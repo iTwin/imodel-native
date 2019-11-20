@@ -115,7 +115,22 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance, do
     if (clusters.size() > GetPointCount() * minCompressionRatio)
         return nullptr;     // No Clusters found.
 
-    PolyfaceHeaderPtr                   decimatedPolyface = PolyfaceHeader::CreateVariableSizeIndexed();
+    PolyfaceHeaderPtr decimatedPolyface = PolyfaceHeader::CreateVariableSizeIndexed();
+    decimatedPolyface->Point().SetActive(true);
+    decimatedPolyface->PointIndex().SetActive(true);
+
+    if (doNormals)
+        {
+        decimatedPolyface->Normal().SetActive(true);
+        decimatedPolyface->NormalIndex().SetActive(true);
+        }
+
+    if (doParams)
+        {
+        decimatedPolyface->Param().SetActive(true);
+        decimatedPolyface->ParamIndex().SetActive(true);
+        }
+
     LightweightPolyfaceBuilderPtr       coordinateMap = LightweightPolyfaceBuilder::Create(*decimatedPolyface);
     PolyfaceAuxData::ChannelsCP         inputAuxChannels = doAux ? &auxData->GetChannels() : nullptr;
     PolyfaceAuxData::Channels           outputAuxChannels;

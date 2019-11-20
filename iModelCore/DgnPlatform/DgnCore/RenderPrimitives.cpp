@@ -1941,11 +1941,11 @@ PolyfaceList SharedGeom::GetPolyfaces(double chordTolerance, NormalMode normalMo
 
         for (auto const& thisPolyface : thisPolyfaces)
             {
-            // ###TODO_INSTANCING: Do we expect to encounter multiple geometries with differing symbologies?
-            // Polyface polyface(*thisPolyface.m_displayParams, *thisPolyface.m_polyface->Clone());
-            // auto const& displayParams = nullptr != instance ? instance->GetDisplayParams() : *m_key.m_displayParams;
-            auto displayParams = CloneDisplayParamsForInstance(*thisPolyface.m_displayParams, nullptr != instance ? instance->GetDisplayParams() : GetDisplayParams());
+            auto displayParams = CloneDisplayParamsForInstance(thisPolyface.GetDisplayParams(), nullptr != instance ? instance->GetDisplayParams() : GetDisplayParams());
             Polyface polyface = thisPolyface.Clone(*displayParams);
+
+            // NB: Decimate before applying instance transform so that correct chord tolerance is used.
+            polyface.Decimate();
             if (nullptr != instance)
                 polyface.Transform(instance->GetTransform());
 
@@ -1984,8 +1984,8 @@ StrokesList SharedGeom::GetStrokes(double chordTolerance, GeometryCP instance, V
         {
         for (auto& stroke : strokes)
             {
-            // stroke.m_displayParams = &instance->GetDisplayParams();
-            stroke.m_displayParams = &GetInstanceDisplayParams(instance, *stroke.m_displayParams);
+            stroke.SetDisplayParams(GetInstanceDisplayParams(instance, stroke.GetDisplayParams()));
+            stroke.Decimate();
             stroke.Transform(instance->GetTransform());
             }
         }
@@ -2383,7 +2383,7 @@ PolyfaceList SolidKernelGeometry::_GetPolyfaces(IFacetOptionsR facetOptions, Vie
 
     if (!GetTransform().IsIdentity())
         for (auto& tilePolyface : tilePolyfaces)
-            tilePolyface.m_polyface->Transform (GetTransform());
+            tilePolyface.GetPolyface().Transform(GetTransform());
 
     return tilePolyfaces;
 
@@ -2604,25 +2604,25 @@ MeshBuilderSet GeometryAccumulator::ToMeshBuilders(GeometryOptionsCR options, do
         auto polyfaces = geom->GetPolyfaces(tolerance, options.m_normalMode, context);
         for (auto const& tilePolyface : polyfaces)
             {
-            PolyfaceHeaderPtr polyface = tilePolyface.m_polyface;
-            if (polyface.IsNull() || 0 == polyface->GetPointCount())
+            auto const& polyface = tilePolyface.GetPolyface();
+            if (0 == polyface.GetPointCount())
                 continue;
 
-            DisplayParamsCPtr displayParams = tilePolyface.m_displayParams;
+            DisplayParamsCPtr displayParams(&tilePolyface.GetDisplayParams());
             bool hasTexture = displayParams.IsValid() && displayParams->IsTextured();
 
-            MeshBuilderKey key(*displayParams, Mesh::PrimitiveType::Mesh, MeshBuilderKey::MakeFlags(nullptr != polyface->GetNormalIndexCP(), tilePolyface.m_isPlanar), 0, nullptr);
-            MeshBuilderR meshBuilder = builders.GetMeshBuilder(key, static_cast<uint32_t>(polyface->GetPointCount()));
+            MeshBuilderKey key(*displayParams, Mesh::PrimitiveType::Mesh, MeshBuilderKey::MakeFlags(nullptr != polyface.GetNormalIndexCP(), tilePolyface.IsPlanar()), 0, nullptr);
+            MeshBuilderR meshBuilder = builders.GetMeshBuilder(key, static_cast<uint32_t>(polyface.GetPointCount()));
 
-            auto edgeOptions = (options.WantEdges() && tilePolyface.m_displayEdges) ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges;
-            meshBuilder.BeginPolyface(*polyface, edgeOptions);
+            auto edgeOptions = (options.WantEdges() && tilePolyface.DisplayEdges()) ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges;
+            meshBuilder.BeginPolyface(polyface, edgeOptions);
 
             uint32_t fillColor = displayParams->GetFillColor();
             uint8_t materialIndex = meshBuilder.GetMaterialIndex(displayParams->GetSurfaceMaterial().GetMaterial());
             auto feature = geom->GetFeature();
-            auto hasNormals = nullptr != polyface->GetNormalCP();
+            auto hasNormals = nullptr != polyface.GetNormalCP();
             auto const& texMap = displayParams->GetSurfaceMaterial().GetTextureMapping();
-            for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
+            for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); /**/)
                 meshBuilder.AddFromPolyfaceVisitor(*visitor, texMap, GetDgnDb(), feature, hasTexture, fillColor, hasNormals, materialIndex, nullptr);
 
             meshBuilder.EndPolyface();
@@ -2633,14 +2633,14 @@ MeshBuilderSet GeometryAccumulator::ToMeshBuilders(GeometryOptionsCR options, do
             auto tileStrokesArray = geom->GetStrokes(tolerance, context);
             for (auto& tileStrokes : tileStrokesArray)
                 {
-                DisplayParamsCPtr displayParams = tileStrokes.m_displayParams;
-                auto type = tileStrokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline;
-                MeshBuilderKey key(*displayParams, type, MeshBuilderKey::MakeFlags(false, tileStrokes.m_isPlanar), 0, nullptr);
+                DisplayParamsCR displayParams = tileStrokes.GetDisplayParams();
+                auto type = tileStrokes.IsDisjoint() ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline;
+                MeshBuilderKey key(displayParams, type, MeshBuilderKey::MakeFlags(false, tileStrokes.IsPlanar()), 0, nullptr);
                 MeshBuilderR builder = builders.GetMeshBuilder(key, tileStrokes.ComputePointCount());
-                uint32_t fillColor = displayParams->GetLineColor();
-                for (auto& strokePoints : tileStrokes.m_strokes)
+                uint32_t fillColor = displayParams.GetLineColor();
+                for (auto& strokePoints : tileStrokes.GetStrokes())
                     {
-                    if (tileStrokes.m_disjoint)
+                    if (tileStrokes.IsDisjoint())
                         builder.AddPointString(strokePoints.m_points, geom->GetFeature(), fillColor, strokePoints.m_startDistance);
                     else
                         builder.AddPolyline(strokePoints.m_points, geom->GetFeature(), fillColor, strokePoints.m_startDistance);
@@ -4242,5 +4242,259 @@ void MeshBuilderSet::GetMeshes(bvector<MeshPtr>& meshes, SharedGeomCR sharedGeom
     {
     for (auto const& builder : m_set)
         builder->GetMeshes(meshes, sharedGeom);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void Polyface::Decimate(size_t minPointCount, double minRatio)
+    {
+    if (!CanDecimate())
+        return;
+
+    BeAssert(m_polyface.IsValid() && 0 < m_polyface->GetPointIndexCount());
+    if (m_polyface->GetPointCount() > minPointCount)
+        {
+        BeAssert(0 == m_polyface->GetEdgeChainCount()); // decimation doesn't handle edge chains - but they should never be present.
+        PolyfaceHeaderPtr decimated = m_polyface->ClusteredVertexDecimate(m_decimationTolerance, minRatio);
+        if (decimated.IsValid())
+            {
+            // Record that we were decimated.
+            m_decimationTolerance = -m_decimationTolerance;
+            m_polyface = decimated;
+            return;
+            }
+        }
+
+    // Prevent future attempts to decimate.
+    m_decimationTolerance = 0.0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void Polyface::ComputeOffset(double expansion)
+    {
+    auto offsetPolyface = m_polyface->ComputeOffset(PolyfaceHeader::OffsetOptions(), expansion, 0.0, true, false, false);
+    if (offsetPolyface.IsValid())
+        m_polyface = offsetPolyface;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void Polyface::ComputePlanarExpansion(double expansion)
+    {
+    DPlane3d plane;
+    auto& polyface = GetPolyface();
+    if (!polyface.IsClosedPlanarRegion(plane))
+        return;
+
+    struct Vertex
+        {
+        int32_t  m_previousIndex;
+        int32_t  m_nextIndex;
+        Vertex() {}
+        Vertex(int32_t previousIndex, int32_t nextIndex): m_previousIndex(previousIndex), m_nextIndex(nextIndex) { }
+        };
+
+    bmap<int32_t, Vertex>       vertexMap;
+
+    for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); )
+        {
+        uint32_t numEdges =  visitor->NumEdgesThisFace();
+        for (uint32_t i = 0; i <numEdges; i++)
+            {
+            int thisIndex, nextIndex;
+            bool visible, nextVisible;
+
+            if (visitor->TryGetClientZeroBasedPointIndex(i, thisIndex, visible) && visible &&
+                visitor->TryGetClientZeroBasedPointIndex((i + 1) % numEdges, nextIndex, nextVisible))
+                {
+                auto thisFound = vertexMap.find(thisIndex);
+                if (thisFound == vertexMap.end())
+                    vertexMap.Insert(thisIndex, Vertex(-1, nextIndex));
+                else
+                    thisFound->second.m_nextIndex = nextIndex;
+
+                auto nextFound =  vertexMap.find(nextIndex);
+                if (nextFound == vertexMap.end())
+                    vertexMap.Insert(nextIndex, Vertex(thisIndex, -1));
+                else
+                    nextFound->second.m_previousIndex = thisIndex;
+                }
+            }
+        }
+
+    bvector<DPoint3d>  pointCopy = polyface.Point();
+    DPoint3dCP points = &pointCopy.front();
+
+    for (auto curr:  vertexMap)
+        {
+        if (curr.second.m_previousIndex < 0 || curr.second.m_nextIndex < 0)
+            continue;
+
+        DPoint3dCR thisPoint = points[curr.first];
+        DVec3d  prev = DVec3d::FromStartEnd(points[curr.second.m_previousIndex], thisPoint),
+                next = DVec3d::FromStartEnd(points[curr.second.m_nextIndex], thisPoint);
+
+        double minMagnitude = 1.0E-5;
+        bool prevDegenerate = prev.Normalize() < minMagnitude, nextDegenerate = next.Normalize() < minMagnitude;
+        if (prevDegenerate && nextDegenerate)
+            continue;
+
+        double expandDistance = expansion;
+        DVec3d expandDirection;
+        if (prevDegenerate)
+            {
+            expandDirection = DVec3d::FromCrossProduct(prev, plane.normal);
+            }
+        else if (nextDegenerate)
+            {
+            expandDirection = DVec3d::FromCrossProduct(plane.normal, next);
+            }
+        else
+            {
+            DVec3d perp =  DVec3d::FromCrossProduct(prev, plane.normal);
+            expandDirection = DVec3d::FromSumOf(prev, next);
+            if (expandDirection.Normalize() < minMagnitude)
+                expandDirection =  perp;
+            else
+                expandDistance = expansion / perp.DotProduct(expandDirection);
+            }
+
+        polyface.Point()[curr.first] = DPoint3d::FromSumOf(thisPoint, expandDirection, expandDistance);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void Strokes::Decimate(size_t minPointCount, double maxRatio)
+    {
+    if (!CanDecimate())
+        return;
+
+    auto initialPointCount = ComputePointCount();
+    if (initialPointCount <= minPointCount)
+        {
+        m_decimationTolerance = 0.0;
+        return;
+        }
+
+    bvector<DPoint3d> compressedPoints;
+    Strokes decimated(GetDisplayParams(), IsDisjoint(), IsPlanar(), 0.0);
+    for (auto const& stroke : m_strokes)
+        {
+        compressedPoints.clear();
+        if (!stroke.m_canDecimate)
+            compressedPoints = stroke.m_points;
+        else
+            DPoint3dOps::CompressByChordError(compressedPoints, stroke.m_points, m_decimationTolerance);
+
+        decimated.m_strokes.emplace_back(PointList(std::move(compressedPoints), false));
+        }
+
+    auto decimatedPointCount = decimated.ComputePointCount();
+    auto decimationRatio = static_cast<double>(decimatedPointCount) / static_cast<double>(initialPointCount);
+    if (decimationRatio <= maxRatio)
+        {
+        // Decimation insufficient - prevent future attempts.
+        m_decimationTolerance = 0.0;
+        return;
+        }
+
+    // Mark as having been decimated.
+    m_decimationTolerance = -m_decimationTolerance;
+    m_strokes = std::move(decimated.m_strokes);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void Strokes::ClipToRange(DRange3dCR range)
+    {
+    if (IsDisjoint())
+        ClipPoints(range);
+    else
+        ClipSegments(range);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Strokes::ClipPoints(DRange3dCR range)
+    {
+    BeAssert(IsDisjoint());
+
+    for (auto& stroke : m_strokes)
+        {
+        auto eraseAt = std::remove_if(stroke.m_points.begin(), stroke.m_points.end(), [&](DPoint3dCR pt) { return !range.IsContained(pt); });
+        if (stroke.m_points.end() != eraseAt)
+            stroke.m_points.erase(eraseAt, stroke.m_points.end());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Strokes::ClipSegments(DRange3dCR range)
+    {
+    BeAssert(IsDisjoint());
+
+    PointLists clipped;
+    clipped.reserve(m_strokes.size());
+
+    for (auto const& stroke : m_strokes)
+        {
+        auto const& points = stroke.m_points;
+        if (points.size() <= 1)
+            continue;
+
+        DPoint3d prevPt = points.front();
+        bool prevOutside = !range.IsContained(prevPt);
+        if (!prevOutside)
+            {
+            clipped.push_back(Strokes::PointList(stroke.m_startDistance, stroke.m_canDecimate));
+            clipped.back().m_points.push_back(prevPt);
+            }
+
+        double length = stroke.m_startDistance; // Cumulative length along polyline
+        for (size_t i = 1; i < points.size(); i++)
+            {
+            auto nextPt = points[i];
+            bool nextOutside = !range.IsContained(nextPt);
+            DSegment3d clippedSegment;
+            if (prevOutside || nextOutside)
+                {
+                double param0, param1;
+                DSegment3d unclippedSegment = DSegment3d::From(prevPt, nextPt);
+                if (!range.IntersectBounded(param0, param1, clippedSegment, unclippedSegment))
+                    {
+                    // entire segment clipped
+                    prevPt = nextPt;
+                    continue;
+                    }
+                }
+
+            DPoint3d startPt = prevOutside ? clippedSegment.point[0] : prevPt;
+            DPoint3d endPt = nextOutside ? clippedSegment.point[1] : nextPt;
+
+            if (prevOutside)
+                {
+                clipped.push_back(Strokes::PointList(length, stroke.m_canDecimate));
+                clipped.back().m_points.push_back(startPt);
+                }
+
+            clipped.back().m_points.push_back(endPt);
+
+            prevPt = nextPt;
+            prevOutside = nextOutside;
+            }
+
+        BeAssert(clipped.empty() || 1 < clipped.back().m_points.size());
+        }
+
+    m_strokes = std::move(clipped);
     }
 

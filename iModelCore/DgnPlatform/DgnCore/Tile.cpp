@@ -909,58 +909,6 @@ public:
     GlyphAtlas& GetAtlasAndLocationForGlyph(DeferredGlyph& glyph, GlyphLocation &loc);
 };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   04/19
-+---------------+---------------+---------------+---------------+---------------+------*/
-static PolyfaceHeaderPtr tryDecimate(Polyface& tilePolyface)
-    {
-    static constexpr size_t minPointCount = 100; // Only decimate meshes with at least this many points.
-    PolyfaceHeaderPtr pf = tilePolyface.m_polyface;
-    BeAssert(pf.IsValid() && 0 < pf->GetPointIndexCount()); // callers check this
-    if (!tilePolyface.CanDecimate() || pf->GetPointCount() <= minPointCount)
-        return nullptr;
-
-    static constexpr double minRatio = 0.25; // Decimation must reduce point count by at least this percentage.
-    BeAssert(0 == pf->GetEdgeChainCount()); // The decimation does not handle edge chains - but this only occurs for polyfaces which should never have them.
-    return pf->ClusteredVertexDecimate(tilePolyface.m_decimationTolerance, minRatio);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   04/19
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool tryDecimate(StrokesR out, StrokesCR in)
-    {
-    if (!in.CanDecimate())
-        return false;
-
-    auto inPointCount = in.ComputePointCount();
-    static constexpr size_t minPointCount = 10;
-    if (inPointCount <= minPointCount)
-        return false;
-
-    bvector<DPoint3d> compressedPoints;
-    for (auto const& strokeIn : in.m_strokes)
-        {
-        compressedPoints.clear();
-        if (!strokeIn.m_canDecimate)
-            compressedPoints = strokeIn.m_points;
-        else
-            DPoint3dOps::CompressByChordError(compressedPoints, strokeIn.m_points, in.m_decimationTolerance);
-
-        out.m_strokes.emplace_back(Strokes::PointList(std::move(compressedPoints), false));
-        }
-
-    auto outPointCount = out.ComputePointCount();
-    auto decimationRatio = static_cast<double>(outPointCount) / static_cast<double>(inPointCount);
-
-    // Prevent further attempts to decimate the output
-    out.m_decimationTolerance = 0.0;
-
-    // If at least this percentage of points remain after decimation, consider it not worthwhile
-    static constexpr double maxRatio = 0.80;
-    return decimationRatio <= maxRatio;
-    }
-
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   02/17
 //=======================================================================================
@@ -972,8 +920,6 @@ protected:
     MeshBuilderSet      m_builders;
     DRange3d            m_contentRange = DRange3d::NullRange();
     bool                m_didDecimate = false;
-
-    static double DecimateStrokes(StrokesR strokesOut, StrokesR strokesIn);
 
     MeshBuilderR GetMeshBuilder(MeshBuilderKey const& key, uint32_t numVertices);
 
@@ -1049,9 +995,6 @@ private:
     DPoint3dCP          m_viewIndependentOrigin = nullptr;
     std::map<DgnElementId, DPoint3d>    m_deferredGlyphOrigins;
 
-    Strokes ClipSegments(StrokesCR strokes) const;
-    void ClipPoints(StrokesR strokes) const;
-
     DPoint3dCP GetViewIndependentOrigin(DgnElementId elemId) const
         {
         auto iter = m_deferredGlyphOrigins.find(elemId);
@@ -1069,7 +1012,7 @@ public:
     DRange3dCR GetContentRange() const { return m_contentRange; }
     void AddDeferredPolyface(Polyface& tilePolyface, DgnElementId, double rangePixels, bool isContained) final;
     void ClipAndAddPolyface(PolyfaceHeaderR polyface, DgnElementId elemId, DisplayParamsCR displayParams, MeshEdgeCreationOptions const& edgeOptions, bool isPlanar) final;
-    void ClipStrokes(StrokesR strokes) const final;
+    void ClipStrokes(StrokesR strokes) const final { strokes.ClipToRange(GetTileRange()); }
 
     MeshList GetMeshes();
     void AddDeferredGlyphMeshes(Render::System& renderSystem);
@@ -1143,33 +1086,26 @@ struct InstanceablePolyface : InstanceableGeom
 private:
     Polyface    m_polyface;
 
-    InstanceablePolyface(PolyfaceCR polyface, SharedGeomCR shared, bool decimated) : InstanceableGeom(shared, decimated), m_polyface(polyface) { }
+    InstanceablePolyface(PolyfaceCR polyface, SharedGeomCR shared) : InstanceableGeom(shared, polyface.IsDecimated()), m_polyface(polyface) { }
 
     void AddInstanced(MeshGeneratorR, MeshBuilderR, DRange3dR contentRange) const final;
     void AddBatched(ElementMeshGeneratorR meshGen, TransformCR transform, DisplayParamsCR displayParams, DgnElementId elemId) final;
 public:
     static InstanceableGeomPtr Create(PolyfaceR polyface, SharedGeomCR shared)
         {
-        PolyfaceHeaderPtr decimated = tryDecimate(polyface);
-
-        // Prevent trying to re-decimate
-        // (Note even if tryDecimate() returned null we may subsequently try and fail again if decimation tolerance is non-zero.
-        polyface.m_decimationTolerance = 0.0;
-        if (decimated.IsValid())
-            polyface.m_polyface = decimated;
-
-        return new InstanceablePolyface(polyface, shared, decimated.IsValid());
+        polyface.Decimate();
+        return new InstanceablePolyface(polyface, shared);
         }
 
-    size_t GetSharedVertexCount() const final { return m_polyface.m_polyface->GetPointCount(); }
+    size_t GetSharedVertexCount() const final { return m_polyface.GetPolyface().GetPointCount(); }
 
     // NB: Face-attached materials produce multiple polyfaces with different materials...
-    DisplayParamsCR GetDisplayParams() const final { return *m_polyface.m_displayParams; }
-    DRange3d ComputeRange() const final { return m_polyface.m_polyface->PointRange(); }
+    DisplayParamsCR GetDisplayParams() const final { return m_polyface.GetDisplayParams(); }
+    DRange3d ComputeRange() const final { return m_polyface.GetPolyface().PointRange(); }
 
     MeshBuilderKey GetMeshBuilderKey() const final
         {
-        return MeshBuilderKey(GetDisplayParams(), Mesh::PrimitiveType::Mesh, MeshBuilderKey::MakeFlags(nullptr != m_polyface.m_polyface->GetNormalIndexCP(), m_polyface.m_isPlanar), 0, nullptr);
+        return MeshBuilderKey(GetDisplayParams(), Mesh::PrimitiveType::Mesh, MeshBuilderKey::MakeFlags(nullptr != m_polyface.GetPolyface().GetNormalIndexCP(), m_polyface.IsPlanar()), 0, nullptr);
         }
 };
 
@@ -1182,9 +1118,9 @@ private:
     Strokes m_strokes;
     size_t  m_numVertices = 0;
 
-    InstanceableStrokes(Strokes&& strokes, SharedGeomCR shared, bool decimated) : InstanceableGeom(shared, decimated), m_strokes(std::move(strokes))
+    InstanceableStrokes(Strokes&& strokes, SharedGeomCR shared) : InstanceableGeom(shared, strokes.IsDecimated()), m_strokes(std::move(strokes))
         {
-        for (auto const& pointList : m_strokes.m_strokes)
+        for (auto const& pointList : m_strokes.GetStrokes())
             m_numVertices += pointList.m_points.size();
         }
 
@@ -1193,27 +1129,16 @@ private:
 public:
     static InstanceableGeomPtr Create(Strokes&& strokes, SharedGeomCR shared)
         {
-        bool didDecimate = false;
-        if (strokes.CanDecimate())
-            {
-            Strokes decimated(*strokes.m_displayParams, strokes.m_disjoint, strokes.m_isPlanar, strokes.m_decimationTolerance);
-            if (tryDecimate(decimated, strokes))
-                {
-                strokes = std::move(decimated);
-                strokes.m_decimationTolerance = 0.0;
-                didDecimate = true;
-                }
-            }
-
-        return new InstanceableStrokes(std::move(strokes), shared, didDecimate);
+        strokes.Decimate();
+        return new InstanceableStrokes(std::move(strokes), shared);
         }
 
     size_t GetSharedVertexCount() const final { return m_numVertices; }
-    DisplayParamsCR GetDisplayParams() const final { return *m_strokes.m_displayParams; }
+    DisplayParamsCR GetDisplayParams() const final { return m_strokes.GetDisplayParams(); }
     DRange3d ComputeRange() const final
         {
         DRange3d range = DRange3d::NullRange();
-        for (auto const& pointList : m_strokes.m_strokes)
+        for (auto const& pointList : m_strokes.GetStrokes())
             range.Extend(pointList.m_points);
 
         return range;
@@ -1221,8 +1146,8 @@ public:
 
     MeshBuilderKey GetMeshBuilderKey() const final
         {
-        auto type = m_strokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline;
-        auto flags = MeshBuilderKey::MakeFlags(false, m_strokes.m_isPlanar);
+        auto type = m_strokes.IsDisjoint() ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline;
+        auto flags = MeshBuilderKey::MakeFlags(false, m_strokes.IsPlanar());
         return MeshBuilderKey(GetDisplayParams(), type, flags, 0, nullptr);
         }
 };
@@ -1327,18 +1252,15 @@ private:
         {
         for (auto& polyface : polyfaces)
             {
-            PolyfaceHeaderPtr pf = polyface.m_polyface;
-            if (pf.IsNull() || 0 == pf->GetPointIndexCount())
-                continue;
-
-            Add(*InstanceablePolyface::Create(polyface, geom));
+            if (0 < polyface.GetPolyface().GetPointIndexCount())
+                Add(*InstanceablePolyface::Create(polyface, geom));
             }
         }
 
     void AddStrokes(StrokesList&& strokes, SharedGeomCR geom)
         {
         for (auto& stroke : strokes)
-            if (!stroke.m_strokes.empty())
+            if (!stroke.IsEmpty())
                 Add(*InstanceableStrokes::Create(std::move(stroke), geom));
         }
 
@@ -2807,15 +2729,8 @@ PlanarClassificationLoader::PlanarClassificationLoader(Tree& tree, ContentIdCR c
 void VolumeClassificationLoader::Preprocess(PolyfaceList& polyfaces, StrokesList& strokes) const
     {
     if (0.0 != m_expansion)
-        {
         for (auto& polyface : polyfaces)
-            {
-            PolyfaceHeaderPtr offsetPolyface = polyface.m_polyface->ComputeOffset(PolyfaceHeader::OffsetOptions(), m_expansion, 0.0, true, false, false);
-
-            if (offsetPolyface.IsValid())
-                polyface.m_polyface = offsetPolyface;
-            }
-        }
+            polyface.ComputeOffset(m_expansion);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2848,7 +2763,7 @@ static PolyfaceHeaderPtr polyfaceFromExpandedStrokes(StrokesCR strokes, double e
     int32_t                     normalIndices[3];
 
     normalIndices[0] = normalIndices[1] = normalIndices[2] = 1 + (int) coordinateMap->AddNormal(normal);
-    for (auto& stroke : strokes.m_strokes)
+    for (auto& stroke : strokes.GetStrokes())
         {
         if (stroke.m_points.empty())
             {
@@ -2856,7 +2771,7 @@ static PolyfaceHeaderPtr polyfaceFromExpandedStrokes(StrokesCR strokes, double e
             continue;
             }
 
-        if (strokes.m_disjoint)
+        if (strokes.IsDisjoint())
             {
             // TBD... stroke point based on tolerance.
             for (auto& point : stroke.m_points)
@@ -2918,106 +2833,28 @@ static PolyfaceHeaderPtr polyfaceFromExpandedStrokes(StrokesCR strokes, double e
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void expandClosedPlanarPolyface(PolyfaceHeaderR polyface, DPlane3dCR plane, double expansion)
-    {
-    struct Vertex
-        {
-        int32_t  m_previousIndex;
-        int32_t  m_nextIndex;
-        Vertex() {}
-        Vertex(int32_t previousIndex, int32_t nextIndex): m_previousIndex(previousIndex), m_nextIndex(nextIndex) { }
-        };
-    bmap<int32_t, Vertex>       vertexMap;
-
-    for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); )
-        {
-        uint32_t numEdges =  visitor->NumEdgesThisFace();
-        for (uint32_t i = 0; i <numEdges; i++)
-            {
-            int thisIndex, nextIndex;
-            bool visible, nextVisible;
-
-            if (visitor->TryGetClientZeroBasedPointIndex(i, thisIndex, visible) && visible &&
-                visitor->TryGetClientZeroBasedPointIndex((i + 1) % numEdges, nextIndex, nextVisible))
-                {
-                auto thisFound = vertexMap.find(thisIndex);
-                if (thisFound == vertexMap.end())
-                    vertexMap.Insert(thisIndex, Vertex(-1, nextIndex));
-                else
-                    thisFound->second.m_nextIndex = nextIndex;
-
-                auto nextFound =  vertexMap.find(nextIndex);
-                if (nextFound == vertexMap.end())
-                    vertexMap.Insert(nextIndex, Vertex(thisIndex, -1));
-                else
-                    nextFound->second.m_previousIndex = thisIndex;
-                }
-            }
-        }
-    bvector<DPoint3d>  pointCopy = polyface.Point();
-    DPoint3dCP points = &pointCopy.front();
-
-    for (auto curr:  vertexMap)
-        {
-        if (curr.second.m_previousIndex < 0 || curr.second.m_nextIndex < 0)
-            {
- //         BeAssert(false);
-            continue;
-            }
-        DPoint3dCR thisPoint = points[curr.first];
-        DVec3d  prev = DVec3d::FromStartEnd(points[curr.second.m_previousIndex], thisPoint),
-                next = DVec3d::FromStartEnd(points[curr.second.m_nextIndex], thisPoint);
-        double minMagnitude = 1.0E-5;
-        bool prevDegenerate = prev.Normalize() < minMagnitude, nextDegenerate = next.Normalize() < minMagnitude;
-        if (prevDegenerate && nextDegenerate)
-            continue;
-        double expandDistance = expansion;
-        DVec3d expandDirection;
-        if (prevDegenerate)
-            expandDirection = DVec3d::FromCrossProduct(prev, plane.normal);
-        else if (nextDegenerate)
-            expandDirection = DVec3d::FromCrossProduct(plane.normal, next);
-        else
-            {
-            DVec3d perp =  DVec3d::FromCrossProduct(prev, plane.normal);
-            expandDirection = DVec3d::FromSumOf(prev, next);
-            if (expandDirection.Normalize() < minMagnitude)
-                expandDirection =  perp;
-            else
-                expandDistance = expansion / perp.DotProduct(expandDirection);
-            }
-        polyface.Point()[curr.first] = DPoint3d::FromSumOf(thisPoint, expandDirection, expandDistance);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/18
-+---------------+---------------+---------------+---------------+---------------+------*/
 void PlanarClassificationLoader::Preprocess(PolyfaceList& polyfaces, StrokesList& strokes) const
     {
     if (0.0 != m_expansion)
         {
         for (auto& polyface : polyfaces)
-            {
-            DPlane3d plane;
+            polyface.ComputePlanarExpansion(m_expansion);
 
-            if (polyface.m_polyface->IsClosedPlanarRegion(plane))
-                expandClosedPlanarPolyface(*polyface.m_polyface, plane, m_expansion);
-            }
         if (!strokes.empty())
             {
-            auto    meshDisplayParams  = strokes.front().m_displayParams->CloneForMeshedLineString();
-            for (auto& strokes : strokes) {
+            auto    meshDisplayParams  = strokes.front().GetDisplayParams().CloneForMeshedLineString();
+            for (auto& strokes : strokes)
+                {
                 PolyfaceHeaderPtr   polyface = polyfaceFromExpandedStrokes(strokes, m_expansion);
 
                 if (polyface.IsValid())
                     polyfaces.push_back(Polyface(*meshDisplayParams, *polyface, false, true));
                 }
             }
+
         strokes.clear();
         }
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/18
@@ -3192,7 +3029,7 @@ static void writeAtlasToImageFile(Byte const* data, uint32_t width, uint32_t hei
 +---------------+---------------+---------------+---------------+---------------+------*/
 void* DeferredGlyph::GetKey()
     {
-    return static_cast<void*>(m_polyface.m_glyphImage);
+    return static_cast<void*>(m_polyface.GetGlyphImage());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3270,7 +3107,7 @@ bool GlyphAtlas::AddGlyph(DeferredGlyph& glyph, GlyphLocation& loc)
     if (m_availGlyphSlotY >= m_numPixelsInY)
         return false; // this atlas is already filled to capacity
 
-    Render::Image* glyphImage = glyph.m_polyface.m_glyphImage;
+    Render::Image* glyphImage = glyph.m_polyface.GetGlyphImage();
     ByteStream glyphBytes = glyphImage->GetByteStream();
 
     // copy unique glyph to next available location in the atlas
@@ -3404,12 +3241,12 @@ void ElementMeshGenerator::AddDeferredGlyphMeshes(Render::System& renderSystem)
 
         // override texture
         TexturePtr tex = atlas.GetTexture(renderSystem, m_dgndb);
-        deferredGlyph.m_polyface.m_displayParams = deferredGlyph.m_polyface.m_displayParams->CloneForRasterText(*tex);
+        deferredGlyph.m_polyface.SetDisplayParams(*deferredGlyph.m_polyface.GetDisplayParams().CloneForRasterText(*tex));
 
         // override uvs
         DPoint2d uvs[2];
-        atlas.GetUVCoords(deferredGlyph.m_polyface.m_glyphImage, loc, uvs);
-        auto& params = deferredGlyph.m_polyface.m_polyface->Param();
+        atlas.GetUVCoords(deferredGlyph.m_polyface.GetGlyphImage(), loc, uvs);
+        auto& params = deferredGlyph.m_polyface.GetPolyface().Param();
         for (auto& param : params)
             {
             param.y = param.y < 0.5 ? uvs[0].x : uvs[1].x;
@@ -3484,34 +3321,29 @@ void ElementMeshGenerator::AddDeferredPolyface(Polyface& tilePolyface, DgnElemen
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MeshGenerator::AddPolyface(Polyface& tilePolyface, DgnElementId elemId, double rangePixels, bool isContained, bool doDefer)
     {
-    if (nullptr != tilePolyface.m_glyphImage && doDefer)
+    if (0 == tilePolyface.GetPolyface().GetPointIndexCount())
+        return;
+
+    if (nullptr != tilePolyface.GetGlyphImage() && doDefer)
         {
         AddDeferredPolyface(tilePolyface, elemId, rangePixels, isContained);
         return;
         }
 
-    // TFS#817210
-    PolyfaceHeaderPtr polyface = tilePolyface.m_polyface.get();
-    if (polyface.IsNull() || 0 == polyface->GetPointIndexCount())
-        return;
-
-    PolyfaceHeaderPtr decimated = tryDecimate(tilePolyface);
-    if (decimated.IsValid())
-        {
+    tilePolyface.Decimate();
+    if (tilePolyface.IsDecimated())
         MarkDecimated();
-        polyface = decimated;
-        }
 
-    auto edgeOptions = (!GetOmitEdges() && tilePolyface.m_displayEdges) ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges;
+    auto edgeOptions = (!GetOmitEdges() && tilePolyface.DisplayEdges()) ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges;
 
     MeshEdgeCreationOptions edges(edgeOptions);
-    bool                    isPlanar = tilePolyface.m_isPlanar;
-    DisplayParamsCPtr       displayParams = &tilePolyface.GetDisplayParams();
+    bool isPlanar = tilePolyface.IsPlanar();
+    DisplayParamsCR displayParams = tilePolyface.GetDisplayParams();
 
     if (isContained)
-        AddClippedPolyface(*polyface, elemId, *displayParams, edges, isPlanar);
+        AddClippedPolyface(tilePolyface.GetPolyface(), elemId, displayParams, edges, isPlanar);
     else
-        ClipAndAddPolyface(*polyface, elemId, *displayParams, edges, isPlanar);
+        ClipAndAddPolyface(tilePolyface.GetPolyface(), elemId, displayParams, edges, isPlanar);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3576,96 +3408,6 @@ void MeshGenerator::AddClippedPolyface(PolyfaceQueryCR polyface, DgnElementId el
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   07/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ElementMeshGenerator::ClipStrokes(StrokesR strokes) const
-    {
-    if (strokes.m_disjoint)
-        ClipPoints(strokes);
-    else
-        strokes = ClipSegments(strokes);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Strokes ElementMeshGenerator::ClipSegments(StrokesCR input) const
-    {
-    BeAssert(!input.m_disjoint);
-
-    Strokes output(*input.m_displayParams, false, input.m_isPlanar, input.m_decimationTolerance);
-    output.m_strokes.reserve(input.m_strokes.size());
-
-    for (auto const& inputStroke : input.m_strokes)
-        {
-        auto const& points = inputStroke.m_points;
-        if (points.size() <= 1)
-            continue;
-
-        DPoint3d prevPt = points.front();
-        bool prevOutside = !GetTileRange().IsContained(prevPt);
-        if (!prevOutside)
-            {
-            output.m_strokes.push_back(Strokes::PointList(inputStroke.m_startDistance, inputStroke.m_canDecimate));
-            output.m_strokes.back().m_points.push_back(prevPt);
-            }
-
-        double length = inputStroke.m_startDistance;        // Cumulative length along polyline
-        for (size_t i = 1; i < points.size(); i++)
-            {
-            auto nextPt = points[i];
-            bool nextOutside = !GetTileRange().IsContained(nextPt);
-            DSegment3d clippedSegment;
-            if (prevOutside || nextOutside)
-                {
-                double param0, param1;
-                DSegment3d unclippedSegment = DSegment3d::From(prevPt, nextPt);
-                if (!GetTileRange().IntersectBounded(param0, param1, clippedSegment, unclippedSegment))
-                    {
-                    // entire segment clipped
-                    prevPt = nextPt;
-                    continue;
-                    }
-                }
-
-            DPoint3d startPt = prevOutside ? clippedSegment.point[0] : prevPt;
-            DPoint3d endPt = nextOutside ? clippedSegment.point[1] : nextPt;
-
-            if (prevOutside)
-                {
-                output.m_strokes.push_back(Strokes::PointList(length, inputStroke.m_canDecimate));
-                output.m_strokes.back().m_points.push_back(startPt);
-                }
-
-            output.m_strokes.back().m_points.push_back(endPt);
-
-            prevPt = nextPt;
-            prevOutside = nextOutside;
-            }
-
-        BeAssert(output.m_strokes.empty() || 1 < output.m_strokes.back().m_points.size());
-        }
-
-    return output;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   07/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ElementMeshGenerator::ClipPoints(StrokesR strokes) const
-    {
-    BeAssert(strokes.m_disjoint);
-
-    for (auto& stroke : strokes.m_strokes)
-        {
-        auto eraseAt = std::remove_if(stroke.m_points.begin(), stroke.m_points.end(), [&](DPoint3dCR pt) { return !GetTileRange().IsContained(pt); });
-        if (stroke.m_points.end() != eraseAt)
-            stroke.m_points.erase(eraseAt, stroke.m_points.end());
-        }
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MeshGenerator::AddStrokes(StrokesList& strokes, DgnElementId elemId, double rangePixels, bool isContained)
@@ -3675,37 +3417,12 @@ void MeshGenerator::AddStrokes(StrokesList& strokes, DgnElementId elemId, double
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Mark.Schlosser  04/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-double MeshGenerator::DecimateStrokes(StrokesR strokesOut, StrokesR strokesIn) // returns percentage of total point reduction
-    {
-    size_t totalPointsIn = 0;
-    size_t totalPointsOut = 0;
-    for (auto& strokeIn : strokesIn.m_strokes)
-        {
-        bool doDecimate = strokeIn.m_canDecimate; // only decimate linestrings
-        if (doDecimate)
-            {
-            bvector<DPoint3d> compressedPoints;
-            DPoint3dOps::CompressByChordError(compressedPoints, strokeIn.m_points, strokesIn.m_decimationTolerance);
-
-            totalPointsIn += strokeIn.m_points.size();
-            totalPointsOut += compressedPoints.size();
-
-            strokesOut.m_strokes.emplace_back(Strokes::PointList(std::move(compressedPoints), false));
-            }
-        }
-
-    return 1.0 - static_cast<double>(totalPointsOut) / static_cast<double>(totalPointsIn);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/19
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T> void addClippedStrokes(MeshBuilderR builder, StrokesCR strokes, FeatureCR feature, uint32_t color, T extendContentRange)
     {
-    auto minPoints = strokes.m_disjoint ? 0 : 1;
-    for (auto& stroke : strokes.m_strokes)
+    auto minPoints = strokes.IsDisjoint() ? 0 : 1;
+    for (auto& stroke : strokes.GetStrokes())
         {
         if (stroke.m_points.size() > minPoints)
             {
@@ -3727,27 +3444,22 @@ void MeshGenerator::AddStrokes(StrokesR strokes, DgnElementId elemId, double ran
     if (!isContained)
         ClipStrokes(strokes);
 
-    if (strokes.m_strokes.empty())
+    if (strokes.IsEmpty())
         return; // avoid potentially creating the builder below...
+
+    strokes.Decimate();
+    if (strokes.IsDecimated())
+        m_didDecimate = true;
 
     DisplayParamsCR displayParams = strokes.GetDisplayParams();
 
-    // Decimate if possible
-    Strokes* strokesToAdd = &strokes;
-    Strokes decimatedStrokes(*strokes.m_displayParams, strokes.m_disjoint, strokes.m_isPlanar, strokes.m_decimationTolerance);
-    if (tryDecimate(decimatedStrokes, strokes))
-        {
-        strokesToAdd = &decimatedStrokes;
-        m_didDecimate = true;
-        }
-
-    auto type = strokesToAdd->m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline;
-    auto flags = MeshBuilderKey::MakeFlags(false, strokesToAdd->m_isPlanar);
+    auto type = strokes.IsDisjoint() ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline;
+    auto flags = MeshBuilderKey::MakeFlags(false, strokes.IsPlanar());
     MeshBuilderKey key(displayParams, type, flags, 0, GetViewIndependentOrigin());
-    MeshBuilderR builder = GetMeshBuilder(key, strokesToAdd->ComputePointCount());
+    MeshBuilderR builder = GetMeshBuilder(key, strokes.ComputePointCount());
 
     uint32_t fillColor = displayParams.GetLineColor();
-    addClippedStrokes(builder, *strokesToAdd, featureFromParams(elemId, displayParams), fillColor, [&](bvector<DPoint3d> const& pts) { ExtendContentRange(pts); });
+    addClippedStrokes(builder, strokes, featureFromParams(elemId, displayParams), fillColor, [&](bvector<DPoint3d> const& pts) { ExtendContentRange(pts); });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4283,15 +3995,13 @@ void InstanceableGeom::AddBatched(ElementMeshGeneratorR meshGen, SubRangesR subR
 void InstanceablePolyface::AddBatched(ElementMeshGeneratorR meshGen, TransformCR transform, DisplayParamsCR displayParams, DgnElementId elemId)
     {
 #if defined(CLONE_FOR_ADD_BATCHED)
-    Polyface pf = m_polyface;
-    pf.m_polyface = pf.m_polyface->Clone();
+    Polyface pf = m_polyface.Clone(displayParams);
     pf.Transform(transform);
-    pf.m_displayParams = &displayParams;
     meshGen.AddPolyface(pf, elemId, 0.0, true, false);
 #else
     Polyface pf = m_polyface;
     pf.Transform(transform);
-    pf.m_displayParams = &displayParams;
+    pf.SetDisplayParams(displayParams);
     meshGen.AddPolyface(pf, elemId, 0.0, true, false);
 #endif
     }
@@ -4302,9 +4012,9 @@ void InstanceablePolyface::AddBatched(ElementMeshGeneratorR meshGen, TransformCR
 void InstanceablePolyface::AddInstanced(MeshGeneratorR meshGen, MeshBuilderR builder, DRange3dR contentRange) const
     {
     auto extendRange = [&contentRange](bvector<DPoint3d> const& points) { contentRange.Extend(points); };
-    auto edgeOptions = !meshGen.GetOmitEdges() && m_polyface.m_displayEdges ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges;
+    auto edgeOptions = !meshGen.GetOmitEdges() && m_polyface.DisplayEdges() ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges;
     DgnDbR db = meshGen.GetLoader().GetDgnDb();
-    addClippedPolyface(builder, *m_polyface.m_polyface, edgeOptions, Feature(), GetDisplayParams(), db, nullptr, extendRange);
+    addClippedPolyface(builder, m_polyface.GetPolyface(), edgeOptions, Feature(), GetDisplayParams(), db, nullptr, extendRange);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4313,7 +4023,7 @@ void InstanceablePolyface::AddInstanced(MeshGeneratorR meshGen, MeshBuilderR bui
 void InstanceableStrokes::AddBatched(ElementMeshGeneratorR meshGen, TransformCR transform, DisplayParamsCR displayParams, DgnElementId elemId)
     {
     m_strokes.Transform(transform);
-    m_strokes.m_displayParams = &displayParams;
+    m_strokes.SetDisplayParams(displayParams);
     meshGen.AddStrokes(m_strokes, elemId, 0.0, true);
     }
 

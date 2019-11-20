@@ -966,22 +966,39 @@ public:
 //=======================================================================================
 struct Polyface
 {
+    friend struct GeometryClipper;
+private:
     DisplayParamsCPtr   m_displayParams;
     PolyfaceHeaderPtr   m_polyface;
-    double              m_decimationTolerance;
     // If the original geometry was a polyface, this is the chord tolerance to use for decimation. Otherwise it is zero.
+    // After decimation, we negate it.
+    double              m_decimationTolerance;
     bool                m_displayEdges;
     bool                m_isPlanar;
     Image*              m_glyphImage;
-
+public:
     Polyface(DisplayParamsCR displayParams, PolyfaceHeaderR polyface, bool displayEdges=true, bool isPlanar=false, Image* glyphImage=nullptr, double decimationTolerance=0.0)
         : m_displayParams(&displayParams), m_polyface(&polyface), m_displayEdges(displayEdges), m_isPlanar(isPlanar), m_glyphImage(glyphImage), m_decimationTolerance(decimationTolerance) { }
+
+    PolyfaceHeaderR GetPolyface() { return *m_polyface; }
+    PolyfaceHeaderCR GetPolyface() const { return *m_polyface; }
+
+    DisplayParamsCR GetDisplayParams() const { return *m_displayParams; }
+    void SetDisplayParams(DisplayParamsCR params) { m_displayParams = & params; }
+
+    Image* GetGlyphImage() const { return m_glyphImage; }
+    bool IsPlanar() const { return m_isPlanar; }
+    bool DisplayEdges() const { return m_displayEdges; }
+
+    bool CanDecimate() const { return 0.0 < m_decimationTolerance; }
+    bool IsDecimated() const { return m_decimationTolerance < 0.0; }
+    void Decimate(size_t minPointCount = 100, double minRatio = 0.75);
+    void ComputeOffset(double expansion);
+    void ComputePlanarExpansion(double expansion);
 
     void Transform(TransformCR transform) { if (m_polyface.IsValid()) m_polyface->Transform(transform); }
     Polyface Clone(DisplayParamsCR params) const { return Polyface(params, *m_polyface->Clone(), m_displayEdges, m_isPlanar, m_glyphImage, m_decimationTolerance); }
     Polyface Clone() const { return Clone(*m_displayParams); }
-    DisplayParamsCR GetDisplayParams() const { return *m_displayParams; }
-    bool CanDecimate() const { return 0.0 < m_decimationTolerance; }
 };
 
 //=======================================================================================
@@ -1013,15 +1030,18 @@ struct Strokes
             }
     };
 
+    friend struct GeometryClipper;
     typedef bvector<PointList> PointLists;
-
-    static PointLists ClipToRange(PointLists&& input, DRange3dCR range);
-
+private:
     DisplayParamsCPtr   m_displayParams;
     PointLists          m_strokes;
     double              m_decimationTolerance;
     bool                m_disjoint;
     bool                m_isPlanar;
+
+    void ClipSegments(DRange3dCR range);
+    void ClipPoints(DRange3dCR range);
+public:
 
     Strokes(DisplayParamsCR displayParams, PointLists&& strokes, bool disjoint, bool isPlanar, double decimationTolerance)
         : m_displayParams(&displayParams), m_strokes(std::move(strokes)), m_disjoint(disjoint), m_isPlanar(isPlanar), m_decimationTolerance(decimationTolerance) { }
@@ -1043,10 +1063,24 @@ struct Strokes
         return *this;
         }
 
-    void Transform(TransformCR transform);
+    PointLists& GetStrokes() { return m_strokes; }
+    PointLists const& GetStrokes() const { return m_strokes; }
+
+    bool IsPlanar() const { return m_isPlanar; }
+    bool IsDisjoint() const { return m_disjoint; }
+
     DisplayParamsCR GetDisplayParams() const { return *m_displayParams; }
+    void SetDisplayParams(DisplayParamsCR params) { m_displayParams = &params; }
+
+    bool IsEmpty() const { return m_strokes.empty(); }
     uint32_t ComputePointCount() const;
+
+    void Transform(TransformCR transform);
+    void ClipToRange(DRange3dCR range);
+
     bool CanDecimate() const { return !m_disjoint && m_decimationTolerance > 0.0; }
+    bool IsDecimated() const { return !m_disjoint && m_decimationTolerance < 0.0; }
+    void Decimate(size_t minPointCount = 10, double maxRatio = 0.8);
 };
 
 //=======================================================================================

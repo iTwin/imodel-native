@@ -199,17 +199,17 @@ void GeometryClipper::DoClipPolyface(PolyfaceList& polyfacesOut, PolyfaceCR poly
         {
         PolyfaceClipper pfClipper;
 
-        pfClipper.ClipPolyface(*polyfaceIn.m_polyface, m_clip, true);
+        pfClipper.ClipPolyface(polyfaceIn.GetPolyface(), m_clip, true);
         if (pfClipper.HasOutput())
             {
-            DisplayParamsCPtr displayParams = polyfaceIn.m_displayParams;
-            bool displayEdges = polyfaceIn.m_displayEdges;
-            bool isPlanar = polyfaceIn.m_isPlanar;
+            DisplayParamsCR displayParams = polyfaceIn.GetDisplayParams();
+            bool displayEdges = polyfaceIn.DisplayEdges();
+            bool isPlanar = polyfaceIn.IsPlanar();
 
             bvector<PolyfaceQueryCP>& clippedPolyfaceQueries = pfClipper.GetOutput();
             for (auto& clippedPolyfaceQuery : clippedPolyfaceQueries)
                 {
-                polyfacesOut.push_back(Polyface(*displayParams, *clippedPolyfaceQuery->Clone(), displayEdges, isPlanar));
+                polyfacesOut.push_back(Polyface(displayParams, *clippedPolyfaceQuery->Clone(), displayEdges, isPlanar));
                 }
             }
         }
