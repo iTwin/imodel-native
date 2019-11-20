@@ -258,5 +258,5 @@ void PointCloudModel::_OnLoadedJsonProperties()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Dgn::Cesium::RootPtr PointCloudModel::_CreateCesiumTileTree(Dgn::Cesium::OutputR output, Utf8StringCR)
     {
-    return PointCloudTileTree::Root::Create(*this, output);
+    return  (nullptr == GetPointCloudSceneP()) ?  nullptr :  PointCloudTileTree::Root::Create(*this, output);
     }
