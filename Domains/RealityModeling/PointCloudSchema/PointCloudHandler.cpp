@@ -136,12 +136,15 @@ PointCloudSceneP PointCloudModel::GetPointCloudSceneP() const
         m_loadSceneStatus = LoadStatus::UnknownError;
 
         // Find resolved file name for the point cloud
-        BeFileName fileName;
-        BentleyStatus status = T_HOST.GetPointCloudAdmin()._ResolveFileUri(fileName, m_properties.m_fileUri, GetDgnDb());
-        if (status != SUCCESS)
+        BeFileName fileName(m_properties.m_fileUri);
+        if (!fileName.IsAbsolutePath())
             {
-            ERROR_PRINTF("Failed to resolve filename = %s", fileName.GetNameUtf8().c_str());
-            return nullptr;
+            BentleyStatus status = T_HOST.GetPointCloudAdmin()._ResolveFileUri(fileName, m_properties.m_fileUri, GetDgnDb());
+            if (status != SUCCESS)
+                {
+                ERROR_PRINTF("Failed to resolve filename = %s", fileName.GetNameUtf8().c_str());
+                return nullptr;
+                }
             }
             
         m_pointCloudScenePtr = PointCloudScene::Create(fileName.c_str());
