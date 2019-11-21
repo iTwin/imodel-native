@@ -433,7 +433,7 @@ void OBMConverter::CreateBimBridgeComponents(Bentley::ObmNET::BridgeR obmBridgeR
         Dgn::DgnCategoryId bridgeCategoryId = BridgeStructuralPhysical::BridgeCategory::Get(m_converter.GetDgnDb());
         if (structuralSystemModelCP != nullptr && multidisciplinaryModelCP != nullptr)
             {
-            auto defaultViewId = m_converter.GetDefaultViewId();
+            /*auto defaultViewId = m_converter.GetDefaultViewId();
             if (defaultViewId.IsValid())
                 {
                 auto viewDefCPtr = structuralSystemModelCP->GetDgnDb().Elements().Get<SpatialViewDefinition>(defaultViewId);
@@ -442,7 +442,7 @@ void OBMConverter::CreateBimBridgeComponents(Bentley::ObmNET::BridgeR obmBridgeR
                 
                 modelSelectorPtr->AddModel(structuralSystemModelCP->GetModelId());
                 modelSelectorPtr->Update();
-                }
+                }*/
             auto bridgeUnits = obmBridgeR.GetBridgeUnits();
             //Iterate through all of the bridge units associated with the current bridge
             while (bridgeUnits->MoveNext())
@@ -1252,7 +1252,7 @@ void OBMConverter::DetermineElementMappingAndCreate(StructuralElementType struct
 +---------------+---------------+---------------+---------------+---------------+------*/
 void OBMConverter::UpdateCategorySelector(Dgn::PhysicalModelCP structuralSystemModelCP)
     {
-    auto defaultViewId = m_converter.GetDefaultViewId();
+    /*auto defaultViewId = m_converter.GetDefaultViewId();
     if (defaultViewId.IsValid())
         {
         auto viewDefCPtr = structuralSystemModelCP->GetDgnDb().Elements().Get<SpatialViewDefinition>(defaultViewId);
@@ -1262,7 +1262,7 @@ void OBMConverter::UpdateCategorySelector(Dgn::PhysicalModelCP structuralSystemM
             categorySelectorPtr->AddCategory(categoryId);
             }
         categorySelectorPtr->Update();
-        }
+        }*/
     }
 
 /*---------------------------------------------------------------------------------**//**

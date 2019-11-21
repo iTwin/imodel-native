@@ -79,7 +79,7 @@ private:
 
 public:
     static Utf8String FeatureNameToClassName(Utf8StringCR featureName);
-    static Utf8String GetTargetSchemaName() { return "DgnV8OpenRoadsDesignerDynamic"; }
+    static Utf8String GetTargetSchemaName() { return "CivilDesignerProductsDynamic"; }
     static Utf8String GetQTOVolumeClassName() { return "QTO_VolumeAspect"; }
     static Utf8String GetQTOSurfaceAreaClassName() { return "QTO_SurfaceAreaAspect"; }
     static Utf8String GetQTOMaterialClassName() { return "QTO_MaterialAspect"; }
