@@ -290,6 +290,7 @@ StatusInt Process (BaseGCSR baseGCS, WCharCP wktChar)
     baseGCS.GetCSParameters()->csdef.xy_min[YY] = 0.0;
     baseGCS.GetCSParameters()->csdef.xy_max[XX] = 0.0;
     baseGCS.GetCSParameters()->csdef.xy_max[YY] = 0.0;
+    baseGCS.GetCSParameters()->csdef.epsgNbr = 0;
 
 
     if ((wkt.length() >= 6) && (wkt.substr (0, 6) == (L"PROJCS")))
@@ -1577,6 +1578,19 @@ StatusInt GetHorizontalDatumToCoordSys (WStringR wkt, BaseGCSR coordinateSystem)
             else
                 return ERROR;
     
+            }
+        else if (ellipsoidPresentAndKnown)
+            {
+            WString ellipName(coordinateSystem.GetEllipsoidName());
+
+            if (0 == ellipName.CompareTo(L"CGCS2000"))
+                {
+                // Special case for china ... the transformation from china datum is unknown/unpublished ... Even if datum name is provided we 
+                // target an ellipsoid based coordinate system.
+                coordinateSystem.SetDatumCode(-1);
+                }
+            else
+                return ERROR;
             }
         else
             return ERROR;
@@ -6595,6 +6609,12 @@ WCharCP                 wellKnownText       // The Well Known Text specifying th
                              (m_csParameters->prj_code == cs_PRJCOD_LMTAN && wktFlavorOracle == wktFlavor) ||
                              (m_csParameters->prj_code == cs_PRJCOD_TRMER && wktFlavorOracle == wktFlavor) ||
                              (m_csParameters->prj_code == cs_PRJCOD_TRMER && wktFlavorEPSG == wktFlavor) ||
+                             (m_csParameters->prj_code == cs_PRJCOD_TRMER && wktFlavorOGC == wktFlavor) ||
+                             (m_csParameters->prj_code == cs_PRJCOD_TRMER && wktFlavorGeoTiff == wktFlavor) ||
+                             (m_csParameters->prj_code == cs_PRJCOD_TRMER && wktFlavorESRI == wktFlavor) ||
+                             (m_csParameters->prj_code == cs_PRJCOD_TRMER && wktFlavorAutodesk == wktFlavor) ||
+                             (m_csParameters->prj_code == cs_PRJCOD_TRMER && wktFlavorGeoTools == wktFlavor) ||
+                             (m_csParameters->prj_code == cs_PRJCOD_TRMER && wktFlavorUnknown == wktFlavor) ||
                              (m_csParameters->prj_code == cs_PRJCOD_SINUS && wktFlavorAutodesk == wktFlavor) ||
                              (m_csParameters->prj_code == cs_PRJCOD_KROVAK) ||
                              (m_csParameters->prj_code == cs_PRJCOD_KROVAKMOD) ||
