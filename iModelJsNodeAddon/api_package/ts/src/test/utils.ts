@@ -62,6 +62,8 @@ export function logTest(msg: string) {
   console.log("Test: " + msg);
 }
 
-export function loadAddon() {
+function loadAddon() {
   return useLocalBuild ? loadLocalBuildOfAddon() : loadInstalledAddon();
 }
+
+export const iModelJsNative: typeof IModelJsNative = loadAddon();

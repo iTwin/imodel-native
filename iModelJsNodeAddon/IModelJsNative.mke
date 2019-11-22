@@ -98,6 +98,10 @@ $(o)UlasClient$(oext) : $(baseDir)UlasClient.cpp $(baseDir)UlasClient.h $(baseDi
 
 $(o)CrashReportingCommon$(oext) : $(baseDir)CrashReportingCommon.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends}
 
+%if $(TARGET_PLATFORM)=="MacOS" || $(TARGET_PLATFORM)=="Windows"
+$(o)KeyTarInterop$(oext) : $(baseDir)KeyTarInterop.cpp $(baseDir)KeyTarInterop.h ${MultiCompileDepends}
+%endif
+
 %if (($(TARGET_PROCESSOR_ARCHITECTURE) == "x64") && (USING_BREAKPAD == 1))
 
     $(o)CrashReportingWindows$(oext) : $(baseDir)CrashReportingWindows.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends}

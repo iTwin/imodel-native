@@ -561,4 +561,52 @@ export declare namespace IModelJsNative {
   class NativeDevTools {
     public static signal(signalType: number): boolean;
   }
+
+  /**
+   * Native API to get, add, replace, and delete passwords in system's keychain. On macOS the passwords are managed by the Keychain, and on Windows they are managed by Credential Vault.
+   * Note: That the current implementation has only been setup on MacOS and Windows - platforms that support for Desktop/Electron applications. 
+   * On Linux, passwords are managed by the Secret Service API/libsecret, but support for that platform has NOT been added. 
+   * Code adapted from https://github.com/atom/node-keytar
+   */
+  class KeyTar {
+    /**
+     * Get the stored password for the service and account.
+     * @param service The string service name.
+     * @param account The string account name.
+     * @returns A promise for the password string.
+     */
+    public static getPassword(service: string, account: string): Promise<string | null>;
+
+    /**
+     * Add the password for the service and account to the keychain.
+     * @param service The string service name.
+     * @param account The string account name.
+     * @param password The string password.
+     * @returns A promise for the set password completion.
+     */
+    public static setPassword(service: string, account: string, password: string): Promise<void>;
+
+    /**
+     * Delete the stored password for the service and account.
+     * @param service The string service name.
+     * @param account The string account name.
+     * @returns A promise for the deletion status. True on success.
+     */
+    public static deletePassword(service: string, account: string): Promise<boolean>;
+
+    /**
+     * Find a password for the service in the keychain.
+     * @param service The string service name.
+     * @returns A promise for the password string.
+     */
+    public static findPassword(service: string): Promise<string | null>;
+
+    /**
+     * Find all accounts and passwords for `service` in the keychain.
+     * @param service The string service name.
+     * @returns A promise for the array of found credentials.
+     */
+    public static findCredentials(service: string): Promise<Array<{ account: string, password: string }>>;
+  }
+
 }

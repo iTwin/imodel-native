@@ -33,6 +33,7 @@ THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libLicensing.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libWebServicesClient.a
 THIN_ARCHIVE_INPUTS  + $(ContextSubpartsLibs)libBeHttp.a
 THIN_ARCHIVE_INPUTS  + $(ContextSubpartsLibs)libBeOpenSSL.a
+THIN_ARCHIVE_INPUTS  + $(ContextSubpartsLibs)libBeSecurity.a
 
 %if defined (BENTLEYCONFIG_PARASOLID)
     THIN_ARCHIVE_INPUTS + $(ContextSubPartsLibs)libpskernel.a
@@ -71,6 +72,7 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)Licensing$(libext)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)WebServicesClient$(libext)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeHttp$(stlibext)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeOpenSSL$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeSecurity$(libext)
 
 %if defined (USING_BREAKPAD)
 %if $(USING_BREAKPAD) == 1

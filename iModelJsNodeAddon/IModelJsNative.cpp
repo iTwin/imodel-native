@@ -29,6 +29,10 @@
 #include "SignalTestUtility.h"
 #include <Bentley/BeThreadLocalStorage.h>
 
+#if defined(BENTLEYCONFIG_OS_WINDOWS) || defined(BENTLEYCONFIG_OS_APPLE_MACOS)
+#include "KeyTarInterop.h"
+#endif
+
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_DGN
@@ -4483,7 +4487,6 @@ private:
             }
         }
 
-
     void OnOK() override
         {
         // Warning! If you want to log in a specific ClientRequestContext, then you can't use NativeLogging directly. You must call this helper function:
@@ -5667,6 +5670,32 @@ static void Init(Napi::Env env, Napi::Object exports)
     }
 };
 
+
+#if defined(BENTLEYCONFIG_OS_WINDOWS) || defined(BENTLEYCONFIG_OS_APPLE_MACOS)
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct KeyTar : BeObjectWrap<KeyTar>
+{
+public:
+    KeyTar(Napi::CallbackInfo const &info) : BeObjectWrap<KeyTar>(info) {}
+    ~KeyTar() {SetInDestructor();}
+
+    static void Init(Napi::Env& env, Napi::Object exports)
+        {
+        Napi::HandleScope scope(env);
+        Napi::Function t = DefineClass(env, "KeyTar", {
+            StaticMethod("getPassword", &GetPasswordWorker::GetPasswordAsync),
+            StaticMethod("setPassword", &SetPasswordWorker::SetPasswordAsync),
+            StaticMethod("deletePassword", &DeletePasswordWorker::DeletePasswordAsync),
+            StaticMethod("findPassword", &FindPasswordWorker::FindPasswordAsync),
+            StaticMethod("findCredentials", &FindCredentialsWorker::FindCredentialsAsync),
+        });
+        exports.Set("KeyTar", t);
+        }
+};
+#endif
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/19
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -6306,6 +6335,10 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports)
     NativeImportContext::Init(env, exports);
     NativeDevTools::Init(env, exports);
     ApplyChangeSetsRequest::Init(env, exports);
+
+#if defined(BENTLEYCONFIG_OS_WINDOWS) || defined(BENTLEYCONFIG_OS_APPLE_MACOS)
+    KeyTar::Init(env, exports);
+#endif
 
 #ifdef NOT_UNTIL_ALL_BOXES_RUN_NODE_10_2
     napi_add_env_cleanup_hook(env, onNodeExiting, nullptr);
