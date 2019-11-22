@@ -1065,6 +1065,10 @@ void GeometryFactory::_Polyline (size_t nPoints, DPoint3dCP points, DVec3dCP nor
     if (0 == nPoints)
         return;
 
+    // CADmep OE 2020 has sent us bogus data - VSTS 217594
+    if (isnan(points[0].x) || isnan(points[0].y) || isnan(points[0].z))
+        return;
+
     ICurvePrimitivePtr  linestring = ICurvePrimitive::CreateLineString (points, nPoints);
     if (linestring.IsValid())
         {
