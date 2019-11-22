@@ -509,7 +509,7 @@ struct JsonECInstanceConverter final
 
         //JsonCpp
         static BentleyStatus JsonToECInstance(ECN::IECInstanceR, Json::Value const&, ECN::ECClassCR currentClass, Utf8StringCR currentAccessString, IECClassLocaterR, bool ignoreUnknownProperties = false, IECSchemaRemapperCP remapper = nullptr, std::function<bool(Utf8CP)> shouldSerializeProperty = nullptr);
-        static BentleyStatus JsonToPrimitiveECValue(ECN::ECValueR value, Json::Value const& json, ECN::PrimitiveType type);
+        static BentleyStatus JsonToPrimitiveECValue(ECN::ECValueR value, Json::Value const& json, ECN::PrimitiveType type, Utf8CP extendedTypeName);
         static BentleyStatus JsonToArrayECValue(ECN::IECInstanceR, Json::Value const&, ECN::ArrayECPropertyCR, Utf8StringCR currentAccessString, IECClassLocaterR);
 
         //rapidjson

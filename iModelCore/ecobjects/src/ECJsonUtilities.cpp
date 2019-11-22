@@ -20,6 +20,70 @@ END_UNNAMED_NAMESPACE
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 //---------------------------------------------------------------------------------------
+// An alternative implementation of BeGuid that only implements FromString. This was copied from BeSQLite.h and BeSQLite.cpp.
+// iModel.js stores GUIDs as strings, but the ECSchema standard is to declare them as binary with an extendedTypeName of BeGuid.
+// The problem was that ECObjects does not depend on BeSQLite so the real BeGuid was not available.
+//---------------------------------------------------------------------------------------
+struct BeGuidAlt
+{
+    union{uint64_t u[2]; uint32_t i[4]; uint8_t b[16];} m_guid;
+    BeGuidAlt() {Invalidate();}
+    void Invalidate() {m_guid.u[0] = m_guid.u[1] = 0;}
+    bool IsValid() const {return 0!=m_guid.u[0] && 0!=m_guid.u[1];}
+    BentleyStatus FromString(Utf8CP uuid_str)
+        {
+        if (uuid_str == nullptr)
+            return ERROR;
+
+        for (int i = 0; i < 36; ++i)
+            {
+            char c = uuid_str[i];
+            if (c == 0 || !isxdigit(c) && !(c == '-' && (i == 8 || i == 13 || i == 18 || i == 23)))
+                return ERROR; /* ### need a better value */
+            }
+
+        if (uuid_str[36] != '\0')
+            return ERROR; /* ### need a better value */
+
+        m_guid.b[0] = parse_hexpair(&uuid_str[0]);
+        m_guid.b[1] = parse_hexpair(&uuid_str[2]);
+        m_guid.b[2] = parse_hexpair(&uuid_str[4]);
+        m_guid.b[3] = parse_hexpair(&uuid_str[6]);
+        m_guid.b[4] = parse_hexpair(&uuid_str[9]);
+        m_guid.b[5] = parse_hexpair(&uuid_str[11]);
+        m_guid.b[6] = parse_hexpair(&uuid_str[14]);
+        m_guid.b[7] = parse_hexpair(&uuid_str[16]);
+        m_guid.b[8] = parse_hexpair(&uuid_str[19]);
+        m_guid.b[9] = parse_hexpair(&uuid_str[21]);
+
+        for (int i = 6; i--;)
+            m_guid.b[10 + i] = parse_hexpair(&uuid_str[i * 2 + 24]);
+
+        return SUCCESS;
+        }
+    static unsigned char parse_hexpair(Utf8CP s)
+        {
+        int result = s[0] - '0';
+        if (result > 48)
+            result = (result - 39) << 4;
+        else if (result > 16)
+            result = (result - 7) << 4;
+        else
+            result = result << 4;
+
+        int temp = s[1] - '0';
+        if (temp > 48)
+            result |= temp - 39;
+        else if (temp > 16)
+            result |= temp - 7;
+        else
+            result |= temp;
+
+        return (unsigned char)result;
+        }
+};
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      09/2017
 //---------------------------------------------------------------------------------------
 //static
@@ -791,7 +855,7 @@ BentleyStatus JsonECInstanceConverter::JsonToECInstance(IECInstanceR instance, J
         if (ecProperty->GetIsPrimitive())
             {
             ECValue ecValue;
-            if (SUCCESS != JsonToPrimitiveECValue(ecValue, childJsonValue, ecProperty->GetAsPrimitiveProperty()->GetType()))
+            if (SUCCESS != JsonToPrimitiveECValue(ecValue, childJsonValue, ecProperty->GetAsPrimitiveProperty()->GetType(), ecProperty->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str()))
                 return ERROR;
 
             ECObjectsStatus ecStatus;
@@ -905,7 +969,7 @@ BentleyStatus JsonECInstanceConverter::JsonToECInstance(IECInstanceR instance, J
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 2/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, Json::Value const& jsonValue, PrimitiveType primitiveType)
+BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, Json::Value const& jsonValue, PrimitiveType primitiveType, Utf8CP extendedTypeName)
     {
     if (jsonValue.isNull())
         {
@@ -989,6 +1053,16 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
             }
         case PRIMITIVETYPE_Binary:
             {
+            if (extendedTypeName && (0 == BeStringUtilities::Stricmp(extendedTypeName, "BeGuid")))
+                {
+                BeGuidAlt guid;
+                if (BentleyStatus::SUCCESS == guid.FromString(jsonValue.asCString()))
+                    ecValue.SetBinary((Byte*)&guid, sizeof(guid), true);
+                else
+                    ecValue.SetIsNull(true);
+                return SUCCESS;
+                }
+
             bvector<Byte> blob;
             if (SUCCESS != ECJsonUtilities::JsonToBinary(blob, jsonValue))
                 return ERROR;
@@ -1080,7 +1154,7 @@ BentleyStatus JsonECInstanceConverter::JsonToArrayECValue(IECInstanceR instance,
     for (uint32_t ii = 0; ii < length; ii++)
         {
         ECValue ecPrimitiveValue;
-        if (SUCCESS != JsonToPrimitiveECValue(ecPrimitiveValue, jsonValue[ii], primType))
+        if (SUCCESS != JsonToPrimitiveECValue(ecPrimitiveValue, jsonValue[ii], primType, nullptr))
             return ERROR;
 
         ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), ecPrimitiveValue, ii);
