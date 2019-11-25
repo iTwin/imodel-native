@@ -987,7 +987,7 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
         {
         case SMStoreDataType::LinearFeature:
             assert(m_smSQLiteFile->GetDb() != nullptr && m_smSQLiteFile->GetDb()->IsDbOpen());
-            m_smSQLiteFile->GetNumberOfFeaturePoints(blockID.m_integerID);
+            blockDataCount = m_smSQLiteFile->GetNumberOfFeaturePoints(blockID.m_integerID);
             break;
         
         case SMStoreDataType::TriUvIndices:
@@ -1256,6 +1256,8 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
             {
             MTGGraph * graph = new(DataTypeArray)MTGGraph(); //some of the memory managers call malloc but not the constructor            
             graph->LoadFromBinaryStream(pi_uncompressedPacket.GetBufferAddress(), uncompressedSize);
+
+            return uncompressedSize;
             }
 
         return 1;       
@@ -1412,3 +1414,15 @@ template <class DATATYPE, class EXTENT> bool SMSQLiteNodeDataStore<DATATYPE, EXT
     return true;
     }
    
+template <class DATATYPE, class EXTENT> bool SMSQLiteNodeDataStore<DATATYPE, EXTENT>::GetLinearFeaturesExtOps(ILinearFeaturesExtOpsPtr& linearFeaturesExtOpsPtr)
+    {
+    if(m_dataType != SMStoreDataType::LinearFeature)
+        {
+        assert(!"Unexpected call");
+        return false;
+        }
+
+    linearFeaturesExtOpsPtr = new SMSQLiteLinearFeaturesExtOps(m_smSQLiteFile);
+
+    return true;
+    }

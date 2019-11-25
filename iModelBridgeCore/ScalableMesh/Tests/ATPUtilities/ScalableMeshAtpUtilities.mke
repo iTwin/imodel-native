@@ -6,7 +6,7 @@
 baseDir         = $(_MakeFilePath)
 sourceDir       = $(baseDir)Sources/
 publicApiDir    = $(baseDir)PublicAPI/
-PolicyFile      = $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/mki/AssertScalableMeshPolicy.mki
+PolicyFile      = $(SrcRoot)ScalableMesh/mki/AssertScalableMeshPolicy.mki
 SolutionPolicyMki=$(baseDir)ScalableMeshAtpUtilities.mki
 #BUILD_USING_VS2013=1
 OPTIMIZE_FOR_SPEED=1

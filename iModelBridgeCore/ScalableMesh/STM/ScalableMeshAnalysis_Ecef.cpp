@@ -284,17 +284,12 @@ bool ScalableMeshAnalysis::_GetComputationParamsInEnu(DRange3d& rangeEnu, bvecto
     DRange3d rangeMeshEnu; // the mesh range in ENU
     rangeMeshEnu = ewgs84->ecef2enu(rangeMesh);
 
+    rangeRegionEnu.low.z = rangeMeshEnu.low.z;
+    rangeRegionEnu.high.z = rangeMeshEnu.high.z;
     rangeEnu = DRange3d::From(0, 0);
     rangeEnu.IntersectionOf(rangeMeshEnu, rangeRegionEnu);
     if (rangeEnu.IsNull())
-        {
-        // polygon can be planar on Z, add some elevation (1 meter)
-        rangeRegionEnu.low.z += -1.0;
-        rangeRegionEnu.high.z += 1.0;
-        rangeEnu.IntersectionOf(rangeMeshEnu, rangeRegionEnu);
-        if (rangeEnu.IsNull()) // still null ?
-            return false; // cannot compute volume, no intersection with restriction region
-        }
+	    return false; // cannot compute volume, no intersection with restriction region
 
     // keep the lowest Z value for volume 
     rangeEnu.low.z = std::min(rangeMeshEnu.low.z, rangeEnu.low.z);

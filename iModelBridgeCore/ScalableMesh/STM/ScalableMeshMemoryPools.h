@@ -40,6 +40,14 @@ inline uint64_t GetAmountOfPhysicalMemory()
     return memoryStatus.ullTotalPhys;
     }
 
+inline uint64_t GetAmountOfPhysicalMemoryAvail()
+{
+    MEMORYSTATUSEX  memoryStatus;
+    memoryStatus.dwLength = sizeof(memoryStatus);
+    GlobalMemoryStatusEx(&memoryStatus);
+    return memoryStatus.ullAvailPhys;
+}
+
 #endif
 
 

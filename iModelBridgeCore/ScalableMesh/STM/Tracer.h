@@ -7,14 +7,15 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <map>
 
+//#define TRACE_ON 1
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
-//#define TRACE_ON 1
-enum EventType
+enum class EventType
 {
-    LOAD_MESH_CREATE_0 = 0,
+    LOAD_MESH_CREATE_0,
     CACHED_MESH_ACQUIRE,
     LOAD_TEX_CREATE_0,
     CACHED_TEX_ACQUIRE,
@@ -30,12 +31,13 @@ enum EventType
     POOL_ADDITEM,
     POOL_REMOVEITEM,
     POOL_GETITEM,
+    POOL_DELETEITEM,	
+    POOL_REPLACEITEM,
+    POOL_CHANGESIZEITEM,
     REFCT_ADDREF,
     REFCT_DECREF,
     BEFORE_SWITCH_VIDEO_TEX,
-    POOL_DELETEITEM,
     GRAPH_STORE,
-    POOL_REPLACEITEM,
     WORKER_MESH_TASK,
     WORKER_FILTER_TASK,
     WORKER_STITCH_TASK,
@@ -50,14 +52,13 @@ enum EventType
     START_NEWQUERY_COLLECT,
     START_NEWQUERY_FINDLOADED,
     START_NEWQUERY_COLLECTCLIPS,
-    START_NEWQUERY_CHECKCLIPS,
-    TYPE_QTY
+    START_NEWQUERY_CHECKCLIPS
 };
 
 struct TraceEvent
 {
-    uint64_t threadId;
-    int typeOfEvent;
+    std::thread::id threadId;
+    EventType typeOfEvent;
     clock_t timestamp;
     uint64_t nodeId;
     uint64_t texId;
@@ -65,10 +66,13 @@ struct TraceEvent
     uint32_t refCount;
     uint64_t objVal;
     uint64_t poolId;
+    int64_t objectSize;
+    std::string stackTrace;
 };
 
 
-extern std::string typeDesc[(int)EventType::TYPE_QTY];
+extern std::map<EventType, std::string> __TRACEPOINT__typeDesc;
+extern std::map<EventType, bool> __TRACEPOINT__typeToFilter;
 
 struct CachedDataEventTracer
 {
@@ -83,8 +87,6 @@ private:
     bool m_outputObjLog; 
 
     CachedDataEventTracer();
-    
-    bool filter(TraceEvent& e);
     
 public:
 
@@ -101,28 +103,45 @@ public:
     BENTLEY_SM_EXPORT void analyze(int processId = -1);    
 };
 
-
-
-#define THREAD_ID() ((uint64_t)std::hash<std::thread::id>()(std::this_thread::get_id()))
-
-
 #if TRACE_ON
-#define TRACEPOINT(threadt,type,id,meshid,texid,poolid,val, rc) \
+#define TRACEPOINT(type,id,meshid,texid,poolid,val,rc) \
 {  \
-TraceEvent e;\
-e.typeOfEvent = (type); \
-e.refCount = (rc); \
-e.threadId = (uint64_t)(threadt);\
-e.nodeId = (id); \
-e.texId = (texid); \
-e.meshId = (meshid); \
-e.poolId =(poolid); \
-e.objVal = (uint64_t)(val); \
-e.timestamp = clock(); \
-CachedDataEventTracer::GetInstance()->logEvent(e); \
+if (__TRACEPOINT__typeToFilter[type]) { \
+TraceEvent __TRACEPOINT__event; \
+__TRACEPOINT__event.typeOfEvent = (type); \
+__TRACEPOINT__event.nodeId = (id); \
+__TRACEPOINT__event.meshId = (meshid); \
+__TRACEPOINT__event.texId = (texid); \
+__TRACEPOINT__event.poolId =(poolid); \
+__TRACEPOINT__event.objVal = (uint64_t)(val); \
+__TRACEPOINT__event.refCount = (rc); \
+__TRACEPOINT__event.threadId = std::this_thread::get_id(); \
+__TRACEPOINT__event.timestamp = clock(); \
+CachedDataEventTracer::GetInstance()->logEvent(__TRACEPOINT__event);  } \
+}
+
+#define TRACEPOINTSize(type,id,meshid,texid,poolid,val,rc,objSize) \
+{  \
+if (__TRACEPOINT__typeToFilter[type]) { \
+TraceEvent __TRACEPOINT__event; \
+__TRACEPOINT__event.typeOfEvent = (type); \
+__TRACEPOINT__event.nodeId = (id); \
+__TRACEPOINT__event.meshId = (meshid); \
+__TRACEPOINT__event.texId = (texid); \
+__TRACEPOINT__event.poolId =(poolid); \
+__TRACEPOINT__event.objVal = (uint64_t)(val); \
+__TRACEPOINT__event.refCount = (rc); \
+__TRACEPOINT__event.threadId = std::this_thread::get_id(); \
+__TRACEPOINT__event.timestamp = clock(); \
+__TRACEPOINT__event.objectSize = objSize; \
+CachedDataEventTracer::GetInstance()->logEvent(__TRACEPOINT__event);  } \
 }
 #else
-#define TRACEPOINT(thread,type,id,meshid,texid,poolid,val, rc) \
+#define TRACEPOINT(type,id,meshid,texid,poolid,val,rc) \
+{  \
+}
+
+#define TRACEPOINTSize(type,id,meshid,texid,poolid,val,rc,objSize) \
 {  \
 }
 #endif

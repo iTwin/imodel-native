@@ -38,6 +38,6 @@ struct DPoint3dLinestringSortByAreaComparison
     };
 
 bool CGALEdgeCollapse(MTGGraph* inoutMesh, std::vector<DPoint3d>& pts, uint64_t id =0);
-void SimplifyPolylines(bvector<bvector<DPoint3d>>& polylines);
+void SimplifyPolylines(bvector<bvector<DPoint3d>>& polylines, bvector<DPoint3d>& removedPoints, double distanceTol = 0.5, size_t targetNumPoints = 10000);
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

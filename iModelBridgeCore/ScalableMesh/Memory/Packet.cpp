@@ -734,7 +734,7 @@ const MemoryAllocator& PacketGroup::GetAllocator () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PacketGroup::Clear ()
     {
-    for_each(begin(), end(), mem_fun_ref(&Packet::Clear));
+    for_each(begin(), end(), [] (Packet& p) { p.Clear(); });
     }
 
 

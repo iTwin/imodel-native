@@ -2,8 +2,11 @@
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #  See COPYRIGHT.md in the repository root for full copyright notice.
 #--------------------------------------------------------------------------------------*/
+
+%if !defined(IMODEL02)
 IncludeCompileLinkMki=1
+%endif
 
 SystemPolicyMki=$(SrcBsiCommon)sharedmki/InternalSystemPolicy.mki
-FoundationPolicyMki=$(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/mki/ScalableMeshPolicy.mki
+FoundationPolicyMki=$(SrcRoot)ScalableMesh/mki/ScalableMeshPolicy.mki
 

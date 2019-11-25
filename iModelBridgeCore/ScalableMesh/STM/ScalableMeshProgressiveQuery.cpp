@@ -261,7 +261,7 @@ QueryPlanner* ScalableMeshProgressiveQueryEngine::GetQueryPlanner(const Requeste
             ScalableMeshCachedDisplayNode<DPoint3d>* meshNode(ScalableMeshCachedDisplayNode<DPoint3d>::Create(visibleNode, scalableMeshPtr.get()));
                          
             SMMeshIndexNode<DPoint3d, Extent3dType>* smNode = dynamic_cast<SMMeshIndexNode<DPoint3d, Extent3dType>*>(visibleNode.GetPtr());
-            TRACEPOINT(THREAD_ID(), EventType::EVT_CREATE_DISPLAY_LOAD, visibleNode->GetBlockID().m_integerID, (uint64_t)-1, smNode->GetSingleTextureID(), -1, (uint64_t)meshNode, -1)
+            TRACEPOINT(EventType::EVT_CREATE_DISPLAY_LOAD, visibleNode->GetBlockID().m_integerID, (uint64_t)-1, smNode->GetSingleTextureID(), -1, (uint64_t)meshNode, -1)
 
 
             if ((meshNode->IsLoaded(displayCacheManagerPtr.get(), loadTexture) == false && meshNode->IsLoadedInVRAM(displayCacheManagerPtr.get(), loadTexture) == false) || !meshNode->IsClippingUpToDate() || !meshNode->HasCorrectClipping(clipVisibilities)
@@ -819,7 +819,7 @@ void ScalableMeshProgressiveQueryEngine::PreloadOverview(HFCPtr<SMPointIndexNode
     ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNode(ScalableMeshCachedDisplayNode<DPoint3d>::Create(node, sMesh));
     
     SMMeshIndexNode<DPoint3d, Extent3dType>* smNode = dynamic_cast<SMMeshIndexNode<DPoint3d, Extent3dType>*>(node.GetPtr());
-    TRACEPOINT(THREAD_ID(), EventType::EVT_CREATE_DISPLAY_OVR_PRELOAD, node->GetBlockID().m_integerID, (uint64_t)-1, smNode->GetSingleTextureID(), -1, (uint64_t)meshNode.get(), -1)
+    TRACEPOINT(EventType::EVT_CREATE_DISPLAY_OVR_PRELOAD, node->GetBlockID().m_integerID, (uint64_t)-1, smNode->GetSingleTextureID(), -1, (uint64_t)meshNode.get(), -1)
 
 
     meshNode->RemoveDisplayDataFromCache();                    
@@ -960,7 +960,7 @@ void FindOverview(bvector<IScalableMeshCachedDisplayNodePtr>& lowerResOverviewNo
     ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(parentNodePtr, scalableMeshPtr.get()));
 
     SMMeshIndexNode<DPoint3d, Extent3dType>* smNode = dynamic_cast<SMMeshIndexNode<DPoint3d, Extent3dType>*>(parentNodePtr.GetPtr());
-    TRACEPOINT(THREAD_ID(), EventType::EVT_CREATE_DISPLAY_OVR_1, parentNodePtr->GetBlockID().m_integerID, (uint64_t)-1, smNode->GetSingleTextureID(), -1, (uint64_t)meshNodePtr.get(), -1)
+    TRACEPOINT(EventType::EVT_CREATE_DISPLAY_OVR_1, parentNodePtr->GetBlockID().m_integerID, (uint64_t)-1, smNode->GetSingleTextureID(), -1, (uint64_t)meshNodePtr.get(), -1)
     size_t levelForOverviewLoad = MAX_PRELOAD_OVERVIEW_LEVEL;
     if (smNode->IsFromCesium()) levelForOverviewLoad++; //we have an extra empty level in Cesium
 
@@ -1140,7 +1140,7 @@ size_t threadId, IScalableMeshPtr* scalableMeshPtr, IScalableMeshDisplayCacheMan
                 }                    
             double elapsedSearch = ((double)clock() - startT) / CLOCKS_PER_SEC * 1000.0;
 
-           TRACEPOINT(THREAD_ID(), EventType::START_NEWQUERY_SEARCHNODES, threadId, (uint64_t)-1, -1, -1, elapsedSearch, m_nodesToSearch->GetNodes().size() - m_nodeToSearchCurrentInd)
+           TRACEPOINT(EventType::START_NEWQUERY_SEARCHNODES, threadId, (uint64_t)-1, -1, -1, elapsedSearch, m_nodesToSearch->GetNodes().size() - m_nodeToSearchCurrentInd)
 
             size_t nNodes = m_foundNodes->GetNodes().size();
             clock_t startFoundNd = clock();
@@ -1192,9 +1192,9 @@ size_t threadId, IScalableMeshPtr* scalableMeshPtr, IScalableMeshDisplayCacheMan
                     }
                 }
             double elapsedFound = ((double)clock() - startFoundNd) / CLOCKS_PER_SEC * 1000.0;
-            TRACEPOINT(THREAD_ID(), EventType::START_NEWQUERY_FOUNDNODES, threadId, (uint64_t)-1, -1, -1, elapsedFound, nNodes)
+            TRACEPOINT(EventType::START_NEWQUERY_FOUNDNODES, threadId, (uint64_t)-1, -1, -1, elapsedFound, nNodes)
             double elapsed = ((double)clock() - startT) / CLOCKS_PER_SEC * 1000.0;
-            TRACEPOINT(THREAD_ID(), EventType::START_NEWQUERY, threadId, (uint64_t)-1, -1, -1, elapsed, nNodes)
+            TRACEPOINT(EventType::START_NEWQUERY, threadId, (uint64_t)-1, -1, -1, elapsed, nNodes)
             }
             
         void Execute(RequestedQuery&                                            newQuery, 
@@ -1594,7 +1594,7 @@ BentleyStatus ScalableMeshProgressiveQueryEngine::_GetOverviewNodes(bvector<BENT
         {
             bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr> newPreviewNodes;
             s_queryProcessor.GetUpdatedOverviewNodes(newPreviewNodes, queryId);
-            TRACEPOINT(THREAD_ID(), EventType::QUERY_NUMBER_OF_OVERVIEWS, queryId, (uint64_t)-1, -1, -1, (int)newPreviewNodes.size(), 0)
+            TRACEPOINT(EventType::QUERY_NUMBER_OF_OVERVIEWS, queryId, (uint64_t)-1, -1, -1, (int)newPreviewNodes.size(), 0)
                 meshNodes.insert(meshNodes.end(), newPreviewNodes.begin(), newPreviewNodes.end());
         }
 

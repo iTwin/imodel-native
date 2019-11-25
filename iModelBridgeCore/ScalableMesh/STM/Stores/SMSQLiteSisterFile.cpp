@@ -188,7 +188,7 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
 
                 StatusInt status;
 
-                if (!m_smSQLiteFile->IsShared())
+                if (createSisterIfMissing || m_smSQLiteFile != nullptr && !m_smSQLiteFile->IsShared())
                     { 
                     remove(sqlNameUtf8.c_str());
                     m_smFeatureSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, false, SQLDatabaseType::SM_GENERATION_FILE, createSisterIfMissing);

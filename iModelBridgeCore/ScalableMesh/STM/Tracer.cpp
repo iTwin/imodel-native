@@ -8,20 +8,89 @@
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
-std::string typeDesc[(int)EventType::TYPE_QTY] = { "LOAD (CREATE) MESH", " ACQUIRE CACHED MESH ", " LOAD (CREATE) TEX ", " ACQUIRE CACHED TEX " ,
-"RELEASE CACHED MESH", "RELEASE CACHED TEX" ,"SWITCH TO VRAM(MESH)" ," SWITCH TO VRAM(TEX)", "LOAD NODE", "UNLOAD NODE", "OVERVIEW 1", "LOADNODEDISPLAYDATA", "PRELOADOVERVIEW",
-"ADDITEM", "REMOVEITEM", "GETITEM", "INCREMENT", "DECREMENT", "BEFORE_SWITCH_VIDEO_TEX", "DELETEITEM","GRAPH_STORE", "POOL_REPLACEITEM", "WORKER_MESH_TASK", "WORKER_FILTER_TASK", "WORKER_STITCH_TASK", "WORKER_STITCH_TASK_NEIGHBOR",
-"CLOUDDATASOURCE_LOAD", "START_NEWQUERY", "QUERY_LOADNODELIST", "QUERY_NUMBEROFOVERVIEWS",  "START_NEWQUERY_FOUNDNODES", "START_NEWQUERY_SEARCHNODES", "START_NEWQUERy_FIND","START_NEWQUERY_COLLECT", "START_NEWQUERY_FINDLOADED", "START_NEWQUERY_COLLECTCLIPS", "START_NEWQUERY_CHECKCLIPS"  };
+std::map<EventType, bool> __TRACEPOINT__typeToFilter = {
+    {EventType::LOAD_MESH_CREATE_0,             false},
+    {EventType::CACHED_MESH_ACQUIRE,            false},
+    {EventType::LOAD_TEX_CREATE_0,              false},
+    {EventType::CACHED_TEX_ACQUIRE,             false},
+    {EventType::CACHED_MESH_RELEASE,            false},
+    {EventType::CACHED_TEX_RELEASE,             false},
+    {EventType::SWITCH_VIDEO_MESH,              false},
+    {EventType::SWITCH_VIDEO_TEX,               false},
+    {EventType::EVT_LOAD_NODE,                  false},
+    {EventType::UNLOAD_NODE,                    false},
+    {EventType::EVT_CREATE_DISPLAY_OVR_1,       false},
+    {EventType::EVT_CREATE_DISPLAY_LOAD,        false},
+    {EventType::EVT_CREATE_DISPLAY_OVR_PRELOAD, false},
+    {EventType::POOL_ADDITEM,                   false},
+    {EventType::POOL_REMOVEITEM,                false},
+    {EventType::POOL_GETITEM,                   false},
+    {EventType::POOL_REPLACEITEM,               false},
+    {EventType::POOL_DELETEITEM,                false},
+    {EventType::POOL_CHANGESIZEITEM,            false},
+    {EventType::REFCT_ADDREF,                   false},
+    {EventType::REFCT_DECREF,                   false},
+    {EventType::BEFORE_SWITCH_VIDEO_TEX,        false},
+    {EventType::GRAPH_STORE,                    false},
+    {EventType::WORKER_MESH_TASK,               false},
+    {EventType::WORKER_FILTER_TASK,             false},
+    {EventType::WORKER_STITCH_TASK,             false},
+    {EventType::WORKER_STITCH_TASK_NEIGHBOR,    false},
+    {EventType::CLOUDDATASOURCE_LOAD,           false},
+    {EventType::START_NEWQUERY,                 false},
+    {EventType::QUERY_LOADNODELIST,             false},
+    {EventType::QUERY_NUMBER_OF_OVERVIEWS,      false},
+    {EventType::START_NEWQUERY_FOUNDNODES,      false},
+    {EventType::START_NEWQUERY_SEARCHNODES,     false},
+    {EventType::START_NEWQUERY_FIND,            false},
+    {EventType::START_NEWQUERY_COLLECT,         false},
+    {EventType::START_NEWQUERY_FINDLOADED,      false},
+    {EventType::START_NEWQUERY_COLLECTCLIPS,    false},
+    {EventType::START_NEWQUERY_CHECKCLIPS,      false}
+};
 
-
-bool typeToFilter[(int)EventType::TYPE_QTY] = { false, false, false, false,
-false, false, false, false,
-false, false, false, false,
-false, false, false, false, false, false, false, false, false, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true };
-   
+std::map<EventType, std::string> __TRACEPOINT__typeDesc = {
+    {EventType::LOAD_MESH_CREATE_0,             std::string("LOAD (CREATE) MESH")         },
+    {EventType::CACHED_MESH_ACQUIRE,            std::string(" ACQUIRE CACHED MESH ")      },
+    {EventType::LOAD_TEX_CREATE_0,              std::string(" LOAD (CREATE) TEX ")        },
+    {EventType::CACHED_TEX_ACQUIRE,             std::string(" ACQUIRE CACHED TEX ")       },
+    {EventType::CACHED_MESH_RELEASE,            std::string("RELEASE CACHED MESH")        },
+    {EventType::CACHED_TEX_RELEASE,             std::string("RELEASE CACHED TEX")         },
+    {EventType::SWITCH_VIDEO_MESH,              std::string("SWITCH TO VRAM(MESH)")       },
+    {EventType::SWITCH_VIDEO_TEX,               std::string(" SWITCH TO VRAM(TEX)")       },
+    {EventType::EVT_LOAD_NODE,                  std::string("LOAD NODE")                  },
+    {EventType::UNLOAD_NODE,                    std::string("UNLOAD NODE")                },
+    {EventType::EVT_CREATE_DISPLAY_OVR_1,       std::string("OVERVIEW 1")                 },
+    {EventType::EVT_CREATE_DISPLAY_LOAD,        std::string("LOADNODEDISPLAYDATA")        },
+    {EventType::EVT_CREATE_DISPLAY_OVR_PRELOAD, std::string("PRELOADOVERVIEW")            },
+    {EventType::POOL_ADDITEM,                   std::string("ADDITEM")                    },
+    {EventType::POOL_REMOVEITEM,                std::string("REMOVEITEM")                 },
+    {EventType::POOL_GETITEM,                   std::string("GETITEM")                    },
+    {EventType::POOL_DELETEITEM,                std::string("DELETEITEM")                 },
+    {EventType::POOL_REPLACEITEM,               std::string("POOL_REPLACEITEM")           },
+    {EventType::POOL_CHANGESIZEITEM,            std::string("POOL_CHANGESIZEITEM")        },
+    {EventType::REFCT_ADDREF,                   std::string("INCREMENT")                  },
+    {EventType::REFCT_DECREF,                   std::string("DECREMENT")                  },
+    {EventType::BEFORE_SWITCH_VIDEO_TEX,        std::string("BEFORE_SWITCH_VIDEO_TEX")    },
+    {EventType::GRAPH_STORE,                    std::string("GRAPH_STORE")                },
+    {EventType::WORKER_MESH_TASK,               std::string("WORKER_MESH_TASK")           },
+    {EventType::WORKER_FILTER_TASK,             std::string("WORKER_FILTER_TASK")         },
+    {EventType::WORKER_STITCH_TASK,             std::string("WORKER_STITCH_TASK")         },
+    {EventType::WORKER_STITCH_TASK_NEIGHBOR,    std::string("WORKER_STITCH_TASK_NEIGHBOR")},
+    {EventType::CLOUDDATASOURCE_LOAD,           std::string("CLOUDDATASOURCE_LOAD")       },
+    {EventType::START_NEWQUERY,                 std::string("START_NEWQUERY")             },
+    {EventType::QUERY_LOADNODELIST,             std::string("QUERY_LOADNODELIST")         },
+    {EventType::QUERY_NUMBER_OF_OVERVIEWS,      std::string("QUERY_NUMBEROFOVERVIEWS")    },
+    {EventType::START_NEWQUERY_FOUNDNODES,      std::string("START_NEWQUERY_FOUNDNODES")  },
+    {EventType::START_NEWQUERY_SEARCHNODES,     std::string("START_NEWQUERY_SEARCHNODES") },
+    {EventType::START_NEWQUERY_FIND,            std::string("START_NEWQUERy_FIND")        },
+    {EventType::START_NEWQUERY_COLLECT,         std::string("START_NEWQUERY_COLLECT")     },
+    {EventType::START_NEWQUERY_FINDLOADED,      std::string("START_NEWQUERY_FINDLOADED")  },
+    {EventType::START_NEWQUERY_COLLECTCLIPS,    std::string("START_NEWQUERY_COLLECTCLIPS")},
+    {EventType::START_NEWQUERY_CHECKCLIPS,      std::string("START_NEWQUERY_CHECKCLIPS")  }
+};
 
 CachedDataEventTracer* CachedDataEventTracer::s_instance;
-
 
 CachedDataEventTracer::CachedDataEventTracer()
     {
@@ -33,18 +102,6 @@ CachedDataEventTracer::CachedDataEventTracer()
     m_logDirectory = "c:\\";
     m_outputObjLog = true;
     }
-
-bool CachedDataEventTracer::filter(TraceEvent& e)
-    {
-    if (!typeToFilter[(int)e.typeOfEvent]) return false;
-    /* if (valToFilter == -1 && e.texId != -1)
-    {
-    valToFilter = e.texId;
-    return true;
-    }*/
-    return true;// valToFilter == e.texId;
-    }
-
 
 CachedDataEventTracer* CachedDataEventTracer::GetInstance()
     {
@@ -71,7 +128,6 @@ void CachedDataEventTracer::start()
 void CachedDataEventTracer::logEvent(TraceEvent e)
     {
     if (!started) return;
-    if (!filter(e)) return;
     TraceEvent* val = end;
     volatile bool test = false;
     if (test) analyze();
@@ -105,8 +161,16 @@ void CachedDataEventTracer::analyze(int processId)
     for (TraceEvent* init = ring.data(); init != current; ++init)
         {
         std::ostringstream str;
-        str << std::to_string((unsigned long long) init->timestamp) << "[" << std::to_string(init->threadId) << "] >> " << typeDesc[(int)init->typeOfEvent] << " : " << std::to_string(init->nodeId)
-            << " INSTANCE " << std::to_string(init->objVal) << " POOL ID " << std::to_string(init->poolId) << " MESH " << std::to_string(init->meshId) << " TEX " << std::to_string(init->texId) << " CT " << std::to_string(init->refCount) << std::endl;
+        str << std::to_string((unsigned long long) init->timestamp)
+            << "[" << init->threadId << "] >> "
+            << __TRACEPOINT__typeDesc[init->typeOfEvent] << " : " << std::to_string(init->nodeId)
+            << " INSTANCE " << std::to_string(init->objVal) << " POOL ID " << std::to_string(init->poolId)
+            << " MESH " << std::to_string(init->meshId) << " TEX " << std::to_string(init->texId)
+            << " CT " << std::to_string(init->refCount);
+        if (init->typeOfEvent == EventType::POOL_CHANGESIZEITEM)
+            {
+            str << " ITEM SIZE " << std::to_string(init->objectSize);
+            }
         traceFile << str.str();
         eventsByVal[init->objVal].push_back(str.str());
         }

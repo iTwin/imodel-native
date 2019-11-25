@@ -46,13 +46,13 @@
     <!-- ======================================================================================================================================== -->
 
     <Part Name="__RealityCorePRG-Dynamic" OnlyPlatforms="x64,winrt*">
-        <SubPart PartName="ScalableMeshCreatorLib" PartFile="iModelBridgeCore/ScalableMesh/ScalableMesh" Repository="imodel02"  LibType="Dynamic"/>
+        <SubPart PartName="ScalableMeshLib" PartFile="iModelBridgeCore/ScalableMesh/ScalableMesh" Repository="imodel02"  LibType="Dynamic"/>
 		<!-- TODO: uncomment this when ScalableMesh unit tests are more robust-->
         <!-- <SubPart PartName="ScalableMesh-Tested" PartFile="iModelBridgeCore/ScalableMesh/ScalableMeshUnitTests" Repository="imodel02" LibType="Dynamic"/> -->
     </Part>
 
     <Part Name="__RealityCorePRG-Static" OnlyPlatforms="linux*">
-        <SubPart PartName="ScalableMeshCreatorLib" PartFile="iModelBridgeCore/ScalableMesh/ScalableMesh" Repository="imodel02"  LibType="Static"/>
+        <SubPart PartName="ScalableMeshLib" PartFile="iModelBridgeCore/ScalableMesh/ScalableMesh" Repository="imodel02"  LibType="Static"/>
         <SubPart PartName="MatrixFromTiePtsLib" PartFile="iModelBridgeCore/Imagepp/ImagePP" Repository="imodel02" LibType="Static"/> 
 		<!-- TODO: uncomment this when ScalableMesh unit tests are more robust-->
         <!-- <SubPart PartName="ScalableMesh-Tested" PartFile="iModelBridgeCore/ScalableMesh/ScalableMeshUnitTests" Repository="imodel02" LibType="Static"/> -->

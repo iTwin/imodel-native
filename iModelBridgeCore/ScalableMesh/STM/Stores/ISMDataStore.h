@@ -106,6 +106,16 @@ class IClipDefinitionExtOps : public RefCountedBase
 
 typedef RefCountedPtr<IClipDefinitionExtOps> IClipDefinitionExtOpsPtr;
 
+class ILinearFeaturesExtOps : public RefCountedBase
+    {
+    public:
+
+        virtual uint64_t StoreFeature(uint32_t type, const bvector<DPoint3d>& featureData) = 0;
+        
+        virtual void GetFeature(uint64_t id, uint32_t& type, bvector<DPoint3d>& featureData) = 0;
+    };
+
+typedef RefCountedPtr<ILinearFeaturesExtOps> ILinearFeaturesExtOpsPtr;
 
 template <class DATATYPE> class ISMNodeDataStore : public RefCountedBase
     {    
@@ -166,7 +176,13 @@ template <class DATATYPE> class ISMNodeDataStore : public RefCountedBase
             {
             HASSERT(!"Unexpected call");
             return false;
-            }                   
+            }
+
+        virtual bool GetLinearFeaturesExtOps(ILinearFeaturesExtOpsPtr& linearFeaturesExtOpsPtr)
+            {
+            HASSERT(!"Unexpected call");
+            return false;
+            }
     };
 
 

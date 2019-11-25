@@ -5,9 +5,9 @@
 baseDir         = $(_MakeFilePath)
 
 %include  mdl.mki
-%include $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/mki/ScalableMeshPolicy.mki
-%include $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/mki/ScalableMeshATPName.mki
-%include $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/ScalableMesh.mki
+%include $(SrcRoot)ScalableMesh/mki/ScalableMeshPolicy.mki
+%include $(SrcRoot)ScalableMesh/mki/ScalableMeshATPName.mki
+%include $(SrcRoot)ScalableMesh/ScalableMesh.mki
 
 consoleAppUnicode = 1
 
@@ -24,7 +24,7 @@ MultiCompileDepends=$(_MakeFileSpec)
 
 
 
-ScalableMeshDir = $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/
+ScalableMeshDir = $(SrcRoot)ScalableMesh/
 
 CCompOpts + -DUNICODE
 

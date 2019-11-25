@@ -287,411 +287,225 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBProgressiveFil
  will compute the sub-resolution and the view oriented parameters.
 -----------------------------------------------------------------------------*/
 template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<POINT, EXTENT>::Filter(
-	HFCPtr<SMPointIndexNode<POINT, EXTENT> > parentNode,
-	std::vector<HFCPtr<SMPointIndexNode<POINT, EXTENT> >>& subNodes,
-	size_t numSubNodes) const
+    HFCPtr<SMPointIndexNode<POINT, EXTENT> > parentNode,
+    std::vector<HFCPtr<SMPointIndexNode<POINT, EXTENT> >>& subNodes,
+    size_t numSubNodes) const
 
 {
 
-	HFCPtr<SMMeshIndexNode<POINT, EXTENT> > pParentMeshNode = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(parentNode);
+    HFCPtr<SMMeshIndexNode<POINT, EXTENT> > pParentMeshNode = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(parentNode);
 
-	RefCountedPtr<SMMemoryPoolVectorItem<POINT>> parentPointsPtr(parentNode->GetPointsPtr());
+    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> parentPointsPtr(parentNode->GetPointsPtr());
     parentPointsPtr->clear();
 
-	// Compute the number of points in sub-nodes
-	size_t totalNumberOfPoints = 0;
-	bvector<bvector<DPoint3d>> polylines;
-	bvector<DTMFeatureType> types;
-	bvector<bool> anyHull(numSubNodes, false);
-	bvector<int> beginIdx(numSubNodes, -1);
+    // Compute the number of points in sub-nodes
+    size_t totalNumberOfPoints = 0;
+    bmap<uint64_t, bmap<DTMFeatureType, bvector<bvector<DPoint3d>>>> polylines;
+
+    // Collect points which are feature points
     std::set<DPoint3d, DPoint3dZYXTolerancedSortComparison> featurePtsToInclude(DPoint3dZYXTolerancedSortComparison(1e-6, 0));
+
+    // Collect points to include as non-feature points
     bvector<POINT> ptsToInclude;
 
 
     // Get children linear features
-	for (size_t indexNodes = 0; indexNodes < numSubNodes; indexNodes++)
-	{
-		if (subNodes[indexNodes] != NULL) 
-		{
+    for (size_t indexNodes = 0; indexNodes < numSubNodes; indexNodes++)
+    {
+        if (subNodes[indexNodes] != NULL) 
+        {
             if (!subNodes[indexNodes]->IsLoaded())
                 subNodes[indexNodes]->Load();
                     
-			RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePointsPtr(subNodes[indexNodes]->GetPointsPtr());
-			totalNumberOfPoints += subNodePointsPtr->size();
+            RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePointsPtr(subNodes[indexNodes]->GetPointsPtr());
+            totalNumberOfPoints += subNodePointsPtr->size();
         
-			HFCPtr<SMMeshIndexNode<POINT, EXTENT>> subMeshNode = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(subNodes[indexNodes]);
+            HFCPtr<SMMeshIndexNode<POINT, EXTENT>> subMeshNode = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(subNodes[indexNodes]);
 
-			bvector<bvector<DPoint3d>> polylinesNode;
-			bvector<DTMFeatureType> typesNode;
-			subMeshNode->ReadFeatureDefinitions(polylinesNode, typesNode, false);
+            bvector<bvector<DPoint3d>> polylinesNode;
+            bvector<DTMFeatureType> typesNode;
+            bvector<int32_t> ids;
+            subMeshNode->ReadFeatureDefinitions(polylinesNode, typesNode, ids, false);
 
-            auto beginHullIdx = (int)polylines.size();
             for(size_t i = 0; i < polylinesNode.size(); i++)
                 {
-                auto const& type = typesNode[i];
+                auto id = ids[i];
+                auto type = typesNode[i];
                 auto const& polyline = polylinesNode[i];
-                if(type == DTMFeatureType::Hull || type == DTMFeatureType::TinHull)
-                    anyHull[indexNodes] = true;
-                else if(IsClosedFeature((ISMStore::FeatureType)type) && polyline.size() <= 4)
+                if(!IsClosedFeature((ISMStore::FeatureType)type) && polyline.size() <= 4 && IsClosedPolygon(polyline))
                     continue;
-                else if(polyline.size() <= 3)
-                    continue;
-                types.push_back(type);
-                polylines.push_back(polyline);
+                //else if(polyline.size() <= 3)
+                //    continue;
+                polylines[id][type].push_back(polyline);
                 for(auto const& pt : polyline)
                     if(featurePtsToInclude.count(pt) == 0) featurePtsToInclude.insert(pt);
                 }
 
-			if(anyHull[indexNodes])
-				beginIdx[indexNodes] = beginHullIdx;
-		}
-	}
+        }
+    }
+    size_t numberOfLinearFeaturePointsToKeep = 0;
 
-
-	if (totalNumberOfPoints < 10)
-	{
-		// There are far too few points to start decimating them towards the root.
-		// We then promote then all so they are given a high importance to make sure some terrain
-		// representativity is retained in this area.
-		DRange3d extent = DRange3d::NullRange();
-		for (size_t indexNodes = 0; indexNodes < numSubNodes; indexNodes++)
-		{            			
-			if (subNodes[indexNodes] != NULL)
-			{
-				if (subNodes[indexNodes]->GetNbObjects() == 0) continue;
+    if (totalNumberOfPoints < 10)
+    {
+        // There are far too few points to start decimating them towards the root.
+        // We then promote then all so they are given a high importance to make sure some terrain
+        // representativity is retained in this area.
+        DRange3d extent = DRange3d::NullRange();
+        for (size_t indexNodes = 0; indexNodes < numSubNodes; indexNodes++)
+        {            			
+            if (subNodes[indexNodes] != NULL)
+            {
+                if (subNodes[indexNodes]->GetNbObjects() == 0) continue;
 
                 extent.Extend(subNodes[indexNodes]->m_nodeHeader.m_contentExtent);
 
-				RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodesPointsPtr(subNodes[indexNodes]->GetPointsPtr());
+                RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodesPointsPtr(subNodes[indexNodes]->GetPointsPtr());
                 ptsToInclude.resize(subNodesPointsPtr->size());
                 memcpy(&ptsToInclude[0], &(*subNodesPointsPtr)[0], ptsToInclude.size() * sizeof(POINT));
 
-				if (std::any_of(anyHull.begin(), anyHull.end(), [](bool val) {return val; }))
-				{
-					if (!anyHull[indexNodes])
-					{
-						types.push_back(DTMFeatureType::Hull);
-						bvector<DPoint3d> boxPts;
-						boxPts.push_back(DPoint3d::From(subNodes[indexNodes]->m_nodeHeader.m_contentExtent.low.x, subNodes[indexNodes]->m_nodeHeader.m_contentExtent.low.y, 0));
-						boxPts.push_back(DPoint3d::From(subNodes[indexNodes]->m_nodeHeader.m_contentExtent.low.x, subNodes[indexNodes]->m_nodeHeader.m_contentExtent.high.y, 0));
-						boxPts.push_back(DPoint3d::From(subNodes[indexNodes]->m_nodeHeader.m_contentExtent.high.x, subNodes[indexNodes]->m_nodeHeader.m_contentExtent.high.y, 0));
-						boxPts.push_back(DPoint3d::From(subNodes[indexNodes]->m_nodeHeader.m_contentExtent.high.x, subNodes[indexNodes]->m_nodeHeader.m_contentExtent.low.y, 0));
-						boxPts.push_back(DPoint3d::From(subNodes[indexNodes]->m_nodeHeader.m_contentExtent.low.x, subNodes[indexNodes]->m_nodeHeader.m_contentExtent.low.y, 0));
-
-						auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(subNodes[indexNodes]);
-						IScalableMeshNodePtr nodeP(
-#ifndef VANCOUVER_API
-							new ScalableMeshNode<POINT>(nodePtr)
-#else
-							ScalableMeshNode<POINT>::CreateItem(nodePtr)
-#endif
-						);
-						BcDTMPtr dtm = nodeP->GetBcDTM().get();
-						for (auto& pt : boxPts)
-						{
-							int drapedTypeP;
-							dtm->GetDTMDraping()->DrapePoint(&pt.z, nullptr, nullptr, nullptr, drapedTypeP, pt);
-						}
-						polylines.push_back(boxPts);
-					}
-					else
-					{
-						types.push_back(types[beginIdx[indexNodes]]);
-						polylines.push_back(polylines[beginIdx[indexNodes]]);
-					}
-				}
-			}
-		}   
-		if (!extent.IsNull()) parentNode->m_nodeHeader.m_contentExtent = extent;
-		if (pParentMeshNode->m_nodeHeader.m_contentExtent.low.x == 0 && pParentMeshNode->m_nodeHeader.m_contentExtent.high.x != 0)
-		{
-			std::cout << " FILTERING NODE " << pParentMeshNode->GetBlockID().m_integerID << " WRONG EXTENT " << std::endl;
-		}
-	}
-	else
-	{
-		size_t pointArrayInitialNumber[8];
-		DRange3d extent = DRange3d::NullRange();
-
-		parentPointsPtr->reserve(parentPointsPtr->size() + (totalNumberOfPoints * 1 / pParentMeshNode->m_nodeHeader.m_numberOfSubNodesOnSplit) + 20);
-
+            }
+        }   
+        if (!extent.IsNull()) parentNode->m_nodeHeader.m_contentExtent = extent;
+        if (pParentMeshNode->m_nodeHeader.m_contentExtent.low.x == 0 && pParentMeshNode->m_nodeHeader.m_contentExtent.high.x != 0)
+        {
+            std::cout << " FILTERING NODE " << pParentMeshNode->GetBlockID().m_integerID << " WRONG EXTENT " << std::endl;
+        }
+    }
+    else
+    {
         // Get children points
-		for (size_t indexNodes = 0; indexNodes < numSubNodes; indexNodes++)
-		{
-			if (subNodes[indexNodes] != NULL)
-			{
-				if (!subNodes[indexNodes]->IsLoaded()) subNodes[indexNodes]->Load();
-				if (subNodes[indexNodes]->m_nodeHeader.m_contentExtentDefined) extent.Extend(subNodes[indexNodes]->m_nodeHeader.m_contentExtent);
-				RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePointsPtr(subNodes[indexNodes]->GetPointsPtr());
+        
+        DRange3d extent = DRange3d::NullRange();
 
+        parentPointsPtr->reserve(parentPointsPtr->size() + (totalNumberOfPoints * 1 / pParentMeshNode->m_nodeHeader.m_numberOfSubNodesOnSplit) + 20);
 
-				if (subNodePointsPtr->size() == 0)
-					continue;
+        for (size_t indexNodes = 0; indexNodes < numSubNodes; indexNodes++)
+        {
+            if (subNodes[indexNodes] != NULL)
+            {
+                if (!subNodes[indexNodes]->IsLoaded()) subNodes[indexNodes]->Load();
+                if (subNodes[indexNodes]->m_nodeHeader.m_contentExtentDefined) extent.Extend(subNodes[indexNodes]->m_nodeHeader.m_contentExtent);
+                RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePointsPtr(subNodes[indexNodes]->GetPointsPtr());
 
-				if (std::any_of(anyHull.begin(), anyHull.end(), [](bool val) {return val; }))
-				{
-					if (!anyHull[indexNodes])
-					{
+                if(subNodePointsPtr->size() == 0)
+                    continue;
 
-						types.push_back(DTMFeatureType::Hull);
-						bvector<DPoint3d> boxPts;
-						boxPts.push_back(DPoint3d::From(subNodes[indexNodes]->m_nodeHeader.m_contentExtent.low.x, subNodes[indexNodes]->m_nodeHeader.m_contentExtent.low.y, 0));
-						boxPts.push_back(DPoint3d::From(subNodes[indexNodes]->m_nodeHeader.m_contentExtent.low.x, subNodes[indexNodes]->m_nodeHeader.m_contentExtent.high.y, 0));
-						boxPts.push_back(DPoint3d::From(subNodes[indexNodes]->m_nodeHeader.m_contentExtent.high.x, subNodes[indexNodes]->m_nodeHeader.m_contentExtent.high.y, 0));
-						boxPts.push_back(DPoint3d::From(subNodes[indexNodes]->m_nodeHeader.m_contentExtent.high.x, subNodes[indexNodes]->m_nodeHeader.m_contentExtent.low.y, 0));
-						boxPts.push_back(DPoint3d::From(subNodes[indexNodes]->m_nodeHeader.m_contentExtent.low.x, subNodes[indexNodes]->m_nodeHeader.m_contentExtent.low.y, 0));
-
-						auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(subNodes[indexNodes]);
-						IScalableMeshNodePtr nodeP(
-#ifndef VANCOUVER_API
-							new ScalableMeshNode<POINT>(nodePtr)
-#else
-							ScalableMeshNode<POINT>::CreateItem(nodePtr)
-#endif
-						);
-						BcDTMPtr dtm = nodeP->GetBcDTM().get();
-						for (auto& pt : boxPts)
-						{
-							int drapedTypeP;
-							if(dtm.IsValid()) 
-								dtm->GetDTMDraping()->DrapePoint(&pt.z, nullptr, nullptr, nullptr, drapedTypeP, pt);
-						}
-
-						polylines.push_back(boxPts);
-					}
-					else
-					{
-						types.push_back(types[beginIdx[indexNodes]]);
-						polylines.push_back(polylines[beginIdx[indexNodes]]);
-					}
-				}
+                size_t currentNbPoints = ptsToInclude.size();
 
                 // The value of 10 here is required. The alternative path use integer division (*3/4 +1) that will take all points anyway
                 // In reality starting at 9 not all points are used but let's gives us a little margin.
                 if (subNodePointsPtr->size() <= 10)
-				{
-					// Too few content in node ... promote them all                           
-                    ptsToInclude.resize(subNodePointsPtr->size());
-                    memcpy(&ptsToInclude[0], &(*subNodePointsPtr)[0], ptsToInclude.size() * sizeof(POINT));
+                {
+                    // Too few content in node ... promote them all                           
+                    ptsToInclude.resize(ptsToInclude.size() + subNodePointsPtr->size());
+                    memcpy(&ptsToInclude[currentNbPoints], &(*subNodePointsPtr)[0], subNodePointsPtr->size() * sizeof(POINT));
+                }
+                else
+                {
+                    subNodePointsPtr = subNodes[indexNodes]->GetPointsPtr();
 
-				}
-				else
-				{
-					subNodePointsPtr = subNodes[indexNodes]->GetPointsPtr();
-					pointArrayInitialNumber[indexNodes] = subNodePointsPtr->size();
-
-
-					vector<POINT> points;
+                    vector<POINT> points;
 
                     for(size_t i = 0; i < subNodePointsPtr->size(); i++)
                         {
-                        DPoint3d pt3d = DPoint3d::From(PointOp<POINT>::GetX((*subNodePointsPtr)[i]), PointOp<POINT>::GetY((*subNodePointsPtr)[i]), PointOp<POINT>::GetZ((*subNodePointsPtr)[i]));
-                        if(featurePtsToInclude.count(pt3d) == 0)
+                        if(featurePtsToInclude.count((*subNodePointsPtr)[i]) == 0)
                             points.push_back((*subNodePointsPtr)[i]);
                         }
-					//memcpy(&points[0], &(*subNodePointsPtr)[0], points.size() * sizeof(POINT));
+                    //memcpy(&points[0], &(*subNodePointsPtr)[0], points.size() * sizeof(POINT));
 
-					std::random_shuffle(points.begin(), points.end());
+                    //std::random_shuffle(points.begin(), points.end());
 
-					size_t count = (subNodePointsPtr->size() / pParentMeshNode->m_nodeHeader.m_numberOfSubNodesOnSplit) + 1;
+                    //numberOfPointsToKeep += (points.size() / pParentMeshNode->m_nodeHeader.m_numberOfSubNodesOnSplit) + 1;
+                    //size_t count = currentNbPoints + std::min(subNodePointTarget, points.size());
 
-                    ptsToInclude.resize(points.size());
-                    memcpy(&ptsToInclude[0], &points[0], std::min(count, points.size()) * sizeof(POINT));
+                    //vector<POINT> nonFeaturePoints;
+                    //for(size_t i = 0; i < subNodePointTarget; i++)
+                    //    {
+                    //    if(featurePtsToInclude.count(points[i]) == 0)
+                    //        nonFeaturePoints.push_back(points[i]);
+                    //    }
 
-				}
-			}
-			if (!extent.IsNull())  parentNode->m_nodeHeader.m_contentExtent = extent;
-
-		}
-
-	}
-   
-	if (std::any_of(anyHull.begin(), anyHull.end(), [](bool val) {return val; }))
-	{
-		size_t nRemoved = 0;
-		for (size_t indexNodes = 0; indexNodes < numSubNodes; indexNodes++)
-		{
-			if (beginIdx[indexNodes] != -1)
-			{
-				polylines.erase(polylines.begin() + beginIdx[indexNodes] - nRemoved);
-				types.erase(types.begin() + beginIdx[indexNodes] - nRemoved);
-				nRemoved++;
-			}
-		}
-	}
-
-    // Merge and simplify children linear features
-	if (polylines.size() > 0)
-	{
-		bvector<DTMFeatureType> newTypes;
-		bvector<DTMFeatureType> otherNewTypes;
-		bvector<bvector<DPoint3d>> newLines;
-
-#if 0
-        LOG_SET_PATH("e:\\Elenie\\mesh\\")
-            LOG_SET_PATH_W("e:\\Elenie\\mesh\\")
-            BC_DTM_OBJ* dtmObjP = 0;
-        bcdtmObject_createDtmObject(&dtmObjP);
-        for(auto& feature: polylines)
-            if(IsVoidFeature((ISMStore::FeatureType)types[&feature-polylines.data()]))
-                bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, DTMFeatureType::Breakline, dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, &feature[0], (long)feature.size());
-
-        WString dtmFileName(LOG_PATH_STR_W + L"ptile_");
-        LOGSTRING_NODE_INFO_W(pParentMeshNode, dtmFileName)
-            dtmFileName.append(L".tin");
-        bcdtmWrite_toFileDtmObject(dtmObjP, dtmFileName.c_str());
-#endif
-
-        // Merge VOIDS
-		MergePolygonSets(polylines, [&newTypes, &newLines, &types](const size_t i, const bvector<DPoint3d>& vec)
-		{
-			if (!IsVoidFeature((ISMStore::FeatureType)types[i]))
-			{
-				newLines.push_back(vec);
-				newTypes.push_back(types[i]);
-				return false;
-			}
-			else return true;
-		},
-			[&otherNewTypes](const bvector<DPoint3d>& vec)
-		{
-			otherNewTypes.push_back(DTMFeatureType::DrapeVoid);
-		});
-		otherNewTypes.insert(otherNewTypes.end(), newTypes.begin(), newTypes.end());
-		polylines.insert(polylines.end(), newLines.begin(), newLines.end());
-		types = otherNewTypes;
-
-		newTypes.clear();
-		otherNewTypes.clear();
-		newLines.clear();
-
-        // Merge ISLANDS
-		MergePolygonSets(polylines, [&newTypes, &newLines, &types](const size_t i, const bvector<DPoint3d>& vec)
-		{
-			if (types[i] != DTMFeatureType::Island)
-			{
-				newLines.push_back(vec);
-				newTypes.push_back(types[i]);
-				return false;
-			}
-			else return true;
-		},
-			[&otherNewTypes](const bvector<DPoint3d>& vec)
-		{
-			otherNewTypes.push_back(DTMFeatureType::Island);
-		});
-		otherNewTypes.insert(otherNewTypes.end(), newTypes.begin(), newTypes.end());
-		polylines.insert(polylines.end(), newLines.begin(), newLines.end());
-		types = otherNewTypes;
-
-		newTypes.clear();
-		otherNewTypes.clear();
-		newLines.clear();
-
-        if (polylines.size() > 0)
-            {
-		    for (size_t i = polylines.size() - 1; i > 0; i--)
-		        {
-                newTypes.clear();
-                otherNewTypes.clear();
-                newLines.clear();
-			    bvector<bvector<DPoint3d>> defsHull;
-			    defsHull.push_back(polylines[i]);
-			    defsHull.push_back(polylines[i - 1]);
-
-                // Merge HULLS
-			    MergePolygonSets(defsHull, [&newTypes, &newLines, &types, &i](const size_t j, const bvector<DPoint3d>& vec)
-			        {
-				    if (types[i-j] != DTMFeatureType::Hull &&  types[i-j] != DTMFeatureType::TinHull)
-				        {
-					    newLines.push_back(vec);
-					    newTypes.push_back(types[i-j]);
-					    return false;
-				    }
-				    else return true;
-			        },
-				    [&otherNewTypes](const bvector<DPoint3d>& vec)
-			        {
-				    otherNewTypes.push_back(DTMFeatureType::Hull);
-			        });
-			    if (defsHull.size() > 0)
-			        {
-				    polylines[i - 1] = defsHull[0];
-				    types[i - 1] = otherNewTypes[0];
-			        }
-			    if (defsHull.size() > 1)
-			        {
-				    polylines[i] = defsHull[1];
-				    types[i] = otherNewTypes[1];
-			        }
-			    if (newLines.size() > 0)
-			        {
-				    polylines[i] = newLines[0];
-				    types[i] = newTypes[0];
-			        }
-			    if (newLines.size() > 1)
-			        {
-				    polylines[i - 1] = newLines[1];
-				    types[i - 1] = newTypes[1];
-			        }
-			    if (defsHull.size() + newLines.size() < 2) polylines[i].clear();
-		        }
-
-		    newLines = polylines;
-
-            size_t totalNumberOfFeaturePoints = 0;
-            for(const auto& line : polylines)
-                totalNumberOfFeaturePoints += line.size();
-
-            // backed out  part of changeset "beab95dcece7" to prevent crash in imodel publish (using IMBOB)
-            // files: $(atp-serv.bentley.com:/atp-root)\atp\building\development\tfbridge\scenario32\1MC08-BBV-DS-DMB-NS02_NL07-100005.dgn 
-            // see discussion in BUG https://bentleycs.visualstudio.com/iModelTechnologies/_workitems/edit/149245 
-
-            // WIP_NEEDS_WORK_2017 (original comment removed from changeset beab95dcece7)
-            //bool shouldSimplifyFeatures = totalNumberOfPoints * 0.2 <= totalNumberOfFeaturePoints;
-            //  if(shouldSimplifyFeatures)
-                //SimplifyPolylines(polylines);
-
-            // Keep non simplified Hulls
-		    std::transform(polylines.begin(), polylines.end(), newLines.begin(), polylines.begin(),
-			    [&types, &polylines](const bvector<DPoint3d>&vec, const bvector<DPoint3d>& vec2)
-		        {
-			    if (types[&vec - &polylines[0]] == DTMFeatureType::Hull || types[&vec - &polylines[0]] == DTMFeatureType::TinHull)
-				    return vec2;
-			    else return vec;
-		        });
+                    numberOfLinearFeaturePointsToKeep += ((subNodePointsPtr->size() - points.size()) / pParentMeshNode->m_nodeHeader.m_numberOfSubNodesOnSplit) + 1;
+                    ptsToInclude.resize(currentNbPoints + points.size());
+                    memcpy(&ptsToInclude[currentNbPoints], &points[0], points.size() * sizeof(POINT));
+                }
             }
-
-        std::unique(polylines.begin(), polylines.end(), [] (const bvector<DPoint3d>& a, const bvector<DPoint3d>&b) {
-            if(a.size() != b.size()) return false;
-            for(size_t i = 0; i < a.size(); ++i)
-                if(!a[i].IsEqual(b[i]))
-                    return false;
-
-            return true;
-                    });
-	    }
-
-    // Only points which are not feature points should be included
-    bvector<POINT> pts2 = ptsToInclude;
-    ptsToInclude.clear();
-    for(auto const& pt : pts2)
+            if (!extent.IsNull())  
+                parentNode->m_nodeHeader.m_contentExtent = extent;
+        }
+    }
+   
+    // Merge and simplify children linear features
+    bvector<bvector<DPoint3d>> newLines;
+    bvector<DTMFeatureType> types;
+    bvector<uint64_t> ids;
+    if (polylines.size() > 0)
         {
-        DPoint3d pt3d = DPoint3d::From(PointOp<POINT>::GetX(pt), PointOp<POINT>::GetY(pt), PointOp<POINT>::GetZ(pt));
+        double tolerance = (pParentMeshNode->m_nodeHeader.m_nodeExtent.high.x - pParentMeshNode->m_nodeHeader.m_nodeExtent.low.x) / 1000.0;
+        for(auto& pair : polylines)
+            {
+            // Merge together polylines with the same id
+            for(auto& poly : pair.second)
+                {
+                bvector<bvector<DPoint3d>> newFeatures;
+                MergeFeatures(poly.second, newFeatures, IsClosedFeature((ISMStore::FeatureType)poly.first));
+                for(auto& mergedPoly : newFeatures)
+                    {
+                    ids.push_back(pair.first);
+                    types.push_back(poly.first);
+                    newLines.push_back(mergedPoly);
+                    }
+                }
+            }
+        if(numberOfLinearFeaturePointsToKeep > 0)
+            {
+            //Utf8String namePts = "E:\\Elenie\\filter_features\\";
+            //LOGSTRING_NODE_INFO(pParentMeshNode, namePts)
+            //    namePts.append(".feature_pts");
+            //
+            //FILE* _meshFile = fopen(namePts.c_str(), "wb");
+            //size_t _nFeatures = newLines.size();
+            //fwrite(&_nFeatures, sizeof(size_t), 1, _meshFile);
+            //
+            //fwrite(&tolerance, sizeof(tolerance), 1, _meshFile);
+            //fwrite(&numberOfLinearFeaturePointsToKeep, sizeof(numberOfLinearFeaturePointsToKeep), 1, _meshFile);
+            //
+            //for(auto feature : newLines)
+            //    {
+            //    size_t _nVertices = feature.size();
+            //    fwrite(&_nVertices, sizeof(size_t), 1, _meshFile);
+            //    fwrite(&feature[0], sizeof(DPoint3d), _nVertices, _meshFile);
+            //    }
+            //fclose(_meshFile);
 
-        if(featurePtsToInclude.count(pt3d) == 0)
-            ptsToInclude.push_back(pt);
+            // Simplify polylines
+            bvector<DPoint3d> removedPoints;
+			if (!newLines.empty())
+			    {
+				SimplifyPolylines(newLines, removedPoints, tolerance, numberOfLinearFeaturePointsToKeep);
+			    }
+            // Include removed points as regular mesh points (points which are not feature points)
+            std::copy(begin(removedPoints), end(removedPoints), std::back_inserter(ptsToInclude));
+            }
+        }
+
+    if(!ptsToInclude.empty())
+        {
+        std::random_shuffle(ptsToInclude.begin(), ptsToInclude.end());
+
+        size_t subNodePointTarget = (ptsToInclude.size() / pParentMeshNode->m_nodeHeader.m_numberOfSubNodesOnSplit) + numSubNodes;
+        ptsToInclude.resize(subNodePointTarget);
         }
 
     // Add points and features
-    parentPointsPtr->push_back(ptsToInclude.begin(), ptsToInclude.size());
+    if (!ptsToInclude.empty()) parentPointsPtr->push_back(ptsToInclude.begin(), ptsToInclude.size());
 
-	for (auto& polyline : polylines)
-	{
-		if (polyline.empty()) continue;
-		DRange3d extent2 = DRange3d::From(polyline);
-		pParentMeshNode->AddFeatureDefinitionSingleNode((ISMStore::FeatureType)types[&polyline - &polylines.front()], polyline, extent2);
-	}
+    for (auto& polyline : newLines)
+    {
+        if (polyline.empty()) continue;
+        DRange3d extent2 = DRange3d::From(polyline);
+        pParentMeshNode->AddFeatureDefinitionSingleNode((ISMStore::FeatureType)types[&polyline - &newLines.front()], ids[&polyline - &newLines.front()], polyline, extent2);
+    }
 
     //In multi-process flushing to disk needs to be controlled by the the workers.
     if(!m_isMultiProcessGeneration)
@@ -701,39 +515,39 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
         pParentMeshNode->m_pointsPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
         }
     
-    // Mesh
+    // Mesh filtered points and linear features
     if (pParentMeshNode->m_nodeHeader.m_arePoints3d)
-	{
-		pParentMeshNode->GetMesher3d()->Mesh(pParentMeshNode);
-	}
-	else
-	{
-		pParentMeshNode->GetMesher2_5d()->Mesh(pParentMeshNode);
-	}
+    {
+        pParentMeshNode->GetMesher3d()->Mesh(pParentMeshNode);
+    }
+    else
+    {
+        pParentMeshNode->GetMesher2_5d()->Mesh(pParentMeshNode);
+    }
 
-	if (pParentMeshNode->GetPointsPtr()->size() > 10 && pParentMeshNode->GetPtsIndicePtr()->size() == 0)
-	{
-		std::cout << "NODE " << pParentMeshNode->GetBlockID().m_integerID << " SHOULD HAVE FACES " << std::endl;
+    if (pParentMeshNode->GetPointsPtr()->size() > 10 && pParentMeshNode->GetPtsIndicePtr()->size() == 0)
+    {
+        std::cout << "NODE " << pParentMeshNode->GetBlockID().m_integerID << " SHOULD HAVE FACES " << std::endl;
 #if FILTER_DBG_WHEN_NODE_HAS_NO_FACE
-		for (size_t indexNodes = 0; indexNodes < numSubNodes; indexNodes++)
-		{
-			if (subNodes[indexNodes] != NULL)
-			{
-				RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePointsPtr(subNodes[indexNodes]->GetPointsPtr());
-				Utf8String namePts = "e:\\output\\scmesh\\2016-08-24\\sub_mesh_tile_";
-				LOGSTRING_NODE_INFO(subNodes[indexNodes], namePts)
-					namePts.append(".pts");
-				size_t _nVertices = subNodePointsPtr->size();
-				FILE* _meshFile = fopen(namePts.c_str(), "wb");
-				fwrite(&_nVertices, sizeof(size_t), 1, _meshFile);
-				fwrite(&((*subNodePointsPtr)[0]), sizeof(DPoint3d), _nVertices, _meshFile);
-				fclose(_meshFile);
-			}
-		}
+        for (size_t indexNodes = 0; indexNodes < numSubNodes; indexNodes++)
+        {
+            if (subNodes[indexNodes] != NULL)
+            {
+                RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePointsPtr(subNodes[indexNodes]->GetPointsPtr());
+                Utf8String namePts = "e:\\output\\scmesh\\2016-08-24\\sub_mesh_tile_";
+                LOGSTRING_NODE_INFO(subNodes[indexNodes], namePts)
+                    namePts.append(".pts");
+                size_t _nVertices = subNodePointsPtr->size();
+                FILE* _meshFile = fopen(namePts.c_str(), "wb");
+                fwrite(&_nVertices, sizeof(size_t), 1, _meshFile);
+                fwrite(&((*subNodePointsPtr)[0]), sizeof(DPoint3d), _nVertices, _meshFile);
+                fclose(_meshFile);
+            }
+        }
 #endif
-	}
+    }
 
-	//In multi-process flushing to disk needs to be controlled by the the workers.
+    //In multi-process flushing to disk needs to be controlled by the the workers.
     if (!m_isMultiProcessGeneration)    
         {
         //Flushing tiles to disk during filtering result in less tiles being flushed sequentially at the end of the generation process, leading to potential huge performance gain.
@@ -746,7 +560,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
             }
         }
     
-	return true;
+    return true;
 }
 
 //=======================================================================================
@@ -769,6 +583,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_CGALMeshFilte
 
     bvector<bvector<DPoint3d>> polylines;
     bvector<DTMFeatureType> types;
+    bvector<int32_t> ids;
     for (size_t indexNodes = 0; indexNodes < numSubNodes; indexNodes++)
         {
         if (subNodes[indexNodes] != NULL)
@@ -788,7 +603,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_CGALMeshFilte
                     inputPts.resize(subMeshPointsPtr->size());
 
                     PtToPtConverter::Transform(&inputPts[0], &(*subMeshPointsPtr)[0], inputPts.size());        
-                    subMeshNode->ReadFeatureDefinitions(polylines, types, false);
+                    subMeshNode->ReadFeatureDefinitions(polylines, types, ids, false);
 
                     }
                 else
@@ -796,7 +611,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_CGALMeshFilte
                     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(subMeshNode->GetPointsPtr());                    
                     std::vector<DPoint3d> pts(pointsPtr->size());                    
                     PtToPtConverter::Transform(&pts[0], &(*pointsPtr)[0], pts.size());
-                    subMeshNode->ReadFeatureDefinitions(polylines, types, false);
+                    subMeshNode->ReadFeatureDefinitions(polylines, types, ids, false);
 
                     std::vector<int> pointsToDestPointsMap(pts.size());
                     std::fill_n(pointsToDestPointsMap.begin(), pointsToDestPointsMap.size(), -1);
@@ -830,31 +645,36 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_CGALMeshFilte
 //    bool ret = CGALEdgeCollapse(meshInput, inputPts, pParentMeshNode->GetBlockID().m_integerID);
     bvector<DPoint3d> vecPts;
     vecPts.assign(inputPts.begin(), inputPts.end());    
-    if (polylines.size() > 0)
-        {
-
-        bvector<DTMFeatureType> newTypes;
-        bvector<DTMFeatureType> otherNewTypes;
-        bvector<bvector<DPoint3d>> newLines;
-        MergePolygonSets(polylines, [&newTypes, &newLines, &types] (const size_t i, const bvector<DPoint3d>& vec)
-            {
-            if (!IsVoidFeature((ISMStore::FeatureType)types[i]))
-                {
-                newLines.push_back(vec);
-                newTypes.push_back(types[i]);
-                return false;
-                }
-            else return true;
-            },
-                [&otherNewTypes] (const bvector<DPoint3d>& vec)
-                {
-                otherNewTypes.push_back(DTMFeatureType::DrapeVoid);
-                });
-            otherNewTypes.insert(otherNewTypes.end(), newTypes.begin(), newTypes.end());
-            polylines.insert(polylines.end(), newLines.begin(), newLines.end());
-                types = otherNewTypes;
-            SimplifyPolylines(polylines);
-        }
+    //if (polylines.size() > 0)
+    //    {
+    //
+    //    bvector<DTMFeatureType> newTypes;
+    //    bvector<DTMFeatureType> otherNewTypes;
+    //    bvector<uint64_t> newIds;
+    //    bvector<uint64_t> othernewIds;
+    //    bvector<bvector<DPoint3d>> newLines;
+    //    MergePolygonSets(polylines, [&newTypes, &newIds, &newLines, &types, &ids] (const size_t i, const bvector<DPoint3d>& vec)
+    //        {
+    //        if (!IsVoidFeature((ISMStore::FeatureType)types[i]))
+    //            {
+    //            newLines.push_back(vec);
+    //            newTypes.push_back(types[i]);
+    //            newIds.push_back(ids[i]);
+    //            return false;
+    //            }
+    //        else return true;
+    //        },
+    //            [&otherNewTypes] (const bvector<DPoint3d>& vec)
+    //            {
+    //            otherNewTypes.push_back(DTMFeatureType::Void);
+    //            });
+    //        otherNewTypes.insert(otherNewTypes.end(), newTypes.begin(), newTypes.end());
+    //        polylines.insert(polylines.end(), newLines.begin(), newLines.end());
+    //        types = otherNewTypes;
+    //        ids = otherNewIds;
+    //        bvector<DPoint3d> removedPoints;
+    //        SimplifyPolylines(polylines, removedPoints);
+    //    }
 
 
     //if (ret)
@@ -887,7 +707,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_CGALMeshFilte
         for (auto& polyline : polylines)
             {
             DRange3d extent = DRange3d::From(polyline);
-            pParentMeshNode->AddFeatureDefinitionSingleNode((ISMStore::FeatureType)types[&polyline - &polylines.front()], polyline, extent);
+            pParentMeshNode->AddFeatureDefinitionSingleNode((ISMStore::FeatureType)types[&polyline - &polylines.front()], ids[&polyline - &polylines.front()], polyline, extent);
             }
 
         if (pParentMeshNode->m_nodeHeader.m_arePoints3d)

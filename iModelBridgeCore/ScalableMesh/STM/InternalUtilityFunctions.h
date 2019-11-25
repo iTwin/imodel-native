@@ -77,5 +77,4 @@ double ComputeMinEdgeLength(const DPoint3d* points, size_t ptNum, const int32_t*
 BENTLEY_SM_EXPORT inline bool IsUrl(WCharCP filename);
 void SimplifyPolygonToMinEdge(double minEdge, bvector<DPoint3d>& poly);
 
-
-
+BENTLEY_SM_EXPORT bool MergeFeatures(bvector<bvector<DPoint3d>> features, bvector<bvector<DPoint3d>>& result, bool isClosedFeature);

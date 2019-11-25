@@ -29,7 +29,7 @@ struct IDTMSourceCollection
     {
     private:
         struct Impl;
-        std::auto_ptr<Impl>                 m_implP;
+        std::shared_ptr<Impl> m_implP;
 
         /*---------------------------------------------------------------------------------**//**
         * @description    
@@ -41,7 +41,7 @@ struct IDTMSourceCollection
             friend struct                       IDTMSourceCollection;
 
             struct                              Impl;
-            std::auto_ptr<Impl>                 m_implP;
+            std::shared_ptr<Impl>               m_implP;
             explicit                            IteratorBase           (Impl*                       implP);
 
         public:

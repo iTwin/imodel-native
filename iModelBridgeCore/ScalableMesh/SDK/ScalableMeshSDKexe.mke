@@ -3,7 +3,7 @@
 #  See COPYRIGHT.md in the repository root for full copyright notice.
 #---------------------------------------------------------------------------------------------
 baseDir         = $(_MakeFilePath)../
-PolicyFile      = $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/mki/AssertScalableMeshPolicy.mki
+PolicyFile      = $(SrcRoot)ScalableMesh/mki/AssertScalableMeshPolicy.mki
 SolutionPolicyMki=$(baseDir)ScalableMesh.mki
 consoleAppUnicode = 1
 BUILD_USING_VS2013=1
@@ -18,7 +18,7 @@ o = $(OutputRootDir)Build/ScalableMesh/$(appName)/
 always:
     ~mkdir $(o)
 
-ScalableMeshDir = $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/
+ScalableMeshDir = $(SrcRoot)ScalableMesh/
 
 CCompOpts + -DUNICODE -DVANCOUVER_API
 

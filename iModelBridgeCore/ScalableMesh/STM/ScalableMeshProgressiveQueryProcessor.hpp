@@ -160,7 +160,7 @@ template <class POINT, class EXTENT>  void ProcessingQuery<POINT,EXTENT>::Run(si
         }
     }
     double elapsed = ((double)clock() - startT) / CLOCKS_PER_SEC * 1000.0;
-    TRACEPOINT(THREAD_ID(), EventType::QUERY_LOADNODELIST, threadInd, (uint64_t)-1, -1, -1, elapsed, (uint32_t)nNodes)
+    TRACEPOINT(EventType::QUERY_LOADNODELIST, threadInd, (uint64_t)-1, -1, -1, elapsed, (uint32_t)nNodes)
 
     size_t m_nbMissed = 0;
     static size_t MAX_MISSED = 5;

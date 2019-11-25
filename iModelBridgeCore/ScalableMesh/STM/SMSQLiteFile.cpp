@@ -18,7 +18,7 @@
 #define READONLY Db::OpenMode::Readonly
 #define READWRITE Db::OpenMode::ReadWrite
 
-const BESQL_VERSION_STRUCT SMSQLiteFile::CURRENT_VERSION = BESQL_VERSION_STRUCT(1, 1, 0, 3);
+const BESQL_VERSION_STRUCT SMSQLiteFile::CURRENT_VERSION = BESQL_VERSION_STRUCT(1, 1, 0, 4);
 
 SMSQLiteFile::SMSQLiteFile()
 {
@@ -54,11 +54,11 @@ bool SMSQLiteFile::Close()
     }
 
 
-const BESQL_VERSION_STRUCT s_listOfReleasedSchemas[4] = { BESQL_VERSION_STRUCT(1, 1, 0, 0), BESQL_VERSION_STRUCT(1, 1, 0, 1), BESQL_VERSION_STRUCT(1, 1, 0, 2), BESQL_VERSION_STRUCT(1, 1, 0, 3) };
-const size_t s_numberOfReleasedSchemas = 4;
-double s_expectedTimeUpdate[3] = { 1.2*1e-5, 1e-6,1e-6};
+const BESQL_VERSION_STRUCT s_listOfReleasedSchemas[5] = { BESQL_VERSION_STRUCT(1, 1, 0, 0), BESQL_VERSION_STRUCT(1, 1, 0, 1), BESQL_VERSION_STRUCT(1, 1, 0, 2), BESQL_VERSION_STRUCT(1, 1, 0, 3), BESQL_VERSION_STRUCT(1, 1, 0, 4) };
+const size_t s_numberOfReleasedSchemas = 5;
+double s_expectedTimeUpdate[4] = { 1.2*1e-5, 1e-6,1e-6,1e-6 };
 //all the functions for each schema transition. 
-std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctions[3] = {
+std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctions[4] = {
     [](BeSQLite::Db* database)
         {
         assert(database->TableExists("SMMasterHeader"));
@@ -142,9 +142,16 @@ std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctions[3] = {
         database->ExecuteSql("ALTER TABLE SMNodeHeader ADD COLUMN GeometryResolution REAL DEFAULT 0.0");
         database->ExecuteSql("ALTER TABLE SMNodeHeader ADD COLUMN TextureResolution REAL DEFAULT 0.0");
         },
-            [](BeSQLite::Db* database)
+
+        [](BeSQLite::Db* database)
         {
             database->ExecuteSql("ALTER TABLE SMFileMetadata ADD COLUMN Properties TEXT DEFAULT NULL");
+        },
+
+        [](BeSQLite::Db* database)
+        {
+            database->ExecuteSql("ALTER TABLE SMSources ADD COLUMN TerrainModelID INTEGER DEFAULT 0");
+            database->ExecuteSql("ALTER TABLE SMSources ADD COLUMN TerrainModelName TEXT DEFAULT NULL");
         }
     };
 
@@ -497,7 +504,9 @@ DbResult SMSQLiteFile::CreateTables()
                                      "ElevationProperty TEXT,"
                                      "LinearFeatureType INTEGER,"
                                      "PolygonFeatureType INTEGER,"
-                                     "IsGridData INTEGER");
+                                     "IsGridData INTEGER,"
+                                     "TerrainModelID INTEGER,"
+                                     "TerrainModelName TEXT");
     assert(result == BE_SQLITE_OK);
 
 
@@ -1551,13 +1560,14 @@ bool SMSQLiteFile::SaveSource(SourcesDataSQLite& sourcesData)
         //Savepoint insertTransaction(*m_database, "replace");
         m_database->GetCachedStatement(stmt, "REPLACE INTO SMSources (SourceId, SourceType, DTMSourceID, GroupID, ModelId, ModelName, LevelId, LevelName, RootToRefPersistentPath, "
             "ReferenceName, ReferenceModelName, GCS, Flags, TypeFamilyID, TypeID, MonikerType, MonikerString, TimeLastModified, "
-            "SizeExtent, Extent, UpToDateState, Time, IsRepresenting3dData, IsGroundDetection, IsGISData, ElevationProperty, LinearFeatureType, PolygonFeatureType, IsGridData)"
+            "SizeExtent, Extent, UpToDateState, Time, IsRepresenting3dData, IsGroundDetection, IsGISData, ElevationProperty, LinearFeatureType, PolygonFeatureType, IsGridData, TerrainModelID, TerrainModelName)"
             "VALUES(?,?,?,?,?,"
             "?,?,?,?,?,"
             "?,?,?,?,?,"
             "?,?,?,?,?,"
             "?,?,?,?,?,"
-            "?,?,?,?)");
+            "?,?,?,?,?,"
+            "?)");
         stmt->BindInt64(1, sourceData.GetSourceID());
         stmt->BindInt(2, sourceData.GetSourceType());
         stmt->BindInt(3, sourceData.GetDTMSourceID());
@@ -1595,8 +1605,8 @@ bool SMSQLiteFile::SaveSource(SourcesDataSQLite& sourcesData)
         stmt->BindInt(28, (int)smData.GetPolygonFeatureType());
         stmt->BindInt(29, smData.IsGridData() ? 1 : 0);
 
-        //stmt->BindInt64(30, sourceData.GetTerrainModelID());
-        //BIND_VALUE_STR(stmt, 31, terrainModelNameUtf8String, MAKE_COPY_NO);
+        stmt->BindInt64(30, sourceData.GetTerrainModelID());
+        BIND_VALUE_STR(stmt, 31, terrainModelNameUtf8String, MAKE_COPY_NO);
 
         DbResult status = stmt->Step();
         assert((status == BE_SQLITE_DONE) || (status == BE_SQLITE_ROW));
@@ -1687,7 +1697,7 @@ bool SMSQLiteFile::LoadSources(SourcesDataSQLite& sourcesData)
     CachedStatementPtr stmt;
     m_database->GetCachedStatement(stmt, "SELECT SourceId, SourceType, DTMSourceID, GroupID, ModelId, ModelName, LevelId, LevelName, RootToRefPersistentPath, "
         "ReferenceName, ReferenceModelName, GCS, Flags, TypeFamilyID, TypeID, MonikerType, MonikerString, TimeLastModified, "
-        "SizeExtent, Extent, UpToDateState, Time, IsRepresenting3dData, IsGroundDetection, IsGISData, ElevationProperty, LinearFeatureType, PolygonFeatureType, IsGridData "
+        "SizeExtent, Extent, UpToDateState, Time, IsRepresenting3dData, IsGroundDetection, IsGISData, ElevationProperty, LinearFeatureType, PolygonFeatureType, IsGridData, TerrainModelID, TerrainModelName "
         "FROM SMSources");
     while (stmt->Step() == BE_SQLITE_ROW)
     {
@@ -1734,8 +1744,8 @@ bool SMSQLiteFile::LoadSources(SourcesDataSQLite& sourcesData)
         smData.SetPolygonFeatureType(DTMFeatureType(stmt->GetValueInt(27)));
         smData.SetIsGridData(stmt->GetValueInt(28) ? true : false);
 
-        //sourceData.SetTerrainModelID(stmt->GetValueInt64(29));
-        //sourceData.SetTerrainModelName(WSTRING_FROM_CSTR(Utf8String(GET_VALUE_STR(stmt, 30)).c_str()));
+        sourceData.SetTerrainModelID(stmt->GetValueInt64(29));
+        sourceData.SetTerrainModelName(WSTRING_FROM_CSTR(Utf8String(GET_VALUE_STR(stmt, 30)).c_str()));
 
         sourceData.SetScalableMeshData(smData);
       

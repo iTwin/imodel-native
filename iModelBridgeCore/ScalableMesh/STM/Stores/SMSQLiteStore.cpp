@@ -217,6 +217,63 @@ void SMSQLiteClipDefinitionExtOps::SetAutoCommit(bool autoCommit)
     m_smSQLiteFile->m_autocommit = autoCommit;
     }
 
+SMSQLiteLinearFeaturesExtOps::SMSQLiteLinearFeaturesExtOps(SMSQLiteFilePtr& smSQLiteFile)
+    {
+    m_smSQLiteFile = smSQLiteFile;
+    }
+
+SMSQLiteLinearFeaturesExtOps::~SMSQLiteLinearFeaturesExtOps()
+    {
+    }
+
+uint64_t SMSQLiteLinearFeaturesExtOps::StoreFeature(uint32_t type, const bvector<DPoint3d>& featureData)
+    {
+    if(featureData.empty()) return -1;
+
+    bvector<uint8_t> data;
+    size_t uncompressedSize = featureData.size() * sizeof(DPoint3d);
+
+#ifdef DO_COMPRESS_LINEAR_FEATURE_DEFINITIONS
+    HCDPacket pi_uncompressedPacket, pi_compressedPacket;
+    
+    pi_uncompressedPacket.SetBuffer(const_cast<DPoint3d*>(featureData.data()), featureData.size() * sizeof(DPoint3d));
+    pi_uncompressedPacket.SetDataSize(featureData.size() * sizeof(DPoint3d));
+    WriteCompressedPacket(pi_uncompressedPacket, pi_compressedPacket);
+
+    data.resize(pi_compressedPacket.GetDataSize());
+    memcpy(&data[0], pi_compressedPacket.GetBufferAddress(), pi_compressedPacket.GetDataSize());
+#else
+    data.resize(uncompressedSize);
+    memcpy(&data[0], featureData.data(), uncompressedSize);
+#endif
+    int64_t featureId;
+    m_smSQLiteFile->StoreFeatureDefinition(featureId, type, data, uncompressedSize);
+    return featureId;
+    }
+
+void SMSQLiteLinearFeaturesExtOps::GetFeature(uint64_t id, uint32_t& type, bvector<DPoint3d>& featureData)
+    {
+    bvector<uint8_t> data;
+    size_t size;
+    m_smSQLiteFile->GetFeatureDefinition(id, type, data, size);
+
+    featureData.resize(size / sizeof(DPoint3d));
+
+#ifdef DO_COMPRESS_LINEAR_FEATURE_DEFINITIONS
+    HCDPacket pi_uncompressedPacket, pi_compressedPacket;
+    pi_compressedPacket.SetBuffer(&data[0], data.size());
+    pi_compressedPacket.SetDataSize(data.size());
+
+    pi_uncompressedPacket.SetBuffer(featureData.data(), size);
+    pi_uncompressedPacket.SetBufferOwnership(false);
+
+
+    LoadCompressedPacket(pi_compressedPacket, pi_uncompressedPacket);
+#else
+    memcpy(featureData.data(), data.data(), size);
+#endif
+    }
+
 SharedTransaction::SharedTransaction(SMSQLiteFilePtr fileP, bool readonly, bool startTransaction)
 {
 #ifndef VANCOUVER_API

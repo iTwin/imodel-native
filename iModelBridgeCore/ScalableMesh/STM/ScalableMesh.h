@@ -460,7 +460,7 @@ DRange3d ScalableMesh<POINT>::ComputeTotalExtentFor(const MeshIndexType*   point
 
     if ((pointIndexP != 0) && (!pointIndexP->IsEmpty()))
         {
-        Extent3dType ExtentPoints = pointIndexP->GetContentExtent();
+        Extent3dType ExtentPoints = pointIndexP->GetIndexExtent();
         totalExtent.low.x = PtExtentOpType::GetXMin(ExtentPoints);
         totalExtent.high.x = PtExtentOpType::GetXMax(ExtentPoints);
         totalExtent.low.y = PtExtentOpType::GetYMin(ExtentPoints);

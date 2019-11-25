@@ -579,7 +579,7 @@ size_t DimensionOrg::GetTypeSize () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DimensionOrg::IsPOD () const
     {
-    return end() == std::find_if(begin(), end(), not1(std::mem_fun_ref(&DimensionDef::IsNative)));
+    return end() == std::find_if(begin(), end(), [] (DimensionDef const& d) { return !d.IsNative(); });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -588,7 +588,7 @@ bool DimensionOrg::IsPOD () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DimensionOrg::IsComplete () const
     {
-    return end() == std::find_if(begin(), end(), not1(std::mem_fun_ref(&DimensionDef::IsComplete)));
+    return end() == std::find_if(begin(), end(), [] (DimensionDef const& d) { return !d.IsComplete(); });
     }
 
 
@@ -812,7 +812,7 @@ size_t DimensionOrgGroup::GetTypeSize () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DimensionOrgGroup::IsPOD () const
     {
-    return end() == std::find_if(begin(), end(), not1(std::mem_fun_ref(&DimensionOrg::IsPOD)));
+    return end() == std::find_if(begin(), end(), [] (DimensionOrg const& d) { return !d.IsPOD(); });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -821,7 +821,7 @@ bool DimensionOrgGroup::IsPOD () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DimensionOrgGroup::IsComplete () const
     {
-    return end() == std::find_if(begin(), end(), not1(std::mem_fun_ref(&DimensionOrg::IsComplete)));
+    return end() == std::find_if(begin(), end(), [] (DimensionOrg const& d) { return !d.IsComplete(); });
     }
 
 END_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE

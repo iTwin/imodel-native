@@ -334,7 +334,7 @@ struct Unit
         };
 
 private:
-    std::auto_ptr<WString>             m_nameP;
+    std::shared_ptr<WString>             m_nameP;
     BaseID                                  m_baseID;
     double                                  m_ratioToBase;
 
@@ -425,7 +425,7 @@ inline double                               GetAngularToLinearRatio            (
 struct WKT
     {
 private:
-    std::auto_ptr<WString>             m_wktP;    
+    std::shared_ptr<WString>             m_wktP;    
 public:
     GEOCOORDS_DLLE explicit                 WKT                                ();
 

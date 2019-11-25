@@ -49,6 +49,7 @@
 #include <TerrainModel/TerrainModel.h>
 #include <TerrainModel/Core/bcDTMBaseDef.h>
 #include <TerrainModel/Core/bcDTMClass.h>
+#include <TerrainModel/Core/IDTM.h>
 #ifndef LINUX_SCALABLEMESH_BUILD
 #include <TerrainModel/Core/bcdtminlines.h>
 #include <TerrainModel/Formats/InroadsImporter.h>
@@ -121,15 +122,6 @@ USING_NAMESPACE_BENTLEY_POINTCLOUD
 +----------------------------------------------------------------------*/
 	
 
-#include <ScalableMesh/Foundations/Definitions.h>
-#include <ScalableMesh/GeoCoords/Definitions.h>
-#include <ScalableMesh/Import/Definitions.h>
-#include <ScalableMesh/ScalableMeshDefs.h>
-#if _WIN32
-#ifndef VANCOUVER_API    
-#include <STMInternal/Foundations/FoundationsPrivateTools.h>
-#endif 
-#endif
 
 #include <Logging/bentleylogging.h>
 

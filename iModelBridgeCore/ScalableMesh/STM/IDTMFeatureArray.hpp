@@ -386,7 +386,7 @@ void IDTMFeatureArray<PointType, HeaderType>::IncrementPointOffsets(typename Hea
     HDEBUGCODE(EditHeaders().BeginEdit()); // Trigger a reallocation if needed
     HASSERT(this->GetHeaders().IsValidIterator(pi_From));
 
-    for_each<HeaderArray::iterator>(pi_From, EditHeaders().EndEdit(), bind2nd(IncrementHeaderOffset(), pi_OffsetIncrement));
+    for_each<HeaderArray::iterator>(pi_From, EditHeaders().EndEdit(), bind(IncrementHeaderOffset(), placeholders::_1, pi_OffsetIncrement));
     }
 
 
@@ -399,7 +399,7 @@ void IDTMFeatureArray<PointType, HeaderType>::DecrementPointOffsets(typename Hea
     HDEBUGCODE(EditHeaders().BeginEdit()); // Trigger a reallocation if needed
     HASSERT(this->GetHeaders().IsValidIterator(pi_From));
 
-    for_each<HeaderArray::iterator>(pi_From, EditHeaders().EndEdit(), bind2nd(DecrementHeaderOffset(), pi_OffsetDecrement));
+    for_each<HeaderArray::iterator>(pi_From, EditHeaders().EndEdit(), bind(DecrementHeaderOffset(), placeholders::_1, pi_OffsetDecrement));
     }
 
 

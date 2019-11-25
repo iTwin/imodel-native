@@ -172,7 +172,7 @@ IScalableMeshSourceCreatorWorker::Impl::Impl(const WChar* scmFileName, uint32_t 
     ScalableMeshDb::SetEnableSharedDatabase(isSharable);
 #ifdef TRACE_ON	    
     CachedDataEventTracer::GetInstance()->setOutputObjLog(false);
-    CachedDataEventTracer::GetInstance()->setLogDirectory("D:\\MyDoc\\RMA - July\\CloudWorker\\Log\\");    
+    CachedDataEventTracer::GetInstance()->setLogDirectory("C:\\traceLogs\\");
     CachedDataEventTracer::GetInstance()->start();
 #endif	
     }
@@ -192,7 +192,7 @@ IScalableMeshSourceCreatorWorker::Impl::Impl(const IScalableMeshPtr& scmPtr, uin
     ScalableMeshDb::SetEnableSharedDatabase(isSharable);
 #ifdef TRACE_ON		    
     CachedDataEventTracer::GetInstance()->setOutputObjLog(false);
-    CachedDataEventTracer::GetInstance()->setLogDirectory("D:\\MyDoc\\RMA - July\\CloudWorker\\Log\\");    
+    CachedDataEventTracer::GetInstance()->setLogDirectory("C:\\traceLogs\\");
     CachedDataEventTracer::GetInstance()->start();
 #endif	
     }
@@ -1525,7 +1525,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
         assert(xmlStatus == BEXML_Success);
         //assert(pChildNode->GetNextSibling() == nullptr);
 
-        //TRACEPOINT(THREAD_ID(), EventType::WORKER_MESH_TASK, tileId, (uint64_t)-1, -1, -1, 0, 0)
+        //TRACEPOINT(EventType::WORKER_MESH_TASK, tileId, (uint64_t)-1, -1, -1, 0, 0)
 
         bvector<WString> idAttrs;
         BeStringUtilities::ParseArguments(idAttrs, attrStr.c_str(), L",");
@@ -1544,7 +1544,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
             {        
             //assert(pChildNode->GetNextSibling() == nullptr);
 
-            //TRACEPOINT(THREAD_ID(), EventType::WORKER_MESH_TASK, tileId, (uint64_t)-1, -1, -1, 0, 0)
+            //TRACEPOINT(EventType::WORKER_MESH_TASK, tileId, (uint64_t)-1, -1, -1, 0, 0)
 
             idAttrs.clear();
             BeStringUtilities::ParseArguments(idAttrs, attrStr.c_str(), L",");
@@ -2215,7 +2215,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessMeshTask(BeXmlNodeP pXm
         assert(xmlStatus == BEXML_Success);
         //assert(pChildNode->GetNextSibling() == nullptr);
 
-        TRACEPOINT(THREAD_ID(), EventType::WORKER_MESH_TASK, tileId, (uint64_t)-1, -1, -1, 0, 0)
+        TRACEPOINT(EventType::WORKER_MESH_TASK, tileId, (uint64_t)-1, -1, -1, 0, 0)
 
         HPMBlockID blockID(tileId);
 
@@ -2313,7 +2313,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessMeshTask(BeXmlNodeP pXm
         assert(xmlStatus == BEXML_Success);
         //assert(pChildNode->GetNextSibling() == nullptr);
 
-        TRACEPOINT(THREAD_ID(), EventType::WORKER_MESH_TASK, tileId, (uint64_t)-1, -1, -1, 0, 0)
+        TRACEPOINT(EventType::WORKER_MESH_TASK, tileId, (uint64_t)-1, -1, -1, 0, 0)
        
         HPMBlockID blockID(tileId);
 
@@ -2507,7 +2507,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessStitchTask(BeXmlNodeP p
         
         HFCPtr<MeshIndexType> pDataIndex(GetDataIndex());
 
-        TRACEPOINT(THREAD_ID(), EventType::WORKER_STITCH_TASK, tileId, (uint64_t)-1, -1, -1, 0, 0)
+        TRACEPOINT(EventType::WORKER_STITCH_TASK, tileId, (uint64_t)-1, -1, -1, 0, 0)
                 
         HPMBlockID blockID(tileId);              
  
@@ -2548,7 +2548,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessStitchTask(BeXmlNodeP p
         
         for (auto node : neighborNodes)
             {                
-            TRACEPOINT(THREAD_ID(), EventType::WORKER_STITCH_TASK_NEIGHBOR, node->GetBlockID().m_integerID, (uint64_t)-1, -1, -1, 0, 0)
+            TRACEPOINT(EventType::WORKER_STITCH_TASK_NEIGHBOR, node->GetBlockID().m_integerID, (uint64_t)-1, -1, -1, 0, 0)
 
             assert(!node->IsDirty());
             node->Unload(); 
@@ -2699,7 +2699,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessFilterTask(BeXmlNodeP p
         BeXmlStatus xmlStatus = pChildNode->GetAttributeUInt64Value(tileId, "id");
         assert(xmlStatus == BEXML_Success);
                     
-        TRACEPOINT(THREAD_ID(), EventType::WORKER_FILTER_TASK, tileId, (uint64_t)-1, -1, -1, 0, 0)    
+        TRACEPOINT(EventType::WORKER_FILTER_TASK, tileId, (uint64_t)-1, -1, -1, 0, 0)    
 
         HFCPtr<MeshIndexType> pDataIndex(GetDataIndex());
 

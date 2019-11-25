@@ -1231,7 +1231,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
     {
 
 #if TRACE_ON
-    CachedDataEventTracer::GetInstance()->setLogDirectory("e:\\Elenie\\traceLogs\\");
+    CachedDataEventTracer::GetInstance()->setLogDirectory("C:\\traceLogs\\");
     CachedDataEventTracer::GetInstance()->start();
 #endif
 

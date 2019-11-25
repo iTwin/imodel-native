@@ -189,9 +189,9 @@ BeFileName ScalableMeshGTestUtil::GetModuleFilePath()
 * @bsimethod                                    Richard.Bois                   10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeFileName ScalableMeshGTestUtil::GetModuleFileDirectory()
-{
+    {
     return BeFileName(BeFileName::GetDirectoryName(GetModuleFilePath()).c_str());
-}
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Richard.Bois                   10/2017
@@ -527,10 +527,12 @@ BentleyStatus ScalableMeshModule::Initialize()
                 };
         };
 
-#ifdef VANCOUVER_API
+#ifdef IMODEL02
+    DgnPlatformLib::Initialize(*this);
+#elif defined(VANCOUVER_API)
     DgnViewLib::Initialize(*this, true); // this initializes the DgnDb libraries
 #else
-    DgnPlatformLib::Initialize(*this);
+    DgnPlatformLib::Initialize(*this,true);
 #endif	
     SMHost* smHost = new SMHost();
     ScalableMesh::ScalableMeshLib::Initialize(*smHost);

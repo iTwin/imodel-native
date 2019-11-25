@@ -9,6 +9,7 @@
 #include "../ScalableMeshProgress.h"
 #include "../ScalableMeshQuery.h"
 #include <ScalableMesh/IScalableMeshPolicy.h>
+#include "../ScalableMeshSourcesPersistance.h"
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 	
@@ -49,6 +50,24 @@ StatusInt SaveAsNodeCreator::SetGCS(const GeoCoords::GCS& gcs)
     m_gcsDirty = true;
 
     return 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois   07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+IScalableMeshNodeEditPtr SaveAsNodeCreator::GetRootNode()
+    {
+    auto rootNode = m_pDataIndex->GetRootNode();
+    return new ScalableMeshNodeEdit<PointType>(rootNode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois   07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+uint64_t SaveAsNodeCreator::GetPointCountFor(IScalableMeshNodePtr sourceNode)
+    {
+    auto foundNode = m_pDataIndex->FindLoadedNode(sourceNode->GetNodeId());
+    return foundNode->GetCount();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -94,6 +113,22 @@ IScalableMeshNodeEditPtr SaveAsNodeCreator::FindParentNodeFor(IScalableMeshNodeP
             }
         }
     return parentNode;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Kim.Piche   07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt SaveAsNodeCreator::SaveSources(IDTMSourceCollection& sources)
+    {
+    SourcesDataSQLite* sourcesData = new SourcesDataSQLite();
+    DocumentEnv dummyDoc(L"");
+    if (BENTLEY_NAMESPACE_NAME::ScalableMesh::SaveSources(sources, *sourcesData, dummyDoc))
+        {
+        m_smSQLitePtr->SaveSource(*sourcesData);
+        return SUCCESS;
+        }
+
+    return ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -333,6 +368,11 @@ StatusInt SM3SMPublisher::_Publish(IScalableMeshPublishParamsPtr params)
         //    });
         }
 
+    OptimiseIndex(destination);
+
+    // Update content extents
+    UpdateContentExtentsAllNodes(destination->GetRootNode());
+
     if (progress != nullptr)
         {
         // Report progress finished
@@ -344,6 +384,50 @@ StatusInt SM3SMPublisher::_Publish(IScalableMeshPublishParamsPtr params)
         return ERROR;
 
     return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois   07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void SM3SMPublisher::OptimiseIndex(SaveAsNodeCreatorPtr destination)
+    {
+    auto destNode = destination->GetRootNode();
+    if(!destNode->GetChildrenNodes().empty())
+        {
+        DRange3d newContentExtent = DRange3d::NullRange();
+        for(auto child : destNode->GetChildrenNodes())
+            {
+            if(destination->GetPointCountFor(child) > 0)
+                {
+                DRange3d childExtent = child->GetNodeExtent();
+                newContentExtent.Extend(childExtent);
+                }
+            }
+        destNode->SetNodeExtent(newContentExtent);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois   07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void SM3SMPublisher::UpdateContentExtentsAllNodes(IScalableMeshNodeEditPtr destNode)
+    {
+    std::function<DRange3d(IScalableMeshNodeEditPtr node)> recursiveUpdate;
+    recursiveUpdate = [&recursiveUpdate] (IScalableMeshNodeEditPtr node) -> DRange3d
+        {
+        if(!node->GetChildrenNodes().empty())
+            {
+            DRange3d newContentExtent = DRange3d::NullRange();
+            for(auto child : node->GetChildrenNodes())
+                {
+                DRange3d childContentExtent = recursiveUpdate(child->EditNode());
+                newContentExtent.Extend(childContentExtent);
+                }
+            node->SetContentExtent(newContentExtent);
+            }
+        return node->GetContentExtent();
+        };
+    recursiveUpdate(destNode);
     }
 
 /*---------------------------------------------------------------------------------**//**

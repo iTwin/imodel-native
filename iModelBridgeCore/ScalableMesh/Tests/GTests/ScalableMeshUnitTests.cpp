@@ -19,6 +19,7 @@
 
 #include "SMUnitTestDisplayQuery.h"
 #include "../../STM/Edits/ClipUtilities.h"
+
 #ifndef VANCOUVER_API
 #include <DgnPlatform/DesktopTools/ConfigurationManager.h>
 #else
@@ -33,7 +34,7 @@
 #endif
 
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
-
+USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
 #define BINGWKT L"PROJCS[\"Google Maps Global Mercator\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.01745329251994328,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]],PROJECTION[\"Mercator_2SP\"],PARAMETER[\"standard_parallel_1\",0],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",0],PARAMETER[\"false_easting\",0],PARAMETER[\"false_northing\",0],UNIT[\"Meter\",1],EXTENSION[\"PROJ4\",\"+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext  +no_defs\"],AUTHORITY[\"EPSG\",\"900913\"]]"
 #define NUM_CLIP_POINTS 21
@@ -237,6 +238,12 @@ class ScalableMeshTestWithParams : public ::testing::TestWithParam<BeFileName>
 
         void SetReprojection(IScalableMeshPtr myScalableMesh, bool& status)
             {
+            if(!myScalableMesh->GetBaseGCS().IsValid())
+                {
+                status = true; // Nothing to do
+                return;
+                }
+
             status = false;
             Transform tr = myScalableMesh->GetReprojectionTransform();
 #ifdef VANCOUVER_API
@@ -283,6 +290,31 @@ class ScalableMeshTestWithParams : public ::testing::TestWithParam<BeFileName>
 #endif
             }
     };
+
+    class ScalableMeshGenerationTest : public ::testing::Test
+        {
+        protected:
+            BeFileName m_filename;
+
+        public:
+            virtual void SetUp()
+                {
+                auto filename = BeFileName(SM_DATA_SOURCE_PATH);
+                bool pathExists = ScalableMeshGTestUtil::GetDataPath(filename);
+                if(pathExists)
+                    {
+                    m_filename = filename;
+                    //m_filename.AppendToPath(L"ground.tin");
+                    //m_filename.AppendToPath(L"CHP2785F-7005_011.bcdtm");
+                    m_filename.AppendToPath(L"Merged PSA PSB TWN AR 15-31-IR-AR19.dtm");
+                    }
+                }
+            virtual void TearDown() { }
+            BeFileName GetFileName() {
+                return m_filename;
+                }
+
+        };
 
 
 class ScalableMeshGenerationTestWithParams : public ::testing::TestWithParam<BeFileName>
@@ -451,7 +483,75 @@ TEST_P(ScalableMeshTestWithParams, CanGenerate3DTiles)
     ASSERT_TRUE(SUCCESS == ret);
     
     EXPECT_EQ(ScalableMeshGTestUtil::GetFileCount(tempPath), groundTruthInfo["Converted3DTilesFileCount"].asUInt64()) << "\n Could not convert 3sm to 3dtiles: " << GetFileName().c_str() << std::endl << std::endl;
-    
+
+    //Checking Unit Conversion
+    auto gcs = myScalableMesh->GetGCS().GetGeoRef().GetBasePtr();
+    GeoCoords::Unit unit(GeoCoords::Unit::GetMeter());
+    if(gcs != nullptr)
+        unit = GeoCoords::GetUnitFor(*gcs);
+    Transform toMeterTransform = Transform::FromRowValues(unit.GetRatioToBase(), 0, 0, 0.0,
+                                                          0, unit.GetRatioToBase(), 0, 0.0,
+                                                          0, 0, unit.GetRatioToBase(), 0.0);
+
+    if(!toMeterTransform.IsIdentity())
+        {
+        tempPath.AppendToPath(L"n_0.json");
+        IScalableMeshPtr exported3DTilesMesh = ScalableMeshTest::OpenMesh(tempPath);
+
+        // Get a random node and extract its points
+        IScalableMeshNodePtr nodeToCheckExported = ScalableMeshTest::GetNonEmptyNode(exported3DTilesMesh);
+        ASSERT_TRUE(nodeToCheckExported != nullptr);
+
+        IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create(false, false);
+        flags->SetLoadIndices(false);
+
+        auto exportedNodeMesh = nodeToCheckExported->GetMesh(flags);
+        DPoint3d* exportedNodePoints = exportedNodeMesh->EditPoints();
+        
+
+        // Search for node in the original 3sm
+        auto meshQueryInterface = myScalableMesh->GetMeshQueryInterface(ScalableMesh::MESH_QUERY_FULL_RESOLUTION);
+
+        bvector<ScalableMesh::IScalableMeshNodePtr> returnedNodes;
+        ScalableMesh::IScalableMeshMeshQueryParamsPtr params = ScalableMesh::IScalableMeshMeshQueryParams::CreateParams();
+        params->SetLevel(nodeToCheckExported->GetLevel());
+        meshQueryInterface->Query(returnedNodes, NULL, 0, params);
+        IScalableMeshNodePtr nodeOriginalScalableMesh = nullptr;
+        for(auto& node : returnedNodes)
+            {
+            if(node->GetNodeId() == nodeToCheckExported->GetNodeId())
+                {
+                nodeOriginalScalableMesh = node;
+                break;
+                }
+            }
+        ASSERT_TRUE(nodeOriginalScalableMesh != nullptr);
+
+        // Extract node points from original mesh node
+        auto originalNodeMesh = nodeOriginalScalableMesh->GetMesh(flags);
+        DPoint3d* originalNodePoints = originalNodeMesh->EditPoints();
+
+        ASSERT_TRUE(exportedNodePoints != nullptr && originalNodePoints != nullptr);
+        ASSERT_TRUE(exportedNodeMesh->GetNbPoints() == originalNodeMesh->GetNbPoints());
+
+        // Check that returned points are the same in the same units of measure
+        auto comparator = DPoint3dZYXTolerancedSortComparison(1e-5, 0);
+        for(size_t i = 0; i < originalNodeMesh->GetNbPoints(); i++)
+            {
+            DPoint3d transformedPoint(originalNodePoints[i]);
+            toMeterTransform.Multiply(transformedPoint);
+            bool pointExists = false;
+            for(size_t j = 0; j < exportedNodeMesh->GetNbPoints(); j++)
+                {
+                if(comparator(exportedNodePoints[j], transformedPoint))
+                    {
+                    pointExists = true;
+                    break;
+                    }
+                }
+            ASSERT_TRUE(pointExists);
+            }
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -489,14 +589,12 @@ TEST_P(ScalableMeshTestWithParams, VerifyMeshInfo)
     EXPECT_EQ(myScalableMesh->GetPointCount(), groundTruthInfo["PointCount"].asUInt64());
     EXPECT_EQ(myScalableMesh->IsTerrain(), groundTruthInfo["IsTerrain"].asBool()); 
     EXPECT_EQ(myScalableMesh->GetNbResolutions(), groundTruthInfo["NbResolutions"].asUInt64());
-    //code review this is broken right here...
-    /*
     EXPECT_DOUBLE_EQ(range.low.x, groundTruthRangeMin.x);
     EXPECT_DOUBLE_EQ(range.low.y, groundTruthRangeMin.y);
     EXPECT_DOUBLE_EQ(range.low.z, groundTruthRangeMin.z);
     EXPECT_DOUBLE_EQ(range.high.x, groundTruthRangeMax.x);
     EXPECT_DOUBLE_EQ(range.high.y, groundTruthRangeMax.y);
-    EXPECT_DOUBLE_EQ(range.high.z, groundTruthRangeMax.z);*/
+    EXPECT_DOUBLE_EQ(range.high.z, groundTruthRangeMax.z);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1210,7 +1308,7 @@ TEST_F(ScalableMeshTest, SaveAsWithClipBoundary)
         ASSERT_TRUE(BeFileNameStatus::Success == BeFileName::BeDeleteFile(destination.c_str()));
 
     //ScalableMeshGTestUtil::TestProgressListener progressListener;
-    //auto progressSM = ScalableMesh::IScalableMeshProgress::Create(ScalableMesh::ScalableMeshProcessType::SAVEAS_3SM, myScalableMesh);
+    //auto progressSM = BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshProgress::Create(BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshProcessType::SAVEAS_3SM, myScalableMesh);
     //ASSERT_TRUE(progressSM->AddListener(progressListener));
 
     DRange3d range;
@@ -1263,7 +1361,7 @@ TEST_F(ScalableMeshTest, SaveAsWithClipMask)
         ASSERT_TRUE(BeFileNameStatus::Success == BeFileName::BeDeleteFile(destination.c_str()));
 
     //ScalableMeshGTestUtil::TestProgressListener progressListener;
-    //auto progressSM = ScalableMesh::IScalableMeshProgress::Create(ScalableMesh::ScalableMeshProcessType::SAVEAS_3SM, myScalableMesh);
+    //auto progressSM = BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshProgress::Create(BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshProcessType::SAVEAS_3SM, myScalableMesh);
     //ASSERT_TRUE(progressSM->AddListener(progressListener));
 
     DRange3d range;
@@ -1335,6 +1433,41 @@ TEST_P(ScalableMeshTestDrapePoints, DrapeLinear)
     }
 }
 
+#if 0
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                            Christian.Tye-Gingras   7/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestDrapePoints, ProjectPoint) 
+    {
+    auto myScalableMesh = OpenMesh();
+    for (size_t i = 0; i < GetData().size(); ++i) 
+        {
+        DPoint3d sourcePt = GetData()[i];
+        DPoint3d result = sourcePt;
+
+        DPoint3d expectedResult = GetResult().front();
+        for (auto&pt : GetResult())
+            if (fabs(pt.x - sourcePt.x) < 1e-6 && fabs(pt.y - sourcePt.y) < 1e-6) 
+                {
+                expectedResult = pt;
+                break;
+                }
+
+        //initFromRowValues
+        //This map is incorrect, and should be added as a parameter to the tests instead of being hard coded
+        DMatrix4d w2vMap;
+        w2vMap.initFromRowValues(4.0532549781045556e-05, 0.,                     0.,                     -392500.94002264069,
+                                 0.,                    -4.0512339773603344e-05, 0.,                      171492.85009206505,
+                                 0.,                     0.,                     0.00032773104470709924, -6420.2511658120748,
+                                 0.,                     0.,                     0.,                      1.                 );
+
+        ASSERT_EQ(true, myScalableMesh->GetDTMInterface()->GetDTMDraping()->ProjectPoint(result, w2vMap, sourcePt));
+        EXPECT_EQ(fabs(result.z - GetResult()[i].z) < 1e-6, true);
+        EXPECT_EQ(fabs(result.x - GetResult()[i].x) < 1e-6, true);
+        EXPECT_EQ(fabs(result.y - GetResult()[i].y) < 1e-6, true);
+        }
+    }
+#endif
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Elenie.Godzaridis  02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1444,11 +1577,11 @@ TEST_P(ScalableMeshGenerationTestWithParams, FromSourceCreation)
 
     EXPECT_EQ(status == SUCCESS, true);    
 
-    ScalableMesh::IDTMSourcePtr sourceP = ScalableMesh::IDTMLocalFileSource::Create(ScalableMesh::DTMSourceDataType::DTM_SOURCE_DATA_POINT, m_filename.c_str());        
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::IDTMSourcePtr sourceP = BENTLEY_NAMESPACE_NAME::ScalableMesh::IDTMLocalFileSource::Create(BENTLEY_NAMESPACE_NAME::ScalableMesh::DTMSourceDataType::DTM_SOURCE_DATA_POINT, m_filename.c_str());        
 
     //Ensure that the source data is always meshed using 2.5D mesher.
-    ScalableMesh::SourceImportConfig& sourceImportConfig = sourceP->EditConfig();
-    ScalableMesh::Import::ScalableMeshData data = sourceImportConfig.GetReplacementSMData();
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::SourceImportConfig& sourceImportConfig = sourceP->EditConfig();
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::ScalableMeshData data = sourceImportConfig.GetReplacementSMData();
     data.SetRepresenting3dData(false);
     sourceImportConfig.SetReplacementSMData(data);
 
@@ -1478,6 +1611,58 @@ TEST_P(ScalableMeshGenerationTestWithParams, FromSourceCreation)
     }
 #endif
 
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                                  Richard.Bois   07/2019
+//+---------------+---------------+---------------+---------------+---------------+------*/
+//TEST_F(ScalableMeshGenerationTest, FromDTMSourceCreation)
+//    {
+//    BeFileName newSmFileName = ScalableMeshGTestUtil::GetUserSMTempDir();
+//
+//    BeFileNameStatus statusFile = BeFileName::CreateNewDirectory(newSmFileName.c_str());
+//    ASSERT_EQ(statusFile == BeFileNameStatus::Success || statusFile == BeFileNameStatus::AlreadyExists, true);
+//
+//    newSmFileName = BeFileName((newSmFileName + WString(L"\\fromSourceCreation.3sm")).c_str());
+//
+//    if(BeFileName::DoesPathExist(newSmFileName.c_str()))
+//        ASSERT_TRUE(BeFileNameStatus::Success == BeFileName::BeDeleteFile(newSmFileName.c_str()));
+//
+//    StatusInt status;
+//    IScalableMeshSourceCreatorPtr smCreatorPtr(IScalableMeshSourceCreator::GetFor(newSmFileName.c_str(), status));
+//
+//    EXPECT_EQ(status == SUCCESS, true);
+//
+//    ScalableMesh::IDTMSourcePtr sourceP = ScalableMesh::IDTMLocalFileSource::Create(ScalableMesh::DTMSourceDataType::DTM_SOURCE_DATA_DTM, m_filename.c_str());
+//
+//    //Ensure that the source data is always meshed using 2.5D mesher.
+//    ScalableMesh::SourceImportConfig& sourceImportConfig = sourceP->EditConfig();
+//    ScalableMesh::Import::ScalableMeshData data = sourceImportConfig.GetReplacementSMData();
+//    data.SetRepresenting3dData(false);
+//    sourceImportConfig.SetReplacementSMData(data);
+//
+//    smCreatorPtr->EditSources().Add(sourceP);
+//    smCreatorPtr->SaveToFile();
+//    SMStatus smStatus = smCreatorPtr->Create();
+//
+//    EXPECT_EQ(smStatus == S_SUCCESS, true);
+//
+//    smCreatorPtr = nullptr;
+//
+//    IScalableMeshPtr smPtr(IScalableMesh::GetFor(newSmFileName.c_str(), false, true, status));
+//
+//    EXPECT_EQ(status == SUCCESS && smPtr.IsValid(), true);
+//
+//    EXPECT_EQ(smPtr->InSynchWithSources(), true);
+//    EXPECT_EQ(smPtr->InSynchWithDataSources(), true);
+//
+//    time_t lastSynchTime;
+//
+//    smPtr->LastSynchronizationCheck(lastSynchTime);
+//
+//    time_t currentTime;
+//    time(&currentTime);
+//
+//    EXPECT_EQ(lastSynchTime <= currentTime, true);
+//    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                               Elenie.Godzaridis     02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1818,7 +2003,7 @@ TEST_P(ScalableMeshTestWithParams, LoadMeshWithClip)
 
     auto nodeP = ScalableMeshTest::GetNonEmptyNode(myScalableMesh, [&] (IScalableMeshNodePtr nodeP)
                                                    {
-                                                   return clipRange.IntersectsWith(nodeP->GetContentExtent());
+                                                   return clipRange.IntersectsWith(nodeP->GetContentExtent(), 2);
                                                    });
 
     if(nodeP->GetPointCount() > 4)
@@ -1843,8 +2028,7 @@ TEST_P(ScalableMeshTestWithParams, LoadMeshWithClip)
 
             ASSERT_EQ(mesh->GetNbPoints(), mesh->GetPolyfaceQuery()->GetPointCount());
             ASSERT_EQ(mesh->GetNbFaces(), mesh->GetPolyfaceQuery()->GetPointIndexCount() / 3);
-            //review broken even on windows
-            //ASSERT_NE(nodeP->GetPointCount(), mesh->GetNbPoints());
+            ASSERT_NE(nodeP->GetPointCount(), mesh->GetNbPoints());
 
             flags = IScalableMeshMeshFlags::Create(false, false);
             mesh = nodeP->GetMesh(flags);
@@ -2505,6 +2689,24 @@ TEST_P(ScalableMeshTestWithParams, MeshClipperClipFilterModes3D)
         EXPECT_FALSE(m.WasClipped());
     }
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                           Christian.Tye-Gingras     07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, GetTerrainDepth)
+    {
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
+    auto const& smDataInfo = static_cast<ScalableMeshEnvironment*>(sm_env)->GetGroundTruthJsonFile();
+    ASSERT_TRUE(smDataInfo.isMember(datasetName.c_str()));
+    auto const& groundTruthInfo = smDataInfo[datasetName.c_str()];
+
+    ASSERT_TRUE(groundTruthInfo.isMember("TerrainDepth"));
+
+    ASSERT_EQ(myScalableMesh->GetTerrainDepth(), groundTruthInfo["TerrainDepth"].asUInt64());
+    }
 
 //// Wrap Google's ASSERT_TRUE macro into a lambda because it returns a "success" error code.
 //// When calling from main function, we actually want to return an error.

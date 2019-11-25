@@ -189,7 +189,7 @@ IScalableMeshSourceImporter::~IScalableMeshSourceImporter ()
 bool IScalableMeshSourceImporter::AreAllSourcesReachable () const
     {
     // Reachable only if all sources are reachable
-    return m_implP->m_sources.End() == std::find_if(m_implP->m_sources.Begin(), m_implP->m_sources.End(), not1(mem_fun_ref(&IDTMSource::IsReachable)));
+    return m_implP->m_sources.End() == std::find_if(m_implP->m_sources.Begin(), m_implP->m_sources.End(), [] (IDTMSource const& s) { return !s.IsReachable(); });
     }
 
 StatusInt IScalableMeshSourceImporter::Import ()

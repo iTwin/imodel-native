@@ -8,6 +8,7 @@
 #include "SMPointIndex.h"
 #include "InternalUtilityFunctions.h"
 #include "Stores/SMStoreUtils.h"
+#include "vuPolygonClassifier.h"
 #include <ScalableMesh/IScalableMeshClipContainer.h>
 #include <ScalableMesh/ScalableMeshUtilityFunctions.h>
 #include <ScalableMesh/IScalableMeshQuery.h>
@@ -626,7 +627,7 @@ GeoDomainShape&                         shape
             int region = gcs.GetDanishSys34Region();
 
             // 1  ==> jylland
-            // 2  ==> sjælland
+            // 2  ==> sjlland
             // 3  ==> bornholm
 
             if (1 == region)
@@ -1804,3 +1805,194 @@ void SimplifyPolygonToMinEdge(double minEdge, bvector<DPoint3d>& poly)
     }
     poly.resize(maxPts);
 }
+
+bool MergeFeatures(bvector<bvector<DPoint3d>> features, bvector<bvector<DPoint3d>>& result, bool isClosedFeatures)
+    {
+    if(features.empty()) return false;
+
+    bvector<bool> isMerged(features.size(), false);
+    bool mergeOccured = false;
+
+    if(isClosedFeatures)
+        {
+        typedef std::map<DPoint3d, double, DPoint3dYXTolerancedSortComparison> MapOfPoints;
+        MapOfPoints pointElevationMap(DPoint3dYXTolerancedSortComparison(1e-6));
+        for(auto const& feature : features)
+            {
+            for (auto const& pt : feature)
+                if(pointElevationMap.count(pt) == 0) pointElevationMap.insert(std::make_pair(pt, pt.z));
+            }
+
+        VuPolygonClassifier vu(1e-6, 0);
+
+        for(auto& fA : features)
+            {
+            if(fA.size() > 2)
+                {
+                if(!fA.front().IsEqual(*(&fA.back()), 1e-8)) fA.push_back(fA.front());
+
+                if(fA.size() >= 4)
+                    {
+                    bvector<DPoint3d> fA2D;
+                    for(auto& pt2 : fA)
+                        fA2D.push_back(DPoint3d::From(pt2.x, pt2.y, 0));
+
+                    auto curveAPtr = ICurvePrimitive::CreateLineString(&fA2D[0], fA2D.size());
+                    auto curveVectorAPtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curveAPtr);
+
+                    bool mergeSucceed = true;
+                    while(mergeSucceed)
+                        {
+                        mergeSucceed = false;
+                        for(auto& fB : features)
+                            {
+                            if(isMerged[&fB - &features[0]]) continue;
+                            if(&fB <= &fA) continue;
+
+                            bvector<DPoint3d> fB2D;
+                            for(auto& pt3 : fB)
+                                fB2D.push_back(DPoint3d::From(pt3.x, pt3.y, 0));
+                            if(bsiDPoint3dArray_polygonClashXYZ(&fA2D.front(), (int)fA2D.size(), &fB2D.front(), (int)fB2D.size()))
+                                {
+                                double fAArea = fabs(bsiGeom_getXYPolygonArea(&fA2D[0], (int)fA2D.size()));
+                                double fBArea = fabs(bsiGeom_getXYPolygonArea(&fB2D[0], (int)fB2D.size()));
+
+                                auto curveBPtr = ICurvePrimitive::CreateLineString(&fB2D[0], fB2D.size());
+                                auto curveVectorBPtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curveBPtr);
+
+                                const CurveVectorPtr mergeArea = CurveVector::AreaUnion(*curveVectorAPtr, *curveVectorBPtr);
+                                bvector<bvector<bvector<DPoint3d>>> regions;
+                                mergeArea->CollectLinearGeometry(regions);
+                                if(regions.size() > 1) continue;
+                                for(auto &region : regions)
+                                    {
+                                    for(auto &xyz : region)
+                                        {
+                                        //if(mergeSucceed) break;
+                                        double mergedArea = bsiGeom_getXYPolygonArea(&xyz[0], (int)xyz.size());
+                                        if(mergedArea < 0) continue;
+                                        if(std::max(fAArea, fBArea) < mergedArea && mergedArea < fAArea + fBArea + 1.e-6)
+                                            {
+                                            fA2D = xyz;
+                                            isMerged[&fB - &features[0]] = true;
+                                            curveAPtr = ICurvePrimitive::CreateLineString(&fA2D[0], fA2D.size());
+                                            curveVectorAPtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curveAPtr);
+
+                                            mergeSucceed = true;
+                                            mergeOccured = true;
+                                            }
+                                        break;
+                                        }
+                                    //if(mergeSucceed) break;
+                                    //break;
+                                    }
+
+                                //bvector<DPoint3d> xyz;
+                                //vu.ClassifyAUnionB(fA2D, fB2D);
+                                //for(int faceIndx = 0; vu.GetFace(xyz); faceIndx++)
+                                //    {
+                                //    if(faceIndx > 0) continue;
+                                //
+                                //    double mergedArea = bsiGeom_getXYPolygonArea(&xyz[0], (int)xyz.size());
+                                //    if(mergedArea < 0) continue;
+                                //    if(std::max(fAArea, fBArea) < mergedArea && mergedArea < fAArea + fBArea + 1.e-6)
+                                //        {
+                                //        fA2D = xyz;
+                                //        isMerged[&fB - &features[0]] = true;
+                                //        mergeSucceed = true;
+                                //        }
+                                //    }
+                                }
+                            }
+                        }
+
+                    if(!isMerged[&fA - &features[0]])
+                        {
+                        isMerged[&fA - &features[0]] = true;
+                        result.push_back(fA2D);
+
+                        // reconstruct proper elevations
+                        for(auto& pt : result.back())
+                            {
+                            if (pointElevationMap.count(pt) == 1)
+                                pt.z = pointElevationMap[pt];
+                            }
+
+                        features[&fA - &features[0]] = result.back();
+
+                        //bvector<bvector<DPoint3d>> others;
+                        //for(auto& feature : features)
+                        //    if(isMerged[&feature - &features[0]] == false) others.push_back(feature);
+                        //
+                        //if(others.empty()) break;
+                        //if(others.size() == 1)
+                        //    {
+                        //    result.push_back(others[0]);
+                        //    break;
+                        //    }
+                        //
+                        //mergeOccured = MergeFeatures(others, result, isClosedFeatures) || mergeOccured;
+                        //if(!mergeOccured) break;
+                        }
+                    }
+                }
+            }
+        }
+    else
+        {
+        auto tempFeatures = features;
+        for(auto& fA : tempFeatures)
+            {
+            if(!isMerged[&fA - &tempFeatures[0]])
+                {
+                DSegment3d fAStartSegment = DSegment3d::From(fA[0], fA[1]);
+                DSegment3d fAEndSegment = DSegment3d::From(fA[fA.size() - 2], fA[fA.size() - 1]);
+                bool isMerging = true;
+                while(isMerging)
+                    {
+                    isMerging = false;
+                    for(auto& fB : tempFeatures)
+                        {
+                        if(isMerged[&fB - &tempFeatures[0]]) continue;
+                        if(&fB <= &fA) continue;
+
+                        bool mergeSucceed = false;
+
+                        // Check endpoints for match
+                        if(fA.front().IsEqual(fB.front(), 1.e-6))
+                            {
+                            mergeSucceed = true;
+                            fA.insert(begin(fA), rbegin(fB), rend(fB) - 1);
+                            }                        
+                        else if(fA.front().IsEqual(fB.back(), 1.e-6))
+                            {
+                            mergeSucceed = true;
+                            fA.insert(begin(fA), begin(fB), end(fB) - 1);
+                            }
+                        if(fA.back().IsEqual(fB.front(), 1.e-6))
+                            {
+                            mergeSucceed = true;
+                            fA.insert(end(fA), begin(fB) + 1, end(fB));
+                            }
+                        else if(fA.back().IsEqual(fB.back(), 1.e-6))
+                            {
+                            mergeSucceed = true;
+                            fA.insert(end(fA), rbegin(fB) + 1, rend(fB));
+                            }                        
+                        if(mergeSucceed)
+                            {
+                            isMerged[&fB - &tempFeatures[0]] = true;
+                            mergeOccured = mergeSucceed || mergeOccured;
+                            isMerging = true;
+                            }
+                        }
+                    }
+
+                result.push_back(fA);
+                isMerged[&fA - &tempFeatures[0]] = true;
+                }
+            }
+        }
+
+    return mergeOccured;
+    }

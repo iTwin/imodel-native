@@ -56,7 +56,11 @@ StatusInt GeneratorTextureProvider::_GetTextureForArea(bvector<uint8_t>& texData
     HIMMosaic::RasterList rasterList;
     while (SUCCESS == directoryIter.GetCurrentEntry(currentTextureName, isDir))
         {
+#ifdef VANCOUVER_API
+        if (0 == BeFileName::GetExtension(currentTextureName.c_str()).CompareToI(L"jpg"))
+#else
         if (0 == currentTextureName.GetExtension().CompareToI(L"jpg"))
+#endif
             {
             WString path = WString(L"file://") + currentTextureName;            
             
@@ -65,7 +69,7 @@ StatusInt GeneratorTextureProvider::_GetTextureForArea(bvector<uint8_t>& texData
             HFCPtr<HRFRasterFile>  pRasterFile;
             HFCPtr<HRARaster>      pRaster;
 
-#ifdef DGNDB06_API
+#if defined(DGNDB06_API) || defined(VANCOUVER_API)
             pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(path), TRUE);
 #else
             Utf8String pathUtf8(path);
@@ -96,7 +100,15 @@ StatusInt GeneratorTextureProvider::_GetTextureForArea(bvector<uint8_t>& texData
     auto provider = new MosaicTextureProvider(pMosaicP);
     StatusInt status = provider->GetTextureForArea(texData, width, height, area);
     pMosaicP = 0;
+
+    // NEEDS_WORK_SM : Do we really want to keep the directory?
+#ifdef VANCOUVER_API
+    BeFileName::EmptyAndRemoveDirectory(m_dir.c_str());
+    BeFileName::CreateNewDirectory(m_dir.c_str());
+#else
+    // NEEDS_WORK_SM : Doesn't delete directory, only its contents...
     BeFileName::EmptyDirectory(m_dir.c_str());
+#endif
     return status;
     }
 

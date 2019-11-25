@@ -24,6 +24,9 @@ struct SaveAsNodeCreator : public IScalableMeshNodeCreator::Impl, public RefCoun
 
         StatusInt SetGCS(const GeoCoords::GCS&       gcs);
         IScalableMeshNodeEditPtr FindParentNodeFor(IScalableMeshNodePtr sourceNode, StatusInt& status);
+        IScalableMeshNodeEditPtr GetRootNode();
+        uint64_t GetPointCountFor(IScalableMeshNodePtr sourceNode);
+        StatusInt SaveSources(IDTMSourceCollection& sources);
     };
 
 typedef RefCountedPtr<SaveAsNodeCreator> SaveAsNodeCreatorPtr;
@@ -121,7 +124,8 @@ struct SM3SMPublisher : virtual public IScalableMeshPublisher
         StatusInt SetNodeMeshData(IScalableMeshNodePtr sourceNode, IScalableMeshMeshPtr mesh, IScalableMeshNodeEditPtr& destNode, const Transform& transform);
         StatusInt PublishRecursive(IScalableMeshNodePtr sourceNode, SMNodeEditPromisePtr parentDestNode, const Transform& transform);
         StatusInt CreateAndAddNewNode(IScalableMeshNodePtr sourceNode, IScalableMeshNodeEditPtr parentDestNode, IScalableMeshNodeEditPtr& newDestNode);
-
+        void UpdateContentExtentsAllNodes(IScalableMeshNodeEditPtr destNode);
+        void OptimiseIndex(SaveAsNodeCreatorPtr destination);
         SMNodeEditPromisePtr AddWorkItem(IScalableMeshNodePtr source, SMNodeEditPromisePtr currentPromise, const Transform& transform);
     };
 

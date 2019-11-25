@@ -18,16 +18,17 @@
     </Product>
 
     <Part Name="ScalableMeshUnitTestsExe" BentleyBuildMakeFile="Tests/GTests/BuildTests_vancouver.mke">
-      <SubPart PartName="google_gtest"         PartFile="iModelCore/util/gtest/gtest"            Repository="imodel02" />
-      <SubPart PartName="google_gtest_lib"     PartFile="iModelCore/util/gtest/gtest"            Repository="imodel02" />
-      <SubPart PartName="ScalableMeshCreator"  PartFile="iModelBridgeCore/ScalableMesh/ScalableMeshCore" Repository="imodel02" />
-      <SubPart PartName="LoggingNativeLog4cxx" PartFile="iModelCore/LoggingSDK/LoggingSDK"       Repository="imodel02"/>
+      <SubPart PartName="google_gtest"         PartFile="gtest"            Repository="util-gtest" />
+      <SubPart PartName="google_gtest_lib"     PartFile="gtest"            Repository="util-gtest" />
+      <SubPart PartName="ScalableMeshCreator"  PartFile="ScalableMeshCore" Repository="ScalableMesh" />
+      <SubPart PartName="LoggingNativeLog4cxx" PartFile="LoggingSDK"       Repository="LoggingSDK"/>
       <Bindings>
         <Files ProductDirectoryName="ScalableMeshUnitTests">Delivery/ScalableMeshUnitTests.exe</Files>
       </Bindings>
     </Part>
 
   <ProductDirectoryList ListName="ScalableMeshUnitTests">
+    <ProductDirectory   Name="PlatformTechNativeExceptions" Deliver="true" Path="Dlls"/>
     <ProductDirectory   Name="ScalableMeshUnitTests" Deliver="true" Path="Dlls"/>
     <ProductDirectory   Name="ScalableMesh_DataFiles" Deliver="true" Path="Dlls"/>
     <ProductDirectory   Name="ScalableMesh_Data" Deliver="true" Path="Dlls/SMData"/>
@@ -68,8 +69,9 @@
     <ProductDirectory   Name="RmgrToolsNativeAssemblies"                Path="Dlls"/>
     <ProductDirectory   Name="RmgrToolsNativeAssemblies"                Path="Dlls"    LibType="Static"/>
     <ProductDirectory   Name="BeOpenSSLAssemblies"                      Path="Dlls"/>
+    <ProductDirectory   Name="BeOpenSSLAssemblies"                      Path="Dlls" LibType="Static"/>
     <ProductDirectory   Name="BeCurlAssemblies"                         Path="Dlls"/>
-    <ProductDirectory   Name="PlatformTechNativeExceptions"             Path="Dlls"/>
+    <ProductDirectory   Name="BeCurlAssemblies"                         Path="Dlls" LibType="Static"/>
     <ProductDirectory   Name="RealityAssemblies"                        Path="Dlls"                      />
     <ProductDirectory   Name="RealityPlatformToolsLibs"                 Path="Libs"                      />
     <ProductDirectory   Name="ZlibNativeAssemblies"                     Path="Dlls" />

@@ -110,7 +110,7 @@ inline bool IsClosedFeature(ISMStore::FeatureType type)
 
 inline bool IsClosedPolygon(const bvector<DPoint3d>& vec)
     {
-    return !vec.empty() && (vec.front() == vec.back());
+    return !vec.empty() && (vec.front().AlmostEqual(vec.back()));
     }
 
 
@@ -303,11 +303,11 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     void                CutTile(uint32_t splitThreshold, Transform unitTransform = Transform::FromIdentity());
     void                CutTileRecursive(uint32_t splitThreshold, Transform unitTransform = Transform::FromIdentity());
 
-    BENTLEY_SM_EXPORT void                  ReadFeatureDefinitions(bvector<bvector<DPoint3d>>& points, bvector<DTMFeatureType> & types, bool shouldIgnoreOpenFeatures);
+    BENTLEY_SM_EXPORT void                  ReadFeatureDefinitions(bvector<bvector<DPoint3d>>& points, bvector<DTMFeatureType> & types, bvector<int32_t>& ids, bool shouldIgnoreOpenFeatures);
 
-    BENTLEY_SM_EXPORT size_t                AddFeatureDefinitionSingleNode(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
-    size_t                AddFeatureDefinitionUnconditional(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
-    size_t                AddFeatureDefinition(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent, bool ExtentFixed);
+    BENTLEY_SM_EXPORT size_t                AddFeatureDefinitionSingleNode(ISMStore::FeatureType type, uint64_t id, bvector<DPoint3d>& points, DRange3d& extent);
+    size_t                AddFeatureDefinitionUnconditional(ISMStore::FeatureType type, uint64_t id, bvector<DPoint3d>& points, DRange3d& extent);
+    size_t                AddFeatureDefinition(ISMStore::FeatureType type, uint64_t id, bvector<DPoint3d>& points, DRange3d& extent, bool ExtentFixed);
 
     //NEEDS_WORK_SM: clean up clipping API (remove extra calls, clarify uses, etc)
 
@@ -324,7 +324,11 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     ClipRegistry* GetClipRegistry() const
         {
-        return dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(this->m_SMIndex)->GetClipRegistry();
+        auto meshIndexPtr = dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(this->m_SMIndex);
+
+        if(meshIndexPtr == nullptr)
+            return nullptr;
+        return meshIndexPtr->GetClipRegistry();
         }
 
     void BuildSkirts();

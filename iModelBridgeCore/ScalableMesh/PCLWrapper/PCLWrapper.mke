@@ -5,10 +5,13 @@
 # Lots of problems in a third-party library that we aren't going to fix. 
 HAVE_PERMISSION_TO_COMPILE_AT_W3=1
 
+baseDir = $(_MakeFilePath)
+ScalableMeshDir = $(baseDir)../
+
 appName = PCLWrapper
 moduleName = PCLWrapper
 
-PolicyFile = $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/PCLWrapper/mki/AssertPCLWrapperPolicy.mki
+PolicyFile = $(baseDir)mki/AssertPCLWrapperPolicy.mki
 
 %include mdl.mki
 

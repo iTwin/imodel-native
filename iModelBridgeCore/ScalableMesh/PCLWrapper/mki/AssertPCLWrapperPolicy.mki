@@ -4,4 +4,4 @@
 #--------------------------------------------------------------------------------------*/
 
 SystemPolicyMki=$(SrcBsiCommon)sharedmki/InternalSystemPolicy.mki
-FoundationPolicyMki=$(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/PCLWrapper/mki/PCLWrapperPolicy.mki
+FoundationPolicyMki=$(ScalableMeshDir)PCLWrapper/mki/PCLWrapperPolicy.mki

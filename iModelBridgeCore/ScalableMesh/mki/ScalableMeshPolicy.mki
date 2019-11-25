@@ -12,13 +12,18 @@
 __ScalableTerrainModelPolicy_mki__=1
 
 OPTIMIZE_FOR_SPEED=1
-appName     = ScalableMesh
+
+%if !defined(appName)
+    %error appName must be defined
+%endif
+
 DLM_NAME    = $(appName)
 CCompPDBName = $(appName)
 # ------------------------------------
 # Source directories
 # ------------------------------------
-SrcScalableMesh     = $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/
+policyBaseDir               = $(_MakeFilePath)
+SrcScalableMesh             = $(policyBaseDir)../ScalableMesh/
 STMPrivateAPISrc            = $(SrcScalableMesh)PrivateAPI/
 SCMPublicAPISrc             = $(SrcScalableMesh)PublicAPI/
 
@@ -36,13 +41,13 @@ pluginsDir                  = $(stmDir)Plugins/
 # ------------------------------------
 # Output directories
 # ------------------------------------
-OutBuildSTM         = $(OutBuildDir)ScalableMesh/
+OutBuildSTM         = $(OutBuildDir)$(appName)/
 
 #o = !Must be defined by individual mke files!
 o = $(OutBuildSTM)$(appName)/
 
 %if !defined (BuildContext)
-    BuildContext=$(OutBuildContexts)ScalableMesh/
+    BuildContext=$(OutBuildContexts)$(appName)/
 %endif
 ContextSubpartsLibs = $(BuildContext)SubParts/Libs/
 
@@ -55,7 +60,6 @@ ContextSubpartsLibs = $(BuildContext)SubParts/Libs/
 
 
 PublicApiIncludes + -I$(STMPrivateApiSrc) -I${BuildContext}/PublicAPI/ -I${BuildContext}/VendorAPI/ -I${BuildContext}/VendorAPI/BeCurl/ -I${BuildContext}/VendorAPI/BeSQLite/
-# PublicApiIncludes + -I${BuildContext}/VendorAPI/cpprestsdk/ -I${BuildContext}/VendorAPI/wastorage/
 
 # dlmlink.mki common options.
 DLM_DEST                    = $(o)
@@ -63,11 +67,13 @@ DLM_SYMB_DEST               = $(o)
 DLM_EXPORT_DEST             = $(o)
 DLM_OBJECT_DEST             = $(o)
 DLM_NO_INITIALIZE_FUNCTION  = 1
+%if defined(VANCOUVER_BUILD) || defined(DGNDB06_BUILD)
 DLM_NO_DEF                  = 1
 DLM_NOMSBUILTINS            = 1
 DLM_NO_DLS                  = 1
+%endif
+
 DLM_NOENTRY                 = 1
-DLM_NO_IMPLIB               = 1
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 DLM_CONTEXT_LOCATION        = $(BuildContext)/Delivery/
 DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)/Delivery/

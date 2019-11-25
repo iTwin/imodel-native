@@ -157,6 +157,8 @@ template <class DATATYPE, class EXTENT> class SMSQLiteNodeDataStore : public ISM
         virtual void ModifyBlockDataCount(HPMBlockID blockID, int64_t countDelta, SMStoreDataType dataType) override;
 
         virtual bool GetClipDefinitionExtOps(IClipDefinitionExtOpsPtr& clipDefinitionExOpsPtr) override;            
+
+        virtual bool GetLinearFeaturesExtOps(ILinearFeaturesExtOpsPtr& linearFeaturesExtOpsPtr) override;
     };
 
 
@@ -200,4 +202,23 @@ class SMSQLiteClipDefinitionExtOps : public IClipDefinitionExtOps
         virtual void LoadClipWithParameters(ClipVectorPtr& clipData, uint64_t id, SMClipGeometryType& geom, SMNonDestructiveClipType& type, bool& isActive) override;
 
 };
+
+class SMSQLiteLinearFeaturesExtOps : public ILinearFeaturesExtOps
+    {
+    private:
+
+        SMSQLiteFilePtr            m_smSQLiteFile;
+
+
+    public:
+
+        SMSQLiteLinearFeaturesExtOps(SMSQLiteFilePtr& smSQLiteFile);
+
+        virtual ~SMSQLiteLinearFeaturesExtOps();
+
+        virtual uint64_t StoreFeature(uint32_t type, const bvector<DPoint3d>& featureData) override;
+
+        virtual void GetFeature(uint64_t id, uint32_t& type, bvector<DPoint3d>& featureData) override;
+
+    };
 

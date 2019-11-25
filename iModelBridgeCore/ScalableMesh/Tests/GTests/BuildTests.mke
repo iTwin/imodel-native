@@ -6,15 +6,28 @@
 
 TestDir = ScalableMesh
 baseDir = $(_MakeFilePath)
+STMPrivateApiSrc = $(baseDir)../../PrivateAPI
+tilePublisherDir=$(baseDir)../../TilePublisher
+
+always:
+   ~linkfile "$(BuildContext)PrivateAPI/TilePublisher/TilePublisher.h=$(tilePublisherDir)/TilePublisher.h"
+   ~linkfile "$(BuildContext)PrivateAPI/TilePublisher/Constants.h=$(tilePublisherDir)/Constants.h"
+   ~linkfile "$(BuildContext)PrivateAPI/TilePublisher/MeshTile.h=$(tilePublisherDir)/MeshTile.h"
 
 #disable warnings on clang
 ClangCppCompOpts + -w
+
+%if defined(IMODEL02)
+CCompOpts + -DIMODEL02
+ClangCppCompOpts + -w -DIMODEL02
+%endif
 
 # Compile and Link the unit tests
 BEGTEST_NAME  = $(TestDir)
 BEGTEST_INPUT = $(baseDir)
 BEGTEST_IGNORE= $(baseDir)ignore_list.txt
 BEGTEST_OUTPUT=$(OutputRootDir)build/ScalableMesh/UnitTests/
+PublicAPIIncludes + -I$(STMPrivateApiSrc) -I$(BuildContext)PrivateAPI
 #BEGTEST_ADDITIONAL_HFILES = 
 o = $(BEGTEST_OUTPUT)/
 

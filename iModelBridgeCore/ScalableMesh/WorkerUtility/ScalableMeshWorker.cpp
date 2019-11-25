@@ -307,7 +307,7 @@ int ScalableMeshWorker::ParseCommandLine(int argc, WCharP argv[])
 void ScalableMeshWorker::Start()
     {     
 #ifdef TRACE_ON	
-    BeFileNameStatus fileStatus = BeFileName::EmptyDirectory(L"D:\\MyDoc\\RMA - July\\CloudWorker\\Log\\");
+    BeFileNameStatus fileStatus = BeFileName::EmptyDirectory(L"C:\\traceLogs\\");
     assert(fileStatus == BeFileNameStatus::Success);
 #endif	    
 

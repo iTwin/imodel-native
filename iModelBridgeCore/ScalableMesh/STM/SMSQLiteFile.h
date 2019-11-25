@@ -188,9 +188,11 @@ public:
 
     virtual void GetGraph(int64_t nodeID, bvector<uint8_t>& graph, size_t& uncompressedSize) { assert(false); }
     virtual void GetFeature(int64_t featureID, bvector<uint8_t>& featureData, size_t& uncompressedSize) { assert(false); }
+    virtual void GetFeatureDefinition(int32_t featureID, uint32_t& type, const bvector<uint8_t>& featureData, size_t& uncompressedSize) { assert(false); }
 
     virtual void StoreGraph(int64_t& nodeID, const bvector<uint8_t>& graph, size_t uncompressedSize) { assert(false); }
     virtual void StoreFeature(int64_t& featureID, const bvector<uint8_t>& featureData, size_t uncompressedSize) { assert(false); }
+    virtual void StoreFeatureDefinition(int64_t& featureID, uint32_t type, const bvector<uint8_t>& featureData, size_t uncompressedSize) { assert(false); }
 
     virtual size_t GetNumberOfFeaturePoints(int64_t featureID) { assert(false); return 0; }
 

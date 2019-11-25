@@ -19,7 +19,7 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 * @description
 * @bsiclass                                               Elenie.Godzaridis   01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BENTLEY_SM_EXPORT struct ScalableMeshProgress : public IScalableMeshProgress
+struct ScalableMeshProgress : public IScalableMeshProgress
     {
 
     private:

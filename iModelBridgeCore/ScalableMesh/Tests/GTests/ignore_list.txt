@@ -1,4 +1,5 @@
 #----------------------------------------------------------------------------------------
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
-*ScalableMeshTestWithParams.LoadMeshWithTexture*
+#*ScalableMeshTestWithParams.LoadMeshWithTexture*
+#*ScalableMeshTest.CanOpen*

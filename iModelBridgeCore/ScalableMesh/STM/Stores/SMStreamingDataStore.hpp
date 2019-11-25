@@ -2501,7 +2501,7 @@ template <class DATATYPE, class EXTENT> StreamingDataBlock& SMStreamingNodeDataS
 #ifdef TRACE_ON
             double elapsed = ((double)clock() - startT) / CLOCKS_PER_SEC;
 
-            TRACEPOINT(THREAD_ID(), EventType::CLOUDDATASOURCE_LOAD, blockID.m_integerID, (uint64_t)-1, -1, -1, elapsed*1000.0, 0)
+            TRACEPOINT(EventType::CLOUDDATASOURCE_LOAD, blockID.m_integerID, (uint64_t)-1, -1, -1, elapsed*1000.0, 0)
 #endif
             }
         }

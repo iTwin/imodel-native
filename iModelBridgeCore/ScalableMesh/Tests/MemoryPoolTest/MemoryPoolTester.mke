@@ -23,7 +23,7 @@ MultiCompileDepends=$(_MakeFileSpec)
 
 
 
-SrcDir = $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/Tests/MemoryPoolTest/
+SrcDir = $(SrcRoot)ScalableMesh/Tests/MemoryPoolTest/
 
 CCompOpts + -DUNICODE
 

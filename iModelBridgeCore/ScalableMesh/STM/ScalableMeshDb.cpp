@@ -173,7 +173,11 @@ DbResult ScalableMeshDb::OpenShared(BENTLEY_NAMESPACE_NAME::Utf8CP path, bool re
         assert(result == BE_SQLITE_OK);
         }
 
+#ifdef IMODEL02
     this->SetAllowImplicitTransactions(true);
+#else
+    this->SetAllowImplictTransactions(true);
+#endif
     return result;
 }
 
@@ -198,7 +202,11 @@ bool ScalableMeshDb::ReOpenShared(bool readonly, bool allowBusyRetry)
     if (result != BE_SQLITE_OK)
         return false;
 
+#ifdef IMODEL02
     this->SetAllowImplicitTransactions(true);
+#else
+    this->SetAllowImplictTransactions(true);
+#endif
     return true;
 }
 

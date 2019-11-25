@@ -69,7 +69,14 @@ bool                                OutputType(SourceDataSQLite&                
             }
         }
 
-    return false;
+    if (type.IsComplete())
+        {
+        return false;
+        }
+    else
+        {
+        return true;
+        }
     }
 
 

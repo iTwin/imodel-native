@@ -26,7 +26,7 @@
 #include <ScalableMesh/IScalableMeshPolicy.h>
 
 #include <STMInternal/GeoCoords/WKTUtils.h>
-
+#include <DgnPlatform/Undo.h>
 
 #define PointCloudMinorId_Handler 1
 
@@ -42,6 +42,23 @@ USING_NAMESPACE_BENTLEY_POINTCLOUD
 
 namespace { //BEGIN UNAMED NAMESPACE
 
+class NonUndoableTxn : DgnCacheTxn 
+    {
+public:
+    NonUndoableTxn() 
+        {
+        m_oldTxn = &ITxnManager::GetManager().SetCurrentTxn(*this);
+        }
+
+    ~NonUndoableTxn() 
+        {
+        ITxnManager::GetManager().SetCurrentTxn(*m_oldTxn);
+        }
+
+    private:
+        ITxn*           m_oldTxn;
+        bool            m_oldUndoRedoState;
+    };
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -54,15 +71,14 @@ private:
     friend class                    PODFileSourceCreator;
     friend class                    PODElementSourceCreator;
 
-    auto_ptr<ElementHandle>         m_elementHandleP;
+    auto_ptr<EditElementHandle>         m_elementHandleP;
     const PointCloudHandler&        m_handler;
 
     bool                            m_isSingleElementOwner;
 
     IPointCloudFileQueryPtr         m_fileQueryPtr;
     bool                            m_hasInternalClassification;
-
-    bool                            m_WantClassification;
+    bool                            m_needToDetach;
     
 
     /*---------------------------------------------------------------------------------**//**
@@ -80,6 +96,30 @@ private:
             m_fileQueryPtr(fileQueryPtr),
             m_hasInternalClassification(m_fileQueryPtr->HasClassificationChannel())
         {
+
+        // If the element was not attached to a model, attach it.  If the ElementRef is NULL => the element is not attach to a model
+        // We need to add the PointCloud to the model to be able to get the classif
+        if (m_elementHandleP->GetElementRef() == NULL) 
+            {
+            std::unique_ptr<NonUndoableTxn> __nonUndoableTxn(new NonUndoableTxn);
+            m_elementHandleP->AddToModel();
+            m_needToDetach = true;
+            }
+        else
+            m_needToDetach = false;
+
+        IPointCloudDataQueryPtr dataQueryPtr = IPointCloudDataQuery::CreateSelectedPointsQuery(*elementHandleP);
+
+        UInt32 channelFlags = (UInt32) PointCloudChannelId::Xyz;
+
+        // find out which channels can a query fill
+        dataQueryPtr->GetAvailableChannelFlags(channelFlags);
+
+        if (channelFlags & (UInt32) PointCloudChannelId::Classification)
+            m_hasInternalClassification = true;
+        else
+            m_hasInternalClassification = false;
+
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -109,7 +149,17 @@ private:
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual void                    _Close                                     () override
         {
-        m_elementHandleP.reset(); // Dispose of element
+        //m_elementHandleP.reset(); // Dispose of element
+
+        if (m_needToDetach) {
+            std::unique_ptr<NonUndoableTxn> __nonUndoableTxn(new NonUndoableTxn);
+            m_elementHandleP->DeleteFromModel();
+            m_elementHandleP.reset(); // Dispose of element
+        }
+
+        // We need to update the PointCloud dialog to make sure the PointCloud that we delete from the model disapear
+        //MdlDesc*    mdlDescP = mdlSystem_findMdlDesc(L"POINTCLOUD");
+        //mdlDialog_itemsSynch(mdlDialog_find(DIALOGID_PointClouds, mdlDescP));
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -277,6 +327,8 @@ public:
 
     bool                            IsFromFile                             () const { return IsTransient(); }
 
+    bool                            NeedToDetach                           () const { return m_needToDetach; }
+
     /*---------------------------------------------------------------------------------**//**
     * @description
     * NOTE: Resolution of TR #335455 required this kind of knowledge in order to avoid
@@ -361,14 +413,32 @@ class PODFileSourceCreator : public LocalFileSourceCreatorBase
     virtual SourceBase*             _Create                                (const LocalFileSourceRef&   sourceRef,
                                                                             Log&                        log) const override
         {      
-        auto_ptr<EditElementHandle> editElementHandleP(new EditElementHandle);
+        DgnModelRefP dgnModelRefP = ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef();
+        assert(dgnModelRefP != 0);
+
+        //check if the pointcloud is already attached first
+        for (PersistentElementRefP const& elemRef : dgnModelRefP->GetDgnFileP()->GetAllElementsCollection())
+            {
+            auto_ptr<EditElementHandle> eh(new EditElementHandle(elemRef));
+            if (!eh->IsValid())
+                continue;
+            if (ElementHandlerManager::GetHandlerId(*eh) == PointCloudHandler::GetElemHandlerId())
+                {
+                IPointCloudFileQueryPtr fileQueryPtr(IPointCloudFileQuery::CreateFileQuery(*eh));
+                if (NULL != fileQueryPtr.get())
+                    {
+                    WString fileName(fileQueryPtr->GetFileName());
+                    if (fileName.CompareTo(sourceRef.GetPath()) == 0)
+                        return PODSource::CreateFrom(eh);
+                    }
+                }
+            }
+
         // Create the point cloud element
-
-        assert(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef() != 0);        
-
-        DgnDocumentMonikerPtr monikerPtr = PointCloudDisplay::CreateDocumentMonikerFromFileName(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef(), sourceRef.GetPath().c_str());
-        PointCloudPropertiesPtr propsP = PointCloudProperties::Create (*monikerPtr, *ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef());
-        if (SUCCESS != PointCloudDisplay::CreateElement (*editElementHandleP, *ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef(), *propsP))
+        auto_ptr<EditElementHandle> editElementHandleP(new EditElementHandle);
+        DgnDocumentMonikerPtr monikerPtr = PointCloudDisplay::CreateDocumentMonikerFromFileName(dgnModelRefP, sourceRef.GetPath().c_str());
+        PointCloudPropertiesPtr propsP = PointCloudProperties::Create (*monikerPtr, *dgnModelRefP);
+        if (SUCCESS != PointCloudDisplay::CreateElement (*editElementHandleP, *dgnModelRefP, *propsP))
             throw FileIOException();
 
         return PODSource::CreateFrom(editElementHandleP);
@@ -552,6 +622,7 @@ private:
     bool                            m_isClip;
     bool                            m_isGroundDetection;
     bvector<uint32_t>               m_classesToImport;
+    bool                            m_needToDetach;
     
     /*---------------------------------------------------------------------------------**//**
     * @description
@@ -562,16 +633,16 @@ private:
                                                                     ElementHandle& elHandle,
                                                                     bool isClip,
                                                                     bool isGroundDetection,
-                                                                    const bvector<uint32_t>& classesToImport)
+                                                                    const bvector<uint32_t>& classesToImport,
+                                                                    bool needToDetach = true)
         :   m_dataQueryPtr(dataQueryPtr),
             m_elHandle(elHandle, true),
             m_reachedEof(false), 
             m_isClip(isClip),
             m_isGroundDetection(isGroundDetection),
-            m_classesToImport(classesToImport)
-
+            m_classesToImport(classesToImport),
+            m_needToDetach(needToDetach)
         {
-        m_elHandle.AddToModel();
 
         if (m_isGroundDetection)
         {
@@ -706,7 +777,8 @@ private:
 
     ~PODPointExtractorWithInternalClassif()
         {
-            m_elHandle.DeleteFromModel();
+            if (m_needToDetach)
+                m_elHandle.DeleteFromModel();
         }
 
     // We are unable to get precisely the read position for pod file
@@ -767,7 +839,7 @@ class PODPointExtractorCreator : public InputExtractorCreatorMixinBase<PODSource
         {
         // NEEDS_WORK_SM : internal classification => classification ?
         if (sourceBase.HasInternalClassification() || isGroundDetection)
-            return new PODPointExtractorWithInternalClassif(dataQueryPtr, sourceBase.GetElementHandle(), isClipped, isGroundDetection, classesToImport);
+            return new PODPointExtractorWithInternalClassif(dataQueryPtr, sourceBase.GetElementHandle(), isClipped, isGroundDetection, classesToImport, sourceBase.NeedToDetach());
 
         return new PODPointExtractor(dataQueryPtr, isClipped);
         }

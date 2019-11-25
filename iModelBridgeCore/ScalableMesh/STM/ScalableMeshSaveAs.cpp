@@ -95,6 +95,11 @@ StatusInt IScalableMeshSaveAs::DoSaveAs(const IScalableMeshPtr& source, const WS
     scMeshDestination->SetIsTerrain(source->IsTerrain());
     scMeshDestination->SetIsSingleFile(!source->IsCesium3DTiles());
     scMeshDestination->SetTextured(textureInfo->GetTextureType());
+    
+    //copy sources
+    IDTMSourceCollection sourceCollection;
+    source->LoadSources(sourceCollection);
+    scMeshDestination->SaveSources(sourceCollection);
 
     { // Scope the publishing part for proper cleanup of parameters when finished
         SM3SMPublishParamsPtr smParams = new SM3SMPublishParams();

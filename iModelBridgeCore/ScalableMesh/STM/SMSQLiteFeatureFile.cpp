@@ -14,12 +14,12 @@
 #define READONLY Db::OpenMode::Readonly
 #define READWRITE Db::OpenMode::ReadWrite
 
-const BESQL_VERSION_STRUCT SMSQLiteFeatureFile::CURRENT_VERSION = BESQL_VERSION_STRUCT(1, 1, 0, 1);
+const BESQL_VERSION_STRUCT SMSQLiteFeatureFile::CURRENT_VERSION = BESQL_VERSION_STRUCT(1, 1, 0, 2);
 
-const BESQL_VERSION_STRUCT s_listOfReleasedSchemasFeature[2] = { BESQL_VERSION_STRUCT(1, 1, 0, 0), BESQL_VERSION_STRUCT(1, 1, 0, 1) };
-const size_t s_numberOfReleasedSchemasFeature = 2;
+const BESQL_VERSION_STRUCT s_listOfReleasedSchemasFeature[3] = { BESQL_VERSION_STRUCT(1, 1, 0, 0), BESQL_VERSION_STRUCT(1, 1, 0, 1), BESQL_VERSION_STRUCT(1, 1, 0, 2) };
+const size_t s_numberOfReleasedSchemasFeature = 3;
 double s_expectedTimeUpdateFeature[1] = { 1.2*1e-5 };
-std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctionsFeature[1] = {
+std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctionsFeature[2] = {
     [](BeSQLite::Db* database)
         {
         database->DropTable("SMNodeHeader");
@@ -31,6 +31,16 @@ std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctionsFeature[1] = {
         database->DropTable("SMSkirts");
         database->DropTable("SMClipDefinitions");
 
+        },
+    [] (BeSQLite::Db* database)
+        {
+        DbResult result;
+        result = database->CreateTable("SMFeatureList", 
+                                       "FeatureId INTEGER PRIMARY KEY,"
+                                       "FeatureData BLOB,"
+                                       "Size INTEGER");
+
+        assert(result == BE_SQLITE_OK);
         }
     };
 size_t SMSQLiteFeatureFile::GetNumberOfReleasedSchemas() { return s_numberOfReleasedSchemasFeature; }
@@ -50,7 +60,15 @@ DbResult SMSQLiteFeatureFile::CreateTables()
 
     result = m_database->CreateTable("SMFeatures", "FeatureId INTEGER PRIMARY KEY,"
                                      "FeatureData BLOB,"
-                                     "Size INTEGER");
+                                     "Size UNSIGNED INT");
+
+    assert(result == BE_SQLITE_OK);
+
+    result = m_database->CreateTable("SMFeaturesList",
+                                     "FeatureId INTEGER PRIMARY KEY,"
+                                     "Type INTEGER,"
+                                     "FeatureData BLOB,"
+                                     "Size UNSIGNED INT");
 
     assert(result == BE_SQLITE_OK);
     return result;
@@ -92,7 +110,13 @@ void SMSQLiteFeatureFile::StoreFeature(int64_t& featureID, const bvector<uint8_t
     {
     std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
-    if (featureID == SQLiteNodeHeader::NO_NODEID)
+    CachedStatementPtr stmt3;
+    m_database->GetCachedStatement(stmt3, "SELECT COUNT(FeatureId) FROM SMFeatures WHERE FeatureId=?");
+    stmt3->BindInt64(1, featureID);
+    stmt3->Step();
+    size_t nRows = stmt3->GetValueInt64(0);
+
+    if (featureID == SQLiteNodeHeader::NO_NODEID || nRows == 0)
         {
         Savepoint insertTransaction(*m_database, "insert");
         m_database->GetCachedStatement(stmt, "INSERT INTO SMFeatures (FeatureData,Size) VALUES(?,?)");
@@ -116,6 +140,45 @@ void SMSQLiteFeatureFile::StoreFeature(int64_t& featureID, const bvector<uint8_t
         assert(status == BE_SQLITE_DONE);
         stmt->ClearBindings();
         }
+    }
+
+void SMSQLiteFeatureFile::GetFeatureDefinition(int64_t featureID, uint32_t& type, bvector<uint8_t>& featureData, size_t& uncompressedSize)
+    {
+    std::lock_guard<std::mutex> lock(dbLock);
+    CachedStatementPtr stmt;
+    m_database->GetCachedStatement(stmt, "SELECT FeatureData, length(FeatureData), Size FROM SMFeaturesList WHERE FeatureId=?");
+    stmt->BindInt64(1, featureID);
+    DbResult status = stmt->Step();
+
+    if(status == BE_SQLITE_DONE)
+        {
+        uncompressedSize = 0;
+        return;
+        }
+    featureData.resize(stmt->GetValueInt64(1));
+    uncompressedSize = stmt->GetValueInt64(2);
+    memcpy(&featureData[0], stmt->GetValueBlob(0), featureData.size());
+    }
+
+void SMSQLiteFeatureFile::StoreFeatureDefinition(int64_t& featureID, uint32_t type, const bvector<uint8_t>& featureData, size_t uncompressedSize)
+    {
+    std::lock_guard<std::mutex> lock(dbLock);
+    CachedStatementPtr stmt;
+
+    Savepoint insertTransaction(*m_database, "insert");
+    m_database->GetCachedStatement(stmt, "INSERT INTO SMFeaturesList (Type,FeatureData,Size) VALUES(?,?,?)");
+    stmt->BindInt(2, (int)type);
+    stmt->BindBlob(3, &featureData[0], (int)featureData.size(), MAKE_COPY_NO);
+    stmt->BindInt64(4, uncompressedSize);
+    DbResult status = stmt->Step();
+    assert(status == BE_SQLITE_DONE);
+    stmt->ClearBindings();
+
+    CachedStatementPtr stmt2;
+    m_database->GetCachedStatement(stmt2, "SELECT last_insert_rowid()");
+    //m_database->GetCachedStatement(stmt2, "SELECT COUNT(FeatureId) FROM SMFeaturesList");
+    status = stmt2->Step();
+    featureID = stmt2->GetValueInt64(0);
     }
 
 void SMSQLiteFeatureFile::GetGraph(int64_t nodeID, bvector<uint8_t>& graph, size_t& uncompressedSize)

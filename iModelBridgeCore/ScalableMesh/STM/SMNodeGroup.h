@@ -823,8 +823,8 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
             m_ParentGroup(parentGroup)
             {
             // reserve space for total number of nodes for this group
-            m_groupHeader->reserve(s_max_number_nodes_in_group);
-            m_rawHeaders.reserve(3000 * s_max_number_nodes_in_group);
+            //m_groupHeader->reserve(s_max_number_nodes_in_group);
+            //m_rawHeaders.reserve(3000 * s_max_number_nodes_in_group);
 
             // A group contains at least its ID and the number of nodes within it.
             m_totalSize = 2 * sizeof(size_t);

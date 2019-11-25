@@ -9,9 +9,18 @@ PolicyFile=$(SrcBsiCommon)sharedmki/AssertCommonCompileLinkPolicy.mki
 
 o = $(OutputRootDir)build/ScalableMesh/ScalableMeshUnitTests/
 
+SrcScalableMesh     = $(SrcRoot)ScalableMesh/
+tilePublisherDir    = $(SrcScalableMesh)TilePublisher/
+
 always:
     !~@mkdir $(o)
 
+always:
+   ~linkfile "$(BuildContext)VendorAPI/TilePublisher/TilePublisher.h=$(tilePublisherDir)TilePublisher.h"
+   ~linkfile "$(BuildContext)VendorAPI/TilePublisher/Constants.h=$(tilePublisherDir)Constants.h"
+   ~linkfile "$(BuildContext)VendorAPI/TilePublisher/MeshTile.h=$(tilePublisherDir)MeshTile.h"
+
+    
 cDefs + -DUSE_GTEST
 cDefs + -DVANCOUVER_API
 #cDefs + -DOVERRIDE_TEST_DATA_DIR

@@ -1838,7 +1838,6 @@ bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, 
                 ClipVectorPtr newClip = ClipVector::CreateFromPrimitive(primitive);
 #endif
                 bool clipIsMask = isMask.empty() ? primitive->IsMask() : isMask[&primitive - &clip->front()];
-                newClip->back()->SetIsMask(clipIsMask);
                 clipPolys.push_back(newClip);
                 polyfaceIndices.push_back(i);
 
@@ -2603,8 +2602,16 @@ MeshClipper::RegionResult MeshClipper::GetClippedMesh(PolyfaceHeaderPtr& mesh)
         if(orderedClipList[0]->isClipMask())
             mesh = computedRegions[0].meshes.front();
         else
-            mesh = computedRegions[1].meshes.front();;
+            mesh = computedRegions[1].meshes.front();
+
+        return MeshClipper::RegionResult::Success;
         }
+    
+    if (orderedClipList[0]->isClipMask())
+        return MeshClipper::RegionResult::NoIntersectionWithClips;
+    else
+        return MeshClipper::RegionResult::Success;
+
     //for(auto& region : computedRegions)
     //    {
     //    if(region.id == 0)
@@ -2627,7 +2634,6 @@ MeshClipper::RegionResult MeshClipper::GetClippedMesh(PolyfaceHeaderPtr& mesh)
     //    if(selectionError != MeshClipper::RegionResult::Success)
     //        return selectionError;
     //    }
-    return MeshClipper::RegionResult::Success;
     }
 
 bool MeshClipper::WasClipped()

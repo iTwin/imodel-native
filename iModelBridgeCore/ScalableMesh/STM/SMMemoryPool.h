@@ -16,6 +16,7 @@
 #include <ImagePP/h/HIterators.h>
 #include "ComputeMemoryUseTraits.h"
 #include <iostream>
+#include <queue>
 
 #include "Stores/ISMDataStore.h"
 #include "Stores/SMStoreUtils.h"
@@ -230,6 +231,8 @@ class SMMemoryPoolItemBase : public RefCountedBase
             return m_dataType == SMStoreDataType::TextureCompressed;
             }
         SMMemoryPoolType m_poolId;
+
+        virtual uint64_t GetSizeAllocated() { return GetSize(); }
     };
 
 
@@ -462,7 +465,13 @@ template <typename DataType> class SMMemoryPoolBlobItem : public SMMemoryPoolIte
             {
             if (m_data != nullptr && this->m_size > 0)
                 delete[] (DataType*)this->m_data;
-            if (GetPoolItemId() != SMMemoryPool::s_UndefinedPoolItemId) NotifySizeChangePoolItem(sizeInBytes - this->m_size, sizeInBytes - this->m_size);
+            if (GetPoolItemId() != SMMemoryPool::s_UndefinedPoolItemId) 
+                {
+                TRACEPOINT(EventType::POOL_CHANGESIZEITEM, this->GetNodeId(), (uint64_t)-1, -1,
+                    this->GetPoolItemId(), (uint64_t)data, 990)
+
+                NotifySizeChangePoolItem((int64_t)sizeInBytes - (int64_t)this->m_size, (int64_t)sizeInBytes - (int64_t)this->m_size);
+                }
             this->m_size = sizeInBytes;
             if (this->m_size > 0)
                 {
@@ -517,7 +526,13 @@ template <typename DataType> class SMMemoryPoolGenericBlobItem : public SMMemory
             if (m_data != nullptr && this->m_size > 0)
                 delete (DataType*)this->m_data;
             this->m_data = (Byte*)data;
-            if (GetPoolItemId() != SMMemoryPool::s_UndefinedPoolItemId) NotifySizeChangePoolItem(GetSizeInMemory(data) - this->m_size, GetSizeInMemory(data) - this->m_size);
+            if (GetPoolItemId() != SMMemoryPool::s_UndefinedPoolItemId)
+                {
+                TRACEPOINT(EventType::POOL_CHANGESIZEITEM, this->GetNodeId(), (uint64_t)-1, -1,
+                    this->GetPoolItemId(), (uint64_t)data, 991)
+
+                NotifySizeChangePoolItem((int64_t)GetSizeInMemory(data) - (int64_t)this->m_size, (int64_t)GetSizeInMemory(data) - (int64_t)this->m_size);
+                }
             this->m_size = GetSizeInMemory(data);
             }
 
@@ -526,7 +541,13 @@ template <typename DataType> class SMMemoryPoolGenericBlobItem : public SMMemory
             if (m_data != nullptr && this->m_size > 0)
                 delete (DataType*)this->m_data;
             this->m_data = (Byte*)data;
-            if (GetPoolItemId() != SMMemoryPool::s_UndefinedPoolItemId) NotifySizeChangePoolItem(sizeInBytes - this->m_size, sizeInBytes - this->m_size);
+            if (GetPoolItemId() != SMMemoryPool::s_UndefinedPoolItemId) 
+            {
+                TRACEPOINT(EventType::POOL_CHANGESIZEITEM, this->GetNodeId(), (uint64_t)-1, -1,
+                    this->GetPoolItemId(), (uint64_t)data, 992)
+
+                NotifySizeChangePoolItem((int64_t)sizeInBytes - (int64_t)this->m_size, (int64_t)sizeInBytes - (int64_t)this->m_size);
+            }
             this->m_size = sizeInBytes;
             }
     };
@@ -568,7 +589,7 @@ template <typename DataType> class SMStoredMemoryPoolGenericBlobItem : public SM
         SMStoredMemoryPoolGenericBlobItem(uint64_t nodeId, IHPMDataStore<DataType>* store, const DataType* data, uint64_t dataSize, SMStoreDataType dataType, uint64_t smId)
             : SMMemoryPoolGenericBlobItem<DataType>((DataType*)new Byte[dataSize],dataSize, nodeId, dataType, smId)
             {
-            m_store = store;
+            this->m_store = store;
 
             if (this->m_size > 0)
                 {
@@ -740,7 +761,7 @@ typedef RandomAccessIteratorWithAutoReverseConst<iteratorBase<T>, iteratorBase<t
             return ((m_vector == otherItr.m_vector) && (m_index == otherItr.m_index));
 
             }
-        bool                LessThan       (const typename super_class::iterator_t&) const
+        bool                LessThan       (const typename super_class::iterator_t& otherItr) const
             {
             HASSERT (m_vector == otherItr.m_vector);
 
@@ -814,7 +835,14 @@ typedef RandomAccessIteratorWithAutoReverseConst<iteratorBase<T>, iteratorBase<t
             Byte* newMemory = (Byte*)new DataType[newCount];
             memcpy(newMemory, m_data, this->m_nbItems*sizeof(DataType));
             delete [] (DataType*)this->m_data;
-            this->m_data = newMemory;                
+            this->m_data = newMemory;       
+
+            // Advice the pool for the memory, the count will by advice in the push methods
+            NotifySizeChangePoolItem(newSize - m_allocatedSize, 0);
+
+            TRACEPOINT(EventType::POOL_CHANGESIZEITEM, this->GetNodeId(), (uint64_t)-1, -1,
+                this->GetPoolItemId(), (uint64_t)newMemory, 993)
+
             m_allocatedSize = newSize;
             }
 
@@ -825,6 +853,8 @@ typedef RandomAccessIteratorWithAutoReverseConst<iteratorBase<T>, iteratorBase<t
         {
         return m_allocatedSize / sizeof(DataType);               
         }
+
+    virtual uint64_t GetSizeAllocated() { return m_allocatedSize; }
 
     virtual bool push_back(const DataType& newObject)
         {        
@@ -838,10 +868,10 @@ typedef RandomAccessIteratorWithAutoReverseConst<iteratorBase<T>, iteratorBase<t
         this->m_size = this->m_nbItems * sizeof(DataType);
         this->m_dirty = true;        
 
-        NotifySizeChangePoolItem(sizeof(DataType), 1);
+        // The reserve method did the memory part, for that reason we pass 0 here.
+        NotifySizeChangePoolItem(0, 1);
 
         BeAssert(this->m_size <= m_allocatedSize);
-
         return true;
         }
     
@@ -860,10 +890,9 @@ typedef RandomAccessIteratorWithAutoReverseConst<iteratorBase<T>, iteratorBase<t
         this->m_size = this->m_nbItems * sizeof(DataType);
         this->m_dirty = true;
 
-        NotifySizeChangePoolItem(count * sizeof(DataType), count);
-
-        assert(this->m_size <= m_allocatedSize);
-       
+		// The reserve method did the memory part, for that reason we pass 0 here.
+        NotifySizeChangePoolItem(0, count);
+        BeAssert(this->m_size <= m_allocatedSize);
         return true;
         }
 
@@ -942,28 +971,31 @@ typedef RandomAccessIteratorWithAutoReverseConst<iteratorBase<T>, iteratorBase<t
         this->m_size = this->m_nbItems * sizeof(DataType);
         this->m_dirty = true;
 
-        NotifySizeChangePoolItem(-1 * indexes.size() * sizeof(DataType), -1 * indexes.size());
+        // No impact on the memory for the moment, see //NEEDS_WORK_POOL above.
+        NotifySizeChangePoolItem(0, -1 * (int64_t)indexes.size());
         }
 
      virtual void erase (size_t index)
-        {
+        { 
         memcpy(&m_data[index], &m_data[index + 1], this->m_nbItems - index - 1 * sizeof(DataType));
         this->m_nbItems -= 1;      
         this->m_size = this->m_nbItems * sizeof(DataType);
         this->m_dirty = true;  
 
-        NotifySizeChangePoolItem(-1 * (int64_t)sizeof(DataType), -1);
+		// No memory size modification
+        NotifySizeChangePoolItem(0, -1);
         }
 
     virtual void clearFrom(size_t indexToClearFrom)
         {        
-        assert(indexToClearFrom < this->m_nbItems);
+        BeAssert(indexToClearFrom < this->m_nbItems);
 
         if (indexToClearFrom == 0)
             clear();
         else
-            {
-            NotifySizeChangePoolItem((indexToClearFrom - this->m_nbItems) * sizeof(DataType), (indexToClearFrom - this->m_nbItems));
+            { 
+			// No memory size modification
+            NotifySizeChangePoolItem(0, -1 * ((int64_t)indexToClearFrom - (int64_t)this->m_nbItems));
             this->m_nbItems = indexToClearFrom; 
             this->m_size = this->m_nbItems * sizeof(DataType);
             this->m_dirty = true;
@@ -974,7 +1006,10 @@ typedef RandomAccessIteratorWithAutoReverseConst<iteratorBase<T>, iteratorBase<t
         {   
         if (m_data != 0)
             {
-            NotifySizeChangePoolItem(-(int64_t)m_nbItems * sizeof(DataType), -(int64_t)m_nbItems);        
+            TRACEPOINT(EventType::POOL_CHANGESIZEITEM, this->GetNodeId(), (uint64_t)-1, -1,
+                this->GetPoolItemId(), (uint64_t)m_data, 994)
+
+            NotifySizeChangePoolItem(-1 * static_cast<int64_t>(m_allocatedSize), -1 * static_cast<int64_t>(m_nbItems));
             delete [] m_data;                        
             this->m_nbItems = 0;
             this->m_data = 0;  
@@ -1032,7 +1067,7 @@ template <typename DataType> class SMMemoryPoolGenericVectorItem : public SMMemo
 
     virtual bool reserve(size_t newCount)
         {
-        assert(newCount > 0);
+        BeAssert(newCount > 0);
 
         size_t newSize = newCount * sizeof(DataType);
 
@@ -1046,6 +1081,11 @@ template <typename DataType> class SMMemoryPoolGenericVectorItem : public SMMemo
                 }
             delete[](DataType*)this->m_data;
             this->m_data = newMemory;
+
+            TRACEPOINT(EventType::POOL_CHANGESIZEITEM, this->GetNodeId(), (uint64_t)-1, -1,
+                this->GetPoolItemId(), (uint64_t)newMemory, 995)
+            // The count parameter will be modified by the push method.
+            this->NotifySizeChangePoolItem(newSize - this->m_allocatedSize, 0);
             this->m_allocatedSize = newSize;
             }
 
@@ -1056,6 +1096,9 @@ template <typename DataType> class SMMemoryPoolGenericVectorItem : public SMMemo
         {
         if (this->m_data != 0)
             {
+            TRACEPOINT(EventType::POOL_CHANGESIZEITEM, this->GetNodeId(), (uint64_t)-1, -1,
+                this->GetPoolItemId(), (uint64_t)m_data, 996)
+            this->NotifySizeChangePoolItem(-1 * static_cast<int64_t>(this->m_allocatedSize), -1 * static_cast<int64_t>(this->m_nbItems));
             delete[] (DataType*)this->m_data;
             this->m_nbItems = 0;
             this->m_data = 0;
@@ -1067,7 +1110,7 @@ template <typename DataType> class SMMemoryPoolGenericVectorItem : public SMMemo
 
     virtual void clearFrom(size_t indexToClearFrom)
         {
-        assert(indexToClearFrom < this->m_nbItems);
+        BeAssert(indexToClearFrom < this->m_nbItems);
 
         if (indexToClearFrom == 0)
             clear();
@@ -1076,7 +1119,9 @@ template <typename DataType> class SMMemoryPoolGenericVectorItem : public SMMemo
             size_t clearedDataSize = 0;
             for (size_t i = indexToClearFrom; i < this->m_nbItems; ++i)
                 clearedDataSize += GetSizeInMemory((DataType*) this->m_data + i);
-            this->NotifySizeChangePoolItem(-(int64_t)clearedDataSize, -(int64_t)clearedDataSize);
+				
+			// No memory size modification
+            this->NotifySizeChangePoolItem(0, -1 * ((int64_t)indexToClearFrom - (int64_t)this->m_nbItems));
             this->m_nbItems = indexToClearFrom;
             this->m_dirty = true;
             }
@@ -1084,13 +1129,13 @@ template <typename DataType> class SMMemoryPoolGenericVectorItem : public SMMemo
 
     virtual void erase(const bvector<size_t>& indexes)
         {
-        assert(indexes.size() <= this->m_nbItems && indexes.size() > 0);
+        BeAssert(indexes.size() <= this->m_nbItems && indexes.size() > 0);
 
         bvector<bool> toEraseItems(this->m_nbItems, false);
 
         for (auto index : indexes)
             {
-            assert(index < toEraseItems.size());
+            BeAssert(index < toEraseItems.size());
             toEraseItems[index] = true;
             }
 
@@ -1118,18 +1163,13 @@ template <typename DataType> class SMMemoryPoolGenericVectorItem : public SMMemo
         this->m_size -= erasedSize;
         this->m_dirty = true;
 
-        this->NotifySizeChangePoolItem(-1 * erasedSize, -1 * erasedSize);
+        this->NotifySizeChangePoolItem(0, -1 * static_cast<int64_t>(indexes.size()));
         }
 
     virtual void Replace(size_t index, const DataType& val)
         {
-        size_t oldSize = GetSizeInMemory((DataType*) this->m_data + index);
-        size_t newSize = GetSizeInMemory((DataType*)&val);
         *((DataType*) this->m_data + index) = val;
-        this->m_size += newSize - oldSize;
         this->m_dirty = true;
-
-        this->NotifySizeChangePoolItem(newSize - oldSize, newSize - oldSize);
         }
 
     virtual void erase(size_t index)
@@ -1140,7 +1180,8 @@ template <typename DataType> class SMMemoryPoolGenericVectorItem : public SMMemo
         this->m_size -= erasedSize;
         this->m_dirty = true;
 
-        this->NotifySizeChangePoolItem(-1 * (int64_t)erasedSize, -1 * (int64_t)erasedSize);
+		// No memory size modification
+        this->NotifySizeChangePoolItem(0, -1);
         }
    
     virtual bool push_back(const DataType& newObject)
@@ -1156,16 +1197,15 @@ template <typename DataType> class SMMemoryPoolGenericVectorItem : public SMMemo
         this->m_size += addedSize;
         this->m_dirty = true;
 
-        this->NotifySizeChangePoolItem(addedSize, addedSize);
-
-        assert(this->m_nbItems*sizeof(DataType) <= this->m_allocatedSize);
-
+		// The reserve method did the memory part, for that reason we pass 0 here.
+        this->NotifySizeChangePoolItem(0, 1);
+        BeAssert(this->m_nbItems * sizeof(DataType) <= this->m_allocatedSize);
         return true;
         }
 
     virtual bool push_back(const DataType* newObjects, size_t count)
         {
-        assert(count != 0);
+        BeAssert(count != 0);
 
         if ((this->m_nbItems + count) * sizeof(DataType) > this->m_allocatedSize)
             {
@@ -1180,10 +1220,9 @@ template <typename DataType> class SMMemoryPoolGenericVectorItem : public SMMemo
         this->m_size += addedSize;
         this->m_dirty = true;
 
-        this->NotifySizeChangePoolItem(addedSize, addedSize);
-
-        assert(this->m_nbItems*sizeof(DataType) <= this->m_allocatedSize);
-
+		// The reserve method did the memory part, for that reason we pass 0 here.
+        this->NotifySizeChangePoolItem(0, count);
+        BeAssert(this->m_nbItems * sizeof(DataType) <= this->m_allocatedSize);
         return true;
         }
     };
@@ -1248,7 +1287,7 @@ template <typename DataType> class SMStoredMemoryPoolGenericVectorItem : public 
                     {
                     HPMBlockID blockID(this->m_nodeId);
                     size_t nbBytesLoaded = m_dataStore->LoadBlock((DataType*)this->m_data, this->m_nbItems, blockID);
-                    assert(nbBytesLoaded == sizeof(DataType) * this->m_nbItems);
+                    BeAssert(nbBytesLoaded == sizeof(DataType) * this->m_nbItems);
                     }
                 }
 
@@ -1289,16 +1328,11 @@ class SMMemoryPool : public RefCountedBase
         bvector<bvector<Spinlock*>>               m_memPoolItemMutex;
         bvector<bvector<clock_t>>                 m_lastAccessTime;
         uint64_t                                  m_nbBins;
-        mutex                                     m_increaseBinMutex;
-        SMMemoryPoolType m_id;
+        mutex                                     m_freeEntryMutex;
+        std::queue<SMMemoryPoolItemId>            m_freeEntries;
+        SMMemoryPoolItemId                        m_nextEntryAvailable;
 
-        
-        //std::mutex                 m_poolItemMutex;
-
-        /*
-        atomic<bool>               m_isFull;
-        atomic<bool>               m_lastAvailableInd;
-        */
+        SMMemoryPoolType                          m_id;
 
         SMMemoryPool(SMMemoryPoolType type);
             
@@ -1317,7 +1351,7 @@ class SMMemoryPool : public RefCountedBase
             if (id == SMMemoryPool::s_UndefinedPoolItemId)
                 return false; 
 
-            assert(!poolMemVectorItemPtr.IsValid());
+            BeAssert(!poolMemVectorItemPtr.IsValid());
             SMMemoryPoolItemBasePtr memItemPtr;
             
             if (GetItem(memItemPtr, id) && memItemPtr->IsCorrect(nodeId, dataType,smId))
@@ -1334,7 +1368,7 @@ class SMMemoryPool : public RefCountedBase
             if (id == SMMemoryPool::s_UndefinedPoolItemId)
                 return false;
 
-            assert(!poolMemVectorItemPtr.IsValid());
+            BeAssert(!poolMemVectorItemPtr.IsValid());
             SMMemoryPoolItemBasePtr memItemPtr;
 
             if (GetItem(memItemPtr, id) && memItemPtr->IsCorrect(nodeId, dataType, smId))
@@ -1351,7 +1385,7 @@ class SMMemoryPool : public RefCountedBase
             if (id == SMMemoryPool::s_UndefinedPoolItemId)
                 return false; 
 
-            assert(!poolMemBlobItemPtr.IsValid());
+            BeAssert(!poolMemBlobItemPtr.IsValid());
             SMMemoryPoolItemBasePtr memItemPtr;
             
             if (GetItem(memItemPtr, id) && memItemPtr->IsCorrect(nodeId, dataType, smId))
@@ -1369,14 +1403,15 @@ class SMMemoryPool : public RefCountedBase
             if (id == SMMemoryPool::s_UndefinedPoolItemId)
                 return false; 
 
-            assert(!poolMemBlobItemPtr.IsValid());
+            BeAssert(!poolMemBlobItemPtr.IsValid());
             SMMemoryPoolItemBasePtr memItemPtr;
             
             if (GetItem(memItemPtr, id) && memItemPtr->IsCorrect(nodeId, dataType, smId))
                 {
                 poolMemBlobItemPtr = memItemPtr->GetAsGenericBlobPoolItem<T>();       
 
-               TRACEPOINT(THREAD_ID(), EventType::POOL_GETITEM, memItemPtr->GetNodeId(), (uint64_t)-1, memItemPtr->GetDataType() == SMStoreDataType::DisplayTexture ? memItemPtr->GetNodeId() : -1, memItemPtr->GetPoolItemId(), (uint64_t)&poolMemBlobItemPtr, memItemPtr->GetRefCount())
+               TRACEPOINT(EventType::POOL_GETITEM, poolMemBlobItemPtr->GetNodeId(), (uint64_t)-1, poolMemBlobItemPtr->GetDataType() == SMStoreDataType::DisplayTexture ? poolMemBlobItemPtr->GetNodeId() : -1, 
+                   memItemPtr->GetPoolItemId(), (uint64_t)&poolMemBlobItemPtr, poolMemBlobItemPtr->GetRefCount())
 
                 }
 
@@ -1388,13 +1423,13 @@ class SMMemoryPool : public RefCountedBase
             if (id == SMMemoryPool::s_UndefinedPoolItemId)
                 return false; 
 
-            assert(!poolMemBlobItemPtr.IsValid());
+            BeAssert(!poolMemBlobItemPtr.IsValid());
             SMMemoryPoolItemBasePtr memItemPtr;
             
             if (GetItem(memItemPtr, id) && memItemPtr->IsCorrect(nodeId, dataType, smId))
                 {
                 poolMemBlobItemPtr = dynamic_cast<SMMemoryPoolMultiItemsBase*>(memItemPtr.get());
-                assert(poolMemBlobItemPtr.IsValid());
+                BeAssert(poolMemBlobItemPtr.IsValid());
                 }
 
             return poolMemBlobItemPtr.IsValid();
@@ -1418,6 +1453,21 @@ class SMMemoryPool : public RefCountedBase
             return m_currentPoolSizeInBytes;
             }
 
+        void IncreaseCurrentPool(uint64_t memSize)
+            {
+            m_currentPoolSizeInBytes += memSize;
+            }
+
+        void DecreaseCurrentPool(uint64_t memSize)
+            {
+            if (m_currentPoolSizeInBytes < memSize)
+                {
+                BeAssert(0);    // Error in the pool
+                m_currentPoolSizeInBytes = 0;
+                }
+            else
+                m_currentPoolSizeInBytes -= memSize;
+            }
 
         size_t GetMaxSize()
         {

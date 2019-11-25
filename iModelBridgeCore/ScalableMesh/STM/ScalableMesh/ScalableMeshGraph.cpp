@@ -109,8 +109,19 @@ void GetGraphExteriorBoundary(MTGGraph* graphP, bvector<bvector<DPoint3d>>& vecB
                 bound.clear();
                 }
 
-            vecBound.push_back(bound);
-            for (auto& b : boundLoops) vecBound.push_back(b);
+            if(!bound.empty())
+                {
+                if(!bound.front().AlmostEqual(bound.back()))
+                    bound.push_back(bound.front());
+
+                vecBound.push_back(bound);
+                }
+            for(auto& b : boundLoops)
+                {
+                if(!b.front().AlmostEqual(b.back()))
+                    b.push_back(b.front());
+                vecBound.push_back(b);
+                }
             numLoop++;
             }
         }

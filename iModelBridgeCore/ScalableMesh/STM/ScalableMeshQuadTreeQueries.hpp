@@ -1207,7 +1207,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
     return IsCorrect;    
     }
 
-static bool s_useSplit = true;
+static bool s_useSplit = false;
 
 template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQuery<POINT, EXTENT>::IsCorrectForCurrentViewSphere(HFCPtr<SMPointIndexNode<POINT, EXTENT>> node,
                                                                                                                                   const EXTENT&                           pi_visibleExtent,                                                                                                                                  

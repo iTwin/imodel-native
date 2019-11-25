@@ -19,9 +19,11 @@ class SMSQLiteFeatureFile : public SMSQLiteFile
     public:
         virtual void GetGraph(int64_t nodeID, bvector<uint8_t>& graph, size_t& uncompressedSize);
         virtual void GetFeature(int64_t featureID, bvector<uint8_t>& featureData, size_t& uncompressedSize);
+        virtual void GetFeatureDefinition(int64_t featureID, uint32_t& type, bvector<uint8_t>& featureData, size_t& uncompressedSize);
 
         virtual void StoreGraph(int64_t& nodeID, const bvector<uint8_t>& graph, size_t uncompressedSize);
         virtual void StoreFeature(int64_t& featureID, const bvector<uint8_t>& featureData, size_t uncompressedSize);
+        virtual void StoreFeatureDefinition(int64_t& featureID, uint32_t type, const bvector<uint8_t>& featureData, size_t uncompressedSize);
 
         virtual size_t GetNumberOfFeaturePoints(int64_t featureID);
 

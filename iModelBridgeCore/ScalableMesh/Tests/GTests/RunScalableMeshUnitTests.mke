@@ -3,7 +3,8 @@
 #  See COPYRIGHT.md in the repository root for full copyright notice.
 #---------------------------------------------------------------------------------------------
 
-PolicyFile      = $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/Tests/AssertCompilePublishedScalableMeshUnitTestsPolicy.mki
+scSrcDir = $(_MakeFilePath)../../../ScalableMesh/
+PolicyFile      = $(scSrcDir)Tests/AssertCompilePublishedScalableMeshUnitTestsPolicy.mki
 
 %include mdl.mki
 

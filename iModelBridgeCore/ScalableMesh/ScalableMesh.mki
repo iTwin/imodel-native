@@ -7,19 +7,27 @@
 # DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.
 # If we define appName and use it for DLM_NAME, MultiCppCompileRule.mki will use it for CCompPDBName, and linkLibrary.mki will use DLM_NAME for LIB_NAME.
 # PreCompiledHeader.mki uses CCompPDBName
-appName     = ScalableMesh
+
 DLM_NAME    = $(appName)
 LIB_NAME    = $(appName)
 CCompPDBName = $(appName)
 
+#This is because GMP and MPFR don't use vendor prefixes in the CGAL files
+#dirToSearch=$(OutputRootDir)BuildContexts/CGAL/VendorAPI/GMP
+#%include cincapnd.mki
+
 #----------------------------------------------------------
 # Preprocessor definition.
 #----------------------------------------------------------
+%if defined(STM_EXPORT)
 nameToDefine = __BENTLEYSTM_BUILD__
 %include cdefapnd.mki
+%endif
 
+%if defined(STM_IMPORT)
 nameToDefine = __BENTLEYSTMIMPORT_BUILD__
 %include cdefapnd.mki
+%endif
 
 nameToDefine = NO_IODEFS
 %include cdefapnd.mki
@@ -32,8 +40,10 @@ nameToDefine = NO_IODEFS
 nameToDefine = NOMINMAX
 %include cdefapnd.mki
 
-nameToDefine=SCALABLE_MESH_ATP
-%include cdefapnd.mki
+%ifdef SCALABLE_MESH_ATP_COMPILE
+    nameToDefine=SCALABLE_MESH_ATP
+    %include cdefapnd.mki
+%endif
 
 %ifndef NDEBUG
 nameToDefine=INDEX_DUMPING_ACTIVATED
@@ -45,5 +55,10 @@ nameToDefine=INDEX_DUMPING_ACTIVATED
 
 %ifdef DHDEBUG
 nameToDefine = DHDEBUG
+%include cdefapnd.mki
+%endif
+
+%if defined(IMODEL02)
+nameToDefine = IMODEL02
 %include cdefapnd.mki
 %endif

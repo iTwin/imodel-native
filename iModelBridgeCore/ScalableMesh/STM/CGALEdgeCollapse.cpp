@@ -202,17 +202,21 @@ struct PointWithId
     {
     DPoint3d m_point;
     size_t m_id;
+    uint64_t m_polyID;
     };
 
 struct PolylineArea
     {
     std::list<PointWithId>::iterator m_listItr;
     mutable double m_area;
+    uint64_t m_key;
+
     PolylineArea(std::list<PointWithId>::iterator ptPtr) : m_listItr(ptPtr)
         {
         m_area = ComputeArea();
+        m_key = (uint64_t)m_listItr->m_id | (uint64_t)(m_listItr->m_polyID << 32);
         }
-    PolylineArea(const PolylineArea& other) : m_listItr(other.m_listItr), m_area(other.m_area) {}
+    PolylineArea(const PolylineArea& other) : m_listItr(other.m_listItr), m_area(other.m_area), m_key(other.m_key) {}
 
     double ComputeArea() const
         {
@@ -226,7 +230,7 @@ struct PolylineArea
         }
     bool operator <(PolylineArea const& other) const
         {
-        return (m_listItr->m_id != other.m_listItr->m_id && m_area < other.m_area) || (m_area == other.m_area && m_listItr->m_id < other.m_listItr->m_id);
+        return (m_key != other.m_key && m_area < other.m_area) || (m_area == other.m_area && m_key < other.m_key);
         }
     };
 
@@ -255,48 +259,114 @@ struct priority_queue_unique : public std::set<PolylineArea>
         }
     };
 
-void SimplifyPolylines(bvector<bvector<DPoint3d>>& polylines)
+double HausdorffDistance(const bvector<DPoint3d>& A, const bvector<DPoint3d>& B)
     {
+    double cmax = 0.0;
+    for(auto const& pA : A)
+        {
+        double cmin = std::numeric_limits<double>::max();
+        for(size_t i = 0; i < B.size()-1; i++)
+            {
+            DSegment3d segment = DSegment3d::From(B[i], B[i+1]);
+            double param;
+            DPoint3d closestPt;
+            segment.ProjectPointXY(closestPt, param, pA);
+
+            double distance = pA.DistanceSquaredXY(closestPt);
+            if(distance <= cmax)
+                {
+                cmin = 0.0;
+                break;
+                }
+            cmin = std::min(cmin, distance);
+            }
+        cmax = std::max(cmax, cmin);
+        }
+    return std::sqrt(cmax);
+    }
+
+void SimplifyPolylines(bvector<bvector<DPoint3d>>& polylines, bvector<DPoint3d>& removedPoints, double distanceTol, size_t targetNumPoints)
+    {
+    // Filter lines that are too close to each other
+    for(int i = 0; i < polylines.size() - 1; i++)
+        {
+        if(!polylines[i].empty())
+            {
+            for(int j = i + 1; j < polylines.size(); j++)
+                {
+                if(!polylines[j].empty())
+                    {
+                    if(distanceTol >= HausdorffDistance(polylines[i], polylines[j]))
+                        {
+                        for(auto pt : polylines[i]) removedPoints.push_back(pt);
+                        polylines[i].clear();
+                        break;
+                        }
+                    else if(distanceTol >= HausdorffDistance(polylines[j], polylines[i]))
+                        {
+                        for(auto pt : polylines[j]) removedPoints.push_back(pt);
+                        polylines[j].clear();
+                        }
+                    }
+                }
+            }
+        }
+
+    if(removedPoints.size() >= targetNumPoints) return;
+
+    // Update target to reflect filtered features in the previous step
+    targetNumPoints -= removedPoints.size();
+
+    priority_queue_unique pointQueue;
+    bvector<std::list<PointWithId>> polyline2(polylines.size());
     for(auto& polyline : polylines)
         {
+        if(polyline.empty()) continue;
         bool isLoop = polyline.front().IsEqual(polyline.back(), 1.e-5);
         if(isLoop && polyline.size() < 5) continue;
         else if(polyline.size() < 3) continue;
 
-        std::list<PointWithId> polyline2;
+        auto& poly2 = polyline2[&polyline - &polylines.front()];
         for(size_t i = 0; i < polyline.size(); ++i)
-            polyline2.push_back({ polyline[i], i });
+            poly2.push_back({ polyline[i], i , (uint64_t)(&polyline - &polylines.front()) });
 
-        priority_queue_unique pointQueue;
-
-        for(auto it = ++polyline2.begin(); it != --polyline2.end(); ++it)
+        for(auto it = ++poly2.begin(); it != --poly2.end(); ++it)
             {
             pointQueue.push(PolylineArea(it));
             }
-
-        size_t targetNumPointsToKeep = std::max((size_t)(polyline.size() * 0.75), (size_t)(isLoop ? 4 : 2)) - 2; // Must keep at least first and last points
-        while(pointQueue.size() > targetNumPointsToKeep)
-            {
-            auto topItem = pointQueue.top();
-
-            // remove point from polyline and update areas of adjacent points
-            auto current = topItem.m_listItr;
-            auto previous = current; --previous;
-            PolylineArea previousPolylineArea(previous);
-            auto next = current; ++next;
-            PolylineArea nextPolylineArea(next);
-            polyline2.erase(current);
-
-            pointQueue.pop();
-
-            if (previous->m_id > 0) pointQueue.push(previousPolylineArea);
-            if (next->m_id < polyline.size() - 1) pointQueue.push(nextPolylineArea);
-            }
-
-        polyline.clear();
-        for(auto const& pt: polyline2)
-            polyline.push_back(pt.m_point);
         }
+
+    while(pointQueue.size() > targetNumPoints)
+        {
+        auto topItem = pointQueue.top();
+
+        // remove point from polyline and update areas of adjacent points
+        auto current = topItem.m_listItr;
+        removedPoints.push_back(current->m_point);
+
+        auto previous = current; --previous;
+        PolylineArea previousPolylineArea(previous);
+        auto next = current; ++next;
+        PolylineArea nextPolylineArea(next);
+        polyline2[current->m_polyID].erase(current);
+
+        auto currentPolyID = current->m_polyID;
+        pointQueue.pop();
+
+        if(previous->m_id > 0) pointQueue.push(previousPolylineArea);
+        if(next->m_id < polylines[currentPolyID].size() - 1) pointQueue.push(nextPolylineArea);
+        }
+
+    for(auto& polyline : polylines)
+        {
+        if(polyline.empty()) continue;
+        polyline.clear();
+
+        for (auto pt : polyline2[&polyline - &polylines.front()])
+            polyline.push_back(pt.m_point);
+
+        }
+    
     // // boost uses Douglas-Peucker algorithm to simplify a polyline. This algorithm requires a tolerance
 	// // parameter which is not well suited for our need to target a specified number of points.
     //typedef boost::geometry::model::d2::point_xy<double> xy;

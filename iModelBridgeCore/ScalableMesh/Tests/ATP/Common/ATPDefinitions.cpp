@@ -2357,12 +2357,12 @@ void PerformDrapeLineTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 //    //volumeMesh[i]->Transform(refToActiveTrf);
 //    //MSElementDescr* desc = NULL;
 //    //mdlMesh_newPolyfaceFromEmbeddedArraysExt(&desc, NULL, &volumeMesh[i]->PointIndex(), 0, &volumeMesh[i]->Point(), (0 == volumeMesh[i]->NormalIndex().size() ? NULL : &volumeMesh[i]->NormalIndex()), (0 == volumeMesh[i]->Normal().size() ? NULL : (EmbeddedDPoint3dArray*) &volumeMesh[i]->Normal()), (0 == volumeMesh[i]->ParamIndex().size() ? NULL : &volumeMesh[i]->ParamIndex()), (0 == volumeMesh[i]->Param().size() ? NULL : (EmbeddedDPoint2dArray*)&volumeMesh[i]->Param()), NULL, NULL, NULL, NULL, false, true);
-//    //mdlMesh_newPolyfaceFromEmbeddedArraysExt(&desc, NULL, &volumeMesh[i]->PointIndex(), 0, &volumeMesh[i]->Point(), (0 == volumeMesh[i]->NormalIndex().size() ? NULL : &volumeMesh[i]->NormalIndex()), (0 == volumeMesh[i]->Normal().size() ? NULL : (EmbeddedDPoint3dArray*) &volumeMesh[i]->Normal()), (0 == volumeMesh[i]->ParamIndex().size() ? NULL : &volumeMesh[i]->ParamIndex()), (0 == volumeMesh[i]->Param().size() ? NULL : (EmbeddedDPoint2dArray*)&volumeMesh[i]->Param()), NULL, NULL, NULL, NULL, false, true);
+//    //mdlMesh_newPolyfaceFromEmbeddedArraysExt(&desc,NULL, &volumeMesh[i]->PointIndex(), 0, &volumeMesh[i]->Point(), (0 ==volumeMesh[i]->NormalIndex().size() ?NULL: &volumeMesh[i]->NormalIndex()), (0 ==volumeMesh[i]->Normal().size() ?NULL: (EmbeddedDPoint3dArray*) &volumeMesh[i]->Normal()), (0 ==volumeMesh[i]->ParamIndex().size() ?NULL: &volumeMesh[i]->ParamIndex()), (0 ==volumeMesh[i]->Param().size() ?NULL: (EmbeddedDPoint2dArray*)&volumeMesh[i]->Param()),NULL,NULL,NULL,NULL,false,true);
 //    //                mdlElmdscr_add(desc);
 //    //EditElementHandle handle(desc, true, true, mdlModelRef_getActive());
 //    //handle.AddToModel();
 //    /*mdlElmdscr_add(desc);
-//    EditElementHandle handle(pNewElmDsc, true, true, model); 
+//    EditElementHandlehandle(pNewElmDsc,true,true, model);
 //    handle.AddToModel();*/
 //    //        }
 //

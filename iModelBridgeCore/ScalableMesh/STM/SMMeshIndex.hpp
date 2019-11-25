@@ -1714,7 +1714,7 @@ static size_t s_featuresAddedToTree = 0;
 //=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 08/15
 //=======================================================================================
-template<class EXTENT> void ClipFeatureDefinition(ISMStore::FeatureType type, EXTENT clipExtent, bvector<DPoint3d>& points, DRange3d& extent, const bvector<DPoint3d>& origPoints, DRange3d& origExtent)
+template<class EXTENT> bool ClipFeatureDefinition(ISMStore::FeatureType type, EXTENT clipExtent, bvector<DPoint3d>& points, DRange3d& extent, const bvector<DPoint3d>& origPoints, DRange3d& origExtent)
     {
 
     if (/*IsClosedFeature(type) ||*/ (origExtent.low.x >= ExtentOp<EXTENT>::GetXMin(clipExtent) && origExtent.low.y >= ExtentOp<EXTENT>::GetYMin(clipExtent) && origExtent.low.z >= ExtentOp<EXTENT>::GetZMin(clipExtent)
@@ -1722,82 +1722,165 @@ template<class EXTENT> void ClipFeatureDefinition(ISMStore::FeatureType type, EX
         {
         points.insert(points.end(), origPoints.begin(), origPoints.end());
         extent = origExtent;
-        return;
+        return false;
         }
+
+    DPoint3d SENTINEL_PT = DPoint3d::From(DBL_MAX, DBL_MAX, DBL_MAX);
+
     DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(clipExtent), ExtentOp<EXTENT>::GetYMin(clipExtent), ExtentOp<EXTENT>::GetZMin(clipExtent),
                                         ExtentOp<EXTENT>::GetXMax(clipExtent), ExtentOp<EXTENT>::GetYMax(clipExtent), ExtentOp<EXTENT>::GetZMax(clipExtent));
-    if (IsClosedFeature(type) || IsClosedPolygon(origPoints))
+    if (IsClosedFeature(type) && IsClosedPolygon(origPoints))
         {
-        DPoint3d origins[6];
-        DVec3d normals[6];
-        nodeRange.Get6Planes(origins, normals);
-        DPlane3d planes[6];
-        for (size_t i = 0; i < 6; ++i)
-            {
-            planes[i] = DPlane3d::FromOriginAndNormal(origins[i], normals[i]);
-            }
+        bvector<DPoint3d> extentPoints;
+        extentPoints.push_back(DPoint3d::From(nodeRange.low.x, nodeRange.low.y, 0));
+        extentPoints.push_back(DPoint3d::From(nodeRange.high.x, nodeRange.low.y, 0));
+        extentPoints.push_back(DPoint3d::From(nodeRange.high.x, nodeRange.high.y, 0));
+        extentPoints.push_back(DPoint3d::From(nodeRange.low.x, nodeRange.high.y, 0));
+        extentPoints.push_back(DPoint3d::From(nodeRange.low.x, nodeRange.low.y, 0));
 
-        points.insert(points.end(), origPoints.begin(), origPoints.end());
-        for (auto& plane : planes)
+        auto extentPrimitivePtr = ICurvePrimitive::CreateLineString(&extentPoints[0], extentPoints.size());
+        auto extentCurveVectorPtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, extentPrimitivePtr);
+
+        auto linearPrimitivePtr = ICurvePrimitive::CreateLineString(&origPoints[0], origPoints.size());
+        auto linearCurveVectorPtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, linearPrimitivePtr);
+        CurvePrimitivePtrPairVector newToOld;
+        auto resultCurveVectorPtr = ((DTMFeatureType)type == DTMFeatureType::Hull || (DTMFeatureType)type == DTMFeatureType::TinHull) ?
+                                    CurveVector::AreaDifference(*extentCurveVectorPtr, *linearCurveVectorPtr) :
+                                    CurveVector::AreaIntersection(*linearCurveVectorPtr, *extentCurveVectorPtr, &newToOld);
+
+        // Insert new points in the elevation map
+        typedef std::map<DPoint3d, double, DPoint3dYXTolerancedSortComparison> MapOfPoints;
+        MapOfPoints pointElevationMap(DPoint3dYXTolerancedSortComparison(1e-5));
+        bvector<DPoint3d> tempPoints(2);
+        for(auto& pair : newToOld)
             {
-            double sign = 0;
-            bool planeCutsPoly = false;
-            for (size_t j = 0; j < points.size() && !planeCutsPoly; j++)
+            if(pair.curveB->GetLineStringCP()->size() == origPoints.size())
                 {
-                double sideOfPoint = plane.Evaluate(points[j]);
-                if (fabs(sideOfPoint) < 1e-6) sideOfPoint = 0;
-                if (sign == 0) sign = sideOfPoint;
-                else if ((sign > 0 && sideOfPoint < 0) || (sign < 0 && sideOfPoint > 0))
-                    planeCutsPoly = true;
-                }
-            if (!planeCutsPoly) continue;                
-            bvector<DPoint3d> points2(points.size() + 10);
-            int nPlaneClipSize = (int)points2.size();
-            int nLoops = 0;
-            bsiPolygon_clipToPlane(&points2[0], &nPlaneClipSize, &nLoops, (int)points2.size(), &points[0], (int)points.size(), &plane);
-            if (nPlaneClipSize > 0)
-                {
-                points.clear();
-                points2.resize(nPlaneClipSize);
-                for (auto& pt : points2)
+                // Only first and last points of the results are on the tile boundary
+                tempPoints[0] = pair.curveA->GetLineStringCP()->front();
+                tempPoints[1] = pair.curveA->GetLineStringCP()->back();
+                for(auto xyz : tempPoints)
                     {
-                    //if (pt.x < DBL_MAX)
-                        points.push_back(pt);
-                    //else break;
+                    if(pointElevationMap.count(xyz) == 0)
+                        {
+                        pointElevationMap[xyz] = xyz.z;
+                        }
                     }
                 }
             }
-        extent = DRange3d::From(points);
-        return;
+        extent.Init();
+
+        bvector<bvector<bvector<DPoint3d>>> regions;
+        if(resultCurveVectorPtr.IsValid())
+            {
+            resultCurveVectorPtr->CollectLinearGeometry(regions);
+            for(auto const& region : regions)
+                {
+                assert(region.size() == 1); // Only one loop per region
+                for(auto xyz : region[0])
+                    {
+                    if(pointElevationMap.count(xyz) > 0)
+                        xyz.z = pointElevationMap[xyz];
+                    points.push_back(xyz);
+                    if(extent.IsNull()) extent = DRange3d::From(xyz);
+                    else extent.Extend(xyz);
+                    }
+                points.push_back(SENTINEL_PT);
+                }
+            }
         }
     if (IsLinearFeature(type))
         {
-        DPoint3d SENTINEL_PT = DPoint3d::From(DBL_MAX, DBL_MAX, DBL_MAX);
-        bool withinExtent = false;
-        for (size_t pt = 0; pt < origPoints.size(); ++pt)
+        DSegment3d extentSegments[4] = { DSegment3d::From(DPoint3d::From(nodeRange.low.x, nodeRange.low.y, 0), DPoint3d::From(nodeRange.high.x, nodeRange.low.y, 0)),
+                                         DSegment3d::From(DPoint3d::From(nodeRange.high.x, nodeRange.low.y, 0), DPoint3d::From(nodeRange.high.x, nodeRange.high.y, 0)),
+                                         DSegment3d::From(DPoint3d::From(nodeRange.high.x, nodeRange.high.y, 0), DPoint3d::From(nodeRange.low.x, nodeRange.high.y, 0)),
+                                         DSegment3d::From(DPoint3d::From(nodeRange.low.x, nodeRange.high.y, 0), DPoint3d::From(nodeRange.low.x, nodeRange.low.y, 0)) };
+
+        for (size_t pt = 1; pt < origPoints.size(); ++pt)
             {
-            bool isPointInRange = nodeRange.IsContained(origPoints[pt]);
-            if (!withinExtent && isPointInRange && pt > 0)
+            DRange3d edgeRange = DRange3d::From(origPoints[pt], origPoints[pt - 1]);
+            if(nodeRange.IntersectsWith(edgeRange))
                 {
-                if (points.size() == 0) extent = DRange3d::From(origPoints[pt]);
+                if(nodeRange.IsContained(origPoints[pt - 1]) && nodeRange.IsContained(origPoints[pt]))
+                    {
+                    if(points.size() == 0) extent = DRange3d::From(origPoints[pt - 1]);
+                    else extent.Extend(origPoints[pt - 1]);
+                    points.push_back(origPoints[pt - 1]);
+                    }
+                else if(!nodeRange.IsContained(origPoints[pt - 1]) && nodeRange.IsContained(origPoints[pt]))
+                    {
+                    if (!points.empty() && points.back().x != DBL_MAX)
+                        points.push_back(SENTINEL_PT);
 
-                points.push_back(origPoints[pt - 1]);                
-                }
+                    DSegment3d lineToSplit = DSegment3d::From(origPoints[pt], origPoints[pt - 1]);
+                    for(size_t i = 0; i < 4; ++i)
+                        {
+                        double f0, f1;
+                        DPoint3d pt0, pt1;
+                        if(DSegment3d::IntersectXY(f0, f1, pt0, pt1, lineToSplit, extentSegments[i]) && f0 > -1.0e-6 && f0 < 1 + 1.0e-6 && f1 > -1.0e-6 && f1 < 1 + 1.0e-6)
+                            {
+                            if(points.size() == 0) extent = DRange3d::From(pt0);
+                            else extent.Extend(pt0);
+                            points.push_back(pt0);
+                            break;
+                            }
+                        }
+                    }
+                else if(nodeRange.IsContained(origPoints[pt - 1]) && !nodeRange.IsContained(origPoints[pt]))
+                    {
+                    if(points.size() == 0) extent = DRange3d::From(origPoints[pt - 1]);
+                    else extent.Extend(origPoints[pt - 1]);
+                    points.push_back(origPoints[pt - 1]);
 
-            if (isPointInRange)
-                {
-                if (points.size() == 0) extent = DRange3d::From(origPoints[pt]);
-                else extent.Extend(origPoints[pt]);
-                points.push_back(origPoints[pt]);
+                    DSegment3d lineToSplit = DSegment3d::From(origPoints[pt], origPoints[pt - 1]);
+                    for(size_t i = 0; i < 4; ++i)
+                        {
+                        double f0, f1;
+                        DPoint3d pt0, pt1;
+                        if(DSegment3d::IntersectXY(f0, f1, pt0, pt1, lineToSplit, extentSegments[i]) && f0 > -1.0e-6 && f0 < 1 + 1.0e-6 && f1 > -1.0e-6 && f1 < 1 + 1.0e-6)
+                            {
+                            if(points.size() == 0) extent = DRange3d::From(pt0);
+                            else extent.Extend(pt0);
+                            points.push_back(pt0);
+                            break;
+                            }
+                        }
+
+                    if(points.back().x != DBL_MAX)
+                        points.push_back(SENTINEL_PT);
+                    }
+                else
+                    {
+                    // Both endpoints are outside the node range (add all intersections found -- should find 2)
+                    if(!points.empty() && points.back().x != DBL_MAX)
+                        points.push_back(SENTINEL_PT);
+
+                    DSegment3d lineToSplit = DSegment3d::From(origPoints[pt], origPoints[pt - 1]);
+                    for(size_t i = 0; i < 4; ++i)
+                        {
+                        double f0, f1;
+                        DPoint3d pt0, pt1;
+                        if(DSegment3d::IntersectXY(f0, f1, pt0, pt1, lineToSplit, extentSegments[i]) && f0 > -1.0e-6 && f0 < 1 + 1.0e-6 && f1 > -1.0e-6 && f1 < 1 + 1.0e-6)
+                            {
+                            if(points.size() == 0) extent = DRange3d::From(pt0);
+                            else extent.Extend(pt0);
+                            points.push_back(pt0);
+                            }
+                        }
+
+                    if(!points.empty() && points.back().x != DBL_MAX)
+                        points.push_back(SENTINEL_PT);
+                    }
                 }
-            if (!isPointInRange && withinExtent && pt < origPoints.size())
-                {
-                points.push_back(origPoints[pt]);
-                points.push_back(SENTINEL_PT);
-                }
-            withinExtent = isPointInRange;
+            }
+        if(nodeRange.IsContained(origPoints.back()))
+            {
+            if(points.size() == 0) extent = DRange3d::From(origPoints.back());
+            else extent.Extend(origPoints.back());
+            points.push_back(origPoints.back());
             }
         }
+    return true;
     }
 
 template<class POINT> void SimplifyMesh(bvector<int32_t>& indices, bvector<POINT>& points, bvector<DPoint2d>& uvs)
@@ -1950,28 +2033,29 @@ template<class EXTENT> void ClipMeshDefinition(EXTENT clipExtent, bvector<DPoint
    // SimplifyMesh(indicesClipped, pointsClipped, inOutUvs);
     }
 
-template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::ReadFeatureDefinitions(bvector<bvector<DPoint3d>>& points, bvector<DTMFeatureType> & types, bool shouldIgnoreOpenFeatures)
+template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::ReadFeatureDefinitions(bvector<bvector<DPoint3d>>& points, bvector<DTMFeatureType> & types, bvector<int32_t>& ids, bool shouldIgnoreOpenFeatures)
     {
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>  linearFeaturesPtr = GetLinearFeaturesPtr();
     bvector<bvector<int32_t>> defs;
     if (linearFeaturesPtr->size() > 0) GetFeatureDefinitions(defs, &*linearFeaturesPtr->begin(), linearFeaturesPtr->size());
     for (size_t i = 0; i < defs.size(); ++i)
         {
+        ids.push_back(defs[i][0]);
         bvector<DPoint3d> feature;
-        if (shouldIgnoreOpenFeatures && !IsClosedFeature(defs[i][0])) continue;
-        for (size_t j = 1; j < defs[i].size(); ++j)
+        if (shouldIgnoreOpenFeatures && !IsClosedFeature(defs[i][1])) continue;
+        for (size_t j = 2; j < defs[i].size(); ++j)
             {
             if (defs[i][j] < this->GetPointsPtr()->size()) feature.push_back(this->GetPointsPtr()->operator[](defs[i][j]));
             }
-        if (IsClosedFeature(defs[i][0]) &&feature.size() > 0)
+        if (IsClosedFeature(defs[i][1]) &&feature.size() > 0)
             if (!feature.back().AlmostEqual(feature.front()))
                 feature.push_back(feature.front());
         points.push_back(feature);
-        types.push_back((DTMFeatureType)defs[i][0]);
+        types.push_back((DTMFeatureType)defs[i][1]);
         }
     }
 
-template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddFeatureDefinitionSingleNode(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent)
+template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddFeatureDefinitionSingleNode(ISMStore::FeatureType type, uint64_t id, bvector<DPoint3d>& points, DRange3d& extent)
     {
     vector<int32_t> indexes;
     //DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(this->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(this->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMin(this->m_nodeHeader.m_nodeExtent),
@@ -1989,7 +2073,8 @@ template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddFe
         }    
 
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>  linearFeaturesPtr = GetLinearFeaturesPtr();
-    linearFeaturesPtr->push_back((int)indexes.size()+1); //include type flag
+    linearFeaturesPtr->push_back((int)indexes.size()+2); //include type flag and id flag
+    linearFeaturesPtr->push_back((int32_t)id);
     linearFeaturesPtr->push_back((int32_t)type);
     linearFeaturesPtr->push_back(&indexes[0], indexes.size());
     return 0;
@@ -2302,15 +2387,14 @@ bool SMMeshIndexNode<POINT, EXTENT>::InvalidateFilteringMeshing(bool becauseData
 //=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 08/15
 //=======================================================================================
-    template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddFeatureDefinitionUnconditional(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent)
+    template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddFeatureDefinitionUnconditional(ISMStore::FeatureType type, uint64_t id, bvector<DPoint3d>& points, DRange3d& extent)
         {
         if (!this->IsLoaded())
             Load();
         if (this->m_DelayedSplitRequested)
             this->SplitNode(this->GetDefaultSplitPosition());
         
-        DRange3d extentClipped;
-        bvector<DPoint3d> pointsClipped;
+        DRange3d extentClipped = DRange3d::NullRange();
         size_t n = 0;
         bool noIntersect = true;
         DRange2d extent2d= DRange2d::From(this->m_nodeHeader.m_nodeExtent);
@@ -2333,34 +2417,84 @@ bool SMMeshIndexNode<POINT, EXTENT>::InvalidateFilteringMeshing(bool becauseData
                     DPoint3d direction;
                     direction.DifferenceOf(pt, points[&pt - &points[0] - 1]);
                     DPoint2d dir2d = DPoint2d::From(direction);
-                    if (extent2d.IntersectRay(par1, par2, ptIntersect1, ptIntersect2,start ,dir2d ) && ((par1 > 1e-5 && par1 < 1 + 1e-5) ||( par2 > 1e-5  && par2 < 1+1e-5)))
-                    noIntersect = false;
+                    if (extent2d.IntersectRay(par1, par2, ptIntersect1, ptIntersect2,start ,dir2d ) && ((par1 > 1e-5 && par1 < 1 - 1e-5) ||( par2 > 1e-5  && par2 < 1-1e-5)))
+                        noIntersect = false;
                     }
                 }
             }
 
-        if (noIntersect && n < 2) return 0;
-        ClipFeatureDefinition(type, this->m_nodeHeader.m_nodeExtent, pointsClipped, extentClipped, points, extent);
-        if (!this->m_nodeHeader.m_nodeExtent.IntersectsWith(extentClipped)) return 0;
+        if(noIntersect && n == 0) 
+            return 0;
+        
+        bvector<bvector<DPoint3d>> newFeatures;
+        size_t nbNewFeaturePoints = 0;
+
+        if(n == 0 && ((DTMFeatureType)type == DTMFeatureType::Hull || (DTMFeatureType)type == DTMFeatureType::TinHull))
+            {
+            type = ISMStore::FeatureType(DTMFeatureType::DrapeVoid);
+            }
+        else if(n < points.size())
+            {
+            bvector<DPoint3d> pointsClipped;
+            bool isClipped = ClipFeatureDefinition(type, this->m_nodeHeader.m_nodeExtent, pointsClipped, extentClipped, points, extent);
+            if(isClipped && ((DTMFeatureType)type == DTMFeatureType::Hull || (DTMFeatureType)type == DTMFeatureType::TinHull))
+                {
+                type = ISMStore::FeatureType(DTMFeatureType::DrapeVoid);
+                }
+            if(isClipped)
+                {
+                size_t currentClippedPointIndex = 0;
+                bool processingDone = false;
+                while(!processingDone)
+                    {
+                    processingDone = true;
+                    newFeatures.push_back(bvector<DPoint3d>());
+                    auto& newFeature = newFeatures.back();
+                    for(size_t i = currentClippedPointIndex; i < pointsClipped.size(); ++i)
+                        {
+                        if(pointsClipped[i].x == DBL_MAX)
+                            {
+                            currentClippedPointIndex = i + 1;
+                            processingDone = currentClippedPointIndex >= pointsClipped.size();
+                            break;
+                            }
+                        newFeature.push_back(pointsClipped[i]);
+                        ++nbNewFeaturePoints;
+                        }
+                    }
+                }
+            else
+                {
+                newFeatures.push_back(pointsClipped);
+                nbNewFeaturePoints = pointsClipped.size();
+                }
+            }
+        else
+            { // All points are inside node extent
+            newFeatures.push_back(points);
+            nbNewFeaturePoints = points.size();
+            extentClipped = extent;
+            }
+
+        if(newFeatures.size() == 0) return false;
 
         RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(this->GetPointsPtr());
 
         if (!this->HasRealChildren() && pointsPtr->size() == 0) this->m_nodeHeader.m_arePoints3d = false;
         if (!this->m_nodeHeader.m_arePoints3d) this->SetNumberOfSubNodesOnSplit(4);        
 
-        if (!this->HasRealChildren() && (pointsPtr->size() + pointsClipped.size() >= this->m_nodeHeader.m_SplitTreshold))
+        if (!this->HasRealChildren() && (pointsPtr->size() + nbNewFeaturePoints >= this->m_nodeHeader.m_SplitTreshold))
             {
             // There are too much objects ... need to split current node
             this->SplitNode(this->GetDefaultSplitPosition());
             }
-        else if (this->m_delayedDataPropagation && (pointsPtr->size() + pointsClipped.size() >= this->m_nodeHeader.m_SplitTreshold))
+        else if (this->m_delayedDataPropagation && (pointsPtr->size() + nbNewFeaturePoints >= this->m_nodeHeader.m_SplitTreshold))
             {
             this->PropagateDataDownImmediately(false);
             }
-        if (pointsClipped.size() == 0) return false;
 
 
-        this->m_nodeHeader.m_totalCount += pointsClipped.size();
+        this->m_nodeHeader.m_totalCount += nbNewFeaturePoints;
         EXTENT featureExtent = ExtentOp<EXTENT>::Create(extentClipped.low.x, extentClipped.low.y, extentClipped.low.z, extentClipped.high.x, extentClipped.high.y, extentClipped.high.z);
         if (!this->m_nodeHeader.m_contentExtentDefined)
             {
@@ -2372,34 +2506,15 @@ bool SMMeshIndexNode<POINT, EXTENT>::InvalidateFilteringMeshing(bool becauseData
             this->m_nodeHeader.m_contentExtent = ExtentOp<EXTENT>::MergeExtents(this->m_nodeHeader.m_contentExtent, featureExtent);
             }
 
-        size_t currentClippedPointIndex = 0;
-        bvector<bvector<DPoint3d>> newFeaturesClipped;
-        bool processNewFeaturesDone = false;
-        while(!processNewFeaturesDone)
-            {
-            processNewFeaturesDone = true;
-            newFeaturesClipped.push_back(bvector<DPoint3d>());
-            auto& newFeature = newFeaturesClipped.back();
-            for(size_t i = currentClippedPointIndex; i < pointsClipped.size(); ++i)
-                {
-                if(pointsClipped[i].x == DBL_MAX)
-                    {
-                    currentClippedPointIndex = i + 1;
-                    processNewFeaturesDone = currentClippedPointIndex >= pointsClipped.size();
-                    break;
-                    }
-                newFeature.push_back(pointsClipped[i]);
-                }
-            }
         size_t added = 0;
         
-        if (!this->HasRealChildren() || (this->m_delayedDataPropagation && (pointsPtr->size() + pointsClipped.size() < this->m_nodeHeader.m_SplitTreshold)))
+        if (!this->HasRealChildren() || (this->m_delayedDataPropagation && (pointsPtr->size() + nbNewFeaturePoints < this->m_nodeHeader.m_SplitTreshold)))
             {
             ++s_featuresAddedToTree;
             DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(this->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(this->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMin(this->m_nodeHeader.m_nodeExtent),
                                                 ExtentOp<EXTENT>::GetXMax(this->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(this->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMax(this->m_nodeHeader.m_nodeExtent));
-            
-            for (auto& feature : newFeaturesClipped)
+
+            for (auto& feature : newFeatures)
                 {
                 vector<int32_t> indexes;
                 for(auto pt : feature)
@@ -2409,28 +2524,31 @@ bool SMMeshIndexNode<POINT, EXTENT>::InvalidateFilteringMeshing(bool becauseData
                     pointsPtr->push_back(pointToInsert);
                     indexes.push_back((int32_t)pointsPtr->size() - 1);
                     }
+
                 /* if (m_featureDefinitions.capacity() < m_featureDefinitions.size() +1) for(auto& def : m_featureDefinitions) if(!def.Discarded()) def.Discard();
                 */ RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>  linearFeaturesPtr = GetLinearFeaturesPtr();
-                    linearFeaturesPtr->push_back((int)indexes.size() + 1);
+                    linearFeaturesPtr->push_back((int)indexes.size() + 2);
+                    linearFeaturesPtr->push_back((int32_t)id);
                     linearFeaturesPtr->push_back((int32_t)type);
                     linearFeaturesPtr->push_back(&indexes[0], indexes.size());
+
                 }
             }
         else
             {
-            for(auto& feature : newFeaturesClipped)
-                {
-                DRange3d newFeatureExtent = DRange3d::From(&feature[0], (int)feature.size());
+            //for(auto& feature : newFeatures)
+            //    {
+            //    DRange3d newFeatureExtent = DRange3d::From(&feature[0], (int)feature.size());
                 if(this->IsParentOfARealUnsplitNode())
-                    added = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_pSubNodeNoSplit)->AddFeatureDefinitionUnconditional(type, feature, newFeatureExtent);
+                    added = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_pSubNodeNoSplit)->AddFeatureDefinitionUnconditional(type, id, points, extent);
                 else
                     {
                     for(size_t indexNode = 0; indexNode < this->m_nodeHeader.m_numberOfSubNodesOnSplit; indexNode++)
                         {
-                        added += dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_apSubNodes[indexNode])->AddFeatureDefinition(type, feature, newFeatureExtent, true);
+                        added += dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_apSubNodes[indexNode])->AddFeatureDefinition(type, id, points, extent, true);
                         }
                     }
-                }
+            //    }
             }
      
         this->SetDirty(true);
@@ -2440,7 +2558,7 @@ bool SMMeshIndexNode<POINT, EXTENT>::InvalidateFilteringMeshing(bool becauseData
     //=======================================================================================
     // @bsimethod                                                   Elenie.Godzaridis 08/15
     //=======================================================================================
-    template<class POINT, class EXTENT>  size_t  SMMeshIndexNode<POINT, EXTENT>::AddFeatureDefinition(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent, bool ExtentFixed)
+    template<class POINT, class EXTENT>  size_t  SMMeshIndexNode<POINT, EXTENT>::AddFeatureDefinition(ISMStore::FeatureType type, uint64_t id, bvector<DPoint3d>& points, DRange3d& extent, bool ExtentFixed)
         {
         if (!this->IsLoaded())
             Load();
@@ -2482,11 +2600,11 @@ bool SMMeshIndexNode<POINT, EXTENT>::InvalidateFilteringMeshing(bool becauseData
 
             if (points.size() + pointsPtr->size() >= this->m_nodeHeader.m_SplitTreshold)
                 {
-                return AddFeatureDefinition(type, points, extent,true);
+                return AddFeatureDefinition(type, id, points, extent,true);
                 }
             else
                 {
-                return AddFeatureDefinitionUnconditional(type,points,extent);              
+                return AddFeatureDefinitionUnconditional(type,id, points,extent);              
                 }
         }
     else
@@ -2495,7 +2613,7 @@ bool SMMeshIndexNode<POINT, EXTENT>::InvalidateFilteringMeshing(bool becauseData
                                             ExtentOp<EXTENT>::GetXMax(this->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(this->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMax(this->m_nodeHeader.m_nodeExtent));
         if (extent.IntersectsWith(nodeRange))
             {
-            return AddFeatureDefinitionUnconditional(type, points, extent);
+            return AddFeatureDefinitionUnconditional(type, id, points, extent);
             }
         }
         return 0;
@@ -2661,7 +2779,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Propag
     for (auto& feature : defs)
         {
         --s_featuresAddedToTree;
-        for (size_t pt = 1; pt < feature.size(); ++pt)
+        for (size_t pt = 2; pt < feature.size(); ++pt)
             {
             if (feature[pt] < INT_MAX)
                 {
@@ -2695,7 +2813,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Propag
     if (this->m_pSubNodeNoSplit != NULL && !this->m_pSubNodeNoSplit->IsVirtualNode())
         {
         for (size_t i = 0; i < featurePoints.size(); ++i)
-            dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_pSubNodeNoSplit)->AddFeatureDefinitionUnconditional((ISMStore::FeatureType)defs[i][0], featurePoints[i], extents[i]);
+            dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_pSubNodeNoSplit)->AddFeatureDefinitionUnconditional((ISMStore::FeatureType)defs[i][1], defs[i][0], featurePoints[i], extents[i]);
         }
     else if (!this->IsLeaf())
         {
@@ -2704,9 +2822,9 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Propag
             size_t added = 0;
             if (featurePoints[i].size() <= 1) continue;
             for (size_t indexNodes = 0; indexNodes < this->m_nodeHeader.m_numberOfSubNodesOnSplit; indexNodes++)
-                added += dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_apSubNodes[indexNodes])->AddFeatureDefinition((ISMStore::FeatureType)defs[i][0], featurePoints[i], extents[i], true);
+                added += dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_apSubNodes[indexNodes])->AddFeatureDefinition((ISMStore::FeatureType)defs[i][1], defs[i][0], featurePoints[i], extents[i], true);
 
-            assert(added >= featurePoints[i].size() - sentinels[i]);
+            //assert(added >= featurePoints[i].size() - sentinels[i]);
             }
         }
 
@@ -3296,7 +3414,7 @@ void SMMeshIndexNode<POINT, EXTENT>::CollectFeatureDefinitionsFromGraph(MTGGraph
         {
         if (definition.size() < 2) continue;
         newDefs.push_back(definition);
-        count += 1 + definition.size();     
+        count += 2 + definition.size();     
         }
     linearFeaturesPtr->reserve(count);
     for (size_t i = 0; i < count; ++i) linearFeaturesPtr->push_back(0);
@@ -5089,7 +5207,6 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
                 for(size_t i = 0; i < clip->size(); ++i)
                     {
                     isMaskPrimitive.push_back(isMask[&clip - clips.data()]);
-                    (*clip)[i]->SetIsMask(isMask[&clip - clips.data()]);
                     }
                 clipComplete->Append(*clip);
             }
@@ -5393,17 +5510,45 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
     DRange3d clippedExt;
     ClipFeatureDefinition((uint32_t)DTMFeatureType::Polygon, extRange, clippedPts, clippedExt, polyPts, polyRange);
 
+    bvector<bvector<DPoint3d>> clippedPolygons;
+    clippedPolygons.push_back(bvector<DPoint3d>());
+    for (int i = 0, j = 0; i < clippedPts.size(); i++)
+        {
+        if (clippedPts[i].x == DBL_MAX)
+            {
+            if (i + 1 < clippedPts.size())
+                {
+                clippedPolygons.push_back(bvector<DPoint3d>());
+                j++;
+                }            
+            }
+        else
+            {
+            clippedPolygons[j].push_back(clippedPts[i]);
+            }
+        } 
+
     ICurvePrimitivePtr boxCurvePtr(ICurvePrimitive::CreateLineString(box,5));
     CurveVectorPtr boxCurveVecPtr(CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, boxCurvePtr));
     if (clippedExt.IsNull() || clippedPts.empty()) return false;
-    if (!clippedExt.IsEqual(polyRange))
-        {
-        curvePtr = ICurvePrimitive::CreateLineString(clippedPts);
-        curveVectorPtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curvePtr);
-        }
-    const CurveVectorPtr intersection = CurveVector::AreaIntersection(*curveVectorPtr, *boxCurveVecPtr);
 
-    return (!intersection.IsNull());
+    if (clippedExt.IsEqual(polyRange))
+        {
+        const CurveVectorPtr intersection = CurveVector::AreaIntersection(*curveVectorPtr, *boxCurveVecPtr);
+        return (!intersection.IsNull());
+        }
+    else
+        {
+        for (int i = 0; i < clippedPolygons.size(); i++)
+            {
+            curvePtr = ICurvePrimitive::CreateLineString(clippedPolygons[i]);
+            curveVectorPtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curvePtr);
+            const CurveVectorPtr intersection = CurveVector::AreaIntersection(*curveVectorPtr, *boxCurveVecPtr);
+            if (!intersection.IsNull())
+                return true;
+            }
+        return false;
+        }    
     }
     
 
@@ -6129,7 +6274,7 @@ template<class POINT, class EXTENT>  int64_t  SMMeshIndex<POINT, EXTENT>::AddTex
 
 template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::AddFeatureDefinition(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent)
     {
-    ++s_importedFeatures;
+    auto id = ++s_importedFeatures;
     if (0 == points.size())
         return;
 
@@ -6143,7 +6288,16 @@ template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::AddFeatur
         else
         this->m_pRootNode = CreateNewNode(ExtentOp<EXTENT>::Create(extent.low.x, extent.low.y, extent.low.z, extent.high.x, extent.high.y, extent.high.z), true);
         }
-    size_t nAddedPoints = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_pRootNode)->AddFeatureDefinition(type, points, extent, this->m_indexHeader.m_HasMaxExtent);
+
+    //ISMInt32DataStorePtr nodeDataStore;
+    //bool result = GetDataStore()->GetNodeDataStore(nodeDataStore, &this->m_pRootNode->m_nodeHeader, SMStoreDataType::LinearFeature);
+    //assert(result == true);
+    //
+    //ILinearFeaturesExtOpsPtr linearFeatures;
+    //nodeDataStore->GetLinearFeaturesExtOps(linearFeatures);
+    //uint32_t id = linearFeatures->StoreFeature(type, points);
+
+    size_t nAddedPoints = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_pRootNode)->AddFeatureDefinition(type, id, points, extent, this->m_indexHeader.m_HasMaxExtent);
     if (0 == nAddedPoints)
         {
         //can't add feature, need to grow extent
@@ -6163,7 +6317,7 @@ template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::AddFeatur
 
 
         // The root node contains the spatial object ... add it
-        nAddedPoints = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_pRootNode)->AddFeatureDefinition(type, points, extent, this->m_indexHeader.m_HasMaxExtent);
+        nAddedPoints = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_pRootNode)->AddFeatureDefinition(type, id, points, extent, this->m_indexHeader.m_HasMaxExtent);
         //assert(nAddedPoints >= points.size());
         }
     }

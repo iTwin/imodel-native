@@ -545,7 +545,7 @@ private:
         // Make sure our read line buffer is null ended
         m_lineBuffer[XYZFormat::MAX_FORMATED_LINE_SIZE] = '\0';
 
-        if (file.GetFieldCount() != dimensionOrg.GetSize())
+        if (file.GetFieldCount() < 3 || dimensionOrg.GetSize() < 3)
             throw CustomException(L"Point type does not define appropriate dimension count!");
 
         for(size_t i = 0; i < dimensionOrg.GetSize(); i++)

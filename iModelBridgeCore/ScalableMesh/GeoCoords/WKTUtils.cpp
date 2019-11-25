@@ -359,7 +359,7 @@ const WKTKeyword& GetWKTKeyword (const WChar* keywordBegin)
     assert(SET_SORTED);
 
     static const bool SET_CONTAINS_NULL_KEYS 
-        = (WKT_KEYWORDS_SET_END != std::find_if(WKT_KEYWORDS_SET, WKT_KEYWORDS_SET_END, std::bind1st(WKT_KEYWORD_EQUAL, WKT_NULL_KEY)));
+        = (WKT_KEYWORDS_SET_END != std::find_if(WKT_KEYWORDS_SET, WKT_KEYWORDS_SET_END, std::bind(WKT_KEYWORD_EQUAL, WKT_NULL_KEY, placeholders::_1)));
     assert(!SET_CONTAINS_NULL_KEYS);
 #endif //!NDEBUG
 

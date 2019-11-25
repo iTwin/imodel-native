@@ -271,7 +271,7 @@ bool IScalableMeshSourceCreator::AreAllSourcesReachable() const
     {
     auto sources = dynamic_cast<IScalableMeshSourceCreator::Impl*>(m_implP.get())->m_sources;
     // Reachable only if all sources are reachable
-    return sources.End() == std::find_if(sources.Begin(), sources.End(), not1(mem_fun_ref(&IDTMSource::IsReachable)));
+    return sources.End() == std::find_if(sources.Begin(), sources.End(), [] (IDTMSource const& s) { return !s.IsReachable(); });
     }
 
 void IScalableMeshSourceCreator::SetSourceImportExtent(const DRange2d& ext)
@@ -1287,6 +1287,16 @@ StatusInt IScalableMeshSourceCreator::Impl::GetTextureProvider(ITextureProviderP
     {
         return GetStreamedTextureProvider(textureProviderPtr, smPtr, dataIndexPtr, filteredSources[0]->GetPath());
     }
+
+    if (smPtr.IsValid())
+        {
+        ((ScalableMesh<DPoint3d>*)smPtr.get())->GetMainIndexP()->SetTextured(SMTextureType::Embedded);
+        }
+    else
+        {
+        assert(dataIndexPtr != nullptr);
+        dataIndexPtr->SetTextured(SMTextureType::Embedded);
+        }
 
     return GetLocalSourceTextureProvider(textureProviderPtr, filteredSources);
 }

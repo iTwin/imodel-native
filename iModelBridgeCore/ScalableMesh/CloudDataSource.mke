@@ -3,42 +3,37 @@
 #  See COPYRIGHT.md in the repository root for full copyright notice.
 #---------------------------------------------------------------------------------------------
 baseDir         = $(_MakeFilePath)
-PolicyFile      = $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/mki/AssertScalableMeshPolicy.mki
+PolicyFile      = $(baseDir)mki/AssertScalableMeshPolicy.mki
 
-ALLOW_MSVC_PERMISSIVE=1 # otherwise we get errors in cpprest's header files
-
-VANCOUVER=1
 OPTIMIZE_FOR_SPEED=1
 
+appName=CloudDataSource
+
 %include  mdl.mki
-%include $(baseDir)mki/ScalableMeshPolicy_Bim.mki
-%include $(baseDir)CloudDataSource/CloudDataSourcePolicy_Bim.mki
+%include $(baseDir)mki/ScalableMeshPolicy.mki
 
 
 CCompOpts + $(PublicApiIncludes)
 CCompOpts + $(VendorApiIncludes)
 
+%if defined(VANCOUVER_BUILD)
+CCompOpts + -DVANCOUVER_API
+%endif
+
 #consoleAppUnicode = 1
 
-includeDir=$(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/CloudDataSource/include/
+includeDir=$(baseDir)CloudDataSource/include/
 dirToSearch=$(includeDir)
 %include cincapnd.mki
-
-#dirToSearch=$(BuildContext)VendorAPI/wastorage/
-#%include cincapnd.mki
-#
-#dirToSearch=$(BuildContext)VendorAPI/cpprestsdk/
-#%include cincapnd.mki
 
 #----------------------------------------------------------------------
 #   Build precompiled header
 #----------------------------------------------------------------------
-appName = CloudDataSource
-o = $(OutputRootDir)Build/ScalableMesh/$(appName)/
+o = $(OutputRootDir)build/ScalableMesh/$(appName)/
 always:
     ~mkdir $(o)
 
-SrcDir=$(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/CloudDataSource/
+SrcDir=$(baseDir)CloudDataSource/
 
 always:
     ~linkdir "$(BuildContext)VendorAPI/CloudDataSource=$(includeDir)"
@@ -104,7 +99,11 @@ $(o)DataSourceTransferScheduler$(oext) : $(SrcDir)DataSourceTransferScheduler.cp
 
 $(o)DataSourceURL$(oext) : $(SrcDir)DataSourceURL.cpp ${MultiCompileDepends}
 
+%if !defined(VANCOUVER_BUILD)
 %if $(BUILD_TOOLSET) == "VS2015" || $(BUILD_TOOLSET) == "VS2017"
+    $(o)PerformanceTimer$(oext) : $(SrcDir)PerformanceTimer.cpp ${MultiCompileDepends}
+%endif
+%else
     $(o)PerformanceTimer$(oext) : $(SrcDir)PerformanceTimer.cpp ${MultiCompileDepends}
 %endif
 
@@ -126,8 +125,6 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)BeCurl.lib \
     $(ContextSubpartsLibs)$(BeJsonCppLib) \
     $(ContextSubpartsLibs)BeOpenSSL.lib
-
-#LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)wastorage.lib 
 
 #--------------------------------------------------------------------------------------
 #   Create the library

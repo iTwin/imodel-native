@@ -331,8 +331,8 @@ template <class EXTENT> class SMIndexNodeHeader : public SMIndexNodeHeaderBase<E
         int*        m_meshComponents = nullptr;
         size_t      m_nodeCount;
 
-        float       m_geometricResolution;     //smallest detail that can be represented by the node geometry 
-        float       m_textureResolution;       //smallest detail that can be represented by the node texture
+        float       m_geometricResolution = 0.0;     //smallest detail that can be represented by the node geometry 
+        float       m_textureResolution = 0.0;       //smallest detail that can be represented by the node texture
 
         std::vector<HPMBlockID> m_apNeighborNodeID[MAX_NEIGHBORNODES_COUNT];    
         bool                    m_apAreNeighborNodesStitched[MAX_NEIGHBORNODES_COUNT];

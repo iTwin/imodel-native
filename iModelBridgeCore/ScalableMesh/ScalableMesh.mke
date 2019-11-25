@@ -2,22 +2,73 @@
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #  See COPYRIGHT.md in the repository root for full copyright notice.
 #---------------------------------------------------------------------------------------------
-     
+
+%if !defined(appName)
+appName         = ScalableMesh
+%endif
+
 baseDir         = $(_MakeFilePath)
 
+%if defined(VANCOUVER_BUILD)
+PolicyFile      = $(baseDir)mki/AssertScalableMeshPolicy.mki
+SolutionPolicyMki=$(baseDir)ScalableMesh.mki
+
+OPTIMIZE_FOR_SPEED=1
+%endif
+
+%if !defined(BUILD_CORE) && !defined(BUILD_CREATOR)
+# Default is build both in a single library
+BUILD_SINGLE_LIB = 1
+BUILD_CORE = 1
+BUILD_CREATOR = 1
+%endif
+
+%if defined(BUILD_CORE)
+STM_EXPORT = 1
+%endif
+
+%if defined(BUILD_CREATOR)
+STM_IMPORT = 1
+%endif
+
 %include  mdl.mki
-%include $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/mki/ScalableMeshLibName.mki
-%include $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/mki/ScalableMeshPolicy_Bim.mki
+
+#%if !defined(VANCOUVER_BUILD) && !defined(DGNDB06_BUILD)
+#
+#dirToSearch=$(BuildContext)VendorAPI/Boost_1_5_7_0
+#%include cincapnd.mki
+#
+#%endif
+
+%if defined(VANCOUVER_BUILD)
+BUILD_TOOLSET = $(BB_DEFAULT_TOOLSET)
+%else
+%include $(baseDir)mki/ScalableMeshPolicy.mki
 %include $(baseDir)ScalableMesh.mki
+%endif
 
+%if defined(DBNDB06_BUILD)
+dirToSearch=$(BuildContext)VendorAPI/Boost
+%include cincapnd.mki
+%endif
 
+%if $(BUILD_TOOLSET) == "LINUX_CLANG"
+%warn HACK: Too many clang-specific warnings!
+%warn NO_DEFAULT_CLANG_WARNINGS = 1
+NO_DEFAULT_CLANG_WARNINGS = 1
+%endif
 
+%if defined(BUILD_CREATOR) && $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
 #this means we can use CGAL with the modules that were licensed to us
 %include $(BuildContext)SubParts/Files/LicensedComponents.mki
+%endif
 
+%if defined(subAppName)
+DLM_NAME    = $(subAppName)
+CCompPDBName = $(subAppName)
 
-dirToSearch=$(BuildContext)VendorAPI/Boost_1_5_7_0
-%include cincapnd.mki
+o = $(OutBuildSTM)$(subAppName)/
+%endif
 
 #----------------------------------------------------------------------
 #       Create output directories
@@ -29,13 +80,17 @@ always:
 #   Symlink APIs
 #----------------------------------------------------------------------
 always:
-   ~linkdir "$(BuildContext)PublicAPI/ScalableMesh=${SCMPublicAPISrc}/ScalableMesh"
+   ~linkdir "$(BuildContext)PublicAPI/ScalableMesh=$(SCMPublicAPISrc)/ScalableMesh"
    ~linkfile "$(BuildContext)VendorAPI/TilePublisher/TilePublisher.h=$(tilePublisherDir)TilePublisher.h"
    ~linkfile "$(BuildContext)VendorAPI/TilePublisher/Constants.h=$(tilePublisherDir)Constants.h"
    ~linkfile "$(BuildContext)VendorAPI/TilePublisher/MeshTile.h=$(tilePublisherDir)MeshTile.h"
 
 
-CCompOpts + -openmp -bigobj -DCGAL_NO_AUTOLINK -DBOOST_ALL_NO_LIB -DBOOST_SYSTEM_NO_DEPRECATED -GR -Zc:twoPhase-
+CCompOpts + -openmp -bigobj -DCGAL_NO_AUTOLINK -DBOOST_ALL_NO_LIB -DBOOST_SYSTEM_NO_DEPRECATED -GR
+
+%if !defined(DGNDB06_BUILD)
+CCompOpts + -Zc:twoPhase-
+%endif
 
 #Uncomment this to allow generating design meshes
 #CCompOpts + -DWIP_MESH_IMPORT
@@ -48,6 +103,7 @@ CCompOpts + -DNO_3D_MESH
 %if !defined (GarlandFilter)
 CCompOpts + -DNO_GARLAND_FILTER 
 %endif
+
 #----------------------------------------------------------------------
 #       Inform user of compile options
 #----------------------------------------------------------------------
@@ -57,34 +113,106 @@ always:
 
 CCompOpts + $(PublicApiIncludes) 
 
-#disable warning: "'argument': conversion from 'int64_t' to 'uint32_t', possible loss of data". NEEDS_WORK_SM: switch all node ID types to uint64_t once and for all, then change this.
+%if !defined(VANCOUVER_BUILD)
+#disable warning: "'argument': conversion from 'int64_t' to 'uint32_t', possible loss of data". NEEDS_WORK_SM: Revisit all conversion warnings then remove this.
 CCompOpts + -wd4244
+%endif
 
 #release builds: error in boost (named_function_params.hpp)
 CCompOpts + -wd4172
 
-CCompOpts + -wd4002
+%if !defined(DGNDB06_BUILD)
+#x86 build. signed/unsigned mismatch and int64/size_t issues.
+CCompOpts + -wd4018 -wd4309 -wd4305
 
-CCompOpts + -wd4091
+%if $(BUILD_TOOLSET) == "ANDROID_CLANG"
+    %message "Android clang toolset"
+    ClangCppCompOpts + -Wno-error=pragma-once-outside-header -DLINUX_SCALABLEMESH_BUILD -Wno-error=unknown-pragmas -Wno-error=unused-private-field -Wno-error=unused-value -fdelayed-template-parsing -Wno-error=inconsistent-missing-override -Wno-error=format -Wno-error=delete-non-virtual-dtor -Wno-error=bool-conversion -Wno-error=microsoft-unqualified-friend -Wno-error=microsoft-pure-definition -Wno-error=microsoft-template -Wno-error=enum-compare -Wno-error=unused-variable -Wno-error=microsoft-default-arg-redefinition -Wno-error=typename-missing -Wno-error=dynamic-class-memaccess -D__CLANG__ -Wno-error=invalid-noreturn
+    ClangCppPchOpts + -Wno-error=pragma-once-outside-header -DLINUX_SCALABLEMESH_BUILD -Wno-error=unknown-pragmas -Wno-error=unused-private-field -Wno-error=unused-value -fdelayed-template-parsing -Wno-error=inconsistent-missing-override -Wno-error=format -Wno-error=delete-non-virtual-dtor  -Wno-error=bool-conversion -Wno-error=microsoft-unqualified-friend -Wno-error=microsoft-pure-definition -Wno-error=microsoft-template -Wno-error=enum-compare -Wno-error=unused-variable -Wno-error=microsoft-default-arg-redefinition -Wno-error=typename-missing -Wno-error=dynamic-class-memaccess -D__CLANG__ -Wno-error=invalid-noreturn
+    CCompOpts +  -Wno-error=pragma-once-outside-header -DLINUX_SCALABLEMESH_BUILD -Wno-error=unknown-pragmas -Wno-error=unused-private-field -Wno-error=unused-value -fdelayed-template-parsing -Wno-error=inconsistent-missing-override -Wno-error=format -Wno-error=delete-non-virtual-dtor  -Wno-error=bool-conversion -Wno-error=microsoft-unqualified-friend -Wno-error=microsoft-pure-definition -Wno-error=microsoft-template -Wno-error=enum-compare -Wno-error=unused-variable -Wno-error=microsoft-default-arg-redefinition -Wno-error=typename-missing -Wno-error=dynamic-class-memaccess -D__CLANG__ -Wno-error=invalid-noreturn
+    cuser + -Wno-error=pragma-once-outside-header -DLINUX_SCALABLEMESH_BUILD -Wno-error=unknown-pragmas -Wno-error=unused-private-field -Wno-error=unused-value -fdelayed-template-parsing -Wno-error=inconsistent-missing-override -Wno-error=format -Wno-error=delete-non-virtual-dtor -Wno-error=bool-conversion -Wno-error=microsoft-unqualified-friend -Wno-error=microsoft-pure-definition -Wno-error=microsoft-template -Wno-error=enum-compare -Wno-error=unused-variable -Wno-error=microsoft-default-arg-redefinition -Wno-error=typename-missing -Wno-error=dynamic-class-memaccess -D__CLANG__ -Wno-error=invalid-noreturn
+%elif $(BUILD_TOOLSET) == "LINUX_CLANG" || $(BUILD_TOOLSET) == "APPLE_CLANG"
+    %message "Linux Apple clang toolset"
+    #Linux options
+
+    cUser + -DLINUX_SCALABLEMESH_BUILD
+
+    cUser + -fdelayed-template-parsing
+
+    %if $(BUILD_TOOLSET) == "LINUX_CLANG"
+        cUser + -fopenmp=libomp -w
+    %endif
+%endif
+
+# Warning in boost (declaration hides global declaration)
+CCompOpts + -wd4459
+%endif
 
 #----------------------------------------------------------------------
 #   Build precompiled header
 #----------------------------------------------------------------------
+%if $(BUILD_TOOLSET) == "LINUX_CLANG"
+    %warn HACK: Something is wrong with the compile options sent into the PCH system, which causes libstdc++ header cmopile errors on Linux+clang!
+    %warn NOT USING PCH
+    
+    dirToSearch = $(stmDir)
+    %include cincapnd.mki
+%else
 PchCompiland = $(stmDir)ScalableMeshPCH.cpp
 PchOutputDir = $(o)
-PchExtraOptions    = -Zm180 -openmp $(PublicApiIncludes) -D__BENTLEYSTM_BUILD__ -D__BENTLEYSTMIMPORT_BUILD__ -DSCALABLE_MESH_DGN -DNOMINMAX -Zc:twoPhase-
-CompileOptionsMki =  $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/mki/ScalableMeshPolicy.mki
+PchExtraOptions    = -Zm180 -openmp $(PublicApiIncludes)
+
+%if defined(subAppName)
+bmopts + -dappName=$(subAppName) 
+%else
+bmopts + -dappName=$(appName) 
+%endif
+
+%if defined(VANCOUVER_BUILD)
+PchExtraOptions + -DVANCOUVER_API
+bmopts + -dbaseDir=$(baseDir)
+%if defined(BUILD_CORE)
+bmopts + -dSTM_EXPORT=1
+%endif
+
+%if defined(BUILD_CREATOR)
+bmopts + -dSTM_IMPORT=1
+%endif
+%else
+%if defined(BUILD_CORE)
+PchExtraOptions + -D__BENTLEYSTM_BUILD__
+%endif
+
+%if defined(BUILD_CREATOR)
+PchExtraOptions + -D__BENTLEYSTMIMPORT_BUILD__
+%endif
+
+CompileOptionsMki =  $(baseDir)mki/ScalableMeshPolicy.mki
+%endif
+
+%if defined(DGNDB06_BUILD)
+PchExtraOptions + -DDGNDB06_API -DNEED_SAVE_AS_IN_IMPORT_DLL
+%else
+PchExtraOptions + -Zc:twoPhase-
+%endif
+
 %include $(SharedMki)PreCompileHeader.mki
 
 # UsePrecompiledHeaderOptions is defined for us by PreCompileHeader.mki
 #CCPchOpts = $(UsePrecompiledHeaderOptions) -DSCALABLE_TERRAIN_MODEL_PRIVATE_SECTION -DWIP_MESH_IMPORT 
 CCPchOpts = $(UsePrecompiledHeaderOptions) -DSCALABLE_TERRAIN_MODEL_PRIVATE_SECTION
 
+%if defined(DGNDB06_BUILD)
+CCPchOpts + -DDGNDB06_API -DNEED_SAVE_AS_IN_IMPORT_DLL
+%endif
+
 %if !defined (3DMesh)
 CCPchOpts + -DNO_3D_MESH
 %endif
 
 PCHHeaderDepends=$(o)ScalableMeshPCH$(oext)
+%endif
+
 MultiCompileDepends=$(_MakeFileSpec) 
 #DisableMultiCompile=1
 %include MultiCppCompileRule.mki
@@ -93,28 +221,37 @@ MultiCompileDepends=$(_MakeFileSpec)
 #----------------------------------------------------------------------
 #   Build Fondations
 #----------------------------------------------------------------------
+%if defined(BUILD_CORE)
 
 $(o)Errors$(oext) : $(foundationsDir)Errors.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)PrivateStringTools$(oext) : $(foundationsDir)PrivateStringTools.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
+%endif
+
 #----------------------------------------------------------------------
 #   Build Memory
 #----------------------------------------------------------------------
+%if defined(BUILD_CORE)
+
 $(o)MemoryAllocation$(oext) : $(memoryDir)MemoryAllocation.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)Packet$(oext) : $(memoryDir)Packet.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)PacketAccess$(oext) : $(memoryDir)PacketAccess.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
+%endif
+
 #----------------------------------------------------------------------
 #   Build GeoCoords
 #----------------------------------------------------------------------
+%if defined(BUILD_CORE)
+
 $(o)Reprojection$(oext) : $(geocoordsDir)Reprojection.cpp $(SCMPublicAPISrc)ScalableMesh/GeoCoords/Definitions.h $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)GCS$(oext) : $(geocoordsDir)GCS.cpp $(SCMPublicAPISrc)ScalableMesh/GeoCoords/Definitions.h $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)WktUtils$(oext) : $(geocoordsDir)WktUtils.cpp $(SCMPublicAPISrc)ScalableMesh/GeoCoords/Definitions.h $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)WKTUtils$(oext) : $(geocoordsDir)WKTUtils.cpp $(SCMPublicAPISrc)ScalableMesh/GeoCoords/Definitions.h $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)GCSWktParsing$(oext) : $(geocoordsDir)GCSWktParsing.cpp $(SCMPublicAPISrc)ScalableMesh/GeoCoords/Definitions.h $(PCHHeaderDepends)  ${MultiCompileDepends}
 
@@ -122,10 +259,13 @@ $(o)LocalTransform$(oext) : $(geocoordsDir)LocalTransform.cpp $(SCMPublicAPISrc)
 
 $(o)Transformation$(oext) : $(geocoordsDir)Transformation.cpp $(SCMPublicAPISrc)ScalableMesh/GeoCoords/Definitions.h $(PCHHeaderDepends)  ${MultiCompileDepends}
 
+%endif
 
 #-----------------------------------------------------------------------
 #   Build Import
 #-----------------------------------------------------------------------
+%if defined(BUILD_CORE)
+
 $(o)DataType$(oext) : $(importDir)DataType.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)DataTypeFamily$(oext) : $(importDir)DataTypeFamily.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
@@ -180,11 +320,12 @@ $(o)ContentConfig$(oext) : $(importDir)ContentConfig.cpp $(PCHHeaderDepends)  ${
 
 $(o)ImportSequence$(oext) : $(importDir)ImportSequence.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-
+%endif
 
 #-----------------------------------------------------------------------
 #   Build STM
 #-----------------------------------------------------------------------
+%if defined(BUILD_CORE)
 
 $(o)SMPointIndex$(oext) : $(stmDir)SMPointIndex.cpp $(stmDir)SMPointIndex.hpp $(stmDir)SMPointIndex.h $(PCHHeaderDepends) ${MultiCompileDepends}
 
@@ -200,23 +341,13 @@ $(o)ScalableMeshClipContainer$(oext) : $(stmDir)ScalableMeshClipContainer.cpp $(
 
 $(o)ScalableMeshQuery$(oext) : $(stmDir)ScalableMeshQuery.cpp $(stmDir)ScalableMeshQuery.hpp $(stmDir)ScalableMeshQuery.h $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)ScalableMeshMesher$(oext) : $(stmDir)ScalableMeshMesher.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
-
 $(o)SMMeshIndex$(oext) : $(stmDir)SMMeshIndex.cpp $(stmDir)SMMeshIndex.hpp $(stmDir)SMMeshIndex.h $(PCHHeaderDepends) ${MultiCompileDepends}
 
 $(o)SMMemoryPool$(oext) : $(stmDir)SMMemoryPool.cpp $(stmDir)SMMemoryPool.h $(PCHHeaderDepends) ${MultiCompileDepends}
 
-$(o)CGALEdgeCollapse$(oext) : $(stmDir)CGALEdgeCollapse.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
-
 $(o)ScalableMeshCreator$(oext) : $(stmDir)ScalableMeshCreator.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)ScalableMeshProgress$(oext) : $(stmDir)ScalableMeshProgress.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
-
-$(o)ScalableMeshSourceCreator$(oext) : $(stmDir)ScalableMeshSourceCreator.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
-
-$(o)ScalableMeshNodeCreator$(oext) : $(stmDir)ScalableMeshNodeCreator.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
-
-$(o)ScalableMeshFeature$(oext) : $(stmDir)ScalableMeshFeature.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)ScalableMeshSources$(oext) : $(stmDir)ScalableMeshSources.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
@@ -226,13 +357,7 @@ $(o)ScalableMeshCoreFns$(oext) : $(stmDir)ScalableMeshCoreFns.cpp $(PCHHeaderDep
 
 $(o)ScalableMeshMoniker$(oext) : $(stmDir)ScalableMeshMoniker.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)ScalableMeshTilingOptions$(oext) : $(stmDir)ScalableMeshTilingOptions.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
-
-$(o)ScalableMeshQuadTreeBCLIBFilters$(oext) : $(stmDir)ScalableMeshQuadTreeBCLIBFilters.cpp $(stmDir)ScalableMeshQuadTreeBCLIBFilters.hpp $(stmDir)ScalableMeshQuadTreeBCLIBFilters.h $(PCHHeaderDepends)  ${MultiCompileDepends}
-
 $(o)ScalableMeshQuadTreeQueries$(oext) : $(stmDir)ScalableMeshQuadTreeQueries.cpp $(stmDir)ScalableMeshQuadTreeQueries.hpp $(stmDir)ScalableMeshQuadTreeQueries.h $(PCHHeaderDepends) ${MultiCompileDepends}
-
-$(o)ScalableMeshRelevanceDistribution$(oext) : $(stmDir)ScalableMeshRelevanceDistribution.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)ScalableMeshUtilityFunctions$(oext) : $(stmDir)ScalableMeshUtilityFunctions.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
@@ -257,8 +382,6 @@ $(o)ScalableMeshSourceImportConfig$(oext) : $(stmDir)ScalableMeshSourceImportCon
 $(o)ScalableMeshURL$(oext) : $(stmDir)ScalableMeshURL.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)ScalableMeshPolicy$(oext) : $(stmDir)ScalableMeshPolicy.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
-
-#$(o)MeshingFunctions$(oext) : $(stmDir)MeshingFunctions.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)ScalableMeshGraph$(oext) : $(stmDir)ScalableMesh/ScalableMeshGraph.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
@@ -304,9 +427,9 @@ $(o)HPUPacket$(oext) : $(stmDir)HPUPacket.cpp $(stmDir)HPUPacket.h ${MultiCompil
 
 $(o)Skirts$(oext) : $(stmDir)Edits/Skirts.cpp $(stmDir)Edits/Skirts.h ${MultiCompileDepends}
 
-$(o)ScalableMeshEdit$(oext) : $(stmDir)ScalableMeshEdit.cpp $(stmDir)ScalableMeshEdit.h ${MultiCompileDepends}
+$(o)ScalableMeshEdit$(oext) : $(stmDir)ScalableMeshEdit.cpp $(stmDir)ScalableMeshEdit.h $(SCMPublicAPISrc)ScalableMesh/IScalableMeshEdit.h ${MultiCompileDepends}
 
-$(o)ScalableMeshAnalysis$(oext) : $(stmDir)ScalableMeshAnalysis.cpp $(stmDir)ScalableMeshAnalysis.h ${MultiCompileDepends}
+$(o)ScalableMeshAnalysis$(oext) : $(stmDir)ScalableMeshAnalysis.cpp $(stmDir)ScalableMeshAnalysis.h $(SCMPublicAPISrc)ScalableMesh/IScalableMeshAnalysis.h ${MultiCompileDepends}
 
 $(o)ScalableMeshAnalysis_Ecef$(oext) : $(stmDir)ScalableMeshAnalysis_Ecef.cpp $(stmDir)ScalableMeshAnalysis.h ${MultiCompileDepends}
 
@@ -315,8 +438,6 @@ $(o)ScalableMeshTextureGenerator$(oext) : $(stmDir)ScalableMeshTextureGenerator.
 $(o)TextureProvider$(oext) : $(stmDir)TextureProvider.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
 $(o)MosaicTextureProvider$(oext) : $(stmDir)MosaicTextureProvider.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
-
-$(o)GeneratorTextureProvider$(oext) : $(stmDir)GeneratorTextureProvider.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
 $(o)StreamTextureProvider$(oext) : $(stmDir)StreamTextureProvider.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
@@ -328,36 +449,83 @@ $(o)ReprojectionModel$(oext) : $(stmDir)ReprojectionModel.cpp $(stmDir)Reproject
 
 $(o)ScalableMeshGroup$(oext) : $(stmDir)ScalableMeshGroup.cpp $(stmDir)ScalableMeshGroup.h ${MultiCompileDepends}
 
-$(o)ScalableMeshFrom3MX$(oext) : $(stmDir)ScalableMeshFrom3MX.cpp $(SCMPublicAPISrc)ScalableMesh\ScalableMeshFrom3MX.h ${MultiCompileDepends}
-
 $(o)ScalableMeshClippingOptions$(oext) : $(stmDir)ScalableMeshClippingOptions.cpp $(stmDir)ScalableMeshClippingOptions.h ${MultiCompileDepends}
 
+%endif
+
+#%if !defined(IMODEL02)
+$(o)ScalableMeshContourExtractor$(oext) : $(stmDir)ScalableMeshContourExtractor.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+#%endif
+
+%if defined(BUILD_CREATOR)
+$(o)ScalableMeshMesher$(oext) : $(stmDir)ScalableMeshMesher.cpp $(stmDir)ScalableMeshMesher.hpp $(stmDir)ScalableMeshMesher.h $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)CGALEdgeCollapse$(oext) : $(stmDir)CGALEdgeCollapse.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)ScalableMeshSourceCreator$(oext) : $(stmDir)ScalableMeshSourceCreator.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)ScalableMeshNodeCreator$(oext) : $(stmDir)ScalableMeshNodeCreator.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)ScalableMeshFeature$(oext) : $(stmDir)ScalableMeshFeature.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)ScalableMeshQuadTreeBCLIBFilters$(oext) : $(stmDir)ScalableMeshQuadTreeBCLIBFilters.cpp $(stmDir)ScalableMeshQuadTreeBCLIBFilters.hpp $(stmDir)ScalableMeshQuadTreeBCLIBFilters.h $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+%if $(BUILD_TOOLSET) != "LINUX_CLANG"
+$(o)ScalableMeshFrom3MX$(oext) : $(stmDir)ScalableMeshFrom3MX.cpp $(SCMPublicAPISrc)ScalableMesh/ScalableMeshFrom3MX.h ${MultiCompileDepends}
+%endif
+
+%if defined(VANCOUVER_BUILD) || defined(IMODEL02)
+$(o)ScalableMeshDetectGround$(oext) : $(stmDir)ScalableMeshDetectGround.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+%endif
+
+#$(o)ScalableMeshTilingOptions$(oext) : $(stmDir)ScalableMeshTilingOptions.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+#$(o)ScalableMeshRelevanceDistribution$(oext) : $(stmDir)ScalableMeshRelevanceDistribution.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+#$(o)MeshingFunctions$(oext) : $(stmDir)MeshingFunctions.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+#$(o)GeneratorTextureProvider$(oext) : $(stmDir)GeneratorTextureProvider.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
+%endif
+
 $(o)ScalableMeshModuleInfo$(oext) : $(stmDir)ScalableMeshModuleInfo.cpp $(stmDir)ScalableMeshModuleInfo.h ${MultiCompileDepends}
+
 
 #-----------------------------------------------------------------------
 #   Build Tile Publisher
 #-----------------------------------------------------------------------
+%if defined(BUILD_CORE)
+
 
 $(o)MeshTile$(oext) : $(tilePublisherDir)MeshTile.cpp $(tilePublisherDir)MeshTile.h ${MultiCompileDepends}
 
 $(o)TilePublisher$(oext) : $(tilePublisherDir)TilePublisher.cpp $(tilePublisherDir)TilePublisher.h ${MultiCompileDepends}
 
+%endif
+
+%if defined(BUILD_CREATOR)
 $(o)SMPublisher$(oext) : $(stmDir)Stores/SMPublisher.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
 $(o)SMCesiumPublisher$(oext) : $(stmDir)Stores/SMCesiumPublisher.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
-$(o)ScalableMeshSaveAs$(oext) : $(stmDir)ScalableMeshSaveAs.cpp ${MultiCompileDepends}
+$(o)ScalableMeshSaveAs$(oext) : $(stmDir)ScalableMeshSaveAs.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
-$(o)ScalableMeshContourExtractor$(oext) : $(stmDir)ScalableMeshContourExtractor.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+%endif
 
 #-----------------------------------------------------------------------
 #   Build RDS provider
 #-----------------------------------------------------------------------
+%if defined(BUILD_CORE)
+
 $(o)ScalableMeshRDSProvider$(oext) : $(stmDir)/ScalableMeshRDSProvider.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
+%endif
 
 #-----------------------------------------------------------------------
 #   Build Stores
 #-----------------------------------------------------------------------
+%if defined(BUILD_CORE)
+
 $(o)SMSQLiteSisterFile$(oext) : $(stmDir)Stores/SMSQLiteSisterFile.cpp $(stmDir)Stores/SMSQLiteSisterFile.h ${MultiCompileDepends}
 
 $(o)SMSQLiteStore$(oext) : $(stmDir)Stores/SMSQLiteStore.cpp $(stmDir)Stores/SMSQLiteStore.h $(stmDir)Stores/SMSQLiteStore.hpp ${MultiCompileDepends}
@@ -368,9 +536,13 @@ $(o)SMExternalProviderDataStore$(oext) : $(stmDir)Stores/SMExternalProviderDataS
 
 $(o)SMStoreUtils$(oext) : $(stmDir)Stores/SMStoreUtils.cpp $(stmDir)Stores/SMStoreUtils.h ${MultiCompileDepends}
 
+%endif
+
 #-----------------------------------------------------------------------
 #   Build Compile Automatic Ground Detection 
 #-----------------------------------------------------------------------
+%if defined(BUILD_CREATOR)
+
 #$(o)GroundDetectionManager$(oext) : $(automaticGroundDetectionDir)GroundDetectionManager.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 #$(o)PointCloudClassification$(oext) : $(automaticGroundDetectionDir)PointCloudClassification.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
@@ -385,13 +557,19 @@ $(o)SMStoreUtils$(oext) : $(stmDir)Stores/SMStoreUtils.cpp $(stmDir)Stores/SMSto
 
 #$(o)PointCloudSisterFileManager$(oext) : $(automaticGroundDetectionDir)PointCloudSisterFileManager.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
+%if $(BUILD_TOOLSET) != "LINUX_CLANG"
+
 $(o)ScalableMeshGroundExtractor$(oext) : $(automaticGroundDetectionDir)ScalableMeshGroundExtractor.cpp $(automaticGroundDetectionDir)ScalableMeshGroundExtractor.h  ${MultiCompileDepends}
 
 $(o)ScalableMeshPointsProvider$(oext) : $(automaticGroundDetectionDir)ScalableMeshPointsProvider.cpp $(automaticGroundDetectionDir)ScalableMeshPointsProvider.h  ${MultiCompileDepends}
 
+%endif
+
 #-----------------------------------------------------------------------
 #   Build Compile Importer plugins
 #-----------------------------------------------------------------------
+%if $(BUILD_TOOLSET) != "LINUX_CLANG"
+
 $(o)CivilDTMHelpers$(oext) : $(importerPluginsDir)CivilDTMHelpers.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)CivilDTMFileImporter$(oext) : $(importerPluginsDir)CivilDTMFileImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
@@ -402,42 +580,76 @@ $(o)XYZFileImporter$(oext) : $(importerPluginsDir)XYZFileImporter.cpp $(PCHHeade
 
 $(o)LandXMLFileImporter$(oext) : $(importerPluginsDir)LandXMLFileImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-#$(o)IDTMFileImporter$(oext) : $(importerPluginsDir)IDTMFileImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+%if defined(VANCOUVER_BUILD)
+$(o)IDTMFileImporter$(oext) : $(importerPluginsDir)IDTMFileImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+%endif
 
 $(o)XYZAsciiFileImporter$(oext) : $(importerPluginsDir)XYZAsciiFileImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-#$(o)DGNdbImporter$(oext) : $(importerPluginsDir)DGNdbImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+%if defined(DGNDB06_BUILD)
+$(o)DGNdbImporter$(oext) : $(importerPluginsDir)DGNdbImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+%endif
 
+%if defined(VANCOUVER_BUILD) || defined(IMODEL02)
+$(o)TextureImporter$(oext) : $(importerPluginsDir)TextureImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+%endif
+
+%endif
 
 #   Importer from DcStmCore
+
+%if defined(VANCOUVER_BUILD)
+$(o)DEMRasterImporter$(oext) : $(importerPluginsDir)DEMRasterImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)DGNLevelImporter$(oext) : $(importerPluginsDir)DGNLevelImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)ElementType$(oext) : $(importerPluginsDir)ElementType.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)DGNModelGeoRef$(oext) : $(geocoordsDir)DGNModelGeoRef.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)PODImporter$(oext) : $(importerPluginsDir)PODImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)STMSource$(oext) : $(importerPluginsDir)STMSource.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+%else
+
+%if $(BUILD_TOOLSET) != "LINUX_CLANG"
+
 $(o)DEMRasterImporter_dgndb$(oext) : $(importerPluginsDir)DEMRasterImporter_dgndb.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-#$(o)DGNLevelImporter$(oext) : $(importerPluginsDir)DGNLevelImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+%endif
 
-#$(o)DGNModelUtilities$(oext) : $(importerPluginsDir)DGNModelUtilities.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+%endif
 
-#$(o)ElementType$(oext) : $(importerPluginsDir)ElementType.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
-
-#$(o)ElemSourceRef$(oext) : $(importerPluginsDir)ElemSourceRef.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
-
-#$(o)DGNModelGeoRef$(oext) : $(geocoordsDir)DGNModelGeoRef.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
-
-#NEEDS_WORK_SM_POD_B0200 : Need to adapt to refactored Vortex API
-#$(o)PODImporter_dgndb$(oext) : $(importerPluginsDir)PODImporter_dgndb.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+%if defined(DGNDB06_BUILD)
+$(o)PODImporter_dgndb$(oext) : $(importerPluginsDir)PODImporter_dgndb.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+%endif
 
 #$(o)STMSource$(oext) : $(importerPluginsDir)STMSource.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
+%if $(BUILD_TOOLSET) != "LINUX_CLANG"
 $(o)XYZAsciiSource$(oext) : $(importerPluginsDir)XYZAsciiSource.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+%endif
 
 #$(o)CivilElemSource$(oext) : $(importerPluginsDir)CivilElemSource.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+%endif
+
+%if defined(VANCOUVER_BUILD)
+
+$(o)DGNModelUtilities$(oext) : $(importerPluginsDir)DGNModelUtilities.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)ElemSourceRef$(oext) : $(importerPluginsDir)ElemSourceRef.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+%endif
 
 
 #-----------------------------------------------------------------------
 #   Build Compile Custom plugins
 #-----------------------------------------------------------------------
-$(o)ScalableMeshClipMaskFilterFactory$(oext) : $(pluginsDir)ScalableMeshClipMaskFilterFactory.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+%if defined(BUILD_CORE)
 
-#$(o)ScalableMeshTypeConversionFilterPlugins$(oext) : $(pluginsDir)ScalableMeshTypeConversionFilterPlugins.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)ScalableMeshClipMaskFilterFactory$(oext) : $(pluginsDir)ScalableMeshClipMaskFilterFactory.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)ScalableMeshReprojectionFilterPlugins$(oext) : $(pluginsDir)ScalableMeshReprojectionFilterPlugins.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
@@ -449,6 +661,9 @@ $(o)ScalableMeshTINTypes$(oext) : $(pluginsDir)ScalableMeshTINTypes.cpp $(PCHHea
 
 $(o)ScalableMeshMeshTypes$(oext) : $(pluginsDir)ScalableMeshMeshTypes.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
+%endif
+
+%if defined(BUILD_CREATOR)
 
 %if defined (3DMesh)
 delaunayDir=$(stmDir)3dDelaunay/
@@ -471,6 +686,7 @@ $(o)tetgen$(oext) : $(delaunayDir)tetgen/tetgen.cpp $(delaunayDir)tetgen/tetgen.
 $(o)tetgenpredicates$(oext) : $(delaunayDir)tetgen/tetgenpredicates.cpp $(delaunayDir)tetgen/tetgen.h $(delaunayIncludes) ${MultiCompileDepends}
 %endif
 
+%endif
 
 
 
@@ -479,16 +695,15 @@ $(o)tetgenpredicates$(oext) : $(delaunayDir)tetgen/tetgenpredicates.cpp $(delaun
 
 cppObjects =% $(MultiCompileObjectList)
 
+%if defined(VANCOUVER_BUILD)
+certDir             = $(bsiCerts)
+%endif
+
 #----------------------------------------------------------------------
 #   dependencies of the subsystem.
 #----------------------------------------------------------------------
 DLM_OBJECT_PCH      = $(o)ScalableMeshPCH$(oext)
 DLM_OBJECT_FILES    = $(cppObjects)
-DLM_DEST            = $(o)
-DLM_SYMB_DEST       = $(o)
-DLM_EXPORT_DEST     = $(o)
-DLM_OBJECT_DEST     = $(o)
-
 
 #SCALABLE_MESH_DGN=1
 
@@ -502,50 +717,115 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)$(TerrainModelFormatsLib) \
     $(ContextSubpartsLibs)BeCurl.lib \
     $(ContextSubpartsLibs)RealityPlatform.lib \
+    $(ContextSubpartsLibs)CCApi.lib
+    
+%if !defined(DGNDB06_BUILD)
+LINKER_LIBRARIES_DELAYLOADED + \
     $(ContextSubpartsLibs)RealityPlatformTools.lib \
-    $(ContextSubpartsLibs)CCApi.lib\
     $(ContextSubpartsLibs)BeHttp.lib\
     $(ContextSubpartsLibs)BeFolly.lib\
     $(ContextSubpartsLibs)BeXml.lib
+%endif
 
+%if defined(VANCOUVER_BUILD)
 
-#    $(DgnPlatformV8LibDir)Bentley.lib \
-#    $(DgnPlatformV8LibDir)ECObjects.lib \
-#    $(DgnPlatformV8LibDir)BentleyGeom.lib \
-#    $(DgnPlatformV8LibDir)DgnPlatform.lib \
-#    $(DgnPlatformV8LibDir)DgnGeoCoord.lib \
-#    $(DgnPlatformV8LibDir)RmgrTools.lib \
-#    $(DgnPlatformV8LibDir)BaseGeoCoord.lib 
+LINKER_LIBRARIES_DELAYLOADED + \
+    $(ContextSubpartsLibs)PointCloud.lib \
 
-#    $(ContextSubpartsLibs)wastorage.lib \
-#    $(ContextSubpartsLibs)cpprest140_2_6.lib
-#    $(ContextSubpartsLibs)PCLWrapper.lib \
-#    $(ContextSubpartsLibs)Imagepp-gdal.lib \
-#    $(ContextSubpartsLibs)PointCloud.lib \
-#    $(ContextSubpartsLibs)RmgrTools.lib \
-#    $(ContextSubpartsLibs)DgnGeoCoord.lib \
-#    $(ContextSubpartsLibs)DgnView.lib \
-#    $(ContextSubpartsLibs)RasterCore.lib \
-#    $(ContextSubpartsLibs)libboost_system-vc120-mt-1_57$(libext) \
-#    $(ContextSubpartsLibs)libboost_thread-vc120-mt-1_57$(libext) \
+%if defined(BUILD_CREATOR)
+LINKER_LIBRARIES_DELAYLOADED + \
+    $(ContextSubpartsLibs)acute3dio.lib
+%endif
+
+%endif
+
+%if defined(BUILD_CREATOR) && !defined(DGNDB06_BUILD)
+LINKER_LIBRARIES_DELAYLOADED + \
+    $(ContextSubpartsLibs)freeimage.lib
+%endif
+
 LINKER_LIBRARIES            = \
-    $(ContextSubpartsLibs)Imagepp.lib \
     $(ContextSubpartsLibs)$(BeJsonCppLib) \
     $(ContextSubpartsLibs)$(BentleyGeomLib) \
+    $(ContextSubpartsLibs)DgnPlatform.lib \
+    $(ContextSubpartsLibs)CloudDataSource.lib
+
+%if defined(BUILD_CREATOR) && $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
+LINKER_LIBRARIES + \
+    $(ContextSubpartsLibs)CGAL.lib \
+%endif
+
+%if defined(BUILD_CREATOR)
+LINKER_LIBRARIES + \
+    $(ContextSubpartsLibs)AutomaticGroundDetection.lib \
+%if !defined(BUILD_SINGLE_LIB)
+    $(ContextSubpartsLibs)ScalableMeshCore.lib \
+%endif
+%endif
+
+%if defined(VANCOUVER_BUILD)
+LINKER_LIBRARIES + \
+    $(ContextSubpartsLibs)$(IppGraLibsLib) \
+    $(ContextSubpartsLibs)$(IppUtlLibsLib) \
+    $(ContextSubpartsLibs)IppZlib.lib \
+    $(ContextSubpartsLibs)IppJpegLibTurbo.lib \
+    $(ContextSubpartsLibs)BeLibJpegTurbo.lib \
+    $(ContextSubpartsLibs)RmgrTools.lib \
+    $(ContextSubpartsLibs)DgnGeoCoord.lib
+    
+%if defined(BUILD_CREATOR)
+LINKER_LIBRARIES + \
+    $(ContextSubpartsLibs)DgnView.lib \
+    $(ContextSubpartsLibs)RasterCore.lib
+#%if defined (BUILD_USING_VS2013)
+#    $(ContextSubpartsLibs)libboost_system-vc120-mt-1_57$(libext) \
+#    $(ContextSubpartsLibs)libboost_thread-vc120-mt-1_57$(libext) \
+#%elif defined (BUILD_USING_VS2015)
+#    $(ContextSubpartsLibs)libboost_system-vc140-mt-1_57$(libext) \
+#    $(ContextSubpartsLibs)libboost_thread-vc140-mt-1_57$(libext) \
+#%elif defined (BUILD_USING_VS2017)
+#    $(ContextSubpartsLibs)libboost_system-vc140-mt-1_57$(libext) \
+#    $(ContextSubpartsLibs)libboost_thread-vc140-mt-1_57$(libext) \
+#%endif
+%endif
+    
+%elif defined(DGNDB06_BUILD)
+
+LINKER_LIBRARIES + \
+    $(ContextSubpartsLibs)BeLibJpegTurbo.lib \
+    $(ContextSubpartsLibs)ThreeMxReader.lib
+
+%elif defined(IMODEL02)
+
+LINKER_LIBRARIES + \
     $(ContextSubpartsStaticLibs)BeLibJpegTurbo.lib \
     $(ContextSubpartsLibs)BeJpeg.lib \
-    $(ContextSubpartsLibs)DgnPlatform.lib \
-    $(ContextSubpartsLibs)CloudDataSource.lib \
-    $(ContextSubpartsLibs)CGAL.lib \
-    $(ContextSubpartsLibs)ECObjects.lib \
-    $(ContextSubpartsLibs)BePointCloud.lib \
-    $(ContextSubpartsLibs)AutomaticGroundDetection.lib \
+    $(ContextSubpartsLibs)ThreeMxReaderLegacy.lib \
+
+%else
+
+LINKER_LIBRARIES + \
+    $(ContextSubpartsStaticLibs)BeLibJpegTurbo.lib \
+    $(ContextSubpartsLibs)BeJpeg.lib \
     $(ContextSubpartsLibs)ThreeMxReaderLegacy.lib \
     $(ContextSubpartsLibs)freeimage.lib
 
+%endif
+
+%if !defined(VANCOUVER_BUILD)
+LINKER_LIBRARIES + \
+    $(ContextSubpartsLibs)Imagepp.lib \
+    $(ContextSubpartsLibs)ECObjects.lib
+%if !defined(IMODEL02)
+LINKER_LIBRARIES + \
+    $(ContextSubpartsLibs)BePointCloud.lib
+%endif
+
+%endif
 
 %include $(sharedMki)linkLibrary.mki
 
+%if defined(BUILD_CORE)
 #----------------------------------------------------------------------------------------
 # Copy the cacert.pem file for securely talk to the RealityDataS-1 server for 
 # usgs datas
@@ -555,6 +835,8 @@ $(o)ScalableMeshCacert.pem: $(baseDir)ScalableMeshCacert.pem
 
 $(ContextDeliveryDir)ScalableMeshCacert.pem : $(o)ScalableMeshCacert.pem
         $(LinkFirstDepToFirstTarget)
+
+%endif
 
 #----------------------------------------------------------------------------------------
 # Symlink the loggging configuration file to enable ScalableMesh logging
