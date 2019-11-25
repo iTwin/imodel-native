@@ -14,6 +14,7 @@
 #include <WebServices/Configuration/UrlProvider.h>
 #include <WebServices/iModelHub/Client/OidcToken.h>
 #include <iModelBridge/iModelBridgeError.h>
+#include <DgnPlatform/DesktopTools/envvutil.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_LOGGING
@@ -1200,6 +1201,17 @@ bool iModelBridge::HoldsElementLock(SubjectCR jobSubject, BentleyApi::Dgn::LockL
 bool iModelBridge::TestFeatureFlag(CharCP ff)
     {
     bool flagVal = false;
+#ifndef PRG
+    WString value;//Allow feature flags to be override using env vars.
+    WString envKey(ff, true);
+    if (SUCCESS == util_getSysEnv(&value, envKey.c_str()))
+        {
+        //Currently we test env keys rarely. But if it is done in a loop it is expensive and we will need to move it into a static map.
+        flagVal = BeStringUtilities::Wtoi(value.c_str()) > 0;
+        LOG.debugv("iModelBridge::TestFeatureFlag: bridge returned %d for feature '%s'. from environment override", flagVal ? 1 : 0, ff);
+        return flagVal;
+        }
+#endif
     iModelBridgeLdClient::GetInstance((WebServices::UrlProvider::Environment)GetParamsCR().GetUrlEnvironment()).IsFeatureOn(flagVal, ff);
     LOG.debugv("iModelBridge::TestFeatureFlag: bridge returned %d for feature '%s'.", flagVal ? 1 : 0, ff);
     return flagVal;

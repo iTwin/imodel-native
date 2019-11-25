@@ -10,6 +10,7 @@
 #include <iModelBridge/iModelBridgeFwk.h>
 #include <iModelDmsSupport/DmsSession.h>
 #include <regex>
+#include "iModelBridgeFwkInternal.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_LOGGING
@@ -339,7 +340,26 @@ BentleyStatus iModelBridgeFwk::DmsServerArgs::ParseCommandLine(bvector<WCharCP>&
     
     if (isEncrypted)
         DecryptCredentials(m_dmsCredentials);
+
+    ParseEnvironment();
     return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  11/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridgeFwk::DmsServerArgs::ParseEnvironment ()
+    {
+    SetValueIfEmptyFromEnv(L"imbridge--dms-documentGuid", m_documentGuid);
+    SetValueIfEmptyFromEnv(L"imbridge--dms-library", m_dmsLibraryName);
+    SetValueIfEmptyFromEnv(L"imbridge--dms-datasource", m_dataSource);
+    if (m_documentId  == 0)
+        SetValueFromEnv(L"imbridge--dms-documentId=", m_documentId);
+
+    SetValueIfEmptyFromEnv(L"imbridge--dms-inputFileUrn", m_inputFileUrn);
+    SetValueIfEmptyFromEnv(L"imbridge-dms-workspaceDir", m_workspaceDir);
+    SetValueFromEnv(L"imbridge-dms-type", m_dmsType);
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -401,4 +421,4 @@ Utf8String iModelBridgeFwk::DmsServerArgs::GetDocumentGuid()
         return Utf8String();
 
     return match[1].str().c_str();
-    }
+    };

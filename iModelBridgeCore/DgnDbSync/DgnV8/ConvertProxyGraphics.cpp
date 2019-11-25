@@ -872,6 +872,62 @@ void ConvertDetailingSymbolExtension::RecordDrawingBoundaryDependency(Converter&
     UNUSED_VARIABLE(status);
     }
 
+/*---------------------------------------------------------------------------------**//**
+//This method should go away once Detailing symbol handler exports getdrawingboundarydata
+* @bsimethod                                    Abeesh.Basheer                  11/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static  Bentley::CurveVectorPtr GetDrawingBoundaryCurveVector(ElementHandleCR elemHandle)
+    {
+    DgnV8Api::IDetailingSymbolPtr def = DgnV8Api::DetailingSymbolManager::CreateDetailingSymbol(elemHandle);
+    if (!def.get())
+        {
+        BeAssert(0);
+        return NULL;
+        }
+
+    DgnV8Api::DrawingBoundaryDef* drawingTitle = dynamic_cast <DgnV8Api::DrawingBoundaryDef*> (def.get());
+    if (!def.get())
+        {
+        BeAssert(0);
+        return NULL;
+        }
+
+    return drawingTitle->GetBoundaryCurveVector();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  11/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static  BentleyStatus GetDrawingBoundaryClip(Converter& converter, Utf8StringR clipData, DgnV8Api::ElementHandle& drawingBoundaryElement, BentleyApi::Transform const& placementTrans)
+    {
+    DgnV8Api::DrawingBoundaryHandler* hdlr = dynamic_cast<DgnV8Api::DrawingBoundaryHandler*> (&drawingBoundaryElement.GetHandler());
+    if (NULL == hdlr)
+        return ERROR;
+        
+    Bentley::CurveVectorPtr v8vector = GetDrawingBoundaryCurveVector(drawingBoundaryElement);
+    if (v8vector.IsNull())
+        return ERROR;
+    
+    CurveVectorPtr curveVector;
+    converter.ConvertCurveVector(curveVector, *v8vector, nullptr);
+
+    if (curveVector.IsNull())
+        return ERROR;
+
+    curveVector->TransformInPlace(placementTrans);
+
+    ClipVectorPtr clip = ClipVector::CreateFromCurveVector(*curveVector, 0.001, 0.1);
+    if (clip.IsNull())
+        return ERROR;
+
+    auto jsonVal = clip->ToJson();
+    if (jsonVal.isNull())
+        return BSIERROR;
+
+    clipData = Json::FastWriter::ToString(jsonVal);
+    return SUCCESS;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      02/17
 //---------------------------------------------------------------------------------------
@@ -914,6 +970,22 @@ void ConvertDetailingSymbolExtension::RelateViewAttachmentLabelToViewAttachment(
 
     // Relate the viewAttachmentLabel to the viewAttachment
     auto viewAttachmentLabel = viewAttachmentLabelPersist->CopyForEdit();
+
+    //Store the drawing boundary extents on the callout.
+    Utf8String clipGeometryString;
+    auto drawingBoundaryMapping = converter.FindResolvedModelMappingByModelId(drawingBoundaryModelId);
+
+    DgnV8Api::ElementHandle drawingBoundaryElement(drawingBoundaryElementId, &drawingBoundaryMapping.GetV8Model());
+    BentleyApi::Transform invPlacementTrans, clipToLocalTrans;
+    invPlacementTrans.InitIdentity();
+    clipToLocalTrans.InitIdentity();
+    BentleyApi::Transform unitTransform = drawingBoundaryMapping.GetTransform();
+    BentleyApi::Transform placementTrans = viewAttachmentLabel->ToGeometrySource2d()->GetPlacementTransform();
+    invPlacementTrans.InverseOf(placementTrans);
+    clipToLocalTrans = Transform::FromProduct(invPlacementTrans, unitTransform);
+    if (SUCCESS == GetDrawingBoundaryClip(converter, clipGeometryString, drawingBoundaryElement, clipToLocalTrans))
+        viewAttachmentLabel->SetPropertyValue(GENERIC_ViewAttachmentLabel_ClipGeometry, clipGeometryString.c_str());
+
     auto status = viewAttachmentLabel->SetPropertyValue(GENERIC_ViewAttachmentLabel_ViewAttachment, viewAttachmentElementId);
     BeAssert((DgnDbStatus::LockNotHeld != status) && "Failed to get or retain necessary locks");
     BeAssert(DgnDbStatus::Success == status);

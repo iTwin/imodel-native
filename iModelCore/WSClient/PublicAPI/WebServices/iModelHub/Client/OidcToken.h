@@ -20,8 +20,8 @@ struct OidcToken : public WebServices::ISecurityToken
 
     public:
         //! Construct token from string
-		OidcToken(Utf8String token);
-		OidcToken(OidcToken const& other);
+        OidcToken(Utf8String token);
+        OidcToken(OidcToken const& other);
         //! Check whenver given token is valid xml and supported
         bool IsSupported() const override;
         //! Create string for authorization header

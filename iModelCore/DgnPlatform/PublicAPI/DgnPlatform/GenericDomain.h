@@ -49,6 +49,8 @@ DGNPLATFORM_REF_COUNTED_PTR(GenericViewAttachmentLabel)
 #define GENERIC_CLASS_ViewAttachmentLabel   "ViewAttachmentLabel"
 
 #define GENERIC_ViewAttachmentLabel_ViewAttachment "ViewAttachment"
+#define GENERIC_ViewAttachmentLabel_ClipGeometry   "ClipGeometry"
+
 #define GENERIC_Callout_DrawingModel        "DrawingModel"
 
 #define GENERIC_REL_ViewAttachmentLabelAnnotatesViewAttachment "ViewAttachmentLabelAnnotatesViewAttachment"

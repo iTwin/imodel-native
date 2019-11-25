@@ -11,7 +11,7 @@
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 typedef Tasks::AsyncResult<void, Tasks::AsyncError> OidcSignInResult;
-
+typedef std::shared_ptr<struct WebServices::IConnectSignInManager> OidcSignInManagerPtr;
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                           Modified from Algirdas.Mikoliunas    08/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -35,6 +35,8 @@ struct OidcSignInManager : WebServices::IConnectSignInManager
             ) const override;
 
     public:
-        OidcSignInManager(Utf8StringCR callBackUrl);
+        OidcSignInManager(WebServices::IConnectTokenProviderPtr);
+        static OidcSignInManagerPtr FromCallBack(Utf8StringCR callBackUrl);
+        static OidcSignInManagerPtr FromAccessToken(Utf8StringCR accessToken);
     };
 END_BENTLEY_DGN_NAMESPACE

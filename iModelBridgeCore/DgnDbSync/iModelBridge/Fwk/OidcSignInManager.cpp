@@ -77,11 +77,24 @@ WebServices::AuthenticationHandlerPtr OidcSignInManager::_GetAuthenticationHandl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-OidcSignInManager::OidcSignInManager(Utf8StringCR callBackUrl)
-    : IConnectSignInManager(std::make_shared<RuntimeLocalState>())
+OidcSignInManagerPtr OidcSignInManager::FromCallBack(Utf8StringCR callBackUrl)
     {
-    m_tokenProvider = std::make_shared< OidcTokenProvider>(OidcTokenProvider(callBackUrl));
+    return std::make_shared < OidcSignInManager> (std::make_shared< OidcTokenProvider>(callBackUrl));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  11/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+OidcSignInManager::OidcSignInManager(WebServices::IConnectTokenProviderPtr provider)
+    : IConnectSignInManager(std::make_shared<RuntimeLocalState>())
+    {
+    m_tokenProvider = provider;
+    }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  11/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+OidcSignInManagerPtr OidcSignInManager::FromAccessToken(Utf8StringCR accesToken)
+    {
+    return std::make_shared < OidcSignInManager> (std::make_shared< OidcStaticTokenProvider>(accesToken));
+    }

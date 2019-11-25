@@ -159,7 +159,8 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         bvector<WString> m_bargs;
         
         IMODEL_BRIDGE_FWK_EXPORT JobDefArgs();
-
+        BentleyStatus ProcessInputJson(bvector<WCharCP>& bargptrs, Utf8StringCR jsonFile);
+        BentleyStatus ParseEnvironment(bvector<WCharCP>& bargptrs);
         //! Parse the command-line arguments required by the iModelBridgeFwk itself, and return a vector of pointers to the remaining
         //! arguments (which are presumably the arguments to the bridge).
         BentleyStatus ParseCommandLine(bvector<WCharCP>& bargptrs, int argc, WCharCP argv[]);
@@ -211,12 +212,15 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         Utf8String          m_repositoryName;     //!< A repository in the iModelHub project
         Http::Credentials   m_credentials;        //!< User credentials
         Utf8String          m_callBackurl;       //! < The OIDC callback url to receive access token
+        Utf8String          m_accessToken;         //!< The token that identifies the user and the user's rights in this environment. (Is passed in http headers as the authorization property.)
         BeSQLite::BeBriefcaseId m_briefcaseId;     //! optional briefcaseId if the bim file is missing.
         WebServices::UrlProvider::Environment m_environment;    //!< Connect environment
         uint8_t             m_maxRetryCount = 3;  //! The number of times to retry a failed pull, merge, and/or push. (0 means that the framework will try operations only once and will not re-try them in case of failure.)
         uint8_t             m_maxRetryWait = 5;   //!< The maximum number of seconds to wait during retries (each retry waits randomly between 0 and this maximum).
         bvector<WString>    m_bargs;
         
+        Utf8String    ParseTokenFile(Utf8StringCR tokenFile);
+        BentleyStatus ParseEnvironment();
         BentleyStatus ParseCommandLine(bvector<WCharCP>& bargptrs, int argc, WCharCP argv[]);
         BentleyStatus Validate(int argc, WCharCP argv[]);
         static void PrintUsage();
@@ -248,6 +252,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         T_iModelDmsSupport_getInstance*   LoadDmsLibrary(iModelBridgeError& error);
         //void*   ReleaseDmsLibrary();
 
+        BentleyStatus ParseEnvironment();
         //! Parse the command-line arguments required by the iModelBridgeFwk itself, and return a vector of pointers to the remaining
         //! arguments (which are presumably the arguments to the bridge).
         BentleyStatus ParseCommandLine(bvector<WCharCP>& bargptrs, int argc, WCharCP argv[], bool isEncrypted);
@@ -403,6 +408,7 @@ public:
     void SetBriefcaseBim(DgnDbR db) { m_briefcaseDgnDb = &db; }
     DgnDbPtr GetBriefcaseBim() { return m_briefcaseDgnDb; }
 
+    static BentleyStatus ReadEntireFile(WStringR contents, BeFileNameCR fileName);
     //! @private
     IMODEL_BRIDGE_FWK_EXPORT static BeFileName ComputeReportFileName(BeFileNameCR bcName);
     //! @private

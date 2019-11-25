@@ -65,3 +65,27 @@ WebServices::ISecurityTokenPtr OidcTokenProvider::GetToken()
 
     return m_token;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  11/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+OidcStaticTokenProvider::OidcStaticTokenProvider(Utf8StringCR accessToken)
+    {
+    m_token = std::make_shared<OidcToken>(accessToken);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  11/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+Tasks::AsyncTaskPtr<WebServices::ISecurityTokenPtr> OidcStaticTokenProvider::UpdateToken()
+    {
+    return Tasks::CreateCompletedAsyncTask(static_cast<WebServices::ISecurityTokenPtr>(m_token));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  11/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+WebServices::ISecurityTokenPtr  OidcStaticTokenProvider::GetToken()
+    {
+    return m_token;
+    }

@@ -8,6 +8,19 @@
 #include <WebServices/iModelHub/Client/OidcToken.h>
 
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  11/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+struct OidcStaticTokenProvider : WebServices::IConnectTokenProvider
+    {
+    OidcTokenPtr        m_token;
+
+    IMODELHUBCLIENT_EXPORT OidcStaticTokenProvider(Utf8StringCR accessToken);
+    IMODELHUBCLIENT_EXPORT Tasks::AsyncTaskPtr<WebServices::ISecurityTokenPtr> UpdateToken() override;
+    IMODELHUBCLIENT_EXPORT WebServices::ISecurityTokenPtr GetToken() override;
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -20,8 +33,8 @@ struct OidcTokenProvider : WebServices::IConnectTokenProvider
         Http::HttpClient    m_client;
 
     public:
-		IMODELHUBCLIENT_EXPORT OidcTokenProvider(Utf8StringCR callBackUrl);
-		IMODELHUBCLIENT_EXPORT Tasks::AsyncTaskPtr<WebServices::ISecurityTokenPtr> UpdateToken() override;
-		IMODELHUBCLIENT_EXPORT WebServices::ISecurityTokenPtr GetToken() override;
+        IMODELHUBCLIENT_EXPORT OidcTokenProvider(Utf8StringCR callBackUrl);
+        IMODELHUBCLIENT_EXPORT Tasks::AsyncTaskPtr<WebServices::ISecurityTokenPtr> UpdateToken() override;
+        IMODELHUBCLIENT_EXPORT WebServices::ISecurityTokenPtr GetToken() override;
     };
 END_BENTLEY_IMODELHUB_NAMESPACE

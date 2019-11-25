@@ -69,9 +69,15 @@ IModelHubClient::IModelHubClient(iModelBridgeFwk::IModelHubArgs const& args, Web
     m_args(args)
     {
     Tasks::AsyncError serror;
+    
     if (!args.m_callBackurl.empty())
         {
-        m_oidcMgr = OidcSignInManagerPtr(new OidcSignInManager(args.m_callBackurl));
+        m_oidcMgr = OidcSignInManager::FromCallBack(args.m_callBackurl);
+        m_client = ClientHelper::GetInstance()->SignInWithManager(m_oidcMgr);
+        }
+    else if (!args.m_accessToken.empty())
+        {
+        m_oidcMgr = OidcSignInManager::FromAccessToken(args.m_callBackurl);
         m_client = ClientHelper::GetInstance()->SignInWithManager(m_oidcMgr);
         }
     else

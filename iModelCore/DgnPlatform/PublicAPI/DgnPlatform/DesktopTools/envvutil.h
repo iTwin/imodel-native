@@ -7,8 +7,8 @@
 
 BEGIN_EXTERN_C
 
-BentleyStatus   util_getSysEnv (WStringP envVar, WCharCP name);
-BentleyStatus   util_putenv (WCharCP varName, WCharCP value);
+DGNPLATFORM_EXPORT BentleyStatus   util_getSysEnv (WStringP envVar, WCharCP name);
+DGNPLATFORM_EXPORT BentleyStatus   util_putenv (WCharCP varName, WCharCP value);
 
 int             util_getCSIDL (WCharCP name);
 

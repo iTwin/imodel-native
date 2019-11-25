@@ -10,6 +10,7 @@
 #include <DgnPlatform/DgnPlatformLib.h>
 #include "Decrypt.h"
 #include "../iModelBridgeSettings.h"
+#include "iModelBridgeFwkInternal.h"
 
 USING_NAMESPACE_BENTLEY_IMODELHUB
 USING_NAMESPACE_BENTLEY_TASKS
@@ -56,6 +57,7 @@ iModelHub:\n\
     --server-credentials-isEncrypted    (optional) The user name and password passed in is encrypted.\n\
     --server-oidcCallBackUrl=           (optional) The OIDC callback url to receive access token instead of credentials. \n\
     --server-briefcaseId=               (optional) The briefcase Id incase we do not have the original BIM file\n\
+    --server-accessToken=               (optional) The access token file that identifies the user and the user's rights in this environment. \n\
     \n");
     }
 
@@ -80,6 +82,7 @@ void            iModelBridgeFwk::DecryptCredentials(Http::Credentials& credentia
 BentleyStatus iModelBridgeFwk::IModelHubArgs::ParseCommandLine(bvector<WCharCP>& bargptrs, int argc, WCharCP argv[])
     {
     m_isEncrypted = true;
+    ParseEnvironment();
     for (int iArg = 1; iArg < argc; ++iArg)
         {
         if (0 != BeStringUtilities::Wcsnicmp(argv[iArg], L"--server", 8))
@@ -173,6 +176,11 @@ BentleyStatus iModelBridgeFwk::IModelHubArgs::ParseCommandLine(bvector<WCharCP>&
             m_briefcaseId = BeSQLite::BeBriefcaseId(atoi(getArgValue(argv[iArg]).c_str()));
             continue;
             }
+        if (argv[iArg] == wcsstr(argv[iArg], L"--server-accessToken="))
+            {
+            m_accessToken = ParseTokenFile(getArgValue(argv[iArg]));
+            continue;
+            }
         BeAssert(false);
         fwprintf(stderr, L"%ls: unrecognized server argument\n", argv[iArg]);
         return BSIERROR;
@@ -180,7 +188,59 @@ BentleyStatus iModelBridgeFwk::IModelHubArgs::ParseCommandLine(bvector<WCharCP>&
 
     if (m_isEncrypted)
         DecryptCredentials(m_credentials);
+
     return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  11/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String      iModelBridgeFwk::IModelHubArgs::ParseTokenFile(Utf8StringCR tokenFile)
+    {
+    WString contents;
+    if (SUCCESS != iModelBridgeFwk::ReadEntireFile(contents, BeFileName(tokenFile)))
+        return tokenFile;
+    
+    return Utf8String(contents);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  11/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   iModelBridgeFwk::IModelHubArgs::ParseEnvironment()
+    {
+    if (m_accessToken.empty())
+        {
+        Utf8String tokenFile;
+        if (SetValueIfEmptyFromEnv(L"imbridge--server-token", tokenFile))
+            m_accessToken = ParseTokenFile(tokenFile);
+            
+        }
+    SetValueIfEmptyFromEnv(L"imbridge--server-oidcCallBackUrl", m_callBackurl);
+    
+    if (!m_briefcaseId.IsValid())
+        SetValueFromEnv(L"imbridge--server-briefcaseId", m_briefcaseId);
+    
+    //
+    Utf8String value;
+    if (SetValueIfEmptyFromEnv(L"imbridge--server-environment", value))
+        {
+        if (BSISUCCESS != getEnvironmentFromString(m_environment, Utf8String(value)))
+            {
+            //TODO: Log error.
+            }
+        }
+
+    if (!SetValueIfEmptyFromEnv(L"imbridge--server-context-guid", m_bcsProjectId))
+        SetValueIfEmptyFromEnv(L"imbridge--server-context", m_bcsProjectId);
+    else
+        m_haveProjectGuid = true;
+    
+    SetValueIfEmptyFromEnv(L"imbridge--server-iModelName", m_repositoryName);
+    
+    SetValueFromEnv(L"imbridge--server-retries", m_maxRetryCount);
+
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -203,9 +263,9 @@ BentleyStatus iModelBridgeFwk::IModelHubArgs::Validate(int argc, WCharCP argv[])
         return BSIERROR;
         }
 
-    if ((m_credentials.GetUsername().empty() || m_credentials.GetPassword().empty()) && m_callBackurl.empty())
+    if ((m_credentials.GetUsername().empty() || m_credentials.GetPassword().empty()) && (m_callBackurl.empty() || m_accessToken.empty()) )
         {
-        GetLogger().fatal("missing server username or password or OIDC callback url.");
+        GetLogger().fatal("missing server username or password or OIDC callback url OR access token.");
         return BSIERROR;
         }
 

@@ -34,7 +34,7 @@
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/IGeoCoordServices.h>
 #include <iModelBridge/iModelBridgeSyncInfoFile.h>
-
+#include "iModelBridgeFwkInternal.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -152,7 +152,7 @@ Utf8String      iModelBridgeFwk::getArgValue(WCharCP arg)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-static BentleyStatus readEntireFile(WStringR contents, BeFileNameCR fileName)
+BentleyStatus iModelBridgeFwk::ReadEntireFile(WStringR contents, BeFileNameCR fileName)
     {
     BeFile errfile;
     if (BeFileStatus::Success != errfile.Open(fileName.c_str(), BeFileAccess::Read))
@@ -211,7 +211,6 @@ void iModelBridgeFwk::JobDefArgs::PrintUsage()
         L"--fwk-max-wait=milliseconds       (optional)  The maximum amount of time to wait for other instances of this job to finish. Default value is 60000ms\n"
         L"--fwk-assetsDir=                  (optional)  Asset directory for the iModelBridgeFwk resources if default location is not suitable.\n"
         L"--fwk-bridgeAssetsDir=            (optional)  Asset directory for the iModelBridge resources if default location is not suitable.\n"
-        L"--fwk-imodelbank-url=             (optional)  The URL of the iModelBank server to use. If none is provided, then iModelHub will be used.\n"
         L"--fwk-job-subject-name=           (optional)  The unique name of the Job Subject element that the bridge must use.\n"
         L"--fwk-jobrun-guid=                (optional)  A unique GUID that identifies this job run for activity tracking. This will be passed along to all dependant services and logs.\n"
         L"--fwk-jobrequest-guid=            (optional)  A unique GUID that identifies this job run for correlation. This will be limited to the native callstack.\n"
@@ -221,6 +220,9 @@ void iModelBridgeFwk::JobDefArgs::PrintUsage()
         L"--fwk-status-message-sink-url=    (optional)  The URL of a WebServer that will process progress meter and status messages\n"
         L"--fwk-status-message-interval=    (optional)  The number of milliseconds to wait before sending another status or progress meter message to the status message server. The default is 1000 milliseconds.\n"
         L"--fwk-enable-crash-reporting      (optional)  Opt-in to crash reporting and potential upload\n"
+        L"--fwk-inputArgsJsonFile           (optional)  Input args serialized into a file stored as json\n"
+        L"--fwk-skip-assignment-check       (optional)  Ignore the assignment check stored in the bridge settings.\n"
+        L"--fwk-no-intermdiate-pushes       (optional)  If set a single changeset is created per input file.\n"
         );
     }
 
@@ -320,7 +322,7 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
             {
             BeFileName rspFileName(argv[iArg]+1);
             WString wargs;
-            if (BSISUCCESS != readEntireFile(wargs, rspFileName))
+            if (BSISUCCESS != iModelBridgeFwk::ReadEntireFile(wargs, rspFileName))
                 {
                 fwprintf(stderr, L"%ls - response file not found\n", rspFileName.c_str());
                 return BSIERROR;
@@ -531,9 +533,19 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
             m_isCrashReportingEnabled = true;
             continue;
             }
-        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-reality-data-dir="))
+		if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-reality-data-dir="))
             {
             m_realityDataDir.SetName(getArgValueW(argv[iArg]));
+            continue;
+            }
+        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-inputArgsJsonFile"))
+            {
+            ProcessInputJson(bargptrs, getArgValue(argv[iArg]));
+            continue;
+            }
+        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-no-intermdiate-pushes"))
+            {
+            m_allowIntermdiatePushes = false;
             continue;
             }
         BeAssert(false);
@@ -544,7 +556,75 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
     BeFileName::FixPathName(m_fwkAssetsDir, fwkAssetsDirRaw.c_str());
     m_fwkAssetsDir.BeGetFullPathName();
 
+    ParseEnvironment(bargptrs);//We cannot call this at the top due to input file, staging directory argument behavior.
+
     return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  11/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   iModelBridgeFwk::JobDefArgs::ProcessInputJson(bvector<WCharCP>& bargptrs, Utf8StringCR jsonFileName)
+    {
+    BeFileName rspFileName(jsonFileName);
+    WString wargs;
+    if (BSISUCCESS != ReadEntireFile(wargs, rspFileName))
+        {
+        fwprintf(stderr, L"%ls - json file not found\n", rspFileName.c_str());
+        return BSIERROR;
+        }
+
+    Json::Value jsonValue;
+    Json::Reader::Parse(Utf8String(wargs), jsonValue);
+
+    bvector<WCharCP> ptrs;
+    bvector<WString> params;
+    ptrs.push_back(rspFileName.c_str());
+    Json::Value::Members     jsonParams = jsonValue.getMemberNames();
+    params.reserve(jsonParams.size());//Allocate required size
+    for (auto& name : jsonParams)
+        {
+        auto& value = jsonValue[name];
+        params.push_back(WPrintfString(L"%s=%s", name.c_str(), value.asCString()));
+        ptrs.push_back(params.back().c_str());
+        }
+
+    if (BSISUCCESS != ParseCommandLine(bargptrs, (int)ptrs.size(), &ptrs.front()))
+        return BSIERROR;
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  11/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   iModelBridgeFwk::JobDefArgs::ParseEnvironment(bvector<WCharCP>& bargptrs)
+    {
+    Utf8String jsonFile;
+    if (SetValueIfEmptyFromEnv(L"imbridge--fwk-inputArgsJsonFile", jsonFile))
+        ProcessInputJson(bargptrs, jsonFile);
+    
+    SetValueIfEmptyFromEnv(L"imbridge_fwk_bridge_library", m_bridgeLibraryName);
+    SetValueIfEmptyFromEnv(L"imbridge_fwk_staging_dir", m_stagingDir);
+    SetValueIfEmptyFromEnv(L"imbridge--fwk-input", m_inputFileName);
+    SetValueIfEmptyFromEnv(L"imbridge--fwk-assetsDir", m_fwkAssetsDir);
+    SetValueIfEmptyFromEnv(L"imbridge--fwk-jobrun-guid", m_jobRunCorrelationId);
+    SetValueIfEmptyFromEnv(L"imbridge--fwk-status-message-sink-url", m_statusMessageSinkUrl);
+    if (!m_isCrashReportingEnabled)
+        SetValueFromEnv(L"imbridge--fwk-enable-crash-reporting", m_isCrashReportingEnabled);
+    /*
+        TODO: Map these if neeeded
+        L"--fwk-max-wait=milliseconds       (optional)  The maximum amount of time to wait for other instances of this job to finish. Default value is 60000ms\n"      
+        L"--fwk-bridgeAssetsDir=            (optional)  Asset directory for the iModelBridge resources if default location is not suitable.\n"
+        L"--fwk-job-subject-name=           (optional)  The unique name of the Job Subject element that the bridge must use.\n"
+        L"--fwk-jobrequest-guid=            (optional)  A unique GUID that identifies this job run for correlation. This will be limited to the native callstack.\n"
+        L"--fwk-ignore-stale-files          (optional)  Should bridges ignore any file whose last-saved-time is BEFORE that last-saved-time recorded for that file in the iModel?. The default is false (that is, process such files, looking for differences).\n"
+        L"--fwk-error-on-stale-files        (optional)  Should bridges fail and report an error if they encounter a file whose last-saved-time is BEFORE that last-saved-time recorded for that file in the iModel?. The default is false (that is, don't fail on stale files).\n"
+        L"--fwk-no-mergeDefinitions         (optional)  Do NOT merge definitions such as levels/layers and materials by name from different root models and bridges into the public dictionary model. Instead, keep definitions separate by job subject. The default is false (that is, merge definition).\n"
+        L"--fwk-status-message-sink-url=    (optional)  The URL of a WebServer that will process progress meter and status messages\n"
+        L"--fwk-status-message-interval=    (optional)  The number of milliseconds to wait before sending another status or progress meter message to the status message server. The default is 1000 milliseconds.\n"
+    */
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1476,8 +1556,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
         {
         iModelId = m_iModelBankArgs->m_iModelId;
         }
-    LoggingContext logContext(m_jobEnvArgs, connectProjectId, iModelId, m_logProvider);
-
+    
     DbResult dbres;
 
     iModelBridgeError errorContext;
@@ -1490,10 +1569,15 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
 
         if(!m_iModelHubArgs->m_callBackurl.empty()) 
             {
-            OidcSignInManagerPtr oidcMgr = OidcSignInManagerPtr(new OidcSignInManager(m_iModelHubArgs->m_callBackurl));
+            OidcSignInManagerPtr oidcMgr = OidcSignInManager::FromCallBack(m_iModelHubArgs->m_callBackurl);
             client.SetUserName(oidcMgr->GetUserInfo().userId.c_str());
             }
-        else 
+        else if (!m_iModelHubArgs->m_accessToken.empty())
+            {
+            OidcSignInManagerPtr oidcMgr = OidcSignInManager::FromAccessToken(m_iModelHubArgs->m_accessToken);
+            client.SetUserName(oidcMgr->GetUserInfo().userId.c_str());
+            }
+        else
             {
             client.SetUserName(m_iModelHubArgs->m_credentials.GetUsername().c_str());  
             }
@@ -1504,6 +1588,8 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
         }
 
     InitLogging();
+
+    LoggingContext logContext(m_jobEnvArgs, connectProjectId, iModelId, m_logProvider);
 
     // Do this as a service to innards that call rand(). For example, the random wait times when acquiring locks to try and break logjams.
     srand(time(0));
@@ -2589,7 +2675,7 @@ void iModelBridgeFwk::LogStderr()
 
     // Write contents of "stderr" capture file to the log
     WString wstr;
-    readEntireFile(wstr, m_stderrFileName);
+    ReadEntireFile(wstr, m_stderrFileName);
     if (!wstr.empty())
         GetLogger().errorv(L"%ls", wstr.c_str());
 
@@ -2598,7 +2684,7 @@ void iModelBridgeFwk::LogStderr()
         // Write contents of the issues file to the log
         wstr.clear();
         BeFileName issuesFileName = ComputeReportFileName(m_briefcaseName);
-        readEntireFile(wstr, issuesFileName);
+        ReadEntireFile(wstr, issuesFileName);
         if (!wstr.empty())
             GetLogger().errorv(L"%ls", wstr.c_str());
         }
