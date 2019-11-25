@@ -32,6 +32,11 @@ Utf8String StubHttpResponseValidLockEvent();
 Utf8String StubHttpResponseValidChangeSetPostPushEvent();
 
 //---------------------------------------------------------------------------------------
+//@bsimethod									Algirdas.Mikoliunas             11/2019
+//---------------------------------------------------------------------------------------
+Utf8String StubHttpResponseValidChangeSetPrePushEvent();
+
+//---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
 Utf8String StubHttpResponseValidCodeEvent();

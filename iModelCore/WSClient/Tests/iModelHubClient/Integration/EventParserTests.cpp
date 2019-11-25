@@ -7,6 +7,7 @@
 #include <WebServices/iModelHub/Events/EventParser.h>
 #include <WebServices/iModelHub/Events/LockEvent.h>
 #include <WebServices/iModelHub/Events/ChangeSetPostPushEvent.h>
+#include <WebServices/iModelHub/Events/ChangeSetPrePushEvent.h>
 #include <WebServices/iModelHub/Events/CodeEvent.h>
 #include <WebServices/iModelHub/Events/DeletedEvent.h>
 #include <WebServices/iModelHub/Events/VersionEvent.h>
@@ -75,6 +76,14 @@ Utf8String StubHttpResponseValidChangeSetPostPushEvent()
 			  "BriefcaseId":1
               }
              )";
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Algirdas.Mikoliunas             11/2019
+//---------------------------------------------------------------------------------------
+Utf8String StubHttpResponseValidChangeSetPrePushEvent()
+    {
+    return R"({"Date":"SomeDate","EventTopic":"SomeEventTopic","FromEventSubscriptionId":"SomeFromEventSubscriptionId"})";
     }
 
 //---------------------------------------------------------------------------------------
@@ -276,6 +285,14 @@ Utf8String StubHttpResponseValidChangeSetPostPushEventContentType()
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod									Algirdas.Mikoliunas             11/2019
+//---------------------------------------------------------------------------------------
+Utf8String StubHttpResponseValidChangeSetPrePushEventContentType()
+    {
+    return Event::Helper::GetEventNameFromEventType(Event::EventType::ChangeSetPrePushEvent).c_str();
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
 Utf8String StubHttpResponseInvalidChangeSetPostPushEventContentType()
@@ -403,6 +420,23 @@ TEST_F(EventParserTests, ChangeSetPostPushEventTests)
     RefCountedPtr<struct ChangeSetPostPushEvent> changeSetEvent2 = EventParser::GetChangeSetPostPushEvent(validPtr);
     EXPECT_TRUE(changeSetEvent2.IsValid());
     EXPECT_EQ(changeSetEvent1.GetChangeSetId(), changeSetEvent2->GetChangeSetId());
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Algirdas.Mikoliunas             11/2019
+//---------------------------------------------------------------------------------------
+TEST_F(EventParserTests, ChangeSetPrePushEventTests)
+    {
+    //Check for valid values
+    EventPtr validPtr = EventParser::ParseEvent(StubHttpResponseValidChangeSetPrePushEventContentType().c_str(), StubHttpResponseValidChangeSetPrePushEvent());
+    EXPECT_TRUE(validPtr.IsValid());
+    EXPECT_EQ(Event::EventType::ChangeSetPrePushEvent, validPtr->GetEventType());
+    ChangeSetPrePushEvent& changeSetEvent1 = dynamic_cast<ChangeSetPrePushEvent&>(*validPtr);
+    EXPECT_TRUE(dynamic_cast<Event::GenericEvent*>(&changeSetEvent1)); //ChangeSetPrePushEvent is a subclass of Event
+    RefCountedPtr<struct ChangeSetPrePushEvent> changeSetEvent2 = EventParser::GetChangeSetPrePushEvent(validPtr);
+    EXPECT_TRUE(changeSetEvent2.IsValid());
+    EXPECT_EQ("SomeEventTopic", changeSetEvent2->GetEventTopic());
+    EXPECT_EQ("SomeFromEventSubscriptionId", changeSetEvent2->GetFromEventSubscriptionId());
     }
 
 //---------------------------------------------------------------------------------------

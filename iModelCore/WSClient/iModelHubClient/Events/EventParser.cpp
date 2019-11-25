@@ -265,7 +265,7 @@ Utf8String responseString
 	if (jsonPosStart == Utf8String::npos || jsonPosEnd == Utf8String::npos)
 		return nullptr;
 
-	Utf8String actualJsonPart = responseString.substr(jsonPosStart, jsonPosEnd);
+	Utf8String actualJsonPart = responseString.substr(jsonPosStart, jsonPosEnd - jsonPosStart + 1);
 	Event::EventType eventType = Event::Helper::GetEventTypeFromEventName(responseContentType);
 	switch (eventType)
 	    {
