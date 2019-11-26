@@ -1912,19 +1912,6 @@ virtual Bentley::BentleyStatus _ProcessCurveVector(Bentley::CurveVectorCR curves
 
     m_converter.InitGeometryParams(pathEntry.m_geomParams, m_currentDisplayParams, *m_context, m_model.Is3d(), m_v8mt.GetV8Model());
 
-    // NOTE: Need to apply pushed transforms (ex. shared cell scale) to linestyle params...
-    //       GeometryBuilder will ignore the linestyle for other types of GeometricPrimitive so it's ok
-    //       that we only account for scale here in _ProcessCurveVector.
-    if (pathEntry.m_geomParams.IsTransformable())
-        {
-        RotMatrix   rMatrix, rotation, skewFactor;
-
-        DoInterop(m_currentTransform).GetMatrix(rMatrix);
-
-        if (rMatrix.RotateAndSkewFactors(rotation, skewFactor, 0, 1) && !skewFactor.IsIdentity())
-            pathEntry.m_geomParams.ApplyTransform(Transform::From(skewFactor));
-        }
-
     // NOTE: Unfortunately PatternParams isn't part of ElemDisplayParams in V8, so we can only check any
     //       element that output a region curve vector to see if it supports IAreaFillPropertiesQuery.
     //       There's no way to get at a PatternParams buried in an XGraphicsContainer either...but then
@@ -2619,8 +2606,14 @@ void CreatePartReferences(bvector<DgnV8PartReference>& geomParts, TransformCR ba
             if (0.0 == pathEntry.m_partScale)
                 return; // Not suitable for creating a part, ex. non-uniform scale...
 
+            // NOTE: Part instancing with stroked linestyles isn't supported for display...
             if (pathEntry.m_curve.IsValid() && pathEntry.m_geomParams.HasStrokedLineStyle())
+                {
+                // Apply would-be part transform directly to linestyle params...
+                if (!DoubleOps::AlmostEqual(1.0, pathEntry.m_partScale, 1.0e-5))
+                    const_cast<Render::LineStyleInfoR> (*pathEntry.m_geomParams.GetLineStyle()).GetStyleParamsR().ApplyTransform(Transform::FromScaleFactors(pathEntry.m_partScale, pathEntry.m_partScale, pathEntry.m_partScale));
                 return;
+                }
             }
         }
 
