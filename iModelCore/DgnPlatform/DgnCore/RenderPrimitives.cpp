@@ -281,10 +281,6 @@ private:
     PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions, ViewContextR context) override;
     StrokesList _GetStrokes (IFacetOptionsR facetOptions, ViewContextR context) override;
     void _SetInCache(bool inCache) override { m_inCache = inCache; }
-
-    static PolyfaceHeaderPtr FixPolyface(PolyfaceHeaderR, IFacetOptionsR);
-    static void AddNormals(PolyfaceHeaderR, IFacetOptionsR);
-    static void AddParams(PolyfaceHeaderR, IFacetOptionsR);
 public:
     bool IsInstanceable() const override { return true; }
 
@@ -2149,7 +2145,7 @@ void Strokes::Transform(TransformCR transform)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-PolyfaceHeaderPtr PrimitiveGeometry::FixPolyface(PolyfaceHeaderR geom, IFacetOptionsR facetOptions)
+void Polyface::FixUp(IFacetOptionsR facetOptions)
     {
     // Avoid IPolyfaceConstruction if possible...AddPolyface_matched() does a ton of expensive remapping which is unnecessary for our use case.
     // (Plus we can avoid cloning the input if caller owns it)
@@ -2160,61 +2156,44 @@ PolyfaceHeaderPtr PrimitiveGeometry::FixPolyface(PolyfaceHeaderR geom, IFacetOpt
         geom.ClearNormals(true);
 #endif
 
-    PolyfaceHeaderPtr polyface(&geom);
     size_t maxPerFace;
-    if (geom.GetNumFacet(maxPerFace) > 0 && (int)maxPerFace > facetOptions.GetMaxPerFace())
+    if (m_polyface->GetNumFacet(maxPerFace) > 0 && (int)maxPerFace > facetOptions.GetMaxPerFace())
         {
         // Make sure we don't generate edge chains - decimation doesn't handle them correctly.
         bool wantedEdgeChains = facetOptions.GetEdgeChainsRequired();
         facetOptions.SetEdgeChainsRequired(false);
         IPolyfaceConstructionPtr builder = PolyfaceConstruction::New(facetOptions);
-        builder->AddPolyface(geom);
-        polyface = &builder->GetClientMeshR();
+        builder->AddPolyface(*m_polyface);
+        m_polyface = &builder->GetClientMeshR();
         facetOptions.SetEdgeChainsRequired(wantedEdgeChains);
         }
     else
         {
-        bool addNormals = facetOptions.GetNormalsRequired() && 0 == geom.GetNormalCount(),
-             addParams = facetOptions.GetParamsRequired() && 0 == geom.GetParamCount(),
-             addFaceData = addParams && 0 == geom.GetFaceCount();
+        bool addNormals = facetOptions.GetNormalsRequired() && 0 == m_polyface->GetNormalCount(),
+             addParams = facetOptions.GetParamsRequired() && 0 == m_polyface->GetParamCount(),
+             addFaceData = addParams && 0 == m_polyface->GetFaceCount();
 
         if (addNormals)
-            AddNormals(*polyface, facetOptions);
+            {
+            static double   s_defaultCreaseRadians = Angle::DegreesToRadians(45.0);
+            static double   s_sharedNormalSizeRatio = 5.0;      // Omit expensive shared normal if below this ratio of tolerance.
+
+            m_polyface->BuildNormalsFast(s_defaultCreaseRadians, s_sharedNormalSizeRatio * facetOptions.GetChordTolerance());
+            }
 
         if (addParams)
-            AddParams(*polyface, facetOptions);
+            m_polyface->BuildPerFaceParameters(LOCAL_COORDINATE_SCALE_01RangeBothAxes);
 
         if (addFaceData)
-            polyface->BuildPerFaceFaceData();
+            m_polyface->BuildPerFaceFaceData();
 
-        if (maxPerFace > 3 && !geom.HasConvexFacets() && facetOptions.GetConvexFacetsRequired())
-            polyface->Triangulate(3);
+        if (maxPerFace > 3 && !m_polyface->HasConvexFacets() && facetOptions.GetConvexFacetsRequired())
+            m_polyface->Triangulate(3);
 
         // Not necessary to add edges chains -- edges will be generated from visibility flags later
         // and decimation will not handle edge chains correctly.
         // Edge chains are never serialized to flat buffer so we know they won't exist.
         }
-
-    return polyface;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PrimitiveGeometry::AddNormals(PolyfaceHeaderR polyface, IFacetOptionsR facetOptions)
-    {
-    static double   s_defaultCreaseRadians = Angle::DegreesToRadians(45.0);
-    static double   s_sharedNormalSizeRatio = 5.0;      // Omit expensive shared normal if below this ratio of tolerance.
-
-    polyface.BuildNormalsFast(s_defaultCreaseRadians, s_sharedNormalSizeRatio * facetOptions.GetChordTolerance());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PrimitiveGeometry::AddParams(PolyfaceHeaderR polyface, IFacetOptionsR facetOptions)
-    {
-    polyface.BuildPerFaceParameters(LOCAL_COORDINATE_SCALE_01RangeBothAxes);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2232,10 +2211,12 @@ PolyfaceList PrimitiveGeometry::_GetPolyfaces(IFacetOptionsR facetOptions, ViewC
         if (!HasTexture())
             polyface->ClearParameters(false);
 
-        // Make sure params, normals, etc present if needed. Note we wait until now so that the tolerance can be computed...
-        polyface = FixPolyface(*polyface, facetOptions);
 
-        return PolyfaceList(1, Polyface(GetDisplayParams(), *polyface, true, false, nullptr, facetOptions.GetChordTolerance()));
+        // Decimate before fixing up so we don't waste time generating more normals/params than we need.
+        PolyfaceList polyfaces(1, Polyface(GetDisplayParams(), *polyface, true, false, nullptr, facetOptions.GetChordTolerance()));
+        polyfaces.back().Decimate();
+        polyfaces.back().FixUp(facetOptions);
+        return polyfaces;
         }
 
     CurveVectorPtr      curveVector = m_geometry->GetAsCurveVector();

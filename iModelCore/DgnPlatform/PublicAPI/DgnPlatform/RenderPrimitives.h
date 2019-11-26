@@ -993,6 +993,10 @@ public:
     bool CanDecimate() const { return 0.0 < m_decimationTolerance; }
     bool IsDecimated() const { return m_decimationTolerance < 0.0; }
     void Decimate(size_t minPointCount = 100, double minRatio = 0.75);
+
+    // Used when the polyface was a polyface in the geometry stream to ensure normals/params/etc are present.
+    void FixUp(IFacetOptionsR facetOptions);
+
     void ComputeOffset(double expansion);
     void ComputePlanarExpansion(double expansion);
 
