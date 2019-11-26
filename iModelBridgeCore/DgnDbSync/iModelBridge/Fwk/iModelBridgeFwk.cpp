@@ -211,6 +211,7 @@ void iModelBridgeFwk::JobDefArgs::PrintUsage()
         L"--fwk-max-wait=milliseconds       (optional)  The maximum amount of time to wait for other instances of this job to finish. Default value is 60000ms\n"
         L"--fwk-assetsDir=                  (optional)  Asset directory for the iModelBridgeFwk resources if default location is not suitable.\n"
         L"--fwk-bridgeAssetsDir=            (optional)  Asset directory for the iModelBridge resources if default location is not suitable.\n"
+        L"--fwk-reality-data-dir=           (optional)  Path to where reality data tiles should be written to for upload to the Reality Data Server.\n"
         L"--fwk-job-subject-name=           (optional)  The unique name of the Job Subject element that the bridge must use.\n"
         L"--fwk-jobrun-guid=                (optional)  A unique GUID that identifies this job run for activity tracking. This will be passed along to all dependant services and logs.\n"
         L"--fwk-jobrequest-guid=            (optional)  A unique GUID that identifies this job run for correlation. This will be limited to the native callstack.\n"
