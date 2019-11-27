@@ -48,6 +48,10 @@ $(o)PWDocumentManager$(oext) : $(_MakeFilePath)PWDocumentManager.cpp $(_MakeFile
 
 $(o)AzureBlobStorageHelper$(oext) : $(_MakeFilePath)AzureBlobStorageHelper.cpp $(_MakeFilePath)AzureBlobStorageHelper.h $(dmsAPISrc)DmsSession.h $(dmsAPISrc)iModelDmsSupport.h ${MultiCompileDepends}
 
+$(o)PWShareDmsSupport$(oext) : $(_MakeFilePath)PWShareDmsSupport.cpp $(_MakeFilePath)PWShareDmsSupport.h $(dmsAPISrc)CommonDefinition.h ${MultiCompileDepends}
+
+$(o)PWShareHelper$(oext) : $(_MakeFilePath)PWShareHelper.cpp $(_MakeFilePath)PWShareHelper.h $(dmsAPISrc)DmsSession.h $(dmsAPISrc)iModelDmsSupport.h ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 
 DgnPlatformV8LibDir = ${BuildContext}/SubParts/VersionedDgnV8Libs/
@@ -68,6 +72,10 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
 LINKER_LIBRARIES            = $(ContextSubpartsLibs)$(libprefix)Bentley$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)WebServicesClient$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BeXml$(libext)
+LINKER_LIBRARIES			+ $(ContextSubpartsLibs)$(libprefix)BeHttp$(libext)
+LINKER_LIBRARIES			+ $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
+LINKER_LIBRARIES			+ $(ContextSubpartsLibs)$(libprefix)iModelHubClient$(libext)
+LINKER_LIBRARIES			+ $(ContextSubpartsLibs)$(stlibprefix)BeJsonCpp$(stlibext)
 
 LINKER_LIBRARIES_DELAYLOADED = $(ContextSubpartsLibs)$(libprefix)PWManagedWorkspace$(stlibext)
 LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)$(libprefix)dmscli$(stlibext)

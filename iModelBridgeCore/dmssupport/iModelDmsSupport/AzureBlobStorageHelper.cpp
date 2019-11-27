@@ -71,19 +71,35 @@ bool            AzureBlobStorageHelper::_UnInitializeSession()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            AzureBlobStorageHelper::_StageInputFile(BeFileNameCR fileLocation)
     {
-    _Initialize();
-    if (m_sasUrl.empty())
+    auto result = _AsyncStageInputFile(fileLocation);
+    if (result == nullptr)
+        {
+        LOG.errorv("Error sas url empty");
+        _UnInitialize();
         return false;
+        }
 
-    auto result = m_client->SendGetFileRequest(m_sasUrl, fileLocation)->GetResult();
-    if (result.IsSuccess())
+    auto response = result->GetResult();
+    if (response.IsSuccess())
         {
         LOG.tracev("Successfully download sas url to input file location");
         _UnInitialize();
         return true;
         }
-    
-    LOG.errorv("Error getting sas url Error : %s.", result.GetError().GetCode().c_str());
+
+    LOG.errorv("Error getting sas url Error : %s.", response.GetError().GetCode().c_str());
     _UnInitialize();
     return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<AzureResult>            AzureBlobStorageHelper::_AsyncStageInputFile(BeFileNameCR fileLocation)
+    {
+    _Initialize();
+    if (m_sasUrl.empty())
+        return nullptr;
+
+    return m_client->SendGetFileRequest(m_sasUrl, fileLocation);
     }

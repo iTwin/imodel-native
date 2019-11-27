@@ -362,6 +362,15 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::BentleyWeatherService(
     &s_urlRegistry
 );
 
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ProjectWiseDocumentService(
+	"ProjectWiseDocumentService.URL",
+	"https://dev-connect-projectwisedocumentservice.bentley.com/",
+	"https://qa-connect-projectwisedocumentservice.bentley.com/",
+	"https://connect-projectwisedocumentservice.bentley.com/",
+	"https://perf-connect-projectwisedocumentservice.bentley.com/",
+	&s_urlRegistry
+);
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                julius.cepukenas   11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/

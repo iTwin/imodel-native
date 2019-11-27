@@ -263,7 +263,7 @@ BentleyStatus iModelBridgeFwk::IModelHubArgs::Validate(int argc, WCharCP argv[])
         return BSIERROR;
         }
 
-    if ((m_credentials.GetUsername().empty() || m_credentials.GetPassword().empty()) && (m_callBackurl.empty() || m_accessToken.empty()) )
+    if ((m_credentials.GetUsername().empty() || m_credentials.GetPassword().empty()) && m_callBackurl.empty() && m_accessToken.empty() )
         {
         GetLogger().fatal("missing server username or password or OIDC callback url OR access token.");
         return BSIERROR;

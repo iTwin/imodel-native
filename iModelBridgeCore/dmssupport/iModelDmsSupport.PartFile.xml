@@ -78,6 +78,7 @@
     <SubPart PartName="iModelDmsPublicApi"/>
     <SubPart PartName="UstationDummy"/>
     <SubPart PartName="WebServicesClient" PartFile="iModelCore/WSClient/WSClient"/>
+    <SubPart PartName="iModelHubClient" PartFile="iModelCore/WSClient/WSClient"/>
     <SubPart PartName="BentleyDll" PartFile="iModelCore/Bentley/Bentley"/>
     <Bindings>
       <Assemblies>Delivery/$(shlibprefix)iModelDmsSupport$(ApiNumber)$(shlibext)</Assemblies>

@@ -45,7 +45,7 @@ BentleyStatus   iModelBridgeFwk::LoadDmsLibrary(iModelBridgeError& errorContext)
     if (nullptr == getInstance)
         return errorContext.GetBentleyStatus();
 
-    m_dmsSupport = getInstance(m_dmsServerArgs.m_dmsType, m_dmsServerArgs.m_dmsCredentials.GetUsername(), m_dmsServerArgs.m_dmsCredentials.GetPassword());//m_dmsCredentials
+    m_dmsSupport = getInstance(m_dmsServerArgs.m_dmsType, m_dmsServerArgs.m_dmsCredentials.GetUsername(), m_dmsServerArgs.m_dmsCredentials.GetPassword(), m_iModelHubArgs->m_callBackurl, m_iModelHubArgs->m_accessToken);//m_dmsCredentials
     
     if (nullptr == m_dmsSupport)
         {

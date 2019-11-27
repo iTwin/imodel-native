@@ -174,6 +174,7 @@ struct UrlProvider
             WSCLIENT_EXPORT static const UrlDescriptor IMSOpenID;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectProductSettingsService;
             WSCLIENT_EXPORT static const UrlDescriptor BentleyWeatherService;
+			WSCLIENT_EXPORT static const UrlDescriptor ProjectWiseDocumentService;
             // ! DEPRECATED, use FormsWsg
             WSCLIENT_EXPORT static const UrlDescriptor ConnectForms;
             };

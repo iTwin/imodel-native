@@ -77,7 +77,7 @@ IModelHubClient::IModelHubClient(iModelBridgeFwk::IModelHubArgs const& args, Web
         }
     else if (!args.m_accessToken.empty())
         {
-        m_oidcMgr = OidcSignInManager::FromAccessToken(args.m_callBackurl);
+        m_oidcMgr = OidcSignInManager::FromAccessToken(args.m_accessToken);
         m_client = ClientHelper::GetInstance()->SignInWithManager(m_oidcMgr);
         }
     else
