@@ -121,10 +121,7 @@ bool            PWShareHelper::_StageInputFile(BeFileNameCR fileLocation)
         return false;
         }
 
-    if (!m_callbackUrl.empty())
-        token.append(tokenStr);
-    else
-        token = tokenStr;
+    token.append(tokenStr);
 
     //Get download URLs
     bmap<WString, WString> downloadUrls = pwShareDmsSupport._GetDownloadURLs(token);
