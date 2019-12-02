@@ -388,7 +388,7 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedBimFileSchemasA
     BeAssert(false == schema->IsDynamicSchema());
     BeAssert(schema->GetClassCount() > 0);
 
-    BentleyApi::ECN::ECSchemaCP dynSchema = dgnDbPtr->Schemas().GetSchema(Utf8String("DgnV8OpenRoadsDesignerDynamic"));
+    BentleyApi::ECN::ECSchemaCP dynSchema = dgnDbPtr->Schemas().GetSchema(Utf8String("CivilDesignerProductsDynamic"));
     BeAssert(NULL != dynSchema);
     BeAssert(true == dynSchema->IsDynamicSchema());
     BeAssert(dynSchema->GetClassCount() > 0);
