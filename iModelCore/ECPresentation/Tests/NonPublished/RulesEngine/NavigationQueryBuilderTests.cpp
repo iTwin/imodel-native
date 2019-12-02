@@ -43,6 +43,22 @@ ECClassCP NavigationQueryBuilderTests::GetECClass(Utf8CP schemaName, Utf8CP clas
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                11/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+ECClassCP NavigationQueryBuilderTests::GetECClass(Utf8CP className)
+    {
+    return GetECClass(BeTest::GetNameOfCurrentTest(), className);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                11/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaCP NavigationQueryBuilderTests::GetECSchema()
+    {
+    return ExpectedQueries::GetInstance(BeTest::GetHost()).GetECSchema(BeTest::GetNameOfCurrentTest());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<ECClassCP> NavigationQueryBuilderTests::GetECClasses(Utf8CP schemaName)

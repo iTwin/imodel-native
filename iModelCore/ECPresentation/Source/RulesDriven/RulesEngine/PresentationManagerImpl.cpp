@@ -255,7 +255,7 @@ private:
         for (size_t i = 0; i < nodesCount; ++i)
             {
             node = nodes->GetNode(i);
-            bvector<Utf8String> const& nodePath = node->GetKey()->GetPathFromRoot();
+            bvector<Utf8String> const& nodePath = node->GetKey()->GetHashPath();
             if (nodePath.size() <= index)
                 {
                 BeAssert(false);
@@ -301,7 +301,7 @@ public:
         {
         NavNodeCPtr node = m_manager.GetNodesCache().LocateNode(m_connection, m_options.GetLocale(), nodeKey);
         if (node.IsNull())
-            node = LocateNodeInHierarchy(nodeKey.GetPathFromRoot(), 0, nullptr, cancelationToken);
+            node = LocateNodeInHierarchy(nodeKey.GetHashPath(), 0, nullptr, cancelationToken);
 
         return node;
         }
@@ -317,6 +317,26 @@ private:
 
 private:
     /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis                11/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static NavNodesProviderPtr WithPostProcessing(NavNodesProviderCR provider, bvector<ChildNodeRuleCP> const& rules)
+        {
+        RefCountedPtr<PostProcessingNodesProvider> postProcessingProvider = PostProcessingNodesProvider::Create(provider);
+        postProcessingProvider->RegisterPostProcessor(std::make_unique<DisplayLabelGroupingNodesPostProcessor>());
+        postProcessingProvider->RegisterPostProcessor(std::make_unique<SameLabelGroupingNodesPostProcessor>(provider.GetContext().GetRuleset(),
+            rules, provider.GetContext().GetSchemaHelper(), provider.GetContext().GetLocalState()));
+        return postProcessingProvider;
+        }
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis                11/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    template<typename TRuleSpecification> static bvector<ChildNodeRuleCP> MapRules(bvector<TRuleSpecification> const& ruleSpecs)
+        {
+        bvector<ChildNodeRuleCP> rules;
+        std::transform(ruleSpecs.begin(), ruleSpecs.end(), std::back_inserter(rules), [](TRuleSpecification const& ruleSpec){return &ruleSpec.GetRule();});
+        return rules;
+        }
+    /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                03/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
     NavNodesProviderPtr CreateProvider(NavNodesProviderContextR context, JsonNavNodeCP parent) const
@@ -330,19 +350,21 @@ private:
             RulesPreprocessor::RootNodeRuleParameters params(TargetTree_MainTree);
             RootNodeRuleSpecificationsList specs = preprocessor.GetRootNodeSpecifications(params);
             if (!specs.empty())
-                provider = MultiSpecificationNodesProvider::Create(context, specs);
+                provider = WithPostProcessing(*MultiSpecificationNodesProvider::Create(context, specs), MapRules(specs));
             }
         else
             {
             RulesPreprocessor::ChildNodeRuleParameters params(*parent, TargetTree_MainTree);
             ChildNodeRuleSpecificationsList specs = preprocessor.GetChildNodeSpecifications(params);
             if (!specs.empty())
-                provider = MultiSpecificationNodesProvider::Create(context, specs, *parent);
+                provider = WithPostProcessing(*MultiSpecificationNodesProvider::Create(context, specs, *parent), MapRules(specs));
             }
         if (provider.IsNull())
             {
             if (nullptr != parent)
                 context.SetChildNodeContext(nullptr, *parent);
+            else
+                context.SetRootNodeContext(nullptr);
             provider = EmptyNavNodesProvider::Create(context);
             }
         return provider;
@@ -842,7 +864,8 @@ private:
             {
             if (nullptr != key->AsECInstanceNodeKey())
                 {
-                instanceKeys.push_back(key->AsECInstanceNodeKey()->GetInstanceKey());
+                std::transform(key->AsECInstanceNodeKey()->GetInstanceKeys().begin(), key->AsECInstanceNodeKey()->GetInstanceKeys().end(),
+                    std::back_inserter(instanceKeys), [](ECClassInstanceKeyCR k){return ECInstanceKey(k.GetClass()->GetId(), k.GetId());});
                 continue;
                 }
 
@@ -851,7 +874,7 @@ private:
                 continue;
 
             NavNodeExtendedData extendedData(*node);
-            bvector<ECInstanceKey> groupedInstanceKeys = extendedData.GetGroupedInstanceKeys();
+            bvector<ECInstanceKey> groupedInstanceKeys = extendedData.GetInstanceKeys();
             for (ECInstanceKeyCR key : groupedInstanceKeys)
                 instanceKeys.push_back(key);
             }

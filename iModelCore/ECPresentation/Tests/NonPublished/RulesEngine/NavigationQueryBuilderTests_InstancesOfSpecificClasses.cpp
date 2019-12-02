@@ -134,7 +134,7 @@ TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_GroupByLabel_Chi
     NavNodeExtendedData extendedData(*parentNode);
     extendedData.SetSpecificationHash(spec.GetHash());
     extendedData.SetGroupingType((int)GroupingType::DisplayLabel);
-    extendedData.SetGroupedInstanceKey(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1)));
+    extendedData.SetInstanceKey(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1)));
 
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
     ASSERT_EQ(1, queries.size());
@@ -195,7 +195,7 @@ TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_GroupByClassAndL
     classNodeExtendedData.SetGroupingType((int)GroupingType::Class);
     labelNodeExtendedData.SetSpecificationHash(spec.GetHash());
     labelNodeExtendedData.SetGroupingType((int)GroupingType::DisplayLabel);
-    labelNodeExtendedData.SetGroupedInstanceKey(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1)));
+    labelNodeExtendedData.SetInstanceKey(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1)));
     
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *labelGroupingNode);
     ASSERT_EQ(1, queries.size());

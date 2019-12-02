@@ -923,3 +923,31 @@ bvector<RelatedClass> QueryBuilderHelpers::GetRelatedInstanceClasses(ECSchemaHel
         }
     return relatedClasses;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+GroupSpecificationCP QueryBuilderHelpers::GetActiveGroupingSpecification(GroupingRuleCR rule, IJsonLocalState const* localState)
+    {
+    if (rule.GetGroups().empty())
+        return nullptr;
+
+    if (rule.GetSettingsId().empty() || nullptr == localState)
+        return rule.GetGroups()[0];
+
+    Json::Value settingValue = localState->GetJsonValue(RULES_ENGINE_ACTIVE_GROUPS_LOCAL_STATE_NAMESPACE, Utf8String(rule.GetSettingsId().c_str()).c_str());
+    if (!settingValue.isInt())
+        {
+        BeAssert(false);
+        return rule.GetGroups()[0];
+        }
+
+    int activeGroupIndex = settingValue.asInt();
+    if (activeGroupIndex < 0 || activeGroupIndex >= (int)rule.GetGroups().size())
+        {
+        BeAssert(false);
+        return rule.GetGroups()[0];
+        }
+
+    return rule.GetGroups()[activeGroupIndex];
+    }

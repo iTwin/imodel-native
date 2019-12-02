@@ -16,7 +16,7 @@ struct QueryBasedSpecificationNodesProviderTests : NodesProviderTests
     ECEntityClassCP m_sprocketClass;
     ECRelationshipClassCP m_widgetHasGadgetsRelationshipClass;
     ECRelationshipClassCP m_gadgetHasSprocketsRelationshipClass;
-        
+
     void SetUp() override;
     };
 
@@ -30,7 +30,7 @@ void QueryBasedSpecificationNodesProviderTests::SetUp()
     m_sprocketClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Sprocket")->GetEntityClassCP();
     m_widgetHasGadgetsRelationshipClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
     m_gadgetHasSprocketsRelationshipClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "GadgetHasSprockets")->GetRelationshipClassCP();
-            
+
     ECInstanceInserter widgetInserter(s_project->GetECDb(), *m_widgetClass, nullptr);
     IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), widgetInserter, *m_widgetClass, [](IECInstanceR instance)
         {
@@ -83,11 +83,11 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, OverridesLabel)
 
     RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
     m_ruleset->AddPresentationRule(*rule);
-    m_context->SetRootNodeContext(*rule);
+    m_context->SetRootNodeContext(rule);
 
-    InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+    InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "this.ECInstanceId = 1 OR this.ECInstanceId = 4", "RulesEngineTest:Widget,Gadget", false);
-    rule->AddSpecification(*spec);    
+    rule->AddSpecification(*spec);
 
     size_t index = 0;
     JsonNavNodePtr node;
@@ -95,12 +95,14 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, OverridesLabel)
 
     ASSERT_TRUE(provider->GetNode(node, index++));
     ASSERT_TRUE(nullptr != node->GetKey()->AsECInstanceNodeKey());
-    EXPECT_EQ(m_gadgetClass->GetId(), node->GetKey()->AsECInstanceNodeKey()->GetECClassId());
+    ASSERT_FALSE(node->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().empty());
+    EXPECT_EQ(m_gadgetClass, node->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().front().GetClass());
     EXPECT_STREQ("GadgetLabel", node->GetLabel().c_str());
 
     ASSERT_TRUE(provider->GetNode(node, index++));
     ASSERT_TRUE(nullptr != node->GetKey()->AsECInstanceNodeKey());
-    EXPECT_EQ(m_widgetClass->GetId(), node->GetKey()->AsECInstanceNodeKey()->GetECClassId());
+    ASSERT_FALSE(node->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().empty());
+    EXPECT_EQ(m_widgetClass, node->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().front().GetClass());
     EXPECT_STREQ("WidgetLabel", node->GetLabel().c_str());
     }
 
@@ -114,11 +116,11 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, UsesRelatedInstanceProperties
 
     RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
     m_ruleset->AddPresentationRule(*rule);
-    m_context->SetRootNodeContext(*rule);
+    m_context->SetRootNodeContext(rule);
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Gadget", false);
     spec->AddRelatedInstance(*new RelatedInstanceSpecification(RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget", "widget"));
-    rule->AddSpecification(*spec);    
+    rule->AddSpecification(*spec);
 
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
     ASSERT_EQ(3, provider->GetNodesCount());
@@ -136,34 +138,36 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, UsesRelatedInstanceProperties
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (QueryBasedSpecificationNodesProviderTests, OverridesStyle)
     {
-    StyleOverrideP styleOverride = new StyleOverride("ThisNode.IsInstanceNode AND ThisNode.ClassName=\"Widget\"", 1, 
-        "IIf(True, \"ForeColor1\", \"ForeColor2\")", 
-        "IIf(True, \"BackColor1\", \"BackColor2\")", 
+    StyleOverrideP styleOverride = new StyleOverride("ThisNode.IsInstanceNode AND ThisNode.ClassName=\"Widget\"", 1,
+        "IIf(True, \"ForeColor1\", \"ForeColor2\")",
+        "IIf(True, \"BackColor1\", \"BackColor2\")",
         "IIf(True, \"FontStyle1\", \"FontStyle2\")");
     m_ruleset->AddPresentationRule(*styleOverride);
-    
+
     RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
     m_ruleset->AddPresentationRule(*rule);
-    m_context->SetRootNodeContext(*rule);
+    m_context->SetRootNodeContext(rule);
 
-    InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+    InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "this.ECInstanceId = 1 OR this.ECInstanceId = 4", "RulesEngineTest:Widget,Gadget", false);
-    rule->AddSpecification(*spec); 
+    rule->AddSpecification(*spec);
 
     size_t index = 0;
     JsonNavNodePtr node;
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
-    
+
     ASSERT_TRUE(provider->GetNode(node, index++));
     ASSERT_TRUE(nullptr != node->GetKey()->AsECInstanceNodeKey());
-    EXPECT_EQ(m_gadgetClass->GetId(), node->GetKey()->AsECInstanceNodeKey()->GetECClassId());
+    ASSERT_FALSE(node->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().empty());
+    EXPECT_EQ(m_gadgetClass, node->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().front().GetClass());
     EXPECT_STREQ("", node->GetForeColor().c_str());
     EXPECT_STREQ("", node->GetBackColor().c_str());
     EXPECT_STREQ("Regular", node->GetFontStyle().c_str());
-    
+
     ASSERT_TRUE(provider->GetNode(node, index++));
     ASSERT_TRUE(nullptr != node->GetKey()->AsECInstanceNodeKey());
-    EXPECT_EQ(m_widgetClass->GetId(), node->GetKey()->AsECInstanceNodeKey()->GetECClassId());
+    ASSERT_FALSE(node->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().empty());
+    EXPECT_EQ(m_widgetClass, node->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().front().GetClass());
     EXPECT_STREQ("ForeColor1", node->GetForeColor().c_str());
     EXPECT_STREQ("BackColor1", node->GetBackColor().c_str());
     EXPECT_STREQ("FontStyle1", node->GetFontStyle().c_str());
@@ -176,7 +180,7 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, ReturnsChildrenIfHideNodesInH
     {
     RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
     m_ruleset->AddPresentationRule(*rule);
-    m_context->SetRootNodeContext(*rule);
+    m_context->SetRootNodeContext(rule);
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, true, false, false, false, false, "", "RulesEngineTest:Widget,Gadget", false);
     rule->AddSpecification(*spec);
@@ -206,7 +210,7 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, ReturnsChildIfDisplayLabelGro
 
     RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
     m_ruleset->AddPresentationRule(*rule);
-    m_context->SetRootNodeContext(*rule);
+    m_context->SetRootNodeContext(rule);
 
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
@@ -218,7 +222,7 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, ReturnsChildIfDisplayLabelGro
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
     while (provider->GetNode(node, index++))
         {
-        ASSERT_STREQ(NAVNODE_TYPE_ECInstanceNode, node->GetType().c_str());
+        ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, node->GetType().c_str());
         ASSERT_STREQ("MyLabel", node->GetLabel().c_str());
         }
     ASSERT_EQ(2, index);
@@ -235,7 +239,7 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, ReturnsChildIfGroupingRuleDoe
 
     RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
     m_ruleset->AddPresentationRule(*rule);
-    m_context->SetRootNodeContext(*rule);
+    m_context->SetRootNodeContext(rule);
 
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
@@ -251,7 +255,7 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, ReturnsChildIfGroupingRuleDoe
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
     while (provider->GetNode(node, index++))
         {
-        ASSERT_STREQ(NAVNODE_TYPE_ECInstanceNode, node->GetType().c_str());
+        ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, node->GetType().c_str());
         ASSERT_STREQ("MyLabel", node->GetLabel().c_str());
         }
     ASSERT_EQ(2, index);
@@ -264,7 +268,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, HasNodesReturnsFalseWhenQueryR
     {
     RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
     m_ruleset->AddPresentationRule(*rule);
-    m_context->SetRootNodeContext(*rule);
+    m_context->SetRootNodeContext(rule);
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false);
     rule->AddSpecification(*spec);
@@ -282,7 +286,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, HasNodesReturnsTrueWhenQueryRe
     {
     RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
     m_ruleset->AddPresentationRule(*rule);
-    m_context->SetRootNodeContext(*rule);
+    m_context->SetRootNodeContext(rule);
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false);
     rule->AddSpecification(*spec);
@@ -300,7 +304,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, NodesCount_SimpleCase)
     {
     RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
     m_ruleset->AddPresentationRule(*rule);
-    m_context->SetRootNodeContext(*rule);
+    m_context->SetRootNodeContext(rule);
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false);
     rule->AddSpecification(*spec);
@@ -332,7 +336,7 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, NodesCount_WithHideNodesInHie
     {
     RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
     m_ruleset->AddPresentationRule(*rule);
-    m_context->SetRootNodeContext(*rule);
+    m_context->SetRootNodeContext(rule);
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, true, false, false, false, false, "", "RulesEngineTest:Widget", false);
     rule->AddSpecification(*spec);
@@ -361,13 +365,13 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, NodesCount_WithDisplayLabelGr
     {
     RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
     m_ruleset->AddPresentationRule(*rule);
-    m_context->SetRootNodeContext(*rule);
+    m_context->SetRootNodeContext(rule);
 
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", "RulesEngineTest:Widget", false);
     rule->AddSpecification(*spec);
-    
+
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
 
 #ifdef WIP_CLEAR_CACHES_ON_DB_CHANGES
@@ -395,13 +399,13 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, NodesCount_WithDisplayLabelAn
     {
     RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
     m_ruleset->AddPresentationRule(*rule);
-    m_context->SetRootNodeContext(*rule);
+    m_context->SetRootNodeContext(rule);
 
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
-    
+
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", "RulesEngineTest:Widget", false);
     rule->AddSpecification(*spec);
-    
+
     GroupingRule* groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
     groupingRule->AddGroup(*new SameLabelInstanceGroup(""));
     m_ruleset->AddPresentationRule(*groupingRule);
@@ -416,12 +420,12 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, NodesCount_WithDisplayLabelAn
 
     JsonNavNodePtr myLabelNode;
     ASSERT_TRUE(provider->GetNode(myLabelNode, 0));
-    ASSERT_STREQ(NAVNODE_TYPE_ECInstanceNode, myLabelNode->GetType().c_str()); // the node is ECInstanceNode because SameLabelInstanceGroup groups all instances into one - nothing is left to group for display label node
+    ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, myLabelNode->GetType().c_str()); // the node is ECInstanceNode because SameLabelInstanceGroup groups all instances into one - nothing is left to group for display label node
     ASSERT_STREQ("MyLabel", myLabelNode->GetLabel().c_str());
-    
+
     JsonNavNodePtr otherLabelNode;
     ASSERT_TRUE(provider->GetNode(otherLabelNode, 1));
-    ASSERT_STREQ(NAVNODE_TYPE_ECInstanceNode, otherLabelNode->GetType().c_str());
+    ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, otherLabelNode->GetType().c_str());
     ASSERT_STREQ("OtherLabel", otherLabelNode->GetLabel().c_str());
     }
 
@@ -432,7 +436,7 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, NodesCount_WithGroupingRuleNo
     {
     RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
     m_ruleset->AddPresentationRule(*rule);
-    m_context->SetRootNodeContext(*rule);
+    m_context->SetRootNodeContext(rule);
 
     GroupingRule* groupingRule = new GroupingRule("", 1000, false, "RulesEngineTest", "Widget", "", "", "");
     groupingRule->AddGroup(*new ClassGroup("", false, "", ""));
@@ -440,7 +444,7 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, NodesCount_WithGroupingRuleNo
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false);
     rule->AddSpecification(*spec);
-    
+
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
 
 #ifdef WIP_CLEAR_CACHES_ON_DB_CHANGES
@@ -470,10 +474,10 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, CustomizesNodes)
 
     RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
     m_ruleset->AddPresentationRule(*rule);
-    m_context->SetRootNodeContext(*rule);
+    m_context->SetRootNodeContext(rule);
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget,Gadget", false);
-    rule->AddSpecification(*spec);    
+    rule->AddSpecification(*spec);
 
     size_t index = 0;
     JsonNavNodePtr node;
@@ -500,7 +504,7 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, ReturnsChildNodesWhenHideNode
 
     RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
     m_ruleset->AddPresentationRule(*rule);
-    m_context->SetRootNodeContext(*rule);
+    m_context->SetRootNodeContext(rule);
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, true, false, false, false, false, "", "RulesEngineTest:Widget", false);
     rule->AddSpecification(*spec);
@@ -516,9 +520,10 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, ReturnsChildNodesWhenHideNode
     ASSERT_EQ(2, provider->GetNodesCount());
     while (provider->GetNode(node, index++))
         {
-        ECInstanceNodeKey const* key = node->GetKey()->AsECInstanceNodeKey();
+        ECInstancesNodeKey const* key = node->GetKey()->AsECInstanceNodeKey();
         ASSERT_TRUE(nullptr != key);
-        EXPECT_EQ(m_gadgetClass->GetId(), key->GetECClassId());
+        ASSERT_FALSE(key->GetInstanceKeys().empty());
+        EXPECT_EQ(m_gadgetClass, key->GetInstanceKeys().front().GetClass());
         }
     ASSERT_EQ(3, index);
     }
@@ -535,7 +540,7 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, ReturnsChildNodesWhenTheresOn
 
     RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
     m_ruleset->AddPresentationRule(*rule);
-    m_context->SetRootNodeContext(*rule);
+    m_context->SetRootNodeContext(rule);
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", "RulesEngineTest:Widget", false);
     rule->AddSpecification(spec);
@@ -546,7 +551,7 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, ReturnsChildNodesWhenTheresOn
     ASSERT_EQ(2, provider->GetNodesCount());
     while (provider->GetNode(node, index++))
         {
-        EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, node->GetType().c_str());
+        EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, node->GetType().c_str());
         EXPECT_STREQ("Widget", node->GetInstance()->GetClass().GetName().c_str());
         }
     ASSERT_EQ(3, index);
@@ -573,10 +578,10 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, PropertyGrouping_GroupsSubcla
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserterF, *classF, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(2));});
     ECInstanceInserter inserterG(s_project->GetECDb(), *classG, nullptr);
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserterG, *classG, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(2));});
-        
+
     RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
     m_ruleset->AddPresentationRule(*rule);
-    m_context->SetRootNodeContext(*rule);
+    m_context->SetRootNodeContext(rule);
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:ClassE", true);
     rule->AddSpecification(*spec);
@@ -600,15 +605,15 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, PropertyGrouping_GroupsSubcla
     ASSERT_TRUE(provider->GetNode(node, 1));
     ASSERT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, node->GetType().c_str());
     ASSERT_STREQ("2", node->GetLabel().c_str());
-    
+
     ASSERT_TRUE(provider->GetNode(node, 2));
-    ASSERT_STREQ(NAVNODE_TYPE_ECInstanceNode, node->GetType().c_str());
-    
+    ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, node->GetType().c_str());
+
     ASSERT_TRUE(provider->GetNode(node, 3));
-    ASSERT_STREQ(NAVNODE_TYPE_ECInstanceNode, node->GetType().c_str());
-    
+    ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, node->GetType().c_str());
+
     ASSERT_TRUE(provider->GetNode(node, 4));
-    ASSERT_STREQ(NAVNODE_TYPE_ECInstanceNode, node->GetType().c_str());
+    ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, node->GetType().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -619,10 +624,10 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, PropertyGrouping_DoesntGroupN
     // create our own instances
     ECInstanceInserter inserter(s_project->GetECDb(), *m_widgetClass, nullptr);
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(5));});
-        
+
     RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
     m_ruleset->AddPresentationRule(*rule);
-    m_context->SetRootNodeContext(*rule);
+    m_context->SetRootNodeContext(rule);
 
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
@@ -647,15 +652,15 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, PropertyGrouping_DoesntGroupN
     ASSERT_STREQ("5", node->GetLabel().c_str());
 
     ASSERT_TRUE(provider->GetNode(node, 1));
-    ASSERT_STREQ(NAVNODE_TYPE_ECInstanceNode, node->GetType().c_str());
+    ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, node->GetType().c_str());
     ASSERT_STREQ("Test Widget 1", node->GetLabel().c_str());
 
     ASSERT_TRUE(provider->GetNode(node, 2));
-    ASSERT_STREQ(NAVNODE_TYPE_ECInstanceNode, node->GetType().c_str());
+    ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, node->GetType().c_str());
     ASSERT_STREQ("Test Widget 2", node->GetLabel().c_str());
 
     ASSERT_TRUE(provider->GetNode(node, 3));
-    ASSERT_STREQ(NAVNODE_TYPE_ECInstanceNode, node->GetType().c_str());
+    ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, node->GetType().c_str());
     ASSERT_STREQ("Test Widget 3", node->GetLabel().c_str());
     }
 
@@ -663,10 +668,10 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, PropertyGrouping_DoesntGroupN
 * @bsitest                                      Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (QueryBasedSpecificationNodesProviderTests, NotifiesAboutUsedRelatedClassesInCustomizationRuleValue)
-    {    
+    {
     RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
     m_ruleset->AddPresentationRule(*rule);
-    m_context->SetRootNodeContext(*rule);
+    m_context->SetRootNodeContext(rule);
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false);
     rule->AddSpecification(*spec);
@@ -704,9 +709,9 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
     ECClassCP classD = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassD");
     ECClassCP classE = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassE");
     ECRelationshipClassCP classDHasE = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassDHasClassE")->GetRelationshipClassCP();
-    
+
     IECInstancePtr d = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD);
-    IECInstancePtr e = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE);    
+    IECInstancePtr e = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classDHasE, *d, *e);
 
     RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
@@ -719,7 +724,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
     m_ruleset->AddPresentationRule(*childRule);
 
     NavNodesProviderContextPtr context = NavNodesProviderContext::Create(*m_context);
-    m_context->SetRootNodeContext(*rule);
+    m_context->SetRootNodeContext(rule);
 
     JsonNavNodePtr root;
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *rule->GetSpecifications().front());
@@ -751,7 +756,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
     m_ruleset->AddPresentationRule(*childRule);
 
     NavNodesProviderContextPtr context = NavNodesProviderContext::Create(*m_context);
-    m_context->SetRootNodeContext(*rule);
+    m_context->SetRootNodeContext(rule);
 
     JsonNavNodePtr root;
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *rule->GetSpecifications().front());
@@ -783,7 +788,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
     m_ruleset->AddPresentationRule(*childRule);
 
     NavNodesProviderContextPtr context = NavNodesProviderContext::Create(*m_context);
-    m_context->SetRootNodeContext(*rule);
+    m_context->SetRootNodeContext(rule);
 
     JsonNavNodePtr root;
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *rule->GetSpecifications().front());
@@ -815,7 +820,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
     m_ruleset->AddPresentationRule(*childRule);
 
     NavNodesProviderContextPtr context = NavNodesProviderContext::Create(*m_context);
-    m_context->SetRootNodeContext(*rule);
+    m_context->SetRootNodeContext(rule);
 
     JsonNavNodePtr root;
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *rule->GetSpecifications().front());
@@ -847,7 +852,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
     m_ruleset->AddPresentationRule(*childRule);
 
     NavNodesProviderContextPtr context = NavNodesProviderContext::Create(*m_context);
-    m_context->SetRootNodeContext(*rule);
+    m_context->SetRootNodeContext(rule);
 
     JsonNavNodePtr root;
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *rule->GetSpecifications().front());
@@ -880,7 +885,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
     m_ruleset->AddPresentationRule(*childRule);
 
     NavNodesProviderContextPtr context = NavNodesProviderContext::Create(*m_context);
-    m_context->SetRootNodeContext(*rule);
+    m_context->SetRootNodeContext(rule);
 
     JsonNavNodePtr root;
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *rule->GetSpecifications().front());
@@ -912,7 +917,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
     m_ruleset->AddPresentationRule(*childRule);
 
     NavNodesProviderContextPtr context = NavNodesProviderContext::Create(*m_context);
-    m_context->SetRootNodeContext(*rule);
+    m_context->SetRootNodeContext(rule);
 
     JsonNavNodePtr root;
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *rule->GetSpecifications().front());
@@ -944,7 +949,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
     m_ruleset->AddPresentationRule(*childRule);
 
     NavNodesProviderContextPtr context = NavNodesProviderContext::Create(*m_context);
-    m_context->SetRootNodeContext(*rule);
+    m_context->SetRootNodeContext(rule);
 
     JsonNavNodePtr root;
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *rule->GetSpecifications().front());
@@ -974,9 +979,9 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
     childRule->AddSpecification(*new RelatedInstanceNodesSpecification(0, ChildrenHint::Unknown, false, false, false, false, 0, "",
         RequiredRelationDirection::RequiredRelationDirection_Backward, "", classGHasD->GetFullName(), ""));
     m_ruleset->AddPresentationRule(*childRule);
-    
+
     NavNodesProviderContextPtr context = NavNodesProviderContext::Create(*m_context);
-    m_context->SetRootNodeContext(*rule);
+    m_context->SetRootNodeContext(rule);
 
     JsonNavNodePtr root;
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *rule->GetSpecifications().front());
@@ -1008,7 +1013,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
     m_ruleset->AddPresentationRule(*childRule);
 
     NavNodesProviderContextPtr context = NavNodesProviderContext::Create(*m_context);
-    m_context->SetRootNodeContext(*rule);
+    m_context->SetRootNodeContext(rule);
 
     JsonNavNodePtr root;
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *rule->GetSpecifications().front());
@@ -1040,7 +1045,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
     m_ruleset->AddPresentationRule(*childRule);
 
     NavNodesProviderContextPtr context = NavNodesProviderContext::Create(*m_context);
-    m_context->SetRootNodeContext(*rule);
+    m_context->SetRootNodeContext(rule);
 
     JsonNavNodePtr root;
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *rule->GetSpecifications().front());
@@ -1056,9 +1061,9 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, GetArtifacts_DoesntRequestArti
     {
     RootNodeRule* rule1 = new RootNodeRule("", 1000, false, TargetTree_Both, false);
     m_ruleset->AddPresentationRule(*rule1);
-    m_context->SetRootNodeContext(*rule1);
+    m_context->SetRootNodeContext(rule1);
 
-    InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+    InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "ECInstanceId = 1", "RulesEngineTest:Widget", false);
     rule1->AddSpecification(*spec);
 
@@ -1085,9 +1090,9 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, GetArtifacts_RequestsArtifacts
 
     RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
     m_ruleset->AddPresentationRule(*rule);
-    m_context->SetRootNodeContext(*rule);
+    m_context->SetRootNodeContext(rule);
 
-    InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+    InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "ECInstanceId = 1", "RulesEngineTest:Widget", false);
     rule->AddSpecification(*spec);
 
@@ -1114,9 +1119,9 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, GetArtifacts_RequestsArtifacts
 
     RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
     m_ruleset->AddPresentationRule(*rule);
-    m_context->SetRootNodeContext(*rule);
+    m_context->SetRootNodeContext(rule);
 
-    InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+    InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "ECInstanceId = 1", "RulesEngineTest:Widget", false);
     rule->AddSpecification(*spec);
 

@@ -92,7 +92,6 @@ struct ContentSetItemExtendedData : ItemExtendedData
 #define NAVNODE_EXTENDEDDATA_SpecificationHash                  "SpecificationHash"
 #define NAVNODE_EXTENDEDDATA_RequestedSpecification             "RequestedSpecification"
 #define NAVNODE_EXTENDEDDATA_VirtualParentId                    "VirtualParentId"
-#define NAVNODE_EXTENDEDDATA_ParentECClassId                    "ParentECClassId"
 #define NAVNODE_EXTENDEDDATA_RelationshipDirection              "RelationshipDirection"
 #define NAVNODE_EXTENDEDDATA_HasChildrenHint                    "HasChildrenHint"
 #define NAVNODE_EXTENDEDDATA_HideIfOnlyOneChild                 "HideIfOnlyOneChild"
@@ -101,11 +100,11 @@ struct ContentSetItemExtendedData : ItemExtendedData
 #define NAVNODE_EXTENDEDDATA_HideIfGroupingValueNotSpecified    "HideIfGroupingValueNotSpecified"
 #define NAVNODE_EXTENDEDDATA_HideNodesInHierarchy               "HideNodesInHierarchy"
 #define NAVNODE_EXTENDEDDATA_ECClassId                          "ECClassId"
+#define NAVNODE_EXTENDEDDATA_ECInstanceKeys                     "ECInstanceKeys"
 #define NAVNODE_EXTENDEDDATA_GroupingType                       "GroupingType"
 #define NAVNODE_EXTENDEDDATA_PropertyName                       "PropertyName"
 #define NAVNODE_EXTENDEDDATA_PropertyValue                      "PropertyValue"
 #define NAVNODE_EXTENDEDDATA_PropertyValueRangeIndex            "PropertyValueRangeIndex"
-#define NAVNODE_EXTENDEDDATA_GroupedInstanceKeys                "GroupedInstanceKeys"
 #define NAVNODE_EXTENDEDDATA_ChildrenArtifacts                  "ChildrenArtifacts"
 #define NAVNODE_EXTENDEDDATA_InstanceKey_ECClassId              "c"
 #define NAVNODE_EXTENDEDDATA_InstanceKey_ECInstanceId           "i"
@@ -132,10 +131,6 @@ struct NavNodeExtendedData : ItemExtendedData
     bool HasVirtualParentId() const {return GetJson().HasMember(NAVNODE_EXTENDEDDATA_VirtualParentId);}
     uint64_t GetVirtualParentId() const {return GetJson().HasMember(NAVNODE_EXTENDEDDATA_VirtualParentId) ? GetJson()[NAVNODE_EXTENDEDDATA_VirtualParentId].GetUint64() : 0;}
     void SetVirtualParentId(uint64_t id) {AddMember(NAVNODE_EXTENDEDDATA_VirtualParentId, rapidjson::Value(id));}
-
-    bool HasParentECClassId() const {return GetJson().HasMember(NAVNODE_EXTENDEDDATA_ParentECClassId);}
-    ECClassId GetParentECClassId() const {return ECClassId(GetJson()[NAVNODE_EXTENDEDDATA_ParentECClassId].GetUint64());}
-    void SetParentECClassId(ECClassId const& id) {AddMember(NAVNODE_EXTENDEDDATA_ParentECClassId, rapidjson::Value(id.GetValue()));}
 
     bool HasRelationshipDirection() const {return GetJson().HasMember(NAVNODE_EXTENDEDDATA_RelationshipDirection);}
     ECRelatedInstanceDirection GetRelationshipDirection() const {return (ECRelatedInstanceDirection)GetJson()[NAVNODE_EXTENDEDDATA_RelationshipDirection].GetInt();}
@@ -183,14 +178,14 @@ struct NavNodeExtendedData : ItemExtendedData
     ECPRESENTATION_EXPORT bvector<NodeArtifacts> GetChildrenArtifacts() const;
     ECPRESENTATION_EXPORT bool SetChildrenArtifacts(bvector<NodeArtifacts> artifacts);
 
-    // Grouped instance keys contains ids of instances which are grouped by the node. For instance nodes there's
-    // only one grouped instance key (of the instance itself); for grouping nodes the list contains keys of all
-    // grouped instances; for custom nodes the list is empty.
-    ECPRESENTATION_EXPORT BeSQLite::IdSet<BeSQLite::EC::ECInstanceId> GetGroupedInstanceIds() const;
-    ECPRESENTATION_EXPORT bvector<BeSQLite::EC::ECInstanceKey> GetGroupedInstanceKeys() const;
-    ECPRESENTATION_EXPORT void SetGroupedInstanceKeys(bvector<BeSQLite::EC::ECInstanceKey> const& keys);
-    ECPRESENTATION_EXPORT void SetGroupedInstanceKey(BeSQLite::EC::ECInstanceKey const& key);
-    rapidjson::SizeType GetGroupedInstanceKeysCount() const;
+    // Contains keys of instances which are grouped by the node. For instance nodes there're key of instances
+    // represented by the node; for grouping nodes the list contains keys of all grouped instances; for custom nodes
+    // the list is empty.
+    ECPRESENTATION_EXPORT BeSQLite::IdSet<BeSQLite::EC::ECInstanceId> GetInstanceIds() const;
+    ECPRESENTATION_EXPORT bvector<BeSQLite::EC::ECInstanceKey> GetInstanceKeys() const;
+    ECPRESENTATION_EXPORT void SetInstanceKeys(bvector<BeSQLite::EC::ECInstanceKey> const& keys);
+    ECPRESENTATION_EXPORT void SetInstanceKey(BeSQLite::EC::ECInstanceKey const& key);
+    rapidjson::SizeType GetInstanceKeysCount() const;
 
     // Skipped instance keys contains keys of ECInstances which were skipped using SkipRelatedLevel
     // specification attribute.

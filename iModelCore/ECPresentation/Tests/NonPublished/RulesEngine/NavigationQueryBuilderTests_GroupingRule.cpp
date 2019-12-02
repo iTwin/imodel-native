@@ -25,7 +25,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_ClassFilterIsPolymorphic)
     ASSERT_TRUE(query.IsValid());
 
     NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("Grouping_ClassFilterIsPolymorphic", spec);
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     }
@@ -42,7 +42,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_IgnoresGroupingRulesWithInvalidSch
     m_ruleset->AddPresentationRule(*groupingRule);
 
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "", "Basic4:ClassA", false);
-    
+
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
@@ -50,7 +50,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_IgnoresGroupingRulesWithInvalidSch
     ASSERT_TRUE(query.IsValid());
 
     NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("Grouping_IgnoresGroupingRulesWithInvalidSchemas", spec);
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     }
@@ -67,7 +67,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_IgnoresGroupingRulesWithInvalidCla
     m_ruleset->AddPresentationRule(*groupingRule);
 
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "", "Basic4:ClassA", false);
-    
+
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
@@ -75,7 +75,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_IgnoresGroupingRulesWithInvalidCla
     ASSERT_TRUE(query.IsValid());
 
     NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("Grouping_IgnoresGroupingRulesWithInvalidClasses", spec);
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     }
@@ -101,7 +101,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_SameLabelInstanceGroup_OnlyGrouped
     ASSERT_TRUE(query.IsValid());
 
     NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("Grouping_SameLabelInstanceGroup_OnlyGroupedInstanceNodes", spec);
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     }
@@ -127,7 +127,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_SameLabelInstanceGroup_MultipleGro
     ASSERT_TRUE(query.IsValid());
 
     NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("Grouping_SameLabelInstanceGroup_MultipleGroupedAndUngroupedInstanceNodes", spec);
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     }
@@ -149,9 +149,8 @@ TEST_F (NavigationQueryBuilderTests, Grouping_SameLabelInstanceGroup_SetsValidQu
     NavigationQueryPtr query = queries[0];
     ASSERT_TRUE(query.IsValid());
 
-    EXPECT_EQ(NavigationQueryResultType::ECInstanceNodes, query->GetResultParameters().GetResultType());
+    EXPECT_EQ(NavigationQueryResultType::MultiECInstanceNodes, query->GetResultParameters().GetResultType());
     EXPECT_EQ((int)GroupingType::SameLabelInstance, query->GetResultParameters().GetNavNodeExtendedData().GetGroupingType());
-    EXPECT_TRUE(query->GetResultParameters().HasInstanceGroups());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -172,7 +171,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_ClassGroup_GroupsByClass)
     ASSERT_TRUE(query.IsValid());
 
     NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("Grouping_ClassGroup_GroupsByClass", spec);
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     }
@@ -196,9 +195,9 @@ TEST_F (NavigationQueryBuilderTests, Grouping_ClassGroup_GroupsByBaseClass)
 
     NavigationQueryPtr query = queries[0];
     ASSERT_TRUE(query.IsValid());
-    
+
     NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("Grouping_ClassGroup_GroupsByBaseClass", spec);
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     }
@@ -222,17 +221,17 @@ TEST_F (NavigationQueryBuilderTests, Grouping_ClassGroup_BaseClassGroupingAndGro
 
     NavigationQueryPtr baseClassQuery = queries[1];
     ASSERT_TRUE(baseClassQuery.IsValid());
-    
+
     NavigationQueryCPtr expectedBaseClassQuery = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("Grouping_ClassGroup_BaseClassGroupingAndGroupByClass_BaseClass", spec);
-    EXPECT_TRUE(expectedBaseClassQuery->IsEqual(*baseClassQuery)) 
+    EXPECT_TRUE(expectedBaseClassQuery->IsEqual(*baseClassQuery))
         << "Expected: " << expectedBaseClassQuery->ToString() << "\r\n"
         << "Actual:   " << baseClassQuery->ToString();
-    
+
     NavigationQueryPtr classQuery = queries[0];
     ASSERT_TRUE(classQuery.IsValid());
 
     NavigationQueryCPtr expectedClassQuery = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("Grouping_ClassGroup_BaseClassGroupingAndGroupByClass_Class", spec);
-    EXPECT_TRUE(expectedClassQuery->IsEqual(*classQuery)) 
+    EXPECT_TRUE(expectedClassQuery->IsEqual(*classQuery))
         << "Expected: " << expectedClassQuery->ToString() << "\r\n"
         << "Actual:   " << classQuery->ToString();
     }
@@ -262,7 +261,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_ClassGroup_ECInstanceNodesChildren
     ASSERT_TRUE(query.IsValid());
 
     NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("Grouping_ClassGroup_ECInstanceNodesChildrenQuery", spec);
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     }
@@ -283,9 +282,9 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_GroupsByProperty)
 
     NavigationQueryPtr query = queries[0];
     ASSERT_TRUE(query.IsValid());
-    
+
     NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("Grouping_PropertyGroup_GroupsByProperty", spec);
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     }
@@ -301,7 +300,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_GroupsMultipleClasse
     groupingRule2->AddGroup(*new PropertyGroup("", "", true, "Name"));
     m_ruleset->AddPresentationRule(*groupingRule1);
     m_ruleset->AddPresentationRule(*groupingRule2);
-    
+
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "", "Basic1:Class1A,Class1B", true);
 
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
@@ -309,9 +308,9 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_GroupsMultipleClasse
 
     NavigationQueryPtr query = queries[0];
     ASSERT_TRUE(query.IsValid());
-    
+
     NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("Grouping_PropertyGroup_GroupsMultipleClassesByProperty", spec);
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     }
@@ -329,7 +328,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_GroupsByRange)
     groupingRule->AddGroup(*groupingSpec);
 
     m_ruleset->AddPresentationRule(*groupingRule);
-    
+
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "", "Basic1:Class1A,Class1B", true);
 
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
@@ -337,9 +336,9 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_GroupsByRange)
 
     NavigationQueryPtr query = queries[0];
     ASSERT_TRUE(query.IsValid());
-    
+
     NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("Grouping_PropertyGroup_GroupsByRange", spec);
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     }
@@ -360,9 +359,9 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_OverridesImageId)
 
     NavigationQueryPtr query = queries[0];
     ASSERT_TRUE(query.IsValid());
-    
+
     NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("Grouping_PropertyGroup_OverridesImageId", spec);
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     }
@@ -391,9 +390,9 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_ValueFiltering)
 
     NavigationQueryPtr query = queries[0];
     ASSERT_TRUE(query.IsValid());
-    
+
     NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("Grouping_PropertyGroup_ValueFiltering", spec);
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     }
@@ -425,9 +424,9 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_RangeFiltering)
 
     NavigationQueryPtr query = queries[0];
     ASSERT_TRUE(query.IsValid());
-    
+
     NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("Grouping_PropertyGroup_RangeFiltering", spec);
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     }
@@ -461,9 +460,9 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_OtherRangeFiltering)
 
     NavigationQueryPtr query = queries[0];
     ASSERT_TRUE(query.IsValid());
-    
+
     NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("Grouping_PropertyGroup_OtherRangeFiltering", spec);
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     }
@@ -476,7 +475,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_CreatesGroupingQuery
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "SchemaComplex3", "ChildClassWithNavigationProperty", "", "", "");
     groupingRule->AddGroup(*new PropertyGroup("", "", true, "Group"));
     m_ruleset->AddPresentationRule(*groupingRule);
-    
+
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false,
         "", "SchemaComplex3:ChildClassWithNavigationProperty", false);
 
@@ -485,9 +484,9 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_CreatesGroupingQuery
 
     NavigationQueryPtr query = queries[0];
     ASSERT_TRUE(query.IsValid());
-    
+
     NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("Grouping_PropertyGroup_CreatesGroupingQueryWhenRelationshipWithNavigationPropertyIsUsed", spec);
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     }
@@ -508,17 +507,17 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_GroupsSubclassNodesW
 
     NavigationQueryPtr propertyGroupingNodesQuery = queries[0];
     ASSERT_TRUE(propertyGroupingNodesQuery.IsValid());
-    
+
     NavigationQueryPtr instanceNodesQuery = queries[1];
     ASSERT_TRUE(instanceNodesQuery.IsValid());
 
     NavigationQueryCPtr expectedPropertyGroupingNodesQuery = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("Grouping_PropertyGroup_GroupsSubclassNodesWhenPolymorphicallyReturningParentNodes_1", spec);
-    EXPECT_TRUE(expectedPropertyGroupingNodesQuery->IsEqual(*propertyGroupingNodesQuery)) 
+    EXPECT_TRUE(expectedPropertyGroupingNodesQuery->IsEqual(*propertyGroupingNodesQuery))
         << "Expected: " << expectedPropertyGroupingNodesQuery->ToString() << "\r\n"
         << "Actual:   " << propertyGroupingNodesQuery->ToString();
-        
+
     NavigationQueryCPtr expectedInstanceNodesQuery = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("Grouping_PropertyGroup_GroupsSubclassNodesWhenPolymorphicallyReturningParentNodes_2", spec);
-    EXPECT_TRUE(expectedInstanceNodesQuery->IsEqual(*instanceNodesQuery)) 
+    EXPECT_TRUE(expectedInstanceNodesQuery->IsEqual(*instanceNodesQuery))
         << "Expected: " << expectedInstanceNodesQuery->ToString() << "\r\n"
         << "Actual:   " << instanceNodesQuery->ToString();
     }
@@ -540,17 +539,17 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_GroupsSubclassNodesW
 
     NavigationQueryPtr propertyGroupingNodesQuery = queries[0];
     ASSERT_TRUE(propertyGroupingNodesQuery.IsValid());
-    
+
     NavigationQueryPtr instanceNodesQuery = queries[1];
     ASSERT_TRUE(instanceNodesQuery.IsValid());
 
     NavigationQueryCPtr expectedPropertyGroupingNodesQuery = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("Grouping_PropertyGroup_GroupsSubclassNodesWhenPolymorphicallyReturningParentNodesWithRelatedInstances_1", spec);
-    EXPECT_TRUE(expectedPropertyGroupingNodesQuery->IsEqual(*propertyGroupingNodesQuery)) 
+    EXPECT_TRUE(expectedPropertyGroupingNodesQuery->IsEqual(*propertyGroupingNodesQuery))
         << "Expected: " << expectedPropertyGroupingNodesQuery->ToString() << "\r\n"
         << "Actual:   " << propertyGroupingNodesQuery->ToString();
-        
+
     NavigationQueryCPtr expectedInstanceNodesQuery = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("Grouping_PropertyGroup_GroupsSubclassNodesWhenPolymorphicallyReturningParentNodesWithRelatedInstances_2", spec);
-    EXPECT_TRUE(expectedInstanceNodesQuery->IsEqual(*instanceNodesQuery)) 
+    EXPECT_TRUE(expectedInstanceNodesQuery->IsEqual(*instanceNodesQuery))
         << "Expected: " << expectedInstanceNodesQuery->ToString() << "\r\n"
         << "Actual:   " << instanceNodesQuery->ToString();
     }
@@ -572,17 +571,17 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_GroupsRelatedSubclas
 
     NavigationQueryPtr propertyGroupingNodesQuery = queries[0];
     ASSERT_TRUE(propertyGroupingNodesQuery.IsValid());
-    
+
     NavigationQueryPtr instanceNodesQuery = queries[1];
     ASSERT_TRUE(instanceNodesQuery.IsValid());
 
     NavigationQueryCPtr expectedPropertyGroupingNodesQuery = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("Grouping_PropertyGroup_GroupsRelatedSubclassNodesWhenPolymorphicallyReturningParentNodes_1", spec);
-    EXPECT_TRUE(expectedPropertyGroupingNodesQuery->IsEqual(*propertyGroupingNodesQuery)) 
+    EXPECT_TRUE(expectedPropertyGroupingNodesQuery->IsEqual(*propertyGroupingNodesQuery))
         << "Expected: " << expectedPropertyGroupingNodesQuery->ToString() << "\r\n"
         << "Actual:   " << propertyGroupingNodesQuery->ToString();
-        
+
     NavigationQueryCPtr expectedInstanceNodesQuery = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("Grouping_PropertyGroup_GroupsRelatedSubclassNodesWhenPolymorphicallyReturningParentNodes_2", spec);
-    EXPECT_TRUE(expectedInstanceNodesQuery->IsEqual(*instanceNodesQuery)) 
+    EXPECT_TRUE(expectedInstanceNodesQuery->IsEqual(*instanceNodesQuery))
         << "Expected: " << expectedInstanceNodesQuery->ToString() << "\r\n"
         << "Actual:   " << instanceNodesQuery->ToString();
     }
@@ -602,7 +601,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_GroupsByBaseClassPro
     ASSERT_EQ(1, queries.size());
 
     NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("Grouping_PropertyGroup_GroupsByBaseClassPropertyWhenReturningDerivedClassInstances", spec);
-    EXPECT_TRUE(expected->IsEqual(*queries[0])) 
+    EXPECT_TRUE(expected->IsEqual(*queries[0]))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << queries[0]->ToString();
     }
@@ -638,7 +637,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PicksActiveGroupingSpecification)
     ASSERT_TRUE(query.IsValid());
 
     NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("Grouping_PropertyGroup_GroupsByProperty", spec);
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     }
@@ -660,7 +659,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_GroupsByRelatedInstanceProperty)
 
     NavigationQueryPtr query = queries[0];
     ASSERT_TRUE(query.IsValid());
-    
+
     NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("Grouping_GroupsByRelatedInstanceProperty", spec);
     EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
@@ -674,20 +673,20 @@ TEST_F (NavigationQueryBuilderTests, Grouping_GroupsByRelationshipPropertyWhenUs
     {
     TestNavNodePtr rootInstanceNode = TestNodesHelper::CreateInstanceNode(*m_connection, *GetECClass("RulesEngineTest", "Widget"));
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *rootInstanceNode);
-    
+
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "WidgetHasGadget", "", "", "");
     groupingRule->AddGroup(*new PropertyGroup("", "", true, "Priority"));
     m_ruleset->AddPresentationRule(*groupingRule);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, false, 0, "", RequiredRelationDirection_Forward,
         "RulesEngineTest", "RulesEngineTest:WidgetHasGadget", "RulesEngineTest:Gadget");
-    
+
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *rootInstanceNode);
     ASSERT_EQ(1, queries.size());
 
     NavigationQueryPtr query = queries[0];
     ASSERT_TRUE(query.IsValid());
-    
+
     NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("Grouping_GroupsByRelationshipPropertyWhenUsedWithRelatedInstancesSpecification", spec);
     EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
@@ -703,11 +702,11 @@ TEST_F(NavigationQueryBuilderTests, Grouping_GroupsMultipleClassesByTheSameRelat
     TestNavNodePtr rootInstanceNode = TestNodesHelper::CreateInstanceNode(*m_connection, *GetECClass("RulesEngineTest", "ClassD"));
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *rootInstanceNode);
 
-    // create the rules    
+    // create the rules
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "ClassDReferencesClassE", "", "", "");
     groupingRule->AddGroup(*new PropertyGroup("", "", true, "Priority", ""));
     m_ruleset->AddPresentationRule(*groupingRule);
-    
+
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, false, 0,
         "", RequiredRelationDirection_Forward, "RulesEngineTest", "RulesEngineTest:ClassDReferencesClassE", "RulesEngineTest:ClassF,ClassG");
 
@@ -717,7 +716,7 @@ TEST_F(NavigationQueryBuilderTests, Grouping_GroupsMultipleClassesByTheSameRelat
 
     NavigationQueryPtr query = queries[0];
     ASSERT_TRUE(query.IsValid());
-    
+
     NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("Grouping_GroupsMultipleClassesByTheSameRelationshipProperty", spec);
     EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
@@ -741,7 +740,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_GroupsByPropertyValu
 
     NavigationQueryPtr query = queries[0];
     ASSERT_TRUE(query.IsValid());
-    
+
     NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("Grouping_PropertyGroup_GroupsByPropertyValue", spec);
     EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
@@ -766,7 +765,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_SortsByDisplayLabelW
 
     NavigationQueryPtr query = queries[0];
     ASSERT_TRUE(query.IsValid());
-    
+
     NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("Grouping_PropertyGroup_SortsByDisplayLabelWhenTryingToSortByPropertyValueAndGroupByLabel", spec);
     EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
@@ -791,7 +790,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_GroupsAndSortsByProp
 
     NavigationQueryPtr query = queries[0];
     ASSERT_TRUE(query.IsValid());
-    
+
     NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("Grouping_PropertyGroup_GroupsAndSortsByPropertyValue", spec);
     EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
@@ -812,11 +811,11 @@ void NavigationQueryBuilder_MultiLevelGroupingTests::SetUp()
     GroupingRuleP propertyGroupingRule1 = new GroupingRule("", 2, false, "Basic4", "ClassA", "", "", "");
     propertyGroupingRule1->AddGroup(*new PropertyGroup("", "", true, "SomeProperty"));
     m_ruleset->AddPresentationRule(*propertyGroupingRule1);
-    
+
     GroupingRuleP propertyGroupingRule2 = new GroupingRule("", 1, false, "Basic4", "ClassA", "", "", "");
     propertyGroupingRule2->AddGroup(*new PropertyGroup("", "", true, "Description"));
     m_ruleset->AddPresentationRule(*propertyGroupingRule2);
-    
+
     GroupingRuleP propertyGroupingRule3 = new GroupingRule("", 1, false, "Basic4", "ClassC", "", "", "");
     propertyGroupingRule3->AddGroup(*new PropertyGroup("", "", true, "SomeProperty"));
     m_ruleset->AddPresentationRule(*propertyGroupingRule3);
@@ -838,10 +837,10 @@ void NavigationQueryBuilder_MultiLevelGroupingTests::TearDown()
     {
     if (nullptr != m_specification1)
         delete m_specification1;
-    
+
     if (nullptr != m_specification2)
         delete m_specification2;
-    
+
     if (nullptr != m_specification3)
         delete m_specification3;
 
@@ -861,7 +860,7 @@ TEST_F (NavigationQueryBuilder_MultiLevelGroupingTests, RootNodesQueryReturnsBas
     ASSERT_TRUE(query.IsValid());
 
     NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("RootNodesQueryReturnsBaseClassGroupingNodes_1", *m_specification1);
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     }
@@ -879,36 +878,7 @@ TEST_F (NavigationQueryBuilder_MultiLevelGroupingTests, RootNodesQueryReturnsBas
     ASSERT_TRUE(query.IsValid());
 
     NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("RootNodesQueryReturnsBaseClassGroupingNodes_2", *m_specification2);
-    EXPECT_TRUE(expected->IsEqual(*query)) 
-        << "Expected: " << expected->ToString() << "\r\n"
-        << "Actual:   " << query->ToString();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Uses AllRelatedInstanceNodes specification
-* @bsitest                                      Grigas.Petraitis                07/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (NavigationQueryBuilder_MultiLevelGroupingTests, RelationshipGroupingNodeChildrenQueryReturnsBaseClassGroupingNodes)
-    {
-    TestNavNodePtr rootInstanceNode = TestNodesHelper::CreateInstanceNode(*m_connection, *GetECClass("Basic4", "ClassB"));
-    TestNavNodePtr relationshipGroupingNode = TestNodesHelper::CreateRelationshipGroupingNode(*m_connection, *GetECClass("Basic4", "ClassBHasClassC")->GetRelationshipClassCP(), "test");
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *rootInstanceNode);
-    relationshipGroupingNode->SetParentNode(*rootInstanceNode);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *relationshipGroupingNode);
-    NavNodeExtendedData extendedData(*relationshipGroupingNode);
-    extendedData.SetSpecificationHash(m_specification3->GetHash());
-    extendedData.SetGroupingType((int)GroupingType::Relationship);
-    extendedData.SetParentECClassId(GetECClass("Basic4", "ClassB")->GetId());
-    extendedData.SetRelationshipDirection(ECRelatedInstanceDirection::Forward);
-    
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, *m_specification3, *relationshipGroupingNode);
-    ASSERT_EQ(1, queries.size());
-
-    NavigationQueryPtr query = queries[0];
-    ASSERT_TRUE(query.IsValid());
-
-    NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("RelationshipGroupingNodeChildrenQueryReturnsBaseClassGroupingNodes", *m_specification3);
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     }
@@ -934,7 +904,7 @@ TEST_F (NavigationQueryBuilder_MultiLevelGroupingTests, BaseClassNodeChildrenQue
     ASSERT_TRUE(query.IsValid());
 
     NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("BaseClassNodeChildrenQueryReturnsClassGroupingNodes_1", *m_specification1);
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     }
@@ -960,7 +930,7 @@ TEST_F (NavigationQueryBuilder_MultiLevelGroupingTests, BaseClassNodeChildrenQue
     ASSERT_TRUE(query.IsValid());
 
     NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("BaseClassNodeChildrenQueryReturnsClassGroupingNodes_2", *m_specification2);
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     }
@@ -994,7 +964,7 @@ TEST_F (NavigationQueryBuilder_MultiLevelGroupingTests, ClassNodeChildrenQueryRe
     ASSERT_TRUE(query.IsValid());
 
     NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("ClassNodeChildrenQueryReturnsFirstPropertyGroupingNodes", *m_specification2);
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     }
@@ -1020,7 +990,7 @@ TEST_F (NavigationQueryBuilder_MultiLevelGroupingTests, FirstPropertyNodeChildre
     NavNodeExtendedData classGroupingNodeExtendedData(*classGroupingNode);
     classGroupingNodeExtendedData.SetSpecificationHash(m_specification2->GetHash());
     classGroupingNodeExtendedData.SetGroupingType((int)GroupingType::Class);
-    
+
     TestNavNodePtr propertyGroupingNode = TestNodesHelper::CreatePropertyGroupingNode(*m_connection, *ecClassB, *ecClassB->GetPropertyP("SomeProperty"), "test1", rapidjson::Value((uint64_t)10000000000), false);
     propertyGroupingNode->SetParentNode(*classGroupingNode);
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode);
@@ -1035,7 +1005,7 @@ TEST_F (NavigationQueryBuilder_MultiLevelGroupingTests, FirstPropertyNodeChildre
     ASSERT_TRUE(query.IsValid());
 
     NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("FirstPropertyNodeChildrenQueryReturnsSecondPropertyGroupingNodes", *m_specification2);
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     }
@@ -1061,14 +1031,14 @@ TEST_F (NavigationQueryBuilder_MultiLevelGroupingTests, SecondPropertyGroupingNo
     NavNodeExtendedData classGroupingNodeExtendedData(*classGroupingNode);
     classGroupingNodeExtendedData.SetSpecificationHash(m_specification2->GetHash());
     classGroupingNodeExtendedData.SetGroupingType((int)GroupingType::Class);
-    
+
     TestNavNodePtr propertyGroupingNode1 = TestNodesHelper::CreatePropertyGroupingNode(*m_connection, *ecClassB, *ecClassB->GetPropertyP("SomeProperty"), "test1", rapidjson::Value(2.5), false);
     propertyGroupingNode1->SetParentNode(*classGroupingNode);
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode1);
     NavNodeExtendedData propertyGroupingNodeExtendedData1(*propertyGroupingNode1);
     propertyGroupingNodeExtendedData1.SetSpecificationHash(m_specification2->GetHash());
     propertyGroupingNodeExtendedData1.SetGroupingType((int)GroupingType::Property);
-    
+
     TestNavNodePtr propertyGroupingNode2 = TestNodesHelper::CreatePropertyGroupingNode(*m_connection, *ecClassB, *ecClassB->GetPropertyP("Description"), "test2", rapidjson::Value("TestGroupingDescription"), false);
     propertyGroupingNode2->SetParentNode(*propertyGroupingNode1);
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode2);
@@ -1083,7 +1053,7 @@ TEST_F (NavigationQueryBuilder_MultiLevelGroupingTests, SecondPropertyGroupingNo
     ASSERT_TRUE(query.IsValid());
 
     NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("SecondPropertyGroupingNodeChildrenQueryReturnsThirdPropertyGroupingNodes", *m_specification2);
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     }
@@ -1110,21 +1080,21 @@ TEST_F (NavigationQueryBuilder_MultiLevelGroupingTests, ThirdPropertyGroupingNod
     NavNodeExtendedData classGroupingNodeExtendedData(*classGroupingNode);
     classGroupingNodeExtendedData.SetSpecificationHash(m_specification2->GetHash());
     classGroupingNodeExtendedData.SetGroupingType((int)GroupingType::Class);
-    
+
     TestNavNodePtr propertyGroupingNode1 = TestNodesHelper::CreatePropertyGroupingNode(*m_connection, *ecClassB, *ecClassB->GetPropertyP("SomeProperty"), "test1", rapidjson::Value(9), false);
     propertyGroupingNode1->SetParentNode(*classGroupingNode);
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode1);
     NavNodeExtendedData propertyGroupingNodeExtendedData1(*propertyGroupingNode1);
     propertyGroupingNodeExtendedData1.SetSpecificationHash(m_specification2->GetHash());
     propertyGroupingNodeExtendedData1.SetGroupingType((int)GroupingType::Property);
-    
+
     TestNavNodePtr propertyGroupingNode2 = TestNodesHelper::CreatePropertyGroupingNode(*m_connection, *ecClassB, *ecClassB->GetPropertyP("Description"), "test2", rapidjson::Value("TestGroupingDescription"), false);
     propertyGroupingNode2->SetParentNode(*propertyGroupingNode1);
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode2);
     NavNodeExtendedData propertyGroupingNodeExtendedData2(*propertyGroupingNode2);
     propertyGroupingNodeExtendedData2.SetSpecificationHash(m_specification2->GetHash());
     propertyGroupingNodeExtendedData2.SetGroupingType((int)GroupingType::Property);
-    
+
     TestNavNodePtr propertyGroupingNode3 = TestNodesHelper::CreatePropertyGroupingNode(*m_connection, *ecClassC, *ecClassC->GetPropertyP("SomeProperty"), "test3", rapidjson::Value(true), false);
     propertyGroupingNode3->SetParentNode(*propertyGroupingNode2);
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode3);
@@ -1139,7 +1109,7 @@ TEST_F (NavigationQueryBuilder_MultiLevelGroupingTests, ThirdPropertyGroupingNod
     ASSERT_TRUE(query.IsValid());
 
     NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("ThirdPropertyGroupingNodeChildrenQueryReturnsLabelGroupingNodes", *m_specification2);
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     }
@@ -1166,36 +1136,36 @@ TEST_F (NavigationQueryBuilder_MultiLevelGroupingTests, LabelGroupingNodeChildre
     NavNodeExtendedData classGroupingNodeExtendedData(*classGroupingNode);
     classGroupingNodeExtendedData.SetSpecificationHash(m_specification2->GetHash());
     classGroupingNodeExtendedData.SetGroupingType((int)GroupingType::Class);
-    
+
     TestNavNodePtr propertyGroupingNode1 = TestNodesHelper::CreatePropertyGroupingNode(*m_connection, *ecClassB, *ecClassB->GetPropertyP("SomeProperty"), "test1", rapidjson::Value(9), false);
     propertyGroupingNode1->SetParentNode(*classGroupingNode);
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode1);
     NavNodeExtendedData propertyGroupingNodeExtendedData1(*propertyGroupingNode1);
     propertyGroupingNodeExtendedData1.SetSpecificationHash(m_specification2->GetHash());
     propertyGroupingNodeExtendedData1.SetGroupingType((int)GroupingType::Property);
-    
+
     TestNavNodePtr propertyGroupingNode2 = TestNodesHelper::CreatePropertyGroupingNode(*m_connection, *ecClassB, *ecClassB->GetPropertyP("Description"), "test2", rapidjson::Value("TestGroupingDescription"), false);
     propertyGroupingNode2->SetParentNode(*propertyGroupingNode1);
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode2);
     NavNodeExtendedData propertyGroupingNodeExtendedData2(*propertyGroupingNode2);
     propertyGroupingNodeExtendedData2.SetSpecificationHash(m_specification2->GetHash());
     propertyGroupingNodeExtendedData2.SetGroupingType((int)GroupingType::Property);
-    
+
     TestNavNodePtr propertyGroupingNode3 = TestNodesHelper::CreatePropertyGroupingNode(*m_connection, *ecClassC, *ecClassC->GetPropertyP("SomeProperty"), "test3", rapidjson::Value(99), false);
     propertyGroupingNode3->SetParentNode(*propertyGroupingNode2);
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *propertyGroupingNode3);
     NavNodeExtendedData propertyGroupingNodeExtendedData3(*propertyGroupingNode3);
     propertyGroupingNodeExtendedData3.SetSpecificationHash(m_specification2->GetHash());
     propertyGroupingNodeExtendedData3.SetGroupingType((int)GroupingType::Property);
-    
+
     JsonNavNodePtr labelGroupingNode = TestNodesHelper::CreateLabelGroupingNode(*m_connection, "test");
     labelGroupingNode->SetParentNode(*propertyGroupingNode3);
     RulesEngineTestHelpers::CacheNode(m_nodesCache, *labelGroupingNode);
     NavNodeExtendedData labelGroupingNodeExtendedData(*labelGroupingNode);
     labelGroupingNodeExtendedData.SetSpecificationHash(m_specification2->GetHash());
     labelGroupingNodeExtendedData.SetGroupingType((int)GroupingType::DisplayLabel);
-    labelGroupingNodeExtendedData.SetGroupedInstanceKeys({ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1))});
-    
+    labelGroupingNodeExtendedData.SetInstanceKeys({ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1))});
+
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, *m_specification2, *labelGroupingNode);
     ASSERT_EQ(1, queries.size());
 
@@ -1203,7 +1173,7 @@ TEST_F (NavigationQueryBuilder_MultiLevelGroupingTests, LabelGroupingNodeChildre
     ASSERT_TRUE(query.IsValid());
 
     NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("LabelGroupingNodeChildrenQueryReturnsInstanceNodes", *m_specification2);
-    EXPECT_TRUE(expected->IsEqual(*query)) 
+    EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     }

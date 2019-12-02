@@ -545,14 +545,14 @@ static folly::Future<NodesPathElement> FindNode(IECPresentationManagerR manager,
         for (size_t i = 0; i < nodes.GetSize(); ++i)
             {
             NavNodeCPtr node = nodes[i];
-            if (node->GetKey()->AsECInstanceNodeKey() && node->GetKey()->AsECInstanceNodeKey()->GetInstanceKey() == lookupKey)
+            if (node->GetKey()->AsECInstanceNodeKey() && node->GetKey()->AsECInstanceNodeKey()->HasInstanceKey(lookupKey))
                 return NodesPathElement(*node, i);
             if (nullptr != node->GetKey()->AsGroupingNodeKey())
                 {
                 NavNodeExtendedData extendedData(*node);
                 if (extendedData.HasGroupingType())
                     {
-                    bvector<ECInstanceKey> groupedKeys = extendedData.GetGroupedInstanceKeys();
+                    bvector<ECInstanceKey> groupedKeys = extendedData.GetInstanceKeys();
                     auto iter = std::find(groupedKeys.begin(), groupedKeys.end(), lookupKey);
                     if (groupedKeys.end() != iter)
                         return NodesPathElement(*node, i);
@@ -581,7 +581,7 @@ static folly::Future<NodesPathElement> CreateNodePath(IECPresentationManagerR ma
             return folly::makeFuture(NodesPathElement());
             }
 
-        if (parentEl.GetNode()->GetKey()->AsECInstanceNodeKey() && parentEl.GetNode()->GetKey()->AsECInstanceNodeKey()->GetInstanceKey() == keyPath.front())
+        if (parentEl.GetNode()->GetKey()->AsECInstanceNodeKey() && parentEl.GetNode()->GetKey()->AsECInstanceNodeKey()->HasInstanceKey(keyPath.front()))
             keyPath.erase(keyPath.begin());
 
         return CreateNodePath(manager, db, parentEl.GetNode().get(), keyPath, jsonOptions, context).then([parentEl](NodesPathElement childEl) mutable

@@ -197,7 +197,7 @@ TEST_F(ContentCacheTests, ReplacesProvidersDifferingJustBySelectionInfo)
 
     // cache another provider with no selection info
     // it should add this new provider in addition to keeping all cached ones
-    INavNodeKeysContainerCPtr keys = NavNodeKeyListContainer::Create({NavNodeKey::Create("a", bvector<Utf8String>())});
+    INavNodeKeysContainerCPtr keys = NavNodeKeyListContainer::Create({NavNodeKey::Create("a", { BeGuid(true).ToString() })});
     ContentProviderKey keyNoSelectionInfo2("connection id", "ruleset id", "display type", 0, "locale", *keys, nullptr);
     SpecificationContentProviderP provider6 = CacheProvider(keyNoSelectionInfo2);
     EXPECT_EQ(provider1, m_cache.GetProvider(keyNoSelectionInfo1).get());

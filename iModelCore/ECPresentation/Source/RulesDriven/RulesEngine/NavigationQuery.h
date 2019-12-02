@@ -215,7 +215,7 @@ protected:
     virtual BoundQueryValuesList _GetBoundValues() const {return BoundQueryValuesList();}
     virtual Utf8String _ToString() const = 0;
 public:
-    Utf8StringCR ToString() const 
+    Utf8StringCR ToString() const
         {
         if (Utf8String::IsNullOrEmpty(m_queryString.c_str()))
             m_queryString = _ToString();
@@ -238,7 +238,7 @@ struct EXPORT_VTABLE_ATTRIBUTE PresentationQuery : PresentationQueryBase, IQuery
     typedef StringPresentationQuery<TBase>  StringQuery;
     typedef TContract                       Contract;
     typedef TResultParameters               ResultParameters;
-    
+
 private:
     ResultParameters m_resultParameters;
     bool m_isOuterQuery;
@@ -259,11 +259,11 @@ public:
     RefCountedPtr<TBase> Clone() const
         {
         RefCountedPtr<TBase> clone;
-        if (nullptr != AsComplexQuery()) 
+        if (nullptr != AsComplexQuery())
             clone = new ComplexPresentationQuery<TBase>(*AsComplexQuery());
-        else if (nullptr != AsUnionQuery()) 
+        else if (nullptr != AsUnionQuery())
             clone = new UnionPresentationQuery<TBase>(*AsUnionQuery());
-        else if (nullptr != AsExceptQuery()) 
+        else if (nullptr != AsExceptQuery())
             clone = new ExceptPresentationQuery<TBase>(*AsExceptQuery());
         else if (nullptr != AsStringQuery())
             clone = new StringPresentationQuery<TBase>(*AsStringQuery());
@@ -319,7 +319,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ComplexPresentationQuery : TBase
 
         FromClause() : m_class(nullptr), m_isPolymorphic(false) {}
         FromClause(ECClassCR fromClass, Utf8CP alias = nullptr, bool isPolymorphic = false)
-            : m_class(&fromClass), m_alias(alias), m_isPolymorphic(isPolymorphic) 
+            : m_class(&fromClass), m_alias(alias), m_isPolymorphic(isPolymorphic)
             {}
         bool IsValid() const {return nullptr != m_class;}
         };
@@ -375,10 +375,10 @@ private:
 
 protected:
     ComplexPresentationQuery() : m_limit(nullptr), m_offset(nullptr), m_isSelectAll(false) {}
-    ComplexPresentationQuery(ComplexPresentationQuery<TBase> const& other) 
-        : TBase(other), m_havingClause(other.m_havingClause), m_orderByClause(other.m_orderByClause), m_from(other.m_from), 
-        m_nestedQueryAlias(other.m_nestedQueryAlias), m_whereClause(other.m_whereClause), m_joins(other.m_joins), 
-        m_selectContract(other.m_selectContract), m_selectPrefix(other.m_selectPrefix), m_isSelectAll(other.m_isSelectAll), 
+    ComplexPresentationQuery(ComplexPresentationQuery<TBase> const& other)
+        : TBase(other), m_havingClause(other.m_havingClause), m_orderByClause(other.m_orderByClause), m_from(other.m_from),
+        m_nestedQueryAlias(other.m_nestedQueryAlias), m_whereClause(other.m_whereClause), m_joins(other.m_joins),
+        m_selectContract(other.m_selectContract), m_selectPrefix(other.m_selectPrefix), m_isSelectAll(other.m_isSelectAll),
         m_groupingContract(other.m_groupingContract), m_limit(nullptr), m_offset(nullptr)
         {
         if (other.m_nestedQuery.IsValid())
@@ -396,7 +396,7 @@ protected:
         }
     ThisType* _AsComplexQuery() override {return this;}
     ECPRESENTATION_EXPORT bvector<Utf8CP> _GetSelectAliases(int) const override;
-    ECPRESENTATION_EXPORT bool _IsEqual(TBase const& other) const override; 
+    ECPRESENTATION_EXPORT bool _IsEqual(TBase const& other) const override;
     ECPRESENTATION_EXPORT Utf8String _ToString() const override;
     ECPRESENTATION_EXPORT Contract const* _GetContract(uint64_t) const override;
     ECPRESENTATION_EXPORT Contract const* _GetGroupingContract() const override;
@@ -465,7 +465,7 @@ protected:
         }
     ThisType* _AsUnionQuery() override {return this;}
     ECPRESENTATION_EXPORT bvector<Utf8CP> _GetSelectAliases(int) const override;
-    ECPRESENTATION_EXPORT bool _IsEqual(TBase const& other) const override; 
+    ECPRESENTATION_EXPORT bool _IsEqual(TBase const& other) const override;
     ECPRESENTATION_EXPORT Utf8String _ToString() const override;
     ECPRESENTATION_EXPORT Contract const* _GetContract(uint64_t) const override;
     ECPRESENTATION_EXPORT Contract const* _GetGroupingContract() const override;
@@ -523,7 +523,7 @@ protected:
         }
     ThisType* _AsExceptQuery() override {return this;}
     ECPRESENTATION_EXPORT bvector<Utf8CP> _GetSelectAliases(int) const override;
-    ECPRESENTATION_EXPORT bool _IsEqual(TBase const& other) const override; 
+    ECPRESENTATION_EXPORT bool _IsEqual(TBase const& other) const override;
     ECPRESENTATION_EXPORT Utf8String _ToString() const override;
     ECPRESENTATION_EXPORT Contract const* _GetContract(uint64_t) const override;
     ECPRESENTATION_EXPORT Contract const* _GetGroupingContract() const override;
@@ -563,7 +563,7 @@ protected:
     StringPresentationQuery(StringPresentationQuery<TBase> const& other) : TBase(other), m_query(other.m_query) {CopyBindings(other.m_bindings);}
     ThisType* _AsStringQuery() override {return this;}
     bvector<Utf8CP> _GetSelectAliases(int) const override {return bvector<Utf8CP>();}
-    ECPRESENTATION_EXPORT bool _IsEqual(TBase const& other) const override; 
+    ECPRESENTATION_EXPORT bool _IsEqual(TBase const& other) const override;
     ECPRESENTATION_EXPORT Utf8String _ToString() const override;
     BoundQueryValuesList _GetBoundValues() const override {return m_bindings;}
 
@@ -608,37 +608,33 @@ private:
     NavNodeExtendedData m_navNodeExtendedData;
     NavigationQueryResultType m_resultType;
     bset<ECClassId> m_matchingRelationshipIds;
-    bool m_hasInstanceGroups;
-    
+
 public:
     NavNodeExtendedData& GetNavNodeExtendedDataR() {return m_navNodeExtendedData;}
     void SetResultType(NavigationQueryResultType type) {m_resultType = type;}
-    void SetHasInstanceGroups(bool value) {m_hasInstanceGroups = value;}
     void SetSpecification(ChildNodeSpecificationCP spec) {m_specification = spec;}
     bset<ECClassId>& GetMatchingRelationshipIds() {return m_matchingRelationshipIds;}
     void OnContractSelected(NavigationQueryContractCR contract) {m_resultType = contract.GetResultType();}
     ECPRESENTATION_EXPORT void MergeWith(NavigationQueryResultParameters const&);
 
 public:
-    NavigationQueryResultParameters() 
-        : m_resultType(NavigationQueryResultType::Invalid), m_specification(nullptr), m_hasInstanceGroups(false)
+    NavigationQueryResultParameters()
+        : m_resultType(NavigationQueryResultType::Invalid), m_specification(nullptr)
         {}
-    NavigationQueryResultParameters(NavigationQueryResultParameters const& other) 
-        : m_navNodeExtendedData(other.m_navNodeExtendedData), m_specification(other.m_specification), m_resultType(other.m_resultType), m_hasInstanceGroups(other.m_hasInstanceGroups), m_matchingRelationshipIds(other.m_matchingRelationshipIds)
+    NavigationQueryResultParameters(NavigationQueryResultParameters const& other)
+        : m_navNodeExtendedData(other.m_navNodeExtendedData), m_specification(other.m_specification), m_resultType(other.m_resultType), m_matchingRelationshipIds(other.m_matchingRelationshipIds)
         {}
     NavigationQueryResultParameters& operator=(NavigationQueryResultParameters const& other)
         {
         m_navNodeExtendedData = other.m_navNodeExtendedData;
         m_specification = other.m_specification;
         m_resultType = other.m_resultType;
-        m_hasInstanceGroups = other.m_hasInstanceGroups;
         m_matchingRelationshipIds = other.m_matchingRelationshipIds;
         return *this;
         }
     ECPRESENTATION_EXPORT bool operator==(NavigationQueryResultParameters const& other) const;
     NavNodeExtendedData const& GetNavNodeExtendedData() const {return m_navNodeExtendedData;}
     NavigationQueryResultType GetResultType() const {return m_resultType;}
-    bool HasInstanceGroups() const {return m_hasInstanceGroups;}
     ChildNodeSpecificationCP GetSpecification() const {return m_specification;}
     bset<ECClassId> const& GetMatchingRelationshipIds() const {return m_matchingRelationshipIds;}
     };

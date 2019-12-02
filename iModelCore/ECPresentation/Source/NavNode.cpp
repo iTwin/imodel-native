@@ -22,22 +22,6 @@ NavNodeKeyPtr NavNodeKey::FromJson(IConnectionCR connection, JsonValueCR json)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                01/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeKeyPtr NavNodeKey::Create(JsonValueCR json)
-    {
-    return IECPresentationManager::GetSerializer().GetBaseNavNodeKeyFromJson(json);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                01/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeKeyPtr NavNodeKey::Create(RapidJsonValueCR json)
-    {
-    return IECPresentationManager::GetSerializer().GetBaseNavNodeKeyFromJson(json);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document NavNodeKey::_AsJson(rapidjson::Document::AllocatorType* allocator) const
@@ -48,23 +32,14 @@ rapidjson::Document NavNodeKey::_AsJson(rapidjson::Document::AllocatorType* allo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 NavNodeKey::_ComputeHash() const
-    {
-    MD5 h;
-    h.Add(m_type.c_str(), m_type.SizeInBytes());
-    for (Utf8StringCR pathElement : m_pathFromRoot)
-        h.Add(pathElement.c_str(), pathElement.SizeInBytes());
-    return h;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                10/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR NavNodeKey::GetHash() const
     {
-    if (m_keyHash.empty())
-        m_keyHash = _ComputeHash().GetHashString();
-    return m_keyHash;
+    if (m_hashPath.empty())
+        {
+        static Utf8String const s_empty;
+        return s_empty;
+        }
+    return m_hashPath.back();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -76,58 +51,31 @@ int NavNodeKey::_Compare(NavNodeKey const& other) const
     if (0 != typeCompareResult)
         return typeCompareResult;
 
-    if (m_pathFromRoot < other.m_pathFromRoot)
+    if (m_hashPath < other.m_hashPath)
         return -1;
-    if (m_pathFromRoot > other.m_pathFromRoot)
+    if (m_hashPath > other.m_hashPath)
         return 1;
     return 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<ECInstanceNodeKey> ECInstanceNodeKey::Create(IConnectionCR connection, JsonValueCR json)
-    {
-    return IECPresentationManager::GetSerializer().GetECInstanceNodeKeyFromJson(connection, json);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<ECInstanceNodeKey> ECInstanceNodeKey::Create(IConnectionCR connection, RapidJsonValueCR json)
-    {
-    return IECPresentationManager::GetSerializer().GetECInstanceNodeKeyFromJson(connection, json);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECInstanceNodeKey::_IsSimilar(NavNodeKey const& other) const
+bool ECInstancesNodeKey::_IsSimilar(NavNodeKey const& other) const
     {
     if (!NavNodeKey::_IsSimilar(other))
         return false;
 
-    BeAssert(nullptr != dynamic_cast<ECInstanceNodeKey const*>(&other));
-    ECInstanceNodeKey const& otherKey = static_cast<ECInstanceNodeKey const&>(other);
-    return m_instanceKey == otherKey.m_instanceKey;
+    ECInstancesNodeKey const* otherKey = dynamic_cast<ECInstancesNodeKey const*>(&other);
+    return nullptr != otherKey && m_instanceKeys == otherKey->m_instanceKeys;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document ECInstanceNodeKey::_AsJson(rapidjson::Document::AllocatorType* allocator) const
+rapidjson::Document ECInstancesNodeKey::_AsJson(rapidjson::Document::AllocatorType* allocator) const
     {
     return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                10/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-MD5 ECInstanceNodeKey::_ComputeHash() const
-    {
-    MD5 h = NavNodeKey::_ComputeHash();
-    h.Add(&m_instanceKey, sizeof(ECInstanceKey));
-    return h;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -157,16 +105,6 @@ rapidjson::Document ECClassGroupingNodeKey::_AsJson(rapidjson::Document::Allocat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 ECClassGroupingNodeKey::_ComputeHash() const
-    {
-    MD5 h = NavNodeKey::_ComputeHash();
-    h.Add(m_class->GetFullName(), strlen(m_class->GetFullName()));
-    return h;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                02/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 RefCountedPtr<ECPropertyGroupingNodeKey> ECPropertyGroupingNodeKey::Create(IConnectionCR connection, JsonValueCR json)
     {
     return IECPresentationManager::GetSerializer().GetECPropertyGroupingNodeKeyFromJson(connection, json);
@@ -191,18 +129,6 @@ rapidjson::Document ECPropertyGroupingNodeKey::_AsJson(rapidjson::Document::Allo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 ECPropertyGroupingNodeKey::_ComputeHash() const
-    {
-    MD5 h = NavNodeKey::_ComputeHash();
-    h.Add(m_class->GetFullName(), strlen(m_class->GetFullName()));
-    h.Add(m_propertyName.c_str(), m_propertyName.SizeInBytes());
-    // wip: do we also absolutely need grouping value?
-    return h;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                02/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 RefCountedPtr<LabelGroupingNodeKey> LabelGroupingNodeKey::Create(JsonValueCR json)
     {
     return IECPresentationManager::GetSerializer().GetLabelGroupingNodeKeyFromJson(json);
@@ -222,16 +148,6 @@ RefCountedPtr<LabelGroupingNodeKey> LabelGroupingNodeKey::Create(RapidJsonValueC
 rapidjson::Document LabelGroupingNodeKey::_AsJson(rapidjson::Document::AllocatorType* allocator) const
     {
     return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                02/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-MD5 LabelGroupingNodeKey::_ComputeHash() const
-    {
-    MD5 h = NavNodeKey::_ComputeHash();
-    h.Add(m_label.c_str(), m_label.SizeInBytes());
-    return h;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -295,7 +211,10 @@ Utf8StringCR INavNodeKeysContainer::GetHash() const
         {
         MD5 h;
         for (NavNodeKeyCPtr const& key : *this)
-            h.Add(key->GetHash().c_str(), key->GetHash().SizeInBytes());
+            {
+            for (Utf8StringCR partialPathHash : key->GetHashPath())
+                h.Add(partialPathHash.c_str(), partialPathHash.SizeInBytes());
+            }
         m_hash = h.GetHashString();
         }
     return m_hash;

@@ -72,7 +72,8 @@ TEST_F (ContentProviderTests, SelectedNodeInstances_AllPropertiesOfOneSelectedNo
     m_context->SetInputKeys(*NavNodeKeyListContainer::Create(keys));
 
     bvector<ECInstanceKey> instanceKeys;
-    instanceKeys.push_back(node->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
+    std::transform(node->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().begin(), node->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().end(),
+        std::back_inserter(instanceKeys), [](ECClassInstanceKeyCR k){return ECInstanceKey(k.GetClass()->GetId(), k.GetId());});
 
     ContentRule rule;
     rule.AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
@@ -106,8 +107,10 @@ TEST_F (ContentProviderTests, SelectedNodeInstances_AllPropertiesOfMultipleSelec
     m_context->SetInputKeys(*NavNodeKeyListContainer::Create(keys));
 
     bvector<ECInstanceKey> instanceKeys;
-    instanceKeys.push_back(node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
-    instanceKeys.push_back(node2->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
+    std::transform(node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().begin(), node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().end(),
+        std::back_inserter(instanceKeys), [](ECClassInstanceKeyCR k) {return ECInstanceKey(k.GetClass()->GetId(), k.GetId()); });
+    std::transform(node2->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().begin(), node2->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().end(),
+        std::back_inserter(instanceKeys), [](ECClassInstanceKeyCR k) {return ECInstanceKey(k.GetClass()->GetId(), k.GetId()); });
     
     ContentRule rule;
     rule.AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
@@ -146,8 +149,10 @@ TEST_F (ContentProviderTests, SelectedNodeInstances_AllPropertiesOfMultipleSelec
     m_context->SetInputKeys(*NavNodeKeyListContainer::Create(keys));
 
     bvector<ECInstanceKey> instanceKeys;
-    instanceKeys.push_back(node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
-    instanceKeys.push_back(node2->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
+    std::transform(node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().begin(), node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().end(),
+        std::back_inserter(instanceKeys), [](ECClassInstanceKeyCR k) {return ECInstanceKey(k.GetClass()->GetId(), k.GetId()); });
+    std::transform(node2->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().begin(), node2->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().end(),
+        std::back_inserter(instanceKeys), [](ECClassInstanceKeyCR k) {return ECInstanceKey(k.GetClass()->GetId(), k.GetId()); });
     
     ContentRule rule;
     rule.AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
@@ -182,7 +187,8 @@ TEST_F (ContentProviderTests, CreatesImageIdWhenSpecified)
     m_context->SetInputKeys(*NavNodeKeyListContainer::Create(keys));
 
     bvector<ECInstanceKey> instanceKeys;
-    instanceKeys.push_back(node->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
+    std::transform(node->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().begin(), node->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().end(),
+        std::back_inserter(instanceKeys), [](ECClassInstanceKeyCR k) {return ECInstanceKey(k.GetClass()->GetId(), k.GetId()); });
     
     SelectedNodeInstancesSpecificationP spec = new SelectedNodeInstancesSpecification(1, false, "", "", false);
     spec->SetShowImages(true);
@@ -217,7 +223,8 @@ TEST_F (ContentProviderTests, CustomizesImageId)
     m_context->SetInputKeys(*NavNodeKeyListContainer::Create(keys));
 
     bvector<ECInstanceKey> instanceKeys;
-    instanceKeys.push_back(node->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
+    std::transform(node->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().begin(), node->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().end(),
+        std::back_inserter(instanceKeys), [](ECClassInstanceKeyCR k) {return ECInstanceKey(k.GetClass()->GetId(), k.GetId()); });
     
     SelectedNodeInstancesSpecificationP spec = new SelectedNodeInstancesSpecification(1, false, "", "", false);
     spec->SetShowImages(true);
@@ -254,7 +261,8 @@ TEST_F (ContentProviderTests, UsesRelatedInstanceInImageIdOverrideCondition)
     m_context->SetInputKeys(*NavNodeKeyListContainer::Create(keys));
 
     bvector<ECInstanceKey> instanceKeys;
-    instanceKeys.push_back(node->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
+    std::transform(node->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().begin(), node->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().end(),
+        std::back_inserter(instanceKeys), [](ECClassInstanceKeyCR k) {return ECInstanceKey(k.GetClass()->GetId(), k.GetId()); });
     
     m_ruleset->AddPresentationRule(*new ImageIdOverride("ThisNode.ClassName = \"Widget\" ANDALSO gadgetAlias.MyID = \"Gadget ID\"", 1, "\"TestImageId\""));
 
@@ -294,7 +302,8 @@ TEST_F (ContentProviderTests, UsesRelatedInstanceInImageIdOverrideExpression)
     m_context->SetInputKeys(*NavNodeKeyListContainer::Create(keys));
 
     bvector<ECInstanceKey> instanceKeys;
-    instanceKeys.push_back(node->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
+    std::transform(node->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().begin(), node->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().end(),
+        std::back_inserter(instanceKeys), [](ECClassInstanceKeyCR k) {return ECInstanceKey(k.GetClass()->GetId(), k.GetId()); });
     
     m_ruleset->AddPresentationRule(*new ImageIdOverride("ThisNode.ClassName = \"Widget\"", 1, "gadgetAlias.MyID"));
 
@@ -330,7 +339,8 @@ TEST_F (ContentProviderTests, CreatesLabelWhenSpecified)
     m_context->SetInputKeys(*NavNodeKeyListContainer::Create(keys));
 
     bvector<ECInstanceKey> instanceKeys;
-    instanceKeys.push_back(node->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
+    std::transform(node->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().begin(), node->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().end(),
+        std::back_inserter(instanceKeys), [](ECClassInstanceKeyCR k) {return ECInstanceKey(k.GetClass()->GetId(), k.GetId()); });
 
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
     
@@ -373,9 +383,12 @@ TEST_F (ContentProviderTests, PagingUnsortedData)
     m_context->SetInputKeys(*NavNodeKeyListContainer::Create(keys));
 
     bvector<ECInstanceKey> instanceKeys;
-    instanceKeys.push_back(node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
-    instanceKeys.push_back(node2->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
-    instanceKeys.push_back(node3->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
+    std::transform(node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().begin(), node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().end(),
+        std::back_inserter(instanceKeys), [](ECClassInstanceKeyCR k) {return ECInstanceKey(k.GetClass()->GetId(), k.GetId()); });
+    std::transform(node2->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().begin(), node2->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().end(),
+        std::back_inserter(instanceKeys), [](ECClassInstanceKeyCR k) {return ECInstanceKey(k.GetClass()->GetId(), k.GetId()); });
+    std::transform(node3->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().begin(), node3->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().end(),
+        std::back_inserter(instanceKeys), [](ECClassInstanceKeyCR k) {return ECInstanceKey(k.GetClass()->GetId(), k.GetId()); });
     
     ContentRule rule;
     rule.AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
@@ -417,9 +430,12 @@ TEST_F (ContentProviderTests, PagingSortedData)
     m_context->SetInputKeys(*NavNodeKeyListContainer::Create(keys));
 
     bvector<ECInstanceKey> instanceKeys;
-    instanceKeys.push_back(node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
-    instanceKeys.push_back(node2->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
-    instanceKeys.push_back(node3->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
+    std::transform(node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().begin(), node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().end(),
+        std::back_inserter(instanceKeys), [](ECClassInstanceKeyCR k) {return ECInstanceKey(k.GetClass()->GetId(), k.GetId()); });
+    std::transform(node2->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().begin(), node2->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().end(),
+        std::back_inserter(instanceKeys), [](ECClassInstanceKeyCR k) {return ECInstanceKey(k.GetClass()->GetId(), k.GetId()); });
+    std::transform(node3->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().begin(), node3->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().end(),
+        std::back_inserter(instanceKeys), [](ECClassInstanceKeyCR k) {return ECInstanceKey(k.GetClass()->GetId(), k.GetId()); });
     
     ContentRule rule;
     rule.AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
@@ -464,9 +480,12 @@ TEST_F (ContentProviderTests, PageDoesNotExceedPageSize)
     m_context->SetInputKeys(*NavNodeKeyListContainer::Create(keys));
     
     bvector<ECInstanceKey> instanceKeys;
-    instanceKeys.push_back(node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
-    instanceKeys.push_back(node2->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
-    instanceKeys.push_back(node3->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
+    std::transform(node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().begin(), node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().end(),
+        std::back_inserter(instanceKeys), [](ECClassInstanceKeyCR k) {return ECInstanceKey(k.GetClass()->GetId(), k.GetId()); });
+    std::transform(node2->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().begin(), node2->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().end(),
+        std::back_inserter(instanceKeys), [](ECClassInstanceKeyCR k) {return ECInstanceKey(k.GetClass()->GetId(), k.GetId()); });
+    std::transform(node3->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().begin(), node3->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().end(),
+        std::back_inserter(instanceKeys), [](ECClassInstanceKeyCR k) {return ECInstanceKey(k.GetClass()->GetId(), k.GetId()); });
 
     ContentRule rule;
     rule.AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
@@ -582,7 +601,8 @@ TEST_F(ContentProviderTests, CloneContentProviderAndChangeCancelationToken)
     m_context->SetInputKeys(*NavNodeKeyListContainer::Create(keys));
 
     bvector<ECInstanceKey> instanceKeys;
-    instanceKeys.push_back(node->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
+    std::transform(node->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().begin(), node->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().end(),
+        std::back_inserter(instanceKeys), [](ECClassInstanceKeyCR k) {return ECInstanceKey(k.GetClass()->GetId(), k.GetId()); });
 
     ContentRule rule;
     rule.AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));

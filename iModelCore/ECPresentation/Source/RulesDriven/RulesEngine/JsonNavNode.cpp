@@ -18,7 +18,6 @@ JsonNavNode::JsonNavNode()
     m_internalExtendedData.SetObject();
     m_usersExtendedData = nullptr;
     m_parentNodeId = 0;
-    m_instanceId = 0;
     m_nodeId = 0;
     m_determinedChildren = false;
     m_hasChildren = false;
@@ -43,7 +42,6 @@ JsonNavNode::JsonNavNode(JsonNavNode const& other)
     else
         m_usersExtendedData = nullptr;
     m_parentNodeId = other.m_parentNodeId;
-    m_instanceId = other.m_instanceId;
     m_nodeId = other.m_nodeId;
     m_nodeKey = other.m_nodeKey;
     m_label = other.m_label;
@@ -114,7 +112,6 @@ rapidjson::Document JsonNavNode::GetJson() const
         }
     json.AddMember(NAVNODE_NodeId, m_nodeId, json.GetAllocator());
     json.AddMember(NAVNODE_ParentNodeId, m_parentNodeId, json.GetAllocator());
-    json.AddMember(NAVNODE_InstanceId, m_instanceId, json.GetAllocator());
     if (!m_label.empty())
         json.AddMember(NAVNODE_Label, rapidjson::Value(m_label.c_str(), json.GetAllocator()), json.GetAllocator());
     if (!m_description.empty())
@@ -158,7 +155,6 @@ void JsonNavNode::InitFromJson(RapidJsonValueCR json)
 
     m_nodeId = json.HasMember(NAVNODE_NodeId) ? json[NAVNODE_NodeId].GetUint64() : 0;
     m_parentNodeId = json.HasMember(NAVNODE_ParentNodeId) ? json[NAVNODE_ParentNodeId].GetUint64() : 0;
-    m_instanceId = json.HasMember(NAVNODE_InstanceId) ? json[NAVNODE_InstanceId].GetUint64() : 0;
     if (json.HasMember(NAVNODE_HasChildren))
         {
         m_determinedChildren = true;
@@ -190,10 +186,29 @@ void JsonNavNode::InitFromJson(RapidJsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-JsonNavNodePtr JsonNavNodesFactory::CreateECInstanceNode(IConnectionCR connection, Utf8StringCR locale, ECClassId classId, ECInstanceId instanceId, Utf8CP label) const
+JsonNavNodePtr JsonNavNodesFactory::CreateECInstanceNode(Utf8StringCR connectionId, Utf8StringCR locale, bvector<ECClassInstanceKey> const& classInstanceKeys, Utf8CP label) const
+    {
+    bvector<ECInstanceKey> instanceKeys;
+    std::transform(classInstanceKeys.begin(), classInstanceKeys.end(), std::back_inserter(instanceKeys),
+        [](ECClassInstanceKeyCR k){return ECInstanceKey(k.GetClass()->GetId(), k.GetId());});
+    return CreateECInstanceNode(connectionId, locale, instanceKeys, label);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+JsonNavNodePtr JsonNavNodesFactory::CreateECInstanceNode(Utf8StringCR connectionId, Utf8StringCR locale, ECClassId classId, ECInstanceId instanceId, Utf8CP label) const
+    {
+    return CreateECInstanceNode(connectionId, locale, {ECInstanceKey(classId, instanceId)}, label);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+JsonNavNodePtr JsonNavNodesFactory::CreateECInstanceNode(Utf8StringCR connectionId, Utf8StringCR locale, bvector<ECInstanceKey> const& instanceKeys, Utf8CP label) const
     {
     JsonNavNodePtr node = JsonNavNode::Create();
-    InitECInstanceNode(*node, connection, locale, classId, instanceId, label);
+    InitECInstanceNode(*node, connectionId, locale, instanceKeys, label);
     return node;
     }
 
@@ -270,26 +285,27 @@ JsonNavNodePtr JsonNavNodesFactory::CreateFromJson(IConnectionCR connection, Rap
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsonNavNodesFactory::InitECInstanceNode(JsonNavNodeR node, IConnectionCR connection, Utf8StringCR locale, ECClassId classId, ECInstanceId instanceId, Utf8CP label) const
+void JsonNavNodesFactory::InitECInstanceNode(JsonNavNodeR node, Utf8StringCR connectionId, Utf8StringCR locale, bvector<ECInstanceKey> const& instanceKeys, Utf8CP label) const
     {
-    ECClassCP ecClass = nullptr;
-    if (nullptr == (ecClass = connection.GetECDb().Schemas().GetClass(classId)))
-        {
-        BeAssert(false);
-        return;
-        }
-
-    node.SetInstanceId(instanceId.GetValueUnchecked());
     node.SetLabel(label);
-    node.SetType(NAVNODE_TYPE_ECInstanceNode);
-    node.SetExpandedImageId(ImageHelper::GetImageId(*ecClass, true, true).c_str());
-    node.SetCollapsedImageId(ImageHelper::GetImageId(*ecClass, true, false).c_str());
+    node.SetType(NAVNODE_TYPE_ECInstancesNode);
+    //TODO: necessary??
+    //node.SetExpandedImageId(ImageHelper::GetImageId(*ecClass, true, true).c_str());
+    //node.SetCollapsedImageId(ImageHelper::GetImageId(*ecClass, true, false).c_str());
 
     NavNodeExtendedData extendedData(node);
-    extendedData.SetGroupedInstanceKey(ECInstanceKey(classId, instanceId));
-    extendedData.SetConnectionId(connection.GetId());
+    extendedData.SetInstanceKeys(instanceKeys);
+    extendedData.SetECClassId(instanceKeys.front().GetClassId()); // TODO: setting id from the first key - what if there are more keys with different class ids?
+    extendedData.SetConnectionId(connectionId);
     extendedData.SetLocale(locale.c_str());
-    extendedData.SetECClassId(ecClass->GetId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void JsonNavNodesFactory::InitECInstanceNode(JsonNavNodeR node, Utf8StringCR connectionId, Utf8StringCR locale, ECClassId classId, ECInstanceId instanceId, Utf8CP label) const
+    {
+    InitECInstanceNode(node, connectionId, locale, {ECInstanceKey(classId, instanceId)}, label);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -299,18 +315,7 @@ void JsonNavNodesFactory::InitECInstanceNode(JsonNavNodeR node, Utf8StringCR con
     {
     ECInstanceId instanceId;
     ECInstanceId::FromString(instanceId, instance.GetInstanceId().c_str());
-
-    node.SetInstanceId(instanceId.GetValueUnchecked());
-    node.SetLabel(label);
-    node.SetType(NAVNODE_TYPE_ECInstanceNode);
-    node.SetExpandedImageId(ImageHelper::GetImageId(instance.GetClass(), true, true).c_str());
-    node.SetCollapsedImageId(ImageHelper::GetImageId(instance.GetClass(), true, false).c_str());
-
-    NavNodeExtendedData extendedData(node);
-    extendedData.SetGroupedInstanceKey(ECInstanceKey(instance.GetClass().GetId(), instanceId));
-    extendedData.SetConnectionId(connectionId);
-    extendedData.SetLocale(locale.c_str());
-    extendedData.SetECClassId(instance.GetClass().GetId());
+    InitECInstanceNode(node, connectionId, locale, {ECInstanceKey(instance.GetClass().GetId(), instanceId)}, label);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -322,13 +327,14 @@ void JsonNavNodesFactory::InitECClassGroupingNode(JsonNavNodeR node, Utf8StringC
     node.SetDescription(ecClass.GetDescription().c_str());
     node.SetType(NAVNODE_TYPE_ECClassGroupingNode);
     node.SetHasChildren(!groupedInstanceKeys.empty());
-    node.SetExpandedImageId(ImageHelper::GetImageId(ecClass, false, true).c_str());
-    node.SetCollapsedImageId(ImageHelper::GetImageId(ecClass, false, false).c_str());
+    //TODO: necessary??
+    //node.SetExpandedImageId(ImageHelper::GetImageId(ecClass, false, true).c_str());
+    //node.SetCollapsedImageId(ImageHelper::GetImageId(ecClass, false, false).c_str());
 
     NavNodeExtendedData extendedData(node);
     extendedData.SetRequestedSpecification(true);
     extendedData.SetGroupingType((int)GroupingType::Class);
-    extendedData.SetGroupedInstanceKeys(groupedInstanceKeys);
+    extendedData.SetInstanceKeys(groupedInstanceKeys);
     extendedData.SetConnectionId(connectionId);
     extendedData.SetLocale(locale.c_str());
     extendedData.SetECClassId(ecClass.GetId());
@@ -342,13 +348,14 @@ void JsonNavNodesFactory::InitDisplayLabelGroupingNode(JsonNavNodeR node, Utf8St
     node.SetLabel(label);
     node.SetType(NAVNODE_TYPE_DisplayLabelGroupingNode);
     node.SetHasChildren(!groupedInstanceKeys.empty());
-    node.SetExpandedImageId(ImageHelper::GetLabelGroupingNodeImageId(true).c_str());
-    node.SetCollapsedImageId(ImageHelper::GetLabelGroupingNodeImageId(false).c_str());
+    //TODO: necessary??
+    //node.SetExpandedImageId(ImageHelper::GetLabelGroupingNodeImageId(true).c_str());
+    //node.SetCollapsedImageId(ImageHelper::GetLabelGroupingNodeImageId(false).c_str());
 
     NavNodeExtendedData extendedData(node);
     extendedData.SetRequestedSpecification(true);
     extendedData.SetGroupingType((int)GroupingType::DisplayLabel);
-    extendedData.SetGroupedInstanceKeys(groupedInstanceKeys);
+    extendedData.SetInstanceKeys(groupedInstanceKeys);
     extendedData.SetConnectionId(connectionId);
     extendedData.SetLocale(locale.c_str());
     }
@@ -362,18 +369,20 @@ void JsonNavNodesFactory::InitECPropertyGroupingNode(JsonNavNodeR node, Utf8Stri
     node.SetDescription(ecProperty.GetDescription().c_str());
     node.SetType(NAVNODE_TYPE_ECPropertyGroupingNode);
     node.SetHasChildren(!groupedInstanceKeys.empty());
-    node.SetExpandedImageId((nullptr != imageId && 0 != *imageId) ? imageId : ImageHelper::GetImageId(ecProperty, true).c_str());
-    node.SetCollapsedImageId((nullptr != imageId && 0 != *imageId) ? imageId : ImageHelper::GetImageId(ecProperty, false).c_str());
+    if (imageId && *imageId)
+        {
+        node.SetExpandedImageId(imageId);
+        node.SetCollapsedImageId(imageId);
+        }
 
     NavNodeExtendedData extendedData(node);
     extendedData.SetRequestedSpecification(true);
     extendedData.SetPropertyName(Utf8String(ecProperty.GetName().c_str()).c_str());
     extendedData.SetGroupingType((int)GroupingType::Property);
-    extendedData.SetGroupedInstanceKeys(groupedInstanceKeys);
+    extendedData.SetInstanceKeys(groupedInstanceKeys);
     extendedData.SetConnectionId(connectionId);
     extendedData.SetLocale(locale.c_str());
     extendedData.SetECClassId(ecClass.GetId());
-
     if (isRangeGrouping)
         extendedData.SetPropertyValueRangeIndex(groupingValue.GetInt());
     else
@@ -389,13 +398,14 @@ void JsonNavNodesFactory::InitECRelationshipGroupingNode(JsonNavNodeR node, Utf8
     node.SetDescription(ecRelationshipClass.GetDescription().c_str());
     node.SetType(NAVNODE_TYPE_ECRelationshipGroupingNode);
     node.SetHasChildren(!groupedInstanceKeys.empty());
-    node.SetExpandedImageId(ImageHelper::GetImageId(ecRelationshipClass, false, true).c_str());
-    node.SetCollapsedImageId(ImageHelper::GetImageId(ecRelationshipClass, false, false).c_str());
+    //TODO: necessary??
+    //node.SetExpandedImageId(ImageHelper::GetImageId(ecRelationshipClass, false, true).c_str());
+    //node.SetCollapsedImageId(ImageHelper::GetImageId(ecRelationshipClass, false, false).c_str());
 
     NavNodeExtendedData extendedData(node);
     extendedData.SetRequestedSpecification(true);
     extendedData.SetGroupingType((int)GroupingType::Relationship);
-    extendedData.SetGroupedInstanceKeys(groupedInstanceKeys);
+    extendedData.SetInstanceKeys(groupedInstanceKeys);
     extendedData.SetConnectionId(connectionId);
     extendedData.SetLocale(locale.c_str());
     extendedData.SetECClassId(ecRelationshipClass.GetId());
@@ -438,7 +448,6 @@ bvector<JsonChange> NavNodesHelper::GetChanges(JsonNavNode const& lhs, JsonNavNo
     bvector<JsonChange> changes;
     COMPARE_PROPERTY(lhs, rhs, m_nodeId, NAVNODE_NodeId);
     COMPARE_PROPERTY(lhs, rhs, m_parentNodeId, NAVNODE_ParentNodeId);
-    COMPARE_PROPERTY(lhs, rhs, m_instanceId, NAVNODE_InstanceId);
     COMPARE_PROPERTY(lhs, rhs, m_hasChildren, NAVNODE_HasChildren);
     COMPARE_PROPERTY(lhs, rhs, m_isSelectable, NAVNODE_IsSelectable);
     COMPARE_PROPERTY(lhs, rhs, m_isEditable, NAVNODE_IsEditable);
@@ -494,7 +503,7 @@ bool NavNodesHelper::IsGroupingNode(NavNodeCR node)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool NavNodesHelper::IsCustomNode(NavNodeCR node)
     {
-    return !node.GetType().Equals(NAVNODE_TYPE_ECInstanceNode)
+    return !node.GetType().Equals(NAVNODE_TYPE_ECInstancesNode)
         && !node.GetType().Equals(NAVNODE_TYPE_ECClassGroupingNode)
         && !node.GetType().Equals(NAVNODE_TYPE_ECRelationshipGroupingNode)
         && !node.GetType().Equals(NAVNODE_TYPE_ECPropertyGroupingNode)
@@ -504,54 +513,46 @@ bool NavNodesHelper::IsCustomNode(NavNodeCR node)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeKeyPtr NavNodesHelper::CreateNodeKey(IConnectionCR connection, JsonNavNodeCR node, bvector<Utf8String> const& path)
+NavNodeKeyPtr NavNodesHelper::CreateNodeKey(IConnectionCR connection, JsonNavNodeCR node, bvector<Utf8String> const& hashPath, bool isFake)
     {
+    BeAssert(isFake || !hashPath.empty());
     NavNodeExtendedData extendedData(node);
-    if (node.GetType().Equals(NAVNODE_TYPE_ECInstanceNode))
+    if (node.GetType().Equals(NAVNODE_TYPE_ECInstancesNode))
         {
-        ECClassCP ecClass = connection.GetECDb().Schemas().GetClass(extendedData.GetECClassId());
-        return ECInstanceNodeKey::Create(ECClassInstanceKey(ecClass, ECInstanceId(node.GetInstanceId())), path);
+        bvector<ECClassInstanceKey> classInstanceKeys;
+        bvector<ECInstanceKey> instanceKeys = extendedData.GetInstanceKeys();
+        for (ECInstanceKeyCR instanceKey : instanceKeys)
+            {
+            ECClassCP ecClass = connection.GetECDb().Schemas().GetClass(instanceKey.GetClassId());
+            if (ecClass)
+                classInstanceKeys.push_back(ECClassInstanceKey(ecClass, instanceKey.GetInstanceId()));
+            }
+        return ECInstancesNodeKey::Create(classInstanceKeys, hashPath);
         }
     if (node.GetType().Equals(NAVNODE_TYPE_ECClassGroupingNode))
         {
-        uint64_t groupedInstancesCount = (uint64_t)extendedData.GetGroupedInstanceKeysCount();
+        uint64_t groupedInstancesCount = (uint64_t)extendedData.GetInstanceKeysCount();
         ECClassCP ecClass = connection.GetECDb().Schemas().GetClass(extendedData.GetECClassId());
-        return ECClassGroupingNodeKey::Create(*ecClass, path, groupedInstancesCount);
+        return ECClassGroupingNodeKey::Create(*ecClass, hashPath, groupedInstancesCount);
         }
     if (node.GetType().Equals(NAVNODE_TYPE_ECPropertyGroupingNode))
         {
-        uint64_t groupedInstancesCount = (uint64_t)extendedData.GetGroupedInstanceKeysCount();
+        uint64_t groupedInstancesCount = (uint64_t)extendedData.GetInstanceKeysCount();
         ECClassCP ecClass = connection.GetECDb().Schemas().GetClass(extendedData.GetECClassId());
-        return ECPropertyGroupingNodeKey::Create(*ecClass, extendedData.GetPropertyName(), extendedData.GetPropertyValue(), path, groupedInstancesCount);
+        return ECPropertyGroupingNodeKey::Create(*ecClass, extendedData.GetPropertyName(), extendedData.GetPropertyValue(), hashPath, groupedInstancesCount);
         }
     if (node.GetType().Equals(NAVNODE_TYPE_DisplayLabelGroupingNode))
         {
-        uint64_t groupedInstancesCount = (uint64_t)extendedData.GetGroupedInstanceKeysCount();
-        return LabelGroupingNodeKey::Create(node.GetLabel(), path, groupedInstancesCount);
+        uint64_t groupedInstancesCount = (uint64_t)extendedData.GetInstanceKeysCount();
+        return LabelGroupingNodeKey::Create(node.GetLabel(), hashPath, groupedInstancesCount);
         }
-    return NavNodeKey::Create(node.GetType(), path);
+    return NavNodeKey::Create(node.GetType(), hashPath);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                01/2018
+* @bsimethod                                    Grigas.Petraitis                11/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeKeyPtr NavNodesHelper::CreateNodeKey(IConnectionCR connection, JsonNavNodeCR node, Utf8CP pathFromRootString)
-    {
-    bvector<Utf8String> path;
-    CharP context;
-    Utf8CP token = BeStringUtilities::Strtok(const_cast<CharP>(pathFromRootString), ",", &context);
-    while (nullptr != token)
-        {
-        path.push_back(token);
-        token = BeStringUtilities::Strtok(nullptr, ",", &context);
-        }
-    return CreateNodeKey(connection, node, path);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                08/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeKeyPtr NavNodesHelper::CreateNodeKey(IConnectionCR connection, JsonNavNodeCR node, NavNodeKeyCP parentNodeKey)
+static Utf8String CreateNodeHash(IConnectionCR connection, JsonNavNodeCR node)
     {
     MD5 h;
     NavNodeExtendedData extendedData(node);
@@ -564,12 +565,11 @@ NavNodeKeyPtr NavNodesHelper::CreateNodeKey(IConnectionCR connection, JsonNavNod
     h.Add(specHash, strlen(specHash));
     h.Add(dbGuid.c_str(), dbGuid.SizeInBytes());
 
-    if (0 == strcmp(NAVNODE_TYPE_ECInstanceNode, type.c_str()))
+    if (0 == strcmp(NAVNODE_TYPE_ECInstancesNode, type.c_str()))
         {
-        uint64_t instanceId = node.GetInstanceId();
-        uint64_t classId = extendedData.GetECClassId().GetValueUnchecked();
-        h.Add(&instanceId, sizeof(instanceId));
-        h.Add(&classId, sizeof(instanceId));
+        bvector<ECInstanceKey> instanceKeys = extendedData.GetInstanceKeys();
+        for (ECInstanceKeyCR instanceKey : instanceKeys)
+            h.Add(&instanceKey, sizeof(instanceKey));
         }
     else if (0 == strcmp(NAVNODE_TYPE_ECClassGroupingNode, type.c_str()))
         {
@@ -598,9 +598,45 @@ NavNodeKeyPtr NavNodesHelper::CreateNodeKey(IConnectionCR connection, JsonNavNod
         h.Add(nodeLabel.c_str(), nodeLabel.SizeInBytes());
         }
 
+    return h.GetHashString();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+NavNodeKeyPtr NavNodesHelper::CreateNodeKey(IConnectionCR connection, JsonNavNodeCR node, NavNodeKeyCP parentNodeKey)
+    {
     // create path from root to this node
-    bvector<Utf8String> parentPath = parentNodeKey ? parentNodeKey->GetPathFromRoot() : bvector<Utf8String>();
-    Utf8String nodeHash = h.GetHashString();
-    parentPath.push_back(nodeHash);
-    return NavNodesHelper::CreateNodeKey(connection, node, parentPath);
+    bvector<Utf8String> path = parentNodeKey ? parentNodeKey->GetHashPath() : bvector<Utf8String>();
+    path.push_back(CreateNodeHash(connection, node));
+    return NavNodesHelper::CreateNodeKey(connection, node, path, false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                11/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+NavNodeKeyPtr NavNodesHelper::CreateFakeNodeKey(IConnectionCR connection, JsonNavNodeCR node)
+    {
+    return CreateNodeKey(connection, node, bvector<Utf8String>(), true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                11/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String NavNodesHelper::NodeKeyHashPathToString(NavNodeKeyCR key) { return BeStringUtilities::Join(key.GetHashPath(), "/"); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                11/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<Utf8String> NavNodesHelper::NodeKeyHashPathFromString(Utf8CP str)
+    {
+    bvector<Utf8String> path;
+    CharP context;
+    Utf8CP token = BeStringUtilities::Strtok(const_cast<CharP>(str), "/", &context);
+    while (nullptr != token)
+        {
+        path.push_back(token);
+        token = BeStringUtilities::Strtok(nullptr, "/", &context);
+        }
+    return path;
     }

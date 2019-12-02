@@ -130,7 +130,7 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
                                     SEARCH_QUERY_FIELD_ECClassId "] FROM [RulesEngineTest].[Widget] WHERE [Widget].[ECInstanceId] > 0"
 
 #define TABLE_ALIAS(prefix, ecclass, counter) \
-    Utf8PrintfString("%s_%s_%s_%d", prefix, ecclass.GetSchema().GetAlias().c_str(), ecclass.GetName().c_str(), counter).c_str()
+    Utf8PrintfString("%s_%s_%s_%d", prefix, (ecclass).GetSchema().GetAlias().c_str(), (ecclass).GetName().c_str(), counter).c_str()
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                07/2015
@@ -174,6 +174,7 @@ public:
 
     ECClassP GetECClassP(Utf8CP schemaName, Utf8CP className);
     ECClassCP GetECClass(Utf8CP schemaName, Utf8CP className);
+    ECSchemaCP GetECSchema(Utf8CP schemaName);
     bvector<ECClassCP> GetECClasses(Utf8CP schemaName);
     ECDbR GetDb() {return m_project.GetECDb();}
     IConnectionCR GetConnection() {return *m_connection;}

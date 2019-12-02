@@ -81,8 +81,8 @@ enum class NavigationQueryResultType
     {
     Invalid,
     ECInstanceNodes,
+    MultiECInstanceNodes,
     ECRelationshipClassNodes,
-    SearchNodes,
     ClassGroupingNodes,
     BaseClassGroupingNodes,
     PropertyGroupingNodes,
@@ -110,10 +110,10 @@ template<typename T> struct Holder
     {
     T* m_obj;
     Holder() : m_obj(nullptr) {}
-    Holder(T& obj) : m_obj(&obj) {}
-    Holder(T&& obj) : m_obj(new T(obj)) {}
+    Holder(T&& obj) : m_obj(new T(std::move(obj))) {}
     ~Holder() {DELETE_AND_CLEAR(m_obj);}
-    Holder<T>& operator=(Holder<T>&& other) {m_obj = other.m_obj; other.m_obj = nullptr; return *this;}
+    Holder<T>& operator=(Holder<T>&& other) {DELETE_AND_CLEAR(m_obj); m_obj = other.m_obj; other.m_obj = nullptr; return *this;}
+    Holder<T>& operator=(std::nullptr_t) {DELETE_AND_CLEAR(m_obj); return *this;}
     T* get() const {return m_obj;}
     T* operator->() const {return m_obj;}
     T& operator*() const {return *m_obj;}

@@ -5277,7 +5277,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategoryOverride_Fi
     {
     ECClassCP classA = GetClass("ClassA");
     ECClassCP classB = GetClass("ClassB");
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -5333,7 +5333,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategoryOverride_Po
     {
     ECClassCP baseClass = GetClass("Element");
     ECClassCP derivedClass = GetClass("DerivedElement");
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -5379,7 +5379,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategoryOverride_Po
     {
     ECClassCP baseClass = GetClass("Element");
     ECClassCP derivedClass = GetClass("DerivedElement");
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -5399,7 +5399,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategoryOverride_Po
     // validate descriptor
     ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
-    ASSERT_EQ(2, descriptor->GetVisibleFields().size()); 
+    ASSERT_EQ(2, descriptor->GetVisibleFields().size());
     EXPECT_STREQ("Element_UserLabel", descriptor->GetVisibleFields()[0]->GetName().c_str());
     EXPECT_STRNE("my_category", descriptor->GetVisibleFields()[0]->GetCategory().GetName().c_str());
     EXPECT_STREQ("Element_UserLabel", descriptor->GetVisibleFields()[1]->GetName().c_str());
@@ -10394,7 +10394,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedDisplayLa
     RulesDrivenECPresentationManager::NavigationOptions navOptions(ruleSet->GetRuleSetId().c_str());
     NavNodesContainer rootNodes = m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), navOptions.GetJson()).get();
     ASSERT_EQ(2, rootNodes.GetSize());
-    EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, rootNodes[0]->GetType().c_str()); // gadget instance
+    EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str()); // gadget instance
     EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, rootNodes[1]->GetType().c_str()); // widgets display grouping node
 
     NavNodesContainer childNodes = m_manager->GetChildren(s_project->GetECDb(), *rootNodes[1], PageOptions(), navOptions.GetJson()).get();
@@ -10452,7 +10452,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedDisplayLa
     RulesDrivenECPresentationManager::NavigationOptions navOptions(ruleSet->GetRuleSetId().c_str());
     NavNodesContainer rootNodes = m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), navOptions.GetJson()).get();
     ASSERT_EQ(2, rootNodes.GetSize());
-    EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, rootNodes[0]->GetType().c_str()); // gadget instance
+    EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str()); // gadget instance
     EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, rootNodes[1]->GetType().c_str()); // widgets display grouping node
 
     NavNodesContainer childNodes = m_manager->GetChildren(s_project->GetECDb(), *rootNodes[1], PageOptions(), navOptions.GetJson()).get();
@@ -10512,8 +10512,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysWhenDisplayLabelGrou
     RulesDrivenECPresentationManager::NavigationOptions navOptions(ruleSet->GetRuleSetId().c_str());
     NavNodesContainer rootNodes = m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), navOptions.GetJson()).get();
     ASSERT_EQ(2, rootNodes.GetSize());
-    EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, rootNodes[0]->GetType().c_str()); // gadget instance
-    EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, rootNodes[1]->GetType().c_str()); // widget node
+    EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str()); // gadget instance
+    EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[1]->GetType().c_str()); // widget node
 
     // save widget node key
     NavNodeKeyCPtr selectedNode = rootNodes[1]->GetKey();
@@ -10571,7 +10571,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysWhenDisplayLabelGrou
     RulesDrivenECPresentationManager::NavigationOptions navOptions(ruleSet->GetRuleSetId().c_str());
     NavNodesContainer rootNodes = m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), navOptions.GetJson()).get();
     ASSERT_EQ(2, rootNodes.GetSize());
-    EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, rootNodes[0]->GetType().c_str()); // gadget instance
+    EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str()); // gadget instance
     EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, rootNodes[1]->GetType().c_str()); // widgets display grouping node
 
     NavNodesContainer childNodes = m_manager->GetChildren(s_project->GetECDb(), *rootNodes[1], PageOptions(), navOptions.GetJson()).get();
@@ -14598,7 +14598,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CategorizesNestedContentFie
 
     ContentModifierP modifier = new ContentModifier(elementClass->GetSchema().GetName(), elementClass->GetName());
     rules->AddPresentationRule(*modifier);
-    modifier->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, elementHasAspectRel->GetFullName(), 
+    modifier->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, elementHasAspectRel->GetFullName(),
         aspectClass->GetFullName(), "", RelationshipMeaning::RelatedInstance));
 
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());

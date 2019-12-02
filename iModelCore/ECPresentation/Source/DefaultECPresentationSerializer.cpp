@@ -515,7 +515,7 @@ void DefaultECPresentationSerializer::_NavNodeKeyAsJson(NavNodeKey const& navNod
     navNodeKeyBaseJson.AddMember("Type", rapidjson::Value(navNodeKey.GetType().c_str(), navNodeKeyBaseJson.GetAllocator()), navNodeKeyBaseJson.GetAllocator());
 
     rapidjson::Value pathJson(rapidjson::kArrayType);
-    for (Utf8StringCR pathElement : navNodeKey.GetPathFromRoot())
+    for (Utf8StringCR pathElement : navNodeKey.GetHashPath())
         pathJson.PushBack(rapidjson::Value(pathElement.c_str(), navNodeKeyBaseJson.GetAllocator()), navNodeKeyBaseJson.GetAllocator());
 
     navNodeKeyBaseJson.AddMember("PathFromRoot", pathJson, navNodeKeyBaseJson.GetAllocator());
@@ -559,7 +559,7 @@ NavNodeKeyPtr DefaultECPresentationSerializer::_GetNavNodeKeyFromJson(IConnectio
         BeAssert(false);
         return nullptr;
         }
-    if (0 == strcmp(NAVNODE_TYPE_ECInstanceNode, type))
+    if (0 == strcmp(NAVNODE_TYPE_ECInstancesNode, type))
         return _GetECInstanceNodeKeyFromJson(connection, json);
     if (0 == strcmp(NAVNODE_TYPE_ECClassGroupingNode, type))
         return _GetECClassGroupingNodeKeyFromJson(connection, json);
@@ -586,7 +586,7 @@ NavNodeKeyPtr DefaultECPresentationSerializer::_GetNavNodeKeyFromJson(IConnectio
         BeAssert(false);
         return nullptr;
         }
-    if (0 == strcmp(NAVNODE_TYPE_ECInstanceNode, type))
+    if (0 == strcmp(NAVNODE_TYPE_ECInstancesNode, type))
         return _GetECInstanceNodeKeyFromJson(connection, json);
     if (0 == strcmp(NAVNODE_TYPE_ECClassGroupingNode, type))
         return _GetECClassGroupingNodeKeyFromJson(connection, json);
@@ -618,32 +618,57 @@ NavNodeKeyPtr DefaultECPresentationSerializer::_GetBaseNavNodeKeyFromJson(RapidJ
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DefaultECPresentationSerializer::_AsJson(ECInstanceNodeKey const& ecInstanceNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const
+void DefaultECPresentationSerializer::_AsJson(ECInstancesNodeKey const& nodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const
     {
-    navNodeKeyBaseJson.AddMember("ECClassId", rapidjson::Value(ecInstanceNodeKey.GetECClassId().ToString().c_str(), navNodeKeyBaseJson.GetAllocator()), navNodeKeyBaseJson.GetAllocator());
-    navNodeKeyBaseJson.AddMember("ECInstanceId", rapidjson::Value(ecInstanceNodeKey.GetInstanceId().ToString().c_str(), navNodeKeyBaseJson.GetAllocator()), navNodeKeyBaseJson.GetAllocator());
+    rapidjson::Value keysJson(rapidjson::kArrayType);
+    for (ECClassInstanceKey const& instanceKey : nodeKey.GetInstanceKeys())
+        {
+        rapidjson::Value instanceKeyJson(rapidjson::kObjectType);
+        instanceKeyJson.AddMember("ECClassId", rapidjson::Value(instanceKey.GetClass()->GetId().ToString().c_str(), navNodeKeyBaseJson.GetAllocator()), navNodeKeyBaseJson.GetAllocator());
+        instanceKeyJson.AddMember("ECInstanceId", rapidjson::Value(instanceKey.GetId().ToString().c_str(), navNodeKeyBaseJson.GetAllocator()), navNodeKeyBaseJson.GetAllocator());
+        keysJson.PushBack(instanceKeyJson, navNodeKeyBaseJson.GetAllocator());
+        }
+    navNodeKeyBaseJson.AddMember("InstanceKeys", keysJson, navNodeKeyBaseJson.GetAllocator());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceNodeKeyPtr DefaultECPresentationSerializer::_GetECInstanceNodeKeyFromJson(IConnectionCR connection, JsonValueCR json) const
+ECInstancesNodeKeyPtr DefaultECPresentationSerializer::_GetECInstanceNodeKeyFromJson(IConnectionCR connection, JsonValueCR json) const
     {
-    ECClassId classId(BeJsonUtilities::UInt64FromValue(json["ECClassId"]));
-    ECClassCP ecClass = connection.GetECDb().Schemas().GetClass(classId);
-    ECInstanceId instanceId(BeJsonUtilities::UInt64FromValue(json["ECInstanceId"]));
-    return ECInstanceNodeKey::Create(ECClassInstanceKey(*ecClass, instanceId), ParseNodeKeyHashPath(json["PathFromRoot"]));
+    bvector<ECClassInstanceKey> instanceKeys;
+    if (json.isMember("InstanceKeys") && json["InstanceKeys"].isArray())
+        {
+        JsonValueCR instanceKeysJson = json["InstanceKeys"];
+        for (Json::ArrayIndex i = 0; i < instanceKeysJson.size(); ++i)
+            {
+            ECClassId classId(BeJsonUtilities::UInt64FromValue(instanceKeysJson[i]["ECClassId"]));
+            ECClassCP ecClass = connection.GetECDb().Schemas().GetClass(classId);
+            ECInstanceId instanceId(BeJsonUtilities::UInt64FromValue(instanceKeysJson[i]["ECInstanceId"]));
+            instanceKeys.push_back(ECClassInstanceKey(ecClass, instanceId));
+            }
+        }    
+    return ECInstancesNodeKey::Create(instanceKeys, ParseNodeKeyHashPath(json["PathFromRoot"]));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceNodeKeyPtr DefaultECPresentationSerializer::_GetECInstanceNodeKeyFromJson(IConnectionCR connection, RapidJsonValueCR json) const
+ECInstancesNodeKeyPtr DefaultECPresentationSerializer::_GetECInstanceNodeKeyFromJson(IConnectionCR connection, RapidJsonValueCR json) const
     {
-    ECClassId classId(BeRapidJsonUtilities::UInt64FromValue(json["ECClassId"]));
-    ECClassCP ecClass = connection.GetECDb().Schemas().GetClass(classId);
-    ECInstanceId instanceId(BeRapidJsonUtilities::UInt64FromValue(json["ECInstanceId"]));
-    return ECInstanceNodeKey::Create(ECClassInstanceKey(*ecClass, instanceId), ParseNodeKeyHashPath(json["PathFromRoot"]));
+    bvector<ECClassInstanceKey> instanceKeys;
+    if (json.HasMember("InstanceKeys") && json["InstanceKeys"].IsArray())
+        {
+        RapidJsonValueCR instanceKeysJson = json["InstanceKeys"];
+        for (rapidjson::SizeType i = 0; i < instanceKeysJson.Size(); ++i)
+            {
+            ECClassId classId(BeRapidJsonUtilities::UInt64FromValue(instanceKeysJson[i]["ECClassId"]));
+            ECClassCP ecClass = connection.GetECDb().Schemas().GetClass(classId);
+            ECInstanceId instanceId(BeRapidJsonUtilities::UInt64FromValue(instanceKeysJson[i]["ECInstanceId"]));
+            instanceKeys.push_back(ECClassInstanceKey(ecClass, instanceId));
+            }
+        }
+    return ECInstancesNodeKey::Create(instanceKeys, ParseNodeKeyHashPath(json["PathFromRoot"]));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -759,7 +784,6 @@ rapidjson::Document DefaultECPresentationSerializer::_AsJson(NavNode const& navN
     json.SetObject();
     Utf8String nodeId = BeInt64Id(navNode.GetNodeId()).ToString();
     Utf8String parentNodeId = BeInt64Id(navNode.GetParentNodeId()).ToString();
-    Utf8String instanceId = BeInt64Id(navNode.GetInstanceId()).ToString();
     json.AddMember("NodeId", rapidjson::Value(nodeId.c_str(), json.GetAllocator()), json.GetAllocator());
     json.AddMember("ParentNodeId", rapidjson::Value(parentNodeId.c_str(), json.GetAllocator()), json.GetAllocator());
     if (navNode.GetKey().IsNull())
@@ -784,7 +808,6 @@ rapidjson::Document DefaultECPresentationSerializer::_AsJson(NavNode const& navN
     json.AddMember("IsCheckboxVisible", navNode.IsCheckboxVisible(), json.GetAllocator());
     json.AddMember("IsCheckboxEnabled", navNode.IsCheckboxEnabled(), json.GetAllocator());
     json.AddMember("IsExpanded", navNode.IsExpanded(), json.GetAllocator());
-    json.AddMember("ECInstanceId", rapidjson::Value(instanceId.c_str(), json.GetAllocator()), json.GetAllocator());
     if (navNode.GetUsersExtendedData().GetJson().MemberCount() > 0)
         json.AddMember("ExtendedData", rapidjson::Value(navNode.GetUsersExtendedData().GetJson(), json.GetAllocator()), json.GetAllocator());
 

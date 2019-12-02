@@ -38,6 +38,7 @@ void NodesProviderTests::SetUp()
     m_providerContextFactory.SetRuleset(m_ruleset.get());
     m_connection = m_connections.NotifyConnectionOpened(s_project->GetECDb());
     m_context = m_providerContextFactory.Create(*m_connection, m_ruleset->GetRuleSetId().c_str(), "", nullptr);
+    m_context->SetProvidersIndexAllocator(*new ProvidersIndexAllocator());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -69,7 +70,7 @@ void NodesProviderTests::Cache(JsonNavNodeR node)
         dsInfo = DataSourceInfo(hlInfo.GetId(), { 0 });
         m_nodesCache.Cache(dsInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
         }
-    m_nodesCache.Cache(node, dsInfo, 0, false);
+    m_nodesCache.Cache(node, dsInfo, 0, NodeVisibility::Visible);
     }
 
 /*---------------------------------------------------------------------------------**//**

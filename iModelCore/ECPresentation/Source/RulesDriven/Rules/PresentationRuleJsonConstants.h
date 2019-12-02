@@ -108,6 +108,9 @@
 #define CHECKBOX_RULE_JSON_ATTRIBUTE_PROPERTYNAME                                       "propertyName"
 
 #define SAME_LABEL_INSTANCE_GROUP_JSON_TYPE                                             "SameLabelInstance"
+#define SAME_LABEL_INSTANCE_GROUP_JSON_ATTRIBUTE_APPLICATIONSTAGE                       "applicationStage"
+#define SAME_LABEL_INSTANCE_GROUP_JSON_ATTRIBUTE_APPLICATIONSTAGE_VALUES_QUERY          "Query"
+#define SAME_LABEL_INSTANCE_GROUP_JSON_ATTRIBUTE_APPLICATIONSTAGE_VALUES_POSTPROCESS    "PostProcess"
 
 #define CONTENTMODIFIER_RULE_JSON_TYPE                                                  "ContentModifier"
 #define CONTENTMODIFIER_JSON_ATTRIBUTE_CALCULATEDPROPERTIES                             "calculatedProperties"

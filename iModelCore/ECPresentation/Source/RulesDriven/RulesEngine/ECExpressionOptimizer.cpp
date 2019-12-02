@@ -55,15 +55,19 @@ bool DisplayTypeOptimizedExpression::_IsEqual(OptimizedExpression const& other) 
 /*-----------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis            02/2018
 +---------------+---------------+---------------+---------------+---------------+--*/
-static ECClassId GetClassId(NavNodeKeyCR key)
+static bset<ECClassId> GetClassIds(NavNodeKeyCR key)
     {
+    bset<ECClassId> ids;
     if (key.AsECInstanceNodeKey())
-        return key.AsECInstanceNodeKey()->GetECClassId();
-    if (key.AsECClassGroupingNodeKey())
-        return key.AsECClassGroupingNodeKey()->GetECClassId();
-    if (key.AsECPropertyGroupingNodeKey())
-        return key.AsECPropertyGroupingNodeKey()->GetECClassId();
-    return ECClassId();
+        {
+        std::transform(key.AsECInstanceNodeKey()->GetInstanceKeys().begin(), key.AsECInstanceNodeKey()->GetInstanceKeys().end(),
+            std::inserter(ids, ids.end()), [](ECClassInstanceKeyCR k){return k.GetClass()->GetId();});
+        }
+    else if (key.AsECClassGroupingNodeKey())
+        ids.insert(key.AsECClassGroupingNodeKey()->GetECClassId());
+    else if (key.AsECPropertyGroupingNodeKey())
+        ids.insert(key.AsECPropertyGroupingNodeKey()->GetECClassId());
+    return ids;
     }
 
 /*-----------------------------------------------------------------------------**//**
@@ -82,11 +86,6 @@ bool IsOfClassOptimizedExpression::_Value(OptimizedExpressionsParameters const& 
     {
     if (params.GetInputNodeKey().IsNull())
         return false;
-
-    NavNodeKeyCPtr nodeKey = params.GetInputNodeKey();
-    ECClassId lookupClassId = GetClassId(*nodeKey);
-    if (!lookupClassId.IsValid())
-        return false;
     
     BeMutexHolder lock(m_cacheMutex);
     auto cacheIter = m_cache.find(&params.GetConnection().GetECDb());
@@ -100,19 +99,29 @@ bool IsOfClassOptimizedExpression::_Value(OptimizedExpressionsParameters const& 
         }
     if (nullptr == cacheIter->second.m_expectedClass)
         return false;
-
-    bmap<ECClassId, bool>& resultsCache = cacheIter->second.m_results;
-    auto iter = resultsCache.find(lookupClassId);
-    if (resultsCache.end() != iter)
-        return iter->second;
-
-    ECClassCP selectedClass = params.GetConnection().GetECDb().Schemas().GetClass(lookupClassId);
-    if (nullptr == selectedClass)
+    
+    NavNodeKeyCPtr nodeKey = params.GetInputNodeKey();
+    bset<ECClassId> lookupClassIds = GetClassIds(*nodeKey);
+    if (lookupClassIds.empty())
         return false;
 
-    bool result = selectedClass->Is(cacheIter->second.m_expectedClass);
-    resultsCache[lookupClassId] = result;
-    return result;
+    for (ECClassId lookupClassId : lookupClassIds)
+        {
+        bmap<ECClassId, bool>& resultsCache = cacheIter->second.m_results;
+        auto iter = resultsCache.find(lookupClassId);
+        if (resultsCache.end() != iter && !iter->second)
+            return false;
+
+        ECClassCP selectedClass = params.GetConnection().GetECDb().Schemas().GetClass(lookupClassId);
+        if (nullptr == selectedClass)
+            return false;
+
+        bool result = selectedClass->Is(cacheIter->second.m_expectedClass);
+        resultsCache[lookupClassId] = result;
+        if (!result)
+            return false;
+        }
+    return true;
     }
 
 /*-----------------------------------------------------------------------------**//**
@@ -152,11 +161,6 @@ bool ClassNameOptimizedExpression::_Value(OptimizedExpressionsParameters const& 
     if (params.GetInputNodeKey().IsNull())
         return false;
 
-    NavNodeKeyCPtr nodeKey = params.GetInputNodeKey();
-    ECClassId lookupClassId = GetClassId(*nodeKey);
-    if (!lookupClassId.IsValid())
-        return false;
-
     BeMutexHolder lock(m_cacheMutex);
     auto cacheIter = m_resultsCache.find(&params.GetConnection().GetECDb());
     if (m_resultsCache.end() == cacheIter)
@@ -166,18 +170,28 @@ bool ClassNameOptimizedExpression::_Value(OptimizedExpressionsParameters const& 
         params.GetConnections().AddListener(*this);
         cacheIter = m_resultsCache.Insert(&params.GetConnection().GetECDb(), bmap<ECClassId, bool>()).first;
         }
-    
-    auto iter = cacheIter->second.find(lookupClassId);
-    if (cacheIter->second.end() != iter)
-        return iter->second;
 
-    ECClassCP selectedClass = params.GetConnection().GetECDb().Schemas().GetClass(lookupClassId);
-    if (nullptr == selectedClass)
+    NavNodeKeyCPtr nodeKey = params.GetInputNodeKey();
+    bset<ECClassId> lookupClassIds = GetClassIds(*nodeKey);
+    if (lookupClassIds.empty())
         return false;
 
-    bool result = selectedClass->GetName() == m_className;
-    cacheIter->second[lookupClassId] = result;
-    return result;
+    for (ECClassId lookupClassId : lookupClassIds)
+        {
+        auto iter = cacheIter->second.find(lookupClassId);
+        if (cacheIter->second.end() != iter && !iter->second)
+            return false;
+
+        ECClassCP selectedClass = params.GetConnection().GetECDb().Schemas().GetClass(lookupClassId);
+        if (nullptr == selectedClass)
+            return false;
+
+        bool result = (selectedClass->GetName() == m_className);
+        cacheIter->second[lookupClassId] = result;
+        if (!result)
+            return false;
+        }
+    return true;
     }
 
 /*-----------------------------------------------------------------------------**//**
@@ -208,8 +222,9 @@ bool InstanceIdOptimizedExpression::_Value(OptimizedExpressionsParameters const&
     if (params.GetInputNodeKey().IsNull() || nullptr == params.GetInputNodeKey()->AsECInstanceNodeKey())
         return false;
 
-    ECInstanceNodeKey const& nodeKey = *params.GetInputNodeKey()->AsECInstanceNodeKey();
-    return nodeKey.GetInstanceId() == m_instanceId;
+    ECInstancesNodeKey const& nodeKey = *params.GetInputNodeKey()->AsECInstanceNodeKey();
+    return nodeKey.GetInstanceKeys().end() != std::find_if(nodeKey.GetInstanceKeys().begin(), nodeKey.GetInstanceKeys().end(),
+        [&](ECClassInstanceKeyCR k){return k.GetId() == m_instanceId;});
     }
 
 /*-----------------------------------------------------------------------------**//**

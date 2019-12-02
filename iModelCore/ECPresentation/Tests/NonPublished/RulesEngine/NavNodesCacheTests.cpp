@@ -124,7 +124,7 @@ void NodesCacheTests::FillWithNodes(bpair<HierarchyLevelInfo, DataSourceInfo> co
     for (size_t i = 0; i < nodes.size(); ++i)
         {
         InitNode(*nodes[i], info.first);
-        m_cache->Cache(*nodes[i], info.second, (uint64_t)i, areVirtual);
+        m_cache->Cache(*nodes[i], info.second, (uint64_t)i, areVirtual ? NodeVisibility::Virtual : NodeVisibility::Visible);
 
         if (createChildDataSources)
             CacheDataSource(info.first.GetConnectionId(), info.first.GetRulesetId(), info.first.GetLocale(), nodes[i]->GetNodeId());
@@ -414,7 +414,7 @@ TEST_F(NodesCacheTests, MakePhysical)
     m_cache->MakePhysical(*nodes[0]);
 
     // verify node is physical
-    EXPECT_EQ(NodeVisibility::Physical, m_cache->GetNodeVisibility(nodes[0]->GetNodeId()));
+    EXPECT_EQ(NodeVisibility::Visible, m_cache->GetNodeVisibility(nodes[0]->GetNodeId()));
 
     // verify child and grandchild nodes' physical parent is now set
     EXPECT_EQ(nodes[0]->GetNodeId(), m_cache->GetNode(childNodes[0]->GetNodeId())->GetParentNodeId());
@@ -439,7 +439,7 @@ TEST_F(NodesCacheTests, MakeVirtual)
     auto grandChildNodes = FillWithNodes(virtualNodeGrandChildrenInfo, 1, false, false);
 
     // verify node is physical
-    EXPECT_EQ(NodeVisibility::Physical, m_cache->GetNodeVisibility(nodes[0]->GetNodeId()));
+    EXPECT_EQ(NodeVisibility::Visible, m_cache->GetNodeVisibility(nodes[0]->GetNodeId()));
 
     // verify child and grandchild nodes' physical parent is set to their closest physical parent node
     EXPECT_EQ(nodes[0]->GetNodeId(), m_cache->GetNode(childNodes[0]->GetNodeId())->GetParentNodeId());
@@ -489,22 +489,24 @@ TEST_F(NodesCacheTests, UpdateDataSource_UpdatesFilter)
     m_cache->Cache(hlInfo);
     EXPECT_TRUE(hlInfo.IsValid());
 
+    ECClassId usedClassId((uint64_t)1);
+
     DataSourceInfo dsInfo(hlInfo.GetId(), { 0 });
     bmap<ECClassId, bool> usedClassIds;
-    usedClassIds[ECClassId((uint64_t)1)] = false;
+    usedClassIds[usedClassId] = false;
     m_cache->Cache(dsInfo, DataSourceFilter(), usedClassIds, bvector<UserSettingEntry>());
     EXPECT_TRUE(dsInfo.IsValid());
 
     // verify the filter is not applied and we find related hierarchy level
     bset<ECInstanceKey> keys;
-    keys.insert(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1)));
+    keys.insert(ECInstanceKey(usedClassId, ECInstanceId((uint64_t)1)));
     bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels(*m_connection, keys);
     EXPECT_EQ(1, related.size());
 
     // update the datasource with new filter
     bset<ECClassId> relationshipClassIds;
     relationshipClassIds.insert(widgetHasGadgetRelationship->GetId());
-    DataSourceFilter filter(DataSourceFilter::RelatedInstanceInfo(relationshipClassIds, RequiredRelationDirection_Both, ECInstanceId((uint64_t)123)), nullptr);
+    DataSourceFilter filter(DataSourceFilter::RelatedInstanceInfo(relationshipClassIds, RequiredRelationDirection_Both, {ECInstanceKey(usedClassId, ECInstanceId((uint64_t)2))}), nullptr);
     m_cache->Update(dsInfo, &filter, nullptr, nullptr);
 
     // verify the filter is applied and we dont find related hierarchy level anymore
@@ -810,7 +812,7 @@ TEST_F(NodesCacheTests, ReturnsCachedRootNode)
     ASSERT_FALSE(cachedProvider.IsValid());
 
     // cache the node
-    m_cache->Cache(*node, info.second, 0, false);
+    m_cache->Cache(*node, info.second, 0, NodeVisibility::Visible);
 
     // verify the node is cached
     cachedProvider = m_cache->GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo(m_connection->GetId(),
@@ -897,7 +899,7 @@ TEST_F(NodesCacheTests, GetNodeVisibility_ReturnsPhysicalNodeVisibility)
     auto nodes = FillWithNodes(info, 1);
 
     // verify results
-    EXPECT_EQ(NodeVisibility::Physical, m_cache->GetNodeVisibility(nodes[0]->GetNodeId()));
+    EXPECT_EQ(NodeVisibility::Visible, m_cache->GetNodeVisibility(nodes[0]->GetNodeId()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1125,9 +1127,9 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECInstanceNode)
 
     // verify the node is not found when key is invalid
     ECClassInstanceKey invalidKey(
-        nodes[0]->GetKey()->AsECInstanceNodeKey()->GetECClass(),
-        ECInstanceId(nodes[0]->GetKey()->AsECInstanceNodeKey()->GetInstanceId().GetValue() + 100));
-    locatedNode = m_cache->LocateNode(*m_connection, "locale", *ECInstanceNodeKey::Create(invalidKey, { "wrong hash" }));
+        nodes[0]->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().front().GetClass(),
+        ECInstanceId(nodes[0]->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().front().GetId().GetValue() + 100));
+    locatedNode = m_cache->LocateNode(*m_connection, "locale", *ECInstancesNodeKey::Create(invalidKey, { "wrong hash" }));
     ASSERT_TRUE(locatedNode.IsNull());
     }
 
@@ -1590,17 +1592,20 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsEmptyListWhen
     {
     ECClassCP widgetHasGadget = GetDb().Schemas().GetClass("RulesEngineTest", "WidgetHasGadget");
 
+    ECClassId usedClassId((uint64_t)1);
+    ECInstanceId usedInstanceId((uint64_t)1);
+
     // cache the data source
     auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
     bset<ECClassId> relationshipIds;
     relationshipIds.insert(widgetHasGadget->GetId());
-    DataSourceFilter filter(DataSourceFilter::RelatedInstanceInfo(relationshipIds, RequiredRelationDirection_Backward, ECInstanceId((uint64_t)123)), nullptr);
+    DataSourceFilter filter(DataSourceFilter::RelatedInstanceInfo(relationshipIds, RequiredRelationDirection_Backward, {ECInstanceKey(usedClassId, usedInstanceId)}), nullptr);
     bmap<ECClassId, bool> usedClassIds;
-    usedClassIds[ECClassId((uint64_t)1)] = false;
+    usedClassIds[usedClassId] = false;
     m_cache->Update(info.second, &filter, &usedClassIds, nullptr);
 
     bset<ECInstanceKey> keys;
-    keys.insert(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1)));
+    keys.insert(ECInstanceKey(usedClassId, ECInstanceId((uint64_t)456)));
     bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels(*m_connection, keys);
     EXPECT_TRUE(related.empty());
     }
@@ -1614,18 +1619,21 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
     ECClassCP gadgetClass = GetDb().Schemas().GetClass("RulesEngineTest", "Gadget");
     ECClassCP widgetHasGadgetRelationship = GetDb().Schemas().GetClass("RulesEngineTest", "WidgetHasGadget");
 
+    ECClassId usedClassId(gadgetClass->GetId());
+    ECInstanceId usedInstanceId((uint64_t)123);
+
     // cache the data source
     auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
     bset<ECClassId> relationshipIds;
     relationshipIds.insert(widgetHasGadgetRelationship->GetId());
-    DataSourceFilter filter(DataSourceFilter::RelatedInstanceInfo(relationshipIds, RequiredRelationDirection_Backward, ECInstanceId((uint64_t)123)), nullptr);
+    DataSourceFilter filter(DataSourceFilter::RelatedInstanceInfo(relationshipIds, RequiredRelationDirection_Backward, {ECInstanceKey(usedClassId, usedInstanceId)}), nullptr);
     bmap<ECClassId, bool> usedClassIds;
     usedClassIds[widgetClass->GetId()] = false;
     usedClassIds[gadgetClass->GetId()] = false;
     m_cache->Update(info.second, &filter, &usedClassIds, nullptr);
 
     bset<ECInstanceKey> keys;
-    keys.insert(ECInstanceKey(gadgetClass->GetId(), filter.GetRelatedInstanceInfo()->m_instanceId));
+    keys.insert(ECInstanceKey(usedClassId, usedInstanceId));
     bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels(*m_connection, keys);
     ASSERT_EQ(1, related.size());
     EXPECT_EQ(related[0], info.first);
@@ -1653,7 +1661,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
     auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
     bset<ECClassId> relationshipIds;
     relationshipIds.insert(widgetHasGadgetRelationship->GetId());
-    DataSourceFilter filter(DataSourceFilter::RelatedInstanceInfo(relationshipIds, RequiredRelationDirection_Forward, widgetId), nullptr);
+    DataSourceFilter filter(DataSourceFilter::RelatedInstanceInfo(relationshipIds, RequiredRelationDirection_Forward, {ECInstanceKey(widgetClass->GetId(), widgetId)}), nullptr);
     bmap<ECClassId, bool> usedClassIds;
     usedClassIds[widgetClass->GetId()] = false;
     usedClassIds[gadgetClass->GetId()] = false;
@@ -1688,7 +1696,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
     auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
     bset<ECClassId> relationshipIds;
     relationshipIds.insert(widgetHasGadgetRelationship->GetId());
-    DataSourceFilter filter(DataSourceFilter::RelatedInstanceInfo(relationshipIds, RequiredRelationDirection_Backward, gadgetId), nullptr);
+    DataSourceFilter filter(DataSourceFilter::RelatedInstanceInfo(relationshipIds, RequiredRelationDirection_Backward, {ECInstanceKey(gadgetClass->GetId(), gadgetId)}), nullptr);
     bmap<ECClassId, bool> usedClassIds;
     usedClassIds[widgetClass->GetId()] = false;
     usedClassIds[gadgetClass->GetId()] = false;
@@ -1723,7 +1731,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
     auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
     bset<ECClassId> relationshipIds;
     relationshipIds.insert(widgetHasGadgetRelationship->GetId());
-    DataSourceFilter filter(DataSourceFilter::RelatedInstanceInfo(relationshipIds, RequiredRelationDirection_Both, gadgetId), nullptr);
+    DataSourceFilter filter(DataSourceFilter::RelatedInstanceInfo(relationshipIds, RequiredRelationDirection_Both, {ECInstanceKey(gadgetClass->GetId(), gadgetId)}), nullptr);
     bmap<ECClassId, bool> usedClassIds;
     usedClassIds[widgetClass->GetId()] = false;
     usedClassIds[gadgetClass->GetId()] = false;
@@ -1760,7 +1768,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
     bset<ECClassId> relationshipIds;
     relationshipIds.insert(widgetHasGadgetRelationship->GetId());
     relationshipIds.insert(widgetHasGadgetsRelationship->GetId());
-    DataSourceFilter filter(DataSourceFilter::RelatedInstanceInfo(relationshipIds, RequiredRelationDirection_Backward, gadgetId), nullptr);
+    DataSourceFilter filter(DataSourceFilter::RelatedInstanceInfo(relationshipIds, RequiredRelationDirection_Backward, {ECInstanceKey(gadgetClass->GetId(), gadgetId)}), nullptr);
     bmap<ECClassId, bool> usedClassIds;
     usedClassIds[widgetClass->GetId()] = false;
     usedClassIds[gadgetClass->GetId()] = false;
@@ -1785,8 +1793,8 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsEmptyListWhen
     TestNavNodePtr node = TestNodesHelper::CreateCustomNode(*m_connection, "type", "label", "descr");
     NavNodeExtendedData extendedData(*node);
     extendedData.SetRulesetId("ruleset_id");
-    extendedData.SetGroupedInstanceKey(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)2)));
-    m_cache->Cache(*node, info.second, 0, false);
+    extendedData.SetInstanceKey(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)2)));
+    m_cache->Cache(*node, info.second, 0, NodeVisibility::Visible);
 
     bset<ECInstanceKey> keys;
     keys.insert(ECInstanceKey(ECClassId((uint64_t)2), ECInstanceId((uint64_t)2)));
@@ -1806,8 +1814,8 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsEmptyListWhen
     TestNavNodePtr node = TestNodesHelper::CreateCustomNode(*m_connection, "type", "label", "descr");
     NavNodeExtendedData extendedData(*node);
     extendedData.SetRulesetId("ruleset_id");
-    extendedData.SetGroupedInstanceKey(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)2)));
-    m_cache->Cache(*node, info.second, 0, false);
+    extendedData.SetInstanceKey(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)2)));
+    m_cache->Cache(*node, info.second, 0, NodeVisibility::Visible);
 
     bset<ECInstanceKey> keys;
     keys.insert(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1)));
@@ -1827,8 +1835,8 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
     TestNavNodePtr node = TestNodesHelper::CreateCustomNode(*m_connection, "type", "label", "descr");
     NavNodeExtendedData extendedData(*node);
     extendedData.SetRulesetId("ruleset_id");
-    extendedData.SetGroupedInstanceKey(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)2)));
-    m_cache->Cache(*node, info.second, 0, false);
+    extendedData.SetInstanceKey(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)2)));
+    m_cache->Cache(*node, info.second, 0, NodeVisibility::Visible);
 
     bset<ECInstanceKey> keys;
     keys.insert(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)2)));
@@ -1844,24 +1852,26 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
     {
     ECClassCP widgetHasGadget = GetDb().Schemas().GetClass("RulesEngineTest", "WidgetHasGadget");
 
+    ECClassId usedClassId((uint64_t)1);
+
     // cache the data source
     auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
     bset<ECClassId> relationshipIds;
     relationshipIds.insert(widgetHasGadget->GetId());
-    DataSourceFilter filter(DataSourceFilter::RelatedInstanceInfo(relationshipIds, RequiredRelationDirection_Backward, ECInstanceId((uint64_t)123)), nullptr);
+    DataSourceFilter filter(DataSourceFilter::RelatedInstanceInfo(relationshipIds, RequiredRelationDirection_Backward, {ECInstanceKey(usedClassId, ECInstanceId((uint64_t)123))}), nullptr);
     bmap<ECClassId, bool> usedClassIds;
-    usedClassIds[ECClassId((uint64_t)1)] = false;
+    usedClassIds[usedClassId] = false;
     m_cache->Update(info.second, &filter, &usedClassIds, nullptr);
 
     // create a node
     TestNavNodePtr node = TestNodesHelper::CreateCustomNode(*m_connection, "type", "label", "descr");
     NavNodeExtendedData extendedData(*node);
     extendedData.SetRulesetId("ruleset_id");
-    extendedData.SetGroupedInstanceKey(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)2)));
-    m_cache->Cache(*node, info.second, 0, false);
+    extendedData.SetInstanceKey(ECInstanceKey(usedClassId, ECInstanceId((uint64_t)2)));
+    m_cache->Cache(*node, info.second, 0, NodeVisibility::Visible);
 
     bset<ECInstanceKey> keys;
-    keys.insert(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)2)));
+    keys.insert(ECInstanceKey(usedClassId, ECInstanceId((uint64_t)2)));
     bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels(*m_connection, keys);
     ASSERT_EQ(1, related.size());
     EXPECT_EQ(related[0], info.first);

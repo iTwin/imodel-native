@@ -371,7 +371,6 @@ TEST_F (ECExpressionContextsProviderTests, GetNodeRulesContext_ChildRelationship
     ECRelationshipClassCP rel = GetSchema().GetClassCP("ClassAHasDerivedClasses")->GetRelationshipClassCP();
     TestNavNodePtr navNode = TestNodesHelper::CreateRelationshipGroupingNode(*s_connection, *rel, "TestLabel");
     NavNodeExtendedData navNodeExtendedData(*navNode);
-    navNodeExtendedData.SetParentECClassId(GetSchema().GetClassCP("ClassA")->GetId());
     navNodeExtendedData.SetRelationshipDirection(ECRelatedInstanceDirection::Backward);
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(navNode.get(), *s_connection,
         m_locale, m_userSettings, nullptr));
@@ -524,28 +523,6 @@ TEST_F(ECExpressionContextsProviderTests, GetNodeRulesContext_Instance_IsOfClass
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECExpressionContextsProviderTests, GetNodeRulesContext_RelationshipClassNode_IsOfClass)
-    {
-    ECRelationshipClassCP rel = GetSchema().GetClassCP("ClassAHasDerivedClasses")->GetRelationshipClassCP();
-    TestNavNodePtr navNode = TestNodesHelper::CreateRelationshipGroupingNode(*s_connection, *rel, "TestLabel");
-    NavNodeExtendedData navNodeExtendedData(*navNode);
-    navNodeExtendedData.SetParentECClassId(GetSchema().GetClassCP("ClassA")->GetId());
-    navNodeExtendedData.SetRelationshipDirection(ECRelatedInstanceDirection::Backward);
-    ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(navNode.get(), *s_connection,
-        m_locale, m_userSettings, nullptr));
-
-    ECValue resultValue = EvaluateAndGetResult("ParentNode.IsOfClass(\"ClassAHasDerivedClasses\", \"TestSchema\")", *ctx);
-    ASSERT_TRUE(resultValue.IsBoolean());
-    ASSERT_TRUE(resultValue.GetBoolean());
-    
-    resultValue = EvaluateAndGetResult("ParentNode.IsOfClass(\"ClassA\", \"TestSchema\")", *ctx);
-    ASSERT_TRUE(resultValue.IsBoolean());
-    ASSERT_FALSE(resultValue.GetBoolean());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                       Grigas.Petraitis                01/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ECExpressionContextsProviderTests, GetNodeRulesContext_ClassGroupingNode_IsOfClass)
     {
     TestNavNodePtr navNode = TestNodesHelper::CreateClassGroupingNode(*s_connection, *GetSchema().GetClassCP("DerivedA"), "TestLabel");
@@ -582,60 +559,6 @@ TEST_F (ECExpressionContextsProviderTests, GetNodeRulesContext_PropertyGroupingN
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @betest                                       Grigas.Petraitis                03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECExpressionContextsProviderTests, GetNodeRulesContext_ChildRelationshipClassNode_ParentClassNameIsValid)
-    {
-    ECRelationshipClassCP rel = GetSchema().GetClassCP("ClassAHasDerivedClasses")->GetRelationshipClassCP();
-    TestNavNodePtr navNode = TestNodesHelper::CreateRelationshipGroupingNode(*s_connection, *rel, "TestLabel");
-    NavNodeExtendedData navNodeExtendedData(*navNode);
-    navNodeExtendedData.SetParentECClassId(GetSchema().GetClassCP("ClassA")->GetId());
-    navNodeExtendedData.SetRelationshipDirection(ECRelatedInstanceDirection::Backward);
-    ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(navNode.get(), *s_connection,
-        m_locale, m_userSettings, nullptr));
-
-    ECValue resultValue = EvaluateAndGetResult("ParentNode.ParentClassName", *ctx);
-    ASSERT_TRUE(resultValue.IsString());
-    ASSERT_STREQ("ClassA", resultValue.GetUtf8CP());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                       Grigas.Petraitis                03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECExpressionContextsProviderTests, GetNodeRulesContext_ChildRelationshipClassNode_ParentSchemaNameIsValid)
-    {
-    ECRelationshipClassCP rel = GetSchema().GetClassCP("ClassAHasDerivedClasses")->GetRelationshipClassCP();
-    TestNavNodePtr navNode = TestNodesHelper::CreateRelationshipGroupingNode(*s_connection, *rel, "TestLabel");
-    NavNodeExtendedData navNodeExtendedData(*navNode);
-    navNodeExtendedData.SetParentECClassId(GetSchema().GetClassCP("ClassA")->GetId());
-    navNodeExtendedData.SetRelationshipDirection(ECRelatedInstanceDirection::Backward);
-    ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(navNode.get(), *s_connection,
-        m_locale, m_userSettings, nullptr));
-
-    ECValue resultValue = EvaluateAndGetResult("ParentNode.ParentSchemaName", *ctx);
-    ASSERT_TRUE(resultValue.IsString());
-    ASSERT_STREQ("TestSchema", resultValue.GetUtf8CP());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                       Grigas.Petraitis                03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECExpressionContextsProviderTests, GetNodeRulesContext_ChildRelationshipClassNode_RelationshipDirectionIsValid)
-    {
-    ECRelationshipClassCP rel = GetSchema().GetClassCP("ClassAHasDerivedClasses")->GetRelationshipClassCP();
-    TestNavNodePtr navNode = TestNodesHelper::CreateRelationshipGroupingNode(*s_connection, *rel, "TestLabel");
-    NavNodeExtendedData navNodeExtendedData(*navNode);
-    navNodeExtendedData.SetParentECClassId(GetSchema().GetClassCP("ClassA")->GetId());
-    navNodeExtendedData.SetRelationshipDirection(ECRelatedInstanceDirection::Backward);
-    ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(navNode.get(), *s_connection,
-        m_locale, m_userSettings, nullptr));
-
-    ECValue resultValue = EvaluateAndGetResult("ParentNode.RelationshipDirection", *ctx);
-    ASSERT_TRUE(resultValue.IsString());
-    ASSERT_STREQ("Backward", resultValue.GetUtf8CP());
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ECExpressionContextsProviderTests, GetNodeRulesContext_GroupingNode_GroupedInstancesCount)
@@ -644,7 +567,7 @@ TEST_F (ECExpressionContextsProviderTests, GetNodeRulesContext_GroupingNode_Grou
     ECPropertyCP prop = classA->GetPropertyP("Int");
     TestNavNodePtr navNode = TestNodesHelper::CreatePropertyGroupingNode(*s_connection, *classA, *prop, "TestLabel", rapidjson::Value(123), false);
     NavNodeExtendedData navNodeExtendedData(*navNode);
-    navNodeExtendedData.SetGroupedInstanceKeys(
+    navNodeExtendedData.SetInstanceKeys(
         {
         ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)2)), 
         ECInstanceKey(ECClassId((uint64_t)3), ECInstanceId((uint64_t)4)), 

@@ -3,6 +3,7 @@
 * See COPYRIGHT.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #pragma once
+#include <ECPresentation/Connection.h>
 #include <UnitTests/BackDoor/ECPresentation/ECPresentationTest.h>
 #include "../../../Source/RulesDriven/RulesEngine/JsonNavNode.h"
 #include "../../../Source/RulesDriven/RulesEngine/ExtendedData.h"
@@ -38,6 +39,7 @@ typedef RefCountedPtr<TestNavNode> TestNavNodePtr;
 +===============+===============+===============+===============+===============+======*/
 struct TestNodesHelper
     {
+    static TestNavNodePtr CreateInstancesNode(IConnectionCR, bvector<ECInstanceKey>);
     static TestNavNodePtr CreateInstanceNode(IConnectionCR, ECClassCR ecClass, ECInstanceId instanceId = ECInstanceId((uint64_t)123));
     static TestNavNodePtr CreateInstanceNode(IConnectionCR, IECInstanceR instance);
     static TestNavNodePtr CreateClassGroupingNode(IConnectionCR, ECClassCR ecClass, Utf8CP label);
@@ -62,7 +64,7 @@ public:
         {}
     JsonNavNodePtr CreateECInstanceNode(IConnectionCR connection, ECClassId classId, ECInstanceId instanceId, Utf8CP label) const
         {
-        JsonNavNodePtr node = JsonNavNodesFactory::CreateECInstanceNode(connection, m_locale, classId, instanceId, label);
+        JsonNavNodePtr node = JsonNavNodesFactory::CreateECInstanceNode(connection.GetId(), m_locale, classId, instanceId, label);
         NavNodeExtendedData(*node).SetRulesetId(m_rulesetId.c_str());
         return node;
         }

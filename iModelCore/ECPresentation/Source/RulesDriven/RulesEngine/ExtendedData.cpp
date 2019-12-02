@@ -145,13 +145,13 @@ void ItemExtendedData::SetRelatedInstanceKey(RelatedInstanceKey const& key)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::IdSet<ECInstanceId> NavNodeExtendedData::GetGroupedInstanceIds() const
+BeSQLite::IdSet<ECInstanceId> NavNodeExtendedData::GetInstanceIds() const
     {
     BeSQLite::IdSet<ECInstanceId> ids;
-    if (!GetJson().HasMember(NAVNODE_EXTENDEDDATA_GroupedInstanceKeys))
+    if (!GetJson().HasMember(NAVNODE_EXTENDEDDATA_ECInstanceKeys))
         return ids;
 
-    RapidJsonValueCR json = GetJson()[NAVNODE_EXTENDEDDATA_GroupedInstanceKeys];
+    RapidJsonValueCR json = GetJson()[NAVNODE_EXTENDEDDATA_ECInstanceKeys];
     if (!json.IsArray())
         return ids;
 
@@ -166,13 +166,13 @@ BeSQLite::IdSet<ECInstanceId> NavNodeExtendedData::GetGroupedInstanceIds() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<ECInstanceKey> NavNodeExtendedData::GetGroupedInstanceKeys() const
+bvector<ECInstanceKey> NavNodeExtendedData::GetInstanceKeys() const
     {
     bvector<ECInstanceKey> keys;
-    if (!GetJson().HasMember(NAVNODE_EXTENDEDDATA_GroupedInstanceKeys))
+    if (!GetJson().HasMember(NAVNODE_EXTENDEDDATA_ECInstanceKeys))
         return keys;
 
-    RapidJsonValueCR json = GetJson()[NAVNODE_EXTENDEDDATA_GroupedInstanceKeys];
+    RapidJsonValueCR json = GetJson()[NAVNODE_EXTENDEDDATA_ECInstanceKeys];
     if (!json.IsArray())
         return keys;
 
@@ -189,12 +189,12 @@ bvector<ECInstanceKey> NavNodeExtendedData::GetGroupedInstanceKeys() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::SizeType NavNodeExtendedData::GetGroupedInstanceKeysCount() const
+rapidjson::SizeType NavNodeExtendedData::GetInstanceKeysCount() const
     {
-    if (!GetJson().HasMember(NAVNODE_EXTENDEDDATA_GroupedInstanceKeys))
+    if (!GetJson().HasMember(NAVNODE_EXTENDEDDATA_ECInstanceKeys))
         return 0;
 
-    RapidJsonValueCR json = GetJson()[NAVNODE_EXTENDEDDATA_GroupedInstanceKeys];
+    RapidJsonValueCR json = GetJson()[NAVNODE_EXTENDEDDATA_ECInstanceKeys];
     if (!json.IsArray())
         return 0;
 
@@ -204,7 +204,7 @@ rapidjson::SizeType NavNodeExtendedData::GetGroupedInstanceKeysCount() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NavNodeExtendedData::SetGroupedInstanceKeys(bvector<ECInstanceKey> const& keys)
+void NavNodeExtendedData::SetInstanceKeys(bvector<ECInstanceKey> const& keys)
     {
     rapidjson::Value json(rapidjson::kArrayType);
     for (ECInstanceKey const& key : keys)
@@ -214,17 +214,17 @@ void NavNodeExtendedData::SetGroupedInstanceKeys(bvector<ECInstanceKey> const& k
         jsonKey.AddMember(NAVNODE_EXTENDEDDATA_InstanceKey_ECInstanceId, key.GetInstanceId().GetValueUnchecked(), GetAllocator());
         json.PushBack(std::move(jsonKey), GetAllocator());
         }
-    AddMember(NAVNODE_EXTENDEDDATA_GroupedInstanceKeys, std::move(json));
+    AddMember(NAVNODE_EXTENDEDDATA_ECInstanceKeys, std::move(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NavNodeExtendedData::SetGroupedInstanceKey(ECInstanceKey const& key)
+void NavNodeExtendedData::SetInstanceKey(ECInstanceKey const& key)
     {
     bvector<ECInstanceKey> vec;
     vec.push_back(key);
-    SetGroupedInstanceKeys(vec);
+    SetInstanceKeys(vec);
     }
 
 #define NAVNODE_EXTENDEDDATA_SkippedInstanceKeys                "SkippedInstanceKeys"

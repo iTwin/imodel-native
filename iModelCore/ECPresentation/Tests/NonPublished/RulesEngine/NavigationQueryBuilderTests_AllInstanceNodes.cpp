@@ -134,21 +134,6 @@ TEST_F (NavigationQueryBuilderTests, AllInstanceNodes_HideNodesInHierarchy)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (NavigationQueryBuilderTests, AllInstanceNodes_HideNodesInHierarchy_ElimintesAllGroupingStatements)
-    {
-    AllInstanceNodesSpecification spec(1, false, true, false, true, true, "");
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
-    ASSERT_EQ(1, queries.size());
-    NavigationQueryPtr query = queries[0];
-    ASSERT_TRUE(query.IsValid());
-    ASSERT_TRUE(nullptr != query->AsComplexQuery());
-    EXPECT_TRUE(query->GetResultParameters().GetNavNodeExtendedData().HideNodesInHierarchy());
-    EXPECT_FALSE(query->AsComplexQuery()->HasClause(CLAUSE_GroupBy));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (NavigationQueryBuilderTests, AllInstanceNodes_HideIfNoChildren)
     {
     AllInstanceNodesSpecification spec(1, false, false, true, false, false, "");
@@ -296,7 +281,7 @@ TEST_F (NavigationQueryBuilderTests, AllInstanceNodes_GroupByLabel_ChildrenQuery
     NavNodeExtendedData extendedData(*parentNode);
     extendedData.SetSpecificationHash(spec.GetHash());
     extendedData.SetGroupingType((int)GroupingType::DisplayLabel);
-    extendedData.SetGroupedInstanceKey(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1)));
+    extendedData.SetInstanceKey(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1)));
 
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
     ASSERT_EQ(1, queries.size());
@@ -324,7 +309,7 @@ TEST_F (NavigationQueryBuilderTests, AllInstanceNodes_GroupByClassAndLabel_Class
     NavNodeExtendedData extendedData(*parentNode);
     extendedData.SetSpecificationHash(spec.GetHash());
     extendedData.SetGroupingType((int)GroupingType::Class);
-    extendedData.SetGroupedInstanceKey(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1)));
+    extendedData.SetInstanceKey(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1)));
 
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
     ASSERT_EQ(1, queries.size());
@@ -358,7 +343,7 @@ TEST_F (NavigationQueryBuilderTests, AllInstanceNodes_GroupByClassAndLabel_Label
     classNodeExtendedData.SetGroupingType((int)GroupingType::Class);
     labelNodeExtendedData.SetSpecificationHash(spec.GetHash());
     labelNodeExtendedData.SetGroupingType((int)GroupingType::DisplayLabel);
-    labelNodeExtendedData.SetGroupedInstanceKey(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1)));
+    labelNodeExtendedData.SetInstanceKey(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1)));
 
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *labelGroupingNode);
     ASSERT_EQ(1, queries.size());

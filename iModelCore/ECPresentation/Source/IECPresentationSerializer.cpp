@@ -206,7 +206,7 @@ rapidjson::Document IECPresentationSerializer::AsJson(NavNodeKey const& navNodeK
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document IECPresentationSerializer::AsJson(ECInstanceNodeKey const& ecInstanceNodeKey, rapidjson::Document::AllocatorType* allocator) const
+rapidjson::Document IECPresentationSerializer::AsJson(ECInstancesNodeKey const& ecInstanceNodeKey, rapidjson::Document::AllocatorType* allocator) const
     {
     rapidjson::Document json(allocator);
     _NavNodeKeyAsJson(ecInstanceNodeKey, json);

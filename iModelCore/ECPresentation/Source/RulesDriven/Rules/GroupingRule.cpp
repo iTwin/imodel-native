@@ -340,19 +340,32 @@ MD5 GroupSpecification::_ComputeHash(Utf8CP parentHash) const
     return md5;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Eligijus.Mauragas               11/2012
+* @bsimethod                                    Grigas.Petraitis                11/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-SameLabelInstanceGroup::SameLabelInstanceGroup () : GroupSpecification ()
+static SameLabelInstanceGroupApplicationStage GetSameLabelInstanceGroupApplicationStageFromString(Utf8StringCR str)
     {
+    if (str.Equals(SAME_LABEL_INSTANCE_GROUP_JSON_ATTRIBUTE_APPLICATIONSTAGE_VALUES_QUERY))
+        return SameLabelInstanceGroupApplicationStage::Query;
+    else if (str.Equals(SAME_LABEL_INSTANCE_GROUP_JSON_ATTRIBUTE_APPLICATIONSTAGE_VALUES_POSTPROCESS))
+        return SameLabelInstanceGroupApplicationStage::PostProcess;
+
+    BeAssert(false);
+    return SameLabelInstanceGroupApplicationStage::Query;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Eligijus.Mauragas               11/2012
+* @bsimethod                                    Grigas.Petraitis                11/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-SameLabelInstanceGroup::SameLabelInstanceGroup (Utf8StringCR contextMenuLabel) : GroupSpecification (contextMenuLabel)
+static Utf8CP GetSameLabelInstanceGroupApplicationStageAsString(SameLabelInstanceGroupApplicationStage value)
     {
+    switch (value)
+        {
+        case SameLabelInstanceGroupApplicationStage::Query: return SAME_LABEL_INSTANCE_GROUP_JSON_ATTRIBUTE_APPLICATIONSTAGE_VALUES_QUERY;
+        case SameLabelInstanceGroupApplicationStage::PostProcess: return SAME_LABEL_INSTANCE_GROUP_JSON_ATTRIBUTE_APPLICATIONSTAGE_VALUES_POSTPROCESS;
+        }
+    BeAssert(false);
+    return SAME_LABEL_INSTANCE_GROUP_JSON_ATTRIBUTE_APPLICATIONSTAGE_VALUES_QUERY;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -377,13 +390,36 @@ Utf8CP SameLabelInstanceGroup::_GetJsonElementType() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                09/2017
+* @bsimethod                                    Grigas.Petraitis                11/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SameLabelInstanceGroup::_ReadJson(JsonValueCR json)
+    {
+    if (!GroupSpecification::_ReadJson(json))
+        return false;
+
+    m_applicationStage = GetSameLabelInstanceGroupApplicationStageFromString(json[SAME_LABEL_INSTANCE_GROUP_JSON_ATTRIBUTE_APPLICATIONSTAGE].asCString(SAME_LABEL_INSTANCE_GROUP_JSON_ATTRIBUTE_APPLICATIONSTAGE_VALUES_QUERY));
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                11/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void SameLabelInstanceGroup::_WriteJson(JsonValueR json) const
+    {
+    GroupSpecification::_WriteJson(json);
+    if (m_applicationStage != SameLabelInstanceGroupApplicationStage::Query)
+        json[SAME_LABEL_INSTANCE_GROUP_JSON_ATTRIBUTE_APPLICATIONSTAGE] = GetSameLabelInstanceGroupApplicationStageAsString(m_applicationStage);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                11/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 MD5 SameLabelInstanceGroup::_ComputeHash(Utf8CP parentHash) const
     {
-    return GroupSpecification::_ComputeHash(parentHash);
+    MD5 md5 = GroupSpecification::_ComputeHash(parentHash);
+    md5.Add(&m_applicationStage, sizeof(m_applicationStage));
+    return md5;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   10/2012

@@ -30,20 +30,32 @@ public:
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                07/2019
 +===============+===============+===============+===============+===============+======*/
-struct ProvidersIndexAllocator : RefCountedBase
+struct IProvidersIndexAllocator : RefCountedBase
+{
+protected:
+    virtual bvector<uint64_t> _GetCurrentIndex() const = 0;
+    virtual bvector<uint64_t> _AllocateIndex() = 0;
+public:
+    bvector<uint64_t> GetCurrentIndex() const {return _GetCurrentIndex();}
+    bvector<uint64_t> AllocateIndex() {return _AllocateIndex();}
+};
+typedef RefCountedPtr<IProvidersIndexAllocator> IProvidersIndexAllocatorPtr;
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                07/2019
++===============+===============+===============+===============+===============+======*/
+struct ProvidersIndexAllocator : IProvidersIndexAllocator
 {
 private:
     bvector<uint64_t> m_parentIndex;
     uint64_t m_currIndex;
-private:
-    bvector<uint64_t> CreateIndex(bool createNew);
+protected:
+    ECPRESENTATION_EXPORT bvector<uint64_t> _GetCurrentIndex() const override;
+    ECPRESENTATION_EXPORT bvector<uint64_t> _AllocateIndex() override;
 public:
     ProvidersIndexAllocator() : m_currIndex(0) {}
     ProvidersIndexAllocator(bvector<uint64_t> parentIndex) : m_parentIndex(parentIndex), m_currIndex(0) {}
-    bvector<uint64_t> GetCurrentIndex() { return CreateIndex(false); }
-    bvector<uint64_t> AllocateIndex() { return CreateIndex(true); }
 };
-typedef RefCountedPtr<ProvidersIndexAllocator> ProvidersIndexAllocatorPtr;
 
 /*=================================================================================**//**
 * Context for NavNodesProvider implementations.
@@ -58,7 +70,7 @@ private:
     INodesProviderFactoryCR m_providerFactory;
     uint64_t const* m_physicalParentNodeId;
     uint64_t const* m_virtualParentNodeId;
-    ProvidersIndexAllocatorPtr m_providersIndexAllocator;
+    IProvidersIndexAllocatorPtr m_providersIndexAllocator;
     mutable HierarchyLevelInfo m_hierarchyLevelInfo;
     mutable DataSourceInfo m_dataSourceInfo;
 
@@ -86,7 +98,7 @@ private:
 
 private:
     void Init();
-    void InitProvidersIndexAllocator(uint64_t const* physicalParentNodeId);
+    void InitProvidersIndexAllocator(uint64_t const* virtualParentNodeId);
     ECPRESENTATION_EXPORT NavNodesProviderContext(PresentationRuleSetCR, RuleTargetTree, Utf8String, uint64_t const*, IUserSettings const&, ECExpressionsCache&, 
         RelatedPathsCache&, PolymorphicallyRelatedClassesCache&, JsonNavNodesFactory const&, IHierarchyCache&, INodesProviderFactoryCR, IJsonLocalState const*);
     ECPRESENTATION_EXPORT NavNodesProviderContext(NavNodesProviderContextCR other);
@@ -112,14 +124,14 @@ public:
     void SetPhysicalParentNode(NavNodeCR node) {SetPhysicalParentNodeId(node.GetNodeId());}
     ECPRESENTATION_EXPORT JsonNavNodeCPtr GetVirtualParentNode() const;
     uint64_t const* GetVirtualParentNodeId() const {return m_virtualParentNodeId;}
-    void SetVirtualParentNodeId(uint64_t id) {DELETE_AND_CLEAR(m_virtualParentNodeId); m_virtualParentNodeId = (0 != id) ? new uint64_t(id) : nullptr;}
+    ECPRESENTATION_EXPORT void SetVirtualParentNodeId(uint64_t id);
     void SetVirtualParentNode(NavNodeCR node) {SetVirtualParentNodeId(node.GetNodeId());}
     NavNodesProviderPtr CreateHierarchyLevelProvider(NavNodesProviderContextR, JsonNavNodeCP parentNode) const;
     HierarchyLevelInfo const& GetHierarchyLevelInfo() const;
     DataSourceInfo const& GetDataSourceInfo() const;
     bvector<UserSettingEntry> GetRelatedSettings() const;
-    ProvidersIndexAllocator& GetProvidersIndexAllocator() const {return *m_providersIndexAllocator;}
-    void SetProvidersIndexAllocator(ProvidersIndexAllocator& allocator) {m_providersIndexAllocator = &allocator;}
+    IProvidersIndexAllocator& GetProvidersIndexAllocator() const {return *m_providersIndexAllocator;}
+    void SetProvidersIndexAllocator(IProvidersIndexAllocator& allocator) {m_providersIndexAllocator = &allocator;}
 
     // optimization flags
     bool IsFullNodesLoadDisabled() const {return m_isFullLoadDisabled;}
@@ -134,10 +146,10 @@ public:
     size_t GetPageSize() const {return m_pageSize;}
     
     // root nodes context
-    ECPRESENTATION_EXPORT void SetRootNodeContext(RootNodeRuleCR);
+    ECPRESENTATION_EXPORT void SetRootNodeContext(RootNodeRuleCP);
     ECPRESENTATION_EXPORT void SetRootNodeContext(NavNodesProviderContextCR other);
     bool IsRootNodeContext() const {return m_isRootNodeContext;}
-    RootNodeRuleCR GetRootNodeRule() const {BeAssert(IsRootNodeContext()); return *m_rootNodeRule;}
+    RootNodeRuleCP GetRootNodeRule() const {BeAssert(IsRootNodeContext()); return m_rootNodeRule;}
 
     // child nodes context
     ECPRESENTATION_EXPORT void SetChildNodeContext(ChildNodeRuleCP, NavNodeCR virtualParentNode);
@@ -395,6 +407,41 @@ public:
     bvector<NavNodesProviderPtr> const& GetNodeProviders() const {return m_providers;}
 };
 
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                11/2017
++===============+===============+===============+===============+===============+======*/
+struct BVectorNodesProvider : NavNodesProvider
+{
+private:
+    bvector<JsonNavNodePtr> m_nodes;
+
+private:
+    BVectorNodesProvider(NavNodesProviderContext const& context, bvector<JsonNavNodePtr> nodes)
+        : NavNodesProvider(context), m_nodes(nodes)
+        {}
+
+protected:
+    bool _IsCacheable() const override {return false;}
+    bool _GetNode(JsonNavNodePtr& node, size_t index) const override
+        {
+        if (index < GetNodesCount())
+            {
+            node = m_nodes[index];
+            return true;
+            }
+        return false;
+        }
+    bool _HasNodes() const override {return !m_nodes.empty();}
+    size_t _GetNodesCount() const override {return m_nodes.size();}
+    ECPRESENTATION_EXPORT bvector<NodeArtifacts> _GetArtifacts() const override;
+
+public:
+    static RefCountedPtr<BVectorNodesProvider> Create(NavNodesProviderContext const& context, bvector<JsonNavNodePtr> nodes)
+        {
+        return new BVectorNodesProvider(context, nodes);
+        }
+};
+
 typedef RefCountedPtr<struct MultiSpecificationNodesProvider> MultiSpecificationNodesProviderPtr;
 /*=================================================================================**//**
 * Creates nodes based on supplied specifications.
@@ -402,9 +449,6 @@ typedef RefCountedPtr<struct MultiSpecificationNodesProvider> MultiSpecification
 +===============+===============+===============+===============+===============+======*/
 struct MultiSpecificationNodesProvider : MultiNavNodesProvider
 {
-private:
-    mutable NavNodesProviderPtr m_replaceProvider;
-
 private:
     ECPRESENTATION_EXPORT MultiSpecificationNodesProvider(NavNodesProviderContextR context, RootNodeRuleSpecificationsList const& specs);
     ECPRESENTATION_EXPORT MultiSpecificationNodesProvider(NavNodesProviderContextR context, ChildNodeRuleSpecificationsList const& specs, NavNodeCR virtualParent);
@@ -423,6 +467,80 @@ public:
         {
         return WithInitialize(new MultiSpecificationNodesProvider(context, specs, virtualParent));
         }
+};
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                11/2019
++===============+===============+===============+===============+===============+======*/
+struct IProvidedNodesPostProcessor
+{
+protected:
+    virtual NavNodesProviderPtr _PostProcessNodeRequest(NavNodesProviderCR, JsonNavNodeCR, size_t index) const = 0;
+    virtual NavNodesProviderPtr _PostProcessCountRequest(NavNodesProviderCR, size_t count) const = 0;
+public:
+    virtual ~IProvidedNodesPostProcessor() {}
+    NavNodesProviderPtr PostProcessNodeRequest(NavNodesProviderCR processedProvider, JsonNavNodeCR node, size_t index) const {return _PostProcessNodeRequest(processedProvider, node, index);}
+    NavNodesProviderPtr PostProcessCountRequest(NavNodesProviderCR processedProvider, size_t count) const {return _PostProcessCountRequest(processedProvider, count);}
+};
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                11/2019
++===============+===============+===============+===============+===============+======*/
+struct DisplayLabelGroupingNodesPostProcessor : IProvidedNodesPostProcessor
+{
+protected:
+    ECPRESENTATION_EXPORT NavNodesProviderPtr _PostProcessNodeRequest(NavNodesProviderCR processedProvider, JsonNavNodeCR node, size_t index) const override;
+    ECPRESENTATION_EXPORT NavNodesProviderPtr _PostProcessCountRequest(NavNodesProviderCR processedProvider, size_t count) const override;
+};
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                11/2019
++===============+===============+===============+===============+===============+======*/
+struct SameLabelGroupingNodesPostProcessor : IProvidedNodesPostProcessor
+{
+private:
+    bset<ECClassCP> m_groupedClasses;
+private:
+    bool IsSuitableForMerge(JsonNavNodeCR node) const;
+    JsonNavNodePtr MergeNodes(NavNodesProviderContextCR context, JsonNavNodeR lhs, JsonNavNodeR rhs) const;
+    ECPRESENTATION_EXPORT NavNodesProviderPtr CreatePostProcessedProvider(NavNodesProviderCR processedProvider) const;
+    ECPRESENTATION_EXPORT void InitGroupedClasses(PresentationRuleSetCR, bvector<ChildNodeRuleCP> const&, ECSchemaHelper const&, IJsonLocalState const*);
+protected:
+    NavNodesProviderPtr _PostProcessNodeRequest(NavNodesProviderCR processedProvider, JsonNavNodeCR, size_t) const override {return CreatePostProcessedProvider(processedProvider);}
+    NavNodesProviderPtr _PostProcessCountRequest(NavNodesProviderCR processedProvider, size_t count) const override {return CreatePostProcessedProvider(processedProvider);}
+public:
+    SameLabelGroupingNodesPostProcessor(PresentationRuleSetCR ruleset, bvector<ChildNodeRuleCP> const& rules, ECSchemaHelper const& schemaHelper, IJsonLocalState const* localState)
+        {
+        InitGroupedClasses(ruleset, rules, schemaHelper, localState);
+        }
+};
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                11/2019
++===============+===============+===============+===============+===============+======*/
+struct PostProcessingNodesProvider : NavNodesProvider
+{
+private:
+    NavNodesProviderCPtr m_wrappedProvider;
+    bvector<std::unique_ptr<IProvidedNodesPostProcessor const>> m_postProcessors;
+    mutable NavNodesProviderPtr m_processedProvider;
+
+private:
+    ECPRESENTATION_EXPORT PostProcessingNodesProvider(NavNodesProviderCR wrappedProvider);
+
+protected:
+    bool _IsCacheable() const override {return false;}
+    ECPRESENTATION_EXPORT bool _GetNode(JsonNavNodePtr& node, size_t index) const override;
+    ECPRESENTATION_EXPORT size_t _GetNodesCount() const override;
+    ECPRESENTATION_EXPORT bool _HasNodes() const override;
+    ECPRESENTATION_EXPORT bvector<NodeArtifacts> _GetArtifacts() const override;
+
+public:
+    static RefCountedPtr<PostProcessingNodesProvider> Create(NavNodesProviderCR provider)
+        {
+        return WithInitialize(new PostProcessingNodesProvider(provider));
+        }
+    void RegisterPostProcessor(std::unique_ptr<IProvidedNodesPostProcessor const> processor) {m_postProcessors.push_back(std::move(processor));}
 };
 
 /*=================================================================================**//**

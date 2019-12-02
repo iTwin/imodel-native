@@ -297,6 +297,18 @@ ECClassInstanceKey RulesEngineTestHelpers::GetInstanceKey(IECInstanceCR instance
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                11/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+ComplexNavigationQueryPtr RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(ECClassCR ecClass, NavigationQueryR instanceNodesQuery)
+    {
+    instanceNodesQuery.GetResultParametersR().SetResultType(NavigationQueryResultType::Invalid);
+    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    query->SelectContract(*MultiECInstanceNodesQueryContract::Create(&ecClass, false));
+    query->From(instanceNodesQuery);
+    return query;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 ComplexNavigationQueryPtr RulesEngineTestHelpers::CreateECInstanceNodesQueryForClass(ECEntityClassCR ecClass, bool polymorphic, Utf8CP alias, bvector<RelatedClass> const& relatedClasses)
@@ -316,6 +328,8 @@ NavigationQueryPtr RulesEngineTestHelpers::CreateECInstanceNodesQueryForClasses(
         ComplexNavigationQueryPtr query = CreateECInstanceNodesQueryForClass(*pair.first, pair.second, alias);
         if (handler)
             handler(*query);
+
+        query = CreateMultiECInstanceNodesQuery(*pair.first, *query);
 
         if (q.IsNull())
             q = query;
@@ -584,7 +598,7 @@ void RulesEngineTestHelpers::CacheNode(IHierarchyCacheR cache, JsonNavNodeR node
         dsInfo = DataSourceInfo(hlInfo.GetId(), { 0 });
         cache.Cache(dsInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
         }
-    cache.Cache(node, dsInfo, 0, false);
+    cache.Cache(node, dsInfo, 0, NodeVisibility::Visible);
     }
 
 /*---------------------------------------------------------------------------------**//**

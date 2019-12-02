@@ -64,9 +64,9 @@ protected:
     ECPRESENTATION_EXPORT virtual NavNodeKeyPtr _GetNavNodeKeyFromJson(IConnectionCR, RapidJsonValueCR json) const override;
     ECPRESENTATION_EXPORT virtual NavNodeKeyPtr _GetBaseNavNodeKeyFromJson(JsonValueCR json) const override;
     ECPRESENTATION_EXPORT virtual NavNodeKeyPtr _GetBaseNavNodeKeyFromJson(RapidJsonValueCR json) const override;
-    ECPRESENTATION_EXPORT virtual void _AsJson(ECInstanceNodeKey const& ecInstanceNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const override;
-    ECPRESENTATION_EXPORT virtual ECInstanceNodeKeyPtr _GetECInstanceNodeKeyFromJson(IConnectionCR, JsonValueCR json) const override;
-    ECPRESENTATION_EXPORT virtual ECInstanceNodeKeyPtr _GetECInstanceNodeKeyFromJson(IConnectionCR, RapidJsonValueCR json) const override;
+    ECPRESENTATION_EXPORT virtual void _AsJson(ECInstancesNodeKey const& ecInstanceNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const override;
+    ECPRESENTATION_EXPORT virtual ECInstancesNodeKeyPtr _GetECInstanceNodeKeyFromJson(IConnectionCR, JsonValueCR json) const override;
+    ECPRESENTATION_EXPORT virtual ECInstancesNodeKeyPtr _GetECInstanceNodeKeyFromJson(IConnectionCR, RapidJsonValueCR json) const override;
     ECPRESENTATION_EXPORT virtual void _AsJson(ECClassGroupingNodeKey const& groupingNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const override;
     ECPRESENTATION_EXPORT virtual ECClassGroupingNodeKeyPtr _GetECClassGroupingNodeKeyFromJson(IConnectionCR, JsonValueCR json) const override;
     ECPRESENTATION_EXPORT virtual ECClassGroupingNodeKeyPtr _GetECClassGroupingNodeKeyFromJson(IConnectionCR, RapidJsonValueCR json) const override;

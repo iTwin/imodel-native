@@ -469,9 +469,10 @@ TEST_F(DefaultECPresentationSerializerTests, PropertySerializationWithKOQ)
 TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeTypeDelete)
     {
     TestNavNodePtr node = TestNavNode::Create(*m_connection);
+    node->SetHasChildren(true);
+
     UpdateRecord updateRecord(*node);
     rapidjson::Document actual = updateRecord.AsJson();
-
     rapidjson::Document expected;
     expected.Parse(R"({
         "Type": "Delete",
@@ -490,14 +491,13 @@ TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeType
             "BackColor": "",
             "FontStyle": "Regular",
             "Type": "TestType",
-            "HasChildren": false,
+            "HasChildren": true,
             "IsSelectable": true,
             "IsEditable": false,
             "IsChecked": false,
             "IsCheckboxVisible": false,
             "IsCheckboxEnabled": false,
-            "IsExpanded": false,
-            "ECInstanceId": "0"
+            "IsExpanded": false
             },
         "RulesetId": "Invalid ruleset ID"
         })");
@@ -513,9 +513,10 @@ TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeType
 TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeTypeInsert)
     {
     TestNavNodePtr node = TestNavNode::Create(*m_connection);
+    node->SetHasChildren(true);
+
     UpdateRecord updateRecord(*node, 10);
     rapidjson::Document actual = updateRecord.AsJson();
-
     rapidjson::Document expected;
     expected.Parse(R"({
         "Type": "Insert",
@@ -534,14 +535,13 @@ TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeType
             "BackColor": "",
             "FontStyle": "Regular",
             "Type": "TestType",
-            "HasChildren": false,
+            "HasChildren": true,
             "IsSelectable": true,
             "IsEditable": false,
             "IsChecked": false,
             "IsCheckboxVisible": false,
             "IsCheckboxEnabled": false,
-            "IsExpanded": false,
-            "ECInstanceId": "0"
+            "IsExpanded": false
             },
         "Position": 10,
         "RulesetId": "Invalid ruleset ID"
@@ -558,11 +558,13 @@ TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeType
 TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeTypeUpdate)
     {
     TestNavNodePtr node = TestNavNode::Create(*m_connection);
+    node->SetHasChildren(true);
+
     bvector<JsonChange> changes;
     changes.push_back(JsonChange("PropertyName", rapidjson::Value("oldValue"), rapidjson::Value("newValue")));
+
     UpdateRecord updateRecord(*node, std::move(changes));
     rapidjson::Document actual = updateRecord.AsJson();
-
     rapidjson::Document expected;
     expected.Parse(R"({
         "Type": "Update",
@@ -581,14 +583,13 @@ TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeType
             "BackColor": "",
             "FontStyle": "Regular",
             "Type": "TestType",
-            "HasChildren": false,
+            "HasChildren": true,
             "IsSelectable": true,
             "IsEditable": false,
             "IsChecked": false,
             "IsCheckboxVisible": false,
             "IsCheckboxEnabled": false,
-            "IsExpanded": false,
-            "ECInstanceId": "0"
+            "IsExpanded": false
             },
         "Changes": [
             {
@@ -611,12 +612,14 @@ TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeType
 TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeTypeUpdateMoreThanOneChange)
     {
     TestNavNodePtr node = TestNavNode::Create(*m_connection);
+    node->SetHasChildren(true);
+
     bvector<JsonChange> changes;
     changes.push_back(JsonChange("PropertyName", rapidjson::Value("oldValue"), rapidjson::Value("newValue")));
     changes.push_back(JsonChange("PropertyName2", rapidjson::Value("oldValue2"), rapidjson::Value("newValue2")));
+
     UpdateRecord updateRecord(*node, std::move(changes));
     rapidjson::Document actual = updateRecord.AsJson();
-
     rapidjson::Document expected;
     expected.Parse(R"({
         "Type": "Update",
@@ -635,14 +638,13 @@ TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeType
             "BackColor": "",
             "FontStyle": "Regular",
             "Type": "TestType",
-            "HasChildren": false,
+            "HasChildren": true,
             "IsSelectable": true,
             "IsEditable": false,
             "IsChecked": false,
             "IsCheckboxVisible": false,
             "IsCheckboxEnabled": false,
-            "IsExpanded": false,
-            "ECInstanceId": "0"
+            "IsExpanded": false
             },
         "Changes": [
             {
@@ -670,10 +672,12 @@ TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeType
 TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeTypeDeleteNoRulesetId)
     {
     TestNavNodePtr node = TestNavNode::Create(*m_connection);
+    node->SetHasChildren(true);
     node->GetExtendedDataR().RemoveAllMembers();
-    UpdateRecord updateRecord(*node);
-    rapidjson::Document actual = updateRecord.AsJson();
 
+    UpdateRecord updateRecord(*node);
+
+    rapidjson::Document actual = updateRecord.AsJson();
     rapidjson::Document expected;
     expected.Parse(R"({
         "Type": "Delete",
@@ -692,14 +696,13 @@ TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeType
             "BackColor": "",
             "FontStyle": "Regular",
             "Type": "TestType",
-            "HasChildren": false,
+            "HasChildren": true,
             "IsSelectable": true,
             "IsEditable": false,
             "IsChecked": false,
             "IsCheckboxVisible": false,
             "IsCheckboxEnabled": false,
-            "IsExpanded": false,
-            "ECInstanceId": "0"
+            "IsExpanded": false
             }
         })");
 
@@ -1472,7 +1475,7 @@ TEST_F(DefaultECPresentationSerializerTests, NavNodeKeySerialization)
     NavNodeKeyPtr deserializedKey = NavNodeKey::FromJson(*m_connection, actual);
 
     EXPECT_EQ(key->GetType(), deserializedKey->GetType());
-    EXPECT_EQ(key->GetPathFromRoot(), deserializedKey->GetPathFromRoot());
+    EXPECT_EQ(key->GetHashPath(), deserializedKey->GetHashPath());
 
     // Deserialize JsonValue
     Json::Value expectedJsonValue;
@@ -1480,7 +1483,7 @@ TEST_F(DefaultECPresentationSerializerTests, NavNodeKeySerialization)
     NavNodeKeyPtr deserializedKey2 = NavNodeKey::FromJson(*m_connection, expectedJsonValue);
 
     EXPECT_EQ(key->GetType(), deserializedKey2->GetType());
-    EXPECT_EQ(key->GetPathFromRoot(), deserializedKey2->GetPathFromRoot());
+    EXPECT_EQ(key->GetHashPath(), deserializedKey2->GetHashPath());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1488,18 +1491,28 @@ TEST_F(DefaultECPresentationSerializerTests, NavNodeKeySerialization)
 //---------------------------------------------------------------------------------------
 TEST_F(DefaultECPresentationSerializerTests, ECInstanceNodeKeySerialization)
     {
-    ECInstanceNodeKeyPtr key = ECInstanceNodeKey::Create(ECClassInstanceKey(GetClassA(), ECInstanceId((uint64_t)123)), {"123", "abc"});
+    ECInstancesNodeKeyPtr key = ECInstancesNodeKey::Create(
+        {
+        ECClassInstanceKey(GetClassA(), ECInstanceId((uint64_t)123)),
+        ECClassInstanceKey(GetClassB(), ECInstanceId((uint64_t)456))
+        }, {"123", "abc"});
     // Serialize
     rapidjson::Document actual = key->AsJson();
 
     rapidjson::Document expected;
     expected.Parse(R"({
-        "Type": "ECInstanceNode",
+        "Type": "ECInstancesNode",
         "PathFromRoot": ["123", "abc"],
-        "ECClassId": "",
-        "ECInstanceId": "123"
-        })");
-    expected["ECClassId"].SetString(GetClassA()->GetId().ToString().c_str(), expected.GetAllocator());
+        "InstanceKeys": [{
+            "ECClassId": "",
+            "ECInstanceId": "123"
+        }, {
+            "ECClassId": "",
+            "ECInstanceId": "456"
+        }]
+    })");
+    expected["InstanceKeys"][0]["ECClassId"].SetString(GetClassA()->GetId().ToString().c_str(), expected.GetAllocator());
+    expected["InstanceKeys"][1]["ECClassId"].SetString(GetClassB()->GetId().ToString().c_str(), expected.GetAllocator());
 
     ASSERT_EQ(expected, actual)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
@@ -1508,23 +1521,23 @@ TEST_F(DefaultECPresentationSerializerTests, ECInstanceNodeKeySerialization)
     // Deserialize RapidJson
     NavNodeKeyPtr navNodeKey = NavNodeKey::FromJson(*m_connection, actual);
     ASSERT_TRUE(navNodeKey.IsValid());
-    ECInstanceNodeKey const* deserializedKey = navNodeKey->AsECInstanceNodeKey();
+    ECInstancesNodeKey const* deserializedKey = navNodeKey->AsECInstanceNodeKey();
     ASSERT_NE(nullptr, deserializedKey);
 
     EXPECT_EQ(key->GetType(), deserializedKey->GetType());
-    EXPECT_EQ(key->GetPathFromRoot(), deserializedKey->GetPathFromRoot());
-    EXPECT_EQ(key->GetInstanceKey(), deserializedKey->GetInstanceKey());
+    EXPECT_EQ(key->GetHashPath(), deserializedKey->GetHashPath());
+    EXPECT_EQ(key->GetInstanceKeys(), deserializedKey->GetInstanceKeys());
 
     // Deserialize JsonValue
     Json::Value expectedJsonValue;
     Json::Reader::Parse(BeRapidJsonUtilities::ToString(actual), expectedJsonValue);
     NavNodeKeyPtr navNodeKey2 = NavNodeKey::FromJson(*m_connection, expectedJsonValue);
     ASSERT_TRUE(navNodeKey2.IsValid());
-    ECInstanceNodeKey const* deserializedKey2 = navNodeKey2->AsECInstanceNodeKey();
+    ECInstancesNodeKey const* deserializedKey2 = navNodeKey2->AsECInstanceNodeKey();
     ASSERT_NE(nullptr, deserializedKey2);
 
     EXPECT_EQ(key->GetType(), deserializedKey2->GetType());
-    EXPECT_EQ(key->GetPathFromRoot(), deserializedKey2->GetPathFromRoot());
+    EXPECT_EQ(key->GetHashPath(), deserializedKey2->GetHashPath());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1556,7 +1569,7 @@ TEST_F(DefaultECPresentationSerializerTests, ECClassGroupingNodeKeySerialization
     ASSERT_NE(nullptr, deserializedKey);
 
     EXPECT_EQ(key->GetType(), deserializedKey->GetType());
-    EXPECT_EQ(key->GetPathFromRoot(), deserializedKey->GetPathFromRoot());
+    EXPECT_EQ(key->GetHashPath(), deserializedKey->GetHashPath());
     EXPECT_EQ(key->GetECClassId(), deserializedKey->GetECClassId());
 
     // Deserialize JsonValue
@@ -1568,7 +1581,7 @@ TEST_F(DefaultECPresentationSerializerTests, ECClassGroupingNodeKeySerialization
     ASSERT_NE(nullptr, deserializedKey2);
 
     EXPECT_EQ(key->GetType(), deserializedKey2->GetType());
-    EXPECT_EQ(key->GetPathFromRoot(), deserializedKey2->GetPathFromRoot());
+    EXPECT_EQ(key->GetHashPath(), deserializedKey2->GetHashPath());
     EXPECT_EQ(key->GetECClassId(), deserializedKey2->GetECClassId());
     }
 
@@ -1602,7 +1615,7 @@ TEST_F(DefaultECPresentationSerializerTests, ECPropertyGroupingNodeKeySerializat
     ASSERT_NE(nullptr, deserializedKey);
 
     EXPECT_EQ(key->GetType(), deserializedKey->GetType());
-    EXPECT_EQ(key->GetPathFromRoot(), deserializedKey->GetPathFromRoot());
+    EXPECT_EQ(key->GetHashPath(), deserializedKey->GetHashPath());
     EXPECT_EQ(key->GetECClassId(), deserializedKey->GetECClassId());
     EXPECT_EQ(key->GetPropertyName(), deserializedKey->GetPropertyName());
     EXPECT_EQ(key->GetGroupingValue(), deserializedKey->GetGroupingValue());
@@ -1616,7 +1629,7 @@ TEST_F(DefaultECPresentationSerializerTests, ECPropertyGroupingNodeKeySerializat
     ASSERT_NE(nullptr, deserializedKey2);
 
     EXPECT_EQ(key->GetType(), deserializedKey2->GetType());
-    EXPECT_EQ(key->GetPathFromRoot(), deserializedKey2->GetPathFromRoot());
+    EXPECT_EQ(key->GetHashPath(), deserializedKey2->GetHashPath());
     EXPECT_EQ(key->GetECClassId(), deserializedKey2->GetECClassId());
     EXPECT_EQ(key->GetPropertyName(), deserializedKey2->GetPropertyName());
     EXPECT_EQ(key->GetGroupingValue(), deserializedKey2->GetGroupingValue());
@@ -1655,7 +1668,7 @@ TEST_F(DefaultECPresentationSerializerTests, ECPropertyGroupingNodeKeySerializat
     ASSERT_NE(nullptr, deserializedKey);
 
     EXPECT_EQ(key->GetType(), deserializedKey->GetType());
-    EXPECT_EQ(key->GetPathFromRoot(), deserializedKey->GetPathFromRoot());
+    EXPECT_EQ(key->GetHashPath(), deserializedKey->GetHashPath());
     EXPECT_EQ(key->GetECClassId(), deserializedKey->GetECClassId());
     EXPECT_EQ(key->GetPropertyName(), deserializedKey->GetPropertyName());
     EXPECT_EQ(*key->GetGroupingValue(), *deserializedKey->GetGroupingValue());
@@ -1669,7 +1682,7 @@ TEST_F(DefaultECPresentationSerializerTests, ECPropertyGroupingNodeKeySerializat
     ASSERT_NE(nullptr, deserializedKey2);
 
     EXPECT_EQ(key->GetType(), deserializedKey2->GetType());
-    EXPECT_EQ(key->GetPathFromRoot(), deserializedKey2->GetPathFromRoot());
+    EXPECT_EQ(key->GetHashPath(), deserializedKey2->GetHashPath());
     EXPECT_EQ(key->GetECClassId(), deserializedKey2->GetECClassId());
     EXPECT_EQ(key->GetPropertyName(), deserializedKey2->GetPropertyName());
     EXPECT_EQ(*key->GetGroupingValue(), *deserializedKey2->GetGroupingValue());
@@ -1706,7 +1719,7 @@ TEST_F(DefaultECPresentationSerializerTests, LabelGroupingNodeKeySerialization)
     ASSERT_NE(nullptr, deserializedKey);
 
     EXPECT_EQ(key->GetType(), deserializedKey->GetType());
-    EXPECT_EQ(key->GetPathFromRoot(), deserializedKey->GetPathFromRoot());
+    EXPECT_EQ(key->GetHashPath(), deserializedKey->GetHashPath());
     EXPECT_EQ(key->GetLabel(), deserializedKey->GetLabel());
 
     // Deserialize JsonValue
@@ -1718,7 +1731,7 @@ TEST_F(DefaultECPresentationSerializerTests, LabelGroupingNodeKeySerialization)
     ASSERT_NE(nullptr, deserializedKey2);
 
     EXPECT_EQ(key->GetType(), deserializedKey2->GetType());
-    EXPECT_EQ(key->GetPathFromRoot(), deserializedKey2->GetPathFromRoot());
+    EXPECT_EQ(key->GetHashPath(), deserializedKey2->GetHashPath());
     EXPECT_EQ(key->GetLabel(), deserializedKey2->GetLabel());
     }
 
@@ -1744,14 +1757,18 @@ TEST_F(DefaultECPresentationSerializerTests, NodesPathElementSerializationNoNavN
 TEST_F(DefaultECPresentationSerializerTests, NodesPathElementSerializationWithNode)
     {
     TestNavNodePtr node = TestNavNode::Create(*m_connection);
+    node->SetHasChildren(true);
+
     NodesPathElement nodesPathElement(*node, 10);
     TestNavNodePtr nodeChild = TestNavNode::Create(*m_connection);
     nodeChild->SetLabel("ChildTestLabeld");
+    nodeChild->SetHasChildren(false);
+
     NodesPathElement nodesPathElementChild(*nodeChild, 9);
     nodesPathElementChild.SetIsMarked(true);
     nodesPathElement.GetChildren().push_back(nodesPathElementChild);
-    rapidjson::Document actual = nodesPathElement.AsJson();
 
+    rapidjson::Document actual = nodesPathElement.AsJson();
     rapidjson::Document expected;
     expected.Parse(R"({
         "Node": {
@@ -1769,14 +1786,13 @@ TEST_F(DefaultECPresentationSerializerTests, NodesPathElementSerializationWithNo
             "BackColor": "",
             "FontStyle": "Regular",
             "Type": "TestType",
-            "HasChildren": false,
+            "HasChildren": true,
             "IsSelectable": true,
             "IsEditable": false,
             "IsChecked": false,
             "IsCheckboxVisible": false,
             "IsCheckboxEnabled": false,
-            "IsExpanded": false,
-            "ECInstanceId": "0"
+            "IsExpanded": false
             },
         "Index": 10,
         "IsMarked": false,
@@ -1803,8 +1819,7 @@ TEST_F(DefaultECPresentationSerializerTests, NodesPathElementSerializationWithNo
                 "IsChecked": false,
                 "IsCheckboxVisible": false,
                 "IsCheckboxEnabled": false,
-                "IsExpanded": false,
-                "ECInstanceId": "0"
+                "IsExpanded": false
                 },
             "Index": 9,
             "IsMarked": true,

@@ -105,7 +105,7 @@ protected:
 public:
     ClassInput(NavNodeKeyListCR keys, SchemaManagerCR schemas)
         {
-        bset<ECClassId> classIds;
+        bset<ECClassCP> classes;
         for (NavNodeKeyCPtr const& key : keys)
             {
             if (nullptr == key->AsECInstanceNodeKey())
@@ -113,13 +113,14 @@ public:
                 BeAssert(false);
                 continue;
                 }
-            ECClassId classId = key->AsECInstanceNodeKey()->GetECClassId();
-            if (classIds.end() != classIds.find(classId))
-                continue;
+            for (ECClassInstanceKeyCR instanceKey : key->AsECInstanceNodeKey()->GetInstanceKeys())
+                {
+                if (classes.end() != classes.find(instanceKey.GetClass()))
+                    continue;
 
-            ECClassCP ecClass = schemas.GetClass(classId);
-            m_classes.push_back(ecClass);
-            classIds.insert(classId);
+                m_classes.push_back(instanceKey.GetClass());
+                classes.insert(instanceKey.GetClass());
+                }
             }
         }
 };
@@ -241,7 +242,7 @@ bvector<NavNodeKeyCPtr> ContentClassesLocater::GetClassKeys(bvector<ECClassCP> c
 
     bvector<NavNodeKeyCPtr> keys;
     for (ECClassCP ecClass : lookup)
-        keys.push_back(ECInstanceNodeKey::Create(ECClassInstanceKey(ecClass, ECInstanceId()), bvector<Utf8String>()));
+        keys.push_back(ECInstancesNodeKey::Create(ECClassInstanceKey(ecClass, ECInstanceId()), bvector<Utf8String>()));
     return keys;
     }
 

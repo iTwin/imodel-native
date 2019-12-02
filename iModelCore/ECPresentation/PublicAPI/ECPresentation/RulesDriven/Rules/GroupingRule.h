@@ -176,33 +176,49 @@ public:
     };
 
 /*---------------------------------------------------------------------------------**//**
+* @bsiclass                                     Grigas.Petraitis                11/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+enum class SameLabelInstanceGroupApplicationStage
+    {
+    Query,
+    PostProcess,
+    };
+
+/*---------------------------------------------------------------------------------**//**
 This grouping option allows to create a Instance NavNode that represents mutiple instances
 of the same label.
 * @bsiclass                                     Eligijus.Mauragas               11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct EXPORT_VTABLE_ATTRIBUTE SameLabelInstanceGroup : public GroupSpecification
-    {
-    protected:
-        ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName () const override;
-        ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
+{
+private:
+    SameLabelInstanceGroupApplicationStage m_applicationStage;
+
+protected:
+    ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName() const override;
+    ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
+    ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
+    ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
         
-        //! Allows the visitor to visit this group specification.
-        ECPRESENTATION_EXPORT void _Accept(GroupingRuleSpecificationVisitor& visitor) const override;
+    //! Allows the visitor to visit this group specification.
+    ECPRESENTATION_EXPORT void _Accept(GroupingRuleSpecificationVisitor& visitor) const override;
     
-        //! Clones this specification.
-        GroupSpecification* _Clone() const override {return new SameLabelInstanceGroup(*this);}
+    //! Clones this specification.
+    GroupSpecification* _Clone() const override {return new SameLabelInstanceGroup(*this);}
 
-        //! Computes specification hash.
-        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+    //! Computes specification hash.
+    ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
 
-    public:
-        //! Constructor. It is used to initialize the rule with default settings.
-        ECPRESENTATION_EXPORT SameLabelInstanceGroup ();
-
-        //! Constructor.
-        ECPRESENTATION_EXPORT SameLabelInstanceGroup (Utf8StringCR contextMenuLabel);
-
-    };
+public:
+    SameLabelInstanceGroup(SameLabelInstanceGroupApplicationStage applicationStage = SameLabelInstanceGroupApplicationStage::Query)
+        : GroupSpecification(), m_applicationStage(applicationStage) 
+        {}
+    SameLabelInstanceGroup(Utf8StringCR contextMenuLabel) 
+        : GroupSpecification(contextMenuLabel), m_applicationStage(SameLabelInstanceGroupApplicationStage::Query) 
+        {}
+    SameLabelInstanceGroupApplicationStage GetApplicationStage() const {return m_applicationStage;}
+    void SetApplicationStage(SameLabelInstanceGroupApplicationStage value) {m_applicationStage = value;}
+};
 
 /*---------------------------------------------------------------------------------**//**
 ClassGroup that identifies parameters on how to group ECInstances.

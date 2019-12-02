@@ -43,7 +43,7 @@ struct RulesDrivenECPresentationManagerTests : ECPresentationTest
         {
         TestNavNodePtr node = TestNodesHelper::CreateInstanceNode(*GetConnection(), *instanceKey.GetClass(), instanceKey.GetId());
         node->SetNodeId(CreateNodeId());
-        node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*GetConnection(), *node, bvector<Utf8String>{std::to_string(node->GetNodeId()).c_str()}));
+        node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*GetConnection(), *node, bvector<Utf8String>{std::to_string(node->GetNodeId()).c_str()}, false));
         node->SetLabel(label);
         return node;
         }
@@ -55,9 +55,9 @@ struct RulesDrivenECPresentationManagerTests : ECPresentationTest
         {
         TestNavNodePtr node = TestNavNode::Create(*GetConnection());
         node->SetNodeId(nodeId);
-        bvector<Utf8String> path = (parent.IsNull()) ? bvector<Utf8String>() : parent->GetKey()->GetPathFromRoot();
+        bvector<Utf8String> path = (parent.IsNull()) ? bvector<Utf8String>() : parent->GetKey()->GetHashPath();
         path.push_back(std::to_string(node->GetNodeId()).c_str());
-        node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*GetConnection(), *node, path));
+        node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*GetConnection(), *node, path, false));
         if (parent.IsValid())
             node->SetParentNodeId(parent->GetNodeId());
         node->SetLabel(label);
@@ -88,8 +88,8 @@ struct RulesDrivenECPresentationManagerTests : ECPresentationTest
         {
         TestNavNodePtr node = TestNodesHelper::CreateClassGroupingNode(*GetConnection(), ecClass, label);
         node->SetNodeId(CreateNodeId());
-        node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*GetConnection(), *node, bvector<Utf8String>{std::to_string(node->GetNodeId()).c_str()}));
-        NavNodeExtendedData(*node).SetGroupedInstanceKeys(groupedKeys);
+        node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*GetConnection(), *node, bvector<Utf8String>{std::to_string(node->GetNodeId()).c_str()}, false));
+        NavNodeExtendedData(*node).SetInstanceKeys(groupedKeys);
         return node;
         }
 
@@ -111,8 +111,8 @@ struct RulesDrivenECPresentationManagerTests : ECPresentationTest
             groupingValue.SetInt(rangeIndex);
         TestNavNodePtr node = TestNodesHelper::CreatePropertyGroupingNode(*GetConnection(), ecClass, *ecProperty, label, groupingValue, -1 != rangeIndex);
         node->SetNodeId(CreateNodeId());
-        node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*GetConnection(), *node, bvector<Utf8String>{std::to_string(node->GetNodeId()).c_str()}));
-        NavNodeExtendedData(*node).SetGroupedInstanceKeys(groupedKeys);
+        node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*GetConnection(), *node, bvector<Utf8String>{std::to_string(node->GetNodeId()).c_str()}, false));
+        NavNodeExtendedData(*node).SetInstanceKeys(groupedKeys);
         return node;
         }
 
@@ -123,8 +123,8 @@ struct RulesDrivenECPresentationManagerTests : ECPresentationTest
         {
         TestNavNodePtr node = TestNodesHelper::CreateLabelGroupingNode(*GetConnection(), label);
         node->SetNodeId(CreateNodeId());
-        node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*GetConnection(), *node, bvector<Utf8String>{std::to_string(node->GetNodeId()).c_str()}));
-        NavNodeExtendedData(*node).SetGroupedInstanceKeys(groupedKeys);
+        node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*GetConnection(), *node, bvector<Utf8String>{std::to_string(node->GetNodeId()).c_str()}, false));
+        NavNodeExtendedData(*node).SetInstanceKeys(groupedKeys);
         return node;
         }
     };
@@ -185,6 +185,15 @@ struct RulesDrivenECPresentationManagerStubbedImplTests : RulesDrivenECPresentat
     };
 
 //---------------------------------------------------------------------------------------
+// @betest                                      Grigas.Petraitis                11/2019
+//---------------------------------------------------------------------------------------
+static ECInstanceKey GetFirstInstanceKey(ECInstancesNodeKey const& nodeKey)
+    {
+    ECClassInstanceKeyCR classKey = nodeKey.GetInstanceKeys().front();
+    return ECInstanceKey(classKey.GetClass()->GetId(), classKey.GetId());
+    }
+
+//---------------------------------------------------------------------------------------
 // @betest                                      Grigas.Petraitis                12/2016
 //---------------------------------------------------------------------------------------
 TEST_F(RulesDrivenECPresentationManagerStubbedImplTests, GetNodePath_InstancesHierarchy)
@@ -214,11 +223,11 @@ TEST_F(RulesDrivenECPresentationManagerStubbedImplTests, GetNodePath_InstancesHi
     */
 
     // create the keys path
-    bvector<ECInstanceKey> keysPath = 
+    bvector<ECInstanceKey> keysPath =
         {
-        node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), 
-        node2->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), 
-        node3->GetKey()->AsECInstanceNodeKey()->GetInstanceKey()
+        GetFirstInstanceKey(*node1->GetKey()->AsECInstanceNodeKey()),
+        GetFirstInstanceKey(*node2->GetKey()->AsECInstanceNodeKey()),
+        GetFirstInstanceKey(*node3->GetKey()->AsECInstanceNodeKey())
         };
 
     // test
@@ -286,7 +295,7 @@ TEST_F(RulesDrivenECPresentationManagerStubbedImplTests, GetNodePath_InstancesHi
     m_impl->SetHierarchy(hierarchy);
 
     // create the keys path
-    bvector<ECInstanceKey> keysPath = {node4->GetKey()->AsECInstanceNodeKey()->GetInstanceKey()};
+    bvector<ECInstanceKey> keysPath = {GetFirstInstanceKey(*node4->GetKey()->AsECInstanceNodeKey())};
 
     // test
     NodesPathElement path = m_manager->GetNodePath(GetECDb(), keysPath).get();
@@ -296,19 +305,19 @@ TEST_F(RulesDrivenECPresentationManagerStubbedImplTests, GetNodePath_InstancesHi
     ASSERT_TRUE(curr->GetNode().IsValid());
     EXPECT_STREQ("A", curr->GetNode()->GetLabel().c_str());
     ASSERT_EQ(1, curr->GetChildren().size());
-    
+
     curr = &curr->GetChildren().front();
     EXPECT_EQ(1, curr->GetIndex());
     ASSERT_TRUE(curr->GetNode().IsValid());
     EXPECT_STREQ("A_2", curr->GetNode()->GetLabel().c_str());
     ASSERT_EQ(1, curr->GetChildren().size());
-    
+
     curr = &curr->GetChildren().front();
     EXPECT_EQ(1, curr->GetIndex());
     ASSERT_TRUE(curr->GetNode().IsValid());
     EXPECT_STREQ("A_2_2", curr->GetNode()->GetLabel().c_str());
     ASSERT_EQ(1, curr->GetChildren().size());
-    
+
     curr = &curr->GetChildren().front();
     EXPECT_EQ(0, curr->GetIndex());
     ASSERT_TRUE(curr->GetNode().IsValid());
@@ -343,16 +352,16 @@ TEST_F(RulesDrivenECPresentationManagerStubbedImplTests, GetNodePaths_Multiple_R
     m_impl->SetHierarchy(hierarchy);
 
     // create the key paths
-    bvector<ECInstanceKey> keysPath1 = 
+    bvector<ECInstanceKey> keysPath1 =
         {
-        node1_1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), 
-        node1_2->GetKey()->AsECInstanceNodeKey()->GetInstanceKey()
+        GetFirstInstanceKey(*node1_1->GetKey()->AsECInstanceNodeKey()),
+        GetFirstInstanceKey(*node1_2->GetKey()->AsECInstanceNodeKey())
         };
-    bvector<ECInstanceKey> keysPath2 = 
+    bvector<ECInstanceKey> keysPath2 =
         {
-        node2_1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), 
-        node2_2->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), 
-        node2_3->GetKey()->AsECInstanceNodeKey()->GetInstanceKey()
+        GetFirstInstanceKey(*node2_1->GetKey()->AsECInstanceNodeKey()),
+        GetFirstInstanceKey(*node2_2->GetKey()->AsECInstanceNodeKey()),
+        GetFirstInstanceKey(*node2_3->GetKey()->AsECInstanceNodeKey())
         };
     bvector<bvector<ECInstanceKey>> keysPaths = {keysPath1, keysPath2};
 
@@ -372,7 +381,7 @@ TEST_F(RulesDrivenECPresentationManagerStubbedImplTests, GetNodePaths_Multiple_R
     ASSERT_TRUE(curr->GetNode().IsValid());
     EXPECT_STREQ("A_3", curr->GetNode()->GetLabel().c_str());
     ASSERT_EQ(0, curr->GetChildren().size());
-    
+
     // 2nd branch
     curr = &paths[1];
     EXPECT_EQ(1, curr->GetIndex());
@@ -418,28 +427,28 @@ TEST_F(RulesDrivenECPresentationManagerStubbedImplTests, GetNodePaths_Multiple_R
     m_impl->SetHierarchy(hierarchy);
 
     // create the key paths
-    bvector<ECInstanceKey> keysPath1 = 
+    bvector<ECInstanceKey> keysPath1 =
         {
-        node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), 
-        node1_2->GetKey()->AsECInstanceNodeKey()->GetInstanceKey()
+        GetFirstInstanceKey(*node1->GetKey()->AsECInstanceNodeKey()),
+        GetFirstInstanceKey(*node1_2->GetKey()->AsECInstanceNodeKey())
         };
-    bvector<ECInstanceKey> keysPath2 = 
+    bvector<ECInstanceKey> keysPath2 =
         {
-        node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), 
-        node1_2->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), 
-        node1_3->GetKey()->AsECInstanceNodeKey()->GetInstanceKey()
+        GetFirstInstanceKey(*node1->GetKey()->AsECInstanceNodeKey()),
+        GetFirstInstanceKey(*node1_2->GetKey()->AsECInstanceNodeKey()),
+        GetFirstInstanceKey(*node1_3->GetKey()->AsECInstanceNodeKey())
         };
-    bvector<ECInstanceKey> keysPath3 = 
+    bvector<ECInstanceKey> keysPath3 =
         {
-        node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), 
-        node2_2->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), 
-        node21_3->GetKey()->AsECInstanceNodeKey()->GetInstanceKey()
+        GetFirstInstanceKey(*node1->GetKey()->AsECInstanceNodeKey()),
+        GetFirstInstanceKey(*node2_2->GetKey()->AsECInstanceNodeKey()),
+        GetFirstInstanceKey(*node21_3->GetKey()->AsECInstanceNodeKey())
         };
-    bvector<ECInstanceKey> keysPath4 = 
+    bvector<ECInstanceKey> keysPath4 =
         {
-        node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), 
-        node2_2->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), 
-        node22_3->GetKey()->AsECInstanceNodeKey()->GetInstanceKey()
+        GetFirstInstanceKey(*node1->GetKey()->AsECInstanceNodeKey()),
+        GetFirstInstanceKey(*node2_2->GetKey()->AsECInstanceNodeKey()),
+        GetFirstInstanceKey(*node22_3->GetKey()->AsECInstanceNodeKey())
         };
     bvector<bvector<ECInstanceKey>> keysPaths = {keysPath1, keysPath2, keysPath3, keysPath4};
 
@@ -447,7 +456,7 @@ TEST_F(RulesDrivenECPresentationManagerStubbedImplTests, GetNodePaths_Multiple_R
     bvector<NodesPathElement> paths = m_manager->GetNodePaths(GetECDb(), keysPaths, -1).get();
     ASSERT_EQ(1, paths.size());
 
-    NodesPathElement const* curr = &paths[0];    
+    NodesPathElement const* curr = &paths[0];
     EXPECT_EQ(1, curr->GetIndex());
     ASSERT_TRUE(curr->GetNode().IsValid());
     EXPECT_STREQ("B", curr->GetNode()->GetLabel().c_str());
@@ -464,7 +473,7 @@ TEST_F(RulesDrivenECPresentationManagerStubbedImplTests, GetNodePaths_Multiple_R
     ASSERT_TRUE(curr1->GetNode().IsValid());
     EXPECT_STREQ("B_1_1", curr1->GetNode()->GetLabel().c_str());
     ASSERT_EQ(0, curr1->GetChildren().size());
-    
+
     NodesPathElement const* curr2 = &curr->GetChildren()[1];
     EXPECT_EQ(2, curr2->GetIndex());
     ASSERT_TRUE(curr2->GetNode().IsValid());
@@ -476,7 +485,7 @@ TEST_F(RulesDrivenECPresentationManagerStubbedImplTests, GetNodePaths_Multiple_R
     ASSERT_TRUE(curr21->GetNode().IsValid());
     EXPECT_STREQ("B_3_2", curr21->GetNode()->GetLabel().c_str());
     ASSERT_EQ(0, curr21->GetChildren().size());
-    
+
     NodesPathElement const* curr22 = &curr2->GetChildren()[1];
     EXPECT_EQ(0, curr22->GetIndex());
     ASSERT_TRUE(curr22->GetNode().IsValid());
@@ -509,28 +518,28 @@ TEST_F(RulesDrivenECPresentationManagerStubbedImplTests, GetNodePaths_Multiple_M
     m_impl->SetHierarchy(hierarchy);
 
     // create the key paths
-    bvector<ECInstanceKey> keysPath1 = 
+    bvector<ECInstanceKey> keysPath1 =
         {
-        node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), 
-        node1_2->GetKey()->AsECInstanceNodeKey()->GetInstanceKey()
+        GetFirstInstanceKey(*node1->GetKey()->AsECInstanceNodeKey()),
+        GetFirstInstanceKey(*node1_2->GetKey()->AsECInstanceNodeKey())
         };
-    bvector<ECInstanceKey> keysPath2 = 
+    bvector<ECInstanceKey> keysPath2 =
         {
-        node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), 
-        node1_2->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), 
-        node1_3->GetKey()->AsECInstanceNodeKey()->GetInstanceKey()
+        GetFirstInstanceKey(*node1->GetKey()->AsECInstanceNodeKey()),
+        GetFirstInstanceKey(*node1_2->GetKey()->AsECInstanceNodeKey()),
+        GetFirstInstanceKey(*node1_3->GetKey()->AsECInstanceNodeKey())
         };
-    bvector<ECInstanceKey> keysPath3 = 
+    bvector<ECInstanceKey> keysPath3 =
         {
-        node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), 
-        node2_2->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), 
-        node21_3->GetKey()->AsECInstanceNodeKey()->GetInstanceKey()
+        GetFirstInstanceKey(*node1->GetKey()->AsECInstanceNodeKey()),
+        GetFirstInstanceKey(*node2_2->GetKey()->AsECInstanceNodeKey()),
+        GetFirstInstanceKey(*node21_3->GetKey()->AsECInstanceNodeKey())
         };
-    bvector<ECInstanceKey> keysPath4 = 
+    bvector<ECInstanceKey> keysPath4 =
         {
-        node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), 
-        node2_2->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), 
-        node22_3->GetKey()->AsECInstanceNodeKey()->GetInstanceKey()
+        GetFirstInstanceKey(*node1->GetKey()->AsECInstanceNodeKey()),
+        GetFirstInstanceKey(*node2_2->GetKey()->AsECInstanceNodeKey()),
+        GetFirstInstanceKey(*node22_3->GetKey()->AsECInstanceNodeKey())
         };
     bvector<bvector<ECInstanceKey>> keysPaths = {keysPath1, keysPath2, keysPath3, keysPath4};
 
@@ -576,14 +585,14 @@ TEST_F(RulesDrivenECPresentationManagerStubbedImplTests, GetNodePaths_Multiple_M
     // create the key paths
     bvector<ECInstanceKey> keysPath1 =
         {
-        node->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(),
-        node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey()
+        GetFirstInstanceKey(*node->GetKey()->AsECInstanceNodeKey()),
+        GetFirstInstanceKey(*node1->GetKey()->AsECInstanceNodeKey())
         };
     bvector<ECInstanceKey> keysPath2 =
         {
-        node->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(),
-        node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(),
-        node1_1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey()
+        GetFirstInstanceKey(*node->GetKey()->AsECInstanceNodeKey()),
+        GetFirstInstanceKey(*node1->GetKey()->AsECInstanceNodeKey()),
+        GetFirstInstanceKey(*node1_1->GetKey()->AsECInstanceNodeKey())
         };
 
     bvector<bvector<ECInstanceKey>> keysPaths = {keysPath1, keysPath2};
@@ -629,14 +638,14 @@ TEST_F(RulesDrivenECPresentationManagerStubbedImplTests, GetNodePaths_Multiple_M
     // create the key paths
     bvector<ECInstanceKey> keysPath1 =
         {
-        node->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(),
-        node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(),
-        node1_1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey()
+        GetFirstInstanceKey(*node->GetKey()->AsECInstanceNodeKey()),
+        GetFirstInstanceKey(*node1->GetKey()->AsECInstanceNodeKey()),
+        GetFirstInstanceKey(*node1_1->GetKey()->AsECInstanceNodeKey())
         };
     bvector<ECInstanceKey> keysPath2 =
         {
-        node->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(),
-        node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(),
+        GetFirstInstanceKey(*node->GetKey()->AsECInstanceNodeKey()),
+        GetFirstInstanceKey(*node1->GetKey()->AsECInstanceNodeKey()),
         };
 
     bvector<bvector<ECInstanceKey>> keysPaths = {keysPath1, keysPath2};
@@ -697,7 +706,7 @@ TEST_F(RulesDrivenECPresentationManagerStubbedImplTests, GetFilteredNodesPaths)
     hierarchy[node6].push_back(CreateTreeNode(7, node6, "match"));
     hierarchy[node6].push_back(CreateTreeNode(8, node6));
     m_impl->SetHierarchy(hierarchy);
-    
+
     bvector<NodesPathElement> paths = m_manager->GetFilteredNodePaths(GetECDb(), "match", Json::Value()).get();
 
     /* Validate path hierarchy
@@ -742,7 +751,7 @@ TEST_F(RulesDrivenECPresentationManagerStubbedImplTests, GetFilteredNodesPaths_C
     hierarchy[root].push_back(CreateTreeNode(2, root, "Match"));
     hierarchy[root].push_back(CreateTreeNode(3, root, "match MATCH"));
     m_impl->SetHierarchy(hierarchy);
-    
+
     bvector<NodesPathElement> paths = m_manager->GetFilteredNodePaths(GetECDb(), "match", Json::Value()).get();
 
     EXPECT_EQ(1, paths[0].GetFilteringData().GetOccurances());

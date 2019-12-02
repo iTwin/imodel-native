@@ -48,7 +48,6 @@ private:
     rapidjson::Document* m_usersExtendedData;
     uint64_t m_nodeId;
     uint64_t m_parentNodeId;
-    uint64_t m_instanceId;
     NavNodeKeyCPtr m_nodeKey;
     Utf8String m_label;
     Utf8String m_description;
@@ -81,7 +80,6 @@ protected:
 
     uint64_t _GetNodeId() const override {return m_nodeId;}
     uint64_t _GetParentNodeId() const override {return m_parentNodeId;}
-    uint64_t _GetInstanceId() const override {return m_instanceId;}
     NavNodeKeyCPtr _GetNodeKey() const override {return m_nodeKey;}
     Utf8String _GetLabel() const override {return m_label;}
     Utf8String _GetDescription() const override {return m_description;}
@@ -91,7 +89,8 @@ protected:
     Utf8String _GetBackColor() const override {return m_backColor;}
     Utf8String _GetFontStyle() const override {return m_fontStyle;}
     Utf8String _GetType() const override {return m_type;}
-    bool _HasChildren() const override {return m_hasChildren;}
+    bool _DeterminedChildren() const override {return m_determinedChildren;}
+    bool _HasChildren() const override {BeAssert(m_determinedChildren); return m_hasChildren;}
     bool _IsSelectable() const override {return m_isSelectable;}
     bool _IsEditable() const override {return m_isEditable;}
     bool _IsChecked() const override {return m_isChecked;}
@@ -99,7 +98,6 @@ protected:
     bool _IsCheckboxEnabled() const override {return m_isCheckboxEnabled;}
     bool _IsExpanded() const override {return m_isExpanded;}
 
-    void _SetInstanceId(uint64_t instanceId) override {m_instanceId = instanceId;}
     void _SetLabel(Utf8CP label) override {m_label = label;}
     void _SetType(Utf8CP type) override {m_type = type;}
     void _SetExpandedImageId(Utf8CP imageId) override {m_imageId = imageId;}
@@ -122,11 +120,12 @@ protected:
 public:
     ECPRESENTATION_EXPORT ~JsonNavNode();
     static JsonNavNodePtr Create() {return new JsonNavNode();}
+    JsonNavNodePtr Clone() {return new JsonNavNode(*this);}
 
     ECPRESENTATION_EXPORT rapidjson::Document GetJson() const;
     ECPRESENTATION_EXPORT void InitFromJson(RapidJsonValueCR);
 
-    bool DeterminedChildren() const {return m_determinedChildren;}
+    void ResetHasChildren() {m_determinedChildren = false;}
     void SetImageId(Utf8CP imageId) {SetExpandedImageId(imageId);}
     void AddUsersExtendedData(Utf8CP key, ECValueCR value);
     void SetParentNode(NavNodeCR node) {SetParentNodeId(node.GetNodeId());}
@@ -139,8 +138,7 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE JsonNavNodesFactory : RefCounted<INavNodesFactory>
 {
 protected:
-    virtual NavNodePtr _CreateECInstanceNode(IConnectionCR db, Utf8StringCR locale, ECClassId classId, ECInstanceId instanceId, Utf8CP label) const override {return CreateECInstanceNode(db, locale, classId, instanceId, label);}
-    virtual NavNodePtr _CreateECInstanceNode(Utf8StringCR connectionId, Utf8StringCR locale, IECInstanceCR instance, Utf8CP label) const override {return CreateECInstanceNode(connectionId, locale, instance, label);}
+    virtual NavNodePtr _CreateECInstanceNode(Utf8StringCR connectionId, Utf8StringCR locale, bvector<ECInstanceKey> const& instanceKeys, Utf8CP label) const override {return CreateECInstanceNode(connectionId, locale, instanceKeys, label);}
     virtual NavNodePtr _CreateECClassGroupingNode(Utf8StringCR connectionId, Utf8StringCR locale, ECClassCR ecClass, Utf8CP label, GroupedInstanceKeysListCR groupedInstanceKeys) const override {return CreateECClassGroupingNode(connectionId, locale, ecClass, label, groupedInstanceKeys);}
     virtual NavNodePtr _CreateECRelationshipGroupingNode(Utf8StringCR connectionId, Utf8StringCR locale, ECRelationshipClassCR relationshipClass, Utf8CP label, GroupedInstanceKeysListCR groupedInstanceKeys) const override {return CreateECRelationshipGroupingNode(connectionId, locale, relationshipClass, label, groupedInstanceKeys);}
     virtual NavNodePtr _CreateECPropertyGroupingNode(Utf8StringCR connectionId, Utf8StringCR locale, ECClassCR ecClass, ECPropertyCR ecProperty, Utf8CP label, Utf8CP imageId, RapidJsonValueCR groupingValue, bool isRangeGrouping, GroupedInstanceKeysListCR groupedInstanceKeys) const override {return CreateECPropertyGroupingNode(connectionId, locale, ecClass, ecProperty, label, imageId, groupingValue, isRangeGrouping, groupedInstanceKeys);}
@@ -148,7 +146,8 @@ protected:
     virtual NavNodePtr _CreateCustomNode(Utf8StringCR connectionId, Utf8StringCR locale, Utf8CP label, Utf8CP description, Utf8CP imageId, Utf8CP type) const override {return CreateCustomNode(connectionId, locale, label, description, imageId, type);}
 
 public:
-    ECPRESENTATION_EXPORT void InitECInstanceNode(JsonNavNodeR, IConnectionCR, Utf8StringCR, ECClassId, ECInstanceId, Utf8CP label) const;
+    ECPRESENTATION_EXPORT void InitECInstanceNode(JsonNavNodeR, Utf8StringCR, Utf8StringCR, bvector<ECInstanceKey> const&, Utf8CP label) const;
+    ECPRESENTATION_EXPORT void InitECInstanceNode(JsonNavNodeR, Utf8StringCR, Utf8StringCR, ECClassId, ECInstanceId, Utf8CP label) const;
     ECPRESENTATION_EXPORT void InitECInstanceNode(JsonNavNodeR, Utf8StringCR, Utf8StringCR, IECInstanceCR, Utf8CP label) const;
     ECPRESENTATION_EXPORT void InitECClassGroupingNode(JsonNavNodeR, Utf8StringCR, Utf8StringCR, ECClassCR, Utf8CP label, GroupedInstanceKeysListCR) const;
     ECPRESENTATION_EXPORT void InitECRelationshipGroupingNode(JsonNavNodeR, Utf8StringCR, Utf8StringCR, ECRelationshipClassCR, Utf8CP label, GroupedInstanceKeysListCR) const;
@@ -157,7 +156,9 @@ public:
     ECPRESENTATION_EXPORT void InitCustomNode(JsonNavNodeR, Utf8StringCR, Utf8StringCR, Utf8CP label, Utf8CP description, Utf8CP imageId, Utf8CP type) const;
     ECPRESENTATION_EXPORT void InitFromJson(JsonNavNodeR, IConnectionCR, RapidJsonValueCR) const;
 
-    ECPRESENTATION_EXPORT JsonNavNodePtr CreateECInstanceNode(IConnectionCR, Utf8StringCR, ECClassId, ECInstanceId, Utf8CP label) const;
+    ECPRESENTATION_EXPORT JsonNavNodePtr CreateECInstanceNode(Utf8StringCR, Utf8StringCR, bvector<ECClassInstanceKey> const&, Utf8CP label) const;
+    ECPRESENTATION_EXPORT JsonNavNodePtr CreateECInstanceNode(Utf8StringCR, Utf8StringCR, bvector<ECInstanceKey> const&, Utf8CP label) const;
+    ECPRESENTATION_EXPORT JsonNavNodePtr CreateECInstanceNode(Utf8StringCR, Utf8StringCR, ECClassId, ECInstanceId, Utf8CP label) const;
     ECPRESENTATION_EXPORT JsonNavNodePtr CreateECInstanceNode(Utf8StringCR, Utf8StringCR, IECInstanceCR, Utf8CP label) const;
     ECPRESENTATION_EXPORT JsonNavNodePtr CreateECClassGroupingNode(Utf8StringCR, Utf8StringCR, ECClassCR, Utf8CP label, GroupedInstanceKeysListCR) const;
     ECPRESENTATION_EXPORT JsonNavNodePtr CreateECRelationshipGroupingNode(Utf8StringCR, Utf8StringCR, ECRelationshipClassCR, Utf8CP label, GroupedInstanceKeysListCR) const;
@@ -181,9 +182,11 @@ public:
     ECPRESENTATION_EXPORT static bvector<JsonChange> GetChanges(JsonNavNode const& oldNode, JsonNavNode const& newNode);
     static bool IsGroupingNode(NavNodeCR);
     static bool IsCustomNode(NavNodeCR node);
-    ECPRESENTATION_EXPORT static NavNodeKeyPtr CreateNodeKey(IConnectionCR, JsonNavNodeCR node, bvector<Utf8String> const& path);
-    ECPRESENTATION_EXPORT static NavNodeKeyPtr CreateNodeKey(IConnectionCR, JsonNavNodeCR node, Utf8CP pathFromRootString);
+    ECPRESENTATION_EXPORT static NavNodeKeyPtr CreateNodeKey(IConnectionCR, JsonNavNodeCR node, bvector<Utf8String> const& path, bool isFake);
     ECPRESENTATION_EXPORT static NavNodeKeyPtr CreateNodeKey(IConnectionCR, JsonNavNodeCR node, NavNodeKeyCP parentNodeKey);
+    ECPRESENTATION_EXPORT static NavNodeKeyPtr CreateFakeNodeKey(IConnectionCR, JsonNavNodeCR node);
+    static Utf8String NodeKeyHashPathToString(NavNodeKeyCR key);
+    static bvector<Utf8String> NodeKeyHashPathFromString(Utf8CP str);
 };
 
 

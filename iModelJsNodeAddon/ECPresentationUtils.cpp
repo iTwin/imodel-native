@@ -536,8 +536,8 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
         navNodeKeyBaseJson.AddMember("type", rapidjson::Value(navNodeKey.GetType().c_str(), navNodeKeyBaseJson.GetAllocator()), navNodeKeyBaseJson.GetAllocator());
 
         rapidjson::Value pathJson(rapidjson::kArrayType);
-        for (Utf8StringCR pathElement : navNodeKey.GetPathFromRoot())
-            pathJson.PushBack(rapidjson::Value(pathElement.c_str(), navNodeKeyBaseJson.GetAllocator()), navNodeKeyBaseJson.GetAllocator());
+        for (Utf8StringCR partialHash : navNodeKey.GetHashPath())
+            pathJson.PushBack(rapidjson::Value(partialHash.c_str(), navNodeKeyBaseJson.GetAllocator()), navNodeKeyBaseJson.GetAllocator());
 
         navNodeKeyBaseJson.AddMember("pathFromRoot", pathJson, navNodeKeyBaseJson.GetAllocator());
         }
@@ -580,7 +580,9 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
             BeAssert(false);
             return nullptr;
             }
-        if (0 == strcmp(NAVNODE_TYPE_ECInstanceNode, type))
+        if (0 == strcmp("ECInstanceNode", type)) // @deprecated
+            return _GetECInstanceNodeKeyFromJson(connection, json);
+        if (0 == strcmp(NAVNODE_TYPE_ECInstancesNode, type))
             return _GetECInstanceNodeKeyFromJson(connection, json);
         if (0 == strcmp(NAVNODE_TYPE_ECClassGroupingNode, type))
             return _GetECClassGroupingNodeKeyFromJson(connection, json);
@@ -607,7 +609,9 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
             BeAssert(false);
             return nullptr;
             }
-        if (0 == strcmp(NAVNODE_TYPE_ECInstanceNode, type))
+        if (0 == strcmp("ECInstanceNode", type)) // @deprecated
+            return _GetECInstanceNodeKeyFromJson(connection, json);
+        if (0 == strcmp(NAVNODE_TYPE_ECInstancesNode, type))
             return _GetECInstanceNodeKeyFromJson(connection, json);
         if (0 == strcmp(NAVNODE_TYPE_ECClassGroupingNode, type))
             return _GetECClassGroupingNodeKeyFromJson(connection, json);
@@ -639,31 +643,52 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                04/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void _AsJson(ECInstanceNodeKey const& ecInstanceNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const override
+    void _AsJson(ECInstancesNodeKey const& ecInstanceNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const override
         {
-        navNodeKeyBaseJson.AddMember("instanceKey", _AsJson(ecInstanceNodeKey.GetClassInstanceKey(), &navNodeKeyBaseJson.GetAllocator()), navNodeKeyBaseJson.GetAllocator());
+        rapidjson::Value instanceKeysJson(rapidjson::kArrayType);
+        for (ECClassInstanceKeyCR instanceKey : ecInstanceNodeKey.GetInstanceKeys())
+            instanceKeysJson.PushBack(_AsJson(instanceKey, &navNodeKeyBaseJson.GetAllocator()), navNodeKeyBaseJson.GetAllocator());
+        navNodeKeyBaseJson.AddMember("instanceKeys", instanceKeysJson, navNodeKeyBaseJson.GetAllocator());
         }
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                04/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
-    ECInstanceNodeKeyPtr _GetECInstanceNodeKeyFromJson(IConnectionCR connection, JsonValueCR json) const override
+    ECInstancesNodeKeyPtr _GetECInstanceNodeKeyFromJson(IConnectionCR connection, JsonValueCR json) const override
         {
-        Utf8CP className = json["instanceKey"]["className"].asCString();
-        ECClassCP ecClass = GetClassFromFullName(connection, className);
-        ECInstanceId instanceId(ECInstanceId::FromString(json["instanceKey"]["id"].asCString()));
-        return ECInstanceNodeKey::Create(ECClassInstanceKey(ecClass, instanceId), ParseNodeKeyHashPath(json["pathFromRoot"]));
+        bvector<ECClassInstanceKey> instanceKeys;
+        if (json.isMember("instanceKeys") && json["instanceKeys"].isArray())
+            {
+            JsonValueCR instanceKeysJson = json["instanceKeys"];
+            for (Json::ArrayIndex i = 0; i < instanceKeysJson.size(); ++i)
+                {
+                Utf8CP className = instanceKeysJson[i]["className"].asCString();
+                ECClassCP ecClass = GetClassFromFullName(connection, className);
+                ECInstanceId instanceId(ECInstanceId::FromString(instanceKeysJson[i]["id"].asCString()));
+                instanceKeys.push_back(ECClassInstanceKey(ecClass, instanceId));
+                }
+            }
+        return ECInstancesNodeKey::Create(instanceKeys, ParseNodeKeyHashPath(json["pathFromRoot"]));
         }
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                04/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
-    ECInstanceNodeKeyPtr _GetECInstanceNodeKeyFromJson(IConnectionCR connection, RapidJsonValueCR json) const override
+    ECInstancesNodeKeyPtr _GetECInstanceNodeKeyFromJson(IConnectionCR connection, RapidJsonValueCR json) const override
         {
-        Utf8CP className = json["instanceKey"]["className"].GetString();
-        ECClassCP ecClass = GetClassFromFullName(connection, className);
-        ECInstanceId instanceId(ECInstanceId::FromString(json["instanceKey"]["id"].GetString()));
-        return ECInstanceNodeKey::Create(ECClassInstanceKey(ecClass, instanceId), ParseNodeKeyHashPath(json["pathFromRoot"]));
+        bvector<ECClassInstanceKey> instanceKeys;
+        if (json.HasMember("instanceKeys") && json["instanceKeys"].IsArray())
+            {
+            RapidJsonValueCR instanceKeysJson = json["instanceKeys"];
+            for (rapidjson::SizeType i = 0; i < instanceKeysJson.Size(); ++i)
+                {
+                Utf8CP className = instanceKeysJson[i]["className"].GetString();
+                ECClassCP ecClass = GetClassFromFullName(connection, className);
+                ECInstanceId instanceId(ECInstanceId::FromString(instanceKeysJson[i]["id"].GetString()));
+                instanceKeys.push_back(ECClassInstanceKey(ecClass, instanceId));
+                }
+            }
+        return ECInstancesNodeKey::Create(instanceKeys, ParseNodeKeyHashPath(json["pathFromRoot"]));
         }
 
     /*---------------------------------------------------------------------------------**//**

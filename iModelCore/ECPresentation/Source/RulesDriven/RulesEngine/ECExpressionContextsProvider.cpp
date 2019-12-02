@@ -166,13 +166,15 @@ public:
         }
     ExpressionContextPtr _GetContext() override
         {
-        ECInstanceNodeKey const* key = m_node->GetKey()->AsECInstanceNodeKey();
-        if (nullptr == key)
+        ECInstancesNodeKey const* key = m_node->GetKey()->AsECInstanceNodeKey();
+        if (nullptr == key || key->GetInstanceKeys().empty())
             return nullptr;
 
+        // TODO: returning first instance key - what if node groups multiple instances???
+        ECInstanceKey instanceKey(key->GetInstanceKeys().front().GetClass()->GetId(), key->GetInstanceKeys().front().GetId());
         InstanceExpressionContextPtr instanceContext = InstanceExpressionContext::Create(nullptr);
         IECInstancePtr instance;
-        ECInstancesHelper::LoadInstance(instance, m_connection, key->GetInstanceKey());
+        ECInstancesHelper::LoadInstance(instance, m_connection, instanceKey);
         if (instance.IsValid())
             instanceContext->SetInstance(*instance);
 
@@ -270,8 +272,8 @@ struct NodeSymbolsProvider : IECSymbolProvider
         {
         IConnectionCR m_connection;
         NavNodeCPtr m_node;
-        Context(IConnectionCR connection, NavNodeCP node) 
-            : m_connection(connection), m_node(node) 
+        Context(IConnectionCR connection, NavNodeCP node)
+            : m_connection(connection), m_node(node)
             {}
         };
 
@@ -352,9 +354,6 @@ protected:
             context.AddSymbol(*ValueSymbol::Create("IsInstanceNode", ECValue(false)));
             context.AddSymbol(*ValueSymbol::Create("IsClassNode", ECValue(false)));
             context.AddSymbol(*ValueSymbol::Create("IsRelationshipClassNode", ECValue(false)));
-            context.AddSymbol(*ValueSymbol::Create("ParentClassName", ECValue("", false)));
-            context.AddSymbol(*ValueSymbol::Create("ParentSchemaName", ECValue("", false)));
-            context.AddSymbol(*ValueSymbol::Create("RelationshipDirection", ECValue("", false)));
             context.AddSymbol(*ValueSymbol::Create("IsSchemaNode", ECValue(false)));
             context.AddSymbol(*ValueSymbol::Create("IsSearchNode", ECValue(false)));
             context.AddSymbol(*ValueSymbol::Create("IsClassGroupingNode", ECValue(false)));
@@ -387,31 +386,15 @@ protected:
             context.AddSymbol(*ValueSymbol::Create("IsSearchNode", ECValue(false)));
             context.AddSymbol(*ValueSymbol::Create("IsClassGroupingNode", ECValue(node.GetType().Equals(NAVNODE_TYPE_ECClassGroupingNode))));
             context.AddSymbol(*ValueSymbol::Create("IsPropertyGroupingNode", ECValue(node.GetType().Equals(NAVNODE_TYPE_ECPropertyGroupingNode) || node.GetType().Equals(NAVNODE_TYPE_DisplayLabelGroupingNode))));
-            context.AddSymbol(*ValueSymbol::Create("GroupedInstancesCount", ECValue((uint64_t)nodeExtendedData.GetGroupedInstanceKeysCount())));
-            context.AddSymbol(*ValueSymbol::Create("HasChildren", ECValue(node.HasChildren())));
+            context.AddSymbol(*ValueSymbol::Create("GroupedInstancesCount", ECValue((uint64_t)nodeExtendedData.GetInstanceKeysCount())));
+            context.AddSymbol(*ValueSymbol::Create("HasChildren", ECValue(node.DeterminedChildren() && node.HasChildren())));
             context.AddSymbol(*ContextSymbol::CreateContextSymbol("ChildrenArtifacts", *new ChildrenArtifactsExpressionContext(nodeExtendedData.GetChildrenArtifacts())));
 
-            if (node.GetType().Equals(NAVNODE_TYPE_ECRelationshipGroupingNode))
+            if (node.GetType().Equals(NAVNODE_TYPE_ECInstancesNode))
                 {
-                BeAssert(nodeExtendedData.HasParentECClassId() && nodeExtendedData.HasRelationshipDirection());
-
-                Utf8String relationshipDirection;
-                switch (nodeExtendedData.GetRelationshipDirection())
-                    {
-                    case ECRelatedInstanceDirection::Backward: relationshipDirection = "Backward"; break;
-                    case ECRelatedInstanceDirection::Forward:  relationshipDirection = "Forward"; break;
-                    }
-
-                ECClassCP parentClass = m_context.m_connection.GetECDb().Schemas().GetClass(nodeExtendedData.GetParentECClassId());
-                context.AddSymbol(*ValueSymbol::Create("ParentClassName", ECValue(parentClass->GetName().c_str(), false)));
-                context.AddSymbol(*ValueSymbol::Create("ParentSchemaName", ECValue(parentClass->GetSchema().GetName().c_str(), false)));
-                context.AddSymbol(*ValueSymbol::Create("RelationshipDirection", ECValue(relationshipDirection.c_str(), true)));
-                }
-
-            if (node.GetType().Equals(NAVNODE_TYPE_ECInstanceNode))
-                {
-                BeAssert(nullptr != node.GetKey()->AsECInstanceNodeKey());
-                ECClassInstanceKeyCR key = node.GetKey()->AsECInstanceNodeKey()->GetClassInstanceKey();
+                BeAssert(nullptr != node.GetKey()->AsECInstanceNodeKey() && !node.GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().empty());
+                // TODO: returning first instance key - what if node groups multiple instances???
+                ECClassInstanceKeyCR key = node.GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().front();
                 context.AddSymbol(*ValueSymbol::Create("InstanceId", ECValue(key.GetId().GetValueUnchecked())));
                 context.AddSymbol(*ValueSymbol::Create("BriefcaseId", ECValue(CommonTools::ToBase36String(CommonTools::GetBriefcaseId(key.GetId())).c_str(), false)));
                 context.AddSymbol(*ValueSymbol::Create("LocalId", ECValue(CommonTools::ToBase36String(CommonTools::GetLocalId(key.GetId())).c_str(), false)));
@@ -465,9 +448,9 @@ public:
         JsonNavNodeCPtr node = (nullptr != m_key && nullptr != m_locater) ? m_locater->LocateNode(m_connection, m_locale, *m_key) : nullptr;
         if (node.IsNull() && nullptr != m_key && nullptr != m_key->AsECInstanceNodeKey())
             {
-            ECInstanceNodeKey const* instanceKey = m_key->AsECInstanceNodeKey();
-            JsonNavNodePtr temp = JsonNavNodesFactory().CreateECInstanceNode(m_connection, m_locale, instanceKey->GetECClassId(), instanceKey->GetInstanceId(), "");
-            temp->SetNodeKey(*NavNodesHelper::CreateNodeKey(m_connection, *temp, bvector<Utf8String>()));
+            ECInstancesNodeKey const* instancesNodeKey = m_key->AsECInstanceNodeKey();
+            JsonNavNodePtr temp = JsonNavNodesFactory().CreateECInstanceNode(m_connection.GetId(), m_locale, instancesNodeKey->GetInstanceKeys(), "");
+            temp->SetNodeKey(*instancesNodeKey);
             node = temp;
             }
 
@@ -901,7 +884,7 @@ ExpressionContextPtr ECExpressionContextsProvider::GetCustomizationRulesContext(
     rootCtx->GetSymbolsContext().AddSymbol(*ContextSymbol::CreateContextSymbol("ThisNode", *thisNodeCtx));
 
     // this
-    if (params.GetNode().GetType().Equals(NAVNODE_TYPE_ECInstanceNode))
+    if (params.GetNode().GetType().Equals(NAVNODE_TYPE_ECInstancesNode))
         rootCtx->GetSymbolsContext().AddSymbol(*PropertySymbol::Create("this", *NodeECInstanceContextEvaluator::Create(params.GetConnection(), params.GetNode())));
     else
         rootCtx->GetSymbolsContext().AddSymbol(*ValueSymbol::Create("this", ECValue()));
@@ -1989,27 +1972,27 @@ bvector<Utf8String> const* ECExpressionsCache::GetUsedClasses(Utf8CP expression)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECExpressionsCache::HasOptimizedExpression(Utf8CP expression) const 
+bool ECExpressionsCache::HasOptimizedExpression(Utf8CP expression) const
     {
-    BeMutexHolder lock(m_mutex); 
+    BeMutexHolder lock(m_mutex);
     return m_optimizedCache.end() != m_optimizedCache.find(expression);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECExpressionsCache::Add(Utf8CP expression, NodePtr node) 
+void ECExpressionsCache::Add(Utf8CP expression, NodePtr node)
     {
-    BeMutexHolder lock(m_mutex); 
+    BeMutexHolder lock(m_mutex);
     m_cache.Insert(expression, node);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECExpressionsCache::Add(Utf8CP expression, OptimizedExpressionPtr node) 
+void ECExpressionsCache::Add(Utf8CP expression, OptimizedExpressionPtr node)
     {
-    BeMutexHolder lock(m_mutex); 
+    BeMutexHolder lock(m_mutex);
     m_optimizedCache.Insert(expression, node);
     }
 
@@ -2018,7 +2001,7 @@ void ECExpressionsCache::Add(Utf8CP expression, OptimizedExpressionPtr node)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<Utf8String> const& ECExpressionsCache::Add(Utf8CP expression, bvector<Utf8String>& classes)
     {
-    BeMutexHolder lock(m_mutex); 
+    BeMutexHolder lock(m_mutex);
     return m_usedClasses.Insert(expression, classes).first->second;
     }
 
@@ -2027,7 +2010,7 @@ bvector<Utf8String> const& ECExpressionsCache::Add(Utf8CP expression, bvector<Ut
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECExpressionsCache::Clear()
     {
-    BeMutexHolder lock(m_mutex); 
+    BeMutexHolder lock(m_mutex);
     m_cache.clear();
     m_optimizedCache.clear();
     }

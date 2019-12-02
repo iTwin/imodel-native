@@ -167,20 +167,24 @@ bool NavNodeCustomizer::ApplyCheckboxRules()
     bool isReadOnly = false;
     if (!rule->GetPropertyName().empty() && nullptr != m_node.GetKey()->AsECInstanceNodeKey())
         {
-        ECClassCP boundPropertyClass = m_context.GetConnection().GetECDb().Schemas().GetClass(m_node.GetKey()->AsECInstanceNodeKey()->GetECClassId());
-        if (nullptr == boundPropertyClass || !boundPropertyClass->IsEntityClass())
+        ECClassInstanceKeyCP instanceKeyP = nullptr;
+        ECPropertyCP boundProperty = nullptr;
+        for (ECClassInstanceKeyCR instanceKey : m_node.GetKey()->AsECInstanceNodeKey()->GetInstanceKeys())
+            {
+            instanceKeyP = &instanceKey;
+            ECPropertyCP prop = instanceKey.GetClass()->GetPropertyP(rule->GetPropertyName().c_str());
+            if (nullptr != prop && prop->GetIsPrimitive())
+                {
+                boundProperty = prop;
+                break;
+                }
+            }
+        if (nullptr == boundProperty)
             {
             BeAssert(false);
             return false;
             }
-        ECPropertyCP boundProperty = boundPropertyClass->GetPropertyP(rule->GetPropertyName().c_str());
-        if (nullptr == boundProperty || !boundProperty->GetIsPrimitive())
-            {
-            BeAssert(false);
-            return false;
-            }
-        ECValue boundValue = ECInstancesHelper::GetValue(m_context.GetConnection(),
-            *boundPropertyClass, m_node.GetKey()->AsECInstanceNodeKey()->GetInstanceId(), *boundProperty);
+        ECValue boundValue = ECInstancesHelper::GetValue(m_context.GetConnection(), *instanceKeyP->GetClass(), instanceKeyP->GetId(), *boundProperty);
         if (!boundValue.IsBoolean())
             {
             BeAssert(false);
@@ -353,10 +357,9 @@ void CustomizationHelper::Customize(ContentProviderContextCR context, ContentDes
 
     ECClassInstanceKeyCR itemKey = item.GetKeys().front();
     Utf8String locale = context.IsLocalizationContext() ? context.GetLocale() : "";
-    JsonNavNodePtr node = context.GetNodesFactory().CreateECInstanceNode(context.GetConnection(), locale, itemKey.GetClass()->GetId(), itemKey.GetId(), "");
+    JsonNavNodePtr node = context.GetNodesFactory().CreateECInstanceNode(context.GetConnection().GetId(), locale, itemKey.GetClass()->GetId(), itemKey.GetId(), "");
     NavNodeExtendedData(*node).SetRelatedInstanceKeys(extendedData.GetRelatedInstanceKeys());
-    // create temporary key
-    node->SetNodeKey(*NavNodesHelper::CreateNodeKey(context.GetConnection(), *node, bvector<Utf8String>()));
+    node->SetNodeKey(*NavNodesHelper::CreateFakeNodeKey(context.GetConnection(), *node));
     ContentSetItemPropertiesSetter setter(item);
     NavNodeCustomizer customizer(context, *node, nullptr, setter);
     if (descriptor.ShowImages())

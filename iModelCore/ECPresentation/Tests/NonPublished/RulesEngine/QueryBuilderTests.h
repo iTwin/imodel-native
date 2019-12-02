@@ -41,7 +41,9 @@ struct NavigationQueryBuilderTests : ECPresentationTest
     void TearDown() override;
 
     NavigationQueryBuilder& GetBuilder() {return *m_builder;}
+    ECSchemaCP GetECSchema();
     ECClassCP GetECClass(Utf8CP schemaName, Utf8CP className);
+    ECClassCP GetECClass(Utf8CP className);
     bvector<ECClassCP> GetECClasses(Utf8CP schemaName);
     };
 

@@ -82,7 +82,7 @@ TEST_F(QueryBasedNodesProviderTests, AbortsInitializationWhenCanceled)
         {
         cachedDataSource = &ds;
         });
-    m_nodesCache.SetCacheNodeHandler([&](JsonNavNodeR, bool)
+    m_nodesCache.SetCacheNodeHandler([&](JsonNavNodeR, NodeVisibility)
         {
         nodesCached++;
         });

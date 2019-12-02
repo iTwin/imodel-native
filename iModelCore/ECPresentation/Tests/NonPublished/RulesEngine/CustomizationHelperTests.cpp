@@ -73,7 +73,7 @@ struct CustomizationHelperTests : ECPresentationTest
     JsonNavNodePtr CreateNode(Utf8CP label, Utf8CP description, Utf8CP imageId, Utf8CP type)
         {
         JsonNavNodePtr node = m_nodesFactory.CreateCustomNode(m_connection->GetId(), label, description, imageId, type);
-        node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*m_connection, *node, bvector<Utf8String>()));
+        node->SetNodeKey(*NavNodesHelper::CreateFakeNodeKey(*m_connection, *node));
         return node;
         }
 };

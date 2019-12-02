@@ -108,8 +108,8 @@ private:
     +---------------+---------------+---------------+---------------+---------------+------*/
     void ProcessLabelOverrides(Utf8StringR label, ECClassId const& classId, ECInstanceId const& instanceId, Utf8CP relatedInstanceInfo) const
         {
-        JsonNavNodePtr thisNode = GetContext().GetNodesFactory().CreateECInstanceNode(GetContext().GetConnection(), GetContext().GetLocale(), classId, instanceId, "");
-        thisNode->SetNodeKey(*NavNodesHelper::CreateNodeKey(GetContext().GetConnection(), *thisNode, bvector<Utf8String>()));
+        JsonNavNodePtr thisNode = GetContext().GetNodesFactory().CreateECInstanceNode(GetContext().GetConnection().GetId(), GetContext().GetLocale(), classId, instanceId, "");
+        thisNode->SetNodeKey(*NavNodesHelper::CreateFakeNodeKey(GetContext().GetConnection(), *thisNode));
         NavNodesHelper::AddRelatedInstanceInfo(*thisNode, relatedInstanceInfo);
 
         // look for label override
@@ -274,7 +274,7 @@ struct GetECClassDisplayLabelScalar : CachingScalarFunction<bmap<ECClassId, Utf8
                 thisNode = GetContext().GetNodesFactory().CreateECClassGroupingNode(GetContext().GetConnection().GetId(), GetContext().GetLocale(), *ecClass, "", groupedInstanceKeys);
 
             // create temporary key
-            thisNode->SetNodeKey(*NavNodesHelper::CreateNodeKey(GetContext().GetConnection(), *thisNode, bvector<Utf8String>()));
+            thisNode->SetNodeKey(*NavNodesHelper::CreateFakeNodeKey(GetContext().GetConnection(), *thisNode));
 
             RulesPreprocessor preprocessor(GetContext().GetConnections(), GetContext().GetConnection(), GetContext().GetRuleset(), GetContext().GetLocale(),
                 GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener(), GetContext().GetECExpressionsCache());
@@ -350,9 +350,8 @@ struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScala
         auto iter = GetCache().find(key);
         if (GetCache().end() == iter)
             {
-            JsonNavNodePtr thisNode = GetContext().GetNodesFactory().CreateECInstanceNode(GetContext().GetConnection(), GetContext().GetLocale(), classId, instanceId, "");
-            // create temporary key
-            thisNode->SetNodeKey(*NavNodesHelper::CreateNodeKey(GetContext().GetConnection(), *thisNode, bvector<Utf8String>()));
+            JsonNavNodePtr thisNode = GetContext().GetNodesFactory().CreateECInstanceNode(GetContext().GetConnection().GetId(), GetContext().GetLocale(), classId, instanceId, "");
+            thisNode->SetNodeKey(*NavNodesHelper::CreateFakeNodeKey(GetContext().GetConnection(), *thisNode));
             ECExpressionContextsProvider::CalculatedPropertyContextParameters params(*thisNode, GetContext().GetConnection(),
                 GetContext().GetLocale(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener());
             ExpressionContextPtr expressionContext = ECExpressionContextsProvider::GetCalculatedPropertyContext(params);
@@ -471,8 +470,7 @@ struct GetECPropertyDisplayLabelScalar : CachingScalarFunction<bmap<ECPropertyDi
             GroupedInstanceKeysList groupedInstanceKeys;
             groupedInstanceKeys.resize(groupedInstancesCount); // note: this creates a list of invalid ECInstanceKeys. but it's okay as we only need it for count
             JsonNavNodePtr thisNode = GetContext().GetNodesFactory().CreateECPropertyGroupingNode(GetContext().GetConnection().GetId(), GetContext().GetLocale(), *ecClass, *ecProperty, "", nullptr, rapidjson::Document(), false, groupedInstanceKeys);
-            // create temporary node key
-            thisNode->SetNodeKey(*NavNodesHelper::CreateNodeKey(GetContext().GetConnection(), *thisNode, bvector<Utf8String>()));
+            thisNode->SetNodeKey(*NavNodesHelper::CreateFakeNodeKey(GetContext().GetConnection(), *thisNode));
             RulesPreprocessor preprocessor(GetContext().GetConnections(), GetContext().GetConnection(), GetContext().GetRuleset(), GetContext().GetLocale(),
                 GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener(), GetContext().GetECExpressionsCache());
             RulesPreprocessor::CustomizationRuleParameters params(*thisNode, GetContext().GetParentNode());

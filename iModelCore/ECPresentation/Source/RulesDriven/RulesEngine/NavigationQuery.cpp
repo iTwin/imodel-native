@@ -168,7 +168,7 @@ FilteredIdsHandler* FilteredIdsHandler::Create(size_t inputSize)
     // choosing when it's worth using virtual set vs bound IDs depends on 2 factors:
     // - rows count in the table we're selecting from (more rows make virtual set more expensive)
     // - bound IDs count (more IDs make binding them individually more expensive)
-    // assuming that selecting from large tables is a common case and large number of 
+    // assuming that selecting from large tables is a common case and large number of
     // bounds IDs - not, we chose the boundary pretty high.
     static const size_t BOUNDARY_VirtualSet = 100;
 
@@ -392,25 +392,25 @@ bool ComplexPresentationQuery<TBase>::HasClause(PresentationQueryClauses clauses
     {
     if (CLAUSE_Select == (CLAUSE_Select & clauses))
         return m_isSelectAll || m_selectContract.IsValid();
-        
+
     if (CLAUSE_From == (CLAUSE_From & clauses))
         return m_nestedQuery.IsValid() || !m_from.empty();
-        
+
     if (CLAUSE_Where == (CLAUSE_Where & clauses))
         return !m_whereClause.empty();
 
     if (CLAUSE_JoinUsing == (CLAUSE_JoinUsing & clauses))
         return !m_joins.empty();
-        
+
     if (CLAUSE_OrderBy == (CLAUSE_OrderBy & clauses))
         return !m_orderByClause.empty();
 
     if (CLAUSE_Limit == (CLAUSE_Limit & clauses))
         return nullptr != m_limit;
-        
+
     if (CLAUSE_GroupBy == (CLAUSE_GroupBy & clauses))
         return m_groupingContract.IsValid() && ContractHasNonAggregateFields(*m_groupingContract);
-    
+
     if (CLAUSE_Having == (CLAUSE_Having & clauses))
         return !m_havingClause.empty();
 
@@ -512,6 +512,23 @@ enum QueryPosition
     };
 
 /*---------------------------------------------------------------------------------**//**
+// @bsimethod                                    Grigas.Petraitis                11/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ShouldSelectWithClause(PresentationQueryContractFieldCR field, PresentationQueryContractCP nestedContract)
+    {
+    if (!nestedContract)
+        return true;
+
+    bvector<PresentationQueryContractFieldCPtr> nestedFields = nestedContract->GetFields();
+    for (PresentationQueryContractFieldCPtr const& nestedField : nestedFields)
+        {
+        if (0 == strcmp(nestedField->GetName(), field.GetName()) && (FieldVisibility::Outer != nestedField->GetVisibility()))
+            return false;
+        }
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename TBase>
@@ -546,7 +563,6 @@ Utf8String ComplexPresentationQuery<TBase>::CreateSelectClause() const
         }
     else
         {
-        bool selectWithClauses = (contract != nestedContract);
         bvector<PresentationQueryContractFieldCPtr> selectFields = contract->GetFields();
         for (PresentationQueryContractFieldCPtr const& field : selectFields)
             {
@@ -559,9 +575,10 @@ Utf8String ComplexPresentationQuery<TBase>::CreateSelectClause() const
             if (FieldVisibility::Outer == field->GetVisibility() && 0 == (QueryPosition::Outer & position))
                 continue;
 
+            bool selectWithClause = ShouldSelectWithClause(*field, nestedContract);
             Utf8String wrappedName = QueryHelpers::Wrap(field->GetName());
             Utf8String selectClauseField;
-            if (m_nestedQuery.IsNull() || nullptr != m_nestedQuery->AsStringQuery() || selectWithClauses || FieldVisibility::Outer == field->GetVisibility())
+            if (selectWithClause)
                 {
                 bool skipNestedClauses = m_nestedQuery.IsValid() && (nullptr == m_nestedQuery->AsStringQuery());
                 SelectField(selectClauseField, field->GetSelectClause(m_selectPrefix.c_str(), skipNestedClauses), wrappedName.c_str(), true);
@@ -573,7 +590,7 @@ Utf8String ComplexPresentationQuery<TBase>::CreateSelectClause() const
             selectClauseFields.push_back(selectClauseField);
             }
         }
-    
+
     Contract const* groupingContract = TBase::GetGroupingContract();
     if (nullptr != groupingContract)
         {
@@ -582,7 +599,7 @@ Utf8String ComplexPresentationQuery<TBase>::CreateSelectClause() const
             {
             if (!field->IsAggregateField())
                 continue;
-            
+
             Utf8String selectClauseField;
             if (m_groupingContract.get() == groupingContract)
                 SelectField(selectClauseField, field->GetSelectClause(m_selectPrefix.c_str(), m_nestedQuery.IsValid()), field->GetName(), true);
@@ -688,7 +705,7 @@ template<typename TBase>
 ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::OrderBy(Utf8CP orderByClause)
     {
     TBase::InvalidateQueryString();
-    m_orderByClause = orderByClause; 
+    m_orderByClause = orderByClause;
     return *this;
     }
 
@@ -730,13 +747,13 @@ Utf8String ComplexPresentationQuery<TBase>::CreateGroupByClause() const
 // @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename TBase>
-ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Having(Utf8CP havingClause, BoundQueryValuesListCR bindings) 
+ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Having(Utf8CP havingClause, BoundQueryValuesListCR bindings)
     {
     TBase::InvalidateQueryString();
     for (BoundQueryValue const* value : m_havingClauseBindings)
         DELETE_AND_CLEAR(value);
     m_havingClauseBindings = bindings;
-    m_havingClause = havingClause; 
+    m_havingClause = havingClause;
     return *this;
     }
 
@@ -795,7 +812,7 @@ static bool ConstraintSupportsClass(ECRelationshipConstraintCR constraint, ECCla
         {
         if (constraintClass->GetName().EqualsI("AnyClass"))
             return true;
-        
+
         if (ECClass::ClassesAreEqualByName(constraintClass, &ecClass))
             return true;
 
@@ -813,9 +830,9 @@ template<typename T>
 static void DetermineJoinClauses(Utf8StringR thisClause, Utf8StringR nextClause, ECClassCR ecClass, bool wasPreviousJoinForward, typename T::JoinUsingClause const& joinClause)
     {
     ECRelationshipConstraintCP constraint;
-    Utf8CP thisClauseECInstanceIdPropertyName, 
-           thisClauseECClassIdPropertyName, 
-           nextClauseECInstanceIdPropertyName, 
+    Utf8CP thisClauseECInstanceIdPropertyName,
+           thisClauseECClassIdPropertyName,
+           nextClauseECInstanceIdPropertyName,
            nextClauseECClassIdPropertyName,
            joinECInstanceIdPropertyName,
            joinECClassIdPropertyName;
@@ -899,7 +916,7 @@ static NavigationECPropertyCP GetNavigationProperty(ECClassCR prev, ECRelationsh
             return prop->GetAsNavigationProperty();
             }
         }
-    
+
     ECPropertyIterable tgtIterable = tgt.GetProperties(true);
     for (ECPropertyCP prop : tgtIterable)
         {
@@ -1037,7 +1054,7 @@ Utf8String ComplexPresentationQuery<TBase>::CreateJoinClause() const
                 wasPreviousJoinForward = usedJoinIter->second.m_wasPreviousJoinForward;
                 continue;
                 }
-                        
+
             joinClause.append(join.m_isOuterJoin ? " LEFT JOIN " : " INNER JOIN ");
 
             if (!join.m_isPolymorphic)
@@ -1087,7 +1104,7 @@ Utf8String ComplexPresentationQuery<TBase>::CreateJoinClause() const
                 previousClass = join.m_using;
                 previousClassName = join.m_usingAlias;
                 }
-            
+
             wasPreviousJoinForward = join.m_isForward;
             usedJoins[join] = JoinInfo(*previousClass, previousClassName, wasPreviousJoinForward);
             first = false;
@@ -1105,7 +1122,7 @@ Utf8String ComplexPresentationQuery<TBase>::GetClause(PresentationQueryClauses c
     {
     if (CLAUSE_Select == (CLAUSE_Select & clause))
         return CreateSelectClause();
-        
+
     if (CLAUSE_From == (CLAUSE_From & clause))
         {
         if (m_nestedQuery.IsValid())
@@ -1116,7 +1133,7 @@ Utf8String ComplexPresentationQuery<TBase>::GetClause(PresentationQueryClauses c
                 clause.append(" ").append(QueryHelpers::Wrap(m_nestedQueryAlias));
             return clause;
             }
-        
+
         Utf8String fromClause;
         bool first = true;
         for (FromClause const& from : m_from)
@@ -1132,13 +1149,13 @@ Utf8String ComplexPresentationQuery<TBase>::GetClause(PresentationQueryClauses c
             }
         return fromClause;
         }
-        
+
     if (CLAUSE_Where == (CLAUSE_Where & clause))
         return m_whereClause;
 
     if (CLAUSE_JoinUsing == (CLAUSE_JoinUsing & clause))
         return CreateJoinClause();
-        
+
     if (CLAUSE_OrderBy == (CLAUSE_OrderBy & clause))
         return m_orderByClause;
 
@@ -1151,10 +1168,10 @@ Utf8String ComplexPresentationQuery<TBase>::GetClause(PresentationQueryClauses c
             limitClause.append(" OFFSET ?");
         return limitClause;
         }
-        
+
     if (CLAUSE_GroupBy == (CLAUSE_GroupBy & clause))
         return CreateGroupByClause();
-    
+
     if (CLAUSE_Having == (CLAUSE_Having & clause))
         return m_havingClause;
 
@@ -1178,7 +1195,7 @@ Utf8String ComplexPresentationQuery<TBase>::_ToString() const
     // FROM
     if (HasClause(CLAUSE_From))
         query.append(" FROM ").append(GetClause(CLAUSE_From));
-        
+
     // JOIN
     if (HasClause(CLAUSE_JoinUsing))
         query.append(GetClause(CLAUSE_JoinUsing));
@@ -1186,15 +1203,15 @@ Utf8String ComplexPresentationQuery<TBase>::_ToString() const
     // WHERE
     if (HasClause(CLAUSE_Where))
         query.append(" WHERE ").append(GetClause(CLAUSE_Where));
-    
+
     // GROUP BY
     if (HasClause(CLAUSE_GroupBy))
         query.append(" GROUP BY ").append(GetClause(CLAUSE_GroupBy));
-    
+
     // HAVING
     if (HasClause(CLAUSE_Having))
         query.append(" HAVING ").append(GetClause(CLAUSE_Having));
-    
+
     // ORDER BY
     if (HasClause(CLAUSE_OrderBy))
         query.append(" ORDER BY ").append(GetClause(CLAUSE_OrderBy));
@@ -1223,7 +1240,7 @@ bool ComplexPresentationQuery<TBase>::_IsEqual(TBase const& otherBase) const
     // SELECT
     if (!CreateSelectClause().Equals(other.CreateSelectClause()))
         return false;
-    
+
     // FROM
     if (m_nestedQuery.IsValid())
         {
@@ -1253,7 +1270,7 @@ bool ComplexPresentationQuery<TBase>::_IsEqual(TBase const& otherBase) const
                 return false;
             }
         }
-        
+
     // JOIN
     if (m_joins.size() != other.m_joins.size())
         return false;
@@ -1316,7 +1333,7 @@ bool ComplexPresentationQuery<TBase>::_IsEqual(TBase const& otherBase) const
         if (!found)
             return false;
         }
-               
+
     // LIMIT
     if (!AreEqual(m_limit, other.m_limit))
         return false;
@@ -1326,7 +1343,7 @@ bool ComplexPresentationQuery<TBase>::_IsEqual(TBase const& otherBase) const
     // GROUP BY
     if (!CreateGroupByClause().Equals(other.CreateGroupByClause()))
         return false;
-    
+
     // HAVING
     if (!m_havingClause.Equals(other.m_havingClause))
         return false;
@@ -1334,7 +1351,7 @@ bool ComplexPresentationQuery<TBase>::_IsEqual(TBase const& otherBase) const
     // ORDER BY
     if (!m_orderByClause.Equals(other.m_orderByClause))
         return false;
-    
+
     return true;
     }
 
@@ -1441,7 +1458,7 @@ Utf8String UnionPresentationQuery<TBase>::_ToString() const
     clause.append(m_first->ToString());
     clause.append(" UNION ALL ");
     clause.append(m_second->ToString());
-    
+
     if (!m_orderByClause.empty())
         clause.append(") ORDER BY ").append(m_orderByClause);
 
@@ -1605,7 +1622,7 @@ template<typename TBase>
 Utf8String ExceptPresentationQuery<TBase>::_ToString() const
     {
     Utf8PrintfString clause("%s EXCEPT %s", m_base->ToString().c_str(), m_except->ToString().c_str());
-    
+
     if (!m_orderByClause.empty())
         {
         // note: wrapping queries in a subquery is required until the TFS#291221 is fixed
@@ -1630,7 +1647,7 @@ template<typename TBase>
 void ExceptPresentationQuery<TBase>::Init()
     {
     TBase::GetResultParametersR().MergeWith(m_base->GetResultParameters());
-    
+
     m_base->GetResultParametersR() = ResultParameters();
     m_except->GetResultParametersR() = ResultParameters();
 
@@ -1793,9 +1810,6 @@ void NavigationQueryResultParameters::MergeWith(NavigationQueryResultParameters 
 
     GetNavNodeExtendedDataR().MergeWith(other.GetNavNodeExtendedData());
 
-    if (other.HasInstanceGroups())
-        SetHasInstanceGroups(true);
-
     BeAssert(nullptr == m_specification || nullptr == other.m_specification
         || m_specification == other.m_specification);
     if (nullptr == m_specification)
@@ -1811,7 +1825,6 @@ void NavigationQueryResultParameters::MergeWith(NavigationQueryResultParameters 
 bool NavigationQueryResultParameters::operator==(NavigationQueryResultParameters const& other) const
     {
     return m_resultType == other.m_resultType
-        && m_hasInstanceGroups == other.m_hasInstanceGroups
         && m_navNodeExtendedData == other.m_navNodeExtendedData
         && m_specification == other.m_specification
         && m_matchingRelationshipIds == other.m_matchingRelationshipIds;
@@ -1830,7 +1843,7 @@ void NavigationQueryExtendedData::AddRangesData(ECPropertyCR prop, PropertyGroup
         BeAssert(false && "Expecting only primitive properties");
         return;
         }
-    
+
     rapidjson::Value ranges(rapidjson::kArrayType);
     for (PropertyRangeGroupSpecificationCP rangeSpec : spec.GetRanges())
         {
@@ -1993,7 +2006,7 @@ public:
         for (rapidjson::SizeType i = 0; i < m_jsonValues.Size(); i++)
             m_keys.insert(&m_jsonValues[i]);
         }
-    RapidJsonValueSet(RapidJsonValueSet const& other) 
+    RapidJsonValueSet(RapidJsonValueSet const& other)
         : RapidJsonValueSet(other.m_jsonValues, other.m_type)
         {}
     bool Equals(RapidJsonValueSet const& otherSet) const
@@ -2009,7 +2022,7 @@ public:
             {
             case PRIMITIVETYPE_Double:
             case PRIMITIVETYPE_DateTime:
-                jsonValue.SetDouble(vals[0].GetValueDouble());               
+                jsonValue.SetDouble(vals[0].GetValueDouble());
                 break;
             case PRIMITIVETYPE_Integer:
                 jsonValue.SetInt(vals[0].GetValueInt());

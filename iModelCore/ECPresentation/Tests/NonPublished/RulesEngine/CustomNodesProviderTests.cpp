@@ -25,7 +25,7 @@ TEST_F(CustomNodesProviderTests, InvalidSpecification_DoesntReturnNodes)
     BeTest::SetFailOnAssert(false);
 
     RootNodeRule rule;
-    m_context->SetRootNodeContext(rule);
+    m_context->SetRootNodeContext(&rule);
 
     JsonNavNodePtr node;
 
@@ -50,7 +50,7 @@ TEST_F(CustomNodesProviderTests, InvalidSpecification_DoesntReturnNodes)
 TEST_F(CustomNodesProviderTests, ReturnsOneNode)
     {
     RootNodeRule rule;
-    m_context->SetRootNodeContext(rule);
+    m_context->SetRootNodeContext(&rule);
 
     JsonNavNodePtr node;
     CustomNodeSpecification spec(1, false, "type", "label", "", "imageId");
@@ -67,7 +67,7 @@ TEST_F(CustomNodesProviderTests, ReturnsOneNode)
 TEST_F(CustomNodesProviderTests, ReturnsNodesAfterCount)
     {
     RootNodeRule rule;
-    m_context->SetRootNodeContext(rule);
+    m_context->SetRootNodeContext(&rule);
 
     JsonNavNodePtr node;
     CustomNodeSpecification spec(1, false, "type", "label", "", "imageId");
@@ -84,7 +84,7 @@ TEST_F(CustomNodesProviderTests, ReturnsNodesAfterCount)
 TEST_F(CustomNodesProviderTests, ReturnsValidNode)
     {
     RootNodeRule rule;
-    m_context->SetRootNodeContext(rule);
+    m_context->SetRootNodeContext(&rule);
 
     JsonNavNodePtr node;
     CustomNodeSpecification spec(1, false, "type", "label", "description", "imageId");
@@ -132,7 +132,7 @@ TEST_F(CustomNodesProviderTests, OverridesLabelAndDescription)
 
     CustomNodeSpecification* spec = new CustomNodeSpecification(1, false, "MyCustomNode", "label", "descr", "imageId");
     rule->AddSpecification(*spec);    
-    m_context->SetRootNodeContext(*rule);
+    m_context->SetRootNodeContext(rule);
 
     JsonNavNodePtr node;
     NavNodesProviderPtr provider = CustomNodesProvider::Create(*m_context, *spec);
@@ -158,7 +158,7 @@ TEST_F(CustomNodesProviderTests, OverridesStyle)
 
     CustomNodeSpecification* spec = new CustomNodeSpecification(1, false, "MyCustomNode", "label", "", "imageId");
     rule->AddSpecification(*spec);    
-    m_context->SetRootNodeContext(*rule);
+    m_context->SetRootNodeContext(rule);
 
     JsonNavNodePtr node;
     NavNodesProviderPtr provider = CustomNodesProvider::Create(*m_context, *spec);
@@ -182,7 +182,7 @@ TEST_F(CustomNodesProviderTests, OverridesImageId)
 
     CustomNodeSpecification* spec = new CustomNodeSpecification(1, false, "MyCustomNode", "label", "", "imageId");
     rule->AddSpecification(*spec);    
-    m_context->SetRootNodeContext(*rule);
+    m_context->SetRootNodeContext(rule);
 
     JsonNavNodePtr node;
     NavNodesProviderPtr provider = CustomNodesProvider::Create(*m_context, *spec);
@@ -198,7 +198,7 @@ TEST_F(CustomNodesProviderTests, OverridesImageId)
 TEST_F(CustomNodesProviderTests, HasNodesReturnsFalseWhenSpecificationIsInvalid)
     {
     RootNodeRule rule;
-    m_context->SetRootNodeContext(rule);
+    m_context->SetRootNodeContext(&rule);
 
     BeTest::SetFailOnAssert(false);
     CustomNodeSpecification specNoType(1, false, "", "label", "", "imageId");
@@ -213,7 +213,7 @@ TEST_F(CustomNodesProviderTests, HasNodesReturnsFalseWhenSpecificationIsInvalid)
 TEST_F(CustomNodesProviderTests, HasNodesReturnsTrueWhenSpecificationIsValid)
     {
     RootNodeRule rule;
-    m_context->SetRootNodeContext(rule);
+    m_context->SetRootNodeContext(&rule);
 
     CustomNodeSpecification spec(1, false, "type", "label", "description", "imageId");
     NavNodesProviderPtr provider = CustomNodesProvider::Create(*m_context, spec);
@@ -226,7 +226,7 @@ TEST_F(CustomNodesProviderTests, HasNodesReturnsTrueWhenSpecificationIsValid)
 TEST_F(CustomNodesProviderTests, GetArtifacts)
     {
     RootNodeRule rule;
-    m_context->SetRootNodeContext(rule);
+    m_context->SetRootNodeContext(&rule);
 
     bmap<Utf8String, Utf8String> artifactDefinitions;
     artifactDefinitions.Insert("TestArtifact", "2 + 3");
@@ -248,7 +248,7 @@ TEST_F(CustomNodesProviderTests, GetArtifacts)
 TEST_F(CustomNodesProviderTests, SetsChildNodeArtifactsExtendedData)
     {
     RootNodeRule rootRule;
-    m_context->SetRootNodeContext(rootRule);
+    m_context->SetRootNodeContext(&rootRule);
     CustomNodeSpecification rootSpec(1, false, "t_parent", "label", "description", "imageId");
 
     auto childrenRule = new ChildNodeRule("ParentNode.Type = \"t_parent\"", 1, false, TargetTree_Both);

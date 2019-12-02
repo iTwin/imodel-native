@@ -9,6 +9,9 @@
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
+#define RULES_ENGINE_LOCAL_STATE_NAMESPACE                  "RulesEngine"
+#define RULES_ENGINE_ACTIVE_GROUPS_LOCAL_STATE_NAMESPACE    RULES_ENGINE_LOCAL_STATE_NAMESPACE "_ActiveGroups"
+
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                02/2018
 +===============+===============+===============+===============+===============+======*/
@@ -107,6 +110,8 @@ public:
 
     static IdSet<BeInt64Id> CreateIdSetFromJsonArray(RapidJsonValueCR);
     static ECValue CreateECValueFromJson(RapidJsonValueCR);
+
+    static GroupSpecificationCP GetActiveGroupingSpecification(GroupingRuleCR, IJsonLocalState const*);
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

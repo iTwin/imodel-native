@@ -9,13 +9,30 @@
 #include "JsonNavNode.h"
 #include <sstream>
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+static GroupedInstanceKeysList ParseInstanceKeys(ECSqlStatementCR stmt, NavigationQueryContract const& contract, Utf8CP fieldName)
+    {
+    Utf8CP str = stmt.GetValueText(contract.GetIndex(fieldName));
+    return ValueHelpers::GetECInstanceKeysFromSerializedJson(str);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename Contract>
+static GroupedInstanceKeysList ParseInstanceKeys(ECSqlStatementCR stmt, NavigationQueryContract const& contract)
+    {
+    return ParseInstanceKeys(stmt, contract, Contract::GroupedInstanceKeysFieldName);
+    }
+
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                07/2015
 +===============+===============+===============+===============+===============+======*/
 struct ECInstanceNodeReader : NavNodeReader
 {
 typedef ECInstanceNodesQueryContract Contract;
-
 protected:
     JsonNavNodePtr _ReadNode(ECSqlStatementCR statement) const override
         {
@@ -24,7 +41,7 @@ protected:
         Utf8CP displayLabel = statement.GetValueText(GetContract().GetIndex(Contract::DisplayLabelFieldName));
         Utf8CP relatedInstanceInfo = statement.GetValueText(GetContract().GetIndex(Contract::RelatedInstanceInfoFieldName));
         Utf8CP skippedInstanceKeys = statement.GetValueText(GetContract().GetIndex(Contract::SkippedInstanceKeysFieldName));
-        JsonNavNodePtr node = GetFactory().CreateECInstanceNode(GetConnection(), GetLocale(), ecClassId, ecInstanceId, displayLabel);
+        JsonNavNodePtr node = GetFactory().CreateECInstanceNode(GetConnection().GetId(), GetLocale(), ecClassId, ecInstanceId, displayLabel);
         if (node.IsValid())
             {
             NavNodesHelper::AddRelatedInstanceInfo(*node, relatedInstanceInfo);
@@ -32,20 +49,34 @@ protected:
             }
         return node;
         }
-
 public:
     ECInstanceNodeReader(JsonNavNodesFactory const& factory, NavigationQueryContract const& contract) : NavNodeReader(factory, contract) {}
 };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                01/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename Contract>
-static GroupedInstanceKeysList GetGroupedInstanceKeys(ECSqlStatementCR stmt, NavigationQueryContract const& contract)
-    {
-    Utf8CP str = stmt.GetValueText(contract.GetIndex(Contract::GroupedInstanceIdsFieldName));
-    return ValueHelpers::GetECInstanceKeysFromSerializedJson(str);
-    }
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                07/2015
++===============+===============+===============+===============+===============+======*/
+struct MultiECInstanceNodeReader : NavNodeReader
+{
+typedef MultiECInstanceNodesQueryContract Contract;
+protected:
+    JsonNavNodePtr _ReadNode(ECSqlStatementCR statement) const override
+        {
+        Utf8CP displayLabel = statement.GetValueText(GetContract().GetIndex(Contract::DisplayLabelFieldName));
+        Utf8CP relatedInstanceInfo = statement.GetValueText(GetContract().GetIndex(Contract::RelatedInstanceInfoFieldName));
+        Utf8CP skippedInstanceKeys = statement.GetValueText(GetContract().GetIndex(Contract::SkippedInstanceKeysFieldName));
+        GroupedInstanceKeysList keys = ParseInstanceKeys(statement, GetContract(), Contract::InstanceKeysFieldName);
+        JsonNavNodePtr node = GetFactory().CreateECInstanceNode(GetConnection().GetId(), GetLocale(), keys, displayLabel);
+        if (node.IsValid())
+            {
+            NavNodesHelper::AddRelatedInstanceInfo(*node, relatedInstanceInfo);
+            NavNodesHelper::SetSkippedInstanceKeys(*node, skippedInstanceKeys);
+            }
+        return node;
+        }
+public:
+    MultiECInstanceNodeReader(JsonNavNodesFactory const& factory, NavigationQueryContract const& contract) : NavNodeReader(factory, contract) {}
+};
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                07/2015
@@ -53,12 +84,11 @@ static GroupedInstanceKeysList GetGroupedInstanceKeys(ECSqlStatementCR stmt, Nav
 struct DisplayLabelGroupingNodeReader : NavNodeReader
 {
 typedef DisplayLabelGroupingNodesQueryContract Contract;
-
 protected:
     JsonNavNodePtr _ReadNode(ECSqlStatementCR statement) const override
         {
         Utf8CP displayLabel = statement.GetValueText(GetContract().GetIndex(Contract::DisplayLabelFieldName));
-        GroupedInstanceKeysList keys = GetGroupedInstanceKeys<Contract>(statement, GetContract());
+        GroupedInstanceKeysList keys = ParseInstanceKeys<Contract>(statement, GetContract());
         JsonNavNodePtr node = GetFactory().CreateDisplayLabelGroupingNode(GetConnection().GetId(), GetLocale(), displayLabel, keys);
         if (node.IsValid())
             {
@@ -67,7 +97,6 @@ protected:
             }
         return node;
         }
-
 public:
     DisplayLabelGroupingNodeReader(JsonNavNodesFactory const& factory, NavigationQueryContract const& contract) : NavNodeReader(factory, contract) {}
 };
@@ -78,7 +107,6 @@ public:
 struct ECClassGroupingNodeReader : NavNodeReader
 {
 typedef ECClassGroupingNodesQueryContract Contract;
-
 protected:
     JsonNavNodePtr _ReadNode(ECSqlStatementCR statement) const override
         {
@@ -97,7 +125,7 @@ protected:
             }
 
         Utf8CP displayLabel = statement.GetValueText(GetContract().GetIndex(Contract::DisplayLabelFieldName));
-        GroupedInstanceKeysList keys = GetGroupedInstanceKeys<Contract>(statement, GetContract());
+        GroupedInstanceKeysList keys = ParseInstanceKeys<Contract>(statement, GetContract());
         JsonNavNodePtr node = GetFactory().CreateECClassGroupingNode(GetConnection().GetId(), GetLocale(), *ecClass, displayLabel, keys);
         if (node.IsValid())
             {
@@ -106,7 +134,6 @@ protected:
             }
         return node;
         }
-
 public:
     ECClassGroupingNodeReader(JsonNavNodesFactory const& factory, NavigationQueryContract const& contract) : NavNodeReader(factory, contract) {}
 };
@@ -117,7 +144,6 @@ public:
 struct BaseClassGroupingNodeReader : NavNodeReader
 {
 typedef BaseECClassGroupingNodesQueryContract Contract;
-
 protected:
     JsonNavNodePtr _ReadNode(ECSqlStatementCR statement) const override
         {
@@ -136,7 +162,7 @@ protected:
             }
 
         Utf8CP displayLabel = statement.GetValueText(GetContract().GetIndex(Contract::DisplayLabelFieldName));
-        GroupedInstanceKeysList keys = GetGroupedInstanceKeys<Contract>(statement, GetContract());
+        GroupedInstanceKeysList keys = ParseInstanceKeys<Contract>(statement, GetContract());
         JsonNavNodePtr node = GetFactory().CreateECClassGroupingNode(GetConnection().GetId(), GetLocale(), *ecClass, displayLabel, keys);
         if (node.IsValid())
             {
@@ -145,7 +171,6 @@ protected:
             }
         return node;
         }
-
 public:
     BaseClassGroupingNodeReader(JsonNavNodesFactory const& factory, NavigationQueryContract const& contract) : NavNodeReader(factory, contract) {}
 };
@@ -156,13 +181,11 @@ public:
 struct ECRelationshipClassGroupingNodeReader : NavNodeReader
 {
 typedef ECRelationshipGroupingNodesQueryContract Contract;
-
 protected:
     JsonNavNodePtr _ReadNode(ECSqlStatementCR statement) const override
         {
         return nullptr;
         }
-
 public:
     ECRelationshipClassGroupingNodeReader(JsonNavNodesFactory const& factory, NavigationQueryContract const& contract) : NavNodeReader(factory, contract) {}
 };
@@ -358,7 +381,7 @@ protected:
         bool isRangeGroupingNode = statement.GetValueBoolean(GetContract().GetIndex(Contract::IsRangeFieldName));
         rapidjson::Document groupingValue = GetGroupingValueAsJson(*ecProperty, statement.GetValueText(GetContract().GetIndex(Contract::GroupingValuesFieldName)), isRangeGroupingNode);
         Utf8CP imageId = statement.GetValueText(GetContract().GetIndex(Contract::ImageIdFieldName));
-        GroupedInstanceKeysList keys = GetGroupedInstanceKeys<Contract>(statement, GetContract());
+        GroupedInstanceKeysList keys = ParseInstanceKeys<Contract>(statement, GetContract());
         JsonNavNodePtr node = GetFactory().CreateECPropertyGroupingNode(GetConnection().GetId(), GetLocale(), *ecClass, *ecProperty, displayLabel, imageId, groupingValue, isRangeGroupingNode, keys);
         if (node.IsValid())
             {
@@ -397,6 +420,9 @@ NavNodeReaderPtr NavNodeReader::Create(JsonNavNodesFactory const& factory, IConn
             break;
         case NavigationQueryResultType::ECInstanceNodes:
             reader = new ECInstanceNodeReader(factory, contract);
+            break;
+        case NavigationQueryResultType::MultiECInstanceNodes:
+            reader = new MultiECInstanceNodeReader(factory, contract);
             break;
         default:
             BeAssert(false && "Not implemented.");

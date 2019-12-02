@@ -20,13 +20,19 @@ struct DataSourceFilter
     struct RelatedInstanceInfo
         {
         bset<ECClassId> m_relationshipClassIds;
-        BeSQLite::EC::ECInstanceId m_instanceId;
+        bvector<ECInstanceKey> m_instanceKeys;
         RequiredRelationDirection m_direction;
         RelatedInstanceInfo() {}
-        RelatedInstanceInfo(bset<ECClassId> relationshipClassIds, RequiredRelationDirection direction, BeSQLite::EC::ECInstanceId id)
-            : m_relationshipClassIds(relationshipClassIds), m_direction(direction), m_instanceId(id)
+        RelatedInstanceInfo(bset<ECClassId> relationshipClassIds, RequiredRelationDirection direction, bvector<ECInstanceKey> instanceKeys)
+            : m_relationshipClassIds(relationshipClassIds), m_direction(direction), m_instanceKeys(instanceKeys)
             {}
-        bool IsValid() const {return !m_relationshipClassIds.empty() && m_instanceId.IsValid();}
+        RelatedInstanceInfo(bset<ECClassId> relationshipClassIds, RequiredRelationDirection direction, bvector<ECClassInstanceKey> const& instanceKeys)
+            : m_relationshipClassIds(relationshipClassIds), m_direction(direction)
+            {
+            std::transform(instanceKeys.begin(), instanceKeys.end(), std::back_inserter(m_instanceKeys), 
+                [](ECClassInstanceKeyCR k){return ECInstanceKey(k.GetClass()->GetId(), k.GetId());});
+            }
+        bool IsValid() const {return !m_relationshipClassIds.empty() && !m_instanceKeys.empty();}
         };
 
 private:
@@ -125,7 +131,15 @@ private:
         size_t size = source.GetSize();
         m_nodes.reserve(size);
         for (size_t i = 0; i < size; ++i)
-            m_nodes.push_back(source.GetNode(i));
+            {
+            NavNodePtr node = source.GetNode(i);
+            if (node.IsNull())
+                {
+                BeAssert(false);
+                continue;
+                }
+            m_nodes.push_back(node);
+            }
         BeAssert(m_nodes.size() == size);
         }
 

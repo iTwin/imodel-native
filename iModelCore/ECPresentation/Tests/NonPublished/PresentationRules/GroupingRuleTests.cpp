@@ -51,25 +51,22 @@ TEST_F(GroupingRuleTests, PropertyGroup_CopyConstructorCopiesRanges)
         EXPECT_NE(group1.GetRanges()[i], group2.GetRanges()[i]);
     }
 
-#ifdef wip_no_attributes
 /*---------------------------------------------------------------------------------**//**
-* @betest                                   Aidas.Kilinskas                		04/2018
+* @betest                                   Grigas.Petraitis                    11/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(GroupingRuleTests, SameLabelInstanceGroup_LoadsFromJson)
     {
     static Utf8CP jsonString = R"({
-        "contextMenuLabel": "TestMenuLabel",
-        "defaultLabel": "defaultGroupLabel"
+        "specType": "SameLabelInstance",
+        "applicationStage": "PostProcess"
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
 
     SameLabelInstanceGroup rule;
     EXPECT_TRUE(rule.ReadJson(json));
-    EXPECT_STREQ("TestMenuLabel", rule.GetContextMenuLabel().c_str());
-    EXPECT_STREQ("defaultGroupLabel", rule.GetDefaultLabel().c_str());
+    EXPECT_EQ(SameLabelInstanceGroupApplicationStage::PostProcess, rule.GetApplicationStage());
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @betest                                   Aidas.Kilinskas                		04/2018
@@ -86,6 +83,7 @@ TEST_F(GroupingRuleTests, SameLabelInstanceGroup_LoadsFromJsonWithDefaultValues)
     EXPECT_TRUE(rule.ReadJson(json));
     EXPECT_STREQ("", rule.GetContextMenuLabel().c_str());
     EXPECT_STREQ("", rule.GetDefaultLabel().c_str());
+    EXPECT_EQ(SameLabelInstanceGroupApplicationStage::Query, rule.GetApplicationStage());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -93,10 +91,11 @@ TEST_F(GroupingRuleTests, SameLabelInstanceGroup_LoadsFromJsonWithDefaultValues)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(GroupingRuleTests, SameLabelInstanceGroup_WriteToJson)
     {
-    SameLabelInstanceGroup rule;
+    SameLabelInstanceGroup rule(SameLabelInstanceGroupApplicationStage::PostProcess);
     Json::Value json = rule.WriteJson();
     Json::Value expected = Json::Reader::DoParse(R"({
-        "specType": "SameLabelInstance"
+        "specType": "SameLabelInstance",
+        "applicationStage": "PostProcess"
     })");
     EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
     }
