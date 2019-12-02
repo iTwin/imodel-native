@@ -54,7 +54,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 using namespace ISMStore;
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
 
-#ifndef __BENTLEYSTM_BUILD__ 
+#if !defined(__BENTLEYSTM_BUILD__) && defined(WIN32) 
  bool s_inEditing = false;
  bool s_useThreadsInStitching = true;
  bool s_useThreadsInMeshing = true;
