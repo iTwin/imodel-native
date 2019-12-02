@@ -169,6 +169,9 @@ void HierarchyPerformanceAnalysis::Reset(ECDb* project)
     ECSchemaReadContext::Initialize(assetsDirectory);
     BeFileName::EmptyDirectory(temporaryDirectory);
 
+    BeFileName supplementalRulesetsDirectory(assetsDirectory);
+    supplementalRulesetsDirectory.AppendToPath(L"SupplementalRulesets");
+
     bmap<int, unsigned> threadAllocations;
     threadAllocations.Insert(INT_MAX, THREADS_COUNT);
 
@@ -178,6 +181,7 @@ void HierarchyPerformanceAnalysis::Reset(ECDb* project)
     params.SetLocalizationProvider(new SQLangLocalizationProvider());
     params.SetMode(RulesDrivenECPresentationManager::Mode::ReadOnly);
     m_manager = new RulesDrivenECPresentationManager(params);
+    m_manager->GetLocaters().RegisterLocater(*SupplementalRuleSetLocater::Create(*DirectoryRuleSetLocater::Create(supplementalRulesetsDirectory.GetNameUtf8().c_str())));
     m_manager->GetLocaters().RegisterLocater(*m_locater);
     if (nullptr != project)
         m_manager->GetConnections().CreateConnection(*project);
