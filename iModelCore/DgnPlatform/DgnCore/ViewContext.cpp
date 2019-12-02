@@ -23,7 +23,7 @@ ViewContext::ViewContext()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ViewContext::_VisitElement(DgnElementId elementId, bool allowLoad) 
+StatusInt ViewContext::_VisitElement(DgnElementId elementId, bool allowLoad)
     {
     DgnElements& pool = m_dgndb->Elements();
     DgnElementCPtr el = allowLoad ? pool.GetElement(elementId) : pool.FindLoadedElement(elementId);
@@ -311,7 +311,7 @@ void ViewContext::_AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPar
 
     auto partBuilder = graphic.CreateSubGraphic(subToGraphic);
     collection.Draw(*partBuilder, *this, geomParams, false, partGeometry.get());
-        
+
     if (WasAborted()) // if we aborted, the graphic may not be complete, don't save it
         return;
 
@@ -713,7 +713,7 @@ GeometryParams::GeometryParams(GeometryParamsCR rhs)
     m_materialUVDetail      = rhs.m_materialUVDetail;
     m_elmPriority           = rhs.m_elmPriority;
     m_netPriority           = rhs.m_netPriority;
-    m_weight                = rhs.m_weight;       
+    m_weight                = rhs.m_weight;
     m_lineColor             = rhs.m_lineColor;
     m_fillColor             = rhs.m_fillColor;
     m_fillDisplay           = rhs.m_fillDisplay;
@@ -722,7 +722,7 @@ GeometryParams::GeometryParams(GeometryParamsCR rhs)
     m_netElmTransparency    = rhs.m_netElmTransparency;
     m_fillTransparency      = rhs.m_fillTransparency;
     m_netFillTransparency   = rhs.m_netFillTransparency;
-    m_geometryClass         = rhs.m_geometryClass;       
+    m_geometryClass         = rhs.m_geometryClass;
     m_styleInfo             = rhs.m_styleInfo;
     m_gradient              = rhs.m_gradient;
     m_pattern               = rhs.m_pattern;
@@ -750,7 +750,7 @@ GeometryParamsR GeometryParams::operator=(GeometryParamsCR rhs)
     m_netElmTransparency    = rhs.m_netElmTransparency;
     m_fillTransparency      = rhs.m_fillTransparency;
     m_netFillTransparency   = rhs.m_netFillTransparency;
-    m_geometryClass         = rhs.m_geometryClass;       
+    m_geometryClass         = rhs.m_geometryClass;
     m_styleInfo             = rhs.m_styleInfo;
     m_gradient              = rhs.m_gradient;
     m_pattern               = rhs.m_pattern;
@@ -920,7 +920,7 @@ void GeometryParams::Resolve(DgnDbR dgnDb)
     if (!m_appearanceOverrides.m_material)
         m_materialId = appearance.GetRenderMaterial();
 
-    // SubCategory transparency is combined with element transparency to compute net transparency. 
+    // SubCategory transparency is combined with element transparency to compute net transparency.
     if (0.0 != appearance.GetTransparency())
         {
         // combine transparencies by multiplying the opaqueness.
@@ -934,7 +934,7 @@ void GeometryParams::Resolve(DgnDbR dgnDb)
         m_netFillTransparency = (1.0 - (fillOpaque * categoryOpaque));
         }
 
-    // SubCategory display priority is combined with element priority to compute net display priority. 
+    // SubCategory display priority is combined with element priority to compute net display priority.
     m_netPriority = m_elmPriority + appearance.GetDisplayPriority();
 
     if (m_styleInfo.IsValid() && nullptr == m_styleInfo->GetLineStyleSymb().GetILineStyle())
@@ -960,7 +960,16 @@ void GeometryParams::ApplyTransform(TransformCR transform, uint32_t options)
         m_pattern->ApplyTransform(transform, options);
 
     if (m_styleInfo.IsValid())
+        {
+        double oldScale = m_styleInfo->GetStyleParamsR().scale;
         m_styleInfo->GetStyleParamsR().ApplyTransform(transform, options);
+        double newScale = m_styleInfo->GetStyleParamsR().scale;
+        if (!DoubleOps::AlmostEqual(oldScale, newScale, 1.0e-5))
+            {
+            m_styleInfo->GetLineStyleSymbR().Init(nullptr);
+            m_resolved = false; // max style width invalid, need to resolve with new scales...
+            }
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

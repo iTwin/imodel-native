@@ -21,7 +21,7 @@ static Bentley::GeoCoordinates::DgnGCSPtr fromDgnDbGcsToV8Gcs(Bentley::DgnModelR
     test66.applicationElm.signatureWord = MSGEOCOORD_SIGNATURE;
     uint32_t test66bytes;
     dgnGCS.PublishedCreateGeoCoordType66((short*)&test66.applicationElm.appData, test66bytes, db, primary);
-    
+
     return Bentley::GeoCoordinates::DgnGCS::FromGeoCoordType66(&test66.applicationElm, &v8Model);
     }
 
@@ -65,7 +65,7 @@ DgnDbStatus SpatialConverterBase::_SetOutputGCS()
     // if no GCS specified, that's ok we'll continue without it.
     if (!gcsDefinition.m_isValid)
         return DgnDbStatus::Success;
-         
+
     // we have a specification, get the outputDgnGcs from it.
     m_outputDgnGcs = gcsDefinition.CreateGcs(GetDgnDb());
     if (!m_outputDgnGcs.IsValid() || !m_outputDgnGcs->IsValid())
@@ -204,8 +204,7 @@ bool                    scaleToGcsGrid
     m_calculatedTransform.SetTranslation (translation);
     m_calculatedTransform.InitProduct (m_calculatedTransform, rotMatrix);
 
-    // if we're dealing with a 2d reference, set zScale to 1.0
-    m_calculatedTransform.ScaleMatrixColumns (m_calculatedTransform,  netScale,  netScale,  m_sourceModel->Is3d() ? netScale : 1.0);
+    m_calculatedTransform.ScaleMatrixColumns (m_calculatedTransform,  netScale,  netScale,  netScale);
 
     m_haveSolution  = true;
     }
@@ -241,7 +240,7 @@ bool            GetCenterPointFromModel (DPoint3dR centerPoint, DgnV8ModelP sour
     extent.x = range.high.x - range.low.x;
     extent.y = range.high.y - range.low.y;
 
-    // check the extent of the range. If it's too small, we got nothing.    
+    // check the extent of the range. If it's too small, we got nothing.
     if ( (extent.x <= 0) || (extent.y <= 0) )
         return false;
 
@@ -346,9 +345,9 @@ double      y
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            SolveAnalytically (bool localTransformDifferent)
     {
-    // here we have a source and output for which the GCS is identical except for possibly the local transform. 
+    // here we have a source and output for which the GCS is identical except for possibly the local transform.
     // In this case, we can calculate the matrix exactly.
-    // 
+    //
     // Observe that C = Us Xs, where C is Cartesian coordinates, Us is the transform that goes from UORs to Cartesian, and Xs is the source UORs.
     //                        (Us is Ss Gs, where Ss is scale to cartesian and Gs subtracts off the global origin).
     // Also IC = Hs C whre IC is Internal Cartesian coordinates and Hs is the Helmert local transform, so IC = Hs Us Xs
@@ -371,7 +370,7 @@ bool            SolveAnalytically (bool localTransformDifferent)
 
         if ( (NULL != outputTransformer) && (NULL == (outputHelmertTransformer = dynamic_cast <GeoCoordinates::HelmertLocalTransformer*> (outputTransformer))) )
             return false;
-        
+
         assert ( (NULL != sourceHelmertTransformer) || (NULL != outputHelmertTransformer) );
         }
 
@@ -411,7 +410,7 @@ bool            SolveAnalytically (bool localTransformDifferent)
         }
     else
         {
-        // this is the case where we are given an output GCS, but we have to figure out the best global origin. The best global origin is the one that transforms the point (0,0,0) in the source 
+        // this is the case where we are given an output GCS, but we have to figure out the best global origin. The best global origin is the one that transforms the point (0,0,0) in the source
         // cartesian coordinates to 0,0,0 in the destination cartesian coordinates.
         // In that case Hs Us [0,0,0] = Ho So Go [0,0,0], so SoInv HoInv Us  = Go [0,0,0]. But Go [0,0,0] is just Go inverting the signs of the three components.
 
@@ -428,7 +427,7 @@ bool            SolveAnalytically (bool localTransformDifferent)
 
         DPoint3d    zeroVector = DPoint3d::From (0.0, 0.0, 0.0);
         computedTransform.Multiply (outputGlobalOrigin, zeroVector);
-        
+
         m_outputGlobalOrigin = outputGlobalOrigin;
         outputGlobalOrigin.Negate();
         }
@@ -559,10 +558,10 @@ DgnV8Api::DgnFileStatus SpatialConverterBase::_ComputeCoordinateSystemTransform(
         {
         // The BIM file doesn't yet have a GCS. Get it from the command line argument, if specified.
         // _SetOutputGCS either sets m_outputDgnGcs or leaves the BIM without a GCS. Either is fine.
-        if (Dgn::DgnDbStatus::Success != _SetOutputGCS())   
+        if (Dgn::DgnDbStatus::Success != _SetOutputGCS())
             return DgnV8Api::DGNFILE_STATUS_UnknownError;
         }
-    
+
     // if the BIM file doesn't have a GCS, the source GCS (if there is one) becomes the BIM's GCS.
     if (!m_outputDgnGcs.IsValid())
         {
@@ -570,7 +569,7 @@ DgnV8Api::DgnFileStatus SpatialConverterBase::_ComputeCoordinateSystemTransform(
         ComputeTransformAndGlobalOriginFromRootModel (*rootModel, true);
 
         // If the root DGN model DOES have a GCS, it becomes the BIM files's GCS. This is a common case.
-        if (sourceGcs.IsValid())             
+        if (sourceGcs.IsValid())
             {
             m_outputDgnGcs = sourceGcs;
             m_outputDgnGcs->Store(GetDgnDb());
@@ -590,15 +589,15 @@ DgnV8Api::DgnFileStatus SpatialConverterBase::_ComputeCoordinateSystemTransform(
         }
 
     // If we get here, the BIM file has a GCS, either pre-existing or specified.
-    if (!sourceGcs.IsValid())             
+    if (!sourceGcs.IsValid())
         {
-        // No sourceGcs from either the model or command line. 
+        // No sourceGcs from either the model or command line.
         //We must assume that root DGN model's origin lines up with 0,0,0 of the BIM file. Just apply units scaling.
-        
+
         ComputeTransformAndGlobalOriginFromRootModel (*rootModel, true);
 /*<==*/ return DgnV8Api::DGNFILE_STATUS_Success;
         }
-    
+
     // Here, the DgnDb AND the root DGN model both have a GCS. Either we can do a linear transform or we need a full reprojection.
     // Use GCSTransformCalculator to see whether we can get a linear transform.
 

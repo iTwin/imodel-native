@@ -75,7 +75,10 @@ void Converter::ConvertLineStyleParams(Render::LineStyleParams& lsParams, DgnV8A
         uorPerMeter = 1;
         }
 
-    lsParams.modifiers = v8lsParams->modifiers; //   & ~STYLEMOD_TRUE_WIDTH;
+    // NOTE: Need everything in uors so that GeometryParams::ApplyTransform can use full uor->db transform to scale/rotate like everything else...
+    modelLsScale *= uorPerMeter;
+
+    lsParams.modifiers = v8lsParams->modifiers;
     lsParams.reserved = 0;
     lsParams.scale = v8lsParams->scale;
     lsParams.dashScale = v8lsParams->dashScale;
@@ -96,13 +99,13 @@ void Converter::ConvertLineStyleParams(Render::LineStyleParams& lsParams, DgnV8A
 
     if (0 != (v8lsParams->modifiers & STYLEMOD_TRUE_WIDTH))
         {
-        //  The value was in UORs.  In DgnDb it is in meters
-        lsParams.startWidth = v8lsParams->startWidth/uorPerMeter;
-        lsParams.endWidth = v8lsParams->endWidth/uorPerMeter;
+        // The value was in UORs, GeometryParams::ApplyTransform will convert it to meters...
+        lsParams.startWidth = v8lsParams->startWidth;
+        lsParams.endWidth = v8lsParams->endWidth;
         }
     else
         {
-        //  The value is in line style units. Convert it to the new line style units.
+        // The value is in line style units, convert it to meters.
         lsParams.startWidth = v8lsParams->startWidth*componentScale;
         lsParams.endWidth = v8lsParams->endWidth*componentScale;
         }
@@ -764,6 +767,44 @@ void Converter::InitGeometryParams(Render::GeometryParams& params, DgnV8Api::Ele
         }
 
     params.Resolve(GetDgnDb()); // Need to be able to check for a stroked linestyle...
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   12/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static double lsBackOutCosmeticRefScale(DgnV8Api::DgnAttachment const* refP)
+    {
+    double refLineStyleScale = 1.0;
+
+    // Back out the reference scaling for any reference that has fd_opts.lstyleScale set.
+    while (nullptr != refP)
+        {
+        // NOTE: IsLstyleScale means ignore reference scale.
+        if (refP->IsLstyleScale())
+            refLineStyleScale *= refP->GetDisplayScale();
+
+        refP = refP->GetParentDgnAttachmentCP();
+        }
+
+    return (1.0 / refLineStyleScale);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   12/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void Converter::AdjustLineStyleScale(Render::GeometryParams& params, DgnV8Api::DgnAttachment const* refP)
+    {
+    if (nullptr == refP || !params.HasStrokedLineStyle())
+        return;
+
+    double ignoreRefScale = lsBackOutCosmeticRefScale(refP);
+
+    if (DoubleOps::AlmostEqual(1.0, ignoreRefScale, 1.0e-5))
+        return;
+
+    BeAssert(nullptr == params.GetPatternParams()); // Shouldn't need to worry about patterns with ApplyTransform, called before they are added...
+    params.ApplyTransform(Transform::FromScaleFactors(ignoreRefScale, ignoreRefScale, ignoreRefScale));
+    params.Resolve(GetDgnDb()); // Don't leave un-resolved...need to recalculate style width...
     }
 
 /*=================================================================================**//**
@@ -1447,8 +1488,7 @@ GeometricPrimitivePtr GetGeometry(DgnFileR dgnFile, Converter& converter, bool i
             m_geometry->TransformInPlace(goopTrans);
 
             // NOTE: Information in GeometryParams may need to be transformed (ex. linestyles, gradient angle/scale, patterns, etc.)
-            //       LineStyleParams only needs to be rotated for placement, the conversion scale has already been accounted for...
-            m_geomParams.ApplyTransform(goopTrans, 0x01); // <- 0x01 is lazy/stealth way of specifying not to scale line style...
+            m_geomParams.ApplyTransform(goopTrans);
             }
 
         // Check 3D-to-2D and flatten the geometry here. Avoids Placement2d issues with geometry from 3d sheets with non-zero z values, etc.
@@ -1630,8 +1670,7 @@ GeometricPrimitivePtr GetGeometry(DgnFileR dgnFile, Converter& converter, bool i
                 m_geometry->TransformInPlace (goopTrans);
 
                 // NOTE: Information in GeometryParams may need to be transformed (ex. linestyles, gradient angle/scale, patterns, etc.)
-                //       LineStyleParams only needs to be rotated for placement, the conversion scale has already been accounted for...
-                m_geomParams.ApplyTransform (goopTrans, 0x01); // <- 0x01 is lazy/stealth way of specifying not to scale line style...
+                m_geomParams.ApplyTransform (goopTrans);
                 }
 
             // Check 3D-to-2D and flatten the geometry here. Avoids Placement2d issues with geometry from 3d sheets with non-zero z values, etc.
@@ -1911,6 +1950,7 @@ virtual Bentley::BentleyStatus _ProcessCurveVector(Bentley::CurveVectorCR curves
     DgnV8PathEntry pathEntry(DoInterop(m_currentTransform), DoInterop(m_conversionScale), m_model.Is3d(), m_context->GetCurrentModel()->Is3d());
 
     m_converter.InitGeometryParams(pathEntry.m_geomParams, m_currentDisplayParams, *m_context, m_model.Is3d(), m_v8mt.GetV8Model());
+    m_converter.AdjustLineStyleScale(pathEntry.m_geomParams, m_v8mt.GetV8Attachment()); // NOTE: Only need to correct ls for curve vectors, builder won't persist for other geometry types...
 
     // NOTE: Unfortunately PatternParams isn't part of ElemDisplayParams in V8, so we can only check any
     //       element that output a region curve vector to see if it supports IAreaFillPropertiesQuery.
@@ -2608,12 +2648,7 @@ void CreatePartReferences(bvector<DgnV8PartReference>& geomParts, TransformCR ba
 
             // NOTE: Part instancing with stroked linestyles isn't supported for display...
             if (pathEntry.m_curve.IsValid() && pathEntry.m_geomParams.HasStrokedLineStyle())
-                {
-                // Apply would-be part transform directly to linestyle params...
-                if (!DoubleOps::AlmostEqual(1.0, pathEntry.m_partScale, 1.0e-5))
-                    const_cast<Render::LineStyleInfoR> (*pathEntry.m_geomParams.GetLineStyle()).GetStyleParamsR().ApplyTransform(Transform::FromScaleFactors(pathEntry.m_partScale, pathEntry.m_partScale, pathEntry.m_partScale));
                 return;
-                }
             }
         }
 
@@ -3344,7 +3379,7 @@ void ProcessElement(DgnClassId elementClassId, bool hasV8PrimaryECInstance, DgnC
 
                 geomToLocal.InverseOf(localToGeom);
                 geometry->TransformInPlace(geomToLocal);
-                pathEntry.m_geomParams.ApplyTransform(geomToLocal, 0x01); // <- Don't scale linestyles...
+                pathEntry.m_geomParams.ApplyTransform(geomToLocal);
                 }
 
             if (IsValidForPostInstancing(*geometry, *pathGeom.m_path) && !DisablePostInstancing(v8eh))
@@ -5119,7 +5154,7 @@ struct V8GraphicsLightWeightCollector : DgnV8Api::IElementGraphicsProcessor
 
                         geomToLocal.InverseOf(localToGeom);
                         geometry->TransformInPlace(geomToLocal);
-                        pathEntry.m_geomParams.ApplyTransform(geomToLocal, 0x01); // <- Don't scale linestyles...
+                        pathEntry.m_geomParams.ApplyTransform(geomToLocal);
                         }
 
                     m_builder->Append(pathEntry.m_geomParams);

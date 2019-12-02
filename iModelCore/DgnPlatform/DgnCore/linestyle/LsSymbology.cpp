@@ -481,7 +481,7 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DgnD
 
     Init(nameRec);
     BeAssert(0 == (styleParams.modifiers & (STYLEMOD_DSCALE | STYLEMOD_GSCALE)));
-    
+
     m_options.isContinuous = nameRec->IsContinuous();
 
     if (styleParams.modifiers & STYLEMOD_DISTPHASE)
@@ -547,12 +547,12 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DgnD
     if (!topComponent->_HasRasterImageComponent())
         SetUseStroker(true);
 
-    // Get the width of this linestyle to use for "discernable" checks...
-    m_styleWidth = ((nameRec->_GetMaxWidth() * GetScale()));
+    // Get the width of this linestyle for "discernable" checks and to pad range..."maxWidth" is actually twice the maximum offset, so divide it by two.
+    m_styleWidth = ((nameRec->_GetMaxWidth() * GetScale()) / 2.0);
 
     // Account for start/end width modifiers if they would affect the linestyle...
     if (topComponent->_IsAffectedByWidth(false))
-        m_styleWidth = DoubleOps::Max(m_styleWidth, GetMaxWidth());
+        m_styleWidth = DoubleOps::Max(m_styleWidth, GetMaxWidth() / 2.0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -692,7 +692,7 @@ void LineStyleParams::ApplyTransform(TransformCR transform, uint32_t options)
         rTmp.InverseOf(rMatrix);
         rTmp.InitProduct(transform, rTmp);
         rTmp.SquareAndNormalizeColumns(rTmp, 0, 1);
-        
+
         rMatrix.InverseOf(rTmp);
         }
     else if (!(modifiers & STYLEMOD_NORMAL))
@@ -747,7 +747,7 @@ void LineStyleParams::ApplyTransform(TransformCR transform, uint32_t options)
 LineStyleInfo::LineStyleInfo(DgnStyleId styleId, LineStyleParamsCP params)
     {
     m_styleId = styleId;
-    
+
     if (params)
         m_styleParams = *params;
     else
