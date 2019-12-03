@@ -117,6 +117,7 @@ IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START (ProgressMessage, dwg_progress)
     L10N_STRING(STEP_UPDATING)                     // =="Updating DgnDb"==
     L10N_STRING(STEP_IMPORTING_MATERIALS)          // =="Importing Materials"==
     L10N_STRING(STEP_IMPORTING_SCHEMAS)            // =="Importing %d DWG Schema%s total %d classes"==
+    L10N_STRING(TASK_IMPORTING)                    // =="Importing %s"==
     L10N_STRING(TASK_LOADING_XREFS)                // =="Loading xReference files and making schema changes"==
     L10N_STRING(TASK_LOADING_FONTS)                // =="Loading %s Fonts"==
     L10N_STRING(TASK_IMPORTING_MODEL)              // =="Model: %s"==

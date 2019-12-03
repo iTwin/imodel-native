@@ -109,6 +109,15 @@
             "depends" : [
                 "iModelBridgeCore"
             ]
+        },
+        {
+            "name": "C3dBridge",
+            "archs": "x64",
+            "version_seed": "2.1.0",
+            "has_installers": "basic",
+            "depends" : [
+                "iModelBridgeCore"
+            ]
         }
     ],
 

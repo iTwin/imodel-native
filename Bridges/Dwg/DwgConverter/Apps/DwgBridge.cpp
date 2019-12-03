@@ -412,108 +412,6 @@ DwgBridge::DwgBridge ()
 END_DWG_NAMESPACE
 
 
-#ifdef DWGTOOLKIT_OpenDwg
-
-#include    <Dwg/DwgDb/DwgDbHost.h>
-USING_NAMESPACE_DWGDB
-
-/*=================================================================================**//**
-* @bsiclass                                                     Don.Fu          08/19
-+===============+===============+===============+===============+===============+======*/
-struct SniffHost : IDwgDbHost
-{
-SniffHost()
-    {
-    IDwgDbHost::InitializeToolkit (*this);
-    }
-~SniffHost()
-    {
-    IDwgDbHost::TerminateToolkit ();
-    }
-
-bool _IsValid() const override { return true; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          08/19
-+---------------+---------------+---------------+---------------+---------------+------*/
-DwgDbStatus _FindFile (WStringR fullpathOut, WCharCP filenameIn, DwgDbDatabaseP dwg = nullptr, AcadFileType hint = AcadFileType::Default) override
-    {
-    LPCWSTR fname = static_cast<LPCWSTR> (filenameIn);
-    LPCWSTR extname = nullptr;
-    if (hint == AcadFileType::ARXApplication)
-        extname = L".tx";
-
-    WCHAR found[2000] = { 0 };
-    DWORD maxChars = _countof (found);
-    LPWSTR filepart = nullptr;
-    LPCWSTR searchPath = nullptr;
-
-    auto foundChars = ::SearchPathW (searchPath, fname, extname, maxChars, found, &filepart);
-    if (foundChars > 0 && foundChars < maxChars)
-        {
-        fullpathOut.assign (reinterpret_cast<WCharCP>(found), foundChars);
-        return  DwgDbStatus::Success;
-        }
-    return DwgDbStatus::FileNotFound;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          08/19
-+---------------+---------------+---------------+---------------+---------------+------*/
-void _FatalError (WCharCP format, ...) override
-    {
-    va_list     varArgs;
-    va_start (varArgs, format);
-
-    WString     err = WPrintfString (format, varArgs);
-    va_end (varArgs);
-
-    ::fwprintf (stderr, L"Toolkit fatal error: %ls\n", err.c_str());
-    }
-
-}; // SniffHost
-
-static SniffHost*   s_sniffHost = nullptr;
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          08/19
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool HasAecPropertySetDefs (BeFileNameCR filename)
-    {
-    if (s_sniffHost == nullptr)
-        s_sniffHost = new SniffHost ();
-
-    bool hasAecPsetDefs = false;
-    try
-        {
-        auto dwg = s_sniffHost->ReadFile(filename, false, false, FileShareMode::DenyNo);
-        if (dwg.IsValid())
-            {
-            DwgDbObjectId   aecpsetdefsId;
-            DwgDbDictionaryPtr  mainDictionary(dwg->GetNamedObjectsDictionaryId(), DwgDbOpenMode::ForRead);
-            if (mainDictionary.OpenStatus() == DwgDbStatus::Success && mainDictionary->GetIdAt(aecpsetdefsId, L"AEC_PROPERTY_SET_DEFS") == DwgDbStatus::Success)
-                {
-                DwgDbDictionaryPtr  aecpsetDefs(aecpsetdefsId, DwgDbOpenMode::ForRead);
-                if (aecpsetDefs.OpenStatus() == DwgDbStatus::Success)
-                    {
-                    // find at least 1 entry under AEC_PROPERTY_SET_DEFS
-                    auto iter = aecpsetDefs->GetIterator();
-                    if (iter.IsValid() && iter->IsValid())
-                        hasAecPsetDefs = !iter->Done();
-                    }
-                }
-            }
-        }
-    catch (...)
-        {
-        ::fwprintf (stderr, L"An exception thrown opening file %ls\n", filename.c_str());
-        }
-
-    return  hasAecPsetDefs;
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -550,17 +448,8 @@ void iModelBridge_getAffinity(WCharP buffer, const size_t bufferSize, iModelBrid
     BeFileName  filename(dwgdxfName);
     if (DwgHelper::SniffDwgFile(filename) || DwgHelper::SniffDxfFile(filename))
         {
-#ifdef DWGTOOLKIT_RealDwg
         affinityLevel = BentleyApi::Dgn::iModelBridge::Affinity::Medium;
         BeStringUtilities::Wcsncpy(buffer, bufferSize, s_dwgBridgeRegKey);
-
-#elif DWGTOOLKIT_OpenDwg
-        if (HasAecPropertySetDefs(filename))
-            {
-            affinityLevel = BentleyApi::Dgn::iModelBridge::Affinity::High;
-            BeStringUtilities::Wcsncpy(buffer, bufferSize, s_dwgBridgeRegKey);
-            }
-#endif
         }
     }
 

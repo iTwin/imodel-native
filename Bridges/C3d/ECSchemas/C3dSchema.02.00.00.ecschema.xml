@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="AdskCivil3dSchema" alias="C3dSchema" version="02.00.00" description="This schema contains predefined object properties from Autodesk Civil3d" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+    <ECSchemaReference name="BisCore" version="01.00.09" alias="bis" />
+    <ECSchemaReference name="CoreCustomAttributes" version="01.00.03" alias="CoreCA" />
+    <ECSchemaReference name="Generic" version="01.00.03" alias="generic"/>
+    <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
+    <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+
+    <KindOfQuantity typeName="LENGTH" displayLabel="Length" persistenceUnit="u:M" presentationUnits="f:DefaultRealU(2)[u:M];f:DefaultRealU(2)[u:FT]" relativeError="0.0001"/>
+    <KindOfQuantity typeName="VELOCITY" displayLabel="Speed" persistenceUnit="u:KM_PER_HR" presentationUnits="f:DefaultRealU(2)[u:KM_PER_HR];f:DefaultRealU(2)[u:MPH]" relativeError="0.0001"/>
+
+    <PropertyCategory typeName="C3dGeometry" displayLabel="Geometry" priority="50"/>
+    <PropertyCategory typeName="C3dDesignSpeeds" displayLabel="Design Speeds" priority="49"/>
+
+    <ECStructClass typeName="DesignSpeed" displayLabel="C3D Design Speed" description="C3D Design speed along the path of th alignment">
+        <ECProperty propertyName="StartStation" typeName="double" kindOfQuantity="LENGTH" displayLabel="Start Station"/>
+        <ECProperty propertyName="DesignSpeed" typeName="double" kindOfQuantity="VELOCITY" displayLabel="Design Speed"/>
+        <ECProperty propertyName="Comment" typeName="string" displayLabel="Comment" description="Comment for the design speed"/>
+    </ECStructClass>
+
+    <ECEntityClass typeName="AeccBase" modifier="Abstract" displayLabel="C3D Object" description="C3D Object">
+        <BaseClass>bis:SpatialElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="AeccAlignment" modifier="Sealed" displayLabel="Alignment" description="Civil3D alignment object">
+        <BaseClass>AeccBase</BaseClass>
+        <ECProperty propertyName="Description" typeName="string" category="C3dGeometry" displayLabel="Description" description="C3D alignment description"/>
+        <ECProperty propertyName="ReferencePoint" typeName="point2d" category="C3dGeometry" displayLabel="Reference Point" description="C3D alignment reference point"/>
+        <ECProperty propertyName="ReferenceStation" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="Reference Point Station" description="C3D alignment reference point station"/>
+        <ECProperty propertyName="StartStation" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="Start Station"/>
+        <ECProperty propertyName="EndStation" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="End Station"/>
+        <ECStructArrayProperty propertyName="DesignSpeeds" typeName="DesignSpeed" category="C3dDesignSpeeds" displayLabel="Design Speeds" description="C3D design speeds for the alignment" minOccurs="0" maxOccurs="unbounded"/>
+    </ECEntityClass>
+</ECSchema>

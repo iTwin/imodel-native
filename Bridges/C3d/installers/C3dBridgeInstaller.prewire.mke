@@ -1,0 +1,20 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+
+PolicyFile = $(SrcBsicommon)sharedmki/AssertCommonCompileLinkPolicy.mki
+
+%include mdl.mki
+
+C3dBridgeInstallFiles = $(BuildContext)C3dBridgeInstallFiles/
+                
+#----------------------------------------------------------------------*/
+# Symlink files needed for powerproduct build in BuildContext
+#----------------------------------------------------------------------*/
+always:
+    ~linkfile "$(C3dBridgeInstallFiles)C3dBridgeRegistryFrag.wxs=$(_MakeFilePath)C3dBridgeRegistryFrag.wxs"
+
+$(C3dBridgeInstallFiles)C3dBridgeInstaller.mki : $(_MakeFilePath)C3dBridgeInstaller.mki
+    $(LinkFirstDepToFirstTarget)
+

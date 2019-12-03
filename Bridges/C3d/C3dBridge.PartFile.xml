@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+  
+    <Part Name="C3dBridgePRG" PrgOutputDir="C3dBridge">
+        <SubProduct ProductName="C3dBridge"/>
+    </Part>
+
+    <Product Name="C3dBridge" SaveProduct="true" BuildInstallSet="true">
+        <SubPart PartName="C3dImporterDLL"/>
+        <SubPart PartName="C3dBridgeApps"/>
+        <SubPart PartName="C3dBridgeInstaller"/>
+
+        <Directories DirectoryListName="C3dBridgeDirList"/>
+        <Directories DirectoryListName="OpenDwgConverterDirList"  PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
+        <Directories DirectoryListName="DwgAppCommonDirList"  PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
+
+        <InstallerWixFile SourceFile="installers\C3dBridge"/>
+    </Product>
+
+    <Part Name="C3dImporterDLL" BentleyBuildMakeFile="C3dImporter.mke" BentleyBuildMakeOptions="+dDWGTOOLKIT=OpenDwg +dVendorVersion=200515" ApiNumber="20M02" OnlyPlatforms="x64" ExcludeLibType="Static" >
+        <SubPart PartName="Teigha" PartFile="${SrcRoot}bsicommon/CvsPartFiles/teigha" Repository="bin-teigha"/>
+        <SubPart PartName="OpenDwgImportDll" PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
+        <SubPart PartName="OpenDwgBridgeDll" PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
+        <SubPart PartName="DwgResources" PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
+        <SubPart PartName="iModelBridgeFwkExe" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
+        <SubPart PartName="LinearReferencing" PartFile="Domains/LinearReferencing/LinearReferencing" Repository="imodel02"/>
+        <SubPart PartName="RoadRailAlignment" PartFile="Domains/RoadRailAlignment/RoadRailAlignment" Repository="imodel02"/>
+        <SubPart PartName="RoadRailPhysical" PartFile="Domains/RoadRailPhysical/RoadRailPhysical" Repository="imodel02"/>
+        <SubPart PartName="Eula" PartFile="Eula" Repository="Miscdev-Eula"/>
+        <SubPart PartName="InstallFrameworkBase" PartFile="InstallFramework" Repository="InstallFramework"/>
+        <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
+        <Bindings>
+            <Assemblies ProductDirectoryName="C3dBridgeAssemblies">Delivery/$(shlibprefix)C3dImporter$(ApiNumber)$(shlibext)</Assemblies>
+            <Libs Required="false">Delivery/$(libprefix)C3dImporter$(libext)</Libs>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Application" SubPartDirectory="ECSchemas/Application">Delivery/C3dSchema.02.00.00.ecschema.xml</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="C3dBridgeApps" BentleyBuildMakeFile="Apps/C3dBridgeApps.mke" BentleyBuildMakeOptions="+dDWGTOOLKIT=OpenDwg +dVendorVersion=200515" ApiNumber="20M02" OnlyPlatforms="x64" ExcludeLibType="Static" >
+        <SubPart PartName="iModelBridgeLibrary"  PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
+        <SubPart PartName="OpenDwgBridgeDLL" PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
+        <SubPart PartName="C3dImporterDLL" />
+        <!-- Need to pull ShxFonts from RealDWG -->
+        <SubPart PartName="RealDwg" PartFile="${SrcRoot}bsicommon/CvsPartFiles/realdwg" Repository="bin-realdwg" />
+        <Bindings>
+            <Assemblies ProductDirectoryName="C3dBridgeAssemblies">Delivery/C3dBridge$(ApiNumber)$(shlibext)</Assemblies>
+            <Files ProductDirectoryName="C3dBridgeAssemblies">Delivery/C3dImporter.exe</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="C3dBridgeInstaller" BMakeFile="installers/C3dBridgeInstaller.prewire.mke" >
+        <Bindings>
+            <Files BindToWixBuild="true">
+                C3dBridgeInstallFiles\C3dBridgeInstaller.mki
+                C3dBridgeInstallFiles\C3dBridgeRegistryFrag.wxs
+            </Files>
+        </Bindings>
+    </Part>
+
+    <ProductDirectoryList ListName="C3dBridgeDirList">
+        <ProductDirectory Name="ApplicationRoot"        Path=""/>
+        <ProductDirectory Name="C3dBridgeAssemblies"    RelativeTo="ApplicationRoot" LibType="dynamic"/>
+        <ProductDirectory Name="ShxFonts"               RelativeTo="ApplicationRoot" Deliver="true"  Path="Fonts"/>
+    </ProductDirectoryList>
+
+</BuildContext>

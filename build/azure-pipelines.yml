@@ -95,9 +95,13 @@ jobs:
         displayName: Compute OrdBridge Change Logs
         condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'OrdBridge'))
       
+      - script: bb -s "C3dBridge;PRG" diffreport --usePrevious $(BDF_DIR)/c3dbridge.xml $(BDF_DIR)/c3dbridge.xml --outputPath $(BDF_DIR)/difflog
+        displayName: Compute C3dBridge Change Logs
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'C3dBridge'))
+      
       - publish: $(BDF_DIR)/difflog
         displayName: Save BBChangeLogs
-        condition: and(succeeded(), or(contains(variables['STRATS_TO_RELEASE'], 'MstnBridge'), contains(variables['STRATS_TO_RELEASE'], 'DwgBridge'), contains(variables['STRATS_TO_RELEASE'], 'OrdBridge')))
+        condition: and(succeeded(), or(contains(variables['STRATS_TO_RELEASE'], 'MstnBridge'), contains(variables['STRATS_TO_RELEASE'], 'DwgBridge'), contains(variables['STRATS_TO_RELEASE'], 'OrdBridge'), contains(variables['STRATS_TO_RELEASE'], 'C3dBridge')))
         artifact: BBChangeLogs
 
       - task: EmbedPdbSourceInfo@0
@@ -279,7 +283,7 @@ jobs:
       - publish: $(Build.BinariesDirectory)/Winx64/InstallSetContext/DwgBridge/RealDwgImporter2x64.msi
         displayName: Save [Real]DwgBridge[OlderVersion]
         condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'DwgBridge'))
-        artifact: REALDWGIMPORTER2X64
+        artifact: RealDwgImporter2x64
 
       - task: archiveandpublishartifact@0
         displayName: Save [Real]DwgBridgeTests
@@ -321,6 +325,11 @@ jobs:
         displayName: Save RealityCoreNuget
         condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'RealityCore'))
         artifact: RealityCoreNuget_x64
+
+      - publish: $(Build.BinariesDirectory)/Winx64/InstallSetContext/C3dBridge/C3dBridgex64.msi
+        displayName: Save C3dBridge installer
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'C3dBridge'))
+        artifact: C3dBridge
 
   # ================================================================================================
   - job: build_linuxx64
