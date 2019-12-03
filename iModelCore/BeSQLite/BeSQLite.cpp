@@ -2084,6 +2084,24 @@ DbResult Db::CreateTable(Utf8CP tableName, Utf8CP ddl) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Matt.Yale                  11/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult Db::CreateTableIfNotExists(Utf8CP tableName, Utf8CP ddl) const
+{
+	SqlPrintfString sql("CREATE TABLE IF NOT EXISTS %s (%s)", tableName, ddl);
+
+	DbResult result = ExecuteSql(sql);
+	if (result != BE_SQLITE_OK)
+		return result;
+
+	ChangeTracker* tracker = m_dbFile->m_tracker.get();
+	if (tracker && isMainTableOrIndex(tableName))
+		result = tracker->RecordDbSchemaChange(sql.GetUtf8CP());
+
+	return result;
+}
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::DropTable(Utf8CP tableName, bool requireExists) const

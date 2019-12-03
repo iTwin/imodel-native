@@ -10,6 +10,7 @@
 #include "LicensingDb.h"
 #include <BeHttp/HttpError.h>
 #include <WebServices/Configuration/UrlProvider.h>
+#include <Bentley/BeTextFile.h>
 
 #if defined (BENTLEY_WIN32)
 #include <filesystem>
@@ -47,11 +48,60 @@ ClientImpl::ClientImpl
     m_correlationId = BeSQLite::BeGuid(true).ToString();
     m_timeRetriever = TimeRetriever::Get();
 
-    if (Utf8String::IsNullOrEmpty(projectId.c_str()))
-        m_projectId = "00000000-0000-0000-0000-000000000000";
+	if (Utf8String::IsNullOrEmpty(projectId.c_str()))
+	{
+		m_projectId = "00000000-0000-0000-0000-000000000000";
+	}
+	else
+	{
+		m_projectId = projectId;
+	}
 
     m_offlineMode = offlineMode;
     }
+
+bool ClientImpl::ValidateParamsAndDB()
+{
+	// start time for offline usage logs
+	m_usageStartTime = DateTime::GetCurrentTimeUtc().ToString();	
+
+	if (m_applicationInfo == nullptr)
+	{
+		LOG.error("ClientImpl::StartApplication ERROR - Application Information object is null.");
+		return false;
+	}
+
+	if (BeFileName::IsNullOrEmpty(m_dbPath))
+	{
+		LOG.error("ClientImpl::StartApplication ERROR - Database path string is null or empty.");
+		return false;
+	}
+
+	if (Utf8String::IsNullOrEmpty(m_correlationId.c_str()))
+	{
+		LOG.error("ClientImpl::StartApplication ERROR - Correlation ID (Usage ID) string is null or empty.");
+		return false;
+	}
+
+	if (m_timeRetriever == nullptr)
+	{
+		LOG.error("ClientImpl::StartApplication ERROR - Time retriever object is null.");
+		return false;
+	}
+
+	if (m_licensingDb == nullptr)
+	{
+		LOG.error("ClientImpl::StartApplication ERROR - Database object is null.");
+		return false;
+	}
+
+	if (SUCCESS != m_licensingDb->OpenOrCreate(m_dbPath))
+	{
+		LOG.error("ClientImpl::StartApplication ERROR - Database creation failed.");
+		return false;
+	}
+	return true;
+}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -60,51 +110,33 @@ LicenseStatus ClientImpl::StartApplication()
     {
     LOG.debug("ClientImpl::StartApplication");
 
-    // start time for offline usage logs
-    m_usageStartTime = DateTime::GetCurrentTimeUtc().ToString();
-
-    if (Utf8String::IsNullOrEmpty(m_userInfo.username.c_str()))
-        {
-        LOG.error("ClientImpl::StartApplication ERROR - Username string is null or empty.");
-        return LicenseStatus::Error;
-        }
-
-    if (m_applicationInfo == nullptr)
-        {
-        LOG.error("ClientImpl::StartApplication ERROR - Application Information object is null.");
-        return LicenseStatus::Error;
-        }
-
-    if (BeFileName::IsNullOrEmpty(m_dbPath))
-        {
-        LOG.error("ClientImpl::StartApplication ERROR - Database path string is null or empty.");
-        return LicenseStatus::Error;
-        }
-
-    if (Utf8String::IsNullOrEmpty(m_correlationId.c_str()))
-        {
-        LOG.error("ClientImpl::StartApplication ERROR - Correlation ID (Usage ID) string is null or empty.");
-        return LicenseStatus::Error;
-        }
-
-    if (m_timeRetriever == nullptr)
-        {
-        LOG.error("ClientImpl::StartApplication ERROR - Time retriever object is null.");
-        return LicenseStatus::Error;
-        }
-
-    if (m_licensingDb == nullptr)
-        {
-        LOG.error("ClientImpl::StartApplication ERROR - Database object is null.");
-        return LicenseStatus::Error;
-        }
-
-    if (SUCCESS != m_licensingDb->OpenOrCreate(m_dbPath))
-        {
-        LOG.error("ClientImpl::StartApplication ERROR - Database creation failed.");
-        return LicenseStatus::Error;
-        }
-
+	if (!ValidateParamsAndDB())
+	{
+		return LicenseStatus::Error;
+	}	
+	//check for checkouts first 
+	const auto productId = m_applicationInfo->GetProductId();
+	auto policy = SearchForCheckout(productId);
+	if (policy != nullptr)
+	{		
+		//found checkout, make sure it isnt expired
+		if (policy->GetPolicyStatus() == Policy::PolicyStatus::Expired)
+		{
+			return LicenseStatus::Expired; //it shouldnt return expired checkouts from DB anymore, but just as a safeguard 
+		}
+		LOG.info("Checkout found returning LicenseStatus OK");
+		m_policy = policy;
+		int64_t currentTime = m_timeRetriever->GetCurrentTimeAsUnixMillis();		
+		m_lastRunningLogPostingHeartbeatStartTime = currentTime; // ensure that StopApplication knows that this heartbeat is started
+		CallOnInterval(m_stopLogPostingHeartbeatThread, m_logPostingHeartbeatThreadStopped, m_lastRunningLogPostingHeartbeatStartTime, HEARTBEAT_THREAD_DELAY_MS, [this]() { return LogPostingHeartbeat(); });
+		return LicenseStatus::Ok;
+	}
+	if (Utf8String::IsNullOrEmpty(m_userInfo.username.c_str()))//not a checkout? needs a user logged in 
+	{
+		LOG.error("ClientImpl::StartApplication ERROR - Username string is null or empty.");
+		return LicenseStatus::Error;
+	}
+	//No checkouts found
     // get policy from entitlements or database
     m_policy = GetPolicyToken();
 
@@ -756,6 +788,54 @@ std::list<std::shared_ptr<Policy>> ClientImpl::GetUserPolicies()
     return policyList;
     }
 
+std::list<std::shared_ptr<Policy>> ClientImpl::GetUserCheckouts()
+{
+	LOG.debug("ClientImpl::GetUserPolicies");
+
+	std::list<std::shared_ptr<Policy>> policyList;
+	auto jsonpolicies = m_licensingDb->GetCheckoutsByUser(m_userInfo.userId);
+	for (auto json : jsonpolicies)
+	{
+		auto policy = Policy::Create(json);
+		if (!policy->IsValid())
+			continue;
+		if (policy->IsExpired())
+			continue;
+		policyList.push_back(policy);		
+	}
+	return policyList;
+}
+
+std::shared_ptr<Policy> ClientImpl::SearchForCheckout(Utf8String requestedProductId)
+{
+	LOG.debug("ClientImpl::SearchForCheckout");
+	std::shared_ptr<Policy> matchingPolicy = nullptr;
+
+	auto policies = GetUserCheckouts();
+
+	Utf8String productId;
+	if (requestedProductId.Equals(""))
+		productId = m_applicationInfo->GetProductId();
+	else
+		productId = requestedProductId;
+
+	for (auto policy : policies)
+	{
+		// policy assumed to be valid due to IsValid check in GetUserCheckouts()
+		// look for a securable that matches productId and featureString
+		for (auto securable : policy->GetSecurableData())
+		{
+			if (Utf8String(std::to_string(securable->GetProductId()).c_str()).Equals(productId) &&
+				securable->GetFeatureString().Equals(m_featureString))
+			{
+				// if matches, return this policy
+				return policy;
+			}
+		}
+	}
+	return matchingPolicy;
+}
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -805,7 +885,7 @@ void ClientImpl::DeleteAllOtherPoliciesByUser(std::shared_ptr<Policy> policy)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                        Jason.Wichert 5/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ClientImpl::AddPolicyToDb(std::shared_ptr<Policy> policy)
+void ClientImpl::AddPolicyToDb(std::shared_ptr<Policy> policy, bool IsCheckout)
     {
     //This function is for testing, allows you to put policies in the database without being entitled, etc.
     LOG.debug("ClientImpl::AddPolicyToDb");
@@ -816,20 +896,32 @@ void ClientImpl::AddPolicyToDb(std::shared_ptr<Policy> policy)
         return;
         }
 
-    StorePolicyInLicensingDb(policy);
+    StorePolicyInLicensingDb(policy, IsCheckout);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ClientImpl::StorePolicyInLicensingDb(std::shared_ptr<Policy> policy)
+void ClientImpl::StorePolicyInLicensingDb(std::shared_ptr<Policy> policy, bool IsCheckout)
     {
     LOG.debug("ClientImpl::StorePolicyInLicensingDb");
 
     auto expiration = policy->GetPolicyExpiresOn();
     auto lastUpdate = policy->GetRequestData()->GetClientDateTime();
     auto accessKey = policy->GetRequestData()->GetAccessKey();
-    m_licensingDb->AddOrUpdatePolicyFile(policy->GetPolicyId(),
+
+	if (IsCheckout)
+	{
+		m_licensingDb->AddOrUpdateCheckout(policy->GetPolicyId(),
+			policy->GetAppliesToUserId(),
+			accessKey,
+			expiration,
+			lastUpdate,
+			policy->GetJson());
+		return;
+	}
+
+	m_licensingDb->AddOrUpdatePolicyFile(policy->GetPolicyId(),
         policy->GetAppliesToUserId(),
         accessKey,
         expiration,
@@ -943,3 +1035,79 @@ int64_t ClientImpl::GetTrialDaysRemaining()
     int64_t daysLeft = policy->GetTrialDaysRemaining(productId, m_featureString, m_applicationInfo->GetVersion());
     return daysLeft;
     }
+
+int64_t ClientImpl::ImportCheckout(BeFileNameCR filepath)
+    {
+    LOG.debug("ClientImpl::ImportCheckout");
+    //Verify File Exists   
+    if (!filepath.DoesPathExist())
+        {
+        LOG.debugv("File does not exist, or user lacks permissions to open %s", filepath.c_str());
+        return -1; // Error 
+        }
+    
+    if (!filepath.EndsWithI(L"belic"))
+        {
+        LOG.debug("not a belic file");
+        return -1;
+        }
+
+    //Read in policy file string 
+    std::shared_ptr<Policy> policy = nullptr;
+    try
+    {        
+        BeFileStatus status;
+        BeTextFilePtr infileReadPtr;
+        WString policyToken;
+        WString policyCert;
+        infileReadPtr = BeTextFile::Open(status, filepath.c_str(), TextFileOpenType::Read, TextFileOptions::None);
+        if (!(BeFileStatus::Success == status))
+            {
+            LOG.debug("File open failed");
+            return -1;
+            }
+        TextFileReadStatus read_status = infileReadPtr->GetLine(policyToken);
+        if (!(TextFileReadStatus::Success == read_status))
+            {
+            LOG.debug("Failed to read from file");
+            return -1;
+            }
+        read_status = infileReadPtr->GetLine(policyCert);
+        if (!(TextFileReadStatus::Success == read_status))
+            {
+            LOG.debug("Failed to read from file");
+            return -1;
+            }
+        policyToken.DropQuotes();
+        policyCert.DropQuotes();
+        Utf8String Token(policyToken);
+        Utf8String Cert(policyCert);
+        infileReadPtr->Close();
+
+        //Add policy to DB 
+        policy = Policy::Create(JWToken::Create(Token.c_str(), Cert.c_str()));
+    if (policy == nullptr)
+        {
+        LOG.debug("Could not create policy from supplied policy token and cert");
+        return -1; //error occured in JWTToken creation or in Policy creation 
+        }
+    }
+    catch (...)
+    {
+        LOG.debug("Exception occured attempting to import the belic file");
+        return -1;
+    }
+	GenerateSID gsid;
+	Utf8String localDeviceId = m_applicationInfo->GetDeviceId();
+	Utf8String policyDeviceId = policy->GetRequestData()->GetMachineName();
+	//Verify policy is for this device ID before putting in DB
+	auto localSig = gsid.GetMachineSID(localDeviceId); 
+	auto policySig = gsid.GetMachineSID(policyDeviceId);
+	if (localSig != policySig)
+	{
+		LOG.debug("Device ID does not match provided policy device id");		
+		return -2; // policy and machine signature mismatch, policy not for this device. 
+	}
+	AddPolicyToDb(policy, true); 
+	return 0;//success 
+}

@@ -83,7 +83,7 @@ BentleyStatus LicensingDb::OpenDb(BeFileNameCR filePath)
 
     if (result == DbResult::BE_SQLITE_OK)
         {
-        if (UpdateDb() != SUCCESS)
+        if (UpdateDb() != SUCCESS) //Will update DB here if schema out of date 
             return ERROR;
 
         return SUCCESS;
@@ -218,8 +218,8 @@ BentleyStatus LicensingDb::SetUpTables()
         {
         return ERROR;
         }
-
-    return SUCCESS;
+	
+    return UpdateDbTables(); //Since they do not have a DB using schema number to update won't work here, already existing DBs will update automatically
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -535,6 +535,36 @@ std::list<Json::Value> LicensingDb::GetPolicyFilesByUser(Utf8StringCR userId)
     return policyList;
     }
 
+std::list<Json::Value> LicensingDb::GetCheckoutsByUser(Utf8StringCR userId)
+{
+	LOG.info("GetCheckoutsByUser(userId)");
+	LOG.info(userId.c_str());
+	std::list<Json::Value> policyList;
+
+	Statement stmt;
+	if (m_db.IsDbOpen())
+	{
+		stmt.Prepare(m_db, "SELECT PolicyFile FROM Checkout");
+		
+		bool isDone = false;
+		while (!isDone)
+		{
+			DbResult result = stmt.Step();
+			if (result == DbResult::BE_SQLITE_ROW)
+			{
+				Utf8String policyUtf8 = stmt.GetValueText(0);
+				auto policyJson = Json::Reader::DoParse(policyUtf8);
+				policyList.push_back(policyJson);
+			}
+			else
+			{
+				isDone = true;
+			}
+		}
+	}
+	return policyList;
+}
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -567,6 +597,36 @@ std::list<Json::Value> LicensingDb::GetPolicyFilesByKey(Utf8StringCR accessKey)
         }
     return policyList;
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus LicensingDb::AddOrUpdateCheckout(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR accessKey, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken)
+{
+	LOG.debug("AddOrUpdateCheckout");
+
+	Statement stmt;
+
+	if (m_db.IsDbOpen())
+	{
+		dbchangelocker.lock();
+		Utf8String stringToken = Json::FastWriter::ToString(policyToken);
+		stmt.Prepare(m_db, "INSERT INTO Checkout VALUES (?, ?, ?, ?, ?, ?)");
+		stmt.BindText(1, policyId, Statement::MakeCopy::No);
+		stmt.BindText(2, userId, Statement::MakeCopy::No);
+		stmt.BindText(3, accessKey, Statement::MakeCopy::No);
+		stmt.BindText(4, expirationDate, Statement::MakeCopy::No);
+		stmt.BindText(5, lastUpdateTime, Statement::MakeCopy::No);
+		stmt.BindText(6, stringToken, Statement::MakeCopy::No);
+		DbResult result = stmt.Step();
+		dbchangelocker.unlock();
+		if (result == DbResult::BE_SQLITE_DONE)
+			return SUCCESS;
+	}
+	return ERROR;
+}
+
+
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -1039,8 +1099,8 @@ BentleyStatus LicensingDb::UpdateDb()
                 result = stmt.Step();
                 dbchangelocker.unlock();
                 if (result == DbResult::BE_SQLITE_DONE)
-                    {
-                    return UpdateDbTables();
+                    {					
+                    return UpdateDbTables();					
                     }
                 else
                     {
@@ -1060,5 +1120,18 @@ BentleyStatus LicensingDb::UpdateDb()
 BentleyStatus LicensingDb::UpdateDbTables()
     {
     LOG.info("UpdateDbTables");
+	//Add new checkout table to DB -- schema 2.0	
+	if (m_db.CreateTableIfNotExists("Checkout",
+		"PolicyId NVARCHAR(20) PRIMARY KEY, "
+		"UserId NVARCHAR(40), "
+		"AccessKey NVARCHAR(40), "
+		"ExpirationDate NVARCHAR(20), "
+		"LastUpdateTime NVARCHAR(20), "
+		"PolicyFile NVARCHAR(900)") != DbResult::BE_SQLITE_OK)  //Any other needed columns? Machine name? SID? 
+	{
+		LOG.error("Failed to create Checkout table.");		
+		return ERROR;
+	}
+	LOG.info("UpdatedDbTables completed");	
     return SUCCESS;
     }

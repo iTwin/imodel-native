@@ -49,4 +49,6 @@ void AccessKeyMarkFeature();
 
 void SaasMarkFeature();
 
+void Import(BeFileNameCR filepath);
+
 void LicenseStatus();

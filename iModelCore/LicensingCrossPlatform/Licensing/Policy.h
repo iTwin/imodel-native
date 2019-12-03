@@ -18,8 +18,10 @@
 // AppliesTo Url
 #if defined(DEBUG)
 #define GETPOLICY_RequestData_AppliesTo_Url         "https://qa-entitlement-search.bentley.com/"
+#define ENTITLEMENT_POLICYSERVICE_RD_AppliesTo_Url  "https://qa-connect-ulastm.bentley.com/Bentley.Entitlement.PolicyService/PolicySvcWebApi/"
 #else
 #define GETPOLICY_RequestData_AppliesTo_Url         "https://entitlement-search.bentley.com/"
+#define ENTITLEMENT_POLICYSERVICE_RD_AppliesTo_Url  "https://connect-ulastm.bentley.com/Bentley.Entitlement.PolicyService/PolicySvcWebApi/"
 #endif // DEBUG)
 
 // Policy Claim Url
@@ -50,7 +52,8 @@ public:
         Valid = 0,
         Expired = 1,
         NotFound = 2,
-        Invalid = 3
+        Invalid = 3,
+        Checkout = 4
         };
     // enumeration for GetEvalStatus return value
     enum class EvaluationStatus
@@ -194,8 +197,9 @@ private:
     double m_PolicyVersion;
     Utf8String m_PolicyCreatedOn;
     Utf8String m_PolicyExpiresOn;
+	bool m_IsCheckout;
     std::shared_ptr<RequestData> m_RequestData;
-    Utf8String m_MachineSignature;
+    Utf8String m_MachineSignature;	
     Utf8String m_AppliesToUserId;
     std::list<Utf8String> m_AppliesToSecurableIds;
     std::list<std::shared_ptr<ACL>> m_ACLs;
@@ -223,7 +227,7 @@ public:
     LICENSING_EXPORT Utf8String GetPolicyCreatedOn() const { return m_PolicyCreatedOn; };
     LICENSING_EXPORT Utf8String GetPolicyExpiresOn() const { return m_PolicyExpiresOn; };
     LICENSING_EXPORT std::shared_ptr<RequestData> GetRequestData() const { return m_RequestData; };
-    LICENSING_EXPORT Utf8String GetMachineSignature() const { return m_MachineSignature; };
+    LICENSING_EXPORT Utf8String GetMachineSignature() const { return m_MachineSignature; };	
     LICENSING_EXPORT Utf8String GetAppliesToUserId() const { return m_AppliesToUserId; };
     LICENSING_EXPORT std::list<Utf8String> GetAppliesToSecurableIds() const { return m_AppliesToSecurableIds; };
     LICENSING_EXPORT std::list<std::shared_ptr<ACL>> GetACLs() const { return m_ACLs; };
@@ -239,6 +243,7 @@ public:
     LICENSING_EXPORT bool IsValid();
     LICENSING_EXPORT bool IsThreeWeeksPastExpired() { return IsPastThreeWeeksExpired(GetPolicyExpiresOn()); }
     LICENSING_EXPORT bool IsExpired() { return IsTimeExpired(GetPolicyExpiresOn()); };
+	LICENSING_EXPORT bool IsCheckout() { return m_IsCheckout; }
     LICENSING_EXPORT std::shared_ptr<Policy::Qualifier> GetQualifier(Utf8StringCR qualifierName, Utf8StringCR productId, Utf8StringCR featureString);
     LICENSING_EXPORT bool IsTrial(Utf8StringCR productId, Utf8StringCR featureString);
     LICENSING_EXPORT bool IsAllowedOfflineUsage(Utf8StringCR productId, Utf8StringCR featureString);

@@ -27,8 +27,10 @@ public:
 
     virtual std::list<Json::Value> GetPolicyFiles() = 0;
     virtual std::list<Json::Value> GetPolicyFilesByUser(Utf8StringCR userId) = 0;
+	virtual std::list<Json::Value> GetCheckoutsByUser(Utf8StringCR userId) = 0;
     virtual std::list<Json::Value> GetPolicyFilesByKey(Utf8StringCR accessKey) = 0;
     virtual BentleyStatus AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR accessKey, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken) = 0;
+	virtual BentleyStatus AddOrUpdateCheckout(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR accessKey, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken) = 0;
     virtual BentleyStatus DeletePolicyFile(Utf8StringCR policyId) = 0;
     virtual BentleyStatus DeleteAllOtherPolicyFilesByUser(Utf8StringCR policyId, Utf8StringCR userId) = 0;
     virtual BentleyStatus DeleteAllOtherPolicyFilesByKey(Utf8StringCR policyId, Utf8StringCR accessKey) = 0;

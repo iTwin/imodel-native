@@ -65,12 +65,14 @@ protected:
 
     // Policy
     std::shared_ptr<Policy> m_policy;
-    void StorePolicyInLicensingDb(std::shared_ptr<Policy> policy);
+    void StorePolicyInLicensingDb(std::shared_ptr<Policy> policy, bool IsCheckout = false);
     virtual std::shared_ptr<Policy> GetPolicyToken();
 
     std::list<std::shared_ptr<Policy>> GetPolicies();
     virtual std::list<std::shared_ptr<Policy>> GetUserPolicies();
+	virtual std::list<std::shared_ptr<Policy>> GetUserCheckouts();
     std::shared_ptr<Policy> SearchForPolicy(Utf8String requestedProductId="");
+	std::shared_ptr<Policy> SearchForCheckout(Utf8String requestedProductId = "");
     bool HasOfflineGracePeriodStarted();
     int64_t GetDaysLeftInOfflineGracePeriod(std::shared_ptr<Policy> policy, Utf8String productId, Utf8String featureString);
 
@@ -125,7 +127,9 @@ public:
         ILicensingDbPtr licensingDb
         );
 
-    // Usages
+	bool ValidateParamsAndDB();
+
+	// Usages
     LICENSING_EXPORT LicenseStatus StartApplication();
     LICENSING_EXPORT BentleyStatus StopApplication();
 
@@ -139,9 +143,12 @@ public:
     virtual LICENSING_EXPORT LicenseStatus GetLicenseStatus();
     LICENSING_EXPORT int64_t GetTrialDaysRemaining();
 
+	//Import .belic files
+	virtual LICENSING_EXPORT int64_t ImportCheckout(BeFileNameCR filepath);
+
     // Used in tests
     LICENSING_EXPORT ILicensingDb& GetLicensingDb();
-    LICENSING_EXPORT void AddPolicyToDb(std::shared_ptr<Policy> policy);
+    LICENSING_EXPORT void AddPolicyToDb(std::shared_ptr<Policy> policy, bool IsCheckout = false);
     LICENSING_EXPORT std::shared_ptr<Policy> GetPolicyWithId(Utf8StringCR policyId);
 
     // clean up policies; used internally, but also used in unit tests

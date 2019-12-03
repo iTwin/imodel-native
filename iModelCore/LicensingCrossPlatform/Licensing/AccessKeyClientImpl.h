@@ -38,9 +38,12 @@ public:
         ILicensingDbPtr licensingDb,
         Utf8StringCR ultimateId
         );
-    LICENSING_EXPORT LicenseStatus StartApplication();
+	bool ValidateParamsAndDB();
+	LICENSING_EXPORT LicenseStatus StartApplication();
 
     LICENSING_EXPORT LicenseStatus GetLicenseStatus();
+
+	LICENSING_EXPORT int64_t ImportCheckout(BeFileNameCR filepath);
 
     LICENSING_EXPORT void DeleteAllOtherPoliciesByKey(std::shared_ptr<Policy> policy);
     };

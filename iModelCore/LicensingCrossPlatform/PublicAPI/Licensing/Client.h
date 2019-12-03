@@ -112,6 +112,10 @@ public:
     * Returns 0 for expired, a postitive integer for the remaining number of days, and -1 for no data, or if policy is not evaluation or trial.
     */
     LICENSING_EXPORT int64_t GetTrialDaysRemaining();
+
+	//! ImportCheckout allows importing of a .belic file policy into the DB
+	//! -1 for error 0 for success  
+	LICENSING_EXPORT int64_t ImportCheckout(BeFileNameCR filepath);
     };
 
 END_BENTLEY_LICENSING_NAMESPACE

@@ -97,3 +97,8 @@ int64_t Client::GetTrialDaysRemaining()
     {
     return m_impl->GetTrialDaysRemaining();
     }
+
+int64_t Client::ImportCheckout(BeFileNameCR filepath)
+{
+	return m_impl->ImportCheckout(filepath);
+}

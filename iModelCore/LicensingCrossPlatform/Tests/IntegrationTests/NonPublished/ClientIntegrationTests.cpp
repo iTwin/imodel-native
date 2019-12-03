@@ -344,5 +344,50 @@ TEST_F(ClientIntegrationTests, GetTrialDaysRemainingValidExpiredTrialPolicy_Test
     EXPECT_EQ(client->GetTrialDaysRemaining(), 0);
     }
 
+TEST_F(ClientIntegrationTests, ImportBelicFile)
+{
+	auto client = CreateTestClientImpl(false, TEST_PRODUCT_ID); //works logged in or not, testing logged out. 
+	BeFileName testbelic;
+	BeTest::GetHost().GetDgnPlatformAssetsDirectory(testbelic);
+	testbelic.AppendToPath(L"TestAssets/DA7CDA78-92D0-4C80-82C8-C35C479E5D0E_TestDeviceId.belic");
+	auto result = client->ImportCheckout(testbelic);
+	EXPECT_EQ(result, 0);
+	auto startStatus = client->StartApplication(); 	
+	ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::Error));
+	ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::NotEntitled));
+	EXPECT_SUCCESS(client->StopApplication());
+}
+
+TEST_F(ClientIntegrationTests, ImportBelicFile_MismatchedDeviceID) 
+{
+	auto client = CreateTestClientImpl(true, TEST_PRODUCT_ID);
+	BeFileName testbelic;
+	BeTest::GetHost().GetDgnPlatformAssetsDirectory(testbelic);
+	testbelic.AppendToPath(L"TestAssets/DA7CDA78-92D0-4C80-82C8-C35C479E5D0E_baddevicefortest.belic");
+	auto result = client->ImportCheckout(testbelic);
+	EXPECT_EQ(result, -2);
+}
+
+TEST_F(ClientIntegrationTests, ImportBelicFile_FileNonExistant)
+{
+	auto client = CreateTestClientImpl(true, TEST_PRODUCT_ID);
+	BeFileName testbelic;
+	BeTest::GetHost().GetDgnPlatformAssetsDirectory(testbelic);
+	testbelic.AppendToPath(L"TestAssets/55555555-92D0-4C80-82C8-C35C479E5D0E_naou23106.belic");
+	auto result = client->ImportCheckout(testbelic);
+	EXPECT_EQ(result, -1);
+}
+
+TEST_F(ClientIntegrationTests, ImportBelicFile_WrongFileExtension)
+{
+	auto client = CreateTestClientImpl(true, TEST_PRODUCT_ID);
+	BeFileName testbelic;
+	BeTest::GetHost().GetDgnPlatformAssetsDirectory(testbelic);
+	testbelic.AppendToPath(L"TestAssets/randomtextfile.txt");
+	auto result = client->ImportCheckout(testbelic);
+	EXPECT_EQ(result, -1);
+}
+
+
 // TODO: heartbeat tests, different LicenseStatus situations
 

@@ -124,3 +124,8 @@ int64_t AccessKeyClient::GetTrialDaysRemaining()
     {
     return m_impl->GetTrialDaysRemaining();
     }
+
+int64_t AccessKeyClient::ImportCheckout(BeFileNameCR filepath)
+{
+	return m_impl->ImportCheckout(filepath);
+}

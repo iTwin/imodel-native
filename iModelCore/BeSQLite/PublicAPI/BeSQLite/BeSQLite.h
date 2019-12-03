@@ -2651,6 +2651,11 @@ public:
     //! @param[in] ddl The column definition sql for this table (should not include parentheses).
     BE_SQLITE_EXPORT DbResult CreateTable(Utf8CP tableName, Utf8CP ddl) const;
 
+    //! Create a new table in this Db only if it doesnt exist already
+    //! @param[in] tableName The name for the new table.
+    //! @param[in] ddl The column definition sql for this table (should not include parentheses).
+    BE_SQLITE_EXPORT DbResult CreateTableIfNotExists(Utf8CP tableName, Utf8CP ddl) const;
+
     //! Drop a table from this Db. Asserts that the table exists.
     //! @param[in] tableName The name of the table to drop.
     //! @return BE_SQLITE_OK if the table was dropped.

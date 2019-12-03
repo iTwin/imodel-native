@@ -25,8 +25,10 @@ public:
 
     std::list<Json::Value> GetPolicyFiles() override;
     std::list<Json::Value> GetPolicyFilesByUser(Utf8StringCR userId) override;
+	std::list<Json::Value> GetCheckoutsByUser(Utf8StringCR userId) override;
     std::list<Json::Value> GetPolicyFilesByKey(Utf8StringCR accessKey) override;
     BentleyStatus AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR accessKey, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken) override;
+	BentleyStatus AddOrUpdateCheckout(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR accessKey, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken) override;
     BentleyStatus DeletePolicyFile(Utf8StringCR policyId) override;
     BentleyStatus DeleteAllOtherPolicyFilesByUser(Utf8StringCR policyId, Utf8StringCR userId) override;
     BentleyStatus DeleteAllOtherPolicyFilesByKey(Utf8StringCR policyId, Utf8StringCR accessKey) override;
@@ -148,6 +150,7 @@ private:
     BentleyStatus m_mockedWriteUsageToCSVFile = BSIERROR;
     BentleyStatus m_mockedWriteFeatureToCSVFile = BSIERROR;
     BentleyStatus m_mockedAddOrUpdatePolicyFile = BSIERROR;
+	BentleyStatus m_mockedAddOrUpdateCheckout = BSIERROR;
     BentleyStatus m_mockedDeletePolicyFile = BSIERROR;
     BentleyStatus m_mockedDeleteAllOtherPolicyFilesByUser = BSIERROR;
     BentleyStatus m_mockedDeleteAllOtherPolicyFilesByKey = BSIERROR;
@@ -169,10 +172,12 @@ private:
     int m_writeFeatureToCSVFileCalls = 0;
     int m_getPolicyFilesCalls = 0;
     std::map<Utf8String, int> m_getPolicyFilesByUserCallsMap;
+	std::map<Utf8String, int> m_getCheckoutsByUserCallsMap;
     std::map<Utf8String, int> m_getPolicyFilesByKeyCallsMap;
     int m_getPolicyFileCalls = 0;
     std::map<Utf8String, int> m_getPolicyFileByIdCallsMap;
     int m_addOrUpdatePolicyFileCalls = 0;
+	int m_addOrUpdateCheckoutCalls = 0;
     int m_deletePolicyFileCalls = 0;
     int m_deleteAllOtherPolicyFilesByUserCalls = 0;
     int m_deleteAllOtherPolicyFilesByKeyCalls = 0;
@@ -191,6 +196,7 @@ private:
     bool m_isOpen = false;
     std::list<Json::Value> m_policyList;
     std::map<Utf8String, std::list<Json::Value>> m_userPolicyListMap;
+	std::map<Utf8String, std::list<Json::Value>> m_userCheckoutListMap;
     std::map<Utf8String, std::list<Json::Value>> m_keyPolicyListMap;
     std::map<Utf8String, Json::Value> m_idPolicyFileMap;
     };

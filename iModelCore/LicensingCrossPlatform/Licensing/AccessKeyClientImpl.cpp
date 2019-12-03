@@ -53,7 +53,13 @@ AccessKeyClientImpl::AccessKeyClientImpl
     m_isAccessKeyValid = false; // assume invalid access key to start
 
     if (Utf8String::IsNullOrEmpty(projectId.c_str()))
-        m_projectId = "00000000-0000-0000-0000-000000000000";
+	{
+		m_projectId = "00000000-0000-0000-0000-000000000000";
+	}
+	else
+	{
+		m_projectId = projectId;
+	}
 
     if (m_offlineMode)
         {
@@ -62,48 +68,72 @@ AccessKeyClientImpl::AccessKeyClientImpl
         }
     }
 
+bool AccessKeyClientImpl::ValidateParamsAndDB()
+{
+	// start time for offline usage logs
+	m_usageStartTime = DateTime::GetCurrentTimeUtc().ToString();
+
+	if (m_applicationInfo == nullptr)
+	{
+		LOG.error("ClientImpl::StartApplication ERROR - Application Information object is null.");
+		return false;
+	}
+
+	if (BeFileName::IsNullOrEmpty(m_dbPath))
+	{
+		LOG.error("ClientImpl::StartApplication ERROR - Database path string is null or empty.");
+		return false;
+	}
+
+	if (Utf8String::IsNullOrEmpty(m_correlationId.c_str()))
+	{
+		LOG.error("ClientImpl::StartApplication ERROR - Correlation ID (Usage ID) string is null or empty.");
+		return false;
+	}
+
+	if (m_timeRetriever == nullptr)
+	{
+		LOG.error("ClientImpl::StartApplication ERROR - Time retriever object is null.");
+		return false;
+	}
+
+	if (m_licensingDb == nullptr)
+	{
+		LOG.error("ClientImpl::StartApplication ERROR - Database object is null.");
+		return false;
+	}
+
+	if (SUCCESS != m_licensingDb->OpenOrCreate(m_dbPath))
+	{
+		LOG.error("AccessKeyClientImpl::StartApplication ERROR - Database creation failed.");
+		return false;
+	}
+	return true;
+}
+
 LicenseStatus AccessKeyClientImpl::StartApplication()
     {
     LOG.trace("AccessKeyClientImpl::StartApplication");
 
-    // start time for offline usage logs
-    m_usageStartTime = DateTime::GetCurrentTimeUtc().ToString();
+	if (!ValidateParamsAndDB())
+	{
+		return LicenseStatus::Error;
+	}
 
-    if (m_applicationInfo == nullptr)
-        {
-        LOG.error("ClientImpl::StartApplication ERROR - Application Information object is null.");
-        return LicenseStatus::Error;
-        }
-
-    if (BeFileName::IsNullOrEmpty(m_dbPath))
-        {
-        LOG.error("ClientImpl::StartApplication ERROR - Database path string is null or empty.");
-        return LicenseStatus::Error;
-        }
-
-    if (Utf8String::IsNullOrEmpty(m_correlationId.c_str()))
-        {
-        LOG.error("ClientImpl::StartApplication ERROR - Correlation ID (Usage ID) string is null or empty.");
-        return LicenseStatus::Error;
-        }
-
-    if (m_timeRetriever == nullptr)
-        {
-        LOG.error("ClientImpl::StartApplication ERROR - Time retriever object is null.");
-        return LicenseStatus::Error;
-        }
-
-    if (m_licensingDb == nullptr)
-        {
-        LOG.error("ClientImpl::StartApplication ERROR - Database object is null.");
-        return LicenseStatus::Error;
-        }
-
-    if (SUCCESS != m_licensingDb->OpenOrCreate(m_dbPath))
-        {
-        LOG.error("AccessKeyClientImpl::StartApplication ERROR - Database creation failed.");
-        return LicenseStatus::Error;
-        }
+	//check for checkouts first 
+	const auto productId = m_applicationInfo->GetProductId();
+	auto policy = SearchForCheckout(productId);
+	if (policy != nullptr)
+	{
+		//found checkout, make sure it isnt expired
+		if (policy->GetPolicyStatus() == Policy::PolicyStatus::Expired)
+		{
+			return LicenseStatus::Expired;
+		}
+		LOG.info("Checkout found returning LicenseStatus OK");
+		return LicenseStatus::Ok;
+	}
+	//No checkouts found
 
     m_policy = GetPolicyToken();
 
@@ -233,6 +263,12 @@ LicenseStatus AccessKeyClientImpl::GetLicenseStatus()
 
     return ClientImpl::GetLicenseStatus();
     }
+
+int64_t AccessKeyClientImpl::ImportCheckout(BeFileNameCR filepath)
+{
+	//Do not think we need different functionality
+	return ClientImpl::ImportCheckout(filepath);
+}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod

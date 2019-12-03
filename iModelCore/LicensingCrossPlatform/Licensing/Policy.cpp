@@ -18,13 +18,13 @@ Policy::Policy(const Json::Value& json)
     m_PolicyCreatedOn = json["PolicyCreatedOn"].asString();
     m_PolicyExpiresOn = json["PolicyExpiresOn"].asString();
     m_RequestData = RequestData::Create(json["RequestData"]);
-    m_MachineSignature = json["MachineSignature"].asString();
+    m_MachineSignature = json["MachineSignature"].asString();	
     m_AppliesToUserId = json["AppliesToUserId"].asString();
     m_AppliesToSecurableIds = CreateAppliesToSecurableIds(json["AppliesToSecurableIds"]);
     m_ACLs = CreateACLs(json["ACLs"]);
     m_SecurableData = CreateSecurableData(json["SecurableData"]);
     m_UserData = UserData::Create(json["UserData"]);
-    m_DefaultQualifiers = CreateDefaultQualifiers(json["DefaultQualifiers"]);
+    m_DefaultQualifiers = CreateDefaultQualifiers(json["DefaultQualifiers"]);	
     }
 
 /*--------------------------------------------------------------------------------------+

@@ -11,7 +11,7 @@
 #include <BeSQLite/BeSQLite.h>
 
 #define LICENSE_CLIENT_SCHEMA_NAME      "LICENSINGSCHEMA"
-#define LICENSE_CLIENT_SCHEMA_VERSION   1.0
+#define LICENSE_CLIENT_SCHEMA_VERSION   2.0  //DB version 2.0 handles checkouts
 #define LOG_VERSION 1
 #define PARTITION_ID 1
 
@@ -53,8 +53,10 @@ public:
 
     LICENSING_EXPORT std::list<Json::Value> GetPolicyFiles();
     LICENSING_EXPORT std::list<Json::Value> GetPolicyFilesByUser(Utf8StringCR userId);
+	LICENSING_EXPORT std::list<Json::Value> GetCheckoutsByUser(Utf8StringCR userId);
     LICENSING_EXPORT std::list<Json::Value> GetPolicyFilesByKey(Utf8StringCR accessKey);
     LICENSING_EXPORT BentleyStatus AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR accessKey, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken);
+	LICENSING_EXPORT BentleyStatus AddOrUpdateCheckout(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR accessKey, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken);
     LICENSING_EXPORT BentleyStatus DeletePolicyFile(Utf8StringCR policyId);
     LICENSING_EXPORT BentleyStatus DeleteAllOtherPolicyFilesByUser(Utf8StringCR policyId, Utf8StringCR userId);
     LICENSING_EXPORT BentleyStatus DeleteAllOtherPolicyFilesByKey(Utf8StringCR policyId, Utf8StringCR accessKey);

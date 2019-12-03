@@ -39,6 +39,7 @@ const string clientArgList = "\n\
     - client trackusage - for SaasClient, posts usage for the given product ID. No effect for Client and AccessKeyClient.\n\
     - client markfeature - for all client flavors, posts a feature log offline (Client, AccessKeyClient), or in realtime (SaasClient) for the given feature.\n\
     - client licstatus - for AccessKeyClient get the license status of the current policy. No effect for Client and SaasClient.\n\
+    - client import [filepath] - For importing a .belic file / checkout to be used. \n\
     - client help - get an explanation of the client and a list of valid client arguments.\n\
 \n";
 
@@ -331,7 +332,39 @@ void ProcessClientCommand(vector<string> input)
 
         return;
         }
-
+    // client import
+    else if (input.at(1) == "import" || input.at(1) == "i")
+        {
+        if (input.size() < 3)
+            {
+            cout << "You must provide the filepath to the .belic as an arg";
+            return;
+            }
+        
+        if (m_client != nullptr)
+            {
+            BeFileName path(input.at(2));
+            Import(path);
+            return;
+            }
+        else if (m_accessKeyClient != nullptr)
+            {
+            BeFileName path(input.at(2));
+            Import(path);
+            return;
+            }
+        else if (m_saasClient != nullptr)
+            {
+            cout << "SaaSClient does not use or utilize checkouts";
+            return;
+            }
+        else
+            {
+            cout << "The Licensing Client has not been created. You must create a client with \"client create [arg]\" to import checkouts\n";
+            return;
+            }
+        return;
+        }
     // client create
     else if(input.at(1) == "create" || input.at(1) == "c")
         {
@@ -1254,6 +1287,19 @@ void SaasMarkFeature()
         {   
         cout << "Marked feature successfully!\n";
         return;
+        }
+    }
+
+//import checkout from provided path
+void Import(BeFileNameCR filepath)
+    {
+    if (m_client != null)
+        {
+            m_client->ImportCheckout(filepath);
+        }
+    if (m_accessKeyClient != null)
+        {
+            m_accessKeyClient->ImportCheckout(filepath);
         }
     }
 
