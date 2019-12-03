@@ -43,6 +43,7 @@
         <Bindings>
             <Directory SourceName="Delivery/Resources/Dgnlibs" ProductDirectoryName="Dgnlibs" SubPartDirectory="Resources/Dgnlibs"
             Required="true"/>
+            <Files Required="false" ProductDirectoryName="Assets">Delivery/CivilImportConfig*</Files>
         </Bindings>
     </Part>
 
@@ -208,6 +209,7 @@
         <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest" Repository="imodel02"/>
         <SubPart PartName="DgnV8ConverterExe" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync" Repository="imodel02"/>
         <SubPart PartName="Tests"/>
+        <SubPart PartName="Resources" />
         <!-- Lay out the Tests test product according to the standard BeGTest layout: -->
         <Directories DirectoryListName="CollectionProduct"/>
     </Product>

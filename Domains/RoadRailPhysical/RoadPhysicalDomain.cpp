@@ -8,15 +8,6 @@
 #include <RoadRailPhysical/Corridor.h>
 #include <RoadRailPhysical/Roadway.h>
 
-DOMAIN_DEFINE_MEMBERS(RoadPhysicalDomain)
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-RoadPhysicalDomain::RoadPhysicalDomain() : DgnDomain(BRDP_SCHEMA_NAME, "Bentley RoadPhysical Domain", 2)
-    {
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/

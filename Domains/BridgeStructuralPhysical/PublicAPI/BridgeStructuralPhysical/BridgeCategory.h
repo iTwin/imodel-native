@@ -21,7 +21,6 @@ struct BridgeCategory : NonCopyableClass
         static Dgn::DefinitionModelPtr GetModel(Dgn::DgnDbR db);
 
     public:
-        static void SetUp(Dgn::DgnDbR db);
         static void InsertDomainCategories(Dgn::DgnDbR);
 
         static Utf8CP GetPartitionName() { return "BridgeCategories"; }

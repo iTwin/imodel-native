@@ -37,6 +37,7 @@
     <None Include="ORDBridge.mke" />
     <None Include="ORDBridge.mki" />
     <None Include="ORDBridge.prewire.mke" />
+    <None Include="Resources.Prewire.mke" />
     <None Include="xliffs.mke" />
   </ItemGroup>
   <ItemGroup>

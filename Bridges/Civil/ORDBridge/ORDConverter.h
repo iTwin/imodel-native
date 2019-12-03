@@ -158,6 +158,9 @@ public:
     size_t GetExtensionCount() const;
     BentleyStatus AddExtensionSchema(bool& hasMoreChanges);
 	BentleyStatus Add2dCategory();
+    BentleyStatus MakeRoadRailSchemaChanges();
+    Utf8String GetAlignedSubjectName() const;
+    Dgn::SubjectCPtr GetAlignedSubject() const;
 }; // ORDConverter
 
 struct ConvertORDElementXDomain : Dgn::DgnDbSync::DgnV8::XDomain

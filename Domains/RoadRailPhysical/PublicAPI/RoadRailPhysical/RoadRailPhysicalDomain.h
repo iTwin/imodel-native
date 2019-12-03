@@ -13,26 +13,21 @@ BEGIN_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 //! The DgnDomain for the RoadRailPhysical schema.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct RoadRailPhysicalDomain : Dgn::DgnDomain
+struct RoadRailPhysicalDomain
 {
-DOMAIN_DECLARE_MEMBERS(RoadRailPhysicalDomain, ROADRAILPHYSICAL_EXPORT)
-
-protected:
-    //! @private
-    void _OnSchemaImported(Dgn::DgnDbR dgndb) const override;
+private:
+    RoadRailPhysicalDomain() {}
 
 public:
-    //! @private
-    RoadRailPhysicalDomain();
-
     //! @private
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnViewId SetUpDefaultViews(Dgn::SubjectCR, Dgn::PhysicalModelR physicalNetworkModel, bvector<Dgn::DgnCategoryId> const* additionalCategoriesForSelector = nullptr);
 
     //! The code name of the PathwayDesignCriteria element
     static Utf8CP GetPathwayDesignCriteriaCodeName() { return "Design Criteria"; }
 
-private:
-    WCharCP _GetSchemaRelativePath() const override { return BRRP_SCHEMA_PATH; }
+    static WCharCP GetSchemaRelativePath() { return BRRP_SCHEMA_PATH; }
+
+    ROADRAILPHYSICAL_EXPORT static void OnSchemaImported(Dgn::SubjectCR subject);
 }; // RoadRailPhysicalDomain
 
 //=======================================================================================

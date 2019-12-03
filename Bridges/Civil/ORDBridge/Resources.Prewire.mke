@@ -8,3 +8,6 @@ Delivery=$(BuildContext)Delivery/
 
 $(Delivery)Resources/Dgnlibs : $(SrcRoot)imodel02/Bridges/Civil/ORDBridge/Resources/Dgnlibs
     $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(Delivery)CivilImportConfig.xml : $(SrcRoot)imodel02/Bridges/Civil/ORDBridge/Resources/CivilImportConfig.xml
+    $(LinkFirstDepToFirstTarget)

@@ -12,19 +12,16 @@ BEGIN_BENTLEY_BRIDGESTRUCTURALPHYSICAL_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsiclass The DgnDomain for the BridgeStructuralPhysical schema.  Nick.Purcell 05/2018
 //---------------------------------------------------------------------------------------
-struct BridgeStructuralPhysicalDomain : Dgn::DgnDomain
+struct BridgeStructuralPhysicalDomain
     {
-    DOMAIN_DECLARE_MEMBERS(BridgeStructuralPhysicalDomain, BRIDGESTRUCTURALPHYSICAL_EXPORT)
-
-    protected:
-        void _OnSchemaImported(Dgn::DgnDbR dgndb) const override;
+    private:
+        BridgeStructuralPhysicalDomain() {}
 
     public:
-        BridgeStructuralPhysicalDomain();
 		BRIDGESTRUCTURALPHYSICAL_EXPORT static Dgn::DgnDbStatus SetUpModelHierarchy(BridgeCR bridgeCR);
 
-    private:
-        WCharCP _GetSchemaRelativePath() const override { return BBP_SCHEMA_PATH; }
+        static WCharCP GetSchemaRelativePath() { return BBP_SCHEMA_PATH; }
+        BRIDGESTRUCTURALPHYSICAL_EXPORT static void OnSchemaImported(Dgn::SubjectCR subject);
     }; // BridgeStructuralPhysicalDomain
 
 /*=================================================================================

@@ -13,21 +13,12 @@ BEGIN_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 //! The DgnDomain for the RoadRailAlignment schema.
 //! @ingroup GROUP_RoadRailAlignment
 //=======================================================================================
-struct RoadRailAlignmentDomain : Dgn::DgnDomain
+struct RoadRailAlignmentDomain
 {
-DOMAIN_DECLARE_MEMBERS(RoadRailAlignmentDomain, ROADRAILALIGNMENT_EXPORT)
-
-/*private:
-    static Dgn::DgnDbStatus InsertViewDefinitions(ConfigurationModelR model);*/
-
-protected:
-    //! @private
-    void _OnSchemaImported(Dgn::DgnDbR dgndb) const override;
+private:
+    RoadRailAlignmentDomain() {}
 
 public:
-    //! @private
-    RoadRailAlignmentDomain();
-
     //! Query for the Alignment CodeSpecId
     //! @param[in] dgndb The DgnDb to query
     //! @return The CodeSpecId of the Alignment partition
@@ -53,9 +44,10 @@ public:
 
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnModelId QueryCategoryModelId(Dgn::DgnDbR db);
     ROADRAILALIGNMENT_EXPORT static Dgn::DefinitionModelPtr QueryCategoryModel(Dgn::DgnDbR db);
+    ROADRAILALIGNMENT_EXPORT static void SetParentSubject(Dgn::SubjectCR subject);
 
-private:
-    WCharCP _GetSchemaRelativePath() const override { return BRRA_SCHEMA_PATH; }
+    static WCharCP GetSchemaRelativePath() { return BRRA_SCHEMA_PATH; }
+    ROADRAILALIGNMENT_EXPORT static void OnSchemaImported(Dgn::SubjectCR subject);
 }; // RoadRailAlignmentDomain
 
 //__PUBLISH_SECTION_START__

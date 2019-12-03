@@ -25,7 +25,7 @@ private:
     static Dgn::DgnSubCategoryId QuerySubCategoryId(Dgn::DgnDbR, Dgn::DgnCategoryId, Utf8CP);
 
 public:
-    static void InsertDomainCategories(Dgn::DgnDbR);
+    static void InsertDomainCategories(Dgn::SubjectCR subject);
 
 //__PUBLISH_SECTION_START__
 public:

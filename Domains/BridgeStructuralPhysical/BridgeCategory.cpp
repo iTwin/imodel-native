@@ -8,28 +8,6 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BridgeCategory::SetUp(DgnDbR db)
-    {
-    DgnDbStatus status;
-    auto categoryPartitionPtr = DefinitionPartition::Create(*db.Elements().GetRootSubject(), GetPartitionName());
-    if (categoryPartitionPtr->Insert(&status).IsNull())
-        {
-        BeAssert(false);
-        }
-
-    auto modelPtr = DefinitionModel::Create(*categoryPartitionPtr);
-
-    if (!modelPtr.IsValid() || (DgnDbStatus::Success != modelPtr->Insert()))
-        {
-        BeAssert(false);
-        }
-
-    BridgeCategory::InsertDomainCategories(db);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      05/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelId BridgeCategory::GetModelId(DgnDbR db)
     {
     DgnCode partitionCode = DefinitionPartition::CreateCode(*db.Elements().GetRootSubject(), GetPartitionName());
@@ -41,9 +19,7 @@ DgnModelId BridgeCategory::GetModelId(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DefinitionModelPtr BridgeCategory::GetModel(DgnDbR db)
     {
-    DefinitionModelPtr model = db.Models().Get<DefinitionModel>(GetModelId(db));
-    BeAssert(model.IsValid());
-    return model;
+    return RoadRailAlignmentDomain::QueryCategoryModel(db);
     }
 
 

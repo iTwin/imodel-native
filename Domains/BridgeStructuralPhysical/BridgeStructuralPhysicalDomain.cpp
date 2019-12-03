@@ -4,18 +4,10 @@
 *--------------------------------------------------------------------------------------------*/
 #include "BridgeStructuralPhysicalInternal.h"
 #include <BridgeStructuralPhysical/BridgeStructuralPhysicalDomain.h>
-DOMAIN_DEFINE_MEMBERS(BridgeStructuralPhysicalDomain)
 #include <BridgeStructuralPhysical/BridgeCategory.h>
 #include <BridgeStructuralPhysical/Bridge.h>
 #include <BridgeStructuralPhysical/BridgeSuperstructure.h>
 #include <BridgeStructuralPhysical/BridgeSubstructure.h>
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Nick.Purcell                    05/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-BridgeStructuralPhysicalDomain::BridgeStructuralPhysicalDomain() : DgnDomain(BBP_SCHEMA_NAME, "Bentley BridgeStructuralPhysical Domain", 1)
-    {
-    }
 
 void createCodeSpecs(DgnDbR dgndb)
     {
@@ -63,10 +55,10 @@ Dgn::DgnDbStatus BridgeStructuralPhysicalDomain::SetUpModelHierarchy(BridgeCR br
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BridgeStructuralPhysicalDomain::_OnSchemaImported(DgnDbR dgndb) const
+void BridgeStructuralPhysicalDomain::OnSchemaImported(SubjectCR subject)
     {
-    createCodeSpecs(dgndb);
-    BridgeCategory::SetUp(dgndb);
+    createCodeSpecs(subject.GetDgnDb());
+    BridgeCategory::InsertDomainCategories(subject.GetDgnDb());
     }
 
 

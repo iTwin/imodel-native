@@ -13,15 +13,13 @@ BEGIN_BENTLEY_LINEARREFERENCING_NAMESPACE
 //! The DgnDomain for the LinearReferencing schema.
 //! @ingroup GROUP_LinearReferencing
 //=======================================================================================
-struct LinearReferencingDomain : Dgn::DgnDomain
+struct LinearReferencingDomain
 {
-DOMAIN_DECLARE_MEMBERS(LinearReferencingDomain, LINEARREFERENCING_EXPORT)
+private:
+    LinearReferencingDomain() {}
 
 public:
-    LinearReferencingDomain();
-
-private:
-    WCharCP _GetSchemaRelativePath() const override { return BLR_SCHEMA_PATH; }
+    static WCharCP GetSchemaRelativePath() { return BLR_SCHEMA_PATH; }
 }; // LinearReferencingDomain
 
 END_BENTLEY_LINEARREFERENCING_NAMESPACE

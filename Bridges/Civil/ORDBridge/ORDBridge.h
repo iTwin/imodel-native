@@ -21,8 +21,11 @@ private:
     ORDConverter* m_converter;
     bool m_isUnitTesting;
 
-    enum class SchemaImportPhase : int16_t { Base = 1, Dynamic = 2, Extensions = 3, Done = 4 };
+    enum class SchemaImportPhase : int16_t { Base = 1, RoadRail = 2, Dynamic = 3, Extensions = 4, Done = 5 };
     SchemaImportPhase m_schemaImportPhase;
+
+private:
+    BentleyStatus InitializeAlignedPartitions(Dgn::SubjectCR jobSubject);
 
 protected:
     Dgn::CategorySelectorPtr CreateSpatialCategorySelector(Dgn::DefinitionModelR);

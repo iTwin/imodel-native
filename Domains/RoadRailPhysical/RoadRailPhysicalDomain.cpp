@@ -20,15 +20,6 @@
 
 BEGIN_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 
-DOMAIN_DEFINE_MEMBERS(RoadRailPhysicalDomain)
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-RoadRailPhysicalDomain::RoadRailPhysicalDomain() : DgnDomain(BRRP_SCHEMA_NAME, "Bentley RoadRailPhysical Domain", 2)
-    {    
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -45,10 +36,10 @@ void createCodeSpecs(DgnDbR dgndb)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RoadRailPhysicalDomain::_OnSchemaImported(DgnDbR dgndb) const
+void RoadRailPhysicalDomain::OnSchemaImported(SubjectCR subject)
     {
-    createCodeSpecs(dgndb);
-    RoadRailCategory::InsertDomainCategories(dgndb);
+    createCodeSpecs(subject.GetDgnDb());
+    RoadRailCategory::InsertDomainCategories(subject);
     }
 
 //---------------------------------------------------------------------------------------

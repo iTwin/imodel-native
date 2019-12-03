@@ -10,13 +10,6 @@
 
 BEGIN_BENTLEY_BRIDGESTRUCTURALPHYSICAL_NAMESPACE
 BE_JSON_NAME(BridgeStructuralPhysicalDomain)
-//---------------------------------------------------------------------------------------
-// @bsimethod                                  Nick.Purcell                  05/2018
-//---------------------------------------------------------------------------------------
-BentleyStatus BridgeStructuralPhysicalDomainUtilities::RegisterDomainHandlers()
-    {
-    return Dgn::DgnDomains::RegisterDomain(BridgeStructuralPhysicalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No);
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Nick.Purcell                  05/2018

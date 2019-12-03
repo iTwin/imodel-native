@@ -3171,26 +3171,44 @@ DgnViewId create3dView(DefinitionModelR model, Utf8StringCR viewName,
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ORDConverter::GetAlignedSubjectName() const
+    {
+    return Utf8PrintfString("%s <Aligned>", GetDgnDb().Elements().GetRootSubject()->GetCode().GetValueUtf8CP());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+SubjectCPtr ORDConverter::GetAlignedSubject() const
+    {
+    auto alignedSubjectId = GetDgnDb().Elements().QueryElementIdByCode(Subject::CreateCode(GetJobSubject(), GetAlignedSubjectName()));
+    return GetDgnDb().Elements().Get<Subject>(alignedSubjectId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ORDConverter::CreateDefaultSavedViews()
     {
-    auto& dictionaryModelR = GetDgnDb().GetDictionaryModel();
-    auto displayStyle3dPtr = createDefaultDisplayStyle3d(dictionaryModelR);
-    auto categorySelectorPtr = createDefaultSpatialCategorySelector(dictionaryModelR);
+    auto alignedSubjectCPtr = GetAlignedSubject();
+    auto configurationModelPtr = AlignmentBim::RoadRailAlignmentDomain::QueryConfigurationModel(*alignedSubjectCPtr);
+    auto displayStyle3dPtr = createDefaultDisplayStyle3d(*configurationModelPtr);
+    auto categorySelectorPtr = createDefaultSpatialCategorySelector(*configurationModelPtr);
 
     if (!m_planViewModels.empty())
         {
-        auto planViewModelSelectorPtr = createDefaultModelSelector(dictionaryModelR, "ORDBridge-PlanView", m_planViewModels);
+        auto planViewModelSelectorPtr = createDefaultModelSelector(*configurationModelPtr, "ORDBridge-PlanView", m_planViewModels);
         auto viewName = ORDBridgeElementCodes::GetString(ORDBridgeElementCodes::VIEW_PLANVIEW_MODELS());
-        create3dView(dictionaryModelR, viewName, *categorySelectorPtr, *planViewModelSelectorPtr, *displayStyle3dPtr);
+        create3dView(*configurationModelPtr, viewName, *categorySelectorPtr, *planViewModelSelectorPtr, *displayStyle3dPtr);
         }
 
     if (!m_3dModels.empty())
         {
-        auto threeDModelSelectorPtr = createDefaultModelSelector(dictionaryModelR, "ORDBridge-3D", m_3dModels);
+        auto threeDModelSelectorPtr = createDefaultModelSelector(*configurationModelPtr, "ORDBridge-3D", m_3dModels);
         auto viewName = ORDBridgeElementCodes::GetString(ORDBridgeElementCodes::VIEW_3D_MODELS());
-        create3dView(dictionaryModelR, viewName, *categorySelectorPtr, *threeDModelSelectorPtr, *displayStyle3dPtr);
+        create3dView(*configurationModelPtr, viewName, *categorySelectorPtr, *threeDModelSelectorPtr, *displayStyle3dPtr);
         }
     }
 
@@ -3376,6 +3394,86 @@ BentleyStatus ORDConverter::AddExtensionSchema(bool& hasMoreChanges)
     BentleyStatus retVal = (*m_makeSchemaChangeExtIter)->MakeSchemaChanges();
     hasMoreChanges = (++m_makeSchemaChangeExtIter != ORDConverterExtensionRegistry::s_extensions.end());
     return retVal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ORDConverter::MakeRoadRailSchemaChanges()
+    {
+    auto schemaReadContextPtr = ECN::ECSchemaReadContext::CreateContext(false, true);
+
+    auto assetsDir = GetParams().GetAssetsDir();
+    BeFileName ecdbDir = assetsDir;
+    ecdbDir.AppendToPath(L"ECSchemas");
+    ecdbDir.AppendToPath(L"ECDb");
+
+    BeFileName dgnDir = assetsDir;
+    dgnDir.AppendToPath(L"ECSchemas");
+    dgnDir.AppendToPath(L"Dgn");
+
+    BeFileName domainDir = assetsDir;
+    domainDir.AppendToPath(L"ECSchemas");
+    domainDir.AppendToPath(L"Domain");
+
+    schemaReadContextPtr->AddSchemaPath(ecdbDir);
+    schemaReadContextPtr->AddSchemaPath(dgnDir);
+    schemaReadContextPtr->AddSchemaPath(domainDir);
+
+    BeFileName lrSchemaPath = assetsDir;
+    lrSchemaPath.AppendToPath(LinearReferencingDomain::GetSchemaRelativePath());
+
+    ECN::ECSchemaPtr lrSchemaPtr;
+    if (ECN::SchemaReadStatus::Success != ECN::ECSchema::ReadFromXmlFile(lrSchemaPtr, lrSchemaPath.c_str(), *schemaReadContextPtr))
+        return BentleyStatus::ERROR;
+
+    BeFileName rraSchemaPath = assetsDir;
+    rraSchemaPath.AppendToPath(RoadRailAlignment::RoadRailAlignmentDomain::GetSchemaRelativePath());
+
+    ECN::ECSchemaPtr rraSchemaPtr;
+    if (ECN::SchemaReadStatus::Success != ECN::ECSchema::ReadFromXmlFile(rraSchemaPtr, rraSchemaPath.c_str(), *schemaReadContextPtr))
+        return BentleyStatus::ERROR;
+
+    BeFileName rrpSchemaPath = assetsDir;
+    rrpSchemaPath.AppendToPath(RoadRailPhysical::RoadRailPhysicalDomain::GetSchemaRelativePath());
+
+    ECN::ECSchemaPtr rrpSchemaPtr;
+    if (ECN::SchemaReadStatus::Success != ECN::ECSchema::ReadFromXmlFile(rrpSchemaPtr, rrpSchemaPath.c_str(), *schemaReadContextPtr))
+        return BentleyStatus::ERROR;
+
+    BeFileName rdpSchemaPath = assetsDir;
+    rdpSchemaPath.AppendToPath(RoadPhysical::RoadPhysicalDomain::GetSchemaRelativePath());
+
+    ECN::ECSchemaPtr rdpSchemaPtr;
+    if (ECN::SchemaReadStatus::Success != ECN::ECSchema::ReadFromXmlFile(rdpSchemaPtr, rdpSchemaPath.c_str(), *schemaReadContextPtr))
+        return BentleyStatus::ERROR;
+
+    BeFileName rlpSchemaPath = assetsDir;
+    rlpSchemaPath.AppendToPath(RailPhysical::RailPhysicalDomain::GetSchemaRelativePath());
+
+    ECN::ECSchemaPtr rlpSchemaPtr;
+    if (ECN::SchemaReadStatus::Success != ECN::ECSchema::ReadFromXmlFile(rlpSchemaPtr, rlpSchemaPath.c_str(), *schemaReadContextPtr))
+        return BentleyStatus::ERROR;
+
+    BeFileName bspSchemaPath = assetsDir;
+    bspSchemaPath.AppendToPath(BridgeStructuralPhysical::BridgeStructuralPhysicalDomain::GetSchemaRelativePath());
+
+    ECN::ECSchemaPtr bspSchemaPtr;
+    if (ECN::SchemaReadStatus::Success != ECN::ECSchema::ReadFromXmlFile(bspSchemaPtr, bspSchemaPath.c_str(), *schemaReadContextPtr))
+        return BentleyStatus::ERROR;
+
+    bvector<ECN::ECSchemaCP> schemas;
+    schemas.push_back(lrSchemaPtr.get());
+    schemas.push_back(rraSchemaPtr.get());
+    schemas.push_back(rrpSchemaPtr.get());
+    schemas.push_back(rdpSchemaPtr.get());
+    schemas.push_back(rlpSchemaPtr.get());
+    schemas.push_back(bspSchemaPtr.get());
+
+    if (SchemaStatus::Success != GetDgnDb().ImportSchemas(schemas))
+        return BentleyStatus::ERROR;
+
+    return BentleyStatus::SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**

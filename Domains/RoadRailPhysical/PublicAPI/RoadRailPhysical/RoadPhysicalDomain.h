@@ -15,22 +15,20 @@ BEGIN_BENTLEY_ROADPHYSICAL_NAMESPACE
 //! The DgnDomain for the RoadPhysical schema.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct RoadPhysicalDomain : Dgn::DgnDomain
+struct RoadPhysicalDomain
 {
-DOMAIN_DECLARE_MEMBERS(RoadPhysicalDomain, ROADRAILPHYSICAL_EXPORT)
+private:
+    //! @private
+    RoadPhysicalDomain() {}
 
 public:
-    //! @private
-    RoadPhysicalDomain();
-
     //! @private
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus SetUpDefinitionPartition(Dgn::SubjectCR subject);
 
     //! The name of the RoadwayStandards Partition
     static Utf8CP GetRoadwayStandardsPartitionName() { return "Roadway Standards"; }
 
-private:
-    WCharCP _GetSchemaRelativePath() const override { return BRDP_SCHEMA_PATH; }
+    static WCharCP GetSchemaRelativePath() { return BRDP_SCHEMA_PATH; }
 }; // RoadPhysicalDomain
 
 //=======================================================================================

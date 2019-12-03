@@ -18,15 +18,6 @@
         BeAssert(codeSpecPtr->GetCodeSpecId().IsValid()); } \
     }
 
-DOMAIN_DEFINE_MEMBERS(RoadRailAlignmentDomain)
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-RoadRailAlignmentDomain::RoadRailAlignmentDomain() : DgnDomain(BRRA_SCHEMA_NAME, "Bentley RoadRailAlignment Domain", 2)
-    {
-    }
-
 BEGIN_UNNAMED_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Alexandre.Gagnon                        09/2017
@@ -109,19 +100,16 @@ DgnDbStatus RoadRailAlignmentDomain::SetUpDefinitionPartitions(SubjectCR subject
         BeAssert(false);
         }
 
-    /*if (DgnDbStatus::Success != (status = InsertViewDefinitions(*configModelPtr)))
-        return status;*/
-
     return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void createDomainCategoriesPartition(DgnDbR db)
+void createDomainCategoriesPartition(SubjectCR subject)
     {
     DgnDbStatus status;
-    auto categoryPartitionPtr = DefinitionPartition::Create(*db.Elements().GetRootSubject(), RoadRailAlignmentDomain::GetDomainCategoriesPartitionName());
+    auto categoryPartitionPtr = DefinitionPartition::Create(subject, RoadRailAlignmentDomain::GetDomainCategoriesPartitionName());
     if (categoryPartitionPtr->Insert(&status).IsNull())
         {
         BeAssert(false);
@@ -134,7 +122,7 @@ void createDomainCategoriesPartition(DgnDbR db)
         BeAssert(false);
         }
 
-    AlignmentCategory::InsertDomainCategories(db);
+    AlignmentCategory::InsertDomainCategories(subject.GetDgnDb());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -150,10 +138,11 @@ void createCodeSpecs(DgnDbR dgndb)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RoadRailAlignmentDomain::_OnSchemaImported(DgnDbR dgndb) const
+void RoadRailAlignmentDomain::OnSchemaImported(SubjectCR subject)
     {
-    createCodeSpecs(dgndb);
-    createDomainCategoriesPartition(dgndb);
+    SetParentSubject(subject);
+    createCodeSpecs(subject.GetDgnDb());
+    createDomainCategoriesPartition(subject);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -193,12 +182,29 @@ DefinitionModelPtr RoadRailAlignmentDomain::QueryConfigurationModel(SubjectCR su
     return model;
     }
 
+struct RoadRailCategoriesAppData : BeSQLite::Db::AppData
+{
+    struct RoadRailCategoriesKey : BeSQLite::Db::AppData::Key {};
+
+public:
+    RoadRailCategoriesAppData(SubjectCR subject): m_parentSubjectId(subject.GetElementId()) {}
+
+    static RoadRailCategoriesKey s_key;
+    Dgn::DgnElementId m_parentSubjectId;
+}; // RoadRailCategoriesAppData
+
+RoadRailCategoriesAppData::RoadRailCategoriesKey RoadRailCategoriesAppData::s_key;
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelId RoadRailAlignmentDomain::QueryCategoryModelId(DgnDbR db)
     {
-    DgnCode partitionCode = DefinitionPartition::CreateCode(*db.Elements().GetRootSubject(), RoadRailAlignmentDomain::GetDomainCategoriesPartitionName());
+    auto appDataPtr = db.FindAppData(RoadRailCategoriesAppData::s_key);
+    BeAssert(appDataPtr.IsValid());
+
+    auto parentSubjectCPtr = db.Elements().Get<Subject>(dynamic_cast<RoadRailCategoriesAppData*>(appDataPtr.get())->m_parentSubjectId);
+    DgnCode partitionCode = DefinitionPartition::CreateCode(*parentSubjectCPtr, RoadRailAlignmentDomain::GetDomainCategoriesPartitionName());
     return db.Models().QuerySubModelId(partitionCode);
     }
 
@@ -210,4 +216,12 @@ DefinitionModelPtr RoadRailAlignmentDomain::QueryCategoryModel(DgnDbR db)
     DefinitionModelPtr model = db.Models().Get<DefinitionModel>(QueryCategoryModelId(db));
     BeAssert(model.IsValid());
     return model;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void RoadRailAlignmentDomain::SetParentSubject(SubjectCR subject)
+    {
+    subject.GetDgnDb().AddAppData(RoadRailCategoriesAppData::s_key, new RoadRailCategoriesAppData(subject));
     }

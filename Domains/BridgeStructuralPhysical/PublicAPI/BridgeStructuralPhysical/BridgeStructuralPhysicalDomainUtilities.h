@@ -12,7 +12,6 @@ BEGIN_BENTLEY_BRIDGESTRUCTURALPHYSICAL_NAMESPACE
 //---------------------------------------------------------------------------------------
 struct BridgeStructuralPhysicalDomainUtilities
     {
-    BRIDGESTRUCTURALPHYSICAL_EXPORT static BentleyStatus                    RegisterDomainHandlers();
     BRIDGESTRUCTURALPHYSICAL_EXPORT static Utf8String                       BuildPhysicalModelCode(Utf8StringCR modelCodeName);
 
     BRIDGESTRUCTURALPHYSICAL_EXPORT static PhysicalModelPtr					GetPhysicalModel(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr);

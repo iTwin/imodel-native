@@ -15,22 +15,19 @@ BEGIN_BENTLEY_RAILPHYSICAL_NAMESPACE
 //! The DgnDomain for the RailPhysical schema.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct RailPhysicalDomain : Dgn::DgnDomain
+struct RailPhysicalDomain
 {
-DOMAIN_DECLARE_MEMBERS(RailPhysicalDomain, ROADRAILPHYSICAL_EXPORT)
+private:
+    RailPhysicalDomain() {}
 
 public:
-    //! @private
-    RailPhysicalDomain();
-
     //! @private
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus SetUpDefinitionPartition(Dgn::SubjectCR subject);
 
     //! The name of the RailwayStandards Partition
     static Utf8CP GetRailwayStandardsPartitionName() { return "Railway Standards"; }
 
-private:
-    WCharCP _GetSchemaRelativePath() const override { return BRLP_SCHEMA_PATH; }
+    static WCharCP GetSchemaRelativePath() { return BRLP_SCHEMA_PATH; }
 }; // RailPhysicalDomain
 
 //=======================================================================================

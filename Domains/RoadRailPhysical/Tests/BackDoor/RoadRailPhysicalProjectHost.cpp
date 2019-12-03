@@ -158,9 +158,76 @@ DgnDbPtr RoadRailPhysicalProjectHost::CreateProject(WCharCP baseName)
     if (!projectPtr.IsValid() || DbResult::BE_SQLITE_OK != createStatus)
         return nullptr;
 
+    auto schemaReadContextPtr = ECN::ECSchemaReadContext::CreateContext(false, true);
+
+    auto assetsDir = GetDgnPlatformAssetsDirectory();
+    BeFileName ecdbDir = assetsDir;
+    ecdbDir.AppendToPath(L"ECSchemas");
+    ecdbDir.AppendToPath(L"ECDb");
+
+    BeFileName dgnDir = assetsDir;
+    dgnDir.AppendToPath(L"ECSchemas");
+    dgnDir.AppendToPath(L"Dgn");
+
+    BeFileName domainDir = assetsDir;
+    domainDir.AppendToPath(L"ECSchemas");
+    domainDir.AppendToPath(L"Domain");
+
+    schemaReadContextPtr->AddSchemaPath(ecdbDir);
+    schemaReadContextPtr->AddSchemaPath(dgnDir);
+    schemaReadContextPtr->AddSchemaPath(domainDir);
+
+    BeFileName lrSchemaPath = assetsDir;
+    lrSchemaPath.AppendToPath(LinearReferencingDomain::GetSchemaRelativePath());
+
+    ECSchemaPtr lrSchemaPtr;
+    if (SchemaReadStatus::Success != ECSchema::ReadFromXmlFile(lrSchemaPtr, lrSchemaPath.c_str(), *schemaReadContextPtr))
+        return nullptr;
+
+    BeFileName rraSchemaPath = assetsDir;
+    rraSchemaPath.AppendToPath(RoadRailAlignmentDomain::GetSchemaRelativePath());
+
+    ECSchemaPtr rraSchemaPtr;
+    if (SchemaReadStatus::Success != ECSchema::ReadFromXmlFile(rraSchemaPtr, rraSchemaPath.c_str(), *schemaReadContextPtr))
+        return nullptr;
+
+    BeFileName rrpSchemaPath = assetsDir;
+    rrpSchemaPath.AppendToPath(RoadRailPhysicalDomain::GetSchemaRelativePath());
+
+    ECSchemaPtr rrpSchemaPtr;
+    if (SchemaReadStatus::Success != ECSchema::ReadFromXmlFile(rrpSchemaPtr, rrpSchemaPath.c_str(), *schemaReadContextPtr))
+        return nullptr;
+
+    BeFileName rdpSchemaPath = assetsDir;
+    rdpSchemaPath.AppendToPath(RoadPhysicalDomain::GetSchemaRelativePath());
+
+    ECSchemaPtr rdpSchemaPtr;
+    if (SchemaReadStatus::Success != ECSchema::ReadFromXmlFile(rdpSchemaPtr, rdpSchemaPath.c_str(), *schemaReadContextPtr))
+        return nullptr;
+
+    BeFileName rlpSchemaPath = assetsDir;
+    rlpSchemaPath.AppendToPath(RailPhysicalDomain::GetSchemaRelativePath());
+
+    ECSchemaPtr rlpSchemaPtr;
+    if (SchemaReadStatus::Success != ECSchema::ReadFromXmlFile(rlpSchemaPtr, rlpSchemaPath.c_str(), *schemaReadContextPtr))
+        return nullptr;
+
+    bvector<ECSchemaCP> schemas;
+    schemas.push_back(lrSchemaPtr.get());
+    schemas.push_back(rraSchemaPtr.get());
+    schemas.push_back(rrpSchemaPtr.get());
+    schemas.push_back(rdpSchemaPtr.get());
+    schemas.push_back(rlpSchemaPtr.get());
+
+    if (SchemaStatus::Success != projectPtr->ImportSchemas(schemas))
+        return nullptr;
+
     BeAssert(BentleyStatus::SUCCESS == projectPtr->Schemas().CreateClassViewsInDb());
 
     auto subjectCPtr = projectPtr->Elements().GetRootSubject();
+    RoadRailAlignmentDomain::OnSchemaImported(*subjectCPtr);
+    RoadRailPhysicalDomain::OnSchemaImported(*subjectCPtr);
+
     RoadRailAlignmentDomain::SetUpDefinitionPartitions(*subjectCPtr);
     RailPhysicalDomain::SetUpDefinitionPartition(*subjectCPtr);
     RoadPhysicalDomain::SetUpDefinitionPartition(*subjectCPtr);
@@ -187,6 +254,7 @@ DgnDbPtr RoadRailPhysicalProjectHost::OpenProject(WCharCP baseName)
     if (!projectPtr.IsValid() || (DbResult::BE_SQLITE_OK != openStatus))
         return nullptr;
 
+    RoadRailAlignmentDomain::SetParentSubject(*projectPtr->Elements().GetRootSubject());
     return projectPtr;
     }
 
@@ -199,11 +267,6 @@ RoadRailPhysicalProjectHostImpl::RoadRailPhysicalProjectHostImpl() : m_isInitial
     BeAssert((DgnPlatformLib::QueryHost() == NULL) && L"This means an old host is still registered. You should have terminated it first before creating a new host.");
 
     DgnPlatformLib::Initialize(*this);
-    DgnDomains::RegisterDomain(LinearReferencingDomain::GetDomain(), DgnDomain::Required::Yes);
-    DgnDomains::RegisterDomain(RoadRailAlignmentDomain::GetDomain(), DgnDomain::Required::Yes);
-    DgnDomains::RegisterDomain(RoadRailPhysicalDomain::GetDomain(), DgnDomain::Required::Yes);
-    DgnDomains::RegisterDomain(RailPhysicalDomain::GetDomain(), DgnDomain::Required::Yes);
-    DgnDomains::RegisterDomain(RoadPhysicalDomain::GetDomain(), DgnDomain::Required::Yes);
     m_isInitialized = true;
     }
 

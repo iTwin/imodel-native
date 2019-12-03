@@ -9,9 +9,9 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RoadRailCategory::InsertDomainCategories(DgnDbR db)
+void RoadRailCategory::InsertDomainCategories(SubjectCR subject)
     {
-    auto modelPtr = RoadRailAlignmentDomain::QueryCategoryModel(db);
+    auto modelPtr = RoadRailAlignmentDomain::QueryCategoryModel(subject.GetDgnDb());
     if (modelPtr.IsNull())
         {
         BeAssert(false);
