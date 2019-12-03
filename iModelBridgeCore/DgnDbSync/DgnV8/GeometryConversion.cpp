@@ -63,16 +63,22 @@ static Bentley::TransformCR DoInterop(BentleyApi::Transform const&source) { retu
 //---------------------------------------------------------------------------------------
 void Converter::ConvertLineStyleParams(Render::LineStyleParams& lsParams, DgnV8Api::LineStyleParams const* v8lsParams, double uorPerMeter, double componentScale, double modelLsScale)
     {
-    if (nullptr == v8lsParams)
-        {
-        lsParams.Init();
-        return;
-        }
-
     if (uorPerMeter == 0.0)
         {
         BeAssert(uorPerMeter != 0.0);
         uorPerMeter = 1;
+        }
+
+    if (nullptr == v8lsParams)
+        {
+        lsParams.Init();
+
+        if (1.0 != uorPerMeter)
+            {
+            lsParams.scale = uorPerMeter;
+            lsParams.modifiers |= STYLEMOD_SCALE;
+            }
+        return;
         }
 
     // NOTE: Need everything in uors so that GeometryParams::ApplyTransform can use full uor->db transform to scale/rotate like everything else...
