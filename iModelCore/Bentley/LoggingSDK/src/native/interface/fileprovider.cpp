@@ -149,7 +149,8 @@ WCharCP                 msg
         // our developers are stupid and to please contact support
         BSILOG_TRY
             {
-            fwprintf ( m_file, L"%-8ls %-20ls %ls\n", GetSeverityText(sev), pNs->c_str(), msg );
+            fwprintf ( m_file, L"%-8lS %-20lS %lS\n", GetSeverityText(sev), pNs->c_str(), msg );
+            fflush(m_file);
             }
         BSILOG_CATCH
             {
