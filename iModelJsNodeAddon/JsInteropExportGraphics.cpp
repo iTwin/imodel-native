@@ -229,7 +229,11 @@ struct ExportGraphicsContext : NullContext
     bvector<PartInstanceRecord>*    m_instances;
 
 ExportGraphicsContext(IGeometryProcessorR processor, bvector<PartInstanceRecord>* instances)
-    : m_processor(processor), m_instances(instances) {m_purpose = processor._GetProcessPurpose();}
+    : m_processor(processor), m_instances(instances)
+    {
+    m_purpose = processor._GetProcessPurpose();
+    m_viewflags.SetShowConstructions(true);
+    }
 
 Render::GraphicBuilderPtr _CreateGraphic(Render::GraphicBuilder::CreateParams const& params) override
     { return new ExportGraphicsBuilder(params, m_processor, *this); }
