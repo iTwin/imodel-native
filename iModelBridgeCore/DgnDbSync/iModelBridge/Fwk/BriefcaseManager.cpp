@@ -528,7 +528,7 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
     {
         BeAssert(IsNormalChannel());
 
-        if (!jobMemberInfo.IsChildOfJob())
+        if (!jobMemberInfo.IsChildOfJob() && !IsAssignedToChannel(modeledElement)) // (the submodel of any RepositoryLink element is open for writes by any bridge any time)
             return ReportChannelError(modeledElement, "During the data phases, a bridge may insert Job-specific models only. Top-level models and sub-models of dictionary elements are off-limits.");
 
         return RepositoryStatus::Success;
