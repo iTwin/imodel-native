@@ -25,43 +25,109 @@ struct C3dSchemaFactory
 {
 private:
     DgnDbR  m_dgndb;
-    ECSchemaPtr& m_targetSchema;
-    BeFileName  m_schemaPath;
     C3dImporterR m_importer;
+    ECSchemaPtr m_c3dSchema;
+    BeFileName  m_c3dSchemaPath;
+    // Civil domain schemas
+    ECSchemaPtr m_linearReferenceSchema;
+    ECSchemaPtr m_roadRailAlignmentSchema;
+    ECSchemaPtr m_roadRailPhysicalSchema;
+    ECSchemaPtr m_roadPhysicalSchema;
+    ECSchemaPtr m_railPhysicalSchema;
+    bvector<ECSchemaCP> m_schemasToImport;
 
 public:
-    C3dSchemaFactory (ECSchemaPtr& schema, C3dImporterR importer) : m_targetSchema(schema), m_importer(importer), m_dgndb(importer.GetDgnDb()) {}
+    C3dSchemaFactory (C3dImporterR importer) : m_importer(importer), m_dgndb(importer.GetDgnDb()) {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          11/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus UpdateSchema (ECSchemaReadContextR schemaContext)
+SchemaReadStatus UpdateC3dSchema (ECSchemaReadContextR schemaContext)
     {
     // WIP - upgrade C3D schema??
-    if (m_targetSchema->GetVersionWrite() >= C3DSCHEMA_VERSION_Write)
-        m_targetSchema = nullptr;
+    if (m_c3dSchema->GetVersionWrite() >= C3DSCHEMA_VERSION_Write)
+        m_c3dSchema = nullptr;
 
-    return ECObjectsStatus::Success;
+    if (m_c3dSchema.IsValid())
+        m_schemasToImport.push_back (m_c3dSchema.get());
+
+    return SchemaReadStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          11/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus CreateSchema (SchemaKeyCR key, ECSchemaReadContextR schemaContext)
+SchemaReadStatus CreateC3dSchema (SchemaKeyCR key, ECSchemaReadContextR schemaContext)
     {
-    auto status = ECSchema::ReadFromXmlFile(m_targetSchema, m_schemaPath, schemaContext);
+    auto status = ECSchema::ReadFromXmlFile(m_c3dSchema, m_c3dSchemaPath, schemaContext);
     if (status != SchemaReadStatus::Success)
-        return  ECObjectsStatus::SchemaNotFound;
+        return  status;
 
-    auto checksum = m_targetSchema->ComputeCheckSum ();
+    auto checksum = m_c3dSchema->ComputeCheckSum ();
 
-    return  ECObjectsStatus::Success;
+    m_schemasToImport.push_back (m_c3dSchema.get());
+
+    return  SchemaReadStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          11/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus CreateOrUpdateSchema (ECSchemaReadContextR schemaContext)
+SchemaReadStatus    AddCivilDomainSchemas (ECSchemaReadContextR schemaContext)
+    {
+    BeFileName  m_assetsDir(m_importer.GetOptions().GetAssetsDir());
+    WString     schemaPath = m_assetsDir;
+    BeFileName::AppendToPath (schemaPath, LinearReferencingDomain::GetSchemaRelativePath());
+
+    auto status = ECSchema::ReadFromXmlFile (m_linearReferenceSchema, schemaPath.c_str(), schemaContext);
+    if (status != SchemaReadStatus::Success)
+        return  status;
+
+    m_schemasToImport.push_back (m_linearReferenceSchema.get());
+
+    schemaPath = m_assetsDir;
+    BeFileName::AppendToPath (schemaPath, RoadRailAlignment::RoadRailAlignmentDomain::GetSchemaRelativePath());
+
+    status = ECSchema::ReadFromXmlFile (m_roadRailAlignmentSchema, schemaPath.c_str(), schemaContext);
+    if (status != SchemaReadStatus::Success)
+        return  status;
+    
+    m_schemasToImport.push_back (m_roadRailAlignmentSchema.get());
+
+    schemaPath = m_assetsDir;
+    BeFileName::AppendToPath (schemaPath, RoadRailPhysical::RoadRailPhysicalDomain::GetSchemaRelativePath());
+
+    status = ECSchema::ReadFromXmlFile (m_roadRailPhysicalSchema, schemaPath.c_str(), schemaContext);
+    if (status != SchemaReadStatus::Success)
+        return  status;
+    
+    m_schemasToImport.push_back (m_roadRailPhysicalSchema.get());
+
+    schemaPath = m_assetsDir;
+    BeFileName::AppendToPath (schemaPath, RoadPhysical::RoadPhysicalDomain::GetSchemaRelativePath());
+
+    status = ECSchema::ReadFromXmlFile (m_roadPhysicalSchema, schemaPath.c_str(), schemaContext);
+    if (status != SchemaReadStatus::Success)
+        return  status;
+    
+    m_schemasToImport.push_back (m_roadPhysicalSchema.get());
+
+    schemaPath = m_assetsDir;
+    BeFileName::AppendToPath (schemaPath, RailPhysical::RailPhysicalDomain::GetSchemaRelativePath());
+
+    status = ECSchema::ReadFromXmlFile (m_railPhysicalSchema, schemaPath.c_str(), schemaContext);
+    if (status != SchemaReadStatus::Success)
+        return  status;
+    
+    m_schemasToImport.push_back (m_railPhysicalSchema.get());
+
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/19
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaReadStatus    CreateOrUpdateSchemas (ECSchemaReadContextR schemaContext)
     {
     BeFileName baseDir(m_importer.GetOptions().GetAssetsDir());
     baseDir.AppendToPath (L"ECSchemas");
@@ -86,13 +152,22 @@ ECObjectsStatus CreateOrUpdateSchema (ECSchemaReadContextR schemaContext)
     searchDir.AppendToPath (L"Application");
     schemaContext.AddSchemaPath (searchDir.c_str());
 
-    m_schemaPath = searchDir.AppendToPath (C3DSCHEMA_FileName);
+    auto status = this->AddCivilDomainSchemas (schemaContext);
+    if (status != SchemaReadStatus::Success)
+        return  status;
+
+    m_c3dSchemaPath = searchDir.AppendToPath (C3DSCHEMA_FileName);
 
     SchemaKey key(C3DSCHEMA_SchemaName, C3DSCHEMA_VERSION_Major, C3DSCHEMA_VERSION_Write, C3DSCHEMA_VERSION_Minor);
 
-    m_targetSchema = m_importer.GetDgnDb().GetSchemaLocater().LocateSchema (key, SchemaMatchType::Latest, schemaContext);
+    m_c3dSchema = m_importer.GetDgnDb().GetSchemaLocater().LocateSchema (key, SchemaMatchType::Latest, schemaContext);
 
-    return m_targetSchema.IsValid() ? this->UpdateSchema(schemaContext) : this->CreateSchema(key, schemaContext);
+    if (m_c3dSchema.IsValid())
+        status = this->UpdateC3dSchema (schemaContext);
+    else
+        status = this->CreateC3dSchema (key, schemaContext);
+        
+    return  status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -107,19 +182,16 @@ BentleyStatus MakeSchemaChanges ()
     if (schemaContext.IsNull())
         return  static_cast<BentleyStatus>(ECObjectsStatus::SchemaNotFound);
 
-    auto createStatus = this->CreateOrUpdateSchema (*schemaContext);
-    if (createStatus != ECObjectsStatus::Success)
+    auto createStatus = this->CreateOrUpdateSchemas (*schemaContext);
+    if (createStatus != SchemaReadStatus::Success)
         return  static_cast<BentleyStatus>(createStatus);
 
-    if (m_targetSchema.IsNull())
-        return  BentleyStatus::BSISUCCESS;
-
-    // import schemas
-    bvector<ECSchemaCP> schemas(1, m_targetSchema.get());
+    if (m_schemasToImport.empty())
+        return  BentleyStatus::BSIERROR;
 
     schemaContext->RemoveSchemaLocater (m_dgndb.GetSchemaLocater());
 
-    auto importStatus = m_dgndb.ImportSchemas (schemas);
+    auto importStatus = m_dgndb.ImportSchemas (m_schemasToImport);
     if (importStatus != SchemaStatus::Success)
         {
         m_importer.ReportError (IssueCategory::Unknown(), Issue::SchemaImportError(), Utf8PrintfString("C3D schema import status=%d", (int)importStatus).c_str());
@@ -140,10 +212,9 @@ BentleyStatus   C3dImporter::_MakeSchemaChanges ()
     if (status != BentleyStatus::BSISUCCESS)
         return  status;
 
-    ECSchemaPtr c3dSchema;
     this->SetTaskName (ProgressMessage::TASK_IMPORTING(), "C3D schemas");
 
-    C3dSchemaFactory factory(c3dSchema, *this);
+    C3dSchemaFactory factory(*this);
     status = factory.MakeSchemaChanges ();
 
     if (status == BentleyStatus::BSISUCCESS)

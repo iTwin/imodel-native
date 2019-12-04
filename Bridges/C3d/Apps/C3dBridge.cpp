@@ -67,7 +67,7 @@ void C3dBridge::_SetClientInfo ()
     // Set CONNECTION Client information to track product usage
     static constexpr char s_bridgeName[] = "iModelBridgeService-C3D";
     static constexpr char s_bridgeGuid[] = "F5EF4029-35E5-41CA-8F42-E3FEFEEB752A";
-    static constexpr char s_bridgePrgId[] = "9999";
+    static constexpr char s_bridgePrgId[] = "3021";
 
     BeVersion bridgeVersion;
 #ifdef REL_V

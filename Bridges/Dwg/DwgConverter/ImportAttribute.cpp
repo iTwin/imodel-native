@@ -438,7 +438,7 @@ ECObjectsStatus DwgImporter::AddAttrdefECClassFromBlock (ECSchemaPtr& attrdefSch
             status = attrdefClass->CreatePrimitiveProperty (prop, propName.c_str(), PRIMITIVETYPE_String);
             if (ECObjectsStatus::Success == status)
                 {
-                prop->SetDisplayLabel (propName.c_str());
+                prop->SetDisplayLabel (DwgHelper::ToUtf8CP(attrdef->GetTag()));
 
                 if (attrdef->IsConstant())
                     {
