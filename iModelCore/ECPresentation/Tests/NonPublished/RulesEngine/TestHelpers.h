@@ -98,8 +98,61 @@ struct RulesEngineTestHelpers
 
     static void CacheNode(IHierarchyCacheR cache, JsonNavNodeR node);
 
-
+    static Utf8String SerializeClassNames(bvector<ECClassCP> const& ecClasses)
+        {
+        Utf8String str;
+        bool first = true;
+        for (ECClassCP ecClass : ecClasses)
+            {
+            if (!first)
+                str.append("_");
+            str.append(QueryBuilderHelpers::CreateClassNameForDescriptor(*ecClass));
+            first = false;
+            }
+        return str;
+        }
+    static Utf8String CreateFieldName(bvector<ECClassCP> const& ecClasses, Utf8CP propertyName)
+        {
+        Utf8String name("pc_");
+        name.append(SerializeClassNames(ecClasses));
+        name.append("_").append(propertyName);
+        return name;
+        }
+    static Utf8String CreateFieldName(ECClassCP ecClass, Utf8CP propertyName)
+        {
+        return CreateFieldName(bvector<ECClassCP>{ecClass}, propertyName);
+        }
+    static Utf8String CreateRelatedFieldName(bvector<ECClassCP> relatedClasses, bvector<ECClassCP> propertyClasses, Utf8CP propertyName)
+        {
+        Utf8String name;
+        name.append("rc_").append(SerializeClassNames(relatedClasses));
+        name.append("_pc_").append(SerializeClassNames(propertyClasses));
+        name.append("_").append(propertyName);
+        return name;
+        }
+    static Utf8String CreateRelatedFieldName(bvector<ECClassCP> relatedClasses, ECClassCP propertyClass, Utf8CP propertyName)
+        {
+        return CreateRelatedFieldName(relatedClasses, bvector<ECClassCP>{propertyClass}, propertyName);
+        }
+    static Utf8String CreateRelatedFieldName(ECClassCP relatedClass, ECClassCP propertyClass, Utf8CP propertyName)
+        {
+        return CreateRelatedFieldName(bvector<ECClassCP>{relatedClass}, bvector<ECClassCP>{propertyClass}, propertyName);
+        }
+    static Utf8String CreateNestedContentFieldName(bvector<ECClassCP> relationshipClasses, ECClassCP nestedContentClass)
+        {
+        Utf8String name;
+        name.append("rc_").append(SerializeClassNames(relationshipClasses));
+        name.append("_ncc_").append(QueryBuilderHelpers::CreateClassNameForDescriptor(*nestedContentClass));
+        return name;
+        }
+    static Utf8String CreateNestedContentFieldName(ECClassCP relationshipClass, ECClassCP nestedContentClass)
+        {
+        return CreateNestedContentFieldName(bvector<ECClassCP>{relationshipClass}, nestedContentClass);
+        }
     };
+#define FIELD_NAME(ecClass, propertyName) RulesEngineTestHelpers::CreateFieldName(ecClass, propertyName).c_str()
+#define RELATED_FIELD_NAME(relatedClass, propertyClass, propertyName) RulesEngineTestHelpers::CreateRelatedFieldName(relatedClass, propertyClass, propertyName).c_str()
+#define NESTED_CONTENT_FIELD_NAME(selectClass, nestedContentClass) RulesEngineTestHelpers::CreateNestedContentFieldName(selectClass, nestedContentClass).c_str()
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                07/2015

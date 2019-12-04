@@ -1470,11 +1470,12 @@ TEST_F(ContentQueryExecutorTests, HandlesResultsMergingFromOneClass)
     ASSERT_TRUE(record.IsValid());
 
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({
-        "Gadget_MyID": "GadgetId",
-        "Gadget_Description": null
-        })");
-    expectedValues["Gadget_Description"].SetString(rapidjson::StringRef(formattedVariesStr.c_str()));
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": "GadgetId",
+        "%s": "%s"
+    })",
+        FIELD_NAME(m_gadgetClass, "MyID"), FIELD_NAME(m_gadgetClass, "Description"), formattedVariesStr.c_str()
+    ).c_str());
 
     rapidjson::Document json = record->AsJson();
     ASSERT_TRUE(json.IsObject());
@@ -1543,10 +1544,10 @@ TEST_F(ContentQueryExecutorTests, HandlesResultsMergingFromMultipleClasses)
     rapidjson::Document json = record->AsJson();
     ASSERT_TRUE(json.IsObject());
     ASSERT_TRUE(json.HasMember("Values") && json["Values"].IsObject());
-    ASSERT_TRUE(json["Values"].HasMember("Gadget_MyID") && json["Values"]["Gadget_MyID"].IsString());
-    ASSERT_STREQ(formattedVariesStr.c_str(), json["Values"]["Gadget_MyID"].GetString());
-    ASSERT_TRUE(json["Values"].HasMember("Widget_MyID") && json["Values"]["Widget_MyID"].IsString());
-    ASSERT_STREQ(formattedVariesStr.c_str(), json["Values"]["Widget_MyID"].GetString());
+    ASSERT_TRUE(json["Values"].HasMember(FIELD_NAME(m_gadgetClass, "MyID")) && json["Values"][FIELD_NAME(m_gadgetClass, "MyID")].IsString());
+    ASSERT_STREQ(formattedVariesStr.c_str(), json["Values"][FIELD_NAME(m_gadgetClass, "MyID")].GetString());
+    ASSERT_TRUE(json["Values"].HasMember(FIELD_NAME(m_widgetClass, "MyID")) && json["Values"][FIELD_NAME(m_widgetClass, "MyID")].IsString());
+    ASSERT_STREQ(formattedVariesStr.c_str(), json["Values"][FIELD_NAME(m_widgetClass, "MyID")].GetString());
     ASSERT_TRUE(json["Values"].HasMember("Description") && json["Values"]["Description"].IsString());
     ASSERT_STREQ(formattedVariesStr.c_str(), json["Values"]["Description"].GetString());
     }
@@ -1583,16 +1584,18 @@ TEST_F(ContentQueryExecutorTests, HandlesStructProperties)
     ASSERT_TRUE(record.IsValid());
 
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({
-        "ClassI_StringProperty": "1",
-        "ClassI_StructProperty": {
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": "1",
+        "%s": {
            "IntProperty": 2,
            "StructProperty": {
                "IntProperty": 3,
                "StringProperty": "4"
-               }
-           }
-        })");
+            }
+        }
+    })", 
+        FIELD_NAME(classI, "StringProperty"), FIELD_NAME(classI, "StructProperty")
+    ).c_str());
 
     rapidjson::Document json = record->AsJson();
     ASSERT_TRUE(json.IsObject());
@@ -1648,16 +1651,18 @@ TEST_F(ContentQueryExecutorTests, HandlesArrayProperties)
     ASSERT_TRUE(record.IsValid());
 
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({
-        "ClassR_IntsArray": [2, 1],
-        "ClassR_StructsArray": [{
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": [2, 1],
+        "%s": [{
            "IntProperty": null,
            "StringProperty": "a"
-           },{
+        },{
            "IntProperty": null,
            "StringProperty": "b"
-           }]
-        })");
+       }]
+    })",
+        FIELD_NAME(classR, "IntsArray"), FIELD_NAME(classR, "StructsArray")
+    ).c_str());
 
     rapidjson::Document json = record->AsJson();
     ASSERT_TRUE(json.IsObject());
@@ -1697,10 +1702,12 @@ TEST_F(ContentQueryExecutorTests, SelectsRelatedProperties)
     ASSERT_TRUE(record.IsValid());
 
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({
-        "Gadget_MyID": "Test Gadget",
-        "Widget_MyID": "Test Widget"
-        })");
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": "Test Gadget",
+        "%s": "Test Widget"
+    })",
+        FIELD_NAME(m_gadgetClass, "MyID"), FIELD_NAME(m_widgetClass, "MyID")
+    ).c_str());
 
     rapidjson::Document json = record->AsJson();
     ASSERT_TRUE(json.IsObject());
@@ -1753,10 +1760,12 @@ TEST_F(ContentQueryExecutorTests, SelectsRelatedPropertiesFromOnlySingleClassWhe
     ASSERT_TRUE(record.IsValid());
 
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({
-        "ClassE_IntProperty": 11,
-        "ClassD_StringProperty": "D Property"
-        })");
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": 11,
+        "%s": "D Property"
+    })",
+        FIELD_NAME(&classE, "IntProperty"), FIELD_NAME(&classD, "StringProperty")
+    ).c_str());
 
     rapidjson::Document json = record->AsJson();
     ASSERT_TRUE(json.IsObject());
@@ -1769,10 +1778,12 @@ TEST_F(ContentQueryExecutorTests, SelectsRelatedPropertiesFromOnlySingleClassWhe
     record = executor.GetRecord(1);
     ASSERT_TRUE(record.IsValid());
 
-    expectedValues.Parse(R"({
-        "ClassE_IntProperty": 22,
-        "ClassD_StringProperty": null
-        })");
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": 22,
+        "%s": null
+    })",
+        FIELD_NAME(&classE, "IntProperty"), FIELD_NAME(&classD, "StringProperty")
+    ).c_str());
 
     json = record->AsJson();
     ASSERT_TRUE(json.IsObject());
@@ -1819,13 +1830,16 @@ TEST_F(ContentQueryExecutorTests, UsesSuppliedECPropertyFormatterToFormatPrimiti
     ASSERT_TRUE(record.IsValid());
 
     rapidjson::Document expectedDisplayValues;
-    expectedDisplayValues.Parse(R"({
-        "Widget_MyID": "_Test 1_",
-        "Widget_Description": "_Test 2_",
-        "Widget_IntProperty": "_3_",
-        "Widget_BoolProperty": "_True_",
-        "Widget_DoubleProperty": "_4_"
-        })");
+    expectedDisplayValues.Parse(Utf8PrintfString(R"({
+        "%s": "_Test 1_",
+        "%s": "_Test 2_",
+        "%s": "_3_",
+        "%s": "_True_",
+        "%s": "_4_"
+    })",
+        FIELD_NAME(m_widgetClass, "MyID"), FIELD_NAME(m_widgetClass, "Description"), FIELD_NAME(m_widgetClass, "IntProperty"),
+        FIELD_NAME(m_widgetClass, "BoolProperty"), FIELD_NAME(m_widgetClass, "DoubleProperty")
+    ).c_str());
 
     rapidjson::Document json = record->AsJson();
     EXPECT_EQ(expectedDisplayValues, json["DisplayValues"])
@@ -1864,14 +1878,14 @@ TEST_F(QueryExecutorTests, GetDistinctStringValuesFromPropertyField)
     ASSERT_EQ(2, executor.GetRecordsCount());
 
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({"Widget_MyID": "Test1"})");
+    expectedValues.Parse(Utf8PrintfString(R"({"%s": "Test1"})", FIELD_NAME(m_widgetClass, "MyID")).c_str());
     ContentSetItemPtr record1 = executor.GetRecord(0);
     ASSERT_TRUE(record1.IsValid());
     EXPECT_EQ(expectedValues, record1->AsJson()["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(record1->AsJson()["Values"]);
 
-    expectedValues.Parse(R"({"Widget_MyID": "Test2"})");
+    expectedValues.Parse(Utf8PrintfString(R"({"%s": "Test2"})", FIELD_NAME(m_widgetClass, "MyID")).c_str());
     ContentSetItemPtr record2 = executor.GetRecord(1);
     ASSERT_TRUE(record2.IsValid());
     EXPECT_EQ(expectedValues, record2->AsJson()["Values"])

@@ -8,6 +8,7 @@
 #include <ECObjects/ECQuantityFormatting.h>
 #include "ValueHelpers.h"
 #include "RulesDriven/RulesEngine/LoggingHelper.h"
+#include "RulesDriven/RulesEngine/QueryBuilderHelpers.h"
 #include "../Localization/Xliffs/ECPresentation.xliff.h"
 
 const int ContentDescriptor::Property::DEFAULT_PRIORITY = 0;
@@ -699,7 +700,7 @@ rapidjson::Document ContentDescriptor::CalculatedPropertyField::_AsJson(rapidjso
 ContentDescriptor::ECPropertiesField::ECPropertiesField(Category category, Property const& prop)
     {
     SetCategory(category);
-    SetName(Utf8String(prop.GetPropertyClass().GetName()).append("_").append(prop.GetProperty().GetName()));
+    SetName(Utf8String("pc_").append(QueryBuilderHelpers::CreateClassNameForDescriptor(prop.GetPropertyClass())).append("_").append(prop.GetProperty().GetName()));
     SetLabel(prop.GetProperty().GetDisplayLabel());
     m_properties.push_back(prop);
     }
@@ -820,12 +821,8 @@ int ContentDescriptor::ECPropertiesField::_GetPriority() const
 static Utf8String CreateFieldName(ContentDescriptor::ECPropertiesField const& field)
     {
     Utf8String name;
-    bool isRelated = field.GetProperties().front().IsRelated();
-    if (isRelated)
-        name.append("rel_");
-
-    bvector<Utf8CP> relatedClassNames;
-    bvector<Utf8CP> propertyClassNames;
+    bvector<Utf8String> relatedClassNames;
+    bvector<Utf8String> propertyClassNames;
 
     bset<ECClassCP> usedRelatedClasses;
     bset<ECClassCP> usedPropertyClasses;
@@ -839,23 +836,23 @@ static Utf8String CreateFieldName(ContentDescriptor::ECPropertiesField const& fi
                 if (usedRelatedClasses.end() != usedRelatedClasses.find(related.GetTargetClass()))
                     continue;
 
-                relatedClassNames.push_back(related.GetTargetClass()->GetName().c_str());
+                relatedClassNames.push_back(QueryBuilderHelpers::CreateClassNameForDescriptor(*related.GetTargetClass()));
                 usedRelatedClasses.insert(related.GetTargetClass());
                 }
             }
 
         if (usedPropertyClasses.end() == usedPropertyClasses.find(&prop.GetProperty().GetClass()))
             {
-            propertyClassNames.push_back(prop.GetProperty().GetClass().GetName().c_str());
+            propertyClassNames.push_back(QueryBuilderHelpers::CreateClassNameForDescriptor(prop.GetProperty().GetClass()));
             usedPropertyClasses.insert(&prop.GetProperty().GetClass());
             }
         }
 
     if (!relatedClassNames.empty())
-        name.append(BeStringUtilities::Join(relatedClassNames, "_")).append("_");
+        name.append("rc_").append(BeStringUtilities::Join(relatedClassNames, "_")).append("_");
 
     if (!propertyClassNames.empty())
-        name.append(BeStringUtilities::Join(propertyClassNames, "_")).append("_");
+        name.append("pc_").append(BeStringUtilities::Join(propertyClassNames, "_")).append("_");
 
     name.append(field.GetProperties().front().GetProperty().GetName());
     return name;

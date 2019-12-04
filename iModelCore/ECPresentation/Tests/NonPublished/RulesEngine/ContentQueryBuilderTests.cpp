@@ -301,7 +301,7 @@ TEST_F (ContentQueryBuilderTests, NestsFilterExpressionQuery)
     ContentInstancesOfSpecificClassesSpecification spec(1,"", "RulesEngineTest:Widget", false);
 
     ContentDescriptorPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
-    descriptor->SetFilterExpression("Widget_MyID = \"WidgetId\"");
+    descriptor->SetFilterExpression(Utf8PrintfString("%s = \"WidgetId\"", FIELD_NAME(GetECClass("RulesEngineTest", "Widget"), "MyID")).c_str());
     ASSERT_TRUE(descriptor.IsValid());
 
     ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor);

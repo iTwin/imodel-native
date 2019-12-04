@@ -112,6 +112,8 @@ public:
     static ECValue CreateECValueFromJson(RapidJsonValueCR);
 
     static GroupSpecificationCP GetActiveGroupingSpecification(GroupingRuleCR, IJsonLocalState const*);
+
+    static Utf8String CreateClassNameForDescriptor(ECClassCR ecClass) {return Utf8String(ecClass.GetSchema().GetAlias()).append("_").append(ecClass.GetName());}
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

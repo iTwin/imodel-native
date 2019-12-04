@@ -215,7 +215,8 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_AppliesInsta
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_CategorizesFields)
     {
-    ContentInstancesOfSpecificClassesSpecification spec(1, "", "Basic1:Class2", false);
+    ECClassCP class2 = GetECClass("Basic1", "Class2");
+    ContentInstancesOfSpecificClassesSpecification spec(1, "", class2->GetFullName(), false);
 
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
     ASSERT_TRUE(descriptor.IsValid());
@@ -226,10 +227,10 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_CategorizesF
     bvector<ContentDescriptor::Field*> fields = descriptor->GetVisibleFields();
     ASSERT_EQ(2, fields.size());
 
-    EXPECT_STREQ("Class2_Name", fields[0]->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME(class2, "Name"), fields[0]->GetName().c_str());
     EXPECT_STREQ("General", fields[0]->GetCategory().GetName().c_str());
 
-    EXPECT_STREQ("Class2_CategorizedProperty", fields[1]->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME(class2, "CategorizedProperty"), fields[1]->GetName().c_str());
     EXPECT_STREQ("CategoryName", fields[1]->GetCategory().GetName().c_str());
     EXPECT_STREQ("Category Label", fields[1]->GetCategory().GetLabel().c_str());
     EXPECT_STREQ("Category description", fields[1]->GetCategory().GetDescription().c_str());
@@ -264,6 +265,8 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_SetsMergeRes
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_MergesSimilarPropertiesIntoOneField)
     {
+    ECClassCP class1a = GetECClass("Basic1", "Class1A");
+    ECClassCP class2 = GetECClass("Basic1", "Class2");
     ContentInstancesOfSpecificClassesSpecification spec(1, "", "Basic1:Class1A,Class2", false);
 
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
@@ -275,10 +278,10 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_MergesSimila
     bvector<ContentDescriptor::Field*> fields = descriptor->GetVisibleFields();
     ASSERT_EQ(2, fields.size());
 
-    EXPECT_STREQ("Class1A_Class2_Name", fields[0]->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME((bvector<ECClassCP>{class1a, class2}), "Name"), fields[0]->GetName().c_str());
     EXPECT_EQ(2, fields[0]->AsPropertiesField()->GetProperties().size());
 
-    EXPECT_STREQ("Class2_CategorizedProperty", fields[1]->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME(class2, "CategorizedProperty"), fields[1]->GetName().c_str());
     EXPECT_EQ(1, fields[1]->AsPropertiesField()->GetProperties().size());
     }
 

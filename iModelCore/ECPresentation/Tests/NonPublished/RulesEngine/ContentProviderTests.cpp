@@ -443,7 +443,7 @@ TEST_F (ContentProviderTests, PagingSortedData)
     ASSERT_TRUE(nullptr != provider->GetContentDescriptor());
 
     ContentDescriptorPtr ovr = ContentDescriptor::Create(*provider->GetContentDescriptor());
-    ovr->SetSortingField("Widget_IntProperty");
+    ovr->SetSortingField(FIELD_NAME(m_widgetClass, "IntProperty"));
     provider->SetContentDescriptor(*ovr);
     // result: instance3, instance1, instance2
 
@@ -548,11 +548,11 @@ TEST_F(ContentProviderTests, LoadsNestedContentFields)
     
     ASSERT_TRUE(value[0].IsObject());
     EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*sprocket1).GetId().GetValue(), BeRapidJsonUtilities::UInt64FromValue(value[0]["PrimaryKeys"][0]["ECInstanceId"]));
-    EXPECT_STREQ("One", value[0]["Values"]["Sprocket_Description"].GetString());
+    EXPECT_STREQ("One", value[0]["Values"][FIELD_NAME(m_sprocketClass, "Description")].GetString());
     
     ASSERT_TRUE(value[1].IsObject());
     EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*sprocket2).GetId().GetValue(), BeRapidJsonUtilities::UInt64FromValue(value[1]["PrimaryKeys"][0]["ECInstanceId"]));
-    EXPECT_STREQ("Two", value[1]["Values"]["Sprocket_Description"].GetString());
+    EXPECT_STREQ("Two", value[1]["Values"][FIELD_NAME(m_sprocketClass, "Description")].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**

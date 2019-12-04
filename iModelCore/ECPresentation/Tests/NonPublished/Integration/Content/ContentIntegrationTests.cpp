@@ -123,10 +123,10 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Retu
     bvector<ContentDescriptor::Field*> fields = descriptor->GetVisibleFields();
     ASSERT_EQ(1, fields.size());
     ASSERT_TRUE(fields.front()->IsNestedContentField());
-    EXPECT_STREQ("Element_ElementUniqueAspect", fields.front()->GetName().c_str());
+    EXPECT_STREQ(NESTED_CONTENT_FIELD_NAME(elementClass, aspectClass), fields.front()->GetName().c_str());
     ContentDescriptor::NestedContentField const* field = fields.front()->AsNestedContentField();
     ASSERT_EQ(1, field->GetFields().size());
-    EXPECT_STREQ("ElementUniqueAspect_AspectName", field->GetFields().front()->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME(aspectClass, "AspectName"), field->GetFields().front()->GetName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -373,7 +373,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_WithSor
 
     // create the override
     ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
-    ovr->SetSortingField("Gadget_Widget_MyID");
+    ovr->SetSortingField(FIELD_NAME((bvector<ECClassCP>{m_gadgetClass, m_widgetClass}), "MyID"));
 
     // get the content with descriptor override
     content = m_manager->GetContent(*ovr, PageOptions()).get();
@@ -485,7 +485,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_Sorting
 
     // create the override
     ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
-    ovr->SetSortingField("ClassQ_IntEnum");
+    ovr->SetSortingField(FIELD_NAME(classQ, "IntEnum"));
 
     // get the content with descriptor override
     ContentCPtr content = m_manager->GetContent(*ovr, PageOptions()).get();
@@ -523,7 +523,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_Removes
 
     // create the override
     ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
-    ovr->RemoveField("Widget_IntProperty");
+    ovr->RemoveField(FIELD_NAME(m_widgetClass, "IntProperty"));
 
     // get the content with descriptor override
     ContentCPtr content = m_manager->GetContent(*ovr, PageOptions()).get();
@@ -532,7 +532,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_Removes
     // make sure the IntProperty field has been removed
     EXPECT_EQ(6, content->GetDescriptor().GetVisibleFields().size());
     EXPECT_TRUE(content->GetDescriptor().GetAllFields().end() == std::find_if(content->GetDescriptor().GetAllFields().begin(), content->GetDescriptor().GetAllFields().end(),
-        [](ContentDescriptor::Field const* field){return field->GetName().Equals("Widget_IntProperty");}));
+        [&](ContentDescriptor::Field const* field){return field->GetName().Equals(FIELD_NAME(m_widgetClass, "IntProperty"));}));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -559,7 +559,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_Removes
 
     // create the override
     ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
-    ovr->RemoveField("Sprocket_Gadget");
+    ovr->RemoveField(FIELD_NAME(m_sprocketClass, "Gadget"));
 
     // get the content with descriptor override
     ContentCPtr content = m_manager->GetContent(*ovr, PageOptions()).get();
@@ -571,8 +571,8 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_Removes
     ASSERT_EQ(1, content->GetContentSet().GetSize());
     ContentSetItemCPtr record = content->GetContentSet().Get(0);
     rapidjson::Document json = record->AsJson();
-    EXPECT_FALSE(json["Values"].HasMember("Sprocket_Gadget"));
-    EXPECT_FALSE(json["DisplayValues"].HasMember("Sprocket_Gadget"));
+    EXPECT_FALSE(json["Values"].HasMember(FIELD_NAME(m_sprocketClass, "Gadget")));
+    EXPECT_FALSE(json["DisplayValues"].HasMember(FIELD_NAME(m_sprocketClass, "Gadget")));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -597,7 +597,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_WithFil
     rules->AddPresentationRule(*rule);
 
     // get the descriptor
-    RulesDrivenECPresentationManager::ContentOptions options("DescriptorOverride_WithFilters");
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
     ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
 
@@ -610,7 +610,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_WithFil
 
     // create the override
     ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
-    ovr->SetFilterExpression("Widget_IntProperty > 1 or Widget_DoubleProperty < 0");
+    ovr->SetFilterExpression(Utf8PrintfString("%s > 1 or %s < 0", FIELD_NAME(m_widgetClass, "IntProperty"), FIELD_NAME(m_widgetClass, "DoubleProperty")).c_str());
 
     // get the content with descriptor override
     content = m_manager->GetContent(*ovr, PageOptions()).get();
@@ -642,7 +642,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_WithEsc
     rules->AddPresentationRule(*rule);
 
     // get the descriptor
-    RulesDrivenECPresentationManager::ContentOptions options("DescriptorOverride_WithEscapedFilters");
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
     ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
 
@@ -655,7 +655,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_WithEsc
 
     // create the override
     ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
-    ovr->SetFilterExpression("Widget_MyID LIKE \"%\\%%\"");
+    ovr->SetFilterExpression(Utf8String(FIELD_NAME(m_widgetClass, "MyID")).append(" LIKE \"%\\%%\"").c_str());
 
     // get the content with descriptor override
     content = m_manager->GetContent(*ovr, PageOptions()).get();
@@ -1469,6 +1469,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 TEST_F(RulesDrivenECPresentationManagerContentTests, CalculatedPropertiesSpecificationAppliedForBaseClassAndDerived_CreatesOneField)
     {
     // set up the dataset
+    ECEntityClassCP classE = GetClass("RulesEngineTest", "ClassE")->GetEntityClassCP();
     ECEntityClassCP classF = GetClass("RulesEngineTest", "ClassF")->GetEntityClassCP();
     ECEntityClassCP classH = GetClass("RulesEngineTest", "ClassH")->GetEntityClassCP();
     IECInstancePtr instanceF = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classF, [](IECInstanceR instance) { instance.SetValue("PropertyF", ECValue(1000));});
@@ -1509,22 +1510,22 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CalculatedPropertiesSpecifi
     rapidjson::Document jsonDoc = contentSet.Get(0)->AsJson();
     RapidJsonValueCR jsonValues = jsonDoc["Values"];
     EXPECT_STREQ("1000", jsonValues["CalculatedProperty_0"].GetString());
-    EXPECT_TRUE(jsonValues["ClassE_IntProperty"].IsNull());
-    EXPECT_EQ(1000, jsonValues["ClassF_PropertyF"].GetInt());
-    EXPECT_TRUE(jsonValues["ClassE_LongProperty"].IsNull());
-    EXPECT_TRUE(jsonValues["ClassH_PointProperty"].IsNull());
-    EXPECT_TRUE(jsonValues["ClassH_Point2dProperty"].IsNull());
-    EXPECT_TRUE(jsonValues["ClassE_ClassD"].IsNull());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(classE, "IntProperty")].IsNull());
+    EXPECT_EQ(1000, jsonValues[FIELD_NAME(classF, "PropertyF")].GetInt());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(classE, "LongProperty")].IsNull());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(classH, "PointProperty")].IsNull());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(classH, "Point2dProperty")].IsNull());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(classE, "ClassD")].IsNull());
 
     rapidjson::Document jsonDoc1 = contentSet.Get(1)->AsJson();
     RapidJsonValueCR jsonValues1 = jsonDoc1["Values"];
     EXPECT_STREQ("2000", jsonValues1["CalculatedProperty_0"].GetString());
-    EXPECT_TRUE(jsonValues1["ClassE_IntProperty"].IsNull());
-    EXPECT_EQ(2000, jsonValues1["ClassF_PropertyF"].GetInt());
-    EXPECT_TRUE(jsonValues1["ClassE_LongProperty"].IsNull());
-    EXPECT_FALSE(jsonValues1["ClassH_PointProperty"].IsNull());
-    EXPECT_TRUE(jsonValues["ClassH_Point2dProperty"].IsNull());
-    EXPECT_TRUE(jsonValues1["ClassE_ClassD"].IsNull());
+    EXPECT_TRUE(jsonValues1[FIELD_NAME(classE, "IntProperty")].IsNull());
+    EXPECT_EQ(2000, jsonValues1[FIELD_NAME(classF, "PropertyF")].GetInt());
+    EXPECT_TRUE(jsonValues1[FIELD_NAME(classE, "LongProperty")].IsNull());
+    EXPECT_FALSE(jsonValues1[FIELD_NAME(classH, "PointProperty")].IsNull());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(classH, "Point2dProperty")].IsNull());
+    EXPECT_TRUE(jsonValues1[FIELD_NAME(classE, "ClassD")].IsNull());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1593,43 +1594,43 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentSerialization)
         Utf8String name = (*field)["Name"].GetString();
         ASSERT_TRUE(value.HasMember(name.c_str()));
 
-        if (name == "Widget_Description")
+        if (name.Equals(FIELD_NAME(m_widgetClass, "Description")))
             {
             EXPECT_STREQ("MyDescription", value[name.c_str()].GetString());
             EXPECT_STREQ("Primitive", (*field)["Type"]["ValueFormat"].GetString());
             EXPECT_STREQ("string", (*field)["Type"]["TypeName"].GetString());
             }
-        else if (name == "Widget_MyID")
+        else if (name.Equals(FIELD_NAME(m_widgetClass, "MyID")))
             {
             EXPECT_STREQ("MyID", value[name.c_str()].GetString());
             EXPECT_STREQ("Primitive", (*field)["Type"]["ValueFormat"].GetString());
             EXPECT_STREQ("string", (*field)["Type"]["TypeName"].GetString());
             }
-        else if (name == "Widget_IntProperty")
+        else if (name.Equals(FIELD_NAME(m_widgetClass, "IntProperty")))
             {
             EXPECT_EQ(9, value[name.c_str()].GetInt());
             EXPECT_STREQ("Primitive", (*field)["Type"]["ValueFormat"].GetString());
             EXPECT_STREQ("int", (*field)["Type"]["TypeName"].GetString());
             }
-        else if (name == "Widget_BoolProperty")
+        else if (name.Equals(FIELD_NAME(m_widgetClass, "BoolProperty")))
             {
             EXPECT_TRUE(value[name.c_str()].GetBool());
             EXPECT_STREQ("Primitive", (*field)["Type"]["ValueFormat"].GetString());
             EXPECT_STREQ("boolean", (*field)["Type"]["TypeName"].GetString());
             }
-        else if (name == "Widget_DoubleProperty")
+        else if (name.Equals(FIELD_NAME(m_widgetClass, "DoubleProperty")))
             {
             EXPECT_DOUBLE_EQ(7.0, value[name.c_str()].GetDouble());
             EXPECT_STREQ("Primitive", (*field)["Type"]["ValueFormat"].GetString());
             EXPECT_STREQ("double", (*field)["Type"]["TypeName"].GetString());
             }
-        else if (name == "Widget_LongProperty")
+        else if (name.Equals(FIELD_NAME(m_widgetClass, "LongProperty")))
             {
             EXPECT_EQ(123, value[name.c_str()].GetInt64());
             EXPECT_STREQ("Primitive", (*field)["Type"]["ValueFormat"].GetString());
             EXPECT_STREQ("long", (*field)["Type"]["TypeName"].GetString());
             }
-        else if (name == "Widget_DateProperty")
+        else if (name.Equals(FIELD_NAME(m_widgetClass, "DateProperty")))
             {
             EXPECT_STREQ("2017-05-30T00:00:00.000", value[name.c_str()].GetString());
             EXPECT_STREQ("Primitive", (*field)["Type"]["ValueFormat"].GetString());
@@ -2913,19 +2914,19 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ReturnsPointPropertyContent
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
 
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"(
+    expectedValues.Parse(Utf8PrintfString(R"(
         {
-        "ClassH_PointProperty": {"x": 1.0, "y": 2.0, "z": 3.0}
-        })");
+        "%s": {"x": 1.0, "y": 2.0, "z": 3.0}
+        })", FIELD_NAME(ecClass, "PointProperty")).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
 
     rapidjson::Document expectedDisplayValues;
-    expectedDisplayValues.Parse(R"(
+    expectedDisplayValues.Parse(Utf8PrintfString(R"(
         {
-        "ClassH_PointProperty": "X: 1.00 Y: 2.00 Z: 3.00"
-        })");
+        "%s": "X: 1.00 Y: 2.00 Z: 3.00"
+        })", FIELD_NAME(ecClass, "PointProperty")).c_str());
     EXPECT_EQ(expectedDisplayValues, recordJson["DisplayValues"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["DisplayValues"]);
@@ -3456,6 +3457,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificClassesSpecification_ContentModifierOnBaseClassPropertyIsAppliedToOnlyOneChildClass)
     {
     // set up data set
+    ECClassCP baseOfBAndC = GetClass("RulesEngineTest", "BaseOfBAndC");
     ECEntityClassCP classB = GetClass("RulesEngineTest", "ClassB")->GetEntityClassCP();
     ECEntityClassCP classC = GetClass("RulesEngineTest", "ClassC")->GetEntityClassCP();
     IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance) { instance.SetValue("MyID", ECValue("B")); });
@@ -3480,7 +3482,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     // validate descriptor
     ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
-    EXPECT_EQ(3, descriptor->GetVisibleFields().size()); //ShouldBe:BaseOfBAndC_MyId, CalculatedProperty_0 Is:ClassB_ClassC_MyId, ClassB_ClassC_A, CalculatedProperty_0
+    EXPECT_EQ(3, descriptor->GetVisibleFields().size());
 
     // request for content
     ContentCPtr content = m_manager->GetContent(*descriptor, PageOptions()).get();
@@ -3492,23 +3494,24 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 
     rapidjson::Document jsonDoc = contentSet.Get(0)->AsJson();
     RapidJsonValueCR jsonValues = jsonDoc["Values"];
-    EXPECT_STREQ("B", jsonValues["BaseOfBAndC_MyID"].GetString());
+    EXPECT_STREQ("B", jsonValues[FIELD_NAME(baseOfBAndC, "MyID")].GetString());
     EXPECT_TRUE(jsonValues["CalculatedProperty_0"].IsNull());
-    EXPECT_TRUE(jsonValues["ClassB_ClassC_A"].IsNull());
+    EXPECT_TRUE(jsonValues[FIELD_NAME((bvector<ECClassCP>{classB, classC}), "A")].IsNull());
 
     rapidjson::Document jsonDoc2 = contentSet.Get(1)->AsJson();
     RapidJsonValueCR jsonValues2 = jsonDoc2["Values"];
-    EXPECT_STREQ("C", jsonValues2["BaseOfBAndC_MyID"].GetString());
+    EXPECT_STREQ("C", jsonValues2[FIELD_NAME(baseOfBAndC, "MyID")].GetString());
     EXPECT_STREQ("C", jsonValues2["CalculatedProperty_0"].GetString());
-    EXPECT_TRUE(jsonValues["ClassB_ClassC_A"].IsNull());
+    EXPECT_TRUE(jsonValues[FIELD_NAME((bvector<ECClassCP>{classB, classC}), "A")].IsNull());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificClassesSpecification_ContentModifierIsAppliedToOnlyOneChildClassPolimorphically)
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificClassesSpecification_ContentModifierIsAppliedToOnlyOneChildClassPolymorphically)
     {
     // set up data set
+    ECClassCP baseOfBAndC = GetClass("RulesEngineTest", "BaseOfBAndC");
     ECEntityClassCP classB = GetClass("RulesEngineTest", "ClassB")->GetEntityClassCP();
     ECEntityClassCP classC = GetClass("RulesEngineTest", "ClassC")->GetEntityClassCP();
     IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB,
@@ -3547,15 +3550,15 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 
     rapidjson::Document jsonDoc = contentSet.Get(0)->AsJson();
     RapidJsonValueCR jsonValues = jsonDoc["Values"];
-    EXPECT_STREQ("B", jsonValues["BaseOfBAndC_MyID"].GetString());
+    EXPECT_STREQ("B", jsonValues[FIELD_NAME(baseOfBAndC, "MyID")].GetString());
     EXPECT_TRUE(jsonValues["CalculatedProperty_0"].IsNull());
-    EXPECT_TRUE(jsonValues["ClassB_ClassC_A"].IsNull());
+    EXPECT_TRUE(jsonValues[FIELD_NAME((bvector<ECClassCP>{classB, classC}), "A")].IsNull());
 
     rapidjson::Document jsonDoc2 = contentSet.Get(1)->AsJson();
     RapidJsonValueCR jsonValues2 = jsonDoc2["Values"];
-    EXPECT_STREQ("C", jsonValues2["BaseOfBAndC_MyID"].GetString());
+    EXPECT_STREQ("C", jsonValues2[FIELD_NAME(baseOfBAndC, "MyID")].GetString());
     EXPECT_STREQ("C", jsonValues2["CalculatedProperty_0"].GetString());
-    EXPECT_TRUE(jsonValues2["ClassB_ClassC_A"].IsNull());
+    EXPECT_TRUE(jsonValues2[FIELD_NAME((bvector<ECClassCP>{classB, classC}), "A")].IsNull());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3590,7 +3593,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     // validate descriptor
     ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
-    EXPECT_EQ(8, descriptor->GetVisibleFields().size()); //Widget_MyId,Widget_Description, Widget_IntProperty, Widget_BoolProperty, Widget_DoubleProperty, Widget_LongProperty, Widget_Date, CalculatedProperty_0
+    EXPECT_EQ(8, descriptor->GetVisibleFields().size());
 
     // request for content
     ContentCPtr content = m_manager->GetContent(*descriptor, PageOptions()).get();
@@ -3602,13 +3605,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
 
     rapidjson::Document jsonDoc = contentSet.Get(0)->AsJson();
     RapidJsonValueCR jsonValues = jsonDoc["Values"];
-    EXPECT_TRUE(jsonValues["Widget_Description"].IsNull());
-    EXPECT_STREQ("WidgetID", jsonValues["Widget_MyID"].GetString());
-    EXPECT_TRUE(jsonValues["Widget_IntProperty"].IsNull());
-    EXPECT_TRUE(jsonValues["Widget_BoolProperty"].IsNull());
-    EXPECT_TRUE(jsonValues["Widget_DoubleProperty"].IsNull());
-    EXPECT_TRUE(jsonValues["Widget_LongProperty"].IsNull());
-    EXPECT_TRUE(jsonValues["Widget_DateProperty"].IsNull());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(m_widgetClass, "Description")].IsNull());
+    EXPECT_STREQ("WidgetID", jsonValues[FIELD_NAME(m_widgetClass, "MyID")].GetString());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(m_widgetClass, "IntProperty")].IsNull());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(m_widgetClass, "BoolProperty")].IsNull());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(m_widgetClass, "DoubleProperty")].IsNull());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(m_widgetClass, "LongProperty")].IsNull());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(m_widgetClass, "DateProperty")].IsNull());
     EXPECT_STREQ("WidgetID", jsonValues["CalculatedProperty_0"].GetString());
     }
 
@@ -3656,13 +3659,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
 
     rapidjson::Document jsonDoc = contentSet.Get(0)->AsJson();
     RapidJsonValueCR jsonValues = jsonDoc["Values"];
-    EXPECT_TRUE(jsonValues["Widget_Description"].IsNull());
-    EXPECT_STREQ("WidgetID", jsonValues["Widget_MyID"].GetString());
-    EXPECT_TRUE(jsonValues["Widget_IntProperty"].IsNull());
-    EXPECT_TRUE(jsonValues["Widget_BoolProperty"].IsNull());
-    EXPECT_TRUE(jsonValues["Widget_DoubleProperty"].IsNull());
-    EXPECT_TRUE(jsonValues["Widget_LongProperty"].IsNull());
-    EXPECT_TRUE(jsonValues["Widget_DateProperty"].IsNull());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(m_widgetClass, "Description")].IsNull());
+    EXPECT_STREQ("WidgetID", jsonValues[FIELD_NAME(m_widgetClass, "MyID")].GetString());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(m_widgetClass, "IntProperty")].IsNull());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(m_widgetClass, "BoolProperty")].IsNull());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(m_widgetClass, "DoubleProperty")].IsNull());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(m_widgetClass, "LongProperty")].IsNull());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(m_widgetClass, "DateProperty")].IsNull());
     EXPECT_STREQ("GadgetID", jsonValues["CalculatedProperty_0"].GetString());
     }
 
@@ -3678,6 +3681,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     ECEntityClassCP classE = GetClass("RulesEngineTest", "ClassE")->GetEntityClassCP();
     ECEntityClassCP classF = GetClass("RulesEngineTest", "ClassF")->GetEntityClassCP();
     ECEntityClassCP classG = GetClass("RulesEngineTest", "ClassG")->GetEntityClassCP();
+    ECEntityClassCP classH = GetClass("RulesEngineTest", "ClassH")->GetEntityClassCP();
     IECInstancePtr instanceD = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD);
     IECInstancePtr instanceE = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE);
     IECInstancePtr instanceF = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classF, [](IECInstanceR instance) { instance.SetValue("PropertyF", ECValue(1000)); });
@@ -3722,35 +3726,35 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     rapidjson::Document jsonDoc = contentSet.Get(0)->AsJson();
     RapidJsonValueCR jsonValues = jsonDoc["Values"];
     EXPECT_TRUE(jsonValues["CalculatedProperty_0"].IsNull());
-    EXPECT_TRUE(jsonValues["ClassE_IntProperty"].IsNull());
-    EXPECT_TRUE(jsonValues["ClassF_PropertyF"].IsNull());
-    EXPECT_TRUE(jsonValues["ClassE_LongProperty"].IsNull());
-    EXPECT_TRUE(jsonValues["ClassG_D"].IsNull());
-    EXPECT_TRUE(jsonValues["ClassH_PointProperty"].IsNull());
-    EXPECT_TRUE(jsonValues["ClassH_Point2dProperty"].IsNull());
-    EXPECT_EQ(instanceDId.GetValueUnchecked(), jsonValues["ClassE_ClassD"].GetInt64());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(classE, "IntProperty")].IsNull());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(classF, "PropertyF")].IsNull());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(classE, "LongProperty")].IsNull());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(classG, "D")].IsNull());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(classH, "PointProperty")].IsNull());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(classH, "Point2dProperty")].IsNull());
+    EXPECT_EQ(instanceDId.GetValueUnchecked(), jsonValues[FIELD_NAME(classE, "ClassD")].GetInt64());
 
     rapidjson::Document jsonDoc1 = contentSet.Get(1)->AsJson();
     RapidJsonValueCR jsonValues1 = jsonDoc1["Values"];
     EXPECT_STREQ("1000", jsonValues1["CalculatedProperty_0"].GetString());
-    EXPECT_TRUE(jsonValues1["ClassE_IntProperty"].IsNull());
-    EXPECT_EQ(1000, jsonValues1["ClassF_PropertyF"].GetInt());
-    EXPECT_TRUE(jsonValues1["ClassE_LongProperty"].IsNull());
-    EXPECT_TRUE(jsonValues1["ClassG_D"].IsNull());
-    EXPECT_TRUE(jsonValues1["ClassH_PointProperty"].IsNull());
-    EXPECT_TRUE(jsonValues1["ClassH_Point2dProperty"].IsNull());
-    EXPECT_EQ(instanceDId.GetValueUnchecked(), jsonValues1["ClassE_ClassD"].GetInt64());
+    EXPECT_TRUE(jsonValues1[FIELD_NAME(classE, "IntProperty")].IsNull());
+    EXPECT_EQ(1000, jsonValues1[FIELD_NAME(classF, "PropertyF")].GetInt());
+    EXPECT_TRUE(jsonValues1[FIELD_NAME(classE, "LongProperty")].IsNull());
+    EXPECT_TRUE(jsonValues1[FIELD_NAME(classG, "D")].IsNull());
+    EXPECT_TRUE(jsonValues1[FIELD_NAME(classH, "PointProperty")].IsNull());
+    EXPECT_TRUE(jsonValues1[FIELD_NAME(classH, "Point2dProperty")].IsNull());
+    EXPECT_EQ(instanceDId.GetValueUnchecked(), jsonValues1[FIELD_NAME(classE, "ClassD")].GetInt64());
 
     rapidjson::Document jsonDoc2 = contentSet.Get(2)->AsJson();
     RapidJsonValueCR jsonValues2 = jsonDoc2["Values"];
     EXPECT_TRUE(jsonValues2["CalculatedProperty_0"].IsNull());
-    EXPECT_TRUE(jsonValues2["ClassE_IntProperty"].IsNull());
-    EXPECT_TRUE(jsonValues2["ClassF_PropertyF"].IsNull());
-    EXPECT_TRUE(jsonValues2["ClassE_LongProperty"].IsNull());
-    EXPECT_TRUE(jsonValues2["ClassG_D"].IsNull());
-    EXPECT_TRUE(jsonValues2["ClassH_PointProperty"].IsNull());
-    EXPECT_TRUE(jsonValues2["ClassH_Point2dProperty"].IsNull());
-    EXPECT_EQ(instanceDId.GetValueUnchecked(), jsonValues2["ClassE_ClassD"].GetInt64());
+    EXPECT_TRUE(jsonValues2[FIELD_NAME(classE, "IntProperty")].IsNull());
+    EXPECT_TRUE(jsonValues2[FIELD_NAME(classF, "PropertyF")].IsNull());
+    EXPECT_TRUE(jsonValues2[FIELD_NAME(classE, "LongProperty")].IsNull());
+    EXPECT_TRUE(jsonValues2[FIELD_NAME(classG, "D")].IsNull());
+    EXPECT_TRUE(jsonValues2[FIELD_NAME(classH, "PointProperty")].IsNull());
+    EXPECT_TRUE(jsonValues2[FIELD_NAME(classH, "Point2dProperty")].IsNull());
+    EXPECT_EQ(instanceDId.GetValueUnchecked(), jsonValues2[FIELD_NAME(classE, "ClassD")].GetInt64());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3807,9 +3811,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
 
     rapidjson::Document jsonDoc = contentSet.Get(0)->AsJson();
     RapidJsonValueCR jsonValues = jsonDoc["Values"];
-    EXPECT_EQ(12345, jsonValues["ClassE_IntProperty"].GetInt());
-    EXPECT_TRUE(jsonValues["ClassE_LongProperty"].IsNull());
-    EXPECT_EQ(instanceDId.GetValueUnchecked(), jsonValues["ClassE_ClassD"].GetInt64());
+    EXPECT_EQ(12345, jsonValues[FIELD_NAME(classE, "IntProperty")].GetInt());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(classE, "LongProperty")].IsNull());
+    EXPECT_EQ(instanceDId.GetValueUnchecked(), jsonValues[FIELD_NAME(classE, "ClassD")].GetInt64());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3854,27 +3858,27 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Cont
 
     rapidjson::Document jsonDoc = contentSet.Get(0)->AsJson();
     RapidJsonValueCR jsonValues = jsonDoc["Values"];
-    EXPECT_TRUE(jsonValues["Gadget_Widget_Description"].IsNull());
-    EXPECT_STREQ("GadgetID", jsonValues["Gadget_Widget_MyID"].GetString());
-    EXPECT_TRUE(jsonValues["Widget_IntProperty"].IsNull());
-    EXPECT_TRUE(jsonValues["Widget_BoolProperty"].IsNull());
-    EXPECT_TRUE(jsonValues["Widget_DoubleProperty"].IsNull());
-    EXPECT_TRUE(jsonValues["Widget_LongProperty"].IsNull());
-    EXPECT_TRUE(jsonValues["Widget_DateProperty"].IsNull());
+    EXPECT_TRUE(jsonValues[FIELD_NAME((bvector<ECClassCP>{m_gadgetClass, m_widgetClass}), "Description")].IsNull());
+    EXPECT_STREQ("GadgetID", jsonValues[FIELD_NAME((bvector<ECClassCP>{m_gadgetClass, m_widgetClass}), "MyID")].GetString());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(m_widgetClass, "IntProperty")].IsNull());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(m_widgetClass, "BoolProperty")].IsNull());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(m_widgetClass, "DoubleProperty")].IsNull());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(m_widgetClass, "LongProperty")].IsNull());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(m_widgetClass, "DateProperty")].IsNull());
     EXPECT_STREQ("GadgetID", jsonValues["CalculatedProperty_0"].GetString());
-    EXPECT_TRUE(jsonValues["Gadget_Widget"].IsNull());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(m_gadgetClass, "Widget")].IsNull());
 
     rapidjson::Document jsonDoc2 = contentSet.Get(1)->AsJson();
     RapidJsonValueCR jsonValues2 = jsonDoc2["Values"];
-    EXPECT_TRUE(jsonValues2["Gadget_Widget_Description"].IsNull());
-    EXPECT_TRUE(jsonValues2["Gadget_Widget_MyID"].IsNull());
-    EXPECT_TRUE(jsonValues2["Widget_IntProperty"].IsNull());
-    EXPECT_TRUE(jsonValues2["Widget_BoolProperty"].IsNull());
-    EXPECT_TRUE(jsonValues2["Widget_DoubleProperty"].IsNull());
-    EXPECT_TRUE(jsonValues2["Widget_LongProperty"].IsNull());
-    EXPECT_TRUE(jsonValues2["Widget_DateProperty"].IsNull());
+    EXPECT_TRUE(jsonValues2[FIELD_NAME((bvector<ECClassCP>{m_gadgetClass, m_widgetClass}), "Description")].IsNull());
+    EXPECT_TRUE(jsonValues2[FIELD_NAME((bvector<ECClassCP>{m_gadgetClass, m_widgetClass}), "MyID")].IsNull());
+    EXPECT_TRUE(jsonValues2[FIELD_NAME(m_widgetClass, "IntProperty")].IsNull());
+    EXPECT_TRUE(jsonValues2[FIELD_NAME(m_widgetClass, "BoolProperty")].IsNull());
+    EXPECT_TRUE(jsonValues2[FIELD_NAME(m_widgetClass, "DoubleProperty")].IsNull());
+    EXPECT_TRUE(jsonValues2[FIELD_NAME(m_widgetClass, "LongProperty")].IsNull());
+    EXPECT_TRUE(jsonValues2[FIELD_NAME(m_widgetClass, "DateProperty")].IsNull());
     EXPECT_TRUE(jsonValues2["CalculatedProperty_0"].IsNull());
-    EXPECT_TRUE(jsonValues2["Gadget_Widget"].IsNull());
+    EXPECT_TRUE(jsonValues2[FIELD_NAME(m_gadgetClass, "Widget")].IsNull());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4251,7 +4255,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyDisplayOverride_Pri
     ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(1, descriptor->GetVisibleFields().size());
-    EXPECT_STREQ("ClassA_UserLabel", descriptor->GetVisibleFields()[0]->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME(classA, "UserLabel"), descriptor->GetVisibleFields()[0]->GetName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4866,8 +4870,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyLabelOverride_Field
     // validate descriptor
     ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
-    EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // Gadget_Widget_MyID
-    EXPECT_STREQ("Gadget_Widget_MyID", descriptor->GetVisibleFields()[0]->GetName().c_str());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+    EXPECT_STREQ(FIELD_NAME((bvector<ECClassCP>{m_gadgetClass, m_widgetClass}), "MyID"), descriptor->GetVisibleFields()[0]->GetName().c_str());
     EXPECT_STREQ("Custom Property Label", descriptor->GetVisibleFields()[0]->GetLabel().c_str());
     }
 
@@ -4905,10 +4909,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyLabelOverride_Field
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(2, descriptor->GetVisibleFields().size()); // Widget_MyID, Gadget_MyID
 
-    EXPECT_STREQ("Gadget_MyID", descriptor->GetVisibleFields()[0]->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME(m_gadgetClass, "MyID"), descriptor->GetVisibleFields()[0]->GetName().c_str());
     EXPECT_STREQ("Custom Gadget Property Label", descriptor->GetVisibleFields()[0]->GetLabel().c_str());
 
-    EXPECT_STREQ("Widget_MyID", descriptor->GetVisibleFields()[1]->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME(m_widgetClass, "MyID"), descriptor->GetVisibleFields()[1]->GetName().c_str());
     EXPECT_STREQ("MyID", descriptor->GetVisibleFields()[1]->GetLabel().c_str());
     }
 
@@ -4946,8 +4950,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyLabelOverride_Polym
     // validate descriptor
     ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
-    EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // ClassE_IntProperty
-    EXPECT_STREQ("ClassE_IntProperty", descriptor->GetVisibleFields()[0]->GetName().c_str());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+    EXPECT_STREQ(FIELD_NAME(classE, "IntProperty"), descriptor->GetVisibleFields()[0]->GetName().c_str());
     EXPECT_STREQ("Custom ClassE Property Label", descriptor->GetVisibleFields()[0]->GetLabel().c_str());
     }
 
@@ -4987,12 +4991,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyLabelOverride_Polym
     // validate descriptor
     ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
-    ASSERT_EQ(2, descriptor->GetVisibleFields().size()); // ClassE_IntProperty, ClassH_ClassF_IntProperty
+    ASSERT_EQ(2, descriptor->GetVisibleFields().size()); 
 
-    EXPECT_STREQ("ClassE_IntProperty", descriptor->GetVisibleFields()[0]->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME(classE, "IntProperty"), descriptor->GetVisibleFields()[0]->GetName().c_str());
     EXPECT_STREQ("IntProperty", descriptor->GetVisibleFields()[0]->GetLabel().c_str());
 
-    EXPECT_STREQ("ClassE_IntProperty", descriptor->GetVisibleFields()[1]->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME(classE, "IntProperty"), descriptor->GetVisibleFields()[1]->GetName().c_str());
     EXPECT_STREQ("Custom ClassF Property Label", descriptor->GetVisibleFields()[1]->GetLabel().c_str());
     }
 
@@ -5256,8 +5260,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategoryOverride_Fi
     // validate descriptor
     ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
-    EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // ClassA_ClassB_UserLabel
-    EXPECT_STREQ("ClassA_ClassB_UserLabel", descriptor->GetVisibleFields()[0]->GetName().c_str());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+    EXPECT_STREQ(FIELD_NAME((bvector<ECClassCP>{classA, classB}), "UserLabel"), descriptor->GetVisibleFields()[0]->GetName().c_str());
     EXPECT_STREQ("my_category", descriptor->GetVisibleFields()[0]->GetCategory().GetName().c_str());
     EXPECT_STREQ("My Category", descriptor->GetVisibleFields()[0]->GetCategory().GetLabel().c_str());
     }
@@ -5302,13 +5306,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategoryOverride_Fi
     // validate descriptor
     ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
-    ASSERT_EQ(2, descriptor->GetVisibleFields().size()); // ClassA_UserLabel, ClassB_UserLabel
+    ASSERT_EQ(2, descriptor->GetVisibleFields().size());
 
-    EXPECT_STREQ("ClassA_UserLabel", descriptor->GetVisibleFields()[0]->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME(classA, "UserLabel"), descriptor->GetVisibleFields()[0]->GetName().c_str());
     EXPECT_STREQ("my_category_1", descriptor->GetVisibleFields()[0]->GetCategory().GetName().c_str());
     EXPECT_STREQ("My Category 1", descriptor->GetVisibleFields()[0]->GetCategory().GetLabel().c_str());
 
-    EXPECT_STREQ("ClassB_UserLabel", descriptor->GetVisibleFields()[1]->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME(classB, "UserLabel"), descriptor->GetVisibleFields()[1]->GetName().c_str());
     EXPECT_STREQ("my_category_2", descriptor->GetVisibleFields()[1]->GetCategory().GetName().c_str());
     EXPECT_STREQ("My Category 2", descriptor->GetVisibleFields()[1]->GetCategory().GetLabel().c_str());
     }
@@ -5354,7 +5358,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategoryOverride_Po
     ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
-    EXPECT_STREQ("Element_UserLabel", descriptor->GetVisibleFields()[0]->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME(baseClass, "UserLabel"), descriptor->GetVisibleFields()[0]->GetName().c_str());
     EXPECT_STREQ("my_category", descriptor->GetVisibleFields()[0]->GetCategory().GetName().c_str());
     EXPECT_STREQ("My Category", descriptor->GetVisibleFields()[0]->GetCategory().GetLabel().c_str());
     }
@@ -5400,9 +5404,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategoryOverride_Po
     ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(2, descriptor->GetVisibleFields().size());
-    EXPECT_STREQ("Element_UserLabel", descriptor->GetVisibleFields()[0]->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME(baseClass, "UserLabel"), descriptor->GetVisibleFields()[0]->GetName().c_str());
     EXPECT_STRNE("my_category", descriptor->GetVisibleFields()[0]->GetCategory().GetName().c_str());
-    EXPECT_STREQ("Element_UserLabel", descriptor->GetVisibleFields()[1]->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME(baseClass, "UserLabel"), descriptor->GetVisibleFields()[1]->GetName().c_str());
     EXPECT_STREQ("my_category", descriptor->GetVisibleFields()[1]->GetCategory().GetName().c_str());
     }
 
@@ -5680,10 +5684,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetNav
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR displayValues = recordJson["DisplayValues"];
-    EXPECT_STREQ("WidgetID", displayValues["Gadget_Widget"].GetString());
+    EXPECT_STREQ("WidgetID", displayValues[FIELD_NAME(m_gadgetClass, "Widget")].GetString());
 
     RapidJsonValueCR values = recordJson["Values"];
-    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widgetInstance).GetId().GetValue(), values["Gadget_Widget"].GetInt64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widgetInstance).GetId().GetValue(), values[FIELD_NAME(m_gadgetClass, "Widget")].GetInt64());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5755,12 +5759,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetNavigationPropertyValueW
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR displayValues = recordJson["DisplayValues"];
-    EXPECT_STREQ(GetDefaultDisplayLabel(*modelInstance).c_str(), displayValues["Element_Model"].GetString());
-    EXPECT_STREQ("Test", displayValues["Element_Model_Id"].GetString());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*modelInstance).c_str(), displayValues[FIELD_NAME(elementClass, "Model")].GetString());
+    EXPECT_STREQ("Test", displayValues[FIELD_NAME(elementClass, "Model_Id")].GetString());
 
     RapidJsonValueCR values = recordJson["Values"];
-    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*modelInstance).GetId().GetValue(), values["Element_Model"].GetInt64());
-    EXPECT_STREQ("Test", values["Element_Model_Id"].GetString());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*modelInstance).GetId().GetValue(), values[FIELD_NAME(elementClass, "Model")].GetInt64());
+    EXPECT_STREQ("Test", values[FIELD_NAME(elementClass, "Model_Id")].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5802,10 +5806,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetNav
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR displayValues = recordJson["DisplayValues"];
-    EXPECT_STREQ("WidgetID", displayValues["Gadget_Widget"].GetString());
+    EXPECT_STREQ("WidgetID", displayValues[FIELD_NAME(m_gadgetClass, "Widget")].GetString());
 
     RapidJsonValueCR values = recordJson["Values"];
-    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widgetInstance).GetId().GetValue(), values["Gadget_Widget"].GetInt64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widgetInstance).GetId().GetValue(), values[FIELD_NAME(m_gadgetClass, "Widget")].GetInt64());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5852,15 +5856,15 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetOne
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR displayValues = recordJson["DisplayValues"];
-    EXPECT_STREQ(GetDefaultDisplayLabel(*instanceA).c_str(), displayValues["ClassB_ClassC_A"].GetString());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*instanceA).c_str(), displayValues[FIELD_NAME((bvector<ECClassCP>{classB, classC}), "A")].GetString());
     RapidJsonValueCR values = recordJson["Values"];
-    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*instanceA).GetId().GetValue(), values["ClassB_ClassC_A"].GetInt64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*instanceA).GetId().GetValue(), values[FIELD_NAME((bvector<ECClassCP>{classB, classC}), "A")].GetInt64());
 
     rapidjson::Document recordJson1 = contentSet.Get(1)->AsJson();
     RapidJsonValueCR displayValues1 = recordJson1["DisplayValues"];
-    EXPECT_STREQ(GetDefaultDisplayLabel(*instanceA).c_str(), displayValues1["ClassB_ClassC_A"].GetString());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*instanceA).c_str(), displayValues1[FIELD_NAME((bvector<ECClassCP>{classB, classC}), "A")].GetString());
     RapidJsonValueCR values1 = recordJson1["Values"];
-    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*instanceA).GetId().GetValue(), values1["ClassB_ClassC_A"].GetInt64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*instanceA).GetId().GetValue(), values1[FIELD_NAME((bvector<ECClassCP>{classB, classC}), "A")].GetInt64());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5905,19 +5909,19 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetDif
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR displayValues = recordJson["DisplayValues"];
-    EXPECT_STREQ(GetDefaultDisplayLabel(*widgetInstance).c_str(), displayValues["Gadget_Widget"].GetString());
-    EXPECT_TRUE(displayValues["Sprocket_Gadget"].IsNull());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*widgetInstance).c_str(), displayValues[FIELD_NAME(m_gadgetClass, "Widget")].GetString());
+    EXPECT_TRUE(displayValues[FIELD_NAME(m_sprocketClass, "Gadget")].IsNull());
     RapidJsonValueCR values = recordJson["Values"];
-    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widgetInstance).GetId().GetValue(), values["Gadget_Widget"].GetInt64());
-    EXPECT_TRUE(values["Sprocket_Gadget"].IsNull());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widgetInstance).GetId().GetValue(), values[FIELD_NAME(m_gadgetClass, "Widget")].GetInt64());
+    EXPECT_TRUE(values[FIELD_NAME(m_sprocketClass, "Gadget")].IsNull());
 
     rapidjson::Document recordJson1 = contentSet.Get(1)->AsJson();
     RapidJsonValueCR displayValues1 = recordJson1["DisplayValues"];
-    EXPECT_STREQ(GetDefaultDisplayLabel(*gadgetInstance).c_str(), displayValues1["Sprocket_Gadget"].GetString());
-    EXPECT_TRUE(displayValues1["Gadget_Widget"].IsNull());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*gadgetInstance).c_str(), displayValues1[FIELD_NAME(m_sprocketClass, "Gadget")].GetString());
+    EXPECT_TRUE(displayValues1[FIELD_NAME(m_gadgetClass, "Widget")].IsNull());
     RapidJsonValueCR values1 = recordJson1["Values"];
-    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*gadgetInstance).GetId().GetValue(), values1["Sprocket_Gadget"].GetInt64());
-    EXPECT_TRUE(values1["Gadget_Widget"].IsNull());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*gadgetInstance).GetId().GetValue(), values1[FIELD_NAME(m_sprocketClass, "Gadget")].GetInt64());
+    EXPECT_TRUE(values1[FIELD_NAME(m_gadgetClass, "Widget")].IsNull());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5973,15 +5977,15 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetCor
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR displayValues = recordJson["DisplayValues"];
-    EXPECT_STREQ(GetDefaultDisplayLabel(*instanceA).c_str(), displayValues["ClassB_ClassB2_A"].GetString());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*instanceA).c_str(), displayValues[FIELD_NAME((bvector<ECClassCP>{classB, classB2}), "A")].GetString());
     RapidJsonValueCR values = recordJson["Values"];
-    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*instanceA).GetId().GetValue(), values["ClassB_ClassB2_A"].GetInt64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*instanceA).GetId().GetValue(), values[FIELD_NAME((bvector<ECClassCP>{classB, classB2}), "A")].GetInt64());
 
     rapidjson::Document recordJson1 = contentSet.Get(1)->AsJson();
     RapidJsonValueCR displayValues1 = recordJson1["DisplayValues"];
-    EXPECT_STREQ(GetDefaultDisplayLabel(*instanceA2Base).c_str(), displayValues1["ClassB_ClassB2_A"].GetString());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*instanceA2Base).c_str(), displayValues1[FIELD_NAME((bvector<ECClassCP>{classB, classB2}), "A")].GetString());
     RapidJsonValueCR values1 = recordJson1["Values"];
-    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*instanceA2Base).GetId().GetValue(), values1["ClassB_ClassB2_A"].GetInt64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*instanceA2Base).GetId().GetValue(), values1[FIELD_NAME((bvector<ECClassCP>{classB, classB2}), "A")].GetInt64());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6025,9 +6029,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetDer
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR displayValues = recordJson["DisplayValues"];
-    EXPECT_STREQ(GetDefaultDisplayLabel(*instanceA2).c_str(), displayValues["ClassB2_A"].GetString());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*instanceA2).c_str(), displayValues[FIELD_NAME(classB2, "A")].GetString());
     RapidJsonValueCR values = recordJson["Values"];
-    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*instanceA2).GetId().GetValue(), values["ClassB2_A"].GetInt64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*instanceA2).GetId().GetValue(), values[FIELD_NAME(classB2, "A")].GetInt64());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6071,10 +6075,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetCor
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR displayValues = recordJson["DisplayValues"];
-    EXPECT_STREQ("WidgetID", displayValues["Gadget_Widget"].GetString());
+    EXPECT_STREQ("WidgetID", displayValues[FIELD_NAME(m_gadgetClass, "Widget")].GetString());
 
     RapidJsonValueCR values = recordJson["Values"];
-    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widget).GetId().GetValue(), values["Gadget_Widget"].GetInt64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widget).GetId().GetValue(), values[FIELD_NAME(m_gadgetClass, "Widget")].GetInt64());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6118,10 +6122,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetCor
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR displayValues = recordJson["DisplayValues"];
-    EXPECT_STREQ("WidgetID", displayValues["Gadget_Widget"].GetString());
+    EXPECT_STREQ("WidgetID", displayValues[FIELD_NAME(m_gadgetClass, "Widget")].GetString());
 
     RapidJsonValueCR values = recordJson["Values"];
-    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widget).GetId().GetValue(), values["Gadget_Widget"].GetInt64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widget).GetId().GetValue(), values[FIELD_NAME(m_gadgetClass, "Widget")].GetInt64());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6163,10 +6167,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Get
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR displayValues = recordJson["DisplayValues"];
-    EXPECT_STREQ("WidgetID", displayValues["Gadget_Widget"].GetString());
+    EXPECT_STREQ("WidgetID", displayValues[FIELD_NAME(m_gadgetClass, "Widget")].GetString());
 
     RapidJsonValueCR values = recordJson["Values"];
-    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widget).GetId().GetValue(), values["Gadget_Widget"].GetInt64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widget).GetId().GetValue(), values[FIELD_NAME(m_gadgetClass, "Widget")].GetInt64());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6208,10 +6212,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Get
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR displayValues = recordJson["DisplayValues"];
-    EXPECT_STREQ("WidgetID", displayValues["Gadget_Widget"].GetString());
+    EXPECT_STREQ("WidgetID", displayValues[FIELD_NAME(m_gadgetClass, "Widget")].GetString());
 
     RapidJsonValueCR values = recordJson["Values"];
-    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widget).GetId().GetValue(), values["Gadget_Widget"].GetInt64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widget).GetId().GetValue(), values[FIELD_NAME(m_gadgetClass, "Widget")].GetInt64());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6253,12 +6257,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDerivedClassNavigationPr
     ASSERT_EQ(2, contentSet.GetSize());
 
     rapidjson::Document recordJson1 = contentSet.Get(0)->AsJson();
-    EXPECT_TRUE(recordJson1["Values"]["ClassG_D"].IsNull());
-    EXPECT_TRUE(recordJson1["DisplayValues"]["ClassG_D"].IsNull());
+    EXPECT_TRUE(recordJson1["Values"][FIELD_NAME(classG, "D")].IsNull());
+    EXPECT_TRUE(recordJson1["DisplayValues"][FIELD_NAME(classG, "D")].IsNull());
 
     rapidjson::Document recordJson2 = contentSet.Get(1)->AsJson();
-    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*relatedInstance).GetId().GetValue(), recordJson2["Values"]["ClassG_D"].GetUint64());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*relatedInstance).c_str(), recordJson2["DisplayValues"]["ClassG_D"].GetString());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*relatedInstance).GetId().GetValue(), recordJson2["Values"][FIELD_NAME(classG, "D")].GetUint64());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*relatedInstance).c_str(), recordJson2["DisplayValues"][FIELD_NAME(classG, "D")].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6305,14 +6309,14 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPrimitiveArrayProperty
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(1, descriptor->GetVisibleFields().size());
     rapidjson::Document expectedFieldType;
-    expectedFieldType.Parse(R"({
+    expectedFieldType.Parse(Utf8PrintfString(R"({
         "ValueFormat": "Array",
         "TypeName": "int[]",
         "MemberType": {
             "ValueFormat": "Primitive",
             "TypeName": "int"
             }
-        })");
+        })").c_str());
     rapidjson::Document actualFieldType = descriptor->GetVisibleFields()[0]->GetTypeDescription().AsJson();
     EXPECT_EQ(expectedFieldType, actualFieldType)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedFieldType) << "\r\n"
@@ -6328,20 +6332,20 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPrimitiveArrayProperty
 
     rapidjson::Document recordJson1 = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues1;
-    expectedValues1.Parse(R"(
+    expectedValues1.Parse(Utf8PrintfString(R"(
         {
-        "MyClass_ArrayProperty": [2, 1]
-        })");
+        "%s": [2, 1]
+        })", FIELD_NAME(ecClass, "ArrayProperty")).c_str());
     EXPECT_EQ(expectedValues1, recordJson1["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues1) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson1["Values"]);
 
     rapidjson::Document recordJson2 = contentSet.Get(1)->AsJson();
     rapidjson::Document expectedValues2;
-    expectedValues2.Parse(R"(
+    expectedValues2.Parse(Utf8PrintfString(R"(
         {
-        "MyClass_ArrayProperty": [3, 4, 5]
-        })");
+        "%s": [3, 4, 5]
+        })", FIELD_NAME(ecClass, "ArrayProperty")).c_str());
     EXPECT_EQ(expectedValues2, recordJson2["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues2) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson2["Values"]);
@@ -6391,14 +6395,14 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPointsArrayPropertyVal
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(1, descriptor->GetVisibleFields().size());
     rapidjson::Document expectedFieldType;
-    expectedFieldType.Parse(R"({
+    expectedFieldType.Parse(Utf8PrintfString(R"({
         "ValueFormat": "Array",
         "TypeName": "point3d[]",
         "MemberType": {
             "ValueFormat": "Primitive",
             "TypeName": "point3d"
             }
-        })");
+        })").c_str());
     rapidjson::Document actualFieldType = descriptor->GetVisibleFields()[0]->GetTypeDescription().AsJson();
     EXPECT_EQ(expectedFieldType, actualFieldType)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedFieldType) << "\r\n"
@@ -6414,41 +6418,41 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPointsArrayPropertyVal
 
     rapidjson::Document recordJson1 = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues1;
-    expectedValues1.Parse(R"(
+    expectedValues1.Parse(Utf8PrintfString(R"(
         {
-        "MyClass_PointsArrayProperty": [
+        "%s": [
             {"x": 0, "y": 0, "z": 0},
             {"x": 1, "y": 1, "z": 1}
-        ]})");
+        ]})", FIELD_NAME(ecClass, "PointsArrayProperty")).c_str());
     EXPECT_EQ(expectedValues1, recordJson1["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues1) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson1["Values"]);
     rapidjson::Document expectedDisplayValues1;
-    expectedDisplayValues1.Parse(R"(
+    expectedDisplayValues1.Parse(Utf8PrintfString(R"(
         {
-        "MyClass_PointsArrayProperty": ["X: 0.00 Y: 0.00 Z: 0.00", "X: 1.00 Y: 1.00 Z: 1.00"]
-        })");
+        "%s": ["X: 0.00 Y: 0.00 Z: 0.00", "X: 1.00 Y: 1.00 Z: 1.00"]
+        })", FIELD_NAME(ecClass, "PointsArrayProperty")).c_str());
     EXPECT_EQ(expectedDisplayValues1, recordJson1["DisplayValues"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues1) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson1["DisplayValues"]);
 
     rapidjson::Document recordJson2 = contentSet.Get(1)->AsJson();
     rapidjson::Document expectedValues2;
-    expectedValues2.Parse(R"(
+    expectedValues2.Parse(Utf8PrintfString(R"(
         {
-        "MyClass_PointsArrayProperty": [
+        "%s": [
             {"x": 3, "y": 3, "z": 3},
             {"x": 4, "y": 4, "z": 4},
             {"x": 5, "y": 5, "z": 5}
-        ]})");
+        ]})", FIELD_NAME(ecClass, "PointsArrayProperty")).c_str());
     EXPECT_EQ(expectedValues2, recordJson2["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues2) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson2["Values"]);
     rapidjson::Document expectedDisplayValues2;
-    expectedDisplayValues2.Parse(R"(
+    expectedDisplayValues2.Parse(Utf8PrintfString(R"(
         {
-        "MyClass_PointsArrayProperty": ["X: 3.00 Y: 3.00 Z: 3.00", "X: 4.00 Y: 4.00 Z: 4.00", "X: 5.00 Y: 5.00 Z: 5.00"]
-        })");
+        "%s": ["X: 3.00 Y: 3.00 Z: 3.00", "X: 4.00 Y: 4.00 Z: 4.00", "X: 5.00 Y: 5.00 Z: 5.00"]
+        })", FIELD_NAME(ecClass, "PointsArrayProperty")).c_str());
     EXPECT_EQ(expectedDisplayValues2, recordJson2["DisplayValues"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues2) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson2["DisplayValues"]);
@@ -6572,22 +6576,22 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DoesntMergePropertiesOfSame
 
     rapidjson::Document recordJson1 = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues1;
-    expectedValues1.Parse(R"(
+    expectedValues1.Parse(Utf8PrintfString(R"(
         {
-        "MyClassA_Prop": 1,
-        "MyClassB_Prop": null
-        })");
+        "%s": 1,
+        "%s": null
+        })", FIELD_NAME(classA, "Prop"), FIELD_NAME(classB, "Prop")).c_str());
     EXPECT_EQ(expectedValues1, recordJson1["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues1) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson1["Values"]);
 
     rapidjson::Document recordJson2 = contentSet.Get(1)->AsJson();
     rapidjson::Document expectedValues2;
-    expectedValues2.Parse(R"(
+    expectedValues2.Parse(Utf8PrintfString(R"(
         {
-        "MyClassA_Prop": null,
-        "MyClassB_Prop": [2, 3]
-        })");
+        "%s": null,
+        "%s": [2, 3]
+        })", FIELD_NAME(classA, "Prop"), FIELD_NAME(classB, "Prop")).c_str());
     EXPECT_EQ(expectedValues2, recordJson2["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues2) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson2["Values"]);
@@ -6651,20 +6655,20 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
 
     rapidjson::Document recordJson1 = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues1;
-    expectedValues1.Parse(R"(
+    expectedValues1.Parse(Utf8PrintfString(R"(
         {
-        "MyClassA_MyClassB_ArrayProperty": [2, 1]
-        })");
+        "%s": [2, 1]
+        })", FIELD_NAME((bvector<ECClassCP>{classA, classB}), "ArrayProperty")).c_str());
     EXPECT_EQ(expectedValues1, recordJson1["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues1) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson1["Values"]);
 
     rapidjson::Document recordJson2 = contentSet.Get(1)->AsJson();
     rapidjson::Document expectedValues2;
-    expectedValues2.Parse(R"(
+    expectedValues2.Parse(Utf8PrintfString(R"(
         {
-        "MyClassA_MyClassB_ArrayProperty": [3, 4, 5]
-        })");
+        "%s": [3, 4, 5]
+        })", FIELD_NAME((bvector<ECClassCP>{classA, classB}), "ArrayProperty")).c_str());
     EXPECT_EQ(expectedValues2, recordJson2["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues2) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson2["Values"]);
@@ -6730,14 +6734,14 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
 
     ContentSetItemCPtr record = contentSet.Get(0);
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"(
+    expectedValues.Parse(Utf8PrintfString(R"(
         {
-        "MyClassA_MyClassB_ArrayProperty": [2, 1]
-        })");
+        "%s": [2, 1]
+        })", FIELD_NAME((bvector<ECClassCP>{classA, classB}), "ArrayProperty")).c_str());
     EXPECT_EQ(expectedValues, record->GetValues())
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(record->GetValues());
-    EXPECT_FALSE(record->IsMerged("MyClassA_MyClassB_ArrayProperty"));
+    EXPECT_FALSE(record->IsMerged(FIELD_NAME((bvector<ECClassCP>{classA, classB}), "ArrayProperty")));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6803,9 +6807,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
 
     ContentSetItemCPtr record = contentSet.Get(0);
     rapidjson::Document recordJson = record->AsJson();
-    EXPECT_TRUE(record->GetValues()["MyClassA_MyClassB_ArrayProperty"].IsNull());
-    EXPECT_STREQ(varies_string.c_str(), record->GetDisplayValues()["MyClassA_MyClassB_ArrayProperty"].GetString());
-    EXPECT_TRUE(record->IsMerged("MyClassA_MyClassB_ArrayProperty"));
+    EXPECT_TRUE(record->GetValues()[FIELD_NAME((bvector<ECClassCP>{classA, classB}), "ArrayProperty")].IsNull());
+    EXPECT_STREQ(varies_string.c_str(), record->GetDisplayValues()[FIELD_NAME((bvector<ECClassCP>{classA, classB}), "ArrayProperty")].GetString());
+    EXPECT_TRUE(record->IsMerged(FIELD_NAME((bvector<ECClassCP>{classA, classB}), "ArrayProperty")));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6865,9 +6869,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
 
     ContentSetItemCPtr record = contentSet.Get(0);
     rapidjson::Document recordJson = record->AsJson();
-    EXPECT_TRUE(record->GetValues()["MyClassA_MyClassB_ArrayProperty"].IsNull());
-    EXPECT_STREQ(varies_string.c_str(), record->GetDisplayValues()["MyClassA_MyClassB_ArrayProperty"].GetString());
-    EXPECT_TRUE(record->IsMerged("MyClassA_MyClassB_ArrayProperty"));
+    EXPECT_TRUE(record->GetValues()[FIELD_NAME((bvector<ECClassCP>{classA, classB}), "ArrayProperty")].IsNull());
+    EXPECT_STREQ(varies_string.c_str(), record->GetDisplayValues()[FIELD_NAME((bvector<ECClassCP>{classA, classB}), "ArrayProperty")].GetString());
+    EXPECT_TRUE(record->IsMerged(FIELD_NAME((bvector<ECClassCP>{classA, classB}), "ArrayProperty")));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6927,14 +6931,14 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     ContentSetItemCPtr record = contentSet.Get(0);
     rapidjson::Document recordJson = record->AsJson();
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"(
+    expectedValues.Parse(Utf8PrintfString(R"(
         {
-        "MyClass_ArrayProperty": [2, 1]
-        })");
+        "%s": [2, 1]
+        })", FIELD_NAME(ecClass, "ArrayProperty")).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
-    EXPECT_FALSE(record->IsMerged("MyClass_ArrayProperty"));
+    EXPECT_FALSE(record->IsMerged(FIELD_NAME(ecClass, "ArrayProperty")));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6996,9 +7000,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
 
     ContentSetItemCPtr record = contentSet.Get(0);
     rapidjson::Document recordJson = record->AsJson();
-    EXPECT_TRUE(recordJson["Values"]["MyClass_ArrayProperty"].IsNull());
-    EXPECT_STREQ(varies_string.c_str(), recordJson["DisplayValues"]["MyClass_ArrayProperty"].GetString());
-    EXPECT_TRUE(record->IsMerged("MyClass_ArrayProperty"));
+    EXPECT_TRUE(recordJson["Values"][FIELD_NAME(ecClass, "ArrayProperty")].IsNull());
+    EXPECT_STREQ(varies_string.c_str(), recordJson["DisplayValues"][FIELD_NAME(ecClass, "ArrayProperty")].GetString());
+    EXPECT_TRUE(record->IsMerged(FIELD_NAME(ecClass, "ArrayProperty")));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -7059,9 +7063,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
 
     ContentSetItemCPtr record = contentSet.Get(0);
     rapidjson::Document recordJson = record->AsJson();
-    EXPECT_TRUE(recordJson["Values"]["MyClass_ArrayProperty"].IsNull());
-    EXPECT_STREQ(varies_string.c_str(), recordJson["DisplayValues"]["MyClass_ArrayProperty"].GetString());
-    EXPECT_TRUE(record->IsMerged("MyClass_ArrayProperty"));
+    EXPECT_TRUE(recordJson["Values"][FIELD_NAME(ecClass, "ArrayProperty")].IsNull());
+    EXPECT_STREQ(varies_string.c_str(), recordJson["DisplayValues"][FIELD_NAME(ecClass, "ArrayProperty")].GetString());
+    EXPECT_TRUE(record->IsMerged(FIELD_NAME(ecClass, "ArrayProperty")));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -7120,9 +7124,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
 
     ContentSetItemCPtr record = contentSet.Get(0);
     rapidjson::Document recordJson = record->AsJson();
-    EXPECT_TRUE(record->GetValues()["ClassA_ArrayProperty"].IsNull());
-    EXPECT_STREQ(varies_string.c_str(), record->GetDisplayValues()["ClassA_ArrayProperty"].GetString());
-    EXPECT_TRUE(record->IsMerged("ClassA_ArrayProperty"));
+    EXPECT_TRUE(record->GetValues()[FIELD_NAME(classA, "ArrayProperty")].IsNull());
+    EXPECT_STREQ(varies_string.c_str(), record->GetDisplayValues()[FIELD_NAME(classA, "ArrayProperty")].GetString());
+    EXPECT_TRUE(record->IsMerged(FIELD_NAME(classA, "ArrayProperty")));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -7174,14 +7178,14 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsEnumsArrayPropertyValu
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(1, descriptor->GetVisibleFields().size());
     rapidjson::Document expectedFieldType;
-    expectedFieldType.Parse(R"({
+    expectedFieldType.Parse(Utf8PrintfString(R"({
         "ValueFormat": "Array",
         "TypeName": "MyEnum[]",
         "MemberType": {
             "ValueFormat": "Primitive",
             "TypeName": "MyEnum"
             }
-        })");
+        })").c_str());
     rapidjson::Document actualFieldType = descriptor->GetVisibleFields()[0]->GetTypeDescription().AsJson();
     EXPECT_EQ(expectedFieldType, actualFieldType)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedFieldType) << "\r\n"
@@ -7197,36 +7201,36 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsEnumsArrayPropertyValu
 
     rapidjson::Document recordJson1 = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues1;
-    expectedValues1.Parse(R"(
+    expectedValues1.Parse(Utf8PrintfString(R"(
         {
-        "MyClass_EnumsArray": [2, 1]
-        })");
+        "%s": [2, 1]
+        })", FIELD_NAME(ecClass, "EnumsArray")).c_str());
     EXPECT_EQ(expectedValues1, recordJson1["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues1) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson1["Values"]);
     rapidjson::Document expectedDisplayValues1;
-    expectedDisplayValues1.Parse(R"(
+    expectedDisplayValues1.Parse(Utf8PrintfString(R"(
         {
-        "MyClass_EnumsArray": ["Two", "One"]
-        })");
+        "%s": ["Two", "One"]
+        })", FIELD_NAME(ecClass, "EnumsArray")).c_str());
     EXPECT_EQ(expectedDisplayValues1, recordJson1["DisplayValues"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues1) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson1["DisplayValues"]);
 
     rapidjson::Document recordJson2 = contentSet.Get(1)->AsJson();
     rapidjson::Document expectedValues2;
-    expectedValues2.Parse(R"(
+    expectedValues2.Parse(Utf8PrintfString(R"(
         {
-        "MyClass_EnumsArray": [1, 2, 3]
-        })");
+        "%s": [1, 2, 3]
+        })", FIELD_NAME(ecClass, "EnumsArray")).c_str());
     EXPECT_EQ(expectedValues2, recordJson2["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues2) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson2["Values"]);
     rapidjson::Document expectedDisplayValues2;
-    expectedDisplayValues2.Parse(R"(
+    expectedDisplayValues2.Parse(Utf8PrintfString(R"(
         {
-        "MyClass_EnumsArray": ["One", "Two", "Three"]
-        })");
+        "%s": ["One", "Two", "Three"]
+        })", FIELD_NAME(ecClass, "EnumsArray")).c_str());
     EXPECT_EQ(expectedDisplayValues2, recordJson2["DisplayValues"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues2) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson2["DisplayValues"]);
@@ -7278,7 +7282,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructPropertyValue)
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(1, descriptor->GetVisibleFields().size());
     rapidjson::Document expectedFieldType;
-    expectedFieldType.Parse(R"({
+    expectedFieldType.Parse(Utf8PrintfString(R"({
         "ValueFormat": "Struct",
         "TypeName": "MyStruct",
         "Members": [{
@@ -7296,7 +7300,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructPropertyValue)
                 "TypeName": "string"
                 }
             }]
-        })");
+        })").c_str());
     rapidjson::Document actualFieldType = descriptor->GetVisibleFields()[0]->GetTypeDescription().AsJson();
     EXPECT_EQ(expectedFieldType, actualFieldType)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedFieldType) << "\r\n"
@@ -7312,24 +7316,24 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructPropertyValue)
 
     rapidjson::Document recordJson1 = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues1;
-    expectedValues1.Parse(R"({
-        "MyClass_StructProperty": {
+    expectedValues1.Parse(Utf8PrintfString(R"({
+        "%s": {
            "IntProperty": 123,
            "StringProperty": "abc"
            }
-        })");
+        })", FIELD_NAME(ecClass, "StructProperty")).c_str());
     EXPECT_EQ(expectedValues1, recordJson1["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues1) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson1["Values"]);
 
     rapidjson::Document recordJson2 = contentSet.Get(1)->AsJson();
     rapidjson::Document expectedValues2;
-    expectedValues2.Parse(R"({
-        "MyClass_StructProperty": {
+    expectedValues2.Parse(Utf8PrintfString(R"({
+        "%s": {
            "IntProperty": 456,
            "StringProperty": "def"
            }
-        })");
+        })", FIELD_NAME(ecClass, "StructProperty")).c_str());
     EXPECT_EQ(expectedValues2, recordJson2["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues2) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson2["Values"]);
@@ -7395,24 +7399,24 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyFieldsO
 
     rapidjson::Document recordJson1 = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues1;
-    expectedValues1.Parse(R"({
-        "MyClassA_MyClassB_StructProperty": {
+    expectedValues1.Parse(Utf8PrintfString(R"({
+        "%s": {
            "IntProperty": 123,
            "StringProperty": "abc"
            }
-        })");
+        })", FIELD_NAME((bvector<ECClassCP>{classA, classB}), "StructProperty")).c_str());
     EXPECT_EQ(expectedValues1, recordJson1["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues1) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson1["Values"]);
 
     rapidjson::Document recordJson2 = contentSet.Get(1)->AsJson();
     rapidjson::Document expectedValues2;
-    expectedValues2.Parse(R"({
-        "MyClassA_MyClassB_StructProperty": {
+    expectedValues2.Parse(Utf8PrintfString(R"({
+        "%s": {
            "IntProperty": 456,
            "StringProperty": "def"
            }
-        })");
+        })", FIELD_NAME((bvector<ECClassCP>{classA, classB}), "StructProperty")).c_str());
     EXPECT_EQ(expectedValues2, recordJson2["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues2) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson2["Values"]);
@@ -7480,16 +7484,16 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyFieldsA
 
     ContentSetItemCPtr record = contentSet.Get(0);
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({
-        "MyClassA_MyClassB_StructProperty": {
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": {
            "IntProperty": 123,
            "StringProperty": "abc"
            }
-        })");
+        })", FIELD_NAME((bvector<ECClassCP>{classA, classB}), "StructProperty")).c_str());
     EXPECT_EQ(expectedValues, record->GetValues())
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(record->GetValues());
-    EXPECT_FALSE(record->IsMerged("MyClassA_MyClassB_StructProperty"));
+    EXPECT_FALSE(record->IsMerged(FIELD_NAME((bvector<ECClassCP>{classA, classB}), "StructProperty")));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -7556,9 +7560,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyFieldsA
 
     ContentSetItemCPtr record = contentSet.Get(0);
     rapidjson::Document recordJson = record->AsJson();
-    EXPECT_TRUE(record->GetValues()["MyClassA_MyClassB_StructProperty"].IsNull());
-    EXPECT_STREQ(varies_string.c_str(), record->GetDisplayValues()["MyClassA_MyClassB_StructProperty"].GetString());
-    EXPECT_TRUE(record->IsMerged("MyClassA_MyClassB_StructProperty"));
+    EXPECT_TRUE(record->GetValues()[FIELD_NAME((bvector<ECClassCP>{classA, classB}), "StructProperty")].IsNull());
+    EXPECT_STREQ(varies_string.c_str(), record->GetDisplayValues()[FIELD_NAME((bvector<ECClassCP>{classA, classB}), "StructProperty")].GetString());
+    EXPECT_TRUE(record->IsMerged(FIELD_NAME((bvector<ECClassCP>{classA, classB}), "StructProperty")));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -7621,16 +7625,16 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValuesW
     ContentSetItemCPtr record = contentSet.Get(0);
     rapidjson::Document recordJson = record->AsJson();
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({
-        "MyClass_StructProperty": {
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": {
            "IntProperty": 123,
            "StringProperty": "abc"
            }
-        })");
+        })", FIELD_NAME(ecClass, "StructProperty")).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
-    EXPECT_FALSE(record->IsMerged("MyClass_StructProperty"));
+    EXPECT_FALSE(record->IsMerged(FIELD_NAME(ecClass, "StructProperty")));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -7694,9 +7698,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValuesW
 
     ContentSetItemCPtr record = contentSet.Get(0);
     rapidjson::Document recordJson = record->AsJson();
-    EXPECT_TRUE(recordJson["Values"]["MyClass_StructProperty"].IsNull());
-    EXPECT_STREQ(varies_string.c_str(), recordJson["DisplayValues"]["MyClass_StructProperty"].GetString());
-    EXPECT_TRUE(record->IsMerged("MyClass_StructProperty"));
+    EXPECT_TRUE(recordJson["Values"][FIELD_NAME(ecClass, "StructProperty")].IsNull());
+    EXPECT_STREQ(varies_string.c_str(), recordJson["DisplayValues"][FIELD_NAME(ecClass, "StructProperty")].GetString());
+    EXPECT_TRUE(record->IsMerged(FIELD_NAME(ecClass, "StructProperty")));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -7757,9 +7761,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValueWh
     ASSERT_EQ(1, contentSet.GetSize());
 
     ContentSetItemCPtr record = contentSet.Get(0);
-    EXPECT_TRUE(record->GetValues()["ClassA_StructProperty"].IsNull());
-    EXPECT_STREQ(varies_string.c_str(), record->GetDisplayValues()["ClassA_StructProperty"].GetString());
-    EXPECT_TRUE(record->IsMerged("ClassA_StructProperty"));
+    EXPECT_TRUE(record->GetValues()[FIELD_NAME(classA, "StructProperty")].IsNull());
+    EXPECT_STREQ(varies_string.c_str(), record->GetDisplayValues()[FIELD_NAME(classA, "StructProperty")].GetString());
+    EXPECT_TRUE(record->IsMerged(FIELD_NAME(classA, "StructProperty")));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -7827,7 +7831,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructArrayPropertyVal
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(1, descriptor->GetVisibleFields().size());
     rapidjson::Document expectedFieldType;
-    expectedFieldType.Parse(R"({
+    expectedFieldType.Parse(Utf8PrintfString(R"({
         "ValueFormat": "Array",
         "TypeName": "MyStruct[]",
         "MemberType": {
@@ -7849,7 +7853,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructArrayPropertyVal
                     }
                 }]
             }
-        })");
+        })").c_str());
     rapidjson::Document actualFieldType = descriptor->GetVisibleFields()[0]->GetTypeDescription().AsJson();
     EXPECT_EQ(expectedFieldType, actualFieldType)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedFieldType) << "\r\n"
@@ -7865,27 +7869,27 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructArrayPropertyVal
 
     rapidjson::Document recordJson1 = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues1;
-    expectedValues1.Parse(R"({
-        "MyClass_StructArrayProperty": [{
+    expectedValues1.Parse(Utf8PrintfString(R"({
+        "%s": [{
            "IntProperty": 123,
            "StringProperty": "abc"
            }]
-        })");
+        })", FIELD_NAME(ecClass, "StructArrayProperty")).c_str());
     EXPECT_EQ(expectedValues1, recordJson1["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues1) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson1["Values"]);
 
     rapidjson::Document recordJson2 = contentSet.Get(1)->AsJson();
     rapidjson::Document expectedValues2;
-    expectedValues2.Parse(R"({
-        "MyClass_StructArrayProperty": [{
+    expectedValues2.Parse(Utf8PrintfString(R"({
+        "%s": [{
            "IntProperty": 456,
            "StringProperty": "def"
            },{
            "IntProperty": 789,
            "StringProperty": "ghi"
            }]
-        })");
+        })", FIELD_NAME(ecClass, "StructArrayProperty")).c_str());
     EXPECT_EQ(expectedValues2, recordJson2["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues2) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson2["Values"]);
@@ -7970,27 +7974,27 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyFi
 
     rapidjson::Document recordJson1 = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues1;
-    expectedValues1.Parse(R"({
-        "MyClassA_MyClassB_StructArrayProperty": [{
+    expectedValues1.Parse(Utf8PrintfString(R"({
+        "%s": [{
            "IntProperty": 123,
            "StringProperty": "abc"
            }]
-        })");
+        })", FIELD_NAME((bvector<ECClassCP>{classA, classB}), "StructArrayProperty")).c_str());
     EXPECT_EQ(expectedValues1, recordJson1["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues1) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson1["Values"]);
 
     rapidjson::Document recordJson2 = contentSet.Get(1)->AsJson();
     rapidjson::Document expectedValues2;
-    expectedValues2.Parse(R"({
-        "MyClassA_MyClassB_StructArrayProperty": [{
+    expectedValues2.Parse(Utf8PrintfString(R"({
+        "%s": [{
            "IntProperty": 456,
            "StringProperty": "def"
            },{
            "IntProperty": 789,
            "StringProperty": "ghi"
            }]
-        })");
+        })", FIELD_NAME((bvector<ECClassCP>{classA, classB}), "StructArrayProperty")).c_str());
     EXPECT_EQ(expectedValues2, recordJson2["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues2) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson2["Values"]);
@@ -8069,16 +8073,16 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyFi
 
     ContentSetItemCPtr record = contentSet.Get(0);
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({
-        "MyClassA_MyClassB_StructArrayProperty": [{
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": [{
            "IntProperty": 123,
            "StringProperty": "abc"
            }]
-        })");
+        })", FIELD_NAME((bvector<ECClassCP>{classA, classB}), "StructArrayProperty")).c_str());
     EXPECT_EQ(expectedValues, record->GetValues())
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(record->GetValues());
-    EXPECT_FALSE(record->IsMerged("MyClassA_MyClassB_StructArrayProperty"));
+    EXPECT_FALSE(record->IsMerged(FIELD_NAME((bvector<ECClassCP>{classA, classB}), "StructArrayProperty")));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -8156,9 +8160,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyFi
 
     ContentSetItemCPtr record = contentSet.Get(0);
     rapidjson::Document recordJson = record->AsJson();
-    EXPECT_TRUE(record->GetValues()["MyClassA_MyClassB_StructArrayProperty"].IsNull());
-    EXPECT_STREQ(varies_string.c_str(), record->GetDisplayValues()["MyClassA_MyClassB_StructArrayProperty"].GetString());
-    EXPECT_TRUE(record->IsMerged("MyClassA_MyClassB_StructArrayProperty"));
+    EXPECT_TRUE(record->GetValues()[FIELD_NAME((bvector<ECClassCP>{classA, classB}), "StructArrayProperty")].IsNull());
+    EXPECT_STREQ(varies_string.c_str(), record->GetDisplayValues()[FIELD_NAME((bvector<ECClassCP>{classA, classB}), "StructArrayProperty")].GetString());
+    EXPECT_TRUE(record->IsMerged(FIELD_NAME((bvector<ECClassCP>{classA, classB}), "StructArrayProperty")));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -8233,16 +8237,16 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
     ContentSetItemCPtr record = contentSet.Get(0);
     rapidjson::Document recordJson = record->AsJson();
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({
-        "MyClass_StructArrayProperty": [{
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": [{
            "IntProperty": 123,
            "StringProperty": "abc"
            }]
-        })");
+        })", FIELD_NAME(ecClass, "StructArrayProperty")).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
-    EXPECT_FALSE(record->IsMerged("MyClass_StructArrayProperty"));
+    EXPECT_FALSE(record->IsMerged(FIELD_NAME(ecClass, "StructArrayProperty")));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -8325,9 +8329,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
 
     ContentSetItemCPtr record = contentSet.Get(0);
     rapidjson::Document recordJson = record->AsJson();
-    EXPECT_TRUE(recordJson["Values"]["MyClass_StructArrayProperty"].IsNull());
-    EXPECT_STREQ(varies_string.c_str(), recordJson["DisplayValues"]["MyClass_StructArrayProperty"].GetString());
-    EXPECT_TRUE(record->IsMerged("MyClass_StructArrayProperty"));
+    EXPECT_TRUE(recordJson["Values"][FIELD_NAME(ecClass, "StructArrayProperty")].IsNull());
+    EXPECT_STREQ(varies_string.c_str(), recordJson["DisplayValues"][FIELD_NAME(ecClass, "StructArrayProperty")].GetString());
+    EXPECT_TRUE(record->IsMerged(FIELD_NAME(ecClass, "StructArrayProperty")));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -8403,9 +8407,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
 
     ContentSetItemCPtr record = contentSet.Get(0);
     rapidjson::Document recordJson = record->AsJson();
-    EXPECT_TRUE(recordJson["Values"]["MyClass_StructArrayProperty"].IsNull());
-    EXPECT_STREQ(varies_string.c_str(), recordJson["DisplayValues"]["MyClass_StructArrayProperty"].GetString());
-    EXPECT_TRUE(record->IsMerged("MyClass_StructArrayProperty"));
+    EXPECT_TRUE(recordJson["Values"][FIELD_NAME(ecClass, "StructArrayProperty")].IsNull());
+    EXPECT_STREQ(varies_string.c_str(), recordJson["DisplayValues"][FIELD_NAME(ecClass, "StructArrayProperty")].GetString());
+    EXPECT_TRUE(record->IsMerged(FIELD_NAME(ecClass, "StructArrayProperty")));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -8472,9 +8476,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
     ASSERT_EQ(1, contentSet.GetSize());
 
     ContentSetItemCPtr record = contentSet.Get(0);
-    EXPECT_TRUE(record->GetValues()["ClassA_StructArrayProperty"].IsNull());
-    EXPECT_STREQ(varies_string.c_str(), record->GetDisplayValues()["ClassA_StructArrayProperty"].GetString());
-    EXPECT_TRUE(record->IsMerged("ClassA_StructArrayProperty"));
+    EXPECT_TRUE(record->GetValues()[FIELD_NAME(classA, "StructArrayProperty")].IsNull());
+    EXPECT_STREQ(varies_string.c_str(), record->GetDisplayValues()[FIELD_NAME(classA, "StructArrayProperty")].GetString());
+    EXPECT_TRUE(record->IsMerged(FIELD_NAME(classA, "StructArrayProperty")));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -8525,7 +8529,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructWithArrayPropert
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(1, descriptor->GetVisibleFields().size());
     rapidjson::Document expectedFieldType;
-    expectedFieldType.Parse(R"({
+    expectedFieldType.Parse(Utf8PrintfString(R"({
         "ValueFormat": "Struct",
         "TypeName": "MyStruct",
         "Members": [{
@@ -8540,7 +8544,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructWithArrayPropert
                     }
                 }
             }]
-        })");
+        })").c_str());
     rapidjson::Document actualFieldType = descriptor->GetVisibleFields()[0]->GetTypeDescription().AsJson();
     EXPECT_EQ(expectedFieldType, actualFieldType)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedFieldType) << "\r\n"
@@ -8556,22 +8560,22 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructWithArrayPropert
 
     rapidjson::Document recordJson1 = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues1;
-    expectedValues1.Parse(R"({
-        "MyClass_StructProperty": {
+    expectedValues1.Parse(Utf8PrintfString(R"({
+        "%s": {
            "IntProperty": [1, 2]
            }
-        })");
+        })", FIELD_NAME(ecClass, "StructProperty")).c_str());
     EXPECT_EQ(expectedValues1, recordJson1["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues1) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson1["Values"]);
 
     rapidjson::Document recordJson2 = contentSet.Get(1)->AsJson();
     rapidjson::Document expectedValues2;
-    expectedValues2.Parse(R"({
-        "MyClass_StructProperty": {
+    expectedValues2.Parse(Utf8PrintfString(R"({
+        "%s": {
            "IntProperty": [4, 5, 6]
            }
-        })");
+        })", FIELD_NAME(ecClass, "StructProperty")).c_str());
     EXPECT_EQ(expectedValues2, recordJson2["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues2) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson2["Values"]);
@@ -8596,7 +8600,6 @@ DEFINE_SCHEMA(LoadsStructWithNullArrayAndStructPropertyValues, R"*(
 TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructWithNullArrayAndStructPropertyValues)
     {
     // set up data set
-    // unused - ECClassCP structClass = GetClass("MyStruct");
     ECClassCP ecClass = GetClass("MyClass");
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
         {
@@ -8628,13 +8631,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructWithNullArrayAnd
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({
-        "MyClass_StructProperty": {
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": {
            "StringProperty": "test",
            "StructProperty": null,
            "IntProperties": null
            }
-        })");
+        })", FIELD_NAME(ecClass, "StructProperty")).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
@@ -8747,25 +8750,25 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     EXPECT_EQ(2, descriptor->GetVisibleFields().size()); // ParentClass_ParentProperty, Nested<5 ChildClass properties>
 
     rapidjson::Document expectedFieldType;
-    expectedFieldType.Parse(R"({
+    expectedFieldType.Parse(Utf8PrintfString(R"({
         "ValueFormat": "Struct",
         "TypeName": "ChildClass",
         "Members": [{
-            "Name": "ChildClass_IntProperty",
+            "Name": "%s",
             "Label": "IntProperty",
             "Type": {
                 "ValueFormat": "Primitive",
                 "TypeName": "int"
                 }
             },{
-            "Name": "ChildClass_StringProperty",
+            "Name": "%s",
             "Label": "StringProperty",
             "Type": {
                 "ValueFormat": "Primitive",
                 "TypeName": "string"
                 }
             },{
-            "Name": "ChildClass_ArrayProperty",
+            "Name": "%s",
             "Label": "ArrayProperty",
             "Type": {
                 "ValueFormat": "Array",
@@ -8776,7 +8779,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
                     }
                 }
             },{
-            "Name": "ChildClass_StructProperty",
+            "Name": "%s",
             "Label": "StructProperty",
             "Type": {
                 "ValueFormat": "Struct",
@@ -8798,7 +8801,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
                     }]
                 }
             },{
-            "Name": "ChildClass_StructArrayProperty",
+            "Name": "%s",
             "Label": "StructArrayProperty",
             "Type": {
                 "ValueFormat": "Array",
@@ -8824,7 +8827,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
                     }
                 }
             }]
-        })");
+        })", 
+        FIELD_NAME(childClass, "IntProperty"), FIELD_NAME(childClass, "StringProperty"),
+        FIELD_NAME(childClass, "ArrayProperty"), FIELD_NAME(childClass, "StructProperty"),
+        FIELD_NAME(childClass, "StructArrayProperty")).c_str());
     rapidjson::Document actualFieldType = descriptor->GetVisibleFields()[1]->GetTypeDescription().AsJson();
     EXPECT_EQ(expectedFieldType, actualFieldType)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedFieldType) << "\r\n"
@@ -8840,48 +8846,48 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({
-        "ParentClass_ParentProperty": null,
-        "ParentClass_ChildClass": [{
-            "PrimaryKeys": [{"ECClassId": "", "ECInstanceId": ""}],
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": null,
+        "%s": [{
+            "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
-                "ChildClass_IntProperty": 1,
-                "ChildClass_StringProperty": "111",
-                "ChildClass_ArrayProperty": [2, 1],
-                "ChildClass_StructProperty": {
+                "%s": 1,
+                "%s": "111",
+                "%s": [2, 1],
+                "%s": {
                     "IntProperty": 123,
                     "StringProperty": "abc"
                     },
-                "ChildClass_StructArrayProperty": [{
+                "%s": [{
                    "IntProperty": 123,
                    "StringProperty": "abc"
                    }]
                 },
             "DisplayValues": {
-                "ChildClass_IntProperty": "1",
-                "ChildClass_StringProperty": "111",
-                "ChildClass_ArrayProperty": ["2", "1"],
-                "ChildClass_StructProperty": {
+                "%s": "1",
+                "%s": "111",
+                "%s": ["2", "1"],
+                "%s": {
                     "IntProperty": "123",
                     "StringProperty": "abc"
                     },
-                "ChildClass_StructArrayProperty": [{
+                "%s": [{
                    "IntProperty": "123",
                    "StringProperty": "abc"
                    }]
                 },
             "MergedFieldNames": []
             },{
-            "PrimaryKeys": [{"ECClassId": "", "ECInstanceId": ""}],
+            "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
-                "ChildClass_IntProperty": 2,
-                "ChildClass_StringProperty": "222",
-                "ChildClass_ArrayProperty": [3],
-                "ChildClass_StructProperty": {
+                "%s": 2,
+                "%s": "222",
+                "%s": [3],
+                "%s": {
                     "IntProperty": 456,
                     "StringProperty": "def"
                     },
-                "ChildClass_StructArrayProperty": [{
+                "%s": [{
                    "IntProperty": 456,
                    "StringProperty": "def"
                    },{
@@ -8890,14 +8896,14 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
                    }]
                 },
             "DisplayValues": {
-                "ChildClass_IntProperty": "2",
-                "ChildClass_StringProperty": "222",
-                "ChildClass_ArrayProperty": ["3"],
-                "ChildClass_StructProperty": {
+                "%s": "2",
+                "%s": "222",
+                "%s": ["3"],
+                "%s": {
                     "IntProperty": "456",
                     "StringProperty": "def"
                     },
-                "ChildClass_StructArrayProperty": [{
+                "%s": [{
                    "IntProperty": "456",
                    "StringProperty": "def"
                    },{
@@ -8907,12 +8913,18 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
                 },
             "MergedFieldNames": []
             }]
-        })");
-    expectedValues["ParentClass_ChildClass"][0]["PrimaryKeys"][0]["ECClassId"].SetString(childClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["ParentClass_ChildClass"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(child1->GetInstanceId().c_str(), expectedValues.GetAllocator());
-    expectedValues["ParentClass_ChildClass"][1]["PrimaryKeys"][0]["ECClassId"].SetString(childClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["ParentClass_ChildClass"][1]["PrimaryKeys"][0]["ECInstanceId"].SetString(child2->GetInstanceId().c_str(), expectedValues.GetAllocator());
-
+        })", 
+        FIELD_NAME(parentClass, "ParentProperty"), NESTED_CONTENT_FIELD_NAME(parentClass, childClass),
+        childClass->GetId().ToString().c_str(), child1->GetInstanceId().c_str(),
+        FIELD_NAME(childClass, "IntProperty"), FIELD_NAME(childClass, "StringProperty"), FIELD_NAME(childClass, "ArrayProperty"), 
+        FIELD_NAME(childClass, "StructProperty"), FIELD_NAME(childClass, "StructArrayProperty"),
+        FIELD_NAME(childClass, "IntProperty"), FIELD_NAME(childClass, "StringProperty"), FIELD_NAME(childClass, "ArrayProperty"),
+        FIELD_NAME(childClass, "StructProperty"), FIELD_NAME(childClass, "StructArrayProperty"),
+        childClass->GetId().ToString().c_str(), child2->GetInstanceId().c_str(),
+        FIELD_NAME(childClass, "IntProperty"), FIELD_NAME(childClass, "StringProperty"), FIELD_NAME(childClass, "ArrayProperty"),
+        FIELD_NAME(childClass, "StructProperty"), FIELD_NAME(childClass, "StructArrayProperty"),
+        FIELD_NAME(childClass, "IntProperty"), FIELD_NAME(childClass, "StringProperty"), FIELD_NAME(childClass, "ArrayProperty"),
+        FIELD_NAME(childClass, "StructProperty"), FIELD_NAME(childClass, "StructArrayProperty")).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
@@ -9020,62 +9032,56 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({
-        "ClassD_StringProperty": null,
-        "ClassD_ClassE": [{
-            "PrimaryKeys": [{"ECClassId":"", "ECInstanceId":""}, {"ECClassId":"", "ECInstanceId":""}, {"ECClassId":"", "ECInstanceId":""}],
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": null,
+        "%s": [{
+            "PrimaryKeys": [{"ECClassId":"%s", "ECInstanceId":"%s"}, {"ECClassId":"%s", "ECInstanceId":"%s"}, {"ECClassId":"%s", "ECInstanceId":"%s"}],
             "Values": {
-                "ClassE_IntProperty": 1,
-                "ClassE_LongProperty": 111
+                "%s": 1,
+                "%s": 111
                 },
             "DisplayValues": {
-                "ClassE_IntProperty": "1",
-                "ClassE_LongProperty": "111"
+                "%s": "1",
+                "%s": "111"
                 },
             "MergedFieldNames": []
             },{
-            "PrimaryKeys": [{"ECClassId":"", "ECInstanceId":""}, {"ECClassId":"", "ECInstanceId":""}, {"ECClassId":"", "ECInstanceId":""}],
+            "PrimaryKeys": [{"ECClassId":"%s", "ECInstanceId":"%s"}, {"ECClassId":"%s", "ECInstanceId":"%s"}, {"ECClassId":"%s", "ECInstanceId":"%s"}],
             "Values": {
-                "ClassE_IntProperty": 2,
-                "ClassE_LongProperty": 222
+                "%s": 2,
+                "%s": 222
                 },
             "DisplayValues": {
-                "ClassE_IntProperty": "2",
-                "ClassE_LongProperty": "222"
+                "%s": "2",
+                "%s": "222"
                 },
             "MergedFieldNames": []
             },{
-            "PrimaryKeys": [{"ECClassId":"", "ECInstanceId":""}, {"ECClassId":"", "ECInstanceId":""}, {"ECClassId":"", "ECInstanceId":""}],
+            "PrimaryKeys": [{"ECClassId":"%s", "ECInstanceId":"%s"}, {"ECClassId":"%s", "ECInstanceId":"%s"}, {"ECClassId":"%s", "ECInstanceId":"%s"}],
             "Values": {
-                "ClassE_IntProperty": 3,
-                "ClassE_LongProperty": 333
+                "%s": 3,
+                "%s": 333
                 },
             "DisplayValues": {
-                "ClassE_IntProperty": "3",
-                "ClassE_LongProperty": "333"
+                "%s": "3",
+                "%s": "333"
                 },
             "MergedFieldNames": []
             }]
-        })");
-    expectedValues["ClassD_ClassE"][0]["PrimaryKeys"][0]["ECClassId"].SetString(classE->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["ClassD_ClassE"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(instanceE11->GetInstanceId().c_str(), expectedValues.GetAllocator());
-    expectedValues["ClassD_ClassE"][0]["PrimaryKeys"][1]["ECClassId"].SetString(classE->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["ClassD_ClassE"][0]["PrimaryKeys"][1]["ECInstanceId"].SetString(instanceE21->GetInstanceId().c_str(), expectedValues.GetAllocator());
-    expectedValues["ClassD_ClassE"][0]["PrimaryKeys"][2]["ECClassId"].SetString(classE->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["ClassD_ClassE"][0]["PrimaryKeys"][2]["ECInstanceId"].SetString(instanceE31->GetInstanceId().c_str(), expectedValues.GetAllocator());
-    expectedValues["ClassD_ClassE"][1]["PrimaryKeys"][0]["ECClassId"].SetString(classE->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["ClassD_ClassE"][1]["PrimaryKeys"][0]["ECInstanceId"].SetString(instanceE12->GetInstanceId().c_str(), expectedValues.GetAllocator());
-    expectedValues["ClassD_ClassE"][1]["PrimaryKeys"][1]["ECClassId"].SetString(classE->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["ClassD_ClassE"][1]["PrimaryKeys"][1]["ECInstanceId"].SetString(instanceE22->GetInstanceId().c_str(), expectedValues.GetAllocator());
-    expectedValues["ClassD_ClassE"][1]["PrimaryKeys"][2]["ECClassId"].SetString(classE->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["ClassD_ClassE"][1]["PrimaryKeys"][2]["ECInstanceId"].SetString(instanceE32->GetInstanceId().c_str(), expectedValues.GetAllocator());
-    expectedValues["ClassD_ClassE"][2]["PrimaryKeys"][0]["ECClassId"].SetString(classE->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["ClassD_ClassE"][2]["PrimaryKeys"][0]["ECInstanceId"].SetString(instanceE13->GetInstanceId().c_str(), expectedValues.GetAllocator());
-    expectedValues["ClassD_ClassE"][2]["PrimaryKeys"][1]["ECClassId"].SetString(classE->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["ClassD_ClassE"][2]["PrimaryKeys"][1]["ECInstanceId"].SetString(instanceE23->GetInstanceId().c_str(), expectedValues.GetAllocator());
-    expectedValues["ClassD_ClassE"][2]["PrimaryKeys"][2]["ECClassId"].SetString(classE->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["ClassD_ClassE"][2]["PrimaryKeys"][2]["ECInstanceId"].SetString(instanceE33->GetInstanceId().c_str(), expectedValues.GetAllocator());
-
+        })",
+        FIELD_NAME(classD, "StringProperty"), NESTED_CONTENT_FIELD_NAME(classD, classE),
+        classE->GetId().ToString().c_str(), instanceE11->GetInstanceId().c_str(),
+        classE->GetId().ToString().c_str(), instanceE21->GetInstanceId().c_str(),
+        classE->GetId().ToString().c_str(), instanceE31->GetInstanceId().c_str(),
+        FIELD_NAME(classE, "IntProperty"), FIELD_NAME(classE, "LongProperty"), FIELD_NAME(classE, "IntProperty"), FIELD_NAME(classE, "LongProperty"),
+        classE->GetId().ToString().c_str(), instanceE12->GetInstanceId().c_str(),
+        classE->GetId().ToString().c_str(), instanceE22->GetInstanceId().c_str(),
+        classE->GetId().ToString().c_str(), instanceE32->GetInstanceId().c_str(),
+        FIELD_NAME(classE, "IntProperty"), FIELD_NAME(classE, "LongProperty"), FIELD_NAME(classE, "IntProperty"), FIELD_NAME(classE, "LongProperty"),
+        classE->GetId().ToString().c_str(), instanceE13->GetInstanceId().c_str(),
+        classE->GetId().ToString().c_str(), instanceE23->GetInstanceId().c_str(),
+        classE->GetId().ToString().c_str(), instanceE33->GetInstanceId().c_str(),
+        FIELD_NAME(classE, "IntProperty"), FIELD_NAME(classE, "LongProperty"), FIELD_NAME(classE, "IntProperty"), FIELD_NAME(classE, "LongProperty")).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
@@ -9151,16 +9157,17 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({
-        "ClassD_StringProperty": null,
-        "ClassD_ClassE": ""
-        })");
-    expectedValues["ClassD_ClassE"].SetString(varies_string.c_str(), expectedValues.GetAllocator());
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": null,
+        "%s": "%s"
+        })", 
+        FIELD_NAME(classD, "StringProperty"), NESTED_CONTENT_FIELD_NAME(classD, classE), 
+        varies_string.c_str()).c_str());
 
     EXPECT_EQ(expectedValues, recordJson["DisplayValues"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["DisplayValues"]);
-    EXPECT_TRUE(contentSet.Get(0)->IsMerged("ClassD_ClassE"));
+    EXPECT_TRUE(contentSet.Get(0)->IsMerged(NESTED_CONTENT_FIELD_NAME(classD, classE)));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -9267,16 +9274,17 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({
-        "ClassD_StringProperty": null,
-        "ClassD_ClassE": ""
-        })");
-    expectedValues["ClassD_ClassE"].SetString(varies_string.c_str(), expectedValues.GetAllocator());
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": null,
+        "%s": "%s"
+        })", 
+        FIELD_NAME(classD, "StringProperty"), NESTED_CONTENT_FIELD_NAME(classD, classE),
+        varies_string.c_str()).c_str());
 
     EXPECT_EQ(expectedValues, recordJson["DisplayValues"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["DisplayValues"]);
-    EXPECT_TRUE(contentSet.Get(0)->IsMerged("ClassD_ClassE"));
+    EXPECT_TRUE(contentSet.Get(0)->IsMerged(NESTED_CONTENT_FIELD_NAME(classD, classE)));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -9328,49 +9336,54 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedNestedIn
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({
-        "Widget_Description": null,
-        "Widget_MyID": null,
-        "Widget_IntProperty": null,
-        "Widget_BoolProperty": null,
-        "Widget_DoubleProperty": null,
-        "Widget_LongProperty": null,
-        "Widget_DateProperty": null,
-        "Widget_Gadget": [{
-            "PrimaryKeys": [{"ECClassId": "", "ECInstanceId": ""}],
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": null,
+        "%s": null,
+        "%s": null,
+        "%s": null,
+        "%s": null,
+        "%s": null,
+        "%s": null,
+        "%s": [{
+            "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
-                "Gadget_MyID": null,
-                "Gadget_Description": null,
-                "Gadget_Sprocket": [{
-                    "PrimaryKeys": [{"ECClassId": "", "ECInstanceId": ""}],
+                "%s": null,
+                "%s": null,
+                "%s": [{
+                    "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
                     "Values": {
-                        "Sprocket_Description": null,
-                        "Sprocket_MyID": null
+                        "%s": null,
+                        "%s": null
                         },
                     "DisplayValues": {
-                        "Sprocket_Description": null,
-                        "Sprocket_MyID": null
+                        "%s": null,
+                        "%s": null
                         },
                     "MergedFieldNames": []
                     }]
                 },
             "DisplayValues": {
-                "Gadget_MyID": null,
-                "Gadget_Description": null,
-                "Gadget_Sprocket": [{
+                "%s": null,
+                "%s": null,
+                "%s": [{
                     "DisplayValues": {
-                        "Sprocket_Description": null,
-                        "Sprocket_MyID": null
+                        "%s": null,
+                        "%s": null
                         }
                     }]
                 },
             "MergedFieldNames": []
             }]
-        })");
-    expectedValues["Widget_Gadget"][0]["PrimaryKeys"][0]["ECClassId"].SetString(m_gadgetClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["Widget_Gadget"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(gadget->GetInstanceId().c_str(), expectedValues.GetAllocator());
-    expectedValues["Widget_Gadget"][0]["Values"]["Gadget_Sprocket"][0]["PrimaryKeys"][0]["ECClassId"].SetString(m_sprocketClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["Widget_Gadget"][0]["Values"]["Gadget_Sprocket"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(sprocket->GetInstanceId().c_str(), expectedValues.GetAllocator());
+        })",
+        FIELD_NAME(m_widgetClass, "Description"), FIELD_NAME(m_widgetClass, "MyID"), FIELD_NAME(m_widgetClass, "IntProperty"),
+        FIELD_NAME(m_widgetClass, "BoolProperty"), FIELD_NAME(m_widgetClass, "DoubleProperty"), FIELD_NAME(m_widgetClass, "LongProperty"),
+        FIELD_NAME(m_widgetClass, "DateProperty"), NESTED_CONTENT_FIELD_NAME(m_widgetClass, m_gadgetClass),
+        m_gadgetClass->GetId().ToString().c_str(), gadget->GetInstanceId().c_str(),
+        FIELD_NAME(m_gadgetClass, "MyID"), FIELD_NAME(m_gadgetClass, "Description"), NESTED_CONTENT_FIELD_NAME(m_gadgetClass, m_sprocketClass),
+        m_sprocketClass->GetId().ToString().c_str(), sprocket->GetInstanceId().c_str(),
+        FIELD_NAME(m_sprocketClass, "Description"), FIELD_NAME(m_sprocketClass, "MyID"), FIELD_NAME(m_sprocketClass, "Description"), FIELD_NAME(m_sprocketClass, "MyID"),
+        FIELD_NAME(m_gadgetClass, "MyID"), FIELD_NAME(m_gadgetClass, "Description"), NESTED_CONTENT_FIELD_NAME(m_gadgetClass, m_sprocketClass),
+        FIELD_NAME(m_sprocketClass, "Description"), FIELD_NAME(m_sprocketClass, "MyID")).c_str());
 
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
@@ -9426,29 +9439,33 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedNestedIn
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({
-        "Widget_Description": null,
-        "Widget_MyID": null,
-        "Widget_IntProperty": null,
-        "Widget_BoolProperty": null,
-        "Widget_DoubleProperty": null,
-        "Widget_LongProperty": null,
-        "Widget_DateProperty": null,
-        "Widget_Gadget_Sprocket": [{
-            "PrimaryKeys": [{"ECClassId": "", "ECInstanceId": ""}],
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": null,
+        "%s": null,
+        "%s": null,
+        "%s": null,
+        "%s": null,
+        "%s": null,
+        "%s": null,
+        "%s": [{
+            "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
-                "Sprocket_Description": null,
-                "Sprocket_MyID": null
+                "%s": null,
+                "%s": null
                 },
             "DisplayValues": {
-                "Sprocket_Description": null,
-                "Sprocket_MyID": null
+                "%s": null,
+                "%s": null
                 },
             "MergedFieldNames": []
             }]
-        })");
-    expectedValues["Widget_Gadget_Sprocket"][0]["PrimaryKeys"][0]["ECClassId"].SetString(m_sprocketClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["Widget_Gadget_Sprocket"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(sprocket->GetInstanceId().c_str(), expectedValues.GetAllocator());
+        })",
+        FIELD_NAME(m_widgetClass, "Description"), FIELD_NAME(m_widgetClass, "MyID"), FIELD_NAME(m_widgetClass, "IntProperty"),
+        FIELD_NAME(m_widgetClass, "BoolProperty"), FIELD_NAME(m_widgetClass, "DoubleProperty"), FIELD_NAME(m_widgetClass, "LongProperty"),
+        FIELD_NAME(m_widgetClass, "DateProperty"), NESTED_CONTENT_FIELD_NAME((bvector<ECClassCP>{m_widgetClass, m_gadgetClass}), m_sprocketClass),
+        m_sprocketClass->GetId().ToString().c_str(), sprocket->GetInstanceId().c_str(),
+        FIELD_NAME(m_sprocketClass, "Description"), FIELD_NAME(m_sprocketClass, "MyID"),
+        FIELD_NAME(m_sprocketClass, "Description"), FIELD_NAME(m_sprocketClass, "MyID")).c_str());
 
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
@@ -9616,8 +9633,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDifferentFieldsIfPropert
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(2, descriptor->GetVisibleFields().size());
 
-    EXPECT_STREQ("ClassK_LengthProperty", descriptor->GetVisibleFields()[0]->GetName().c_str());
-    EXPECT_STREQ("ClassL_LengthProperty", descriptor->GetVisibleFields()[1]->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME(classK, "LengthProperty"), descriptor->GetVisibleFields()[0]->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME(classL, "LengthProperty"), descriptor->GetVisibleFields()[1]->GetName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -9650,7 +9667,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValues)
     // hide all fields except Widget_MyID
     for (ContentDescriptor::Field const* field : fieldVectorCopy)
         {
-        if (!field->GetName().Equals("Widget_MyID"))
+        if (!field->GetName().EndsWithI("MyID"))
             overridenDescriptor->RemoveField(field->GetName().c_str());
         }
     overridenDescriptor->AddContentFlag(ContentFlags::DistinctValues);
@@ -9668,10 +9685,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValues)
 
     RapidJsonValueCR values1 = contentSet.Get(0)->GetValues();
     ASSERT_EQ(1, values1.MemberCount());
-    EXPECT_STREQ("Test1", values1["Widget_MyID"].GetString());
+    EXPECT_STREQ("Test1", values1[FIELD_NAME(m_widgetClass, "MyID")].GetString());
     RapidJsonValueCR values2 = contentSet.Get(1)->GetValues();
     ASSERT_EQ(1, values2.MemberCount());
-    EXPECT_STREQ("Test2", values2["Widget_MyID"].GetString());
+    EXPECT_STREQ("Test2", values2[FIELD_NAME(m_widgetClass, "MyID")].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -9716,7 +9733,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValuesFromRelate
     // hide all fields except Gadget_MyID
     for (ContentDescriptor::Field const* field : fieldVectorCopy)
         {
-        if (!field->GetName().Equals("Gadget_MyID"))
+        if (!field->GetName().EndsWithI("MyID"))
             overridenDescriptor->RemoveField(field->GetName().c_str());
         }
     overridenDescriptor->AddContentFlag(ContentFlags::DistinctValues);
@@ -9734,14 +9751,14 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValuesFromRelate
 
     RapidJsonValueCR values1 = contentSet.Get(0)->GetValues();
     rapidjson::Document expectedValues1;
-    expectedValues1.Parse(R"({"Gadget_MyID": "Test1"})");
+    expectedValues1.Parse(Utf8PrintfString(R"({"%s": "Test1"})", FIELD_NAME(m_gadgetClass, "MyID")).c_str());
     EXPECT_EQ(expectedValues1, values1)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues1) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(values1);
 
     RapidJsonValueCR values2 = contentSet.Get(1)->GetValues();
     rapidjson::Document expectedValues2;
-    expectedValues2.Parse(R"({"Gadget_MyID": "Test2"})");
+    expectedValues2.Parse(Utf8PrintfString(R"({"%s": "Test2"})", FIELD_NAME(m_gadgetClass, "MyID")).c_str());
     EXPECT_EQ(expectedValues2, values2)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues2) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(values2);
@@ -9813,14 +9830,14 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValuesOfCalculat
 
     RapidJsonValueCR values1 = contentSet.Get(0)->GetValues();
     rapidjson::Document expectedValues1;
-    expectedValues1.Parse(R"({"CalculatedProperty_0": "Test1Calculated"})");
+    expectedValues1.Parse(Utf8PrintfString(R"({"CalculatedProperty_0": "Test1Calculated"})").c_str());
     EXPECT_EQ(expectedValues1, values1)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues1) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(values1);
 
     RapidJsonValueCR values2 = contentSet.Get(1)->GetValues();
     rapidjson::Document expectedValues2;
-    expectedValues2.Parse(R"({"CalculatedProperty_0": "Test2Calculated"})");
+    expectedValues2.Parse(Utf8PrintfString(R"({"CalculatedProperty_0": "Test2Calculated"})").c_str());
     EXPECT_EQ(expectedValues2, values2)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues2) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(values2);
@@ -9884,14 +9901,14 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValuesOfDisplayL
 
     RapidJsonValueCR values1 = contentSet.Get(0)->GetValues();
     rapidjson::Document expectedValues1;
-    expectedValues1.Parse(R"({"/DisplayLabel/": "Test1"})");
+    expectedValues1.Parse(Utf8PrintfString(R"({"/DisplayLabel/": "Test1"})").c_str());
     EXPECT_EQ(expectedValues1, values1)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues1) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(values1);
 
     RapidJsonValueCR values2 = contentSet.Get(1)->GetValues();
     rapidjson::Document expectedValues2;
-    expectedValues2.Parse(R"({"/DisplayLabel/": "Test2"})");
+    expectedValues2.Parse(Utf8PrintfString(R"({"/DisplayLabel/": "Test2"})").c_str());
     EXPECT_EQ(expectedValues2, values2)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues2) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(values2);
@@ -9933,7 +9950,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, GetDistinctValuesFromMerge
     // hide all fields except Widget_MyID
     for (ContentDescriptor::Field const* field : fieldVectorCopy)
         {
-        if (!field->GetName().Equals("Gadget_Widget_MyID"))
+        if (!field->GetName().EndsWithI("MyID"))
             overridenDescriptor->RemoveField(field->GetName().c_str());
         }
     ASSERT_EQ(1, overridenDescriptor->GetVisibleFields().size());
@@ -9948,9 +9965,9 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, GetDistinctValuesFromMerge
     ASSERT_EQ(2, contentSet.GetSize());
 
     RapidJsonValueCR jsonValues = contentSet.Get(0)->GetValues();
-    EXPECT_STREQ("GadgetID", jsonValues["Gadget_Widget_MyID"].GetString());
+    EXPECT_STREQ("GadgetID", jsonValues[FIELD_NAME((bvector<ECClassCP>{m_gadgetClass, m_widgetClass}), "MyID")].GetString());
     RapidJsonValueCR jsonValues2 = contentSet.Get(1)->GetValues();
-    EXPECT_STREQ("WidgetID", jsonValues2["Gadget_Widget_MyID"].GetString());
+    EXPECT_STREQ("WidgetID", jsonValues2[FIELD_NAME((bvector<ECClassCP>{m_gadgetClass, m_widgetClass}), "MyID")].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -9996,12 +10013,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetsContentDescriptorWithNa
     ASSERT_EQ(2, contentSet.GetSize());
 
     RapidJsonValueCR jsonValues = contentSet.Get(0)->GetValues();
-    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widget).GetId().GetValue(), jsonValues["Gadget_Widget"].GetUint64());
-    EXPECT_TRUE(jsonValues["Sprocket_Gadget"].IsNull());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widget).GetId().GetValue(), jsonValues[FIELD_NAME(m_gadgetClass, "Widget")].GetUint64());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(m_sprocketClass, "Gadget")].IsNull());
 
     RapidJsonValueCR jsonValues2 = contentSet.Get(1)->GetValues();
-    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*gadget).GetId().GetValue(), jsonValues2["Sprocket_Gadget"].GetUint64());
-    EXPECT_TRUE(jsonValues2["Gadget_Widget"].IsNull());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*gadget).GetId().GetValue(), jsonValues2[FIELD_NAME(m_sprocketClass, "Gadget")].GetUint64());
+    EXPECT_TRUE(jsonValues2[FIELD_NAME(m_gadgetClass, "Widget")].IsNull());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -10049,7 +10066,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctNavigationProper
     ASSERT_EQ(1, contentSet.GetSize());
 
     RapidJsonValueCR jsonValues = contentSet.Get(0)->GetDisplayValues();
-    EXPECT_STREQ("WidgetID", jsonValues["Gadget_Widget"].GetString());
+    EXPECT_STREQ("WidgetID", jsonValues[FIELD_NAME(m_gadgetClass, "Widget")].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -11632,7 +11649,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, NavigationPropertyLabelIsOv
     ASSERT_EQ(1, contentSet.GetSize());
 
     RapidJsonValueCR jsonValues = contentSet.Get(0)->GetDisplayValues();
-    EXPECT_STREQ("ClassB_StringProperty", jsonValues["ClassC_A"].GetString());
+    EXPECT_STREQ("ClassB_StringProperty", jsonValues[FIELD_NAME(classC, "A")].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -11701,7 +11718,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, NavigationPropertyLabelIsOv
     ASSERT_EQ(1, contentSet.GetSize());
 
     RapidJsonValueCR jsonValues = contentSet.Get(0)->GetDisplayValues();
-    EXPECT_STREQ("ClassC_StringProperty", jsonValues["ClassD_A"].GetString());
+    EXPECT_STREQ("ClassC_StringProperty", jsonValues[FIELD_NAME(classD, "A")].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -12100,20 +12117,21 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPolymorphicallyRelated
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({
-        "Element_MyAspect": [{
-            "PrimaryKeys": [{"ECClassId": "", "ECInstanceId": ""}],
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": [{
+            "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
-                "MyAspect_AspectName": "my aspect"
+                "%s": "my aspect"
                 },
             "DisplayValues": {
-                "MyAspect_AspectName": "my aspect"
+                "%s": "my aspect"
                 },
             "MergedFieldNames": []
             }]
-        })");
-    expectedValues["Element_MyAspect"][0]["PrimaryKeys"][0]["ECClassId"].SetString(aspectClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["Element_MyAspect"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(aspect->GetInstanceId().c_str(), expectedValues.GetAllocator());
+        })", 
+        NESTED_CONTENT_FIELD_NAME(baseElementClass, aspectClass),
+        aspectClass->GetId().ToString().c_str(), aspect->GetInstanceId().c_str(),
+        FIELD_NAME(aspectClass, "AspectName"), FIELD_NAME(aspectClass, "AspectName")).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
@@ -12199,9 +12217,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPolymorphicallyBackwar
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({
-        "rel_ElementUniqueAspect_MyElement_ElementName": "my element"
-        })");
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": "my element"
+        })", RELATED_FIELD_NAME(baseAspectClass, elementClass, "ElementName")).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
@@ -12362,21 +12380,22 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPolymorphicallyRelated
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({
-        "Element_ElementName": "my element 1",
-        "Element_MyAspectA": [{
-            "PrimaryKeys": [{"ECClassId": "", "ECInstanceId": ""}],
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": "my element 1",
+        "%s": [{
+            "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
-                "MyAspectA_Aspect_A_Name": "my aspect a"
+                "%s": "my aspect a"
                 },
             "DisplayValues": {
-                "MyAspectA_Aspect_A_Name": "my aspect a"
+                "%s": "my aspect a"
                 },
             "MergedFieldNames": []
             }]
-        })");
-    expectedValues["Element_MyAspectA"][0]["PrimaryKeys"][0]["ECClassId"].SetString(aspectAClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["Element_MyAspectA"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(aspect1->GetInstanceId().c_str(), expectedValues.GetAllocator());
+        })", 
+        FIELD_NAME(elementClass, "ElementName"), NESTED_CONTENT_FIELD_NAME(elementClass, aspectAClass),
+        aspectAClass->GetId().ToString().c_str(), aspect1->GetInstanceId().c_str(),
+        FIELD_NAME(aspectAClass, "Aspect_A_Name"), FIELD_NAME(aspectAClass, "Aspect_A_Name")).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
@@ -12467,21 +12486,22 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPolymorphicallyRelated
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({
-        "Element_ElementName": "my element 1",
-        "Element_MyAspectA": [{
-            "PrimaryKeys": [{"ECClassId": "", "ECInstanceId": ""}],
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": "my element 1",
+        "%s": [{
+            "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
-                "MyAspectA_Aspect_A_Name": "my aspect a"
+                "%s": "my aspect a"
                 },
             "DisplayValues": {
-                "MyAspectA_Aspect_A_Name": "my aspect a"
+                "%s": "my aspect a"
                 },
             "MergedFieldNames": []
             }]
-        })");
-    expectedValues["Element_MyAspectA"][0]["PrimaryKeys"][0]["ECClassId"].SetString(aspectAClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["Element_MyAspectA"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(aspect1->GetInstanceId().c_str(), expectedValues.GetAllocator());
+        })",
+        FIELD_NAME(elementClass, "ElementName"), NESTED_CONTENT_FIELD_NAME(elementClass, aspectAClass),
+        aspectAClass->GetId().ToString().c_str(), aspect1->GetInstanceId().c_str(),
+        FIELD_NAME(aspectAClass, "Aspect_A_Name"), FIELD_NAME(aspectAClass, "Aspect_A_Name")).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
@@ -12570,21 +12590,22 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPolymorphicallyRelated
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({
-        "Element_ElementName": "my element 1",
-        "Element_MyAspectA": [{
-            "PrimaryKeys": [{"ECClassId": "", "ECInstanceId": ""}],
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": "my element 1",
+        "%s": [{
+            "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
-                "MyAspectA_Aspect_A_Name": "my aspect a"
+                "%s": "my aspect a"
                 },
             "DisplayValues": {
-                "MyAspectA_Aspect_A_Name": "my aspect a"
+                "%s": "my aspect a"
                 },
             "MergedFieldNames": []
             }]
-        })");
-    expectedValues["Element_MyAspectA"][0]["PrimaryKeys"][0]["ECClassId"].SetString(aspectAClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["Element_MyAspectA"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(aspect1->GetInstanceId().c_str(), expectedValues.GetAllocator());
+        })",
+        FIELD_NAME(elementClass, "ElementName"), NESTED_CONTENT_FIELD_NAME(elementClass, aspectAClass),
+        aspectAClass->GetId().ToString().c_str(), aspect1->GetInstanceId().c_str(),
+        FIELD_NAME(aspectAClass, "Aspect_A_Name"), FIELD_NAME(aspectAClass, "Aspect_A_Name")).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
@@ -12673,21 +12694,22 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPolymorphicallyRelated
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({
-        "Element_ElementName": "my element 1",
-        "Element_MyAspectA": [{
-            "PrimaryKeys": [{"ECClassId": "", "ECInstanceId": ""}],
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": "my element 1",
+        "%s": [{
+            "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
-                "MyAspectA_Aspect_A_Name": "my aspect a"
+                "%s": "my aspect a"
                 },
             "DisplayValues": {
-                "MyAspectA_Aspect_A_Name": "my aspect a"
+                "%s": "my aspect a"
                 },
             "MergedFieldNames": []
             }]
-        })");
-    expectedValues["Element_MyAspectA"][0]["PrimaryKeys"][0]["ECClassId"].SetString(aspectAClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["Element_MyAspectA"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(aspect1->GetInstanceId().c_str(), expectedValues.GetAllocator());
+        })",
+        FIELD_NAME(elementClass, "ElementName"), NESTED_CONTENT_FIELD_NAME(elementClass, aspectAClass),
+        aspectAClass->GetId().ToString().c_str(), aspect1->GetInstanceId().c_str(),
+        FIELD_NAME(aspectAClass, "Aspect_A_Name"), FIELD_NAME(aspectAClass, "Aspect_A_Name")).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
@@ -12795,21 +12817,22 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPolymorphicallyRelated
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({
-        "Element_ElementName": "my element 1",
-        "Element_MyAspectA": [{
-            "PrimaryKeys": [{"ECClassId": "", "ECInstanceId": ""}],
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": "my element 1",
+        "%s": [{
+            "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
-                "MyAspectA_Aspect_A_Name": "my aspect a"
+                "%s": "my aspect a"
                 },
             "DisplayValues": {
-                "MyAspectA_Aspect_A_Name": "my aspect a"
+                "%s": "my aspect a"
                 },
             "MergedFieldNames": []
             }]
-        })");
-    expectedValues["Element_MyAspectA"][0]["PrimaryKeys"][0]["ECClassId"].SetString(aspectAClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["Element_MyAspectA"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(aspect1->GetInstanceId().c_str(), expectedValues.GetAllocator());
+        })",
+        FIELD_NAME(elementClass, "ElementName"), NESTED_CONTENT_FIELD_NAME(elementClass, aspectAClass),
+        aspectAClass->GetId().ToString().c_str(), aspect1->GetInstanceId().c_str(),
+        FIELD_NAME(aspectAClass, "Aspect_A_Name"), FIELD_NAME(aspectAClass, "Aspect_A_Name")).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
@@ -12916,21 +12939,22 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPolymorphicallyRelated
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({
-        "Element_ElementName": "my element 1",
-        "Element_MyAspectA": [{
-            "PrimaryKeys": [{"ECClassId": "", "ECInstanceId": ""}],
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": "my element 1",
+        "%s": [{
+            "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
-                "MyAspectA_Aspect_A_Name": "my aspect a"
+                "%s": "my aspect a"
                 },
             "DisplayValues": {
-                "MyAspectA_Aspect_A_Name": "my aspect a"
+                "%s": "my aspect a"
                 },
             "MergedFieldNames": []
             }]
-        })");
-    expectedValues["Element_MyAspectA"][0]["PrimaryKeys"][0]["ECClassId"].SetString(aspectAClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["Element_MyAspectA"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(aspect1->GetInstanceId().c_str(), expectedValues.GetAllocator());
+        })",
+        FIELD_NAME(elementClass, "ElementName"), NESTED_CONTENT_FIELD_NAME(elementClass, aspectAClass),
+        aspectAClass->GetId().ToString().c_str(), aspect1->GetInstanceId().c_str(),
+        FIELD_NAME(aspectAClass, "Aspect_A_Name"), FIELD_NAME(aspectAClass, "Aspect_A_Name")).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
@@ -13061,67 +13085,73 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPolymorphicallyRelated
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({
-        "Element_ElementName": "my element 2",
-        "Element_MyAspectA": [{
-            "PrimaryKeys": [{"ECClassId": "", "ECInstanceId": ""}],
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": "my element 2",
+        "%s": [{
+            "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
-                "MyAspectA_Aspect_A_Name": "my aspect a"
+                "%s": "my aspect a"
                 },
             "DisplayValues": {
-                "MyAspectA_Aspect_A_Name": "my aspect a"
+                "%s": "my aspect a"
                 },
             "MergedFieldNames": []
             }],
-        "Element_MyAspectB": [],
-        "Element_MyAspectC": []
-        })");
-    expectedValues["Element_MyAspectA"][0]["PrimaryKeys"][0]["ECClassId"].SetString(aspectAClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["Element_MyAspectA"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(aspect2->GetInstanceId().c_str(), expectedValues.GetAllocator());
+        "%s": [],
+        "%s": []
+        })",
+        FIELD_NAME(elementClass, "ElementName"), NESTED_CONTENT_FIELD_NAME(elementClass, aspectAClass),
+        aspectAClass->GetId().ToString().c_str(), aspect2->GetInstanceId().c_str(),
+        FIELD_NAME(aspectAClass, "Aspect_A_Name"), FIELD_NAME(aspectAClass, "Aspect_A_Name"),
+        NESTED_CONTENT_FIELD_NAME(elementClass, aspectBClass), NESTED_CONTENT_FIELD_NAME(elementClass, aspectCClass)).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
 
     recordJson = contentSet.Get(1)->AsJson();
-    expectedValues.Parse(R"({
-        "Element_ElementName": "my element 3",
-        "Element_MyAspectA": [],
-        "Element_MyAspectB": [{
-            "PrimaryKeys": [{"ECClassId": "", "ECInstanceId": ""}],
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": "my element 3",
+        "%s": [],
+        "%s": [{
+            "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
-                "MyAspectB_Aspect_B_Name": "my aspect b"
+                "%s": "my aspect b"
                 },
             "DisplayValues": {
-                "MyAspectB_Aspect_B_Name": "my aspect b"
+                "%s": "my aspect b"
                 },
             "MergedFieldNames": []
             }],
-        "Element_MyAspectC": []
-        })");
-    expectedValues["Element_MyAspectB"][0]["PrimaryKeys"][0]["ECClassId"].SetString(aspectBClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["Element_MyAspectB"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(aspect3->GetInstanceId().c_str(), expectedValues.GetAllocator());
+        "%s": []
+        })",
+        FIELD_NAME(elementClass, "ElementName"), NESTED_CONTENT_FIELD_NAME(elementClass, aspectAClass), NESTED_CONTENT_FIELD_NAME(elementClass, aspectBClass),
+        aspectBClass->GetId().ToString().c_str(), aspect3->GetInstanceId().c_str(),
+        FIELD_NAME(aspectBClass, "Aspect_B_Name"), FIELD_NAME(aspectBClass, "Aspect_B_Name"), 
+        NESTED_CONTENT_FIELD_NAME(elementClass, aspectCClass)).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
 
     recordJson = contentSet.Get(2)->AsJson();
-    expectedValues.Parse(R"({
-        "Element_ElementName": "my element 4",
-        "Element_MyAspectA": [],
-        "Element_MyAspectB": [],
-        "Element_MyAspectC": [{
-            "PrimaryKeys": [{"ECClassId": "", "ECInstanceId": ""}],
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": "my element 4",
+        "%s": [],
+        "%s": [],
+        "%s": [{
+            "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
-                "MyAspectC_Aspect_C_Name": "my aspect c"
+                "%s": "my aspect c"
                 },
             "DisplayValues": {
-                "MyAspectC_Aspect_C_Name": "my aspect c"
+                "%s": "my aspect c"
                 },
             "MergedFieldNames": []
             }]
-        })");
-    expectedValues["Element_MyAspectC"][0]["PrimaryKeys"][0]["ECClassId"].SetString(aspectCClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["Element_MyAspectC"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(aspect4->GetInstanceId().c_str(), expectedValues.GetAllocator());
+        })",
+        FIELD_NAME(elementClass, "ElementName"), NESTED_CONTENT_FIELD_NAME(elementClass, aspectAClass),
+        NESTED_CONTENT_FIELD_NAME(elementClass, aspectBClass), NESTED_CONTENT_FIELD_NAME(elementClass, aspectCClass),
+        aspectCClass->GetId().ToString().c_str(), aspect4->GetInstanceId().c_str(),
+        FIELD_NAME(aspectCClass, "Aspect_C_Name"), FIELD_NAME(aspectCClass, "Aspect_C_Name")).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
@@ -13229,21 +13259,22 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsNestedPolymorphicallyR
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({
-        "Model_ModelName": "my model 1",
-        "Model_Element_MyAspectA": [{
-            "PrimaryKeys": [{"ECClassId": "", "ECInstanceId": ""}],
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": "my model 1",
+        "%s": [{
+            "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
-                "MyAspectA_Aspect_A_Name": "my aspect a"
+                "%s": "my aspect a"
                 },
             "DisplayValues": {
-                "MyAspectA_Aspect_A_Name": "my aspect a"
+                "%s": "my aspect a"
                 },
             "MergedFieldNames": []
             }]
-        })");
-    expectedValues["Model_Element_MyAspectA"][0]["PrimaryKeys"][0]["ECClassId"].SetString(aspectAClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["Model_Element_MyAspectA"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(aspect1->GetInstanceId().c_str(), expectedValues.GetAllocator());
+        })", 
+        FIELD_NAME(modelClass, "ModelName"), NESTED_CONTENT_FIELD_NAME((bvector<ECClassCP>{modelClass, elementClass}), aspectAClass),
+        aspectAClass->GetId().ToString().c_str(), aspect1->GetInstanceId().c_str(),
+        FIELD_NAME(aspectAClass, "Aspect_A_Name"), FIELD_NAME(aspectAClass, "Aspect_A_Name")).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
@@ -13351,21 +13382,22 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsNestedPolymorphicallyR
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({
-        "Model_ModelName": "my model 1",
-        "Model_Element_MyAspectA": [{
-            "PrimaryKeys": [{"ECClassId": "", "ECInstanceId": ""}],
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": "my model 1",
+        "%s": [{
+            "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
-                "MyAspectA_Aspect_A_Name": "my aspect a"
+                "%s": "my aspect a"
                 },
             "DisplayValues": {
-                "MyAspectA_Aspect_A_Name": "my aspect a"
+                "%s": "my aspect a"
                 },
             "MergedFieldNames": []
             }]
-        })");
-    expectedValues["Model_Element_MyAspectA"][0]["PrimaryKeys"][0]["ECClassId"].SetString(aspectAClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["Model_Element_MyAspectA"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(aspect1->GetInstanceId().c_str(), expectedValues.GetAllocator());
+        })",
+        FIELD_NAME(modelClass, "ModelName"), NESTED_CONTENT_FIELD_NAME((bvector<ECClassCP>{modelClass, elementClass}), aspectAClass),
+        aspectAClass->GetId().ToString().c_str(), aspect1->GetInstanceId().c_str(),
+        FIELD_NAME(aspectAClass, "Aspect_A_Name"), FIELD_NAME(aspectAClass, "Aspect_A_Name")).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
@@ -13490,21 +13522,22 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsNestedPolymorphicallyR
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({
-        "Category_CategoryName": "my category 1",
-        "Category_Element_MyAspectA": [{
-            "PrimaryKeys": [{"ECClassId": "", "ECInstanceId": ""}],
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": "my category 1",
+        "%s": [{
+            "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
-                "MyAspectA_Aspect_A_Name": "my aspect a"
+                "%s": "my aspect a"
                 },
             "DisplayValues": {
-                "MyAspectA_Aspect_A_Name": "my aspect a"
+                "%s": "my aspect a"
                 },
             "MergedFieldNames": []
             }]
-        })");
-    expectedValues["Category_Element_MyAspectA"][0]["PrimaryKeys"][0]["ECClassId"].SetString(aspectAClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["Category_Element_MyAspectA"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(aspect1->GetInstanceId().c_str(), expectedValues.GetAllocator());
+        })",
+        FIELD_NAME(categoryClass, "CategoryName"), NESTED_CONTENT_FIELD_NAME((bvector<ECClassCP>{categoryClass, elementClass}), aspectAClass),
+        aspectAClass->GetId().ToString().c_str(), aspect1->GetInstanceId().c_str(),
+        FIELD_NAME(aspectAClass, "Aspect_A_Name"), FIELD_NAME(aspectAClass, "Aspect_A_Name")).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
@@ -13656,67 +13689,79 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsNestedPolymorphicallyR
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({
-        "Model_ModelName": "my model 2",
-        "Model_Element_MyAspectA": [{
-            "PrimaryKeys": [{"ECClassId": "", "ECInstanceId": ""}],
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": "my model 2",
+        "%s": [{
+            "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
-                "MyAspectA_Aspect_A_Name": "my aspect a"
+                "%s": "my aspect a"
                 },
             "DisplayValues": {
-                "MyAspectA_Aspect_A_Name": "my aspect a"
+                "%s": "my aspect a"
                 },
             "MergedFieldNames": []
             }],
-        "Model_Element_MyAspectB": [],
-        "Model_Element_MyAspectC": []
-        })");
-    expectedValues["Model_Element_MyAspectA"][0]["PrimaryKeys"][0]["ECClassId"].SetString(aspectAClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["Model_Element_MyAspectA"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(aspect2->GetInstanceId().c_str(), expectedValues.GetAllocator());
+        "%s": [],
+        "%s": []
+        })",
+        FIELD_NAME(modelClass, "ModelName"), 
+        NESTED_CONTENT_FIELD_NAME((bvector<ECClassCP>{modelClass, elementClass}), aspectAClass),
+        aspectAClass->GetId().ToString().c_str(), aspect2->GetInstanceId().c_str(),
+        FIELD_NAME(aspectAClass, "Aspect_A_Name"), FIELD_NAME(aspectAClass, "Aspect_A_Name"),
+        NESTED_CONTENT_FIELD_NAME((bvector<ECClassCP>{modelClass, elementClass}), aspectBClass), 
+        NESTED_CONTENT_FIELD_NAME((bvector<ECClassCP>{modelClass, elementClass}), aspectCClass)).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
 
     recordJson = contentSet.Get(1)->AsJson();
-    expectedValues.Parse(R"({
-        "Model_ModelName": "my model 3",
-        "Model_Element_MyAspectA": [],
-        "Model_Element_MyAspectB": [{
-            "PrimaryKeys": [{"ECClassId": "", "ECInstanceId": ""}],
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": "my model 3",
+        "%s": [],
+        "%s": [{
+            "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
-                "MyAspectB_Aspect_B_Name": "my aspect b"
+                "%s": "my aspect b"
                 },
             "DisplayValues": {
-                "MyAspectB_Aspect_B_Name": "my aspect b"
+                "%s": "my aspect b"
                 },
             "MergedFieldNames": []
             }],
-        "Model_Element_MyAspectC": []
-        })");
-    expectedValues["Model_Element_MyAspectB"][0]["PrimaryKeys"][0]["ECClassId"].SetString(aspectBClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["Model_Element_MyAspectB"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(aspect3->GetInstanceId().c_str(), expectedValues.GetAllocator());
+        "%s": []
+        })",
+        FIELD_NAME(modelClass, "ModelName"), 
+        NESTED_CONTENT_FIELD_NAME((bvector<ECClassCP>{modelClass, elementClass}), aspectAClass),
+        NESTED_CONTENT_FIELD_NAME((bvector<ECClassCP>{modelClass, elementClass}), aspectBClass),
+        aspectBClass->GetId().ToString().c_str(), aspect3->GetInstanceId().c_str(), 
+        FIELD_NAME(aspectBClass, "Aspect_B_Name"), FIELD_NAME(aspectBClass, "Aspect_B_Name"),
+        NESTED_CONTENT_FIELD_NAME((bvector<ECClassCP>{modelClass, elementClass}), aspectCClass)).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
 
     recordJson = contentSet.Get(2)->AsJson();
-    expectedValues.Parse(R"({
-        "Model_ModelName": "my model 4",
-        "Model_Element_MyAspectA": [],
-        "Model_Element_MyAspectB": [],
-        "Model_Element_MyAspectC": [{
-            "PrimaryKeys": [{"ECClassId": "", "ECInstanceId": ""}],
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": "my model 4",
+        "%s": [],
+        "%s": [],
+        "%s": [{
+            "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
-                "MyAspectC_Aspect_C_Name": "my aspect c"
+                "%s": "my aspect c"
                 },
             "DisplayValues": {
-                "MyAspectC_Aspect_C_Name": "my aspect c"
+                "%s": "my aspect c"
                 },
             "MergedFieldNames": []
             }]
-        })");
-    expectedValues["Model_Element_MyAspectC"][0]["PrimaryKeys"][0]["ECClassId"].SetString(aspectCClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["Model_Element_MyAspectC"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(aspect4->GetInstanceId().c_str(), expectedValues.GetAllocator());
+        })",
+        FIELD_NAME(modelClass, "ModelName"), 
+        NESTED_CONTENT_FIELD_NAME((bvector<ECClassCP>{modelClass, elementClass}), aspectAClass),
+        NESTED_CONTENT_FIELD_NAME((bvector<ECClassCP>{modelClass, elementClass}), aspectBClass), 
+        NESTED_CONTENT_FIELD_NAME((bvector<ECClassCP>{modelClass, elementClass}), aspectCClass),
+        aspectCClass->GetId().ToString().c_str(), aspect4->GetInstanceId().c_str(),
+        FIELD_NAME(aspectCClass, "Aspect_C_Name"), FIELD_NAME(aspectCClass, "Aspect_C_Name")).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
@@ -13810,35 +13855,37 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsRelatedPropertiesForMu
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({
-        "Element_ElementMultiAspect": [{
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": [{
             "PrimaryKeys": [
                 {
-                "ECClassId": "",
-                "ECInstanceId": ""
+                "ECClassId": "%s",
+                "ECInstanceId": "%s"
                 },
                 {
-                "ECClassId": "",
-                "ECInstanceId": ""
+                "ECClassId": "%s",
+                "ECInstanceId": "%s"
                 }],
             "Values": {
-                "ElementMultiAspect_IntProperty": 123,
-                "ElementMultiAspect_StringProperty": null
+                "%s": 123,
+                "%s": null
                 },
             "DisplayValues": {
-                "ElementMultiAspect_IntProperty": "123",
-                "ElementMultiAspect_StringProperty": ""
+                "%s": "123",
+                "%s": "%s"
                 },
             "MergedFieldNames": [
-                "ElementMultiAspect_StringProperty"
+                "%s"
                 ]
             }]
-        })");
-    expectedValues["Element_ElementMultiAspect"][0]["PrimaryKeys"][0]["ECClassId"].SetString(aspectClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["Element_ElementMultiAspect"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(aspect1->GetInstanceId().c_str(), expectedValues.GetAllocator());
-    expectedValues["Element_ElementMultiAspect"][0]["PrimaryKeys"][1]["ECClassId"].SetString(aspectClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["Element_ElementMultiAspect"][0]["PrimaryKeys"][1]["ECInstanceId"].SetString(aspect2->GetInstanceId().c_str(), expectedValues.GetAllocator());
-    expectedValues["Element_ElementMultiAspect"][0]["DisplayValues"]["ElementMultiAspect_StringProperty"].SetString(varies_string.c_str(), expectedValues.GetAllocator());
+        })",
+        NESTED_CONTENT_FIELD_NAME(elementClass, aspectClass),
+        aspectClass->GetId().ToString().c_str(), aspect1->GetInstanceId().c_str(),
+        aspectClass->GetId().ToString().c_str(), aspect2->GetInstanceId().c_str(),
+        FIELD_NAME(aspectClass, "IntProperty"), FIELD_NAME(aspectClass, "StringProperty"),
+        FIELD_NAME(aspectClass, "IntProperty"), FIELD_NAME(aspectClass, "StringProperty"),
+        varies_string.c_str(),
+        FIELD_NAME(aspectClass, "StringProperty")).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
@@ -13940,35 +13987,37 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsRelatedPropertiesForMu
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({
-        "Element_ElementMultiAspect": [{
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": [{
             "PrimaryKeys": [
                 {
-                "ECClassId": "",
-                "ECInstanceId": ""
+                "ECClassId": "%s",
+                "ECInstanceId": "%s"
                 },
                 {
-                "ECClassId": "",
-                "ECInstanceId": ""
+                "ECClassId": "%s",
+                "ECInstanceId": "%s"
                 }],
             "Values": {
-                "ElementMultiAspect_IntProperty": 123,
-                "ElementMultiAspect_StringProperty": null
+                "%s": 123,
+                "%s": null
                 },
             "DisplayValues": {
-                "ElementMultiAspect_IntProperty": "123",
-                "ElementMultiAspect_StringProperty": ""
+                "%s": "123",
+                "%s": "%s"
                 },
             "MergedFieldNames": [
-                "ElementMultiAspect_StringProperty"
+                "%s"
                 ]
             }]
-        })");
-    expectedValues["Element_ElementMultiAspect"][0]["PrimaryKeys"][0]["ECClassId"].SetString(aspectClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["Element_ElementMultiAspect"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(aspect1->GetInstanceId().c_str(), expectedValues.GetAllocator());
-    expectedValues["Element_ElementMultiAspect"][0]["PrimaryKeys"][1]["ECClassId"].SetString(aspectClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["Element_ElementMultiAspect"][0]["PrimaryKeys"][1]["ECInstanceId"].SetString(aspect2->GetInstanceId().c_str(), expectedValues.GetAllocator());
-    expectedValues["Element_ElementMultiAspect"][0]["DisplayValues"]["ElementMultiAspect_StringProperty"].SetString(varies_string.c_str(), expectedValues.GetAllocator());
+        })",
+        NESTED_CONTENT_FIELD_NAME(baseElementClass, aspectClass),
+        aspectClass->GetId().ToString().c_str(), aspect1->GetInstanceId().c_str(),
+        aspectClass->GetId().ToString().c_str(), aspect2->GetInstanceId().c_str(),
+        FIELD_NAME(aspectClass, "IntProperty"), FIELD_NAME(aspectClass, "StringProperty"),
+        FIELD_NAME(aspectClass, "IntProperty"), FIELD_NAME(aspectClass, "StringProperty"),
+        varies_string.c_str(),
+        FIELD_NAME(aspectClass, "StringProperty")).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
@@ -14108,35 +14157,37 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsNestedRelatedPropertie
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({
-        "Model_Element_ElementMultiAspect": [{
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": [{
             "PrimaryKeys": [
                 {
-                "ECClassId": "",
-                "ECInstanceId": ""
+                "ECClassId": "%s",
+                "ECInstanceId": "%s"
                 },
                 {
-                "ECClassId": "",
-                "ECInstanceId": ""
+                "ECClassId": "%s",
+                "ECInstanceId": "%s"
                 }],
             "Values": {
-                "ElementMultiAspect_IntProperty": 123,
-                "ElementMultiAspect_StringProperty": null
+                "%s": 123,
+                "%s": null
                 },
             "DisplayValues": {
-                "ElementMultiAspect_IntProperty": "123",
-                "ElementMultiAspect_StringProperty": ""
+                "%s": "123",
+                "%s": "%s"
                 },
             "MergedFieldNames": [
-                "ElementMultiAspect_StringProperty"
+                "%s"
                 ]
             }]
-        })");
-    expectedValues["Model_Element_ElementMultiAspect"][0]["PrimaryKeys"][0]["ECClassId"].SetString(aspectClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["Model_Element_ElementMultiAspect"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(aspect1->GetInstanceId().c_str(), expectedValues.GetAllocator());
-    expectedValues["Model_Element_ElementMultiAspect"][0]["PrimaryKeys"][1]["ECClassId"].SetString(aspectClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["Model_Element_ElementMultiAspect"][0]["PrimaryKeys"][1]["ECInstanceId"].SetString(aspect2->GetInstanceId().c_str(), expectedValues.GetAllocator());
-    expectedValues["Model_Element_ElementMultiAspect"][0]["DisplayValues"]["ElementMultiAspect_StringProperty"].SetString(varies_string.c_str(), expectedValues.GetAllocator());
+        })",
+        NESTED_CONTENT_FIELD_NAME((bvector<ECClassCP>{baseModelClass, baseElementClass}), aspectClass),
+        aspectClass->GetId().ToString().c_str(), aspect1->GetInstanceId().c_str(),
+        aspectClass->GetId().ToString().c_str(), aspect2->GetInstanceId().c_str(),
+        FIELD_NAME(aspectClass, "IntProperty"), FIELD_NAME(aspectClass, "StringProperty"),
+        FIELD_NAME(aspectClass, "IntProperty"), FIELD_NAME(aspectClass, "StringProperty"),
+        varies_string.c_str(),
+        FIELD_NAME(aspectClass, "StringProperty")).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
@@ -14223,9 +14274,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsRelatedPropertiesForMu
     ASSERT_EQ(1, contentSet.GetSize());
 
     ContentSetItemCPtr record = contentSet.Get(0);
-    EXPECT_TRUE(record->GetValues()["Element_ElementMultiAspect"].IsNull());
-    EXPECT_STREQ(varies_string.c_str(), record->GetDisplayValues()["Element_ElementMultiAspect"].GetString());
-    EXPECT_TRUE(record->IsMerged("Element_ElementMultiAspect"));
+    EXPECT_TRUE(record->GetValues()[NESTED_CONTENT_FIELD_NAME(elementClass, aspectClass)].IsNull());
+    EXPECT_STREQ(varies_string.c_str(), record->GetDisplayValues()[NESTED_CONTENT_FIELD_NAME(elementClass, aspectClass)].GetString());
+    EXPECT_TRUE(record->IsMerged(NESTED_CONTENT_FIELD_NAME(elementClass, aspectClass)));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -14364,24 +14415,25 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, HandlesContentWithPolymorph
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({
-        "Element_InfoAspect": [{
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": [{
             "PrimaryKeys": [
                 {
-                "ECClassId": "",
-                "ECInstanceId": ""
+                "ECClassId": "%s",
+                "ECInstanceId": "%s"
                 }],
             "Values": {
-                "InfoAspect_intProp": 75
+                "%s": 75
                 },
             "DisplayValues": {
-                "InfoAspect_intProp": "75"
+                "%s": "75"
                 },
             "MergedFieldNames": []
             }]
-        })");
-    expectedValues["Element_InfoAspect"][0]["PrimaryKeys"][0]["ECClassId"].SetString(ecClassInfoAspect->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["Element_InfoAspect"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(infoAspect->GetInstanceId().c_str(), expectedValues.GetAllocator());
+        })", 
+        NESTED_CONTENT_FIELD_NAME(ecClassElement, ecClassInfoAspect), 
+        ecClassInfoAspect->GetId().ToString().c_str(), infoAspect->GetInstanceId().c_str(),
+        FIELD_NAME(ecClassInfoAspect, "intProp"), FIELD_NAME(ecClassInfoAspect, "intProp")).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
@@ -14609,9 +14661,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CategorizesNestedContentFie
     ASSERT_TRUE(fields[0]->IsNestedContentField());
     EXPECT_STREQ(aspectClass->GetName().c_str(), fields[0]->GetCategory().GetName().c_str());
     ASSERT_EQ(2, fields[0]->AsNestedContentField()->GetFields().size());
-    EXPECT_STREQ("Aspect_CategorizedProp", fields[0]->AsNestedContentField()->GetFields()[0]->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME(aspectClass, "CategorizedProp"), fields[0]->AsNestedContentField()->GetFields()[0]->GetName().c_str());
     EXPECT_STREQ("GeometryAttributes", fields[0]->AsNestedContentField()->GetFields()[0]->GetCategory().GetName().c_str());
-    EXPECT_STREQ("Aspect_UncategorizedProp", fields[0]->AsNestedContentField()->GetFields()[1]->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME(aspectClass, "UncategorizedProp"), fields[0]->AsNestedContentField()->GetFields()[1]->GetName().c_str());
     EXPECT_STREQ("", fields[0]->AsNestedContentField()->GetFields()[1]->GetCategory().GetName().c_str());
     }
 
@@ -14753,11 +14805,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DoesNotIncludeHiddenRelated
 
     // HiddenAspect1.Prop1 is _not_ included because it's hidden and we're including it's base class - not it specifically
     // HiddenAspect2.Prop2 is included because we have a rule that specifically requests it polymorphically
-    EXPECT_TRUE(fields.end() != std::find_if(fields.begin(), fields.end(), [&](ContentDescriptor::Field const* f){return f->GetName().Equals("Element_HiddenAspect2");}));
+    EXPECT_TRUE(fields.end() != std::find_if(fields.begin(), fields.end(), [&](ContentDescriptor::Field const* f){return f->GetName().Equals(NESTED_CONTENT_FIELD_NAME(elementClass, aspectClass2));}));
     // HiddenAspect3.Prop3 is included because we have a rule that specifically requests it non-polymorphically
-    EXPECT_TRUE(fields.end() != std::find_if(fields.begin(), fields.end(), [&](ContentDescriptor::Field const* f){return f->GetName().Equals("Element_HiddenAspect3");}));
+    EXPECT_TRUE(fields.end() != std::find_if(fields.begin(), fields.end(), [&](ContentDescriptor::Field const* f){return f->GetName().Equals(NESTED_CONTENT_FIELD_NAME(elementClass, aspectClass3));}));
     // Aspect4.Prop4 is included because it's not hidden
-    EXPECT_TRUE(fields.end() != std::find_if(fields.begin(), fields.end(), [&](ContentDescriptor::Field const* f){return f->GetName().Equals("Element_Aspect4");}));
+    EXPECT_TRUE(fields.end() != std::find_if(fields.begin(), fields.end(), [&](ContentDescriptor::Field const* f){return f->GetName().Equals(NESTED_CONTENT_FIELD_NAME(elementClass, aspectClass4));}));
     }
 
 //=======================================================================================
@@ -14823,42 +14875,45 @@ TEST_F(RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests, 
     RapidJsonValueCR displayValues = recordJson["DisplayValues"];
     ASSERT_TRUE(displayValues.IsObject());
 
-    Utf8CP fieldName = "Widget_MyID";
-    ASSERT_TRUE(displayValues.HasMember(fieldName));
-    ASSERT_TRUE(displayValues[fieldName].IsString());
-    EXPECT_STREQ("_Test 1_", displayValues[fieldName].GetString());
+    Utf8String fieldName = FIELD_NAME(m_widgetClass, "MyID");
+    ASSERT_TRUE(displayValues.HasMember(fieldName.c_str()));
+    ASSERT_TRUE(displayValues[fieldName.c_str()].IsString());
+    EXPECT_STREQ("_Test 1_", displayValues[fieldName.c_str()].GetString());
 
-    fieldName = "Widget_Description";
-    ASSERT_TRUE(displayValues.HasMember(fieldName));
-    ASSERT_TRUE(displayValues[fieldName].IsString());
-    EXPECT_STREQ("_Test 2_", displayValues[fieldName].GetString());
+    fieldName = FIELD_NAME(m_widgetClass, "Description");
+    ASSERT_TRUE(displayValues.HasMember(fieldName.c_str()));
+    ASSERT_TRUE(displayValues[fieldName.c_str()].IsString());
+    EXPECT_STREQ("_Test 2_", displayValues[fieldName.c_str()].GetString());
 
-    fieldName = "Widget_IntProperty";
-    ASSERT_TRUE(displayValues.HasMember(fieldName));
-    ASSERT_TRUE(displayValues[fieldName].IsString());
-    EXPECT_STREQ("_3_", displayValues[fieldName].GetString());
+    fieldName = FIELD_NAME(m_widgetClass, "IntProperty");
+    ASSERT_TRUE(displayValues.HasMember(fieldName.c_str()));
+    ASSERT_TRUE(displayValues[fieldName.c_str()].IsString());
+    EXPECT_STREQ("_3_", displayValues[fieldName.c_str()].GetString());
 
-    fieldName = "Widget_BoolProperty";
-    ASSERT_TRUE(displayValues.HasMember(fieldName));
-    ASSERT_TRUE(displayValues[fieldName].IsString());
-    EXPECT_STREQ("_True_", displayValues[fieldName].GetString());
+    fieldName = FIELD_NAME(m_widgetClass, "BoolProperty");
+    ASSERT_TRUE(displayValues.HasMember(fieldName.c_str()));
+    ASSERT_TRUE(displayValues[fieldName.c_str()].IsString());
+    EXPECT_STREQ("_True_", displayValues[fieldName.c_str()].GetString());
 
-    fieldName = "Widget_DoubleProperty";
-    ASSERT_TRUE(displayValues.HasMember(fieldName));
-    ASSERT_TRUE(displayValues[fieldName].IsString());
-    EXPECT_STREQ("_4_", displayValues[fieldName].GetString());
+    fieldName = FIELD_NAME(m_widgetClass, "DoubleProperty");
+    ASSERT_TRUE(displayValues.HasMember(fieldName.c_str()));
+    ASSERT_TRUE(displayValues[fieldName.c_str()].IsString());
+    EXPECT_STREQ("_4_", displayValues[fieldName.c_str()].GetString());
 
-    fieldName = "Widget_LongProperty";
-    ASSERT_TRUE(displayValues.HasMember(fieldName));
-    ASSERT_TRUE(displayValues[fieldName].IsString());
-    EXPECT_STREQ("_123_", displayValues[fieldName].GetString());
+    fieldName = FIELD_NAME(m_widgetClass, "LongProperty");
+    ASSERT_TRUE(displayValues.HasMember(fieldName.c_str()));
+    ASSERT_TRUE(displayValues[fieldName.c_str()].IsString());
+    EXPECT_STREQ("_123_", displayValues[fieldName.c_str()].GetString());
 
-    fieldName = "Widget_DateProperty";
-    ASSERT_TRUE(displayValues.HasMember(fieldName));
-    ASSERT_TRUE(displayValues[fieldName].IsString());
-    EXPECT_STREQ("_2017-05-30T00:00:00.000Z_", displayValues[fieldName].GetString());
+    fieldName = FIELD_NAME(m_widgetClass, "DateProperty");
+    ASSERT_TRUE(displayValues.HasMember(fieldName.c_str()));
+    ASSERT_TRUE(displayValues[fieldName.c_str()].IsString());
+    EXPECT_STREQ("_2017-05-30T00:00:00.000Z_", displayValues[fieldName.c_str()].GetString());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(UsesSuppliedECPropertyFormatterToFormatNestedContentValue, R"*(
     <ECEntityClass typeName="Element">
     </ECEntityClass>
@@ -14874,9 +14929,6 @@ DEFINE_SCHEMA(UsesSuppliedECPropertyFormatterToFormatNestedContentValue, R"*(
         </Target>
     </ECRelationshipClass>
 )*");
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                02/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests, UsesSuppliedECPropertyFormatterToFormatNestedContentValue)
     {
     ECClassCP elementClass = GetClass("Element");
@@ -14926,20 +14978,20 @@ TEST_F(RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests, 
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({
-        "Element_ElementUniqueAspect": [{
-            "PrimaryKeys": [{"ECClassId": "", "ECInstanceId": ""}],
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": [{
+            "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
-                "ElementUniqueAspect_StringProperty": "Test"
+                "%s": "Test"
                 },
             "DisplayValues": {
-                "ElementUniqueAspect_StringProperty": "_Test_"
+                "%s": "_Test_"
                 },
             "MergedFieldNames": []
             }]
-        })");
-    expectedValues["Element_ElementUniqueAspect"][0]["PrimaryKeys"][0]["ECClassId"].SetString(aspectClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["Element_ElementUniqueAspect"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(aspect->GetInstanceId().c_str(), expectedValues.GetAllocator());
+        })", NESTED_CONTENT_FIELD_NAME(elementClass, aspectClass), 
+        aspectClass->GetId().ToString().c_str(), aspect->GetInstanceId().c_str(),
+        FIELD_NAME(aspectClass, "StringProperty"), FIELD_NAME(aspectClass, "StringProperty")).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
@@ -15031,10 +15083,10 @@ TEST_F(RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests, 
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedDisplayValues;
-    expectedDisplayValues.Parse(R"(
+    expectedDisplayValues.Parse(Utf8PrintfString(R"(
         {
-        "MyClass_ArrayProperty": ["_2_", "_1_", null]
-        })");
+        "%s": ["_2_", "_1_", null]
+        })", FIELD_NAME(ecClass, "ArrayProperty")).c_str());
     EXPECT_EQ(expectedDisplayValues, recordJson["DisplayValues"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["DisplayValues"]);
@@ -15097,13 +15149,13 @@ TEST_F(RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests, 
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedDisplayValues;
-    expectedDisplayValues.Parse(R"({
-        "MyClass_StructProperty": {
+    expectedDisplayValues.Parse(Utf8PrintfString(R"({
+        "%s": {
            "DoubleProperty": null,
            "IntProperty": "_123_",
            "StringProperty": "_abc_"
            }
-        })");
+        })", FIELD_NAME(ecClass, "StructProperty")).c_str());
     EXPECT_EQ(expectedDisplayValues, recordJson["DisplayValues"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["DisplayValues"]);
@@ -15184,18 +15236,18 @@ TEST_F(RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests, 
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({
-        "Element_ElementUniqueAspect": [{
-            "PrimaryKeys": [{"ECClassId": "", "ECInstanceId": ""}],
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": [{
+            "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
-                "ElementUniqueAspect_StructProperty": {
+                "%s": {
                     "DoubleProperty": null,
                     "IntProperty": 123,
                     "StringProperty": "abc"
                     }
                 },
             "DisplayValues": {
-                "ElementUniqueAspect_StructProperty": {
+                "%s": {
                     "DoubleProperty": null,
                     "IntProperty": "_123_",
                     "StringProperty": "_abc_"
@@ -15203,9 +15255,9 @@ TEST_F(RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests, 
                 },
             "MergedFieldNames": []
             }]
-        })");
-    expectedValues["Element_ElementUniqueAspect"][0]["PrimaryKeys"][0]["ECClassId"].SetString(aspectClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["Element_ElementUniqueAspect"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(aspect->GetInstanceId().c_str(), expectedValues.GetAllocator());
+        })", NESTED_CONTENT_FIELD_NAME(elementClass, aspectClass),
+        aspectClass->GetId().ToString().c_str(), aspect->GetInstanceId().c_str(),
+        FIELD_NAME(aspectClass, "StructProperty"), FIELD_NAME(aspectClass, "StructProperty")).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);

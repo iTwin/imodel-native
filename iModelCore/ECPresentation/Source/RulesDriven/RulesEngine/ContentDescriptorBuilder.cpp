@@ -143,12 +143,15 @@ private:
     Utf8String CreateNestedContentFieldName(RelatedClassPath const& relationshipPath) const
         {
         Utf8String name;
+        if (!relationshipPath.empty())
+            name.append("rc_");
         for (RelatedClassCR rel : relationshipPath)
             {
-            name.append(rel.GetTargetClass()->GetName());
+            name.append(QueryBuilderHelpers::CreateClassNameForDescriptor(*rel.GetTargetClass()));
             name.append("_");
             }
-        name.append(m_actualClass.GetName());
+        name.append("ncc_");
+        name.append(QueryBuilderHelpers::CreateClassNameForDescriptor(m_actualClass));
         return name;
         }
     

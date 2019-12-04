@@ -788,44 +788,43 @@ TEST_F(DefaultECPresentationSerializerTests, ECPropertiesFieldSerialization)
     rapidjson::Document actual = field.AsJson();
 
     rapidjson::Document expected;
-    expected.Parse(R"({
+    expected.Parse(Utf8PrintfString(R"({
         "Category": {
             "Name": "",
             "DisplayLabel": "",
             "Description": "",
             "Expand": false,
             "Priority": 0
-            },
-        "Name": "PropertyTestClassA_String",
+        },
+        "Name": "%s",
         "DisplayLabel": "String",
         "Type": {
             "TypeName": "string",
             "ValueFormat": "Primitive"
-            },
+        },
         "IsReadOnly": false,
         "Priority": 0,
-        "Properties": [
-            {
+        "Properties": [{
             "Property": {
                 "BaseClassInfo": {
-                    "Id": "",
+                    "Id": "%s",
                     "Name": "TestSchema:PropertyTestClassA",
                     "Label": "PropertyTestClassA"
-                    },
+                },
                 "ActualClassInfo": {
-                    "Id": "",
+                    "Id": "%s",
                     "Name": "TestSchema:PropertyTestClassA",
                     "Label": "PropertyTestClassA"
-                    },
+                },
                 "Name": "String",
                 "Type": "string"
             },
             "RelatedClassPath": []
-            }
-            ]
-        })");
-    expected["Properties"][0]["Property"]["BaseClassInfo"]["Id"].SetString(testClass->GetId().ToString().c_str(), expected.GetAllocator());
-    expected["Properties"][0]["Property"]["ActualClassInfo"]["Id"].SetString(testClass->GetId().ToString().c_str(), expected.GetAllocator());
+        }]
+    })", 
+        FIELD_NAME(testClass, "String"),
+        testClass->GetId().ToString().c_str(), testClass->GetId().ToString().c_str()
+    ).c_str());
 
     EXPECT_EQ(expected, actual)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
@@ -843,64 +842,60 @@ TEST_F(DefaultECPresentationSerializerTests, ECPropertiesFieldSerializationWithM
     rapidjson::Document actual = field.AsJson();
 
     rapidjson::Document expected;
-    expected.Parse(R"({
+    expected.Parse(Utf8PrintfString(R"({
         "Category": {
             "Name": "",
             "DisplayLabel": "",
             "Description": "",
             "Expand": false,
             "Priority": 0
-            },
-        "Name": "PropertyTestClassA_String",
+        },
+        "Name": "%s",
         "DisplayLabel": "String",
         "Type": {
             "TypeName": "string",
             "ValueFormat": "Primitive"
-            },
+        },
         "IsReadOnly": false,
         "Priority": 0,
-        "Properties": [
-            {
+        "Properties": [{
             "Property": {
                 "BaseClassInfo": {
-                    "Id": "",
+                    "Id": "%s",
                     "Name": "TestSchema:PropertyTestClassA",
                     "Label": "PropertyTestClassA"
-                    },
+                },
                 "ActualClassInfo": {
-                    "Id": "",
+                    "Id": "%s",
                     "Name": "TestSchema:PropertyTestClassA",
                     "Label": "PropertyTestClassA"
-                    },
+                },
                 "Name": "String",
                 "Type": "string"
                 },
             "RelatedClassPath": []
-            },
-            {
+            }, {
             "Property": {
                 "BaseClassInfo": {
-                    "Id": "",
+                    "Id": "%s",
                     "Name": "TestSchema:PropertyTestClassA",
                     "Label": "PropertyTestClassA"
-                    },
+                },
                 "ActualClassInfo": {
-                    "Id": "",
+                    "Id": "%s",
                     "Name": "TestSchema:PropertyTestClassA",
                     "Label": "PropertyTestClassA"
-                    },
+                },
                 "Name": "Int",
                 "Type": "int"
-                },
+            },
             "RelatedClassPath": []
-            }
-            ]
-        })");
-    expected["Properties"][0]["Property"]["BaseClassInfo"]["Id"].SetString(testClass->GetId().ToString().c_str(), expected.GetAllocator());
-    expected["Properties"][1]["Property"]["BaseClassInfo"]["Id"].SetString(testClass->GetId().ToString().c_str(), expected.GetAllocator());
-    expected["Properties"][0]["Property"]["ActualClassInfo"]["Id"].SetString(testClass->GetId().ToString().c_str(), expected.GetAllocator());
-    expected["Properties"][1]["Property"]["ActualClassInfo"]["Id"].SetString(testClass->GetId().ToString().c_str(), expected.GetAllocator());
-
+        }]
+    })", 
+        FIELD_NAME(testClass, "String"),
+        testClass->GetId().ToString().c_str(), testClass->GetId().ToString().c_str(),
+        testClass->GetId().ToString().c_str(), testClass->GetId().ToString().c_str()
+    ).c_str());
     EXPECT_EQ(expected, actual)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actual);
@@ -949,23 +944,25 @@ TEST_F(DefaultECPresentationSerializerTests, ECNavigationInstanceIdFieldSerializ
     rapidjson::Document actual = navigationInstanceIdField.AsJson();
 
     rapidjson::Document expected;
-    expected.Parse(R"({
+    expected.Parse(Utf8PrintfString(R"({
         "Category": {
             "Name": "",
             "DisplayLabel": "",
             "Description": "",
             "Expand": false,
             "Priority": 0
-            },
-        "Name": "/id/PropertyTestClassA_String",
+        },
+        "Name": "/id/%s",
         "DisplayLabel": "",
         "Type": {
             "TypeName": "ECInstanceId",
             "ValueFormat": "Primitive"
-            },
+        },
         "IsReadOnly": true,
         "Priority": 0
-        })");
+    })", 
+        FIELD_NAME(testClass, "String")
+    ).c_str());
 
     EXPECT_EQ(expected, actual)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
@@ -990,130 +987,119 @@ TEST_F(DefaultECPresentationSerializerTests, NestedContentFieldSerialization)
     rapidjson::Document actual = field.AsJson();
 
     rapidjson::Document expected;
-    expected.Parse(R"({
+    expected.Parse(Utf8PrintfString(R"({
         "Category": {
             "Name": "name",
             "DisplayLabel": "label",
             "Description": "",
             "Expand": false,
             "Priority": 1
-            },
+        },
         "Name": "field_name",
         "DisplayLabel": "field_label",
         "Type": {
             "TypeName": "PropertyTestClassA",
             "ValueFormat": "Struct",
-            "Members": [
-                {
+            "Members": [{
                 "Name": "/DisplayLabel/",
                 "Label": "NestedLabel",
                 "Type": {
                     "TypeName": "string",
                     "ValueFormat": "Primitive"
-                    }
-                },
-                {
-                "Name": "PropertyTestClassA_String",
+                }
+            }, {
+                "Name": "%s",
                 "Label": "String",
                 "Type": {
                     "TypeName": "string",
                     "ValueFormat": "Primitive"
-                    }
                 }
-                ]
-            },
+            }]
+        },
         "IsReadOnly": true,
         "Priority": 0,
         "ContentClassInfo": {
-            "Id": "",
+            "Id": "%s",
             "Name": "TestSchema:PropertyTestClassA",
             "Label": "PropertyTestClassA"
-            },
-        "PathToPrimary": [
-            {
+        },
+        "PathToPrimary": [{
             "SourceClassInfo": {
-                "Id": "",
+                "Id": "%s",
                 "Name": "TestSchema:PropertyTestClassA",
                 "Label": "PropertyTestClassA"
-                },
+            },
             "TargetClassInfo": {
-                "Id": "",
+                "Id": "%s",
                 "Name": "TestSchema:PropertyTestClassB",
                 "Label": "PropertyTestClassB"
-                },
+            },
             "RelationshipInfo": {
-                "Id": "",
+                "Id": "%s",
                 "Name": "TestSchema:TestClassAHasTestClassB",
                 "Label": "TestClassAHasTestClassB"
-                },
+            },
             "IsForwardRelationship": false,
             "IsPolymorphicRelationship": true
-            }
-            ],
-        "NestedFields": [
-            {
+        }],
+        "NestedFields": [{
             "Category": {
                 "Name": "General",
-                "DisplayLabel": "General",
+                "DisplayLabel": "%s",
                 "Description": "",
                 "Expand": false,
                 "Priority": 1000
-                },
+            },
             "Name": "/DisplayLabel/",
             "DisplayLabel": "NestedLabel",
             "Type": {
                 "TypeName": "string",
                 "ValueFormat": "Primitive"
-                },
+            },
             "IsReadOnly": true,
             "Priority": 10
-            },
-            {
+        }, {
             "Category": {
                 "Name": "",
                 "DisplayLabel": "",
                 "Description": "",
                 "Expand": false,
                 "Priority": 0
-                },
-            "Name": "PropertyTestClassA_String",
+            },
+            "Name": "%s",
             "DisplayLabel": "String",
             "Type": {
                 "TypeName": "string",
                 "ValueFormat": "Primitive"
-                },
+            },
             "IsReadOnly": false,
             "Priority": 0,
-            "Properties": [
-                {
+            "Properties": [{
                 "Property": {
                     "BaseClassInfo": {
-                        "Id": "",
+                        "Id": "%s",
                         "Name": "TestSchema:PropertyTestClassA",
                         "Label": "PropertyTestClassA"
-                        },
+                    },
                     "ActualClassInfo": {
-                        "Id": "",
+                        "Id": "%s",
                         "Name": "TestSchema:PropertyTestClassA",
                         "Label": "PropertyTestClassA"
-                        },
+                    },
                     "Name": "String",
                     "Type": "string"
-                    },
+                },
                 "RelatedClassPath": []
-                }
-                ]
-            }
-            ]
-        })");
-    expected["ContentClassInfo"]["Id"].SetString(testClassA->GetId().ToString().c_str(), expected.GetAllocator());
-    expected["PathToPrimary"][0]["SourceClassInfo"]["Id"].SetString(testClassA->GetId().ToString().c_str(), expected.GetAllocator());
-    expected["PathToPrimary"][0]["TargetClassInfo"]["Id"].SetString(testClassB->GetId().ToString().c_str(), expected.GetAllocator());
-    expected["PathToPrimary"][0]["RelationshipInfo"]["Id"].SetString(relClassAClassB->GetId().ToString().c_str(), expected.GetAllocator());
-    expected["NestedFields"][0]["Category"]["DisplayLabel"].SetString(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace().m_namespace, ECPresentationL10N::LABEL_Category_General().m_str).c_str(), expected.GetAllocator());
-    expected["NestedFields"][1]["Properties"][0]["Property"]["BaseClassInfo"]["Id"].SetString(testClassA->GetId().ToString().c_str(), expected.GetAllocator());
-    expected["NestedFields"][1]["Properties"][0]["Property"]["ActualClassInfo"]["Id"].SetString(testClassA->GetId().ToString().c_str(), expected.GetAllocator());
-
+            }]
+        }]
+    })",
+        FIELD_NAME(testClassA, "String"), 
+        testClassA->GetId().ToString().c_str(),
+        testClassA->GetId().ToString().c_str(), testClassB->GetId().ToString().c_str(), relClassAClassB->GetId().ToString().c_str(),
+        PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace().m_namespace, ECPresentationL10N::LABEL_Category_General().m_str).c_str(),
+        FIELD_NAME(testClassA, "String"),
+        testClassA->GetId().ToString().c_str(), testClassA->GetId().ToString().c_str()
+    ).c_str());
 
     EXPECT_EQ(expected, actual)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
@@ -1130,28 +1116,29 @@ TEST_F(DefaultECPresentationSerializerTests, DisplayLabelFieldSerializationHasCo
     rapidjson::Document actual = field.AsJson();
 
     rapidjson::Document expected;
-    expected.Parse(R"({
+    expected.Parse(Utf8PrintfString(R"({
         "Category": {
             "Name": "General",
-            "DisplayLabel": "General",
+            "DisplayLabel": "%s",
             "Description": "",
             "Expand": false,
             "Priority": 1000
-            },
+        },
         "Name": "/DisplayLabel/",
         "DisplayLabel": "Label",
         "Type": {
             "TypeName": "string",
             "ValueFormat": "Primitive"
-            },
+        },
         "IsReadOnly": true,
         "Priority": 10,
         "Editor": {
             "Name": "ContentFieldEditorName",
             "Params": {}
-            }
-        })");
-    expected["Category"]["DisplayLabel"].SetString(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace().m_namespace, ECPresentationL10N::LABEL_Category_General().m_str).c_str(), expected.GetAllocator());
+        }
+    })",
+        PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace().m_namespace, ECPresentationL10N::LABEL_Category_General().m_str).c_str()
+    ).c_str());
 
     EXPECT_EQ(expected, actual)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
@@ -1364,28 +1351,27 @@ TEST_F(DefaultECPresentationSerializerTests, NestedContentTypeDescriptionSeriali
     rapidjson::Document actual = typeDescription->AsJson();
 
     rapidjson::Document expected;
-    expected.Parse(R"({
+    expected.Parse(Utf8PrintfString(R"({
         "TypeName": "PropertyTestClassA",
         "ValueFormat": "Struct",
-        "Members": [
-            {
+        "Members": [{
             "Name": "/DisplayLabel/",
             "Label": "NestedLabel",
             "Type": {
                 "TypeName": "string",
                 "ValueFormat": "Primitive"
-                }
-            },
-            {
-            "Name": "PropertyTestClassA_String",
+            }
+        }, {
+            "Name": "%s",
             "Label": "String",
             "Type": {
                 "TypeName": "string",
                 "ValueFormat": "Primitive"
-                }
             }
-            ]
-        })");
+        }]
+    })", 
+        FIELD_NAME(testClassA, "String")
+    ).c_str());
 
     EXPECT_EQ(expected, actual)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
@@ -1404,7 +1390,7 @@ TEST_F(DefaultECPresentationSerializerTests, ECInstanceChangeResultSerialization
     expected.Parse(R"({
         "Status": 0,
         "Value": 456
-        })");
+    })");
 
     EXPECT_EQ(expected, actual)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
@@ -2074,61 +2060,59 @@ TEST_F(DefaultECPresentationSerializerTests, ContentSetSerializationItemWithClas
     rapidjson::Document actual = contentSetItem->AsJson();
 
     rapidjson::Document expected;
-    expected.Parse(R"({
+    expected.Parse(Utf8PrintfString(R"({
         "DisplayLabel": "DisplayLabelText",
         "ImageId": "ImageIdText",
         "Values": {
             "FieldName": "FieldValue"
-            },
+        },
         "DisplayValues": {
             "FieldName": "FieldDisplayValue"
-            },
+        },
         "ClassInfo": {
-            "Id": "",
+            "Id": "%s",
             "Name": "TestSchema:PropertyTestClassA",
             "Label": "PropertyTestClassA"
-            },
+        },
         "PrimaryKeys": [{
-            "ECClassId": "",
+            "ECClassId": "%s",
             "ECInstanceId": "1"
-            }, {
-            "ECClassId": "",
+        }, {
+            "ECClassId": "%s",
             "ECInstanceId": "2"
-            }],
+        }],
         "MergedFieldNames": [
             "MergedField1",
             "MergedField2"
-            ],
+        ],
         "FieldValueKeys": {
-            "PropertyTestClassA_String": [{
+            "%s": [{
                 "PropertyIndex": 0,
                 "Keys": [{
-                    "ECClassId": "",
+                    "ECClassId": "%s",
                     "ECInstanceId": "1"
-                    }, {
-                    "ECClassId": "",
+                }, {
+                    "ECClassId": "%s",
                     "ECInstanceId": "2"
-                    }]
-                }],
-            "PropertyTestClassA_Int": [{
+                }]
+            }],
+            "%s": [{
                 "PropertyIndex": 1,
                 "Keys": [{
-                    "ECClassId": "",
+                    "ECClassId": "%s",
                     "ECInstanceId": "1"
-                    }, {
-                    "ECClassId": "",
+                }, {
+                    "ECClassId": "%s",
                     "ECInstanceId": "2"
-                    }]
                 }]
-            }
-        })");
-    expected["ClassInfo"]["Id"].SetString(testClass->GetId().ToString().c_str(), expected.GetAllocator());
-    expected["PrimaryKeys"][0]["ECClassId"].SetString(GetClassA()->GetId().ToString().c_str(), expected.GetAllocator());
-    expected["PrimaryKeys"][1]["ECClassId"].SetString(GetClassB()->GetId().ToString().c_str(), expected.GetAllocator());
-    expected["FieldValueKeys"]["PropertyTestClassA_String"][0]["Keys"][0]["ECClassId"].SetString(GetClassA()->GetId().ToString().c_str(), expected.GetAllocator());
-    expected["FieldValueKeys"]["PropertyTestClassA_String"][0]["Keys"][1]["ECClassId"].SetString(GetClassB()->GetId().ToString().c_str(), expected.GetAllocator());
-    expected["FieldValueKeys"]["PropertyTestClassA_Int"][0]["Keys"][0]["ECClassId"].SetString(GetClassA()->GetId().ToString().c_str(), expected.GetAllocator());
-    expected["FieldValueKeys"]["PropertyTestClassA_Int"][0]["Keys"][1]["ECClassId"].SetString(GetClassB()->GetId().ToString().c_str(), expected.GetAllocator());
+            }]
+        }
+    })", 
+        testClass->GetId().ToString().c_str(),
+        GetClassA()->GetId().ToString().c_str(), GetClassB()->GetId().ToString().c_str(),
+        FIELD_NAME(testClass, "String"), GetClassA()->GetId().ToString().c_str(), GetClassB()->GetId().ToString().c_str(),
+        FIELD_NAME(testClass, "Int"), GetClassA()->GetId().ToString().c_str(), GetClassB()->GetId().ToString().c_str()
+    ).c_str());
 
     EXPECT_EQ(expected, actual)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
