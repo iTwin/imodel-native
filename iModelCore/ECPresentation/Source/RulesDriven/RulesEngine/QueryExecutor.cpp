@@ -329,7 +329,7 @@ static bool IsValueMerged(Utf8CP value)
 static bool IsNullQuotedDouble(PrimitiveType primitiveType, IECSqlValue const& value)
     {
     return primitiveType == PRIMITIVETYPE_Double
-        && 0 == strcmp("NULL", value.GetText());
+        && value.GetText() && 0 == strcmp("NULL", value.GetText());
     }
 
 #define NULL_FORMATTED_VALUE_PRECONDITION(sqlValue) \
