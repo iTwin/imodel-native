@@ -355,8 +355,9 @@ bool PolygonOps::TriangleIntersectsRangeByPlaneClip
             numOld = numNew;
             }
         }
-    // and this should never happen.  Call it an intersection case
-    return true;
+
+    // numOld tells if anything is left ..
+    return numOld > 0;
     }
 /* Altitude functions return positive OUTSIDE */
 typedef double(*AltitudeFunction)(DRange3d const &range, DPoint3d const &xyz);

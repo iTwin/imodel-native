@@ -4,7 +4,6 @@
 |GEOMDLLIMPEXP void AddSolidPrimitive (ISolidPrimitiveR primitive);
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
-#include "../SolidPrimitive/BoxFaces.h"
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
 

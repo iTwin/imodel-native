@@ -3,7 +3,6 @@
 * See COPYRIGHT.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
-#include "BoxFaces.h"
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
 SolidLocationDetail::FaceIndices::FaceIndices (ptrdiff_t index0, ptrdiff_t index1, ptrdiff_t index2)

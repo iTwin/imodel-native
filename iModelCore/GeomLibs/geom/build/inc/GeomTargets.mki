@@ -669,9 +669,9 @@ $(OUT_DIR)sp_UVToXYZ$(OUT_EXT)  : $(geomSrcSolidPrimitive)sp_UVToXYZ.cpp  $(geom
 
 $(OUT_DIR)SolidLocationDetail$(OUT_EXT)  : $(geomSrcSolidPrimitive)SolidLocationDetail.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
-$(OUT_DIR)BoxFaces$(OUT_EXT)  : $(geomSrcSolidPrimitive)BoxFaces.cpp  $(geomSrcSolidPrimitive)BoxFaces.h        $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+$(OUT_DIR)BoxFaces$(OUT_EXT)  : $(geomSrcSolidPrimitive)BoxFaces.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
-$(OUT_DIR)sp_FaceIndices$(OUT_EXT)  : $(geomSrcSolidPrimitive)sp_FaceIndices.cpp  $(geomSrcSolidPrimitive)BoxFaces.h        $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+$(OUT_DIR)sp_FaceIndices$(OUT_EXT)  : $(geomSrcSolidPrimitive)sp_FaceIndices.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 $(OUT_DIR)sp_maxUVLength$(OUT_EXT)    : $(geomSrcSolidPrimitive)sp_maxUVLength.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 

@@ -38,6 +38,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(ColorTable);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(PrimitiveBuilder);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshList);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ThematicMeshBuilder);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Output);
 
 DEFINE_REF_COUNTED_PTR(DisplayParams);
 DEFINE_REF_COUNTED_PTR(Mesh);
@@ -973,9 +974,11 @@ private:
     // If the original geometry was a polyface, this is the chord tolerance to use for decimation. Otherwise it is zero.
     // After decimation, we negate it.
     double              m_decimationTolerance;
+    Image*              m_glyphImage;
     bool                m_displayEdges;
     bool                m_isPlanar;
-    Image*              m_glyphImage;
+    // True if the original geometry was a polyface and is known to be contained within output range.
+    bool                m_isContained = false;
 public:
     Polyface(DisplayParamsCR displayParams, PolyfaceHeaderR polyface, bool displayEdges=true, bool isPlanar=false, Image* glyphImage=nullptr, double decimationTolerance=0.0)
         : m_displayParams(&displayParams), m_polyface(&polyface), m_displayEdges(displayEdges), m_isPlanar(isPlanar), m_glyphImage(glyphImage), m_decimationTolerance(decimationTolerance) { }
@@ -989,6 +992,9 @@ public:
     Image* GetGlyphImage() const { return m_glyphImage; }
     bool IsPlanar() const { return m_isPlanar; }
     bool DisplayEdges() const { return m_displayEdges; }
+
+    bool IsContained() const { return m_isContained; }
+    void SetContained(bool contained) { m_isContained = contained; }
 
     bool CanDecimate() const { return 0.0 < m_decimationTolerance; }
     bool IsDecimated() const { return m_decimationTolerance < 0.0; }
@@ -1104,11 +1110,10 @@ protected:
 
     Geometry(TransformCR tf, DRange3dCR tileRange, DgnElementId entityId, DisplayParamsCR params, bool isCurved, DgnDbR db);
 
-    virtual PolyfaceList _GetPolyfaces(double chordTolerance, NormalMode, ViewContextR) = 0;
-    virtual StrokesList _GetStrokes(double chordTolerance, ViewContextR) { return StrokesList(); }
+    virtual PolyfaceList _GetPolyfaces(double chordTolerance, NormalMode, OutputR) = 0;
+    virtual StrokesList _GetStrokes(double chordTolerance, OutputR) { return StrokesList(); }
     virtual bool _DoVertexCluster() const { return true; }
     virtual SharedGeomCPtr _GetSharedGeom() const { return nullptr; }
-    virtual void _SetInCache(bool inCache) { }
 public:
     DisplayParamsCR GetDisplayParams() const { return *m_params; }
     TransformCR GetTransform() const { return m_transform; }
@@ -1123,11 +1128,10 @@ public:
     bool IsCurved() const { return m_isCurved; }
     bool HasTexture() const { return m_hasTexture; }
 
-    PolyfaceList GetPolyfaces(double chordTolerance, NormalMode normalMode, ViewContextR context);
+    PolyfaceList GetPolyfaces(double chordTolerance, NormalMode normalMode, OutputR context);
     bool DoVertexCluster() const { return _DoVertexCluster(); }
-    StrokesList GetStrokes (double chordTolerance, ViewContextR context);
+    StrokesList GetStrokes (double chordTolerance, OutputR context);
     SharedGeomCPtr GetSharedGeom() const { return _GetSharedGeom(); }
-    void SetInCache(bool inCache) { _SetInCache(inCache); }
     void SetClipVector(ClipVectorCP clip) { m_clip = nullptr != clip ? ClipVector::CreateCopy(*clip) : nullptr; }
 
     virtual bool IsInstanceable() const = 0;
@@ -1251,12 +1255,10 @@ public:
     size_t GetInstanceCount() const { return GetInstances().size(); }
     void AddInstance(TransformCR tf, DisplayParamsCR dispParams, DgnElementId elemId);
 
-    void SetInCache(bool inCache);
-
     bool IsCurved() const;
     bool IsComplete() const { return m_geometries.IsComplete(); }
-    PolyfaceList GetPolyfaces(double chordTolerance, NormalMode, GeometryCP instance, ViewContextR);
-    StrokesList GetStrokes(double chordTolerance, GeometryCP instance, ViewContextR);
+    PolyfaceList GetPolyfaces(double chordTolerance, NormalMode, GeometryCP instance, OutputR);
+    StrokesList GetStrokes(double chordTolerance, GeometryCP instance, OutputR);
 
     virtual DisplayParamsCR GetDisplayParams() const = 0;
     virtual double GetTolerance(double baseTolerance) const { return baseTolerance; }
@@ -1566,6 +1568,115 @@ protected:
     DGNPLATFORM_EXPORT double ComputeTolerance(GeometryAccumulatorR) const;
 public:
     PrimitiveBuilder(System& system, Render::GraphicBuilder::CreateParams const& params, DgnElementId elemId=DgnElementId()) : GeometryListBuilder(system, params, elemId) { }
+};
+
+//=======================================================================================
+//! Context passed into Geometry::GetPolyfaces/Strokes().
+// @bsistruct                                                   Paul.Connelly   11/19
+//=======================================================================================
+struct Output
+{
+public:
+    virtual ViewContextR GetContext() = 0;
+
+    // The Add*() methods return false to reject the input primitive.
+    // Subclasses can use these functions to perform tighter intersection tests than the already-established AABB-AABB intersection.
+
+    // Note: An uninstanced polyface is already in output coordinate space so transform tends to be identity.
+    virtual void AcceptPolyface(PolyfaceHeaderCR, TransformCR transform, DRange3dCR range) = 0;
+
+    // Surfaces in local coordinate space with transform to output coordinate space and range already in output coordinate space.
+    virtual void AcceptRegion(CurveVectorCR, TransformCR, DRange3dCR range) = 0;
+    virtual void AcceptSolidPrimitive(ISolidPrimitiveCR, TransformCR, DRange3dCR range) = 0;
+    virtual void AcceptBSplineSurface(MSBsplineSurfaceCR, TransformCR, DRange3dCR range) = 0;
+    virtual void AcceptBRep(IBRepEntityCR, TransformCR, DRange3dCR range) = 0;
+    virtual void AcceptTextString(TextStringCR, TransformCR, DRange3dCR range) = 0;
+
+    // Polylines in local coordinate space with transform to output coordinate space and range already in output coordinate space.
+    virtual void AcceptCurves(CurveVectorCR, TransformCR, DRange3dCR range) = 0;
+
+    // Given a polyface extracted from a geometry stream, choose to take ownership of it (or reject it by returning nullptr).
+    // This method is invoked from Geometry::GetPolyfaces(); if multiple calls to that method for the same Geometry object are possible
+    // then the polyface should be cloned.
+    virtual PolyfaceHeaderPtr ClaimPolyface(PolyfaceHeaderR polyface) = 0;
+    
+    using ClippedPolyface = bpair<PolyfaceHeaderPtr, bool>;
+    // Given the claimed PolyfaceHeader, optionally test for containment and clip to output range if necessary.
+    // Return the output polyface and a bool indicating whether or not the output is known to be contained within the output range.
+    virtual ClippedPolyface ClipPolyface(PolyfaceHeaderR polyface, DRange3dCR polyfaceRange) = 0;
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   11/19
+//=======================================================================================
+struct NullOutput : Output
+{
+protected:
+    ViewContextR m_context;
+public:
+    NullOutput(ViewContextR context) : m_context(context) { }
+
+    ViewContextR GetContext() final { return m_context; }
+
+    void AcceptRegion(CurveVectorCR, TransformCR, DRange3dCR range) final { }
+    void AcceptSolidPrimitive(ISolidPrimitiveCR, TransformCR, DRange3dCR range) final { }
+    void AcceptBSplineSurface(MSBsplineSurfaceCR, TransformCR, DRange3dCR range) final { }
+    void AcceptBRep(IBRepEntityCR, TransformCR, DRange3dCR range) final { }
+    void AcceptTextString(TextStringCR, TransformCR, DRange3dCR range) final { }
+    void AcceptCurves(CurveVectorCR, TransformCR, DRange3dCR range) final { }
+    void AcceptPolyface(PolyfaceHeaderCR, TransformCR, DRange3dCR range) final { }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/19
+//=======================================================================================
+struct TransformedOutput : Output
+{
+protected:
+    OutputR     m_output;
+    Transform   m_transform;
+    Transform   m_outTransform;
+    DRange3d    m_outRange;
+
+    template<typename T> void Forward(TransformCR inTf, DRange3dCR inRange, T fwd)
+        {
+        m_transform.Multiply(m_outRange, inRange);
+        m_outTransform.InitProduct(inTf, m_transform);
+        fwd(m_outTransform, m_outRange);
+        }
+public:
+    TransformedOutput(OutputR output, TransformCR transform) : m_output(output), m_transform(transform) { }
+
+    ViewContextR GetContext() final { return m_output.GetContext(); }
+
+    void AcceptRegion(CurveVectorCR geom, TransformCR inTf, DRange3dCR inRange) final
+        {
+        Forward(inTf, inRange, [&](TransformCR outTf, DRange3dCR outRange) { m_output.AcceptRegion(geom, outTf, outRange); });
+        }
+    void AcceptSolidPrimitive(ISolidPrimitiveCR geom, TransformCR inTf, DRange3dCR inRange) final
+        {
+        Forward(inTf, inRange, [&](TransformCR outTf, DRange3dCR outRange) { m_output.AcceptSolidPrimitive(geom, outTf, outRange); });
+        }
+    void AcceptBSplineSurface(MSBsplineSurfaceCR geom, TransformCR inTf, DRange3dCR inRange) final
+        {
+        Forward(inTf, inRange, [&](TransformCR outTf, DRange3dCR outRange) { m_output.AcceptBSplineSurface(geom, outTf, outRange); });
+        }
+    void AcceptBRep(IBRepEntityCR geom, TransformCR inTf, DRange3dCR inRange) final
+        {
+        Forward(inTf, inRange, [&](TransformCR outTf, DRange3dCR outRange) { m_output.AcceptBRep(geom, outTf, outRange); });
+        }
+    void AcceptTextString(TextStringCR geom, TransformCR inTf, DRange3dCR inRange) final
+        {
+        Forward(inTf, inRange, [&](TransformCR outTf, DRange3dCR outRange) { m_output.AcceptTextString(geom, outTf, outRange); });
+        }
+    void AcceptCurves(CurveVectorCR geom, TransformCR inTf, DRange3dCR inRange) final
+        {
+        Forward(inTf, inRange, [&](TransformCR outTf, DRange3dCR outRange) { m_output.AcceptCurves(geom, outTf, outRange); });
+        }
+    void AcceptPolyface(PolyfaceHeaderCR geom, TransformCR inTf, DRange3dCR inRange) final
+        {
+        Forward(inTf, inRange, [&](TransformCR outTf, DRange3dCR outRange) { m_output.AcceptPolyface(geom, outTf, outRange); });
+        }
 };
 
 END_BENTLEY_RENDER_PRIMITIVES_NAMESPACE

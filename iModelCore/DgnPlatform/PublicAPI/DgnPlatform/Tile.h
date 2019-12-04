@@ -111,7 +111,7 @@ struct ContentId : NodeId
     {
         None = 0,
         AllowInstancing = 1 << 0,
-        All = AllowInstancing,
+        ImprovedElision = 1 << 1,
     };
 private:
     DEFINE_T_SUPER(NodeId);
@@ -148,6 +148,7 @@ public:
     Flags GetFlags() const { return m_flags; }
 
     bool AllowInstancing() const;
+    bool WantImprovedElision() const;
 };
 
 ENUM_IS_FLAGS(ContentId::Flags);
@@ -264,6 +265,7 @@ public:
 
     ContentIdCR GetContentId() const { return m_contentId; }
     bool AllowInstancing() const;
+    bool WantImprovedElision() const { return m_contentId.WantImprovedElision(); }
     ContentCP GetContent() const { return m_content.get(); }
     TreeR GetTree() const { return m_tree; }
 

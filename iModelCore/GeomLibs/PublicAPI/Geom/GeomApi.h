@@ -888,6 +888,7 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 #include <Geom/CurvePrimitive.h>
 #include <Geom/CurveVector.h>
 #include <Geom/SolidPrimitive.h>
+#include <Geom/BoxFaces.h>
 #include <Geom/CurveTopologyId.h>
 #include <Geom/Polyface.h>
 #endif

@@ -3,7 +3,6 @@
 * See COPYRIGHT.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
-#include "BoxFaces.h"
 #include "../DeprecatedFunctions.h"
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 // Macro to invoke m_data detail methods.

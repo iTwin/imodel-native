@@ -8,6 +8,7 @@
 #include <numeric>
 #include <DgnPlatform/RangeIndex.h>
 #include <GeomJsonWireFormat/JsonUtils.h>
+#include <Geom/polygon3d.fdf>
 #include <numeric>
 #include <algorithm>
 #include <set>
@@ -221,54 +222,76 @@ static DRange3d bisectRange(DRange3dCR range, bool takeUpper)
 struct SubRanges
 {
 private:
-    DRange3d    m_ranges[8];
-    bool        m_empty[8];
-    uint8_t     m_size;
+    double          m_tileRangeDiagonal;
+    DRange3d        m_ranges[8];
+    bool            m_empty[8];
+    const uint8_t   m_size;
+    bool            m_allIntersected = false;
+    bool            m_allowTightIntersectionTests;
+
+    bool TriviallyAccept(DRange3dCR range);
+
+    struct CandidateIndices
+    {
+    private:
+        uint8_t m_indices[8];
+        uint8_t m_size = 0;
+    public:
+        uint8_t size() const { return m_size; }
+        bool empty() const { return 0 == size(); }
+
+        uint8_t operator[](uint8_t index) const { return m_indices[index] ;}
+
+        void push_back(uint8_t index) { m_indices[m_size++] = index; }
+        void remove_at(uint8_t index)
+            {
+            m_indices[index] = m_indices[m_size - 1];
+            --m_size;
+            }
+    };
+
+    // 3   2
+    //   /
+    // 0   1
+    struct Quad
+    {
+        // 5th point unused (BoxFaces::Get5PointCCWFace)
+        DPoint3d    m_points[5];
+    };
+
+    CandidateIndices GetCandidates(DRange3dCR range) const;
+    CandidateIndices GetCandidates(DRange3dCR range, CandidateIndices const& limit) const;
+    template<typename T> void Accept(CandidateIndices& indices, T func);
+    template<typename T> void Accept(DRange3dCR range, T func);
+
+    void AcceptCurveVector(CurveVectorCR curves, TransformCR, DRange3dCR, CandidateIndices& indices);
+    void AcceptCurve(ICurvePrimitiveCR curve, TransformCR, DRange3dCR, CandidateIndices& indices);
+    void AcceptPointString(bvector<DPoint3d> const&, TransformCR, CandidateIndices& indices);
+    void AcceptLineString(bvector<DPoint3d> const&, TransformCR, CandidateIndices& indices);
+
+    void AcceptPoint(DPoint3dCR, CandidateIndices& indices);
+    void AcceptSegment(DSegment3dCR, CandidateIndices& indices);
+    void AcceptTriangle(DPoint3dCR p0, DPoint3dCR p1, DPoint3dCR p2, CandidateIndices&);
+    void AcceptQuad(Quad const& quad, CandidateIndices&);
 public:
-    SubRanges(DRange3dCR tileRange, bool is2d) : m_size(is2d ? 4 : 8)
-        {
-        // ###TODO this can be made more efficient
-        auto bisect = is2d ? bisectRange2d : bisectRange;
-        for (auto i = 0; i < 2; i++)
-            {
-            for (auto j = 0; j < 2; j++)
-                {
-                for (auto k = 0; k < (is2d ? 1 : 2); k++)
-                    {
-                    DRange3d range = tileRange;
-                    range = bisect(range, 0 == i);
-                    range = bisect(range, 0 == j);
-                    if (!is2d)
-                        range = bisect(range, 0 == k);
+    SubRanges(DRange3dCR tileRange, bool is2d, bool allowTightIntersectionTests);
 
-                    auto index = i + j*2 + k*4;
-                    m_ranges[index] = range;
-                    m_empty[index] = true;
-                    }
-                }
-            }
-        }
-
-    void Add(DRange3dCR range)
-        {
-        for (uint8_t i = 0; i < m_size; i++)
-            {
-            if (m_empty[i] && m_ranges[i].IntersectsWith(range))
-                m_empty[i] = false;
-            }
-        }
+    void AddRange(DRange3dCR range);
+    void AddRanges(DRange3dCR range, SharedGeom::InstanceList const& instances);
 
     // Compute bitfield with a 1 indicating an empty sub-range where each bit = i + j*2 + k*4
     // NB: This will fit in a single byte but for alignment and other reasons make it occupy 4 bytes in binary tile header.
-    Content::SubRange ToBitfield() const
-        {
-        uint32_t flags = 0;
-        for (uint8_t i = 0; i < m_size; i++)
-            if (m_empty[i])
-                flags |= (1 << i);
+    Content::SubRange ToBitfield() const;
 
-        return static_cast<Content::SubRange>(flags);
-        }
+    void AcceptRegion(CurveVectorCR, TransformCR, DRange3dCR range);
+    void AcceptSolidPrimitive(ISolidPrimitiveCR, TransformCR, DRange3dCR range);
+    void AcceptBSplineSurface(MSBsplineSurfaceCR, TransformCR, DRange3dCR range) { AddRange(range); }
+    void AcceptBRep(IBRepEntityCR, TransformCR, DRange3dCR range) { AddRange(range); }
+    void AcceptTextString(TextStringCR, TransformCR, DRange3dCR range) { AddRange(range); }
+
+    void AcceptCurves(CurveVectorCR, TransformCR, DRange3dCR range);
+    void AcceptPolyface(PolyfaceHeaderCR, TransformCR, DRange3dCR range);
+    void AcceptPolyfaces(PolyfaceHeaderCR, TransformCR, DRange3dCR range, SharedGeom::InstanceList const& instances);
 };
 
 //=======================================================================================
@@ -330,7 +353,7 @@ private:
             // This element is too small to contribute geometry - but record which sub-range(s) it intersects.
             DRange3d tileRange = entry.m_range.ToRange3d();
             m_transformFromDgn.Multiply(tileRange, tileRange);
-            m_subRanges.Add(tileRange);
+            m_subRanges.AddRange(tileRange);
 
             ++m_numSkipped;
             }
@@ -812,22 +835,53 @@ public:
     PartGeoms const& Parts() const { return m_geomParts; }
     SolidPrimitives const& GetSolidPrimitives() const { return m_solidPrimitives; }
 
-    void AddSharedGeometry(GeometryList& geometryList, ElementMeshGeneratorR meshGenerator, SubRanges& subRanges) const;
+    void AddSharedGeometry(GeometryList& geometryList, ElementMeshGeneratorR meshGenerator) const;
 
     bool IsViewIndependent() const { return m_isViewIndependent; }
     DPoint3dCP GetViewIndependentOrigin() const { return IsViewIndependent() ? &m_viewIndependentOrigin : nullptr; }
 };
 
-/*=================================================================================**//**
-* @bsiclass                                                     Ray.Bentley     12/2017
-+===============+===============+===============+===============+===============+======*/
-struct TileRangeClipOutput : PolyfaceQuery::IClipToPlaneSetOutput
+//=======================================================================================
+// IClipToPlaneSetOutput is misleading as to what PolyfaceQuery::ClipToRange() can produce.
+// It produces exactly one of the following:
+//  - The input polyface, because it is contained in the clip range; or
+//  - A single clipped polyface; or
+//  - Nothing, because the polyface is entirely outside the clip range.
+// @bsistruct                                                   Paul.Connelly   12/19
+//=======================================================================================
+struct TileRangeClipper : PolyfaceQuery::IClipToPlaneSetOutput
 {
-    bvector<PolyfaceHeaderPtr>  m_clipped;
-    bvector<PolyfaceQueryCP>    m_output;
+private:
+    PolyfaceHeaderPtr   m_output;
+    bool                m_isContained = false;
 
-    StatusInt _ProcessUnclippedPolyface(PolyfaceQueryCR mesh) override { m_output.push_back(&mesh); ; return SUCCESS; }
-    StatusInt _ProcessClippedPolyface(PolyfaceHeaderR mesh) override { m_output.push_back(&mesh); m_clipped.push_back(&mesh); return SUCCESS; }
+    StatusInt _ProcessUnclippedPolyface(PolyfaceQueryCR mesh) override
+        {
+        BeAssert(m_output.IsNull());
+        BeAssert(!m_isContained);
+        m_isContained = true;
+        return SUCCESS;
+        }
+
+    StatusInt _ProcessClippedPolyface(PolyfaceHeaderR mesh) override
+        {
+        BeAssert(m_output.IsNull() && "Multiple clipped polyfaces produced");
+        BeAssert(!m_isContained);
+        m_output = &mesh;
+        return SUCCESS;
+        }
+
+    TileRangeClipper() { }
+public:
+    static PolyfaceHeaderPtr Clip(PolyfaceHeaderR input, DRange3dCR range)
+        {
+        TileRangeClipper clipper;
+        input.ClipToRange(range, clipper, false);
+        if (clipper.m_isContained)
+            return &input;
+        else
+            return clipper.m_output;
+        }
 };
 
 struct GlyphAtlas;
@@ -912,7 +966,7 @@ public:
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   02/17
 //=======================================================================================
-struct MeshGenerator : ViewContext
+struct MeshGenerator : ViewContext, Output
 {
 protected:
     GeometryLoaderCR    m_loader;
@@ -980,6 +1034,8 @@ public:
 
     void AddPolyface(Polyface& polyface, DgnElementId, double rangePixels, bool isContained, bool doDefer=true);
     void AddStrokes(StrokesR strokes, DgnElementId, double rangePixels, bool isContained);
+
+    ViewContextR GetContext() final { return *this; }
 };
 
 //=======================================================================================
@@ -994,6 +1050,7 @@ private:
     bvector<MeshPtr>    m_sharedMeshes;
     DPoint3dCP          m_viewIndependentOrigin = nullptr;
     std::map<DgnElementId, DPoint3d>    m_deferredGlyphOrigins;
+    SubRangesR          m_subRanges;
 
     DPoint3dCP GetViewIndependentOrigin(DgnElementId elemId) const
         {
@@ -1001,8 +1058,8 @@ private:
         return m_deferredGlyphOrigins.end() != iter ? &iter->second : nullptr;
         }
 public:
-    ElementMeshGenerator(GeometryLoaderCR loader, GeometryOptionsCR options) : MeshGenerator(loader, loader.GetTolerance(), options, loader.GetTileRange()),
-        m_featureTable(loader.GetTree().GetModelId(), loader.GetRenderSystem()._GetMaxFeaturesPerBatch())
+    ElementMeshGenerator(GeometryLoaderCR loader, GeometryOptionsCR options, SubRangesR subRanges) : MeshGenerator(loader, loader.GetTolerance(), options, loader.GetTileRange()),
+        m_featureTable(loader.GetTree().GetModelId(), loader.GetRenderSystem()._GetMaxFeaturesPerBatch()), m_subRanges(subRanges)
         {
         m_builders.SetFeatureTable(m_featureTable);
         }
@@ -1020,6 +1077,23 @@ public:
 
     void SetViewIndependentOrigin(DPoint3dCP origin) { m_viewIndependentOrigin = origin; }
     DPoint3dCP GetViewIndependentOrigin() const override { return m_viewIndependentOrigin; }
+
+    // RenderPrimitives::Output
+    void AcceptPolyface(PolyfaceHeaderCR geom, TransformCR tf, DRange3dCR range) final { m_subRanges.AcceptPolyface(geom, tf, range); }
+    void AcceptRegion(CurveVectorCR geom, TransformCR tf, DRange3dCR range) final { m_subRanges.AcceptRegion(geom, tf, range); }
+    void AcceptSolidPrimitive(ISolidPrimitiveCR geom, TransformCR tf, DRange3dCR range) final { m_subRanges.AcceptSolidPrimitive(geom, tf, range); }
+    void AcceptBSplineSurface(MSBsplineSurfaceCR geom, TransformCR tf, DRange3dCR range) final { m_subRanges.AcceptBSplineSurface(geom, tf, range); }
+    void AcceptBRep(IBRepEntityCR geom, TransformCR tf, DRange3dCR range) final { m_subRanges.AcceptBRep(geom, tf, range); }
+    void AcceptTextString(TextStringCR geom, TransformCR tf, DRange3dCR range) final { m_subRanges.AcceptTextString(geom, tf, range); }
+    void AcceptCurves(CurveVectorCR geom, TransformCR tf, DRange3dCR range) final { m_subRanges.AcceptCurves(geom, tf, range); }
+    PolyfaceHeaderPtr ClaimPolyface(PolyfaceHeaderR pf) final { return &pf; }
+    ClippedPolyface ClipPolyface(PolyfaceHeaderR polyface, DRange3dCR range) final
+        {
+        auto clipped = TileRangeClipper::Clip(polyface, GetTileRange());
+        return ClippedPolyface(clipped, true);
+        }
+
+    SubRangesR GetSubRanges() { return m_subRanges; }
 };
 
 //=======================================================================================
@@ -1044,7 +1118,22 @@ public:
     void ClipStrokes(StrokesR) const final { }
 
     void AddMeshes(bvector<MeshPtr>& meshes);
-    DRange3d ComputeContentRange(SubRangesR) const;
+    DRange3d ComputeContentRange() const;
+
+    // RenderPrimitives::Output
+    void AcceptPolyface(PolyfaceHeaderCR geom, TransformCR tf, DRange3dCR range) final { m_gen.GetSubRanges().AcceptPolyfaces(geom, tf, range, m_geom.GetInstances()); }
+    void AcceptRegion(CurveVectorCR geom, TransformCR tf, DRange3dCR range) final { m_gen.GetSubRanges().AddRanges(range, m_geom.GetInstances()); }
+    void AcceptSolidPrimitive(ISolidPrimitiveCR geom, TransformCR tf, DRange3dCR range) final { m_gen.GetSubRanges().AddRanges(range, m_geom.GetInstances()); }
+    void AcceptBSplineSurface(MSBsplineSurfaceCR geom, TransformCR tf, DRange3dCR range) final { m_gen.GetSubRanges().AddRanges(range, m_geom.GetInstances()); }
+    void AcceptBRep(IBRepEntityCR geom, TransformCR tf, DRange3dCR range) final { m_gen.GetSubRanges().AddRanges(range, m_geom.GetInstances()); }
+    void AcceptTextString(TextStringCR geom, TransformCR tf, DRange3dCR range) final { m_gen.GetSubRanges().AddRanges(range, m_geom.GetInstances()); }
+    void AcceptCurves(CurveVectorCR geom, TransformCR tf, DRange3dCR range) final { m_gen.GetSubRanges().AddRanges(range, m_geom.GetInstances()); }
+    PolyfaceHeaderPtr ClaimPolyface(PolyfaceHeaderR pf) final { return pf.Clone(); }
+    ClippedPolyface ClipPolyface(PolyfaceHeaderR polyface, DRange3dCR range) final
+        {
+        // If it needed clipping, it wouldn't be considered instanceable.
+        return ClippedPolyface(&polyface, true);
+        }
 };
 
 //=======================================================================================
@@ -1054,11 +1143,14 @@ public:
 struct InstanceableGeom : RefCountedBase
 {
 private:
-    SharedGeomCPtr  m_sharedGeom;
-    bool            m_decimated;
+    SharedGeomCPtr      m_sharedGeom;
+    mutable DRange3d    m_range;
+    mutable bool        m_computedRange = false;
+    bool                m_decimated;
 protected:
     InstanceableGeom(SharedGeomCR shared, bool decimated) : m_sharedGeom(&shared), m_decimated(decimated) { }
 
+    virtual DRange3d _ComputeRange() const = 0;
     virtual void AddInstanced(MeshGeneratorR, MeshBuilderR, DRange3dR contentRange) const = 0;
     virtual void AddBatched(ElementMeshGeneratorR meshGen, TransformCR transform, DisplayParamsCR displayParams, DgnElementId elemId) = 0;
 public:
@@ -1069,13 +1161,22 @@ public:
     virtual size_t GetSharedVertexCount() const = 0;
     virtual DisplayParamsCR GetDisplayParams() const = 0;
     virtual MeshBuilderKey GetMeshBuilderKey() const = 0;
-    virtual DRange3d ComputeRange() const = 0;
+    DRange3d GetRange() const
+        {
+        if (!m_computedRange)
+            {
+            m_range = _ComputeRange();
+            m_computedRange = true;
+            }
+
+        return m_range;
+        }
 
     bool operator<(InstanceableGeomCR rhs) const { return GetVertexCount() < rhs.GetVertexCount(); }
     static bool ComparePtrs(InstanceableGeomPtr const& lhs, InstanceableGeomPtr const& rhs) { return *lhs < *rhs; }
 
-    void AddInstanced(ElementMeshGeneratorR meshGen, SubRangesR subRanges);
-    void AddBatched(ElementMeshGeneratorR meshGen, SubRangesR subRanges);
+    void AddInstanced(ElementMeshGeneratorR meshGen);
+    void AddBatched(ElementMeshGeneratorR meshGen);
 };
 
 //=======================================================================================
@@ -1088,6 +1189,7 @@ private:
 
     InstanceablePolyface(PolyfaceCR polyface, SharedGeomCR shared) : InstanceableGeom(shared, polyface.IsDecimated()), m_polyface(polyface) { }
 
+    DRange3d _ComputeRange() const final { return m_polyface.GetPolyface().PointRange(); }
     void AddInstanced(MeshGeneratorR, MeshBuilderR, DRange3dR contentRange) const final;
     void AddBatched(ElementMeshGeneratorR meshGen, TransformCR transform, DisplayParamsCR displayParams, DgnElementId elemId) final;
 public:
@@ -1101,7 +1203,6 @@ public:
 
     // NB: Face-attached materials produce multiple polyfaces with different materials...
     DisplayParamsCR GetDisplayParams() const final { return m_polyface.GetDisplayParams(); }
-    DRange3d ComputeRange() const final { return m_polyface.GetPolyface().PointRange(); }
 
     MeshBuilderKey GetMeshBuilderKey() const final
         {
@@ -1126,6 +1227,14 @@ private:
 
     void AddInstanced(MeshGeneratorR, MeshBuilderR, DRange3dR contentRange) const final;
     void AddBatched(ElementMeshGeneratorR meshGen, TransformCR transform, DisplayParamsCR displayParams, DgnElementId elemId) final;
+    DRange3d _ComputeRange() const final
+        {
+        DRange3d range = DRange3d::NullRange();
+        for (auto const& pointList : m_strokes.GetStrokes())
+            range.Extend(pointList.m_points);
+
+        return range;
+        }
 public:
     static InstanceableGeomPtr Create(Strokes&& strokes, SharedGeomCR shared)
         {
@@ -1135,14 +1244,6 @@ public:
 
     size_t GetSharedVertexCount() const final { return m_numVertices; }
     DisplayParamsCR GetDisplayParams() const final { return m_strokes.GetDisplayParams(); }
-    DRange3d ComputeRange() const final
-        {
-        DRange3d range = DRange3d::NullRange();
-        for (auto const& pointList : m_strokes.GetStrokes())
-            range.Extend(pointList.m_points);
-
-        return range;
-        }
 
     MeshBuilderKey GetMeshBuilderKey() const final
         {
@@ -1246,7 +1347,6 @@ private:
 
     Buckets m_buckets;
     ElementMeshGeneratorR m_meshGenerator;
-    SubRangesR m_subRanges;
 
     void AddPolyfaces(PolyfaceList& polyfaces, SharedGeomCR geom)
         {
@@ -1290,7 +1390,7 @@ private:
         return ratio >= s_minFacetRatio;
         }
 public:
-    InstanceableGeomBuckets(ElementMeshGeneratorR gen, SubRangesR subRanges) : m_meshGenerator(gen), m_subRanges(subRanges) { }
+    InstanceableGeomBuckets(ElementMeshGeneratorR gen) : m_meshGenerator(gen) { }
 
     using const_iterator = Buckets::const_iterator;
     size_t size() const { return m_buckets.size(); }
@@ -1302,7 +1402,7 @@ public:
         {
         if (!geom.GetSharedGeom().IsWorthInstancing())
             {
-            geom.AddBatched(m_meshGenerator, m_subRanges);
+            geom.AddBatched(m_meshGenerator);
             return;
             }
 
@@ -1352,9 +1452,9 @@ public:
                 InstanceableGeomPtr geom = bucket.Pop();
                 shouldInstance = shouldInstance && IsWorthInstancing(*geom, bucket);
                 if (shouldInstance)
-                    geom->AddInstanced(m_meshGenerator, m_subRanges);
+                    geom->AddInstanced(m_meshGenerator);
                 else
-                    geom->AddBatched(m_meshGenerator, m_subRanges);
+                    geom->AddBatched(m_meshGenerator);
                 }
             }
         }
@@ -1521,6 +1621,7 @@ END_UNNAMED_NAMESPACE
 * @bsimethod                                                    Paul.Connelly   02/19
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ContentId::AllowInstancing() const { return Flags::None != (GetFlags() & Flags::AllowInstancing); }
+bool ContentId::WantImprovedElision() const { return Flags::None != (GetFlags() & Flags::ImprovedElision); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/19
@@ -2899,7 +3000,7 @@ bool GeometryLoader::GenerateGeometry()
     Transform transformFromDgn;
     transformFromDgn.InverseOf(GetTree().GetLocation());
 
-    SubRanges subRanges(GetTileRange(), Is2d());
+    SubRanges subRanges(GetTileRange(), Is2d(), m_loader.WantImprovedElision());
 
     // ###TODO: Do not populate the element collection up front - just traverse range index one element at a time
     // (We chiefly did the up-front collection previously in order to support partial tiles - process biggest elements first)
@@ -2919,7 +3020,7 @@ bool GeometryLoader::GenerateGeometry()
         }
 
     TileContext tileContext(geometryList, *this, dgnRange, *facetOptions, transformFromDgn, tolerance, subRanges);
-    ElementMeshGenerator meshGenerator(*this, GeometryOptions());
+    ElementMeshGenerator meshGenerator(*this, GeometryOptions(), subRanges);
 
     if (IsCanceled())
         return false;
@@ -2962,7 +3063,7 @@ bool GeometryLoader::GenerateGeometry()
     if (IsCanceled())
         return false;
 
-    tileContext.AddSharedGeometry(geometryList, meshGenerator, subRanges);
+    tileContext.AddSharedGeometry(geometryList, meshGenerator);
     if (IsCanceled())
         return false;
 
@@ -3296,10 +3397,10 @@ void MeshGenerator::AddMeshes(GeometryR geom, bool doRangeTest)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshGenerator::AddPolyfaces(PolyfaceList& polyfaces, DgnElementId elemId, double rangePixels, bool isContained)
+void MeshGenerator::AddPolyfaces(PolyfaceList& polyfaces, DgnElementId elemId, double rangePixels, bool geometryIsContained)
     {
     for (auto& polyface : polyfaces)
-        AddPolyface(polyface, elemId, rangePixels, isContained);
+        AddPolyface(polyface, elemId, rangePixels, geometryIsContained || polyface.IsContained());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3351,9 +3452,8 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, DgnElementId elemId, dou
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ElementMeshGenerator::ClipAndAddPolyface(PolyfaceHeaderR polyface, DgnElementId elemId, DisplayParamsCR displayParams, MeshEdgeCreationOptions const& edgeOptions, bool isPlanar)
     {
-    TileRangeClipOutput clipOutput;
-    polyface.ClipToRange(GetTileRange(), clipOutput, false);
-    for (auto& clipped : clipOutput.m_output)
+    auto clipped = TileRangeClipper::Clip(polyface, GetTileRange());
+    if (clipped.IsValid())
         AddClippedPolyface(*clipped, elemId, displayParams, edgeOptions, isPlanar);
     }
 
@@ -3834,11 +3934,17 @@ void TileContext::ProcessElement(DgnElementId elemId, double rangeDiagonalSquare
 void TileContext::PushGeometry(GeometryR geom)
     {
     auto const& range = geom.GetTileRange();
-    m_subRanges.Add(range);
     if (BelowMinRange(range))
+        {
+        // It is not worth doing tighter range checks for such small bits of geometry.
+        m_subRanges.AddRange(range);
         MarkIncomplete();
+        }
     else
+        {
+        // SubRanges will be updated when processing geometry later, possibly using tighter intersection tests.
         m_geometries.push_back(geom);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3925,9 +4031,9 @@ Render::GraphicPtr TileContext::_StrokeGeometry(GeometrySourceCR source, double 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileContext::AddSharedGeometry(GeometryList& geometryList, ElementMeshGeneratorR meshGenerator, SubRanges& subRanges) const
+void TileContext::AddSharedGeometry(GeometryList& geometryList, ElementMeshGeneratorR meshGenerator) const
     {
-    InstanceableGeomBuckets buckets(meshGenerator, subRanges);
+    InstanceableGeomBuckets buckets(meshGenerator);
 
     auto process = [&](SharedGeomR shared)
         {
@@ -3958,12 +4064,11 @@ void TileContext::AddSharedGeometry(GeometryList& geometryList, ElementMeshGener
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-void InstanceableGeom::AddBatched(ElementMeshGeneratorR meshGen, SubRangesR subRanges)
+void InstanceableGeom::AddBatched(ElementMeshGeneratorR meshGen)
     {
     // Reverts the previous instance's transform when applying next instance's transform - eliminates the need
     // to clone+transform polyface/strokes for each instance.
     Transform invTransform = Transform::FromIdentity();
-    DRange3d geomRange = ComputeRange();
     auto const& sharedGeom = GetSharedGeom();
 
     // For face-attached materials these may differ from SharedGeom's DisplayParams.
@@ -3977,10 +4082,6 @@ void InstanceableGeom::AddBatched(ElementMeshGeneratorR meshGen, SubRangesR subR
         Transform instanceTransform = Transform::FromProduct(instance.GetTransform(), invTransform);
 #endif
         invTransform.InverseOf(instance.GetTransform());
-
-        DRange3d instanceRange;
-        instance.GetTransform().Multiply(instanceRange, geomRange);
-        subRanges.Add(instanceRange);
 
         DisplayParamsCPtr displayParams = sharedGeom.CloneDisplayParamsForInstance(*baseDisplayParams, instance.GetDisplayParams());
         AddBatched(meshGen, instanceTransform, *displayParams, instance.GetElementId());
@@ -4039,7 +4140,7 @@ void InstanceableStrokes::AddInstanced(MeshGeneratorR meshGen, MeshBuilderR buil
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-void InstanceableGeom::AddInstanced(ElementMeshGeneratorR meshGen, SubRangesR subRanges)
+void InstanceableGeom::AddInstanced(ElementMeshGeneratorR meshGen)
     {
     auto key = GetMeshBuilderKey();
     SharedGeomCR geom = GetSharedGeom();
@@ -4066,9 +4167,6 @@ void InstanceableGeom::AddInstanced(ElementMeshGeneratorR meshGen, SubRangesR su
         DRange3d range;
         instance.GetTransform().Multiply(range, contentRange);
         instancesContentRange.Extend(range);
-
-        // Mark sub-ranges containing instanced geometry as non-empty
-        subRanges.Add(range);
 
         // Ensure feature index allocated for instance
         meshGen.GetFeatureTable().GetIndex(instance.GetFeature());
@@ -4108,7 +4206,7 @@ MeshList ElementMeshGenerator::GetMeshes()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-DRange3d SharedMeshGenerator::ComputeContentRange(SubRangesR subRanges) const
+DRange3d SharedMeshGenerator::ComputeContentRange() const
     {
     auto contentRange = DRange3d::NullRange();
     for (auto const& instance : m_geom.GetInstances())
@@ -4119,9 +4217,6 @@ DRange3d SharedMeshGenerator::ComputeContentRange(SubRangesR subRanges) const
 
         // Ensure feature index allocated for instance
         m_gen.GetFeatureTable().GetIndex(instance.GetFeature());
-
-        // Ensure sub-ranges containing instanced geometry are marked non-empty
-        subRanges.Add(range);
         }
 
     return contentRange;
@@ -4134,5 +4229,479 @@ void SharedMeshGenerator::AddMeshes(bvector<MeshPtr>& meshes)
     {
     MeshGenerator::AddMeshes(m_geom.GetGeometries(), false);
     m_builders.GetMeshes(meshes, m_geom);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/19
++---------------+---------------+---------------+---------------+---------------+------*/
+SubRanges::SubRanges(DRange3dCR tileRange, bool is2d, bool allowTightIntersectionTests)
+    : m_size(is2d ? 4 : 8), m_allowTightIntersectionTests(allowTightIntersectionTests), m_tileRangeDiagonal(tileRange.DiagonalDistance())
+    {
+    // ###TODO this can be made more efficient
+    auto bisect = is2d ? bisectRange2d : bisectRange;
+    for (auto i = 0; i < 2; i++)
+        {
+        for (auto j = 0; j < 2; j++)
+            {
+            for (auto k = 0; k < (is2d ? 1 : 2); k++)
+                {
+                DRange3d range = tileRange;
+                range = bisect(range, 0 == i);
+                range = bisect(range, 0 == j);
+                if (!is2d)
+                    range = bisect(range, 0 == k);
+
+                auto index = i + j*2 + k*4;
+                m_ranges[index] = range;
+                m_empty[index] = true;
+                }
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void SubRanges::AddRange(DRange3dCR range)
+    {
+    if (m_allIntersected)
+        return;
+
+    m_allIntersected = true;
+    for (uint8_t i = 0; i < m_size; i++)
+        {
+        if (m_empty[i])
+            {
+            if (m_ranges[i].IntersectsWith(range))
+                m_empty[i] = false;
+            else
+                m_allIntersected = false;
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void SubRanges::AddRanges(DRange3dCR geomRange, SharedGeom::InstanceList const& instances)
+    {
+    for (auto iter = instances.begin(); iter != instances.end() && !m_allIntersected; ++iter)
+        {
+        DRange3d instanceRange;
+        iter->GetTransform().Multiply(instanceRange, geomRange);
+        AddRange(instanceRange);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/19
++---------------+---------------+---------------+---------------+---------------+------*/
+Content::SubRange SubRanges::ToBitfield() const
+    {
+    uint32_t flags = 0;
+    for (uint8_t i = 0; i < m_size; i++)
+        if (m_empty[i])
+            flags |= (1 << i);
+
+    return static_cast<Content::SubRange>(flags);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void SubRanges::AcceptRegion(CurveVectorCR region, TransformCR tf, DRange3dCR range)
+    {
+    if (!m_allowTightIntersectionTests)
+        {
+        AddRange(range);
+        return;
+        }
+
+    Accept(range, [&](CandidateIndices& candidates)
+        {
+        Transform localToWorld, worldToLocal;
+        DRange3d localRange;
+        if (!region.IsPlanar(localToWorld, worldToLocal, localRange))
+            {
+            AddRange(range);
+            return;
+            }
+
+        BeAssert(localRange.IsAlmostZeroZ());
+
+        Quad quad;
+        quad.m_points[0] = quad.m_points[1] = localRange.low;
+        quad.m_points[2] = quad.m_points[3] = localRange.high;
+        quad.m_points[1].x = localRange.high.x;
+        quad.m_points[3].x = localRange.low.x;
+
+        localToWorld.Multiply(quad.m_points, 4);
+        tf.Multiply(quad.m_points, 4);
+
+        AcceptQuad(quad, candidates);
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void SubRanges::AcceptSolidPrimitive(ISolidPrimitiveCR solid, TransformCR tf, DRange3dCR range)
+    {
+    // Some customers like to draw enormous green construction boxes around vast volumes of their models. Prevent such geometry from intersecting every tile in that volume.
+    DgnBoxDetail box;
+    if (!m_allowTightIntersectionTests || !solid.TryGetDgnBoxDetail(box))
+        {
+        AddRange(range);
+        return;
+        }
+
+    Accept(range, [&](CandidateIndices& candidates)
+        {
+        box.TransformInPlace(tf);
+        BoxFaces faces;
+        faces.Load(box);
+
+        Quad quad;
+        for (int i = 0; i < 6; i++)
+            {
+            if (!box.m_capped && faces.IsCapFace(i))
+                continue;
+
+            faces.Get5PointCCWFace(i, quad.m_points);
+            AcceptQuad(quad, candidates);
+            if (candidates.empty())
+                break;
+            }
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void SubRanges::AcceptQuad(Quad const& quad, CandidateIndices& candidates)
+    {
+    AcceptTriangle(quad.m_points[0], quad.m_points[1], quad.m_points[2], candidates);
+    if (!candidates.empty())
+        AcceptTriangle(quad.m_points[0], quad.m_points[2], quad.m_points[3], candidates);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* NB: This is for linear geometry, not regions - AcceptRegion() handles those.
+* @bsimethod                                                    Paul.Connelly   11/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void SubRanges::AcceptCurves(CurveVectorCR curves, TransformCR tf, DRange3dCR range)
+    {
+    if (m_allowTightIntersectionTests)
+        Accept(range, [&](CandidateIndices& candidates) { AcceptCurveVector(curves, tf, range, candidates); });
+    else
+        AddRange(range);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void SubRanges::AcceptCurveVector(CurveVectorCR curves, TransformCR tf, DRange3dCR range, CandidateIndices& curveVectorCandidates)
+    {
+    if (TriviallyAccept(range))
+        return;
+
+    if (1 == curves.size())
+        {
+        AcceptCurve(*curves.front(), tf, range, curveVectorCandidates);
+        return;
+        }
+
+    for (auto const& curve : curves)
+        {
+        DRange3d curveRange;
+        if (curve->GetRange(curveRange, tf) && !TriviallyAccept(curveRange))
+            {
+            auto candidates = GetCandidates(curveRange, curveVectorCandidates);
+            AcceptCurve(*curve, tf, curveRange, candidates);
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void SubRanges::AcceptCurve(ICurvePrimitiveCR curve, TransformCR tf, DRange3dCR range, CandidateIndices& candidates)
+    {
+    // Point strings, lines, and line strings can be relatively cheaply tested.
+    // ###TODO: Some curved types could be handled.
+    // NB: Various representations of single point primitives are "handled" here but should never end up here (their ranges will be too small).
+    switch (curve.GetCurvePrimitiveType())
+        {
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString:
+            AcceptPointString(*curve.GetPointStringCP(), tf, candidates);
+            break;
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector:
+            AcceptCurveVector(*curve.GetChildCurveVectorCP(), tf, range, candidates);
+            break;
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
+            {
+            DSegment3d segment = *curve.GetLineCP();
+            tf.Multiply(segment);
+            if (segment.IsAlmostSinglePoint())
+                AcceptPoint(segment.point[0], candidates);
+            else
+                AcceptSegment(segment, candidates);
+            break;
+            }
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
+            {
+            auto const& points = *curve.GetLineStringCP();
+            switch (points.size())
+                {
+                case 0:
+                    break;
+                case 1:
+                    {
+                    DPoint3d pt = points[0];
+                    tf.Multiply(pt);
+                    AcceptPoint(pt, candidates);
+                    break;
+                    }
+                case 2:
+                    {
+                    if (points[0].AlmostEqual(points[1]))
+                        {
+                        DPoint3d pt = points[0];
+                        tf.Multiply(pt);
+                        AcceptPoint(pt, candidates);
+                        break;
+                        }
+                    // not a zero-length line-string - fall through...
+                    }
+                default:
+                    AcceptLineString(points, tf, candidates);
+                    break;
+                }
+
+            break;
+            }
+        default:
+            AddRange(range);
+            break;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void SubRanges::AcceptPointString(bvector<DPoint3d> const& points, TransformCR tf, CandidateIndices& candidates)
+    {
+    for (auto point : points)
+        {
+        tf.Multiply(point);
+        AcceptPoint(point, candidates);
+        if (candidates.empty())
+            break;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void SubRanges::AcceptLineString(bvector<DPoint3d> const& points, TransformCR tf, CandidateIndices& candidates)
+    {
+    DSegment3d segment;
+    segment.point[0] = points[0];
+    tf.Multiply(segment.point[0]);
+
+    for (size_t i = 1; i < points.size(); i++)
+        {
+        segment.point[1] = points[i];
+        tf.Multiply(segment.point[1]);
+        AcceptSegment(segment, candidates);
+        if (candidates.empty())
+            break;
+
+        segment.point[0] = segment.point[1];
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void SubRanges::AcceptPoint(DPoint3dCR point, CandidateIndices& candidates)
+    {
+    Accept(candidates, [&](DRange3dCR range) { return range.IsContained(point); });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void SubRanges::AcceptSegment(DSegment3dCR segment, CandidateIndices& candidates)
+    {
+    // ###TODO: Make a simplified version of IntersectBounded (don't need any of its outputs, just a bool)
+    DSegment3d clippedSegment;
+    double param0, param1;
+    Accept(candidates, [&](DRange3dCR range) { return range.IsContained(segment.point[0]) || range.IsContained(segment.point[1]) || range.IntersectBounded(param0, param1, clippedSegment, segment); });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/19
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T> void SubRanges::Accept(DRange3dCR range, T func)
+    {
+    if (TriviallyAccept(range))
+        return;
+
+    auto candidates = GetCandidates(range);
+    if (candidates.empty())
+        return;
+
+    func(candidates);
+
+    // Update m_allIntersected
+    for (uint8_t i = 0; i < m_size; i++)
+        if (m_empty[i])
+            return;
+
+    m_allIntersected = true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/19
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T> void SubRanges::Accept(CandidateIndices& indices, T func)
+    {
+    uint8_t i = 0;
+    while (i < indices.size())
+        {
+        uint8_t index = indices[i];
+        if (func(m_ranges[index]))
+            {
+            m_empty[index] = false;
+            indices.remove_at(i);
+            }
+        else
+            {
+            ++i;
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/19
++---------------+---------------+---------------+---------------+---------------+------*/
+SubRanges::CandidateIndices SubRanges::GetCandidates(DRange3dCR range) const
+    {
+    CandidateIndices indices;
+    for (uint8_t i = 0; i < m_size; i++)
+        if (m_empty[i] && m_ranges[i].IntersectsWith(range))
+            indices.push_back(i);
+
+    return indices;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/19
++---------------+---------------+---------------+---------------+---------------+------*/
+SubRanges::CandidateIndices SubRanges::GetCandidates(DRange3dCR range, CandidateIndices const& limit) const
+    {
+    CandidateIndices indices;
+    for (uint8_t i = 0; i < limit.size(); i++)
+        {
+        uint8_t index = limit[i];
+        if (m_empty[index] && m_ranges[index].IntersectsWith(range))
+            indices.push_back(i);
+        }
+
+    return indices;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SubRanges::TriviallyAccept(DRange3dCR range)
+    {
+    if (m_allIntersected)
+        return true;
+
+    // Only bother with expensive checks if range is big enough relative to tile.
+    static constexpr double minRatio = 0.2;
+    auto rangeDiagonal = range.DiagonalDistance();
+    if (rangeDiagonal / m_tileRangeDiagonal > minRatio)
+        return false;
+
+    AddRange(range);
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void SubRanges::AcceptTriangle(DPoint3dCR p0, DPoint3dCR p1, DPoint3dCR p2, CandidateIndices& candidates)
+    {
+    Accept(candidates, [&](DRange3dCR subrange) { return PolygonOps::TriangleIntersectsRangeByPlaneClip(subrange, p0, p1, p2); });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void SubRanges::AcceptPolyface(PolyfaceHeaderCR polyface, TransformCR tf, DRange3dCR range)
+    {
+    if (!m_allowTightIntersectionTests)
+        {
+        AddRange(range);
+        return;
+        }
+
+    Accept(range, [&](CandidateIndices& candidates)
+        {
+        for (auto visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); /**/)
+            {
+            auto const& points = visitor->Point();
+            if (points.size() < 3)
+                continue;
+
+            // Coarser intersection for non-convex facets. Don't want to triangulate here.
+            // NB: PolyfaceQuery::HasConvexFacets() unreachable because protected inheritance...
+            if (points.size() > 3 && !bsiGeom_testPolygonConvex(points.data(), static_cast<int>(points.size())))
+                {
+                DRange3d facetRange = DRange3d::From(tf, points);
+                Accept(candidates, [&](DRange3dCR subrange) { return subrange.IntersectsWith(facetRange); });
+                if (candidates.empty())
+                    return;
+                else
+                    continue;
+                }
+
+            // Make triangle fans from face...
+            DPoint3d p0 = points[0];
+            DPoint3d p1 = points[1];
+            tf.Multiply(p0, p0);
+            tf.Multiply(p1, p1);
+
+            for (size_t i = 2; i < points.size(); i++)
+                {
+                DPoint3d p2 = points[i];
+                tf.Multiply(p2, p2);
+                AcceptTriangle(p0, p1, p2, candidates);
+                if (candidates.empty())
+                    return;
+                
+                p1 = p2;
+                }
+            }
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void SubRanges::AcceptPolyfaces(PolyfaceHeaderCR polyface, TransformCR polyTf, DRange3dCR geomRange, SharedGeom::InstanceList const& instances)
+    {
+    // NB: polyTf ought to always be identity here...the only time we have a transform for a polyface is from InstancedGeometry, which never ends up in here.
+    BeAssert(polyTf.IsIdentity());
+    for (auto iter = instances.begin(); iter != instances.end() && !m_allIntersected; ++iter)
+        {
+        TransformCR tf = iter->GetTransform();
+        DRange3d instanceRange;
+        tf.Multiply(instanceRange, geomRange);
+        AcceptPolyface(polyface, tf, instanceRange);
+        }
     }
 
