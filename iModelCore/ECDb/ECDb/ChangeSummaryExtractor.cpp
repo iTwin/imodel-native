@@ -532,8 +532,10 @@ BentleyStatus ChangeSummaryExtractor::FkRelChangeExtractor::Extract(Context& ctx
     if (relClassRaw == nullptr || !relClassRaw->IsRelationshipClass())
         {
         //rel class id wasn't set along with nav id
-        ctx.Issues().ReportV("Failed to extract change summary. ForeignKey Relationship %s does not refer to relationship.", rowEntry.ToString().c_str());
-        return ERROR;
+        ctx.Issues().ReportV("Failed to extract change summary for a navigation property. ForeignKey Relationship %s does not refer to relationship class.", rowEntry.ToString().c_str());
+        // We decided to treat this as not an error, because ECDb allows to insert this into the DB without validation. We do not want this data error to completely
+        // stop change summary generation from working.
+        return SUCCESS;
         }
 
     ECRelationshipClassCR relClass = *relClassRaw->GetRelationshipClassCP();

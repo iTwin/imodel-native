@@ -2529,6 +2529,55 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropCascadeDelete)
 
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                Robert.Schili                  11/19
+//---------------------------------------------------------------------------------------
+TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_NonRelationshipRelECClassId)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("SimpleWorkflowWithNavPropLogicalForeignKey_NonVirtualRelECClassId.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?> 
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+            <ECEntityClass typeName="Parent" modifier="Sealed">
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Child" modifier="Sealed">
+                <ECProperty propertyName="Name" typeName="string" />
+                <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward"/>
+            </ECEntityClass>
+            <ECRelationshipClass typeName="Rel" modifier="None" strength="embedding">
+                <Source multiplicity="(0..1)" polymorphic="True" roleLabel="is parent of">
+                    <Class class="Parent"/>
+                </Source>
+                <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is child of">
+                    <Class class="Child" />
+                </Target>
+            </ECRelationshipClass>
+            <ECEntityClass typeName="UnrelatedEntityClass" modifier="Sealed">
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+    ASSERT_EQ(BE_SQLITE_OK, AttachCache());
+
+    ECClassId relClassId = m_ecdb.Schemas().GetClassId("TestSchema", "UnrelatedEntityClass");
+    ASSERT_TRUE(relClassId.IsValid());
+    TestChangeTracker tracker(m_ecdb);
+
+    ECInstanceKey parentKey, childKey;
+
+    //changeset 1
+    tracker.EnableTracking(true);
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(parentKey, "INSERT INTO ts.Parent(Name) VALUES('Parent 1')"));
+    Utf8String parentIdStr = parentKey.GetInstanceId().ToHexStr();
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(childKey, Utf8PrintfString("INSERT INTO ts.Child(Name,Parent.Id,Parent.RelECClassId) VALUES('Child 1',%s,%s)", parentIdStr.c_str(), relClassId.ToString().c_str()).c_str()));
+
+    TestChangeSet changeset1;
+    ASSERT_EQ(BE_SQLITE_OK, changeset1.FromChangeTrack(tracker));
+    ECInstanceKey changeSummary1Key;
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary1Key, ChangeSetArg(changeset1)));
+    tracker.EndTracking();
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                  07/18
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, DeletedLinkTableRow)
