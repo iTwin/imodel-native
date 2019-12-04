@@ -1,0 +1,138 @@
+#----------------------------------------------------------------------------------------
+#   Tests that are ignored on purpose
+#----------------------------------------------------------------------------------------
+CrashTests.*
+WebsiteSeedFileTests.CreateSeedFile
+
+#----------------------------------------------------------------------------------------
+#   Tests that are failing
+#----------------------------------------------------------------------------------------
+SeedFileTests.ReplaceWithoutLockediModel
+
+#----------------------------------------------------------------------------------------
+#   Tests that require seed file replacement
+#----------------------------------------------------------------------------------------
+LRPTests.InitializeFileJob
+SeedFileTests.DownloadArchivedSeedFile
+SeedFileTests.PushAndPullAfterReplacement
+SeedFileTests.ReplaceSeedFileWithLocks
+SeedFileTests.DeleteFile
+SeedFileTests.OpenBriefcaseAfterReplace
+SeedFileTests.RecoverBriefcaseAfterReplace
+SeedFileTests.CanceledFileReplaceCodesLocksChangeSets
+SeedFileTests.FileReplaceInProgressCodesLocksChangeSetsDenied
+SeedFileTests.ReplaceCodesLocksChangeSets
+SeedFileTests.EmptyFileReplaceOtherUser
+SeedFileTests.ReplaceWithLockediModel
+
+#----------------------------------------------------------------------------------------
+#   URL Validator - Should run after other tests have finished
+#----------------------------------------------------------------------------------------
+UrlValidator.WhitelistCheck
+
+#========================================================================================
+#   iModelBank ignored tests
+#========================================================================================
+
+#----------------------------------------------------------------------------------------
+#   Requires setting up permissions
+#----------------------------------------------------------------------------------------
+BriefcaseTests.NonAdminAbandonOtherUserBriefcase
+CodesTests.RelinquishOtherUserCodes
+LocksTests.RelinquishOtherUserLocks
+CodesLocksTests.RelinquishOtherUserCodesLocks
+VersionsTests.CreateUserDoesNotHavePermission
+VersionsTests.UpdateUserDoesNotHavePermission
+iModelTests.UnauthorizedCreateiModel
+iModelTests.UnsuccessfulCreateiModel
+iModelTests.UnsuccessfulGetiModels
+
+#----------------------------------------------------------------------------------------
+#   Fails when running all tests
+#----------------------------------------------------------------------------------------
+BriefcaseTests.SuccessfulRestoreBriefcase
+PerformanceTests.RetrieveFractionOfAllAvailableCodes
+CodesTests.QueryAvailableCodesTest
+VersionsTests.GetChangeSetsAfterBaselineVersionSucceeds
+VersionsTests.GetChangeSetsBetweenBaselineVersionAndChangeSetSucceeds
+
+#----------------------------------------------------------------------------------------
+#   Missing features in iModelBank
+#----------------------------------------------------------------------------------------
+ChangeSetsTests.PreDownload                         #222158 - Events
+ChangeSetsTests.PreDownloadSmallCacheSize           #222158 - Events
+ChangeSetsTests.PreDownloadManyBriefcases           #222158 - Events
+EventsTests.*                                       #222158 - Events
+iModelTests.SuccessfulCreateiModel                  #205154 - Extents
+iModelTests.CreateEmptyiModel                       #205154 - Extents
+iModelTests.UpdateiModel                            #205154 - Extents
+BriefcaseTests.AcquireAfterQueryingById             #222170 - UserInfo
+BriefcaseTests.AcquireAfterQueryingByName           #222170 - UserInfo
+iModelTests.SuccessfulCreateiModelWithASpaceInName  #222170 - UserInfo
+UserInfoTests.*                                     #222170 - UserInfo
+StatisticsTests.*                                   #222170 - UserInfo
+ChangeSetsTests.PushWithBridgeProperties            #206035 - BridgeProperties
+iModelTests.CreateiModelUsingOidcLogin              #222174 - Initialization
+CodesTests.QueryUnavailableCodesTest                #222174 - Initialization
+iModelTests.FilterGetiModels                        #222174 - Initialization
+LRPTests.*                                          #185686 - Checkpoints
+BriefcasePullTests.SuccessfulAcquireBriefcaseAfterCheckpointJob #185686 - Checkpoints
+iModelTests.CloneWithChangeSets                     #185686 - Checkpoints
+iModelTests.CloneEmptyiModel                        #222175 - Cloning
+CodesTests.FailingCodesResponseOptions              #222178 - ConflictOptions
+LocksTests.FailingLocksResponseOptions              #222178 - ConflictOptions
+
+#----------------------------------------------------------------------------------------
+#   Requires features that will not be supported
+#----------------------------------------------------------------------------------------
+GlobalEventsTests.*                                 #Global events
+ThumbnailsTests.*                                   #Thumbnails
+VersionsTests.GetVersionsWithThumbnails             #Thumbnails
+
+#----------------------------------------------------------------------------------------
+#   CodeSequence issues (probably should fix)
+#----------------------------------------------------------------------------------------
+CodesTests.GetCodeMaximumIndex
+CodesTests.GetCodeNextAvailable
+CodesTests.PlantScenario
+
+#----------------------------------------------------------------------------------------
+#   Should fix
+#----------------------------------------------------------------------------------------
+BriefcasePullTests.DownloadStandaloneBriefcaseUpdatedToChangeSet #Incorrect test, should properly query by index
+ChangeSetsTests.ChangeSetsInfo
+LocksTests.QueryLocksTest
+LocksTests.QueryUnavailableLocksTest
+LocksTests.LocksStatesResponseTest
+LocksTests.ReleasedWithChangeSetLocksTest
+CodesLocksTests.QueryLocksCodes
+PerformanceTests.RetrieveCodesById
+PerformanceTests.RetrieveFractionOfAllAvailableCodesById
+PerformanceTests.PushLocks
+PerformanceTests.RetrieveLocksById
+PerformanceTests.RetrieveFractionOfAllAvailableLocksById
+SchemaLockTests.LockSchemas
+SchemaLockTests.ModifySchema
+BriefcaseSchemaChangesTests.UpdateToChangeSetPullWithoutReinstating
+BriefcaseSchemaChangesTests.UpdateToChangeSetPullWithReinstating
+
+#----------------------------------------------------------------------------------------
+#   iModelManager or Gateway issues, might need fix
+#----------------------------------------------------------------------------------------
+BriefcaseTests.UnsuccessfulAcquireBriefcase
+iModelTests.QueryNonExistentiModelById
+
+#----------------------------------------------------------------------------------------
+#   Failing tests, need investigation
+#----------------------------------------------------------------------------------------
+PushRetryTests.*
+SeedFileTests.*
+
+#----------------------------------------------------------------------------------------
+#   Unit tests
+#----------------------------------------------------------------------------------------
+EventParserTests.*
+FakeServerFixture.*
+MultiProgressCallbackHandlerTests.*
+ClientHelperTests.*
+ChangeSetQueryTests.*

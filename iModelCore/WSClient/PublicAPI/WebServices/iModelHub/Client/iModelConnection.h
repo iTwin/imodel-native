@@ -197,7 +197,7 @@ private:
     StatisticsManager          m_statisticsManager;
     ThumbnailsManager          m_thumbnailsManager;
 
-    iModelConnection(iModelInfoCR iModel, CredentialsCR credentials, ClientInfoPtr clientInfo, GlobalRequestOptionsPtr globalRequestOptions, IHttpHandlerPtr customHandler);
+    iModelConnection(iModelInfoCR iModel, CredentialsCR credentials, ClientInfoPtr clientInfo, GlobalRequestOptionsPtr globalRequestOptions, IHttpHandlerPtr customHandler, bool enableCompression);
 
     StatusTaskPtr DownloadFileInternal(BeFileName localFile, ObjectIdCR fileId, FileAccessKeyPtr fileAccessKey, 
                                        Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const;
@@ -438,7 +438,7 @@ private:
     //! @return Asynchronous task that has the created connection instance as the result.
     //! @note Client is the class that creates this connection. See Client::OpenBriefcase.
     static iModelConnectionResult Create(iModelInfoCR iModel, CredentialsCR credentials, ClientInfoPtr clientInfo, GlobalRequestOptionsPtr globalRequestOptions,
-                                         IHttpHandlerPtr customHandler = nullptr);
+                                         IHttpHandlerPtr customHandler = nullptr, bool enableCompression = true);
 
     //! Checks whether seed file with specified fileId is active.
     //! @param[in] fileId Db guid of the seed file.

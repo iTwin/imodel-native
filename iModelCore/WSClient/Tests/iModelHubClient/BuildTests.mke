@@ -63,3 +63,6 @@ $(BuildContext)Delivery/iModelHubNativeTests/ignore_list_dev.txt : $(baseDir)ign
 
 $(BuildContext)Delivery/iModelHubNativeTests/ignore_list_qa.txt : $(baseDir)ignore_list_qa.txt
     $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/iModelHubNativeTests/ignore_list_bank.txt : $(baseDir)ignore_list_bank.txt
+    $(LinkFirstDepToFirstTarget)

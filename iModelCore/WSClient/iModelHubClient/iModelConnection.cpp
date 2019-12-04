@@ -37,13 +37,17 @@ iModelInfoCR           iModel,
 WebServices::CredentialsCR credentials,
 WebServices::ClientInfoPtr clientInfo,
 GlobalRequestOptionsPtr    globalRequestOptions,
-IHttpHandlerPtr            customHandler
+IHttpHandlerPtr            customHandler,
+bool                       enableCompression
 ) : m_iModelInfo(iModel), m_customHandler(customHandler), m_globalRequestOptionsPtr(globalRequestOptions)
     {
     auto wsRepositoryClient = WSRepositoryClient::Create(iModel.GetServerURL(), ServerProperties::ServiceVersion(), iModel.GetWSRepositoryName(), clientInfo, nullptr, customHandler);
-    CompressionOptions options;
-    options.EnableRequestCompression(true, 1024);
-    wsRepositoryClient->Config().SetCompressionOptions(options);
+    if (enableCompression)
+        {
+        CompressionOptions options;
+        options.EnableRequestCompression(true, 1024);
+        wsRepositoryClient->Config().SetCompressionOptions(options);
+        }
     wsRepositoryClient->SetCredentials(credentials);
 
     SetRepositoryClient(wsRepositoryClient);
@@ -2057,7 +2061,8 @@ iModelInfoCR     iModel,
 CredentialsCR    credentials,
 ClientInfoPtr    clientInfo,
 GlobalRequestOptionsPtr globalRequestOptions,
-IHttpHandlerPtr  customHandler
+IHttpHandlerPtr  customHandler,
+bool             enableCompression
 )
     {
     const Utf8String methodName = "iModelConnection::Create";
@@ -2079,7 +2084,7 @@ IHttpHandlerPtr  customHandler
         }
 
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    iModelConnectionPtr imodelConnection(new iModelConnection(iModel, credentials, clientInfo, globalRequestOptions, customHandler));
+    iModelConnectionPtr imodelConnection(new iModelConnection(iModel, credentials, clientInfo, globalRequestOptions, customHandler, enableCompression));
 
     double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");

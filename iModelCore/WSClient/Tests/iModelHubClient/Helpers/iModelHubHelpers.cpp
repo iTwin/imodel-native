@@ -49,9 +49,18 @@ namespace iModelHubHelpers
     void CreateClient(ClientPtr& client, CredentialsCR credentials)
         {
         AsyncError error;
-        client = ClientHelper::GetInstance()->SignInWithCredentials(&error, credentials);
+        bool isiModelBank = IntegrationTestsSettings::Instance().IsiModelBank();
+        if (isiModelBank)
+            client = Client::Create(IntegrationTestsSettings::Instance().GetClientInfo(), nullptr, IntegrationTestsSettings::Instance().GetServerUrl().c_str());
+        else
+            client = ClientHelper::GetInstance()->SignInWithCredentials(&error, credentials);
         ASSERT_TRUE(client.IsValid()) << error.GetMessage().c_str();
         ASSERT_TRUE(!Utf8String::IsNullOrEmpty(client->GetServerUrl().c_str()));
+        if (isiModelBank)
+            {
+            client->SetCredentials(credentials);
+            client->DisableCompression();
+            }
         }
 
     /*--------------------------------------------------------------------------------------+

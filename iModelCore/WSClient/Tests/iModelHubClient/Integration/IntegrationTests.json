@@ -3,6 +3,7 @@
   "ProjectId": "52a2af9e-1430-4a09-8b77-f168762863e6",
   "AssetId": "3e8fdfcc-ea5d-44be-8bba-b4a7e3dcfd3f",
   "ServerUrl": "",
+  "iModelBank": false,
   "Users": [
     {
       "Username": "admin_password_please_change",

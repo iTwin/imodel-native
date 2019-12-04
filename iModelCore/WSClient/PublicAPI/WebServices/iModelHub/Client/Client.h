@@ -47,17 +47,19 @@ private:
     IHttpHandlerPtr             m_customHandler;
     iModelAdmin                 m_iModelAdmin;
     GlobalConnectionPtr         m_globalConnectionPtr;
+    bool                        m_enableCompression;
 
     static StatusResult MergeChangeSetsIntoDgnDb(Dgn::DgnDbPtr db, const ChangeSets changeSets, BeFileNameCR filePath,
                                                  Http::Request::ProgressCallbackCR callback = nullptr,
                                                  ICancellationTokenPtr cancellationToken = nullptr);
 
-    Client(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler, Utf8StringCR url) : 
+    Client(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler, Utf8StringCR url) :
         m_globalRequestOptionsPtr(new Hub::GlobalRequestOptions()),
         m_serverUrl(url),
         m_clientInfo(clientInfo),
         m_customHandler(customHandler),
-        m_iModelAdmin(this)
+        m_iModelAdmin(this),
+        m_enableCompression(true)
         {}
 
     StatusResult DownloadBriefcase(iModelConnectionPtr connection, BeFileName filePath, BriefcaseInfoCR briefcaseInfo,
@@ -68,7 +70,7 @@ private:
                                        
     iModelConnectionResult CreateiModelConnection(iModelInfoCR iModelInfo) const
         {
-        return iModelConnection::Create(iModelInfo, m_credentials, m_clientInfo, m_globalRequestOptionsPtr, m_customHandler);
+        return iModelConnection::Create(iModelInfo, m_credentials, m_clientInfo, m_globalRequestOptionsPtr, m_customHandler, m_enableCompression);
         }
     IWSRepositoryClientPtr CreateContextConnection(Utf8StringCR contextId) const;
 
@@ -76,8 +78,6 @@ private:
                                                           bvector<ChangeSetInfoPtr> changeSetsToMerge, 
                                                           LocalBriefcaseFileNameCallback const & fileNameCallBack, 
                                                           Http::Request::ProgressCallback callback, ICancellationTokenPtr cancellationToken) const;
-
-    void SetCredentialsForImodelBank();
     
     iModelTaskPtr GetiModelInternal(Utf8StringCR contextId, WSQuery query, Utf8String methodName, ICancellationTokenPtr cancellationToken = nullptr) const;
 
@@ -88,6 +88,15 @@ public:
     //! @private
     void SetHttpHandler(IHttpHandlerPtr customHandler) {m_customHandler = customHandler;}
 
+    //! Set credentials.
+    //! @param[in] credentials
+    //! @private
+    void SetCredentials(Credentials credentials) { m_credentials = credentials; }
+	
+    //! Disable compression for the created iModelConnections.
+    //! @private
+    void DisableCompression() { m_enableCompression = false; }
+    
     //! Get custom handler.
     //! @return Returns HttpHandler
     //! @private

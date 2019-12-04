@@ -102,17 +102,6 @@ ClientPtr Client::Create(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Sam.Wilson                     06/2018
-//---------------------------------------------------------------------------------------
-void Client::SetCredentialsForImodelBank()
-    {
-    // WIP_IMODEL_BANK Must stub in fake credentials, as there are many places in the Client methods that assert
-    // that m_credentials are valid (even though they aren't actually used).
-    m_credentials.SetUsername("iModelBank");
-    m_credentials.SetPassword("iModelBank");
-    }
-
-//---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
 iModelsTaskPtr Client::GetiModels(Utf8StringCR contextId, ICancellationTokenPtr cancellationToken, bool filterInitialized) const

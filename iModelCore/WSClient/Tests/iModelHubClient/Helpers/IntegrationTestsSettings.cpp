@@ -90,6 +90,7 @@ void IntegrationTestsSettings::ReadSettings(BeFileNameCR settingsFile)
         m_url = UrlProvider::Urls::iModelHubApi.Get();
     m_projectId = settings["ProjectId"].asString();
     m_assetId = settings["AssetId"].asString();
+    m_isiModelBank = settings.isMember("iModelBank") && settings["iModelBank"].asBool();
 
     m_environment = ResolveEnvironment(settings);
     }
@@ -134,6 +135,11 @@ Utf8String IntegrationTestsSettings::GetServerUrl() const
     return m_url;
     }
 
+bool IntegrationTestsSettings::IsiModelBank() const
+    {
+    return m_isiModelBank;
+    }
+
 ClientInfoPtr IntegrationTestsSettings::GetClientInfo() const
     {
     Utf8String deviceId = BeSystemInfo::GetDeviceId();
@@ -148,7 +154,7 @@ ClientInfoPtr IntegrationTestsSettings::GetClientInfo() const
         model.c_str(),
         BeSystemInfo::GetOSName().c_str(),
         BeSystemInfo::GetOSVersion().c_str());
-    
+
     return std::shared_ptr<WebServices::ClientInfo>(new WebServices::ClientInfo("iModelHub.ClientAPITests", BeVersion(1, 0), "05f0c41d-413f-4431-8e66-22999dfe16fa", deviceId, systemDescription, "2485"));
     }
 
