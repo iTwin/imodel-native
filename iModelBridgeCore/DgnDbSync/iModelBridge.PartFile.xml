@@ -137,6 +137,7 @@
         <SubPart PartName="iModelBridgeAssignExeShim"/>
         <SubPart PartName="__iModelBridgeGetAffinityHostForFwk"/>
         <SubPart PartName="Domains" />
+        <SubPart PartName="UpdateClientRegistrationMsm"/>
 
         <Directories DirectoryListName="iModelBridgeAppCommonDirList"/>
         <Directories DirectoryListName="iModelBridgeFwkDirList"/>
@@ -146,6 +147,7 @@
     <ProductDirectoryList ListName="iModelBridgeFwkNugetDirList">
         <ProductDirectory Name="Root"                       Path="native"/>
         <ProductDirectory Name="Root"   LibType="Static"    Path="native"/>
+        <ProductDirectory Name="MergeModules"               Path="MergeModules" RelativeTo="Root"/>
     </ProductDirectoryList>
 
     <!--
@@ -573,5 +575,11 @@
         <ProductDirectory Name="DgnV8Dlls"                                          Path="DgnV8"        RelativeTo="Root"/>
         <ProductDirectory Name="DgnV8DummyUstation"                                 Path="DgnV8"        RelativeTo="Root"/>
     </ProductDirectoryList>
+
+    <Part Name="UpdateClientRegistrationMsm" BentleyBuildMakeFile="iModelBridge/UpdateClientRegistrationMsm.mke">
+        <Bindings>
+            <Files ProductDirectoryName="MergeModules">Delivery/UpdateClientRegistration.msm</Files>
+        </Bindings>
+    </Part>
 
 </BuildContext>

@@ -13,24 +13,29 @@
 -->
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:fw="http://schemas.microsoft.com/wix/FirewallExtension">
     <Fragment Id="DirectoryStructure">
-
         <Upgrade Id="!(wix.wixUpgradeCode)">
             <UpgradeVersion IncludeMaximum="no" Maximum="!(wix.wixProductVersion)" IgnoreRemoveFailure="no" OnlyDetect="no" Property="CIVILBRIDGE_MAJOR_UPGRADE"/>
         </Upgrade>
-      <DirectoryRef Id="INSTALLDIR">
-        <Directory Id="CivilBridgeRegistryEntriesDir">
-            <Component Id="CivilBridgeRegistryEntries" Guid="{98813C07-7C4A-4152-AC7B-F1517B333274}" Win64="$(var.COMPONENT_WIN64)" Feature="DefaultFeature">
-              <RegistryKey Root="HKLM" Key="Software\Bentley\iModelBridges\Civil" >
-                <RegistryValue Name="AffinityLibraryPath" Type="string" Value="[INSTALLDIR]ORDBridge.dll"/>
-                <RegistryValue Name="BridgeAssetsDir" Type="string" Value="[INSTALLDIR]Assets"/>
-                <RegistryValue Name="BridgeLibraryPath" Type="string" Value="[INSTALLDIR]ORDBridge.dll" KeyPath="yes"/>
-                <RegistryValue Name="iModelFrameWorkExe" Type="string" Value="[INSTALLDIR]iModelBridgeFwk.exe"/>
-                <RegistryValue Name="IsPowerPlatformBased" Type="string" Value="false"/>
-                <RegistryValue Name="PublishORDToBimExe" Type="string" Value="[INSTALLDIR]PublishORDToBIM.exe"/>
-              </RegistryKey>
-            </Component>
-        </Directory>
-      </DirectoryRef>
+        <DirectoryRef Id="INSTALLDIR">
+            <Directory Id="CivilBridgeRegistryEntriesDir">
+                <Component Id="CivilBridgeRegistryEntries" Guid="{98813C07-7C4A-4152-AC7B-F1517B333274}" Win64="$(var.COMPONENT_WIN64)" Feature="DefaultFeature">
+                    <RegistryKey Root="HKLM" Key="Software\Bentley\iModelBridges\Civil" >
+                        <RegistryValue Name="AffinityLibraryPath" Type="string" Value="[INSTALLDIR]ORDBridge.dll"/>
+                        <RegistryValue Name="BridgeAssetsDir" Type="string" Value="[INSTALLDIR]Assets"/>
+                        <RegistryValue Name="BridgeLibraryPath" Type="string" Value="[INSTALLDIR]ORDBridge.dll" KeyPath="yes"/>
+                        <RegistryValue Name="iModelFrameWorkExe" Type="string" Value="[INSTALLDIR]iModelBridgeFwk.exe"/>
+                        <RegistryValue Name="IsPowerPlatformBased" Type="string" Value="false"/>
+                        <RegistryValue Name="PublishORDToBimExe" Type="string" Value="[INSTALLDIR]PublishORDToBIM.exe"/>
+                    </RegistryKey>
+                </Component>
+            </Directory>
+            <Merge Id="UpdateClientRegistrationMsm" DiskId="1" Language="0" FileCompression="yes" SourceFile="$(env.SRCROOT)imodel02\iModelBridgeCore\DgnDbSync\iModelBridge\UpdateClientRegistration.msm">
+                <ConfigurationData Name="REG_RETARGET_UPDATE_CLIENT_KEY" Value="SOFTWARE\Bentley\Installed_Products\UpdateClient\!(wix.wixUpgradeCode)"/>
+                <ConfigurationData Name="REG_SERVICE_PACK_LEVEL" Value="#1"/>
+            </Merge>
+        </DirectoryRef>
+        <Feature Id="UpdateClientRegistrationMsm" Title="Update Client Registration Module" AllowAdvertise="no" Display="hidden" Level="1">
+            <MergeRef Id="UpdateClientRegistrationMsm"/>
+        </Feature>
     </Fragment>
-
 </Wix>

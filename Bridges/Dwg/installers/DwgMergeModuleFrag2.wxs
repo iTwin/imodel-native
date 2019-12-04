@@ -17,12 +17,16 @@
             </Directory>
         </DirectoryRef>
 
-        <!--<DirectoryRef Id="installdir">
-            <Merge Id="UpdateClientRegistrationMsm" DiskId="1" Language="0" FileCompression="yes" SourceFile="UpdateClientRegistration.msm">
+        <DirectoryRef Id="INSTALLDIR">
+            <Merge Id="UpdateClientRegistrationMsm" DiskId="1" Language="0" FileCompression="yes" SourceFile="$(env.SRCROOT)imodel02\iModelBridgeCore\DgnDbSync\iModelBridge\UpdateClientRegistration.msm">
                 <ConfigurationData Name="REG_RETARGET_UPDATE_CLIENT_KEY" Value="SOFTWARE\Bentley\Installed_Products\UpdateClient\!(wix.wixUpgradeCode)"/>
                 <ConfigurationData Name="REG_SERVICE_PACK_LEVEL" Value="#1"/>
             </Merge>
-        </DirectoryRef>-->
+        </DirectoryRef>
+
+        <Feature Id="UpdateClientRegistrationMsm" Title="Update Client Registration Module" AllowAdvertise="no" Display="hidden" Level="1">
+            <MergeRef Id="UpdateClientRegistrationMsm"/>
+        </Feature>
 
         <!--
         wixShortManufacturerName    = Bentley           ==> Separating Bentley products from other company products.
