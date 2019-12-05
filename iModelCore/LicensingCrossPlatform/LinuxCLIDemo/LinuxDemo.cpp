@@ -343,13 +343,13 @@ void ProcessClientCommand(vector<string> input)
         
         if (m_client != nullptr)
             {
-            BeFileName path(input.at(2));
+            BeFileName path(input.at(2).c_str());
             Import(path);
             return;
             }
         else if (m_accessKeyClient != nullptr)
             {
-            BeFileName path(input.at(2));
+            BeFileName path(input.at(2).c_str());
             Import(path);
             return;
             }
@@ -1293,11 +1293,11 @@ void SaasMarkFeature()
 //import checkout from provided path
 void Import(BeFileNameCR filepath)
     {
-    if (m_client != null)
+    if (m_client != nullptr)
         {
             m_client->ImportCheckout(filepath);
         }
-    if (m_accessKeyClient != null)
+    if (m_accessKeyClient != nullptr)
         {
             m_accessKeyClient->ImportCheckout(filepath);
         }
