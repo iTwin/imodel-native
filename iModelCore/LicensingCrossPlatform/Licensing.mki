@@ -82,6 +82,8 @@ $(o)PolicyProvider$(oext)            : $(SourceDir)Providers/PolicyProvider.cpp 
 
 $(o)UlasProvider$(oext)              : $(SourceDir)Providers/UlasProvider.cpp $(Headers) ${MultiCompileDepends}
 
+$(o)EntitlementProvider$(oext)       : $(SourceDir)Providers/EntitlementProvider.cpp $(Headers) ${MultiCompileDepends}
+
 $(o)FeatureEvent$(oext)             : $(SourceDir)Utils/FeatureEvent.cpp $(Headers) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki

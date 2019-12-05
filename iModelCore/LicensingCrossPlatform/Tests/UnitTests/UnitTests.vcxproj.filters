@@ -25,6 +25,8 @@
     <ClCompile Include="NonPublished\SaasClientTests.cpp" />
     <ClCompile Include="NonPublished\TestsHelper.cpp" />
     <ClCompile Include="NonPublished\UlasProviderTests.cpp" />
+    <ClCompile Include="NonPublished\Mocks\EntitlementProviderMock.cpp" />
+    <ClCompile Include="NonPublished\EntitlementProviderTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="NonPublished\Mocks\AuthHandlerProviderMock.h" />
@@ -51,6 +53,8 @@
     <ClInclude Include="NonPublished\SaasClientTests.h" />
     <ClInclude Include="NonPublished\TestsHelper.h" />
     <ClInclude Include="NonPublished\UlasProviderTests.h" />
+    <ClInclude Include="NonPublished\Mocks\EntitlementProviderMock.h" />
+    <ClInclude Include="NonPublished\EntitlementProviderTests.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="BuildTests.mke" />

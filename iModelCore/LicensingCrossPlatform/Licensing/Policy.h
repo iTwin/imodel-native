@@ -100,7 +100,6 @@ public:
         Utf8String m_MachineSID;
         Utf8String m_AccessKey;
         Utf8String m_UserId;
-        Utf8String m_CheckedOutDate;
         std::list<std::shared_ptr<RequestedSecurable>> m_RequestedSecurables;
         Utf8String m_MachineName;
         Utf8String m_ClientDateTime;
@@ -114,7 +113,6 @@ public:
         Utf8String GetMachineSID() const { return m_MachineSID; };
         Utf8String GetAccessKey() const { return m_AccessKey; };
         Utf8String GetUserId() const { return m_UserId; };
-        Utf8String GetCheckedOutDate() const { return m_CheckedOutDate; };
         std::list<std::shared_ptr<RequestedSecurable>> GetRequestedSecurables() const { return m_RequestedSecurables; };
         Utf8String GetMachineName() const { return m_MachineName; };
         Utf8String GetClientDateTime() const { return m_ClientDateTime; };
@@ -189,7 +187,7 @@ public:
         Utf8String GetUltimateId() const { return m_UltimadeId; };
         Utf8String GetUltimateCountryId() const { return m_UltimateCountryId; };
         };
-    // END	
+    // END  
 
 private:
     Json::Value m_json;

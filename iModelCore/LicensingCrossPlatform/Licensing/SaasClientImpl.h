@@ -14,6 +14,7 @@
 
 #include "Providers/IBuddiProvider.h"
 #include "Providers/IUlasProvider.h"
+#include "Providers/IEntitlementProvider.h"
 
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
@@ -30,17 +31,30 @@ protected:
     int m_productId;
     Utf8String m_featureString;
     IUlasProviderPtr m_ulasProvider;
+    IEntitlementProviderPtr m_entitlementProvider;
 
 public:
     LICENSING_EXPORT SaasClientImpl
         (
         int productId,
         Utf8StringCR featureString,
-        IUlasProviderPtr ulasProvider
+        IUlasProviderPtr ulasProvider,
+        IEntitlementProviderPtr entitlementProvider
+        );
+
+    LICENSING_EXPORT folly::Future<TrackUsageStatus> TrackUsage
+        (
+        Utf8StringCR accessToken,
+        BeVersionCR version,
+        Utf8StringCR projectId,
+        AuthType authType,
+        std::vector<int> productIds,
+        Utf8StringCR deviceId,
+        Utf8StringCR correlationId
         );
 
     LICENSING_EXPORT folly::Future<BentleyStatus> TrackUsage
-        (
+    (
         Utf8StringCR accessToken,
         BeVersionCR version,
         Utf8StringCR projectId,
@@ -49,7 +63,7 @@ public:
         Utf8StringCR deviceId,
         UsageType usageType,
         Utf8StringCR correlationId
-        );
+    );
 
     LICENSING_EXPORT folly::Future<BentleyStatus> MarkFeature
         (
@@ -59,6 +73,17 @@ public:
         int productId,
         Utf8StringCR deviceId,
         UsageType usageType,
+        Utf8StringCR correlationId
+        );
+
+    LICENSING_EXPORT folly::Future<EntitlementResult> CheckEntitlement
+        (
+        Utf8StringCR accessToken,
+        BeVersionCR version,
+        Utf8StringCR projectId,
+        AuthType authType,
+        int productId,
+        Utf8StringCR deviceId,
         Utf8StringCR correlationId
         );
     };

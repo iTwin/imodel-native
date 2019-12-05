@@ -178,7 +178,6 @@ Policy::RequestData::RequestData(const Json::Value& json)
     m_MachineSID = json["MachineSID"].asString();
     m_AccessKey = json["AccessKey"].asString();
     m_UserId = json["UserId"].asString();
-    m_CheckedOutDate = json["CheckedOutDate"].asString();
     m_RequestedSecurables = CreateRequestedSecurables(json["RequestedSecurables"]);
     m_MachineName = json["MachineName"].asString();
     m_ClientDateTime = json["ClientDateTime"].asString();

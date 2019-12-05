@@ -12,11 +12,13 @@
     <ClCompile Include="NonPublished\ClientTests.cpp" />
     <ClCompile Include="NonPublished\DummyPolicyHelper.cpp" />
     <ClCompile Include="NonPublished\DummyUserInfoHelper.cpp" />
+    <ClCompile Include="NonPublished\EntitlementProviderTests.cpp" />
     <ClCompile Include="NonPublished\GenerateSIDTests.cpp" />
     <ClCompile Include="NonPublished\JsonHelper.cpp" />
     <ClCompile Include="NonPublished\LicensingDbTests.cpp" />
     <ClCompile Include="NonPublished\Mocks\AuthHandlerProviderMock.cpp" />
     <ClCompile Include="NonPublished\Mocks\BuddiProviderMock.cpp" />
+    <ClCompile Include="NonPublished\Mocks\EntitlementProviderMock.cpp" />
     <ClCompile Include="NonPublished\Mocks\LicensingDbMock.cpp" />
     <ClCompile Include="NonPublished\Mocks\PolicyProviderMock.cpp" />
     <ClCompile Include="NonPublished\Mocks\UlasProviderMock.cpp" />
@@ -38,11 +40,13 @@
     <ClInclude Include="NonPublished\ClientTests.h" />
     <ClInclude Include="NonPublished\DummyPolicyHelper.h" />
     <ClInclude Include="NonPublished\DummyUserInfoHelper.h" />
+    <ClInclude Include="NonPublished\EntitlementProviderTests.h" />
     <ClInclude Include="NonPublished\GenerateSIDTests.h" />
     <ClInclude Include="NonPublished\JsonHelper.h" />
     <ClInclude Include="NonPublished\LicensingDbTests.h" />
     <ClInclude Include="NonPublished\Mocks\AuthHandlerProviderMock.h" />
     <ClInclude Include="NonPublished\Mocks\BuddiProviderMock.h" />
+    <ClInclude Include="NonPublished\Mocks\EntitlementProviderMock.h" />
     <ClInclude Include="NonPublished\Mocks\LicensingDbMock.h" />
     <ClInclude Include="NonPublished\Mocks\PolicyProviderMock.h" />
     <ClInclude Include="NonPublished\Mocks\UlasProviderMock.h" />

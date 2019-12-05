@@ -68,7 +68,6 @@ TEST_F(PolicyTests, Validate_ProperRead)
 	ASSERT_TRUE(requestData->GetMachineSID().Equals("zEc0kbXcMkPBXSjeJDU+pE54n/I="));
 	ASSERT_TRUE(std::string(requestData->GetAccessKey().c_str()).empty());
 	ASSERT_TRUE(requestData->GetUserId().Equals("112dde45-f85e-41e6-a012-28f5bcd44ce1"));
-	ASSERT_EQ(requestData->GetCheckedOutDate(), ""); // no time
 	auto requestedSecurables = requestData->GetRequestedSecurables();
 	ASSERT_EQ(requestedSecurables.size(), 1);
 	ASSERT_EQ(requestedSecurables.front()->GetProductId(), 1000);

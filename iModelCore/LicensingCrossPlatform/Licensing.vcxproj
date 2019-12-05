@@ -10,6 +10,7 @@
     <ClCompile Include="Licensing\AccessKeyClient.cpp" />
     <ClCompile Include="Licensing\ApplicationInfo.cpp" />
     <ClCompile Include="Licensing\Client.cpp" />
+    <ClCompile Include="Licensing\Providers\EntitlementProvider.cpp" />
     <ClCompile Include="Licensing\SaasClient.cpp" />
     <ClCompile Include="Licensing\SaasClientImpl.cpp" />
     <ClCompile Include="Licensing\ClientImpl.cpp" />
@@ -31,6 +32,11 @@
     <ClCompile Include="Licensing\Utils\UrlSafeBase64Utilities.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Licensing\Providers\EntitlementProvider.h" />
+    <ClInclude Include="Licensing\Providers\IEntitlementProvider.h" />
+    <ClInclude Include="Licensing\Providers\WebEntitlementResult.h" />
+    <ClInclude Include="Licensing\TrackUsageStatus.h" />
+    <ClInclude Include="PublicAPI\Licensing\EntitlementResult.h" />
     <ClInclude Include="Licensing\SaasClientImpl.h" />
     <ClInclude Include="Licensing\ClientImpl.h" />
     <ClInclude Include="Licensing\AccessKeyClientImpl.h" />

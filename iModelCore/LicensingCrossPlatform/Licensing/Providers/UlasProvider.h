@@ -6,11 +6,18 @@
 
 #include <Licensing/Licensing.h>
 #include <Licensing/LicenseStatus.h>
+#include <Licensing/UsageType.h>
 
 #include "IBuddiProvider.h"
 #include "IUlasProvider.h"
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
+
+inline UsageType LicenseStatusToUsageType(LicenseStatus licenseStatus)
+    {
+    auto usageType = licenseStatus == LicenseStatus::Trial ? UsageType::Trial : UsageType::Production;
+    return usageType;
+    }
 
 struct UlasProvider : IUlasProvider
     {
@@ -62,8 +69,24 @@ public:
         Utf8StringCR projectId,
         UsageType usageType,
         Utf8StringCR correlationId,
-        AuthType authType
+        AuthType authType,
+        Utf8StringCR principalId
         );
+
+    LICENSING_EXPORT folly::Future<BentleyStatus> RealtimeTrackUsage
+    (
+        Utf8StringCR accessToken,
+        int productId,
+        Utf8StringCR featureString,
+        Utf8StringCR deviceId,
+        BeVersionCR version,
+        Utf8StringCR projectId,
+        LicenseStatus licenseStatus,
+        Utf8StringCR correlationId,
+        AuthType authType,
+        Utf8StringCR principalId
+    );
+
     LICENSING_EXPORT folly::Future<BentleyStatus> RealtimeMarkFeature
         (
         Utf8StringCR accessToken,

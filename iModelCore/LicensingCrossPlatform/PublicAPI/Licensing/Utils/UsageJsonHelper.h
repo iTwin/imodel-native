@@ -20,13 +20,13 @@ struct UsageJsonHelper
 private:
 
 public:
-    static Utf8String CreateJsonRandomGuids(Utf8StringCR deviceID, Utf8StringCR featureString, BeVersionCR version, Utf8StringCR projectID, int productId, UsageType usageType, Utf8StringCR correlationId)
+    static Utf8String CreateJsonRandomGuids(Utf8StringCR deviceID, Utf8StringCR featureString, BeVersionCR version, Utf8StringCR projectID, int productId, UsageType usageType, Utf8StringCR correlationId, Utf8StringCR principalId)
         {
+        // TODO use proper json library
         Utf8String jsonString;
 
         jsonString += "{";
         //stream << "\"ultID\": " << 1234 << ","; // ultimate id [NUMBER] not required
-        //stream << "\"pid\": " << 1234 << ","; // principal id (same as IMS id?) [GUID] not required
         //stream << "\"imsID\": " << 1234 << ","; // ims id [GUID] not required
         jsonString += "\"hID\": \"" + deviceID + "\","; // client's machine name excluding domain info [STRING]
         //stream << "\"uID\": " << 1234 << ","; // client's login name excluding domain information (same is IMS id?) [STRING] not required
@@ -44,6 +44,11 @@ public:
         jsonString += "\"evTimeZ\": \"" + DateHelper::GetCurrentTime() + "\","; // event time (current UTC time) [STRING]
         jsonString += "\"lVer\": 1,"; // version of scheme of this log [NUMBER]
         jsonString += "\"lSrc\": \"RealTime\","; // source of usage log entry: RealTime, Offline, Checkout [STRING]
+
+        if (principalId != "")
+            {
+            jsonString += "\"pid\": \"" + principalId + "\",";
+            }
 
         Utf8String usageTypeString;
         switch (usageType)

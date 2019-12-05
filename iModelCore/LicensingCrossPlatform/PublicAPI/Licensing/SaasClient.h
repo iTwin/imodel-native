@@ -6,6 +6,7 @@
 //__PUBLISH_SECTION_START__
 
 #include <Licensing/Licensing.h>
+#include <Licensing/EntitlementResult.h>
 
 #include "LicenseStatus.h"
 
@@ -40,11 +41,11 @@ public:
     //! @param[in] featureString Feature string of the application to track usage of
     //! @param[in] customHttpHandler CustomHttpHandler, defaults to a nullptr
     LICENSING_EXPORT static SaasClientPtr Create
-        (
+    (
         int productId = 0,
         Utf8StringCR featureString = "",
         Http::IHttpHandlerPtr customHttpHandler = nullptr
-        );
+    );
 
     //! Send realtime usage
     //! @param[in] accessToken OIDC or SAML token of user to track usage against. OIDC is preferred
@@ -52,7 +53,7 @@ public:
     //! @param[in] projectId projectId of this usage
     //! @param[in] authType optional - specify whether the accessToken is OIDC or SAML. Defaults to OIDC which is preferred
     //! @param[in] productId optional - specify the productId for this usage
-    //! @param[in] deviceId optional - specify the deviceId for this usage
+    //! @param[in] deviceId optional - specify the deviceId for this usage, required for multi-product id tracking
     //! @param[in] usageType optional - specify the usage type for this usage
     //! @param[in] correlationId optional - specify the correlationId for this usage, must be a GUID
     LICENSING_EXPORT folly::Future<BentleyStatus> TrackUsage
@@ -83,6 +84,25 @@ public:
         int productId = -1,
         Utf8StringCR deviceId = "",
         UsageType usageType = UsageType::Production,
+        Utf8StringCR correlationId = ""
+        );
+
+    //! Check entitlement status for a user, important to cache result recommended for session or 4 hours.
+    //! @param[in] accessToken OIDC or SAML token of user to check entitlement of. OIDC is preferred
+    //! @param[in] version - the version of the product to check entitlements of
+    //! @param[in] projectId projectId to consider when checking entitlements (overrides from constructor)
+    //! @param[in] authType optional - specify whether the accessToken is OIDC or SAML. Defaults to OIDC which is preferred
+    //! @param[in] productId optional - specify the productId to check the entitlement for (overrides from constructor if provided)
+    //! @param[in] deviceId optional - specify the deviceId (overrides from constructor)
+    //! @param[in] correlationId optional - specify the correlationId that will be used on downstream requests
+    LICENSING_EXPORT folly::Future<EntitlementResult> CheckEntitlement
+        (
+        Utf8StringCR accessToken,
+        BeVersionCR version,
+        Utf8StringCR projectId,
+        AuthType authType = AuthType::OIDC,
+        int productId = -1,
+        Utf8StringCR deviceId = "",
         Utf8StringCR correlationId = ""
         );
     };

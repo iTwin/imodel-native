@@ -26,6 +26,7 @@
 #include <WebServices/Connect/ConnectSignInManager.h>
 
 #define TEST_PRODUCT_ID         "2545"
+#define TEST_DEVICE_ID          "ATPDeviceID"
 
 USING_NAMESPACE_BENTLEY_LICENSING
 USING_NAMESPACE_BENTLEY_LICENSING_UNIT_TESTS
@@ -34,13 +35,14 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_SQLITE
 
 
-SaasClientImplPtr CreateTestSaasClient(IUlasProviderPtr ulasProvider, int productId = std::atoi(TEST_PRODUCT_ID))
+SaasClientImplPtr CreateTestSaasClient(IUlasProviderPtr ulasProvider, IEntitlementProviderPtr entitlementProvider, int productId = std::atoi(TEST_PRODUCT_ID))
     {
     return std::make_shared<SaasClientImpl>
         (
         productId,
         "",
-        ulasProvider
+        ulasProvider,
+        entitlementProvider
         );
     }
 
@@ -48,7 +50,8 @@ SaasClientImplPtr CreateTestSaasClient(IUlasProviderPtr ulasProvider, int produc
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 SaasClientTests::SaasClientTests() :
-    m_ulasProviderMock(std::make_shared<UlasProviderMock>())
+    m_ulasProviderMock(std::make_shared<UlasProviderMock>()),
+    m_entitlementProviderMock(std::make_shared<EntitlementProviderMock>())
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -66,6 +69,16 @@ std::shared_ptr<UlasProviderMock> SaasClientTests::GetUlasProviderMockPtr() cons
     {
     return m_ulasProviderMock;
     }
+
+EntitlementProviderMock& SaasClientTests::GetEntitlementProviderMock() const
+{
+    return *m_entitlementProviderMock;
+}
+
+std::shared_ptr<EntitlementProviderMock> SaasClientTests::GetEntitlementProviderMockPtr() const
+{
+    return m_entitlementProviderMock;
+}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -117,7 +130,7 @@ TEST_F(SaasClientTests, JsonExample)
 
 TEST_F(SaasClientTests, SaasClientTrackUsage_Success)
     {
-    auto client = CreateTestSaasClient(GetUlasProviderMockPtr());
+    auto client = CreateTestSaasClient(GetUlasProviderMockPtr(), GetEntitlementProviderMockPtr());
 
     Utf8String accessToken = "TestToken";
     const auto version = BeVersion(1, 0);
@@ -126,15 +139,38 @@ TEST_F(SaasClientTests, SaasClientTrackUsage_Success)
     BentleyStatus status = BentleyStatus::SUCCESS;
 
     GetUlasProviderMock().MockRealtimeTrackUsage(BentleyStatus::SUCCESS);
+    WebEntitlementResult mocked{ std::atoi(TEST_PRODUCT_ID), LicenseStatus::Ok, "00000000-0000-0000-0000-000000000000" };
+    GetEntitlementProviderMock().MockV4Result(mocked);
 
     Utf8String projectId = "00000000-0000-0000-0000-000000000000";
-    EXPECT_SUCCESS(client->TrackUsage(accessToken, version, projectId, AuthType::OIDC, std::atoi(TEST_PRODUCT_ID), "", UsageType::Production, "").get());
+    std::vector<int> pList;
+    pList.push_back((std::atoi(TEST_PRODUCT_ID)));
+    EXPECT_LICENSE_SUCCESS(client->TrackUsage(accessToken, version, projectId, AuthType::OIDC, pList, TEST_DEVICE_ID, "").get());
     EXPECT_EQ(1, GetUlasProviderMock().RealtimeTrackUsageCalls());
     }
 
+TEST_F(SaasClientTests, SaasClientTrackUsage_Success_Original)
+{
+    auto client = CreateTestSaasClient(GetUlasProviderMockPtr(), GetEntitlementProviderMockPtr());
+
+    Utf8String accessToken = "TestToken";
+    const auto version = BeVersion(1, 0);
+    FeatureEvent featureEvent = FeatureEvent("TestFeatureId", version);
+
+    BentleyStatus status = BentleyStatus::SUCCESS;
+
+    GetUlasProviderMock().MockRealtimeTrackUsage(BentleyStatus::SUCCESS);
+    //GetEntitlementProviderMock().MockV4Result(LicenseStatus::Ok);
+
+    Utf8String projectId = "00000000-0000-0000-0000-000000000000";
+ 
+    EXPECT_SUCCESS(client->TrackUsage(accessToken, version, projectId, AuthType::OIDC, std::atoi(TEST_PRODUCT_ID), "", UsageType::Production, "").get());
+    EXPECT_EQ(1, GetUlasProviderMock().RealtimeTrackUsageCalls());
+}
+
 TEST_F(SaasClientTests, SaasClientMarkFeatureNoDataNoProject_Success)
     {
-    auto client = CreateTestSaasClient(GetUlasProviderMockPtr());
+    auto client = CreateTestSaasClient(GetUlasProviderMockPtr(), GetEntitlementProviderMockPtr());
 
     Utf8String accessToken = "TestToken";
     const auto version = BeVersion(1, 0);

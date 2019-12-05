@@ -7,13 +7,15 @@
 #include "TestsHelper.h"
 
 #include "Mocks/UlasProviderMock.h"
+#include "Mocks/EntitlementProviderMock.h"
 
 USING_NAMESPACE_BENTLEY_LICENSING_UNIT_TESTS
 
 class SaasClientTests : public ::testing::Test
     {
     private:
-        std::shared_ptr<UlasProviderMock>        m_ulasProviderMock;
+        std::shared_ptr<UlasProviderMock>          m_ulasProviderMock;
+        std::shared_ptr<EntitlementProviderMock>   m_entitlementProviderMock;
 
     public:
         SaasClientTests();
@@ -21,6 +23,8 @@ class SaasClientTests : public ::testing::Test
 
         UlasProviderMock&                        GetUlasProviderMock() const;
         std::shared_ptr<UlasProviderMock>        GetUlasProviderMockPtr() const;
+        EntitlementProviderMock&                 GetEntitlementProviderMock() const;
+        std::shared_ptr<EntitlementProviderMock> GetEntitlementProviderMockPtr() const;
 
         void TearDown();
     };

@@ -19,6 +19,7 @@
 
 #include "../../../Licensing/Providers/BuddiProvider.h"
 #include "../../../Licensing/Providers/UlasProvider.h"
+#include "../../../Licensing/Providers/EntitlementProvider.h"
 
 #include <BeHttp/HttpClient.h>
 #include <BeHttp/ProxyHttpHandler.h>
@@ -33,8 +34,10 @@
 #include  <OidcNativeClient/OidcNative.h>
 
 #define TEST_PRODUCT_ID      "2545"
+#define TEST_PRODUCT_ID2     "1000"
 #define OIDC_CLIENT_ID "cplc-integration-tests-guwkmv6sxwn4ro05bvei7l1r2"
 #define OIDC_SCOPES "openid email profile entitlement-policy-service-2576 ulas-log-location-2728 ulas-realtime-log-posting-2733"
+#define TEST_DEVICE_ID "ATPDeviceID"
 
 USING_NAMESPACE_BENTLEY_LICENSING
 USING_NAMESPACE_BENTLEY_LICENSING_INTEGRATION_TESTS
@@ -87,7 +90,6 @@ SaasClientPtr SaasClientIntegrationTests::CreateTestSaasClient(int productId) co
     UrlProvider::Initialize(UrlProvider::Environment::Qa, UrlProvider::DefaultTimeout, localState);
 
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-
     return SaasClient::Create
         (
         productId,
@@ -104,14 +106,15 @@ SaasClientImplPtr SaasClientIntegrationTests::CreateTestSaasClientImpl(int produ
 
     IBuddiProviderPtr buddiProvider = std::make_shared<BuddiProvider>();
     IUlasProviderPtr ulasProvider = std::make_shared<UlasProvider>(buddiProvider, proxy);
+    IEntitlementProviderPtr entitlementProvider = std::make_shared<EntitlementProvider>(buddiProvider, proxy);
 
     //auto oidcManager = OidcSignInManager();
-
     return std::make_shared<SaasClientImpl>
         (
         productId,
         "",
-        ulasProvider
+        ulasProvider,
+        entitlementProvider
         );
     }
 
@@ -208,9 +211,52 @@ TEST_F(SaasClientIntegrationTests, TrackUsage_Success)
 
     auto version = BeVersion(1, 0);
     Utf8String projectId = "00000000-0000-0000-0000-000000000000";
+    std::vector<int> pList;
+    pList.push_back(std::atoi(TEST_PRODUCT_ID));
+    EXPECT_EQ(static_cast<int>(client->TrackUsage(oidcToken, version, projectId, AuthType::OIDC, pList, TEST_DEVICE_ID, "").get()), static_cast<int>(TrackUsageStatus::Success));
+    }
+
+TEST_F(SaasClientIntegrationTests, TrackUsage_BadParam_NoDeviceIDEmptyString)
+{
+    auto client = CreateTestSaasClientImpl(std::atoi(TEST_PRODUCT_ID));
+
+    auto oidcToken = OIDCNative::IssueToken("qa2_devuser2@mailinator.com", "bentley", UrlProvider::Urls::IMSOpenID.Get().c_str(), OIDC_CLIENT_ID, OIDC_SCOPES);
+    LOG.debugv("token issued: %s", Utf8CP(oidcToken));
+
+    auto version = BeVersion(1, 0);
+    Utf8String projectId = "00000000-0000-0000-0000-000000000000";
+    std::vector<int> pList;
+    pList.push_back(std::atoi(TEST_PRODUCT_ID));    
+    EXPECT_EQ(static_cast<int>(client->TrackUsage(oidcToken, version, projectId, AuthType::OIDC, pList, "", "").get()), static_cast<int>(TrackUsageStatus::BadParam));
+}
+
+TEST_F(SaasClientIntegrationTests, TrackUsage_Success_MultiProduct)
+{
+    auto client = CreateTestSaasClientImpl(std::atoi(TEST_PRODUCT_ID));
+
+    auto oidcToken = OIDCNative::IssueToken("qa2_devuser2@mailinator.com", "bentley", UrlProvider::Urls::IMSOpenID.Get().c_str(), OIDC_CLIENT_ID, OIDC_SCOPES);
+    LOG.debugv("token issued: %s", Utf8CP(oidcToken));
+
+    auto version = BeVersion(1, 0);
+    Utf8String projectId = "00000000-0000-0000-0000-000000000000";
+    std::vector<int> pList;
+    pList.push_back(std::atoi(TEST_PRODUCT_ID));
+    pList.push_back(std::atoi(TEST_PRODUCT_ID2));
+    EXPECT_EQ(static_cast<int>(client->TrackUsage(oidcToken, version, projectId, AuthType::OIDC, pList, TEST_DEVICE_ID, "").get()), static_cast<int>(TrackUsageStatus::Success));
+}
+
+TEST_F(SaasClientIntegrationTests, TrackUsage_Success_Original)
+{
+    auto client = CreateTestSaasClientImpl(std::atoi(TEST_PRODUCT_ID));
+
+    auto oidcToken = OIDCNative::IssueToken("qa2_devuser2@mailinator.com", "bentley", UrlProvider::Urls::IMSOpenID.Get().c_str(), OIDC_CLIENT_ID, OIDC_SCOPES);
+    LOG.debugv("token issued: %s", Utf8CP(oidcToken));
+
+    auto version = BeVersion(1, 0);
+    Utf8String projectId = "00000000-0000-0000-0000-000000000000";
 
     EXPECT_NE(static_cast<int>(client->TrackUsage(oidcToken, version, projectId, AuthType::OIDC, std::atoi(TEST_PRODUCT_ID), "", UsageType::Production, "").get()), static_cast<int>(BentleyStatus::ERROR));
-    }
+}
 
 TEST_F(SaasClientIntegrationTests, MarkFeature_Success)
     {
@@ -233,3 +279,21 @@ TEST_F(SaasClientIntegrationTests, MarkFeature_Success)
 
     EXPECT_NE(static_cast<int>(client->MarkFeature(oidcToken, featureEvent, AuthType::OIDC, std::atoi(TEST_PRODUCT_ID), "", UsageType::Production, "").get()), static_cast<int>(BentleyStatus::ERROR));
     }
+
+TEST_F(SaasClientIntegrationTests, CheckEntitlement_Success)
+    {
+    auto productId = std::atoi(TEST_PRODUCT_ID);
+    auto client = CreateTestSaasClientImpl(productId);
+    auto expectedPrincipalId = "30450d13-4815-403e-a335-7247a4cf59e0";
+    auto oidcToken = OIDCNative::IssueToken("qa2_devuser2@mailinator.com", "bentley", UrlProvider::Urls::IMSOpenID.Get().c_str(), OIDC_CLIENT_ID, OIDC_SCOPES);
+    LOG.debugv("token issued: %s", Utf8CP(oidcToken));
+
+    auto version = BeVersion(1, 0);
+    Utf8String projectId = "00000000-0000-0000-0000-000000000000";
+    auto actual = client->CheckEntitlement(oidcToken, version, projectId, AuthType::OIDC, productId, TEST_DEVICE_ID, "").get();
+    EXPECT_TRUE(actual.allowed);
+    EXPECT_EQ(UsageType::Production, actual.usageType);
+    EXPECT_STRCASEEQ(expectedPrincipalId, actual.principalId.c_str()); // case ignore
+    }
+
+// TODO add no license case

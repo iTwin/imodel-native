@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "../../../Licensing/TrackUsageStatus.h"
 #include <Bentley/BeTest.h>
 #include <Licensing/Licensing.h>
 #include <BeHttp/HttpClient.h>
@@ -13,6 +14,7 @@
 #define END_BENTLEY_LICENSING_UNIT_TESTS_NAMESPACE   } END_BENTLEY_LICENSING_NAMESPACE
 #define USING_NAMESPACE_BENTLEY_LICENSING_UNIT_TESTS using namespace BentleyApi::Licensing::UnitTests;
 
+#define EXPECT_LICENSE_SUCCESS(EXPR) EXPECT_EQ(TrackUsageStatus::Success, (EXPR))
 #define EXPECT_SUCCESS(EXPR) EXPECT_EQ(SUCCESS, (EXPR))
 #define EXPECT_ERROR(EXPR) EXPECT_EQ(ERROR, (EXPR))
 

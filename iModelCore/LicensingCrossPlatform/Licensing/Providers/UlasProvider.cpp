@@ -245,7 +245,19 @@ folly::Future<folly::Unit> UlasProvider::SendFeatureLogs(ApplicationInfoPtr appl
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> UlasProvider::RealtimeTrackUsage(Utf8StringCR accessToken, int productId, Utf8StringCR featureString, Utf8StringCR deviceId, BeVersionCR version, Utf8StringCR projectId, UsageType usageType, Utf8StringCR correlationId, AuthType authType)
+folly::Future<BentleyStatus> UlasProvider::RealtimeTrackUsage
+    (
+    Utf8StringCR accessToken,
+    int productId,
+    Utf8StringCR featureString,
+    Utf8StringCR deviceId,
+    BeVersionCR version,
+    Utf8StringCR projectId,
+    UsageType usageType,
+    Utf8StringCR correlationId,
+    AuthType authType,
+    Utf8StringCR principalId
+    )
     {
     LOG.debug("UlasProvider::RealtimeTrackUsage");
     // Send real time usage
@@ -275,7 +287,8 @@ folly::Future<BentleyStatus> UlasProvider::RealtimeTrackUsage(Utf8StringCR acces
         projectId,
         productId,
         usageType,
-        correlationId
+        correlationId,
+        principalId
         );
 
     uploadRequest.SetRequestBody(HttpStringBody::Create(jsonBody));
@@ -297,7 +310,38 @@ folly::Future<BentleyStatus> UlasProvider::RealtimeTrackUsage(Utf8StringCR acces
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> UlasProvider::RealtimeMarkFeature(Utf8StringCR accessToken, FeatureEvent featureEvent, int productId, Utf8StringCR featureString, Utf8StringCR deviceId, UsageType usageType, Utf8StringCR correlationId, AuthType authType)
+folly::Future<BentleyStatus> UlasProvider::RealtimeTrackUsage
+    (
+    Utf8StringCR accessToken,
+    int productId,
+    Utf8StringCR featureString,
+    Utf8StringCR deviceId,
+    BeVersionCR version,
+    Utf8StringCR projectId,
+    LicenseStatus licenseStatus,
+    Utf8StringCR correlationId,
+    AuthType authType,
+    Utf8StringCR principalId
+    )
+    {
+    auto usageType = LicenseStatusToUsageType(licenseStatus);
+    return RealtimeTrackUsage(accessToken, productId, featureString, deviceId, version, projectId, usageType, correlationId, authType, principalId);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<BentleyStatus> UlasProvider::RealtimeMarkFeature
+    (
+    Utf8StringCR accessToken,
+    FeatureEvent featureEvent,
+    int productId,
+    Utf8StringCR featureString,
+    Utf8StringCR deviceId,
+    UsageType usageType,
+    Utf8StringCR correlationId,
+    AuthType authType
+    )
     {
     LOG.debug("UlasProvider::RealtimeMarkFeature");
     //LOG.tracev("MarkFeature - Called with featureId: %s, version: %s, projectId: %s", featureEvent.m_featureId.c_str(), featureEvent.m_version.ToString().c_str(), featureEvent.m_projectId.c_str());

@@ -137,7 +137,10 @@ TEST_F(UlasProviderTests, SendUsageLogs_Success)
     // return a mock location response
     GetMockHttp().ForRequest(1, [=](Http::RequestCR request)
         {
+        // Asserts
         EXPECT_EQ(expectedUrl, request.GetUrl());
+        
+        // Response
         Json::Value responseJson(Json::objectValue);
         responseJson["epUri"] = epUri;
         responseJson["epInfo"]["SharedAccessSignature"] = sharedAccessSignature;
@@ -305,23 +308,51 @@ TEST_F(UlasProviderTests, SendFeatureLogs_Failure)
         }
     }
 
-TEST_F(UlasProviderTests, RealtimeTrackUsage_Success)
+TEST_F(UlasProviderTests, RealtimeTrackUsage_WithPrincipalId)
     {
     Utf8String mockUrl("https://ulasmockurl.bentley.com");
 
     GetMockBuddi().MockUlasRealtimeLoggingBaseUrl(mockUrl);
 
     GetMockHttp().ExpectRequests(1);
-    // return a mock location response
-    GetMockHttp().ForRequest(1, [=](Http::RequestCR request)
+    
+    auto mockPrincipalId = "A79C4590-90B4-47EB-9239-F5AAE502434D";
+    GetMockHttp().ForRequest(1, [=](Http::RequestCR request) // return a mock location response
         {
+        // Asserts
         EXPECT_EQ(mockUrl, request.GetUrl());
+        Json::Value requestJson = Json::Reader::DoParse(request.GetRequestBody()->AsString());
+        EXPECT_STREQ(mockPrincipalId, requestJson["pid"].asCString());
 
+        // Reponse
         return MockHttpHandler::StubHttpResponse();
         });
 
-    EXPECT_SUCCESS(GetUlasProvider().RealtimeTrackUsage("AccessToken", std::atoi(TEST_PRODUCT_ID), "", "DeviceId", BeVersion(1, 0), "ProjectId", UsageType::Production, "", AuthType::OIDC).get());
+    EXPECT_SUCCESS(GetUlasProvider().RealtimeTrackUsage("AccessToken", std::atoi(TEST_PRODUCT_ID), "", "DeviceId", BeVersion(1, 0), "ProjectId", UsageType::Production, "", AuthType::OIDC, mockPrincipalId).get());
     }
+
+TEST_F(UlasProviderTests, RealtimeTrackUsage_WithoutPrincipalId)
+{
+    Utf8String mockUrl("https://ulasmockurl.bentley.com");
+
+    GetMockBuddi().MockUlasRealtimeLoggingBaseUrl(mockUrl);
+
+    GetMockHttp().ExpectRequests(1);
+
+    auto mockPrincipalId = "";
+    GetMockHttp().ForRequest(1, [=](Http::RequestCR request) // return a mock location response
+        {
+            // Asserts
+            EXPECT_EQ(mockUrl, request.GetUrl());
+            Json::Value requestJson = Json::Reader::DoParse(request.GetRequestBody()->AsString());
+            EXPECT_STREQ(mockPrincipalId, requestJson["pid"].asCString());
+
+            // Reponse
+            return MockHttpHandler::StubHttpResponse();
+        });
+
+    EXPECT_SUCCESS(GetUlasProvider().RealtimeTrackUsage("AccessToken", std::atoi(TEST_PRODUCT_ID), "", "DeviceId", BeVersion(1, 0), "ProjectId", UsageType::Production, "", AuthType::OIDC, mockPrincipalId).get());
+}
 
 TEST_F(UlasProviderTests, RealtimeTrackUsage_Failure)
     {
@@ -338,7 +369,7 @@ TEST_F(UlasProviderTests, RealtimeTrackUsage_Failure)
         return MockHttpHandler::StubHttpFailureResponse();
         });
 
-    EXPECT_ERROR(GetUlasProvider().RealtimeTrackUsage("AccessToken", std::atoi(TEST_PRODUCT_ID), "", "DeviceId", BeVersion(1, 0), "ProjectId", UsageType::Production, "", AuthType::OIDC).get());
+    EXPECT_ERROR(GetUlasProvider().RealtimeTrackUsage("AccessToken", std::atoi(TEST_PRODUCT_ID), "", "DeviceId", BeVersion(1, 0), "ProjectId", UsageType::Production, "", AuthType::OIDC, "").get());
     }
 
 TEST_F(UlasProviderTests, RealtimeTrackUsageNoFeatureUserData_Success)
@@ -430,9 +461,9 @@ TEST_F(UlasProviderTests, GetAccessKeyInfo_Success)
     GetMockHttp().ForRequest(1, [=](Http::RequestCR request)
         {
         EXPECT_EQ(expectedUrl, request.GetUrl());
-		auto requeststr = request.GetRequestBody()->AsString();
-		Json::Value requestJSON = Json::Reader::DoParse(requeststr);
-		EXPECT_STREQ(TEST_DEVICE_SID, requestJSON["cSID"].asCString());
+        auto requeststr = request.GetRequestBody()->AsString();
+        Json::Value requestJSON = Json::Reader::DoParse(requeststr);
+        EXPECT_STREQ(TEST_DEVICE_SID, requestJSON["cSID"].asCString());
         return MockHttpHandler::StubHttpResponse(testJsonString);
         });
 
@@ -441,32 +472,32 @@ TEST_F(UlasProviderTests, GetAccessKeyInfo_Success)
 
 TEST_F(UlasProviderTests, GetAccessKeyInfo_SuccessAgnostic)
 {
-	auto appInfo = std::make_shared<ApplicationInfo>(BeVersion(1, 0), "TestDeviceId", TEST_PRODUCT_ID);
-	Utf8String accessKey = "TestAccessKey";
-	Utf8String mockUrl("https://ulasaccesskeymockurl.bentley.com");
+    auto appInfo = std::make_shared<ApplicationInfo>(BeVersion(1, 0), "TestDeviceId", TEST_PRODUCT_ID);
+    Utf8String accessKey = "TestAccessKey";
+    Utf8String mockUrl("https://ulasaccesskeymockurl.bentley.com");
 
-	BeFileName testJsonFile;
-	BeTest::GetHost().GetDgnPlatformAssetsDirectory(testJsonFile);
-	testJsonFile.AppendToPath(L"TestAssets/test.json");
+    BeFileName testJsonFile;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(testJsonFile);
+    testJsonFile.AppendToPath(L"TestAssets/test.json");
 
-	Json::Value testJson = ReadJsonFile(testJsonFile);
-	Utf8String testJsonString = testJson.asString();
+    Json::Value testJson = ReadJsonFile(testJsonFile);
+    Utf8String testJsonString = testJson.asString();
 
-	GetMockBuddi().MockUlasAccessKeyBaseUrl(mockUrl);
-	Utf8String expectedUrl = mockUrl + "/info";
+    GetMockBuddi().MockUlasAccessKeyBaseUrl(mockUrl);
+    Utf8String expectedUrl = mockUrl + "/info";
 
-	GetMockHttp().ExpectRequests(1);
-	// return a mock location response
-	GetMockHttp().ForRequest(1, [=](Http::RequestCR request)
-	{
-		EXPECT_EQ(expectedUrl, request.GetUrl());
-		auto requeststr = request.GetRequestBody()->AsString();
-		Json::Value requestJSON = Json::Reader::DoParse(requeststr);		
-		EXPECT_STREQ(TEST_ULT_ID, requestJSON["cSID"].asCString());
-		return MockHttpHandler::StubHttpResponse(testJsonString);
-	});
+    GetMockHttp().ExpectRequests(1);
+    // return a mock location response
+    GetMockHttp().ForRequest(1, [=](Http::RequestCR request)
+    {
+        EXPECT_EQ(expectedUrl, request.GetUrl());
+        auto requeststr = request.GetRequestBody()->AsString();
+        Json::Value requestJSON = Json::Reader::DoParse(requeststr);        
+        EXPECT_STREQ(TEST_ULT_ID, requestJSON["cSID"].asCString());
+        return MockHttpHandler::StubHttpResponse(testJsonString);
+    });
 
-	EXPECT_NE(Json::Value::GetNull(), GetUlasProvider().GetAccessKeyInfo(appInfo, accessKey, TEST_ULT_ID).get());
+    EXPECT_NE(Json::Value::GetNull(), GetUlasProvider().GetAccessKeyInfo(appInfo, accessKey, TEST_ULT_ID).get());
 }
 
 // TODO: add a GetAccessKeyInfo success test with ultimate ID
