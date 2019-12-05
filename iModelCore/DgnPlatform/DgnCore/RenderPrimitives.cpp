@@ -2210,8 +2210,15 @@ PolyfaceList PrimitiveGeometry::_GetPolyfaces(IFacetOptionsR facetOptions, Outpu
 
     if (polyface.IsValid())
         {
-        // May need to clone because we may be called again with different facetOptions; also don't want to decimate and reuse same polyface.
+        // May need to clone because we may be called again with different facetOptions; don't want to clip/decimate and reuse same polyface.
         polyface = output.ClaimPolyface(*polyface);
+        if (polyface.IsNull())
+            return polyfaces;
+
+        // Clip before any further processing to reduce number of facets processed.
+        bvector<PolyfaceHeaderPtr> clippedPolyfaces;
+        auto clipped = output.ClipPolyface(*polyface, GetTileRange());
+        polyface = clipped.first;
         if (polyface.IsNull())
             return polyfaces;
 
@@ -2220,13 +2227,6 @@ PolyfaceList PrimitiveGeometry::_GetPolyfaces(IFacetOptionsR facetOptions, Outpu
 
         // AcceptPolyface needs the non-decimated polyface for proper range intersection test.
         output.AcceptPolyface(*polyface, Transform::FromIdentity(), GetTileRange());
-
-        // Clip before decimating or fixing up to reduce the number of facets processed.
-        bvector<PolyfaceHeaderPtr> clippedPolyfaces;
-        auto clipped = output.ClipPolyface(*polyface, GetTileRange());
-        polyface = clipped.first;
-        if (polyface.IsNull())
-            return polyfaces;
 
         bool isContained = clipped.second;
         polyfaces.push_back(Polyface(GetDisplayParams(), *polyface, true, false, nullptr, facetOptions.GetChordTolerance()));
