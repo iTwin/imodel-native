@@ -447,9 +447,6 @@ BentleyStatus ORDBridge::_MakeDefinitionChanges(SubjectCR jobSubject)
             ORDBRIDGE_LOGE("ORDConverter MakeDefinitionChanges failed.");
             return status;
             }
-
-        if (BentleyStatus::SUCCESS != (status = m_converter->Add2dCategory()))
-            ORDBRIDGE_LOGE("ORDConverter Add2dCategory failed.");
         }
     else
         {

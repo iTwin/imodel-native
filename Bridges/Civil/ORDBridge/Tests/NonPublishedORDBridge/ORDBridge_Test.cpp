@@ -351,27 +351,6 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDItemTypesTest)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Greg.Ashe       08/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CiviliModelBridgesORDBridgeTests, ORDAlignment2dPlanViewTest)
-    {
-    WCharCP wDgnFileName = WCharCP(L"Alignment2dPlanView.dgn");
-    WCharCP wFileName = WCharCP(L"ORDAlignment2dPlanView.bim");
-    ASSERT_TRUE(RunTestApp(wDgnFileName, wFileName, false));
-
-    Utf8String bimFile;
-    BeStringUtilities::WCharToUtf8(bimFile, wFileName);
-    Utf8CP bim = bimFile.c_str();
-
-    bvector<Utf8String> requiredSubCatNames;
-    requiredSubCatNames.push_back(Utf8String("_CIVIL_CONSTRUCTION")); // DataAccess ECInstanceBinder ?
-    requiredSubCatNames.push_back(Utf8String("Level2d"));
-    requiredSubCatNames.push_back(Utf8String("Level3d"));
-
-    VerifyConvertedBimFileSchemasAndCategories(bim, requiredSubCatNames);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Greg.Ashe       09/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CiviliModelBridgesORDBridgeTests, ORDDebugTest)
@@ -388,13 +367,6 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDDebugTest)
         return;
 
     ASSERT_TRUE(RunTestApp(dgn.c_str(), sql.c_str(), false));
-
-    Utf8String bimFile;
-    BeStringUtilities::WCharToUtf8(bimFile, sql.c_str());
-    Utf8CP bim = bimFile.c_str();
-
-    bvector<Utf8String> requiredSubCatNames;
-    VerifyConvertedBimFileSchemasAndCategories(bim, requiredSubCatNames);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -410,12 +382,4 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDFullLocalPathTest)
         return;
 
     ASSERT_TRUE(RunTestAppFullLocalPath(dgn.c_str(), sql.c_str(), false));
-
-    Utf8String bimFile;
-    BeStringUtilities::WCharToUtf8(bimFile, sql.c_str());
-    Utf8CP bim = bimFile.c_str();
-
-    bvector<Utf8String> requiredSubCatNames;
-    VerifyConvertedBimFileSchemasAndCategories(bim, requiredSubCatNames);
     }
-

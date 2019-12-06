@@ -11,7 +11,6 @@
 #define DefaultDesignAlignmentsName     "Road/Rail Design Alignments"
 #define DefaultTransportationSystemName "Transportation System"
 #define QuantityTakeoffsSchemaName      "QuantityTakeoffsAspects"
-#define PlannarCategoryName             "2D (Plan-View)"
 
 BEGIN_ORDBRIDGE_NAMESPACE
 
@@ -1917,7 +1916,6 @@ ConvertORDElementXDomain::ConvertORDElementXDomain(ORDConverter& converter) : m_
     {
     m_cifConsensusConnection = ConsensusConnection::Create(*m_converter.GetRootModelRefP());
     m_graphic3dClassId = converter.GetDgnDb().Schemas().GetClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_Graphic3d);
-    m_plannarCategoryId = Dgn::SpatialCategory::QueryCategoryId(converter.GetDgnDb().GetDictionaryModel(), PlannarCategoryName);
 
     m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignAlignmentAspect);
     m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignLinear3dAspect);
@@ -2695,69 +2693,6 @@ bool ConvertORDElementXDomain::AssignCorridorSurfaceAspect(Dgn::DgnElementR elem
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      09/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-void switchElementCategory(Dgn::GeometricElement3dR element, Dgn::DgnCategoryId const& targetCategoryId,
-                           bmap<Dgn::DgnSubCategoryId, Dgn::DgnSubCategoryId> const& subCategoryMap, DgnPlatform::ElementId const& v8ElementId)
-    {
-    if (!element.HasGeometry())
-        return;
-
-    GeometryCollection oldGeomColl(element);
-
-    auto oldCategoryId = element.GetCategoryId();
-    element.SetCategoryId(targetCategoryId);
-
-    auto geomBuilderPtr = GeometryBuilder::Create(element);
-    if (!geomBuilderPtr.IsValid())
-        {
-        ORDBRIDGE_LOGI(Utf8PrintfString("switchElementCategory - Failed to switch element '%s'.  No Builder.", element.GetDisplayLabel().c_str()).c_str());
-        return;
-        }
-    
-    for (auto& iter : oldGeomColl)
-        {
-        auto geomParams = iter.GetGeometryParams(); // Intentionally copied
-
-        auto subCatId = geomParams.GetSubCategoryId();
-        auto subCatIter = subCategoryMap.find(subCatId);
-
-        DgnSubCategoryId targetSubCatId;
-        if (subCategoryMap.end() != subCatIter)
-            targetSubCatId = subCatIter->second;
-        else
-            {
-            element.SetCategoryId(oldCategoryId);
-            ORDBRIDGE_LOGI(Utf8PrintfString("switchElementCategory - Failed to switch element '%s'.  No category.", element.GetDisplayLabel().c_str()).c_str());
-            return;
-            }
-
-        auto geomPtr = iter.GetGeometryPtr();
-        if (!geomPtr.IsValid())
-            {
-            element.SetCategoryId(oldCategoryId);
-            ORDBRIDGE_LOGI(Utf8PrintfString("switchElementCategory - Failed to switch element '%s'.  Geometry iterator failed.", element.GetDisplayLabel().c_str()).c_str());
-            return;
-            }
-
-        geomParams.SetCategoryId(targetCategoryId, false);
-        geomParams.SetSubCategoryId(targetSubCatId, false);
-
-        if (!geomBuilderPtr->Append(geomParams))
-            BeAssert(false);
-
-        if (!geomBuilderPtr->Append(*geomPtr))
-            BeAssert(false);
-        }
-
-    if (BentleyStatus::SUCCESS != geomBuilderPtr->Finish(element))
-        {
-        ORDBRIDGE_LOGW("switchElementCategory - Failed to write new SubCategories on V8 ElementId %lu", v8ElementId);
-        return;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConvertORDElementXDomain::_ProcessResults(DgnDbSync::DgnV8::ElementConversionResults& elRes, DgnV8EhCR v8el, DgnDbSync::DgnV8::ResolvedModelMapping const& v8mm, DgnDbSync::DgnV8::Converter&)
@@ -2775,15 +2710,6 @@ void ConvertORDElementXDomain::_ProcessResults(DgnDbSync::DgnV8::ElementConversi
         }
 
     m_converter.m_v8ToBimElmMap.insert({v8el.GetElementRef(), elRes.m_element.get()});
-
-    // Is it a plannar/2D model?
-    if (!v8mm.GetV8Model().Is3D() && v8mm.GetDgnModel().Is3dModel())
-        {
-        switchElementCategory(*dynamic_cast<Dgn::GeometricElement3dP>(elRes.m_element.get()), m_plannarCategoryId, m_converter.m_2dSubCategoryMap, v8el.GetElementId());
-
-        for (auto& childRes : elRes.m_childElements)
-            switchElementCategory(*dynamic_cast<Dgn::GeometricElement3dP>(childRes.m_element.get()), m_plannarCategoryId, m_converter.m_2dSubCategoryMap, v8el.GetElementId());
-        }
 
     auto bimModelId = v8mm.GetDgnModel().GetModelId();
     if (v8mm.GetV8Model().Is3D())
@@ -3477,44 +3403,6 @@ BentleyStatus ORDConverter::MakeRoadRailSchemaChanges()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Greg.Ashe       09/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus add2dCategory(Dgn::DgnDbR dgnDbR, DgnCategoryId dgnCatId, Dgn::DictionaryModelR dictionaryModelR, DgnCategoryId& plannarCatId, 
-    bmap<Dgn::DgnSubCategoryId, Dgn::DgnSubCategoryId>& subCategoryMap)
-    {
-    if (dgnCatId.IsValid())
-        {
-        auto convertedCategoryCPtr = Dgn::SpatialCategory::Get(dgnDbR, dgnCatId);
-        auto subCategoryCPtr = Dgn::DgnSubCategory::Get(dgnDbR, convertedCategoryCPtr->GetDefaultSubCategoryId());
-        auto& subCategoryAppearanceCR = subCategoryCPtr->GetAppearance();
-
-        if (!plannarCatId.IsValid())
-            {
-            Dgn::SpatialCategory plannarCat(dictionaryModelR, PlannarCategoryName, Dgn::DgnCategory::Rank::Application);
-            auto plannarCatCPtr = plannarCat.Insert(subCategoryAppearanceCR);
-            if (plannarCatCPtr.IsNull())
-                return BentleyStatus::ERROR;
-
-            plannarCatId = plannarCatCPtr->GetCategoryId();
-            }
-
-        Dgn::DgnSubCategoryId plannarSubCatId = Dgn::DgnSubCategory::QuerySubCategoryId(dgnDbR, DgnSubCategory::CreateCode(dgnDbR, plannarCatId, convertedCategoryCPtr->GetCategoryName()));
-        if (!plannarSubCatId.IsValid())
-            {
-            Dgn::DgnSubCategory plannarSubCat(Dgn::DgnSubCategory::CreateParams(dgnDbR, plannarCatId, convertedCategoryCPtr->GetCategoryName(), subCategoryAppearanceCR));
-            if (plannarSubCat.Insert().IsNull())
-                return BentleyStatus::ERROR;
-
-            plannarSubCatId = plannarSubCat.GetSubCategoryId();
-            }
-
-        subCategoryMap.insert({subCategoryCPtr->GetSubCategoryId(), plannarSubCatId});
-        }
-
-    return BentleyStatus::SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      10/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelId ORDConverter::_MapModelIntoProject(DgnV8ModelR v8Model, Bentley::Utf8CP newName, DgnV8Api::DgnAttachment const* attachment)
@@ -3537,69 +3425,7 @@ DgnModelId ORDConverter::_MapModelIntoProject(DgnV8ModelR v8Model, Bentley::Utf8
         newModelPtr->Update();
         }
 
-        return newModelId;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      09/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ORDConverter::Add2dCategory()
-    {
-    auto& dictionaryModelR = GetDgnDb().GetDictionaryModel();
-
-    DgnCategoryId plannarCatId = Dgn::SpatialCategory::QueryCategoryId(dictionaryModelR, PlannarCategoryName);
-
-    if (plannarCatId.IsValid() && m_2dSubCategoryMapIsFilled)
-        return BentleyStatus::SUCCESS;
-
-    // Default cat
-    DefinitionModelPtr definitionModel = GetJobDefinitionModel();
-    if (definitionModel.IsValid())
-        {
-        DgnCategoryId uncategorizedCategoryId = Dgn::SpatialCategory::QueryCategoryId(*definitionModel, CATEGORY_NAME_Uncategorized);
-
-        if (BentleyStatus::SUCCESS != add2dCategory(GetDgnDb(), uncategorizedCategoryId, dictionaryModelR, plannarCatId, m_2dSubCategoryMap))
-            {
-            BeAssert(false);
-            ORDBRIDGE_LOGE("Failed to add 2d default category.");
-            return BentleyStatus::ERROR;
-            }
-        }
-
-    // Converted cat ... TODO Get only used ones ???
-    BeSQLite::EC::ECSqlStatement stmt;
-    stmt.Prepare(GetDgnDb(), "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_SpatialCategory) " WHERE Model.Id = ? AND Rank = ? ORDER BY CodeValue;");
-    BeAssert(stmt.IsPrepared());
-
-    stmt.BindId(1, dictionaryModelR.GetModelId());
-    stmt.BindInt(2, static_cast<int32_t>(Dgn::DgnCategory::Rank::User));
-    
-    bvector<DgnCategoryId> convertedCatIds;
-    while (BeSQLite::DbResult::BE_SQLITE_ROW == stmt.Step())
-        convertedCatIds.push_back(stmt.GetValueId<DgnCategoryId>(0));
-
-    stmt.Finalize();
-
-    if (convertedCatIds.empty())
-        {
-        m_2dSubCategoryMapIsFilled = true;
-        ORDBRIDGE_LOGI("Didn't find any 2d converted categories.");
-        return BentleyStatus::SUCCESS;
-        }
-
-    for (auto catId : convertedCatIds)
-        {
-        if (BentleyStatus::SUCCESS != add2dCategory(GetDgnDb(), catId, dictionaryModelR, plannarCatId, m_2dSubCategoryMap))
-            {
-            BeAssert(false);
-            ORDBRIDGE_LOGE("Failed to add 2d converted category.");
-            return BentleyStatus::ERROR;
-            }
-        }
-
-    m_2dSubCategoryMapIsFilled = true;
-
-    return BentleyStatus::SUCCESS;
+    return newModelId;
     }
 
 END_ORDBRIDGE_NAMESPACE

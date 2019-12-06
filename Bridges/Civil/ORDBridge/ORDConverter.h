@@ -82,8 +82,6 @@ private:
     Dgn::DgnModelId m_clippingsModelId;
     bmap<Bentley::ElementRefP, Dgn::DgnElementPtr> m_v8ToBimElmMap;
     bmap<Bentley::ElementRefP, Dgn::DgnElementId> m_cifAlignmentToBimID;
-    bmap<Dgn::DgnSubCategoryId, Dgn::DgnSubCategoryId> m_2dSubCategoryMap;
-    bool m_2dSubCategoryMapIsFilled = false;
 
     bvector<Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::Corridor>> m_cifCorridors;
     bvector<Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::Alignment>> m_cifAlignments;    
@@ -157,7 +155,6 @@ public:
     BentleyStatus AddDynamicSchema();
     size_t GetExtensionCount() const;
     BentleyStatus AddExtensionSchema(bool& hasMoreChanges);
-	BentleyStatus Add2dCategory();
     BentleyStatus MakeRoadRailSchemaChanges();
     Utf8String GetAlignedSubjectName() const;
     Dgn::SubjectCPtr GetAlignedSubject() const;
@@ -168,7 +165,6 @@ struct ConvertORDElementXDomain : Dgn::DgnDbSync::DgnV8::XDomain
 private:
     ORDConverter& m_converter;
     Dgn::DgnClassId m_graphic3dClassId;
-    Dgn::DgnCategoryId m_plannarCategoryId;
     bset<Bentley::ElementRefP> m_elementsSeen;    
     bset<Bentley::ElementRefP> m_alignmentV8RefSet;
     bset<Bentley::ElementRefP> m_corridorV8RefSet;
