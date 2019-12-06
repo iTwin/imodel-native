@@ -2158,7 +2158,13 @@ ECClassId DgnElement::Aspect::GetKeyECClassId(DgnDbR db) const
 DgnElement::AppData::DropMe DgnElement::Aspect::_OnInserted(DgnElementCR el)
     {
     if (ChangeType::Delete != m_changeType) // (caller can cancel an add by calling Delete)
-        InsertThis(el);
+        {
+        auto status = InsertThis(el);
+        if (DgnDbStatus::Success != status)
+            {
+            LOG.errorv("Attempt to insert aspect %llu:%llu failed with status=%x", el.GetElementId().GetValueUnchecked(), GetAspectInstanceId().GetValueUnchecked(), status);
+            }
+        }
 
     m_changeType = ChangeType::None; // (Just in case)
 

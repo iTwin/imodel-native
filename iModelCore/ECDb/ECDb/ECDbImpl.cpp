@@ -90,6 +90,9 @@ DbResult ECDb::Impl::OnBriefcaseIdAssigned(BeBriefcaseId newBriefcaseId)
                    m_ecdb.GetDbFileName());
         }
 
+    if (BSISUCCESS != ResetInstanceIdSequence(newBriefcaseId, nullptr)) // We may be restoring an existing, populated briefcase. If it is a checkpoint, there may be no changesets to follow.
+        return BE_SQLITE_ERROR;
+
     return stat;
     }
 

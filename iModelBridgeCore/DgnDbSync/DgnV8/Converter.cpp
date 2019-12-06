@@ -1724,61 +1724,92 @@ void Converter::ValidateJob()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Elonas.Seviakovas               07/2019
+* @bsimethod                                    Sam.Wilson                      12/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelPtr getElementPartitionSubModel(DgnDbCR db, DgnElementCR outlierElement)
+BentleyApi::BentleyStatus getElementInfo (BentleyApi::Utf8StringR message, DgnDbCP db, DgnElementId eid, Converter* converter)
     {
-    auto aspectId = SyncInfo::GetSoleAspectIdByKind(outlierElement, SyncInfo::V8ElementExternalSourceAspect::Kind::Element);
-    SyncInfo::V8ElementExternalSourceAspect aspect = SyncInfo::V8ElementExternalSourceAspect::GetAspect(outlierElement, aspectId);
+    auto el = db->Elements().GetElement(eid);
+    if (!el.IsValid())
+        {
+        BeAssert(false);
+        return BentleyApi::BSIERROR;
+        }
 
+    // An element in an iModel can be mapped to multiple V8 elements.
+    auto elAspects = iModelExternalSourceAspect::GetAllByKind(*el, SyncInfo::V8ElementExternalSourceAspect::Kind::Element);
+    if (elAspects.empty())
+        {
+        // This element did not come from a bridge??
+        return BentleyApi::BSIERROR;
+        }
+
+    // Report the first V8 source element.
+    SyncInfo::V8ElementExternalSourceAspect aspect = SyncInfo::V8ElementExternalSourceAspect::GetAspect(*el, elAspects[0].GetECInstanceId());
     if (!aspect.IsValid())
-        return outlierElement.GetModel();
+        {
+        BeAssert(false);
+        return BentleyApi::BSIERROR;
+        }
 
-    PhysicalPartitionCPtr physicalPartition = db.Elements().Get<PhysicalPartition>(aspect.GetScope());
+    auto v8ElementId = aspect.GetV8ElementId();
 
-    return physicalPartition.IsValid() ? physicalPartition->GetSubModel() : outlierElement.GetModel();
+    PhysicalPartitionCPtr physicalPartition = db->Elements().Get<PhysicalPartition>(aspect.GetScope());
+    if (!physicalPartition.IsValid())
+        {
+        BeAssert(false);
+        return BentleyApi::BSIERROR;
+        }
+    auto partionSubModel = physicalPartition->GetSubModel();
+    if (!partionSubModel.IsValid())
+        {
+        BeAssert(false);
+        return BentleyApi::BSIERROR;
+        }
+
+    auto v8ModelInfo = std::get <1> (SyncInfo::V8ModelExternalSourceAspect::GetAspect (*partionSubModel));
+    if (!v8ModelInfo.IsValid())
+        {
+        BeDataAssert(false);
+        return BentleyApi::BSIERROR;
+        }
+
+    Utf8String sourceModelName = v8ModelInfo.GetV8ModelName();
+
+    RepositoryLinkId id = v8ModelInfo.GetRepositoryLinkId();
+    if (!id.IsValid())
+        {
+        BeDataAssert(false);
+        return BentleyApi::BSIERROR;
+        }
+    auto repositoryLinkElement = converter->GetRepositoryLinkElement(id);
+    if (!repositoryLinkElement.IsValid())
+        {
+        BeDataAssert(false);
+        return BentleyApi::BSIERROR;
+        }
+    auto v8FileInfo = SyncInfo::RepositoryLinkExternalSourceAspect::GetAspect(*repositoryLinkElement);
+    if (!v8FileInfo.IsValid())
+        {
+        BeDataAssert(false);
+        return BentleyApi::BSIERROR;
+        }
+    Utf8String sourceFileName = v8FileInfo.GetFileName();
+
+    message.Sprintf(" Element Id: %lld, Model Name: %s, File Name: %s", v8ElementId, sourceModelName.c_str(), sourceFileName.c_str());
+    return BentleyApi::BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Mayuresh.Kanade                 04/2019
+* @bsimethod                                    Sam.Wilson                      12/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-void getOutlierElementInfo (const bvector<BeInt64Id>& elementOutliers, DgnDbCP db, Utf8String& message, Converter* converter)
-{
-    for (auto eid : elementOutliers)
+void getFirstOutlierElementInfo (const bvector<BeInt64Id>& elementOutliers, DgnDbCP db, Utf8String& message, Converter* converter)
     {
-        auto outlierElement = db->Elements ().GetElement ((DgnElementId)eid.GetValue ());
-        if (outlierElement.IsValid ())
+    for (auto eid : elementOutliers)
         {
-            BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
-            auto status = estmt.Prepare (*db, "SELECT Identifier FROM " BIS_SCHEMA (BIS_CLASS_ExternalSourceAspect) " AS xsa WHERE (xsa.Element.Id=?)");
-
-            estmt.BindInt64 (1, eid.GetValue ());
-            int64_t v8ElementId = 0;
-
-            if (BentleyApi::BeSQLite::BE_SQLITE_ROW == estmt.Step ())
-                v8ElementId = estmt.GetValueInt64 (0);
-
-            DgnModelPtr partitionsubModel = getElementPartitionSubModel(*db, *outlierElement);
-            auto v8ModelInfo = std::get <1> (SyncInfo::V8ModelExternalSourceAspect::GetAspect (*partitionsubModel));
-            Utf8String sourceModelName;
-            Utf8String sourceFileName;
-            if (v8ModelInfo.IsValid())
-                {
-                sourceModelName = v8ModelInfo.GetV8ModelName();
-                RepositoryLinkId id = v8ModelInfo.GetRepositoryLinkId();
-                auto repositoryLinkElement = converter->GetRepositoryLinkElement(id);
-                auto v8FileInfo = SyncInfo::RepositoryLinkExternalSourceAspect::GetAspect(*repositoryLinkElement);
-                sourceFileName = v8FileInfo.GetFileName();
-                }
-            else
-                {
-                sourceModelName = "<unknown>";
-                sourceFileName = "<unknown>";
-                }
-            message.Sprintf(" Element Id: %lld, Model Name: %s, File Name: %s", v8ElementId, sourceModelName.c_str(), sourceFileName.c_str());
+        if (BentleyApi::BSISUCCESS == getElementInfo(message, db, DgnElementId(eid.GetValue()), converter))
+            return;
         }
     }
-}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/15
@@ -1795,7 +1826,7 @@ void Converter::OnCreateComplete()
     if (elementOutliers.size () > 0)
         {
         Utf8String message;
-        getOutlierElementInfo (elementOutliers, m_dgndb.get (), message, this);
+        getFirstOutlierElementInfo (elementOutliers, m_dgndb.get (), message, this);
         ReportAdjustedProjectExtents (elementOutliers.size (), m_dgndb->GeoLocation ().GetProjectExtents (), rangeWithOutliers, message);
         }
 
@@ -1851,7 +1882,7 @@ void Converter::OnUpdateComplete()
             if (elementOutliers.size () > 0)
                 {
                 Utf8String message;
-                getOutlierElementInfo (elementOutliers, m_dgndb.get (), message, this);
+                getFirstOutlierElementInfo (elementOutliers, m_dgndb.get (), message, this);
                 ReportAdjustedProjectExtents (elementOutliers.size (), m_dgndb->GeoLocation ().GetProjectExtents (), rangeWithOutliers, message);
                 }
             }
