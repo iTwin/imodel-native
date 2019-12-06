@@ -2254,6 +2254,9 @@ struct SpatialConverterBase : Converter
 {
     DEFINE_T_SUPER(Converter)
 
+private:
+    int m_xDomainsProcessed = 0;
+
 public:
     //! The status of attempting to create a new ImportJob
     enum class ImportJobCreateStatus
@@ -2329,6 +2332,8 @@ public:
     void PushChangesForFile(DgnV8FileR, BentleyApi::Utf8StringCR whatData);
     void PushChangesForFile(DgnV8FileR, ConverterDataStrings::StringId);
     void PushChangesForModel(DgnV8ModelRefCR);
+
+    DGNDBSYNC_EXPORT bool ImportXDomainSchemas();
 
     //! Sets the Params BridgeJobName property
     DGNDBSYNC_EXPORT void ComputeDefaultImportJobName(SubjectCR sourceMasterModelSubject);

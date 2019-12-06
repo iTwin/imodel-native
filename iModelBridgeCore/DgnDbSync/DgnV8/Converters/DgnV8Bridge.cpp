@@ -506,13 +506,57 @@ WString ConverterApp::_SupplySqlangRelPath()
     return L"sqlang/DgnV8Converter_en-US.sqlang.db3";
     }
 
+
+//=======================================================================================
+// @bsiclass 
+//=======================================================================================
+struct     SchemaImportCaller : public DgnV8Api::IEnumerateAvailableHandlers
+    {
+    bvector<ConvertToDgnDbElementExtension*>& m_extensions;
+    SchemaImportCaller(bvector<ConvertToDgnDbElementExtension*>& extensions) : m_extensions(extensions) {}
+    virtual StatusInt _ProcessHandler(DgnV8Api::Handler& handler)
+        {
+        ConvertToDgnDbElementExtension* extension = ConvertToDgnDbElementExtension::Cast(handler);
+        if (NULL == extension)
+            return SUCCESS;
+
+        m_extensions.push_back(extension);
+        return SUCCESS;
+        }
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DgnV8Bridge::_MakeSchemaChanges(bool& hasMoreChanges)
     {
-    auto status = m_converter->MakeSchemaChanges();
-    return ((BSISUCCESS != status) || m_converter->WasAborted())? BSIERROR: BSISUCCESS;
+    if (m_isFirstSchemaChange)
+        {
+        auto status = m_converter->MakeSchemaChanges();
+        hasMoreChanges = true;
+        m_isFirstSchemaChange = BSISUCCESS != status;
+        return ((BSISUCCESS != status) || m_converter->WasAborted()) ? BSIERROR : BSISUCCESS;
+        }
+
+    if (!m_collectedExtensions)
+        {
+        SchemaImportCaller importer(m_extensions);
+        DgnV8Api::ElementHandlerManager::EnumerateAvailableHandlers(importer);
+        m_collectedExtensions = true;
+        }
+
+    if (m_extensionsProcessed < m_extensions.size())
+        {
+        m_extensions[m_extensionsProcessed++]->_ImportSchema(m_converter->GetDgnDb());
+        if (m_extensionsProcessed < m_extensions.size())
+            {
+            hasMoreChanges = true;
+            return BSISUCCESS;
+            }
+        }
+
+    hasMoreChanges = m_converter->ImportXDomainSchemas();
+    return BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -3622,33 +3622,6 @@ void DynamicSchemaGenerator::BisifyV8Schemas(bvector<DgnV8FileP> const& uniqueFi
     scope.SetSucceeded();
     }
 
-//=======================================================================================
-// @bsiclass 
-//=======================================================================================
-struct     SchemaImportCaller : public DgnV8Api::IEnumerateAvailableHandlers
-    {
-    Converter& m_converter;
-    SchemaImportCaller(Converter& cvt) : m_converter(cvt) {}
-    virtual StatusInt _ProcessHandler(DgnV8Api::Handler& handler)
-        {
-        ConvertToDgnDbElementExtension* extension = ConvertToDgnDbElementExtension::Cast(handler);
-        if (NULL == extension)
-            return SUCCESS;
-
-        extension->_ImportSchema(m_converter.GetDgnDb());
-        return SUCCESS;
-        }
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  01/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void     importHandlerExtensionsSchema(Converter& cvt)
-    {
-    SchemaImportCaller importer(cvt);
-    DgnV8Api::ElementHandlerManager::EnumerateAvailableHandlers(importer);
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3665,6 +3638,20 @@ void DynamicSchemaGenerator::GenerateSchemas(bvector<DgnV8FileP> const& files, b
         }
         
     BisifyV8Schemas(files, models);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            12/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+bool SpatialConverterBase::ImportXDomainSchemas()
+    {
+    if (m_xDomainsProcessed < XDomainRegistry::s_xdomains.size())
+        {
+        XDomainRegistry::s_xdomains[m_xDomainsProcessed++]->_ImportSchema(*m_dgndb);
+        if (m_xDomainsProcessed < XDomainRegistry::s_xdomains.size())
+            return true;
+        }
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3716,27 +3703,6 @@ BentleyStatus SpatialConverterBase::MakeSchemaChanges(bvector<DgnFileP> const& f
         if (gen.DidEcConversionFailDueToLockingError())
             return BSIERROR;    // This is a re-try-able failure, not a fatal error that should stop the conversion
         m_hadAnyChanges |= gen.GetAnyImported();
-        }
-
-    if (WasAborted())
-        return BSIERROR;
-
-    CheckForAndSaveChanges();
-
-    // Let handler extensions import schemas
-    importHandlerExtensionsSchema(*this);
-
-    if (WasAborted())
-        return BSIERROR;
-
-    CheckForAndSaveChanges();
-
-    for (auto xdomain : XDomainRegistry::s_xdomains)
-        {
-        if (BSISUCCESS != xdomain->_ImportSchema(*m_dgndb))
-            {
-            OnFatalError();
-            }
         }
 
     if (WasAborted())

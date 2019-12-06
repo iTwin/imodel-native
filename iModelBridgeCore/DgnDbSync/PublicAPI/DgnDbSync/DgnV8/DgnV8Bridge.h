@@ -78,6 +78,12 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnV8Bridge : ConverterApp
 {
     DEFINE_T_SUPER(ConverterApp)
 
+private:
+    bvector<ConvertToDgnDbElementExtension*> m_extensions;
+    bool m_isFirstSchemaChange = true;
+    bool m_collectedExtensions = false;
+    int m_extensionsProcessed = 0;
+
 protected:
     RootModelConverter::RootModelSpatialParams m_params;
     std::unique_ptr<RootModelConverter> m_converter;
