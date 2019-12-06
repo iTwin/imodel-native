@@ -3126,6 +3126,8 @@ bool MeshArgs::Init(MeshCR mesh)
     mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, mesh.Colors());
     mesh.ToFeatureIndex(m_features);
 
+    m_auxChannels = mesh.GetAuxChannels();
+
     m_edges.m_width = mesh.GetDisplayParams().GetLineWidth();
     m_edges.m_linePixels = mesh.GetDisplayParams().GetLinePixels();
 
@@ -3145,7 +3147,6 @@ bool MeshArgs::Init(MeshCR mesh)
         }
 
     m_edges.m_polylines.Init(m_polylineEdges);
-    m_auxChannels = mesh.GetAuxChannels();
 
     return true;
     }
