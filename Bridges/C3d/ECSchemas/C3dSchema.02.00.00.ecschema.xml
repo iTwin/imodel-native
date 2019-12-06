@@ -6,18 +6,35 @@
     <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
     <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
 
+    <!-- KindOfQuantitys -->
     <KindOfQuantity typeName="LENGTH" displayLabel="Length" persistenceUnit="u:M" presentationUnits="f:DefaultRealU(2)[u:M];f:DefaultRealU(2)[u:FT]" relativeError="0.0001"/>
     <KindOfQuantity typeName="VELOCITY" displayLabel="Speed" persistenceUnit="u:KM_PER_HR" presentationUnits="f:DefaultRealU(2)[u:KM_PER_HR];f:DefaultRealU(2)[u:MPH]" relativeError="0.0001"/>
 
+    <!-- PropertyCategorys -->
     <PropertyCategory typeName="C3dGeometry" displayLabel="Geometry" priority="50"/>
-    <PropertyCategory typeName="C3dDesignSpeeds" displayLabel="Design Speeds" priority="49"/>
+    <PropertyCategory typeName="C3dData" displayLabel="Data" priority="48"/>
+    <PropertyCategory typeName="C3dVAlignments" displayLabel="Vertical Alignments" priority="45"/>
+    <PropertyCategory typeName="C3dDesignSpeeds" displayLabel="Design Speeds" priority="40"/>
 
-    <ECStructClass typeName="DesignSpeed" displayLabel="C3D Design Speed" description="C3D Design speed along the path of th alignment">
-        <ECProperty propertyName="StartStation" typeName="double" kindOfQuantity="LENGTH" displayLabel="Start Station"/>
-        <ECProperty propertyName="DesignSpeed" typeName="double" kindOfQuantity="VELOCITY" displayLabel="Design Speed"/>
-        <ECProperty propertyName="Comment" typeName="string" displayLabel="Comment" description="Comment for the design speed"/>
+    <!-- Properties -->
+    <ECStructClass typeName="DesignSpeed" displayLabel="C3D Design Speed" description="C3D design speed along the path of the alignment">
+        <ECProperty propertyName="Station" typeName="double" kindOfQuantity="LENGTH" displayLabel="C3D Station"/>
+        <ECProperty propertyName="DesignSpeed" typeName="double" kindOfQuantity="VELOCITY" displayLabel="C3D Design Speed"/>
+        <ECProperty propertyName="Comment" typeName="string" displayLabel="Comment" description="C3D comment for the design speed"/>
+    </ECStructClass>
+    <ECStructClass typeName="VAlignment" displayLabel="Vertical Alignment" description="C3D vertical alignment along the path of the horizontal alignment">
+        <ECProperty propertyName="Description" typeName="string" category="C3dGeometry" displayLabel="Description" description="C3D vertical alignment description"/>
+        <ECProperty propertyName="StartStation" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="Start Station" description="C3D vertical alignment start station"/>
+        <ECProperty propertyName="EndStation" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="End Station" description="C3D vertical alignment end station"/>
+        <ECProperty propertyName="StartOffset" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="Start Offset" description="C3D vertical alignment start offset"/>
+        <ECProperty propertyName="EndOffset" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="End Offset" description="C3D vertical alignment end offset"/>
+        <ECProperty propertyName="SampleOffset" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="Sample Offset" description="C3D vertical alignment sample offset"/>
+        <ECProperty propertyName="MinElevation" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="Minimum Elevation" description="C3D vertical alignment minimum elevation"/>
+        <ECProperty propertyName="MaxElevation" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="Maximum Elevation" description="C3D vertical alignment maximum elevation"/>
+        <ECProperty propertyName="Length" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="Length" description="C3D vertical alignment length"/>
     </ECStructClass>
 
+    <!-- Entities -->
     <ECEntityClass typeName="AeccBase" modifier="Abstract" displayLabel="C3D Object" description="C3D Object">
         <BaseClass>bis:SpatialElement</BaseClass>
     </ECEntityClass>
@@ -26,8 +43,13 @@
         <ECProperty propertyName="Description" typeName="string" category="C3dGeometry" displayLabel="Description" description="C3D alignment description"/>
         <ECProperty propertyName="ReferencePoint" typeName="point2d" category="C3dGeometry" displayLabel="Reference Point" description="C3D alignment reference point"/>
         <ECProperty propertyName="ReferenceStation" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="Reference Point Station" description="C3D alignment reference point station"/>
-        <ECProperty propertyName="StartStation" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="Start Station"/>
-        <ECProperty propertyName="EndStation" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="End Station"/>
+        <ECProperty propertyName="StartStation" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="Start Station" description="C3D alignment start station"/>
+        <ECProperty propertyName="EndStation" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="End Station" description="C3D alignment end station"/>
         <ECStructArrayProperty propertyName="DesignSpeeds" typeName="DesignSpeed" category="C3dDesignSpeeds" displayLabel="Design Speeds" description="C3D design speeds for the alignment" minOccurs="0" maxOccurs="unbounded"/>
+        <ECStructArrayProperty propertyName="VAlignments" typeName="VAlignment" category="C3dVAlignments" displayLabel="Vertical Alignments" description="C3D vertical alignments" minOccurs="0" maxOccurs="unbounded"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="AeccVAlignment" modifier="Sealed" displayLabel="Vertical Alignment" description="Civil3D vertical alignment">
+        <BaseClass>AeccBase</BaseClass>
+        <ECStructProperty propertyName="VAlignment" typeName="VAlignment" category="C3dGeometry" displayLabel="Vertical Alignment" description="C3D vertical alignment"/>
     </ECEntityClass>
 </ECSchema>

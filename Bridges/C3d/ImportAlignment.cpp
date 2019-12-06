@@ -3,8 +3,8 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include    "C3dImporter.h"
-#include    "C3dHelper.h"
+#include "C3dImporter.h"
+#include "C3dHelper.h"
 
 BEGIN_C3D_NAMESPACE
 
@@ -25,16 +25,23 @@ BentleyStatus AeccAlignmentExt::_ConvertToBim (ProtocolExtensionContext& context
     m_name.Assign (reinterpret_cast<WCharCP>(m_aeccAlignment->GetName().c_str()));
     m_description.Assign (reinterpret_cast<WCharCP>(m_aeccAlignment->GetDescription().c_str()));
     m_toDgnContext = &context;
+    m_importedVAlignmentMap.clear ();
 
-    status = this->CreateAeccAlignment ();
+    // C3D elements
+    status = this->CreateOrUpdateAeccAlignment ();
     if (status != BentleyStatus::BSISUCCESS)
         return  status;
+
+    this->CreateOrUpdateAeccVAlignments ();
 
     m_alignmentModel = m_importer->GetAlignmentModel ();
     if (!m_alignmentModel.IsValid())
         return  status;
 
-    status = this->CreateAlignment ();
+    // Civil domain elements
+    status = this->CreateOrUpdateHorizontalAlignment ();
+    if (status == BentleyStatus::BSISUCCESS)
+        this->CreateOrUpdateVerticalAlignments ();
 
     return  BentleyStatus::BSISUCCESS;
     }
@@ -42,19 +49,16 @@ BentleyStatus AeccAlignmentExt::_ConvertToBim (ProtocolExtensionContext& context
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          11/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   AeccAlignmentExt::CreateAeccAlignment ()
+BentleyStatus   AeccAlignmentExt::CreateOrUpdateAeccAlignment ()
     {
-    auto ecClass = this->GetECClass (ECCLASSNAME_AeccAligment);
-    if (ecClass == nullptr)
-        return  BentleyStatus::BSIERROR;
-
-    auto ecInstance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance ();
+    auto ecInstance = m_importer->CreateC3dECInstance (ECCLASSNAME_AeccAlignment);
     if (!ecInstance.IsValid())
         return  BentleyStatus::BSIERROR;
 
     auto& results = m_toDgnContext->GetElementResultsR ();
     auto& inputs = m_toDgnContext->GetElementInputsR ();
-    inputs.SetClassId (ecClass->GetId());
+
+    inputs.SetClassId (ecInstance->GetClass().GetId());
 
     auto status = m_importer->_ImportEntity (results, inputs);
     if (status != BentleyStatus::BSISUCCESS)
@@ -65,8 +69,9 @@ BentleyStatus   AeccAlignmentExt::CreateAeccAlignment ()
         {
         if (!m_name.empty())
             element->SetUserLabel (m_name.c_str());
+        if (!m_description.empty())
+            element->SetPropertyValue ("Description", m_description.c_str());
 
-        element->SetPropertyValue ("Description", m_description.c_str());
         element->SetPropertyValue ("ReferenceStation", m_aeccAlignment->GetReferencePointStation());
         element->SetPropertyValue ("StartStation", m_aeccAlignment->GetStartStation());
         element->SetPropertyValue ("EndStation", m_aeccAlignment->GetEndStation());
@@ -75,7 +80,8 @@ BentleyStatus   AeccAlignmentExt::CreateAeccAlignment ()
         if (m_aeccAlignment->GetReferencePoint(point))
             element->SetPropertyValue ("ReferencePoint", DPoint2d::From(point.x, point.y));
 
-        this->SetDesignSpeeds (*element);
+        this->SetDesignSpeedProperties (*element);
+        this->SetVAlignmentProperties (*element);
         }
 
     return  status;
@@ -84,31 +90,20 @@ BentleyStatus   AeccAlignmentExt::CreateAeccAlignment ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          11/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   AeccAlignmentExt::SetDesignSpeeds (DgnElementR element)
+BentleyStatus   AeccAlignmentExt::SetDesignSpeedProperties (DgnElementR element)
     {
-    auto ecClass = this->GetECClass ("DesignSpeed");
-    if (ecClass == nullptr)
-        return  BentleyStatus::BSIERROR;
-
-    auto ecEnabler = ecClass->GetDefaultStandaloneEnabler ();
-    if (!ecEnabler.IsValid())
-        return  BentleyStatus::BSIERROR;
-
     auto count = m_aeccAlignment->GetDesignSpeedCount ();
     if (count < 1)
         return  BentleyStatus::BSISUCCESS;
 
-    uint32_t    propIndex = 0;
-    auto status = element.GetPropertyIndex (propIndex, "DesignSpeeds");
-    if (status != DgnDbStatus::Success)
-        return  static_cast<BentleyStatus>(status);
-
-    element.InsertPropertyArrayItems (propIndex, 0, count);
+    auto ecInstance = m_importer->CreateC3dECInstance (ECCLASSNAME_DesignSpeed);
+    if (!ecInstance.IsValid())
+        return  BentleyStatus::BSIERROR;
 
     ECValue ecValue;
-    status = element.GetPropertyValue (ecValue, "DesignSpeeds");
-    if (!ecValue.IsArray() || ecValue.GetArrayInfo().GetCount() != count)
-        BeAssert (false && "StructArray not correctly set");
+    auto status = m_importer->InsertStructArrayProperty (element, ecValue, "DesignSpeeds", count);
+    if (status != DgnDbStatus::Success)
+        return  static_cast<BentleyStatus>(status);
 
     for (int32_t i = 0; i < static_cast<int32_t>(count); i++)
         {
@@ -116,17 +111,14 @@ BentleyStatus   AeccAlignmentExt::SetDesignSpeeds (DgnElementR element)
         if (!designSpeed.isNull())
             {
             Utf8String  comment(reinterpret_cast<WCharCP>(designSpeed->GetComment().c_str()));
-
-            auto ecInstance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance ();
-            if (ecInstance.IsValid())
-                {
-                ecInstance->SetValue ("StartStation", ECValue(designSpeed->GetStation()));
-                ecInstance->SetValue ("DesignSpeed", ECValue(designSpeed->GetValue()));
+            if (!comment.empty())
                 ecInstance->SetValue ("Comment", ECValue(comment.c_str()));
 
-                ecValue.SetStruct (ecInstance.get());
-                status = element.SetPropertyValue("DesignSpeeds", ecValue, PropertyArrayIndex(i));
-                }
+            ecInstance->SetValue ("Station", ECValue(designSpeed->GetStation()));
+            ecInstance->SetValue ("DesignSpeed", ECValue(designSpeed->GetValue()));
+
+            ecValue.SetStruct (ecInstance.get());
+            status = element.SetPropertyValue("DesignSpeeds", ecValue, PropertyArrayIndex(i));
             }
         }
 
@@ -136,19 +128,149 @@ BentleyStatus   AeccAlignmentExt::SetDesignSpeeds (DgnElementR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          11/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassCP   AeccAlignmentExt::GetECClass (Utf8StringCR className) const
+BentleyStatus   AeccAlignmentExt::SetVAlignmentProperties (DgnElementR element)
     {
-    ECClassCP   ecClass = nullptr;
-    auto c3dSchema = m_importer->GetC3dSchema ();
-    if (c3dSchema != nullptr)
-        ecClass = c3dSchema->GetClassCP (DwgHelper::ValidateECNameFrom(className).c_str());
-    return  ecClass;
+    uint32_t    count = m_aeccAlignment->GetVAlignmentCount ();
+    if (count < 1)
+        return  BentleyStatus::BSISUCCESS;
+
+    auto ecInstance = m_importer->CreateC3dECInstance (ECCLASSNAME_VAlignment);
+    if (!ecInstance.IsValid())
+        return  BentleyStatus::BSIERROR;
+
+    ECValue ecValue;
+    auto status = m_importer->InsertStructArrayProperty (element, ecValue, "VAlignments", count);
+    if (status != DgnDbStatus::Success)
+        return  static_cast<BentleyStatus>(status);
+
+    for (uint32_t i = 0; i < count; i++)
+        {
+        auto objectId = m_aeccAlignment->GetVAlignmentByIndex (i);
+        AECCDbVAlignmentPtr aeccVAlignment = objectId.openObject (OdDb::OpenMode::kForRead);
+        if (!aeccVAlignment.isNull())
+            {
+            Utf8String  descr(reinterpret_cast<WCharCP>(aeccVAlignment->GetDescription().c_str()));
+            if (!descr.empty())
+                ecInstance->SetValue ("Description", ECValue(descr.c_str()));
+
+            ecInstance->SetValue ("StartStation", ECValue(aeccVAlignment->GetStartStation()));
+            ecInstance->SetValue ("EndStation", ECValue(aeccVAlignment->GetEndStation()));
+            ecInstance->SetValue ("StartOffset", ECValue(aeccVAlignment->GetStartOffset()));
+            ecInstance->SetValue ("EndOffset", ECValue(aeccVAlignment->GetEndOffset()));
+            ecInstance->SetValue ("SampleOffset", ECValue(aeccVAlignment->GetSampleOffset()));
+            ecInstance->SetValue ("MinElevation", ECValue(aeccVAlignment->GetElevationMin()));
+            ecInstance->SetValue ("MaxElevation", ECValue(aeccVAlignment->GetElevationMax()));
+            ecInstance->SetValue ("Length", ECValue(aeccVAlignment->GetLength()));
+
+            ecValue.SetStruct (ecInstance.get());
+            status = element.SetPropertyValue("VAlignments", ecValue, PropertyArrayIndex(i));
+            }
+        }
+
+    return  BentleyStatus::BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          11/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus AeccAlignmentExt::CreateAlignment ()
+BentleyStatus AeccAlignmentExt::CreateOrUpdateAeccVAlignments ()
+    {
+    /*-----------------------------------------------------------------------------------
+    This method takes over the default implementation of DwgImporter to import C3D VAlignment 
+    entities attached to this alignment, i.e. open the object and detect changes.  Then
+    act based on the detection results: ignore, insert or update the target element.
+    Upon successfully imported a VAlignment, the imported element ID is cached for a later
+    step where Civil vertical alignments are created.
+
+    C3D VAlignments are filtered out in _FilterEntity to let DwgImporter skip them.
+    -----------------------------------------------------------------------------------*/
+    uint32_t    count = m_aeccAlignment->GetVAlignmentCount ();
+    if (count < 1)
+        return  BentleyStatus::BSISUCCESS;
+
+    auto ecInstance = m_importer->CreateC3dECInstance (ECCLASSNAME_AeccVAlignment);
+    if (!ecInstance.IsValid())
+        return  BentleyStatus::BSIERROR;
+
+    DwgImporter::ElementImportInputs    vaInputs(m_toDgnContext->GetModel());
+    vaInputs.SetClassId (ecInstance->GetClass().GetId());
+    vaInputs.SetTransform (m_toDgnContext->GetTransform());
+    vaInputs.SetModelMapping (m_toDgnContext->GetElementInputsR().GetModelMapping());
+
+    for (uint32_t i = 0; i < count; i++)
+        {
+        auto objectId = m_aeccAlignment->GetVAlignmentByIndex (i);
+        if (vaInputs.GetEntityPtrR().OpenObject(objectId, DwgDbOpenMode::ForRead) != DwgDbStatus::Success)
+            continue;
+
+        DwgDbEntityP entity = vaInputs.GetEntityP ();
+        if (entity == nullptr || !entity->isKindOf(AECCDbVAlignment::desc()))
+            continue;
+
+        vaInputs.SetParentEntity (entity);
+        vaInputs.SetEntityId (objectId);
+        this->DetectAndImportAeccVAlignment (vaInputs);
+        }
+
+    return  BentleyStatus::BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/19
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus AeccAlignmentExt::DetectAndImportAeccVAlignment (DwgImporter::ElementImportInputs& inputs)
+    {
+    DwgDbObjectP    object = DwgDbObject::Cast (inputs.GetEntityP());
+    if (nullptr == object)
+        return  BentleyStatus::BSIERROR;
+
+    AECCDbVAlignment* aeccVAlignment = AECCDbVAlignment::cast (object);
+    if (aeccVAlignment == nullptr)
+        return  BentleyStatus::BSIERROR;
+
+    IDwgChangeDetector::DetectionResults    detectionResults;
+    DwgImporter::ElementImportResults   elementResults;
+    BentleyStatus   status = BentleyStatus::SUCCESS;
+
+    if (m_importer->GetChangeDetector()._IsElementChanged(detectionResults, *m_importer, *object, inputs.GetModelMapping()))
+        {
+        elementResults.SetExistingElement (detectionResults.GetObjectAspect());
+
+        auto status = m_importer->_ImportEntity (elementResults, inputs);
+        if (status != BentleyStatus::BSISUCCESS)
+            return  status;
+
+        auto importedElement = elementResults.GetImportedElement ();
+        if (importedElement != nullptr)
+            {
+            if (!m_name.empty())
+                importedElement->SetUserLabel (m_name.c_str());
+
+            importedElement->SetPropertyValue ("VAlignment.StartStation", ECValue(aeccVAlignment->GetStartStation()));
+            importedElement->SetPropertyValue ("VAlignment.EndStation", ECValue(aeccVAlignment->GetEndStation()));
+            importedElement->SetPropertyValue ("VAlignment.StartOffset", ECValue(aeccVAlignment->GetStartOffset()));
+            importedElement->SetPropertyValue ("VAlignment.EndOffset", ECValue(aeccVAlignment->GetEndOffset()));
+            importedElement->SetPropertyValue ("VAlignment.SampleOffset", ECValue(aeccVAlignment->GetSampleOffset()));
+            importedElement->SetPropertyValue ("VAlignment.MinElevation", ECValue(aeccVAlignment->GetElevationMin()));
+            importedElement->SetPropertyValue ("VAlignment.MaxElevation", ECValue(aeccVAlignment->GetElevationMax()));
+            importedElement->SetPropertyValue ("VAlignment.Length", ECValue(aeccVAlignment->GetLength()));
+            }
+        }
+
+    status = m_importer->ProcessDetectionResults(detectionResults, elementResults, inputs);
+    if (status == BentleyStatus::BSISUCCESS)
+        {
+        bpair<DwgDbObjectId,DgnElementId> entry(object->GetObjectId(), elementResults.GetImportedElementId());
+        m_importedVAlignmentMap.insert (entry);
+        }
+
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/19
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus AeccAlignmentExt::CreateOrUpdateHorizontalAlignment ()
     {
     if (m_aeccAlignment == nullptr)
         return  BentleyStatus::BSIERROR;
@@ -177,6 +299,8 @@ BentleyStatus AeccAlignmentExt::CreateAlignment ()
     auto alignment = Alignment::Create (*m_alignmentModel);
     if (!alignment.IsValid() || !alignment->Insert().IsValid())
         return  BentleyStatus::BSIERROR;
+
+    m_baseAlignmentId = alignment->GetElementId ();
     
     alignment->SetCode (RoadRailAlignmentDomain::CreateCode(*m_alignmentModel, m_name));
     alignment->SetStartStation (m_aeccAlignment->GetStartStation());
@@ -193,6 +317,63 @@ BentleyStatus AeccAlignmentExt::CreateAlignment ()
     auto inserted = horizontalAlign->Insert ();
 
     return inserted.IsValid() ? BentleyStatus::BSISUCCESS : BentleyStatus::BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/19
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus AeccAlignmentExt::CreateOrUpdateVerticalAlignments ()
+    {
+    // Civil VerticalAlignment seems to require geoemtry whereas C3D's does not?
+    if (!m_baseAlignmentId.IsValid() || m_importedVAlignmentMap.empty())
+        return  BentleyStatus::BSISUCCESS;
+
+    auto& db = m_importer->GetDgnDb ();
+    auto baseAlignment = RoadRailAlignment::Alignment::Get (db, m_baseAlignmentId);
+    if (!baseAlignment.IsValid())
+        return  BentleyStatus::BSIERROR;
+        
+    auto verticalModelId = baseAlignment->QueryVerticalAlignmentSubModelId ();
+    if (!verticalModelId.IsValid())
+        {
+        auto verticalModel = RoadRailAlignment::VerticalAlignmentModel::Create (VerticalAlignmentModel::CreateParams(db, m_baseAlignmentId));
+        if (verticalModel->Insert() != DgnDbStatus::Success)
+            return BentleyStatus::BSIERROR;
+        verticalModelId = verticalModel->GetModelId ();
+        }
+
+    BentleyStatus   status = BentleyStatus::BSISUCCESS;
+    uint32_t    count = m_aeccAlignment->GetVAlignmentCount ();
+
+    for (uint32_t i = 0; i < count; i++)
+        {
+        AECCDbVAlignmentPtr aeccVAlignment = m_aeccAlignment->GetVAlignmentByIndex(i).openObject (OdDb::OpenMode::kForRead);
+        if (aeccVAlignment.isNull())
+            continue;
+
+        auto found = m_importedVAlignmentMap.find (aeccVAlignment->objectId());
+        if (found == m_importedVAlignmentMap.end())
+            continue;
+
+        auto importedElement = m_importer->GetDgnDb().Elements().Get<GeometricElement> (found->second);
+        if (!importedElement.IsValid())
+            continue;
+
+        CurveVector curves(CurveVector::BoundaryType::BOUNDARY_TYPE_None);
+        if (C3dHelper::GetLinearCurves(curves, importedElement->ToGeometrySource()) != BentleyStatus::BSISUCCESS)
+            continue;
+
+        auto verticalAlignment = RoadRailAlignment::VerticalAlignment::Create (*baseAlignment, curves);
+        if (verticalAlignment.IsValid() && verticalAlignment->GenerateElementGeom() == DgnDbStatus::Success)
+            {
+            DgnDbStatus dbStatus = DgnDbStatus::Success;
+
+            auto inserted = verticalAlignment->Insert (&dbStatus);
+            if (dbStatus != DgnDbStatus::Success)
+                status = static_cast<BentleyStatus>(dbStatus);
+            }
+        }
+    return  BentleyStatus::BSISUCCESS;
     }
 
 END_C3D_NAMESPACE

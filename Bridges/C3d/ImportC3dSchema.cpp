@@ -206,19 +206,78 @@ BentleyStatus MakeSchemaChanges ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          11/19
 +---------------+---------------+---------------+---------------+---------------+------*/
+ECClassCP   C3dImporter::GetC3dECClass (Utf8StringCR className) const
+    {
+    ECClassCP   ecClass = nullptr;
+    auto c3dSchema = this->GetC3dSchema ();
+    if (c3dSchema != nullptr)
+        ecClass = c3dSchema->GetClassCP (DwgHelper::ValidateECNameFrom(className).c_str());
+    return  ecClass;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/19
++---------------+---------------+---------------+---------------+---------------+------*/
+StandaloneECInstancePtr C3dImporter::CreateC3dECInstance (Utf8StringCR className) const
+    {
+    auto ecClass = this->GetC3dECClass (className.c_str());
+    if (ecClass != nullptr)
+        {
+        auto ecEnabler = ecClass->GetDefaultStandaloneEnabler ();
+        if (ecEnabler.IsValid())
+            return  ecEnabler->CreateInstance ();
+        }
+    return  nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/19
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus C3dImporter::InsertStructArrayProperty (DgnElementR element, ECValueR outValue, Utf8StringCR propertyName, uint32_t arraySize) const
+    {
+    DgnDbStatus status = DgnDbStatus::BadRequest;
+    if (arraySize > 0 && !propertyName.empty())
+        {
+        uint32_t    propertyIndex = 0;
+
+        status = element.GetPropertyIndex (propertyIndex, propertyName.c_str());
+        if (status == DgnDbStatus::Success)
+            {
+            element.InsertPropertyArrayItems (propertyIndex, 0, arraySize);
+
+            ECValue ecValue;
+            status = element.GetPropertyValue (ecValue, propertyName.c_str());
+
+            if (status == DgnDbStatus::Success && (!ecValue.IsArray() || ecValue.GetArrayInfo().GetCount() != arraySize))
+                status = DgnDbStatus::WrongClass;
+            }
+        }
+
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/19
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   C3dImporter::_MakeSchemaChanges ()
     {
     auto status = T_Super::_MakeSchemaChanges();
     if (status != BentleyStatus::BSISUCCESS)
         return  status;
 
-    this->SetTaskName (ProgressMessage::TASK_IMPORTING(), "C3D schemas");
+    this->SetStepName (ProgressMessage::TASK_IMPORTING(), "Civil domain & C3D schemas");
+
+    StopWatch totalTimer (true);
+    StopWatch timer (true);
+    timer.Start ();
 
     C3dSchemaFactory factory(*this);
     status = factory.MakeSchemaChanges ();
 
     if (status == BentleyStatus::BSISUCCESS)
         m_c3dSchema = m_dgndb->Schemas().GetSchema (C3DSCHEMA_SchemaName, true);
+
+    iModelBridge::LogPerformance (timer, "Importing Civil domain and C3D schemas");
 
     return  status;
     }

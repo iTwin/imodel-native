@@ -84,6 +84,17 @@ SubjectCPtr C3dImporter::GetAlignmentSubject ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          12/19
 +---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String C3dImporter::_ComputeImportJobName (DwgDbBlockTableRecordCR modelspaceBlock) const
+    {
+    Utf8String  jobName = T_Super::GetOptions().GetBridgeJobName ();
+    if (jobName.empty())
+        jobName.assign ("Civil3d");
+    return  jobName;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          12/19
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus C3dImporter::OnBaseBridgeJobFound (DgnElementId jobId)
     {
     auto alignSubject = this->GetAlignmentSubject ();
@@ -180,10 +191,13 @@ BentleyStatus C3dImporter::OnBaseBridgeJobFound (DgnElementId jobId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          12/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   C3dImporter::ConvertC3d (DgnElementR element, DwgDbEntityCR entity)
+bool    C3dImporter::_FilterEntity (ElementImportInputs& inputs) const
     {
-    BentleyStatus   status = BSISUCCESS;
-    return  status;
+    // vertical alignments are processed together with horizontal alignments
+    if (inputs.GetEntity().isKindOf(AECCDbVAlignment::desc()))
+        return  true;
+
+    return  T_Super::_FilterEntity(inputs);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -191,21 +205,8 @@ BentleyStatus   C3dImporter::ConvertC3d (DgnElementR element, DwgDbEntityCR enti
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   C3dImporter::_ImportEntity (ElementImportResults& results, ElementImportInputs& inputs)
     {
-    // Create a DgnElement from DWG entity by default, and get the results back:
-    DgnElementP     dgnElement = nullptr;
-    BentleyStatus   status = T_Super::_ImportEntity (results, inputs);
-    if (BSISUCCESS != status || nullptr == (dgnElement = results.GetImportedElement()))
-        {
-        LOG.errorv ("Failed creating DgnElement from DWG entity %lld", inputs.GetEntity().GetObjectId().ToUInt64());
-        return  status;
-        }
-
-    status = ConvertC3d (*dgnElement, inputs.GetEntity());
-
-    if (BSISUCCESS != status)
-        LOG.error ("Failed adding xdata to DgnElement as Adhoc properties!");
-
-    return  status;
+    // override this only because so we can call it from C3D protocol extensions
+    return T_Super::_ImportEntity (results, inputs);
     }
 
 END_C3D_NAMESPACE

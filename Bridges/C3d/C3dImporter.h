@@ -15,15 +15,13 @@
 #include <Dwg/ProtocalExtensions.h>
 
 #include <Teigha/Civil/DbEntity/AECCDbAlignment.h>
+#include <Teigha/Civil/DbEntity/AECCDbVAlignment.h>
 
 #include <DgnPlatform/GenericDomain.h>
 
 #include <LinearReferencing/LinearReferencingApi.h>
 #include <RoadRailAlignment/RoadRailAlignmentApi.h>
 #include <RoadRailPhysical/RoadRailPhysicalApi.h>
-//#include <Structural/StructuralPhysicalApi.h>
-//#include <StructuralDomain/StructuralPhysicalApi.h>
-//#include <BridgeStructural/BridgeStructuralPhysicalApi.h>
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_DGN
@@ -43,13 +41,25 @@ USING_NAMESPACE_BENTLEY_ROADRAILALIGNMENT
 #define END_C3D_NAMESPACE   } END_BENTLEY_NAMESPACE
 #define USING_NAMESPACE_C3D using namespace BENTLEY_NAMESPACE_NAME::C3D_NAMESPACE_NAME;
 
+// Declare common members for a C3D protocol extension
+#define DEFINE_C3DPROTOCOLEXTENSION(__extclassname__)  \
+    DEFINE_T_SUPER(DwgProtocolExtension)                \
+    DWGRX_DECLARE_MEMBERS(__extclassname__)             \
+    DWG_PROTOCOLEXT_DECLARE_MEMBERS(__extclassname__)
+    
+
 #define DESIGNALIGNMENTS_NAME       "Road/Rail Design Alignments"
 #define ALIGNMENTS_PARTITION_NAME   "Road/Rail Physical"
 #define ROADNETWORK_MODEL_NAME      "Road Network"
 #define RAILNETWORK_MODEL_NAME      "Rail Network"
 #define CIVIL_ALIGNED_SUBJECT       "Civil Designer Products"
 
-#define ECCLASSNAME_AeccAligment    "AeccAlignment"
+// Entities
+#define ECCLASSNAME_AeccAlignment   "AeccAlignment"
+#define ECCLASSNAME_AeccVAlignment  "AeccVAlignment"
+// Structs
+#define ECCLASSNAME_DesignSpeed     "DesignSpeed"
+#define ECCLASSNAME_VAlignment      "VAlignment"
 
 BEGIN_C3D_NAMESPACE
 
@@ -79,7 +89,6 @@ private:
     C3dOptions          m_c3dOptions;
     
 private:
-    BentleyStatus   ConvertC3d (DgnElementR element, DwgDbEntityCR entity);
     SubjectCPtr GetAlignmentSubject ();
     void ParseC3dConfigurations ();
 
@@ -94,6 +103,8 @@ public:
     EXPORT_ATTRIBUTE BentleyStatus  _MakeSchemaChanges() override;
     EXPORT_ATTRIBUTE BentleyStatus  _ImportEntitySection () override;
     EXPORT_ATTRIBUTE BentleyStatus  _ImportEntity(ElementImportResults& results, ElementImportInputs& inputs) override;
+    EXPORT_ATTRIBUTE Utf8String     _ComputeImportJobName (DwgDbBlockTableRecordCR modelspaceBlock) const override;
+    EXPORT_ATTRIBUTE bool           _FilterEntity (ElementImportInputs& inputs) const override;
 
     // C3dImporter methods
     EXPORT_ATTRIBUTE BentleyStatus  OnBaseBridgeJobFound (DgnElementId jobId);
@@ -101,6 +112,11 @@ public:
     PhysicalModelPtr    GetRailNetworkModel ();
     SpatialLocationModelPtr GetAlignmentModel () { return m_alignmentModel; }
     ECSchemaCP  GetC3dSchema () const { return m_c3dSchema; }
+    ECClassCP   GetC3dECClass (Utf8StringCR name) const;
+    StandaloneECInstancePtr CreateC3dECInstance (Utf8StringCR className) const;
+    DgnDbStatus InsertStructArrayProperty (DgnElementR element, ECValueR outValue, Utf8StringCR propertyName, uint32_t arraySize) const;
+    IDwgChangeDetector& GetChangeDetector () { return T_Super::_GetChangeDetector(); }
+    BentleyStatus  ProcessDetectionResults (IDwgChangeDetector::DetectionResultsR detected, ElementImportResults& results, ElementImportInputs& inputs) { return T_Super::_ProcessDetectionResults(detected, results, inputs); }
 };  // C3dImporter
 DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(C3dImporter)
 
@@ -110,9 +126,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(C3dImporter)
 class AeccAlignmentExt : public DwgProtocolExtension
 {
 public:
-    DEFINE_T_SUPER (DwgProtocolExtension)
-    DWGRX_DECLARE_MEMBERS (AeccAlignmentExt)
-    DWG_PROTOCOLEXT_DECLARE_MEMBERS (AeccAlignmentExt)
+    DEFINE_C3DPROTOCOLEXTENSION(AeccAlignmentExt)
 
     virtual BentleyStatus  _ConvertToBim (ProtocolExtensionContext& context, DwgImporterR importer) override;
 
@@ -121,13 +135,20 @@ private:
     mutable Utf8String  m_description;
     mutable C3dImporterP    m_importer;
     mutable AECCDbAlignment*    m_aeccAlignment;
+    mutable DgnElementId    m_baseAlignmentId;
     mutable SpatialLocationModelPtr m_alignmentModel;
     mutable ProtocolExtensionContext* m_toDgnContext;
+    mutable bmap<DwgDbObjectId, DgnElementId>   m_importedVAlignmentMap;
     
-    ECClassCP   GetECClass (Utf8StringCR className) const;
-    BentleyStatus   SetDesignSpeeds (DgnElementR element);
-    BentleyStatus   CreateAeccAlignment ();
-    BentleyStatus   CreateAlignment ();
+    // C3D elements
+    BentleyStatus   SetVAlignmentProperties (DgnElementR element);
+    BentleyStatus   SetDesignSpeedProperties (DgnElementR element);
+    BentleyStatus   DetectAndImportAeccVAlignment (DwgImporter::ElementImportInputs& inputs);
+    BentleyStatus   CreateOrUpdateAeccVAlignments ();
+    BentleyStatus   CreateOrUpdateAeccAlignment ();
+    // Civil domain elements
+    BentleyStatus   CreateOrUpdateVerticalAlignments ();
+    BentleyStatus   CreateOrUpdateHorizontalAlignment ();
 };  // AeccAlignmentExt
 
 END_C3D_NAMESPACE
