@@ -1351,6 +1351,16 @@ public:
         return Napi::Number::New(Env(), (int)status);
         }
 
+    Napi::Value ExtractChangedInstanceIdsFromChangeSet(Napi::CallbackInfo const &info)
+        {
+        REQUIRE_DB_TO_BE_OPEN
+        REQUIRE_ARGUMENT_STRING(0, changeSetFileName, Env().Undefined());
+        BeFileName changeSetFile(changeSetFileName);
+        Json::Value json;
+        DgnDbStatus status = JsInterop::ExtractChangedInstanceIdsFromChangeSet(json, *m_dgndb, changeSetFile);
+        return CreateBentleyReturnObject(status, toJsString(Env(), json.ToString()));
+        }
+
     static TxnManager::TxnId TxnIdFromString(Utf8StringCR str) {return TxnManager::TxnId(BeInt64Id::FromString(str.c_str()).GetValue());}
     static Utf8String TxnIdToString(TxnManager::TxnId txnId) {return BeInt64Id(txnId.GetValue()).ToHexStr();}
 
@@ -2363,6 +2373,7 @@ public:
             InstanceMethod("exportSchemas", &NativeDgnDb::ExportSchemas),
             InstanceMethod("extractBriefcaseManagerResourcesRequest", &NativeDgnDb::ExtractBriefcaseManagerResourcesRequest),
             InstanceMethod("extractBulkResourcesRequest", &NativeDgnDb::ExtractBulkResourcesRequest),
+            InstanceMethod("extractChangedInstanceIdsFromChangeSet", &NativeDgnDb::ExtractChangedInstanceIdsFromChangeSet),
             InstanceMethod("extractChangeSummary", &NativeDgnDb::ExtractChangeSummary),
             InstanceMethod("extractCodes", &NativeDgnDb::ExtractCodes),
             InstanceMethod("extractCodesFromFile", &NativeDgnDb::ExtractCodesFromFile),

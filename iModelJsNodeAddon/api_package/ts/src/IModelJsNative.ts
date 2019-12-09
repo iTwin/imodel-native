@@ -201,6 +201,7 @@ export declare namespace IModelJsNative {
     public exportSchemas(exportDirectory: string): DbResult;
     public extractBriefcaseManagerResourcesRequest(reqOut: BriefcaseManagerResourcesRequest, reqIn: BriefcaseManagerResourcesRequest, locks: boolean, codes: boolean): void;
     public extractBulkResourcesRequest(req: BriefcaseManagerResourcesRequest, locks: boolean, codes: boolean): void;
+    public extractChangedInstanceIdsFromChangeSet(changeSetFileName: string): ErrorStatusOrResult<IModelStatus, string>; // see ChangedInstanceIdsProps
     public extractChangeSummary(changeCacheFile: ECDb, changesetFilePath: string): ErrorStatusOrResult<DbResult, string>;
     public extractCodes(): ErrorStatusOrResult<DbResult, string>;
     public extractCodesFromFile(changeSets: string): ErrorStatusOrResult<DbResult, string>;
@@ -552,6 +553,22 @@ export declare namespace IModelJsNative {
     public cloneElement(sourceId: Id64String): ElementProps;
     public importCodeSpec(sourceId: Id64String): Id64String;
     public importFont(sourceId: number): number;
+  }
+
+  interface ChangedInstanceOpsProps {
+    insert?: Id64String[];
+    update?: Id64String[];
+    delete?: Id64String[];
+  }
+
+  /** The *wire format* of the result returned by DgnDb.extractChangedInstanceIdsFromChangeSet */
+  interface ChangedInstanceIdsProps {
+    codeSpec?: ChangedInstanceOpsProps;
+    model?: ChangedInstanceOpsProps;
+    element?: ChangedInstanceOpsProps;
+    aspect?: ChangedInstanceOpsProps;
+    relationship?: ChangedInstanceOpsProps;
+    font?: ChangedInstanceOpsProps;
   }
 
   /**

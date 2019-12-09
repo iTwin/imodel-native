@@ -9,6 +9,7 @@
 #include <Bentley/Base64Utilities.h>
 #include <Bentley/Desktop/FileSystem.h>
 #include <GeomSerialization/GeomSerializationApi.h>
+#include <ECDb/ChangeIterator.h>
 #include <DgnPlatform/FunctionalDomain.h>
 #include <chrono>
 
@@ -508,6 +509,152 @@ RevisionStatus JsInterop::DumpChangeSet(DgnDbR dgndb, JsonValueCR changeSetToken
         return status;
     revision->Dump(dgndb);
     return RevisionStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Shaun.Sewall                    12/19
+//---------------------------------------------------------------------------------------
+DgnDbStatus JsInterop::ExtractChangedInstanceIdsFromChangeSet(JsonValueR json, DgnDbR db, BeFileNameCR changeSetFile)
+    {
+    ECClassCP elementClass = db.Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_Element);
+    Json::Value elementJson(Json::ValueType::objectValue);
+    Json::Value elementInsertIds(Json::ValueType::arrayValue);
+    Json::Value elementUpdateIds(Json::ValueType::arrayValue);
+    Json::Value elementDeleteIds(Json::ValueType::arrayValue);
+
+    ECClassCP aspectClass = db.Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementAspect);
+    Json::Value aspectJson(Json::ValueType::objectValue);
+    Json::Value aspectInsertIds(Json::ValueType::arrayValue);
+    Json::Value aspectUpdateIds(Json::ValueType::arrayValue);
+    Json::Value aspectDeleteIds(Json::ValueType::arrayValue);
+
+    ECClassCP modelClass = db.Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_Model);
+    Json::Value modelJson(Json::ValueType::objectValue);
+    Json::Value modelInsertIds(Json::ValueType::arrayValue);
+    Json::Value modelUpdateIds(Json::ValueType::arrayValue);
+    Json::Value modelDeleteIds(Json::ValueType::arrayValue);
+
+    ECClassCP relationshipClass = db.Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_REL_ElementRefersToElements);
+    // WIP: also consider ElementDrivesElement
+    Json::Value relationshipJson(Json::ValueType::objectValue);
+    Json::Value relationshipInsertIds(Json::ValueType::arrayValue);
+    Json::Value relationshipUpdateIds(Json::ValueType::arrayValue);
+    Json::Value relationshipDeleteIds(Json::ValueType::arrayValue);
+
+    ECClassCP codeSpecClass = db.Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_CodeSpec);
+    Json::Value codeSpecJson(Json::ValueType::objectValue);
+    Json::Value codeSpecInsertIds(Json::ValueType::arrayValue);
+    Json::Value codeSpecUpdateIds(Json::ValueType::arrayValue);
+    Json::Value codeSpecDeleteIds(Json::ValueType::arrayValue);
+
+    Json::Value fontJson(Json::ValueType::objectValue);
+    Json::Value fontInsertIds(Json::ValueType::arrayValue);
+    Json::Value fontUpdateIds(Json::ValueType::arrayValue);
+    Json::Value fontDeleteIds(Json::ValueType::arrayValue);
+
+    RevisionChangesFileReader changeSetReader(changeSetFile, db);
+    ChangeIterator changeIter(db, changeSetReader);
+    for (ChangeIterator::RowEntry const& changeEntry : changeIter)
+        {
+        if (!changeEntry.IsMapped() || !changeEntry.IsPrimaryTable())
+            {
+            if (0 == strcmp(changeEntry.GetTableName().c_str(), "dgn_Font"))
+                {
+                switch (changeEntry.GetDbOpcode())
+                    {
+                    case DbOpcode::Insert: fontInsertIds.append(changeEntry.GetPrimaryInstanceId().ToHexStr()); break;
+                    case DbOpcode::Update: fontUpdateIds.append(changeEntry.GetPrimaryInstanceId().ToHexStr()); break;
+                    case DbOpcode::Delete: fontDeleteIds.append(changeEntry.GetPrimaryInstanceId().ToHexStr()); break;
+                    default: break;
+                    }
+                }
+            continue;
+            }
+
+        ECClassCP primaryClass = changeEntry.GetPrimaryClass();
+        if (primaryClass->Is(elementClass))
+            {
+            switch (changeEntry.GetDbOpcode())
+                {
+                case DbOpcode::Insert: elementInsertIds.append(changeEntry.GetPrimaryInstanceId().ToHexStr()); break;
+                case DbOpcode::Update: elementUpdateIds.append(changeEntry.GetPrimaryInstanceId().ToHexStr()); break;
+                case DbOpcode::Delete: elementDeleteIds.append(changeEntry.GetPrimaryInstanceId().ToHexStr()); break;
+                default: break;
+                }
+            }
+        else if (primaryClass->Is(aspectClass))
+            {
+            switch (changeEntry.GetDbOpcode())
+                {
+                case DbOpcode::Insert: aspectInsertIds.append(changeEntry.GetPrimaryInstanceId().ToHexStr()); break;
+                case DbOpcode::Update: aspectUpdateIds.append(changeEntry.GetPrimaryInstanceId().ToHexStr()); break;
+                case DbOpcode::Delete: aspectDeleteIds.append(changeEntry.GetPrimaryInstanceId().ToHexStr()); break;
+                default: break;
+                }
+            }
+        else if (primaryClass->Is(modelClass))
+            {
+            switch (changeEntry.GetDbOpcode())
+                {
+                case DbOpcode::Insert: modelInsertIds.append(changeEntry.GetPrimaryInstanceId().ToHexStr()); break;
+                case DbOpcode::Update: modelUpdateIds.append(changeEntry.GetPrimaryInstanceId().ToHexStr()); break;
+                case DbOpcode::Delete: modelDeleteIds.append(changeEntry.GetPrimaryInstanceId().ToHexStr()); break;
+                default: break;
+                }
+            }
+        else if (primaryClass->Is(relationshipClass)) // WIP: also consider ElementDrivesElement
+            {
+            switch (changeEntry.GetDbOpcode())
+                {
+                case DbOpcode::Insert: relationshipInsertIds.append(changeEntry.GetPrimaryInstanceId().ToHexStr()); break;
+                case DbOpcode::Update: relationshipUpdateIds.append(changeEntry.GetPrimaryInstanceId().ToHexStr()); break;
+                case DbOpcode::Delete: relationshipDeleteIds.append(changeEntry.GetPrimaryInstanceId().ToHexStr()); break;
+                default: break;
+                }
+            }
+        else if (primaryClass->Is(codeSpecClass))
+            {
+            switch (changeEntry.GetDbOpcode())
+                {
+                case DbOpcode::Insert: codeSpecInsertIds.append(changeEntry.GetPrimaryInstanceId().ToHexStr()); break;
+                case DbOpcode::Update: codeSpecUpdateIds.append(changeEntry.GetPrimaryInstanceId().ToHexStr()); break;
+                case DbOpcode::Delete: codeSpecDeleteIds.append(changeEntry.GetPrimaryInstanceId().ToHexStr()); break;
+                default: break;
+                }
+            }
+        }
+
+    if (elementInsertIds.size() > 0) elementJson["insert"] = elementInsertIds;
+    if (elementUpdateIds.size() > 0) elementJson["update"] = elementUpdateIds;
+    if (elementDeleteIds.size() > 0) elementJson["delete"] = elementDeleteIds;
+    if (!elementJson.empty()) json["element"] = elementJson;
+
+    if (aspectInsertIds.size() > 0) aspectJson["insert"] = aspectInsertIds;
+    if (aspectUpdateIds.size() > 0) aspectJson["update"] = aspectUpdateIds;
+    if (aspectDeleteIds.size() > 0) aspectJson["delete"] = aspectDeleteIds;
+    if (!aspectJson.empty()) json["aspect"] = aspectJson;
+
+    if (modelInsertIds.size() > 0) modelJson["insert"] = modelInsertIds;
+    if (modelUpdateIds.size() > 0) modelJson["update"] = modelUpdateIds;
+    if (modelDeleteIds.size() > 0) modelJson["delete"] = modelDeleteIds;
+    if (!modelJson.empty()) json["model"] = modelJson;
+
+    if (relationshipInsertIds.size() > 0) relationshipJson["insert"] = relationshipInsertIds;
+    if (relationshipUpdateIds.size() > 0) relationshipJson["update"] = relationshipUpdateIds;
+    if (relationshipDeleteIds.size() > 0) relationshipJson["delete"] = relationshipDeleteIds;
+    if (!relationshipJson.empty()) json["relationship"] = relationshipJson;
+
+    if (codeSpecInsertIds.size() > 0) codeSpecJson["insert"] = codeSpecInsertIds;
+    if (codeSpecUpdateIds.size() > 0) codeSpecJson["update"] = codeSpecUpdateIds;
+    if (codeSpecDeleteIds.size() > 0) codeSpecJson["delete"] = codeSpecDeleteIds;
+    if (!codeSpecJson.empty()) json["codeSpec"] = codeSpecJson;
+
+    if (fontInsertIds.size() > 0) fontJson["insert"] = fontInsertIds;
+    if (fontUpdateIds.size() > 0) fontJson["update"] = fontUpdateIds;
+    if (fontDeleteIds.size() > 0) fontJson["delete"] = fontDeleteIds;
+    if (!fontJson.empty()) json["font"] = fontJson;
+
+    return DgnDbStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------

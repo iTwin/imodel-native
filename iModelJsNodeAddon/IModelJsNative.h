@@ -187,6 +187,7 @@ public:
     static RevisionStatus FinishCreateChangeSet(DgnDbR dgndb);
     static void AbandonCreateChangeSet(DgnDbR dgndb);
     static RevisionStatus DumpChangeSet(DgnDbR dgndb, JsonValueCR changeSetToken);
+    static DgnDbStatus ExtractChangedInstanceIdsFromChangeSet(JsonValueR, DgnDbR, BeFileNameCR);
 
     static BeSQLite::DbResult ExtractCodes(JsonValueR codes, DgnDbR db);
     static BeSQLite::DbResult ExtractCodesFromFile(JsonValueR codes, DgnDbR db, JsonValueCR changeSetToken);
