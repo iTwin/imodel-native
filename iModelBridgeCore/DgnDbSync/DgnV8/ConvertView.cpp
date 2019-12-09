@@ -1493,8 +1493,8 @@ BentleyStatus DynamicViewMapper::CreateSectionLocation(DgnElementPtr& element, U
 BentleyStatus   DynamicViewMapper::CreateRelationship(DgnElementR sectionLocationElement)
     {
     DgnV8Api::ElementHandle namedViewElement(m_namedView.GetElementRef(), NULL);
-                            
-    DgnV8Api::DgnECInstanceHost titleBlockHost = Converter::GetLinkTargetHost(namedViewElement, m_converter, DGNLINK_REGIONTYPE_Drawing);
+    DgnV8Api::FindInstancesScopePtr scope;
+    DgnV8Api::DgnECInstanceHost titleBlockHost = Converter::GetLinkTargetHost(namedViewElement, m_converter, DGNLINK_REGIONTYPE_Drawing, scope);
     if (titleBlockHost.IsElement())
         {
         ElementHandleCP targetDrawingBoundary = titleBlockHost.GetElementHandle();

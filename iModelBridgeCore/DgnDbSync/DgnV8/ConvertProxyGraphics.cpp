@@ -530,7 +530,7 @@ struct TargetDrawingBoundary
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                                   Sam.Wilson      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnV8Api::DgnECInstanceHost Converter::GetLinkTargetHost(DgnV8EhCR viewEH, Converter& cvt, WCharCP linkType)
+DgnV8Api::DgnECInstanceHost Converter::GetLinkTargetHost(DgnV8EhCR viewEH, Converter& cvt, WCharCP linkType, DgnV8Api::FindInstancesScopePtr& scope)
     {
     DgnV8Api::DgnLinkTreeSpecPtr treeSpec = DgnV8Api::DgnLinkManager::CreateTreeSpec (viewEH);
     DgnV8Api::DgnLinkTreePtr annotationTree = DgnV8Api::DgnLinkManager::GetManager ().ReadLinkTree (*treeSpec, false);
@@ -548,7 +548,6 @@ DgnV8Api::DgnECInstanceHost Converter::GetLinkTargetHost(DgnV8EhCR viewEH, Conve
             continue;
 
         // Let the link figure out the target.
-        DgnV8Api::FindInstancesScopePtr   scope;
         ECQueryPtr              query;
         if (regionLink->GetECTarget (scope, query, nullptr, getCreateOptions()))
             {
@@ -574,7 +573,8 @@ DgnV8Api::DgnECInstanceHost Converter::GetLinkTargetHost(DgnV8EhCR viewEH, Conve
 static TargetDrawingBoundary getTargetDrawingBoundary(DgnV8EhCR viewEH, Converter& cvt)
     {
     TargetDrawingBoundary tdb;
-    DgnV8Api::DgnECInstanceHost host = Converter::GetLinkTargetHost(viewEH, cvt, DGNLINK_REGIONTYPE_Drawing);
+    DgnV8Api::FindInstancesScopePtr scope;
+    DgnV8Api::DgnECInstanceHost host = Converter::GetLinkTargetHost(viewEH, cvt, DGNLINK_REGIONTYPE_Drawing, scope);
     if (!host.IsElement())
         return tdb;
     

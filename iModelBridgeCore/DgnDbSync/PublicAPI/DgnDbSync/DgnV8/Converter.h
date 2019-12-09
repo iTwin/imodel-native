@@ -1327,7 +1327,7 @@ public:
     };
 
     V8NamedViewType GetV8NamedViewType(DgnV8Api::ElementHandle const&);
-    static          DgnV8Api::DgnECInstanceHost GetLinkTargetHost(DgnV8EhCR viewEH, Converter& cvt, WCharCP linkType);
+    static          DgnV8Api::DgnECInstanceHost GetLinkTargetHost(DgnV8EhCR viewEH, Converter& cvt, WCharCP linkType, DgnV8Api::FindInstancesScopePtr& scope);
     DGNDBSYNC_EXPORT V8NamedViewType GetV8NamedViewType(DgnAttachmentCR);
     DGNDBSYNC_EXPORT V8NamedViewType GetV8NamedViewTypeOfFirstAttachment(DgnV8ModelR);
 
