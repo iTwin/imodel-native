@@ -2,7 +2,7 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See COPYRIGHT.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-#pragma once 
+#pragma once
 #include "RulesDrivenProviderContext.h"
 #include "QueryExecutor.h"
 #include "RulesPreprocessor.h"
@@ -58,6 +58,20 @@ public:
 };
 
 /*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                12/2019
++===============+===============+===============+===============+===============+======*/
+struct ArtifactsCapturer : RefCountedBase
+{
+private:
+    bvector<NodeArtifacts> m_artifacts;
+    ArtifactsCapturer() {}
+public:
+    void AddArtifact(NodeArtifacts artifact) {m_artifacts.push_back(artifact);}
+    bvector<NodeArtifacts> const& GetArtifacts() const {return m_artifacts;}
+    static RefCountedPtr<ArtifactsCapturer> Create() {return new ArtifactsCapturer();}
+};
+
+/*=================================================================================**//**
 * Context for NavNodesProvider implementations.
 * @bsiclass                                     Grigas.Petraitis                07/2015
 +===============+===============+===============+===============+===============+======*/
@@ -73,12 +87,14 @@ private:
     IProvidersIndexAllocatorPtr m_providersIndexAllocator;
     mutable HierarchyLevelInfo m_hierarchyLevelInfo;
     mutable DataSourceInfo m_dataSourceInfo;
+    bset<ArtifactsCapturer*> m_artifactsCapturers;
 
     // optimization flags
     bool m_isFullLoadDisabled;
     bool m_isUpdatesDisabled;
     bool m_isCheckingChildren;
     bool m_hasPageSize;
+    bool m_mayHaveArtifacts;
     size_t m_pageSize;
 
     // root nodes context
@@ -99,17 +115,17 @@ private:
 private:
     void Init();
     void InitProvidersIndexAllocator(uint64_t const* virtualParentNodeId);
-    ECPRESENTATION_EXPORT NavNodesProviderContext(PresentationRuleSetCR, RuleTargetTree, Utf8String, uint64_t const*, IUserSettings const&, ECExpressionsCache&, 
+    ECPRESENTATION_EXPORT NavNodesProviderContext(PresentationRuleSetCR, RuleTargetTree, Utf8String, uint64_t const*, IUserSettings const&, ECExpressionsCache&,
         RelatedPathsCache&, PolymorphicallyRelatedClassesCache&, JsonNavNodesFactory const&, IHierarchyCache&, INodesProviderFactoryCR, IJsonLocalState const*);
     ECPRESENTATION_EXPORT NavNodesProviderContext(NavNodesProviderContextCR other);
-    
+
 public:
-    static NavNodesProviderContextPtr Create(PresentationRuleSetCR ruleset, RuleTargetTree targetTree, Utf8String locale, uint64_t const* physicalParentId, 
-        IUserSettings const& userSettings, ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache, 
-        PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache, JsonNavNodesFactory const& nodesFactory, IHierarchyCache& nodesCache, 
-        INodesProviderFactoryCR providerFactory, IJsonLocalState const* localState) 
+    static NavNodesProviderContextPtr Create(PresentationRuleSetCR ruleset, RuleTargetTree targetTree, Utf8String locale, uint64_t const* physicalParentId,
+        IUserSettings const& userSettings, ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache,
+        PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache, JsonNavNodesFactory const& nodesFactory, IHierarchyCache& nodesCache,
+        INodesProviderFactoryCR providerFactory, IJsonLocalState const* localState)
         {
-        return new NavNodesProviderContext(ruleset, targetTree, locale, physicalParentId, userSettings, ecexpressionsCache, 
+        return new NavNodesProviderContext(ruleset, targetTree, locale, physicalParentId, userSettings, ecexpressionsCache,
             relatedPathsCache, polymorphicallyRelatedClassesCache, nodesFactory, nodesCache, providerFactory, localState);
         }
     static NavNodesProviderContextPtr Create(NavNodesProviderContextCR other) {return new NavNodesProviderContext(other);}
@@ -132,6 +148,10 @@ public:
     bvector<UserSettingEntry> GetRelatedSettings() const;
     IProvidersIndexAllocator& GetProvidersIndexAllocator() const {return *m_providersIndexAllocator;}
     void SetProvidersIndexAllocator(IProvidersIndexAllocator& allocator) {m_providersIndexAllocator = &allocator;}
+    bset<ArtifactsCapturer*> const& GetArtifactsCapturers() const {return m_artifactsCapturers;}
+    void SetArtifactsCapturers(bset<ArtifactsCapturer*> capturers) {m_artifactsCapturers = capturers;}
+    void AddArtifactsCapturer(ArtifactsCapturer* capturer) {m_artifactsCapturers.insert(capturer);}
+    void RemoveArtifactsCapturer(ArtifactsCapturer* capturer) {m_artifactsCapturers.erase(capturer);}
 
     // optimization flags
     bool IsFullNodesLoadDisabled() const {return m_isFullLoadDisabled;}
@@ -144,7 +164,10 @@ public:
     void SetPageSize(size_t value) {m_pageSize = value; m_hasPageSize = true;}
     bool HasPageSize() const {return m_hasPageSize;}
     size_t GetPageSize() const {return m_pageSize;}
-    
+    bool MayHaveArtifacts() const {return m_mayHaveArtifacts;}
+    void SetMayHaveArtifacts(bool value) {m_mayHaveArtifacts = value;}
+    bool RequiresFullProviderLoad() const {return !m_artifactsCapturers.empty() && m_mayHaveArtifacts;}
+
     // root nodes context
     ECPRESENTATION_EXPORT void SetRootNodeContext(RootNodeRuleCP);
     ECPRESENTATION_EXPORT void SetRootNodeContext(NavNodesProviderContextCR other);
@@ -175,11 +198,11 @@ public:
 struct INodesProviderContextFactory
 {
 protected:
-    virtual NavNodesProviderContextPtr _Create(IConnectionCR, Utf8CP rulesetId, Utf8CP locale, uint64_t const* parentNodeId, 
+    virtual NavNodesProviderContextPtr _Create(IConnectionCR, Utf8CP rulesetId, Utf8CP locale, uint64_t const* parentNodeId,
         ICancelationTokenCP, size_t pageSize) const = 0;
 public:
     virtual ~INodesProviderContextFactory() {}
-    NavNodesProviderContextPtr Create(IConnectionCR connection, Utf8CP rulesetId, Utf8CP locale, uint64_t const* parentNodeId, 
+    NavNodesProviderContextPtr Create(IConnectionCR connection, Utf8CP rulesetId, Utf8CP locale, uint64_t const* parentNodeId,
         ICancelationTokenCP cancelationToken = nullptr, size_t pageSize = -1) const
         {
         return _Create(connection, rulesetId, locale, parentNodeId, cancelationToken, pageSize);
@@ -241,16 +264,19 @@ private:
     mutable bool m_hasCachedHasNodesFlag;
     mutable uint64_t m_cachedNodesCount;
     mutable bool m_hasCachedNodesCount;
-        
+
 protected:
     ECPRESENTATION_EXPORT NavNodesProvider(NavNodesProviderContextCR context);
-    HasChildrenFlag AnyChildSpecificationReturnsNodes(JsonNavNode const& parentNode) const;
+    HasChildrenFlag AnyChildSpecificationReturnsNodes(JsonNavNodeR parentNode, bool captureChildrenArtifacts) const;
     NavNodesProviderPtr GetCachedProvider() const;
     void FinalizeNode(JsonNavNodeR, bool customizeLabel) const;
     ECPRESENTATION_EXPORT void InitializeNodes() const;
     bool HasSimilarNodeInHierarchy(JsonNavNodeCR node, uint64_t parentNodeId) const;
-    bvector<NodeArtifacts> GetChildrenArtifacts(JsonNavNodeCR) const;
-    
+    bool ShouldReturnChildNodes(JsonNavNodeR node) const;
+    NavNodesProviderPtr CreateProvider(JsonNavNodeR node) const;
+    NavNodesProviderPtr CreateProviderForCachedNode(JsonNavNodeR node) const;
+    void EvaluateArtifacts(JsonNavNodeCR node) const;
+
     virtual bool _IsCacheable() const = 0;
     virtual ProviderNodesInitializationStrategy _GetInitializationStrategy() const {return ProviderNodesInitializationStrategy::Automatic;}
     virtual bool _InitializeNodes() {return true;}
@@ -262,7 +288,6 @@ protected:
     virtual bool _GetNode(JsonNavNodePtr& node, size_t index) const = 0;
     virtual bool _HasNodes() const = 0;
     virtual size_t _GetNodesCount() const = 0;
-    virtual bvector<NodeArtifacts> _GetArtifacts() const = 0;
 
 public:
     virtual ~NavNodesProvider() {}
@@ -276,7 +301,6 @@ public:
     ECPRESENTATION_EXPORT bool GetNode(JsonNavNodePtr& node, size_t index) const;
     ECPRESENTATION_EXPORT size_t GetNodesCount() const;
     ECPRESENTATION_EXPORT bool HasNodes() const;
-    ECPRESENTATION_EXPORT bvector<NodeArtifacts> GetArtifacts() const;
     void DetermineChildren(JsonNavNodeR) const;
     void NotifyNodeChanged(JsonNavNodeCR node) const;
     void SetNodesCount(size_t count) {m_cachedNodesCount = count; m_hasCachedNodesCount = true;}
@@ -322,7 +346,7 @@ struct DisabledFullNodesLoadContext
     {
     NavNodesProviderCR m_provider;
     bool m_wasFullLoadDisabled;
-    DisabledFullNodesLoadContext(NavNodesProviderCR provider) 
+    DisabledFullNodesLoadContext(NavNodesProviderCR provider)
         : m_provider(provider)
         {
         m_wasFullLoadDisabled = m_provider.GetContext().IsFullNodesLoadDisabled();
@@ -344,7 +368,6 @@ protected:
     bool _GetNode(JsonNavNodePtr& node, size_t index) const override {return false;}
     bool _HasNodes() const override {return false;}
     size_t _GetNodesCount() const override {return 0;}
-    bvector<NodeArtifacts> _GetArtifacts() const override {return bvector<NodeArtifacts>();}
     EmptyNavNodesProviderCP _AsEmptyProvider() const override {return this;}
 public:
     static RefCountedPtr<EmptyNavNodesProvider> Create(NavNodesProviderContextR context)
@@ -361,7 +384,7 @@ struct SingleNavNodeProvider : NavNodesProvider
 private:
     JsonNavNodePtr m_node;
 private:
-    SingleNavNodeProvider(JsonNavNode& node, NavNodesProviderContextCR context) 
+    SingleNavNodeProvider(JsonNavNode& node, NavNodesProviderContextCR context)
         : NavNodesProvider(context), m_node(&node)
         {}
 protected:
@@ -370,12 +393,11 @@ protected:
         {
         if (0 != index)
             return false;
-        node = m_node; 
+        node = m_node;
         return true;
         }
     bool _HasNodes() const override {return true;}
     size_t _GetNodesCount() const override {return 1;}
-    bvector<NodeArtifacts> _GetArtifacts() const override;
     SingleNavNodeProviderCP _AsSingleProvider() const override {return this;}
 public:
     static RefCountedPtr<SingleNavNodeProvider> Create(JsonNavNode& node, NavNodesProviderContextCR context)
@@ -391,6 +413,8 @@ struct MultiNavNodesProvider : NavNodesProvider
 {
 private:
     bvector<NavNodesProviderPtr> m_providers;
+private:
+    bool RequiresFullLoad() const;
 protected:
     MultiNavNodesProvider(NavNodesProviderContextCR context) : NavNodesProvider(context) {}
     void AddProvider(NavNodesProvider& provider) {m_providers.push_back(&provider);}
@@ -402,7 +426,6 @@ protected:
     virtual bool _GetNode(JsonNavNodePtr& node, size_t index) const override;
     virtual bool _HasNodes() const override;
     virtual size_t _GetNodesCount() const override;
-    virtual bvector<NodeArtifacts> _GetArtifacts() const override;
 public:
     bvector<NavNodesProviderPtr> const& GetNodeProviders() const {return m_providers;}
 };
@@ -433,7 +456,6 @@ protected:
         }
     bool _HasNodes() const override {return !m_nodes.empty();}
     size_t _GetNodesCount() const override {return m_nodes.size();}
-    ECPRESENTATION_EXPORT bvector<NodeArtifacts> _GetArtifacts() const override;
 
 public:
     static RefCountedPtr<BVectorNodesProvider> Create(NavNodesProviderContext const& context, bvector<JsonNavNodePtr> nodes)
@@ -533,7 +555,6 @@ protected:
     ECPRESENTATION_EXPORT bool _GetNode(JsonNavNodePtr& node, size_t index) const override;
     ECPRESENTATION_EXPORT size_t _GetNodesCount() const override;
     ECPRESENTATION_EXPORT bool _HasNodes() const override;
-    ECPRESENTATION_EXPORT bvector<NodeArtifacts> _GetArtifacts() const override;
 
 public:
     static RefCountedPtr<PostProcessingNodesProvider> Create(NavNodesProviderCR provider)
@@ -552,20 +573,18 @@ struct CustomNodesProvider : NavNodesProvider
     using NavNodesProvider::GetNode;
 
 private:
-    mutable NavNodesProviderPtr m_childNodesProvider;
     CustomNodeSpecificationCR m_specification;
-    JsonNavNodePtr m_node;
+    NavNodesProviderPtr m_provider;
 
 private:
     ECPRESENTATION_EXPORT CustomNodesProvider(NavNodesProviderContextCR context, CustomNodeSpecificationCR specification);
-    
+
 protected:
     bool _IsCacheable() const override {return true;}
     bool _InitializeNodes() override;
     bool _GetNode(JsonNavNodePtr& node, size_t index) const override;
     bool _HasNodes() const override;
     size_t _GetNodesCount() const override;
-    bvector<NodeArtifacts> _GetArtifacts() const override;
 
 public:
     static RefCountedPtr<CustomNodesProvider> Create(NavNodesProviderContextCR context, CustomNodeSpecificationCR specification)
@@ -593,14 +612,11 @@ private:
 
 private:
     ECPRESENTATION_EXPORT QueryBasedNodesProvider(NavNodesProviderContextCR context, NavigationQuery const& query, bmap<ECClassId, bool> const&);
-    bool ShouldReturnChildNodes(JsonNavNode const& node, HasChildrenFlag& hasChildren) const;
-    NavNodesProviderPtr CreateProvider(JsonNavNodeR node) const;
     void InitializeDataSource();
     bool InitializeProvidersFromCache();
     bool InitializeProvidersForAllNodes();
     bool InitializeProvidersForPagedQueries(size_t nodesCount, size_t pageSize);
-    void EnsureQueryRecordsRead() const;
-    
+
 protected:
     bool _IsCacheable() const override {return true;}
     ProviderNodesInitializationStrategy _GetInitializationStrategy() const override {return ProviderNodesInitializationStrategy::Manual;}
@@ -608,10 +624,9 @@ protected:
     bool _GetNode(JsonNavNodePtr& node, size_t index) const override;
     bool _HasNodes() const override;
     size_t _GetNodesCount() const override;
-    bvector<NodeArtifacts> _GetArtifacts() const override;
 
 public:
-    static RefCountedPtr<QueryBasedNodesProvider> Create(NavNodesProviderContextCR context, 
+    static RefCountedPtr<QueryBasedNodesProvider> Create(NavNodesProviderContextCR context,
         NavigationQuery const& query, bmap<ECClassId, bool> const& usedClassIds = bmap<ECClassId, bool>())
         {
         return WithInitialize(new QueryBasedNodesProvider(context, query, usedClassIds));
@@ -637,11 +652,10 @@ private:
 private:
     ECPRESENTATION_EXPORT QueryBasedSpecificationNodesProvider(NavNodesProviderContextCR context, ChildNodeSpecificationCR specification);
     bvector<NavigationQueryPtr> CreateQueries(ChildNodeSpecificationCR specification) const;
-    
+
 protected:
     bool _IsCacheable() const override {return false;}
     bool _HasNodes() const override;
-    bvector<NodeArtifacts> _GetArtifacts() const override;
 
 public:
     static RefCountedPtr<QueryBasedSpecificationNodesProvider> Create(NavNodesProviderContextCR context, ChildNodeSpecificationCR specification)
@@ -674,7 +688,6 @@ protected:
     bool _GetNode(JsonNavNodePtr& node, size_t index) const override;
     bool _HasNodes() const override;
     size_t _GetNodesCount() const override;
-    bvector<NodeArtifacts> _GetArtifacts() const override;
 
     virtual BeSQLite::CachedStatementPtr _GetNodesStatement() const = 0;
     virtual BeSQLite::CachedStatementPtr _GetCountStatement() const = 0;
@@ -803,7 +816,6 @@ protected:
     bool _GetNode(JsonNavNodePtr& node, size_t index) const override { return m_singleNodeProvider->GetNode(node, index); }
     bool _HasNodes() const override { return m_singleNodeProvider->HasNodes(); }
     size_t _GetNodesCount() const override { return m_singleNodeProvider->GetNodesCount(); }
-    bvector<NodeArtifacts> _GetArtifacts() const override { return m_singleNodeProvider->GetArtifacts(); }
     SingleNavNodeProviderCP _AsSingleProvider() const override { return m_singleNodeProvider.get(); }
 public:
     static RefCountedPtr<CachedNodeProvider> Create(NavNodesProviderContextCR context, uint64_t id)

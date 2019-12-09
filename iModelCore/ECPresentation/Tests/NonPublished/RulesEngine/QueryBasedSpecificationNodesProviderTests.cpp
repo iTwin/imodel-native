@@ -1059,6 +1059,9 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(QueryBasedSpecificationNodesProviderTests, GetArtifacts_DoesntRequestArtifactsFromChildProvidersWhenNoArtifactsRuleAppliesForSpecification)
     {
+    auto captureArtifacts = ArtifactsCapturer::Create();
+    m_context->AddArtifactsCapturer(captureArtifacts.get());
+
     RootNodeRule* rule1 = new RootNodeRule("", 1000, false, TargetTree_Both, false);
     m_ruleset->AddPresentationRule(*rule1);
     m_context->SetRootNodeContext(rule1);
@@ -1072,8 +1075,9 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, GetArtifacts_DoesntRequestArti
     rule2->AddCustomizationRule(*new NodeArtifactsRule());
 
     RefCountedPtr<QueryBasedSpecificationNodesProvider> provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
-    auto result = provider->GetArtifacts();
-    EXPECT_TRUE(result.empty());
+    provider->GetNodesCount();
+
+    EXPECT_TRUE(captureArtifacts->GetArtifacts().empty());
     ASSERT_EQ(1, provider->GetNodeProviders().size());
     ASSERT_TRUE(nullptr != dynamic_cast<QueryBasedNodesProvider const*>(provider->GetNodeProviders()[0].get()));
     ASSERT_FALSE(dynamic_cast<QueryBasedNodesProvider const*>(provider->GetNodeProviders()[0].get())->GetExecutor().IsReadStarted());
@@ -1084,6 +1088,9 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, GetArtifacts_DoesntRequestArti
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(QueryBasedSpecificationNodesProviderTests, GetArtifacts_RequestsArtifactsFromChildProvidersWhenArtifactsDefinedAtRulesetRootLevel)
     {
+    auto captureArtifacts = ArtifactsCapturer::Create();
+    m_context->AddArtifactsCapturer(captureArtifacts.get());
+
     // create our own instances
     ECInstanceInserter inserter(s_project->GetECDb(), *m_widgetClass, nullptr);
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass);
@@ -1101,8 +1108,9 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, GetArtifacts_RequestsArtifacts
     m_ruleset->AddPresentationRule(*new NodeArtifactsRule("", artifactDefinitions));
 
     RefCountedPtr<QueryBasedSpecificationNodesProvider> provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
-    auto result = provider->GetArtifacts();
-    EXPECT_EQ(1, result.size());
+    provider->GetNodesCount();
+
+    EXPECT_EQ(1, captureArtifacts->GetArtifacts().size());
     ASSERT_EQ(1, provider->GetNodeProviders().size());
     ASSERT_TRUE(nullptr != dynamic_cast<QueryBasedNodesProvider const*>(provider->GetNodeProviders()[0].get()));
     ASSERT_TRUE(dynamic_cast<QueryBasedNodesProvider const*>(provider->GetNodeProviders()[0].get())->GetExecutor().IsReadFinished());
@@ -1113,6 +1121,9 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, GetArtifacts_RequestsArtifacts
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(QueryBasedSpecificationNodesProviderTests, GetArtifacts_RequestsArtifactsFromChildProvidersWhenArtifactsDefinedAtNestedRuleLevel)
     {
+    auto captureArtifacts = ArtifactsCapturer::Create();
+    m_context->AddArtifactsCapturer(captureArtifacts.get());
+
     // create our own instances
     ECInstanceInserter inserter(s_project->GetECDb(), *m_widgetClass, nullptr);
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass);
@@ -1130,8 +1141,9 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, GetArtifacts_RequestsArtifacts
     rule->AddCustomizationRule(*new NodeArtifactsRule("", artifactDefinitions));
 
     RefCountedPtr<QueryBasedSpecificationNodesProvider> provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
-    auto result = provider->GetArtifacts();
-    EXPECT_EQ(1, result.size());
+    provider->GetNodesCount();
+
+    EXPECT_EQ(1, captureArtifacts->GetArtifacts().size());
     ASSERT_EQ(1, provider->GetNodeProviders().size());
     ASSERT_TRUE(nullptr != dynamic_cast<QueryBasedNodesProvider const*>(provider->GetNodeProviders()[0].get()));
     ASSERT_TRUE(dynamic_cast<QueryBasedNodesProvider const*>(provider->GetNodeProviders()[0].get())->GetExecutor().IsReadFinished());

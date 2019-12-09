@@ -7154,9 +7154,19 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AppliesNodeExtendedDataF
 * @bsitest                                      Grigas.Petraitis                08/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(HideNodeWhenItHasNoChildrenOrArtifacts_ShowsWhenThereAreChildren, R"*(
-    <ECEntityClass typeName="Subject" />
+    <ECEntityClass typeName="Subject">
+        <ECNavigationProperty propertyName="Parent" relationshipName="SubjectOwnsSubjects" direction="Backward" />
+    </ECEntityClass>
     <ECEntityClass typeName="Partition" />
     <ECEntityClass typeName="Model" />
+    <ECRelationshipClass typeName="SubjectOwnsSubjects" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="false">
+            <Class class="Subject"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Subject"/>
+        </Target>
+    </ECRelationshipClass>
     <ECRelationshipClass typeName="SubjectOwnsPartitionElements" strength="embedding" modifier="None">
         <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="false">
             <Class class="Subject"/>
@@ -7179,36 +7189,43 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, HideNodeWhenItHasNoChild
     ECClassCP subjectClass = GetClass("Subject");
     ECClassCP partitionClass = GetClass("Partition");
     ECClassCP modelClass = GetClass("Model");
+    ECRelationshipClassCP relSubjectOwnsSubjects = GetClass("SubjectOwnsSubjects")->GetRelationshipClassCP();
     ECRelationshipClassCP relSubjectOwnsPartitionElements = GetClass("SubjectOwnsPartitionElements")->GetRelationshipClassCP();
     ECRelationshipClassCP relModelModelsElement = GetClass("ModelModelsElement")->GetRelationshipClassCP();
-    IECInstancePtr subject = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *subjectClass);
+    IECInstancePtr subject1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *subjectClass);
+    IECInstancePtr subject2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *subjectClass);
     IECInstancePtr partition = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *partitionClass);
     IECInstancePtr model = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *modelClass);
-    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relSubjectOwnsPartitionElements, *subject, *partition);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relSubjectOwnsSubjects, *subject1, *subject2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relSubjectOwnsPartitionElements, *subject2, *partition);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relModelModelsElement, *model, *partition);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* subjectsRule = new RootNodeRule();
-    rules->AddPresentationRule(*subjectsRule);
+    RootNodeRule* rootSubjectsRule = new RootNodeRule();
+    rules->AddPresentationRule(*rootSubjectsRule);
     InstanceNodesOfSpecificClassesSpecification* subjectsSpec = new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
-        "", subjectClass->GetFullName(), true);
-    subjectsSpec->SetHideExpression("NOT ThisNode.HasChildren AND NOT ThisNode.ChildrenArtifacts.AnyMatches(x => x.IsContentModelPartition)");
-    subjectsRule->AddSpecification(*subjectsSpec);
+        "this.Parent = NULL", subjectClass->GetFullName(), true);
+    subjectsSpec->SetHideExpression("NOT (ThisNode.HasChildren OR ThisNode.ChildrenArtifacts.AnyMatches(x => x.IsContentModelPartition))");
+    rootSubjectsRule->AddSpecification(*subjectsSpec);
+
+    ChildNodeRule* childSubjectsRule = new ChildNodeRule("ParentNode.ClassName = \"Subject\"", 1000, false, TargetTree_Both);
+    childSubjectsRule->AddSpecification(*new RelatedInstanceNodesSpecification(1000, ChildrenHint::Unknown, true, false, false, false, 0, "",
+        RequiredRelationDirection_Forward, "", relSubjectOwnsSubjects->GetFullName(), subjectClass->GetFullName()));
+    rules->AddPresentationRule(*childSubjectsRule);
 
     ChildNodeRule* partitionsRule = new ChildNodeRule("ParentNode.ClassName = \"Subject\"", 1000, false, TargetTree_Both);
+    partitionsRule->AddSpecification(*new RelatedInstanceNodesSpecification(1000, ChildrenHint::Unknown, false, false, false, false, 0, "",
+        RequiredRelationDirection_Forward, "", relSubjectOwnsPartitionElements->GetFullName(), partitionClass->GetFullName()));
     rules->AddPresentationRule(*partitionsRule);
-    RelatedInstanceNodesSpecification* partitionsSpec = new RelatedInstanceNodesSpecification(1000, ChildrenHint::Unknown, false, false, false, false, 0, "",
-        RequiredRelationDirection_Forward, "", relSubjectOwnsPartitionElements->GetFullName(), partitionClass->GetFullName());
-    partitionsRule->AddSpecification(*partitionsSpec);
 
     // request for nodes
     RulesDrivenECPresentationManager::NavigationOptions options(BeTest::GetNameOfCurrentTest());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyNodeInstance(*rootNodes[0], *subject);
+    VerifyNodeInstance(*rootNodes[0], *subject1);
 
     DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
@@ -7220,9 +7237,19 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, HideNodeWhenItHasNoChild
 * @bsitest                                      Grigas.Petraitis                08/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(HideNodeWhenItHasNoChildrenOrArtifacts_HidesWhenThereAreNoChildren, R"*(
-    <ECEntityClass typeName="Subject" />
+    <ECEntityClass typeName="Subject">
+        <ECNavigationProperty propertyName="Parent" relationshipName="SubjectOwnsSubjects" direction="Backward" />
+    </ECEntityClass>
     <ECEntityClass typeName="Partition" />
     <ECEntityClass typeName="Model" />
+    <ECRelationshipClass typeName="SubjectOwnsSubjects" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="false">
+            <Class class="Subject"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Subject"/>
+        </Target>
+    </ECRelationshipClass>
     <ECRelationshipClass typeName="SubjectOwnsPartitionElements" strength="embedding" modifier="None">
         <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="false">
             <Class class="Subject"/>
@@ -7245,30 +7272,37 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, HideNodeWhenItHasNoChild
     ECClassCP subjectClass = GetClass("Subject");
     ECClassCP partitionClass = GetClass("Partition");
     ECClassCP modelClass = GetClass("Model");
+    ECRelationshipClassCP relSubjectOwnsSubjects = GetClass("SubjectOwnsSubjects")->GetRelationshipClassCP();
     ECRelationshipClassCP relSubjectOwnsPartitionElements = GetClass("SubjectOwnsPartitionElements")->GetRelationshipClassCP();
     ECRelationshipClassCP relModelModelsElement = GetClass("ModelModelsElement")->GetRelationshipClassCP();
-    IECInstancePtr subject = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *subjectClass);
+    IECInstancePtr subject1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *subjectClass);
+    IECInstancePtr subject2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *subjectClass);
     IECInstancePtr partition = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *partitionClass);
     IECInstancePtr model = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *modelClass);
-    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relSubjectOwnsPartitionElements, *subject, *partition);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relSubjectOwnsSubjects, *subject1, *subject2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relSubjectOwnsPartitionElements, *subject2, *partition);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relModelModelsElement, *model, *partition);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* subjectsRule = new RootNodeRule();
-    rules->AddPresentationRule(*subjectsRule);
+    RootNodeRule* rootSubjectsRule = new RootNodeRule();
+    rules->AddPresentationRule(*rootSubjectsRule);
     InstanceNodesOfSpecificClassesSpecification* subjectsSpec = new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
-        "", subjectClass->GetFullName(), true);
-    subjectsSpec->SetHideExpression("NOT ThisNode.HasChildren AND NOT ThisNode.ChildrenArtifacts.AnyMatches(x => x.IsContentModelPartition)");
-    subjectsRule->AddSpecification(*subjectsSpec);
+        "this.Parent = NULL", subjectClass->GetFullName(), true);
+    subjectsSpec->SetHideExpression("NOT (ThisNode.HasChildren OR ThisNode.ChildrenArtifacts.AnyMatches(x => x.IsContentModelPartition))");
+    rootSubjectsRule->AddSpecification(*subjectsSpec);
+
+    ChildNodeRule* childSubjectsRule = new ChildNodeRule("ParentNode.ClassName = \"Subject\"", 1000, false, TargetTree_Both);
+    childSubjectsRule->AddSpecification(*new RelatedInstanceNodesSpecification(1000, ChildrenHint::Unknown, true, false, false, false, 0, "",
+        RequiredRelationDirection_Forward, "", relSubjectOwnsSubjects->GetFullName(), subjectClass->GetFullName()));
+    rules->AddPresentationRule(*childSubjectsRule);
 
     ChildNodeRule* partitionsRule = new ChildNodeRule("ParentNode.ClassName = \"Subject\"", 1000, false, TargetTree_Both);
+    partitionsRule->AddSpecification(*new RelatedInstanceNodesSpecification(1000, ChildrenHint::Unknown, false, false, false, false, 0, "FALSE",
+        RequiredRelationDirection_Forward, "", relSubjectOwnsPartitionElements->GetFullName(), partitionClass->GetFullName()));
     rules->AddPresentationRule(*partitionsRule);
-    RelatedInstanceNodesSpecification* partitionsSpec = new RelatedInstanceNodesSpecification(1000, ChildrenHint::Unknown, false, false, false, false, 0, "FALSE",
-        RequiredRelationDirection_Forward, "", relSubjectOwnsPartitionElements->GetFullName(), partitionClass->GetFullName());
-    partitionsRule->AddSpecification(*partitionsSpec);
 
     // request for nodes
     RulesDrivenECPresentationManager::NavigationOptions options(BeTest::GetNameOfCurrentTest());
@@ -7281,9 +7315,19 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, HideNodeWhenItHasNoChild
 * @bsitest                                      Grigas.Petraitis                08/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(HideNodeWhenItHasNoChildrenOrArtifacts_ShowsWhenThereAreNoChildrenButThereAreArtifacts, R"*(
-    <ECEntityClass typeName="Subject" />
+    <ECEntityClass typeName="Subject">
+        <ECNavigationProperty propertyName="Parent" relationshipName="SubjectOwnsSubjects" direction="Backward" />
+    </ECEntityClass>
     <ECEntityClass typeName="Partition" />
     <ECEntityClass typeName="Model" />
+    <ECRelationshipClass typeName="SubjectOwnsSubjects" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="false">
+            <Class class="Subject"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Subject"/>
+        </Target>
+    </ECRelationshipClass>
     <ECRelationshipClass typeName="SubjectOwnsPartitionElements" strength="embedding" modifier="None">
         <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="false">
             <Class class="Subject"/>
@@ -7306,30 +7350,37 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, HideNodeWhenItHasNoChild
     ECClassCP subjectClass = GetClass("Subject");
     ECClassCP partitionClass = GetClass("Partition");
     ECClassCP modelClass = GetClass("Model");
+    ECRelationshipClassCP relSubjectOwnsSubjects = GetClass("SubjectOwnsSubjects")->GetRelationshipClassCP();
     ECRelationshipClassCP relSubjectOwnsPartitionElements = GetClass("SubjectOwnsPartitionElements")->GetRelationshipClassCP();
     ECRelationshipClassCP relModelModelsElement = GetClass("ModelModelsElement")->GetRelationshipClassCP();
-    IECInstancePtr subject = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *subjectClass);
+    IECInstancePtr subject1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *subjectClass);
+    IECInstancePtr subject2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *subjectClass);
     IECInstancePtr partition = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *partitionClass);
     IECInstancePtr model = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *modelClass);
-    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relSubjectOwnsPartitionElements, *subject, *partition);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relSubjectOwnsSubjects, *subject1, *subject2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relSubjectOwnsPartitionElements, *subject2, *partition);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relModelModelsElement, *model, *partition);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* subjectsRule = new RootNodeRule();
-    rules->AddPresentationRule(*subjectsRule);
+    RootNodeRule* rootSubjectsRule = new RootNodeRule();
+    rules->AddPresentationRule(*rootSubjectsRule);
     InstanceNodesOfSpecificClassesSpecification* subjectsSpec = new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
-        "", subjectClass->GetFullName(), true);
-    subjectsSpec->SetHideExpression("NOT ThisNode.HasChildren AND NOT ThisNode.ChildrenArtifacts.AnyMatches(x => x.IsContentModelPartition)");
-    subjectsRule->AddSpecification(*subjectsSpec);
+        "this.Parent = NULL", subjectClass->GetFullName(), true);
+    subjectsSpec->SetHideExpression("NOT (ThisNode.HasChildren OR ThisNode.ChildrenArtifacts.AnyMatches(x => x.IsContentModelPartition))");
+    rootSubjectsRule->AddSpecification(*subjectsSpec);
+
+    ChildNodeRule* childSubjectsRule = new ChildNodeRule("ParentNode.ClassName = \"Subject\"", 1000, false, TargetTree_Both);
+    childSubjectsRule->AddSpecification(*new RelatedInstanceNodesSpecification(1000, ChildrenHint::Unknown, true, false, false, false, 0, "",
+        RequiredRelationDirection_Forward, "", relSubjectOwnsSubjects->GetFullName(), subjectClass->GetFullName()));
+    rules->AddPresentationRule(*childSubjectsRule);
 
     ChildNodeRule* partitionsRule = new ChildNodeRule("ParentNode.ClassName = \"Subject\"", 1000, false, TargetTree_Both);
+    partitionsRule->AddSpecification(*new RelatedInstanceNodesSpecification(1000, ChildrenHint::Unknown, true, false, false, false, 0, "",
+        RequiredRelationDirection_Forward, "", relSubjectOwnsPartitionElements->GetFullName(), partitionClass->GetFullName()));
     rules->AddPresentationRule(*partitionsRule);
-    RelatedInstanceNodesSpecification* partitionsSpec = new RelatedInstanceNodesSpecification(1000, ChildrenHint::Unknown, true, false, false, false, 0, "",
-        RequiredRelationDirection_Forward, "", relSubjectOwnsPartitionElements->GetFullName(), partitionClass->GetFullName());
-    partitionsRule->AddSpecification(*partitionsSpec);
 
     bmap<Utf8String, Utf8String> artifactDefinitions;
     artifactDefinitions.Insert("IsContentModelPartition", "TRUE");
@@ -7339,7 +7390,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, HideNodeWhenItHasNoChild
     RulesDrivenECPresentationManager::NavigationOptions options(BeTest::GetNameOfCurrentTest());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyNodeInstance(*rootNodes[0], *subject);
+    VerifyNodeInstance(*rootNodes[0], *subject1);
 
     DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(0, childNodes.GetSize());
