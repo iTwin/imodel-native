@@ -1032,10 +1032,6 @@ void RootModelConverter::_ConvertDrawingLevels()
 //---------------------------------------------------------------------------------------
 void RootModelConverter::_ConvertLineStyles()
     {
-    BeAssert(GetRootModelP() != nullptr);
-    if (GetRootModelP() == nullptr)
-        return;     //  the line style converter uses m_rootModel
-
     for (DgnV8FileP v8File : m_v8Files)
         {
         if (IsFileAssignedToBridge(*v8File))
@@ -2066,9 +2062,6 @@ BentleyStatus RootModelConverter::MakeDefinitionChanges()
     if (BSISUCCESS != MustBeInSharedChannel("MakeDefinitionChanges must be called only in the shared channel."))
         return BSIERROR;
 
-    if (!m_isRootModelSpatial)
-        return BSISUCCESS;
-
     if (!m_beginConversionCalled)
         {
         if (SUCCESS != DoBeginConversion() || WasAborted())     // must call this first, to initialize the ChangeDetector, which MakeDefinitionChanges will use
@@ -2081,6 +2074,9 @@ BentleyStatus RootModelConverter::MakeDefinitionChanges()
     _ConvertLineStyles();
     if (WasAborted())
         return ERROR;
+
+    if (!m_isRootModelSpatial)
+        return BSISUCCESS;
 
     for (auto v8Model : m_spatialModelsInAttachmentOrder)
         {

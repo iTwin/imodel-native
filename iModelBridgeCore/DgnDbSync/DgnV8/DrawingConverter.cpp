@@ -263,7 +263,7 @@ bpair<ResolvedModelMapping, bool> Converter::Import2dModel(DgnV8ModelR v8model)
         GetChangeDetector()._OnModelSeen(*this, foundmm);
         return make_bpair(foundmm, false); // v8model has already been imported
         }
-	
+
     GetRepositoryLinkId(*v8model.GetDgnFileP());    // The old converter created a repository link for each sheet file, so we will do it, too. This is harmless if there's already a link for this file.
 
     _OnDrawingModelFound(v8model);	// We may have reached a new drawing model (e.g., in the case where we *generated* the model to adjust for annotation scale.)
@@ -271,10 +271,10 @@ bpair<ResolvedModelMapping, bool> Converter::Import2dModel(DgnV8ModelR v8model)
     auto bimModel = _GetResolvedModelMapping(v8model, toMeters); // adds to m_v8ModelMappings
     if (!bimModel.IsValid())
         return make_bpair(bimModel, false);
-    
+
     BeAssert(bimModel.GetDgnModel().Is2dModel());
 
-    return make_bpair(bimModel, true); 
+    return make_bpair(bimModel, true);
 
     // NB: Do not recurse! The caller handles that!
     }
@@ -295,12 +295,12 @@ void RootModelConverter::RegisterNonSpatialModel(DgnV8ModelR thisV8Model)
     if (!m_nonSpatialModelsSeen.insert(&thisV8Model).second)   // Already seen this model?
         return;
 
-    // Build up a list of non-spatial models in the order in which they were found. This is 
+    // Build up a list of non-spatial models in the order in which they were found. This is
     // so that we will (later) import those models in that same order. That is necessary so that
     // the converter will produce the same results -- the same rows in the same order -- as the older converter did.
     // And that is necessary so that we can verify the new converter by matching its results with the results of the old converter.
     m_nonSpatialModelsInModelIndexOrder.push_back(&thisV8Model);
-    
+
     // NB: Do not attempt to check if this model is known to be a child of some other job subject.
     //      This method is called very early in the conversion process. The current job subject is not yet known.
 
@@ -339,7 +339,7 @@ static void processModelIndex(bvector<DgnV8FileP>& filesToSearch, bvector<DgnV8F
             // The callback may create copies of model which invalidates the iterator - so iterate through a temporary list of indices.
             bvector<DgnV8Api::ModelIndexItem const*> indexItems;
             bset <DgnV8Api::ModelIndexItem const*> originals;
-    
+
             for (DgnV8Api::ModelIndexItem const& item : v8File->GetModelIndex())
                 {
                 indexItems.push_back(&item);
@@ -347,7 +347,7 @@ static void processModelIndex(bvector<DgnV8FileP>& filesToSearch, bvector<DgnV8F
                 }
 
             // First process the items that were originally in the index.
-            for (auto& pItem : indexItems)      
+            for (auto& pItem : indexItems)
                 cb(*v8File, *pItem);
 
             /// Then process any items that were added in the original pass.
@@ -373,7 +373,7 @@ static void processModelIndex(bvector<DgnV8FileP>& filesToSearch, bvector<DgnV8F
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RootModelConverter::FindV8DrawingsAndSheets()
     {
-    //  Build a list of dgn files to search for sheets and drawings 
+    //  Build a list of dgn files to search for sheets and drawings
     bvector<DgnFilePtr> tempKeepAlive;
     bvector<DgnV8FileP> filesToSearch;
 
@@ -412,7 +412,7 @@ void RootModelConverter::RegisterDrawingModel(DgnV8FileR v8File, DgnV8Api::Model
     {
     if (!IsV8DrawingModel(v8File, item))
         return;
-    
+
     auto v8model = v8File.LoadModelById(item.GetModelId());
     if (!v8model.IsValid())
         return;
@@ -487,7 +487,7 @@ Bentley::RefCountedPtr<DgnV8Api::DgnModel> Converter::CopyAndChangeAnnotationSca
     // Generate a new name for the model based on the attachment and the new scale
     WString newModelName = computeFullV8ModelName(*v8Model, WPrintfString(L" (annotation scale=%lf) DgnV8Converter", newAnnotationScale).c_str());
 
-    //  See if we already made such a copy. This can happen if the same drawing is attached to many different sheets 
+    //  See if we already made such a copy. This can happen if the same drawing is attached to many different sheets
     //  or to the same sheet, each time with a different clip
     if (true)
         {
@@ -556,7 +556,7 @@ Bentley::RefCountedPtr<DgnV8Api::DgnModel> Converter::CopyModel(DgnV8ModelP v8Mo
     // Generate a new name for the copied model based on the attachment
     WString newModelName = computeFullV8ModelName(*v8Model, newNameSuffix);
 
-    //  See if we already made such a copy. This can happen if the same drawing is attached to many different sheets 
+    //  See if we already made such a copy. This can happen if the same drawing is attached to many different sheets
     //  or to the same sheet, each time with a different clip
     if (true)
         {
@@ -691,7 +691,7 @@ void Converter::TransformDrawingAttachmentsToCopies(DgnV8ModelR parentModel, T_A
         // We only make private copies of attached drawings, not spatial/3d models!
         if (ShouldConvertToPhysicalModel(*v8Model))
             continue;
-            
+
         // If this is a model that we already copied in a previous step (or for another sheet), there is no need to copy it again.
         if (ConverterMadeCopyMarker::IsFoundOn(*v8Model))
             continue;
@@ -719,7 +719,7 @@ void Converter::TransformDrawingAttachmentsToCopies(DgnV8ModelR parentModel, T_A
 void RootModelConverter::Transform2dAttachments(DgnV8ModelR v8ParentModel)
     {
     GetAttachments(v8ParentModel); // make sure attachment hierarchy is created
-    
+
     if (!ScaledCopyMarker::IsFoundOn(v8ParentModel))    // *** NEEDS WORK: not sure why we need this check
         MakeAttachmentsMatchRootAnnotationScale(v8ParentModel);
     }
@@ -731,7 +731,7 @@ void RootModelConverter::RegisterSheetModel(DgnV8FileR v8File, DgnV8Api::ModelIn
     {
     if (DgnV8Api::DgnModelType::Sheet != item.GetModelType())
         return;
-    
+
     auto v8model = v8File.LoadModelById(item.GetModelId());
     if (!v8model.IsValid())
         return;
@@ -762,7 +762,7 @@ void RootModelConverter::RegisterSheetModel(DgnV8FileR v8File, DgnV8Api::ModelIn
                 continue;
 
             RegisterNonSpatialModel(*attachedModel);
-    
+
             // Mark the sheet's attachments. This will tell downstream conversion logic: "hands off!"
             SheetAttachmentMarker::AddTo(*attachedModel);
             }
@@ -849,7 +849,7 @@ ViewDefinitionPtr DrawingViewFactory::_UpdateView(Converter& converter, ViewDefi
         }
     drawing->SetDisplayStyle(newDisplayStyle);
 
-    // Update doesn't actually update the 'CategorySelector' list.  It deletes the old one and creates a new one.  This will cause a changeset to be created for every update, 
+    // Update doesn't actually update the 'CategorySelector' list.  It deletes the old one and creates a new one.  This will cause a changeset to be created for every update,
     // even if there were no changes.  Therefore, we have to manually determine if there were changes to the list of categories and only call Update if there were.
     CategorySelectorR newCategorySelector = drawing->GetCategorySelector();
     newCategorySelector.ForceElementIdForInsert(existingViewDef.GetCategorySelectorId());
@@ -877,8 +877,8 @@ static BentleyApi::DMatrix4dCR DoInterop(Bentley::DMatrix4d const&source) { retu
 struct MergeProxyGraphicsDrawGeom : public DgnV8Api::SimplifyViewDrawGeom
 {
     typedef
-        bmap<Bentley::DgnModelRefP,                            
-            bmap<DgnV8Api::ElementId,                          
+        bmap<Bentley::DgnModelRefP,
+            bmap<DgnV8Api::ElementId,
                 bmap<DgnCategoryId, GeometryBuilderPtr>>>    T_BuilderMap;
 
     typedef
@@ -1013,7 +1013,7 @@ void _DrawTextString (Bentley::TextStringCR v8Text, double* zDepth)  override
 
     TextStringPtr textString;
     Converter::ConvertTextString(textString, v8Text, *m_currentModelRef->GetDgnFileP(), m_converter);
-    
+
     // Flatten 3D -> 2D
     Transform   flattenTrans;
     flattenTrans.InitIdentity();
@@ -1038,12 +1038,13 @@ Bentley::StatusInt _ProcessCurveVector(Bentley::CurveVectorCR v8curves, bool isF
 
     if (!InitGeometryParams(geometryParams))
         return Bentley::SUCCESS;
+    m_converter.AdjustLineStyleScale(geometryParams, m_context->GetCurrentModel()->AsDgnAttachmentCP()); // NOTE: m_parentModelMapping.GetV8Attachment() is never set...
 
     Bentley::Transform  currentTransform = (nullptr == m_context->GetCurrLocalToFrustumTransformCP()) ? Bentley::Transform::FromIdentity() : *m_context->GetCurrLocalToFrustumTransformCP();
 
     CurveVectorPtr bimcurves;
     auto transform = m_parentModelMapping.GetTransform();
-    Converter::ConvertCurveVector(bimcurves, v8curves, &transform);   
+    Converter::ConvertCurveVector(bimcurves, v8curves, &transform);
 
     // Flatten 3D -> 2D
     Transform       flattenTrans;
@@ -1054,14 +1055,22 @@ Bentley::StatusInt _ProcessCurveVector(Bentley::CurveVectorCR v8curves, bool isF
 
     if (m_currentModelInfo.m_useMap)
         {
-        DMatrix4d     current, composite;
+        DMatrix4d   composite;
 
         composite.InitProduct(DMatrix4d::From(parentAndFlatten), m_currentModelInfo.m_map, DMatrix4d::From(DoInterop(currentTransform)));
-        bimcurves = bimcurves->Clone (composite);          
-        } 
+        bimcurves = bimcurves->Clone (composite);
+
+        Transform   transform;
+
+        transform.InitFrom(composite);
+        geometryParams.ApplyTransform(transform);
+        }
     else
         {
-        bimcurves->TransformInPlace(Transform::FromProduct(parentAndFlatten, DoInterop(currentTransform)));
+        Transform   transform = Transform::FromProduct(parentAndFlatten, DoInterop(currentTransform));
+
+        bimcurves->TransformInPlace(transform);
+        geometryParams.ApplyTransform(transform);
         }
 
     auto    primitive = GeometricPrimitive::Create(bimcurves);
@@ -1143,13 +1152,13 @@ void InitCurrentModel(DgnModelRefP modelRef)
     {
     m_currentModelRef = modelRef;
     auto  foundInfo = m_modelRefInfoMap.find(m_currentModelRef);
-    
+
     if (foundInfo != m_modelRefInfoMap.end())
         {
         m_currentModelInfo = foundInfo->second;
         return;
         }
-    
+
     ModelRefInfo info;
 
     auto    attachment = m_currentModelRef->AsDgnAttachmentCP();
@@ -1160,17 +1169,17 @@ void InitCurrentModel(DgnModelRefP modelRef)
         info.m_modelMapping = m_parentModelMapping;
         m_modelRefInfoMap[m_currentModelRef] = info;
         m_currentModelInfo = info;
-        
+
         // WIP_EXTERNAL_SOURCE_ASPECT must note somehow that m_currentModelRef was processed for proxy graphics?
 
         return;
         }
-    
+
     if (nullptr != attachment->GetDgnModelP())
         {
         info.m_modelMapping = m_converter._FindFirstResolvedModelMapping(*attachment->GetDgnModelP());
         // If no model mapping, then this model is only used as an attachment for proxy graphics and in that case we only care if the drawing changed
-        info.m_modelContentsChanged = info.m_modelMapping.IsValid() ? !m_converter.GetChangeDetector()._AreContentsOfModelUnChanged(m_converter, info.m_modelMapping) : true; 
+        info.m_modelContentsChanged = info.m_modelMapping.IsValid() ? !m_converter.GetChangeDetector()._AreContentsOfModelUnChanged(m_converter, info.m_modelMapping) : true;
         }
 
 
@@ -1209,10 +1218,10 @@ void InitCurrentModel(DgnModelRefP modelRef)
             info.m_map.InitProduct(DoInterop(toParentMap.M0), DMatrix4d::From(DoInterop(fromParentTransform)));
             }
         }
-    
+
     if (!info.m_attachmentChanged && !info.m_modelContentsChanged)
         m_attachmentsUnchanged.insert(attachment);
-        
+
     if (nullptr != attachment->FindProxyHandler(nullptr, m_context->GetViewport()))     // This works on children (searches through parents)...
         info.m_categoryId = m_converter.GetExtractionCategoryId(*attachment);
 
@@ -1243,7 +1252,7 @@ bool CreateOrUpdateDrawingGraphics()
         for (auto& byElement : byModelRef.second)
             {
             DgnV8Api::ElementHandle sectionedV8Element(modelRef->GetDgnModelP()->FindElementByID(byElement.first));   // This is the 3-D element in the V8 file that was sectioned/projected/rendered
-            
+
             bool sectionedV8ElementExists = sectionedV8Element.IsValid();
 
             SyncInfo::V8ElementExternalSourceAspect sectionedElementXsa;        // This identifies the PhysicalElement in the iModel to which the sectioned element was converted
@@ -1256,7 +1265,7 @@ bool CreateOrUpdateDrawingGraphics()
 
             if (m_converter.IsUpdating())
                 v8SectionedElementPathsSeen.insert(v8SectionedElementPath); // Note that we don't care if the original sectioned element still exists or not. We care if the *proxy graphics* for that element still exist.
-            
+
             DgnCategoryIdSet seenCategories;
             for (auto& bycategory : byElement.second)
                 {
@@ -1301,7 +1310,7 @@ bool CreateOrUpdateDrawingGraphics()
 +---------------+---------------+---------------+---------------+---------------+------*/
 MergeProxyGraphicsDrawGeom(Converter& converter, ResolvedModelMapping const& parentModelMapping, ResolvedModelMapping const& masterModelMapping)
                            : m_converter(converter), m_parentModelMapping(parentModelMapping), m_masterModelMapping(masterModelMapping)
-    { 
+    {
     }
 
 }; // MergeProxyGraphicsDrawGeom
@@ -1328,12 +1337,12 @@ virtual void _SetupOutputs () override {SetIViewDraw (m_output);}
 
 public:
 
-MergeDrawingContext(MergeProxyGraphicsDrawGeom& output, Converter& converter, bool mergeGraphicsForRenderedViews, ResolvedModelMapping const& mm) 
+MergeDrawingContext(MergeProxyGraphicsDrawGeom& output, Converter& converter, bool mergeGraphicsForRenderedViews, ResolvedModelMapping const& mm)
     : m_output (output), m_converter(converter), m_mergeGraphicsForRenderedViews(mergeGraphicsForRenderedViews), m_masterModelMapping(mm)
     {
     m_setupScan = true;
     m_purpose = DgnV8Api::DrawPurpose::DgnDbConvert;
-    m_wantMaterials = true; 
+    m_wantMaterials = true;
 
     SetBlockAsynchs (true);
     _SetupOutputs ();
@@ -1396,14 +1405,14 @@ void _DrawModelRef (DgnV8Api::DgnModelRef* baseModelRef, DgnV8Api::DgnModelRefLi
         return;
 
     m_converter.GetRepositoryLinkId(*baseModelRef->GetDgnModelP()->GetDgnFileP());  // May be the first we've encountered this file. Map it in now, so that downstream conversion mappings can refer to it.
-    
+
     // Rendered views are handled as direct sheet attachments -- so we ignore them if processing a drawing that will be viewed through a sheet.
     if (!m_mergeGraphicsForRenderedViews &&
         nullptr != baseModelRef->AsDgnAttachmentP() &&
         m_converter._UseRenderedViewAttachmentFor(*baseModelRef->AsDgnAttachmentP()))
         return;
 
-    
+
     m_output.InitCurrentModel(baseModelRef);
     bool        drawThisModel = (m_output.m_currentModelInfo.m_modelContentsChanged || (m_output.m_currentModelRef->IsDgnAttachment() && m_output.m_currentModelInfo.m_attachmentChanged));
     m_viewHandler->DrawModelRef (*this, baseModelRef, includeList, useUpdateSequence, drawThisModel, includeRefs);
@@ -1412,7 +1421,7 @@ void _DrawModelRef (DgnV8Api::DgnModelRef* baseModelRef, DgnV8Api::DgnModelRefLi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void VisitElementHandleWithExceptionHandling(DgnV8Api::ElementHandle const& inEl, bool checkRange, bool checkScanCriteria) 
+void VisitElementHandleWithExceptionHandling(DgnV8Api::ElementHandle const& inEl, bool checkRange, bool checkScanCriteria)
     {
     // __try
         {
@@ -1489,7 +1498,7 @@ static bool hasAnyPrefix(Utf8CP pathStr, bset<Utf8String> pathsToIgnore)
         {
         if (pathsToIgnore.find(path) != pathsToIgnore.end())
             return true;
-            
+
         while ((*--end  != '/') && (end > path))
             ;
         if (end == path)
@@ -1588,14 +1597,14 @@ struct CreateCveMeter : DgnV8Api::VisEdgesProgressMeter
         msg.append(Utf8String(detailed.c_str()));
 
         Converter::IssueSeverity sev = (DgnV8Api::OutputMessagePriority::Error == priority || DgnV8Api::OutputMessagePriority::Fatal == priority)?
-                                        Converter::IssueSeverity::Error: 
+                                        Converter::IssueSeverity::Error:
                                         (DgnV8Api::OutputMessagePriority::Warning == priority)?
                                         Converter::IssueSeverity::Warning:
                                         Converter::IssueSeverity::Info;
 
         m_converter.ReportIssue(sev, Converter::IssueCategory::Unknown(), Converter::Issue::ConvertFailure(), msg.c_str());
         }
-};  
+};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      07/2011
@@ -1634,7 +1643,7 @@ static StatusInt generateCve (DgnAttachmentP refP, ViewportP viewport, CachedVis
         }
 
     DgnV8Api::VisibleEdgeCache*           proxyCache = DgnV8Api::VisibleEdgeCache::Create (modelRef, options);
-                              
+
     if (SUCCESS ==  DgnV8Api::VisibleEdgesLib::CreateProxyCache (*proxyCache, NULL, modelRef, viewport, meter))
         {
         proxyCache->Resolve ();
@@ -1689,7 +1698,7 @@ bool Converter::_UseRenderedViewAttachmentFor(DgnAttachmentR ref)
         {
         return false;
         }
-        
+
     for (int i=0; i<8; i++)
         if (ref.GetViewFlags(i).renderMode  >= (UInt32) DgnV8Api::MSRenderMode::SmoothShade)
             return true;
@@ -1712,7 +1721,7 @@ bool Converter::IsSimpleWireframeAttachment(DgnAttachmentCR ref)
 
     if ((nullptr != ref.GetDynamicViewSettingsCR().GetClipBoundElementRef(ref.GetDgnModelP()) ||
          nullptr != ref.GetDynamicViewSettingsCR().GetClipMaskElementRef(ref.GetDgnModelP())) &&
-         ref.GetDynamicViewSettingsCR().GetMaximumClipRenderMode(ref.GetParentModelRefP()) > (UInt32) DgnV8Api::MSRenderMode::Wireframe) 
+         ref.GetDynamicViewSettingsCR().GetMaximumClipRenderMode(ref.GetParentModelRefP()) > (UInt32) DgnV8Api::MSRenderMode::Wireframe)
         return false;
 
     for (int i=0; i<8; i++)
@@ -1727,9 +1736,9 @@ bool Converter::IsSimpleWireframeAttachment(DgnAttachmentCR ref)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Converter::_GenerateProxyCacheFor(DgnAttachmentR ref)
     {
-    if (!ref.Is3d() || ref.IsTemporary() || IsSimpleWireframeAttachment(ref) || _UseRenderedViewAttachmentFor(ref)) 
+    if (!ref.Is3d() || ref.IsTemporary() || IsSimpleWireframeAttachment(ref) || _UseRenderedViewAttachmentFor(ref))
         return false;
-    
+
     return true;
     }
 
@@ -1837,7 +1846,7 @@ void Converter::DrawingsConvertModelAndViews(ResolvedModelMapping const& v8mm)
         v8ParentModel.ReadAndLoadDgnAttachments(loadOptions);
         }
 
-    
+
     DgnV8Api::ViewInfo const*   foundViewInfo = nullptr;
     auto                        vg = FindFirstViewGroupShowing(v8ParentModel);
     if (vg.IsValid())
@@ -1868,7 +1877,7 @@ void Converter::DrawingsConvertModelAndViews(ResolvedModelMapping const& v8mm)
     for (DgnV8Api::ViewGroupPtr const& vg : v8ParentModel.GetDgnFileP()->GetViewGroups())
         {
         DrawingViewFactory svf(v8mm);
-        Convert2dViewsOf(viewInfo, *vg, v8ParentModel, svf); 
+        Convert2dViewsOf(viewInfo, *vg, v8ParentModel, svf);
         }
     }
 
@@ -1881,7 +1890,7 @@ void Converter::CreateSheetExtractionAttachments(ResolvedModelMapping const& v8S
     auto                    attachments = GetAttachments(v8ParentModel);
     DgnV8Api::ViewInfoPtr   viewInfo = (nullptr == v8SheetView) ? createFakeViewInfo(v8ParentModel, *this):  DgnV8Api::ViewInfo::CopyFrom(*v8SheetView, true, true, true);
     FakeViewport            fakeVp(*viewInfo);
-    
+
     if (nullptr != attachments)
         {
         for (auto attachment : *attachments)
@@ -1909,20 +1918,20 @@ END_DGNDBSYNC_DGNV8_NAMESPACE
 //  Importing/mapping is done as the very first phase of the converter.
 //  Converting is done much later, after styles and views and ECSchemas have been converted.
 //
-//  Note that we ignore 3D attachments to 2d parents entirely at *model import* time. 
+//  Note that we ignore 3D attachments to 2d parents entirely at *model import* time.
 //  3d models are mapped into the BIM only when found via attachments to the spatial rootmodel.
 //  3d content is pulled into drawings and sheets via conversion to 2d proxy graphics, as explained below.
 //
 //  Here is how attachments are handled by the converter when the root model is a V8 drawing or sheet:
 //
-//  Root model = drawing. 
+//  Root model = drawing.
 //      We do not use attachments found in a V8 drawing model to map any other models in to the BIM. That is because we will copy the
-//      *content* of the attached models into the root drawing model later by visiting the drawing with a V8 view context and 
+//      *content* of the attached models into the root drawing model later by visiting the drawing with a V8 view context and
 //      recording the graphics as it would be displayed.
-////  Root model = sheet. 
-//      2d attachment: 
-//          We map the *directly* attached drawings into BIM. See the comment "DgnModel objects and Sheet attachments" below for why we *must* map in 2d models found by 
-//          direct attachments to sheets. 
+////  Root model = sheet.
+//      2d attachment:
+//          We map the *directly* attached drawings into BIM. See the comment "DgnModel objects and Sheet attachments" below for why we *must* map in 2d models found by
+//          direct attachments to sheets.
 //          Later, we will convert the drawing's contents as described in the case above.
 //          Finally, we will create a view of the mapped DrawingModel.
 //      3d attachment:
@@ -1933,15 +1942,15 @@ END_DGNDBSYNC_DGNV8_NAMESPACE
 
 
 //  "Annotation Scale and V8 drawings and Sheets"
-//  
+//
 //  When a sheet or drawing has a reference to a sheet or drawing, the attachment may specify that the annotations (text, dims, etc.) in the attached
 //  model should be displayed at a different scale. Changing the "annotation scale" of an annotation element is not the same as applying a simple
-//  scale factor to its geometry. In V8, this annotation re-scaling is done at draw time (in a very complicated way that meshes with the reference transform). 
+//  scale factor to its geometry. In V8, this annotation re-scaling is done at draw time (in a very complicated way that meshes with the reference transform).
 //  BIM does not have any concept of of reference attachments.
-//  BIM does not have any real concept of annotation scale. 
+//  BIM does not have any real concept of annotation scale.
 //  In BIM, a drawing or sheet are always full size, and so the text, dims, etc. in the model are to be placed in the size ultimately intended for plotting.
 //  Change the scale of a drawing or sheet means changing the geometry of the elements in it.
-//  
+//
 //  The converter handles an attachment that implies annotation re-scaling by making a copy of the attached model and changing its contents to the required scale.
 //  This transformation is applied recursively to all nested attachments.
 //  The result is a new, temporary copy of the original V8 DgnModel, and the converter converts the content of the copy, not the original, when processing
@@ -1949,7 +1958,7 @@ END_DGNDBSYNC_DGNV8_NAMESPACE
 //  Note that this transform is done by making a copy of the V8 DgnModel and transforming it. We do not make a copy of the BIM model and try to transform it.
 //  Only V8 has annotation re-scaling logic.
 //
-//  This transform is done at *model import* time. That is, we are tweaking the V8 *input* to the converter. 
+//  This transform is done at *model import* time. That is, we are tweaking the V8 *input* to the converter.
 //  The later phases of the converter, such as where we create views of drawings attached to sheets, see the transformed copies of the
 //  V8 models. The rules about processing attachments to 2d root models described above apply to these transformed copies just the same as they apply to other V8 attachments.
 
@@ -1957,15 +1966,15 @@ END_DGNDBSYNC_DGNV8_NAMESPACE
 //  "DgnModel objects and Sheet attachments"
 //
 // **** Make sure our m_v8ModelMappings points to the the same set of DgnModels that V8 knows about! ****
-// We use 2 passes so that the drawings that are referenced by sheets are found in the first pass, by ImportSheetModelsInFile, 
-// and not in the second pass by ImportDrawingModelsInFile. That is the way to avoid creating duplicate V8 DgnModel objects in memory. 
-// Specifically, when we tell V8 to load the reference attachments for a given sheet model, it will create V8 DgnModel objects in memory 
-// for the drawings attached to the sheet, and those are the V8 DgnModel objects that we will see later on when we process the sheet's attachments 
-// in order to create ViewAttachments. We want to make sure that those are the V8 DgnModel objects that are mapped to BIM models. 
+// We use 2 passes so that the drawings that are referenced by sheets are found in the first pass, by ImportSheetModelsInFile,
+// and not in the second pass by ImportDrawingModelsInFile. That is the way to avoid creating duplicate V8 DgnModel objects in memory.
+// Specifically, when we tell V8 to load the reference attachments for a given sheet model, it will create V8 DgnModel objects in memory
+// for the drawings attached to the sheet, and those are the V8 DgnModel objects that we will see later on when we process the sheet's attachments
+// in order to create ViewAttachments. We want to make sure that those are the V8 DgnModel objects that are mapped to BIM models.
 // If, instead, we had discovered those *same* V8 drawing models in the second pass (in ImportDrawingModelsInFile), we would create
-// *new* V8 DgnModel objects for them. The new objects would be distinct from but duplicates of the V8 DgnModel objects that the sheet's attachments point to. 
+// *new* V8 DgnModel objects for them. The new objects would be distinct from but duplicates of the V8 DgnModel objects that the sheet's attachments point to.
 // That would lead to mass confusion. We would think that a given V8 DgnModel object represents a given V8 model, but V8 would think that some other
-// V8 DgnModel object represents that model. We would map the one into BIM, and the duplicate would have no mapping. We would fill the one model, and the 
+// V8 DgnModel object represents that model. We would map the one into BIM, and the duplicate would have no mapping. We would fill the one model, and the
 // duplicate would remain unfilled, and so on.
 
 //  "Keeping sheet and drawing models alive"
@@ -1973,7 +1982,7 @@ END_DGNDBSYNC_DGNV8_NAMESPACE
 // Sheets are never kept alive by references, and drawings are also often un-referenced.
 // In this converter, sheets and drawings are never treated as V8 "root models" (since their containing files may in fact be reference files).
 // So, we have to keep sheet and drawing models alive by holding a reference to them explicitly.
-// Note that holding a reference to a model also keeps the containing DgnFile alive (even though its fileref remains zero). 
+// Note that holding a reference to a model also keeps the containing DgnFile alive (even though its fileref remains zero).
 // But that is not enough. We must also hold a reference to the file. That is to prevent this callstack from freeing the attachments
 // that we set up so carefully for scale-specific or other manipulated drawings and sheets:
 // 	DgnPlatform5.dll!Bentley::DgnPlatform::DgnModelRef::internal_DeleteDgnAttachmentList() Line 3543	C++
@@ -1990,7 +1999,7 @@ END_DGNDBSYNC_DGNV8_NAMESPACE
 // Some of the cases are explained above, for example, when a sheet needs a re-scaled copy of a drawing.
 //
 // Why in other cases? To avoid duplicate graphics in the case where a drawing has nested attachments of its own.
-// When a drawing is attached to a sheet, the nested 3d attachments are un-nested and become direct attachments of the sheet. 
+// When a drawing is attached to a sheet, the nested 3d attachments are un-nested and become direct attachments of the sheet.
 // When a drawing is displayed in its own right in its own view, then its nested attachments must be merged into it.
 // So, obviously, the bridge cannot apply those two different transformations to the same model. (Note that these transformations are done on the V8 models (in memory) before the conversion really starts.)
 //
@@ -1998,7 +2007,7 @@ END_DGNDBSYNC_DGNV8_NAMESPACE
 // "MergeProxyGraphicsDrawGeom handles both the drawing and attachments to the drawing"
 // MergeProxyGraphicsDrawGeom captures all graphics that appear in a V8 drawing, including
 // graphics generated from elements in the v8 drawing model itself, as well as graphics
-// generated from elements in attachments to the v8 drawing model. In some cases, the 
+// generated from elements in attachments to the v8 drawing model. In some cases, the
 // referenced graphics will have been generated by CVE, e.g., for section cuts, but that is a detail.
 // In some cases, the graphics for elements in the drawing itself will be clipped or otherwise
 // different from the original elements. That is also a detail. In all cases, the graphics
