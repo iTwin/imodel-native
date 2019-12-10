@@ -10,13 +10,17 @@
                 Delivery/DgnPlatformV8Sdk/Dlls/*.dll
             </Files>
             <Directory SourceName="Delivery/DgnPlatformV8Sdk/Dlls/ECSchemas" ProductDirectoryName="DgnV8Dlls" ProductSubDirectory="ECSchemas" SubPartDirectory="DgnPlatformV8Sdk/Dlls/ECSchemas" Required="true"/>
-            <Directory SourceName="Delivery/DgnPlatformV8Sdk/Dlls/Fonts" ProductDirectoryName="DgnV8Dlls" ProductSubDirectory="Fonts" SubPartDirectory="DgnPlatformV8Sdk/Dlls/Fonts" Required="true"/>
             <Directory SourceName="Delivery/DgnPlatformV8Sdk/Dlls/RealDwg" ProductDirectoryName="DgnV8Dlls" ProductSubDirectory="RealDwg" SubPartDirectory="DgnPlatformV8Sdk/Dlls/RealDwg" Required="true"/>
             <Directory SourceName="Delivery/DgnPlatformV8Sdk/Dlls/schema" ProductDirectoryName="DgnV8Dlls" ProductSubDirectory="schema" SubPartDirectory="DgnPlatformV8Sdk/Dlls/schema" Required="true"/>
             <Directory SourceName="Delivery/DgnPlatformV8Sdk/Dlls/Seed" ProductDirectoryName="DgnV8Dlls" ProductSubDirectory="Seed" SubPartDirectory="DgnPlatformV8Sdk/Dlls/Seed" Required="true"/>
             <Directory SourceName="Delivery/DgnPlatformV8Sdk/Dlls/Symb" ProductDirectoryName="DgnV8Dlls" ProductSubDirectory="Symb" SubPartDirectory="DgnPlatformV8Sdk/Dlls/Symb" Required="true"/>
             <Directory SourceName="Delivery/DgnPlatformV8Sdk/Dlls/en" ProductDirectoryName="DgnV8Dlls" ProductSubDirectory="en" SubPartDirectory="DgnPlatformV8Sdk/Dlls/en" Required="true"/>
             <Directory SourceName="Delivery/DgnPlatformV8Sdk/Libs" Required="false" SubPartDirectory="VersionedDgnV8Libs" />
+            <Files ProductDirectoryName="DgnV8Dlls" ProductSubDirectory="System/Fonts" SubPartDirectory="DgnPlatformV8Sdk/Dlls/Fonts" Required="true">
+                Delivery/DgnPlatformV8Sdk/Dlls/Fonts/*.shx
+                Delivery/DgnPlatformV8Sdk/Dlls/Fonts/*.rsc
+                Delivery/DgnPlatformV8Sdk/Dlls/Fonts/MstnFontConfig.xml
+            </Files>
         </Bindings>
     </Part>
 
@@ -391,6 +395,7 @@
         <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
         <SubPart PartName="DgnV8ConverterTestsExe"/>
         <SubPart PartName="StaticAppData"  PartFile="MstnAppData"      Repository="miscdev-mstnappdata"    />
+        <FeatureExclude>imodel02_Workspace_System_Fonts</FeatureExclude>
         <!--
         <Directories PartFile="iModelCore/BeGTest/BeGTest" DirectoryListName="BeGTestDirList"/>
         -->

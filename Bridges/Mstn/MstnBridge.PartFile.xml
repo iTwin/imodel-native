@@ -16,7 +16,8 @@
         <SubPart PartName="MakePackages" PartFile="iModelBridgeCore/DgnDbSync/bridge-addon"/>
         <SubPart PartName="StaticAppData" PartFile="MstnAppData" Repository="miscdev-mstnappdata"/>
         <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
-        
+        <FeatureExclude>imodel02_Workspace_System_Fonts</FeatureExclude>
+
         <InstallerWixFile SourceFile="Installer/MstnBridgeInstaller"/>
         <WixBundleFile    SourceFile="Installer/MstnBridgeBundle"/>
        
@@ -86,6 +87,7 @@
         <SubPart PartName="MstnBridgeTestsExe"/>
         <SubPart PartName="StaticAppData" PartFile="MstnAppData" Repository="miscdev-mstnappdata"/>
         <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
+        <FeatureExclude>imodel02_Workspace_System_Fonts</FeatureExclude>
         <Directories DirectoryListName="DgnDbSyncAppCommonDirList" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync" Repository="imodel02"/>
         <Directories DirectoryListName="DgnV8ConverterDirList"  PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync" Repository="imodel02"/>
         <Directories DirectoryListName="Tests" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync" Repository="imodel02"/>

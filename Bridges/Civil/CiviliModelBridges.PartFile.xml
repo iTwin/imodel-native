@@ -107,6 +107,7 @@
         <SubPart PartName="RoadRailAlignment-Tested" Repository="imodel02" PartFile="Domains/RoadRailAlignment/RoadRailAlignment" />
         <SubPart PartName="RoadRailPhysical-Tested" Repository="imodel02" PartFile="Domains/RoadRailPhysical/RoadRailPhysical" />
         <SubPart PartName="CiviliModelBridgesTested" />
+        <FeatureExclude>imodel02_Workspace_System_Fonts</FeatureExclude>
         
         <!-- <SubPart PartName="ORDBridgeGUI" /> -->
                 
@@ -336,6 +337,7 @@
     <SubPart PartName="PublishORDToBIMExe" />
     <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
     <SubPart PartName="StaticAppData" PartFile="MstnAppData" Repository="miscdev-mstnappdata"/>
+    <FeatureExclude>imodel02_Workspace_System_Fonts</FeatureExclude>
     <Directories DirectoryListName="PublishORDToBIMDirectoryList" />
   </Product>
 
