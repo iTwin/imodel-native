@@ -1753,13 +1753,13 @@ BentleyApi::BentleyStatus getElementInfo (BentleyApi::Utf8StringR message, DgnDb
 
     auto v8ElementId = aspect.GetV8ElementId();
 
-    PhysicalPartitionCPtr physicalPartition = db->Elements().Get<PhysicalPartition>(aspect.GetScope());
-    if (!physicalPartition.IsValid())
+    auto geometricalPartition = db->Elements().Get<InformationPartitionElement>(aspect.GetScope());
+    if (!geometricalPartition.IsValid())
         {
         BeAssert(false);
         return BentleyApi::BSIERROR;
         }
-    auto partionSubModel = physicalPartition->GetSubModel();
+    auto partionSubModel = geometricalPartition->GetSubModel();
     if (!partionSubModel.IsValid())
         {
         BeAssert(false);
