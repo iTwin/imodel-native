@@ -367,6 +367,8 @@ LineStyleStatus LineStyleConverter::ConvertLsComponent (LsComponentId& v10Id, Dg
         {
         DgnV8Api::LsCacheInternalComponent const* internalComponent = dynamic_cast<DgnV8Api::LsCacheInternalComponent const*>(&component);
         BeAssert(NULL != internalComponent);
+        if (nullptr == internalComponent)
+            return LINESTYLE_STATUS_ComponentNotFound;
         v10Id = LsComponentId(LsComponentType::Internal, internalComponent->GetLineCode());
         return LINESTYLE_STATUS_Success;
         }
@@ -650,9 +652,11 @@ LineStyleStatus LineStyleConverter::ConvertLineStyle (DgnStyleId& newId, double&
     if (BSISUCCESS != result)
         {
         //  I think the final argument can be eliminated.  I've added "BeAssert(1.0 == lsScale)" to ConvertLsComponent to prove it.
-        ConvertLsComponent(v10ComponentId, v8File, *v8component, 1.0);
-        // NB: Since we don't specify a model, the Insert function will automatically put the new linestyle element in the DictionaryModel.
-        result = GetDgnDb().LineStyles().Insert(newId, lineStyleName.c_str(), v10ComponentId, lineStyleAttributes, lsUnitDef);
+        if (BSISUCCESS == (result = ConvertLsComponent(v10ComponentId, v8File, *v8component, 1.0) == LINESTYLE_STATUS_Success ? BSISUCCESS : BSIERROR))
+            {
+            // NB: Since we don't specify a model, the Insert function will automatically put the new linestyle element in the DictionaryModel.
+            result = GetDgnDb().LineStyles().Insert(newId, lineStyleName.c_str(), v10ComponentId, lineStyleAttributes, lsUnitDef);
+            }
         }
 
     if (BSISUCCESS == result)
