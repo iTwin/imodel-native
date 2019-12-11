@@ -265,6 +265,16 @@ static void OnSelected(SelectQueryInfo const& selectInfo, NavigationQueryBuilder
         }
     }
 
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                12/2019
++===============+===============+===============+===============+===============+======*/
+enum class ApplyGroupingResult
+    {
+    Error,      //!< failed to apply grouping
+    Handled,    //!< the query was handled successfully
+    Stored,     //!< the query was handled successfully and stored inside the handler - should not be passed on to other handlers
+    };
+
 struct AdvancedGroupingHandler;
 /*=================================================================================**//**
 * Abstract class for all grouping handlers.
@@ -282,6 +292,7 @@ protected:
     virtual GroupingType _GetType() const = 0;
     virtual NavigationQueryContractPtr _GetContract(SelectQueryInfo const&) const = 0;
     virtual bool _AppliesForClass(ECClassCR ecClass, bool polymorphic) const = 0;
+    virtual bvector<GroupingHandler*> _FindMatchingHandlersOfTheSameType(bvector<GroupingHandler*>::iterator begin, bvector<GroupingHandler*>::iterator end) const {return bvector<GroupingHandler*>();}
     virtual bool _IsAppliedTo(NavNodeCR node) const
         {
         if (node.GetType().Equals(NAVNODE_TYPE_ECInstancesNode))
@@ -291,7 +302,7 @@ protected:
         return extendedData.HasGroupingType() && (GetType() == (GroupingType)extendedData.GetGroupingType());
         }
     virtual NavigationQueryPtr _GetStoredQuery() const {return nullptr;}
-    virtual bool _ApplyClassGrouping(ComplexNavigationQueryPtr& query, SelectQueryInfo const&) {return false;}
+    virtual ApplyGroupingResult _ApplyClassGrouping(ComplexNavigationQueryPtr& query, SelectQueryInfo const&) {return ApplyGroupingResult::Error;}
     virtual bool _ApplyOuterGrouping(NavigationQueryPtr& query)
         {
         if (query.IsValid())
@@ -299,19 +310,21 @@ protected:
         return false;
         }
     virtual bool _ApplyFilter(ComplexNavigationQueryPtr& query, SelectQueryInfo const&, NavNodeCR filteringNode) const {return false;}
-    virtual AdvancedGroupingHandler const* _AsAdvancedGroupingHandler() const {return nullptr;}
+    virtual AdvancedGroupingHandler* _AsAdvancedGroupingHandler() {return nullptr;}
 
 public:
     virtual ~GroupingHandler() {}
     GroupingType GetType() const {return _GetType();}
     NavigationQueryContractPtr GetContract(SelectQueryInfo const& selectInfo) const {return _GetContract(selectInfo);}
+    bvector<GroupingHandler*> FindMatchingHandlersOfTheSameType(bvector<GroupingHandler*>::iterator begin, bvector<GroupingHandler*>::iterator end) {return _FindMatchingHandlersOfTheSameType(begin, end);}
     bool AppliesForClass(ECClassCR ecClass, bool polymorphic) const {return _AppliesForClass(ecClass, polymorphic);}
     bool IsAppliedTo(NavNodeCR node) const {return _IsAppliedTo(node);}
     NavigationQueryPtr GetStoredQuery() const {return _GetStoredQuery();}
-    bool ApplyClassGrouping(ComplexNavigationQueryPtr& query, SelectQueryInfo const& selectInfo) {return _ApplyClassGrouping(query, selectInfo);}
+    ApplyGroupingResult ApplyClassGrouping(ComplexNavigationQueryPtr& query, SelectQueryInfo const& selectInfo) {return _ApplyClassGrouping(query, selectInfo);}
     bool ApplyOuterGrouping(NavigationQueryPtr& query) {return _ApplyOuterGrouping(query);}
     bool ApplyFilter(ComplexNavigationQueryPtr& query, SelectQueryInfo const& selectInfo, NavNodeCR filteringNode) const {return _ApplyFilter(query, selectInfo, filteringNode);}
-    AdvancedGroupingHandler const* AsAdvancedGroupingHandler() const {return _AsAdvancedGroupingHandler();}
+    AdvancedGroupingHandler const* AsAdvancedGroupingHandler() const {return const_cast<GroupingHandler*>(this)->_AsAdvancedGroupingHandler();}
+    AdvancedGroupingHandler* AsAdvancedGroupingHandler() {return _AsAdvancedGroupingHandler();}
 };
 
 typedef bvector<GroupingHandler*> GroupingHandlersList;
@@ -344,7 +357,6 @@ protected:
         }
     bool _AppliesForClass(ECClassCR, bool) const override {return true;}
     bool _IsAppliedTo(NavNodeCR node) const override {return node.GetType().Equals(NAVNODE_TYPE_ECRelationshipGroupingNode);}
-    bool _ApplyClassGrouping(ComplexNavigationQueryPtr& query, SelectQueryInfo const&) override {return true;}
 };
 
 /*=================================================================================**//**
@@ -374,7 +386,7 @@ protected:
     GroupingType _GetType() const override {return GroupingType::Class;}
     NavigationQueryContractPtr _GetContract(SelectQueryInfo const&) const override {return GetContract();}
     bool _AppliesForClass(ECClassCR, bool) const override {return true;}
-    bool _ApplyClassGrouping(ComplexNavigationQueryPtr& query, SelectQueryInfo const&) override {return true;}
+    ApplyGroupingResult _ApplyClassGrouping(ComplexNavigationQueryPtr& query, SelectQueryInfo const&) override {return ApplyGroupingResult::Handled;}
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                06/2015
@@ -428,7 +440,7 @@ protected:
         }
     bool _AppliesForClass(ECClassCR, bool) const override {return true;}
     bool _IsAppliedTo(NavNodeCR node) const override {return node.GetType().Equals(NAVNODE_TYPE_DisplayLabelGroupingNode);}
-    bool _ApplyClassGrouping(ComplexNavigationQueryPtr& query, SelectQueryInfo const&) override {return true;}
+    ApplyGroupingResult _ApplyClassGrouping(ComplexNavigationQueryPtr& query, SelectQueryInfo const&) override {return ApplyGroupingResult::Handled;}
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                06/2015
@@ -481,11 +493,38 @@ struct AdvancedGroupingHandler : GroupingHandler
 protected:
     ECSchemaHelper const& m_schemaHelper;
     GroupingRuleCR m_rule;
+private:
+    ECClassCP GetRuleClass() const {return m_schemaHelper.GetECClass(m_rule.GetSchemaName().c_str(), m_rule.GetClassName().c_str());}
 protected:
     AdvancedGroupingHandler(GroupingRuleCR rule, ECSchemaHelper const& helper) : m_rule(rule), m_schemaHelper(helper) {}
+    bvector<GroupingHandler*> _FindMatchingHandlersOfTheSameType(bvector<GroupingHandler*>::iterator begin, bvector<GroupingHandler*>::iterator end) const override
+        {
+        bvector<GroupingHandler*> matches;
+        ECClassCP myRuleClass = GetRuleClass();
+        if (!myRuleClass)
+            {
+            BeAssert(false);
+            return matches;
+            }
+        for (auto iter = begin; iter != end; ++iter)
+            {
+            AdvancedGroupingHandler* handler = (*iter)->AsAdvancedGroupingHandler();
+            if (!handler)
+                continue;
+            ECClassCP handlerRuleClass = handler->GetRuleClass();
+            if (!handlerRuleClass)
+                {
+                BeAssert(false);
+                continue;
+                }
+            if (handlerRuleClass->Is(myRuleClass))
+                matches.push_back(handler);
+            }
+        return matches;
+        }
     bool _AppliesForClass(ECClassCR ecClass, bool polymorphic) const override
         {
-        ECClassCP ruleClass = m_schemaHelper.GetECClass(m_rule.GetSchemaName().c_str(), m_rule.GetClassName().c_str());
+        ECClassCP ruleClass = GetRuleClass();
         if (nullptr == ruleClass)
             {
             BeAssert(false);
@@ -500,7 +539,7 @@ protected:
 
         return false;
         }
-    AdvancedGroupingHandler const* _AsAdvancedGroupingHandler() const override {return this;}
+    AdvancedGroupingHandler* _AsAdvancedGroupingHandler() override {return this;}
 public:
     GroupingRuleCR GetRule() const {return m_rule;}
 };
@@ -516,6 +555,7 @@ private:
     bool m_doNotSort;
     ClassGroupCR m_specification;
     mutable NavigationQueryContractPtr m_contract;
+    mutable ECClassId m_baseClassId;
 
 private:
     /*---------------------------------------------------------------------------------**//**
@@ -523,18 +563,22 @@ private:
     +---------------+---------------+---------------+---------------+---------------+------*/
     ECClassId GetBaseECClassId() const
         {
-        Utf8String schemaName = m_specification.GetSchemaName();
-        Utf8String baseClassName = m_specification.GetBaseClassName();
-        if (schemaName.empty() || baseClassName.empty())
+        if (!m_baseClassId.IsValid())
             {
-            schemaName = m_rule.GetSchemaName();
-            baseClassName = m_rule.GetClassName();
-            }
-        if (schemaName.empty() || baseClassName.empty())
-            BeAssert(false);
+            Utf8String schemaName = m_specification.GetSchemaName();
+            Utf8String baseClassName = m_specification.GetBaseClassName();
+            if (schemaName.empty() || baseClassName.empty())
+                {
+                schemaName = m_rule.GetSchemaName();
+                baseClassName = m_rule.GetClassName();
+                }
+            if (schemaName.empty() || baseClassName.empty())
+                BeAssert(false);
 
-        ECClassCP baseClass = m_schemaHelper.GetECClass(schemaName.c_str(), baseClassName.c_str());
-        return baseClass->GetId();
+            ECClassCP baseClass = m_schemaHelper.GetECClass(schemaName.c_str(), baseClassName.c_str());
+            m_baseClassId = baseClass->GetId();
+            }
+        return m_baseClassId;
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -550,7 +594,11 @@ private:
 protected:
     GroupingType _GetType() const override {return GroupingType::BaseClass;}
     NavigationQueryContractPtr _GetContract(SelectQueryInfo const& selectInfo) const override {return GetContract();}
-    bool _ApplyClassGrouping(ComplexNavigationQueryPtr& query, SelectQueryInfo const&) override {return true;}
+    ApplyGroupingResult _ApplyClassGrouping(ComplexNavigationQueryPtr& query, SelectQueryInfo const& selectInfo) override {return ApplyGroupingResult::Handled;}
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis                06/2015
+    +---------------+---------------+---------------+---------------+---------------+------*/
     bool _IsAppliedTo(NavNodeCR node) const override
         {
         if (!T_Super::_IsAppliedTo(node))
@@ -735,7 +783,7 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                06/2015
     +---------------+---------------+---------------+---------------+---------------+------*/
-    bool _ApplyClassGrouping(ComplexNavigationQueryPtr& query, SelectQueryInfo const& selectInfo) override
+    ApplyGroupingResult _ApplyClassGrouping(ComplexNavigationQueryPtr& query, SelectQueryInfo const& selectInfo) override
         {
         if (m_foreignKeyClass.IsValid())
             {
@@ -769,7 +817,7 @@ protected:
         if (contract.IsNull())
             {
             BeAssert(false);
-            return false;
+            return ApplyGroupingResult::Error;
             }
 
         auto iter = m_groupedQueries.find(&contract->GetProperty());
@@ -778,7 +826,7 @@ protected:
         else
             m_groupedQueries[&contract->GetProperty()] = UnionNavigationQuery::Create(*iter->second, *query);
 
-        return false;
+        return ApplyGroupingResult::Stored;
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -1023,12 +1071,12 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                06/2015
     +---------------+---------------+---------------+---------------+---------------+------*/
-    bool _ApplyClassGrouping(ComplexNavigationQueryPtr& query, SelectQueryInfo const& selectInfo) override
+    ApplyGroupingResult _ApplyClassGrouping(ComplexNavigationQueryPtr& query, SelectQueryInfo const& selectInfo) override
         {
         NavigationQueryContractPtr contract = GetContract(selectInfo);
         query = QueryBuilderHelpers::CreateComplexNestedQueryIfNecessary<NavigationQuery>(*query, contract->GetGroupingAliases());
         query->GroupByContract(*contract);
-        return true;
+        return ApplyGroupingResult::Handled;
         }
 
 public:
@@ -1348,28 +1396,42 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                07/2015
     +---------------+---------------+---------------+---------------+---------------+------*/
-    GroupingHandler* GetHandlerForNextGroupingLevel(bvector<ECClassCP> const& selectClasses, bool polymorphic) const
+    bvector<GroupingHandler*> GetHandlersForNextGroupingLevel(bvector<ECClassCP> const& selectClasses, bool polymorphic) const
         {
+        bvector<GroupingHandler*> matchingHandlers;
         if (m_groupingHandlers.empty())
-            return nullptr;
+            return matchingHandlers;
 
         if (nullptr != m_parentGrouping)
             {
             if (0 == (int)m_parentGrouping->GetType())
-                return nullptr;
+                return matchingHandlers;
 
             // check if there're any handlers of the same grouping type as the
             // parent (the case of multiple nested property grouping nodes)
             GroupingType parentGroupingType = m_parentGrouping->GetType();
             GroupingHandlersList handlersOfTheSameType = GetGroupingHandlers(parentGroupingType);
             bool foundParentGroupingHandler = false;
-            for (GroupingHandler* handler : handlersOfTheSameType)
+
+            for (auto iter = handlersOfTheSameType.begin(); iter != handlersOfTheSameType.end(); ++iter)
                 {
+                GroupingHandler* handler = *iter;
                 if (foundParentGroupingHandler && DoesHandlerApply(*handler, selectClasses, polymorphic))
-                    return handler;
+                    {
+                    matchingHandlers.push_back(handler);
+                    return matchingHandlers;
+                    }
 
                 if (m_parentGrouping == handler)
+                    {
                     foundParentGroupingHandler = true;
+                    GroupingHandlersList parentMatches = m_parentGrouping->FindMatchingHandlersOfTheSameType(iter + 1, handlersOfTheSameType.end());
+                    GroupingHandlersList parentMatchesThatApply;
+                    std::copy_if(parentMatches.begin(), parentMatches.end(), std::back_inserter(parentMatchesThatApply),
+                        [&](GroupingHandler* handler){return DoesHandlerApply(*handler, selectClasses, polymorphic);});
+                    if (!parentMatchesThatApply.empty())
+                        return parentMatchesThatApply;
+                    }
                 }
             }
 
@@ -1377,18 +1439,17 @@ public:
         GroupingHandlersList handlers = GetGroupingHandlers((GroupingType)nextGroupingType--);
         while (!handlers.empty())
             {
-            GroupingHandler* lastHandler = nullptr;
             for (GroupingHandler* handler : handlers)
                 {
                 if (DoesHandlerApply(*handler, selectClasses, polymorphic))
-                    return handler;
-
-                lastHandler = handler;
+                    matchingHandlers.push_back(handler);
                 }
-            if (nullptr != lastHandler)
-                handlers = GetGroupingHandlers((GroupingType)nextGroupingType--);
+            if (!matchingHandlers.empty())
+                break;
+
+            handlers = GetGroupingHandlers((GroupingType)nextGroupingType--);
             }
-        return nullptr;
+        return matchingHandlers;
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -1430,17 +1491,20 @@ public:
         {
         bvector<GroupingRuleCP> rules;
 
-        bvector<GroupingNodeAndHandler> handlers = GetFilterHandlers();
-        for (GroupingNodeAndHandler const& filterHandler : handlers)
+        bvector<GroupingNodeAndHandler> filterHandlers = GetFilterHandlers();
+        for (GroupingNodeAndHandler const& handler : filterHandlers)
             {
-            AdvancedGroupingHandler const* advancedHandler = filterHandler.GetHandler().AsAdvancedGroupingHandler();
+            AdvancedGroupingHandler const* advancedHandler = handler.GetHandler().AsAdvancedGroupingHandler();
             if (nullptr != advancedHandler)
                 rules.push_back(&advancedHandler->GetRule());
             }
 
-        GroupingHandler* handler = GetHandlerForNextGroupingLevel(selectClasses, true);
-        if (nullptr != handler && nullptr != handler->AsAdvancedGroupingHandler())
-            rules.push_back(&handler->AsAdvancedGroupingHandler()->GetRule());
+        bvector<GroupingHandler*> nextLevelHandlers = GetHandlersForNextGroupingLevel(selectClasses, true);
+        for (GroupingHandler const* handler : nextLevelHandlers)
+            {
+            if (nullptr != handler->AsAdvancedGroupingHandler())
+                rules.push_back(&handler->AsAdvancedGroupingHandler()->GetRule());
+            }
 
         return rules;
         }
@@ -1914,7 +1978,7 @@ protected:
         if (queryToProcess.IsNull())
             queryToProcess = QueryBuilderHelpers::CreateNestedQuery(*query);
 
-        if (m_handler.ApplyClassGrouping(queryToProcess, selectInfo))
+        if (ApplyGroupingResult::Stored != m_handler.ApplyClassGrouping(queryToProcess, selectInfo))
             {
             query = queryToProcess;
             if (GetBaseContext()->Accept(query, selectInfo))
@@ -1923,7 +1987,7 @@ protected:
             return BaseQueryContext::_Accept(query, selectInfo);
             }
 
-        return false;
+        return true;
         }
     NavigationQueryPtr _GetQuery() const override
         {
@@ -1967,7 +2031,16 @@ private:
     GroupingHandler* GetGroupingHandler(SelectQueryInfo const& selectInfo) const
         {
         bvector<ECClassCP> selectClasses = selectInfo.CreateSelectClassList();
-        return m_resolver.GetHandlerForNextGroupingLevel(selectClasses, false);
+        GroupingHandlersList handlers = m_resolver.GetHandlersForNextGroupingLevel(selectClasses, false);
+        GroupingHandler* handler = nullptr;
+        if (!handlers.empty())
+            {
+            // the handlers list contains all handlers that can handle the given select
+            // class - we assume that they're  in the order we want them applied, so just
+            // take the first one
+            handler = handlers[0];
+            }
+        return handler;
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -2101,10 +2174,10 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                07/2015
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void Accept(ComplexNavigationQueryPtr const& query, SelectQueryInfo const& selectInfo)
+    bool Accept(ComplexNavigationQueryPtr const& query, SelectQueryInfo const& selectInfo)
         {
         if (!IsAnyECClassAccepted(selectInfo.CreateSelectClassList()))
-            return;
+            return false;
 
         // add ids of relationship classes used by the query
         if (!selectInfo.GetRelatedClassPath().empty())
@@ -2127,7 +2200,15 @@ public:
 
         GroupingHandler* handler = GetGroupingHandler(selectInfo);
         if (nullptr == handler || !GetGroupingContext(*handler)->Accept(filteredQuery, selectInfo))
-            m_base->Accept(filteredQuery, selectInfo);
+            {
+            if (!m_base->Accept(filteredQuery, selectInfo))
+                {
+                BeAssert(false);
+                return false;
+                }
+            }
+
+        return true;
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -2241,9 +2322,10 @@ struct SelectQueryInfoComparer
     {
     bool operator()(SelectQueryInfo const& lhs, SelectQueryInfo const& rhs) const
         {
-        if (lhs.GetSelectClass() < rhs.GetSelectClass())
+        int selectClassNameCmp = strcmp(lhs.GetSelectClass()->GetFullName(), rhs.GetSelectClass()->GetFullName());
+        if (selectClassNameCmp < 0)
             return true;
-        if (lhs.GetSelectClass() > rhs.GetSelectClass())
+        if (selectClassNameCmp > 0)
             return false;
         COMPARE_VEC(lhs.GetRelatedClassPath(), rhs.GetRelatedClassPath());
         COMPARE_VEC(lhs.GetRelatedClasses(), rhs.GetRelatedClasses());
@@ -2804,8 +2886,8 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
         query->SelectContract(*contract, "this");
         query->From(*info.GetSelectClass(), info.GetSelectPolymorphically(), "this");
 
-        queryContext->Accept(query, info);
-        OnSelected(info, m_params);
+        if (queryContext->Accept(query, info))
+            OnSelected(info, m_params);
         }
 
     return queryContext->GetQueries();
@@ -2869,8 +2951,8 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
 
                 ComplexNavigationQueryPtr query = CreateQuery(*contract, selectInfo, m_params, *parentNode, parentClass, parentInstanceIds,
                     FormatInstanceFilter(specification.GetInstanceFilter()), 0 != specification.GetSkipRelatedLevel());
-                queryContext->Accept(query, selectInfo);
-                OnSelected(selectInfo, m_params);
+                if (queryContext->Accept(query, selectInfo))
+                    OnSelected(selectInfo, m_params);
                 }
             }
         else
@@ -2919,8 +3001,8 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
                     {
                     ComplexNavigationQueryPtr query = CreateQuery(*contract, info, m_params, *parentNode, parentClass, parentInstanceIds,
                         FormatInstanceFilter(specification.GetInstanceFilter()), 0 != specification.GetSkipRelatedLevel());
-                    queryContext->Accept(query, info);
-                    OnSelected(info, m_params);
+                    if (queryContext->Accept(query, info))
+                        OnSelected(info, m_params);
                     }
                 }
             }
@@ -2987,8 +3069,8 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
         query->From(*info.GetSelectClass(), info.GetSelectPolymorphically(), "this");
         ApplyInstanceFilter(*query, info, m_params, FormatInstanceFilter(specification.GetInstanceFilter()), groupingResolver.GetParentInstanceNode());
 
-        queryContext->Accept(query, info);
-        OnSelected(info, m_params);
+        if (queryContext->Accept(query, info))
+            OnSelected(info, m_params);
         }
 
     return queryContext->GetQueries();
@@ -3186,8 +3268,8 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
                     {new BoundQueryId(info.GetSelectClass()->GetId())});
                 }
 
-            queryContext->Accept(query, info);
-            OnSelected(info, m_params);
+            if (queryContext->Accept(query, info))
+                OnSelected(info, m_params);
             }
         }
 

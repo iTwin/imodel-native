@@ -7518,3 +7518,159 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Grou
     VerifyNodeInstance(*spatialNodes[0], *spatial1);
     VerifyNodeInstance(*spatialNodes[1], *spatial2);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(Grouping_ClassGroup_GroupsByDerivedClassesWhenRequestingBaseClassInstances, R"*(
+    <ECEntityClass typeName="Element" />
+    <ECEntityClass typeName="DrawingElement">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="PhysicalElement">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="PhysicalElement1">
+        <BaseClass>PhysicalElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="PhysicalElement2">
+        <BaseClass>PhysicalElement</BaseClass>
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_GroupsByDerivedClassesWhenRequestingBaseClassInstances)
+    {
+    ECClassCP elementClass = GetClass("Element");
+    ECClassCP drawingElementClass = GetClass("DrawingElement");
+    ECClassCP physicalElementClass1 = GetClass("PhysicalElement1");
+    ECClassCP physicalElementClass2 = GetClass("PhysicalElement2");
+    IECInstancePtr drawingElement1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *drawingElementClass);
+    IECInstancePtr physicalElement1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *physicalElementClass1);
+    IECInstancePtr physicalElement2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *physicalElementClass2);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, TargetTree_Both, true);
+    rules->AddPresentationRule(*rootRule);
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
+        "", elementClass->GetFullName(), true));
+
+    GroupingRuleP drawingGroup = new GroupingRule("", 1, false, drawingElementClass->GetSchema().GetName(), drawingElementClass->GetName(), "", "", "");
+    drawingGroup->AddGroup(*new ClassGroup("", true, "", ""));
+
+    GroupingRuleP physicalGroup1 = new GroupingRule("", 1, false, physicalElementClass1->GetSchema().GetName(), physicalElementClass1->GetName(), "", "", "");
+    physicalGroup1->AddGroup(*new ClassGroup("", true, "", ""));
+
+    GroupingRuleP physicalGroup2 = new GroupingRule("", 1, false, physicalElementClass2->GetSchema().GetName(), physicalElementClass2->GetName(), "", "", "");
+    physicalGroup2->AddGroup(*new ClassGroup("", true, "", ""));
+
+    rootRule->AddCustomizationRule(*drawingGroup);
+    rootRule->AddCustomizationRule(*physicalGroup1);
+    rootRule->AddCustomizationRule(*physicalGroup2);
+
+    // request for nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(BeTest::GetNameOfCurrentTest());
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
+    ASSERT_EQ(3, rootNodes.GetSize());
+
+    NavNodeCPtr drawingElementsGroupingNode = rootNodes[0];
+    NavNodeCPtr physicalElements1GroupingNode = rootNodes[1];
+    NavNodeCPtr physicalElements2GroupingNode = rootNodes[2];
+    ASSERT_TRUE(nullptr != drawingElementsGroupingNode->GetKey()->AsECClassGroupingNodeKey());
+    ASSERT_TRUE(nullptr != physicalElements1GroupingNode->GetKey()->AsECClassGroupingNodeKey());
+    ASSERT_TRUE(nullptr != physicalElements2GroupingNode->GetKey()->AsECClassGroupingNodeKey());
+
+    DataContainer<NavNodeCPtr> drawingElementNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDbCR(), *drawingElementsGroupingNode, PageOptions(), options.GetJson()).get(); });
+    ASSERT_EQ(1, drawingElementNodes.GetSize());
+    VerifyNodeInstance(*drawingElementNodes[0], *drawingElement1);
+
+    DataContainer<NavNodeCPtr> physicalElement1Nodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDbCR(), *physicalElements1GroupingNode, PageOptions(), options.GetJson()).get(); });
+    ASSERT_EQ(1, physicalElement1Nodes.GetSize());
+    VerifyNodeInstance(*physicalElement1Nodes[0], *physicalElement1);
+
+    DataContainer<NavNodeCPtr> physicalElement2Nodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDbCR(), *physicalElements2GroupingNode, PageOptions(), options.GetJson()).get(); });
+    ASSERT_EQ(1, physicalElement2Nodes.GetSize());
+    VerifyNodeInstance(*physicalElement2Nodes[0], *physicalElement2);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(Grouping_ClassGroup_CreatesHierarchyFromGivenClasses, R"*(
+    <ECEntityClass typeName="Element" />
+    <ECEntityClass typeName="DrawingElement">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="PhysicalElement">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="PhysicalElement1">
+        <BaseClass>PhysicalElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="PhysicalElement2">
+        <BaseClass>PhysicalElement</BaseClass>
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_CreatesHierarchyFromGivenClasses)
+    {
+    ECClassCP elementClass = GetClass("Element");
+    ECClassCP drawingElementClass = GetClass("DrawingElement");
+    ECClassCP physicalElementClass = GetClass("PhysicalElement");
+    ECClassCP physicalElementClass1 = GetClass("PhysicalElement1");
+    ECClassCP physicalElementClass2 = GetClass("PhysicalElement2");
+    IECInstancePtr element = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
+    IECInstancePtr drawingElement = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *drawingElementClass);
+    IECInstancePtr physicalElement = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *physicalElementClass);
+    IECInstancePtr physicalElement1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *physicalElementClass1);
+    IECInstancePtr physicalElement2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *physicalElementClass2);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, TargetTree_Both, true);
+    rules->AddPresentationRule(*rootRule);
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
+        "", elementClass->GetFullName(), true));
+
+    GroupingRuleP physicalElementsGroup = new GroupingRule("", 1, false, physicalElementClass->GetSchema().GetName(), physicalElementClass->GetName(), "", "", "");
+    physicalElementsGroup->AddGroup(*new ClassGroup("", true, "", ""));
+    rootRule->AddCustomizationRule(*physicalElementsGroup);
+
+    GroupingRuleP drawingElementsGroup = new GroupingRule("", 1, false, drawingElementClass->GetSchema().GetName(), drawingElementClass->GetName(), "", "", "");
+    drawingElementsGroup->AddGroup(*new ClassGroup("", true, "", ""));
+    rootRule->AddCustomizationRule(*drawingElementsGroup);
+
+    GroupingRuleP physicalElements1Group = new GroupingRule("", 1, false, physicalElementClass1->GetSchema().GetName(), physicalElementClass1->GetName(), "", "", "");
+    physicalElements1Group->AddGroup(*new ClassGroup("", true, "", ""));
+    rootRule->AddCustomizationRule(*physicalElements1Group);
+
+    // request for nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(BeTest::GetNameOfCurrentTest());
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
+    ASSERT_EQ(3, rootNodes.GetSize());
+
+    NavNodeCPtr drawingClassGroupingNode = rootNodes[0];
+    ASSERT_TRUE(nullptr != drawingClassGroupingNode->GetKey()->AsECClassGroupingNodeKey());
+
+    NavNodeCPtr physicalClassGroupingNode = rootNodes[1];
+    ASSERT_TRUE(nullptr != physicalClassGroupingNode->GetKey()->AsECClassGroupingNodeKey());
+
+    NavNodeCPtr elementNode = rootNodes[2];
+    VerifyNodeInstance(*elementNode, *element);
+    
+    DataContainer<NavNodeCPtr> drawingClassGroupChildren = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDbCR(), *drawingClassGroupingNode, PageOptions(), options.GetJson()).get(); });
+    ASSERT_EQ(1, drawingClassGroupChildren.GetSize());
+    VerifyNodeInstance(*drawingClassGroupChildren[0], *drawingElement);
+
+    DataContainer<NavNodeCPtr> physicalClassGroupChildren = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDbCR(), *physicalClassGroupingNode, PageOptions(), options.GetJson()).get(); });
+    ASSERT_EQ(3, physicalClassGroupChildren.GetSize());
+    ASSERT_TRUE(nullptr != physicalClassGroupChildren[0]->GetKey()->AsECClassGroupingNodeKey());
+    VerifyNodeInstance(*physicalClassGroupChildren[1], *physicalElement);
+    VerifyNodeInstance(*physicalClassGroupChildren[2], *physicalElement2);
+
+    DataContainer<NavNodeCPtr> physical1ClassGroupChildren = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDbCR(), *physicalClassGroupChildren[0], PageOptions(), options.GetJson()).get(); });
+    ASSERT_EQ(1, physical1ClassGroupChildren.GetSize());
+    VerifyNodeInstance(*physical1ClassGroupChildren[0], *physicalElement1);
+    }

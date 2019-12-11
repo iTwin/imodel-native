@@ -2459,11 +2459,15 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         ComplexNavigationQueryPtr classBQuery = ComplexNavigationQuery::Create();
         classBQuery->SelectContract(*baseClassGroupingContract, "this");
-        classBQuery->From(b4_ClassB, true, "this");
+        classBQuery->From(b4_ClassB, false, "this");
+
+        ComplexNavigationQueryPtr classCQuery = ComplexNavigationQuery::Create();
+        classCQuery->SelectContract(*baseClassGroupingContract, "this");
+        classCQuery->From(b4_ClassC, true, "this");
 
         ComplexNavigationQueryPtr baseClassGroupingQueryGrouped = ComplexNavigationQuery::Create();
         baseClassGroupingQueryGrouped->SelectAll();
-        baseClassGroupingQueryGrouped->From(*classBQuery);
+        baseClassGroupingQueryGrouped->From(*UnionNavigationQuery::Create(*classCQuery, *classBQuery));
         baseClassGroupingQueryGrouped->GroupByContract(*baseClassGroupingContract);
 
         ComplexNavigationQueryPtr baseClassGroupingQuery = ComplexNavigationQuery::Create();
