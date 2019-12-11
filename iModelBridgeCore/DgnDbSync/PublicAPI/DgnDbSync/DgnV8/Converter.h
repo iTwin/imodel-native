@@ -1026,6 +1026,7 @@ protected:
     bmap<DgnModelId, bpair<Utf8String, RepositoryLinkId>>    m_modelsRequiringRealityTiles;
     bool                m_haveCreatedThumbnails = false;
 
+    BeFileName GetLocalFileName(DgnV8FileR file);
     void CheckForAndSaveChanges();
     DGNDBSYNC_EXPORT Converter(Params const&);
     DGNDBSYNC_EXPORT ~Converter();

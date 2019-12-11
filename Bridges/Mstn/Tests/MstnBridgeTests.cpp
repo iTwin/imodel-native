@@ -1840,6 +1840,81 @@ TEST_F(MstnBridgeTests, DetectCommonReferencesUsingRecipes)
     putenv("iModelBridge_MatchOnEmbeddedFileBasename="); 
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            12/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(MstnBridgeTests, UpdateDocumentProperties)
+    {
+    auto testDir = CreateTestDir();
+
+    bvector<WString> args;
+    SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, DEFAULT_IMODEL_NAME);
+
+    BentleyApi::BeFileName inputFile;
+    MakeCopyOfFile(inputFile, L"Test3d.dgn", NULL);
+
+    args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", inputFile.c_str()));
+
+    SetupClient();
+    CreateRepository();
+    auto runningServer = StartServer();
+
+    BentleyApi::BeFileName assignDbName(testDir);
+    assignDbName.AppendToPath(DEFAULT_IMODEL_NAME L".fwk-registry.db");
+    FakeRegistry testRegistry(testDir, assignDbName);
+    testRegistry.WriteAssignments();
+    testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, iModelBridge_getAffinity);
+
+    BentleyApi::BeSQLite::BeGuid guid;
+    guid.Create();
+
+    Utf8String json1 = R"json({"Name": "Time", "Value":"1234"})json";
+    iModelBridgeDocumentProperties docProps(guid.ToString().c_str(), "wurn1", "durn1", json1.c_str(), "");
+    testRegistry.SetDocumentProperties(docProps, inputFile);
+    std::function<T_iModelBridge_getAffinity> lambda = [=](BentleyApi::WCharP buffer,
+                                                           const size_t bufferSize,
+                                                           iModelBridgeAffinityLevel& affinityLevel,
+                                                           BentleyApi::WCharCP affinityLibraryPath,
+                                                           BentleyApi::WCharCP sourceFileName)
+        {
+        wcscpy(buffer, MSTN_BRIDGE_REG_SUB_KEY);
+        affinityLevel = iModelBridgeAffinityLevel::Medium;
+        };
+
+    testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, lambda);
+    BentleyApi::WString bridgeName;
+    testRegistry.SearchForBridgeToAssignToDocument(bridgeName, inputFile, L"");
+    testRegistry.Save();
+    TerminateHost();
+
+    if (true)
+        {
+        // Ask the framework to run our test bridge to do the initial conversion and create the repo
+        RunTheBridge(args);
+        CleanupElementECExtensions();
+        }
+
+    Utf8String json2 = R"json({"Name": "Time", "Value":"5678"})json";
+    iModelBridgeDocumentProperties docProps2(guid.ToString().c_str(), "wurn1", "durn1", json2.c_str(), "");
+    testRegistry.SetDocumentProperties(docProps2, inputFile);
+    testRegistry.Save();
+    if (true)
+        {
+        // Run an update.  This should update the document properties
+        RunTheBridge(args);
+        DbFileInfo info(m_briefcaseName);
+        BeSQLite::EC::ECSqlStatement stmt;
+        EXPECT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.Prepare(*info.m_db, "SELECT JsonProperties FROM BisCore.RepositoryLink"));
+        while (stmt.Step() != BentleyApi::BeSQLite::DbResult::BE_SQLITE_DONE)
+            {
+            Utf8CP json = stmt.GetValueText(0);
+            Utf8String expected = R"json({"DocumentProperties":{"attributes":{"Name":"Time","Value" : "5678"},"desktopURN" : "durn1","webURN" : "wurn1"}})json";
+            ASSERT_TRUE(0 == expected.Equals(json)) << expected.c_str() << " not equal to " << json;
+            }
+        }
+
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mayuresh.Kanade                 01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2060,3 +2135,4 @@ TEST_F(Bridge, File)
     iModelBridgeFwkLibM02.dll!BentleyM0200::Dgn::iModelBridgeFwk::Run(int argc, const wchar_t * * argv) Line 2392 (d:\imodel02\source\imodel02\iModelBridgeCore\DgnDbSync\iModelBridge\Fwk\iModelBridgeFwk.cpp:2392)
     MstnBridgeTests.exe!MstnBridgeTests_MultiBridgeSequencing_Test::TestBody::__l7::<lambda>() Line 210 (d:\imodel02\source\imodel02\Bridges\Mstn\Tests\MstnBridgeTests.cpp:210)
 */
+

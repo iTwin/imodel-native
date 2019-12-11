@@ -1941,13 +1941,14 @@ void RootModelConverter::_FinishConversion()
         // Note: Bridges do not retain their locks on RepositoryLink elements. So, even if another job created this element,
         // it is safe for this bridge job to update it.
         auto rlinkEd = GetDgnDb().Elements().GetForEdit<RepositoryLink>(GetRepositoryLinkId(*v8File));
+        BeFileName localFileName = GetLocalFileName(*v8File);
+        auto anyChanges = iModelBridge::UpdateRepositoryLinkDocumentProperties(rlinkEd.get(), *m_dgndb, GetParams(), localFileName);
         auto rlinkXsa = SyncInfo::RepositoryLinkExternalSourceAspect::GetAspectForEdit(*rlinkEd);
         if (rlinkXsa.IsValid())
-            {
-            auto anyChanges = rlinkXsa.Update(GetSyncInfo().ComputeFileInfo(*v8File), _GetParams().IgnoreStaleFiles());
-            if (anyChanges)
-                rlinkEd->Update();
-            }
+            anyChanges |= rlinkXsa.Update(GetSyncInfo().ComputeFileInfo(*v8File), _GetParams().IgnoreStaleFiles());
+
+        if (anyChanges)
+            rlinkEd->Update();
         }
 
     CopyExpirationDate(*m_rootFile);

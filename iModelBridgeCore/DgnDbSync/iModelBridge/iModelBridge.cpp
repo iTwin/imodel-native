@@ -912,6 +912,32 @@ RepositoryLinkPtr iModelBridge::MakeRepositoryLink(DgnDbR db, Params const& para
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            12/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+bool iModelBridge::UpdateRepositoryLinkDocumentProperties(RepositoryLinkP rlink, DgnDbR db, Params const& params, BeFileNameCR localFileName)
+    {
+    if (nullptr == params.GetDocumentPropertiesAccessor())
+        return false;
+
+    iModelBridgeDocumentProperties docProps;
+    params.GetDocumentPropertiesAccessor()->_GetDocumentProperties(docProps, localFileName);
+
+    if (!docProps.m_attributesJSON.empty())
+        {
+        Json::Value jsonValue = Json::objectValue;
+        jsonValue["attributes"] = Json::Value::From(docProps.m_attributesJSON);
+        auto current = rlink->GetDocumentProperties();
+        if (current["attributes"] == jsonValue["attributes"])
+            return false;
+        jsonValue["desktopURN"] = docProps.m_desktopURN;
+        jsonValue["webURN"] = docProps.m_webURN;
+        rlink->SetDocumentProperties(jsonValue);
+        return true;
+        }
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson      09/16
 //---------------------------------------------------------------------------------------
 DgnDbStatus iModelBridge::InsertLinkTableRelationship(DgnDbR db, Utf8CP relClassName, DgnElementId source, DgnElementId target, Utf8CP schemaName)

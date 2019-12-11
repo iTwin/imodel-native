@@ -203,6 +203,24 @@ RefCountedCPtr<RepositoryLink> Converter::GetRepositoryLinkElement(RepositoryLin
     return GetDgnDb().Elements().Get<RepositoryLink>(eid);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            12/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+BeFileName Converter::GetLocalFileName(DgnV8FileR file)
+    {
+    BeFileName localFileName(file.GetFileName().c_str());
+    if (file.IsEmbeddedFile())
+        {
+        // don't include package name
+        auto endPackage = localFileName.find(L">");
+        if (endPackage != WString::npos)
+            {
+            auto refname = localFileName.substr(endPackage + 1);
+            localFileName.assign(refname.c_str());
+            }
+        }
+    return localFileName;
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -218,18 +236,7 @@ RepositoryLinkId Converter::WriteRepositoryLink(DgnV8FileR file)
     if (!iModelBridge::IsNonFileURN(uri) || IsEmbeddedFileName(uri) || BentleyApi::BeFileName::DoesPathExist(BentleyApi::WString(uri.c_str(), true).c_str()))
         uri.clear();    // Don't store filepaths that refer to someone's computer.
 
-    BeFileName localFileName(file.GetFileName().c_str());
-    if (file.IsEmbeddedFile())
-        {
-        // don't include package name
-        auto endPackage = localFileName.find(L">");
-        if (endPackage != WString::npos)
-            {
-            auto refname = localFileName.substr(endPackage+1);
-            localFileName.assign(refname.c_str());
-            }
-        }
-
+    BeFileName localFileName = GetLocalFileName(file);
     auto rlink = iModelBridge::MakeRepositoryLink(GetDgnDb(), _GetParams(), localFileName, code.c_str(), uri.c_str(), /*preferDefaultCode*/true);
 
     auto rlinkPersist = GetDgnDb().Elements().Get<RepositoryLink>(rlink->GetElementId());

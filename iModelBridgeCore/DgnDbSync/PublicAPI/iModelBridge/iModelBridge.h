@@ -1048,6 +1048,10 @@ public:
     IMODEL_BRIDGE_EXPORT static RepositoryLinkPtr MakeRepositoryLink(DgnDbR db, Params const& params, BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN, bool preferDefaultCode = false);
 
     // @private
+    //! Update the document properties on a repository link
+    IMODEL_BRIDGE_EXPORT static bool UpdateRepositoryLinkDocumentProperties(RepositoryLinkP rlink, DgnDbR db, Params const& params, BeFileNameCR localFileName);
+
+    // @private
     IMODEL_BRIDGE_EXPORT static void GetRepositoryLinkInfo(DgnCode& code, iModelBridgeDocumentProperties& docProps, DgnDbR db, Params const& params, 
                                                 BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN, InformationModelR lmodel, bool preferDefaultCode = false);
     // @private
