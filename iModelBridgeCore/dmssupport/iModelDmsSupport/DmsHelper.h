@@ -8,16 +8,19 @@
 #include <BeHttp/HttpClient.h>
 #include <WebServices/iModelHub/Client/OidcTokenProvider.h>
 #include "AzureBlobStorageHelper.h"
+#include "DmsClient.h"
 
 USING_NAMESPACE_BENTLEY_IMODELHUB
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-struct PWShareHelper : public IDmsSupport
+struct DmsHelper : public IDmsSupport
     {
     private:
         Utf8String m_repositoryUrl;
         Utf8String m_callbackUrl;
         Utf8String m_accessToken;
+        Utf8String m_repositoryType;
+        Utf8String m_datasource;
         AzureBlobStorageHelper* m_azureHelper = nullptr;
         IConnectTokenProvider* m_tokenProvider = nullptr;
         virtual bool _Initialize() override;
@@ -32,8 +35,8 @@ struct PWShareHelper : public IDmsSupport
 
 
     public:
-        PWShareHelper(Utf8StringCR callBackurl, Utf8StringCR accessToken);
-        ~PWShareHelper();
+        DmsHelper(Utf8StringCR callBackurl, Utf8StringCR accessToken, Utf8StringCR repositoryType = Utf8String(), Utf8StringCR datasource = Utf8String());
+        ~DmsHelper();
         virtual StatusInt _FetchWorkspace(BeFileNameR workspaceCfgFile, int folderId, int documentId, BeFileNameCR destination, bool isv8i, bvector<WString> const& additonalFilePatterns) override
             {
             return SUCCESS;

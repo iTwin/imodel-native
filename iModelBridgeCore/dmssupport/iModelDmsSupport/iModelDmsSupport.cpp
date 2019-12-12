@@ -5,7 +5,7 @@
 #include <iModelDmsSupport/DmsSession.h>
 #include "PWWorkspaceHelper.h"
 #include "AzureBlobStorageHelper.h"
-#include "PWShareHelper.h"
+#include "DmsHelper.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 /*---------------------------------------------------------------------------------**//**
@@ -14,17 +14,17 @@ USING_NAMESPACE_BENTLEY_DGN
 extern "C"
     {
 
-    IMODEL_DMSSUPPORT_EXPORT IDmsSupport*    iModelDmsSupport_getInstance(int sessionType, Utf8StringCR userName, Utf8StringCR password, Utf8StringCR callBackurl, Utf8StringCR accessToken)
+    IMODEL_DMSSUPPORT_EXPORT IDmsSupport*    iModelDmsSupport_getInstance(int sessionType, Utf8StringCR userName, Utf8StringCR password, Utf8StringCR callBackurl, Utf8StringCR accessToken, Utf8StringCR datasource)
         {
-        return iModelDmsSupport::GetInstance((iModelDmsSupport::SessionType)sessionType, userName, password, callBackurl, accessToken);
+        return iModelDmsSupport::GetInstance((iModelDmsSupport::SessionType)sessionType, userName, password, callBackurl, accessToken, datasource);
         }
     }
 
- BentleyApi::Dgn::IDmsSupport*   iModelDmsSupport_getInstance(int sessionType, Utf8StringCR userName, Utf8StringCR password, Utf8StringCR callBackurl, Utf8StringCR accessToken);
+ BentleyApi::Dgn::IDmsSupport*   iModelDmsSupport_getInstance(int sessionType, Utf8StringCR userName, Utf8StringCR password, Utf8StringCR callBackurl, Utf8StringCR accessToken, Utf8StringCR datasource);
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
- IDmsSupport*    iModelDmsSupport::GetInstance(iModelDmsSupport::SessionType sessionType, Utf8StringCR userName, Utf8StringCR password, Utf8StringCR callBackurl, Utf8StringCR accessToken)
+ IDmsSupport*    iModelDmsSupport::GetInstance(iModelDmsSupport::SessionType sessionType, Utf8StringCR userName, Utf8StringCR password, Utf8StringCR callBackurl, Utf8StringCR accessToken, Utf8StringCR datasource)
      {
      DmsSession session(userName, password, sessionType);
 
@@ -32,7 +32,10 @@ extern "C"
          return new AzureBlobStorageHelper();
 
      if (sessionType == SessionType::PWShare)
-         return new PWShareHelper(callBackurl, accessToken);
+         return new DmsHelper(callBackurl, accessToken);
+
+     if (sessionType == SessionType::PWDIDMS)
+         return new DmsHelper(callBackurl, accessToken, PWREPOSITORYTYPE, datasource);
 
      return new PWWorkspaceHelper(session);
      };

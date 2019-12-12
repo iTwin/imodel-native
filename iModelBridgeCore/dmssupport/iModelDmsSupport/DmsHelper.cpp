@@ -2,8 +2,7 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See COPYRIGHT.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-#include "PWShareHelper.h"
-#include "PWShareDmsSupport.h"
+#include "DmsHelper.h"
 #include <iModelDmsSupport/DmsSession.h>
 #include <Bentley/Desktop/FileSystem.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
@@ -16,7 +15,7 @@ USING_NAMESPACE_BENTLEY_DGN
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Suvik.Rahane                    11/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool   PWShareHelper::_Initialize()
+bool   DmsHelper::_Initialize()
     {
     if (m_azureHelper != nullptr && m_tokenProvider != nullptr)
         return true;
@@ -34,7 +33,7 @@ bool   PWShareHelper::_Initialize()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Suvik.Rahane                    11/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool   PWShareHelper::_UnInitialize()
+bool   DmsHelper::_UnInitialize()
     {
     if (m_azureHelper != nullptr)
         {
@@ -53,16 +52,18 @@ bool   PWShareHelper::_UnInitialize()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Suvik.Rahane                    11/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-PWShareHelper::PWShareHelper(Utf8StringCR callBackurl, Utf8StringCR accessToken)
+DmsHelper::DmsHelper(Utf8StringCR callBackurl, Utf8StringCR accessToken, Utf8StringCR repositoryType, Utf8StringCR datasource)
     {
     m_callbackUrl = Utf8String(callBackurl);
     m_accessToken = Utf8String(accessToken);
+    m_repositoryType = Utf8String(repositoryType);
+    m_datasource = Utf8String(datasource);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Suvik.Rahane                    11/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-PWShareHelper::~PWShareHelper()
+DmsHelper::~DmsHelper()
     {
     _UnInitialize();
     _UnInitializeSession();
@@ -71,7 +72,7 @@ PWShareHelper::~PWShareHelper()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Suvik.Rahane                    11/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            PWShareHelper::_InitializeSession(WStringCR repositoryUrl)
+bool            DmsHelper::_InitializeSession(WStringCR repositoryUrl)
     {
     m_repositoryUrl = Utf8String(repositoryUrl);
     return true;
@@ -80,7 +81,7 @@ bool            PWShareHelper::_InitializeSession(WStringCR repositoryUrl)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Suvik.Rahane                    11/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            PWShareHelper::_UnInitializeSession()
+bool            DmsHelper::_UnInitializeSession()
     {
     m_repositoryUrl.clear();
     return true;
@@ -89,16 +90,16 @@ bool            PWShareHelper::_UnInitializeSession()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Suvik.Rahane                    11/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            PWShareHelper::_StageInputFile(BeFileNameCR fileLocation)
+bool            DmsHelper::_StageInputFile(BeFileNameCR fileLocation)
     {
     _Initialize();
 
     //Parse URL
-    PWShareDmsSupport pwShareDmsSupport;
-    if (!pwShareDmsSupport._InitializeSession(m_repositoryUrl))
+    DmsClient dmsClient;
+    if (!dmsClient._InitializeSession(m_repositoryUrl, m_repositoryType))
         {
         LOG.errorv("Error while parsing url");
-        pwShareDmsSupport._UnInitializeSession();
+        dmsClient._UnInitializeSession();
         return false;
         }
 
@@ -124,14 +125,15 @@ bool            PWShareHelper::_StageInputFile(BeFileNameCR fileLocation)
     token.append(tokenStr);
 
     //Get download URLs
-    bmap<WString, WString> downloadUrls = pwShareDmsSupport._GetDownloadURLs(token);
+    bmap<WString, WString> downloadUrls = dmsClient._GetDownloadURLs(token, m_datasource);
+
     if (downloadUrls.empty())
         {
         LOG.errorv("Error while getting download urls");
-        pwShareDmsSupport._UnInitializeSession();
+        dmsClient._UnInitializeSession();
         return false;
         }
-    pwShareDmsSupport._UnInitializeSession();
+    dmsClient._UnInitializeSession();
 
     //Download files
     bvector<AsyncTaskPtr<AzureResult>> stageFileRequests;
@@ -162,14 +164,14 @@ bool            PWShareHelper::_StageInputFile(BeFileNameCR fileLocation)
         auto result = stageFileRequests[itr]->GetResult();
         if (result.IsSuccess())
             {
-            LOG.tracev("Successfully download sas url to input file location");
+            LOG.tracev("Successfully download file url to input file location");
             continue;
             }
-        LOG.errorv("Error getting sas url Error : %s.", result.GetError().GetCode().c_str());
+        LOG.errorv("Error getting file url Error : %s.", result.GetError().GetCode().c_str());
         return false;
         }
 
-    LOG.tracev("Successfully download all sas url to input file location");
+    LOG.tracev("Successfully download all file urls to input file location");
     _UnInitialize();
     return true;
     }
