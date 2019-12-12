@@ -82,6 +82,7 @@ public:
     static Utf8String GetQTOVolumeClassName() { return "QTO_VolumeAspect"; }
     static Utf8String GetQTOSurfaceAreaClassName() { return "QTO_SurfaceAreaAspect"; }
     static Utf8String GetQTOMaterialClassName() { return "QTO_MaterialAspect"; }
+    static Utf8String GetQTOSideAreasClassName() { return "QTO_SideAreasAspect"; }
 
 private:
     void Initialize();
@@ -282,6 +283,65 @@ BentleyStatus ORDDynamicSchemaGenerator::AddQuantityTakeOffAspectClasses()
         ecPropertyP->SetCustomAttribute(*hiddenPropertyInstance);
 
     if (ECN::ECObjectsStatus::Success != surfaceAreaAspectClassP->CreatePrimitiveProperty(ecPropertyP, "NetSurfaceArea", ECN::PrimitiveType::PRIMITIVETYPE_Double))
+        return BentleyStatus::ERROR;
+
+    if (hiddenPropertyInstance.IsValid())
+        ecPropertyP->SetCustomAttribute(*hiddenPropertyInstance);
+
+    // Create SideAreasAspect subclass and hide it
+    ECN::ECEntityClassP sideAreasAspectClassP;
+    if (ECN::ECObjectsStatus::Success != m_dynamicSchema->CreateEntityClass(sideAreasAspectClassP, GetQTOSideAreasClassName()))
+        return BentleyStatus::ERROR;
+
+    auto baseSideAreasAspectClassCP = m_qtoSchema->GetClassCP("SideAreasAspect");
+    sideAreasAspectClassP->AddBaseClass(*baseSideAreasAspectClassCP);
+
+    if (hiddenClassInstance.IsValid())
+        sideAreasAspectClassP->SetCustomAttribute(*hiddenClassInstance);
+
+    if (ECN::ECObjectsStatus::Success != sideAreasAspectClassP->CreatePrimitiveProperty(ecPropertyP, "BottomGrossArea", ECN::PrimitiveType::PRIMITIVETYPE_Double))
+        return BentleyStatus::ERROR;
+
+    if (hiddenPropertyInstance.IsValid())
+        ecPropertyP->SetCustomAttribute(*hiddenPropertyInstance);
+
+    if (ECN::ECObjectsStatus::Success != sideAreasAspectClassP->CreatePrimitiveProperty(ecPropertyP, "BottomNetArea", ECN::PrimitiveType::PRIMITIVETYPE_Double))
+        return BentleyStatus::ERROR;
+
+    if (hiddenPropertyInstance.IsValid())
+        ecPropertyP->SetCustomAttribute(*hiddenPropertyInstance);
+
+    if (ECN::ECObjectsStatus::Success != sideAreasAspectClassP->CreatePrimitiveProperty(ecPropertyP, "LeftSideGrossArea", ECN::PrimitiveType::PRIMITIVETYPE_Double))
+        return BentleyStatus::ERROR;
+
+    if (hiddenPropertyInstance.IsValid())
+        ecPropertyP->SetCustomAttribute(*hiddenPropertyInstance);
+
+    if (ECN::ECObjectsStatus::Success != sideAreasAspectClassP->CreatePrimitiveProperty(ecPropertyP, "LeftSideNetArea", ECN::PrimitiveType::PRIMITIVETYPE_Double))
+        return BentleyStatus::ERROR;
+
+    if (hiddenPropertyInstance.IsValid())
+        ecPropertyP->SetCustomAttribute(*hiddenPropertyInstance);
+
+    if (ECN::ECObjectsStatus::Success != sideAreasAspectClassP->CreatePrimitiveProperty(ecPropertyP, "RightSideGrossArea", ECN::PrimitiveType::PRIMITIVETYPE_Double))
+        return BentleyStatus::ERROR;
+
+    if (hiddenPropertyInstance.IsValid())
+        ecPropertyP->SetCustomAttribute(*hiddenPropertyInstance);
+
+    if (ECN::ECObjectsStatus::Success != sideAreasAspectClassP->CreatePrimitiveProperty(ecPropertyP, "RightSideNetArea", ECN::PrimitiveType::PRIMITIVETYPE_Double))
+        return BentleyStatus::ERROR;
+
+    if (hiddenPropertyInstance.IsValid())
+        ecPropertyP->SetCustomAttribute(*hiddenPropertyInstance);
+
+    if (ECN::ECObjectsStatus::Success != sideAreasAspectClassP->CreatePrimitiveProperty(ecPropertyP, "TopGrossArea", ECN::PrimitiveType::PRIMITIVETYPE_Double))
+        return BentleyStatus::ERROR;
+
+    if (hiddenPropertyInstance.IsValid())
+        ecPropertyP->SetCustomAttribute(*hiddenPropertyInstance);
+
+    if (ECN::ECObjectsStatus::Success != sideAreasAspectClassP->CreatePrimitiveProperty(ecPropertyP, "TopNetArea", ECN::PrimitiveType::PRIMITIVETYPE_Double))
         return BentleyStatus::ERROR;
 
     if (hiddenPropertyInstance.IsValid())
@@ -2406,15 +2466,15 @@ void assignQuantityAspect(Dgn::DgnElementR element, Cif::CorridorSurfaceCR cifCo
     double cubicUorsPerMeter = squaredUorsPerMeter * uorsPerMeter;
 
     double volumeVal = volume.IsValid() ? volume.Value() / cubicUorsPerMeter : NAN;
-    double surfaceAreaVal = surfaceArea.IsValid() ? surfaceArea.Value() / squaredUorsPerMeter : NAN;
+    double topSurfaceAreaVal = surfaceArea.IsValid() ? surfaceArea.Value() / squaredUorsPerMeter : NAN;
     if (auto volumetricQuantityAspectP = DgnV8ORDBim::VolumetricQuantityAspect::GetP(element))
         {
-        volumetricQuantityAspectP->SetSlopedArea(surfaceAreaVal);
+        volumetricQuantityAspectP->SetSlopedArea(topSurfaceAreaVal);
         volumetricQuantityAspectP->SetVolume(volumeVal);
         }
     else
         {
-        auto volumetricQuantityAspectPtr = DgnV8ORDBim::VolumetricQuantityAspect::Create(volumeVal, surfaceAreaVal);
+        auto volumetricQuantityAspectPtr = DgnV8ORDBim::VolumetricQuantityAspect::Create(volumeVal, topSurfaceAreaVal);
         DgnV8ORDBim::VolumetricQuantityAspect::Set(element, *volumetricQuantityAspectPtr);
         }
 
@@ -2436,17 +2496,33 @@ void assignQuantityAspect(Dgn::DgnElementR element, Cif::CorridorSurfaceCR cifCo
 
     auto qtoSurfaceAreaClassCP = element.GetDgnDb().Schemas().GetClass(ORDDynamicSchemaGenerator::GetTargetSchemaName(), ORDDynamicSchemaGenerator::GetQTOSurfaceAreaClassName());
 
-    if (auto qtoSurfaceAreaInsgtanceP = Dgn::DgnElement::GenericUniqueAspect::GetAspectP(element, *qtoSurfaceAreaClassCP))
+    if (auto qtoSurfaceAreaInstanceP = Dgn::DgnElement::GenericUniqueAspect::GetAspectP(element, *qtoSurfaceAreaClassCP))
         {
-        qtoSurfaceAreaInsgtanceP->SetValue("GrossSurfaceArea", ECN::ECValue(surfaceAreaVal));
-        qtoSurfaceAreaInsgtanceP->SetValue("NetSurfaceArea", ECN::ECValue(surfaceAreaVal));
+        qtoSurfaceAreaInstanceP->SetValue("GrossSurfaceArea", ECN::ECValue(topSurfaceAreaVal));
+        qtoSurfaceAreaInstanceP->SetValue("NetSurfaceArea", ECN::ECValue(topSurfaceAreaVal));
         }
     else
         {    
         auto enablerP = qtoSurfaceAreaClassCP->GetDefaultStandaloneEnabler();
         auto instancePtr = enablerP->CreateInstance();
-        instancePtr->SetValue("GrossSurfaceArea", ECN::ECValue(volumeVal));
-        instancePtr->SetValue("NetSurfaceArea", ECN::ECValue(volumeVal));
+        instancePtr->SetValue("GrossSurfaceArea", ECN::ECValue(topSurfaceAreaVal));
+        instancePtr->SetValue("NetSurfaceArea", ECN::ECValue(topSurfaceAreaVal));
+        Dgn::DgnElement::GenericUniqueAspect::SetAspect(element, *instancePtr);
+        }
+
+    auto qtoSideAreasClassCP = element.GetDgnDb().Schemas().GetClass(ORDDynamicSchemaGenerator::GetTargetSchemaName(), ORDDynamicSchemaGenerator::GetQTOSideAreasClassName());
+
+    if (auto qtoSideAreasInstanceP = Dgn::DgnElement::GenericUniqueAspect::GetAspectP(element, *qtoSideAreasClassCP))
+        {
+        qtoSideAreasInstanceP->SetValue("TopGrossArea", ECN::ECValue(topSurfaceAreaVal));
+        qtoSideAreasInstanceP->SetValue("TopNetArea", ECN::ECValue(topSurfaceAreaVal));
+        }
+    else
+        {
+        auto enablerP = qtoSideAreasClassCP->GetDefaultStandaloneEnabler();
+        auto instancePtr = enablerP->CreateInstance();
+        instancePtr->SetValue("TopGrossArea", ECN::ECValue(topSurfaceAreaVal));
+        instancePtr->SetValue("TopNetArea", ECN::ECValue(topSurfaceAreaVal));
         Dgn::DgnElement::GenericUniqueAspect::SetAspect(element, *instancePtr);
         }
 
