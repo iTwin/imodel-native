@@ -3511,19 +3511,24 @@ void DynamicSchemaGenerator::CheckECSchemasForModel(DgnV8ModelR v8Model, bmap<Ut
             }
         if (checksum != syncEntry->second)
             {
-            ECObjectsV8::SchemaKey newSchemaKey = v8SchemaInfo.GetSchemaKey();
-            ECN::ECSchemaCP bimSchema = m_converter.GetDgnDb().Schemas().GetSchema(Utf8String(newSchemaKey.GetName().c_str()).c_str(), false);
-            ECN::SchemaKey bimSchemaKey = bimSchema->GetSchemaKey();
-            if (newSchemaKey.GetVersionMajor() == bimSchemaKey.GetVersionRead() && newSchemaKey.GetVersionMinor() <= bimSchemaKey.GetVersionMinor() && 
-                !bimSchema->IsDynamicSchema())
+            // We don't store supplemental schemas, so we have to reimport in that case.
+            if (!bimSchemaName.Contains("_Supplemental"))
                 {
-                Utf8PrintfString msg("v8 ECSchema '%s' checksum is different from stored schema yet the version is the same as or lower than the version stored.  Minor version must be greater than stored version in order to update.", Utf8String(v8SchemaInfo.GetSchemaName()).c_str());
-                ReportIssue(Converter::IssueSeverity::Fatal, Converter::IssueCategory::InconsistentData(), Converter::Issue::ConvertFailure(), msg.c_str());
-                OnFatalError(Converter::IssueCategory::InconsistentData());
-                return;
+                ECObjectsV8::SchemaKey newSchemaKey = v8SchemaInfo.GetSchemaKey();
+                ECN::ECSchemaCP bimSchema = m_converter.GetDgnDb().Schemas().GetSchema(Utf8String(newSchemaKey.GetName().c_str()).c_str(), false);
+                ECN::SchemaKey bimSchemaKey = bimSchema->GetSchemaKey();
+                if (newSchemaKey.GetVersionMajor() == bimSchemaKey.GetVersionRead() && newSchemaKey.GetVersionMinor() <= bimSchemaKey.GetVersionMinor() &&
+                    !bimSchema->IsDynamicSchema())
+                    {
+                    Utf8PrintfString msg("v8 ECSchema '%s' checksum is different from stored schema yet the version is the same as or lower than the version stored.  Minor version must be greater than stored version in order to update.", Utf8String(v8SchemaInfo.GetSchemaName()).c_str());
+                    ReportIssue(Converter::IssueSeverity::Fatal, Converter::IssueCategory::InconsistentData(), Converter::Issue::ConvertFailure(), msg.c_str());
+                    OnFatalError(Converter::IssueCategory::InconsistentData());
+                    return;
 
+                    }
                 }
             Utf8PrintfString msg("v8 ECSchema '%s' checksum is different from stored schema.  Need to merge and reimport.", Utf8String(v8SchemaInfo.GetSchemaName()).c_str());
+            ReportIssue(Converter::IssueSeverity::Info, Converter::IssueCategory::Sync(), Converter::Issue::Message(), msg.c_str());
             m_needReimportSchemas = true;
             }
         }

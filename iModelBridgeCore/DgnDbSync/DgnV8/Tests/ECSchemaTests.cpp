@@ -1955,3 +1955,116 @@ TEST_F(ECSchemaTests, AliasAlreadyInUse)
     DoUpdate(m_dgnDbFileName, thirdFile);
 
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            12/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ECSchemaTests, SupplementalSchema)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="Test" nameSpacePrefix="ts" version="01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECClass typeName="Foo" isDomainClass="True">
+                    <ECProperty propertyName="Bar" typeName="string" />
+                    <ECProperty propertyName="New" typeName="string" />
+                </ECClass>
+            </ECSchema>)xml";
+
+    Utf8CP suppXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="Test_Supplemental_Overrides" version="01.01" nameSpacePrefix="test_sup" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="1.13" prefix="bsca"/>
+            <ECSchemaReference name="EditorCustomAttributes" version="01.03" prefix="beca" />
+            <ECCustomAttributes>
+                <SupplementalSchemaMetaData xmlns="Bentley_Standard_CustomAttributes.01.13">
+                    <PrimarySchemaName>Test</PrimarySchemaName>
+                    <PrimarySchemaMajorVersion>1</PrimarySchemaMajorVersion>
+                    <PrimarySchemaMinorVersion>1</PrimarySchemaMinorVersion>
+                    <Precedence>1</Precedence>
+                    <Purpose>Overrides</Purpose>
+                    <IsUserSpecific>False</IsUserSpecific>
+               </SupplementalSchemaMetaData>
+            </ECCustomAttributes>
+            <ECClass typeName="Foo" isDomainClass="True">
+                <ECProperty propertyName="Bar" typeName="string" >
+                    <ECCustomAttributes>
+                        <Category xmlns="EditorCustomAttributes.01.03">
+                            <Standard>0</Standard>
+                            <Name>MyCat</Name>
+                            <DisplayLabel>My Category</DisplayLabel>
+                            <Description>My Category</Description>
+                            <Priority>430</Priority>
+                            <Expand xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true" />
+                        </Category>
+                    </ECCustomAttributes>
+                </ECProperty>
+            </ECClass>
+        </ECSchema>)xml";
+    LineUpFiles(L"SupplementalSchemas.bim", L"Test3d.dgn", false);
+    V8FileEditor v8editor;
+    v8editor.Open(m_v8FileName);
+
+    ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
+    if (true)
+        {
+        ECObjectsV8::ECSchemaPtr schema;
+        EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext));
+        EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema, *(v8editor.m_file)));
+
+        ECObjectsV8::ECSchemaPtr suppSchema;
+        EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(suppSchema, suppXml, *schemaContext));
+        EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*suppSchema, *(v8editor.m_file)));
+        v8editor.Save();
+        }
+
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+    Utf8CP suppXml2 = R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="Test_Supplemental_Overrides" version="01.02" nameSpacePrefix="test_sup" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="1.13" prefix="bsca"/>
+            <ECSchemaReference name="EditorCustomAttributes" version="01.03" prefix="beca" />
+            <ECCustomAttributes>
+                <SupplementalSchemaMetaData xmlns="Bentley_Standard_CustomAttributes.01.13">
+                    <PrimarySchemaName>Test</PrimarySchemaName>
+                    <PrimarySchemaMajorVersion>1</PrimarySchemaMajorVersion>
+                    <PrimarySchemaMinorVersion>0</PrimarySchemaMinorVersion>
+                    <Precedence>1</Precedence>
+                    <Purpose>Overrides</Purpose>
+                    <IsUserSpecific>False</IsUserSpecific>
+               </SupplementalSchemaMetaData>
+            </ECCustomAttributes>
+            <ECClass typeName="Foo" isDomainClass="True">
+                <ECProperty propertyName="Bar" typeName="string" >
+                    <ECCustomAttributes>
+                        <Category xmlns="EditorCustomAttributes.01.03">
+                            <Standard>0</Standard>
+                            <Name>MyCat</Name>
+                            <DisplayLabel>My Category</DisplayLabel>
+                            <Description>My Category</Description>
+                            <Priority>430</Priority>
+                            <Expand xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true" />
+                        </Category>
+                    </ECCustomAttributes>
+                </ECProperty>
+                <ECProperty propertyName="New" typeName="string" >
+                    <ECCustomAttributes>
+                        <Category xmlns="EditorCustomAttributes.01.03">
+                            <Standard>0</Standard>
+                            <Name>MyCat</Name>
+                            <DisplayLabel>My Category</DisplayLabel>
+                            <Description>My Category</Description>
+                            <Priority>430</Priority>
+                            <Expand xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true" />
+                        </Category>
+                    </ECCustomAttributes>
+                </ECProperty>
+            </ECClass>
+        </ECSchema>)xml";
+
+    if (true)
+        {
+        ECObjectsV8::ECSchemaPtr suppSchema;
+        EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(suppSchema, suppXml2, *schemaContext));
+        EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().UpdateSchema(*suppSchema, *(v8editor.m_file)));
+        v8editor.Save();
+        }
+    DoUpdate(m_dgnDbFileName, m_v8FileName);
+
+    }
