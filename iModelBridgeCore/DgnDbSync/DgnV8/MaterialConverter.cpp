@@ -503,7 +503,7 @@ BentleyStatus Converter::ConvertMaterialTextureMapImage(Json::Value& textureMap,
         return ERROR;
         }
 
-    WString fileName(fileNameValue.asCString());
+    WString fileName(fileNameValue.asCString(), true);
     auto textureId = FindOrInsertTextureImage(fileName.c_str(), v8File, pseudoBackgroundTransparency);
     if (!textureId.IsValid())
         return ERROR;
