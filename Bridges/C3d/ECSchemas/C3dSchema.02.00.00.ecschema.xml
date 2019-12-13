@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<ECSchema schemaName="AdskCivil3dSchema" alias="C3dSchema" version="02.00.00" description="This schema contains predefined object properties from Autodesk Civil3d" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+<ECSchema schemaName="AdskCivil3dSchema" alias="C3dSchema" version="01.00.00" description="This schema contains predefined object properties from Autodesk Civil3d" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
     <ECSchemaReference name="BisCore" version="01.00.09" alias="bis" />
     <ECSchemaReference name="CoreCustomAttributes" version="01.00.03" alias="CoreCA" />
     <ECSchemaReference name="Generic" version="01.00.03" alias="generic"/>
@@ -15,6 +15,9 @@
     <PropertyCategory typeName="C3dData" displayLabel="Data" priority="48"/>
     <PropertyCategory typeName="C3dVAlignments" displayLabel="Vertical Alignments" priority="45"/>
     <PropertyCategory typeName="C3dDesignSpeeds" displayLabel="Design Speeds" priority="40"/>
+    <PropertyCategory typeName="C3dParameters" displayLabel="Parameters" priority="48"/>
+    <PropertyCategory typeName="C3dCodes" displayLabel="Codes" priority="45"/>
+    <PropertyCategory typeName="C3dFeatureLines" displayLabel="Feature Lines" priority="40"/>
 
     <!-- Properties -->
     <ECStructClass typeName="DesignSpeed" displayLabel="C3D Design Speed" description="C3D design speed along the path of the alignment">
@@ -32,6 +35,27 @@
         <ECProperty propertyName="MinElevation" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="Minimum Elevation" description="C3D vertical alignment minimum elevation"/>
         <ECProperty propertyName="MaxElevation" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="Maximum Elevation" description="C3D vertical alignment maximum elevation"/>
         <ECProperty propertyName="Length" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="Length" description="C3D vertical alignment length"/>
+    </ECStructClass>
+    <ECStructClass typeName="CorridorRegion" displayLabel="C3D Corridor Region" description="C3D parameters of a corridor region">
+        <ECProperty propertyName="StartStation" typeName="double" kindOfQuantity="LENGTH" displayLabel="Start Station" description="C3D vertical alignment start station"/>
+        <ECProperty propertyName="EndStation" typeName="double" kindOfQuantity="LENGTH" displayLabel="End Station" description="C3D vertical alignment end station"/>
+    </ECStructClass>
+    <ECStructClass typeName="CorridorParameters" displayLabel="C3D Corridor Parameters" description="C3D parameters of a corridor">
+        <ECProperty propertyName="Name" typeName="string" displayLabel="Name" description="C3D corridor name"/>
+        <ECProperty propertyName="HorizontalAlignment" typeName="string" displayLabel="Horizontal Alignment" description="C3D horizontal alignment name of a corridor"/>
+        <ECProperty propertyName="VerticalAlignment" typeName="string" displayLabel="Vertical Alignment" description="C3D vertical alignment name of a corridor"/>
+        <ECStructArrayProperty propertyName="Regions" typeName="CorridorRegion" category="C3dParameters" displayLabel="Region" description="C3D regions of a corridor baseline" minOccurs="0" maxOccurs="unbounded"/>
+    </ECStructClass>
+    <ECStructClass typeName="CorridorCode" displayLabel="C3D Corridor Code" description="C3D link, point or shape code used to build a corridor">
+        <ECProperty propertyName="Code" typeName="string" displayLabel="Code" description="C3D link, point or shape code"/>
+        <ECProperty propertyName="Description" typeName="string" displayLabel="Description" description="C3D description of a corridor code"/>
+        <ECProperty propertyName="Style" typeName="string" displayLabel="Style" description="C3D style assigned to a corridor code"/>
+        <ECProperty propertyName="FeatureLineStyle" typeName="string" displayLabel="Feature Line Style" description="C3D feature line style of a corridor"/>
+    </ECStructClass>
+    <ECStructClass typeName="CorridorFeature" displayLabel="C3D Corridor Feature Line" description="C3D corridor feature line">
+        <ECProperty propertyName="Code" typeName="string" displayLabel="Code" description="C3D feature line code"/>
+        <ECProperty propertyName="Description" typeName="string" displayLabel="Description" description="C3D description of a corridor feature line code"/>
+        <ECProperty propertyName="FeatureLineStyle" typeName="string" displayLabel="Feature Line Style" description="C3D feature line style of a corridor"/>
     </ECStructClass>
 
     <!-- Entities -->
@@ -51,5 +75,15 @@
     <ECEntityClass typeName="AeccVAlignment" modifier="Sealed" displayLabel="Vertical Alignment" description="Civil3D vertical alignment">
         <BaseClass>AeccBase</BaseClass>
         <ECStructProperty propertyName="VAlignment" typeName="VAlignment" category="C3dGeometry" displayLabel="Vertical Alignment" description="C3D vertical alignment"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="AeccCorridor" modifier="Sealed" displayLabel="Corridor" description="Civil3D corridor">
+        <BaseClass>AeccBase</BaseClass>
+        <ECProperty propertyName="Name" typeName="string" displayLabel="Name" description="C3D corridor name"/>
+        <ECProperty propertyName="Description" typeName="string" displayLabel="Description" description="C3D corridor description"/>
+        <ECStructArrayProperty propertyName="CorridorParameters" typeName="CorridorParameters" category="C3dParameters" displayLabel="Parameters" description="C3D corridor parameters" minOccurs="0" maxOccurs="unbounded"/>
+        <ECStructArrayProperty propertyName="LinkCodes" typeName="CorridorCode" category="C3dCodes" displayLabel="Link Codes" description="C3D link codes applied to the corridor" minOccurs="0" maxOccurs="unbounded"/>
+        <ECStructArrayProperty propertyName="PointCodes" typeName="CorridorCode" category="C3dCodes" displayLabel="Point Codes" description="C3D point codes applied to the corridor" minOccurs="0" maxOccurs="unbounded"/>
+        <ECStructArrayProperty propertyName="ShapeCodes" typeName="CorridorCode" category="C3dCodes" displayLabel="Shape Codes" description="C3D shape codes applied to the corridor" minOccurs="0" maxOccurs="unbounded"/>
+        <ECStructArrayProperty propertyName="CorridorFeatures" typeName="CorridorFeature" category="C3dFeatureLines" displayLabel="Feature Lines" description="C3D corridor feature lines" minOccurs="0" maxOccurs="unbounded"/>
     </ECEntityClass>
 </ECSchema>

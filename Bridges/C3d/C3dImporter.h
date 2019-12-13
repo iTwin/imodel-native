@@ -16,6 +16,11 @@
 
 #include <Teigha/Civil/DbEntity/AECCDbAlignment.h>
 #include <Teigha/Civil/DbEntity/AECCDbVAlignment.h>
+#include <Teigha/Civil/DbEntity/AECCDbCorridor.h>
+#include <Teigha/Civil/DbObject/AECCDbRoadwayStyleSet.h>
+#include <Teigha/Civil/DbObject/AECCDbRoadwayLinkStyle.h>
+#include <Teigha/Civil/DbObject/AECCDbRoadwayShapeStyle.h>
+#include <Teigha/Civil/DbObject/AECCDbFeatureLineStyle.h>
 
 #include <DgnPlatform/GenericDomain.h>
 
@@ -42,12 +47,13 @@ USING_NAMESPACE_BENTLEY_ROADRAILALIGNMENT
 #define USING_NAMESPACE_C3D using namespace BENTLEY_NAMESPACE_NAME::C3D_NAMESPACE_NAME;
 
 // Declare common members for a C3D protocol extension
-#define DEFINE_C3DPROTOCOLEXTENSION(__extclassname__)  \
+#define DEFINE_C3DPROTOCOLEXTENSION(__extclassname__)   \
     DEFINE_T_SUPER(DwgProtocolExtension)                \
     DWGRX_DECLARE_MEMBERS(__extclassname__)             \
     DWG_PROTOCOLEXT_DECLARE_MEMBERS(__extclassname__)
     
 
+// Civil domain names
 #define DESIGNALIGNMENTS_NAME       "Road/Rail Design Alignments"
 #define ALIGNMENTS_PARTITION_NAME   "Road/Rail Physical"
 #define ROADNETWORK_MODEL_NAME      "Road Network"
@@ -55,11 +61,47 @@ USING_NAMESPACE_BENTLEY_ROADRAILALIGNMENT
 #define CIVIL_ALIGNED_SUBJECT       "Civil Designer Products"
 
 // Entities
-#define ECCLASSNAME_AeccAlignment   "AeccAlignment"
-#define ECCLASSNAME_AeccVAlignment  "AeccVAlignment"
+#define ECCLASSNAME_AeccAlignment       "AeccAlignment"
+#define ECCLASSNAME_AeccVAlignment      "AeccVAlignment"
+#define ECCLASSNAME_AeccCorridor        "AeccCorridor"
 // Structs
-#define ECCLASSNAME_DesignSpeed     "DesignSpeed"
-#define ECCLASSNAME_VAlignment      "VAlignment"
+#define ECCLASSNAME_DesignSpeed         "DesignSpeed"
+#define ECCLASSNAME_VAlignment          "VAlignment"
+#define ECCLASSNAME_CorridorParameters  "CorridorParameters"
+#define ECCLASSNAME_CorridorFeature     "CorridorFeature"
+#define ECCLASSNAME_CorridorCode        "CorridorCode"
+#define ECCLASSNAME_CorridorRegion      "CorridorRegion"
+// Properties
+#define ECPROPNAME_Code                 "Code"
+#define ECPROPNAME_Comment              "Comment"
+#define ECPROPNAME_CorridorParameters   "CorridorParameters"
+#define ECPROPNAME_CorridorFeatures     "CorridorFeatures"
+#define ECPROPNAME_DesignSpeed          "DesignSpeed"
+#define ECPROPNAME_DesignSpeeds         "DesignSpeeds"
+#define ECPROPNAME_Description          "Description"
+#define ECPROPNAME_EndOffset            "EndOffset"
+#define ECPROPNAME_EndStation           "EndStation"
+#define ECPROPNAME_FeatureLineStyle     "FeatureLineStyle"
+#define ECPROPNAME_HorizontalAlignment  "HorizontalAlignment"
+#define ECPROPNAME_Length               "Length"
+#define ECPROPNAME_LinkCodes            "LinkCodes"
+#define ECPROPNAME_MaxElevation         "MaxElevation"
+#define ECPROPNAME_MinElevation         "MinElevation"
+#define ECPROPNAME_Name                 "Name"
+#define ECPROPNAME_PointCodes           "PointCodes"
+#define ECPROPNAME_ReferencePoint       "ReferencePoint"
+#define ECPROPNAME_ReferenceStation     "ReferenceStation"
+#define ECPROPNAME_Regions              "Regions"
+#define ECPROPNAME_SampleOffset         "SampleOffset"
+#define ECPROPNAME_ShapeCodes           "ShapeCodes"
+#define ECPROPNAME_Station              "Station"
+#define ECPROPNAME_StartStation         "StartStation"
+#define ECPROPNAME_StartOffset          "StartOffset"
+#define ECPROPNAME_Style                "Style"
+#define ECPROPNAME_VAlignment           "VAlignment"
+#define ECPROPNAME_VAlignments          "VAlignments"
+#define ECPROPNAME_VerticalAlignment    "VerticalAlignment"
+
 
 BEGIN_C3D_NAMESPACE
 
@@ -114,7 +156,7 @@ public:
     ECSchemaCP  GetC3dSchema () const { return m_c3dSchema; }
     ECClassCP   GetC3dECClass (Utf8StringCR name) const;
     StandaloneECInstancePtr CreateC3dECInstance (Utf8StringCR className) const;
-    DgnDbStatus InsertStructArrayProperty (DgnElementR element, ECValueR outValue, Utf8StringCR propertyName, uint32_t arraySize) const;
+    DgnDbStatus InsertArrayProperty (DgnElementR element, Utf8StringCR propertyName, uint32_t arraySize) const;
     IDwgChangeDetector& GetChangeDetector () { return T_Super::_GetChangeDetector(); }
     BentleyStatus  ProcessDetectionResults (IDwgChangeDetector::DetectionResultsR detected, ElementImportResults& results, ElementImportInputs& inputs) { return T_Super::_ProcessDetectionResults(detected, results, inputs); }
 };  // C3dImporter
@@ -150,5 +192,37 @@ private:
     BentleyStatus   CreateOrUpdateVerticalAlignments ();
     BentleyStatus   CreateOrUpdateHorizontalAlignment ();
 };  // AeccAlignmentExt
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          11/19
++===============+===============+===============+===============+===============+======*/
+class AeccCorridorExt : public DwgProtocolExtension
+{
+public:
+    DEFINE_C3DPROTOCOLEXTENSION(AeccCorridorExt)
+
+    virtual BentleyStatus  _ConvertToBim (ProtocolExtensionContext& context, DwgImporterR importer) override;
+
+private:
+    mutable Utf8String  m_name;
+    mutable Utf8String  m_description;
+    mutable DgnElementP m_importedElement;
+    mutable IECInstancePtr  m_parametersInstance;
+    mutable C3dImporterP    m_importer;
+    mutable AECCDbCorridor* m_aeccCorridor;
+    mutable ProtocolExtensionContext* m_toDgnContext;
+    
+    // C3D elements
+#ifdef FEATURE_COLLECTIONS
+    BentleyStatus ProcessFeatureCollections (AECCCorridorBaseline const& baseline);
+#endif
+    DgnDbStatus ProcessCode (OdString const& code, AECCSubassemblyEntTraits const& subassentTraits, Utf8StringCR propName, uint32_t index);
+    BentleyStatus ProcessRegions (AECCCorridorBaseline const& baseline);
+    BentleyStatus ProcessBaseline (AECCCorridorBaseline const& baseline);
+    BentleyStatus ProcessBaselines ();
+    BentleyStatus ProcessFeatureStyles ();
+    BentleyStatus ProcessCodes ();
+    BentleyStatus ImportCorridor ();
+};  // AeccCorridorExt
 
 END_C3D_NAMESPACE

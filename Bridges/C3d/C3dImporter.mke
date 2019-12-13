@@ -66,6 +66,8 @@ $(o)ImportC3dSchema.obj : $(baseDir)ImportC3dSchema.cpp $(ImportC3dDepends) ${Mu
 
 $(o)ImportAlignment.obj : $(baseDir)ImportAlignment.cpp $(ImportC3dDepends) ${MultiCompileDepends}
 
+$(o)ImportCorridor.obj : $(baseDir)ImportCorridor.cpp $(ImportC3dDepends) ${MultiCompileDepends}
+
 $(o)C3dHelper.obj : $(baseDir)C3dHelper.cpp $(ImportC3dDepends) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki

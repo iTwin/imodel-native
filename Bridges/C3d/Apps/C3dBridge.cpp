@@ -25,7 +25,14 @@ BentleyStatus C3dBridge::_Initialize (int argc, WCharCP argv[])
     {
     auto status = T_Super::_Initialize (argc, argv);
     if (status == BentleyStatus::BSISUCCESS)
+        {
         C3dImporter::Initialize ();
+
+        // set registry sub key "C3dBridge" for standalone bridge
+        auto regsubKey = T_Super::_GetParams().GetBridgeRegSubKey ();
+        if (regsubKey.empty() || regsubKey.Equals(L"OpenDwgBridge"))
+            T_Super::_GetParams().SetBridgeRegSubKey (L"C3dBridge");
+        }
     return  status;
     }
 

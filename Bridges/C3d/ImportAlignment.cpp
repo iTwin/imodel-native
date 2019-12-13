@@ -70,15 +70,15 @@ BentleyStatus   AeccAlignmentExt::CreateOrUpdateAeccAlignment ()
         if (!m_name.empty())
             element->SetUserLabel (m_name.c_str());
         if (!m_description.empty())
-            element->SetPropertyValue ("Description", m_description.c_str());
+            element->SetPropertyValue (ECPROPNAME_Description, m_description.c_str());
 
-        element->SetPropertyValue ("ReferenceStation", m_aeccAlignment->GetReferencePointStation());
-        element->SetPropertyValue ("StartStation", m_aeccAlignment->GetStartStation());
-        element->SetPropertyValue ("EndStation", m_aeccAlignment->GetEndStation());
+        element->SetPropertyValue (ECPROPNAME_ReferenceStation, m_aeccAlignment->GetReferencePointStation());
+        element->SetPropertyValue (ECPROPNAME_StartStation, m_aeccAlignment->GetStartStation());
+        element->SetPropertyValue (ECPROPNAME_EndStation, m_aeccAlignment->GetEndStation());
 
         OdGePoint2d point;
         if (m_aeccAlignment->GetReferencePoint(point))
-            element->SetPropertyValue ("ReferencePoint", DPoint2d::From(point.x, point.y));
+            element->SetPropertyValue (ECPROPNAME_ReferencePoint, DPoint2d::From(point.x, point.y));
 
         this->SetDesignSpeedProperties (*element);
         this->SetVAlignmentProperties (*element);
@@ -100,8 +100,7 @@ BentleyStatus   AeccAlignmentExt::SetDesignSpeedProperties (DgnElementR element)
     if (!ecInstance.IsValid())
         return  BentleyStatus::BSIERROR;
 
-    ECValue ecValue;
-    auto status = m_importer->InsertStructArrayProperty (element, ecValue, "DesignSpeeds", count);
+    auto status = m_importer->InsertArrayProperty (element, ECPROPNAME_DesignSpeeds, count);
     if (status != DgnDbStatus::Success)
         return  static_cast<BentleyStatus>(status);
 
@@ -112,13 +111,17 @@ BentleyStatus   AeccAlignmentExt::SetDesignSpeedProperties (DgnElementR element)
             {
             Utf8String  comment(reinterpret_cast<WCharCP>(designSpeed->GetComment().c_str()));
             if (!comment.empty())
-                ecInstance->SetValue ("Comment", ECValue(comment.c_str()));
+                ecInstance->SetValue (ECPROPNAME_Comment, ECValue(comment.c_str()));
 
-            ecInstance->SetValue ("Station", ECValue(designSpeed->GetStation()));
-            ecInstance->SetValue ("DesignSpeed", ECValue(designSpeed->GetValue()));
+            ecInstance->SetValue (ECPROPNAME_Station, ECValue(designSpeed->GetStation()));
+            ecInstance->SetValue (ECPROPNAME_DesignSpeed, ECValue(designSpeed->GetValue()));
 
+            ECValue ecValue(VALUEKIND_Struct);
             ecValue.SetStruct (ecInstance.get());
-            status = element.SetPropertyValue("DesignSpeeds", ecValue, PropertyArrayIndex(i));
+
+            status = element.SetPropertyValue(ECPROPNAME_DesignSpeeds, ecValue, PropertyArrayIndex(i));
+            if (status != DgnDbStatus::Success)
+                break;
             }
         }
 
@@ -138,8 +141,7 @@ BentleyStatus   AeccAlignmentExt::SetVAlignmentProperties (DgnElementR element)
     if (!ecInstance.IsValid())
         return  BentleyStatus::BSIERROR;
 
-    ECValue ecValue;
-    auto status = m_importer->InsertStructArrayProperty (element, ecValue, "VAlignments", count);
+    auto status = m_importer->InsertArrayProperty (element, ECPROPNAME_VAlignments, count);
     if (status != DgnDbStatus::Success)
         return  static_cast<BentleyStatus>(status);
 
@@ -151,19 +153,23 @@ BentleyStatus   AeccAlignmentExt::SetVAlignmentProperties (DgnElementR element)
             {
             Utf8String  descr(reinterpret_cast<WCharCP>(aeccVAlignment->GetDescription().c_str()));
             if (!descr.empty())
-                ecInstance->SetValue ("Description", ECValue(descr.c_str()));
+                ecInstance->SetValue (ECPROPNAME_Description, ECValue(descr.c_str()));
 
-            ecInstance->SetValue ("StartStation", ECValue(aeccVAlignment->GetStartStation()));
-            ecInstance->SetValue ("EndStation", ECValue(aeccVAlignment->GetEndStation()));
-            ecInstance->SetValue ("StartOffset", ECValue(aeccVAlignment->GetStartOffset()));
-            ecInstance->SetValue ("EndOffset", ECValue(aeccVAlignment->GetEndOffset()));
-            ecInstance->SetValue ("SampleOffset", ECValue(aeccVAlignment->GetSampleOffset()));
-            ecInstance->SetValue ("MinElevation", ECValue(aeccVAlignment->GetElevationMin()));
-            ecInstance->SetValue ("MaxElevation", ECValue(aeccVAlignment->GetElevationMax()));
-            ecInstance->SetValue ("Length", ECValue(aeccVAlignment->GetLength()));
+            ecInstance->SetValue (ECPROPNAME_StartStation, ECValue(aeccVAlignment->GetStartStation()));
+            ecInstance->SetValue (ECPROPNAME_EndStation, ECValue(aeccVAlignment->GetEndStation()));
+            ecInstance->SetValue (ECPROPNAME_StartOffset, ECValue(aeccVAlignment->GetStartOffset()));
+            ecInstance->SetValue (ECPROPNAME_EndOffset, ECValue(aeccVAlignment->GetEndOffset()));
+            ecInstance->SetValue (ECPROPNAME_SampleOffset, ECValue(aeccVAlignment->GetSampleOffset()));
+            ecInstance->SetValue (ECPROPNAME_MinElevation, ECValue(aeccVAlignment->GetElevationMin()));
+            ecInstance->SetValue (ECPROPNAME_MaxElevation, ECValue(aeccVAlignment->GetElevationMax()));
+            ecInstance->SetValue (ECPROPNAME_Length, ECValue(aeccVAlignment->GetLength()));
 
+            ECValue ecValue(VALUEKIND_Struct);
             ecValue.SetStruct (ecInstance.get());
-            status = element.SetPropertyValue("VAlignments", ecValue, PropertyArrayIndex(i));
+
+            status = element.SetPropertyValue(ECPROPNAME_VAlignments, ecValue, PropertyArrayIndex(i));
+            if (status != DgnDbStatus::Success)
+                break;
             }
         }
 

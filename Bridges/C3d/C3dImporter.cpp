@@ -26,6 +26,11 @@ C3dImporter::C3dImporter (DwgImporter::Options& options) : T_Super(options)
     AECCDbAlignment::rxInit ();
     AeccAlignmentExt::RxInit ();
     DwgRxClass::AddProtocolExtension (AECCDbAlignment::desc(), DwgProtocolExtension::Desc(), AeccAlignmentExt::CreateObject());
+
+    AECCDbCorridor::rxInit ();
+    AeccCorridorExt::RxInit ();
+    DwgRxClass::AddProtocolExtension (AECCDbCorridor::desc(), DwgProtocolExtension::Desc(), AeccCorridorExt::CreateObject());
+
     this->ParseC3dConfigurations ();
 
     m_c3dSchema = nullptr;
@@ -39,6 +44,10 @@ C3dImporter::~C3dImporter ()
     DwgRxClass::DeleteProtocolExtension (AECCDbAlignment::desc(), AeccAlignmentExt::desc());
     AeccAlignmentExt::RxUnInit ();
     AECCDbAlignment::rxUninit ();
+
+    DwgRxClass::DeleteProtocolExtension (AECCDbCorridor::desc(), AeccCorridorExt::desc());
+    AeccCorridorExt::RxUnInit ();
+    AECCDbCorridor::rxUninit ();
     }
 
 /*---------------------------------------------------------------------------------**//**

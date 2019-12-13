@@ -49,11 +49,44 @@ OdString    DwgToolkitHost::findFile(const OdString& filenameIn, OdDbBaseDatabas
     }
 
 void        DwgToolkitHost::warning (const OdString& message) { if (nullptr != m_appHost) m_appHost->_Alert(reinterpret_cast<WCharCP>(message.c_str())); }
-void        DwgToolkitHost::warning (const char* warnVisGroup, OdWarning warningOb) { if (nullptr != m_appHost) m_appHost->_Alert(L"...implement warning!"); }
-void        DwgToolkitHost::warning (const char* warnVisGroup, OdWarning warningOb, OdDbObjectId objectId) { if (nullptr != m_appHost) m_appHost->_Alert(L"...implement warning!"); }
+void        DwgToolkitHost::warning (const char* warnVisGroup, OdWarning warningOb) { if (nullptr != m_appHost) m_appHost->_Alert(reinterpret_cast<WCharCP>(this->getErrorDescription(warningOb).c_str())); }
 void        DwgToolkitHost::warning (OdWarning code) { if (nullptr != m_appHost) m_appHost->_Alert(reinterpret_cast<WCharCP>(this->getErrorDescription(code).c_str())); }
-OdString    DwgToolkitHost::getErrorDescription (unsigned int code) { return  OdString(L"implement getErrorDescriprion!!!"); }
+OdString    DwgToolkitHost::getErrorDescription (unsigned int code) { return  OdError(OdResult(code)).description(); }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void        DwgToolkitHost::warning (const char* warnVisGroup, OdWarning warningOb, OdDbObjectId objectId) 
+    { 
+    if (nullptr != m_appHost)
+        {
+        OdString    name, id;
+        if (objectId.isValid())
+            {
+            auto obj = objectId.openObject (OdDb::OpenMode::kForRead);
+            if (!obj.isNull())
+                name = obj->isA()->name ();
+            id = objectId.getHandle().ascii ();
+            }
+        else
+            {
+            name.empty ();
+            id = OdString (L"invalid");
+            }
+            
+        WString msg;
+        if (name.isEmpty())
+            msg.Sprintf (L"%ls, ID=%ls", this->getErrorDescription(warningOb).c_str(), id.c_str());
+        else
+            msg.Sprintf (L"%ls, %ls, ID=%ls", this->getErrorDescription(warningOb).c_str(), name.c_str(), id.c_str());
+
+        m_appHost->_Alert (msg.c_str());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
 OdDbHostAppProgressMeter*   DwgToolkitHost::newProgressMeter ()
     {
     if (nullptr != m_workingProgressMeter)

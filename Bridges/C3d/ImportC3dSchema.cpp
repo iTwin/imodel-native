@@ -7,7 +7,7 @@
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 
 #define C3DSCHEMA_SchemaName    "AdskCivil3dSchema"
-#define C3DSCHEMA_VERSION_Major 2
+#define C3DSCHEMA_VERSION_Major 1
 #define C3DSCHEMA_VERSION_Write 0
 #define C3DSCHEMA_VERSION_Minor 0
 #define C3DSCHEMA_FileName      L"C3dSchema.02.00.00.ecschema.xml"
@@ -233,7 +233,7 @@ StandaloneECInstancePtr C3dImporter::CreateC3dECInstance (Utf8StringCR className
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          11/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus C3dImporter::InsertStructArrayProperty (DgnElementR element, ECValueR outValue, Utf8StringCR propertyName, uint32_t arraySize) const
+DgnDbStatus C3dImporter::InsertArrayProperty (DgnElementR element, Utf8StringCR propertyName, uint32_t arraySize) const
     {
     DgnDbStatus status = DgnDbStatus::BadRequest;
     if (arraySize > 0 && !propertyName.empty())
@@ -264,6 +264,8 @@ BentleyStatus   C3dImporter::_MakeSchemaChanges ()
     auto status = T_Super::_MakeSchemaChanges();
     if (status != BentleyStatus::BSISUCCESS)
         return  status;
+
+    iModelBridge::PushChanges (T_Super::GetDgnDb(), T_Super::GetOptions(), "DWG schemas");
 
     this->SetStepName (ProgressMessage::TASK_IMPORTING(), "Civil domain & C3D schemas");
 
