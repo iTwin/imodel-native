@@ -134,6 +134,22 @@ Napi::Value ConversionUtils::GetValue(Statement &stmt, int i, Napi::Env env)
 BentleyStatus ConversionUtils::BindValue(Statement &stmt, int i, Napi::Value value)
 {
     BentleyStatus status = BSISUCCESS;
+    if (value.IsTypedArray())
+    {
+        switch (value.As<Napi::TypedArray>().TypedArrayType())
+        {
+        case napi_uint8_array:
+            {
+            Napi::Uint8Array array = value.As<Napi::Uint8Array>();
+            stmt.BindBlob(i, array.Data(), (int)array.ByteLength(), Statement::MakeCopy::Yes);
+            break;
+            }
+        default:
+            BeAssert(false);
+            status = BSIERROR;
+        }
+        return status;
+    }
     switch (value.Type())
     {
     case napi_undefined:

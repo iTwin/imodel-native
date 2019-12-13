@@ -109,7 +109,7 @@ void NativeSQLiteStatement::Init(Napi::Env env, Napi::Object exports)
     // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
     // ***
     Napi::HandleScope scope(env);
-    Napi::Function t = DefineClass(env, "NativeSQLiteStatement", {InstanceMethod("bindValues", &NativeSQLiteStatement::BindValues), InstanceMethod("prepare", &NativeSQLiteStatement::Prepare), InstanceMethod("clearBindings", &NativeSQLiteStatement::ClearBindings), InstanceMethod("reset", &NativeSQLiteStatement::Reset), InstanceMethod("dispose", &NativeSQLiteStatement::Dispose), InstanceMethod("step", &NativeSQLiteStatement::Step), InstanceMethod("getRow", &NativeSQLiteStatement::GetRow)});
+    Napi::Function t = DefineClass(env, "NativeSQLiteStatement", { InstanceMethod("bindValues", &NativeSQLiteStatement::BindValues), InstanceMethod("prepare", &NativeSQLiteStatement::Prepare), InstanceMethod("clearBindings", &NativeSQLiteStatement::ClearBindings), InstanceMethod("reset", &NativeSQLiteStatement::Reset), InstanceMethod("dispose", &NativeSQLiteStatement::Dispose), InstanceMethod("step", &NativeSQLiteStatement::Step), InstanceMethod("getRow", &NativeSQLiteStatement::GetRow) });
 
     exports.Set("NativeSQLiteStatement", t);
 
