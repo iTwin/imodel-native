@@ -2720,7 +2720,19 @@ void Converter::AnnounceConversionResults(ElementConversionResults& results, Dgn
                                         ChangeOperation::Update : ChangeOperation::Create;
 
     if (isParentElement)
+        {
         m_linkConverter->ConvertLinksOnElement(&v8eh, elementId, changeOperation);
+        DgnV8Api::ChildElemIter v8childEh(v8eh, DgnV8Api::ExposeChildrenReason::Query);
+
+        if (v8childEh.IsValid())
+            {
+            for (; v8childEh.IsValid(); v8childEh = v8childEh.ToNext())
+                {
+                m_linkConverter->ConvertLinksOnElement(&v8childEh, elementId, changeOperation);
+                }
+            }
+
+        }
 
     if (!results.m_v8SecondaryInstanceMappings.empty())
         {
