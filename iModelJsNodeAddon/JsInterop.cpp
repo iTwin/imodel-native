@@ -553,6 +553,7 @@ DgnDbStatus JsInterop::ExtractChangedInstanceIdsFromChangeSet(JsonValueR json, D
     Json::Value fontDeleteIds(Json::ValueType::arrayValue);
 
     RevisionChangesFileReader changeSetReader(changeSetFile, db);
+    // changeSetReader.Dump("ExtractChangedInstanceIdsFromChangeSet", db);
     ChangeIterator changeIter(db, changeSetReader);
     for (ChangeIterator::RowEntry const& changeEntry : changeIter)
         {
@@ -560,11 +561,20 @@ DgnDbStatus JsInterop::ExtractChangedInstanceIdsFromChangeSet(JsonValueR json, D
             {
             if (0 == strcmp(changeEntry.GetTableName().c_str(), "dgn_Font"))
                 {
+                Changes::Change const& change = changeEntry.GetChange();
+                Byte* pColumns = nullptr;
+                int numColumns = 0;
+                if (BE_SQLITE_OK != change.GetPrimaryKeyColumns(&pColumns, &numColumns) || (0 == numColumns) || (0 == pColumns[0]))
+                    {
+                    BeAssert(false && "Expect column 0 to be the primary key of the dgn_Font table");
+                    continue;
+                    }
+
                 switch (changeEntry.GetDbOpcode())
                     {
-                    case DbOpcode::Insert: fontInsertIds.append(changeEntry.GetPrimaryInstanceId().ToHexStr()); break;
-                    case DbOpcode::Update: fontUpdateIds.append(changeEntry.GetPrimaryInstanceId().ToHexStr()); break;
-                    case DbOpcode::Delete: fontDeleteIds.append(changeEntry.GetPrimaryInstanceId().ToHexStr()); break;
+                    case DbOpcode::Insert: fontInsertIds.append(change.GetNewValue(0).GetValueId<DgnFontId>().ToHexStr()); break;
+                    case DbOpcode::Update: fontUpdateIds.append(change.GetOldValue(0).GetValueId<DgnFontId>().ToHexStr()); break;
+                    case DbOpcode::Delete: fontDeleteIds.append(change.GetOldValue(0).GetValueId<DgnFontId>().ToHexStr()); break;
                     default: break;
                     }
                 }
