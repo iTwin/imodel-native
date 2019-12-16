@@ -5,10 +5,8 @@
 #include <bsibasegeomPCH.h>
 
 #include  <Bentley/bmap.h>
-#include  <Bentley/bset.h>
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
-
 
 struct IPointComparator
     {
@@ -38,7 +36,6 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance, do
     DVec3dCP                        normals = GetNormalCP();
     DPoint2dCP                      params = GetParamCP();
     PolyfaceAuxDataCPtr             auxData = GetAuxDataCP();
-    size_t                          nextClusterIndex = 0;
     bool                            doNormals = (nullptr != normals), doParams = (nullptr != params), doAux = auxData.IsValid();
 
     struct Cluster : RefCountedBase
@@ -66,25 +63,26 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance, do
                 m_auxIndices.push_back(auxIndex);
             }
         };
-    
-    bmap<size_t, RefCountedPtr<Cluster>> clusters;
-    bmap <size_t, Cluster*>     inputPointIndexToCluster;
-       
+
+    bvector<RefCountedPtr<Cluster>> clusters;
+    bvector<Cluster*>               inputPointIndexToCluster(GetPointCount(), nullptr);
+
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*this); visitor->AdvanceToNextFace(); )
         {
+        if ((doNormals && nullptr == visitor->GetClientNormalIndexCP()) || (doParams && nullptr == visitor->GetClientParamIndexCP()))
+            continue;   // degenerate facet...
+
         for (size_t i=0, count = visitor->NumEdgesThisFace(); i<count; i++)
             {
-            if ((doNormals && nullptr == visitor->GetClientNormalIndexCP()) || (doParams && nullptr == visitor->GetClientParamIndexCP()))
-                continue;   // degenerate facet...
-
             int32_t     inputPointIndex  = visitor->GetClientPointIndexCP()[i];
             int32_t     inputNormalIndex = doNormals ? visitor->GetClientNormalIndexCP()[i] : -1;
             int32_t     inputParamIndex  = doParams  ? visitor->GetClientParamIndexCP()[i] : -1; 
             int32_t     inputAuxIndex    = doAux     ? visitor->GetClientAuxIndexCP()[i] : -1;
-            size_t      clusterIndex;
 
-            auto        foundCluster = inputPointIndexToCluster.find(inputPointIndex);
-            if (foundCluster == inputPointIndexToCluster.end())
+            auto foundCluster = inputPointIndexToCluster[inputPointIndex];
+            if (foundCluster)
+                foundCluster->Add(inputPointIndex, inputNormalIndex, inputParamIndex, inputAuxIndex);
+            else
                 {
                 DPoint3d    dPoint = points[inputPointIndex];
                 Point3d     iPoint;
@@ -93,21 +91,18 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance, do
                 iPoint.y = (int32_t) (dPoint.y / tolerance);
                 iPoint.z = (int32_t) (dPoint.z / tolerance);
 
-                auto        pointMapInsert = pointMap.Insert(iPoint, nextClusterIndex);
-
-                if (pointMapInsert.second)
-                    clusterIndex = nextClusterIndex++;
+                Cluster*    thisCluster = nullptr;
+                auto        pointMapInsert = pointMap.Insert(iPoint, clusters.size()); // try to insert new cluster for this point
+                if (pointMapInsert.second) // no cluster existed
+                    {
+                    clusters.push_back(new Cluster()); // add to global list to match index in pointMap
+                    thisCluster = clusters.back().get();
+                    }
                 else
-                    clusterIndex = pointMapInsert.first->second;
-                
-                auto        clusterInsert = clusters.Insert(clusterIndex, new Cluster());
+                    thisCluster = clusters[pointMapInsert.first->second].get(); // pointMap already has Cluster
 
-                clusterInsert.first->second->Add(inputPointIndex, inputNormalIndex, inputParamIndex, inputAuxIndex);
-                inputPointIndexToCluster.Insert(inputPointIndex, clusterInsert.first->second.get());
-                }
-            else
-                {
-                foundCluster->second->Add(inputPointIndex, inputNormalIndex, inputParamIndex, inputAuxIndex);
+                thisCluster->Add(inputPointIndex, inputNormalIndex, inputParamIndex, inputAuxIndex);
+                inputPointIndexToCluster[inputPointIndex] = thisCluster;
                 }
             }
         }
@@ -139,9 +134,8 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance, do
         outputAuxChannels.Init( GetAuxDataCP()->GetChannels());
 
     // Build clustered points.
-    for (auto& pair : clusters)
+    for (auto& cluster : clusters)
         {
-        auto const& cluster = pair.second;
         DPoint3d    point  = DPoint3d::FromZero();
         double      scale = 1.0 / (double) cluster->m_pointIndices.size();
 
@@ -195,35 +189,48 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance, do
                 }
             }
         }
+
     bvector<int32_t>            outputAuxIndices;
 
+    bvector<Cluster*>           faceClusters;
+    bvector<bool>               faceClusterVisibility;
+    bvector<DPoint3d>           faceVertices;
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*this); visitor->AdvanceToNextFace(); )
         {
-        bset<Cluster*>          unique;
-        bvector<Cluster*>       faceClusters;
-        bvector<DPoint3d>       faceVertices;
-
+        faceClusters.clear();
+        faceClusterVisibility.clear();
+        faceVertices.clear();
         for (size_t i=0, count = visitor->NumEdgesThisFace(); i<count; i++)
             {
             int32_t         inputPointIndex = visitor->GetClientPointIndexCP()[i];
-            auto foundCluster = inputPointIndexToCluster.find(inputPointIndex);
-            if (inputPointIndexToCluster.end() == foundCluster)
+            Cluster*        cluster = inputPointIndexToCluster[inputPointIndex];
+            if (cluster == nullptr)
                 continue; // degenerate facet, ignored above...
 
-            Cluster*        cluster = foundCluster->second;
-            auto            insert = unique.insert(cluster);
-
-            if (insert.second)
+            bool isVisible = visitor->GetVisibleCP()[i];
+            // Ensure clustered points aren't repeated.
+            auto faceClusterIter = std::find(faceClusters.begin(), faceClusters.end(), cluster);
+            if (faceClusterIter == faceClusters.end())
                 {
                 faceClusters.push_back(cluster);
+                faceClusterVisibility.push_back(isVisible);
                 faceVertices.push_back(decimatedPolyface->GetPointCP()[cluster->m_outputPointIndex]);
                 }
-            }
-        if (faceClusters.size() > 2)                                                                                       
-            {
-            for (auto& cluster : faceClusters)
+            else
                 {
-                coordinateMap->AddPointIndex(cluster->m_outputPointIndex, true /* Visiblity,,, TBD if necessary */ );
+                // If this was originally multiple points, turn on visibility if on for any of the points.
+                // Note that this visibility glombing is just inside the current face; should not introduce artifacts.
+                size_t faceClusterIndex = faceClusterIter - faceClusters.begin();
+                if (isVisible && !faceClusterVisibility[faceClusterIndex])
+                    faceClusterVisibility[faceClusterIndex] = true;
+                }
+            }
+        if (faceClusters.size() > 2)
+            {
+            for (size_t faceClusterIndex = 0; faceClusterIndex < faceClusters.size(); ++faceClusterIndex)
+                {
+                auto& cluster = faceClusters[faceClusterIndex];
+                coordinateMap->AddPointIndex(cluster->m_outputPointIndex, faceClusterVisibility[faceClusterIndex]);
 
                 if (doNormals)
                     {
@@ -248,17 +255,15 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance, do
                 coordinateMap->AddParamIndexTerminator();
             if (doAux)
                 outputAuxIndices.push_back(0);
-                
             }
         }
-
 
     if (doAux)
         {
         PolyfaceAuxDataPtr  decimatedAuxData = new PolyfaceAuxData(std::move(outputAuxIndices), std::move(outputAuxChannels));
-
         decimatedPolyface->SetAuxData(decimatedAuxData);
         }
+
     return decimatedPolyface;
     }
 
