@@ -149,6 +149,7 @@ public:
     EXPORT_ATTRIBUTE bool           _FilterEntity (ElementImportInputs& inputs) const override;
 
     // C3dImporter methods
+    EXPORT_ATTRIBUTE BentleyStatus  OnBaseBridgeJobInitialized (DgnElementId jobId);
     EXPORT_ATTRIBUTE BentleyStatus  OnBaseBridgeJobFound (DgnElementId jobId);
     PhysicalModelPtr    GetRoadNetworkModel ();
     PhysicalModelPtr    GetRailNetworkModel ();

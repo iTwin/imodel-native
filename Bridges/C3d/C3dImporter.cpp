@@ -104,7 +104,7 @@ Utf8String C3dImporter::_ComputeImportJobName (DwgDbBlockTableRecordCR modelspac
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          12/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus C3dImporter::OnBaseBridgeJobFound (DgnElementId jobId)
+BentleyStatus C3dImporter::OnBaseBridgeJobInitialized (DgnElementId jobId)
     {
     auto alignSubject = this->GetAlignmentSubject ();
     if (!alignSubject.IsValid())
@@ -165,7 +165,10 @@ BentleyStatus C3dImporter::OnBaseBridgeJobFound (DgnElementId jobId)
         }
 
     auto m_alignmentModel = designAlignments->GetAlignmentModel ();
-    if (m_alignmentModel.IsValid() && m_c3dOptions.IsAlignedModelPrivate())
+    if (!m_alignmentModel.IsValid())
+        return  BentleyStatus::BSIERROR;
+
+    if (m_c3dOptions.IsAlignedModelPrivate())
         {
         alignedPartition->GetSubModel()->SetIsPrivate (true);
         alignedPartition->GetSubModel()->Update ();
@@ -190,11 +193,44 @@ BentleyStatus C3dImporter::OnBaseBridgeJobFound (DgnElementId jobId)
 
         m_alignmentModel->SetIsPrivate (true);
         m_alignmentModel->Update ();
-
-        return  BentleyStatus::BSISUCCESS;
         }
 
-    return  BentleyStatus::BSIERROR;
+    return  BentleyStatus::BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          12/19
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus C3dImporter::OnBaseBridgeJobFound (DgnElementId jobId)
+    {
+    auto alignSubject = this->GetAlignmentSubject ();
+    if (!alignSubject.IsValid())
+        {
+        T_Super::ReportError (IssueCategory::Briefcase(), Issue::Message(), "Failed to get the Alignment subject!");
+        return  BentleyStatus::BSIERROR;
+        }
+
+    m_roadNetworkModel = RoadRailPhysical::PhysicalModelUtilities::QueryRoadNetworkModel (*alignSubject, ALIGNMENTS_PARTITION_NAME, ROADNETWORK_MODEL_NAME);
+    m_railNetworkModel = RoadRailPhysical::PhysicalModelUtilities::QueryRailNetworkModel (*alignSubject, ALIGNMENTS_PARTITION_NAME, RAILNETWORK_MODEL_NAME);
+
+    if (!m_roadNetworkModel.IsValid() || !m_railNetworkModel.IsValid())
+        {
+        T_Super::ReportError (IssueCategory::Briefcase(), Issue::Message(), Utf8PrintfString("Error finding road/rail network under the Alignment subject %s!", alignSubject->GetDisplayLabel().c_str()).c_str());
+        return  BentleyStatus::BSIERROR;
+        }
+
+    auto designAlignments = RoadRailAlignment::DesignAlignments::Query (*m_roadNetworkModel, DESIGNALIGNMENTS_NAME);
+    if (!designAlignments.IsValid())
+        {
+        T_Super::ReportError (IssueCategory::Briefcase(), Issue::Message(), "Error finding the Alignments element %s!");
+        return  BentleyStatus::BSIERROR;
+        }
+
+    auto m_alignmentModel = designAlignments->GetAlignmentModel ();
+    if (!m_alignmentModel.IsValid())
+        return  BentleyStatus::BSIERROR;
+
+    return  BentleyStatus::BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**

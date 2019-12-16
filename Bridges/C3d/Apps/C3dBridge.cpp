@@ -49,7 +49,8 @@ Dgn::SubjectCPtr C3dBridge::_InitializeJob ()
     if (!jobSubject.IsValid())
         return  nullptr;
 
-    c3dImporter->OnBaseBridgeJobFound (jobSubject->GetElementId());
+    if (c3dImporter->OnBaseBridgeJobInitialized(jobSubject->GetElementId()) != BentleyStatus::BSISUCCESS)
+        jobSubject = nullptr;
         
     return  jobSubject;
     }
@@ -59,9 +60,16 @@ Dgn::SubjectCPtr C3dBridge::_InitializeJob ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Dgn::SubjectCPtr C3dBridge::_FindJob ()
     {
+    auto c3dImporter = dynamic_cast<C3dImporterP>(T_Super::GetImporter());
+    if (c3dImporter == nullptr)
+        return  nullptr;
+
     auto jobSubject = T_Super::_FindJob ();
     if (jobSubject.IsValid())
-        m_importer->OnBaseBridgeJobFound (jobSubject->GetElementId());
+        {
+        if (c3dImporter->OnBaseBridgeJobFound(jobSubject->GetElementId()) != BentleyStatus::BSISUCCESS)
+            jobSubject = nullptr;
+        }
 
     return  jobSubject;
     }

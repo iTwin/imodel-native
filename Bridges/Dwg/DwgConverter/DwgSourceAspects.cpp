@@ -2186,7 +2186,7 @@ DwgSourceAspects::ModelAspect DwgSourceAspects::FindModelAspect(DwgDbObjectIdCR 
     iter.GetStatement()->BindText(iter.GetParameterIndex("Identifier"), idstr.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     for (auto entry : iter)
         {
-        if (entry.GetTransform().IsEqual(trans))
+        if (iModelBridge::AreTransformsEqual(entry.GetTransform(), trans))
             return  entry;
         }
     return ModelAspect();

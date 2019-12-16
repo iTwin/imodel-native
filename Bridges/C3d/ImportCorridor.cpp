@@ -48,6 +48,8 @@ BentleyStatus AeccCorridorExt::ImportCorridor ()
     auto& inputs = m_toDgnContext->GetElementInputsR ();
 
     inputs.SetClassId (corridorClass->GetId());
+    if (!m_name.empty())
+        inputs.SetElementLabel (m_name);
 
     auto status = m_importer->_ImportEntity (results, inputs);
     if (status != BentleyStatus::BSISUCCESS)
@@ -56,8 +58,6 @@ BentleyStatus AeccCorridorExt::ImportCorridor ()
     m_importedElement = results.GetImportedElement ();
     if (m_importedElement != nullptr)
         {
-        if (!m_name.empty())
-            m_importedElement->SetUserLabel (m_name.c_str());
         if (!m_description.empty())
             m_importedElement->SetPropertyValue (ECPROPNAME_Description, m_description.c_str());
 
@@ -233,7 +233,9 @@ BentleyStatus AeccCorridorExt::ProcessFeatureStyles ()
                 if (!descr.empty())
                     featureInstance->SetValue (ECPROPNAME_Description, ECValue(descr.c_str()));
                 }
+#ifdef DUMP_AECC_PROPERTIES
             LOG.debugv ("Feature[%d]=%s, %s, %s", i, code.c_str(), name.c_str(), descr.c_str());
+#endif
 
             ECValue featureValue(VALUEKIND_Struct);
             featureValue.SetStruct (featureInstance.get());
@@ -421,7 +423,9 @@ DgnDbStatus AeccCorridorExt::ProcessCode (OdString const& code, AECCSubassemblyE
             codeInstance->SetValue (ECPROPNAME_FeatureLineStyle, ECValue(flstyleName.c_str()));
         }
 
+#ifdef DUMP_AECC_PROPERTIES
     LOG.debugv ("%s: %s, %s, %s, %s", propName.c_str(), codeString.c_str(), descr.c_str(), styleName.c_str(), flstyleName.c_str());
+#endif
 
     ECValue codeValue(VALUEKIND_Struct);
     codeValue.SetStruct (codeInstance.get());

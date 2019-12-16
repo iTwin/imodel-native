@@ -59,6 +59,8 @@ BentleyStatus   AeccAlignmentExt::CreateOrUpdateAeccAlignment ()
     auto& inputs = m_toDgnContext->GetElementInputsR ();
 
     inputs.SetClassId (ecInstance->GetClass().GetId());
+    if (!m_name.empty())
+        inputs.SetElementLabel (m_name);
 
     auto status = m_importer->_ImportEntity (results, inputs);
     if (status != BentleyStatus::BSISUCCESS)
@@ -67,8 +69,6 @@ BentleyStatus   AeccAlignmentExt::CreateOrUpdateAeccAlignment ()
     auto element = results.GetImportedElement ();
     if (element != nullptr)
         {
-        if (!m_name.empty())
-            element->SetUserLabel (m_name.c_str());
         if (!m_description.empty())
             element->SetPropertyValue (ECPROPNAME_Description, m_description.c_str());
 
@@ -234,6 +234,10 @@ BentleyStatus AeccAlignmentExt::DetectAndImportAeccVAlignment (DwgImporter::Elem
     if (aeccVAlignment == nullptr)
         return  BentleyStatus::BSIERROR;
 
+    Utf8String  vaName(reinterpret_cast<WCharCP>(aeccVAlignment->GetVAlignmentName().c_str()));
+    if (!vaName.empty())
+        inputs.SetElementLabel (vaName);
+
     IDwgChangeDetector::DetectionResults    detectionResults;
     DwgImporter::ElementImportResults   elementResults;
     BentleyStatus   status = BentleyStatus::SUCCESS;
@@ -249,9 +253,6 @@ BentleyStatus AeccAlignmentExt::DetectAndImportAeccVAlignment (DwgImporter::Elem
         auto importedElement = elementResults.GetImportedElement ();
         if (importedElement != nullptr)
             {
-            if (!m_name.empty())
-                importedElement->SetUserLabel (m_name.c_str());
-
             importedElement->SetPropertyValue ("VAlignment.StartStation", ECValue(aeccVAlignment->GetStartStation()));
             importedElement->SetPropertyValue ("VAlignment.EndStation", ECValue(aeccVAlignment->GetEndStation()));
             importedElement->SetPropertyValue ("VAlignment.StartOffset", ECValue(aeccVAlignment->GetStartOffset()));
