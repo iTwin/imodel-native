@@ -2213,8 +2213,7 @@ bool SchemaWriter::IsChangeToBaseClassIsSupported(ECClassCR baseClass)
         {
         if (entityClass->IsMixin())
             {
-            ECPropertyIterableCR propertyItor = baseClass.GetProperties(true);
-            return  propertyItor.begin() == propertyItor.end();
+            return true;
             }
         }
 

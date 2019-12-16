@@ -711,8 +711,497 @@ TEST_F(SchemaUpgradeTestFixture, UpdateBaseClass_UpdateEmtptyMixinBaseClassWithN
         "       <ECProperty propertyName='P1' typeName='string' />"
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(ERROR, ImportSchema(editedSchemaItem));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
+
+    // Verify we can insert and select
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.SupportOption (Code,P2,P1) VALUES ('code', 'p2', 'p1')");
+    ASSERT_EQ(JsonValue(R"json([{"Code":"code", "P2":"p2", "P1":"p1"}])json"),
+     GetHelper().ExecuteSelectECSql("SELECT Code, P2, P1 FROM TestSchema.SupportOption WHERE Code='code'")) << "After swapping baseclass to none-empty mixin";
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Robert Schili                     12/19
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, UpdateBaseClass_AddMixinBaseClassWithProperties)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' prefix='CoreCA'/>"
+        "  <ECEntityClass typeName='IMyMixin' modifier='Abstract'>"
+        "      <ECCustomAttributes>"
+        "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+        "              <AppliesToEntityClass>Element</AppliesToEntityClass>"
+        "          </IsMixin>"
+        "      </ECCustomAttributes>"
+        "       <ECProperty propertyName='M1' typeName='string' />"
+        "  </ECEntityClass>"
+        "   <ECEntityClass typeName='Element'>"
+        "       <ECProperty propertyName='Code' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='SupportOption' modifier='None' >"
+        "       <BaseClass>Element</BaseClass>"
+        "       <ECProperty propertyName='P1' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
+    {
+    ECClassCP supportOption = m_ecdb.Schemas().GetClass("TestSchema", "SupportOption");
+    ASSERT_NE(supportOption, nullptr);
+    ASSERT_STREQ(supportOption->GetBaseClasses().at(0)->GetFullName(), "TestSchema:Element");
+    ASSERT_EQ(1, supportOption->GetBaseClasses().size());
+    ASSERT_EQ(2, supportOption->GetPropertyCount());
+    }
+
+    //import edited schema with some changes.
+    SchemaItem editedSchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' prefix='CoreCA'/>"
+        "  <ECEntityClass typeName='IMyMixin' modifier='Abstract'>"
+        "      <ECCustomAttributes>"
+        "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+        "              <AppliesToEntityClass>Element</AppliesToEntityClass>"
+        "          </IsMixin>"
+        "      </ECCustomAttributes>"
+        "       <ECProperty propertyName='M1' typeName='string' />"
+        "  </ECEntityClass>"
+        "   <ECEntityClass typeName='Element'>"
+        "       <ECProperty propertyName='Code' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='SupportOption' modifier='None' >"
+        "       <BaseClass>Element</BaseClass>"
+        "       <BaseClass>IMyMixin</BaseClass>"
+        "       <ECProperty propertyName='P1' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
+
+    {
+    ECClassCP supportOption = m_ecdb.Schemas().GetClass("TestSchema", "SupportOption");
+    ASSERT_NE(supportOption, nullptr);
+    ASSERT_STREQ(supportOption->GetBaseClasses().at(0)->GetFullName(), "TestSchema:Element");
+    ASSERT_STREQ(supportOption->GetBaseClasses().at(1)->GetFullName(), "TestSchema:IMyMixin");
+    ASSERT_EQ(2, supportOption->GetBaseClasses().size());
+    ASSERT_EQ(3, supportOption->GetPropertyCount());
+    }
+
+    // Verify we can insert and select
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.SupportOption (Code,M1,P1) VALUES ('code1', 'm1', 'p1')");
+    ASSERT_EQ(JsonValue(R"json([{"Code":"code1", "M1":"m1", "P1":"p1"}])json"),
+     GetHelper().ExecuteSelectECSql("SELECT Code, M1, P1 FROM TestSchema.SupportOption WHERE Code='code1'")) << "Verify inserted instance";
+
+    // select polymorphically
+    ASSERT_EQ(JsonValue(R"json([{"Code":"code1"}])json"),
+     GetHelper().ExecuteSelectECSql("SELECT Code FROM TestSchema.Element")) << "Verify polymorphic query by base class";
+
+    ASSERT_EQ(JsonValue(R"json([{"M1":"m1"}])json"),
+     GetHelper().ExecuteSelectECSql("SELECT M1 FROM TestSchema.IMyMixin")) << "Verify polymorphic query by mixin";
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Robert Schili                     12/19
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, UpdateBaseClass_AddPropertiesToEmptyMixinBaseClass)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' prefix='CoreCA'/>"
+        "  <ECEntityClass typeName='IMyMixin' modifier='Abstract'>"
+        "      <ECCustomAttributes>"
+        "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+        "              <AppliesToEntityClass>Element</AppliesToEntityClass>"
+        "          </IsMixin>"
+        "      </ECCustomAttributes>"
+        "  </ECEntityClass>"
+        "   <ECEntityClass typeName='Element'>"
+        "       <ECProperty propertyName='Code' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='SupportOption' modifier='None' >"
+        "       <BaseClass>Element</BaseClass>"
+        "       <BaseClass>IMyMixin</BaseClass>"
+        "       <ECProperty propertyName='P1' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
+
+    ECClassCP supportOption = m_ecdb.Schemas().GetClass("TestSchema", "SupportOption");
+    ASSERT_NE(supportOption, nullptr);
+    ASSERT_STREQ(supportOption->GetBaseClasses().at(0)->GetFullName(), "TestSchema:Element");
+    ASSERT_STREQ(supportOption->GetBaseClasses().at(1)->GetFullName(), "TestSchema:IMyMixin");
+    ASSERT_EQ(2, supportOption->GetBaseClasses().size());
+    ASSERT_EQ(2, supportOption->GetPropertyCount());
+
+    //import edited schema with some changes.
+    SchemaItem editedSchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' prefix='CoreCA'/>"
+        "  <ECEntityClass typeName='IMyMixin' modifier='Abstract'>"
+        "      <ECCustomAttributes>"
+        "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+        "              <AppliesToEntityClass>Element</AppliesToEntityClass>"
+        "          </IsMixin>"
+        "      </ECCustomAttributes>"
+        "       <ECProperty propertyName='M1' typeName='string' />"
+        "  </ECEntityClass>"
+        "   <ECEntityClass typeName='Element'>"
+        "       <ECProperty propertyName='Code' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='SupportOption' modifier='None' >"
+        "       <BaseClass>Element</BaseClass>"
+        "       <BaseClass>IMyMixin</BaseClass>"
+        "       <ECProperty propertyName='P1' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
+    supportOption = m_ecdb.Schemas().GetClass("TestSchema", "SupportOption");
+    ASSERT_EQ(2, supportOption->GetBaseClasses().size());
+    ASSERT_EQ(3, supportOption->GetPropertyCount());
+
+    // Verify we can insert and select
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.SupportOption (Code,M1,P1) VALUES ('code2', 'm1', 'p1')");
+    ASSERT_EQ(JsonValue(R"json([{"Code":"code2", "M1":"m1", "P1":"p1"}])json"),
+     GetHelper().ExecuteSelectECSql("SELECT Code, M1, P1 FROM TestSchema.SupportOption WHERE Code='code2'")) << "Verify inserted instance";
+
+    // select polymorphically
+    ASSERT_EQ(JsonValue(R"json([{"Code":"code2"}])json"),
+     GetHelper().ExecuteSelectECSql("SELECT Code FROM TestSchema.Element")) << "Verify polymorphic query by base class";
+
+    ASSERT_EQ(JsonValue(R"json([{"M1":"m1"}])json"),
+     GetHelper().ExecuteSelectECSql("SELECT M1 FROM TestSchema.IMyMixin")) << "Verify polymorphic query by mixin";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Robert Schili                     12/19
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, UpdateBaseClass_AddMixinWithPropertiesUsingTablePerHierarchy)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+        "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' prefix='CoreCA'/>"
+        "   <ECEntityClass typeName='Element'>"
+        "      <ECCustomAttributes>"
+        "          <ClassMap xmlns='ECDbMap.2.0'>"
+        "              <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "          </ClassMap>"
+        "      </ECCustomAttributes>"
+        "       <ECProperty propertyName='ElementProperty' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Pipe' modifier='None' >"
+        "       <BaseClass>Element</BaseClass>"
+        "       <ECProperty propertyName='PipeProperty' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Valve' modifier='None' >"
+        "       <BaseClass>Element</BaseClass>"
+        "       <ECProperty propertyName='ValveProperty' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
+
+    {
+    ECClassCP pipe = m_ecdb.Schemas().GetClass("TestSchema", "Pipe");
+    ASSERT_NE(pipe, nullptr);
+    ASSERT_STREQ(pipe->GetBaseClasses().at(0)->GetFullName(), "TestSchema:Element");
+    ASSERT_EQ(1, pipe->GetBaseClasses().size());
+    ASSERT_EQ(2, pipe->GetPropertyCount());
+
+    ECClassCP valve = m_ecdb.Schemas().GetClass("TestSchema", "Valve");
+    ASSERT_NE(valve, nullptr);
+    ASSERT_STREQ(valve->GetBaseClasses().at(0)->GetFullName(), "TestSchema:Element");
+    ASSERT_EQ(1, valve->GetBaseClasses().size());
+    ASSERT_EQ(2, valve->GetPropertyCount());
+    }
+
+    //import edited schema with some changes.
+    SchemaItem editedSchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+        "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' prefix='CoreCA'/>"
+        "  <ECEntityClass typeName='TaggedPhysicalElement' modifier='Abstract'>"
+        "      <ECCustomAttributes>"
+        "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+        "              <AppliesToEntityClass>Element</AppliesToEntityClass>"
+        "          </IsMixin>"
+        "      </ECCustomAttributes>"
+        "       <ECProperty propertyName='MixinProperty' typeName='string' />"
+        "  </ECEntityClass>"
+        "   <ECEntityClass typeName='Element'>"
+        "      <ECCustomAttributes>"
+        "          <ClassMap xmlns='ECDbMap.2.0'>"
+        "              <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "          </ClassMap>"
+        "      </ECCustomAttributes>"
+        "       <ECProperty propertyName='ElementProperty' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Pipe' modifier='None' >"
+        "       <BaseClass>Element</BaseClass>"
+        "       <BaseClass>TaggedPhysicalElement</BaseClass>"
+        "       <ECProperty propertyName='PipeProperty' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Valve' modifier='None' >"
+        "       <BaseClass>Element</BaseClass>"
+        "       <BaseClass>TaggedPhysicalElement</BaseClass>"
+        "       <ECProperty propertyName='ValveProperty' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
+
+    {
+    ECClassCP pipe = m_ecdb.Schemas().GetClass("TestSchema", "Pipe");
+    ASSERT_NE(pipe, nullptr);
+    ASSERT_EQ(2, pipe->GetBaseClasses().size());
+    ASSERT_STREQ(pipe->GetBaseClasses().at(0)->GetFullName(), "TestSchema:Element");
+    ASSERT_STREQ(pipe->GetBaseClasses().at(1)->GetFullName(), "TestSchema:TaggedPhysicalElement");
+    ASSERT_EQ(3, pipe->GetPropertyCount());
+
+    ECClassCP valve = m_ecdb.Schemas().GetClass("TestSchema", "Valve");
+    ASSERT_NE(valve, nullptr);
+    ASSERT_EQ(2, valve->GetBaseClasses().size());
+    ASSERT_STREQ(valve->GetBaseClasses().at(0)->GetFullName(), "TestSchema:Element");
+    ASSERT_STREQ(pipe->GetBaseClasses().at(1)->GetFullName(), "TestSchema:TaggedPhysicalElement");
+    ASSERT_EQ(3, valve->GetPropertyCount());
+    }
+
+    // Verify we can insert and select
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Pipe (ElementProperty,MixinProperty,PipeProperty) VALUES ('elem', 'mix', 'pipe')");
+    ASSERT_EQ(JsonValue(R"json([{"ElementProperty":"elem", "MixinProperty":"mix", "PipeProperty":"pipe"}])json"),
+     GetHelper().ExecuteSelectECSql("SELECT ElementProperty, MixinProperty, PipeProperty FROM TestSchema.Pipe")) << "Verify inserted pipe";
+
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Valve (ElementProperty,MixinProperty,ValveProperty) VALUES ('elem2', 'mix', 'valve')");
+    ASSERT_EQ(JsonValue(R"json([{"ElementProperty":"elem2", "MixinProperty":"mix", "ValveProperty":"valve"}])json"),
+     GetHelper().ExecuteSelectECSql("SELECT ElementProperty, MixinProperty, ValveProperty FROM TestSchema.Valve")) << "Verify inserted valve";
+
+    // select polymorphically
+    ASSERT_EQ(JsonValue(R"json([{"ElementProperty":"elem"}, {"ElementProperty":"elem2"}])json"),
+     GetHelper().ExecuteSelectECSql("SELECT ElementProperty FROM TestSchema.Element")) << "Verify polymorphic query by base class";
+
+    ASSERT_EQ(JsonValue(R"json([{"MixinProperty":"mix"}, {"MixinProperty":"mix"}])json"),
+     GetHelper().ExecuteSelectECSql("SELECT MixinProperty FROM TestSchema.TaggedPhysicalElement")) << "Verify polymorphic query by mixin";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Robert Schili                     12/19
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, UpdateBaseClass_AddMixinWithPropertiesUsingJoinedTablePerDirectSubclass)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+        "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' prefix='CoreCA'/>"
+        "   <ECEntityClass typeName='Element'>"
+        "      <ECCustomAttributes>"
+        "          <ClassMap xmlns='ECDbMap.2.0'>"
+        "              <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "          </ClassMap>"
+        "          <JoinedTablePerDirectSubclass xmlns='ECDbMap.2.0'/>"
+        "      </ECCustomAttributes>"
+        "       <ECProperty propertyName='ElementProperty' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Pipe' modifier='None' >"
+        "       <BaseClass>Element</BaseClass>"
+        "       <ECProperty propertyName='PipeProperty' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Valve' modifier='None' >"
+        "       <BaseClass>Element</BaseClass>"
+        "       <ECProperty propertyName='ValveProperty' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
+
+    {
+    ECClassCP pipe = m_ecdb.Schemas().GetClass("TestSchema", "Pipe");
+    ASSERT_NE(pipe, nullptr);
+    ASSERT_STREQ(pipe->GetBaseClasses().at(0)->GetFullName(), "TestSchema:Element");
+    ASSERT_EQ(1, pipe->GetBaseClasses().size());
+    ASSERT_EQ(2, pipe->GetPropertyCount());
+
+    ECClassCP valve = m_ecdb.Schemas().GetClass("TestSchema", "Valve");
+    ASSERT_NE(valve, nullptr);
+    ASSERT_STREQ(valve->GetBaseClasses().at(0)->GetFullName(), "TestSchema:Element");
+    ASSERT_EQ(1, valve->GetBaseClasses().size());
+    ASSERT_EQ(2, valve->GetPropertyCount());
+    }
+
+    //import edited schema with some changes.
+    SchemaItem editedSchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+        "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' prefix='CoreCA'/>"
+        "  <ECEntityClass typeName='TaggedPhysicalElement' modifier='Abstract'>"
+        "      <ECCustomAttributes>"
+        "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+        "              <AppliesToEntityClass>Element</AppliesToEntityClass>"
+        "          </IsMixin>"
+        "      </ECCustomAttributes>"
+        "       <ECProperty propertyName='MixinProperty' typeName='string' />"
+        "  </ECEntityClass>"
+        "   <ECEntityClass typeName='Element'>"
+        "      <ECCustomAttributes>"
+        "          <ClassMap xmlns='ECDbMap.2.0'>"
+        "              <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "          </ClassMap>"
+        "          <JoinedTablePerDirectSubclass xmlns='ECDbMap.2.0'/>"
+        "      </ECCustomAttributes>"
+        "       <ECProperty propertyName='ElementProperty' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Pipe' modifier='None' >"
+        "       <BaseClass>Element</BaseClass>"
+        "       <BaseClass>TaggedPhysicalElement</BaseClass>"
+        "       <ECProperty propertyName='PipeProperty' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Valve' modifier='None' >"
+        "       <BaseClass>Element</BaseClass>"
+        "       <BaseClass>TaggedPhysicalElement</BaseClass>"
+        "       <ECProperty propertyName='ValveProperty' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
+
+    {
+    ECClassCP pipe = m_ecdb.Schemas().GetClass("TestSchema", "Pipe");
+    ASSERT_NE(pipe, nullptr);
+    ASSERT_EQ(2, pipe->GetBaseClasses().size());
+    ASSERT_STREQ(pipe->GetBaseClasses().at(0)->GetFullName(), "TestSchema:Element");
+    ASSERT_STREQ(pipe->GetBaseClasses().at(1)->GetFullName(), "TestSchema:TaggedPhysicalElement");
+    ASSERT_EQ(3, pipe->GetPropertyCount());
+
+    ECClassCP valve = m_ecdb.Schemas().GetClass("TestSchema", "Valve");
+    ASSERT_NE(valve, nullptr);
+    ASSERT_EQ(2, valve->GetBaseClasses().size());
+    ASSERT_STREQ(valve->GetBaseClasses().at(0)->GetFullName(), "TestSchema:Element");
+    ASSERT_STREQ(pipe->GetBaseClasses().at(1)->GetFullName(), "TestSchema:TaggedPhysicalElement");
+    ASSERT_EQ(3, valve->GetPropertyCount());
+    }
+
+    // Verify we can insert and select
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Pipe (ElementProperty,MixinProperty,PipeProperty) VALUES ('elem', 'mix', 'pipe')");
+    ASSERT_EQ(JsonValue(R"json([{"ElementProperty":"elem", "MixinProperty":"mix", "PipeProperty":"pipe"}])json"),
+     GetHelper().ExecuteSelectECSql("SELECT ElementProperty, MixinProperty, PipeProperty FROM TestSchema.Pipe WHERE ElementProperty='elem'")) << "Verify inserted pipe";
+
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Valve (ElementProperty,MixinProperty,ValveProperty) VALUES ('elem2', 'mix', 'valve')");
+    ASSERT_EQ(JsonValue(R"json([{"ElementProperty":"elem2", "MixinProperty":"mix", "ValveProperty":"valve"}])json"),
+     GetHelper().ExecuteSelectECSql("SELECT ElementProperty, MixinProperty, ValveProperty FROM TestSchema.Valve WHERE ElementProperty='elem2'")) << "Verify inserted valve";
+
+    // select polymorphically
+    ASSERT_EQ(JsonValue(R"json([{"ElementProperty":"elem"}, {"ElementProperty":"elem2"}])json"),
+     GetHelper().ExecuteSelectECSql("SELECT ElementProperty FROM TestSchema.Element")) << "Verify polymorphic query by base class";
+
+    ASSERT_EQ(JsonValue(R"json([{"MixinProperty":"mix"}, {"MixinProperty":"mix"}])json"),
+     GetHelper().ExecuteSelectECSql("SELECT MixinProperty FROM TestSchema.TaggedPhysicalElement")) << "Verify polymorphic query by mixin";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Robert Schili                     12/19
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, UpdateBaseClass_AddMixinWithPropertiesToMultipleClasses)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' prefix='CoreCA'/>"
+        "   <ECEntityClass typeName='Element'>"
+        "       <ECProperty propertyName='ElementProperty' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Pipe' modifier='None' >"
+        "       <BaseClass>Element</BaseClass>"
+        "       <ECProperty propertyName='PipeProperty' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Valve' modifier='None' >"
+        "       <BaseClass>Element</BaseClass>"
+        "       <ECProperty propertyName='ValveProperty' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
+
+    {
+    ECClassCP pipe = m_ecdb.Schemas().GetClass("TestSchema", "Pipe");
+    ASSERT_NE(pipe, nullptr);
+    ASSERT_STREQ(pipe->GetBaseClasses().at(0)->GetFullName(), "TestSchema:Element");
+    ASSERT_EQ(1, pipe->GetBaseClasses().size());
+    ASSERT_EQ(2, pipe->GetPropertyCount());
+
+    ECClassCP valve = m_ecdb.Schemas().GetClass("TestSchema", "Valve");
+    ASSERT_NE(valve, nullptr);
+    ASSERT_STREQ(valve->GetBaseClasses().at(0)->GetFullName(), "TestSchema:Element");
+    ASSERT_EQ(1, valve->GetBaseClasses().size());
+    ASSERT_EQ(2, valve->GetPropertyCount());
+    }
+
+    //import edited schema with some changes.
+    SchemaItem editedSchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' prefix='CoreCA'/>"
+        "  <ECEntityClass typeName='TaggedPhysicalElement' modifier='Abstract'>"
+        "      <ECCustomAttributes>"
+        "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+        "              <AppliesToEntityClass>Element</AppliesToEntityClass>"
+        "          </IsMixin>"
+        "      </ECCustomAttributes>"
+        "       <ECProperty propertyName='MixinProperty' typeName='string' />"
+        "  </ECEntityClass>"
+        "   <ECEntityClass typeName='Element'>"
+        "       <ECProperty propertyName='ElementProperty' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Pipe' modifier='None' >"
+        "       <BaseClass>Element</BaseClass>"
+        "       <BaseClass>TaggedPhysicalElement</BaseClass>"
+        "       <ECProperty propertyName='PipeProperty' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Valve' modifier='None' >"
+        "       <BaseClass>Element</BaseClass>"
+        "       <BaseClass>TaggedPhysicalElement</BaseClass>"
+        "       <ECProperty propertyName='ValveProperty' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
+
+    {
+    ECClassCP pipe = m_ecdb.Schemas().GetClass("TestSchema", "Pipe");
+    ASSERT_NE(pipe, nullptr);
+    ASSERT_EQ(2, pipe->GetBaseClasses().size());
+    ASSERT_STREQ(pipe->GetBaseClasses().at(0)->GetFullName(), "TestSchema:Element");
+    ASSERT_STREQ(pipe->GetBaseClasses().at(1)->GetFullName(), "TestSchema:TaggedPhysicalElement");
+    ASSERT_EQ(3, pipe->GetPropertyCount());
+
+    ECClassCP valve = m_ecdb.Schemas().GetClass("TestSchema", "Valve");
+    ASSERT_NE(valve, nullptr);
+    ASSERT_EQ(2, valve->GetBaseClasses().size());
+    ASSERT_STREQ(valve->GetBaseClasses().at(0)->GetFullName(), "TestSchema:Element");
+    ASSERT_STREQ(pipe->GetBaseClasses().at(1)->GetFullName(), "TestSchema:TaggedPhysicalElement");
+    ASSERT_EQ(3, valve->GetPropertyCount());
+    }
+
+    // Verify we can insert and select
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Pipe (ElementProperty,MixinProperty,PipeProperty) VALUES ('elem', 'mix', 'pipe')");
+    ASSERT_EQ(JsonValue(R"json([{"ElementProperty":"elem", "MixinProperty":"mix", "PipeProperty":"pipe"}])json"),
+     GetHelper().ExecuteSelectECSql("SELECT ElementProperty, MixinProperty, PipeProperty FROM TestSchema.Pipe WHERE ElementProperty='elem'")) << "Verify inserted pipe";
+
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Valve (ElementProperty,MixinProperty,ValveProperty) VALUES ('elem2', 'mix', 'valve')");
+    ASSERT_EQ(JsonValue(R"json([{"ElementProperty":"elem2", "MixinProperty":"mix", "ValveProperty":"valve"}])json"),
+     GetHelper().ExecuteSelectECSql("SELECT ElementProperty, MixinProperty, ValveProperty FROM TestSchema.Valve WHERE ElementProperty='elem2'")) << "Verify inserted valve";
+
+    // select polymorphically
+    ASSERT_EQ(JsonValue(R"json([{"ElementProperty":"elem"}, {"ElementProperty":"elem2"}])json"),
+     GetHelper().ExecuteSelectECSql("SELECT ElementProperty FROM TestSchema.Element")) << "Verify polymorphic query by base class";
+
+    ASSERT_EQ(JsonValue(R"json([{"MixinProperty":"mix"}, {"MixinProperty":"mix"}])json"),
+     GetHelper().ExecuteSelectECSql("SELECT MixinProperty FROM TestSchema.TaggedPhysicalElement")) << "Verify polymorphic query by mixin";
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
