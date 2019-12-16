@@ -75,6 +75,8 @@ ChangeSetsTests.PushWithBridgeProperties            #206035 - BridgeProperties
 iModelTests.CreateiModelUsingOidcLogin              #222174 - Initialization
 CodesTests.QueryUnavailableCodesTest                #222174 - Initialization
 iModelTests.FilterGetiModels                        #222174 - Initialization
+BriefcaseTests.OpenSeedFileAsBriefcase              #222174 - Initialization
+iModelTests.RepeatedCreateiModel                    #222174 - Initialization
 LRPTests.*                                          #185686 - Checkpoints
 BriefcasePullTests.SuccessfulAcquireBriefcaseAfterCheckpointJob #185686 - Checkpoints
 iModelTests.CloneWithChangeSets                     #185686 - Checkpoints
