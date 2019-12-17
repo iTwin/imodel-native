@@ -352,7 +352,10 @@ BentleyStatus BisClassConverter::ConvertECClass(SchemaConversionContext& context
     if (BSISUCCESS != DoConvertECClass(context, conversionRule, *inputClass, v8ClassName, hasSecondary))
         return BSIERROR;
 
-    for (BECN::ECClassP childClass : inputClass->GetDerivedClasses())
+    // If the call to ConvertECClass results in creating a new ElementAspect class, the new class will add the inputClass as a baseclass,
+    // which in turn adds the new class as a derived class of inputClass, thus messing up the list.  Therefore we use a copy instead.
+    bvector<BECN::ECClassP> derived(inputClass->GetDerivedClasses());
+    for (BECN::ECClassP childClass : derived)
         {
         ECClassName childClassName(*childClass);
         if (BSISUCCESS != ConvertECClass(context, childClassName, &conversionRule))
