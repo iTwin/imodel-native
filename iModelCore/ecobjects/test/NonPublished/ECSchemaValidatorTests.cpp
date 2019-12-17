@@ -531,6 +531,36 @@ TEST_F(SchemaValidatorTests, MixinClassMayNotOverrideInheritedEntityProperty)
     ASSERT_FALSE(validator.Validate(*schema)) << "Mixin overrides an inherited entity property so validation should fail";
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Colin.Kerr                             12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaValidatorTests, MixinClassMayNotOverrideInheritedEntityProperty_RuleIsSuppressedForProcessPhysical_INSTRUMENT_MODEL_NUMBER_Property)
+    {
+    ECSchemaPtr bisSchema;
+    ECEntityClassP bisEntity;
+    ECSchemaPtr schema;
+    ECEntityClassP entity0;
+    ECEntityClassP entity1;
+    ECEntityClassP mixin;
+    PrimitiveECPropertyP prop;
+
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(bisSchema, "BisCore", "bis", 1, 1, 1));
+    ASSERT_EQ(ECObjectsStatus::Success, bisSchema->CreateEntityClass(bisEntity, "BisEntity"));
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "ProcessPhysical", "PPhis", 1, 1, 1));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*bisSchema));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity0, "VALVE"));
+    ASSERT_EQ(ECObjectsStatus::Success, entity0->AddBaseClass(*bisEntity));
+    ASSERT_EQ(ECObjectsStatus::Success, entity0->CreatePrimitiveProperty(prop, "MODEL_NUMBER"));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity1, "CONTROL_VALVE"));
+    ASSERT_EQ(ECObjectsStatus::Success, entity1->AddBaseClass(*entity0));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateMixinClass(mixin, "INSTRUMENT", *entity0));
+    ASSERT_EQ(ECObjectsStatus::Success, entity1->AddBaseClass(*mixin));
+
+    ASSERT_TRUE(validator.Validate(*schema)) << "Mixin property does not override anything so validation should succeed";
+    ASSERT_EQ(ECObjectsStatus::Success, mixin->CreatePrimitiveProperty(prop, "MODEL_NUMBER"));
+    ASSERT_TRUE(validator.Validate(*schema)) << "Mixin overrides an inherited entity property so validation should fail";
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                             Dan.Perlman                          06/2017
 //---------------------------------------------------------------------------------------

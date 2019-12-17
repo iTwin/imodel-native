@@ -742,16 +742,26 @@ ECObjectsStatus ECSchemaValidator::EntityValidator(ECClassCR entity)
                     if (baseClass->GetEntityClassCP()->IsMixin() && prevIsMixin)
                         {
                         LOG.errorv("Error at property '%s'. Mixin class '%s' overrides a property inherited from mixin class '%s'",
-                                   prop->GetName().c_str(), baseClass->GetFullName(), prevClass->GetFullName());
+                                prop->GetName().c_str(), baseClass->GetFullName(), prevClass->GetFullName());
                         status = ECObjectsStatus::Error;
-                        }
+                        } 
                     else
                         {
-                        LOG.errorv("Error at property '%s'. Mixin class '%s' overrides a property inherited from entity class '%s'",
-                                   prop->GetName().c_str(),
-                                   prevIsMixin ? prevClass->GetFullName() : baseClass->GetFullName(),
-                                   prevIsMixin ? baseClass->GetFullName() : prevClass->GetFullName());
-                        status = ECObjectsStatus::Error;
+                        ECClassP mixinClass = prevIsMixin ? prevClass : baseClass;
+                        ECClassP entityClass = prevIsMixin ? baseClass : prevClass;
+                        if (prop->GetName().EqualsI("MODEL_NUMBER") && mixinClass->GetName().EqualsI("INSTRUMENT") && prevClass->GetSchema().GetFullSchemaName().StartsWithI("ProcessPhysical.01") && 
+                            (entityClass->GetName().EqualsI("VALVE") || entityClass->GetName().EqualsI("PIPING_COMPONENT") || entityClass->GetName().EqualsI("SPACER") || 
+                             entityClass->GetName().EqualsI("PIPING_AND_INSTRUMENT_COMPONENT")))
+                            {
+                            LOG.warningv("Warning at property '%s'. Mixin class '%s' overrides a property inherited from entity class '%s'.  Supppressed for some ProcessPhysical instruments.",
+                                        prop->GetName().c_str(), mixinClass->GetFullName(), entityClass->GetFullName());
+                            }
+                        else
+                            {
+                            LOG.errorv("Error at property '%s'. Mixin class '%s' overrides a property inherited from entity class '%s'",
+                                       prop->GetName().c_str(), mixinClass->GetFullName(), entityClass->GetFullName());
+                            status = ECObjectsStatus::Error;
+                            }
                         }
                     }
                 }
