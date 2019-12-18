@@ -43,11 +43,28 @@ AlignmentStationingTranslator::AlignmentStationingTranslator(AlignmentCR alignme
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+AlignmentStationingTranslator::AlignmentStationingTranslator(
+    bvector<Alignment::DistanceAlongStationPair> const& distAlongToStationPairs, double alignmentLength):
+    m_stations(distAlongToStationPairs), m_length(alignmentLength)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 AlignmentStationingTranslatorPtr AlignmentStationingTranslator::Create(AlignmentCR alignment)
     {
     return new AlignmentStationingTranslator(alignment);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+AlignmentStationingTranslatorPtr AlignmentStationingTranslator::Create(bvector<Alignment::DistanceAlongStationPair> const& distAlongToStationPairs, double alignmentLength) 
+    {
+    return new AlignmentStationingTranslator(distAlongToStationPairs, alignmentLength);
     }
 
 /*---------------------------------------------------------------------------------**//**

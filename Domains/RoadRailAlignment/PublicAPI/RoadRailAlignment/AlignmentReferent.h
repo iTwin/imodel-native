@@ -63,11 +63,13 @@ private:
     double m_length;
 
     AlignmentStationingTranslator(AlignmentCR alignment);
+    AlignmentStationingTranslator(bvector<Alignment::DistanceAlongStationPair> const& distAlongToStationPairs, double alignmentLength);
 
 public:
     //! Create a new AlignmentStationingTranslator
     //! @param[in] alignment The Alignment that will be used for translation
     ROADRAILALIGNMENT_EXPORT static AlignmentStationingTranslatorPtr Create(AlignmentCR alignment);
+    ROADRAILALIGNMENT_EXPORT static AlignmentStationingTranslatorPtr Create(bvector<Alignment::DistanceAlongStationPair> const& distAlongToStationPairs, double alignmentLength);
 
     //! Translate a linear distance along the Alignment to a station value
     //! @param[in] distanceAlongFromStart The linear distance along the Alignment, in meters, from the start of the Alignment

@@ -1533,12 +1533,20 @@ Dgn::DgnElementCPtr createCorridorComponent(CorridorSurfaceCR corridorSurface,
     double endStation = wcstod(endStationAsWStr.c_str(), &endStationNextCharP);
 
     auto alignmentCPtr = AlignmentBim::Alignment::Get(corridorPortion.GetDgnDb(), corridorPortion.GetMainAlignmentId());
-    auto linearLocationPtr = LinearReferencing::LinearLocation::Create(*corridorComponentElmCPtr, categoryId,
-                                                                       LinearReferencing::LinearLocation::ILinearlyLocatedSingleFromTo::CreateFromToParams(
-                                                                           *alignmentCPtr,
-                                                                           LinearReferencing::DistanceExpression(startStation),
-                                                                           LinearReferencing::DistanceExpression(endStation)));
-    linearLocationPtr->Insert();
+
+    auto stationingTranslatorPtr = AlignmentBim::AlignmentStationingTranslator::Create(*alignmentCPtr);
+    auto startDistAlong = stationingTranslatorPtr->ToDistanceAlongFromStart(startStation);
+    auto endDistAlong = stationingTranslatorPtr->ToDistanceAlongFromStart(endStation);
+
+    if (startDistAlong.IsValid() && endDistAlong.IsValid())
+        {
+        auto linearLocationPtr = LinearReferencing::LinearLocation::Create(*corridorComponentElmCPtr, categoryId,
+            LinearReferencing::LinearLocation::ILinearlyLocatedSingleFromTo::CreateFromToParams(
+                *alignmentCPtr,
+                LinearReferencing::DistanceExpression(startDistAlong.Value()),
+                LinearReferencing::DistanceExpression(endDistAlong.Value())));
+        linearLocationPtr->Insert();
+        }
 
     return corridorComponentElmCPtr;
     }
@@ -1601,16 +1609,28 @@ Dgn::DgnElementCPtr updateCorridorComponent(CorridorSurfaceCR corridorSurface,
     double endStation = wcstod(endStationAsWStr.c_str(), &endStationNextCharP);
 
     auto linearLocationId = LinearReferencing::LinearLocation::Query(*corridorComponentElmCPtr);
-    auto linearLocationPtr = LinearReferencing::LinearLocation::GetForEdit(corridorPortion.GetDgnDb(), linearLocationId);
-    linearLocationPtr->SetFromDistanceAlongFromStart(startStation);
-    linearLocationPtr->SetToDistanceAlongFromStart(endStation);
-    linearLocationPtr->Update();
 
-    if (corridorPortion.GetMainAlignmentId() != linearLocationPtr->GetLinearElementId())
+    if (linearLocationId.IsValid())
         {
         auto alignmentCPtr = AlignmentBim::Alignment::Get(corridorPortion.GetDgnDb(), corridorPortion.GetMainAlignmentId());
-        linearLocationPtr->SetLinearElement(alignmentCPtr.get());
+        auto stationingTranslatorPtr = AlignmentBim::AlignmentStationingTranslator::Create(*alignmentCPtr);
+        auto startDistAlong = stationingTranslatorPtr->ToDistanceAlongFromStart(startStation);
+        auto endDistAlong = stationingTranslatorPtr->ToDistanceAlongFromStart(endStation);
+
+        if (startDistAlong.IsValid() && endDistAlong.IsValid())
+            {
+            auto linearLocationPtr = LinearReferencing::LinearLocation::GetForEdit(corridorPortion.GetDgnDb(), linearLocationId);
+
+            if (corridorPortion.GetMainAlignmentId() != linearLocationPtr->GetLinearElementId())
+                linearLocationPtr->SetLinearElement(alignmentCPtr.get());
+
+            linearLocationPtr->SetFromDistanceAlongFromStart(startDistAlong.Value());
+            linearLocationPtr->SetToDistanceAlongFromStart(endDistAlong.Value());
+            linearLocationPtr->Update();
+            }
         }
+
+    
 
     return corridorComponentElmCPtr;
     }
@@ -2816,7 +2836,6 @@ Bentley::DgnPlatform::ModelId ORDConverter::_GetRootModelId()
         {
         if (auto planModelRefP = GeometryModelDgnECDataBinder::GetInstance().GetPlanModelFromModel(rootModelRefP))
             {
-            BeAssert(!planModelRefP->Is3d());
             rootModelId = planModelRefP->GetModelId();
             ORDBRIDGE_LOGI("CIF found Plan Model '%s' - using it as root-model.", Utf8String(planModelRefP->GetModelNameCP()).c_str());
             }
