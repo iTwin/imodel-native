@@ -5890,6 +5890,14 @@ static void clearLogLevelCache(Napi::CallbackInfo const&)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static void setNopBriefcaseManager(Napi::CallbackInfo const&)
+    {
+    JsInterop::SetNopBriefcaseManager();
+    }
+  
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void logMessageToJs(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg)
@@ -6367,6 +6375,7 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports)
         Napi::PropertyDescriptor::Function(env, exports, "addReferenceToObjectInVault", &addReferenceToObjectInVault),
         Napi::PropertyDescriptor::Function(env, exports, "getObjectRefCountFromVault", &getObjectRefCountFromVault),
         Napi::PropertyDescriptor::Function(env, exports, "clearLogLevelCache", &clearLogLevelCache),
+        Napi::PropertyDescriptor::Function(env, exports, "setNopBriefcaseManager", &setNopBriefcaseManager),
         });
 
     return exports;

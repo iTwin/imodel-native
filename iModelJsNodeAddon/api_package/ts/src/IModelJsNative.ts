@@ -72,6 +72,7 @@ export declare namespace IModelJsNative {
   function addReferenceToObjectInVault(id: string): void;
   function getObjectRefCountFromVault(id: string): number;
   function clearLogLevelCache(): void;
+  function setNopBriefcaseManager(): void;
 
   /** The return type of synchronous functions that may return an error or a successful result. */
   interface ErrorStatusOrResult<ErrorCodeType, ResultType> {

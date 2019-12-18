@@ -26,7 +26,10 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${env:OutRoot}Winx64/Product/DgnPlatform-Gtest/DgnPlatformTest.exe",
-            "args": ["--gtest_break_on_failure", "--gtest_filter=RevisionTestFixture.MoreWorkflow"],
+            "args": [
+                "--gtest_break_on_failure",
+                "--gtest_filter=RevisionTestFixture.MoreWorkflow"
+            ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
@@ -37,10 +40,19 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${env:OutRoot}/Winx64/Product/DgnV8Converter/DgnV8Converter.exe",
-            "args": ["--standalone", "--input=D:/dgn/problem/174257/Levels/EWR_OSGB_Master.dgn", "--output=d:/tmp"],
+            "args": [
+                "--standalone",
+                "--input=d:/dgn/test/sourceFiles/TestFieldBuildings.dgn",
+                "--output=d:/tmp"
+            ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
-            "environment": [],
+            "environment": [
+                {
+                    "name": "imodel-bridge-fwk-briefcase-manager",
+                    "value": "1"
+                }
+            ],
             "externalConsole": true
         },
         {
@@ -48,7 +60,10 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${env:OutRoot}/Winx64/Product/DgnV8ConverterTests/DgnV8ConverterTests.exe",
-            "args": ["--gtest_break_on_failure", "--gtest_filter=ConverterTests.IgnoreStaleFiles"],
+            "args": [
+                "--gtest_break_on_failure",
+                "--gtest_filter=ConverterTests.IgnoreStaleFiles"
+            ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
@@ -65,7 +80,9 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "node.exe",
-            "args": ["./iModelJsNodeAddon/api_package/ts/lib/test/index.js"],
+            "args": [
+                "./iModelJsNodeAddon/api_package/ts/lib/test/index.js"
+            ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
@@ -82,7 +99,9 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "node.exe",
-            "args": ["./iModelBankAddon/bank/api_package/ts/lib/test/index.js"],
+            "args": [
+                "./iModelBankAddon/bank/api_package/ts/lib/test/index.js"
+            ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [
@@ -104,7 +123,9 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "node.exe",
-            "args": ["./iModelBankAddon/licensing/api_package/ts/lib/test/index.js"],
+            "args": [
+                "./iModelBankAddon/licensing/api_package/ts/lib/test/index.js"
+            ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
@@ -130,7 +151,10 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [
-                { "name": "imodel-bridge-fwk-briefcase-manager", "value": "1" }
+                {
+                    "name": "imodel-bridge-fwk-briefcase-manager",
+                    "value": "1"
+                }
             ],
             "externalConsole": false
         },
@@ -149,7 +173,10 @@
             "stopAtEntry": false,
             "cwd": "${env:IMODEL_BRIDGE_FWK_TEST_STAGING_DIR}bridge",
             "environment": [
-                { "name": "imodel-bridge-fwk-briefcase-manager", "value": "1" }
+                {
+                    "name": "imodel-bridge-fwk-briefcase-manager",
+                    "value": "1"
+                }
             ],
             "externalConsole": false
         },

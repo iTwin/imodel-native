@@ -211,6 +211,7 @@ public:
     static RepositoryStatus BuildBriefcaseManagerResourcesRequestToLockModel(IBriefcaseManager::Request& req, DgnDbR dgndb, DgnModelId mid, LockLevel level);
     static RepositoryStatus BriefcaseManagerStartBulkOperation(DgnDbR dgndb);
     static RepositoryStatus BriefcaseManagerEndBulkOperation(DgnDbR dgndb);
+    static void SetNopBriefcaseManager();
 
     static Napi::Value ConcurrentQueryInit(ECDbCR ecdb, Napi::Env env, Napi::Object cfg);
     static Napi::Value PostConcurrentQuery(ECDbCR ecdb, Napi::Env env, Utf8StringCR ecsql, Utf8StringCR bindings, Napi::Object limit, Napi::Object quota, ConcurrentQueryManager::Priority priority);

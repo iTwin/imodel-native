@@ -348,6 +348,138 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
         }
     };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Sam.Wilson      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+struct NopBriefcaseManager : IBriefcaseManager, TxnMonitor
+    {
+    NopBriefcaseManager(DgnDbR db) : IBriefcaseManager(db)
+        {
+        T_HOST.GetTxnAdmin().AddTxnMonitor(*this);
+        }
+
+    ~NopBriefcaseManager()
+        {
+        T_HOST.GetTxnAdmin().DropTxnMonitor(*this);
+        }
+
+    Response _ProcessRequest(Request& req, RequestPurpose purpose) override
+        {
+        // import schemas calls lockSchemas. We have to let that through.
+        return IBriefcaseManager::Response(purpose, req.Options(), RepositoryStatus::Success);
+        }
+
+    RepositoryStatus _Relinquish(Resources) override
+        {
+        BeAssert(false && "Cannot process iModel server requests from native code.");
+        return RepositoryStatus::ServerUnavailable;
+        }
+
+    RepositoryStatus _Demote(DgnLockSet&, DgnCodeSet const&) override
+        {
+        BeAssert(false && "Cannot process requests from native code. See startBulkOperation.");
+        return RepositoryStatus::ServerUnavailable;
+        }
+
+    RepositoryStatus _PrepareForElementOperation(Request& req, DgnElementCR el, BeSQLite::DbOpcode op) override
+        {
+        return RepositoryStatus::Success;
+        }
+
+    RepositoryStatus _PrepareForModelOperation(Request& req, DgnModelCR model, BeSQLite::DbOpcode op) override
+        {
+        return RepositoryStatus::Success;
+        }
+
+    void _OnElementInserted(DgnElementId id) override
+        {
+        }
+
+    void _OnModelInserted(DgnModelId id) override
+        {
+        }
+
+    RepositoryStatus _ReserveCode(DgnCodeCR code) override
+        {
+        BeAssert(false && "Cannot process iModel server requests from native code.");
+        return RepositoryStatus::ServerUnavailable;
+        }
+
+    void _OnDgnDbDestroyed() override {  }
+
+    RepositoryStatus _ClearUserHeldCodesLocks() override
+        {
+        BeAssert(false && "Cannot process iModel server requests from native code.");
+        return RepositoryStatus::ServerUnavailable;
+        }
+
+    RepositoryStatus _OnFinishRevision(DgnRevision const& rev) override
+        {
+        return RepositoryStatus::Success;
+        }
+
+    void _OnCommit(TxnManager& mgr) override
+        {
+        }
+
+    void _OnAppliedChanges(TxnManager& mgr) override
+        {
+        }
+
+    void _OnUndoRedo(TxnManager& mgr, TxnAction) override
+        {
+        }
+
+    bool _AreResourcesHeld(DgnLockSet& locks, DgnCodeSet& codes, RepositoryStatus* status) override
+        {
+        return true;
+        }
+
+    RepositoryStatus _QueryCodeStates(DgnCodeInfoSet& states, DgnCodeSet const& codes) override
+        {
+        BeAssert(false && "Cannot process iModel server requests from native code.");
+        return RepositoryStatus::ServerUnavailable;
+        }
+
+    RepositoryStatus _QueryLockLevels(DgnLockSet& levels, LockableIdSet& lockIds) override
+        {
+        BeAssert(false && "Cannot process iModel server requests from native code.");
+        return RepositoryStatus::ServerUnavailable;
+        }
+
+    RepositoryStatus _QueryLockLevel(LockLevel& level, LockableId lockId) override
+        {
+        BeAssert(false && "Cannot process iModel server requests from native code.");
+        return RepositoryStatus::ServerUnavailable;
+        }
+
+    IOwnedLocksIteratorPtr _GetOwnedLocks(FastQuery fast) override
+        {
+        BeAssert(false && "Cannot process iModel server requests from native code.");
+        return nullptr;
+        }
+
+    RepositoryStatus _RefreshFromRepository() override
+        {
+        return RepositoryStatus::Success;
+        }
+
+    void _StartBulkOperation() override { }
+    
+    bool _IsBulkOperation() const override { return true; }
+
+    Response _EndBulkOperation() override
+        {
+        return Response(RequestPurpose::Acquire, ResponseOptions::None, RepositoryStatus::Success);
+        }
+
+    void _ExtractRequestFromBulkOperation(Request& reqOut, bool locks, bool codes) override
+        {
+        BeAssert(false && "Cannot process iModel server requests from native code.");
+        }
+
+    };
+
 //=======================================================================================
 // @bsistruct                                   Sam.Wilson                  01/18
 //=======================================================================================
@@ -392,6 +524,7 @@ struct RepositoryManagerWatchDog : IRepositoryManager
 struct NativeRepositoryAdmin : DgnPlatformLib::Host::RepositoryAdmin
     {
     DEFINE_T_SUPER(RepositoryAdmin);
+    static bool s_useNopBriefcaseManager;
 
     NativeRepositoryAdmin() {}
 
@@ -407,7 +540,10 @@ struct NativeRepositoryAdmin : DgnPlatformLib::Host::RepositoryAdmin
             bc = MasterBriefcaseManager::Create(db);
         else
             {
-            bc = new BriefcaseManager(db);
+            if (s_useNopBriefcaseManager)
+              bc = new NopBriefcaseManager(db);
+            else
+              bc = new BriefcaseManager(db);
             if (nullptr != db.GetConcurrencyControl())
                 db.GetConcurrencyControl()->_ConfigureBriefcaseManager(*bc);
             }
@@ -419,12 +555,19 @@ struct NativeRepositoryAdmin : DgnPlatformLib::Host::RepositoryAdmin
 
 using namespace IModelJsNative;
 
+bool NativeRepositoryAdmin::s_useNopBriefcaseManager;
+
+void JsInterop::SetNopBriefcaseManager()
+  {
+  NativeRepositoryAdmin::s_useNopBriefcaseManager = true;
+  }
+
 bool JsInterop::SetOkEndBulkMode(bool b)
-    {
-    bool was = s_okEndBulkMode;
-    s_okEndBulkMode = b;
-    return was;
-    }
+  {
+  bool was = s_okEndBulkMode;
+  s_okEndBulkMode = b;
+  return was;
+  }
 
 //=======================================================================================
 // @bsistruct                                   Sam.Wilson                  05/17
