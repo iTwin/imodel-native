@@ -299,6 +299,7 @@
             <Files ProductDirectoryName="UnitTests-Assets" ProductSubDirectory="ECSchemas" SubPartDirectory="iModelHubNativeTests/Integration">Delivery/iModelHubNativeTests/SchemaVersionTest.02.02.02.ecschema.xml</Files>
             <Files ProductDirectoryName="UnitTests-Assets" SubPartDirectory="iModelHubNativeTests/Integration">Delivery/iModelHubNativeTests/ignore_list_dev.txt</Files>
             <Files ProductDirectoryName="UnitTests-Assets" SubPartDirectory="iModelHubNativeTests/Integration">Delivery/iModelHubNativeTests/ignore_list_qa.txt</Files>
+            <Files ProductDirectoryName="UnitTests-Assets" SubPartDirectory="iModelHubNativeTests/Integration">Delivery/iModelHubNativeTests/ignore_list_bank.txt</Files>
             <Files ProductDirectoryName="UnitTests-Assets" SubPartDirectory="iModelHubNativeTests/Integration">Delivery/iModelHubNativeTests/whitelist.txt</Files>
         </Bindings>
     </Part>
