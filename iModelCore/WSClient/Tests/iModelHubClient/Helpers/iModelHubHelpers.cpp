@@ -14,6 +14,7 @@
 #include <BeHttp/ProxyHttpHandler.h>
 #include "../../../iModelHubClient/Utils.h"
 #include "Oidc/OidcSignInManager.h"
+#include "../Integration/RequestVerifyHttpHandler.h"
 
 USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_IMODELHUB
@@ -51,9 +52,14 @@ namespace iModelHubHelpers
         AsyncError error;
         bool isiModelBank = IntegrationTestsSettings::Instance().IsiModelBank();
         if (isiModelBank)
-            client = Client::Create(IntegrationTestsSettings::Instance().GetClientInfo(), nullptr, IntegrationTestsSettings::Instance().GetServerUrl().c_str());
+            {
+            auto handler = std::make_shared<RequestVerifyHttpHandler>(ProxyHttpHandler::GetFiddlerProxyIfReachable());
+            client = Client::Create(IntegrationTestsSettings::Instance().GetClientInfo(), handler, IntegrationTestsSettings::Instance().GetServerUrl().c_str());
+            }
         else
+            {
             client = ClientHelper::GetInstance()->SignInWithCredentials(&error, credentials);
+            }
         ASSERT_TRUE(client.IsValid()) << error.GetMessage().c_str();
         ASSERT_TRUE(!Utf8String::IsNullOrEmpty(client->GetServerUrl().c_str()));
         if (isiModelBank)
