@@ -228,6 +228,10 @@ Napi::Value JsInterop::ConcurrentQueryInit(ECDbCR ecdb, Napi::Env env, Napi::Obj
     if (!v.IsUndefined() && !b.IsNull())
         config.SetUseUncommitedRead(b);
 
+    b = cfg.Get("useImmutableDb").ToBoolean();
+    if (!v.IsUndefined() && !b.IsNull())
+        config.SetUseImmutableDb(b);
+
     v = cfg.Get("concurrent").ToNumber();
     if (!v.IsUndefined() && !v.IsNull())
         config.SetConcurrent(v.Uint32Value());

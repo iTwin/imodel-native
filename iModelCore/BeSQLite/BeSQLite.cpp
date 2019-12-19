@@ -5213,6 +5213,14 @@ static void logCallback(void *pArg, int iErrCode, Utf8CP zMsg)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Affan.Khan                      04/18
 +---------------+---------------+---------------+---------------+---------------+------*/
+DbResult BeSQLiteLib::EnableSharedCache(bool enabled)
+    {
+    return (DbResult)sqlite3_enable_shared_cache(enabled);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Affan.Khan                      04/18
++---------------+---------------+---------------+---------------+---------------+------*/
 DbResult BeSQLiteLib::GetMemoryUsed(int64_t& current, int64_t& high, bool reset)
     {
     //return (DbResult)sqlite3_status64(SQLITE_STATUS_MEMORY_USED, &current, &high, reset?1:0);

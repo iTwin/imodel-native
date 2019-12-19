@@ -9,6 +9,7 @@ using namespace std::chrono_literals;
 using namespace std::chrono;
 #define LIMIT_VAR_COUNT "sys_ecdb_count"
 #define LIMIT_VAR_OFFSET "sys_ecdb_offset"
+#define BUSY_RETRY_TIMEOUT 100 // ms
 static BentleyApi::NativeLogging::ILogger *s_logger = NativeLogging::LoggingManager::GetLogger(L"ECDb.ConcurrentQuery");
 #define CQLOG (*s_logger)
 
@@ -25,7 +26,8 @@ ConcurrentQueryManager::Config::Config():
     m_completedTaskExpires(1min),
     m_quota(),
     m_useSharedCache(false),
-    m_useUncommitedRead(true)
+    m_useUncommitedRead(false),
+    m_useImmutableDb(false)
     {}
 
 
@@ -43,7 +45,8 @@ ConcurrentQueryManager::Config::Config(const Config&& rhs)
     m_minMonitorInterval(std::move(rhs.m_minMonitorInterval)),
     m_completedTaskExpires(std::move(rhs.m_completedTaskExpires)),
     m_useSharedCache(std::move(rhs.m_useSharedCache)),
-    m_useUncommitedRead(std::move(rhs.m_useUncommitedRead))
+    m_useUncommitedRead(std::move(rhs.m_useUncommitedRead)),
+    m_useImmutableDb(std::move(rhs.m_useImmutableDb))
     {
     }
 
@@ -61,7 +64,8 @@ ConcurrentQueryManager::Config::Config(const Config& rhs)
     m_minMonitorInterval(rhs.m_minMonitorInterval),
     m_completedTaskExpires(rhs.m_completedTaskExpires),
     m_useSharedCache(rhs.m_useSharedCache),
-    m_useUncommitedRead(rhs.m_useUncommitedRead)
+    m_useUncommitedRead(rhs.m_useUncommitedRead),
+    m_useImmutableDb(rhs.m_useImmutableDb)
     {
     }
 
@@ -83,6 +87,7 @@ ConcurrentQueryManager::Config& ConcurrentQueryManager::Config::operator= (const
         m_completedTaskExpires = rhs.m_completedTaskExpires;
         m_useSharedCache = rhs.m_useSharedCache;
         m_useUncommitedRead = rhs.m_useUncommitedRead;
+        m_useImmutableDb = rhs.m_useImmutableDb;
         }
     return *this;
     }
@@ -105,6 +110,7 @@ ConcurrentQueryManager::Config& ConcurrentQueryManager::Config::operator= (const
         m_completedTaskExpires = rhs.m_completedTaskExpires;
         m_useSharedCache = std::move(rhs.m_useSharedCache);
         m_useUncommitedRead = std::move(rhs.m_useUncommitedRead);
+        m_useImmutableDb = std::move(rhs.m_useImmutableDb);
         }
     return *this;
     }
@@ -113,11 +119,23 @@ ConcurrentQueryManager::Config& ConcurrentQueryManager::Config::operator= (const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                             Affan.Khan             05/2019
 //---------------------------------------------------------------------------------------
-bool QueryTask::ExceededQuota() const noexcept
+bool QueryTask::ExceededQuota(QuotaType type) const noexcept
     {
-    const auto timeQuotaExceeded = m_quota.MaxTimeAllowed() == seconds(0) ? false : GetTimeElapsed() >= m_quota.MaxTimeAllowed();
-    const auto memoryQuotaExceeded = m_quota.MaxMemoryAllowed() == 0 ? false : GetMemoryUsed() >= m_quota.MaxMemoryAllowed();
-    return timeQuotaExceeded || memoryQuotaExceeded;
+    if (((int)type & (int)QuotaType::Time) > 0)
+        {
+        const auto timeQuotaExceeded = m_quota.MaxTimeAllowed() == seconds(0) ? false : GetTimeElapsed() >= m_quota.MaxTimeAllowed();
+        if (timeQuotaExceeded)
+            return true;
+        }
+
+    if (((int) type & (int)QuotaType::Memory) > 0)
+        {
+        const auto memoryQuotaExceeded = m_quota.MaxMemoryAllowed() == 0 ? false : GetMemoryUsed() >= m_quota.MaxMemoryAllowed();
+        if (memoryQuotaExceeded)
+            return true;
+        }
+
+    return false;
     }
 
 //---------------------------------------------------------------------------------------
@@ -137,6 +155,16 @@ void QueryTask::SetError(Utf8CP error)
 void QueryTask::SetPartial()
     {
     m_result.append("]");
+    m_completedOn = steady_clock::now();
+    m_interruptor = nullptr;
+    m_state.store(State::Partial);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                             Affan.Khan             05/2019
+//---------------------------------------------------------------------------------------
+void QueryTask::SetPartialWithNoResults()
+    {
+    m_result.clear();
     m_completedOn = steady_clock::now();
     m_interruptor = nullptr;
     m_state.store(State::Partial);
@@ -205,16 +233,19 @@ void QueryTask::Run(JsonAdaptorCache& cache, QueryInterruptor& interruptor)
     m_state = State::Running;
     if (ExceededQuota())
         {
-        m_state.store(State::Partial);
-        m_interruptor = nullptr;
+        SetPartialWithNoResults();
         return;
         }
    
     m_interruptor = &interruptor;
-    auto entry = cache.Get(m_ecsql.c_str());
+    ECSqlStatus prepareStatus;
+    auto entry = cache.Get(m_ecsql.c_str(), &prepareStatus);
     if (entry == nullptr)
         {
-        SetError(interruptor.GetLastError().c_str());
+        if (prepareStatus.IsSQLiteError() && prepareStatus.GetSQLiteError() == BE_SQLITE_BUSY)
+            SetPartialWithNoResults();
+        else
+            SetError(interruptor.GetLastError().c_str());
         return;
         }
     ECSqlStatement* pstmt = entry->GetStatement();
@@ -292,7 +323,7 @@ void QueryTask::Run(JsonAdaptorCache& cache, QueryInterruptor& interruptor)
             }
 
         if (ExceededQuota())
-            {            
+            {
             SetPartial();
             return;
             }
@@ -317,7 +348,7 @@ void QueryTask::Run(JsonAdaptorCache& cache, QueryInterruptor& interruptor)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                             Affan.Khan             05/2019
 //---------------------------------------------------------------------------------------
-JsonAdaptorCache::CacheEntry* JsonAdaptorCache::Get(Utf8CP ecsql)
+JsonAdaptorCache::CacheEntry* JsonAdaptorCache::Get(Utf8CP ecsql, ECSqlStatus* status)
     {
     auto itor = std::find_if(m_stmt.begin(), m_stmt.end(), [&ecsql] (CacheEntry& entry)
         {
@@ -338,11 +369,15 @@ JsonAdaptorCache::CacheEntry* JsonAdaptorCache::Get(Utf8CP ecsql)
     auto& workerConn = m_worker.GetConnection();
 
     CacheEntry entry;    
-    ecdb.GetImpl().GetMutex().Enter();
+    // ecdb.GetImpl().GetMutex().Enter();
     auto rc = entry.GetStatement()->Prepare(ecdb.Schemas(), workerConn, ecsql);
-    ecdb.GetImpl().GetMutex().Leave();
+    // ecdb.GetImpl().GetMutex().Leave();
     if (rc != ECSqlStatus::Success)
+        {
+        if (status)
+            *status = rc;
         return nullptr;
+        }
 
     while (m_stmt.size() >= m_cacheSize - 1)
         m_stmt.pop_back();
@@ -356,7 +391,7 @@ JsonAdaptorCache::CacheEntry* JsonAdaptorCache::Get(Utf8CP ecsql)
 // @bsimethod                                             Affan.Khan             05/2019
 //---------------------------------------------------------------------------------------
 QueryWorker::QueryWorker(QueryWorkerPool& workerPool)
-    :m_workerPool(workerPool), m_stmtCache(*this, workerPool.m_mgr->GetConfig().GetCacheStatementPerThread())
+    :m_workerPool(workerPool), m_stmtCache(*this, workerPool.m_mgr->GetConfig().GetCacheStatementPerThread()), m_retryHandler(RetryHandler::Create())
     {
     Init();
     }
@@ -406,8 +441,16 @@ void QueryWorker::Run(QueryWorker* worker)
         if (task != nullptr)
             {
             QueryInterruptor interruptor(worker->m_db);
-            Savepoint txn(worker->m_db, "QueryWorker::Run");
-            task->Run(worker->m_stmtCache, interruptor);
+            RetryHandler::Scope scope(*worker->m_retryHandler, *task);
+            if (worker->GetPool().GetMgr()->GetConfig().GetUseImmutableDb() && worker->m_db.IsReadonly())
+                {
+                task->Run(worker->m_stmtCache, interruptor);
+                }
+            else
+                {
+                Savepoint txn(worker->m_db, "QueryWorker::Run");
+                task->Run(worker->m_stmtCache, interruptor);
+                }
             }
         }
     }
@@ -415,13 +458,37 @@ void QueryWorker::Run(QueryWorker* worker)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                             Affan.Khan             05/2019
 //---------------------------------------------------------------------------------------
+int QueryWorker::RetryHandler::_OnBusy(int count) const 
+    {
+    printf("Worker %d\n", count);
+    if (m_task && m_task->ExceededQuota(QueryTask::QuotaType::Time))
+        return 0;
+
+    BeThreadUtilities::BeSleep(BUSY_RETRY_TIMEOUT);
+    return 1;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                             Affan.Khan             05/2019
+//---------------------------------------------------------------------------------------
 void QueryWorker::Init()
     {
-    m_retryHandler = new RetryHandler();
+    // m_retryHandler = RetryHandler::Create();
     const auto isErrorEnabled = CQLOG.isSeverityEnabled(NativeLogging::LOG_ERROR);
-    const auto txn =  DefaultTxn::No;
-    const auto openMode = (Db::OpenMode)(m_workerPool.GetMgr()->GetConfig().GetUseSharedCache() ? (int)Db::OpenMode::Readonly | (int)Db::OpenMode::SharedCache : (int)Db::OpenMode::Readonly);
-    auto rc = m_db.OpenBeSQLiteDb(m_workerPool.GetMgr()->GetECDb().GetDbFileName(), Db::OpenParams(openMode, txn, m_retryHandler.get()));
+    const auto useImmutableDb = m_workerPool.GetMgr()->GetConfig().GetUseImmutableDb() && m_workerPool.GetMgr()->GetECDb().IsReadonly();
+    const auto useUncommitedRead = m_workerPool.GetMgr()->GetConfig().GetUseUncommitedRead();
+    const auto useSharedCache = m_workerPool.GetMgr()->GetConfig().GetUseSharedCache();
+    const auto txn = useImmutableDb ? DefaultTxn::Yes : DefaultTxn::No;
+    const auto openMode = (Db::OpenMode)(useSharedCache && !useImmutableDb ? 
+        (int)Db::OpenMode::Readonly | (int)Db::OpenMode::SharedCache : (int)Db::OpenMode::Readonly);
+
+    const auto openParam = Db::OpenParams(openMode, txn, m_retryHandler.get());
+    if (useImmutableDb)
+        {
+        openParam.SetQueryParam("immutable", "true");
+        CQLOG.info("ConncurrentQuery initialized with immutable connection to SQLiteDb");
+        }
+        
+    auto rc = m_db.OpenBeSQLiteDb(m_workerPool.GetMgr()->GetECDb().GetDbFileName(), openParam);
     if (rc != BE_SQLITE_OK)
         {
         if (isErrorEnabled) 
@@ -430,7 +497,7 @@ void QueryWorker::Init()
         BeAssert(rc != BE_SQLITE_OK);
         return;
         }
-    if ( m_workerPool.GetMgr()->GetConfig().GetUseUncommitedRead())
+    if (useUncommitedRead && !useImmutableDb)
         {
         rc = m_db.TryExecuteSql("PRAGMA read_uncommitted=true");
         if (rc != BE_SQLITE_OK)

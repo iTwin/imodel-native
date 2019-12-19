@@ -78,6 +78,7 @@ struct ConcurrentQueryManager final
             std::function<void(Db const&)> m_beforeConnectionClosed;
             bool m_useSharedCache;
             bool m_useUncommitedRead;
+            bool m_useImmutableDb;
             Quota m_quota;
         public:
             ECDB_EXPORT Config(const Config&& rhs);
@@ -91,8 +92,9 @@ struct ConcurrentQueryManager final
             unsigned int GetConcurrent() const noexcept { return m_concurrent; }
             unsigned int GetMaxQueueSize() const noexcept { return m_maxQueueSize; }
             unsigned int GetCacheStatementPerThread() const noexcept { return m_cacheStatementsPerThread; }            
-            unsigned int GetUseSharedCache() const noexcept { return m_useSharedCache; }
-            unsigned int GetUseUncommitedRead() const noexcept { return m_useUncommitedRead; }
+            bool GetUseSharedCache() const noexcept { return m_useSharedCache; }
+            bool GetUseUncommitedRead() const noexcept { return m_useUncommitedRead; }
+            bool GetUseImmutableDb() const noexcept { return m_useImmutableDb;  }
             std::chrono::seconds GetMinMonitorInterval() const noexcept { return m_minMonitorInterval; }
             std::chrono::seconds GetIdleCleanupTime() const noexcept { return m_idleCleanupTime; }
             std::chrono::seconds GetAutoExpireTimeForCompletedQuery() const { return m_completedTaskExpires; }
@@ -110,6 +112,7 @@ struct ConcurrentQueryManager final
             Config& SetBeforeConnectionClosed(std::function<void(Db const&)> callback) noexcept { m_beforeConnectionClosed = callback;  return *this; }
             Config& SetUseSharedCache(bool v) noexcept { m_useSharedCache = v;  return *this; }
             Config& SetUseUncommitedRead(bool v) noexcept { m_useUncommitedRead = v;  return *this; }
+            Config& SetUseImmutableDb(bool v) noexcept { m_useImmutableDb = v; return *this; }
         };
     struct Limit final
         {

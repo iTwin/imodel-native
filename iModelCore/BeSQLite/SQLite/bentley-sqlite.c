@@ -15,24 +15,12 @@
 #define SQLITE_ENABLE_NULL_TRIM 1 // trim null columns from end of rows. Experimental for now, per DRH
 #define SQLITE_MAX_VARIABLE_NUMBER 20000 // this is the maximum number of variables in an SQL statement
 #define SQLITE_HAS_CODEC 1
-// #define SQLITE_TEMP_STORE 3 // always use memory for temporary files see https://www.sqlite.org/tempfiles.html#tempstore
 #define SQLITE_OMIT_COMPLETE 1
 #define SQLITE_OMIT_PROGRESS_CALLBACK 1
 #define SQLITE_HAS_CODEC 1
 #define SQLITE_MAX_EXPR_DEPTH 2000
-//Alocate around 16Mb instead of 2Mb for page cache
-#define SQLITE_DEFAULT_CACHE_SIZE 4000
-
-// # Alloc 4000 pages allocated in advance  (default 20)
-// cDefs + -DSQLITE_DEFAULT_PCACHE_INITSZ=4000
-// # Alloc 4000 pages is page cache size (default 2000)
-// cDefs + -DSQLITE_DEFAULT_CACHE_SIZE=4000
-
-// #64*4096 default(64*1024)
-// cDefs + -DSQLITE_STMTJRNL_SPILL=262144
-// cDefs + -DSQLITE_DEFAULT_AUTOVACUUM=1
-// cDefs + -DSQLITE_OMIT_AUTHORIZATION
-// cDefs + -DSQLITE_OMIT_WAL
+//Allocate around ~ 64 Mb 
+#define SQLITE_DEFAULT_CACHE_SIZE 16000
 
 // uncomment next line to build with explain comments enabled
 // #define SQLITE_ENABLE_EXPLAIN_COMMENTS 1

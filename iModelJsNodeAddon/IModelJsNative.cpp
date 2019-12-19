@@ -931,6 +931,13 @@ struct NativeECDb : BeObjectWrap<NativeECDb>
 
         Napi::Value IsOpen(Napi::CallbackInfo const& info) { return Napi::Boolean::New(Env(), GetECDb().IsDbOpen()); }
 
+        static Napi::Value EnableSharedCache(Napi::CallbackInfo const& info)
+            {
+            REQUIRE_ARGUMENT_BOOL(0, enabled, Napi::Number::New(info.Env(), (int) BE_SQLITE_ERROR));
+            DbResult r = BeSQLiteLib::EnableSharedCache(enabled);
+            return Napi::Number::New(info.Env(), (int) r);
+            }
+
         static void Init(Napi::Env env, Napi::Object exports)
             {
             Napi::HandleScope scope(env);
@@ -946,6 +953,7 @@ struct NativeECDb : BeObjectWrap<NativeECDb>
                 InstanceMethod("concurrentQueryInit", &NativeECDb::ConcurrentQueryInit),
                 InstanceMethod("postConcurrentQuery", &NativeECDb::PostConcurrentQuery),
                 InstanceMethod("pollConcurrentQuery", &NativeECDb::PollConcurrentQuery),
+                StaticMethod("enableSharedCache", &NativeECDb::EnableSharedCache),
             });
 
             exports.Set("ECDb", t);
@@ -2096,7 +2104,12 @@ public:
         BeFileName asset = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
         return Napi::String::New(info.Env(), asset.GetNameUtf8().c_str());
         }
-
+    static Napi::Value EnableSharedCache(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_ARGUMENT_BOOL(0, enabled, Napi::Number::New(info.Env(), (int) BE_SQLITE_ERROR));
+        DbResult r = BeSQLiteLib::EnableSharedCache(enabled);
+        return Napi::Number::New(info.Env(), (int) r);
+        }
     void UpdateProjectExtents(Napi::CallbackInfo const& info)
         {
         REQUIRE_ARGUMENT_STRING(0, newExtentsJson, )
@@ -2454,6 +2467,7 @@ public:
             InstanceMethod("postConcurrentQuery", &NativeDgnDb::PostConcurrentQuery),
             InstanceMethod("pollConcurrentQuery", &NativeDgnDb::PollConcurrentQuery),
             StaticMethod("getAssetsDir", &NativeDgnDb::GetAssetDir),
+            StaticMethod("enableSharedCache", &NativeDgnDb::EnableSharedCache),
             StaticMethod("vacuum", &NativeDgnDb::Vacuum),
             StaticMethod("unsafeSetBriefcaseId", &NativeDgnDb::UnsafeSetBriefcaseId),
         });

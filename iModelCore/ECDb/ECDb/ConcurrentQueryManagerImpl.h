@@ -103,7 +103,7 @@ struct JsonAdaptorCache final
 
         explicit JsonAdaptorCache(QueryWorker& worker, unsigned int cacheSize) :m_cacheSize(cacheSize), m_worker(worker) {}
         ~JsonAdaptorCache(){}
-        CacheEntry* Get(Utf8CP ecsql);
+        CacheEntry* Get(Utf8CP ecsql, ECSqlStatus* status);
         void Clear() { m_stmt.clear(); }
     };
 
@@ -131,6 +131,12 @@ struct QueryInterruptor final
 //=======================================================================================
 struct QueryTask final
     {
+    enum class QuotaType
+        {
+        Time = 1,
+        Memory = 2,
+        All = Time | Memory,
+        };
     enum class State
         {
         Inqueue,
@@ -140,7 +146,7 @@ struct QueryTask final
         Done,
         Error
         };
-    struct ComparePriority { bool operator()(QueryTask* rhs, QueryTask* lhs) { return (int) rhs->m_priority > (int) lhs->m_priority; } };
+    struct ComparePriority { bool operator()(QueryTask* rhs, QueryTask* lhs) { return (int) rhs->m_priority < (int) lhs->m_priority; } };
     private:
         ConcurrentQueryManager::Priority m_priority;
         Utf8String m_ecsql;
@@ -157,6 +163,7 @@ struct QueryTask final
         ConcurrentQueryManager::RequestContext m_requestContext;
         void SetError(Utf8CP error);
         void SetPartial();
+        void SetPartialWithNoResults();
         void SetDone();
         BentleyStatus BindPrimitive(ECSqlStatement* stmt, Json::Value const& v, int index);
     public:
@@ -174,7 +181,7 @@ struct QueryTask final
         int64_t GetRowCount() const noexcept { return m_rows; }
         std::chrono::seconds GetTimeElapsed() const { return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - m_createdOn); }
         size_t GetMemoryUsed() const { return m_result.SizeInBytes(); }
-        bool ExceededQuota() const noexcept;
+        bool ExceededQuota(QuotaType type = QuotaType::All) const noexcept;
         void SetState(State state) noexcept { m_state = state; }
         void Run(JsonAdaptorCache& cache, QueryInterruptor& interruptor);
         Utf8StringR GetResult() { return m_result; }
@@ -190,14 +197,21 @@ struct QueryWorker final
     private:
         struct RetryHandler final : BeSQLite::BusyRetry
             {
-            private:
-                virtual int _OnBusy(int count) const
+            public:
+                struct Scope final
                     {
-                    if (count > 10)
-                        return 0;
-
-                    BeThreadUtilities::BeSleep(1000); return 1;
-                    }
+                    private:
+                        RetryHandler& m_handler;
+                    public:
+                    Scope(RetryHandler& handler, QueryTask& task):m_handler(handler) { m_handler.m_task = &task; }
+                    ~Scope() { m_handler.m_task = nullptr; }
+                    };
+            private:
+                QueryTask* m_task;
+                RetryHandler(): m_task(nullptr) {}
+                virtual int _OnBusy(int count) const;
+            public:
+                static RefCountedPtr<RetryHandler> Create() { return new RetryHandler(); }
             };
 
         JsonAdaptorCache m_stmtCache;

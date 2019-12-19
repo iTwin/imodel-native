@@ -598,6 +598,9 @@ public:
     //! Get memory used by SQLite for current process
     BE_SQLITE_EXPORT static DbResult GetMemoryUsed(int64_t& current, int64_t& high, bool reset = false);
 
+    //! Enabled shared cache for the process.
+    BE_SQLITE_EXPORT static DbResult EnableSharedCache(bool enabled);
+
     static int GetBaseDbResult(DbResult val) {return 0xff & val;}
     static bool TestBaseDbResult(DbResult val1, DbResult val2) {return GetBaseDbResult(val1) == GetBaseDbResult(val2);}
     static bool IsConstraintDbResult(DbResult val1) {return GetBaseDbResult(val1) == BE_SQLITE_CONSTRAINT_BASE;}

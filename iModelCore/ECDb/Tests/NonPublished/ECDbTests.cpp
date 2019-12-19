@@ -63,11 +63,11 @@ struct AsyncQuery
         if (rcPoll == ConcurrentQueryManager::PollStatus::Done)
             {
             q->m_rows += rows;
-            printf("[%d-%s] DONE %lld sec: total rows %lld\n", q->m_id, GetPriortyStr(q->m_priority), diff.count(), q->m_rows);
+            // printf("[%d-%s] DONE %lld sec: total rows %lld\n", q->m_id, GetPriortyStr(q->m_priority), diff.count(), q->m_rows);
             auto t = Json::Value::From(result);
             for (Json::ArrayIndex f = 0; f < t.size(); f++)
                 q->m_rowset.append(t[f]);
-            printf("[%d-%s] DONE %s\n", q->m_id, GetPriortyStr(q->m_priority), q->m_rowset.ToString().substr(0, 80).c_str());
+            // printf("[%d-%s] DONE %s\n", q->m_id, GetPriortyStr(q->m_priority), q->m_rowset.ToString().substr(0, 80).c_str());
             q->m_promise.set_value();
             return;
             }
@@ -75,11 +75,13 @@ struct AsyncQuery
             {
             printf("[%d-%s] ERROR %lld sec\n", q->m_id, GetPriortyStr(q->m_priority), diff.count());
             q->m_promise.set_value();
+            FAIL();
             return;
             }
         if (rcPoll == ConcurrentQueryManager::PollStatus::Timeout)
             {
             printf("[%d-%s] TIMEOUT  %lld sec\n", q->m_id, GetPriortyStr(q->m_priority), diff.count());
+            FAIL();
             goto next;
             }
         if (rcPoll == ConcurrentQueryManager::PollStatus::Partial)
@@ -145,14 +147,24 @@ struct TimeoutFunc : BeSQLite::ScalarFunction
         ctx.SetResultInt(args[0].GetValueInt());
         }
     };
-
-
-TEST_F(ECDbTestFixture, ConcurrentQueryManager)
+constexpr uint32_t operator "" _mb(unsigned long long v)
+    {
+    return static_cast<uint32_t>(v * 1024 * 1024);
+    }
+constexpr uint32_t operator "" _kb(unsigned long long v)
+    {
+    return  static_cast<uint32_t>(v * 1024);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                     12/19
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbTestFixture, ConcurrentQueryManagerReadonly)
     {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("one.ecdb"));
+    ReopenECDb(ECDb::OpenParams(Db::OpenMode::Readonly));
     TimeoutFunc timeoutFunc;
     auto config = ConcurrentQueryManager::Config()
-        .SetQuota(ConcurrentQueryManager::Quota(1s,1000))
+        .SetQuota(ConcurrentQueryManager::Quota(1s, 1_kb))
         .SetIdleCleanupTime(30s)
         .SetAfterConnectionOpenned([&timeoutFunc] (Db const& db) {
             db.AddFunction(timeoutFunc);
@@ -162,23 +174,68 @@ TEST_F(ECDbTestFixture, ConcurrentQueryManager)
     mgr.Initalize(config);
     std::async([&] ()
         {
-        for (int j = 0; j < 10; j++)
+        std::vector<std::unique_ptr<AsyncQuery>> queries;
+        for (int i = 0; i < 100; i++)
             {
-            std::vector<std::unique_ptr<AsyncQuery>> queries;
-            for (int i = 0; i < 40; i++)
-                {
-                queries.push_back(std::make_unique<AsyncQuery>(mgr, "select * from meta.ecclassdef", ConcurrentQueryManager::Priority::Low));
-                queries.push_back(std::make_unique<AsyncQuery>(mgr, "select * from meta.ecclassdef", ConcurrentQueryManager::Priority::Normal));
-                queries.push_back(std::make_unique<AsyncQuery>(mgr, "select * from meta.ecpropertydef", ConcurrentQueryManager::Priority::High));
+            queries.push_back(std::make_unique<AsyncQuery>(mgr, "select * from meta.ecclassdef", ConcurrentQueryManager::Priority::Low));
+            queries.push_back(std::make_unique<AsyncQuery>(mgr, "select * from meta.ecclassdef", ConcurrentQueryManager::Priority::Normal));
+            queries.push_back(std::make_unique<AsyncQuery>(mgr, "select * from meta.ecpropertydef", ConcurrentQueryManager::Priority::High));
 
-                }
-            for (auto& k : queries)
-                {
-                k->Wait();
-                }
-            printf("SLEEPING for 24 sec\n");
-            std::this_thread::sleep_for(24s);
             }
+        for (auto& k : queries)
+            {
+            k->Wait();
+            }
+        }).wait();
+    }
+struct RetryHandler final : BeSQLite::BusyRetry
+    {
+    private:
+        virtual int _OnBusy(int count) const override 
+            {
+            printf("Main %d\n", count);
+            return 1; 
+            }
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                     12/19
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbTestFixture, ConcurrentQueryManagerReadWrite)
+    {
+    // BeSQLiteLib::EnableSharedCache(true);
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("one.ecdb"));
+    m_ecdb.CreateTable("test_foo", "col");
+    RefCountedPtr<RetryHandler> handler = new RetryHandler();
+    ReopenECDb(ECDb::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes, handler.get()));
+    auto config = ConcurrentQueryManager::Config()
+        .SetQuota(ConcurrentQueryManager::Quota(60s, 2_mb))
+        .SetIdleCleanupTime(1s)
+        .SetConcurrent(8)
+        .SetUseSharedCache(true)
+        .SetUseImmutableDb(false)
+        .SetUseUncommitedRead(true);
+
+    auto& mgr = m_ecdb.GetConcurrentQueryManager();
+    mgr.Initalize(config);
+    std::async([&] ()
+        {
+        std::vector<std::unique_ptr<AsyncQuery>> queries;
+        for (int i = 0; i < 100; i++)
+            {
+            // make sure ecsql is not cachable
+            queries.push_back(std::make_unique<AsyncQuery>(mgr, SqlPrintfString("select * from meta.ecclassdef where ecinstanceid<> %d", i), ConcurrentQueryManager::Priority::Low));
+            queries.push_back(std::make_unique<AsyncQuery>(mgr, SqlPrintfString("select * from meta.ecpropertydef where ecinstanceid<> %d", i), ConcurrentQueryManager::Priority::High));
+
+            // simulate write to primary connection and call save changes to trigger RetryBusy handler 
+            m_ecdb.ExecuteSql("insert into test_foo(col) values (1)");
+
+            }
+        for (auto& k : queries)
+            {
+            k->Wait();
+            }
+
         }).wait();
     }
 //---------------------------------------------------------------------------------------

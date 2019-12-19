@@ -284,6 +284,7 @@ export declare namespace IModelJsNative {
     public pollConcurrentQuery(taskId: number): { status: ConcurrentQuery.PollStatus, result: string, rowCount: number };
     public static vacuum(dbName: string, pageSize?: number): DbResult;
     public static unsafeSetBriefcaseId(dbName: string, briefcaseId: number, dbGuid?: GuidString, projectGuid?: GuidString): DbResult;
+    public static enableSharedCache(enable: boolean): DbResult;
   }
 
   /**
@@ -339,6 +340,7 @@ export declare namespace IModelJsNative {
     public concurrentQueryInit(config: ConcurrentQuery.Config): boolean;
     public postConcurrentQuery(ecsql: string, bindings: string, limit: QueryLimit, quota: QueryQuota, priority: QueryPriority): { status: ConcurrentQuery.PostStatus, taskId: number };
     public pollConcurrentQuery(taskId: number): { status: ConcurrentQuery.PollStatus, result: string, rowCount: number };
+    public static enableSharedCache(enable: boolean): DbResult;
   }
 
   class ChangedElementsECDb implements IDisposable {
