@@ -2373,8 +2373,11 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
             hasPrimaryInstance = false;
             auto res = _CreateElementAndGeom(results, v8mm, elementClassId, hasPrimaryInstance, categoryId, elementCode, v8eh);
             m_skipECContent = was;
-            ecContent.m_secondaryV8Instances.push_back(std::make_pair(ecContent.m_primaryV8Instance, BisConversionRule::ToAspectOnly));
-            hasSecondaryInstances = true;
+            if (ecContent.m_primaryV8Instance.IsValid())
+                {
+                ecContent.m_secondaryV8Instances.push_back(std::make_pair(ecContent.m_primaryV8Instance, BisConversionRule::ToAspectOnly));
+                hasSecondaryInstances = true;
+                }
             if (BentleyApi::SUCCESS != res)
                 {
                 LOG.debugv("Failed to create element and geom after 3d mismatch for %s %s", Converter::IssueReporter::FmtElement(v8eh).c_str(), Converter::IssueReporter::FmtModel(*v8eh.GetDgnModelP()).c_str());
