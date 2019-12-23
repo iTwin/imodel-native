@@ -311,7 +311,7 @@ bool UpdaterChangeDetector::_IsElementChanged (DetectionResults& results, DwgImp
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DwgImporter::UpdateResults (ElementImportResults& results, DgnElementId existingElementId, DwgSourceAspects::ObjectAspect::SourceDataCR source)
+DgnDbStatus DwgImporter::UpdateResults (ElementImportResults& results, DgnElementId existingElementId)
     {
     auto importedElement = results.GetImportedElement();
     if (importedElement == nullptr || !existingElementId.IsValid())
@@ -324,6 +324,13 @@ DgnDbStatus DwgImporter::UpdateResults (ElementImportResults& results, DgnElemen
     if (!existingEl.IsValid())
         {
         BeAssert(false && L"Invalid existing element!");
+        return DgnDbStatus::BadArg;
+        }
+
+    auto source = results.GetObjectSourceData ();
+    if (!source.IsValid())
+        {
+        BeAssert(false && L"SourceData not set in ElementImportResults!");
         return DgnDbStatus::BadArg;
         }
 
@@ -394,7 +401,10 @@ DgnDbStatus DwgImporter::UpdateResults (ElementImportResults& results, DgnElemen
             auto found = existingChildIdSet.find (existingChildElementId);
             if (found != existingChildIdSet.end())
                 {
-                this->UpdateResults (childResults, existingChildElementId, source);
+                if (!childResults.GetObjectSourceData().IsValid())
+                    childResults.SetObjectSourceData (source);
+
+                this->UpdateResults (childResults, existingChildElementId);
                 // *** WIP_CONVERTER - bail out if any child update fails?
                 }
             }
@@ -418,7 +428,10 @@ DgnDbStatus DwgImporter::UpdateResults (ElementImportResults& results, DgnElemen
         {
         // set the parent element as the existing element for children, VSTS 127172:
         auto childResults = results.m_childElements.at(i);
-        this->UpdateResults (childResults, existingChildren.at(i), source);
+        if (!childResults.GetObjectSourceData().IsValid())
+            childResults.SetObjectSourceData (source);
+
+        this->UpdateResults (childResults, existingChildren.at(i));
         // *** WIP_CONVERTER - bail out if any child update fails?
         }
 
@@ -426,7 +439,10 @@ DgnDbStatus DwgImporter::UpdateResults (ElementImportResults& results, DgnElemen
     for (; i < results.m_childElements.size(); ++i)
         {
         auto childResults = results.m_childElements.at(i);
-        this->InsertResults (childResults, source);
+        if (!childResults.GetObjectSourceData().IsValid())
+            childResults.SetObjectSourceData (source);
+        
+        this->InsertResults (childResults);
         changeDetector._OnElementSeen (*this, childResults.GetImportedElementId());
         }
 

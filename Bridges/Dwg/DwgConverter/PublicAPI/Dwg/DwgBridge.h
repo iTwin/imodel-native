@@ -67,6 +67,7 @@ protected:
 
 public:
     DWG_EXPORT DwgBridge ();
+    DWG_EXPORT virtual ~DwgBridge ();
     DWG_EXPORT BentleyStatus  RunAsStandaloneExe (int argc, WCharCP argv[]);
     DWG_EXPORT DwgImporter::Options&  GetImportOptions () { return m_options; }
     DWG_EXPORT DwgImporterP   GetImporter () { return m_importer.get(); }

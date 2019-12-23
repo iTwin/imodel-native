@@ -22,6 +22,10 @@ private:
 public:
     EXPORT_ATTRIBUTE static BentleyStatus   GetLinearCurves (CurveVectorR curves, GeometrySourceCP source);
     EXPORT_ATTRIBUTE static BentleyStatus   CopyGeometrySource (GeometricElement3dP target, GeometrySourceCP source);
+    EXPORT_ATTRIBUTE static DgnElementId    GetCivilReferenceElementId (DwgSourceAspects::ObjectAspectCR aspect);
+    EXPORT_ATTRIBUTE static DgnElementId    GetCivilReferenceElementId (DwgImporter::ElementImportResultsCR results);
+    EXPORT_ATTRIBUTE static BentleyStatus   AddCivilReferenceElementId (DwgImporter::ElementImportResultsR results, DgnElementId id);
+    EXPORT_ATTRIBUTE static Utf8String      AppendElementIdToJson (Utf8StringCR existingJson, DgnElementId elementId);
     };  // C3dHelper
 
 END_C3D_NAMESPACE

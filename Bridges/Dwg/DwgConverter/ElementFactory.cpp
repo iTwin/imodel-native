@@ -42,7 +42,6 @@ ElementFactory::ElementFactory (DwgImporter::ElementImportResults& results, DwgI
 
     // find the element handler
     m_elementHandler = dgn_ElementHandler::Element::FindHandler (m_inputs.GetTargetModelR().GetDgnDb(), m_inputs.GetClassId());
-    BeAssert(nullptr != m_elementHandler && "Null element handler!");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -621,7 +620,15 @@ BentleyStatus   ElementFactory::CreateIndividualElements ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   ElementFactory::CreateEmptyElement ()
     {
-    m_results.m_importedElement = m_elementHandler->Create (m_elementParams);
+    m_results.m_importedElement = m_importer._CreateElement (m_elementParams, m_inputs);
+    if (m_results.m_importedElement.IsNull() && m_elementHandler != nullptr)
+        m_results.m_importedElement = m_elementHandler->Create (m_elementParams);
+
+    if (m_results.m_importedElement.IsNull())
+        {
+        BeAssert (false && L"DgnElement creations failed!");
+        return  BentleyStatus::BSIERROR;
+        }
 
     auto geomSource = m_results.m_importedElement->ToGeometrySourceP ();
     if (nullptr == geomSource)
@@ -639,7 +646,7 @@ BentleyStatus   ElementFactory::CreateEmptyElement ()
 BentleyStatus   ElementFactory::CreateElement ()
     {
     // create elements from current GeometryBuilder containing up to date geometry collection, then flush the builder.
-    if (!m_geometryBuilder.IsValid() || nullptr == m_elementHandler)
+    if (!m_geometryBuilder.IsValid())
         {
         BeAssert (false && L"Invalid GeometricBuilder and/or ElementHandler!");
         return  BSIERROR;
@@ -656,7 +663,10 @@ BentleyStatus   ElementFactory::CreateElement ()
 #endif  // NEED_UNIQUE_CODE_PER_ELEMENT
 
     // create a new element from current geometry builder:
-    DgnElementPtr   element = m_elementHandler->Create (m_elementParams);
+    DgnElementPtr   element = m_importer._CreateElement (m_elementParams, m_inputs);
+    if (!element.IsValid() && m_elementHandler != nullptr)
+        element = m_elementHandler->Create (m_elementParams);
+
     if (!element.IsValid())
         {
         BeAssert (false && L"Null element!");

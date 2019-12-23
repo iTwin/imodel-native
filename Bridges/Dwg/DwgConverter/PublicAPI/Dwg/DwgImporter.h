@@ -367,6 +367,7 @@ public:
     public:
         Options ()
             {
+            m_stableIdPolicy = StableIdPolicy::ById;
             m_time = DateTime::GetCurrentTimeUtc();
             m_changesFileNameFromGuid = false;
             m_skipUnchangedFiles = true;
@@ -678,6 +679,7 @@ public:
         void                    SetModelMapping (ResolvedModelMappingCR m) { m_modelMapping = m; }
         ResolvedModelMapping    GetModelMapping () const { return m_modelMapping; }
         };  // ElementImportInputs
+    DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(ElementImportInputs)
 
     //! A data context for output DgnElement's imported from a modelspace or paperspace entity.
     struct ElementImportResults
@@ -688,6 +690,7 @@ public:
         bvector<ElementImportResults>   m_childElements;
         // from DwgSyncInfo after importing
         DwgSourceAspects::ObjectAspect  m_existingElementMapping;
+        DwgSourceAspects::ObjectAspect::SourceData  m_objectSourceData;
         bool                            m_wasDiscarded;
     public:
         ElementImportResults () : m_importedElement(nullptr), m_wasDiscarded(false) { m_childElements.clear(); }
@@ -701,7 +704,10 @@ public:
         DwgSourceAspects::ObjectAspectCR  GetExistingElement () const { return m_existingElementMapping; }
         void SetExistingElement (DwgSourceAspects::ObjectAspectCR aspect) { if (aspect.IsValid()) m_existingElementMapping = aspect; }
         DgnElementId    GetExistingElementId () const { return m_existingElementMapping.GetElementId(); }
+        DwgSourceAspects::ObjectAspect::SourceDataCR GetObjectSourceData () const { return m_objectSourceData; }
+        void SetObjectSourceData (DwgSourceAspects::ObjectAspect::SourceDataCR source) { m_objectSourceData = source; }
         };  // ElementImportResults
+    DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(ElementImportResults)
 
     //! Cache entry for geometry collection
     struct GeometryEntry
@@ -1074,7 +1080,6 @@ private:
     bool                    UpdateModelspaceView (ViewControllerP view);
     bool                    UpdatePaperspaceView (ViewControllerP view, DwgDbObjectIdCR viewportId);
     DgnElementId            CreateOrUpdateRepositoryLink (DwgDbDatabaseP dwg = nullptr);
-    BentleyStatus           InsertElementHasLinks (DgnModelR model, DwgDbDatabaseR dwg);
     DgnSubCategoryId        GetSubcategoryForDrawingCategory (DefinitionModelR model, DgnCategoryId categoryId, DgnSubCategory::Appearance const& appear, Utf8StringCR name);
 
     static void             RegisterProtocolExtensions ();
@@ -1157,6 +1162,10 @@ protected:
     //! Create the root model from the modelspace block if importing, or retrieve it from the syncInfo if updating.
     //! @param[in] rootModelAspect A model aspect for the root model when updating bim; nullptr when initializing a job
     DWG_EXPORT virtual ResolvedModelMapping _GetOrCreateRootModel (DwgSourceAspects::ModelAspectCP rootModelAspect);
+    //! When creating a new root model, the default implementation of _GetOrCreateRootModel calls this method to compose the root model transform from the modelspace and iModelBridge::GetSpatialDataTransform.
+    //! @param[in] rootModelAspect A model aspect for the root model when updating bim; nullptr when initializing a job
+    DWG_EXPORT virtual ResolvedModelMapping _InitializeRootTransform (DwgSourceAspects::ModelAspectCP rootModelAspect);
+    DWG_EXPORT BentleyStatus    InsertElementHasLinks (DgnModelR model, DwgDbDatabaseR dwg);
     //! Set unit formats to be displayed in the DgnModel created from the input block.
     //! @param[out] displayInfo Unit formats to be displayed in the model created from the input block
     //! @param[in] block A modelspace, layout/paperspace, or xRef block
@@ -1264,6 +1273,11 @@ protected:
     DWG_EXPORT virtual DgnClassId     _GetElementType (DwgDbBlockTableRecordCR block);
     //! Determine graphical element label from the input data.  The default implementation returns element label the label in the inputs(if pre-set); otherwise returns the entity name.
     DWG_EXPORT virtual Utf8String     _GetElementLabel (ElementImportInputs& inputs);
+    //! This method is called from the ElementFactory to create a new DgnElement for an input entity.  Return nullptr to have to the caller fallback to the element handler.
+    //! @param[in] params The parameters brewed by ElementFactory used to create a DgnElement
+    //! @param[in] inputs The source entity info from which the new DgnElement shall be created
+    //! @note The returned DgnElement will be updated in ElementImportResults by ElementFactory
+    DWG_EXPORT virtual DgnElementPtr  _CreateElement (DgnElement::CreateParams& params, ElementImportInputs& inputs) { return nullptr; }
     //! Should the entity be imported at all?
     DWG_EXPORT virtual bool           _FilterEntity (ElementImportInputs& inputs) const;
     //! Should create a DgnElement if there is no geometry at all?
@@ -1272,15 +1286,18 @@ protected:
     DWG_EXPORT virtual BentleyStatus  _ProcessDetectionResults (IDwgChangeDetector::DetectionResultsR detectionResults, ElementImportResults& elementResults, ElementImportInputs& inputs);
     //! Insert imported DgnElement into DgnDb.  This method is called after _ImportEntity.
     //! @param[in] results Imported element data from a source object
-    //! @param[in] source Input source data with pre-calculated provenance
-    DWG_EXPORT DgnDbStatus    InsertResults (ElementImportResults& results, DwgSourceAspects::ObjectAspect::SourceDataCR source);
+    DWG_EXPORT DgnDbStatus    InsertResults (ElementImportResults& results);
     //! Update existing element from imported element
     //! @param[in] results Imported element data from a source object
     //! @param[in] existingElementId Input ID of existing element
-    //! @param[in] source Input source data with pre-calculated provenance
-    DWG_EXPORT DgnDbStatus    UpdateResults (ElementImportResults& results, DgnElementId existingElementId, DwgSourceAspects::ObjectAspect::SourceDataCR source);
+    DWG_EXPORT DgnDbStatus    UpdateResults (ElementImportResults& results, DgnElementId existingElementId);
     //! Create a new or update an existing element from an entity based on the sync info
     DWG_EXPORT BentleyStatus  ImportOrUpdateEntity (ElementImportInputs& inputs);
+    //! Override this method to create application specific object provenance for an input entity
+    //! @param[in] hash The output hash value to be applied as the provenance for the object
+    //! @param[in] object The source entity for which the provenance should be calculated
+    //! @return True to apply returned provenance, false to fallback on the default calculation
+    virtual bool    _CreateObjectProvenance (BentleyApi::MD5::HashVal& hash, DwgDbObjectCR object) { return false; }
 
     //! @name  Importing layouts
     //! @{
@@ -1353,7 +1370,7 @@ protected:
 public:
     //! An app must hold and pass in the reference of a DwgImporter::Options, which may be changed after a DwgImporter is created.
     DWG_EXPORT DwgImporter (Options& options);
-    DWG_EXPORT ~DwgImporter ();
+    DWG_EXPORT virtual ~DwgImporter ();
 
     DWG_EXPORT ImportJobCreateStatus InitializeJob (Utf8CP comment=nullptr);
     DWG_EXPORT ImportJobLoadStatus FindJob ();

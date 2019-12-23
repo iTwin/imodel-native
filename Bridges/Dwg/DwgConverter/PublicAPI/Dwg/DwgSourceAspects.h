@@ -318,7 +318,7 @@ public:
     public:
         struct Hash : BentleyApi::MD5::HashVal
             {
-            Hash() {::memset(m_buffer, 0, sizeof BentleyApi::MD5::BlockSize);}
+            Hash() {::memset(m_buffer, 0, sizeof BentleyApi::MD5::HashBytes);}
             Hash(BentleyApi::MD5::HashVal const& from) : BentleyApi::MD5::HashVal(from) {}
             bool IsSame(Hash const& other) const {return 0==memcmp(m_buffer, other.m_buffer, sizeof(m_buffer));}
             bool IsNull() const;

@@ -444,19 +444,20 @@ BentleyStatus   DwgImporter::ImportOrUpdateEntity (ElementImportInputs& inputs)
     if (nullptr == object)
         return  BentleyStatus::BSIERROR;
 
-    IDwgChangeDetector::DetectionResults    detectionResults;
-    ElementImportResults    elementResults;
-    BentleyStatus   status = BentleyStatus::SUCCESS;
-
     // consult the sync info to see if the entity has been changed, and what action to take:
-    if (this->_GetChangeDetector()._IsElementChanged(detectionResults, *this, *object, inputs.GetModelMapping()))
-        {
-        // set existing element in elementResults
-        elementResults.SetExistingElement (detectionResults.GetObjectAspect());
-        // create a new non-database resident element
-        status = this->ImportEntity (elementResults, inputs);
-        }
+    IDwgChangeDetector::DetectionResults    detectionResults;
+    bool isChanged = this->_GetChangeDetector()._IsElementChanged (detectionResults, *this, *object, inputs.GetModelMapping());
 
+    // set existing element map and source data in ElementImportResults
+    ElementImportResults    elementResults;
+    DwgSourceAspects::ObjectAspect::SourceData source(inputs.GetEntityId().GetHandle(), inputs.GetTargetModel().GetModelId(), detectionResults.GetCurrentProvenance(), Utf8String());
+    elementResults.SetObjectSourceData (source);
+    elementResults.SetExistingElement (detectionResults.GetObjectAspect());
+
+    // create new non-database resident element(s) if the entity has been changed
+    BentleyStatus   status = BentleyStatus::SUCCESS;
+    if (isChanged)
+        status = this->ImportEntity (elementResults, inputs);
     if (BentleyStatus::SUCCESS != status)
         return  status;
 
@@ -471,7 +472,6 @@ BentleyStatus   DwgImporter::ImportOrUpdateEntity (ElementImportInputs& inputs)
 BentleyStatus   DwgImporter::_ProcessDetectionResults (IDwgChangeDetector::DetectionResultsR detectionResults, ElementImportResults& elementResults, ElementImportInputs& inputs)
     {
     auto& changeDetector = this->_GetChangeDetector ();
-    auto objectHandle = inputs.GetEntityId().GetHandle();
 
     // act based on change detector results:
     switch (detectionResults.GetChangeType())
@@ -479,7 +479,6 @@ BentleyStatus   DwgImporter::_ProcessDetectionResults (IDwgChangeDetector::Detec
         case IDwgChangeDetector::ChangeType::None:
             {
             // no change - just update input entity for output results
-            elementResults.SetExistingElement (detectionResults.GetObjectAspect());
             changeDetector._OnElementSeen (*this, detectionResults.GetExistingElementId());
             // add children into the element seen list
             auto allFromSameSource = iModelExternalSourceAspect::GetSelectFromSameSource(*m_dgndb, detectionResults.GetObjectAspect(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
@@ -490,18 +489,16 @@ BentleyStatus   DwgImporter::_ProcessDetectionResults (IDwgChangeDetector::Detec
 
         case IDwgChangeDetector::ChangeType::Insert:
             {
-            // new entity - insert results into BIM, with an ExternalSourceAspect from previously calculated prevenance
-            DwgSourceAspects::ObjectAspect::SourceData source(objectHandle, inputs.GetTargetModel().GetModelId(), detectionResults.GetCurrentProvenance(), Utf8String());
-            this->InsertResults (elementResults, source);
+            // new entity - insert results into BIM
+            this->InsertResults (elementResults);
             break;
             }
 
         case IDwgChangeDetector::ChangeType::Update:
             {
-            // existing element along with an ExternalSourceAspect needs update
-            DwgSourceAspects::ObjectAspect::SourceData source(objectHandle, inputs.GetTargetModel().GetModelId(), detectionResults.GetCurrentProvenance(), Utf8String());
+            // existing element - update it
             auto existingElementId = detectionResults.GetExistingElementId ();
-            this->UpdateResults (elementResults, existingElementId, source);
+            this->UpdateResults (elementResults, existingElementId);
             break;
             }
 
@@ -715,10 +712,14 @@ DgnClassId      DwgImporter::_GetElementType (DwgDbBlockTableRecordCR block)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus     DwgImporter::InsertResults (ElementImportResults& results, DwgSourceAspects::ObjectAspect::SourceDataCR source)
+DgnDbStatus     DwgImporter::InsertResults (ElementImportResults& results)
     {
     if (!results.m_importedElement.IsValid())
         return DgnDbStatus::Success;
+
+    auto source = results.GetObjectSourceData ();
+    if (!source.IsValid())
+        return  DgnDbStatus::BadArg;
 
     // create & add an ObjectAspect for the new element
     results.m_existingElementMapping = m_sourceAspects.AddOrUpdateObjectAspect (*results.m_importedElement, source);
@@ -764,7 +765,10 @@ DgnDbStatus     DwgImporter::InsertResults (ElementImportResults& results, DwgSo
 
         childElement->SetParentId (parentId, m_dgndb->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements));
 
-        status = this->InsertResults (child, source);
+        if (!child.GetObjectSourceData().IsValid())
+            child.SetObjectSourceData (source);
+
+        status = this->InsertResults (child);
         if (DgnDbStatus::Success != status)
             return status;
         }

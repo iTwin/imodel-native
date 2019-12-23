@@ -137,16 +137,16 @@ private:
 public:
     // Constructor
     EXPORT_ATTRIBUTE C3dImporter(DwgImporter::Options& options);
-    // Initialization
-    EXPORT_ATTRIBUTE static void Initialize ();
     // Destructor
     EXPORT_ATTRIBUTE ~C3dImporter ();
     // Overridden methods
     EXPORT_ATTRIBUTE BentleyStatus  _MakeSchemaChanges() override;
     EXPORT_ATTRIBUTE BentleyStatus  _ImportEntitySection () override;
-    EXPORT_ATTRIBUTE BentleyStatus  _ImportEntity(ElementImportResults& results, ElementImportInputs& inputs) override;
+    EXPORT_ATTRIBUTE BentleyStatus  _ImportEntity(ElementImportResultsR results, ElementImportInputsR inputs) override;
     EXPORT_ATTRIBUTE Utf8String     _ComputeImportJobName (DwgDbBlockTableRecordCR modelspaceBlock) const override;
-    EXPORT_ATTRIBUTE bool           _FilterEntity (ElementImportInputs& inputs) const override;
+    EXPORT_ATTRIBUTE bool           _FilterEntity (ElementImportInputsR inputs) const override;
+    EXPORT_ATTRIBUTE bool _CreateObjectProvenance (BentleyApi::MD5::HashVal& hash, DwgDbObjectCR object) override;
+    EXPORT_ATTRIBUTE void _SetChangeDetector (bool updating) override;
 
     // C3dImporter methods
     EXPORT_ATTRIBUTE BentleyStatus  OnBaseBridgeJobInitialized (DgnElementId jobId);
@@ -159,9 +159,21 @@ public:
     StandaloneECInstancePtr CreateC3dECInstance (Utf8StringCR className) const;
     DgnDbStatus InsertArrayProperty (DgnElementR element, Utf8StringCR propertyName, uint32_t arraySize) const;
     IDwgChangeDetector& GetChangeDetector () { return T_Super::_GetChangeDetector(); }
-    BentleyStatus  ProcessDetectionResults (IDwgChangeDetector::DetectionResultsR detected, ElementImportResults& results, ElementImportInputs& inputs) { return T_Super::_ProcessDetectionResults(detected, results, inputs); }
+    BentleyStatus   ProcessDetectionResults (IDwgChangeDetector::DetectionResultsR detected, ElementImportResultsR results, ElementImportInputsR inputs) { return T_Super::_ProcessDetectionResults(detected, results, inputs); }
 };  // C3dImporter
 DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(C3dImporter)
+
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          12/19
++===============+===============+===============+===============+===============+======*/
+struct C3dUpdaterChangeDetector : public UpdaterChangeDetector
+{
+public:
+    DEFINE_T_SUPER (UpdaterChangeDetector)
+    EXPORT_ATTRIBUTE void _DeleteElement (DgnDbR db, DwgSourceAspects::ObjectAspectCR elementAspect) override;
+};  // C3dUpdaterChangeDetector
+
 
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          11/19
@@ -178,10 +190,10 @@ private:
     mutable Utf8String  m_description;
     mutable C3dImporterP    m_importer;
     mutable AECCDbAlignment*    m_aeccAlignment;
-    mutable DgnElementId    m_baseAlignmentId;
+    mutable RoadRailAlignment::AlignmentPtr m_baseAlignment;
     mutable SpatialLocationModelPtr m_alignmentModel;
+    mutable DgnModelId  m_verticalAlignmentModelId;
     mutable ProtocolExtensionContext* m_toDgnContext;
-    mutable bmap<DwgDbObjectId, DgnElementId>   m_importedVAlignmentMap;
     
     // C3D elements
     BentleyStatus   SetVAlignmentProperties (DgnElementR element);
@@ -190,8 +202,15 @@ private:
     BentleyStatus   CreateOrUpdateAeccVAlignments ();
     BentleyStatus   CreateOrUpdateAeccAlignment ();
     // Civil domain elements
-    BentleyStatus   CreateOrUpdateVerticalAlignments ();
+    BentleyStatus   CreateVerticalAlignment (CurveVectorCR curves, DwgImporter::ElementImportResultsR results);
+    BentleyStatus   UpdateVerticalAlignment (CurveVectorCR curves, DwgImporter::ElementImportResultsR results);
+    BentleyStatus   CreateHorizontalAlignment (CurveVectorCR curves, GeometrySourceCP geomSource);
+    BentleyStatus   UpdateHorizontalAlignment (CurveVectorCR curves, GeometrySourceCP geomSource);
+    BentleyStatus   CreateOrUpdateVerticalAlignment (DwgImporter::ElementImportResultsR aeccResults, AECCDbVAlignment* aeccVAlignment);
     BentleyStatus   CreateOrUpdateHorizontalAlignment ();
+    // Top level
+    BentleyStatus   ImportVAlignments ();
+    BentleyStatus   ImportAlignment ();
 };  // AeccAlignmentExt
 
 /*=================================================================================**//**

@@ -25,7 +25,7 @@ class DwgRxObject : public DWGRX_EXTENDCLASS(Object)
     {
 public:
     DEFINE_T_SUPER (DWGROOT_SUPER_CONSTRUCTOR(RxObject))
-    DWGRX_DECLARE_MEMBERS(DwgRxObject)
+    DWGRX_DECLARE_MEMBERS_EXPIMP(DwgRxObject, DWGDB_EXPORT)
 
     DWGDB_EXPORT DwgRxObject () : T_Super() { }
     

@@ -1592,6 +1592,10 @@ DwgSourceAspects::ObjectProvenance::ObjectProvenance(DwgDbObjectCR object, DwgIm
     ::memset (&m_hash, 0, sizeof(m_hash));
     m_hasher.Reset ();
 
+    // give extended bridges a chance to create their own provenance:
+    if (importer._CreateObjectProvenance(m_hash, object) && !m_hash.IsNull())
+        return;
+
     HashFactory factory(object, m_hasher);
     factory.SetSyncBlockChanges(importer.GetOptions().GetSyncBlockChanges());
     factory.SetSyncAsmBodyInFull(importer.GetOptions().GetSyncAsmBodyInFull());
@@ -1619,7 +1623,7 @@ void DwgSourceAspects::ObjectProvenance::AddHash(DwgDbObjectCR object)
 void DwgSourceAspects::ObjectProvenance::AddHash(const void* binaryData, size_t numBytes)
     {
     // do not reset hasher - add it to existing hasher
-    if (numBytes == 0 || binaryData == nullptr)
+    if (numBytes > 0 && binaryData != nullptr)
         {
         m_hasher.Add(binaryData, numBytes);
         m_hash = m_hasher.GetHashVal();
@@ -1631,7 +1635,7 @@ void DwgSourceAspects::ObjectProvenance::AddHash(const void* binaryData, size_t 
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DwgSourceAspects::ObjectProvenance::Hash::IsNull () const
     {
-    for (size_t i = 0; i < BentleyApi::MD5::BlockSize; i++)
+    for (size_t i = 0; i < BentleyApi::MD5::HashBytes; i++)
         {
         if (m_buffer[i] != 0)
             return  false;

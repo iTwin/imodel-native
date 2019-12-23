@@ -134,8 +134,13 @@ DwgRxObjectP    DwgRxClass::AddProtocolExtension (DWG_TypeP(RxClass) toClass, DW
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DwgRxClass::DeleteProtocolExtension (DWG_TypeP(RxClass) fromClass, DWG_TypeP(RxClass) protocalClass)
     {
+#ifdef DWGTOOLKIT_OpenDwg
     if (nullptr != fromClass && nullptr != protocalClass && nullptr != fromClass->getX(protocalClass))
         fromClass->delX (protocalClass);
+#elif DWGTOOLKIT_RealDwg
+    if (nullptr != fromClass && nullptr != protocalClass && nullptr != fromClass->queryX(protocalClass))
+        fromClass->delX (protocalClass);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

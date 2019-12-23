@@ -665,22 +665,9 @@ void            DwgImporter::CompoundModelTransformBy (TransformR trans, DwgDbBl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ResolvedModelMapping    DwgImporter::_GetOrCreateRootModel (DwgSourceAspects::ModelAspectCP rootModelAspect)
+ResolvedModelMapping    DwgImporter::_InitializeRootTransform (DwgSourceAspects::ModelAspectCP rootModelAspect)
     {
     ResolvedModelMapping    rootModelMap;
-    if (m_dwgdb.IsNull())
-        {
-        BeAssert (false && "DWG file is not opened yet!");
-        return  rootModelMap;
-        }
-
-    // do this only once per session
-    rootModelMap = this->GetRootModel ();
-    if (rootModelMap.IsValid())
-        return  rootModelMap;
-
-    if (m_modelspaceId.IsNull())
-        m_modelspaceId = m_dwgdb->GetModelspaceId ();
 
     // apply the spatial model transform initiated from the iModelBridge:
     Transform   jobTransform = iModelBridge::GetSpatialDataTransform(this->GetOptions(), this->GetJobSubject());
@@ -732,12 +719,42 @@ ResolvedModelMapping    DwgImporter::_GetOrCreateRootModel (DwgSourceAspects::Mo
                 Transform   fromOldToNew = Transform::FromProduct (newTransform, oldTransform.ValidatedInverse().Value());
                 m_rootTransformInfo.SetChangeTransformFromOldToNew (fromOldToNew);
                 }
-
-            return  rootModelMap;
             }
         }
 
+    return  rootModelMap;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ResolvedModelMapping    DwgImporter::_GetOrCreateRootModel (DwgSourceAspects::ModelAspectCP rootModelAspect)
+    {
+    ResolvedModelMapping    rootModelMap;
+    if (m_dwgdb.IsNull())
+        {
+        BeAssert (false && "DWG file is not opened yet!");
+        return  rootModelMap;
+        }
+
+    // do this only once per session
+    rootModelMap = this->GetRootModel ();
+    if (rootModelMap.IsValid())
+        return  rootModelMap;
+
+    if (m_modelspaceId.IsNull())
+        m_modelspaceId = m_dwgdb->GetModelspaceId ();
+
+    // compute the root transform
+    rootModelMap = this->_InitializeRootTransform (rootModelAspect);
+    if (rootModelMap.IsValid())
+        return  rootModelMap;
+
     // try creating the root model from the modelspace block:
+    DwgDbBlockTableRecordPtr    modelspaceBlock(m_modelspaceId, DwgDbOpenMode::ForRead);
+    if (modelspaceBlock.IsNull())
+        return  rootModelMap;
+
     rootModelMap = this->GetOrCreateModelFromBlock (*modelspaceBlock.get(), m_rootTransformInfo.GetRootTransform());
     if (!rootModelMap.IsValid())
         this->ReportError (IssueCategory::MissingData(), Issue::CantCreateModel(), IssueReporter::FmtModel(*modelspaceBlock).c_str());
