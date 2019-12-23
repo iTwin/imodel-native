@@ -245,6 +245,12 @@ private:
 
     uint8_t*        m_pDataEnd = nullptr;
 
+    void ZeroRemainingBytes()
+        {
+        auto bsEnd = m_data.data() + m_data.size();
+        if (bsEnd > m_pDataEnd)
+            memset(m_pDataEnd, 0, bsEnd - m_pDataEnd);
+        }
 public:
     ByteStream              m_data;
     LUTDimensions           m_dimensions;
@@ -302,6 +308,8 @@ public:
             for (uint32_t i = 0; i < nColors; i++)
                 AppendColor(colorIndex.m_nonUniform.m_colors[i]);
             }
+
+        ZeroRemainingBytes();
         }
 
     template<typename T_Vertex> void InitMesh(TriMeshArgsCR args, QPoint2d::ParamsCR uvParams)
@@ -507,6 +515,7 @@ void AuxChannelTable::Init(TriMeshArgsCR args)
         m_dimensions.Init(m_numVertices, nRgbaPerVertex);
 
     m_data = ByteStream(m_dimensions.GetWidth() * m_dimensions.GetHeight() * 4);
+    memset(m_data.data(), 0, m_data.size());
 
     uint32_t byteOffset = 0;
     for (auto const& channel : args.m_auxChannels)
