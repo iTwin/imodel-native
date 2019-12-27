@@ -177,10 +177,9 @@ TEST_F(ECDbTestFixture, ConcurrentQueryManagerReadonly)
         std::vector<std::unique_ptr<AsyncQuery>> queries;
         for (int i = 0; i < 100; i++)
             {
-            queries.push_back(std::make_unique<AsyncQuery>(mgr, "select * from meta.ecclassdef", ConcurrentQueryManager::Priority::Low));
-            queries.push_back(std::make_unique<AsyncQuery>(mgr, "select * from meta.ecclassdef", ConcurrentQueryManager::Priority::Normal));
-            queries.push_back(std::make_unique<AsyncQuery>(mgr, "select * from meta.ecpropertydef", ConcurrentQueryManager::Priority::High));
-
+            queries.push_back(std::make_unique<AsyncQuery>(mgr, "select * from meta.ecclassdef; ;;", ConcurrentQueryManager::Priority::Low));
+            queries.push_back(std::make_unique<AsyncQuery>(mgr, "select * from meta.ecclassdef ;;", ConcurrentQueryManager::Priority::Normal));
+            queries.push_back(std::make_unique<AsyncQuery>(mgr, "select * from meta.ecpropertydef; ; ;", ConcurrentQueryManager::Priority::High));
             }
         for (auto& k : queries)
             {

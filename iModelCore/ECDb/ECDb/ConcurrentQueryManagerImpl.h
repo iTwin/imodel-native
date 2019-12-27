@@ -166,6 +166,7 @@ struct QueryTask final
         void SetPartialWithNoResults();
         void SetDone();
         BentleyStatus BindPrimitive(ECSqlStatement* stmt, Json::Value const& v, int index);
+        static Utf8String FormatECSql(Utf8CP ecsql);
     public:
         QueryTask(const QueryTask& rhs) = delete;
         QueryTask& operator = (const QueryTask& rhs) = delete;

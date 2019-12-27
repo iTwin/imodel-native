@@ -137,7 +137,20 @@ bool QueryTask::ExceededQuota(QuotaType type) const noexcept
 
     return false;
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                             Affan.Khan             12/2019
+//---------------------------------------------------------------------------------------
+Utf8String QueryTask::FormatECSql(Utf8CP ecsql)
+    {
+    // remove semicolon in the end so this query can be but as subquery of another
+    Utf8String trimedECSql = ecsql;
+    trimedECSql.Trim();
+    Utf8Char c;
+    while (!trimedECSql.empty() && (c = trimedECSql[trimedECSql.size() - 1])  && (c == ';' || isspace(c)))
+        trimedECSql.erase(trimedECSql.size() - 1);
 
+    return Utf8PrintfString("select * from (%s) limit :" LIMIT_VAR_COUNT " offset :" LIMIT_VAR_OFFSET, trimedECSql.c_str());
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                             Affan.Khan             05/2019
 //---------------------------------------------------------------------------------------
@@ -145,7 +158,7 @@ void QueryTask::SetError(Utf8CP error)
     {
     m_completedOn = steady_clock::now();
     m_interruptor = nullptr;
-    m_result = error;
+    m_result.assign(error);
     m_state.store(State::Error);
     }
 
@@ -206,7 +219,7 @@ BentleyStatus QueryTask::BindPrimitive(ECSqlStatement* stmt, Json::Value const& 
         if (stringSize > headerSize)
             {
             if (strncmp(BASE64_HEADER, v.asCString(), headerSize) == 0)
-                {
+               {
                 const auto payLoadLen = stringSize - headerSize;
                 ByteStream stream;
                 Base64Utilities::Decode(stream, v.asCString() + headerSize, payLoadLen);
@@ -236,16 +249,23 @@ void QueryTask::Run(JsonAdaptorCache& cache, QueryInterruptor& interruptor)
         SetPartialWithNoResults();
         return;
         }
-   
+    const Utf8String ecsql = QueryTask::FormatECSql(m_ecsql.c_str());
     m_interruptor = &interruptor;
     ECSqlStatus prepareStatus;
-    auto entry = cache.Get(m_ecsql.c_str(), &prepareStatus);
+    auto entry = cache.Get(ecsql.c_str(), &prepareStatus);
     if (entry == nullptr)
         {
-        if (prepareStatus.IsSQLiteError() && prepareStatus.GetSQLiteError() == BE_SQLITE_BUSY)
-            SetPartialWithNoResults();
+        if (prepareStatus.IsSQLiteError())
+            {
+            if (prepareStatus.GetSQLiteError() == BE_SQLITE_BUSY)
+                SetPartialWithNoResults();
+            else
+                SetError(interruptor.GetLastError().c_str());
+            }
         else
-            SetError(interruptor.GetLastError().c_str());
+            {
+            SetError(SqlPrintfString("InvalidECSql: %s", m_ecsql.c_str()));
+            }
         return;
         }
     ECSqlStatement* pstmt = entry->GetStatement();
@@ -369,9 +389,9 @@ JsonAdaptorCache::CacheEntry* JsonAdaptorCache::Get(Utf8CP ecsql, ECSqlStatus* s
     auto& workerConn = m_worker.GetConnection();
 
     CacheEntry entry;    
-    // ecdb.GetImpl().GetMutex().Enter();
+    ecdb.GetImpl().GetMutex().Enter();
     auto rc = entry.GetStatement()->Prepare(ecdb.Schemas(), workerConn, ecsql);
-    // ecdb.GetImpl().GetMutex().Leave();
+    ecdb.GetImpl().GetMutex().Leave();
     if (rc != ECSqlStatus::Success)
         {
         if (status)
@@ -845,23 +865,6 @@ ConcurrentQueryManager::PostStatus ConcurrentQueryManager::Impl::PostQuery(TaskI
     if (CQLOG.isSeverityEnabled(NativeLogging::LOG_ERROR))
         CQLOG.trace("Failed to initialize");
 
-    // remove semicolon in the end so this query can be but as subquery of another
-    Utf8String trimedECSql = ecsql;
-    if (!trimedECSql.empty())
-        {
-        for (size_t i = trimedECSql.size() - 1; i > 0; --i)
-            {
-            if (!isspace(trimedECSql[i]))
-                {
-                if (trimedECSql[i] != ';')
-                    break;
-                else
-                    trimedECSql[i] = ' ';
-                }
-            }
-        trimedECSql.TrimEnd();
-        }
-
     if (quota.IsEmpty())
         quota = m_config.GetQuota();
     else
@@ -880,8 +883,7 @@ ConcurrentQueryManager::PostStatus ConcurrentQueryManager::Impl::PostQuery(TaskI
 
     std::lock_guard<std::mutex> guard(m_mutex);
     auto id = NextId();
-    const Utf8String limitQuery = Utf8PrintfString("select * from (%s) limit :" LIMIT_VAR_COUNT " offset :" LIMIT_VAR_OFFSET , trimedECSql.c_str());
-    auto itor = m_tasks.insert(std::make_pair(id, std::make_unique<QueryTask>(id, limitQuery.c_str(), bindings, limit, quota, priority, requestContext)));
+    auto itor = m_tasks.insert(std::make_pair(id, std::make_unique<QueryTask>(id, ecsql, bindings, limit, quota, priority, requestContext)));
     auto task = itor.first->second.get();
     if (m_workerPool->Enqueue(task))
         {
@@ -914,6 +916,7 @@ ConcurrentQueryManager::PollStatus ConcurrentQueryManager::Impl::PollQuery(Utf8S
     auto task = it->second.get();
     if (task->GetState() == QueryTask::State::Error)
         {
+        resultJson = std::move(task->GetResult());
         m_workerPool->Remove(it->second.get());
         m_tasks.erase(it);
         return PollStatus::Error;
