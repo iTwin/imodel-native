@@ -481,8 +481,11 @@ bool _ProcessPolyface(PolyfaceQueryCR pfQuery, bool filled, SimplifyGraphic& sg)
                 // Unlike params computed from texture map (see below), V does not need to inverted for raw params.
                 computedParams[computedParamCount + j].y = static_cast<float>(srcParam.y);
                 }
+
             // Apply mirror transform while constructing so we don't have to iterate through again
-            if (isMirrored) std::swap(computedParams[computedParamCount + 1], computedParams[computedParamCount + 2]);
+            if (isMirrored)
+                std::swap(computedParams[computedParamCount + 1], computedParams[computedParamCount + 2]);
+
             computedParamCount += 3;
             }
         }
@@ -495,13 +498,13 @@ bool _ProcessPolyface(PolyfaceQueryCR pfQuery, bool filled, SimplifyGraphic& sg)
         // Elevation drape needs localToWorld transform with iModel's global origin accounted for.
         DPoint3d globalOrigin = m_db.GeoLocation().GetGlobalOrigin();
         globalOrigin.Negate();
-        auto uvLocalToWorld = Transform::FromProduct(localToWorld, Transform::From(globalOrigin));
+        ElevationDrapeParams drapeParams(Transform::FromProduct(localToWorld, Transform::From(globalOrigin)));
 
         bvector<DPoint2d> perFaceParams(3, DPoint2d::FromZero());
         int computedParamCount = 0;
         for (auto visitor = PolyfaceVisitor::Attach(pfQuery); visitor->AdvanceToNextFace(); )
             {
-            textureMapParams.ComputeUVParams(perFaceParams, *visitor, &uvLocalToWorld);
+            textureMapParams.ComputeUVParams(perFaceParams, *visitor, &drapeParams);
             for (int i = 0; i < 3; ++i)
                 {
                 computedParams[computedParamCount + i].x = static_cast<float>(perFaceParams[i].x);
@@ -509,8 +512,11 @@ bool _ProcessPolyface(PolyfaceQueryCR pfQuery, bool filled, SimplifyGraphic& sg)
                 // on load. We need to invert back to match interchange conventions.
                 computedParams[computedParamCount + i].y = 1.0f - static_cast<float>(perFaceParams[i].y);
                 }
+
             // Apply mirror transform while constructing so we don't have to iterate through again
-            if (isMirrored) std::swap(computedParams[computedParamCount + 1], computedParams[computedParamCount + 2]);
+            if (isMirrored)
+                std::swap(computedParams[computedParamCount + 1], computedParams[computedParamCount + 2]);
+
             computedParamCount += 3;
             }
         }

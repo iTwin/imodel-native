@@ -1633,14 +1633,21 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
     if (requireNormals && visitor.Normal().size() < points.size())
         return; // TFS#790263: Degenerate triangle - no normals.
 
-    Transform transformToDgnWithGlobalOrigin;
-    if (transformToDgn && mappedTexture.GetParams().m_mapMode == TextureMapping::Mode::ElevationDrape)
+    auto const& textureMapParams = mappedTexture.GetParams();
+    ElevationDrapeParams drapeParams;
+    ElevationDrapeParamsCP pDrapeParams = nullptr;
+    if (nullptr != mappedTexture.GetTexture() && nullptr != transformToDgn && mappedTexture.GetParams().m_mapMode == TextureMapping::Mode::ElevationDrape)
         {
         // Elevation drape needs world coordinates with iModel's global origin accounted for.
         DPoint3d globalOrigin = dgnDb.GeoLocation().GetGlobalOrigin();
         globalOrigin.Negate();
+
+        Transform transformToDgnWithGlobalOrigin;
         transformToDgnWithGlobalOrigin.InitProduct(*transformToDgn, Transform::From(globalOrigin));
-        transformToDgn = &transformToDgnWithGlobalOrigin;
+
+        auto dimensions = mappedTexture.GetTexture()->GetDimensions();
+        drapeParams = ElevationDrapeParams(transformToDgnWithGlobalOrigin, dimensions.width, dimensions.height);
+        pDrapeParams = &drapeParams;
         }
 
     // The face represented by this visitor should be convex (we request that in facet options) - so we do a simple fan triangulation.
@@ -1660,11 +1667,10 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
         newTriangle.SetEdgeFlags(visibility);
         if (haveParams && mappedTexture.IsValid())
             {
-            auto const&         textureMapParams = mappedTexture.GetParams();
             bvector<DPoint2d>   computedParams;
 
             BeAssert (m_mesh->Verts().empty() || !m_mesh->Params().empty());
-            if (SUCCESS == textureMapParams.ComputeUVParams (computedParams, visitor, transformToDgn))
+            if (SUCCESS == textureMapParams.ComputeUVParams (computedParams, visitor, pDrapeParams))
                 params = computedParams;
             else
                 BeAssert(false && "ComputeUVParams() failed");

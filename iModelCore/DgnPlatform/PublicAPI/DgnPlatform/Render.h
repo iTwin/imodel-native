@@ -594,7 +594,7 @@ struct TextureMapping
         void SetTransform(Trans2x3 const* val) {m_textureMat2x3 = nullptr != val ? *val : Trans2x3();} //<! Set Texture 2x3 transform
         void SetWorldMapping(bool val) {m_worldMapping = val;} //! if true world mapping, false for surface
 
-        DGNPLATFORM_EXPORT BentleyStatus ComputeUVParams (bvector<DPoint2d>& params, PolyfaceVisitorCR visitor, TransformCP transformToDgn = nullptr) const;
+        DGNPLATFORM_EXPORT BentleyStatus ComputeUVParams (bvector<DPoint2d>& params, PolyfaceVisitorCR visitor, ElevationDrapeParamsCP drapeParams = nullptr) const;
     };
 
 private:

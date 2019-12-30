@@ -11,6 +11,25 @@
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 //=======================================================================================
+//! Optional parameters used when computing UV params for elevation drape.
+// @bsistruct                                                   Paul.Connelly   12/19
+//=======================================================================================
+struct ElevationDrapeParams
+{
+    Transform m_transform;
+    uint32_t m_width;
+    uint32_t m_height;
+
+    ElevationDrapeParams() = default; // Uninitialized!
+    ElevationDrapeParams(TransformCR transform, uint32_t width = 0, uint32_t height = 0) : m_transform(transform), m_width(width), m_height(height) { }
+
+    //! Params are computed in world space, which may result in very large coordinates.
+    //! Translate coordinates to be close to zero.
+    //! Requires texture dimensions to be specified (non-zero).
+    void Normalize(DPoint2dP params, size_t numParams) const;
+};
+
+//=======================================================================================
 //! JSON representation of a RenderMaterial.
 //! See RENDER_MATERIAL_* constants for a list of the known property names.
 //! Only a very small subset of those properties are actually used for rendering in the iModel.js
@@ -40,7 +59,6 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //!     RENDER_MATERIAL_Specular=weight
 //!     (If RENDER_MATERIAL_FlagHasSpecular=false, the weight is 0.0).
 //! The pattern map can be specified by setting json[RENDER_MATERIAL_Map][RENDER_MATERIAL_MAP_Pattern] to the JSON representation of a pattern map.
-//! 
 // @bsiclass                                            Ray.Bentley     09/2015
 //=======================================================================================
 struct RenderingAsset : Json::Value
@@ -130,7 +148,7 @@ public:
         double GetDouble(Utf8CP name, double defaultVal) const {return m_value[name].asDouble(defaultVal);}
         bool GetBool(Utf8CP name, bool defaultVal) const {return m_value[name].asBool(defaultVal);}
         JsonValueCR GetValue() const {return m_value;}
-        DGNPLATFORM_EXPORT BentleyStatus ComputeUVParams (bvector<DPoint2d>& params, PolyfaceVisitorCR visitor, TransformCP transformToDgn = nullptr) const;
+        DGNPLATFORM_EXPORT BentleyStatus ComputeUVParams (bvector<DPoint2d>& params, PolyfaceVisitorCR visitor, ElevationDrapeParamsCP drapeParams = nullptr) const;
         TextureMap(JsonValueCR val, Type type) : m_value(val), m_type(type) {}
     }; // TextureMap
 

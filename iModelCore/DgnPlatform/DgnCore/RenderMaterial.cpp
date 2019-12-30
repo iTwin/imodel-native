@@ -2,7 +2,8 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See COPYRIGHT.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-#include    <DgnPlatformInternal.h>
+#include <DgnPlatformInternal.h>
+#include <cmath>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      09/2015
@@ -325,35 +326,58 @@ static void computePlanarUVParams (DPoint2dP params, PolyfaceVisitorCR visitor, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Ray.Bentley     10/2016
 //---------------------------------------------------------------------------------------
-static void computeElevationDrapeUVParams (DPoint2dP params, PolyfaceVisitorCR visitor, TransformCR uvTransform, TransformCP transformToDgn)
+static void computeElevationDrapeUVParams (DPoint2dP params, PolyfaceVisitorCR visitor, TransformCR uvTransform, ElevationDrapeParamsCP drapeParams)
     {
-    for (size_t i = 0, count = visitor.NumEdgesThisFace(); i<count; i++)
+    size_t count = visitor.NumEdgesThisFace();
+    for (size_t i = 0; i < count; i++)
         {
         DPoint3d    point        = *(visitor.GetPointCP() + i);
         DPoint2dP   outParam    = params + i;
 
-        if (nullptr != transformToDgn)
-            transformToDgn->Multiply(point);
+        if (nullptr != drapeParams)
+            drapeParams->m_transform.Multiply(point);
 
         outParam->Init (point);
         uvTransform.Multiply (*outParam, *outParam);
         }
+
+    if (nullptr != drapeParams)
+        drapeParams->Normalize(params, count);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElevationDrapeParams::Normalize(DPoint2dP params, size_t numParams) const
+    {
+    if (0 == numParams || 0 == m_width || 0 == m_height)
+        return;
+
+    // Translate the first coordinate so it is within +/- dimensions from zero. Then translate all other coordinates relative to that.
+    DPoint2d first = *params;
+    params->x = fmod(first.x, static_cast<double>(m_width));
+    params->y = fmod(first.y, static_cast<double>(m_height));
+
+    for (size_t i = 1; i < numParams; i++)
+        {
+        params[i].x -= first.x - params->x;
+        params[i].y -= first.y - params->y;
+        }
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Ray.Bentley     08/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus RenderingAsset::TextureMap::ComputeUVParams (bvector<DPoint2d>& params,  PolyfaceVisitorCR visitor, TransformCP transformToDgn) const
+BentleyStatus RenderingAsset::TextureMap::ComputeUVParams (bvector<DPoint2d>& params,  PolyfaceVisitorCR visitor, ElevationDrapeParamsCP drapeParams) const
     {
     Render::TextureMapping::Params mapParams = GetTextureMapParams();
-    return mapParams.ComputeUVParams(params, visitor, transformToDgn);
+    return mapParams.ComputeUVParams(params, visitor, drapeParams);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Ray.Bentley     08/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus Render::TextureMapping::Params::ComputeUVParams (bvector<DPoint2d>& params,  PolyfaceVisitorCR visitor, TransformCP transformToDgn) const
+BentleyStatus Render::TextureMapping::Params::ComputeUVParams (bvector<DPoint2d>& params,  PolyfaceVisitorCR visitor, ElevationDrapeParamsCP drapeParams) const
     {
     params.resize (visitor.NumEdgesThisFace());
     switch (m_mapMode)
@@ -380,7 +404,7 @@ BentleyStatus Render::TextureMapping::Params::ComputeUVParams (bvector<DPoint2d>
             }
 
         case Render::TextureMapping::Mode::ElevationDrape:
-            computeElevationDrapeUVParams (&params[0], visitor, m_textureMat2x3.GetTransform(), transformToDgn);
+            computeElevationDrapeUVParams (&params[0], visitor, m_textureMat2x3.GetTransform(), drapeParams);
             return SUCCESS;
 
 #ifdef WIP
