@@ -56,8 +56,9 @@ struct NullContext : ViewContext
         void _AddBody(IBRepEntityCR) override {}
         void _AddTextString(TextStringCR text) override {}
         void _AddTextString2d(TextStringCR text, double zDepth) override {}
-        void _AddDgnOle(Render::DgnOleDraw*) override {}
         void _AddSubGraphic(Render::GraphicR, TransformCR, Render::GraphicParamsCR, ClipVectorCP) override {}
+        void AddImage(ImageGraphicCR) override {}
+        void AddImage2d(ImageGraphicCR, double) override {}
         Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR transform, ClipVectorCP) const override {return new NullGraphicBuilder(GetCreateParams().SubGraphic(transform));}
         Render::GraphicPtr _Finish() override { m_isOpen = false; return new NullGraphic(GetDgnDb()); }
     };

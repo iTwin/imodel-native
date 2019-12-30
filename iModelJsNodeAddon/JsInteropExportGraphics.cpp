@@ -186,7 +186,8 @@ virtual ~ExportGraphicsBuilder() { }
 // Don't let SimplifyGraphic generate intermediates we always throw away
 void _AddTextString(TextStringCR) override { }
 void _AddTextString2d(TextStringCR, double) override { }
-void _AddDgnOle(Render::DgnOleDraw*) override { }
+void AddImage(ImageGraphicCR) override { }
+void AddImage2d(ImageGraphicCR, double) override { }
 bool _WantStrokeLineStyle(Render::LineStyleSymbCR, IFacetOptionsPtr&) override { return false; }
 bool _WantStrokePattern(PatternParamsCR) override { return false; }
 Render::GraphicPtr _Finish() override {m_isOpen = false; return nullptr;} // we don't use output, don't allocate!
@@ -303,7 +304,6 @@ private:
     UnhandledPreference _GetUnhandledPreference(MSBsplineSurfaceCR, SimplifyGraphic&) const override {return UnhandledPreference::Facet;}
     UnhandledPreference _GetUnhandledPreference(PolyfaceQueryCR, SimplifyGraphic&) const override {return UnhandledPreference::Ignore;}
     UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&) const override {return UnhandledPreference::Facet;}
-    UnhandledPreference _GetUnhandledPreference(Render::TriMeshArgsCR, SimplifyGraphic&) const override {return UnhandledPreference::Facet;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Matt.Gooding    07/19

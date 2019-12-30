@@ -1827,7 +1827,6 @@ void SimplifyGraphic::ClipAndProcessText(TextStringCR text)
         }
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   09/03
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2146,105 +2145,51 @@ void SimplifyGraphic::_AddTextString2d(TextStringCR text, double zDepth)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/05
+* @bsimethod                                                    Paul.Connelly   12/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddDgnOle(DgnOleDraw* ole)
+void SimplifyGraphic::AddImage(ImageGraphicCR img)
     {
     m_processor._OnNewGeometry();
-
-    // NEEDSWORK...Draw box...
+    ClipAndProcessImage(img);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ray.Bentley                     05/2017
+* @bsimethod                                                    Paul.Connelly   12/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::ClipAndProcessTriMesh(TriMeshArgs const& args)
+void SimplifyGraphic::AddImage2d(ImageGraphicCR input, double zDepth)
     {
-#ifdef NOTNOW_MAY_NOT_BE_NEEDED
-    bool doClipping = (nullptr != GetCurrentClip() && m_processor._DoClipping());
-
-    // Give output a chance to handle geometry directly...
-    if (doClipping)
-        {
-        if (m_processor._ProcessTriMeshClipped(args, *this, *GetCurrentClip()))
-            return;
-        }
-    else
-        {
-        if (m_processor._ProcessTriMesh(args, *this))
-            return;
-        }
-
-    PolyfaceHeaderPtr           polyface = args.ToPolyface();
-
-    if (m_processor._GetUnhandledPreference(args, *this) == IGeometryProcessor::UnhandledPreference::Ignore)
-        return;
-
-    if (m_processor._GetUnhandledPreference(args, *this) == IGeometryProcessor::UnhandledPreference::Facet)
-        {
-        ClipAndProcessPolyface (*polyface, false);
-        return;
-        }
-
-    SimplifyPolyfaceClipper     polyfaceClipper;
-    bvector<PolyfaceHeaderPtr>& clippedPolyfaces = polyfaceClipper.ClipPolyface(*polyface, *GetCurrentClip(), true);
-
-    if (polyfaceClipper.IsUnclipped())
-        {
-        m_processor._ProcessTriMesh(args, *this);
-        }
-    else
-        {
-        for (PolyfaceHeaderPtr clippedPolyface : clippedPolyfaces)
-            {
-            if (!clippedPolyface->IsTriangulated())
-                clippedPolyface->Triangulate();
-
-            if ((0 != clippedPolyface->GetParamCount() && clippedPolyface->GetParamCount() != clippedPolyface->GetPointCount()) ||
-                (0 != clippedPolyface->GetNormalCount() && clippedPolyface->GetNormalCount() != clippedPolyface->GetPointCount()))
-                clippedPolyface = PolyfaceHeader::CreateUnifiedIndexMesh(*clippedPolyface);
-
-            // unused - size_t              numFacets = clippedPolyface->GetNumFacet();
-            size_t              numPoints = clippedPolyface->GetPointCount();
-            bvector<int32_t>    indices;
-            bvector<FPoint3d>   points(numPoints), normals(nullptr == clippedPolyface->GetNormalCP() ? 0 : numPoints);
-            bvector<FPoint2d>   params(nullptr == clippedPolyface->GetParamCP() ? 0 : numPoints);
-
-            for (size_t i=0; i<numPoints; i++)
-                {
-                bsiFPoint3d_initFromDPoint3d(&points[i], &clippedPolyface->GetPointCP()[i]);
-                if (nullptr != clippedPolyface->GetNormalCP())
-                    bsiFPoint3d_initFromDPoint3d(&normals[i], &clippedPolyface->GetNormalCP()[i]);
-
-                if (nullptr != clippedPolyface->GetParamCP())
-                    bsiFPoint2d_initFromDPoint2d(&params[i], &clippedPolyface->GetParamCP()[i]);
-                }
-            // unused - size_t  j = 0;
-            PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*clippedPolyface, true);
-            for (visitor->Reset(); visitor->AdvanceToNextFace();)
-                {
-                indices.push_back(visitor->GetClientPointIndexCP()[0]);
-                indices.push_back(visitor->GetClientPointIndexCP()[1]);
-                indices.push_back(visitor->GetClientPointIndexCP()[2]);
-                }
-
-            TriMeshArgs     triMesh;
-
-            triMesh.m_numIndices = 3 * clippedPolyface->GetNumFacet();
-            triMesh.m_numPoints = numPoints;
-            triMesh.m_vertIndex = &indices.front();
-            triMesh.m_points  = &points.front();
-            triMesh.m_normals = normals.empty() ? nullptr : &normals.front();
-            triMesh.m_textureUV = params.empty() ? nullptr : &params.front();
-            triMesh.m_texture = args.m_texture;
-            triMesh.m_flags = args.m_flags;
-
-            m_processor._ProcessTriMesh(triMesh, *this);
-            }
-        }
-#endif
+    auto img = input.Clone();
+    zDepth = m_processor._AdjustZDepth(zDepth);
+    img->SetZ(zDepth);
+    AddImage(*img);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void SimplifyGraphic::ClipAndProcessImage(ImageGraphicCR img)
+    {
+    if (nullptr != GetCurrentClip() && m_processor._DoClipping())
+        {
+        if (m_processor._ProcessImageClipped(img, *this, *GetCurrentClip()))
+            return;
+        }
+    else if (m_processor._ProcessImage(img, *this))
+        {
+        return;
+        }
+
+    // NOTE: We currently have no way to forward the texture image - if processor cares about it they must implement _ProcessImage()
+    auto mask = IGeometryProcessor::UnhandledPreference::Box | IGeometryProcessor::UnhandledPreference::Curve;
+    auto unhandled = m_processor._GetUnhandledPreference(img, *this);
+    if (IGeometryProcessor::UnhandledPreference::Ignore == (mask & unhandled))
+        return;
+
+
+    ClipAndProcessCurveVector(*img.ToCurveVector(), true);
+    if (img.HasBorder())
+        ClipAndProcessCurveVector(*img.ToCurveVector(CurveVector::BOUNDARY_TYPE_Open), false);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/15

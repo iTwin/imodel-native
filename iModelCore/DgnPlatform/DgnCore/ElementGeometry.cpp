@@ -165,6 +165,17 @@ bool GeometricPrimitive::GetLocalCoordinateFrame(TransformR localToWorld) const
             break;
             }
 
+        case GeometryType::Image:
+            {
+            auto const& corners = GetAsImage()->GetCorners();
+            DPoint3d origin = corners.m_pts[0];
+            DVec3d xVec = DVec3d::FromStartEnd(corners.m_pts[0], corners.m_pts[1]);
+            DVec3d yVec = DVec3d::FromStartEnd(corners.m_pts[0], corners.m_pts[2]);
+            RotMatrix rMatrix = RotMatrix::From2Vectors(xVec, yVec);
+
+            localToWorld.InitFrom(rMatrix, origin);
+            break;
+            }
         default:
             {
             localToWorld.InitIdentity();
@@ -216,34 +227,30 @@ bool GeometricPrimitive::GetLocalRange(DRange3dR localRange, TransformR localToW
     return clone->GetRange(localRange);
     }
 
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Brien.Bastings  04/15
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool getRange(ICurvePrimitiveCR geom, DRange3dR range, TransformCP transform)
+template<typename T> static bool getRange(T const& geom, DRange3dR range, TransformCP transform)
     {
-    return (nullptr != transform ? geom.GetRange(range, *transform) : geom.GetRange(range));
+    return nullptr != transform ? geom.GetRange(range, *transform) : geom.GetRange(range);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/19
++---------------+---------------+---------------+---------------+---------------+------*/
+template<> bool getRange(ImageGraphicCR geom, DRange3dR range, TransformCP transform)
+    {
+    range = geom.GetRange();
+    if (nullptr != transform)
+        transform->Multiply(range, range);
+
+    return true;
     }
 
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool getRange(CurveVectorCR geom, DRange3dR range, TransformCP transform)
-    {
-    return (nullptr != transform ? geom.GetRange(range, *transform) : geom.GetRange(range));
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Brien.Bastings  04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool getRange(ISolidPrimitiveCR geom, DRange3dR range, TransformCP transform)
-    {
-    return (nullptr != transform ? geom.GetRange(range, *transform) : geom.GetRange(range));
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Brien.Bastings  04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool getRange(PolyfaceQueryCR geom, DRange3dR range, TransformCP transform)
+template<> bool getRange(PolyfaceQueryCR geom, DRange3dR range, TransformCP transform)
     {
     if (nullptr == transform)
         {
@@ -261,7 +268,7 @@ static bool getRange(PolyfaceQueryCR geom, DRange3dR range, TransformCP transfor
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool getRange(MSBsplineSurfaceCR geom, DRange3dR range, TransformCP transform)
+template<> bool getRange(MSBsplineSurfaceCR geom, DRange3dR range, TransformCP transform)
     {
     // NOTE: MSBsplineSurface::GetPoleRange can result in a very large range and using IPolyfaceConstruction can be slow.
     //       Unfortunately, we don't have a better way to handle trimmed surfaces and getting a large range for a surface has
@@ -276,7 +283,8 @@ static bool getRange(MSBsplineSurfaceCR geom, DRange3dR range, TransformCP trans
 
         builder->Add(geom);
 
-        return getRange(builder->GetClientMeshR(), range, transform);
+        PolyfaceQueryCR polyface = builder->GetClientMeshR();
+        return getRange(polyface, range, transform);
         }
 
     if (nullptr != transform)
@@ -304,7 +312,7 @@ static bool getRange(MSBsplineSurfaceCR geom, DRange3dR range, TransformCP trans
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool getRange(IBRepEntityCR geom, DRange3dR range, TransformCP transform)
+template<> bool getRange(IBRepEntityCR geom, DRange3dR range, TransformCP transform)
     {
     range = geom.GetEntityRange();
 
@@ -317,7 +325,7 @@ static bool getRange(IBRepEntityCR geom, DRange3dR range, TransformCP transform)
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Jeff.Marker     05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool getRange(TextStringCR text, DRange3dR range, TransformCP transform)
+template<> bool getRange(TextStringCR text, DRange3dR range, TransformCP transform)
     {
     DRange2dCR textRange = text.GetRange();
     range.low.Init(textRange.low);
@@ -372,7 +380,7 @@ bool GeometricPrimitive::GetRange(DRange3dR range, TransformCP transform) const
 
         case GeometryType::Polyface:
             {
-            PolyfaceHeaderCR geom = *GetAsPolyfaceHeader();
+            PolyfaceQueryCR geom = *GetAsPolyfaceHeader();
 
             return getRange(geom, range, transform);
             }
@@ -397,6 +405,9 @@ bool GeometricPrimitive::GetRange(DRange3dR range, TransformCP transform) const
 
             return getRange(geom, range, transform);
             }
+
+        case GeometryType::Image:
+            return getRange(*GetAsImage(), range, transform);
 
         default:
             {
@@ -467,6 +478,10 @@ bool GeometricPrimitive::TransformInPlace(TransformCR transform)
 
             return true;
             }
+
+        case GeometryType::Image:
+            GetAsImage()->ApplyTransform(transform);
+            return true;
 
         default:
             {
@@ -548,8 +563,8 @@ bool GeometricPrimitive::IsSameStructureAndGeometry(GeometricPrimitiveCR primiti
             return PSolidUtil::AreBodiesEqual(bodyTag1, bodyTag2, solidTolerance, nullptr);
             }
 #endif
-
         case GeometryType::TextString: // <- Don't currently need to compare TextString...
+        case GeometryType::Image: // <- Don't currently need to compare ImageGraphic...
         default:
             return false;
         }
@@ -610,6 +625,9 @@ GeometricPrimitivePtr GeometricPrimitive::Clone() const
 
             return new GeometricPrimitive(geom);
             }
+
+        case GeometryType::Image:
+            return new GeometricPrimitive(GetAsImage()->Clone());
 
         default:
             {
@@ -682,6 +700,10 @@ void GeometricPrimitive::AddToGraphic(Render::GraphicBuilderR graphic) const
             graphic.AddTextString(geom);
             break;
             }
+
+        case GeometryType::Image:
+            graphic.AddImage(*GetAsImage());
+            break;
 
         default:
             {
@@ -800,6 +822,7 @@ GeometricPrimitive::GeometricPrimitive(MSBsplineSurfacePtr const& source) {m_typ
 GeometricPrimitive::GeometricPrimitive(PolyfaceHeaderPtr const& source) {m_type = GeometryType::Polyface; m_data = source;}
 GeometricPrimitive::GeometricPrimitive(IBRepEntityPtr const& source) {m_type = GeometryType::BRepEntity; m_data = source;}
 GeometricPrimitive::GeometricPrimitive(TextStringPtr const& source) {m_type = GeometryType::TextString; m_data = source;}
+GeometricPrimitive::GeometricPrimitive(ImageGraphicPtr const& source) {m_type = GeometryType::Image; m_data = source;}
 
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  02/15
@@ -811,6 +834,7 @@ GeometricPrimitivePtr GeometricPrimitive::Create(MSBsplineSurfacePtr const& sour
 GeometricPrimitivePtr GeometricPrimitive::Create(PolyfaceHeaderPtr const& source) {return (source.IsValid() ? new GeometricPrimitive(source) : nullptr);}
 GeometricPrimitivePtr GeometricPrimitive::Create(IBRepEntityPtr const& source) {return (source.IsValid() ? new GeometricPrimitive(source) : nullptr);}
 GeometricPrimitivePtr GeometricPrimitive::Create(TextStringPtr const& source) {return (source.IsValid() ? new GeometricPrimitive(source) : nullptr);}
+GeometricPrimitivePtr GeometricPrimitive::Create(ImageGraphicPtr const& source) {return source.IsValid() ? new GeometricPrimitive(source) : nullptr;}
 
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  02/15
@@ -822,6 +846,7 @@ GeometricPrimitivePtr GeometricPrimitive::Create(MSBsplineSurfaceCR source) {MSB
 GeometricPrimitivePtr GeometricPrimitive::Create(PolyfaceQueryCR source) {PolyfaceHeaderPtr clone = source.Clone(); return Create(clone);}
 GeometricPrimitivePtr GeometricPrimitive::Create(IBRepEntityCR source) {IBRepEntityPtr clone = source.Clone(); return Create(clone);}
 GeometricPrimitivePtr GeometricPrimitive::Create(TextStringCR source) {TextStringPtr clone = source.Clone(); return Create(clone);}
+GeometricPrimitivePtr GeometricPrimitive::Create(ImageGraphicCR source) {return Create(source.Clone());}
 
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Shaun.Sewall    02/17
@@ -843,6 +868,7 @@ MSBsplineSurfacePtr GeometricPrimitive::GetAsMSBsplineSurface() const {return (G
 PolyfaceHeaderPtr GeometricPrimitive::GetAsPolyfaceHeader() const {return (GeometryType::Polyface == m_type ? static_cast <PolyfaceHeaderP> (m_data.get()) : nullptr);}
 IBRepEntityPtr GeometricPrimitive::GetAsIBRepEntity() const {return (GeometryType::BRepEntity == m_type ? static_cast <IBRepEntityP> (m_data.get()) : nullptr);}
 TextStringPtr GeometricPrimitive::GetAsTextString() const {return (GeometryType::TextString == m_type ? static_cast <TextStringP> (m_data.get()) : nullptr);}
+ImageGraphicPtr GeometricPrimitive::GetAsImage() const {return GeometryType::Image == m_type ? static_cast<ImageGraphicP>(m_data.get()) : nullptr;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/15
@@ -1744,6 +1770,11 @@ void GeometryStreamIO::Writer::Append(GeometricPrimitiveCR elemGeom)
         case GeometricPrimitive::GeometryType::TextString:
             Append(*elemGeom.GetAsTextString());
             break;
+
+        case GeometricPrimitive::GeometryType::Image:
+            Append(*elemGeom.GetAsImage());
+            break;
+
         }
     }
 
@@ -1757,6 +1788,30 @@ void GeometryStreamIO::Writer::Append(TextStringCR text)
         return;
 
     Append(Operation(OpCode::TextString, (uint32_t)data.size(), &data[0]));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometryStreamIO::Writer::Append(ImageGraphicCR img)
+    {
+    if (!img.GetTextureId().IsValid())
+        return;
+
+    FlatBufferBuilder fbb;
+    FB::ImageBuilder builder(fbb);
+
+    auto const* pts = img.GetCorners().m_pts;
+    builder.add_tileCorner0((FB::DPoint3d*) pts + 0);
+    builder.add_tileCorner1((FB::DPoint3d*) pts + 1);
+    builder.add_tileCorner2((FB::DPoint3d*) pts + 2);
+    builder.add_tileCorner3((FB::DPoint3d*) pts + 3);
+    builder.add_drawBorder(img.HasBorder());
+    builder.add_textureId(static_cast<int64_t>(img.GetTextureId().GetValueUnchecked()));
+
+    auto mloc = builder.Finish();
+    fbb.Finish(mloc);
+    Append(Operation(OpCode::Image, static_cast<uint32_t>(fbb.GetSize()), fbb.GetBufferPointer()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2318,6 +2373,30 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, TextStringR text) cons
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryStreamIO::Reader::Get(Operation const& egOp, ImageGraphicPtr& img) const
+    {
+    if (OpCode::Image != egOp.m_opCode)
+        return false;
+
+    auto ppfb = flatbuffers::GetRoot<FB::Image>(egOp.m_data);
+    if (!ppfb->has_textureId())
+        return false;
+
+    ImageGraphic::Corners corners;
+    auto* pts = corners.m_pts;
+    pts[0] = nullptr != ppfb->tileCorner0() ? *reinterpret_cast<DPoint3dCP>(ppfb->tileCorner0()) : DPoint3d::FromZero();
+    pts[1] = nullptr != ppfb->tileCorner1() ? *reinterpret_cast<DPoint3dCP>(ppfb->tileCorner1()) : DPoint3d::FromZero();
+    pts[2] = nullptr != ppfb->tileCorner2() ? *reinterpret_cast<DPoint3dCP>(ppfb->tileCorner2()) : DPoint3d::FromZero();
+    pts[3] = nullptr != ppfb->tileCorner3() ? *reinterpret_cast<DPoint3dCP>(ppfb->tileCorner3()) : DPoint3d::FromZero();
+
+    DgnTextureId textureId(static_cast<uint64_t>(ppfb->textureId()));
+    img = ImageGraphic::Create(corners, textureId, ppfb->drawBorder());
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometricPrimitivePtr& elemGeom) const
@@ -2479,6 +2558,16 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometricPrimitivePtr&
                 break;
 
             elemGeom = GeometricPrimitive::Create(text);
+            return true;
+            }
+
+        case GeometryStreamIO::OpCode::Image:
+            {
+            ImageGraphicPtr img;
+            if (!Get(egOp, img))
+                break;
+
+            elemGeom = GeometricPrimitive::Create(img);
             return true;
             }
         }
@@ -2666,6 +2755,35 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
                     text->GetStyleR().SetFont(*dstFont);
 
                 writer.Append(*text);
+                break;
+                }
+
+            case GeometryStreamIO::OpCode::Image:
+                {
+                auto fbImg = flatbuffers::GetRoot<FB::Image>(egOp.m_data);
+                if (!fbImg->has_textureId())
+                    {
+                    writer.Append(egOp);
+                    break;
+                    }
+
+                DgnTextureId srcTextureId(static_cast<uint64_t>(fbImg->textureId()));
+                DgnTextureId dstTextureId = srcTextureId.IsValid() ? importer.RemapTextureId(srcTextureId) : DgnTextureId();
+                BeAssert(srcTextureId.IsValid() == dstTextureId.IsValid() && "Unable to deep-copy texture for ImageGraphic");
+
+                FlatBufferBuilder fbb;
+                auto mloc = FB::CreateImage(
+                    fbb,
+                    fbImg->drawBorder() ? 1 : 0,
+                    0, // use fill tint
+                    fbImg->tileCorner0(), fbImg->tileCorner1(), fbImg->tileCorner2(), fbImg->tileCorner3(),
+                    0, 0, 0, // width, height, format
+                    0, // image bytes
+                    static_cast<int64_t>(dstTextureId.GetValueUnchecked()));
+
+                fbb.Finish(mloc);
+                writer.Append(Operation(OpCode::Image, static_cast<uint32_t>(fbb.GetSize()), fbb.GetBufferPointer()));
+                break;
                 }
 
             default:
@@ -2718,6 +2836,10 @@ static void debugGeomId(GeometryStreamIO::IDebugOutput& output, GeometricPrimiti
             geomType.assign("TextString");
             break;
 
+        case GeometricPrimitive::GeometryType::Image:
+            geomType.assign("Image");
+            break;
+
         default:
             geomType.assign("Unknown");
             break;
@@ -2746,13 +2868,13 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
             {
             case GeometryStreamIO::OpCode::Header:
                 {
-                output._DoOutputLine(Utf8PrintfString("OpCode::Header\n").c_str());
+                output._DoOutputLine("OpCode::Header\n");
                 break;
                 }
 
             case GeometryStreamIO::OpCode::SubGraphicRange:
                 {
-                output._DoOutputLine(Utf8PrintfString("OpCode::SubGraphicRange\n").c_str());
+                output._DoOutputLine("OpCode::SubGraphicRange\n");
                 break;
                 }
 
@@ -2780,7 +2902,7 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
                 if (!(ppfb->has_origin() || ppfb->has_yaw() || ppfb->has_pitch() || ppfb->has_roll() || ppfb->has_scale()))
                     break;
 
-                output._DoOutputLine(Utf8PrintfString("  ").c_str());
+                output._DoOutputLine("  ");
 
                 if (ppfb->has_origin())
                     output._DoOutputLine(Utf8PrintfString("Origin: [%lf, %lf, %lf] ", origin.x, origin.y, origin.z).c_str());
@@ -2797,7 +2919,7 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
                 if (ppfb->has_scale())
                     output._DoOutputLine(Utf8PrintfString("Scale: %lf ", ppfb->scale()).c_str());
 
-                output._DoOutputLine(Utf8PrintfString("\n").c_str());
+                output._DoOutputLine("\n");
                 break;
                 }
 
@@ -2813,7 +2935,7 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
                 else if (subCategoryId.IsValid())
                     output._DoOutputLine(Utf8PrintfString("OpCode::BasicSymbology - SubCategoryId: %" PRIu64 "\n", subCategoryId.GetValue()).c_str());
                 else
-                    output._DoOutputLine(Utf8PrintfString("OpCode::BasicSymbology\n").c_str());
+                    output._DoOutputLine("OpCode::BasicSymbology\n");
 
                 if (!output._WantVerbose())
                     break;
@@ -2824,7 +2946,7 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
                       ppfb->has_transparency() || ppfb->has_displayPriority() || ppfb->has_geomClass()))
                     break;
 
-                output._DoOutputLine(Utf8PrintfString("  ").c_str());
+                output._DoOutputLine("  ");
 
                 if (ppfb->has_color() || ppfb->has_useColor())
                     {
@@ -2868,13 +2990,13 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
                     output._DoOutputLine(Utf8PrintfString("Geometry Class: %s ", classStr.c_str()).c_str());
                     }
 
-                output._DoOutputLine(Utf8PrintfString("\n").c_str());
+                output._DoOutputLine("\n");
                 break;
                 }
 
             case GeometryStreamIO::OpCode::PointPrimitive:
                 {
-                output._DoOutputLine(Utf8PrintfString("OpCode::PointPrimitive\n").c_str());
+                output._DoOutputLine("OpCode::PointPrimitive\n");
 
                 if (!output._WantVerbose())
                     break;
@@ -2907,7 +3029,7 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
 
             case GeometryStreamIO::OpCode::PointPrimitive2d:
                 {
-                output._DoOutputLine(Utf8PrintfString("OpCode::PointPrimitive2d\n").c_str());
+                output._DoOutputLine("OpCode::PointPrimitive2d\n");
 
                 if (!output._WantVerbose())
                     break;
@@ -2940,7 +3062,7 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
 
             case GeometryStreamIO::OpCode::ArcPrimitive:
                 {
-                output._DoOutputLine(Utf8PrintfString("OpCode::ArcPrimitive\n").c_str());
+                output._DoOutputLine("OpCode::ArcPrimitive\n");
 
                 if (!output._WantVerbose())
                     break;
@@ -2972,7 +3094,7 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
 
             case GeometryStreamIO::OpCode::CurveVector:
                 {
-                output._DoOutputLine(Utf8PrintfString("OpCode::CurveVector\n").c_str());
+                output._DoOutputLine("OpCode::CurveVector\n");
                 break;
                 }
 
@@ -2982,44 +3104,44 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
                 PolyfaceHeaderPtr mesh = BentleyGeometryFlatBuffer::BytesToPolyfaceHeader(egOp.m_data);
                 output._DoOutputLine(Utf8PrintfString("OpCode::Polyface %u points\n", mesh.IsValid() ? static_cast<uint32_t>(mesh->GetPointCount()) : 0).c_str());
 #else
-                output._DoOutputLine(Utf8PrintfString("OpCode::Polyface\n").c_str());
+                output._DoOutputLine("OpCode::Polyface\n");
 #endif
                 break;
                 }
 
             case GeometryStreamIO::OpCode::CurvePrimitive:
                 {
-                output._DoOutputLine(Utf8PrintfString("OpCode::CurvePrimitive\n").c_str());
+                output._DoOutputLine("OpCode::CurvePrimitive\n");
                 break;
                 }
 
             case GeometryStreamIO::OpCode::SolidPrimitive:
                 {
-                output._DoOutputLine(Utf8PrintfString("OpCode::SolidPrimitive\n").c_str());
+                output._DoOutputLine("OpCode::SolidPrimitive\n");
                 break;
                 }
 
             case GeometryStreamIO::OpCode::BsplineSurface:
                 {
-                output._DoOutputLine(Utf8PrintfString("OpCode::BsplineSurface\n").c_str());
+                output._DoOutputLine("OpCode::BsplineSurface\n");
                 break;
                 }
 
             case GeometryStreamIO::OpCode::ParasolidBRep:
                 {
-                output._DoOutputLine(Utf8PrintfString("OpCode::ParasolidBRep\n").c_str());
+                output._DoOutputLine("OpCode::ParasolidBRep\n");
                 break;
                 }
 
             case GeometryStreamIO::OpCode::BRepPolyfaceDeprecated:
                 {
-                output._DoOutputLine(Utf8PrintfString("OpCode::BRepPolyfaceDeprecated\n").c_str());
+                output._DoOutputLine("OpCode::BRepPolyfaceDeprecated\n");
                 break;
                 }
 
             case GeometryStreamIO::OpCode::BRepCurveVecDeprecated:
                 {
-                output._DoOutputLine(Utf8PrintfString("OpCode::BRepCurveVecDeprecated\n").c_str());
+                output._DoOutputLine("OpCode::BRepCurveVecDeprecated\n");
                 break;
                 }
 
@@ -3061,14 +3183,14 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
                     if (ppfb->has_transparency())
                         output._DoOutputLine(Utf8PrintfString("Transparency: %lf ", ppfb->transparency()).c_str());
 
-                    output._DoOutputLine(Utf8PrintfString("\n").c_str());
+                    output._DoOutputLine("\n");
                     break;
                     }
 
                 if (!(ppfb->has_color() || ppfb->has_useColor() || ppfb->has_backgroundFill() || ppfb->has_transparency()))
                     break;
 
-                output._DoOutputLine(Utf8PrintfString("  ").c_str());
+                output._DoOutputLine("  ");
 
                 if (ppfb->has_color() || ppfb->has_useColor())
                     {
@@ -3081,37 +3203,43 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
                     }
                 else
                     {
-                    output._DoOutputLine(Utf8PrintfString("Fill: Single Color ").c_str());
+                    output._DoOutputLine("Fill: Single Color ");
                     }
 
                 if (ppfb->has_transparency())
                     output._DoOutputLine(Utf8PrintfString("Transparency: %lf ", ppfb->transparency()).c_str());
 
-                output._DoOutputLine(Utf8PrintfString("\n").c_str());
+                output._DoOutputLine("\n");
                 break;
                 }
 
             case GeometryStreamIO::OpCode::Pattern:
                 {
-                output._DoOutputLine(Utf8PrintfString("OpCode::Pattern\n").c_str());
+                output._DoOutputLine("OpCode::Pattern\n");
                 break;
                 }
 
             case GeometryStreamIO::OpCode::Material:
                 {
-                output._DoOutputLine(Utf8PrintfString("OpCode::Material\n").c_str());
+                output._DoOutputLine("OpCode::Material\n");
                 break;
                 }
 
             case GeometryStreamIO::OpCode::LineStyleModifiers:
                 {
-                output._DoOutputLine(Utf8PrintfString("OpCode::LineStyleModifiers\n").c_str());
+                output._DoOutputLine("OpCode::LineStyleModifiers\n");
                 break;
                 }
 
             case GeometryStreamIO::OpCode::TextString:
                 {
-                output._DoOutputLine(Utf8PrintfString("OpCode::TextString\n").c_str());
+                output._DoOutputLine("OpCode::TextString\n");
+                break;
+                }
+
+            case GeometryStreamIO::OpCode::Image:
+                {
+                output._DoOutputLine("OpCode::Image\n");
                 break;
                 }
 
@@ -3749,6 +3877,28 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 break;
                 }
 
+            case GeometryStreamIO::OpCode::Image:
+                {
+                entryId.Increment();
+                currGraphic->SetGeometryStreamEntryId(&entryId);
+
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, &subGraphicRange))
+                    break;
+
+                ImageGraphicPtr imagePtr;
+                if (!reader.Get(egOp, imagePtr))
+                    break;
+
+                DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
+
+                if (context.Is3dView())
+                    currGraphic->AddImageR(*imagePtr);
+                else
+                    currGraphic->AddImage2dR(*imagePtr, geomParams.GetNetDisplayPriority());
+
+                break;
+                }
+
             default:
                 break;
             }
@@ -3842,6 +3992,9 @@ GeometryCollection::Iterator::EntryType GeometryCollection::Iterator::GetEntryTy
 
         case GeometryStreamIO::OpCode::TextString:
             return EntryType::TextString;
+
+        case GeometryStreamIO::OpCode::Image:
+            return EntryType::Image;
 
         default:
             BeAssert(false); return EntryType::Unknown;
@@ -4494,6 +4647,21 @@ Json::Value GeometryCollection::ToJson(JsonValueCR opts) const
                 Json::Value textValue;
                 textValue["textString"] = value;
                 output.append(textValue);
+                break;
+                }
+
+            case GeometryStreamIO::OpCode::Image:
+                {
+                ImageGraphicPtr img;
+                if (!reader.Get(egOp, img))
+                    break;
+
+                Json::Value json;
+                img->ToJson(json);
+
+                Json::Value imgJson;
+                imgJson["image"] = json;
+                output.append(imgJson);
                 break;
                 }
 
@@ -5177,6 +5345,10 @@ bool GeometryBuilder::AppendLocal(GeometricPrimitiveCR geom)
             opCode = GeometryStreamIO::OpCode::TextString;
             break;
 
+        case GeometricPrimitive::GeometryType::Image:
+            opCode = GeometryStreamIO::OpCode::Image;
+            break;
+
         default:
             opCode = GeometryStreamIO::OpCode::Invalid;
             break;
@@ -5434,6 +5606,27 @@ bool GeometryBuilder::Append(TextStringCR text, CoordSystem coord)
         }
 
     return AppendWorld(*GeometricPrimitive::Create(text));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryBuilder::Append(ImageGraphicCR img, CoordSystem coord)
+    {
+    if (CoordSystem::Local == coord)
+        {
+        DRange3d localRange;
+        if (!getRange(img, localRange, nullptr))
+            return false;
+
+        OnNewGeom(localRange, m_appendAsSubGraphics, GeometryStreamIO::OpCode::Image);
+        m_writer.Append(img);
+
+        return true;
+        }
+
+    auto geom = GeometricPrimitive::Create(img);
+    return AppendWorld(*geom);
     }
 
 BEGIN_UNNAMED_NAMESPACE
@@ -6206,6 +6399,12 @@ bool GeometryBuilder::FromJson(JsonValueCR input, JsonValueCR opts)
             if (!Append(*entity))
                 return false;
             }
+        else if (entry.isMember("image"))
+            {
+            auto img = ImageGraphic::FromJson(entry["image"]);
+            if (img.IsNull() || !Append(params) || !Append(*img))
+                return false;
+            }
         else
             {
             bvector<IGeometryPtr> geometry;
@@ -6265,3 +6464,55 @@ bool GeometryBuilder::UpdateFromJson(GeometrySourceR source, JsonValueCR input, 
     return (SUCCESS == builder->Finish(source));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void ImageGraphic::ToJson(JsonValueR json) const
+    {
+    Json::Value cornersJson(Json::arrayValue);
+    for (auto i = 0; i < 4; i++)
+        JsonUtils::DPoint3dToJson(cornersJson[i], GetCorners().m_pts[i]);
+
+    json["corners"] = cornersJson;
+    json["textureId"] = GetTextureId().ToHexStr();
+    json["hasBorder"] = HasBorder();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/19
++---------------+---------------+---------------+---------------+---------------+------*/
+ImageGraphicPtr ImageGraphic::FromJson(JsonValueCR json)
+    {
+    auto const& cornersJson = json["corners"];
+    if (!cornersJson.isArray() || 4 != cornersJson.size())
+        return nullptr;
+
+    DgnTextureId textureId;
+    textureId.FromJson(json["textureId"]);
+    if (!textureId.IsValid())
+        return nullptr;
+
+    Corners corners;
+    for (auto i = 0; i < 4; i++)
+        JsonUtils::DPoint3dFromJson(corners.m_pts[i], cornersJson[i]);
+
+    return ImageGraphic::Create(corners, textureId, json["hasBorder"].asBool());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/19
++---------------+---------------+---------------+---------------+---------------+------*/
+ICurvePrimitivePtr ImageGraphic::ToCurvePrimitive() const
+    {
+    auto imgPts = GetCorners().m_pts;
+    DPoint3d points[5] = { imgPts[0], imgPts[1], imgPts[2], imgPts[3], imgPts[0] };
+    return ICurvePrimitive::CreateLineString(points, 5);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/19
++---------------+---------------+---------------+---------------+---------------+------*/
+CurveVectorPtr ImageGraphic::ToCurveVector(CurveVector::BoundaryType boundary) const
+    {
+    return CurveVector::Create(boundary, ToCurvePrimitive());
+    }

@@ -976,7 +976,6 @@ public:
  };
 
 struct ISprite;
-struct DgnOleDraw;
 
 enum class FillDisplay //!< Whether a closed region should be drawn for wireframe display with its internal area filled or not.
 {
@@ -1583,7 +1582,6 @@ protected:
     virtual void _AddBody(IBRepEntityCR) = 0;
     virtual void _AddTextString(TextStringCR text) = 0;
     virtual void _AddTextString2d(TextStringCR text, double zDepth) = 0;
-    virtual void _AddDgnOle(DgnOleDraw*) = 0;
     virtual void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR, ClipVectorCP clip) = 0;
     virtual GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const = 0;
     virtual bool _WantStrokeLineStyle(LineStyleSymbCR, IFacetOptionsPtr&) {return true;}
@@ -1715,6 +1713,11 @@ public:
     //! @param[in] zDepth Priority value in 2d
     void AddTextString2d(TextStringCR text, double zDepth) {_AddTextString2d(text, zDepth);}
 
+    virtual void AddImage(ImageGraphicCR) = 0;
+    virtual void AddImage2d(ImageGraphicCR, double zDepth) = 0;
+    virtual void AddImageR(ImageGraphicR img) { AddImage(img); }
+    virtual void AddImage2dR(ImageGraphicR img, double zDepth) { AddImage2d(img, zDepth); }
+
     //! Draw a filled triangle strip from 3D points.
     //! @param[in] numPoints Number of vertices in \c points array.
     //! @param[in] points Array of vertices.
@@ -1768,9 +1771,6 @@ public:
 
         AddLineString2d(5, tmpPts, zDepth);
         }
-
-    //! Draw OLE object.
-    void AddDgnOle(DgnOleDraw* ole) {_AddDgnOle(ole);}
 
     void AddSubGraphic(GraphicR graphic, TransformCR subToGraphic, GraphicParamsCR params, ClipVectorCP clip=nullptr) {_AddSubGraphic(graphic, subToGraphic, params, clip);}
 

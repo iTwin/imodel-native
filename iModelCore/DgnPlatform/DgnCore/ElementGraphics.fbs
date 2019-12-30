@@ -85,6 +85,29 @@ table OCBRepData
     } // OCBRepData
 
 //=======================================================================================
+// This struct existed long ago and was removed without any known public users.
+// (The old "redline model" stored background images using this struct).
+// Out of paranoia, we maintain the ability to read (and ignore) the old version.
+// Old version stored an Image.
+// New version adds the textureId field pointing to a persistent texture element that supplies the image.
+// @bsistruct                                                   Paul.Connelly   12/19
+//=======================================================================================
+table Image
+    {
+    drawBorder:ubyte;
+    useFillTint:ubyte; // unused
+    tileCorner0:DPoint3d;
+    tileCorner1:DPoint3d;
+    tileCorner2:DPoint3d;
+    tileCorner3:DPoint3d;
+    width:uint; // unused
+    height:uint; // unused
+    format:uint; // unused
+    byteData:[ubyte]; // unused
+    textureId:long; // not present in old version of this struct.
+    } // Image
+
+//=======================================================================================
 // @bsiclass                                                    
 //=======================================================================================
 table GeometryPart

@@ -160,7 +160,7 @@ struct DisplayParams : RefCountedBase
 {
     friend struct DisplayParamsCache;
 
-    enum class Type { Mesh, Linear, Text };
+    enum class Type { Mesh, Linear, Text, Image };
     enum class RegionEdgeType { None, Default, Outline };
 protected:
     Type                m_type;
@@ -182,7 +182,8 @@ protected:
     DGNPLATFORM_EXPORT static DisplayParams ForMesh(GraphicParamsCR gf, GeometryParamsCP geom, bool filled, DgnDbR db, System& sys);
     DGNPLATFORM_EXPORT static DisplayParams ForLinear(GraphicParamsCR gf, GeometryParamsCP geom);
     DGNPLATFORM_EXPORT static DisplayParams ForText(GraphicParamsCR gf, GeometryParamsCP geom);
-    static DisplayParams ForType(Type type, GraphicParamsCR gf, GeometryParamsCP geom, bool filled, DgnDbR db, System& sys);
+    DGNPLATFORM_EXPORT static DisplayParams ForImage(GeometryParamsCP geom, DgnTextureId textureId, DgnDbR db, System& sys);
+    static DisplayParams ForType(Type type, GraphicParamsCR gf, GeometryParamsCP geom, bool filled, DgnDbR db, System& sys, DgnTextureId textureId);
 
     DisplayParams(DisplayParamsCR rhs) = default;
     DisplayParams(ColorDef lineColor, DgnCategoryId catId, DgnSubCategoryId subCatId, DgnGeometryClass geomClass) { InitText(lineColor, catId, subCatId, geomClass); }
@@ -190,10 +191,12 @@ protected:
         { InitLinear(lineColor, width, px, cat, sub, gc); }
     DisplayParams(ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels px, SurfaceMaterialCR mat, FillFlags ff, DgnCategoryId cat, DgnSubCategoryId sub, DgnGeometryClass gc)
         { InitMesh(lineColor, fillColor, width, px, mat, ff, cat, sub, gc); }
+    DisplayParams(SurfaceMaterialCR mat, DgnCategoryId cat, DgnSubCategoryId sub, DgnGeometryClass gc) { InitImage(mat, cat, sub, gc); }
 
     void InitGeomParams(DgnCategoryId, DgnSubCategoryId, DgnGeometryClass);
     void InitText(ColorDef lineColor, DgnCategoryId, DgnSubCategoryId, DgnGeometryClass);
     void InitLinear(ColorDef lineColor, uint32_t width, LinePixels, DgnCategoryId, DgnSubCategoryId, DgnGeometryClass);
+    void InitImage(SurfaceMaterialCR mat, DgnCategoryId, DgnSubCategoryId, DgnGeometryClass);
     DGNPLATFORM_EXPORT void InitMesh(ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels, SurfaceMaterialCR, FillFlags, DgnCategoryId, DgnSubCategoryId, DgnGeometryClass);
 public:
     Type GetType() const { return m_type; }
@@ -227,6 +230,7 @@ public:
     static DisplayParamsCPtr CreateForMesh(GraphicParamsCR gf, GeometryParamsCP geom, bool filled, DgnDbR db, System& sys) { return ForMesh(gf, geom, filled, db, sys).Clone(); }
     static DisplayParamsCPtr CreateForLinear(GraphicParamsCR gf, GeometryParamsCP geom) { return ForLinear(gf, geom).Clone(); }
     static DisplayParamsCPtr CreateForText(GraphicParamsCR gf, GeometryParamsCP geom) { return ForText(gf, geom).Clone(); }
+    static DisplayParamsCPtr CreateForImage(GeometryParamsCP geom, DgnTextureId textureId, DgnDbR db, System& sys) { return ForImage(geom, textureId, db, sys).Clone(); }
     static DisplayParamsCPtr Create(Type type, DgnCategoryId catId, DgnSubCategoryId subCatId, GradientSymbCP gradient, RenderMaterialId matId, ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels linePixels, FillFlags fillFlags, DgnGeometryClass geomClass, bool ignoreLights, DgnDbR dgnDb, System& renderSys, TextureMappingCR texMap);
 
     DisplayParamsCPtr CloneForRasterText(TextureCR raster) const;
@@ -268,9 +272,10 @@ public:
     DisplayParamsCR GetForMesh(GraphicParamsCR gf, GeometryParamsCP geom, bool filled) { return Get(DisplayParams::Type::Mesh, gf, geom, filled); }
     DisplayParamsCR GetForLinear(GraphicParamsCR gf, GeometryParamsCP geom) { return Get(DisplayParams::Type::Linear, gf, geom, false); }
     DisplayParamsCR GetForText(GraphicParamsCR gf, GeometryParamsCP geom) { return Get(DisplayParams::Type::Text, gf, geom, false); }
-    DisplayParamsCR Get(DisplayParams::Type type, GraphicParamsCR gf, GeometryParamsCP geom, bool filled)
+    DisplayParamsCR GetForImage(GraphicParamsCR gf, GeometryParamsCP geom, DgnTextureId textureId) { return Get(DisplayParams::Type::Image, gf, geom, false, textureId); }
+    DisplayParamsCR Get(DisplayParams::Type type, GraphicParamsCR gf, GeometryParamsCP geom, bool filled, DgnTextureId textureId=DgnTextureId())
         {
-        DisplayParams ndp = DisplayParams::ForType(type, gf, geom, filled, m_db, m_system);
+        DisplayParams ndp = DisplayParams::ForType(type, gf, geom, filled, m_db, m_system, textureId);
         return Get(ndp);
         }
 
@@ -1144,6 +1149,8 @@ public:
     static GeometryPtr Create(TextStringR textString, TransformCR transform, DRange3dCR range, DgnElementId entityId, DisplayParamsCR params, DgnDbR db, bool checkGlyphBoxes);
     //! Create a Geometry for a shared geometry instance.
     static GeometryPtr Create(SharedGeomR geom, TransformCR transform, DRange3dCR range, DgnElementId entityId, DisplayParamsCR params, DgnDbR db);
+    //! Create a Geometry for an image.
+    static GeometryPtr Create(ImageGraphicR img, TransformCR tf, DRange3dCR range, DgnElementId elementId, DisplayParamsCR params, DgnDbR db);
 };
 
 //=======================================================================================
@@ -1425,6 +1432,7 @@ public:
     DGNPLATFORM_EXPORT bool Add(IBRepEntityR body, DisplayParamsCR displayParams, TransformCR transform);
     DGNPLATFORM_EXPORT bool Add(TextStringR textString, DisplayParamsCR displayParams, TransformCR transform);
     bool AddTextUnderline(TextStringR, DisplayParamsCR, TransformCR);
+    bool Add(ImageGraphicR img, DisplayParamsCR displayParams, TransformCR transform);
 
     bool IsEmpty() const { return m_geometries.empty(); }
     void Clear() { m_geometries.clear(); }
@@ -1506,7 +1514,8 @@ protected:
     DGNPLATFORM_EXPORT void _AddBSplineCurve(MSBsplineCurveCR, bool filled) override;
     DGNPLATFORM_EXPORT void _AddBSplineCurve2d(MSBsplineCurveCR, bool filled, double zDepth) override;
     DGNPLATFORM_EXPORT void _AddBSplineSurface(MSBsplineSurfaceCR) override;
-    DGNPLATFORM_EXPORT void _AddDgnOle(DgnOleDraw*) override;
+    DGNPLATFORM_EXPORT void AddImage(ImageGraphicCR img) override;
+    DGNPLATFORM_EXPORT void AddImage2d(ImageGraphicCR img, double zDepth) override;
 
     DGNPLATFORM_EXPORT void _AddBSplineCurveR(RefCountedMSBsplineCurveR curve, bool filled) override;
     DGNPLATFORM_EXPORT void _AddBSplineCurve2dR(RefCountedMSBsplineCurveR curve, bool filled, double zDepth) override;
@@ -1518,6 +1527,8 @@ protected:
     DGNPLATFORM_EXPORT void _AddBodyR(IBRepEntityR body) override;
     DGNPLATFORM_EXPORT void _AddTextStringR(TextStringR text) override;
     DGNPLATFORM_EXPORT void _AddTextString2dR(TextStringR text, double zDepth) override;
+    DGNPLATFORM_EXPORT void AddImageR(ImageGraphicR img) override;
+    DGNPLATFORM_EXPORT void AddImage2dR(ImageGraphicR img, double zDepth) override;
 
     virtual Render::GraphicPtr _FinishGraphic(GeometryAccumulatorR) = 0; //!< Invoked by _Finish() to obtain the finished Graphic.
     virtual void _Reset() { } //!< Invoked by ReInitialize() to reset any state before this builder is reused.
@@ -1532,10 +1543,11 @@ public:
     DgnElementId GetElementId() const { return m_accum.GetElementId(); }
 
     DisplayParamsCacheR GetDisplayParamsCache() const { return m_accum.GetDisplayParamsCache(); }
-    DisplayParamsCR GetDisplayParams(DisplayParams::Type type, bool filled) const { return m_accum.GetDisplayParamsCache().Get(type, GetGraphicParams(), GetGeometryParams(), filled); }
+    DisplayParamsCR GetDisplayParams(DisplayParams::Type type, bool filled, DgnTextureId textureId=DgnTextureId()) const { return m_accum.GetDisplayParamsCache().Get(type, GetGraphicParams(), GetGeometryParams(), filled, textureId); }
     DisplayParamsCR GetMeshDisplayParams(bool filled) const { return GetDisplayParams(DisplayParams::Type::Mesh, filled); }
     DisplayParamsCR GetLinearDisplayParams() const { return GetDisplayParams(DisplayParams::Type::Linear, false); }
     DisplayParamsCR GetTextDisplayParams() const { return GetDisplayParams(DisplayParams::Type::Text, false); }
+    DisplayParamsCR GetImageDisplayParams(DgnTextureId textureId) const { return GetDisplayParams(DisplayParams::Type::Image, false, textureId); }
 
     System& GetSystem() const { return m_accum.GetSystem(); }
 

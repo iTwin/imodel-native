@@ -968,6 +968,12 @@ void MeasureGeomCollector::_OutputGraphics (ViewContextR context)
             break;
             }
 
+        case GeometricPrimitive::GeometryType::Image:
+            {
+            builder->AddImage(*m_geomPrimitive->GetAsImage());
+            break;
+            }
+
         default:
             {
             BeAssert(false);

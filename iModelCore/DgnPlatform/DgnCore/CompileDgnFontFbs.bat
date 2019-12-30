@@ -7,12 +7,12 @@ rem   See COPYRIGHT.md in the repository root for full copyright notice.
 rem ------------------------------------------------------------------------------------
 
 SET BaseName=DgnFont
-SET SrcDir=%SrcRoot%DgnPlatform\DgnCore\
+SET SrcDir=%SrcRoot%imodel02\iModelCore\DgnPlatform\DgnCore\
 SET SrcFile=%SrcDir%%BaseName%.fbs
 SET GeneratedDir=%SrcDir%
 SET GeneratedFileName=%BaseName%_generated.h
 SET GeneratedFile=%GeneratedDir%%GeneratedFileName%
-SET OutDir=%SrcRoot%DgnPlatform\PublicApi\DgnPlatform\
+SET OutDir=%SrcRoot%imodel02\iModelCore\DgnPlatform\PublicApi\DgnPlatform\
 SET OutFile=%OutDir%%BaseName%.fb.h
 
 REM flatbuffers comes from nuget now... just use the latest we can find:

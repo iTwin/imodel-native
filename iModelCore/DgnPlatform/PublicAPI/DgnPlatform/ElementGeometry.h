@@ -14,6 +14,58 @@
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
+//! A quadrilateral that displays an image mapped to the corners of a quadrilateral, with
+//! an optional border. The image is always displayed regardless of RenderMode or ViewFlags,
+//! and is displayed without lighting.
+// @bsistruct                                                   Paul.Connelly   12/19
+//=======================================================================================
+struct ImageGraphic : RefCountedBase
+{
+    //=======================================================================================
+    //! Defines the 4 corners of the ImageGraphic. The points are expected to line in a single plane
+    //! and define a (possibly-skewed) quadrilateral.
+    //! The points map to the corners of the image as follows:
+    //!   3____2
+    //!   |    |
+    //!   |____|
+    //!   0    1
+    // @bsistruct                                                   Paul.Connelly   12/19
+    //=======================================================================================
+    struct Corners
+    {
+        DPoint3d    m_pts[4];
+    };
+private:
+    Corners         m_corners;
+    DgnTextureId    m_textureId;
+    bool            m_drawBorder;
+
+    ImageGraphic(Corners const& corners, DgnTextureId textureId, bool drawBorder) : m_corners(corners), m_textureId(textureId), m_drawBorder(drawBorder) { }
+public:
+    static ImageGraphicPtr Create(Corners const& corners, DgnTextureId textureId, bool drawBorder=false) { return new ImageGraphic(corners, textureId, drawBorder); }
+
+    DgnTextureId GetTextureId() const { return m_textureId; }
+    Corners const& GetCorners() const { return m_corners; }
+    bool HasBorder() const { return m_drawBorder; }
+
+    ImageGraphicPtr Clone() const { return ImageGraphic::Create(m_corners, m_textureId, m_drawBorder); }
+    DRange3d GetRange() const { return DRange3d::From(m_corners.m_pts, 4); }
+
+    void ApplyTransform(TransformCR transform) { transform.Multiply(m_corners.m_pts, 4); }
+    void SetZ(double z)
+        {
+        for (auto& pt : m_corners.m_pts)
+            pt.z = z;
+        }
+
+    DGNPLATFORM_EXPORT static ImageGraphicPtr FromJson(JsonValueCR);
+    DGNPLATFORM_EXPORT void ToJson(JsonValueR) const;
+
+    DGNPLATFORM_EXPORT ICurvePrimitivePtr ToCurvePrimitive() const;
+    DGNPLATFORM_EXPORT CurveVectorPtr ToCurveVector(CurveVector::BoundaryType boundary = CurveVector::BoundaryType::BOUNDARY_TYPE_Outer) const;
+};
+
+//=======================================================================================
 //! Class for multiple RefCounted geometry types: ICurvePrimitive, CurveVector,
 //! ISolidPrimitive, MSBsplineSurface, PolyfaceHeader, IBRepEntity.
 //! @ingroup GROUP_Geometry
@@ -30,6 +82,7 @@ public:
         Polyface            = 5,
         BRepEntity          = 6,
         TextString          = 7,
+        Image               = 8,
     };
 
 protected:
@@ -43,6 +96,7 @@ protected:
     GeometricPrimitive(PolyfaceHeaderPtr const& source);
     GeometricPrimitive(IBRepEntityPtr const& source);
     GeometricPrimitive(TextStringPtr const& source);
+    GeometricPrimitive(ImageGraphicPtr const& source);
 
 public:
     DGNPLATFORM_EXPORT GeometryType GetGeometryType() const;
@@ -66,6 +120,7 @@ public:
     DGNPLATFORM_EXPORT PolyfaceHeaderPtr GetAsPolyfaceHeader() const;
     DGNPLATFORM_EXPORT IBRepEntityPtr GetAsIBRepEntity() const;
     DGNPLATFORM_EXPORT TextStringPtr GetAsTextString() const;
+    DGNPLATFORM_EXPORT ImageGraphicPtr GetAsImage() const;
 
     DGNPLATFORM_EXPORT void AddToGraphic(Render::GraphicBuilderR) const; // Convenience method - treats as 3d geometry.
     DGNPLATFORM_EXPORT bool GetLocalCoordinateFrame(TransformR localToWorld) const;
@@ -89,6 +144,7 @@ public:
     DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(PolyfaceQueryCR source);     //!< Create a GeometricPrimitive from a clone of source
     DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(IBRepEntityCR source);       //!< Create a GeometricPrimitive from a clone of source
     DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(TextStringCR source);        //!< Create a GeometricPrimitive from a clone of source
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(ImageGraphicCR source);      //!< Create a GeometricPrimitive from a clone of source
 
     DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(ICurvePrimitivePtr const& source);   //!< Create a GeometricPrimitive using source directly
     DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(CurveVectorPtr const& source);       //!< Create a GeometricPrimitive using source directly
@@ -97,6 +153,7 @@ public:
     DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(PolyfaceHeaderPtr const& source);    //!< Create a GeometricPrimitive using source directly
     DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(IBRepEntityPtr const& source);       //!< Create a GeometricPrimitive using source directly
     DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(TextStringPtr const& source);        //!< Create a GeometricPrimitive using source directly
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(ImageGraphicPtr const& source);      //!< Create a GeometricPrimitive using source directly
 
 }; // GeometricPrimitive
 
@@ -245,6 +302,7 @@ struct GeometryStreamIO
         void Append(DgnGeometryPartId, TransformCP geomToElem);
         void Append(Render::GeometryParamsCR, bool ignoreSubCategory, bool is3d); // Adds multiple op-codes...
         void Append(TextStringCR);
+        void Append(ImageGraphicCR);
         void Append(DRange3dCR);
     };
 
@@ -273,6 +331,7 @@ struct GeometryStreamIO
         bool Get(Operation const&, DgnGeometryPartId&, TransformR) const;
         bool Get(Operation const&, Render::GeometryParamsR) const; // Updated by multiple op-codes, true if changed
         bool Get(Operation const&, TextStringR) const;
+        bool Get(Operation const&, ImageGraphicPtr&) const;
         bool Get(Operation const&, DRange3dR) const;
     };
 
@@ -375,6 +434,7 @@ struct GeometryCollection
             Polyface            = 6,  //!< Polyface
             BRepEntity          = 7,  //!< BRepEntity
             TextString          = 8,  //!< TextString
+            Image               = 9, //!< ImageGraphic
         };
 
     private:
@@ -668,6 +728,9 @@ public:
 
     //! Append a TextAnnotation to builder in either local or world coordinates.
     DGNPLATFORM_EXPORT bool Append(TextAnnotationCR, CoordSystem coord = CoordSystem::Local);
+
+    //! Append an ImageGraphic.
+    DGNPLATFORM_EXPORT bool Append(ImageGraphicCR, CoordSystem coord = CoordSystem::Local);
 
     //! Set GeometryStream header flags when creating a geometric element.
     //! @note Do this before appending any geometric primitives as it resets the buffer.

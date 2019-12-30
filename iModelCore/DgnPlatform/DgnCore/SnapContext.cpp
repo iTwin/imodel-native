@@ -1790,6 +1790,14 @@ bool ProcessTextString(TextStringCR text, DPoint3dCR localPoint)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ProcessImageGraphic(ImageGraphicCR img, DPoint3dCR localPoint)
+    {
+    return ProcessCurveVector(*img.ToCurveVector(), localPoint, HitGeomType::Surface, HitParentGeomType::None);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ProcessGeometry(GeometricPrimitiveR geom, TransformCR localToWorld, bool checkRange)
@@ -1871,6 +1879,9 @@ bool ProcessGeometry(GeometricPrimitiveR geom, TransformCR localToWorld, bool ch
 
             return ProcessTextString(text, localPoint);
             }
+
+        case GeometricPrimitive::GeometryType::Image:
+            return ProcessImageGraphic(*geom.GetAsImage(), localPoint);
 
         default:
             {

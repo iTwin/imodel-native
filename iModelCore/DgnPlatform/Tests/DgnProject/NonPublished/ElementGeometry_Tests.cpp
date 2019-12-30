@@ -157,8 +157,41 @@ TEST_F(GeometricPrimitiveTests, Create)
     GeometricPrimitivePtr elmGeom7C = elmGeom7->Clone();
     EXPECT_TRUE(elmGeom7C.IsValid());
     EXPECT_TRUE(elmGeom7C->GetGeometryType() == elmGeom7->GetGeometryType());
-    }
 
+    // ImageGraphic
+    //
+    DgnTextureId textureId((uint64_t)0x1234);
+    ImageGraphic::Corners corners =
+        {
+            {
+            DPoint3d::From(-5, 10, 3),
+            DPoint3d::From(20, 10, 3),
+            DPoint3d::From(20, 15, 3),
+            DPoint3d::From(-5, 15, 3),
+            }
+        };
+
+    auto input = ImageGraphic::Create(corners, textureId, true);
+    auto imgPrim = GeometricPrimitive::Create(*input);
+    EXPECT_TRUE(imgPrim.IsValid());
+    EXPECT_EQ(GeometricPrimitive::GeometryType::Image, imgPrim->GetGeometryType());
+
+    auto output = imgPrim->GetAsImage();
+    EXPECT_TRUE(output.IsValid());
+    EXPECT_FALSE(input.get() == output.get());
+
+    EXPECT_EQ(input->GetTextureId().GetValueUnchecked(), output->GetTextureId().GetValueUnchecked());
+    EXPECT_TRUE(output->HasBorder());
+
+    auto const& outPts = output->GetCorners().m_pts;
+    auto const& inPts = corners.m_pts;
+    for (auto i = 0; i < 4; i++)
+        {
+        EXPECT_EQ(outPts[i].x, inPts[i].x);
+        EXPECT_EQ(outPts[i].y, inPts[i].y);
+        EXPECT_EQ(outPts[i].z, inPts[i].z);
+        }
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16

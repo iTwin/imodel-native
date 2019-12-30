@@ -99,6 +99,87 @@ TEST_F(GeometryBuilderTests, CreateElement3d)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/19
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(GeometryBuilderTests, RoundTripImageGraphic)
+    {
+    SetupSeedProject();
+
+    DgnElementPtr el = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnCode());
+    DgnModelP model = m_db->Models().GetModel(m_defaultModelId).get();
+    GeometrySourceP geomElem = el->ToGeometrySourceP();
+
+    auto builder = GeometryBuilder::Create(*model, m_defaultCategoryId, DPoint3d::From(0.0, 0.0, 0.0));
+
+    // Create an element with an ImageGraphic in its geometry stream.
+    DgnTextureId textureId((uint64_t)0x1234);
+    ImageGraphic::Corners corners =
+        {
+            {
+            DPoint3d::From(-5, 10, 3),
+            DPoint3d::From(20, 10, 3),
+            DPoint3d::From(20, 15, 3),
+            DPoint3d::From(-5, 15, 3),
+            }
+        };
+
+    auto input = ImageGraphic::Create(corners, textureId, true);
+    EXPECT_TRUE(builder->Append(*input));
+
+    EXPECT_EQ(SUCCESS, builder->Finish(*geomElem));
+    auto persistentElem = m_db->Elements().Insert(*el);
+    EXPECT_TRUE(persistentElem.IsValid());
+
+    // Pull the ImageGraphic back out of the new persistent element's geometry stream.
+    ImageGraphicPtr output;
+    GeometryCollection geom(*persistentElem->ToGeometrySource());
+    for (auto const& entry : geom)
+        {
+        EXPECT_TRUE(output.IsNull());
+        EXPECT_TRUE(entry.GetEntryType() == GeometryCollection::Iterator::EntryType::Image);
+        auto primitive = entry.GetGeometryPtr();
+        EXPECT_TRUE(primitive.IsValid());
+        output = primitive->GetAsImage();
+        EXPECT_TRUE(output.IsValid());
+        }
+
+    EXPECT_TRUE(output.IsValid());
+
+    auto compare = [&]()
+        {
+        EXPECT_EQ(output->GetTextureId().GetValue(), input->GetTextureId().GetValue());
+        EXPECT_TRUE(output->HasBorder());
+
+        auto const& outPts = output->GetCorners().m_pts;
+        auto const& inPts = corners.m_pts;
+        for (auto i = 0; i < 4; i++)
+            {
+            EXPECT_EQ(outPts[i].x, inPts[i].x);
+            EXPECT_EQ(outPts[i].y, inPts[i].y);
+            EXPECT_EQ(outPts[i].z, inPts[i].z);
+            }
+        };
+
+    compare();
+
+    // Test JSON representation.
+    auto geomJson = geom.ToJson();
+    EXPECT_TRUE(geomJson.isArray());
+    EXPECT_EQ(2, geomJson.size());
+
+    auto const& outputJson = geomJson[1]["image"];
+    EXPECT_TRUE(outputJson.isObject());
+    EXPECT_FALSE(outputJson.isNull());
+
+    Json::Value inputJson;
+    input->ToJson(inputJson);
+    EXPECT_EQ(Json::FastWriter::ToString(outputJson), Json::FastWriter::ToString(inputJson));
+
+    output = ImageGraphic::FromJson(outputJson);
+    compare();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(GeometryBuilderTests, CreateElement2d)

@@ -49,7 +49,6 @@ protected:
     DGNPLATFORM_EXPORT void _AddBody(IBRepEntityCR entity) override;
     DGNPLATFORM_EXPORT void _AddTextString(TextStringCR text) override;
     DGNPLATFORM_EXPORT void _AddTextString2d(TextStringCR text, double zDepth) override;
-    DGNPLATFORM_EXPORT void _AddDgnOle(Render::DgnOleDraw*) override;
     DGNPLATFORM_EXPORT void _AddSubGraphic(Render::GraphicR, TransformCR, Render::GraphicParamsCR, ClipVectorCP clip) override;
     DGNPLATFORM_EXPORT Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const override;
     DGNPLATFORM_EXPORT bool _WantStrokeLineStyle(Render::LineStyleSymbCR symb, IFacetOptionsPtr& facetOptions) override;
@@ -112,7 +111,7 @@ public:
     DGNPLATFORM_EXPORT void ClipAndProcessBody(IBRepEntityCR);
     DGNPLATFORM_EXPORT void ClipAndProcessBodyAsPolyface(IBRepEntityCR);
     DGNPLATFORM_EXPORT void ClipAndProcessText(TextStringCR);
-    DGNPLATFORM_EXPORT void ClipAndProcessTriMesh(Render::TriMeshArgsCR);
+    DGNPLATFORM_EXPORT void ClipAndProcessImage(ImageGraphicCR);
 
     Render::GraphicParamsCR GetCurrentGraphicParams() const {return m_currGraphicParams;}
     Render::GeometryParamsCR GetCurrentGeometryParams() const {return m_currGeometryParams;}
@@ -123,6 +122,9 @@ public:
     DGNPLATFORM_EXPORT bool IsRangeTotallyInsideClip(DRange3dCR range) const;
     DGNPLATFORM_EXPORT bool ArePointsTotallyInsideClip(DPoint3dCP points, int nPoints) const;
     DGNPLATFORM_EXPORT bool ArePointsTotallyOutsideClip(DPoint3dCP points, int nPoints) const;
+
+    DGNPLATFORM_EXPORT void AddImage(ImageGraphicCR) override;
+    DGNPLATFORM_EXPORT void AddImage2d(ImageGraphicCR, double zDepth) override;
 
     struct Base : Render::Graphic
     {
@@ -149,7 +151,7 @@ public:
         BRep    = 1 << 1, //!< Process region CurveVector, open CurveVector, ISolidPrimitive, MSBsplineSurface, and PolyfaceQuery as IBRepEntity.
         Facet   = 1 << 2, //!< Process region CurveVector, ISolidPrimitive, MSBsplineSurface, and IBRepEntity as PolyfaceHeader.
         Curve   = 1 << 3, //!< Process ISolidPrimitive, MSBsplineSurface, PolyfaceQuery, and IBRepEntity as edge/face iso CurveVector. Process clipped CurveVector as open curves, drop TextString.
-        Box     = 1 << 4, //!< Process TextString, Raster, and Mosasic as a simple rectangle.
+        Box     = 1 << 4, //!< Process TextString and ImageGraphic as a simple quadrilateral.
     };
 
     //! Specify how to process geometry that originated as a PolyfaceQuery and is not compatible with the current IFacetOptions.
@@ -189,7 +191,7 @@ virtual UnhandledPreference _GetUnhandledPreference(MSBsplineSurfaceCR, Simplify
 virtual UnhandledPreference _GetUnhandledPreference(PolyfaceQueryCR, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
 virtual UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
 virtual UnhandledPreference _GetUnhandledPreference(TextStringCR, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
-virtual UnhandledPreference _GetUnhandledPreference(Render::TriMeshArgsCR, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
+virtual UnhandledPreference _GetUnhandledPreference(ImageGraphicCR, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
 
 //! Call SimplifyGraphic::ProcessAsLinearSegments to output a CurveVector as strokes calling this method.
 virtual bool _ProcessLinearSegments(DPoint3dCP points, size_t numPoints, bool closed, bool filled, SimplifyGraphic&) {return false;}
@@ -205,7 +207,7 @@ virtual bool _ProcessSurface(MSBsplineSurfaceCR, SimplifyGraphic&) {return false
 virtual bool _ProcessPolyface(PolyfaceQueryCR, bool filled, SimplifyGraphic&) {return false;}
 virtual bool _ProcessBody(IBRepEntityCR, SimplifyGraphic&) {return false;}
 virtual bool _ProcessTextString(TextStringCR, SimplifyGraphic&) {return false;}
-virtual bool _ProcessTriMesh(Render::TriMeshArgsCR args, SimplifyGraphic&) {return false; }
+virtual bool _ProcessImage(ImageGraphicCR, SimplifyGraphic&) {return false;}
 
 //! Called by SimplifyGraphic when clipping (and clips are present).
 //! @return true if handled or false to process according to _GetUnhandledPreference.
@@ -215,7 +217,7 @@ virtual bool _ProcessSurfaceClipped(MSBsplineSurfaceCR, SimplifyGraphic&, ClipVe
 virtual bool _ProcessPolyfaceClipped(PolyfaceQueryCR, bool filled, SimplifyGraphic&, ClipVectorCR) {return false;}
 virtual bool _ProcessBodyClipped(IBRepEntityCR, SimplifyGraphic&, ClipVectorCR) {return false;}
 virtual bool _ProcessTextStringClipped(TextStringCR, SimplifyGraphic&, ClipVectorCR) {return false;}
-virtual bool _ProcessTriMeshClipped(Render::TriMeshArgsCR args, SimplifyGraphic&, ClipVectorCR) {return false; }
+virtual bool _ProcessImageClipped(ImageGraphicCR, SimplifyGraphic&, ClipVectorCR) {return false;}
 
 //! Allow processor to initialize per-geometry state information before any _Process method is called.
 //! @remarks Can be used to allow a _Process method to distinguish between the natural geometry type and geometry output according to the UnhandledPreference.

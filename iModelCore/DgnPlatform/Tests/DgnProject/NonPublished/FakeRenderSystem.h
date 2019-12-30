@@ -65,8 +65,9 @@ protected:
     void _AddBody(IBRepEntityCR) { }
     void _AddTextString(TextStringCR text) { }
     void _AddTextString2d(TextStringCR text, double zDepth) { }
-    void _AddDgnOle(DgnOleDraw*) { }
     void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR, ClipVectorCP clip) { }
+    void AddImage(ImageGraphicCR) { }
+    void AddImage2d(ImageGraphicCR, double) { }
     GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const { return nullptr; }
 public:
     static FakeGraphicBuilderPtr Create(CreateParamsCR params) { return new FakeGraphicBuilder(params); }

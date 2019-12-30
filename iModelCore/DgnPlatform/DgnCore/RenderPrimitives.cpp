@@ -343,6 +343,26 @@ public:
 };  // TextStringGeometry
 
 //=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/19
+//=======================================================================================
+struct ImageGeometry : SingularGeometry
+{
+private:
+    ImageGraphicPtr m_image;
+
+    ImageGeometry(ImageGraphicR img, TransformCR tf, DRange3dCR range, DgnElementId elementId, DisplayParamsCR params, DgnDbR db)
+        : SingularGeometry(tf, range, elementId, params, false, db), m_image(&img) { }
+public:
+    static GeometryPtr Create(ImageGraphicR img, TransformCR tf, DRange3dCR range, DgnElementId elementId, DisplayParamsCR params, DgnDbR db)
+        {
+        return new ImageGeometry(img, tf, range, elementId, params, db);
+        }
+
+    PolyfaceList _GetPolyfaces(IFacetOptionsR, OutputR) override;
+    bool IsInstanceable() const final { return false; } // for now.
+};
+
+//=======================================================================================
 // @bsistruct                                                   Ray.Bentley     11/2016
 //=======================================================================================
 struct InstancedGeometry : Geometry
@@ -642,13 +662,14 @@ void DisplayParams::InitGeomParams(DgnCategoryId catId, DgnSubCategoryId subCatI
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-DisplayParams DisplayParams::ForType(Type type, GraphicParamsCR gf, GeometryParamsCP geom, bool filled, DgnDbR db, System& sys)
+DisplayParams DisplayParams::ForType(Type type, GraphicParamsCR gf, GeometryParamsCP geom, bool filled, DgnDbR db, System& sys, DgnTextureId textureId)
     {
     switch (type)
         {
         case Type::Mesh:    return ForMesh(gf, geom, filled, db, sys);
         case Type::Text:    return ForText(gf, geom);
         case Type::Linear:  return ForLinear(gf, geom);
+        case Type::Image:   return ForImage(geom, textureId, db, sys);
         default:            BeAssert(false); return ForText(gf, geom);
         }
     }
@@ -762,7 +783,7 @@ DisplayParams DisplayParams::ForMesh(GraphicParamsCR gf, GeometryParamsCP geom, 
             if (FillDisplay::Always == geom->GetFillDisplay())
                 {
                 fillFlags |= FillFlags::Always;
-                fillFlags&= ~FillFlags::ByView;
+                fillFlags &= ~FillFlags::ByView;
                 }
 
             if (geom->IsFillColorFromViewBackground())
@@ -778,6 +799,44 @@ DisplayParams DisplayParams::ForMesh(GraphicParamsCR gf, GeometryParamsCP geom, 
         surfMat = SurfaceMaterial(*gf.GetMaterial(), gf.GetMaterialUVDetail().GetTransform());
 
     return DisplayParams(gf.GetLineColor(), gf.GetFillColor(), gf.GetWidth(), static_cast<LinePixels>(gf.GetLinePixels()), surfMat, fillFlags, catId, subCatId, geomClass);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/19
++---------------+---------------+---------------+---------------+---------------+------*/
+DisplayParams DisplayParams::ForImage(GeometryParamsCP geom, DgnTextureId textureId, DgnDbR db, System& sys)
+    {
+    DgnCategoryId catId;
+    DgnSubCategoryId subCatId;
+    DgnGeometryClass geomClass = DgnGeometryClass::Primary;
+    if (nullptr != geom)
+        {
+        catId = geom->GetCategoryId();
+        subCatId = geom->GetSubCategoryId();
+        geomClass = geom->GetGeometryClass();
+        }
+
+    SurfaceMaterial surfMat;
+    auto texture = sys._GetTexture(textureId, db);
+    if (texture.IsNull())
+        BeAssert(false && "Failed to locate texture for ImageGraphic");
+    else
+        surfMat = SurfaceMaterial(TextureMapping(*texture));
+
+    return DisplayParams(surfMat, catId, subCatId, geomClass);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void DisplayParams::InitImage(SurfaceMaterialCR mat, DgnCategoryId cat, DgnSubCategoryId sub, DgnGeometryClass gc)
+    {
+    InitGeomParams(cat, sub, gc);
+    m_type = Type::Image;
+    m_surfaceMaterial = mat;
+    m_lineColor = m_fillColor = ColorDef::White();
+    m_ignoreLighting = true;
+    m_fillFlags = FillFlags::Blanking;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2320,6 +2379,37 @@ StrokesList PrimitiveGeometry::_GetStrokes (IFacetOptionsR facetOptions, OutputR
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/19
++---------------+---------------+---------------+---------------+---------------+------*/
+PolyfaceList ImageGeometry::_GetPolyfaces(IFacetOptionsR facetOptions, OutputR output)
+    {
+    auto const& pts = m_image->GetCorners().m_pts;
+    bvector<DPoint3d> points;
+    points.reserve(4);
+    points.push_back(pts[3]);
+    points.push_back(pts[2]);
+    points.push_back(pts[1]);
+    points.push_back(pts[0]);
+
+    auto opts = facetOptions.Clone();
+    opts->SetParamsRequired(true);
+    opts->SetNormalsRequired(false);
+    opts->SetEdgeChainsRequired(false);
+
+    auto builder = IPolyfaceConstruction::Create(*opts);
+    builder->AddTriangulation(points);
+
+    auto polyface = builder->GetClientMeshPtr();
+    polyface->Transform(GetTransform());
+
+    output.AcceptPolyface(*polyface, Transform::FromIdentity(), GetTileRange());
+
+    PolyfaceList polyfaces;
+    polyfaces.push_back(Polyface(GetDisplayParams(), *polyface, false, true));
+    return polyfaces;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 SolidKernelGeometry::SolidKernelGeometry(IBRepEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbR db)
@@ -2437,6 +2527,14 @@ GeometryPtr Geometry::Create(IBRepEntityR solid, TransformCR tf, DRange3dCR rang
 GeometryPtr Geometry::Create(SharedGeomR geom, TransformCR transform, DRange3dCR range, DgnElementId entityId, DisplayParamsCR params, DgnDbR db)
     {
     return InstancedGeometry::Create(geom, transform, range, entityId, params, db);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/19
++---------------+---------------+---------------+---------------+---------------+------*/
+GeometryPtr Geometry::Create(ImageGraphicR img, TransformCR tf, DRange3dCR range, DgnElementId elementId, DisplayParamsCR params, DgnDbR db)
+    {
+    return ImageGeometry::Create(img, tf, range, elementId, params, db);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2574,6 +2672,19 @@ bool GeometryAccumulator::AddTextUnderline(TextStringR text, DisplayParamsCR par
     textTf.Multiply(segment);
     CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None, ICurvePrimitive::CreateLineString(segment.point, 2));
     return Add(*curve, false, params, transform, nullptr, false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryAccumulator::Add(ImageGraphicR img, DisplayParamsCR params, TransformCR transform)
+    {
+    DRange3d range = img.GetRange();
+    Transform tf = m_haveTransform ? Transform::FromProduct(m_transform, transform) : transform;
+    tf.Multiply(range, range);
+
+    m_geometries.push_back(*Geometry::Create(img, tf, range, GetElementId(), params, GetDgnDb()));
+    return true;
     }
 
 //=======================================================================================
@@ -3410,7 +3521,6 @@ void GeometryListBuilder::_AddShape2d(int numPoints, DPoint2dCP points, bool fil
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryListBuilder::_AddTextString(TextStringCR text)
     {
-    // ###TODO_ELEMENT_TILE: May want to treat as box if too small...
     _AddTextStringR(*text.Clone());
     }
 
@@ -3461,6 +3571,39 @@ void GeometryListBuilder::_AddTextString2dR(TextStringR text, double priority)
         ts->SetOrigin(origin);
         _AddTextStringR(*ts);
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometryListBuilder::AddImage(ImageGraphicCR img) { AddImageR(*img.Clone()); }
+void GeometryListBuilder::AddImage2d(ImageGraphicCR img, double z) { AddImage2dR(*img.Clone(), z); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometryListBuilder::AddImageR(ImageGraphicR img)
+    {
+    m_accum.Add(img, GetImageDisplayParams(img.GetTextureId()), GetLocalToWorldTransform());
+    if (img.HasBorder())
+        {
+        DPoint3d pts[5];
+        for (auto i = 0; i < 4; i++)
+            pts[i] = img.GetCorners().m_pts[i];
+
+        pts[4] = pts[0];
+
+        _AddLineString(5, pts);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometryListBuilder::AddImage2dR(ImageGraphicR img, double priority)
+    {
+    img.SetZ(depthFromDisplayPriority(priority));
+    AddImageR(img);
     }
 
 PUSH_MSVC_IGNORE(6386) // Static analysis warning claims we overrun tmpPts...bogus.
@@ -3724,14 +3867,6 @@ void GeometryListBuilder::_AddBSplineSurfaceR(RefCountedMSBsplineSurfaceR surf)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   07/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryListBuilder::_AddDgnOle(DgnOleDraw* dgnOle)
-    {
-    BeAssert("TODO");
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PrimitiveBuilder::_AddSubGraphic(Graphic& gf, TransformCR subToGf, GraphicParamsCR gfParams, ClipVectorCP clip)
@@ -3960,6 +4095,11 @@ DisplayParamsCPtr DisplayParams::Create(Type type, DgnCategoryId catId, DgnSubCa
             auto params = new DisplayParams(lineColor, catId, subCatId, geomClass);
             params->m_surfaceMaterial = SurfaceMaterial(texMap);
             return params;
+            }
+        case Type::Image:
+            {
+            BeAssert(texMap.IsValid() && "ImageGraphic DisplayParams requires a texture");
+            return new DisplayParams(SurfaceMaterial(texMap), catId, subCatId, geomClass);
             }
         default:
             BeAssert(false);

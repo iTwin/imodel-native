@@ -341,6 +341,7 @@ size_t FacetCounter::GetFacetCount(GeometricPrimitiveCR geom) const
         case GeometricPrimitive::GeometryType::Polyface:            return GetFacetCount(*geom.GetAsPolyfaceHeader());
         case GeometricPrimitive::GeometryType::BRepEntity:   return GetFacetCount(*geom.GetAsIBRepEntity());
         case GeometricPrimitive::GeometryType::TextString:          return GetFacetCount(*geom.GetAsTextString());
+        case GeometricPrimitive::GeometryType::Image:               return 2;
         default:                                                    BeAssert(false); return 0;
         }
     }

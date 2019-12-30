@@ -1375,12 +1375,12 @@ BentleyStatus IModelTileWriter::CreateTriMesh(Json::Value& primitiveJson, MeshCR
         {
         DRange2d uvRange = meshParams.m_uvParams.GetRange();
         primitiveJson["surface"]["uvParams"] = CreateDecodeQuantizeValues(&uvRange.low.x, &uvRange.high.x, 2);
+        if (mesh.GetDisplayParams().GetType() == DisplayParams::Type::Image)
+            primitiveJson["surface"]["alwaysDisplayTexture"] = true;
         }
 
     if (args.m_edges.IsValid())
         primitiveJson["edges"] = CreateMeshEdges(args.m_edges, args, idStr);
-
-
 
     return SUCCESS;
     }
@@ -1723,7 +1723,8 @@ BentleyStatus IModelTileWriter::CreateDisplayParamJson(Json::Value& matJson, Mes
     {
     auto const& displayParams = mesh.GetDisplayParams();
 
-    matJson["type"] = (uint8_t) displayParams.GetType();
+    // Typescript doesn't need to know about the "Image" type.
+    matJson["type"] = static_cast<uint8_t>(displayParams.GetType() == DisplayParams::Type::Image ? DisplayParams::Type::Mesh : displayParams.GetType());
 
     // GeomParams...
     if (displayParams.GetCategoryId().IsValid())
