@@ -1502,6 +1502,7 @@ bool hasSymbologyChanges(GeometryStreamIO::Collection const& geom)
             case GeometryStreamIO::OpCode::AreaFill:
             case GeometryStreamIO::OpCode::Pattern:
             case GeometryStreamIO::OpCode::Material:
+            case GeometryStreamIO::OpCode::LineStyleModifiers:
                 return true;
             }
         }

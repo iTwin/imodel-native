@@ -1264,6 +1264,10 @@ public:
 
     bool IsCurved() const;
     bool IsComplete() const { return m_geometries.IsComplete(); }
+
+    // NOTE: These 2 methods are intended for use when you know only one instance exists.
+    // The symbology associated with each polyface or polyline will be a combination of the instance's symbology and that of
+    // each corresponding entry in the geometry part's geometry stream.
     PolyfaceList GetPolyfaces(double chordTolerance, NormalMode, GeometryCP instance, OutputR);
     StrokesList GetStrokes(double chordTolerance, GeometryCP instance, OutputR);
 

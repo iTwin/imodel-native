@@ -2016,8 +2016,6 @@ PolyfaceList SharedGeom::GetPolyfaces(double chordTolerance, NormalMode normalMo
 
         for (auto& polyface : thisPolyfaces)
             {
-            auto displayParams = CloneDisplayParamsForInstance(polyface.GetDisplayParams(), nullptr != instance ? instance->GetDisplayParams() : GetDisplayParams());
-            polyface.SetDisplayParams(*displayParams);
             if (nullptr != instance)
                 polyface.Transform(instance->GetTransform());
 
@@ -2048,7 +2046,6 @@ StrokesList SharedGeom::GetStrokes(double chordTolerance, GeometryCP instance, O
         {
         for (auto& stroke : strokes)
             {
-            stroke.SetDisplayParams(GetInstanceDisplayParams(instance, stroke.GetDisplayParams()));
             stroke.Decimate();
             stroke.Transform(instance->GetTransform());
             }
