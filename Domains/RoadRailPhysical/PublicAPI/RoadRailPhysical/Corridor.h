@@ -52,6 +52,7 @@ public:
     //! @private
     CorridorCPtr Update(Dgn::DgnDbStatus* status = nullptr) { return new Corridor(*getP()->GetDgnDb().Elements().Update<Dgn::PhysicalElement>(*getP(), status)); }
     ROADRAILPHYSICAL_EXPORT CorridorCPtr Insert(Dgn::DgnDbStatus* status = nullptr);
+    ROADRAILPHYSICAL_EXPORT Dgn::DgnDbStatus InsertLinearElementRelationship() { return _InsertLinearElementRelationship(); }
 }; // Corridor
 
 //=======================================================================================

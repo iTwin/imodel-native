@@ -1809,6 +1809,8 @@ BentleyStatus ORDCorridorsConverter::CreateNewCorridor(
         return BentleyStatus::ERROR;
         }
 
+    corridorPtr->InsertLinearElementRelationship();
+
     bimCorridorCPtr = RoadRailBim::Corridor::Get(corridorPtr->GetDgnDb(), corridorPtr->GetElementId());
 
     auto bimAlignmentPtr = AlignmentBim::Alignment::GetForEdit(bimAlignmentCPtr->GetDgnDb(), bimAlignmentCPtr->GetElementId());
