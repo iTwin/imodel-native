@@ -1016,8 +1016,8 @@ BentleyStatus ECSchemaXmlDeserializer::DeserializeSchemas(BECN::ECSchemaReadCont
     m_converter.AddTasks(m_schemaXmlMap.size());
     schemaContext.RemoveSchemaLocater(m_converter.GetDgnDb().GetSchemaLocater());
     //Prefer ECDb and standard schemas over ones embedded in DGN file.
-    schemaContext.AddSchemaLocater(*this);
-    schemaContext.AddSchemaLocater(m_converter.GetDgnDb().GetSchemaLocater());
+    schemaContext.SetFinalSchemaLocater(*this);
+    schemaContext.SetFinalSchemaLocater(m_converter.GetDgnDb().GetSchemaLocater());
 
     bvector<Utf8String> usedAliases;
     for (auto& kvPairs : m_schemaXmlMap)
