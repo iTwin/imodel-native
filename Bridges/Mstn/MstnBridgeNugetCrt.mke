@@ -1,0 +1,12 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+%include mdl.mki
+
+srcDir = $(SrcRoot)ThirdParty/msvcrt_14_16_27012/x64/Microsoft.VC141.CRT/
+dstDir = $(BuildContext)Delivery/msvcrt/
+
+always:
+    ~linkfile "$(dstDir)msvcp140.dll=$(srcDir)msvcp140.dll"
+    ~linkfile "$(dstDir)vcruntime140.dll=$(srcDir)vcruntime140.dll"

@@ -7,15 +7,20 @@
     <Part Name="MstnBridgePRG" PrgOutputDir="MstnBridge">
         <SubProduct ProductName="MstnBridge"/>
         <SubPart PartName="RunMstnBridgeTests"/>
+        <SubNuGetProduct NuGetProductName="MstnBridgeNuget"/>
     </Part>
 
-    <Product Name="MstnBridge" SaveProduct="true" BuildInstallSet="true">
-        <SubPart PartName="MstnBridgeInstallFiles"/>
+    <Part Name="__MstnBridgeProductSubParts">
         <SubPart PartName="DgnV8ConverterExe" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync"/>
         <SubPart PartName="iModelBridgeFwkExe" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"/>
         <SubPart PartName="MakePackages" PartFile="iModelBridgeCore/DgnDbSync/bridge-addon"/>
         <SubPart PartName="StaticAppData" PartFile="MstnAppData" Repository="miscdev-mstnappdata"/>
         <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
+    </Part>
+
+    <Product Name="MstnBridge" SaveProduct="true" BuildInstallSet="true">
+        <SubPart PartName="__MstnBridgeProductSubParts"/>
+        <SubPart PartName="MstnBridgeInstallFiles"/>
         <FeatureExclude>imodel02_Workspace_System_Fonts</FeatureExclude>
 
         <InstallerWixFile SourceFile="Installer/MstnBridgeInstaller"/>
@@ -109,5 +114,30 @@
         <Directories DirectoryListName="DgnV8ConverterDirList"  PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync"/>
         <Directories DirectoryListName="Tests" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync"/>
     </Product>
+
+    <Part Name="__MstnBridgeNugetCrt" BentleyBuildMakeFile="MstnBridgeNugetCrt.mke">
+        <RequiredRepository>Thirdparty-msvcrt_14_16_27012</RequiredRepository>
+        <Bindings>
+            <Assemblies>
+                Delivery/msvcrt/msvcp140.dll
+                Delivery/msvcrt/vcruntime140.dll
+            </Assemblies>
+        </Bindings>
+    </Part>
+
+    <NuGetProduct Name="MstnBridgeNuget" Description="MstnBridge" OnlyPlatforms="x64">
+        <SubPart PartName="__MstnBridgeProductSubParts"/>
+        <SubPart PartName="__MstnBridgeNugetCrt"/>
+        
+        <FeatureExclude>imodel02_Workspace_System_Fonts</FeatureExclude>
+
+        <Directories DirectoryListName="DgnDbSyncAppCommonDirList" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync" Repository="imodel02"/>
+        <Directories DirectoryListName="MstnBridgeDirList"/>
+        <Directories DirectoryListName="iModelCoreNugetDirs"/>
+    </NuGetProduct>
+
+    <ProductDirectoryList ListName="iModelCoreNugetDirs">
+        <ProductDirectory Name="applicationroot" Path="app"/>
+    </ProductDirectoryList>
 
 </BuildContext>
