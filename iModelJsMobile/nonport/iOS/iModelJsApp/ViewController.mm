@@ -339,7 +339,7 @@ didReceiveServerRedirectForProvisionalNavigation:(WKNavigation *)navigation {
     } else if ([message.name compare:@"signOut" options:NSCaseInsensitiveSearch] == NSOrderedSame) {
         
     } else if ([message.name compare:@"launchApp" options:NSCaseInsensitiveSearch] == NSOrderedSame) {
-        
+        NSLog(@"Documents Directory: %@", [[[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] lastObject]); 
         //launch backend
         NSString* appIdArg = message.body;
         _appInfo = [[AppRegistry sharedInstance] find: appIdArg];

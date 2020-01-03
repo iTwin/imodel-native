@@ -120,7 +120,7 @@
         <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices" LibType="static"/>
     </ProductDirectoryList>
 
-    <Part Name="imodeljsiosapp" BentleyBuildMakeFile="nonport/iOS/iModelJsApp/iModelJsApp.mke" OnlyPlatforms="MacOs*,Linux*,iOSARM64">
+    <Part Name="imodeljsiosapp" BentleyBuildMakeFile="nonport/iOS/iModelJsApp/iModelJsApp.mke" OnlyPlatforms="MacOs*,Linux*,iOSARM64,IOSX64">
         <SubPart PartName="iModelJs" LibType="Static" />
     </Part>
 
@@ -163,7 +163,7 @@
     <!-- ********************** -->
 
     <Part Name="Gtest-Base" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}imodel02/iModelCore/BeGTest/gtest/buildGtest.mke"
-    BentleyBuildMakeOptions="-dTEST_NAME=iModelJsTests -dTEST_COLLECTION_PRODUCT=iModelJs-Tests -dTEST_FRAMEWORK_SQLANG=iModelJsNodeAddon_en.sqlang.db3" OnlyPlatforms="x86,x64,MacOs*,Linux*,iOSARM64">
+    BentleyBuildMakeOptions="-dTEST_NAME=iModelJsTests -dTEST_COLLECTION_PRODUCT=iModelJs-Tests -dTEST_FRAMEWORK_SQLANG=iModelJsNodeAddon_en.sqlang.db3" OnlyPlatforms="x86,x64,MacOs*,Linux*,iOSARM64,IOSX64">
         <SubProduct ProductName="iModelJs-Tests"/>
         <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <Bindings>
@@ -176,7 +176,7 @@
         <SubPart PartName="Gtest-Base" LibType="Dynamic"/>
     </Part>
 
-    <Part Name="Gtest-Unix" OnlyPlatforms="MacOS*,Linux*,iOSARM64">
+    <Part Name="Gtest-Unix" OnlyPlatforms="MacOS*,Linux*,iOSARM64,IOSX64">
         <SubPart PartName="Gtest-Base" LibType="Static"/>
     </Part>
 
@@ -186,7 +186,7 @@
         <Directories DirectoryListName="GtestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
     </Product>
 
-    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}imodel02/iModelCore/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=iModelJs-Gtest -dGTEST_NAME=iModelJsTests -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/iModelJsTests" OnlyPlatforms="x86,x64,MacOs*,Linux*,iOSARM64">
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}imodel02/iModelCore/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=iModelJs-Gtest -dGTEST_NAME=iModelJsTests -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/iModelJsTests" OnlyPlatforms="x86,x64,MacOs*,Linux*,iOSARM64,IOSX64">
         <SubProduct ProductName="iModelJs-Gtest" />
     </Part>
 
