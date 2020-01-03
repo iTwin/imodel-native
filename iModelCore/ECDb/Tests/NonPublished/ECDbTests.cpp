@@ -165,6 +165,7 @@ TEST_F(ECDbTestFixture, ConcurrentQueryManagerReadonly)
     TimeoutFunc timeoutFunc;
     auto config = ConcurrentQueryManager::Config()
         .SetQuota(ConcurrentQueryManager::Quota(1s, 1_kb))
+        .SetConcurrent(8)
         .SetIdleCleanupTime(30s)
         .SetAfterConnectionOpenned([&timeoutFunc] (Db const& db) {
             db.AddFunction(timeoutFunc);
@@ -213,7 +214,7 @@ TEST_F(ECDbTestFixture, ConcurrentQueryManagerReadWrite)
         .SetConcurrent(8)
         .SetUseSharedCache(true)
         .SetUseImmutableDb(false)
-        .SetUseUncommitedRead(true);
+        .SetUseUncommittedRead(true);
 
     auto& mgr = m_ecdb.GetConcurrentQueryManager();
     mgr.Initalize(config);

@@ -26,7 +26,7 @@ ConcurrentQueryManager::Config::Config():
     m_completedTaskExpires(1min),
     m_quota(),
     m_useSharedCache(false),
-    m_useUncommitedRead(false),
+    m_useUncommittedRead(false),
     m_useImmutableDb(false)
     {}
 
@@ -45,7 +45,7 @@ ConcurrentQueryManager::Config::Config(const Config&& rhs)
     m_minMonitorInterval(std::move(rhs.m_minMonitorInterval)),
     m_completedTaskExpires(std::move(rhs.m_completedTaskExpires)),
     m_useSharedCache(std::move(rhs.m_useSharedCache)),
-    m_useUncommitedRead(std::move(rhs.m_useUncommitedRead)),
+    m_useUncommittedRead(std::move(rhs.m_useUncommittedRead)),
     m_useImmutableDb(std::move(rhs.m_useImmutableDb))
     {
     }
@@ -64,7 +64,7 @@ ConcurrentQueryManager::Config::Config(const Config& rhs)
     m_minMonitorInterval(rhs.m_minMonitorInterval),
     m_completedTaskExpires(rhs.m_completedTaskExpires),
     m_useSharedCache(rhs.m_useSharedCache),
-    m_useUncommitedRead(rhs.m_useUncommitedRead),
+    m_useUncommittedRead(rhs.m_useUncommittedRead),
     m_useImmutableDb(rhs.m_useImmutableDb)
     {
     }
@@ -86,7 +86,7 @@ ConcurrentQueryManager::Config& ConcurrentQueryManager::Config::operator= (const
         m_minMonitorInterval = rhs.m_minMonitorInterval;
         m_completedTaskExpires = rhs.m_completedTaskExpires;
         m_useSharedCache = rhs.m_useSharedCache;
-        m_useUncommitedRead = rhs.m_useUncommitedRead;
+        m_useUncommittedRead = rhs.m_useUncommittedRead;
         m_useImmutableDb = rhs.m_useImmutableDb;
         }
     return *this;
@@ -109,7 +109,7 @@ ConcurrentQueryManager::Config& ConcurrentQueryManager::Config::operator= (const
         m_minMonitorInterval = rhs.m_minMonitorInterval;
         m_completedTaskExpires = rhs.m_completedTaskExpires;
         m_useSharedCache = std::move(rhs.m_useSharedCache);
-        m_useUncommitedRead = std::move(rhs.m_useUncommitedRead);
+        m_useUncommittedRead = std::move(rhs.m_useUncommittedRead);
         m_useImmutableDb = std::move(rhs.m_useImmutableDb);
         }
     return *this;
@@ -495,7 +495,7 @@ void QueryWorker::Init()
     // m_retryHandler = RetryHandler::Create();
     const auto isErrorEnabled = CQLOG.isSeverityEnabled(NativeLogging::LOG_ERROR);
     const auto useImmutableDb = m_workerPool.GetMgr()->GetConfig().GetUseImmutableDb() && m_workerPool.GetMgr()->GetECDb().IsReadonly();
-    const auto useUncommitedRead = m_workerPool.GetMgr()->GetConfig().GetUseUncommitedRead();
+    const auto useUncommittedRead = m_workerPool.GetMgr()->GetConfig().GetUseUncommittedRead();
     const auto useSharedCache = m_workerPool.GetMgr()->GetConfig().GetUseSharedCache();
     const auto txn = useImmutableDb ? DefaultTxn::Yes : DefaultTxn::No;
     const auto openMode = (Db::OpenMode)(useSharedCache && !useImmutableDb ? 
@@ -517,7 +517,7 @@ void QueryWorker::Init()
         BeAssert(rc != BE_SQLITE_OK);
         return;
         }
-    if (useUncommitedRead && !useImmutableDb)
+    if (useUncommittedRead && !useImmutableDb)
         {
         rc = m_db.TryExecuteSql("PRAGMA read_uncommitted=true");
         if (rc != BE_SQLITE_OK)

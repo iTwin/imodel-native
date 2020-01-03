@@ -224,9 +224,9 @@ Napi::Value JsInterop::ConcurrentQueryInit(ECDbCR ecdb, Napi::Env env, Napi::Obj
     if (!b.IsUndefined() && !b.IsNull())
         config.SetUseSharedCache(b);
 
-    b = cfg.Get("useUncommitedRead").ToBoolean();
+    b = cfg.Get("useUncommittedRead").ToBoolean();
     if (!v.IsUndefined() && !b.IsNull())
-        config.SetUseUncommitedRead(b);
+        config.SetUseUncommittedRead(b);
 
     b = cfg.Get("useImmutableDb").ToBoolean();
     if (!v.IsUndefined() && !b.IsNull())
