@@ -36,6 +36,7 @@
     <ClInclude Include="Licensing\Providers\IEntitlementProvider.h" />
     <ClInclude Include="Licensing\Providers\WebEntitlementResult.h" />
     <ClInclude Include="Licensing\TrackUsageStatus.h" />
+    <ClInclude Include="PublicAPI\Licensing\ClientConfig.h" />
     <ClInclude Include="PublicAPI\Licensing\EntitlementResult.h" />
     <ClInclude Include="Licensing\SaasClientImpl.h" />
     <ClInclude Include="Licensing\ClientImpl.h" />

@@ -9,6 +9,7 @@
 #include <Licensing/AuthType.h>
 #include <Licensing/ApplicationInfo.h>
 
+
 #include "LicenseStatus.h"
 
 #include <WebServices/Connect/IConnectAuthenticationProvider.h>
@@ -16,6 +17,7 @@
 #include <WebServices/Connect/ConnectSignInManager.h> // Would be nice to remove this dependency
 
 #include <Licensing/Utils/FeatureUserDataMap.h>
+#include <Licensing/ClientConfig.h>
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 
@@ -81,6 +83,14 @@ public:
         Http::IHttpHandlerPtr customHttpHandler = nullptr,
         AuthType authType = AuthType::SAML
         );
+
+	//! Initializes an instance of Client, returns a ClientPtr to the prepared Client instance.
+	//! @param[in] ClientConfig configobject, holds all the params for Client::Create, instantiates with defaults.
+	//! Make sure to set the values needed in the config object prior to calling create(configobject)
+	LICENSING_EXPORT static ClientPtr Create
+	(
+		ClientConfig config
+	);
 
     //! StartApplication performs actions and creates threads required for usage posting and policy requests, returns LicenseStatus
     // TODO: Return more than BentleyStatus to indicate to the app if the user has rights to use this app or it's crippled etc...

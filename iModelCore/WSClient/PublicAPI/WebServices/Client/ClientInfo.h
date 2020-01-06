@@ -8,6 +8,7 @@
 #include <WebServices/Client/WebServicesClient.h>
 #include <BeHttp/IHttpHeaderProvider.h>
 #include <Bentley/BeVersion.h>
+#include <Bentley/BeThread.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 

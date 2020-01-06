@@ -3,6 +3,7 @@
 * See COPYRIGHT.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include <Licensing/Client.h>
+#include <Licensing/ClientConfig.h>
 #include "Providers/AuthHandlerProvider.h"
 #include "Providers/BuddiProvider.h"
 #include "Providers/PolicyProvider.h"
@@ -17,7 +18,7 @@ USING_NAMESPACE_BENTLEY_LICENSING
 Client::Client
     (
     std::shared_ptr<struct ClientImpl> implementation
-    )
+)
     {
     m_impl = implementation;
     }
@@ -26,7 +27,7 @@ Client::Client
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClientPtr Client::Create
-    (
+(
     const WebServices::ConnectSignInManager::UserInfo& userInfo,
     WebServices::ClientInfoPtr clientInfo,
     std::shared_ptr<WebServices::IConnectAuthenticationProvider> authenticationProvider,
@@ -36,7 +37,7 @@ ClientPtr Client::Create
     Utf8StringCR featureString,
     Http::IHttpHandlerPtr httpHandler,
     AuthType authType
-    )
+)
     {
     ApplicationInfoPtr applicationInfo = std::make_shared<ApplicationInfo>(clientInfo->GetApplicationVersion(), clientInfo->GetDeviceId(), clientInfo->GetApplicationProductId());
     IBuddiProviderPtr buddiProvider = std::make_shared<BuddiProvider>();
@@ -47,7 +48,7 @@ ClientPtr Client::Create
     }
 
 ClientPtr Client::Create
-    (
+(
     const WebServices::ConnectSignInManager::UserInfo& userInfo,
     ApplicationInfoPtr applicationInfo,
     std::shared_ptr<WebServices::IConnectAuthenticationProvider> authenticationProvider,
@@ -57,13 +58,22 @@ ClientPtr Client::Create
     Utf8StringCR featureString,
     Http::IHttpHandlerPtr httpHandler,
     AuthType authType
-    )
+)
     {
     IBuddiProviderPtr buddiProvider = std::make_shared<BuddiProvider>();
     IAuthHandlerProviderPtr authHandlerProvider = std::make_shared<AuthHandlerProvider>(authenticationProvider, httpHandler);
     IPolicyProviderPtr policyProvider = std::make_shared<PolicyProvider>(buddiProvider, applicationInfo, httpHandler, authType, authHandlerProvider);
     IUlasProviderPtr ulasProvider = std::make_shared<UlasProvider>(buddiProvider, httpHandler);
     return std::shared_ptr<Client>(new Client(std::make_shared<ClientImpl>(userInfo, applicationInfo, dbPath, offlineMode, policyProvider, ulasProvider, projectId, featureString, nullptr)));
+    }
+
+ClientPtr Client::Create
+(
+    ClientConfig config
+)
+    {
+    //TODO check required params
+    return Client::Create(config.GetUserInfo(), config.GetAppInfo(), config.GetAuthProvider(), config.GetDBPath(), config.GetOfflineMode(), config.GetProjectId(), config.GetFeatureString(), config.GetCustomHttpHandler(), config.GetAuthType());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -82,13 +92,13 @@ BentleyStatus Client::StopApplication()
     return m_impl->StopApplication();
     }
 
- /*--------------------------------------------------------------------------------------+
- * @bsimethod
- +---------------+---------------+---------------+---------------+---------------+------*/
- BentleyStatus Client::MarkFeature(Utf8StringCR featureId, FeatureUserDataMapPtr featureUserData)
-     {
-     return m_impl->MarkFeature(featureId, featureUserData);
-     }
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus Client::MarkFeature(Utf8StringCR featureId, FeatureUserDataMapPtr featureUserData)
+    {
+    return m_impl->MarkFeature(featureId, featureUserData);
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -99,6 +109,6 @@ int64_t Client::GetTrialDaysRemaining()
     }
 
 int64_t Client::ImportCheckout(BeFileNameCR filepath)
-{
-	return m_impl->ImportCheckout(filepath);
-}
+    {
+    return m_impl->ImportCheckout(filepath);
+    }
