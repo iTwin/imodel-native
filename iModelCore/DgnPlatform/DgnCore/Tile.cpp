@@ -2150,6 +2150,7 @@ void Tree::Destroy()
     CancelAllTileLoads();
     WaitForAllLoads();
     BeAssert(m_activeLoads.empty());
+    BeAssert(m_canceledLoads.empty());
     m_cache = nullptr;
     }
 
@@ -2183,7 +2184,17 @@ void Tree::CancelAllTileLoads()
     {
     BeMutexHolder lock(m_cv.GetMutex());
     for (auto& load : m_activeLoads)
-        load->SetCanceled();
+        CancelTileLoad(load);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/20
++---------------+---------------+---------------+---------------+---------------+------*/
+void Tree::WaitForAllLoads()
+    {
+    BeMutexHolder lock(m_cv.GetMutex());
+    while (m_activeLoads.size() > 0 || m_canceledLoads.size() > 0)
+        m_cv.InfiniteWait(lock);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2205,12 +2216,37 @@ LoaderPtr Tree::CreateLoader(ContentIdCR contentId, bool useCache)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/20
++---------------+---------------+---------------+---------------+---------------+------*/
+void Tree::CancelTileLoad(LoaderPtr const& load)
+    {
+    // NB: Mutex is held by caller.
+    load->SetCanceled();
+    m_canceledLoads.insert(load);
+    m_activeLoads.erase(load);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/20
++---------------+---------------+---------------+---------------+---------------+------*/
+void Tree::CancelTileLoads(bvector<ContentId> const& contentIds)
+    {
+    BeMutexHolder lock(m_cv.GetMutex());
+    for (auto const& contentId : contentIds)
+        {
+        auto found = m_activeLoads.find(contentId);
+        if (m_activeLoads.end() != found)
+            CancelTileLoad(*found);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentCPtr Tree::RequestContent(ContentIdCR contentId, bool useCache)
     {
-    LoaderPtr loader;
     BeMutexHolder lock(m_cv.GetMutex());
+    LoaderPtr loader;
     auto iter = m_activeLoads.find(contentId);
     if (iter == m_activeLoads.end())
         {
@@ -2472,9 +2508,21 @@ Tree::LoaderScope::~LoaderScope()
     // Ensure loader removed and waiting threads notified even if exception occurs during Loader::Perform().
     m_lock.lock();
     auto& loads = m_loader->GetTree().m_activeLoads;
-    BeAssert(loads.end() != loads.find(m_loader));
-    loads.erase(m_loader);
-    BeAssert(loads.end() == loads.find(m_loader));
+    auto& canceledLoads = m_loader->GetTree().m_canceledLoads;
+    if (m_loader->IsCanceled())
+        {
+        BeAssert(canceledLoads.end() != canceledLoads.find(m_loader));
+        canceledLoads.erase(m_loader);
+        }
+    else
+        {
+        BeAssert(loads.end() != loads.find(m_loader));
+        loads.erase(m_loader);
+        BeAssert(loads.end() == loads.find(m_loader));
+        }
+
+    BeAssert(canceledLoads.end() == canceledLoads.find(m_loader));
+
     m_loader->GetTree().m_cv.notify_all();
     }
 
@@ -2657,7 +2705,8 @@ void Loader::Perform()
         state = ReadFromModel();
         if (IsCanceled())
             return;
-        else if (State::Ready == state && SUCCESS != SaveToDb())
+
+        if (State::Ready == state && SUCCESS != SaveToDb())
             BeAssert(false);
         }
 

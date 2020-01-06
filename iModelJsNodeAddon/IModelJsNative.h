@@ -221,6 +221,7 @@ public:
     static void GetTileContent(ICancellationTokenPtr, DgnDbR db, Utf8StringCR treeId, Utf8StringCR tileId, Napi::Function& callback);
     static void PurgeTileTrees(DgnDbR db, bvector<DgnModelId> const* modelIds);
     static Tile::PollResult PollTileContent(ICancellationTokenPtr, DgnDbR db, Utf8StringCR treeId, Utf8StringCR tileId);
+    static void CancelContentRequests(DgnDbR db, Utf8StringCR treeId, bvector<Utf8String> const& tileIds);
     static void SetUseTileCache(bool use);
     static bool GetUseTileCache();
 

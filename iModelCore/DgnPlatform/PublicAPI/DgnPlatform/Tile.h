@@ -282,6 +282,11 @@ public:
         bool operator()(ContentIdCR lhs, LoaderPtr const& rhs) const { return operator()(lhs, rhs->GetContentId()); }
         bool operator()(ContentIdCR lhs, ContentIdCR rhs) const { return lhs < rhs; }
     };
+
+    struct IdentityComparator
+    {
+        bool operator()(LoaderPtr const& lhs, LoaderPtr const& rhs) const { return lhs.get() < rhs.get(); }
+    };
 };
 
 //=======================================================================================
@@ -419,11 +424,14 @@ private:
     Render::SystemR m_renderSystem;
     RealityData::CachePtr m_cache;
     std::set<LoaderPtr, Loader::PtrComparator> m_activeLoads;
+    bset<LoaderPtr, Loader::IdentityComparator> m_canceledLoads;
     Id m_id;
     bool m_is3d;
     RootTile m_rootTile;
     AnimationNodeMap m_nodeMap;
     DRange3d m_contentRange;
+
+    void CancelTileLoad(LoaderPtr const& loader);
 protected:
     Tree(GeometricModelCR model, TransformCR location, DRange3dCR range, Render::SystemR system, Id id, RootTile rootTile, DRange3dCR contentRange);
 
@@ -457,10 +465,9 @@ public:
     GeometricModelPtr FetchModel() const { return GetDgnDb().Models().Get<GeometricModel>(GetModelId()); }
     Utf8String ConstructCacheKey(ContentIdCR contentId) const { auto key = GetId().ToString(); key.append(contentId.ToString()); return key; }
 
-    void DoneTileLoad(LoaderR loader);
-
+    DGNPLATFORM_EXPORT void CancelTileLoads(bvector<ContentId> const& contentIds);
     DGNPLATFORM_EXPORT void CancelAllTileLoads();
-    void WaitForAllLoads() { BeMutexHolder holder(m_cv.GetMutex()); while (m_activeLoads.size() > 0) m_cv.InfiniteWait(holder); }
+    DGNPLATFORM_EXPORT void WaitForAllLoads();
 
     // Obtain the content associated with the specified content ID.
     // If another thread is already in the process of obtaining the same content, this thread will wait until the other thread completes, then return the same content.

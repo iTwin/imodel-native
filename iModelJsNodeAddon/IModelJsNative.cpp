@@ -1709,6 +1709,18 @@ public:
             }
         }
 
+    void CancelTileContentRequests(Napi::CallbackInfo const& info)
+        {
+        if (!IsOpen())
+            return;
+
+        REQUIRE_ARGUMENT_STRING(0, treeId, );
+        REQUIRE_ARGUMENT_STRING_ARRAY(1, tileIds, );
+
+        if (!tileIds.empty())
+            JsInterop::CancelContentRequests(GetDgnDb(), treeId, tileIds);
+        }
+
     Napi::Value InsertLinkTableRelationship(Napi::CallbackInfo const& info)
         {
         REQUIRE_DB_TO_BE_OPEN
@@ -2367,6 +2379,7 @@ public:
             InstanceMethod("briefcaseManagerStartBulkOperation", &NativeDgnDb::BriefcaseManagerStartBulkOperation),
             InstanceMethod("buildBriefcaseManagerResourcesRequestForElement", &NativeDgnDb::BuildBriefcaseManagerResourcesRequestForElement),
             InstanceMethod("buildBriefcaseManagerResourcesRequestForModel", &NativeDgnDb::BuildBriefcaseManagerResourcesRequestForModel),
+            InstanceMethod("cancelTileContentRequests", &NativeDgnDb::CancelTileContentRequests),
             InstanceMethod("cancelTo", &NativeDgnDb::CancelTo),
             InstanceMethod("closeIModel", &NativeDgnDb::CloseIModel),
             InstanceMethod("createChangeCache", &NativeDgnDb::CreateChangeCache),
@@ -2410,7 +2423,6 @@ public:
             InstanceMethod("getSchema", &NativeDgnDb::GetSchema),
             InstanceMethod("getSchemaItem", &NativeDgnDb::GetSchemaItem),
             InstanceMethod("getTileContent", &NativeDgnDb::GetTileContent),
-            InstanceMethod("pollTileContent", &NativeDgnDb::PollTileContent),
             InstanceMethod("getTileTree", &NativeDgnDb::GetTileTree),
             InstanceMethod("purgeTileTrees", &NativeDgnDb::PurgeTileTrees),
             InstanceMethod("getTxnDescription", &NativeDgnDb::GetTxnDescription),
@@ -2434,6 +2446,7 @@ public:
             InstanceMethod("isUndoPossible", &NativeDgnDb::IsUndoPossible),
             InstanceMethod("logTxnError", &NativeDgnDb::LogTxnError),
             InstanceMethod("openIModel", &NativeDgnDb::OpenIModel),
+            InstanceMethod("pollTileContent", &NativeDgnDb::PollTileContent),
             InstanceMethod("queryFileProperty", &NativeDgnDb::QueryFileProperty),
             InstanceMethod("queryFirstTxnId", &NativeDgnDb::QueryFirstTxnId),
             InstanceMethod("queryModelExtents", &NativeDgnDb::QueryModelExtents),

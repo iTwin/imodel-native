@@ -228,6 +228,7 @@ export declare namespace IModelJsNative {
     public pollTileContent(treeId: string, tileId: string): ErrorStatusOrResult<IModelStatus, TileContentState | TileContent>;
     public getTileTree(id: string, callback: (result: ErrorStatusOrResult<IModelStatus, any>) => void): void;
     public purgeTileTrees(modelIds: Id64Array | undefined): void;
+    public cancelTileContentRequests(treeId: string, contentIds: string[]): void;
     public getTxnDescription(txnId: TxnIdString): string;
     public getUndoString(): string;
     public hasFatalTxnError(): boolean;

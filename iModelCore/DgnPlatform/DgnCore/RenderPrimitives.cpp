@@ -4594,7 +4594,7 @@ void Strokes::ClipPoints(DRange3dCR range)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Strokes::ClipSegments(DRange3dCR range)
     {
-    BeAssert(IsDisjoint());
+    BeAssert(!IsDisjoint());
 
     PointLists clipped;
     clipped.reserve(m_strokes.size());

@@ -507,10 +507,11 @@ struct AppData : DgnModel::AppData
                 {
                 // just in case somebody request more tiles after _OnUnload()...
                 entry.m_tree->CancelAllTileLoads();
+
                 // Wait for them all to finish canceling...
                 entry.m_tree->WaitForAllLoads();
-                // No one else should be holding a pointer to tile tree any more.
-                BeAssert(1 == entry.m_tree->GetRefCount());
+
+                // No one else should be holding a pointer to tile tree any more, except possibly a Tile::Request in the process of being destroyed.
                 entry.m_tree = nullptr;
                 }
 
@@ -588,6 +589,7 @@ struct AppData : DgnModel::AppData
 
     static PollResult PollContent(ICancellationTokenPtr cancel, GeometricModelR model, Tree::Id const& treeId, ContentIdCR contentId);
     static PollResult PollContent(ICancellationTokenPtr cancel, DgnDbR db, Utf8StringCR treeIdStr, Utf8StringCR contentIdStr);
+    static void CancelContentRequests(DgnDbR db, Utf8StringCR treeId, bvector<Utf8String> const& tileIds);
 
     static RefCountedPtr<AppData> Get(GeometricModelR model)
         {
@@ -717,3 +719,48 @@ Tile::PollResult JsInterop::PollTileContent(ICancellationTokenPtr cancel, DgnDbR
     return Tile::AppData::PollContent(cancel, db, treeId, tileId);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/20
++---------------+---------------+---------------+---------------+---------------+------*/
+void Tile::AppData::CancelContentRequests(DgnDbR db, Utf8StringCR treeIdStr, bvector<Utf8String> const& tileIds)
+    {
+    if (!db.IsDbOpen())
+        return;
+
+    auto treeId = Tree::Id::FromString(treeIdStr, &db);
+    if (!treeId.IsValid())
+        return;
+
+    auto model = db.Models().Get<GeometricModel>(treeId.GetModelId());
+    if (model.IsNull())
+        return;
+
+    WithEntry(*model, treeId, false, [&](EntryR entry)
+        {
+        bvector<ContentId> contentIds;
+        contentIds.reserve(tileIds.size());
+        for (auto const& tileId : tileIds)
+            {
+            ContentId contentId;
+            if (!contentId.FromString(tileId.c_str(), treeId.GetMajorVersion()))
+                continue;
+
+            contentIds.push_back(contentId);
+
+            auto iter = entry.m_requests.find(contentId);
+            if (entry.m_requests.end() != iter)
+                entry.m_requests.erase(iter);
+            }
+
+        if (!contentIds.empty() && entry.m_tree.IsValid())
+            entry.m_tree->CancelTileLoads(contentIds);
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/20
++---------------+---------------+---------------+---------------+---------------+------*/
+void JsInterop::CancelContentRequests(DgnDbR db, Utf8StringCR treeId, bvector<Utf8String> const& tileIds)
+    {
+    Tile::AppData::CancelContentRequests(db, treeId, tileIds);
+    }
