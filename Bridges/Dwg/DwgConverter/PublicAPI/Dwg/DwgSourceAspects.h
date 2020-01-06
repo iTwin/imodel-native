@@ -61,7 +61,7 @@ public:
             };  // Kind
         static Utf8String FormatDbHandle(DwgDbHandleCR hd) { return "0x"+Utf8String(hd.AsAscii().c_str()); }
         static Utf8String FormatObjectId(DwgDbObjectIdCR id) { return "0x"+Utf8String(id.ToAscii().c_str()); }
-        static Utf8String FormatHexUInt64(uint64_t i) { return Utf8PrintfString("0x%X", i); }
+        static Utf8String FormatHexUInt64(uint64_t i) { return Utf8PrintfString("0x%llX", i); }
         static DwgDbHandle ParseDbHandle(Utf8StringCR h) { return DwgDbHandle(BeStringUtilities::ParseHex(h.c_str())); }
         static uint64_t ParseUInt64(Utf8StringCR h) { return BeStringUtilities::ParseHex(h.c_str()); }
         DgnElementId GetElementId () const { return iModelExternalSourceAspect::IsValid() ? iModelExternalSourceAspect::GetElementId() : DgnElementId(); }

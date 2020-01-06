@@ -3,8 +3,7 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include "C3dImporter.h"
-#include "C3dHelper.h"
+#include "C3dInternal.h"
 
 BEGIN_C3D_NAMESPACE
 

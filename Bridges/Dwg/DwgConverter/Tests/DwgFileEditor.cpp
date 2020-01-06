@@ -133,7 +133,7 @@ void DwgFileEditor::AddCircleInDefaultModel ()
     ASSERT_TRUE (m_dwgdb.IsValid());
 
     // create a new circle
-    DwgDbCirclePtr  circle = DwgDbCircle::Create () ;
+    DwgDbCirclePtr  circle = DwgDbCircle::Create ();
     ASSERT_FALSE (circle.IsNull()) << "Circle cannot be created!";
 
     ASSERT_DWGDBSUCCESS (circle->SetCenter(DPoint3d::From(10.0, 13.0, 0.0)));
@@ -199,16 +199,18 @@ void DwgFileEditor::AddLayer (DwgStringCR layerName, DwgDbObjectIdP outId)
     // open layer table
     DwgDbLayerTablePtr  layerTable(m_dwgdb->GetLayerTableId(), DwgDbOpenMode::ForWrite);
     ASSERT_DWGDBSUCCESS (layerTable.OpenStatus()) << "Layer table cannot be opened for write";
+    EXPECT_FALSE (layerTable->Has(layerName)) << "Layer w/same name alreay exists in DWG";
 
     // create a new layer
     DwgDbLayerTableRecordPtr    layer = DwgDbLayerTableRecord::Create () ;
     ASSERT_FALSE (layer.IsNull()) << "DwgDbLayer cannot be created!";
 
+    ASSERT_DWGDBSUCCESS (layer->SetName(layerName)) << "Unable to set the input layer name";
+
     // append the new layer into the layer table
     auto layerId = layerTable->Add (layer.get());
-    ASSERT_TRUE(layerId.IsValid()) << "Layer cannot added to DWG";
+    ASSERT_TRUE(layerId.IsValid()) << "Layer cannot be added to DWG";
 
-    ASSERT_DWGDBSUCCESS (layer->SetName(layerName));
     ASSERT_DWGDBSUCCESS (layer->SetDescription(L"A layer added by DwgBridge tester."));
     ASSERT_DWGDBSUCCESS (layer->SetIsFrozen(false));
     ASSERT_DWGDBSUCCESS (layer->SetIsOff(false));

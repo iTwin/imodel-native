@@ -7,7 +7,7 @@
 
 #ifndef DWGTOOLKIT_OpenDwg
     #error C3dImporter currently only supports OpenDWG + Civil toolkit!
-#endif  // DWGTOOLKIT_RealDwg
+#endif  // DWGTOOLKIT_OpenDwg
 
 #include <Dwg/DwgImporter.h>
 #include <Dwg/DwgHelper.h>
@@ -22,23 +22,7 @@
 #include <Teigha/Civil/DbObject/AECCDbRoadwayShapeStyle.h>
 #include <Teigha/Civil/DbObject/AECCDbFeatureLineStyle.h>
 
-#include <DgnPlatform/GenericDomain.h>
-
-#include <LinearReferencing/LinearReferencingApi.h>
 #include <RoadRailAlignment/RoadRailAlignmentApi.h>
-#include <RoadRailPhysical/RoadRailPhysicalApi.h>
-
-USING_NAMESPACE_BENTLEY
-USING_NAMESPACE_BENTLEY_DGN
-USING_NAMESPACE_BENTLEY_EC
-USING_NAMESPACE_BENTLEY_SQLITE_EC
-USING_NAMESPACE_DWGDB
-USING_NAMESPACE_DWG
-USING_NAMESPACE_BENTLEY_LINEARREFERENCING
-USING_NAMESPACE_BENTLEY_ROADRAILALIGNMENT
-
-// Use DwgImporter logging to trace import and to report issues
-#define LOG (*NativeLogging::LoggingManager::GetLogger(L"DwgImporter"))
 
 // Namespaces for C3dImporter
 #define C3D_NAMESPACE_NAME C3D
@@ -52,6 +36,15 @@ USING_NAMESPACE_BENTLEY_ROADRAILALIGNMENT
     DWGRX_DECLARE_MEMBERS(__extclassname__)             \
     DWG_PROTOCOLEXT_DECLARE_MEMBERS(__extclassname__)
     
+
+// C3d schema names
+#define C3DSCHEMA_SchemaName    "AdskCivil3dSchema"
+#define C3DSCHEMA_SchemaAlias   "C3dSchema"
+#define C3DSCHEMA_VERSION_Major 1
+#define C3DSCHEMA_VERSION_Write 0
+#define C3DSCHEMA_VERSION_Minor 0
+#define C3DSCHEMA_FileName      L"C3dSchema.01.00.00.ecschema.xml"
+#define C3DSCHEMA(name)         C3DSCHEMA_SchemaAlias "." name
 
 // Civil domain names
 #define DESIGNALIGNMENTS_NAME       "Road/Rail Design Alignments"
@@ -127,7 +120,7 @@ private:
     SpatialLocationModelPtr m_alignmentModel;
     PhysicalModelPtr    m_roadNetworkModel;
     PhysicalModelPtr    m_railNetworkModel;
-    ECSchemaCP          m_c3dSchema;
+    ECN::ECSchemaCP     m_c3dSchema;
     C3dOptions          m_c3dOptions;
     
 private:
@@ -154,9 +147,9 @@ public:
     PhysicalModelPtr    GetRoadNetworkModel ();
     PhysicalModelPtr    GetRailNetworkModel ();
     SpatialLocationModelPtr GetAlignmentModel () { return m_alignmentModel; }
-    ECSchemaCP  GetC3dSchema () const { return m_c3dSchema; }
-    ECClassCP   GetC3dECClass (Utf8StringCR name) const;
-    StandaloneECInstancePtr CreateC3dECInstance (Utf8StringCR className) const;
+    ECN::ECSchemaCP     GetC3dSchema () const { return m_c3dSchema; }
+    ECN::ECClassCP      GetC3dECClass (Utf8StringCR name) const;
+    ECN::StandaloneECInstancePtr CreateC3dECInstance (Utf8StringCR className) const;
     DgnDbStatus InsertArrayProperty (DgnElementR element, Utf8StringCR propertyName, uint32_t arraySize) const;
     IDwgChangeDetector& GetChangeDetector () { return T_Super::_GetChangeDetector(); }
     BentleyStatus   ProcessDetectionResults (IDwgChangeDetector::DetectionResultsR detected, ElementImportResultsR results, ElementImportInputsR inputs) { return T_Super::_ProcessDetectionResults(detected, results, inputs); }
@@ -227,7 +220,7 @@ private:
     mutable Utf8String  m_name;
     mutable Utf8String  m_description;
     mutable DgnElementP m_importedElement;
-    mutable IECInstancePtr  m_parametersInstance;
+    mutable ECN::IECInstancePtr  m_parametersInstance;
     mutable C3dImporterP    m_importer;
     mutable AECCDbCorridor* m_aeccCorridor;
     mutable ProtocolExtensionContext* m_toDgnContext;

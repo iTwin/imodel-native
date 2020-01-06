@@ -3,8 +3,7 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include    "C3dImporter.h"
-#include    "C3dHelper.h"
+#include "C3dInternal.h"
 
 BEGIN_C3D_NAMESPACE
 
@@ -79,7 +78,7 @@ C3dImporter::~C3dImporter ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void C3dImporter::ParseC3dConfigurations ()
     {
-#ifdef DEBUG
+#ifdef HIDE_ALIGNMENT_MODELS
     m_c3dOptions.SetAlignedModelPrivate (false);
 #endif
 
@@ -234,6 +233,8 @@ BentleyStatus C3dImporter::OnBaseBridgeJobFound (DgnElementId jobId)
         return  BentleyStatus::BSIERROR;
         }
 
+    RoadRailAlignment::RoadRailAlignmentDomain::SetParentSubject (*alignSubject);
+
     m_roadNetworkModel = RoadRailPhysical::PhysicalModelUtilities::QueryRoadNetworkModel (*alignSubject, ALIGNMENTS_PARTITION_NAME, ROADNETWORK_MODEL_NAME);
     m_railNetworkModel = RoadRailPhysical::PhysicalModelUtilities::QueryRailNetworkModel (*alignSubject, ALIGNMENTS_PARTITION_NAME, RAILNETWORK_MODEL_NAME);
 
@@ -264,7 +265,26 @@ bool    C3dImporter::_FilterEntity (ElementImportInputsR inputs) const
     {
     // vertical alignments are processed together with horizontal alignments
     if (inputs.GetEntity().isKindOf(AECCDbVAlignment::desc()))
+        {
+        // however, if a VAlignment is not changed when updating, get and record existing elements mapped from it, so they won't be deleted
+        if (this->IsUpdating())
+            {
+            IDwgChangeDetector::DetectionResults    detectionResults;
+            DwgDbObjectP    object = DwgDbObject::Cast (inputs.GetEntityP());
+            C3dImporter*    importer = const_cast<C3dImporter*> (this);
+            if (object != nullptr && importer != nullptr)
+                {
+                auto& changeDetector = importer->GetChangeDetector ();
+                if (!changeDetector._IsElementChanged(detectionResults, *importer, *object, inputs.GetModelMapping()))
+                    {
+                    auto existingElements = iModelExternalSourceAspect::GetSelectFromSameSource(this->GetDgnDb(), detectionResults.GetObjectAspect(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+                    while(BE_SQLITE_ROW == existingElements->Step())
+                        changeDetector._OnElementSeen (*importer, existingElements->GetValueId<DgnElementId>(0));
+                    }
+                }
+            }
         return  true;
+        }
 
     return  T_Super::_FilterEntity(inputs);
     }

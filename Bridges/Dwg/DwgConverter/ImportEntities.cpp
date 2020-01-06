@@ -523,6 +523,10 @@ void DwgImporter::OpenAndImportEntity (ElementImportInputs& inputs)
         return;
         }
 
+#ifdef DEBUG
+    uint64_t handleValue = inputs.m_entityId.ToUInt64 ();
+#endif
+
     this->Progress ();
 
     if (!this->_FilterEntity(inputs))

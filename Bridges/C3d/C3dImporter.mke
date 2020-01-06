@@ -7,47 +7,26 @@
     %error  C3dBridge depends on OpenDWG toolkit of a correct version!
 %endif
 
-DwgImporterDir  = OpenDwg
-VendorSubDir    = Teigha
-
 %include mdl.mki
 
 appName         = C3dImporter
 baseDir         = $(_MakeFilePath)
-DwgPublicAPI    = $(BuildContext)PublicAPI/Dwg/
-DwgVendorAPI    = $(BuildContext)VendorAPI/$(VendorSubDir)/
-DwgImporterLib  = $(BuildContext)SubParts/Files/$(DwgImporterDir)/DwgImporter$(libext)
-DwgBridgeLib    = $(BuildContext)SubParts/Files/$(DwgImporterDir)/DwgBridge$(libext)
-DwgDbLibDir     = $(ContextSubpartsLibs)
-ToolkitLibs     = $(ContextSubpartsLibs)/Teigha/
+
+CompileOptionsMki = $(baseDir)C3dCompileOptions.mki
+%include $(CompileOptionsMki)
 
 o               = $(OutputRootDir)Build/$(appName)/
 always:
     ~mkdir $(o)
 
-ImportC3dDepends = $(baseDir)C3dImporter.h      \
+ImportC3dDepends = $(baseDir)C3dInternal.h      \
+                   $(baseDir)C3dImporter.h      \
                    $(baseDir)C3dHelper.h        \
                    $(DwgPublicAPI)DwgL10N.h     \
                    $(DwgPublicAPI)DwgBridge.h   \
                    $(DwgPublicAPI)DwgHelper.h   \
                    $(DwgPublicAPI)DwgImporter.h \
                    $(DwgPublicAPI)ProtocalExtensions.h
-
-CCompOpts + -DDWGTOOLKIT_$(DWGTOOLKIT) -D_TOOLKIT_IN_DLL_ -DODA_NEED_TEMP_USING -DADT_DYNAMIC_BUILD
-CCompOpts + -I$(DwgVendorAPI) -I$(DwgVendorAPI)Kernel/Include/ -I$(DwgVendorAPI)Kernel/Extensions/ExServices/ -I$(DwgVendorAPI)Drawing/Include/ -I$(DwgVendorAPI)Architecture/ -I$(DwgVendorAPI)Civil/ -I$(DwgVendorAPI)FacetModeler/
-#ifdef DEBUG
-    CCompOpts + -DDEBUG
-#endif
-
-#----------------------------------------------------------------------
-#       Inform user of compile options
-#----------------------------------------------------------------------
-%if defined(DEBUG) && !defined(NDEBUG)
-always:
-        |  -------- -------- --------- -------- -------- ---------
-        |  Compiler options: $(cDefs) $(CCompOpts) $(cIncs)
-        |  -------- -------- --------- -------- -------- ---------
-%endif
 
 #--------------------------------------------------------------------------------------
 #   Create prg.h header with build version numbers
@@ -57,6 +36,15 @@ always:
 #----------------------------------------------------------------------
 #   Compile C3dImporter
 #----------------------------------------------------------------------
+MultiCompileIntermediatePdbFile = $(o)$(CCompPDBName).pdb
+IntermediatePdbFile             = $(MultiCompileIntermediatePdbFile)
+PchCompiland                    = $(baseDir)C3dInternal.cpp
+PchOutputDir                    = $(o)
+
+%include $(SharedMki)PreCompileHeader.mki
+
+CCPchOpts           = $(UsePrecompiledHeaderOptions)
+CPchOpts            = $(UsePrecompiledHeaderOptions)
 MultiCompileDepends = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
@@ -125,6 +113,7 @@ DLM_NAME            = $(appName)
 DLM_DEST            = $(o)
 DLM_OBJECT_DEST     = $(o)
 DLM_EXPORT_DEST     = $(o)
+DLM_OBJECT_PCH      = $(o)C3dInternal$(oext)
 DLM_OBJECT_FILES    = $(MultiCompileObjectList)
 DLM_NOINITFUNC      = 1
 DLM_NOENTRY         = 1

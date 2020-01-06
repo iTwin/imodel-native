@@ -2,21 +2,9 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See COPYRIGHT.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-#include "C3dImporter.h"
-#include <ECPresentation/RulesDriven/RuleSetEmbedder.h>
-#include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
+#include "C3dInternal.h"
 
-#define C3DSCHEMA_SchemaName    "AdskCivil3dSchema"
-#define C3DSCHEMA_VERSION_Major 1
-#define C3DSCHEMA_VERSION_Write 0
-#define C3DSCHEMA_VERSION_Minor 0
-#define C3DSCHEMA_FileName      L"C3dSchema.02.00.00.ecschema.xml"
-
-USING_NAMESPACE_BENTLEY
-USING_NAMESPACE_BENTLEY_ECPRESENTATION
-USING_NAMESPACE_DWGDB
-USING_NAMESPACE_DWG
-USING_NAMESPACE_C3D
+BEGIN_C3D_NAMESPACE
 
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          11/19
@@ -289,7 +277,7 @@ BentleyStatus   C3dImporter::_MakeSchemaChanges ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   C3dImporter::_ImportEntitySection ()
     {
-    // get the Alighment model created or found during initialization stage
+    // get the Alignment model created or found during initialization stage
     auto& db = T_Super::GetDgnDb ();
     auto const& jobSubject = T_Super::GetJobSubject ();
     auto alignedCode = Subject::CreateCode (jobSubject, CIVIL_ALIGNED_SUBJECT);
@@ -314,3 +302,5 @@ BentleyStatus   C3dImporter::_ImportEntitySection ()
     // begin importing entities
     return T_Super::_ImportEntitySection ();
     }
+
+END_C3D_NAMESPACE

@@ -336,6 +336,13 @@ jobs:
         condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'C3dBridge'))
         artifact: C3dBridge
 
+      - task: archiveandpublishartifact@0
+        displayName: Save C3dBridgeTests
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'C3dBridge'))
+        inputs:
+          rootFolderOrFile: $(Build.BinariesDirectory)/Winx64/Product/C3dBridgeTests
+          artifactName: C3dBridgeTests
+
   # ================================================================================================
   - job: build_linuxx64
     displayName: Build Linux x64
