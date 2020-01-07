@@ -689,11 +689,11 @@ ECObjectsStatus StandardValueInfo::ExtractInstanceData(IECInstanceR instance, St
         if (!structInstance.IsValid())
             return ECObjectsStatus::Error;
 
-        if (ECObjectsStatus::Success != (status = structInstance->GetValue(value, "Value")))
+        if (ECObjectsStatus::Success != (status = structInstance->GetValue(value, "Value")) || !value.IsLoaded() || value.IsNull())
             return status;
         int index = value.GetInteger();
 
-        if (ECObjectsStatus::Success != (status = structInstance->GetValue(value, "DisplayString")))
+        if (ECObjectsStatus::Success != (status = structInstance->GetValue(value, "DisplayString")) || !value.IsLoaded() || value.IsNull())
             return status;
         sdInfo.m_valuesMap[index] = value.ToString();
         }

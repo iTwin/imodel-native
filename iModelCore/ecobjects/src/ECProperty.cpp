@@ -1508,8 +1508,13 @@ ECObjectsStatus StructECProperty::_SetTypeName (Utf8StringCR typeName)
         LOG.errorv ("Failed to set the type name of ECStructProperty '%s' to '%s' because the typeName could not be parsed into a resolvable ECClass.", this->GetName().c_str(), typeName.c_str());
         return status;
         }
-    else
-        return SetType (*structClass);
+    
+    if (structClass->Is(&this->GetClass()))
+        {
+        LOG.errorv("Failed to set typename of ECStructProperty '%s:%s' to '%s' because the struct type is the same class as the containing class.", this->GetClass().GetName().c_str(), this->GetName().c_str(), typeName.c_str());
+        return ECObjectsStatus::ECClassNotSupported;
+        }
+    return SetType (*structClass);
     }
 
 /*---------------------------------------------------------------------------------**//**
