@@ -4551,7 +4551,7 @@ void Strokes::Decimate(size_t minPointCount, double maxRatio)
 
     auto decimatedPointCount = decimated.ComputePointCount();
     auto decimationRatio = static_cast<double>(decimatedPointCount) / static_cast<double>(initialPointCount);
-    if (decimationRatio <= maxRatio)
+    if (decimationRatio > maxRatio)
         {
         // Decimation insufficient - prevent future attempts.
         m_decimationTolerance = 0.0;
