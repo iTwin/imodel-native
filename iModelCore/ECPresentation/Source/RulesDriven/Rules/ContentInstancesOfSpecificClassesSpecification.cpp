@@ -16,14 +16,14 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentInstancesOfSpecificClassesSpecification::ContentInstancesOfSpecificClassesSpecification () 
-    : ContentSpecification(), m_arePolymorphic(false)
+    : ContentSpecification(), m_handleInstancesPolymorphically(false)
     {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentInstancesOfSpecificClassesSpecification::ContentInstancesOfSpecificClassesSpecification (int priority, Utf8StringCR instanceFilter, Utf8StringCR classNames, bool arePolymorphic) 
-    : ContentSpecification (priority), m_instanceFilter (instanceFilter), m_classNames (classNames), m_arePolymorphic (arePolymorphic)
+    : ContentSpecification (priority), m_instanceFilter (instanceFilter), m_classNames (classNames), m_handleInstancesPolymorphically(arePolymorphic)
     {
     }
 
@@ -56,8 +56,8 @@ bool ContentInstancesOfSpecificClassesSpecification::_ReadXml (BeXmlNodeP xmlNod
         }
 
     //Optional:
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_arePolymorphic, COMMON_XML_ATTRIBUTE_AREPOLYMORPHIC))
-        m_arePolymorphic = false;
+    if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_handleInstancesPolymorphically, COMMON_XML_ATTRIBUTE_AREPOLYMORPHIC))
+        m_handleInstancesPolymorphically = false;
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_instanceFilter, COMMON_XML_ATTRIBUTE_INSTANCEFILTER))
         m_instanceFilter = "";
@@ -72,7 +72,7 @@ void ContentInstancesOfSpecificClassesSpecification::_WriteXml (BeXmlNodeP xmlNo
     {
     ContentSpecification::_WriteXml(xmlNode);
     xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_CLASSNAMES, m_classNames.c_str ());
-    xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_AREPOLYMORPHIC, m_arePolymorphic);
+    xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_AREPOLYMORPHIC, m_handleInstancesPolymorphically);
     xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_INSTANCEFILTER, m_instanceFilter.c_str ());
     }
 
@@ -101,7 +101,10 @@ bool ContentInstancesOfSpecificClassesSpecification::_ReadJson(JsonValueCR json)
         }
 
     //Optional
-    m_arePolymorphic = json[COMMON_JSON_ATTRIBUTE_AREPOLYMORPHIC].asBool(false);
+    if (json.isMember(CONTENT_INSTANCES_OF_SPECIFIC_CLASSES_SPECIFICATION_JSON_ATTRIBUTE_HANDLEINSTANCESPOLYMORPHICALLY))
+        m_handleInstancesPolymorphically = json[CONTENT_INSTANCES_OF_SPECIFIC_CLASSES_SPECIFICATION_JSON_ATTRIBUTE_HANDLEINSTANCESPOLYMORPHICALLY].asBool(false);
+    else
+        m_handleInstancesPolymorphically = json[COMMON_JSON_ATTRIBUTE_AREPOLYMORPHIC].asBool(false); // deprecated
     m_instanceFilter = json[COMMON_JSON_ATTRIBUTE_INSTANCEFILTER].asCString("");
 
     return true;
@@ -114,41 +117,11 @@ void ContentInstancesOfSpecificClassesSpecification::_WriteJson(JsonValueR json)
     {
     ContentSpecification::_WriteJson(json);
     json[COMMON_JSON_ATTRIBUTE_CLASSES] = CommonToolsInternal::SchemaAndClassNamesToJson(m_classNames);
-    if (m_arePolymorphic)
-        json[COMMON_JSON_ATTRIBUTE_AREPOLYMORPHIC] = m_arePolymorphic;
+    if (m_handleInstancesPolymorphically)
+        json[CONTENT_INSTANCES_OF_SPECIFIC_CLASSES_SPECIFICATION_JSON_ATTRIBUTE_HANDLEINSTANCESPOLYMORPHICALLY] = m_handleInstancesPolymorphically;
     if (!m_instanceFilter.empty())
         json[COMMON_JSON_ATTRIBUTE_INSTANCEFILTER] = m_instanceFilter;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Eligijus.Mauragas               10/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ContentInstancesOfSpecificClassesSpecification::GetClassNames (void) const { return m_classNames; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Kelly.Shiptoski                 06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ContentInstancesOfSpecificClassesSpecification::SetClassNames (Utf8StringCR value) { m_classNames = value; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Eligijus.Mauragas               10/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ContentInstancesOfSpecificClassesSpecification::GetArePolymorphic (void) const { return m_arePolymorphic; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Kelly.Shiptoski                 06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ContentInstancesOfSpecificClassesSpecification::SetArePolymorphic (bool value) { m_arePolymorphic = value; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Eligijus.Mauragas               10/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ContentInstancesOfSpecificClassesSpecification::GetInstanceFilter (void) const { return m_instanceFilter; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Kelly.Shiptoski                 06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ContentInstancesOfSpecificClassesSpecification::SetInstanceFilter (Utf8StringCR value) { m_instanceFilter = value; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                10/2017
@@ -158,6 +131,6 @@ MD5 ContentInstancesOfSpecificClassesSpecification::_ComputeHash(Utf8CP parentHa
     MD5 md5 = ContentSpecification::_ComputeHash(parentHash);
     md5.Add(m_instanceFilter.c_str(), m_instanceFilter.size());
     md5.Add(m_classNames.c_str(), m_classNames.size());
-    md5.Add(&m_arePolymorphic, sizeof(m_arePolymorphic));
+    md5.Add(&m_handleInstancesPolymorphically, sizeof(m_handleInstancesPolymorphically));
     return md5;
     }

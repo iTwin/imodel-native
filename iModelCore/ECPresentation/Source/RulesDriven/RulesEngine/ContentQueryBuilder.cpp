@@ -44,7 +44,7 @@ void ParsedInput::Parse(bvector<ECInstanceKey> const& keys, INavNodeLocater cons
     for (ECInstanceKeyCR key : keys)
         GetNodeClasses(key, nodesLocater, connection, helper);
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -53,7 +53,7 @@ bvector<ECInstanceId> const& ParsedInput::_GetInstanceIds(ECClassCR selectClass)
     auto iter = m_classInput.find(&selectClass);
     if (m_classInput.end() != iter)
         return iter->second;
-        
+
     static const bvector<ECInstanceId> s_empty;
     return s_empty;
     }
@@ -61,11 +61,11 @@ bvector<ECInstanceId> const& ParsedInput::_GetInstanceIds(ECClassCR selectClass)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bvector<RelatedClassPath> GetPathsToPrimary(bvector<SelectClassInfo> const& selectInfos)
+static bvector<RelatedClassPath> GetPathsToInputClass(bvector<SelectClassInfo> const& selectInfos)
     {
     bvector<RelatedClassPath> paths;
     for (SelectClassInfo const& info : selectInfos)
-        paths.push_back(info.GetPathToPrimaryClass());
+        paths.push_back(info.GetPathToInputClass());
     return paths;
     }
 
@@ -104,29 +104,33 @@ static void JoinRelatedClasses(ComplexContentQueryR query, SelectClassInfo const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentQueryPtr ContentQueryBuilder::CreateQuery(SelectedNodeInstancesSpecificationCR specification, ContentDescriptorCR descriptor, IParsedInput const& input)
     {
-    ContentDescriptorBuilder::Context descriptorContext(m_params.GetSchemaHelper(), m_params.GetConnections(), m_params.GetConnection(), m_params.GetRuleset(), 
+    ContentDescriptorBuilder::Context descriptorContext(m_params.GetSchemaHelper(), m_params.GetConnections(), m_params.GetConnection(), m_params.GetRuleset(),
         descriptor.GetPreferredDisplayType().c_str(), descriptor.GetContentFlags(), m_params.GetCategorySupplier(), m_params.GetPropertyFormatter(),
         m_params.GetLocalizationProvider(), m_params.GetLocale(), descriptor.GetInputNodeKeys(), descriptor.GetSelectionInfo());
     ContentDescriptorPtr specificationDescriptor = ContentDescriptorBuilder(descriptorContext).CreateDescriptor(specification, input);
     if (specificationDescriptor.IsNull())
         return nullptr;
-    
+
     ContentQueryPtr query;
     for (SelectClassInfo const& selectClassInfo : specificationDescriptor->GetSelectClasses())
         {
         ComplexContentQueryPtr classQuery = ComplexContentQuery::Create();
-        ContentQueryContractPtr contract = ContentQueryContract::Create(++m_contractIdsCounter, descriptor, &selectClassInfo.GetSelectClass(), *classQuery, selectClassInfo.GetRelatedInstanceClasses());
+        ContentQueryContractPtr contract = ContentQueryContract::Create(++m_contractIdsCounter, descriptor, &selectClassInfo.GetSelectClass().GetClass(),
+            *classQuery, selectClassInfo.GetRelatedInstanceClasses());
         classQuery->SelectContract(*contract, "this");
-        classQuery->From(selectClassInfo.GetSelectClass(), selectClassInfo.IsSelectPolymorphic(), "this");
+        classQuery->From(selectClassInfo.GetSelectClass(), "this");
 
         // handle related classes
         JoinRelatedClasses(*classQuery, selectClassInfo);
-        
-        // handle filtering 
+
+        // exclude derived classes if necessary
+        QueryBuilderHelpers::FilterOutExcludes(*classQuery, "this", selectClassInfo.GetSelectClass().GetDerivedExcludedClasses(), m_params.GetConnection().GetECDb().Schemas());
+
+        // handle filtering
         InstanceFilteringParams filteringParams(m_params.GetConnection(), m_params.GetECExpressionsCache(), &input, selectClassInfo, nullptr, nullptr);
         QueryBuilderHelpers::ApplyInstanceFilter(*classQuery, filteringParams, RelatedClassPath());
-        
-        // handle selecting property for distinct values 
+
+        // handle selecting property for distinct values
         if (descriptor.GetDistinctField() != nullptr)
             classQuery = WrapQueryIntoGroupingClause(*classQuery, *contract);
 
@@ -149,9 +153,9 @@ struct HandledRecursiveClassesKey
     HandledRecursiveClassesKey() : m_source(nullptr), m_target(nullptr), m_isForward(false) {}
     HandledRecursiveClassesKey(SelectClassInfo const& info)
         {
-        m_source = &info.GetSelectClass();
-        m_target = info.GetPathToPrimaryClass().back().GetTargetClass();
-        m_isForward = info.GetPathToPrimaryClass().back().IsForwardRelationship();
+        m_source = &info.GetSelectClass().GetClass();
+        m_target = &info.GetPathToInputClass().back().GetTargetClass().GetClass();
+        m_isForward = info.GetPathToInputClass().back().IsForwardRelationship();
         }
     bool operator<(HandledRecursiveClassesKey const& other) const
         {
@@ -166,16 +170,16 @@ struct HandledRecursiveClassesKey
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentRelatedInstancesSpecificationCR specification, ContentDescriptorCR descriptor, IParsedInput const& input)
     {
-    ContentDescriptorBuilder::Context descriptorContext(m_params.GetSchemaHelper(), m_params.GetConnections(), m_params.GetConnection(), m_params.GetRuleset(), 
-        descriptor.GetPreferredDisplayType().c_str(), descriptor.GetContentFlags(), m_params.GetCategorySupplier(), m_params.GetPropertyFormatter(), 
+    ContentDescriptorBuilder::Context descriptorContext(m_params.GetSchemaHelper(), m_params.GetConnections(), m_params.GetConnection(), m_params.GetRuleset(),
+        descriptor.GetPreferredDisplayType().c_str(), descriptor.GetContentFlags(), m_params.GetCategorySupplier(), m_params.GetPropertyFormatter(),
         m_params.GetLocalizationProvider(), m_params.GetLocale(), descriptor.GetInputNodeKeys(), descriptor.GetSelectionInfo());
     ContentDescriptorPtr specificationDescriptor = ContentDescriptorBuilder(descriptorContext).CreateDescriptor(specification, input);
     if (specificationDescriptor.IsNull())
         return nullptr;
-    
+
     InstanceFilteringParams::RecursiveQueryInfo const* recursiveInfo = nullptr;
     if (specification.IsRecursive())
-        recursiveInfo = new InstanceFilteringParams::RecursiveQueryInfo(GetPathsToPrimary(specificationDescriptor->GetSelectClasses()));
+        recursiveInfo = new InstanceFilteringParams::RecursiveQueryInfo(GetPathsToInputClass(specificationDescriptor->GetSelectClasses()));
 
     bset<HandledRecursiveClassesKey> recursiverlyHandledClasses;
     ContentQueryPtr query;
@@ -190,19 +194,23 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentRelatedInstancesSpecific
             }
 
         ComplexContentQueryPtr classQuery = ComplexContentQuery::Create();
-        ContentQueryContractPtr contract = ContentQueryContract::Create(++m_contractIdsCounter, descriptor, &selectClassInfo.GetSelectClass(), *classQuery, selectClassInfo.GetRelatedInstanceClasses());
+        ContentQueryContractPtr contract = ContentQueryContract::Create(++m_contractIdsCounter, descriptor, &selectClassInfo.GetSelectClass().GetClass(),
+            *classQuery, selectClassInfo.GetRelatedInstanceClasses());
         classQuery->SelectContract(*contract, "this");
-        classQuery->From(selectClassInfo.GetSelectClass(), selectClassInfo.IsSelectPolymorphic(), "this");
+        classQuery->From(selectClassInfo.GetSelectClass(), "this");
 
         // handle related classes
         JoinRelatedClasses(*classQuery, selectClassInfo);
-        
-        // handle filtering 
-        InstanceFilteringParams filteringParams(m_params.GetConnection(), m_params.GetECExpressionsCache(), &input, 
+
+        // exclude derived classes if necessary
+        QueryBuilderHelpers::FilterOutExcludes(*classQuery, "this", selectClassInfo.GetSelectClass().GetDerivedExcludedClasses(), m_params.GetConnection().GetECDb().Schemas());
+
+        // handle filtering
+        InstanceFilteringParams filteringParams(m_params.GetConnection(), m_params.GetECExpressionsCache(), &input,
             selectClassInfo, recursiveInfo, specification.GetInstanceFilter().c_str());
         QueryBuilderHelpers::ApplyInstanceFilter(*classQuery, filteringParams, RelatedClassPath());
-            
-        // handle selecting property for distinct values 
+
+        // handle selecting property for distinct values
         if (descriptor.GetDistinctField() != nullptr)
             classQuery = WrapQueryIntoGroupingClause(*classQuery, *contract);
 
@@ -214,42 +222,46 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentRelatedInstancesSpecific
 
     return query;
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentInstancesOfSpecificClassesSpecificationCR specification, ContentDescriptorCR descriptor)
     {
-    ContentDescriptorBuilder::Context descriptorContext(m_params.GetSchemaHelper(), m_params.GetConnections(), m_params.GetConnection(), m_params.GetRuleset(), 
+    ContentDescriptorBuilder::Context descriptorContext(m_params.GetSchemaHelper(), m_params.GetConnections(), m_params.GetConnection(), m_params.GetRuleset(),
         descriptor.GetPreferredDisplayType().c_str(), descriptor.GetContentFlags(), m_params.GetCategorySupplier(), m_params.GetPropertyFormatter(),
         m_params.GetLocalizationProvider(), m_params.GetLocale(), descriptor.GetInputNodeKeys(), descriptor.GetSelectionInfo());
     ContentDescriptorPtr specificationDescriptor = ContentDescriptorBuilder(descriptorContext).CreateDescriptor(specification);
     if (specificationDescriptor.IsNull())
         return nullptr;
-        
+
     ContentQueryPtr query;
     for (SelectClassInfo const& selectClassInfo : specificationDescriptor->GetSelectClasses())
         {
         ComplexContentQueryPtr classQuery = ComplexContentQuery::Create();
-        ContentQueryContractPtr contract = ContentQueryContract::Create(++m_contractIdsCounter, descriptor, &selectClassInfo.GetSelectClass(), *classQuery, selectClassInfo.GetRelatedInstanceClasses());
+        ContentQueryContractPtr contract = ContentQueryContract::Create(++m_contractIdsCounter, descriptor, &selectClassInfo.GetSelectClass().GetClass(),
+            *classQuery, selectClassInfo.GetRelatedInstanceClasses());
         classQuery->SelectContract(*contract, "this");
-        classQuery->From(selectClassInfo.GetSelectClass(), selectClassInfo.IsSelectPolymorphic(), "this");
+        classQuery->From(selectClassInfo.GetSelectClass(), "this");
 
         // handle related classes
         JoinRelatedClasses(*classQuery, selectClassInfo);
-        
-        // handle filtering 
-        InstanceFilteringParams filteringParams(m_params.GetConnection(), m_params.GetECExpressionsCache(), nullptr, 
+
+        // exclude derived classes if necessary
+        QueryBuilderHelpers::FilterOutExcludes(*classQuery, "this", selectClassInfo.GetSelectClass().GetDerivedExcludedClasses(), m_params.GetConnection().GetECDb().Schemas());
+
+        // handle filtering
+        InstanceFilteringParams filteringParams(m_params.GetConnection(), m_params.GetECExpressionsCache(), nullptr,
             selectClassInfo, nullptr, specification.GetInstanceFilter().c_str());
         QueryBuilderHelpers::ApplyInstanceFilter(*classQuery, filteringParams, RelatedClassPath());
 
-        // handle selecting property for distinct values 
+        // handle selecting property for distinct values
         if (descriptor.GetDistinctField() != nullptr)
             classQuery = WrapQueryIntoGroupingClause(*classQuery, *contract);
 
         QueryBuilderHelpers::SetOrUnion<ContentQuery>(query, *classQuery);
         }
-    
+
     QueryBuilderHelpers::ApplyDescriptorOverrides(query, descriptor, m_params.GetECExpressionsCache());
 
     return query;
@@ -260,22 +272,26 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentInstancesOfSpecificClass
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentDescriptor::NestedContentField const& contentField)
     {
-    ContentDescriptorBuilder::Context descriptorContext(m_params.GetSchemaHelper(), m_params.GetConnections(), m_params.GetConnection(), m_params.GetRuleset(), 
-        ContentDisplayType::Undefined, 0, m_params.GetCategorySupplier(), m_params.GetPropertyFormatter(), 
+    ContentDescriptorBuilder::Context descriptorContext(m_params.GetSchemaHelper(), m_params.GetConnections(), m_params.GetConnection(), m_params.GetRuleset(),
+        ContentDisplayType::Undefined, 0, m_params.GetCategorySupplier(), m_params.GetPropertyFormatter(),
         m_params.GetLocalizationProvider(), m_params.GetLocale(), *NavNodeKeyListContainer::Create(), nullptr);
     ContentDescriptorPtr descriptor = ContentDescriptorBuilder(descriptorContext).CreateDescriptor(contentField);
     if (!descriptor.IsValid())
         return nullptr;
-        
+
     ComplexContentQueryPtr query = ComplexContentQuery::Create();
     ContentQueryContractPtr contract = ContentQueryContract::Create(++m_contractIdsCounter, *descriptor, &contentField.GetContentClass(), *query, bvector<RelatedClass>(), false);
-    query->SelectContract(*contract, contentField.GetContentClassAlias().c_str());
-    query->From(contentField.GetContentClass(), true, contentField.GetContentClassAlias().c_str());
+    query->SelectContract(*contract, contentField.GetContentClassAlias());
+    query->From(contentField.GetContentClass(), true, contentField.GetContentClassAlias());
 
-    RelatedClassPath relationshipPath;
-    for (auto iter = contentField.GetRelationshipPath().rbegin(); iter != contentField.GetRelationshipPath().rend(); ++iter)
-        relationshipPath.push_back(*iter);
-    query->Join(relationshipPath, false);
-    
+    ContentDescriptor::RelatedContentField const* relatedContentField = contentField.AsRelatedContentField();
+    if (nullptr != relatedContentField)
+        {
+        RelatedClassPath relationshipPath = RelatedClassPath(relatedContentField->GetPathFromSelectToContentClass()).Reverse(relatedContentField->GetSelectClassAlias(), false);
+        for (RelatedClass& rc : relationshipPath)
+            rc.SetIsTargetOptional(false);
+        query->Join(relationshipPath);
+        }
+
     return query;
     }

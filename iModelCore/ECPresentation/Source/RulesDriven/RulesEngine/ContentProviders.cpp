@@ -313,7 +313,7 @@ void ContentProvider::LoadNestedContentFieldValue(ContentSetItemR item, ContentD
     ILocalizationProvider const* localizationProvider = GetContext().IsLocalizationContext() ? &GetContext().GetLocalizationProvider() : nullptr;
     ContentDescriptorCR descriptor = *GetContentDescriptor();
     Utf8CP fieldName = field.GetName().c_str();
-    bool isRelatedContent = !field.GetRelationshipPath().empty();
+    bool isRelatedContent = (nullptr != field.AsRelatedContentField());
     NestedContentProviderPtr provider = GetNestedContentProvider(field, cacheable);
     provider->SetIsResultsMerged(descriptor.MergeResults());
     if (descriptor.MergeResults())
@@ -489,8 +489,8 @@ void ContentProvider::LoadCompositePropertiesFieldValue(ContentSetItemR item, Co
         // create a nested content provider for it
         ContentDescriptor::ECPropertiesField* nestedField = new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category(), *matchingProperty);
         nestedField->SetName(field.GetName());
-        ContentDescriptor::NestedContentField nestingField(field.GetCategory(), field.GetName(), field.GetLabel(),
-            *itemClass, "this", RelatedClassPath(), {nestedField}, false, field.GetPriority());
+        ContentDescriptor::CompositeContentField nestingField(field.GetCategory(), field.GetName(), field.GetLabel(),
+            *itemClass, "this", {nestedField}, false, field.GetPriority());
 
         // get the nested content
         LoadNestedContentFieldValue(item, nestingField, false);
@@ -1061,10 +1061,9 @@ ContentQueryCPtr NestedContentProvider::_GetQuery() const
 
     if (m_adjustedQuery.IsNull() && !m_mergedResults)
         {
-        Utf8StringCR idFieldAlias = m_field.GetRelationshipPath().empty() ? m_field.GetContentClassAlias() : m_field.GetRelationshipPath().front().GetTargetClassAlias();
+        Utf8CP idFieldAlias = (nullptr != m_field.AsRelatedContentField()) ? m_field.AsRelatedContentField()->GetSelectClassAlias() : m_field.GetContentClassAlias();
         Utf8String idSelector = Utf8String("[").append(idFieldAlias).append("].[ECInstanceId]");
-        bvector<ECInstanceId> ids;
-        std::transform(m_primaryInstanceKeys.begin(), m_primaryInstanceKeys.end(), std::back_inserter(ids), [](ECClassInstanceKeyCR key){return key.GetId();});
+        bvector<ECInstanceId> ids = ContainerHelpers::TransformContainer<bvector<ECInstanceId>>(m_primaryInstanceKeys, [](ECClassInstanceKeyCR key){return key.GetId();});
         IdsFilteringHelper<bvector<ECInstanceId>> idsFilteringHelper(ids);
         ContentQueryPtr query = m_query->Clone();
         QueryBuilderHelpers::Where(query, idsFilteringHelper.CreateWhereClause(idSelector.c_str()).c_str(), idsFilteringHelper.CreateBoundValues());
@@ -1077,7 +1076,7 @@ ContentQueryCPtr NestedContentProvider::_GetQuery() const
             {
             BoundQueryValuesList bindings = {new BoundQueryId(m_primaryInstanceKeys[0].GetId())};
             ContentQueryPtr query = m_query->Clone();
-            Utf8StringCR idFieldAlias = m_field.GetRelationshipPath().empty() ? m_field.GetContentClassAlias() : m_field.GetRelationshipPath().front().GetTargetClassAlias();
+            Utf8CP idFieldAlias = (nullptr != m_field.AsRelatedContentField()) ? m_field.AsRelatedContentField()->GetSelectClassAlias() : m_field.GetContentClassAlias();
             Utf8String whereClause;
             whereClause.append("[").append(idFieldAlias).append("].[ECInstanceId] = ? ");
             QueryBuilderHelpers::Where(query, whereClause.c_str(), bindings);

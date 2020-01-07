@@ -281,27 +281,13 @@ private:
     +---------------+---------------+---------------+---------------+---------------+------*/
     static bool IsRecursiveJoinForward(SelectClassInfo const& selectInfo)
         {
-        if (selectInfo.GetPathToPrimaryClass().empty())
+        if (selectInfo.GetPathToInputClass().empty())
             {
             BeAssert(false);
             return true;
             }
 
-        return !selectInfo.GetPathToPrimaryClass().back().IsForwardRelationship(); // invert direction
-        }
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis                04/2017
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    static bool IsPathValidForRecursiveSelect(Utf8StringR errorMessage, RelatedClassPath const& path, ECClassCR selectClass)
-        {
-        RelatedClass const& relatedClassDef = path.front();
-        if (!selectClass.Is(relatedClassDef.GetSourceClass()))
-            {
-            errorMessage = "Using IsRecursive requires recursive relationship";
-            return false;
-            }
-        return true;
+        return !selectInfo.GetPathToInputClass().back().IsForwardRelationship(); // invert direction
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -388,19 +374,12 @@ public:
     bset<ECInstanceId> GetRecursiveChildrenIds(IParsedInput const& input, SelectClassInfo const& thisInfo)
         {
         bset<ECRelationshipClassCP> relationships;
-        for (RelatedClassPath const& path : m_recursiveQueryInfo.GetPathsToPrimary())
+        for (RelatedClassPath const& path : m_recursiveQueryInfo.GetPathsFromInputToSelectClass())
             {
-            Utf8String validationErrorMessage;
-            if (!IsPathValidForRecursiveSelect(validationErrorMessage, path, *path.front().GetSourceClass()))
-                {
-                BeAssert(false);
-                LoggingHelper::LogMessage(Log::Content, validationErrorMessage.c_str(), NativeLogging::LOG_ERROR);
-                continue;
-                }
             for (RelatedClassCR rel : path)
                 relationships.insert(rel.GetRelationship());
             }
-        return GetRecursiveChildrenIds(relationships, IsRecursiveJoinForward(thisInfo), input.GetInstanceIds(*thisInfo.GetPrimaryClass()));
+        return GetRecursiveChildrenIds(relationships, IsRecursiveJoinForward(thisInfo), input.GetInstanceIds(*thisInfo.GetInputClass()));
         }
 };
 
@@ -408,17 +387,17 @@ public:
 * @bsimethod                                    Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T>
-InstanceFilteringResult QueryBuilderHelpers::ApplyInstanceFilter(ComplexPresentationQuery<T>& query, InstanceFilteringParams const& params, RelatedClassPath relatedClassPath)
+InstanceFilteringResult QueryBuilderHelpers::ApplyInstanceFilter(ComplexPresentationQuery<T>& query, InstanceFilteringParams const& params, RelatedClassPath pathFromSourceClassToSelectClass)
     {
     InstanceFilteringResult result = InstanceFilteringResult::Success;
-    if (!relatedClassPath.empty())
-        relatedClassPath.front().SetTargetClassAlias("this"); // Changed in order instance filtering to work using this keyword
+    if (!pathFromSourceClassToSelectClass.empty())
+        pathFromSourceClassToSelectClass.front().SetTargetClassAlias("this"); // Changed in order instance filtering to work using this keyword
 
     if (nullptr != params.GetInput())
         {
-        if (params.GetSelectInfo().GetPathToPrimaryClass().empty())
+        if (params.GetSelectInfo().GetPathToInputClass().empty())
             {
-            bvector<ECInstanceId> const& selectedInstanceIds = params.GetInput()->GetInstanceIds(params.GetSelectInfo().GetSelectClass());
+            bvector<ECInstanceId> const& selectedInstanceIds = params.GetInput()->GetInstanceIds(params.GetSelectInfo().GetSelectClass().GetClass());
             if (!selectedInstanceIds.empty())
                 {
                 IdsFilteringHelper<bvector<ECInstanceId>> filteringHelper(selectedInstanceIds);
@@ -439,9 +418,9 @@ InstanceFilteringResult QueryBuilderHelpers::ApplyInstanceFilter(ComplexPresenta
                 }
             else
                 {
-                BeAssert(!params.GetSelectInfo().GetPathToPrimaryClass().empty());
-                relatedClassPath.insert(relatedClassPath.end(), params.GetSelectInfo().GetPathToPrimaryClass().begin(), params.GetSelectInfo().GetPathToPrimaryClass().end());
-                bvector<ECInstanceId> const& ids = params.GetInput()->GetInstanceIds(*params.GetSelectInfo().GetPrimaryClass());
+                BeAssert(!params.GetSelectInfo().GetPathToInputClass().empty());
+                pathFromSourceClassToSelectClass.insert(pathFromSourceClassToSelectClass.end(), params.GetSelectInfo().GetPathToInputClass().begin(), params.GetSelectInfo().GetPathToInputClass().end());
+                bvector<ECInstanceId> const& ids = params.GetInput()->GetInstanceIds(*params.GetSelectInfo().GetInputClass());
                 IdsFilteringHelper<bvector<ECInstanceId>> filteringHelper(ids);
                 query.Where(filteringHelper.CreateWhereClause("[related].[ECInstanceId]").c_str(), filteringHelper.CreateBoundValues());
                 if (ids.empty())
@@ -450,8 +429,8 @@ InstanceFilteringResult QueryBuilderHelpers::ApplyInstanceFilter(ComplexPresenta
             }
         }
 
-    if (!relatedClassPath.empty())
-        query.Join(relatedClassPath, false);
+    if (!pathFromSourceClassToSelectClass.empty())
+        query.Join(pathFromSourceClassToSelectClass, true);
 
     if (params.GetInstanceFilter() && 0 != *params.GetInstanceFilter())
         query.Where(ECExpressionsHelper(params.GetECExpressionsCache()).ConvertToECSql(params.GetInstanceFilter()).c_str(), BoundQueryValuesList());
@@ -460,6 +439,56 @@ InstanceFilteringResult QueryBuilderHelpers::ApplyInstanceFilter(ComplexPresenta
     }
 template InstanceFilteringResult QueryBuilderHelpers::ApplyInstanceFilter<ContentQuery>(ComplexContentQuery&, InstanceFilteringParams const&, RelatedClassPath);
 template InstanceFilteringResult QueryBuilderHelpers::ApplyInstanceFilter<GenericQuery>(ComplexGenericQuery&, InstanceFilteringParams const&, RelatedClassPath);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static void AppendDerivedClassIds(bset<ECClassId>& classIds, SchemaManagerCR schemas)
+    {
+    bset<ECClassId> derivedClassIds;
+    for (ECClassId classId : classIds)
+        {
+        ECClassCP baseClass = schemas.GetClass(classId);
+        ECDerivedClassesList const& derivedClasses = schemas.GetDerivedClasses(*baseClass);
+        for (ECClassCP derivedClass : derivedClasses)
+            derivedClassIds.insert(derivedClass->GetId());
+        }
+    if (!derivedClassIds.empty())
+        AppendDerivedClassIds(derivedClassIds, schemas);
+    std::move(derivedClassIds.begin(), derivedClassIds.end(), std::inserter(classIds, classIds.end()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T>
+void QueryBuilderHelpers::FilterOutExcludes(ComplexPresentationQuery<T>& query, Utf8CP alias, bvector<SelectClass> const& excludes, SchemaManagerCR schemas)
+    {
+    if (excludes.empty())
+        return;
+
+    bset<ECClassId> excludedClassIds;
+
+    // first insert ids of classes we want to exclude polymorphically
+    for (SelectClass const& sc : excludes)
+        {
+        if (sc.IsSelectPolymorphic())
+            excludedClassIds.insert(sc.GetClass().GetId());
+        }
+    // now insert all their derived class ids
+    AppendDerivedClassIds(excludedClassIds, schemas);
+    // and finally insert ids of classes we want to exclude non-polymorphically
+    for (SelectClass const& sc : excludes)
+        {
+        if (!sc.IsSelectPolymorphic())
+            excludedClassIds.insert(sc.GetClass().GetId());
+        }
+
+    IdsFilteringHelper<bset<ECClassId>> helper(excludedClassIds);
+    query.Where(helper.CreateWhereClause(Utf8PrintfString("[%s].[ECClassId]", alias).c_str(), true).c_str(), helper.CreateBoundValues());
+    }
+template void QueryBuilderHelpers::FilterOutExcludes<ContentQuery>(ComplexContentQuery&, Utf8CP, bvector<SelectClass> const&, SchemaManagerCR);
+template void QueryBuilderHelpers::FilterOutExcludes<NavigationQuery>(ComplexNavigationQuery&, Utf8CP, bvector<SelectClass> const&, SchemaManagerCR);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
@@ -796,35 +825,6 @@ ECValue QueryBuilderHelpers::CreateECValueFromJson(RapidJsonValueCR json)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                01/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RelatedClassPath::Reverse(Utf8CP firstTargetClassAlias, bool isFirstTargetPolymorphic)
-    {
-    // first pass: reverse the order in list
-    for (size_t i = 0; i < size() / 2; ++i)
-        {
-        RelatedClass& lhs = at(i);
-        RelatedClass& rhs = at(size() - i - 1);
-        RelatedClass tmp = lhs;
-        lhs = rhs;
-        rhs = tmp;
-        }
-
-    // second pass: reverse each spec
-    for (size_t i = 0; i < size(); ++i)
-        {
-        RelatedClass& spec = at(i);
-        ECClassCP tmp = spec.GetSourceClass();
-        spec.SetSourceClass(*spec.GetTargetClass());
-        spec.SetTargetClass(*tmp);
-        spec.SetTargetClassAlias((i < size() - 1) ? at(i + 1).GetTargetClassAlias() : firstTargetClassAlias);
-        spec.SetIsPolymorphic((i < size() - 1) ? at(i + 1).IsPolymorphic() : isFirstTargetPolymorphic);
-        if (nullptr == spec.GetTargetClassAlias() || 0 == *spec.GetTargetClassAlias())
-            spec.SetTargetClassAlias(Utf8String(spec.GetTargetClass()->GetName()).ToLower());
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 bmap<ECClassCP, bvector<InstanceLabelOverrideValueSpecification const*>> QueryBuilderHelpers::GetLabelOverrideValuesMap(ECSchemaHelper const& helper, InstanceLabelOverrideList labelOverrides)
@@ -917,7 +917,7 @@ bvector<RelatedClass> QueryBuilderHelpers::GetRelatedInstanceClasses(ECSchemaHel
         RelatedClass relatedClassInfo(selectClass, *relatedClass->GetEntityClassCP(), *relationshipClass->GetRelationshipClassCP(), isForward);
         relatedClassInfo.SetTargetClassAlias(spec->GetAlias().c_str());
         relatedClassInfo.SetRelationshipAlias(Utf8PrintfString("rel_%s_%s_%d", relationshipClass->GetSchema().GetAlias().c_str(), relationshipClass->GetName().c_str(), relationshipUsedCount[relationshipClass->GetRelationshipClassCP()]++).c_str());
-        relatedClassInfo.SetIsOuterJoin(!spec->IsRequired());
+        relatedClassInfo.SetIsTargetOptional(!spec->IsRequired());
         relatedClasses.push_back(relatedClassInfo);
         aliases.insert(spec->GetAlias());
         }
@@ -950,4 +950,131 @@ GroupSpecificationCP QueryBuilderHelpers::GetActiveGroupingSpecification(Groupin
         }
 
     return rule.GetGroups()[activeGroupIndex];
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool ShouldSplitIntoDerivedClasses(RuleApplicationInfo const& ruleInfo, ECClassCR candidate)
+    {
+    // expand ECClass into its subclasses in 2 cases:
+    // - rule applies to one of the child classes
+    // - rule applies to this class, but is not polymorphic (applies to this class, but not its children)
+    return ruleInfo.GetRuleClass()->Is(&candidate) && ruleInfo.GetRuleClass() != &candidate
+        || ruleInfo.GetRuleClass() == &candidate && !ruleInfo.IsRulePolymorphic() && !candidate.GetDerivedClasses().empty();
+    }
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                12/2019
++===============+===============+===============+===============+===============+======*/
+struct SelectClassSplitResultComparer
+    {
+    bool operator()(SelectClassSplitResult const& lhs, SelectClassSplitResult const& rhs) const
+        {
+        int selectClassNameCmp = strcmp(lhs.GetSelectClass().GetClass().GetFullName(), rhs.GetSelectClass().GetClass().GetFullName());
+        if (selectClassNameCmp < 0)
+            return true;
+        if (selectClassNameCmp > 0)
+            return false;
+        if (!lhs.GetSelectClass().IsSelectPolymorphic() && rhs.GetSelectClass().IsSelectPolymorphic())
+            return true;
+        return false;
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static void ProcessSelectClassesBasedOnCustomizationRules(bvector<SelectClassSplitResult>& splitInfos, bvector<RuleApplicationInfo> const& customizationRuleInfos, SchemaManagerCR schemas)
+    {
+    bset<SelectClassSplitResult, SelectClassSplitResultComparer> selectsToAppend;
+    for (SelectClassSplitResult& splitInfo : splitInfos)
+        {
+        if (!splitInfo.GetSelectClass().IsSelectPolymorphic())
+            continue;
+
+        for (RuleApplicationInfo const& ruleInfo : customizationRuleInfos)
+            {
+            // check the primary select class
+            if (ShouldSplitIntoDerivedClasses(ruleInfo, splitInfo.GetSelectClass().GetClass()))
+                {
+                // the rule wants to customize a subclass of the class and leave other subclasses as is -
+                // this means we have to expand the ecClass into its subclasses
+                splitInfo.GetSelectClass().GetDerivedExcludedClasses().push_back(SelectClass(*ruleInfo.GetRuleClass(), ruleInfo.IsRulePolymorphic()));
+
+                SelectClassSplitResult customizationClassSplitInfo(SelectClassWithExcludes(*ruleInfo.GetRuleClass(), ruleInfo.IsRulePolymorphic()));
+                std::copy(splitInfo.GetSplitPath().begin(), splitInfo.GetSplitPath().end(), std::back_inserter(customizationClassSplitInfo.GetSplitPath()));
+                customizationClassSplitInfo.GetSplitPath().push_back(splitInfo.GetSelectClass());
+
+                bvector<SelectClassSplitResult> customizationClassSplitInfos = {customizationClassSplitInfo};
+                ProcessSelectClassesBasedOnCustomizationRules(customizationClassSplitInfos, customizationRuleInfos, schemas);
+                std::move(customizationClassSplitInfos.begin(), customizationClassSplitInfos.end(), std::inserter(selectsToAppend, selectsToAppend.end()));
+                }
+            }
+        }
+
+    // don't want to append selects that are already in the input vector
+    for (SelectClassSplitResult const& splitInfo : splitInfos)
+        {
+        auto iter = selectsToAppend.find(splitInfo);
+        if (selectsToAppend.end() != iter)
+            selectsToAppend.erase(iter);
+        }
+
+    // append the additional selects
+    std::move(selectsToAppend.begin(), selectsToAppend.end(), std::back_inserter(splitInfos));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<SelectClassSplitResult> QueryBuilderHelpers::ProcessSelectClassesBasedOnCustomizationRules(bvector<SelectClass> const& selectClasses,
+    bvector<RuleApplicationInfo> const& customizationRuleInfos, SchemaManagerCR schemas)
+    {
+    bvector<SelectClassSplitResult> result = ContainerHelpers::TransformContainer<bvector<SelectClassSplitResult>>(selectClasses, [](SelectClass const& sc){return SelectClassSplitResult(sc);});
+    ::ProcessSelectClassesBasedOnCustomizationRules(result, customizationRuleInfos, schemas);
+    return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static void ProcessRelationshipPathsBasedOnCustomizationRules(bvector<RelatedClassPath>& relationshipPaths, bvector<RuleApplicationInfo> const& customizationRuleInfos, SchemaManagerCR schemas)
+    {
+    bvector<RelatedClassPath> childPaths;
+    for (RuleApplicationInfo const& ruleInfo : customizationRuleInfos)
+        {
+        for (RelatedClassPath& path : relationshipPaths)
+            {
+            if (!path.back().GetTargetClass().IsSelectPolymorphic())
+                continue;
+
+            if (ShouldSplitIntoDerivedClasses(ruleInfo, path.back().GetTargetClass().GetClass()))
+                {
+                path.back().GetTargetClass().GetDerivedExcludedClasses().push_back(SelectClass(*ruleInfo.GetRuleClass(), ruleInfo.IsRulePolymorphic()));
+
+                RelatedClassPath copy(path);
+                copy.back().SetTargetClass(SelectClassWithExcludes(*ruleInfo.GetRuleClass(), ruleInfo.IsRulePolymorphic()));
+                bvector<RelatedClassPath> derivedPaths({copy});
+                ProcessRelationshipPathsBasedOnCustomizationRules(derivedPaths, customizationRuleInfos, schemas);
+                std::move(derivedPaths.begin(), derivedPaths.end(), std::back_inserter(childPaths));
+                }
+            }
+        }
+    for (RelatedClassPath const& relatedPath : childPaths)
+        {
+        // TODO: would be nice to filter-out duplicate paths...
+        relationshipPaths.push_back(relatedPath);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<RelatedClassPath> QueryBuilderHelpers::ProcessRelationshipPathsBasedOnCustomizationRules(bvector<RelatedClassPath> const& relationshipPaths,
+    bvector<RuleApplicationInfo> const& customizationRuleInfos, SchemaManagerCR schemas)
+    {
+    bvector<RelatedClassPath> result(relationshipPaths);
+    ::ProcessRelationshipPathsBasedOnCustomizationRules(result, customizationRuleInfos, schemas);
+    return result;
     }

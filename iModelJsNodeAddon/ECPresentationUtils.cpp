@@ -108,7 +108,7 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
             }
 
         json.AddMember("property", propertyJson, json.GetAllocator());
-        json.AddMember("relatedClassPath", _AsJson(property.GetRelatedClassPath(), json.GetAllocator()), json.GetAllocator());
+        json.AddMember("relatedClassPath", _AsJson(property.GetPathFromSelectToPropertyClass(), json.GetAllocator()), json.GetAllocator());
 
         return json;
         }
@@ -144,10 +144,8 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                04/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void _AsJson(ContentDescriptor::NestedContentField const& nestedContentField, RapidJsonDocumentR fieldBaseJson) const override
+    void _NestedContentFieldAsJson(ContentDescriptor::NestedContentField const& nestedContentField, RapidJsonDocumentR fieldBaseJson) const override
         {
-        fieldBaseJson.AddMember("contentClassInfo", _AsJson(nestedContentField.GetContentClass(), &fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
-        fieldBaseJson.AddMember("pathToPrimaryClass", _AsJson(nestedContentField.GetRelationshipPath(), fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
         if (nestedContentField.ShouldAutoExpand())
             fieldBaseJson.AddMember("autoExpand", nestedContentField.ShouldAutoExpand(), fieldBaseJson.GetAllocator());
 
@@ -155,6 +153,24 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
         for (ContentDescriptor::Field const* nestedField : nestedContentField.GetFields())
             nestedFieldsJson.PushBack(nestedField->AsJson(&fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
         fieldBaseJson.AddMember("nestedFields", nestedFieldsJson, fieldBaseJson.GetAllocator());
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis                04/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void _AsJson(ContentDescriptor::CompositeContentField const& compositeContentField, RapidJsonDocumentR nestedContentBaseJson) const override
+        {
+        nestedContentBaseJson.AddMember("contentClassInfo", _AsJson(compositeContentField.GetContentClass(), &nestedContentBaseJson.GetAllocator()), nestedContentBaseJson.GetAllocator());
+        nestedContentBaseJson.AddMember("pathToPrimaryClass", rapidjson::Document(rapidjson::kArrayType), nestedContentBaseJson.GetAllocator()); // just for backwards compatibility
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis                04/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void _AsJson(ContentDescriptor::RelatedContentField const& relatedContentField, RapidJsonDocumentR nestedContentBaseJson) const override
+        {
+        nestedContentBaseJson.AddMember("contentClassInfo", _AsJson(relatedContentField.GetContentClass(), &nestedContentBaseJson.GetAllocator()), nestedContentBaseJson.GetAllocator()); // just for backwards compatibility
+        nestedContentBaseJson.AddMember("pathToPrimaryClass", _AsJson(RelatedClassPath(relatedContentField.GetPathFromSelectToContentClass()).Reverse("", false), nestedContentBaseJson.GetAllocator()), nestedContentBaseJson.GetAllocator());
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -374,9 +390,9 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
         for (SelectClassInfo const& selectClass : contentDescriptor.GetSelectClasses())
             {
             rapidjson::Value selectClassJson(rapidjson::kObjectType);
-            selectClassJson.AddMember("selectClassInfo", _AsJson(selectClass.GetSelectClass(), &json.GetAllocator()), json.GetAllocator());
-            selectClassJson.AddMember("isSelectPolymorphic", selectClass.IsSelectPolymorphic(), json.GetAllocator());
-            selectClassJson.AddMember("pathToPrimaryClass", _AsJson(selectClass.GetPathToPrimaryClass(), json.GetAllocator()), json.GetAllocator());
+            selectClassJson.AddMember("selectClassInfo", _AsJson(selectClass.GetSelectClass().GetClass(), &json.GetAllocator()), json.GetAllocator());
+            selectClassJson.AddMember("isSelectPolymorphic", selectClass.GetSelectClass().IsSelectPolymorphic(), json.GetAllocator());
+            selectClassJson.AddMember("pathToPrimaryClass", _AsJson(selectClass.GetPathToInputClass(), json.GetAllocator()), json.GetAllocator());
             selectClassJson.AddMember("relatedPropertyPaths", rapidjson::Value(rapidjson::kArrayType), json.GetAllocator());
             for (RelatedClassPathCR propertyPath : selectClass.GetRelatedPropertyPaths())
                 selectClassJson["relatedPropertyPaths"].PushBack(_AsJson(propertyPath, json.GetAllocator()), json.GetAllocator());
@@ -974,10 +990,10 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
         {
         rapidjson::Value json(rapidjson::kObjectType);
         json.AddMember("sourceClassInfo", _AsJson(*relatedClass.GetSourceClass(), &allocator), allocator);
-        json.AddMember("targetClassInfo", _AsJson(*relatedClass.GetTargetClass(), &allocator), allocator);
+        json.AddMember("targetClassInfo", _AsJson(relatedClass.GetTargetClass().GetClass(), &allocator), allocator);
+        json.AddMember("isPolymorphicRelationship", relatedClass.GetTargetClass().IsSelectPolymorphic(), allocator);
         json.AddMember("relationshipInfo", _AsJson(*relatedClass.GetRelationship(), &allocator), allocator);
         json.AddMember("isForwardRelationship", relatedClass.IsForwardRelationship(), allocator);
-        json.AddMember("isPolymorphicRelationship", relatedClass.IsPolymorphic(), allocator);
         return json;
         }
 
@@ -1193,7 +1209,7 @@ static IModelJsECPresentationStaticSetupHelper s_staticSetup;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-RulesDrivenECPresentationManager* ECPresentationUtils::CreatePresentationManager(Dgn::DgnPlatformLib::Host::IKnownLocationsAdmin& locations, 
+RulesDrivenECPresentationManager* ECPresentationUtils::CreatePresentationManager(Dgn::DgnPlatformLib::Host::IKnownLocationsAdmin& locations,
     IJsonLocalState& localState, Utf8StringCR id, bvector<Utf8String> const& localeDirectories, bmap<int, unsigned> taskAllocationSlots, Utf8StringCR mode)
     {
     BeFileName assetsDir = locations.GetDgnPlatformAssetsDirectory();
@@ -1214,7 +1230,7 @@ RulesDrivenECPresentationManager* ECPresentationUtils::CreatePresentationManager
     bvector<BeFileName> localeDirectoryPaths;
     for (Utf8StringCR dir : localeDirectories)
         localeDirectoryPaths.push_back(BeFileName(dir).AppendSeparator());
-    
+
     RulesDrivenECPresentationManager::Params params(pathParams);
     params.SetMultiThreadingParams(threadingParams);
     params.SetLocalizationProvider(new IModelJsECPresentationLocalizationProvider(localeDirectoryPaths));

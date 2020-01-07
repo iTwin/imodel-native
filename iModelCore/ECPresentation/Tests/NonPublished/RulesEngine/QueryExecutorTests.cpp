@@ -1368,7 +1368,7 @@ TEST_F(NavigationQueryExecutorTests, SetsRelatedInstanceKeysForECInstanceNodes)
     gadgetRelatedClasses.push_back(widgetRelatedToGadgetInfo);
 
     ComplexNavigationQueryPtr gadgetsQuery = RulesEngineTestHelpers::CreateECInstanceNodesQueryForClass(*m_gadgetClass, true, "this", gadgetRelatedClasses);
-    gadgetsQuery->Join(RelatedClass(*m_gadgetClass, *m_widgetClass, *m_widgetHasGadgetsClass, false, "w", nullptr, true, false));
+    gadgetsQuery->Join(RelatedClass(*m_gadgetClass, SelectClass(*m_widgetClass, true), *m_widgetHasGadgetsClass, false, "w", "r", false));
     ComplexNavigationQueryPtr sprocketsQuery = RulesEngineTestHelpers::CreateECInstanceNodesQueryForClass(*m_sprocketClass, true, "this");
     UnionNavigationQueryPtr unionQuery = UnionNavigationQuery::Create(*gadgetsQuery, *sprocketsQuery);
     unionQuery->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
@@ -1682,16 +1682,18 @@ TEST_F(ContentQueryExecutorTests, SelectsRelatedProperties)
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test Widget"));});
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgetsRelationship, *widget, *gadget);
 
+    RelatedClass relatedPropertyPath(*m_gadgetClass, *m_widgetClass, *widgetHasGadgetsRelationship, false, "rel_RET_Widget_0", "rel");
+
     RulesDrivenECPresentationManager::ContentOptions options(m_ruleset->GetRuleSetId());
     ContentDescriptorPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
     AddField(*descriptor, *m_gadgetClass, ContentDescriptor::Property("this", *m_gadgetClass, *m_gadgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty()));
     AddField(*descriptor, *m_gadgetClass, ContentDescriptor::Property("rel_RET_Widget_0", *m_widgetClass, *m_widgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty()));
-    const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(*m_widgetClass, *m_gadgetClass, *widgetHasGadgetsRelationship, true), RelationshipMeaning::RelatedInstance);
+    const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(relatedPropertyPath, RelationshipMeaning::RelatedInstance);
 
     ComplexContentQueryPtr query = ComplexContentQuery::Create();
     query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_gadgetClass, *query), "this");
     query->From(*m_gadgetClass, false, "this");
-    query->Join(RelatedClass(*m_gadgetClass, *m_widgetClass, *widgetHasGadgetsRelationship, false, "rel_RET_Widget_0"));
+    query->Join(relatedPropertyPath);
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     ContentQueryExecutor executor(*m_connection, *query);
@@ -1732,16 +1734,18 @@ TEST_F(ContentQueryExecutorTests, SelectsRelatedPropertiesFromOnlySingleClassWhe
     IECInstancePtr fInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), classF, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(22));});
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), classDHasClassERelationship, *dInstance, *eInstance);
 
+    RelatedClass relatedPropertyPath(classE, classD, classDHasClassERelationship, false, "rel_RET_ClassD_0", "rel");
+
     RulesDrivenECPresentationManager::ContentOptions options(m_ruleset->GetRuleSetId());
     ContentDescriptorPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
     AddField(*descriptor, classE, ContentDescriptor::Property("this", classE, *classE.GetPropertyP("IntProperty")->GetAsPrimitiveProperty()));
     AddField(*descriptor, classE, ContentDescriptor::Property("rel_RET_ClassD_0", classD, *classD.GetPropertyP("StringProperty")->GetAsPrimitiveProperty()));
-    const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(classD, classE, classDHasClassERelationship, true), RelationshipMeaning::RelatedInstance);
+    const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(relatedPropertyPath, RelationshipMeaning::RelatedInstance);
 
     ComplexContentQueryPtr query1 = ComplexContentQuery::Create();
     query1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &classE, *query1), "this");
     query1->From(classE, false, "this");
-    query1->Join(RelatedClass(classE, classD, classDHasClassERelationship, false, "rel_RET_ClassD_0"));
+    query1->Join(relatedPropertyPath);
 
     ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
     query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &classF, *query2), "this");

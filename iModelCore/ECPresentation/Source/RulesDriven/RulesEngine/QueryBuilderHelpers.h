@@ -2,15 +2,28 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See COPYRIGHT.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-#pragma once 
+#pragma once
 #include <ECPresentation/ECPresentation.h>
 #include "NavigationQuery.h"
-#include "ContentSpecificationsHandler.h"
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
 #define RULES_ENGINE_LOCAL_STATE_NAMESPACE                  "RulesEngine"
 #define RULES_ENGINE_ACTIVE_GROUPS_LOCAL_STATE_NAMESPACE    RULES_ENGINE_LOCAL_STATE_NAMESPACE "_ActiveGroups"
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                07/2017
++===============+===============+===============+===============+===============+======*/
+struct IParsedInput
+    {
+    protected:
+        virtual bvector<ECClassCP> const& _GetClasses() const = 0;
+        virtual bvector<BeSQLite::EC::ECInstanceId> const& _GetInstanceIds(ECClassCR) const = 0;
+    public:
+        virtual ~IParsedInput() {}
+        bvector<ECClassCP> const& GetClasses() const { return _GetClasses(); }
+        bvector<BeSQLite::EC::ECInstanceId> const& GetInstanceIds(ECClassCR selectClass) const { return _GetInstanceIds(selectClass); }
+    };
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                02/2018
@@ -20,10 +33,10 @@ struct InstanceFilteringParams
     struct RecursiveQueryInfo
     {
     private:
-        bvector<RelatedClassPath> m_pathsToPrimary;
+        bvector<RelatedClassPath> m_pathsFromInputToSelectClass;
     public:
-        RecursiveQueryInfo(bvector<RelatedClassPath> pathsToPrimary) : m_pathsToPrimary(pathsToPrimary) {}
-        bvector<RelatedClassPath> const& GetPathsToPrimary() const {return m_pathsToPrimary;}
+        RecursiveQueryInfo(bvector<RelatedClassPath> pathsFromInputToSelectClass) : m_pathsFromInputToSelectClass(pathsFromInputToSelectClass) {}
+        bvector<RelatedClassPath> const& GetPathsFromInputToSelectClass() const {return m_pathsFromInputToSelectClass;}
     };
 
 private:
@@ -37,7 +50,7 @@ private:
 public:
     InstanceFilteringParams(IConnectionCR connection, ECExpressionsCache& ecexpressionsCache, IParsedInput const* selection,
         SelectClassInfo const& selectInfo, RecursiveQueryInfo const* recursiveQueryInfo, Utf8CP instanceFilter)
-        : m_connection(connection), m_ecexpressionsCache(ecexpressionsCache), m_selection(selection), m_selectInfo(selectInfo), 
+        : m_connection(connection), m_ecexpressionsCache(ecexpressionsCache), m_selection(selection), m_selectInfo(selectInfo),
         m_recursiveQueryInfo(recursiveQueryInfo), m_instanceFilter(instanceFilter)
         {}
     IConnectionCR GetConnection() const {return m_connection;}
@@ -53,9 +66,26 @@ public:
 +===============+===============+===============+===============+===============+======*/
 enum class InstanceFilteringResult
     {
-    Success,         //!< Filter appied successfully
-    NoResults, //!< Returned when it's clear the query will return no results after applying the filter
+    Success,    //!< Filter appied successfully
+    NoResults,  //!< Returned when it's clear the query will return no results after applying the filter
     };
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                12/2019
++===============+===============+===============+===============+===============+======*/
+struct SelectClassSplitResult
+{
+private:
+    bvector<SelectClassWithExcludes> m_splitPath;
+    SelectClassWithExcludes m_selectClass;
+public:
+    SelectClassSplitResult() {}
+    SelectClassSplitResult(SelectClassWithExcludes selectClass) : m_selectClass(selectClass) {}
+    SelectClassWithExcludes const& GetSelectClass() const {return m_selectClass;}
+    SelectClassWithExcludes& GetSelectClass() {return m_selectClass;}
+    bvector<SelectClassWithExcludes> const& GetSplitPath() const {return m_splitPath;}
+    bvector<SelectClassWithExcludes>& GetSplitPath() {return m_splitPath;}
+};
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                04/2015
@@ -64,7 +94,6 @@ struct QueryBuilderHelpers
 {
 private:
     QueryBuilderHelpers() {}
-    static void ProcessQueryClassesBasedOnCustomizationRules(ECClassSet& classes, bmap<ECClassCP, bool> const& customizationClasses);
 
 public:
     template<typename T> static Utf8String GetOrderByClause(T const& query);
@@ -78,9 +107,15 @@ public:
     template<typename T> static bool NeedsNestingToUseAlias(T const& query, bvector<Utf8CP> const& aliases);
     template<typename T> static RefCountedPtr<T> CreateNestedQueryIfNecessary(T& query, bvector<Utf8CP> const& aliases);
     template<typename T> static RefCountedPtr<ComplexPresentationQuery<T>> CreateComplexNestedQueryIfNecessary(T& query, bvector<Utf8CP> const& aliases);
-    
+
     template<typename T> static InstanceFilteringResult ApplyInstanceFilter(ComplexPresentationQuery<T>&, InstanceFilteringParams const&, RelatedClassPath);
-    
+    template<typename T> static void FilterOutExcludes(ComplexPresentationQuery<T>&, Utf8CP alias, bvector<SelectClass> const& excludes, SchemaManagerCR);
+
+    static bvector<SelectClassSplitResult> ProcessSelectClassesBasedOnCustomizationRules(bvector<SelectClass> const& selectClasses,
+        bvector<RuleApplicationInfo> const& customizationRuleInfos, SchemaManagerCR schemas);
+    static bvector<RelatedClassPath> ProcessRelationshipPathsBasedOnCustomizationRules(bvector<RelatedClassPath> const& relationshipPaths,
+        bvector<RuleApplicationInfo> const& customizationRuleInfos, SchemaManagerCR);
+
     template<typename T> static bvector<T> SerializeECClassMapPolymorphically(bmap<ECClassCP, bvector<T>> const& map, ECClassCR ecClass)
         {
         bvector<T> list;
@@ -94,7 +129,7 @@ public:
             }
         return list;
         }
-    
+
     static void ApplyDescriptorOverrides(RefCountedPtr<ContentQuery>& query, ContentDescriptorCR ovr, ECExpressionsCache&);
     static void ApplyPagingOptions(RefCountedPtr<ContentQuery>& query, PageOptionsCR opts);
     static void ApplyDefaultContentFlags(ContentDescriptorR descriptor, Utf8CP displayType, ContentSpecificationCR);

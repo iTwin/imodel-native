@@ -2512,6 +2512,168 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Fi
     ASSERT_STREQ("test label", childNodes[0]->GetLabel().c_str());
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(RelatedInstancesNodes_ReturnsWithoutExcludedRelatedClassInstances, R"*(
+    <ECEntityClass typeName="Element">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="Model" relationshipName="ModelContainsElements" direction="Backward">
+            <ECCustomAttributes>
+                <ForeignKeyConstraint xmlns="ECDbMap.2.0">
+                    <OnDeleteAction>NoAction</OnDeleteAction>
+                </ForeignKeyConstraint>
+            </ECCustomAttributes>
+        </ECNavigationProperty>
+    </ECEntityClass>
+    <ECEntityClass typeName="CustomElement" displayLabel="Custom Element">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="GeometricElement" displayLabel="Geometric Element">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="PhysicalElement" displayLabel="PhysicalElement Element">
+        <BaseClass>GeometricElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="Model" />
+    <ECRelationshipClass typeName="ModelContainsElements" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="Model"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="Element" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_ReturnsWithoutExcludedRelatedClassInstances)
+    {
+    ECClassCP modelClass = GetClass("Model");
+    ECClassCP elementClass = GetClass("Element");
+    ECClassCP customElementClass = GetClass("CustomElement");
+    ECClassCP geometricElementClass = GetClass("GeometricElement");
+    ECClassCP physicalElementClass = GetClass("PhysicalElement");
+    ECRelationshipClassCP modelContainsElementsRel = GetClass("ModelContainsElements")->GetRelationshipClassCP();
+    IECInstancePtr model = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *modelClass);
+    IECInstancePtr baseElement = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass, 
+        [&](IECInstanceR inst){inst.SetValue("Model", ECValue(ECInstanceId::FromString(model->GetInstanceId().c_str()), modelContainsElementsRel->GetId()));});
+    IECInstancePtr customElement = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *customElementClass, 
+        [&](IECInstanceR inst){inst.SetValue("Model", ECValue(ECInstanceId::FromString(model->GetInstanceId().c_str()), modelContainsElementsRel->GetId()));});
+    IECInstancePtr geometricElement = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *geometricElementClass, 
+        [&](IECInstanceR inst){inst.SetValue("Model", ECValue(ECInstanceId::FromString(model->GetInstanceId().c_str()), modelContainsElementsRel->GetId()));});
+    IECInstancePtr physicalElement = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *physicalElementClass, 
+        [&](IECInstanceR inst){inst.SetValue("Model", ECValue(ECInstanceId::FromString(model->GetInstanceId().c_str()), modelContainsElementsRel->GetId()));});
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule();
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", modelClass->GetFullName(), false));
+    rules->AddPresentationRule(*rootRule);
+
+    ChildNodeRule* childRule = new ChildNodeRule("ParentNode.ClassName=\"Model\"", 1, false);
+    childRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, ChildrenHint::Unknown, false, false, false, false, 0, "", RequiredRelationDirection_Forward, "",
+        modelContainsElementsRel->GetFullName(), Utf8PrintfString("%s;E:%s", elementClass->GetFullName(), geometricElementClass->GetFullName())));
+    rules->AddPresentationRule(*childRule);
+
+    // request for nodes
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
+    ASSERT_EQ(1, rootNodes.GetSize());
+    VerifyNodeInstance(*rootNodes[0], *model);
+
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
+    ASSERT_EQ(3, childNodes.GetSize());
+    VerifyNodeInstance(*childNodes[0], *baseElement);
+    VerifyNodeInstance(*childNodes[1], *customElement);
+    VerifyNodeInstance(*childNodes[2], *physicalElement);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(RelatedInstancesNodes_ReturnsWithoutPolymorphicallyExcludedRelatedClassInstances, R"*(
+    <ECEntityClass typeName="Element">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="Model" relationshipName="ModelContainsElements" direction="Backward">
+            <ECCustomAttributes>
+                <ForeignKeyConstraint xmlns="ECDbMap.2.0">
+                    <OnDeleteAction>NoAction</OnDeleteAction>
+                </ForeignKeyConstraint>
+            </ECCustomAttributes>
+        </ECNavigationProperty>
+    </ECEntityClass>
+    <ECEntityClass typeName="CustomElement" displayLabel="Custom Element">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="GeometricElement" displayLabel="Geometric Element">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="PhysicalElement" displayLabel="PhysicalElement Element">
+        <BaseClass>GeometricElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="Model" />
+    <ECRelationshipClass typeName="ModelContainsElements" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="Model"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="Element" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_ReturnsWithoutPolymorphicallyExcludedRelatedClassInstances)
+    {
+    ECClassCP modelClass = GetClass("Model");
+    ECClassCP elementClass = GetClass("Element");
+    ECClassCP customElementClass = GetClass("CustomElement");
+    ECClassCP geometricElementClass = GetClass("GeometricElement");
+    ECClassCP physicalElementClass = GetClass("PhysicalElement");
+    ECRelationshipClassCP modelContainsElementsRel = GetClass("ModelContainsElements")->GetRelationshipClassCP();
+    IECInstancePtr model = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *modelClass);
+    IECInstancePtr baseElement = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass, 
+        [&](IECInstanceR inst){inst.SetValue("Model", ECValue(ECInstanceId::FromString(model->GetInstanceId().c_str()), modelContainsElementsRel->GetId()));});
+    IECInstancePtr customElement = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *customElementClass, 
+        [&](IECInstanceR inst){inst.SetValue("Model", ECValue(ECInstanceId::FromString(model->GetInstanceId().c_str()), modelContainsElementsRel->GetId()));});
+    IECInstancePtr geometricElement = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *geometricElementClass, 
+        [&](IECInstanceR inst){inst.SetValue("Model", ECValue(ECInstanceId::FromString(model->GetInstanceId().c_str()), modelContainsElementsRel->GetId()));});
+    IECInstancePtr physicalElement = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *physicalElementClass, 
+        [&](IECInstanceR inst){inst.SetValue("Model", ECValue(ECInstanceId::FromString(model->GetInstanceId().c_str()), modelContainsElementsRel->GetId()));});
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule();
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", modelClass->GetFullName(), false));
+    rules->AddPresentationRule(*rootRule);
+
+    ChildNodeRule* childRule = new ChildNodeRule("ParentNode.ClassName=\"Model\"", 1, false);
+    childRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, ChildrenHint::Unknown, false, false, false, false, 0, "", RequiredRelationDirection_Forward, "",
+        modelContainsElementsRel->GetFullName(), Utf8PrintfString("%s;PE:%s", elementClass->GetFullName(), geometricElementClass->GetFullName())));
+    rules->AddPresentationRule(*childRule);
+
+    // request for nodes
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
+    ASSERT_EQ(1, rootNodes.GetSize());
+    VerifyNodeInstance(*rootNodes[0], *model);
+
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
+    ASSERT_EQ(2, childNodes.GetSize());
+    VerifyNodeInstance(*childNodes[0], *baseElement);
+    VerifyNodeInstance(*childNodes[1], *customElement);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Pranciskus.Ambrazas                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/

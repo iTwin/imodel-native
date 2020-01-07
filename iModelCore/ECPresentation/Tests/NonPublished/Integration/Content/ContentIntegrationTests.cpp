@@ -63,11 +63,11 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Retu
 
     ASSERT_EQ(2, descriptor->GetSelectClasses().size());
 
-    EXPECT_EQ(m_gadgetClass, &descriptor->GetSelectClasses()[0].GetSelectClass());
-    EXPECT_FALSE(descriptor->GetSelectClasses()[0].IsSelectPolymorphic());
+    EXPECT_EQ(m_gadgetClass, &descriptor->GetSelectClasses()[0].GetSelectClass().GetClass());
+    EXPECT_FALSE(descriptor->GetSelectClasses()[0].GetSelectClass().IsSelectPolymorphic());
 
-    EXPECT_EQ(m_widgetClass, &descriptor->GetSelectClasses()[1].GetSelectClass());
-    EXPECT_FALSE(descriptor->GetSelectClasses()[1].IsSelectPolymorphic());
+    EXPECT_EQ(m_widgetClass, &descriptor->GetSelectClasses()[1].GetSelectClass().GetClass());
+    EXPECT_FALSE(descriptor->GetSelectClasses()[1].GetSelectClass().IsSelectPolymorphic());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -118,7 +118,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Retu
     ASSERT_TRUE(descriptor.IsValid());
 
     ASSERT_EQ(1, descriptor->GetSelectClasses().size());
-    EXPECT_EQ(elementClass, &descriptor->GetSelectClasses()[0].GetSelectClass());
+    EXPECT_EQ(elementClass, &descriptor->GetSelectClasses()[0].GetSelectClass().GetClass());
 
     bvector<ContentDescriptor::Field*> fields = descriptor->GetVisibleFields();
     ASSERT_EQ(1, fields.size());
@@ -740,8 +740,8 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecific
     ASSERT_TRUE(descriptor.IsValid());
 
     ASSERT_EQ(1, descriptor->GetSelectClasses().size());
-    EXPECT_EQ(m_widgetClass, &descriptor->GetSelectClasses()[0].GetSelectClass());
-    EXPECT_TRUE(descriptor->GetSelectClasses()[0].IsSelectPolymorphic());
+    EXPECT_EQ(m_widgetClass, &descriptor->GetSelectClasses()[0].GetSelectClass().GetClass());
+    EXPECT_TRUE(descriptor->GetSelectClasses()[0].GetSelectClass().IsSelectPolymorphic());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -877,41 +877,41 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Re
 
     ASSERT_EQ(6, descriptor->GetSelectClasses().size());
 
-    EXPECT_EQ(m_widgetClass, &descriptor->GetSelectClasses()[0].GetSelectClass());
-    EXPECT_TRUE(descriptor->GetSelectClasses()[0].IsSelectPolymorphic());
-    EXPECT_EQ(m_gadgetClass, descriptor->GetSelectClasses()[0].GetPrimaryClass());
-    EXPECT_EQ(1, descriptor->GetSelectClasses()[0].GetPathToPrimaryClass().size());
-    EXPECT_EQ(rel1, descriptor->GetSelectClasses()[0].GetPathToPrimaryClass()[0].GetRelationship());
+    EXPECT_EQ(m_widgetClass, &descriptor->GetSelectClasses()[0].GetSelectClass().GetClass());
+    EXPECT_TRUE(descriptor->GetSelectClasses()[0].GetSelectClass().IsSelectPolymorphic());
+    EXPECT_EQ(m_gadgetClass, descriptor->GetSelectClasses()[0].GetInputClass());
+    EXPECT_EQ(1, descriptor->GetSelectClasses()[0].GetPathToInputClass().size());
+    EXPECT_EQ(rel1, descriptor->GetSelectClasses()[0].GetPathToInputClass()[0].GetRelationship());
 
-    EXPECT_EQ(m_widgetClass, &descriptor->GetSelectClasses()[1].GetSelectClass());
-    EXPECT_TRUE(descriptor->GetSelectClasses()[1].IsSelectPolymorphic());
-    EXPECT_EQ(m_gadgetClass, descriptor->GetSelectClasses()[1].GetPrimaryClass());
-    EXPECT_EQ(1, descriptor->GetSelectClasses()[1].GetPathToPrimaryClass().size());
-    EXPECT_EQ(rel2, descriptor->GetSelectClasses()[1].GetPathToPrimaryClass()[0].GetRelationship());
+    EXPECT_EQ(m_widgetClass, &descriptor->GetSelectClasses()[1].GetSelectClass().GetClass());
+    EXPECT_TRUE(descriptor->GetSelectClasses()[1].GetSelectClass().IsSelectPolymorphic());
+    EXPECT_EQ(m_gadgetClass, descriptor->GetSelectClasses()[1].GetInputClass());
+    EXPECT_EQ(1, descriptor->GetSelectClasses()[1].GetPathToInputClass().size());
+    EXPECT_EQ(rel2, descriptor->GetSelectClasses()[1].GetPathToInputClass()[0].GetRelationship());
 
-    EXPECT_EQ(m_widgetClass, &descriptor->GetSelectClasses()[2].GetSelectClass());
-    EXPECT_TRUE(descriptor->GetSelectClasses()[2].IsSelectPolymorphic());
-    EXPECT_EQ(m_gadgetClass, descriptor->GetSelectClasses()[2].GetPrimaryClass());
-    EXPECT_EQ(1, descriptor->GetSelectClasses()[2].GetPathToPrimaryClass().size());
-    EXPECT_EQ(rel3, descriptor->GetSelectClasses()[2].GetPathToPrimaryClass()[0].GetRelationship());
+    EXPECT_EQ(m_widgetClass, &descriptor->GetSelectClasses()[2].GetSelectClass().GetClass());
+    EXPECT_TRUE(descriptor->GetSelectClasses()[2].GetSelectClass().IsSelectPolymorphic());
+    EXPECT_EQ(m_gadgetClass, descriptor->GetSelectClasses()[2].GetInputClass());
+    EXPECT_EQ(1, descriptor->GetSelectClasses()[2].GetPathToInputClass().size());
+    EXPECT_EQ(rel3, descriptor->GetSelectClasses()[2].GetPathToInputClass()[0].GetRelationship());
 
-    EXPECT_EQ(m_widgetClass, &descriptor->GetSelectClasses()[3].GetSelectClass());
-    EXPECT_TRUE(descriptor->GetSelectClasses()[3].IsSelectPolymorphic());
-    EXPECT_EQ(m_gadgetClass, descriptor->GetSelectClasses()[3].GetPrimaryClass());
-    EXPECT_EQ(1, descriptor->GetSelectClasses()[3].GetPathToPrimaryClass().size());
-    EXPECT_EQ(rel4, descriptor->GetSelectClasses()[3].GetPathToPrimaryClass()[0].GetRelationship());
+    EXPECT_EQ(m_widgetClass, &descriptor->GetSelectClasses()[3].GetSelectClass().GetClass());
+    EXPECT_TRUE(descriptor->GetSelectClasses()[3].GetSelectClass().IsSelectPolymorphic());
+    EXPECT_EQ(m_gadgetClass, descriptor->GetSelectClasses()[3].GetInputClass());
+    EXPECT_EQ(1, descriptor->GetSelectClasses()[3].GetPathToInputClass().size());
+    EXPECT_EQ(rel4, descriptor->GetSelectClasses()[3].GetPathToInputClass()[0].GetRelationship());
 
-    EXPECT_EQ(sprocketClass, &descriptor->GetSelectClasses()[4].GetSelectClass());
-    EXPECT_TRUE(descriptor->GetSelectClasses()[4].IsSelectPolymorphic());
-    EXPECT_EQ(m_gadgetClass, descriptor->GetSelectClasses()[4].GetPrimaryClass());
-    EXPECT_EQ(1, descriptor->GetSelectClasses()[4].GetPathToPrimaryClass().size());
-    EXPECT_EQ(rel5, descriptor->GetSelectClasses()[4].GetPathToPrimaryClass()[0].GetRelationship());
+    EXPECT_EQ(sprocketClass, &descriptor->GetSelectClasses()[4].GetSelectClass().GetClass());
+    EXPECT_TRUE(descriptor->GetSelectClasses()[4].GetSelectClass().IsSelectPolymorphic());
+    EXPECT_EQ(m_gadgetClass, descriptor->GetSelectClasses()[4].GetInputClass());
+    EXPECT_EQ(1, descriptor->GetSelectClasses()[4].GetPathToInputClass().size());
+    EXPECT_EQ(rel5, descriptor->GetSelectClasses()[4].GetPathToInputClass()[0].GetRelationship());
 
-    EXPECT_EQ(sprocketClass, &descriptor->GetSelectClasses()[5].GetSelectClass());
-    EXPECT_TRUE(descriptor->GetSelectClasses()[5].IsSelectPolymorphic());
-    EXPECT_EQ(m_gadgetClass, descriptor->GetSelectClasses()[5].GetPrimaryClass());
-    EXPECT_EQ(1, descriptor->GetSelectClasses()[5].GetPathToPrimaryClass().size());
-    EXPECT_EQ(rel6, descriptor->GetSelectClasses()[5].GetPathToPrimaryClass()[0].GetRelationship());
+    EXPECT_EQ(sprocketClass, &descriptor->GetSelectClasses()[5].GetSelectClass().GetClass());
+    EXPECT_TRUE(descriptor->GetSelectClasses()[5].GetSelectClass().IsSelectPolymorphic());
+    EXPECT_EQ(m_gadgetClass, descriptor->GetSelectClasses()[5].GetInputClass());
+    EXPECT_EQ(1, descriptor->GetSelectClasses()[5].GetPathToInputClass().size());
+    EXPECT_EQ(rel6, descriptor->GetSelectClasses()[5].GetPathToInputClass()[0].GetRelationship());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3538,7 +3538,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     // validate descriptor
     ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
-    EXPECT_EQ(3, descriptor->GetVisibleFields().size()); //BaseOfBAndC_MyId, ClassB_ClassC_A, CalculatedProperty_0
+    EXPECT_EQ(2, descriptor->GetVisibleFields().size()); //BaseOfBAndC_MyId, CalculatedProperty_0
 
     // request for content
     ContentCPtr content = m_manager->GetContent(*descriptor, PageOptions()).get();
@@ -3552,13 +3552,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     RapidJsonValueCR jsonValues = jsonDoc["Values"];
     EXPECT_STREQ("B", jsonValues[FIELD_NAME(baseOfBAndC, "MyID")].GetString());
     EXPECT_TRUE(jsonValues["CalculatedProperty_0"].IsNull());
-    EXPECT_TRUE(jsonValues[FIELD_NAME((bvector<ECClassCP>{classB, classC}), "A")].IsNull());
 
     rapidjson::Document jsonDoc2 = contentSet.Get(1)->AsJson();
     RapidJsonValueCR jsonValues2 = jsonDoc2["Values"];
     EXPECT_STREQ("C", jsonValues2[FIELD_NAME(baseOfBAndC, "MyID")].GetString());
     EXPECT_STREQ("C", jsonValues2["CalculatedProperty_0"].GetString());
-    EXPECT_TRUE(jsonValues2[FIELD_NAME((bvector<ECClassCP>{classB, classC}), "A")].IsNull());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3734,18 +3732,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     EXPECT_TRUE(jsonValues[FIELD_NAME(classH, "Point2dProperty")].IsNull());
     EXPECT_EQ(instanceDId.GetValueUnchecked(), jsonValues[FIELD_NAME(classE, "ClassD")].GetInt64());
 
-    rapidjson::Document jsonDoc1 = contentSet.Get(1)->AsJson();
-    RapidJsonValueCR jsonValues1 = jsonDoc1["Values"];
-    EXPECT_STREQ("1000", jsonValues1["CalculatedProperty_0"].GetString());
-    EXPECT_TRUE(jsonValues1[FIELD_NAME(classE, "IntProperty")].IsNull());
-    EXPECT_EQ(1000, jsonValues1[FIELD_NAME(classF, "PropertyF")].GetInt());
-    EXPECT_TRUE(jsonValues1[FIELD_NAME(classE, "LongProperty")].IsNull());
-    EXPECT_TRUE(jsonValues1[FIELD_NAME(classG, "D")].IsNull());
-    EXPECT_TRUE(jsonValues1[FIELD_NAME(classH, "PointProperty")].IsNull());
-    EXPECT_TRUE(jsonValues1[FIELD_NAME(classH, "Point2dProperty")].IsNull());
-    EXPECT_EQ(instanceDId.GetValueUnchecked(), jsonValues1[FIELD_NAME(classE, "ClassD")].GetInt64());
-
-    rapidjson::Document jsonDoc2 = contentSet.Get(2)->AsJson();
+    rapidjson::Document jsonDoc2 = contentSet.Get(1)->AsJson();
     RapidJsonValueCR jsonValues2 = jsonDoc2["Values"];
     EXPECT_TRUE(jsonValues2["CalculatedProperty_0"].IsNull());
     EXPECT_TRUE(jsonValues2[FIELD_NAME(classE, "IntProperty")].IsNull());
@@ -3755,6 +3742,17 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     EXPECT_TRUE(jsonValues2[FIELD_NAME(classH, "PointProperty")].IsNull());
     EXPECT_TRUE(jsonValues2[FIELD_NAME(classH, "Point2dProperty")].IsNull());
     EXPECT_EQ(instanceDId.GetValueUnchecked(), jsonValues2[FIELD_NAME(classE, "ClassD")].GetInt64());
+
+    rapidjson::Document jsonDoc1 = contentSet.Get(2)->AsJson();
+    RapidJsonValueCR jsonValues1 = jsonDoc1["Values"];
+    EXPECT_STREQ("1000", jsonValues1["CalculatedProperty_0"].GetString());
+    EXPECT_TRUE(jsonValues1[FIELD_NAME(classE, "IntProperty")].IsNull());
+    EXPECT_EQ(1000, jsonValues1[FIELD_NAME(classF, "PropertyF")].GetInt());
+    EXPECT_TRUE(jsonValues1[FIELD_NAME(classE, "LongProperty")].IsNull());
+    EXPECT_TRUE(jsonValues1[FIELD_NAME(classG, "D")].IsNull());
+    EXPECT_TRUE(jsonValues1[FIELD_NAME(classH, "PointProperty")].IsNull());
+    EXPECT_TRUE(jsonValues1[FIELD_NAME(classH, "Point2dProperty")].IsNull());
+    EXPECT_EQ(instanceDId.GetValueUnchecked(), jsonValues1[FIELD_NAME(classE, "ClassD")].GetInt64());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3766,6 +3764,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     ECRelationshipClassCR relationshipClassDHasClassE = *m_schema->GetClassCP("ClassDHasClassE")->GetRelationshipClassCP();
     ECEntityClassCP classD = GetClass("RulesEngineTest", "ClassD")->GetEntityClassCP();
     ECEntityClassCP classE = GetClass("RulesEngineTest", "ClassE")->GetEntityClassCP();
+    ECEntityClassCP classF = GetClass("RulesEngineTest", "ClassF")->GetEntityClassCP();
+    ECEntityClassCP classG = GetClass("RulesEngineTest", "ClassG")->GetEntityClassCP();
+    ECEntityClassCP classH = GetClass("RulesEngineTest", "ClassH")->GetEntityClassCP();
     IECInstancePtr instanceD = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD);
     IECInstancePtr instanceE = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [](IECInstanceR instance) { instance.SetValue("IntProperty", ECValue(12345)); });
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), relationshipClassDHasClassE, *instanceD, *instanceE);
@@ -3797,7 +3798,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
 
     //Calculated property is not applied
     ASSERT_TRUE(descriptor.IsValid());
-    EXPECT_EQ(3, descriptor->GetVisibleFields().size());
+    EXPECT_EQ(7, descriptor->GetVisibleFields().size());
 
     // request for content
     ContentCPtr content = m_manager->GetContent(*descriptor, PageOptions()).get();
@@ -3814,6 +3815,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     EXPECT_EQ(12345, jsonValues[FIELD_NAME(classE, "IntProperty")].GetInt());
     EXPECT_TRUE(jsonValues[FIELD_NAME(classE, "LongProperty")].IsNull());
     EXPECT_EQ(instanceDId.GetValueUnchecked(), jsonValues[FIELD_NAME(classE, "ClassD")].GetInt64());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(classF, "PropertyF")].IsNull());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(classG, "D")].IsNull());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(classH, "PointProperty")].IsNull());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(classH, "Point2dProperty")].IsNull());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4991,7 +4996,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyLabelOverride_Polym
     // validate descriptor
     ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
-    ASSERT_EQ(2, descriptor->GetVisibleFields().size()); 
+    ASSERT_EQ(2, descriptor->GetVisibleFields().size());
 
     EXPECT_STREQ(FIELD_NAME(classE, "IntProperty"), descriptor->GetVisibleFields()[0]->GetName().c_str());
     EXPECT_STREQ("IntProperty", descriptor->GetVisibleFields()[0]->GetLabel().c_str());
@@ -8827,7 +8832,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
                     }
                 }
             }]
-        })", 
+        })",
         FIELD_NAME(childClass, "IntProperty"), FIELD_NAME(childClass, "StringProperty"),
         FIELD_NAME(childClass, "ArrayProperty"), FIELD_NAME(childClass, "StructProperty"),
         FIELD_NAME(childClass, "StructArrayProperty")).c_str());
@@ -8913,10 +8918,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
                 },
             "MergedFieldNames": []
             }]
-        })", 
+        })",
         FIELD_NAME(parentClass, "ParentProperty"), NESTED_CONTENT_FIELD_NAME(parentClass, childClass),
         childClass->GetId().ToString().c_str(), child1->GetInstanceId().c_str(),
-        FIELD_NAME(childClass, "IntProperty"), FIELD_NAME(childClass, "StringProperty"), FIELD_NAME(childClass, "ArrayProperty"), 
+        FIELD_NAME(childClass, "IntProperty"), FIELD_NAME(childClass, "StringProperty"), FIELD_NAME(childClass, "ArrayProperty"),
         FIELD_NAME(childClass, "StructProperty"), FIELD_NAME(childClass, "StructArrayProperty"),
         FIELD_NAME(childClass, "IntProperty"), FIELD_NAME(childClass, "StringProperty"), FIELD_NAME(childClass, "ArrayProperty"),
         FIELD_NAME(childClass, "StructProperty"), FIELD_NAME(childClass, "StructArrayProperty"),
@@ -9160,8 +9165,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": null,
         "%s": "%s"
-        })", 
-        FIELD_NAME(classD, "StringProperty"), NESTED_CONTENT_FIELD_NAME(classD, classE), 
+        })",
+        FIELD_NAME(classD, "StringProperty"), NESTED_CONTENT_FIELD_NAME(classD, classE),
         varies_string.c_str()).c_str());
 
     EXPECT_EQ(expectedValues, recordJson["DisplayValues"])
@@ -9277,7 +9282,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": null,
         "%s": "%s"
-        })", 
+        })",
         FIELD_NAME(classD, "StringProperty"), NESTED_CONTENT_FIELD_NAME(classD, classE),
         varies_string.c_str()).c_str());
 
@@ -9495,7 +9500,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, RequestingDescriptorWithCl
     ASSERT_TRUE(descriptor.IsValid());
 
     ASSERT_EQ(1, descriptor->GetSelectClasses().size());
-    EXPECT_EQ(m_widgetClass, &descriptor->GetSelectClasses()[0].GetSelectClass());
+    EXPECT_EQ(m_widgetClass, &descriptor->GetSelectClasses()[0].GetSelectClass().GetClass());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -11379,7 +11384,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingBaseClassPolymorph
     // set the "show labels" flag
     ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
     modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-    EXPECT_EQ(3, modifiedDescriptor->GetVisibleFields().size());
+    EXPECT_EQ(2, modifiedDescriptor->GetVisibleFields().size());
 
     // request for content
     ContentCPtr content = m_manager->GetContent(*modifiedDescriptor, PageOptions()).get();;
@@ -11389,8 +11394,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingBaseClassPolymorph
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(3, contentSet.GetSize());
 
-    EXPECT_STREQ("ClassA_BaseStringProperty", contentSet.Get(0)->GetDisplayLabel().c_str());
-    EXPECT_STREQ("ClassB_BaseStringProperty", contentSet.Get(1)->GetDisplayLabel().c_str());
+    EXPECT_STREQ("ClassB_BaseStringProperty", contentSet.Get(0)->GetDisplayLabel().c_str());
+    EXPECT_STREQ("ClassA_BaseStringProperty", contentSet.Get(1)->GetDisplayLabel().c_str());
     EXPECT_STREQ("ClassC_StringProperty", contentSet.Get(2)->GetDisplayLabel().c_str());
     }
 
@@ -12128,7 +12133,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPolymorphicallyRelated
                 },
             "MergedFieldNames": []
             }]
-        })", 
+        })",
         NESTED_CONTENT_FIELD_NAME(baseElementClass, aspectClass),
         aspectClass->GetId().ToString().c_str(), aspect->GetInstanceId().c_str(),
         FIELD_NAME(aspectClass, "AspectName"), FIELD_NAME(aspectClass, "AspectName")).c_str());
@@ -12392,7 +12397,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPolymorphicallyRelated
                 },
             "MergedFieldNames": []
             }]
-        })", 
+        })",
         FIELD_NAME(elementClass, "ElementName"), NESTED_CONTENT_FIELD_NAME(elementClass, aspectAClass),
         aspectAClass->GetId().ToString().c_str(), aspect1->GetInstanceId().c_str(),
         FIELD_NAME(aspectAClass, "Aspect_A_Name"), FIELD_NAME(aspectAClass, "Aspect_A_Name")).c_str());
@@ -13126,7 +13131,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPolymorphicallyRelated
         })",
         FIELD_NAME(elementClass, "ElementName"), NESTED_CONTENT_FIELD_NAME(elementClass, aspectAClass), NESTED_CONTENT_FIELD_NAME(elementClass, aspectBClass),
         aspectBClass->GetId().ToString().c_str(), aspect3->GetInstanceId().c_str(),
-        FIELD_NAME(aspectBClass, "Aspect_B_Name"), FIELD_NAME(aspectBClass, "Aspect_B_Name"), 
+        FIELD_NAME(aspectBClass, "Aspect_B_Name"), FIELD_NAME(aspectBClass, "Aspect_B_Name"),
         NESTED_CONTENT_FIELD_NAME(elementClass, aspectCClass)).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
@@ -13271,7 +13276,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsNestedPolymorphicallyR
                 },
             "MergedFieldNames": []
             }]
-        })", 
+        })",
         FIELD_NAME(modelClass, "ModelName"), NESTED_CONTENT_FIELD_NAME((bvector<ECClassCP>{modelClass, elementClass}), aspectAClass),
         aspectAClass->GetId().ToString().c_str(), aspect1->GetInstanceId().c_str(),
         FIELD_NAME(aspectAClass, "Aspect_A_Name"), FIELD_NAME(aspectAClass, "Aspect_A_Name")).c_str());
@@ -13704,11 +13709,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsNestedPolymorphicallyR
         "%s": [],
         "%s": []
         })",
-        FIELD_NAME(modelClass, "ModelName"), 
+        FIELD_NAME(modelClass, "ModelName"),
         NESTED_CONTENT_FIELD_NAME((bvector<ECClassCP>{modelClass, elementClass}), aspectAClass),
         aspectAClass->GetId().ToString().c_str(), aspect2->GetInstanceId().c_str(),
         FIELD_NAME(aspectAClass, "Aspect_A_Name"), FIELD_NAME(aspectAClass, "Aspect_A_Name"),
-        NESTED_CONTENT_FIELD_NAME((bvector<ECClassCP>{modelClass, elementClass}), aspectBClass), 
+        NESTED_CONTENT_FIELD_NAME((bvector<ECClassCP>{modelClass, elementClass}), aspectBClass),
         NESTED_CONTENT_FIELD_NAME((bvector<ECClassCP>{modelClass, elementClass}), aspectCClass)).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
@@ -13730,10 +13735,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsNestedPolymorphicallyR
             }],
         "%s": []
         })",
-        FIELD_NAME(modelClass, "ModelName"), 
+        FIELD_NAME(modelClass, "ModelName"),
         NESTED_CONTENT_FIELD_NAME((bvector<ECClassCP>{modelClass, elementClass}), aspectAClass),
         NESTED_CONTENT_FIELD_NAME((bvector<ECClassCP>{modelClass, elementClass}), aspectBClass),
-        aspectBClass->GetId().ToString().c_str(), aspect3->GetInstanceId().c_str(), 
+        aspectBClass->GetId().ToString().c_str(), aspect3->GetInstanceId().c_str(),
         FIELD_NAME(aspectBClass, "Aspect_B_Name"), FIELD_NAME(aspectBClass, "Aspect_B_Name"),
         NESTED_CONTENT_FIELD_NAME((bvector<ECClassCP>{modelClass, elementClass}), aspectCClass)).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
@@ -13756,9 +13761,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsNestedPolymorphicallyR
             "MergedFieldNames": []
             }]
         })",
-        FIELD_NAME(modelClass, "ModelName"), 
+        FIELD_NAME(modelClass, "ModelName"),
         NESTED_CONTENT_FIELD_NAME((bvector<ECClassCP>{modelClass, elementClass}), aspectAClass),
-        NESTED_CONTENT_FIELD_NAME((bvector<ECClassCP>{modelClass, elementClass}), aspectBClass), 
+        NESTED_CONTENT_FIELD_NAME((bvector<ECClassCP>{modelClass, elementClass}), aspectBClass),
         NESTED_CONTENT_FIELD_NAME((bvector<ECClassCP>{modelClass, elementClass}), aspectCClass),
         aspectCClass->GetId().ToString().c_str(), aspect4->GetInstanceId().c_str(),
         FIELD_NAME(aspectCClass, "Aspect_C_Name"), FIELD_NAME(aspectCClass, "Aspect_C_Name")).c_str());
@@ -14430,8 +14435,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, HandlesContentWithPolymorph
                 },
             "MergedFieldNames": []
             }]
-        })", 
-        NESTED_CONTENT_FIELD_NAME(ecClassElement, ecClassInfoAspect), 
+        })",
+        NESTED_CONTENT_FIELD_NAME(ecClassElement, ecClassInfoAspect),
         ecClassInfoAspect->GetId().ToString().c_str(), infoAspect->GetInstanceId().c_str(),
         FIELD_NAME(ecClassInfoAspect, "intProp"), FIELD_NAME(ecClassInfoAspect, "intProp")).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
@@ -14812,6 +14817,72 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DoesNotIncludeHiddenRelated
     EXPECT_TRUE(fields.end() != std::find_if(fields.begin(), fields.end(), [&](ContentDescriptor::Field const* f){return f->GetName().Equals(NESTED_CONTENT_FIELD_NAME(elementClass, aspectClass4));}));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static bvector<ECEntityClassCP> CreateNDerivedClasses(ECSchemaR schema, ECEntityClassCR baseClass, int numberOfChildClasses)
+    {
+    bvector<ECEntityClassCP> classes;
+    for (int i = 0; i < numberOfChildClasses; ++i)
+        {
+        ECEntityClassP ecClass = nullptr;
+        EXPECT_EQ(ECObjectsStatus::Success, schema.CreateEntityClass(ecClass, Utf8PrintfString("Class%d", i + 1)));
+        EXPECT_EQ(ECObjectsStatus::Success, ecClass->AddBaseClass(baseClass));
+        classes.push_back(ecClass);
+        }
+    return classes;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* VSTS#224831
+* @bsitest                                      Grigas.Petraitis                12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesContentForBaseClassWhenDerivedClassIsCustomizedAndThereAreLotsOfDerivedClasses)
+    {
+    // set up the schema
+    ECSchemaPtr schema;
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, BeTest::GetNameOfCurrentTest(), Utf8PrintfString("alias_%s", BeTest::GetNameOfCurrentTest()), 0, 0, 0));
+    schema->AddReferencedSchema(*const_cast<ECSchemaP>(s_project->GetECDb().Schemas().GetSchema("ECDbMap")));
+    ECEntityClassP baseClass = nullptr;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(baseClass, "BaseClass"));
+    ECClassCP classMapCustomAttributeClass = GetClass("ECDbMap", "ClassMap");
+    IECInstancePtr classMapCustomAttribute = classMapCustomAttributeClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    classMapCustomAttribute->SetValue("MapStrategy", ECValue("TablePerHierarchy"));
+    ASSERT_EQ(ECObjectsStatus::Success, baseClass->SetCustomAttribute(*classMapCustomAttribute));
+    PrimitiveECPropertyP prop = nullptr;
+    ASSERT_EQ(ECObjectsStatus::Success, baseClass->CreatePrimitiveProperty(prop, "Label", PRIMITIVETYPE_String));
+    bvector<ECEntityClassCP> derivedClasses = CreateNDerivedClasses(*schema, *baseClass, 1000);
+    ASSERT_EQ(SUCCESS, s_project->GetECDb().Schemas().ImportSchemas({ schema.get() }));
+
+    // set up data set
+    for (ECEntityClassCP ecClass : derivedClasses)
+        RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass);
+
+    // set up ruleset
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRule* rule = new ContentRule();
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", baseClass->GetFullName(), true));
+    rules->AddPresentationRule(*rule);
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, false, derivedClasses[0]->GetFullName(), "Label"));
+
+    // request content
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
+
+    ASSERT_EQ(2, descriptor->GetSelectClasses().size());
+    EXPECT_EQ(baseClass->GetId(), descriptor->GetSelectClasses()[0].GetSelectClass().GetClass().GetId());
+    EXPECT_EQ(derivedClasses[0]->GetId(), descriptor->GetSelectClasses()[1].GetSelectClass().GetClass().GetId());
+
+    bvector<ContentDescriptor::Field*> fields = descriptor->GetVisibleFields();
+    ASSERT_EQ(1, fields.size());
+
+    ContentCPtr content = m_manager->GetContent(*descriptor, PageOptions()).get();
+    ASSERT_TRUE(content.IsValid());
+    EXPECT_EQ(1000, content->GetContentSet().GetSize());
+    }
+
 //=======================================================================================
 // @bsiclass                                     Grigas.Petraitis                04/2015
 //=======================================================================================
@@ -14989,7 +15060,7 @@ TEST_F(RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests, 
                 },
             "MergedFieldNames": []
             }]
-        })", NESTED_CONTENT_FIELD_NAME(elementClass, aspectClass), 
+        })", NESTED_CONTENT_FIELD_NAME(elementClass, aspectClass),
         aspectClass->GetId().ToString().c_str(), aspect->GetInstanceId().c_str(),
         FIELD_NAME(aspectClass, "StringProperty"), FIELD_NAME(aspectClass, "StringProperty")).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])

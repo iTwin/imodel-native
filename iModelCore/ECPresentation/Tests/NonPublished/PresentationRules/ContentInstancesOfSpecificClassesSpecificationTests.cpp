@@ -22,7 +22,7 @@ TEST_F(ContentInstancesOfSpecificClassesSpecificationTests, LoadsFromJson)
     static Utf8CP jsonString = R"({
         "specType": "ContentInstancesOfSpecificClasses",
         "classes": {"schemaName": "TestSchema", "classNames": ["TestClass"]},
-        "arePolymorphic": true,
+        "handleInstancesPolymorphically": true,
         "instanceFilter": "filter"
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
@@ -31,7 +31,7 @@ TEST_F(ContentInstancesOfSpecificClassesSpecificationTests, LoadsFromJson)
     ContentInstancesOfSpecificClassesSpecification spec;
     EXPECT_TRUE(spec.ReadJson(json));
     EXPECT_STREQ("TestSchema:TestClass", spec.GetClassNames().c_str());
-    EXPECT_TRUE(spec.GetArePolymorphic());
+    EXPECT_TRUE(spec.ShouldHandleInstancesPolymorphically());
     EXPECT_STREQ("filter", spec.GetInstanceFilter().c_str());
     }
 
@@ -66,7 +66,7 @@ TEST_F(ContentInstancesOfSpecificClassesSpecificationTests, LoadsFromJsonWithDef
     EXPECT_TRUE(spec.ReadJson(json));
 
     EXPECT_STREQ("TestSchema:TestClass", spec.GetClassNames().c_str());
-    EXPECT_FALSE(spec.GetArePolymorphic());
+    EXPECT_FALSE(spec.ShouldHandleInstancesPolymorphically());
     EXPECT_STREQ("", spec.GetInstanceFilter().c_str());
     }
 
@@ -166,7 +166,7 @@ TEST_F(ContentInstancesOfSpecificClassesSpecificationTests, WriteToJson)
             {"schemaName": "s1", "classNames": ["c1", "c2"]},
             {"schemaName": "s2", "classNames": ["c3", "E:c4"]}
         ],
-        "arePolymorphic": true
+        "handleInstancesPolymorphically": true
     })");
     EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
     }
@@ -186,7 +186,7 @@ TEST_F(ContentInstancesOfSpecificClassesSpecificationTests, LoadsFromXml)
     ContentInstancesOfSpecificClassesSpecification spec;
     EXPECT_TRUE(spec.ReadXml(xml->GetRootElement()));
     EXPECT_STREQ("TestSchema:TestClass", spec.GetClassNames().c_str());
-    EXPECT_TRUE(spec.GetArePolymorphic());
+    EXPECT_TRUE(spec.ShouldHandleInstancesPolymorphically());
     EXPECT_STREQ("filter", spec.GetInstanceFilter().c_str());
     }
 
@@ -220,7 +220,7 @@ TEST_F(ContentInstancesOfSpecificClassesSpecificationTests, LoadsFromXmlWithDefa
     EXPECT_TRUE(spec.ReadXml(xml->GetRootElement()));
 
     EXPECT_STREQ("TestSchema:ClassA", spec.GetClassNames().c_str());
-    EXPECT_FALSE(spec.GetArePolymorphic());
+    EXPECT_FALSE(spec.ShouldHandleInstancesPolymorphically());
     EXPECT_STREQ("", spec.GetInstanceFilter().c_str());
     }
 
@@ -235,7 +235,7 @@ TEST_F(ContentInstancesOfSpecificClassesSpecificationTests, WritesToXml)
 
     ContentInstancesOfSpecificClassesSpecification spec;
     spec.SetClassNames("TestSchema:TestClass");
-    spec.SetArePolymorphic(true);
+    spec.SetShouldHandleInstancesPolymorphically(true);
     spec.SetInstanceFilter("filter");
     spec.WriteXml(xml->GetRootElement());
 

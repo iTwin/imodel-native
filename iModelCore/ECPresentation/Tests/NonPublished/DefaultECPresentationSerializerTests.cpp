@@ -821,7 +821,7 @@ TEST_F(DefaultECPresentationSerializerTests, ECPropertiesFieldSerialization)
             },
             "RelatedClassPath": []
         }]
-    })", 
+    })",
         FIELD_NAME(testClass, "String"),
         testClass->GetId().ToString().c_str(), testClass->GetId().ToString().c_str()
     ).c_str());
@@ -891,7 +891,7 @@ TEST_F(DefaultECPresentationSerializerTests, ECPropertiesFieldSerializationWithM
             },
             "RelatedClassPath": []
         }]
-    })", 
+    })",
         FIELD_NAME(testClass, "String"),
         testClass->GetId().ToString().c_str(), testClass->GetId().ToString().c_str(),
         testClass->GetId().ToString().c_str(), testClass->GetId().ToString().c_str()
@@ -960,7 +960,7 @@ TEST_F(DefaultECPresentationSerializerTests, ECNavigationInstanceIdFieldSerializ
         },
         "IsReadOnly": true,
         "Priority": 0
-    })", 
+    })",
         FIELD_NAME(testClass, "String")
     ).c_str());
 
@@ -972,20 +972,15 @@ TEST_F(DefaultECPresentationSerializerTests, ECNavigationInstanceIdFieldSerializ
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DefaultECPresentationSerializerTests, NestedContentFieldSerialization)
+TEST_F(DefaultECPresentationSerializerTests, CompositeContentFieldSerialization)
     {
     ECClassCP testClassA = GetClass("PropertyTestClassA");
-    ECClassCP testClassB = GetClass("PropertyTestClassB");
-    ECRelationshipClassCP relClassAClassB = GetClass("TestClassAHasTestClassB")->GetRelationshipClassCP();
     ContentDescriptor::Category category("name", "label", "", 1);
-    ContentDescriptor::NestedContentField field(category, "field_name", "field_label", *testClassA, "PropertyTestClassA",
-        {RelatedClass(*testClassA, *testClassB, *relClassAClassB, false, "primary_instance", "rel")},
+    ContentDescriptor::CompositeContentField field(category, "field_name", "field_label", *testClassA, "PropertyTestClassA",
         {
-        new ContentDescriptor::DisplayLabelField("NestedLabel", 10),
-        new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category(), ContentDescriptor::Property("rel_RET_PropertyTestClassA_0", *testClassA, *testClassA->GetPropertyP("String")))
+        new ContentDescriptor::DisplayLabelField("NestedLabel", 10)
         });
     rapidjson::Document actual = field.AsJson();
-
     rapidjson::Document expected;
     expected.Parse(Utf8PrintfString(R"({
         "Category": {
@@ -1007,13 +1002,6 @@ TEST_F(DefaultECPresentationSerializerTests, NestedContentFieldSerialization)
                     "TypeName": "string",
                     "ValueFormat": "Primitive"
                 }
-            }, {
-                "Name": "%s",
-                "Label": "String",
-                "Type": {
-                    "TypeName": "string",
-                    "ValueFormat": "Primitive"
-                }
             }]
         },
         "IsReadOnly": true,
@@ -1023,7 +1011,73 @@ TEST_F(DefaultECPresentationSerializerTests, NestedContentFieldSerialization)
             "Name": "TestSchema:PropertyTestClassA",
             "Label": "PropertyTestClassA"
         },
-        "PathToPrimary": [{
+        "NestedFields": [{
+            "Category": {
+                "Name": "General",
+                "DisplayLabel": "%s",
+                "Description": "",
+                "Expand": false,
+                "Priority": 1000
+            },
+            "Name": "/DisplayLabel/",
+            "DisplayLabel": "NestedLabel",
+            "Type": {
+                "TypeName": "string",
+                "ValueFormat": "Primitive"
+            },
+            "IsReadOnly": true,
+            "Priority": 10
+        }]
+    })",
+        testClassA->GetId().ToString().c_str(),
+        PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace().m_namespace, ECPresentationL10N::LABEL_Category_General().m_str).c_str()
+    ).c_str());
+    EXPECT_EQ(expected, actual)
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actual);
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Mantas.Kontrimas                03/2018
+//---------------------------------------------------------------------------------------
+TEST_F(DefaultECPresentationSerializerTests, RelatedContentFieldSerialization)
+    {
+    ECClassCP testClassA = GetClass("PropertyTestClassA");
+    ECClassCP testClassB = GetClass("PropertyTestClassB");
+    ECRelationshipClassCP relClassAClassB = GetClass("TestClassAHasTestClassB")->GetRelationshipClassCP();
+    ContentDescriptor::Category category("name", "label", "", 1);
+    ContentDescriptor::RelatedContentField field(category, "field_name", "field_label",
+        {RelatedClass(*testClassA, *testClassB, *relClassAClassB, false, "primary_instance", "rel")},
+        {
+        new ContentDescriptor::DisplayLabelField("NestedLabel", 10)
+        });
+    rapidjson::Document actual = field.AsJson();
+    rapidjson::Document expected;
+    expected.Parse(Utf8PrintfString(R"({
+        "Category": {
+            "Name": "name",
+            "DisplayLabel": "label",
+            "Description": "",
+            "Expand": false,
+            "Priority": 1
+        },
+        "Name": "field_name",
+        "DisplayLabel": "field_label",
+        "Type": {
+            "TypeName": "PropertyTestClassB",
+            "ValueFormat": "Struct",
+            "Members": [{
+                "Name": "/DisplayLabel/",
+                "Label": "NestedLabel",
+                "Type": {
+                    "TypeName": "string",
+                    "ValueFormat": "Primitive"
+                }
+            }]
+        },
+        "IsReadOnly": true,
+        "Priority": 0,
+        "PathFromSelectToContentClass": [{
             "SourceClassInfo": {
                 "Id": "%s",
                 "Name": "TestSchema:PropertyTestClassA",
@@ -1058,49 +1112,11 @@ TEST_F(DefaultECPresentationSerializerTests, NestedContentFieldSerialization)
             },
             "IsReadOnly": true,
             "Priority": 10
-        }, {
-            "Category": {
-                "Name": "",
-                "DisplayLabel": "",
-                "Description": "",
-                "Expand": false,
-                "Priority": 0
-            },
-            "Name": "%s",
-            "DisplayLabel": "String",
-            "Type": {
-                "TypeName": "string",
-                "ValueFormat": "Primitive"
-            },
-            "IsReadOnly": false,
-            "Priority": 0,
-            "Properties": [{
-                "Property": {
-                    "BaseClassInfo": {
-                        "Id": "%s",
-                        "Name": "TestSchema:PropertyTestClassA",
-                        "Label": "PropertyTestClassA"
-                    },
-                    "ActualClassInfo": {
-                        "Id": "%s",
-                        "Name": "TestSchema:PropertyTestClassA",
-                        "Label": "PropertyTestClassA"
-                    },
-                    "Name": "String",
-                    "Type": "string"
-                },
-                "RelatedClassPath": []
-            }]
         }]
     })",
-        FIELD_NAME(testClassA, "String"), 
-        testClassA->GetId().ToString().c_str(),
         testClassA->GetId().ToString().c_str(), testClassB->GetId().ToString().c_str(), relClassAClassB->GetId().ToString().c_str(),
-        PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace().m_namespace, ECPresentationL10N::LABEL_Category_General().m_str).c_str(),
-        FIELD_NAME(testClassA, "String"),
-        testClassA->GetId().ToString().c_str(), testClassA->GetId().ToString().c_str()
+        PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace().m_namespace, ECPresentationL10N::LABEL_Category_General().m_str).c_str()
     ).c_str());
-
     EXPECT_EQ(expected, actual)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actual);
@@ -1338,18 +1354,14 @@ TEST_F(DefaultECPresentationSerializerTests, StructTypeDescriptionSerialization)
 TEST_F(DefaultECPresentationSerializerTests, NestedContentTypeDescriptionSerialization)
     {
     ECClassCP testClassA = GetClass("PropertyTestClassA");
-    ECClassCP testClassB = GetClass("PropertyTestClassB");
-    ECRelationshipClassCP relClassAClassB = GetClass("TestClassAHasTestClassB")->GetRelationshipClassCP();
     ContentDescriptor::Category category("name", "label", "", 1);
-    ContentDescriptor::NestedContentField field(category, "field_name", "field_label", *testClassA, "PropertyTestClassA",
-        {RelatedClass(*testClassA, *testClassB, *relClassAClassB, false, "primary_instance", "rel")},
+    ContentDescriptor::CompositeContentField field(category, "field_name", "field_label", *testClassA, "PropertyTestClassA",
         {
         new ContentDescriptor::DisplayLabelField("NestedLabel", 10),
         new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category(), ContentDescriptor::Property("rel_RET_PropertyTestClassA_0", *testClassA, *testClassA->GetPropertyP("String")))
         });
     ContentDescriptor::Field::TypeDescriptionPtr typeDescription = new ContentDescriptor::Field::NestedContentTypeDescription(field);
     rapidjson::Document actual = typeDescription->AsJson();
-
     rapidjson::Document expected;
     expected.Parse(Utf8PrintfString(R"({
         "TypeName": "PropertyTestClassA",
@@ -1369,10 +1381,9 @@ TEST_F(DefaultECPresentationSerializerTests, NestedContentTypeDescriptionSeriali
                 "ValueFormat": "Primitive"
             }
         }]
-    })", 
+    })",
         FIELD_NAME(testClassA, "String")
     ).c_str());
-
     EXPECT_EQ(expected, actual)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actual);
@@ -1876,7 +1887,7 @@ TEST_F(DefaultECPresentationSerializerTests, ContentDescriptorSerializationNoSel
         });
     ContentDescriptorPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *container, "DisplayTypeText");
     SelectClassInfo selectClassInfo(*testClassA, false);
-    selectClassInfo.SetPathToPrimaryClass({RelatedClass(*testClassA, *testClassB, *relClassAClassB, false)});
+    selectClassInfo.SetPathToInputClass({RelatedClass(*testClassA, *testClassB, *relClassAClassB, false)});
     selectClassInfo.SetRelatedPropertyPaths({{RelatedClass(*testClassA, *testClassB, *relClassAClassB, false)}});
     descriptor->GetSelectClasses().push_back(selectClassInfo);
     descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 10));
@@ -2107,7 +2118,7 @@ TEST_F(DefaultECPresentationSerializerTests, ContentSetSerializationItemWithClas
                 }]
             }]
         }
-    })", 
+    })",
         testClass->GetId().ToString().c_str(),
         GetClassA()->GetId().ToString().c_str(), GetClassB()->GetId().ToString().c_str(),
         FIELD_NAME(testClass, "String"), GetClassA()->GetId().ToString().c_str(), GetClassB()->GetId().ToString().c_str(),

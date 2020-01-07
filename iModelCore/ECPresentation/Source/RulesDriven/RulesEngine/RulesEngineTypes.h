@@ -74,6 +74,8 @@ ECPRESENTATION_REFCOUNTED_PTR(IUpdateTask)
 ECPRESENTATION_TYPEDEFS(IUpdateTask)
 ECPRESENTATION_TYPEDEFS(UpdateTasksFactory)
 
+BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
+
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                04/2015
 +===============+===============+===============+===============+===============+======*/
@@ -135,3 +137,51 @@ template<typename T> struct Holder
                 return false; \
             } \
         }
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                11/2016
++===============+===============+===============+===============+===============+======*/
+struct RuleApplicationInfo
+{
+private:
+    ECClassCP m_ruleClass;
+    bool m_isRulePolymorphic;
+public:
+    RuleApplicationInfo() : m_ruleClass(nullptr) {}
+    RuleApplicationInfo(ECClassCR ruleClass, bool isPolymorphic) : m_ruleClass(&ruleClass), m_isRulePolymorphic(isPolymorphic) {}
+    ECClassCP GetRuleClass() const {return m_ruleClass;}
+    bool IsRulePolymorphic() const {return m_isRulePolymorphic;}
+};
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                12/2019
++===============+===============+===============+===============+===============+======*/
+struct ContainerHelpers
+{
+private:
+    ContainerHelpers() {}
+
+public:
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis                12/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    template<typename TTargetContainerType, typename TSourceContainerType, typename TFunctor>
+    static TTargetContainerType TransformContainer(TSourceContainerType const& source, TFunctor&& f)
+        {
+        TTargetContainerType target;
+        std::transform(source.begin(), source.end(), std::inserter(target, target.end()), f);
+        return target;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis                05/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    template<typename TKey, typename TValue>
+    static bvector<TKey> GetMapKeys(bmap<TKey, TValue> const& map)
+        {
+        return TransformContainer<bvector<TKey>>(map, [](bpair<TKey, TValue> const& entry){return entry.first;});
+        }
+
+};
+
+END_BENTLEY_ECPRESENTATION_NAMESPACE

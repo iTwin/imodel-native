@@ -31,7 +31,9 @@ protected:
     virtual void _AsJson(ContentDescriptor::DisplayLabelField const&, RapidJsonDocumentR) const = 0;
     virtual void _AsJson(ContentDescriptor::ECPropertiesField const&, RapidJsonDocumentR) const = 0;
     virtual void _AsJson(ContentDescriptor::CalculatedPropertyField const&, RapidJsonDocumentR) const = 0;
-    virtual void _AsJson(ContentDescriptor::NestedContentField const&, RapidJsonDocumentR) const = 0;
+    virtual void _NestedContentFieldAsJson(ContentDescriptor::NestedContentField const&, RapidJsonDocumentR) const = 0;
+    virtual void _AsJson(ContentDescriptor::CompositeContentField const&, RapidJsonDocumentR) const = 0;
+    virtual void _AsJson(ContentDescriptor::RelatedContentField const&, RapidJsonDocumentR) const = 0;
     void _SystemFieldAsJson(ContentDescriptor::SystemField const&, RapidJsonDocumentR) const;
     virtual void _AsJson(ContentDescriptor::SystemField const&, RapidJsonDocumentR) const = 0;
     virtual void _AsJson(ContentDescriptor::ECInstanceKeyField const&, RapidJsonDocumentR) const = 0;
@@ -122,7 +124,8 @@ public:
     rapidjson::Document AsJson(ContentDescriptor::DisplayLabelField const& displayLabelField, rapidjson::Document::AllocatorType* allocator = nullptr) const;
     rapidjson::Document AsJson(ContentDescriptor::ECPropertiesField const& ecPropertiesField, rapidjson::Document::AllocatorType* allocator = nullptr) const;
     rapidjson::Document AsJson(ContentDescriptor::CalculatedPropertyField const& calculatedPropertyField, rapidjson::Document::AllocatorType* allocator = nullptr) const;
-    rapidjson::Document AsJson(ContentDescriptor::NestedContentField const& nestedContentField, rapidjson::Document::AllocatorType* allocator = nullptr) const;
+    rapidjson::Document AsJson(ContentDescriptor::CompositeContentField const&, rapidjson::Document::AllocatorType* allocator = nullptr) const;
+    rapidjson::Document AsJson(ContentDescriptor::RelatedContentField const&, rapidjson::Document::AllocatorType* allocator = nullptr) const;
     rapidjson::Document AsJson(ContentDescriptor::ECInstanceKeyField const& ecInstanceKeyField, rapidjson::Document::AllocatorType* allocator = nullptr) const;
     rapidjson::Document AsJson(ContentDescriptor::ECNavigationInstanceIdField const& ecNavigationInstanceIdField, rapidjson::Document::AllocatorType* allocator = nullptr) const;
 

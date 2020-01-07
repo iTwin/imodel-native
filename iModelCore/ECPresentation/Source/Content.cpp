@@ -411,9 +411,9 @@ void ContentDescriptor::AddField(Field* field)
 * @bsimethod                                    Saulius.Skliutas                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentDescriptor::ECPropertiesField* ContentDescriptor::FindECPropertiesField(ECPropertyCR prop, ECClassCR propClass,
-    RelatedClassPathCR relatedPath, Utf8StringCR fieldLabel, ContentDescriptor::Category const& category, ContentFieldEditor const* editor)
+    RelatedClassPathCR pathFromSelectToPropertyClass, Utf8StringCR fieldLabel, ContentDescriptor::Category const& category, ContentFieldEditor const* editor)
     {
-    auto iter = m_fieldsMap.find(ECPropertiesFieldKey(prop, propClass, relatedPath, fieldLabel, category.GetName(), editor));
+    auto iter = m_fieldsMap.find(ECPropertiesFieldKey(prop, propClass, pathFromSelectToPropertyClass, fieldLabel, category.GetName(), editor));
     if (m_fieldsMap.end() == iter)
         return nullptr;
 
@@ -506,7 +506,7 @@ bool ContentDescriptor::Property::operator==(Property const& other) const
     return m_propertyClass == other.m_propertyClass
         && m_property == other.m_property
         && m_prefix.Equals(other.m_prefix)
-        && m_relatedClassPath == other.m_relatedClassPath;
+        && m_pathFromSelectToPropertyClass == other.m_pathFromSelectToPropertyClass;
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
@@ -790,7 +790,7 @@ bvector<ContentDescriptor::Property const*> const& ContentDescriptor::ECProperti
             {
             for (Property const& prop : m_properties)
                 {
-                if (targetClass->Is(&prop.GetPropertyClass()) || prop.IsRelated() && targetClass->Is(prop.GetRelatedClassPath().front().GetTargetClass()))
+                if (targetClass->Is(&prop.GetPropertyClass()) || prop.IsRelated() && targetClass->Is(prop.GetPathFromSelectToPropertyClass().front().GetSourceClass()))
                     matchingProperties.push_back(&prop);
                 }
             }
@@ -831,13 +831,13 @@ static Utf8String CreateFieldName(ContentDescriptor::ECPropertiesField const& fi
         {
         if (prop.IsRelated())
             {
-            for (RelatedClass const& related : prop.GetRelatedClassPath())
+            for (RelatedClass const& related : prop.GetPathFromSelectToPropertyClass())
                 {
-                if (usedRelatedClasses.end() != usedRelatedClasses.find(related.GetTargetClass()))
+                if (usedRelatedClasses.end() != usedRelatedClasses.find(related.GetSourceClass()))
                     continue;
 
-                relatedClassNames.push_back(QueryBuilderHelpers::CreateClassNameForDescriptor(*related.GetTargetClass()));
-                usedRelatedClasses.insert(related.GetTargetClass());
+                relatedClassNames.push_back(QueryBuilderHelpers::CreateClassNameForDescriptor(*related.GetSourceClass()));
+                usedRelatedClasses.insert(related.GetSourceClass());
                 }
             }
 
@@ -886,9 +886,7 @@ bool ContentDescriptor::NestedContentField::_Equals(Field const& other) const
         return false;
 
     NestedContentField const* otherNestedContentField = other.AsNestedContentField();
-    if (&m_contentClass != &otherNestedContentField->m_contentClass
-        || m_relationshipPath != otherNestedContentField->m_relationshipPath
-        || m_priority != otherNestedContentField->m_priority)
+    if (m_priority != otherNestedContentField->m_priority)
         {
         return false;
         }
@@ -909,6 +907,47 @@ bool ContentDescriptor::NestedContentField::_Equals(Field const& other) const
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document ContentDescriptor::NestedContentField::_AsJson(rapidjson::Document::AllocatorType* allocator) const
+    {
+    return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ContentDescriptor::CompositeContentField::_Equals(Field const& other) const
+    {
+    if (!NestedContentField::_Equals(other) || nullptr == other.AsNestedContentField()->AsCompositeContentField())
+        return false;
+
+    CompositeContentField const* otherCompositeContentField = other.AsNestedContentField()->AsCompositeContentField();
+    return m_contentClass.GetId() == otherCompositeContentField->m_contentClass.GetId()
+        && m_contentClassAlias.Equals(otherCompositeContentField->m_contentClassAlias);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document ContentDescriptor::CompositeContentField::_AsJson(rapidjson::Document::AllocatorType* allocator) const
+    {
+    return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ContentDescriptor::RelatedContentField::_Equals(Field const& other) const
+    {
+    if (!NestedContentField::_Equals(other) || nullptr == other.AsNestedContentField()->AsRelatedContentField())
+        return false;
+
+    RelatedContentField const* otherRelatedContentField = other.AsNestedContentField()->AsRelatedContentField();
+    return m_pathFromSelectClassToContentClass == otherRelatedContentField->m_pathFromSelectClassToContentClass;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document ContentDescriptor::RelatedContentField::_AsJson(rapidjson::Document::AllocatorType* allocator) const
     {
     return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
     }
@@ -1083,7 +1122,7 @@ bool ContentDescriptor::ECPropertiesFieldKey::operator<(ECPropertiesFieldKey con
 
     bool areSimilar = (rhs.IsRelated() == IsRelated()) && (GetClass() == rhs.GetClass() || !IsRelated());
     if (!areSimilar)
-        return m_relatedClassPath < rhs.m_relatedClassPath;
+        return m_pathFromSelectToPropertyClass < rhs.m_pathFromSelectToPropertyClass;
 
     if (GetValueKind() < rhs.GetValueKind())
         return true;

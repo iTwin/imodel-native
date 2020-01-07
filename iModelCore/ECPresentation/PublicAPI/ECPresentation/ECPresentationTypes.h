@@ -135,6 +135,67 @@ public:
 };
 
 //=======================================================================================
+//! Data structure that describes an ECClass used to selected ECInstances using ECSQL.
+// @bsiclass                                    Grigas.Petraitis                12/2019
+//=======================================================================================
+struct SelectClass
+{
+private:
+    ECClassCP m_class;
+    bool m_isPolymorphic;
+public:
+    //! Constructor. Creates an invalid object.
+    SelectClass() : m_class(nullptr) {}
+    //! Constructor. Creates an information instance with the specified ECClass.
+    SelectClass(ECClassCR selectClass) : m_class(&selectClass), m_isPolymorphic(true) {}
+    //! Constructor. Creates an information instance with the specified ECClass.
+    SelectClass(ECClassCR selectClass, bool isPolymorphic) : m_class(&selectClass), m_isPolymorphic(isPolymorphic) {}
+    bool IsValid() const {return m_class != nullptr;}
+    //! Returns whether this info is equal to the supplied one.
+    bool Equals(SelectClass const& other) const {return m_class == other.m_class && m_isPolymorphic == other.m_isPolymorphic;}
+    bool operator==(SelectClass const& other) const {return Equals(other);}
+    bool operator!=(SelectClass const& other) const {return !Equals(other);}
+    bool operator<(SelectClass const& other) const
+        {
+        if (!m_class && other.m_class)
+            return true;
+        if (!other.m_class)
+            return false;
+        int nameCmp = strcmp(m_class->GetFullName(), other.m_class->GetFullName());
+        return nameCmp < 0;
+        }
+    //! Get the select ECClass.
+    ECClassCR GetClass() const {return *m_class;}
+    //! Is the select polymorphic.
+    bool IsSelectPolymorphic() const {return m_isPolymorphic;}
+    //! Set whether select is polymorphic.
+    void SetIsSelectPolymorphic(bool value) {m_isPolymorphic = value;}
+};
+
+//=======================================================================================
+//! Data structure that describes an ECClass used to selected ECInstances using ECSQL. In
+//! addition, it specifies whether any derived classes should be excluded.
+// @bsiclass                                    Grigas.Petraitis                12/2019
+//=======================================================================================
+struct SelectClassWithExcludes : SelectClass
+{
+private:
+    bvector<SelectClass> m_derivedExcludes;
+public:
+    SelectClassWithExcludes() : SelectClass() {}
+    SelectClassWithExcludes(SelectClass const& selectClass) : SelectClass(selectClass) {}
+    SelectClassWithExcludes(ECClassCR selectClass) : SelectClass(selectClass) {}
+    SelectClassWithExcludes(ECClassCR selectClass, bool isPolymorphic) : SelectClass(selectClass, isPolymorphic) {}
+    //! Returns whether this info is equal to the supplied one.
+    bool Equals(SelectClassWithExcludes const& other) const {return SelectClass::Equals(other) && m_derivedExcludes == other.m_derivedExcludes;}
+    bool operator==(SelectClassWithExcludes const& other) const {return Equals(other);}
+    bool operator!=(SelectClassWithExcludes const& other) const {return !Equals(other);}
+    //! Get derived class excludes
+    bvector<SelectClass> const& GetDerivedExcludedClasses() const {return m_derivedExcludes;}
+    bvector<SelectClass>& GetDerivedExcludedClasses() {return m_derivedExcludes;}
+};
+
+//=======================================================================================
 //! A structure that describes a related class and the properties of that relationship.
 //! @ingroup GROUP_Presentation
 // @bsiclass                                    Grigas.Petraitis                07/2015
@@ -143,21 +204,20 @@ struct RelatedClass
 {
 private:
     ECN::ECClassCP m_source;
-    ECN::ECClassCP m_target;
-    Utf8String m_targetAlias;
     ECN::ECRelationshipClassCP m_relationship;
     Utf8String m_relationshipAlias;
     bool m_isForwardRelationship;
-    bool m_isPolymorphic;
-    bool m_isOuterJoin;
+    SelectClassWithExcludes m_target;
+    Utf8String m_targetAlias;
+    bool m_isTargetOptional;
 
 public:
     //! Constructor. Creates an invalid instance.
-    RelatedClass() : m_source(nullptr), m_target(nullptr), m_relationship(nullptr), m_isForwardRelationship(false), m_isPolymorphic(true), m_isOuterJoin(true) {}
+    RelatedClass() : m_source(nullptr), m_relationship(nullptr), m_isForwardRelationship(false), m_isTargetOptional(true) {}
 
     //! Constructor.
-    RelatedClass(ECN::ECClassCR source, ECN::ECClassCR target, ECN::ECRelationshipClassCR relationship, bool isForward, Utf8CP targetAlias = nullptr, Utf8CP relationshipAlias = nullptr, bool isPolymorphic = true, bool isOuterJoin = true)
-        : m_source(&source), m_target(&target), m_relationship(&relationship), m_isForwardRelationship(isForward), m_isPolymorphic(isPolymorphic), m_targetAlias(targetAlias), m_relationshipAlias(relationshipAlias), m_isOuterJoin(isOuterJoin)
+    RelatedClass(ECN::ECClassCR source, SelectClassWithExcludes target, ECN::ECRelationshipClassCR relationship, bool isForward, Utf8CP targetAlias = nullptr, Utf8CP relationshipAlias = nullptr, bool isTargetOptional = true)
+        : m_source(&source), m_target(target), m_relationship(&relationship), m_isForwardRelationship(isForward), m_targetAlias(targetAlias), m_relationshipAlias(relationshipAlias), m_isTargetOptional(isTargetOptional)
         {}
 
     //! Checks whether this object is equal to the supplied one.
@@ -173,7 +233,7 @@ public:
     ECPRESENTATION_EXPORT bool operator<(RelatedClass const& other) const;
 
     //! Is this structure valid.
-    bool IsValid() const {return nullptr != m_source && nullptr != m_target && nullptr != m_relationship;}
+    bool IsValid() const {return nullptr != m_source && nullptr != m_relationship && m_target.IsValid();}
 
     //! Set the source class.
     void SetSourceClass(ECN::ECClassCR sourceClass) {m_source = &sourceClass;}
@@ -182,10 +242,11 @@ public:
     ECN::ECClassCP GetSourceClass() const {return m_source;}
 
     //! Set the related class.
-    void SetTargetClass(ECN::ECClassCR targetClass) {m_target = &targetClass;}
+    void SetTargetClass(SelectClassWithExcludes targetClass) {m_target = targetClass;}
 
     //! Get the related class.
-    ECN::ECClassCP GetTargetClass() const {return m_target;}
+    SelectClassWithExcludes const& GetTargetClass() const {return m_target;}
+    SelectClassWithExcludes& GetTargetClass() {return m_target;}
 
     //! Set the alias for the related class.
     void SetTargetClassAlias(Utf8String alias) {m_targetAlias = alias;}
@@ -211,20 +272,14 @@ public:
     //! Set whether the relationship should be followed in a forward direction to access the related class.
     void SetIsForwardRelationship(bool value) {m_isForwardRelationship = value;}
 
-    //! Is the related class is polymorphic.
-    bool IsPolymorphic() const {return m_isPolymorphic;}
-
-    //! Set whether the related class is polymorphic.
-    void SetIsPolymorphic(bool value) {m_isPolymorphic = value;}
-
     //! Get the navigation property for this relationship.
     ECN::NavigationECPropertyCP GetNavigationProperty() const;
 
     //! Is related class queried using outer join
-    bool IsOuterJoin() const {return m_isOuterJoin;}
+    bool IsTargetOptional() const {return m_isTargetOptional;}
 
     //! Set whether the related class should be queried using outer join
-    void SetIsOuterJoin(bool value) {m_isOuterJoin = value;}
+    void SetIsTargetOptional(bool value) { m_isTargetOptional = value;}
 };
 
 //! A stack of ECClass and ECRelationshipClass pairs representing a path of relationships.
@@ -234,7 +289,7 @@ struct RelatedClassPath : bvector<RelatedClass>
     DEFINE_T_SUPER(bvector<RelatedClass>);
     RelatedClassPath() : T_Super() {}
     RelatedClassPath(std::initializer_list<RelatedClass> list) : T_Super(list) {}
-    void Reverse(Utf8CP firstTargetClassAlias, bool isFirstTargetPolymorphic);
+    ECPRESENTATION_EXPORT RelatedClassPath& Reverse(Utf8CP firstTargetClassAlias, bool isFirstTargetPolymorphic);
     };
 typedef RelatedClassPath& RelatedClassPathR;
 typedef RelatedClassPath const& RelatedClassPathCR;

@@ -13,6 +13,96 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 USING_NAMESPACE_ECPRESENTATIONTESTS
 
 /*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                12/2019
++===============+===============+===============+===============+===============+======*/
+struct IdsFilteringHelperTests : ::testing::Test
+    {};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(IdsFilteringHelperTests, CreatesConstantFalseClauseWhenSetIsEmpty)
+    {
+    bvector<BeInt64Id> ids;
+    IdsFilteringHelper<bvector<BeInt64Id>> helper(ids);
+    EXPECT_STREQ("FALSE", helper.CreateWhereClause("any").c_str());
+    EXPECT_TRUE(helper.CreateBoundValues().empty());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(IdsFilteringHelperTests, CreatesConstantTrueClauseWhenSetIsEmptyAndClauseIsInversed)
+    {
+    bvector<BeInt64Id> ids;
+    IdsFilteringHelper<bvector<BeInt64Id>> helper(ids);
+    EXPECT_STREQ("TRUE", helper.CreateWhereClause("any", true).c_str());
+    EXPECT_TRUE(helper.CreateBoundValues().empty());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(IdsFilteringHelperTests, CreatesSqlInClauseWhenSetIsNotEmptyButSmallerThan100Items)
+    {
+    bvector<BeInt64Id> ids;
+    for (uint64_t i = 0; i < 3; ++i)
+        ids.push_back(BeInt64Id(i + 1));
+    IdsFilteringHelper<bvector<BeInt64Id>> helper(ids);
+    EXPECT_STREQ("test_id IN (?,?,?)", helper.CreateWhereClause("test_id").c_str());
+    BoundQueryValuesList bindings = helper.CreateBoundValues();
+    ASSERT_EQ(3, bindings.size());
+    EXPECT_TRUE(bindings[0]->Equals(BoundQueryId(ids[0])));
+    EXPECT_TRUE(bindings[1]->Equals(BoundQueryId(ids[1])));
+    EXPECT_TRUE(bindings[2]->Equals(BoundQueryId(ids[2])));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(IdsFilteringHelperTests, CreatesSqlNotInClauseWhenSetIsNotEmptyButSmallerThan100ItemsAndClauseIsInversed)
+    {
+    bvector<BeInt64Id> ids;
+    for (uint64_t i = 0; i < 3; ++i)
+        ids.push_back(BeInt64Id(i + 1));
+    IdsFilteringHelper<bvector<BeInt64Id>> helper(ids);
+    EXPECT_STREQ("test_id NOT IN (?,?,?)", helper.CreateWhereClause("test_id", true).c_str());
+    BoundQueryValuesList bindings = helper.CreateBoundValues();
+    ASSERT_EQ(3, bindings.size());
+    EXPECT_TRUE(bindings[0]->Equals(BoundQueryId(ids[0])));
+    EXPECT_TRUE(bindings[1]->Equals(BoundQueryId(ids[1])));
+    EXPECT_TRUE(bindings[2]->Equals(BoundQueryId(ids[2])));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(IdsFilteringHelperTests, CreatesInVirtualSetClauseWhenSetLargerThan100Items)
+    {
+    bvector<BeInt64Id> ids;
+    for (uint64_t i = 0; i < 101; ++i)
+        ids.push_back(BeInt64Id(i + 1));
+    IdsFilteringHelper<bvector<BeInt64Id>> helper(ids);
+    EXPECT_STREQ("InVirtualSet(?, test_id)", helper.CreateWhereClause("test_id").c_str());
+    BoundQueryValuesList bindings = helper.CreateBoundValues();
+    ASSERT_EQ(1, bindings.size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(IdsFilteringHelperTests, CreatesNotInVirtualSetClauseWhenSetLargerThan100ItemsAndClauseIsInversed)
+    {
+    bvector<BeInt64Id> ids;
+    for (uint64_t i = 0; i < 101; ++i)
+        ids.push_back(BeInt64Id(i + 1));
+    IdsFilteringHelper<bvector<BeInt64Id>> helper(ids);
+    EXPECT_STREQ("NOT InVirtualSet(?, test_id)", helper.CreateWhereClause("test_id", true).c_str());
+    BoundQueryValuesList bindings = helper.CreateBoundValues();
+    ASSERT_EQ(1, bindings.size());
+    }
+
+/*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                12/2015
 +===============+===============+===============+===============+===============+======*/
 struct NavigationQueryTests : ECPresentationTest
@@ -69,7 +159,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_SingleClause_ForwardRelat
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->From(class1, true);
-    query->Join(RelatedClass(class1, class2, relationship1, true, "target_alias", "", true, false));
+    query->Join(RelatedClass(class1, SelectClass(class2, true), relationship1, true, "target_alias", "rel_alias", false));
 
     Utf8String expected(
         " FROM [sc2].[Class1]"
@@ -92,7 +182,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_SingleClause_BackwardRela
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->From(class2, true);
-    query->Join(RelatedClass(class2, class1, relationship1, false, "target_alias", "", true, false));
+    query->Join(RelatedClass(class2, SelectClass(class1, true), relationship1, false, "target_alias", "rel_alias", false));
 
     Utf8String expected(
         " FROM [sc2].[Class2]"
@@ -114,7 +204,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_SingleClause_RespectsRela
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->From(entity, true, "source");
-    query->Join(RelatedClass(entity, entity, relationship, true, "target", nullptr, true, false));
+    query->Join(RelatedClass(entity, SelectClass(entity, true), relationship, true, "target", "rel_alias", false));
 
     Utf8String expected(
         " FROM [sc3].[Class1] [source]"
@@ -136,7 +226,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_SingleClause_RespectsRela
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->From(entity, true, "target");
-    query->Join(RelatedClass(entity, entity, relationship, false, "source", nullptr, true, false));
+    query->Join(RelatedClass(entity, SelectClass(entity, true), relationship, false, "source", "rel_alias", false));
 
     Utf8String expected(
         " FROM [sc3].[Class1] [target]"
@@ -163,14 +253,14 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_MultipleClauses)
     query->From(class1, true);
 
     RelatedClassPath path;
-    path.push_back(RelatedClass(class1, class2, relationship1, true, "target_alias1", ""));
-    path.push_back(RelatedClass(class2, class3, relationship2, false, "target_alias2", ""));
+    path.push_back(RelatedClass(class1, class2, relationship1, true, "target_alias1", "rel_alias1"));
+    path.push_back(RelatedClass(class2, class3, relationship2, false, "target_alias2", "rel_alias2"));
     query->Join(path, false);
 
     Utf8String expected(
         " FROM [sc2].[Class1]"
-        " INNER JOIN [sc2].[Class2] [target_alias1] ON [target_alias1].[C1].[Id] = [Class1].[ECInstanceId]"
-        " INNER JOIN [sc2].[Class3] [target_alias2] ON [target_alias2].[ECInstanceId] = [target_alias1].[C3].[Id]");
+        " LEFT JOIN [sc2].[Class2] [target_alias1] ON [target_alias1].[C1].[Id] = [Class1].[ECInstanceId]"
+        " LEFT JOIN [sc2].[Class3] [target_alias2] ON [target_alias2].[ECInstanceId] = [target_alias1].[C3].[Id]");
     Utf8String str = query->ToString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
@@ -193,18 +283,18 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_MultipleClauses_DoesntInc
     query->From(class1, true);
 
     RelatedClassPath path1;
-    path1.push_back(RelatedClass(class1, class2, relationship1, true, "target_alias1", ""));
+    path1.push_back(RelatedClass(class1, class2, relationship1, true, "target_alias1", "rel_alias1"));
     query->Join(path1, false);
     
     RelatedClassPath path2;
-    path2.push_back(RelatedClass(class1, class2, relationship1, true, "target_alias1", ""));
-    path2.push_back(RelatedClass(class2, class3, relationship2, false, "target_alias2", ""));
+    path2.push_back(RelatedClass(class1, class2, relationship1, true, "target_alias1", "rel_alias1"));
+    path2.push_back(RelatedClass(class2, class3, relationship2, false, "target_alias2", "rel_alias2"));
     query->Join(path2, false);
 
     Utf8String expected(
         " FROM [sc2].[Class1]"
-        " INNER JOIN [sc2].[Class2] [target_alias1] ON [target_alias1].[C1].[Id] = [Class1].[ECInstanceId]"
-        " INNER JOIN [sc2].[Class3] [target_alias2] ON [target_alias2].[ECInstanceId] = [target_alias1].[C3].[Id]");
+        " LEFT JOIN [sc2].[Class2] [target_alias1] ON [target_alias1].[C1].[Id] = [Class1].[ECInstanceId]"
+        " LEFT JOIN [sc2].[Class3] [target_alias2] ON [target_alias2].[ECInstanceId] = [target_alias1].[C3].[Id]");
     Utf8String str = query->ToString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
@@ -223,7 +313,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_UsesAliases)
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->From(class1, true, "Class1Alias");
-    query->Join(RelatedClass(class1, class2, relationship1, true, "Class2Alias", "", true, false));
+    query->Join(RelatedClass(class1, SelectClass(class2, true), relationship1, true, "Class2Alias", "rel_alias", false));
 
     Utf8String expected(
         " FROM [sc2].[Class1] [Class1Alias]"
@@ -246,7 +336,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerForwardJoin_BackwardNavigation
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->From(class1, true, "Class1Alias");
-    query->Join(RelatedClass(class1, class2, relationship, true, "Class2Alias", nullptr, true, false));
+    query->Join(RelatedClass(class1, SelectClass(class2, true), relationship, true, "Class2Alias", "rel_alias", false));
 
     Utf8String expected(
         " FROM [sc3].[Class1] [Class1Alias]"
@@ -269,7 +359,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerBackwardJoin_BackwardNavigatio
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->From(class2, true, "Class2Alias");
-    query->Join(RelatedClass(class2, class1, relationship, false, "Class1Alias", nullptr, true, false));
+    query->Join(RelatedClass(class2, SelectClass(class1, true), relationship, false, "Class1Alias", "rel_alias", false));
 
     Utf8String expected(
         " FROM [sc3].[Class2] [Class2Alias]"
@@ -292,7 +382,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerBackwardJoin_ForwardNavigation
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->From(class1, true, "Class1Alias");
-    query->Join(RelatedClass(class1, class3, relationship, false, "Class3Alias", nullptr, true, false));
+    query->Join(RelatedClass(class1, SelectClass(class3, true), relationship, false, "Class3Alias", "rel_alias", false));
 
     Utf8String expected(
         " FROM [sc3].[Class1] [Class1Alias]"
@@ -315,7 +405,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerForwardJoin_ForwardNavigationP
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->From(class3, true, "Class3Alias");
-    query->Join(RelatedClass(class3, class1, relationship, true, "Class1Alias", nullptr, true, false));
+    query->Join(RelatedClass(class3, SelectClass(class1, true), relationship, true, "Class1Alias", "rel_alias", false));
 
     Utf8String expected(
         " FROM [sc3].[Class3] [Class3Alias]"
@@ -338,7 +428,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_SingleClause_ForwardRelat
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->From(class1, true);
-    query->Join(RelatedClass(class1, class2, relationship1, true, "target_alias", ""));
+    query->Join(RelatedClass(class1, class2, relationship1, true, "target_alias", "rel_alias"));
 
     Utf8String expected(
         " FROM [sc2].[Class1]"
@@ -361,7 +451,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_SingleClause_BackwardRela
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->From(class2, true);
-    query->Join(RelatedClass(class2, class1, relationship1, false, "target_alias", ""));
+    query->Join(RelatedClass(class2, class1, relationship1, false, "target_alias", "rel_alias"));
 
     Utf8String expected(
         " FROM [sc2].[Class2]"
@@ -383,7 +473,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_SingleClause_RespectsRela
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->From(entity, true, "source");
-    query->Join(RelatedClass(entity, entity, relationship, true, "target"));
+    query->Join(RelatedClass(entity, entity, relationship, true, "target", "rel_alias"));
 
     Utf8String expected(
         " FROM [sc3].[Class1] [source]"
@@ -405,7 +495,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_SingleClause_RespectsRela
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->From(entity, true, "target");
-    query->Join(RelatedClass(entity, entity, relationship, false, "source"));
+    query->Join(RelatedClass(entity, entity, relationship, false, "source", "rel_alias"));
 
     Utf8String expected(
         " FROM [sc3].[Class1] [target]"
@@ -432,8 +522,8 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_MultipleClauses)
     query->From(class1, true);
 
     RelatedClassPath path;
-    path.push_back(RelatedClass(class1, class2, relationship1, true, "target_alias1", ""));
-    path.push_back(RelatedClass(class2, class3, relationship2, false, "target_alias2", ""));
+    path.push_back(RelatedClass(class1, class2, relationship1, true, "target_alias1", "rel_alias"));
+    path.push_back(RelatedClass(class2, class3, relationship2, false, "target_alias2", "rel_alias"));
     query->Join(path, true);
 
     Utf8String expected(
@@ -530,7 +620,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterForwardJoin_BackwardNavigation
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->From(class1, true, "Class1Alias");
-    query->Join(RelatedClass(class1, class2, relationship, true, "Class2Alias"));
+    query->Join(RelatedClass(class1, class2, relationship, true, "Class2Alias", "rel_alias"));
 
     Utf8String expected(
         " FROM [sc3].[Class1] [Class1Alias]"
@@ -553,7 +643,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterBackwardJoin_BackwardNavigatio
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->From(class2, true, "Class2Alias");
-    query->Join(RelatedClass(class2, class1, relationship, false, "Class1Alias"));
+    query->Join(RelatedClass(class2, class1, relationship, false, "Class1Alias", "rel_alias"));
 
     Utf8String expected(
         " FROM [sc3].[Class2] [Class2Alias]"
@@ -576,7 +666,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterBackwardJoin_ForwardNavigation
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->From(class1, true, "Class1Alias");
-    query->Join(RelatedClass(class1, class3, relationship, false, "Class3Alias"));
+    query->Join(RelatedClass(class1, class3, relationship, false, "Class3Alias", "rel_alias"));
 
     Utf8String expected(
         " FROM [sc3].[Class1] [Class1Alias]"
@@ -599,7 +689,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterForwardJoin_ForwardNavigationP
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->From(class3, true, "Class3Alias");
-    query->Join(RelatedClass(class3, class1, relationship, true, "Class1Alias"));
+    query->Join(RelatedClass(class3, class1, relationship, true, "Class1Alias", "rel_alias"));
 
     Utf8String expected(
         " FROM [sc3].[Class3] [Class3Alias]"
@@ -615,31 +705,9 @@ struct TestContract : NavigationQueryContract
 {
 private:
     bvector<PresentationQueryContractFieldCPtr> m_fields;
-
 protected:
     NavigationQueryResultType _GetResultType() const override {return NavigationQueryResultType::ECInstanceNodes;}
     bvector<PresentationQueryContractFieldCPtr> _GetFields() const override {return m_fields;}
-    /*virtual uint8_t _GetIndex(Utf8CP lookup) const override
-        {
-        static bvector<Utf8CP> fieldNames;
-        if (fieldNames.empty())
-            {
-            fieldNames.push_back(GeneralField);
-            fieldNames.push_back(InternalField);
-            fieldNames.push_back(OuterField);
-            fieldNames.push_back(AggregateField);
-            }
-
-        for (size_t i = 0; i < fieldNames.size(); i++)
-            {
-            if (fieldNames[i] == lookup)
-                return (int)i;
-            }
-
-        EXPECT_TRUE(false);
-        return -1;
-        }*/
-
 public:
     static RefCountedPtr<TestContract> Create() {return new TestContract();}
     void AddField(PresentationQueryContractFieldCPtr field) {m_fields.push_back(field);}

@@ -110,22 +110,22 @@ struct ContentDisplayType
 //!
 //! Dependencies are related as follows:
 //!
-//!                                          +----------------------------+
-//!                                          | Related Properties Path 1  |
-//!                                          | Related Properties Path 2  |
-//!                                    +---> | ...                        |
-//!                                    |     | Related Properties Path n  |
-//!                                    |     +----------------------------+
-//!                                    |     | Related Instance Class 1   |
-//!                                    |     | Related Instance Class 2   |
-//! Primary Class <------ Select Class +---> | ...                        |
-//!                                    |     | Related Instance Class n   |
-//!                                    |     +----------------------------+
-//!                                    |     | Navigation Property Path 1 |
-//!                                    |     | Navigation Property Path 2 |
-//!                                    +---> | ...                        |
-//!                                          | Navigation Property Path n |
-//!                                          +----------------------------+
+//!                                                                 +----------------------------+
+//!                                        paths to related         | Related Properties Path 1  |
+//!                                        property classes         | Related Properties Path 2  |
+//!                                      +------------------------> | ...                        |
+//!                                      |                          | Related Properties Path n  |
+//!                                      |                          +----------------------------+
+//!                                      | paths to related         | Related Instance Class 1   |
+//!                                      | instance classes         | Related Instance Class 2   |
+//! Input Class <---------- Select Class +------------------------> | ...                        |
+//!            path to input             |                          | Related Instance Class n   |
+//!                class                 |                          +----------------------------+
+//!                                      | paths to navigation      | Navigation Property Path 1 |
+//!                                      | property target classes  | Navigation Property Path 2 |
+//!                                      +------------------------> | ...                        |
+//!                                                                 | Navigation Property Path n |
+//!                                                                 +----------------------------+
 //!
 //! @ingroup GROUP_Presentation_Content
 // @bsiclass                                    Grigas.Petraitis                05/2016
@@ -133,25 +133,24 @@ struct ContentDisplayType
 struct SelectClassInfo
 {
 private:
-    ECClassCP m_selectClass;
-    bool m_isPolymorphic;
-    RelatedClassPath m_pathToPrimaryClass;
+    SelectClassWithExcludes m_selectClass;
+    RelatedClassPath m_pathToInputClass;
     bvector<RelatedClassPath> m_relatedPropertyPaths;
     bvector<RelatedClass> m_navigationPropertyClasses;
     bvector<RelatedClass> m_relatedInstanceClasses;
 
 public:
     //! Constructor. Creates an invalid object.
-    SelectClassInfo() : m_selectClass(nullptr) {}
+    SelectClassInfo() {}
     //! Constructor. Creates an information instance with the specified ECClass.
-    SelectClassInfo(ECClassCR selectClass, bool isPolymorphic) : m_selectClass(&selectClass), m_isPolymorphic(isPolymorphic) {}
-
+    SelectClassInfo(SelectClassWithExcludes const& selectClass) : m_selectClass(selectClass) {}
+    SelectClassInfo(SelectClassWithExcludes&& selectClass) : m_selectClass(std::move(selectClass)) {}
+    SelectClassInfo(ECClassCR ecClass, bool isSelectPolymorphic) : m_selectClass(SelectClassWithExcludes(ecClass, isSelectPolymorphic)) {}
     //! Returns whether this info is equal to the supplied one.
     bool Equals(SelectClassInfo const& other) const
         {
         return m_selectClass == other.m_selectClass
-            && m_isPolymorphic == other.m_isPolymorphic
-            && m_pathToPrimaryClass == other.m_pathToPrimaryClass
+            && m_pathToInputClass == other.m_pathToInputClass
             && m_relatedPropertyPaths == other.m_relatedPropertyPaths
             && m_navigationPropertyClasses == other.m_navigationPropertyClasses
             && m_relatedInstanceClasses == other.m_relatedInstanceClasses;
@@ -162,20 +161,16 @@ public:
     bool operator!=(SelectClassInfo const& other) const {return !Equals(other);}
 
     //! Get the select ECClass.
-    ECClassCR GetSelectClass() const {return *m_selectClass;}
+    SelectClassWithExcludes const& GetSelectClass() const {return m_selectClass;}
+    SelectClassWithExcludes& GetSelectClass() {return m_selectClass;}
 
-    //! Is the select polymorphic.
-    bool IsSelectPolymorphic() const {return m_isPolymorphic;}
-    //! Set whether select is polymorphic.
-    void SetIsSelectPolymorphic(bool value) {m_isPolymorphic = value;}
+    //! Get the input ECClass.
+    ECClassCP GetInputClass() const {return m_pathToInputClass.empty() ? nullptr : &m_pathToInputClass.back().GetTargetClass().GetClass();}
 
-    //! Get the primary ECClass.
-    ECClassCP GetPrimaryClass() const {return m_pathToPrimaryClass.empty() ? nullptr : m_pathToPrimaryClass.back().GetTargetClass();}
-
-    //! Get path to the primary ECClass.
-    RelatedClassPath const& GetPathToPrimaryClass() const { return m_pathToPrimaryClass; }
-    //! Set path to the primary ECClass.
-    void SetPathToPrimaryClass(RelatedClassPath path) { m_pathToPrimaryClass = path; }
+    //! Get path to the input ECClass.
+    RelatedClassPath const& GetPathToInputClass() const {return m_pathToInputClass;}
+    //! Set path to the input ECClass.
+    void SetPathToInputClass(RelatedClassPath path) {m_pathToInputClass = path;}
 
     //! Get paths to related property ECClasses.
     bvector<RelatedClassPath> const& GetRelatedPropertyPaths() const {return m_relatedPropertyPaths;}
@@ -341,7 +336,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         Utf8String m_prefix;
         ECClassCP m_propertyClass;
         ECPropertyCP m_property;
-        RelatedClassPath m_relatedClassPath;
+        RelatedClassPath m_pathFromSelectToPropertyClass;
         RelationshipMeaning m_relationshipMeaning;
 
     private:
@@ -374,17 +369,17 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         ECPropertyCR GetProperty() const {return *m_property;}
 
         //! Is this a related property.
-        bool IsRelated() const {return !m_relatedClassPath.empty();}
+        bool IsRelated() const {return !m_pathFromSelectToPropertyClass.empty();}
         //! Make this a related property.
         //! @param[in] path The relationship path that describes the relationship between this property and main properties.
         //! @param[in] meaning The relationship meaning.
-        void SetIsRelated(RelatedClassPath path, RelationshipMeaning meaning) {m_relatedClassPath = path; m_relationshipMeaning = meaning;}
+        void SetIsRelated(RelatedClassPath path, RelationshipMeaning meaning) {m_pathFromSelectToPropertyClass = path; m_relationshipMeaning = meaning;}
         //! Make this a related property.
         //! @param[in] relatedClass The related class object that describes the relationship between this property and main properties.
         //! @param[in] meaning The relationship meaning.
-        void SetIsRelated(RelatedClass relatedClass, RelationshipMeaning meaning) {m_relatedClassPath.clear(); m_relatedClassPath.push_back(relatedClass); m_relationshipMeaning = meaning;}
+        void SetIsRelated(RelatedClass relatedClass, RelationshipMeaning meaning) {m_pathFromSelectToPropertyClass.clear(); m_pathFromSelectToPropertyClass.push_back(relatedClass); m_relationshipMeaning = meaning;}
         //! Get the relationship path that describes the relationship between this property and main properties.
-        RelatedClassPathCR GetRelatedClassPath() const {return m_relatedClassPath;}
+        RelatedClassPathCR GetPathFromSelectToPropertyClass() const {return m_pathFromSelectToPropertyClass;}
         //! Get the relationship meaning. Always SameInstance if this is not a related property.
         RelationshipMeaning GetRelationshipMeaning() const {return m_relationshipMeaning;}
         //! Get the priority of this property.
@@ -764,16 +759,17 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         bvector<Property const*> const& FindMatchingProperties(ECClassCP) const;
     };
 
+    struct CompositeContentField;
+    struct RelatedContentField;
     //===================================================================================
-    //! Describes a single content field which contains related instances' content.
+    //! Describes a single content field which by itself describes content. Creating content
+    //! for this field requires executing a separate query. Examples of such content could be getting
+    //! content for related instances or composite structures like arrays or structs.
     // @bsiclass                                    Grigas.Petraitis            07/2017
     //===================================================================================
     struct NestedContentField : Field
     {
     private:
-        ECClassCR m_contentClass;
-        Utf8String m_contentClassAlias;
-        RelatedClassPath m_relationshipPath;
         bvector<Field*> m_fields;
         int m_priority;
         bool m_autoExpand;
@@ -781,34 +777,32 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
     protected:
         NestedContentField* _AsNestedContentField() override {return this;}
         NestedContentField const* _AsNestedContentField() const override {return this;}
-        Field* _Clone() const override {return new NestedContentField(*this);}
         ECPRESENTATION_EXPORT TypeDescriptionPtr _CreateTypeDescription() const override;
         bool _IsReadOnly() const override {return true;}
-        ECPRESENTATION_EXPORT bool _Equals(Field const& other) const override;
+        ECPRESENTATION_EXPORT virtual bool _Equals(Field const& other) const override;
         int _GetPriority() const override {return m_priority;}
-        ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const override;
-    public:
+        ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const override;
+        virtual ECClassCR _GetContentClass() const = 0;
+        virtual Utf8CP _GetContentClassAlias() const = 0;
+        virtual CompositeContentField* _AsCompositeContentField() {return nullptr;}
+        virtual RelatedContentField* _AsRelatedContentField() {return nullptr;}
+
+
         //! Constructor.
         //! @param[in] category The category of this field.
         //! @param[in] name The per-descriptor unique name of this field.
         //! @param[in] label The label of this field.
-        //! @param[in] contentClass ECClass whose content is returned by this field
-        //! @param[in] contentClassAlias Alias of the content class.
-        //! @param[in] relationshipPath Path from the @e contentClass to the primary instance class.
         //! @param[in] fields A list of fields which this field consists from.
         //! @param[in] autoExpand Flag specifying if this field should be expanded.
         //! @param[in] priority Priority of the field
         NestedContentField(Category category, Utf8String name, Utf8String label,
-            ECClassCR contentClass, Utf8String contentClassAlias, RelatedClassPath relationshipPath,
             bvector<Field*> fields = bvector<Field*>(), bool autoExpand = false, int priority = Property::DEFAULT_PRIORITY)
-            : Field(category, name, label), m_contentClass(contentClass), m_contentClassAlias(contentClassAlias),
-            m_relationshipPath(relationshipPath), m_fields(fields), m_priority(priority), m_autoExpand(autoExpand)
+            : Field(category, name, label), m_fields(fields), m_priority(priority), m_autoExpand(autoExpand)
             {}
 
         //! Copy constructor.
         NestedContentField(NestedContentField const& other)
-            : Field(other), m_contentClass(other.m_contentClass), m_contentClassAlias(other.m_contentClassAlias),
-            m_relationshipPath(other.m_relationshipPath), m_priority(other.m_priority), m_autoExpand(other.m_autoExpand)
+            : Field(other), m_priority(other.m_priority), m_autoExpand(other.m_autoExpand)
             {
             for (Field const* field : other.m_fields)
                 m_fields.push_back(field->Clone());
@@ -816,23 +810,23 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
 
         //! Move constructor.
         NestedContentField(NestedContentField&& other)
-            : Field(std::move(other)), m_contentClass(other.m_contentClass), m_contentClassAlias(std::move(other.m_contentClassAlias)),
-            m_relationshipPath(std::move(other.m_relationshipPath)), m_fields(std::move(other.m_fields)), m_priority(other.m_priority), m_autoExpand(other.m_autoExpand)
+            : Field(std::move(other)), m_fields(std::move(other.m_fields)), m_priority(other.m_priority), m_autoExpand(other.m_autoExpand)
             {}
 
+    public:
         //! Destructor
         ~NestedContentField() {for (Field const* field : m_fields) {DELETE_AND_CLEAR(field);}}
 
+        CompositeContentField* AsCompositeContentField() {return _AsCompositeContentField();}
+        CompositeContentField const* AsCompositeContentField() const {return const_cast<NestedContentField*>(this)->AsCompositeContentField();}
+        RelatedContentField* AsRelatedContentField() {return _AsRelatedContentField();}
+        RelatedContentField const* AsRelatedContentField() const {return const_cast<NestedContentField*>(this)->AsRelatedContentField();}
+
         //! Get the content class whose content is returned by this field.
-        ECClassCR GetContentClass() const {return m_contentClass;}
+        ECClassCR GetContentClass() const {return _GetContentClass();}
 
         //! Get alias of the content class
-        Utf8StringCR GetContentClassAlias() const {return m_contentClassAlias;}
-
-        //! Path from the @e "content class" to the primary instance class.
-        RelatedClassPath& GetRelationshipPath() {return m_relationshipPath;}
-        RelatedClassPath const& GetRelationshipPath() const {return m_relationshipPath;}
-        void SetRelationshipPath(RelatedClassPath path) {m_relationshipPath = path;}
+        Utf8CP GetContentClassAlias() const {return _GetContentClassAlias();}
 
         //! A list of fields which this field consists from.
         bvector<Field*> const& GetFields() const {return m_fields;}
@@ -841,6 +835,72 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         //! Should this field be automatically expanded.
         bool ShouldAutoExpand() const {return m_autoExpand;}
         };
+
+    //===================================================================================
+    //! Describes a single content field which contains composite (struct, array) content.
+    // @bsiclass                                    Grigas.Petraitis            12/2019
+    //===================================================================================
+    struct CompositeContentField : NestedContentField
+    {
+    private:
+        ECClassCR m_contentClass;
+        Utf8String m_contentClassAlias;
+    protected:
+        ECClassCR _GetContentClass() const override {return m_contentClass;}
+        Utf8CP _GetContentClassAlias() const override {return m_contentClassAlias.c_str();}
+        virtual CompositeContentField* _AsCompositeContentField() override {return this;}
+        Field* _Clone() const override {return new CompositeContentField(*this);}
+        ECPRESENTATION_EXPORT bool _Equals(Field const& other) const override;
+        ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const override;
+    public:
+        CompositeContentField(Category category, Utf8String name, Utf8String label,
+            ECClassCR contentClass, Utf8String contentClassAlias,
+            bvector<Field*> fields = bvector<Field*>(), bool autoExpand = false, int priority = Property::DEFAULT_PRIORITY)
+            : NestedContentField(category, name, label, fields, autoExpand, priority), m_contentClass(contentClass),
+            m_contentClassAlias(contentClassAlias)
+            {}
+        CompositeContentField(CompositeContentField const& other)
+            : NestedContentField(other), m_contentClass(other.m_contentClass), m_contentClassAlias(other.m_contentClassAlias)
+            {}
+        CompositeContentField(CompositeContentField&& other)
+            : NestedContentField(std::move(other)), m_contentClass(other.m_contentClass), m_contentClassAlias(std::move(other.m_contentClassAlias))
+            {}
+    };
+
+    //===================================================================================
+    //! Describes a single content field which contains related instances' content.
+    // @bsiclass                                    Grigas.Petraitis            12/2019
+    //===================================================================================
+    struct RelatedContentField : NestedContentField
+    {
+    private:
+        RelatedClassPath m_pathFromSelectClassToContentClass;
+    protected:
+        ECClassCR _GetContentClass() const override {return m_pathFromSelectClassToContentClass.back().GetTargetClass().GetClass();}
+        Utf8CP _GetContentClassAlias() const override {return m_pathFromSelectClassToContentClass.back().GetTargetClassAlias();}
+        virtual RelatedContentField* _AsRelatedContentField() override {return this;}
+        Field* _Clone() const override {return new RelatedContentField(*this);}
+        ECPRESENTATION_EXPORT bool _Equals(Field const& other) const override;
+        ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const override;
+    public:
+        RelatedContentField(Category category, Utf8String name, Utf8String label, RelatedClassPath pathFromSelectClassToContentClass,
+            bvector<Field*> fields = bvector<Field*>(), bool autoExpand = false, int priority = Property::DEFAULT_PRIORITY)
+            : NestedContentField(category, name, label, fields, autoExpand, priority), m_pathFromSelectClassToContentClass(pathFromSelectClassToContentClass)
+            {}
+        RelatedContentField(RelatedContentField const& other)
+            : NestedContentField(other), m_pathFromSelectClassToContentClass(other.m_pathFromSelectClassToContentClass)
+            {}
+        RelatedContentField(RelatedContentField&& other)
+            : NestedContentField(std::move(other)), m_pathFromSelectClassToContentClass(std::move(other.m_pathFromSelectClassToContentClass))
+            {}
+
+        //! Path from the select class to content class.
+        RelatedClassPath& GetPathFromSelectToContentClass() {return m_pathFromSelectClassToContentClass;}
+        RelatedClassPath const& GetPathFromSelectToContentClass() const {return m_pathFromSelectClassToContentClass;}
+        void SetPathFromSelectToContentClass(RelatedClassPath path) {m_pathFromSelectClassToContentClass = path;}
+
+        Utf8CP GetSelectClassAlias() const {return "related";}
+    };
 
     struct ECInstanceKeyField;
     struct ECNavigationInstanceIdField;
@@ -930,7 +990,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
     private:
         ECPropertyCP m_property;
         ECClassCP m_propertyClass;
-        RelatedClassPath m_relatedClassPath;
+        RelatedClassPath m_pathFromSelectToPropertyClass;
         ValueKind m_valueKind;
         Utf8String m_fieldLabel;
         Utf8String m_type;
@@ -942,7 +1002,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
             : m_property(nullptr), m_propertyClass(nullptr), m_fieldEditor(nullptr), m_valueKind(VALUEKIND_Uninitialized), m_koq(nullptr)
             {}
         ECPropertiesFieldKey(ECPropertyCR property, ECClassCR propertyClass, RelatedClassPathCR path, Utf8String fieldLabel, Utf8String categoryName, ContentFieldEditor const* editor)
-            : m_property(&property), m_propertyClass(&propertyClass), m_relatedClassPath(path), m_fieldLabel(fieldLabel), m_categoryName(categoryName), m_fieldEditor(editor)
+            : m_property(&property), m_propertyClass(&propertyClass), m_pathFromSelectToPropertyClass(path), m_fieldLabel(fieldLabel), m_categoryName(categoryName), m_fieldEditor(editor)
             {
             m_valueKind = m_property->GetIsPrimitive() ? VALUEKIND_Primitive
                 : m_property->GetIsNavigation() ? VALUEKIND_Navigation
@@ -953,7 +1013,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
             m_koq = m_property->GetKindOfQuantity();
             }
         ECPropertiesFieldKey(Property const& prop, Utf8String fieldLabel, Utf8String categoryName, ContentFieldEditor const* editor)
-            : ECPropertiesFieldKey(prop.GetProperty(), prop.GetPropertyClass(), prop.GetRelatedClassPath(), fieldLabel, categoryName, editor)
+            : ECPropertiesFieldKey(prop.GetProperty(), prop.GetPropertyClass(), prop.GetPathFromSelectToPropertyClass(), fieldLabel, categoryName, editor)
             {}
         bool operator<(ECPropertiesFieldKey const& rhs) const;
         ValueKind GetValueKind() const {return m_valueKind;}
@@ -961,7 +1021,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         Utf8CP GetLabel() const {return m_fieldLabel.c_str();}
         Utf8CP GetType() const {return m_type.c_str();}
         KindOfQuantityCP GetKoq() const {return m_koq;}
-        bool IsRelated() const {return !m_relatedClassPath.empty();}
+        bool IsRelated() const {return !m_pathFromSelectToPropertyClass.empty();}
         ECClassCP GetClass() const {return m_propertyClass;}
         Utf8StringCR GetCategoryName() const {return m_categoryName;}
         ContentFieldEditor const* GetEditor() const {return m_fieldEditor;}
@@ -1051,9 +1111,9 @@ public:
     //! Add field to this descriptor.
     ECPRESENTATION_EXPORT void AddField(Field* field);
     //! Find ECProperties field in this descriptor by property.
-    ECPropertiesField* FindECPropertiesField(Property const& prop, Utf8StringCR fieldLabel, Category const& category, ContentFieldEditor const* editor) {return FindECPropertiesField(prop.GetProperty(), prop.GetPropertyClass(), prop.GetRelatedClassPath(), fieldLabel, category, editor);}
+    ECPropertiesField* FindECPropertiesField(Property const& prop, Utf8StringCR fieldLabel, Category const& category, ContentFieldEditor const* editor) {return FindECPropertiesField(prop.GetProperty(), prop.GetPropertyClass(), prop.GetPathFromSelectToPropertyClass(), fieldLabel, category, editor);}
     //! Find ECProperties field in this descriptor by property.
-    ECPropertiesField* FindECPropertiesField(ECPropertyCR prop, ECClassCR propClass, RelatedClassPathCR relatedPath, Utf8StringCR fieldLabel, Category const& category, ContentFieldEditor const* editor);
+    ECPropertiesField* FindECPropertiesField(ECPropertyCR prop, ECClassCR propClass, RelatedClassPathCR pathFromSelectToPropertyClass, Utf8StringCR fieldLabel, Category const& category, ContentFieldEditor const* editor);
 
     //! Remove a field from this descriptor.
     ECPRESENTATION_EXPORT void RemoveField(Field const& field);
@@ -1384,9 +1444,9 @@ public:
     //! @param[in] relationshipMeaning Meaning of relationship between displayed ECInstace class and ECProperty class.
     //! @return SUCCESS if the label was successfully formatted.
     BentleyStatus GetFormattedPropertyLabel(Utf8StringR formattedLabel, ECPropertyCR ecProperty, ECClassCR propertyClass,
-        RelatedClassPath const& relatedClassPath, RelationshipMeaning relationshipMeaning) const
+        RelatedClassPath const& pathFromSelectToPropertyClass, RelationshipMeaning relationshipMeaning) const
         {
-        return _GetFormattedPropertyLabel(formattedLabel, ecProperty, propertyClass, relatedClassPath, relationshipMeaning);
+        return _GetFormattedPropertyLabel(formattedLabel, ecProperty, propertyClass, pathFromSelectToPropertyClass, relationshipMeaning);
         }
 };
 

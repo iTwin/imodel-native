@@ -533,42 +533,28 @@ private:
     mutable ECSchemaSet m_schemaList;
     mutable IdSet<ECSchemaId> m_schemaIds;
     mutable IdSet<ECClassId> m_includedEntityClassIds;
-    mutable IdSet<ECClassId> m_excludedEntityClassIds;
-    mutable IdSet<ECClassId> m_relationshipClassIds;
     mutable IdSet<ECClassId> m_polymorphicallyIncludedClassIds;
-    mutable IdSet<ECClassId> m_polymorphicallyExcludedClassIds;
+    mutable bvector<ECClassCP> m_excludedClasses;
+    mutable bvector<ECClassCP> m_polymorphicallyExcludedClasses;
+    mutable IdSet<ECClassId> m_relationshipClassIds;
     SupportedEntityClassInfos const* m_classInfos;
     SupportedRelationshipClassInfos const* m_relationshipInfos;
 
 private:
     /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis                08/2016
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    void AddOrRemoveFlag(int flag, bool add)
-        {
-        if (add)
-            m_flags |= flag;
-        else
-            m_flags &= ~flag;
-        }
-
-    /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                04/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    static void AddClassId(IdSet<ECClassId>& list, ECClassCR ecClass)
-        {
-        list.insert(ecClass.GetId());
-        }
+    static void AddClassId(IdSet<ECClassId>& list, ECClassCR ecClass) {list.insert(ecClass.GetId());}
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Saulius.Skliutas                09/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    IdSet<ECClassId> DeterminePolymorphicallySupportedClassesIds(bool include) const
+    IdSet<ECClassId> DeterminePolymorphicallyIncludedClassesIds() const
         {
         Savepoint txn(m_connection.GetDb(), "SupportedClassesResolver::DeterminePolymorphicallySupportedClassesIds");
         BeAssert(txn.IsActive());
 
-        IdSet<ECClassId> const& ids = include ? GetIncludedEntityClassIds() : GetExcludedEntityClassIds();
+        IdSet<ECClassId> const& ids = GetIncludedEntityClassIds();
         IdsFilteringHelper<IdSet<ECClassId>> helper(ids);
 
         Utf8String query = "SELECT SourceECInstanceId FROM [meta].[ClassHasAllBaseClasses] ";
@@ -608,10 +594,6 @@ public:
     * @bsimethod                                    Grigas.Petraitis                01/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
     bool GetAcceptAllIncludeClasses() const {return GetIncludedEntityClassIds().empty() && nullptr == m_classInfos;}
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis                01/2017
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    bool GetAcceptAllExcludeClasses() const {return GetExcludedEntityClassIds().empty() && nullptr == m_classInfos;}
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                01/2017
@@ -681,26 +663,6 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                07/2016
     +---------------+---------------+---------------+---------------+---------------+------*/
-    IdSet<ECClassId> const& GetExcludedEntityClassIds() const
-        {
-        if (0 == (m_flags & DeterminedExcludedEntityClasses))
-            {
-            if (nullptr != m_classInfos)
-                {
-                for (SupportedEntityClassInfo const& info : *m_classInfos)
-                    {
-                    if (info.IsExclude())
-                        m_excludedEntityClassIds.insert(info.GetClass().GetId());
-                    }
-                }
-            m_flags |= DeterminedExcludedEntityClasses;
-            }
-        return m_excludedEntityClassIds;
-        }
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis                07/2016
-    +---------------+---------------+---------------+---------------+---------------+------*/
     IdSet<ECClassId> const& GetRelationshipClassIds() const
         {
         if (0 == (m_flags & DeterminedRelationshipClasses))
@@ -725,29 +687,51 @@ public:
         {
         if (0 == (m_flags & DeterminedPolymorphicallyIncludedClasses))
             {
-            m_polymorphicallyIncludedClassIds = DeterminePolymorphicallySupportedClassesIds(true);
+            m_polymorphicallyIncludedClassIds = DeterminePolymorphicallyIncludedClassesIds();
             m_flags |= DeterminedPolymorphicallyIncludedClasses;
             }
         return m_polymorphicallyIncludedClassIds;
         }
 
     /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Saulius.Skliutas                09/2017
+    * @bsimethod                                    Grigas.Petraitis                12/2019
     +---------------+---------------+---------------+---------------+---------------+------*/
-    IdSet<ECClassId> const& GetPolymorphicallyExcludedClassIds() const
+    bvector<ECClassCP> const& GetExcludedClasses() const
         {
-        if (0 == (m_flags & DeterminedPolymorphicallyExcludedClasses))
+        if (0 == (m_flags & DeterminedExcludedEntityClasses))
             {
-            m_polymorphicallyExcludedClassIds = DeterminePolymorphicallySupportedClassesIds(false);
-            m_flags |= DeterminedPolymorphicallyExcludedClasses;
+            if (nullptr != m_classInfos)
+                {
+                for (SupportedEntityClassInfo const& info : *m_classInfos)
+                    {
+                    if (info.IsExclude() && !info.IsPolymorphic())
+                        m_excludedClasses.push_back(&info.GetClass());
+                    }
+                }
+            m_flags |= DeterminedExcludedEntityClasses;
             }
-        return m_polymorphicallyExcludedClassIds;
+        return m_excludedClasses;
         }
 
     /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis                01/2017
+    * @bsimethod                                    Grigas.Petraitis                12/2019
     +---------------+---------------+---------------+---------------+---------------+------*/
-    bool HasExcludes() const {return !GetExcludedEntityClassIds().empty();}
+    bvector<ECClassCP> const& GetPolymorphicallyExcludedClasses() const
+        {
+        if (0 == (m_flags & DeterminedPolymorphicallyExcludedClasses))
+            {
+            if (nullptr != m_classInfos)
+                {
+                for (SupportedEntityClassInfo const& info : *m_classInfos)
+                    {
+                    if (info.IsExclude() && info.IsPolymorphic())
+                        m_polymorphicallyExcludedClasses.push_back(&info.GetClass());
+                    }
+                }
+            m_flags |= DeterminedPolymorphicallyExcludedClasses;
+            }
+        return m_polymorphicallyExcludedClasses;
+        }
 };
 
 /*=================================================================================**//**
@@ -769,14 +753,6 @@ public:
 };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                05/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool ShouldAcceptAllClasses(ECSchemaHelper::SupportedClassesResolver const& resolver, bool include)
-    {
-    return include && resolver.GetAcceptAllIncludeClasses() || !include && resolver.GetAcceptAllExcludeClasses();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void MergeBindings(BoundQueryValuesList& target, BoundQueryValuesList&& source)
@@ -788,7 +764,7 @@ static void MergeBindings(BoundQueryValuesList& target, BoundQueryValuesList&& s
 * @bsimethod                                    Grigas.Petraitis                01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 static BoundQueryValuesList CreateRelationshipPathsQuery(Utf8StringR query, ECSchemaHelper::SupportedClassesResolver const& resolver,
-    bset<ECClassId> const& sourceClassIds, int relationshipDirection, int depth, bool include)
+    bset<ECClassId> const& sourceClassIds, int relationshipDirection, int depth)
     {
     BoundQueryValuesList bindings;
     query = ""
@@ -833,11 +809,11 @@ static BoundQueryValuesList CreateRelationshipPathsQuery(Utf8StringR query, ECSc
             hasCondition = true;
             }
 
-        if (!ShouldAcceptAllClasses(resolver, include))
+        if (!resolver.GetAcceptAllIncludeClasses())
             {
             if (hasCondition)
                 query.append(" AND ");
-            IdSet<ECClassId> const& ids = include ? resolver.GetPolymorphicallyIncludedClassIds() : resolver.GetPolymorphicallyExcludedClassIds();
+            IdSet<ECClassId> const& ids = resolver.GetPolymorphicallyIncludedClassIds();
             IdsFilteringHelper<IdSet<ECClassId>> helper(ids);
             query.append(helper.CreateWhereClause("[end].[ECInstanceId]"));
             MergeBindings(bindings, helper.CreateBoundValues());
@@ -867,7 +843,7 @@ static BoundQueryValuesList CreateRelationshipPathsQuery(Utf8StringR query, ECSc
         query.append(schemaIdsHelper.CreateWhereClause("[relationship].[Schema].[Id]"));
         MergeBindings(bindings, schemaIdsHelper.CreateBoundValues());
         }
-    if (include && resolver.GetAcceptAllIncludeClasses())
+    if (resolver.GetAcceptAllIncludeClasses())
         {
         query.append(" AND ");
         query.append(schemaIdsHelper.CreateWhereClause("[end].[Schema].[Id]"));
@@ -882,7 +858,7 @@ static BoundQueryValuesList CreateRelationshipPathsQuery(Utf8StringR query, ECSc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool DoesPathContainAnotherPath(RelatedClassPath const& containingPath, RelatedClassPath const& candidatePath)
+static bool DoesPathContainAnotherPath(RelatedClassPath const& containingPath, RelatedClassPath const& candidatePath, bool handleTargetClassPolymorphically)
     {
     for (size_t i = 0; i < containingPath.size(); ++i)
         {
@@ -892,16 +868,21 @@ static bool DoesPathContainAnotherPath(RelatedClassPath const& containingPath, R
             return false;
             }
 
-        if (!containingPath[i].IsPolymorphic() && candidatePath[i].GetTargetClass() != containingPath[i].GetTargetClass()
-            || containingPath[i].IsPolymorphic() && !candidatePath[i].GetTargetClass()->Is(containingPath[i].GetTargetClass()))
-            {
+        if (!candidatePath[i].GetSourceClass()->Is(containingPath[i].GetSourceClass()))
             return false;
-            }
 
-        if (!containingPath[i].IsPolymorphic() && candidatePath[i].GetSourceClass() != containingPath[i].GetSourceClass()
-            || containingPath[i].IsPolymorphic() && !candidatePath[i].GetSourceClass()->Is(containingPath[i].GetSourceClass()))
+        if (handleTargetClassPolymorphically)
             {
-            return false;
+            if (!containingPath[i].GetTargetClass().IsSelectPolymorphic() && &candidatePath[i].GetTargetClass().GetClass() != &containingPath[i].GetTargetClass().GetClass()
+                || containingPath[i].GetTargetClass().IsSelectPolymorphic() && !candidatePath[i].GetTargetClass().GetClass().Is(&containingPath[i].GetTargetClass().GetClass()))
+                {
+                return false;
+                }
+            }
+        else
+            {
+            if (candidatePath[i].GetTargetClass() != containingPath[i].GetTargetClass())
+                return false;
             }
         }
     return true;
@@ -910,7 +891,7 @@ static bool DoesPathContainAnotherPath(RelatedClassPath const& containingPath, R
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void AppendPath(bvector<RelatedClassPath>& paths, RelatedClassPath const& path)
+static void AppendPath(bvector<RelatedClassPath>& paths, RelatedClassPath const& path, bool handleTargetClassPolymorphically)
     {
     if (paths.size() > 0)
         {
@@ -927,12 +908,12 @@ static void AppendPath(bvector<RelatedClassPath>& paths, RelatedClassPath const&
                 }
 
             // the new path is already included polymorphically by another path
-            if (DoesPathContainAnotherPath(includedPath, path))
+            if (DoesPathContainAnotherPath(includedPath, path, handleTargetClassPolymorphically))
                 return;
 
             // the new path includes another (already included) path polymorphically -
             // the included path must be removed
-            if (DoesPathContainAnotherPath(path, includedPath))
+            if (DoesPathContainAnotherPath(path, includedPath, handleTargetClassPolymorphically))
                 {
                 paths.erase(paths.begin() + index - 1);
                 continue;
@@ -947,64 +928,17 @@ static void AppendPath(bvector<RelatedClassPath>& paths, RelatedClassPath const&
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                03/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void AppendPath(bvector<bpair<RelatedClassPath, bool>>& paths, RelatedClassPath const& path, bool forInclude)
-    {
-    if (paths.size() > 0)
-        {
-        size_t index = paths.size();
-        while (index > 0)
-            {
-            RelatedClassPath const& includedPath = paths[index - 1].first;
-            bool isIncludedPathForInclude = paths[index - 1].second;
-
-            // if path lengths are different, they can't be similar
-            if (includedPath.size() != path.size())
-                {
-                --index;
-                continue;
-                }
-
-            // if one path is included and another - excluded, they can't be similar
-            if (forInclude != isIncludedPathForInclude)
-                {
-                --index;
-                continue;
-                }
-
-            // the new path is already included polymorphically by another path
-            if (DoesPathContainAnotherPath(includedPath, path))
-                return;
-
-            // the new path includes another (already included) path polymorphically -
-            // the included path must be removed
-            if (DoesPathContainAnotherPath(path, includedPath))
-                {
-                paths.erase(paths.begin() + index - 1);
-                continue;
-                }
-
-            --index;
-            }
-        }
-
-    // did not find any similar paths - simply append the new path
-    paths.push_back(bpair<RelatedClassPath, bool>(path, forInclude));
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool MatchesPathRequest(RelatedClass const& related, ECSchemaHelper::SupportedClassesResolver const& resolver, bool include)
+static bool MatchesPathRequest(RelatedClass const& related, ECSchemaHelper::SupportedClassesResolver const& resolver)
     {
-    IdSet<ECClassId> const& classIds = include ? resolver.GetIncludedEntityClassIds() : resolver.GetExcludedEntityClassIds();
-    if (!ShouldAcceptAllClasses(resolver, include) && !classIds.Contains(related.GetTargetClass()->GetId()))
+    IdSet<ECClassId> const& classIds = resolver.GetIncludedEntityClassIds();
+    if (!resolver.GetAcceptAllIncludeClasses() && !classIds.Contains(related.GetTargetClass().GetClass().GetId()))
         {
         // if specific classes are requested, make sure the candidate is in that list
         return false;
         }
-    if (ShouldAcceptAllClasses(resolver, include) && !resolver.GetSchemaIds().Contains(related.GetTargetClass()->GetSchema().GetId()))
+    if (resolver.GetAcceptAllIncludeClasses() && !resolver.GetSchemaIds().Contains(related.GetTargetClass().GetClass().GetSchema().GetId()))
         {
         // if any class is okay, make sure the candidate class is from supported schemas list
         return false;
@@ -1028,15 +962,15 @@ static bool MatchesPathRequest(RelatedClass const& related, ECSchemaHelper::Supp
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchemaHelper::GetPaths(bvector<bpair<RelatedClassPath, bool>>& paths, bmap<ECRelationshipClassCP, int>& relationshipsUseCounter,
-    bset<RelatedClass>& usedRelationships, SupportedClassesResolver const& resolver, bset<ECClassId> const& sourceClassIds, int relationshipDirection,
-    int depth, ECEntityClassCP targetClass, bool include) const
+void ECSchemaHelper::GetPaths(bvector<RelatedClassPath>& paths, bmap<ECRelationshipClassCP, int>& relationshipsUseCounter,
+    bset<RelatedClass>& usedRelationships, SupportedClassesResolver const& resolver, bset<ECClassId> const& sourceClassIds,
+    bool handleRelatedClassesPolymorphically, int relationshipDirection, int depth, ECEntityClassCP targetClass) const
     {
     Savepoint txn(m_connection.GetDb(), "ECSchemaHelper::GetPaths");
     BeAssert(txn.IsActive());
 
     Utf8String query;
-    BoundQueryValuesList bindings = CreateRelationshipPathsQuery(query, resolver, sourceClassIds, relationshipDirection, depth, include);
+    BoundQueryValuesList bindings = CreateRelationshipPathsQuery(query, resolver, sourceClassIds, relationshipDirection, depth);
     CachedECSqlStatementPtr stmt = m_connection.GetStatementCache().GetPreparedStatement(m_connection.GetECDb().Schemas(), m_connection.GetDb(), query.c_str());
     if (!stmt.IsValid())
         {
@@ -1061,7 +995,7 @@ void ECSchemaHelper::GetPaths(bvector<bpair<RelatedClassPath, bool>>& paths, bma
             BeAssert(false);
             continue;
             }
-        bool isForward = !(ECRelationshipEnd_Source == (ECRelationshipEnd)stmt->GetValueInt(4)); // note: reverse the direction
+        bool isForward = (ECRelationshipEnd_Source == (ECRelationshipEnd)stmt->GetValueInt(4));
 
         // filter by target class (if specified)
         if (nullptr != targetClass)
@@ -1078,18 +1012,17 @@ void ECSchemaHelper::GetPaths(bvector<bpair<RelatedClassPath, bool>>& paths, bma
         relationshipAlias.append(std::to_string(relationshipsUseCounter[relationship]++).c_str());
 
         SupportedEntityClassInfo const* info = resolver.GetInfo(*actualRelated);
-        RelatedClass relatedClassSpec(*source, *actualRelated, *relationship, isForward);
+        RelatedClass relatedClassSpec(*source, SelectClass(*actualRelated, (nullptr == info || info->IsPolymorphic())), *relationship, isForward);
         relatedClassSpec.SetRelationshipAlias(relationshipAlias);
-        relatedClassSpec.SetIsPolymorphic(nullptr == info || info->IsPolymorphic() && !(info->IsInclude() && info->IsExclude() && !include));
 
         // avoid recursive relationship loops
         if (usedRelationships.end() != usedRelationships.find(relatedClassSpec))
             continue;
 
-        bool matchesRecursiveRequest = (depth < 0 && MatchesPathRequest(relatedClassSpec, resolver, include));
+        bool matchesRecursiveRequest = (depth < 0 && MatchesPathRequest(relatedClassSpec, resolver));
 
         if (0 == depth || matchesRecursiveRequest)
-            AppendPath(paths, {relatedClassSpec}, include);
+            AppendPath(paths, {relatedClassSpec}, handleRelatedClassesPolymorphically);
 
         if (depth > 0 || matchesRecursiveRequest)
             {
@@ -1106,43 +1039,44 @@ void ECSchemaHelper::GetPaths(bvector<bpair<RelatedClassPath, bool>>& paths, bma
 
     if (0 != depth && !specs.empty())
         {
-        bvector<bpair<RelatedClassPath, bool>> subPaths;
+        bvector<RelatedClassPath> subPaths;
         GetPaths(subPaths, relationshipsUseCounter, usedRelationships, resolver, relatedClassIds,
-            relationshipDirection, depth - 1, targetClass, include);
-        for (auto& pair : subPaths)
+            handleRelatedClassesPolymorphically, relationshipDirection, depth - 1, targetClass);
+        for (RelatedClassPath const& subPath : subPaths)
             {
-            RelatedClassPath const& subPath = pair.first;
             for (RelatedClassCR sourceClassSpec : specs)
                 {
-                if (sourceClassSpec.GetTargetClass() != subPath[0].GetSourceClass())
+                if (&sourceClassSpec.GetTargetClass().GetClass() != subPath[0].GetSourceClass())
                     continue;
 
                 RelatedClassPath aggregatedPath = subPath;
                 aggregatedPath.insert(aggregatedPath.begin(), sourceClassSpec);
-                AppendPath(paths, aggregatedPath, include);
+                AppendPath(paths, aggregatedPath, handleRelatedClassesPolymorphically);
                 }
             }
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                02/2017
+* @bsimethod                                    Grigas.Petraitis                12/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaHelper::RelationshipClassPathOptions::RelationshipClassPathOptions(ECClassCR sourceClass, int relationshipDirection, int depth,
-    Utf8CP supportedSchemas, Utf8CP supportedRelationships, Utf8CP supportedClasses,
-    bmap<ECRelationshipClassCP, int>& relationshipsUseCounter, ECEntityClassCP targetClass)
-    : m_relationshipsUseCounter(relationshipsUseCounter), m_sourceClass(sourceClass), m_supportedSchemas(supportedSchemas),
-    m_supportedRelationships(supportedRelationships), m_supportedClasses(supportedClasses)
+static void ApplyExcludedClasses(bvector<RelatedClassPath>& paths, bvector<ECClassCP> const& excludedClasses, bool excludePolymorphically, SchemaManagerCR schemas)
     {
-    m_relationshipDirection = relationshipDirection;
-    m_depth = depth;
-    m_targetClass = targetClass;
+    for (RelatedClassPathR path : paths)
+        {
+        RelatedClassR targetClass = path.back();
+        for (ECClassCP excludedClass : excludedClasses)
+            {
+            if (excludedClass->Is(&targetClass.GetTargetClass().GetClass()))
+                targetClass.GetTargetClass().GetDerivedExcludedClasses().push_back(SelectClass(*excludedClass, excludePolymorphically));
+            }
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<bpair<RelatedClassPath, bool>> ECSchemaHelper::GetRelationshipClassPaths(RelationshipClassPathOptions const& options) const
+bvector<RelatedClassPath> ECSchemaHelper::GetRelationshipClassPaths(RelationshipClassPathOptions const& options) const
     {
     // look for cached results first
     BeMutexHolder lock(m_relatedPathsCache->GetMutex());
@@ -1156,7 +1090,7 @@ bvector<bpair<RelatedClassPath, bool>> ECSchemaHelper::GetRelationshipClassPaths
         }
     lock.unlock();
 
-    bvector<bpair<RelatedClassPath, bool>> paths;
+    bvector<RelatedClassPath> paths;
     SupportedEntityClassInfos classInfos = GetECClassesFromClassList(options.m_supportedClasses, true);
     SupportedRelationshipClassInfos relationshipInfos = GetECRelationshipClasses(options.m_supportedRelationships);
     SupportedClassesResolver resolver(m_connection, GetECSchemas(options.m_supportedSchemas),
@@ -1167,17 +1101,11 @@ bvector<bpair<RelatedClassPath, bool>> ECSchemaHelper::GetRelationshipClassPaths
     bset<ECClassId> sourceClassIds;
     sourceClassIds.insert(options.m_sourceClass.GetId());
 
-    // get includes
     GetPaths(paths, options.m_relationshipsUseCounter, usedRelationships, resolver, sourceClassIds,
-        options.m_relationshipDirection, options.m_depth, options.m_targetClass, true);
+        options.m_handleRelatedClassesPolymorphically, options.m_relationshipDirection, options.m_depth, options.m_targetClass);
 
-    if (resolver.HasExcludes())
-        {
-        // get excludes
-        usedRelationships.clear();
-        GetPaths(paths, options.m_relationshipsUseCounter, usedRelationships, resolver, sourceClassIds,
-            options.m_relationshipDirection, options.m_depth, options.m_targetClass, false);
-        }
+    ApplyExcludedClasses(paths, resolver.GetExcludedClasses(), false, m_connection.GetECDb().Schemas());
+    ApplyExcludedClasses(paths, resolver.GetPolymorphicallyExcludedClasses(), true, m_connection.GetECDb().Schemas());
 
     // cache
     m_relatedPathsCache->Put(key, RelatedPathsCache::Result(paths, options.m_relationshipsUseCounter));
@@ -1240,12 +1168,11 @@ RelatedClass ECSchemaHelper::GetForeignKeyClass(ECPropertyCR prop) const
 
     NavigationECPropertyCR navigationProp = *prop.GetAsNavigationProperty();
     ECRelationshipClassCP relationship = navigationProp.GetRelationshipClass();
-    ECClassCP sourceClass = GetClassFromRelationshipConstraint((navigationProp.GetDirection() == ECRelatedInstanceDirection::Backward)
-        ? relationship->GetTarget() : relationship->GetSource());
-    ECClassCP targetClass = GetClassFromRelationshipConstraint((navigationProp.GetDirection() == ECRelatedInstanceDirection::Backward)
-        ? relationship->GetSource() : relationship->GetTarget());
+    bool isRelationshipForward = (navigationProp.GetDirection() == ECRelatedInstanceDirection::Forward);
+    ECClassCP sourceClass = GetClassFromRelationshipConstraint(isRelationshipForward ? relationship->GetSource() : relationship->GetTarget());
+    ECClassCP targetClass = GetClassFromRelationshipConstraint(isRelationshipForward ? relationship->GetTarget() : relationship->GetSource());
     if (nullptr != sourceClass && nullptr != targetClass)
-        return RelatedClass(*sourceClass, *targetClass, *relationship, navigationProp.GetDirection() == ECRelatedInstanceDirection::Backward);
+        return RelatedClass(*sourceClass, *targetClass, *relationship, isRelationshipForward);
 
     BeAssert(false);
     return RelatedClass();
@@ -1255,19 +1182,19 @@ RelatedClass ECSchemaHelper::GetForeignKeyClass(ECPropertyCR prop) const
 * @bsimethod                                    Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<RelatedClassPath> ECSchemaHelper::GetPolymorphicallyRelatedClassesWithInstances(ECClassCR sourceClass, Utf8StringCR relationshipNames,
-    ECRelatedInstanceDirection direction, Utf8StringCR baseClassNames, RelatedClassPathCR relatedClassPath, InstanceFilteringParams const* filteringParams) const
+    ECRelatedInstanceDirection direction, Utf8StringCR baseClassNames, RelatedClassPathCR pathFromSelectToSourceClass, InstanceFilteringParams const* filteringParams) const
     {
     bvector<RelatedClassPath> paths;
     Savepoint txn(m_connection.GetDb(), "ECSchemaHelper::GetPolymorphicallyRelatedClassesWithInstances");
     BeAssert(txn.IsActive());
 
-    bool isNested = !relatedClassPath.empty();
+    bool isNested = !pathFromSelectToSourceClass.empty();
     ComplexGenericQueryPtr filteringQuery = ComplexGenericQuery::Create();
     filteringQuery->SelectContract(*SimpleQueryContract::Create(*PresentationQueryContractSimpleField::Create("ECInstanceId", "ECInstanceId")), isNested ? "nestedRel" : "this");
     filteringQuery->From(sourceClass, true, isNested ? "nestedRel" : "this");
     if (nullptr != filteringParams)
         {
-        if (InstanceFilteringResult::NoResults == QueryBuilderHelpers::ApplyInstanceFilter(*filteringQuery, *filteringParams, relatedClassPath))
+        if (InstanceFilteringResult::NoResults == QueryBuilderHelpers::ApplyInstanceFilter(*filteringQuery, *filteringParams, RelatedClassPath(pathFromSelectToSourceClass).Reverse("", false)))
             return paths;
         }
     BoundQueryValuesList filterBindings = filteringQuery->GetBoundValues();
@@ -1278,26 +1205,22 @@ bvector<RelatedClassPath> ECSchemaHelper::GetPolymorphicallyRelatedClassesWithIn
         }
 
     SupportedEntityClassInfos baseClassInfos = GetECClassesFromClassList(baseClassNames, false);
-    bvector<ECEntityClassCP> baseClasses;
-    std::transform(baseClassInfos.begin(), baseClassInfos.end(), std::back_inserter(baseClasses), [](SupportedEntityClassInfo const& i){return &i.GetClass();});
+    bvector<ECEntityClassCP> baseClasses = ContainerHelpers::TransformContainer<bvector<ECEntityClassCP>>(baseClassInfos, [](SupportedEntityClassInfo const& i){return &i.GetClass();});
     bvector<ECRelationshipClassCP> relationships;
     if (relationshipNames.empty())
         {
         bmap<ECRelationshipClassCP, int> relationshipCounter;
-        RelationshipClassPathOptions params(sourceClass, (int)direction, 0, "", "", baseClassNames.c_str(), relationshipCounter);
-        bvector<bpair<RelatedClassPath, bool>> relationshipPaths = GetRelationshipClassPaths(params);
-        for (bpair<RelatedClassPath, bool> const& entry : relationshipPaths)
+        RelationshipClassPathOptions params(sourceClass, (int)direction, 0, "", "", baseClassNames.c_str(), true, relationshipCounter);
+        bvector<RelatedClassPath> relationshipPaths = GetRelationshipClassPaths(params);
+        for (RelatedClassPath const& path : relationshipPaths)
             {
-            if (!entry.second)
-                continue;
-
-            if (entry.first.size() != 1)
+            if (path.size() != 1)
                 {
                 BeAssert(false);
                 continue;
                 }
 
-            ECRelationshipClassCP relationship = entry.first[0].GetRelationship();
+            ECRelationshipClassCP relationship = path[0].GetRelationship();
             if (relationships.end() == std::find(relationships.begin(), relationships.end(), relationship))
                 relationships.push_back(relationship);
             }
@@ -1352,11 +1275,12 @@ bvector<RelatedClassPath> ECSchemaHelper::GetPolymorphicallyRelatedClassesWithIn
             if (IsClassHidden(*targetClass) && baseClassInfos.end() == baseClassInfos.find(*targetClass))
                 continue;
 
-            vec.push_back(RelatedClass(sourceClass, *targetClass, *relationship,
+            vec.push_back(RelatedClass(sourceClass,
+                SelectClassWithExcludes(*targetClass, true),
+                *relationship,
                 ECRelatedInstanceDirection::Forward == direction,
                 Utf8String("target_").append(std::to_string(vec.size()).c_str()).c_str(),
                 Utf8String("rel_").append(std::to_string(vec.size()).c_str()).c_str(),
-                true,
                 false));
             }
         polymorphicallyRelatedClasses = &m_polymorphicallyRelatedClassesCache->Add(key, std::move(vec));
@@ -1372,18 +1296,18 @@ bvector<RelatedClassPath> ECSchemaHelper::GetPolymorphicallyRelatedClassesWithIn
             filterBindingsCopy.push_back(binding->Clone());
 
         RefCountedPtr<SimpleQueryContract> contract = SimpleQueryContract::Create();
-        contract->AddField(*PresentationQueryContractSimpleField::Create("RelatedClassId", relatedClass.IsForwardRelationship() ? "TargetECClassId" : "SourceECClassId"));
-        contract->AddField(*PresentationQueryContractSimpleField::Create("RelatedInstanceId", relatedClass.IsForwardRelationship() ?  "SourceECInstanceId" : "TargetECInstanceId"));
+        contract->AddField(*PresentationQueryContractSimpleField::Create("TargetClassId", relatedClass.IsForwardRelationship() ? "TargetECClassId" : "SourceECClassId"));
+        contract->AddField(*PresentationQueryContractSimpleField::Create("SourceInstanceId", relatedClass.IsForwardRelationship() ?  "SourceECInstanceId" : "TargetECInstanceId"));
         ComplexGenericQueryPtr nestedQuery = ComplexGenericQuery::Create();
         nestedQuery->SelectContract(*contract, "rel");
         nestedQuery->From(*relatedClass.GetRelationship(), true, "rel");
-        nestedQuery->Where(relatedClass.IsForwardRelationship() ? "[rel].[TargetECClassId] = ?" : "[rel].[SourceECClassId] = ?", {new BoundQueryId(relatedClass.GetTargetClass()->GetId())});
+        nestedQuery->Where(relatedClass.IsForwardRelationship() ? "[rel].[TargetECClassId] = ?" : "[rel].[SourceECClassId] = ?", {new BoundQueryId(relatedClass.GetTargetClass().GetClass().GetId())});
 
         ComplexGenericQueryPtr query = ComplexGenericQuery::Create();
         query->SelectAll();
         query->From(*nestedQuery);
-        query->Where(Utf8String("[RelatedInstanceId] IN (").append(filteringQuery->ToString()).append(")").c_str(), filterBindingsCopy);
-        query->GroupByContract(*SimpleQueryContract::Create(*PresentationQueryContractSimpleField::Create("RelatedClassId", "RelatedClassId")));
+        query->Where(Utf8String("[SourceInstanceId] IN (").append(filteringQuery->ToString()).append(")").c_str(), filterBindingsCopy);
+        query->GroupByContract(*SimpleQueryContract::Create(*PresentationQueryContractSimpleField::Create("TargetClassId", "TargetClassId")));
 
         CachedECSqlStatementPtr stmt = m_connection.GetStatementCache().GetPreparedStatement(m_connection.GetECDb().Schemas(),
             m_connection.GetDb(), query->ToString().c_str());
@@ -1412,8 +1336,8 @@ bvector<RelatedClassPath> ECSchemaHelper::GetPolymorphicallyRelatedClassesWithIn
             if (!derivesFromBase && !baseClasses.empty())
                 continue;
 
-            RelatedClass derivedPath(sourceClass, *derivedClass, *relationships[0], true);
-            AppendPath(paths, {derivedPath});
+            RelatedClass derivedPath(sourceClass, *derivedClass, *relationships[0], relatedClass.IsForwardRelationship());
+            AppendPath(paths, {derivedPath}, true);
             }
         }
     return paths;

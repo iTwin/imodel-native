@@ -51,14 +51,28 @@ rapidjson::Document IECPresentationSerializer::AsJson(ContentDescriptor::Calcula
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Mantas.Kontrimas                04/2018
+* @bsimethod                                    Grigas.Petraitis                12/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document IECPresentationSerializer::AsJson(ContentDescriptor::NestedContentField const& nestedContentField,
+rapidjson::Document IECPresentationSerializer::AsJson(ContentDescriptor::CompositeContentField const& compositeContentField,
     rapidjson::Document::AllocatorType* allocator) const
     {
     rapidjson::Document json(allocator);
-    _FieldAsJson(nestedContentField, json);
-    _AsJson(nestedContentField, json);
+    _FieldAsJson(compositeContentField, json);
+    _NestedContentFieldAsJson(compositeContentField, json);
+    _AsJson(compositeContentField, json);
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document IECPresentationSerializer::AsJson(ContentDescriptor::RelatedContentField const& relatedContentField,
+    rapidjson::Document::AllocatorType* allocator) const
+    {
+    rapidjson::Document json(allocator);
+    _FieldAsJson(relatedContentField, json);
+    _NestedContentFieldAsJson(relatedContentField, json);
+    _AsJson(relatedContentField, json);
     return json;
     }
 

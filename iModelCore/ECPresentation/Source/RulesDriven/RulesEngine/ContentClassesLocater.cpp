@@ -198,30 +198,32 @@ protected:
         {
         // located classes are always considered polymorphic
         SelectClassInfo copy(classInfo);
-        copy.SetIsSelectPolymorphic(true);
+        copy.GetSelectClass().SetIsSelectPolymorphic(true);
         m_classes.push_back(copy);
         }
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                10/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void _OnBeforeAppendClassInfos(bvector<SupportedEntityClassInfo>& infos) override
+    bvector<ContentSource> _BuildContentSource(bvector<SelectClass> const& selectClasses) override
         {
-        bvector<ECClassCP> navigationPropertyClasses;
-        for (SupportedEntityClassInfo& info : infos)
+        bvector<SelectClass> polymorphicSelectClasses = ContainerHelpers::TransformContainer<bvector<SelectClass>>(selectClasses, [](SelectClass const& sc)
             {
-            info.SetFlags(info.GetFlags() | CLASS_FLAG_Polymorphic);
+            // classes locater should always treat input classes as polymorphic
+            return SelectClass(sc.GetClass(), true);
+            });
 
-            bvector<ECClassCP> classes = CollectDerivedClassesWithNavigationProperties(info.GetClass(), GetContext().GetSchemaHelper().GetConnection().GetECDb().Schemas());
+        bvector<ContentSource> result = ContentSpecificationsHandler::_BuildContentSource(polymorphicSelectClasses);
+
+        bvector<ECClassCP> navigationPropertyClasses;
+        for (SelectClass const& selectClass : selectClasses)
+            {
+            bvector<ECClassCP> classes = CollectDerivedClassesWithNavigationProperties(selectClass.GetClass(), GetContext().GetSchemaHelper().GetConnection().GetECDb().Schemas());
             std::move(classes.begin(), classes.end(), std::back_inserter(navigationPropertyClasses));
             }
         for (ECClassCP ecClass : navigationPropertyClasses)
-            {
-            if (ecClass->IsEntityClass())
-                infos.push_back(SupportedEntityClassInfo(*ecClass->GetEntityClassCP(), CLASS_FLAG_Polymorphic | CLASS_FLAG_Include));
-            }
-
-        ContentSpecificationsHandler::_OnBeforeAppendClassInfos(infos);
+            result.push_back(ContentSource(SelectClass(*ecClass)));
+        return result;
         }
 
 public:

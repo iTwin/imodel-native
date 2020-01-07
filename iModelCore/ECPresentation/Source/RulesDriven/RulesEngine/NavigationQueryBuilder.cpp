@@ -177,62 +177,46 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(RootNodeRuleCR ru
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                11/2016
 +===============+===============+===============+===============+===============+======*/
-enum class SelectionPurpose
-    {
-    Include,
-    Exclude,
-    };
-
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                11/2016
-+===============+===============+===============+===============+===============+======*/
 struct SelectQueryInfo
-    {
-    private:
-        ChildNodeSpecificationCP m_specification;
-        ECClassCP m_selectClass;
-        RelatedClassPath m_relatedClassPath;
-        bool m_selectPolymorphically;
-        bvector<RelatedClass> m_relatedClasses;
-        SelectionPurpose m_flag;
-        bvector<InstanceLabelOverrideValueSpecification const*> m_labelOverrideValueSpecs;
-    public:
-        SelectQueryInfo() : m_selectClass(nullptr) {}
-        SelectQueryInfo(ChildNodeSpecificationCR spec, ECClassCR selectClass, bool selectPolymorphically,
-            SelectionPurpose flag = SelectionPurpose::Include, bvector<RelatedClass> relatedClasses = bvector<RelatedClass>())
-            : m_specification(&spec), m_selectClass(&selectClass), m_selectPolymorphically(selectPolymorphically), m_flag(flag), m_relatedClasses(relatedClasses)
-            {}
-        ChildNodeSpecificationCP GetSpecification() const {return m_specification;}
-        void SetSpecification(ChildNodeSpecificationCR spec) {m_specification = &spec;}
+{
+private:
+    ChildNodeSpecificationCP m_specification;
+    SelectClassWithExcludes m_selectClass;
+    RelatedClassPath m_pathFromSelectToParentClass;
+    bvector<RelatedClass> m_relatedInstanceClasses;
+    bvector<InstanceLabelOverrideValueSpecification const*> m_labelOverrideValueSpecs;
+public:
+    SelectQueryInfo() : m_specification(nullptr) {}
+    SelectQueryInfo(ChildNodeSpecificationCR spec, SelectClassWithExcludes selectClass,
+        bvector<RelatedClass> relatedInstanceClasses = bvector<RelatedClass>())
+        : m_specification(&spec), m_selectClass(selectClass), m_relatedInstanceClasses(relatedInstanceClasses)
+        {}
+    ChildNodeSpecificationCP GetSpecification() const {return m_specification;}
+    void SetSpecification(ChildNodeSpecificationCR spec) {m_specification = &spec;}
 
-        ECClassCP GetSelectClass() const {return m_selectClass;}
-        void SetSelectClass(ECClassCR selectClass) {m_selectClass = &selectClass;}
+    SelectClassWithExcludes const& GetSelectClass() const {return m_selectClass;}
+    void SetSelectClass(SelectClassWithExcludes selectClass) {m_selectClass = selectClass;}
 
-        bool GetSelectPolymorphically() const {return m_selectPolymorphically;}
-        void SetSelectPolymorphically(bool value) {m_selectPolymorphically = value;}
+    RelatedClassPath const& GetPathFromSelectToParentClass() const {return m_pathFromSelectToParentClass;}
+    RelatedClassPath& GetPathFromSelectToParentClass() {return m_pathFromSelectToParentClass;}
 
-        SelectionPurpose GetSelectFlag() const {return m_flag;}
+    bvector<RelatedClass> const& GetRelatedInstanceClasses() const {return m_relatedInstanceClasses;}
+    bvector<RelatedClass>& GetRelatedInstanceClasses() {return m_relatedInstanceClasses;}
 
-        RelatedClassPath const& GetRelatedClassPath() const {return m_relatedClassPath;}
-        RelatedClassPath& GetRelatedClassPath() {return m_relatedClassPath;}
+    bvector<ECClassCP> CreateSelectClassList() const
+        {
+        bvector<ECClassCP> list;
+        list.push_back(&m_selectClass.GetClass());
+        for (RelatedClassCR relatedPathClass : m_pathFromSelectToParentClass)
+            list.push_back(relatedPathClass.GetRelationship());
+        for (RelatedClassCR relatedInstanceClass : m_relatedInstanceClasses)
+            list.push_back(&relatedInstanceClass.GetTargetClass().GetClass());
+        return list;
+        }
 
-        bvector<RelatedClass> const& GetRelatedClasses() const {return m_relatedClasses;}
-        bvector<RelatedClass>& GetRelatedClasses() {return m_relatedClasses;}
-
-        bvector<ECClassCP> CreateSelectClassList() const
-            {
-            bvector<ECClassCP> list;
-            list.push_back(m_selectClass);
-            for (RelatedClassCR relatedPathClass : m_relatedClassPath)
-                list.push_back(relatedPathClass.GetRelationship());
-            for (RelatedClassCR relatedSelectClass : m_relatedClasses)
-                list.push_back(relatedSelectClass.GetTargetClass());
-            return list;
-            }
-
-        bvector<InstanceLabelOverrideValueSpecification const*> const& GetLabelOverrideValueSpecs() const { return m_labelOverrideValueSpecs; }
-        void SetLabelOverrideValueSpecs(bvector<InstanceLabelOverrideValueSpecification const*> const& overrides) { m_labelOverrideValueSpecs = overrides; }
-    };
+    bvector<InstanceLabelOverrideValueSpecification const*> const& GetLabelOverrideValueSpecs() const {return m_labelOverrideValueSpecs;}
+    void SetLabelOverrideValueSpecs(bvector<InstanceLabelOverrideValueSpecification const*> const& overrides) {m_labelOverrideValueSpecs = overrides;}
+};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2016
@@ -251,16 +235,16 @@ static void OnSelected(SelectQueryInfo const& selectInfo, NavigationQueryBuilder
     if (nullptr == params.GetUsedClassesListener())
         return;
 
-    params.GetUsedClassesListener()->_OnClassUsed(*selectInfo.GetSelectClass(), selectInfo.GetSelectPolymorphically());
-    for (RelatedClass const& related : selectInfo.GetRelatedClassPath())
+    params.GetUsedClassesListener()->_OnClassUsed(selectInfo.GetSelectClass().GetClass(), selectInfo.GetSelectClass().IsSelectPolymorphic());
+    for (RelatedClass const& related : selectInfo.GetPathFromSelectToParentClass())
         {
-        params.GetUsedClassesListener()->_OnClassUsed(*related.GetTargetClass(), related.IsPolymorphic());
+        params.GetUsedClassesListener()->_OnClassUsed(related.GetTargetClass().GetClass(), related.GetTargetClass().IsSelectPolymorphic());
         params.GetUsedClassesListener()->_OnClassUsed(*related.GetRelationship(), true);
         }
 
-    for (RelatedClass const& related : selectInfo.GetRelatedClasses())
+    for (RelatedClass const& related : selectInfo.GetRelatedInstanceClasses())
         {
-        params.GetUsedClassesListener()->_OnClassUsed(*related.GetTargetClass(), related.IsPolymorphic());
+        params.GetUsedClassesListener()->_OnClassUsed(related.GetTargetClass().GetClass(), related.GetTargetClass().IsSelectPolymorphic());
         params.GetUsedClassesListener()->_OnClassUsed(*related.GetRelationship(), true);
         }
     }
@@ -436,7 +420,7 @@ protected:
     GroupingType _GetType() const override {return GroupingType::DisplayLabel;}
     NavigationQueryContractPtr _GetContract(SelectQueryInfo const& selectInfo) const override
         {
-        return DisplayLabelGroupingNodesQueryContract::Create(selectInfo.GetSelectClass(), selectInfo.GetRelatedClasses(), selectInfo.GetLabelOverrideValueSpecs());
+        return DisplayLabelGroupingNodesQueryContract::Create(&selectInfo.GetSelectClass().GetClass(), selectInfo.GetRelatedInstanceClasses(), selectInfo.GetLabelOverrideValueSpecs());
         }
     bool _AppliesForClass(ECClassCR, bool) const override {return true;}
     bool _IsAppliedTo(NavNodeCR node) const override {return node.GetType().Equals(NAVNODE_TYPE_DisplayLabelGroupingNode);}
@@ -680,7 +664,12 @@ private:
             }
 
         m_foreignKeyClass = m_schemaHelper.GetForeignKeyClass(*ecProperty);
-        return ECPropertyGroupingNodesQueryContract::Create(*ecClass, *ecProperty, relatedClassAlias, m_specification, m_foreignKeyClass.GetTargetClass());
+        if (m_foreignKeyClass.IsValid())
+            {
+            m_foreignKeyClass.SetTargetClassAlias("parentInstance");
+            m_foreignKeyClass.SetRelationshipAlias(Utf8String("rel_").append(m_foreignKeyClass.GetRelationship()->GetSchema().GetAlias()).append("_").append(m_foreignKeyClass.GetRelationship()->GetName()));
+            }
+        return ECPropertyGroupingNodesQueryContract::Create(*ecClass, *ecProperty, relatedClassAlias, m_specification, &m_foreignKeyClass.GetTargetClass().GetClass());
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -704,23 +693,20 @@ protected:
     Utf8CP GetSelectPrefix(SelectQueryInfo const& selectInfo) const
         {
         // first, check the primary select class
-        if (AppliesForClass(*selectInfo.GetSelectClass(), selectInfo.GetSelectPolymorphically()))
+        if (AppliesForClass(selectInfo.GetSelectClass().GetClass(), selectInfo.GetSelectClass().IsSelectPolymorphic()))
             return nullptr;
 
         // then, check the related class path in case we want to group by relationship property
-        if (!selectInfo.GetRelatedClassPath().empty())
+        for (RelatedClass const& relatedClass : selectInfo.GetPathFromSelectToParentClass())
             {
-            for (RelatedClass const& relatedClass : selectInfo.GetRelatedClassPath())
-                {
-                if (AppliesForClass(*relatedClass.GetRelationship(), true))
-                    return relatedClass.GetRelationshipAlias();
-                }
+            if (AppliesForClass(*relatedClass.GetRelationship(), true))
+                return relatedClass.GetRelationshipAlias();
             }
 
         // finally, check the additional related classes
-        for (RelatedClass const& relatedClass : selectInfo.GetRelatedClasses())
+        for (RelatedClass const& relatedClass : selectInfo.GetRelatedInstanceClasses())
             {
-            if (AppliesForClass(*relatedClass.GetTargetClass(), relatedClass.IsPolymorphic()))
+            if (AppliesForClass(relatedClass.GetTargetClass().GetClass(), relatedClass.GetTargetClass().IsSelectPolymorphic()))
                 return relatedClass.GetTargetClassAlias();
             }
 
@@ -787,17 +773,14 @@ protected:
         {
         if (m_foreignKeyClass.IsValid())
             {
-            Utf8String relationshipAlias = Utf8String("rel_").append(m_foreignKeyClass.GetRelationship()->GetSchema().GetAlias()).append("_").append(m_foreignKeyClass.GetRelationship()->GetName());
-            if (m_foreignKeyClass.GetSourceClass()->IsEntityClass())
+            if (m_foreignKeyClass.GetSourceClass()->IsEntityClass()) // note: source class is the source of the navigation property
                 {
-                RelatedClass relatedParent(*selectInfo.GetSelectClass(), *m_foreignKeyClass.GetTargetClass(), *m_foreignKeyClass.GetRelationship(),
-                    !m_foreignKeyClass.IsForwardRelationship(), "parentInstance", relationshipAlias.c_str());
-                query->Join(relatedParent);
+                query->Join(m_foreignKeyClass);
                 }
             else
                 {
-                BeAssert(!selectInfo.GetRelatedClassPath().empty());
-                RelatedClassPath joinPath = selectInfo.GetRelatedClassPath();
+                BeAssert(!selectInfo.GetPathFromSelectToParentClass().empty());
+                RelatedClassPath joinPath = selectInfo.GetPathFromSelectToParentClass();
                 for (auto iter = joinPath.begin(); iter != joinPath.end(); ++iter)
                     {
                     RelatedClassCR related = *iter;
@@ -807,8 +790,7 @@ protected:
                         break;
                         }
                     }
-                joinPath.push_back(RelatedClass(*m_foreignKeyClass.GetSourceClass(), *m_foreignKeyClass.GetTargetClass(), *m_foreignKeyClass.GetRelationship(),
-                    !m_foreignKeyClass.IsForwardRelationship(), "parentInstance", relationshipAlias.c_str()));
+                joinPath.push_back(m_foreignKeyClass);
                 query->Join(joinPath, true);
                 }
             }
@@ -1029,7 +1011,7 @@ protected:
     GroupingType _GetType() const override {return GroupingType::SameLabelInstance;}
     NavigationQueryContractPtr _GetContract(SelectQueryInfo const& selectInfo) const override
         {
-        return MultiECInstanceNodesQueryContract::Create(selectInfo.GetSelectClass(), true, selectInfo.GetRelatedClasses(), selectInfo.GetLabelOverrideValueSpecs());
+        return MultiECInstanceNodesQueryContract::Create(&selectInfo.GetSelectClass().GetClass(), true, selectInfo.GetRelatedInstanceClasses(), selectInfo.GetLabelOverrideValueSpecs());
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -1563,8 +1545,7 @@ public:
 struct BaseQueryContext : IQueryContext
 {
 private:
-    bvector<NavigationQueryPtr> m_queriesIncluded;
-    bvector<NavigationQueryPtr> m_queriesExcluded;
+    bvector<NavigationQueryPtr> m_queries;
 
 protected:
     BaseQueryContext(IQueryContext& base) : IQueryContext(base) {}
@@ -1572,34 +1553,22 @@ protected:
         Utf8StringCR locale, JsonNavNodeCP parentNode, JsonNavNodeCP parentInstanceNode)
         : IQueryContext(schemaHelper, connections, connection, ruleset, locale, parentNode, parentInstanceNode)
         {}
-    bvector<NavigationQueryPtr> const& GetIncludedQueries() const {return m_queriesIncluded;}
-    bvector<NavigationQueryPtr> const& GetExcludedQueries() const {return m_queriesExcluded;}
+    bvector<NavigationQueryPtr> const& GetQueries() const {return m_queries;}
 
     bool _Accept(NavigationQueryPtr& query, SelectQueryInfo const& selectInfo) override
         {
-        if (selectInfo.GetSelectFlag() == SelectionPurpose::Include)
-            m_queriesIncluded.push_back(query);
-        else
-            m_queriesExcluded.push_back(query);
+        m_queries.push_back(query);
         return true;
         }
     void _DiscardQueries() override
         {
-        m_queriesIncluded.clear();
-        m_queriesExcluded.clear();
+        m_queries.clear();
         }
     NavigationQueryPtr _GetQuery() const override
         {
         NavigationQueryPtr query;
-        for (NavigationQueryPtr includedQuery : m_queriesIncluded)
+        for (NavigationQueryPtr includedQuery : m_queries)
             QueryBuilderHelpers::SetOrUnion(query, *includedQuery);
-
-        if (query.IsValid())
-            {
-            for (NavigationQueryPtr excludedQuery : m_queriesExcluded)
-                query = ExceptNavigationQuery::Create(*query, *excludedQuery);
-            }
-
         return query;
         }
 };
@@ -1616,7 +1585,7 @@ protected:
         {}
     NavigationQueryContractPtr _GetContract(SelectQueryInfo const& selectInfo) const override
         {
-        return ECInstanceNodesQueryContract::Create(selectInfo.GetSelectClass(), selectInfo.GetRelatedClasses(), selectInfo.GetLabelOverrideValueSpecs());
+        return ECInstanceNodesQueryContract::Create(&selectInfo.GetSelectClass().GetClass(), selectInfo.GetRelatedInstanceClasses(), selectInfo.GetLabelOverrideValueSpecs());
         }
 };
 
@@ -1663,12 +1632,12 @@ private:
         }
     static void AppendRule(bvector<ClassSortingRule>& rules, SortingRuleCR rule, SelectQueryInfo const& selectInfo, std::function<bool(ECClassCR)> const& cond)
         {
-        if (cond(*selectInfo.GetSelectClass()))
-            rules.push_back(ClassSortingRule(*selectInfo.GetSelectClass(), nullptr, rule));
-        for (RelatedClass const& relatedClass : selectInfo.GetRelatedClasses())
+        if (cond(selectInfo.GetSelectClass().GetClass()))
+            rules.push_back(ClassSortingRule(selectInfo.GetSelectClass().GetClass(), nullptr, rule));
+        for (RelatedClass const& relatedClass : selectInfo.GetRelatedInstanceClasses())
             {
-            if (cond(*relatedClass.GetTargetClass()))
-                rules.push_back(ClassSortingRule(*relatedClass.GetTargetClass(), relatedClass.GetTargetClassAlias(), rule));
+            if (cond(relatedClass.GetTargetClass().GetClass()))
+                rules.push_back(ClassSortingRule(relatedClass.GetTargetClass().GetClass(), relatedClass.GetTargetClassAlias(), rule));
             }
         }
     bvector<ClassSortingRule> GetSortingRules(SelectQueryInfo const& selectInfo) const
@@ -1679,7 +1648,7 @@ private:
             {
             if (rule->GetSchemaName().empty())
                 {
-                rules.push_back(ClassSortingRule(*selectInfo.GetSelectClass(), nullptr, *rule));
+                rules.push_back(ClassSortingRule(selectInfo.GetSelectClass().GetClass(), nullptr, *rule));
                 continue;
                 }
 
@@ -1719,8 +1688,8 @@ private:
         // set to invalid so NavigationQuery doesn't attempt to set resultQuery result type to nested query result type
         query->GetResultParametersR().SetResultType(NavigationQueryResultType::Invalid);
 
-        RefCountedPtr<MultiECInstanceNodesQueryContract> contract = MultiECInstanceNodesQueryContract::Create(selectInfo.GetSelectClass(), false,
-            selectInfo.GetRelatedClasses(), selectInfo.GetLabelOverrideValueSpecs());
+        RefCountedPtr<MultiECInstanceNodesQueryContract> contract = MultiECInstanceNodesQueryContract::Create(&selectInfo.GetSelectClass().GetClass(), false,
+            selectInfo.GetRelatedInstanceClasses(), selectInfo.GetLabelOverrideValueSpecs());
         ComplexNavigationQueryPtr resultQuery = ComplexNavigationQuery::Create();
         resultQuery->SelectContract(*contract);
         resultQuery->From(*query);
@@ -1743,7 +1712,7 @@ protected:
             return false;
             }
 
-        if (m_doNotSort || SelectionPurpose::Exclude == selectInfo.GetSelectFlag())
+        if (m_doNotSort)
             {
             ToMultiECInstanceNodeQuery(query, selectInfo);
             return ECInstanceQueryContext::_Accept(query, selectInfo);
@@ -1767,6 +1736,13 @@ protected:
         Utf8String orderByClause;
         for (ClassSortingRule const& rule : sortingRules)
             {
+            if (!rule.GetRule()->GetClassName().empty() && !rule.GetRule()->GetIsPolymorphic()
+                && selectInfo.GetSelectClass().IsSelectPolymorphic() && !selectInfo.GetSelectClass().GetClass().GetDerivedClasses().empty())
+                {
+                // don't apply the rule if it's not polymorphic and we're selecting polymorphically
+                continue;
+                }
+
             if (rule.GetRule()->GetDoNotSort())
                 {
                 LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("SortingRule requests no sorting for ECClass '%s'",
@@ -1823,7 +1799,8 @@ protected:
         if (orderByClause.empty())
             {
             ToMultiECInstanceNodeQuery(query, selectInfo);
-            return ECInstanceQueryContext::_Accept(query, selectInfo);
+            m_queriesLabelSorted.push_back(query);
+            return true;
             }
 
         QueryBuilderHelpers::Order(*query, orderByClause.c_str());
@@ -1839,8 +1816,7 @@ protected:
         }
     NavigationQueryPtr _GetQuery() const override
         {
-        size_t notSortedQueriesCount = GetIncludedQueries().size();
-        size_t excludedQueriesCount = GetExcludedQueries().size();
+        size_t notSortedQueriesCount = GetQueries().size();
 
         // union all rules-sorted queries
         size_t rulesSortedQueriesCount = 0;
@@ -1865,7 +1841,7 @@ protected:
             labelSortedUnion = QueryBuilderHelpers::CreateNestedQueryIfNecessary(*labelSortedUnion, aliases);
             QueryBuilderHelpers::Order(*labelSortedUnion, sortedDisplayLabel.c_str());
 
-            if (0 != rulesSortedQueriesCount || 0 != notSortedQueriesCount || 0 != excludedQueriesCount)
+            if (0 != rulesSortedQueriesCount || 0 != notSortedQueriesCount)
                 {
                 // add the single label-sorted query to the wrapper one
                 // note: the queries must be nested in order to union them ordered
@@ -1875,7 +1851,7 @@ protected:
 
         // union all not sorted queries
         NavigationQueryPtr notSortedQuery;
-        for (NavigationQueryPtr const& query : GetIncludedQueries())
+        for (NavigationQueryPtr const& query : GetQueries())
             QueryBuilderHelpers::SetOrUnion(notSortedQuery, *query);
 
         // union all queries
@@ -1886,14 +1862,6 @@ protected:
             QueryBuilderHelpers::SetOrUnion(unionQuery, *notSortedQuery);
         if (!unionQuery.IsValid())
             return nullptr;
-
-        // handle excluded queries
-        NavigationQueryPtr excludedQueries;
-        for (NavigationQueryPtr const& excluded : GetExcludedQueries())
-            excludedQueries = excludedQueries.IsNull() ? excluded.get() : ExceptNavigationQuery::Create(*excludedQueries, *excluded).get();
-        if (excludedQueries.IsValid())
-            unionQuery = ExceptNavigationQuery::Create(*unionQuery, *excludedQueries);
-
         return unionQuery;
         }
 
@@ -2092,7 +2060,14 @@ private:
     void JoinRelatedClasses(ComplexNavigationQuery& query, bvector<RelatedClass> const& relatedClasses) const
         {
         for (RelatedClass const& relatedClass : relatedClasses)
+            {
             query.Join(relatedClass);
+            if (!relatedClass.GetTargetClass().GetDerivedExcludedClasses().empty())
+                {
+                QueryBuilderHelpers::FilterOutExcludes(query, relatedClass.GetTargetClassAlias(),
+                    relatedClass.GetTargetClass().GetDerivedExcludedClasses(), m_resolver.GetSchemaHelper().GetConnection().GetECDb().Schemas());
+                }
+            }
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -2180,20 +2155,18 @@ public:
             return false;
 
         // add ids of relationship classes used by the query
-        if (!selectInfo.GetRelatedClassPath().empty())
-            {
-            // add ids of all relationships in the related class path
-            for (RelatedClassCR related : selectInfo.GetRelatedClassPath())
-                query->GetResultParametersR().GetMatchingRelationshipIds().insert(related.GetRelationship()->GetId());
-            }
-        for (RelatedClassCR relatedClass : selectInfo.GetRelatedClasses())
+        for (RelatedClassCR related : selectInfo.GetPathFromSelectToParentClass())
+            query->GetResultParametersR().GetMatchingRelationshipIds().insert(related.GetRelationship()->GetId());
+        for (RelatedClassCR relatedClass : selectInfo.GetRelatedInstanceClasses())
             query->GetResultParametersR().GetMatchingRelationshipIds().insert(relatedClass.GetRelationship()->GetId());
 
         // set query specification
         BeAssert(nullptr != selectInfo.GetSpecification());
         query->GetResultParametersR().SetSpecification(selectInfo.GetSpecification());
 
-        JoinRelatedClasses(*query, selectInfo.GetRelatedClasses());
+        QueryBuilderHelpers::FilterOutExcludes(*query, "this", selectInfo.GetSelectClass().GetDerivedExcludedClasses(),
+            m_resolver.GetSchemaHelper().GetConnection().GetECDb().Schemas());
+        JoinRelatedClasses(*query, selectInfo.GetRelatedInstanceClasses());
 
         NavigationQueryPtr filteredQuery = query;
         ApplyFilters(filteredQuery, selectInfo);
@@ -2300,129 +2273,6 @@ Utf8String NavigationQueryBuilder::GetSupportedSchemas(SpecificationType const& 
     return m_params.GetRuleset().GetSupportedSchemas();
     }
 
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                11/2016
-+===============+===============+===============+===============+===============+======*/
-struct RuleInfo
-{
-private:
-    ECClassCP m_ruleClass;
-    bool m_isRulePolymorphic;
-public:
-    RuleInfo() : m_ruleClass(nullptr) {}
-    RuleInfo(ECClassCR ruleClass, bool isPolymorphic) : m_ruleClass(&ruleClass), m_isRulePolymorphic(isPolymorphic) {}
-    ECClassCP GetRuleClass() const {return m_ruleClass;}
-    bool IsRulePolymorphic() const {return m_isRulePolymorphic;}
-};
-
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                11/2016
-+===============+===============+===============+===============+===============+======*/
-struct SelectQueryInfoComparer
-    {
-    bool operator()(SelectQueryInfo const& lhs, SelectQueryInfo const& rhs) const
-        {
-        int selectClassNameCmp = strcmp(lhs.GetSelectClass()->GetFullName(), rhs.GetSelectClass()->GetFullName());
-        if (selectClassNameCmp < 0)
-            return true;
-        if (selectClassNameCmp > 0)
-            return false;
-        COMPARE_VEC(lhs.GetRelatedClassPath(), rhs.GetRelatedClassPath());
-        COMPARE_VEC(lhs.GetRelatedClasses(), rhs.GetRelatedClasses());
-        if (!lhs.GetSelectPolymorphically() && rhs.GetSelectPolymorphically())
-            return true;
-        if (lhs.GetSelectPolymorphically() && !rhs.GetSelectPolymorphically())
-            return false;
-        return false;
-        }
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool ShouldSplitIntoDerivedClasses(RuleInfo const& ruleInfo, ECClassCR candidate)
-    {
-    // expand ECClass into its subclasses in 2 cases:
-    // - rule applies to one of the child classes
-    // - rule applies to this class, but is not polymorphic (applies to this class, but not its children)
-    return ruleInfo.GetRuleClass()->Is(&candidate) && ruleInfo.GetRuleClass() != &candidate
-        || ruleInfo.GetRuleClass() == &candidate && !ruleInfo.IsRulePolymorphic() && !candidate.GetDerivedClasses().empty();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                12/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void ProcessQueryClassesBasedOnCustomizationRules(bvector<SelectQueryInfo>& selectInfos, bvector<RuleInfo> const& customizationRuleInfos)
-    {
-    bset<SelectQueryInfo*> selectInfosWithBasePrimaryClasses;
-    bset<RelatedClass*> baseRelatedClasses;
-    bset<SelectQueryInfo, SelectQueryInfoComparer> infosToAppend;
-    for (SelectQueryInfo& selectInfo : selectInfos)
-        {
-        for (RuleInfo const& ruleInfo : customizationRuleInfos)
-            {
-            // check the primary select class
-            if (selectInfo.GetSelectPolymorphically() && ShouldSplitIntoDerivedClasses(ruleInfo, *selectInfo.GetSelectClass()))
-                {
-                // the rule wants to customize a subclass of the class and leave other subclasses unsorted -
-                // this means we have to expand the ecClass into its subclasses
-                bvector<SelectQueryInfo> subclassSelectInfos;
-                for (ECClassCP derived : selectInfo.GetSelectClass()->GetDerivedClasses())
-                    {
-                    SelectQueryInfo copy(selectInfo);
-                    copy.SetSelectClass(*derived->GetEntityClassCP());
-                    copy.SetSelectPolymorphically(true);
-                    if (!copy.GetRelatedClassPath().empty())
-                        copy.GetRelatedClassPath().front().SetSourceClass(*derived->GetEntityClassCP());
-                    subclassSelectInfos.push_back(std::move(copy));
-                    }
-
-                ProcessQueryClassesBasedOnCustomizationRules(subclassSelectInfos, customizationRuleInfos);
-                selectInfosWithBasePrimaryClasses.insert(&selectInfo);
-                infosToAppend.insert(subclassSelectInfos.begin(), subclassSelectInfos.end());
-                }
-
-            // check all related classes
-            for (size_t relatedClassIndex = 0; relatedClassIndex < selectInfo.GetRelatedClasses().size(); ++relatedClassIndex)
-                {
-                RelatedClass& relatedClass = selectInfo.GetRelatedClasses()[relatedClassIndex];
-                if (relatedClass.IsPolymorphic() && ShouldSplitIntoDerivedClasses(ruleInfo, *relatedClass.GetTargetClass()))
-                    {
-                    bvector<SelectQueryInfo> subclassSelectInfos;
-                    for (ECClassCP derived : relatedClass.GetTargetClass()->GetDerivedClasses())
-                        {
-                        SelectQueryInfo copy(selectInfo);
-                        copy.GetRelatedClasses()[relatedClassIndex].SetTargetClass(*derived->GetEntityClassCP());
-                        subclassSelectInfos.push_back(std::move(copy));
-                        }
-
-                    ProcessQueryClassesBasedOnCustomizationRules(subclassSelectInfos, customizationRuleInfos);
-                    baseRelatedClasses.insert(&relatedClass);
-                    infosToAppend.insert(subclassSelectInfos.begin(), subclassSelectInfos.end());
-                    }
-                }
-            }
-        }
-
-    // the primary and related classes that were polymorphic and have been split into subclasses
-    // should be changed to be selected non-polymorphically
-    for (SelectQueryInfo* selectInfo : selectInfosWithBasePrimaryClasses)
-        selectInfo->SetSelectPolymorphically(false);
-    for (RelatedClass* relatedClass : baseRelatedClasses)
-        relatedClass->SetIsPolymorphic(false);
-
-    // don't want to append selects that are already in the input vector
-    for (SelectQueryInfo const& selectInfo : selectInfos)
-        {
-        auto iter = infosToAppend.find(selectInfo);
-        if (infosToAppend.end() != iter)
-            infosToAppend.erase(iter);
-        }
-
-    // append the additional selects
-    selectInfos.insert(selectInfos.end(), infosToAppend.begin(), infosToAppend.end());
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2446,20 +2296,16 @@ static void CallbackOnRuleClasses(bvector<RuleType const*> const& rules, ECSchem
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void ProcessQueryClassesBasedOnCustomizationRules(bvector<SelectQueryInfo>& selectInfos, GroupingResolver const& resolver,
+static bvector<RuleApplicationInfo> GetCustomizationRuleInfos(bvector<SelectClass> const& selectClasses, GroupingResolver const& resolver,
     bvector<ECClassCP> const& instanceLabelOverrideClasses, JsonNavNodeCP parentNode, NavigationQueryBuilderParameters const& params)
     {
-    bvector<RuleInfo> customizationRuleInfos;
-
-    for (SelectQueryInfo const& info : selectInfos)
+    bvector<RuleApplicationInfo> customizationRuleInfos;
+    bvector<GroupingRuleCP> groupingRules = resolver.GetAppliedGroupingRules(ContainerHelpers::TransformContainer<bvector<ECClassCP>>(selectClasses, [](SelectClass const& s){return &s.GetClass();}));
+    for (GroupingRuleCP groupingRule : groupingRules)
         {
-        bvector<GroupingRuleCP> groupingRules = resolver.GetAppliedGroupingRules(info.CreateSelectClassList());
-        for (GroupingRuleCP groupingRule : groupingRules)
-            {
-            ECClassCP ruleClass = params.GetSchemaHelper().GetECClass(groupingRule->GetSchemaName().c_str(), groupingRule->GetClassName().c_str());
-            if (ruleClass->IsEntityClass())
-                customizationRuleInfos.push_back(RuleInfo(*ruleClass->GetEntityClassCP(), true));
-            }
+        ECClassCP ruleClass = params.GetSchemaHelper().GetECClass(groupingRule->GetSchemaName().c_str(), groupingRule->GetClassName().c_str());
+        if (ruleClass->IsEntityClass())
+            customizationRuleInfos.push_back(RuleApplicationInfo(*ruleClass->GetEntityClassCP(), true));
         }
 
     RulesPreprocessor preprocessor(params.GetConnections(), params.GetConnection(), params.GetRuleset(), params.GetLocale(),
@@ -2468,13 +2314,39 @@ static void ProcessQueryClassesBasedOnCustomizationRules(bvector<SelectQueryInfo
     CallbackOnRuleClasses<SortingRule>(preprocessor.GetSortingRules(preprocessorParams), params.GetSchemaHelper(),
         [&customizationRuleInfos](SortingRuleCR rule, ECEntityClassCR ecClass)
         {
-        customizationRuleInfos.push_back(RuleInfo(ecClass, rule.GetIsPolymorphic()));
+        customizationRuleInfos.push_back(RuleApplicationInfo(ecClass, rule.GetIsPolymorphic()));
         });
 
     for (ECClassCP instanceLabelOverrideClass : instanceLabelOverrideClasses)
-        customizationRuleInfos.push_back(RuleInfo(*instanceLabelOverrideClass, true));
+        customizationRuleInfos.push_back(RuleApplicationInfo(*instanceLabelOverrideClass, true));
 
-    ProcessQueryClassesBasedOnCustomizationRules(selectInfos, customizationRuleInfos);
+    return customizationRuleInfos;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+static bvector<SelectClassWithExcludes> ProcessSelectClassesBasedOnCustomizationRules(bvector<SelectClass> const& selectClasses, GroupingResolver const& resolver,
+    bvector<ECClassCP> const& instanceLabelOverrideClasses, JsonNavNodeCP parentNode, NavigationQueryBuilderParameters const& params)
+    {
+    bvector<RuleApplicationInfo> customizationRuleInfos = GetCustomizationRuleInfos(selectClasses, resolver, instanceLabelOverrideClasses, parentNode, params);
+    bvector<SelectClassSplitResult> splitResult = QueryBuilderHelpers::ProcessSelectClassesBasedOnCustomizationRules(selectClasses, customizationRuleInfos, params.GetConnection().GetECDb().Schemas());
+    return ContainerHelpers::TransformContainer<bvector<SelectClassWithExcludes>>(splitResult, [&](SelectClassSplitResult const& sr)
+        {
+        return SelectClassWithExcludes(sr.GetSelectClass());
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+static bvector<RelatedClassPath> ProcessSelectPathsBasedOnCustomizationRules(bvector<RelatedClassPath> const& selectPaths, GroupingResolver const& resolver,
+    bvector<ECClassCP> const& instanceLabelOverrideClasses, JsonNavNodeCP parentNode, NavigationQueryBuilderParameters const& params)
+    {
+    bvector<SelectClass> selectClasses = ContainerHelpers::TransformContainer<bvector<SelectClass>>(selectPaths,
+        [](RelatedClassPath const& path){return path.back().GetTargetClass();});
+    bvector<RuleApplicationInfo> customizationRuleInfos = GetCustomizationRuleInfos(selectClasses, resolver, instanceLabelOverrideClasses, parentNode, params);
+    return QueryBuilderHelpers::ProcessRelationshipPathsBasedOnCustomizationRules(selectPaths, customizationRuleInfos, params.GetConnection().GetECDb().Schemas());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2751,8 +2623,8 @@ static ComplexNavigationQueryPtr CreateQuery(NavigationQueryContract& contract, 
     {
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->SelectContract(contract, "this");
-    query->From(*selectInfo.GetSelectClass(), selectInfo.GetSelectPolymorphically(), "this");
-    query->Join(selectInfo.GetRelatedClassPath(), false);
+    query->From(selectInfo.GetSelectClass(), "this");
+    query->Join(selectInfo.GetPathFromSelectToParentClass(), false);
     ApplyRelatedInstanceFilter(*query, parentInstanceIds);
     ApplyInstanceFilter(*query, selectInfo, params, instanceFilter, &parentInstanceNode);
 
@@ -2766,48 +2638,90 @@ static ComplexNavigationQueryPtr CreateQuery(NavigationQueryContract& contract, 
         }
 
     // set the relationship path for the contract so it can include any skipped related instance keys into the select clause
-    contract.SetRelationshipPath(selectInfo.GetRelatedClassPath());
+    contract.SetRelationshipPath(selectInfo.GetPathFromSelectToParentClass());
 
-    // note: isPreviousRelationshipForward considers "this -> related" relationship direction, but the property in extended data
-    // should tell about "related -> this" direction
-    query->GetResultParametersR().GetNavNodeExtendedDataR().SetRelationshipDirection(selectInfo.GetRelatedClassPath().front().IsForwardRelationship() ? ECRelatedInstanceDirection::Backward : ECRelatedInstanceDirection::Forward);
+    // note: PathFromSelectToParentClass considers "this -> related" relationship direction, but the property in extended data
+    // should tell about "related -> this" direction - need to reverse
+    query->GetResultParametersR().GetNavNodeExtendedDataR().SetRelationshipDirection(selectInfo.GetPathFromSelectToParentClass().front().IsForwardRelationship() ? ECRelatedInstanceDirection::Backward : ECRelatedInstanceDirection::Forward);
 
     return query;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                05/2019
+* @bsimethod                                    Grigas.Petraitis                12/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TKey, typename TValue>
-static bvector<TKey> GetMapKeys(bmap<TKey, TValue> const& map)
+static void AssignRelatedInstanceClasses(bvector<SelectQueryInfo>& infos, ChildNodeSpecificationCR specification, GroupingResolver const& resolver,
+    bvector<ECClassCP> const& instanceLabelOverrideClasses, JsonNavNodeCP parentNode, NavigationQueryBuilderParameters const& params,
+    bmap<ECRelationshipClassCP, int>& relationshipUseCounter)
     {
-    bvector<TKey> keys;
-    std::transform(map.begin(), map.end(), std::back_inserter(keys), [](bpair<TKey, TValue> const& entry) {return entry.first;});
-    return keys;
+    bvector<SelectQueryInfo> infosToAppend;
+    for (SelectQueryInfo& info : infos)
+        {
+        bvector<RelatedClass> relatedClasses = QueryBuilderHelpers::GetRelatedInstanceClasses(params.GetSchemaHelper(),
+            info.GetSelectClass().GetClass(), specification.GetRelatedInstances(), relationshipUseCounter);
+        for (RelatedClass& relatedClass : relatedClasses)
+            {
+            bvector<RelatedClassPath> relatedInstancePaths = ProcessSelectPathsBasedOnCustomizationRules({RelatedClassPath({relatedClass})},
+                resolver, instanceLabelOverrideClasses, parentNode, params);
+            for (size_t pathIndex = 0; pathIndex < relatedInstancePaths.size(); ++pathIndex)
+                {
+                if (0 == pathIndex)
+                    {
+                    info.GetRelatedInstanceClasses() = relatedInstancePaths[pathIndex];
+                    continue;
+                    }
+                SelectQueryInfo copy(info);
+                copy.GetRelatedInstanceClasses() = relatedInstancePaths[pathIndex];
+                infosToAppend.push_back(copy);
+                }
+            }
+        }
+    std::move(infosToAppend.begin(), infosToAppend.end(), std::back_inserter(infos));
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Vaiksnoras                01/2018
+* @bsimethod                                    Grigas.Petraitis                12/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-static SelectQueryInfo CreateSelectInfo(ChildNodeSpecificationCR specification, ECClassCR selectClass, bool selectPolymorphically,
-    SelectionPurpose purpose = SelectionPurpose::Include)
+template<typename TSpecification>
+static bvector<SelectQueryInfo> CreateSelectInfos(TSpecification const& spec, bvector<SelectClass> const& selectClasses, GroupingResolver const& resolver,
+    bmap<ECClassCP, bvector<InstanceLabelOverrideValueSpecification const*>> const& labelOverridingProperties, JsonNavNodeCP parentNode,
+    NavigationQueryBuilderParameters const& params, bmap<ECRelationshipClassCP, int>& relationshipUseCounter)
     {
-    return SelectQueryInfo(specification, selectClass, selectPolymorphically, purpose);
+    bvector<ECClassCP> instanceLabelOverrideClasses = ContainerHelpers::GetMapKeys(labelOverridingProperties);
+    bvector<SelectClassWithExcludes> selects = ProcessSelectClassesBasedOnCustomizationRules(selectClasses, resolver,
+        instanceLabelOverrideClasses, parentNode, params);
+    bvector<SelectQueryInfo> selectInfos = ContainerHelpers::TransformContainer<bvector<SelectQueryInfo>>(selects, [&](SelectClassWithExcludes const& sc)
+        {
+        SelectQueryInfo info(spec, sc);
+        info.SetLabelOverrideValueSpecs(QueryBuilderHelpers::SerializeECClassMapPolymorphically(labelOverridingProperties, info.GetSelectClass().GetClass()));
+        return info;
+        });
+    AssignRelatedInstanceClasses(selectInfos, spec, resolver, instanceLabelOverrideClasses, parentNode, params, relationshipUseCounter);
+    return selectInfos;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                11/2016
+* @bsimethod                                    Grigas.Petraitis                12/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-static SelectQueryInfo CreateSelectInfo(ECSchemaHelper const& helper, MultiQueryContext& ctx, ECEntityClassCR parentInstanceClass,
-    RelatedClassPath const& path, SelectionPurpose purpose, ChildNodeSpecificationCR specification)
+template<typename TSpecification>
+static bvector<SelectQueryInfo> CreateSelectInfos(TSpecification const& spec, bvector<RelatedClassPath> const& pathsFromParentToSelectClass, GroupingResolver const& resolver,
+    bmap<ECClassCP, bvector<InstanceLabelOverrideValueSpecification const*>> const& labelOverridingProperties, JsonNavNodeCP parentNode,
+    NavigationQueryBuilderParameters const& params, bmap<ECRelationshipClassCP, int>& relationshipUseCounter)
     {
-    RelatedClassPath relatedClassPath = path;
-    relatedClassPath.Reverse("related", path.back().IsPolymorphic());
-
-    SelectQueryInfo selectInfo = CreateSelectInfo(specification, *path.back().GetTargetClass(), path.back().IsPolymorphic(), purpose);
-    selectInfo.GetRelatedClassPath() = relatedClassPath;
-    selectInfo.GetRelatedClasses() = QueryBuilderHelpers::GetRelatedInstanceClasses(helper, *selectInfo.GetSelectClass(), specification.GetRelatedInstances(), ctx.GetRelationshipUseCounter());
-    return selectInfo;
+    bvector<ECClassCP> instanceLabelOverrideClasses = ContainerHelpers::GetMapKeys(labelOverridingProperties);
+    bvector<RelatedClassPath> processedPathsFromParentToSelectClass = ProcessSelectPathsBasedOnCustomizationRules(pathsFromParentToSelectClass, resolver,
+        instanceLabelOverrideClasses, parentNode, params);
+    bvector<SelectQueryInfo> selectInfos = ContainerHelpers::TransformContainer<bvector<SelectQueryInfo>>(processedPathsFromParentToSelectClass, [&](RelatedClassPath const& path)
+        {
+        SelectQueryInfo info(spec, path.back().GetTargetClass());
+        info.SetLabelOverrideValueSpecs(QueryBuilderHelpers::SerializeECClassMapPolymorphically(labelOverridingProperties, info.GetSelectClass().GetClass()));
+        info.GetPathFromSelectToParentClass() = RelatedClassPath(path).Reverse("related", true);
+        for (RelatedClass& rc : info.GetPathFromSelectToParentClass())
+            rc.SetIsTargetOptional(false);
+        return info;
+        });
+    AssignRelatedInstanceClasses(selectInfos, spec, resolver, instanceLabelOverrideClasses, parentNode, params, relationshipUseCounter);
+    return selectInfos;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2835,10 +2749,10 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
     MultiQueryContextPtr queryContext = CreateQueryContext(groupingResolver);
 
     // find the classes to query instances from
-    bvector<SelectQueryInfo> selectInfos;
+    bvector<SelectClass> selectClasses;
     if (groupingResolver.IsGroupedByClass())
         {
-        selectInfos.push_back(CreateSelectInfo(specification, *groupingResolver.GetGroupingClass(), false));
+        selectClasses.push_back(SelectClass(*groupingResolver.GetGroupingClass(), false));
         }
     else
         {
@@ -2850,41 +2764,31 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
             }
         ECClassSet queryClasses = m_params.GetSchemaHelper().GetECClassesFromSchemaList(supportedSchemas);
         for (auto pair : queryClasses)
-            selectInfos.push_back(CreateSelectInfo(specification, *pair.first, pair.second));
+            selectClasses.push_back(SelectClass(*pair.first, pair.second));
         }
 
     // quick return if nothing to select from
-    if (selectInfos.empty())
+    if (selectClasses.empty())
         return bvector<NavigationQueryPtr>();
 
     // determine instance label overrides
     bmap<ECClassCP, bvector<InstanceLabelOverrideValueSpecification const*>> labelOverridingProperties = QueryBuilderHelpers::GetLabelOverrideValuesMap(m_params.GetSchemaHelper(),
         m_params.GetRuleset().GetInstanceLabelOverrides());
 
-    // determine additional related joins
-    for (SelectQueryInfo& info : selectInfos)
-        {
-        info.GetRelatedClasses() = QueryBuilderHelpers::GetRelatedInstanceClasses(m_params.GetSchemaHelper(), *info.GetSelectClass(),
-            specification.GetRelatedInstances(), queryContext->GetRelationshipUseCounter());
-        }
-
-    // may need to split some base classes into their derived classes if there are customization rules that only apply for
-    // derived classes.
-    ProcessQueryClassesBasedOnCustomizationRules(selectInfos, groupingResolver, GetMapKeys(labelOverridingProperties),
-        groupingResolver.GetParentInstanceNode(), m_params);
+    // create select infos
+    bvector<SelectQueryInfo> selectInfos = CreateSelectInfos(specification, selectClasses, groupingResolver,
+        labelOverridingProperties, groupingResolver.GetParentInstanceNode(), m_params, queryContext->GetRelationshipUseCounter());
 
     // create a query for each class
-    for (SelectQueryInfo& info : selectInfos)
+    for (SelectQueryInfo const& info : selectInfos)
         {
-        info.SetLabelOverrideValueSpecs(QueryBuilderHelpers::SerializeECClassMapPolymorphically(labelOverridingProperties, *info.GetSelectClass()));
-
         NavigationQueryContractCPtr contract = queryContext->GetContract(info);
         if (contract.IsNull())
             continue;
 
         ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
         query->SelectContract(*contract, "this");
-        query->From(*info.GetSelectClass(), info.GetSelectPolymorphically(), "this");
+        query->From(info.GetSelectClass(), "this");
 
         if (queryContext->Accept(query, info))
             OnSelected(info, m_params);
@@ -2929,6 +2833,7 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
         {
         ECEntityClassCR parentClass = *entry.first->GetEntityClassCP();
         bvector<ECInstanceId> const& parentInstanceIds = entry.second;
+#ifdef wip_disabled_relationship_grouping
         if (groupingResolver.IsGroupedByRelationship())
             {
             ECRelationshipClassCP groupingRelationship = groupingResolver.GetGroupingRelationship();
@@ -2942,8 +2847,7 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
                 RelatedClassPath path;
                 path.push_back(RelatedClass(parentClass, *relationshipEnd, *groupingRelationship, isForwardJoin, nullptr, relationshipAlias.c_str()));
                 SelectQueryInfo selectInfo = CreateSelectInfo(m_params.GetSchemaHelper(), *queryContext,
-                    parentClass, path, SelectionPurpose::Include, specification);
-                selectInfo.SetLabelOverrideValueSpecs(QueryBuilderHelpers::SerializeECClassMapPolymorphically(labelOverridingProperties, *selectInfo.GetSelectClass()));
+                    parentClass, path, /*SelectionPurpose::Include, */specification);
 
                 NavigationQueryContractPtr contract = queryContext->GetContract(selectInfo);
                 if (contract.IsNull())
@@ -2957,6 +2861,7 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
             }
         else
             {
+#endif
             // determine the relationship direction
             int relationshipDirection = 0;
             switch (specification.GetRequiredRelationDirection())
@@ -2968,34 +2873,20 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
 
             // find all applying relationship paths
             ECSchemaHelper::RelationshipClassPathOptions options(parentClass, relationshipDirection, specification.GetSkipRelatedLevel(),
-                supportedSchemas.c_str(), specification.GetRelationshipClassNames().c_str(), specification.GetRelatedClassNames().c_str(),
+                supportedSchemas.c_str(), specification.GetRelationshipClassNames().c_str(), specification.GetRelatedClassNames().c_str(), true,
                 queryContext->GetRelationshipUseCounter(), groupingResolver.GetGroupingClass());
-            bvector<bpair<RelatedClassPath, bool>> relationshipClassPaths = m_params.GetSchemaHelper().GetRelationshipClassPaths(options);
+            bvector<RelatedClassPath> relationshipClassPaths = m_params.GetSchemaHelper().GetRelationshipClassPaths(options);
 
-            // create a select info for each path
-            bool hasIncludes = false;
-            bvector<SelectQueryInfo> selectInfos;
-            for (bpair<RelatedClassPath, bool> const& pair : relationshipClassPaths)
-                {
-                selectInfos.push_back(CreateSelectInfo(m_params.GetSchemaHelper(), *queryContext,
-                    parentClass, pair.first, pair.second ? SelectionPurpose::Include : SelectionPurpose::Exclude, specification));
-                if (pair.second)
-                    hasIncludes = true;
-                }
+            // create select infos
+            bvector<SelectQueryInfo> selectInfos = CreateSelectInfos(specification, relationshipClassPaths, groupingResolver,
+                labelOverridingProperties, groupingResolver.GetParentInstanceNode(), m_params, queryContext->GetRelationshipUseCounter());
 
-            // quick return if there are no includes
-            if (!hasIncludes)
+            if (selectInfos.empty())
                 return bvector<NavigationQueryPtr>();
 
-            // may need to split some base classes into their derived classes if there are customization rules that only apply for
-            // derived classes.
-            ProcessQueryClassesBasedOnCustomizationRules(selectInfos, groupingResolver, GetMapKeys(labelOverridingProperties),
-                groupingResolver.GetParentInstanceNode(), m_params);
-
             // union everything
-            for (SelectQueryInfo& info : selectInfos)
+            for (SelectQueryInfo const& info : selectInfos)
                 {
-                info.SetLabelOverrideValueSpecs(QueryBuilderHelpers::SerializeECClassMapPolymorphically(labelOverridingProperties, *info.GetSelectClass()));
                 NavigationQueryContractPtr contract = queryContext->GetContract(info);
                 if (contract.IsValid())
                     {
@@ -3005,7 +2896,9 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
                         OnSelected(info, m_params);
                     }
                 }
+#ifdef wip_disabled_relationship_grouping
             }
+#endif
         }
 
     return queryContext->GetQueries();
@@ -3020,53 +2913,43 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
     MultiQueryContextPtr queryContext = CreateQueryContext(groupingResolver);
     bool areQueriesPolymorphic = specification.GetArePolymorphic() && !groupingResolver.IsGroupedByClass();
 
-    bvector<SelectQueryInfo> selectInfos;
+    bvector<SelectClass> selectClasses;
     if (groupingResolver.IsGroupedByClass())
         {
-        selectInfos.push_back(CreateSelectInfo(specification, *groupingResolver.GetGroupingClass(), false));
+        selectClasses.push_back(SelectClass(*groupingResolver.GetGroupingClass(), false));
         }
     else
         {
-        // WIP: in case of class grouping, need to query against a metadata table to pick all matching classes
         SupportedEntityClassInfos queryClassesInfos = m_params.GetSchemaHelper().GetECClassesFromClassList(specification.GetClassNames(), false);
         for (SupportedEntityClassInfo const& queryClassInfo : queryClassesInfos)
             {
             bool isPolymorphic = areQueriesPolymorphic && queryClassInfo.IsPolymorphic();
-            selectInfos.push_back(CreateSelectInfo(specification, queryClassInfo.GetClass(), isPolymorphic));
+            selectClasses.push_back(SelectClass(queryClassInfo.GetClass(), isPolymorphic));
             }
         }
 
     // quick return if nothing to select from
-    if (selectInfos.empty())
+    if (selectClasses.empty())
         return bvector<NavigationQueryPtr>();
 
     // determine instance label overrides
     bmap<ECClassCP, bvector<InstanceLabelOverrideValueSpecification const*>> labelOverridingProperties = QueryBuilderHelpers::GetLabelOverrideValuesMap(m_params.GetSchemaHelper(),
         m_params.GetRuleset().GetInstanceLabelOverrides());
 
-    // determine additional related joins
-    for (SelectQueryInfo& info : selectInfos)
-        {
-        info.GetRelatedClasses() = QueryBuilderHelpers::GetRelatedInstanceClasses(m_params.GetSchemaHelper(), *info.GetSelectClass(),
-            specification.GetRelatedInstances(), queryContext->GetRelationshipUseCounter());
-        }
-
-    // may need to split some base classes into their derived classes if there are customization rules that only apply for
-    // derived classes.
-    ProcessQueryClassesBasedOnCustomizationRules(selectInfos, groupingResolver, GetMapKeys(labelOverridingProperties),
-        groupingResolver.GetParentInstanceNode(), m_params);
+    // create select infos
+    bvector<SelectQueryInfo> selectInfos = CreateSelectInfos(specification, selectClasses, groupingResolver,
+        labelOverridingProperties, groupingResolver.GetParentInstanceNode(), m_params, queryContext->GetRelationshipUseCounter());
 
     // union everything
-    for (SelectQueryInfo& info : selectInfos)
+    for (SelectQueryInfo const& info : selectInfos)
         {
-        info.SetLabelOverrideValueSpecs(QueryBuilderHelpers::SerializeECClassMapPolymorphically(labelOverridingProperties, *info.GetSelectClass()));
         NavigationQueryContractCPtr contract = queryContext->GetContract(info);
         if (contract.IsNull())
             continue;
 
         ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
         query->SelectContract(*contract, "this");
-        query->From(*info.GetSelectClass(), info.GetSelectPolymorphically(), "this");
+        query->From(info.GetSelectClass(), "this");
         ApplyInstanceFilter(*query, info, m_params, FormatInstanceFilter(specification.GetInstanceFilter()), groupingResolver.GetParentInstanceNode());
 
         if (queryContext->Accept(query, info))
@@ -3201,8 +3084,6 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
 
     GroupingResolver groupingResolver(m_params.GetSchemaHelper(), m_params, parentNode, specification.GetHash(), specification);
     MultiQueryContextPtr queryContext = CreateQueryContext(groupingResolver, true);
-
-    // determine instance label overrides
     bmap<ECClassCP, bvector<InstanceLabelOverrideValueSpecification const*>> labelOverridingProperties = QueryBuilderHelpers::GetLabelOverrideValuesMap(m_params.GetSchemaHelper(),
         m_params.GetRuleset().GetInstanceLabelOverrides());
 
@@ -3228,20 +3109,12 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
         if (groupingResolver.IsGroupedByClass() && !groupingResolver.GetGroupingClass()->Is(entityClass))
             continue;
 
-        SelectQueryInfo selectInfo = CreateSelectInfo(specification, *entityClass, true);
-        selectInfo.GetRelatedClasses() = QueryBuilderHelpers::GetRelatedInstanceClasses(m_params.GetSchemaHelper(), *selectInfo.GetSelectClass(),
-            specification.GetRelatedInstances(), queryContext->GetRelationshipUseCounter());
+        // create select infos
+        bvector<SelectQueryInfo> selectInfos = CreateSelectInfos(specification, {SelectClass(*entityClass)}, groupingResolver,
+            labelOverridingProperties, parentNode, m_params, queryContext->GetRelationshipUseCounter());
 
-        // may need to split some base classes into their derived classes if there are customization rules that only apply for
-        // derived classes.
-        bvector<SelectQueryInfo> selectInfos;
-        selectInfos.push_back(std::move(selectInfo));
-        ProcessQueryClassesBasedOnCustomizationRules(selectInfos, groupingResolver, GetMapKeys(labelOverridingProperties),
-            groupingResolver.GetParentInstanceNode(), m_params);
-
-        for (SelectQueryInfo& info : selectInfos)
+        for (SelectQueryInfo const& info : selectInfos)
             {
-            info.SetLabelOverrideValueSpecs(QueryBuilderHelpers::SerializeECClassMapPolymorphically(labelOverridingProperties, *info.GetSelectClass()));
             NavigationQueryContractCPtr contract = queryContext->GetContract(info);
             if (contract.IsNull())
                 continue;
@@ -3262,10 +3135,10 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
                 query->Where(Utf8PrintfString("[" SEARCH_QUERY_Alias "].[%s] = ?", SEARCH_QUERY_FIELD_ECClassId).c_str(),
                     {new BoundQueryId(groupingResolver.GetGroupingClass()->GetId())});
                 }
-            else if (!info.GetSelectPolymorphically())
+            else if (!info.GetSelectClass().IsSelectPolymorphic())
                 {
                 query->Where(Utf8PrintfString("[" SEARCH_QUERY_Alias "].[%s] = ?", SEARCH_QUERY_FIELD_ECClassId).c_str(),
-                    {new BoundQueryId(info.GetSelectClass()->GetId())});
+                    {new BoundQueryId(info.GetSelectClass().GetClass().GetId())});
                 }
 
             if (queryContext->Accept(query, info))

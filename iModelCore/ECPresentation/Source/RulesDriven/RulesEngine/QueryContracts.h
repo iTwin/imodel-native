@@ -215,7 +215,7 @@ public:
 private:
     mutable PresentationQueryContractFieldCPtr m_skippedInstanceKeysField;
     mutable PresentationQueryContractFieldCPtr m_skippedInstanceKeysInternalField;
-    RelatedClassPath m_relationshipPath;
+    RelatedClassPath m_pathFromSelectToParentClass;
 
 protected:
     virtual NavigationQueryResultType _GetResultType() const = 0;
@@ -223,8 +223,8 @@ protected:
 
 public:
     NavigationQueryResultType GetResultType() const {return _GetResultType();}
-    RelatedClassPath const& GetRelationshipPath() const {return m_relationshipPath;}
-    void SetRelationshipPath(RelatedClassPath path) {m_relationshipPath = path;}
+    RelatedClassPath const& GetRelationshipPath() const {return m_pathFromSelectToParentClass;}
+    void SetRelationshipPath(RelatedClassPath path) {m_pathFromSelectToParentClass = path;}
 };
 
 /*=================================================================================**//**
@@ -255,10 +255,10 @@ protected:
     ECPRESENTATION_EXPORT void _SetECInstanceIdFieldName(Utf8CP name) override;
 
 public:
-    static RefCountedPtr<ECInstanceNodesQueryContract> Create(ECClassCP ecClass, bvector<RelatedClass> const& relatedClasses = bvector<RelatedClass>(),
+    static RefCountedPtr<ECInstanceNodesQueryContract> Create(ECClassCP ecClass, bvector<RelatedClass> const& relatedInstanceClasses = bvector<RelatedClass>(),
         bvector<InstanceLabelOverrideValueSpecification const*> const& labelOverrideValueSpecs = bvector<InstanceLabelOverrideValueSpecification const*>())
         {
-        return new ECInstanceNodesQueryContract(ecClass, relatedClasses, labelOverrideValueSpecs);
+        return new ECInstanceNodesQueryContract(ecClass, relatedInstanceClasses, labelOverrideValueSpecs);
         }
 };
 
@@ -294,10 +294,10 @@ protected:
 
 public:
     static RefCountedPtr<MultiECInstanceNodesQueryContract> Create(ECClassCP ecClass, bool aggregateInstanceKeys,
-        bvector<RelatedClass> const& relatedClasses = bvector<RelatedClass>(),
+        bvector<RelatedClass> const& relatedInstanceClasses = bvector<RelatedClass>(),
         bvector<InstanceLabelOverrideValueSpecification const*> const& labelOverrideValueSpecs = bvector<InstanceLabelOverrideValueSpecification const*>())
         {
-        return new MultiECInstanceNodesQueryContract(ecClass, aggregateInstanceKeys, relatedClasses, labelOverrideValueSpecs);
+        return new MultiECInstanceNodesQueryContract(ecClass, aggregateInstanceKeys, relatedInstanceClasses, labelOverrideValueSpecs);
         }
 };
 
@@ -383,10 +383,10 @@ protected:
 
 public:
     static RefCountedPtr<DisplayLabelGroupingNodesQueryContract> Create(ECClassCP ecClass,
-        bvector<RelatedClass> const& relatedClasses = bvector<RelatedClass>(),
+        bvector<RelatedClass> const& relatedInstanceClasses = bvector<RelatedClass>(),
         bvector<InstanceLabelOverrideValueSpecification const*> const& labelOverrideValueSpecs = bvector<InstanceLabelOverrideValueSpecification const*>())
         {
-        return new DisplayLabelGroupingNodesQueryContract(ecClass, relatedClasses, labelOverrideValueSpecs);
+        return new DisplayLabelGroupingNodesQueryContract(ecClass, relatedInstanceClasses, labelOverrideValueSpecs);
         }
 };
 
@@ -518,7 +518,7 @@ private:
     ContentDescriptorCPtr m_descriptor;
     ECClassCP m_class;
     IQueryInfoProvider const& m_queryInfo;
-    bvector<RelatedClass> m_relatedClasses;
+    bvector<RelatedClass> m_relatedInstanceClasses;
     bool m_skipCompositePropertyFields;
 
 private:
@@ -532,9 +532,9 @@ protected:
     ECPRESENTATION_EXPORT bvector<PresentationQueryContractFieldCPtr> _GetFields() const override;
 
 public:
-    static ContentQueryContractPtr Create(uint64_t id, ContentDescriptorCR descriptor, ECClassCP ecClass, IQueryInfoProvider const& queryInfo, bvector<RelatedClass> const& relatedClasses = bvector<RelatedClass>(), bool skipCompositePropertyFields = true)
+    static ContentQueryContractPtr Create(uint64_t id, ContentDescriptorCR descriptor, ECClassCP ecClass, IQueryInfoProvider const& queryInfo, bvector<RelatedClass> const& relatedInstanceClasses = bvector<RelatedClass>(), bool skipCompositePropertyFields = true)
         {
-        return new ContentQueryContract(id, descriptor, ecClass, queryInfo, relatedClasses, skipCompositePropertyFields);
+        return new ContentQueryContract(id, descriptor, ecClass, queryInfo, relatedInstanceClasses, skipCompositePropertyFields);
         }
     ContentDescriptorCR GetDescriptor() const {return *m_descriptor;}
     ContentDescriptor::Property const* FindMatchingProperty(ContentDescriptor::ECPropertiesField const&, ECClassCP) const;

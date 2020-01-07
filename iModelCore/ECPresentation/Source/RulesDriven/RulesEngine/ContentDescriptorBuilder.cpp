@@ -79,10 +79,10 @@ private:
     PropertyInfoStore const& m_propertyInfos;
     ContentDescriptorR m_descriptor;
     ECClassCR m_actualClass;
-    RelatedClassPath const& m_relatedClassPath;
+    RelatedClassPath const& m_pathFromSelectToPropertyClass;
     RelationshipMeaning m_relationshipMeaning;
     ContentDescriptor::ECInstanceKeyField* m_keyField;
-    ContentDescriptor::NestedContentField* m_nestedContentField;
+    ContentDescriptor::RelatedContentField* m_nestedContentField;
     bool m_expandNestedFields;
     PropertyCategorySpecificationsList const* m_scopePropertyCategories;
 
@@ -97,15 +97,15 @@ private:
             return labelOverride;
 
         Utf8String displayLabel;
-        if (nullptr != m_context.GetPropertyFormatter() && SUCCESS == m_context.GetPropertyFormatter()->GetFormattedPropertyLabel(displayLabel, ecProperty, m_actualClass, m_relatedClassPath, m_relationshipMeaning))
+        if (nullptr != m_context.GetPropertyFormatter() && SUCCESS == m_context.GetPropertyFormatter()->GetFormattedPropertyLabel(displayLabel, ecProperty, m_actualClass, m_pathFromSelectToPropertyClass, m_relationshipMeaning))
             return displayLabel;
 
-        if (!m_relatedClassPath.empty() && RelationshipMeaning::SameInstance != m_relationshipMeaning && nullptr == m_nestedContentField)
+        if (!m_pathFromSelectToPropertyClass.empty() && RelationshipMeaning::SameInstance != m_relationshipMeaning && nullptr == m_nestedContentField)
             return Utf8String(m_actualClass.GetDisplayLabel()).append(" ").append(ecProperty.GetDisplayLabel());
 
         return ecProperty.GetDisplayLabel();
         }
-    
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                10/2019
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -140,21 +140,21 @@ private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                07/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    Utf8String CreateNestedContentFieldName(RelatedClassPath const& relationshipPath) const
+    Utf8String CreateNestedContentFieldName(RelatedClassPath const& pathFromSelectToContentClass) const
         {
         Utf8String name;
-        if (!relationshipPath.empty())
+        if (!pathFromSelectToContentClass.empty())
             name.append("rc_");
-        for (RelatedClassCR rel : relationshipPath)
+        for (RelatedClassCR rel : pathFromSelectToContentClass)
             {
-            name.append(QueryBuilderHelpers::CreateClassNameForDescriptor(*rel.GetTargetClass()));
+            name.append(QueryBuilderHelpers::CreateClassNameForDescriptor(*rel.GetSourceClass()));
             name.append("_");
             }
         name.append("ncc_");
         name.append(QueryBuilderHelpers::CreateClassNameForDescriptor(m_actualClass));
         return name;
         }
-    
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                08/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -174,17 +174,17 @@ private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                06/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    FieldCreateAction GetActionForPropertyField(ContentDescriptor::ECPropertiesField*& mergeField, bvector<ContentDescriptor::Field*> const& fields, 
+    FieldCreateAction GetActionForPropertyField(ContentDescriptor::ECPropertiesField*& mergeField, bvector<ContentDescriptor::Field*> const& fields,
         ECPropertyCR ecProperty, Utf8CP propertyClassAlias, FieldAttributes const& fieldAttributes)
         {
-        ContentDescriptor::ECPropertiesField* field = m_descriptor.FindECPropertiesField(ecProperty, m_actualClass, m_relatedClassPath, 
+        ContentDescriptor::ECPropertiesField* field = m_descriptor.FindECPropertiesField(ecProperty, m_actualClass, m_pathFromSelectToPropertyClass,
             fieldAttributes.GetLabel(), fieldAttributes.GetCategory(), fieldAttributes.GetEditor().get());
         if (nullptr != field)
             {
             for (ContentDescriptor::Property const& prop : field->AsPropertiesField()->GetProperties())
                 {
                 // skip if already included in descriptor
-                if (&ecProperty == &prop.GetProperty() 
+                if (&ecProperty == &prop.GetProperty()
                     && &m_actualClass == &prop.GetPropertyClass()
                     && 0 == strcmp(propertyClassAlias, prop.GetPrefix()))
                     {
@@ -210,12 +210,13 @@ private:
         ContentDescriptor::ECPropertiesField* field = nullptr;
         if (FieldCreateAction::Skip == GetActionForPropertyField(field, m_descriptor.GetAllFields(), ecProperty, propertyClassAlias, fieldAttributes))
             return nullptr;
-                
+
         // did not find a field with similar properties - create a new one
         if (nullptr == field)
             {
-            if (nullptr == m_keyField && !m_relatedClassPath.empty())
+            if (!m_keyField && !m_pathFromSelectToPropertyClass.empty() && !ecProperty.GetIsNavigation())
                 {
+                // only create related instance key field for non-navigation properties
                 m_keyField = new ContentDescriptor::ECInstanceKeyField();
                 m_descriptor.AddField(m_keyField);
                 }
@@ -225,8 +226,9 @@ private:
 
         return field;
         }
-    
+
     /*---------------------------------------------------------------------------------**//**
+    * TODO: move to RelatedClassPath?
     * @bsimethod                                    Grigas.Petraitis                07/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
     static bool PathStartsWith(RelatedClassPathCR path, RelatedClassPathCR sub)
@@ -243,6 +245,7 @@ private:
         }
 
     /*---------------------------------------------------------------------------------**//**
+    * TODO: move to RelatedClassPath?
     * @bsimethod                                    Grigas.Petraitis                08/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
     static RelatedClassPath GetPathDifference(RelatedClassPathCR lhs, RelatedClassPathCR rhs)
@@ -255,6 +258,7 @@ private:
         }
 
     /*---------------------------------------------------------------------------------**//**
+    * TODO: move to RelatedClassPath?
     * @bsimethod                                    Mantas.Kontrimas                02/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
     static bool EndsWithSameRelatedClass(RelatedClassPathCR path, RelatedClassPathCR fieldPath)
@@ -329,6 +333,7 @@ private:
         }
 
     /*---------------------------------------------------------------------------------**//**
+    * TODO: move to RelatedClassPath?
     * @bsimethod                                    Mantas.Kontrimas                05/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
     static RelatedClassPath GetCommonBaseRelatedClassPath(RelatedClassPathCR path, RelatedClassPathCR fieldPath)
@@ -339,10 +344,10 @@ private:
             RelatedClass lhsRelated = path[i];
             RelatedClass rhsRelated = baseRelatedClassPath[i];
             ECRelationshipConstraintClassList constraintClasses = rhsRelated.IsForwardRelationship() ?
-                rhsRelated.GetRelationship()->GetTarget().GetConstraintClasses() :
-                rhsRelated.GetRelationship()->GetSource().GetConstraintClasses();
-            ECClassCP lhsClass = lhsRelated.IsForwardRelationship() ? lhsRelated.GetSourceClass() : lhsRelated.GetTargetClass();
-            ECClassCP rhsClass = rhsRelated.IsForwardRelationship() ? rhsRelated.GetSourceClass() : rhsRelated.GetTargetClass();
+                rhsRelated.GetRelationship()->GetSource().GetConstraintClasses() :
+                rhsRelated.GetRelationship()->GetTarget().GetConstraintClasses();
+            ECClassCP lhsClass = lhsRelated.IsForwardRelationship() ? lhsRelated.GetSourceClass() : &lhsRelated.GetTargetClass().GetClass();
+            ECClassCP rhsClass = rhsRelated.IsForwardRelationship() ? rhsRelated.GetSourceClass() : &rhsRelated.GetTargetClass().GetClass();
 
             ECClassCP commonBaseClass = GetNearestCommonRelationshipEndClass(lhsClass, rhsClass, constraintClasses);
             if (nullptr == commonBaseClass)
@@ -356,45 +361,52 @@ private:
             else
                 baseRelatedClassPath[i].SetTargetClass(*commonBaseClass);
             }
-        
+
         return baseRelatedClassPath;
         }
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                07/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    ContentDescriptor::NestedContentField* GetXToManyNestedContentField(Utf8CP classAlias)
+    ContentDescriptor::RelatedContentField* GetXToManyNestedContentField(Utf8CP classAlias)
         {
         if (nullptr == m_nestedContentField)
             {
             // find a content field that the new nested field should be nested in
-            ContentDescriptor::NestedContentField* nestingField = nullptr;
-            RelatedClassPath relationshipPath = m_relatedClassPath;
+            ContentDescriptor::RelatedContentField* nestingField = nullptr;
+            RelatedClassPath pathFromSelectToContentClass = m_pathFromSelectToPropertyClass;
             for (ContentDescriptor::Field* descriptorField : m_descriptor.GetAllFields())
                 {
                 if (!descriptorField->IsNestedContentField())
                     continue;
 
-                if (PathStartsWith(m_relatedClassPath, descriptorField->AsNestedContentField()->GetRelationshipPath()))
+                ContentDescriptor::RelatedContentField* existingField = descriptorField->AsNestedContentField()->AsRelatedContentField();
+                if (nullptr == existingField)
+                    continue;
+
+                RelatedClassPathCR existingFieldPathFromSelectToContentClass = existingField->GetPathFromSelectToContentClass();
+                if (PathStartsWith(m_pathFromSelectToPropertyClass, existingFieldPathFromSelectToContentClass))
                     {
-                    // this field should be nested in descriptorField
-                    nestingField = descriptorField->AsNestedContentField();
-                    relationshipPath = GetPathDifference(m_relatedClassPath, descriptorField->AsNestedContentField()->GetRelationshipPath());
+                    // if m_pathFromSelectToPropertyClass starts with existing nested content field path, this field should be nested in existing field
+                    nestingField = existingField;
+                    pathFromSelectToContentClass = GetPathDifference(m_pathFromSelectToPropertyClass, existingFieldPathFromSelectToContentClass);
                     break;
                     }
-                else if (EndsWithSameRelatedClass(m_relatedClassPath, descriptorField->AsNestedContentField()->GetRelationshipPath()))
+                else if (EndsWithSameRelatedClass(m_pathFromSelectToPropertyClass, existingFieldPathFromSelectToContentClass))
                     {
-                    m_nestedContentField = descriptorField->AsNestedContentField();
-                    m_nestedContentField->SetRelationshipPath(GetCommonBaseRelatedClassPath(m_relatedClassPath, descriptorField->AsNestedContentField()->GetRelationshipPath()));
-                    m_nestedContentField->SetName(CreateNestedContentFieldName(m_nestedContentField->GetRelationshipPath()));
+                    // if m_pathFromSelectToPropertyClass and existing nested content field paths both target the same class, unify the paths and update the
+                    // existing field - no need to create a new one
+                    m_nestedContentField = existingField;
+                    m_nestedContentField->SetPathFromSelectToContentClass(GetCommonBaseRelatedClassPath(m_pathFromSelectToPropertyClass, existingFieldPathFromSelectToContentClass));
+                    m_nestedContentField->SetName(CreateNestedContentFieldName(m_nestedContentField->GetPathFromSelectToContentClass()));
                     return m_nestedContentField;
                     }
                 }
 
             // create the field
             FieldAttributes fieldAttributes(m_actualClass.GetDisplayLabel(), m_context.GetCategorySupplier().GetRelatedECClassCategory(m_actualClass, m_relationshipMeaning), nullptr);
-            m_nestedContentField = new ContentDescriptor::NestedContentField(fieldAttributes.GetCategory(), CreateNestedContentFieldName(relationshipPath), 
-                fieldAttributes.GetLabel(), m_actualClass, classAlias, relationshipPath, bvector<ContentDescriptor::Field*>(), m_expandNestedFields);
+            m_nestedContentField = new ContentDescriptor::RelatedContentField(fieldAttributes.GetCategory(), CreateNestedContentFieldName(pathFromSelectToContentClass),
+                fieldAttributes.GetLabel(), pathFromSelectToContentClass, bvector<ContentDescriptor::Field*>(), m_expandNestedFields);
             if (fieldAttributes.GetEditor())
                 m_nestedContentField->SetEditor(new ContentFieldEditor(*fieldAttributes.GetEditor()));
             ApplyFieldLocalization(*m_nestedContentField, m_context);
@@ -418,16 +430,16 @@ private:
     +---------------+---------------+---------------+---------------+---------------+------*/
     bool IsXToManyRelated() const
         {
-        for (RelatedClassCR rel : m_relatedClassPath)
+        for (RelatedClassCR rel : m_pathFromSelectToPropertyClass)
             {
-            if (rel.IsForwardRelationship() && rel.GetRelationship()->GetSource().GetMultiplicity().GetUpperLimit() > 1)
+            if (rel.IsForwardRelationship() && rel.GetRelationship()->GetTarget().GetMultiplicity().GetUpperLimit() > 1)
                 return true;
-            if (!rel.IsForwardRelationship() && rel.GetRelationship()->GetTarget().GetMultiplicity().GetUpperLimit() > 1)
+            if (!rel.IsForwardRelationship() && rel.GetRelationship()->GetSource().GetMultiplicity().GetUpperLimit() > 1)
                 return true;
             }
         return false;
         }
-    
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                06/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -440,8 +452,8 @@ private:
 
         ContentDescriptor::Property prop(propertyClassAlias, m_actualClass, p);
         // set the "related" flag, if necessary
-        if (!m_relatedClassPath.empty())
-            prop.SetIsRelated(m_relatedClassPath, m_relationshipMeaning);
+        if (!m_pathFromSelectToPropertyClass.empty())
+            prop.SetIsRelated(m_pathFromSelectToPropertyClass, m_relationshipMeaning);
 
         // append the property definition
         field->AddProperty(prop);
@@ -450,7 +462,7 @@ private:
         if (1 == field->GetProperties().size())
             {
             m_descriptor.AddField(field);
-            if (!m_relatedClassPath.empty())
+            if (!m_pathFromSelectToPropertyClass.empty() && m_keyField)
                 m_keyField->AddKeyField(*field);
             if (p.GetIsNavigation())
                 m_descriptor.AddField(new ContentDescriptor::ECNavigationInstanceIdField(*field));
@@ -458,7 +470,7 @@ private:
 
         return true;
         }
-    
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                07/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -514,7 +526,7 @@ protected:
     * @bsimethod                                    Grigas.Petraitis                07/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
     bool _Append(ECPropertyCR ecProperty, Utf8CP propertyClassAlias, PropertySpecificationCP overrides) override
-        {        
+        {
         if (IsXToManyRelated())
             return AppendXToManyRelatedProperty(ecProperty, propertyClassAlias, overrides);
         return AppendSimpleProperty(ecProperty, propertyClassAlias, overrides);
@@ -524,11 +536,11 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                06/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    ContentPropertiesAppender(ContentDescriptorBuilder::Context& context, PropertyInfoStore const& propertyInfos, ContentDescriptorR descriptor,        
-        ECClassCR actualClass, RelatedClassPath const& relatedClassPath, RelationshipMeaning relationshipMeaning, bool expandNestedFields, 
+    ContentPropertiesAppender(ContentDescriptorBuilder::Context& context, PropertyInfoStore const& propertyInfos, ContentDescriptorR descriptor,
+        ECClassCR actualClass, RelatedClassPath const& pathFromSelectToPropertyClass, RelationshipMeaning relationshipMeaning, bool expandNestedFields,
         PropertyCategorySpecificationsList const* scopePropertyCategories)
-        : m_context(context), m_descriptor(descriptor), m_propertyInfos(propertyInfos), m_relatedClassPath(relatedClassPath), m_actualClass(actualClass), 
-        m_relationshipMeaning(relationshipMeaning), m_keyField(nullptr), m_nestedContentField(nullptr), m_expandNestedFields(expandNestedFields), 
+        : m_context(context), m_descriptor(descriptor), m_propertyInfos(propertyInfos), m_pathFromSelectToPropertyClass(pathFromSelectToPropertyClass), m_actualClass(actualClass),
+        m_relationshipMeaning(relationshipMeaning), m_keyField(nullptr), m_nestedContentField(nullptr), m_expandNestedFields(expandNestedFields),
         m_scopePropertyCategories(scopePropertyCategories)
         {}
 };
@@ -561,7 +573,7 @@ private:
             ECClassCP modifierClass = GetContext().GetSchemaHelper().GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
             if (ecClass.Is(modifierClass))
                 {
-                QueryBuilderHelpers::AddCalculatedFields(*m_descriptor, modifier->GetCalculatedProperties(), 
+                QueryBuilderHelpers::AddCalculatedFields(*m_descriptor, modifier->GetCalculatedProperties(),
                     GetContext().GetLocalizationProvider(), GetContext().GetLocale(), GetContext().GetRuleset(), modifierClass);
                 }
             }
@@ -576,26 +588,26 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                10/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    PropertyAppenderPtr _CreatePropertyAppender(ECClassCR propertyClass, RelatedClassPath const& pathToSelectClass, RelationshipMeaning relationshipMeaning, 
+    PropertyAppenderPtr _CreatePropertyAppender(ECClassCR propertyClass, RelatedClassPath const& pathToSelectClass, RelationshipMeaning relationshipMeaning,
         bool expandNestedFields, PropertyCategorySpecificationsList const* categorySpecifications) override
         {
-        return new ContentPropertiesAppender(GetContext(), m_propertyInfos, *m_descriptor, 
+        return new ContentPropertiesAppender(GetContext(), m_propertyInfos, *m_descriptor,
             propertyClass, pathToSelectClass, relationshipMeaning, expandNestedFields, categorySpecifications);
         }
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                10/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void _OnBeforeAppendClassPaths(bvector<RelatedClassPath>& paths) override
+    bvector<ContentSource> _BuildContentSource(bvector<RelatedClassPath> const& paths) override
         {
         if (m_isRecursiveSpecification)
             {
             // ContentSpecificationsHandler::_OnBeforeAppendClassPaths splits paths into
             // derived paths based on content modifiers. Don't do that for recursive selects.
-            return;
+            return ContainerHelpers::TransformContainer<bvector<ContentSource>>(paths, std::bind(&ContentDescriptorBuilderImpl::CreateContentSource, this, std::placeholders::_1));
             }
 
-        ContentSpecificationsHandler::_OnBeforeAppendClassPaths(paths);
+        return ContentSpecificationsHandler::_BuildContentSource(paths);
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -606,7 +618,7 @@ protected:
         m_descriptor->GetSelectClasses().push_back(classInfo);
 
         if (ShouldCreateFields(*m_descriptor))
-            AddCalculatedFieldsFromContentModifiers(classInfo.GetSelectClass());
+            AddCalculatedFieldsFromContentModifiers(classInfo.GetSelectClass().GetClass());
         }
 
 public:
@@ -633,7 +645,7 @@ public:
             m_descriptor->GetDisplayLabelField()->SetOverrideValueSpecs(QueryBuilderHelpers::GetLabelOverrideValuesMap(GetContext().GetSchemaHelper(), GetContext().GetRuleset().GetInstanceLabelOverrides()));
             }
         }
-        
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                10/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -664,7 +676,7 @@ public:
     +---------------+---------------+---------------+---------------+---------------+------*/
     void HandleContentField(ContentDescriptor::NestedContentField const& contentField)
         {
-        m_descriptor->GetSelectClasses().push_back(SelectClassInfo(contentField.GetContentClass(), true));
+        m_descriptor->GetSelectClasses().push_back(SelectClassInfo(SelectClassWithExcludes(contentField.GetContentClass())));
         for (ContentDescriptor::Field const* field : contentField.GetFields())
             {
             if (field->IsPropertiesField())
@@ -672,9 +684,9 @@ public:
                 ContentDescriptor::ECPropertiesField const* propertiesField = field->AsPropertiesField();
                 BeAssert(1 == propertiesField->GetProperties().size());
                 bvector<RelatedClassPath> navigationPropertiesPaths;
-                PropertyAppenderPtr appender = _CreatePropertyAppender(contentField.GetContentClass(), RelatedClassPath(), 
+                PropertyAppenderPtr appender = _CreatePropertyAppender(contentField.GetContentClass(), RelatedClassPath(),
                     RelationshipMeaning::SameInstance, false, nullptr);
-                if (appender->Append(propertiesField->GetProperties().front().GetProperty(), contentField.GetContentClassAlias().c_str(), nullptr))
+                if (appender->Append(propertiesField->GetProperties().front().GetProperty(), contentField.GetContentClassAlias(), nullptr))
                     m_descriptor->GetAllFields().back()->SetName(field->GetName());
                 }
             else if (field->IsNestedContentField())

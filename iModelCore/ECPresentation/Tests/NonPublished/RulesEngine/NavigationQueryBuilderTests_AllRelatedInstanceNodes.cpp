@@ -171,6 +171,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_GroupByClass_Childr
         << "Actual:   " << query->ToString();
     }
 
+#ifdef wip_disabled_relationship_grouping
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -231,6 +232,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_GroupByRelationship
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                06/2015
@@ -347,6 +349,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_GroupByClassAndLabe
         << "Actual:   " << query->ToString();
     }
 
+#ifdef wip_disabled_relationship_grouping
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -517,6 +520,7 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_GroupByRelationship
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                01/2018

@@ -28,7 +28,9 @@ protected:
     virtual void _AsJson(ContentDescriptor::DisplayLabelField const&, RapidJsonDocumentR) const override {}
     ECPRESENTATION_EXPORT virtual void _AsJson(ContentDescriptor::ECPropertiesField const& ecPropertiesField, RapidJsonDocumentR fieldBaseJson) const override;
     virtual void _AsJson(ContentDescriptor::CalculatedPropertyField const&, RapidJsonDocumentR) const override {}
-    ECPRESENTATION_EXPORT virtual void _AsJson(ContentDescriptor::NestedContentField const& nestedContentField, RapidJsonDocumentR fieldBaseJson) const override;
+    ECPRESENTATION_EXPORT virtual void _NestedContentFieldAsJson(ContentDescriptor::NestedContentField const& nestedContentField, RapidJsonDocumentR fieldBaseJson) const override;
+    ECPRESENTATION_EXPORT virtual void _AsJson(ContentDescriptor::CompositeContentField const& compositeContentField, RapidJsonDocumentR nestedContentFieldJson) const override;
+    ECPRESENTATION_EXPORT virtual void _AsJson(ContentDescriptor::RelatedContentField const& relatedContentField, RapidJsonDocumentR nestedContentFieldJson) const override;
     virtual void _AsJson(ContentDescriptor::SystemField const&, RapidJsonDocumentR) const override {}
     virtual void _AsJson(ContentDescriptor::ECInstanceKeyField const&, RapidJsonDocumentR) const override {}
     virtual void _AsJson(ContentDescriptor::ECNavigationInstanceIdField const&, RapidJsonDocumentR) const override {}

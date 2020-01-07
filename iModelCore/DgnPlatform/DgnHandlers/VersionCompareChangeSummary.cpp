@@ -511,7 +511,7 @@ void    VersionCompareChangeSummary::CacheRelatedPaths(Utf8String schemaName, Ut
             {
             for (RelatedClass relatedClass : path)
                 {
-                m_relatedClassCache[accessor].Add(relatedClass.GetSourceClass()->GetFullName(), relatedClass.GetRelationship()->GetFullName(), relatedClass.GetTargetClass()->GetFullName());
+                m_relatedClassCache[accessor].Add(relatedClass.GetSourceClass()->GetFullName(), relatedClass.GetRelationship()->GetFullName(), relatedClass.GetTargetClass().GetClass().GetFullName());
                 }
             }
         }

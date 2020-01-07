@@ -159,7 +159,7 @@ public:
 struct FilteredIdsHandler
     {
     virtual ~FilteredIdsHandler() {}
-    virtual Utf8String _GetWhereClause(Utf8CP idSelector, size_t) const = 0;
+    virtual Utf8String _GetWhereClause(Utf8CP idSelector, size_t, bool) const = 0;
     virtual void _Accept(BeInt64Id) = 0;
     virtual BoundQueryValuesList _GetBoundValues() = 0;
     ECPRESENTATION_EXPORT static FilteredIdsHandler* Create(size_t);
@@ -184,7 +184,7 @@ public:
         if (m_ownsSet)
             DELETE_AND_CLEAR(m_set);
         }
-    Utf8String CreateWhereClause(Utf8CP idSelector) const {return m_handler->_GetWhereClause(idSelector, m_set->size());}
+    Utf8String CreateWhereClause(Utf8CP idSelector, bool inverse = false) const {return m_handler->_GetWhereClause(idSelector, m_set->size(), inverse);}
     BoundQueryValuesList CreateBoundValues()
         {
         for (auto el : *m_set)
@@ -413,10 +413,11 @@ public:
     ECPRESENTATION_EXPORT ThisType& SelectAll();
     ECPRESENTATION_EXPORT ThisType& SelectContract(Contract const& contract, Utf8CP prefix = nullptr);
     ECPRESENTATION_EXPORT ThisType& From(ECClassCR fromClass, bool polymorphic, Utf8CP alias = nullptr, bool append = true);
+    ECPRESENTATION_EXPORT ThisType& From(SelectClass const& fromClass, Utf8CP alias = nullptr, bool append = true);
     ECPRESENTATION_EXPORT ThisType& From(TBase& nestedQuery, Utf8CP alias = nullptr);
     ECPRESENTATION_EXPORT ThisType& Where(Utf8CP whereClause, BoundQueryValuesListCR, bool append = true);
     ECPRESENTATION_EXPORT ThisType& Join(RelatedClass const& relatedClass, bool append = true);
-    ECPRESENTATION_EXPORT ThisType& Join(RelatedClassPath const& path, bool isOuter, bool append = true);
+    ECPRESENTATION_EXPORT ThisType& Join(RelatedClassPath const& path, bool append = true);
     ECPRESENTATION_EXPORT ThisType& OrderBy(Utf8CP orderByClause);
     ECPRESENTATION_EXPORT ThisType& GroupByContract(Contract const& contract);
     ECPRESENTATION_EXPORT ThisType& Having(Utf8CP havingClause, BoundQueryValuesListCR);

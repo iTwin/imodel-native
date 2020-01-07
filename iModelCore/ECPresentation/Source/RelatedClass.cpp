@@ -19,8 +19,7 @@ bool RelatedClass::IsEqual(RelatedClass const& other) const
         && m_targetAlias.Equals(other.m_targetAlias)
         && m_relationship == other.m_relationship
         && m_relationshipAlias.Equals(other.m_relationshipAlias)
-        && m_isForwardRelationship == other.m_isForwardRelationship
-        && m_isPolymorphic == other.m_isPolymorphic;
+        && m_isForwardRelationship == other.m_isForwardRelationship;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -32,9 +31,9 @@ bool RelatedClass::operator<(RelatedClass const& other) const
         return true;
     if (m_source->GetId() > other.m_source->GetId())
         return false;
-    if (m_target->GetId() < other.m_target->GetId())
+    if (m_target < other.m_target)
         return true;
-    if (m_target->GetId() > other.m_target->GetId())
+    if (other.m_target < m_target)
         return false;
     if (m_relationship->GetId() < other.m_relationship->GetId())
         return true;
@@ -48,8 +47,8 @@ bool RelatedClass::operator<(RelatedClass const& other) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 NavigationECPropertyCP RelatedClass::GetNavigationProperty() const
     {
-    ECClassCP source = m_isForwardRelationship ? m_source : m_target;
-    ECClassCP target = m_isForwardRelationship ? m_target : m_source;
+    ECClassCP source = m_isForwardRelationship ? m_source : &m_target.GetClass();
+    ECClassCP target = m_isForwardRelationship ? &m_target.GetClass() : m_source;
 
     ECPropertyIterable sourceIterable = source->GetProperties(true);
     for (ECPropertyCP prop : sourceIterable)
@@ -73,4 +72,35 @@ NavigationECPropertyCP RelatedClass::GetNavigationProperty() const
             }
         }
     return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+RelatedClassPath& RelatedClassPath::Reverse(Utf8CP sourceClassAlias, bool isSourcePolymorphic)
+    {
+    // first pass: reverse the order in list
+    for (size_t i = 0; i < size() / 2; ++i)
+        {
+        RelatedClass& lhs = at(i);
+        RelatedClass& rhs = at(size() - i - 1);
+        RelatedClass tmp = lhs;
+        lhs = rhs;
+        rhs = tmp;
+        }
+
+    // second pass: reverse each spec
+    for (size_t i = 0; i < size(); ++i)
+        {
+        RelatedClass& spec = at(i);
+        ECClassCP tmp = spec.GetSourceClass();
+        spec.SetIsForwardRelationship(!spec.IsForwardRelationship());
+        spec.SetSourceClass(spec.GetTargetClass().GetClass());
+        spec.SetTargetClass(SelectClass(*tmp, (i < size() - 1) ? at(i + 1).GetTargetClass().IsSelectPolymorphic() : isSourcePolymorphic));
+        spec.SetTargetClassAlias((i < size() - 1) ? at(i + 1).GetTargetClassAlias() : sourceClassAlias);
+        if (nullptr == spec.GetTargetClassAlias() || 0 == *spec.GetTargetClassAlias())
+            spec.SetTargetClassAlias(Utf8String(spec.GetTargetClass().GetClass().GetName()).ToLower());
+        }
+
+    return *this;
     }

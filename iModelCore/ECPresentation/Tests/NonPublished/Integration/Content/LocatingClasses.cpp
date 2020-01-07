@@ -62,8 +62,8 @@ TEST_F(LocatingClasses, ReturnsLookupListWhenRulesetHasSelectedNodeInstancesRule
     ASSERT_EQ(lookup.size(), result.size());
     for (size_t i = 0; i < lookup.size(); ++i)
         {
-        EXPECT_EQ(lookup[i], &result[i].GetSelectClass());
-        EXPECT_TRUE(result[i].IsSelectPolymorphic());
+        EXPECT_EQ(lookup[i], &result[i].GetSelectClass().GetClass());
+        EXPECT_TRUE(result[i].GetSelectClass().IsSelectPolymorphic());
         }
     }
 
@@ -92,11 +92,11 @@ TEST_F(LocatingClasses, ReturnsFilteredLookupListWhenRulesetHasSelectedNodeInsta
     bvector<SelectClassInfo> result = m_manager->GetContentClasses(s_project->GetECDb(), nullptr, 0, lookup, options.GetJson()).get();
     ASSERT_EQ(2, result.size());
 
-    EXPECT_EQ(GetClass("A"), &result[0].GetSelectClass());
-    EXPECT_TRUE(result[0].IsSelectPolymorphic());
+    EXPECT_EQ(GetClass("A"), &result[0].GetSelectClass().GetClass());
+    EXPECT_TRUE(result[0].GetSelectClass().IsSelectPolymorphic());
     
-    EXPECT_EQ(GetClass("C"), &result[1].GetSelectClass());
-    EXPECT_TRUE(result[1].IsSelectPolymorphic());
+    EXPECT_EQ(GetClass("C"), &result[1].GetSelectClass().GetClass());
+    EXPECT_TRUE(result[1].GetSelectClass().IsSelectPolymorphic());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -125,8 +125,8 @@ TEST_F(LocatingClasses, ReturnsLookupListWhenRulesetHasInstanceNodesOfSpecificCl
     ASSERT_EQ(lookup.size(), result.size());
     for (size_t i = 0; i < lookup.size(); ++i)
         {
-        EXPECT_EQ(lookup[i], &result[i].GetSelectClass());
-        EXPECT_TRUE(result[i].IsSelectPolymorphic());
+        EXPECT_EQ(lookup[i], &result[i].GetSelectClass().GetClass());
+        EXPECT_TRUE(result[i].GetSelectClass().IsSelectPolymorphic());
         }
     }
 
@@ -155,11 +155,11 @@ TEST_F(LocatingClasses, ReturnsFilteredListWhenRulesetHasInstanceNodesOfSpecific
     bvector<SelectClassInfo> result = m_manager->GetContentClasses(s_project->GetECDb(), nullptr, 0, lookup, options.GetJson()).get();
     ASSERT_EQ(2, result.size());
 
-    EXPECT_EQ(GetClass("A"), &result[0].GetSelectClass());
-    EXPECT_TRUE(result[0].IsSelectPolymorphic());
+    EXPECT_EQ(GetClass("A"), &result[0].GetSelectClass().GetClass());
+    EXPECT_TRUE(result[0].GetSelectClass().IsSelectPolymorphic());
     
-    EXPECT_EQ(GetClass("C"), &result[1].GetSelectClass());
-    EXPECT_TRUE(result[1].IsSelectPolymorphic());
+    EXPECT_EQ(GetClass("C"), &result[1].GetSelectClass().GetClass());
+    EXPECT_TRUE(result[1].GetSelectClass().IsSelectPolymorphic());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -224,7 +224,7 @@ TEST_F(LocatingClasses, SplitsLookupListClassesByClassesUsedInRuleConditionIsOfC
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
     bvector<SelectClassInfo> result = m_manager->GetContentClasses(s_project->GetECDb(), nullptr, 0, lookup, options.GetJson()).get();
     ASSERT_EQ(1, result.size());
-    EXPECT_EQ(GetClass("D"), &result[0].GetSelectClass());
+    EXPECT_EQ(GetClass("D"), &result[0].GetSelectClass().GetClass());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -255,7 +255,7 @@ TEST_F(LocatingClasses, SplitsLookupListClassesByClassesUsedInRuleConditionClass
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
     bvector<SelectClassInfo> result = m_manager->GetContentClasses(s_project->GetECDb(), nullptr, 0, lookup, options.GetJson()).get();
     ASSERT_EQ(1, result.size());
-    EXPECT_EQ(GetClass("D"), &result[0].GetSelectClass());
+    EXPECT_EQ(GetClass("D"), &result[0].GetSelectClass().GetClass());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -287,9 +287,9 @@ TEST_F(LocatingClasses, SplitsLookupListClassesByClassesUsedInContentModifiers)
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
     bvector<SelectClassInfo> result = m_manager->GetContentClasses(s_project->GetECDb(), nullptr, 0, lookup, options.GetJson()).get();
     ASSERT_EQ(3, result.size());
-    EXPECT_EQ(GetClass("A"), &result[0].GetSelectClass());
-    EXPECT_EQ(GetClass("C"), &result[1].GetSelectClass());
-    EXPECT_EQ(GetClass("D"), &result[2].GetSelectClass());
+    EXPECT_EQ(GetClass("A"), &result[0].GetSelectClass().GetClass());
+    EXPECT_EQ(GetClass("C"), &result[1].GetSelectClass().GetClass());
+    EXPECT_EQ(GetClass("D"), &result[2].GetSelectClass().GetClass());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -344,6 +344,6 @@ TEST_F(LocatingClasses, SplitsLookupListClassesByClassesWhichHaveNavigationPrope
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
     bvector<SelectClassInfo> result = m_manager->GetContentClasses(s_project->GetECDb(), nullptr, 0, lookup, options.GetJson()).get();
     ASSERT_EQ(2, result.size());
-    EXPECT_EQ(GetClass("A"), &result[0].GetSelectClass());
-    EXPECT_EQ(GetClass("C"), &result[1].GetSelectClass());
+    EXPECT_EQ(GetClass("A"), &result[0].GetSelectClass().GetClass());
+    EXPECT_EQ(GetClass("C"), &result[1].GetSelectClass().GetClass());
     }

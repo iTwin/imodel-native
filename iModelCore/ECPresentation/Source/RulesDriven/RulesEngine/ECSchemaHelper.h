@@ -2,7 +2,7 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See COPYRIGHT.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-#pragma once 
+#pragma once
 #include <ECPresentation/ECPresentation.h>
 #include "../../ValueHelpers.h"
 #include "ExtendedData.h"
@@ -88,12 +88,17 @@ struct ECSchemaHelper : NonCopyableClass
         Utf8CP m_supportedSchemas;
         Utf8CP m_supportedRelationships;
         Utf8CP m_supportedClasses;
+        bool m_handleRelatedClassesPolymorphically;
         ECEntityClassCP m_targetClass;
         bmap<ECRelationshipClassCP, int>& m_relationshipsUseCounter;
 
-        ECPRESENTATION_EXPORT RelationshipClassPathOptions(ECClassCR sourceClass, int relationshipDirection, int depth,
-            Utf8CP supportedSchemas, Utf8CP supportedRelationships, Utf8CP supportedClasses,
-            bmap<ECRelationshipClassCP, int>& relationshipsUseCounter, ECEntityClassCP targetClass = nullptr);
+        RelationshipClassPathOptions(ECClassCR sourceClass, int relationshipDirection, int depth, Utf8CP supportedSchemas,
+            Utf8CP supportedRelationships, Utf8CP supportedClasses, bool handleRelatedClassesPolymorphically,
+            bmap<ECRelationshipClassCP, int>& relationshipsUseCounter, ECEntityClassCP targetClass = nullptr)
+            : m_relationshipsUseCounter(relationshipsUseCounter), m_sourceClass(sourceClass), m_supportedSchemas(supportedSchemas),
+            m_supportedRelationships(supportedRelationships), m_supportedClasses(supportedClasses), m_targetClass(targetClass),
+            m_relationshipDirection(relationshipDirection), m_depth(depth), m_handleRelatedClassesPolymorphically(handleRelatedClassesPolymorphically)
+            {}
         };
 
 private:
@@ -110,10 +115,10 @@ private:
     void ParseECSchemas(ECSchemaSet& schemas, bool& exclude, Utf8StringCR commaSeparatedSchemaList) const;
     ECClassSet GetECClasses(ECSchemaSet const& schemas) const;
     ECSchemaSet GetECSchemas(Utf8StringCR supportedSchemasStr) const;
-    void GetPaths(bvector<bpair<RelatedClassPath, bool>>& paths, bmap<ECRelationshipClassCP, int>& relationshipsUseCounter, 
-        bset<RelatedClass>&, SupportedClassesResolver const&, bset<ECClassId> const& sourceClassIds, 
-        int relationshipDirection, int depth, ECEntityClassCP targetClass, bool include) const;
-                
+    void GetPaths(bvector<RelatedClassPath>& paths, bmap<ECRelationshipClassCP, int>& relationshipsUseCounter,
+        bset<RelatedClass>&, SupportedClassesResolver const&, bset<ECClassId> const& sourceClassIds, bool handleRelatedClassesPolymorphically,
+        int relationshipDirection, int depth, ECEntityClassCP targetClass) const;
+
 public:
     ECPRESENTATION_EXPORT ECSchemaHelper(IConnectionCR, RelatedPathsCache*, PolymorphicallyRelatedClassesCache*, ECExpressionsCache*);
     ECPRESENTATION_EXPORT ~ECSchemaHelper();
@@ -128,9 +133,9 @@ public:
     ECPRESENTATION_EXPORT bool AreSchemasSupported(Utf8StringCR schemaListStr) const;
     ECPRESENTATION_EXPORT ECClassSet GetECClassesFromSchemaList(Utf8StringCR schemaListStr) const;
     ECPRESENTATION_EXPORT SupportedEntityClassInfos GetECClassesFromClassList(Utf8StringCR classListStr, bool supportExclusion) const;
-    ECPRESENTATION_EXPORT bvector<bpair<RelatedClassPath, bool>> GetRelationshipClassPaths(RelationshipClassPathOptions const&) const;
+    ECPRESENTATION_EXPORT bvector<RelatedClassPath> GetRelationshipClassPaths(RelationshipClassPathOptions const&) const;
     SupportedRelationshipClassInfos GetECRelationshipClasses(Utf8StringCR commaSeparatedClassList) const;
-    ECPRESENTATION_EXPORT ECRelationshipConstraintClassList GetRelationshipConstraintClasses(ECRelationshipClassCR relationship, 
+    ECPRESENTATION_EXPORT ECRelationshipConstraintClassList GetRelationshipConstraintClasses(ECRelationshipClassCR relationship,
         ECRelatedInstanceDirection direction, Utf8StringCR supportedSchemas) const;
     ECPRESENTATION_EXPORT bvector<RelatedClassPath> GetPolymorphicallyRelatedClassesWithInstances(ECClassCR sourceClass, Utf8StringCR relationshipName,
         ECRelatedInstanceDirection direction, Utf8StringCR baseClassName, RelatedClassPathCR relatedClassPath, InstanceFilteringParams const*) const;
@@ -159,10 +164,10 @@ struct RelatedPathsCache
 
     struct Result
         {
-        bvector<bpair<RelatedClassPath, bool>> m_paths;
+        bvector<RelatedClassPath> m_paths;
         bmap<ECRelationshipClassCP, int> m_relationshipCounter;
         Result() {}
-        Result(bvector<bpair<RelatedClassPath, bool>> paths, bmap<ECRelationshipClassCP, int> relationshipCounter)
+        Result(bvector<RelatedClassPath> paths, bmap<ECRelationshipClassCP, int> relationshipCounter)
             : m_paths(paths), m_relationshipCounter(relationshipCounter)
             {}
         };
@@ -185,7 +190,7 @@ public:
             return nullptr;
         return &iter->second;
         }
-    
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                02/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -257,7 +262,7 @@ private:
     ECPRESENTATION_EXPORT void Parse();
 
 public:
-    SupportedClassNamesParser(ECSchemaHelper const& helper, Utf8StringCR str, bool supportExclusion) 
+    SupportedClassNamesParser(ECSchemaHelper const& helper, Utf8StringCR str, bool supportExclusion)
         : m_helper(helper), m_str(str), m_currentFlags(CLASS_FLAG_Polymorphic | CLASS_FLAG_Include), m_currentSchema(nullptr), m_supportExclusion(supportExclusion)
         {
         Parse();

@@ -323,29 +323,29 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_FromSupportedSchemas)
     ECClassCR class3 = *schema->GetClassCP("Class3");
 
     bmap<ECRelationshipClassCP, int> relationshipUseCounts;
-    ECSchemaHelper::RelationshipClassPathOptions options(class1, (int)ECRelatedInstanceDirection::Forward, 0, "SchemaComplex", "", "", relationshipUseCounts, nullptr);
-    bvector<bpair<RelatedClassPath, bool>> paths = m_helper->GetRelationshipClassPaths(options);
+    ECSchemaHelper::RelationshipClassPathOptions options(class1, (int)ECRelatedInstanceDirection::Forward, 0, "SchemaComplex", "", "", true, relationshipUseCounts, nullptr);
+    bvector<RelatedClassPath> paths = m_helper->GetRelationshipClassPaths(options);
     ASSERT_EQ(3, paths.size());
     for (size_t i = 0; i < paths.size(); i++)
-        {
-        ASSERT_EQ(1, paths[i].first.size());
-        ASSERT_TRUE(paths[i].second);
-        }
+        ASSERT_EQ(1, paths[i].size());
 
-    ASSERT_EQ(&class1, paths[0].first[0].GetSourceClass());
-    ASSERT_EQ(&class2, paths[0].first[0].GetTargetClass());
-    ASSERT_EQ(&relationship1, paths[0].first[0].GetRelationship());
-    ASSERT_FALSE(paths[0].first[0].IsForwardRelationship());
+    EXPECT_EQ(&class1, paths[0][0].GetSourceClass());
+    EXPECT_EQ(&class2, &paths[0][0].GetTargetClass().GetClass());
+    EXPECT_TRUE(paths[0][0].GetTargetClass().IsSelectPolymorphic());
+    EXPECT_EQ(&relationship1, paths[0][0].GetRelationship());
+    EXPECT_TRUE(paths[0][0].IsForwardRelationship());
 
-    ASSERT_EQ(&class1, paths[1].first[0].GetSourceClass());
-    ASSERT_EQ(&class3, paths[1].first[0].GetTargetClass());
-    ASSERT_EQ(&relationship1, paths[1].first[0].GetRelationship());
-    ASSERT_FALSE(paths[1].first[0].IsForwardRelationship());
+    EXPECT_EQ(&class1, paths[1][0].GetSourceClass());
+    EXPECT_EQ(&class3, &paths[1][0].GetTargetClass().GetClass());
+    EXPECT_TRUE(paths[1][0].GetTargetClass().IsSelectPolymorphic());
+    EXPECT_EQ(&relationship1, paths[1][0].GetRelationship());
+    EXPECT_TRUE(paths[1][0].IsForwardRelationship());
 
-    ASSERT_EQ(&class1, paths[2].first[0].GetSourceClass());
-    ASSERT_EQ(&class3, paths[2].first[0].GetTargetClass());
-    ASSERT_EQ(&relationship2, paths[2].first[0].GetRelationship());
-    ASSERT_FALSE(paths[2].first[0].IsForwardRelationship());
+    EXPECT_EQ(&class1, paths[2][0].GetSourceClass());
+    EXPECT_EQ(&class3, &paths[2][0].GetTargetClass().GetClass());
+    EXPECT_TRUE(paths[2][0].GetTargetClass().IsSelectPolymorphic());
+    EXPECT_EQ(&relationship2, paths[2][0].GetRelationship());
+    EXPECT_TRUE(paths[2][0].IsForwardRelationship());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -360,24 +360,23 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_FromRelatedClassNames)
     ECClassCR class3 = *schema->GetClassCP("Class3");
 
     bmap<ECRelationshipClassCP, int> relationshipUseCounts;
-    ECSchemaHelper::RelationshipClassPathOptions options(class1, (int)ECRelatedInstanceDirection::Forward, 0, "", "", "SchemaComplex:Class3", relationshipUseCounts, nullptr);
-    bvector<bpair<RelatedClassPath, bool>> paths = m_helper->GetRelationshipClassPaths(options);
+    ECSchemaHelper::RelationshipClassPathOptions options(class1, (int)ECRelatedInstanceDirection::Forward, 0, "", "", "SchemaComplex:Class3", true, relationshipUseCounts, nullptr);
+    bvector<RelatedClassPath> paths = m_helper->GetRelationshipClassPaths(options);
     ASSERT_EQ(2, paths.size());
     for (size_t i = 0; i < paths.size(); i++)
-        {
-        ASSERT_EQ(1, paths[i].first.size());
-        ASSERT_TRUE(paths[i].second);
-        }
+        ASSERT_EQ(1, paths[i].size());
 
-    ASSERT_EQ(&class1, paths[0].first[0].GetSourceClass());
-    ASSERT_EQ(&class3, paths[0].first[0].GetTargetClass());
-    ASSERT_EQ(&relationship1, paths[0].first[0].GetRelationship());
-    ASSERT_FALSE(paths[0].first[0].IsForwardRelationship());
+    EXPECT_EQ(&class1, paths[0][0].GetSourceClass());
+    EXPECT_EQ(&class3, &paths[0][0].GetTargetClass().GetClass());
+    EXPECT_TRUE(paths[0][0].GetTargetClass().IsSelectPolymorphic());
+    EXPECT_EQ(&relationship1, paths[0][0].GetRelationship());
+    EXPECT_TRUE(paths[0][0].IsForwardRelationship());
 
-    ASSERT_EQ(&class1, paths[1].first[0].GetSourceClass());
-    ASSERT_EQ(&class3, paths[1].first[0].GetTargetClass());
-    ASSERT_EQ(&relationship2, paths[1].first[0].GetRelationship());
-    ASSERT_FALSE(paths[1].first[0].IsForwardRelationship());
+    EXPECT_EQ(&class1, paths[1][0].GetSourceClass());
+    EXPECT_EQ(&class3, &paths[1][0].GetTargetClass().GetClass());
+    EXPECT_TRUE(paths[1][0].GetTargetClass().IsSelectPolymorphic());
+    EXPECT_EQ(&relationship2, paths[1][0].GetRelationship());
+    EXPECT_TRUE(paths[1][0].IsForwardRelationship());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -391,16 +390,124 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_FindsRelatedClassesPolymo
     ECEntityClassCR class3 = *schema->GetClassCP("Class3")->GetEntityClassCP();
 
     bmap<ECRelationshipClassCP, int> relationshipUseCounts;
-    ECSchemaHelper::RelationshipClassPathOptions options(class3, (int)ECRelatedInstanceDirection::Backward, 0, "", "SchemaComplex:DerivingRelationship", "SchemaComplex:Class4", relationshipUseCounts, nullptr);
-    bvector<bpair<RelatedClassPath, bool>> paths = m_helper->GetRelationshipClassPaths(options);
+    ECSchemaHelper::RelationshipClassPathOptions options(class3, (int)ECRelatedInstanceDirection::Backward, 0, "", "SchemaComplex:DerivingRelationship", "SchemaComplex:Class4", true, relationshipUseCounts, nullptr);
+    bvector<RelatedClassPath> paths = m_helper->GetRelationshipClassPaths(options);
     ASSERT_EQ(1, paths.size());
-    ASSERT_EQ(1, paths[0].first.size());
-    ASSERT_TRUE(paths[0].second);
+    ASSERT_EQ(1, paths[0].size());
+    EXPECT_EQ(&class3, paths[0][0].GetSourceClass());
+    EXPECT_EQ(&class4, &paths[0][0].GetTargetClass().GetClass());
+    EXPECT_TRUE(paths[0][0].GetTargetClass().IsSelectPolymorphic());
+    EXPECT_EQ(&relationship, paths[0][0].GetRelationship());
+    EXPECT_FALSE(paths[0][0].IsForwardRelationship());
+    }
 
-    ASSERT_EQ(&class3, paths[0].first[0].GetSourceClass());
-    ASSERT_EQ(&class4, paths[0].first[0].GetTargetClass());
-    ASSERT_EQ(&relationship, paths[0].first[0].GetRelationship());
-    ASSERT_TRUE(paths[0].first[0].IsForwardRelationship());
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(GetRelationshipClassPaths_DoesntIncludeDerivedRelatedClassesWhenBaseAlreadyIncludedAndRequestingPathsPolymorphically,
+    R"*(
+    <ECEntityClass typeName="Element">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="Aspect">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="CustomAspect">
+        <BaseClass>Aspect</BaseClass>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementHasAspect" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Aspect" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(ECSchemaHelperTests, GetRelationshipClassPaths_DoesntIncludeDerivedRelatedClassesWhenBaseAlreadyIncludedAndRequestingPathsPolymorphically)
+    {
+    ECEntityClassCP elementClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Element")->GetEntityClassCP();
+    ECEntityClassCP aspectClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Aspect")->GetEntityClassCP();
+    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ElementHasAspect")->GetRelationshipClassCP();
+
+    bmap<ECRelationshipClassCP, int> relationshipUseCounts;
+    ECSchemaHelper::RelationshipClassPathOptions options(*elementClass, (int)ECRelatedInstanceDirection::Forward, 0, "", 
+        rel->GetFullName(), aspectClass->GetFullName(), true, relationshipUseCounts, nullptr);
+    bvector<RelatedClassPath> paths = m_helper->GetRelationshipClassPaths(options);
+    ASSERT_EQ(1, paths.size());
+    ASSERT_EQ(1, paths[0].size());
+    EXPECT_EQ(elementClass, paths[0][0].GetSourceClass());
+    EXPECT_EQ(aspectClass, &paths[0][0].GetTargetClass().GetClass());
+    EXPECT_TRUE(paths[0][0].GetTargetClass().IsSelectPolymorphic());
+    EXPECT_EQ(rel, paths[0][0].GetRelationship());
+    EXPECT_TRUE(paths[0][0].IsForwardRelationship());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(GetRelationshipClassPaths_IncludesBaseAndDerivedRelatedClassesWhenRequestingPathsNonPolymorphically,
+    R"*(
+    <ECEntityClass typeName="Element">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="Aspect">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="CustomAspect">
+        <BaseClass>Aspect</BaseClass>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementHasAspect" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Aspect" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(ECSchemaHelperTests, GetRelationshipClassPaths_IncludesBaseAndDerivedRelatedClassesWhenRequestingPathsNonPolymorphically)
+    {
+    ECEntityClassCP elementClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Element")->GetEntityClassCP();
+    ECEntityClassCP aspectClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Aspect")->GetEntityClassCP();
+    ECEntityClassCP customAspectClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "CustomAspect")->GetEntityClassCP();
+    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ElementHasAspect")->GetRelationshipClassCP();
+
+    bmap<ECRelationshipClassCP, int> relationshipUseCounts;
+    ECSchemaHelper::RelationshipClassPathOptions options(*elementClass, (int)ECRelatedInstanceDirection::Forward, 0, "",
+        rel->GetFullName(), aspectClass->GetFullName(), false, relationshipUseCounts, nullptr);
+    bvector<RelatedClassPath> paths = m_helper->GetRelationshipClassPaths(options);
+    ASSERT_EQ(2, paths.size());
+
+    ASSERT_EQ(1, paths[0].size());
+    EXPECT_EQ(elementClass, paths[0][0].GetSourceClass());
+    EXPECT_EQ(aspectClass, &paths[0][0].GetTargetClass().GetClass());
+    EXPECT_TRUE(paths[0][0].GetTargetClass().IsSelectPolymorphic());
+    EXPECT_EQ(rel, paths[0][0].GetRelationship());
+    EXPECT_TRUE(paths[0][0].IsForwardRelationship());
+
+    ASSERT_EQ(1, paths[1].size());
+    EXPECT_EQ(elementClass, paths[1][0].GetSourceClass());
+    EXPECT_EQ(customAspectClass, &paths[1][0].GetTargetClass().GetClass());
+    EXPECT_TRUE(paths[1][0].GetTargetClass().IsSelectPolymorphic());
+    EXPECT_EQ(rel, paths[1][0].GetRelationship());
+    EXPECT_TRUE(paths[1][0].IsForwardRelationship());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -415,24 +522,23 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_FromSupportedRelationship
     ECClassCR class3 = *schema->GetClassCP("Class3");
 
     bmap<ECRelationshipClassCP, int> relationshipUseCounts;
-    ECSchemaHelper::RelationshipClassPathOptions options(class1, (int)ECRelatedInstanceDirection::Forward, 0, "", "SchemaComplex:Class1HasClass2And3", "", relationshipUseCounts, nullptr);
-    bvector<bpair<RelatedClassPath, bool>> paths = m_helper->GetRelationshipClassPaths(options);
+    ECSchemaHelper::RelationshipClassPathOptions options(class1, (int)ECRelatedInstanceDirection::Forward, 0, "", "SchemaComplex:Class1HasClass2And3", "", true, relationshipUseCounts, nullptr);
+    bvector<RelatedClassPath> paths = m_helper->GetRelationshipClassPaths(options);
     ASSERT_EQ(2, paths.size());
     for (size_t i = 0; i < paths.size(); i++)
-        {
-        ASSERT_EQ(1, paths[i].first.size());
-        ASSERT_TRUE(paths[i].second);
-        }
+        ASSERT_EQ(1, paths[i].size());
 
-    ASSERT_EQ(&class1, paths[0].first[0].GetSourceClass());
-    ASSERT_EQ(&class2, paths[0].first[0].GetTargetClass());
-    ASSERT_EQ(&relationship, paths[0].first[0].GetRelationship());
-    ASSERT_FALSE(paths[0].first[0].IsForwardRelationship());
+    EXPECT_EQ(&class1, paths[0][0].GetSourceClass());
+    EXPECT_EQ(&class2, &paths[0][0].GetTargetClass().GetClass());
+    EXPECT_TRUE(paths[0][0].GetTargetClass().IsSelectPolymorphic());
+    EXPECT_EQ(&relationship, paths[0][0].GetRelationship());
+    EXPECT_TRUE(paths[0][0].IsForwardRelationship());
 
-    ASSERT_EQ(&class1, paths[1].first[0].GetSourceClass());
-    ASSERT_EQ(&class3, paths[1].first[0].GetTargetClass());
-    ASSERT_EQ(&relationship, paths[1].first[0].GetRelationship());
-    ASSERT_FALSE(paths[1].first[0].IsForwardRelationship());
+    EXPECT_EQ(&class1, paths[1][0].GetSourceClass());
+    EXPECT_EQ(&class3, &paths[1][0].GetTargetClass().GetClass());
+    EXPECT_TRUE(paths[1][0].GetTargetClass().IsSelectPolymorphic());
+    EXPECT_EQ(&relationship, paths[1][0].GetRelationship());
+    EXPECT_TRUE(paths[1][0].IsForwardRelationship());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -445,21 +551,21 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_RespectsPolymorphicRelati
     ECEntityClassCR class4 = *schema->GetClassCP("Class4")->GetEntityClassCP();
 
     bmap<ECRelationshipClassCP, int> relationshipUseCounts;
-    ECSchemaHelper::RelationshipClassPathOptions options1(class1, (int)ECRelatedInstanceDirection::Forward, 0, "", "SchemaComplex:Class1HasClass3", "", relationshipUseCounts, nullptr);
-    bvector<bpair<RelatedClassPath, bool>> paths = m_helper->GetRelationshipClassPaths(options1);
+    ECSchemaHelper::RelationshipClassPathOptions options1(class1, (int)ECRelatedInstanceDirection::Forward, 0, "", "SchemaComplex:Class1HasClass3", "", true, relationshipUseCounts, nullptr);
+    bvector<RelatedClassPath> paths = m_helper->GetRelationshipClassPaths(options1);
     ASSERT_EQ(1, paths.size());
 
     // Class4 derives from Class1, but the relationship is not followed because the source constraint is not polymorphic
-    ECSchemaHelper::RelationshipClassPathOptions options2(class4, (int)ECRelatedInstanceDirection::Forward, 0, "", "SchemaComplex:Class1HasClass3", "", relationshipUseCounts, nullptr);
+    ECSchemaHelper::RelationshipClassPathOptions options2(class4, (int)ECRelatedInstanceDirection::Forward, 0, "", "SchemaComplex:Class1HasClass3", "", true, relationshipUseCounts, nullptr);
     paths = m_helper->GetRelationshipClassPaths(options2);
     ASSERT_EQ(0, paths.size());
 
-    ECSchemaHelper::RelationshipClassPathOptions options3(class1, (int)ECRelatedInstanceDirection::Forward, 0, "", "SchemaComplex:Class1HasClass2And3", "", relationshipUseCounts, nullptr);
+    ECSchemaHelper::RelationshipClassPathOptions options3(class1, (int)ECRelatedInstanceDirection::Forward, 0, "", "SchemaComplex:Class1HasClass2And3", "", true, relationshipUseCounts, nullptr);
     paths = m_helper->GetRelationshipClassPaths(options3);
     ASSERT_EQ(2, paths.size());
 
     // the relationship constraint is polymorphic in this case, so following Class4 is the same as following Class1
-    ECSchemaHelper::RelationshipClassPathOptions options4(class4, (int)ECRelatedInstanceDirection::Forward, 0, "", "SchemaComplex:Class1HasClass2And3", "", relationshipUseCounts, nullptr);
+    ECSchemaHelper::RelationshipClassPathOptions options4(class4, (int)ECRelatedInstanceDirection::Forward, 0, "", "SchemaComplex:Class1HasClass2And3", "", true, relationshipUseCounts, nullptr);
     paths = m_helper->GetRelationshipClassPaths(options4);
     ASSERT_EQ(2, paths.size());
     }
@@ -479,24 +585,23 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_FollowsBothRelationshipsD
     static int relationshipDirection = (int)ECRelatedInstanceDirection::Forward | (int)ECRelatedInstanceDirection::Backward;
 
     bmap<ECRelationshipClassCP, int> relationshipUseCounts;
-    ECSchemaHelper::RelationshipClassPathOptions options(class2, relationshipDirection, 0, "SchemaComplex2", "", "", relationshipUseCounts, nullptr);
-    bvector<bpair<RelatedClassPath, bool>> paths = m_helper->GetRelationshipClassPaths(options);
+    ECSchemaHelper::RelationshipClassPathOptions options(class2, relationshipDirection, 0, "SchemaComplex2", "", "", true, relationshipUseCounts, nullptr);
+    bvector<RelatedClassPath> paths = m_helper->GetRelationshipClassPaths(options);
     ASSERT_EQ(2, paths.size());
     for (size_t i = 0; i < paths.size(); i++)
-        {
-        ASSERT_EQ(1, paths[i].first.size());
-        ASSERT_TRUE(paths[i].second);
-        }
+        ASSERT_EQ(1, paths[i].size());
 
-    ASSERT_EQ(&class2, paths[0].first[0].GetSourceClass());
-    ASSERT_EQ(&class1, paths[0].first[0].GetTargetClass());
-    ASSERT_EQ(&relationship1, paths[0].first[0].GetRelationship());
-    ASSERT_TRUE(paths[0].first[0].IsForwardRelationship());
+    EXPECT_EQ(&class2, paths[0][0].GetSourceClass());
+    EXPECT_EQ(&class1, &paths[0][0].GetTargetClass().GetClass());
+    EXPECT_TRUE(paths[0][0].GetTargetClass().IsSelectPolymorphic());
+    EXPECT_EQ(&relationship1, paths[0][0].GetRelationship());
+    EXPECT_FALSE(paths[0][0].IsForwardRelationship());
 
-    ASSERT_EQ(&class2, paths[1].first[0].GetSourceClass());
-    ASSERT_EQ(&class3, paths[1].first[0].GetTargetClass());
-    ASSERT_EQ(&relationship2, paths[1].first[0].GetRelationship());
-    ASSERT_TRUE(paths[1].first[0].IsForwardRelationship());
+    EXPECT_EQ(&class2, paths[1][0].GetSourceClass());
+    EXPECT_EQ(&class3, &paths[1][0].GetTargetClass().GetClass());
+    EXPECT_TRUE(paths[1][0].GetTargetClass().IsSelectPolymorphic());
+    EXPECT_EQ(&relationship2, paths[1][0].GetRelationship());
+    EXPECT_FALSE(paths[1][0].IsForwardRelationship());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -514,21 +619,22 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_FollowsBothRelationshipsD
     static int relationshipDirection = (int)ECRelatedInstanceDirection::Forward | (int)ECRelatedInstanceDirection::Backward;
 
     bmap<ECRelationshipClassCP, int> relationshipUseCounts;
-    ECSchemaHelper::RelationshipClassPathOptions options(class1, relationshipDirection, 1, "", "", "SchemaComplex2:Class3", relationshipUseCounts, nullptr);
-    bvector<bpair<RelatedClassPath, bool>> paths = m_helper->GetRelationshipClassPaths(options);
+    ECSchemaHelper::RelationshipClassPathOptions options(class1, relationshipDirection, 1, "", "", "SchemaComplex2:Class3", true, relationshipUseCounts, nullptr);
+    bvector<RelatedClassPath> paths = m_helper->GetRelationshipClassPaths(options);
     ASSERT_EQ(1, paths.size());
-    ASSERT_EQ(2, paths[0].first.size());
-    ASSERT_TRUE(paths[0].second);
+    ASSERT_EQ(2, paths[0].size());
 
-    ASSERT_EQ(&class1, paths[0].first[0].GetSourceClass());
-    ASSERT_EQ(&class2, paths[0].first[0].GetTargetClass());
-    ASSERT_EQ(&relationship1, paths[0].first[0].GetRelationship());
-    ASSERT_FALSE(paths[0].first[0].IsForwardRelationship());
+    EXPECT_EQ(&class1, paths[0][0].GetSourceClass());
+    EXPECT_EQ(&class2, &paths[0][0].GetTargetClass().GetClass());
+    EXPECT_TRUE(paths[0][0].GetTargetClass().IsSelectPolymorphic());
+    EXPECT_EQ(&relationship1, paths[0][0].GetRelationship());
+    EXPECT_TRUE(paths[0][0].IsForwardRelationship());
 
-    ASSERT_EQ(&class2, paths[0].first[1].GetSourceClass());
-    ASSERT_EQ(&class3, paths[0].first[1].GetTargetClass());
-    ASSERT_EQ(&relationship2, paths[0].first[1].GetRelationship());
-    ASSERT_TRUE(paths[0].first[1].IsForwardRelationship());
+    EXPECT_EQ(&class2, paths[0][1].GetSourceClass());
+    EXPECT_EQ(&class3, &paths[0][1].GetTargetClass().GetClass());
+    EXPECT_TRUE(paths[0][1].GetTargetClass().IsSelectPolymorphic());
+    EXPECT_EQ(&relationship2, paths[0][1].GetRelationship());
+    EXPECT_FALSE(paths[0][1].IsForwardRelationship());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -543,14 +649,15 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_DoesntDuplicatePathsWithP
 
     bmap<ECRelationshipClassCP, int> relationshipUseCounts;
     ECSchemaHelper::RelationshipClassPathOptions options(class2, (int)ECRelatedInstanceDirection::Backward,
-        0, "SchemaComplex", "", "", relationshipUseCounts, nullptr);
-    bvector<bpair<RelatedClassPath, bool>> paths = m_helper->GetRelationshipClassPaths(options);
+        0, "SchemaComplex", "", "", true, relationshipUseCounts, nullptr);
+    bvector<RelatedClassPath> paths = m_helper->GetRelationshipClassPaths(options);
     ASSERT_EQ(1, paths.size());
 
-    ASSERT_EQ(&class2, paths[0].first[0].GetSourceClass());
-    ASSERT_EQ(&class1, paths[0].first[0].GetTargetClass());
-    ASSERT_EQ(&relationship, paths[0].first[0].GetRelationship());
-    ASSERT_TRUE(paths[0].first[0].IsForwardRelationship());
+    EXPECT_EQ(&class2, paths[0][0].GetSourceClass());
+    EXPECT_EQ(&class1, &paths[0][0].GetTargetClass().GetClass());
+    EXPECT_TRUE(paths[0][0].GetTargetClass().IsSelectPolymorphic());
+    EXPECT_EQ(&relationship, paths[0][0].GetRelationship());
+    EXPECT_FALSE(paths[0][0].IsForwardRelationship());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -565,14 +672,15 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_DoesntDuplicatePathsWithP
 
     bmap<ECRelationshipClassCP, int> relationshipUseCounts;
     ECSchemaHelper::RelationshipClassPathOptions options(class1, (int)ECRelatedInstanceDirection::Forward,
-        0, "", "SchemaComplex:Class1HasClass3,DerivingRelationship", "SchemaComplex:Class3", relationshipUseCounts, nullptr);
-    bvector<bpair<RelatedClassPath, bool>> paths = m_helper->GetRelationshipClassPaths(options);
+        0, "", "SchemaComplex:Class1HasClass3,DerivingRelationship", "SchemaComplex:Class3", true, relationshipUseCounts, nullptr);
+    bvector<RelatedClassPath> paths = m_helper->GetRelationshipClassPaths(options);
     ASSERT_EQ(1, paths.size());
 
-    ASSERT_EQ(&class1, paths[0].first[0].GetSourceClass());
-    ASSERT_EQ(&class3, paths[0].first[0].GetTargetClass());
-    ASSERT_EQ(&relationship, paths[0].first[0].GetRelationship());
-    ASSERT_FALSE(paths[0].first[0].IsForwardRelationship());
+    EXPECT_EQ(&class1, paths[0][0].GetSourceClass());
+    EXPECT_EQ(&class3, &paths[0][0].GetTargetClass().GetClass());
+    EXPECT_TRUE(paths[0][0].GetTargetClass().IsSelectPolymorphic());
+    EXPECT_EQ(&relationship, paths[0][0].GetRelationship());
+    EXPECT_TRUE(paths[0][0].IsForwardRelationship());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -589,28 +697,30 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_RecursivelyUsingSuppliedR
 
     bmap<ECRelationshipClassCP, int> relationshipUseCounts;
     ECSchemaHelper::RelationshipClassPathOptions options(widget, (int)ECRelatedInstanceDirection::Forward, -1, "",
-        "RulesEngineTest:WidgetHasGadgets,GadgetHasSprockets", "RulesEngineTest:Gadget,Sprocket", relationshipUseCounts, nullptr);
-    bvector<bpair<RelatedClassPath, bool>> paths = m_helper->GetRelationshipClassPaths(options);
+        "RulesEngineTest:WidgetHasGadgets,GadgetHasSprockets", "RulesEngineTest:Gadget,Sprocket", true, relationshipUseCounts, nullptr);
+    bvector<RelatedClassPath> paths = m_helper->GetRelationshipClassPaths(options);
     ASSERT_EQ(2, paths.size());
-    ASSERT_TRUE(paths[0].second);
 
-    RelatedClassPath const& path1 = paths[0].first;
+    RelatedClassPath const& path1 = paths[0];
     ASSERT_EQ(1, path1.size());
     EXPECT_EQ(&widget, path1[0].GetSourceClass());
-    EXPECT_EQ(&gadget, path1[0].GetTargetClass());
+    EXPECT_EQ(&gadget, &path1[0].GetTargetClass().GetClass());
+    EXPECT_TRUE(path1[0].GetTargetClass().IsSelectPolymorphic());
     EXPECT_EQ(&wiggetHasGadgets, path1[0].GetRelationship());
-    EXPECT_FALSE(path1[0].IsForwardRelationship());
+    EXPECT_TRUE(path1[0].IsForwardRelationship());
 
-    RelatedClassPath const& path2 = paths[1].first;
+    RelatedClassPath const& path2 = paths[1];
     ASSERT_EQ(2, path2.size());
     EXPECT_EQ(&widget, path2[0].GetSourceClass());
-    EXPECT_EQ(&gadget, path2[0].GetTargetClass());
+    EXPECT_EQ(&gadget, &path2[0].GetTargetClass().GetClass());
+    EXPECT_TRUE(path2[0].GetTargetClass().IsSelectPolymorphic());
     EXPECT_EQ(&wiggetHasGadgets, path2[0].GetRelationship());
-    EXPECT_FALSE(path2[0].IsForwardRelationship());
+    EXPECT_TRUE(path2[0].IsForwardRelationship());
     EXPECT_EQ(&gadget, path2[1].GetSourceClass());
-    EXPECT_EQ(&sprocket, path2[1].GetTargetClass());
+    EXPECT_EQ(&sprocket, &path2[1].GetTargetClass().GetClass());
+    EXPECT_TRUE(path2[0].GetTargetClass().IsSelectPolymorphic());
     EXPECT_EQ(&gadgetHasSprockets, path2[1].GetRelationship());
-    EXPECT_FALSE(path2[1].IsForwardRelationship());
+    EXPECT_TRUE(path2[1].IsForwardRelationship());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -620,7 +730,7 @@ TEST_F (ECSchemaHelperTests, GetForeignKeyClass_FindsForeignClassByNavigationPro
     {
     ECSchemaCP schema = s_project->GetECDb().Schemas().GetSchema("SchemaComplex3");
     ECEntityClassCR class1 = *schema->GetClassCP("Class1")->GetEntityClassCP();
-    EXPECT_EQ(&class1, m_helper->GetForeignKeyClass(*class1.GetPropertyP("Parent")).GetTargetClass());
+    EXPECT_EQ(&class1, &m_helper->GetForeignKeyClass(*class1.GetPropertyP("Parent")).GetTargetClass().GetClass());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -666,7 +776,7 @@ TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_Retur
         rel->GetFullName(), ECRelatedInstanceDirection::Forward, baseof2and3->GetFullName(), RelatedClassPath(), nullptr);
     ASSERT_EQ(1, result.size());
     ASSERT_EQ(1, result[0].size());
-    EXPECT_EQ(class2, result[0][0].GetTargetClass());
+    EXPECT_EQ(class2, &result[0][0].GetTargetClass().GetClass());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -688,7 +798,7 @@ TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_Retur
         rel->GetFullName(), ECRelatedInstanceDirection::Forward, "", RelatedClassPath(), nullptr);
     ASSERT_EQ(1, result.size());
     ASSERT_EQ(1, result[0].size());
-    EXPECT_EQ(class2, result[0][0].GetTargetClass());
+    EXPECT_EQ(class2, &result[0][0].GetTargetClass().GetClass());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -711,7 +821,7 @@ TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_Retur
         "", ECRelatedInstanceDirection::Forward, baseof2and3->GetFullName(), RelatedClassPath(), nullptr);
     ASSERT_EQ(1, result.size());
     ASSERT_EQ(1, result[0].size());
-    EXPECT_EQ(class2, result[0][0].GetTargetClass());
+    EXPECT_EQ(class2, &result[0][0].GetTargetClass().GetClass());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -734,7 +844,7 @@ TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_Retur
         rel->GetFullName(), ECRelatedInstanceDirection::Forward, class2->GetFullName(), RelatedClassPath(), nullptr);
     ASSERT_EQ(1, result.size());
     ASSERT_EQ(1, result[0].size());
-    EXPECT_EQ(class2, result[0][0].GetTargetClass());
+    EXPECT_EQ(class2, &result[0][0].GetTargetClass().GetClass());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -839,7 +949,7 @@ TEST_F(ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_Return
         rel->GetFullName(), ECRelatedInstanceDirection::Forward, hiddenAspectClass->GetFullName(), RelatedClassPath(), nullptr);
     ASSERT_EQ(1, result.size());
     ASSERT_EQ(1, result[0].size());
-    EXPECT_EQ(hiddenAspectClass, result[0][0].GetTargetClass());
+    EXPECT_EQ(hiddenAspectClass, &result[0][0].GetTargetClass().GetClass());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -868,7 +978,7 @@ TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_Retur
         rel->GetFullName(), ECRelatedInstanceDirection::Forward, baseof2and3->GetFullName(), RelatedClassPath(), &filteringParams);
     ASSERT_EQ(1, result.size());
     ASSERT_EQ(1, result[0].size());
-    EXPECT_EQ(class2, result[0][0].GetTargetClass());
+    EXPECT_EQ(class2, &result[0][0].GetTargetClass().GetClass());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -897,7 +1007,7 @@ TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_Retur
         rel->GetFullName(), ECRelatedInstanceDirection::Forward, baseof2and3->GetFullName(), RelatedClassPath(), &filteringParams);
     ASSERT_EQ(1, result.size());
     ASSERT_EQ(1, result[0].size());
-    EXPECT_EQ(class2, result[0][0].GetTargetClass());
+    EXPECT_EQ(class2, &result[0][0].GetTargetClass().GetClass());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -931,9 +1041,9 @@ TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_Retur
         &filteringParams);
     ASSERT_EQ(2, result.size());
     ASSERT_EQ(1, result[0].size());
-    EXPECT_EQ(class1, result[0][0].GetTargetClass());
+    EXPECT_EQ(class1, &result[0][0].GetTargetClass().GetClass());
     ASSERT_EQ(1, result[1].size());
-    EXPECT_EQ(class2, result[1][0].GetTargetClass());
+    EXPECT_EQ(class2, &result[1][0].GetTargetClass().GetClass());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -956,14 +1066,14 @@ TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_Retur
     SelectClassInfo selectInfo(*class3, true);
     Utf8PrintfString instanceFilter("this.ECInstanceId = %s", instance3->GetInstanceId().c_str());
     InstanceFilteringParams filteringParams(*m_connection, m_helper->GetECExpressionsCache(), nullptr, selectInfo, nullptr, instanceFilter.c_str());
-    RelatedClassPath nestedRelationship({RelatedClass(*class2, *class3, *rel2, false)});
+    RelatedClassPath nestedRelationship({RelatedClass(*class3, *class2, *rel2, true, "target", "rel")});
 
     bvector<RelatedClassPath> result = m_helper->GetPolymorphicallyRelatedClassesWithInstances(*class2,
         rel1->GetFullName(), ECRelatedInstanceDirection::Backward, class1->GetFullName(), nestedRelationship, &filteringParams);
 
     ASSERT_EQ(1, result.size());
     ASSERT_EQ(1, result[0].size());
-    EXPECT_EQ(class1, result[0][0].GetTargetClass());
+    EXPECT_EQ(class1, &result[0][0].GetTargetClass().GetClass());
     }
 
 //---------------------------------------------------------------------------------------

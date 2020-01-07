@@ -112,7 +112,7 @@ bool BoundQueryIdSet::_Equals(BoundQueryValue const& other) const
 struct NoIdsHandler : FilteredIdsHandler
 {
 protected:
-    Utf8String _GetWhereClause(Utf8CP idSelector, size_t) const override {return "FALSE";}
+    Utf8String _GetWhereClause(Utf8CP idSelector, size_t, bool inverse) const override {return inverse ? "TRUE" : "FALSE";}
     void _Accept(BeInt64Id id) override {BeAssert(false);}
     BoundQueryValuesList _GetBoundValues() override {return BoundQueryValuesList();}
 };
@@ -125,9 +125,13 @@ struct VirtualSetIdsHandler : FilteredIdsHandler
 private:
     IdSet<BeInt64Id> m_ids;
 protected:
-    Utf8String _GetWhereClause(Utf8CP idSelector, size_t) const override
+    Utf8String _GetWhereClause(Utf8CP idSelector, size_t, bool inverse) const override
         {
-        return Utf8String("InVirtualSet(?, ").append(idSelector).append(")");
+        Utf8String clause;
+        if (inverse)
+            clause.append("NOT ");
+        clause.append("InVirtualSet(?, ").append(idSelector).append(")");
+        return clause;
         }
     void _Accept(BeInt64Id id) override {m_ids.insert(id);}
     BoundQueryValuesList _GetBoundValues() override {return {new BoundQueryIdSet(std::move(m_ids))};}
@@ -141,14 +145,18 @@ struct BoundIdsHandler : FilteredIdsHandler
 private:
     BoundQueryValuesList m_values;
 protected:
-    Utf8String _GetWhereClause(Utf8CP idSelector, size_t idsCount) const override
+    Utf8String _GetWhereClause(Utf8CP idSelector, size_t idsCount, bool inverse) const override
         {
         if (0 == idsCount)
-            return "FALSE";
+            return inverse ? "TRUE" : "FALSE";
         Utf8String idsArg(idsCount * 2 - 1, '?');
         for (size_t i = 1; i < idsArg.size(); i += 2)
             idsArg[i] = ',';
-        return Utf8PrintfString("%s IN (%s)", idSelector, idsArg.c_str());
+        Utf8String clause(idSelector);
+        if (inverse)
+            clause.append(" NOT");
+        clause.append(" IN (").append(idsArg).append(")");
+        return clause;
         }
     void _Accept(BeInt64Id id) override {m_values.push_back(new BoundQueryId(id));}
     BoundQueryValuesList _GetBoundValues() override {return std::move(m_values);}
@@ -627,6 +635,16 @@ ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::From(ECClassCR
     }
 
 /*---------------------------------------------------------------------------------**//**
+// @bsimethod                                    Grigas.Petraitis                12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename TBase>
+ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::From(SelectClass const& fromClass, Utf8CP alias, bool append)
+    {
+    From(fromClass.GetClass(), fromClass.IsSelectPolymorphic(), alias, append);
+    return *this;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename TBase>
@@ -674,14 +692,14 @@ ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Join(RelatedCl
     TBase::InvalidateQueryString();
     RelatedClassPath path;
     path.push_back(relatedClass);
-    return Join(path, relatedClass.IsOuterJoin(), append);
+    return Join(path, append);
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename TBase>
-ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Join(RelatedClassPath const& path, bool isOuter, bool append)
+ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Join(RelatedClassPath const& path, bool append)
     {
     TBase::InvalidateQueryString();
     if (!append)
@@ -690,8 +708,10 @@ ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Join(RelatedCl
     bvector<JoinUsingClause> join;
     for (RelatedClass const& relatedClass : path)
         {
-        join.push_back(JoinUsingClause(*relatedClass.GetTargetClass(), *relatedClass.GetRelationship(), relatedClass.IsForwardRelationship(),
-            isOuter, relatedClass.IsPolymorphic(), relatedClass.GetTargetClassAlias(), relatedClass.GetRelationshipAlias()));
+        BeAssert(relatedClass.GetTargetClassAlias() && *relatedClass.GetTargetClassAlias());
+        BeAssert(relatedClass.GetRelationshipAlias() && *relatedClass.GetRelationshipAlias());
+        join.push_back(JoinUsingClause(relatedClass.GetTargetClass().GetClass(), *relatedClass.GetRelationship(), relatedClass.IsForwardRelationship(),
+            relatedClass.IsTargetOptional(), relatedClass.GetTargetClass().IsSelectPolymorphic(), relatedClass.GetTargetClassAlias(), relatedClass.GetRelationshipAlias()));
         }
     m_joins.push_back(join);
 
@@ -899,39 +919,6 @@ static void DetermineJoinClauses(Utf8StringR thisClause, Utf8StringR nextClause,
     }
 
 /*---------------------------------------------------------------------------------**//**
-// @bsimethod                                    Grigas.Petraitis                07/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-static NavigationECPropertyCP GetNavigationProperty(ECClassCR prev, ECRelationshipClassCR usingRel, bool isForward, ECClassCR join)
-    {
-    ECClassCR src = isForward ? prev : join;
-    ECClassCR tgt = isForward ? join : prev;
-
-    ECPropertyIterable srcIterable = src.GetProperties(true);
-    for (ECPropertyCP prop : srcIterable)
-        {
-        if (prop->GetIsNavigation()
-            && prop->GetAsNavigationProperty()->GetRelationshipClass() == &usingRel
-            && ECRelatedInstanceDirection::Forward == prop->GetAsNavigationProperty()->GetDirection())
-            {
-            return prop->GetAsNavigationProperty();
-            }
-        }
-
-    ECPropertyIterable tgtIterable = tgt.GetProperties(true);
-    for (ECPropertyCP prop : tgtIterable)
-        {
-        if (prop->GetIsNavigation()
-            && prop->GetAsNavigationProperty()->GetRelationshipClass() == &usingRel
-            && ECRelatedInstanceDirection::Backward == prop->GetAsNavigationProperty()->GetDirection())
-            {
-            return prop->GetAsNavigationProperty();
-            }
-        }
-
-    return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 static Utf8String GetNavigationPropertyName(NavigationECPropertyCR navigationProperty)
@@ -1060,7 +1047,7 @@ Utf8String ComplexPresentationQuery<TBase>::CreateJoinClause() const
             if (!join.m_isPolymorphic)
                 joinClause.append("ONLY ");
 
-            NavigationECPropertyCP navigationProperty = GetNavigationProperty(*previousClass, *join.m_using, join.m_isForward, *join.m_join);
+            NavigationECPropertyCP navigationProperty = RelatedClass(*previousClass, *join.m_join, *join.m_using, join.m_isForward).GetNavigationProperty();
             if (nullptr != navigationProperty)
                 {
                 BeAssert(!join.m_joinAlias.empty());
