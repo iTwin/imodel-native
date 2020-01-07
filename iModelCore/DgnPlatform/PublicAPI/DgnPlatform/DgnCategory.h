@@ -54,12 +54,16 @@ public:
         bool m_dontPlot;     //!< Graphics on this SubCategory should not be plotted
         bool m_dontSnap;     //!< Graphics on this SubCategory should not be snappable
         bool m_dontLocate;   //!< Graphics on this SubCategory should not be locatable
+        bool m_useFillColor;
+        bool m_useFillTransparency;
         ColorDef m_color;
+        ColorDef m_fillColor; // optional fill color
         uint32_t m_weight;
         DgnStyleId m_style;
         int32_t m_displayPriority; // only valid for SubCategories in 2D models
         RenderMaterialId m_material;
         double m_transparency;
+        double m_fillTransparency; // optional fill transparency
 
     public:
         BE_JSON_NAME(invisible)
@@ -67,11 +71,13 @@ public:
         BE_JSON_NAME(dontSnap)
         BE_JSON_NAME(dontLocate)
         BE_JSON_NAME(color)
+        BE_JSON_NAME(fill)
         BE_JSON_NAME(weight)
         BE_JSON_NAME(style)
         BE_JSON_NAME(priority)
         BE_JSON_NAME(material)
         BE_JSON_NAME(transp)
+        BE_JSON_NAME(transpFill)
 
         void Init() {memset(this, 0, sizeof(*this)); m_material.Invalidate(); m_color = ColorDef::White();} // white on white reversal makes this a better default color than black.
         Appearance() {Init();}
@@ -85,19 +91,27 @@ public:
         bool GetDontLocate() const {return m_dontLocate;}
         void SetDontLocate(bool val) {m_dontLocate=val;}
         void SetColor(ColorDef val) {m_color=val;}
+        void SetFillColor(ColorDef val) {m_fillColor=val; m_useFillColor=true;}
+        void ClearFillColor() {m_useFillColor=false;} // Use element color for fill...
+        bool HasFillColor() {return m_useFillColor;} // Whether independent color is specified for fill...
         void SetWeight(uint32_t val) {m_weight=val;}
         void SetStyle(DgnStyleId val) {m_style=val;}
         void SetDisplayPriority(int32_t val) {m_displayPriority=val;}
         void SetRenderMaterial(RenderMaterialId val) {m_material=val;}
         void SetTransparency(double val) {m_transparency=val;}
+        void SetFillTransparency(double val) {m_fillTransparency=val; m_useFillTransparency=true;}
+        void ClearFillTransparency() {m_useFillTransparency=false;} // Use element transparency for fill...
+        bool HasFillTransparency() {return m_useFillTransparency;} // Whether independent transparency is specified for fill...
         bool IsInvisible() const {return m_invisible;}
         bool IsVisible() const {return !m_invisible;}
         ColorDef GetColor() const {return m_color;}
+        ColorDef GetFillColor() const {return m_useFillColor ? m_fillColor : m_color;}
         uint32_t GetWeight() const {return m_weight;}
         DgnStyleId GetStyle() const {return m_style;}
         int32_t GetDisplayPriority() const {return m_displayPriority;}
         RenderMaterialId GetRenderMaterial() const {return m_material;}
         double GetTransparency() const {return m_transparency;}
+        double GetFillTransparency() const {return m_useFillTransparency ? m_fillTransparency : m_transparency;}
         DGNPLATFORM_EXPORT bool operator== (Appearance const& other) const;
         bool IsEqual(Appearance const& other) const {return *this==other;}
         DGNPLATFORM_EXPORT void FromJson(JsonValueCR); //!< initialize this appearance from a previously saved json

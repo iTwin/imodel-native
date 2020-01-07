@@ -62,7 +62,7 @@ TEST_F (CategoryTests, InsertCategory)
     {
     SetupSeedProject();
     ASSERT_TRUE(m_db.IsValid());
-        
+
     //Category properties.
     Utf8CP cat_name = "Test Category";
     Utf8CP cat_desc = "This is a test category.";
@@ -156,11 +156,11 @@ TEST_F (CategoryTests, InsertCategory)
 
     EXPECT_EQ(1, nNotCompared);
     EXPECT_EQ(3, nCompared);
-    
+
     // Ordered List verification
     int count = 0;
     DgnCategoryIdList orderedList = SpatialCategory::MakeIterator(*m_db, nullptr, "ORDER BY [CodeValue]").BuildIdList<DgnCategoryId>();
-    
+
     DgnCategoryId lastId;
     for (DgnCategoryId id : orderedList)
         {
@@ -257,7 +257,7 @@ TEST_F (CategoryTests, UpdateCategory)
     DgnDbStatus updateStatus;
     toFind->Update(&updateStatus);
     ASSERT_EQ(DgnDbStatus::Success, updateStatus);
-    
+
     //Verification of category properties
     SpatialCategoryCPtr updatedCat = SpatialCategory::Get(*m_db, id);
     EXPECT_TRUE(updatedCat.IsValid());
@@ -297,12 +297,12 @@ TEST_F (CategoryTests, IterateCategories)
             foundCategory1 = true;
             ASSERT_EQ(1, DgnSubCategory::MakeIterator(*m_db, categoryId).BuildIdSet<DgnSubCategoryId>().size());
             }
-        else if (0 == strcmp(entry.GetCodeValue(), "TestCategory2")) 
+        else if (0 == strcmp(entry.GetCodeValue(), "TestCategory2"))
             {
             foundCategory2 = true;
             ASSERT_EQ(1, DgnSubCategory::MakeIterator(*m_db, categoryId).BuildIdSet<DgnSubCategoryId>().size());
             }
-        else if (0 == strcmp(entry.GetCodeValue(), "TestCategory3")) 
+        else if (0 == strcmp(entry.GetCodeValue(), "TestCategory3"))
             {
             foundCategory3 = true;
             ASSERT_EQ(1, DgnSubCategory::MakeIterator(*m_db, categoryId).BuildIdSet<DgnSubCategoryId>().size());
@@ -336,7 +336,7 @@ TEST_F (CategoryTests, ChangeElementCategory)
     ASSERT_NE(DgnDbStatus::Success, element->SetCategoryId(drawingCategoryId));
     ASSERT_EQ(spatialCategoryId2.GetValue(), element->GetCategoryId().GetValue());
     }
-	
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -394,8 +394,8 @@ TEST_F (CategoryTests, InsertSubCategory)
     appearence.SetDontPlot(true);
     appearence.SetDontSnap(true);
     appearence.SetDisplayPriority(1);
-    // TODO: Set line style 
-    
+    // TODO: Set line style
+
     //Inserts a category
     EXPECT_TRUE(category.Insert(appearence).IsValid());
     DgnCategoryId categoryId = category.GetCategoryId();
@@ -403,7 +403,7 @@ TEST_F (CategoryTests, InsertSubCategory)
     Utf8CP sub_name = "Test SubCategory";
     Utf8CP sub_desc = "This is a test subcategory";
     DgnSubCategory subcategory(DgnSubCategory::CreateParams(*m_db, categoryId, sub_name, appearence, sub_desc));
-    
+
     //Inserts a subcategory
     EXPECT_TRUE(subcategory.Insert().IsValid());
     DgnCode code = subcategory.GetCode();
@@ -587,6 +587,54 @@ TEST_F(CategoryTests, SubCategoryInvariants)
     DgnSubCategory subcatWithInvalidName(DgnSubCategory::CreateParams(db, cat2Id, invalidChars, app));
     EXPECT_TRUE(subcatWithInvalidName.Insert(&status).IsNull());
     EXPECT_EQ(DgnDbStatus::InvalidName, status);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  01/20
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CategoryTests, SubCategoryFill)
+    {
+    SetupSeedProject();
+    DgnDbR db = *m_db;
+
+    DefinitionModelR dictionary = db.GetDictionaryModel();
+    SpatialCategory cat(dictionary, "CatFill1", DgnCategory::Rank::Domain);
+    DgnSubCategory::Appearance app;
+    ASSERT_TRUE(cat.Insert(app).IsValid());
+    DgnCategoryId catId = cat.GetCategoryId();
+    DgnSubCategoryCPtr defaultSubCat = DgnSubCategory::Get(db, DgnCategory::GetDefaultSubCategoryId(catId));
+    ASSERT_TRUE(defaultSubCat.IsValid());
+    db.SaveChanges();
+
+    auto defApp = defaultSubCat->GetAppearance();
+    ASSERT_FALSE(defApp.HasFillColor());
+    ASSERT_FALSE(defApp.HasFillTransparency());
+    ASSERT_TRUE(defApp.GetColor() == defApp.GetFillColor());
+    ASSERT_TRUE(defApp.GetTransparency() == defApp.GetFillTransparency());
+    ASSERT_TRUE(defApp.IsEqual(app));
+
+    DgnSubCategory::Appearance app1;
+    app1.SetColor(ColorDef::Green());
+    app1.SetTransparency(0.25);
+    app1.SetFillColor(ColorDef::Blue());
+    app1.SetFillTransparency(0.75);
+    DgnCategoryPtr cat1 = db.Elements().GetForEdit<DgnCategory>(catId);
+    cat1->SetDefaultAppearance(app1);
+    DgnDbStatus updateStatus;
+    cat1->Update(&updateStatus);
+    EXPECT_TRUE(DgnDbStatus::Success == updateStatus);
+    db.SaveChanges();
+
+    defaultSubCat = DgnSubCategory::Get(db, DgnCategory::GetDefaultSubCategoryId(catId));
+    ASSERT_TRUE(defaultSubCat.IsValid());
+    defApp = defaultSubCat->GetAppearance();
+    ASSERT_TRUE(defApp.HasFillColor());
+    ASSERT_TRUE(defApp.HasFillTransparency());
+    ASSERT_FALSE(defApp.GetColor() == defApp.GetFillColor());
+    ASSERT_FALSE(defApp.GetTransparency() == defApp.GetFillTransparency());
+    ASSERT_TRUE(defApp.GetFillColor() == ColorDef::Blue());
+    ASSERT_TRUE(defApp.GetFillTransparency() == 0.75);
+    ASSERT_TRUE(defApp.IsEqual(app1));
     }
 
 //=======================================================================================

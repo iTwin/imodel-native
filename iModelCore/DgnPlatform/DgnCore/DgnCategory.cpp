@@ -433,6 +433,12 @@ void DgnSubCategory::Appearance::FromJson(JsonValueCR val)
         m_material = RenderMaterialId(val[json_material()].asUInt64());
     else
         m_material.Invalidate();
+
+    if (m_useFillColor = val.isMember(json_fill()))
+        m_fillColor = ColorDef(val[json_fill()].asUInt());
+
+    if (m_useFillTransparency = val.isMember(json_transpFill()))
+        m_fillTransparency = val[json_transpFill()].asDouble();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -453,6 +459,12 @@ Json::Value DgnSubCategory::Appearance::ToJson() const
     if (m_material.IsValid())   val[json_material()] = m_material.ToHexStr();
     if (0.0 != m_transparency)  val[json_transp()] = m_transparency;
 
+    if (m_useFillColor)
+        val[json_fill()] = m_fillColor.GetValue();
+
+    if (m_useFillTransparency)
+        val[json_transpFill()] = m_fillTransparency;
+
     return val;
     }
 
@@ -467,7 +479,9 @@ bool DgnSubCategory::Appearance::operator==(Appearance const& other) const
            m_style==other.m_style &&
            m_displayPriority==other.m_displayPriority &&
            m_material==other.m_material &&
-           m_transparency==other.m_transparency;
+           m_transparency==other.m_transparency &&
+           m_useFillColor==other.m_useFillColor && (!m_useFillColor || m_fillColor==other.m_fillColor) &&
+           m_useFillTransparency==other.m_useFillTransparency && (!m_useFillTransparency || m_fillTransparency==other.m_fillTransparency);
     }
 
 /*---------------------------------------------------------------------------------**//**

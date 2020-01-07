@@ -907,7 +907,7 @@ void GeometryParams::Resolve(DgnDbR dgnDb)
         m_lineColor = appearance.GetColor();
 
     if (!m_appearanceOverrides.m_fill)
-        m_fillColor = appearance.GetColor();
+        m_fillColor = appearance.GetFillColor();
     else if (BackgroundFill::None != m_backgroundFill)
         m_fillColor = ColorDef::Black();
 
@@ -920,18 +920,26 @@ void GeometryParams::Resolve(DgnDbR dgnDb)
     if (!m_appearanceOverrides.m_material)
         m_materialId = appearance.GetRenderMaterial();
 
-    // SubCategory transparency is combined with element transparency to compute net transparency.
-    if (0.0 != appearance.GetTransparency())
+    // combine transparencies by multiplying the opaqueness.
+    // A 50% transparent element on a 50% transparent category should give a 75% transparent result.
+    // (1 - ((1 - .5) * (1 - .5))
+    double categoryTransparency = appearance.GetTransparency();
+    double categoryFillTransparency = appearance.GetFillTransparency();
+
+    if (0.0 != categoryTransparency)
         {
-        // combine transparencies by multiplying the opaqueness.
-        // A 50% transparent element on a 50% transparent category should give a 75% transparent result.
-        // (1 - ((1 - .5) * (1 - .5))
         double elementOpaque = 1.0 - m_elmTransparency;
-        double fillOpaque = 1.0 - m_fillTransparency;
-        double categoryOpaque = 1.0 - appearance.GetTransparency();
+        double categoryOpaque = 1.0 - categoryTransparency;
 
         m_netElmTransparency = (1.0 - (elementOpaque * categoryOpaque));
-        m_netFillTransparency = (1.0 - (fillOpaque * categoryOpaque));
+        }
+
+    if (0.0 != categoryFillTransparency)
+        {
+        double fillOpaque = 1.0 - m_fillTransparency;
+        double categoryFillOpaque = 1.0 - categoryFillTransparency;
+
+        m_netFillTransparency = (1.0 - (fillOpaque * categoryFillOpaque));
         }
 
     // SubCategory display priority is combined with element priority to compute net display priority.
