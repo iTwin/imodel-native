@@ -94,6 +94,10 @@ jobs:
       - script: bb -s "ORDBridge;PRG" diffreport --usePrevious $(BDF_DIR)/ordbridge.xml $(BDF_DIR)/ordbridge.xml --outputPath $(BDF_DIR)/difflog
         displayName: Compute OrdBridge Change Logs
         condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'OrdBridge'))
+
+      - script: bb -s "C3dBridge;PRG" diffreport --usePrevious $(BDF_DIR)/c3dbridge.xml $(BDF_DIR)/c3dbridge.xml --outputPath $(BDF_DIR)/difflog
+        displayName: Compute C3dBridge Change Logs
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'C3dBridge'))
       
       - publish: $(BDF_DIR)/difflog
         displayName: Save BBChangeLogs
