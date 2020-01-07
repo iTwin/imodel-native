@@ -56,3 +56,14 @@ AzureError::AzureError(Http::ResponseCR response) : HttpError(response)
     if (contentType.find(REQUESTHEADER_ContentType_ApplicationXml) != Utf8String::npos)
         ParseBody(response);
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Karolis.Dziedzelis              09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+AzureError::AzureError(Http::ConnectionStatus connectionStatus, Http::HttpStatus httpStatus,
+    Utf8StringCR code, Utf8StringCR message, Utf8StringCR description) : HttpError(connectionStatus, httpStatus)
+    {
+    m_code = code;
+    m_message = message;
+    m_description = description;
+    }

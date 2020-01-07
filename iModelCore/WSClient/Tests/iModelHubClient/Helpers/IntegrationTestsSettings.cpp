@@ -91,6 +91,7 @@ void IntegrationTestsSettings::ReadSettings(BeFileNameCR settingsFile)
     m_projectId = settings["ProjectId"].asString();
     m_assetId = settings["AssetId"].asString();
     m_isiModelBank = settings.isMember("iModelBank") && settings["iModelBank"].asBool();
+    m_storageClientType = settings["StorageClientType"].asString();
 
     m_environment = ResolveEnvironment(settings);
     }
@@ -133,6 +134,11 @@ Utf8String IntegrationTestsSettings::GetAssetId() const
 Utf8String IntegrationTestsSettings::GetServerUrl() const
     {
     return m_url;
+    }
+
+Utf8String IntegrationTestsSettings::GetStorageClientType() const
+    {
+    return m_storageClientType;
     }
 
 bool IntegrationTestsSettings::IsiModelBank() const

@@ -248,6 +248,7 @@
     <ClCompile Include="Client\WSRepository.cpp" />
     <ClCompile Include="Client\WSRepositoryClient.cpp" />
     <ClCompile Include="iModelHubClient\StatisticsManager.cpp" />
+    <ClCompile Include="Localhost\LocalhostStorageClient.cpp" />
     <ClCompile Include="Tests\iModelHubClient\Integration\GlobalEventsTests.cpp" />
     <ClCompile Include="Tests\UnitTests\Published\WebServices\Azure\AzureBlobStorageClientTests.cpp" />
     <ClCompile Include="Tests\UnitTests\Published\WebServices\Azure\EventServiceClientTests.cpp" />
@@ -503,6 +504,7 @@
     <ClInclude Include="PublicAPI\WebServices\Client\WSQuery.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\WSRepository.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\WSRepositoryClient.h" />
+    <ClInclude Include="PublicAPI\WebServices\Localhost\LocalhostStorageClient.h" />
     <ClInclude Include="PublicAPI\WebServices\WebServices.h" />
     <ClInclude Include="Tests\UnitTests\Published\WebServices\Azure\AzureBlobStorageClientTests.h" />
     <ClInclude Include="Tests\UnitTests\Published\WebServices\Azure\EventServiceClientTests.h" />
@@ -580,6 +582,7 @@
     <None Include="Ims\Ims.mki" />
     <None Include="l10n-WSClient.mke" />
     <None Include="Licensing\Licensing.mki" />
+    <None Include="Localhost\Localhost.mki" />
     <None Include="Tests\UnitTests\WSClientTests.vcxproj" />
     <None Include="UnZip.py" />
     <None Include="WebServicesCache.NuGetPackage.mke" />

@@ -91,14 +91,14 @@ iModelConnectionTaskPtr Client::ConnectToiModel(Utf8StringCR contextId, Utf8Stri
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-ClientPtr Client::Create(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler, Utf8CP url)
+ClientPtr Client::Create(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler, Utf8CP url, IAzureBlobStorageClientFactory storageClientFactory)
     {
     const Utf8String methodName = "Client::Create";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     if (!Utf8String::IsNullOrEmpty(url))
-        return new Client(clientInfo, customHandler, url);
+        return new Client(clientInfo, customHandler, url, storageClientFactory);
     Utf8String resolvedUrl = UrlProvider::Urls::iModelHubApi.Get();
-    return new Client(clientInfo, customHandler, resolvedUrl.c_str());
+    return new Client(clientInfo, customHandler, resolvedUrl.c_str(), storageClientFactory);
     }
 
 //---------------------------------------------------------------------------------------

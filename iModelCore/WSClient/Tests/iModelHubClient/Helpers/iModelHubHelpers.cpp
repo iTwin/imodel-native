@@ -9,6 +9,7 @@
 #include "DgnPlatformHelpers.h"
 #include <WebServices/iModelHub/Client/ClientHelper.h>
 #include <WebServices/Connect/SimpleConnectTokenProvider.h>
+#include <WebServices/Localhost/LocalhostStorageClient.h>
 #include <Bentley/BeTest.h>
 #include <Bentley/BeStringUtilities.h>
 #include <BeHttp/ProxyHttpHandler.h>
@@ -18,6 +19,7 @@
 
 USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_IMODELHUB
+USING_NAMESPACE_BENTLEY_WEBSERVICES
 using namespace OidcInterop;
 
 #define IMODELHUB_ClientId            "imodel-hub-integration-tests-2485"
@@ -45,6 +47,17 @@ namespace iModelHubHelpers
         }
 
     /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                    Marius.Balcaitis                01/2020
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    IAzureBlobStorageClientFactory ResolveStorageClientFactory()
+        {
+        auto type = IntegrationTestsSettings::Instance().GetStorageClientType().ToLower();
+        if (type == "localhost")
+            return LocalhostStorageClient::Factory;
+        return AzureBlobStorageClient::Factory;
+        }
+
+    /*--------------------------------------------------------------------------------------+
     * @bsimethod                                    Karolis.Dziedzelis              11/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
     void CreateClient(ClientPtr& client, CredentialsCR credentials)
@@ -54,7 +67,7 @@ namespace iModelHubHelpers
         if (isiModelBank)
             {
             auto handler = std::make_shared<RequestVerifyHttpHandler>(ProxyHttpHandler::GetFiddlerProxyIfReachable());
-            client = Client::Create(IntegrationTestsSettings::Instance().GetClientInfo(), handler, IntegrationTestsSettings::Instance().GetServerUrl().c_str());
+            client = Client::Create(IntegrationTestsSettings::Instance().GetClientInfo(), handler, IntegrationTestsSettings::Instance().GetServerUrl().c_str(), ResolveStorageClientFactory());
             }
         else
             {

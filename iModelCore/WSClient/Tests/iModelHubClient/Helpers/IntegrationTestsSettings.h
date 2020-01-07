@@ -18,6 +18,7 @@ struct IntegrationTestsSettings
         Utf8String m_projectId;
         Utf8String m_assetId;
         Utf8String m_url;
+        Utf8String m_storageClientType;
         bool m_isiModelBank;
         WebServices::UrlProvider::Environment m_environment;
         static BeFileName ResolveSettingsPath();
@@ -35,6 +36,7 @@ struct IntegrationTestsSettings
         Utf8String GetProjectId() const;
         Utf8String GetAssetId() const;
         Utf8String GetServerUrl() const;
+        Utf8String GetStorageClientType() const;
         bool IsiModelBank() const;
         WebServices::UrlProvider::Environment GetEnvironment() const;
         static WebServices::UrlProvider::Environment ReadEnvironment();

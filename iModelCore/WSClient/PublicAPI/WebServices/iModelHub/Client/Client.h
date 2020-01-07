@@ -40,26 +40,28 @@ typedef std::function<BeFileName(iModelInfoCR, FileInfoCR)> LocalBriefcaseFileNa
 struct Client : RefCountedBase
 {
 private:
-    GlobalRequestOptionsPtr     m_globalRequestOptionsPtr = nullptr;
-    Utf8String                  m_serverUrl;
-    Credentials                 m_credentials;
-    ClientInfoPtr               m_clientInfo;
-    IHttpHandlerPtr             m_customHandler;
-    iModelAdmin                 m_iModelAdmin;
-    GlobalConnectionPtr         m_globalConnectionPtr;
-    bool                        m_enableCompression;
+    GlobalRequestOptionsPtr           m_globalRequestOptionsPtr = nullptr;
+    Utf8String                        m_serverUrl;
+    Credentials                       m_credentials;
+    ClientInfoPtr                     m_clientInfo;
+    IHttpHandlerPtr                   m_customHandler;
+    iModelAdmin                       m_iModelAdmin;
+    GlobalConnectionPtr               m_globalConnectionPtr;
+    bool                              m_enableCompression;
+    IAzureBlobStorageClientFactory    m_storageClientFactory;
 
     static StatusResult MergeChangeSetsIntoDgnDb(Dgn::DgnDbPtr db, const ChangeSets changeSets, BeFileNameCR filePath,
                                                  Http::Request::ProgressCallbackCR callback = nullptr,
                                                  ICancellationTokenPtr cancellationToken = nullptr);
 
-    Client(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler, Utf8StringCR url) :
+    Client(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler, Utf8StringCR url, IAzureBlobStorageClientFactory storageClientFactory) :
         m_globalRequestOptionsPtr(new Hub::GlobalRequestOptions()),
         m_serverUrl(url),
         m_clientInfo(clientInfo),
         m_customHandler(customHandler),
         m_iModelAdmin(this),
-        m_enableCompression(true)
+        m_enableCompression(true),
+        m_storageClientFactory(storageClientFactory)
         {}
 
     StatusResult DownloadBriefcase(iModelConnectionPtr connection, BeFileName filePath, BriefcaseInfoCR briefcaseInfo,
@@ -70,7 +72,7 @@ private:
                                        
     iModelConnectionResult CreateiModelConnection(iModelInfoCR iModelInfo) const
         {
-        return iModelConnection::Create(iModelInfo, m_credentials, m_clientInfo, m_globalRequestOptionsPtr, m_customHandler, m_enableCompression);
+        return iModelConnection::Create(iModelInfo, m_credentials, m_clientInfo, m_globalRequestOptionsPtr, m_customHandler, m_enableCompression, m_storageClientFactory());
         }
     IWSRepositoryClientPtr CreateContextConnection(Utf8StringCR contextId) const;
 
@@ -115,8 +117,9 @@ public:
     //! @param[in] clientInfo Application information sent to server.
     //! @param[in] customHandler Http handler for connect authentication.
     //! @param[in] url Optional url for the server.
+    //! @param[in] storageClientFactory Optional storage client factory.
     //! @return Returns a shared pointer to the created instance.
-    IMODELHUBCLIENT_EXPORT static ClientPtr Create(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler = nullptr, Utf8CP url = nullptr);
+    IMODELHUBCLIENT_EXPORT static ClientPtr Create(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler = nullptr, Utf8CP url = nullptr, IAzureBlobStorageClientFactory storageClientFactory = AzureBlobStorageClient::Factory);
 
     //! Creates a connection to a iModel. Use this method if you need to access iModel information without acquirying a briefcase.
     //! If you already have a briefcase, please use Briefcase.GetiModelConnection()

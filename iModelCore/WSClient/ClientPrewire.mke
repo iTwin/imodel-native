@@ -12,4 +12,5 @@ always:
     ~linkdir "$(BuildContext)PublicAPI/WebServices/Configuration=$(_MakeFilePath)/PublicAPI/WebServices/Configuration"
     ~linkdir "$(BuildContext)PublicAPI/WebServices/Connect=$(_MakeFilePath)/PublicAPI/WebServices/Connect"
     ~linkdir "$(BuildContext)PublicAPI/WebServices/Licensing=$(_MakeFilePath)/PublicAPI/WebServices/Licensing"
+    ~linkdir "$(BuildContext)PublicAPI/WebServices/Localhost=$(_MakeFilePath)/PublicAPI/WebServices/Localhost"
     ~linkdir "$(BuildContext)PublicAPI/WebServices/Ims=$(_MakeFilePath)/PublicAPI/WebServices/Ims"

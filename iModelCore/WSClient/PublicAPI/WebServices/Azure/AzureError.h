@@ -21,6 +21,7 @@ struct AzureError : public Http::HttpError
     public:
         WSCLIENT_EXPORT AzureError();
         WSCLIENT_EXPORT AzureError(Http::ResponseCR response);
+        WSCLIENT_EXPORT AzureError(Http::ConnectionStatus connectionStatus, Http::HttpStatus httpStatus, Utf8StringCR code, Utf8StringCR message, Utf8StringCR description);
         Utf8StringCR GetCode() const { return m_code; }
     };
 

@@ -22,6 +22,7 @@ typedef std::shared_ptr<struct IAzureBlobStorageClient> IAzureBlobStorageClientP
 typedef std::shared_ptr<struct AzureBlobStorageClient> AzureBlobStorageClientPtr;
 // Return success values or error Http::Response. Convert Http::Response to HttpError if simple information is needed.
 typedef AsyncResult<struct AzureFileResponse, AzureError> AzureResult;
+typedef std::function<IAzureBlobStorageClientPtr()> IAzureBlobStorageClientFactory;
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass
@@ -153,6 +154,9 @@ struct AzureBlobStorageClient : public IAzureBlobStorageClient
                 static const uint32_t Upload;
                 };
             };
+
+        //! Factory for creating this client instances.
+        WSCLIENT_EXPORT static const IAzureBlobStorageClientFactory Factory;
 
         //! @param[in] customHandler - custom http handler for testing purposes.
         WSCLIENT_EXPORT static AzureBlobStorageClientPtr Create

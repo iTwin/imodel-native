@@ -38,7 +38,8 @@ WebServices::CredentialsCR credentials,
 WebServices::ClientInfoPtr clientInfo,
 GlobalRequestOptionsPtr    globalRequestOptions,
 IHttpHandlerPtr            customHandler,
-bool                       enableCompression
+bool                       enableCompression,
+IAzureBlobStorageClientPtr storageClient
 ) : m_iModelInfo(iModel), m_customHandler(customHandler), m_globalRequestOptionsPtr(globalRequestOptions)
     {
     auto wsRepositoryClient = WSRepositoryClient::Create(iModel.GetServerURL(), ServerProperties::ServiceVersion(), iModel.GetWSRepositoryName(), clientInfo, nullptr, customHandler);
@@ -52,7 +53,24 @@ bool                       enableCompression
 
     SetRepositoryClient(wsRepositoryClient);
     m_eventManagerPtr = new EventManager(wsRepositoryClient);
-    SetAzureBlobStorageClient(AzureBlobStorageClient::Create());
+    if (!storageClient)
+        storageClient = AzureBlobStorageClient::Create();
+    SetAzureBlobStorageClient(storageClient);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             10/2015
+//---------------------------------------------------------------------------------------
+iModelConnection::iModelConnection
+(
+    iModelInfoCR           iModel,
+    WebServices::CredentialsCR credentials,
+    WebServices::ClientInfoPtr clientInfo,
+    GlobalRequestOptionsPtr    globalRequestOptions,
+    IHttpHandlerPtr            customHandler,
+    bool                       enableCompression
+) : iModelConnection(iModel, credentials, clientInfo, globalRequestOptions, customHandler, enableCompression, nullptr)
+    {
     }
 
 //---------------------------------------------------------------------------------------
@@ -2062,7 +2080,8 @@ CredentialsCR    credentials,
 ClientInfoPtr    clientInfo,
 GlobalRequestOptionsPtr globalRequestOptions,
 IHttpHandlerPtr  customHandler,
-bool             enableCompression
+bool             enableCompression,
+IAzureBlobStorageClientPtr storageClient
 )
     {
     const Utf8String methodName = "iModelConnection::Create";
@@ -2084,7 +2103,7 @@ bool             enableCompression
         }
 
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    iModelConnectionPtr imodelConnection(new iModelConnection(iModel, credentials, clientInfo, globalRequestOptions, customHandler, enableCompression));
+    iModelConnectionPtr imodelConnection(new iModelConnection(iModel, credentials, clientInfo, globalRequestOptions, customHandler, enableCompression, storageClient));
 
     double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
