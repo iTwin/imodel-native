@@ -462,7 +462,6 @@ jobs:
   # ================================================================================================
   - job: build_iosx64
     displayName: Build iOS x64
-    condition: and(succeeded(), eq('Schedule', variables['Build.Reason']))
     timeoutInMinutes: 120
     dependsOn: create_bdf
     pool:
