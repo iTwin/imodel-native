@@ -529,6 +529,16 @@ export declare namespace IModelJsNative {
     projectId?: string;
     featureUserData?: FeatureUserDataKeyValuePair[];
   }
+  
+  /** Represent the entitlement Response.
+  * @internal
+  */
+  export interface Entitlement {
+	allowed: boolean;
+	usageType: string;
+	principalId: string;
+   }
+
   /** Authentication methods used by the native addon
    * @internal
    */
@@ -539,6 +549,7 @@ export declare namespace IModelJsNative {
     public static initializeRegion(region: number): void;
     public static trackUsage(accessToken: string, appVersionStr: string, projectId: GuidString, authType?: AuthType, productId?: number, deviceId?: string, usageType?: UsageType, correlationId?: string): BentleyStatus;
     public static markFeature(accessToken: string, featureEvent: NativeUlasClientFeatureEvent, authType?: AuthType, productId?: number, deviceId?: string, usageType?: UsageType, correlationId?: string): BentleyStatus;
+    public static checkEntitlement(accessToken: string, appVersionStr: string, projectId: GuidString, authType?: AuthType, productId?: number, deviceId?: string, correlationId?: string): Entitlement;
   }
 
   class DisableNativeAssertions implements IDisposable {

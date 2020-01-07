@@ -106,6 +106,12 @@ BentleyStatus UlasClient::TrackUsage(
         return ERROR;
         }
 
+    if (Licensing::UsageType::Production > usageType || Licensing::UsageType::Academic < usageType)
+        {
+        JsInterop::GetLogger().error("Failed to track iModel.js usage: usage type was not specified or an invalid usage type was specfied.");
+        return ERROR;
+        }
+
     return m_client->TrackUsage(accessToken, appVersion, projectId, authType, productId, deviceId, usageType, correlationId).onError([] (void* e) { return ERROR; }).get();
     }
 
@@ -128,6 +134,51 @@ BentleyStatus UlasClient::MarkFeature(
         }
 
     return m_client->MarkFeature(accessToken, featureEvent, authType, productId, deviceId, usageType, correlationId).onError([] (void* e) { return ERROR; }).get();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Zain.Ulabidin                     11/2019
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus UlasClient::CheckEntitlement(
+    Utf8StringCR accessToken,
+    BeVersionCR appVersion,
+    Utf8StringCR projectId,
+    Licensing::AuthType authType,
+    int productId,
+    Utf8StringCR deviceId,
+    Utf8StringCR correlationId,
+    Licensing::EntitlementResult &entitlementResult) const
+    {
+    if (m_client == nullptr)
+        {
+        BeAssert(false && "Must call UlasClient::Initialize first.");
+        return ERROR;
+        }
+
+    if (projectId.empty())
+        {
+        JsInterop::GetLogger().error("Failed to validate entitlements: projectId was not specified.");
+        return ERROR;
+        }
+
+    if (appVersion.IsEmpty())
+        {
+        JsInterop::GetLogger().error("Failed to validate entitlements: application version was not specified or an invalid version string was passed.");
+        return ERROR;
+        }
+
+    BentleyStatus status = BentleyStatus::ERROR;
+    auto result = m_client->CheckEntitlement(accessToken, appVersion, projectId, authType, productId, deviceId,correlationId)
+    .then([&entitlementResult, &status](Licensing::EntitlementResult value) {
+        entitlementResult = value;
+        status = BentleyStatus::SUCCESS;
+            }).onError([&status](std::exception& ex) {
+                status = BentleyStatus::ERROR;
+                });
+    // Without this check the function exit without returning the result
+    while (result.isReady() != true){}
+
+    return status;
     }
 
 //-------------------------------------------------------------------------------------

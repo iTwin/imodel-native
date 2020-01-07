@@ -13,6 +13,7 @@
 
 #include <Bentley/BentleyConfig.h>
 
+#include <Licensing/EntitlementResult.h>
 #include <Licensing/SaasClient.h>
 #include <Licensing/Utils/FeatureEvent.h>
 #include <Licensing/AuthType.h>
@@ -70,6 +71,17 @@ namespace IModelJsNative
             Utf8StringCR deviceId = "",
             Licensing::UsageType usageType = Licensing::UsageType::Production,
             Utf8StringCR correlationId = ""
+        ) const;
+
+        BentleyStatus CheckEntitlement(
+            Utf8StringCR accessToken,
+            BeVersionCR appVersion,
+            Utf8StringCR projectId,
+            Licensing::AuthType authType,
+            int productId,
+            Utf8StringCR deviceId,
+            Utf8StringCR correlationId,
+            Licensing::EntitlementResult &entitlementResult
         ) const;
         };
     };

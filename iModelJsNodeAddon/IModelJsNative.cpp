@@ -4722,55 +4722,111 @@ struct NativeUlasClient : BeObjectWrap<NativeUlasClient>
             }
 
         //---------------------------------------------------------------------------------------
-        // @bsimethod                                     Evan.Preslar                    08/2019
+        // @bsimethod                                     Zain.Ulabidin                    11/2019
         //+---------------+---------------+---------------+---------------+---------------+------
-        static void TrackUsage(Napi::CallbackInfo const& info)
+        static Utf8String GetUsageType(Licensing::UsageType usageType)
             {
-            REQUIRE_ARGUMENT_STRING(0, accessToken, );
-            REQUIRE_ARGUMENT_STRING(1, appVersionStr, );
+            switch (usageType)
+                {
+                case Licensing::UsageType::Production:
+                    return "Production";
+
+                case Licensing::UsageType::Trial:
+                    return "Trial";
+
+                case Licensing::UsageType::HomeUse:
+                    return "HomeUse";
+
+                case Licensing::UsageType::PreActivation:
+                    return "PreActivation";
+
+                case Licensing::UsageType::Evaluation:
+                    return "Evaluation";
+
+                case Licensing::UsageType::Academic:
+                    return "Academic";
+                }
+                return "Not Defined";
+            }
+
+        //---------------------------------------------------------------------------------------
+        // @bsimethod                                     Zain.Ulabidin                    11/2019
+        //+---------------+---------------+---------------+---------------+---------------+------
+        static Napi::Value CheckEntitlement(Napi::CallbackInfo const& info)
+            {
+            REQUIRE_ARGUMENT_STRING(0, accessToken, info.Env().Undefined());
+            REQUIRE_ARGUMENT_STRING(1, appVersionStr, info.Env().Undefined());
             BeVersion appVersion = BeVersion(appVersionStr.c_str());
-            REQUIRE_ARGUMENT_STRING(2, projectId, );
-            OPTIONAL_ARGUMENT_INTEGER(3, authType, (int) Licensing::AuthType::OIDC, );
-            OPTIONAL_ARGUMENT_INTEGER(4, productId, -1, );
-            OPTIONAL_ARGUMENT_STRING(5, deviceId, );
-            OPTIONAL_ARGUMENT_INTEGER(6, usageType, (int) Licensing::UsageType::Production, );
-            OPTIONAL_ARGUMENT_STRING(7, correlationId, );
+            REQUIRE_ARGUMENT_STRING(2, projectId, info.Env().Undefined());
+            OPTIONAL_ARGUMENT_INTEGER(3, authType, (int)Licensing::AuthType::OIDC, info.Env().Undefined());
+            OPTIONAL_ARGUMENT_INTEGER(4, productId, -1, info.Env().Undefined());
+            OPTIONAL_ARGUMENT_STRING(5, deviceId, info.Env().Undefined());
+            OPTIONAL_ARGUMENT_STRING(6, correlationId, info.Env().Undefined());
 
-            BentleyStatus status = UlasClient::Get().TrackUsage(accessToken, appVersion, projectId, (Licensing::AuthType) authType, productId, deviceId, (Licensing::UsageType) usageType, correlationId);
+            Licensing::EntitlementResult entitlementResult;
+            BentleyStatus status = UlasClient::Get().CheckEntitlement(accessToken, appVersion, projectId, (Licensing::AuthType) authType, productId, deviceId, correlationId, entitlementResult);
+            Napi::Object jsNavValue = Napi::Object::New(info.Env());
+
             if (status == BentleyStatus::ERROR)
-              {
-              THROW_JS_EXCEPTION("Could not log usage information");
-              return;
-              }
+                THROW_TYPE_EXCEPTION_AND_RETURN("Could not validate entitlements", info.Env().Undefined());
 
-            return;
+            Utf8StringCR usageType = GetUsageType(entitlementResult.usageType);
+            jsNavValue.Set("allowed", Napi::Boolean::New(info.Env(), entitlementResult.allowed));
+            jsNavValue.Set("principalId", Napi::String::New(info.Env(), entitlementResult.principalId.c_str()));
+            jsNavValue.Set("usageType", Napi::String::New(info.Env(), usageType.c_str()));
+            
+            return jsNavValue;
             }
 
         //---------------------------------------------------------------------------------------
         // @bsimethod                                     Evan.Preslar                    08/2019
         //+---------------+---------------+---------------+---------------+---------------+------
-        static void MarkFeature(Napi::CallbackInfo const& info)
+        static Napi::Value TrackUsage(Napi::CallbackInfo const& info)
             {
-            REQUIRE_ARGUMENT_STRING(0, accessToken, );
+            REQUIRE_ARGUMENT_STRING(0, accessToken, Napi::Number::New(info.Env(), (int)BentleyStatus::ERROR));
+            REQUIRE_ARGUMENT_STRING(1, appVersionStr, Napi::Number::New(info.Env(), (int)BentleyStatus::ERROR));
+            BeVersion appVersion = BeVersion(appVersionStr.c_str());
+            REQUIRE_ARGUMENT_STRING(2, projectId, Napi::Number::New(info.Env(), (int)BentleyStatus::ERROR));
+            OPTIONAL_ARGUMENT_INTEGER(3, authType, (int) Licensing::AuthType::OIDC, Napi::Number::New(info.Env(), (int)BentleyStatus::ERROR));
+            OPTIONAL_ARGUMENT_INTEGER(4, productId, -1, Napi::Number::New(info.Env(), (int)BentleyStatus::ERROR));
+            OPTIONAL_ARGUMENT_STRING(5, deviceId, Napi::Number::New(info.Env(), (int)BentleyStatus::ERROR));
+            OPTIONAL_ARGUMENT_INTEGER(6, usageType, (int) Licensing::UsageType::Production, Napi::Number::New(info.Env(), (int)BentleyStatus::ERROR));
+            OPTIONAL_ARGUMENT_STRING(7, correlationId, Napi::Number::New(info.Env(), (int)BentleyStatus::ERROR));
 
-            REQUIRE_ARGUMENT_ANY_OBJ(1, featureEventObj, );
+            BentleyStatus status = UlasClient::Get().TrackUsage(accessToken, appVersion, projectId, (Licensing::AuthType) authType, productId, deviceId, (Licensing::UsageType) usageType, correlationId);
+            if (status == BentleyStatus::ERROR)
+                THROW_TYPE_EXCEPTION_AND_RETURN("Could not log usage information", info.Env().Undefined());
+
+            return Napi::Number::New(info.Env(), (int)BentleyStatus::SUCCESS);
+            }
+
+        //---------------------------------------------------------------------------------------
+        // @bsimethod                                     Evan.Preslar                    08/2019
+        //+---------------+---------------+---------------+---------------+---------------+------
+        static Napi::Value MarkFeature(Napi::CallbackInfo const& info)
+            {
+            REQUIRE_ARGUMENT_STRING(0, accessToken, Napi::Number::New(info.Env(), (int)BentleyStatus::ERROR));
+
+            REQUIRE_ARGUMENT_ANY_OBJ(1, featureEventObj, Napi::Number::New(info.Env(), (int)BentleyStatus::ERROR));
             if (!featureEventObj.Has("featureId"))
-              {
-              THROW_JS_TYPE_ERROR("Could not track feature information: featureId must be specified");
-              return;
-              }
+                THROW_TYPE_EXCEPTION_AND_RETURN("Could not track feature information: featureId must be specified", info.Env().Undefined());
+
             Utf8String featureId = featureEventObj.Get("featureId").ToString().Utf8Value().c_str();
 
             if (!featureEventObj.Has("versionStr"))
-              {
-              THROW_JS_TYPE_ERROR("Could not track feature information: version must be specified");
-              return;
-              }
+                THROW_TYPE_EXCEPTION_AND_RETURN("Could not track feature information: version must be specified", info.Env().Undefined());
+
             BeVersion appVersion = BeVersion(featureEventObj.Get("versionStr").ToString().Utf8Value().c_str());
             
-            Utf8String projectId = featureEventObj.Has("projectId")
-              ? featureEventObj.Get("projectId").ToString().Utf8Value().c_str()
-              : BeSQLite::BeGuid(false).ToString();
+            Utf8String projectId;
+            if (featureEventObj.Has("projectId"))
+                {
+                Utf8String projectIdString(featureEventObj.Get("projectId").ToString().Utf8Value().c_str());
+                if(BentleyStatus::SUCCESS != BeSQLite::BeGuid(false).FromString(projectIdString.c_str()))
+                    projectId = Utf8String("00000000-0000-0000-0000-000000000000");
+                else
+                    projectId = projectIdString;
+                }
 
             Licensing::FeatureUserDataMapPtr userFeatureData = std::make_shared<Licensing::FeatureUserDataMap>();
             if (featureEventObj.Has("featureUserData"))
@@ -4808,20 +4864,17 @@ struct NativeUlasClient : BeObjectWrap<NativeUlasClient>
 
             Licensing::FeatureEvent featureEvent = Licensing::FeatureEvent(featureId, appVersion, projectId, userFeatureData);
 
-            OPTIONAL_ARGUMENT_INTEGER(2, authType, (int) Licensing::AuthType::OIDC, );
-            OPTIONAL_ARGUMENT_INTEGER(3, productId, -1, );
-            OPTIONAL_ARGUMENT_STRING(4, deviceId, );
-            OPTIONAL_ARGUMENT_INTEGER(5, usageType, (int) Licensing::UsageType::Production, );
-            OPTIONAL_ARGUMENT_STRING(6, correlationId, );
+            OPTIONAL_ARGUMENT_INTEGER(2, authType, (int) Licensing::AuthType::OIDC, Napi::Number::New(info.Env(), (int)BentleyStatus::ERROR));
+            OPTIONAL_ARGUMENT_INTEGER(3, productId, -1, Napi::Number::New(info.Env(), (int)BentleyStatus::ERROR));
+            OPTIONAL_ARGUMENT_STRING(4, deviceId, Napi::Number::New(info.Env(), (int)BentleyStatus::ERROR));
+            OPTIONAL_ARGUMENT_INTEGER(5, usageType, (int) Licensing::UsageType::Production, Napi::Number::New(info.Env(), (int)BentleyStatus::ERROR));
+            OPTIONAL_ARGUMENT_STRING(6, correlationId, Napi::Number::New(info.Env(), (int)BentleyStatus::ERROR));
 
             BentleyStatus status = UlasClient::Get().MarkFeature(accessToken, featureEvent, (Licensing::AuthType) authType, productId, deviceId, (Licensing::UsageType) usageType, correlationId);
             if (status == BentleyStatus::ERROR)
-              {
-              THROW_JS_EXCEPTION("Could not track feature information");
-              return;
-              }
+                THROW_TYPE_EXCEPTION_AND_RETURN("Could not track feature information", info.Env().Undefined());
 
-            return; 
+            return Napi::Number::New(info.Env(), (int)BentleyStatus::SUCCESS);
             }
     public:
         NativeUlasClient(Napi::CallbackInfo const &info) : BeObjectWrap<NativeUlasClient>(info) {}
@@ -4837,6 +4890,7 @@ struct NativeUlasClient : BeObjectWrap<NativeUlasClient>
             StaticMethod("initializeRegion", &NativeUlasClient::InitializeRegion),
             StaticMethod("trackUsage", &NativeUlasClient::TrackUsage),
             StaticMethod("markFeature", &NativeUlasClient::MarkFeature),
+            StaticMethod("checkEntitlement", &NativeUlasClient::CheckEntitlement),
         });
         exports.Set("NativeUlasClient", t);
         }
