@@ -18,19 +18,19 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_LICENSING
 
 SaasClientImpl::SaasClientImpl
-    (
+(
     int productId,
     Utf8StringCR featureString,
     IUlasProviderPtr ulasProvider,
     IEntitlementProviderPtr entitlementProvider
-    )
+)
     {
     m_deviceId = BeSystemInfo::GetDeviceId();
     if (m_deviceId.Equals(""))
         m_deviceId = "DefaultDevice";
 
     m_productId = productId;
-    
+
 
     m_featureString = featureString;
     m_ulasProvider = ulasProvider;
@@ -41,19 +41,19 @@ bool LicenseStatusToRunStatus(LicenseStatus status)
     {
     switch (status)
         {
-        case LicenseStatus::Ok: // intentional fallthrough
-        case LicenseStatus::Offline: // intentional fallthrough
-        case LicenseStatus::Trial:
-            return true;
+            case LicenseStatus::Ok: // intentional fallthrough
+            case LicenseStatus::Offline: // intentional fallthrough
+            case LicenseStatus::Trial:
+                return true;
 
-        case LicenseStatus::Expired: // intentional fallthrough
-        case LicenseStatus::Error: // intentional fallthrough
-        case LicenseStatus::AccessDenied: // intentional fallthrough
-        case LicenseStatus::DisabledByLogSend: // intentional fallthrough
-        case LicenseStatus::DisabledByPolicy: // intentional fallthrough
-        case LicenseStatus::NotEntitled: // intentional fallthrough
-        default:
-            return false;
+            case LicenseStatus::Expired: // intentional fallthrough
+            case LicenseStatus::Error: // intentional fallthrough
+            case LicenseStatus::AccessDenied: // intentional fallthrough
+            case LicenseStatus::DisabledByLogSend: // intentional fallthrough
+            case LicenseStatus::DisabledByPolicy: // intentional fallthrough
+            case LicenseStatus::NotEntitled: // intentional fallthrough
+            default:
+                return false;
         }
     }
 
@@ -62,8 +62,8 @@ bool LicenseStatusToRunStatus(LicenseStatus status)
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<TrackUsageStatus> SaasClientImpl::TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId, AuthType authType, std::vector<int> productIds, Utf8StringCR deviceId, Utf8StringCR correlationId)
     {
-     LOG.debug("UlasProvider::RealtimeTrackUsage");
-     if (deviceId == "") //required for web v4 call TODO there is m_deviceId as well
+    LOG.debug("UlasProvider::RealtimeTrackUsage");
+    if (deviceId == "") //required for web v4 call TODO there is m_deviceId as well
         {
         return TrackUsageStatus::BadParam;
         }
@@ -74,29 +74,29 @@ folly::Future<TrackUsageStatus> SaasClientImpl::TrackUsage(Utf8StringCR accessTo
         m_deviceId = deviceId;
         }
 
-    return m_entitlementProvider->FetchWebEntitlementV4(productIds, version, deviceId, projectId, accessToken).then(
-        [=](WebEntitlementResult result)
+    return m_entitlementProvider->FetchWebEntitlementV4(productIds, version, deviceId, projectId, accessToken, authType).then(
+        [=] (WebEntitlementResult result)
         {
-            auto allowed = LicenseStatusToRunStatus(result.Status);
-            if (allowed)
+        auto allowed = LicenseStatusToRunStatus(result.Status);
+        if (allowed)
+            {
+            return m_ulasProvider->RealtimeTrackUsage(accessToken, result.ProductId, m_featureString, m_deviceId, version, projectId, result.Status, correlationId, authType, result.PrincipalId)
+                .then([=] (BentleyStatus usageStatus)
                 {
-                return m_ulasProvider->RealtimeTrackUsage(accessToken, result.ProductId, m_featureString, m_deviceId, version, projectId, result.Status, correlationId, authType, result.PrincipalId)
-                    .then([=](BentleyStatus usageStatus)
-                        {
-                        if (usageStatus == BentleyStatus::SUCCESS)
-                            {
-                            return TrackUsageStatus::Success;
-                            }
-                        else
-                            {
-                            return TrackUsageStatus::EntitledButErrorUsageTracking;
-                            }
-                        });
-                }
-            else
-                {
-                return folly::makeFuture(TrackUsageStatus::NotEntitled);
-                }
+                if (usageStatus == BentleyStatus::SUCCESS)
+                    {
+                    return TrackUsageStatus::Success;
+                    }
+                else
+                    {
+                    return TrackUsageStatus::EntitledButErrorUsageTracking;
+                    }
+                });
+            }
+        else
+            {
+            return folly::makeFuture(TrackUsageStatus::NotEntitled);
+            }
         });
     }
 
@@ -148,7 +148,7 @@ folly::Future<BentleyStatus> SaasClientImpl::MarkFeature(Utf8StringCR accessToke
 * @bsimethod                                            Luke.Lindsey            11/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<EntitlementResult> SaasClientImpl::CheckEntitlement
-    (
+(
     Utf8StringCR accessToken,
     BeVersionCR version,
     Utf8StringCR projectId,
@@ -156,15 +156,15 @@ folly::Future<EntitlementResult> SaasClientImpl::CheckEntitlement
     int productId,
     Utf8StringCR deviceId,
     Utf8StringCR correlationId
-    )
+)
     {
     auto product = productId == -1 ? m_productId : productId;
-    std::vector<int> productIds{ product };
-    return m_entitlementProvider->FetchWebEntitlementV4(productIds, version, deviceId, projectId, accessToken).then(
-        [=](WebEntitlementResult e)
+    std::vector<int> productIds {product};
+    return m_entitlementProvider->FetchWebEntitlementV4(productIds, version, deviceId, projectId, accessToken, authType).then(
+        [=] (WebEntitlementResult e)
         {
-            auto usageType = LicenseStatusToUsageType(e.Status);
-            EntitlementResult entitlement{ LicenseStatusToRunStatus(e.Status), e.PrincipalId, usageType };
-            return entitlement;
+        auto usageType = LicenseStatusToUsageType(e.Status);
+        EntitlementResult entitlement {LicenseStatusToRunStatus(e.Status), e.PrincipalId, usageType};
+        return entitlement;
         });
     }

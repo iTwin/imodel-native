@@ -13,24 +13,24 @@
 BEGIN_BENTLEY_LICENSING_UNIT_TESTS_NAMESPACE
 
 struct EntitlementProviderMock : IEntitlementProvider
-{
-private:
-	int m_productId = -1;
-	LicenseStatus m_status = LicenseStatus::AccessDenied;
-	Utf8String m_principalId;
+    {
+    private:
+        int m_productId = -1;
+        LicenseStatus m_status = LicenseStatus::AccessDenied;
+        Utf8String m_principalId;
 
-	int m_fetchWebEntitlementV4Calls = 0;
-public:
-	virtual folly::Future<WebEntitlementResult> FetchWebEntitlementV4(const std::vector<int>& productIds, BeVersionCR version, Utf8StringCR deviceId, Utf8StringCR projectId, Utf8StringCR accessToken) override;
+        int m_fetchWebEntitlementV4Calls = 0;
+    public:
+        virtual folly::Future<WebEntitlementResult> FetchWebEntitlementV4(const std::vector<int>& productIds, BeVersionCR version, Utf8StringCR deviceId, Utf8StringCR projectId, Utf8StringCR accessToken, AuthType authType) override;
 
-	void MockV4Result(WebEntitlementResult mocked)
-		{
-		m_productId = mocked.ProductId;
-		m_status = mocked.Status;
-		m_principalId = mocked.PrincipalId;
-		}
+        void MockV4Result(WebEntitlementResult mocked)
+            {
+            m_productId = mocked.ProductId;
+            m_status = mocked.Status;
+            m_principalId = mocked.PrincipalId;
+            }
 
-	int FetchWebEntitlementV4Calls() const { return m_fetchWebEntitlementV4Calls; }
-};
+        int FetchWebEntitlementV4Calls() const { return m_fetchWebEntitlementV4Calls; }
+    };
 
 END_BENTLEY_LICENSING_UNIT_TESTS_NAMESPACE

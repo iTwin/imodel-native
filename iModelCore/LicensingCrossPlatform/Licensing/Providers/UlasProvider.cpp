@@ -14,10 +14,10 @@ USING_NAMESPACE_BENTLEY_LICENSING
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 UlasProvider::UlasProvider
-    (
+(
     IBuddiProviderPtr buddiProvider,
     IHttpHandlerPtr httpHandler
-    ) :
+) :
     m_buddiProvider(buddiProvider),
     m_httpHandler(httpHandler)
     {}
@@ -86,14 +86,14 @@ folly::Future<folly::Unit> UlasProvider::SendUsageLogs(ApplicationInfoPtr applic
 
     auto url = m_buddiProvider->UlasLocationBaseUrl();
     url += Utf8PrintfString("/usageLog?ultId=%s&prdId=%s&lng=%s", ultId.c_str(), applicationInfo->GetProductId().c_str(),
-        applicationInfo->GetLanguage().c_str());
+                            applicationInfo->GetLanguage().c_str());
 
     LOG.debugv("UlasProvider::SendUsageLogs - UsageLoggingServiceLocation: %s", url.c_str());
 
     HttpClient client(nullptr, m_httpHandler);
 
     return client.CreateGetRequest(url).Perform().then(
-        [=](Response response)
+        [=] (Response response)
         {
         if (!response.IsSuccess())
             {
@@ -115,7 +115,7 @@ folly::Future<folly::Unit> UlasProvider::SendUsageLogs(ApplicationInfoPtr applic
         auto uploadRequest = client.CreateRequest(epUri + sharedAccessSignature, "PUT");
         uploadRequest.GetHeaders().SetValue("x-ms-blob-type", "BlockBlob");
         uploadRequest.SetRequestBody(HttpFileBody::Create(usageCSV));
-        return uploadRequest.Perform().then([=](Response response)
+        return uploadRequest.Perform().then([=] (Response response)
             {
             if (!response.IsSuccess())
                 {
@@ -196,14 +196,14 @@ folly::Future<folly::Unit> UlasProvider::SendFeatureLogs(ApplicationInfoPtr appl
 
     auto url = m_buddiProvider->UlasLocationBaseUrl();
     url += Utf8PrintfString("/featureLog?ultId=%s&prdId=%s&lng=%s", ultId.c_str(), applicationInfo->GetProductId().c_str(),
-        applicationInfo->GetLanguage().c_str());
+                            applicationInfo->GetLanguage().c_str());
 
     LOG.debugv("UlasProvider::SendFeatureLogs - UsageLoggingServiceLocation: %s", url.c_str());
 
     HttpClient client(nullptr, m_httpHandler);
 
     return client.CreateGetRequest(url).Perform().then(
-        [=](Response response)
+        [=] (Response response)
         {
         if (!response.IsSuccess())
             {
@@ -225,7 +225,7 @@ folly::Future<folly::Unit> UlasProvider::SendFeatureLogs(ApplicationInfoPtr appl
         auto uploadRequest = client.CreateRequest(epUri + sharedAccessSignature, "PUT");
         uploadRequest.GetHeaders().SetValue("x-ms-blob-type", "BlockBlob");
         uploadRequest.SetRequestBody(HttpFileBody::Create(featureCSV));
-        return uploadRequest.Perform().then([=](Response response)
+        return uploadRequest.Perform().then([=] (Response response)
             {
             if (!response.IsSuccess())
                 {
@@ -246,7 +246,7 @@ folly::Future<folly::Unit> UlasProvider::SendFeatureLogs(ApplicationInfoPtr appl
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<BentleyStatus> UlasProvider::RealtimeTrackUsage
-    (
+(
     Utf8StringCR accessToken,
     int productId,
     Utf8StringCR featureString,
@@ -257,7 +257,7 @@ folly::Future<BentleyStatus> UlasProvider::RealtimeTrackUsage
     Utf8StringCR correlationId,
     AuthType authType,
     Utf8StringCR principalId
-    )
+)
     {
     LOG.debug("UlasProvider::RealtimeTrackUsage");
     // Send real time usage
@@ -269,18 +269,18 @@ folly::Future<BentleyStatus> UlasProvider::RealtimeTrackUsage
     auto uploadRequest = client.CreateRequest(url, "POST");
     switch (authType)
         {
-        case AuthType::SAML:
-            uploadRequest.GetHeaders().SetValue("authorization", "SAML " + accessToken);
-            break;
-        case AuthType::OIDC:
-        default:
-            uploadRequest.GetHeaders().SetValue("authorization", "Bearer " + accessToken);
+            case AuthType::SAML:
+                uploadRequest.GetHeaders().SetValue("authorization", "SAML " + accessToken);
+                break;
+            case AuthType::OIDC: //Fallthrough as OIDC is default case
+            default:
+                uploadRequest.GetHeaders().SetValue("authorization", "Bearer " + accessToken);
         }
     uploadRequest.GetHeaders().SetValue("content-type", "application/json; charset=utf-8");
 
     // create Json body
     auto jsonBody = UsageJsonHelper::CreateJsonRandomGuids
-        (
+    (
         deviceId,
         featureString,
         version,
@@ -289,12 +289,12 @@ folly::Future<BentleyStatus> UlasProvider::RealtimeTrackUsage
         usageType,
         correlationId,
         principalId
-        );
+    );
 
     uploadRequest.SetRequestBody(HttpStringBody::Create(jsonBody));
 
     return uploadRequest.Perform().then(
-        [=](Response response)
+        [=] (Response response)
         {
         if (!response.IsSuccess())
             {
@@ -311,7 +311,7 @@ folly::Future<BentleyStatus> UlasProvider::RealtimeTrackUsage
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<BentleyStatus> UlasProvider::RealtimeTrackUsage
-    (
+(
     Utf8StringCR accessToken,
     int productId,
     Utf8StringCR featureString,
@@ -322,7 +322,7 @@ folly::Future<BentleyStatus> UlasProvider::RealtimeTrackUsage
     Utf8StringCR correlationId,
     AuthType authType,
     Utf8StringCR principalId
-    )
+)
     {
     auto usageType = LicenseStatusToUsageType(licenseStatus);
     return RealtimeTrackUsage(accessToken, productId, featureString, deviceId, version, projectId, usageType, correlationId, authType, principalId);
@@ -332,7 +332,7 @@ folly::Future<BentleyStatus> UlasProvider::RealtimeTrackUsage
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<BentleyStatus> UlasProvider::RealtimeMarkFeature
-    (
+(
     Utf8StringCR accessToken,
     FeatureEvent featureEvent,
     int productId,
@@ -341,7 +341,7 @@ folly::Future<BentleyStatus> UlasProvider::RealtimeMarkFeature
     UsageType usageType,
     Utf8StringCR correlationId,
     AuthType authType
-    )
+)
     {
     LOG.debug("UlasProvider::RealtimeMarkFeature");
     //LOG.tracev("MarkFeature - Called with featureId: %s, version: %s, projectId: %s", featureEvent.m_featureId.c_str(), featureEvent.m_version.ToString().c_str(), featureEvent.m_projectId.c_str());
@@ -352,14 +352,14 @@ folly::Future<BentleyStatus> UlasProvider::RealtimeMarkFeature
     auto uploadRequest = client.CreateRequest(url, "POST");
     switch (authType)
         {
-        case AuthType::SAML:
-            uploadRequest.GetHeaders().SetValue("authorization", "SAML " + accessToken);
-            break;
-        case AuthType::OIDC:
-        default:
-            uploadRequest.GetHeaders().SetValue("authorization", "Bearer " + accessToken);
+            case AuthType::SAML:
+                uploadRequest.GetHeaders().SetValue("authorization", "SAML " + accessToken);
+                break;
+            case AuthType::OIDC: //Fallthrough as OIDC is default case
+            default:
+                uploadRequest.GetHeaders().SetValue("authorization", "Bearer " + accessToken);
         }
-    
+
     uploadRequest.GetHeaders().SetValue("content-type", "application/json; charset=utf-8");
 
     auto jsonBody = featureEvent.ToJson
@@ -374,7 +374,7 @@ folly::Future<BentleyStatus> UlasProvider::RealtimeMarkFeature
     uploadRequest.SetRequestBody(HttpStringBody::Create(jsonBody));
 
     return uploadRequest.Perform().then(
-        [=](Response response)
+        [=] (Response response)
         {
         if (!response.IsSuccess())
             {
@@ -415,7 +415,7 @@ folly::Future<Json::Value> UlasProvider::GetAccessKeyInfo(ApplicationInfoPtr app
     uploadRequest.SetRequestBody(HttpStringBody::Create(jsonBody));
 
     return uploadRequest.Perform().then(
-        [=](Response response)
+        [=] (Response response)
         {
         if (!response.IsSuccess())
             {

@@ -7,9 +7,9 @@
 USING_NAMESPACE_BENTLEY_LICENSING
 USING_NAMESPACE_BENTLEY_LICENSING_UNIT_TESTS
 
-folly::Future<WebEntitlementResult> EntitlementProviderMock::FetchWebEntitlementV4(const std::vector<int>& productIds, BeVersionCR version, Utf8StringCR deviceId, Utf8StringCR projectId, Utf8StringCR accessToken)
-	{
-	m_fetchWebEntitlementV4Calls++;
-	WebEntitlementResult webEntitlement{ m_productId, m_status, m_principalId };
-	return folly::makeFuture(webEntitlement);
-	}
+folly::Future<WebEntitlementResult> EntitlementProviderMock::FetchWebEntitlementV4(const std::vector<int>& productIds, BeVersionCR version, Utf8StringCR deviceId, Utf8StringCR projectId, Utf8StringCR accessToken, AuthType authType)
+    {
+    m_fetchWebEntitlementV4Calls++;
+    WebEntitlementResult webEntitlement {m_productId, m_status, m_principalId};
+    return folly::makeFuture(webEntitlement);
+    }

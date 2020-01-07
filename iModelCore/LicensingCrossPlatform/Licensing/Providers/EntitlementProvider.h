@@ -14,19 +14,19 @@
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 
 struct EntitlementProvider : IEntitlementProvider
-{
-protected:
-	IBuddiProviderPtr m_buddiProvider;
-	Http::IHttpHandlerPtr m_httpHandler;
+    {
+    protected:
+        IBuddiProviderPtr m_buddiProvider;
+        Http::IHttpHandlerPtr m_httpHandler;
 
-public:
-	LICENSING_EXPORT EntitlementProvider
-		(
-		IBuddiProviderPtr     buddiProvider,
-		Http::IHttpHandlerPtr httpHandler
-		);
+    public:
+        LICENSING_EXPORT EntitlementProvider
+        (
+            IBuddiProviderPtr     buddiProvider,
+            Http::IHttpHandlerPtr httpHandler
+        );
 
-	LICENSING_EXPORT folly::Future<WebEntitlementResult> FetchWebEntitlementV4(const std::vector<int>& productIds, BeVersionCR version, Utf8StringCR deviceId, Utf8StringCR projectId, Utf8StringCR accessToken);
-};
+        LICENSING_EXPORT folly::Future<WebEntitlementResult> FetchWebEntitlementV4(const std::vector<int>& productIds, BeVersionCR version, Utf8StringCR deviceId, Utf8StringCR projectId, Utf8StringCR accessToken, AuthType authType);
+    };
 
 END_BENTLEY_LICENSING_NAMESPACE

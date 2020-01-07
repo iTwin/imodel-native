@@ -104,7 +104,7 @@ void EntitlementProviderTests::SetUpTestCase()
 BuddiProviderMock& EntitlementProviderTests::GetMockBuddi() const
     {
     return *m_buddiMock;
-    } 
+    }
 
 Utf8String EntitlementProviderTests::MockEntitlementUrl()
     {
@@ -116,45 +116,45 @@ Utf8String EntitlementProviderTests::MockEntitlementUrl()
     }
 
 Utf8String GetMockWebEntitlementBody(std::vector<int> productIds, Utf8StringCR mockPrincipalId)
-	{
-	Json::Value responseBody(Json::objectValue);
-	Json::Value result(Json::objectValue);
-	Json::Value entitlements(Json::arrayValue);
+    {
+    Json::Value responseBody(Json::objectValue);
+    Json::Value result(Json::objectValue);
+    Json::Value entitlements(Json::arrayValue);
 
-	for (auto id : productIds)
-		{
-		Json::Value entitlement(Json::objectValue);
-		entitlement["ProductId"] = id;
-		entitlement["FeatureString"] = "";
-		entitlement["LicenseStatus"] = "Allowed";
-		entitlement["PrincipalId"] = Utf8String(mockPrincipalId.c_str());
-		entitlements.append(entitlement);
-		}
-	result["Entitlements"] = entitlements;
-	responseBody["result"] = result;
-	return responseBody.ToString();
-	}
+    for (auto id : productIds)
+        {
+        Json::Value entitlement(Json::objectValue);
+        entitlement["ProductId"] = id;
+        entitlement["FeatureString"] = "";
+        entitlement["LicenseStatus"] = "Allowed";
+        entitlement["PrincipalId"] = Utf8String(mockPrincipalId.c_str());
+        entitlements.append(entitlement);
+        }
+    result["Entitlements"] = entitlements;
+    responseBody["result"] = result;
+    return responseBody.ToString();
+    }
 
 TEST_F(EntitlementProviderTests, FetchWebEntitlementV4_Success)
     {
-	auto mockUrl = MockEntitlementUrl();
-	mockUrl.ReplaceAll("/api", "");
-	Utf8String expectedUrl = mockUrl + "/v4.0/api/WebEntitlement";
-	std::vector<int> mockProductIds{ 1000, 1001, 1002 };
-	auto mockPrincipalId = Utf8String("9853E17E-94AE-46A7-825C-155AF41C589F");
+    auto mockUrl = MockEntitlementUrl();
+    mockUrl.ReplaceAll("/api", "");
+    Utf8String expectedUrl = mockUrl + "/v4.0/api/WebEntitlement";
+    std::vector<int> mockProductIds {1000, 1001, 1002};
+    auto mockPrincipalId = Utf8String("9853E17E-94AE-46A7-825C-155AF41C589F");
 
     GetMockHttpHandler().ExpectRequests(1);
     GetMockHttpHandler().ForRequest(1, [=] (Http::RequestCR request)
         {
-		// assert our outgoing request matches expectation
+        // assert our outgoing request matches expectation
         EXPECT_EQ(expectedUrl, request.GetUrl());
         return MockHttpHandler::StubHttpResponse(GetMockWebEntitlementBody(mockProductIds, mockPrincipalId));
         });
 
     // assert that we return the result of the call on success
-    const auto result = GetEntitlementProvider().FetchWebEntitlementV4(mockProductIds, BeVersion(1, 0), "device-id", "00000000-0000-0000-0000-000000000000", "mocked-token").get();
+    const auto result = GetEntitlementProvider().FetchWebEntitlementV4(mockProductIds, BeVersion(1, 0), "device-id", "00000000-0000-0000-0000-000000000000", "mocked-token", AuthType::OIDC).get();
     EXPECT_EQ(LicenseStatus::Ok, result.Status);
-	EXPECT_STREQ(mockPrincipalId.c_str(), result.PrincipalId.c_str());
+    EXPECT_STREQ(mockPrincipalId.c_str(), result.PrincipalId.c_str());
     }
 
 // TODO more tests for making sure it picks the correct productId and handles other statuses
@@ -165,12 +165,12 @@ TEST_F(EntitlementProviderTests, FetchWebEntitlementV4_Failure)
     {
     // assert that we we fall into catch on non-success status code
     auto mockUrl = MockEntitlementUrl();
-	mockUrl.ReplaceAll("/api", "");
+    mockUrl.ReplaceAll("/api", "");
     Utf8String expectedUrl = mockUrl + "/v4.0/api/WebEntitlement";
-	std::vector<int> mockProductIds{ 1000, 1001, 1002 };
+    std::vector<int> mockProductIds {1000, 1001, 1002};
 
     GetMockHttpHandler().ExpectRequests(1);
-    GetMockHttpHandler().ForRequest(1, [=](Http::RequestCR request)
+    GetMockHttpHandler().ForRequest(1, [=] (Http::RequestCR request)
         {
         EXPECT_EQ(expectedUrl, request.GetUrl());
         return MockHttpHandler::StubHttpFailureResponse();
@@ -178,7 +178,7 @@ TEST_F(EntitlementProviderTests, FetchWebEntitlementV4_Failure)
 
     try
         {
-		const auto result = GetEntitlementProvider().FetchWebEntitlementV4(mockProductIds, BeVersion(1, 0), "device-id", "00000000-0000-0000-0000-000000000000", "mocked-token").get();
+        const auto result = GetEntitlementProvider().FetchWebEntitlementV4(mockProductIds, BeVersion(1, 0), "device-id", "00000000-0000-0000-0000-000000000000", "mocked-token", AuthType::OIDC).get();
         FAIL() << "Expected an execption to be thrown";
         }
     catch (HttpError error)

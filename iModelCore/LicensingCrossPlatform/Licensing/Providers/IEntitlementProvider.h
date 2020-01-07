@@ -7,6 +7,7 @@
 #include <memory>
 #include <vector>
 #include <folly/BeFolly.h>
+#include <Licensing/AuthType.h>
 #include <Licensing/Licensing.h>
 #include <Licensing/LicenseStatus.h>
 #include "WebEntitlementResult.h"
@@ -19,7 +20,7 @@ typedef std::shared_ptr<struct IEntitlementProvider> IEntitlementProviderPtr;
 struct IEntitlementProvider
 {
 public:
-	virtual folly::Future<WebEntitlementResult> FetchWebEntitlementV4(const std::vector<int>& productIds, BeVersionCR version, Utf8StringCR deviceId, Utf8StringCR projectId, Utf8StringCR accessToken) = 0;
+	virtual folly::Future<WebEntitlementResult> FetchWebEntitlementV4(const std::vector<int>& productIds, BeVersionCR version, Utf8StringCR deviceId, Utf8StringCR projectId, Utf8StringCR accessToken, AuthType authType) = 0;
 	virtual ~IEntitlementProvider() {};
 };
 

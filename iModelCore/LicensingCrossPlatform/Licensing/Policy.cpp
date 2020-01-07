@@ -18,13 +18,13 @@ Policy::Policy(const Json::Value& json)
     m_PolicyCreatedOn = json["PolicyCreatedOn"].asString();
     m_PolicyExpiresOn = json["PolicyExpiresOn"].asString();
     m_RequestData = RequestData::Create(json["RequestData"]);
-    m_MachineSignature = json["MachineSignature"].asString();	
+    m_MachineSignature = json["MachineSignature"].asString();
     m_AppliesToUserId = json["AppliesToUserId"].asString();
     m_AppliesToSecurableIds = CreateAppliesToSecurableIds(json["AppliesToSecurableIds"]);
     m_ACLs = CreateACLs(json["ACLs"]);
     m_SecurableData = CreateSecurableData(json["SecurableData"]);
     m_UserData = UserData::Create(json["UserData"]);
-    m_DefaultQualifiers = CreateDefaultQualifiers(json["DefaultQualifiers"]);	
+    m_DefaultQualifiers = CreateDefaultQualifiers(json["DefaultQualifiers"]);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -219,7 +219,7 @@ Policy::ACL::ACL(const Json::Value& json)
     {
     m_PrincipalId = json["PrincipalId"].asString();
     m_SecurableId = json["SecurableId"].asString();
-    m_AccessKind = (AccessKind)json["AccessKind"].asInt();
+    m_AccessKind = (AccessKind) json["AccessKind"].asInt();
     m_ExpiresOn = json["ExpiresOn"].asString();
     m_QualifierOverrides = CreateQualifierOverrides(json["QualifierOverrides"]);
     }
@@ -321,10 +321,10 @@ bool Policy::IsTimeExpired(Utf8StringCR expirationTime)
     }
 
 bool Policy::IsPastThreeWeeksExpired(Utf8StringCR expirationTime)
-{
-	int64_t timeLeft = DateHelper::diffdatedays(expirationTime, DateHelper::GetCurrentTime());
-	return timeLeft <= -21;
-}
+    {
+    int64_t timeLeft = DateHelper::diffdatedays(expirationTime, DateHelper::GetCurrentTime());
+    return timeLeft <= -21;
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -404,9 +404,9 @@ bool Policy::IsValid()
                 !acl->GetPrincipalId().Equals(GetUserData()->GetOrganizationId()) &&
                 !acl->GetPrincipalId().Equals(GetUserData()->GetUltimateId()) &&
                 !acl->GetPrincipalId().Equals(GetUserData()->GetUltimateCountryId())
-            ))
-        // do nothing for now
-        continue;
+                ))
+            // do nothing for now
+            continue;
         }
     return true;
     }
@@ -530,7 +530,7 @@ Policy::EvaluationStatus Policy::GetEvalStatus(Utf8StringCR productId, Utf8Strin
             else
                 {
                 // if the last two verison numbers aren't zero, make sure the whole version matches the application
-                if (appVersion.CompareTo(evalVersion))
+                if (appVersion.CompareTo(evalVersion) == 0)
                     {
                     // only call it exipred if we haven't found a valid eval, and the version is good
                     if (IsTimeExpired(acl->GetExpiresOn()) && result != EvaluationStatus::Valid)
