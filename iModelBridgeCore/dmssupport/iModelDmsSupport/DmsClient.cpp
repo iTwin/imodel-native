@@ -36,10 +36,10 @@ bool  DmsClient::_UnInitializeSession()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Vishal.Shingare                11/2019
 //-------------------------------------------------------------------------------------
-bmap<WString, WString> DmsClient::_GetDownloadURLs(Utf8String token, Utf8String datasource)
+bvector<DmsResponseData> DmsClient::_GetDownloadURLs(Utf8String token, Utf8String datasource)
     {
     Http::HttpClient client;
-    bmap<WString, WString> downloadUrls;
+    bvector<DmsResponseData> downloadUrls;
     Utf8String graphqlRequestUrl = UrlProvider::Urls::ProjectWiseDocumentService.Get();
     if (graphqlRequestUrl.empty())
         {
@@ -64,15 +64,14 @@ bmap<WString, WString> DmsClient::_GetDownloadURLs(Utf8String token, Utf8String 
     rapidjson::Document document;
     auto content = response.GetContent()->GetBody()->AsString();
     document.Parse(content.c_str());
-
     if (document["data"].IsNull())
         {
         LOG.errorv("Error getting requested file urls");
         return downloadUrls;
         }
-
     if (m_repositoryType.EqualsI(PWREPOSITORYTYPE))
         {
+        DmsResponseData dmsResponse;
         rapidjson::Value& results = document["data"]["item"];
         bool isfolder = results["isFolder"].GetBool();
         if (!isfolder)
@@ -80,9 +79,13 @@ bmap<WString, WString> DmsClient::_GetDownloadURLs(Utf8String token, Utf8String 
             // Store the value of the element in a vector
             Utf8String name = results["name"].GetString();
             Utf8String url = results["downloadUrl"].GetString();
-            WString fileName(name.c_str(), 0);
-            WString downloadUrl(url.c_str(), 0);
-            downloadUrls.Insert(fileName, downloadUrl);
+            Utf8String parentId = results["parentId"].GetString();
+            Utf8String fileId = results["id"].GetString();
+            dmsResponse.fileName = WString(name.c_str(), 0);
+            dmsResponse.downloadURL = WString(url.c_str(), 0);
+            dmsResponse.parentFolderId = WString(parentId.c_str(), 0);
+            dmsResponse.fileId = WString(fileId.c_str(), 0);
+            downloadUrls.push_back(dmsResponse);
             }
         }
     else
@@ -90,22 +93,27 @@ bmap<WString, WString> DmsClient::_GetDownloadURLs(Utf8String token, Utf8String 
         rapidjson::Value& results = document["data"]["item"]["children"];
         for (rapidjson::SizeType i = 0; i < results.Size(); i++)
             {
+            DmsResponseData dmsResponse;
             bool isfolder = results[i]["isFolder"].GetBool();
             if (!isfolder)
                 {
                 // Store the value of the element in a vector
                 Utf8String name = results[i]["name"].GetString();
                 Utf8String url = results[i]["downloadUrl"].GetString();
+                Utf8String parentId = results[i]["parentId"].GetString();
+                Utf8String fileId = results[i]["id"].GetString();
                 url.ReplaceAll(" ", "%20");
-                WString fileName(name.c_str(), 0);
-                WString downloadUrl(url.c_str(), 0);
-                downloadUrls.Insert(fileName, downloadUrl);
+
+                dmsResponse.fileName = WString(name.c_str(), 0);
+                dmsResponse.downloadURL = WString(url.c_str(), 0);
+                dmsResponse.parentFolderId = WString(parentId.c_str(), 0);
+                dmsResponse.fileId = WString(fileId.c_str(), 0);
+                downloadUrls.push_back(dmsResponse);
                 }
             }
         }
     return downloadUrls;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Vishal.Shingare                  11/2019
@@ -142,7 +150,7 @@ Utf8PrintfString DmsClient::_CreateQuery(Utf8String datasource)
     {
     // PWDI query
     if (m_repositoryType.EqualsI(PWREPOSITORYTYPE))
-        return Utf8PrintfString("query{item(input: {type: %s, location: \"%s\", id: \"%s\"}){id, name, downloadUrl, isFolder}}", PWREPOSITORYTYPE, datasource.c_str(), m_fileId.c_str());
+        return Utf8PrintfString("query{item(input: {type: %s, location: \"%s\", id: \"%s\"}){id, parentId, name, downloadUrl, isFolder}}", PWREPOSITORYTYPE, datasource.c_str(), m_fileId.c_str());
     // Projectshare query
-    return Utf8PrintfString("query{item(input: {type: %s, location : \"%s\", id : \"%s\"}){children{id, name, downloadUrl, isFolder}}}", PSREPOSITORYTYPE, m_projectId.c_str(), m_folderId.c_str());
+    return Utf8PrintfString("query{item(input: {type: %s, location : \"%s\", id : \"%s\"}){children{id, parentId, name, downloadUrl, isFolder}}}", PSREPOSITORYTYPE, m_projectId.c_str(), m_folderId.c_str());
     }

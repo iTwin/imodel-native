@@ -44,7 +44,7 @@ $(o)iModelDmsSupport$(oext) : $(_MakeFilePath)iModelDmsSupport.cpp $(dmsAPISrc)D
 
 $(o)PWWorkspaceHelper$(oext) : $(_MakeFilePath)PWWorkspaceHelper.cpp $(_MakeFilePath)PWWorkspaceHelper.h $(dmsAPISrc)DmsSession.h $(dmsAPISrc)iModelDmsSupport.h ${MultiCompileDepends}
 
-$(o)PWDocumentManager$(oext) : $(_MakeFilePath)PWDocumentManager.cpp $(_MakeFilePath)PWWorkspaceHelper.h $(dmsAPISrc)DmsSession.h $(dmsAPISrc)iModelDmsSupport.h ${MultiCompileDepends}
+$(o)PWDocumentManager$(oext) : $(_MakeFilePath)PWDocumentManager.cpp $(_MakeFilePath)PWWorkspaceHelper.h $(_MakeFilePath)DmsHelper.h $(dmsAPISrc)DmsSession.h $(dmsAPISrc)iModelDmsSupport.h ${MultiCompileDepends}
 
 $(o)AzureBlobStorageHelper$(oext) : $(_MakeFilePath)AzureBlobStorageHelper.cpp $(_MakeFilePath)AzureBlobStorageHelper.h $(dmsAPISrc)DmsSession.h $(dmsAPISrc)iModelDmsSupport.h ${MultiCompileDepends}
 

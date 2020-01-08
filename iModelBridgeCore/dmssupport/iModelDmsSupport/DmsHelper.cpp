@@ -88,22 +88,10 @@ bool            DmsHelper::_UnInitializeSession()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Suvik.Rahane                    11/2019
+* @bsimethod                                    Vishal.Shingare                  12/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            DmsHelper::_StageInputFile(BeFileNameCR fileLocation)
+Utf8String       DmsHelper::GetToken()
     {
-    _Initialize();
-
-    //Parse URL
-    DmsClient dmsClient;
-    if (!dmsClient._InitializeSession(m_repositoryUrl, m_repositoryType))
-        {
-        LOG.errorv("Error while parsing url");
-        dmsClient._UnInitializeSession();
-        return false;
-        }
-
-    //Get OIDC token
     Utf8String token = Utf8String("Bearer ");
     Utf8String tokenStr = Utf8String();
     WebServices::ISecurityTokenPtr tokenPtr = nullptr;
@@ -119,13 +107,34 @@ bool            DmsHelper::_StageInputFile(BeFileNameCR fileLocation)
     else
         {
         LOG.errorv("Error while getting authorization token");
-        return false;
+        return Utf8String();
         }
 
     token.append(tokenStr);
+    return token;
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Suvik.Rahane                    11/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            DmsHelper::_StageInputFile(BeFileNameCR fileLocation)
+    {
+    _Initialize();
+
+    //Parse URL
+    DmsClient dmsClient;
+    if (!dmsClient._InitializeSession(m_repositoryUrl, m_repositoryType))
+        {
+        LOG.errorv("Error while parsing url");
+        dmsClient._UnInitializeSession();
+        return false;
+        }
+    //Get OIDC token
+    Utf8String token = GetToken();
+    if (token.empty())
+        return false;
     //Get download URLs
-    bmap<WString, WString> downloadUrls = dmsClient._GetDownloadURLs(token, m_datasource);
+    bvector<DmsResponseData> downloadUrls = dmsClient._GetDownloadURLs(token, m_datasource);
 
     if (downloadUrls.empty())
         {
@@ -137,17 +146,40 @@ bool            DmsHelper::_StageInputFile(BeFileNameCR fileLocation)
 
     //Download files
     bvector<AsyncTaskPtr<AzureResult>> stageFileRequests;
-    for (bmap<WString, WString>::iterator itr = downloadUrls.begin(); itr != downloadUrls.end(); ++itr)
+    for (bvector<DmsResponseData>::iterator itr = downloadUrls.begin(); itr != downloadUrls.end(); ++itr)
         {
-        WString fileName(itr->first);
-        WString downloadURL(itr->second);
+        WString fileName(itr->fileName);
+        WString downloadURL(itr->downloadURL);
+        WString parentId(itr->parentFolderId);
+        WString fileId(itr->fileId);
 
         WString dirPath(BeFileName::GetDirectoryName(fileLocation));
-        BeFileName::AppendToPath(dirPath, fileName.c_str());
+        BeFileName fullDirPath;
+        if (!fileId.empty() && !parentId.empty())
+            {
+            bvector<WString> paths;
+            BeStringUtilities::Split(dirPath.c_str(), L"\\", paths);
+            fullDirPath.append(paths[0].c_str());
+            for (int itr = 1; itr != paths.size(); itr++)
+                {
+                if (paths[itr].EqualsI(parentId))
+                    break;
+
+                fullDirPath.AppendToPath(paths[itr].c_str());
+                }
+            fullDirPath.AppendToPath(parentId.c_str());
+            if (!fullDirPath.DoesPathExist())
+                BeFileName::CreateNewDirectory(fullDirPath);
+
+            // Added folderId into collection
+            m_fileFolderIds.Insert(fileId, parentId);
+            }
+
+        fullDirPath.AppendToPath(fileName.c_str());
 
         if (m_azureHelper->_InitializeSession(downloadURL))
             {
-            auto result = m_azureHelper->_AsyncStageInputFile(BeFileName(dirPath));
+            auto result = m_azureHelper->_AsyncStageInputFile(fullDirPath);
             if (result == nullptr)
                 {
                 LOG.errorv("Error sas url empty");
@@ -170,8 +202,43 @@ bool            DmsHelper::_StageInputFile(BeFileNameCR fileLocation)
         LOG.errorv("Error getting file url Error : %s.", result.GetError().GetCode().c_str());
         return false;
         }
-
     LOG.tracev("Successfully download all file urls to input file location");
     _UnInitialize();
     return true;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Vishal.Shingare                  12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+WString   DmsHelper::_GetFolderId(WStringCR pwMoniker)
+    {
+    Utf8String fileId = Utf8String();
+    WString folderId = WString();
+    if (pwMoniker.empty())
+        {
+        return m_fileFolderIds.begin()->second;
+        }
+    bvector<Utf8String> guids;
+    if (m_repositoryType.EqualsI(PWREPOSITORYTYPE))
+        {
+        BeStringUtilities::Split(Utf8String(pwMoniker).c_str(), "{", guids);
+        if (guids.size() < 2)
+            return  folderId;
+        fileId = guids[1].Trim("}");
+        }
+    else
+        {
+        BeStringUtilities::Split(Utf8String(pwMoniker).c_str(), "/", guids);
+        if (guids.size() < 3)
+            return  folderId;
+        fileId = guids[2];
+        }
+    if (m_fileFolderIds.count(WString(fileId.c_str(), 0)) != 0)
+        {
+        auto nodeItr = m_fileFolderIds.find(WString(fileId.c_str(), 0));
+        folderId = nodeItr->second;
+        return folderId;
+        }
+    return folderId;
     }

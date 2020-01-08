@@ -11,7 +11,13 @@
 #define PWREPOSITORYTYPE "PWDI"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
-
+struct DmsResponseData
+    {
+    WString fileName;
+    WString downloadURL;
+    WString parentFolderId;
+    WString fileId;
+    };
 struct DmsClient
     {
     private:
@@ -26,7 +32,7 @@ struct DmsClient
     public:
         bool _InitializeSession(Utf8String fileUrl, Utf8String repositoryType);
         bool _UnInitializeSession();
-        bmap<WString, WString> _GetDownloadURLs(Utf8String token, Utf8String datasource = Utf8String());
+        bvector<DmsResponseData> _GetDownloadURLs(Utf8String token, Utf8String datasource = Utf8String());
     };
 
 END_BENTLEY_DGN_NAMESPACE
