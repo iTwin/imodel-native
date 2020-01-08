@@ -1673,7 +1673,6 @@ private:
     static bool     SchemaAllowsOverridingArrays(ECSchemaCP schema);
 
     static bool     CheckBaseClassCycles(ECClassCP currentBaseClass, const void * arg);
-    static bool     AddUniquePropertiesToList(ECClassCP curentBaseClass, const void * arg);
     bool            TraverseBaseClasses(TraversalDelegate traverseMethod, bool recursive, const void * arg) const;
 
     void            AddDerivedClass(ECClassCR derivedClass) const {m_derivedClasses.push_back(const_cast<ECClassP>(&derivedClass));}

@@ -861,7 +861,7 @@ ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP so
     if (sourceProperty->IsPriorityLocallyDefined() && ECObjectsStatus::Success != (status = destProperty->SetPriority(sourceProperty->GetPriority())))
         return status;
 
-    // This is needed so that roundtrip – deserialize schema -> copy schema -> serialize schema – would preserve unrecognized typeNames
+    // This is needed so that roundtrip - deserialize schema -> copy schema -> serialize schema - would preserve unrecognized typeNames
     if (!sourceProperty->m_originalTypeName.empty())
         destProperty->m_originalTypeName = sourceProperty->m_originalTypeName;
 
@@ -1494,7 +1494,7 @@ ECObjectsStatus ECClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginni
         {
         ECPropertyP thisProperty;
         // This is a case-insensitive search
-        if (NULL != (thisProperty = this->GetPropertyP(prop->GetName(), false)))
+        if (NULL != (thisProperty = this->GetPropertyP(prop->GetName(), true)))
             {
             Utf8String errMsg;
             status = ECClass::CanPropertyBeOverridden(*prop, *thisProperty, errMsg);
@@ -1714,7 +1714,7 @@ static bool containsProperty(Utf8CP name, PropertyList const& props)
     {
     return props.end() != std::find_if (props.begin(), props.end(), [&name](ECPropertyP const& prop)
         {
-        return prop->GetName().Equals (name);
+        return prop->GetName().EqualsIAscii (name);
         });
     }
 
@@ -1745,37 +1745,6 @@ ECObjectsStatus ECClass::GetProperties(bool includeBaseProperties, PropertyList*
     propertyList->insert(propertyList->begin(), inheritedProperties.begin(), inheritedProperties.end());
 
     return ECObjectsStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                04/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECClass::AddUniquePropertiesToList (ECClassCP currentBaseClass, const void *arg)
-    {
-    const PropertyList* props = static_cast<const PropertyList*>(arg);
-    PropertyList* propertyList = const_cast<PropertyList*>(props);
-
-    PropertyList newProperties;
-    PropertyList::iterator currentEnd = propertyList->end();
-    for (ECPropertyP prop: currentBaseClass->GetProperties(false))
-        {
-        PropertyList::iterator testIter;
-        for (testIter = propertyList->begin(); testIter != currentEnd; testIter++)
-            {
-            ECPropertyP testProperty = *testIter;
-            if (testProperty->GetName().Equals(prop->GetName()))
-                break;
-            }
-        // we didn't find it
-        if (testIter == currentEnd)
-            newProperties.push_back(prop);
-        }
-
-    // add properties in reverse order to front of list, so base class properties come first
-    for (size_t i = newProperties.size(); i>0; i--)
-        propertyList->insert(propertyList->begin(), newProperties[i-1]);
-
-    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**

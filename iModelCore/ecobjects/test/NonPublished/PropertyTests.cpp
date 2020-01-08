@@ -1421,10 +1421,10 @@ TEST_F(PropertyOverrideTests, AddingBasePropertyOverrideChangesPropertyInDerived
  <summary>Creates a class chain and add properties and then verifies if they
  come in the expected sequence depending on Traversal Order of ECClasses.</summary>
  <Scenario>
- <ECClass typeName = "Root" / > //Defines a property “A”
+ <ECClass typeName = "Root" / > //Defines a property "A"
  <ECClass typeName = "B1">
  <BaseClass>Root< / BaseClass >
- <ECClass typeName = "B2" / >  // Define’s a property “A”
+ <ECClass typeName = "B2" / >  // Defines a property "A"
  <ECClass typeName = "Foo">
  <BaseClass>B1< / BaseClass >
  <BaseClass>B2< / BaseClass >
@@ -1433,7 +1433,7 @@ TEST_F(PropertyOverrideTests, AddingBasePropertyOverrideChangesPropertyInDerived
  //   2B1    4B2
  //     \  /
  //      1Foo
- The traversal order will be: Foo, B1, Root, B2, and Root’s definition of property “A” will “win”,
+ The traversal order will be: Foo, B1, Root, B2, and Root's definition of property "A" will "win",
  </scenario>
  @bsimethod                              Muhammad Hassan                         07/15
  -------------+---------------+---------------+---------------+---------------+---------*/
@@ -1471,10 +1471,10 @@ TEST_F(PropertyOverrideTests, VerifyClassTraversalOrderAfterPropertyOverride)
  <summary>Creates a class chain and add properties and then verifies if they
  come in the expected sequence depending on Traversal Order of ECClasses.</summary>
  <Scenario>
- <ECClass typeName = "Root" / > //Defines a property “A”
+ <ECClass typeName = "Root" / > //Defines a property "A"
  <ECClass typeName = "B1">
  <BaseClass>Root< / BaseClass >
- <ECClass typeName = "B2" / >  // Define’s a property “A”
+ <ECClass typeName = "B2" / >  // Defines a property "A"
  <ECClass typeName = "Foo">
  <BaseClass>B2< / BaseClass >
  <BaseClass>B1< / BaseClass >
@@ -1483,7 +1483,7 @@ TEST_F(PropertyOverrideTests, VerifyClassTraversalOrderAfterPropertyOverride)
  //   3B1    2B2
  //     \  /
  //      1Foo
- The traversal order will be: Foo, B2, B1, Root and B2’s definition of property “A” will “win”.
+ The traversal order will be: Foo, B2, B1, Root and B2's definition of property "A" will "win".
  </scenario>
  @bsimethod                              Muhammad Hassan                         07/15
  -------------+---------------+---------------+---------------+---------------+---------*/
@@ -1521,10 +1521,10 @@ TEST_F(PropertyOverrideTests, VerifyClassTraversalOrderAfterPropertyOverride1)
  <summary>Creates a class chain and add properties and then verifies if they
  come in the expected sequence depending on Traversal Order of ECClasses.</summary>
  <Scenario>
- <ECClass typeName = "Root" / > //Defines a property “A”
+ <ECClass typeName = "Root" / > //Defines a property "A"
  <ECClass typeName = "B1">
  <BaseClass>Root< / BaseClass >
- <ECClass typeName = "B2" / >  // Define’s a property “A”
+ <ECClass typeName = "B2" / >  // Defines a property "A"
  <ECClass typeName = "Foo">
  <BaseClass>B1< / BaseClass >
  <BaseClass>B2< / BaseClass >
@@ -1533,7 +1533,7 @@ TEST_F(PropertyOverrideTests, VerifyClassTraversalOrderAfterPropertyOverride1)
  //   2B1    4B2
  //     \  /
  //      1Foo
- The traversal order will be: Foo, B1, Root, B2, and Root’s definition of property “A” will “win”,
+ The traversal order will be: Foo, B1, Root, B2, and Root's definition of property "A" will "win",
  </scenario>
  @bsimethod                              Muhammad Hassan                         07/15
  -------------+---------------+---------------+---------------+---------------+---------*/
@@ -1756,5 +1756,60 @@ TEST_F(PropertyOverrideTests, PriorityOverride)
     EXPECT_EQ(priorityB, primPropOverride->GetPriority());
     }
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                     01/2020
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyOverrideTests, SamePropertyInheritedFromMultipleMixins_CaseInsensitive)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version='1.0' encoding="utf-8"?>
+        <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00.01" alias="CoreCA"/>
+            <ECEntityClass typeName='IFruit'>
+                <ECCustomAttributes>
+                <IsMixin xmlns="CoreCustomAttributes.1.0">
+                    <AppliesToEntityClass>AFruit</AppliesToEntityClass>
+                </IsMixin>
+                </ECCustomAttributes>
+               <ECProperty propertyName='color' typeName='string'/>
+            </ECEntityClass>
+            <ECEntityClass typeName='IFood'>
+                <ECCustomAttributes>
+                <IsMixin xmlns="CoreCustomAttributes.1.0">
+                    <AppliesToEntityClass>AFruit</AppliesToEntityClass>
+                </IsMixin>
+                </ECCustomAttributes>
+               <ECProperty propertyName='Color' typeName='string'/>
+            </ECEntityClass>
+            <ECEntityClass typeName='AFruit'>
+                <BaseClass>IFruit</BaseClass>
+                <BaseClass>IFood</BaseClass>
+            </ECEntityClass>
+        </ECSchema>)xml";
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    context->SetResolveConflicts(true);
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+
+    ECClassCP aFruit = schema->GetClassCP("AFruit");
+    ASSERT_NE(nullptr, aFruit);
+
+    auto props = aFruit->GetProperties(true);
+    ASSERT_EQ(1, std::distance(props.begin(), props.end())) << "Expected only one property to be inherited";
+
+    ECClassCP iFruit = schema->GetClassCP("IFruit");
+    ASSERT_NE(nullptr, iFruit);
+    ECClassCP iFood = schema->GetClassCP("IFood");
+    ASSERT_NE(nullptr, iFood);
+
+    ECPropertyCP color_IFruit = iFruit->GetPropertyP("color");
+    ASSERT_NE(nullptr, color_IFruit);
+    ECPropertyCP color_IFood = iFood->GetPropertyP("color");
+    ASSERT_NE(nullptr, color_IFood);
+
+    ASSERT_TRUE(color_IFruit->GetName().Equals(color_IFood->GetName())) << "The two properties should have be recased to match";
+    }
+
 
 END_BENTLEY_ECN_TEST_NAMESPACE
