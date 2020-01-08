@@ -83,7 +83,7 @@ DgnV8Api::DgnFileStatus RootModelConverter::_InitRootModel()
     m_rootFile = OpenDgnV8File(openStatus, rootFileName);
     if (!m_rootFile.IsValid())
         {
-        LOG.errorv("Error opening the file %d", openStatus);
+        LOG.errorv("Error opening the file %s (Error code: %d)",rootFileName.GetNameUtf8().c_str(), openStatus);
         return openStatus;
         }
 

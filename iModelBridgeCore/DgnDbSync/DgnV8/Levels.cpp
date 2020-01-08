@@ -537,6 +537,14 @@ void Converter::ConvertLevelMask(ViewDefinitionR theView, DgnV8ViewInfoCR viewIn
         }
     else
         {
+        DgnV8Api::LevelMaskTree& lmTree = viewInfo.GetLevelMasksR();
+        DgnV8Api::LMTreeEntry* entry;
+        if (NULL != (entry = lmTree.FindEntry(NULL, v8ModelRef, false, NULL)))
+            {
+            bool newLevels;
+            entry->CorrectViewLevelMask(newLevels, false, v8ModelRef);
+            v8LevelMask = entry->GetViewLevelMaskCP();
+            }
         for (uint32_t i = 0; i < v8LevelMask->GetCapacity(); ++i)
             {
             DgnV8Api::LevelId levelId = (i + 1);
