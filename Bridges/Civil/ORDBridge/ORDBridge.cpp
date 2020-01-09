@@ -302,6 +302,13 @@ BentleyStatus ORDBridge::InitializeAlignedPartitions(SubjectCR jobSubject)
             horizontalAlignmentsCPtr->GetHorizontalModel()->Update();
             }
 
+        horizontalAlignmentsCPtr = AlignmentBim::HorizontalAlignments::Query(*railNetworkCPtr->GetNetworkModel());
+        if (horizontalAlignmentsCPtr.IsValid())
+            {
+            horizontalAlignmentsCPtr->GetHorizontalModel()->SetIsPrivate(true);
+            horizontalAlignmentsCPtr->GetHorizontalModel()->Update();
+            }
+
         designAlignmentModelPtr->SetIsPrivate(true);
         designAlignmentModelPtr->Update();
 
