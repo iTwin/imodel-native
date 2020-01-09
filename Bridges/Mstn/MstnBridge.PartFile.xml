@@ -6,8 +6,8 @@
 
     <Part Name="MstnBridgePRG" PrgOutputDir="MstnBridge">
         <SubProduct ProductName="MstnBridge"/>
+        <SubProduct ProductName="MstnBridge-Portable"/>
         <SubPart PartName="RunMstnBridgeTests"/>
-        <SubNuGetProduct NuGetProductName="MstnBridgeNuget"/>
     </Part>
 
     <Part Name="__MstnBridgeProductSubParts">
@@ -125,19 +125,12 @@
         </Bindings>
     </Part>
 
-    <NuGetProduct Name="MstnBridgeNuget" Description="MstnBridge" OnlyPlatforms="x64">
+    <Product Name="MstnBridge-Portable">
         <SubPart PartName="__MstnBridgeProductSubParts"/>
         <SubPart PartName="__MstnBridgeNugetCrt"/>
-        
         <FeatureExclude>imodel02_Workspace_System_Fonts</FeatureExclude>
-
         <Directories DirectoryListName="DgnDbSyncAppCommonDirList" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync" Repository="imodel02"/>
         <Directories DirectoryListName="MstnBridgeDirList"/>
-        <Directories DirectoryListName="iModelCoreNugetDirs"/>
-    </NuGetProduct>
-
-    <ProductDirectoryList ListName="iModelCoreNugetDirs">
-        <ProductDirectory Name="applicationroot" Path="app"/>
-    </ProductDirectoryList>
+    </Product>
 
 </BuildContext>
