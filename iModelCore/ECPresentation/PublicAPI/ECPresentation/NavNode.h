@@ -7,6 +7,7 @@
 
 #include <ECPresentation/ECPresentationTypes.h>
 #include <ECPresentation/ExtendedData.h>
+#include <ECPresentation/LabelDefinition.h>
 #include <Bentley/md5.h>
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
@@ -290,7 +291,6 @@ protected:
     virtual uint64_t _GetNodeId() const = 0;
     virtual uint64_t _GetParentNodeId() const = 0;
     virtual NavNodeKeyCPtr _GetNodeKey() const = 0;
-    virtual Utf8String _GetLabel() const = 0;
     virtual Utf8String _GetDescription() const = 0;
     virtual Utf8String _GetExpandedImageId() const = 0;
     virtual Utf8String _GetCollapsedImageId() const = 0;
@@ -306,12 +306,12 @@ protected:
     virtual bool _IsCheckboxVisible() const = 0;
     virtual bool _IsCheckboxEnabled() const = 0;
     virtual bool _IsExpanded() const = 0;
+    virtual LabelDefinitionCR _GetLabelDefinition() const = 0;
     virtual rapidjson::Value const* _GetUsersExtendedData() const { return nullptr; }
 
     virtual void _SetNodeId(uint64_t nodeId) = 0;
     virtual void _SetParentNodeId(uint64_t parentNodeId) = 0;
     virtual void _SetNodeKey(NavNodeKeyCR nodeKey) = 0;
-    virtual void _SetLabel(Utf8CP label) = 0;
     virtual void _SetDescription(Utf8CP description) = 0;
     virtual void _SetExpandedImageId(Utf8CP imageId) = 0;
     virtual void _SetCollapsedImageId(Utf8CP imageId) = 0;
@@ -326,6 +326,7 @@ protected:
     virtual void _SetIsCheckboxVisible(bool value) = 0;
     virtual void _SetIsCheckboxEnabled(bool value) = 0;
     virtual void _SetIsExpanded(bool value) = 0;
+    virtual void _SetLabelDefinition(LabelDefinitionCR value) = 0;
 
     virtual NavNodePtr _Clone() const = 0;
 
@@ -348,10 +349,6 @@ public:
     //! Get unique parent node ID or 0 if this is a root node.
     uint64_t GetParentNodeId() const {return _GetParentNodeId();}
 
-    //! Set label.
-    void SetLabel(Utf8CP label) {_SetLabel(label);}
-    //! Get the label.
-    Utf8String GetLabel() const {return _GetLabel();}
     //! Set description.
     void SetDescription(Utf8CP description) {_SetDescription(description);}
     //! Get the description.
@@ -383,6 +380,11 @@ public:
     void SetType(Utf8CP type) {_SetType(type);}
     //! Get the type of this node.
     Utf8String GetType() const {return _GetType();}
+
+    //! Get display label definition of this node.
+    LabelDefinitionCR GetLabelDefinition() const { return _GetLabelDefinition(); }
+    //! Set display label definition of this node.
+    void SetLabelDefinition(LabelDefinitionCR value) { _SetLabelDefinition(value); }
 
     //! Set if this node has a children.
     void SetHasChildren(bool value) {_SetHasChildren(value);}

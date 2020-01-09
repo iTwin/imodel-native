@@ -44,7 +44,7 @@ struct RulesDrivenECPresentationManagerTests : ECPresentationTest
         TestNavNodePtr node = TestNodesHelper::CreateInstanceNode(*GetConnection(), *instanceKey.GetClass(), instanceKey.GetId());
         node->SetNodeId(CreateNodeId());
         node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*GetConnection(), *node, bvector<Utf8String>{std::to_string(node->GetNodeId()).c_str()}, false));
-        node->SetLabel(label);
+        node->SetLabelDefinition(*LabelDefinition::Create(label));
         return node;
         }
 
@@ -60,7 +60,7 @@ struct RulesDrivenECPresentationManagerTests : ECPresentationTest
         node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*GetConnection(), *node, path, false));
         if (parent.IsValid())
             node->SetParentNodeId(parent->GetNodeId());
-        node->SetLabel(label);
+        node->SetLabelDefinition(*LabelDefinition::Create(label));
         return node;
         }
 
@@ -236,19 +236,19 @@ TEST_F(RulesDrivenECPresentationManagerStubbedImplTests, GetNodePath_InstancesHi
     NodesPathElement const* curr = &path;
     EXPECT_EQ(1, curr->GetIndex());
     ASSERT_TRUE(curr->GetNode().IsValid());
-    EXPECT_STREQ("B", curr->GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("B", curr->GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_EQ(1, curr->GetChildren().size());
 
     curr = &curr->GetChildren().front();
     EXPECT_EQ(1, curr->GetIndex());
     ASSERT_TRUE(curr->GetNode().IsValid());
-    EXPECT_STREQ("B_2", curr->GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("B_2", curr->GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_EQ(1, curr->GetChildren().size());
 
     curr = &curr->GetChildren().front();
     EXPECT_EQ(0, curr->GetIndex());
     ASSERT_TRUE(curr->GetNode().IsValid());
-    EXPECT_STREQ("B_2_1", curr->GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("B_2_1", curr->GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_EQ(0, curr->GetChildren().size());
     }
 
@@ -303,25 +303,25 @@ TEST_F(RulesDrivenECPresentationManagerStubbedImplTests, GetNodePath_InstancesHi
     NodesPathElement const* curr = &path;
     EXPECT_EQ(0, curr->GetIndex());
     ASSERT_TRUE(curr->GetNode().IsValid());
-    EXPECT_STREQ("A", curr->GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("A", curr->GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_EQ(1, curr->GetChildren().size());
 
     curr = &curr->GetChildren().front();
     EXPECT_EQ(1, curr->GetIndex());
     ASSERT_TRUE(curr->GetNode().IsValid());
-    EXPECT_STREQ("A_2", curr->GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("A_2", curr->GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_EQ(1, curr->GetChildren().size());
 
     curr = &curr->GetChildren().front();
     EXPECT_EQ(1, curr->GetIndex());
     ASSERT_TRUE(curr->GetNode().IsValid());
-    EXPECT_STREQ("A_2_2", curr->GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("A_2_2", curr->GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_EQ(1, curr->GetChildren().size());
 
     curr = &curr->GetChildren().front();
     EXPECT_EQ(0, curr->GetIndex());
     ASSERT_TRUE(curr->GetNode().IsValid());
-    EXPECT_STREQ("A_2_2_1", curr->GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("A_2_2_1", curr->GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_EQ(0, curr->GetChildren().size());
     }
 
@@ -373,32 +373,32 @@ TEST_F(RulesDrivenECPresentationManagerStubbedImplTests, GetNodePaths_Multiple_R
     NodesPathElement const* curr = &paths[0];
     EXPECT_EQ(0, curr->GetIndex());
     ASSERT_TRUE(curr->GetNode().IsValid());
-    EXPECT_STREQ("A", curr->GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("A", curr->GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_EQ(1, curr->GetChildren().size());
 
     curr = &curr->GetChildren().front();
     EXPECT_EQ(2, curr->GetIndex());
     ASSERT_TRUE(curr->GetNode().IsValid());
-    EXPECT_STREQ("A_3", curr->GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("A_3", curr->GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_EQ(0, curr->GetChildren().size());
 
     // 2nd branch
     curr = &paths[1];
     EXPECT_EQ(1, curr->GetIndex());
     ASSERT_TRUE(curr->GetNode().IsValid());
-    EXPECT_STREQ("B", curr->GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("B", curr->GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_EQ(1, curr->GetChildren().size());
 
     curr = &curr->GetChildren().front();
     EXPECT_EQ(1, curr->GetIndex());
     ASSERT_TRUE(curr->GetNode().IsValid());
-    EXPECT_STREQ("B_2", curr->GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("B_2", curr->GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_EQ(1, curr->GetChildren().size());
 
     curr = &curr->GetChildren().front();
     EXPECT_EQ(0, curr->GetIndex());
     ASSERT_TRUE(curr->GetNode().IsValid());
-    EXPECT_STREQ("B_2_1", curr->GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("B_2_1", curr->GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_EQ(0, curr->GetChildren().size());
     }
 
@@ -459,37 +459,37 @@ TEST_F(RulesDrivenECPresentationManagerStubbedImplTests, GetNodePaths_Multiple_R
     NodesPathElement const* curr = &paths[0];
     EXPECT_EQ(1, curr->GetIndex());
     ASSERT_TRUE(curr->GetNode().IsValid());
-    EXPECT_STREQ("B", curr->GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("B", curr->GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_EQ(2, curr->GetChildren().size());
 
     NodesPathElement const* curr1 = &curr->GetChildren()[0];
     EXPECT_EQ(0, curr1->GetIndex());
     ASSERT_TRUE(curr1->GetNode().IsValid());
-    EXPECT_STREQ("B_1", curr1->GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("B_1", curr1->GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_EQ(1, curr1->GetChildren().size());
 
     curr1 = &curr1->GetChildren().front();
     EXPECT_EQ(0, curr1->GetIndex());
     ASSERT_TRUE(curr1->GetNode().IsValid());
-    EXPECT_STREQ("B_1_1", curr1->GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("B_1_1", curr1->GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_EQ(0, curr1->GetChildren().size());
 
     NodesPathElement const* curr2 = &curr->GetChildren()[1];
     EXPECT_EQ(2, curr2->GetIndex());
     ASSERT_TRUE(curr2->GetNode().IsValid());
-    EXPECT_STREQ("B_3", curr2->GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("B_3", curr2->GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_EQ(2, curr2->GetChildren().size());
 
     NodesPathElement const* curr21 = &curr2->GetChildren()[0];
     EXPECT_EQ(1, curr21->GetIndex());
     ASSERT_TRUE(curr21->GetNode().IsValid());
-    EXPECT_STREQ("B_3_2", curr21->GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("B_3_2", curr21->GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_EQ(0, curr21->GetChildren().size());
 
     NodesPathElement const* curr22 = &curr2->GetChildren()[1];
     EXPECT_EQ(0, curr22->GetIndex());
     ASSERT_TRUE(curr22->GetNode().IsValid());
-    EXPECT_STREQ("B_3_1", curr22->GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("B_3_1", curr22->GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_EQ(0, curr22->GetChildren().size());
     }
 
@@ -549,19 +549,19 @@ TEST_F(RulesDrivenECPresentationManagerStubbedImplTests, GetNodePaths_Multiple_M
 
     NodesPathElement const* curr = &paths[0];
     ASSERT_TRUE(curr->GetNode().IsValid());
-    EXPECT_STREQ("B", curr->GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("B", curr->GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_FALSE(curr->IsMarked());
     ASSERT_EQ(2, curr->GetChildren().size());
 
     curr = &curr->GetChildren().back();
     ASSERT_TRUE(curr->GetNode().IsValid());
-    EXPECT_STREQ("B_3", curr->GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("B_3", curr->GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_FALSE(curr->IsMarked());
     ASSERT_EQ(2, curr->GetChildren().size());
 
     curr = &curr->GetChildren().front();
     ASSERT_TRUE(curr->GetNode().IsValid());
-    EXPECT_STREQ("B_3_2", curr->GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("B_3_2", curr->GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_TRUE(curr->IsMarked());
     ASSERT_EQ(0, curr->GetChildren().size());
     }
@@ -603,19 +603,19 @@ TEST_F(RulesDrivenECPresentationManagerStubbedImplTests, GetNodePaths_Multiple_M
 
     NodesPathElement const* curr = &paths[0];
     ASSERT_TRUE(curr->GetNode().IsValid());
-    EXPECT_STREQ("B", curr->GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("B", curr->GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_FALSE(curr->IsMarked());
     ASSERT_EQ(1, curr->GetChildren().size());
 
     curr = &curr->GetChildren().front();
     ASSERT_TRUE(curr->GetNode().IsValid());
-    EXPECT_STREQ("B_1", curr->GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("B_1", curr->GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_TRUE(curr->IsMarked());
     ASSERT_EQ(1, curr->GetChildren().size());
 
     curr = &curr->GetChildren().front();
     ASSERT_TRUE(curr->GetNode().IsValid());
-    EXPECT_STREQ("B_1_1", curr->GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("B_1_1", curr->GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_FALSE(curr->IsMarked());
     ASSERT_EQ(0, curr->GetChildren().size());
     }
@@ -656,19 +656,19 @@ TEST_F(RulesDrivenECPresentationManagerStubbedImplTests, GetNodePaths_Multiple_M
 
     NodesPathElement const* curr = &paths[0];
     ASSERT_TRUE(curr->GetNode().IsValid());
-    EXPECT_STREQ("B", curr->GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("B", curr->GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_FALSE(curr->IsMarked());
     ASSERT_EQ(1, curr->GetChildren().size());
 
     curr = &curr->GetChildren().front();
     ASSERT_TRUE(curr->GetNode().IsValid());
-    EXPECT_STREQ("B_1", curr->GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("B_1", curr->GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_TRUE(curr->IsMarked());
     ASSERT_EQ(1, curr->GetChildren().size());
 
     curr = &curr->GetChildren().front();
     ASSERT_TRUE(curr->GetNode().IsValid());
-    EXPECT_STREQ("B_1_1", curr->GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("B_1_1", curr->GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_FALSE(curr->IsMarked());
     ASSERT_EQ(0, curr->GetChildren().size());
     }

@@ -207,11 +207,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_DoNotSo
 
     NavNodeCPtr instanceNode = nodes[0];
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, instanceNode->GetType().c_str());
-    ASSERT_STREQ("Widget2", instanceNode->GetLabel().c_str());
+    ASSERT_STREQ("Widget2", instanceNode->GetLabelDefinition().GetDisplayValue().c_str());
 
     instanceNode = nodes[1];
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, instanceNode->GetType().c_str());
-    ASSERT_STREQ("Widget1", instanceNode->GetLabel().c_str());
+    ASSERT_STREQ("Widget1", instanceNode->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -379,7 +379,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_Grouped
     ASSERT_EQ(1, nodes.GetSize());
 
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, nodes[0]->GetType().c_str());
-    ASSERT_STREQ("WidgetID", nodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("WidgetID", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -411,11 +411,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_Grouped
 
     NavNodeCPtr instanceNode = nodes[0];
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, instanceNode->GetType().c_str());
-    ASSERT_STREQ("GadgetID", instanceNode->GetLabel().c_str());
+    ASSERT_STREQ("GadgetID", instanceNode->GetLabelDefinition().GetDisplayValue().c_str());
 
     NavNodeCPtr labelGroupingNode = nodes[1];
     EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, labelGroupingNode->GetType().c_str());
-    ASSERT_STREQ("WidgetID", labelGroupingNode->GetLabel().c_str());
+    ASSERT_STREQ("WidgetID", labelGroupingNode->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure we have 2 widget instances
     DataContainer<NavNodeCPtr> instanceNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *labelGroupingNode, PageOptions(), options).get(); });
@@ -454,7 +454,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_Grouped
 
     NavNodeCPtr labelGroupingNode = labelGroupingNodes[0];
     EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, labelGroupingNode->GetType().c_str());
-    ASSERT_STREQ("GadgetID", labelGroupingNode->GetLabel().c_str());
+    ASSERT_STREQ("GadgetID", labelGroupingNode->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure we have 2 gadget instances
     DataContainer<NavNodeCPtr> instanceNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *labelGroupingNode, PageOptions(), options).get(); });
@@ -464,7 +464,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_Grouped
 
     labelGroupingNode = labelGroupingNodes[1];
     EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, labelGroupingNode->GetType().c_str());
-    ASSERT_STREQ("WidgetID", labelGroupingNode->GetLabel().c_str());
+    ASSERT_STREQ("WidgetID", labelGroupingNode->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure we have 2 widget instances
     instanceNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *labelGroupingNode, PageOptions(), options).get(); });
@@ -725,9 +725,9 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_SkipsSpecifiedNu
 
     // expect 3 nodes: C, D, E
     ASSERT_EQ(3, nodes.GetSize());
-    EXPECT_STREQ("C", nodes[0]->GetLabel().c_str());
-    EXPECT_STREQ("D", nodes[1]->GetLabel().c_str());
-    EXPECT_STREQ("E", nodes[2]->GetLabel().c_str());
+    EXPECT_STREQ("C", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("D", nodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("E", nodes[2]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -757,9 +757,9 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_SkipsSpecifiedNu
 
     // expect 3 nodes: C, D, E
     ASSERT_EQ(3, nodes.GetSize());
-    EXPECT_STREQ("C", nodes[0]->GetLabel().c_str());
-    EXPECT_STREQ("D", nodes[1]->GetLabel().c_str());
-    EXPECT_STREQ("E", nodes[2]->GetLabel().c_str());
+    EXPECT_STREQ("C", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("D", nodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("E", nodes[2]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -819,8 +819,8 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_ReturnsSpecified
 
     // expect 2 nodes: A, B
     ASSERT_EQ(2, nodes.GetSize());
-    EXPECT_STREQ("A", nodes[0]->GetLabel().c_str());
-    EXPECT_STREQ("B", nodes[1]->GetLabel().c_str());
+    EXPECT_STREQ("A", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("B", nodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -847,8 +847,8 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_PageSizeHigherTh
 
     // expect 2 nodes: A, B
     ASSERT_EQ(2, nodes.GetSize());
-    EXPECT_STREQ("A", nodes[0]->GetLabel().c_str());
-    EXPECT_STREQ("B", nodes[1]->GetLabel().c_str());
+    EXPECT_STREQ("A", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("B", nodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -904,9 +904,9 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_SkipsAndReturnsS
 
     // expect 3 nodes: B, C, D
     ASSERT_EQ(3, nodes.GetSize());
-    EXPECT_STREQ("B", nodes[0]->GetLabel().c_str());
-    EXPECT_STREQ("C", nodes[1]->GetLabel().c_str());
-    EXPECT_STREQ("D", nodes[2]->GetLabel().c_str());
+    EXPECT_STREQ("B", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("C", nodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("D", nodes[2]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -932,7 +932,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_Type_Label_D
 
     NavNodeCPtr instanceNode = nodes[0];
     ASSERT_STREQ("type", instanceNode->GetType().c_str());
-    ASSERT_STREQ("label", instanceNode->GetLabel().c_str());
+    ASSERT_STREQ("label", instanceNode->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_STREQ("description", instanceNode->GetDescription().c_str());
     ASSERT_STREQ("imageid", instanceNode->GetCollapsedImageId().c_str());
     }
@@ -1334,7 +1334,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
     // make sure we have 1 node
     ASSERT_EQ(1, nodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, nodes[0]->GetType().c_str());
-    ASSERT_STREQ("WidgetID", nodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("WidgetID", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1367,12 +1367,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
     // make sure we have 1 gadget instance node
     NavNodeCPtr instanceNode = nodes[0];
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, instanceNode->GetType().c_str());
-    ASSERT_STREQ("GadgetID", instanceNode->GetLabel().c_str());
+    ASSERT_STREQ("GadgetID", instanceNode->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure we have 1 widget label grouping node
     NavNodeCPtr labelGroupingNode = nodes[1];
     EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, labelGroupingNode->GetType().c_str());
-    ASSERT_STREQ("WidgetID", labelGroupingNode->GetLabel().c_str());
+    ASSERT_STREQ("WidgetID", labelGroupingNode->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure we have 2 widget instances
     DataContainer<NavNodeCPtr> instanceNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *labelGroupingNode, PageOptions(), options).get(); });
@@ -1412,7 +1412,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
     // make sure we have 2 gadget instances in gadget grouping node
     NavNodeCPtr labelGroupingNode = labelGroupingNodes[0];
     EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, labelGroupingNode->GetType().c_str());
-    ASSERT_STREQ("GadgetID", labelGroupingNode->GetLabel().c_str());
+    ASSERT_STREQ("GadgetID", labelGroupingNode->GetLabelDefinition().GetDisplayValue().c_str());
     DataContainer<NavNodeCPtr> instanceNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *labelGroupingNode, PageOptions(), options).get(); });
     ASSERT_EQ(2, instanceNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, instanceNodes[0]->GetType().c_str());
@@ -1421,7 +1421,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
     // make sure we have 2 widget instances in widget grouping node
     labelGroupingNode = labelGroupingNodes[1];
     EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, labelGroupingNode->GetType().c_str());
-    ASSERT_STREQ("WidgetID", labelGroupingNode->GetLabel().c_str());
+    ASSERT_STREQ("WidgetID", labelGroupingNode->GetLabelDefinition().GetDisplayValue().c_str());
     instanceNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *labelGroupingNode, PageOptions(), options).get(); });
     ASSERT_EQ(2, instanceNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, instanceNodes[0]->GetType().c_str());
@@ -1463,7 +1463,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
     DataContainer<NavNodeCPtr> gadgetInstanceNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *classGroupingNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, gadgetInstanceNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, gadgetInstanceNodes[0]->GetType().c_str());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*gadget).c_str(), gadgetInstanceNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*gadget).c_str(), gadgetInstanceNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure we have 2 widget nodes (one grouping node and one instance node)
     DataContainer<NavNodeCPtr> widgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *classGroupingNodes[1], PageOptions(), options).get(); });
@@ -1474,11 +1474,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
     DataContainer<NavNodeCPtr> widget1Nodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *widgetNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(2, widget1Nodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, widget1Nodes[0]->GetType().c_str());
-    EXPECT_STREQ("Widget1", widget1Nodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("Widget1", widget1Nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure we have 1 Widget2 instance node
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, widgetNodes[1]->GetType().c_str());
-    EXPECT_STREQ("Widget2", widgetNodes[1]->GetLabel().c_str());
+    EXPECT_STREQ("Widget2", widgetNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1515,7 +1515,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
     DataContainer<NavNodeCPtr> gadgetInstanceNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *classGroupingNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, gadgetInstanceNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, gadgetInstanceNodes[0]->GetType().c_str());
-    EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_NotSpecified()).c_str(), gadgetInstanceNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_NotSpecified()).c_str(), gadgetInstanceNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure we have 2 widget nodes (one grouping node and one instance node)
     DataContainer<NavNodeCPtr> widgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *classGroupingNodes[1], PageOptions(), options).get(); });
@@ -1526,11 +1526,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
     DataContainer<NavNodeCPtr> widget1Nodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *widgetNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(2, widget1Nodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, widget1Nodes[0]->GetType().c_str());
-    EXPECT_STREQ("Widget1", widget1Nodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("Widget1", widget1Nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure we have 1 Widget2 instance node
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, widgetNodes[1]->GetType().c_str());
-    EXPECT_STREQ("Widget2", widgetNodes[1]->GetLabel().c_str());
+    EXPECT_STREQ("Widget2", widgetNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1562,11 +1562,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     NavNodeCPtr instanceNode = nodes[0];
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, instanceNode->GetType().c_str());
-    ASSERT_STREQ("Widget2", instanceNode->GetLabel().c_str());
+    ASSERT_STREQ("Widget2", instanceNode->GetLabelDefinition().GetDisplayValue().c_str());
 
     instanceNode = nodes[1];
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, instanceNode->GetType().c_str());
-    ASSERT_STREQ("Widget1", instanceNode->GetLabel().c_str());
+    ASSERT_STREQ("Widget1", instanceNode->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1978,14 +1978,14 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Gr
 
     // make sure we have 1 gadget node
     ASSERT_EQ(1, gadgetNodes.GetSize());
-    ASSERT_STREQ("GadgetID", gadgetNodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("GadgetID", gadgetNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     NavNodeCPtr gadgetNode = gadgetNodes[0];
     DataContainer<NavNodeCPtr> widgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *gadgetNode, PageOptions(), options).get(); });
 
     // make sure we have 1 widget node
     ASSERT_EQ(1, widgetNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, widgetNodes[0]->GetType().c_str());
-    ASSERT_STREQ("WidgetID", widgetNodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("WidgetID", widgetNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2027,7 +2027,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Gr
 
     // make sure we have 1 gadget node
     ASSERT_EQ(1, gadgetNodes.GetSize());
-    ASSERT_STREQ(GetDefaultDisplayLabel(*gadgetInstance).c_str(), gadgetNodes[0]->GetLabel().c_str());
+    ASSERT_STREQ(GetDefaultDisplayLabel(*gadgetInstance).c_str(), gadgetNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     NavNodeCPtr gadgetNode = gadgetNodes[0];
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *gadgetNode, PageOptions(), options).get(); });
 
@@ -2079,15 +2079,15 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Do
 
     // make sure we have 1 gadget node
     ASSERT_EQ(1, gadgetNodes.GetSize());
-    ASSERT_STREQ(GetDefaultDisplayLabel(*gadgetInstance).c_str(), gadgetNodes[0]->GetLabel().c_str());
+    ASSERT_STREQ(GetDefaultDisplayLabel(*gadgetInstance).c_str(), gadgetNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     NavNodeCPtr gadgetNode = gadgetNodes[0];
     DataContainer<NavNodeCPtr> sprocketNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *gadgetNode, PageOptions(), options).get(); });
 
     // make sure we have 2 sprocket nodes
     ASSERT_EQ(2, sprocketNodes.GetSize());
 
-    ASSERT_STREQ("Sprocket2", sprocketNodes[0]->GetLabel().c_str());
-    ASSERT_STREQ("Sprocket1", sprocketNodes[1]->GetLabel().c_str());
+    ASSERT_STREQ("Sprocket2", sprocketNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    ASSERT_STREQ("Sprocket1", sprocketNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2132,7 +2132,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Sk
     // make sure we have 1 sprocket node
     ASSERT_EQ(1, sprocketNodes.GetSize());
     NavNodeCPtr sprocketNode = sprocketNodes[0];
-    ASSERT_STREQ(GetDefaultDisplayLabel(*sprocketInstance).c_str(), sprocketNode->GetLabel().c_str());
+    ASSERT_STREQ(GetDefaultDisplayLabel(*sprocketInstance).c_str(), sprocketNode->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2223,13 +2223,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_In
 
     // make sure we have 1 gadget node
     ASSERT_EQ(1, gadgetNodes.GetSize());
-    ASSERT_STREQ(GetDefaultDisplayLabel(*gadgetInstance).c_str(), gadgetNodes[0]->GetLabel().c_str());
+    ASSERT_STREQ(GetDefaultDisplayLabel(*gadgetInstance).c_str(), gadgetNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     NavNodeCPtr gadgetNode = gadgetNodes[0];
     DataContainer<NavNodeCPtr> sprocketNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *gadgetNode, PageOptions(), options).get(); });
 
     // make sure we have 1 sprocket node
     ASSERT_EQ(1, sprocketNodes.GetSize());
-    ASSERT_STREQ("Sprocket1", sprocketNodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("Sprocket1", sprocketNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2342,17 +2342,17 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Gr
     DataContainer<NavNodeCPtr> sprocket1Nodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *sprocketNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(2, sprocket1Nodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, sprocket1Nodes[0]->GetType().c_str());
-    EXPECT_STREQ("Sprocket1", sprocket1Nodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("Sprocket1", sprocket1Nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure we have 1 Sprocket2 instance node
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, sprocketNodes[1]->GetType().c_str());
-    EXPECT_STREQ("Sprocket2", sprocketNodes[1]->GetLabel().c_str());
+    EXPECT_STREQ("Sprocket2", sprocketNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure we have 1 widget instance node
     DataContainer<NavNodeCPtr> widgetInstanceNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *classGroupingNodes[1], PageOptions(), options).get(); });
     ASSERT_EQ(1, widgetInstanceNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, widgetInstanceNodes[0]->GetType().c_str());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*widgetInstance).c_str(), widgetInstanceNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*widgetInstance).c_str(), widgetInstanceNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2411,17 +2411,17 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Gr
     DataContainer<NavNodeCPtr> sprocket1Nodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *sprocketNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(2, sprocket1Nodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, sprocket1Nodes[0]->GetType().c_str());
-    EXPECT_STREQ("Sprocket1", sprocket1Nodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("Sprocket1", sprocket1Nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure we have 1 Sprocket2 instance node
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, sprocketNodes[1]->GetType().c_str());
-    EXPECT_STREQ("Sprocket2", sprocketNodes[1]->GetLabel().c_str());
+    EXPECT_STREQ("Sprocket2", sprocketNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure we have 1 widget instance node
     DataContainer<NavNodeCPtr> widgetInstanceNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *classGroupingNodes[1], PageOptions(), options).get(); });
     ASSERT_EQ(1, widgetInstanceNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, widgetInstanceNodes[0]->GetType().c_str());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*widgetInstance).c_str(), widgetInstanceNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*widgetInstance).c_str(), widgetInstanceNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2509,7 +2509,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Fi
 
     DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
-    ASSERT_STREQ("test label", childNodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("test label", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 
@@ -2704,12 +2704,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SearchResultInstances_Hi
 
     // make sure we have 1 widget node
     ASSERT_EQ(1, widgetNodes.GetSize());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*widget).c_str(), widgetNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*widget).c_str(), widgetNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure we have 1 custom node
     DataContainer<NavNodeCPtr> customNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *widgetNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, customNodes.GetSize());
-    EXPECT_STREQ("test", customNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("test", customNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2824,14 +2824,14 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, SearchResultInstances_G
 
     // make sure we have 1 gadget instance node
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, nodes[0]->GetType().c_str());
-    ASSERT_STREQ("GadgetID", nodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("GadgetID", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure we have 2 widget instance nodes with label grouping node
     EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, nodes[1]->GetType().c_str());
     DataContainer<NavNodeCPtr> widgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *nodes[1], PageOptions(), options).get(); });
     ASSERT_EQ(2, widgetNodes.GetSize());
-    ASSERT_STREQ("WidgetID", widgetNodes[0]->GetLabel().c_str());
-    ASSERT_STREQ("WidgetID", widgetNodes[1]->GetLabel().c_str());
+    ASSERT_STREQ("WidgetID", widgetNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    ASSERT_STREQ("WidgetID", widgetNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2868,15 +2868,15 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, SearchResultInstances_G
     // make sure we have 2 gadget instance nodes
     EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, nodes[0]->GetType().c_str());
     DataContainer<NavNodeCPtr> gadgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options).get(); });
-    ASSERT_STREQ("GadgetID", gadgetNodes[0]->GetLabel().c_str());
-    ASSERT_STREQ("GadgetID", gadgetNodes[1]->GetLabel().c_str());
+    ASSERT_STREQ("GadgetID", gadgetNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    ASSERT_STREQ("GadgetID", gadgetNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure we have 2 widget instance nodes
     EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, nodes[1]->GetType().c_str());
     DataContainer<NavNodeCPtr> widgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *nodes[1], PageOptions(), options).get(); });
     ASSERT_EQ(2, widgetNodes.GetSize());
-    ASSERT_STREQ("WidgetID", widgetNodes[0]->GetLabel().c_str());
-    ASSERT_STREQ("WidgetID", widgetNodes[1]->GetLabel().c_str());
+    ASSERT_STREQ("WidgetID", widgetNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    ASSERT_STREQ("WidgetID", widgetNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2908,11 +2908,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SearchResultInstances_Do
 
     NavNodeCPtr instanceNode = nodes[0];
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, instanceNode->GetType().c_str());
-    ASSERT_STREQ("Widget2", instanceNode->GetLabel().c_str());
+    ASSERT_STREQ("Widget2", instanceNode->GetLabelDefinition().GetDisplayValue().c_str());
 
     instanceNode = nodes[1];
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, instanceNode->GetType().c_str());
-    ASSERT_STREQ("Widget1", instanceNode->GetLabel().c_str());
+    ASSERT_STREQ("Widget1", instanceNode->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2999,7 +2999,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, LabelOverride)
 
     // make sure we have 1 node with overrided Label & Description
     ASSERT_EQ(1, nodes.GetSize());
-    ASSERT_STREQ("overridedLabel", nodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("overridedLabel", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_STREQ("overridedDescription", nodes[0]->GetDescription().c_str());
     }
 
@@ -3033,8 +3033,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, LabelOverrideWithGrouped
 
     // verify there're two grouping nodes with correct labels
     ASSERT_EQ(2, nodes.GetSize());
-    ASSERT_STREQ("Count: 2", nodes[0]->GetLabel().c_str());
-    ASSERT_STREQ("Count: 3", nodes[1]->GetLabel().c_str());
+    ASSERT_STREQ("Count: 2", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    ASSERT_STREQ("Count: 3", nodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3075,9 +3075,9 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, LabelOverrideWithGrouped
 
     // verify there're three grouping nodes with correct labels
     ASSERT_EQ(3, nodes.GetSize());
-    ASSERT_STREQ("Count: 1", nodes[0]->GetLabel().c_str());
-    ASSERT_STREQ("Count: 2", nodes[1]->GetLabel().c_str());
-    ASSERT_STREQ("Count: 3", nodes[2]->GetLabel().c_str());
+    ASSERT_STREQ("Count: 1", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    ASSERT_STREQ("Count: 2", nodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
+    ASSERT_STREQ("Count: 3", nodes[2]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3119,9 +3119,9 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, LabelOverrideWithGrouped
 
     // verify there're three grouping nodes with correct labels
     ASSERT_EQ(3, nodes.GetSize());
-    ASSERT_STREQ("Count: 2", nodes[0]->GetLabel().c_str());
-    ASSERT_STREQ("Count: 3", nodes[1]->GetLabel().c_str());
-    ASSERT_STREQ("Count: 1", nodes[2]->GetLabel().c_str());
+    ASSERT_STREQ("Count: 2", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    ASSERT_STREQ("Count: 3", nodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
+    ASSERT_STREQ("Count: 1", nodes[2]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3180,7 +3180,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, LocalizationResourceKeyD
 
     // make sure we have 1 node
     ASSERT_EQ(1, nodes.GetSize());
-    ASSERT_STREQ("T35T", nodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("T35T", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3209,7 +3209,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, LocalizationResourceKeyD
 
     // make sure we have 1 node
     ASSERT_EQ(1, nodes.GetSize());
-    ASSERT_STREQ("notfound", nodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("notfound", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3243,11 +3243,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CheckBoxRule_UsesDefault
     ASSERT_EQ(2, nodes.GetSize());
 
     // make sure we have 1 gadget node
-    ASSERT_STREQ("GadgetID", nodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("GadgetID", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_FALSE(nodes[0]->IsCheckboxVisible());
 
     // make sure we have 1 widget node with CheckBoxRule
-    ASSERT_STREQ("WidgetID", nodes[1]->GetLabel().c_str());
+    ASSERT_STREQ("WidgetID", nodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_TRUE(nodes[1]->IsCheckboxVisible());
     ASSERT_TRUE(nodes[1]->IsCheckboxEnabled());
     ASSERT_FALSE(nodes[1]->IsChecked());
@@ -3277,7 +3277,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CheckBoxRule_WithoutProp
 
     // make sure we have 1 node
     ASSERT_EQ(1, nodes.GetSize());
-    ASSERT_STREQ("customLabel", nodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("customLabel", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_TRUE(nodes[0]->IsCheckboxVisible());
     ASSERT_TRUE(nodes[0]->IsCheckboxEnabled());
     ASSERT_FALSE(nodes[0]->IsChecked());
@@ -3320,11 +3320,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CheckBoxRule_UsesInverse
     ASSERT_EQ(2, nodes.GetSize());
 
     // make sure we have 1 gadget node
-    ASSERT_STREQ("GadgetID", nodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("GadgetID", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_FALSE(nodes[0]->IsCheckboxVisible());
 
     // make sure we have 1 widget node with CheckBoxRule
-    ASSERT_STREQ("WidgetID", nodes[1]->GetLabel().c_str());
+    ASSERT_STREQ("WidgetID", nodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_TRUE(nodes[1]->IsCheckboxVisible());
     ASSERT_TRUE(nodes[1]->IsCheckboxEnabled());
     ASSERT_TRUE(nodes[1]->IsChecked());
@@ -3368,11 +3368,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CheckBoxRule_DoesNotUseI
     ASSERT_EQ(2, nodes.GetSize());
 
     // make sure we have 1 gadget node
-    ASSERT_STREQ("GadgetID", nodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("GadgetID", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_FALSE(nodes[0]->IsCheckboxVisible());
 
     // make sure we have 1 widget node with CheckBoxRule
-    ASSERT_STREQ("WidgetID", nodes[1]->GetLabel().c_str());
+    ASSERT_STREQ("WidgetID", nodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_TRUE(nodes[1]->IsCheckboxVisible());
     ASSERT_TRUE(nodes[1]->IsCheckboxEnabled());
     ASSERT_FALSE(nodes[1]->IsChecked());
@@ -3407,9 +3407,9 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingAscen
 
     // make sure we have 3 nodes sorted ascending
     ASSERT_EQ(3, nodes.GetSize());
-    ASSERT_STREQ("Widget1", nodes[0]->GetLabel().c_str());
-    ASSERT_STREQ("Widget2", nodes[1]->GetLabel().c_str());
-    ASSERT_STREQ("Widget3", nodes[2]->GetLabel().c_str());
+    ASSERT_STREQ("Widget1", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    ASSERT_STREQ("Widget2", nodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
+    ASSERT_STREQ("Widget3", nodes[2]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3441,9 +3441,9 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingAscen
 
     // make sure we have 3 nodes sorted ascending
     ASSERT_EQ(3, nodes.GetSize());
-    ASSERT_STREQ("Widget1", nodes[0]->GetLabel().c_str());
-    ASSERT_STREQ("widget2", nodes[1]->GetLabel().c_str());
-    ASSERT_STREQ("Widget3", nodes[2]->GetLabel().c_str());
+    ASSERT_STREQ("Widget1", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    ASSERT_STREQ("widget2", nodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
+    ASSERT_STREQ("Widget3", nodes[2]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3475,9 +3475,9 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingDesce
 
     // make sure we have 1 node sorted descending
     ASSERT_EQ(3, nodes.GetSize());
-    ASSERT_STREQ("Widget3", nodes[0]->GetLabel().c_str());
-    ASSERT_STREQ("widget2", nodes[1]->GetLabel().c_str());
-    ASSERT_STREQ("Widget1", nodes[2]->GetLabel().c_str());
+    ASSERT_STREQ("Widget3", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    ASSERT_STREQ("widget2", nodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
+    ASSERT_STREQ("Widget1", nodes[2]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3509,9 +3509,9 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_DoNotSort)
 
     // make sure we have 3 unsorted nodes
     ASSERT_EQ(3, nodes.GetSize());
-    ASSERT_STREQ("Widget2", nodes[0]->GetLabel().c_str());
-    ASSERT_STREQ("Widget3", nodes[1]->GetLabel().c_str());
-    ASSERT_STREQ("Widget1", nodes[2]->GetLabel().c_str());
+    ASSERT_STREQ("Widget2", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    ASSERT_STREQ("Widget3", nodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
+    ASSERT_STREQ("Widget1", nodes[2]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3549,16 +3549,16 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingAscen
     ASSERT_EQ(4, nodes.GetSize());
 
     VerifyNodeInstance(*nodes[0], *instance3);
-    EXPECT_STREQ(GetDefaultDisplayLabel(*instance3).c_str(), nodes[0]->GetLabel().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*instance3).c_str(), nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     VerifyNodeInstance(*nodes[1], *instance1);
-    EXPECT_STREQ(GetDefaultDisplayLabel(*instance1).c_str(), nodes[1]->GetLabel().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*instance1).c_str(), nodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
     VerifyNodeInstance(*nodes[2], *instance4);
-    EXPECT_STREQ(GetDefaultDisplayLabel(*instance4).c_str(), nodes[2]->GetLabel().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*instance4).c_str(), nodes[2]->GetLabelDefinition().GetDisplayValue().c_str());
 
     VerifyNodeInstance(*nodes[3], *instance2);
-    EXPECT_STREQ(GetDefaultDisplayLabel(*instance2).c_str(), nodes[3]->GetLabel().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*instance2).c_str(), nodes[3]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3684,7 +3684,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortsLargeNumbersOfNodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(instancesCount, rootNodes.GetSize());
     for (size_t i = 0; i < instancesCount; ++i)
-        EXPECT_STREQ(std::to_string(i).c_str(), rootNodes[i]->GetLabel().c_str());
+        EXPECT_STREQ(std::to_string(i).c_str(), rootNodes[i]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3721,15 +3721,15 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Grou
     // make sure we have 1 class grouping node
     ASSERT_EQ(1, nodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, nodes[0]->GetType().c_str());
-    ASSERT_STREQ("ClassE", nodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("ClassE", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure we have 2 classE child nodes
     DataContainer<NavNodeCPtr> classEChildNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(2, classEChildNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, classEChildNodes[0]->GetType().c_str());
-    ASSERT_STREQ(GetDefaultDisplayLabel(*instanceF).c_str(), classEChildNodes[0]->GetLabel().c_str());
+    ASSERT_STREQ(GetDefaultDisplayLabel(*instanceF).c_str(), classEChildNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, classEChildNodes[1]->GetType().c_str());
-    ASSERT_STREQ(GetDefaultDisplayLabel(*instanceG).c_str(), classEChildNodes[1]->GetLabel().c_str());
+    ASSERT_STREQ(GetDefaultDisplayLabel(*instanceG).c_str(), classEChildNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3764,7 +3764,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Does
     // make sure we have 1 ClassF node
     ASSERT_EQ(1, nodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, nodes[0]->GetType().c_str());
-    ASSERT_STREQ(GetDefaultDisplayLabel(*instanceF).c_str(), nodes[0]->GetLabel().c_str());
+    ASSERT_STREQ(GetDefaultDisplayLabel(*instanceF).c_str(), nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3799,13 +3799,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Crea
     // make sure we have 1 class grouping node
     ASSERT_EQ(1, nodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, nodes[0]->GetType().c_str());
-    ASSERT_STREQ("ClassE", nodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("ClassE", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure we have 1 ClassF node
     DataContainer<NavNodeCPtr> classFNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, classFNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, classFNodes[0]->GetType().c_str());
-    ASSERT_STREQ(GetDefaultDisplayLabel(*instanceF).c_str(), classFNodes[0]->GetLabel().c_str());
+    ASSERT_STREQ(GetDefaultDisplayLabel(*instanceF).c_str(), classFNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3839,7 +3839,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_D
     // make sure we have 1 Widget node
     ASSERT_EQ(1, nodes.GetSize());
     ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, nodes[0]->GetType().c_str());
-    ASSERT_STREQ("Widget1", nodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("Widget1", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3872,7 +3872,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_D
     // make sure we have 1 Widget node
     ASSERT_EQ(1, nodes.GetSize());
     ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, nodes[0]->GetType().c_str());
-    ASSERT_STREQ("Widget1", nodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("Widget1", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3905,7 +3905,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_C
     // make sure we have 1 widget property grouping node
     ASSERT_EQ(1, nodes.GetSize());
     ASSERT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, nodes[0]->GetType().c_str());
-    ASSERT_STREQ("Widget1", nodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("Widget1", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3973,7 +3973,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     ASSERT_EQ(1, nodes.GetSize());
     NavNodeCPtr node = nodes[0];
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, node->GetType().c_str());
-    EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_NotSpecified()).c_str(), node->GetLabel().c_str());
+    EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_NotSpecified()).c_str(), node->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure the node has 2 children
     DataContainer<NavNodeCPtr> children = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options).get(); });
@@ -4021,7 +4021,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, nodes.GetSize());
     ASSERT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, nodes[0]->GetType().c_str());
-    ASSERT_STREQ("ClassD_Label", nodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("ClassD_Label", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure the node has 2 children
     DataContainer<NavNodeCPtr> children = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options).get(); });
@@ -4065,7 +4065,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, nodes.GetSize());
     ASSERT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, nodes[0]->GetType().c_str());
-    ASSERT_STREQ("My Value", nodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("My Value", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure the node has 2 children
     DataContainer<NavNodeCPtr> children = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options).get(); });
@@ -4107,10 +4107,10 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     ASSERT_EQ(2, nodes.GetSize());
 
     ASSERT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, nodes[0]->GetType().c_str());
-    ASSERT_STREQ("A", nodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("A", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     ASSERT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, nodes[1]->GetType().c_str());
-    ASSERT_STREQ("Z", nodes[1]->GetLabel().c_str());
+    ASSERT_STREQ("Z", nodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4143,10 +4143,10 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     ASSERT_EQ(2, nodes.GetSize());
 
     ASSERT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, nodes[0]->GetType().c_str());
-    ASSERT_STREQ("1", nodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("1", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     ASSERT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, nodes[1]->GetType().c_str());
-    ASSERT_STREQ("3", nodes[1]->GetLabel().c_str());
+    ASSERT_STREQ("3", nodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4178,7 +4178,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, nodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, nodes[0]->GetType().c_str());
-    EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_NotSpecified()).c_str(), nodes[0]->GetLabel().c_str());
+    EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_NotSpecified()).c_str(), nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4225,7 +4225,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     // expect 1 child property grouping node
     ASSERT_EQ(1, childNodes.GetSize());
     ASSERT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, childNodes[0]->GetType().c_str());
-    ASSERT_STREQ("5", childNodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("5", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4282,7 +4282,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     // expect 1 child property grouping node with label of instanceU
     ASSERT_EQ(1, childNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, childNodes[0]->GetType().c_str());
-    EXPECT_STREQ("Label 3", childNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("Label 3", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // request for grandchildren
     DataContainer<NavNodeCPtr> grandchildNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *childNodes[0], PageOptions(), options).get(); });
@@ -4345,7 +4345,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     // expect 1 child property grouping node with label of instanceU
     ASSERT_EQ(1, childNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, childNodes[0]->GetType().c_str());
-    EXPECT_STREQ("3", childNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("3", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // request for grandchildren
     DataContainer<NavNodeCPtr> grandchildNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *childNodes[0], PageOptions(), options).get(); });
@@ -4401,7 +4401,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     // expect 1 child property grouping node
     ASSERT_EQ(1, childNodes.GetSize());
     ASSERT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, childNodes[0]->GetType().c_str());
-    ASSERT_STREQ("5", childNodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("5", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4452,15 +4452,15 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     DataContainer<NavNodeCPtr> childNodes1 = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, childNodes1.GetSize());
     ASSERT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, childNodes1[0]->GetType().c_str());
-    ASSERT_STREQ("5", childNodes1[0]->GetLabel().c_str());
+    ASSERT_STREQ("5", childNodes1[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect 2 child instance nodes under the grouping node
     DataContainer<NavNodeCPtr> childNodes2 = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *childNodes1[0], PageOptions(), options).get(); });
     ASSERT_EQ(2, childNodes2.GetSize());
     ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, childNodes2[0]->GetType().c_str());
-    ASSERT_STREQ(GetDefaultDisplayLabel(*instanceF).c_str(), childNodes2[0]->GetLabel().c_str());
+    ASSERT_STREQ(GetDefaultDisplayLabel(*instanceF).c_str(), childNodes2[0]->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, childNodes2[1]->GetType().c_str());
-    ASSERT_STREQ(GetDefaultDisplayLabel(*instanceG).c_str(), childNodes2[1]->GetLabel().c_str());
+    ASSERT_STREQ(GetDefaultDisplayLabel(*instanceG).c_str(), childNodes2[1]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4504,11 +4504,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_SameLabelInstan
 
     // make sure we have 3 instance nodes, one of them is merged
     ASSERT_EQ(3, nodes.GetSize());
-    EXPECT_STREQ("a0", nodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("a0", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     VerifyNodeInstance(*nodes[0], *a1);
-    EXPECT_STREQ("a1", nodes[1]->GetLabel().c_str());
+    EXPECT_STREQ("a1", nodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     VerifyNodeInstances(*nodes[1], {a2, a3});
-    EXPECT_STREQ("b", nodes[2]->GetLabel().c_str());
+    EXPECT_STREQ("b", nodes[2]->GetLabelDefinition().GetDisplayValue().c_str());
     VerifyNodeInstance(*nodes[2], *b);
     }
 
@@ -4543,7 +4543,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_InstanceLabelOv
     // make sure we have 1 widget instance node
     ASSERT_EQ(1, nodes.GetSize());
     ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, nodes[0]->GetType().c_str());
-    ASSERT_STREQ("Widget1", nodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("Widget1", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4794,17 +4794,17 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_SameLabelInstan
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId()).GetJson();
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(6, rootNodes.GetSize());
-    EXPECT_STREQ("c", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("c", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     VerifyNodeInstances(*rootNodes[0], {c});
-    EXPECT_STREQ("b11", rootNodes[1]->GetLabel().c_str());
+    EXPECT_STREQ("b11", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     VerifyNodeInstances(*rootNodes[1], {b11});
-    EXPECT_STREQ("m", rootNodes[2]->GetLabel().c_str());
+    EXPECT_STREQ("m", rootNodes[2]->GetLabelDefinition().GetDisplayValue().c_str());
     VerifyNodeInstances(*rootNodes[2], {b12, b21, d});
-    EXPECT_STREQ("b13", rootNodes[3]->GetLabel().c_str());
+    EXPECT_STREQ("b13", rootNodes[3]->GetLabelDefinition().GetDisplayValue().c_str());
     VerifyNodeInstances(*rootNodes[3], {b13});
-    EXPECT_STREQ("b22", rootNodes[4]->GetLabel().c_str());
+    EXPECT_STREQ("b22", rootNodes[4]->GetLabelDefinition().GetDisplayValue().c_str());
     VerifyNodeInstances(*rootNodes[4], {b22});
-    EXPECT_STREQ("b23", rootNodes[5]->GetLabel().c_str());
+    EXPECT_STREQ("b23", rootNodes[5]->GetLabelDefinition().GetDisplayValue().c_str());
     VerifyNodeInstances(*rootNodes[5], {b23});
     }
 
@@ -4845,9 +4845,9 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_SameLabelInstan
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId()).GetJson();
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(2, rootNodes.GetSize());
-    EXPECT_STREQ("a", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("a", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     VerifyNodeInstances(*rootNodes[0], {a1, a2, a3});
-    EXPECT_STREQ("b", rootNodes[1]->GetLabel().c_str());
+    EXPECT_STREQ("b", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     VerifyNodeInstances(*rootNodes[1], {b1, b2, b3});
     }
 
@@ -4895,7 +4895,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_SameLabelInstan
 
     DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
-    EXPECT_STREQ("b", childNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("b", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     VerifyNodeInstances(*childNodes[0], {b1, b2});
     }
 
@@ -4976,19 +4976,19 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_SameLabelInstan
     DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(5, childNodes.GetSize());
     
-    EXPECT_STREQ("a1", childNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("a1", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     VerifyNodeInstances(*childNodes[0], {a1});
     
-    EXPECT_STREQ("a2", childNodes[1]->GetLabel().c_str());
+    EXPECT_STREQ("a2", childNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     VerifyNodeInstances(*childNodes[1], {a2});
 
-    EXPECT_STREQ("b1", childNodes[2]->GetLabel().c_str());
+    EXPECT_STREQ("b1", childNodes[2]->GetLabelDefinition().GetDisplayValue().c_str());
     VerifyNodeInstances(*childNodes[2], {b1});
 
-    EXPECT_STREQ("m", childNodes[3]->GetLabel().c_str());
+    EXPECT_STREQ("m", childNodes[3]->GetLabelDefinition().GetDisplayValue().c_str());
     VerifyNodeInstances(*childNodes[3], {b2, c1});
 
-    EXPECT_STREQ("c2", childNodes[4]->GetLabel().c_str());
+    EXPECT_STREQ("c2", childNodes[4]->GetLabelDefinition().GetDisplayValue().c_str());
     VerifyNodeInstances(*childNodes[4], {c2});
     }
 
@@ -5025,13 +5025,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, nodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, nodes[0]->GetType().c_str());
-    EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_Other()).c_str(), nodes[0]->GetLabel().c_str());
+    EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_Other()).c_str(), nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure it has 1 ECInstance child node
     DataContainer<NavNodeCPtr> children = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, children.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, children[0]->GetType().c_str());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*widget).c_str(), children[0]->GetLabel().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*widget).c_str(), children[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5066,13 +5066,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, nodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, nodes[0]->GetType().c_str());
-    EXPECT_STREQ("Range", nodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("Range", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure it has 1 ECInstance child node
     DataContainer<NavNodeCPtr> children = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, children.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, children[0]->GetType().c_str());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*widget).c_str(), children[0]->GetLabel().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*widget).c_str(), children[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5107,13 +5107,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, nodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, nodes[0]->GetType().c_str());
-    EXPECT_STREQ("Range", nodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("Range", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure it has 1 ECInstance child node
     DataContainer<NavNodeCPtr> children = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, children.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, children[0]->GetType().c_str());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*widget).c_str(), children[0]->GetLabel().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*widget).c_str(), children[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5148,13 +5148,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, nodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, nodes[0]->GetType().c_str());
-    EXPECT_STREQ("Range", nodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("Range", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure it has 1 ECInstance child node
     DataContainer<NavNodeCPtr> children = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, children.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, children[0]->GetType().c_str());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*widget).c_str(), children[0]->GetLabel().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*widget).c_str(), children[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5189,13 +5189,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, nodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, nodes[0]->GetType().c_str());
-    EXPECT_STREQ("Range", nodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("Range", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure it has 1 ECInstance child node
     DataContainer<NavNodeCPtr> children = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, children.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, children[0]->GetType().c_str());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*widget).c_str(), children[0]->GetLabel().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*widget).c_str(), children[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5237,7 +5237,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
 
     // expect 1 gadget node
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*gadget).c_str(), rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*gadget).c_str(), rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // request children
     DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
@@ -5245,7 +5245,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, childNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, childNodes[0]->GetType().c_str());
-    EXPECT_STREQ("1 - 5", childNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("1 - 5", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5279,13 +5279,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Grou
     // make sure we have 1 class grouping node
     ASSERT_EQ(1, nodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, nodes[0]->GetType().c_str());
-    ASSERT_STREQ("ClassE", nodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("ClassE", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure we have 1 classE child nodes
     DataContainer<NavNodeCPtr> classEChildNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, classEChildNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, classEChildNodes[0]->GetType().c_str());
-    ASSERT_STREQ("ClassF", classEChildNodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("ClassF", classEChildNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5322,20 +5322,20 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, DoesNotReturnECInstanceN
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*classDInstance).c_str(), rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*classDInstance).c_str(), rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // ClassD instance node should have 1 ClassE instance child node
     DataContainer<NavNodeCPtr> classDChildNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, classDChildNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, classDChildNodes[0]->GetType().c_str());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*classEInstance).c_str(), classDChildNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*classEInstance).c_str(), classDChildNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // ClassE instance node has 1 ClassD instance node. There's such a node already in the hierarchy, but it's based on
     // different (root node rule) specification, so we allow it
     DataContainer<NavNodeCPtr> classEChildNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *classDChildNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, classEChildNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, classEChildNodes[0]->GetType().c_str());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*classDInstance).c_str(), rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*classDInstance).c_str(), rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // This time ClassD instance node has no children because there's such a node up in the
     // hierarchy and it's also based on the same specification.
@@ -5420,7 +5420,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomizesNodesWhenCusto
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     VerifyNodeInstance(*rootNodes[0], *widget);
-    EXPECT_STREQ("Test", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("Test", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5469,7 +5469,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupingChildrenByRelate
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // the node should have 1 property grouping node
     DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
@@ -5527,7 +5527,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupingChildrenByRelate
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // the node should have 1 property grouping node
     DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
@@ -5617,9 +5617,9 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, ReturnsChildNodesWhenTh
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(2, rootNodes.GetSize());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
-    EXPECT_STREQ("WidgetID", rootNodes[1]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[1]->GetType().c_str());
     }
 
@@ -5647,13 +5647,13 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, ReturnsChildrenUsingAll
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("a", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("a", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure it has 2 child nodes
     DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(2, childNodes.GetSize());
-    EXPECT_STREQ("b", childNodes[0]->GetLabel().c_str());
-    EXPECT_STREQ("c", childNodes[1]->GetLabel().c_str());
+    EXPECT_STREQ("b", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("c", childNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5711,17 +5711,17 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, FiltersNodesByParentNod
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*widget).c_str(), rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*widget).c_str(), rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure it has 1 child node
     DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*gadget).c_str(), childNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*gadget).c_str(), childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure it has 1 child node as well
     DataContainer<NavNodeCPtr> childNodes2 = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *childNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, childNodes2.GetSize());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*sprocket).c_str(), childNodes2[0]->GetLabel().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*sprocket).c_str(), childNodes2[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5751,7 +5751,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, FiltersNodesByParentNod
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*widget).c_str(), rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*widget).c_str(), rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure it has 0 children
     DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
@@ -5791,12 +5791,12 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, FiltersNodesByParentNod
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*widget).c_str(), rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*widget).c_str(), rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure it has 1 child node
     DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*gadget).c_str(), childNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*gadget).c_str(), childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure it has 0 children
     DataContainer<NavNodeCPtr> childNodes2 = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *childNodes[0], PageOptions(), options).get(); });
@@ -5839,13 +5839,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoublePrope
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
-    EXPECT_STREQ("2.00", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("2.00", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure it has 2 children nodes
     DataContainer<NavNodeCPtr> childrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(2, childrenNodes.GetSize());
-    EXPECT_STREQ("WidgetID", childrenNodes[0]->GetLabel().c_str());
-    EXPECT_STREQ("WidgetID", childrenNodes[1]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", childrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("WidgetID", childrenNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5884,13 +5884,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoublePrope
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
-    EXPECT_STREQ("2.50", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("2.50", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure it has 2 children nodes
     DataContainer<NavNodeCPtr> childrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(2, childrenNodes.GetSize());
-    EXPECT_STREQ("WidgetID", childrenNodes[0]->GetLabel().c_str());
-    EXPECT_STREQ("WidgetID", childrenNodes[1]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", childrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("WidgetID", childrenNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5934,14 +5934,14 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoublePrope
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
-    EXPECT_STREQ("0.01", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("0.01", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure it has 3 children nodes
     DataContainer<NavNodeCPtr> childrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(3, childrenNodes.GetSize());
-    EXPECT_STREQ("WidgetID", childrenNodes[0]->GetLabel().c_str());
-    EXPECT_STREQ("WidgetID", childrenNodes[1]->GetLabel().c_str());
-    EXPECT_STREQ("WidgetID", childrenNodes[2]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", childrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("WidgetID", childrenNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("WidgetID", childrenNodes[2]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5981,18 +5981,18 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoublePrope
     ASSERT_EQ(2, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[1]->GetType().c_str());
-    EXPECT_STREQ("2.50", rootNodes[0]->GetLabel().c_str());
-    EXPECT_STREQ("2.51", rootNodes[1]->GetLabel().c_str());
+    EXPECT_STREQ("2.50", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("2.51", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure first grouping node has 1 child node
     DataContainer<NavNodeCPtr> firstNodeChildrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, firstNodeChildrenNodes.GetSize());
-    EXPECT_STREQ("WidgetID", firstNodeChildrenNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", firstNodeChildrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure second grouping node has 1 child node
     DataContainer<NavNodeCPtr> secondNodeChildrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[1], PageOptions(), options).get(); });
     ASSERT_EQ(1, secondNodeChildrenNodes.GetSize());
-    EXPECT_STREQ("WidgetID", secondNodeChildrenNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", secondNodeChildrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6031,13 +6031,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoublePrope
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
-    EXPECT_STREQ("2.60", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("2.60", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure it has 2 children nodes
     DataContainer<NavNodeCPtr> childrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(2, childrenNodes.GetSize());
-    EXPECT_STREQ("WidgetID", childrenNodes[0]->GetLabel().c_str());
-    EXPECT_STREQ("WidgetID", childrenNodes[1]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", childrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("WidgetID", childrenNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6077,18 +6077,18 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoublePrope
     ASSERT_EQ(2, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[1]->GetType().c_str());
-    EXPECT_STREQ("2.59", rootNodes[0]->GetLabel().c_str());
-    EXPECT_STREQ("2.60", rootNodes[1]->GetLabel().c_str());
+    EXPECT_STREQ("2.59", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("2.60", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure first grouping node has 1 child node
     DataContainer<NavNodeCPtr> firstNodeChildrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, firstNodeChildrenNodes.GetSize());
-    EXPECT_STREQ("WidgetID", firstNodeChildrenNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", firstNodeChildrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure second grouping node has 1 child node
     DataContainer<NavNodeCPtr> secondNodeChildrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[1], PageOptions(), options).get(); });
     ASSERT_EQ(1, secondNodeChildrenNodes.GetSize());
-    EXPECT_STREQ("WidgetID", secondNodeChildrenNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", secondNodeChildrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6119,13 +6119,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
-    EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure it has 2 children nodes
     DataContainer<NavNodeCPtr> childrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(2, childrenNodes.GetSize());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*instance1).c_str(), childrenNodes[0]->GetLabel().c_str());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*instance2).c_str(), childrenNodes[1]->GetLabel().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*instance1).c_str(), childrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*instance2).c_str(), childrenNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6156,13 +6156,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
-    EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure it has 2 children nodes
     DataContainer<NavNodeCPtr> childrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(2, childrenNodes.GetSize());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*instance1).c_str(), childrenNodes[0]->GetLabel().c_str());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*instance2).c_str(), childrenNodes[1]->GetLabel().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*instance1).c_str(), childrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*instance2).c_str(), childrenNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6194,18 +6194,18 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
     ASSERT_EQ(2, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[1]->GetType().c_str());
-    EXPECT_STREQ("X: 1.11 Y: 1.11 Z: 1.11", rootNodes[0]->GetLabel().c_str());
-    EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[1]->GetLabel().c_str());
+    EXPECT_STREQ("X: 1.11 Y: 1.11 Z: 1.11", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure first grouping node has 1 child node
     DataContainer<NavNodeCPtr> firstNodeChildrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, firstNodeChildrenNodes.GetSize());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*instance1).c_str(), firstNodeChildrenNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*instance1).c_str(), firstNodeChildrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure second grouping node has 1 child node
     DataContainer<NavNodeCPtr> secondNodeChildrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[1], PageOptions(), options).get(); });
     ASSERT_EQ(1, secondNodeChildrenNodes.GetSize());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*instance2).c_str(), secondNodeChildrenNodes[0]->GetLabel().c_str());;
+    EXPECT_STREQ(GetDefaultDisplayLabel(*instance2).c_str(), secondNodeChildrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6237,18 +6237,18 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
     ASSERT_EQ(2, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[1]->GetType().c_str());
-    EXPECT_STREQ("X: 1.11 Y: 1.12 Z: 1.12", rootNodes[0]->GetLabel().c_str());
-    EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[1]->GetLabel().c_str());
+    EXPECT_STREQ("X: 1.11 Y: 1.12 Z: 1.12", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure first grouping node has 1 child node
     DataContainer<NavNodeCPtr> firstNodeChildrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, firstNodeChildrenNodes.GetSize());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*instance1).c_str(), firstNodeChildrenNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*instance1).c_str(), firstNodeChildrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure second grouping node has 1 child node
     DataContainer<NavNodeCPtr> secondNodeChildrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[1], PageOptions(), options).get(); });
     ASSERT_EQ(1, secondNodeChildrenNodes.GetSize());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*instance2).c_str(), secondNodeChildrenNodes[0]->GetLabel().c_str());;
+    EXPECT_STREQ(GetDefaultDisplayLabel(*instance2).c_str(), secondNodeChildrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6280,18 +6280,18 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
     ASSERT_EQ(2, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[1]->GetType().c_str());
-    EXPECT_STREQ("X: 1.12 Y: 1.11 Z: 1.12", rootNodes[0]->GetLabel().c_str());
-    EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[1]->GetLabel().c_str());
+    EXPECT_STREQ("X: 1.12 Y: 1.11 Z: 1.12", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure first grouping node has 1 child node
     DataContainer<NavNodeCPtr> firstNodeChildrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, firstNodeChildrenNodes.GetSize());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*instance1).c_str(), firstNodeChildrenNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*instance1).c_str(), firstNodeChildrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure second grouping node has 1 child node
     DataContainer<NavNodeCPtr> secondNodeChildrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[1], PageOptions(), options).get(); });
     ASSERT_EQ(1, secondNodeChildrenNodes.GetSize());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*instance2).c_str(), secondNodeChildrenNodes[0]->GetLabel().c_str());;
+    EXPECT_STREQ(GetDefaultDisplayLabel(*instance2).c_str(), secondNodeChildrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6323,18 +6323,18 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
     ASSERT_EQ(2, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[1]->GetType().c_str());
-    EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.11", rootNodes[0]->GetLabel().c_str());
-    EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[1]->GetLabel().c_str());
+    EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.11", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure first grouping node has 1 child node
     DataContainer<NavNodeCPtr> firstNodeChildrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, firstNodeChildrenNodes.GetSize());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*instance1).c_str(), firstNodeChildrenNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*instance1).c_str(), firstNodeChildrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure second grouping node has 1 child node
     DataContainer<NavNodeCPtr> secondNodeChildrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[1], PageOptions(), options).get(); });
     ASSERT_EQ(1, secondNodeChildrenNodes.GetSize());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*instance2).c_str(), secondNodeChildrenNodes[0]->GetLabel().c_str());;
+    EXPECT_STREQ(GetDefaultDisplayLabel(*instance2).c_str(), secondNodeChildrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6365,13 +6365,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
-    EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure it has 2 children nodes
     DataContainer<NavNodeCPtr> childrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(2, childrenNodes.GetSize());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*instance1).c_str(), childrenNodes[0]->GetLabel().c_str());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*instance2).c_str(), childrenNodes[1]->GetLabel().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*instance1).c_str(), childrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*instance2).c_str(), childrenNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6402,13 +6402,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
-    EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure it has 2 children nodes
     DataContainer<NavNodeCPtr> childrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(2, childrenNodes.GetSize());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*instance1).c_str(), childrenNodes[0]->GetLabel().c_str());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*instance2).c_str(), childrenNodes[1]->GetLabel().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*instance1).c_str(), childrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*instance2).c_str(), childrenNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6439,13 +6439,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
-    EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure it has 2 children nodes
     DataContainer<NavNodeCPtr> childrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(2, childrenNodes.GetSize());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*instance1).c_str(), childrenNodes[0]->GetLabel().c_str());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*instance2).c_str(), childrenNodes[1]->GetLabel().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*instance1).c_str(), childrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*instance2).c_str(), childrenNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6475,13 +6475,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDateTimePro
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
-    EXPECT_STREQ("2019-10-03T00:00:00.000Z", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("2019-10-03T00:00:00.000Z", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure it has 2 children nodes
     DataContainer<NavNodeCPtr> childrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(2, childrenNodes.GetSize());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*instance1).c_str(), childrenNodes[0]->GetLabel().c_str());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*instance2).c_str(), childrenNodes[1]->GetLabel().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*instance1).c_str(), childrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*instance2).c_str(), childrenNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6673,11 +6673,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceLabelOverride_Ov
     ASSERT_EQ(2, nodes.GetSize());
     NavNodeCPtr instanceNode = nodes[0];
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, instanceNode->GetType().c_str());
-    ASSERT_STREQ("Widget2", instanceNode->GetLabel().c_str());
+    ASSERT_STREQ("Widget2", instanceNode->GetLabelDefinition().GetDisplayValue().c_str());
 
     instanceNode = nodes[1];
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, instanceNode->GetType().c_str());
-    ASSERT_STREQ("Widget1", instanceNode->GetLabel().c_str());
+    ASSERT_STREQ("Widget1", instanceNode->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6707,7 +6707,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceLabelOverride_Fi
     ASSERT_EQ(1, nodes.GetSize());
     NavNodeCPtr instanceNode = nodes[0];
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, instanceNode->GetType().c_str());
-    ASSERT_STREQ("WidgetID", instanceNode->GetLabel().c_str());
+    ASSERT_STREQ("WidgetID", instanceNode->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6844,13 +6844,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceLabelOverride_Ha
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(6, rootNodes.GetSize());
 
-    EXPECT_STREQ("Custom Element 1 UserLabel", rootNodes[0]->GetLabel().c_str());
-    EXPECT_STREQ("Custom Element 2 CodeValue", rootNodes[1]->GetLabel().c_str());
-    EXPECT_STREQ("Custom Element [0-3]", rootNodes[2]->GetLabel().c_str());
+    EXPECT_STREQ("Custom Element 1 UserLabel", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("Custom Element 2 CodeValue", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("Custom Element [0-3]", rootNodes[2]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    EXPECT_STREQ("Custom Geometric Element 1 CodeValue", rootNodes[3]->GetLabel().c_str());
-    EXPECT_STREQ("Custom Geometric Element 2 UserLabel [0-5]", rootNodes[4]->GetLabel().c_str());
-    EXPECT_STREQ("Custom Geometric Element [0-6]", rootNodes[5]->GetLabel().c_str());
+    EXPECT_STREQ("Custom Geometric Element 1 CodeValue", rootNodes[3]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("Custom Geometric Element 2 UserLabel [0-5]", rootNodes[4]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("Custom Geometric Element [0-6]", rootNodes[5]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6944,9 +6944,9 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceLabelOverride_Ha
 
     DataContainer<NavNodeCPtr> elementNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *modelNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(3, elementNodes.GetSize());
-    EXPECT_STREQ("CodeValue", elementNodes[0]->GetLabel().c_str());
-    EXPECT_STREQ("Custom Element-0-4", elementNodes[1]->GetLabel().c_str());
-    EXPECT_STREQ("UserLabel-0-3", elementNodes[2]->GetLabel().c_str());
+    EXPECT_STREQ("CodeValue", elementNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("Custom Element-0-4", elementNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("UserLabel-0-3", elementNodes[2]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -7000,11 +7000,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
     RulesDrivenECPresentationManager::NavigationOptions options(BeTest::GetNameOfCurrentTest());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("ClassA1_CodeValue", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("ClassA1_CodeValue", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
-    EXPECT_STREQ("ClassC_CodeValue", childNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("ClassC_CodeValue", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -7060,11 +7060,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
     RulesDrivenECPresentationManager::NavigationOptions options(BeTest::GetNameOfCurrentTest());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("ClassA1_CodeValue", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("ClassA1_CodeValue", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
-    EXPECT_STREQ("ClassC_UserLabel", childNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("ClassC_UserLabel", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -7109,8 +7109,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodesSpecific
     RulesDrivenECPresentationManager::NavigationOptions options(BeTest::GetNameOfCurrentTest());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(2, rootNodes.GetSize());
-    EXPECT_STREQ("ClassC_CodeValue", rootNodes[0]->GetLabel().c_str());
-    EXPECT_STREQ("ClassA1_CodeValue", rootNodes[1]->GetLabel().c_str());
+    EXPECT_STREQ("ClassC_CodeValue", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("ClassA1_CodeValue", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -7156,8 +7156,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodesSpecific
     RulesDrivenECPresentationManager::NavigationOptions options(BeTest::GetNameOfCurrentTest());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(2, rootNodes.GetSize());
-    EXPECT_STREQ("1_Instance_C", rootNodes[0]->GetLabel().c_str());
-    EXPECT_STREQ("2_Instance_A", rootNodes[1]->GetLabel().c_str());
+    EXPECT_STREQ("1_Instance_C", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("2_Instance_A", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -7219,15 +7219,15 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CreatesValidHierarchyWhe
     RulesDrivenECPresentationManager::NavigationOptions options(BeTest::GetNameOfCurrentTest());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("1", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("1", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // get child nodes
     DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(4, childNodes.GetSize());
-    EXPECT_STREQ("1.1.1.1", childNodes[0]->GetLabel().c_str());
-    EXPECT_STREQ("1.1.1.2", childNodes[1]->GetLabel().c_str());
-    EXPECT_STREQ("1.1.2", childNodes[2]->GetLabel().c_str());
-    EXPECT_STREQ("1.2", childNodes[3]->GetLabel().c_str());
+    EXPECT_STREQ("1.1.1.1", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("1.1.1.2", childNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("1.1.2", childNodes[2]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("1.2", childNodes[3]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -7835,4 +7835,124 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Crea
     DataContainer<NavNodeCPtr> physical1ClassGroupChildren = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDbCR(), *physicalClassGroupChildren[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, physical1ClassGroupChildren.GetSize());
     VerifyNodeInstance(*physical1ClassGroupChildren[0], *physicalElement1);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Saulius.Skliutas                09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(InstanceLabelOverride_DateTimePropertyValue, R"*(
+    <ECEntityClass typeName="Element">
+        <ECProperty propertyName="DateTimeProp" typeName="dateTime" displayLabel="DateTime" description="DateTime property">
+            <ECCustomAttributes>
+                <DateTimeInfo xmlns="CoreCustomAttributes.1.0">
+                    <DateTimeKind>Utc</DateTimeKind>
+                </DateTimeInfo>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceLabelOverride_DateTimePropertyValue)
+    {
+    ECClassCP element = GetClass("Element");
+    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *element, [](IECInstanceR instance) {instance.SetValue("DateTimeProp", ECValue(DateTime(2019, 11, 28))); });
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, TargetTree_Both, true);
+    rules->AddPresentationRule(*rootRule);
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
+        "", element->GetFullName(), true));
+
+    InstanceLabelOverride* labelOverrideRule = new InstanceLabelOverride(1, false, element->GetFullName(), { new InstanceLabelOverridePropertyValueSpecification("DateTimeProp") });
+    rules->AddPresentationRule(*labelOverrideRule);
+
+    // request for nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(BeTest::GetNameOfCurrentTest());
+    DataContainer<NavNodeCPtr> rootNodes = m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(1, rootNodes.GetSize());
+
+    NavNodeCPtr node = rootNodes[0];
+    EXPECT_STREQ("2019-11-28T00:00:00.000Z", node->GetLabelDefinition().GetRawValue()->AsSimpleValue()->GetValue().GetString());
+    EXPECT_STREQ("dateTime", node->GetLabelDefinition().GetTypeName().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Saulius.Skliutas                09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(Grouping_PropertyGroup_DateTimeProperty, R"*(
+    <ECEntityClass typeName="Element">
+        <ECProperty propertyName="DateTimeProp" typeName="dateTime" displayLabel="DateTime" description="DateTime property">
+            <ECCustomAttributes>
+                <DateTimeInfo xmlns="CoreCustomAttributes.1.0">
+                    <DateTimeKind>Utc</DateTimeKind>
+                </DateTimeInfo>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_DateTimeProperty)
+    {
+    ECClassCP element = GetClass("Element");
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *element, [](IECInstanceR instance) {instance.SetValue("DateTimeProp", ECValue(DateTime(2019, 11, 28))); });
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *element, [](IECInstanceR instance) {instance.SetValue("DateTimeProp", ECValue(DateTime(2019, 11, 28))); });
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, TargetTree_Both, true);
+    rules->AddPresentationRule(*rootRule);
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
+        "", element->GetFullName(), true));
+
+    GroupingRuleP groupingRule = new GroupingRule("", 0, "", element->GetSchema().GetName(), element->GetName(), "", "", "");
+    PropertyGroupP groupByPoint = new PropertyGroup("", "", true, "DateTimeProp", "");
+    groupingRule->AddGroup(*groupByPoint);
+    rules->AddPresentationRule(*groupingRule);
+
+    // request for nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(BeTest::GetNameOfCurrentTest());
+    DataContainer<NavNodeCPtr> rootNodes = m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(1, rootNodes.GetSize());
+
+    NavNodeCPtr node = rootNodes[0];
+    EXPECT_STREQ("2019-11-28T00:00:00.000Z", node->GetLabelDefinition().GetRawValue()->AsSimpleValue()->GetValue().GetString());
+    EXPECT_STREQ("dateTime", node->GetLabelDefinition().GetTypeName().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Saulius.Skliutas                09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(LabelOverride_OverrideWithNullValue, R"*(
+    <ECEntityClass typeName="Element">
+        <ECProperty propertyName="IntProperty" typeName="int" displayLabel="IntProperty" description="DateTime property">
+        </ECProperty>
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, LabelOverride_OverrideWithNullValue)
+    {
+    ECClassCP element = GetClass("Element");
+    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *element);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, TargetTree_Both, true);
+    rules->AddPresentationRule(*rootRule);
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
+        "", element->GetFullName(), true));
+
+    LabelOverride* labelOverride = new LabelOverride("", 1, "this.IntProperty", "");
+    rules->AddPresentationRule(*labelOverride);
+
+    // request for nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(BeTest::GetNameOfCurrentTest());
+    DataContainer<NavNodeCPtr> rootNodes = m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(1, rootNodes.GetSize());
+
+    NavNodeCPtr node = rootNodes[0];
+    EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_NotSpecified()).c_str(), node->GetLabelDefinition().GetDisplayValue().c_str());
     }

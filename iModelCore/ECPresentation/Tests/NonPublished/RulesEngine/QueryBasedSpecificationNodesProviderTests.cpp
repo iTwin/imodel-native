@@ -97,13 +97,13 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, OverridesLabel)
     ASSERT_TRUE(nullptr != node->GetKey()->AsECInstanceNodeKey());
     ASSERT_FALSE(node->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().empty());
     EXPECT_EQ(m_gadgetClass, node->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().front().GetClass());
-    EXPECT_STREQ("GadgetLabel", node->GetLabel().c_str());
+    EXPECT_STREQ("GadgetLabel", node->GetLabelDefinition().GetDisplayValue().c_str());
 
     ASSERT_TRUE(provider->GetNode(node, index++));
     ASSERT_TRUE(nullptr != node->GetKey()->AsECInstanceNodeKey());
     ASSERT_FALSE(node->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().empty());
     EXPECT_EQ(m_widgetClass, node->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().front().GetClass());
-    EXPECT_STREQ("WidgetLabel", node->GetLabel().c_str());
+    EXPECT_STREQ("WidgetLabel", node->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -129,7 +129,7 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, UsesRelatedInstanceProperties
     JsonNavNodePtr node;
     while (provider->GetNode(node, index++))
         {
-        EXPECT_STREQ("Test Widget 1", node->GetLabel().c_str());
+        EXPECT_STREQ("Test Widget 1", node->GetLabelDefinition().GetDisplayValue().c_str());
         }
     }
 
@@ -223,7 +223,7 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, ReturnsChildIfDisplayLabelGro
     while (provider->GetNode(node, index++))
         {
         ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, node->GetType().c_str());
-        ASSERT_STREQ("MyLabel", node->GetLabel().c_str());
+        ASSERT_STREQ("MyLabel", node->GetLabelDefinition().GetDisplayValue().c_str());
         }
     ASSERT_EQ(2, index);
     }
@@ -256,7 +256,7 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, ReturnsChildIfGroupingRuleDoe
     while (provider->GetNode(node, index++))
         {
         ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, node->GetType().c_str());
-        ASSERT_STREQ("MyLabel", node->GetLabel().c_str());
+        ASSERT_STREQ("MyLabel", node->GetLabelDefinition().GetDisplayValue().c_str());
         }
     ASSERT_EQ(2, index);
     }
@@ -421,12 +421,12 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, NodesCount_WithDisplayLabelAn
     JsonNavNodePtr myLabelNode;
     ASSERT_TRUE(provider->GetNode(myLabelNode, 0));
     ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, myLabelNode->GetType().c_str()); // the node is ECInstanceNode because SameLabelInstanceGroup groups all instances into one - nothing is left to group for display label node
-    ASSERT_STREQ("MyLabel", myLabelNode->GetLabel().c_str());
+    ASSERT_STREQ("MyLabel", myLabelNode->GetLabelDefinition().GetDisplayValue().c_str());
 
     JsonNavNodePtr otherLabelNode;
     ASSERT_TRUE(provider->GetNode(otherLabelNode, 1));
     ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, otherLabelNode->GetType().c_str());
-    ASSERT_STREQ("OtherLabel", otherLabelNode->GetLabel().c_str());
+    ASSERT_STREQ("OtherLabel", otherLabelNode->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -600,11 +600,11 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, PropertyGrouping_GroupsSubcla
 
     ASSERT_TRUE(provider->GetNode(node, 0));
     ASSERT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, node->GetType().c_str());
-    ASSERT_STREQ("1", node->GetLabel().c_str());
+    ASSERT_STREQ("1", node->GetLabelDefinition().GetDisplayValue().c_str());
 
     ASSERT_TRUE(provider->GetNode(node, 1));
     ASSERT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, node->GetType().c_str());
-    ASSERT_STREQ("2", node->GetLabel().c_str());
+    ASSERT_STREQ("2", node->GetLabelDefinition().GetDisplayValue().c_str());
 
     ASSERT_TRUE(provider->GetNode(node, 2));
     ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, node->GetType().c_str());
@@ -649,19 +649,19 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, PropertyGrouping_DoesntGroupN
 
     ASSERT_TRUE(provider->GetNode(node, 0));
     ASSERT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, node->GetType().c_str());
-    ASSERT_STREQ("5", node->GetLabel().c_str());
+    ASSERT_STREQ("5", node->GetLabelDefinition().GetDisplayValue().c_str());
 
     ASSERT_TRUE(provider->GetNode(node, 1));
     ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, node->GetType().c_str());
-    ASSERT_STREQ("Test Widget 1", node->GetLabel().c_str());
+    ASSERT_STREQ("Test Widget 1", node->GetLabelDefinition().GetDisplayValue().c_str());
 
     ASSERT_TRUE(provider->GetNode(node, 2));
     ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, node->GetType().c_str());
-    ASSERT_STREQ("Test Widget 2", node->GetLabel().c_str());
+    ASSERT_STREQ("Test Widget 2", node->GetLabelDefinition().GetDisplayValue().c_str());
 
     ASSERT_TRUE(provider->GetNode(node, 3));
     ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, node->GetType().c_str());
-    ASSERT_STREQ("Test Widget 3", node->GetLabel().c_str());
+    ASSERT_STREQ("Test Widget 3", node->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -186,9 +186,9 @@ int ContentDescriptor::GetFieldIndex(Utf8CP name) const
 bvector<ContentDescriptor::Field*> ContentDescriptor::GetVisibleFields() const
     {
     bvector<Field*> fields;
-    std::copy_if(m_fields.begin(), m_fields.end(), std::back_inserter(fields), [this](Field const* f)
+    std::copy_if(m_fields.begin(), m_fields.end(), std::back_inserter(fields), [](Field const* f)
         {
-        bool isHidden = (f->IsSystemField() || (f->IsDisplayLabelField() && !ShowLabels()));
+        bool isHidden = (f->IsSystemField() || f->IsDisplayLabelField());
         return !isHidden;
         });
     return fields;
@@ -202,9 +202,13 @@ ContentDescriptor::Field const* ContentDescriptor::GetDistinctField() const
     if (OnlyDistinctValues() && GetVisibleFields().size() == 1)
         {
         Field const* field = GetVisibleFields()[0];
-        if (field->IsPropertiesField() || field->IsCalculatedPropertyField() || (field->IsDisplayLabelField() && ShowLabels()))
+        if (field->IsPropertiesField() || field->IsCalculatedPropertyField())
             return field;
         }
+
+    if (OnlyDistinctValues() && GetVisibleFields().size() == 0 && ShowLabels())
+        return GetDisplayLabelField();
+
     return nullptr;
     }
 

@@ -138,8 +138,9 @@ public:
     static ContentQueryPtr CreateMergedResultsQuery(ContentQueryR, ContentDescriptorR);
 
     static bmap<ECClassCP, bvector<InstanceLabelOverrideValueSpecification const*>> GetLabelOverrideValuesMap(ECSchemaHelper const& helper, InstanceLabelOverrideList labelOverrides);
-    static PresentationQueryContractFieldPtr CreateInstanceLabelField(Utf8CP name, bvector<InstanceLabelOverrideValueSpecification const*> const& labelOverrideValueSpecs, PresentationQueryContractField const* fallback = nullptr);
+    static PresentationQueryContractFieldPtr CreateInstanceLabelField(Utf8CP name, bvector<InstanceLabelOverrideValueSpecification const*> const& labelOverrideValueSpecs, PresentationQueryContractField const* fallback = nullptr, PresentationQueryContractFieldCP instanceIdField = nullptr, PresentationQueryContractFieldCP classIdField = nullptr);
     static GenericQueryPtr CreateInstanceLabelQuery(ECClassInstanceKeyCR key, bvector<InstanceLabelOverrideValueSpecification const*> const& labelOverrideValueSpecs);
+    static Utf8String CreateDisplayLabelValueClause(Utf8CP fieldName);
 
     static bvector<RelatedClass> GetRelatedInstanceClasses(ECSchemaHelper const& schemaHelper, ECClassCR selectClass, RelatedInstanceSpecificationList const& relatedInstanceSpecs, bmap<ECRelationshipClassCP, int>& relationshipUsedCount);
 

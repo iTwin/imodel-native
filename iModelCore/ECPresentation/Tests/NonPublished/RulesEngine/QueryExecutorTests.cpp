@@ -228,11 +228,11 @@ TEST_F (NavigationQueryExecutorTests, GetClassGroupingNodes)
     NavNodeCPtr gadgetNode = executor.GetNode(0);
     NavNodeCPtr widgetNode = executor.GetNode(1);
 
-    ASSERT_STREQ(Utf8String(m_widgetClass->GetDisplayLabel().c_str()).c_str(), widgetNode->GetLabel().c_str());
+    ASSERT_STREQ(Utf8String(m_widgetClass->GetDisplayLabel().c_str()).c_str(), widgetNode->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, widgetNode->GetType().c_str());
     ASSERT_EQ(1, NavNodeExtendedData(*widgetNode).GetInstanceKeys().size());
 
-    ASSERT_STREQ(Utf8String(m_gadgetClass->GetDisplayLabel().c_str()).c_str(), gadgetNode->GetLabel().c_str());
+    ASSERT_STREQ(Utf8String(m_gadgetClass->GetDisplayLabel().c_str()).c_str(), gadgetNode->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, gadgetNode->GetType().c_str());
     ASSERT_EQ(2, NavNodeExtendedData(*gadgetNode).GetInstanceKeys().size());
     }
@@ -287,10 +287,10 @@ TEST_F (NavigationQueryExecutorTests, GetDisplayLabelGroupingNodes)
     NavNodeCPtr gadgetNode = executor.GetNode(0);
     NavNodeCPtr widgetNode = executor.GetNode(1);
 
-    EXPECT_STREQ("WidgetID", widgetNode->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", widgetNode->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, widgetNode->GetType().c_str());
 
-    EXPECT_STREQ("GadgetID", gadgetNode->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", gadgetNode->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, gadgetNode->GetType().c_str());
     }
 
@@ -307,8 +307,10 @@ TEST_F (NavigationQueryExecutorTests, GetChildNodesOfDisplayLabelGroupingNode)
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->SelectAll();
     query->From(ComplexNavigationQuery::Create()->SelectContract(*contract).From(*m_widgetClass, false));
-    query->Where(Utf8PrintfString("[%s] = ?", DisplayLabelGroupingNodesQueryContract::DisplayLabelFieldName).c_str(), {new BoundQueryECValue(ECValue("AAA"))});
-    query->OrderBy(Utf8String("[").append(ECClassGroupingNodesQueryContract::DisplayLabelFieldName).append("]").c_str());
+
+    Utf8String displayLabelValueField = RulesEngineTestHelpers::CreateDisplayLabelValueClause(DisplayLabelGroupingNodesQueryContract::DisplayLabelFieldName);
+    query->Where(Utf8PrintfString("%s = ?", displayLabelValueField.c_str()).c_str(), {new BoundQueryECValue(ECValue("AAA"))});
+    query->OrderBy(displayLabelValueField.c_str());
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
 
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
@@ -325,7 +327,7 @@ TEST_F (NavigationQueryExecutorTests, GetChildNodesOfDisplayLabelGroupingNode)
         JsonNavNodePtr node = executor.GetNode(i);
         ASSERT_TRUE(node.IsValid());
         EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, node->GetType().c_str());
-        EXPECT_STREQ("AAA", node->GetLabel().c_str());
+        EXPECT_STREQ("AAA", node->GetLabelDefinition().GetDisplayValue().c_str());
         }
     }
 
@@ -342,8 +344,9 @@ TEST_F (NavigationQueryExecutorTests, GetChildNodesOfDisplayLabelGroupingNode_In
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->SelectAll();
     query->From(ComplexNavigationQuery::Create()->SelectContract(*contract).From(*m_widgetClass, false));
-    query->Where(Utf8PrintfString("[%s] = ?", DisplayLabelGroupingNodesQueryContract::DisplayLabelFieldName).c_str(), {new BoundQueryECValue(ECValue("AAA"))});
-    query->OrderBy(Utf8String("[").append(ECClassGroupingNodesQueryContract::DisplayLabelFieldName).append("]").c_str());
+    Utf8String displayLabelValueField = RulesEngineTestHelpers::CreateDisplayLabelValueClause(DisplayLabelGroupingNodesQueryContract::DisplayLabelFieldName);
+    query->Where(Utf8PrintfString("%s = ?", displayLabelValueField.c_str()).c_str(), {new BoundQueryECValue(ECValue("AAA"))});
+    query->OrderBy(displayLabelValueField.c_str());
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
 
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
@@ -360,7 +363,7 @@ TEST_F (NavigationQueryExecutorTests, GetChildNodesOfDisplayLabelGroupingNode_In
         JsonNavNodePtr node = executor.GetNode(i);
         ASSERT_TRUE(node.IsValid());
         EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, node->GetType().c_str());
-        EXPECT_STREQ("AAA", node->GetLabel().c_str());
+        EXPECT_STREQ("AAA", node->GetLabelDefinition().GetDisplayValue().c_str());
         }
     }
 
@@ -417,7 +420,7 @@ TEST_F (NavigationQueryExecutorTests, GetChildNodesOfClassGroupingNode_GroupedBy
 
     JsonNavNodePtr node = executor.GetNode(0);
     EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, node->GetType().c_str());
-    EXPECT_STREQ("WidgetID", node->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", node->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -445,12 +448,12 @@ TEST_F (NavigationQueryExecutorTests, OverridesLabel)
     JsonNavNodePtr node = executor.GetNode(0);
     ASSERT_TRUE(node.IsValid());
     EXPECT_EQ(m_gadgetClass->GetId(), NavNodeExtendedData(*node).GetECClassId());
-    EXPECT_STRNE("NavigationQueryExecutorTests.OverridesLabel", node->GetLabel().c_str());
+    EXPECT_STRNE("NavigationQueryExecutorTests.OverridesLabel", node->GetLabelDefinition().GetDisplayValue().c_str());
 
     node = executor.GetNode(1);
     ASSERT_TRUE(node.IsValid());
     EXPECT_EQ(m_widgetClass->GetId(), NavNodeExtendedData(*node).GetECClassId());
-    EXPECT_STREQ("NavigationQueryExecutorTests.OverridesLabel", node->GetLabel().c_str());
+    EXPECT_STREQ("NavigationQueryExecutorTests.OverridesLabel", node->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -480,15 +483,15 @@ TEST_F (NavigationQueryExecutorTests, InstanceNodesSortedAlphanumerically)
 
     JsonNavNodePtr node = executor.GetNode(0);
     ASSERT_TRUE(node.IsValid());
-    EXPECT_STREQ("Widget9A9", node->GetLabel().c_str());
+    EXPECT_STREQ("Widget9A9", node->GetLabelDefinition().GetDisplayValue().c_str());
 
     node = executor.GetNode(1);
     ASSERT_TRUE(node.IsValid());
-    EXPECT_STREQ("Widget9A10", node->GetLabel().c_str());
+    EXPECT_STREQ("Widget9A10", node->GetLabelDefinition().GetDisplayValue().c_str());
 
     node = executor.GetNode(2);
     ASSERT_TRUE(node.IsValid());
-    EXPECT_STREQ("Widget10", node->GetLabel().c_str());
+    EXPECT_STREQ("Widget10", node->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -517,13 +520,13 @@ TEST_F (NavigationQueryExecutorTests, InstanceNodesSortedAlphanumerically_Instan
     ASSERT_EQ(3, executor.GetNodesCount());
 
     JsonNavNodePtr node = executor.GetNode(0);
-    EXPECT_STREQ("Widget9A9", node->GetLabel().c_str());
+    EXPECT_STREQ("Widget9A9", node->GetLabelDefinition().GetDisplayValue().c_str());
 
     node = executor.GetNode(1);
-    EXPECT_STREQ("Widget9A10", node->GetLabel().c_str());
+    EXPECT_STREQ("Widget9A10", node->GetLabelDefinition().GetDisplayValue().c_str());
 
     node = executor.GetNode(2);
-    EXPECT_STREQ("Widget10", node->GetLabel().c_str());
+    EXPECT_STREQ("Widget10", node->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -602,12 +605,12 @@ TEST_F(NavigationQueryExecutorTests, PropertyGroupingByBooleanProperty)
     ASSERT_EQ(2, executor.GetNodesCount());
 
     JsonNavNodePtr node0 = executor.GetNode(0);
-    EXPECT_STREQ("False", node0->GetLabel().c_str());
+    EXPECT_STREQ("False", node0->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_TRUE(NavNodeExtendedData(*node0).HasPropertyValue());
     EXPECT_EQ(false, NavNodeExtendedData(*node0).GetPropertyValue()->GetBool());
 
     JsonNavNodePtr node1 = executor.GetNode(1);
-    EXPECT_STREQ("True", node1->GetLabel().c_str());
+    EXPECT_STREQ("True", node1->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_TRUE(NavNodeExtendedData(*node1).HasPropertyValue());
     EXPECT_EQ(true, NavNodeExtendedData(*node1).GetPropertyValue()->GetBool());
     }
@@ -646,9 +649,9 @@ TEST_F (NavigationQueryExecutorTests, PropertyGroupingByIntProperty)
         ASSERT_TRUE(node.IsValid());
         switch (i + 1)
             {
-            case 1: EXPECT_STREQ("-1", node->GetLabel().c_str()); break;
-            case 2: EXPECT_STREQ("10", node->GetLabel().c_str()); break;
-            case 3: EXPECT_STREQ("5", node->GetLabel().c_str()); break;
+            case 1: EXPECT_STREQ("-1", node->GetLabelDefinition().GetDisplayValue().c_str()); break;
+            case 2: EXPECT_STREQ("10", node->GetLabelDefinition().GetDisplayValue().c_str()); break;
+            case 3: EXPECT_STREQ("5", node->GetLabelDefinition().GetDisplayValue().c_str()); break;
             }
         EXPECT_STREQ("TestImageId", node->GetCollapsedImageId().c_str());
         EXPECT_STREQ("TestImageId", node->GetExpandedImageId().c_str());
@@ -697,9 +700,9 @@ TEST_F (NavigationQueryExecutorTests, PropertyRangeGrouping)
         ASSERT_TRUE(node.IsValid());
         switch (i + 1)
             {
-            case 1: EXPECT_STREQ("0 - 5", node->GetLabel().c_str()); break;
-            case 2: EXPECT_STREQ("6 - 10", node->GetLabel().c_str()); break;
-            case 3: EXPECT_STREQ(RULESENGINE_LOCALIZEDSTRING_Other.c_str(), node->GetLabel().c_str()); break;
+            case 1: EXPECT_STREQ("0 - 5", node->GetLabelDefinition().GetDisplayValue().c_str()); break;
+            case 2: EXPECT_STREQ("6 - 10", node->GetLabelDefinition().GetDisplayValue().c_str()); break;
+            case 3: EXPECT_STREQ(RULESENGINE_LOCALIZEDSTRING_Other.c_str(), node->GetLabelDefinition().GetDisplayValue().c_str()); break;
             }
         }
     }
@@ -747,17 +750,17 @@ TEST_F (NavigationQueryExecutorTests, PropertyRangeGroupingWithCustomLabelsAndIm
         switch (i + 1)
             {
             case 1:
-                EXPECT_STREQ(RULESENGINE_LOCALIZEDSTRING_Other.c_str(), node->GetLabel().c_str());
+                EXPECT_STREQ(RULESENGINE_LOCALIZEDSTRING_Other.c_str(), node->GetLabelDefinition().GetDisplayValue().c_str());
                 EXPECT_STREQ("", node->GetCollapsedImageId().c_str());
                 EXPECT_STREQ("", node->GetExpandedImageId().c_str());
                 break;
             case 2:
-                EXPECT_STREQ("CustomLabel1", node->GetLabel().c_str());
+                EXPECT_STREQ("CustomLabel1", node->GetLabelDefinition().GetDisplayValue().c_str());
                 EXPECT_STREQ("CustomImage1", node->GetCollapsedImageId().c_str());
                 EXPECT_STREQ("CustomImage1", node->GetExpandedImageId().c_str());
                 break;
             case 3:
-                EXPECT_STREQ("CustomLabel2", node->GetLabel().c_str());
+                EXPECT_STREQ("CustomLabel2", node->GetLabelDefinition().GetDisplayValue().c_str());
                 EXPECT_STREQ("", node->GetCollapsedImageId().c_str());
                 EXPECT_STREQ("", node->GetExpandedImageId().c_str());
                 break;
@@ -808,7 +811,7 @@ TEST_F (NavigationQueryExecutorTests, PropertyGroupingByForeignKeyWithoutDisplay
 
     JsonNavNodePtr node = executor.GetNode(0);
     ASSERT_TRUE(node.IsValid());
-    EXPECT_STREQ("GadgetID", node->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", node->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -857,8 +860,8 @@ TEST_F (NavigationQueryExecutorTests, PropertyGroupingByForeignKeyWithDisplayLab
         ASSERT_TRUE(node.IsValid());
         switch (i + 1)
             {
-            case 1: EXPECT_STREQ("Widget1", node->GetLabel().c_str()); break;
-            case 2: EXPECT_STREQ("Widget2", node->GetLabel().c_str()); break;
+            case 1: EXPECT_STREQ("Widget1", node->GetLabelDefinition().GetDisplayValue().c_str()); break;
+            case 2: EXPECT_STREQ("Widget2", node->GetLabelDefinition().GetDisplayValue().c_str()); break;
             }
         }
     }
@@ -909,8 +912,8 @@ TEST_F (NavigationQueryExecutorTests, PropertyGroupingByForeignKeyWithDisplayLab
         ASSERT_TRUE(node.IsValid());
         switch (i + 1)
             {
-            case 1: EXPECT_STREQ("Widget1", node->GetLabel().c_str()); break;
-            case 2: EXPECT_STREQ("Widget2", node->GetLabel().c_str()); break;
+            case 1: EXPECT_STREQ("Widget1", node->GetLabelDefinition().GetDisplayValue().c_str()); break;
+            case 2: EXPECT_STREQ("Widget2", node->GetLabelDefinition().GetDisplayValue().c_str()); break;
             }
         }
     }
@@ -952,7 +955,7 @@ TEST_F (NavigationQueryExecutorTests, PropertyGroupingByForeignKeyWithDisplayLab
 
     JsonNavNodePtr node = executor.GetNode(0);
     ASSERT_TRUE(node.IsValid());
-    EXPECT_STREQ("ClassD_Label", node->GetLabel().c_str());
+    EXPECT_STREQ("ClassD_Label", node->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -991,7 +994,7 @@ TEST_F (NavigationQueryExecutorTests, PropertyGroupingByForeignKeyWithLabelOverr
 
     JsonNavNodePtr node = executor.GetNode(0);
     ASSERT_TRUE(node.IsValid());
-    EXPECT_STREQ("MyLabel", node->GetLabel().c_str());
+    EXPECT_STREQ("MyLabel", node->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1030,7 +1033,7 @@ TEST_F (NavigationQueryExecutorTests, PropertyGroupingByForeignKeyWithInstanceLa
 
     JsonNavNodePtr node = executor.GetNode(0);
     ASSERT_TRUE(node.IsValid());
-    EXPECT_STREQ("ClassD_StringProperty", node->GetLabel().c_str());
+    EXPECT_STREQ("ClassD_StringProperty", node->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1076,7 +1079,7 @@ TEST_F (NavigationQueryExecutorTests, PropertyGroupingByForeignKeyWithDisplayLab
 
     JsonNavNodePtr node = executor.GetNode(0);
     ASSERT_TRUE(node.IsValid());
-    EXPECT_STREQ("WidgetName", node->GetLabel().c_str());
+    EXPECT_STREQ("WidgetName", node->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1122,7 +1125,7 @@ TEST_F (NavigationQueryExecutorTests, PropertyGroupingByForeignKeyWithDisplayLab
 
     JsonNavNodePtr node = executor.GetNode(0);
     ASSERT_TRUE(node.IsValid());
-    EXPECT_STREQ("WidgetName", node->GetLabel().c_str());
+    EXPECT_STREQ("WidgetName", node->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

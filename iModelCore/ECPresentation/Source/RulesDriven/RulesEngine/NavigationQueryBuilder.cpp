@@ -2558,7 +2558,7 @@ static BentleyStatus AppendParents(ComplexNavigationQuery& query, bset<unsigned>
         if (parentClasses.size() > 1)
             {
             LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("Used parent node '%s' represents instances of more than 1 ECClass. Using just the first one: '%s'.",
-                parent->GetLabel().c_str(), parentClass->GetFullName()).c_str(), NativeLogging::LOG_WARNING);
+                parent->GetLabelDefinition().GetDisplayValue().c_str(), parentClass->GetFullName()).c_str(), NativeLogging::LOG_WARNING);
             }
 
         for (unsigned i = previousLevel; i < targetLevel; ++i)

@@ -37,11 +37,11 @@ TEST_F(MultiSpecificationNodesProviderTests, ReturnsNodesForAllSpecifications)
 
     EXPECT_TRUE(provider->GetNode(node, 0));
     ASSERT_TRUE(node.IsValid());
-    EXPECT_STREQ("label1", node->GetLabel().c_str());
+    EXPECT_STREQ("label1", node->GetLabelDefinition().GetDisplayValue().c_str());
 
     EXPECT_TRUE(provider->GetNode(node, 1));
     ASSERT_TRUE(node.IsValid());
-    EXPECT_STREQ("label2", node->GetLabel().c_str());
+    EXPECT_STREQ("label2", node->GetLabelDefinition().GetDisplayValue().c_str());
 
     EXPECT_FALSE(provider->GetNode(node, 2));
     }
@@ -68,11 +68,11 @@ TEST_F(MultiSpecificationNodesProviderTests, SkipsEmptySpecifications)
 
     EXPECT_TRUE(provider->GetNode(node, 0));
     ASSERT_TRUE(node.IsValid());
-    EXPECT_STREQ("label1", node->GetLabel().c_str());
+    EXPECT_STREQ("label1", node->GetLabelDefinition().GetDisplayValue().c_str());
 
     EXPECT_TRUE(provider->GetNode(node, 1));
     ASSERT_TRUE(node.IsValid());
-    EXPECT_STREQ("label3", node->GetLabel().c_str());
+    EXPECT_STREQ("label3", node->GetLabelDefinition().GetDisplayValue().c_str());
 
     EXPECT_FALSE(provider->GetNode(node, 2));
     BeTest::SetFailOnAssert(true);

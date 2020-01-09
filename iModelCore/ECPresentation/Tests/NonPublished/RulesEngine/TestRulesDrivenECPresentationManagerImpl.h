@@ -30,7 +30,7 @@ struct TestRulesDrivenECPresentationManagerImpl : RulesDrivenECPresentationManag
     typedef std::function<ContentDescriptorCPtr(IConnectionCR, Utf8CP, int, KeySetCR, SelectionInfo const*, ContentOptions const&, ICancelationTokenCR)> Handler_GetContentDescriptor;
     typedef std::function<ContentCPtr(IConnectionCR, ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR)> Handler_GetContent;
     typedef std::function<size_t(IConnectionCR, ContentDescriptorCR, ICancelationTokenCR)> Handler_GetContentSetSize;
-    typedef std::function<Utf8String(IConnectionCR, KeySetCR, ICancelationTokenCR)> Handler_GetDisplayLabel;
+    typedef std::function<LabelDefinitionCPtr(IConnectionCR, KeySetCR, ICancelationTokenCR)> Handler_GetDisplayLabel;
 
     typedef std::function<void()> Handler_OnUpdateRecordsHandlerChanged;
     typedef std::function<void(ECInstanceChangeEventSource&)> Handler_OnECInstanceChangeEventSourceRegistered;
@@ -119,11 +119,11 @@ protected:
             return m_contentSetSizeHandler(connection, descriptor, cancelationToken);
         return 0;
         }
-    Utf8String _GetDisplayLabel(IConnectionCR connection, KeySetCR key, ICancelationTokenCR cancelationToken) override
+    LabelDefinitionCPtr _GetDisplayLabel(IConnectionCR connection, KeySetCR key, ICancelationTokenCR cancelationToken) override
         {
         if (m_displayLabelHandler)
             return m_displayLabelHandler(connection, key, cancelationToken);
-        return "";
+        return LabelDefinition::Create();
         }
 
 public:

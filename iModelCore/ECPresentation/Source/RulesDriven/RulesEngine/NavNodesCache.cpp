@@ -1010,7 +1010,7 @@ static Utf8String GetNodeDebugString(Utf8CP action, NavNodeCR node, Nullable<Nod
         str.append(" ").append(GetNodeVisibilityString(visibility.Value())).append(" node {");
     str.append("Id: ").append(std::to_string(node.GetNodeId()).c_str());
     str.append(", Type: '").append(node.GetType()).append("'");
-    str.append(", Label: '").append(node.GetLabel()).append("'");
+    str.append(", Label: '").append(node.GetLabelDefinition().GetDisplayValue()).append("'");
     str.append("}");
     return str;
     }
@@ -1095,7 +1095,7 @@ void NodesCache::CacheNode(DataSourceInfo const& datasourceInfo, NavNodeR node, 
 
     Utf8String nodeStr = GetSerializedJson(jsonNode.GetJson());
     stmt->BindText(bindingIndex++, nodeStr.c_str(), Statement::MakeCopy::No);
-    stmt->BindText(bindingIndex++, node.GetLabel(), Statement::MakeCopy::Yes);
+    stmt->BindText(bindingIndex++, node.GetLabelDefinition().GetDisplayValue(), Statement::MakeCopy::Yes);
 
     DbResult result = stmt->Step();
     BeAssert(BE_SQLITE_DONE == result);
@@ -1821,7 +1821,7 @@ void NodesCache::_Update(uint64_t nodeId, JsonNavNodeCR node)
     BeAssert(nullptr != dynamic_cast<JsonNavNodeCP>(&node));
     Utf8String nodeStr = GetSerializedJson(static_cast<JsonNavNodeCR>(node).GetJson());
     stmt->BindText(2, nodeStr.c_str(), Statement::MakeCopy::No);
-    stmt->BindText(3, node.GetLabel(), Statement::MakeCopy::Yes);
+    stmt->BindText(3, node.GetLabelDefinition().GetDisplayValue(), Statement::MakeCopy::Yes);
 
     stmt->BindUInt64(4, nodeId);
 

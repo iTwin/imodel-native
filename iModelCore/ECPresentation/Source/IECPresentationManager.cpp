@@ -85,7 +85,7 @@ folly::Future<size_t> IECPresentationManager::GetContentSetSize(ContentDescripto
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<Utf8String> IECPresentationManager::GetDisplayLabel(ECDbCR db, ECInstanceKeyCR key, JsonValueCR extendedOptions, PresentationRequestContextCR context)
+folly::Future<LabelDefinitionCPtr> IECPresentationManager::GetDisplayLabel(ECDbCR db, ECInstanceKeyCR key, JsonValueCR extendedOptions, PresentationRequestContextCR context)
     {
     ECClassCP ecClass = db.Schemas().GetClass(key.GetClassId());
     KeySetPtr keys = KeySet::Create({ECClassInstanceKey(ecClass, key.GetInstanceId())});
@@ -95,7 +95,7 @@ folly::Future<Utf8String> IECPresentationManager::GetDisplayLabel(ECDbCR db, ECI
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<Utf8String> IECPresentationManager::GetDisplayLabel(ECDbCR db, KeySetCR keys, JsonValueCR extendedOptions, PresentationRequestContextCR context)
+folly::Future<LabelDefinitionCPtr> IECPresentationManager::GetDisplayLabel(ECDbCR db, KeySetCR keys, JsonValueCR extendedOptions, PresentationRequestContextCR context)
     {
     return _GetDisplayLabel(db, keys, extendedOptions, context);
     }

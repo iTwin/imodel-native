@@ -86,6 +86,10 @@ protected:
     virtual rapidjson::Document _AsJson(NavNode const&, rapidjson::Document::AllocatorType*) const = 0;
     virtual rapidjson::Document _AsJson(NodesPathElement const&, rapidjson::Document::AllocatorType*) const = 0;
 
+    virtual rapidjson::Document _AsJson(LabelDefinition const&, rapidjson::Document::AllocatorType*) const = 0;
+    virtual rapidjson::Document _AsJson(LabelDefinition::SimpleRawValue const&, rapidjson::Document::AllocatorType*) const = 0;
+    virtual rapidjson::Document _AsJson(LabelDefinition::CompositeRawValue const&, rapidjson::Document::AllocatorType*) const = 0;
+
     virtual rapidjson::Document _AsJson(KeySet const&, rapidjson::Document::AllocatorType*) const = 0;
     virtual KeySetPtr _GetKeySetFromJson(IConnectionCR, JsonValueCR) const = 0;
 
@@ -159,6 +163,10 @@ public:
     rapidjson::Document AsJson(LabelGroupingNodeKey const& labelGroupingNodeKey, rapidjson::Document::AllocatorType* allocator = nullptr) const;
     LabelGroupingNodeKeyPtr GetLabelGroupingNodeKeyFromJson(JsonValueCR json) const {return _GetLabelGroupingNodeKeyFromJson(json);}
     LabelGroupingNodeKeyPtr GetLabelGroupingNodeKeyFromJson(RapidJsonValueCR json) const {return _GetLabelGroupingNodeKeyFromJson(json);}
+
+    rapidjson::Document AsJson(LabelDefinition const& labelDefinition, rapidjson::Document::AllocatorType* allocator = nullptr) const {return _AsJson(labelDefinition, allocator);}
+    rapidjson::Document AsJson(LabelDefinition::SimpleRawValue const& value, rapidjson::Document::AllocatorType* allocator = nullptr) const { return _AsJson(value, allocator); }
+    rapidjson::Document AsJson(LabelDefinition::CompositeRawValue const& value, rapidjson::Document::AllocatorType* allocator = nullptr) const { return _AsJson(value, allocator); }
 
     rapidjson::Document AsJson(KeySet const& keySet, rapidjson::Document::AllocatorType* allocator = nullptr) const {return _AsJson(keySet, allocator);}
     KeySetPtr GetKeySetFromJson(IConnectionCR connection, JsonValueCR json) const {return _GetKeySetFromJson(connection, json);}

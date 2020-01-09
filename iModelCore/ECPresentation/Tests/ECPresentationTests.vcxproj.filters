@@ -377,5 +377,8 @@
     <ClCompile Include="NonPublished\PresentationRules\PropertyCategorySpecificationTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="NonPublished\RulesEngine\LabelDefinitionTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

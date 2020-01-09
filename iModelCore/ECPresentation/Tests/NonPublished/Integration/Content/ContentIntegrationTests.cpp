@@ -444,8 +444,8 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_SortByD
 
     // make sure the records in the content set are sorted
     ASSERT_EQ(2, content->GetContentSet().GetSize());
-    EXPECT_STREQ("a", content->GetContentSet().Get(0)->GetDisplayLabel().c_str());
-    EXPECT_STREQ("b", content->GetContentSet().Get(1)->GetDisplayLabel().c_str());
+    EXPECT_STREQ("a", content->GetContentSet().Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("b", content->GetContentSet().Get(1)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
 
     // change the order from ascending to descending
     ovr->SetSortDirection(SortDirection::Descending);
@@ -456,8 +456,8 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_SortByD
 
     // make sure the records in the content set are sorted in descending order
     ASSERT_EQ(2, content->GetContentSet().GetSize());
-    EXPECT_STREQ("b", content->GetContentSet().Get(0)->GetDisplayLabel().c_str());
-    EXPECT_STREQ("a", content->GetContentSet().Get(1)->GetDisplayLabel().c_str());
+    EXPECT_STREQ("b", content->GetContentSet().Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("a", content->GetContentSet().Get(1)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -715,7 +715,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_Filters
 
     // make sure the records in the content set are filtered
     ASSERT_EQ(1, content->GetContentSet().GetSize());
-    EXPECT_STREQ("b", content->GetContentSet().Get(0)->GetDisplayLabel().c_str());
+    EXPECT_STREQ("b", content->GetContentSet().Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2441,7 +2441,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelProperty)
     // validate content set
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
-    EXPECT_STREQ("Custom label", contentSet.Get(0)->GetDisplayLabel().c_str());
+    EXPECT_STREQ("Custom label", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2487,7 +2487,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, UsesRelatedInstanceInLabelO
     // validate content set
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
-    EXPECT_STREQ("Widget label", contentSet.Get(0)->GetDisplayLabel().c_str());
+    EXPECT_STREQ("Widget label", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2533,7 +2533,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, UsesRelatedInstanceInLabelO
     // validate content set
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
-    EXPECT_STREQ("Gadget label", contentSet.Get(0)->GetDisplayLabel().c_str());
+    EXPECT_STREQ("Gadget label", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2574,7 +2574,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_SetsD
     // validate content set
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
-    EXPECT_STREQ("Custom label", contentSet.Get(0)->GetDisplayLabel().c_str());
+    EXPECT_STREQ("Custom label", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2618,7 +2618,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LabelOverride_SetsDisplayLa
     // validate content set
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
-    EXPECT_STREQ("Custom label", contentSet.Get(0)->GetDisplayLabel().c_str());
+    EXPECT_STREQ("Custom label", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2662,7 +2662,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_SetsD
     // validate content set
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
-    EXPECT_STREQ("Custom label", contentSet.Get(0)->GetDisplayLabel().c_str());
+    EXPECT_STREQ("Custom label", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2706,7 +2706,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LabelOverride_SetsDisplayLa
     // validate content set
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
-    EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_MultipleInstances()).c_str(), contentSet.Get(0)->GetDisplayLabel().c_str());
+    EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_MultipleInstances()).c_str(), contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2750,7 +2750,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_SetsD
     // validate content set
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
-    EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_MultipleInstances()).c_str(), contentSet.Get(0)->GetDisplayLabel().c_str());
+    EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_MultipleInstances()).c_str(), contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2792,7 +2792,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelPropertyWhe
     // validate content set
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
-    EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_MultipleInstances()).c_str(), contentSet.Get(0)->GetDisplayLabel().c_str());
+    EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_MultipleInstances()).c_str(), contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2984,7 +2984,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, RecordFromDifferrentSpecifi
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, LabelOverride_DisplayLabelFieldsGetCreatedForRecordsfromDifferentSpecifications)
+TEST_F(RulesDrivenECPresentationManagerContentTests, LabelOverride_DisplayLabelGetCreatedfromDifferentSpecifications)
     {
     // set up the dataset
     IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
@@ -3016,25 +3016,21 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LabelOverride_DisplayLabelF
     // request for content
     ContentCPtr content = m_manager->GetContent(*modifiedDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
-    EXPECT_EQ(9, content->GetDescriptor().GetVisibleFields().size()); // content created with a descriptor that has a display label
+    EXPECT_EQ(8, content->GetDescriptor().GetVisibleFields().size()); // content created with a descriptor that has a display label
 
     // validate content set
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(2, contentSet.GetSize());
 
-    rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
-    RapidJsonValueCR values1 = recordJson["Values"];
-    EXPECT_STREQ("Test Widget", values1[content->GetDescriptor().GetVisibleFields()[0]->GetName().c_str()].GetString());
+    EXPECT_STREQ("Test Widget", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
 
-    rapidjson::Document recordJson2 = contentSet.Get(1)->AsJson();
-    RapidJsonValueCR values2 = recordJson2["Values"];
-    EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_NotSpecified()).c_str(), values2[content->GetDescriptor().GetVisibleFields()[0]->GetName().c_str()].GetString());
+    EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_NotSpecified()).c_str(), contentSet.Get(1)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_DisplayLabelFieldsGetCreatedForRecordsFromDifferentSpecifications)
+TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_DisplayLabelGetCreatedFromDifferentSpecifications)
     {
     // set up the dataset
     IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
@@ -3066,19 +3062,15 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_Displ
     // request for content
     ContentCPtr content = m_manager->GetContent(*modifiedDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
-    EXPECT_EQ(9, content->GetDescriptor().GetVisibleFields().size()); // content created with a descriptor that has a display label
+    EXPECT_EQ(8, content->GetDescriptor().GetVisibleFields().size()); // content created with a descriptor that has a display label
 
     // validate content set
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(2, contentSet.GetSize());
 
-    rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
-    RapidJsonValueCR values1 = recordJson["Values"];
-    EXPECT_STREQ("Test Widget", values1[content->GetDescriptor().GetVisibleFields()[0]->GetName().c_str()].GetString());
+    EXPECT_STREQ("Test Widget", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
 
-    rapidjson::Document recordJson2 = contentSet.Get(1)->AsJson();
-    RapidJsonValueCR values2 = recordJson2["Values"];
-    EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_NotSpecified()).c_str(), values2[content->GetDescriptor().GetVisibleFields()[0]->GetName().c_str()].GetString());
+    EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_NotSpecified()).c_str(), contentSet.Get(1)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -9885,7 +9877,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValuesOfDisplayL
     ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *keys, nullptr, options.GetJson()).get();
     ContentDescriptorPtr overridenDescriptor = ContentDescriptor::Create(*descriptor);
     bvector<ContentDescriptor::Field*> fieldVectorCopy = descriptor->GetAllFields();
-    // hide all fields except DisplayLabel
+    // remove all fields except DisplayLabel
     for (ContentDescriptor::Field const* field : fieldVectorCopy)
         {
         if (!field->IsDisplayLabelField())
@@ -9894,7 +9886,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValuesOfDisplayL
     overridenDescriptor->AddContentFlag(ContentFlags::DistinctValues);
     overridenDescriptor->AddContentFlag(ContentFlags::ShowLabels);
     // validate descriptor
-    EXPECT_EQ(1, overridenDescriptor->GetVisibleFields().size());
+    EXPECT_EQ(0, overridenDescriptor->GetVisibleFields().size());
 
     // request for content
     ContentCPtr content = m_manager->GetContent(*overridenDescriptor, PageOptions()).get();
@@ -9904,19 +9896,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValuesOfDisplayL
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(2, contentSet.GetSize());
 
-    RapidJsonValueCR values1 = contentSet.Get(0)->GetValues();
-    rapidjson::Document expectedValues1;
-    expectedValues1.Parse(Utf8PrintfString(R"({"/DisplayLabel/": "Test1"})").c_str());
-    EXPECT_EQ(expectedValues1, values1)
-        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues1) << "\r\n"
-        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(values1);
-
-    RapidJsonValueCR values2 = contentSet.Get(1)->GetValues();
-    rapidjson::Document expectedValues2;
-    expectedValues2.Parse(Utf8PrintfString(R"({"/DisplayLabel/": "Test2"})").c_str());
-    EXPECT_EQ(expectedValues2, values2)
-        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues2) << "\r\n"
-        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(values2);
+    EXPECT_STREQ("Test1", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("Test2",  contentSet.Get(1)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -10893,8 +10874,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_Overr
     // validate content set
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(2, contentSet.GetSize());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*gadget).c_str(), contentSet.Get(0)->GetDisplayLabel().c_str());
-    EXPECT_STREQ("WidgetID", contentSet.Get(1)->GetDisplayLabel().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*gadget).c_str(), contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("WidgetID", contentSet.Get(1)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -10938,9 +10919,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_Overr
     // validate content set
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(3, contentSet.GetSize());
-    EXPECT_STREQ("GadgetDescription", contentSet.Get(0)->GetDisplayLabel().c_str());
-    EXPECT_STREQ("WidgetID", contentSet.Get(1)->GetDisplayLabel().c_str());
-    EXPECT_STREQ(GetDefaultDisplayLabel(*sprocket).c_str(), contentSet.Get(2)->GetDisplayLabel().c_str());
+    EXPECT_STREQ("GadgetDescription", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("WidgetID", contentSet.Get(1)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*sprocket).c_str(), contentSet.Get(2)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -10985,7 +10966,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_Appli
     // validate content set
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
-    EXPECT_STREQ("WidgetDescription", contentSet.Get(0)->GetDisplayLabel().c_str());
+    EXPECT_STREQ("WidgetDescription", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -11026,7 +11007,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_WhenN
     // validate content set
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
-    EXPECT_STREQ("LabelOverride", contentSet.Get(0)->GetDisplayLabel().c_str());
+    EXPECT_STREQ("LabelOverride", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -11067,7 +11048,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_Asser
     // validate content set
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
-    EXPECT_STREQ("LabelOverride", contentSet.Get(0)->GetDisplayLabel().c_str());
+    EXPECT_STREQ("LabelOverride", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -11194,13 +11175,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_Handl
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(6, contentSet.GetSize());
 
-    EXPECT_STREQ("UserLabel", contentSet.Get(0)->GetDisplayLabel().c_str());
-    EXPECT_STREQ("CodeValue", contentSet.Get(1)->GetDisplayLabel().c_str());
-    EXPECT_STREQ("Custom Element [0-3]", contentSet.Get(2)->GetDisplayLabel().c_str());
+    EXPECT_STREQ("UserLabel", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("CodeValue", contentSet.Get(1)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("Custom Element [0-3]", contentSet.Get(2)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
 
-    EXPECT_STREQ("CodeValue", contentSet.Get(3)->GetDisplayLabel().c_str());
-    EXPECT_STREQ("UserLabel [0-5]", contentSet.Get(4)->GetDisplayLabel().c_str());
-    EXPECT_STREQ("Custom Geometric Element [0-6]", contentSet.Get(5)->GetDisplayLabel().c_str());
+    EXPECT_STREQ("CodeValue", contentSet.Get(3)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("UserLabel [0-5]", contentSet.Get(4)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("Custom Geometric Element [0-6]", contentSet.Get(5)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -11262,7 +11243,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, RelatedInstanceLabelIsOverr
     // set the "show labels" flag
     ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
     modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-    EXPECT_EQ(2, modifiedDescriptor->GetVisibleFields().size());
+    EXPECT_EQ(1, modifiedDescriptor->GetVisibleFields().size());
 
     // request for content
     ContentCPtr content = m_manager->GetContent(*modifiedDescriptor, PageOptions()).get();;
@@ -11272,7 +11253,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, RelatedInstanceLabelIsOverr
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
 
-    EXPECT_STREQ("ClassB_StringProperty", contentSet.Get(0)->GetDisplayLabel().c_str());
+    EXPECT_STREQ("ClassB_StringProperty", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -11317,7 +11298,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingBaseClassPolymorph
     // set the "show labels" flag
     ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
     modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-    EXPECT_EQ(2, modifiedDescriptor->GetVisibleFields().size());
+    EXPECT_EQ(1, modifiedDescriptor->GetVisibleFields().size());
 
     // request for content
     ContentCPtr content = m_manager->GetContent(*modifiedDescriptor, PageOptions()).get();;
@@ -11327,8 +11308,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingBaseClassPolymorph
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(2, contentSet.GetSize());
 
-    EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_NotSpecified()).c_str(), contentSet.Get(0)->GetDisplayLabel().c_str());
-    EXPECT_STREQ("ClassB_StringProperty", contentSet.Get(1)->GetDisplayLabel().c_str());
+    EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_NotSpecified()).c_str(), contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("ClassB_StringProperty", contentSet.Get(1)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -11384,7 +11365,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingBaseClassPolymorph
     // set the "show labels" flag
     ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
     modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-    EXPECT_EQ(2, modifiedDescriptor->GetVisibleFields().size());
+    EXPECT_EQ(1, modifiedDescriptor->GetVisibleFields().size());
 
     // request for content
     ContentCPtr content = m_manager->GetContent(*modifiedDescriptor, PageOptions()).get();;
@@ -11394,9 +11375,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingBaseClassPolymorph
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(3, contentSet.GetSize());
 
-    EXPECT_STREQ("ClassB_BaseStringProperty", contentSet.Get(0)->GetDisplayLabel().c_str());
-    EXPECT_STREQ("ClassA_BaseStringProperty", contentSet.Get(1)->GetDisplayLabel().c_str());
-    EXPECT_STREQ("ClassC_StringProperty", contentSet.Get(2)->GetDisplayLabel().c_str());
+    EXPECT_STREQ("ClassB_BaseStringProperty", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("ClassA_BaseStringProperty", contentSet.Get(1)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("ClassC_StringProperty", contentSet.Get(2)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -11445,7 +11426,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabel
     // set the "show labels" flag
     ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
     modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-    EXPECT_EQ(3, modifiedDescriptor->GetVisibleFields().size());
+    EXPECT_EQ(2, modifiedDescriptor->GetVisibleFields().size());
 
     // request for content
     ContentCPtr content = m_manager->GetContent(*modifiedDescriptor, PageOptions()).get();;
@@ -11455,7 +11436,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabel
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
 
-    EXPECT_STREQ("ClassC_BaseStringProperty", contentSet.Get(0)->GetDisplayLabel().c_str());
+    EXPECT_STREQ("ClassC_BaseStringProperty", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -11511,7 +11492,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabel
     // set the "show labels" flag
     ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
     modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-    EXPECT_EQ(2, modifiedDescriptor->GetVisibleFields().size());
+    EXPECT_EQ(1, modifiedDescriptor->GetVisibleFields().size());
 
     // request for content
     ContentCPtr content = m_manager->GetContent(*modifiedDescriptor, PageOptions()).get();;
@@ -11521,7 +11502,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabel
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
 
-    EXPECT_STREQ("ClassC_CodeValue", contentSet.Get(0)->GetDisplayLabel().c_str());
+    EXPECT_STREQ("ClassC_CodeValue", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -11579,7 +11560,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabel
     // set the "show labels" flag
     ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
     modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-    EXPECT_EQ(3, modifiedDescriptor->GetVisibleFields().size());
+    EXPECT_EQ(2, modifiedDescriptor->GetVisibleFields().size());
 
     // request for content
     ContentCPtr content = m_manager->GetContent(*modifiedDescriptor, PageOptions()).get();;
@@ -11589,7 +11570,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabel
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
 
-    EXPECT_STREQ("ClassC_CodeValue", contentSet.Get(0)->GetDisplayLabel().c_str());
+    EXPECT_STREQ("ClassC_CodeValue", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -11776,7 +11757,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabel
     // set the "show labels" flag
     ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
     modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-    EXPECT_EQ(2, modifiedDescriptor->GetVisibleFields().size());
+    EXPECT_EQ(1, modifiedDescriptor->GetVisibleFields().size());
 
     // request for content
     ContentCPtr content = m_manager->GetContent(*modifiedDescriptor, PageOptions()).get();
@@ -11786,7 +11767,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabel
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
 
-    EXPECT_STREQ("ClassB_UserLabel", contentSet.Get(0)->GetDisplayLabel().c_str());
+    EXPECT_STREQ("ClassB_UserLabel", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -11840,7 +11821,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabel
     // set the "show labels" flag
     ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
     modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-    EXPECT_EQ(2, modifiedDescriptor->GetVisibleFields().size());
+    EXPECT_EQ(1, modifiedDescriptor->GetVisibleFields().size());
 
     // request for content
     ContentCPtr content = m_manager->GetContent(*modifiedDescriptor, PageOptions()).get();
@@ -11850,7 +11831,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabel
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
 
-    EXPECT_STREQ("ClassB_UserLabel", contentSet.Get(0)->GetDisplayLabel().c_str());
+    EXPECT_STREQ("ClassB_UserLabel", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -11904,7 +11885,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabel
     // set the "show labels" flag
     ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
     modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-    EXPECT_EQ(2, modifiedDescriptor->GetVisibleFields().size());
+    EXPECT_EQ(1, modifiedDescriptor->GetVisibleFields().size());
 
     // request for content
     ContentCPtr content = m_manager->GetContent(*modifiedDescriptor, PageOptions()).get();
@@ -11914,7 +11895,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabel
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
 
-    EXPECT_STREQ("ClassA_UserLabel", contentSet.Get(0)->GetDisplayLabel().c_str());
+    EXPECT_STREQ("ClassA_UserLabel", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -11966,7 +11947,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabel
     // set the "show labels" flag
     ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
     modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-    EXPECT_EQ(2, modifiedDescriptor->GetVisibleFields().size());
+    EXPECT_EQ(1, modifiedDescriptor->GetVisibleFields().size());
 
     // request for content
     ContentCPtr content = m_manager->GetContent(*modifiedDescriptor, PageOptions()).get();
@@ -11977,7 +11958,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabel
     ASSERT_EQ(1, contentSet.GetSize());
 
     // Expecting "Not specified" label
-    EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_NotSpecified()).c_str(), contentSet.Get(0)->GetDisplayLabel().c_str());
+    EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_NotSpecified()).c_str(), contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -12029,7 +12010,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabel
     // set the "show labels" flag
     ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
     modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-    EXPECT_EQ(2, modifiedDescriptor->GetVisibleFields().size());
+    EXPECT_EQ(1, modifiedDescriptor->GetVisibleFields().size());
 
     // request for content
     ContentCPtr content = m_manager->GetContent(*modifiedDescriptor, PageOptions()).get();
@@ -12039,7 +12020,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabel
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
 
-    EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_NotSpecified()).c_str(), contentSet.Get(0)->GetDisplayLabel().c_str());
+    EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_NotSpecified()).c_str(), contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -14305,10 +14286,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ReturnsDisplayLabelOfSingle
     ECInstanceKey key(elementClass->GetId(), RulesEngineTestHelpers::GetInstanceKey(*element).GetId());
 
     // get label
-    Utf8String label = m_manager->GetDisplayLabel(s_project->GetECDb(), key).get();
+    LabelDefinitionCPtr label = m_manager->GetDisplayLabel(s_project->GetECDb(), key).get();
 
     // verify
-    EXPECT_STREQ("abc", label.c_str());
+    EXPECT_STREQ("abc", label->GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -14340,10 +14321,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ReturnsDisplayLabelOfMultip
         });
 
     // get label
-    Utf8String label = m_manager->GetDisplayLabel(s_project->GetECDb(), *keys).get();
+    LabelDefinitionCPtr label = m_manager->GetDisplayLabel(s_project->GetECDb(), *keys).get();
 
     // verify
-    EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_MultipleInstances()).c_str(), label.c_str());
+    EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_MultipleInstances()).c_str(), label->GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

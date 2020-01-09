@@ -385,11 +385,9 @@ rapidjson::Document ValueHelpers::GetJsonFromString(PrimitiveType primitiveType,
             doc.SetString(str.c_str(), doc.GetAllocator());
             return doc;
         case PRIMITIVETYPE_Point2d:
-            doc = GetPoint2dJsonFromString(str, &doc.GetAllocator());
-            return doc;
+            return GetPoint2dJsonFromString(str, allocator);
         case PRIMITIVETYPE_Point3d:
-            doc = GetPoint3dJsonFromString(str, &doc.GetAllocator());
-            return doc;
+            return GetPoint3dJsonFromString(str, allocator);
         }
     BeAssert(false);
     return doc;
@@ -700,11 +698,9 @@ rapidjson::Document ValueHelpers::GetJsonFromECValue(ECValueCR ecValue, rapidjso
             doc.SetString(ecValue.GetUtf8CP(), doc.GetAllocator());
             return doc;
         case PRIMITIVETYPE_Point2d:
-            doc = GetPoint2dJson(ecValue.GetPoint2d(), &doc.GetAllocator());
-            return doc;
+            return GetPoint2dJson(ecValue.GetPoint2d(), allocator);
         case PRIMITIVETYPE_Point3d:
-            doc = GetPoint3dJson(ecValue.GetPoint3d(), &doc.GetAllocator());
-            return doc;
+            return GetPoint3dJson(ecValue.GetPoint3d(), allocator);
         }
     BeAssert(false);
     return doc;
@@ -772,4 +768,34 @@ bvector<ECInstanceKey> ValueHelpers::GetECInstanceKeysFromSerializedJson(Utf8CP 
         BeAssert(false);
         }    
     return list;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ValueHelpers::GetECValueTypeName(ECValueCR value) 
+    {
+    switch (value.GetPrimitiveType())
+        {
+        case PRIMITIVETYPE_Binary:
+            return "binary";
+        case PRIMITIVETYPE_Boolean:
+            return "boolean";
+        case PRIMITIVETYPE_DateTime:
+            return "dateTime";
+        case PRIMITIVETYPE_Double:
+            return "double";
+        case PRIMITIVETYPE_Integer:
+            return "int";
+        case PRIMITIVETYPE_Long:
+            return "long";
+        case PRIMITIVETYPE_Point2d:
+            return "point2d";
+        case PRIMITIVETYPE_Point3d:
+            return "point3d";
+        case PRIMITIVETYPE_String:
+            return "string";
+        default:
+            return "";
+        }
     }

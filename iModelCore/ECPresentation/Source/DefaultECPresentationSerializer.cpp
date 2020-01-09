@@ -396,7 +396,7 @@ rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContentSetItem cons
     json.SetObject();
 
     if (0 != (ContentSetItem::SerializationFlags::SERIALIZE_DisplayLabel & flags))
-        json.AddMember("DisplayLabel", rapidjson::Value(contentSetItem.GetDisplayLabel().c_str(), json.GetAllocator()), json.GetAllocator());
+        json.AddMember("DisplayLabel", _AsJson(contentSetItem.GetDisplayLabelDefinition(), &json.GetAllocator()), json.GetAllocator());
 
     if (0 != (ContentSetItem::SerializationFlags::SERIALIZE_ImageId & flags))
         json.AddMember("ImageId", rapidjson::Value(contentSetItem.GetImageId().c_str(), json.GetAllocator()), json.GetAllocator());
@@ -806,7 +806,6 @@ rapidjson::Document DefaultECPresentationSerializer::_AsJson(NavNode const& navN
         }
     else
         json.AddMember("Key", navNode.GetKey()->AsJson(&json.GetAllocator()), json.GetAllocator());
-    json.AddMember("Label", rapidjson::Value(navNode.GetLabel().c_str(), json.GetAllocator()), json.GetAllocator());
     json.AddMember("Description", rapidjson::Value(navNode.GetDescription().c_str(), json.GetAllocator()), json.GetAllocator());
     json.AddMember("ExpandedImageId", rapidjson::Value(navNode.GetExpandedImageId().c_str(), json.GetAllocator()), json.GetAllocator());
     json.AddMember("CollapsedImageId", rapidjson::Value(navNode.GetCollapsedImageId().c_str(), json.GetAllocator()), json.GetAllocator());
@@ -823,6 +822,7 @@ rapidjson::Document DefaultECPresentationSerializer::_AsJson(NavNode const& navN
     json.AddMember("IsExpanded", navNode.IsExpanded(), json.GetAllocator());
     if (navNode.GetUsersExtendedData().GetJson().MemberCount() > 0)
         json.AddMember("ExtendedData", rapidjson::Value(navNode.GetUsersExtendedData().GetJson(), json.GetAllocator()), json.GetAllocator());
+    json.AddMember("LabelDefinition", _AsJson(navNode.GetLabelDefinition(), &json.GetAllocator()), json.GetAllocator());
 
     return json;
     }
@@ -849,6 +849,49 @@ rapidjson::Document DefaultECPresentationSerializer::_AsJson(NodesPathElement co
 
     json.AddMember("Children", childrenJson, json.GetAllocator());
 
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document DefaultECPresentationSerializer::_AsJson(LabelDefinition const& labelDefinition, rapidjson::Document::AllocatorType* allocator) const
+    {
+    rapidjson::Document json(allocator);
+    json.SetObject();
+    if (!labelDefinition.IsDefinitionValid())
+        return json;
+
+    json.AddMember("DisplayValue", rapidjson::Value(labelDefinition.GetDisplayValue().c_str(), json.GetAllocator()), json.GetAllocator());
+    json.AddMember("TypeName", rapidjson::Value(labelDefinition.GetTypeName().c_str(), json.GetAllocator()), json.GetAllocator());
+    if (nullptr != labelDefinition.GetRawValue())
+        json.AddMember("RawValue", labelDefinition.GetRawValue()->AsJson(&json.GetAllocator()), json.GetAllocator());
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document DefaultECPresentationSerializer::_AsJson(LabelDefinition::SimpleRawValue const& value, rapidjson::Document::AllocatorType* allocator) const
+    {
+    rapidjson::Document json(allocator);
+    json.CopyFrom(value.GetValue(), json.GetAllocator());
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document DefaultECPresentationSerializer::_AsJson(LabelDefinition::CompositeRawValue const& value, rapidjson::Document::AllocatorType* allocator) const
+    {
+    rapidjson::Document json(allocator);
+    json.SetObject();
+    json.AddMember("Separator", rapidjson::Value(value.GetSeparator().c_str(), json.GetAllocator()), json.GetAllocator());
+    rapidjson::Value values(rapidjson::kArrayType);
+    for (LabelDefinitionCPtr labelValue : value.GetValues())
+        values.PushBack(labelValue->AsJson(&json.GetAllocator()), json.GetAllocator());
+
+    json.AddMember("Values", values, json.GetAllocator());
     return json;
     }
 

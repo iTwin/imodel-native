@@ -44,7 +44,7 @@ JsonNavNode::JsonNavNode(JsonNavNode const& other)
     m_parentNodeId = other.m_parentNodeId;
     m_nodeId = other.m_nodeId;
     m_nodeKey = other.m_nodeKey;
-    m_label = other.m_label;
+    m_labelDefinition = other.m_labelDefinition;
     m_description = other.m_description;
     m_imageId = other.m_imageId;
     m_foreColor = other.m_foreColor;
@@ -112,8 +112,6 @@ rapidjson::Document JsonNavNode::GetJson() const
         }
     json.AddMember(NAVNODE_NodeId, m_nodeId, json.GetAllocator());
     json.AddMember(NAVNODE_ParentNodeId, m_parentNodeId, json.GetAllocator());
-    if (!m_label.empty())
-        json.AddMember(NAVNODE_Label, rapidjson::Value(m_label.c_str(), json.GetAllocator()), json.GetAllocator());
     if (!m_description.empty())
         json.AddMember(NAVNODE_Description, rapidjson::Value(m_description.c_str(), json.GetAllocator()), json.GetAllocator());
     if (!m_imageId.empty())
@@ -140,6 +138,8 @@ rapidjson::Document JsonNavNode::GetJson() const
         json.AddMember(NAVNODE_IsCheckboxVisible, m_isCheckboxVisible, json.GetAllocator());
     if (m_isExpanded)
         json.AddMember(NAVNODE_IsExpanded, m_isExpanded, json.GetAllocator());    
+    if (m_labelDefinition.IsValid())
+        json.AddMember(NAVNODE_LabelDefinition, m_labelDefinition->ToInternalJson(&json.GetAllocator()), json.GetAllocator());
     return json;
     }
 
@@ -167,8 +167,6 @@ void JsonNavNode::InitFromJson(RapidJsonValueCR json)
     m_isCheckboxEnabled = json.HasMember(NAVNODE_IsCheckboxEnabled) ? json[NAVNODE_IsCheckboxEnabled].GetBool() : false;
     m_isExpanded = json.HasMember(NAVNODE_IsExpanded) ? json[NAVNODE_IsExpanded].GetBool() : false;
 
-    if (json.HasMember(NAVNODE_Label))
-        m_label = json[NAVNODE_Label].GetString();
     if (json.HasMember(NAVNODE_Description))
         m_description = json[NAVNODE_Description].GetString();
     if (json.HasMember(NAVNODE_CollapsedImageId))
@@ -181,6 +179,8 @@ void JsonNavNode::InitFromJson(RapidJsonValueCR json)
         m_fontStyle = json[NAVNODE_FontStyle].GetString();
     if (json.HasMember(NAVNODE_Type))
         m_type = json[NAVNODE_Type].GetString();
+    if (json.HasMember(NAVNODE_LabelDefinition))
+        m_labelDefinition = LabelDefinition::FromInternalJson(json[NAVNODE_LabelDefinition]);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -287,7 +287,7 @@ JsonNavNodePtr JsonNavNodesFactory::CreateFromJson(IConnectionCR connection, Rap
 +---------------+---------------+---------------+---------------+---------------+------*/
 void JsonNavNodesFactory::InitECInstanceNode(JsonNavNodeR node, Utf8StringCR connectionId, Utf8StringCR locale, bvector<ECInstanceKey> const& instanceKeys, Utf8CP label) const
     {
-    node.SetLabel(label);
+    node.SetLabelDefinition(*LabelDefinition::FromString(label));
     node.SetType(NAVNODE_TYPE_ECInstancesNode);
     //TODO: necessary??
     //node.SetExpandedImageId(ImageHelper::GetImageId(*ecClass, true, true).c_str());
@@ -323,7 +323,7 @@ void JsonNavNodesFactory::InitECInstanceNode(JsonNavNodeR node, Utf8StringCR con
 +---------------+---------------+---------------+---------------+---------------+------*/
 void JsonNavNodesFactory::InitECClassGroupingNode(JsonNavNodeR node, Utf8StringCR connectionId, Utf8StringCR locale, ECClassCR ecClass, Utf8CP label, GroupedInstanceKeysListCR groupedInstanceKeys) const
     {
-    node.SetLabel(label);
+    node.SetLabelDefinition(*LabelDefinition::FromString(label));
     node.SetDescription(ecClass.GetDescription().c_str());
     node.SetType(NAVNODE_TYPE_ECClassGroupingNode);
     node.SetHasChildren(!groupedInstanceKeys.empty());
@@ -345,7 +345,7 @@ void JsonNavNodesFactory::InitECClassGroupingNode(JsonNavNodeR node, Utf8StringC
 +---------------+---------------+---------------+---------------+---------------+------*/
 void JsonNavNodesFactory::InitDisplayLabelGroupingNode(JsonNavNodeR node, Utf8StringCR connectionId, Utf8StringCR locale, Utf8CP label, GroupedInstanceKeysListCR groupedInstanceKeys) const
     {
-    node.SetLabel(label);
+    node.SetLabelDefinition(*LabelDefinition::FromString(label));
     node.SetType(NAVNODE_TYPE_DisplayLabelGroupingNode);
     node.SetHasChildren(!groupedInstanceKeys.empty());
     //TODO: necessary??
@@ -365,7 +365,7 @@ void JsonNavNodesFactory::InitDisplayLabelGroupingNode(JsonNavNodeR node, Utf8St
 +---------------+---------------+---------------+---------------+---------------+------*/
 void JsonNavNodesFactory::InitECPropertyGroupingNode(JsonNavNodeR node, Utf8StringCR connectionId, Utf8StringCR locale, ECClassCR ecClass, ECPropertyCR ecProperty, Utf8CP label, Utf8CP imageId, RapidJsonValueCR groupingValue, bool isRangeGrouping, GroupedInstanceKeysListCR groupedInstanceKeys) const
     {
-    node.SetLabel(label);
+    node.SetLabelDefinition(*LabelDefinition::FromString(label));
     node.SetDescription(ecProperty.GetDescription().c_str());
     node.SetType(NAVNODE_TYPE_ECPropertyGroupingNode);
     node.SetHasChildren(!groupedInstanceKeys.empty());
@@ -394,7 +394,7 @@ void JsonNavNodesFactory::InitECPropertyGroupingNode(JsonNavNodeR node, Utf8Stri
 +---------------+---------------+---------------+---------------+---------------+------*/
 void JsonNavNodesFactory::InitECRelationshipGroupingNode(JsonNavNodeR node, Utf8StringCR connectionId, Utf8StringCR locale, ECRelationshipClassCR ecRelationshipClass, Utf8CP label, GroupedInstanceKeysListCR groupedInstanceKeys) const
     {
-    node.SetLabel(label);
+    node.SetLabelDefinition(*LabelDefinition::FromString(label));
     node.SetDescription(ecRelationshipClass.GetDescription().c_str());
     node.SetType(NAVNODE_TYPE_ECRelationshipGroupingNode);
     node.SetHasChildren(!groupedInstanceKeys.empty());
@@ -416,7 +416,7 @@ void JsonNavNodesFactory::InitECRelationshipGroupingNode(JsonNavNodeR node, Utf8
 +---------------+---------------+---------------+---------------+---------------+------*/
 void JsonNavNodesFactory::InitCustomNode(JsonNavNodeR node, Utf8StringCR connectionId, Utf8StringCR locale, Utf8CP label, Utf8CP description, Utf8CP imageId, Utf8CP type) const
     {
-    node.SetLabel(label);
+    node.SetLabelDefinition(*LabelDefinition::FromString(label));
     node.SetDescription(description);
     node.SetType(type);
     node.SetExpandedImageId(imageId);
@@ -455,13 +455,13 @@ bvector<JsonChange> NavNodesHelper::GetChanges(JsonNavNode const& lhs, JsonNavNo
     COMPARE_PROPERTY(lhs, rhs, m_isCheckboxVisible, NAVNODE_IsCheckboxVisible);
     COMPARE_PROPERTY(lhs, rhs, m_isCheckboxEnabled, NAVNODE_IsCheckboxEnabled);
     COMPARE_PROPERTY(lhs, rhs, m_isExpanded, NAVNODE_IsExpanded);
-    COMPARE_PROPERTY(lhs, rhs, m_label, NAVNODE_Label);
     COMPARE_PROPERTY(lhs, rhs, m_description, NAVNODE_Description);
     COMPARE_PROPERTY(lhs, rhs, m_imageId, NAVNODE_CollapsedImageId);
     COMPARE_PROPERTY(lhs, rhs, m_foreColor, NAVNODE_ForeColor);
     COMPARE_PROPERTY(lhs, rhs, m_backColor, NAVNODE_BackColor);
     COMPARE_PROPERTY(lhs, rhs, m_fontStyle, NAVNODE_FontStyle);
     COMPARE_PROPERTY(lhs, rhs, m_type, NAVNODE_Type);
+    COMPARE_PROPERTY(lhs, rhs, m_labelDefinition->ToInternalJson(), NAVNODE_LabelDefinition);
     return changes;
     }
 
@@ -544,7 +544,7 @@ NavNodeKeyPtr NavNodesHelper::CreateNodeKey(IConnectionCR connection, JsonNavNod
     if (node.GetType().Equals(NAVNODE_TYPE_DisplayLabelGroupingNode))
         {
         uint64_t groupedInstancesCount = (uint64_t)extendedData.GetInstanceKeysCount();
-        return LabelGroupingNodeKey::Create(node.GetLabel(), hashPath, groupedInstancesCount);
+        return LabelGroupingNodeKey::Create(node.GetLabelDefinition().GetDisplayValue(), hashPath, groupedInstancesCount);
         }
     return NavNodeKey::Create(node.GetType(), hashPath);
     }
@@ -594,7 +594,7 @@ static Utf8String CreateNodeHash(IConnectionCR connection, JsonNavNodeCR node)
     else
         {
         // CustomNode and DisplayLabelGroupingNode
-        Utf8String nodeLabel = node.GetLabel();
+        Utf8String nodeLabel = node.GetLabelDefinition().GetDisplayValue();
         h.Add(nodeLabel.c_str(), nodeLabel.SizeInBytes());
         }
 

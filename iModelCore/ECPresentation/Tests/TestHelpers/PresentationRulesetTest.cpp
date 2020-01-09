@@ -72,9 +72,9 @@ int PresentationRulesetTester::CheckNode(NavNodeCR node, JsonValueCR tree, int i
         errorCount++;
         }
 
-    if (!node.GetLabel().Equals(jsonValue.get("Label", Json::Value::GetNull()).asString()))
+    if (!node.GetLabelDefinition().GetDisplayValue().Equals(jsonValue.get("Label", Json::Value::GetNull()).asString()))
         {
-        GetIssueReporter().Report("Error validating tree: Labels do not match. Expected: %s, Actual: %s\n", jsonValue.get("Label", Json::Value::GetNull()).asString().c_str(), node.GetLabel().c_str());
+        GetIssueReporter().Report("Error validating tree: Labels do not match. Expected: %s, Actual: %s\n", jsonValue.get("Label", Json::Value::GetNull()).asString().c_str(), node.GetLabelDefinition().GetDisplayValue().c_str());
         errorCount++;
         }
         
@@ -124,7 +124,7 @@ int PresentationRulesetTester::CheckNode(NavNodeCR node, JsonValueCR tree, int i
             GetIssueReporter().Report("Actual nodes: \n");
             for (NavNodeCPtr rootNode : childList)
                 {
-                GetIssueReporter().Report("\t%s \n", (*rootNode).GetLabel().c_str());
+                GetIssueReporter().Report("\t%s \n", (*rootNode).GetLabelDefinition().GetDisplayValue().c_str());
                 }
             if (0 == nodeChildSize)
                 GetIssueReporter().Report("\tN/A\n");
@@ -227,7 +227,7 @@ int PresentationRulesetTester::ValidateTree(Utf8CP rulesetId, JsonValueCR treeFi
         GetIssueReporter().Report("Actual nodes: \n");
         for (NavNodeCPtr rootNode : roots)
             {
-            GetIssueReporter().Report("\t%s \n", (*rootNode).GetLabel().c_str());
+            GetIssueReporter().Report("\t%s \n", (*rootNode).GetLabelDefinition().GetDisplayValue().c_str());
             }
         if (rootCount == 0)
             GetIssueReporter().Report("\tN/A\n");
@@ -287,7 +287,7 @@ Json::Value PresentationRulesetTester::CreateJsonNode(NavNodeCPtr node, RulesDri
     {
     Json::Value jsonNode(Json::objectValue);
     jsonNode["Type"] = node->GetType();
-    jsonNode["Label"] = node->GetLabel();
+    jsonNode["Label"] = node->GetLabelDefinition().GetDisplayValue();
     jsonNode["Description"] = node->GetDescription();
     jsonNode["ImageId"] = node->GetExpandedImageId();
     if (node->HasChildren())

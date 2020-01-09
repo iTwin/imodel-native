@@ -65,7 +65,7 @@ TEST_F(CheckboxRuleTests, SetsPropertyBoundCheckboxProperties)
         EXPECT_STREQ("BoolProperty", extendedData.GetCheckboxBoundPropertyName());
         EXPECT_FALSE(extendedData.IsCheckboxBoundPropertyInversed());
 
-        if (node->GetLabel().Equals("A"))
+        if (node->GetLabelDefinition().GetDisplayValue().Equals("A"))
             EXPECT_TRUE(node->IsChecked());
         else
             EXPECT_FALSE(node->IsChecked());
@@ -112,7 +112,7 @@ TEST_F(CheckboxRuleTests, SetsInversedPropertyBoundCheckboxProperties)
         EXPECT_STREQ("BoolProperty", extendedData.GetCheckboxBoundPropertyName());
         EXPECT_TRUE(extendedData.IsCheckboxBoundPropertyInversed());
 
-        if (node->GetLabel().Equals("A"))
+        if (node->GetLabelDefinition().GetDisplayValue().Equals("A"))
             EXPECT_FALSE(node->IsChecked());
         else
             EXPECT_TRUE(node->IsChecked());

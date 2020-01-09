@@ -28,6 +28,8 @@ $(o)DefaultECPresentationSerializer$(oext) : $(SourceDirectory)DefaultECPresenta
 
 $(o)Localization$(oext)             : $(SourceDirectory)Localization.cpp $(ECPresentationDependencies)
 
+$(o)LabelDefinition$(oext)          : $(SourceDirectory)LabelDefinition.cpp $(ECPresentationDependencies)
+
 %include MultiCppCompileGo.mki
 
 ECPresentationObjs =

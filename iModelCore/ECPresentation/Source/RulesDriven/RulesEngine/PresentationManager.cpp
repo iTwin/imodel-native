@@ -707,16 +707,16 @@ folly::Future<size_t> RulesDrivenECPresentationManager::_GetContentSetSize(Conte
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<Utf8String> RulesDrivenECPresentationManager::_GetDisplayLabel(ECDbCR db, KeySetCR keys, JsonValueCR jsonOptions, PresentationRequestContextCR context)
+folly::Future<LabelDefinitionCPtr> RulesDrivenECPresentationManager::_GetDisplayLabel(ECDbCR db, KeySetCR keys, JsonValueCR jsonOptions, PresentationRequestContextCR context)
     {
     Utf8CP connectionId = GetConnectionId(db);
     if (!connectionId)
         {
         BeAssert(false && "ECDb not registered as a connection");
-        return "";
+        return LabelDefinition::Create();
         }
     CommonOptions options(jsonOptions);
-    return m_tasksManager->CreateAndExecute<Utf8String>([&, keys = KeySetCPtr(&keys), context](IECPresentationTaskWithResult<Utf8String> const& task)
+    return m_tasksManager->CreateAndExecute<LabelDefinitionCPtr>([&, keys = KeySetCPtr(&keys), context](IECPresentationTaskWithResult<LabelDefinitionCPtr> const& task)
         {
         context.OnTaskStart();
         return m_impl->GetDisplayLabel(*GetTaskConnection(task), *keys, *task.GetCancelationToken());

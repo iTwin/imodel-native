@@ -93,7 +93,7 @@ TEST_F(CustomNodesProviderTests, ReturnsValidNode)
     EXPECT_EQ(1, provider->GetNodesCount());
     ASSERT_TRUE(node.IsValid());
     EXPECT_STREQ("type", node->GetType().c_str());
-    EXPECT_STREQ("label", node->GetLabel().c_str());
+    EXPECT_STREQ("label", node->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_STREQ("description", node->GetDescription().c_str());
     EXPECT_STREQ("imageId", node->GetExpandedImageId().c_str());
     EXPECT_STREQ("imageId", node->GetCollapsedImageId().c_str());
@@ -138,7 +138,7 @@ TEST_F(CustomNodesProviderTests, OverridesLabelAndDescription)
     NavNodesProviderPtr provider = CustomNodesProvider::Create(*m_context, *spec);
     EXPECT_TRUE(provider->GetNode(node, 0));
     ASSERT_TRUE(node.IsValid());
-    EXPECT_STREQ("overriden_label", node->GetLabel().c_str());
+    EXPECT_STREQ("overriden_label", node->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_STREQ("overriden_description", node->GetDescription().c_str());
     }
 

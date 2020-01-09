@@ -94,7 +94,7 @@ protected:
         for (auto pair : m_parentship)
             {
             NavNodeCP node = pair.first;
-            if (nullptr != node && node->GetLabel().ContainsI(filterText))
+            if (nullptr != node && node->GetLabelDefinition().GetDisplayValue().ContainsI(filterText))
                 result.push_back(node);
             }
         return result;
@@ -116,9 +116,9 @@ protected:
         {
         return 0;
         }
-    Utf8String _GetDisplayLabel(IConnectionCR, KeySetCR, ICancelationTokenCR) override
+    LabelDefinitionCPtr _GetDisplayLabel(IConnectionCR, KeySetCR, ICancelationTokenCR) override
         {
-        return "";
+        return LabelDefinition::Create();
         }
 
 public:

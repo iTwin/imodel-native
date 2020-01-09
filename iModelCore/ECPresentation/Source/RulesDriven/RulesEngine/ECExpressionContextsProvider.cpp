@@ -374,7 +374,7 @@ protected:
 
             context.AddSymbol(*ValueSymbol::Create("IsNull", ECValue(false)));
             context.AddSymbol(*ValueSymbol::Create("Type", ECValue(node.GetType().c_str(), false)));
-            context.AddSymbol(*ValueSymbol::Create("Label", ECValue(node.GetLabel().c_str(), false)));
+            context.AddSymbol(*ValueSymbol::Create("Label", ECValue(node.GetLabelDefinition().GetDisplayValue().c_str(), false)));
             context.AddSymbol(*ValueSymbol::Create("Description", ECValue(node.GetDescription().c_str(), false)));
             context.AddSymbol(*ValueSymbol::Create("ClassName", nullptr != nodeClass ? ECValue(nodeClass->GetName().c_str(), false) : ECValue()));
             context.AddSymbol(*ValueSymbol::Create("SchemaName", nullptr != nodeClass ? ECValue(nodeClass->GetSchema().GetName().c_str(), true) : ECValue()));
@@ -686,7 +686,8 @@ private:
             return ExpressionStatus::UnknownError;
             }
 
-        query = Utf8PrintfString("SELECT " FUNCTION_NAME_GetRelatedDisplayLabel "([related].[ECClassId], [related].[ECInstanceId]) FROM %%s this, [%s].[%s] relationship, [%s].[%s] related "
+        query = Utf8PrintfString("SELECT " FUNCTION_NAME_GetRelatedDisplayLabel "([related].[ECClassId], [related].[ECInstanceId]) "
+                                 "FROM %%s this, [%s].[%s] relationship, [%s].[%s] related "
                                  "WHERE this.[ECInstanceId]=? AND "
                                  "      this.[ECInstanceId]=relationship.[%s] AND this.[ECClassId]=relationship.[%s] AND "
                                  "      related.[ECInstanceId]=relationship.[%s] AND related.[ECClassId]=relationship.[%s]",
@@ -1776,7 +1777,8 @@ public:
     +---------------+---------------+---------------+---------------+---------------+--*/
     static void Preprocess(Utf8StringR expr)
         {
-        expr.ReplaceAll(ContentDescriptor::DisplayLabelField::NAME, Utf8String(ContentDescriptor::DisplayLabelField::NAME).AddQuotes().c_str());
+        Utf8String displayLabelValue = Utf8String(FUNCTION_NAME_GetLabelDefinitionDisplayValue).append("(").append(Utf8String(ContentDescriptor::DisplayLabelField::NAME).AddQuotes()).append(")");
+        expr.ReplaceAll(ContentDescriptor::DisplayLabelField::NAME, displayLabelValue.c_str());
         }
 
     /*-----------------------------------------------------------------------------**//**

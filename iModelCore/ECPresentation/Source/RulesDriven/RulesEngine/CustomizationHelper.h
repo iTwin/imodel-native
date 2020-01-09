@@ -14,7 +14,7 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 struct ICustomizablePropertiesSetter
     {
     virtual ~ICustomizablePropertiesSetter() {}
-    virtual void _SetLabel(Utf8StringCR label) const = 0;
+    virtual void _SetLabelDefinition(LabelDefinitionCR labelDefinition) const = 0;
     virtual void _SetDescription(Utf8StringCR description) const = 0;
     virtual void _SetForeColor(Utf8StringCR color) const = 0;
     virtual void _SetBackColor(Utf8StringCR color) const = 0;

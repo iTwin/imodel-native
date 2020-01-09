@@ -315,7 +315,7 @@ protected:
     ECPRESENTATION_EXPORT virtual folly::Future<ContentDescriptorCPtr> _GetContentDescriptor(ECDbCR, Utf8CP, int, KeySetCR, SelectionInfo const*, JsonValueCR, PresentationRequestContextCR) override;
     ECPRESENTATION_EXPORT virtual folly::Future<ContentCPtr> _GetContent(ContentDescriptorCR, PageOptionsCR, PresentationRequestContextCR) override;
     ECPRESENTATION_EXPORT virtual folly::Future<size_t> _GetContentSetSize(ContentDescriptorCR, PresentationRequestContextCR) override;
-    ECPRESENTATION_EXPORT virtual folly::Future<Utf8String> _GetDisplayLabel(ECDbCR, KeySetCR, JsonValueCR, PresentationRequestContextCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<LabelDefinitionCPtr> _GetDisplayLabel(ECDbCR, KeySetCR, JsonValueCR, PresentationRequestContextCR) override;
 
 //__PUBLISH_SECTION_END__
 public:

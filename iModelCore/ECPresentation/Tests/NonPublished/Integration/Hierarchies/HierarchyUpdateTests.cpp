@@ -332,7 +332,7 @@ TEST_F (HierarchyUpdateTests, RemovesDisplayLabelGroupingNodeChildrenAfterECInst
     ASSERT_EQ(2, rootNodes.GetSize());
     ASSERT_TRUE(rootNodes[0].IsValid());
     ASSERT_TRUE(rootNodes[0]->GetType().Equals(NAVNODE_TYPE_ECInstancesNode));
-    ASSERT_TRUE(rootNodes[0]->GetLabel().Equals("My Label"));
+    ASSERT_TRUE(rootNodes[0]->GetLabelDefinition().GetDisplayValue().Equals("My Label"));
     ASSERT_EQ(*retainedNode->GetKey(), *rootNodes[1]->GetKey());
 
     // expect 3 update records
@@ -415,7 +415,7 @@ TEST_F (HierarchyUpdateTests, RemovesDisplayLabelGroupingNodeAfterECInstanceDele
     ASSERT_EQ(1, rootNodes.GetSize());
     ASSERT_TRUE(rootNodes[0].IsValid());
     ASSERT_TRUE(rootNodes[0]->GetType().Equals(NAVNODE_TYPE_ECInstancesNode));
-    ASSERT_TRUE(rootNodes[0]->GetLabel().Equals("Other Label"));
+    ASSERT_TRUE(rootNodes[0]->GetLabelDefinition().GetDisplayValue().Equals("Other Label"));
 
     // expect one update record
     ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
@@ -473,7 +473,7 @@ TEST_F (HierarchyUpdateTests, RemovesDisplayLabelGroupingNodeAfterECInstanceDele
     ASSERT_EQ(1, rootNodes.GetSize());
     ASSERT_TRUE(rootNodes[0].IsValid());
     ASSERT_TRUE(rootNodes[0]->GetType().Equals(NAVNODE_TYPE_ECInstancesNode));
-    ASSERT_TRUE(rootNodes[0]->GetLabel().Equals("Other Label"));
+    ASSERT_TRUE(rootNodes[0]->GetLabelDefinition().GetDisplayValue().Equals("Other Label"));
 
     // expect one update record
     ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
@@ -540,10 +540,10 @@ TEST_F (HierarchyUpdateTests, RemovesDisplayLabelGroupingNodeAfterECInstanceLabe
     ASSERT_EQ(3, rootNodes.GetSize());
     ASSERT_TRUE(rootNodes[0].IsValid());
     ASSERT_TRUE(rootNodes[0]->GetType().Equals(NAVNODE_TYPE_ECInstancesNode));
-    ASSERT_TRUE(rootNodes[0]->GetLabel().Equals("My Label"));
+    ASSERT_TRUE(rootNodes[0]->GetLabelDefinition().GetDisplayValue().Equals("My Label"));
     ASSERT_TRUE(rootNodes[1].IsValid());
     ASSERT_TRUE(rootNodes[1]->GetType().Equals(NAVNODE_TYPE_ECInstancesNode));
-    ASSERT_TRUE(rootNodes[1]->GetLabel().Equals("My Other Label"));
+    ASSERT_TRUE(rootNodes[1]->GetLabelDefinition().GetDisplayValue().Equals("My Other Label"));
 
     // expect 3 update records
     ASSERT_EQ(4, m_updateRecordsHandler->GetRecords().size());
@@ -594,7 +594,7 @@ TEST_F (HierarchyUpdateTests, SetsCorrectInsertPositionWhenMultipleSpecification
     ASSERT_EQ(1, rootNodes.GetSize());
     ASSERT_TRUE(rootNodes[0].IsValid());
     ASSERT_TRUE(rootNodes[0]->GetType().Equals(NAVNODE_TYPE_ECInstancesNode));
-    ASSERT_TRUE(rootNodes[0]->GetLabel().Equals("WidgetID"));
+    ASSERT_TRUE(rootNodes[0]->GetLabelDefinition().GetDisplayValue().Equals("WidgetID"));
 
     // expect 1 update record
     ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
@@ -639,7 +639,7 @@ TEST_F (HierarchyUpdateTests, SetsCorrectInsertPositionWhenMultipleSpecification
     ASSERT_EQ(3, rootNodes.GetSize());
     ASSERT_TRUE(rootNodes[2].IsValid());
     ASSERT_TRUE(rootNodes[2]->GetType().Equals(NAVNODE_TYPE_ECInstancesNode));
-    ASSERT_TRUE(rootNodes[2]->GetLabel().Equals("WidgetID"));
+    ASSERT_TRUE(rootNodes[2]->GetLabelDefinition().GetDisplayValue().Equals("WidgetID"));
 
     // expect 3 update records
     ASSERT_EQ(3, m_updateRecordsHandler->GetRecords().size());
@@ -703,10 +703,10 @@ TEST_F (HierarchyUpdateTests, CreatesDisplayLabelGroupingNodeAfterECInstanceLabe
     ASSERT_EQ(2, rootNodes.GetSize());
     ASSERT_TRUE(rootNodes[0].IsValid());
     ASSERT_TRUE(rootNodes[0]->GetType().Equals(NAVNODE_TYPE_DisplayLabelGroupingNode));
-    ASSERT_TRUE(rootNodes[0]->GetLabel().Equals("Label 2"));
+    ASSERT_TRUE(rootNodes[0]->GetLabelDefinition().GetDisplayValue().Equals("Label 2"));
     ASSERT_TRUE(rootNodes[1].IsValid());
     ASSERT_TRUE(rootNodes[1]->GetType().Equals(NAVNODE_TYPE_ECInstancesNode));
-    ASSERT_TRUE(rootNodes[1]->GetLabel().Equals("Label 3"));
+    ASSERT_TRUE(rootNodes[1]->GetLabelDefinition().GetDisplayValue().Equals("Label 3"));
 
     // expect 4 update records
     ASSERT_EQ(4, m_updateRecordsHandler->GetRecords().size());
@@ -767,10 +767,10 @@ TEST_F (HierarchyUpdateTests, CreatesDisplayLabelGroupingNodeAfterECInstanceInse
     ASSERT_EQ(2, rootNodes.GetSize());
     ASSERT_TRUE(rootNodes[0].IsValid());
     ASSERT_TRUE(rootNodes[0]->GetType().Equals(NAVNODE_TYPE_ECInstancesNode));
-    ASSERT_TRUE(rootNodes[0]->GetLabel().Equals("Label 1"));
+    ASSERT_TRUE(rootNodes[0]->GetLabelDefinition().GetDisplayValue().Equals("Label 1"));
     ASSERT_TRUE(rootNodes[1].IsValid());
     ASSERT_TRUE(rootNodes[1]->GetType().Equals(NAVNODE_TYPE_DisplayLabelGroupingNode));
-    ASSERT_TRUE(rootNodes[1]->GetLabel().Equals("Label 2"));
+    ASSERT_TRUE(rootNodes[1]->GetLabelDefinition().GetDisplayValue().Equals("Label 2"));
 
     // expect 3 update records
     ASSERT_EQ(3, m_updateRecordsHandler->GetRecords().size());
@@ -820,7 +820,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDisplayLabelGroupingNodeAfterECInstanceInse
     for (NavNodeCPtr const& node : childNodes)
         {
         EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, node->GetType().c_str());
-        EXPECT_STREQ("Label 1", node->GetLabel().c_str());
+        EXPECT_STREQ("Label 1", node->GetLabelDefinition().GetDisplayValue().c_str());
         }
 
     // change the label of one of the instances
@@ -834,7 +834,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDisplayLabelGroupingNodeAfterECInstanceInse
     for (NavNodeCPtr const& node : childNodes)
         {
         EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, node->GetType().c_str());
-        EXPECT_STREQ("Label 1", node->GetLabel().c_str());
+        EXPECT_STREQ("Label 1", node->GetLabelDefinition().GetDisplayValue().c_str());
         }
 
     // expect 5 update records
@@ -883,7 +883,7 @@ TEST_F (HierarchyUpdateTests, UpdatesVirtualDisplayLabelGroupingNodeAfterECInsta
     for (NavNodeCPtr const& node : rootNodes)
         {
         EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, node->GetType().c_str());
-        EXPECT_STREQ("Label 1", node->GetLabel().c_str());
+        EXPECT_STREQ("Label 1", node->GetLabelDefinition().GetDisplayValue().c_str());
         }
 
     // insert another widget
@@ -896,7 +896,7 @@ TEST_F (HierarchyUpdateTests, UpdatesVirtualDisplayLabelGroupingNodeAfterECInsta
     for (NavNodeCPtr const& node : rootNodes)
         {
         EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, node->GetType().c_str());
-        EXPECT_STREQ("Label 1", node->GetLabel().c_str());
+        EXPECT_STREQ("Label 1", node->GetLabelDefinition().GetDisplayValue().c_str());
         }
 
     // expect 3 update records
@@ -941,7 +941,7 @@ TEST_F (HierarchyUpdateTests, UpdatesVirtualDisplayLabelGroupingNodeAfterECInsta
     for (NavNodeCPtr const& node : rootNodes)
         {
         EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, node->GetType().c_str());
-        EXPECT_STREQ("Label 1", node->GetLabel().c_str());
+        EXPECT_STREQ("Label 1", node->GetLabelDefinition().GetDisplayValue().c_str());
         }
     NavNodeCPtr deletedNode = rootNodes[1];
 
@@ -955,7 +955,7 @@ TEST_F (HierarchyUpdateTests, UpdatesVirtualDisplayLabelGroupingNodeAfterECInsta
     for (NavNodeCPtr const& node : rootNodes)
         {
         EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, node->GetType().c_str());
-        EXPECT_STREQ("Label 1", node->GetLabel().c_str());
+        EXPECT_STREQ("Label 1", node->GetLabelDefinition().GetDisplayValue().c_str());
         }
 
     // expect 3 update records
@@ -1012,7 +1012,7 @@ TEST_F (HierarchyUpdateTests, UpdatesECInstanceNodeAfterECInstanceChange)
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     ASSERT_TRUE(rootNodes[0].IsValid());
-    ASSERT_STREQ("Label 2", rootNodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("Label 2", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect 1 update record
     ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
@@ -1055,10 +1055,10 @@ TEST_F (HierarchyUpdateTests, UpdatesRootDataSourceAfterECInstanceInsert_AllInst
     ASSERT_EQ(2, rootNodes.GetSize());
     ASSERT_TRUE(rootNodes[0].IsValid());
     ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
-    ASSERT_STREQ("1", rootNodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("1", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_TRUE(rootNodes[1].IsValid());
     ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[1]->GetType().c_str());
-    ASSERT_STREQ("2", rootNodes[1]->GetLabel().c_str());
+    ASSERT_STREQ("2", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect 2 update records
     ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
@@ -1105,10 +1105,10 @@ TEST_F (HierarchyUpdateTests, UpdatesRootDataSourceAfterECInstanceInsert_Instanc
     ASSERT_EQ(2, rootNodes.GetSize());
     ASSERT_TRUE(rootNodes[0].IsValid());
     ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
-    ASSERT_STREQ("1", rootNodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("1", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_TRUE(rootNodes[1].IsValid());
     ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[1]->GetType().c_str());
-    ASSERT_STREQ("2", rootNodes[1]->GetLabel().c_str());
+    ASSERT_STREQ("2", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect 2 update records
     ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
@@ -1291,7 +1291,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterECInstanceInsert_RelatedInst
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
-    EXPECT_STREQ("GadgetID", childNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect 2 update records
     ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
@@ -1500,7 +1500,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterParentECInstanceUpdate_Searc
 
     // expect 1 ECInstance node
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expand node
     SetNodeExpanded(*rootNodes[0]);
@@ -1579,7 +1579,7 @@ TEST_F (HierarchyUpdateTests, CreatesNodeAfterECInstanceInsertWhenPreviouslyNotC
     ASSERT_EQ(1, rootNodes.GetSize());
     ASSERT_TRUE(rootNodes[0].IsValid());
     ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
-    ASSERT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect 1 update record
     ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
@@ -1631,12 +1631,12 @@ TEST_F (HierarchyUpdateTests, SameLabelInstanceGroupIsCreatedWhenAdditionalInsta
     ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
 
     EXPECT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
-    EXPECT_STREQ("WidgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     VerifyNodeInstances(*m_updateRecordsHandler->GetRecords()[0].GetNode(), {widget});
 
     EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
     EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[1].GetPosition());
-    EXPECT_STREQ("WidgetID", m_updateRecordsHandler->GetRecords()[1].GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", m_updateRecordsHandler->GetRecords()[1].GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     VerifyNodeInstances(*m_updateRecordsHandler->GetRecords()[1].GetNode(), {widget, widget2});
     }
 
@@ -1670,7 +1670,7 @@ TEST_F (HierarchyUpdateTests, BaseClassGroupIsUpdatedWhenAdditionalInstancesAreI
     // expect 1 instance
     ASSERT_EQ(1, rootNodes.GetSize());
     ASSERT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, rootNodes[0]->GetType().c_str());
-    ASSERT_STREQ("ClassE", rootNodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("ClassE", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expand node
     SetNodeExpanded(*rootNodes[0]);
@@ -1686,7 +1686,7 @@ TEST_F (HierarchyUpdateTests, BaseClassGroupIsUpdatedWhenAdditionalInstancesAreI
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     ASSERT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, rootNodes[0]->GetType().c_str());
-    ASSERT_STREQ("ClassE", rootNodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("ClassE", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect it to have 2 children now
     DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
@@ -1733,7 +1733,7 @@ TEST_F (HierarchyUpdateTests, ValuePropertyGroupIsUpdatedWhenAdditionalInstances
     // expect 1 property grouping node
     ASSERT_EQ(1, rootNodes.GetSize());
     ASSERT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
-    ASSERT_STREQ("8", rootNodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("8", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expand node
     SetNodeExpanded(*rootNodes[0]);
@@ -1749,7 +1749,7 @@ TEST_F (HierarchyUpdateTests, ValuePropertyGroupIsUpdatedWhenAdditionalInstances
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     ASSERT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
-    ASSERT_STREQ("8", rootNodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("8", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect it to have 2 children now
     DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
@@ -1799,7 +1799,7 @@ TEST_F (HierarchyUpdateTests, RangePropertyGroupIsUpdatedWhenAdditionalInstances
     // expect 1 property grouping node
     ASSERT_EQ(1, rootNodes.GetSize());
     ASSERT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
-    ASSERT_STREQ("5 to 10", rootNodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("5 to 10", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expand node
     SetNodeExpanded(*rootNodes[0]);
@@ -1815,7 +1815,7 @@ TEST_F (HierarchyUpdateTests, RangePropertyGroupIsUpdatedWhenAdditionalInstances
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     ASSERT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
-    ASSERT_STREQ("5 to 10", rootNodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("5 to 10", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect it to have 2 children now
     DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
@@ -1863,7 +1863,7 @@ TEST_F (HierarchyUpdateTests, PropertyGroupIsCreatedWhenInstanceValuesChange)
     // expect 1 property grouping node
     ASSERT_EQ(1, rootNodes.GetSize());
     ASSERT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
-    ASSERT_STREQ("8", rootNodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("8", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expand node
     SetNodeExpanded(*rootNodes[0]);
@@ -1884,9 +1884,9 @@ TEST_F (HierarchyUpdateTests, PropertyGroupIsCreatedWhenInstanceValuesChange)
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(2, rootNodes.GetSize());
     ASSERT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
-    ASSERT_STREQ("8", rootNodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("8", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[1]->GetType().c_str());
-    ASSERT_STREQ("9", rootNodes[1]->GetLabel().c_str());
+    ASSERT_STREQ("9", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect each of them to have 1 child
     DataContainer<NavNodeCPtr> childNodes1 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
@@ -1952,7 +1952,7 @@ TEST_F (HierarchyUpdateTests, PropertyGroupIsCreatedWhenInstanceValuesChangeWith
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     ASSERT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
-    ASSERT_STREQ("8", rootNodes[0]->GetLabel().c_str());
+    ASSERT_STREQ("8", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect it to have 2 children
     DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
@@ -2003,7 +2003,7 @@ TEST_F (HierarchyUpdateTests, UpdatesCustomNodeWithHideIfNoChildrenFlagWhenNothi
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect 1 update record
     ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
@@ -2048,9 +2048,9 @@ TEST_F (HierarchyUpdateTests, UpdatesCustomNodeWithHideIfNoChildrenFlagWhenChild
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(2, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_STREQ("MyType", rootNodes[1]->GetType().c_str());
-    EXPECT_STREQ("MyLabel", rootNodes[1]->GetLabel().c_str());
+    EXPECT_STREQ("MyLabel", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect 2 update records
     ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
@@ -2141,7 +2141,7 @@ TEST_F (HierarchyUpdateTests, HidesDisplayLabelGroupingNodeWhenSiblingIsRemovedF
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("MyCustomType", rootNodes[0]->GetType().c_str());
-    EXPECT_STREQ("MyLabel", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("MyLabel", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expand node
     SetNodeExpanded(*rootNodes[0]);
@@ -2149,9 +2149,9 @@ TEST_F (HierarchyUpdateTests, HidesDisplayLabelGroupingNodeWhenSiblingIsRemovedF
     DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(2, childNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, childNodes[0]->GetType().c_str());
-    EXPECT_STREQ("GadgetID", childNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, childNodes[1]->GetType().c_str());
-    EXPECT_STREQ("WidgetID", childNodes[1]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", childNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expand node
     SetNodeExpanded(*childNodes[1]);
@@ -2170,28 +2170,28 @@ TEST_F (HierarchyUpdateTests, HidesDisplayLabelGroupingNodeWhenSiblingIsRemovedF
     childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(2, childNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, childNodes[0]->GetType().c_str());
-    EXPECT_STREQ("WidgetID", childNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, childNodes[1]->GetType().c_str());
-    EXPECT_STREQ("WidgetID", childNodes[1]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", childNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect 4 update records
     ASSERT_EQ(4, m_updateRecordsHandler->GetRecords().size());
 
     EXPECT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
-    EXPECT_STREQ("GadgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
 
     EXPECT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
     EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, m_updateRecordsHandler->GetRecords()[1].GetNode()->GetType().c_str());
-    EXPECT_STREQ("WidgetID", m_updateRecordsHandler->GetRecords()[1].GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", m_updateRecordsHandler->GetRecords()[1].GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
 
     EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[2].GetChangeType());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, m_updateRecordsHandler->GetRecords()[2].GetNode()->GetType().c_str());
-    EXPECT_STREQ("WidgetID", m_updateRecordsHandler->GetRecords()[2].GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", m_updateRecordsHandler->GetRecords()[2].GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[2].GetPosition());
 
     EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[3].GetChangeType());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, m_updateRecordsHandler->GetRecords()[3].GetNode()->GetType().c_str());
-    EXPECT_STREQ("WidgetID", m_updateRecordsHandler->GetRecords()[3].GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", m_updateRecordsHandler->GetRecords()[3].GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[3].GetPosition());
     }
 
@@ -2230,9 +2230,9 @@ TEST_F (HierarchyUpdateTests, HidesDisplayLabelGroupingNodeWhenSiblingIsRemovedF
     DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(2, childNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, childNodes[0]->GetType().c_str());
-    EXPECT_STREQ("WidgetID", childNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, childNodes[1]->GetType().c_str());
-    EXPECT_STREQ("ZZZ", childNodes[1]->GetLabel().c_str());
+    EXPECT_STREQ("ZZZ", childNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     bvector<NavNodeCPtr> deletedNodes = {childNodes[0], childNodes[1]};
 
     // expand node
@@ -2252,9 +2252,9 @@ TEST_F (HierarchyUpdateTests, HidesDisplayLabelGroupingNodeWhenSiblingIsRemovedF
     childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(2, childNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, childNodes[0]->GetType().c_str());
-    EXPECT_STREQ("WidgetID", childNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, childNodes[1]->GetType().c_str());
-    EXPECT_STREQ("WidgetID", childNodes[1]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", childNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect 5 update records
     ASSERT_EQ(5, m_updateRecordsHandler->GetRecords().size());
@@ -2308,7 +2308,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterOneToManyForwar
     RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expand node
     SetNodeExpanded(*rootNodes[0]);
@@ -2325,7 +2325,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterOneToManyForwar
     childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, childNodes[0]->GetType().c_str());
-    EXPECT_STREQ("GadgetID", childNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect 2 update records
     ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
@@ -2369,7 +2369,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterOneToManyBackwa
     RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expand node
     SetNodeExpanded(*rootNodes[0]);
@@ -2386,7 +2386,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterOneToManyBackwa
     childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, childNodes[0]->GetType().c_str());
-    EXPECT_STREQ("WidgetID", childNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect 2 update records
     ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
@@ -2431,7 +2431,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterOneToManyForwar
     RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expand node
     SetNodeExpanded(*rootNodes[0]);
@@ -2439,7 +2439,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterOneToManyForwar
     DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, childNodes[0]->GetType().c_str());
-    EXPECT_STREQ("GadgetID", childNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     NavNodeCPtr deletedNode = childNodes[0];
 
     // unrelate the instances
@@ -2493,7 +2493,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterOneToManyBackwa
     RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expand node
     SetNodeExpanded(*rootNodes[0]);
@@ -2501,7 +2501,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterOneToManyBackwa
     DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, childNodes[0]->GetType().c_str());
-    EXPECT_STREQ("WidgetID", childNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     NavNodeCPtr deletedNode = childNodes[0];
 
     // unrelate the instances
@@ -2554,7 +2554,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterManyToManyForwa
     RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expand node
     SetNodeExpanded(*rootNodes[0]);
@@ -2574,7 +2574,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterManyToManyForwa
     childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, childNodes[0]->GetType().c_str());
-    EXPECT_STREQ("GadgetID", childNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect 2 update records
     ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
@@ -2618,7 +2618,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterManyToManyBackw
     RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expand node
     SetNodeExpanded(*rootNodes[0]);
@@ -2638,7 +2638,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterManyToManyBackw
     childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, childNodes[0]->GetType().c_str());
-    EXPECT_STREQ("WidgetID", childNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect 2 update records
     ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
@@ -2683,7 +2683,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterManyToManyForwa
     RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expand node
     SetNodeExpanded(*rootNodes[0]);
@@ -2691,7 +2691,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterManyToManyForwa
     DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, childNodes[0]->GetType().c_str());
-    EXPECT_STREQ("GadgetID", childNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     NavNodeCPtr deletedNode = childNodes[0];
 
     // unrelate the instances
@@ -2748,7 +2748,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterManyToManyBackw
     RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expand node
     SetNodeExpanded(*rootNodes[0]);
@@ -2756,7 +2756,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterManyToManyBackw
     DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, childNodes[0]->GetType().c_str());
-    EXPECT_STREQ("WidgetID", childNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     NavNodeCPtr deletedNode = childNodes[0];
 
     // unrelate the instances
@@ -2819,14 +2819,14 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipInsertWhenBackwar
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
-    EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect 1 update record
     ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
 
     EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, m_updateRecordsHandler->GetRecords()[0].GetNode()->GetType().c_str());
-    EXPECT_STREQ("GadgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[0].GetPosition());
     }
 
@@ -2868,14 +2868,14 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipInsertWhenForward
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect 1 update record
     ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
 
     EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, m_updateRecordsHandler->GetRecords()[0].GetNode()->GetType().c_str());
-    EXPECT_STREQ("WidgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[0].GetPosition());
     }
 
@@ -2907,7 +2907,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipDeleteWhenBackwar
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
-    EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // unrelate the instances
     RulesEngineTestHelpers::DeleteInstance(m_db, relationshipKey, true);
@@ -2925,7 +2925,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipDeleteWhenBackwar
 
     EXPECT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, m_updateRecordsHandler->GetRecords()[0].GetNode()->GetType().c_str());
-    EXPECT_STREQ("GadgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2956,7 +2956,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipDeleteWhenForward
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // relate the instances
     RulesEngineTestHelpers::DeleteInstance(m_db, relationshipKey, true);
@@ -2974,7 +2974,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipDeleteWhenForward
 
     EXPECT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, m_updateRecordsHandler->GetRecords()[0].GetNode()->GetType().c_str());
-    EXPECT_STREQ("WidgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3012,14 +3012,14 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipInsertWhenBackward
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
-    EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect 1 update record
     ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
 
     EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, m_updateRecordsHandler->GetRecords()[0].GetNode()->GetType().c_str());
-    EXPECT_STREQ("GadgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[0].GetPosition());
     }
 
@@ -3058,14 +3058,14 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipInsertWhenForwardH
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect 1 update record
     ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
 
     EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, m_updateRecordsHandler->GetRecords()[0].GetNode()->GetType().c_str());
-    EXPECT_STREQ("WidgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[0].GetPosition());
     }
 
@@ -3097,7 +3097,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipDeleteWhenBackward
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
-    EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // unrelate the instances
     RulesEngineTestHelpers::DeleteInstance(m_db, relationshipKey, true);
@@ -3112,7 +3112,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipDeleteWhenBackward
 
     EXPECT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, m_updateRecordsHandler->GetRecords()[0].GetNode()->GetType().c_str());
-    EXPECT_STREQ("GadgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3143,7 +3143,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipDeleteWhenForwardH
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // relate the instances
     RulesEngineTestHelpers::DeleteInstance(m_db, relationshipKey, true);
@@ -3158,7 +3158,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipDeleteWhenForwardH
 
     EXPECT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, m_updateRecordsHandler->GetRecords()[0].GetNode()->GetType().c_str());
-    EXPECT_STREQ("WidgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3199,14 +3199,14 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipInsertWhenBackwar
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
-    EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect 1 update record
     ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
 
     EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, m_updateRecordsHandler->GetRecords()[0].GetNode()->GetType().c_str());
-    EXPECT_STREQ("GadgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[0].GetPosition());
     }
 
@@ -3248,14 +3248,14 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipInsertWhenForward
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect 1 update record
     ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
 
     EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, m_updateRecordsHandler->GetRecords()[0].GetNode()->GetType().c_str());
-    EXPECT_STREQ("WidgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[0].GetPosition());
     }
 
@@ -3287,7 +3287,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipDeleteWhenBackwar
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
-    EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // unrelate the instances
     RulesEngineTestHelpers::DeleteInstance(m_db, relationshipKey, true);
@@ -3305,7 +3305,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipDeleteWhenBackwar
 
     EXPECT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, m_updateRecordsHandler->GetRecords()[0].GetNode()->GetType().c_str());
-    EXPECT_STREQ("GadgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3336,7 +3336,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipDeleteWhenForward
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // relate the instances
     RulesEngineTestHelpers::DeleteInstance(m_db, relationshipKey, true);
@@ -3354,7 +3354,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipDeleteWhenForward
 
     EXPECT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, m_updateRecordsHandler->GetRecords()[0].GetNode()->GetType().c_str());
-    EXPECT_STREQ("WidgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3392,14 +3392,14 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipInsertWhenBackward
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
-    EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect 1 update record
     ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
 
     EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, m_updateRecordsHandler->GetRecords()[0].GetNode()->GetType().c_str());
-    EXPECT_STREQ("GadgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[0].GetPosition());
     }
 
@@ -3438,14 +3438,14 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipInsertWhenForwardG
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect 1 update record
     ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
 
     EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, m_updateRecordsHandler->GetRecords()[0].GetNode()->GetType().c_str());
-    EXPECT_STREQ("WidgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[0].GetPosition());
     }
 
@@ -3477,7 +3477,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipDeleteWhenBackward
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
-    EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // unrelate the instances
     RulesEngineTestHelpers::DeleteInstance(m_db, relationshipKey, true);
@@ -3492,7 +3492,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipDeleteWhenBackward
 
     EXPECT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, m_updateRecordsHandler->GetRecords()[0].GetNode()->GetType().c_str());
-    EXPECT_STREQ("GadgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3523,7 +3523,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipDeleteWhenForwardG
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // relate the instances
     RulesEngineTestHelpers::DeleteInstance(m_db, relationshipKey, true);
@@ -3538,7 +3538,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipDeleteWhenForwardG
 
     EXPECT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, m_updateRecordsHandler->GetRecords()[0].GetNode()->GetType().c_str());
-    EXPECT_STREQ("WidgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3584,7 +3584,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipRelatedInstanceUp
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect 1 update record
     ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
@@ -3812,7 +3812,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterRelatedInstanceInsert)
     ASSERT_EQ(1, rootNodes.GetSize());
 
     // verify the label override with related instance property got applied
-    EXPECT_STREQ("Gadget_No_Widget", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("Gadget_No_Widget", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // relate the instances
     RulesEngineTestHelpers::InsertRelationship(m_db, *relationshipClass, *widget, *gadget, nullptr, true);
@@ -3823,7 +3823,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterRelatedInstanceInsert)
     ASSERT_EQ(1, rootNodes.GetSize());
 
     // verify the label has changed
-    EXPECT_STREQ("Gadget_1", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("Gadget_1", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect 1 update record
     ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
@@ -3864,7 +3864,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterRelatedInstanceDelete)
     ASSERT_EQ(1, rootNodes.GetSize());
 
     // verify the label override with related instance property got applied
-    EXPECT_STREQ("Gadget_1", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("Gadget_1", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     RulesEngineTestHelpers::DeleteInstance(m_db, *widget, true);
     m_eventsSource->NotifyECInstanceDeleted(m_db, *widget);
@@ -3875,7 +3875,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterRelatedInstanceDelete)
     ASSERT_EQ(1, rootNodes.GetSize());
 
     // verify the label has changed
-    EXPECT_STREQ("Gadget_No_Widget", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("Gadget_No_Widget", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect 1 update record
     ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
@@ -3916,7 +3916,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterRelatedInstanceUpdate)
     ASSERT_EQ(1, rootNodes.GetSize());
 
     // verify the label override with related instance property got applied
-    EXPECT_STREQ("Gadget_1", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("Gadget_1", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     widget->SetValue("IntProperty", ECValue(2));
     ECInstanceUpdater(m_db, *widget, nullptr).Update(*widget);
@@ -3928,7 +3928,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterRelatedInstanceUpdate)
     ASSERT_EQ(1, rootNodes.GetSize());
 
     // verify the label has changed
-    EXPECT_STREQ("Gadget_2", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("Gadget_2", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect 1 update record
     ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
@@ -3974,9 +3974,9 @@ TEST_F (HierarchyUpdateTests, UpdatesAllAffectedRootHierarchies)
 
     // verify expected results
     ASSERT_EQ(1, rootNodes1.GetSize());
-    EXPECT_STREQ("123", rootNodes1[0]->GetLabel().c_str());
+    EXPECT_STREQ("123", rootNodes1[0]->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_EQ(1, rootNodes2.GetSize());
-    EXPECT_STREQ("123", rootNodes2[0]->GetLabel().c_str());
+    EXPECT_STREQ("123", rootNodes2[0]->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_EQ(0, rootNodes3.GetSize());
 
     // update the widget
@@ -3991,20 +3991,20 @@ TEST_F (HierarchyUpdateTests, UpdatesAllAffectedRootHierarchies)
     rootNodes2 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules2->GetRuleSetId().c_str()).GetJson()).get(); });
     rootNodes3 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules3->GetRuleSetId().c_str()).GetJson()).get(); });
     ASSERT_EQ(1, rootNodes1.GetSize());
-    EXPECT_STREQ("456", rootNodes1[0]->GetLabel().c_str());
+    EXPECT_STREQ("456", rootNodes1[0]->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_EQ(1, rootNodes2.GetSize());
-    EXPECT_STREQ("456", rootNodes2[0]->GetLabel().c_str());
+    EXPECT_STREQ("456", rootNodes2[0]->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_EQ(0, rootNodes3.GetSize());
 
     // expect 2 update records
     ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
 
     EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
-    EXPECT_STREQ("456", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("456", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_STREQ("UpdatesAllAffectedRootHierarchies_1", NavNodeExtendedData(*m_updateRecordsHandler->GetRecords()[0].GetNode()).GetRulesetId());
 
     EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
-    EXPECT_STREQ("456", m_updateRecordsHandler->GetRecords()[1].GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("456", m_updateRecordsHandler->GetRecords()[1].GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_STREQ("UpdatesAllAffectedRootHierarchies_2", NavNodeExtendedData(*m_updateRecordsHandler->GetRecords()[1].GetNode()).GetRulesetId());
     }
 
@@ -4054,23 +4054,23 @@ TEST_F (HierarchyUpdateTests, UpdatesAllAffectedChildHierarchies)
 
     // verify expected results
     ASSERT_EQ(1, rootNodes1.GetSize());
-    EXPECT_STREQ("Root", rootNodes1[0]->GetLabel().c_str());
+    EXPECT_STREQ("Root", rootNodes1[0]->GetLabelDefinition().GetDisplayValue().c_str());
     // expand node
     SetNodeExpanded(*rootNodes1[0]);
     DataContainer<NavNodeCPtr> childNodes1 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes1[0], PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules1->GetRuleSetId().c_str()).GetJson()).get(); });
     ASSERT_EQ(1, rootNodes1.GetSize());
-    EXPECT_STREQ("123", childNodes1[0]->GetLabel().c_str());
+    EXPECT_STREQ("123", childNodes1[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     ASSERT_EQ(1, rootNodes2.GetSize());
-    EXPECT_STREQ("Root", rootNodes2[0]->GetLabel().c_str());
+    EXPECT_STREQ("Root", rootNodes2[0]->GetLabelDefinition().GetDisplayValue().c_str());
     // expand node
     SetNodeExpanded(*rootNodes2[0]);
     DataContainer<NavNodeCPtr> childNodes2 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes2[0], PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules2->GetRuleSetId().c_str()).GetJson()).get(); });
     ASSERT_EQ(1, childNodes2.GetSize());
-    EXPECT_STREQ("123", childNodes2[0]->GetLabel().c_str());
+    EXPECT_STREQ("123", childNodes2[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     ASSERT_EQ(1, rootNodes3.GetSize());
-    EXPECT_STREQ("Root", rootNodes3[0]->GetLabel().c_str());
+    EXPECT_STREQ("Root", rootNodes3[0]->GetLabelDefinition().GetDisplayValue().c_str());
     // expand node
     SetNodeExpanded(*rootNodes3[0]);
     DataContainer<NavNodeCPtr> childNodes3 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes3[0], PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules3->GetRuleSetId().c_str()).GetJson()).get(); });
@@ -4091,20 +4091,20 @@ TEST_F (HierarchyUpdateTests, UpdatesAllAffectedChildHierarchies)
     rootNodes3 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules3->GetRuleSetId().c_str()).GetJson()).get(); });
     childNodes3 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes3[0], PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules3->GetRuleSetId().c_str()).GetJson()).get(); });
     ASSERT_EQ(1, childNodes1.GetSize());
-    EXPECT_STREQ("456", childNodes1[0]->GetLabel().c_str());
+    EXPECT_STREQ("456", childNodes1[0]->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_EQ(1, childNodes2.GetSize());
-    EXPECT_STREQ("456", childNodes2[0]->GetLabel().c_str());
+    EXPECT_STREQ("456", childNodes2[0]->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_EQ(0, childNodes3.GetSize());
 
     // expect 2 update records
     ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
 
     EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
-    EXPECT_STREQ("456", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("456", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_STREQ("UpdatesAllAffectedChildHierarchies_1", NavNodeExtendedData(*m_updateRecordsHandler->GetRecords()[0].GetNode()).GetRulesetId());
 
     EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
-    EXPECT_STREQ("456", m_updateRecordsHandler->GetRecords()[1].GetNode()->GetLabel().c_str());
+    EXPECT_STREQ("456", m_updateRecordsHandler->GetRecords()[1].GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_STREQ("UpdatesAllAffectedChildHierarchies_2", NavNodeExtendedData(*m_updateRecordsHandler->GetRecords()[1].GetNode()).GetRulesetId());
     }
 
@@ -4413,20 +4413,20 @@ TEST_F (HierarchyUpdateTests, DoesNotUpdateChildHierarchyIfParentIsRemoved)
 
     // verify expected results
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     NavNodeCPtr deletedRootNode = rootNodes[0];
 
     // expand node
     SetNodeExpanded(*rootNodes[0]);
     DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
-    EXPECT_STREQ("Custom label", childNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("Custom label", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expand node
     SetNodeExpanded(*childNodes[0]);
     DataContainer<NavNodeCPtr> grandchildNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *childNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, grandchildNodes.GetSize());
-    EXPECT_STREQ("WidgetID", grandchildNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", grandchildNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // delete the widget
     RulesEngineTestHelpers::DeleteInstance(m_db, *widget, true);
@@ -4470,7 +4470,7 @@ TEST_F (HierarchyUpdateTests, CustomizesInsertedNodes)
     // expect 1 root node now
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect 1 update record
     ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
@@ -4509,7 +4509,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChanges_Used
     // expect 1 root node now
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect 1 update record
     ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
@@ -4549,7 +4549,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChanges_Used
     // expect 1 root node now
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect 1 update record
     ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
@@ -4582,7 +4582,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChanges_Used
     RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_NotSpecified()).c_str(), rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_NotSpecified()).c_str(), rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     for (int i = 1; i <= 2; ++i)
         {
@@ -4596,7 +4596,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChanges_Used
         ASSERT_EQ(1, rootNodes.GetSize());
 
         // verify label
-        EXPECT_STREQ(shouldLabelChange ? "test" : RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_NotSpecified()).c_str(), rootNodes[0]->GetLabel().c_str());
+        EXPECT_STREQ(shouldLabelChange ? "test" : RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_NotSpecified()).c_str(), rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
         // expect 1 update record
         ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
@@ -4628,7 +4628,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChanges_Used
     RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("test0", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("test0", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     for (int i = 1; i <= 2; ++i)
         {
@@ -4640,7 +4640,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChanges_Used
         ASSERT_EQ(1, rootNodes.GetSize());
 
         // its label should have changed
-        EXPECT_STREQ(Utf8PrintfString("test%d", i).c_str(), rootNodes[0]->GetLabel().c_str());
+        EXPECT_STREQ(Utf8PrintfString("test%d", i).c_str(), rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
         // expect 1 update record
         ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
@@ -4783,7 +4783,7 @@ TEST_F (HierarchyUpdateTests, UpdatesGroupingBranchesUnderHiddenLevelsWhenUserSe
     RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("Gadget", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("Gadget", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expand node
     SetNodeExpanded(*rootNodes[0]);
@@ -4805,7 +4805,7 @@ TEST_F (HierarchyUpdateTests, UpdatesGroupingBranchesUnderHiddenLevelsWhenUserSe
     // expect 1 root node now
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("Gadget", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("Gadget", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
@@ -4881,7 +4881,7 @@ TEST_F (HierarchyUpdateTests, DoesntUpdateHierarchiesOfClosedConnectionsOnUserSe
     RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("Label", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("Label", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // close the dataset
     m_db.CloseDb();
@@ -4921,7 +4921,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChangesSever
     // expect 1 root node now
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect 1 update record
     ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
@@ -4978,13 +4978,13 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateHierarchyWhenNodeRemovedFromCollapsedH
     RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure it has 2 children nodes
     DataContainer<NavNodeCPtr> childrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(2, childrenNodes.GetSize());
-    EXPECT_STREQ("GadgetID", childrenNodes[0]->GetLabel().c_str());
-    EXPECT_STREQ("GadgetID", childrenNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", childrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("GadgetID", childrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect root node to be collapsed
     EXPECT_FALSE(rootNodes[0]->IsExpanded());
@@ -4999,12 +4999,12 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateHierarchyWhenNodeRemovedFromCollapsedH
     // make sure we still have 1 root node
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure it now has 1 child node
     childrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, childrenNodes.GetSize());
-    EXPECT_STREQ("GadgetID", childrenNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", childrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5039,12 +5039,12 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateHierarchyWhenNodeInsertedIntoCollapsed
     RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure it has 1 child node
     DataContainer<NavNodeCPtr> childrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, childrenNodes.GetSize());
-    EXPECT_STREQ("GadgetID", childrenNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", childrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect root node to be collapsed
     EXPECT_FALSE(rootNodes[0]->IsExpanded());
@@ -5059,13 +5059,13 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateHierarchyWhenNodeInsertedIntoCollapsed
     // make sure we have 1 root node
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure it now has 2 children
     childrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(2, childrenNodes.GetSize());
-    EXPECT_STREQ("GadgetID", childrenNodes[0]->GetLabel().c_str());
-    EXPECT_STREQ("GadgetID", childrenNodes[1]->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", childrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("GadgetID", childrenNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5100,12 +5100,12 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateHierarchyWhenNodeUpdatedInCollapsedHie
     RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("Gadget_Label", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("Gadget_Label", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure it has 1 child node
     DataContainer<NavNodeCPtr> childrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, childrenNodes.GetSize());
-    EXPECT_STREQ("Widget_Label", childrenNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("Widget_Label", childrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect root node to be collapsed
     EXPECT_FALSE(rootNodes[0]->IsExpanded());
@@ -5123,12 +5123,12 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateHierarchyWhenNodeUpdatedInCollapsedHie
     // make sure we still have 1 root node
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("Gadget_Label", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("Gadget_Label", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure it still has 1 child node but label is changed
     childrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, childrenNodes.GetSize());
-    EXPECT_STREQ("New_Widget_Label", childrenNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("New_Widget_Label", childrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5174,12 +5174,12 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateHierarchyWhenAnyParentUpTheHierarchyIs
     RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure it has 1 gadget node
     DataContainer<NavNodeCPtr> gadgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, gadgetNodes.GetSize());
-    EXPECT_STREQ("GadgetID", gadgetNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", gadgetNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expand gadget node
     SetNodeExpanded(*gadgetNodes[0]);
@@ -5187,7 +5187,7 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateHierarchyWhenAnyParentUpTheHierarchyIs
     // make sure it has 1 sprocket node
     DataContainer<NavNodeCPtr> sprocketNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *gadgetNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, sprocketNodes.GetSize());
-    EXPECT_STREQ("SprocketID", sprocketNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("SprocketID", sprocketNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect widget to be collapsed and gadget to be expanded
     EXPECT_FALSE(rootNodes[0]->IsExpanded());
@@ -5203,18 +5203,18 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateHierarchyWhenAnyParentUpTheHierarchyIs
     // make sure we still have 1 root node
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure it still has 1 gadget node
     gadgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, gadgetNodes.GetSize());
-    EXPECT_STREQ("GadgetID", gadgetNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", gadgetNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // make sure it now has 2 sprocket nodes
     sprocketNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *gadgetNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(2, sprocketNodes.GetSize());
-    EXPECT_STREQ("SprocketID", sprocketNodes[0]->GetLabel().c_str());
-    EXPECT_STREQ("SprocketID", sprocketNodes[1]->GetLabel().c_str());
+    EXPECT_STREQ("SprocketID", sprocketNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("SprocketID", sprocketNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5248,13 +5248,13 @@ TEST_F(HierarchyUpdateTests, UpdateHierarchyWhenLastNodeRemovedFromCollapsedHier
     RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_TRUE(rootNodes[0]->HasChildren());
 
     // make sure it has 1 child node
     DataContainer<NavNodeCPtr> childrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, childrenNodes.GetSize());
-    EXPECT_STREQ("GadgetID", childrenNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", childrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect root node to be collapsed
     EXPECT_FALSE(rootNodes[0]->IsExpanded());
@@ -5266,7 +5266,7 @@ TEST_F(HierarchyUpdateTests, UpdateHierarchyWhenLastNodeRemovedFromCollapsedHier
     // make sure we still have 1 root node
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_FALSE(rootNodes[0]->HasChildren());
 
     // make sure now it has 0 children
@@ -5309,7 +5309,7 @@ TEST_F(HierarchyUpdateTests, UpdateHierarchyWhenNodeInsertedIntoEmptyCollapsedHi
     RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_FALSE(rootNodes[0]->HasChildren());
 
     // make sure it has 0 children
@@ -5326,13 +5326,13 @@ TEST_F(HierarchyUpdateTests, UpdateHierarchyWhenNodeInsertedIntoEmptyCollapsedHi
     // make sure we still have 1 root node
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_TRUE(rootNodes[0]->HasChildren());
 
     // make sure now it has 1 child node
     childrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, childrenNodes.GetSize());
-    EXPECT_STREQ("GadgetID", childrenNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", childrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect 1 update record
     EXPECT_EQ(1, m_updateRecordsHandler->GetRecords().size());
@@ -5371,7 +5371,7 @@ TEST_F(HierarchyUpdateTests, UpdateHierarchyWhenLastGroupedNodeDeletedFromCollap
     RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_TRUE(rootNodes[0]->HasChildren());
 
     // make sure it has 1 child grouping node
@@ -5383,7 +5383,7 @@ TEST_F(HierarchyUpdateTests, UpdateHierarchyWhenLastGroupedNodeDeletedFromCollap
     DataContainer<NavNodeCPtr> gadgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *childrenNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, gadgetNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, gadgetNodes[0]->GetType().c_str());
-    EXPECT_STREQ("GadgetID", gadgetNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", gadgetNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect root node to be collapsed
     EXPECT_FALSE(rootNodes[0]->IsExpanded());
@@ -5395,7 +5395,7 @@ TEST_F(HierarchyUpdateTests, UpdateHierarchyWhenLastGroupedNodeDeletedFromCollap
     // make sure we still have 1 root node
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_FALSE(rootNodes[0]->HasChildren());
 
     // make sure now it has 0 children
@@ -5439,7 +5439,7 @@ TEST_F(HierarchyUpdateTests, DoesNotCollapseParentNodeAfterChildNodeIsInserted)
     // make sure it has 1 child node
     DataContainer<NavNodeCPtr> childrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, childrenNodes.GetSize());
-    EXPECT_STREQ("WidgetID", childrenNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", childrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect grouping node to be expanded
     EXPECT_TRUE(rootNodes[0]->IsExpanded());
@@ -5460,8 +5460,8 @@ TEST_F(HierarchyUpdateTests, DoesNotCollapseParentNodeAfterChildNodeIsInserted)
     // make sure now it has 2 children nodes
     childrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(2, childrenNodes.GetSize());
-    EXPECT_STREQ("WidgetID", childrenNodes[0]->GetLabel().c_str());
-    EXPECT_STREQ("WidgetID", childrenNodes[1]->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", childrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("WidgetID", childrenNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
     // expect 3 recors
     ASSERT_EQ(3, m_updateRecordsHandler->GetRecords().size());

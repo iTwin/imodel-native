@@ -16,7 +16,7 @@ static uint16_t CountFilterTextMatches(NavNodeCR node, Utf8CP lowerFilterText)
         return 0;
 
     uint16_t occurances = 0;
-    Utf8String lowerLabel(node.GetLabel().ToLower());
+    Utf8String lowerLabel = Utf8String(node.GetLabelDefinition().GetDisplayValue()).ToLower();
     size_t position = lowerLabel.find(lowerFilterText, 0);
     while (position != Utf8String::npos)
         {

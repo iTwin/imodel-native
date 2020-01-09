@@ -483,7 +483,6 @@ TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeType
                 "Type": "TestType",
                 "PathFromRoot": []
                 },
-            "Label": "TestLabel",
             "Description": "",
             "ExpandedImageId": "",
             "CollapsedImageId": "",
@@ -497,7 +496,12 @@ TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeType
             "IsChecked": false,
             "IsCheckboxVisible": false,
             "IsCheckboxEnabled": false,
-            "IsExpanded": false
+            "IsExpanded": false,
+            "LabelDefinition": {
+                "DisplayValue": "TestLabel",
+                "RawValue": "TestLabel",
+                "TypeName": "string"
+                }
             },
         "RulesetId": "Invalid ruleset ID"
         })");
@@ -527,7 +531,6 @@ TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeType
                 "Type": "TestType",
                 "PathFromRoot": []
                 },
-            "Label": "TestLabel",
             "Description": "",
             "ExpandedImageId": "",
             "CollapsedImageId": "",
@@ -541,7 +544,12 @@ TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeType
             "IsChecked": false,
             "IsCheckboxVisible": false,
             "IsCheckboxEnabled": false,
-            "IsExpanded": false
+            "IsExpanded": false,
+            "LabelDefinition": {
+                "DisplayValue": "TestLabel",
+                "RawValue": "TestLabel",
+                "TypeName": "string"
+                }
             },
         "Position": 10,
         "RulesetId": "Invalid ruleset ID"
@@ -575,7 +583,6 @@ TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeType
                 "Type": "TestType",
                 "PathFromRoot": []
                 },
-            "Label": "TestLabel",
             "Description": "",
             "ExpandedImageId": "",
             "CollapsedImageId": "",
@@ -589,7 +596,12 @@ TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeType
             "IsChecked": false,
             "IsCheckboxVisible": false,
             "IsCheckboxEnabled": false,
-            "IsExpanded": false
+            "IsExpanded": false,
+            "LabelDefinition": {
+                "DisplayValue": "TestLabel",
+                "RawValue": "TestLabel",
+                "TypeName": "string"
+                }
             },
         "Changes": [
             {
@@ -630,7 +642,6 @@ TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeType
                 "Type": "TestType",
                 "PathFromRoot": []
                 },
-            "Label": "TestLabel",
             "Description": "",
             "ExpandedImageId": "",
             "CollapsedImageId": "",
@@ -644,7 +655,12 @@ TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeType
             "IsChecked": false,
             "IsCheckboxVisible": false,
             "IsCheckboxEnabled": false,
-            "IsExpanded": false
+            "IsExpanded": false,
+            "LabelDefinition": {
+                "DisplayValue": "TestLabel",
+                "RawValue": "TestLabel",
+                "TypeName": "string"
+                }
             },
         "Changes": [
             {
@@ -688,7 +704,6 @@ TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeType
                 "Type": "TestType",
                 "PathFromRoot": []
                 },
-            "Label": "TestLabel",
             "Description": "",
             "ExpandedImageId": "",
             "CollapsedImageId": "",
@@ -702,7 +717,12 @@ TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeType
             "IsChecked": false,
             "IsCheckboxVisible": false,
             "IsCheckboxEnabled": false,
-            "IsExpanded": false
+            "IsExpanded": false,
+            "LabelDefinition": {
+                "DisplayValue": "TestLabel",
+                "RawValue": "TestLabel",
+                "TypeName": "string"
+                }
             }
         })");
 
@@ -1758,7 +1778,7 @@ TEST_F(DefaultECPresentationSerializerTests, NodesPathElementSerializationWithNo
 
     NodesPathElement nodesPathElement(*node, 10);
     TestNavNodePtr nodeChild = TestNavNode::Create(*m_connection);
-    nodeChild->SetLabel("ChildTestLabeld");
+    nodeChild->SetLabelDefinition(*LabelDefinition::Create("ChildTestLabel"));
     nodeChild->SetHasChildren(false);
 
     NodesPathElement nodesPathElementChild(*nodeChild, 9);
@@ -1775,7 +1795,6 @@ TEST_F(DefaultECPresentationSerializerTests, NodesPathElementSerializationWithNo
                 "Type": "TestType",
                 "PathFromRoot": []
                 },
-            "Label": "TestLabel",
             "Description": "",
             "ExpandedImageId": "",
             "CollapsedImageId": "",
@@ -1789,7 +1808,12 @@ TEST_F(DefaultECPresentationSerializerTests, NodesPathElementSerializationWithNo
             "IsChecked": false,
             "IsCheckboxVisible": false,
             "IsCheckboxEnabled": false,
-            "IsExpanded": false
+            "IsExpanded": false,
+            "LabelDefinition": {
+                "DisplayValue": "TestLabel",
+                "RawValue": "TestLabel",
+                "TypeName": "string"
+                }
             },
         "Index": 10,
         "IsMarked": false,
@@ -1802,7 +1826,6 @@ TEST_F(DefaultECPresentationSerializerTests, NodesPathElementSerializationWithNo
                     "Type": "TestType",
                     "PathFromRoot": []
                     },
-                "Label": "ChildTestLabeld",
                 "Description": "",
                 "ExpandedImageId": "",
                 "CollapsedImageId": "",
@@ -1816,7 +1839,12 @@ TEST_F(DefaultECPresentationSerializerTests, NodesPathElementSerializationWithNo
                 "IsChecked": false,
                 "IsCheckboxVisible": false,
                 "IsCheckboxEnabled": false,
-                "IsExpanded": false
+                "IsExpanded": false,
+                "LabelDefinition": {
+                    "DisplayValue": "ChildTestLabel",
+                    "RawValue": "ChildTestLabel",
+                    "TypeName": "string"
+                    }
                 },
             "Index": 9,
             "IsMarked": true,
@@ -1954,25 +1982,7 @@ TEST_F(DefaultECPresentationSerializerTests, ContentDescriptorSerializationNoSel
             "RelatedInstanceClasses": []
             }
             ],
-        "Fields": [
-            {
-            "Category": {
-                "Name": "General",
-                "DisplayLabel": "General",
-                "Description": "",
-                "Expand": false,
-                "Priority": 1000
-                },
-            "Name": "/DisplayLabel/",
-            "DisplayLabel": "Label",
-            "Type": {
-                "TypeName": "string",
-                "ValueFormat": "Primitive"
-                },
-            "IsReadOnly": true,
-            "Priority": 10
-            }
-            ],
+        "Fields": [],
         "SortingFieldIndex": 0,
         "SortDirection": 1,
         "ContentFlags": 4,
@@ -1987,7 +1997,6 @@ TEST_F(DefaultECPresentationSerializerTests, ContentDescriptorSerializationNoSel
 
     expected["ConnectionId"].SetString(m_connection->GetId().c_str(), expected.GetAllocator());
     expected["InputKeysHash"].SetString(container->GetHash().c_str(), expected.GetAllocator());
-    expected["Fields"][0]["Category"]["DisplayLabel"].SetString(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace().m_namespace, ECPresentationL10N::LABEL_Category_General().m_str).c_str(), expected.GetAllocator());
     expected["SelectClasses"][0]["SelectClassInfo"]["Id"].SetString(testClassA->GetId().ToString().c_str(), expected.GetAllocator());
     expected["SelectClasses"][0]["PathToPrimaryClass"][0]["SourceClassInfo"]["Id"].SetString(testClassA->GetId().ToString().c_str(), expected.GetAllocator());
     expected["SelectClasses"][0]["PathToPrimaryClass"][0]["TargetClassInfo"]["Id"].SetString(testClassB->GetId().ToString().c_str(), expected.GetAllocator());
@@ -2065,14 +2074,18 @@ TEST_F(DefaultECPresentationSerializerTests, ContentSetSerializationItemWithClas
     ContentSetItem::FieldPropertyInstanceKeyMap fieldPropertyInstanceKeys;
     fieldPropertyInstanceKeys.Insert(ContentSetItem::FieldProperty(ecPropertiesField, 0), keys);
     fieldPropertyInstanceKeys.Insert(ContentSetItem::FieldProperty(ecPropertiesField1, 1), keys);
-    ContentSetItemPtr contentSetItem = ContentSetItem::Create(keys, "DisplayLabelText", "ImageIdText", std::move(values),
+    ContentSetItemPtr contentSetItem = ContentSetItem::Create(keys, *LabelDefinition::Create("DisplayLabelText"), "ImageIdText", std::move(values),
                                                               std::move(displayValues), mergedFieldNames, std::move(fieldPropertyInstanceKeys));
     contentSetItem->SetClass(testClass);
     rapidjson::Document actual = contentSetItem->AsJson();
 
     rapidjson::Document expected;
     expected.Parse(Utf8PrintfString(R"({
-        "DisplayLabel": "DisplayLabelText",
+        "DisplayLabel": {
+            "DisplayValue": "DisplayLabelText",
+            "RawValue": "DisplayLabelText",
+            "TypeName": "string"
+        },
         "ImageId": "ImageIdText",
         "Values": {
             "FieldName": "FieldValue"
@@ -2137,7 +2150,7 @@ TEST_F(DefaultECPresentationSerializerTests, ContentSetItemSerializationNoClassS
     {
     rapidjson::Document values(rapidjson::kObjectType);
     rapidjson::Document displayValues(rapidjson::kObjectType);
-    ContentSetItemPtr contentSetItem = ContentSetItem::Create({ECClassInstanceKey()}, "", "", std::move(values), std::move(displayValues),
+    ContentSetItemPtr contentSetItem = ContentSetItem::Create({ECClassInstanceKey()}, *LabelDefinition::Create(), "", std::move(values), std::move(displayValues),
                                                               bvector<Utf8String>(), bmap<ContentSetItem::FieldProperty, bvector<ECClassInstanceKey>>());
     rapidjson::Document actual = contentSetItem->AsJson(ContentSetItem::SerializationFlags::SERIALIZE_ClassInfo);
 
@@ -2163,7 +2176,7 @@ TEST_F(DefaultECPresentationSerializerTests, ContentSerialization)
 
     rapidjson::Document values(rapidjson::kObjectType);
     rapidjson::Document displayValues(rapidjson::kObjectType);
-    ContentSetItemPtr contentSetItem = ContentSetItem::Create({primaryKey}, "", "", std::move(values), std::move(displayValues),
+    ContentSetItemPtr contentSetItem = ContentSetItem::Create({primaryKey}, *LabelDefinition::Create(), "", std::move(values), std::move(displayValues),
                                                               bvector<Utf8String>(), bmap<ContentSetItem::FieldProperty, bvector<ECClassInstanceKey>>());
     RefCountedPtr<TestContentDataSource> dataSource = TestContentDataSource::Create();
     dataSource->AddContentSetItem(contentSetItem);
@@ -2189,7 +2202,7 @@ TEST_F(DefaultECPresentationSerializerTests, ContentSerialization)
                 }
             },
         "ContentSet": [{
-            "DisplayLabel": "",
+            "DisplayLabel": {},
             "ImageId": "",
             "Values": {},
             "DisplayValues": {},
@@ -2245,6 +2258,26 @@ TEST_F(DefaultECPresentationSerializerTests, ContenteSerializationContentSetItem
         "ContentSet": []
         })");
     expected["Descriptor"]["ConnectionId"].SetString(m_connection->GetId().c_str(), expected.GetAllocator());
+
+    EXPECT_EQ(expected, actual)
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actual);
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Saulius.Skliutas                12/2019
+//---------------------------------------------------------------------------------------
+TEST_F(DefaultECPresentationSerializerTests, NavNodeLabelDefinitionSerialization)
+    {
+    LabelDefinitionPtr labelDefinition = LabelDefinition::Create(ECValue(DateTime(DateTime::Kind::Utc, 2019, 12, 12, 12, 30, 30)), "2019/12/12");
+    rapidjson::Document actual = labelDefinition->AsJson();
+
+    rapidjson::Document expected;
+    expected.Parse(R"({
+        "DisplayValue": "2019/12/12",
+        "RawValue": "2019-12-12T12:30:30.000Z",
+        "TypeName": "dateTime"
+        })");
 
     EXPECT_EQ(expected, actual)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"

@@ -13,6 +13,7 @@
 #include <ECPresentation/Connection.h>
 #include <ECPresentation/IECPresentationSerializer.h>
 #include <ECPresentation/Localization.h>
+#include <ECPresentation/LabelDefinition.h>
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
@@ -116,7 +117,7 @@ protected:
 
     //! Get display label
     //! @see GetDisplayLabel
-    virtual folly::Future<Utf8String> _GetDisplayLabel(ECDbCR, KeySetCR, JsonValueCR, PresentationRequestContextCR) = 0;
+    virtual folly::Future<LabelDefinitionCPtr> _GetDisplayLabel(ECDbCR, KeySetCR, JsonValueCR, PresentationRequestContextCR) = 0;
 /** @} */
 
 public:
@@ -233,12 +234,12 @@ public:
     //! Get display label of specific ECInstance
     //! @param[in] db The db to use for getting the label.
     //! @param[in] key Key of ECInstance to get the label for.
-    ECPRESENTATION_EXPORT folly::Future<Utf8String> GetDisplayLabel(ECDbCR db, ECInstanceKeyCR key, JsonValueCR extendedOptions = Json::Value(), PresentationRequestContextCR = PresentationRequestContext());
+    ECPRESENTATION_EXPORT folly::Future<LabelDefinitionCPtr> GetDisplayLabel(ECDbCR db, ECInstanceKeyCR key, JsonValueCR extendedOptions = Json::Value(), PresentationRequestContextCR = PresentationRequestContext());
 
     //! Get aggregated display label of multiple ECInstances
     //! @param[in] db The db to use for getting the label.
     //! @param[in] keys Set of ECInstance keys to get the label for.
-    ECPRESENTATION_EXPORT folly::Future<Utf8String> GetDisplayLabel(ECDbCR db, KeySetCR keys, JsonValueCR extendedOptions = Json::Value(), PresentationRequestContextCR = PresentationRequestContext());
+    ECPRESENTATION_EXPORT folly::Future<LabelDefinitionCPtr> GetDisplayLabel(ECDbCR db, KeySetCR keys, JsonValueCR extendedOptions = Json::Value(), PresentationRequestContextCR = PresentationRequestContext());
 /** @} */
 };
 

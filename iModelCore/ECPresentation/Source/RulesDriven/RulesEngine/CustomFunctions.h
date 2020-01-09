@@ -45,6 +45,8 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 #define FUNCTION_NAME_ParseLocalId                  "ParseLocalId"
 #define FUNCTION_NAME_JoinOptionallyRequired        "JoinOptionallyRequired"
 #define FUNCTION_NAME_CompareDoubles                "CompareDoubles"
+#define FUNCTION_NAME_GetECPropertyValueLabel       "GetECPropertyValueLabel"
+#define FUNCTION_NAME_GetLabelDefinitionDisplayValue "GetLabelDisplayValue"
 
 struct JsonNavNodesFactory;
 struct ILocalizationProvider;

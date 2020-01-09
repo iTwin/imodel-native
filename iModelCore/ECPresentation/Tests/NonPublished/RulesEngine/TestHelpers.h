@@ -149,6 +149,10 @@ struct RulesEngineTestHelpers
         {
         return CreateNestedContentFieldName(bvector<ECClassCP>{relationshipClass}, nestedContentClass);
         }
+    static Utf8String CreateDisplayLabelValueClause(Utf8CP fieldName)
+        {
+        return Utf8PrintfString("%s([%s])", FUNCTION_NAME_GetLabelDefinitionDisplayValue, fieldName);
+        }
     };
 #define FIELD_NAME(ecClass, propertyName) RulesEngineTestHelpers::CreateFieldName(ecClass, propertyName).c_str()
 #define RELATED_FIELD_NAME(relatedClass, propertyClass, propertyName) RulesEngineTestHelpers::CreateRelatedFieldName(relatedClass, propertyClass, propertyName).c_str()

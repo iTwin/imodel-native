@@ -737,7 +737,7 @@ INavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::_GetChildren(IConne
         source = EmptyNavNodesDataSource::Create();
     source = PagingDataSource::Create(*source, pageOpts.GetPageStart(), pageOpts.GetPageSize());
     LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("[GetChildren] Returned [%" PRIu64 ", %" PRIu64 ") nodes for parent: '%s'",
-        (uint64_t)pageOpts.GetPageStart(), (uint64_t)(pageOpts.GetPageStart() + source->GetSize()), parent.GetLabel().c_str()).c_str());
+        (uint64_t)pageOpts.GetPageStart(), (uint64_t)(pageOpts.GetPageStart() + source->GetSize()), parent.GetLabelDefinition().GetDisplayValue().c_str()).c_str());
     return source;
     }
 
@@ -749,7 +749,7 @@ size_t RulesDrivenECPresentationManagerImpl::_GetChildrenCount(IConnectionCR con
     INavNodesDataSourcePtr source = GetCachedDataSource(connection, cancelationToken, parent, options);
     size_t size = source.IsValid() ? source->GetSize() : 0;
     LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("[GetChildrenCount] Returned %" PRIu64 " for parent: '%s'",
-        (uint64_t)size, parent.GetLabel().c_str()).c_str());
+        (uint64_t)size, parent.GetLabelDefinition().GetDisplayValue().c_str()).c_str());
     return size;
     }
 
@@ -1104,7 +1104,7 @@ size_t RulesDrivenECPresentationManagerImpl::_GetContentSetSize(IConnectionCR co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String RulesDrivenECPresentationManagerImpl::_GetDisplayLabel(IConnectionCR connection, KeySetCR keys, ICancelationTokenCR cancelationToken)
+LabelDefinitionCPtr RulesDrivenECPresentationManagerImpl::_GetDisplayLabel(IConnectionCR connection, KeySetCR keys, ICancelationTokenCR cancelationToken)
     {
     RefCountedPtr<PerformanceLogger> _l = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManagerImpl::GetDisplayLabel]", NativeLogging::LOG_TRACE);
 
@@ -1112,21 +1112,21 @@ Utf8String RulesDrivenECPresentationManagerImpl::_GetDisplayLabel(IConnectionCR 
     int flags = (int)ContentFlags::NoFields | (int)ContentFlags::ShowLabels | (int)ContentFlags::MergeResults;
     ContentDescriptorCPtr descriptor = GetContentDescriptor(connection, ContentDisplayType::List, flags, keys, nullptr, options, cancelationToken);
     if (descriptor.IsNull())
-        return "";
+        return LabelDefinition::Create();
 
     ContentCPtr content = GetContent(connection, *descriptor, PageOptions(), cancelationToken);
     if (content.IsNull())
-        return "";
+        return LabelDefinition::Create();
 
     BeAssert(1 == content->GetContentSet().GetSize());
     ContentSetItemCPtr item = content->GetContentSet().Get(0);
     if (item.IsNull())
         {
         BeAssert(false);
-        return "";
+        return LabelDefinition::Create();
         }
 
-    return item->GetDisplayLabel();
+    return &item->GetDisplayLabelDefinition();
     }
 
 /*---------------------------------------------------------------------------------**//**

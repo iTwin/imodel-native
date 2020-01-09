@@ -205,7 +205,7 @@ TEST_F(CustomNodesProviderLocalizationTests, NodesLabelAndDescriptionAreLocalize
     NavNodesProviderPtr provider = CustomNodesProvider::Create(*m_context, spec);
     EXPECT_TRUE(provider->GetNode(node, 0));
     EXPECT_TRUE(node.IsValid());
-    EXPECT_STREQ("localized", node->GetLabel().c_str());
+    EXPECT_STREQ("localized", node->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_STREQ("localized", node->GetDescription().c_str());
     }
 
@@ -229,7 +229,7 @@ TEST_F(CustomNodesProviderLocalizationTests, NodesOverridenLabelIsLocalized)
     NavNodesProviderPtr provider = CustomNodesProvider::Create(*m_context, spec);
     EXPECT_TRUE(provider->GetNode(node, 0));
     EXPECT_TRUE(node.IsValid());
-    EXPECT_STREQ("localized", node->GetLabel().c_str());
+    EXPECT_STREQ("localized", node->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -256,7 +256,7 @@ TEST_F(CustomNodesProviderLocalizationTests, NodesLabelIsLocalizedWithLocalizati
     NavNodesProviderPtr provider = CustomNodesProvider::Create(*m_context, spec);
     EXPECT_TRUE(provider->GetNode(node, 0));
     EXPECT_TRUE(node.IsValid());
-    EXPECT_STREQ("localized", node->GetLabel().c_str());
+    EXPECT_STREQ("localized", node->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -278,7 +278,7 @@ TEST_F(CustomNodesProviderLocalizationTests, NodesLabelIsLocalizedWithLocalizati
     NavNodesProviderPtr provider = CustomNodesProvider::Create(*m_context, spec);
     EXPECT_TRUE(provider->GetNode(node, 0));
     EXPECT_TRUE(node.IsValid());
-    EXPECT_STREQ("default_value", node->GetLabel().c_str());
+    EXPECT_STREQ("default_value", node->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*=================================================================================**//**
@@ -319,7 +319,7 @@ TEST_F(QueryExecutorLocalizationTests, ECInstanceNodesLabelIsLocalized)
         JsonNavNodePtr node = executor.GetNode(i);
         ASSERT_TRUE(node.IsValid());
         ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, node->GetType().c_str());
-        ASSERT_STREQ("localized", node->GetLabel().c_str());
+        ASSERT_STREQ("localized", node->GetLabelDefinition().GetDisplayValue().c_str());
         }
     }
 
@@ -354,7 +354,7 @@ TEST_F(QueryExecutorLocalizationTests, ECClassGroupingNodesLabelIsLocalized)
         JsonNavNodePtr node = executor.GetNode(i);
         ASSERT_TRUE(node.IsValid());
         ASSERT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, node->GetType().c_str());
-        ASSERT_STREQ("localized", node->GetLabel().c_str());
+        ASSERT_STREQ("localized", node->GetLabelDefinition().GetDisplayValue().c_str());
         }
     }
 
@@ -390,7 +390,7 @@ TEST_F(QueryExecutorLocalizationTests, ECPropertyGroupingNodesLabelIsLocalized)
         JsonNavNodePtr node = executor.GetNode(i);
         ASSERT_TRUE(node.IsValid());
         ASSERT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, node->GetType().c_str());
-        ASSERT_STREQ("localized", node->GetLabel().c_str());
+        ASSERT_STREQ("localized", node->GetLabelDefinition().GetDisplayValue().c_str());
         }
     }
 
@@ -426,6 +426,6 @@ TEST_F(QueryExecutorLocalizationTests, DisplayLabelGroupingNodesLabelIsLocalized
         JsonNavNodePtr node = executor.GetNode(i);
         ASSERT_TRUE(node.IsValid());
         ASSERT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, node->GetType().c_str());
-        ASSERT_STREQ("localized", node->GetLabel().c_str());
+        ASSERT_STREQ("localized", node->GetLabelDefinition().GetDisplayValue().c_str());
         }
     }

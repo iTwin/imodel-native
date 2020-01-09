@@ -15,7 +15,7 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TestNavNode::InitNode(IConnectionCR connection, Utf8CP type)
     {
-    SetLabel("TestLabel");
+    SetLabelDefinition(*LabelDefinition::Create("TestLabel"));
     SetType("TestType");
 
     NavNodeExtendedData extendedData(*this);

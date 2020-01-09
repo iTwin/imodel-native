@@ -238,7 +238,7 @@ protected:
             {
             NavNodeCPtr node = m_record.GetNode();
             str.append(Utf8PrintfString(" %s: Type = %s, Label = %s, Id = %" PRIu64 ", ParentId = %" PRIu64, 
-                GetString(m_record).c_str(), node->GetType().c_str(), node->GetLabel().c_str(), node->GetNodeId(), node->GetParentNodeId()));
+                GetString(m_record).c_str(), node->GetType().c_str(), node->GetLabelDefinition().GetDisplayValue().c_str(), node->GetNodeId(), node->GetParentNodeId()));
             }
         return str;
         }

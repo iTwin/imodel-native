@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 #include <ECPresentation/RulesDriven/PresentationManager.h>
+#include <ECPresentation/LabelDefinition.h>
 #include "QueryBuilderHelpers.h"
 #include "RulesPreprocessor.h"
 #include "ECExpressionContextsProvider.h"
@@ -491,6 +492,19 @@ template void QueryBuilderHelpers::FilterOutExcludes<ContentQuery>(ComplexConten
 template void QueryBuilderHelpers::FilterOutExcludes<NavigationQuery>(ComplexNavigationQuery&, Utf8CP, bvector<SelectClass> const&, SchemaManagerCR);
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8String CreateEnumOrderByClause(ContentDescriptor::Field const& field, ECEnumerationCR enumeration)
+    {
+    Utf8String clause = FUNCTION_NAME_GetECEnumerationValue;
+    clause.append("('");
+    clause.append(enumeration.GetSchema().GetName()).append("', '");
+    clause.append(enumeration.GetName()).append("', ");
+    clause.append(QueryHelpers::Wrap(field.GetName())).append(")");
+    return clause;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryBuilderHelpers::ApplyDescriptorOverrides(RefCountedPtr<ContentQuery>& query, ContentDescriptorCR ovr, ECExpressionsCache& ecexpressionsCache)
@@ -503,18 +517,21 @@ void QueryBuilderHelpers::ApplyDescriptorOverrides(RefCountedPtr<ContentQuery>& 
         ContentDescriptor::Field const* sortingField = ovr.GetSortingField();
         if (nullptr != sortingField)
             {
-            ECEnumerationCP enumeration = nullptr;
-            if (sortingField->IsPropertiesField() && sortingField->AsPropertiesField()->GetProperties().front().GetProperty().GetIsPrimitive())
-                enumeration = sortingField->AsPropertiesField()->GetProperties().front().GetProperty().GetAsPrimitiveProperty()->GetEnumeration();
-            if (nullptr != enumeration)
+            if (sortingField->IsPropertiesField() && sortingField->AsPropertiesField()->GetProperties().front().GetProperty().GetIsPrimitive()
+                && nullptr != sortingField->AsPropertiesField()->GetProperties().front().GetProperty().GetAsPrimitiveProperty()->GetEnumeration())
                 {
-                orderByClause.append(FUNCTION_NAME_GetECEnumerationValue).append("('");
-                orderByClause.append(enumeration->GetSchema().GetName()).append("', '");
-                orderByClause.append(enumeration->GetName()).append("', ");
+                ECEnumerationCP enumeration = sortingField->AsPropertiesField()->GetProperties().front().GetProperty().GetAsPrimitiveProperty()->GetEnumeration();
+                orderByClause.append(CreateEnumOrderByClause(*sortingField, *enumeration));
                 }
-            orderByClause.append(QueryHelpers::Wrap(ovr.GetSortingField()->GetName()));
-            if (nullptr != enumeration)
-                orderByClause.append(")");
+            else if (sortingField->IsDisplayLabelField())
+                {
+                orderByClause.append(QueryBuilderHelpers::CreateDisplayLabelValueClause(sortingField->GetName().c_str()));
+                }
+            else
+                {
+                orderByClause.append(QueryHelpers::Wrap(ovr.GetSortingField()->GetName()));
+                }
+
             sortingFieldNames.push_back(ovr.GetSortingField()->GetName().c_str());
             }
 #ifdef WIP_SORTING_GRID_CONTENT
@@ -671,6 +688,8 @@ ContentQueryPtr QueryBuilderHelpers::CreateMergedResultsQuery(ContentQueryR quer
 struct InstanceLabelOverrideSelectFieldsBuilder : InstanceLabelOverrideValueSpecificationVisitor
     {
     private:
+        PresentationQueryContractFieldCPtr m_ecInstanceIdField;
+        PresentationQueryContractFieldCPtr m_ecClassIdField;
         bvector<PresentationQueryContractFieldCPtr> m_fields;
     protected:
         void _Visit(InstanceLabelOverrideCompositeValueSpecification const& spec) override
@@ -679,7 +698,7 @@ struct InstanceLabelOverrideSelectFieldsBuilder : InstanceLabelOverrideValueSpec
             functionParameters.push_back(PresentationQueryContractSimpleField::Create("", Utf8PrintfString("'%s'", spec.GetSeparator().c_str()).c_str()));
             for (auto valuePart : spec.GetValueParts())
                 {
-                InstanceLabelOverrideSelectFieldsBuilder builder;
+                InstanceLabelOverrideSelectFieldsBuilder builder(m_ecInstanceIdField.get(), m_ecClassIdField.get());
                 valuePart->GetSpecification()->Accept(builder);
                 if (builder.GetSelectFields().empty())
                     {
@@ -693,13 +712,18 @@ struct InstanceLabelOverrideSelectFieldsBuilder : InstanceLabelOverrideValueSpec
             }
         void _Visit(InstanceLabelOverridePropertyValueSpecification const& spec) override
             {
-            m_fields.push_back(PresentationQueryContractSimpleField::Create("/PropertyValue/", spec.GetPropertyName().c_str()));
+            m_fields.push_back(PresentationQueryContractFunctionField::Create("/PropertyValue/", FUNCTION_NAME_GetECPropertyValueLabel,
+                {
+                m_ecClassIdField,
+                PresentationQueryContractSimpleField::Create("/PropertyName/", Utf8PrintfString("'%s'", spec.GetPropertyName().c_str()).c_str()),
+                PresentationQueryContractSimpleField::Create("/PropertyValue/", spec.GetPropertyName().c_str())
+                }));
             }
         void _Visit(InstanceLabelOverrideClassNameValueSpecification const& spec) override
             {
             m_fields.push_back(PresentationQueryContractFunctionField::Create("/ClassName/", FUNCTION_NAME_GetECClassName,
                 {
-                PresentationQueryContractSimpleField::Create("/ClassId/", "ECClassId"),
+                m_ecClassIdField,
                 PresentationQueryContractSimpleField::Create("/Full/", spec.ShouldUseFullName() ? "TRUE" : "FALSE")
                 }));
             }
@@ -707,7 +731,7 @@ struct InstanceLabelOverrideSelectFieldsBuilder : InstanceLabelOverrideValueSpec
             {
             m_fields.push_back(PresentationQueryContractFunctionField::Create("/ClassLabel/", FUNCTION_NAME_GetECClassLabel,
                 {
-                PresentationQueryContractSimpleField::Create("/ClassId/", "ECClassId"),
+                m_ecClassIdField,
                 }));
             }
         void _Visit(InstanceLabelOverrideBriefcaseIdValueSpecification const&) override
@@ -718,7 +742,7 @@ struct InstanceLabelOverrideSelectFieldsBuilder : InstanceLabelOverrideValueSpec
                 {
                 PresentationQueryContractFunctionField::Create("/BriefcaseId/", FUNCTION_NAME_ParseBriefcaseId,
                     {
-                    PresentationQueryContractSimpleField::Create("/InstanceId/", "ECInstanceId"),
+                    m_ecInstanceIdField,
                     })
                 }));
             }
@@ -730,15 +754,25 @@ struct InstanceLabelOverrideSelectFieldsBuilder : InstanceLabelOverrideValueSpec
                 {
                 PresentationQueryContractFunctionField::Create("/LocalId/", FUNCTION_NAME_ParseLocalId,
                     {
-                    PresentationQueryContractSimpleField::Create("/InstanceId/", "ECInstanceId"),
+                    m_ecInstanceIdField,
                     })
                 }));
             }
         void _Visit(InstanceLabelOverrideStringValueSpecification const& spec) override
             {
-            m_fields.push_back(PresentationQueryContractSimpleField::Create("/StringValue/", Utf8PrintfString("'%s'", spec.GetValue().c_str()).c_str()));
+            Utf8String value = Utf8String("'").append(LabelDefinition::Create(spec.GetValue().c_str())->ToJsonString()).append("'");
+            m_fields.push_back(PresentationQueryContractSimpleField::Create("/StringValue/", value.c_str()));
             }
     public:
+        InstanceLabelOverrideSelectFieldsBuilder(PresentationQueryContractFieldCP instanceIdField, PresentationQueryContractFieldCP classIdField) 
+            : m_ecInstanceIdField(instanceIdField), m_ecClassIdField(classIdField)
+            {
+            if (m_ecInstanceIdField.IsNull())
+                 m_ecInstanceIdField = PresentationQueryContractSimpleField::Create("/InstanceId/", "ECInstanceId");
+            if (m_ecClassIdField.IsNull())
+                m_ecClassIdField = PresentationQueryContractSimpleField::Create("/ClassId/", "ECClassId");
+            }
+
         bvector<PresentationQueryContractFieldCPtr> const& GetSelectFields() const { return m_fields; }
     };
 
@@ -746,9 +780,9 @@ struct InstanceLabelOverrideSelectFieldsBuilder : InstanceLabelOverrideValueSpec
 * @bsimethod                                    Grigas.Petraitis                05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 PresentationQueryContractFieldPtr QueryBuilderHelpers::CreateInstanceLabelField(Utf8CP name, bvector<InstanceLabelOverrideValueSpecification const*> const& labelOverrideValueSpecs,
-    PresentationQueryContractField const* fallback)
+    PresentationQueryContractField const* fallback, PresentationQueryContractFieldCP instanceIdField, PresentationQueryContractFieldCP classIdField)
     {
-    InstanceLabelOverrideSelectFieldsBuilder builder;
+    InstanceLabelOverrideSelectFieldsBuilder builder(instanceIdField, classIdField);
     for (InstanceLabelOverrideValueSpecification const* spec : labelOverrideValueSpecs)
         spec->Accept(builder);
 
@@ -1077,4 +1111,12 @@ bvector<RelatedClassPath> QueryBuilderHelpers::ProcessRelationshipPathsBasedOnCu
     bvector<RelatedClassPath> result(relationshipPaths);
     ::ProcessRelationshipPathsBasedOnCustomizationRules(result, customizationRuleInfos, schemas);
     return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                12/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String QueryBuilderHelpers::CreateDisplayLabelValueClause(Utf8CP fieldName)
+    {
+    return Utf8String(FUNCTION_NAME_GetLabelDefinitionDisplayValue).append("(").append(QueryHelpers::Wrap(fieldName)).append(")");
     }

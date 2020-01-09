@@ -1919,7 +1919,7 @@ JsonNavNodePtr SameLabelGroupingNodesPostProcessor::MergeNodes(NavNodesProviderC
         BeAssert(false && "Both nodes must be ECInstance nodes");
         return &lhs;
         }
-    if (!lhs.GetLabel().Equals(rhs.GetLabel()))
+    if (!lhs.GetLabelDefinition().GetDisplayValue().Equals(rhs.GetLabelDefinition().GetDisplayValue()))
         {
         BeAssert(false && "Labels of both nodes must match");
         return &lhs;
@@ -1973,12 +1973,12 @@ NavNodesProviderPtr SameLabelGroupingNodesPostProcessor::CreatePostProcessedProv
     size_t index = 0;
     while (processedProvider.GetNode(node, index++))
         {
-        auto iter = labelsMap.find(node->GetLabel());
+        auto iter = labelsMap.find(node->GetLabelDefinition().GetDisplayValue());
         if (labelsMap.end() != iter)
             {
             size_t pos = iter->second;
             BeAssert(pos < nodes.size());
-            BeAssert(nodes[pos]->GetLabel().Equals(node->GetLabel()));
+            BeAssert(nodes[pos]->GetLabelDefinition().GetDisplayValue().Equals(node->GetLabelDefinition().GetDisplayValue()));
             if (IsSuitableForMerge(*nodes[pos]) && IsSuitableForMerge(*node))
                 {
                 JsonNavNodePtr merged;
@@ -2004,7 +2004,7 @@ NavNodesProviderPtr SameLabelGroupingNodesPostProcessor::CreatePostProcessedProv
                 }
             }
         nodes.push_back(node);
-        labelsMap.Insert(node->GetLabel(), nodes.size() - 1);
+        labelsMap.Insert(node->GetLabelDefinition().GetDisplayValue(), nodes.size() - 1);
         }
     context->GetNodesCache().FinalizeInitialization(dsInfo);
     return BVectorNodesProvider::Create(*context, nodes);

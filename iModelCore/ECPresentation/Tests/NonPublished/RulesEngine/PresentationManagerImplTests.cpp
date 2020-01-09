@@ -120,18 +120,18 @@ TEST_F(RulesDrivenECPresentationManagerImplTests, LocatesChildNodeWhoseGrandPare
     RulesDrivenECPresentationManager::NavigationOptions options(ruleset->GetRuleSetId().c_str());
     INavNodesDataSourcePtr rootNodes = m_impl->GetRootNodes(*m_connection, PageOptions(), options, *cancelationToken);
     ASSERT_EQ(2, rootNodes->GetSize());
-    EXPECT_STREQ("child1", rootNodes->GetNode(0)->GetLabel().c_str());
-    EXPECT_STREQ("child2", rootNodes->GetNode(1)->GetLabel().c_str());
+    EXPECT_STREQ("child1", rootNodes->GetNode(0)->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("child2", rootNodes->GetNode(1)->GetLabelDefinition().GetDisplayValue().c_str());
     INavNodesDataSourcePtr childNodes = m_impl->GetChildren(*m_connection, *rootNodes->GetNode(1), PageOptions(), options, *cancelationToken);
     ASSERT_EQ(1, childNodes->GetSize());
-    EXPECT_STREQ("child2.1", childNodes->GetNode(0)->GetLabel().c_str());
+    EXPECT_STREQ("child2.1", childNodes->GetNode(0)->GetLabelDefinition().GetDisplayValue().c_str());
 
     // clear nodes cache and try to locate the node by its key
     NavNodeKeyCPtr key = childNodes->GetNode(0)->GetKey();
     m_impl->GetNodesCache().Clear();
     NavNodeCPtr locatedNode = m_impl->GetNode(*m_connection, *key, options, *cancelationToken);
     ASSERT_TRUE(locatedNode.IsValid());
-    EXPECT_STREQ("child2.1", locatedNode->GetLabel().c_str());
+    EXPECT_STREQ("child2.1", locatedNode->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*=================================================================================**//**

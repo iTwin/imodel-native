@@ -474,9 +474,14 @@ void RulesEngineTestHelpers::ValidateContentSetItem(IECInstanceCR instance, Cont
     
     ASSERT_TRUE(json.HasMember("DisplayLabel"));
     if (nullptr != expectedLabel)
-        EXPECT_STREQ(expectedLabel, json["DisplayLabel"].GetString());
+        {
+        ASSERT_TRUE(json["DisplayLabel"].HasMember("DisplayValue"));
+        EXPECT_STREQ(expectedLabel, json["DisplayLabel"]["DisplayValue"].GetString());
+        }
     else
-        EXPECT_STREQ("", json["DisplayLabel"].GetString());
+        {
+        EXPECT_TRUE(!json["DisplayLabel"].IsObject() || json["DisplayLabel"].ObjectEmpty());
+        }
 
     ASSERT_TRUE(json.HasMember("ImageId"));
     if (nullptr != expectedImageId)
@@ -493,7 +498,7 @@ void RulesEngineTestHelpers::ValidateContentSetItem(IECInstanceCR instance, Cont
         Utf8CP fieldName = field->GetName().c_str();
         ASSERT_TRUE(values.HasMember(fieldName));
         if (field->IsDisplayLabelField())
-            EXPECT_STREQ(expectedLabel, values[fieldName].GetString());
+            continue;
         else
             {
             for (ContentDescriptor::Property const& prop : field->AsPropertiesField()->GetProperties())

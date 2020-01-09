@@ -124,7 +124,7 @@ TEST_F (CustomizationHelperTests, CustomizeNode_ApplyOnlyDescriptionOverride)
     JsonNavNodePtr node = CreateNode("label", "description", "imageId", "type");
     CustomizationHelper::Customize(*m_context, *node, false);
     ASSERT_TRUE(NavNodeExtendedData(*node).IsCustomized());
-    ASSERT_STREQ("label", node->GetLabel().c_str());
+    ASSERT_STREQ("label", node->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_STREQ("overridedDescription", node->GetDescription().c_str());
     }
 
@@ -138,7 +138,7 @@ TEST_F (CustomizationHelperTests, CustomizeNode_ApplyLabelAndDescriptionOverride
     JsonNavNodePtr node = CreateNode("label", "description", "imageId", "type");
     CustomizationHelper::Customize(*m_context, *node, true);
     ASSERT_TRUE(NavNodeExtendedData(*node).IsCustomized());
-    ASSERT_STREQ("overridedLabel", node->GetLabel().c_str());
+    ASSERT_STREQ("overridedLabel", node->GetLabelDefinition().GetDisplayValue().c_str());
     ASSERT_STREQ("overridedDescription", node->GetDescription().c_str());
     }
 
@@ -196,7 +196,7 @@ TEST_F (CustomizationHelperTests, CustomizeNode_ApplyLocalization)
     JsonNavNodePtr node = CreateNode("@Namespace:Id@", "description", "imageId", "type");
     CustomizationHelper::Customize(*m_context, *node, false);
     ASSERT_TRUE(NavNodeExtendedData(*node).IsCustomized());
-    ASSERT_STREQ("localized", node->GetLabel().c_str());
+    ASSERT_STREQ("localized", node->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

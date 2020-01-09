@@ -466,14 +466,14 @@ TEST_F(NodesCacheTests, UpdateNode)
     auto nodes = FillWithNodes(rootInfo, 1);
 
     // verify node's label is valid
-    EXPECT_STREQ("0", m_cache->GetNode(nodes[0]->GetNodeId())->GetLabel().c_str());
+    EXPECT_STREQ("0", m_cache->GetNode(nodes[0]->GetNodeId())->GetLabelDefinition().GetDisplayValue().c_str());
 
     // update
-    nodes[0]->SetLabel("B");
+    nodes[0]->SetLabelDefinition(*LabelDefinition::Create("B"));
     m_cache->Update(nodes[0]->GetNodeId(), *nodes[0]);
 
     // verify node's label has changed
-    EXPECT_STREQ("B", m_cache->GetNode(nodes[0]->GetNodeId())->GetLabel().c_str());
+    EXPECT_STREQ("B", m_cache->GetNode(nodes[0]->GetNodeId())->GetLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

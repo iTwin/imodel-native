@@ -439,7 +439,7 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
         json.SetObject();
 
         if (0 != (ContentSetItem::SerializationFlags::SERIALIZE_DisplayLabel & flags))
-            json.AddMember("label", rapidjson::Value(contentSetItem.GetDisplayLabel().c_str(), json.GetAllocator()), json.GetAllocator());
+            json.AddMember("labelDefinition", _AsJson(contentSetItem.GetDisplayLabelDefinition(), &json.GetAllocator()), json.GetAllocator());
 
         if (0 != (ContentSetItem::SerializationFlags::SERIALIZE_ImageId & flags))
             json.AddMember("imageId", rapidjson::Value(contentSetItem.GetImageId().c_str(), json.GetAllocator()), json.GetAllocator());
@@ -825,7 +825,7 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
             }
         else
             json.AddMember("key", navNode.GetKey()->AsJson(&json.GetAllocator()), json.GetAllocator());
-        json.AddMember("label", rapidjson::Value(navNode.GetLabel().c_str(), json.GetAllocator()), json.GetAllocator());
+        json.AddMember("labelDefinition", _AsJson(navNode.GetLabelDefinition(), &json.GetAllocator()), json.GetAllocator());
         if (navNode.HasChildren())
             json.AddMember("hasChildren", navNode.HasChildren(), json.GetAllocator());
         if (!navNode.GetDescription().empty())
@@ -852,6 +852,49 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
             json.AddMember("isExpanded", navNode.IsExpanded(), json.GetAllocator());
         if (navNode.GetUsersExtendedData().GetJson().MemberCount() > 0)
             json.AddMember("extendedData", rapidjson::Value(navNode.GetUsersExtendedData().GetJson(), json.GetAllocator()), json.GetAllocator());
+        return json;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Saulius.Skliutas                12/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    rapidjson::Document _AsJson(LabelDefinition const& labelDefinition, rapidjson::Document::AllocatorType* allocator) const override 
+        {
+        rapidjson::Document json(allocator);
+        json.SetObject();
+        if (!labelDefinition.IsDefinitionValid())
+            return json;
+
+        json.AddMember("displayValue", rapidjson::Value(labelDefinition.GetDisplayValue().c_str(), json.GetAllocator()), json.GetAllocator());
+        json.AddMember("typeName", rapidjson::Value(labelDefinition.GetTypeName().c_str(), json.GetAllocator()), json.GetAllocator());
+        if (nullptr != labelDefinition.GetRawValue())
+            json.AddMember("rawValue", labelDefinition.GetRawValue()->AsJson(&json.GetAllocator()), json.GetAllocator());
+        return json;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Saulius.Skliutas                12/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    rapidjson::Document _AsJson(LabelDefinition::SimpleRawValue const& value, rapidjson::Document::AllocatorType* allocator) const override
+        {
+        rapidjson::Document json(allocator);
+        json.CopyFrom(value.GetValue(), json.GetAllocator());
+        return json;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Saulius.Skliutas                12/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    rapidjson::Document _AsJson(LabelDefinition::CompositeRawValue const& value, rapidjson::Document::AllocatorType* allocator) const override
+        {
+        rapidjson::Document json(allocator);
+        json.SetObject();
+        json.AddMember("separator", rapidjson::Value(value.GetSeparator().c_str(), json.GetAllocator()), json.GetAllocator());
+        rapidjson::Value values(rapidjson::kArrayType);
+        for (LabelDefinitionCPtr labelValue : value.GetValues())
+            values.PushBack(labelValue->AsJson(&json.GetAllocator()), json.GetAllocator());
+
+        json.AddMember("values", values, json.GetAllocator());
         return json;
         }
 
@@ -1846,11 +1889,9 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetDisplayLabel(RulesDr
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, "key.id");
 
     return manager.GetDisplayLabel(db, ECInstanceKey(ecClass->GetId(), id), Json::Value(), context)
-        .then([context](Utf8String label)
+        .then([context](LabelDefinitionCPtr labelDefinition)
         {
         context.OnTaskStart();
-        rapidjson::Document responseJson;
-        responseJson.SetString(label.c_str(), responseJson.GetAllocator());
-        return ECPresentationResult(std::move(responseJson));
+        return ECPresentationResult(labelDefinition->AsJson());
         });
     }

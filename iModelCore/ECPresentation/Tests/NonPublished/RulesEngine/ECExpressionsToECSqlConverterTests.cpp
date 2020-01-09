@@ -148,7 +148,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, StructProperties)
 TEST_F(ECExpressionsToECSqlConverterTests, DisplayLabelFieldWithSlashes)
     {
     Utf8String ecsql = m_helper.ConvertToECSql("/DisplayLabel/ = \"a\"");
-    ASSERT_STREQ("[/DisplayLabel/] = 'a'", ecsql.c_str());
+    ASSERT_STREQ("GetLabelDisplayValue([/DisplayLabel/]) = 'a'", ecsql.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

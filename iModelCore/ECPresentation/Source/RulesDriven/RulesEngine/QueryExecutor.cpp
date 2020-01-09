@@ -5,6 +5,7 @@
 #include <ECPresentationPch.h>
 #include <ECPresentation/RulesDriven/PresentationManager.h>
 #include <ECPresentation/RulesDriven/Rules/SpecificationVisitor.h>
+#include <ECPresentation/LabelDefinition.h>
 #include "QueryExecutor.h"
 #include "QueryContracts.h"
 #include "ExtendedData.h"
@@ -817,7 +818,8 @@ void ContentQueryExecutor::_ReadRecord(ECSqlStatement& statement)
     FieldValueInstanceKeyReader fieldValueInstanceKeyReader(GetConnection().GetECDb(), primaryRecordKeys, needFieldValueKeys);
 
     ContentValueAppender values;
-    Utf8String displayLabel, imageId;
+    Utf8String imageId;
+    LabelDefinitionPtr displayLabelDefinition = LabelDefinition::Create();
     ECClassCP recordClass = nullptr;
     if (0 == ((int)ContentFlags::KeysOnly & descriptor.GetContentFlags()))
         {
@@ -845,10 +847,8 @@ void ContentQueryExecutor::_ReadRecord(ECSqlStatement& statement)
             Utf8StringCR fieldName = field->GetName();
             if (field->IsDisplayLabelField() && descriptor.ShowLabels())
                 {
-                // if this is a display label field, set the display label and also append the value
-                displayLabel = statement.GetValueText(columnIndex);
-                Utf8CP value = statement.GetValueText(columnIndex);
-                values.AddValue(fieldName.c_str(), value, value, (possiblyMerged && IsValueMerged(value)));
+                // if this is a display label field, set the display label definition
+                displayLabelDefinition = LabelDefinition::FromString(statement.GetValueText(columnIndex));
                 }
             else if (field->IsCalculatedPropertyField())
                 {
@@ -912,12 +912,12 @@ void ContentQueryExecutor::_ReadRecord(ECSqlStatement& statement)
         {
         for (size_t i = 0; i < m_records.size(); i++)
             {
-            if (values.GetDisplayValues() == m_records[i]->GetDisplayValues())
+            if (values.GetDisplayValues() == m_records[i]->GetDisplayValues() && *displayLabelDefinition == m_records[i]->GetDisplayLabelDefinition())
                 return;
             }
         }
 
-    ContentSetItemPtr record = ContentSetItem::Create(primaryRecordKeys, displayLabel, imageId,
+    ContentSetItemPtr record = ContentSetItem::Create(primaryRecordKeys, *displayLabelDefinition, imageId,
         values.GetValues(), values.GetDisplayValues(), values.GetMergedFieldNames(), fieldValueInstanceKeyReader.GetKeys());
     record->SetClass(recordClass);
     ContentSetItemExtendedData(*record).SetContractId(contractId);

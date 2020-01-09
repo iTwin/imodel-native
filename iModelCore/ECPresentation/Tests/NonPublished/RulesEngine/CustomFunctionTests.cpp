@@ -62,6 +62,41 @@ struct CustomFunctionTests : ECPresentationTest
         }
 
     ECDbR GetDb() {return s_project->GetECDb();}
+    Utf8String GetDisplayLabelJson(Utf8CP value, Utf8CP displayValue = nullptr) { return LabelDefinition::Create(value, displayValue)->ToJsonString(); }
+    Utf8String GetDisplayLabelJson(ECValue value, Utf8CP displayValue = nullptr) { return LabelDefinition::Create(value, displayValue)->ToJsonString(); }
+
+    Utf8String GetJoinOptionallyQuery(Utf8CP separator, bvector<Utf8CP> parts)
+        {
+        Utf8String query = "SELECT " FUNCTION_NAME_JoinOptionallyRequired;
+        query.append("('").append(separator).append("'");
+        for (size_t i = 0; i < parts.size(); i += 2)
+            {
+            Utf8String value = LabelDefinition::Create(parts[i])->ToJsonString();
+            Utf8CP required = parts[i + 1];
+
+            query.append(", '").append(value).append("'");
+            query.append(", ").append(required);
+            }
+        query.append(") FROM RET.Widget");
+        return query;
+        }
+
+    Utf8String GetJoinOptionallyQueryResult(Utf8CP separator, bvector<Utf8CP> parts)
+        {
+        Utf8String displayLabel;
+        bvector<LabelDefinitionCPtr> values;
+        for (size_t i = 0; i < parts.size(); ++i)
+            {
+            LabelDefinitionPtr labelDefinition = LabelDefinition::Create(parts[i]);
+            if (!displayLabel.empty())
+                displayLabel.append(separator);
+            displayLabel.append(parts[i]);
+            values.push_back(labelDefinition);
+            }
+
+        std::unique_ptr<LabelDefinition::CompositeRawValue> compositeValue = std::make_unique<LabelDefinition::CompositeRawValue>(separator, values);
+        return LabelDefinition::Create(displayLabel.c_str(), "composite", std::move(compositeValue))->ToJsonString();
+        }
     };
 ECDbTestProject* CustomFunctionTests::s_project = nullptr;
 ECClassP CustomFunctionTests::s_widgetClass = nullptr;
@@ -119,7 +154,7 @@ TEST_F(CustomFunctionTests, GetECInstanceDisplayLabel_UsesLabelOverride)
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(2, m_widgetInstanceId));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    ASSERT_STREQ("CustomLabel", stmt.GetValueText(0));
+    ASSERT_STREQ(GetDisplayLabelJson("CustomLabel").c_str(), stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -139,7 +174,7 @@ TEST_F(CustomFunctionTests, GetECInstanceDisplayLabel_UsesInstanceLabel)
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, classJ->GetId()));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(2, instanceJId));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    ASSERT_STREQ("CustomLabel", stmt.GetValueText(0));
+    ASSERT_STREQ(GetDisplayLabelJson("CustomLabel").c_str(), stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -154,7 +189,7 @@ TEST_F(CustomFunctionTests, GetECInstanceDisplayLabel_UsesDefaultInstanceDisplay
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(2, m_widgetInstanceId));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    EXPECT_STREQ(RULESENGINE_LOCALIZEDSTRING_NotSpecified.c_str(), stmt.GetValueText(0));
+    EXPECT_STREQ(GetDisplayLabelJson(RULESENGINE_LOCALIZEDSTRING_NotSpecified.c_str()).c_str(), stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -178,7 +213,7 @@ TEST_F(CustomFunctionTests, GetECInstanceDisplayLabel_Localizes)
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(2, m_widgetInstanceId));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    ASSERT_STREQ("LocalizedLabel", stmt.GetValueText(0));
+    ASSERT_STREQ(GetDisplayLabelJson("@Namespace:Id@", "LocalizedLabel").c_str(), stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -194,7 +229,7 @@ TEST_F(CustomFunctionTests, GetECClassDisplayLabel_UsesLabelOverride)
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetECClassDisplayLabel(?, 0) FROM RET.Widget"));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    ASSERT_STREQ("CustomLabel", stmt.GetValueText(0));
+    ASSERT_STREQ(GetDisplayLabelJson("CustomLabel").c_str(), stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -236,7 +271,7 @@ TEST_F(CustomFunctionTests, GetECClassDisplayLabel_UsesClassDisplayLabel)
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetECClassDisplayLabel(?, 0) FROM RET.Widget"));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    ASSERT_STREQ(Utf8String(s_widgetClass->GetDisplayLabel().c_str()).c_str(), stmt.GetValueText(0));
+    ASSERT_STREQ(GetDisplayLabelJson(s_widgetClass->GetDisplayLabel().c_str()).c_str(), stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -259,7 +294,7 @@ TEST_F(CustomFunctionTests, GetECClassDisplayLabel_Localizes)
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetECClassDisplayLabel(?, 0) FROM RET.Widget"));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    ASSERT_STREQ("LocalizedLabel", stmt.GetValueText(0));
+    ASSERT_STREQ(GetDisplayLabelJson("@Namespace:Id@", "LocalizedLabel").c_str(), stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -277,7 +312,7 @@ TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_UsesLabelOverride)
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(2, "DoubleProperty", IECSqlBinder::MakeCopy::No));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindDouble(3, 9.99));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    ASSERT_STREQ("CustomLabel", stmt.GetValueText(0));
+    ASSERT_STREQ(GetDisplayLabelJson("CustomLabel").c_str(), stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -292,7 +327,7 @@ TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_UsesPropertyValue)
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(2, "DoubleProperty", IECSqlBinder::MakeCopy::No));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindDouble(3, 9.99));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    ASSERT_STREQ(ECValue(9.99).ToString().c_str(), stmt.GetValueText(0));
+    ASSERT_STREQ(GetDisplayLabelJson(ECValue(9.99)).c_str(), stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -307,7 +342,7 @@ TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_Formats)
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(2, "BoolProperty", IECSqlBinder::MakeCopy::No));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindBoolean(3, false));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    ASSERT_STREQ("_False_", stmt.GetValueText(0));
+    ASSERT_STREQ(GetDisplayLabelJson(ECValue(false), "_False_").c_str(), stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -332,7 +367,7 @@ TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_Localizes)
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(2, "DoubleProperty", IECSqlBinder::MakeCopy::No));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindDouble(3, 9.99));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    ASSERT_STREQ("LocalizedLabel", stmt.GetValueText(0));
+    ASSERT_STREQ(GetDisplayLabelJson("@Namespace:Id@", "LocalizedLabel").c_str(), stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -349,7 +384,7 @@ TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_GroupingByNullValue_LabelI
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(2, "MyID", IECSqlBinder::MakeCopy::No));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindNull(3));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    EXPECT_TRUE(RULESENGINE_LOCALIZEDSTRING_NotSpecified.Equals(stmt.GetValueText(0)));
+    EXPECT_STREQ(GetDisplayLabelJson(RULESENGINE_LOCALIZEDSTRING_NotSpecified.c_str()).c_str(), stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -373,7 +408,7 @@ TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_RangeBased_ReturnsOtherRan
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(2, "DoubleProperty", IECSqlBinder::MakeCopy::No));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindDouble(3, 9.99));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    EXPECT_TRUE(RULESENGINE_LOCALIZEDSTRING_Other.Equals(stmt.GetValueText(0)));
+    EXPECT_STREQ(GetDisplayLabelJson(RULESENGINE_LOCALIZEDSTRING_Other.c_str()).c_str(), stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -397,7 +432,7 @@ TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_RangeBased_ReturnsRangeLab
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(2, "DoubleProperty", IECSqlBinder::MakeCopy::No));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindDouble(3, 6.66));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    ASSERT_STREQ("Two", stmt.GetValueText(0));
+    ASSERT_STREQ(GetDisplayLabelJson("Two").c_str(), stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -421,7 +456,7 @@ TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_RangeBased_ReturnsRangeVal
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(2, "DoubleProperty", IECSqlBinder::MakeCopy::No));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindDouble(3, 6.66));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    ASSERT_STREQ("6.00 - 9.00", stmt.GetValueText(0));
+    ASSERT_STREQ(GetDisplayLabelJson("6.00 - 9.00").c_str(), stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -461,7 +496,7 @@ TEST_F(CustomFunctionTests, GetSortingValue_PadsText)
 
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_GetSortingValue " (?) FROM RET.Widget"));
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, "1", IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, GetDisplayLabelJson("1").c_str(), IECSqlBinder::MakeCopy::Yes));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
     ASSERT_STREQ("0000000001", stmt.GetValueText(0));
     }
@@ -475,7 +510,7 @@ TEST_F(CustomFunctionTests, GetSortingValue_PadsComplexText)
 
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_GetSortingValue " (?) FROM RET.Widget"));
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, "a*123-b^45_c6d", IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, GetDisplayLabelJson("a*123-b^45_c6d").c_str(), IECSqlBinder::MakeCopy::Yes));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
     ASSERT_STREQ("a*0000000123-b^0000000045_c0000000006d", stmt.GetValueText(0));
     }
@@ -489,7 +524,7 @@ TEST_F(CustomFunctionTests, GetSortingValue_LowerCasesText)
 
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_GetSortingValue " (?) FROM RET.Widget"));
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, "ABC1 abc2 Abc3 aBC4", IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, GetDisplayLabelJson("ABC1 abc2 Abc3 aBC4").c_str(), IECSqlBinder::MakeCopy::Yes));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
     ASSERT_STREQ("abc0000000001 abc0000000002 abc0000000003 abc0000000004", stmt.GetValueText(0));
     }
@@ -800,12 +835,12 @@ TEST_F(CustomFunctionTests, GetECClassName)
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), Utf8PrintfString("SELECT " FUNCTION_NAME_GetECClassName "(%" PRIu64 ", FALSE) FROM RET.Widget", s_widgetClass->GetId().GetValue()).c_str()));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    EXPECT_STREQ(s_widgetClass->GetName().c_str(), stmt.GetValueText(0));
+    EXPECT_STREQ(GetDisplayLabelJson(s_widgetClass->GetName().c_str()).c_str(), stmt.GetValueText(0));
 
     stmt.Finalize();
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), Utf8PrintfString("SELECT " FUNCTION_NAME_GetECClassName "(%" PRIu64 ", TRUE) FROM RET.Widget", s_widgetClass->GetId().GetValue()).c_str()));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    EXPECT_STREQ(s_widgetClass->GetFullName(), stmt.GetValueText(0));
+    EXPECT_STREQ(GetDisplayLabelJson(s_widgetClass->GetFullName()).c_str(), stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -818,7 +853,7 @@ TEST_F(CustomFunctionTests, GetECClassLabel)
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), Utf8PrintfString("SELECT " FUNCTION_NAME_GetECClassLabel "(%" PRIu64 ") FROM RET.Widget", s_widgetClass->GetId().GetValue()).c_str()));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    EXPECT_STREQ(s_widgetClass->GetDisplayLabel().c_str(), stmt.GetValueText(0));
+    EXPECT_STREQ(GetDisplayLabelJson(s_widgetClass->GetDisplayLabel().c_str()).c_str(), stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1042,8 +1077,8 @@ TEST_F(CustomFunctionTests, GetECEnumerationValue)
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), query));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    EXPECT_STREQ("2", stmt.GetValueText(0));
-    EXPECT_STREQ("A", stmt.GetValueText(1));
+    EXPECT_STREQ(GetDisplayLabelJson("2").c_str(), stmt.GetValueText(0));
+    EXPECT_STREQ(GetDisplayLabelJson("A").c_str(), stmt.GetValueText(1));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1326,7 +1361,7 @@ TEST_F(CustomFunctionTests, GetNavigationPropertyLabel_UsesInstanceLabelOverride
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(2, widgetInstanceID));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    EXPECT_STREQ("WidgetID", stmt.GetValueText(0));
+    EXPECT_STREQ(GetDisplayLabelJson("WidgetID").c_str(), stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1347,7 +1382,7 @@ TEST_F(CustomFunctionTests, GetNavigationPropertyLabel_UsesLabelOverride)
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(2, widgetInstanceID));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    EXPECT_STREQ("WidgetID", stmt.GetValueText(0));
+    EXPECT_STREQ(GetDisplayLabelJson("WidgetID").c_str(), stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1362,7 +1397,7 @@ TEST_F(CustomFunctionTests, GetNavigationPropertyLabel_ReturnsNotSpecifiedIfLabe
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(2, m_widgetInstanceId));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    EXPECT_STREQ(RULESENGINE_LOCALIZEDSTRING_NotSpecified.c_str(), stmt.GetValueText(0));
+    EXPECT_STREQ(GetDisplayLabelJson(RULESENGINE_LOCALIZEDSTRING_NotSpecified.c_str()).c_str(), stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1383,7 +1418,7 @@ TEST_F(CustomFunctionTests, GetRelatedDisplayLabel_UsesInstanceLabelOverride)
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(2, widgetInstanceID));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    EXPECT_STREQ("WidgetID", stmt.GetValueText(0));
+    EXPECT_STREQ(GetDisplayLabelJson("WidgetID").c_str(), stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1404,7 +1439,7 @@ TEST_F(CustomFunctionTests, GetRelatedDisplayLabel_UsesLabelOverride)
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(2, widgetInstanceID));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    EXPECT_STREQ("WidgetID", stmt.GetValueText(0));
+    EXPECT_STREQ(GetDisplayLabelJson("WidgetID").c_str(), stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1419,7 +1454,7 @@ TEST_F(CustomFunctionTests, GetRelatedDisplayLabel_NoRule_NotSpecifiedStringRetu
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(2, m_widgetInstanceId));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    EXPECT_STREQ(RULESENGINE_LOCALIZEDSTRING_NotSpecified.c_str(), stmt.GetValueText(0));
+    EXPECT_STREQ(GetDisplayLabelJson(RULESENGINE_LOCALIZEDSTRING_NotSpecified.c_str()).c_str(), stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1431,9 +1466,9 @@ TEST_F(CustomFunctionTests, ToBase36)
 
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_ToBase36 "(?) FROM RET.Widget"));
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt64(1, 13368));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, "{\"DisplayValue\":\"13368\",\"RawValue\":13368,\"TypeName\":\"uint64\"}", IECSqlBinder::MakeCopy::Yes));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    EXPECT_STREQ("ABC", stmt.GetValueText(0));
+    EXPECT_STREQ(GetDisplayLabelJson("ABC").c_str(), stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1444,42 +1479,50 @@ TEST_F(CustomFunctionTests, JoinOptionallyRequired)
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_locale, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
     ECSqlStatement stmt;
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_JoinOptionallyRequired "('-') FROM RET.Widget"));
+    Utf8String query = GetJoinOptionallyQuery("-", bvector<Utf8CP>());
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), query.c_str()));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
     EXPECT_TRUE(stmt.IsValueNull(0));
 
     stmt.Finalize();
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_JoinOptionallyRequired "(' ', 'a', FALSE, 'b', FALSE, 'c', FALSE) FROM RET.Widget"));
+    query = GetJoinOptionallyQuery(" ", { "a", "FALSE", "b", "FALSE", "c", "FALSE" });
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), query.c_str()));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    EXPECT_STREQ("a b c", stmt.GetValueText(0));
+    EXPECT_STREQ(GetJoinOptionallyQueryResult(" ", {"a", "b", "c"}).c_str(), stmt.GetValueText(0));
 
     stmt.Finalize();
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_JoinOptionallyRequired "('/', '', FALSE, 'b', FALSE, 'c', FALSE) FROM RET.Widget"));
+    query = GetJoinOptionallyQuery("/", { "", "FALSE", "b", "FALSE", "c", "FALSE" });
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), query.c_str()));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    EXPECT_STREQ("b/c", stmt.GetValueText(0));
+    EXPECT_STREQ(GetJoinOptionallyQueryResult("/", { "b", "c" }).c_str(), stmt.GetValueText(0));
 
     stmt.Finalize();
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_JoinOptionallyRequired "('_', 'a', FALSE, 'b', FALSE, '', FALSE) FROM RET.Widget"));
+    query = GetJoinOptionallyQuery("_", { "a", "FALSE", "b", "FALSE", "", "False" });
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), query.c_str()));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    EXPECT_STREQ("a_b", stmt.GetValueText(0));
+    EXPECT_STREQ(GetJoinOptionallyQueryResult("_", { "a", "b" }).c_str(), stmt.GetValueText(0));
 
     stmt.Finalize();
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_JoinOptionallyRequired "('', 'a', FALSE, '', FALSE, 'c', FALSE) FROM RET.Widget"));
+    query = GetJoinOptionallyQuery("", { "a", "FALSE", "", "FALSE", "c", "FALSE" });
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), query.c_str()));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    EXPECT_STREQ("ac", stmt.GetValueText(0));
+    EXPECT_STREQ(GetJoinOptionallyQueryResult("", { "a", "c" }).c_str(), stmt.GetValueText(0));
 
     stmt.Finalize();
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_JoinOptionallyRequired "('-', 'a', TRUE, 'b', TRUE, 'c', TRUE) FROM RET.Widget"));
+    query = GetJoinOptionallyQuery("-", { "a", "TRUE", "b", "TRUE", "c", "TRUE" });
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), query.c_str()));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    EXPECT_STREQ("a-b-c", stmt.GetValueText(0));
+    EXPECT_STREQ(GetJoinOptionallyQueryResult("-", { "a", "b", "c" }).c_str(), stmt.GetValueText(0));
 
     stmt.Finalize();
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_JoinOptionallyRequired "('-', '', TRUE, 'b', TRUE, 'c', TRUE) FROM RET.Widget"));
+    query = GetJoinOptionallyQuery("-", { "", "TRUE", "b", "TRUE", "c", "TRUE" });
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), query.c_str()));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
     EXPECT_TRUE(stmt.IsValueNull(0));
 
     stmt.Finalize();
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_JoinOptionallyRequired "('-', 'a', FALSE, '', TRUE, 'c', FALSE) FROM RET.Widget"));
+    query = GetJoinOptionallyQuery("-", { "a", "FALSE", "", "TRUE", "c", "FALSE" });
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), query.c_str()));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
     EXPECT_TRUE(stmt.IsValueNull(0));
     }

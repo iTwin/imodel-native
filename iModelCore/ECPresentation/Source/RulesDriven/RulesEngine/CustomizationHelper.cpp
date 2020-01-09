@@ -43,7 +43,8 @@ bool NavNodeCustomizer::ApplyLabelAndDescriptionOverride(bool customizeLabel)
             && ECExpressionsHelper(m_context.GetECExpressionsCache()).EvaluateECExpression(value, labelOverride->GetLabel(), GetNodeExpressionContext())
             && value.CanConvertToPrimitiveType(PRIMITIVETYPE_String) && value.ConvertPrimitiveToString(valueStr))
             {
-            m_setter._SetLabel(valueStr);
+            LabelDefinitionPtr labelDefinition = value.IsString() ? LabelDefinition::FromString(valueStr.c_str()) : LabelDefinition::Create(value, valueStr.c_str());
+            m_setter._SetLabelDefinition(*labelDefinition);
             didOverride = true;
             }
         if (!labelOverride->GetDescription().empty()
@@ -130,10 +131,12 @@ bool NavNodeCustomizer::ApplyLocalization()
         bool didLocalize = false;
         LocalizationHelper helper(m_context.GetLocalizationProvider(), m_context.GetLocale(), &m_context.GetRuleset());
 
-        Utf8String label = m_node.GetLabel();
+        LabelDefinitionCR labelDefinition = m_node.GetLabelDefinition();
+        Utf8String label = labelDefinition.GetDisplayValue();
         if (!label.empty() && helper.LocalizeString(label))
             {
-            m_setter._SetLabel(label);
+            LabelDefinitionPtr newLabelDefinition = LabelDefinition::Create(label.c_str(), labelDefinition.GetTypeName().c_str(), labelDefinition.GetRawValue()->Clone());
+            m_setter._SetLabelDefinition(*newLabelDefinition);
             didLocalize = true;
             }
 
@@ -266,7 +269,7 @@ private:
     JsonNavNodeR m_node;
 public:
     JsonNavNodePropertiesSetter(JsonNavNodeR node) : m_node(node) {}
-    void _SetLabel(Utf8StringCR label) const override {m_node.SetLabel(label.c_str());}
+    void _SetLabelDefinition(LabelDefinitionCR label) const override {m_node.SetLabelDefinition(label);}
     void _SetDescription(Utf8StringCR description) const override {m_node.SetDescription(description.c_str());}
     void _SetForeColor(Utf8StringCR color) const override {m_node.SetForeColor(color.c_str());}
     void _SetBackColor(Utf8StringCR color) const override {m_node.SetBackColor(color.c_str());}
@@ -293,7 +296,7 @@ private:
     ContentSetItemR m_item;
 public:
     ContentSetItemPropertiesSetter(ContentSetItemR item) : m_item(item) {}
-    void _SetLabel(Utf8StringCR label) const override {}
+    void _SetLabelDefinition(LabelDefinitionCR label) const override {}
     void _SetDescription(Utf8StringCR description) const override {}
     void _SetForeColor(Utf8StringCR color) const override {}
     void _SetBackColor(Utf8StringCR color) const override {}

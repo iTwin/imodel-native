@@ -9,6 +9,7 @@
 #include <ECPresentation/DataSource.h>
 #include <ECPresentation/ExtendedData.h>
 #include <ECPresentation/KeySet.h>
+#include <ECPresentation/LabelDefinition.h>
 #include <ECPresentation/RulesDriven/Rules/RelatedPropertiesSpecification.h>
 #include <ECPresentation/RulesDriven/Rules/InstanceLabelOverride.h>
 
@@ -1221,7 +1222,7 @@ struct ContentSetItem : RefCountedBase, RapidJsonExtendedDataHolder<>
 private:
     ECClassCP m_class;
     bvector<ECClassInstanceKey> m_keys;
-    Utf8String m_displayLabel;
+    LabelDefinitionCPtr m_displayLabelDefinition;
     Utf8String m_imageId;
     rapidjson::Document m_values;
     rapidjson::Document m_displayValues;
@@ -1230,9 +1231,9 @@ private:
     bvector<Utf8String> m_mergedFieldNames;
 
 private:
-    ContentSetItem(bvector<ECClassInstanceKey> keys, Utf8String displayLabel, Utf8String imageId, rapidjson::Document&& values,
+    ContentSetItem(bvector<ECClassInstanceKey> keys, LabelDefinitionCR displayLabelDefinition, Utf8String imageId, rapidjson::Document&& values,
         rapidjson::Document&& displayValues, bvector<Utf8String> mergedFieldNames, FieldPropertyInstanceKeyMap&& fieldPropertyInstanceKeys)
-        : m_class(nullptr), m_keys(keys), m_displayLabel(displayLabel), m_imageId(imageId),
+        : m_class(nullptr), m_keys(keys), m_displayLabelDefinition(&displayLabelDefinition), m_imageId(imageId),
         m_values(std::move(values)), m_displayValues(std::move(displayValues)), m_extendedData(rapidjson::kObjectType),
         m_mergedFieldNames(mergedFieldNames), m_fieldPropertyInstanceKeys(std::move(fieldPropertyInstanceKeys))
         {}
@@ -1251,17 +1252,17 @@ public:
 public:
     //! Creates a @ref ContentSetItem.
     //! @param[in] keys The keys which describe whose values this item contains.
-    //! @param[in] displayLabel The label of this content item.
+    //! @param[in] displayLabelDefinition The definition of this content item label.
     //! @param[in] imageId The image ID for this item.
     //! @param[in] values The values map.
     //! @param[in] displayValues The display values map.
     //! @param[in] mergedFieldNames Names of merged fields in this record.
     //! @param[in] fieldPropertyInstanceKeys ECClassInstanceKeys of related instances for each field in this record.
-    static ContentSetItemPtr Create(bvector<ECClassInstanceKey> keys, Utf8String displayLabel, Utf8String imageId,
+    static ContentSetItemPtr Create(bvector<ECClassInstanceKey> keys, LabelDefinitionCR displayLabelDefinition, Utf8String imageId,
         rapidjson::Document&& values, rapidjson::Document&& displayValues, bvector<Utf8String> mergedFieldNames,
         FieldPropertyInstanceKeyMap&& fieldPropertyInstanceKeys)
         {
-        return new ContentSetItem(keys, displayLabel, imageId, std::move(values), std::move(displayValues),
+        return new ContentSetItem(keys, displayLabelDefinition, imageId, std::move(values), std::move(displayValues),
             mergedFieldNames, std::move(fieldPropertyInstanceKeys));
         }
 
@@ -1290,8 +1291,8 @@ public:
     //! Set the ECClass whose values are contained in this record.
     void SetClass(ECClassCP ecClass) {m_class = ecClass;}
 
-    //! Get the display label of this item.
-    Utf8StringCR GetDisplayLabel() const {return m_displayLabel;}
+    //! Get the display label definition of this item.
+    LabelDefinitionCR GetDisplayLabelDefinition() const {return *m_displayLabelDefinition;}
 
     //! Get the image ID of this item.
     Utf8StringCR GetImageId() const {return m_imageId;}

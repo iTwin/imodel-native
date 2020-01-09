@@ -147,9 +147,9 @@ protected:
         {
         return 0;
         }
-    folly::Future<Utf8String> _GetDisplayLabel(ECDbCR, KeySetCR, JsonValueCR, PresentationRequestContextCR) override
+    folly::Future<LabelDefinitionCPtr> _GetDisplayLabel(ECDbCR, KeySetCR, JsonValueCR, PresentationRequestContextCR) override
         {
-        return "";
+        return LabelDefinition::Create();
         }
 
 public:

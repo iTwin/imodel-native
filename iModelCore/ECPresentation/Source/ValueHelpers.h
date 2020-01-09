@@ -51,6 +51,8 @@ public:
 
     static Utf8String GetJsonAsString(RapidJsonValueCR);
     static Utf8String GetDbValueAsString(RapidJsonValueCR);
+
+    static Utf8String GetECValueTypeName(ECN::ECValueCR);
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

@@ -82,6 +82,10 @@ protected:
     ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(NavNode const& navNode, rapidjson::Document::AllocatorType*) const override;
     ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(NodesPathElement const& navNodesPathElement, rapidjson::Document::AllocatorType*) const override;
 
+    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(LabelDefinition const& labelDefinition, rapidjson::Document::AllocatorType*) const override;
+    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(LabelDefinition::SimpleRawValue const& value, rapidjson::Document::AllocatorType*) const override;
+    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(LabelDefinition::CompositeRawValue const& value, rapidjson::Document::AllocatorType*) const override;
+
     ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(KeySet const&, rapidjson::Document::AllocatorType*) const override;
     ECPRESENTATION_EXPORT virtual KeySetPtr _GetKeySetFromJson(IConnectionCR, JsonValueCR json) const override;
 

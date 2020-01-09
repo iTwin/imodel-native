@@ -14,7 +14,8 @@ ECPresentationPublicHeaders     = $(PublicApiDirectory)ECPresentation.h         
                                   $(PublicApiDirectory)Connection.h             \
                                   $(PublicApiDirectory)Update.h                 \
                                   $(PublicApiDirectory)ContentFieldEditors.h    \
-                                  $(PublicApiDirectory)KeySet.h
+                                  $(PublicApiDirectory)KeySet.h                 \
+                                  $(PublicApiDirectory)LabelDefinition.h
 
 ECPresentationInternalHeaders   = $(SourceDirectory)ECDbBasedCache.h            \
                                   $(SourceDirectory)ValueHelpers.h

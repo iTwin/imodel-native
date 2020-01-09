@@ -57,7 +57,7 @@ protected:
     virtual ContentDescriptorCPtr _GetContentDescriptor(IConnectionCR, Utf8CP, int, KeySetCR, SelectionInfo const*, ContentOptions const&, ICancelationTokenCR) = 0;
     virtual ContentCPtr _GetContent(IConnectionCR, ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR) = 0;
     virtual size_t _GetContentSetSize(IConnectionCR, ContentDescriptorCR, ICancelationTokenCR) = 0;
-    virtual Utf8String _GetDisplayLabel(IConnectionCR, KeySetCR, ICancelationTokenCR) = 0;
+    virtual LabelDefinitionCPtr _GetDisplayLabel(IConnectionCR, KeySetCR, ICancelationTokenCR) = 0;
 /** @} */
 
 public:
@@ -91,7 +91,7 @@ public:
     ContentDescriptorCPtr GetContentDescriptor(IConnectionCR connection, Utf8CP preferredDisplayType, int contentFlags, KeySetCR inputKeys, SelectionInfo const* selectionInfo, ContentOptions const& options, ICancelationTokenCR cancelationToken) {return _GetContentDescriptor(connection, preferredDisplayType, contentFlags, inputKeys, selectionInfo, options, cancelationToken);}
     ContentCPtr GetContent(IConnectionCR connection, ContentDescriptorCR descriptor, PageOptionsCR pageOptions, ICancelationTokenCR cancelationToken) {return _GetContent(connection, descriptor, pageOptions, cancelationToken);}
     size_t GetContentSetSize(IConnectionCR connection, ContentDescriptorCR descriptor, ICancelationTokenCR cancelationToken) {return _GetContentSetSize(connection, descriptor, cancelationToken);}
-    Utf8String GetDisplayLabel(IConnectionCR connection, KeySetCR keys, ICancelationTokenCR cancelationToken) {return _GetDisplayLabel(connection, keys, cancelationToken);}
+    LabelDefinitionCPtr GetDisplayLabel(IConnectionCR connection, KeySetCR keys, ICancelationTokenCR cancelationToken) {return _GetDisplayLabel(connection, keys, cancelationToken);}
 /** @} */
 };
 
@@ -176,7 +176,7 @@ protected:
     ECPRESENTATION_EXPORT ContentDescriptorCPtr _GetContentDescriptor(IConnectionCR, Utf8CP, int, KeySetCR, SelectionInfo const*, ContentOptions const&, ICancelationTokenCR) override;
     ECPRESENTATION_EXPORT ContentCPtr _GetContent(IConnectionCR, ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR) override;
     ECPRESENTATION_EXPORT size_t _GetContentSetSize(IConnectionCR, ContentDescriptorCR, ICancelationTokenCR) override;
-    ECPRESENTATION_EXPORT Utf8String _GetDisplayLabel(IConnectionCR, KeySetCR, ICancelationTokenCR) override;
+    ECPRESENTATION_EXPORT LabelDefinitionCPtr _GetDisplayLabel(IConnectionCR, KeySetCR, ICancelationTokenCR) override;
     
 public:
     ECPRESENTATION_EXPORT RulesDrivenECPresentationManagerImpl(Params const&);

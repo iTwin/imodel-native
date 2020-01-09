@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include <ECPresentation/NavNode.h>
+#include <ECPresentation/LabelDefinition.h>
 #include <ECPresentation/Update.h>
 #include "RulesEngineTypes.h"
 
@@ -27,10 +28,10 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 #define NAVNODE_IsCheckboxVisible   "IsCheckboxVisible"
 #define NAVNODE_IsCheckboxEnabled   "IsCheckboxEnabled"
 #define NAVNODE_IsExpanded          "IsExpanded"
-#define NAVNODE_Label               "Label"
 #define NAVNODE_Description         "Description"
 #define NAVNODE_InternalData        "InternalData"
 #define NAVNODE_UsersExtendedData   "ExtendedData"
+#define NAVNODE_LabelDefinition     "LabelDefinition"
 
 #define NAVNODE_JSON_CHUNK_SIZE     256
 
@@ -46,10 +47,10 @@ private:
     mutable rapidjson::MemoryPoolAllocator<> m_allocator;
     mutable rapidjson::Document m_internalExtendedData;
     rapidjson::Document* m_usersExtendedData;
+    LabelDefinitionCPtr m_labelDefinition;
     uint64_t m_nodeId;
     uint64_t m_parentNodeId;
     NavNodeKeyCPtr m_nodeKey;
-    Utf8String m_label;
     Utf8String m_description;
     Utf8String m_imageId;
     Utf8String m_foreColor;
@@ -81,7 +82,6 @@ protected:
     uint64_t _GetNodeId() const override {return m_nodeId;}
     uint64_t _GetParentNodeId() const override {return m_parentNodeId;}
     NavNodeKeyCPtr _GetNodeKey() const override {return m_nodeKey;}
-    Utf8String _GetLabel() const override {return m_label;}
     Utf8String _GetDescription() const override {return m_description;}
     Utf8String _GetExpandedImageId() const override {return m_imageId;}
     Utf8String _GetCollapsedImageId() const override {return m_imageId;}
@@ -97,8 +97,8 @@ protected:
     bool _IsCheckboxVisible() const override {return m_isCheckboxVisible;}
     bool _IsCheckboxEnabled() const override {return m_isCheckboxEnabled;}
     bool _IsExpanded() const override {return m_isExpanded;}
+    LabelDefinitionCR _GetLabelDefinition() const override { return *m_labelDefinition; }
 
-    void _SetLabel(Utf8CP label) override {m_label = label;}
     void _SetType(Utf8CP type) override {m_type = type;}
     void _SetExpandedImageId(Utf8CP imageId) override {m_imageId = imageId;}
     void _SetCollapsedImageId(Utf8CP imageId) override {m_imageId = imageId;}
@@ -116,6 +116,7 @@ protected:
     void _SetIsSelectable(bool value) override {m_isSelectable = value;}
     void _SetIsEditable(bool value) override {m_isEditable = value;}
     void _SetNodeKey(NavNodeKeyCR nodeKey) override {m_nodeKey = &nodeKey;}
+    void _SetLabelDefinition(LabelDefinitionCR value) override { m_labelDefinition = &value; }
 
 public:
     ECPRESENTATION_EXPORT ~JsonNavNode();
