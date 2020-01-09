@@ -2052,7 +2052,7 @@ TreePtr Tree::Create(GeometricModelR model, Render::SystemR system, Id id)
         // NB: We used to use project extents. For read-only scenarios, that's problematic when multiple models exist because:
         // - if a model occupies a small fraction of the extents, we must subdivide its tile tree excessively before we reach useful geometry; and
         // - some models contain junk elements in far orbit which blow out the project extents resulting in same problem - constrain that only to those models.
-        // Classifiers are applied to all models (currently...) so they use project extents.
+        // Volume classifiers are applied to all models (currently...) so they use project extents.
         auto projectExtents = model.GetDgnDb().GeoLocation().GetProjectExtents();
         auto useProjectExtents = id.GetUseProjectExtents();
         range.IntersectionOf(projectExtents, model.QueryElementsRange());
@@ -2060,20 +2060,27 @@ TreePtr Tree::Create(GeometricModelR model, Render::SystemR system, Id id)
         if(id.IsVolumeClassifier() || id.IsPlanarClassifier() && 0.0 != id.GetClassifierExpansion())
             range.Extend(id.GetClassifierExpansion());
 
-        range = scaleSpatialRange(range);
-
+        // The model's range defines the bounding content range.
+        contentRange = range;
         if (useProjectExtents)
             {
-            // Actually use the project extents as the tile tree range, but also include the model range as a bounding content range.
+            // Actually use the project extents as the tile tree range.
             // This allows us to produce root tiles of appropriate resolution when model range is small relative to project extents, instead
             // of producing extremely high-resolution tiles inappropriate for display when fitting to project extents.
-            contentRange = range;
             range = projectExtents;
-            scaleSpatialRange(range);
+
+            // Align the project extents to the model extents to prevent excessive sub-division.
+            if (!id.IsVolumeClassifier())
+                {
+                auto diagonal = range.DiagonalVector();
+                range.low = contentRange.low;
+                range.high.SumOf(range.low, diagonal, 1.0);
+                }
             }
 
-        uint32_t nElements = 0;
+        range = scaleSpatialRange(range);
 
+        uint32_t nElements = 0;
         populateRootTile = !range.IsNull() && isElementCountLessThan(s_minElementsPerTile, *model.GetRangeIndex(), &nElements);
         if (id.IsVolumeClassifier())
             populateRootTile = true;    // The volume classifier algorithm currently cannot handle multiple tiles -- force the root to populate...
