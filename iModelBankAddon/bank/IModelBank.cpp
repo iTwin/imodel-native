@@ -14,6 +14,8 @@ static FARPROC delayLoadNotify(unsigned dliNotify, PDelayLoadInfo pdli) {return 
 decltype(__pfnDliNotifyHook2) __pfnDliNotifyHook2 = delayLoadNotify;
 #endif
 
+#include <BeHttp/HttpClient.h>
+#include <Bentley/Desktop/FileSystem.h>
 #include "../common/ConversionUtils.h"
 #include "../common/NativeSQLiteDb.h"
 #include "../common/NativeSQLiteStatement.h"
@@ -21,6 +23,7 @@ decltype(__pfnDliNotifyHook2) __pfnDliNotifyHook2 = delayLoadNotify;
 #include "EntitlementChecker.h"
 
 using namespace IModelBank;
+USING_NAMESPACE_BENTLEY_HTTP
 
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod                                    Sam.Wilson                      06/18
@@ -31,11 +34,15 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports)
 
     Napi::HandleScope scope(env);
 
+    BeFileName libraryDir = Desktop::FileSystem::GetLibraryDir();
+    HttpClient::Initialize(HttpClient::Options(libraryDir.AppendToPath(L"Assets")));
+
     NativeSQLiteDb::Init(env, exports);
     NativeSQLiteStatement::Init(env, exports);
     EntitlementChecker::Run(env);
 
     exports.Set("doDeferredLogging", Napi::Function::New(env, [](const Napi::CallbackInfo &) { ConversionUtils::DoDeferredLogging(); }));
+    exports.Set("initialize", Napi::Function::New(env, [](const Napi::CallbackInfo& info) { EntitlementChecker::initialize(info); }));
 
     exports.DefineProperties(
         {

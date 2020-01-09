@@ -2,10 +2,12 @@
 * Copyright (c) 2019 Bentley Systems, Incorporated. All rights reserved.
 * Licensed under the MIT License. See LICENSE.md in the project root for license terms.
 *--------------------------------------------------------------------------------------------*/
+import * as path from "path";
 import { logTest, loadAddon, it, tests } from "./utils";
 import { assert } from "chai";
 import { Logger } from "@bentley/bentleyjs-core";
 import * as dbTest from "./dbTest";
+import { KnownTestLocations } from "./KnownTestLocations";
 import { IModelBankLicensingNative } from "../IModelBankLicensingNative";
 import { IModelBankLicensingNativeHost } from "../IModelBankLicensingNativeHost";
 
@@ -34,20 +36,9 @@ it("should verify addon API", () => {
 });
 
 it("should call checkEntitlement", () => {
-    try {
-        (addon as any).checkEntitlement();
-        assert.fail();
-    } catch (_err) {
-        // expected
-    }
-    try {
-        (addon as any).checkEntitlement(1);
-        assert.fail();
-    } catch (_err) {
-        // expected
-    }
-
-    addon.checkEntitlement("/tmp/licensefile");
+    const licensePath = path.join(__dirname, "../../../../", "License.belic");
+    addon.setup(KnownTestLocations.outputDir, licensePath, "iModelBankTest");
+    addon.checkEntitlement("iModelId", "activityId", "0");
 });
 
 for (const test of tests) {

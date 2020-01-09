@@ -7,6 +7,7 @@ export declare namespace IModelBankNative {
 
   const version: string;
   let logger: Logger;
+  function initialize(url: string, iModel: string): void;
   function doDeferredLogging(): void;
 
   interface NativeChangeSetCounts {

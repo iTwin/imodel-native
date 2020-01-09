@@ -167,6 +167,7 @@ BentleyStatus ConversionUtils::BindValue(Statement &stmt, int i, Napi::Value val
     case napi_symbol:
         stmt.BindText(i, value.ToString().Utf8Value().c_str(), Statement::MakeCopy::Yes);
         break;
+
     // case napi_object :
     // case napi_function :
     // case napi_external :

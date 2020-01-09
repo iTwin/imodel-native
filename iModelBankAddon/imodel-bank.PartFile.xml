@@ -28,8 +28,8 @@
   </Product>
 
   <Product Name="imodel-bank-Windows" OnlyPlatforms="x64">
-    <SubPart PartName="imodel-bank-lib" LibType="Static" />
-    <SubPart PartName="imodel-sqlang" LibType="Static" />
+    <SubPart PartName="imodel-bank-lib" />
+    <SubPart PartName="imodel-sqlang" />
     <Directories DirectoryListName="imodel-bank-delivery-list" />
   </Product>
 
@@ -62,7 +62,7 @@
     <SubPart PartName="napi-lib" PartFile="node-addon-api/node-addon-api" Repository="imodel02"/>
     <SubPart PartName="BeSQLite" PartFile="iModelCore/BeSQLite/BeSQLite" Repository="imodel02"/>
     <SubPart PartName="GeomDlls" PartFile="iModelCore/GeomLibs/geomlibs" Repository="imodel02"/>
-    <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+    <SubPart PartName="BeHttp" PartFile="iModelCore/BeHttp/BeHttp" Repository="imodel02"/>
     <Bindings>
       <Files ProductDirectoryName="AddonRoot">
         Delivery/imodel-bank/imodel-bank.node

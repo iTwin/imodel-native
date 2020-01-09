@@ -60,6 +60,8 @@ $(o)NativeSQLiteStatement$(oext) : $(commonDir)NativeSQLiteStatement.cpp $(commo
 
 $(o)ConversionUtils$(oext) : $(commonDir)ConversionUtils.cpp $(commonDir)ConversionUtils.h ${MultiCompileDepends}
 
+$(o)EntitlementCheckerUtils$(oext) : $(commonDir)EntitlementCheckerUtils.cpp $(commonDir)EntitlementCheckerUtils.h ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 
 #----------------------------------------------------------------------
@@ -73,9 +75,21 @@ DLM_OBJECT_FILES    = $(MultiCompileObjectList)
 DLM_NOENTRY         = 1
 DLM_NO_CONTEXT_LINK = 1
 
-%include $(baseDir)common-input-libs.mki
 
-IMODEL_BANK_LIBS + $(BuildContext)SubParts/Libs/$(stlibprefix)BeCurl$(stlibext)
+%ifdef __unix
+    lx = $(stlibext)
+%else
+    lx = $(libext)
+%endif
+
+IMODEL_BANK_LIBS +  $(ContextSubpartsLibs)$(libprefix)Bentley$(lx)
+IMODEL_BANK_LIBS +  $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(lx)
+IMODEL_BANK_LIBS +  $(ContextSubpartsLibs)$(libprefix)BeSQLite$(lx)
+IMODEL_BANK_LIBS +  $(ContextSubpartsLibs)$(libprefix)BeIcu4c$(lx)
+IMODEL_BANK_LIBS +  $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(lx)
+IMODEL_BANK_LIBS +  $(ContextSubpartsLibs)$(libprefix)BeHttp$(lx)
+IMODEL_BANK_LIBS +  $(ContextSubpartsLibs)$(libprefix)BeOpenSSL$(lx)
+IMODEL_BANK_LIBS +  $(ContextSubpartsLibs)$(libprefix)BeFolly$(lx)
 
 %ifdef __unix
 
@@ -103,14 +117,6 @@ IMODEL_BANK_LIBS + $(BuildContext)SubParts/Libs/$(stlibprefix)BeCurl$(stlibext)
 
     DLM_SPECIAL_LINKOPT = -delayload:node.exe
     LINKER_LIBRARIES = DelayImp.lib $(BuildContext)SubParts\nodelib\node.lib
-
-    # Win32 sockets for Web
-    LINKER_LIBRARIES            + "WS2_32.Lib"
-
-    NOSTRICT=1
-    # HTTP client configuration
-    LINKER_LIBRARIES            + "Winhttp.Lib"
-    LINKER_LIBRARIES + crypt32.lib wldap32.lib
 
     # Always produce a .SO (even though this is a static build)
     %undef CREATE_STATIC_LIBRARIES

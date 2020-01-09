@@ -5,124 +5,174 @@
 +--------------------------------------------------------------------------------------*/
 #include "EntitlementChecker.h"
 #include "../common/ConversionUtils.h"
+#include "../common/EntitlementCheckerUtils.h"
+#include "../common/macros.h"
 #include <Bentley/BeSystemInfo.h>
-#define CURL_STATICLIB
-#include <curl/curl.h>
+#include <BeHttp/HttpClient.h>
+#include <Bentley/Bentley.h>
 #include <thread>
+#include <chrono>
+#include <iostream>
 
 using namespace IModelBank;
 
-static Napi::ObjectReference s_http;
+USING_NAMESPACE_BENTLEY_HTTP
 
-#if defined(BENTLEY_WIN32)
-/*---------------------------------------------------------------------------------**/ /**
-* @bsimethod                                        Grigas.Petraitis            06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String getHostName()
+Utf8String EntitlementChecker::s_url = "";
+Utf8String EntitlementChecker::s_iModelId = "";
+
+
+namespace Properties
 {
-    WString computerName;
-    DWORD nameLength = 0;
-    ::GetComputerNameExW(ComputerNamePhysicalDnsFullyQualified, NULL, &nameLength);
-    if (0 != nameLength)
+    Utf8CP iModelId = "iModelId";
+    Utf8CP time = "time";
+    Utf8CP activityId = "activityId";
+    Utf8CP responseValue = "responseValue";
+}
+
+Utf8String fromEntitlementStatus(EntitlementStatus status)
+{
+    switch (status)
     {
-        computerName.resize(nameLength);
-        if (TRUE != ::GetComputerNameExW(ComputerNamePhysicalDnsFullyQualified, (WCharP)computerName.data(), &nameLength))
-            BeAssert(false);
+    case EntitlementStatus::LicensingUrlNotSet:
+        return "Licensing URL is not set.";
+    case EntitlementStatus::iModelIdNotSet:
+        return "iModel id not set.";
+    case EntitlementStatus::InvalidResponse:
+        return "Received an invalid response from Licensing service.";
+    case EntitlementStatus::RequestFailed:
+        return "Request to Licensing service has failed.";
+    default:
+        return "Unknown error.";
     }
-    if (computerName.empty())
+}
+
+static void handleEntitlementError(EntitlementStatus status)
+{
+    std::cerr << "Entitlement check has failed." << fromEntitlementStatus(status) << std::endl << std::flush;
+    exit(1);
+}
+
+Json::Value createJson(Utf8StringCR iModelId)
+{
+    Json::Value json(Json::objectValue);
+    BeSQLite::BeGuid checkId(true);
+    int64_t time = std::chrono::system_clock::now().time_since_epoch().count();
+    json.SetOrRemoveInt64(Properties::time, time, 0);
+    json[Properties::iModelId] = iModelId;
+    json[Properties::activityId] = checkId.ToString();
+    return json;
+}
+
+Request createRequest(JsonValueCR value, Utf8StringCR url)
+{
+    HttpStringBodyPtr body = HttpStringBody::Create(Json::FastWriter().write(value));
+    HttpClient client;
+    Request request = client.CreatePostRequest(url);
+    request.GetHeaders().AddValue("Content-Type", "application/json");
+    request.SetRequestBody(body);
+    return request;
+}
+
+Utf8String calculateHashFromJson(JsonValueCR value)
+{
+    return calculateHash(value[Properties::activityId].asString(),
+        value[Properties::iModelId].asString(),
+        Utf8PrintfString("%lld", value[Properties::time].asInt64()));
+}
+
+Json::Value parseResponse(ResponseCR response)
+{
+    Utf8String responseString = response.GetBody().AsString();
+    Json::Value responseJson = Json::Reader::DoParse(responseString);
+    return responseJson;
+}
+
+EntitlementStatus ValidateResponse(JsonValueCR requestJson, JsonValueCR responseJson)
+{
+    Utf8String expectedResponse = calculateHashFromJson(requestJson);
+    Utf8String actualResponse = responseJson["responseValue"].asString();
+    if (!actualResponse.Equals(expectedResponse))
+        return EntitlementStatus::InvalidResponse;
+    return EntitlementStatus::Success;
+}
+
+void EntitlementChecker::initialize(const Napi::CallbackInfo& info)
+{
+    REQUIRE_ARGUMENT_STRING(0, licensingUrl);
+    REQUIRE_ARGUMENT_STRING(1, iModelId);
+    s_url = licensingUrl;
+    s_iModelId = iModelId;
+}
+
+EntitlementStatus EntitlementChecker::checkEntitlement()
+{
+    if (Utf8String::IsNullOrEmpty(s_url.c_str()))
     {
-        WCharCP computerNameP = NULL;
-        if (NULL != (computerNameP = ::_wgetenv(L"COMPUTERNAME")))
-            computerName.assign(computerNameP);
-        else
-            computerName.assign(L"UnknownHostName");
+        return EntitlementStatus::LicensingUrlNotSet;
     }
-    return Utf8String(computerName.c_str());
-}
-#else
-static Utf8String getHostName()
-{
-    return BeSystemInfo::GetMachineName();
-}
-#endif
 
-static void handleEntitlementError(Utf8StringCR msg)
-{
-// #ifdef NDEBUG
-//     // In a production build, terminate on an entitlement error.
-//     // TODO: make sure that napi_fatal_error does not show a callstack in a production build. If it does, then just call exit.
-//     // exit(1);
-//     napi_fatal_error("", NAPI_AUTO_LENGTH, msg.c_str(), NAPI_AUTO_LENGTH);
-// #else
-    if (getenv("IMODEL_BANK_ENTITLEMENT_CHECK_ENFORCE"))
-        napi_fatal_error("", NAPI_AUTO_LENGTH, msg.c_str(), NAPI_AUTO_LENGTH);
+    if (Utf8String::IsNullOrEmpty(s_iModelId.c_str()))
+    {
+        return EntitlementStatus::iModelIdNotSet;
+    }
 
-    ConversionUtils::GetNativeLogger().errorv("*** ENTITLEMENT CHECK FAILED (DEV): %s", msg.c_str());
-//    ConversionUtils::GetNativeLogger().error("*** In a production build, this would have been a fatal error ***");
-// #endif
+    Json::Value requestJson = createJson(s_iModelId);
+    Request request = createRequest(requestJson, s_url);
+    Response response = request.Perform().get();
+    HttpStatus status = response.GetHttpStatus();
+    if (HttpStatus::OK != status)
+    {
+        std::cerr << "Entitlement Check request failed with status: " << (int)status << "." << std::endl;
+        return EntitlementStatus::RequestFailed;
+    }
+
+    Json::Value responseJson = parseResponse(response);
+    return ValidateResponse(requestJson, responseJson);
 }
 
-static CURLcode checkEntitlement(Utf8CP url, Utf8StringCR jsonBody)
-{
-    CURL *curl;
-    CURLcode res;
+static EntitlementStatus checkEntitlementWithRetries()
+    {
+    int delay = 200;
+    EntitlementStatus status = EntitlementStatus::Unknown;
+    for (int i = 0; i < 6; ++i)
+        {
+        BeDuration duration = BeDuration::FromMilliseconds(delay);
+        duration.Sleep();
+        status = EntitlementChecker::checkEntitlement();
+        if (status == EntitlementStatus::Success)
+            break;
+        delay *= 2;
+        }
+    return status;
+    }
 
-    curl = curl_easy_init();
-    if (nullptr == curl)
-        return CURLE_UNSUPPORTED_PROTOCOL;
 
-    curl_easy_setopt(curl, CURLOPT_URL, url);
-    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L); // need this if url is redirected
-
-    res = curl_easy_perform(curl);
-
-    curl_easy_cleanup(curl);
-
-    return res;
-}
-
-static void runEntitlementChecks(Utf8CP url, BeDuration checkInterval)
+static void runEntitlementChecks(BeDuration checkInterval)
 {
     try
     {
-        auto hostname = getHostName();
-
-        Json::Value json(Json::objectValue);
-        json["dummy"] = "dummy";
-        Utf8String queryString(Json::FastWriter().write(json));
-
         while (true)
         {
-            auto res = checkEntitlement(url, queryString);
-            if (CURLE_OK != res)
-                handleEntitlementError(Utf8PrintfString("Entitlement check on %s failed with code %d: %s. Server=%s", hostname.c_str(), res, curl_easy_strerror(res), url));
+            auto res = checkEntitlementWithRetries();
+
+            if (res != EntitlementStatus::Success)
+                handleEntitlementError(res);
             else
-                ConversionUtils::GetNativeLogger().infov("Entitlement check on %s suceeded (server=%s)", hostname.c_str(), url);
+                ConversionUtils::GetNativeLogger().info("Entitlement check suceeded.");
 
             checkInterval.Sleep();
         }
     }
     catch (...)
     {
-        handleEntitlementError("?");
+        handleEntitlementError(EntitlementStatus::Unknown);
     }
 }
 
 void EntitlementChecker::Run(Napi::Env env)
 {
-    Utf8CP url = getenv("IMODEL_BANK_ENTITLEMENT_SERVER_URL");
-    if (nullptr == url)
-    {
-        handleEntitlementError("IMODEL_BANK_ENTITLEMENT_SERVER_URL must be defined");
-        return;
-    }
+    BeDuration checkInterval = BeDuration::Hours(1);
 
-    Utf8CP intervalStr = getenv("IMODEL_BANK_ENTITLEMENT_CHECK_INTERVAL_HOURS");
-    auto intervalHours = intervalStr ? atoi(intervalStr) : 0;
-    if (intervalHours <= 0 || intervalHours > (24 * 30)) // cannot be more than 30 days, as that is the max lifetime of a checked-out license.
-        intervalHours = 24;
-
-    BeDuration checkInterval = BeDuration::Hours(intervalHours);
-
-    std::thread([checkInterval, url] { runEntitlementChecks(url, checkInterval); }).detach();
+    std::thread([checkInterval] { runEntitlementChecks(checkInterval); }).detach();
 }

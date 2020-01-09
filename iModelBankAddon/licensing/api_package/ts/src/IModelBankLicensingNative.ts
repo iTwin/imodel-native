@@ -12,7 +12,8 @@ export declare namespace IModelBankLicensingNative {
    * Verify that the specified license file is valid and not expired.
    * @param licenseFileName Full path to a checked-out license file.
    */
-  function checkEntitlement(licenseFileName: string): number;
+  function checkEntitlement(iModelId: string, activityId: string, time: string): string;
+  function setup(rootDir: string, licensePath: string, deploymentId: string): number;
 
   interface NativeChangeSetCounts {
     inserts: number;

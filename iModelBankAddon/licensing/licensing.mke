@@ -61,6 +61,8 @@ $(o)NativeSQLiteStatement$(oext) : $(commonDir)NativeSQLiteStatement.cpp $(commo
 
 $(o)ConversionUtils$(oext) : $(commonDir)ConversionUtils.cpp $(commonDir)ConversionUtils.h ${MultiCompileDepends}
 
+$(o)EntitlementCheckerUtils$(oext) : $(commonDir)EntitlementCheckerUtils.cpp $(commonDir)EntitlementCheckerUtils.h ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 
 #----------------------------------------------------------------------
