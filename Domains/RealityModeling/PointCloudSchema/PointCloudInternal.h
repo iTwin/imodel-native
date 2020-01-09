@@ -9,6 +9,7 @@
 
 #include <Bentley/Bentley.h>
 #include <Bentley/BeTimeUtilities.h>
+#include <Bentley/BeSystemInfo.h>
 #include <folly/BeFolly.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/DgnDomain.h>

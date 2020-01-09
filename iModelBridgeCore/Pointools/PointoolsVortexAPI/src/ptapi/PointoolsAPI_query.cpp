@@ -36,6 +36,8 @@
 #include <pt/timer.h>
 
 #include <math/matrix_math.h>
+#include <mutex>
+#include <atomic>
 
 #include <ptengine/StreamManager.h>
 
@@ -254,8 +256,8 @@ namespace querydetail
 		PThandle		        scope;				// point cloud or scene (pod) scope
 		uint			        layerMask;
 
-		static pcloud::Voxel *	lastPartiallyIteratedVoxel;
-		static float			lastPartiallyIteratedVoxelUnloadLOD;
+		pcloud::Voxel 		*	lastPartiallyIteratedVoxel;
+		float					lastPartiallyIteratedVoxelUnloadLOD;
 
 		const pcloud::PointCloud			*pcloudOnly;
 		const pcloud::Scene					*sceneOnly;
@@ -268,9 +270,11 @@ namespace querydetail
 
 	typedef std::map<PThandle, Query*> QueryMap;
 	static QueryMap s_queries;
+    std::mutex s_queryMapMutex;
 
-	pcloud::Voxel *	Query::lastPartiallyIteratedVoxel = NULL;
-	float			Query::lastPartiallyIteratedVoxelUnloadLOD = 0;
+
+//	pcloud::Voxel *	Query::lastPartiallyIteratedVoxel = NULL;
+//	float			Query::lastPartiallyIteratedVoxelUnloadLOD = 0;
 
 	//---------------------------------------------------------------------
 	/* Gather Voxels Visitor - used in ordered voxel querying for display */
@@ -985,6 +989,16 @@ namespace querydetail
 				}
 															// Last voxel is local, so lock to iterate voxel
 				lock.lock();
+                                                            // In rare circumstances, another client thread may have pre-empted
+                                                            // while this function has unlocked the voxel and dumped the voxel
+                                                            // So for local voxels (only) make sure there is data for the voxel
+//              if(dataSourceForm == ptds::DataSource::DataSourceFormLocal) // Note: iModel02 always local, no ProjectWise server access
+                {
+                                                            // Calculate load details based on LODs and density settings
+                    amount = calculateVoxelLoad(vox, doLoad);
+                                                            // Load data if required without dumping on destruction
+                    pointsengine::VoxelLoader load(doLoad ? vox : 0, amount, false, false, false);
+                }
 			}
 
 															// If last voxel is remote, no need to iterate this voxel so return
@@ -3536,8 +3550,9 @@ h->getNode()->flag(WholeSelected, true);
 };
 
 
-
-int s_lastQueryHandle;
+													// Query handle counter must be atomic to prevent
+													// multiple client threads obtaining the same handle
+std::atomic<int> s_lastQueryHandle;
 
 };
 /* Query */
@@ -4015,6 +4030,61 @@ PTbool PTAPI ptIntersectRayInterpolated(PThandle scene, const PTdouble *origin, 
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// Atomic addition of query to queries
+//-----------------------------------------------------------------------------
+
+void addQuery(PThandle handle, querydetail::Query *query)
+{
+    if(query == nullptr)
+        throw false;
+
+    std::unique_lock<std::mutex> lock(querydetail::s_queryMapMutex);
+
+    querydetail::s_queries.insert(querydetail::QueryMap::value_type(handle, query));
+}
+
+
+//-----------------------------------------------------------------------------
+// Atomic access to query from queries
+//-----------------------------------------------------------------------------
+
+querydetail::Query *getQuery(PThandle query)
+{
+    std::unique_lock<std::mutex> lock(querydetail::s_queryMapMutex);
+
+    querydetail::QueryMap::iterator i = querydetail::s_queries.find(query);
+    if (i != querydetail::s_queries.end())
+    {
+        return i->second;
+    }
+
+    return nullptr;
+}
+
+//-----------------------------------------------------------------------------
+// Atomic deletion of query and removal of query from queries
+//-----------------------------------------------------------------------------
+
+void deleteQuery(PThandle query)
+{
+    std::unique_lock<std::mutex> lock(querydetail::s_queryMapMutex);
+
+    querydetail::QueryMap::iterator i = querydetail::s_queries.find(query);
+    if (i != querydetail::s_queries.end())
+    {
+        if(i->second)
+            delete i->second;
+
+        querydetail::s_queries.erase(i);
+    }
+	else
+	{
+    	throw false;
+	}
+}
+
 //-----------------------------------------------------------------------------
 // Querying for points extraction to user buffers
 //-----------------------------------------------------------------------------
@@ -4024,12 +4094,13 @@ PTbool PTAPI ptResetQuery( PThandle query )
 
 	using namespace querydetail;
 
-	QueryMap::iterator i = s_queries.find( query );
-	if (i != s_queries.end())
-	{
-		i->second->resetQuery();
-		return true;
-	}
+    Query *q = getQuery(query);
+    if (q)
+    {
+        q->resetQuery();
+        return true;
+    }
+
 	setLastErrorCode( PTV_INVALID_HANDLE );
 	return false;
 }
@@ -4042,10 +4113,10 @@ PTbool PTAPI ptResetQueryProgressive(PThandle query)
 
         using namespace querydetail;
 
-    QueryMap::iterator i = s_queries.find(query);
-    if (i != s_queries.end())
+	querydetail::Query *q = getQuery(query);
+	if (q)
     {
-        i->second->resetQueryProgressive();
+        q->resetQueryProgressive();
         return true;
     }
     setLastErrorCode(PTV_INVALID_HANDLE);
@@ -4096,6 +4167,18 @@ struct VisibleCondition
 	pointsengine::ClipManager& m_clipManager;
 };
 //-----------------------------------------------------------------------------
+// Create a new query handle (Note: These will wrap when exhausted)
+//-----------------------------------------------------------------------------
+
+PThandle getNewQueryHandle(void)
+{
+                                                            // Get atomically incremented counter
+    PThandle h = ++querydetail::s_lastQueryHandle;
+
+    return h;
+}
+
+//-----------------------------------------------------------------------------
 // Visible points condition, ie everything in the scene that is visible
 //-----------------------------------------------------------------------------
 PThandle PTAPI ptCreateVisPointsQuery()
@@ -4103,11 +4186,11 @@ PThandle PTAPI ptCreateVisPointsQuery()
 	PTTRACE_FUNC
 
 	using namespace querydetail;
-	PThandle h = ++querydetail::s_lastQueryHandle;
+    PThandle h = getNewQueryHandle();
 
 	try
 	{
-		s_queries.insert( QueryMap::value_type(h, new ConditionQuery<VisibleCondition>) ); ///!ToDo: Exception safety: avoid leaks [Trac #315]
+        addQuery(h, new ConditionQuery<VisibleCondition>);
 	}
 	catch (...)
 	{
@@ -4126,13 +4209,13 @@ PThandle PTAPI ptCreateAllPointsQuery()
 	PTTRACE_FUNC
 
 	using namespace querydetail;
-	PThandle h = ++querydetail::s_lastQueryHandle;
+    PThandle h = getNewQueryHandle();
 
 	try
 	{
 		querydetail::Query *q = new ConditionQuery<NullCondition>; ///!ToDo: Exception safety: avoid leaks [Trac #315]
 		q->setDensity( PT_QUERY_DENSITY_FULL, 1.0f );				//all points
-		s_queries.insert( QueryMap::value_type( h, q ));
+        addQuery(h, q);
 	}
 	catch (...)
 	{
@@ -4309,7 +4392,7 @@ template <typename T>
 PThandle t_ptCreateUserChannelQuery( PThandle userChannel, T *minValue, T *maxValue )
 {
 	using namespace querydetail;
-	PThandle h = ++querydetail::s_lastQueryHandle;
+    PThandle h = getNewQueryHandle();
 
 	try
 	{
@@ -4363,7 +4446,7 @@ PThandle t_ptCreateUserChannelQuery( PThandle userChannel, T *minValue, T *maxVa
 			return 0;
 		}
 		q->setDensity( PT_QUERY_DENSITY_FULL, 1.0f );				//all points
-		s_queries.insert( QueryMap::value_type( h, q ));
+        addQuery(h, q);
 	}
 	catch (...)
 	{
@@ -4452,11 +4535,12 @@ PThandle PTAPI ptCreateSelPointsQuery()
 	PTTRACE_FUNC
 
 	using namespace querydetail;
-	PThandle h = ++querydetail::s_lastQueryHandle;
+
+    PThandle h = getNewQueryHandle();
 
 	try
 	{
-		s_queries.insert( QueryMap::value_type(h, new ConditionQuery<SelectedCondition>) ); ///!ToDo: Exception safety: avoid leaks [Trac #315]
+        addQuery(h, new ConditionQuery<SelectedCondition>);
 	}
 	catch (...)
 	{
@@ -4471,11 +4555,12 @@ PThandle PTAPI ptCreateSelPointsQuery()
 PThandle PTAPI ptCreateKNNQuery(PTfloat *vertices, PTint numQueryVertices, PTint k, PTfloat lod = 1)
 {
 	using namespace querydetail;
-	PThandle h = ++querydetail::s_lastQueryHandle;
+
+    PThandle h = getNewQueryHandle();
 
 	try
 	{
-		s_queries.insert( QueryMap::value_type(h, new KNearestNeighbourQuery(vertices, numQueryVertices, k, lod)) ); ///!ToDo: Exception safety: avoid leaks [Trac #315]
+        addQuery(h, new KNearestNeighbourQuery(vertices, numQueryVertices, k, lod));
 	}
 	catch (...)
 	{
@@ -4761,11 +4846,12 @@ struct FrustumQuery : public Query
 PThandle PTAPI ptCreateFrustumPointsQuery()
 {
 	using namespace querydetail;
-	PThandle h = ++querydetail::s_lastQueryHandle;
+
+    PThandle h = getNewQueryHandle();
 
 	try
 	{
-		s_queries.insert( QueryMap::value_type(h, new FrustumQuery(h) ) ); ///!ToDo: Exception safety: avoid leaks [Trac #315]
+        addQuery(h, new FrustumQuery(h));
 	}
 	catch (...)
 	{
@@ -4800,10 +4886,13 @@ struct BoxCondition
 
 	inline bool validPoint(const vector3d &pnt, ubyte &f)
 	{
-		static double pf[3];
-		pf[0] = pnt.x; pf[1] = pnt.y; pf[2] = pnt.z;
-		bool in = (bb.inBounds(pf) && m_clipManager->inside(pnt));
-		return in;
+        double p[3];
+        p[0] = pnt.x;
+        p[1] = pnt.y;
+        p[2] = pnt.z;
+
+		bool in = (bb.inBounds(p) && m_clipManager->inside(pnt));
+        return in;
 	}
 	pt::BoundingBoxD bb;
 	pt::BoundingBoxD nodeBox;
@@ -5016,12 +5105,15 @@ struct SphereCondition
 	static const char* name()  { return "SPHERE"; }
 	bool sphereContains()
 	{
-		static ubyte f; 
+		ubyte f; 
+
 		vector3d v;
 		for (int c=0; c<8; c++)
 		{
 			nodeBox.getExtrema(c, v);
-			if (!validPoint( v, f ))	return false;
+
+			if (!validPoint( v, f ))
+                return false;
 		}
 		return true;
 	}
@@ -5030,12 +5122,15 @@ struct SphereCondition
 	{
 		if (nodeBox.inBounds( cen ) ) return true;
 
-		static ubyte f;
-		vector3d v;
+		ubyte       f;
+		vector3d    v;
+
 		for (int c=0; c<8; c++)
 		{
 			nodeBox.getExtrema(c, v);
-			if (validPoint( v, f ))	return true;
+
+			if (validPoint( v, f ))
+                return true;
 		}
 		/* check for overlap */
 		double s, d = 0;
@@ -5073,15 +5168,14 @@ struct SphereCondition
 PThandle PTAPI ptCreateBoundingBoxQuery( PTdouble minx, PTdouble miny, PTdouble minz, PTdouble maxx, PTdouble maxy, PTdouble maxz )
 {
 	using namespace querydetail;
-	PThandle h = ++querydetail::s_lastQueryHandle;
+
+    PThandle h = getNewQueryHandle();
 
 	BoxCondition  box( pt::BoundingBoxD(maxx, minx, maxy, miny, maxz, minz) );
 
 	try
 	{
-		s_queries.insert( QueryMap::value_type(h, 
-			new ConditionQuery< BoxCondition >( BoxCondition( box ), h )
-			) );
+        addQuery(h, new ConditionQuery< BoxCondition >(BoxCondition(box), h));
 	}
 	catch (...)
 	{
@@ -5097,7 +5191,8 @@ PThandle PTAPI ptCreateBoundingBoxQuery( PTdouble minx, PTdouble miny, PTdouble 
 PThandle PTAPI ptCreateBoundingSphereQuery( PTdouble *cen, PTdouble radius )
 {
 	using namespace querydetail;
-	PThandle h = ++querydetail::s_lastQueryHandle;
+
+    PThandle h = getNewQueryHandle();
 
 	if (!cen || radius < 1e-6) 
 	{
@@ -5110,8 +5205,7 @@ PThandle PTAPI ptCreateBoundingSphereQuery( PTdouble *cen, PTdouble radius )
 
 	try
 	{
-		s_queries.insert( QueryMap::value_type(h, new ConditionQuery< SphereCondition > 
-			( SphereCondition( cen, radius ), h ) ) );
+        addQuery(h, new ConditionQuery<SphereCondition>(SphereCondition(cen, radius), h));
 	}
 	catch (...)
 	{
@@ -5127,19 +5221,19 @@ PTbool PTAPI ptDeleteQuery( PThandle query )
 {
 	PTTRACE_FUNC_P1( query )
 
-	using namespace querydetail;
+    try
+    {
+        deleteQuery(query);
+    }
+    catch (...)
+    {
+        setLastErrorCode(PTV_INVALID_HANDLE);
+        return PT_FALSE;
+    }
 
-	QueryMap::iterator i = s_queries.find( query );
-	if (i != s_queries.end())
-	{
-		delete i->second;
-		s_queries.erase(i);
-
-		return PT_TRUE;
-	}
-	setLastErrorCode( PTV_INVALID_HANDLE );
-	return PT_FALSE;
+    return PT_TRUE;
 }
+
 //-----------------------------------------------------------------------------
 // Other queries not yet implemented
 //-----------------------------------------------------------------------------
@@ -5153,7 +5247,8 @@ PThandle PTAPI ptCreateKrigSurfaceQuery( PTuint numPoints, PTdouble *pnts )
 PThandle PTAPI ptCreateOrientedBoundingBoxQuery( PTdouble minx, PTdouble miny, PTdouble minz, PTdouble maxx, PTdouble maxy, PTdouble maxz, PTdouble posx, PTdouble posy, PTdouble posz, PTdouble ux, PTdouble uy, PTdouble uz, PTdouble vx, PTdouble vy, PTdouble vz)
 { 
 	using namespace querydetail;
-	PThandle h = ++querydetail::s_lastQueryHandle;
+
+    PThandle h = getNewQueryHandle();
 
 	OrientedBoxCondition  orientedbox(pt::BoundingBoxD(maxx, minx, maxy, miny, maxz, minz));
 
@@ -5165,7 +5260,7 @@ PThandle PTAPI ptCreateOrientedBoundingBoxQuery( PTdouble minx, PTdouble miny, P
 	
 	try
 	{
-		s_queries.insert( QueryMap::value_type(h, new ConditionQuery< OrientedBoxCondition >( OrientedBoxCondition( orientedbox ), h ) ) );
+        addQuery(h, new ConditionQuery< OrientedBoxCondition >(OrientedBoxCondition(orientedbox), h));
 	}
 	catch (...)
 	{
@@ -5189,20 +5284,19 @@ PTres PTAPI ptSetQueryDensity( PThandle query, PTenum densityType, PTfloat densi
 	//if (densityType == PT_QUERY_DENSITY_FULL)
 	//	densityType = PT_QUERY_DENSITY_VIEW_COMPLETE;
 
-	QueryMap::iterator i = s_queries.find( query );
-	if (i != s_queries.end())
-	{
-        if (densityType <PT_QUERY_DENSITY_FULL || densityType > PT_QUERY_DENSITY_VIEW_PROGRESSIVE)
-			return setLastErrorCode( PTV_INVALID_PARAMETER );
+    Query *q;
 
-		i->second->setDensity( densityType, densityValue );
-		return setLastErrorCode( PTV_SUCCESS );
-	}
-	else
-	{
-		return setLastErrorCode( PTV_INVALID_HANDLE );
-	}
+    if((q = getQuery(query)) == nullptr)
+        return setLastErrorCode(PTV_INVALID_HANDLE);
+
+    if (densityType <PT_QUERY_DENSITY_FULL || densityType > PT_QUERY_DENSITY_VIEW_PROGRESSIVE)
+		return setLastErrorCode( PTV_INVALID_PARAMETER );
+
+    q->setDensity(densityType, densityValue);
+
+    return setLastErrorCode(PTV_SUCCESS);
 }
+
 //-----------------------------------------------------------------------------
 // Sets the queries scope
 //-----------------------------------------------------------------------------
@@ -5212,16 +5306,13 @@ PTres PTAPI ptSetQueryScope( PThandle query, PThandle cloudOrSceneHandle )
 
 	using namespace querydetail;
 
-	QueryMap::iterator i = s_queries.find( query );
-	if (i != s_queries.end())
-	{
-		i->second->setScope( cloudOrSceneHandle );
-		return setLastErrorCode( PTV_SUCCESS );
-	}
-	else
-	{
-		return setLastErrorCode( PTV_INVALID_HANDLE );
-	}
+    Query *q = getQuery(query);
+    if (q == nullptr)
+        return setLastErrorCode(PTV_INVALID_HANDLE);
+
+    q->setScope(cloudOrSceneHandle);
+
+    return setLastErrorCode(PTV_SUCCESS);
 }
 //
 //
@@ -5232,17 +5323,15 @@ PTres PTAPI ptSetQueryLayerMask( PThandle query, PTubyte layerMask )
 
 	using namespace querydetail;
 
-	QueryMap::iterator i = s_queries.find( query );
-	if (i != s_queries.end())
-	{
-		i->second->setLayers( layerMask );
-		return setLastErrorCode( PTV_SUCCESS );
-	}
-	else
-	{
-		return setLastErrorCode( PTV_INVALID_HANDLE );
-	}
+    Query *q = getQuery(query);
+    if(q == nullptr)
+        return setLastErrorCode(PTV_INVALID_HANDLE);
+
+    q->setLayers(layerMask);
+
+    return setLastErrorCode(PTV_SUCCESS);
 }
+
 //-----------------------------------------------------------------------------
 // The RGB mode
 //-----------------------------------------------------------------------------
@@ -5252,17 +5341,14 @@ PTres PTAPI ptSetQueryRGBMode( PThandle query, PTenum mode )
 
 	using namespace querydetail;
 
-	QueryMap::iterator i = s_queries.find( query );
-	if (i != s_queries.end())
-	{
-		i->second->setRGBMode( mode );
-		return setLastErrorCode( PTV_SUCCESS );
-	}
-	else
-	{
-		return setLastErrorCode( PTV_INVALID_HANDLE );
-	}
+    Query *q = getQuery(query);
+    if(q == nullptr)
+        return setLastErrorCode(PTV_INVALID_HANDLE);
+
+    q->setRGBMode(mode);
+    return setLastErrorCode(PTV_SUCCESS);
 }
+
 /************************************************************************/
 /*                                                                      */
 /************************************************************************/
@@ -5332,21 +5418,22 @@ static querydetail::Query *prepareQueryRun( PThandle query )
 	extern PTuint g_currentViewport;
 	_ptApplyShader(g_currentViewport);
 
-	QueryMap::iterator i = s_queries.find(query);
-	if (i == s_queries.end()) 
+    Query *q = getQuery(query);
+    if(q == nullptr)
+    {
+        setLastErrorCode(PTV_INVALID_HANDLE);
+        return nullptr;
+    }
+
+	if (q->isReset())	// compute density required to hit point limit
 	{
-		setLastErrorCode( PTV_INVALID_HANDLE );			
-		return 0;
-	}
-	if (i->second->isReset())	// compute density required to hit point limit
-	{
-		if (!computePntLimitDensity( i->second )) 
-			return 0;
+		if (!computePntLimitDensity(q)) 
+			return nullptr;
 	}
 
-    i->second->setQueryHandle(query);
+//  q->setQueryHandle(query); Note: Reinstate if required
 
-	return i->second;
+	return q;
 }
 //-----------------------------------------------------------------------------
 // select the result of the query
@@ -5359,13 +5446,12 @@ PTuint PTAPI ptSelectQueryPoints( PThandle query )
 
 	setLastErrorCode( PTV_SUCCESS ); ///!FixMe: What if there is already an outstanding error from a previous operation?
 
-	QueryMap::iterator i = s_queries.find(query);
-	if (i == s_queries.end()) 
-	{
-		setLastErrorCode( PTV_INVALID_HANDLE );			
-		return 0;
-	}
-	Query *q = i->second;
+    Query *q = getQuery(query);
+    if (q == nullptr)
+    {
+        setLastErrorCode(PTV_INVALID_HANDLE);
+        return 0;
+    }
 
 	return q->selectQueryPoints(true);
 }
@@ -5381,13 +5467,12 @@ PTuint PTAPI ptDeselectQueryPoints( PThandle query )
 
 	setLastErrorCode( PTV_SUCCESS ); ///!FixMe: What if there is already an outstanding error from a previous operation?
 
-	QueryMap::iterator i = s_queries.find(query);
-	if (i == s_queries.end()) 
+    Query *q = getQuery(query);
+    if(q == nullptr)
 	{
 		setLastErrorCode( PTV_INVALID_HANDLE );			
 		return 0;
 	}
-	Query *q = i->second;
 
 	return q->selectQueryPoints(false);
 }
@@ -5517,14 +5602,15 @@ PTres		PTAPI ptSubmitPointChannelUpdate( PThandle query, PThandle channel )
 
 	using namespace querydetail;
 
-	/* find the query and run an update */
-	QueryMap::iterator i = s_queries.find(query);
-	if (i == s_queries.end())
+    Query *q = getQuery(query);
+    if(q == nullptr)
 	{
 		return setLastErrorCode( PTV_INVALID_HANDLE );				
 	}
-	i->second->submitChannelUpdate(channel);
-	return setLastErrorCode( PTV_SUCCESS );
+
+    q->submitChannelUpdate(channel);
+
+    return setLastErrorCode(PTV_SUCCESS);
 }
 
 

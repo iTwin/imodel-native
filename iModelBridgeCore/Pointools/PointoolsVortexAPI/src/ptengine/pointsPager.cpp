@@ -132,6 +132,8 @@ PointsPager::PointsPager()
 	pp.pager = 0;
 	pp.pointsPager = this;
 	_pager = NULL;
+
+    setNumThreadsPaused(0);
 }
 //---------------------------------------------------------
 // destructor 
@@ -911,10 +913,8 @@ VoxelLoader::VoxelLoader(pcloud::Voxel *vox, float amount, bool pause, bool lock
 
 		if (pause)
 		{
-			_paused = pp.pointsPager->paused();
-
-			pp.pointsPager->pause();
-		}
+            _paused = pp.pointsPager->pause();
+        }
 
 		/*store current lod - not the current request*/ 
 		_lod = _voxel->getCurrentLOD();
@@ -1270,15 +1270,17 @@ void PointsPager::completeRequests()
 //---------------------------------------------------------
 bool PointsPager::pause()				
 { 
-	// if its paused still need to check is lock was acquired
-	if (_paused && !pp.pausemutex.try_lock()) 
-		return true;
+    std::unique_lock<std::mutex> pointsPagerPauseLock(pointsPagerPauseMutex);
 
-	if (!_paused) 
-		pp.pausemutex.lock(); 
-	
-	pp.voxlist.clear(); 
-	_paused = true; 
+    setNumThreadsPaused(getNumThreadsPaused() + 1);
+
+    if (getNumThreadsPaused() == 1)
+    {
+        pp.pausemutex.lock();
+
+	    pp.voxlist.clear(); 
+	    _paused = true; 
+    }
 
 	return true; 
 }
@@ -1288,11 +1290,10 @@ bool PointsPager::softPause()
 	if (_paused)
 		return true;
 
-	_paused = true; 
-	pp.pausemutex.try_lock(); 
+	_paused = pp.pausemutex.try_lock(); 
 	
 	//pp.voxlist.clear(); 
-	return false; 
+	return _paused; 
 }
 //---------------------------------------------------------
 bool PointsPager::isPaused() const
@@ -1302,19 +1303,26 @@ bool PointsPager::isPaused() const
 //---------------------------------------------------------
 bool PointsPager::unpause()				
 { 
-	if (_paused)
-	{
-		_paused = false;
-		try
+    std::unique_lock<std::mutex> pointsPagerPauseLock(pointsPagerPauseMutex);
+
+    assert(getNumThreadsPaused() > 0);
+
+    setNumThreadsPaused(getNumThreadsPaused() - 1);
+
+    if(getNumThreadsPaused() == 0)
+    {
+        try
 		{
 			pp.pausemutex.unlock(); 
 		}
 		catch(...)
 		{
-			// mutex already unlocked, no big deal
+	    		                                                // mutex already unlocked
 		}
-		return true; 
-	}
+
+        _paused = false;
+    }
+
 	return true;
 }
 

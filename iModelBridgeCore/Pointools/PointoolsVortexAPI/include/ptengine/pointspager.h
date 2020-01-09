@@ -15,6 +15,7 @@
 #include <ptengine/module.h>
 #include <ptengine/podCache.h>
 #include <ptengine/voxelLoader.h>
+#include <mutex>
 
 #define	LOW_LOD_LOAD_THRESHOLD	512
 #define	LOAD_BLOCK_SIZE 65536
@@ -35,6 +36,13 @@ namespace pointsengine
 	
 class PTENGINE_API PointsPager : public Module
 {
+
+protected:
+
+    std::mutex      pointsPagerPauseMutex;
+    PTuint          numThreadsPaused;
+
+	void		*	_pager;
 
 public:
 
@@ -58,6 +66,9 @@ public:
 	bool softPause();
 	bool unpause();
 	bool isPaused() const;
+
+    void setNumThreadsPaused(PTuint numThreads) { numThreadsPaused = numThreads; }
+    PTuint getNumThreadsPaused(void) { return numThreadsPaused; }
 
 	pcloud::Scene::CreateSceneResult	openScene(pcloud::Scene *scene);
 	
@@ -106,7 +117,6 @@ public:
 		void		operator ()			(void);
 	};
 
-	void *_pager;
 };
 }
 

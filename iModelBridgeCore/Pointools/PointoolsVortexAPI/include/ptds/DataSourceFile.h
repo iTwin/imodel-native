@@ -50,7 +50,7 @@ public:
 	Size					readBytes			(Data *buffer, Size number_bytes);
 	Size					writeBytes			(const Data *buffer, Size number_bytes);
 
-	Size					readBytesFrom		(Data *buffer, DataPointer position, Size numBytes);
+//	Size					readBytesFrom		(Data *buffer, DataPointer position, Size numBytes);
 
 	DataSize				getFileSize			(void);
 

@@ -183,7 +183,7 @@ DataSource::Size DataSourceFile::readBytes(Data *buffer, Size numBytes)
 	return numRead;
 }
 
-
+/*
 DataSource::Size DataSourceFile::readBytesFrom(Data *buffer, DataPointer position, Size numBytes)
 {
 
@@ -208,7 +208,7 @@ DataSource::Size DataSourceFile::readBytesFrom(Data *buffer, DataPointer positio
 		return readBytes(buffer, numBytes);
 	}
 }
-
+*/
 
 DataSource::Size DataSourceFile::writeBytes(const Data *buffer, Size number_bytes)
 {

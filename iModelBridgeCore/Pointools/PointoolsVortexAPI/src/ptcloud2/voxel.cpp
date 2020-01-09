@@ -694,12 +694,11 @@ if(req < 1.0f / 255.0f)
 
 	srcPos += bytes_offset;
 
-
-	if (data && num_bytes && dataSrc->movePointerTo(srcPos))
+	if (data && num_bytes)
 	{
-		unsigned int bytesRead;
+		ptds::DataSource::Size bytesRead;
 															// Read now or add to ReadSet if reading is deferred
-		bytesRead = static_cast<uint>(dataSrc->readBytes(data, num_bytes));
+		bytesRead = dataSrc->readBytesFrom(static_cast<ptds::DataSource::Data *>(data), srcPos, num_bytes);
 
 // Pip Option
 /*
@@ -729,7 +728,7 @@ dataSrc->setReadSetEnabled(true);
 															// Set Stream LOD that states how much progress is made towards the request LOD
 		setStreamLOD(req);
 
-		return bytesRead;
+		return static_cast<int>(bytesRead);
 	}
 
 	return 0;

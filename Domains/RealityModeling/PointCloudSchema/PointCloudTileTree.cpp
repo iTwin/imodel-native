@@ -54,8 +54,8 @@ DEFINE_REF_COUNTED_PTR(Loader)
 //=======================================================================================
 struct PointCloudFileThread : BeFolly::ThreadPool
     {
-    PointCloudFileThread() : ThreadPool(1, "PointCloud") {}
-    static PointCloudFileThread& Get() { static folly::Singleton<PointCloudFileThread> s_pool; return *s_pool.try_get_fast(); }
+    PointCloudFileThread() : ThreadPool(BeSystemInfo::GetNumberOfCpus() * 2, "PointCloud") {}
+	static PointCloudFileThread& Get() { static folly::Singleton<PointCloudFileThread> s_pool; return *s_pool.try_get_fast(); }
     };
 
 BEGIN_POINTCLOUD_TILETREE_NAMESPACE
@@ -111,9 +111,6 @@ BentleyStatus DoGetFromSource()
     static const size_t         s_maxTileBatchCount = 500000;
     bool                        colorsPresent;
 
-    static   BeMutex            s_queryMutex;
-    BeMutexHolder               lock(s_queryMutex);        // Arrgh.... Queries are not thread safe??
-
     root.m_stopWatch.Start();
     root.m_tileCount++;
     PointCloudQueryHandlePtr    queryHandle = root.InitQuery(colorsPresent, tile.GetRange(), s_maxTileBatchCount);
@@ -125,8 +122,8 @@ BentleyStatus DoGetFromSource()
     DRange3d                    tileRange = tile.GetRange();
     QPoint3dList                points(tileRange);
 
-    static bvector<DPoint3d>	        batchPoints(s_maxTileBatchCount);   //*********** NOT THREAD SAFE ********    Fix this when we move to multithreading 
-    static bvector<PointCloudColorDef>  batchColors(s_maxTileBatchCount);   //*********** NOT THREAD SAFE ********    Fix this when we move to multithreading  
+    bvector<DPoint3d>	        batchPoints(s_maxTileBatchCount);
+    bvector<PointCloudColorDef> batchColors(s_maxTileBatchCount);
     bvector<PointCloudColorDef> colors;
     size_t				   	    totalPoints = 0;
     bset<uint32_t>              uniquePointSet, downSampledPointSet;

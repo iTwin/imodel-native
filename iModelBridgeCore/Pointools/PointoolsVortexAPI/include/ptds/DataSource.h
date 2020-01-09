@@ -4,6 +4,8 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 
+#include <mutex>
+
 #include <ptds/FilePath.h>
 #include <pt/ptstring.h>
 
@@ -34,6 +36,8 @@ public:
 
 	typedef unsigned char	Data;
 	typedef DataSize		Size;
+
+    typedef std::mutex      DataSourceMutex;
 
 	enum ReadMode
 	{
@@ -87,6 +91,8 @@ protected:
 	ReadMode				readMode;
 
 	DataSourceOpenState		openState;
+
+    DataSourceMutex         readMutex;
 
 
 protected:
@@ -160,7 +166,7 @@ public:
 	virtual Size			readBytes					(Data *buffer, Size numBytes) = 0;
 	virtual Size			writeBytes					(const Data *buffer, Size numBytes) = 0;
 
-	virtual Size			readBytesFrom				(Data * /*buffer*/, DataPointer /*position*/, Size /*numBytes*/) {return 0;}
+	virtual Size			readBytesFrom				(Data *buffer, DataPointer position, Size numBytes);
 	virtual Size			writeBytesFrom				(const Data * /*buffer*/, DataPointer /*position*/, Size /*numBytes*/) {return 0;}
 
 #ifndef NO_DATA_SOURCE_SERVER

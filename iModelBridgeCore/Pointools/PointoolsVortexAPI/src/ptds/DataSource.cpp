@@ -76,6 +76,34 @@ void DataSource::getURL(PTRMI::URL &url)
 }
 
 
+DataSource::Size DataSource::readBytesFrom(Data *buffer, DataPointer position, Size numBytes)
+{
+                                                            // Enforce atomic seek and read for multiple client threads
+    std::unique_lock<DataSourceMutex> readLock(readMutex);
+
+#ifndef NO_DATA_SOURCE_SERVER
+
+															// If a read set is defined
+	if(getReadSetEnabled() && isReadSetDefined())
+	{
+														// Add item to the read set
+		ptds::DataSize numRead = addReadSetItem(buffer, getDataPointer(), numBytes);
+														// Advance local read pointer
+		setDataPointer(position + numRead);
+
+		return numRead;
+	}
+	else
+#endif
+	{
+		if(movePointerTo(position) == false)
+			return 0;
+
+		return readBytes(buffer, numBytes);
+	}
+}
+
+
 void DataSource::setOpenState(DataSourceOpenState state)
 {
 	openState = state;
