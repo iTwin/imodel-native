@@ -1,0 +1,30 @@
+<BuildStrategy
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../bsicommon/build/BuildStrategy.xsd"
+    >
+
+    <ImportStrategy Name="Base"/>
+    
+    <DefaultTarget
+        Repository="imodel02"
+        PartFile="Bridges/Civil/CiviliModelBridges"
+        PartName="ORDBridge"
+        Platform="x64"
+        LKGPlatforms="x64"
+        OnlyPlatforms="x64"
+        />
+    
+    <!-- This is part of the monorepo, so it's expected to build all dependencies. -->
+    <ImportStrategy Name="BuildIModelCore"/>
+    <ImportStrategy Name="BuildIModelBridgeCore"/>
+
+    <PartStrategy PartFile="CivilBaseGeometry" PartName="*" BuildFromSource="Once"/>
+    <PartStrategy PartFile="CiviliModelBridges" PartName="*" BuildFromSource="Once"/>
+    <PartStrategy PartFile="CivilTestFiles" PartName="*" BuildFromSource="Once"/>
+    <PartStrategy PartFile="DgnV8OpenRoadsDesigner" PartName="*" BuildFromSource="Once"/>
+    <PartStrategy PartFile="LinearReferencing" PartName="*" BuildFromSource="Once"/>
+    <PartStrategy PartFile="RoadRailAlignment" PartName="*" BuildFromSource="Once"/>
+    <PartStrategy PartFile="RoadRailPhysical" PartName="*" BuildFromSource="Once"/>
+    <PartStrategy PartFile="BridgeStructuralPhysical" PartName="*" BuildFromSource="Once"/>
+
+</BuildStrategy>

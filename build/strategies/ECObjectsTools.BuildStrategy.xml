@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildStrategy  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/BuildStrategy.xsd">
+
+    <ImportStrategy Name="ECObjects" />
+
+    <BuildControl SaveLkgsLegacy="false" SaveLkgsNuGet="false" SaveProducts="false" SaveNugetProducts="true" />
+
+    <DefaultTarget Repository="imodel02" PartFile="iModelCore/ecobjects/ECObjects" PartName="ECObjectsToolsNuGet-TopLevel" Platform="x64" />
+
+    <DefaultPartOptions BuildFromSource="Once" OnError="Stop" />
+
+    <LastKnownGoodSource
+        Name="ECObjectsTools"
+        Type="dev"
+        DevServer="FirebugLkgs1"
+        FirebugServer="FirebugLkgs1"
+        PrgServer="PrgBuildFileshare"
+        />
+
+    <PartStrategy PartFile="ecobjects" PartName="*" BuildFromSource="Once" />
+    <PartStrategy PartFile="ECObjects" PartName="ECObjectsToolsNuGet-TopLevel" LastKnownGoodSource="ECObjectsTools"/>
+
+</BuildStrategy>

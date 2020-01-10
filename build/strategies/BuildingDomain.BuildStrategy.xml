@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildStrategy
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../bsicommon/build/BuildStrategy.xsd"
+    >
+    <ImportStrategy Name="Base"/>
+
+    <DefaultTarget
+        Repository="imodel02"
+        PartFile="Domains/Building/BuildingDomains"
+        PartName="DesignModelingSDKDistribution"
+        Platform="x64"
+        LKGPlatforms="x64"
+        OnlyPlatforms="x64"
+        />
+
+    <BuildControl SaveNugetProducts="true"/>
+
+    <!-- This is part of the monorepo, so it's expected to build all dependencies. -->
+    <ImportStrategy Name="BuildIModelCore"/>
+    
+    <!-- Questionable why a domain needs bridge components. -->
+    <ImportStrategy Name="BuildIModelBridgeCore"/>
+
+    <PartStrategy PartFile="AecUnits"                   PartName="*"    BuildFromSource="Always"/>
+    <PartStrategy PartFile="BuildingDomains"            PartName="*"    BuildFromSource="Always"/>
+    <PartStrategy PartFile="BuildingShared"             PartName="*"    BuildFromSource="Always"/>
+    <PartStrategy PartFile="BuildingSpacePlanning"      PartName="*"    BuildFromSource="Always"/>
+    <PartStrategy PartFile="BuildingSpatial"            PartName="*"    BuildFromSource="Always"/>
+    <PartStrategy PartFile="CivilBaseGeometry"          PartName="*"    BuildFromSource="Always"/>
+    <PartStrategy PartFile="ClassificationSystems"      PartName="*"    BuildFromSource="Always"/>
+    <PartStrategy PartFile="ConstraintSystem"           PartName="*"    BuildFromSource="Always"/>
+    <PartStrategy PartFile="ElectricalDomains"          PartName="*"    BuildFromSource="Always"/>
+    <PartStrategy PartFile="FormsDomain"                PartName="*"    BuildFromSource="Always"/>
+    <PartStrategy PartFile="Grids"                      PartName="*"    BuildFromSource="Always"/>
+    <PartStrategy PartFile="LinearReferencing"          PartName="*"    BuildFromSource="Always"/>
+    <PartStrategy PartFile="PlantPrototypeDomain"       PartName="*"    BuildFromSource="Always"/>
+    <PartStrategy PartFile="ProfilesDomain"             PartName="*"    BuildFromSource="Always"/>
+    <PartStrategy PartFile="QuantityTakeoffsAspects"    PartName="*"    BuildFromSource="Always"/>
+    <PartStrategy PartFile="RoadRailAlignment"          PartName="*"    BuildFromSource="Always"/>
+    <PartStrategy PartFile="RoadRailPhysical"           PartName="*"    BuildFromSource="Always"/>
+    <PartStrategy PartFile="SpatialComposition"         PartName="*"    BuildFromSource="Always"/>
+    <PartStrategy PartFile="StructuralDomains"          PartName="*"    BuildFromSource="Always"/>
+
+</BuildStrategy>

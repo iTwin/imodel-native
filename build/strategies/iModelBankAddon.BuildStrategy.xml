@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildStrategy
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../bsicommon/build/BuildStrategy.xsd"
+    >
+
+    <ImportStrategy Name="Base"/>
+    
+    <DefaultTarget
+        Repository="imodel02"
+        PartFile="iModelBankAddon/imodel-bank"
+        PartName="AllBankAddons"
+        Platform="$(hostPlatform)"
+        OnlyPlatforms="x64,linuxx64"
+        />
+
+    <!-- This is part of the monorepo, so it's expected to build all dependencies. -->
+    <ImportStrategy Name="BuildIModelCore"/>
+    
+    <PartStrategy PartFile="imodel-bank" PartName="*" BuildFromSource="Once"/>
+    <PartStrategy PartFile="imodel-bank-licensing" PartName="*" BuildFromSource="Once"/>
+    <PartStrategy PartFile="node-addon-api" PartName="*" BuildFromSource="Once"/>
+
+</BuildStrategy>

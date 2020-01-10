@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildStrategy
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../bsicommon/build/BuildStrategy.xsd"
+    >
+
+    <ImportStrategy Name="Base"/>
+
+    <DefaultTarget
+        Repository="iModel02"
+        PartFile="iModelCore/iModelCore"
+        PartName="iModelCorePRG"
+        Platform="x64"
+        OnlyPlatforms="x64,winrtx64,androidarm64,iosarm64,iosx64,linuxx64,macosx64"
+        />
+    
+    <BuildControl SaveNugetProducts="true"/>
+
+    <!-- Build and run "extras" like docs and tests after the libraries to find compile errors sooner. -->
+    <DeferStrategy Name="*" BuildPass="1"/>
+
+    <ImportStrategy Name="BuildIModelCore"/>
+
+</BuildStrategy>

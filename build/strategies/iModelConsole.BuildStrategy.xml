@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildStrategy
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../bsicommon/build/BuildStrategy.xsd"
+    >
+
+    <ImportStrategy Name="Base"/>
+
+    <DefaultTarget
+        Repository="iModel02"
+        PartFile="iModelCore/DgnPlatform/DgnPlatform"
+        PartName="iModelConsole"
+        Platform="x64"
+        OnlyPlatforms="x64,linuxx64,macosx64"
+        />
+    
+
+    <ImportStrategy Name="BuildIModelCore"/>
+
+</BuildStrategy>

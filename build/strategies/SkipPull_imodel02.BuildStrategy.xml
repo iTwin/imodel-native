@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildStrategy
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../bsicommon/build/BuildStrategy.xsd"
+    >
+
+    <LocalRepository Name="imodel02" SkipPull="true" Type="Git" Directory="${SrcRoot}imodel02"/>
+
+</BuildStrategy>

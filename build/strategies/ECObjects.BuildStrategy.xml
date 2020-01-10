@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildStrategy  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"  xsi:noNamespaceSchemaLocation="../bsicommon/build/BuildStrategy.xsd">
+    
+    <!-- This is the generic strategy; you should not try to build from it directly.  It won't work. -->
+    <!-- Instead use the .dev variant for development.  PRG will use -s ThisFile;PRG for its strategy. -->
+
+    <ImportStrategy Name="Base" />
+    <DefaultTarget Repository="imodel02" PartFile="iModelCore/ecobjects/ECObjects" PartName="ECObjectsTested" Platform="x64" />
+
+    <FirebugJob Name="ECObjects Vancouver"/>
+
+    <!-- No LKGs are expected for these, so to get it to build in PRG it needs to be called out. -->
+    <PartStrategy PartFile="ECStandards" PartName="*" BuildFromSource="Once" />
+    <PartStrategy PartFile="TransKitTools" PartName="*" BuildFromSource="Once" />
+    <PartStrategy PartFile="ecobjects" PartName="ECObjectsTests" BuildFromSource="Once" SaveLKG="false"/>
+    <PartStrategy PartFile="units" PartName="*" BuildFromSource="Once" />
+
+</BuildStrategy>

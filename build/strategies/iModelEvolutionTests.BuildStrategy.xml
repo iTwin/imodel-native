@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildStrategy xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"  xsi:noNamespaceSchemaLocation="../bsicommon/build/BuildStrategy.xsd">
+    <ImportStrategy Name="Base"/>
+
+    <DefaultTarget
+        Repository="iModel02"
+        PartFile="iModelCore/DgnPlatform/DgnPlatform"
+        PartName="RunIModelEvolutionTests"
+        Platform="x64"
+        />
+    <BuildControl SaveLkgsLegacy="false" SaveLkgsNuGet="false" SaveProducts="false" SaveNugetProducts="true" />
+    <PartStrategy PartFile="$(strategy.defaultPartFileBase)" PartName="*" BuildFromSource="Once"/>
+
+    <!-- Need to build the following parts from source -->
+    <PartStrategy PartFile="bentley"                PartName="*" BuildFromSource="Once"/>
+    <PartStrategy PartFile="besqlite"               PartName="*" BuildFromSource="Once"/>
+    <PartStrategy PartFile="beportableui"           PartName="*" BuildFromSource="Once"/>
+    <PartStrategy PartFile="bejavascript"           PartName="*" BuildFromSource="Once"/>
+    <PartStrategy PartFile="BisSchemas"             PartName="*" BuildFromSource="Once"/>
+    <PartStrategy PartFile="ecdb"                   PartName="*" BuildFromSource="Once"/>
+    <PartStrategy PartFile="ecobjects"              PartName="*" BuildFromSource="Once"/>
+    <PartStrategy PartFile="ecpresentation"         PartName="*" BuildFromSource="Once"/>
+    <PartStrategy PartFile="ecstandards"            PartName="*" BuildFromSource="Once"/>
+    <PartStrategy PartFile="geocoord"               PartName="*" BuildFromSource="Once"/>
+    <PartStrategy PartFile="geomlibs"               PartName="*" BuildFromSource="Once"/>
+    <PartStrategy PartFile="units"                  PartName="*" BuildFromSource="Once"/>
+</BuildStrategy>

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildStrategy
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../bsicommon/build/BuildStrategy.xsd"
+    >
+
+    <ImportStrategy Name="Base"/>
+
+    <DefaultTarget
+        Repository="iModel02"
+        PartFile="iModelJsMobile/iModelJsMobile"
+        PartName="iModelJsHostPakage"
+        Platform="iosarm64"
+        OnlyPlatforms="iosarm64,iosx64"
+        />
+    
+    <!-- This is part of the monorepo, so it's expected to build all dependencies. -->
+    <ImportStrategy Name="BuildIModelCore"/>
+    <ImportStrategy Name="BuildIModelJsNodeAddon"/>
+
+    <!-- The source of this component. -->
+    <PartStrategy BuildFromSource="Always" PartFile="iModelJsMobile" PartName="*"/>
+    <PartStrategy BuildFromSource="Always" PartFile="libuv" PartName="*"/>
+    <PartStrategy BuildFromSource="Always" PartFile="google_v8" PartName="*"/>
+
+</BuildStrategy>

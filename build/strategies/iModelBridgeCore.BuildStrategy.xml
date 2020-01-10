@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildStrategy
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../bsicommon/build/BuildStrategy.xsd"
+    >
+
+    <ImportStrategy Name="Base"/>
+
+    <DefaultTarget
+        Repository="iModel02"
+        PartFile="iModelBridgeCore/iModelBridgeCore"
+        PartName="iModelBridgeCore"
+        Platform="x64"
+        OnlyPlatforms="x64"
+        />
+
+    <BuildControl SaveNugetProducts="true"/>
+
+    <!-- This is part of the monorepo, so it's expected to build all dependencies. -->
+    <ImportStrategy Name="BuildIModelCore"/>
+
+    <ImportStrategy Name="BuildIModelBridgeCore"/>
+
+</BuildStrategy>

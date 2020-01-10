@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildStrategy
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../bsicommon/build/BuildStrategy.xsd"
+    >
+
+    <ImportStrategy Name="iModelCore"/>
+
+    <!-- The point of this strategy is to analyze tests, so override iModelCore and don't defer the test parts. -->
+    <DeferStrategy Name="*" BuildPass="0"/>
+
+    <DefaultTarget
+        Repository="iModel02"
+        PartFile="TestingScripts/Coverage/Coverage"
+        PartName="iModelCore-CodeCoverage"
+        Platform="x64"
+        OnlyPlatforms="x64"
+        />
+
+    <PartStrategy PartFile="Coverage" PartName="*" BuildFromSource="Once"/>
+
+</BuildStrategy>
