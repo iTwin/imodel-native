@@ -1,6 +1,6 @@
 # @bentley/imodeljs-native
 
-Copyright © 2019 Bentley Systems, Incorporated. All rights reserved.
+Copyright © 2019-2020 Bentley Systems, Incorporated. All rights reserved.
 
 ## Description
 
