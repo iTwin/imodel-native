@@ -129,7 +129,6 @@ BentleyStatus ORDBridge::_Initialize(int argc, WCharCP argv[])
         m_params.SetDoRealityDataUpload(true);
         }
 
-    m_params.SetDoTerrainModelConversion(false); // DO NOT COMMIT!
     m_params.SetWantThumbnails(true);
 
     BentleyApi::BeFileName configFileName = m_params.GetAssetsDir();
