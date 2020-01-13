@@ -9,13 +9,15 @@
 #include "DgnPlatformHelpers.h"
 #include <WebServices/iModelHub/Client/ClientHelper.h>
 #include <WebServices/Connect/SimpleConnectTokenProvider.h>
-#include <WebServices/Localhost/LocalhostStorageClient.h>
+#include <WebServices/iModelBank/LocalhostStorageClient.h>
 #include <Bentley/BeTest.h>
 #include <Bentley/BeStringUtilities.h>
+#include <Bentley/Base64Utilities.h>
 #include <BeHttp/ProxyHttpHandler.h>
 #include "../../../iModelHubClient/Utils.h"
 #include "Oidc/OidcSignInManager.h"
 #include "../Integration/RequestVerifyHttpHandler.h"
+#include "CodesHelpers.h"
 
 USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_IMODELHUB
@@ -66,8 +68,8 @@ namespace iModelHubHelpers
         bool isiModelBank = IntegrationTestsSettings::Instance().IsiModelBank();
         if (isiModelBank)
             {
-            auto handler = std::make_shared<RequestVerifyHttpHandler>(ProxyHttpHandler::GetFiddlerProxyIfReachable());
-            client = Client::Create(IntegrationTestsSettings::Instance().GetClientInfo(), handler, IntegrationTestsSettings::Instance().GetServerUrl().c_str(), ResolveStorageClientFactory());
+            Utf8String token = BentleyApi::Base64Utilities::Encode(BentleyApi::Utf8PrintfString("%s:%s", credentials.GetUsername().c_str(), credentials.GetPassword().c_str()));
+            client = ClientHelper::GetInstance()->SignInToiModelBank(Utf8PrintfString("Basic %s", token.c_str()), ResolveStorageClientFactory());
             }
         else
             {
@@ -75,11 +77,6 @@ namespace iModelHubHelpers
             }
         ASSERT_TRUE(client.IsValid()) << error.GetMessage().c_str();
         ASSERT_TRUE(!Utf8String::IsNullOrEmpty(client->GetServerUrl().c_str()));
-        if (isiModelBank)
-            {
-            client->SetCredentials(credentials);
-            client->DisableCompression();
-            }
         }
 
     /*--------------------------------------------------------------------------------------+
@@ -661,7 +658,7 @@ namespace iModelHubHelpers
         DgnModelPtr model = CreateModel(Utf8GuidString("AddChangeSetsModel_%s").c_str(), briefcase.GetDgnDb());
         for (uint32_t i = startingNumber; i < startingNumber + count; ++i)
             {
-            CreateElement(*model, Dgn::DgnCode(), true, categoryName);
+            CreateElement(*model, CreateElementCode(briefcase.GetDgnDb(), Utf8GuidString("AddChangeSetsElement_%s")), true, categoryName);
             ChangeSetsResult result = PullMergeAndPush(briefcase, expectSuccess, false, true, expectSuccess);
             if (!result.IsSuccess())
                 {

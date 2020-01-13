@@ -89,6 +89,9 @@ public:
     //! Create a client that always uses the same authorizationHeader
     IMODELHUBCLIENT_EXPORT iModel::Hub::ClientPtr SignInWithStaticHeader(Utf8StringCR authorizationHeader);
 
+    //! Create a client that always uses the same authorizationHeader and sets up some values required for iModelBank
+    IMODELHUBCLIENT_EXPORT iModel::Hub::ClientPtr SignInToiModelBank(Utf8StringCR authorizationHeader, IAzureBlobStorageClientFactory storageClientFactory = AzureBlobStorageClient::Factory);
+
     //! Get Connect sign in manager for iModelBridge use case.
     IMODELHUBCLIENT_EXPORT IConnectSignInManagerPtr GetConnectSignInManager() const;
     

@@ -108,6 +108,16 @@ ClientPtr ClientHelper::SignInWithStaticHeader(Utf8StringCR authorizationHeader)
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Karolis.Dziedzelis              01/20
++---------------+---------------+---------------+---------------+---------------+------*/
+ClientPtr ClientHelper::SignInToiModelBank(Utf8StringCR authorizationHeader, IAzureBlobStorageClientFactory storageClientFactory)
+    {
+    ClientPtr client = Client::Create(m_clientInfo, StaticAuthenticationHandler::Create(authorizationHeader, m_customHandler), GetUrl().c_str(), storageClientFactory);
+    client->DisableCompression();
+    return client;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClientPtr ClientHelper::SignInWithCredentials(AsyncError* errorOut, Credentials credentials)

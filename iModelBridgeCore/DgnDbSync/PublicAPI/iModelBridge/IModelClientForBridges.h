@@ -116,12 +116,13 @@ struct IMODEL_BRIDGE_FWK_EXPORT IShutdownIModelServer
 // ========================================================================================================
 struct IMODEL_BRIDGE_FWK_EXPORT IModelBankClient : IModelClientBase, IShutdownIModelServer
     {
+	Utf8String m_contextId;
     Utf8String m_iModelId;
 
     IModelBankClient(iModelBridgeFwk::IModelBankArgs const&, WebServices::ClientInfoPtr ci);
 
     iModel::Hub::iModelInfoPtr GetIModelInfo() override;
-    void SetUrlAndAccessToken(iModelBridgeFwk::IModelBankArgs const&);
+    virtual Utf8String GetProjectId() const override { return m_contextId; }
 
     BentleyStatus Shutdown() override;
     };

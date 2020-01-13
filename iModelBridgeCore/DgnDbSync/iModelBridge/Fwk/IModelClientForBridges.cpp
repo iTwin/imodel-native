@@ -8,6 +8,8 @@
 #include <WebServices/Connect/ConnectSignInManager.h>
 #include <WebServices/Configuration/UrlProvider.h>
 #include <Bentley/Base64Utilities.h >
+#include <WebServices/iModelBank/LocalhostStorageClient.h>
+#include <WebServices/Azure/AzureBlobStorageClient.h>
 
 #include "OidcSignInManager.h"
 
@@ -40,24 +42,33 @@ IModelClientBase::IModelClientBase(WebServices::ClientInfoPtr info, uint8_t maxR
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Karolis.Dziedzelis              01/20
++---------------+---------------+---------------+---------------+---------------+------*/
+IAzureBlobStorageClientFactory GetStorageFactory(Utf8StringCR storageType)
+    {
+    if (storageType == "localhost")
+        return iModel::Hub::LocalhostStorageClient::Factory;
+    return iModel::Hub::AzureBlobStorageClient::Factory;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 IModelBankClient::IModelBankClient(iModelBridgeFwk::IModelBankArgs const& args, WebServices::ClientInfoPtr info) : 
     IModelClientBase(info, args.m_maxRetryCount, args.m_maxRetryWait, WebServices::UrlProvider::Environment::Release, INT64_MAX),
     m_iModelId(args.m_iModelId)
     {
-    SetUrlAndAccessToken(args);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      03/19
-+---------------+---------------+---------------+---------------+---------------+------*/
-void IModelBankClient::SetUrlAndAccessToken(iModelBridgeFwk::IModelBankArgs const& args)
-    {
     ClientHelper::GetInstance()->SetUrl(args.m_url);
-    m_client = ClientHelper::GetInstance()->SignInWithStaticHeader(args.m_accessToken);
-    auto atok = Base64Utilities::Decode(args.m_accessToken);
-    GetLogger().infov("IModelBankClient accessToken=%s", atok.c_str());
+    if (Utf8String::IsNullOrEmpty(args.m_contextId.c_str()))
+        {
+        m_contextId = args.m_iModelId;
+        m_client = ClientHelper::GetInstance()->SignInWithStaticHeader(args.m_accessToken);
+        }
+    else
+        {
+        m_contextId = args.m_contextId;
+        m_client = ClientHelper::GetInstance()->SignInToiModelBank(args.m_accessToken, GetStorageFactory(args.m_storageType));
+        }
     ClientHelper::GetInstance()->SetUrl("");
     }
 
@@ -172,7 +183,7 @@ BentleyStatus IModelHubClient::DeleteRepository()
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModel::Hub::iModelInfoPtr IModelBankClient::GetIModelInfo()
     {
-    auto result = m_client->GetiModelById(m_iModelId.c_str(), m_iModelId.c_str())->GetResult();
+    auto result = m_client->GetiModelById(m_contextId, m_iModelId.c_str())->GetResult();
     if (result.IsSuccess())
         return result.GetValue();
     
@@ -357,7 +368,7 @@ static ChangeSetsResult tryPullAndMergeSchemaRevisions(Dgn::DgnDbPtr& db, iModel
 
     auto downloadedChangeSets = downloadChangeSetsResult.GetValue();
 
-    // Close briefcase, dgndb,…
+    // Close briefcase, dgndb,...
     briefcase = nullptr;
     db->CloseDb();
 

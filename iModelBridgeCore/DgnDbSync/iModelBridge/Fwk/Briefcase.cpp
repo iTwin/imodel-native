@@ -280,7 +280,9 @@ void iModelBridgeFwk::IModelBankArgs::PrintUsage()
     fwprintf(stderr, L"\n\
 iModelBank:\n\
     --imodel-bank-url=                          (required) The URL of the iModelBank server to use.\n\
-    --imodel-bank-imodel-id=                    (required) The GUID of the iModel that is served by the bank at the specified URL.\n\
+    --imodel-bank-imodel-id=                    (required) The GUID of the iModel to use.\n\
+    --imodel-bank-context-id=                   (required) The GUID of the context to use.\n\
+    --imodel-bank-storage-type=                 (required) The type of storage iModelBank uses (azure, localhost).\n\
     --imodel-bank-access-token=                 (optional) The JSON-encoded user access token, if needed by the project mgmt system.\n\
     --imodel-bank-retries=                      (optional) The number of times to retry a pull, merge, and/or push to iModelBank. Must be a value between 0 and 255.\n\
     --imodel-bank-max-retry-wait=               (optional) The maximum number of seconds to wait when retrying a pull, merge, and/or push to iModelBank (actual wait is randomized). Must be a value between 0 and 255.\n\
@@ -344,6 +346,18 @@ BentleyStatus iModelBridgeFwk::IModelBankArgs::ParseCommandLine(bvector<WCharCP>
         if (argv[iArg] == wcsstr(argv[iArg], L"--imodel-bank-imodel-id="))
             {
             m_iModelId = getArgValue(argv[iArg]);
+            continue;
+            }
+
+        if (argv[iArg] == wcsstr(argv[iArg], L"--imodel-bank-context-id="))
+            {
+            m_contextId = getArgValue(argv[iArg]);
+            continue;
+            }
+
+        if (argv[iArg] == wcsstr(argv[iArg], L"--imodel-bank-storage-type="))
+            {
+            m_storageType = getArgValue(argv[iArg]);
             continue;
             }
 

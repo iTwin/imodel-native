@@ -190,6 +190,8 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         uint8_t m_maxRetryWait = 5;  //!< The maximum number of seconds to wait during retries (each retry waits randomly between 0 and this maximum).
         Utf8String m_url;            //!< Where the iModelBank server is 
         Utf8String m_iModelId;       //!< The GUID of the iModel that the bank serves. This is used to name to local briefcase and as a means of checking that the URL is correct.
+        Utf8String m_contextId;      //!< The GUID of the context for the iModel.
+        Utf8String m_storageType;    //!< Storage type used in iModelBank.
         Utf8String m_accessToken;    //!< The token that identifies the user and the user's rights in this environment. (Is passed in http headers as the authorization property.)
         Utf8String m_iModelName;     //!< Optional. Friendly name of the iModel. Returned by GetBriefcaseBasename
         bvector<WString> m_bargs;

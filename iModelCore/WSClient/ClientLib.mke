@@ -30,7 +30,7 @@ always:
 %include Configuration/Configuration.mki
 %include Connect/Connect.mki
 %include Licensing/Licensing.mki
-%include Localhost/Localhost.mki
+%include iModelBank/iModelBank.mki
 %include Ims/Ims.mki
 
 %include MultiCppCompileGo.mki
