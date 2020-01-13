@@ -53,7 +53,13 @@ DgnDbStatus iModelBridgeSyncInfoFile::ChangeDetector::InsertResultsIntoBIM(Conve
         if (DgnDbStatus::Success != status)
             return status;
         }
-    conversionResults.m_syncInfoRecord.m_ROWID = conversionResults.m_element->GetElementId().GetValue();
+
+    conversionResults.m_syncInfoRecord.m_elementId = conversionResults.m_element->GetElementId();
+
+    auto xsas = iModelExternalSourceAspect::GetAllByKind(*conversionResults.m_element, conversionResults.m_syncInfoRecord.GetSourceIdentity().GetKind().c_str());
+    if (xsas.size() != 0)
+        conversionResults.m_syncInfoRecord.m_externalSourceAspectInstanceId = xsas[0].GetECInstanceId();
+
     return DgnDbStatus::Success;
     }
 
@@ -246,17 +252,6 @@ DgnDbStatus     iModelBridgeSyncInfoFile::ChangeDetector::AddProvenanceAspect(iM
     return aspect.AddAspect(element);
     }
 
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Bentley.Systems
-//---------------------------------------------------------------------------------------
-iModelBridgeSyncInfoFile::ChangeDetector::Results iModelBridgeSyncInfoFile::InitialConversionChangeDetector::_DetectChange(ROWID scope, Utf8CP kind, ISourceItem& item, T_Filter* filter, bool)
-    {
-    Results res;
-    auto sid = SourceIdentity(scope, kind, item._GetId());
-    SourceState currentState(item._GetLastModifiedTime(), item._GetHash());
-    return Results(sid, currentState);
-    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -368,9 +363,6 @@ BentleyStatus iModelBridgeSyncInfoFile::ChangeDetector::_UpdateBimAndSyncInfo(Co
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelBridgeSyncInfoFile::ChangeDetectorPtr iModelBridgeSyncInfoFile::GetChangeDetectorFor(iModelBridge& bridge)
     {
-    if (!bridge.GetParamsCR().IsUpdating())
-        return new InitialConversionChangeDetector(*m_bim);
-
     return new ChangeDetector(*m_bim, bridge._GetParams().IgnoreStaleFiles());
     }
 
@@ -395,7 +387,7 @@ iModelBridgeSyncInfoFile::ChangeDetector::Results iModelBridgeSyncInfoFile::Chan
                 //if ((nullptr != filter) && !(*filter)(rec, m_si))
                 //    continue;
             
-                Record rec(ROWID(scope), idVals.elementId , sid, aspect.GetSourceState());
+                Record rec(idVals.elementId, sid, aspect.GetSourceState(), aspect.GetECInstanceId());
                 double lmt = item._GetLastModifiedTime();
                 if (!forceChange && (0 != lmt))
                     {
@@ -428,7 +420,7 @@ iModelBridgeSyncInfoFile::ChangeDetector::Results iModelBridgeSyncInfoFile::Chan
                 //Record rec = i.GetRecord();
                 //if ((nullptr != filter) && !(*filter)(rec, m_si))
                 //    return Results(sid, currentState);    // We have it, but the filter rejected it. We have to treat it as new
-                Record rec(ROWID(scope), idVals.elementId, sid, aspect.GetSourceState());
+                Record rec(idVals.elementId, sid, aspect.GetSourceState(), aspect.GetECInstanceId());
                 return Results(forceChange ? ChangeType::Changed : ChangeType::Unchanged, rec, currentState);
                 }//Fall through it is new
             }

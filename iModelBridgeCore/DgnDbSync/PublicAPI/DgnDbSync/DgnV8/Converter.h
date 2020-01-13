@@ -861,14 +861,13 @@ struct Converter
         L10N_STRING(STEP_CREATE_IMODEL)                // =="Creating .imodel File"==
         L10N_STRING(STEP_CREATE_THUMBNAILS)            // =="Creating Thumbnails"==
         L10N_STRING(STEP_CREATE_REALITY_MODEL_TILES)   // =="Creating Reality Model Tiles"==
-        L10N_STRING(STEP_CREATING)                     // =="Creating DgnDb [%s]"==
+        L10N_STRING(STEP_FINDING_MODELS)               // =="Finding Models in [%s]"==
         L10N_STRING(STEP_EMBED_FILES)                  // =="Embedding Files"==
         L10N_STRING(STEP_EMBED_FONTS)                  // =="Embedding Fonts"==
         L10N_STRING(STEP_IMPORT_SCHEMAS)               // =="Importing Schemas"==
         L10N_STRING(STEP_DISCOVER_ECSCHEMAS)           // =="Detecting ECClasses"==
         L10N_STRING(STEP_CREATE_CLASS_VIEWS)           // =="Creating ECClass Views"==
         L10N_STRING(STEP_MERGING_MODELS)               // =="Merging Models"==
-        L10N_STRING(STEP_UPDATING)                     // =="Updating DgnDb"==
         L10N_STRING(TASK_CONVERTING_MODEL)             // =="Model: %s"==
         L10N_STRING(TASK_CONVERTING_SHEET_ATTACHMENTS) // =="Sheet: %s"==
         L10N_STRING(TASK_CREATING_THUMBNAIL)           // =="View: %s"==

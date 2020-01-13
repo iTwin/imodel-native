@@ -208,6 +208,13 @@ BentleyStatus iModelBridgeSacAdapter::CreateOrUpdateBim(iModelBridge& bridge, Pa
         bool hasMoreChanges = false;
         do {
             bridge._MakeSchemaChanges(hasMoreChanges);
+
+            auto dbres = db->SaveChanges(); 
+            if (BeSQLite::BE_SQLITE_OK != dbres)
+                {
+                LOG.fatalv("Db::SaveChanges called after _MakeSchemaChanges failed with status %d", dbres); 
+                return BentleyStatus::ERROR;
+                }
         } while (hasMoreChanges);
 
         bool madeDynamicSchemaChanges = db->Txns().HasChanges(); // see if _MakeSchemaChanges made any changes.

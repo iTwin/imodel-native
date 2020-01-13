@@ -597,20 +597,22 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
       private:
         friend struct iModelBridgeSyncInfoFile;
 
-        ROWID m_ROWID;
+        BeSQLite::EC::ECInstanceId m_externalSourceAspectInstanceId;
         DgnElementId m_elementId;
         SourceIdentity m_sourceId;
         SourceState m_sourceState;
 
       public:
-        Record() : m_ROWID(0), m_sourceState(0, "") {}
-        Record(ROWID rid, DgnElementId eid, SourceIdentity const& sid, SourceState const& sstate) : 
-            m_ROWID(rid), m_elementId(eid), m_sourceId(sid), m_sourceState(sstate) {}
+        Record() : m_sourceState(0, "") {}
+        Record(DgnElementId eid, SourceIdentity const& sid, SourceState const& sstate, BeSQLite::EC::ECInstanceId aspectInstanceId) : 
+            m_elementId(eid), m_sourceId(sid), m_sourceState(sstate), m_externalSourceAspectInstanceId(aspectInstanceId) {}
 
         //! Query if this record is valid
-        bool IsValid() const {return 0 != m_ROWID;}
-        //! Item's ROWID in SyncInfo
-        ROWID GetROWID() const {return m_ROWID;}
+        bool IsValid() const {return GetDgnElementId().IsValid();}
+        //! @deprecated There is no longer a separate syncinfo record with its own ROWID. An element's "syncinfo" is stored in an ExternalSourceAspect that is owned by the element.
+        ROWID GetROWID() const {return GetDgnElementId().GetValue();}
+        //! Get the ECInstanceId of the ExternalSourceAspect that stores this syncinfo
+        BeSQLite::EC::ECInstanceId GetExternalSourceAspectInstanceId() {return m_externalSourceAspectInstanceId;}
         //! The element to which this record is mapped
         DgnElementId GetDgnElementId() const {return m_elementId;}
         //! SourceIdentity
@@ -746,19 +748,6 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
         void DeleteElementsNotSeenInScope(ROWID onlyInScope) {bvector<ROWID> scopes; scopes.push_back(onlyInScope); _DeleteElementsNotSeenInScopes(scopes);}
         };
 
-    //! A ChangeDetector that can be used in the initial conversion, where all source items are new.
-    struct InitialConversionChangeDetector : ChangeDetector
-        {
-        IMODEL_BRIDGE_EXPORT Results _DetectChange(ROWID scope, Utf8CP kind, ISourceItem& item, T_Filter* filter = nullptr, bool forceChange = false) override;
-        void _OnScopeSkipped(ROWID srid) override {BeAssert(false);}//! Nothing should be skipped -- all content goes into the intial conversion. 
-        void _OnElementSeen(DgnElementId) override {}               //! No need to keep a list of elements 
-        void _DeleteElementsNotSeenInScopes(bvector<iModelBridgeSyncInfoFile::ROWID> const&) override {}                   //! There will be no deletions
-
-        //! Construct a change detector that can be used efficiently by a converter that is doing an initial conversion, such that all items are new to the BIM.
-        //! @note You should generally call iModelSyncInfoFile::GetChangeDetectorFor to get a change detector.
-        InitialConversionChangeDetector(DgnDbR db) : ChangeDetector(db, false) {}
-        };
-
     typedef RefCountedPtr<ChangeDetector> ChangeDetectorPtr;
 
   protected:
@@ -846,7 +835,38 @@ public:
     //! @param knownUrn Optional. The URN of the master document. Defaults to "".
     //! @return the resulting RepositoryLink Element and corresponding SyncInfo record
     //! @see GetAllDocumentGuidsInSyncInfo, DeleteAllItemsFromDocumentInSyncInfo
-    IMODEL_BRIDGE_EXPORT iModelBridgeSyncInfoFile::ConversionResults RecordDocument(iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, 
+    IMODEL_BRIDGE_EXPORT iModelBridgeSyncInfoFile::ConversionResults RecordDocument(iModelBridgeSyncInfoFile::ChangeDetector& changeDetector,
+                                                                BeFileNameCR fileName = BeFileName(), iModelBridgeSyncInfoFile::SourceState const* sstate = nullptr,
+                                                                Utf8CP kind = "DocumentWithBeGuid", iModelBridgeSyncInfoFile::ROWID srid = iModelBridgeSyncInfoFile::ROWID(),
+                                                                Utf8StringCR knownUrn = Utf8String());
+
+    //! Convenience method to insert or update a RepositoryLink element in the BIM to represent a source document, and to insert or update a record in syncinfo to track it. 
+    //! Calls GetSourceItemForDocument and then uses the supplied ChangeDetector to write the item to syncinfo.
+    //! The 'changeDetectionResults' output argument allws you to detect if the RepositoryLink element was already present in the iModel and is unchanged.
+    //! If so, you may be able to skip everything in the document. In that case and if the RepositoryLink element is used as a scope, be sure to mark it as skipped.
+    //! <pre>
+    //!   iModelBridgeSyncInfoFile::ChangeDetector::Results changeDetectionResults;
+    //!   iModelBridgeSyncInfoFile::ConversionResults docLink = RecordDocument(changeDetectionResults, *changeDetector);
+    //!   m_fileScopeId = docLink.m_syncInfoRecord.GetROWID();
+    //!   if (_GetParams().IsUpdating() && (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Unchanged == changeDetectionResults.GetChangeType()))
+    //!      {
+    //!      // The file's last-modified time has not changed since the last time the bridge ran. So, don't bother processing the items in it.
+    //!      changeDetector->_OnScopeSkipped(m_fileScopeId);      // Tell the change-detector to skip all items that are scoped to this document.
+    //!      return;
+    //!      }
+    //! </pre>
+    //! @param changeDetectionResults The returned status of the RepositoryLink element. 
+    //! @param changeDetector The change detector
+    //! @param fileName Optional. The local filename of the document. If not supplied, this defaults to the input filename.
+    //! @param sstate Optional. If specified, the state of the document. If not specified, the state defaults to an empty hash and the last modified time of the file.
+    //! @param kind Optional. The document kind. Defaults to "DocumentWithBeGuid"
+    //! @param srid Optional. The document scope. Defaults to 0
+    //! @param knownUrn Optional. The URN of the master document. Defaults to "".
+    //! @return the resulting RepositoryLink Element and corresponding SyncInfo record
+    //! @see GetAllDocumentGuidsInSyncInfo, DeleteAllItemsFromDocumentInSyncInfo
+    IMODEL_BRIDGE_EXPORT iModelBridgeSyncInfoFile::ConversionResults RecordDocument(
+                                                                iModelBridgeSyncInfoFile::ChangeDetector::Results& changeDetectionResults,
+                                                                iModelBridgeSyncInfoFile::ChangeDetector& changeDetector,
                                                                 BeFileNameCR fileName = BeFileName(), iModelBridgeSyncInfoFile::SourceState const* sstate = nullptr,
                                                                 Utf8CP kind = "DocumentWithBeGuid", iModelBridgeSyncInfoFile::ROWID srid = iModelBridgeSyncInfoFile::ROWID(),
                                                                 Utf8StringCR knownUrn = Utf8String());

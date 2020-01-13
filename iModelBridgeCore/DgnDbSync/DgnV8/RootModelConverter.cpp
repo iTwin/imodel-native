@@ -802,8 +802,7 @@ SubjectCPtr SpatialConverterBase::GetOrCreateModelSubject(SubjectCR parent, Utf8
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RootModelConverter::_ConvertModels()
     {
-    SetStepName(IsUpdating() ? Converter::ProgressMessage::STEP_UPDATING() :
-                Converter::ProgressMessage::STEP_CREATING(), Utf8String(GetDgnDb().GetFileName()).c_str());
+    SetStepName(Converter::ProgressMessage::STEP_FINDING_MODELS(), Utf8String(GetDgnDb().GetFileName()).c_str());
 
     if (nullptr != m_rootModelRef && m_isRootModelSpatial)
         {

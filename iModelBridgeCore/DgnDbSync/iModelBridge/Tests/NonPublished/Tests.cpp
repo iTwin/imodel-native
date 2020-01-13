@@ -800,9 +800,11 @@ void iModelBridgeTests_Test1_Bridge::DoConvertToBim(SubjectCR jobSubject)
         }
 
     iModelBridgeSyncInfoFile::ChangeDetectorPtr changeDetector = GetSyncInfo().GetChangeDetectorFor(*this);
-
-    iModelBridgeSyncInfoFile::ConversionResults docLink = RecordDocument(*changeDetector, _GetParams().GetInputFileName(), nullptr,
+    iModelBridgeSyncInfoFile::ChangeDetector::Results change;
+    iModelBridgeSyncInfoFile::ConversionResults docLink = RecordDocument(change, *changeDetector, _GetParams().GetInputFileName(), nullptr,
         "DocumentWithBeGuid", iModelBridgeSyncInfoFile::ROWID(jobSubject.GetElementId().GetValue()));
+
+    ASSERT_EQ(iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Unchanged, change.GetChangeType());
 
     m_docScopeId = docLink.m_element->GetElementId().GetValue();
 

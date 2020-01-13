@@ -95,7 +95,8 @@ void iModelBridgeWithSyncInfoBase::_OnCloseBim(BentleyStatus status, iModelBridg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-iModelBridgeSyncInfoFile::ConversionResults iModelBridgeWithSyncInfoBase::RecordDocument(iModelBridgeSyncInfoFile::ChangeDetector& changeDetector,
+iModelBridgeSyncInfoFile::ConversionResults iModelBridgeWithSyncInfoBase::RecordDocument(iModelBridgeSyncInfoFile::ChangeDetector::Results& change,
+                                                                    iModelBridgeSyncInfoFile::ChangeDetector& changeDetector,
                                                                      BeFileNameCR fileNameIn, iModelBridgeSyncInfoFile::SourceState const* sstateIn,
                                                                      Utf8CP kind, iModelBridgeSyncInfoFile::ROWID srid, Utf8StringCR knownUrn)
     {
@@ -138,7 +139,7 @@ iModelBridgeSyncInfoFile::ConversionResults iModelBridgeWithSyncInfoBase::Record
     //  Write the item to syncinfo, and write the RepositoryLink Element to the BIM
     DocSourceItem docItem(results.m_element->GetCode(), sstate);
 
-    auto change = changeDetector._DetectChange(srid, kind, docItem);
+    change = changeDetector._DetectChange(srid, kind, docItem);
     changeDetector._UpdateBimAndSyncInfo(results, change);
  
     if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Unchanged != change.GetChangeType())
@@ -151,6 +152,17 @@ iModelBridgeSyncInfoFile::ConversionResults iModelBridgeWithSyncInfoBase::Record
         }
 
     return results;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+iModelBridgeSyncInfoFile::ConversionResults iModelBridgeWithSyncInfoBase::RecordDocument(iModelBridgeSyncInfoFile::ChangeDetector& changeDetector,
+                                                                     BeFileNameCR fileNameIn, iModelBridgeSyncInfoFile::SourceState const* sstateIn,
+                                                                     Utf8CP kind, iModelBridgeSyncInfoFile::ROWID srid, Utf8StringCR knownUrn)
+    {
+    iModelBridgeSyncInfoFile::ChangeDetector::Results change;
+    return RecordDocument(change, changeDetector, fileNameIn, sstateIn, kind, srid, knownUrn);
     }
 
 /*---------------------------------------------------------------------------------**//**
