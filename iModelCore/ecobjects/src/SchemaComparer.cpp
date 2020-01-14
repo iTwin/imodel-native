@@ -516,13 +516,17 @@ BentleyStatus SchemaComparer::Compare(SchemaDiff& diff, bvector<ECN::ECSchemaCP>
             }
         else
             {
+            LOG.errorv("Failed to compare %s because it was not found in either set of schemas", schemaName);
             BeAssert(false);
             return ERROR;
             }
 
         RefCountedPtr<SchemaChange> schemaChange = diff.Changes().CreateElement(opCode, ECChange::Type::Schema, schemaName);
         if (SUCCESS != CompareSchema(*schemaChange, oldSchema, newSchema))
+            {
+            LOG.errorv("The schema comparison for %s failed.", schemaName);
             return ERROR;
+            }
 
         diff.Changes().Add(schemaChange);
         }
@@ -550,33 +554,66 @@ BentleyStatus SchemaComparer::CompareSchema(SchemaChange& change, ECSchemaCP old
     change.OriginalECXmlVersionMinor().Set(oldSchema.OriginalECXmlVersionMinor(), newSchema.OriginalECXmlVersionMinor());
 
     if (CompareClasses(change.Classes(), oldSchema.Classes(), newSchema.Classes()) != SUCCESS)
+        {
+        LOG.errorv("Class comparison for schema %s failed", change.GetChangeName());
         return ERROR;
+        }
 
     if (CompareEnumerations(change.Enumerations(), oldSchema.Enumerations(), newSchema.Enumerations()) != SUCCESS)
+        {
+        LOG.errorv("Enumeration comparison for schema %s failed", change.GetChangeName());
         return ERROR;
+        }
 
     if (CompareKindOfQuantities(change.KindOfQuantities(), oldSchema.KindOfQuantities(), newSchema.KindOfQuantities()) != SUCCESS)
+        {
+        LOG.errorv("KindOfQuantity comparison for schema %s failed", change.GetChangeName());
         return ERROR;
+        }
 
     if (ComparePropertyCategories(change.PropertyCategories(), oldSchema.PropertyCategories(), newSchema.PropertyCategories()) != SUCCESS)
+        {
+        LOG.errorv("PropertyCategory comparison for schema %s failed", change.GetChangeName());
         return ERROR;
+        }
 
     if (ComparePhenomena(change.Phenomena(), oldSchema.Phenomena(), newSchema.Phenomena()) != SUCCESS)
+        {
+        LOG.errorv("Phenomenon comparison for schema %s failed", change.GetChangeName());
         return ERROR;
+        }
 
     if (CompareUnitSystems(change.UnitSystems(), oldSchema.UnitSystems(), newSchema.UnitSystems()) != SUCCESS)
+        {
+        LOG.errorv("UnitSystem comparison for schema %s failed", change.GetChangeName());
         return ERROR;
+        }
 
     if (CompareUnits(change.Units(), oldSchema.Units(), newSchema.Units()) != SUCCESS)
+        {
+        LOG.errorv("Unit comparison for schema %s failed", change.GetChangeName());
         return ERROR;
+        }
 
     if (SUCCESS != CompareFormats(change.Formats(), oldSchema.Formats(), newSchema.Formats()))
+        {
+        LOG.errorv("Format comparison for schema %s failed", change.GetChangeName());
         return ERROR;
+        }
 
     if (CompareReferences(change.References(), oldSchema.References(), newSchema.References()) != SUCCESS)
+        {
+        LOG.errorv("Schema Reference comparison for schema %s failed", change.GetChangeName());
         return ERROR;
+        }
 
-    return CompareCustomAttributes(change.CustomAttributes(), oldSchema.CustomAttributes(), newSchema.CustomAttributes());
+    if (CompareCustomAttributes(change.CustomAttributes(), oldSchema.CustomAttributes(), newSchema.CustomAttributes()) != SUCCESS)
+        {
+        LOG.errorv("CustomAttribute comparison for schema %s failed", change.GetChangeName());
+        return ERROR;
+        }
+    
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -594,6 +631,7 @@ BentleyStatus SchemaComparer::CompareReferences(SchemaReferenceChanges& changes,
             const Utf8String fullname = kvPair.second->GetFullSchemaName();
             if (!oldReferences.insert(make_bpair(name, fullname)).second)
                 {
+                LOG.errorv("Schema Reference comparison failed because multiple schema references for %s were found in the old schema.", name.c_str());
                 BeAssert(false && "Multiple version of same referenced schema is not supported");
                 return ERROR;
                 }
@@ -610,6 +648,7 @@ BentleyStatus SchemaComparer::CompareReferences(SchemaReferenceChanges& changes,
             const Utf8String fullname = kvPair.second->GetFullSchemaName();
             if (!newReferences.insert(make_bpair(name, fullname)).second)
                 {
+                LOG.errorv("Schema Reference comparison failed because multiple schema references for %s were found in the new schema.", name.c_str());
                 BeAssert(false && "Multiple version of same referenced schema is not supported");
                 return ERROR;
                 }
@@ -653,13 +692,17 @@ BentleyStatus SchemaComparer::CompareReferences(SchemaReferenceChanges& changes,
             }
         else
             {
+            LOG.errorv("Schema Reference comparison failed because no schema reference was found for %s though the schema was expected in one of the schemas.", schemaName.c_str());
             BeAssert(false);
             return ERROR;
             }
 
         RefCountedPtr<StringChange> change = changes.CreateElement(opCode, ECChange::Type::SchemaReference, schemaName.c_str());
         if (SUCCESS != change->Set(oldRef, newRef))
+            {
+            LOG.errorv("Schema Reference comparison failed because the change object could not be created for %s.", schemaName.c_str());
             return ERROR;
+            }
 
         changes.Add(change);
         }
@@ -724,13 +767,17 @@ BentleyStatus SchemaComparer::CompareClasses(ClassChanges& changes, ECClassConta
             }
         else
             {
+            LOG.errorv("Class comparison failed because no class was found for %s though the class was expected in one of the schemas.", className);
             BeAssert(false);
             return ERROR;
             }
 
         RefCountedPtr<ClassChange> classChange = changes.CreateElement(opCode, ECChange::Type::Class, className);
         if (SUCCESS != CompareClass(*classChange, oldClass, newClass))
+            {
+            LOG.errorv("Class comparison for class %s", className);
             return ERROR;
+            }
 
         changes.Add(classChange);
         }
@@ -758,19 +805,37 @@ BentleyStatus SchemaComparer::CompareClass(ClassChange& change, ECClassCP oldVal
         change.StrengthDirection().Set(oldClass.RelationStrengthDirection(), newClass.RelationStrengthDirection());
 
         if (CompareRelationshipConstraint(change.Source(), oldClass.RelationSource(), newClass.RelationSource()) != SUCCESS)
+            {
+            LOG.errorv("Source Relationship Constraint comparison failed for class %s", change.GetChangeName());
             return ERROR;
+            }
 
         if (CompareRelationshipConstraint(change.Target(), oldClass.RelationTarget(), newClass.RelationTarget()) != SUCCESS)
+            {
+            LOG.errorv("Target Relationship Constraint comparison failed for class %s", change.GetChangeName());
             return ERROR;
+            }
         }
 
     if (CompareBaseClasses(change.BaseClasses(), oldClass.BaseClasses(), newClass.BaseClasses()) != SUCCESS)
+        {
+        LOG.errorv("Base Class comparison failed for class %s", change.GetChangeName());
         return ERROR;
+        }
 
     if (CompareProperties(change.Properties(), oldClass.Properties(), newClass.Properties()) != SUCCESS)
+        {
+        LOG.errorv("Property comparison failed for class %s", change.GetChangeName());
         return ERROR;
+        }
 
-    return CompareCustomAttributes(change.CustomAttributes(), oldClass.CustomAttributes(), newClass.CustomAttributes());
+    if (CompareCustomAttributes(change.CustomAttributes(), oldClass.CustomAttributes(), newClass.CustomAttributes()))
+        {
+        LOG.errorv("CustomAttribute comparison failed for class %s", change.GetChangeName());
+        return ERROR;
+        }
+
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -838,7 +903,10 @@ BentleyStatus SchemaComparer::CompareRelationshipConstraint(RelationshipConstrai
     change.Multiplicity().Set(oldConstraint.Multiplicity(), newConstraint.Multiplicity());
 
     if (SUCCESS != CompareRelationshipConstraintClasses(change.ConstraintClasses(), oldConstraint.ConstraintClasses(), newConstraint.ConstraintClasses()))
+        {
+        LOG.errorv("Relationship Constraint Class comparison failed for class %s", change.GetChangeName());
         return ERROR;
+        }
 
     return CompareCustomAttributes(change.CustomAttributes(), oldConstraint.CustomAttributes(), newConstraint.CustomAttributes());
     }
@@ -892,6 +960,7 @@ BentleyStatus SchemaComparer::CompareRelationshipConstraintClasses(RelationshipC
             continue;
         else
             {
+            LOG.errorv("Relationship constraint class comparison because no old or new constraint with name %s was found.", constraintClassName);
             BeAssert(false);
             return ERROR;
             }
@@ -955,13 +1024,17 @@ BentleyStatus SchemaComparer::CompareProperties(PropertyChanges& changes, bvecto
             }
         else
             {
+            LOG.errorv("Property comparison because no old or new property with name %s was found.", propName);
             BeAssert(false);
             return ERROR;
             }
 
         RefCountedPtr<PropertyChange> propertyChange = changes.CreateElement(opCode, ECChange::Type::Property, propName);
         if (SUCCESS != CompareProperty(*propertyChange, oldProp, newProp))
+            {
+            LOG.errorv("Property comparison failed for property %s.", propName);
             return ERROR;
+            }
 
         changes.Add(propertyChange);
         }
@@ -1071,13 +1144,17 @@ BentleyStatus SchemaComparer::CompareEnumerations(EnumerationChanges& changes, E
             }
         else
             {
+            LOG.errorv("Enumeration comparison because no old or new enum with name %s was found.", enumName);
             BeAssert(false);
             return ERROR;
             }
 
         RefCountedPtr<EnumerationChange> enumChange = changes.CreateElement(opCode, ECChange::Type::Enumeration, enumName);
         if (SUCCESS != CompareEnumeration(*enumChange, oldEnum, newEnum))
+            {
+            LOG.errorv("Enumeration comparison failed for enumeration %s.", enumName);
             return ERROR;
+            }
 
         changes.Add(enumChange);
         }
@@ -1149,13 +1226,17 @@ BentleyStatus SchemaComparer::CompareEnumerators(EnumeratorChanges& changes, bve
             }
         else
             {
+            LOG.errorv("Enumerator comparison because no old or new enumerator with name %s was found.", name);
             BeAssert(false);
             return ERROR;
             }
 
         RefCountedPtr<EnumeratorChange> change = changes.CreateElement(opCode, ECChange::Type::Enumerator, name);
         if (SUCCESS != CompareEnumerator(*change, oldEn, newEn))
+            {
+            LOG.errorv("Enumerator comparison failed for enumerator %s.", name);
             return ERROR;
+            }
 
         changes.Add(change);
         }
@@ -1236,13 +1317,17 @@ BentleyStatus SchemaComparer::ComparePropertyCategories(PropertyCategoryChanges&
             }
         else
             {
+            LOG.errorv("Property Category comparison because no old or new category with name %s was found.", catName);
             BeAssert(false);
             return ERROR;
             }
 
         RefCountedPtr<PropertyCategoryChange> change = changes.CreateElement(opCode, ECChange::Type::PropertyCategory, catName);
         if (SUCCESS != ComparePropertyCategory(*change, oldCat, newCat))
+            {
+            LOG.errorv("Property Category comparison failed for category %s.", catName);
             return ERROR;
+            }
 
         changes.Add(change);
         }
@@ -1321,13 +1406,17 @@ BentleyStatus SchemaComparer::CompareKindOfQuantities(KindOfQuantityChanges& cha
             }
         else
             {
+            LOG.errorv("KindOfQuantity comparison because no old or new koq with name %s was found.", koqName);
             BeAssert(false);
             return ERROR;
             }
 
         RefCountedPtr<KindOfQuantityChange> change = changes.CreateElement(opCode, ECChange::Type::KindOfQuantity, koqName);
         if (SUCCESS != CompareKindOfQuantity(*change, oldKoq, newKoq))
+            {
+            LOG.errorv("KindOfQuantity comparison failed for koq %s.", koqName);
             return ERROR;
+            }
 
         changes.Add(change);
         }
@@ -1377,6 +1466,7 @@ BentleyStatus SchemaComparer::CompareKindOfQuantity(KindOfQuantityChange& change
             }
         else
             {
+            LOG.errorv("Unable to compare presentation formats for %s.", change.GetChangeName());
             BeAssert(false);
             return ERROR;
             }
@@ -1446,13 +1536,17 @@ BentleyStatus SchemaComparer::ComparePhenomena(PhenomenonChanges& changes, Pheno
             }
         else
             {
+            LOG.errorv("Phenomenon comparison because no old or new phenomenon with name %s was found.", phName);
             BeAssert(false);
             return ERROR;
             }
 
         RefCountedPtr<PhenomenonChange> change = changes.CreateElement(opCode, ECChange::Type::Phenomenon, phName);
         if (SUCCESS != ComparePhenomenon(*change, oldPh, newPh))
+            {
+            LOG.errorv("Phenomenon comparison failed for koq %s.", phName);
             return ERROR;
+            }
 
         changes.Add(change);
         }
@@ -1529,13 +1623,18 @@ BentleyStatus SchemaComparer::CompareUnitSystems(UnitSystemChanges& changes, Uni
             }
         else
             {
+            LOG.errorv("UnitSystem comparison because no old or new unit system with name %s was found.", usName);
             BeAssert(false);
             return ERROR;
             }
 
         RefCountedPtr<UnitSystemChange> change = changes.CreateElement(opCode, ECChange::Type::UnitSystem, usName);
         if (SUCCESS != CompareUnitSystem(*change, oldUs, newUs))
+            {
+            LOG.errorv("UnitSystem comparison failed for unit system %s.", usName);
             return ERROR;
+            }
+
 
         changes.Add(change);
         }
@@ -1612,13 +1711,17 @@ BentleyStatus SchemaComparer::CompareUnits(UnitChanges& changes, UnitContainerCP
             }
         else
             {
+            LOG.errorv("Unit comparison because no old or new unit with name %s was found.", uName);
             BeAssert(false);
             return ERROR;
             }
 
         RefCountedPtr<UnitChange> change = changes.CreateElement(opCode, ECChange::Type::Unit, uName);
         if (SUCCESS != CompareUnit(*change, oldU, newU))
+            {
+            LOG.errorv("Unit comparison failed for unit %s.", uName);
             return ERROR;
+            }
 
         changes.Add(change);
         }
@@ -1707,13 +1810,17 @@ BentleyStatus SchemaComparer::CompareFormats(FormatChanges& changes, ECN::Format
             }
         else
             {
+            LOG.errorv("Format comparison because no old or new format with name %s was found.", fName);
             BeAssert(false);
             return ERROR;
             }
 
         RefCountedPtr<FormatChange> change = changes.CreateElement(opCode, ECChange::Type::Format, fName);
         if (SUCCESS != CompareFormat(*change, oldF, newF))
+            {
+            LOG.errorv("Format comparison failed for format %s.", fName);
             return ERROR;
+            }
 
         changes.Add(change);
         }
@@ -1733,7 +1840,10 @@ BentleyStatus SchemaComparer::CompareFormat(FormatChange& change, ECN::ECFormatC
     change.Description().Set(oldFormat.Description(), newFormat.Description());
 
     if (SUCCESS != change.NumericSpec().SetFrom(oldFormat.NumericSpec(), newFormat.NumericSpec()))
+        {
+        LOG.errorv("Could not compare Numeric Specification format %s.", change.GetChangeName());
         return ERROR;
+        }
 
     return change.CompositeSpec().SetFrom(oldFormat.CompositeSpec(), newFormat.CompositeSpec());
     }
@@ -1789,13 +1899,17 @@ BentleyStatus SchemaComparer::CompareCustomAttributes(CustomAttributeChanges& ch
             }
         else
             {
+            LOG.errorv("CustomAttribute comparison because no old or new custom attribute with name %s was found.", caName);
             BeAssert(false);
             return ERROR;
             }
 
         RefCountedPtr<CustomAttributeChange> change = changes.CreateElement(opCode, ECChange::Type::CustomAttribute, caName);
         if (SUCCESS != CompareCustomAttribute(*change, oldCA.get(), newCA.get()))
+            {
+            LOG.errorv("CustomAttribute comparison failed for custom attribute %s.", caName);
             return ERROR;
+            }
 
         changes.Add(change);
         }
@@ -1813,13 +1927,19 @@ BentleyStatus SchemaComparer::CompareCustomAttribute(CustomAttributeChange& chan
     if (oldVal != nullptr)
         {
         if (ConvertECInstanceToValueMap(oldPropValues, *oldVal) != SUCCESS)
+            {
+            LOG.errorv("Unable to convert old custom attribute to value map %s.", change.GetChangeName());
             return ERROR;
+            }
         }
 
     if (newVal != nullptr)
         {
         if (ConvertECInstanceToValueMap(newPropValues, *newVal) != SUCCESS)
+            {
+            LOG.errorv("Unable to convert new custom attribute to value map %s.", change.GetChangeName());
             return ERROR;
+            }
         }
 
     for (bpair<Utf8String, ECValue> const& kvPair : oldPropValues)
@@ -1865,13 +1985,17 @@ BentleyStatus SchemaComparer::CompareCustomAttribute(CustomAttributeChange& chan
             }
         else
             {
+            LOG.errorv("CustomAttribute property value comparison because no old or new value was found with access string %s.", accessString);
             BeAssert(false);
             return ERROR;
             }
 
         RefCountedPtr<PropertyValueChange> pvChange = change.PropValues().CreateElement(opCode, ECChange::Type::PropertyValue, accessString);
         if (SUCCESS != pvChange->Set(oldValue, newValue))
+            {
+            LOG.errorv("Failed to create a change for Custom Attribute property with access string %s.", accessString);
             return ERROR;
+            }
 
         change.PropValues().Add(pvChange);
         }
@@ -1903,7 +2027,7 @@ BentleyStatus SchemaComparer::ConvertECValuesCollectionToValueMap(bmap<Utf8Strin
         if ((*itor).HasChildValues())
             {
             if (ConvertECValuesCollectionToValueMap(map, *(*itor).GetChildValues()) != SUCCESS)
-                return ERROR;
+                return ERROR;   // Add logging message if this method can ever return something besides SUCCESS.
             }
         else
             {
@@ -2078,6 +2202,7 @@ Utf8CP ECChange::TypeToString(Type type)
             case Type::VersionWrite: return "VersionWrite";
         }
 
+    LOG.errorv("Encountered unhandled ECChange Type, %i", type);
     BeAssert(false && "Unhandled Type");
     return "";
     }
@@ -2129,22 +2254,30 @@ BentleyStatus PropertyValueChange::Set(ECValueCR oldValue, ECValueCR newValue)
     const bool bothAreNotNull = !oldValue.IsNull() && !newValue.IsNull();
     if ((!oldValue.IsNull() && !oldValue.IsPrimitive()) || (!newValue.IsNull() && !newValue.IsPrimitive()))
         {
+        LOG.error("Only primitive values are supported as a PropertyValueChange");
         BeAssert(false && "Only primitive values are supported for PropertyValueChange");
         return ERROR;
         }
 
     if (bothAreNotNull && oldValue.GetPrimitiveType() != newValue.GetPrimitiveType())
+        {
+        LOG.error("PropertyValueChange cannot be set because the primitive types of the old and new values differ.");
         return ERROR;
+        }
 
     PrimitiveType primType = oldValue.IsPrimitive() ? oldValue.GetPrimitiveType() : newValue.GetPrimitiveType();
 
     if (Inititalize(primType) != SUCCESS)
+        {
+        LOG.error("Failed to set PropertyValueChange because initialization failed.");
         return ERROR;
+        }
 
     switch (m_primType)
         {
             case PRIMITIVETYPE_IGeometry:
                 {
+                LOG.error ("PropertyValueChange does not support the Geometry type");
                 BeAssert(false && "Geometry not supported type");
                 return ERROR;
                 }
@@ -2222,6 +2355,7 @@ BentleyStatus PropertyValueChange::Set(ECValueCR oldValue, ECValueCR newValue)
             }
 
             default:
+                LOG.errorv("Unhandled PrimitiveType: %i", m_primType);
                 BeAssert(false && "Unhandled PrimitiveType");
                 return ERROR;
         }
@@ -2244,6 +2378,7 @@ BentleyStatus PropertyValueChange::Inititalize(PrimitiveType type)
     {
     if (m_value != nullptr)
         {
+        LOG.error("PropertyValueChange cannot be initialized because it has already been used");
         BeAssert(false && "PropertyValueChange has already been used");
         return ERROR;
         }
@@ -2284,6 +2419,7 @@ BentleyStatus PropertyValueChange::Inititalize(PrimitiveType type)
                 m_value = std::unique_ptr<ECChange>(new StringChange(GetOpCode(), Type::PropertyValue, this, GetChangeName()));
                 return SUCCESS;
             default:
+                LOG.errorv("Unexpected value for PrimitiveType %i", type);
                 BeAssert(false && "Unexpected value for PrimitiveType");
                 return ERROR;
         }
@@ -2301,12 +2437,14 @@ BentleyStatus NumericFormatSpecChange::SetFrom(Formatting::NumericFormatSpecCP o
     {
     if (GetOpCode() == OpCode::New && oldSpec != nullptr)
         {
+        LOG.errorv("Cannot Set format change for %s to New because old spec must not be nullptr for that opcode.", GetChangeName());
         BeAssert(false && "Old spec must not be nullptr if OpCode is New");
         return ERROR;
         }
 
     if (GetOpCode() == OpCode::Deleted && newSpec != nullptr)
         {
+        LOG.errorv("Cannot set format change for %s to Deleted because new spec must not be nullptr for that opcode.", GetChangeName());
         BeAssert(false && "New spec must not be nullptr if OpCode is Deleted");
         return ERROR;
         }
@@ -2459,12 +2597,14 @@ BentleyStatus CompositeValueSpecChange::SetFrom(Formatting::CompositeValueSpecCP
     {
     if (GetOpCode() == OpCode::New && oldSpec != nullptr)
         {
+        LOG.errorv("Cannot Set composite value change for %s to New because old spec must not be nullptr for that opcode.", GetChangeName());
         BeAssert(false && "Old spec must not be nullptr if OpCode is New");
         return ERROR;
         }
 
     if (GetOpCode() == OpCode::Deleted && newSpec != nullptr)
         {
+        LOG.errorv("Cannot set composite value change for %s to Deleted because new spec must not be nullptr for that opcode.", GetChangeName());
         BeAssert(false && "New spec must not be nullptr if OpCode is Deleted");
         return ERROR;
         }

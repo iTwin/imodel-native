@@ -2348,14 +2348,28 @@ TEST_F(KindOfQuantityRoundTripTest, ec30_roundTrip)
 //! KindOfQuantityUpgradeTest
 //=======================================================================================
 
+void verifySchemaIsReferencedWithNoDuplicates(ECSchemaPtr schema, ECSchemaCR expectedRefSchema)
+    {
+    int count = 0;
+    for (const auto& refSchema : schema->GetReferencedSchemas())
+        {
+        if (refSchema.first.GetName().EqualsIAscii(expectedRefSchema.GetName()))
+            ++count;
+        }
+    EXPECT_EQ(1, count) << "Expected to find one and only one reference to schema " << schema->GetName().c_str();
+    const auto schemaFullName = expectedRefSchema.GetFullSchemaName();
+    EXPECT_TRUE(ECSchema::IsSchemaReferenced(*schema, expectedRefSchema)) << "Expected to find a reference to the schema " << schemaFullName.c_str() 
+        << ".  Found " << count << " schemas with the same name";
+    }
+
 void KindOfQuantityUpgradeTest::VerifySchemaReferencesUnitsSchema(ECSchemaPtr schema)
     {
-    EXPECT_TRUE(SchemaReferencesUnitsSchema(schema));
+    verifySchemaIsReferencedWithNoDuplicates(schema, *GetUnitsSchema());
     }
 
 void KindOfQuantityUpgradeTest::VerifySchemaReferencesFormatsSchema(ECSchemaPtr schema)
     {
-    EXPECT_TRUE(SchemaReferencesFormatsSchema(schema));
+    verifySchemaIsReferencedWithNoDuplicates(schema, *GetFormatsSchema());
     }
 
 bool KindOfQuantityUpgradeTest::SchemaReferencesUnitsSchema(ECSchemaPtr schema)
@@ -2648,6 +2662,27 @@ TEST_F(KindOfQuantityUpgradeTest, ReferencesToUnitsAndFormatsAddedCorrectly)
 
             ECSchemaPtr schema;
             ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+            ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml.GetXmlString().c_str(), *context));
+            VerifySchemaReferencesUnitsSchema(schema);
+            VerifySchemaReferencesFormatsSchema(schema);
+            }
+
+            {
+            ECSchemaPtr unitsSchema;
+            GetUnitsSchema()->CopySchema(unitsSchema);
+            unitsSchema->SetVersionMinor(0);
+            // NOTE: The goal here it to ensure that we won't get more than one copy of the Units schema as part of the EC 3.1-> EC 3.2 conversion
+            SchemaItem schemaXml(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+                                    <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                        <ECSchemaReference name="Units" version="1.0.1" alias="u"/>
+                                        <ECSchemaReference name="Formats" version="1.0.0" alias="f"/>
+                                        <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
+                                            displayLabel="best quantity of all time" persistenceUnit="M" presentationUnits="MM(real)" relativeError="10e-3" />
+                                    </ECSchema>)xml");
+
+            ECSchemaPtr schema;
+            ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+            context->AddSchema(*unitsSchema);
             ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml.GetXmlString().c_str(), *context));
             VerifySchemaReferencesUnitsSchema(schema);
             VerifySchemaReferencesFormatsSchema(schema);

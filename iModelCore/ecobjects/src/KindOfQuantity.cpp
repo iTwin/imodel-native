@@ -763,7 +763,7 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
             LOG.errorv("Failed to find '%s' schema to add as a reference schema for '%s'.", key.GetName().c_str(), GetSchema().GetName().c_str());
             return SchemaReadStatus::ReferencedSchemaNotFound;
             }
-        if (!ECSchema::IsSchemaReferenced(GetSchema(), *unitsSchema))
+        if (GetSchema().GetReferencedSchemas().Find (key, SchemaMatchType::Latest) == GetSchema().GetReferencedSchemas().end())
             { 
             LOG.warningv("Adding '%s' as a reference schema to '%s', in order to resolve old units.",
                 unitsSchema->GetName().c_str(), GetSchema().GetName().c_str());
@@ -781,7 +781,7 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
             LOG.errorv("Failed to find '%s' schema to add as a reference schema for '%s'.", key.GetName().c_str(), GetSchema().GetName().c_str());
             return SchemaReadStatus::ReferencedSchemaNotFound;
             }
-        if (!ECSchema::IsSchemaReferenced(GetSchema(), *formatsSchema))
+        if (GetSchema().GetReferencedSchemas().Find (key, SchemaMatchType::Latest) == GetSchema().GetReferencedSchemas().end())
             { 
             LOG.warningv("Adding '%s' as a reference schema to '%s', in order to resolve old formats.", formatsSchema->GetName().c_str(), GetSchema().GetName().c_str());
             if (ECObjectsStatus::Success != GetSchemaR().AddReferencedSchema(*formatsSchema))
