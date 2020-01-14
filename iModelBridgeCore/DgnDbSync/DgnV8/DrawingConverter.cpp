@@ -1188,6 +1188,8 @@ void InitCurrentModel(DgnModelRefP modelRef)
         DgnV8Api::EditElementHandle         v8eh(thisAttachment->GetElementId(), thisAttachment->GetParent().GetDgnModelP());
         SyncInfo::V8ElementExternalSourceAspect          attachMapping, clipMapping, maskMapping;
 
+        if (!v8eh.IsValid())
+            continue;
 
         if (IsElementChanged(attachMapping, v8eh, thisAttachment))
             info.m_attachmentChanged = true;
