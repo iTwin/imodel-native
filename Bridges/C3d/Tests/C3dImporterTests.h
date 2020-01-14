@@ -8,9 +8,12 @@
     #define UNICODE
 #endif
 
+#include <DgnPlatform/DgnCoreAPI.h>
+#include <Raster/RasterAPI.h>
 #include <LinearReferencing/LinearReferencingApi.h>
 #include <RoadRailAlignment/RoadRailAlignmentApi.h>
 #include <RoadRailPhysical/RoadRailPhysicalApi.h>
+
 #include "../C3dImporter.h"
 
 #include <Bentley/BeTest.h>

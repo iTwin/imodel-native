@@ -7,46 +7,6 @@
 
 BEGIN_C3D_NAMESPACE
 
-/*=================================================================================**//**
-* @bsiclass                                                     Don.Fu          06/19
-+===============+===============+===============+===============+===============+======*/
-struct C3dProtocolExtensions
-{
-public:
-    OdStaticRxObject<AeccAlignmentExt>  m_aeccAlignmentExt;
-    OdStaticRxObject<AeccCorridorExt>   m_aeccCorridorExt;
-    C3dProtocolExtensions ()
-        {
-        try
-            {
-            AECCDbAlignment::rxInit ();
-            AeccAlignmentExt::RxInit ();
-            //m_aeccAlignmentExt = AeccAlignmentExt::CreateObject ();
-            DwgRxClass::AddProtocolExtension (AECCDbAlignment::desc(), AeccAlignmentExt::Desc(), &m_aeccAlignmentExt);
-
-            AECCDbCorridor::rxInit ();
-            AeccCorridorExt::RxInit ();
-            //m_aeccCorridorExt = AeccCorridorExt::CreateObject ();
-            DwgRxClass::AddProtocolExtension (AECCDbCorridor::desc(), DwgProtocolExtension::Desc(), &m_aeccCorridorExt);
-            }
-        catch (OdError& error)
-            {
-            LOG.debugv ("Toolkit Exception: %ls", error.description().c_str());
-            }
-        }
-
-    ~C3dProtocolExtensions ()
-        {
-        DwgRxClass::DeleteProtocolExtension (AECCDbAlignment::desc(), AeccAlignmentExt::Desc());
-        AeccAlignmentExt::RxUnInit ();
-        AECCDbAlignment::rxUninit ();
-
-        DwgRxClass::DeleteProtocolExtension (AECCDbCorridor::desc(), AeccCorridorExt::Desc());
-        AeccCorridorExt::RxUnInit ();
-        AECCDbCorridor::rxUninit ();
-        }
-
-};  // C3dProtocolExtensions
 static C3dProtocolExtensions*   s_c3dProtocolExtensions;
 
 /*---------------------------------------------------------------------------------**//**
@@ -54,7 +14,10 @@ static C3dProtocolExtensions*   s_c3dProtocolExtensions;
 +---------------+---------------+---------------+---------------+---------------+------*/
 C3dImporter::C3dImporter (DwgImporter::Options& options) : T_Super(options)
     {
+    // add C3D protocol extensions
     s_c3dProtocolExtensions = new C3dProtocolExtensions ();
+
+    m_entitiesNeedProxyGeometry.clear ();
 
     this->ParseC3dConfigurations ();
 
@@ -66,6 +29,7 @@ C3dImporter::C3dImporter (DwgImporter::Options& options) : T_Super(options)
 +---------------+---------------+---------------+---------------+---------------+------*/
 C3dImporter::~C3dImporter ()
     {
+    // remove C3D protocol extensions
     if (s_c3dProtocolExtensions != nullptr)
         {
         delete s_c3dProtocolExtensions;
@@ -87,14 +51,22 @@ void C3dImporter::ParseC3dConfigurations ()
         return;
 
     BeXmlDom::IterableNodeSet   nodes;
+    Utf8String  strValue;
+
+    xmlDom->SelectNodes (nodes, "/ConvertConfig/UseProxyGeometry/Entity", nullptr);
+    for (auto node : nodes)
+        {
+        if (BeXmlStatus::BEXML_Success == node->GetAttributeStringValue(strValue, "name") && !strValue.empty())
+            m_entitiesNeedProxyGeometry.insert (strValue.ToUpper());
+        }   
+
     xmlDom->SelectNodes (nodes, "/ConvertConfig/Options/OptionBool", nullptr);
     for (auto node : nodes)
         {
-        Utf8String  str;
         bool        boolValue = false;
-        if (BeXmlStatus::BEXML_Success == node->GetAttributeStringValue(str, "name") && BeXmlStatus::BEXML_Success == node->GetAttributeBooleanValue(boolValue, "value"))
+        if (BeXmlStatus::BEXML_Success == node->GetAttributeStringValue(strValue, "name") && BeXmlStatus::BEXML_Success == node->GetAttributeBooleanValue(boolValue, "value"))
             {
-            if (str.EqualsI("SetAlignedModelPrivate"))
+            if (strValue.EqualsI("SetAlignedModelPrivate"))
                 m_c3dOptions.SetAlignedModelPrivate (boolValue);
             }
         }
@@ -207,6 +179,13 @@ BentleyStatus C3dImporter::OnBaseBridgeJobInitialized (DgnElementId jobId)
             horizontalAlignments->GetHorizontalModel()->Update ();
             }
 
+        horizontalAlignments = RoadRailAlignment::HorizontalAlignments::Query (*m_railNetworkModel);
+        if (horizontalAlignments.IsValid())
+            {
+            horizontalAlignments->GetHorizontalModel()->SetIsPrivate (true);
+            horizontalAlignments->GetHorizontalModel()->Update ();
+            }
+
         horizontalAlignments = RoadRailAlignment::HorizontalAlignments::Query (*m_alignmentModel);
         if (horizontalAlignments.IsValid())
             {
@@ -294,7 +273,39 @@ bool    C3dImporter::_FilterEntity (ElementImportInputsR inputs) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   C3dImporter::_ImportEntity (ElementImportResultsR results, ElementImportInputsR inputs)
     {
-    // override this only because so we can call it from C3D protocol extensions
+    /*-----------------------------------------------------------------------------------
+    Below code is only needed as a workaround for some AECC entities which are known to be 
+    incorrectly drawn by the Civil toolkit.  We filter these entities in or out on a case 
+    by case.  After we have obtained an ODA fix for an entity, update the filter below.
+    -----------------------------------------------------------------------------------*/
+    auto sourceEntity = inputs.GetEntityP ();
+    if (sourceEntity != nullptr && !m_entitiesNeedProxyGeometry.empty())
+        {
+        Utf8String  entityName(reinterpret_cast<WCharCP>(sourceEntity->GetDxfName().c_str()));
+
+        auto found = m_entitiesNeedProxyGeometry.find (entityName.ToUpper());
+        if (found != m_entitiesNeedProxyGeometry.end())
+            {
+            // convert the enabled object as a proxy entity:
+            OdDbProxyEntityPtr  proxy = ::odEntityToProxy (*sourceEntity);
+            if (!proxy.isNull())
+                {
+                // create geometrical element(s) from the proxy entity:
+                ElementImportInputs proxyInputs(inputs.GetTargetModelR(), DwgDbEntity::Cast(proxy.detach()), inputs);
+                // use the source entity name as user label
+                proxyInputs.SetElementLabel (entityName);
+
+                // import the new non-database resident entity
+                auto status = T_Super::ImportNewEntity (results, proxyInputs, sourceEntity->GetOwnerId());
+
+                // count as a database-resident entity
+                if (status == BentleyStatus::BSISUCCESS)
+                    m_entitiesImported++;
+                return  status;
+                }
+            }
+        }
+
     return T_Super::_ImportEntity (results, inputs);
     }
 

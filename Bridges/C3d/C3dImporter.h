@@ -10,19 +10,6 @@
 #endif  // DWGTOOLKIT_OpenDwg
 
 #include <Dwg/DwgImporter.h>
-#include <Dwg/DwgHelper.h>
-#include <Dwg/DwgBridge.h>
-#include <Dwg/ProtocalExtensions.h>
-
-#include <Teigha/Civil/DbEntity/AECCDbAlignment.h>
-#include <Teigha/Civil/DbEntity/AECCDbVAlignment.h>
-#include <Teigha/Civil/DbEntity/AECCDbCorridor.h>
-#include <Teigha/Civil/DbObject/AECCDbRoadwayStyleSet.h>
-#include <Teigha/Civil/DbObject/AECCDbRoadwayLinkStyle.h>
-#include <Teigha/Civil/DbObject/AECCDbRoadwayShapeStyle.h>
-#include <Teigha/Civil/DbObject/AECCDbFeatureLineStyle.h>
-
-#include <RoadRailAlignment/RoadRailAlignmentApi.h>
 
 // Namespaces for C3dImporter
 #define C3D_NAMESPACE_NAME C3D
@@ -57,6 +44,7 @@
 #define ECCLASSNAME_AeccAlignment       "AeccAlignment"
 #define ECCLASSNAME_AeccVAlignment      "AeccVAlignment"
 #define ECCLASSNAME_AeccCorridor        "AeccCorridor"
+#define ECCLASSNAME_AeccFeatureLine     "AeccFeatureLine"
 // Structs
 #define ECCLASSNAME_DesignSpeed         "DesignSpeed"
 #define ECCLASSNAME_VAlignment          "VAlignment"
@@ -77,10 +65,13 @@
 #define ECPROPNAME_FeatureLineStyle     "FeatureLineStyle"
 #define ECPROPNAME_HorizontalAlignment  "HorizontalAlignment"
 #define ECPROPNAME_Length               "Length"
+#define ECPROPNAME_Length2d             "Length2d"
+#define ECPROPNAME_Length3d             "Length3d"
 #define ECPROPNAME_LinkCodes            "LinkCodes"
 #define ECPROPNAME_MaxElevation         "MaxElevation"
 #define ECPROPNAME_MinElevation         "MinElevation"
 #define ECPROPNAME_Name                 "Name"
+#define ECPROPNAME_NumberOfPoints       "NumberOfPoints"
 #define ECPROPNAME_PointCodes           "PointCodes"
 #define ECPROPNAME_ReferencePoint       "ReferencePoint"
 #define ECPROPNAME_ReferenceStation     "ReferenceStation"
@@ -95,6 +86,8 @@
 #define ECPROPNAME_VAlignments          "VAlignments"
 #define ECPROPNAME_VerticalAlignment    "VerticalAlignment"
 
+
+USING_NAMESPACE_DWG
 
 BEGIN_C3D_NAMESPACE
 
@@ -122,6 +115,7 @@ private:
     PhysicalModelPtr    m_railNetworkModel;
     ECN::ECSchemaCP     m_c3dSchema;
     C3dOptions          m_c3dOptions;
+    bset<Utf8String>    m_entitiesNeedProxyGeometry;
     
 private:
     SubjectCPtr GetAlignmentSubject ();
@@ -166,76 +160,5 @@ public:
     DEFINE_T_SUPER (UpdaterChangeDetector)
     EXPORT_ATTRIBUTE void _DeleteElement (DgnDbR db, DwgSourceAspects::ObjectAspectCR elementAspect) override;
 };  // C3dUpdaterChangeDetector
-
-
-/*=================================================================================**//**
-* @bsiclass                                                     Don.Fu          11/19
-+===============+===============+===============+===============+===============+======*/
-class AeccAlignmentExt : public DwgProtocolExtension
-{
-public:
-    DEFINE_C3DPROTOCOLEXTENSION(AeccAlignmentExt)
-
-    virtual BentleyStatus  _ConvertToBim (ProtocolExtensionContext& context, DwgImporterR importer) override;
-
-private:
-    mutable Utf8String  m_name;
-    mutable Utf8String  m_description;
-    mutable C3dImporterP    m_importer;
-    mutable AECCDbAlignment*    m_aeccAlignment;
-    mutable RoadRailAlignment::AlignmentPtr m_baseAlignment;
-    mutable SpatialLocationModelPtr m_alignmentModel;
-    mutable DgnModelId  m_verticalAlignmentModelId;
-    mutable ProtocolExtensionContext* m_toDgnContext;
-    
-    // C3D elements
-    BentleyStatus   SetVAlignmentProperties (DgnElementR element);
-    BentleyStatus   SetDesignSpeedProperties (DgnElementR element);
-    BentleyStatus   DetectAndImportAeccVAlignment (DwgImporter::ElementImportInputs& inputs);
-    BentleyStatus   CreateOrUpdateAeccVAlignments ();
-    BentleyStatus   CreateOrUpdateAeccAlignment ();
-    // Civil domain elements
-    BentleyStatus   CreateVerticalAlignment (CurveVectorCR curves, DwgImporter::ElementImportResultsR results);
-    BentleyStatus   UpdateVerticalAlignment (CurveVectorCR curves, DwgImporter::ElementImportResultsR results);
-    BentleyStatus   CreateHorizontalAlignment (CurveVectorCR curves, GeometrySourceCP geomSource);
-    BentleyStatus   UpdateHorizontalAlignment (CurveVectorCR curves, GeometrySourceCP geomSource);
-    BentleyStatus   CreateOrUpdateVerticalAlignment (DwgImporter::ElementImportResultsR aeccResults, AECCDbVAlignment* aeccVAlignment);
-    BentleyStatus   CreateOrUpdateHorizontalAlignment ();
-    // Top level
-    BentleyStatus   ImportVAlignments ();
-    BentleyStatus   ImportAlignment ();
-};  // AeccAlignmentExt
-
-/*=================================================================================**//**
-* @bsiclass                                                     Don.Fu          11/19
-+===============+===============+===============+===============+===============+======*/
-class AeccCorridorExt : public DwgProtocolExtension
-{
-public:
-    DEFINE_C3DPROTOCOLEXTENSION(AeccCorridorExt)
-
-    virtual BentleyStatus  _ConvertToBim (ProtocolExtensionContext& context, DwgImporterR importer) override;
-
-private:
-    mutable Utf8String  m_name;
-    mutable Utf8String  m_description;
-    mutable DgnElementP m_importedElement;
-    mutable ECN::IECInstancePtr  m_parametersInstance;
-    mutable C3dImporterP    m_importer;
-    mutable AECCDbCorridor* m_aeccCorridor;
-    mutable ProtocolExtensionContext* m_toDgnContext;
-    
-    // C3D elements
-#ifdef FEATURE_COLLECTIONS
-    BentleyStatus ProcessFeatureCollections (AECCCorridorBaseline const& baseline);
-#endif
-    DgnDbStatus ProcessCode (OdString const& code, AECCSubassemblyEntTraits const& subassentTraits, Utf8StringCR propName, uint32_t index);
-    BentleyStatus ProcessRegions (AECCCorridorBaseline const& baseline);
-    BentleyStatus ProcessBaseline (AECCCorridorBaseline const& baseline);
-    BentleyStatus ProcessBaselines ();
-    BentleyStatus ProcessFeatureStyles ();
-    BentleyStatus ProcessCodes ();
-    BentleyStatus ImportCorridor ();
-};  // AeccCorridorExt
 
 END_C3D_NAMESPACE

@@ -3,6 +3,8 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
+#include <Dwg/DwgBridge.h>
+#include <Dwg/DwgHelper.h>
 #include "../C3dImporter.h"
 
 BEGIN_C3D_NAMESPACE

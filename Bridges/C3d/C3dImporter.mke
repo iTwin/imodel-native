@@ -22,6 +22,7 @@ always:
 ImportC3dDepends = $(baseDir)C3dInternal.h      \
                    $(baseDir)C3dImporter.h      \
                    $(baseDir)C3dHelper.h        \
+                   $(baseDir)C3dProtocolExtensions.h \
                    $(DwgPublicAPI)DwgL10N.h     \
                    $(DwgPublicAPI)DwgBridge.h   \
                    $(DwgPublicAPI)DwgHelper.h   \
@@ -55,6 +56,8 @@ $(o)ImportC3dSchema.obj : $(baseDir)ImportC3dSchema.cpp $(ImportC3dDepends) ${Mu
 $(o)ImportAlignment.obj : $(baseDir)ImportAlignment.cpp $(ImportC3dDepends) ${MultiCompileDepends}
 
 $(o)ImportCorridor.obj : $(baseDir)ImportCorridor.cpp $(ImportC3dDepends) ${MultiCompileDepends}
+
+$(o)ImportFeatureLine.obj : $(baseDir)ImportFeatureLine.cpp $(ImportC3dDepends) ${MultiCompileDepends}
 
 $(o)C3dProvenance.obj : $(baseDir)C3dProvenance.cpp $(ImportC3dDepends) ${MultiCompileDepends}
 
@@ -90,6 +93,7 @@ LINKER_LIBRARIES    + $(ToolkitLibs)TD_Ge$(libext)
 LINKER_LIBRARIES_DELAYLOADED    = $(ToolkitLibs)TD_Db$(libext)
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)TD_DbRoot$(libext)
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)TD_DbEntities$(libext)
+LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)TD_DbIO$(libext)
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)TD_Alloc$(libext)
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)TD_Key$(libext)
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)TD_Gi$(libext)
@@ -108,6 +112,7 @@ LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)AeccRoadway.lib
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)AeccSurvey.lib
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)AeccUiLand.lib
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)AeccvBase.lib
+LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)FacetModeler.lib
 
 DLM_NAME            = $(appName)
 DLM_DEST            = $(o)

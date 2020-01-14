@@ -86,4 +86,13 @@
         <ECStructArrayProperty propertyName="ShapeCodes" typeName="CorridorCode" category="C3dCodes" displayLabel="Shape Codes" description="C3D shape codes applied to the corridor" minOccurs="0" maxOccurs="unbounded"/>
         <ECStructArrayProperty propertyName="CorridorFeatures" typeName="CorridorFeature" category="C3dFeatureLines" displayLabel="Feature Lines" description="C3D corridor feature lines" minOccurs="0" maxOccurs="unbounded"/>
     </ECEntityClass>
+    <ECEntityClass typeName="AeccFeatureLine" modifier="Sealed" displayLabel="FeatureLine" description="Civil3D feature line">
+        <BaseClass>AeccBase</BaseClass>
+        <ECProperty propertyName="Style" typeName="string" category="C3dGeometry" displayLabel="Style" description="C3D feature line style"/>
+        <ECProperty propertyName="NumberOfPoints" typeName="int" category="C3dGeometry" displayLabel="Number of Points" description="Number of points on a C3D feature line"/>
+        <ECProperty propertyName="MinElevation" typeName="double" kindOfQuantity="LENGTH" category="C3dGeometry" displayLabel="Minimum Elevation" description="Minimum elevation of a C3D feature line"/>
+        <ECProperty propertyName="MaxElevation" typeName="double" kindOfQuantity="LENGTH" category="C3dGeometry" displayLabel="Maximum Elevation" description="Maximum elevation of a C3D feature line"/>
+        <ECProperty propertyName="Length2d" typeName="double" kindOfQuantity="LENGTH" category="C3dGeometry" displayLabel="2D Length" description="Length in 2D of of C3D feature line"/>
+        <ECProperty propertyName="Length3d" typeName="double" kindOfQuantity="LENGTH" category="C3dGeometry" displayLabel="3D Length" description="Length in 3D of of C3D feature line"/>
+    </ECEntityClass>
 </ECSchema>
