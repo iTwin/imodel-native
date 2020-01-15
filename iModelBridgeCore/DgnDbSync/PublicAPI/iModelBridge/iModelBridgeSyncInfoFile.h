@@ -629,7 +629,7 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
         {
         DgnElementPtr m_element;  //!< The DgnDb element created to represent the source item -- optional
         bvector<ConversionResults> m_childElements; //!< Child elements - optional
-        Record m_syncInfoRecord; //!< Output from _ProcessConversionResults
+        Record m_syncInfoRecord; //!< Output from _ProcessConversionResults. @see ChangeDetector::GetSyncInfoRecord. Note that in the case of a New item, m_syncInfoRecord.GetSyncInfoRecord will return the item's new, post-conversion state.
         bool m_isStale{}; //!< Is the item stale?
         };
 
@@ -644,6 +644,7 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
 
         DgnDbR m_dgnDb;
 
+        //! The result of a conversion. 
         struct Results
             {
           private:
@@ -662,8 +663,10 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
             //! Get the change type detected
             ChangeType GetChangeType() const {return m_changeType;}
             //! Get the existing syncinfo record, if any. Caller must check if record is valid. @see Record::IsValid
+            //! If ChangeType is Changed or Unchanged, GetSyncInfoRecord returns the state of the item that was recorded in an ExternalSourceAspect that last time the bridge ran.
+            //! If New, GetSyncInfoRecord returns an invalid Record.
             Record const& GetSyncInfoRecord() const {return m_record;}
-            //! Get the current state of the source data, as cached by the change detector. @note This may be empty if #GetChangeType returns ChangeType::Unchanged.
+            //! Get the current state of the source data, as reported by the item handler to the ChangeDetector.
             SourceState const& GetCurrentState() const {return m_currentState;}
             //! Is the item "stale"? That is, is the value returned by its _LastModifiedTime function earlier than the value stored in the ExternalSourceAspect that tracks this item?
             bool IsItemStale() const {return m_currentState.GetLastModifiedTime() < m_record.GetSourceState().GetLastModifiedTime();}

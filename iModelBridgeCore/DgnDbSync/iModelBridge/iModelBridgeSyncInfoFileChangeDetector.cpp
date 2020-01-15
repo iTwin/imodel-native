@@ -348,6 +348,7 @@ BentleyStatus iModelBridgeSyncInfoFile::ChangeDetector::_UpdateBimAndSyncInfo(Co
                 else
                     AddProvenanceAspect(changeDetectorResults.GetSourceIdentity(), changeDetectorResults.GetCurrentState(), *conversionResults.m_element);
                 }
+            conversionResults.m_syncInfoRecord = changeDetectorResults.GetSyncInfoRecord(); // m_syncInfoRecord is the item's PRE-conversion state, as captured by the ExternalSourceAspect during the previous run of the bridge.
             status = UpdateResultsInBIM(conversionResults, eid);
             }
 
