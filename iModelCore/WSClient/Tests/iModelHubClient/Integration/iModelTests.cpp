@@ -258,7 +258,7 @@ TEST_F(iModelTests, CancelCreateiModel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(iModelTests, UnsuccessfulCreateiModel)
     {
-    iModelResult result = iModelHubHelpers::CreateNewiModel(s_client, m_db, "bad project", false);
+    iModelResult result = iModelHubHelpers::CreateNewiModel(s_client, m_db, BeSQLite::BeGuid(true).ToString(), false);
     EXPECT_EQ(Error::Id::FailedToGetProjectPermissions, result.GetError().GetId());
     }
 
@@ -287,9 +287,19 @@ TEST_F(iModelTests, QueryNonExistentiModelByName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(iModelTests, UnsuccessfulGetiModels)
     {
-    iModelsResult result = s_client->GetiModels("bad project")->GetResult();
+    iModelsResult result = s_client->GetiModels(BeSQLite::BeGuid(true).ToString())->GetResult();
     ASSERT_FAILURE(result);
     EXPECT_EQ(Error::Id::FailedToGetProjectPermissions, result.GetError().GetId());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Algirdas.Mikoliunas             01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(iModelTests, GetiModelsInvalidContextId)
+    {
+    iModelsResult result = s_client->GetiModels("badContextId")->GetResult();
+    ASSERT_FAILURE(result);
+    EXPECT_EQ(Error::Id::InvalidContextId, result.GetError().GetId());
     }
 
 /*--------------------------------------------------------------------------------------+

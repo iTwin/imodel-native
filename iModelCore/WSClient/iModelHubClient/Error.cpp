@@ -49,6 +49,7 @@ Error::Id Error::ErrorIdFromString(Utf8StringCR errorIdString)
         map["iModelHub.EventSubscriptionDoesNotExist"]              = Id::EventSubscriptionDoesNotExist;
         map["iModelHub.EventSubscriptionAlreadyExists"]             = Id::EventSubscriptionAlreadyExists;
         map["iModelHub.ProjectIdIsNotSpecified"]                    = Id::ProjectIdIsNotSpecified;
+        map["iModelHub.InvalidContextId"]                           = Id::InvalidContextId;
         map["iModelHub.FailedToGetProjectPermissions"]              = Id::FailedToGetProjectPermissions;
         map["iModelHub.FailedToGetProjectMembers"]                  = Id::FailedToGetProjectMembers;
         map["iModelHub.FailedToGetAssetPermissions"]                = Id::FailedToGetAssetPermissions;

@@ -51,6 +51,7 @@ public:
         EventSubscriptionDoesNotExist,
         EventSubscriptionAlreadyExists,
         ProjectIdIsNotSpecified,
+        InvalidContextId,
         FailedToGetProjectPermissions,
         FailedToGetProjectMembers,
         FailedToGetAssetPermissions,

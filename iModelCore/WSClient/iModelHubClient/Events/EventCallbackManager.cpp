@@ -15,6 +15,7 @@ USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
 
 static const int s_maxSleepTimeInSeconds = 60 * 10;
+static const int s_failedGetEventsLimit = 10;
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             12/2016
@@ -29,9 +30,6 @@ bool EventListContainsEvent(EventTypeSet eventList, Event::EventType eventType)
 //---------------------------------------------------------------------------------------
 int CalculateEventCallbackManagerThreadSleepSeconds(int failedCallsCount)
     {
-    if (failedCallsCount > 10)
-        return s_maxSleepTimeInSeconds;
-
     int sleepTime = pow(3, failedCallsCount);
     return sleepTime > s_maxSleepTimeInSeconds ? s_maxSleepTimeInSeconds : sleepTime;
     }
@@ -117,7 +115,8 @@ unsigned __stdcall EventCallbackManagerThread(void* arg)
                 auto errorResult = eventResult.GetError();
                 Error::Id errorId = errorResult.GetId();
                 
-                if (errorId == Error::Id::NoSubscriptionFound || errorId == Error::Id::iModelDoesNotExist || errorId == Error::Id::UserDoesNotHavePermission)
+                if (errorId == Error::Id::NoSubscriptionFound || errorId == Error::Id::iModelDoesNotExist || errorId == Error::Id::UserDoesNotHavePermission
+                    || errorId == Error::Id::FailedToGetAssetPermissions || errorId == Error::Id::FailedToGetProjectPermissions)
                     {
                     LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "EventCallbackManagerThread is stopping. Possible reasons: Event subscription or iModel does not exist any more, user does not have required permissions. Error code: %d", errorId);
                     return 0;
@@ -129,6 +128,12 @@ unsigned __stdcall EventCallbackManagerThread(void* arg)
                 else
                     {
                     failedGetEventCallsCounter++;
+                    if (failedGetEventCallsCounter > s_failedGetEventsLimit)
+                        {
+                        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "EventCallbackManagerThread is stopping. Maximum failed get events retry count %d reached.", failedGetEventCallsCounter);
+                        return 0;
+                        }
+
                     int sleepTimeInSeconds = CalculateEventCallbackManagerThreadSleepSeconds(failedGetEventCallsCounter);
                     LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "EventCallbackManagerThread failed to get event: %d %s. Sleeping for %d seconds.", errorId, errorResult.GetMessage().c_str(), sleepTimeInSeconds);
                     BeThreadUtilities::BeSleep(sleepTimeInSeconds * 1000);
