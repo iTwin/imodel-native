@@ -1344,4 +1344,42 @@ TEST_F(SchemaDeserializationTest, ChecksumIsCalculatedFromContext)
     }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            01/2020
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationTest, CaseConflictInMultipleBaseClasses)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="Test" nameSpacePrefix="ts" version="01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECClass typeName="ClassA" isDomainClass="True">
+                    <ECProperty propertyName="foo" typeName="string" />
+                </ECClass>
+                <ECClass typeName="ClassB" isDomainClass="True">
+                    <ECProperty propertyName="Foo" typeName="string" />
+                </ECClass>
+                <ECClass typeName="ClassC" isDomainClass="True">
+                    <ECProperty propertyName="Foo" typeName="string" />
+                </ECClass>
+                <ECClass typeName="ClassD" isDomainClass="True">
+                    <BaseClass>ClassB</BaseClass>
+                    <BaseClass>ClassC</BaseClass>
+                    <BaseClass>ClassA</BaseClass>
+                </ECClass>
+            </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    context->SetResolveConflicts(true);
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+
+    ECPropertyP propA = schema->GetClassCP("ClassA")->GetPropertyP("foo", false);
+    ECPropertyP propB = schema->GetClassCP("ClassB")->GetPropertyP("foo", false);
+    ECPropertyP propC = schema->GetClassCP("ClassC")->GetPropertyP("foo", false);
+
+    // Ensure all properties are now the same case
+    ASSERT_TRUE(propA->GetName().Equals(propB->GetName()));
+    ASSERT_TRUE(propA->GetName().Equals(propC->GetName()));
+    ASSERT_TRUE(propC->GetName().Equals(propB->GetName()));
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE

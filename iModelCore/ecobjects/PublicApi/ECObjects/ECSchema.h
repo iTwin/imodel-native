@@ -1825,6 +1825,8 @@ public:
     const ECBaseClassesList& GetBaseClasses() const {return m_baseClasses;} //!< Returns a list of the classes this ECClass is derived from
     ECObjectsStatus RemoveBaseClass(ECClassCR baseClass) {return _RemoveBaseClass(baseClass);} //!< Removes the provided base class.
     ECOBJECTS_EXPORT void RemoveBaseClasses(); //!< Removes all base classes
+    ECOBJECTS_EXPORT void CollectAllBaseClasses(bmap<Utf8String, ECClassP>& baseClasses, ECClassP ecClass); //!< Creates a list of all of the baseclasses this ECClass is derived from, recursively traversing up the hierarchy
+
 
     bool HasDerivedClasses() const { return m_derivedClasses.size() > 0; } //!< Returns whether there are any derived classes for this class
     const ECDerivedClassesList& GetDerivedClasses() const {return m_derivedClasses;} //!< Returns a list of the classes that derive from this class.

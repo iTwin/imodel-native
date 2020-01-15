@@ -1415,6 +1415,20 @@ bool ECClass::CheckBaseClassCycles (ECClassCP thisClass, const void * arg)
     return false;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            01/2020
+//---------------+---------------+---------------+---------------+---------------+-------
+void ECClass::CollectAllBaseClasses(bmap<Utf8String, ECClassP>& baseClasses, ECClassP ecClass)
+    {
+    baseClasses.insert(bpair<Utf8String, ECClassP>(Utf8String(ecClass->GetFullName()), ecClass));
+    for (ECClassP baseClass : ecClass->GetBaseClasses())
+        {
+        if (baseClasses.find(baseClass->GetFullName()) != baseClasses.end())
+            continue;
+        CollectAllBaseClasses(baseClasses, baseClass);
+        }
+    }
+
 //-------------------------------------------------------------------------------------
 //* @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1490,52 +1504,60 @@ ECObjectsStatus ECClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginni
     if (ECObjectsStatus::Success != status)
         return status;
 
-    for (ECPropertyP prop : baseClassProperties)
+    bmap<Utf8String, ECClassP> baseClasses;
+    CollectAllBaseClasses(baseClasses, this);
+    for (auto it : baseClasses)
         {
-        ECPropertyP thisProperty;
-        // This is a case-insensitive search
-        if (NULL != (thisProperty = this->GetPropertyP(prop->GetName(), true)))
+        ECClassP testClass = it.second;
+        if (testClass->GetPropertyCount(false) == 0)
+            continue;
+        for (ECPropertyP prop : baseClassProperties)
             {
-            Utf8String errMsg;
-            status = ECClass::CanPropertyBeOverridden(*prop, *thisProperty, errMsg);
-
-            // If the property names do not have the same case, this is an error
-            if (!prop->GetName().Equals(thisProperty->GetName()))
+            ECPropertyP thisProperty;
+            // This is a case-insensitive search
+            if (NULL != (thisProperty = testClass->GetPropertyP(prop->GetName(), false)))
                 {
-                if (!resolveConflicts)
+                Utf8String errMsg;
+                status = ECClass::CanPropertyBeOverridden(*prop, *thisProperty, errMsg);
+
+                // If the property names do not have the same case, this is an error
+                if (!prop->GetName().Equals(thisProperty->GetName()))
                     {
-                    LOG.errorv("Failed to add base class due to case-collision between %s:%s and %s:%s.", prop->GetClass().GetFullName(), prop->GetName().c_str(), GetFullName(), thisProperty->GetName().c_str());
-                    return ECObjectsStatus::CaseCollision;
+                    if (!resolveConflicts)
+                        {
+                        LOG.errorv("Failed to add base class due to case-collision between %s:%s and %s:%s.", prop->GetClass().GetFullName(), prop->GetName().c_str(), GetFullName(), thisProperty->GetName().c_str());
+                        return ECObjectsStatus::CaseCollision;
+                        }
+
+                    // Same type, different case, simply rename the second property to match the first
+                    if (ECObjectsStatus::Success == status)
+                        {
+                        LOG.warningv("Case-collision between %s:%s and %s:%s.  Renaming to %s", prop->GetClass().GetFullName(), prop->GetName().c_str(), GetFullName(), thisProperty->GetName().c_str(), prop->GetName().c_str());
+                        ECClassP conflictClass = const_cast<ECClassP> (&thisProperty->GetClass());
+                        ECPropertyP renamedProperty = nullptr;
+                        if (ECObjectsStatus::Success != conflictClass->RenameConflictProperty(thisProperty, true, renamedProperty, prop->GetName()))
+                            return status;
+                        }
                     }
 
-                // Same type, different case, simply rename the second property to match the first
-                if (ECObjectsStatus::Success == status)
+                if (ECObjectsStatus::Success != status)
                     {
-                    LOG.warningv("Case-collision between %s:%s and %s:%s.  Renaming to %s", prop->GetClass().GetFullName(), prop->GetName().c_str(), GetFullName(), thisProperty->GetName().c_str(), prop->GetName().c_str());
-                    ECClassP conflictClass = const_cast<ECClassP> (&thisProperty->GetClass());
-                    ECPropertyP renamedProperty = nullptr;
-                    if (ECObjectsStatus::Success != conflictClass->RenameConflictProperty(thisProperty, true, renamedProperty, prop->GetName()))
+                    if (ECObjectsStatus::DataTypeMismatch == status && resolveConflicts)
+                        {
+                        if (!Utf8String::IsNullOrEmpty(errMsg.c_str()))
+                            LOG.warning(errMsg.c_str());
+                        LOG.warningv("Conflict between %s:%s and %s:%s.  Renaming...", prop->GetClass().GetFullName(), prop->GetName().c_str(), GetFullName(), thisProperty->GetName().c_str(), GetFullName(), thisProperty->GetName().c_str());
+                        ECClassP conflictClass = const_cast<ECClassP> (&thisProperty->GetClass());
+                        ECPropertyP renamedProperty = nullptr;
+                        if (ECObjectsStatus::Success != conflictClass->RenameConflictProperty(thisProperty, true, renamedProperty))
+                            return status;
+                        }
+                    else
+                        {
+                        if (!Utf8String::IsNullOrEmpty(errMsg.c_str()))
+                            LOG.error(errMsg.c_str());
                         return status;
-                    }
-                }
-
-            if (ECObjectsStatus::Success != status)
-                {
-                if (ECObjectsStatus::DataTypeMismatch == status && resolveConflicts)
-                    {
-                    if (!Utf8String::IsNullOrEmpty(errMsg.c_str()))
-                        LOG.warning(errMsg.c_str());
-                    LOG.warningv("Conflict between %s:%s and %s:%s.  Renaming...", prop->GetClass().GetFullName(), prop->GetName().c_str(), GetFullName(), thisProperty->GetName().c_str(), GetFullName(), thisProperty->GetName().c_str());
-                    ECClassP conflictClass = const_cast<ECClassP> (&thisProperty->GetClass());
-                    ECPropertyP renamedProperty = nullptr;
-                    if (ECObjectsStatus::Success != conflictClass->RenameConflictProperty(thisProperty, true, renamedProperty))
-                        return status;
-                    }
-                else
-                    {
-                    if (!Utf8String::IsNullOrEmpty(errMsg.c_str()))
-                        LOG.error(errMsg.c_str());
-                    return status;
+                        }
                     }
                 }
             }
