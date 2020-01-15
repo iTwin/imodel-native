@@ -701,6 +701,9 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
         //! @note You should use the same change detector object for an entire update.
         IMODEL_BRIDGE_EXPORT ChangeDetector(DgnDbR db, bool ignoreStaleItems = false);
 
+        ChangeDetector(ChangeDetector const&) = delete;
+        ChangeDetector& operator=(ChangeDetector const&) = delete;
+
         //! Get a reference to the BIM
         virtual DgnDbR GetDgnDb() {return m_dgnDb;}
 
