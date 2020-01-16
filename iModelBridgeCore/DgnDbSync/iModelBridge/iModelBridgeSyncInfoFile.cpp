@@ -140,6 +140,17 @@ iModelBridgeSyncInfoFile::ConversionResults iModelBridgeWithSyncInfoBase::Record
     DocSourceItem docItem(results.m_element->GetCode(), sstate);
 
     change = changeDetector._DetectChange(srid, kind, docItem);
+
+    if (results.m_element->GetElementId().IsValid() && (change.GetChangeType() == iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::New))
+        {
+        WString code(results.m_element->GetCode().GetValueUtf8CP(), true);
+        LOG.errorv(L"A RepositoryLink element with code=%ls and id=%llx already exists in the bim file. \
+However, no ExternalSourceAspect with scope=%llu and kind=%s was found for this element. \
+Maybe RecordDocument was previously called on this file with a different scope or kind.",
+            code.c_str(), results.m_element->GetElementId().GetValue(), srid, kind);
+        BeAssert(false && "Inconsistent calls to RecordDocument");
+        }
+
     changeDetector._UpdateBimAndSyncInfo(results, change);
  
     if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Unchanged != change.GetChangeType())

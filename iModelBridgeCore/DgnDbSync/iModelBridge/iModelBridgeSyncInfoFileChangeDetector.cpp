@@ -309,6 +309,12 @@ BentleyStatus iModelBridgeSyncInfoFile::ChangeDetector::_UpdateBimAndSyncInfo(Co
         {
         DgnDbStatus status;
         
+        // ***
+        // ***
+        // *** NEEDS WORK: Remove all of the look-ups and double-checks below. They were necessary 
+        // ***             only while we were transitioning from the old syncinfo mechanism to the ExternSourceAspect mechanism.
+        // ***
+
         DgnElementId eid;
         if (changeDetectorResults.GetSyncInfoRecord().IsValid())
             eid = changeDetectorResults.GetSyncInfoRecord().GetDgnElementId();
@@ -320,11 +326,14 @@ BentleyStatus iModelBridgeSyncInfoFile::ChangeDetector::_UpdateBimAndSyncInfo(Co
             // bridges that use multiple converters at once. One converter will insert an element, such as a 
             // RepositoryLink, and then another converter within the same bridge will try to do the same.)
             // If so, this is really an update.
+            // *** NEEDS WORK: Git rid of this. Just do what changeDetectorResults.GetChangeType tells you to do: insert if New and update if Modified.
+            // ***                  If the element (and ExternalSourceAspect) is already there, the changeDetector will have detected it.
             if (conversionResults.m_element->GetElementId().IsValid() && GetDgnDb().Elements().GetElement(conversionResults.m_element->GetElementId()).IsValid())
                 eid = conversionResults.m_element->GetElementId();
             }
 
         
+        // *** NEEDS WORK: Git rid of this. Just do what changeDetectorResults.GetChangeType tells you to do: insert if New and update if Modified.
         if (!eid.IsValid())
             {
             AddProvenanceAspect(changeDetectorResults.GetSourceIdentity(), changeDetectorResults.GetCurrentState(), *conversionResults.m_element);
@@ -333,9 +342,11 @@ BentleyStatus iModelBridgeSyncInfoFile::ChangeDetector::_UpdateBimAndSyncInfo(Co
             }
         else
             {
+            // *** NEEDS WORK: Git rid of this. Just do what changeDetectorResults.GetChangeType tells you to do: insert if New and update if Modified.
             ECN::ECClassCP aspectClass = iModelExternalSourceAspect::GetAspectClass(conversionResults.m_element->GetDgnDb());
             if (nullptr != aspectClass)
                 {
+                // *** NEEDS WORK: Git rid of this. Just do what changeDetectorResults.GetChangeType tells you to do: insert if New and update if Modified.
                 auto idVals = iModelExternalSourceAspect::FindElementBySourceId(GetDgnDb(), DgnElementId(changeDetectorResults.GetSourceIdentity().GetScopeROWID()),
                     changeDetectorResults.GetSourceIdentity().GetKind().c_str(), changeDetectorResults.GetSourceIdentity().GetId());
                 iModelExternalSourceAspect aspect = iModelExternalSourceAspect::GetAspectForEdit(*conversionResults.m_element, BeSQLite::EC::ECInstanceId(idVals.aspectId), aspectClass);
