@@ -1802,10 +1802,10 @@ void GeometryStreamIO::Writer::Append(ImageGraphicCR img)
     FB::ImageBuilder builder(fbb);
 
     auto const* pts = img.GetCorners().m_pts;
-    builder.add_tileCorner0((FB::DPoint3d*) pts + 0);
-    builder.add_tileCorner1((FB::DPoint3d*) pts + 1);
-    builder.add_tileCorner2((FB::DPoint3d*) pts + 2);
-    builder.add_tileCorner3((FB::DPoint3d*) pts + 3);
+    builder.add_tileCorner0((FB::DPoint3d const*) pts + 0);
+    builder.add_tileCorner1((FB::DPoint3d const*) pts + 1);
+    builder.add_tileCorner2((FB::DPoint3d const*) pts + 2);
+    builder.add_tileCorner3((FB::DPoint3d const*) pts + 3);
     builder.add_drawBorder(img.HasBorder());
     builder.add_textureId(static_cast<int64_t>(img.GetTextureId().GetValueUnchecked()));
 
