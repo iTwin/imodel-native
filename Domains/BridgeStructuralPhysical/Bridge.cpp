@@ -14,13 +14,14 @@
 Bridge::Bridge(Dgn::PhysicalElementR element, CreateFromToParams const& fromToParams):
     T_Super(element), ILinearlyLocatedSingleFromTo(fromToParams)
     {
+    _SetLinearElement(fromToParams.m_linearElementCPtr->GetElementId());
     _AddLinearlyReferencedLocation(*_GetUnpersistedFromToLocation());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Nick.Purcell                  07/2018
 //---------------------------------------------------------------------------------------
-BridgePtr Bridge::Create(PhysicalModelCR physModel, DgnCodeCR code, LinearReferencing::ILinearElementCR linearElement, CreateFromToParams const& fromToParams)
+BridgePtr Bridge::Create(PhysicalModelCR physModel, DgnCodeCR code, CreateFromToParams const& fromToParams)
     {
     if (!physModel.IsGeometricModel())
         return nullptr;
@@ -28,9 +29,7 @@ BridgePtr Bridge::Create(PhysicalModelCR physModel, DgnCodeCR code, LinearRefere
    // auto dgnDb = ;
     Dgn::PhysicalElement::CreateParams createParams(dgnDb, physModel.GetModelId(), QueryClassId(dgnDb), BridgeCategory::Get(dgnDb));
     createParams.m_code = code;
-    BridgePtr bridgePtr(new Bridge(*Create(physModel.GetDgnDb(), createParams), fromToParams));
-    bridgePtr->_SetLinearElement(linearElement.ToElement().GetElementId());
-    return bridgePtr;
+    return new Bridge(*Create(physModel.GetDgnDb(), createParams), fromToParams);
     }
 
 
@@ -100,4 +99,40 @@ bvector<DgnElementId> Bridge::QueryOrderedSuperstructures() const
         retVal.push_back(stmt.GetValueId<DgnElementId>(0));
 
     return retVal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+BridgeCPtr Bridge::Insert(DgnDbStatus* stat)
+    {
+    BridgeCPtr retCPtr = new Bridge(*getP()->GetDgnDb().Elements().Insert<PhysicalElement>(*getP(), stat));
+
+    DgnDbStatus status = Dgn::DgnDbStatus::Success;
+    if (retCPtr.IsNull() ||
+        DgnDbStatus::Success != (status = _InsertLinearElementRelationship()))
+        {
+        if (stat) *stat = status;
+        return nullptr;
+        }
+
+    return retCPtr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+BridgeCPtr Bridge::Update(DgnDbStatus* stat)
+    {
+    BridgeCPtr retCPtr = new Bridge(*getP()->GetDgnDb().Elements().Update<PhysicalElement>(*getP(), stat));
+
+    DgnDbStatus status = Dgn::DgnDbStatus::Success;
+    if (retCPtr.IsNull() ||
+        DgnDbStatus::Success != (status = _UpdateLinearElementRelationship()))
+        {
+        if (stat) *stat = status;
+        return nullptr;
+        }
+
+    return retCPtr;
     }

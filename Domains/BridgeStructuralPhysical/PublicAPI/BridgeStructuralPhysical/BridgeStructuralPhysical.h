@@ -100,11 +100,17 @@ END_BENTLEY_BRIDGESTRUCTURALPHYSICAL_NAMESPACE
 
 
 //-----------------------------------------------------------------------------------------
+// Macro to declare Get, GetForEdit methods on elements. Pointers (Ptr, CPtr) must be defined.
+//-----------------------------------------------------------------------------------------
+#define DECLARE_BRIDGESTRUCTURALPHYSICAL_ELEMENT_GET_METHODS(__name__, __dgnelementname__) \
+    BRIDGESTRUCTURALPHYSICAL_EXPORT static __name__##CPtr Get       (Dgn::DgnDbR db, Dgn::DgnElementId id) { auto cPtr = db.Elements().Get< __dgnelementname__ >(id); if (cPtr.IsNull()) return nullptr; return new __name__(*cPtr); } \
+    BRIDGESTRUCTURALPHYSICAL_EXPORT static __name__##Ptr  GetForEdit(Dgn::DgnDbR db, Dgn::DgnElementId id) { auto ptr = db.Elements().GetForEdit< __dgnelementname__ >(id); if (ptr.IsNull()) return nullptr; return new __name__(*ptr); }
+
+//-----------------------------------------------------------------------------------------
 // Macro to declare Get, GetForEdit, Insert, Update methods on elements. Pointers (Ptr, CPtr) must be defined.
 //-----------------------------------------------------------------------------------------
 #define DECLARE_BRIDGESTRUCTURALPHYSICAL_ELEMENT_BASE_METHODS(__name__, __dgnelementname__) \
-    BRIDGESTRUCTURALPHYSICAL_EXPORT static __name__##CPtr Get       (Dgn::DgnDbR db, Dgn::DgnElementId id) { auto cPtr = db.Elements().Get< __dgnelementname__ >(id); if (cPtr.IsNull()) return nullptr; return new __name__(*cPtr); } \
-    BRIDGESTRUCTURALPHYSICAL_EXPORT static __name__##Ptr  GetForEdit(Dgn::DgnDbR db, Dgn::DgnElementId id) { auto ptr = db.Elements().GetForEdit< __dgnelementname__ >(id); if (ptr.IsNull()) return nullptr; return new __name__(*ptr); } \
+    DECLARE_BRIDGESTRUCTURALPHYSICAL_ELEMENT_GET_METHODS(__name__, __dgnelementname__) \
     BRIDGESTRUCTURALPHYSICAL_EXPORT        __name__##CPtr Insert(Dgn::DgnDbStatus* stat=nullptr) { auto cPtr = GetDgnDb().Elements().Insert< __dgnelementname__ >(*getP(), stat); if (cPtr.IsNull()) return nullptr; return new __name__(*cPtr); } \
     BRIDGESTRUCTURALPHYSICAL_EXPORT        __name__##CPtr Update(Dgn::DgnDbStatus* stat=nullptr) { auto cPtr = GetDgnDb().Elements().Update< __dgnelementname__ >(*getP(), stat); if (cPtr.IsNull()) return nullptr; return new __name__(*cPtr); }
 

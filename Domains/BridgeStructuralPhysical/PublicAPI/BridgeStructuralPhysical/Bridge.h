@@ -28,19 +28,22 @@ struct EXPORT_VTABLE_ATTRIBUTE Bridge : LinearReferencing::LinearPhysicalElement
 
     public:
         DECLARE_BRIDGESTRUCTURALPHYSICAL_QUERYCLASS_METHODS(Bridge)
-        DECLARE_BRIDGESTRUCTURALPHYSICAL_ELEMENT_BASE_METHODS(Bridge, Dgn::PhysicalElement)
+        DECLARE_BRIDGESTRUCTURALPHYSICAL_ELEMENT_GET_METHODS(Bridge, Dgn::PhysicalElement)
 
         BRIDGESTRUCTURALPHYSICAL_EXPORT bvector<LinearReferencing::LinearLocationReference> QueryOrderedSupports() const;
 
         BRIDGESTRUCTURALPHYSICAL_EXPORT bvector<Dgn::DgnElementId> QueryOrderedSuperstructures() const;
 
         BRIDGESTRUCTURALPHYSICAL_EXPORT static BridgePtr Create(Dgn::PhysicalModelCR pysModel, Dgn::DgnCodeCR code,
-            LinearReferencing::ILinearElementCR linearElement, CreateFromToParams const& fromToParams);
+            CreateFromToParams const& fromToParams);
 
         BRIDGESTRUCTURALPHYSICAL_EXPORT static Dgn::DgnCode CreateCode(Dgn::PhysicalModelCR scopeModel, Utf8StringCR codeValue);
 
         BRIDGESTRUCTURALPHYSICAL_EXPORT Dgn::PhysicalModelCP QueryStructuralSystemModel() const;
 
         BRIDGESTRUCTURALPHYSICAL_EXPORT Dgn::PhysicalModelCP QueryMultidisciplinaryModel() const;
+
+        BRIDGESTRUCTURALPHYSICAL_EXPORT BridgeCPtr Insert(Dgn::DgnDbStatus* stat = nullptr);
+        BRIDGESTRUCTURALPHYSICAL_EXPORT BridgeCPtr Update(Dgn::DgnDbStatus* stat = nullptr);
     }; // Bridge
 END_BENTLEY_BRIDGESTRUCTURALPHYSICAL_NAMESPACE

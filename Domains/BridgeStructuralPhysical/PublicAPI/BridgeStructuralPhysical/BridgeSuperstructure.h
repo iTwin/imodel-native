@@ -19,13 +19,13 @@ struct EXPORT_VTABLE_ATTRIBUTE SuperstructureElement : LinearReferencing::Linear
         //! @private
         BRIDGESTRUCTURALPHYSICAL_EXPORT explicit SuperstructureElement(Dgn::PhysicalElementCR element);
         BRIDGESTRUCTURALPHYSICAL_EXPORT explicit SuperstructureElement(Dgn::PhysicalElementR element) : T_Super(element) {}
-		BRIDGESTRUCTURALPHYSICAL_EXPORT explicit SuperstructureElement(Dgn::PhysicalElementR element, LinearReferencing::DistanceExpression distanceExpr);
+		BRIDGESTRUCTURALPHYSICAL_EXPORT explicit SuperstructureElement(Dgn::PhysicalElementR element, ILinearlyLocatedSingleAt::CreateAtParams const& atParams);
 		virtual Dgn::DgnElementCR _ILinearlyLocatedToDgnElement() const override { return *get(); }
         Dgn::DgnElementId GetFromBridgeSupportId() const { return get()->GetPropertyValueId<Dgn::DgnElementId>(BBP_PROP_BridgeSuperstructure_FromSupport); }
         Dgn::DgnElementId GetToBridgeSupportId() const { return get()->GetPropertyValueId<Dgn::DgnElementId>(BBP_PROP_BridgeSuperstructure_ToSupport); }
     public:
         DECLARE_BRIDGESTRUCTURALPHYSICAL_QUERYCLASS_METHODS(SuperstructureElement)
-        DECLARE_BRIDGESTRUCTURALPHYSICAL_ELEMENT_BASE_METHODS(SuperstructureElement, Dgn::PhysicalElement)
+        DECLARE_BRIDGESTRUCTURALPHYSICAL_ELEMENT_GET_METHODS(SuperstructureElement, Dgn::PhysicalElement)
 
     }; // SuperstructureElement
 
@@ -41,11 +41,14 @@ protected:
 	//! @private
 	BRIDGESTRUCTURALPHYSICAL_EXPORT explicit GenericSuperstructureElement(Dgn::PhysicalElementCR element);
     BRIDGESTRUCTURALPHYSICAL_EXPORT explicit GenericSuperstructureElement(Dgn::PhysicalElementR element) : T_Super(element) {}
-	BRIDGESTRUCTURALPHYSICAL_EXPORT explicit GenericSuperstructureElement(Dgn::PhysicalElementR element, LinearReferencing::DistanceExpression distanceExpr);
+	BRIDGESTRUCTURALPHYSICAL_EXPORT explicit GenericSuperstructureElement(Dgn::PhysicalElementR element, ILinearlyLocatedSingleAt::CreateAtParams const& atParams);
 public:
 	DECLARE_BRIDGESTRUCTURALPHYSICAL_QUERYCLASS_METHODS(GenericSuperstructureElement)
-	DECLARE_BRIDGESTRUCTURALPHYSICAL_ELEMENT_BASE_METHODS(GenericSuperstructureElement, Dgn::PhysicalElement)
-	BRIDGESTRUCTURALPHYSICAL_EXPORT static GenericSuperstructureElementPtr Create(Dgn::PhysicalElement::CreateParams createParams, LinearReferencing::ILinearElementCR linearElement, LinearReferencing::DistanceExpression distanceExpr);
+	DECLARE_BRIDGESTRUCTURALPHYSICAL_ELEMENT_GET_METHODS(GenericSuperstructureElement, Dgn::PhysicalElement)
+	BRIDGESTRUCTURALPHYSICAL_EXPORT static GenericSuperstructureElementPtr Create(Dgn::PhysicalElement::CreateParams createParams, ILinearlyLocatedSingleAt::CreateAtParams const& atParams);
+
+    BRIDGESTRUCTURALPHYSICAL_EXPORT GenericSuperstructureElementCPtr Insert(Dgn::DgnDbStatus* status = nullptr);
+    BRIDGESTRUCTURALPHYSICAL_EXPORT GenericSuperstructureElementCPtr Update(Dgn::DgnDbStatus* status = nullptr);
 }; //GenericSuperstructureElement
 
 END_BENTLEY_BRIDGESTRUCTURALPHYSICAL_NAMESPACE

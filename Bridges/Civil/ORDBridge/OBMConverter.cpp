@@ -407,7 +407,7 @@ void OBMConverter::CreateBimBridge(Bentley::ObmNET::BridgeR bridgeR, bmap<Bentle
                     Utf8String bridgeNameUtf8(bridgeName.c_str());
                     auto physicalModelCP = m_converter.GetRoadNetwork()->GetModel()->ToPhysicalModel();
                     DgnCode bridgeCode = BridgeStructuralPhysical::Bridge::CreateCode(*physicalModelCP, bridgeNameUtf8);
-                    BridgeStructuralPhysical::BridgePtr bimBridgePtr = BridgeStructuralPhysical::Bridge::Create(*physicalModelCP, bridgeCode, *bimAlignmentCPtr, createFromToParams);
+                    BridgeStructuralPhysical::BridgePtr bimBridgePtr = BridgeStructuralPhysical::Bridge::Create(*physicalModelCP, bridgeCode, createFromToParams);
                     if (bimBridgePtr != nullptr)
                         {
                         if (bimBridgePtr->Insert().IsValid())
@@ -999,7 +999,7 @@ void OBMConverter::CreateBimBridgeSuperstructures(Bentley::ObmNET::BridgeUnitR b
     Dgn::DgnCategoryId bridgeCategoryId = BridgeStructuralPhysical::BridgeCategory::Get(m_converter.GetDgnDb());
     Dgn::GeometricElement3d::CreateParams createParams(m_converter.GetDgnDb(), structuralSystemModelCP->GetModelId(), BridgeStructuralPhysical::GenericSuperstructureElement::QueryClassId(m_converter.GetDgnDb()), bridgeCategoryId);
     //TODO: Get the appropriate distance expression for the superstructure element
-    auto bimSuperstructureElementPtr = BridgeStructuralPhysical::GenericSuperstructureElement::Create(createParams, bimAlignmentCR, 0.0);
+    auto bimSuperstructureElementPtr = BridgeStructuralPhysical::GenericSuperstructureElement::Create(createParams, ILinearlyLocatedSingleAt::CreateAtParams(bimAlignmentCR, 0.0));
     if (bimSuperstructureElementPtr.IsValid())
         if (bimSuperstructureElementPtr->Insert().IsValid())
             {

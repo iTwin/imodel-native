@@ -19,11 +19,9 @@ SuperstructureElement::SuperstructureElement(PhysicalElementCR element):
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                       Nick.Purcell  06/2018
 //---------------------------------------------------------------------------------------
-SuperstructureElement::SuperstructureElement(PhysicalElementR element, DistanceExpression distanceExpr)
-	: T_Super(element)
+SuperstructureElement::SuperstructureElement(PhysicalElementR element, ILinearlyLocatedSingleAt::CreateAtParams const& atParams)
+	: T_Super(element), ILinearlyLocatedSingleAt(atParams)
 	{
-	auto atLocationPtr = LinearlyReferencedAtLocation::Create(distanceExpr);
-	_AddLinearlyReferencedLocation(*atLocationPtr);
 	}
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                       Nick.Purcell  07/2018
@@ -36,19 +34,53 @@ GenericSuperstructureElement::GenericSuperstructureElement(PhysicalElementCR ele
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                       Nick.Purcell  07/2018
 //---------------------------------------------------------------------------------------
-GenericSuperstructureElement::GenericSuperstructureElement(PhysicalElementR element, DistanceExpression distanceExpr)
-	: SuperstructureElement(element, distanceExpr)
+GenericSuperstructureElement::GenericSuperstructureElement(PhysicalElementR element, ILinearlyLocatedSingleAt::CreateAtParams const& atParams)
+	: SuperstructureElement(element, atParams)
 	{
+    _SetLinearElement(atParams.m_linearElementCPtr->GetElementId());
+    _AddLinearlyReferencedLocation(*_GetUnpersistedAtLocation());
 	}
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                       Nick.Purcell  07/2018
 //---------------------------------------------------------------------------------------
 GenericSuperstructureElementPtr GenericSuperstructureElement::Create(PhysicalElement::CreateParams createParams,
-	ILinearElementCR linearElement, DistanceExpression distanceExpr)
+	ILinearlyLocatedSingleAt::CreateAtParams const& atParams)
 	{
-	GenericSuperstructureElementPtr retVal = 
-		new GenericSuperstructureElement(*Create(createParams.m_dgndb, createParams), distanceExpr);
-	retVal->_SetLinearElement(linearElement.ToElement().GetElementId());
-	return retVal;
+	return new GenericSuperstructureElement(*Create(createParams.m_dgndb, createParams), atParams);
 	}
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+GenericSuperstructureElementCPtr GenericSuperstructureElement::Insert(DgnDbStatus* stat)
+    {
+    GenericSuperstructureElementCPtr retCPtr = new GenericSuperstructureElement(*getP()->GetDgnDb().Elements().Insert<PhysicalElement>(*getP(), stat));
+
+    DgnDbStatus status = Dgn::DgnDbStatus::Success;
+    if (retCPtr.IsNull() ||
+        DgnDbStatus::Success != (status = _InsertLinearElementRelationship()))
+        {
+        if (stat) *stat = status;
+        return nullptr;
+        }
+
+    return retCPtr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+GenericSuperstructureElementCPtr GenericSuperstructureElement::Update(DgnDbStatus* stat)
+    {
+    GenericSuperstructureElementCPtr retCPtr = new GenericSuperstructureElement(*getP()->GetDgnDb().Elements().Update<PhysicalElement>(*getP(), stat));
+
+    DgnDbStatus status = Dgn::DgnDbStatus::Success;
+    if (retCPtr.IsNull() ||
+        DgnDbStatus::Success != (status = _UpdateLinearElementRelationship()))
+        {
+        if (stat) *stat = status;
+        return nullptr;
+        }
+
+    return retCPtr;
+    }
