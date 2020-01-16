@@ -147,12 +147,12 @@ TEST_F(EventsTests, SingleCallbackTest)
     version->SetName("NewName");
     EXPECT_SUCCESS(versionManager.UpdateVersion(*version)->GetResult());
 
-    WaitForEventsCount(callbackNum, 13, 0, 0);
+    WaitForEventsCount(callbackNum, 14, 0, 0);
 
     EXPECT_SUCCESS(briefcase->UnsubscribeEventsCallback(callback)->GetResult());
-    EXPECT_EQ(13, callbackNum);
+    EXPECT_EQ(14, callbackNum);
 
-    EXPECT_EQ(6, codeEventCallbackNum);
+    EXPECT_EQ(7, codeEventCallbackNum);
     EXPECT_EQ(3, lockEventCallbackNum);
     EXPECT_EQ(1, changeSetPrePushEventCallbackNum);
     EXPECT_EQ(1, changeSetPostPushEventCallbackNum);
