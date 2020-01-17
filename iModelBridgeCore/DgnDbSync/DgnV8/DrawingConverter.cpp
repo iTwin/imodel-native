@@ -1279,7 +1279,8 @@ bool CreateOrUpdateDrawingGraphics()
                 if (DgnDbStatus::Success != status)
                     {
                     BeAssert((DgnDbStatus::LockNotHeld != status) && "Failed to get or retain necessary locks");
-                    m_converter.ReportError(Converter::IssueCategory::Unknown(), Converter::Issue::ConvertFailure(), "drawing extraction");
+                    Utf8PrintfString msg("drawing extraction for element %" PRIu64" and category %" PRIu64, byElement.first, sectionedElementCategory.GetValue());
+                    m_converter.ReportError(Converter::IssueCategory::Unknown(), Converter::Issue::ConvertFailure(), msg.c_str());
                     }
                 }
             if (m_converter.IsUpdating() &&

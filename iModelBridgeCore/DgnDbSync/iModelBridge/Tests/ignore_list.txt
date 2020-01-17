@@ -1,6 +1,1 @@
-iModelBridgeTests.Test1
-iModelBridgeTests.DelDocTest1
-iModelBridgeTests.SpatialDataTransformTest
-iModelBridgeTests.LaunchDarklyQa
-iModelBridgeTests.ECEFTransformTest
-iModelBridgeTests.iModelProjectExtentsTest
+
