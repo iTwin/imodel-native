@@ -805,3 +805,50 @@ TEST_F(DgnModelTests, ModelModelsElementSubClass)
     ASSERT_EQ(model2->GetModeledElementRelClassId(), testrelclassid2);
     ASSERT_NE(testrelclassid1, testrelclassid2);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/20
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnModelTests, FlagsAddedInBisCore108)
+    {
+    SetupSeedProject();
+
+    auto testFlags = [](PhysicalModelCR model)
+        {
+        EXPECT_TRUE(model.IsPlanProjection());
+        EXPECT_TRUE(model.IsNotSpatiallyLocated());
+
+        auto json = model.ToJson(Json::nullValue);
+        EXPECT_TRUE(json["isPlanProjection"].asBool());
+        EXPECT_TRUE(json["isNotSpatiallyLocated"].asBool());
+        };
+
+    DgnModelId modelId;
+    BeFileName dbFileName;
+        {
+        auto model = DgnDbTestUtils::InsertPhysicalModel(*m_db, "NonSpatialPlanProjection");
+        EXPECT_FALSE(model->IsPlanProjection());
+        EXPECT_FALSE(model->IsNotSpatiallyLocated());
+
+        model->SetIsPlanProjection(true);
+        model->SetNotSpatiallyLocated();
+
+        testFlags(*model);
+
+        EXPECT_EQ(DgnDbStatus::Success, model->Update());
+
+        modelId = model->GetModelId();
+        dbFileName = m_db->GetFileName();
+
+        m_db->SaveChanges("set flags");
+        m_db->CloseDb();
+        }
+
+    m_db = DgnDb::OpenDgnDb(nullptr, dbFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    EXPECT_TRUE(m_db->Models().FindModel(modelId).IsNull());
+
+    auto model = m_db->Models().Get<PhysicalModel>(modelId);
+    EXPECT_TRUE(model.IsValid());
+
+    testFlags(*model);
+    }

@@ -720,6 +720,26 @@ DgnDbStatus DgnModel::_ReadSelectParams(ECSqlStatement& statement, ECSqlClassPar
 }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/20
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometricModel3d::_ReadSelectParams(BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParamsCR params)
+    {
+    auto status = T_Super::_ReadSelectParams(stmt, params);
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    int isPlanProjectionIndex = params.GetSelectIndex(prop_IsPlanProjection());
+    if (isPlanProjectionIndex >= 0)
+        m_isPlanProjection = stmt.GetValueBoolean(isPlanProjectionIndex);
+
+    int isNotSpatialIndex = params.GetSelectIndex(prop_IsNotSpatiallyLocated());
+    if (isNotSpatialIndex >= 0)
+        m_isNotSpatiallyLocated = stmt.GetValueBoolean(isNotSpatialIndex);
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
  @bsimethod                                    Keith.Bentley                    08/19
 +---------------+---------------+---------------+---------------+---------------+------*/
 DateTime DgnModel::QueryLastModifyTime() const {
