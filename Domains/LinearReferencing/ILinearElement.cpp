@@ -518,13 +518,16 @@ DgnDbStatus ILinearlyLocated::_UpdateLinearElementRelationship()
 
     auto& elCR = ToElement();
     auto stmtDelPtr = elCR.GetDgnDb().GetPreparedECSqlStatement(
-        "SELECT ECClassId, ECInstanceId FROM " BLR_SCHEMA(BLR_REL_ILinearlyLocatedAlongILinearElement) " WHERE SourceECInstanceId = ?;");
+        "SELECT ECClassId, ECInstanceId, TargetECInstanceId FROM " BLR_SCHEMA(BLR_REL_ILinearlyLocatedAlongILinearElement) " WHERE SourceECInstanceId = ?;");
     BeAssert(stmtDelPtr.IsValid());
 
     stmtDelPtr->BindId(1, elCR.GetElementId());
     if (DbResult::BE_SQLITE_ROW == stmtDelPtr->Step())
         {
-        if (DbResult::BE_SQLITE_OK != elCR.GetDgnDb().DeleteLinkTableRelationship(
+        if (stmtDelPtr->GetValueId<DgnElementId>(2) == m_cachedLinearElementId)
+            return DgnDbStatus::Success;
+
+        if (DbResult::BE_SQLITE_DONE != elCR.GetDgnDb().DeleteLinkTableRelationship(
                 ECInstanceKey(stmtDelPtr->GetValueId<ECClassId>(0), stmtDelPtr->GetValueId<ECInstanceId>(1))))
             return DgnDbStatus::BadElement;
         }
