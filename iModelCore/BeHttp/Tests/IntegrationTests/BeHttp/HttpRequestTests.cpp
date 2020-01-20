@@ -1687,7 +1687,7 @@ TEST_P(HttpRequestTestsTls, PerformAsync_TlsServerConnectionRequest_GetsExpected
 
 INSTANTIATE_TEST_CASE_P(, HttpRequestTestsTls, Values(
      TlsRequestSettings {TlsVersion::v1_0, ConnectionStatus::CertificateError},
-     TlsRequestSettings {TlsVersion::v1_1, ConnectionStatus::OK},
+     TlsRequestSettings {TlsVersion::v1_1, ConnectionStatus::CertificateError},
      TlsRequestSettings {TlsVersion::v1_2, ConnectionStatus::OK}
 ));
 
