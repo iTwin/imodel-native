@@ -361,6 +361,9 @@ ENUM_IS_FLAGS(DgnTile::Flags);
 //      6.0: Added support for view-independent geometry.
 //  Major version 7:
 //      7.0 Fix incorrect normals for decimated polyfaces; fix incorrect decimation tolerance for polyface part geometry.
+//  Major version 8:
+//      8.0: Bump version to force new tiles to be generated, preventing old cached tiles that were produced for trees with the "use project extents" flag from being obtained.
+//          The geometry in those old tiles is shifted because we changed the way the tile tree range is computed from project extents.
 // @bsistruct                                                   Paul.Connelly   09/18
 //=======================================================================================
 struct IModelTile
@@ -389,9 +392,10 @@ struct IModelTile
         static constexpr Version V5() { return Version(5, 0); }
         static constexpr Version V6() { return Version(6, 0); }
         static constexpr Version V7() { return Version(7, 0); }
+        static constexpr Version V8() { return Version(8, 0); }
 
         // !!! IMPORTANT !!! If you change the major version you must update IModelTile::Version::FromMajorVersion !!!
-        static constexpr Version Current() { return V7(); }
+        static constexpr Version Current() { return V8(); }
 
         DGNPLATFORM_EXPORT static Version FromMajorVersion(uint16_t major);
 
