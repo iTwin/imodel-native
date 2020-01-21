@@ -40,6 +40,7 @@ public:
     static DgnModelId          m_defaultDrawingModelId;
     static DgnCategoryId       m_defaultCategoryId;
     static DgnCategoryId       m_defaultDrawingCategoryId;
+    static Utf8String          m_rulesetDir;
 
     bool ModifyElement(DgnElementId elementId);
     DgnElementPtr InsertPhysicalElement(Utf8String codeName);
@@ -70,6 +71,7 @@ DgnModelId                          VersionCompareTestFixture::m_defaultModelId;
 DgnModelId                          VersionCompareTestFixture::m_defaultDrawingModelId;
 DgnCategoryId                       VersionCompareTestFixture::m_defaultCategoryId;
 DgnCategoryId                       VersionCompareTestFixture::m_defaultDrawingCategoryId;
+Utf8String                          VersionCompareTestFixture::m_rulesetDir;
 
 static BeFileName                   s_changesetDir;
 
@@ -190,6 +192,7 @@ void VersionCompareTestFixture::SetUp()
     RulesDrivenECPresentationManager::Params params(RulesDrivenECPresentationManager::Paths(rulesetsDir, tempDir));
     params.SetLocalizationProvider(new ECPresentation::SQLangLocalizationProvider());
     m_manager = new RulesDrivenECPresentationManager(params);
+    m_rulesetDir = rulesetsDir.GetNameUtf8().c_str();
 
     // Add presentation rules
     rulesetsDir.AppendToPath(L"PresentationRules");
@@ -1401,6 +1404,79 @@ TEST_F(VersionCompareTestFixture, ChangedElementsManagerTest2_ChangedModels)
     EXPECT_EQ(bbox.low.x, 3.5);
     EXPECT_EQ(bbox.low.y, 2.5);
     EXPECT_EQ(bbox.low.z, 2.5);
+
+    // Close cache Db
+    cacheDb.CloseDb();
+    }
+
+//-------------------------------------------------------------------------------------------
+// @bsimethod                                                 Diego.Pinate     12/18
+//-------------------------------------------------------------------------------------------
+TEST_F(VersionCompareTestFixture, ChangedElementsManagerTest_PassRulesetDirectoryToManager)
+    {
+    ElementMap elementMap;
+    bvector<DgnRevisionPtr> changesets;
+
+    // INITIAL CHANGESET
+    // Create the starting changeset containing an element with an aspect
+    TestElementPtr tempEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "TestElement");
+    TestUniqueAspectPtr aspect = TestUniqueAspect::Create("Initial Value");
+    DgnElement::UniqueAspect::SetAspect(*tempEl, *aspect);
+    aspect->SetPropertyValue("TestUniqueAspectProperty", ECValue("Old Value for Property"));
+    m_db->Elements().Insert(*tempEl);
+    DgnRevisionPtr initialRevision = CreateRevision();
+    changesets.push_back(initialRevision);
+    ASSERT_TRUE(initialRevision.IsValid());
+    DgnDbPtr targetDb = CloneTemporaryDb(m_db);
+    ASSERT_TRUE(targetDb.IsValid());
+
+    // CHANGESET 1
+    // Modify the aspect, we should get a modification of the element
+    ECClassCP aspectClassUnique = TestUniqueAspect::GetECClass(*m_db);
+    ASSERT_NE(aspectClassUnique, nullptr);
+    SetUniqueAspectPropertyValue(*tempEl, *aspectClassUnique, "TestUniqueAspectProperty", "New Value for Property");
+    tempEl->Update();
+    elementMap[tempEl->GetElementId()] = ElementData(tempEl, DbOpcode::Update);
+    
+    DgnRevisionPtr changeset1 = CreateRevision();
+    DumpRevision(*changeset1, "ChangedElementsManagerTest_Aspects: Aspect modification");
+    changesets.push_back(changeset1);
+
+    // Filename and cleanup if needed
+    BeFileName cacheFilename;
+    BeTest::GetHost().GetOutputRoot(cacheFilename);
+    cacheFilename.AppendToPath(L"ChangedElements.chems");
+    if (BeFileName::DoesPathExist(cacheFilename.GetName()))
+        BeFileName::BeDeleteFile(cacheFilename.GetName());
+
+    // Process backwards
+    std::reverse(changesets.begin(), changesets.end());
+
+    ChangedElementsManager ceMgr(m_db);
+    ECDb cacheDb;
+    // Create the Db file
+    EXPECT_EQ(BE_SQLITE_OK, ceMgr.CreateChangedElementsCache(cacheDb, cacheFilename));
+    // IMPORTANT: Test that we can provide a ruleset directory to the manager so that the related property paths are found properly in this test
+    ceMgr.SetPresentationRulesetDirectory(VersionCompareTestFixture::m_rulesetDir);
+    // Process the changeset
+    EXPECT_EQ(BE_SQLITE_OK, ceMgr.ProcessChangesets(cacheDb, "Items", changesets));
+    // Should be able to retrieve the changed elements from the cache Db
+    ChangedElementsMap map;
+    // Check first changeset 1 and 2 above
+    EXPECT_EQ(BE_SQLITE_OK, ceMgr.GetChangedElements(cacheDb, map, changesets[0]->GetId(), changesets[0]->GetId()));
+    // Check size and data from retrieved map
+    EXPECT_EQ(1, map.size());
+    // Should contain the element whose aspect got modified
+    EXPECT_FALSE(map.find(tempEl->GetECInstanceKey()) == map.end());
+    EXPECT_EQ(map[tempEl->GetECInstanceKey()].m_opcode, DbOpcode::Update);
+    // Test we have the correct model Ids
+    EXPECT_EQ(elementMap[tempEl->GetElementId()].m_modelId, map[tempEl->GetECInstanceKey()].m_modelId);
+
+    // Test we can get changed models
+    bmap<DgnModelId, AxisAlignedBox3d> changedModels;
+    EXPECT_EQ(BE_SQLITE_OK, ceMgr.GetChangedModels(cacheDb, changedModels, changesets[0]->GetId(), changesets[0]->GetId()));
+    // Should have the default model in the changed models
+    EXPECT_TRUE(changedModels.find(m_defaultModelId) != changedModels.end());
 
     // Close cache Db
     cacheDb.CloseDb();

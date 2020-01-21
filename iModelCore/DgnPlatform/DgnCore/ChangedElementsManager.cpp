@@ -6,6 +6,7 @@
 #include <DgnPlatform/ChangedElementsManager.h>
 #include <ECDb/ECDbApi.h>
 #include <ECPresentation/RulesDriven/PresentationManager.h>
+#include <ECPresentation/RulesDriven/RuleSetLocater.h>
 
 #define CHANGE_PROPSPEC_NAMESPACE "ec_ChangedElements"
 
@@ -25,6 +26,15 @@ IECPresentationManager* ChangedElementsManager::CreatePresentationManager()
     RulesDrivenECPresentationManager::Params params(paths);
     return new RulesDrivenECPresentationManager(params);
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Diego.Pinate     01/2020
+//---------------------------------------------------------------------------------------
+void ChangedElementsManager::SetPresentationRulesetDirectory(Utf8String rulesetDir) {
+    m_rulesetDirectory = rulesetDir;
+    RuleSetLocaterPtr locater = DirectoryRuleSetLocater::Create(rulesetDir.c_str());
+    ((RulesDrivenECPresentationManager*)m_presentationManager)->GetLocaters().RegisterLocater(*locater);
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Diego.Pinate     12/2018
@@ -238,7 +248,10 @@ DgnDbPtr    ChangedElementsManager::CloneDb(DgnDbR db)
     DgnDb::OpenParams params (Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::SkipCheck));
 
     BeFileName tempFilename;
-    T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectory(tempFilename, L"ChangedElementsManager");
+    if (m_tempLocation.IsEmpty())
+        T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectory(tempFilename, L"ChangedElementsManager");
+    else
+        tempFilename = m_tempLocation;
 
     WString name = WString(L"Temp_") + db.GetFileName().GetFileNameWithoutExtension();
     tempFilename.AppendToPath(name.c_str());

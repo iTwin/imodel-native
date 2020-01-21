@@ -2556,6 +2556,8 @@ struct NativeChangedElementsECDb : BeObjectWrap<NativeChangedElementsECDb>
             REQUIRE_ARGUMENT_STRING(1, changeSetTokens, Env().Undefined());
             REQUIRE_ARGUMENT_STRING(2, rulesetId, Env().Undefined());
             REQUIRE_ARGUMENT_BOOL(3, filterSpatial, Env().Undefined());
+            OPTIONAL_ARGUMENT_STRING(4, rulesetDir, Env().Undefined());
+            OPTIONAL_ARGUMENT_STRING(5, tempDir, Env().Undefined());
 
             if (GetECDb().IsReadonly())
                 return Napi::Number::New(Env(), (int) BE_SQLITE_READONLY);
@@ -2572,6 +2574,12 @@ struct NativeChangedElementsECDb : BeObjectWrap<NativeChangedElementsECDb>
                 return Napi::Number::New(Env(), (int)status);
 
             m_manager->SetFilterSpatial(filterSpatial);
+            if (!rulesetDir.empty())
+                m_manager->SetPresentationRulesetDirectory(rulesetDir);
+
+            if (!tempDir.empty())
+                m_manager->SetTempLocation(tempDir.c_str());
+
             DbResult result = m_manager->ProcessChangesets(GetECDb(), Utf8String(rulesetId), revisionPtrs);
             return Napi::Number::New(Env(), (int) result);
             }

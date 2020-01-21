@@ -36,6 +36,8 @@ struct ChangedElementsManager final {
         //! Briefcase
         DgnDbPtr    m_db;
         bool        m_filterSpatial;
+        BeFileName  m_tempLocation;
+        Utf8String  m_rulesetDirectory;
         IECPresentationManager* m_presentationManager;
 
         DbResult AddMetadataToChangeCacheFile(ECDb& cacheFile, ECDbCR primaryECDb) const;
@@ -61,6 +63,10 @@ struct ChangedElementsManager final {
 
         //! Only store changes to spatial elements
         void SetFilterSpatial(bool value) { m_filterSpatial = value; }
+        //! Set presentation manager to use in processing
+        DGNPLATFORM_EXPORT void SetPresentationRulesetDirectory(Utf8String rulesetDir);
+        //! Set the temp location where the cloned Dbs are stored and cached for processing
+        void SetTempLocation(Utf8String path) { m_tempLocation = BeFileName(path); }
 
         //! Creates the changed elements cache
         DGNPLATFORM_EXPORT DbResult CreateChangedElementsCache(ECDbR cacheDb, BeFileNameCR cacheFilePath);
