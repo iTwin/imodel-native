@@ -2500,52 +2500,58 @@ void assignQuantityAspect(Dgn::DgnElementR element, Cif::CorridorSurfaceCR cifCo
         DgnV8ORDBim::VolumetricQuantityAspect::Set(element, *volumetricQuantityAspectPtr);
         }
 
-    auto qtoVolumeClassCP = element.GetDgnDb().Schemas().GetClass(ORDDynamicSchemaGenerator::GetTargetSchemaName(), ORDDynamicSchemaGenerator::GetQTOVolumeClassName());
-
-    if (auto qtoVolumeInstanceP = Dgn::DgnElement::GenericUniqueAspect::GetAspectP(element, *qtoVolumeClassCP))
+    if (volume.IsValid())
         {
-        qtoVolumeInstanceP->SetValue("NetVolume", ECN::ECValue(volumeVal));
-        qtoVolumeInstanceP->SetValue("GrossVolume", ECN::ECValue(volumeVal));
-        }
-    else
-        {
-        auto enablerP = qtoVolumeClassCP->GetDefaultStandaloneEnabler();
-        auto instancePtr = enablerP->CreateInstance();
-        instancePtr->SetValue("NetVolume", ECN::ECValue(volumeVal));
-        instancePtr->SetValue("GrossVolume", ECN::ECValue(volumeVal));
-        Dgn::DgnElement::GenericUniqueAspect::SetAspect(element, *instancePtr);
-        }
+        auto qtoVolumeClassCP = element.GetDgnDb().Schemas().GetClass(ORDDynamicSchemaGenerator::GetTargetSchemaName(), ORDDynamicSchemaGenerator::GetQTOVolumeClassName());
 
-    auto qtoSurfaceAreaClassCP = element.GetDgnDb().Schemas().GetClass(ORDDynamicSchemaGenerator::GetTargetSchemaName(), ORDDynamicSchemaGenerator::GetQTOSurfaceAreaClassName());
-
-    if (auto qtoSurfaceAreaInstanceP = Dgn::DgnElement::GenericUniqueAspect::GetAspectP(element, *qtoSurfaceAreaClassCP))
-        {
-        qtoSurfaceAreaInstanceP->SetValue("GrossSurfaceArea", ECN::ECValue(topSurfaceAreaVal));
-        qtoSurfaceAreaInstanceP->SetValue("NetSurfaceArea", ECN::ECValue(topSurfaceAreaVal));
-        }
-    else
-        {    
-        auto enablerP = qtoSurfaceAreaClassCP->GetDefaultStandaloneEnabler();
-        auto instancePtr = enablerP->CreateInstance();
-        instancePtr->SetValue("GrossSurfaceArea", ECN::ECValue(topSurfaceAreaVal));
-        instancePtr->SetValue("NetSurfaceArea", ECN::ECValue(topSurfaceAreaVal));
-        Dgn::DgnElement::GenericUniqueAspect::SetAspect(element, *instancePtr);
+        if (auto qtoVolumeInstanceP = Dgn::DgnElement::GenericUniqueAspect::GetAspectP(element, *qtoVolumeClassCP))
+            {
+            qtoVolumeInstanceP->SetValue("NetVolume", ECN::ECValue(volumeVal));
+            qtoVolumeInstanceP->SetValue("GrossVolume", ECN::ECValue(volumeVal));
+            }
+        else
+            {
+            auto enablerP = qtoVolumeClassCP->GetDefaultStandaloneEnabler();
+            auto instancePtr = enablerP->CreateInstance();
+            instancePtr->SetValue("NetVolume", ECN::ECValue(volumeVal));
+            instancePtr->SetValue("GrossVolume", ECN::ECValue(volumeVal));
+            Dgn::DgnElement::GenericUniqueAspect::SetAspect(element, *instancePtr);
+            }
         }
 
-    auto qtoSideAreasClassCP = element.GetDgnDb().Schemas().GetClass(ORDDynamicSchemaGenerator::GetTargetSchemaName(), ORDDynamicSchemaGenerator::GetQTOSideAreasClassName());
+    if (surfaceArea.IsValid())
+        {
+        auto qtoSurfaceAreaClassCP = element.GetDgnDb().Schemas().GetClass(ORDDynamicSchemaGenerator::GetTargetSchemaName(), ORDDynamicSchemaGenerator::GetQTOSurfaceAreaClassName());
 
-    if (auto qtoSideAreasInstanceP = Dgn::DgnElement::GenericUniqueAspect::GetAspectP(element, *qtoSideAreasClassCP))
-        {
-        qtoSideAreasInstanceP->SetValue("TopGrossArea", ECN::ECValue(topSurfaceAreaVal));
-        qtoSideAreasInstanceP->SetValue("TopNetArea", ECN::ECValue(topSurfaceAreaVal));
-        }
-    else
-        {
-        auto enablerP = qtoSideAreasClassCP->GetDefaultStandaloneEnabler();
-        auto instancePtr = enablerP->CreateInstance();
-        instancePtr->SetValue("TopGrossArea", ECN::ECValue(topSurfaceAreaVal));
-        instancePtr->SetValue("TopNetArea", ECN::ECValue(topSurfaceAreaVal));
-        Dgn::DgnElement::GenericUniqueAspect::SetAspect(element, *instancePtr);
+        if (auto qtoSurfaceAreaInstanceP = Dgn::DgnElement::GenericUniqueAspect::GetAspectP(element, *qtoSurfaceAreaClassCP))
+            {
+            qtoSurfaceAreaInstanceP->SetValue("GrossSurfaceArea", ECN::ECValue(topSurfaceAreaVal));
+            qtoSurfaceAreaInstanceP->SetValue("NetSurfaceArea", ECN::ECValue(topSurfaceAreaVal));
+            }
+        else
+            {
+            auto enablerP = qtoSurfaceAreaClassCP->GetDefaultStandaloneEnabler();
+            auto instancePtr = enablerP->CreateInstance();
+            instancePtr->SetValue("GrossSurfaceArea", ECN::ECValue(topSurfaceAreaVal));
+            instancePtr->SetValue("NetSurfaceArea", ECN::ECValue(topSurfaceAreaVal));
+            Dgn::DgnElement::GenericUniqueAspect::SetAspect(element, *instancePtr);
+            }
+
+        auto qtoSideAreasClassCP = element.GetDgnDb().Schemas().GetClass(ORDDynamicSchemaGenerator::GetTargetSchemaName(), ORDDynamicSchemaGenerator::GetQTOSideAreasClassName());
+
+        if (auto qtoSideAreasInstanceP = Dgn::DgnElement::GenericUniqueAspect::GetAspectP(element, *qtoSideAreasClassCP))
+            {
+            qtoSideAreasInstanceP->SetValue("TopGrossArea", ECN::ECValue(topSurfaceAreaVal));
+            qtoSideAreasInstanceP->SetValue("TopNetArea", ECN::ECValue(topSurfaceAreaVal));
+            }
+        else
+            {
+            auto enablerP = qtoSideAreasClassCP->GetDefaultStandaloneEnabler();
+            auto instancePtr = enablerP->CreateInstance();
+            instancePtr->SetValue("TopGrossArea", ECN::ECValue(topSurfaceAreaVal));
+            instancePtr->SetValue("TopNetArea", ECN::ECValue(topSurfaceAreaVal));
+            Dgn::DgnElement::GenericUniqueAspect::SetAspect(element, *instancePtr);
+            }
         }
 
     auto featureDefPtr = cifCorridorSurface.GetFeatureDefinition();
