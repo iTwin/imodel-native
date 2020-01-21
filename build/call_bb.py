@@ -144,8 +144,8 @@ def callEachStrategy(args, config, verData):
                 bbEnv['PrgProductId'] = str(stratConfig['prg_id'])
 
             # BDF names must be lower-case because BentleyBootstrap.py always lower-cases its input, which affects case-sensitive file systems.
-            bdfPath = os.path.join(args.bdfdir, stratConfig['name'].lower() + '.xml')
-            action = 'taglist -f ' + bdfPath
+            bdfPath = os.path.join(args.bdfdir, stratConfig['name'].lower() + '.json')
+            action = 'taglist --outputType=json -f ' + bdfPath
         elif 'build' == args.action:
             action = 'build'
             if isFirstStrategy:
