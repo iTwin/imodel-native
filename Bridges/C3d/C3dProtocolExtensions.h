@@ -98,6 +98,28 @@ private:
 };  // AeccFeatureLine
 
 /*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          01/20
++===============+===============+===============+===============+===============+======*/
+class AeccPipeExt : public DwgProtocolExtension
+{
+public:
+    DEFINE_C3DPROTOCOLEXTENSION(AeccPipeExt)
+
+    BentleyStatus  _ConvertToBim (ProtocolExtensionContext& context, DwgImporterR importer) override;
+
+private:
+    mutable C3dImporterP m_importer;
+    mutable AECCDbPipe* m_aeccPipe;
+    mutable ProtocolExtensionContext* m_toDgnContext;
+
+    ECObjectsStatus SetStringPartProperty (Utf8CP propName, AECCVariant const& var, IECInstanceR ecInstance);
+    void SetPartData (IECInstanceR ecInstance);
+    BentleyStatus CreateOrUpdateAeccPipe ();
+    BentleyStatus ImportAeccPipe ();
+    BentleyStatus ImportPipe ();
+};  // AeccPipe
+
+/*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          06/19
 +===============+===============+===============+===============+===============+======*/
 struct C3dProtocolExtensions
@@ -106,6 +128,7 @@ public:
     OdStaticRxObject<AeccAlignmentExt>  m_aeccAlignmentExt;
     OdStaticRxObject<AeccCorridorExt>   m_aeccCorridorExt;
     OdStaticRxObject<AeccFeatureLineExt> m_aeccFeatureLineExt;
+    OdStaticRxObject<AeccPipeExt>   m_aeccPipeExt;
     C3dProtocolExtensions ()
         {
         try
@@ -121,6 +144,10 @@ public:
             AECCDbFeatureLine::rxInit ();
             AeccFeatureLineExt::RxInit ();
             DwgRxClass::AddProtocolExtension (AECCDbFeatureLine::desc(), DwgProtocolExtension::Desc(), &m_aeccFeatureLineExt);
+
+            AECCDbPipe::rxInit ();
+            AeccPipeExt::RxInit ();
+            DwgRxClass::AddProtocolExtension (AECCDbPipe::desc(), DwgProtocolExtension::Desc(), &m_aeccPipeExt);
             }
         catch (OdError& error)
             {
@@ -141,6 +168,10 @@ public:
         DwgRxClass::DeleteProtocolExtension (AECCDbFeatureLine::desc(), AeccFeatureLineExt::Desc());
         AeccFeatureLineExt::RxUnInit ();
         AECCDbFeatureLine::rxUninit ();
+
+        DwgRxClass::DeleteProtocolExtension (AECCDbPipe::desc(), AeccPipeExt::Desc());
+        AeccPipeExt::RxUnInit ();
+        AECCDbPipe::rxUninit ();
         }
 
 };  // C3dProtocolExtensions

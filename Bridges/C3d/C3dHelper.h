@@ -26,6 +26,7 @@ public:
     EXPORT_ATTRIBUTE static DgnElementId    GetCivilReferenceElementId (DwgImporter::ElementImportResultsCR results);
     EXPORT_ATTRIBUTE static BentleyStatus   AddCivilReferenceElementId (DwgImporter::ElementImportResultsR results, DgnElementId id);
     EXPORT_ATTRIBUTE static Utf8String      AppendElementIdToJson (Utf8StringCR existingJson, DgnElementId elementId);
+    EXPORT_ATTRIBUTE static BentleyStatus   SetPropertiesInResults (DwgImporter::ElementImportResultsR results, ECN::IECInstanceCR ecInstance);
     };  // C3dHelper
 
 END_C3D_NAMESPACE

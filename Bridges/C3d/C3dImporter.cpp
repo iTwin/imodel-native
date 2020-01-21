@@ -238,6 +238,20 @@ BentleyStatus C3dImporter::OnBaseBridgeJobFound (DgnElementId jobId)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/20
++---------------+---------------+---------------+---------------+---------------+------*/
+DPoint3d    C3dImporter::_GetElementPlacementPoint (DwgDbEntityCR entity)
+    {
+    AECCDbGraph const* graph = AECCDbGraph::cast (&entity);
+    if (graph != nullptr)
+        {
+        auto origin = graph->GetOrigin ();
+        return  DPoint3d::From(origin.x, origin.y, origin.z);
+        }
+    return  T_Super::_GetElementPlacementPoint(entity);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          12/19
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool    C3dImporter::_FilterEntity (ElementImportInputsR inputs) const

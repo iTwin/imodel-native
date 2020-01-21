@@ -38,6 +38,10 @@ BentleyStatus AeccFeatureLineExt::ImportFeatureLine ()
 
     inputs.SetClassId (featureLineClass->GetId());
 
+    Utf8String  name(reinterpret_cast<WCharCP>(m_aeccFeatureLine->GetName().c_str()));
+    if (!name.empty())
+        inputs.SetElementLabel (name);
+
     auto status = m_importer->_ImportEntity (results, inputs);
     if (status != BentleyStatus::BSISUCCESS)
         return  status;

@@ -174,4 +174,36 @@ Utf8String  C3dHelper::AppendElementIdToJson (Utf8StringCR existingJson, DgnElem
     return  jsonstr;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/20
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   C3dHelper::SetPropertiesInResults (DwgImporter::ElementImportResultsR results, ECN::IECInstanceCR ecInstance)
+    {
+    BentleyStatus   status = BentleyStatus::BSIERROR;
+
+    // get the header element
+    auto importedElement = results.GetImportedElement ();
+    if (importedElement != nullptr)
+        {
+        // set all properties to the header element
+        auto dbStatus = importedElement->SetPropertyValues (ecInstance);
+        if (dbStatus == DgnDbStatus::Success)
+            {
+            // set all properties to child elements
+            for (auto& child : results.m_childElements)
+                {
+                importedElement = child.GetImportedElement ();
+                if (importedElement != nullptr)
+                    {
+                    dbStatus = importedElement->SetPropertyValues (ecInstance);
+                    if (dbStatus != DgnDbStatus::Success)
+                        break;
+                    }
+                }
+            }
+        status = static_cast<BentleyStatus>(dbStatus);
+        }
+    return  status;
+    }
+
 END_C3D_NAMESPACE

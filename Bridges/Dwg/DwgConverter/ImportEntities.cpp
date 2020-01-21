@@ -311,6 +311,14 @@ Utf8String      DwgImporter::_GetElementLabel (ElementImportInputs& inputs)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+DPoint3d    DwgImporter::_GetElementPlacementPoint (DwgDbEntityCR entity)
+    {
+    return DwgHelper::DefaultPlacementPoint (entity);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   DwgImporter::_GetElementCreateParams (DwgImporter::ElementCreateParams& params, TransformCR toDgn, DwgDbEntityCR ent, Utf8CP desiredCode)
     {
     DgnModelCR      model = params.GetModel ();
@@ -349,7 +357,7 @@ BentleyStatus   DwgImporter::_GetElementCreateParams (DwgImporter::ElementCreate
     // params.m_transform.InitProduct (ecs, toDgn);
     params.m_transform = toDgn;
 
-    params.m_placementPoint = DwgHelper::DefaultPlacementPoint (ent);
+    params.m_placementPoint = this->_GetElementPlacementPoint (ent);
 
 #ifdef NEED_UNIQUE_CODE_PER_ELEMENT
     Utf8String      codeNamespace = model.GetName ();

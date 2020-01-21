@@ -1269,6 +1269,10 @@ protected:
     DWG_EXPORT virtual BentleyStatus  _PostImportEntity (ElementImportResults& results, ElementImportInputs& inputs);
     //! This method is called to setup ElementCreatParams for each entity to be imported by default:
     DWG_EXPORT virtual BentleyStatus  _GetElementCreateParams (ElementCreateParams& params, TransformCR toDgn, DwgDbEntityCR entity, Utf8CP desiredCode = nullptr);
+    //! This method is called to calculate the placement point of the output element from the input entity.
+    //! The default implementation attempts to get the first grip point from the entity and sets the placement point from it.
+    //! If the grip point is not available, it then calculates the center point from the input entity's extents and uses it as the placement point.
+    DWG_EXPORT virtual DPoint3d       _GetElementPlacementPoint (DwgDbEntityCR entity);
     //! Determine DgnClassId for an entity by its owner block.  The default implementation maps modelspace entities to GenericPhysicalObjects for 3D or DrawingGraphics for 2D.
     DWG_EXPORT virtual DgnClassId     _GetElementType (DwgDbBlockTableRecordCR block);
     //! Determine graphical element label from the input data.  The default implementation returns element label the label in the inputs(if pre-set); otherwise returns the entity name.
