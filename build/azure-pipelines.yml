@@ -263,12 +263,20 @@ jobs:
         condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'MstnBridge'))
         artifact: iModelBridgeMstnx64
 
-      - task: archiveandpublishartifact@0
-        displayName: Save MstnBridge-Portable
+      - task: ArchiveFiles@2
+        displayName: Archive MstnBridge-Portable
         condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'MstnBridge'))
         inputs:
           rootFolderOrFile: $(Build.BinariesDirectory)/Winx64/Product/MstnBridge-Portable
-          artifactName: MstnBridge-Portable
+          includeRootFolder: false
+          archiveType: zip
+          archiveFile: $(Build.ArtifactStagingDirectory)/MstnBridge-Portable.zip
+          replaceExistingArchive: true
+
+      - publish: $(Build.ArtifactStagingDirectory)/MstnBridge-Portable.zip
+        displayName: Save MstnBridge-Portable
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'MstnBridge'))
+        artifact: MstnBridge-Portable
 
       - publish: $(Build.BinariesDirectory)/Winx64/imodelbridgeaddon_pkgs
         displayName: Save iModelBridgeAddonPackagesx64
