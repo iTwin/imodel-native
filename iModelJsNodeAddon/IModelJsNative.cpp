@@ -4782,7 +4782,7 @@ struct NativeUlasClient : BeObjectWrap<NativeUlasClient>
             jsNavValue.Set("allowed", Napi::Boolean::New(info.Env(), entitlementResult.allowed));
             jsNavValue.Set("principalId", Napi::String::New(info.Env(), entitlementResult.principalId.c_str()));
             jsNavValue.Set("usageType", Napi::String::New(info.Env(), usageType.c_str()));
-            
+
             return jsNavValue;
             }
 
@@ -4825,7 +4825,7 @@ struct NativeUlasClient : BeObjectWrap<NativeUlasClient>
                 THROW_TYPE_EXCEPTION_AND_RETURN("Could not track feature information: version must be specified", info.Env().Undefined());
 
             BeVersion appVersion = BeVersion(featureEventObj.Get("versionStr").ToString().Utf8Value().c_str());
-            
+
             Utf8String projectId;
             if (featureEventObj.Has("projectId"))
                 {
@@ -4851,7 +4851,7 @@ struct NativeUlasClient : BeObjectWrap<NativeUlasClient>
                     JsInterop::GetLogger().error("Invalid feature tracking data: userFeatureData entry is missing the field: value. Omitting this field from the feature tracking request.");
                     continue;
                     }
-                  
+
                   Utf8String key = getOptionalStringProperty(item, "key", "");
                   Utf8String value = getOptionalStringProperty(item, "value", "");
 
@@ -5137,15 +5137,15 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
     {
         struct BoolPredicate : IConditionVariablePredicate
             {
-            BeAtomic<bool>& m_flag;
-            BoolPredicate(BeAtomic<bool>& flag) : m_flag(flag) {}
-            bool _TestCondition(BeConditionVariable&) override {return m_flag.load();}
+            bool& m_flag;
+            BoolPredicate(bool& flag) : m_flag(flag) {}
+            bool _TestCondition(BeConditionVariable&) override {return m_flag;}
             };
     private:
         JsInterop::ObjectReferenceClaimCheck m_requestContext;
         BeConditionVariable m_waiter;
         ECPresentationResult m_result;
-        BeAtomic<bool> m_hasResult;
+        bool m_hasResult;
         uint64_t m_startTime;
     protected:
         void Execute() override
@@ -5168,7 +5168,13 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         ResponseSender(Napi::Function& callback)
             : Napi::AsyncWorker(callback), m_requestContext(JsInterop::GetCurrentClientRequestContextForMainThread()), m_hasResult(false), m_startTime(BeTimeUtilities::GetCurrentTimeAsUnixMillis())
             {}
-        void SetResult(ECPresentationResult&& result) {m_result = std::move(result); m_hasResult.store(true); m_waiter.notify_all();}
+        void SetResult(ECPresentationResult&& result)
+            {
+            BeMutexHolder lock(m_waiter.GetMutex());
+            m_result = std::move(result);
+            m_hasResult = true;
+            m_waiter.notify_all();
+            }
     };
 
     //=======================================================================================
@@ -5215,7 +5221,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
     std::unique_ptr<RulesDrivenECPresentationManager> m_presentationManager;
     RefCountedPtr<SimpleRuleSetLocater> m_ruleSetLocater;
     RuntimeJsonLocalState m_localState;
-    
+
     static bool InstanceOf(Napi::Value val) {
         if (!val.IsObject())
             return false;
@@ -5304,7 +5310,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             }
         return NapiUtils::CreateBentleyReturnSuccessObject(NapiUtils::Convert(env, result.GetSuccessResponse()), env);
         }
-    
+
     NativeECPresentationManager(Napi::CallbackInfo const& info)
         : BeObjectWrap<NativeECPresentationManager>(info)
         {
@@ -5985,7 +5991,7 @@ static void setNopBriefcaseManager(Napi::CallbackInfo const&)
     {
     JsInterop::SetNopBriefcaseManager();
     }
-  
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/18
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -6328,7 +6334,7 @@ void JsInterop::LogMessageInContext(Utf8StringCR category, NativeLogging::SEVERI
         // know issue in iOS with JSC
         return;
         }
-        
+
     Napi::HandleScope scope(env);
 
     auto wasCtx = callGetCurrentClientRequestContext(env);
