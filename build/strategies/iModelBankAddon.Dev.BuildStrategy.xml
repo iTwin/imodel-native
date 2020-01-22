@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildStrategy
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../bsicommon/build/BuildStrategy.xsd"
+    >
+
+    <!-- This is a developer strategy that builds /and tests/ iModelCore as well. -->
+
+    <ImportStrategy Name="iModelBankAddon"/>
+
+    <DefaultTarget PartName="imodel-bank.Dev"/>
+
+</BuildStrategy>
