@@ -689,6 +689,7 @@ void ConvertV8TextToDgnDbExtension::_ProcessResults(ElementConversionResults& re
     // As such, we want to leave our caller's proxy placement and graphics on the element.
     TextAnnotationDataP dbTextItem = TextAnnotationData::GetP(*results.m_element);
     dbTextItem->m_isGeometrySuppressed = true;
+    results.m_element->SetUserLabel(dbText->ToString().c_str());
     }
 
 //---------------------------------------------------------------------------------------
