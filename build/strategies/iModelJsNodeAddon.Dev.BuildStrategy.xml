@@ -4,10 +4,10 @@
     xsi:noNamespaceSchemaLocation="../bsicommon/build/BuildStrategy.xsd"
     >
 
-    <!-- This is a developer strategy that builds /and tests/ iModelCore as well. -->
+    <!-- This is a "developer" strategy for iModelJsNodeAddon that builds and tests iModelCore as well. -->
 
-    <ImportStrategy Name="iModelBankAddon"/>
+    <ImportStrategy Name="iModelJsNodeAddon"/>
 
-    <DefaultTarget PartName="imodel-bank.Dev"/>
-
+    <DefaultTarget PartName="iModelJsNodeAddon.Dev"/>
+    
 </BuildStrategy>
