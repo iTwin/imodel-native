@@ -82,7 +82,13 @@ jobs:
 
     steps:
       - template: ./templates/build.yml
-      
+
+      - task: DeleteFiles@1
+        displayName: Clear Old Change Logs
+        inputs:
+          SourceFolder: '$(BDF_DIR)/difflog'
+          Contents: '*.log'
+
       - script: bb -s "MstnBridge;PRG" diffreport --usePrevious $(BDF_DIR)/mstnbridge.xml $(BDF_DIR)/mstnbridge.xml --outputPath $(BDF_DIR)/difflog
         displayName: Compute MstnBridge Change Logs
         condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'MstnBridge'))
@@ -150,6 +156,7 @@ jobs:
           $pdbs = (Get-ChildItem -Recurse -Filter "*.pdb" -Path $walkDir)
           Write-Host "Found $($pdbs.Length) total PDB(s)"
           $pdbs = $pdbs | Where-Object { $_.Name -like "*stripped*" }
+
           Write-Host "Found $($pdbs.Length) stripped PDB(s)"
           $pdbs = $pdbs | Where-Object { -not ($_.Name -like "*test*") }
           $pdbs = $pdbs | Where-Object { -not ($_.Name -eq "objects.pdb") }
