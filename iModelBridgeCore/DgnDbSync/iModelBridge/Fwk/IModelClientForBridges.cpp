@@ -9,6 +9,7 @@
 #include <WebServices/Configuration/UrlProvider.h>
 #include <Bentley/Base64Utilities.h >
 #include <WebServices/iModelBank/LocalhostStorageClient.h>
+#include <WebServices/iModelBank/StorageServiceClient.h>
 #include <WebServices/Azure/AzureBlobStorageClient.h>
 
 #include "OidcSignInManager.h"
@@ -34,7 +35,7 @@ static IJsonLocalState* getLocalState()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-IModelClientBase::IModelClientBase(WebServices::ClientInfoPtr info, uint8_t maxRetryCount, size_t maxRetryWait, WebServices::UrlProvider::Environment environment, int64_t cacheTimeOutMs) : 
+IModelClientBase::IModelClientBase(WebServices::ClientInfoPtr info, uint8_t maxRetryCount, size_t maxRetryWait, WebServices::UrlProvider::Environment environment, int64_t cacheTimeOutMs) :
     m_clientInfo(info), m_maxRetryCount(maxRetryCount), m_maxRetryWait(maxRetryWait)
     {
     UrlProvider::Initialize(environment, cacheTimeOutMs, getLocalState());
@@ -48,13 +49,15 @@ IAzureBlobStorageClientFactory GetStorageFactory(Utf8StringCR storageType)
     {
     if (storageType == "localhost")
         return iModel::Hub::LocalhostStorageClient::Factory;
-    return iModel::Hub::AzureBlobStorageClient::Factory;
+    if (storageType == "azure")
+        return iModel::Hub::AzureBlobStorageClient::Factory;
+    return iModel::Hub::StorageServiceClient::Factory;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-IModelBankClient::IModelBankClient(iModelBridgeFwk::IModelBankArgs const& args, WebServices::ClientInfoPtr info) : 
+IModelBankClient::IModelBankClient(iModelBridgeFwk::IModelBankArgs const& args, WebServices::ClientInfoPtr info) :
     IModelClientBase(info, args.m_maxRetryCount, args.m_maxRetryWait, WebServices::UrlProvider::Environment::Release, INT64_MAX),
     m_iModelId(args.m_iModelId)
     {
@@ -80,7 +83,7 @@ IModelHubClient::IModelHubClient(iModelBridgeFwk::IModelHubArgs const& args, Web
     m_args(args)
     {
     Tasks::AsyncError serror;
-    
+
     if (!args.m_callBackurl.empty())
         {
         m_oidcMgr = OidcSignInManager::FromCallBack(args.m_callBackurl);
@@ -154,7 +157,7 @@ BentleyStatus IModelBankClient::Shutdown()
     auto result = m_client->DeleteiModel(m_iModelId, *info)->GetResult();
     if (result.IsSuccess())
         return BSISUCCESS;
-    
+
     m_lastServerError = result.GetError();
     return BSIERROR;
     }
@@ -173,7 +176,7 @@ BentleyStatus IModelHubClient::DeleteRepository()
     auto result = m_client->DeleteiModel(m_projectId, *info)->GetResult();
     if (result.IsSuccess())
         return BSISUCCESS;
-    
+
     m_lastServerError = result.GetError();
     return BSIERROR;
     }
@@ -186,7 +189,7 @@ iModel::Hub::iModelInfoPtr IModelBankClient::GetIModelInfo()
     auto result = m_client->GetiModelById(m_contextId, m_iModelId.c_str())->GetResult();
     if (result.IsSuccess())
         return result.GetValue();
-    
+
     m_lastServerError = result.GetError();
     return nullptr;
     }
@@ -199,11 +202,11 @@ iModel::Hub::iModelInfoPtr IModelHubClient::GetIModelInfo()
     auto result = m_client->GetiModelById(m_projectId, m_args.m_repositoryName)->GetResult();
     if (result.IsSuccess())
         return result.GetValue();
-    
+
     result = m_client->GetiModelByName(m_projectId, m_args.m_repositoryName)->GetResult();
     if (result.IsSuccess())
         return result.GetValue();
-    
+
     m_lastServerError = result.GetError();
     return nullptr;
     }
@@ -374,7 +377,7 @@ static ChangeSetsResult tryPullAndMergeSchemaRevisions(Dgn::DgnDbPtr& db, iModel
 
     // Reopen dgndb with changesets that should be applied
     BeSQLite::DbResult dbres;
-    
+
     bvector<DgnRevisionCP> changeSetVector;
     for (Dgn::DgnRevisionPtr& rev : downloadedChangeSets)
         changeSetVector.push_back(rev.get());
@@ -450,7 +453,7 @@ StatusInt       IModelClientBase::RestoreBriefcase(BeFileNameCR bcFileName, Utf8
             baseDirectory.AppendToPath(BeFileName(briefcaseInfo.GetFileName()));
         return baseDirectory;
         }, progress)->GetResult();
-        
+
     if (result.IsSuccess())
         {
         auto createdPath = result.GetValue()->GetLocalPath();
