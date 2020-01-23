@@ -10,6 +10,7 @@
 #include <WebServices/iModelHub/Client/ClientHelper.h>
 #include <WebServices/Connect/SimpleConnectTokenProvider.h>
 #include <WebServices/iModelBank/LocalhostStorageClient.h>
+#include <WebServices/iModelBank/StorageServiceClient.h>
 #include <Bentley/BeTest.h>
 #include <Bentley/BeStringUtilities.h>
 #include <Bentley/Base64Utilities.h>
@@ -56,6 +57,8 @@ namespace iModelHubHelpers
         auto type = IntegrationTestsSettings::Instance().GetStorageClientType().ToLower();
         if (type == "localhost")
             return LocalhostStorageClient::Factory;
+        if (type == "storageservice")
+            return StorageServiceClient::Factory;
         return AzureBlobStorageClient::Factory;
         }
 

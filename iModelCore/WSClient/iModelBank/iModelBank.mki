@@ -9,9 +9,12 @@ iModelBankMkiSourceDir = $(ClientSourceDirectory)iModelBank/
 #--------------------------------------------------------------------------------------
 #   Set up build dependencies
 #--------------------------------------------------------------------------------------
-iModelBankMkiHeaders =  $(iModelBankMkiPublicApiDir)LocalhostStorageClient.h
+iModelBankMkiHeaders =  $(iModelBankMkiPublicApiDir)LocalhostStorageClient.h        \
+					    $(iModelBankMkiPublicApiDir)StorageServiceClient.h
 
 #--------------------------------------------------------------------------------------
 #   Compile
 #--------------------------------------------------------------------------------------
 $(o)LocalhostStorageClient$(oext) : $(iModelBankMkiSourceDir)LocalhostStorageClient.cpp $(iModelBankMkiHeaders) ${MultiCompileDepends}
+
+$(o)StorageServiceClient$(oext) : $(iModelBankMkiSourceDir)StorageServiceClient.cpp $(iModelBankMkiHeaders) ${MultiCompileDepends}

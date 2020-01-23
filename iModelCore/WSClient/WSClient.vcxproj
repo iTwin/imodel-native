@@ -44,7 +44,7 @@
     <NMakeCleanCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WebServicesCache reb *WebServices* WSClient* -c</NMakeCleanCommandLine>
     <NMakeReBuildCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WebServicesCache b</NMakeReBuildCommandLine>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
-    <IncludePath>$(SrcRoot)WSClient\PublicAPI\;$(SrcRoot)WSClient\Client\;$(OutRoot)Winx64\build\WSClient\PublishedApi\;$(OutRoot)Winx64\BuildContexts\WSClient\PublicAPI\;$(OutRoot)Winx64\BuildContexts\WSClient\VendorAPI\;$(OutRoot)Winx64\Product\DgnClientSdk-Winx64\include\;$(IncludePath)</IncludePath>
+    <IncludePath>$(SrcRoot)imodel02\iModelCore\WSClient\PublicAPI\;$(SrcRoot)imodel02\iModelCore\WSClient\Client\;$(OutRoot)Winx64\build\WSClient\PublishedApi\;$(OutRoot)Winx64\BuildContexts\WSClient\PublicAPI\;$(OutRoot)Winx64\BuildContexts\WSClient\VendorAPI\;$(OutRoot)Winx64\Product\DgnClientSdk-Winx64\include\;$(IncludePath)</IncludePath>
     <OutDir>$(OutRoot)\Winx64\build\VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(OutDir)</IntDir>
   </PropertyGroup>
@@ -170,6 +170,8 @@
     <ClCompile Include="Connect\IdentityTokenProvider.cpp" />
     <ClCompile Include="Connect\IdentityAuthenticationPersistence.cpp" />
     <ClCompile Include="Connect\SamlToken.cpp" />
+    <ClCompile Include="iModelBank\LocalhostStorageClient.cpp" />
+    <ClCompile Include="iModelBank\StorageServiceClient.cpp" />
     <ClCompile Include="iModelHubClient\BaseFileInfo.cpp" />
     <ClCompile Include="iModelHubClient\BridgeProperties.cpp" />
     <ClCompile Include="iModelHubClient\BriefcaseInfo.cpp" />
@@ -325,6 +327,8 @@
     <ClInclude Include="PublicAPI\WebServices\Cache\Persistence\FileManager.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\SecurityToken.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\SimpleConnectTokenProvider.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelBank\LocalhostStorageClient.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelBank\StorageServiceClient.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\BridgeProperties.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\ChangeSetQuery.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\GlobalRequestOptions.h" />
@@ -572,6 +576,7 @@
     <None Include="CacheSchemasDelivery.mke" />
     <None Include="FakeServerLib.mke" />
     <None Include="FakeServerPrewire.mke" />
+    <None Include="iModelBank\iModelBank.mki" />
     <None Include="iModelHubClient.NuGetPackage.mke" />
     <None Include="iModelHubClient.nuspec" />
     <None Include="iModelHubClientLib.mke" />
