@@ -57,6 +57,13 @@ VersionsTests.GetChangeSetsAfterBaselineVersionSucceeds
 VersionsTests.GetChangeSetsBetweenBaselineVersionAndChangeSetSucceeds
 
 #----------------------------------------------------------------------------------------
+#   Fails only on pipeline #266395
+#----------------------------------------------------------------------------------------
+BriefcasePullTests.UpdateBriefcaseToVersion
+BriefcasePullTests.SuccessfulAcquireAndMergeBriefcase
+BriefcasePullTests.DownloadStandaloneBriefcaseUpdatedToVersion
+
+#----------------------------------------------------------------------------------------
 #   Missing features in iModelBank
 #----------------------------------------------------------------------------------------
 ChangeSetsTests.PreDownload                         #222158 - Events
@@ -123,6 +130,7 @@ BriefcaseSchemaChangesTests.UpdateToChangeSetPullWithReinstating
 #----------------------------------------------------------------------------------------
 BriefcaseTests.UnsuccessfulAcquireBriefcase
 iModelTests.QueryNonExistentiModelById
+iModelTests.GetiModelsInvalidContextId
 
 #----------------------------------------------------------------------------------------
 #   Failing tests, need investigation
