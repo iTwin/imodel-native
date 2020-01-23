@@ -46,6 +46,7 @@ public:
         m_high.x = RoundUp(box.high.x);
         m_high.z = RoundUp(box.high.z);
         m_isMinimal = Placement3d::IsMinimumRange(box.low, box.high, is2d);
+        m_is2d = is2d;
         }
 
     void Invalidate()
@@ -53,6 +54,7 @@ public:
         m_low.x = m_low.y = m_low.z = std::numeric_limits<float>::max();
         m_high.x = m_high.y = m_high.z = -std::numeric_limits<float>::max();
         m_isMinimal = false;
+        m_is2d = false;
         }
 
     bool IsNull() const {return m_low.x>m_high.x || m_low.y>m_high.y || (!m_is2d && m_low.z>m_high.z);}
