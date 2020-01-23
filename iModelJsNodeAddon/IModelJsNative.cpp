@@ -5596,6 +5596,7 @@ public:
             InstanceMethod("importCodeSpec", &NativeImportContext::ImportCodeSpec),
             InstanceMethod("cloneElement", &NativeImportContext::CloneElement),
             InstanceMethod("importFont", &NativeImportContext::ImportFont),
+            InstanceMethod("dump", &NativeImportContext::Dump),
         });
         exports.Set("ImportContext", t);
         SET_CONSTRUCTOR(t);
@@ -5626,6 +5627,16 @@ public:
             delete m_importContext;
             m_importContext = nullptr;
             }
+        }
+
+    Napi::Value Dump(Napi::CallbackInfo const& info)
+        {
+        if (nullptr == m_importContext)
+            THROW_TYPE_EXCEPTION_AND_RETURN("Invalid NativeImportContext", Env().Undefined());
+
+        REQUIRE_ARGUMENT_STRING(0, outputFileName, Napi::Number::New(Env(), (int) BentleyStatus::ERROR));
+        BentleyStatus status = m_importContext->Dump(outputFileName);
+        return Napi::Number::New(Env(), (int) status);
         }
 
     Napi::Value AddClass(Napi::CallbackInfo const& info)

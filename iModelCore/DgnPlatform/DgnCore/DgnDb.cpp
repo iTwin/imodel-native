@@ -911,6 +911,127 @@ DgnImportContext::~DgnImportContext()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DgnImportContext::Dump(Utf8StringCR outputFileName)
+    {
+    BeFile outputFile;
+    BeFileStatus status = outputFile.Create(outputFileName);
+    if (BeFileStatus::Success != status)
+        return BentleyStatus::ERROR;
+
+    Utf8PrintfString sourceDbLine("SourceDb: %s\n", m_sourceDb.GetFileName().GetNameUtf8().c_str());
+    Utf8PrintfString targetDbLine("TargetDb: %s\n", m_destDb.GetFileName().GetNameUtf8().c_str());
+    outputFile.Write(nullptr, sourceDbLine.c_str(), static_cast<uint32_t>(sourceDbLine.size()));
+    outputFile.Write(nullptr, targetDbLine.c_str(), static_cast<uint32_t>(targetDbLine.size()));
+
+    Utf8CP codeSpecHeaderLine = "\n=== CodeSpecs ===\n";
+    outputFile.Write(nullptr, codeSpecHeaderLine, static_cast<uint32_t>(strlen(codeSpecHeaderLine)));
+    if (m_remap.m_codeSpecId.size() > 0)
+        {
+        for (auto const& it : m_remap.m_codeSpecId)
+            {
+            CodeSpecCPtr source = m_sourceDb.CodeSpecs().GetCodeSpec(it.first);
+            CodeSpecCPtr target = m_destDb.CodeSpecs().GetCodeSpec(it.second);
+            Utf8CP sourceName = source.IsValid() ? source->GetName().c_str() : "<Invalid>";
+            Utf8CP targetName = target.IsValid() ? target->GetName().c_str() : "<Invalid>";
+            Utf8PrintfString line("%llu, %s --> %llu, %s\n", it.first.GetValueUnchecked(), sourceName, it.second.GetValueUnchecked(), targetName);
+            outputFile.Write(nullptr, line.c_str(), static_cast<uint32_t>(line.size()));
+            }
+        }
+    else
+        {
+        Utf8CP noCodeSpecsLine = "No CodeSpec remappings\n";
+        outputFile.Write(nullptr, noCodeSpecsLine, static_cast<uint32_t>(strlen(noCodeSpecsLine)));
+        }
+
+    Utf8CP fontHeaderLine = "\n=== Fonts ===\n";
+    outputFile.Write(nullptr, fontHeaderLine, static_cast<uint32_t>(strlen(fontHeaderLine)));
+    if (m_remap.m_fontId.size() > 0)
+        {
+        for (auto const& it : m_remap.m_fontId)
+            {
+            DgnFontCP source = m_sourceDb.Fonts().FindFontById(it.first);
+            DgnFontCP target = m_destDb.Fonts().FindFontById(it.second);
+            Utf8CP sourceName = (nullptr != source) ? source->GetName().c_str() : "<Invalid>";
+            Utf8CP targetName = (nullptr != target) ? target->GetName().c_str() : "<Invalid>";
+            Utf8PrintfString line("%llu, %s --> %llu, %s\n", it.first.GetValueUnchecked(), sourceName, it.second.GetValueUnchecked(), targetName);
+            outputFile.Write(nullptr, line.c_str(), static_cast<uint32_t>(line.size()));
+            }
+        }
+    else
+        {
+        Utf8CP noFontsLine = "No Font remappings\n";
+        outputFile.Write(nullptr, noFontsLine, static_cast<uint32_t>(strlen(noFontsLine)));
+        }
+
+    Utf8CP classHeaderLine = "\n=== Classes ===\n";
+    outputFile.Write(nullptr, classHeaderLine, static_cast<uint32_t>(strlen(classHeaderLine)));
+    if (m_remap.m_classId.size() > 0)
+        {
+        for (auto const& it : m_remap.m_classId)
+            {
+            ECClassCP source = m_sourceDb.Schemas().GetClass(it.first);
+            ECClassCP target = m_destDb.Schemas().GetClass(it.second);
+            Utf8CP sourceName = (nullptr != source) ? source->GetFullName() : "<Invalid>";
+            Utf8CP targetName = (nullptr != target) ? target->GetFullName() : "<Invalid>";
+            Utf8PrintfString line("%llu, %s --> %llu, %s\n", it.first.GetValueUnchecked(), sourceName, it.second.GetValueUnchecked(), targetName);
+            outputFile.Write(nullptr, line.c_str(), static_cast<uint32_t>(line.size()));
+            }
+        }
+    else
+        {
+        Utf8CP noClassesLine = "No Class remappings\n";
+        outputFile.Write(nullptr, noClassesLine, static_cast<uint32_t>(strlen(noClassesLine)));
+        }
+
+    Utf8CP elementHeaderLine = "\n=== Elements ===\n";
+    outputFile.Write(nullptr, elementHeaderLine, static_cast<uint32_t>(strlen(elementHeaderLine)));
+    if (m_remap.m_elementId.size() > 0)
+        {
+        for (auto const& it : m_remap.m_elementId)
+            {
+            DgnElementCPtr source = m_sourceDb.Elements().Get<DgnElement>(it.first);
+            DgnElementCPtr target = m_destDb.Elements().Get<DgnElement>(it.second);
+            if (!source.IsValid() || !target.IsValid())
+                {
+                Utf8CP sourceName = source.IsValid() ? source->GetDisplayLabel().c_str() : "<Invalid>";
+                Utf8CP targetName = target.IsValid() ? target->GetDisplayLabel().c_str() : "<Invalid>";
+                Utf8PrintfString line("%llu, %s, %s --> %llu, %s, %s\n",
+                    it.first.GetValueUnchecked(), it.first.ToHexStr().c_str(), sourceName,
+                    it.second.GetValueUnchecked(), it.second.ToHexStr().c_str(), targetName);
+                outputFile.Write(nullptr, line.c_str(), static_cast<uint32_t>(line.size()));
+                }
+            else
+                {
+                Utf8PrintfString line("e=%llu, e=%s, c=%llu, m=%llu, p=%llu, %s --> e=%llu, e=%s, c=%llu, m=%llu, p=%llu, %s\n",
+                    it.first.GetValueUnchecked(),
+                    it.first.ToHexStr().c_str(),
+                    source->GetElementClassId().GetValueUnchecked(),
+                    source->GetModelId().GetValueUnchecked(),
+                    source->GetParentId().GetValueUnchecked(),
+                    source->GetDisplayLabel().c_str(),
+                    it.second.GetValueUnchecked(),
+                    it.second.ToHexStr().c_str(),
+                    target->GetElementClassId().GetValueUnchecked(),
+                    target->GetModelId().GetValueUnchecked(),
+                    target->GetParentId().GetValueUnchecked(),
+                    target->GetDisplayLabel().c_str());
+                outputFile.Write(nullptr, line.c_str(), static_cast<uint32_t>(line.size()));
+                }
+            }
+        }
+    else
+        {
+        Utf8CP noElementsLine = "No Element remappings\n";
+        outputFile.Write(nullptr, noElementsLine, static_cast<uint32_t>(strlen(noElementsLine)));
+        }
+
+    outputFile.Close();
+    return BentleyStatus::SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 RepositoryModelPtr DgnDb::GetRepositoryModel()

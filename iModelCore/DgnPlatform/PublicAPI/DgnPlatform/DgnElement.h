@@ -39,6 +39,7 @@ struct ElementAutoHandledPropertiesECInstanceAdapter;
 //=======================================================================================
 struct DgnRemapTables
 {
+    friend struct DgnImportContext;
 protected:
     // *** NEEDS WORK: We may have to move these remappings into temp tables
     bmap<DgnElementId, DgnElementId> m_elementId;
@@ -144,6 +145,9 @@ public:
     DGNPLATFORM_EXPORT DgnImportContext(DgnDbR source, DgnDbR dest);
     //! Destruct a DgnImportContext object.
     DGNPLATFORM_EXPORT virtual ~DgnImportContext();
+
+    //! @private
+    DGNPLATFORM_EXPORT BentleyStatus Dump(Utf8StringCR outputFileName);
 
     //! @name Source and Destination Dbs
     //! @{
