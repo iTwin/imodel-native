@@ -729,12 +729,17 @@ DgnDbStatus GeometricModel3d::_ReadSelectParams(BeSQLite::EC::ECSqlStatement& st
         return status;
 
     int isPlanProjectionIndex = params.GetSelectIndex(prop_IsPlanProjection());
-    if (isPlanProjectionIndex >= 0)
-        m_isPlanProjection = stmt.GetValueBoolean(isPlanProjectionIndex);
+    if (isPlanProjectionIndex >= stmt.GetColumnCount())
+        {
+        // Following properties introduced after initial BisCore release; this db doesn't have them.
+        return DgnDbStatus::Success;
+        }
 
     int isNotSpatialIndex = params.GetSelectIndex(prop_IsNotSpatiallyLocated());
-    if (isNotSpatialIndex >= 0)
-        m_isNotSpatiallyLocated = stmt.GetValueBoolean(isNotSpatialIndex);
+    BeAssert(isNotSpatialIndex >= 0 && isNotSpatialIndex < stmt.GetColumnCount());
+
+    m_isPlanProjection = stmt.GetValueBoolean(isPlanProjectionIndex);
+    m_isNotSpatiallyLocated = stmt.GetValueBoolean(isNotSpatialIndex);
 
     return DgnDbStatus::Success;
     }
