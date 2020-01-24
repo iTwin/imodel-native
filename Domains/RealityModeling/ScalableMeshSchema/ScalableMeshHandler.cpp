@@ -711,8 +711,12 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     if (m_smPtr->IsCesium3DTiles() && !(smFilename.ContainsI(L"realitydataservices") && smFilename.ContainsI(L"S3MXECPlugin")))
         {
         // The mesh likely comes from ProjectWiseContextShare, if it does then save that instead
-        auto pwcsLink = BeFileName(m_smPtr->GetProjectWiseContextShareLink().c_str());
-        if (!pwcsLink.empty()) m_path = pwcsLink;
+        WString pwcsLink (m_smPtr->GetProjectWiseContextShareLink().c_str(), true);
+        if(!pwcsLink.empty())
+            {
+            m_path = BeFileName();
+            m_path.AppendString(pwcsLink.c_str());
+            }
         }
         
     BeFileName dbFileName(dgnProject.GetDbFileName());
