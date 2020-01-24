@@ -15,6 +15,8 @@ namespace {
 struct BroadcasterBase
     {
     Utf8String m_url;
+    Utf8String m_jobRunCorrelationId;
+    Utf8String m_jobRequestId;
     uint32_t m_timeOfLastPost {};
     uint32_t m_interval = 1000;
     bool m_isRequestInFlight{};
@@ -24,6 +26,8 @@ struct BroadcasterBase
 
     public:
     void SetUrl(Utf8StringCR url) {m_url = url;}
+    void SetCorrelationId(Utf8String correlationId) { m_jobRunCorrelationId = correlationId; }
+    void SetJobRequestId(Utf8String jobRequestId) { m_jobRequestId = jobRequestId; }
     bool HasUrl() const {return !m_url.empty();}
     void SetInterval(uint32_t i) {m_interval=i;}
     bool IsTooSoonForNextMessage() const;
@@ -158,6 +162,8 @@ void BroadcastProgressMeter::PostProgressMessage()
     SetTimeOfLastPost();
 
     Json::Value json(Json::objectValue);
+    json["jobRequestId"] = m_jobRequestId;
+    json["jobRunCorrelationId"] = m_jobRunCorrelationId;
     json["messageType"] = "progress";
     json["phase"] = m_phaseName.c_str();
     json["step"] = m_stepName.c_str();
@@ -249,6 +255,8 @@ void iModelBridgeFwk::SetupProgressMeter()
         {
         s_broadcastMeter.SetUrl(m_jobEnvArgs.m_statusMessageSinkUrl);
         s_broadcastMeter.SetInterval(m_jobEnvArgs.m_statusMessageInterval);
+        s_broadcastMeter.SetJobRequestId(m_jobEnvArgs.m_jobRequestId);
+        s_broadcastMeter.SetCorrelationId(m_jobEnvArgs.m_jobRunCorrelationId);
         T_HOST.SetProgressMeter(&s_broadcastMeter);
         }
     else
