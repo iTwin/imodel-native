@@ -3354,7 +3354,7 @@ public:
 
         IGeometryPtr geom = m_ecsqlValue->GetGeometry();
         Json::Value json;
-        if (SUCCESS != ECJsonUtilities::IGeometryToJson(json, *geom))
+        if (SUCCESS != ECJsonUtilities::IGeometryToIModelJson(json, *geom))
             THROW_TYPE_EXCEPTION_AND_RETURN("Could not convert IGeometry to JSON.", Env().Undefined());
 
         return toJsString(Env(), json.ToString());
