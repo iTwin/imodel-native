@@ -156,13 +156,13 @@ void    AeccPipeExt::SetPartData (IECInstanceR ecInstance)
             {
             Utf8String  fieldKey (reinterpret_cast<WCharCP>(dataField->GetContext().c_str()));
             AECCVariant fieldValue = dataField->GetValue ();
-            if (fieldKey.CompareToI("PipeInnerDiameter") == 0)
+            if (fieldKey.CompareToI("InnerStructDiameter") == 0)
                 {
                 if (fieldValue.type() == AECCVariant::eDouble)
                     {
                     // WIP - determine what units to show
                     double  diameterInMM = ::DrawingUnitsTo(AECDefs::Units::euMillimeters, fieldValue.getDouble(), m_aeccPipe->database());
-                    ecInstance.SetValue (ECPROPNAME_InnerPipeDiameter, ECValue(diameterInMM));
+                    ecInstance.SetValue (ECPROPNAME_InnerStructDiameter, ECValue(diameterInMM));
                     count++;
                     }
                 }
@@ -226,7 +226,10 @@ void    AeccPipeExt::SetPartData (IECInstanceR ecInstance)
         }
 
     if (count < 8)
-        m_importer->ReportError(IssueCategory::Unknown(), Issue::Error(), Utf8PrintfString("Missing part data - expected 8 but only seen %d", count).c_str());
+        {
+        Utf8PrintfString msg("Expected 8 fields in the part definition, but only seen %d, pipe ID=%ls", count, m_aeccPipe->objectId().getHandle().ascii().c_str());
+        m_importer->ReportIssue (DwgImporter::IssueSeverity::Info, IssueCategory::MissingData(), Issue::Message(), msg.c_str());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

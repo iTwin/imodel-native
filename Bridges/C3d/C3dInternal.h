@@ -27,11 +27,13 @@
 #include <Teigha/Civil/DbEntity/AECCDbPipe.h>
 #include <Teigha/Civil/DbEntity/AECCDbStructure.h>
 #include <Teigha/Civil/DbEntity/AECCDbSurface.h>
+#include <Teigha/Civil/DbEntity/AECCDbNetworkPartConnector.h>
 #include <Teigha/Civil/DbObject/AECCDbRoadwayStyleSet.h>
 #include <Teigha/Civil/DbObject/AECCDbRoadwayLinkStyle.h>
 #include <Teigha/Civil/DbObject/AECCDbRoadwayShapeStyle.h>
 #include <Teigha/Civil/DbObject/AECCDbFeatureLineStyle.h>
 #include <Teigha/Civil/DbObject/AECCDbPipeStyle.h>
+#include <Teigha/Civil/DbObject/AECCDbStructureStyle.h>
 #include <Teigha/Civil/DbObject/AECCDbNetworkPartDef.h>
 #include <Teigha/Civil/DbLabeling/AECCDbAlignmentStationLabeling.h>
 #include <Teigha/Civil/DbLabeling/AECCDbAlignmentMinorStationLabeling.h>

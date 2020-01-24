@@ -61,6 +61,8 @@ $(o)ImportFeatureLine.obj : $(baseDir)ImportFeatureLine.cpp $(ImportC3dDepends) 
 
 $(o)ImportPipe.obj : $(baseDir)ImportPipe.cpp $(ImportC3dDepends) ${MultiCompileDepends}
 
+$(o)ImportStructure.obj : $(baseDir)ImportStructure.cpp $(ImportC3dDepends) ${MultiCompileDepends}
+
 $(o)C3dProvenance.obj : $(baseDir)C3dProvenance.cpp $(ImportC3dDepends) ${MultiCompileDepends}
 
 $(o)C3dHelper.obj : $(baseDir)C3dHelper.cpp $(ImportC3dDepends) ${MultiCompileDepends}

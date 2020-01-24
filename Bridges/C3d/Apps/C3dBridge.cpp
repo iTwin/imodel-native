@@ -12,6 +12,8 @@
 
 USING_NAMESPACE_C3D
 
+static C3dBridge*   s_c3dBridgeInstance = nullptr;
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          11/19
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -172,7 +174,10 @@ EXPORT_ATTRIBUTE void iModelBridge_getAffinity (WCharP buffer, const size_t buff
             {
             auto className = aeccRoot->GetDwgClassName ();
             if (className.EqualsI(L"AeccDbTreeNode"))
+                {
                 affinityLevel = BentleyApi::Dgn::iModelBridge::Affinity::ExactMatch;
+                BeStringUtilities::Wcsncpy(buffer, bufferSize, L"C3dBridge");
+                }
             }
         }
     }
@@ -182,7 +187,22 @@ EXPORT_ATTRIBUTE void iModelBridge_getAffinity (WCharP buffer, const size_t buff
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelBridge* iModelBridge_getInstance(wchar_t const* bridgeRegSubKey)
     {
-    return  new BentleyApi::C3D::C3dBridge();
+    s_c3dBridgeInstance = new BentleyApi::C3D::C3dBridge();
+    return  s_c3dBridgeInstance;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridge_releaseInstance(iModelBridge* bridgeInstance)
+    {
+    if (dynamic_cast<BentleyApi::C3D::C3dBridge*>(bridgeInstance) != nullptr)
+        {
+        delete s_c3dBridgeInstance;
+        s_c3dBridgeInstance = nullptr;
+        return  BentleyStatus::SUCCESS;
+        }
+    return  BentleyStatus::ERROR;
     }
 
 }   // extern "C"

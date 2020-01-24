@@ -15,6 +15,7 @@
     <KindOfQuantity typeName="VELOCITY" displayLabel="Speed" persistenceUnit="u:KM_PER_HR" presentationUnits="f:DefaultRealU(2)[u:KM_PER_HR];f:DefaultRealU(2)[u:MPH]" relativeError="0.0001"/>
 
     <!-- PropertyCategorys -->
+    <PropertyCategory typeName="C3dInformation" displayLabel="Information" priority="60"/>
     <PropertyCategory typeName="C3dGeometry" displayLabel="Geometry" priority="50"/>
     <PropertyCategory typeName="C3dData" displayLabel="Data" priority="48"/>
     <PropertyCategory typeName="C3dVAlignments" displayLabel="Vertical Alignments" priority="45"/>
@@ -24,33 +25,40 @@
     <PropertyCategory typeName="C3dFeatureLines" displayLabel="Feature Lines" priority="40"/>
     <PropertyCategory typeName="C3dHydraulicProperties" displayLabel="Hydraulic Properties" priority="45"/>
     <PropertyCategory typeName="C3dPartData" displayLabel="Part Data" priority="40"/>
+    <PropertyCategory typeName="C3dSumpBehavior" displayLabel="Sump Behavior" priority="45"/>
+
+    <!-- ECEnumerations -->
+    <ECEnumeration typeName="ControlSump" backingTypeName="int" isStrict="false" description="Methods to control structure's sump">
+        <ECEnumerator value="0" name="ByDepth" displayLabel="Depth"/>
+        <ECEnumerator value="1" name="ByElevation" displayLabel="Elevation"/>
+    </ECEnumeration>
 
     <!-- Properties -->
-    <ECStructClass typeName="DesignSpeed" displayLabel="C3D Design Speed" description="C3D design speed along the path of the alignment">
-        <ECProperty propertyName="Station" typeName="double" kindOfQuantity="LENGTH" displayLabel="C3D Station"/>
-        <ECProperty propertyName="DesignSpeed" typeName="double" kindOfQuantity="VELOCITY" displayLabel="C3D Design Speed"/>
-        <ECProperty propertyName="Comment" typeName="string" displayLabel="Comment" description="C3D comment for the design speed"/>
+    <ECStructClass typeName="DesignSpeed" displayLabel="Design Speed" description="Design speed along the path of the alignment">
+        <ECProperty propertyName="Station" typeName="double" kindOfQuantity="LENGTH" displayLabel="Station"/>
+        <ECProperty propertyName="DesignSpeed" typeName="double" kindOfQuantity="VELOCITY" displayLabel="Design Speed"/>
+        <ECProperty propertyName="Comment" typeName="string" displayLabel="Comment" description="Comment for the design speed"/>
     </ECStructClass>
-    <ECStructClass typeName="VAlignment" displayLabel="Vertical Alignment" description="C3D vertical alignment along the path of the horizontal alignment">
-        <ECProperty propertyName="Description" typeName="string" category="C3dGeometry" displayLabel="Description" description="C3D vertical alignment description"/>
-        <ECProperty propertyName="StartStation" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="Start Station" description="C3D vertical alignment start station"/>
-        <ECProperty propertyName="EndStation" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="End Station" description="C3D vertical alignment end station"/>
-        <ECProperty propertyName="StartOffset" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="Start Offset" description="C3D vertical alignment start offset"/>
-        <ECProperty propertyName="EndOffset" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="End Offset" description="C3D vertical alignment end offset"/>
-        <ECProperty propertyName="SampleOffset" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="Sample Offset" description="C3D vertical alignment sample offset"/>
-        <ECProperty propertyName="MinElevation" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="Minimum Elevation" description="C3D vertical alignment minimum elevation"/>
-        <ECProperty propertyName="MaxElevation" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="Maximum Elevation" description="C3D vertical alignment maximum elevation"/>
-        <ECProperty propertyName="Length" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="Length" description="C3D vertical alignment length"/>
+    <ECStructClass typeName="VAlignment" displayLabel="Vertical Alignment" description="Vertical alignment along the path of the horizontal alignment">
+        <ECProperty propertyName="Description" typeName="string" category="C3dGeometry" displayLabel="Description" description="Vertical alignment description"/>
+        <ECProperty propertyName="StartStation" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="Start Station" description="Vertical alignment start station"/>
+        <ECProperty propertyName="EndStation" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="End Station" description="Vertical alignment end station"/>
+        <ECProperty propertyName="StartOffset" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="Start Offset" description="Vertical alignment start offset"/>
+        <ECProperty propertyName="EndOffset" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="End Offset" description="Vertical alignment end offset"/>
+        <ECProperty propertyName="SampleOffset" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="Sample Offset" description="Vertical alignment sample offset"/>
+        <ECProperty propertyName="MinElevation" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="Minimum Elevation" description="Vertical alignment minimum elevation"/>
+        <ECProperty propertyName="MaxElevation" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="Maximum Elevation" description="Vertical alignment maximum elevation"/>
+        <ECProperty propertyName="Length" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="Length" description="Vertical alignment length"/>
     </ECStructClass>
     <ECStructClass typeName="CorridorRegion" displayLabel="C3D Corridor Region" description="C3D parameters of a corridor region">
-        <ECProperty propertyName="StartStation" typeName="double" kindOfQuantity="LENGTH" displayLabel="Start Station" description="C3D vertical alignment start station"/>
-        <ECProperty propertyName="EndStation" typeName="double" kindOfQuantity="LENGTH" displayLabel="End Station" description="C3D vertical alignment end station"/>
+        <ECProperty propertyName="StartStation" typeName="double" kindOfQuantity="LENGTH" displayLabel="Start Station" description="Vertical alignment start station"/>
+        <ECProperty propertyName="EndStation" typeName="double" kindOfQuantity="LENGTH" displayLabel="End Station" description="Vertical alignment end station"/>
     </ECStructClass>
     <ECStructClass typeName="CorridorParameters" displayLabel="C3D Corridor Parameters" description="C3D parameters of a corridor">
         <ECProperty propertyName="Name" typeName="string" displayLabel="Name" description="C3D corridor name"/>
-        <ECProperty propertyName="HorizontalAlignment" typeName="string" displayLabel="Horizontal Alignment" description="C3D horizontal alignment name of a corridor"/>
-        <ECProperty propertyName="VerticalAlignment" typeName="string" displayLabel="Vertical Alignment" description="C3D vertical alignment name of a corridor"/>
-        <ECStructArrayProperty propertyName="Regions" typeName="CorridorRegion" category="C3dParameters" displayLabel="Region" description="C3D regions of a corridor baseline" minOccurs="0" maxOccurs="unbounded"/>
+        <ECProperty propertyName="HorizontalAlignment" typeName="string" displayLabel="Horizontal Alignment" description="Horizontal alignment name of a corridor"/>
+        <ECProperty propertyName="VerticalAlignment" typeName="string" displayLabel="Vertical Alignment" description="Vertical alignment name of a corridor"/>
+        <ECStructArrayProperty propertyName="Regions" typeName="CorridorRegion" category="C3dParameters" displayLabel="Region" description="Regions of a corridor baseline" minOccurs="0" maxOccurs="unbounded"/>
     </ECStructClass>
     <ECStructClass typeName="CorridorCode" displayLabel="C3D Corridor Code" description="C3D link, point or shape code used to build a corridor">
         <ECProperty propertyName="Code" typeName="string" displayLabel="Code" description="C3D link, point or shape code"/>
@@ -58,10 +66,10 @@
         <ECProperty propertyName="Style" typeName="string" displayLabel="Style" description="C3D style assigned to a corridor code"/>
         <ECProperty propertyName="FeatureLineStyle" typeName="string" displayLabel="Feature Line Style" description="C3D feature line style of a corridor"/>
     </ECStructClass>
-    <ECStructClass typeName="CorridorFeature" displayLabel="C3D Corridor Feature Line" description="C3D corridor feature line">
+    <ECStructClass typeName="CorridorFeature" displayLabel="C3D Corridor Feature Line" description="Corridor feature line">
         <ECProperty propertyName="Code" typeName="string" displayLabel="Code" description="C3D feature line code"/>
-        <ECProperty propertyName="Description" typeName="string" displayLabel="Description" description="C3D description of a corridor feature line code"/>
-        <ECProperty propertyName="FeatureLineStyle" typeName="string" displayLabel="Feature Line Style" description="C3D feature line style of a corridor"/>
+        <ECProperty propertyName="Description" typeName="string" displayLabel="Description" description="Description of a corridor feature line code"/>
+        <ECProperty propertyName="FeatureLineStyle" typeName="string" displayLabel="Feature Line Style" description="Feature line style of a corridor"/>
     </ECStructClass>
 
     <!-- Entities -->
@@ -70,67 +78,106 @@
     </ECEntityClass>
     <ECEntityClass typeName="AeccAlignment" modifier="Sealed" displayLabel="Alignment" description="Civil3D alignment object">
         <BaseClass>AeccBase</BaseClass>
-        <ECProperty propertyName="Description" typeName="string" displayLabel="Description" description="C3D alignment description"/>
-        <ECProperty propertyName="ReferencePoint" typeName="point2d" category="C3dGeometry" displayLabel="Reference Point" description="C3D alignment reference point"/>
-        <ECProperty propertyName="ReferenceStation" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="Reference Point Station" description="C3D alignment reference point station"/>
-        <ECProperty propertyName="StartStation" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="Start Station" description="C3D alignment start station"/>
-        <ECProperty propertyName="EndStation" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="End Station" description="C3D alignment end station"/>
-        <ECStructArrayProperty propertyName="DesignSpeeds" typeName="DesignSpeed" category="C3dDesignSpeeds" displayLabel="Design Speeds" description="C3D design speeds for the alignment" minOccurs="0" maxOccurs="unbounded"/>
-        <ECStructArrayProperty propertyName="VAlignments" typeName="VAlignment" category="C3dVAlignments" displayLabel="Vertical Alignments" description="C3D vertical alignments" minOccurs="0" maxOccurs="unbounded"/>
+        <ECProperty propertyName="Description" typeName="string" displayLabel="Description" description="Alignment description"/>
+        <ECProperty propertyName="ReferencePoint" typeName="point2d" category="C3dGeometry" displayLabel="Reference Point" description="Alignment reference point"/>
+        <ECProperty propertyName="ReferenceStation" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="Reference Point Station" description="Alignment reference point station"/>
+        <ECProperty propertyName="StartStation" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="Start Station" description="Alignment start station"/>
+        <ECProperty propertyName="EndStation" typeName="double" category="C3dGeometry" kindOfQuantity="LENGTH" displayLabel="End Station" description="Alignment end station"/>
+        <ECStructArrayProperty propertyName="DesignSpeeds" typeName="DesignSpeed" category="C3dDesignSpeeds" displayLabel="Design Speeds" description="Design speeds for the alignment" minOccurs="0" maxOccurs="unbounded"/>
+        <ECStructArrayProperty propertyName="VAlignments" typeName="VAlignment" category="C3dVAlignments" displayLabel="Vertical Alignments" description="Vertical alignments" minOccurs="0" maxOccurs="unbounded"/>
     </ECEntityClass>
     <ECEntityClass typeName="AeccVAlignment" modifier="Sealed" displayLabel="Vertical Alignment" description="Civil3D vertical alignment">
         <BaseClass>AeccBase</BaseClass>
-        <ECStructProperty propertyName="VAlignment" typeName="VAlignment" category="C3dGeometry" displayLabel="Vertical Alignment" description="C3D vertical alignment"/>
+        <ECStructProperty propertyName="VAlignment" typeName="VAlignment" category="C3dGeometry" displayLabel="Vertical Alignment" description="Vertical alignment"/>
     </ECEntityClass>
     <ECEntityClass typeName="AeccCorridor" modifier="Sealed" displayLabel="Corridor" description="Civil3D corridor">
         <BaseClass>AeccBase</BaseClass>
         <ECProperty propertyName="Description" typeName="string" displayLabel="Description" description="C3D corridor description"/>
-        <ECStructArrayProperty propertyName="CorridorParameters" typeName="CorridorParameters" category="C3dParameters" displayLabel="Parameters" description="C3D corridor parameters" minOccurs="0" maxOccurs="unbounded"/>
+        <ECStructArrayProperty propertyName="CorridorParameters" typeName="CorridorParameters" category="C3dParameters" displayLabel="Parameters" description="Corridor parameters" minOccurs="0" maxOccurs="unbounded"/>
         <ECStructArrayProperty propertyName="LinkCodes" typeName="CorridorCode" category="C3dCodes" displayLabel="Link Codes" description="C3D link codes applied to the corridor" minOccurs="0" maxOccurs="unbounded"/>
         <ECStructArrayProperty propertyName="PointCodes" typeName="CorridorCode" category="C3dCodes" displayLabel="Point Codes" description="C3D point codes applied to the corridor" minOccurs="0" maxOccurs="unbounded"/>
         <ECStructArrayProperty propertyName="ShapeCodes" typeName="CorridorCode" category="C3dCodes" displayLabel="Shape Codes" description="C3D shape codes applied to the corridor" minOccurs="0" maxOccurs="unbounded"/>
-        <ECStructArrayProperty propertyName="CorridorFeatures" typeName="CorridorFeature" category="C3dFeatureLines" displayLabel="Feature Lines" description="C3D corridor feature lines" minOccurs="0" maxOccurs="unbounded"/>
+        <ECStructArrayProperty propertyName="CorridorFeatures" typeName="CorridorFeature" category="C3dFeatureLines" displayLabel="Feature Lines" description="Corridor feature lines" minOccurs="0" maxOccurs="unbounded"/>
     </ECEntityClass>
     <ECEntityClass typeName="AeccFeatureLine" modifier="Sealed" displayLabel="FeatureLine" description="Civil3D feature line">
         <BaseClass>AeccBase</BaseClass>
         <ECProperty propertyName="Style" typeName="string" displayLabel="Style" description="C3D feature line style"/>
-        <ECProperty propertyName="NumberOfPoints" typeName="int" category="C3dGeometry" displayLabel="Number of Points" description="Number of points on a C3D feature line"/>
-        <ECProperty propertyName="MinElevation" typeName="double" kindOfQuantity="LENGTH" category="C3dGeometry" displayLabel="Minimum Elevation" description="Minimum elevation of a C3D feature line"/>
-        <ECProperty propertyName="MaxElevation" typeName="double" kindOfQuantity="LENGTH" category="C3dGeometry" displayLabel="Maximum Elevation" description="Maximum elevation of a C3D feature line"/>
-        <ECProperty propertyName="Length2d" typeName="double" kindOfQuantity="LENGTH" category="C3dGeometry" displayLabel="2D Length" description="Length in 2D of of C3D feature line"/>
-        <ECProperty propertyName="Length3d" typeName="double" kindOfQuantity="LENGTH" category="C3dGeometry" displayLabel="3D Length" description="Length in 3D of of C3D feature line"/>
+        <ECProperty propertyName="NumberOfPoints" typeName="int" category="C3dGeometry" displayLabel="Number of Points" description="Number of points on a feature line"/>
+        <ECProperty propertyName="MinElevation" typeName="double" kindOfQuantity="LENGTH" category="C3dGeometry" displayLabel="Minimum Elevation" description="Minimum elevation of a feature line"/>
+        <ECProperty propertyName="MaxElevation" typeName="double" kindOfQuantity="LENGTH" category="C3dGeometry" displayLabel="Maximum Elevation" description="Maximum elevation of a feature line"/>
+        <ECProperty propertyName="Length2d" typeName="double" kindOfQuantity="LENGTH" category="C3dGeometry" displayLabel="2D Length" description="Length in 2D of of feature line"/>
+        <ECProperty propertyName="Length3d" typeName="double" kindOfQuantity="LENGTH" category="C3dGeometry" displayLabel="3D Length" description="Length in 3D of of feature line"/>
     </ECEntityClass>
     <ECEntityClass typeName="AeccPipe" modifier="Sealed" displayLabel="Pipe" description="Civil3D pipe part">
         <BaseClass>AeccBase</BaseClass>
-        <!-- General -->
-        <ECProperty propertyName="Description" typeName="string" displayLabel="Description" description="C3D network part description"/>
-        <ECProperty propertyName="Style" typeName="string" displayLabel="Style" description="C3D pipe part style"/>
-        <ECProperty propertyName="FlowDirectionMethod" typeName="string" displayLabel="Pipe Flow Direction Method" description="Flow direction method of a C3D pipe"/>
-        <ECProperty propertyName="ReferenceAlignment" typeName="string" displayLabel="Reference Alignment" description="Reference alignment of a C3D part"/>
-        <ECProperty propertyName="ReferenceSurface" typeName="string" displayLabel="Reference Surface" description="Reference surface of a C3D part"/>
+        <!-- Information -->
+        <ECProperty propertyName="Description" typeName="string" category="C3dInformation" displayLabel="Description" description="Network part description"/>
+        <ECProperty propertyName="Style" typeName="string" category="C3dInformation" displayLabel="Style" description="Pipe part style"/>
+        <ECProperty propertyName="FlowDirectionMethod" typeName="string" category="C3dInformation" displayLabel="Pipe Flow Direction Method" description="Flow direction method of a pipe"/>
+        <ECProperty propertyName="ReferenceAlignment" typeName="string" category="C3dInformation" displayLabel="Reference Alignment" description="Reference alignment of a part"/>
+        <ECProperty propertyName="ReferenceSurface" typeName="string" category="C3dInformation" displayLabel="Reference Surface" description="Reference surface of a part"/>
         <!-- Geometry -->
-        <ECProperty propertyName="StartStructure" typeName="string" category="C3dGeometry" priority="50" displayLabel="Start Structure" description="C3D start structure name of a pipe"/>
-        <ECProperty propertyName="EndStructure" typeName="string" category="C3dGeometry" priority="48" displayLabel="End Structure" description="C3D end structure name of a pipe"/>
-        <ECProperty propertyName="Slope" typeName="double" kindOfQuantity="SLOPE" category="C3dGeometry" priority="46" displayLabel="Slope" description="C3D pipe slope"/>
-        <ECProperty propertyName="Length2dCenterToCenter" typeName="double" kindOfQuantity="LENGTH" category="C3dGeometry" priority="44" displayLabel="2D Length - Center to Center" description="C3D Pipe length in 2D measured from center to center"/>
-        <ECProperty propertyName="Length3dCenterToCenter" typeName="double" kindOfQuantity="LENGTH" category="C3dGeometry" priority="42" displayLabel="3D Length - Center to Center" description="C3D Pipe length in 3D measured from center to center"/>
+        <ECProperty propertyName="StartStructure" typeName="string" category="C3dGeometry" priority="50" displayLabel="Start Structure" description="Start structure name of a pipe"/>
+        <ECProperty propertyName="EndStructure" typeName="string" category="C3dGeometry" priority="48" displayLabel="End Structure" description="End structure name of a pipe"/>
+        <ECProperty propertyName="Slope" typeName="double" kindOfQuantity="SLOPE" category="C3dGeometry" priority="46" displayLabel="Slope" description="Pipe slope"/>
+        <ECProperty propertyName="Length2dCenterToCenter" typeName="double" kindOfQuantity="LENGTH" category="C3dGeometry" priority="44" displayLabel="2D Length - Center to Center" description="Pipe length in 2D measured from center to center"/>
+        <ECProperty propertyName="Length3dCenterToCenter" typeName="double" kindOfQuantity="LENGTH" category="C3dGeometry" priority="42" displayLabel="3D Length - Center to Center" description="Pipe length in 3D measured from center to center"/>
         <!-- Hydraulic Properties -->
-        <ECProperty propertyName="HydraGradeLineUp" typeName="double" kindOfQuantity="LENGTH" category="C3dHydraulicProperties" priority="50" displayLabel="Hydraulic Grade Line Up" description="The elevation of the hydraulic grade line for C3D pipe networks flowing in an upstream direction that contain hydraulic property data"/>
-        <ECProperty propertyName="HydraGradeLineDown" typeName="double" kindOfQuantity="LENGTH" category="C3dHydraulicProperties" priority="48" displayLabel="Hydraulic Grade Line Down" description="The elevation of the hydraulic grade line for C3D pipe networks flowing in an downstream direction that contain hydraulic property data"/>
-        <ECProperty propertyName="EnergyGradeLineUp" typeName="double" kindOfQuantity="LENGTH" category="C3dHydraulicProperties" priority="46" displayLabel="Energy Grade Line Up" description="The elevation of the energy grade line for C3D pipe networks flowing in an upstream direction that contain hydraulic property data"/>
-        <ECProperty propertyName="EnergyGradeLineDown" typeName="double" kindOfQuantity="LENGTH" category="C3dHydraulicProperties" priority="44" displayLabel="Energy Grade Line Down" description="The elevation of the energy grade line for C3D pipe networks flowing in a downstream direction that contain hydraulic property data"/>
-        <ECProperty propertyName="FlowRate" typeName="double" kindOfQuantity="FLOWRATE" category="C3dHydraulicProperties" priority="42" displayLabel="Flow Rate" description="C3D pipe flow rate"/>
-        <ECProperty propertyName="JunctionLoss" typeName="double" kindOfQuantity="LENGTH" category="C3dHydraulicProperties" priority="40" displayLabel="Junction Loss" description="C3D pipe junction loss"/>
+        <ECProperty propertyName="HydraGradeLineUp" typeName="double" kindOfQuantity="LENGTH" category="C3dHydraulicProperties" priority="50" displayLabel="Hydraulic Grade Line Up" description="The elevation of the hydraulic grade line for pipe networks flowing in an upstream direction that contain hydraulic property data"/>
+        <ECProperty propertyName="HydraGradeLineDown" typeName="double" kindOfQuantity="LENGTH" category="C3dHydraulicProperties" priority="48" displayLabel="Hydraulic Grade Line Down" description="The elevation of the hydraulic grade line for pipe networks flowing in an downstream direction that contain hydraulic property data"/>
+        <ECProperty propertyName="EnergyGradeLineUp" typeName="double" kindOfQuantity="LENGTH" category="C3dHydraulicProperties" priority="46" displayLabel="Energy Grade Line Up" description="The elevation of the energy grade line for pipe networks flowing in an upstream direction that contain hydraulic property data"/>
+        <ECProperty propertyName="EnergyGradeLineDown" typeName="double" kindOfQuantity="LENGTH" category="C3dHydraulicProperties" priority="44" displayLabel="Energy Grade Line Down" description="The elevation of the energy grade line for pipe networks flowing in a downstream direction that contain hydraulic property data"/>
+        <ECProperty propertyName="FlowRate" typeName="double" kindOfQuantity="FLOWRATE" category="C3dHydraulicProperties" priority="42" displayLabel="Flow Rate" description="Pipe flow rate"/>
+        <ECProperty propertyName="JunctionLoss" typeName="double" kindOfQuantity="LENGTH" category="C3dHydraulicProperties" priority="40" displayLabel="Junction Loss" description="Pipe junction loss"/>
         <!-- Part Data -->
-        <ECProperty propertyName="PartType" typeName="string" category="C3dPartData" priority="50" displayLabel="Part Type" description="C3D part type"/>
-        <ECProperty propertyName="PartSubType" typeName="string" category="C3dPartData" priority="48" displayLabel="Part Subtype" description="C3D part sub-type"/>
-        <ECProperty propertyName="PartDescription" typeName="string" category="C3dPartData" priority="46" displayLabel="Part Description" description="The description of a C3D part"/>
-        <ECProperty propertyName="PartSizeName" typeName="string" category="C3dPartData" priority="44" displayLabel="Part Size Name" description="C3D part size name"/>
-        <ECProperty propertyName="PartID" typeName="string" category="C3dPartData" priority="42" displayLabel="Part ID" description="C3D part ID"/>
-        <ECProperty propertyName="Material" typeName="string" category="C3dPartData" priority="40" displayLabel="Material" description="C3D part material"/>
-        <ECProperty propertyName="CrossSectionalShape" typeName="string" category="C3dPartData" priority="38" displayLabel="Cross Sectional Shape" description="The cross sectional shape of a C3D part"/>
-        <ECProperty propertyName="InnerPipeDiameter" typeName="double" kindOfQuantity="DIAMETER" category="C3dPartData" priority="36" displayLabel="Inner Pipe Diameter" description="The inner diameter of a C3D pipe"/>
-        <ECProperty propertyName="WallThickness" typeName="double" kindOfQuantity="THICKNESS" category="C3dPartData" priority="32" displayLabel="Wall Thickness" description="Wall thickness of a C3D pipe"/>
-        <ECProperty propertyName="ManningCoefficient" typeName="double" category="C3dPartData" priority="30" displayLabel="Manning Coefficient" description="The Manning Coefficient of a C3D pipe"/>
+        <ECProperty propertyName="PartType" typeName="string" category="C3dPartData" priority="50" displayLabel="Part Type" description="Part type"/>
+        <ECProperty propertyName="PartSubType" typeName="string" category="C3dPartData" priority="48" displayLabel="Part Subtype" description="Part sub-type"/>
+        <ECProperty propertyName="PartDescription" typeName="string" category="C3dPartData" priority="46" displayLabel="Part Description" description="Part description"/>
+        <ECProperty propertyName="PartSizeName" typeName="string" category="C3dPartData" priority="44" displayLabel="Part Size Name" description="Part size name"/>
+        <ECProperty propertyName="PartID" typeName="string" category="C3dPartData" priority="42" displayLabel="Part ID" description="Part ID"/>
+        <ECProperty propertyName="Material" typeName="string" category="C3dPartData" priority="40" displayLabel="Material" description="Part material"/>
+        <ECProperty propertyName="CrossSectionalShape" typeName="string" category="C3dPartData" priority="38" displayLabel="Cross Sectional Shape" description="The cross sectional shape of a part"/>
+        <ECProperty propertyName="InnerPipeDiameter" typeName="double" kindOfQuantity="DIAMETER" category="C3dPartData" priority="36" displayLabel="Inner Pipe Diameter" description="The inner diameter of a pipe"/>
+        <ECProperty propertyName="WallThickness" typeName="double" kindOfQuantity="THICKNESS" category="C3dPartData" priority="32" displayLabel="Wall Thickness" description="Wall thickness of a pipe"/>
+        <ECProperty propertyName="ManningCoefficient" typeName="double" category="C3dPartData" priority="30" displayLabel="Manning Coefficient" description="The Manning Coefficient of a pipe"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="AeccStructure" modifier="Sealed" displayLabel="Structure" description="Civil3D structure">
+        <BaseClass>AeccBase</BaseClass>
+        <!-- Information -->
+        <ECProperty propertyName="Description" typeName="string" category="C3dInformation" displayLabel="Description" description="Network part description"/>
+        <ECProperty propertyName="Style" typeName="string" category="C3dInformation" displayLabel="Style" description="Structure part style"/>
+        <ECProperty propertyName="ReferenceAlignment" typeName="string" category="C3dInformation" displayLabel="Reference Alignment" description="Reference alignment of a part"/>
+        <ECProperty propertyName="ReferenceSurface" typeName="string" category="C3dInformation" displayLabel="Reference Surface" description="Reference surface of a part"/>
+        <!-- Geometry -->
+        <ECProperty propertyName="ConnectedPipes" typeName="int" category="C3dGeometry" priority="50" displayLabel="Connected Pipes" description="Number of pipes connected to the structure"/>
+        <ECProperty propertyName="InsertionElevation" typeName="double" kindOfQuantity="LENGTH" category="C3dGeometry" priority="48" displayLabel="Insertion Elevation" description="Insertion elevation of a structure"/>
+        <ECProperty propertyName="SurfaceAdjustment" typeName="double" kindOfQuantity="LENGTH" category="C3dGeometry" priority="45" displayLabel="Surface Adjustment Value" description="Surface adjustment value"/>
+        <ECProperty propertyName="AutoSurfaceAdjustment" typeName="bool" category="C3dGeometry" priority="43" displayLabel="Automatic Surface Adjustment" description="Automatically adjust the structure to a surface?"/>
+        <!-- Sump Behavior -->
+        <ECProperty propertyName="SumpDepth" typeName="double" kindOfQuantity="LENGTH" category="C3dSumpBehavior" priority="45" displayLabel="Sump Depth" description="Depth of a structure's sump"/>
+        <ECProperty propertyName="ControlSumpBy" typeName="ControlSump" category="C3dSumpBehavior" priority="43" displayLabel="Control Sump By" description="Control method of a structure's sump"/>
+        <!-- Part Data -->
+        <ECProperty propertyName="PartType" typeName="string" category="C3dPartData" priority="100" displayLabel="Part Type" description="Part type"/>
+        <ECProperty propertyName="PartSubType" typeName="string" category="C3dPartData" priority="98" displayLabel="Part Subtype" description="Part sub-type"/>
+        <ECProperty propertyName="PartDescription" typeName="string" category="C3dPartData" priority="96" displayLabel="Part Description" description="Part description"/>
+        <ECProperty propertyName="PartSizeName" typeName="string" category="C3dPartData" priority="94" displayLabel="Part Size Name" description="Part size name"/>
+        <ECProperty propertyName="PartID" typeName="string" category="C3dPartData" priority="92" displayLabel="Part ID" description="Part ID"/>
+        <ECProperty propertyName="StructureShape" typeName="string" category="C3dPartData" priority="85" displayLabel="Structure Shape" description="Structure shape"/>
+        <ECProperty propertyName="VerticalPipeClearance" typeName="double" kindOfQuantity="LENGTH" category="C3dPartData" priority="75" displayLabel="Vertical Pipe Clearance" description="Clearance required from the top outside of the highest pipe connected to a structure, to the rim"/>
+        <ECProperty propertyName="RimToSumpHeight" typeName="double" kindOfQuantity="LENGTH" category="C3dPartData" priority="72" displayLabel="Rim To Sump Height" description="Height from a structure's rim to sump"/>
+        <ECProperty propertyName="WallThickness" typeName="double" kindOfQuantity="LENGTH" category="C3dPartData" priority="69" displayLabel="Wall Thickness" description="Wall thickness of a structure"/>
+        <ECProperty propertyName="FloorThickness" typeName="double" kindOfQuantity="LENGTH" category="C3dPartData" priority="65" displayLabel="Floor Thickness" description="Flood thickness of a structure"/>
+        <ECProperty propertyName="Material" typeName="string" category="C3dPartData" priority="62" displayLabel="Material" description="C3D part material"/>
+        <ECProperty propertyName="Frame" typeName="string" category="C3dPartData" priority="60" displayLabel="Frame" description="Model or type of frame used for a structure"/>
+        <ECProperty propertyName="Grate" typeName="string" category="C3dPartData" priority="58" displayLabel="Grate" description="Model or type of grate used for a structure"/>
+        <ECProperty propertyName="Cover" typeName="string" category="C3dPartData" priority="56" displayLabel="Cover" description="Model or type of cover used for a structure"/>
+        <ECProperty propertyName="FrameHeight" typeName="double" kindOfQuantity="LENGTH" category="C3dPartData" priority="54" displayLabel="Frame Height" description="Frame height of a structure"/>
+        <ECProperty propertyName="FrameDiameter" typeName="double" kindOfQuantity="LENGTH" category="C3dPartData" priority="52" displayLabel="Frame Diameter" description="Frame diameter of a structure"/>
+        <ECProperty propertyName="BarrelPipeClearance" typeName="double" kindOfQuantity="LENGTH" category="C3dPartData" priority="50" displayLabel="Barrel Pipe Clearance" description="Clearance required above the top of the barrel section of a structure"/>
+        <ECProperty propertyName="ConeHeight" typeName="double" kindOfQuantity="LENGTH" category="C3dPartData" priority="45" displayLabel="Cone Height" description="Height of the cone shaped section of a structure"/>
+        <ECProperty propertyName="SlabThickness" typeName="double" kindOfQuantity="LENGTH" category="C3dPartData" priority="42" displayLabel="Slab Thickness" description="Thickness of a structure slab"/>
+        <ECProperty propertyName="InnerStructDiameter" typeName="double" kindOfQuantity="LENGTH" category="C3dPartData" priority="40" displayLabel="Inner Structure Diameter" description="Inner diameter of a structure"/>
+        <ECProperty propertyName="StructureHeight" typeName="double" kindOfQuantity="LENGTH" category="C3dPartData" priority="38" displayLabel="Structure Height" description="Total height for a structure, measured from the bottom outside edge of the structure to the top outside edge of the structure"/>
+        <ECProperty propertyName="StructureDiameter" typeName="double" kindOfQuantity="LENGTH" category="C3dPartData" priority="36" displayLabel="Structure Diameter" description="Diameter of a structure, measured from the outside edges of the structure"/>
     </ECEntityClass>
 </ECSchema>

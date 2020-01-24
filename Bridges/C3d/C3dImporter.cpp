@@ -248,6 +248,14 @@ DPoint3d    C3dImporter::_GetElementPlacementPoint (DwgDbEntityCR entity)
         auto origin = graph->GetOrigin ();
         return  DPoint3d::From(origin.x, origin.y, origin.z);
         }
+
+    AECCDbStructure const* structure = AECCDbStructure::cast (&entity);
+    if (structure != nullptr)
+        {
+        auto origin = structure->GetLocation ();
+        return  DPoint3d::From(origin.x, origin.y, origin.z);
+        }
+
     return  T_Super::_GetElementPlacementPoint(entity);
     }
 
