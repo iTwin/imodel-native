@@ -51,6 +51,7 @@ struct DmsHelper : public IDmsSupport
             {}
         virtual Bentley::DgnPlatform::DgnDocumentManager* _GetDgnDocumentManager() override;
         virtual bool _StageInputFile(BeFileNameCR fileLocation) override;
+        virtual bool _StageDocuments(BeFileNameCR fileLocation, bool dirStructureOn = false);
         WString _GetFolderId(WStringCR pwMoniker = WString());
     };
 

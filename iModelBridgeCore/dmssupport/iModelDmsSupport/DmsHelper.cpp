@@ -119,6 +119,14 @@ Utf8String       DmsHelper::GetToken()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            DmsHelper::_StageInputFile(BeFileNameCR fileLocation)
     {
+    return _StageDocuments(fileLocation);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Suvik.Rahane                    11/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            DmsHelper::_StageDocuments(BeFileNameCR fileLocation, bool dirStructureOn)
+    {
     _Initialize();
 
     //Parse URL
@@ -154,25 +162,19 @@ bool            DmsHelper::_StageInputFile(BeFileNameCR fileLocation)
         WString fileId(itr->fileId);
 
         WString dirPath(BeFileName::GetDirectoryName(fileLocation));
-        BeFileName fullDirPath;
-        if (!fileId.empty() && !parentId.empty())
+        BeFileName fullDirPath(dirPath);
+        if (dirStructureOn)
             {
-            bvector<WString> paths;
-            BeStringUtilities::Split(dirPath.c_str(), L"\\", paths);
-            fullDirPath.append(paths[0].c_str());
-            for (int itr = 1; itr != paths.size(); itr++)
+            // maintaining directory structure for references
+            if (!fileId.empty() && !parentId.empty())
                 {
-                if (paths[itr].EqualsI(parentId))
-                    break;
+                fullDirPath.AppendToPath(parentId.c_str());
+                if (!fullDirPath.DoesPathExist())
+                    BeFileName::CreateNewDirectory(fullDirPath);
 
-                fullDirPath.AppendToPath(paths[itr].c_str());
+                // Added folderId into collection
+                m_fileFolderIds.Insert(fileId, parentId);
                 }
-            fullDirPath.AppendToPath(parentId.c_str());
-            if (!fullDirPath.DoesPathExist())
-                BeFileName::CreateNewDirectory(fullDirPath);
-
-            // Added folderId into collection
-            m_fileFolderIds.Insert(fileId, parentId);
             }
 
         fullDirPath.AppendToPath(fileName.c_str());
@@ -215,10 +217,6 @@ WString   DmsHelper::_GetFolderId(WStringCR pwMoniker)
     {
     Utf8String fileId = Utf8String();
     WString folderId = WString();
-    if (pwMoniker.empty())
-        {
-        return m_fileFolderIds.begin()->second;
-        }
     bvector<Utf8String> guids;
     if (m_repositoryType.EqualsI(PWREPOSITORYTYPE))
         {

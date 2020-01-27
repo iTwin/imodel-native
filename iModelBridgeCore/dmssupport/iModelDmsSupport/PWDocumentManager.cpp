@@ -252,27 +252,16 @@ DgnDocumentMonikerPtr PWDocumentManager::_CreateMonikerImplFromDMS(WCharCP porta
 
     if (NULL != portableName && NULL != searchPathIn && !dmsMoniker.empty())
         {
+        if (NULL != fullPathIn && BentleyApi::BeFileName::DoesPathExist(fullPathIn))
+            return parentFunction(portableName, fullPathIn, providerId, searchPathIn, findFullPathFirst, customXMLString);
+
         folderId = m_DMSHelper->_GetFolderId(dmsMoniker);
         BentleyApi::BeFileName portableFileName(portableName);
-        BentleyApi::BeFileName fullDirPath;
         BentleyApi::WString refFileName = portableFileName.GetFileNameAndExtension();
         BentleyApi::WString dirPath(BentleyApi::BeFileName::GetDirectoryName(searchPathIn));
+        BentleyApi::BeFileName fullDirPath(dirPath);
         if (!folderId.empty())
-            {
-            BentleyApi::bvector<BentleyApi::WString> paths;
-            BentleyApi::BeStringUtilities::Split(dirPath.c_str(), L"\\", paths);
-            fullDirPath.append(paths[0].c_str());
-            for (int itr = 1; itr != paths.size(); itr++)
-                {
-                if (paths[itr].EqualsI(folderId))
-                    break;
-
-                fullDirPath.AppendToPath(paths[itr].c_str());
-                }
             fullDirPath.AppendToPath(folderId.c_str());
-            }
-        else
-            fullDirPath = BentleyApi::BeFileName(dirPath);
 
         fullDirPath.AppendToPath(refFileName.c_str());
 
@@ -282,10 +271,13 @@ DgnDocumentMonikerPtr PWDocumentManager::_CreateMonikerImplFromDMS(WCharCP porta
         // Download Reference File
         if (m_DMSHelper->_InitializeSession(dmsMoniker))
             {
-            if (m_DMSHelper->_StageInputFile(fullDirPath))
+            if (m_DMSHelper->_StageDocuments(fullDirPath, true))
                 {
-                if (fullDirPath.DoesPathExist())
-                    return parentFunction(portableName, fullDirPath.c_str(), providerId, searchPathIn, findFullPathFirst, customXMLString);
+                folderId = m_DMSHelper->_GetFolderId(dmsMoniker);
+                if (!folderId.empty())
+                    BentleyApi::BeFileName::AppendToPath(dirPath, folderId.c_str());
+                if (BentleyApi::BeFileName::DoesPathExist(dirPath.c_str()))
+                    return parentFunction(portableName, dirPath.c_str(), providerId, searchPathIn, findFullPathFirst, customXMLString);
                 }
             }
         LOG.errorv("Error downloading reference file.");
