@@ -536,6 +536,7 @@ public:
     DWGDB_EXPORT FilterBy                   GetFilter () const;
     DWGDB_EXPORT void                       GetMapper (DwgGiMapperR m) const;
     DWGDB_EXPORT ImageBy                    GetSource () const;
+    DWGDB_EXPORT DwgString                  GetSourceFileName () const;
     DWGDB_EXPORT DwgGiMaterialTextureCP     GetTexture () const;
     }; // DwgGiMaterialMap
 DEFINE_NO_NAMESPACE_TYPEDEFS (DwgGiMaterialMap)

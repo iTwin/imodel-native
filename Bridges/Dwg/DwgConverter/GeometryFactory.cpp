@@ -56,6 +56,7 @@ void DrawParameters::CopyFrom (DrawParameters const& params)
     m_isParentLayerFrozen = params.m_isParentLayerFrozen;
     m_isDisplayed = params.m_isDisplayed;
     m_layer0Id = params.m_layer0Id;
+    m_canOverrideEntityMaterial = params.m_canOverrideEntityMaterial;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -73,6 +74,7 @@ void DrawParameters::Initialize (DwgDbEntityCR ent, DrawParameters const* parent
     m_materialId = ent.GetMaterialId ();
     if (!m_materialId.IsValid() && nullptr != templateEntity)
         m_materialId = templateEntity->GetMaterialId ();
+    m_canOverrideEntityMaterial = m_dwgImporter._AllowEntityMaterialOverrides(ent);
     m_transparency = ent.GetTransparency ();
     m_weight = ent.GetLineweight ();
     m_mappedDgnWeight = m_dwgImporter.GetOptions().GetDgnLineWeight (m_weight);
@@ -160,6 +162,96 @@ DrawParameters::DrawParameters (DwgDbEntityCR ent, DwgImporter& importer, DwgDbE
         return;
         }
     this->Initialize (ent, nullptr, templateEntity);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DrawParameters::_SetColor (DwgCmEntityColorCR color)
+    {
+    m_color = color;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DrawParameters::_SetLayer (DwgDbObjectIdCR layerId)
+    {
+    m_layerId = layerId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DrawParameters::_SetLineType (DwgDbObjectIdCR linetypeId)
+    {
+    m_linetypeId = linetypeId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DrawParameters::_SetSelectionMarker (std::ptrdiff_t markerId)
+    {
+    m_markerId = markerId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DrawParameters::_SetFillType (DwgGiFillType filltype)
+    {
+    m_filltype = filltype;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DrawParameters::_SetFill (DwgGiFillCP fill)
+    {
+    m_fill = fill == nullptr ? nullptr : fill->Clone();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DrawParameters::_SetLineWeight (DwgDbLineWeight weight)
+    {
+    m_weight = weight;
+    m_mappedDgnWeight = m_dwgImporter.GetOptions().GetDgnLineWeight(weight);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DrawParameters::_SetLineTypeScale (double scale)
+    {
+    m_linetypeScale = scale;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DrawParameters::_SetThickness (double thickness)
+    {
+    m_thickness = thickness;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DrawParameters::_SetTransparency (DwgTransparency transparency)
+    {
+    m_transparency = transparency;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DrawParameters::_SetMaterial (DwgDbObjectIdCR materialId)
+    {
+    if (m_canOverrideEntityMaterial)
+        m_materialId = materialId;
     }
 
 /*---------------------------------------------------------------------------------**//**

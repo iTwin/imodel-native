@@ -12,6 +12,10 @@
     <Fragment Id="C3dBridgeBridgeStandardRegistry">
         <Property Id="C3dBridgeRegistryFeature" Value="1"/>
 
+        <Upgrade Id="{EA5A0937-CA0D-418E-B1D0-9B2EC4257F5B}">
+            <UpgradeVersion IncludeMaximum="no" Maximum="!(wix.wixProductVersion)" IgnoreRemoveFailure="no" OnlyDetect="no" Property="C3DBRIDGE_MAJOR_UPGRADE"/>
+        </Upgrade>
+
         <Component Id="PPRequiredInstallRegKeysBSW" Guid="*" Directory="INSTALLDIR" Win64="$(var.COMPONENT_WIN64)" Feature="DefaultFeature">
             <RegistryKey ForceDeleteOnUninstall="yes" ForceCreateOnInstall="yes" Key="SOFTWARE\Bentley\iModelBridges\C3dBridge" Root="HKLM">
                 <RegistryValue Name="AffinityLibraryPath"   Value="[INSTALLDIR]C3dBridgeM02.dll" Type="string" />

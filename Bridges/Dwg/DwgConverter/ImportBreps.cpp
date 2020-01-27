@@ -25,6 +25,7 @@ BentleyStatus   DwgBrepExt::_ConvertToBim (ProtocolExtensionContext& context, Dw
 
     m_toBimContext = &context;
     m_importer = &importer;
+    m_drawParams = nullptr;
 
     BentleyStatus   status = BSIERROR;
     ElementInputsR  inputs = context.GetElementInputsR ();
@@ -98,6 +99,7 @@ GeometricPrimitivePtr DwgBrepExt::_ConvertToGeometry (DwgDbEntityCP entity, bool
     m_toBimContext = nullptr;
     m_importer = &importer;
     m_entity = entity;
+    m_drawParams = params;
 
     // single out region and plance surface from being dropped to proxy - VSTS 32627(Sweco):
     DwgDbRegionP       region = DwgDbRegion::Cast (entity);
@@ -213,6 +215,7 @@ BentleyStatus   DwgBrepExt::CreateElement (GeometricPrimitiveR geometry, DwgImpo
     display.SetGeometryClass (Render::DgnGeometryClass::Primary);
     display.SetLineColor (DwgHelper::GetColorDefFromEntity(*m_entity));
 
+    this->GetMaterial (display);
     this->GetTransparency (display);
 
     builder->Append (display);
@@ -327,4 +330,43 @@ void    DwgBrepExt::GetTransparency (Render::GeometryParams& display) const
     auto layerId = m_entity->GetLayerId();
     double  transparency = DwgHelper::GetTransparencyFromDwg (m_entity->GetTransparency(), &layerId, nullptr);
     display.SetTransparency (transparency);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/20
++---------------+---------------+---------------+---------------+---------------+------*/
+void    DwgBrepExt::GetMaterial (Render::GeometryParams& display) const
+    {
+    RenderMaterialId    dgnMaterialId;
+    auto dwgMaterialId = m_entity->GetMaterialId ();
+    if (dwgMaterialId.IsValid())
+        {
+        auto dwg = m_entity->GetDatabase ();
+        if (dwg == nullptr)
+            dwg = m_importer->GetDwgDbP ();
+        if (dwg != nullptr)
+            {
+            // resolve floating material
+            if (dwgMaterialId == dwg->GetMaterialByLayerId())
+                {
+                // ByLayer material
+                DwgDbLayerTableRecordPtr layer(m_entity->GetLayerId(), DwgDbOpenMode::ForRead);
+                if (!layer.IsNull())
+                    dwgMaterialId = layer->GetMaterialId ();
+                }
+            else if (dwgMaterialId == dwg->GetMaterialByBlockId())
+                {
+                // ByBlock - if a nested entity called from _ConvertToGeometry, apply its current material:
+                if (m_drawParams != nullptr)
+                    dwgMaterialId = m_drawParams->_GetMaterial ();
+                else
+                    dwgMaterialId.SetNull ();
+                }
+            if (dwgMaterialId.IsValid())
+                dgnMaterialId = m_importer->GetDgnMaterialFor (dwgMaterialId);
+            }
+        }
+
+    if (dgnMaterialId.IsValid())
+        display.SetMaterialId (dgnMaterialId);
     }

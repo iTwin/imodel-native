@@ -1997,12 +1997,13 @@ DwgGiMaterialMap::FilterBy  DwgGiMaterialMap::GetFilter () const { return DWGDB_
 void                        DwgGiMaterialMap::GetMapper (DwgGiMapperR m) const { m = T_Super::mapper(); }
 DwgGiMaterialMap::ImageBy   DwgGiMaterialMap::GetSource () const { return static_cast<ImageBy>(T_Super::source()); }
 DwgGiMaterialTextureCP      DwgGiMaterialMap::GetTexture () const { return static_cast<DwgGiMaterialTextureCP>(T_Super::DWGDB_CALLSDKMETHOD(texture().get,texture)()); }
+DwgString   DwgGiMaterialMap::GetSourceFileName () const { return T_Super::sourceFileName(); }
+
 DwgGiImageFileTextureCP     DwgGiMaterialTexture::ToDwgGiImageFileTextureCP () const { return static_cast<DwgGiImageFileTextureCP>(T_Super::DWGDB_CALLSDKMETHOD(cast(this).get(),cast(this))); }
 DwgGiGenericTextureCP       DwgGiMaterialTexture::ToDwgGiGenericTextureCP () const { return static_cast<DwgGiGenericTextureCP>(T_Super::DWGDB_CALLSDKMETHOD(cast(this).get(),cast(this))); }
 DwgGiMarbleTextureCP        DwgGiMaterialTexture::ToDwgGiMarbleTextureCP () const { return static_cast<DwgGiMarbleTextureCP>(T_Super::DWGDB_CALLSDKMETHOD(cast(this).get(),cast(this))); }
 DwgGiWoodTextureCP          DwgGiMaterialTexture::ToDwgGiWoodTextureCP () const { return static_cast<DwgGiWoodTextureCP>(T_Super::DWGDB_CALLSDKMETHOD(cast(this).get(),cast(this))); }
 bool                        DwgGiMaterialTexture::operator==(DwgGiMaterialTextureCR t) const { return t.isEqualTo(this); }
-
 DwgString   DwgGiImageFileTexture::GetSourceFileName () const { return T_Super::sourceFileName(); }
 
 #ifdef DWGTOOLKIT_RealDwg

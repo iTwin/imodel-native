@@ -219,6 +219,7 @@ private:
     mutable DwgImporterP                m_importer;
     mutable DwgDbEntityCP               m_entity;
     mutable DPoint3d                    m_placementPoint;
+    mutable IDwgDrawParametersP         m_drawParams;
 
     BentleyStatus   CreateElement (GeometricPrimitiveR geometry, DwgImporter::ElementCreateParams& params);
 
@@ -231,6 +232,7 @@ private:
     GeometricPrimitivePtr PlaceGeometry (CurveVectorPtr& shapes);
     BentleyStatus   SetPlacementPoint (TransformR transform);
     void GetTransparency (Render::GeometryParams& display) const;
+    void GetMaterial (Render::GeometryParams& display) const;
     };  // DwgBrep
 
 /*=================================================================================**//**

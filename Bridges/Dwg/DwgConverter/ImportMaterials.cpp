@@ -70,6 +70,7 @@ private:
     void                ExtractAndConvertMapUnits ();
     size_t              ReadRawBytes (ByteStream& bytesOut, BeFileNameCR fileNameIn) const;
     BentleyStatus       ReadToRgba (Render::ImageR image, BeFileNameCR filename, bool pseudoBackgroundTransparency) const;
+    BentleyStatus       CreateTextureFromImageFile (Json::Value& mapJson, BeFileNameR filename, bool inverted);
     BentleyStatus       CreateTextureFromImageFile (Json::Value& mapJson, DwgGiImageFileTextureCR imageFile, bool inverted);
     BentleyStatus       CreateTextureMap (Json::Value& mapJson, DwgGiMaterialMapCR map, bool isOn);
     bool                FindTextureFile (BeFileNameR filename);
@@ -351,9 +352,20 @@ bool    MaterialFactory::FindTextureFile (BeFileNameR filename)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   MaterialFactory::CreateTextureFromImageFile (Json::Value& mapJson, DwgGiImageFileTextureCR imageFile, bool inverted)
     {
-    BeFileName  fileName(imageFile.GetSourceFileName());
+    BeFileName  filename(imageFile.GetSourceFileName());
+    if (filename.empty())
+        return  BentleyStatus::BSIERROR;
+
+    return this->CreateTextureFromImageFile(mapJson, filename, inverted);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   MaterialFactory::CreateTextureFromImageFile (Json::Value& mapJson, BeFileNameR fileName, bool inverted)
+    {
     if (!this->FindTextureFile(fileName))
-        return  BSIERROR;
+        return  BentleyStatus::BSIERROR;
 
     Utf8String      utf8Name = fileName.GetNameUtf8 ();
     DgnTextureId    textureId = m_importer.GetDgnMaterialTextureFor (utf8Name);
@@ -427,21 +439,31 @@ BentleyStatus   MaterialFactory::CreateTextureFromImageFile (Json::Value& mapJso
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   MaterialFactory::CreateTextureMap (Json::Value& mapJson, DwgGiMaterialMapCR dwgMap, bool isOn)
     {
+    BeFileName  filename;
     DwgGiMaterialTextureCP  texture = dwgMap.GetTexture ();
     if (nullptr == texture)
-        return  BSIERROR;
+        {
+        // ODA does not create texture for the material map - get image file name:
+        filename.SetName (dwgMap.GetSourceFileName());
+        if (filename.empty())
+            return  BentleyStatus::BSIERROR;
+        }
 
     mapJson.clear ();
     mapJson[RENDER_MATERIAL_PatternScaleMode] = static_cast<int> (m_textureMapUnits);
 
     if (dwgMap.GetSource() == DwgGiMaterialMap::File)
         {
+        bool    inverted = dwgMap.GetBlendFactor() < 0.0;
+
+        // extract image directly from the file
+        if (texture == nullptr)
+            return  this->CreateTextureFromImageFile(mapJson, filename, inverted);
+
         // extract and convert DWG image texture to DgnDb texture:
         DwgGiImageFileTextureCP imageFile = texture->ToDwgGiImageFileTextureCP ();
         if (nullptr == imageFile)
-            return  BSIERROR;
-
-        bool    inverted = dwgMap.GetBlendFactor() < 0.0;
+            return  BentleyStatus::BSIERROR;
 
         if (BSISUCCESS != this->CreateTextureFromImageFile(mapJson, *imageFile, inverted))
             return  BSIERROR;

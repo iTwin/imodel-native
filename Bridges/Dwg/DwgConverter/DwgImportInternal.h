@@ -492,6 +492,7 @@ private:
     bool                m_isParentLayerFrozen;
     bool                m_isDisplayed;
     DwgDbObjectId       m_layer0Id;
+    bool                m_canOverrideEntityMaterial;
 
 protected:
     void CopyFrom (DrawParameters const& params);
@@ -509,17 +510,17 @@ protected:
     virtual double              _GetThickness () const override { return m_thickness; }
     virtual DwgTransparencyCR   _GetTransparency () const override { return m_transparency; }
     virtual DwgDbObjectIdCR     _GetMaterial () const override { return m_materialId; }
-    virtual void _SetColor (DwgCmEntityColorCR color) override { m_color = color; }
-    virtual void _SetLayer (DwgDbObjectIdCR layerId) override { m_layerId = layerId; }
-    virtual void _SetLineType (DwgDbObjectIdCR linetypeId) override { m_linetypeId = linetypeId; }
-    virtual void _SetSelectionMarker (std::ptrdiff_t markerId) override { m_markerId = markerId; }
-    virtual void _SetFillType (DwgGiFillType filltype) override { m_filltype = filltype; }
-    virtual void _SetFill (DwgGiFillCP fill) override { m_fill = fill == nullptr ? nullptr : fill->Clone(); }
-    virtual void _SetLineWeight (DwgDbLineWeight weight) override { m_weight = weight; m_mappedDgnWeight = m_dwgImporter.GetOptions().GetDgnLineWeight(weight); }
-    virtual void _SetLineTypeScale (double scale) override { m_linetypeScale = scale; }
-    virtual void _SetThickness (double thickness) override { m_thickness = thickness; }
-    virtual void _SetTransparency (DwgTransparency transparency) override { m_transparency = transparency; }
-    virtual void _SetMaterial (DwgDbObjectIdCR materialId) override { m_materialId = materialId; }
+    DWG_EXPORT virtual void _SetColor (DwgCmEntityColorCR color) override;
+    DWG_EXPORT virtual void _SetLayer (DwgDbObjectIdCR layerId) override;
+    DWG_EXPORT virtual void _SetLineType (DwgDbObjectIdCR linetypeId) override;
+    DWG_EXPORT virtual void _SetSelectionMarker (std::ptrdiff_t markerId) override;
+    DWG_EXPORT virtual void _SetFillType (DwgGiFillType filltype) override;
+    DWG_EXPORT virtual void _SetFill (DwgGiFillCP fill) override;
+    DWG_EXPORT virtual void _SetLineWeight (DwgDbLineWeight weight) override;
+    DWG_EXPORT virtual void _SetLineTypeScale (double scale) override;
+    DWG_EXPORT virtual void _SetThickness (double thickness) override;
+    DWG_EXPORT virtual void _SetTransparency (DwgTransparency transparency) override;
+    DWG_EXPORT virtual void _SetMaterial (DwgDbObjectIdCR materialId) override;
 
 public:
     DrawParameters (DrawParameters const& params);

@@ -263,6 +263,7 @@ struct DwgImporter
 //__PUBLISH_SECTION_END__
     friend struct DwgBridge;
     friend struct UpdaterChangeDetector;
+    friend struct DrawParameters;
     friend struct DwgSourceAspects;
     friend struct DwgImportHost;
     friend struct ViewportFactory;
@@ -1236,6 +1237,10 @@ protected:
     //! Search material paths specified in the Config file.  If a match found, replace the file name.
     DWG_EXPORT virtual bool             _FindTextureFile (BeFileNameR filename) const;
     DWG_EXPORT bvector<BeFileName> const& GetMaterialSearchPaths () const { return m_materialSearchPaths; }
+    //! By default, a material set on an entity is free to be overridden by its draw code of the runtime toolkit.
+    //! This method is called through the default implementation of _ImportEntity. Return false to to stop the material to be overridden.
+    //! Note that if your extension does not call the deault _ImportEntity, this method has no effect.
+    DWG_EXPORT virtual bool _AllowEntityMaterialOverrides (DwgDbEntityCR entity) const { return true; }
 
     //! @name  Importing entities
     //! @{
