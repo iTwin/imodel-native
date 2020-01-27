@@ -979,6 +979,7 @@ public:
     BE_JSON_NAME(extents)
     BE_JSON_NAME(angles)
     BE_JSON_NAME(camera)
+    BE_JSON_NAME(disable3dManipulations)
 
     double MinimumFrontDistance(double nearScaleLimit = 5.0E-5 /* between resolution of 24 and 32bit */) const;
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ViewDefinition3d));} //!< private
@@ -1127,6 +1128,11 @@ public:
 
     //! Get the distance from the eyePoint to the focus plane for this view.
     double GetFocusDistance() const {return GetCamera().GetFocusDistance();}
+
+    //! Get whether this view allows 3d manipulations
+    bool Allows3dManipulations() const {return !GetDetail(json_disable3dManipulations()).asBool(false);}
+    // Set whether this view allows 3d manipulations
+    void SetAllows3dManipulations(bool allow) {if (allow) RemoveDetail(json_disable3dManipulations()); else SetDetail(json_disable3dManipulations(), Json::Value(true));}
 };
 
 //=======================================================================================
