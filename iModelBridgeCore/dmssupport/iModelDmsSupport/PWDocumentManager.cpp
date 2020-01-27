@@ -276,6 +276,7 @@ DgnDocumentMonikerPtr PWDocumentManager::_CreateMonikerImplFromDMS(WCharCP porta
                 folderId = m_DMSHelper->_GetFolderId(dmsMoniker);
                 if (!folderId.empty())
                     BentleyApi::BeFileName::AppendToPath(dirPath, folderId.c_str());
+                BentleyApi::BeFileName::AppendToPath(dirPath, refFileName.c_str());
                 if (BentleyApi::BeFileName::DoesPathExist(dirPath.c_str()))
                     return parentFunction(portableName, dirPath.c_str(), providerId, searchPathIn, findFullPathFirst, customXMLString);
                 }
