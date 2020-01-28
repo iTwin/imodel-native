@@ -1915,6 +1915,195 @@ TEST_F(MstnBridgeTests, UpdateDocumentProperties)
 
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            01/2020
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(MstnBridgeTests, ChangeFileNameShouldUpdateModelName)
+    {
+    auto testDir = CreateTestDir();
+
+    bvector<WString> args;
+    SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, DEFAULT_IMODEL_NAME);
+
+    BentleyApi::BeFileName inputFile;
+    MakeCopyOfFile(inputFile, L"Test3d.dgn", NULL);
+
+    args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", inputFile.c_str()));
+
+    SetupClient();
+    CreateRepository();
+    auto runningServer = StartServer();
+
+    BentleyApi::BeFileName assignDbName(testDir);
+    assignDbName.AppendToPath(DEFAULT_IMODEL_NAME L".fwk-registry.db");
+    FakeRegistry testRegistry(testDir, assignDbName);
+    testRegistry.WriteAssignments();
+    testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, iModelBridge_getAffinity);
+
+    BentleyApi::BeSQLite::BeGuid guid;
+    guid.Create();
+
+    Utf8String json1 = R"json({"Name": "Time", "Value":"1234"})json";
+    iModelBridgeDocumentProperties docProps(guid.ToString().c_str(), "wurn1", "durn1", json1.c_str(), "");
+    testRegistry.SetDocumentProperties(docProps, inputFile);
+    std::function<T_iModelBridge_getAffinity> lambda = [=](BentleyApi::WCharP buffer,
+                                                           const size_t bufferSize,
+                                                           iModelBridgeAffinityLevel& affinityLevel,
+                                                           BentleyApi::WCharCP affinityLibraryPath,
+                                                           BentleyApi::WCharCP sourceFileName)
+        {
+        wcscpy(buffer, MSTN_BRIDGE_REG_SUB_KEY);
+        affinityLevel = iModelBridgeAffinityLevel::Medium;
+        };
+
+    testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, lambda);
+    BentleyApi::WString bridgeName;
+    testRegistry.SearchForBridgeToAssignToDocument(bridgeName, inputFile, L"");
+    testRegistry.Save();
+    TerminateHost();
+
+    if (true)
+        {
+        // Ask the framework to run our test bridge to do the initial conversion and create the repo
+        RunTheBridge(args);
+        CleanupElementECExtensions();
+        }
+
+    WString baseName = inputFile.GetFileNameWithoutExtension();
+    baseName.AppendA("_2");
+    BentleyApi::BeFileName newFile(inputFile.GetDirectoryName());
+    newFile.AppendToPath(baseName.c_str());
+    newFile.AppendExtension(inputFile.GetExtension().c_str());
+    BeFileName::BeMoveFile(inputFile.GetName(), newFile.GetName());
+    bvector<WString> newArgs;
+    SetUpBridgeProcessingArgs(newArgs, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, DEFAULT_IMODEL_NAME);
+    newArgs.push_back(WPrintfString(L"--fwk-input=\"%ls\"", newFile.c_str()));
+    testRegistry.SetDocumentProperties(docProps, newFile);
+    testRegistry.SearchForBridgeToAssignToDocument(bridgeName, newFile, L"");
+    testRegistry.Save();
+
+    if (true)
+        {
+        // Run an update.  This should update the model name
+        RunTheBridge(newArgs);
+        DbFileInfo info(m_briefcaseName);
+            {
+            BeSQLite::EC::ECSqlStatement stmt;
+            EXPECT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.Prepare(*info.m_db, "SELECT UserLabel FROM BisCore.Subject WHERE Parent.Id=1"));
+            while (stmt.Step() != BentleyApi::BeSQLite::DbResult::BE_SQLITE_DONE)
+                {
+                Utf8CP text = stmt.GetValueText(0);
+                Utf8String label(text);
+                ASSERT_TRUE(label.Equals("Test3d_2")) << "BisCore.Subject " << label.c_str() << " not equal to 'Test3d_2'";
+                }
+            }
+            {
+            BeSQLite::EC::ECSqlStatement stmt;
+            EXPECT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.Prepare(*info.m_db, "SELECT CodeValue FROM BisCore.PhysicalPartition"));
+            while (stmt.Step() != BentleyApi::BeSQLite::DbResult::BE_SQLITE_DONE)
+                {
+                Utf8String code(stmt.GetValueText(0));
+                ASSERT_TRUE(code.Equals("Test3d_2")) << "BisCore.PhysicalPartition " << code.c_str() << " not equal to 'Test3d_2'";
+                }
+            }
+        }
+
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            01/2020
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(MstnBridgeTests, ChangeFileNameShouldUpdateModelName2d)
+    {
+    auto testDir = CreateTestDir();
+
+    bvector<WString> args;
+    SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, DEFAULT_IMODEL_NAME);
+
+    BentleyApi::BeFileName inputFile;
+    MakeCopyOfFile(inputFile, L"Test2d.dgn", NULL);
+
+    args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", inputFile.c_str()));
+
+    SetupClient();
+    CreateRepository();
+    auto runningServer = StartServer();
+
+    BentleyApi::BeFileName assignDbName(testDir);
+    assignDbName.AppendToPath(DEFAULT_IMODEL_NAME L".fwk-registry.db");
+    FakeRegistry testRegistry(testDir, assignDbName);
+    testRegistry.WriteAssignments();
+    testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, iModelBridge_getAffinity);
+
+    BentleyApi::BeSQLite::BeGuid guid;
+    guid.Create();
+
+    Utf8String json1 = R"json({"Name": "Time", "Value":"1234"})json";
+    iModelBridgeDocumentProperties docProps(guid.ToString().c_str(), "wurn1", "durn1", json1.c_str(), "");
+    testRegistry.SetDocumentProperties(docProps, inputFile);
+    std::function<T_iModelBridge_getAffinity> lambda = [=](BentleyApi::WCharP buffer,
+                                                           const size_t bufferSize,
+                                                           iModelBridgeAffinityLevel& affinityLevel,
+                                                           BentleyApi::WCharCP affinityLibraryPath,
+                                                           BentleyApi::WCharCP sourceFileName)
+        {
+        wcscpy(buffer, MSTN_BRIDGE_REG_SUB_KEY);
+        affinityLevel = iModelBridgeAffinityLevel::Medium;
+        };
+
+    testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, lambda);
+    BentleyApi::WString bridgeName;
+    testRegistry.SearchForBridgeToAssignToDocument(bridgeName, inputFile, L"");
+    testRegistry.Save();
+    TerminateHost();
+
+    if (true)
+        {
+        // Ask the framework to run our test bridge to do the initial conversion and create the repo
+        RunTheBridge(args);
+        CleanupElementECExtensions();
+        }
+
+    WString baseName = inputFile.GetFileNameWithoutExtension();
+    baseName.AppendA("_2");
+    BentleyApi::BeFileName newFile(inputFile.GetDirectoryName());
+    newFile.AppendToPath(baseName.c_str());
+    newFile.AppendExtension(inputFile.GetExtension().c_str());
+    BeFileName::BeMoveFile(inputFile.GetName(), newFile.GetName());
+    bvector<WString> newArgs;
+    SetUpBridgeProcessingArgs(newArgs, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, DEFAULT_IMODEL_NAME);
+    newArgs.push_back(WPrintfString(L"--fwk-input=\"%ls\"", newFile.c_str()));
+    testRegistry.SetDocumentProperties(docProps, newFile);
+    testRegistry.SearchForBridgeToAssignToDocument(bridgeName, newFile, L"");
+    testRegistry.Save();
+
+    if (true)
+        {
+        // Run an update.  This should update the model name
+        RunTheBridge(newArgs);
+        DbFileInfo info(m_briefcaseName);
+        {
+        BeSQLite::EC::ECSqlStatement stmt;
+        EXPECT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.Prepare(*info.m_db, "SELECT UserLabel FROM BisCore.Subject WHERE Parent.Id=1"));
+        while (stmt.Step() != BentleyApi::BeSQLite::DbResult::BE_SQLITE_DONE)
+            {
+            Utf8String label(stmt.GetValueText(0));
+            ASSERT_TRUE(label.Equals("Test2d_2")) << "BisCore.Subject " << label.c_str() << " not equal to 'Test2d_2'";
+            }
+        }
+        {
+        BeSQLite::EC::ECSqlStatement stmt;
+        EXPECT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.Prepare(*info.m_db, "SELECT CodeValue FROM BisCore.Drawing"));
+        while (stmt.Step() != BentleyApi::BeSQLite::DbResult::BE_SQLITE_DONE)
+            {
+            Utf8String code(stmt.GetValueText(0));
+            ASSERT_TRUE(code.Equals("Test2d_2")) << "BisCore.Drawing " << code.c_str() << " not equal to 'Test2d_2'";
+            }
+        }
+        }
+
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mayuresh.Kanade                 01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -2156,6 +2156,35 @@ BentleyStatus  RootModelConverter::ConvertData()
 
         ConvertModelACSTraverser acsTraverser(modelMapping, GetJobDefinitionModel().get(), ComputeUnitsScaleFactor(modelMapping.GetV8Model()));
         DgnV8Api::IACSManager::GetManager().Traverse(acsTraverser, &modelMapping.GetV8Model());
+
+        // If we're updating, need to see if the master model's subject needs updating, and if the model names need updating.  This will
+        // happen when a filename has been modified and we're relying on the PW doc guid to identify the file.
+        if (IsUpdating())
+            {
+            SubjectCPtr sourceMasterModelSubject = FindSourceMasterModelSubject(modelMapping.GetV8Model());
+            if (!sourceMasterModelSubject.IsValid())
+                continue;
+            Utf8String sourceMasterModelUserLabel(IssueReporter::FmtFileBaseName(*modelMapping.GetV8Model().GetDgnFileP()));
+            if (!sourceMasterModelUserLabel.Equals(sourceMasterModelSubject->GetUserLabel()))
+                {
+                auto subject = GetDgnDb().Elements().GetForEdit<DgnElement>(sourceMasterModelSubject->GetElementId());
+                subject->SetUserLabel(sourceMasterModelUserLabel.c_str());
+                subject->Update();
+                }
+
+            Utf8String newModelName = _ComputeModelName(modelMapping.GetV8Model()).c_str();
+            Utf8String originalModelName = modelMapping.GetDgnModel().GetName();
+            if (!newModelName.Equals(originalModelName))
+                {
+                auto modeledElement = m_dgndb->Elements().GetElement(modelMapping.GetDgnModel().GetModeledElementId())->CopyForEdit();
+                DgnCodeCR code = modeledElement->GetCode();
+                DgnCode newCode(code.GetCodeSpecId(), code.GetScopeElementId(GetDgnDb()), newModelName);
+                modeledElement->SetCode(newCode);
+                if (originalModelName.Equals(modeledElement->GetUserLabel()))
+                    modeledElement->SetUserLabel(newModelName.c_str());
+                modeledElement->Update();
+                }
+            }
         }
 
     if (m_isRootModelSpatial)

@@ -42,10 +42,6 @@
     <NMakeOutput>$(OutRoot)Winx64\product\DgnV8ConverterTests\DgnV8ConverterTests.exe</NMakeOutput>
     <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\DgnDbSync\PublicAPI\;$(OutRoot)Winx64\BuildContexts\DgnDbSync\VendorAPI\;$(OutRoot)Winx64\build\UnitTests\DgnProject\BackDoorDgnProjectUnitTests\PublicAPI\;$(SrcRoot)DgnPlatform\PublicAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeBuildCommandLine>bb -N0 re dgnv8converterTestsEXE</NMakeBuildCommandLine>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>

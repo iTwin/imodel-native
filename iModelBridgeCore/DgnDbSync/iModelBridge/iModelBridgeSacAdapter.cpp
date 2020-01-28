@@ -189,7 +189,7 @@ BentleyStatus iModelBridgeSacAdapter::CreateOrUpdateBim(iModelBridge& bridge, Pa
         db = bridge.OpenBimAndMergeSchemaChanges(dbres, _hadDomainSchemaChanges, outputFileName);
         if (!db.IsValid())
             {
-            fwprintf(stderr, L"%ls - file not found or could not be opened (error %x)\n", inputFileName.GetName(), (int)dbres);
+            fwprintf(stderr, L"%ls - file not found or could not be opened (error %x)\n", outputFileName.GetName(), (int)dbres);
             return BSIERROR;
             }
 
