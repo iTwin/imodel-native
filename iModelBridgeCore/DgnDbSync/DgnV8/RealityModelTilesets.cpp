@@ -315,25 +315,25 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
                 }
             }
 
-        BeFileName entryName;
-        bool isDir;
-        bool isEmpty = true;
-        BeDirectoryIterator dirs(modelDir);
-        while (dirs.GetCurrentEntry(entryName, isDir) == SUCCESS && isEmpty)
-            {
-            isEmpty = false;
-            dirs.ToNext();
-            }
-        if (isEmpty)
-            {
-            ReportIssueV(Converter::IssueSeverity::Error, IssueCategory::DiskIO(), Issue::TileSetCreationFailure(), "", model->GetName().c_str(), -1);
-            continue;
-            }
-
         Utf8String url;
         Utf8String identifier = "";
         if (doUpload)
             {
+            BeFileName entryName;
+            bool isDir;
+            bool isEmpty = true;
+            BeDirectoryIterator dirs(modelDir);
+            while (dirs.GetCurrentEntry(entryName, isDir) == SUCCESS && isEmpty)
+                {
+                isEmpty = false;
+                dirs.ToNext();
+                }
+            if (isEmpty)
+                {
+                ReportIssueV(Converter::IssueSeverity::Error, IssueCategory::DiskIO(), Issue::TileSetCreationFailure(), "", model->GetName().c_str(), -1);
+                continue;
+                }
+
             // if it is an update, then first we need to delete the current data
             if (isUpdate)
                 {
