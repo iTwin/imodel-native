@@ -160,16 +160,12 @@ constexpr uint32_t operator "" _kb(unsigned long long v)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbTestFixture, ConcurrentQueryManagerReadonly)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("one.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("concurrentQueryManagerReadonly.ecdb"));
     ReopenECDb(ECDb::OpenParams(Db::OpenMode::Readonly));
-    TimeoutFunc timeoutFunc;
     auto config = ConcurrentQueryManager::Config()
         .SetQuota(ConcurrentQueryManager::Quota(1s, 1_kb))
         .SetConcurrent(8)
-        .SetIdleCleanupTime(30s)
-        .SetAfterConnectionOpenned([&timeoutFunc] (Db const& db) {
-            db.AddFunction(timeoutFunc);
-            });
+        .SetIdleCleanupTime(30s);
 
     auto& mgr = m_ecdb.GetConcurrentQueryManager();  
     mgr.Initalize(config);
@@ -204,7 +200,7 @@ struct RetryHandler final : BeSQLite::BusyRetry
 TEST_F(ECDbTestFixture, ConcurrentQueryManagerReadWrite)
     {
     // BeSQLiteLib::EnableSharedCache(true);
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("one.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("concurrentQueryManagerReadWrite.ecdb"));
     m_ecdb.CreateTable("test_foo", "col");
     RefCountedPtr<RetryHandler> handler = new RetryHandler();
     ReopenECDb(ECDb::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes, handler.get()));
@@ -475,7 +471,7 @@ TEST_F(ECDbTestFixture, TwoConnections)
     {
     BeFileName testECDbPath;
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("one.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("twoConnections.ecdb"));
     testECDbPath = BeFileName(m_ecdb.GetDbFileName());
     m_ecdb.CloseDb();
     }
@@ -562,7 +558,7 @@ TEST_F(ECDbTestFixture, TwoConnectionsWithBusyRetryHandler)
     {
     BeFileName testECDbPath;
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("one.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("twoConnectionsWithBusyRetryHandler.ecdb"));
     testECDbPath = BeFileName(m_ecdb.GetDbFileName());
     m_ecdb.CloseDb();
     }

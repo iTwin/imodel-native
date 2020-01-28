@@ -417,6 +417,8 @@ std::unique_ptr<ForeignKeyPartitionView> ForeignKeyPartitionView::Create(TableSp
 //static
 std::unique_ptr<ForeignKeyPartitionView> ForeignKeyPartitionView::Create(TableSpaceSchemaManager const& schemaManager, ECN::ECRelationshipClassCR relationship, MapStrategy mapStrategy, bool readonly)
     {
+    // Following code modify state of schemaManager.GetDbSchema(). DbSchema hold not mutex.
+    BeMutexHolder lock(schemaManager.GetECDb().GetImpl().GetMutex());
     enum class PropertyMapKind
         {
         Id = 1,
