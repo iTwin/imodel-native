@@ -89,19 +89,19 @@ jobs:
           SourceFolder: '$(BDF_DIR)/difflog'
           Contents: '*.log'
 
-      - script: bb -s "MstnBridge;PRG" diffreport --usePrevious $(BDF_DIR)/mstnbridge.xml $(BDF_DIR)/mstnbridge.xml --outputPath $(BDF_DIR)/difflog
+      - script: bb -s "MstnBridge;PRG" diffreport --usePrevious $(BDF_DIR)/mstnbridge.json --outputPath $(BDF_DIR)/difflog
         displayName: Compute MstnBridge Change Logs
         condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'MstnBridge'))
 
-      - script: bb -s "DwgBridge;PRG" diffreport --usePrevious $(BDF_DIR)/dwgbridge.xml $(BDF_DIR)/dwgbridge.xml --outputPath $(BDF_DIR)/difflog
+      - script: bb -s "DwgBridge;PRG" diffreport --usePrevious $(BDF_DIR)/dwgbridge.json --outputPath $(BDF_DIR)/difflog
         displayName: Compute DwgBridge Change Logs
         condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'DwgBridge'))
       
-      - script: bb -s "ORDBridge;PRG" diffreport --usePrevious $(BDF_DIR)/ordbridge.xml $(BDF_DIR)/ordbridge.xml --outputPath $(BDF_DIR)/difflog
+      - script: bb -s "ORDBridge;PRG" diffreport --usePrevious $(BDF_DIR)/ordbridge.json --outputPath $(BDF_DIR)/difflog
         displayName: Compute OrdBridge Change Logs
         condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'OrdBridge'))
 
-      - script: bb -s "C3dBridge;PRG" diffreport --usePrevious $(BDF_DIR)/c3dbridge.xml $(BDF_DIR)/c3dbridge.xml --outputPath $(BDF_DIR)/difflog
+      - script: bb -s "C3dBridge;PRG" diffreport --usePrevious $(BDF_DIR)/c3dbridge.json --outputPath $(BDF_DIR)/difflog
         displayName: Compute C3dBridge Change Logs
         condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'C3dBridge'))
       

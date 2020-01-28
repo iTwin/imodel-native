@@ -79,7 +79,7 @@ def callForPull(args, config):
         # BDF names must be lower-case because BentleyBootstrap.py always lower-cases its input, which affects case-sensitive file systems.
         candidateBdf = candidateBdf.lower()
 
-        cmd += ' -r ' + os.path.join(args.bdfdir, candidateBdf + '.xml')
+        cmd += ' -r ' + os.path.join(args.bdfdir, candidateBdf + '.json')
 
     print(cmd)
     cmdStartTime = time.time()
