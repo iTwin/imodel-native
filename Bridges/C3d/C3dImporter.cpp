@@ -240,6 +240,17 @@ BentleyStatus C3dImporter::OnBaseBridgeJobFound (DgnElementId jobId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/20
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool C3dImporter::_AllowEntityMaterialOverrides (DwgDbEntityCR entity) const
+    {
+    // a workaround ODA's removing material from TIN - CIVIL-1203:
+    if (entity.isKindOf(AECCDbSurface::desc()))
+        return  false;
+    return  T_Super::_AllowEntityMaterialOverrides(entity);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/20
++---------------+---------------+---------------+---------------+---------------+------*/
 DPoint3d    C3dImporter::_GetElementPlacementPoint (DwgDbEntityCR entity)
     {
     AECCDbGraph const* graph = AECCDbGraph::cast (&entity);

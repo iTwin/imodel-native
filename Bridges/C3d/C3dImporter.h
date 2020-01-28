@@ -183,6 +183,7 @@ public:
     EXPORT_ATTRIBUTE DPoint3d       _GetElementPlacementPoint (DwgDbEntityCR entity) override;
     EXPORT_ATTRIBUTE bool _CreateObjectProvenance (BentleyApi::MD5::HashVal& hash, DwgDbObjectCR object) override;
     EXPORT_ATTRIBUTE void _SetChangeDetector (bool updating) override;
+    EXPORT_ATTRIBUTE bool _AllowEntityMaterialOverrides (DwgDbEntityCR entity) const override;
 
     // C3dImporter methods
     EXPORT_ATTRIBUTE BentleyStatus  OnBaseBridgeJobInitialized (DgnElementId jobId);

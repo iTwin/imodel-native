@@ -127,9 +127,9 @@ BentleyStatus AeccPipeExt::CreateOrUpdateAeccPipe ()
     ecInstance->SetValue (ECPROPNAME_FlowRate, ECValue(m_aeccPipe->GetFlowRate()));
     ecInstance->SetValue (ECPROPNAME_JunctionLoss, ECValue(m_aeccPipe->GetJunctionLoss()));
 
-    // WIP - determine what units to show
-    double  thicknessInMM = ::DrawingUnitsTo(AECDefs::Units::euMillimeters, m_aeccPipe->GetWallThickness(), m_aeccPipe->database());
-    ecInstance->SetValue (ECPROPNAME_WallThickness, ECValue(thicknessInMM));
+    // wall thickness in meters
+    double  thicknessInMeters = m_aeccPipe->GetWallThickness ();
+    ecInstance->SetValue (ECPROPNAME_WallThickness, ECValue(thicknessInMeters));
 
     this->SetPartData (*ecInstance);
 

@@ -9,10 +9,10 @@
     <!-- KindOfQuantitys -->
     <KindOfQuantity typeName="LENGTH" displayLabel="Length" persistenceUnit="u:M" presentationUnits="f:DefaultRealU(2)[u:M];f:DefaultRealU(2)[u:FT]" relativeError="0.0001"/>
     <KindOfQuantity typeName="FLOWRATE" displayLabel="Flow Rate" persistenceUnit="u:CUB_M_PER_SEC" presentationUnits="f:DefaultRealU(2)[u:CUB_M_PER_SEC];f:DefaultRealU(2)[u:LITRE_PER_SEC]" relativeError="0.001"/>
-    <KindOfQuantity typeName="SLOPE" displayLabel="Slope" persistenceUnit="u:PERCENT" relativeError="0.01"/>
-    <KindOfQuantity typeName="THICKNESS" displayLabel="Thickness" persistenceUnit="u:MM" presentationUnits="f:DefaultRealU(2)[u:MM];f:DefaultRealU(2)[u:IN]" relativeError="0.01"/>
-    <KindOfQuantity typeName="DIAMETER" displayLabel="Diameter" persistenceUnit="u:MM" presentationUnits="f:DefaultRealU(2)[u:MM];f:DefaultRealU(2)[u:IN]" relativeError="0.01"/>
-    <KindOfQuantity typeName="VELOCITY" displayLabel="Speed" persistenceUnit="u:KM_PER_HR" presentationUnits="f:DefaultRealU(2)[u:KM_PER_HR];f:DefaultRealU(2)[u:MPH]" relativeError="0.0001"/>
+    <KindOfQuantity typeName="SLOPE" displayLabel="Slope" persistenceUnit="u:M_PER_M" relativeError="0.01"/>
+    <KindOfQuantity typeName="THICKNESS" displayLabel="Thickness" persistenceUnit="u:M" presentationUnits="f:DefaultRealU(2)[u:MM];f:DefaultRealU(2)[u:IN]" relativeError="0.0001"/>
+    <KindOfQuantity typeName="DIAMETER" displayLabel="Diameter" persistenceUnit="u:M" presentationUnits="f:DefaultRealU(2)[u:MM];f:DefaultRealU(2)[u:IN]" relativeError="0.0001"/>
+    <KindOfQuantity typeName="VELOCITY" displayLabel="Speed" persistenceUnit="u:M_PER_SEC" presentationUnits="f:DefaultRealU(2)[u:KM_PER_HR];f:DefaultRealU(2)[u:MPH]" relativeError="0.0001"/>
 
     <!-- PropertyCategorys -->
     <PropertyCategory typeName="C3dInformation" displayLabel="Information" priority="60"/>
@@ -35,8 +35,8 @@
 
     <!-- Properties -->
     <ECStructClass typeName="DesignSpeed" displayLabel="Design Speed" description="Design speed along the path of the alignment">
-        <ECProperty propertyName="Station" typeName="double" kindOfQuantity="LENGTH" displayLabel="Station"/>
-        <ECProperty propertyName="DesignSpeed" typeName="double" kindOfQuantity="VELOCITY" displayLabel="Design Speed"/>
+        <ECProperty propertyName="Station" typeName="double" kindOfQuantity="LENGTH" displayLabel="Station" description="The station of the alignment"/>
+        <ECProperty propertyName="DesignSpeed" typeName="double" kindOfQuantity="VELOCITY" displayLabel="Design Speed" description="The design speed at the station"/>
         <ECProperty propertyName="Comment" typeName="string" displayLabel="Comment" description="Comment for the design speed"/>
     </ECStructClass>
     <ECStructClass typeName="VAlignment" displayLabel="Vertical Alignment" description="Vertical alignment along the path of the horizontal alignment">
@@ -165,8 +165,8 @@
         <ECProperty propertyName="StructureShape" typeName="string" category="C3dPartData" priority="85" displayLabel="Structure Shape" description="Structure shape"/>
         <ECProperty propertyName="VerticalPipeClearance" typeName="double" kindOfQuantity="LENGTH" category="C3dPartData" priority="75" displayLabel="Vertical Pipe Clearance" description="Clearance required from the top outside of the highest pipe connected to a structure, to the rim"/>
         <ECProperty propertyName="RimToSumpHeight" typeName="double" kindOfQuantity="LENGTH" category="C3dPartData" priority="72" displayLabel="Rim To Sump Height" description="Height from a structure's rim to sump"/>
-        <ECProperty propertyName="WallThickness" typeName="double" kindOfQuantity="LENGTH" category="C3dPartData" priority="69" displayLabel="Wall Thickness" description="Wall thickness of a structure"/>
-        <ECProperty propertyName="FloorThickness" typeName="double" kindOfQuantity="LENGTH" category="C3dPartData" priority="65" displayLabel="Floor Thickness" description="Flood thickness of a structure"/>
+        <ECProperty propertyName="WallThickness" typeName="double" kindOfQuantity="THICKNESS" category="C3dPartData" priority="69" displayLabel="Wall Thickness" description="Wall thickness of a structure"/>
+        <ECProperty propertyName="FloorThickness" typeName="double" kindOfQuantity="THICKNESS" category="C3dPartData" priority="65" displayLabel="Floor Thickness" description="Flood thickness of a structure"/>
         <ECProperty propertyName="Material" typeName="string" category="C3dPartData" priority="62" displayLabel="Material" description="C3D part material"/>
         <ECProperty propertyName="Frame" typeName="string" category="C3dPartData" priority="60" displayLabel="Frame" description="Model or type of frame used for a structure"/>
         <ECProperty propertyName="Grate" typeName="string" category="C3dPartData" priority="58" displayLabel="Grate" description="Model or type of grate used for a structure"/>
@@ -175,7 +175,7 @@
         <ECProperty propertyName="FrameDiameter" typeName="double" kindOfQuantity="LENGTH" category="C3dPartData" priority="52" displayLabel="Frame Diameter" description="Frame diameter of a structure"/>
         <ECProperty propertyName="BarrelPipeClearance" typeName="double" kindOfQuantity="LENGTH" category="C3dPartData" priority="50" displayLabel="Barrel Pipe Clearance" description="Clearance required above the top of the barrel section of a structure"/>
         <ECProperty propertyName="ConeHeight" typeName="double" kindOfQuantity="LENGTH" category="C3dPartData" priority="45" displayLabel="Cone Height" description="Height of the cone shaped section of a structure"/>
-        <ECProperty propertyName="SlabThickness" typeName="double" kindOfQuantity="LENGTH" category="C3dPartData" priority="42" displayLabel="Slab Thickness" description="Thickness of a structure slab"/>
+        <ECProperty propertyName="SlabThickness" typeName="double" kindOfQuantity="THICKNESS" category="C3dPartData" priority="42" displayLabel="Slab Thickness" description="Thickness of a structure slab"/>
         <ECProperty propertyName="InnerStructDiameter" typeName="double" kindOfQuantity="LENGTH" category="C3dPartData" priority="40" displayLabel="Inner Structure Diameter" description="Inner diameter of a structure"/>
         <ECProperty propertyName="StructureHeight" typeName="double" kindOfQuantity="LENGTH" category="C3dPartData" priority="38" displayLabel="Structure Height" description="Total height for a structure, measured from the bottom outside edge of the structure to the top outside edge of the structure"/>
         <ECProperty propertyName="StructureDiameter" typeName="double" kindOfQuantity="LENGTH" category="C3dPartData" priority="36" displayLabel="Structure Diameter" description="Diameter of a structure, measured from the outside edges of the structure"/>
