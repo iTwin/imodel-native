@@ -239,6 +239,67 @@ public:
         DGNPLATFORM_EXPORT void Initialize();
     };
 
+    //! Since we're not yet using C++17, a simple replacement for std::optional<double>.
+    struct OptionalDouble
+    {
+    private:
+        double  m_value;
+        bool    m_hasValue;
+    public:
+        OptionalDouble() : m_hasValue(false) { }
+        OptionalDouble(double value) : m_value(value), m_hasValue(true) { }
+        OptionalDouble(OptionalDouble const& src) = default;
+
+        OptionalDouble& operator=(OptionalDouble const& src) { m_value = src.m_value; m_hasValue = src.m_hasValue; return *this; }
+        OptionalDouble& operator=(double value) { m_value = value; m_hasValue = true; return *this; }
+
+        operator bool() const { return m_hasValue; }
+        double operator*() const { BeAssert(m_hasValue); return m_value; }
+        bool operator==(OptionalDouble const& rhs) const { return m_hasValue == rhs.m_hasValue && (!m_hasValue || m_value == rhs.m_value); }
+        bool operator==(double value) const { return m_hasValue && m_value == value; }
+
+        void reset() { m_hasValue = false; }
+    };
+
+    //=======================================================================================
+    //! Describes how to draw a plan projection model. A plan projection model is a spatial
+    //! model whose geometry lies in an XY plane. Multiple such models can be combined within
+    //! a single view as layers, with various ways to control the order in which the layers
+    //! are displayed.
+    // @bsistruct                                                   Paul.Connelly   01/20
+    //=======================================================================================
+    struct PlanProjectionSettings
+    {
+        //! If defined, the absolute height in meters at which to display the model.
+        OptionalDouble m_elevation;
+        //! If defined, specifies a uniform transparency applied to all of the geometry in the model, in the range 0.0 (fully opaque) to 1.0 (fully transparent).
+        OptionalDouble m_transparency;
+        //! If true, the model is displayed as an overlay in the view (without depth testing) so that it is always visible behind other geometry.
+        bool m_drawAsOverlay = false;
+        //! If true, subcategory display priority is used to specify the draw order of portions of the model. Geometry belonging to a subcategory with a higher priority
+        //! value is drawn on top of coincident geometry belonging to a subcategory with a lower priority value. The priorities can be modified at display time using
+        //! feature symbology overrides. Note that subcategory layers cross model boundaries; that is, geometry belonging to the same subcategory in different models
+        //! are drawn as part of the same layer.
+        bool m_enforceDisplayPriority = false;
+
+        BE_JSON_NAME(elevation);
+        BE_JSON_NAME(transparency);
+        BE_JSON_NAME(overlay);
+        BE_JSON_NAME(enforceDisplayPriority);
+
+        bool MatchesDefaults() const { return !m_elevation && !m_transparency && !m_drawAsOverlay && !m_enforceDisplayPriority; }
+        bool operator==(PlanProjectionSettings const& rhs) const
+            {
+            return m_elevation == rhs.m_elevation && m_transparency == rhs.m_transparency
+                && m_drawAsOverlay == rhs.m_drawAsOverlay && m_enforceDisplayPriority == rhs.m_enforceDisplayPriority;
+            }
+
+        DGNPLATFORM_EXPORT Json::Value ToJson() const;
+        DGNPLATFORM_EXPORT static PlanProjectionSettings FromJson(JsonValueCR);
+    };
+
+    //! Maps plan projection model Ids to corresponding plan projection settings.
+    using PlanProjectionSettingsMap = bmap<DgnModelId, PlanProjectionSettings>;
 
 protected:
     EnvironmentDisplay m_environment;
@@ -264,6 +325,7 @@ public:
     BE_JSON_NAME(fstop);
     BE_JSON_NAME(environment);
     BE_JSON_NAME(ao);
+    BE_JSON_NAME(planProjections);
 
     //! Construct a new DisplayStyle3d.
     //! @param[in] model The DefinitionModel to contain the DisplayStyle3d
@@ -286,6 +348,9 @@ public:
 
     Render::HiddenLineParams GetHiddenLineParams() {return Render::HiddenLineParams::FromJson(GetStyle(json_hline()));}
     void SetHiddenLineParams(Render::HiddenLineParams const& params) {SetStyle(json_hline(), params.ToJson());}
+
+    DGNPLATFORM_EXPORT PlanProjectionSettingsMap GetPlanProjectionSettings() const;
+    DGNPLATFORM_EXPORT void SetPlanProjectionSettings(PlanProjectionSettingsMap const*);
 
     Render::AmbientOcclusionParams GetAmbientOcclusionParams() {return Render::AmbientOcclusionParams::FromJson(GetStyle(json_ao()));}
     void SetAmbientOcclusionParams(Render::AmbientOcclusionParams const& params) {SetStyle(json_ao(), params.ToJson());}

@@ -1491,6 +1491,99 @@ void DisplayStyle3d::SetSolarLight(Lighting::Parameters const& params, DVec3dCR 
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/20
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value DisplayStyle3d::PlanProjectionSettings::ToJson() const
+    {
+    if (MatchesDefaults())
+        return Json::nullValue;
+
+    Json::Value json(Json::objectValue);
+    if (m_elevation)
+        json[json_elevation()] = *m_elevation;
+
+    if (m_transparency)
+        {
+        auto transp = *m_transparency;
+        json[json_transparency()] = transp > 1 ? 1 : (transp < 0 ? 0 : transp);
+        }
+
+    if (m_drawAsOverlay)
+        json[json_overlay()] = true;
+
+    if (m_enforceDisplayPriority)
+        json[json_enforceDisplayPriority()] = true;
+
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/20
++---------------+---------------+---------------+---------------+---------------+------*/
+DisplayStyle3d::PlanProjectionSettings DisplayStyle3d::PlanProjectionSettings::FromJson(JsonValueCR json)
+    {
+    PlanProjectionSettings settings;
+    if (json.isMember(json_elevation()))
+        settings.m_elevation = json[json_elevation()].asDouble();
+
+    if (json.isMember(json_transparency()))
+        {
+        auto transp = json[json_transparency()].asDouble();
+        settings.m_transparency = transp > 1 ? 1 : (transp < 0 ? 0 : transp);
+        }
+
+    settings.m_drawAsOverlay = json[json_overlay()].asBool();
+    settings.m_enforceDisplayPriority = json[json_enforceDisplayPriority()].asBool();
+
+    return settings;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/20
++---------------+---------------+---------------+---------------+---------------+------*/
+DisplayStyle3d::PlanProjectionSettingsMap DisplayStyle3d::GetPlanProjectionSettings() const
+    {
+    PlanProjectionSettingsMap map;
+    auto const& json = GetStyle(json_planProjections());
+    if (json.isNull() || !json.isObject())
+        return map;
+
+    for (auto iter = json.begin(); iter != json.end(); ++iter)
+        {
+        auto id64 = BeInt64Id::FromString(iter.memberName());
+        if (!id64.IsValid())
+            continue;
+
+        auto settings = PlanProjectionSettings::FromJson(*iter);
+        if (!settings.MatchesDefaults())
+            map.Insert(DgnModelId(id64.GetValue()), settings);
+        }
+
+    return map;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/20
++---------------+---------------+---------------+---------------+---------------+------*/
+void DisplayStyle3d::SetPlanProjectionSettings(PlanProjectionSettingsMap const* settings)
+    {
+    if (nullptr == settings || 0 == settings->size())
+        {
+        SetStyle(json_planProjections(), Json::nullValue);
+        return;
+        }
+
+    Json::Value json(Json::objectValue);
+    for (auto const& entry : *settings)
+        {
+        if (!entry.second.MatchesDefaults())
+            json[entry.first.ToHexStr()] = entry.second.ToJson();
+        }
+
+    SetStyle(json_planProjections(), json);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Search the (8) standard view matrices for one that is close to given matrix.
 * @bsimethod                                                    EarlinLutz      05/05
 +---------------+---------------+---------------+---------------+---------------+------*/

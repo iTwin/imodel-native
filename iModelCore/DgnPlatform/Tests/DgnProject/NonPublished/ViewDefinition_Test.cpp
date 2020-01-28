@@ -3,27 +3,32 @@
 * See COPYRIGHT.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
+#include <vector>
 
 //========================================================================================
 // @bsiclass                                    Shaun.Sewall                    02/2017
 //========================================================================================
 struct ViewDefinitionTests : public DgnDbTestFixture
 {
-    OrthographicViewDefinitionPtr InsertSpatialView(SpatialModelR model, Utf8CP name, bool isPrivate);
+    OrthographicViewDefinitionPtr InsertSpatialView(SpatialModelR model, Utf8CP name, bool isPrivate, DisplayStyle3dP style = nullptr);
     SheetViewDefinitionCPtr InsertSheetView(Sheet::ModelR model, Utf8CP name, bool isPrivate);
 };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2017
 //---------------------------------------------------------------------------------------
-OrthographicViewDefinitionPtr ViewDefinitionTests::InsertSpatialView(SpatialModelR model, Utf8CP name, bool isPrivate)
+OrthographicViewDefinitionPtr ViewDefinitionTests::InsertSpatialView(SpatialModelR model, Utf8CP name, bool isPrivate, DisplayStyle3dP style)
     {
     DgnDbR db = model.GetDgnDb();
     DefinitionModelR dictionary = db.GetDictionaryModel();
+
+    if (nullptr == style)
+        style = new DisplayStyle3d(dictionary, "");
+
     ModelSelectorPtr modelSelector = new ModelSelector(dictionary, "");
     modelSelector->AddModel(model.GetModelId());
 
-    OrthographicViewDefinitionPtr viewDef = new OrthographicViewDefinition(dictionary, name, *new CategorySelector(dictionary, ""), *new DisplayStyle3d(dictionary, ""), *modelSelector);
+    OrthographicViewDefinitionPtr viewDef = new OrthographicViewDefinition(dictionary, name, *new CategorySelector(dictionary, ""), *style, *modelSelector);
     BeAssert(viewDef.IsValid());
 
     for (ElementIteratorEntryCR categoryEntry : SpatialCategory::MakeIterator(db))
@@ -338,6 +343,96 @@ TEST_F(ViewDefinitionTests, ViewDefinition2dCRUD)
     ASSERT_EQ(DgnDbStatus::Success, SviewDef->Delete());
     ASSERT_EQ(0, ViewDefinition::QueryCount(*m_db));
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/20
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ViewDefinitionTests, PlanProjectionSettings)
+    {
+    using OptDbl = DisplayStyle3d::OptionalDouble;
+    using Settings = DisplayStyle3d::PlanProjectionSettings;
+    using Map = DisplayStyle3d::PlanProjectionSettingsMap;
+
+    struct Entry
+    {
+        DgnModelId m_modelId;
+        Settings m_settings;
+
+        Entry(int modelId, OptDbl const& elevation, OptDbl const& transp, bool overlay, bool priority)
+            {
+            m_modelId = DgnModelId(static_cast<uint64_t>(modelId));
+            if (elevation) m_settings.m_elevation = elevation;
+            if (transp) m_settings.m_transparency = transp;
+            m_settings.m_drawAsOverlay = overlay;
+            m_settings.m_enforceDisplayPriority = priority;
+            }
+    };
+
+    using Entries = std::vector<Entry>;
+    auto makeMap = [](Entries const& entries)
+        {
+        Map map;
+        for (auto const& entry : entries)
+            map.Insert(entry.m_modelId, entry.m_settings);
+
+        return map;
+        };
+
+    SetupSeedProject();
+    DisplayStyle3dPtr style = new DisplayStyle3d(m_db->GetDictionaryModel(), "");
+
+    auto test = [&](Entries const& input, Entries const& expected)
+        {
+        auto inputMap = makeMap(input);
+        style->SetPlanProjectionSettings(&inputMap);
+
+        auto outputMap = style->GetPlanProjectionSettings();
+
+        EXPECT_EQ(outputMap.size(), expected.size());
+        for (auto const& kvp : outputMap)
+            {
+            auto found = std::find_if(expected.begin(), expected.end(), [&](Entry const& entry) { return entry.m_modelId == kvp.first; });
+            EXPECT_TRUE(found != expected.end());
+            if (found == expected.end())
+                continue;
+
+            auto const& exp = found->m_settings;
+            auto const& act = kvp.second;
+            EXPECT_EQ(act, exp);
+            }
+        };
+
+    OptDbl empty;
+    test({ }, { });
+    test({ Entry(0, 1, 0, true, true) }, { });
+    test(
+        { Entry(0x1c, empty, empty, false, false) },
+        { });
+    test(
+        { Entry(0x1c, 2, 0.5, true, true) },
+        { Entry(0x1c, 2, 0.5, true, true) });
+    test(
+        { Entry(0x1c, empty, 12, false, true) },
+        { Entry(0x1c, empty, 1, false, true) });
+    test(
+        { Entry(0x1c, empty, -0.01, true, false) },
+        { Entry(0x1c, empty, 0, true, false) });
+    test(
+        {
+            Entry(0x1, 0.5, empty, false, false),
+            Entry(0x2, empty, 0.5, false, false),
+            Entry(0x3, empty, empty, true, false),
+            Entry(0x4, empty, empty, false, true),
+            Entry(0x5, empty, empty, false, false)
+        },
+        {
+            Entry(0x1, 0.5, empty, false, false),
+            Entry(0x2, empty, 0.5, false, false),
+            Entry(0x3, empty, empty, true, false),
+            Entry(0x4, empty, empty, false, true)
+        });
+    }
+
 #ifdef NOTNOW
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                               Ridha.Malik                   3/17
