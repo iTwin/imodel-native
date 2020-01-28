@@ -22,6 +22,8 @@ steps:
         # Use a unique mspdbsrv.exe per-job to alleviate PDB write issues when an existing instance is killed based on uptime.
         _MSPDBSRV_ENDPOINT_=$(Build.BuildId)
 
+        PRG=1
+
   - task: setenv@0
     displayName: Linux Environment
     condition: and(succeeded(), eq('linux', variables['Agent.OS']))
@@ -39,6 +41,8 @@ steps:
         BMAKE_PYTHON_SCRIPTS_DIR=$(BB_SRC_ROOT)/bsicommon/build/
         BSI=1
 
+        PRG=1
+
   - task: setenv@0
     displayName: MacOS Environment
     condition: and(succeeded(), eq('darwin', variables['Agent.OS']))
@@ -55,6 +59,8 @@ steps:
         BMAKE_OPT=-I$(BB_SRC_ROOT)/bsicommon/PublicSDK/
         BMAKE_PYTHON_SCRIPTS_DIR=$(BB_SRC_ROOT)/bsicommon/build/
         BSI=1
+
+        PRG=1
 
   - task: bentleybootstrap@0
     displayName: BentleyBootstrap
