@@ -85,7 +85,7 @@ struct RulesEngineTestHelpers
 
     static ComplexNavigationQueryPtr CreateMultiECInstanceNodesQuery(ECClassCR ecClass, NavigationQueryR instanceNodesQuery);
     static NavigationQueryPtr CreateECInstanceNodesQueryForClasses(ECClassSet const& classes, Utf8CP alias, ComplexQueryHandler handler = nullptr);
-    static ComplexNavigationQueryPtr CreateECInstanceNodesQueryForClass(ECEntityClassCR ecClass, bool polymorphic, Utf8CP alias, bvector<RelatedClass> const& = bvector<RelatedClass>());
+    static ComplexNavigationQueryPtr CreateECInstanceNodesQueryForClass(ECEntityClassCR ecClass, bool polymorphic, Utf8CP alias, bvector<RelatedClassPath> const& = bvector<RelatedClassPath>());
     static NavigationQueryPtr CreateLabelGroupingNodesQueryForClasses(ECClassSet const& classes, Utf8CP alias, ComplexQueryHandler handler = nullptr);
     static NavigationQueryPtr CreateQuery(NavigationQueryContract const&, bset<ECN::ECClassCP>, bool polymorphic, Utf8CP alias, ComplexQueryHandler handler = nullptr);
     static NavigationQueryPtr CreateQuery(NavigationQueryContract const&, bvector<ECN::ECClassCP>, bool polymorphic, Utf8CP alias, ComplexQueryHandler handler = nullptr);

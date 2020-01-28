@@ -135,10 +135,10 @@ struct SelectClassInfo
 {
 private:
     SelectClassWithExcludes m_selectClass;
-    RelatedClassPath m_pathToInputClass;
+    RelatedClassPath m_pathFromInputToSelectClass;
     bvector<RelatedClassPath> m_relatedPropertyPaths;
     bvector<RelatedClass> m_navigationPropertyClasses;
-    bvector<RelatedClass> m_relatedInstanceClasses;
+    bvector<RelatedClassPath> m_relatedInstancePaths;
 
 public:
     //! Constructor. Creates an invalid object.
@@ -151,10 +151,10 @@ public:
     bool Equals(SelectClassInfo const& other) const
         {
         return m_selectClass == other.m_selectClass
-            && m_pathToInputClass == other.m_pathToInputClass
+            && m_pathFromInputToSelectClass == other.m_pathFromInputToSelectClass
             && m_relatedPropertyPaths == other.m_relatedPropertyPaths
             && m_navigationPropertyClasses == other.m_navigationPropertyClasses
-            && m_relatedInstanceClasses == other.m_relatedInstanceClasses;
+            && m_relatedInstancePaths == other.m_relatedInstancePaths;
         }
     //! Equals operator override.
     bool operator==(SelectClassInfo const& other) const {return Equals(other);}
@@ -166,12 +166,11 @@ public:
     SelectClassWithExcludes& GetSelectClass() {return m_selectClass;}
 
     //! Get the input ECClass.
-    ECClassCP GetInputClass() const {return m_pathToInputClass.empty() ? nullptr : &m_pathToInputClass.back().GetTargetClass().GetClass();}
+    ECClassCP GetInputClass() const {return m_pathFromInputToSelectClass.empty() ? nullptr : m_pathFromInputToSelectClass.front().GetSourceClass();}
 
-    //! Get path to the input ECClass.
-    RelatedClassPath const& GetPathToInputClass() const {return m_pathToInputClass;}
-    //! Set path to the input ECClass.
-    void SetPathToInputClass(RelatedClassPath path) {m_pathToInputClass = path;}
+    //! Path from input to select ECClass.
+    RelatedClassPath const& GetPathFromInputToSelectClass() const {return m_pathFromInputToSelectClass;}
+    void SetPathFromInputToSelectClass(RelatedClassPath path) {m_pathFromInputToSelectClass = path;}
 
     //! Get paths to related property ECClasses.
     bvector<RelatedClassPath> const& GetRelatedPropertyPaths() const {return m_relatedPropertyPaths;}
@@ -184,9 +183,9 @@ public:
     void SetNavigationPropertyClasses(bvector<RelatedClass> classes) {m_navigationPropertyClasses = classes;}
 
     //! Get related classes of related instances.
-    bvector<RelatedClass> const& GetRelatedInstanceClasses() const {return m_relatedInstanceClasses;}
+    bvector<RelatedClassPath> const& GetRelatedInstancePaths() const {return m_relatedInstancePaths;}
     //! Set related classes of related instances.
-    void SetRelatedInstanceClasses(bvector<RelatedClass> classes) {m_relatedInstanceClasses = classes;}
+    void SetRelatedInstancePaths(bvector<RelatedClassPath> paths) {m_relatedInstancePaths = paths;}
 };
 
 //=======================================================================================

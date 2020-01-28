@@ -46,7 +46,8 @@ PresentationRulesPublicHeaders    = $(PresentationRulesPublicApiDirectory)Presen
                                     $(PresentationRulesPublicApiDirectory)CustomizationRules.h \
                                     $(PresentationRulesPublicApiDirectory)ContentModifier.h \
                                     $(PresentationRulesPublicApiDirectory)PropertyEditorSpecification.h \
-                                    $(PresentationRulesPublicApiDirectory)PropertyCategorySpecification.h
+                                    $(PresentationRulesPublicApiDirectory)PropertyCategorySpecification.h \
+                                    $(PresentationRulesPublicApiDirectory)RelationshipPathSpecification.h
 
 
 PresentationRulesInternalHeaders  = $(PresentationRulesSourceDirectory)PresentationRuleXmlConstants.h \

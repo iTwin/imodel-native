@@ -62,7 +62,18 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 #define LOGGER_NAMESPACE_ECPRESENTATION_RULES   LOGGER_NAMESPACE_ECPRESENTATION ".Rules"
 #define ECPRENSETATION_RULES_LOG (*NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE_ECPRESENTATION_RULES))
 
-enum RequiredRelationDirection : unsigned;
+//! This enumerator allows to chose which direction should be honored
+//! when selecting relationships in the query.
+enum RequiredRelationDirection : unsigned
+    {
+    //! Folows relationships in both directions (default).
+    RequiredRelationDirection_Both = 0,
+    //! Folows only Forward relationships.
+    RequiredRelationDirection_Forward = 1,
+    //! Folows only Backward relationships.
+    RequiredRelationDirection_Backward = 2
+    };
+
 enum class RelationshipMeaning;
 
 typedef RefCountedPtr<PresentationRuleSet>    		PresentationRuleSetPtr;

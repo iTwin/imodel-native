@@ -130,7 +130,22 @@ struct NavigationQueryTests : ECPresentationTest
 +===============+===============+===============+===============+===============+======*/
 struct ComplexNavigationQueryTests : NavigationQueryTests
     {
+    DECLARE_SCHEMA_REGISTRY(ComplexNavigationQueryTests)
+    static ECDbTestProject* s_project;
+    static void SetUpTestCase()
+        {
+        s_project = new ECDbTestProject();
+        s_project->Create("ComplexNavigationQueryTests");
+        INIT_SCHEMA_REGISTRY(s_project->GetECDb())
+        }
+    static void TearDownTestCase()
+        {
+        DELETE_AND_CLEAR(s_project);
+        }
     };
+ECDbTestProject* ComplexNavigationQueryTests::s_project = nullptr;
+DEFINE_SCHEMA_REGISTRY(ComplexNavigationQueryTests)
+#define DEFINE_NAVIGATION_QUERY_TEST_SCHEMA(name, schema_xml) DEFINE_REGISTRY_SCHEMA(ComplexNavigationQueryTests, name, schema_xml)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                03/2019
@@ -295,6 +310,56 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_MultipleClauses_DoesntInc
         " FROM [sc2].[Class1]"
         " LEFT JOIN [sc2].[Class2] [target_alias1] ON [target_alias1].[C1].[Id] = [Class1].[ECInstanceId]"
         " LEFT JOIN [sc2].[Class3] [target_alias2] ON [target_alias2].[ECInstanceId] = [target_alias1].[C3].[Id]");
+    Utf8String str = query->ToString();
+    ASSERT_STREQ(expected.c_str(), str.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_NAVIGATION_QUERY_TEST_SCHEMA(ToString_InnerJoin_MultipleClauses_DoesntIncludeRelationshipMultipleTimesEvenIfJoinedClassIsDifferent, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="Child">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="A_Has_Children" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="true">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Child" />
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="B">
+        <BaseClass>Child</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="C">
+        <BaseClass>Child</BaseClass>
+    </ECEntityClass>
+)*");
+TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_MultipleClauses_DoesntIncludeRelationshipMultipleTimesEvenIfJoinedClassIsDifferent)
+    {
+    ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
+    ECClassCP classB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B");
+    ECClassCP classC = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "C");
+    ECRelationshipClassCP relationship = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A_Has_Children")->GetRelationshipClassCP();
+
+    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    query->From(*classA, "a", true);
+    query->Join(RelatedClass(*classA, *classB, *relationship, true, "b", "rel"));
+    query->Join(RelatedClass(*classA, *classC, *relationship, true, "c", "rel"));
+
+    Utf8String expected(
+        " FROM [alias_ToString_InnerJoin_MultipleClauses_DoesntIncludeRelationshipMultipleTimesEvenIfJoinedClassIsDifferent].[A] [a]"
+        " LEFT JOIN [alias_ToString_InnerJoin_MultipleClauses_DoesntIncludeRelationshipMultipleTimesEvenIfJoinedClassIsDifferent].[A_Has_Children] [rel] ON [a].[ECInstanceId] = [rel].[SourceECInstanceId] AND [a].[ECClassId] = [rel].[SourceECClassId]"
+        " LEFT JOIN [alias_ToString_InnerJoin_MultipleClauses_DoesntIncludeRelationshipMultipleTimesEvenIfJoinedClassIsDifferent].[B] [b] ON [b].[ECInstanceId] = [rel].[TargetECInstanceId] AND [b].[ECClassId] = [rel].[TargetECClassId]"
+        " LEFT JOIN [alias_ToString_InnerJoin_MultipleClauses_DoesntIncludeRelationshipMultipleTimesEvenIfJoinedClassIsDifferent].[C] [c] ON [c].[ECInstanceId] = [rel].[TargetECInstanceId] AND [c].[ECClassId] = [rel].[TargetECClassId]");
     Utf8String str = query->ToString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
@@ -584,6 +649,58 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_MultipleClauses_DoesntInc
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_NAVIGATION_QUERY_TEST_SCHEMA(ToString_OuterJoin_MultiStepPath_WithNavigationProperty, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B" />
+    <ECEntityClass typeName="C">
+        <ECNavigationProperty propertyName="B" relationshipName="B_Has_C" direction="Backward" />        
+    </ECEntityClass>
+    <ECRelationshipClass typeName="A_Has_B" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="true">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="B_Has_C" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="true">
+            <Class class="B"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="C" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_MultiStepPath_WithNavigationProperty)
+    {
+    ECSchemaCP schema = s_project->GetECDb().Schemas().GetSchema(BeTest::GetNameOfCurrentTest());
+    ECEntityClassCR classA = *schema->GetClassCP("A")->GetEntityClassCP();
+    ECEntityClassCR classB = *schema->GetClassCP("B")->GetEntityClassCP();
+    ECEntityClassCR classC = *schema->GetClassCP("C")->GetEntityClassCP();
+    ECRelationshipClassCR relAB = *schema->GetClassCP("A_Has_B")->GetRelationshipClassCP();
+    ECRelationshipClassCR relBC = *schema->GetClassCP("B_Has_C")->GetRelationshipClassCP();
+
+    ComplexContentQueryPtr query = ComplexContentQuery::Create();
+    query->From(classA, false, "this");
+
+    RelatedClassPath joinPath{
+        RelatedClass(classA, classB, relAB, true, "b_alias", "rel_ab_alias"),
+        RelatedClass(classB, classC, relBC, true, "c_alias", "rel_bc_alias"),
+        };
+    query->Join(joinPath, true);
+
+    Utf8String expected(
+        " FROM ONLY [alias_ToString_OuterJoin_MultiStepPath_WithNavigationProperty].[A] [this]"
+        " LEFT JOIN [alias_ToString_OuterJoin_MultiStepPath_WithNavigationProperty].[A_Has_B] [rel_ab_alias] ON [this].[ECInstanceId] = [rel_ab_alias].[SourceECInstanceId] AND [this].[ECClassId] = [rel_ab_alias].[SourceECClassId]"
+        " LEFT JOIN [alias_ToString_OuterJoin_MultiStepPath_WithNavigationProperty].[C] [c_alias] ON [c_alias].[B].[Id] = [rel_ab_alias].[TargetECInstanceId]");
+    Utf8String str = query->ToString();
+    ASSERT_STREQ(expected.c_str(), str.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_UsesAliases)
@@ -694,6 +811,122 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterForwardJoin_ForwardNavigationP
     Utf8String expected(
         " FROM [sc3].[Class3] [Class3Alias]"
         " LEFT JOIN [sc3].[Class1] [Class1Alias] ON [Class1Alias].[ECInstanceId] = [Class3Alias].[Parent].[Id]");
+    Utf8String str = query->ToString();
+    ASSERT_STREQ(expected.c_str(), str.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_NAVIGATION_QUERY_TEST_SCHEMA(ToString_Join_ClassWithTargetIds, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B" />
+    <ECRelationshipClass typeName="A_Has_B" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="true">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(ComplexNavigationQueryTests, ToString_Join_ClassWithTargetIds)
+    {
+    ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
+    ECClassCP classB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B");
+    ECRelationshipClassCP relAB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A_Has_B")->GetRelationshipClassCP();
+
+    bset<ECInstanceId> targetIds;
+    targetIds.insert(ECInstanceId((uint64_t)123));
+    targetIds.insert(ECInstanceId((uint64_t)456));
+    
+    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    query->From(*classA, true, "src");
+    query->Join(RelatedClass(*classA, *relAB, true, "rel", *classB, targetIds, "tgt", true));
+
+    Utf8String expected(
+        " FROM [alias_ToString_Join_ClassWithTargetIds].[A] [src]"
+        " LEFT JOIN [alias_ToString_Join_ClassWithTargetIds].[A_Has_B] [rel] ON [src].[ECInstanceId] = [rel].[SourceECInstanceId] AND [src].[ECClassId] = [rel].[SourceECClassId]"
+        " LEFT JOIN [alias_ToString_Join_ClassWithTargetIds].[B] [tgt] ON [tgt].[ECInstanceId] = [rel].[TargetECInstanceId] AND [tgt].[ECClassId] = [rel].[TargetECClassId] AND [tgt].[ECInstanceId] IN (?,?)");
+    Utf8String str = query->ToString();
+    ASSERT_STREQ(expected.c_str(), str.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_NAVIGATION_QUERY_TEST_SCHEMA(ToString_Join_PathWithTargetIds, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B" />
+    <ECEntityClass typeName="C" />
+    <ECRelationshipClass typeName="A_Has_B" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="true">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="B_Has_C" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="true">
+            <Class class="B"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="C" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(ComplexNavigationQueryTests, ToString_Join_PathWithTargetIds)
+    {
+    ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
+    ECClassCP classB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B");
+    ECClassCP classC = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "C");
+    ECRelationshipClassCP relAB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A_Has_B")->GetRelationshipClassCP();
+    ECRelationshipClassCP relBC = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B_Has_C")->GetRelationshipClassCP();
+
+    bset<ECInstanceId> targetIds;
+    targetIds.insert(ECInstanceId((uint64_t)123));
+
+    RelatedClassPath path = {
+        RelatedClass(*classA, *relAB, true, "rel_ab", *classB, targetIds, "tgt1", false),
+        RelatedClass(*classB, *relBC, true, "rel_bc", *classC, "tgt2", false),
+        };
+
+    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    query->From(*classA, true, "src");
+    query->Join(path);
+
+    Utf8String expected(
+        " FROM [alias_ToString_Join_PathWithTargetIds].[A] [src]"
+        " INNER JOIN [alias_ToString_Join_PathWithTargetIds].[A_Has_B] [rel_ab] ON [src].[ECInstanceId] = [rel_ab].[SourceECInstanceId] AND [src].[ECClassId] = [rel_ab].[SourceECClassId]"
+        " INNER JOIN [alias_ToString_Join_PathWithTargetIds].[B] [tgt1] ON [tgt1].[ECInstanceId] = [rel_ab].[TargetECInstanceId] AND [tgt1].[ECClassId] = [rel_ab].[TargetECClassId] AND [tgt1].[ECInstanceId] IN (?)"
+        " INNER JOIN [alias_ToString_Join_PathWithTargetIds].[B_Has_C] [rel_bc] ON [tgt1].[ECInstanceId] = [rel_bc].[SourceECInstanceId] AND [tgt1].[ECClassId] = [rel_bc].[SourceECClassId]"
+        " INNER JOIN [alias_ToString_Join_PathWithTargetIds].[C] [tgt2] ON [tgt2].[ECInstanceId] = [rel_bc].[TargetECInstanceId] AND [tgt2].[ECClassId] = [rel_bc].[TargetECClassId]");
+    Utf8String str = query->ToString();
+    ASSERT_STREQ(expected.c_str(), str.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_NAVIGATION_QUERY_TEST_SCHEMA(ToString_Join_ClassWithJoinClause, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B">
+        <ECProperty propertyName="Prop" typeName="int" />
+    </ECEntityClass>
+)*");
+TEST_F(ComplexNavigationQueryTests, ToString_Join_ClassWithJoinClause)
+    {
+    ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
+    ECClassCP classB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B");
+
+    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    query->From(SelectClass(*classA), "a");
+    query->Join(SelectClass(*classB, false), "b", QueryClauseAndBindings("[b].[Prop] > ?", { new BoundQueryECValue(ECValue(123)) }), true);
+
+    Utf8String expected(
+        " FROM [alias_ToString_Join_ClassWithJoinClause].[A] [a]"
+        " LEFT JOIN ONLY [alias_ToString_Join_ClassWithJoinClause].[B] [b] ON [b].[Prop] > ?");
     Utf8String str = query->ToString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }

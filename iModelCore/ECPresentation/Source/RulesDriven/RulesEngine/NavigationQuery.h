@@ -76,8 +76,39 @@ public:
     BoundQueryValue* Clone() const {return _Clone();}
     BeSQLite::EC::ECSqlStatus Bind(BeSQLite::EC::ECSqlStatement& stmt, uint32_t index) const {return _Bind(stmt, index);}
 };
-typedef bvector<BoundQueryValue const*> BoundQueryValuesList;
-typedef BoundQueryValuesList const&     BoundQueryValuesListCR;
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                01/2020
++===============+===============+===============+===============+===============+======*/
+struct BoundQueryValuesList : bvector<BoundQueryValue const*>
+    {
+    BoundQueryValuesList() {}
+    BoundQueryValuesList(std::initializer_list<BoundQueryValue const*> values)
+        : bvector<BoundQueryValue const*>(values)
+        {}
+    BoundQueryValuesList(bvector<BoundQueryValue const*> values)
+        : bvector<BoundQueryValue const*>(values)
+        {}
+    bool operator==(BoundQueryValuesList const& other) const
+        {
+        if (size() != other.size())
+            return false;
+        for (size_t i = 0; i < size(); ++i)
+            {
+            if (!at(i)->Equals(*other[i]))
+                return false;
+            }
+        return true;
+        }
+    BoundQueryValuesList Clone() const
+        {
+        BoundQueryValuesList clone;
+        for (BoundQueryValue const* value : *this)
+            clone.push_back(value->Clone());
+        return clone;
+        }
+    };
+typedef BoundQueryValuesList const& BoundQueryValuesListCR;
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                01/2017
@@ -154,6 +185,68 @@ public:
 };
 
 /*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                01/2020
++===============+===============+===============+===============+===============+======*/
+struct QueryClauseAndBindings
+{
+private:
+    Utf8String m_clause;
+    BoundQueryValuesList m_bindings;
+public:
+    QueryClauseAndBindings() {}
+    QueryClauseAndBindings(Utf8String clause, BoundQueryValuesList bindings = BoundQueryValuesList())
+        : m_clause(clause), m_bindings(bindings)
+        {}
+    QueryClauseAndBindings(QueryClauseAndBindings const& other) 
+        : m_clause(other.m_clause), m_bindings(other.m_bindings.Clone())
+        {}
+    QueryClauseAndBindings(QueryClauseAndBindings&& other) : m_clause(std::move(other.m_clause)) {m_bindings.swap(other.m_bindings);}
+    ~QueryClauseAndBindings() {Reset();}
+    QueryClauseAndBindings& operator=(QueryClauseAndBindings const& other)
+        {
+        Reset();
+        m_clause = other.m_clause;
+        m_bindings = other.m_bindings.Clone();
+        return *this;
+        }
+    QueryClauseAndBindings& operator=(QueryClauseAndBindings&& other)
+        {
+        m_clause = std::move(other.m_clause);
+        m_bindings.swap(other.m_bindings);
+        return *this;
+        }
+    bool operator==(QueryClauseAndBindings const& other) const
+        {
+        return m_clause.Equals(other.m_clause)
+            && m_bindings == other.m_bindings;
+        }
+    bool operator!=(QueryClauseAndBindings const& other) const {return !operator==(other);}
+    void Reset()
+        {
+        for (BoundQueryValue const* value : m_bindings)
+            DELETE_AND_CLEAR(value);
+        m_bindings.clear();
+        m_clause.clear();
+        }
+    void Append(QueryClauseAndBindings const& rhs)
+        {
+        if (!m_clause.empty())
+            m_clause.append(" AND ");
+        m_clause.append("(").append(rhs.GetClause()).append(")");
+        ContainerHelpers::Push(m_bindings, rhs.GetBindings().Clone());
+        }
+    void Bind(ECSqlStatement& stmt, uint32_t* bindingIndex = nullptr)
+        {
+        uint32_t defaultIndex = 1;
+        uint32_t& index = bindingIndex ? *bindingIndex : defaultIndex;
+        for (BoundQueryValue const* binding : m_bindings)
+            binding->Bind(stmt, index++);
+        }
+    Utf8StringCR GetClause() const {return m_clause;}
+    BoundQueryValuesList const& GetBindings() const {return m_bindings;}
+};
+
+/*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                02/2018
 +===============+===============+===============+===============+===============+======*/
 struct FilteredIdsHandler
@@ -191,6 +284,7 @@ public:
             m_handler->_Accept(el);
         return m_handler->_GetBoundValues();
         }
+    QueryClauseAndBindings Create(Utf8CP idSelector, bool inverse = false) {return QueryClauseAndBindings(CreateWhereClause(idSelector, inverse), CreateBoundValues());}
 };
 
 /*=================================================================================**//**
@@ -305,9 +399,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ComplexPresentationQuery : TBase
     typedef ComplexPresentationQuery<TBase>     ThisType;
     typedef typename TBase::Contract            Contract;
     typedef typename TBase::ResultParameters    ResultParameters;
-
     friend struct PresentationQuery<TBase, Contract, ResultParameters>;
 
+private:
     /*=============================================================================**//**
     * @bsiclass                                     Grigas.Petraitis            06/2015
     +===============+===============+===============+===============+===============+==*/
@@ -331,39 +425,45 @@ struct EXPORT_VTABLE_ATTRIBUTE ComplexPresentationQuery : TBase
         {
         ECClassCP m_join;
         Utf8String m_joinAlias;
+        QueryClauseAndBindings m_joinFilter;
         ECRelationshipClassCP m_using;
         Utf8String m_usingAlias;
         bool m_isForward;
         bool m_isPolymorphic;
         bool m_isOuterJoin;
-
         JoinUsingClause() : m_join(nullptr), m_using(nullptr), m_isPolymorphic(false), m_isForward(false), m_isOuterJoin(false) {}
-        JoinUsingClause(ECClassCR joinClass, ECRelationshipClassCR usingRelationship, bool isForward, bool isOuter, bool isPolymorphic, Utf8CP joinAlias, Utf8CP usingAlias)
+        JoinUsingClause(ECClassCR joinClass, Utf8CP joinAlias, ECRelationshipClassCR usingRelationship, Utf8CP usingAlias, bool isForward, bool isOuter, bool isPolymorphic)
             : m_join(&joinClass), m_using(&usingRelationship), m_joinAlias(joinAlias), m_usingAlias(usingAlias), m_isPolymorphic(isPolymorphic), m_isForward(isForward), m_isOuterJoin(isOuter)
             {}
-        bool IsValid() const {return nullptr != m_join && nullptr != m_using;}
+        JoinUsingClause(ECClassCR joinClass, Utf8CP joinAlias, QueryClauseAndBindings joinFilter, ECRelationshipClassCR usingRelationship, Utf8CP usingAlias, bool isForward, bool isOuter, bool isPolymorphic)
+            : m_join(&joinClass), m_joinAlias(joinAlias), m_joinFilter(joinFilter), m_using(&usingRelationship), m_isForward(isForward), m_usingAlias(usingAlias), m_isPolymorphic(isPolymorphic), m_isOuterJoin(isOuter)
+            {}
+        JoinUsingClause(ECClassCR joinClass, Utf8CP joinAlias, QueryClauseAndBindings joinFilter, bool isOuter, bool isPolymorphic)
+            : m_join(&joinClass), m_joinAlias(joinAlias), m_joinFilter(joinFilter), m_using(nullptr), m_isForward(false), m_usingAlias(""), m_isPolymorphic(isPolymorphic), m_isOuterJoin(isOuter)
+            {}
+        bool IsValid() const {return nullptr != m_join;}
         };
+    struct JoinsComparer;
 
 private:
     Utf8String m_orderByClause;
     bvector<FromClause> m_from;
     RefCountedPtr<TBase const> m_nestedQuery;
     Utf8String m_nestedQueryAlias;
-    Utf8String m_whereClause;
-    BoundQueryValuesList m_whereClauseBindings;
+    QueryClauseAndBindings m_whereClause;
     bvector<bvector<JoinUsingClause>> m_joins;
+    mutable QueryClauseAndBindings m_joinClause;
     RefCountedPtr<Contract const> m_selectContract;
     Utf8String m_selectPrefix;
     bool m_isSelectAll;
     RefCountedPtr<Contract const> m_groupingContract;
-    Utf8String m_havingClause;
-    BoundQueryValuesList m_havingClauseBindings;
+    QueryClauseAndBindings m_havingClause;
     BoundQueryECValue const* m_limit;
     BoundQueryECValue const* m_offset;
 
 private:
     Utf8String CreateSelectClause() const;
-    Utf8String CreateJoinClause() const;
+    void InitJoinClause() const;
     Utf8String CreateGroupByClause() const;
     ECPRESENTATION_EXPORT void CopyBindings(ComplexPresentationQuery<TBase> const& other);
 
@@ -387,10 +487,6 @@ protected:
         }
     ~ComplexPresentationQuery()
         {
-        for (BoundQueryValue const* value : m_whereClauseBindings)
-            DELETE_AND_CLEAR(value);
-        for (BoundQueryValue const* value : m_havingClauseBindings)
-            DELETE_AND_CLEAR(value);
         DELETE_AND_CLEAR(m_limit);
         DELETE_AND_CLEAR(m_offset);
         }
@@ -408,7 +504,6 @@ public:
     ECPRESENTATION_EXPORT Utf8String GetClause(PresentationQueryClauses clause) const;
     TBase const* GetNestedQuery() const {return m_nestedQuery.get();}
     Utf8CP GetSelectPrefix() const {return m_selectPrefix.c_str();}
-    ECPRESENTATION_EXPORT void SetBoundValues(BoundQueryValuesListCR bindings);
 
     ECPRESENTATION_EXPORT ThisType& SelectAll();
     ECPRESENTATION_EXPORT ThisType& SelectContract(Contract const& contract, Utf8CP prefix = nullptr);
@@ -416,11 +511,14 @@ public:
     ECPRESENTATION_EXPORT ThisType& From(SelectClass const& fromClass, Utf8CP alias = nullptr, bool append = true);
     ECPRESENTATION_EXPORT ThisType& From(TBase& nestedQuery, Utf8CP alias = nullptr);
     ECPRESENTATION_EXPORT ThisType& Where(Utf8CP whereClause, BoundQueryValuesListCR, bool append = true);
+    ECPRESENTATION_EXPORT ThisType& Where(QueryClauseAndBindings whereClause, bool append = true);
+    ECPRESENTATION_EXPORT ThisType& Join(SelectClass const& joinClass, Utf8CP alias, QueryClauseAndBindings joinClause, bool isOuter, bool append = true);
     ECPRESENTATION_EXPORT ThisType& Join(RelatedClass const& relatedClass, bool append = true);
     ECPRESENTATION_EXPORT ThisType& Join(RelatedClassPath const& path, bool append = true);
     ECPRESENTATION_EXPORT ThisType& OrderBy(Utf8CP orderByClause);
     ECPRESENTATION_EXPORT ThisType& GroupByContract(Contract const& contract);
     ECPRESENTATION_EXPORT ThisType& Having(Utf8CP havingClause, BoundQueryValuesListCR);
+    ECPRESENTATION_EXPORT ThisType& Having(QueryClauseAndBindings);
     ECPRESENTATION_EXPORT ThisType& Limit(uint64_t limit, uint64_t offset = 0);
 };
 

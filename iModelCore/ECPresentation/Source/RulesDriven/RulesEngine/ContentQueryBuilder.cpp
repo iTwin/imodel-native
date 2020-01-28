@@ -61,11 +61,11 @@ bvector<ECInstanceId> const& ParsedInput::_GetInstanceIds(ECClassCR selectClass)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bvector<RelatedClassPath> GetPathsToInputClass(bvector<SelectClassInfo> const& selectInfos)
+static bvector<RelatedClassPath> GetPathsToSelectClass(bvector<SelectClassInfo> const& selectInfos)
     {
     bvector<RelatedClassPath> paths;
     for (SelectClassInfo const& info : selectInfos)
-        paths.push_back(info.GetPathToInputClass());
+        paths.push_back(info.GetPathFromInputToSelectClass());
     return paths;
     }
 
@@ -95,8 +95,8 @@ static void JoinRelatedClasses(ComplexContentQueryR query, SelectClassInfo const
         query.Join(path, true);
 
     // join related instances
-    for (RelatedClass const& relatedInstanceClass : selectInfo.GetRelatedInstanceClasses())
-        query.Join(relatedInstanceClass, true);
+    for (RelatedClassPathCR path : selectInfo.GetRelatedInstancePaths())
+        query.Join(path, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -116,7 +116,7 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(SelectedNodeInstancesSpecificat
         {
         ComplexContentQueryPtr classQuery = ComplexContentQuery::Create();
         ContentQueryContractPtr contract = ContentQueryContract::Create(++m_contractIdsCounter, descriptor, &selectClassInfo.GetSelectClass().GetClass(),
-            *classQuery, selectClassInfo.GetRelatedInstanceClasses());
+            *classQuery, selectClassInfo.GetRelatedInstancePaths());
         classQuery->SelectContract(*contract, "this");
         classQuery->From(selectClassInfo.GetSelectClass(), "this");
 
@@ -147,21 +147,21 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(SelectedNodeInstancesSpecificat
 +===============+===============+===============+===============+===============+======*/
 struct HandledRecursiveClassesKey
     {
-    ECClassCP m_source;
-    ECClassCP m_target;
+    ECClassCP m_inputClass;
+    ECClassCP m_selectClass;
     bool m_isForward;
-    HandledRecursiveClassesKey() : m_source(nullptr), m_target(nullptr), m_isForward(false) {}
+    HandledRecursiveClassesKey() : m_inputClass(nullptr), m_selectClass(nullptr), m_isForward(false) {}
     HandledRecursiveClassesKey(SelectClassInfo const& info)
         {
-        m_source = &info.GetSelectClass().GetClass();
-        m_target = &info.GetPathToInputClass().back().GetTargetClass().GetClass();
-        m_isForward = info.GetPathToInputClass().back().IsForwardRelationship();
+        m_inputClass = info.GetInputClass();
+        m_selectClass = &info.GetSelectClass().GetClass();
+        m_isForward = info.GetPathFromInputToSelectClass().back().IsForwardRelationship();
         }
     bool operator<(HandledRecursiveClassesKey const& other) const
         {
-        return m_source < other.m_source
-            || m_source == other.m_source && m_target < other.m_target
-            || m_source == other.m_source && m_target == other.m_target && m_isForward < other.m_isForward;
+        return m_inputClass < other.m_inputClass
+            || m_inputClass == other.m_inputClass && m_selectClass < other.m_selectClass
+            || m_inputClass == other.m_inputClass && m_selectClass == other.m_selectClass && m_isForward < other.m_isForward;
         }
     };
 
@@ -179,7 +179,7 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentRelatedInstancesSpecific
 
     InstanceFilteringParams::RecursiveQueryInfo const* recursiveInfo = nullptr;
     if (specification.IsRecursive())
-        recursiveInfo = new InstanceFilteringParams::RecursiveQueryInfo(GetPathsToInputClass(specificationDescriptor->GetSelectClasses()));
+        recursiveInfo = new InstanceFilteringParams::RecursiveQueryInfo(GetPathsToSelectClass(specificationDescriptor->GetSelectClasses()));
 
     bset<HandledRecursiveClassesKey> recursiverlyHandledClasses;
     ContentQueryPtr query;
@@ -195,7 +195,7 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentRelatedInstancesSpecific
 
         ComplexContentQueryPtr classQuery = ComplexContentQuery::Create();
         ContentQueryContractPtr contract = ContentQueryContract::Create(++m_contractIdsCounter, descriptor, &selectClassInfo.GetSelectClass().GetClass(),
-            *classQuery, selectClassInfo.GetRelatedInstanceClasses());
+            *classQuery, selectClassInfo.GetRelatedInstancePaths());
         classQuery->SelectContract(*contract, "this");
         classQuery->From(selectClassInfo.GetSelectClass(), "this");
 
@@ -240,7 +240,7 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentInstancesOfSpecificClass
         {
         ComplexContentQueryPtr classQuery = ComplexContentQuery::Create();
         ContentQueryContractPtr contract = ContentQueryContract::Create(++m_contractIdsCounter, descriptor, &selectClassInfo.GetSelectClass().GetClass(),
-            *classQuery, selectClassInfo.GetRelatedInstanceClasses());
+            *classQuery, selectClassInfo.GetRelatedInstancePaths());
         classQuery->SelectContract(*contract, "this");
         classQuery->From(selectClassInfo.GetSelectClass(), "this");
 
@@ -280,7 +280,7 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentDescriptor::NestedConten
         return nullptr;
 
     ComplexContentQueryPtr query = ComplexContentQuery::Create();
-    ContentQueryContractPtr contract = ContentQueryContract::Create(++m_contractIdsCounter, *descriptor, &contentField.GetContentClass(), *query, bvector<RelatedClass>(), false);
+    ContentQueryContractPtr contract = ContentQueryContract::Create(++m_contractIdsCounter, *descriptor, &contentField.GetContentClass(), *query, bvector<RelatedClassPath>(), false);
     query->SelectContract(*contract, contentField.GetContentClassAlias());
     query->From(contentField.GetContentClass(), true, contentField.GetContentClassAlias());
 

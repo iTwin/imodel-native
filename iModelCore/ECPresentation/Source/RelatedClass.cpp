@@ -77,7 +77,7 @@ NavigationECPropertyCP RelatedClass::GetNavigationProperty() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-RelatedClassPath& RelatedClassPath::Reverse(Utf8CP sourceClassAlias, bool isSourcePolymorphic)
+RelatedClassPath& RelatedClassPath::Reverse(Utf8CP resultTargetClassAlias, bool isResultTargetClassPolymorphic)
     {
     // first pass: reverse the order in list
     for (size_t i = 0; i < size() / 2; ++i)
@@ -93,11 +93,27 @@ RelatedClassPath& RelatedClassPath::Reverse(Utf8CP sourceClassAlias, bool isSour
     for (size_t i = 0; i < size(); ++i)
         {
         RelatedClass& spec = at(i);
+
+        if (!spec.GetTargetIds().empty())
+            {
+            if (i > 0)
+                {
+                RelatedClassR prev = at(i - 1);
+                prev.SetTargetIds(spec.GetTargetIds());
+                erase(begin() + i, end());
+                }
+            else
+                {
+                clear();
+                }
+            break;
+            }
+
         ECClassCP tmp = spec.GetSourceClass();
         spec.SetIsForwardRelationship(!spec.IsForwardRelationship());
         spec.SetSourceClass(spec.GetTargetClass().GetClass());
-        spec.SetTargetClass(SelectClass(*tmp, (i < size() - 1) ? at(i + 1).GetTargetClass().IsSelectPolymorphic() : isSourcePolymorphic));
-        spec.SetTargetClassAlias((i < size() - 1) ? at(i + 1).GetTargetClassAlias() : sourceClassAlias);
+        spec.SetTargetClass(SelectClass(*tmp, (i < size() - 1) ? at(i + 1).GetTargetClass().IsSelectPolymorphic() : isResultTargetClassPolymorphic));
+        spec.SetTargetClassAlias((i < size() - 1) ? at(i + 1).GetTargetClassAlias() : resultTargetClassAlias);
         if (nullptr == spec.GetTargetClassAlias() || 0 == *spec.GetTargetClassAlias())
             spec.SetTargetClassAlias(Utf8String(spec.GetTargetClass().GetClass().GetName()).ToLower());
         }

@@ -60,7 +60,7 @@ struct ContentSpecificationsHandler
         bmap<ECClassCP, size_t> m_classCounter;
         bset<ECClassCP> m_handledClasses;
         bmap<ECSchemaCP, bmap<ECClassCP, RelatedPropertiesSpecificationList>> m_relatedPropertySpecifications;
-        bmap<ECRelationshipClassCP, int> m_relationshipUseCounts;
+        ECClassUseCounter m_relationshipUseCounts;
         bmap<ECClassCP, bvector<RelatedClass>> m_handledNavigationPropertiesPaths;
 
     public:
@@ -75,7 +75,7 @@ struct ContentSpecificationsHandler
         void SetPreferredDisplayType(Utf8CP value) {m_preferredDisplayType = value;}
         ECSchemaHelper const& GetSchemaHelper() const {return m_helper;}
         size_t GetClassCount(ECClassCR ecClass) {return m_classCounter[&ecClass]++;}
-        bmap<ECRelationshipClassCP, int>& GetRelationshipUseCounts() {return m_relationshipUseCounts;}
+        ECClassUseCounter& GetRelationshipUseCounts() {return m_relationshipUseCounts;}
         bool IsClassHandled(ECClassCR ecClass) const {return m_handledClasses.end() != m_handledClasses.find(&ecClass);}
         void SetClassHandled(ECClassCR ecClass) {m_handledClasses.insert(&ecClass);}
         void AddNavigationPropertiesPaths(ECClassCR ecClass, bvector<RelatedClass> navigationPropertiesPaths) {m_handledNavigationPropertiesPaths[&ecClass] = navigationPropertiesPaths;}
@@ -105,6 +105,7 @@ private:
 
 private:
     void AppendContent(ContentSource const&, ContentSpecificationCR, IParsedInput const*, Utf8StringCR instanceFilter, InstanceFilteringParams::RecursiveQueryInfo const*);
+    bvector<RelatedClassPath> CreateRelatedPropertyPaths(RelatedClassPathCR pathFromSelectToSourceClass, ECClassCR sourceClass, InstanceFilteringParams const&, RelatedPropertiesSpecificationCR);
     bvector<RelatedClassPath> AppendRelatedProperties(AppendRelatedPropertyParams const&);
     bvector<RelatedClassPath> AppendRelatedProperties(AppendRelatedPropertiesParams const&, bool isNested);
     void AppendRelatedProperties(bvector<RelatedClassPath>&, AppendRelatedPropertiesParams const&);

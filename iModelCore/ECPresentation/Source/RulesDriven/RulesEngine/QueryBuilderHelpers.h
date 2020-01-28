@@ -30,6 +30,7 @@ struct IParsedInput
 +===============+===============+===============+===============+===============+======*/
 struct InstanceFilteringParams
 {
+    // deprecated
     struct RecursiveQueryInfo
     {
     private:
@@ -44,7 +45,7 @@ private:
     ECExpressionsCache& m_ecexpressionsCache;
     SelectClassInfo const& m_selectInfo;
     IParsedInput const* m_selection;
-    RecursiveQueryInfo const* m_recursiveQueryInfo;
+    RecursiveQueryInfo const* m_recursiveQueryInfo; // deprecated
     Utf8CP m_instanceFilter;
 
 public:
@@ -57,7 +58,7 @@ public:
     ECExpressionsCache& GetECExpressionsCache() const {return m_ecexpressionsCache;}
     IParsedInput const* GetInput() const {return m_selection;}
     SelectClassInfo const& GetSelectInfo() const {return m_selectInfo;}
-    RecursiveQueryInfo const* GetRecursiveQueryInfo() const {return m_recursiveQueryInfo;}
+    RecursiveQueryInfo const* GetRecursiveQueryInfo() const {return m_recursiveQueryInfo;} // deprecated
     Utf8CP GetInstanceFilter() const {return m_instanceFilter;}
 };
 
@@ -142,7 +143,11 @@ public:
     static GenericQueryPtr CreateInstanceLabelQuery(ECClassInstanceKeyCR key, bvector<InstanceLabelOverrideValueSpecification const*> const& labelOverrideValueSpecs);
     static Utf8String CreateDisplayLabelValueClause(Utf8CP fieldName);
 
-    static bvector<RelatedClass> GetRelatedInstanceClasses(ECSchemaHelper const& schemaHelper, ECClassCR selectClass, RelatedInstanceSpecificationList const& relatedInstanceSpecs, bmap<ECRelationshipClassCP, int>& relationshipUsedCount);
+    static bmap<Utf8String, bvector<RelatedClassPath>> GetRelatedInstancePaths(ECSchemaHelper const& schemaHelper, ECClassCR selectClass, 
+        RelatedInstanceSpecificationList const& relatedInstanceSpecs, ECClassUseCounter& relationshipsUseCount);
+
+    static bvector<RelatedClassPath> GetRelatedClassPaths(ECSchemaHelper const& schemaHelper, ECClassCR sourceClass, bvector<ECInstanceId> const& sourceIds,
+        bvector<RepeatableRelationshipPathSpecification*> const& relationshipPathSpecs, ECClassUseCounter& relationshipsUseCount);
 
     static IdSet<BeInt64Id> CreateIdSetFromJsonArray(RapidJsonValueCR);
     static ECValue CreateECValueFromJson(RapidJsonValueCR);

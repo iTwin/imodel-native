@@ -72,12 +72,20 @@ static SupportedClassInfo<ECClass> const* Find(SupportedClassInfos const& classI
     return nullptr;
     }
 
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                06/2015
++===============+===============+===============+===============+===============+======*/
+struct SupportedClassesParserTests : ECSchemaHelperTests
+    {
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (SupportedClassNamesParserTests, Parse_IncludedClassInfosFromSingleSchema)
+TEST_F (SupportedClassesParserTests, Parse_IncludedClassInfosFromSingleSchema)
     {
-    SupportedClassNamesParser parser(*m_helper, "Basic2:Class2", true);
+    SupportedClassesParser parser(*m_helper, "Basic2:Class2", true);
     SupportedClassInfos const& classInfos = parser.GetClassInfos();
     ASSERT_EQ(1, classInfos.size());
 
@@ -90,9 +98,9 @@ TEST_F (SupportedClassNamesParserTests, Parse_IncludedClassInfosFromSingleSchema
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (SupportedClassNamesParserTests, Parse_IncludedClassInfosFromMultipleSchemas)
+TEST_F (SupportedClassesParserTests, Parse_IncludedClassInfosFromMultipleSchemas)
     {
-    SupportedClassNamesParser parser(*m_helper, "Basic2:Class2;Basic3:Class3", true);
+    SupportedClassesParser parser(*m_helper, "Basic2:Class2;Basic3:Class3", true);
     SupportedClassInfos const& classInfos = parser.GetClassInfos();
     ASSERT_EQ(2, classInfos.size());
 
@@ -110,9 +118,9 @@ TEST_F (SupportedClassNamesParserTests, Parse_IncludedClassInfosFromMultipleSche
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (SupportedClassNamesParserTests, Parse_ExcludedClassInfosFromSingleSchema)
+TEST_F (SupportedClassesParserTests, Parse_ExcludedClassInfosFromSingleSchema)
     {
-    SupportedClassNamesParser parser(*m_helper, "E:Basic2:Class2", true);
+    SupportedClassesParser parser(*m_helper, "E:Basic2:Class2", true);
     SupportedClassInfos const& classInfos = parser.GetClassInfos();
     ASSERT_EQ(1, classInfos.size());
 
@@ -124,9 +132,9 @@ TEST_F (SupportedClassNamesParserTests, Parse_ExcludedClassInfosFromSingleSchema
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (SupportedClassNamesParserTests, Parse_ExcludedClassInfosFromMultipleSchemas)
+TEST_F (SupportedClassesParserTests, Parse_ExcludedClassInfosFromMultipleSchemas)
     {
-    SupportedClassNamesParser parser(*m_helper, "E:Basic2:Class2;Basic3:Class3", true);
+    SupportedClassesParser parser(*m_helper, "E:Basic2:Class2;Basic3:Class3", true);
     SupportedClassInfos const& classInfos = parser.GetClassInfos();
     ASSERT_EQ(2, classInfos.size());
 
@@ -142,9 +150,9 @@ TEST_F (SupportedClassNamesParserTests, Parse_ExcludedClassInfosFromMultipleSche
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (SupportedClassNamesParserTests, Parse_PolymorphicallyExcludedClassInfosFromSingleSchema)
+TEST_F (SupportedClassesParserTests, Parse_PolymorphicallyExcludedClassInfosFromSingleSchema)
     {
-    SupportedClassNamesParser parser(*m_helper, "PE:Basic2:Class2", true);
+    SupportedClassesParser parser(*m_helper, "PE:Basic2:Class2", true);
     SupportedClassInfos const& classInfos = parser.GetClassInfos();
     ASSERT_EQ(1, classInfos.size());
 
@@ -157,9 +165,9 @@ TEST_F (SupportedClassNamesParserTests, Parse_PolymorphicallyExcludedClassInfosF
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (SupportedClassNamesParserTests, Parse_PolymorphicallyExcludedClassInfosFromMultipleSchemas)
+TEST_F (SupportedClassesParserTests, Parse_PolymorphicallyExcludedClassInfosFromMultipleSchemas)
     {
-    SupportedClassNamesParser parser(*m_helper, "PE:Basic2:Class2;Basic3:Class3", true);
+    SupportedClassesParser parser(*m_helper, "PE:Basic2:Class2;Basic3:Class3", true);
     SupportedClassInfos const& classInfos = parser.GetClassInfos();
     ASSERT_EQ(2, classInfos.size());
 
@@ -177,9 +185,9 @@ TEST_F (SupportedClassNamesParserTests, Parse_PolymorphicallyExcludedClassInfosF
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (SupportedClassNamesParserTests, Parse_IncludedAndExcluded)
+TEST_F (SupportedClassesParserTests, Parse_IncludedAndExcluded)
     {
-    SupportedClassNamesParser parser(*m_helper, "Basic1:Class1;E:Basic1:Class1B;PE:Basic2:Class2", true);
+    SupportedClassesParser parser(*m_helper, "Basic1:Class1;E:Basic1:Class1B;PE:Basic2:Class2", true);
     SupportedClassInfos const& classInfos = parser.GetClassInfos();
     ASSERT_EQ(3, classInfos.size());
 
@@ -201,9 +209,9 @@ TEST_F (SupportedClassNamesParserTests, Parse_IncludedAndExcluded)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (SupportedClassNamesParserTests, GetECClassInfosFromClassList_IncludedAndExcluded)
+TEST_F (SupportedClassesParserTests, GetECClassInfosFromClassList_IncludedAndExcluded)
     {
-    SupportedClassNamesParser parser(*m_helper, "Basic1:Class1;E:Basic1:Class1", true);
+    SupportedClassesParser parser(*m_helper, "Basic1:Class1;E:Basic1:Class1", true);
     SupportedClassInfos const& classInfos = parser.GetClassInfos();
     ASSERT_EQ(1, classInfos.size());
 
@@ -313,7 +321,7 @@ TEST_F (ECSchemaHelperTests, GetOppositeRelationshipEnds_UnsupportedSchema)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_FromSupportedSchemas)
+TEST_F (ECSchemaHelperTests, Deprecated_GetRelationshipClassPaths_FromSupportedSchemas)
     {
     ECSchemaCP schema = s_project->GetECDb().Schemas().GetSchema("SchemaComplex");
     ECRelationshipClassCR relationship1 = *schema->GetClassCP("Class1HasClass2And3")->GetRelationshipClassCP();
@@ -322,7 +330,7 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_FromSupportedSchemas)
     ECClassCR class2 = *schema->GetClassCP("Class2");
     ECClassCR class3 = *schema->GetClassCP("Class3");
 
-    bmap<ECRelationshipClassCP, int> relationshipUseCounts;
+    ECClassUseCounter relationshipUseCounts;
     ECSchemaHelper::RelationshipClassPathOptions options(class1, (int)ECRelatedInstanceDirection::Forward, 0, "SchemaComplex", "", "", true, relationshipUseCounts, nullptr);
     bvector<RelatedClassPath> paths = m_helper->GetRelationshipClassPaths(options);
     ASSERT_EQ(3, paths.size());
@@ -351,7 +359,7 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_FromSupportedSchemas)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_FromRelatedClassNames)
+TEST_F (ECSchemaHelperTests, Deprecated_GetRelationshipClassPaths_FromRelatedClassNames)
     {
     ECSchemaCP schema = s_project->GetECDb().Schemas().GetSchema("SchemaComplex");
     ECRelationshipClassCR relationship1 = *schema->GetClassCP("Class1HasClass2And3")->GetRelationshipClassCP();
@@ -359,7 +367,7 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_FromRelatedClassNames)
     ECEntityClassCR class1 = *schema->GetClassCP("Class1")->GetEntityClassCP();
     ECClassCR class3 = *schema->GetClassCP("Class3");
 
-    bmap<ECRelationshipClassCP, int> relationshipUseCounts;
+    ECClassUseCounter relationshipUseCounts;
     ECSchemaHelper::RelationshipClassPathOptions options(class1, (int)ECRelatedInstanceDirection::Forward, 0, "", "", "SchemaComplex:Class3", true, relationshipUseCounts, nullptr);
     bvector<RelatedClassPath> paths = m_helper->GetRelationshipClassPaths(options);
     ASSERT_EQ(2, paths.size());
@@ -382,14 +390,14 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_FromRelatedClassNames)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_FindsRelatedClassesPolymorphically)
+TEST_F (ECSchemaHelperTests, Deprecated_GetRelationshipClassPaths_FindsRelatedClassesPolymorphically)
     {
     ECSchemaCP schema = s_project->GetECDb().Schemas().GetSchema("SchemaComplex");
     ECRelationshipClassCR relationship = *schema->GetClassCP("DerivingRelationship")->GetRelationshipClassCP();
     ECEntityClassCR class4 = *schema->GetClassCP("Class4")->GetEntityClassCP();
     ECEntityClassCR class3 = *schema->GetClassCP("Class3")->GetEntityClassCP();
 
-    bmap<ECRelationshipClassCP, int> relationshipUseCounts;
+    ECClassUseCounter relationshipUseCounts;
     ECSchemaHelper::RelationshipClassPathOptions options(class3, (int)ECRelatedInstanceDirection::Backward, 0, "", "SchemaComplex:DerivingRelationship", "SchemaComplex:Class4", true, relationshipUseCounts, nullptr);
     bvector<RelatedClassPath> paths = m_helper->GetRelationshipClassPaths(options);
     ASSERT_EQ(1, paths.size());
@@ -404,8 +412,7 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_FindsRelatedClassesPolymo
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                12/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(GetRelationshipClassPaths_DoesntIncludeDerivedRelatedClassesWhenBaseAlreadyIncludedAndRequestingPathsPolymorphically,
-    R"*(
+DEFINE_SCHEMA(Deprecated_GetRelationshipClassPaths_DoesntIncludeDerivedRelatedClassesWhenBaseAlreadyIncludedAndRequestingPathsPolymorphically, R"*(
     <ECEntityClass typeName="Element">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.2.0">
@@ -432,14 +439,14 @@ DEFINE_SCHEMA(GetRelationshipClassPaths_DoesntIncludeDerivedRelatedClassesWhenBa
         </Target>
     </ECRelationshipClass>
 )*");
-TEST_F(ECSchemaHelperTests, GetRelationshipClassPaths_DoesntIncludeDerivedRelatedClassesWhenBaseAlreadyIncludedAndRequestingPathsPolymorphically)
+TEST_F(ECSchemaHelperTests, Deprecated_GetRelationshipClassPaths_DoesntIncludeDerivedRelatedClassesWhenBaseAlreadyIncludedAndRequestingPathsPolymorphically)
     {
     ECEntityClassCP elementClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Element")->GetEntityClassCP();
     ECEntityClassCP aspectClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Aspect")->GetEntityClassCP();
     ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ElementHasAspect")->GetRelationshipClassCP();
 
-    bmap<ECRelationshipClassCP, int> relationshipUseCounts;
-    ECSchemaHelper::RelationshipClassPathOptions options(*elementClass, (int)ECRelatedInstanceDirection::Forward, 0, "", 
+    ECClassUseCounter relationshipUseCounts;
+    ECSchemaHelper::RelationshipClassPathOptions options(*elementClass, (int)ECRelatedInstanceDirection::Forward, 0, "",
         rel->GetFullName(), aspectClass->GetFullName(), true, relationshipUseCounts, nullptr);
     bvector<RelatedClassPath> paths = m_helper->GetRelationshipClassPaths(options);
     ASSERT_EQ(1, paths.size());
@@ -454,7 +461,7 @@ TEST_F(ECSchemaHelperTests, GetRelationshipClassPaths_DoesntIncludeDerivedRelate
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                12/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(GetRelationshipClassPaths_IncludesBaseAndDerivedRelatedClassesWhenRequestingPathsNonPolymorphically,
+DEFINE_SCHEMA(Deprecated_GetRelationshipClassPaths_IncludesBaseAndDerivedRelatedClassesWhenRequestingPathsNonPolymorphically,
     R"*(
     <ECEntityClass typeName="Element">
         <ECCustomAttributes>
@@ -482,14 +489,14 @@ DEFINE_SCHEMA(GetRelationshipClassPaths_IncludesBaseAndDerivedRelatedClassesWhen
         </Target>
     </ECRelationshipClass>
 )*");
-TEST_F(ECSchemaHelperTests, GetRelationshipClassPaths_IncludesBaseAndDerivedRelatedClassesWhenRequestingPathsNonPolymorphically)
+TEST_F(ECSchemaHelperTests, Deprecated_GetRelationshipClassPaths_IncludesBaseAndDerivedRelatedClassesWhenRequestingPathsNonPolymorphically)
     {
     ECEntityClassCP elementClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Element")->GetEntityClassCP();
     ECEntityClassCP aspectClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Aspect")->GetEntityClassCP();
     ECEntityClassCP customAspectClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "CustomAspect")->GetEntityClassCP();
     ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ElementHasAspect")->GetRelationshipClassCP();
 
-    bmap<ECRelationshipClassCP, int> relationshipUseCounts;
+    ECClassUseCounter relationshipUseCounts;
     ECSchemaHelper::RelationshipClassPathOptions options(*elementClass, (int)ECRelatedInstanceDirection::Forward, 0, "",
         rel->GetFullName(), aspectClass->GetFullName(), false, relationshipUseCounts, nullptr);
     bvector<RelatedClassPath> paths = m_helper->GetRelationshipClassPaths(options);
@@ -513,7 +520,7 @@ TEST_F(ECSchemaHelperTests, GetRelationshipClassPaths_IncludesBaseAndDerivedRela
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_FromSupportedRelationships)
+TEST_F (ECSchemaHelperTests, Deprecated_GetRelationshipClassPaths_FromSupportedRelationships)
     {
     ECSchemaCP schema = s_project->GetECDb().Schemas().GetSchema("SchemaComplex");
     ECRelationshipClassCR relationship = *schema->GetClassCP("Class1HasClass2And3")->GetRelationshipClassCP();
@@ -521,7 +528,7 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_FromSupportedRelationship
     ECClassCR class2 = *schema->GetClassCP("Class2");
     ECClassCR class3 = *schema->GetClassCP("Class3");
 
-    bmap<ECRelationshipClassCP, int> relationshipUseCounts;
+    ECClassUseCounter relationshipUseCounts;
     ECSchemaHelper::RelationshipClassPathOptions options(class1, (int)ECRelatedInstanceDirection::Forward, 0, "", "SchemaComplex:Class1HasClass2And3", "", true, relationshipUseCounts, nullptr);
     bvector<RelatedClassPath> paths = m_helper->GetRelationshipClassPaths(options);
     ASSERT_EQ(2, paths.size());
@@ -544,13 +551,13 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_FromSupportedRelationship
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_RespectsPolymorphicRelationshipConstraints)
+TEST_F (ECSchemaHelperTests, Deprecated_GetRelationshipClassPaths_RespectsPolymorphicRelationshipConstraints)
     {
     ECSchemaCP schema = s_project->GetECDb().Schemas().GetSchema("SchemaComplex");
     ECEntityClassCR class1 = *schema->GetClassCP("Class1")->GetEntityClassCP();
     ECEntityClassCR class4 = *schema->GetClassCP("Class4")->GetEntityClassCP();
 
-    bmap<ECRelationshipClassCP, int> relationshipUseCounts;
+    ECClassUseCounter relationshipUseCounts;
     ECSchemaHelper::RelationshipClassPathOptions options1(class1, (int)ECRelatedInstanceDirection::Forward, 0, "", "SchemaComplex:Class1HasClass3", "", true, relationshipUseCounts, nullptr);
     bvector<RelatedClassPath> paths = m_helper->GetRelationshipClassPaths(options1);
     ASSERT_EQ(1, paths.size());
@@ -573,7 +580,7 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_RespectsPolymorphicRelati
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_FollowsBothRelationshipsDirections)
+TEST_F (ECSchemaHelperTests, Deprecated_GetRelationshipClassPaths_FollowsBothRelationshipsDirections)
     {
     ECSchemaCP schema = s_project->GetECDb().Schemas().GetSchema("SchemaComplex2");
     ECRelationshipClassCR relationship1 = *schema->GetClassCP("Class1HasClass2")->GetRelationshipClassCP();
@@ -584,7 +591,7 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_FollowsBothRelationshipsD
 
     static int relationshipDirection = (int)ECRelatedInstanceDirection::Forward | (int)ECRelatedInstanceDirection::Backward;
 
-    bmap<ECRelationshipClassCP, int> relationshipUseCounts;
+    ECClassUseCounter relationshipUseCounts;
     ECSchemaHelper::RelationshipClassPathOptions options(class2, relationshipDirection, 0, "SchemaComplex2", "", "", true, relationshipUseCounts, nullptr);
     bvector<RelatedClassPath> paths = m_helper->GetRelationshipClassPaths(options);
     ASSERT_EQ(2, paths.size());
@@ -607,7 +614,7 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_FollowsBothRelationshipsD
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_FollowsBothRelationshipsDirectionsWithDepthMoreThan0)
+TEST_F (ECSchemaHelperTests, Deprecated_GetRelationshipClassPaths_FollowsBothRelationshipsDirectionsWithDepthMoreThan0)
     {
     ECSchemaCP schema = s_project->GetECDb().Schemas().GetSchema("SchemaComplex2");
     ECRelationshipClassCR relationship1 = *schema->GetClassCP("Class1HasClass2")->GetRelationshipClassCP();
@@ -618,7 +625,7 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_FollowsBothRelationshipsD
 
     static int relationshipDirection = (int)ECRelatedInstanceDirection::Forward | (int)ECRelatedInstanceDirection::Backward;
 
-    bmap<ECRelationshipClassCP, int> relationshipUseCounts;
+    ECClassUseCounter relationshipUseCounts;
     ECSchemaHelper::RelationshipClassPathOptions options(class1, relationshipDirection, 1, "", "", "SchemaComplex2:Class3", true, relationshipUseCounts, nullptr);
     bvector<RelatedClassPath> paths = m_helper->GetRelationshipClassPaths(options);
     ASSERT_EQ(1, paths.size());
@@ -640,14 +647,14 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_FollowsBothRelationshipsD
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_DoesntDuplicatePathsWithPolymorphicallySimilarClasses)
+TEST_F (ECSchemaHelperTests, Deprecated_GetRelationshipClassPaths_DoesntDuplicatePathsWithPolymorphicallySimilarClasses)
     {
     ECSchemaCP schema = s_project->GetECDb().Schemas().GetSchema("SchemaComplex");
     ECRelationshipClassCR relationship = *schema->GetClassCP("Class1HasClass2And3")->GetRelationshipClassCP();
     ECEntityClassCR class1 = *schema->GetClassCP("Class1")->GetEntityClassCP();
     ECEntityClassCR class2 = *schema->GetClassCP("Class2")->GetEntityClassCP();
 
-    bmap<ECRelationshipClassCP, int> relationshipUseCounts;
+    ECClassUseCounter relationshipUseCounts;
     ECSchemaHelper::RelationshipClassPathOptions options(class2, (int)ECRelatedInstanceDirection::Backward,
         0, "SchemaComplex", "", "", true, relationshipUseCounts, nullptr);
     bvector<RelatedClassPath> paths = m_helper->GetRelationshipClassPaths(options);
@@ -663,14 +670,14 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_DoesntDuplicatePathsWithP
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_DoesntDuplicatePathsWithPolymorphicallySimilarRelationships)
+TEST_F (ECSchemaHelperTests, Deprecated_GetRelationshipClassPaths_DoesntDuplicatePathsWithPolymorphicallySimilarRelationships)
     {
     ECSchemaCP schema = s_project->GetECDb().Schemas().GetSchema("SchemaComplex");
     ECRelationshipClassCR relationship = *schema->GetClassCP("Class1HasClass3")->GetRelationshipClassCP();
     ECEntityClassCR class1 = *schema->GetClassCP("Class1")->GetEntityClassCP();
     ECEntityClassCR class3 = *schema->GetClassCP("Class3")->GetEntityClassCP();
 
-    bmap<ECRelationshipClassCP, int> relationshipUseCounts;
+    ECClassUseCounter relationshipUseCounts;
     ECSchemaHelper::RelationshipClassPathOptions options(class1, (int)ECRelatedInstanceDirection::Forward,
         0, "", "SchemaComplex:Class1HasClass3,DerivingRelationship", "SchemaComplex:Class3", true, relationshipUseCounts, nullptr);
     bvector<RelatedClassPath> paths = m_helper->GetRelationshipClassPaths(options);
@@ -686,7 +693,7 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_DoesntDuplicatePathsWithP
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_RecursivelyUsingSuppliedRelationshipsAndClasses)
+TEST_F (ECSchemaHelperTests, Deprecated_GetRelationshipClassPaths_RecursivelyUsingSuppliedRelationshipsAndClasses)
     {
     ECSchemaCP schema = s_project->GetECDb().Schemas().GetSchema("RulesEngineTest");
     ECEntityClassCR widget = *schema->GetClassCP("Widget")->GetEntityClassCP();
@@ -695,7 +702,7 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_RecursivelyUsingSuppliedR
     ECRelationshipClassCR wiggetHasGadgets = *schema->GetClassCP("WidgetHasGadgets")->GetRelationshipClassCP();
     ECRelationshipClassCR gadgetHasSprockets = *schema->GetClassCP("GadgetHasSprockets")->GetRelationshipClassCP();
 
-    bmap<ECRelationshipClassCP, int> relationshipUseCounts;
+    ECClassUseCounter relationshipUseCounts;
     ECSchemaHelper::RelationshipClassPathOptions options(widget, (int)ECRelatedInstanceDirection::Forward, -1, "",
         "RulesEngineTest:WidgetHasGadgets,GadgetHasSprockets", "RulesEngineTest:Gadget,Sprocket", true, relationshipUseCounts, nullptr);
     bvector<RelatedClassPath> paths = m_helper->GetRelationshipClassPaths(options);
@@ -721,6 +728,151 @@ TEST_F (ECSchemaHelperTests, GetRelationshipClassPaths_RecursivelyUsingSuppliedR
     EXPECT_TRUE(path2[0].GetTargetClass().IsSelectPolymorphic());
     EXPECT_EQ(&gadgetHasSprockets, path2[1].GetRelationship());
     EXPECT_TRUE(path2[1].IsForwardRelationship());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(GetRelationshipClassPaths_IncludesPathsForRelationshipTargetClassIfTargetNotSpecifiedInSpecification, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="Base">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+        <BaseClass>Base</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="C">
+        <BaseClass>Base</BaseClass>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="A_Has_Target" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Base" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(ECSchemaHelperTests, GetRelationshipClassPaths_IncludesPathsForRelationshipTargetClassIfTargetNotSpecifiedInSpecification)
+    {
+    ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
+    ECClassCP baseTargetClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Base");
+    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A_Has_Target")->GetRelationshipClassCP();
+
+    ECClassUseCounter relationshipUseCounts;
+    RelationshipPathSpecification pathSpecification(*new RelationshipStepSpecification(rel->GetFullName(), RequiredRelationDirection_Forward, ""));
+    ECSchemaHelper::MultiRelationshipPathOptions options(*classA, pathSpecification, relationshipUseCounts);
+    bvector<RelatedClassPath> paths = m_helper->GetRelationshipClassPaths(options);
+
+    ASSERT_EQ(1, paths.size());
+
+    ASSERT_EQ(1, paths[0].size());
+    EXPECT_EQ(classA, paths[0][0].GetSourceClass());
+    EXPECT_EQ(baseTargetClass, &paths[0][0].GetTargetClass().GetClass());
+    EXPECT_TRUE(paths[0][0].GetTargetClass().IsSelectPolymorphic());
+    EXPECT_EQ(rel, paths[0][0].GetRelationship());
+    EXPECT_TRUE(paths[0][0].IsForwardRelationship());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(GetRelationshipClassPaths_IncludesPathsOnlyForSpecifiedTargetClass, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="Base">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+        <BaseClass>Base</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="C">
+        <BaseClass>Base</BaseClass>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="A_Has_Target" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Base" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(ECSchemaHelperTests, GetRelationshipClassPaths_IncludesPathsOnlyForSpecifiedTargetClass)
+    {
+    ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
+    ECClassCP classC = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "C");
+    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A_Has_Target")->GetRelationshipClassCP();
+
+    ECClassUseCounter relationshipUseCounts;
+    RelationshipPathSpecification pathSpecification(*new RelationshipStepSpecification(rel->GetFullName(), RequiredRelationDirection_Forward, classC->GetFullName()));
+    ECSchemaHelper::MultiRelationshipPathOptions options(*classA, pathSpecification, relationshipUseCounts);
+    bvector<RelatedClassPath> paths = m_helper->GetRelationshipClassPaths(options);
+    ASSERT_EQ(1, paths.size());
+    ASSERT_EQ(1, paths[0].size());
+    EXPECT_EQ(classA, paths[0][0].GetSourceClass());
+    EXPECT_EQ(classC, &paths[0][0].GetTargetClass().GetClass());
+    EXPECT_TRUE(paths[0][0].GetTargetClass().IsSelectPolymorphic());
+    EXPECT_EQ(rel, paths[0][0].GetRelationship());
+    EXPECT_TRUE(paths[0][0].IsForwardRelationship());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(GetRelationshipClassPaths_CreatesPathForHiddenClassIfSpecificallyAskedFor, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="Base">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+        <BaseClass>Base</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="C">
+        <BaseClass>Base</BaseClass>
+        <ECCustomAttributes>
+            <HiddenClass xmlns="CoreCustomAttributes.01.00" />
+        </ECCustomAttributes>"
+    </ECEntityClass>
+    <ECRelationshipClass typeName="A_Has_Target" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Base" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(ECSchemaHelperTests, GetRelationshipClassPaths_CreatesPathForHiddenClassIfSpecificallyAskedFor)
+    {
+    ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
+    ECClassCP classC = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "C");
+    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A_Has_Target")->GetRelationshipClassCP();
+
+    ECClassUseCounter relationshipUseCounts;
+    RelationshipPathSpecification pathSpecification(*new RelationshipStepSpecification(rel->GetFullName(), RequiredRelationDirection_Forward, classC->GetFullName()));
+    ECSchemaHelper::MultiRelationshipPathOptions options(*classA, pathSpecification, relationshipUseCounts);
+    bvector<RelatedClassPath> paths = m_helper->GetRelationshipClassPaths(options);
+
+    ASSERT_EQ(1, paths.size());
+
+    ASSERT_EQ(1, paths[0].size());
+    EXPECT_EQ(classA, paths[0][0].GetSourceClass());
+    EXPECT_EQ(classC, &paths[0][0].GetTargetClass().GetClass());
+    EXPECT_TRUE(paths[0][0].GetTargetClass().IsSelectPolymorphic());
+    EXPECT_EQ(rel, paths[0][0].GetRelationship());
+    EXPECT_TRUE(paths[0][0].IsForwardRelationship());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -757,102 +909,18 @@ TEST_F (ECSchemaHelperTests, GetECClassesFromSchemaList_DoesNotReturnClassesFrom
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                02/2018
+* @bsitest                                      Grigas.Petraitis                01/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_ReturnsOnlyRelatedInstanceClasses)
-    {
-    ECEntityClassCP class1 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class1")->GetEntityClassCP();
-    ECEntityClassCP baseof2and3 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "BaseOf2and3")->GetEntityClassCP();
-    ECEntityClassCP class2 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class2")->GetEntityClassCP();
-    ECEntityClassCP class3 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class3")->GetEntityClassCP();
-    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class1HasClass2And3")->GetRelationshipClassCP();
-
-    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class1);
-    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class2);
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class3);
-    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *instance1, *instance2);
-
-    bvector<RelatedClassPath> result = m_helper->GetPolymorphicallyRelatedClassesWithInstances(*class1,
-        rel->GetFullName(), ECRelatedInstanceDirection::Forward, baseof2and3->GetFullName(), RelatedClassPath(), nullptr);
-    ASSERT_EQ(1, result.size());
-    ASSERT_EQ(1, result[0].size());
-    EXPECT_EQ(class2, &result[0][0].GetTargetClass().GetClass());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                09/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_ReturnsRelatedInstanceClasses_WhenRelatedClassIsNotSpecified)
-    {
-    ECEntityClassCP class1 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class1")->GetEntityClassCP();
-    ECEntityClassCP class2 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class2")->GetEntityClassCP();
-    ECEntityClassCP class3 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class3")->GetEntityClassCP();
-    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class1HasClass2And3")->GetRelationshipClassCP();
-
-    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class1);
-    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class2);
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class3);
-    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *instance1, *instance2);
-
-    bvector<RelatedClassPath> result = m_helper->GetPolymorphicallyRelatedClassesWithInstances(*class1,
-        rel->GetFullName(), ECRelatedInstanceDirection::Forward, "", RelatedClassPath(), nullptr);
-    ASSERT_EQ(1, result.size());
-    ASSERT_EQ(1, result[0].size());
-    EXPECT_EQ(class2, &result[0][0].GetTargetClass().GetClass());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                09/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_ReturnsRelatedInstanceClasses_WhenRelationshipIsNotSpecified)
-    {
-    ECEntityClassCP class1 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class1")->GetEntityClassCP();
-    ECEntityClassCP baseof2and3 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "BaseOf2and3")->GetEntityClassCP();
-    ECEntityClassCP class2 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class2")->GetEntityClassCP();
-    ECEntityClassCP class3 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class3")->GetEntityClassCP();
-    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class1HasClass2And3")->GetRelationshipClassCP();
-
-    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class1);
-    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class2);
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class3);
-    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *instance1, *instance2);
-
-    bvector<RelatedClassPath> result = m_helper->GetPolymorphicallyRelatedClassesWithInstances(*class1,
-        "", ECRelatedInstanceDirection::Forward, baseof2and3->GetFullName(), RelatedClassPath(), nullptr);
-    ASSERT_EQ(1, result.size());
-    ASSERT_EQ(1, result[0].size());
-    EXPECT_EQ(class2, &result[0][0].GetTargetClass().GetClass());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                02/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_ReturnsOnlySubclassesOfProvidedBaseClass)
-    {
-    ECEntityClassCP class1 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class1")->GetEntityClassCP();
-    ECEntityClassCP class2 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class2")->GetEntityClassCP();
-    ECEntityClassCP class3 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class3")->GetEntityClassCP();
-    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class1HasClass2And3")->GetRelationshipClassCP();
-
-    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class1);
-    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class2);
-    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class3);
-    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *instance1, *instance2);
-    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *instance1, *instance3);
-
-    bvector<RelatedClassPath> result = m_helper->GetPolymorphicallyRelatedClassesWithInstances(*class1,
-        rel->GetFullName(), ECRelatedInstanceDirection::Forward, class2->GetFullName(), RelatedClassPath(), nullptr);
-    ASSERT_EQ(1, result.size());
-    ASSERT_EQ(1, result[0].size());
-    EXPECT_EQ(class2, &result[0][0].GetTargetClass().GetClass());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* VSTS#202530
-* @bsitest                                      Grigas.Petraitis                10/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(GetPolymorphicallyRelatedClassesWithInstances_DoesntReturnHiddenClasses,
-    R"*(
+DEFINE_SCHEMA(SplitIntoDerivedClassPaths_ReturnsPathsForAllDerivedClasses, R"*(
+    <ECEntityClass typeName="Model" />
+    <ECRelationshipClass typeName="ModelContainsElements" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Model"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Element" />
+        </Target>
+    </ECRelationshipClass>
     <ECEntityClass typeName="Element">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.2.0">
@@ -860,51 +928,373 @@ DEFINE_SCHEMA(GetPolymorphicallyRelatedClassesWithInstances_DoesntReturnHiddenCl
             </ClassMap>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="Aspect">
+    <ECEntityClass typeName="A">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="C">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+)*");
+TEST_F(ECSchemaHelperTests, SplitIntoDerivedClassPaths_ReturnsPathsForAllDerivedClasses)
+    {
+    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ModelContainsElements")->GetRelationshipClassCP();
+    ECClassCP modelClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Model");
+    ECClassCP baseClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Element");
+    ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
+    ECClassCP classB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B");
+    ECClassCP classC = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "C");
+
+    RelatedClassPath basePath = {RelatedClass(*modelClass, SelectClass(*baseClass), *rel, true)};
+    bvector<RelatedClassPath> result = m_helper->SplitIntoDerivedClassPaths({basePath});
+
+    ASSERT_EQ(4, result.size());
+
+    ASSERT_EQ(1, result[0].size());
+    EXPECT_EQ(baseClass, &result[0][0].GetTargetClass().GetClass());
+    EXPECT_FALSE(result[0][0].GetTargetClass().IsSelectPolymorphic());
+
+    ASSERT_EQ(1, result[1].size());
+    EXPECT_EQ(classA, &result[1][0].GetTargetClass().GetClass());
+    EXPECT_FALSE(result[1][0].GetTargetClass().IsSelectPolymorphic());
+
+    ASSERT_EQ(1, result[2].size());
+    EXPECT_EQ(classB, &result[2][0].GetTargetClass().GetClass());
+    EXPECT_FALSE(result[2][0].GetTargetClass().IsSelectPolymorphic());
+
+    ASSERT_EQ(1, result[3].size());
+    EXPECT_EQ(classC, &result[3][0].GetTargetClass().GetClass());
+    EXPECT_FALSE(result[2][0].GetTargetClass().IsSelectPolymorphic());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* VSTS#202530
+* @bsitest                                      Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(SplitIntoDerivedClassPaths_DoesntIncludeHiddenClasses, R"*(
+    <ECEntityClass typeName="Model" />
+    <ECRelationshipClass typeName="ModelContainsElements" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Model"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Element" />
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="Element">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.2.0">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="HiddenAspect">
-        <BaseClass>Aspect</BaseClass>
+    <ECEntityClass typeName="A">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+        <BaseClass>Element</BaseClass>
         <ECCustomAttributes>
             <HiddenClass xmlns="CoreCustomAttributes.01.00" />
-        </ECCustomAttributes>
-        <ECProperty propertyName="Prop1" typeName="string" />
+        </ECCustomAttributes>"
     </ECEntityClass>
-    <ECRelationshipClass typeName="ElementHasAspect" strength="embedding" modifier="None">
+)*");
+TEST_F(ECSchemaHelperTests, SplitIntoDerivedClassPaths_DoesntIncludeHiddenClasses)
+    {
+    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ModelContainsElements")->GetRelationshipClassCP();
+    ECClassCP modelClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Model");
+    ECClassCP baseClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Element");
+    ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
+
+    RelatedClassPath basePath = {RelatedClass(*modelClass, SelectClass(*baseClass), *rel, true)};
+    bvector<RelatedClassPath> result = m_helper->SplitIntoDerivedClassPaths({basePath});
+
+    ASSERT_EQ(2, result.size());
+
+    ASSERT_EQ(1, result[0].size());
+    EXPECT_EQ(baseClass, &result[0][0].GetTargetClass().GetClass());
+    EXPECT_FALSE(result[0][0].GetTargetClass().IsSelectPolymorphic());
+
+    ASSERT_EQ(1, result[1].size());
+    EXPECT_EQ(classA, &result[1][0].GetTargetClass().GetClass());
+    EXPECT_FALSE(result[1][0].GetTargetClass().IsSelectPolymorphic());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(GetRelatedPathsWithInstances_ReturnsPathsWithTargetClassInstances, R"*(
+    <ECEntityClass typeName="Model" />
+    <ECRelationshipClass typeName="ModelContainsElements" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Model"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Element" />
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="Element" />
+)*");
+TEST_F(ECSchemaHelperTests, GetRelatedPathsWithInstances_ReturnsPathsWithTargetClassInstances)
+    {
+    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ModelContainsElements")->GetRelationshipClassCP();
+    ECClassCP modelClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Model");
+    ECClassCP elementClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Element");
+
+    IECInstancePtr model = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *modelClass);
+    IECInstancePtr element = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *model, *element);
+
+    RelatedClassPath path = {RelatedClass(*modelClass, *rel, true, "r", SelectClass(*elementClass), "e", true)};
+    bvector<RelatedClassPath> result = m_helper->GetRelatedPathsWithInstances(RelatedClassPath(), {path}, nullptr);
+
+    ASSERT_EQ(1, result.size());
+    ASSERT_EQ(1, result[0].size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(GetRelatedPathsWithInstances_DoesntReturnPathsWithoutTargetClassInstances, R"*(
+    <ECEntityClass typeName="Model" />
+    <ECRelationshipClass typeName="ModelContainsElements" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Model"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Element" />
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="Element">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="A">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+)*");
+TEST_F(ECSchemaHelperTests, GetRelatedPathsWithInstances_DoesntReturnPathsWithoutTargetClassInstances)
+    {
+    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ModelContainsElements")->GetRelationshipClassCP();
+    ECClassCP modelClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Model");
+    ECClassCP elementClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Element");
+    ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
+    ECClassCP classB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B");
+
+    IECInstancePtr model = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *modelClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr elementB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *model, *elementB);
+
+    bvector<RelatedClassPath> paths = {
+        RelatedClassPath{RelatedClass(*modelClass, *rel, true, "r", SelectClass(*elementClass), "e", true)},
+        RelatedClassPath{RelatedClass(*modelClass, *rel, true, "r", SelectClass(*classA), "a", true)},
+        RelatedClassPath{RelatedClass(*modelClass, *rel, true, "r", SelectClass(*classB), "b", true)},
+        };
+    bvector<RelatedClassPath> result = m_helper->GetRelatedPathsWithInstances(RelatedClassPath(), {paths}, nullptr);
+
+    ASSERT_EQ(1, result.size());
+    ASSERT_EQ(1, result[0].size());
+    EXPECT_EQ(classB, &result[0][0].GetTargetClass().GetClass());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(GetRelatedPathsWithInstances_ReturnsMultiRelationshipPathsWithTargetClassInstances, R"*(
+    <ECEntityClass typeName="Element">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsChildElements" strength="embedding" modifier="None">
         <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
             <Class class="Element"/>
         </Source>
         <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
-            <Class class="Aspect" />
+            <Class class="Element" />
         </Target>
     </ECRelationshipClass>
+    <ECEntityClass typeName="A">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="C">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
 )*");
-TEST_F(ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_DoesntReturnHiddenClasses)
+TEST_F(ECSchemaHelperTests, GetRelatedPathsWithInstances_ReturnsMultiRelationshipPathsWithTargetClassInstances)
     {
-    ECEntityClassCP elementClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Element")->GetEntityClassCP();
-    ECEntityClassCP baseAspectClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Aspect")->GetEntityClassCP();
-    ECEntityClassCP hiddenAspectClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "HiddenAspect")->GetEntityClassCP();
-    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ElementHasAspect")->GetRelationshipClassCP();
+    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ElementOwnsChildElements")->GetRelationshipClassCP();
+    ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
+    ECClassCP classB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B");
+    ECClassCP classC = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "C");
 
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr c = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *a, *b);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *a, *c);
+
+    RelatedClassPath pathFromSelectClass = {
+        RelatedClass(*classB, SelectClass(*classA), *rel, false, "a", "ba"),
+        RelatedClass(*classA, SelectClass(*classC), *rel, true, "c", "ac"),
+        };
+
+    bvector<RelatedClassPath> result = m_helper->GetRelatedPathsWithInstances(RelatedClassPath(), {pathFromSelectClass}, nullptr);
+    ASSERT_EQ(1, result.size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(GetRelatedPathsWithInstances_ReturnsPathsWithInstancesMatchingInstanceFilter, R"*(
+    <ECEntityClass typeName="Model">
+        <ECProperty propertyName="Prop" typeName="int" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ModelContainsElements" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Model"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Element" />
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="Element" />
+)*");
+TEST_F(ECSchemaHelperTests, GetRelatedPathsWithInstances_ReturnsPathsWithInstancesMatchingInstanceFilter)
+    {
+    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ModelContainsElements")->GetRelationshipClassCP();
+    ECClassCP modelClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Model");
+    ECClassCP elementClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Element");
+
+    IECInstancePtr model = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *modelClass, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(1));});
     IECInstancePtr element = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
-    IECInstancePtr aspect = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *hiddenAspectClass);
-    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *element, *aspect);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *model, *element);
 
-    bvector<RelatedClassPath> result = m_helper->GetPolymorphicallyRelatedClassesWithInstances(*elementClass,
-        rel->GetFullName(), ECRelatedInstanceDirection::Forward, baseAspectClass->GetFullName(), RelatedClassPath(), nullptr);
+    RelatedClassPath path = {RelatedClass(*modelClass, *rel, true, "r", SelectClass(*elementClass), "e", true)};
+    InstanceFilteringParams filteringParams(*m_connection, m_helper->GetECExpressionsCache(), nullptr, SelectClassInfo(*modelClass), nullptr, "this.Prop = 1");
+
+    bvector<RelatedClassPath> result = m_helper->GetRelatedPathsWithInstances(RelatedClassPath(), {path}, &filteringParams);
+    ASSERT_EQ(1, result.size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(GetRelatedPathsWithInstances_DoesntReturnPathsWithoutInstancesMatchingInstanceFilter, R"*(
+    <ECEntityClass typeName="Model">
+        <ECProperty propertyName="Prop" typeName="int" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ModelContainsElements" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Model"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Element" />
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="Element" />
+)*");
+TEST_F(ECSchemaHelperTests, GetRelatedPathsWithInstances_DoesntReturnPathsWithoutInstancesMatchingInstanceFilter)
+    {
+    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ModelContainsElements")->GetRelationshipClassCP();
+    ECClassCP modelClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Model");
+    ECClassCP elementClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Element");
+
+    IECInstancePtr model = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *modelClass, [](IECInstanceR instance) {instance.SetValue("Prop", ECValue(1));});
+    IECInstancePtr element = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *model, *element);
+
+    RelatedClassPath path = {RelatedClass(*modelClass, *rel, true, "r", SelectClass(*elementClass), "e", true)};
+    InstanceFilteringParams filteringParams(*m_connection, m_helper->GetECExpressionsCache(), nullptr, SelectClassInfo(*modelClass), nullptr, "this.Prop = 2");
+
+    bvector<RelatedClassPath> result = m_helper->GetRelatedPathsWithInstances(RelatedClassPath(), {path}, &filteringParams);
     ASSERT_EQ(0, result.size());
     }
 
 /*---------------------------------------------------------------------------------**//**
-* VSTS#202530
-* @bsitest                                      Grigas.Petraitis                10/2019
+* @bsitest                                      Grigas.Petraitis                01/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(GetPolymorphicallyRelatedClassesWithInstances_ReturnsHiddenClassesIfSpecificallyAskedFor,
-    R"*(
+DEFINE_SCHEMA(GetRelatedPathsWithInstances_ReturnsPathsWithInstancesRelatedToGivenInput, R"*(
+    <ECEntityClass typeName="Model" />
+    <ECRelationshipClass typeName="ModelContainsElements" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Model"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Element" />
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="Element" />
+)*");
+TEST_F(ECSchemaHelperTests, GetRelatedPathsWithInstances_ReturnsPathsWithInstancesRelatedToGivenInput)
+    {
+    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ModelContainsElements")->GetRelationshipClassCP();
+    ECClassCP modelClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Model");
+    ECClassCP elementClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Element");
+
+    IECInstancePtr model = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *modelClass);
+    IECInstancePtr element = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *model, *element);
+
+    RelatedClassPath path = {RelatedClass(*modelClass, *rel, true, "r", SelectClass(*elementClass), "e", true)};
+    TestParsedInput input(*model);
+    InstanceFilteringParams filteringParams(*m_connection, m_helper->GetECExpressionsCache(), &input, SelectClassInfo(*modelClass), nullptr, "");
+
+    bvector<RelatedClassPath> result = m_helper->GetRelatedPathsWithInstances(RelatedClassPath(), {path}, &filteringParams);
+    ASSERT_EQ(1, result.size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(GetRelatedPathsWithInstances_DoesntReturnPathsWithoutInstancesRelatedToGivenInput, R"*(
+    <ECEntityClass typeName="Model" />
+    <ECRelationshipClass typeName="ModelContainsElements" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Model"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Element" />
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="Element" />
+)*");
+TEST_F(ECSchemaHelperTests, GetRelatedPathsWithInstances_DoesntReturnPathsWithoutInstancesRelatedToGivenInput)
+    {
+    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ModelContainsElements")->GetRelationshipClassCP();
+    ECClassCP modelClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Model");
+    ECClassCP elementClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Element");
+
+    IECInstancePtr model1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *modelClass);
+    IECInstancePtr model2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *modelClass);
+    IECInstancePtr element = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *model1, *element);
+
+    RelatedClassPath path = {RelatedClass(*modelClass, *rel, true, "r", SelectClass(*elementClass), "e", true)};
+    TestParsedInput input(*model2);
+    InstanceFilteringParams filteringParams(*m_connection, m_helper->GetECExpressionsCache(), &input, SelectClassInfo(*modelClass), nullptr, "");
+
+    bvector<RelatedClassPath> result = m_helper->GetRelatedPathsWithInstances(RelatedClassPath(), {path}, &filteringParams);
+    ASSERT_EQ(0, result.size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(GetRelatedPathsWithInstances_ReturnsPathsWithInstancesMatchingNestedInstanceFilter, R"*(
     <ECEntityClass typeName="Element">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.2.0">
@@ -912,19 +1302,158 @@ DEFINE_SCHEMA(GetPolymorphicallyRelatedClassesWithInstances_ReturnsHiddenClasses
             </ClassMap>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="Aspect">
+    <ECRelationshipClass typeName="ElementOwnsChildElements" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Element" />
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="A">
+        <BaseClass>Element</BaseClass>
+        <ECProperty propertyName="Prop" typeName="int" />
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="C">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="D">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="E">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+)*");
+TEST_F(ECSchemaHelperTests, GetRelatedPathsWithInstances_ReturnsPathsWithInstancesMatchingNestedInstanceFilter)
+    {
+    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ElementOwnsChildElements")->GetRelationshipClassCP();
+    ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
+    ECClassCP classB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B");
+    ECClassCP classC = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "C");
+    ECClassCP classD = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "D");
+    ECClassCP classE = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "E");
+
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(1));});
+    IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr c = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+    IECInstancePtr d = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD);
+    IECInstancePtr e = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *a, *b);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *b, *c);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *c, *d);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *d, *e);
+
+    RelatedClassPath pathToSelectClass = {
+        RelatedClass(*classA, SelectClass(*classB), *rel, true, "b", "ab"),
+        RelatedClass(*classB, SelectClass(*classC), *rel, true, "c", "bc"),
+        };
+    RelatedClassPath pathFromSelectClass = {
+        RelatedClass(*classC, SelectClass(*classD), *rel, true, "d", "cd"),
+        RelatedClass(*classD, SelectClass(*classE), *rel, true, "e", "de"),
+        };
+    InstanceFilteringParams filteringParams(*m_connection, m_helper->GetECExpressionsCache(), nullptr, SelectClassInfo(*classC), nullptr, "this.Prop = 1");
+
+    bvector<RelatedClassPath> result = m_helper->GetRelatedPathsWithInstances(pathToSelectClass, {pathFromSelectClass}, &filteringParams);
+    ASSERT_EQ(1, result.size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(GetRelatedPathsWithInstances_DoesntReturnPathsWithoutsInstancesMatchingNestedInstanceFilter, R"*(
+    <ECEntityClass typeName="Element">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.2.0">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="HiddenAspect">
-        <BaseClass>Aspect</BaseClass>
+    <ECRelationshipClass typeName="ElementOwnsChildElements" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Element" />
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="A">
+        <BaseClass>Element</BaseClass>
+        <ECProperty propertyName="Prop" typeName="int" />
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="C">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="D">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="E">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+)*");
+TEST_F(ECSchemaHelperTests, GetRelatedPathsWithInstances_DoesntReturnPathsWithoutsInstancesMatchingNestedInstanceFilter)
+    {
+    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ElementOwnsChildElements")->GetRelationshipClassCP();
+    ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
+    ECClassCP classB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B");
+    ECClassCP classC = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "C");
+    ECClassCP classD = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "D");
+    ECClassCP classE = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "E");
+
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("Prop", ECValue(2)); });
+    IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr c = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+    IECInstancePtr d = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD);
+    IECInstancePtr e = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *a, *b);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *b, *c);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *c, *d);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *d, *e);
+
+    RelatedClassPath pathToSelectClass = {
+        RelatedClass(*classA, SelectClass(*classB), *rel, true, "b", "ab"),
+        RelatedClass(*classB, SelectClass(*classC), *rel, true, "c", "bc"),
+        };
+    RelatedClassPath pathFromSelectClass = {
+        RelatedClass(*classC, SelectClass(*classD), *rel, true, "d", "cd"),
+        RelatedClass(*classD, SelectClass(*classE), *rel, true, "e", "de"),
+        };
+    InstanceFilteringParams filteringParams(*m_connection, m_helper->GetECExpressionsCache(), nullptr, SelectClassInfo(*classC), nullptr, "this.Prop = 1");
+
+    bvector<RelatedClassPath> result = m_helper->GetRelatedPathsWithInstances(pathToSelectClass, {pathFromSelectClass}, &filteringParams);
+    ASSERT_EQ(0, result.size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(GetRelatedPathsWithInstances_ReturnsPathsRelatedToRecursivelyFilteredInstances, R"*(
+    <ECEntityClass typeName="Element">
         <ECCustomAttributes>
-            <HiddenClass xmlns="CoreCustomAttributes.01.00" />
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
         </ECCustomAttributes>
-        <ECProperty propertyName="Prop1" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsChildElements" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Element" />
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="Aspect">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
     </ECEntityClass>
     <ECRelationshipClass typeName="ElementHasAspect" strength="embedding" modifier="None">
         <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
@@ -934,146 +1463,49 @@ DEFINE_SCHEMA(GetPolymorphicallyRelatedClassesWithInstances_ReturnsHiddenClasses
             <Class class="Aspect" />
         </Target>
     </ECRelationshipClass>
+    <ECEntityClass typeName="AspectA">
+        <BaseClass>Aspect</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="AspectB">
+        <BaseClass>Aspect</BaseClass>
+    </ECEntityClass>
 )*");
-TEST_F(ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_ReturnsHiddenClassesIfSpecificallyAskedFor)
+TEST_F(ECSchemaHelperTests, GetRelatedPathsWithInstances_ReturnsPathsRelatedToRecursivelyFilteredInstances)
     {
-    ECEntityClassCP elementClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Element")->GetEntityClassCP();
-    ECEntityClassCP hiddenAspectClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "HiddenAspect")->GetEntityClassCP();
-    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ElementHasAspect")->GetRelationshipClassCP();
+    ECClassCP elementClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Element");
+    ECRelationshipClassCP elementToElementRel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ElementOwnsChildElements")->GetRelationshipClassCP();
+    ECRelationshipClassCP elementToAspectRel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ElementHasAspect")->GetRelationshipClassCP();
+    ECClassCP aspectAClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "AspectA");
+    ECClassCP aspectBClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "AspectB");
 
-    IECInstancePtr element = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
-    IECInstancePtr aspect = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *hiddenAspectClass);
-    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *element, *aspect);
+    IECInstancePtr e1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
+    IECInstancePtr e2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementToElementRel, *e1, *e2);
+    IECInstancePtr e3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementToElementRel, *e2, *e3);
+    IECInstancePtr aspectA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *aspectAClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementToAspectRel, *e2, *aspectA);
+    IECInstancePtr aspectB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *aspectBClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementToAspectRel, *e3, *aspectB);
 
-    bvector<RelatedClassPath> result = m_helper->GetPolymorphicallyRelatedClassesWithInstances(*elementClass,
-        rel->GetFullName(), ECRelatedInstanceDirection::Forward, hiddenAspectClass->GetFullName(), RelatedClassPath(), nullptr);
-    ASSERT_EQ(1, result.size());
-    ASSERT_EQ(1, result[0].size());
-    EXPECT_EQ(hiddenAspectClass, &result[0][0].GetTargetClass().GetClass());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                02/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_ReturnsClassesOfInstancesWhichMatchInstanceFilter)
-    {
-    ECEntityClassCP class1 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class1")->GetEntityClassCP();
-    ECEntityClassCP baseof2and3 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "BaseOf2and3")->GetEntityClassCP();
-    ECEntityClassCP class2 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class2")->GetEntityClassCP();
-    ECEntityClassCP class3 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class3")->GetEntityClassCP();
-    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class1HasClass2And3")->GetRelationshipClassCP();
-
-    IECInstancePtr instance11 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class1);
-    IECInstancePtr instance12 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class1);
-    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class2);
-    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class3);
-    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *instance11, *instance2);
-    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *instance12, *instance3);
-
-    SelectClassInfo selectInfo(*class1, true);
-    Utf8PrintfString instanceFilter("this.ECInstanceId = %s", instance11->GetInstanceId().c_str());
-    InstanceFilteringParams filteringParams(*m_connection, m_helper->GetECExpressionsCache(), nullptr, selectInfo, nullptr, instanceFilter.c_str());
-
-    bvector<RelatedClassPath> result = m_helper->GetPolymorphicallyRelatedClassesWithInstances(*class1,
-        rel->GetFullName(), ECRelatedInstanceDirection::Forward, baseof2and3->GetFullName(), RelatedClassPath(), &filteringParams);
-    ASSERT_EQ(1, result.size());
-    ASSERT_EQ(1, result[0].size());
-    EXPECT_EQ(class2, &result[0][0].GetTargetClass().GetClass());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                02/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_ReturnsClassesOfInstancesRelatedToFilteredInstances)
-    {
-    ECEntityClassCP class1 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class1")->GetEntityClassCP();
-    ECEntityClassCP baseof2and3 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "BaseOf2and3")->GetEntityClassCP();
-    ECEntityClassCP class2 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class2")->GetEntityClassCP();
-    ECEntityClassCP class3 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class3")->GetEntityClassCP();
-    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class1HasClass2And3")->GetRelationshipClassCP();
-
-    IECInstancePtr instance11 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class1);
-    IECInstancePtr instance12 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class1);
-    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class2);
-    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class3);
-    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *instance11, *instance2);
-    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *instance12, *instance3);
-
-    SelectClassInfo selectInfo(*class1, true);
-    TestParsedInput input(*instance11);
-    InstanceFilteringParams filteringParams(*m_connection, m_helper->GetECExpressionsCache(), &input, selectInfo, nullptr, "");
-
-    bvector<RelatedClassPath> result = m_helper->GetPolymorphicallyRelatedClassesWithInstances(*class1,
-        rel->GetFullName(), ECRelatedInstanceDirection::Forward, baseof2and3->GetFullName(), RelatedClassPath(), &filteringParams);
-    ASSERT_EQ(1, result.size());
-    ASSERT_EQ(1, result[0].size());
-    EXPECT_EQ(class2, &result[0][0].GetTargetClass().GetClass());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                02/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_ReturnsRecursivelyRelatedInstanceClasses)
-    {
-    ECEntityClassCP class1 = s_project->GetECDb().Schemas().GetClass("SchemaComplex3", "Class1")->GetEntityClassCP();
-    ECEntityClassCP class2 = s_project->GetECDb().Schemas().GetClass("SchemaComplex3", "Class2")->GetEntityClassCP();
-    ECRelationshipClassCP rel1 = s_project->GetECDb().Schemas().GetClass("SchemaComplex3", "Class1HasClass1")->GetRelationshipClassCP();
-    ECRelationshipClassCP rel2 = s_project->GetECDb().Schemas().GetClass("SchemaComplex3", "Class1HasClass2")->GetRelationshipClassCP();
-
-    IECInstancePtr instance11 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class1);
-    IECInstancePtr instance12 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class1);
-    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class2);
-    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel1, *instance11, *instance12);
-    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel2, *instance12, *instance2);
-
-    SelectClassInfo selectInfo(*class1, true);
-    InstanceFilteringParams::RecursiveQueryInfo recursiveInfo({
-        {RelatedClass(*class1, *class1, *rel1, true)},
-        {RelatedClass(*class1, *class2, *rel2, true)}
-        });
+    SelectClassInfo selectInfo(*elementClass, true);
+    RelatedClassPath pathToSelectClass{RelatedClass(*elementClass, *elementClass, *elementToElementRel, true, "e", "e_to_e")};
+    InstanceFilteringParams::RecursiveQueryInfo recursiveInfo({pathToSelectClass});
     InstanceFilteringParams filteringParams(*m_connection, m_helper->GetECExpressionsCache(), nullptr, selectInfo, &recursiveInfo, "");
 
-    bvector<RelatedClassPath> result = m_helper->GetPolymorphicallyRelatedClassesWithInstances(*class1,
-        Utf8PrintfString("%s:%s,%s", rel1->GetSchema().GetName().c_str(), rel1->GetName().c_str(), rel2->GetName().c_str()),
-        ECRelatedInstanceDirection::Forward,
-        Utf8PrintfString("%s:%s,%s", class1->GetSchema().GetName().c_str(), class1->GetName().c_str(), class2->GetName().c_str()),
-        RelatedClassPath(),
-        &filteringParams);
+    bvector<RelatedClassPath> paths {
+        RelatedClassPath{RelatedClass(*elementClass, *elementToAspectRel, true, "r", *aspectAClass, "a", true)},
+        RelatedClassPath{RelatedClass(*elementClass, *elementToAspectRel, true, "r", *aspectBClass, "b", true)},
+        };
+
+    bvector<RelatedClassPath> result = m_helper->GetRelatedPathsWithInstances(pathToSelectClass, paths, &filteringParams);
     ASSERT_EQ(2, result.size());
+
     ASSERT_EQ(1, result[0].size());
-    EXPECT_EQ(class1, &result[0][0].GetTargetClass().GetClass());
+    EXPECT_EQ(aspectAClass , &result[0][0].GetTargetClass().GetClass());
+
     ASSERT_EQ(1, result[1].size());
-    EXPECT_EQ(class2, &result[1][0].GetTargetClass().GetClass());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Mantas.Kontrimas                05/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_ReturnsNestedRalationshipInstanceClassesWhichMatchInstanceFilter)
-    {
-    ECEntityClassCP class1 = s_project->GetECDb().Schemas().GetClass("SchemaComplex2", "Class1")->GetEntityClassCP();
-    ECEntityClassCP class2 = s_project->GetECDb().Schemas().GetClass("SchemaComplex2", "Class2")->GetEntityClassCP();
-    ECEntityClassCP class3 = s_project->GetECDb().Schemas().GetClass("SchemaComplex2", "Class3")->GetEntityClassCP();
-    ECRelationshipClassCP rel1 = s_project->GetECDb().Schemas().GetClass("SchemaComplex2", "Class1HasClass2")->GetRelationshipClassCP();
-    ECRelationshipClassCP rel2 = s_project->GetECDb().Schemas().GetClass("SchemaComplex2", "Class3HasClass2")->GetRelationshipClassCP();
-
-    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class1);
-    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class2);
-    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class3);
-    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel1, *instance1, *instance2);
-    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel2, *instance3, *instance2);
-
-    SelectClassInfo selectInfo(*class3, true);
-    Utf8PrintfString instanceFilter("this.ECInstanceId = %s", instance3->GetInstanceId().c_str());
-    InstanceFilteringParams filteringParams(*m_connection, m_helper->GetECExpressionsCache(), nullptr, selectInfo, nullptr, instanceFilter.c_str());
-    RelatedClassPath nestedRelationship({RelatedClass(*class3, *class2, *rel2, true, "target", "rel")});
-
-    bvector<RelatedClassPath> result = m_helper->GetPolymorphicallyRelatedClassesWithInstances(*class2,
-        rel1->GetFullName(), ECRelatedInstanceDirection::Backward, class1->GetFullName(), nestedRelationship, &filteringParams);
-
-    ASSERT_EQ(1, result.size());
-    ASSERT_EQ(1, result[0].size());
-    EXPECT_EQ(class1, &result[0][0].GetTargetClass().GetClass());
+    EXPECT_EQ(aspectBClass, &result[1][0].GetTargetClass().GetClass());
     }
 
 //---------------------------------------------------------------------------------------

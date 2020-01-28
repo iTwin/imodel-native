@@ -17,10 +17,8 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 bool RelatedInstanceSpecification::ShallowEqual(RelatedInstanceSpecificationCR other) const
     {
     return m_isRequired == other.m_isRequired
-        && m_direction == other.m_direction
-        && m_className == other.m_className
-        && m_relationshipName == other.m_relationshipName
-        && m_alias == other.m_alias;
+        && m_alias == other.m_alias
+        && m_relationshipPath == other.m_relationshipPath;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -28,30 +26,34 @@ bool RelatedInstanceSpecification::ShallowEqual(RelatedInstanceSpecificationCR o
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool RelatedInstanceSpecification::ReadXml(BeXmlNodeP xmlNode)
     {
-    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_relationshipName, RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_RELATIONSHIPNAME))
+    Utf8String relationshipName;
+    if (BEXML_Success != xmlNode->GetAttributeStringValue(relationshipName, RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_RELATIONSHIPNAME))
         {
         ECPRENSETATION_RULES_LOG.errorv(INVALID_XML, RELATED_INSTANCE_SPECIFICATION_XML_NODE_NAME, RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_RELATIONSHIPNAME);
         return false;
         }
 
-    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_className, RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_CLASSNAME))
+    Utf8String className;
+    if (BEXML_Success != xmlNode->GetAttributeStringValue(className, RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_CLASSNAME))
         {
         ECPRENSETATION_RULES_LOG.errorv(INVALID_XML, RELATED_INSTANCE_SPECIFICATION_XML_NODE_NAME, RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_CLASSNAME);
         return false;
         }
+
+    Utf8String requiredDirectionString;
+    if (BEXML_Success != xmlNode->GetAttributeStringValue(requiredDirectionString, RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_RELATIONSHIPDIRECTION))
+        requiredDirectionString = "";
+    RequiredRelationDirection direction = CommonToolsInternal::ParseRequiredDirectionString(requiredDirectionString.c_str());
+    m_relationshipPath.AddStep(*new RelationshipStepSpecification(relationshipName, direction, className));
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue(m_alias, RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_ALIAS))
         {
         ECPRENSETATION_RULES_LOG.errorv(INVALID_XML, RELATED_INSTANCE_SPECIFICATION_XML_NODE_NAME, RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_ALIAS);
         return false;
         }
+
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue(m_isRequired, RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_ISREQUIRED))
         m_isRequired = false;
-    
-    Utf8String requiredDirectionString;
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (requiredDirectionString, RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_RELATIONSHIPDIRECTION))
-        requiredDirectionString = "";
-    m_direction = CommonToolsInternal::ParseRequiredDirectionString(requiredDirectionString.c_str());
 
     return true;
     }
@@ -62,9 +64,12 @@ bool RelatedInstanceSpecification::ReadXml(BeXmlNodeP xmlNode)
 void RelatedInstanceSpecification::WriteXml(BeXmlNodeP parentXmlNode) const
     {
     BeXmlNodeP node = parentXmlNode->AddEmptyElement(RELATED_INSTANCE_SPECIFICATION_XML_NODE_NAME);
-    node->AddAttributeStringValue(RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_CLASSNAME, m_className.c_str());
-    node->AddAttributeStringValue(RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_RELATIONSHIPNAME, m_relationshipName.c_str());
-    node->AddAttributeStringValue(RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_RELATIONSHIPDIRECTION, CommonToolsInternal::FormatRequiredDirectionString(m_direction));
+    if (!m_relationshipPath.GetSteps().empty())
+        {
+        node->AddAttributeStringValue(RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_CLASSNAME, m_relationshipPath.GetSteps().front()->GetTargetClassName().c_str());
+        node->AddAttributeStringValue(RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_RELATIONSHIPNAME, m_relationshipPath.GetSteps().front()->GetRelationshipClassName().c_str());
+        node->AddAttributeStringValue(RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_RELATIONSHIPDIRECTION, CommonToolsInternal::FormatRequiredDirectionString(m_relationshipPath.GetSteps().front()->GetRelationDirection()));
+        }
     node->AddAttributeStringValue(RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_ALIAS, m_alias.c_str());
     node->AddAttributeBooleanValue(RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_ISREQUIRED, m_isRequired);
     }
@@ -74,19 +79,30 @@ void RelatedInstanceSpecification::WriteXml(BeXmlNodeP parentXmlNode) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool RelatedInstanceSpecification::ReadJson(JsonValueCR json)
     {
-    //Required
-    m_className = CommonToolsInternal::SchemaAndClassNameToString(json[RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_CLASS]);
-    if (m_className.empty())
+    if (json.isMember(RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_RELATIONSHIPPATH))
         {
-        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, "RelatedInstanceSpecification", RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_CLASS);
-        return false;
+        if (!m_relationshipPath.ReadJson(json[RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_RELATIONSHIPPATH]))
+            {
+            ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, "RelatedInstanceSpecification", RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_RELATIONSHIPPATH);
+            return false;
+            }
         }
-
-    m_relationshipName = CommonToolsInternal::SchemaAndClassNameToString(json[RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_RELATIONSHIP]);
-    if (m_relationshipName.empty())
+    else
         {
-        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, "RelatedInstanceSpecification", RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_RELATIONSHIP);
-        return false;
+        Utf8String className = CommonToolsInternal::SchemaAndClassNameToString(json[RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_CLASS]);
+        if (className.empty())
+            {
+            ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, "RelatedInstanceSpecification", RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_CLASS);
+            return false;
+            }
+        Utf8String relationshipName = CommonToolsInternal::SchemaAndClassNameToString(json[RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_RELATIONSHIP]);
+        if (relationshipName.empty())
+            {
+            ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, "RelatedInstanceSpecification", RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_RELATIONSHIP);
+            return false;
+            }
+        RequiredRelationDirection direction = CommonToolsInternal::ParseRequiredDirectionString(json[COMMON_JSON_ATTRIBUTE_REQUIREDDIRECTION].asCString(""));
+        m_relationshipPath.AddStep(*new RelationshipStepSpecification(relationshipName, direction, className));
         }
 
     JsonValueCR aliasJson = json[RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_ALIAS];
@@ -97,10 +113,7 @@ bool RelatedInstanceSpecification::ReadJson(JsonValueCR json)
         }
     m_alias = aliasJson.asCString();
 
-    //Optional
     m_isRequired = json[RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_ISREQUIRED].asBool(false);
-    m_direction = CommonToolsInternal::ParseRequiredDirectionString(json[COMMON_JSON_ATTRIBUTE_REQUIREDDIRECTION].asCString(""));
-
     return true;
     }
 
@@ -110,15 +123,10 @@ bool RelatedInstanceSpecification::ReadJson(JsonValueCR json)
 Json::Value RelatedInstanceSpecification::WriteJson() const
     {
     Json::Value json(Json::objectValue);
-    if (!m_className.empty())
-        json[RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_CLASS] = CommonToolsInternal::SchemaAndClassNameToJson(m_className);
-    if (!m_relationshipName.empty())
-        json[RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_RELATIONSHIP] = CommonToolsInternal::SchemaAndClassNameToJson(m_relationshipName);
+    json[RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_RELATIONSHIPPATH] = m_relationshipPath.WriteJson();
     json[RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_ALIAS] = m_alias;
     if (m_isRequired)
         json[RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_ISREQUIRED] = m_isRequired;
-    if (RequiredRelationDirection_Both != m_direction)
-        json[COMMON_JSON_ATTRIBUTE_REQUIREDDIRECTION] = CommonToolsInternal::FormatRequiredDirectionString(m_direction);
     return json;
     }
 
@@ -128,13 +136,15 @@ Json::Value RelatedInstanceSpecification::WriteJson() const
 MD5 RelatedInstanceSpecification::_ComputeHash(Utf8CP parentHash) const
     {
     MD5 md5;
-    md5.Add(&m_direction, sizeof(m_direction));
-    md5.Add(m_relationshipName.c_str(), m_relationshipName.size());
-    md5.Add(m_className.c_str(), m_className.size());
-    md5.Add(m_alias.c_str(), m_alias.size());
-    md5.Add(&m_isRequired, sizeof(m_isRequired));
+
     if (nullptr != parentHash)
         md5.Add(parentHash, strlen(parentHash));
+
+    md5.Add(m_alias.c_str(), m_alias.size());
+    md5.Add(&m_isRequired, sizeof(m_isRequired));
+
+    Utf8StringCR relationshipPathHash = m_relationshipPath.GetHash(md5.GetHashString().c_str());
+    md5.Add(relationshipPathHash.c_str(), relationshipPathHash.size());
 
     return md5;
     }

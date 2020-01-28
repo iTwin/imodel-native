@@ -354,7 +354,7 @@ rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContentDescriptor c
         rapidjson::Value selectClassJson(rapidjson::kObjectType);
         selectClassJson.AddMember("SelectClassInfo", _AsJson(selectClass.GetSelectClass().GetClass(), &json.GetAllocator()), json.GetAllocator());
         selectClassJson.AddMember("IsPolymorphic", selectClass.GetSelectClass().IsSelectPolymorphic(), json.GetAllocator());
-        selectClassJson.AddMember("PathToPrimaryClass", _AsJson(selectClass.GetPathToInputClass(), json.GetAllocator()), json.GetAllocator());
+        selectClassJson.AddMember("PathToSelectClass", _AsJson(selectClass.GetPathFromInputToSelectClass(), json.GetAllocator()), json.GetAllocator());
         selectClassJson.AddMember("RelatedPropertyPaths", rapidjson::Value(rapidjson::kArrayType), json.GetAllocator());
         for (RelatedClassPathCR propertyPath : selectClass.GetRelatedPropertyPaths())
             selectClassJson["RelatedPropertyPaths"].PushBack(_AsJson(propertyPath, json.GetAllocator()), json.GetAllocator());
@@ -362,8 +362,8 @@ rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContentDescriptor c
         for (RelatedClassCR navPropertyClass : selectClass.GetNavigationPropertyClasses())
             selectClassJson["NavigationPropertyClasses"].PushBack(_AsJson(navPropertyClass, json.GetAllocator()), json.GetAllocator());
         selectClassJson.AddMember("RelatedInstanceClasses", rapidjson::Value(rapidjson::kArrayType), json.GetAllocator());
-        for (RelatedClassCR relatedInstanceClass : selectClass.GetRelatedInstanceClasses())
-            selectClassJson["RelatedInstanceClasses"].PushBack(_AsJson(relatedInstanceClass, json.GetAllocator()), json.GetAllocator());
+        for (RelatedClassPathCR relatedInstancePath : selectClass.GetRelatedInstancePaths())
+            selectClassJson["RelatedInstancePaths"].PushBack(_AsJson(relatedInstancePath, json.GetAllocator()), json.GetAllocator());
         json["SelectClasses"].PushBack(selectClassJson, json.GetAllocator());
         }
 

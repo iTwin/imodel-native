@@ -143,6 +143,7 @@
     <ClCompile Include="NonPublished\PresentationRules\CheckBoxPresRuleTests.cpp" />
     <ClCompile Include="NonPublished\PresentationRules\CheckBoxRuleTests.cpp" />
     <ClCompile Include="NonPublished\PresentationRules\ChildNodeRuleTests.cpp" />
+    <ClCompile Include="NonPublished\PresentationRules\ClassNamesParserTests.cpp" />
     <ClCompile Include="NonPublished\PresentationRules\ContentInstancesOfSpecificClassesSpecificationTests.cpp" />
     <ClCompile Include="NonPublished\PresentationRules\ContentModifierTests.cpp" />
     <ClCompile Include="NonPublished\PresentationRules\ContentRelatedInstancesSpecificationTests.cpp" />
@@ -165,11 +166,13 @@
     <ClCompile Include="NonPublished\PresentationRules\RelatedInstanceNodesSpecificationTests.cpp" />
     <ClCompile Include="NonPublished\PresentationRules\RelatedInstanceSpecificationTests.cpp" />
     <ClCompile Include="NonPublished\PresentationRules\RelatedPropertiesSpecificationTests.cpp" />
+    <ClCompile Include="NonPublished\PresentationRules\RelationshipPathSpecificationTests.cpp" />
     <ClCompile Include="NonPublished\PresentationRules\SearchResultInstanceNodesSpecificationTests.cpp" />
     <ClCompile Include="NonPublished\PresentationRules\SelectedNodeInstancesSpecificationTests.cpp" />
     <ClCompile Include="NonPublished\PresentationRules\SortingRuleTests.cpp" />
     <ClCompile Include="NonPublished\PresentationRules\StyleOverrideTests.cpp" />
     <ClCompile Include="NonPublished\PresentationRules\UserSettingsGroupTests.cpp" />
+    <ClCompile Include="NonPublished\RelatedClassPathTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\CheckboxRuleTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\ContentCacheTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\ContentFieldEditorParamsTests.cpp" />

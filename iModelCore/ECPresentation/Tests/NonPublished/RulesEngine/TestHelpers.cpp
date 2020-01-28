@@ -311,9 +311,9 @@ ComplexNavigationQueryPtr RulesEngineTestHelpers::CreateMultiECInstanceNodesQuer
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ComplexNavigationQueryPtr RulesEngineTestHelpers::CreateECInstanceNodesQueryForClass(ECEntityClassCR ecClass, bool polymorphic, Utf8CP alias, bvector<RelatedClass> const& relatedClasses)
+ComplexNavigationQueryPtr RulesEngineTestHelpers::CreateECInstanceNodesQueryForClass(ECEntityClassCR ecClass, bool polymorphic, Utf8CP alias, bvector<RelatedClassPath> const& relatedInstancePaths)
     {
-    RefCountedPtr<ECInstanceNodesQueryContract> contract = ECInstanceNodesQueryContract::Create(&ecClass, relatedClasses);
+    RefCountedPtr<ECInstanceNodesQueryContract> contract = ECInstanceNodesQueryContract::Create(&ecClass, relatedInstancePaths);
     return &ComplexNavigationQuery::Create()->SelectContract(*contract, alias).From(ecClass, polymorphic, alias);
     }
 

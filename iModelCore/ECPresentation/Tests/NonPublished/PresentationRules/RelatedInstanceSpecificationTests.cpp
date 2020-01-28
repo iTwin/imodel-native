@@ -17,7 +17,7 @@ struct RelatedInstanceSpecificationTests : PresentationRulesTests
 /*---------------------------------------------------------------------------------**//**
 * @betest                                   Aidas.Kilinskas                		04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RelatedInstanceSpecificationTests, LoadsFromJson)
+TEST_F(RelatedInstanceSpecificationTests, LoadsFromJsonDeprecated)
     {
     static Utf8CP jsonString = R"({
         "relationship": {"schemaName": "a", "className": "b"},
@@ -31,9 +31,37 @@ TEST_F(RelatedInstanceSpecificationTests, LoadsFromJson)
     
     RelatedInstanceSpecification spec;
     EXPECT_TRUE(spec.ReadJson(json));
-    EXPECT_STREQ("a:b", spec.GetRelationshipName().c_str());
-    EXPECT_STREQ("c:d", spec.GetClassName().c_str());
-    EXPECT_EQ(RequiredRelationDirection::RequiredRelationDirection_Forward, spec.GetRelationshipDirection());
+    ASSERT_EQ(1, spec.GetRelationshipPath().GetSteps().size());
+    EXPECT_STREQ("a:b", spec.GetRelationshipPath().GetSteps().front()->GetRelationshipClassName().c_str());
+    EXPECT_STREQ("c:d", spec.GetRelationshipPath().GetSteps().front()->GetTargetClassName().c_str());
+    EXPECT_EQ(RequiredRelationDirection::RequiredRelationDirection_Forward, spec.GetRelationshipPath().GetSteps().front()->GetRelationDirection());
+    EXPECT_STREQ("TestAlias", spec.GetAlias().c_str());
+    EXPECT_TRUE(spec.IsRequired());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RelatedInstanceSpecificationTests, LoadsFromJson)
+    {
+    static Utf8CP jsonString = R"({
+        "relationshipPath": {
+            "relationship": {"schemaName": "a", "className": "b"},
+            "direction": "Forward",
+            "targetClass": {"schemaName": "c", "className": "d"}
+        },
+        "alias": "TestAlias",
+        "isRequired": true
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    RelatedInstanceSpecification spec;
+    EXPECT_TRUE(spec.ReadJson(json));
+    ASSERT_EQ(1, spec.GetRelationshipPath().GetSteps().size());
+    EXPECT_STREQ("a:b", spec.GetRelationshipPath().GetSteps().front()->GetRelationshipClassName().c_str());
+    EXPECT_STREQ("c:d", spec.GetRelationshipPath().GetSteps().front()->GetTargetClassName().c_str());
+    EXPECT_EQ(RequiredRelationDirection::RequiredRelationDirection_Forward, spec.GetRelationshipPath().GetSteps().front()->GetRelationDirection());
     EXPECT_STREQ("TestAlias", spec.GetAlias().c_str());
     EXPECT_TRUE(spec.IsRequired());
     }
@@ -41,7 +69,7 @@ TEST_F(RelatedInstanceSpecificationTests, LoadsFromJson)
 /*---------------------------------------------------------------------------------**//**
 * @betest                                   Aidas.Kilinskas                		04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RelatedInstanceSpecificationTests, LoadsFromJsonWithDefaultValues)
+TEST_F(RelatedInstanceSpecificationTests, LoadsFromJsonWithDefaultValuesDeprecated)
     {
     static Utf8CP jsonString = R"({
         "relationship": {"schemaName": "a", "className": "b"},
@@ -53,9 +81,10 @@ TEST_F(RelatedInstanceSpecificationTests, LoadsFromJsonWithDefaultValues)
     
     RelatedInstanceSpecification spec;
     EXPECT_TRUE(spec.ReadJson(json));
-    EXPECT_STREQ("a:b", spec.GetRelationshipName().c_str());
-    EXPECT_STREQ("c:d", spec.GetClassName().c_str());
-    EXPECT_EQ(RequiredRelationDirection::RequiredRelationDirection_Both, spec.GetRelationshipDirection());
+    ASSERT_EQ(1, spec.GetRelationshipPath().GetSteps().size());
+    EXPECT_STREQ("a:b", spec.GetRelationshipPath().GetSteps().front()->GetRelationshipClassName().c_str());
+    EXPECT_STREQ("c:d", spec.GetRelationshipPath().GetSteps().front()->GetTargetClassName().c_str());
+    EXPECT_EQ(RequiredRelationDirection::RequiredRelationDirection_Both, spec.GetRelationshipPath().GetSteps().front()->GetRelationDirection());
     EXPECT_STREQ("TestAlias", spec.GetAlias().c_str());
     EXPECT_FALSE(spec.IsRequired());
     }
@@ -68,9 +97,11 @@ TEST_F(RelatedInstanceSpecificationTests, WriteToJson)
     RelatedInstanceSpecification spec(RequiredRelationDirection_Forward, "s1:c1", "s2:c2", "alias", true);
     Json::Value json = spec.WriteJson();
     Json::Value expected = Json::Reader::DoParse(R"({
-        "requiredDirection": "Forward",
-        "relationship": {"schemaName": "s1", "className": "c1"},
-        "class": {"schemaName": "s2", "className": "c2"},
+        "relationshipPath": {
+            "relationship": {"schemaName": "s1", "className": "c1"},
+            "direction": "Forward",
+            "targetClass": {"schemaName": "s2", "className": "c2"}
+        },
         "alias": "alias",
         "isRequired": true
     })");
@@ -91,9 +122,10 @@ TEST_F(RelatedInstanceSpecificationTests, LoadsFromXml)
     
     RelatedInstanceSpecification spec;
     EXPECT_TRUE(spec.ReadXml(xml->GetRootElement()));
-    EXPECT_STREQ("ClassAHasClassB", spec.GetRelationshipName().c_str());
-    EXPECT_STREQ("ClassA", spec.GetClassName().c_str());
-    EXPECT_EQ(RequiredRelationDirection::RequiredRelationDirection_Both, spec.GetRelationshipDirection());
+    ASSERT_EQ(1, spec.GetRelationshipPath().GetSteps().size());
+    EXPECT_STREQ("ClassAHasClassB", spec.GetRelationshipPath().GetSteps().front()->GetRelationshipClassName().c_str());
+    EXPECT_STREQ("ClassA", spec.GetRelationshipPath().GetSteps().front()->GetTargetClassName().c_str());
+    EXPECT_EQ(RequiredRelationDirection::RequiredRelationDirection_Both, spec.GetRelationshipPath().GetSteps().front()->GetRelationDirection());
     EXPECT_STREQ("TestAlias", spec.GetAlias().c_str());
     EXPECT_EQ(false, spec.IsRequired());
     }
@@ -112,9 +144,10 @@ TEST_F(RelatedInstanceSpecificationTests, LoadsFromXmlWithIsRequiredAttributeSet
     
     RelatedInstanceSpecification spec;
     EXPECT_TRUE(spec.ReadXml(xml->GetRootElement()));
-    EXPECT_STREQ("ClassAHasClassB", spec.GetRelationshipName().c_str());
-    EXPECT_STREQ("ClassA", spec.GetClassName().c_str());
-    EXPECT_EQ(RequiredRelationDirection::RequiredRelationDirection_Both, spec.GetRelationshipDirection());
+    ASSERT_EQ(1, spec.GetRelationshipPath().GetSteps().size());
+    EXPECT_STREQ("ClassAHasClassB", spec.GetRelationshipPath().GetSteps().front()->GetRelationshipClassName().c_str());
+    EXPECT_STREQ("ClassA", spec.GetRelationshipPath().GetSteps().front()->GetTargetClassName().c_str());
+    EXPECT_EQ(RequiredRelationDirection::RequiredRelationDirection_Both, spec.GetRelationshipPath().GetSteps().front()->GetRelationDirection());
     EXPECT_STREQ("TestAlias", spec.GetAlias().c_str());
     EXPECT_EQ(true, spec.IsRequired());
     }

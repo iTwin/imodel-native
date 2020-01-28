@@ -1915,7 +1915,7 @@ TEST_F(DefaultECPresentationSerializerTests, ContentDescriptorSerializationNoSel
         });
     ContentDescriptorPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *container, "DisplayTypeText");
     SelectClassInfo selectClassInfo(*testClassA, false);
-    selectClassInfo.SetPathToInputClass({RelatedClass(*testClassA, *testClassB, *relClassAClassB, false)});
+    selectClassInfo.SetPathFromInputToSelectClass({RelatedClass(*testClassB, *testClassA, *relClassAClassB, true)});
     selectClassInfo.SetRelatedPropertyPaths({{RelatedClass(*testClassA, *testClassB, *relClassAClassB, false)}});
     descriptor->GetSelectClasses().push_back(selectClassInfo);
     descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 10));
@@ -1936,24 +1936,24 @@ TEST_F(DefaultECPresentationSerializerTests, ContentDescriptorSerializationNoSel
                 "Label": "PropertyTestClassA"
                 },
             "IsPolymorphic": false,
-            "PathToPrimaryClass": [
+            "PathToSelectClass": [
                 {
                 "SourceClassInfo": {
                     "Id": "",
-                    "Name": "TestSchema:PropertyTestClassA",
-                    "Label": "PropertyTestClassA"
+                    "Name": "TestSchema:PropertyTestClassB",
+                    "Label": "PropertyTestClassB"
                     },
                 "TargetClassInfo": {
                     "Id": "",
-                    "Name": "TestSchema:PropertyTestClassB",
-                    "Label": "PropertyTestClassB"
+                    "Name": "TestSchema:PropertyTestClassA",
+                    "Label": "PropertyTestClassA"
                     },
                 "RelationshipInfo": {
                     "Id": "",
                     "Name": "TestSchema:TestClassAHasTestClassB",
                     "Label": "TestClassAHasTestClassB"
                     },
-                "IsForwardRelationship": false,
+                "IsForwardRelationship": true,
                 "IsPolymorphicRelationship": true
                 }
                 ],
@@ -1998,9 +1998,9 @@ TEST_F(DefaultECPresentationSerializerTests, ContentDescriptorSerializationNoSel
     expected["ConnectionId"].SetString(m_connection->GetId().c_str(), expected.GetAllocator());
     expected["InputKeysHash"].SetString(container->GetHash().c_str(), expected.GetAllocator());
     expected["SelectClasses"][0]["SelectClassInfo"]["Id"].SetString(testClassA->GetId().ToString().c_str(), expected.GetAllocator());
-    expected["SelectClasses"][0]["PathToPrimaryClass"][0]["SourceClassInfo"]["Id"].SetString(testClassA->GetId().ToString().c_str(), expected.GetAllocator());
-    expected["SelectClasses"][0]["PathToPrimaryClass"][0]["TargetClassInfo"]["Id"].SetString(testClassB->GetId().ToString().c_str(), expected.GetAllocator());
-    expected["SelectClasses"][0]["PathToPrimaryClass"][0]["RelationshipInfo"]["Id"].SetString(relClassAClassB->GetId().ToString().c_str(), expected.GetAllocator());
+    expected["SelectClasses"][0]["PathToSelectClass"][0]["SourceClassInfo"]["Id"].SetString(testClassB->GetId().ToString().c_str(), expected.GetAllocator());
+    expected["SelectClasses"][0]["PathToSelectClass"][0]["TargetClassInfo"]["Id"].SetString(testClassA->GetId().ToString().c_str(), expected.GetAllocator());
+    expected["SelectClasses"][0]["PathToSelectClass"][0]["RelationshipInfo"]["Id"].SetString(relClassAClassB->GetId().ToString().c_str(), expected.GetAllocator());
     expected["SelectClasses"][0]["RelatedPropertyPaths"][0][0]["SourceClassInfo"]["Id"].SetString(testClassA->GetId().ToString().c_str(), expected.GetAllocator());
     expected["SelectClasses"][0]["RelatedPropertyPaths"][0][0]["TargetClassInfo"]["Id"].SetString(testClassB->GetId().ToString().c_str(), expected.GetAllocator());
     expected["SelectClasses"][0]["RelatedPropertyPaths"][0][0]["RelationshipInfo"]["Id"].SetString(relClassAClassB->GetId().ToString().c_str(), expected.GetAllocator());

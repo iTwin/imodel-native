@@ -39,3 +39,4 @@
 #include <ECPresentation/RulesDriven/Rules/RelatedInstanceSpecification.h>
 #include <ECPresentation/RulesDriven/Rules/PropertyEditorSpecification.h>
 #include <ECPresentation/RulesDriven/Rules/PropertyCategorySpecification.h>
+#include <ECPresentation/RulesDriven/Rules/RelationshipPathSpecification.h>

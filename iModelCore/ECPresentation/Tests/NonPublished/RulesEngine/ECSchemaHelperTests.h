@@ -218,13 +218,6 @@ struct ECSchemaHelperTests : ECPresentationTest
     };
 
 /*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                06/2015
-+===============+===============+===============+===============+===============+======*/
-struct SupportedClassNamesParserTests : ECSchemaHelperTests
-    {
-    };
-
-/*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                12/2018
 +===============+===============+===============+===============+===============+======*/
 struct ECInstancesHelperTests : ECPresentationTest

@@ -1084,8 +1084,8 @@ ContentQueryCPtr NestedContentProvider::_GetQuery() const
             }
         else
             {
-            BoundQueryValuesList bindings = {new BoundQueryId(m_primaryInstanceKeys[0].GetId())};
-            const_cast<ContentQuery*>(m_adjustedQuery.get())->AsComplexQuery()->SetBoundValues(bindings);
+            ComplexContentQuery* query = const_cast<ContentQuery*>(m_adjustedQuery.get())->AsComplexQuery();
+            query->Where(query->GetClause(CLAUSE_Where).c_str(), {new BoundQueryId(m_primaryInstanceKeys[0].GetId())}, false);
             }
         }
         

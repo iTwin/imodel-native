@@ -430,7 +430,7 @@ TEST_F (ContentQueryBuilderTests, AppliesRelatedInstanceSpecificationForTheSameX
     ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor, info);
     ASSERT_TRUE(query.IsValid());
 
-    ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("AppliesRelatedInstanceSpecificationForTheSameXToManyRelationshipAndClassTwoTimes");
+    ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery(BeTest::GetNameOfCurrentTest());
     EXPECT_TRUE(expected->IsEqual(*query)) 
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();

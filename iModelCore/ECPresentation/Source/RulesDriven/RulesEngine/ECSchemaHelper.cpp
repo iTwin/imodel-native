@@ -27,7 +27,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-RelatedPathsCache::Key::Key(ECSchemaHelper::RelationshipClassPathOptions const& options)
+RelatedPathsCacheDeprecated::Key::Key(ECSchemaHelper::RelationshipClassPathOptions const& options)
     {
     m_sourceClass = &options.m_sourceClass;
     m_relationshipDirection = options.m_relationshipDirection;
@@ -41,7 +41,7 @@ RelatedPathsCache::Key::Key(ECSchemaHelper::RelationshipClassPathOptions const& 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RelatedPathsCache::Key::operator<(Key const& other) const
+bool RelatedPathsCacheDeprecated::Key::operator<(Key const& other) const
     {
     NUMERIC_LESS_COMPARE(m_sourceClass, other.m_sourceClass);
     NUMERIC_LESS_COMPARE(m_targetClass, other.m_targetClass);
@@ -54,20 +54,42 @@ bool RelatedPathsCache::Key::operator<(Key const& other) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+RelatedPathsCache::Key::Key(ECSchemaHelper::MultiRelationshipPathOptions const& options)
+    : m_sourceClass(&options.m_sourceClass)
+    {
+    for (RelationshipStepSpecification const* step : options.m_path.GetSteps())
+        {
+        m_pathSpecification.AddStep(*new RepeatableRelationshipStepSpecification(step->GetRelationshipClassName(),
+            step->GetRelationDirection(), step->GetTargetClassName()));
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+RelatedPathsCache::Key::Key(ECSchemaHelper::RepeatableMultiRelationshipPathOptions const& options)
+    : m_sourceClass(&options.m_sourceClass), m_pathSpecification(options.m_path)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RelatedPathsCache::Key::operator<(Key const& other) const
+    {
+    NUMERIC_LESS_COMPARE(m_sourceClass, other.m_sourceClass);
+    STR_LESS_COMPARE(path, m_pathSpecification.GetHash(), other.m_pathSpecification.GetHash());
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PolymorphicallyRelatedClassesCache::Key::operator<(PolymorphicallyRelatedClassesCache::Key const& other) const
     {
-    if (m_source < other.m_source)
-        return true;
-    if (m_source > other.m_source)
-        return false;
-
-    if (m_direction < other.m_direction)
-        return true;
-    if (m_direction > other.m_direction)
-        return false;
-
+    NUMERIC_LESS_COMPARE(m_source, other.m_source);
+    NUMERIC_LESS_COMPARE(m_direction, other.m_direction);
     COMPARE_VEC(m_rels, other.m_rels);
     COMPARE_VEC(m_baseClasses, other.m_baseClasses);
     return false;
@@ -105,17 +127,22 @@ void PolymorphicallyRelatedClassesCache::Clear()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaHelper::ECSchemaHelper(IConnectionCR connection, RelatedPathsCache* relatedPathsCache, 
+ECSchemaHelper::ECSchemaHelper(IConnectionCR connection, RelatedPathsCache* relatedPathsCache,
     PolymorphicallyRelatedClassesCache* polymorphicallyRelatedClassesCache, ECExpressionsCache* ecexpressionsCache)
     : m_connection(connection),
     m_relatedPathsCache(relatedPathsCache), m_ownsRelatedPathsCache(nullptr == relatedPathsCache),
+#ifdef wip_check_if_necessary
     m_polymorphicallyRelatedClassesCache(polymorphicallyRelatedClassesCache), m_ownsPolymorphicallyRelatedClassesCache(nullptr == polymorphicallyRelatedClassesCache),
+#endif
     m_ecexpressionsCache(ecexpressionsCache), m_ownsECExpressionsCache(nullptr == ecexpressionsCache)
     {
+    m_relatedPathsCacheDeprecated = new RelatedPathsCacheDeprecated();
     if (nullptr == m_relatedPathsCache)
         m_relatedPathsCache = new RelatedPathsCache();
+#ifdef wip_check_if_necessary
     if (nullptr == m_polymorphicallyRelatedClassesCache)
         m_polymorphicallyRelatedClassesCache = new PolymorphicallyRelatedClassesCache();
+#endif
     if (nullptr == m_ecexpressionsCache)
         m_ecexpressionsCache = new ECExpressionsCache();
     }
@@ -127,8 +154,10 @@ ECSchemaHelper::~ECSchemaHelper()
     {
     if (m_ownsRelatedPathsCache)
         DELETE_AND_CLEAR(m_relatedPathsCache);
+#ifdef wip_check_if_necessary
     if (m_ownsPolymorphicallyRelatedClassesCache)
         DELETE_AND_CLEAR(m_polymorphicallyRelatedClassesCache);
+#endif
     if (m_ownsECExpressionsCache)
         DELETE_AND_CLEAR(m_ecexpressionsCache);
     }
@@ -338,7 +367,7 @@ void ECSchemaHelper::ParseECSchemaNames(bvector<Utf8String>& names, bool& exclud
 +---------------+---------------+---------------+---------------+---------------+------*/
 SupportedEntityClassInfos ECSchemaHelper::GetECClassesFromClassList(Utf8StringCR classListStr, bool supportExclusion) const
     {
-    SupportedClassNamesParser parser(*this, classListStr, supportExclusion);
+    SupportedClassesParser parser(*this, classListStr, supportExclusion);
     SupportedClassInfos classInfos = parser.GetClassInfos();
     SupportedEntityClassInfos entityClasses;
     for (SupportedClassInfo<ECClass> const& info : classInfos)
@@ -354,7 +383,7 @@ SupportedEntityClassInfos ECSchemaHelper::GetECClassesFromClassList(Utf8StringCR
 +---------------+---------------+---------------+---------------+---------------+------*/
 SupportedRelationshipClassInfos ECSchemaHelper::GetECRelationshipClasses(Utf8StringCR relationshipListStr) const
     {
-    SupportedClassNamesParser parser(*this, relationshipListStr, false);
+    SupportedClassesParser parser(*this, relationshipListStr, false);
     SupportedClassInfos classInfos = parser.GetClassInfos();
     SupportedRelationshipClassInfos relationshipClasses;
     for (SupportedClassInfo<ECClass> const& info : classInfos)
@@ -581,7 +610,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                07/2016
     +---------------+---------------+---------------+---------------+---------------+------*/
-    SupportedClassesResolver(IConnectionCR connection, ECSchemaSet const& supportedSchemas, 
+    SupportedClassesResolver(IConnectionCR connection, ECSchemaSet const& supportedSchemas,
         SupportedEntityClassInfos const* classInfos, SupportedRelationshipClassInfos const* relationshipInfos)
         : m_flags(0), m_connection(connection)
         {
@@ -763,11 +792,11 @@ static void MergeBindings(BoundQueryValuesList& target, BoundQueryValuesList&& s
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static BoundQueryValuesList CreateRelationshipPathsQuery(Utf8StringR query, ECSchemaHelper::SupportedClassesResolver const& resolver,
+static QueryClauseAndBindings CreateRelationshipPathsQuery(ECSchemaHelper::SupportedClassesResolver const& resolver,
     bset<ECClassId> const& sourceClassIds, int relationshipDirection, int depth)
     {
     BoundQueryValuesList bindings;
-    query = ""
+    Utf8String query = ""
         "SELECT [start].[ECInstanceId] startClassId, "
         "       [relationship].[ECInstanceId] relationshipClassId, "
         "       [endBase].[ECInstanceId] baseRelatedClassId, "
@@ -837,13 +866,13 @@ static BoundQueryValuesList CreateRelationshipPathsQuery(Utf8StringR query, ECSc
         }
 
     IdsFilteringHelper<IdSet<ECSchemaId>> schemaIdsHelper(resolver.GetSchemaIds());
-    if (resolver.GetAcceptAllRelationships())
+    if (resolver.GetAcceptAllRelationships() && !resolver.GetSchemaIds().empty())
         {
         query.append(" AND ");
         query.append(schemaIdsHelper.CreateWhereClause("[relationship].[Schema].[Id]"));
         MergeBindings(bindings, schemaIdsHelper.CreateBoundValues());
         }
-    if (resolver.GetAcceptAllIncludeClasses())
+    if (resolver.GetAcceptAllIncludeClasses() && !resolver.GetSchemaIds().empty())
         {
         query.append(" AND ");
         query.append(schemaIdsHelper.CreateWhereClause("[end].[Schema].[Id]"));
@@ -852,7 +881,7 @@ static BoundQueryValuesList CreateRelationshipPathsQuery(Utf8StringR query, ECSc
 
     query.append(" ORDER BY [start].[ECInstanceId], [end].[ECInstanceId], [relationship].[ECInstanceId]");
 
-    return bindings;
+    return QueryClauseAndBindings(query, bindings);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -960,25 +989,49 @@ static bool MatchesPathRequest(RelatedClass const& related, ECSchemaHelper::Supp
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8String CreateRelationshipAlias(ECClassCR relationship, ECClassUseCounter& counter)
+    {
+    Utf8String alias("rel_");
+    alias.append(relationship.GetSchema().GetAlias()).append("_");
+    alias.append(relationship.GetName()).append("_");
+    alias.append(std::to_string(counter.Inc(&relationship)).c_str());
+    return alias;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8String CreateTargetClassAlias(ECClassCR relationship, ECClassUseCounter& counter)
+    {
+    Utf8String alias("target_");
+    alias.append(relationship.GetSchema().GetAlias()).append("_");
+    alias.append(relationship.GetName()).append("_");
+    alias.append(std::to_string(counter.Inc(&relationship)).c_str());
+    return alias;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @deprecated In favor of the version with RelationshipPathSpecification. Left only to support deprecated cases.
 * @bsimethod                                    Grigas.Petraitis                01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchemaHelper::GetPaths(bvector<RelatedClassPath>& paths, bmap<ECRelationshipClassCP, int>& relationshipsUseCounter,
+void ECSchemaHelper::GetPaths(bvector<RelatedClassPath>& paths, ECClassUseCounter& relationshipsUseCounter,
     bset<RelatedClass>& usedRelationships, SupportedClassesResolver const& resolver, bset<ECClassId> const& sourceClassIds,
     bool handleRelatedClassesPolymorphically, int relationshipDirection, int depth, ECEntityClassCP targetClass) const
     {
     Savepoint txn(m_connection.GetDb(), "ECSchemaHelper::GetPaths");
     BeAssert(txn.IsActive());
 
-    Utf8String query;
-    BoundQueryValuesList bindings = CreateRelationshipPathsQuery(query, resolver, sourceClassIds, relationshipDirection, depth);
-    CachedECSqlStatementPtr stmt = m_connection.GetStatementCache().GetPreparedStatement(m_connection.GetECDb().Schemas(), m_connection.GetDb(), query.c_str());
+    QueryClauseAndBindings clause = CreateRelationshipPathsQuery(resolver, sourceClassIds, relationshipDirection, depth);
+    CachedECSqlStatementPtr stmt = m_connection.GetStatementCache().GetPreparedStatement(m_connection.GetECDb().Schemas(), m_connection.GetDb(), clause.GetClause().c_str());
     if (!stmt.IsValid())
         {
         BeAssert(false);
         return;
         }
     uint32_t index = 1;
-    for (BoundQueryValue const* binding : bindings)
+    for (BoundQueryValue const* binding : clause.GetBindings())
         binding->Bind(*stmt, index++);
 
     bvector<RelatedClass> specs;
@@ -1006,14 +1059,10 @@ void ECSchemaHelper::GetPaths(bvector<RelatedClassPath>& paths, bmap<ECRelations
                 continue;
             }
 
-        Utf8String relationshipAlias("rel_");
-        relationshipAlias.append(relationship->GetSchema().GetAlias()).append("_");
-        relationshipAlias.append(relationship->GetName()).append("_");
-        relationshipAlias.append(std::to_string(relationshipsUseCounter[relationship]++).c_str());
-
         SupportedEntityClassInfo const* info = resolver.GetInfo(*actualRelated);
         RelatedClass relatedClassSpec(*source, SelectClass(*actualRelated, (nullptr == info || info->IsPolymorphic())), *relationship, isForward);
-        relatedClassSpec.SetRelationshipAlias(relationshipAlias);
+        relatedClassSpec.SetRelationshipAlias(CreateRelationshipAlias(*relationship, relationshipsUseCounter));
+        relatedClassSpec.SetTargetClassAlias(CreateTargetClassAlias(*actualRelated, relationshipsUseCounter));
 
         // avoid recursive relationship loops
         if (usedRelationships.end() != usedRelationships.find(relatedClassSpec))
@@ -1033,9 +1082,6 @@ void ECSchemaHelper::GetPaths(bvector<RelatedClassPath>& paths, bmap<ECRelations
         }
 
     txn.Cancel();
-
-    for (BoundQueryValue const* binding : bindings)
-        delete binding;
 
     if (0 != depth && !specs.empty())
         {
@@ -1074,18 +1120,18 @@ static void ApplyExcludedClasses(bvector<RelatedClassPath>& paths, bvector<ECCla
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @deprecated In favor of the version with RelationshipPathSpecification. Left only to support deprecated cases.
 * @bsimethod                                    Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<RelatedClassPath> ECSchemaHelper::GetRelationshipClassPaths(RelationshipClassPathOptions const& options) const
     {
     // look for cached results first
     BeMutexHolder lock(m_relatedPathsCache->GetMutex());
-    RelatedPathsCache::Key key(options);
-    RelatedPathsCache::Result const* cacheResult = m_relatedPathsCache->Get(key);
+    RelatedPathsCacheDeprecated::Key key(options);
+    RelatedPathsCacheDeprecated::Result const* cacheResult = m_relatedPathsCacheDeprecated->Get(key);
     if (nullptr != cacheResult)
         {
-        for (auto const& pair : cacheResult->m_relationshipCounter)
-            options.m_relationshipsUseCounter[pair.first] += pair.second;
+        options.m_relationshipsUseCounter.Merge(cacheResult->m_relationshipCounter);
         return cacheResult->m_paths;
         }
     lock.unlock();
@@ -1108,8 +1154,164 @@ bvector<RelatedClassPath> ECSchemaHelper::GetRelationshipClassPaths(Relationship
     ApplyExcludedClasses(paths, resolver.GetPolymorphicallyExcludedClasses(), true, m_connection.GetECDb().Schemas());
 
     // cache
+    m_relatedPathsCacheDeprecated->Put(key, RelatedPathsCacheDeprecated::Result(paths, options.m_relationshipsUseCounter));
+    return paths;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<RelatedClassPath> ECSchemaHelper::GetPaths(ECClassId sourceClassId, bvector<RepeatableRelationshipStepSpecification> pathSpecification,
+    bset<RelatedClass>& usedRelationships, ECClassUseCounter& relationshipsUseCounter, bool handleRelatedClassesPolymorphically) const
+    {
+    bvector<RelatedClassPath> paths;
+    if (pathSpecification.empty())
+        return paths;
+
+    RepeatableRelationshipStepSpecification stepSpecification = pathSpecification.front();
+    pathSpecification.erase(pathSpecification.begin());
+
+    SupportedEntityClassInfos classInfos = GetECClassesFromClassList(stepSpecification.GetTargetClassName(), false);
+    SupportedRelationshipClassInfos relationshipInfos = GetECRelationshipClasses(stepSpecification.GetRelationshipClassName());
+    SupportedClassesResolver resolver(m_connection, ECSchemaSet(),
+        (classInfos.empty() && stepSpecification.GetTargetClassName().empty()) ? nullptr : &classInfos,
+        (relationshipInfos.empty() && stepSpecification.GetRelationshipClassName().empty()) ? nullptr : &relationshipInfos);
+
+    Savepoint txn(m_connection.GetDb(), "ECSchemaHelper::GetPaths");
+    BeAssert(txn.IsActive());
+
+    QueryClauseAndBindings clause = CreateRelationshipPathsQuery(resolver, ContainerHelpers::Create<bset<ECClassId>>(sourceClassId), stepSpecification.GetRelationDirection(), 0);
+    CachedECSqlStatementPtr stmt = m_connection.GetStatementCache().GetPreparedStatement(m_connection.GetECDb().Schemas(), m_connection.GetDb(), clause.GetClause().c_str());
+    if (!stmt.IsValid())
+        {
+        BeAssert(false);
+        return paths;
+        }
+    clause.Bind(*stmt);
+
+    // get the results
+    while (DbResult::BE_SQLITE_ROW == stmt->Step())
+        {
+        ECEntityClassCP source = GetECClass(stmt->GetValueId<ECClassId>(0))->GetEntityClassCP();
+        ECRelationshipClassCP relationship = GetECClass(stmt->GetValueId<ECClassId>(1))->GetRelationshipClassCP();
+        ECEntityClassCP actualRelated = GetECClass(stmt->GetValueId<ECClassId>(3))->GetEntityClassCP();
+        if (nullptr == source || nullptr == relationship || nullptr == actualRelated)
+            {
+            BeAssert(false);
+            continue;
+            }
+        bool isForward = (ECRelationshipEnd_Source == (ECRelationshipEnd)stmt->GetValueInt(4));
+
+        // filter by target class (if specified)
+        if (!stepSpecification.GetTargetClassName().empty())
+            {
+            ECClassCP targetClass = GetECClass(stepSpecification.GetTargetClassName().c_str());
+            if (targetClass && targetClass->GetEntityClassCP() && targetClass->Is(actualRelated))
+                actualRelated = targetClass->GetEntityClassCP();
+            else
+                continue;
+            }
+        else if (IsClassHidden(*actualRelated))
+            {
+            continue;
+            }
+
+        SupportedEntityClassInfo const* info = resolver.GetInfo(*actualRelated);
+        RelatedClass relatedClassSpec(*source, SelectClass(*actualRelated, (nullptr == info || info->IsPolymorphic())), *relationship, isForward);
+        relatedClassSpec.SetRelationshipAlias(CreateRelationshipAlias(*relationship, relationshipsUseCounter));
+        relatedClassSpec.SetTargetClassAlias(CreateTargetClassAlias(*actualRelated, relationshipsUseCounter));
+        RelatedClassPath path{relatedClassSpec};
+
+        if (stepSpecification.GetCount() > 1)
+            {
+            if (!actualRelated->Is(isForward ? relationship->GetSource().GetAbstractConstraint() : relationship->GetTarget().GetAbstractConstraint()))
+                {
+                BeAssert(false);
+                }
+            else
+                {
+                for (int i = 1; i < stepSpecification.GetCount(); ++i)
+                    {
+                    RelatedClass repeatedStep(relatedClassSpec);
+                    repeatedStep.SetSourceClass(*actualRelated);
+                    repeatedStep.SetRelationshipAlias(CreateRelationshipAlias(*relationship, relationshipsUseCounter));
+                    path.push_back(repeatedStep);
+                    }
+                }
+            }
+
+        bvector<RelatedClassPath> subPaths = GetPaths(actualRelated->GetId(), pathSpecification, usedRelationships,
+            relationshipsUseCounter, handleRelatedClassesPolymorphically);
+        if (subPaths.empty())
+            {
+            AppendPath(paths, path, handleRelatedClassesPolymorphically);
+            }
+        else
+            {
+            for (RelatedClassPath subPath : subPaths)
+                {
+                RelatedClassPath aggregatedPath = path;
+                ContainerHelpers::Push(aggregatedPath, subPath);
+                AppendPath(paths, aggregatedPath, handleRelatedClassesPolymorphically);
+                }
+            }
+        }
+
+    txn.Cancel();
+    return paths;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename TOptions>
+bvector<RelatedClassPath> ECSchemaHelper::GetCachedRelationshipPaths(TOptions const& options, std::function<bvector<RelatedClassPath>()> const& handler) const
+    {
+    // look for cached results first
+    BeMutexHolder lock(m_relatedPathsCache->GetMutex());
+    RelatedPathsCache::Key key(options);
+    RelatedPathsCache::Result const* cacheResult = m_relatedPathsCache->Get(key);
+    if (nullptr != cacheResult)
+        {
+        options.m_relationshipsUseCounter.Merge(cacheResult->m_relationshipCounter);
+        return cacheResult->m_paths;
+        }
+    lock.unlock();
+
+    // calculate
+    bvector<RelatedClassPath> paths = handler();
+
+    // cache
     m_relatedPathsCache->Put(key, RelatedPathsCache::Result(paths, options.m_relationshipsUseCounter));
     return paths;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<RelatedClassPath> ECSchemaHelper::GetRelationshipClassPaths(MultiRelationshipPathOptions const& options) const
+    {
+    return GetCachedRelationshipPaths(options, [&]()
+        {
+        bset<RelatedClass> usedRelationships;
+        auto steps = ContainerHelpers::TransformContainer<bvector<RepeatableRelationshipStepSpecification>>(options.m_path.GetSteps(),
+            [](RelationshipStepSpecification const* spec) {return RepeatableRelationshipStepSpecification(spec->GetRelationshipClassName(), spec->GetRelationDirection(), spec->GetTargetClassName()); });
+        return GetPaths(options.m_sourceClass.GetId(), steps, usedRelationships, options.m_relationshipsUseCounter, true);
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<RelatedClassPath> ECSchemaHelper::GetRelationshipClassPaths(RepeatableMultiRelationshipPathOptions const& options) const
+    {
+    return GetCachedRelationshipPaths(options, [&]()
+        {
+        bset<RelatedClass> usedRelationships;
+        auto steps = ContainerHelpers::TransformContainer<bvector<RepeatableRelationshipStepSpecification>>(options.m_path.GetSteps(),
+            [](RepeatableRelationshipStepSpecification const* spec) {return RepeatableRelationshipStepSpecification(*spec); });
+        return GetPaths(options.m_sourceClass.GetId(), steps, usedRelationships, options.m_relationshipsUseCounter, true);
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1179,135 +1381,171 @@ RelatedClass ECSchemaHelper::GetForeignKeyClass(ECPropertyCR prop) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+static bvector<SelectClass> GetAllDerivedClasses(ECClassCR baseClass)
+    {
+    bvector<SelectClass> derivedClasses;
+    for (ECClassCP derivedClass : baseClass.GetDerivedClasses())
+        {
+        bvector<SelectClass> nestedDerivedClasses = GetAllDerivedClasses(*derivedClass);
+        derivedClasses.push_back(SelectClass(*derivedClass, false));
+        ContainerHelpers::Push(derivedClasses, nestedDerivedClasses);
+        }
+    return derivedClasses;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<RelatedClassPath> ECSchemaHelper::GetPolymorphicallyRelatedClassesWithInstances(ECClassCR sourceClass, Utf8StringCR relationshipNames,
-    ECRelatedInstanceDirection direction, Utf8StringCR baseClassNames, RelatedClassPathCR pathFromSelectToSourceClass, InstanceFilteringParams const* filteringParams) const
+bvector<RelatedClass> ECSchemaHelper::GetPolymorphicallyRelatedClasses(RelatedClassCR relatedClass, ECClassUseCounter& relationshipsUseCounter) const
     {
-    bvector<RelatedClassPath> paths;
-    Savepoint txn(m_connection.GetDb(), "ECSchemaHelper::GetPolymorphicallyRelatedClassesWithInstances");
-    BeAssert(txn.IsActive());
-
-    bool isNested = !pathFromSelectToSourceClass.empty();
-    ComplexGenericQueryPtr filteringQuery = ComplexGenericQuery::Create();
-    filteringQuery->SelectContract(*SimpleQueryContract::Create(*PresentationQueryContractSimpleField::Create("ECInstanceId", "ECInstanceId")), isNested ? "nestedRel" : "this");
-    filteringQuery->From(sourceClass, true, isNested ? "nestedRel" : "this");
-    if (nullptr != filteringParams)
-        {
-        if (InstanceFilteringResult::NoResults == QueryBuilderHelpers::ApplyInstanceFilter(*filteringQuery, *filteringParams, RelatedClassPath(pathFromSelectToSourceClass).Reverse("", false)))
-            return paths;
-        }
-    BoundQueryValuesList filterBindings = filteringQuery->GetBoundValues();
-    if (nullptr != filteringParams)
-        {
-        for (RelatedClass const& relatedInstanceClass : filteringParams->GetSelectInfo().GetRelatedInstanceClasses())
-            filteringQuery->Join(relatedInstanceClass);
-        }
-
-    SupportedEntityClassInfos baseClassInfos = GetECClassesFromClassList(baseClassNames, false);
-    bvector<ECEntityClassCP> baseClasses = ContainerHelpers::TransformContainer<bvector<ECEntityClassCP>>(baseClassInfos, [](SupportedEntityClassInfo const& i){return &i.GetClass();});
-    bvector<ECRelationshipClassCP> relationships;
-    if (relationshipNames.empty())
-        {
-        bmap<ECRelationshipClassCP, int> relationshipCounter;
-        RelationshipClassPathOptions params(sourceClass, (int)direction, 0, "", "", baseClassNames.c_str(), true, relationshipCounter);
-        bvector<RelatedClassPath> relationshipPaths = GetRelationshipClassPaths(params);
-        for (RelatedClassPath const& path : relationshipPaths)
-            {
-            if (path.size() != 1)
-                {
-                BeAssert(false);
-                continue;
-                }
-
-            ECRelationshipClassCP relationship = path[0].GetRelationship();
-            if (relationships.end() == std::find(relationships.begin(), relationships.end(), relationship))
-                relationships.push_back(relationship);
-            }
-        }
-    else
-        {
-        SupportedRelationshipClassInfos relationshipInfos = GetECRelationshipClasses(relationshipNames);
-        std::transform(relationshipInfos.begin(), relationshipInfos.end(), std::back_inserter(relationships),
-            [](SupportedRelationshipClassInfo const& info) { return &info.GetClass(); });
-        }
-
-    PolymorphicallyRelatedClassesCache::Key key = {&sourceClass, direction, relationships, baseClasses};
+#ifdef wip_check_if_necessary
+    PolymorphicallyRelatedClassesCache::Key key = {&sourceClass, direction, relationships, targetBaseClasses};
     BeMutexHolder lock(m_polymorphicallyRelatedClassesCache->GetMutex());
     bvector<RelatedClass> const* polymorphicallyRelatedClasses = m_polymorphicallyRelatedClassesCache->Get(key);
     if (!polymorphicallyRelatedClasses)
         {
-        bool first = true;
-        Utf8String q("SELECT RelationshipId, RelatedClassId FROM (");
-        for (ECRelationshipClassCP rel : relationships)
-            {
-            if (!first)
-                q.append(" UNION ALL ");
-            q.append("SELECT ");
-            q.append("r.ECClassId AS RelationshipId,");
-            q.append("r.").append(ECRelatedInstanceDirection::Forward == direction ? "TargetECClassId" : "SourceECClassId").append(" AS RelatedClassId,");
-            q.append("b.TargetECInstanceId AS BaseClassId ");
-            q.append("FROM ").append(rel->GetECSqlName()).append(" r ");
-            q.append("JOIN [meta].[ClassHasAllBaseClasses] b ON b.SourceECInstanceId = r.");
-            q.append(ECRelatedInstanceDirection::Forward == direction ? "SourceECClassId" : "TargetECClassId");
-            first = false;
-            }
-        q.append(") WHERE BaseClassId = ? ");
-        q.append("GROUP BY RelationshipId, RelatedClassId");
-
-        CachedECSqlStatementPtr stmt = m_connection.GetStatementCache().GetPreparedStatement(m_connection.GetECDb().Schemas(),
-            m_connection.GetDb(), q.c_str());
-        if (stmt.IsNull())
-            {
-            BeAssert(false);
-            return bvector<RelatedClassPath>();
-            }
-        stmt->BindId(1, sourceClass.GetId());
-
+#endif
         bvector<RelatedClass> vec;
-        while (BE_SQLITE_ROW == stmt->Step())
-            {
-            ECClassId relationshipId = stmt->GetValueId<ECClassId>(0);
-            ECRelationshipClassCP relationship = GetECClass(relationshipId)->GetRelationshipClassCP();
-            ECClassId targetClassId = stmt->GetValueId<ECClassId>(1);
-            ECEntityClassCP targetClass = GetECClass(targetClassId)->GetEntityClassCP();
 
-            if (IsClassHidden(*targetClass) && baseClassInfos.end() == baseClassInfos.find(*targetClass))
+        RelatedClass baseRelatedClass(relatedClass);
+        baseRelatedClass.GetTargetClass().SetIsSelectPolymorphic(false);
+        vec.push_back(baseRelatedClass);
+
+        bvector<SelectClass> derivedClasses = GetAllDerivedClasses(relatedClass.GetTargetClass().GetClass());
+        for (SelectClass derivedClass : derivedClasses)
+            {
+            if (IsClassHidden(derivedClass.GetClass()))
                 continue;
 
-            vec.push_back(RelatedClass(sourceClass,
-                SelectClassWithExcludes(*targetClass, true),
-                *relationship,
-                ECRelatedInstanceDirection::Forward == direction,
-                Utf8String("target_").append(std::to_string(vec.size()).c_str()).c_str(),
-                Utf8String("rel_").append(std::to_string(vec.size()).c_str()).c_str(),
-                false));
+            RelatedClass derivedRelatedClass(relatedClass);
+            derivedRelatedClass.SetTargetClass(derivedClass);
+            derivedRelatedClass.SetTargetClassAlias(CreateTargetClassAlias(derivedClass.GetClass(), relationshipsUseCounter));
+            derivedRelatedClass.SetRelationshipAlias(CreateRelationshipAlias(*relatedClass.GetRelationship(), relationshipsUseCounter));
+            vec.push_back(derivedRelatedClass);
             }
+        return vec;
+
+#ifdef wip_check_if_necessary
         polymorphicallyRelatedClasses = &m_polymorphicallyRelatedClassesCache->Add(key, std::move(vec));
         }
+    return *polymorphicallyRelatedClasses;
+#endif
+    }
 
-    bvector<RelatedClass> polymorphicallyRelatedClassesCopy = *polymorphicallyRelatedClasses;
-    lock.unlock();
-
-    for (RelatedClass const& relatedClass : polymorphicallyRelatedClassesCopy)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<RelatedClassPath> ECSchemaHelper::SplitIntoDerivedClassPaths(bvector<RelatedClassPath> const& paths) const
+    {
+    ECClassUseCounter relationshipCounter;
+    bvector<RelatedClassPath> polymorphicallyRelatedPaths;
+    for (RelatedClassPathCR path : paths)
         {
-        BoundQueryValuesList filterBindingsCopy;
-        for (BoundQueryValue const* binding : filterBindings)
-            filterBindingsCopy.push_back(binding->Clone());
+        if (path.empty())
+            continue;
 
-        RefCountedPtr<SimpleQueryContract> contract = SimpleQueryContract::Create();
-        contract->AddField(*PresentationQueryContractSimpleField::Create("TargetClassId", relatedClass.IsForwardRelationship() ? "TargetECClassId" : "SourceECClassId"));
-        contract->AddField(*PresentationQueryContractSimpleField::Create("SourceInstanceId", relatedClass.IsForwardRelationship() ?  "SourceECInstanceId" : "TargetECInstanceId"));
-        ComplexGenericQueryPtr nestedQuery = ComplexGenericQuery::Create();
-        nestedQuery->SelectContract(*contract, "rel");
-        nestedQuery->From(*relatedClass.GetRelationship(), true, "rel");
-        nestedQuery->Where(relatedClass.IsForwardRelationship() ? "[rel].[TargetECClassId] = ?" : "[rel].[SourceECClassId] = ?", {new BoundQueryId(relatedClass.GetTargetClass().GetClass().GetId())});
+        RelatedClassCR targetRelatedClass = path.back();
+        bvector<RelatedClass> polymorphicallyRelatedTargetClasses = GetPolymorphicallyRelatedClasses(targetRelatedClass, relationshipCounter);
+        for (RelatedClassCR polymorphicallyRelatedTargetClass : polymorphicallyRelatedTargetClasses)
+            {
+            RelatedClassPath polymorphicallyRelatedPath(path);
+            polymorphicallyRelatedPath.pop_back();
+            polymorphicallyRelatedPath.push_back(polymorphicallyRelatedTargetClass);
+            polymorphicallyRelatedPaths.push_back(polymorphicallyRelatedPath);
+            }
+        }
+    return polymorphicallyRelatedPaths;
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+enum class RelationshipsJoinIdType
+    {
+    ECClassId,
+    ECInstanceId,
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+static void JoinRelationships(ComplexGenericQueryR query, RelatedClassPath const& path, RelationshipsJoinIdType idType, Utf8StringP lastJoinAlias, bool* wasLastJoinForward)
+    {
+    static Utf8CP s_sourceECClassId = "SourceECClassId";
+    static Utf8CP s_sourceECInstanceId = "SourceECInstanceId";
+    static Utf8CP s_targetECClassId = "TargetECClassId";
+    static Utf8CP s_targetECInstanceId = "TargetECInstanceId";
+
+    Utf8CP sourceId = (idType == RelationshipsJoinIdType::ECClassId) ? s_sourceECClassId : s_sourceECInstanceId;
+    Utf8CP targetId = (idType == RelationshipsJoinIdType::ECClassId) ? s_targetECClassId : s_targetECInstanceId;
+
+    Utf8String prevJoinAlias;
+    bool prevJoinWasForward = false;
+    for (size_t i = 0; i < path.size(); ++i)
+        {
+        RelatedClassCR r = path[i];
+        Utf8String joinAlias = Utf8String("r").append(std::to_string(i).c_str());
+        if (i == 0)
+            {
+            query.From(*r.GetRelationship(), true, joinAlias.c_str());
+            }
+        else
+            {
+            Utf8PrintfString joinClause("[%s].[%s] = [%s].[%s]",
+                joinAlias.c_str(), r.IsForwardRelationship() ? sourceId : targetId,
+                prevJoinAlias.c_str(), prevJoinWasForward ? targetId : sourceId);
+            query.Join(SelectClass(*r.GetRelationship(), true), joinAlias.c_str(), QueryClauseAndBindings(joinClause), false);
+            }
+        prevJoinAlias = joinAlias;
+        prevJoinWasForward = r.IsForwardRelationship();
+        }
+    if (nullptr != lastJoinAlias)
+        lastJoinAlias->AssignOrClear(prevJoinAlias.c_str());
+    if (nullptr != wasLastJoinForward)
+        *wasLastJoinForward = prevJoinWasForward;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<RelatedClassPath> ECSchemaHelper::GetRelatedPathsWithInstances(RelatedClassPathCR pathToSelectClass, bvector<RelatedClassPath> const& pathsFromSelectToPropertyClass,
+    InstanceFilteringParams const* filteringParams) const
+    {
+    bvector<RelatedClassPath> filteredRelatedPaths;
+    for (RelatedClassPath const& path : pathsFromSelectToPropertyClass)
+        {
+        if (path.empty())
+            continue;
+
+        Utf8String filteringSelectAlias = (pathToSelectClass.empty()) ? "this" : "nestedRel";
+        ComplexGenericQueryPtr filteringQuery = ComplexGenericQuery::Create();
+        filteringQuery->SelectContract(*SimpleQueryContract::Create(*PresentationQueryContractSimpleField::Create("ECInstanceId", "ECInstanceId")), filteringSelectAlias.c_str());
+        filteringQuery->From(*path.front().GetSourceClass(), true, filteringSelectAlias.c_str());
+        if (nullptr != filteringParams)
+            {
+            if (InstanceFilteringResult::NoResults == QueryBuilderHelpers::ApplyInstanceFilter(*filteringQuery, *filteringParams, RelatedClassPath(pathToSelectClass).Reverse("", false)))
+                return bvector<RelatedClassPath>();
+            for (RelatedClassPathCR relatedInstancePath : filteringParams->GetSelectInfo().GetRelatedInstancePaths())
+                filteringQuery->Join(relatedInstancePath);
+            }
+
+        RefCountedPtr<SimpleQueryContract> contract = SimpleQueryContract::Create(
+            {
+            PresentationQueryContractSimpleField::Create("", "1", false),
+            });
         ComplexGenericQueryPtr query = ComplexGenericQuery::Create();
-        query->SelectAll();
-        query->From(*nestedQuery);
-        query->Where(Utf8String("[SourceInstanceId] IN (").append(filteringQuery->ToString()).append(")").c_str(), filterBindingsCopy);
-        query->GroupByContract(*SimpleQueryContract::Create(*PresentationQueryContractSimpleField::Create("TargetClassId", "TargetClassId")));
+        query->SelectContract(*contract, "r0");
+
+        Utf8String lastJoinAlias;
+        bool wasLastJoinForward;
+        JoinRelationships(*query, path, RelationshipsJoinIdType::ECInstanceId, &lastJoinAlias, &wasLastJoinForward);
+
+        query->Where(Utf8PrintfString("[%s].[%s] = ?", lastJoinAlias.c_str(), wasLastJoinForward ? "TargetECClassId" : "SourceECClassId").c_str(),
+            {new BoundQueryId(path.back().GetTargetClass().GetClass().GetId())});
+        query->Where(Utf8PrintfString("[%s].[%s] IN (%s)", "r0", path.front().IsForwardRelationship() ? "SourceECInstanceId" : "TargetECInstanceId", filteringQuery->ToString().c_str()).c_str(),
+            filteringQuery->GetBoundValues().Clone());
 
         CachedECSqlStatementPtr stmt = m_connection.GetStatementCache().GetPreparedStatement(m_connection.GetECDb().Schemas(),
             m_connection.GetDb(), query->ToString().c_str());
@@ -1319,129 +1557,92 @@ bvector<RelatedClassPath> ECSchemaHelper::GetPolymorphicallyRelatedClassesWithIn
 
         query->BindValues(*stmt);
 
-        while (BE_SQLITE_ROW == stmt->Step())
+        if (BE_SQLITE_ROW == stmt->Step())
+            filteredRelatedPaths.push_back(path);
+        }
+    return filteredRelatedPaths;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+bset<ECInstanceId> ECSchemaHelper::GetTargetIds(bvector<RelatedClassPath> const& paths, bset<ECInstanceId> const& sourceIds) const
+    {
+    GenericQueryPtr nestedQuery;
+    for (RelatedClassPath const& path : paths)
+        {
+        if (path.empty())
+            continue;
+
+        ComplexGenericQueryPtr query = ComplexGenericQuery::Create();
+
+        Utf8String lastJoinAlias;
+        JoinRelationships(*query, path, RelationshipsJoinIdType::ECClassId, &lastJoinAlias, nullptr);
+
+        RefCountedPtr<SimpleQueryContract> contract = SimpleQueryContract::Create();
+        RefCountedPtr < PresentationQueryContractSimpleField> targetIdField = PresentationQueryContractSimpleField::Create("TargetId", path.back().IsForwardRelationship() ? "TargetECInstanceId" : "SourceECInstanceId");
+        targetIdField->SetPrefixOverride(lastJoinAlias);
+        contract->AddField(*targetIdField);
+        contract->AddField(*PresentationQueryContractSimpleField::Create("SourceId", path.front().IsForwardRelationship() ? "SourceECInstanceId" : "TargetECInstanceId"));
+        query->SelectContract(*contract, "r0");
+        QueryBuilderHelpers::SetOrUnion<GenericQuery>(nestedQuery, *query);
+        }
+
+    ComplexGenericQueryPtr query = ComplexGenericQuery::Create();
+    query->SelectAll();
+    query->From(*nestedQuery);
+    query->Where(IdsFilteringHelper<bset<ECInstanceId>>(sourceIds).Create("[SourceId]"));
+
+    CachedECSqlStatementPtr stmt = m_connection.GetStatementCache().GetPreparedStatement(m_connection.GetECDb().Schemas(),
+        m_connection.GetDb(), query->ToString().c_str());
+    if (stmt.IsNull())
+        {
+        BeAssert(false);
+        return bset<ECInstanceId>();
+        }
+
+    query->BindValues(*stmt);
+
+    bset<ECInstanceId> targetIds;
+    while (BE_SQLITE_ROW == stmt->Step())
+        targetIds.insert(stmt->GetValueId<ECInstanceId>(0));
+    return targetIds;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void SupportedClassesParser::Parse(ECSchemaHelper const& helper, Utf8StringCR str, bool supportExclusion)
+    {
+    ClassNamesParser names(str.c_str(), supportExclusion);
+    for (auto entry : names)
+        {
+        ECSchemaCP ecSchema = helper.GetSchema(entry.GetSchemaName());
+        if (nullptr == ecSchema)
             {
-            ECClassId derivedClassId = stmt->GetValueId<ECClassId>(0);
-            ECClassCP derivedClass = GetECClass(derivedClassId);
-
-            bool derivesFromBase = false;
-            for (ECEntityClassCP baseClass : baseClasses)
-                {
-                if (derivedClass->Is(baseClass))
-                    {
-                    derivesFromBase = true;
-                    break;
-                    }
-                }
-            if (!derivesFromBase && !baseClasses.empty())
-                continue;
-
-            RelatedClass derivedPath(sourceClass, *derivedClass, *relationships[0], relatedClass.IsForwardRelationship());
-            AppendPath(paths, {derivedPath}, true);
+            BeAssert(false);
+            continue;
             }
-        }
-    return paths;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SupportedClassNamesParser::UpdateFlags(Utf8String::const_iterator& begin, Utf8String::const_iterator const& end)
-    {
-    if (end - begin >= 3 && *begin == 'P' && *(begin + 1) == 'E' && *(begin + 2) == ':')
-        {
-        m_currentFlags = CLASS_FLAG_Polymorphic | CLASS_FLAG_Exclude;
-        begin = begin + 3;
-        return true;
-        }
-    if (end - begin >= 2 && *begin == 'E' && *(begin + 1) == ':')
-        {
-        m_currentFlags = CLASS_FLAG_Exclude;
-        begin = begin + 2;
-        return true;
-        }
-    return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SupportedClassNamesParser::Advance(Utf8String::const_iterator& begin, Utf8String::const_iterator& end) const
-    {
-    auto next = end + 1;
-    if (m_str.end() != next && ' ' == *next)
-        begin = end = next + 1;
-    else
-        begin = end = next;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SupportedClassNamesParser::ParseSchema(Utf8String::const_iterator const& begin, Utf8String::const_iterator const& end)
-    {
-    m_currentSchema = m_helper.GetSchema(Utf8String(begin, end).c_str());
-    if (nullptr == m_currentSchema)
-        BeAssert(false);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SupportedClassNamesParser::ParseClass(Utf8String::const_iterator const& begin, Utf8String::const_iterator const& end)
-    {
-    if (nullptr == m_currentSchema)
-        {
-        BeAssert(false);
-        return;
-        }
-    ECClassCP ecClass = m_currentSchema->GetClassCP(Utf8String(begin, end).c_str());
-    if (nullptr == ecClass)
-        {
-        BeAssert(false);
-        return;
-        }
-
-    SupportedClassInfo<ECClass> info(*ecClass, m_currentFlags);
-    auto iter = m_classInfos.find(info);
-    if (m_classInfos.end() != iter)
-        {
-        if ((CLASS_FLAG_Exclude | CLASS_FLAG_Polymorphic) == ((CLASS_FLAG_Exclude | CLASS_FLAG_Polymorphic) & m_currentFlags))
-            m_classInfos.erase(iter);
+        ECClassCP ecClass = ecSchema->GetClassCP(entry.GetClassName());
+        if (nullptr == ecClass)
+            {
+            BeAssert(false);
+            continue;
+            }
+        SupportedClassInfo<ECClass> info(*ecClass, entry.GetFlags());
+        auto iter = m_classInfos.find(info);
+        if (m_classInfos.end() != iter)
+            {
+            if (entry.IsPolymorphic() && entry.IsExclude())
+                m_classInfos.erase(iter);
+            else
+                iter->SetFlags(iter->GetFlags() | entry.GetFlags());
+            }
         else
-            iter->SetFlags(iter->GetFlags() | m_currentFlags);
-        }
-    else
-        {
-        m_classInfos.insert(info);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SupportedClassNamesParser::Parse()
-    {
-    auto begin = m_str.begin();
-    auto end = m_str.begin();
-
-    while (m_str.end() != end)
-        {
-        if (*end == ':')
             {
-            if (!m_supportExclusion || !UpdateFlags(begin, end + 1))
-                ParseSchema(begin, end);
-            Advance(begin, end);
+            m_classInfos.insert(info);
             }
-        else if (*end == ',' || *end == ';')
-            {
-            ParseClass(begin, end);
-            Advance(begin, end);
-            }
-        end++;
         }
-    if (end != begin)
-        ParseClass(begin, end);
     }
 
 static BeMutex s_getIntanceMutex;

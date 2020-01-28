@@ -20,21 +20,42 @@ ContentRelatedInstancesSpecification::ContentRelatedInstancesSpecification ()
     {}
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentRelatedInstancesSpecification::ContentRelatedInstancesSpecification(ContentRelatedInstancesSpecification const& other)
+    : ContentSpecification(other), m_skipRelatedLevel(other.m_skipRelatedLevel), m_isRecursive(other.m_isRecursive),
+    m_instanceFilter(other.m_instanceFilter), m_requiredDirection(other.m_requiredDirection),
+    m_relationshipClassNames(other.m_relationshipClassNames), m_relatedClassNames(other.m_relatedClassNames)
+    {
+    CommonToolsInternal::CopyRules(m_relationshipPaths, other.m_relationshipPaths, this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentRelatedInstancesSpecification::ContentRelatedInstancesSpecification(ContentRelatedInstancesSpecification&& other)
+    : ContentSpecification(other), m_skipRelatedLevel(other.m_skipRelatedLevel), m_isRecursive(other.m_isRecursive), 
+    m_instanceFilter(std::move(other.m_instanceFilter)), m_requiredDirection(other.m_requiredDirection), 
+    m_relationshipClassNames(std::move(other.m_relationshipClassNames)), m_relatedClassNames(std::move(other.m_relatedClassNames))
+    {
+    m_relationshipPaths.swap(other.m_relationshipPaths);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentRelatedInstancesSpecification::ContentRelatedInstancesSpecification 
-(
-int                        priority,
-int                        skipRelatedLevel,
-bool                       isRecursive,
-Utf8String                 instanceFilter,
-RequiredRelationDirection  requiredDirection,
-Utf8String                 relationshipClassNames,
-Utf8String                 relatedClassNames
-) : ContentSpecification (priority), m_skipRelatedLevel (skipRelatedLevel), m_isRecursive(isRecursive),
-    m_instanceFilter (instanceFilter), m_requiredDirection (requiredDirection),
-    m_relationshipClassNames (relationshipClassNames), m_relatedClassNames (relatedClassNames)
+ContentRelatedInstancesSpecification::ContentRelatedInstancesSpecification(int priority, int skipRelatedLevel, bool isRecursive, 
+    Utf8String instanceFilter, RequiredRelationDirection requiredDirection, Utf8String relationshipClassNames, Utf8String relatedClassNames) 
+    : ContentSpecification (priority), m_skipRelatedLevel (skipRelatedLevel), m_isRecursive(isRecursive), m_instanceFilter (instanceFilter), 
+    m_requiredDirection (requiredDirection), m_relationshipClassNames (relationshipClassNames), m_relatedClassNames (relatedClassNames)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentRelatedInstancesSpecification::~ContentRelatedInstancesSpecification()
     {
+    CommonToolsInternal::FreePresentationRules(m_relationshipPaths);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -111,12 +132,21 @@ bool ContentRelatedInstancesSpecification::_ReadJson(JsonValueCR json)
     {
     if (!ContentSpecification::_ReadJson(json))
         return false;
-    m_skipRelatedLevel = json[COMMON_JSON_ATTRIBUTE_SKIPRELATEDLEVEL].asInt(0);
-    m_isRecursive = json[CONTENT_RELATED_INSTANCES_SPECIFICATION_JSON_ATTRIBUTE_ISRECURSIVE].asBool(false);
+
+    if (json.isMember(COMMON_JSON_ATTRIBUTE_RELATIONSHIPPATHS))
+        {
+        CommonToolsInternal::LoadFromJson(json[COMMON_JSON_ATTRIBUTE_RELATIONSHIPPATHS], m_relationshipPaths, &CommonToolsInternal::LoadRuleFromJson<RepeatableRelationshipPathSpecification>, this);
+        }
+    else
+        {
+        // all of this is deprecated in favor of relationship paths:
+        m_skipRelatedLevel = json[COMMON_JSON_ATTRIBUTE_SKIPRELATEDLEVEL].asInt(0);
+        m_isRecursive = json[CONTENT_RELATED_INSTANCES_SPECIFICATION_JSON_ATTRIBUTE_ISRECURSIVE].asBool(false);
+        m_relationshipClassNames = CommonToolsInternal::SchemaAndClassNamesToString(json[COMMON_JSON_ATTRIBUTE_RELATIONSHIPS]);
+        m_relatedClassNames = CommonToolsInternal::SchemaAndClassNamesToString(json[COMMON_JSON_ATTRIBUTE_RELATEDCLASSES]);
+        m_requiredDirection = CommonToolsInternal::ParseRequiredDirectionString(json[COMMON_JSON_ATTRIBUTE_REQUIREDDIRECTION].asCString(""));
+        }
     m_instanceFilter = json[COMMON_JSON_ATTRIBUTE_INSTANCEFILTER].asCString("");
-    m_relationshipClassNames = CommonToolsInternal::SchemaAndClassNamesToString(json[COMMON_JSON_ATTRIBUTE_RELATIONSHIPS]);
-    m_relatedClassNames = CommonToolsInternal::SchemaAndClassNamesToString(json[COMMON_JSON_ATTRIBUTE_RELATEDCLASSES]);
-    m_requiredDirection = CommonToolsInternal::ParseRequiredDirectionString(json[COMMON_JSON_ATTRIBUTE_REQUIREDDIRECTION].asCString(""));
     return true;
     }
 
@@ -138,57 +168,9 @@ void ContentRelatedInstancesSpecification::_WriteJson(JsonValueR json) const
         json[COMMON_JSON_ATTRIBUTE_RELATEDCLASSES] = CommonToolsInternal::SchemaAndClassNamesToJson(m_relatedClassNames);
     if (RequiredRelationDirection_Both != m_requiredDirection)
         json[COMMON_JSON_ATTRIBUTE_REQUIREDDIRECTION] = CommonToolsInternal::FormatRequiredDirectionString(m_requiredDirection);
+    if (!m_relationshipPaths.empty())
+        CommonToolsInternal::WriteRulesToJson<RepeatableRelationshipPathSpecification, bvector<RepeatableRelationshipPathSpecification*>>(json[COMMON_JSON_ATTRIBUTE_RELATIONSHIPPATHS], m_relationshipPaths);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Eligijus.Mauragas               10/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-int ContentRelatedInstancesSpecification::GetSkipRelatedLevel (void) const { return m_skipRelatedLevel; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Kelly.Shiptoski                 06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ContentRelatedInstancesSpecification::SetSkipRelatedLevel (int value) { m_skipRelatedLevel = value; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Eligijus.Mauragas               10/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ContentRelatedInstancesSpecification::GetInstanceFilter (void) const { return m_instanceFilter; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Kelly.Shiptoski                 06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ContentRelatedInstancesSpecification::SetInstanceFilter (Utf8StringCR value) { m_instanceFilter = value; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Eligijus.Mauragas               10/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-RequiredRelationDirection ContentRelatedInstancesSpecification::GetRequiredRelationDirection (void) const { return m_requiredDirection; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Kelly.Shiptoski                 06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ContentRelatedInstancesSpecification::SetRequiredRelationDirection (RequiredRelationDirection value) { m_requiredDirection = value; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Eligijus.Mauragas               10/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ContentRelatedInstancesSpecification::GetRelationshipClassNames (void) const { return m_relationshipClassNames; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Kelly.Shiptoski                 06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ContentRelatedInstancesSpecification::SetRelationshipClassNames (Utf8StringCR value) { m_relationshipClassNames = value; } 
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Eligijus.Mauragas               10/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ContentRelatedInstancesSpecification::GetRelatedClassNames (void) const { return m_relatedClassNames; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Kelly.Shiptoski                 06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ContentRelatedInstancesSpecification::SetRelatedClassNames (Utf8StringCR value) { m_relatedClassNames = value; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                10/2017
@@ -202,5 +184,13 @@ MD5 ContentRelatedInstancesSpecification::_ComputeHash(Utf8CP parentHash) const
     md5.Add(&m_requiredDirection, sizeof(m_requiredDirection));
     md5.Add(m_relationshipClassNames.c_str(), m_relationshipClassNames.size());
     md5.Add(m_relatedClassNames.c_str(), m_relatedClassNames.size());
+
+    Utf8String currentHash = md5.GetHashString();
+    for (RepeatableRelationshipPathSpecification const* spec : m_relationshipPaths)
+        {
+        Utf8StringCR specHash = spec->GetHash(currentHash.c_str());
+        md5.Add(specHash.c_str(), specHash.size());
+        }
+
     return md5;
     }

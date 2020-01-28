@@ -166,10 +166,41 @@ public:
     * @bsimethod                                    Grigas.Petraitis                12/2019
     +---------------+---------------+---------------+---------------+---------------+------*/
     template<typename TTargetContainerType, typename TSourceContainerType, typename TFunctor>
+    static TTargetContainerType& TransformContainer(TTargetContainerType& target, TSourceContainerType const& source, TFunctor&& f)
+        {
+        std::transform(source.begin(), source.end(), std::inserter(target, target.end()), f);
+        return target;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis                12/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    template<typename TTargetContainerType, typename TSourceContainerType, typename TFunctor>
     static TTargetContainerType TransformContainer(TSourceContainerType const& source, TFunctor&& f)
         {
         TTargetContainerType target;
         std::transform(source.begin(), source.end(), std::inserter(target, target.end()), f);
+        return target;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis                12/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    template<typename TTargetContainerType, typename TSourceContainerType>
+    static TTargetContainerType TransformContainer(TSourceContainerType const& source)
+        {
+        TTargetContainerType target;
+        std::copy(source.begin(), source.end(), std::inserter(target, target.end()));
+        return target;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis                01/2020
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    template<typename TTargetContainerType, typename TSourceContainerType>
+    static TTargetContainerType& Push(TTargetContainerType& target, TSourceContainerType const& source)
+        {
+        std::copy(source.begin(), source.end(), std::inserter(target, target.end()));
         return target;
         }
 
@@ -182,6 +213,28 @@ public:
         return TransformContainer<bvector<TKey>>(map, [](bpair<TKey, TValue> const& entry){return entry.first;});
         }
 
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis                01/2020
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    template<typename TKey, typename TValue>
+    static bvector<TValue> SerializeMapListValues(bmap<TKey, bvector<TValue>> const& map)
+        {
+        bvector<TValue> serialized;
+        for (bpair<TKey, bvector<TValue>> const& entry : map)
+            Push(serialized, entry.second);
+        return serialized;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis                01/2020
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    template<typename TContainerType, typename TItemType>
+    static TContainerType Create(TItemType item)
+        {
+        TContainerType container;
+        container.insert(container.end(), item);
+        return container;
+        }
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

@@ -49,12 +49,12 @@ public:
     static Utf8String SchemaAndClassNameToString(JsonValueCR json);
     static Json::Value SchemaAndClassNameToJson(Utf8StringCR str);
     static Json::Value SchemaAndClassNameToJson(Utf8StringCR schemaName, Utf8StringCR className);
-    
+
     static Utf8String SchemaAndClassNamesToString(JsonValueCR json);
     static Json::Value SchemaAndClassNamesToJson(Utf8StringCR str);
 
     //! Copies the rules in source vector into the target vector.
-    template<typename T> 
+    template<typename T>
     static void CopyRules(bvector<T*>& target, bvector<T*> const& source, HashableBase* parentHashable)
         {
         for (T* rule : source)
@@ -64,9 +64,9 @@ public:
             target.push_back(copy);
             }
         }
-    
+
     //! Clones the rules in source vector into the target vector.
-    template<typename T> 
+    template<typename T>
     static void CloneRules(bvector<T*>& target, bvector<T*> const& source, HashableBase* parentHashable)
         {
         for (T const* rule : source)
@@ -152,15 +152,14 @@ public:
         for (RuleType const* rule: rulesCollection)
             rule->WriteXml (parentXmlNode);
         }
-    
-    
+
     template<typename TRule, typename TCollection>
     static void AddToCollection(TCollection& collection, TRule* rule)
         {
         if (nullptr != rule)
             collection.push_back(rule);
         }
-    
+
     template<typename TRule, typename TCollection>
     static void AddToCollectionByPriority(TCollection& collection, TRule* rule)
         {
@@ -180,7 +179,7 @@ public:
             DELETE_AND_CLEAR(rule);
         return rule;
         }
-    
+
     //! Load rules from json array and add them to collection
     template<typename TRule>
     static void LoadFromJson(JsonValueCR json, bvector<TRule*>& collection, TRule*(*factory)(JsonValueCR), HashableBase* parentHashable)
@@ -193,7 +192,7 @@ public:
             AddToCollection(collection, rule);
             }
         }
-    
+
     //! Load rules from json array and add them to collection by priority
     template<typename TRule>
     static void LoadFromJsonByPriority(JsonValueCR json, bvector<TRule*>& collection, TRule*(*factory)(JsonValueCR), HashableBase* parentHashable)
@@ -214,6 +213,68 @@ public:
         for (TRule const* rule : rulesCollection)
             rulesList.append(rule->WriteJson());
         }
+};
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                01/2017
++===============+===============+===============+===============+===============+======*/
+enum ClassSelectionFlags
+    {
+    CLASS_SELECTION_FLAG_Include = 1 << 0,
+    CLASS_SELECTION_FLAG_Exclude = 1 << 1,
+    CLASS_SELECTION_FLAG_Polymorphic = 1 << 2,
+    };
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                01/2020
++===============+===============+===============+===============+===============+======*/
+struct ClassNamesParser
+{
+    struct Entry
+    {
+    private:
+        Utf8CP m_schemaName;
+        Utf8CP m_className;
+        int m_flags;
+    public:
+        Entry(Utf8CP schemaName, Utf8CP className, int flags) 
+            : m_schemaName(schemaName), m_className(className), m_flags(flags) 
+            {}
+        Utf8CP GetSchemaName() const {return m_schemaName;}
+        Utf8CP GetClassName() const {return m_className;}
+        int GetFlags() const {return m_flags;}
+        bool IsInclude() const {return 0 != ((int)CLASS_SELECTION_FLAG_Include & m_flags);}
+        bool IsExclude() const {return 0 != ((int)CLASS_SELECTION_FLAG_Exclude & m_flags);}
+        bool IsPolymorphic() const {return 0 != ((int)CLASS_SELECTION_FLAG_Polymorphic & m_flags);}
+    };
+    struct Iterator
+    {
+    private:
+        ClassNamesParser const& m_parser;
+        Utf8CP m_startPos;
+        Utf8CP m_currentPos;
+        int m_currentFlags;
+        Utf8String m_currentSchemaName;
+        Utf8String m_currentClassName;
+    private:
+        ECPRESENTATION_EXPORT void Advance();
+    public:
+        Iterator(ClassNamesParser const& parser, Utf8CP initialPos) 
+            : m_parser(parser), m_startPos(initialPos), m_currentPos(initialPos), m_currentFlags(CLASS_SELECTION_FLAG_Include | CLASS_SELECTION_FLAG_Polymorphic)
+            { Advance(); }
+        Entry operator*() const { return Entry(m_currentSchemaName.c_str(), m_currentClassName.c_str(), m_currentFlags); }
+        Iterator& operator=(Iterator const& rhs) { m_startPos = rhs.m_startPos; m_currentPos = rhs.m_currentPos; return *this; }
+        Iterator& operator++() { Advance(); return *this; }
+        bool operator==(Iterator const& rhs) const { return m_startPos == rhs.m_startPos; }
+        bool operator!=(Iterator const& rhs) const { return m_startPos != rhs.m_startPos; }
+    };
+private:
+    Utf8CP m_str;
+    bool m_supportExclusion;
+public:
+    ClassNamesParser(Utf8CP input, bool supportExclusion) : m_str(input), m_supportExclusion(supportExclusion) {}
+    Iterator begin() const { return Iterator(*this, m_str); }
+    Iterator end() const { return Iterator(*this, m_str + strlen(m_str)); }
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

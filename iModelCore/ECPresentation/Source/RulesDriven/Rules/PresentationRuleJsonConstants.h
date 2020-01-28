@@ -27,6 +27,7 @@
 #define COMMON_JSON_ATTRIBUTE_ISPOLYMORPHIC                                             "isPolymorphic"
 #define COMMON_JSON_ATTRIBUTE_STOPFURTHERPROCESSING                                     "stopFurtherProcessing"
 #define COMMON_JSON_ATTRIBUTE_RELATIONSHIPMEANING                                       "relationshipMeaning"
+#define COMMON_JSON_ATTRIBUTE_RELATIONSHIPPATHS                                         "relationshipPaths"
 #define COMMON_JSON_ATTRIBUTE_AUTOEXPAND                                                "autoExpand"
 
 #define SCHEMAS_SPECIFICATION_SCHEMANAMES                                               "schemaNames"
@@ -155,12 +156,17 @@
 #define SORTING_RULE_DISABLEDSORTING_JSON_TYPE                                          "DisabledSorting"
 #define SORTING_RULE_JSON_ATTRIBUTE_SORTASCENDING                                       "sortAscending"
 
-
 #define RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_CLASS                             "class"
 #define RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_RELATIONSHIP                      "relationship"
 #define RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_RELATIONSHIPDIRECTION             "relationshipDirection"
+#define RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_RELATIONSHIPPATH                  "relationshipPath"
 #define RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_ALIAS                             "alias"
 #define RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_ISREQUIRED                        "isRequired"
+
+#define RELATIONSHIP_STEP_SPECIFICATION_JSON_ATTRIBUTE_RELATIONSHIP                     "relationship"
+#define RELATIONSHIP_STEP_SPECIFICATION_JSON_ATTRIBUTE_DIRECTION                        "direction"
+#define RELATIONSHIP_STEP_SPECIFICATION_JSON_ATTRIBUTE_TARGETCLASS                      "targetClass"
+#define RELATIONSHIP_STEP_SPECIFICATION_JSON_ATTRIBUTE_COUNT                            "count"
 
 //ChildNodeSpecifications
 #define CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_DONOTSORT                               "doNotSort"
@@ -201,6 +207,7 @@
 #define CONTENT_SPECIFICATION_JSON_ATTRIBUTE_SHOWIMAGES                                 "showImages"
 #define CONTENT_SPECIFICATION_JSON_ATTRIBUTE_RELATEDINSTANCESSPECIFICATION              "relatedInstances"
 
+#define RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTIESSOURCE                "propertiesSource"
 #define RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTIES                      "properties"
 #define RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTYNAMES                   "propertyNames"
 #define RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_NESTEDRELATEDPROPERTIES         "nestedRelatedProperties"

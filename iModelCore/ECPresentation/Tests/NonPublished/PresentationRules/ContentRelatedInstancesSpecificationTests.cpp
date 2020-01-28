@@ -17,7 +17,7 @@ struct ContentRelatedInstancesSpecificationTests : PresentationRulesTests
 /*---------------------------------------------------------------------------------**//**
 * @betest                                   Aidas.Kilinskas                		04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ContentRelatedInstancesSpecificationTests, LoadFromJson)
+TEST_F(ContentRelatedInstancesSpecificationTests, LoadFromJsonDeprecated)
     {
     static Utf8CP jsonString = R"({
         "specType": "ContentRelatedInstances",
@@ -39,6 +39,54 @@ TEST_F(ContentRelatedInstancesSpecificationTests, LoadFromJson)
     EXPECT_STREQ("MySchemaName:ClassA,ClassB", spec.GetRelatedClassNames().c_str());
     EXPECT_EQ(RequiredRelationDirection::RequiredRelationDirection_Both, spec.GetRequiredRelationDirection());
     EXPECT_STREQ("this.PropertyName = 10", spec.GetInstanceFilter().c_str());
+    EXPECT_TRUE(spec.GetRelationshipPaths().empty());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentRelatedInstancesSpecificationTests, LoadFromJson)
+    {
+    static Utf8CP jsonString = R"({
+        "specType": "ContentRelatedInstances",
+        "relationships": {"schemaName":"MySchemaName", "classNames": ["ClassA","ClassB"]},
+        "relatedClasses": [{"schemaName": "MySchemaName", "classNames": ["ClassA","ClassB"]}],
+        "requiredDirection": "Both",
+        "skipRelatedLevel": 321,
+        "isRecursive": true,
+        "instanceFilter": "this.PropertyName = 10",
+        "relationshipPaths": [{
+            "relationship": {"schemaName": "m", "className": "n" },
+            "direction": "Forward",
+            "targetClass": {"schemaName": "o", "className": "p"}
+        }, {
+            "relationship": {"schemaName": "q", "className": "r" },
+            "direction": "Backward",
+            "targetClass": {"schemaName": "s", "className": "t"}
+        }]
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    ASSERT_FALSE(json.isNull());
+
+    ContentRelatedInstancesSpecification spec;
+    EXPECT_TRUE(spec.ReadJson(json));
+    EXPECT_STREQ("this.PropertyName = 10", spec.GetInstanceFilter().c_str());
+
+    EXPECT_EQ(0, spec.GetSkipRelatedLevel());
+    EXPECT_FALSE(spec.IsRecursive());
+    EXPECT_TRUE(spec.GetRelationshipClassNames().empty());
+    EXPECT_TRUE(spec.GetRelatedClassNames().empty());
+    EXPECT_EQ(RequiredRelationDirection::RequiredRelationDirection_Both, spec.GetRequiredRelationDirection());
+
+    ASSERT_EQ(2, spec.GetRelationshipPaths().size());
+    ASSERT_EQ(1, spec.GetRelationshipPaths()[0]->GetSteps().size());
+    EXPECT_STREQ("m:n", spec.GetRelationshipPaths()[0]->GetSteps().front()->GetRelationshipClassName().c_str());
+    EXPECT_EQ(RequiredRelationDirection_Forward, spec.GetRelationshipPaths()[0]->GetSteps().front()->GetRelationDirection());
+    EXPECT_STREQ("o:p", spec.GetRelationshipPaths()[0]->GetSteps().front()->GetTargetClassName().c_str());
+    ASSERT_EQ(1, spec.GetRelationshipPaths()[1]->GetSteps().size());
+    EXPECT_STREQ("q:r", spec.GetRelationshipPaths()[1]->GetSteps().front()->GetRelationshipClassName().c_str());
+    EXPECT_EQ(RequiredRelationDirection_Backward, spec.GetRelationshipPaths()[1]->GetSteps().front()->GetRelationDirection());
+    EXPECT_STREQ("s:t", spec.GetRelationshipPaths()[1]->GetSteps().front()->GetTargetClassName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -60,12 +108,13 @@ TEST_F(ContentRelatedInstancesSpecificationTests, LoadsFromJsonWithDefaultValues
     EXPECT_TRUE(spec.GetRelatedClassNames().empty());
     EXPECT_EQ(RequiredRelationDirection::RequiredRelationDirection_Both, spec.GetRequiredRelationDirection());
     EXPECT_TRUE(spec.GetInstanceFilter().empty());
+    EXPECT_TRUE(spec.GetRelationshipPaths().empty());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ContentRelatedInstancesSpecificationTests, WriteToJson)
+TEST_F(ContentRelatedInstancesSpecificationTests, WriteToJsonDeprecated)
     {
     ContentRelatedInstancesSpecification spec(123, 3, true, "filter", RequiredRelationDirection_Backward, "s1:c1", "E:s2:c2");
     Json::Value json = spec.WriteJson();
@@ -78,6 +127,27 @@ TEST_F(ContentRelatedInstancesSpecificationTests, WriteToJson)
         "requiredDirection": "Backward",
         "relationships": {"schemaName": "s1", "classNames": ["c1"]},
         "relatedClasses": {"schemaName": "s2", "classNames": ["E:c2"]}
+    })");
+    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentRelatedInstancesSpecificationTests, WriteToJson)
+    {
+    ContentRelatedInstancesSpecification spec(123, "filter", {new RepeatableRelationshipPathSpecification(*new RepeatableRelationshipStepSpecification("s1:c1", RequiredRelationDirection_Backward, "s2:c2", 5))});
+    Json::Value json = spec.WriteJson();
+    Json::Value expected = Json::Reader::DoParse(R"({
+        "specType": "ContentRelatedInstances",
+        "priority": 123,
+        "instanceFilter": "filter",
+        "relationshipPaths": [{
+            "relationship": {"schemaName": "s1", "className": "c1"},
+            "direction": "Backward",
+            "targetClass": {"schemaName": "s2", "className": "c2"},
+            "count": 5
+        }]
     })");
     EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
     }
@@ -157,11 +227,26 @@ TEST_F(ContentRelatedInstancesSpecificationTests, WritesToXml)
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Aidas.Vaiksnoras                12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ContentRelatedInstancesSpecificationTests, ComputesCorrectHashes)
+TEST_F(ContentRelatedInstancesSpecificationTests, ComputesCorrectHashesDeprecated)
     {
     ContentRelatedInstancesSpecification spec1(1000, 3, true, "filter", RequiredRelationDirection::RequiredRelationDirection_Backward, "ClassAHasClassB", "ClassB");
     ContentRelatedInstancesSpecification spec2(1000, 3, true, "filter", RequiredRelationDirection::RequiredRelationDirection_Backward, "ClassAHasClassB", "ClassB");
     ContentRelatedInstancesSpecification spec3(1000, 3, true, "filter", RequiredRelationDirection::RequiredRelationDirection_Backward, "ClassBHasClassA", "ClassA");
+
+    // Hashes are same for identical specifications
+    EXPECT_STREQ(spec1.GetHash().c_str(), spec2.GetHash().c_str());
+    // Hashes differs for different specifications
+    EXPECT_STRNE(spec1.GetHash().c_str(), spec3.GetHash().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass                                     Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentRelatedInstancesSpecificationTests, ComputesCorrectHashes)
+    {
+    ContentRelatedInstancesSpecification spec1(1000, "filter", {new RepeatableRelationshipPathSpecification(*new RepeatableRelationshipStepSpecification("s1:c1", RequiredRelationDirection_Backward, "s2:c2", 5))});
+    ContentRelatedInstancesSpecification spec2(1000, "filter", {new RepeatableRelationshipPathSpecification(*new RepeatableRelationshipStepSpecification("s1:c1", RequiredRelationDirection_Backward, "s2:c2", 5))});
+    ContentRelatedInstancesSpecification spec3(1000, "filter", {new RepeatableRelationshipPathSpecification(*new RepeatableRelationshipStepSpecification("s3:c3", RequiredRelationDirection_Forward, "s4:c4", 6))});
 
     // Hashes are same for identical specifications
     EXPECT_STREQ(spec1.GetHash().c_str(), spec2.GetHash().c_str());

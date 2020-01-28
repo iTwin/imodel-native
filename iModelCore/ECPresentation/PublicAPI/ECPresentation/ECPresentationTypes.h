@@ -205,73 +205,68 @@ public:
 struct RelatedClass
 {
 private:
-    ECN::ECClassCP m_source;
-    ECN::ECRelationshipClassCP m_relationship;
+    ECClassCP m_source;
+    ECRelationshipClassCP m_relationship;
     Utf8String m_relationshipAlias;
     bool m_isForwardRelationship;
     SelectClassWithExcludes m_target;
     Utf8String m_targetAlias;
+    bset<ECInstanceId> m_targetIds;
     bool m_isTargetOptional;
 
 public:
-    //! Constructor. Creates an invalid instance.
     RelatedClass() : m_source(nullptr), m_relationship(nullptr), m_isForwardRelationship(false), m_isTargetOptional(true) {}
-
-    //! Constructor.
+    //! deprecated
     RelatedClass(ECN::ECClassCR source, SelectClassWithExcludes target, ECN::ECRelationshipClassCR relationship, bool isForward, Utf8CP targetAlias = nullptr, Utf8CP relationshipAlias = nullptr, bool isTargetOptional = true)
-        : m_source(&source), m_target(target), m_relationship(&relationship), m_isForwardRelationship(isForward), m_targetAlias(targetAlias), m_relationshipAlias(relationshipAlias), m_isTargetOptional(isTargetOptional)
+        : m_source(&source), m_relationship(&relationship), m_isForwardRelationship(isForward), m_target(target), m_targetAlias(targetAlias), m_relationshipAlias(relationshipAlias), m_isTargetOptional(isTargetOptional)
+        {}
+    RelatedClass(ECClassCR source, ECRelationshipClassCR relationship, bool isForward, Utf8String relationshipAlias, SelectClassWithExcludes target, Utf8String targetAlias, bool isTargetOptional = true)
+        : m_source(&source), m_relationship(&relationship), m_isForwardRelationship(isForward), m_relationshipAlias(relationshipAlias), m_target(target), m_targetAlias(targetAlias), m_isTargetOptional(isTargetOptional)
+        {}
+    RelatedClass(ECClassCR source, ECRelationshipClassCR relationship, bool isForward, Utf8String relationshipAlias, SelectClassWithExcludes target, bset<ECInstanceId> targetIds, Utf8String targetAlias, bool isTargetOptional = true)
+        : m_source(&source), m_relationship(&relationship), m_isForwardRelationship(isForward), m_relationshipAlias(relationshipAlias), m_target(target), m_targetIds(targetIds), m_targetAlias(targetAlias), m_isTargetOptional(isTargetOptional)
+        {}
+    RelatedClass(ECClassCR source, SelectClassWithExcludes target, bset<ECInstanceId> targetIds, Utf8String targetAlias, bool isTargetOptional = true)
+        : m_source(&source), m_relationship(nullptr), m_isForwardRelationship(false), m_target(target), m_targetIds(targetIds), m_targetAlias(targetAlias), m_isTargetOptional(isTargetOptional)
         {}
 
     //! Checks whether this object is equal to the supplied one.
     ECPRESENTATION_EXPORT bool IsEqual(RelatedClass const& other) const;
-
-    //! Checks whether this object is equal to the supplied one.
     bool operator==(RelatedClass const& other) const {return IsEqual(other);}
-
-    //! Checks whether this object is not equal to the supplied one.
     bool operator!=(RelatedClass const& other) const {return !IsEqual(other);}
-
-    //! Operator overload required for comparing @ref RelatedClass objects and using them in maps.
     ECPRESENTATION_EXPORT bool operator<(RelatedClass const& other) const;
 
     //! Is this structure valid.
-    bool IsValid() const {return nullptr != m_source && nullptr != m_relationship && m_target.IsValid();}
+    bool IsValid() const {return nullptr != m_source && m_target.IsValid();}
 
-    //! Set the source class.
+    //! The source class.
     void SetSourceClass(ECN::ECClassCR sourceClass) {m_source = &sourceClass;}
-
-    //! Get the source class.
     ECN::ECClassCP GetSourceClass() const {return m_source;}
-
-    //! Set the related class.
+    
+    //! The related class.
     void SetTargetClass(SelectClassWithExcludes targetClass) {m_target = targetClass;}
-
-    //! Get the related class.
     SelectClassWithExcludes const& GetTargetClass() const {return m_target;}
     SelectClassWithExcludes& GetTargetClass() {return m_target;}
 
-    //! Set the alias for the related class.
-    void SetTargetClassAlias(Utf8String alias) {m_targetAlias = alias;}
+    //! Target ECInstance IDs. Used to join the target to source if relationship is not specified
+    bset<ECInstanceId> const& GetTargetIds() const {return m_targetIds;}
+    bset<ECInstanceId>& GetTargetIds() {return m_targetIds;}
+    void SetTargetIds(bset<ECInstanceId> ids) {m_targetIds = ids;}
 
-    //! Get the alias of the related class.
+    //! Alias for the related class.
+    void SetTargetClassAlias(Utf8String alias) {m_targetAlias = alias;}
     Utf8CP GetTargetClassAlias() const {return m_targetAlias.c_str();}
 
-    //! Get the relationship used to access the related class.
+    //! Relationship used to access the related class.
     ECN::ECRelationshipClassCP GetRelationship() const {return m_relationship;}
-
-    //! Set the relationship used to access the related class.
     void SetRelationship(ECN::ECRelationshipClassCR relationship) {m_relationship = &relationship;}
 
-    //! Set the alias for the relationship.
+    //! Alias for the relationship.
     void SetRelationshipAlias(Utf8String alias) {m_relationshipAlias = alias;}
-
-    //! Get the alias of the relationship.
     Utf8CP GetRelationshipAlias() const {return m_relationshipAlias.c_str();}
 
     //! Should the relationship be followed in a forward direction to access the related class.
     bool IsForwardRelationship() const {return m_isForwardRelationship;}
-
-    //! Set whether the relationship should be followed in a forward direction to access the related class.
     void SetIsForwardRelationship(bool value) {m_isForwardRelationship = value;}
 
     //! Get the navigation property for this relationship.
@@ -279,8 +274,6 @@ public:
 
     //! Is related class queried using outer join
     bool IsTargetOptional() const {return m_isTargetOptional;}
-
-    //! Set whether the related class should be queried using outer join
     void SetIsTargetOptional(bool value) { m_isTargetOptional = value;}
 };
 
@@ -291,7 +284,7 @@ struct RelatedClassPath : bvector<RelatedClass>
     DEFINE_T_SUPER(bvector<RelatedClass>);
     RelatedClassPath() : T_Super() {}
     RelatedClassPath(std::initializer_list<RelatedClass> list) : T_Super(list) {}
-    ECPRESENTATION_EXPORT RelatedClassPath& Reverse(Utf8CP firstTargetClassAlias, bool isFirstTargetPolymorphic);
+    ECPRESENTATION_EXPORT RelatedClassPath& Reverse(Utf8CP resultTargetClassAlias, bool isResultTargetPolymorphic);
     };
 typedef RelatedClassPath& RelatedClassPathR;
 typedef RelatedClassPath const& RelatedClassPathCR;

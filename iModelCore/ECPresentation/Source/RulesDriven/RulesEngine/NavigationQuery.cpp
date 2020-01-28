@@ -342,10 +342,6 @@ void ComplexPresentationQuery<TBase>::CopyBindings(ComplexPresentationQuery<TBas
         m_limit = new BoundQueryECValue(*other.m_limit);
     if (nullptr != other.m_offset)
         m_offset = new BoundQueryECValue(*other.m_offset);
-    for (BoundQueryValue const* whereClauseBinding : other.m_whereClauseBindings)
-        m_whereClauseBindings.push_back(whereClauseBinding->Clone());
-    for (BoundQueryValue const* havingClauseBinding : other.m_havingClauseBindings)
-        m_havingClauseBindings.push_back(havingClauseBinding->Clone());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -405,7 +401,7 @@ bool ComplexPresentationQuery<TBase>::HasClause(PresentationQueryClauses clauses
         return m_nestedQuery.IsValid() || !m_from.empty();
 
     if (CLAUSE_Where == (CLAUSE_Where & clauses))
-        return !m_whereClause.empty();
+        return !m_whereClause.GetClause().empty();
 
     if (CLAUSE_JoinUsing == (CLAUSE_JoinUsing & clauses))
         return !m_joins.empty();
@@ -420,7 +416,7 @@ bool ComplexPresentationQuery<TBase>::HasClause(PresentationQueryClauses clauses
         return m_groupingContract.IsValid() && ContractHasNonAggregateFields(*m_groupingContract);
 
     if (CLAUSE_Having == (CLAUSE_Having & clauses))
-        return !m_havingClause.empty();
+        return !m_havingClause.GetClause().empty();
 
     BeAssert(false);
     return false;
@@ -667,19 +663,22 @@ ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::From(TBase& ne
 template<typename TBase>
 ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Where(Utf8CP whereClause, BoundQueryValuesListCR bindings, bool append)
     {
+    return Where(QueryClauseAndBindings(whereClause, BoundQueryValuesList(bindings)), append);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod                                    Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename TBase>
+ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Where(QueryClauseAndBindings clause, bool append)
+    {
     TBase::InvalidateQueryString();
-    if (!m_whereClause.empty() && append)
+    if (!append)
         {
-        m_whereClauseBindings.insert(m_whereClauseBindings.end(), bindings.begin(), bindings.end());
-        m_whereClause.append(" AND (").append(whereClause).append(")");
+        m_whereClause = clause;
+        return *this;
         }
-    else
-        {
-        for (BoundQueryValue const* value : m_whereClauseBindings)
-            DELETE_AND_CLEAR(value);
-        m_whereClauseBindings = bindings;
-        m_whereClause = Utf8String("(").append(whereClause).append(")");
-        }
+    m_whereClause.Append(clause);
     return *this;
     }
 
@@ -689,7 +688,6 @@ ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Where(Utf8CP w
 template<typename TBase>
 ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Join(RelatedClass const& relatedClass, bool append)
     {
-    TBase::InvalidateQueryString();
     RelatedClassPath path;
     path.push_back(relatedClass);
     return Join(path, append);
@@ -702,17 +700,48 @@ template<typename TBase>
 ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Join(RelatedClassPath const& path, bool append)
     {
     TBase::InvalidateQueryString();
+    m_joinClause.Reset();
+
     if (!append)
         m_joins.clear();
 
     bvector<JoinUsingClause> join;
     for (RelatedClass const& relatedClass : path)
         {
-        BeAssert(relatedClass.GetTargetClassAlias() && *relatedClass.GetTargetClassAlias());
         BeAssert(relatedClass.GetRelationshipAlias() && *relatedClass.GetRelationshipAlias());
-        join.push_back(JoinUsingClause(relatedClass.GetTargetClass().GetClass(), *relatedClass.GetRelationship(), relatedClass.IsForwardRelationship(),
-            relatedClass.IsTargetOptional(), relatedClass.GetTargetClass().IsSelectPolymorphic(), relatedClass.GetTargetClassAlias(), relatedClass.GetRelationshipAlias()));
+        if (relatedClass.GetTargetIds().empty())
+            {
+            join.push_back(JoinUsingClause(relatedClass.GetTargetClass().GetClass(), relatedClass.GetTargetClassAlias(),
+                *relatedClass.GetRelationship(), relatedClass.GetRelationshipAlias(), relatedClass.IsForwardRelationship(),
+                relatedClass.IsTargetOptional(), relatedClass.GetTargetClass().IsSelectPolymorphic()));
+            }
+        else
+            {
+            join.push_back(JoinUsingClause(relatedClass.GetTargetClass().GetClass(), relatedClass.GetTargetClassAlias(),
+                IdsFilteringHelper<bset<ECInstanceId>>(relatedClass.GetTargetIds()).Create(QueryHelpers::Wrap(relatedClass.GetTargetClassAlias()).append(".[ECInstanceId]").c_str()),
+                *relatedClass.GetRelationship(), relatedClass.GetRelationshipAlias(), relatedClass.IsForwardRelationship(),
+                relatedClass.IsTargetOptional(), relatedClass.GetTargetClass().IsSelectPolymorphic()));
+            }
         }
+    BeAssert(!join.back().m_joinAlias.empty() && (!join.back().m_using || !join.back().m_usingAlias.empty()));
+    m_joins.push_back(join);
+
+    return *this;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod                                    Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename TBase>
+ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Join(SelectClass const& joinClass, Utf8CP alias, QueryClauseAndBindings joinClause, bool isOuter, bool append)
+    {
+    TBase::InvalidateQueryString();
+    m_joinClause.Reset();
+
+    if (!append)
+        m_joins.clear();
+
+    bvector<JoinUsingClause> join{JoinUsingClause(joinClass.GetClass(), alias, joinClause, isOuter, joinClass.IsSelectPolymorphic())};
     m_joins.push_back(join);
 
     return *this;
@@ -770,10 +799,17 @@ template<typename TBase>
 ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Having(Utf8CP havingClause, BoundQueryValuesListCR bindings)
     {
     TBase::InvalidateQueryString();
-    for (BoundQueryValue const* value : m_havingClauseBindings)
-        DELETE_AND_CLEAR(value);
-    m_havingClauseBindings = bindings;
-    m_havingClause = havingClause;
+    return Having(QueryClauseAndBindings(havingClause, BoundQueryValuesList(bindings)));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod                                    Grigas.Petraitis                07/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename TBase>
+ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Having(QueryClauseAndBindings clause)
+    {
+    TBase::InvalidateQueryString();
+    m_havingClause = clause;
     return *this;
     }
 
@@ -791,34 +827,38 @@ ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Limit(uint64_t
     return *this;
     }
 
+//=======================================================================================
+// @bsiclass                                     Grigas.Petraitis               01/2020
+//=======================================================================================
+struct JoinInfo
+    {
+    ECClassCP m_class;
+    Utf8String m_alias;
+    bool m_isForward;
+    JoinInfo() : m_class(nullptr), m_isForward(false) {}
+    JoinInfo(ECClassCR ecClass, Utf8String alias, bool isForward)
+        : m_class(&ecClass), m_alias(alias), m_isForward(isForward)
+        {}
+    };
+
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T>
-static void DetermineFromClass(ECClassCP& ecClass, Utf8StringR name, bvector<typename T::FromClause> const& fromClauses, typename T::JoinUsingClause const& joinClause)
+template<typename TFromClause, typename TJoinUsingClause>
+static void DetermineFromClass(JoinInfo& info, bvector<TFromClause> const& fromClauses, TJoinUsingClause const& joinClause)
     {
     ECRelationshipConstraintCR constraint = joinClause.m_isForward ? joinClause.m_using->GetSource() : joinClause.m_using->GetTarget();
     ECRelationshipConstraintCR oppositeConstraint = joinClause.m_isForward ? joinClause.m_using->GetTarget() : joinClause.m_using->GetSource();
-    for (typename T::FromClause const& fromClause : fromClauses)
+    for (TFromClause const& fromClause : fromClauses)
         {
         if (constraint.SupportsClass(*fromClause.m_class))
             {
-            ecClass = fromClause.m_class;
+            info = JoinInfo(*fromClause.m_class, fromClause.m_alias.empty() ? fromClause.m_class->GetName() : fromClause.m_alias, true);
             BeAssert(oppositeConstraint.SupportsClass(*joinClause.m_join));
-            }
-
-        if (nullptr != ecClass)
-            {
-            name = fromClause.m_alias.empty() ? ecClass->GetName() : fromClause.m_alias;
             break;
             }
         }
-
-    if (nullptr == ecClass)
-        {
-        BeAssert(false && "Trying to JOIN on a relationship whose neither target nor source exists in the FROM clause");
-        return;
-        }
+    BeAssert((nullptr != info.m_class) && "Trying to JOIN on a relationship whose neither target nor source exists in the FROM clause");
     }
 
 #ifndef NDEBUG
@@ -846,8 +886,8 @@ static bool ConstraintSupportsClass(ECRelationshipConstraintCR constraint, ECCla
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T>
-static void DetermineJoinClauses(Utf8StringR thisClause, Utf8StringR nextClause, ECClassCR ecClass, bool wasPreviousJoinForward, typename T::JoinUsingClause const& joinClause)
+template<typename TJoinUsingClause>
+static void DetermineJoinClauses(Utf8StringR thisClause, Utf8StringR nextClause, ECClassCR ecClass, bool wasPreviousJoinForward, TJoinUsingClause const& joinClause)
     {
     ECRelationshipConstraintCP constraint;
     Utf8CP thisClauseECInstanceIdPropertyName,
@@ -952,7 +992,7 @@ static Utf8String GetOppositeNavigationPropertyName(NavigationECPropertyCR navig
 // @bsiclass                                     Grigas.Petraitis            10/2016
 //=======================================================================================
 template<typename TBase>
-struct JoinsComparer
+struct ComplexPresentationQuery<TBase>::JoinsComparer
     {
     bool operator()(typename ComplexPresentationQuery<TBase>::JoinUsingClause const& lhs, typename ComplexPresentationQuery<TBase>::JoinUsingClause const& rhs) const
         {
@@ -982,41 +1022,39 @@ struct JoinsComparer
         }
     };
 
-//=======================================================================================
-// @bsiclass                                     Grigas.Petraitis            10/2016
-//=======================================================================================
-struct JoinInfo
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod                                    Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+static void AppendJoinClause(Utf8StringR clause, bool outer, bool polymorphic)
     {
-    ECClassCP m_previousClass;
-    Utf8String m_previousClassName;
-    bool m_wasPreviousJoinForward;
-    JoinInfo() : m_previousClass(nullptr), m_wasPreviousJoinForward(false) {}
-    JoinInfo(ECClassCR previous, Utf8String previousName, bool wasForward)
-        : m_previousClass(&previous), m_previousClassName(previousName), m_wasPreviousJoinForward(wasForward)
-        {}
-    };
+    clause.append(outer ? " LEFT JOIN " : " INNER JOIN ");
+    if (!polymorphic)
+        clause.append("ONLY ");
+    }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename TBase>
-Utf8String ComplexPresentationQuery<TBase>::CreateJoinClause() const
+void ComplexPresentationQuery<TBase>::InitJoinClause() const
     {
+    if (!m_joinClause.GetClause().empty() || m_joins.empty())
+        return;
+
     if (m_from.empty())
         {
         BeAssert(false && "Join is only valid when used with 'FROM [ECClass]'");
-        return "";
+        return;
         }
 
-    bmap<JoinUsingClause, JoinInfo, JoinsComparer<TBase>> usedJoins;
+    bmap<Utf8String, JoinInfo> joinedRelationships;
+
     Utf8String joinClause;
+    BoundQueryValuesList bindings;
     for (auto joinGroupIter = m_joins.begin(); joinGroupIter != m_joins.end(); ++joinGroupIter)
         {
         bvector<JoinUsingClause> const& joins = *joinGroupIter;
-
-        ECClassCP previousClass = nullptr;
-        Utf8String previousClassName = "";
-        bool wasPreviousJoinForward = false;
+        JoinInfo prev;
         bool first = true;
         for (auto iter = joins.begin(); iter != joins.end(); iter++)
             {
@@ -1024,81 +1062,108 @@ Utf8String ComplexPresentationQuery<TBase>::CreateJoinClause() const
             if (!join.IsValid())
                 continue;
 
-            if (nullptr == previousClass)
+            auto joinedRelationshipInfoIter = joinedRelationships.find(join.m_joinAlias);
+            if (joinedRelationships.end() != joinedRelationshipInfoIter)
                 {
-                DetermineFromClass<ThisType>(previousClass, previousClassName, m_from, join);
-                if (nullptr == previousClass)
-                    continue;
-
-                BeAssert(previousClass->IsEntityClass());
-                }
-
-            auto usedJoinIter = usedJoins.find(join);
-            if (usedJoins.end() != usedJoinIter)
-                {
-                previousClass = usedJoinIter->second.m_previousClass;
-                previousClassName = usedJoinIter->second.m_previousClassName;
-                wasPreviousJoinForward = usedJoinIter->second.m_wasPreviousJoinForward;
+                BeAssert(joinedRelationshipInfoIter->second.m_class == join.m_join || joinedRelationshipInfoIter->second.m_class == join.m_using);
+                prev = joinedRelationshipInfoIter->second;
                 continue;
                 }
 
-            joinClause.append(join.m_isOuterJoin ? " LEFT JOIN " : " INNER JOIN ");
-
-            if (!join.m_isPolymorphic)
-                joinClause.append("ONLY ");
-
-            NavigationECPropertyCP navigationProperty = RelatedClass(*previousClass, *join.m_join, *join.m_using, join.m_isForward).GetNavigationProperty();
-            if (nullptr != navigationProperty)
+            if (join.m_using && nullptr == prev.m_class)
                 {
-                BeAssert(!join.m_joinAlias.empty());
-                bool isForward = (join.m_isForward == (ECRelatedInstanceDirection::Forward == navigationProperty->GetDirection()));
-                joinClause.append(GetECClassClause(*join.m_join));
-                joinClause.append(" ").append(QueryHelpers::Wrap(join.m_joinAlias));
-                joinClause.append(" ON ").append(QueryHelpers::Wrap(join.m_joinAlias)).append(".");
-                joinClause.append(isForward ? GetOppositeNavigationPropertyName(*navigationProperty, *previousClass, wasPreviousJoinForward) : GetNavigationPropertyName(*navigationProperty));
-                joinClause.append(" = ").append(QueryHelpers::Wrap(previousClassName)).append(".");
-                joinClause.append(isForward ? GetNavigationPropertyName(*navigationProperty) : GetOppositeNavigationPropertyName(*navigationProperty, *previousClass, wasPreviousJoinForward));
+                DetermineFromClass<ThisType::FromClause, ThisType::JoinUsingClause>(prev, m_from, join);
+                if (!prev.m_class)
+                    continue;
+                }
 
-                previousClass = join.m_join;
-                previousClassName = join.m_joinAlias;
+            JoinInfo joinedClassInfo(*join.m_join, join.m_joinAlias, true);
+            if (join.m_using)
+                {
+                NavigationECPropertyCP navigationProperty = RelatedClass(*prev.m_class, *join.m_join, *join.m_using, join.m_isForward).GetNavigationProperty();
+                if (nullptr != navigationProperty)
+                    {
+                    AppendJoinClause(joinClause, join.m_isOuterJoin, join.m_isPolymorphic);
+                    BeAssert(!join.m_joinAlias.empty());
+                    bool isForward = (join.m_isForward == (ECRelatedInstanceDirection::Forward == navigationProperty->GetDirection()));
+                    joinClause.append(GetECClassClause(*join.m_join));
+                    joinClause.append(" ").append(QueryHelpers::Wrap(join.m_joinAlias));
+                    joinClause.append(" ON ").append(QueryHelpers::Wrap(join.m_joinAlias)).append(".");
+                    joinClause.append(isForward ? GetOppositeNavigationPropertyName(*navigationProperty, *prev.m_class, prev.m_isForward) : GetNavigationPropertyName(*navigationProperty));
+                    joinClause.append(" = ").append(QueryHelpers::Wrap(prev.m_alias)).append(".");
+                    joinClause.append(isForward ? GetNavigationPropertyName(*navigationProperty) : GetOppositeNavigationPropertyName(*navigationProperty, *prev.m_class, prev.m_isForward));
+                    joinedRelationships.Insert(join.m_joinAlias, joinedClassInfo);
+                    prev = joinedClassInfo;
+                    }
+                else
+                    {
+                    // determine the join clause based on relationship direction
+                    Utf8String previousClassJoinClause;
+                    Utf8String joinedClassJoinClause;
+                    DetermineJoinClauses<ThisType::JoinUsingClause>(previousClassJoinClause, joinedClassJoinClause, *prev.m_class, prev.m_isForward, join);
+
+                    JoinInfo relationshipJoinInfo(*join.m_using, join.m_usingAlias, join.m_isForward);
+                    joinedRelationshipInfoIter = joinedRelationships.find(join.m_usingAlias);
+                    if (joinedRelationships.end() == joinedRelationshipInfoIter)
+                        {
+                        AppendJoinClause(joinClause, join.m_isOuterJoin, join.m_isPolymorphic);
+                        BeAssert(!join.m_usingAlias.empty());
+                        joinClause.append(GetECClassClause(*join.m_using));
+                        joinClause.append(" ").append(QueryHelpers::Wrap(join.m_usingAlias));
+                        joinClause.append(Utf8PrintfString(previousClassJoinClause.c_str(), prev.m_alias.c_str(), join.m_usingAlias.c_str(), prev.m_alias.c_str(), join.m_usingAlias.c_str()));
+                        joinedRelationships.Insert(join.m_usingAlias, relationshipJoinInfo);
+                        prev = relationshipJoinInfo;
+                        }
+                    else
+                        {
+                        BeAssert(joinedRelationshipInfoIter->second.m_class == join.m_using);
+                        }
+
+                    // only join the other end of the relationship if this is the last join clause in the group or has a join filter
+                    if (&join == &joins[joins.size() - 1] || !join.m_joinFilter.GetClause().empty())
+                        {
+                        AppendJoinClause(joinClause, join.m_isOuterJoin, true);
+                        Utf8String joinedClassName = join.m_join->GetName();
+                        joinClause.append(GetECClassClause(*join.m_join));
+                        if (!join.m_joinAlias.empty())
+                            {
+                            joinClause.append(" ").append(QueryHelpers::Wrap(join.m_joinAlias));
+                            joinedClassName = join.m_joinAlias;
+                            }
+                        joinClause.append(Utf8PrintfString(joinedClassJoinClause.c_str(), joinedClassName.c_str(), join.m_usingAlias.c_str(), joinedClassName.c_str(), join.m_usingAlias.c_str()));
+                        if (!join.m_joinFilter.GetClause().empty())
+                            {
+                            joinClause.append(" AND ").append(join.m_joinFilter.GetClause());
+                            ContainerHelpers::Push(bindings, join.m_joinFilter.GetBindings().Clone());
+                            }
+                        joinedRelationships.Insert(joinedClassName, relationshipJoinInfo);
+                        prev = joinedClassInfo;
+                        }
+                    }
                 }
             else
                 {
-                // determine the join clause based on relationship direction
-                Utf8String previousClassJoinClause;
-                Utf8String joinedClassJoinClause;
-                DetermineJoinClauses<ThisType>(previousClassJoinClause, joinedClassJoinClause, *previousClass, wasPreviousJoinForward, join);
-
-                // append the join on relationship clause
-                BeAssert(!join.m_usingAlias.empty());
-                joinClause.append(GetECClassClause(*join.m_using));
-                joinClause.append(" ").append(QueryHelpers::Wrap(join.m_usingAlias));
-                joinClause.append(Utf8PrintfString(previousClassJoinClause.c_str(), previousClassName.c_str(), join.m_usingAlias.c_str(), previousClassName.c_str(), join.m_usingAlias.c_str()));
-
-                // only join the other end of the relationship if this is the last join clause in the group
-                if (&join == &joins[joins.size() - 1])
+                AppendJoinClause(joinClause, join.m_isOuterJoin, join.m_isPolymorphic);
+                Utf8String joinedClassName = join.m_join->GetName();
+                joinClause.append(GetECClassClause(*join.m_join));
+                if (!join.m_joinAlias.empty())
                     {
-                    Utf8String joinedClassName = join.m_join->GetName();
-                    joinClause.append(join.m_isOuterJoin ? " LEFT JOIN " : " INNER JOIN ").append(GetECClassClause(*join.m_join));
-                    if (!join.m_joinAlias.empty())
-                        {
-                        joinClause.append(" ").append(QueryHelpers::Wrap(join.m_joinAlias));
-                        joinedClassName = join.m_joinAlias;
-                        }
-                    joinClause.append(Utf8PrintfString(joinedClassJoinClause.c_str(), joinedClassName.c_str(), join.m_usingAlias.c_str(), joinedClassName.c_str(), join.m_usingAlias.c_str()));
+                    joinClause.append(" ").append(QueryHelpers::Wrap(join.m_joinAlias));
+                    joinedClassName = join.m_joinAlias;
                     }
-
-                previousClass = join.m_using;
-                previousClassName = join.m_usingAlias;
+                if (!join.m_joinFilter.GetClause().empty())
+                    {
+                    joinClause.append(" ON ").append(join.m_joinFilter.GetClause());
+                    ContainerHelpers::Push(bindings, join.m_joinFilter.GetBindings().Clone());
+                    }
+                joinedRelationships.Insert(joinedClassName, joinedClassInfo);
+                prev = joinedClassInfo;
                 }
-
-            wasPreviousJoinForward = join.m_isForward;
-            usedJoins[join] = JoinInfo(*previousClass, previousClassName, wasPreviousJoinForward);
             first = false;
             }
         }
 
-    return joinClause;
+    m_joinClause = QueryClauseAndBindings(joinClause, bindings);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1138,10 +1203,13 @@ Utf8String ComplexPresentationQuery<TBase>::GetClause(PresentationQueryClauses c
         }
 
     if (CLAUSE_Where == (CLAUSE_Where & clause))
-        return m_whereClause;
+        return m_whereClause.GetClause();
 
     if (CLAUSE_JoinUsing == (CLAUSE_JoinUsing & clause))
-        return CreateJoinClause();
+        {
+        InitJoinClause();
+        return m_joinClause.GetClause();
+        }
 
     if (CLAUSE_OrderBy == (CLAUSE_OrderBy & clause))
         return m_orderByClause;
@@ -1160,7 +1228,7 @@ Utf8String ComplexPresentationQuery<TBase>::GetClause(PresentationQueryClauses c
         return CreateGroupByClause();
 
     if (CLAUSE_Having == (CLAUSE_Having & clause))
-        return m_havingClause;
+        return m_havingClause.GetClause();
 
     BeAssert(false);
     return "";
@@ -1302,24 +1370,8 @@ bool ComplexPresentationQuery<TBase>::_IsEqual(TBase const& otherBase) const
         }
 
     // WHERE
-    if (!m_whereClause.Equals(other.m_whereClause))
+    if (m_whereClause != other.m_whereClause)
         return false;
-    if (m_whereClauseBindings.size() != other.m_whereClauseBindings.size())
-        return false;
-    for (BoundQueryValue const* value : m_whereClauseBindings)
-        {
-        bool found = false;
-        for (BoundQueryValue const* otherValue : other.m_whereClauseBindings)
-            {
-            if (value->Equals(*otherValue))
-                {
-                found = true;
-                break;
-                }
-            }
-        if (!found)
-            return false;
-        }
 
     // LIMIT
     if (!AreEqual(m_limit, other.m_limit))
@@ -1332,7 +1384,7 @@ bool ComplexPresentationQuery<TBase>::_IsEqual(TBase const& otherBase) const
         return false;
 
     // HAVING
-    if (!m_havingClause.Equals(other.m_havingClause))
+    if (m_havingClause != other.m_havingClause)
         return false;
 
     // ORDER BY
@@ -1385,30 +1437,15 @@ BoundQueryValuesList ComplexPresentationQuery<TBase>::_GetBoundValues() const
         BoundQueryValuesList nestedValues = m_nestedQuery->GetBoundValues();
         values.insert(values.end(), nestedValues.begin(), nestedValues.end());
         }
-    values.insert(values.end(), m_whereClauseBindings.begin(), m_whereClauseBindings.end());
-    values.insert(values.end(), m_havingClauseBindings.begin(), m_havingClauseBindings.end());
+    InitJoinClause();
+    ContainerHelpers::Push(values, m_joinClause.GetBindings());
+    ContainerHelpers::Push(values, m_whereClause.GetBindings());
+    ContainerHelpers::Push(values, m_havingClause.GetBindings());
     if (nullptr != m_limit)
         values.push_back(m_limit);
     if (nullptr != m_offset)
         values.push_back(m_offset);
     return values;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod                                    Saulius.Skliutas                12/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TBase>
-void ComplexPresentationQuery<TBase>::SetBoundValues(BoundQueryValuesListCR bindings)
-    {
-    if (m_whereClauseBindings.size() != bindings.size())
-        {
-        BeAssert(false);
-        return;
-        }
-
-    for (BoundQueryValue const* value : m_whereClauseBindings)
-        DELETE_AND_CLEAR(value);
-    m_whereClauseBindings = bindings;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1780,8 +1817,7 @@ Utf8String StringPresentationQuery<TBase>::_ToString() const {return m_query;}
 template<typename TBase>
 void StringPresentationQuery<TBase>::CopyBindings(BoundQueryValuesListCR bindings)
     {
-    for (BoundQueryValue const* binding : bindings)
-        m_bindings.push_back(binding->Clone());
+    ContainerHelpers::Push(m_bindings, bindings.Clone());
     }
 
 /*---------------------------------------------------------------------------------**//**

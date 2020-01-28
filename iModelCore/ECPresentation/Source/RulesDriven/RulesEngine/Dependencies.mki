@@ -59,6 +59,6 @@ RulesEngineHeaders            = $(RulesEnginePublicHeaders) $(RulesEngineInterna
 
 RulesEngineMkis               = $(RulesEngineSourceDirectory)Dependencies.mki $(RulesEngineSourceDirectory)RulesEngine.mki
 
-RulesEngineDependencies       = $(RulesEngineHeaders) $(RulesEngineMkis) $(RulesDrivenECPresentationDependencies)
+RulesEngineDependencies       = $(RulesEngineHeaders) $(RulesEngineMkis) $(PresentationRulesHeaders) $(RulesDrivenECPresentationDependencies)
 
 ECPresentationMakefiles       + $(RulesEngineMkis)

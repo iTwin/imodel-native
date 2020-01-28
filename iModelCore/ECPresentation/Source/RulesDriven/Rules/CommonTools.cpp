@@ -363,3 +363,84 @@ uint64_t CommonTools::GetBriefcaseId(ECInstanceId id) {return (uint64_t)id.GetVa
 * @bsimethod                                    Aidas.Vaiksnoras                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint64_t CommonTools::GetLocalId(ECInstanceId id) {return (uint64_t)id.GetValueUnchecked() & (((uint64_t)1 << 40) - 1);}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+static void SkipSpaces(Utf8CP& pos)
+    {
+    while (*pos == ' ')
+        ++pos;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+static int ReadFlags(Utf8CP& pos)
+    {
+    SkipSpaces(pos);
+    if (*pos == 'P' && *(pos + 1) == 'E' && *(pos + 2) == ':')
+        {
+        pos += 3;
+        return CLASS_SELECTION_FLAG_Polymorphic | CLASS_SELECTION_FLAG_Exclude;
+        }
+    if (*pos == 'E' && *(pos + 1) == ':')
+        {
+        pos += 2;
+        return CLASS_SELECTION_FLAG_Exclude;
+        }
+    return 0;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8String TakeSchemaName(Utf8CP& pos)
+    {
+    SkipSpaces(pos);
+    Utf8CP front = pos;
+    while (*pos && *pos != ':')
+        ++pos;
+    return Utf8String(front, pos).Trim();
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8String TakeClassName(Utf8CP& pos)
+    {
+    SkipSpaces(pos);
+    Utf8CP front = pos;
+    while (*pos && *pos != ',' && *pos != ';')
+        ++pos;
+    return Utf8String(front, pos).Trim();
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClassNamesParser::Iterator::Advance()
+    {
+    m_startPos = m_currentPos;
+    SkipSpaces(m_currentPos);
+    if (!*m_currentPos)
+        return;
+
+    if (*m_currentPos == ',' || *m_currentPos == ':')
+        {
+        // if we get here at comma or a colon, always expect a class name
+        ++m_currentPos;
+        m_currentClassName = TakeClassName(m_currentPos);
+        }
+    else
+        {
+        // otherwise we might be at the beginning or at a semi-colon - in that case 
+        // we should expect optional flags and schema name
+        if (*m_currentPos == ';')
+            ++m_currentPos;
+        int flags = ReadFlags(m_currentPos);
+        if (flags != 0 && m_parser.m_supportExclusion)
+            m_currentFlags = flags;
+        m_currentSchemaName = TakeSchemaName(m_currentPos);
+        Advance(); // we should now be at a colon after a schema name - advance to read the class name
+        }
+
+    if (m_currentClassName.empty())
+        m_startPos = m_currentPos;
+    }

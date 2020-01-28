@@ -378,6 +378,13 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="NonPublished\RulesEngine\LabelDefinitionTests.cpp">
+    <ClCompile Include="NonPublished\PresentationRules\RelationshipPathSpecificationTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\PresentationRules\ClassNamesParserTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\RelatedClassPathTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

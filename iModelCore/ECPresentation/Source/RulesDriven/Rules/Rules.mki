@@ -84,6 +84,8 @@ $(o)PropertyEditorSpecification$(oext)                     : $(PresentationRules
 
 $(o)PropertyCategorySpecification$(oext)                   : $(PresentationRulesSourceDirectory)PropertyCategorySpecification.cpp $(PresentationRulesDependencies)
 
+$(o)RelationshipPathSpecification$(oext)                   : $(PresentationRulesSourceDirectory)RelationshipPathSpecification.cpp $(PresentationRulesDependencies)
+
 %include MultiCppCompileGo.mki
 
 PresentationRulesObjs =

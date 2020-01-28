@@ -9,27 +9,50 @@
 #include "CommonToolsInternal.h"
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 #include <ECPresentation/RulesDriven/Rules/SpecificationVisitor.h>
+#include <ECPresentation/RulesDriven/Rules/RelationshipPathSpecification.h>
 
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-RelatedInstanceNodesSpecification::RelatedInstanceNodesSpecification ()
-    : ChildNodeSpecification (), m_groupByClass (true), m_groupByRelationship (false), m_groupByLabel (true), m_showEmptyGroups (false),
-    m_skipRelatedLevel (0), m_instanceFilter (""), m_requiredDirection (RequiredRelationDirection_Both),
-    m_supportedSchemas (""), m_relationshipClassNames (""), m_relatedClassNames ("")
+RelatedInstanceNodesSpecification::RelatedInstanceNodesSpecification()
+    : ChildNodeSpecification(), m_groupByClass(true), m_groupByRelationship(false), m_groupByLabel(true),
+    m_showEmptyGroups(false), m_skipRelatedLevel(0), m_requiredDirection(RequiredRelationDirection_Both)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+RelatedInstanceNodesSpecification::RelatedInstanceNodesSpecification(RelatedInstanceNodesSpecification const& other)
+    : ChildNodeSpecification(other), m_groupByClass(other.m_groupByClass), m_showEmptyGroups(other.m_showEmptyGroups),
+    m_groupByRelationship(other.m_groupByRelationship), m_groupByLabel(other.m_groupByLabel), m_skipRelatedLevel(other.m_skipRelatedLevel), 
+    m_instanceFilter(other.m_instanceFilter), m_supportedSchemas(other.m_supportedSchemas), m_requiredDirection(other.m_requiredDirection),
+    m_relationshipClassNames(other.m_relationshipClassNames), m_relatedClassNames(other.m_relatedClassNames)
     {
+    CommonToolsInternal::CopyRules(m_relationshipPaths, other.m_relationshipPaths, this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+RelatedInstanceNodesSpecification::RelatedInstanceNodesSpecification(RelatedInstanceNodesSpecification&& other)
+    : ChildNodeSpecification(other), m_groupByClass(other.m_groupByClass), m_showEmptyGroups(other.m_showEmptyGroups),
+    m_groupByRelationship(other.m_groupByRelationship), m_groupByLabel(other.m_groupByLabel), m_skipRelatedLevel(other.m_skipRelatedLevel),
+    m_instanceFilter(std::move(other.m_instanceFilter)), m_supportedSchemas(std::move(other.m_supportedSchemas)), m_requiredDirection(other.m_requiredDirection),
+    m_relationshipClassNames(std::move(other.m_relationshipClassNames)), m_relatedClassNames(std::move(other.m_relatedClassNames))
+    {
+    m_relationshipPaths.swap(other.m_relationshipPaths);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-RelatedInstanceNodesSpecification::RelatedInstanceNodesSpecification(int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy,  
-    bool hideIfNoChildren, bool groupByClass, bool groupByRelationship, bool groupByLabel, bool showEmptyGroups, int skipRelatedLevel, 
-    Utf8String instanceFilter, RequiredRelationDirection requiredDirection, Utf8String supportedSchemas, Utf8String relationshipClassNames, 
-    Utf8String relatedClassNames) 
-    : RelatedInstanceNodesSpecification(priority, alwaysReturnsChildren ? ChildrenHint::Always : ChildrenHint::Unknown, hideNodesInHierarchy, hideIfNoChildren, 
+RelatedInstanceNodesSpecification::RelatedInstanceNodesSpecification(int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy,
+    bool hideIfNoChildren, bool groupByClass, bool groupByRelationship, bool groupByLabel, bool, int skipRelatedLevel,
+    Utf8String instanceFilter, RequiredRelationDirection requiredDirection, Utf8String supportedSchemas, Utf8String relationshipClassNames,
+    Utf8String relatedClassNames)
+    : RelatedInstanceNodesSpecification(priority, alwaysReturnsChildren ? ChildrenHint::Always : ChildrenHint::Unknown, hideNodesInHierarchy, hideIfNoChildren,
     groupByClass, groupByLabel, skipRelatedLevel, instanceFilter, requiredDirection, supportedSchemas, relationshipClassNames, relatedClassNames)
     {
     m_groupByRelationship = groupByRelationship;
@@ -38,14 +61,22 @@ RelatedInstanceNodesSpecification::RelatedInstanceNodesSpecification(int priorit
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-RelatedInstanceNodesSpecification::RelatedInstanceNodesSpecification(int priority, ChildrenHint hasChildren, bool hideNodesInHierarchy,  
-    bool hideIfNoChildren, bool groupByClass, bool groupByLabel, int skipRelatedLevel, Utf8String instanceFilter, 
-    RequiredRelationDirection requiredDirection, Utf8String supportedSchemas, Utf8String relationshipClassNames, Utf8String relatedClassNames) 
-    : ChildNodeSpecification(priority, hasChildren, hideNodesInHierarchy, hideIfNoChildren), m_groupByClass(groupByClass), 
-    m_groupByRelationship(false), m_groupByLabel(groupByLabel), m_showEmptyGroups(false), m_skipRelatedLevel(skipRelatedLevel), 
-    m_instanceFilter(instanceFilter), m_requiredDirection(requiredDirection), m_supportedSchemas(supportedSchemas), 
-    m_relationshipClassNames(relationshipClassNames), m_relatedClassNames(relatedClassNames)
-    {}
+RelatedInstanceNodesSpecification::RelatedInstanceNodesSpecification(int priority, ChildrenHint hasChildren, bool hideNodesInHierarchy,
+    bool hideIfNoChildren, bool groupByClass, bool groupByLabel, int skipRelatedLevel, Utf8String instanceFilter,
+    RequiredRelationDirection requiredDirection, Utf8String supportedSchemas, Utf8String relationshipClassNames, Utf8String relatedClassNames)
+    : ChildNodeSpecification(priority, hasChildren, hideNodesInHierarchy, hideIfNoChildren), m_groupByClass(groupByClass), m_showEmptyGroups(false),
+    m_groupByRelationship(false), m_groupByLabel(groupByLabel), m_skipRelatedLevel(skipRelatedLevel), m_instanceFilter(instanceFilter), 
+    m_supportedSchemas(supportedSchemas), m_requiredDirection(requiredDirection), m_relationshipClassNames(relationshipClassNames), m_relatedClassNames(relatedClassNames)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+RelatedInstanceNodesSpecification::~RelatedInstanceNodesSpecification()
+    {
+    CommonToolsInternal::FreePresentationRules(m_relationshipPaths);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                09/2019
@@ -68,7 +99,10 @@ bool RelatedInstanceNodesSpecification::_ShallowEqual(PresentationRuleSpecificat
         && m_relatedClassNames == otherRule->m_relatedClassNames
         && m_relationshipClassNames == otherRule->m_relationshipClassNames
         && m_supportedSchemas == otherRule->m_supportedSchemas
-        && m_instanceFilter == otherRule->m_instanceFilter;
+        && m_instanceFilter == otherRule->m_instanceFilter
+        && m_relationshipPaths.size() == otherRule->m_relationshipPaths.size()
+        && std::equal(m_relationshipPaths.begin(), m_relationshipPaths.end(), otherRule->m_relationshipPaths.begin(),
+            [](RepeatableRelationshipPathSpecification const* lhs, RepeatableRelationshipPathSpecification const* rhs){return *lhs == *rhs;});
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -163,14 +197,22 @@ bool RelatedInstanceNodesSpecification::_ReadJson(JsonValueCR json)
     if (!ChildNodeSpecification::_ReadJson(json))
         return false;
 
+    if (json.isMember(COMMON_JSON_ATTRIBUTE_RELATIONSHIPPATHS))
+        {
+        CommonToolsInternal::LoadFromJson(json[COMMON_JSON_ATTRIBUTE_RELATIONSHIPPATHS], m_relationshipPaths, &CommonToolsInternal::LoadRuleFromJson<RepeatableRelationshipPathSpecification>, this);
+        }
+    else
+        {
+        // all of this is deprecated in favor of relationship paths:
+        m_skipRelatedLevel = json[COMMON_JSON_ATTRIBUTE_SKIPRELATEDLEVEL].asInt(0);
+        m_supportedSchemas = CommonToolsInternal::SupportedSchemasToString(json[COMMON_JSON_ATTRIBUTE_SUPPORTEDSCHEMAS]);
+        m_relationshipClassNames = CommonToolsInternal::SchemaAndClassNamesToString(json[COMMON_JSON_ATTRIBUTE_RELATIONSHIPS]);
+        m_relatedClassNames = CommonToolsInternal::SchemaAndClassNamesToString(json[COMMON_JSON_ATTRIBUTE_RELATEDCLASSES]);
+        m_requiredDirection = CommonToolsInternal::ParseRequiredDirectionString(json[COMMON_JSON_ATTRIBUTE_REQUIREDDIRECTION].asCString(""));
+        }
     m_groupByClass = json[COMMON_JSON_ATTRIBUTE_GROUPBYCLASS].asBool(true);
     m_groupByLabel = json[COMMON_JSON_ATTRIBUTE_GROUPBYLABEL].asBool(true);
-    m_skipRelatedLevel = json[COMMON_JSON_ATTRIBUTE_SKIPRELATEDLEVEL].asInt(0);
     m_instanceFilter = json[COMMON_JSON_ATTRIBUTE_INSTANCEFILTER].asCString("");
-    m_supportedSchemas = CommonToolsInternal::SupportedSchemasToString(json[COMMON_JSON_ATTRIBUTE_SUPPORTEDSCHEMAS]);
-    m_relationshipClassNames = CommonToolsInternal::SchemaAndClassNamesToString(json[COMMON_JSON_ATTRIBUTE_RELATIONSHIPS]);
-    m_relatedClassNames = CommonToolsInternal::SchemaAndClassNamesToString(json[COMMON_JSON_ATTRIBUTE_RELATEDCLASSES]);
-    m_requiredDirection = CommonToolsInternal::ParseRequiredDirectionString(json[COMMON_JSON_ATTRIBUTE_REQUIREDDIRECTION].asCString(""));
     return true;
     }
 
@@ -196,107 +238,9 @@ void RelatedInstanceNodesSpecification::_WriteJson(JsonValueR json) const
         json[COMMON_JSON_ATTRIBUTE_RELATEDCLASSES] = CommonToolsInternal::SchemaAndClassNamesToJson(m_relatedClassNames);
     if (RequiredRelationDirection_Both != m_requiredDirection)
         json[COMMON_JSON_ATTRIBUTE_REQUIREDDIRECTION] = CommonToolsInternal::FormatRequiredDirectionString(m_requiredDirection);
+    if (!m_relationshipPaths.empty())
+        CommonToolsInternal::WriteRulesToJson<RepeatableRelationshipPathSpecification, bvector<RepeatableRelationshipPathSpecification*>>(json[COMMON_JSON_ATTRIBUTE_RELATIONSHIPPATHS], m_relationshipPaths);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Eligijus.Mauragas               10/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool RelatedInstanceNodesSpecification::GetGroupByClass (void) const                { return m_groupByClass; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Kelly.Shiptoski                 05/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RelatedInstanceNodesSpecification::SetGroupByClass (bool value)                { m_groupByClass = value; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Eligijus.Mauragas               10/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool RelatedInstanceNodesSpecification::GetGroupByRelationship (void) const         { return m_groupByRelationship; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Kelly.Shiptoski                 05/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RelatedInstanceNodesSpecification::SetGroupByRelationship (bool value)         { m_groupByRelationship = value; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Eligijus.Mauragas               10/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool RelatedInstanceNodesSpecification::GetGroupByLabel (void) const                { return m_groupByLabel; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Kelly.Shiptoski                 05/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RelatedInstanceNodesSpecification::SetGroupByLabel (bool value)                { m_groupByLabel = value; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Eligijus.Mauragas               10/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool RelatedInstanceNodesSpecification::GetShowEmptyGroups (void) const             { return m_showEmptyGroups; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Kelly.Shiptoski                 05/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RelatedInstanceNodesSpecification::SetShowEmptyGroups (bool value)             { m_showEmptyGroups = value; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Eligijus.Mauragas               10/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-int RelatedInstanceNodesSpecification::GetSkipRelatedLevel (void) const             { return m_skipRelatedLevel; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Kelly.Shiptoski                 05/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RelatedInstanceNodesSpecification::SetSkipRelatedLevel (int value)             { m_skipRelatedLevel = value; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Eligijus.Mauragas               10/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR RelatedInstanceNodesSpecification::GetInstanceFilter (void) const         { return m_instanceFilter; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Kelly.Shiptoski                 05/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RelatedInstanceNodesSpecification::SetInstanceFilter (Utf8String value)           { m_instanceFilter = value; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Eligijus.Mauragas               10/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-RequiredRelationDirection RelatedInstanceNodesSpecification::GetRequiredRelationDirection (void) const { return m_requiredDirection; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Kelly.Shiptoski                 05/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RelatedInstanceNodesSpecification::SetRequiredRelationDirection (RequiredRelationDirection value) { m_requiredDirection = value; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Eligijus.Mauragas               10/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR RelatedInstanceNodesSpecification::GetSupportedSchemas (void) const       { return m_supportedSchemas; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Kelly.Shiptoski                 05/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RelatedInstanceNodesSpecification::SetSupportedSchemas (Utf8String value)         { m_supportedSchemas = value; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Eligijus.Mauragas               10/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR RelatedInstanceNodesSpecification::GetRelationshipClassNames (void) const { return m_relationshipClassNames; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Kelly.Shiptoski                 05/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RelatedInstanceNodesSpecification::SetRelationshipClassNames (Utf8String value)   { m_relationshipClassNames = value; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Eligijus.Mauragas               10/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR RelatedInstanceNodesSpecification::GetRelatedClassNames (void) const      { return m_relatedClassNames; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Kelly.Shiptoski                 05/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RelatedInstanceNodesSpecification::SetRelatedClassNames(Utf8String value) { m_relatedClassNames = value; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                09/2017
@@ -314,5 +258,13 @@ MD5 RelatedInstanceNodesSpecification::_ComputeHash(Utf8CP parentHash) const
     md5.Add(m_supportedSchemas.c_str(), m_supportedSchemas.size());
     md5.Add(m_relationshipClassNames.c_str(), m_relationshipClassNames.size());
     md5.Add(m_relatedClassNames.c_str(), m_relatedClassNames.size());
+
+    Utf8String currentHash = md5.GetHashString();
+    for (RepeatableRelationshipPathSpecification const* spec : m_relationshipPaths)
+        {
+        Utf8StringCR specHash = spec->GetHash(currentHash.c_str());
+        md5.Add(specHash.c_str(), specHash.size());
+        }
+
     return md5;
     }

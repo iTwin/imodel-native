@@ -98,7 +98,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_NotGro
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    RulesDrivenECPresentationManager::NavigationOptions options("AllInstanceNodes_NotGrouped");
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
 
     // expect two nodes
@@ -129,7 +129,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_Groupe
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    RulesDrivenECPresentationManager::NavigationOptions options("AllInstanceNodes_GroupedByClass");
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
 
     // make sure we have 2 class grouping nodes
@@ -169,7 +169,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_AlwaysR
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("AllInstanceNodes_AlwaysReturnsChildren").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node
@@ -199,7 +199,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_DoNotSo
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("AllInstanceNodes_DoNotSort_ReturnsUnsortedNodes").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 2 nodes
@@ -231,7 +231,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_HideIfN
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("AllInstanceNodes_HideIfNoChildren_ReturnsEmptyListIfNoChildren").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 0 nodes
@@ -261,7 +261,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_HideIfN
     allInstanceNodesSpecification->AddNestedRule(*childRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("AllInstanceNodes_HideIfNoChildren_ReturnsNodesIfHasChildren").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node
@@ -372,7 +372,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_Grouped
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("AllInstanceNodes_GroupedByLabel_DoesntGroup1Instance").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node
@@ -403,7 +403,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_Grouped
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("AllInstanceNodes_GroupedByLabelGroups3InstancesWith1GroupingNode").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 2 nodes
@@ -446,7 +446,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_Grouped
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("AllInstanceNodes_GroupedByLabelGroups4InstancesWith2GroupingNodes").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> labelGroupingNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 2 label grouping nodes
@@ -562,7 +562,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, HideIfNoChildren_Return
     rules->AddPresentationRule(*childRule);
 
     // request for nodes
-    RulesDrivenECPresentationManager::NavigationOptions options("HideIfNoChildren_ReturnsEmptyListIfNoChildren");
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
 
     // make sure the node was hidden
@@ -595,7 +595,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, HideIfNoChildren_Return
     rules->AddPresentationRule(*childRule);
 
     // request for nodes
-    RulesDrivenECPresentationManager::NavigationOptions options("HideIfNoChildren_ReturnsNodesIfHasChildren");
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
 
     // make sure the node was not hidden
@@ -619,7 +619,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, HideIfNoChildren_Ignore
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    RulesDrivenECPresentationManager::NavigationOptions options("HideIfNoChildren_IgnoredIfHasAlwaysReturnsNodesFlag");
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
 
     // make sure the node was not hidden
@@ -651,7 +651,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, HideNodesInHierarchy_Re
     rules->AddPresentationRule(*childRule);
 
     // request for nodes
-    RulesDrivenECPresentationManager::NavigationOptions options("HideNodesInHierarchy_ReturnsChildNodes");
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
 
     // make sure we get gadget, not widget
@@ -752,7 +752,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_SkipsSpecifiedNu
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    RulesDrivenECPresentationManager::NavigationOptions options("Paging_SkipsSpecifiedNumberOfNodes");
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(2), options.GetJson()).get(); });
 
     // expect 3 nodes: C, D, E
@@ -784,7 +784,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_SkippingMoreThan
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    RulesDrivenECPresentationManager::NavigationOptions options("Paging_SkippingMoreThanExists");
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(5), options.GetJson()).get(); });
 
     // expect 0 nodes
@@ -814,7 +814,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_ReturnsSpecified
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    RulesDrivenECPresentationManager::NavigationOptions options("Paging_ReturnsSpecifiedNumberOfNodes");
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(0, 2), options.GetJson()).get(); });
 
     // expect 2 nodes: A, B
@@ -842,7 +842,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_PageSizeHigherTh
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    RulesDrivenECPresentationManager::NavigationOptions options("Paging_PageSizeHigherThanTheNumberOfNodes");
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(0, 5), options.GetJson()).get(); });
 
     // expect 2 nodes: A, B
@@ -870,7 +870,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_IndexHigherThanP
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    RulesDrivenECPresentationManager::NavigationOptions options("Paging_PageSizeHigherThanTheNumberOfNodes");
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(0, 2), options.GetJson()).get(); });
 
     // expect nullptr
@@ -899,7 +899,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_SkipsAndReturnsS
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    RulesDrivenECPresentationManager::NavigationOptions options("Paging_SkipsAndReturnsSpecifiedNumberOfNodes");
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(1, 3), options.GetJson()).get(); });
 
     // expect 3 nodes: B, C, D
@@ -924,7 +924,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_Type_Label_D
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("CustomNodes_Type_Label_Description_ImageId").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node
@@ -954,7 +954,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_HideIfNoChil
     rules->AddPresentationRule(*childRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("CustomNodes_HideIfNoChildren_ReturnsNodesIfHasChildren").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 0 nodes
@@ -975,7 +975,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_HideIfNoChil
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("CustomNodes_HideIfNoChildren_ReturnsEmptyListIfNoChildren").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 0 nodes
@@ -1186,7 +1186,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("InstanceNodesOfSpecificClasses_AlwaysReturnsChildren").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node
@@ -1219,7 +1219,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
     instanceNodesOfSpecificClassesSpecification->AddNestedRule(*childRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("InstanceNodesOfSpecificClasses_HideNodesInHierarchy").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node
@@ -1246,7 +1246,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("InstanceNodesOfSpecificClasses_HideIfNoChildren_ReturnsEmptyListIfNoChildren").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 0 nodes
@@ -1276,7 +1276,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
     instanceNodesOfSpecificClassesSpecification->AddNestedRule(*childRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("InstanceNodesOfSpecificClasses_HideIfNoChildren_ReturnsNodesIfHasChildren").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node
@@ -1301,7 +1301,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecific
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("InstanceNodesOfSpecificClasses_GroupedByClass").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> classGroupingNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 2 class grouping nodes
@@ -1328,7 +1328,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("InstanceNodesOfSpecificClasses_GroupedByLabel_DoesntGroup1Instance").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node
@@ -1358,7 +1358,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("InstanceNodesOfSpecificClasses_GroupedByLabel_Groups3InstancesWith1GroupingNode").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 2 nodes
@@ -1403,7 +1403,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("InstanceNodesOfSpecificClasses_GroupedByLabel_Groups4InstancesWith2GroupingNodes").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> labelGroupingNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 2 label grouping nodes
@@ -1452,7 +1452,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("InstanceNodesOfSpecificClasses_GroupedByClassAndByLabel").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> classGroupingNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 2 class grouping nodes
@@ -1504,7 +1504,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("InstanceNodesOfSpecificClasses_GroupedByClassAndByLabel").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> classGroupingNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 2 class grouping nodes
@@ -1554,7 +1554,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("InstanceNodesOfSpecificClasses_DoNotSort_ReturnsUnsortedNodes").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 2 nodes
@@ -1590,7 +1590,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("InstanceNodesOfSpecificClasses_ArePolymorphic").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 2 nodes
@@ -1618,7 +1618,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("InstanceNodesOfSpecificClasses_AreNotPolymorphic").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node
@@ -1643,7 +1643,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("InstanceNodesOfSpecificClasses_InstanceFilter").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node
@@ -1738,7 +1738,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Pranciskus.Ambrazas                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_AlwaysReturnsChildren)
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, DEPRECATED_RelatedInstanceNodes_AlwaysReturnsChildren)
     {
     // insert widget & gadget instances with relationship
     ECRelationshipClassCR relationshipWidgetHasGadget = *m_schema->GetClassCP("WidgetHasGadget")->GetRelationshipClassCP();
@@ -1761,7 +1761,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Al
     instanceNodesOfSpecificClassesSpecification->AddNestedRule(*childRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("RelatedInstancesNodes_AlwaysReturnsChildren").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> widgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 widget node
@@ -1780,7 +1780,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Al
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Pranciskus.Ambrazas                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_HideNodesInHierarchy)
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, DEPRECATED_RelatedInstanceNodes_HideNodesInHierarchy)
     {
     // insert widget & gadget instances with relationship
     ECRelationshipClassCR relationshipWidgetHasGadget = *m_schema->GetClassCP("WidgetHasGadget")->GetRelationshipClassCP();
@@ -1808,7 +1808,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Hi
     relatedInstanceNodesSpecification->AddNestedRule(*customNodeRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("RelatedInstancesNodes_HideNodesInHierarchy").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> widgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
      // make sure we have 1 widget node
@@ -1827,7 +1827,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Hi
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Pranciskus.Ambrazas                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_HideIfNoChildren_ReturnsEmptyListIfNoChildren)
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, DEPRECATED_RelatedInstanceNodes_HideIfNoChildren_ReturnsEmptyListIfNoChildren)
     {
     // insert widget & gadget instances with relationship
     ECRelationshipClassCR relationshipWidgetHasGadget = *m_schema->GetClassCP("WidgetHasGadget")->GetRelationshipClassCP();
@@ -1850,7 +1850,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Hi
     instanceNodesOfSpecificClassesSpecification->AddNestedRule(*relatedNodeRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("RelatedInstancesNodes_HideIfNoChildren_ReturnsEmptyListIfNoChildren").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> widgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 widget node
@@ -1866,7 +1866,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Hi
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Pranciskus.Ambrazas                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_HideIfNoChildren_ReturnsNodesIfHasChildren)
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, DEPRECATED_RelatedInstanceNodes_HideIfNoChildren_ReturnsNodesIfHasChildren)
     {
     // insert widget & gadget instances with relationship
     ECRelationshipClassCR relationshipWidgetHasGadget = *m_schema->GetClassCP("WidgetHasGadget")->GetRelationshipClassCP();
@@ -1894,7 +1894,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Hi
     relatedInstanceNodesSpecification->AddNestedRule(*customNodeRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("RelatedInstancesNodes_HideIfNoChildren_ReturnsNodesIfHasChildren").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> widgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 widget node
@@ -1909,7 +1909,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Hi
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Pranciskus.Ambrazas                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_GroupedByClass)
+TEST_F (RulesDrivenECPresentationManagerNavigationTests, DEPRECATED_RelatedInstanceNodes_GroupedByClass)
     {
     // insert widget & gadget instances with relationships
     ECRelationshipClassCR relationshipWidgetHasGadget = *m_schema->GetClassCP("WidgetHasGadget")->GetRelationshipClassCP();
@@ -1932,7 +1932,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_G
     instanceNodesOfSpecificClassesSpecification->AddNestedRule(*relatedNodeRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("RelatedInstancesNodes_GroupedByClass").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> widgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 widget node
@@ -1948,7 +1948,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_G
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Pranciskus.Ambrazas                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_GroupedByLabel_DoesntGroup1Instance)
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, DEPRECATED_RelatedInstanceNodes_GroupedByLabel_DoesntGroup1Instance)
     {
     // insert widget & gadget instances with relationships
     ECRelationshipClassCR relationshipWidgetHasGadget = *m_schema->GetClassCP("WidgetHasGadget")->GetRelationshipClassCP();
@@ -1973,7 +1973,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Gr
     instanceNodesOfSpecificClassesSpecification->AddNestedRule(*relatedNodeRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("RelatedInstancesNodes_GroupedByLabel_DoesntGroup1Instance").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> gadgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 gadget node
@@ -1991,7 +1991,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Gr
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Pranciskus.Ambrazas                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_GroupedByLabel_Groups3InstancesWith1GroupingNode)
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, DEPRECATED_RelatedInstanceNodes_GroupedByLabel_Groups3InstancesWith1GroupingNode)
     {
     // insert widget, gadget & sprocket instances with relationships
     ECRelationshipClassCR relationshipWidgetHasGadget = *m_schema->GetClassCP("WidgetHasGadget")->GetRelationshipClassCP();
@@ -2022,7 +2022,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Gr
     instanceNodesOfSpecificClassesSpecification->AddNestedRule(*relatedNodeRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("RelatedInstancesNodes_GroupedByLabel_Groups3InstancesWith1GroupingNode").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> gadgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 gadget node
@@ -2046,7 +2046,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Gr
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Pranciskus.Ambrazas                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_DoNotSort_ReturnsUnsortedNodes)
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, DEPRECATED_RelatedInstanceNodes_DoNotSort_ReturnsUnsortedNodes)
     {
     // insert some gadget & sprocket instances with relationships
     ECClassCP sprocketClass = m_schema->GetClassCP("Sprocket");
@@ -2074,7 +2074,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Do
     instanceNodesOfSpecificClassesSpecification->AddNestedRule(*relatedNodeRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("RelatedInstancesNodes_DoNotSort_ReturnsUnsortedNodes").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> gadgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 gadget node
@@ -2091,9 +2091,537 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Do
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(RelatedInstanceNodes_ReturnsSingleStepRelatedInstanceNodes, R"*(
+    <ECEntityClass typeName="Model">
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ModelContainsElements" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="Model"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="Element" />
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="Element">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="ElementName" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstanceNodes_ReturnsSingleStepRelatedInstanceNodes)
+    {
+    ECClassCP modelClass = GetClass("Model");
+    ECClassCP elementClass = GetClass("Element");
+    ECRelationshipClassCP modelContainsElementsRelationship = GetClass("ModelContainsElements")->GetRelationshipClassCP();
+
+    IECInstancePtr model = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *modelClass);
+    IECInstancePtr element = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *modelContainsElementsRelationship, *model, *element);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rule = new RootNodeRule();
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", modelClass->GetFullName(), false));
+    rules->AddPresentationRule(*rule);
+
+    ChildNodeRule* relatedNodeRule = new ChildNodeRule("ParentNode.ClassName=\"Model\"", 1, false);
+    relatedNodeRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "", {new RepeatableRelationshipPathSpecification({
+        new RepeatableRelationshipStepSpecification(modelContainsElementsRelationship->GetFullName(), RequiredRelationDirection_Forward),
+        })}));
+    rules->AddPresentationRule(*relatedNodeRule);
+
+    // validate
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
+
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
+    ASSERT_EQ(1, rootNodes.GetSize());
+
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
+    ASSERT_EQ(1, childNodes.GetSize());
+    VerifyNodeInstance(*childNodes[0], *element);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(RelatedInstanceNodes_ReturnsMultiStepRelatedInstanceNodes, R"*(
+    <ECEntityClass typeName="Element">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="ElementName" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsChildElements" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="true">
+            <Class class="Element"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstanceNodes_ReturnsMultiStepRelatedInstanceNodes)
+    {
+    ECClassCP elementClass = GetClass("Element");
+    ECRelationshipClassCP elementOwnsChildElementsRelationship = GetClass("ElementOwnsChildElements")->GetRelationshipClassCP();
+
+    IECInstancePtr e1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass, [](IECInstanceR instance){instance.SetValue("ElementName", ECValue("root"));});
+    IECInstancePtr e2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
+    IECInstancePtr e3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
+    IECInstancePtr e4 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementOwnsChildElementsRelationship, *e1, *e2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementOwnsChildElementsRelationship, *e2, *e3);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementOwnsChildElementsRelationship, *e3, *e4);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rule = new RootNodeRule();
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
+        "this.ElementName=\"root\"", elementClass->GetFullName(), false));
+    rules->AddPresentationRule(*rule);
+
+    ChildNodeRule* relatedNodeRule = new ChildNodeRule("ParentNode.ECInstance.ElementName=\"root\"", 1, false);
+    relatedNodeRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "", {new RepeatableRelationshipPathSpecification({
+        new RepeatableRelationshipStepSpecification(elementOwnsChildElementsRelationship->GetFullName(), RequiredRelationDirection_Forward, "", 3),
+        })}));
+    rules->AddPresentationRule(*relatedNodeRule);
+
+    // validate
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
+
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
+    ASSERT_EQ(1, rootNodes.GetSize());
+
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
+    ASSERT_EQ(1, childNodes.GetSize());
+    VerifyNodeInstance(*childNodes[0], *e4);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(RelatedInstanceNodes_ReturnsMultiRelationshipSingleStepRelatedInstanceNodes, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B" />
+    <ECEntityClass typeName="C" />
+    <ECRelationshipClass typeName="A_To_B" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="B_To_C" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="B"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="C" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstanceNodes_ReturnsMultiRelationshipSingleStepRelatedInstanceNodes)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+    ECRelationshipClassCP relationshipAB = GetClass("A_To_B")->GetRelationshipClassCP();
+    ECRelationshipClassCP relationshipBC = GetClass("B_To_C")->GetRelationshipClassCP();
+
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr c = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipAB, *a, *b);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipBC, *b, *c);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rule = new RootNodeRule();
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
+        "", classA->GetFullName(), false));
+    rules->AddPresentationRule(*rule);
+
+    ChildNodeRule* relatedNodeRule = new ChildNodeRule("ParentNode.ClassName=\"A\"", 1, false);
+    relatedNodeRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "", {new RepeatableRelationshipPathSpecification({
+        new RepeatableRelationshipStepSpecification(relationshipAB->GetFullName(), RequiredRelationDirection_Forward),
+        new RepeatableRelationshipStepSpecification(relationshipBC->GetFullName(), RequiredRelationDirection_Forward),
+        })}));
+    rules->AddPresentationRule(*relatedNodeRule);
+
+    // validate
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
+
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
+    ASSERT_EQ(1, rootNodes.GetSize());
+
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
+    ASSERT_EQ(1, childNodes.GetSize());
+    VerifyNodeInstance(*childNodes[0], *c);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(RelatedInstanceNodes_ReturnsMultiRelationshipMultiStepRelatedInstanceNodes, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B" />
+    <ECEntityClass typeName="C" />
+    <ECRelationshipClass typeName="A_To_B" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="B_To_B" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="B"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="B_To_C" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="B"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="C" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstanceNodes_ReturnsMultiRelationshipMultiStepRelatedInstanceNodes)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+    ECRelationshipClassCP relationshipAB = GetClass("A_To_B")->GetRelationshipClassCP();
+    ECRelationshipClassCP relationshipBB = GetClass("B_To_B")->GetRelationshipClassCP();
+    ECRelationshipClassCP relationshipBC = GetClass("B_To_C")->GetRelationshipClassCP();
+
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr b1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr b2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr b3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr c = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipAB, *a, *b1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipBB, *b1, *b2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipBB, *b2, *b3);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipBC, *b3, *c);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rule = new RootNodeRule();
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
+        "", classA->GetFullName(), false));
+    rules->AddPresentationRule(*rule);
+
+    ChildNodeRule* relatedNodeRule = new ChildNodeRule("ParentNode.ClassName=\"A\"", 1, false);
+    relatedNodeRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "", {new RepeatableRelationshipPathSpecification({
+        new RepeatableRelationshipStepSpecification(relationshipAB->GetFullName(), RequiredRelationDirection_Forward),
+        new RepeatableRelationshipStepSpecification(relationshipBB->GetFullName(), RequiredRelationDirection_Forward, "", 2),
+        new RepeatableRelationshipStepSpecification(relationshipBC->GetFullName(), RequiredRelationDirection_Forward),
+        })}));
+    rules->AddPresentationRule(*relatedNodeRule);
+
+    // validate
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
+
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
+    ASSERT_EQ(1, rootNodes.GetSize());
+
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
+    ASSERT_EQ(1, childNodes.GetSize());
+    VerifyNodeInstance(*childNodes[0], *c);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(RelatedInstanceNodes_ReturnsMultiRelationshipRecursivelyRelatedInstanceNodesWithRecursiveRelationshipInFront, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="Name" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="B" />
+    <ECEntityClass typeName="C" />
+    <ECRelationshipClass typeName="A_To_A" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="A" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="A_To_B" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="B_To_C" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="B"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="C" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstanceNodes_ReturnsMultiRelationshipRecursivelyRelatedInstanceNodesWithRecursiveRelationshipInFront)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+    ECRelationshipClassCP relationshipAA = GetClass("A_To_A")->GetRelationshipClassCP();
+    ECRelationshipClassCP relationshipAB = GetClass("A_To_B")->GetRelationshipClassCP();
+    ECRelationshipClassCP relationshipBC = GetClass("B_To_C")->GetRelationshipClassCP();
+
+    IECInstancePtr a1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance){instance.SetValue("Name", ECValue("a1"));});
+    IECInstancePtr a2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr a3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr b1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr b2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr b3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr c1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+    IECInstancePtr c2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+    IECInstancePtr c3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+    IECInstancePtr c4 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipAA, *a1, *a2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipAB, *a1, *b1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipAA, *a2, *a3);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipAB, *a2, *b2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipAB, *a3, *b3);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipBC, *b1, *c1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipBC, *b2, *c2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipBC, *b3, *c3);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipBC, *b3, *c4);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rule = new RootNodeRule();
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
+        "this.Name = \"a1\"", classA->GetFullName(), false));
+    rules->AddPresentationRule(*rule);
+
+    ChildNodeRule* relatedNodeRule = new ChildNodeRule("ParentNode.ECInstance.Name=\"a1\"", 1, false);
+    relatedNodeRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "", {new RepeatableRelationshipPathSpecification({
+        new RepeatableRelationshipStepSpecification(relationshipAA->GetFullName(), RequiredRelationDirection_Forward, "", 0),
+        new RepeatableRelationshipStepSpecification(relationshipAB->GetFullName(), RequiredRelationDirection_Forward),
+        new RepeatableRelationshipStepSpecification(relationshipBC->GetFullName(), RequiredRelationDirection_Forward),
+        })}));
+    rules->AddPresentationRule(*relatedNodeRule);
+
+    // validate
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
+
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
+    ASSERT_EQ(1, rootNodes.GetSize());
+
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
+    ASSERT_EQ(4, childNodes.GetSize());
+    VerifyNodeInstance(*childNodes[0], *c1);
+    VerifyNodeInstance(*childNodes[1], *c2);
+    VerifyNodeInstance(*childNodes[2], *c3);
+    VerifyNodeInstance(*childNodes[3], *c4);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(RelatedInstanceNodes_ReturnsMultiRelationshipRecursivelyRelatedInstanceNodesWithRecursiveRelationshipInTheMiddle, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B" />
+    <ECEntityClass typeName="C" />
+    <ECRelationshipClass typeName="A_To_B" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="B_To_B" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="B"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="B_To_C" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="B"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="C" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstanceNodes_ReturnsMultiRelationshipRecursivelyRelatedInstanceNodesWithRecursiveRelationshipInTheMiddle)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+    ECRelationshipClassCP relationshipAB = GetClass("A_To_B")->GetRelationshipClassCP();
+    ECRelationshipClassCP relationshipBB = GetClass("B_To_B")->GetRelationshipClassCP();
+    ECRelationshipClassCP relationshipBC = GetClass("B_To_C")->GetRelationshipClassCP();
+
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr b1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr b2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr b3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr c1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+    IECInstancePtr c2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+    IECInstancePtr c3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+    IECInstancePtr c4 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipAB, *a, *b1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipBC, *b1, *c1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipBB, *b1, *b2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipBC, *b2, *c2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipBB, *b2, *b3);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipBC, *b3, *c3);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipBC, *b3, *c4);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rule = new RootNodeRule();
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
+        "", classA->GetFullName(), false));
+    rules->AddPresentationRule(*rule);
+
+    ChildNodeRule* relatedNodeRule = new ChildNodeRule("ParentNode.ClassName=\"A\"", 1, false);
+    relatedNodeRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "", {new RepeatableRelationshipPathSpecification({
+        new RepeatableRelationshipStepSpecification(relationshipAB->GetFullName(), RequiredRelationDirection_Forward),
+        new RepeatableRelationshipStepSpecification(relationshipBB->GetFullName(), RequiredRelationDirection_Forward, "", 0),
+        new RepeatableRelationshipStepSpecification(relationshipBC->GetFullName(), RequiredRelationDirection_Forward),
+        })}));
+    rules->AddPresentationRule(*relatedNodeRule);
+
+    // validate
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
+
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
+    ASSERT_EQ(1, rootNodes.GetSize());
+
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
+    ASSERT_EQ(4, childNodes.GetSize());
+    VerifyNodeInstance(*childNodes[0], *c1);
+    VerifyNodeInstance(*childNodes[1], *c2);
+    VerifyNodeInstance(*childNodes[2], *c3);
+    VerifyNodeInstance(*childNodes[3], *c4);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(RelatedInstanceNodes_ReturnsMultiRelationshipRecursivelyRelatedInstanceNodesWithRecursiveRelationshipAtTheEnd, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B" />
+    <ECEntityClass typeName="C" />
+    <ECRelationshipClass typeName="A_To_B" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="B_To_C" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="B"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="C" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="C_To_C" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="C"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="C" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstanceNodes_ReturnsMultiRelationshipRecursivelyRelatedInstanceNodesWithRecursiveRelationshipAtTheEnd)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+    ECRelationshipClassCP relationshipAB = GetClass("A_To_B")->GetRelationshipClassCP();
+    ECRelationshipClassCP relationshipBC = GetClass("B_To_C")->GetRelationshipClassCP();
+    ECRelationshipClassCP relationshipCC = GetClass("C_To_C")->GetRelationshipClassCP();
+
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr c1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+    IECInstancePtr c2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+    IECInstancePtr c3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+    IECInstancePtr c4 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipAB, *a, *b);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipBC, *b, *c1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipCC, *c1, *c2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipCC, *c1, *c3);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipCC, *c3, *c4);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rule = new RootNodeRule();
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
+        "", classA->GetFullName(), false));
+    rules->AddPresentationRule(*rule);
+
+    ChildNodeRule* relatedNodeRule = new ChildNodeRule("ParentNode.ClassName=\"A\"", 1, false);
+    relatedNodeRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "", {new RepeatableRelationshipPathSpecification({
+        new RepeatableRelationshipStepSpecification(relationshipAB->GetFullName(), RequiredRelationDirection_Forward),
+        new RepeatableRelationshipStepSpecification(relationshipBC->GetFullName(), RequiredRelationDirection_Forward),
+        new RepeatableRelationshipStepSpecification(relationshipCC->GetFullName(), RequiredRelationDirection_Forward, "", 0),
+        })}));
+    rules->AddPresentationRule(*relatedNodeRule);
+
+    // validate
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
+
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
+    ASSERT_EQ(1, rootNodes.GetSize());
+
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
+    ASSERT_EQ(4, childNodes.GetSize());
+    VerifyNodeInstance(*childNodes[0], *c1);
+    VerifyNodeInstance(*childNodes[1], *c2);
+    VerifyNodeInstance(*childNodes[2], *c3);
+    VerifyNodeInstance(*childNodes[3], *c4);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @betest                                       Pranciskus.Ambrazas                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_SkipRelatedLevel)
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, DEPRECATED_RelatedInstanceNodes_SkipRelatedLevel)
     {
     // insert widget, gadget & sprocket instances with relationships
     ECRelationshipClassCR relationshipWidgetHasGadget = *m_schema->GetClassCP("WidgetHasGadget")->GetRelationshipClassCP();
@@ -2121,7 +2649,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Sk
     instanceNodesOfSpecificClassesSpecification->AddNestedRule(*relatedNodeRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("RelatedInstancesNodes_SkipRelatedLevel").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> widgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
      // make sure we have 1 widget node
@@ -2139,7 +2667,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Sk
 * TFS#711486
 * @betest                                       Grigas.Petraitis                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_SkipRelatedLevel_DoesntDuplicateNodesWhenSkippingMultipleDifferentInstancesWithTheSameEndpointInstance)
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, DEPRECATED_RelatedInstanceNodes_SkipRelatedLevel_DoesntDuplicateNodesWhenSkippingMultipleDifferentInstancesWithTheSameEndpointInstance)
     {
     // insert widget, gadget & sprocket instances with relationships
     ECRelationshipClassCR relationshipWidgetHasGadget = *m_schema->GetClassCP("WidgetHasGadgets")->GetRelationshipClassCP();
@@ -2190,7 +2718,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Sk
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Pranciskus.Ambrazas                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_InstanceFilter)
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, DEPRECATED_RelatedInstanceNodes_InstanceFilter)
     {
     // insert some gadget & sprocket instances with relationships
     ECClassCP sprocketClass = m_schema->GetClassCP("Sprocket");
@@ -2218,7 +2746,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_In
     instanceNodesOfSpecificClassesSpecification->AddNestedRule(*relatedNodeRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("RelatedInstancesNodes_InstanceFilter").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> gadgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 gadget node
@@ -2235,7 +2763,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_In
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(RelatedInstancesNodes_InstanceFilter_AppliesOnlyToMatchingInstances, R"*(
+DEFINE_SCHEMA(DEPRECATED_RelatedInstanceNodes_InstanceFilter_AppliesOnlyToMatchingInstances, R"*(
     <ECEntityClass typeName="ClassA">
     </ECEntityClass>
     <ECEntityClass typeName="ClassB">
@@ -2250,7 +2778,7 @@ DEFINE_SCHEMA(RelatedInstancesNodes_InstanceFilter_AppliesOnlyToMatchingInstance
         </Target>
     </ECRelationshipClass>
 )*");
-TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_InstanceFilter_AppliesOnlyToMatchingInstances)
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, DEPRECATED_RelatedInstanceNodes_InstanceFilter_AppliesOnlyToMatchingInstances)
     {
     ECEntityClassCP classA = GetClass("ClassA")->GetEntityClassCP();
     ECEntityClassCP classB = GetClass("ClassB")->GetEntityClassCP();
@@ -2288,7 +2816,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_In
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Pranciskus.Ambrazas                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_GroupedByLabel_GroupsByClassAndByLabel)
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, DEPRECATED_RelatedInstanceNodes_GroupedByLabel_GroupsByClassAndByLabel)
     {
     // insert widget, gadget & sprocket instances with relationships
     ECRelationshipClassCR relationshipWidgetHasGadget = *m_schema->GetClassCP("WidgetHasGadget")->GetRelationshipClassCP();
@@ -2321,7 +2849,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Gr
     instanceNodesOfSpecificClassesSpecification->AddNestedRule(*relatedNodeRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("RelatedInstancesNodes_GroupedByLabel_GroupsByClassAndByLabel").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> gadgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 gadget node
@@ -2358,7 +2886,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Gr
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Aidas.Vaiksnoras               01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_GroupedByLabel_GroupsByClassAndByLabel_InstanceLabelOverride)
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, DEPRECATED_RelatedInstanceNodes_GroupedByLabel_GroupsByClassAndByLabel_InstanceLabelOverride)
     {
     // insert widget, gadget & sprocket instances with relationships
     ECRelationshipClassCR relationshipWidgetHasGadget = *m_schema->GetClassCP("WidgetHasGadget")->GetRelationshipClassCP();
@@ -2375,7 +2903,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Gr
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), relationshipGadgetHasSprockets, *gadgetInstance, *sprocketInstance);
 
     // create the rule set
-    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("RelatedInstancesNodes_GroupedByLabel_GroupsByClassAndByLabel", 1, 0, false, "", "", "", false);
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("RelatedInstanceNodes_GroupedByLabel_GroupsByClassAndByLabel", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
     SetUpDefaultLabelRule(*rules);
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Sprocket", "MyID"));
@@ -2390,7 +2918,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Gr
     instanceNodesOfSpecificClassesSpecification->AddNestedRule(*relatedNodeRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("RelatedInstancesNodes_GroupedByLabel_GroupsByClassAndByLabel").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> gadgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 gadget node
@@ -2427,7 +2955,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Gr
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(RelatedInstancesNodes_FindsAllMixinSubclassesAndCustomizesNodesCorrectly, R"*(
+DEFINE_SCHEMA(DEPRECATED_RelatedInstanceNodes_FindsAllMixinSubclassesAndCustomizesNodesCorrectly, R"*(
     <ECEntityClass typeName="Element" modifier="Abstract">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.2.0">
@@ -2477,7 +3005,7 @@ DEFINE_SCHEMA(RelatedInstancesNodes_FindsAllMixinSubclassesAndCustomizesNodesCor
         <ECProperty propertyName="Label" typeName="string" />
     </ECEntityClass>
 )*");
-TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_FindsAllMixinSubclassesAndCustomizesNodesCorrectly)
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, DEPRECATED_RelatedInstanceNodes_FindsAllMixinSubclassesAndCustomizesNodesCorrectly)
     {
     ECEntityClassCP classClassification = GetClass("Classification")->GetEntityClassCP();
     ECEntityClassCP classSpecificClassifiedClass = GetClass("SpecificClassifiedClass")->GetEntityClassCP();
@@ -2516,7 +3044,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Fi
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                12/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(RelatedInstancesNodes_ReturnsWithoutExcludedRelatedClassInstances, R"*(
+DEFINE_SCHEMA(DEPRECATED_RelatedInstanceNodes_ReturnsWithoutExcludedRelatedClassInstances, R"*(
     <ECEntityClass typeName="Element">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
@@ -2550,7 +3078,7 @@ DEFINE_SCHEMA(RelatedInstancesNodes_ReturnsWithoutExcludedRelatedClassInstances,
         </Target>
     </ECRelationshipClass>
 )*");
-TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_ReturnsWithoutExcludedRelatedClassInstances)
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, DEPRECATED_RelatedInstanceNodes_ReturnsWithoutExcludedRelatedClassInstances)
     {
     ECClassCP modelClass = GetClass("Model");
     ECClassCP elementClass = GetClass("Element");
@@ -2559,13 +3087,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Re
     ECClassCP physicalElementClass = GetClass("PhysicalElement");
     ECRelationshipClassCP modelContainsElementsRel = GetClass("ModelContainsElements")->GetRelationshipClassCP();
     IECInstancePtr model = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *modelClass);
-    IECInstancePtr baseElement = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass, 
+    IECInstancePtr baseElement = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass,
         [&](IECInstanceR inst){inst.SetValue("Model", ECValue(ECInstanceId::FromString(model->GetInstanceId().c_str()), modelContainsElementsRel->GetId()));});
-    IECInstancePtr customElement = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *customElementClass, 
+    IECInstancePtr customElement = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *customElementClass,
         [&](IECInstanceR inst){inst.SetValue("Model", ECValue(ECInstanceId::FromString(model->GetInstanceId().c_str()), modelContainsElementsRel->GetId()));});
-    IECInstancePtr geometricElement = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *geometricElementClass, 
+    IECInstancePtr geometricElement = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *geometricElementClass,
         [&](IECInstanceR inst){inst.SetValue("Model", ECValue(ECInstanceId::FromString(model->GetInstanceId().c_str()), modelContainsElementsRel->GetId()));});
-    IECInstancePtr physicalElement = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *physicalElementClass, 
+    IECInstancePtr physicalElement = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *physicalElementClass,
         [&](IECInstanceR inst){inst.SetValue("Model", ECValue(ECInstanceId::FromString(model->GetInstanceId().c_str()), modelContainsElementsRel->GetId()));});
 
     // create the rule set
@@ -2597,7 +3125,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Re
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                12/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(RelatedInstancesNodes_ReturnsWithoutPolymorphicallyExcludedRelatedClassInstances, R"*(
+DEFINE_SCHEMA(DEPRECATED_RelatedInstanceNodes_ReturnsWithoutPolymorphicallyExcludedRelatedClassInstances, R"*(
     <ECEntityClass typeName="Element">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
@@ -2631,7 +3159,7 @@ DEFINE_SCHEMA(RelatedInstancesNodes_ReturnsWithoutPolymorphicallyExcludedRelated
         </Target>
     </ECRelationshipClass>
 )*");
-TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_ReturnsWithoutPolymorphicallyExcludedRelatedClassInstances)
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, DEPRECATED_RelatedInstanceNodes_ReturnsWithoutPolymorphicallyExcludedRelatedClassInstances)
     {
     ECClassCP modelClass = GetClass("Model");
     ECClassCP elementClass = GetClass("Element");
@@ -2640,13 +3168,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Re
     ECClassCP physicalElementClass = GetClass("PhysicalElement");
     ECRelationshipClassCP modelContainsElementsRel = GetClass("ModelContainsElements")->GetRelationshipClassCP();
     IECInstancePtr model = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *modelClass);
-    IECInstancePtr baseElement = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass, 
+    IECInstancePtr baseElement = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass,
         [&](IECInstanceR inst){inst.SetValue("Model", ECValue(ECInstanceId::FromString(model->GetInstanceId().c_str()), modelContainsElementsRel->GetId()));});
-    IECInstancePtr customElement = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *customElementClass, 
+    IECInstancePtr customElement = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *customElementClass,
         [&](IECInstanceR inst){inst.SetValue("Model", ECValue(ECInstanceId::FromString(model->GetInstanceId().c_str()), modelContainsElementsRel->GetId()));});
-    IECInstancePtr geometricElement = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *geometricElementClass, 
+    IECInstancePtr geometricElement = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *geometricElementClass,
         [&](IECInstanceR inst){inst.SetValue("Model", ECValue(ECInstanceId::FromString(model->GetInstanceId().c_str()), modelContainsElementsRel->GetId()));});
-    IECInstancePtr physicalElement = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *physicalElementClass, 
+    IECInstancePtr physicalElement = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *physicalElementClass,
         [&](IECInstanceR inst){inst.SetValue("Model", ECValue(ECInstanceId::FromString(model->GetInstanceId().c_str()), modelContainsElementsRel->GetId()));});
 
     // create the rule set
@@ -2699,7 +3227,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SearchResultInstances_Hi
     searchResultInstanceSpecification->AddNestedRule(*childRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("SearchResultInstances_HideIfNoChildren_ReturnsNodesIfHasChildren").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> widgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 widget node
@@ -2731,7 +3259,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SearchResultInstances_Hi
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("SearchResultInstances_HideIfNoChildren_ReturnsEmptyListIfNoChildren").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 0 nodes
@@ -2757,7 +3285,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, SearchResultInstances_G
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("SearchResultInstances_GroupedByClass").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> classGroupingNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 class grouping node
@@ -2816,7 +3344,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, SearchResultInstances_G
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("SearchResultInstances_GroupedByLabel_Groups3InstancesWith1GroupingNode").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 2 nodes
@@ -2859,7 +3387,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, SearchResultInstances_G
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("SearchResultInstances_GroupedByLabel_Groups4InstancesWith2GroupingNodes").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 2 label grouping nodes
@@ -2900,7 +3428,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SearchResultInstances_Do
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("SearchResultInstances_DoNotSort_ReturnsUnsortedNodes").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 2 nodes
@@ -2934,7 +3462,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, ImageIdOverride)
     rules->AddPresentationRule(*imageIdOverride);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("ImageIdOverride").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node with overrided ImageId
@@ -2994,7 +3522,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, LabelOverride)
     rules->AddPresentationRule(*labelOverride);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("LabelOverride").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node with overrided Label & Description
@@ -3028,7 +3556,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, LabelOverrideWithGrouped
     rules->AddPresentationRule(*labelOverride);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("LabelOverrideWithGroupedInstancesCountOnClassGroupingNode").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // verify there're two grouping nodes with correct labels
@@ -3070,7 +3598,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, LabelOverrideWithGrouped
     rules->AddPresentationRule(*labelOverride);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("LabelOverrideWithGroupedInstancesCountOnPropertyGroupingNode").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // verify there're three grouping nodes with correct labels
@@ -3114,7 +3642,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, LabelOverrideWithGrouped
     rules->AddPresentationRule(*labelOverride);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("LabelOverrideWithGroupedInstancesCountOnPropertyGroupingNodeSortedByPropertyValue").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // verify there're three grouping nodes with correct labels
@@ -3144,7 +3672,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, StyleOverride)
     rules->AddPresentationRule(*styleOverride);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("StyleOverride").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node with overrided BackColor, ForeColor & FontStyle
@@ -3175,7 +3703,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, LocalizationResourceKeyD
     rules->AddPresentationRule(*localizationRecourceKeyDefinition);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("LocalizationResourceKeyDefinition_WithExistingKey").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node
@@ -3204,7 +3732,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, LocalizationResourceKeyD
     rules->AddPresentationRule(*localizationRecourceKeyDefinition);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("LocalizationResourceKeyDefinition_KeyNotFound").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node
@@ -3236,7 +3764,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CheckBoxRule_UsesDefault
     rules->AddPresentationRule(*checkBoxRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("CheckBoxRule_UsesDefaultValueIfPropertyIsNull").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 2 nodes
@@ -3272,7 +3800,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CheckBoxRule_WithoutProp
     rules->AddPresentationRule(*checkBoxRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("CheckBoxRule_WithoutProperty").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node
@@ -3313,7 +3841,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CheckBoxRule_UsesInverse
     rules->AddPresentationRule(*checkBoxRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("CheckBoxRule_UsesInversedPropertyName").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 2 nodes
@@ -3361,7 +3889,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CheckBoxRule_DoesNotUseI
     rules->AddPresentationRule(*checkBoxRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("CheckBoxRule_DoesNotUseInversedPropertyName").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 2 nodes
@@ -3402,7 +3930,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingAscen
     rules->AddPresentationRule(*sortingRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("SortingRule_SortingAscending").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 3 nodes sorted ascending
@@ -3436,7 +3964,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingAscen
     rules->AddPresentationRule(*sortingRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("SortingRule_SortingAscending").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 3 nodes sorted ascending
@@ -3470,7 +3998,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingDesce
     rules->AddPresentationRule(*sortingRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("SortingRule_SortingDescending").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node sorted descending
@@ -3504,7 +4032,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_DoNotSort)
     rules->AddPresentationRule(*sortingRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("SortingRule_DoNotSort").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 3 unsorted nodes
@@ -3542,7 +4070,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingAscen
     rules->AddPresentationRule(*sortingRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("SortingRule_SortingAscendingPolymorphically").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 4 sorted ascending ClassE & ClassF nodes
@@ -3599,7 +4127,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingByTwo
     rules->AddPresentationRule(*sortingRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("SortingRule_SortingByTwoProperties").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 3 nodes sorted ascending by IntProperty & descending by DoubleProperty
@@ -3715,7 +4243,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Grou
     rules->AddPresentationRule(*groupingRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Grouping_ClassGroup_GroupsByBaseClass").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 class grouping node
@@ -3758,7 +4286,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Does
     rules->AddPresentationRule(*groupingRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Grouping_ClassGroup_DoesNotCreateGroupForSingleItem").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 ClassF node
@@ -3793,7 +4321,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Crea
     rules->AddPresentationRule(*groupingRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Grouping_ClassGroup_CreatesGroupForSingleItem").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 class grouping node
@@ -3833,7 +4361,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_D
     rules->AddPresentationRule(*groupingRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Grouping_PropertyGroup_DoesNotCreateGroupForSingleItem").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 Widget node
@@ -3866,7 +4394,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_D
     rules->AddPresentationRule(*groupingRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Grouping_PropertyGroup_DoesNotCreateGroupForSingleItem").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 Widget node
@@ -3932,7 +4460,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_S
     rules->AddPresentationRule(*groupingRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Grouping_PropertyGroup_SetImageIdForGroupingNode").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 widget property grouping node with changed ImageId
@@ -3966,7 +4494,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     rules->AddPresentationRule(*groupingRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Grouping_PropertyGroup_GroupsByNullProperty").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 property grouping node
@@ -4015,7 +4543,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     rules->AddPresentationRule(*groupingRule2);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Grouping_PropertyGroup_GroupsPolymorphically").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 property grouping node
@@ -4172,7 +4700,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     rules->AddPresentationRule(*groupingRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Grouping_PropertyGroup_GroupsByNullForeignKey").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 property grouping node
@@ -4211,7 +4739,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     rules->AddPresentationRule(*groupingRule);
 
     // request for root nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Grouping_PropertyGroup_GroupsByRelationshipProperty").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // expect 1 widget node
@@ -4388,7 +4916,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     rules->AddPresentationRule(*groupingRule);
 
     // request for root nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Grouping_PropertyGroup_GroupsBySkippedRelationshipProperty").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // expect 1 widget node
@@ -4537,7 +5065,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_InstanceLabelOv
     rules->AddPresentationRule(*groupingRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Grouping_SameLabelInstanceGroup").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 widget instance node
@@ -4734,7 +5262,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_SameLabelInstan
 
     IECInstancePtr d = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD, [](IECInstanceR instance) {instance.SetValue("UserLabel", ECValue("m")); });
 
-    /* 
+    /*
     produce the following hierarchy:
         c
         a1 (virtual)
@@ -4960,7 +5488,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_SameLabelInstan
     childRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
         "", classD->GetFullName(), false));
     rootSpec->AddNestedRule(*childRule);
-    
+
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, baseClass->GetSchema().GetName(), baseClass->GetName(), "", "", "");
     groupingRule->AddGroup(*new SameLabelInstanceGroup(SameLabelInstanceGroupApplicationStage::PostProcess));
     rules->AddPresentationRule(*groupingRule);
@@ -4975,10 +5503,10 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_SameLabelInstan
     EXPECT_EQ(5, m_manager->GetChildrenCount(s_project->GetECDb(), *rootNodes[0], options).get());
     DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(5, childNodes.GetSize());
-    
+
     EXPECT_STREQ("a1", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     VerifyNodeInstances(*childNodes[0], {a1});
-    
+
     EXPECT_STREQ("a2", childNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
     VerifyNodeInstances(*childNodes[1], {a2});
 
@@ -5019,7 +5547,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
     rules->AddPresentationRule(*groupingRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Grouping_GroupsByProperty_WithRanges").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 property grouping node
@@ -5273,7 +5801,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Grou
     rules->AddPresentationRule(*groupingRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Grouping_ClassGroup_GroupsByBaseClassAndByInstancesClasses").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 class grouping node
@@ -5318,7 +5846,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, DoesNotReturnECInstanceN
     rules->AddPresentationRule(*relatedNodeRule);
 
     // make sure we have 1 ClassD root node
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("DoesNotReturnECInstanceNodesOfTheSameSpecificationAlreadyExistingInHierarchy").GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[0]->GetType().c_str());
@@ -5480,6 +6008,78 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupingChildrenByRelate
     DataContainer<NavNodeCPtr> grandChildNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *childNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, grandChildNodes.GetSize());
     VerifyNodeInstance(*grandChildNodes[0], *gadget);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(GroupingNodesByMultiStepRelatedInstanceProperty, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B" />
+    <ECEntityClass typeName="C">
+        <ECProperty propertyName="Name" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="A_Has_B" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="false">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is owned by" polymorphic="true">
+            <Class class="B"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="B_Has_C" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="false">
+            <Class class="B"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is owned by" polymorphic="true">
+            <Class class="C"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupingNodesByMultiStepRelatedInstanceProperty)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+    ECRelationshipClassCP relAB = GetClass("A_Has_B")->GetRelationshipClassCP();
+    ECRelationshipClassCP relBC = GetClass("B_Has_C")->GetRelationshipClassCP();
+
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr c = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance) {instance.SetValue("Name", ECValue("test")); });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *a, *b);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relBC, *b, *c);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rule = new RootNodeRule();
+    InstanceNodesOfSpecificClassesSpecificationP spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
+        "", classA->GetFullName(), false);
+    spec->AddRelatedInstance(*new RelatedInstanceSpecification(RelationshipPathSpecification({
+        new RelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection_Forward, classB->GetFullName()),
+        new RelationshipStepSpecification(relBC->GetFullName(), RequiredRelationDirection_Forward, classC->GetFullName()),
+        }), "c", true));
+    rule->AddSpecification(*spec);
+    rules->AddPresentationRule(*rule);
+
+    GroupingRule* groupingRule = new GroupingRule("", 1, false, classC->GetSchema().GetName(), classC->GetName(), "", "", "");
+    PropertyGroup* propertyGroupSpec = new PropertyGroup("", "", true, "Name");
+    groupingRule->AddGroup(*propertyGroupSpec);
+    rules->AddPresentationRule(*groupingRule);
+
+    // make sure we have 1 widget
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
+    ASSERT_EQ(1, rootNodes.GetSize());
+    EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
+    EXPECT_STREQ("test", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+
+    // the child node should have 1 Gadget child node
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
+    ASSERT_EQ(1, childNodes.GetSize());
+    VerifyNodeInstance(*childNodes[0], *a);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -7821,7 +8421,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Crea
 
     NavNodeCPtr elementNode = rootNodes[2];
     VerifyNodeInstance(*elementNode, *element);
-    
+
     DataContainer<NavNodeCPtr> drawingClassGroupChildren = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDbCR(), *drawingClassGroupingNode, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, drawingClassGroupChildren.GetSize());
     VerifyNodeInstance(*drawingClassGroupChildren[0], *drawingElement);

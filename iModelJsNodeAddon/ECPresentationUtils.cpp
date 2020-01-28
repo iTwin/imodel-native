@@ -392,16 +392,21 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
             rapidjson::Value selectClassJson(rapidjson::kObjectType);
             selectClassJson.AddMember("selectClassInfo", _AsJson(selectClass.GetSelectClass().GetClass(), &json.GetAllocator()), json.GetAllocator());
             selectClassJson.AddMember("isSelectPolymorphic", selectClass.GetSelectClass().IsSelectPolymorphic(), json.GetAllocator());
-            selectClassJson.AddMember("pathToPrimaryClass", _AsJson(selectClass.GetPathToInputClass(), json.GetAllocator()), json.GetAllocator());
+            selectClassJson.AddMember("pathToPrimaryClass", _AsJson(RelatedClassPath(selectClass.GetPathFromInputToSelectClass()).Reverse("", false), json.GetAllocator()), json.GetAllocator()); // deprecated
+            selectClassJson.AddMember("pathFromInputToSelectClass", _AsJson(selectClass.GetPathFromInputToSelectClass(), json.GetAllocator()), json.GetAllocator());
             selectClassJson.AddMember("relatedPropertyPaths", rapidjson::Value(rapidjson::kArrayType), json.GetAllocator());
             for (RelatedClassPathCR propertyPath : selectClass.GetRelatedPropertyPaths())
                 selectClassJson["relatedPropertyPaths"].PushBack(_AsJson(propertyPath, json.GetAllocator()), json.GetAllocator());
             selectClassJson.AddMember("navigationPropertyClasses", rapidjson::Value(rapidjson::kArrayType), json.GetAllocator());
             for (RelatedClassCR navPropertyClass : selectClass.GetNavigationPropertyClasses())
                 selectClassJson["navigationPropertyClasses"].PushBack(_AsJson(navPropertyClass, json.GetAllocator()), json.GetAllocator());
-            selectClassJson.AddMember("relatedInstanceClasses", rapidjson::Value(rapidjson::kArrayType), json.GetAllocator());
-            for (RelatedClassCR relatedInstanceClass : selectClass.GetRelatedInstanceClasses())
-                selectClassJson["relatedInstanceClasses"].PushBack(_AsJson(relatedInstanceClass, json.GetAllocator()), json.GetAllocator());
+            selectClassJson.AddMember("relatedInstanceClasses", rapidjson::Value(rapidjson::kArrayType), json.GetAllocator()); // deprecated
+            selectClassJson.AddMember("relatedInstancePaths", rapidjson::Value(rapidjson::kArrayType), json.GetAllocator());
+            for (RelatedClassPathCR relatedInstancePath : selectClass.GetRelatedInstancePaths())
+                {
+                selectClassJson["relatedInstanceClasses"].PushBack(_AsJson(relatedInstancePath.back(), json.GetAllocator()), json.GetAllocator());
+                selectClassJson["relatedInstancePaths"].PushBack(_AsJson(relatedInstancePath, json.GetAllocator()), json.GetAllocator());
+                }
             json["selectClasses"].PushBack(selectClassJson, json.GetAllocator());
             }
 
@@ -858,7 +863,7 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Saulius.Skliutas                12/2019
     +---------------+---------------+---------------+---------------+---------------+------*/
-    rapidjson::Document _AsJson(LabelDefinition const& labelDefinition, rapidjson::Document::AllocatorType* allocator) const override 
+    rapidjson::Document _AsJson(LabelDefinition const& labelDefinition, rapidjson::Document::AllocatorType* allocator) const override
         {
         rapidjson::Document json(allocator);
         json.SetObject();
@@ -1035,7 +1040,8 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
         json.AddMember("sourceClassInfo", _AsJson(*relatedClass.GetSourceClass(), &allocator), allocator);
         json.AddMember("targetClassInfo", _AsJson(relatedClass.GetTargetClass().GetClass(), &allocator), allocator);
         json.AddMember("isPolymorphicRelationship", relatedClass.GetTargetClass().IsSelectPolymorphic(), allocator);
-        json.AddMember("relationshipInfo", _AsJson(*relatedClass.GetRelationship(), &allocator), allocator);
+        if (relatedClass.GetRelationship())
+            json.AddMember("relationshipInfo", _AsJson(*relatedClass.GetRelationship(), &allocator), allocator);
         json.AddMember("isForwardRelationship", relatedClass.IsForwardRelationship(), allocator);
         return json;
         }

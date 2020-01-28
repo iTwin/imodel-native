@@ -101,8 +101,11 @@ TEST_F(ContentSpecificationsTests, WriteToJson)
             "overridesPriority": 456
         }],
         "relatedInstances": [{
-            "relationship": {"schemaName": "s1", "className": "c1"},
-            "class": {"schemaName": "s2", "className": "c2"},
+            "relationshipPath": {
+                "relationship": {"schemaName": "s1", "className": "c1"},
+                "direction" : "Both",
+                "targetClass": {"schemaName": "s2", "className": "c2"}
+            },
             "alias": "alias",
             "isRequired": true
         }],
