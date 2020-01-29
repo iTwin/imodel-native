@@ -1340,7 +1340,14 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
         BECN::SchemaKey key = entry.GetSchemaKey();
         bool isDynamic = entry.GetMappingType() == SyncInfo::ECSchemaMappingType::Dynamic;
         Utf8String schemaName(key.GetName().c_str());
-        if (0 == BeStringUtilities::Strnicmp("EWR", schemaName.c_str(), 3) && 0 != strcmp("EWRData", schemaName.c_str()))
+        if (0 == BeStringUtilities::Strnicmp("EWR", schemaName.c_str(), 3) && 0 != strcmp("EWRData", schemaName.c_str()) &&
+            0 != strcmp("EWR2CulvertsTemplate_01_ThreeD_3D", schemaName.c_str()) &&
+            0 != strcmp("EWR2CulvertsTemplate_02_ThreeD_3D", schemaName.c_str())) // These are entirely different schemas from the rest of the EWR* schemas.  
+                                                                                  // A more accurate comparison would be to check the namespacePrefix.  For the ones
+                                                                                  // we want to consolidate, the prefix is always "BIM_BLOCK".  Any other prefix would
+                                                                                  // be ignored.  Unfortunately, there's no way to get the alias from V8 without 
+                                                                                  // deserializing the schema.  So for now, we just hardcode in the ones we find that need
+                                                                                  // to be excluded from consolidation.
             {
             schemaName.AssignOrClear("EWR");
             key.m_schemaName = schemaName;

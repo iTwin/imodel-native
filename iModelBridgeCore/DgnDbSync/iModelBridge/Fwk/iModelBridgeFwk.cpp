@@ -259,7 +259,7 @@ void iModelBridgeFwk::InitLogging()
         if (NULL == m_logProvider)
             m_logProvider = new NativeLogging::Provider::Log4cxxProvider();
         NativeLogging::LoggingConfig::ActivateProvider(m_logProvider);
-
+        LOG.infov("Using logfile %s", m_jobEnvArgs.m_loggingConfigFileName.GetBaseName().GetNameUtf8().c_str());
         return;
         }
 

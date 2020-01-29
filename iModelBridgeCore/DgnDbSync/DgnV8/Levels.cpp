@@ -528,6 +528,14 @@ void Converter::ConvertLevelMask(ViewDefinitionR theView, DgnV8ViewInfoCR viewIn
     bool handleInconsistencies = theView.IsSpatialView(); // only spatial views process references and so only spatial views can have attachments disagreeing about level symbology or visibility
     auto levelType = theView.IsSpatialView()? SyncInfo::LevelExternalSourceAspect::Type::Spatial: SyncInfo::LevelExternalSourceAspect::Type::Drawing;
 
+    DgnV8Api::LevelMaskTree& lmTree = viewInfo.GetLevelMasksR();
+    DgnV8Api::LMTreeEntry* entry;
+    if (NULL != (entry = lmTree.FindEntry(NULL, v8ModelRef, false, NULL)))
+        {
+        bool newLevels;
+        entry->CorrectViewLevelMask(newLevels, false, v8ModelRef);
+        }
+
     //  Start by adding all categories to the view that are on in the V8 root model level mask.
     Bentley::BitMaskCP v8LevelMask = nullptr;
     if (DgnV8Api::VI_Success != viewInfo.GetEffectiveLevelDisplayMask(v8LevelMask, v8ModelRef) || nullptr==v8LevelMask)
@@ -537,14 +545,6 @@ void Converter::ConvertLevelMask(ViewDefinitionR theView, DgnV8ViewInfoCR viewIn
         }
     else
         {
-        DgnV8Api::LevelMaskTree& lmTree = viewInfo.GetLevelMasksR();
-        DgnV8Api::LMTreeEntry* entry;
-        if (NULL != (entry = lmTree.FindEntry(NULL, v8ModelRef, false, NULL)))
-            {
-            bool newLevels;
-            entry->CorrectViewLevelMask(newLevels, false, v8ModelRef);
-            v8LevelMask = entry->GetViewLevelMaskCP();
-            }
         for (uint32_t i = 0; i < v8LevelMask->GetCapacity(); ++i)
             {
             DgnV8Api::LevelId levelId = (i + 1);
