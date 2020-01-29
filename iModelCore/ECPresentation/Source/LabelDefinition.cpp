@@ -132,6 +132,9 @@ bool LabelDefinition::operator!=(LabelDefinitionCR other) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 LabelDefinition const& LabelDefinition::SetStringValue(Utf8CP value, Utf8CP displayValue)
     {
+    if (nullptr == value)
+        return *this;
+
     m_displayValue = nullptr != displayValue ? displayValue : value;
     m_typeName = "string";
     m_rawValue = std::make_unique<SimpleRawValue>(value);
@@ -143,6 +146,9 @@ LabelDefinition const& LabelDefinition::SetStringValue(Utf8CP value, Utf8CP disp
 +---------------+---------------+---------------+---------------+---------------+------*/
 LabelDefinition const& LabelDefinition::SetECValue(ECValueCR value, Utf8CP displayValue)
     {
+    if (value.IsUninitialized() || value.IsNull())
+        return *this;
+
     m_displayValue = nullptr != displayValue ? displayValue : value.ToString().c_str();
     m_typeName = ValueHelpers::GetECValueTypeName(value);
     m_rawValue = std::make_unique<SimpleRawValue>(ValueHelpers::GetJsonFromECValue(value, nullptr));
@@ -168,6 +174,9 @@ LabelDefinition const& LabelDefinition::SetECPropertyValue(ECPropertyCR ecProper
 +---------------+---------------+---------------+---------------+---------------+------*/
 LabelDefinition const& LabelDefinition::SetJsonValue(Utf8CP displayValue, Utf8CP typeName, RapidJsonValueCR value)
     {
+    if (value.IsNull())
+        return *this;
+
     m_displayValue = displayValue;
     m_typeName = typeName;
     m_rawValue = std::make_unique<SimpleRawValue>(value);
@@ -179,6 +188,9 @@ LabelDefinition const& LabelDefinition::SetJsonValue(Utf8CP displayValue, Utf8CP
 +---------------+---------------+---------------+---------------+---------------+------*/
 LabelDefinitionCR LabelDefinition::SetCompositeValue(Utf8CP displayValue, std::unique_ptr<CompositeRawValue> value)
     {
+    if (nullptr == value.get())
+        return *this;
+
     m_displayValue = displayValue;
     m_typeName = "composite";
     m_rawValue = std::move(value);

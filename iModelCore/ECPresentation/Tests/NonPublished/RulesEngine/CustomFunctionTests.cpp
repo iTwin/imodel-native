@@ -217,6 +217,26 @@ TEST_F(CustomFunctionTests, GetECInstanceDisplayLabel_Localizes)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Saulius.Skliutas                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CustomFunctionTests, GetECInstanceDisplayLabel_HandlesEmptyInstanceLabel)
+    {
+    ECClassCP classJ = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassJ");
+    IECInstancePtr instanceJ = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classJ, [](IECInstanceR instance) {instance.SetValue("DisplayLabel", ECValue()); });
+    ECInstanceId instanceJId;
+    ECInstanceId::FromString(instanceJId, instanceJ->GetInstanceId().c_str());
+
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_locale, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
+
+    ECSqlStatement stmt;
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetECInstanceDisplayLabel(?, ?, DisplayLabel, '') FROM RET.ClassJ"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, classJ->GetId()));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(2, instanceJId));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    EXPECT_STREQ(GetDisplayLabelJson(RULESENGINE_LOCALIZEDSTRING_NotSpecified.c_str()).c_str(), stmt.GetValueText(0));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CustomFunctionTests, GetECClassDisplayLabel_UsesLabelOverride)
