@@ -35,7 +35,7 @@
         <Bindings>
             <Assemblies ProductDirectoryName="C3dBridgeAssemblies">Delivery/$(shlibprefix)C3dImporter$(ApiNumber)$(shlibext)</Assemblies>
             <Libs Required="false">Delivery/$(libprefix)C3dImporter$(libext)</Libs>
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Application" SubPartDirectory="ECSchemas/Application">Delivery/C3dSchema.01.00.00.ecschema.xml</Files>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Application" SubPartDirectory="ECSchemas/Application">Delivery/C3dSchema.ecschema.xml</Files>
         </Bindings>
     </Part>
 

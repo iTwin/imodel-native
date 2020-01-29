@@ -30,7 +30,7 @@
 #define C3DSCHEMA_VERSION_Major 1
 #define C3DSCHEMA_VERSION_Write 0
 #define C3DSCHEMA_VERSION_Minor 0
-#define C3DSCHEMA_FileName      L"C3dSchema.01.00.00.ecschema.xml"
+#define C3DSCHEMA_FileName      L"C3dSchema.ecschema.xml"
 #define C3DSCHEMA(name)         C3DSCHEMA_SchemaAlias "." name
 
 // Civil domain names
@@ -195,6 +195,7 @@ public:
     ECN::ECClassCP      GetC3dECClass (Utf8StringCR name) const;
     ECN::StandaloneECInstancePtr CreateC3dECInstance (Utf8StringCR className) const;
     DgnDbStatus InsertArrayProperty (DgnElementR element, Utf8StringCR propertyName, uint32_t arraySize) const;
+    GeometryOptions& GetCurrentGeometryOptions () { return T_Super::_GetCurrentGeometryOptions(); }
     IDwgChangeDetector& GetChangeDetector () { return T_Super::_GetChangeDetector(); }
     BentleyStatus   ProcessDetectionResults (IDwgChangeDetector::DetectionResultsR detected, ElementImportResultsR results, ElementImportInputsR inputs) { return T_Super::_ProcessDetectionResults(detected, results, inputs); }
 };  // C3dImporter

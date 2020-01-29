@@ -69,7 +69,20 @@ BentleyStatus   AeccAlignmentExt::CreateOrUpdateAeccAlignment ()
     if (!m_name.empty())
         inputs.SetElementLabel (m_name);
 
+    // unset rendering options - they should have no impact on generating geometry for an alignment but ODA may gives no geometry!
+    auto&   geometryOpts = m_importer->GetCurrentGeometryOptions ();
+    auto currViewDir = geometryOpts.GetViewDirection ();
+    auto currRegenType = geometryOpts.GetRegenType ();
+
+    geometryOpts.SetViewDirection (DVec3d::From(0,0,1));
+    geometryOpts.SetRegenType (DwgGiRegenType::StandardDisplay);
+
     auto status = m_importer->_ImportEntity (results, inputs);
+
+    // restore current geometry settings
+    geometryOpts.SetViewDirection (currViewDir);
+    geometryOpts.SetRegenType (currRegenType);
+    
     if (status != BentleyStatus::BSISUCCESS)
         return  status;
 
@@ -103,6 +116,10 @@ BentleyStatus   AeccAlignmentExt::SetDesignSpeedProperties (DgnElementR element)
     if (count < 1)
         return  BentleyStatus::BSISUCCESS;
 
+    auto ecInstance = m_importer->CreateC3dECInstance (ECCLASSNAME_DesignSpeed);
+    if (!ecInstance.IsValid())
+        return  BentleyStatus::BSIERROR;
+
     auto status = m_importer->InsertArrayProperty (element, ECPROPNAME_DesignSpeeds, count);
     if (status != DgnDbStatus::Success)
         return  static_cast<BentleyStatus>(status);
@@ -112,19 +129,12 @@ BentleyStatus   AeccAlignmentExt::SetDesignSpeedProperties (DgnElementR element)
         auto designSpeed = m_aeccAlignment->GetDesignSpeedsByIndex (i);
         if (!designSpeed.isNull())
             {
-            auto ecInstance = m_importer->CreateC3dECInstance (ECCLASSNAME_DesignSpeed);
-            if (!ecInstance.IsValid())
-                return  BentleyStatus::BSIERROR;
-
             Utf8String  comment(reinterpret_cast<WCharCP>(designSpeed->GetComment().c_str()));
             if (!comment.empty())
                 ecInstance->SetValue (ECPROPNAME_Comment, ECValue(comment.c_str()));
 
-            // convert speed from km/hr to m/sec
-            double metersPerSec = designSpeed->GetValue() * 0.277778;
-
             ecInstance->SetValue (ECPROPNAME_Station, ECValue(designSpeed->GetStation()));
-            ecInstance->SetValue (ECPROPNAME_DesignSpeed, ECValue(metersPerSec));
+            ecInstance->SetValue (ECPROPNAME_DesignSpeed, ECValue(designSpeed->GetValue()));
 
             ECValue ecValue(VALUEKIND_Struct);
             ecValue.SetStruct (ecInstance.get());
