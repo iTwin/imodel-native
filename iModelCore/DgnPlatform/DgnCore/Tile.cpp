@@ -1616,6 +1616,38 @@ static Utf8CP parseExpansion(double& out, Utf8CP str)
     return '_' == *str ? str + 1 : nullptr;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* See https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function
+* Obviously do not use if bit pattern of T contains padding bytes, pointers, etc.
+* @bsimethod                                                    Paul.Connelly   01/20
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T> static uint64_t computeFnv1Hash(T const& input)
+    {
+    auto cur = reinterpret_cast<unsigned char const*>(&input);
+    auto end = cur + sizeof(input);
+
+    uint64_t hash = 0xcbf29ce484222325ull;
+    while (cur < end)
+        {
+        hash *= 0x100000001b3ull;
+        hash ^= static_cast<uint64_t>(*cur);
+        ++cur;
+        }
+
+    return hash;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/20
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T> static Utf8String computeFnv1HashString(T const& input)
+    {
+    auto hash = computeFnv1Hash(input);
+    Utf8Char buf[17]; // 16 hex digits plus null terminator
+    BeStringUtilities::FormatHexUInt64(buf, hash);
+    return buf;
+    }
+
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
@@ -2139,6 +2171,13 @@ Tree::Tree(GeometricModelCR model, TransformCR location, DRange3dCR range, Rende
 
     if (m_id.ContainsAnimation())
         LoadNodeMapFromAnimation();
+
+    if (m_id.GetUseProjectExtents())
+        {
+        // The contents of our tiles depends on the current project extents. If those extents later change, but the model does not,
+        // then any cached tiles produced using the previous extents need to be discarded.
+        m_contentIdQualifier = computeFnv1HashString(model.GetDgnDb().GeoLocation().GetProjectExtents());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2175,6 +2214,9 @@ Json::Value Tree::ToJson() const
 
     if (!m_contentRange.IsNull())
         JsonUtils::DRange3dToJson(json["contentRange"], m_contentRange);
+
+    if (!m_contentIdQualifier.empty())
+        json["contentIdQualifier"] = m_contentIdQualifier;
 
     json["rootTile"]["isLeaf"] = RootTile::Empty == m_rootTile;
     json["rootTile"]["maximumSize"] = RootTile::Displayable == m_rootTile ? 512 : 0;

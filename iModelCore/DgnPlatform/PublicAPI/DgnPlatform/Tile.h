@@ -430,6 +430,7 @@ private:
     RootTile m_rootTile;
     AnimationNodeMap m_nodeMap;
     DRange3d m_contentRange;
+    Utf8String m_contentIdQualifier;
 
     void CancelTileLoad(LoaderPtr const& loader);
 protected:
