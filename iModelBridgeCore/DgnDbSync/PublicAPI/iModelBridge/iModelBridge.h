@@ -1008,6 +1008,13 @@ public:
     //! Test two transforms for equality, using the minimum tolerance possible
     IMODEL_BRIDGE_EXPORT static bool AreTransformsEqual(Transform const& t1, Transform const& t2);
 
+    //! Allows a bridge to override the calculated project extents.
+    //! Calculated project extents attempt to detect "outlier" elements based on a statistical analysis of elements already in the file.
+    //! But we recognize that bridges run independently and in any order, and may have additional knowledge to influence a good range.
+    //! By implementing this method and adjusting 'extents', the bridge agrees to provide "reasonable" data so as to not cause display problems.
+    //! 'extents' is an in/out variable, providing the "calculated" / preferred range as input.
+    virtual void _AdjustProjectExtents(AxisAlignedBox3dR extents, DRange3dCR rangeWithOutliers) {}
+
     //! @name Font Resolution
     //! @{
 

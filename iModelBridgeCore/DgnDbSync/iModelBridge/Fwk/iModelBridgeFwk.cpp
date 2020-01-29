@@ -3206,6 +3206,9 @@ int             iModelBridgeFwk::UpdateProjectExtents(iModelBridgeFwk::FwkContex
     bvector<BeInt64Id> elementOutliers;
     AxisAlignedBox3d calculated = m_briefcaseDgnDb->GeoLocation().ComputeProjectExtents(&rangeWithOutliers, &elementOutliers);
 
+    // Yes, this is evil, but until users are allowed to manually specify a project extent, some bridges and scenarios need to defeat the outlier computation above.
+    m_bridge->_AdjustProjectExtents(calculated, rangeWithOutliers);
+
     AxisAlignedBox3d userProvided = calculated;
     bool useiModelHubExtents = false; 
     TestFeatureFlag("allow-imodelhub-projectextents", useiModelHubExtents);
