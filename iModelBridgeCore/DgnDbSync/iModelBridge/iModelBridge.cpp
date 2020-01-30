@@ -280,6 +280,49 @@ BentleyStatus iModelBridge::DoMakeDefinitionChanges(SubjectCPtr& jobsubj, DgnDbR
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jeff.Marker                     01/20
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridge::DoFinalizationChanges(DgnDbR db)
+    {
+    BeAssert(db.BriefcaseManager().IsSharedChannel());
+    BeAssert(db.BriefcaseManager().GetChannelPropsR().channelParentId == db.Elements().GetRootSubjectId());
+
+    if (_GetParams().GetInputFileName().empty())
+        return BSISUCCESS;
+
+    _GetParams().SetIsCreatingNewDgnDb(false);
+
+    BeAssert(!db.BriefcaseManager().IsBulkOperation());
+
+    db.BriefcaseManager().StartBulkOperation();
+    bool runningInBulkMode = db.BriefcaseManager().IsBulkOperation();
+
+    BeAssert(db.BriefcaseManager().GetChannelPropsR().channelParentId == db.Elements().GetRootSubjectId());
+
+    //  Now make normal definition cleanup changes, such as cleaning up unnecessary categories.
+    if (BSISUCCESS != _FinalizeChanges())
+        {
+        LOG.fatalv("_FinalizeChanges failed");
+        return BSIERROR; // caller must call abandon changes
+        }
+
+    // Must either succeed in getting all required locks and codes ... or abort the whole txn.
+    BeAssert(!runningInBulkMode || db.BriefcaseManager().IsBulkOperation());
+
+    auto response = db.BriefcaseManager().EndBulkOperation();
+    if (RepositoryStatus::Success != response.Result())
+        {
+        LOG.fatalv("DoFinalizationChanges Failed to acquire locks and/or codes with error %x", response.Result());
+        return BSIERROR;
+        }
+
+    BeAssert(db.BriefcaseManager().IsSharedChannel());
+    BeAssert(db.BriefcaseManager().GetChannelPropsR().channelParentId == db.Elements().GetRootSubjectId());
+    
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridge::DoConvertToExistingBim(DgnDbR db, SubjectCR jobsubj, bool detectDeletedFiles)

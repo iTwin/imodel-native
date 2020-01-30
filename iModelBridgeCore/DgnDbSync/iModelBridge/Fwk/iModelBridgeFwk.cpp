@@ -2614,6 +2614,7 @@ int iModelBridgeFwk::UpdateExistingBim(iModelBridgeFwk::FwkContext& context)
 
     if (!m_jobEnvArgs.m_allDocsProcessed)
         {
+        m_bridge->DoFinalizationChanges(*m_briefcaseDgnDb);
         UpdateProjectExtents(context);
         SetUpECEFLocation(context);
         }

@@ -810,6 +810,8 @@ struct iModelBridge
     IMODEL_BRIDGE_EXPORT BentleyStatus DoOnAllDocumentsProcessed(DgnDbR db);
 
     IMODEL_BRIDGE_EXPORT BentleyStatus DoMakeDefinitionChanges(SubjectCPtr& jobsubj, DgnDbR db);
+    
+    IMODEL_BRIDGE_EXPORT BentleyStatus DoFinalizationChanges(DgnDbR db);
 
     WebServices::ISecurityTokenPtr GetSecurityToken();
     //! @}
@@ -1007,6 +1009,11 @@ public:
 
     //! Test two transforms for equality, using the minimum tolerance possible
     IMODEL_BRIDGE_EXPORT static bool AreTransformsEqual(Transform const& t1, Transform const& t2);
+
+    //! This is called, under a schema lock, after the bridge has finished normal processing (e.g. after _ConvertToBim).
+    //! This is intended for scenarios where _MakeSchemaChanges and/or _MakeDefinitionChanges had to write extra definition data into the BIM,
+    //! but after element conversion, you can clean some of it up (e.g. unnecessary categories).
+    virtual BentleyStatus _FinalizeChanges() {return BSISUCCESS;}
 
     //! Allows a bridge to override the calculated project extents.
     //! Calculated project extents attempt to detect "outlier" elements based on a statistical analysis of elements already in the file.
