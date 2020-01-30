@@ -71,7 +71,7 @@
     -->
 
     <root>
-        <priority value="warning" />
+        <priority value="warn" />
         <appender-ref ref="Console"/>
         <!-- <appender-ref ref="OutputDebugStringAppender" /> -->
         <appender-ref ref="RollingFileAppender" />
