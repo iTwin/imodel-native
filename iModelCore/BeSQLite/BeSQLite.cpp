@@ -2766,40 +2766,39 @@ ProfileState Db::CheckProfileVersion(ProfileVersion const& expectedProfileVersio
     if (fileVersionComp == 0)
         return ProfileState::UpToDate();
 
-    const int fileVersionMajorMinorComp = fileProfileVersion.CompareTo(expectedProfileVersion, ProfileVersion::VERSION_MajorMinor);
+    const int fileVersionMajorComp = fileProfileVersion.CompareTo(expectedProfileVersion, ProfileVersion::VERSION_Major);
+    const int fileVersionMinorComp = fileProfileVersion.CompareTo(expectedProfileVersion, ProfileVersion::VERSION_Minor);
 
     //File is newer than software
     if (fileVersionComp > 0)
         {
-        if (fileVersionMajorMinorComp > 0)
+        if (fileVersionMajorComp > 0)
             {
             LOG.errorv("Cannot open file: The file's %s profile (%s) is too new. Expected version: %s.",
                        profileName, fileProfileVersion.ToString().c_str(), expectedProfileVersion.ToString().c_str());
             return ProfileState::Newer(ProfileState::CanOpen::No);
             }
 
-        BeAssert(fileVersionMajorMinorComp == 0);
-
-        if (fileProfileVersion.GetSub1() > expectedProfileVersion.GetSub1())
+        if (fileVersionMinorComp > 0)
+            {
             return ProfileState::Newer(ProfileState::CanOpen::Readonly);
+            }
 
         return ProfileState::Newer(ProfileState::CanOpen::Readwrite);
         }
 
     BeAssert(fileVersionComp < 0 && "At this point file version must be older than expected");
 
-    if (fileVersionMajorMinorComp < 0)
+    const bool isUpgradable = fileProfileVersion.CompareTo(minimumUpgradableProfileVersion) >= 0;
+
+    if (fileVersionMajorComp < 0)
         {
         LOG.errorv("Cannot open file: The file's %s profile (%s) is too old. Expected version: %s.",
                    profileName, fileProfileVersion.ToString().c_str(), expectedProfileVersion.ToString().c_str());
-        return ProfileState::Older(ProfileState::CanOpen::No, false);;
+        return ProfileState::Older(ProfileState::CanOpen::No, isUpgradable);
         }
 
-    const bool isUpgradable = fileProfileVersion.CompareTo(minimumUpgradableProfileVersion) >= 0;
-
-    BeAssert(fileVersionMajorMinorComp == 0);
-
-    if (fileProfileVersion.GetSub1() < expectedProfileVersion.GetSub1())
+    if (fileVersionMinorComp < 0)
         return ProfileState::Older(ProfileState::CanOpen::Readonly, isUpgradable);
 
     return ProfileState::Older(ProfileState::CanOpen::Readwrite, isUpgradable);

@@ -195,12 +195,12 @@ TEST_F(ECDbTestFixture, CheckECDbProfileVersion)
             {ProfileVersion(4,0,0,1), ProfileState::Older(ProfileState::CanOpen::Readwrite, true)},
             {ProfileVersion(4,0,0,2), ProfileState::UpToDate()},
             {ProfileVersion(4,0,0,3), ProfileState::Newer(ProfileState::CanOpen::Readwrite)},
-            {ProfileVersion(4,0,1,0), ProfileState::Newer(ProfileState::CanOpen::Readonly)},
-            {ProfileVersion(4,0,1,1), ProfileState::Newer(ProfileState::CanOpen::Readonly)},
-            {ProfileVersion(4,0,1,99), ProfileState::Newer(ProfileState::CanOpen::Readonly)},
-            {ProfileVersion(4,0,2,0), ProfileState::Newer(ProfileState::CanOpen::Readonly)},
-            {ProfileVersion(4,0,10,99), ProfileState::Newer(ProfileState::CanOpen::Readonly)},
-            {ProfileVersion(4,1,0,0), ProfileState::Newer(ProfileState::CanOpen::No)},
+            {ProfileVersion(4,0,1,0), ProfileState::Newer(ProfileState::CanOpen::Readwrite)},
+            {ProfileVersion(4,0,1,1), ProfileState::Newer(ProfileState::CanOpen::Readwrite)},
+            {ProfileVersion(4,0,1,99), ProfileState::Newer(ProfileState::CanOpen::Readwrite)},
+            {ProfileVersion(4,0,2,0), ProfileState::Newer(ProfileState::CanOpen::Readwrite)},
+            {ProfileVersion(4,0,10,99), ProfileState::Newer(ProfileState::CanOpen::Readwrite)},
+            {ProfileVersion(4,1,0,0), ProfileState::Newer(ProfileState::CanOpen::Readonly)},
             {ProfileVersion(5,0,0,0), ProfileState::Newer(ProfileState::CanOpen::No)}
         };
 
@@ -214,9 +214,9 @@ TEST_F(ECDbTestFixture, CheckECDbProfileVersion)
     std::vector<ProfileVersion> expectedTooOld = {ProfileVersion(3,6,99,0), ProfileVersion(3,7,0,0),ProfileVersion(3,7,0,1),ProfileVersion(3,7,3,1),ProfileVersion(3,7,3,2),ProfileVersion(3,7,4,3),ProfileVersion(3,100,0,0), ProfileVersion(3,100,0,1), ProfileVersion(3,100,1,1)};
     std::vector<ProfileVersion> expectedOlderReadWriteAndUpgradable = {ProfileVersion(4,0,0,0), ProfileVersion(4,0,0,1)};
     ProfileVersion expectedUpToDate = ProfileVersion(4,0,0,2);
-    std::vector<ProfileVersion> expectedNewerReadWrite = {ProfileVersion(4,0,0,3), ProfileVersion(4,0,0,4)};
-    std::vector<ProfileVersion> expectedNewerReadonly = {ProfileVersion(4,0,1,0), ProfileVersion(4,0,1,3), ProfileVersion(4,0,2,0), ProfileVersion(4,0,10,99)};
-    std::vector<ProfileVersion> expectedTooNew = {ProfileVersion(4,1,0,0), ProfileVersion(5,0,0,0)};
+    std::vector<ProfileVersion> expectedNewerReadWrite = {ProfileVersion(4,0,0,3), ProfileVersion(4,0,0,4), ProfileVersion(4,0,1,0), ProfileVersion(4,0,1,3), ProfileVersion(4,0,2,0), ProfileVersion(4,0,10,99)};
+    std::vector<ProfileVersion> expectedNewerReadonly = {ProfileVersion(4,1,1,0), ProfileVersion(4,1,0,0)};
+    std::vector<ProfileVersion> expectedTooNew = {ProfileVersion(5,1,0,0), ProfileVersion(99,0,0,0)};
 
     auto fakeModifyProfileVersion = [] (BeFileNameCR filePath, ProfileVersion const& version)
         {
@@ -302,6 +302,59 @@ TEST_F(ECDbTestFixture, CheckECDbProfileVersion)
         ASSERT_EQ(BE_SQLITE_ERROR_ProfileTooNew, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite, Db::ProfileUpgradeOptions::Upgrade))) << expectedUpToDate.ToString();
         ASSERT_EQ(BE_SQLITE_ERROR_ProfileTooNew, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::Readonly))) << testVersion.ToString();
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbTestFixture, ImportSchemaByProfileVersion)
+    {
+    auto fakeModifyProfileVersion = [] (BeFileNameCR filePath, ProfileVersion const& version)
+        {
+        Utf8String versionStr = version.ToJson();
+
+        Db db;
+        ASSERT_EQ(BE_SQLITE_OK, db.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite))) << versionStr;
+        Statement stmt;
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(db, "UPDATE be_Prop SET StrData=? WHERE Namespace='ec_Db' AND Name='SchemaVersion'")) << versionStr;
+        ASSERT_EQ(BE_SQLITE_OK, stmt.BindText(1, versionStr, Statement::MakeCopy::Yes)) << versionStr;
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << versionStr;
+        ASSERT_EQ(1, db.GetModifiedRowCount()) << versionStr;
+        ASSERT_EQ(BE_SQLITE_OK, db.SaveChanges()) << versionStr;
+        };
+
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ecdbprofileschemaimporttest.ecdb"));
+    BeFileName filePath(m_ecdb.GetDbFileName());
+    CloseECDb();
+
+    auto import = [this] (SchemaItem const& schema, SchemaManager::SchemaImportOptions options)
+        {
+        BentleyStatus stat = ERROR;
+        Savepoint sp(m_ecdb, "");
+        {
+        stat = GetHelper().ImportSchema(schema, options);
+        }
+        sp.Cancel();
+        return stat;
+        };
+
+
+    SchemaItem schema(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                              <ECSchema schemaName="Schema1" alias="s1" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                <ECEntityClass typeName="Foo" >
+                                  <ECProperty propertyName="Length" typeName="double" />
+                                </ECEntityClass>
+                              </ECSchema>)xml");
+
+    fakeModifyProfileVersion(filePath, ProfileVersion(4,0,0,3));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite)));
+    ASSERT_EQ(SUCCESS, import(schema, SchemaManager::SchemaImportOptions::None)) << "Import schema to newer sub2 profile";
+    CloseECDb();
+
+    fakeModifyProfileVersion(filePath, ProfileVersion(4,0,1,0));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite)));
+    ASSERT_EQ(ERROR, import(schema, SchemaManager::SchemaImportOptions::None)) << "Import schema to newer sub2 profile should fail";
+    CloseECDb();
     }
 
 END_ECDBUNITTESTS_NAMESPACE

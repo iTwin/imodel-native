@@ -55,13 +55,14 @@ TEST(BeSQLiteDb, BeBriefcaseBasedIdTest)
 TEST(BeSQLiteDb, CheckProfileVersion)
     {
     ProfileVersion expectedProfileVersion(2, 4, 5, 3);
-    ProfileVersion minimumUpgradeProfileVersion(2, 4, 0, 0);
+    ProfileVersion minimumUpgradeProfileVersion(2, 3, 0, 0);
 
     std::map<ProfileVersion, ProfileState> testDataset {{ProfileVersion(0, 0, 0, 0), ProfileState::Older(ProfileState::CanOpen::No, false)},
     {ProfileVersion(1, 0, 0, 0), ProfileState::Older(ProfileState::CanOpen::No, false)},
     {ProfileVersion(1, 9, 0, 0), ProfileState::Older(ProfileState::CanOpen::No, false)},
-    {ProfileVersion(2, 4, 0, 0), ProfileState::Older(ProfileState::CanOpen::Readonly, true)},
-    {ProfileVersion(2, 4, 2, 3), ProfileState::Older(ProfileState::CanOpen::Readonly, true)},
+    {ProfileVersion(2, 3, 0, 0), ProfileState::Older(ProfileState::CanOpen::Readonly, true)},
+    {ProfileVersion(2, 4, 0, 0), ProfileState::Older(ProfileState::CanOpen::Readwrite, true)},
+    {ProfileVersion(2, 4, 2, 3), ProfileState::Older(ProfileState::CanOpen::Readwrite, true)},
     {ProfileVersion(2, 4, 5, 0), ProfileState::Older(ProfileState::CanOpen::Readwrite, true)},
     {ProfileVersion(2, 4, 5, 2), ProfileState::Older(ProfileState::CanOpen::Readwrite, true)},
 
@@ -70,14 +71,14 @@ TEST(BeSQLiteDb, CheckProfileVersion)
     {ProfileVersion(2, 4, 5, 4), ProfileState::Newer(ProfileState::CanOpen::Readwrite)},
     {ProfileVersion(2, 4, 5, 33), ProfileState::Newer(ProfileState::CanOpen::Readwrite)},
 
-    {ProfileVersion(2, 4, 6, 0), ProfileState::Newer(ProfileState::CanOpen::Readonly)},
-    {ProfileVersion(2, 4, 6, 99), ProfileState::Newer(ProfileState::CanOpen::Readonly)},
-    {ProfileVersion(2, 4, 99, 0), ProfileState::Newer(ProfileState::CanOpen::Readonly)},
-    {ProfileVersion(2, 4, 99, 99), ProfileState::Newer(ProfileState::CanOpen::Readonly)},
+    {ProfileVersion(2, 4, 6, 0), ProfileState::Newer(ProfileState::CanOpen::Readwrite)},
+    {ProfileVersion(2, 4, 6, 99), ProfileState::Newer(ProfileState::CanOpen::Readwrite)},
+    {ProfileVersion(2, 4, 99, 0), ProfileState::Newer(ProfileState::CanOpen::Readwrite)},
+    {ProfileVersion(2, 4, 99, 99), ProfileState::Newer(ProfileState::CanOpen::Readwrite)},
 
-    {ProfileVersion(2, 5, 0, 0), ProfileState::Newer(ProfileState::CanOpen::No)},
-    {ProfileVersion(2, 5, 0, 1), ProfileState::Newer(ProfileState::CanOpen::No)},
-    {ProfileVersion(2, 99, 0, 1), ProfileState::Newer(ProfileState::CanOpen::No)},
+    {ProfileVersion(2, 5, 0, 0), ProfileState::Newer(ProfileState::CanOpen::Readonly)},
+    {ProfileVersion(2, 5, 0, 1), ProfileState::Newer(ProfileState::CanOpen::Readonly)},
+    {ProfileVersion(2, 99, 0, 1), ProfileState::Newer(ProfileState::CanOpen::Readonly)},
     {ProfileVersion(3, 0, 0, 0), ProfileState::Newer(ProfileState::CanOpen::No)},
     {ProfileVersion(99, 99, 99, 99), ProfileState::Newer(ProfileState::CanOpen::No)}};
 
