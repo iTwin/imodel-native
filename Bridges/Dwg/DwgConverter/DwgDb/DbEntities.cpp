@@ -59,6 +59,19 @@ DWGDB_SURFACE_DEFINE_MEMBERS(SweptSurface)
 
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/20
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgString   DwgDbEntity::GetOriginalClassName () const
+    {
+    if (T_Super::isAProxy())
+        {
+        DWGDB_TypeCP(ProxyEntity) proxyEntity = DWGDB_Type(ProxyEntity)::cast (this);
+        if (proxyEntity != nullptr)
+            return  proxyEntity->originalClassName();
+        }
+    return T_Super::isA()->name ();
+    }
 bool    DwgDbEntity::IsDimension () const { return nullptr != DWGDB_Type(Dimension)::cast(this); }
 
 DPoint3d    DwgDbLine::GetStartPoint () const { return Util::DPoint3dFrom(T_Super::startPoint()); }
@@ -1125,6 +1138,7 @@ bool            DwgDbAttributeDefinition::GetValueString (DwgStringR value) cons
 #endif
     return  !value.IsEmpty();
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          08/16
 +---------------+---------------+---------------+---------------+---------------+------*/

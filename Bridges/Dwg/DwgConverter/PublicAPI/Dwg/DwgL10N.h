@@ -128,8 +128,8 @@ IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
 //! Miscellaneous strings needed for DwgImporter
 IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START (DataStrings, dwg_dataStrings)
-    L10N_STRING(AttrdefsSchemaDescription)  // =="Block attribute definitions created from DWG file %ls"==
-    L10N_STRING(BlockAttrdefDescription)    // =="Attribute definition created from DWG block %ls"==
+    L10N_STRING(AttrdefsSchemaDescription)  // =="Block attribute definitions created from DWG file %s"==
+    L10N_STRING(BlockAttrdefDescription)    // =="Attribute definition created from DWG block %s"==
     L10N_STRING(ModelView)                  // =="Model View"==
     L10N_STRING(LayoutView)                 // =="Layout View"==
     L10N_STRING(XrefView)                   // =="XReference View"==

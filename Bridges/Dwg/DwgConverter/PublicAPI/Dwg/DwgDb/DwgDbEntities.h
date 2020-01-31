@@ -150,6 +150,8 @@ public:
     DWGDB_DECLARE_ENTITY_MEMBERS()
     //! Is this a dimension entity?
     DWGDB_EXPORT bool   IsDimension () const;
+    //! If this is a proxy entity, get original class name
+    DWGDB_EXPORT DwgString  GetOriginalClassName () const;
     };  // DwgDbEntity
 DWGDB_DEFINE_OBJECTPTR (Entity)
 

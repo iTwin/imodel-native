@@ -118,6 +118,7 @@ public:
     DWG_EXPORT static SubjectCPtr      FindModelSubject(SubjectCR parent, Utf8StringCR modelName, Json::Value const& modelProps, DgnDbCR db);
     DWG_EXPORT static void             ComposeTransformByExtrusion (TransformR intOut, double elevation);
     DWG_EXPORT static bool             IsBulgeFactorValid (double bulge);
+    DWG_EXPORT static BentleyStatus    ExtractAndConcatenateTextsFrom (Utf8StringR texts, DgnElementCR element);
     };  // DwgHelper
 
 END_DWG_NAMESPACE

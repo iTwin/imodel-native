@@ -703,17 +703,43 @@ BentleyStatus   ExtractFromEntity ()
 BentleyStatus   DwgImporter::_PostImportEntity (ElementImportResults& results, ElementImportInputs& inputs)
     {
     BentleyStatus   status = BSISUCCESS;
-    if (m_aecPropertySetSchema == nullptr || inputs.GetEntityP() == nullptr)
+    auto element = results.GetImportedElement ();
+    if (element == nullptr || inputs.GetEntityP() == nullptr)
         return  status;
 
-    ExtendedImportInputs* extendedInputs = static_cast<ExtendedImportInputs*> (&inputs);
-    if (extendedInputs == nullptr)
-        return  BSIERROR;
+    if (m_aecPropertySetSchema != nullptr)
+        {
+        ExtendedImportInputs* extendedInputs = static_cast<ExtendedImportInputs*> (&inputs);
+        if (extendedInputs == nullptr)
+            return  BSIERROR;
 
-    auto element = results.GetImportedElement ();
+        AecPsetPropertyFactory factory(*this, *extendedInputs);
+        status = factory.CreateEcInstances (*element);
+        }
 
-    AecPsetPropertyFactory factory(*this, *extendedInputs);
-    return factory.CreateEcInstances (*element);
+    if (inputs.GetEntity().IsAProxy())
+        {
+        /*-------------------------------------------------------------------------------
+        To help with Shell POC project, which needs to extract the "tag" from an AutoCAD PID entity, 
+        which is originally created from class AcPpDynamicAsset, but is dumbed down as a proxy due to
+        a missing object enabler.
+        This workaround is to extract the child texts from the element created fron the proxy entity, 
+        concatenate extracted text strings, and set them as an AdHoc property.
+        -------------------------------------------------------------------------------*/
+        auto originalName = inputs.GetEntity().GetOriginalClassName ();
+        if (originalName.EqualsI(L"AcPpDynamicAsset"))
+            {
+            Utf8String  texts;
+            if (DwgHelper::ExtractAndConcatenateTextsFrom(texts, *element) == BentleyStatus::BSISUCCESS)
+                {
+                AdHocJsonValue  adhocProp;
+                adhocProp.SetValueText ("Text", texts.c_str());
+                element->SetUserProperties ("Text Label", adhocProp);
+                }
+            }
+        }
+    
+    return  status;
     }
 
 /*---------------------------------------------------------------------------------**//**

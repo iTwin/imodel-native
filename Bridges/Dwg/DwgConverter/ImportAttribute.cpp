@@ -353,7 +353,8 @@ ECObjectsStatus DwgImporter::AddAttrdefECClassFromBlock (ECSchemaPtr& attrdefSch
             // set label
             status = attrdefSchema->SetDisplayLabel (SCHEMALabel_AttributeDefinitions);
             // set description
-            Utf8PrintfString    description (DataStrings::GetString(DataStrings::AttrdefsSchemaDescription()).c_str(), m_rootFileName.GetFileNameAndExtension().c_str());
+            Utf8String  filename(m_rootFileName.GetFileNameAndExtension().c_str());
+            Utf8PrintfString    description (DataStrings::GetString(DataStrings::AttrdefsSchemaDescription()).c_str(), filename.c_str());
             status = attrdefSchema->SetDescription (description.c_str());
 
             // Reference schema Generic
@@ -388,16 +389,18 @@ ECObjectsStatus DwgImporter::AddAttrdefECClassFromBlock (ECSchemaPtr& attrdefSch
 
     // add an attrdef class for the block
     ECEntityClassP  attrdefClass = nullptr;
-    Utf8String      className = DwgHelper::GetAttrdefECClassNameFromBlockName (block.GetName().c_str());
+    DwgStringCR blockNameW = block.GetName ();
+    Utf8String  className = DwgHelper::GetAttrdefECClassNameFromBlockName (blockNameW.c_str());
 
     status = attrdefSchema->CreateEntityClass (attrdefClass, className.c_str());
 
     if (ECObjectsStatus::Success == status)
         {
         // display the class as the block name:
-        attrdefClass->SetDisplayLabel (DwgHelper::ToUtf8CP(block.GetName()));
+        Utf8String  blockNameUtf8(blockNameW.c_str());
+        attrdefClass->SetDisplayLabel (blockNameUtf8.c_str());
         // description of the class
-        Utf8PrintfString    description (DataStrings::GetString(DataStrings::BlockAttrdefDescription()).c_str(), block.GetName().c_str());
+        Utf8PrintfString    description (DataStrings::GetString(DataStrings::BlockAttrdefDescription()).c_str(), blockNameUtf8.c_str());
         attrdefClass->SetDescription (description);
 
         // add GenericMultiAspect as a base ECClass:

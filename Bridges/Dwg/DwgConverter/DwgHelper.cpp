@@ -2197,3 +2197,29 @@ bool DwgHelper::IsBulgeFactorValid (double bulge)
     
     return fabs(bulge) > s_minBulge && fabs(bulge) < s_maxBulge;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/20
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DwgHelper::ExtractAndConcatenateTextsFrom (Utf8StringR texts, DgnElementCR element)
+    {
+    GeometrySourceCP geomSource = element.ToGeometrySource ();
+    if (geomSource == nullptr)
+        return  BentleyStatus::BSIERROR;
+
+    texts.clear ();
+
+    GeometryCollection collection(*geomSource);
+    for (auto entry : collection)
+        {
+        GeometricPrimitivePtr primitive = entry.GetGeometryPtr ();
+        if (primitive.IsValid())
+            {
+            TextStringPtr dgnText = primitive->GetAsTextString ();
+            if (dgnText.IsValid())
+                texts += dgnText->GetText ();
+            }
+        }
+
+    return  texts.empty() ? BentleyStatus::BSIERROR : BentleyStatus::BSISUCCESS;
+    }
