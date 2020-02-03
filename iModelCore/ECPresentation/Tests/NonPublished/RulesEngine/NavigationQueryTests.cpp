@@ -357,9 +357,9 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_MultipleClauses_DoesntInc
 
     Utf8String expected(
         " FROM [alias_ToString_InnerJoin_MultipleClauses_DoesntIncludeRelationshipMultipleTimesEvenIfJoinedClassIsDifferent].[A] [a]"
-        " LEFT JOIN [alias_ToString_InnerJoin_MultipleClauses_DoesntIncludeRelationshipMultipleTimesEvenIfJoinedClassIsDifferent].[A_Has_Children] [rel] ON [a].[ECInstanceId] = [rel].[SourceECInstanceId] AND [a].[ECClassId] = [rel].[SourceECClassId]"
-        " LEFT JOIN [alias_ToString_InnerJoin_MultipleClauses_DoesntIncludeRelationshipMultipleTimesEvenIfJoinedClassIsDifferent].[B] [b] ON [b].[ECInstanceId] = [rel].[TargetECInstanceId] AND [b].[ECClassId] = [rel].[TargetECClassId]"
-        " LEFT JOIN [alias_ToString_InnerJoin_MultipleClauses_DoesntIncludeRelationshipMultipleTimesEvenIfJoinedClassIsDifferent].[C] [c] ON [c].[ECInstanceId] = [rel].[TargetECInstanceId] AND [c].[ECClassId] = [rel].[TargetECClassId]");
+        " LEFT JOIN [alias_ToString_InnerJoin_MultipleClauses_DoesntIncludeRelationshipMultipleTimesEvenIfJoinedClassIsDifferent].[A_Has_Children] [rel] ON [a].[ECInstanceId] = [rel].[SourceECInstanceId]"
+        " LEFT JOIN [alias_ToString_InnerJoin_MultipleClauses_DoesntIncludeRelationshipMultipleTimesEvenIfJoinedClassIsDifferent].[B] [b] ON [b].[ECInstanceId] = [rel].[TargetECInstanceId]"
+        " LEFT JOIN [alias_ToString_InnerJoin_MultipleClauses_DoesntIncludeRelationshipMultipleTimesEvenIfJoinedClassIsDifferent].[C] [c] ON [c].[ECInstanceId] = [rel].[TargetECInstanceId]");
     Utf8String str = query->ToString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
@@ -640,8 +640,8 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_MultipleClauses_DoesntInc
 
     Utf8String expected(
         " FROM ONLY [RET].[Widget] [this]"
-        " LEFT JOIN [RET].[WidgetHasGadget] [relationship_alias1] ON [this].[ECInstanceId] = [relationship_alias1].[SourceECInstanceId] AND [this].[ECClassId] = [relationship_alias1].[SourceECClassId]"
-        " LEFT JOIN [RET].[Gadget] [target_alias1] ON [target_alias1].[ECInstanceId] = [relationship_alias1].[TargetECInstanceId] AND [target_alias1].[ECClassId] = [relationship_alias1].[TargetECClassId]"
+        " LEFT JOIN [RET].[WidgetHasGadget] [relationship_alias1] ON [this].[ECInstanceId] = [relationship_alias1].[SourceECInstanceId]"
+        " LEFT JOIN [RET].[Gadget] [target_alias1] ON [target_alias1].[ECInstanceId] = [relationship_alias1].[TargetECInstanceId]"
         " LEFT JOIN [RET].[Sprocket] [target_alias2] ON [target_alias2].[Gadget].[Id] = [relationship_alias1].[TargetECInstanceId]");
     Utf8String str = query->ToString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
@@ -694,8 +694,9 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_MultiStepPath_WithNavigat
 
     Utf8String expected(
         " FROM ONLY [alias_ToString_OuterJoin_MultiStepPath_WithNavigationProperty].[A] [this]"
-        " LEFT JOIN [alias_ToString_OuterJoin_MultiStepPath_WithNavigationProperty].[A_Has_B] [rel_ab_alias] ON [this].[ECInstanceId] = [rel_ab_alias].[SourceECInstanceId] AND [this].[ECClassId] = [rel_ab_alias].[SourceECClassId]"
-        " LEFT JOIN [alias_ToString_OuterJoin_MultiStepPath_WithNavigationProperty].[C] [c_alias] ON [c_alias].[B].[Id] = [rel_ab_alias].[TargetECInstanceId]");
+        " LEFT JOIN [alias_ToString_OuterJoin_MultiStepPath_WithNavigationProperty].[A_Has_B] [rel_ab_alias] ON [this].[ECInstanceId] = [rel_ab_alias].[SourceECInstanceId]"
+        " LEFT JOIN [alias_ToString_OuterJoin_MultiStepPath_WithNavigationProperty].[B] [b_alias] ON [b_alias].[ECInstanceId] = [rel_ab_alias].[TargetECInstanceId]"
+        " LEFT JOIN [alias_ToString_OuterJoin_MultiStepPath_WithNavigationProperty].[C] [c_alias] ON [c_alias].[B].[Id] = [b_alias].[ECInstanceId]");
     Utf8String str = query->ToString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
@@ -846,8 +847,8 @@ TEST_F(ComplexNavigationQueryTests, ToString_Join_ClassWithTargetIds)
 
     Utf8String expected(
         " FROM [alias_ToString_Join_ClassWithTargetIds].[A] [src]"
-        " LEFT JOIN [alias_ToString_Join_ClassWithTargetIds].[A_Has_B] [rel] ON [src].[ECInstanceId] = [rel].[SourceECInstanceId] AND [src].[ECClassId] = [rel].[SourceECClassId]"
-        " LEFT JOIN [alias_ToString_Join_ClassWithTargetIds].[B] [tgt] ON [tgt].[ECInstanceId] = [rel].[TargetECInstanceId] AND [tgt].[ECClassId] = [rel].[TargetECClassId] AND [tgt].[ECInstanceId] IN (?,?)");
+        " LEFT JOIN [alias_ToString_Join_ClassWithTargetIds].[A_Has_B] [rel] ON [src].[ECInstanceId] = [rel].[SourceECInstanceId]"
+        " LEFT JOIN [alias_ToString_Join_ClassWithTargetIds].[B] [tgt] ON [tgt].[ECInstanceId] = [rel].[TargetECInstanceId] AND [tgt].[ECInstanceId] IN (?,?)");
     Utf8String str = query->ToString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
@@ -898,10 +899,10 @@ TEST_F(ComplexNavigationQueryTests, ToString_Join_PathWithTargetIds)
 
     Utf8String expected(
         " FROM [alias_ToString_Join_PathWithTargetIds].[A] [src]"
-        " INNER JOIN [alias_ToString_Join_PathWithTargetIds].[A_Has_B] [rel_ab] ON [src].[ECInstanceId] = [rel_ab].[SourceECInstanceId] AND [src].[ECClassId] = [rel_ab].[SourceECClassId]"
-        " INNER JOIN [alias_ToString_Join_PathWithTargetIds].[B] [tgt1] ON [tgt1].[ECInstanceId] = [rel_ab].[TargetECInstanceId] AND [tgt1].[ECClassId] = [rel_ab].[TargetECClassId] AND [tgt1].[ECInstanceId] IN (?)"
-        " INNER JOIN [alias_ToString_Join_PathWithTargetIds].[B_Has_C] [rel_bc] ON [tgt1].[ECInstanceId] = [rel_bc].[SourceECInstanceId] AND [tgt1].[ECClassId] = [rel_bc].[SourceECClassId]"
-        " INNER JOIN [alias_ToString_Join_PathWithTargetIds].[C] [tgt2] ON [tgt2].[ECInstanceId] = [rel_bc].[TargetECInstanceId] AND [tgt2].[ECClassId] = [rel_bc].[TargetECClassId]");
+        " INNER JOIN [alias_ToString_Join_PathWithTargetIds].[A_Has_B] [rel_ab] ON [src].[ECInstanceId] = [rel_ab].[SourceECInstanceId]"
+        " INNER JOIN [alias_ToString_Join_PathWithTargetIds].[B] [tgt1] ON [tgt1].[ECInstanceId] = [rel_ab].[TargetECInstanceId] AND [tgt1].[ECInstanceId] IN (?)"
+        " INNER JOIN [alias_ToString_Join_PathWithTargetIds].[B_Has_C] [rel_bc] ON [tgt1].[ECInstanceId] = [rel_bc].[SourceECInstanceId]"
+        " INNER JOIN [alias_ToString_Join_PathWithTargetIds].[C] [tgt2] ON [tgt2].[ECInstanceId] = [rel_bc].[TargetECInstanceId]");
     Utf8String str = query->ToString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }

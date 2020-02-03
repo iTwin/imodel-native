@@ -1176,6 +1176,7 @@ bvector<RelatedClassPath> ECSchemaHelper::GetPaths(ECClassId sourceClassId, bvec
     SupportedClassesResolver resolver(m_connection, ECSchemaSet(),
         (classInfos.empty() && stepSpecification.GetTargetClassName().empty()) ? nullptr : &classInfos,
         (relationshipInfos.empty() && stepSpecification.GetRelationshipClassName().empty()) ? nullptr : &relationshipInfos);
+    ECClassCP targetClass = stepSpecification.GetTargetClassName().empty() ? nullptr : GetECClass(stepSpecification.GetTargetClassName().c_str());
 
     Savepoint txn(m_connection.GetDb(), "ECSchemaHelper::GetPaths");
     BeAssert(txn.IsActive());
@@ -1203,18 +1204,10 @@ bvector<RelatedClassPath> ECSchemaHelper::GetPaths(ECClassId sourceClassId, bvec
         bool isForward = (ECRelationshipEnd_Source == (ECRelationshipEnd)stmt->GetValueInt(4));
 
         // filter by target class (if specified)
-        if (!stepSpecification.GetTargetClassName().empty())
-            {
-            ECClassCP targetClass = GetECClass(stepSpecification.GetTargetClassName().c_str());
-            if (targetClass && targetClass->GetEntityClassCP() && targetClass->Is(actualRelated))
-                actualRelated = targetClass->GetEntityClassCP();
-            else
-                continue;
-            }
-        else if (IsClassHidden(*actualRelated))
-            {
+        if (targetClass && targetClass->GetEntityClassCP() && targetClass->Is(actualRelated))
+            actualRelated = targetClass->GetEntityClassCP();
+        else if (targetClass && !actualRelated->Is(targetClass) || IsClassHidden(*actualRelated))
             continue;
-            }
 
         SupportedEntityClassInfo const* info = resolver.GetInfo(*actualRelated);
         RelatedClass relatedClassSpec(*source, SelectClass(*actualRelated, (nullptr == info || info->IsPolymorphic())), *relationship, isForward);
@@ -1235,19 +1228,20 @@ bvector<RelatedClassPath> ECSchemaHelper::GetPaths(ECClassId sourceClassId, bvec
                     RelatedClass repeatedStep(relatedClassSpec);
                     repeatedStep.SetSourceClass(*actualRelated);
                     repeatedStep.SetRelationshipAlias(CreateRelationshipAlias(*relationship, relationshipsUseCounter));
+                    repeatedStep.SetTargetClassAlias(CreateRelationshipAlias(*actualRelated, relationshipsUseCounter));
                     path.push_back(repeatedStep);
                     }
                 }
             }
 
-        bvector<RelatedClassPath> subPaths = GetPaths(actualRelated->GetId(), pathSpecification, usedRelationships,
-            relationshipsUseCounter, handleRelatedClassesPolymorphically);
-        if (subPaths.empty())
+        if (pathSpecification.empty())
             {
             AppendPath(paths, path, handleRelatedClassesPolymorphically);
             }
         else
             {
+            bvector<RelatedClassPath> subPaths = GetPaths(actualRelated->GetId(), pathSpecification, usedRelationships,
+                relationshipsUseCounter, handleRelatedClassesPolymorphically);
             for (RelatedClassPath subPath : subPaths)
                 {
                 RelatedClassPath aggregatedPath = path;
@@ -1626,7 +1620,8 @@ void SupportedClassesParser::Parse(ECSchemaHelper const& helper, Utf8StringCR st
         ECClassCP ecClass = ecSchema->GetClassCP(entry.GetClassName());
         if (nullptr == ecClass)
             {
-            BeAssert(false);
+            // TODO: VSTS#210508
+            // BeAssert(false);
             continue;
             }
         SupportedClassInfo<ECClass> info(*ecClass, entry.GetFlags());

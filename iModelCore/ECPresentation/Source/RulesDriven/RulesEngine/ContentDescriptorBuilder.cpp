@@ -278,93 +278,7 @@ private:
 
         return false;
         }
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Mantas.Kontrimas                02/2018
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    static void GetAllBaseClasses(ECClassCP ecClass, bset<ECClassCP>& baseClasses)
-        {
-        for (ECClassCP base : ecClass->GetBaseClasses())
-            {
-            baseClasses.insert(base);
-            GetAllBaseClasses(base, baseClasses);
-            }
-        }
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Mantas.Kontrimas                02/2018
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    static ECClassCP FindCommonClassForRelationshipEnd(ECClassCP rhs, bset<ECClassCP>& lhsAllBaseClasses,
-        ECRelationshipConstraintClassList const& constraintClasses)
-        {
-        for (ECClassCP rhsBaseClass : rhs->GetBaseClasses())
-            {
-            if (lhsAllBaseClasses.end() != lhsAllBaseClasses.find(rhsBaseClass))
-                {
-                for (ECClassCP constraintClass : constraintClasses)
-                    {
-                    if (rhsBaseClass->Is(constraintClass))
-                        return rhsBaseClass;
-                    }
-                }
-
-            ECClassCP foundClass = FindCommonClassForRelationshipEnd(rhsBaseClass, lhsAllBaseClasses, constraintClasses);
-            if (nullptr != foundClass)
-                return foundClass;
-            }
-
-        return nullptr;
-        }
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Mantas.Kontrimas                02/2018
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    static ECClassCP GetNearestCommonRelationshipEndClass(ECClassCP lhsClass, ECClassCP rhsClass,
-        ECRelationshipConstraintClassList const& constraintClasses)
-        {
-        bset<ECClassCP> lhsAllBaseClasses;
-        lhsAllBaseClasses.insert(lhsClass);
-        GetAllBaseClasses(lhsClass, lhsAllBaseClasses);
-
-        if (lhsAllBaseClasses.end() != lhsAllBaseClasses.find(rhsClass))
-            return rhsClass;
-
-        return FindCommonClassForRelationshipEnd(rhsClass, lhsAllBaseClasses, constraintClasses);
-        }
-
-    /*---------------------------------------------------------------------------------**//**
-    * TODO: move to RelatedClassPath?
-    * @bsimethod                                    Mantas.Kontrimas                05/2018
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    static RelatedClassPath GetCommonBaseRelatedClassPath(RelatedClassPathCR path, RelatedClassPathCR fieldPath)
-        {
-        RelatedClassPath baseRelatedClassPath (fieldPath);
-        for (size_t i = path.size(); i-- > 0; )
-            {
-            RelatedClass lhsRelated = path[i];
-            RelatedClass rhsRelated = baseRelatedClassPath[i];
-            ECRelationshipConstraintClassList constraintClasses = rhsRelated.IsForwardRelationship() ?
-                rhsRelated.GetRelationship()->GetSource().GetConstraintClasses() :
-                rhsRelated.GetRelationship()->GetTarget().GetConstraintClasses();
-            ECClassCP lhsClass = lhsRelated.IsForwardRelationship() ? lhsRelated.GetSourceClass() : &lhsRelated.GetTargetClass().GetClass();
-            ECClassCP rhsClass = rhsRelated.IsForwardRelationship() ? rhsRelated.GetSourceClass() : &rhsRelated.GetTargetClass().GetClass();
-
-            ECClassCP commonBaseClass = GetNearestCommonRelationshipEndClass(lhsClass, rhsClass, constraintClasses);
-            if (nullptr == commonBaseClass)
-                {
-                BeAssert(false);
-                return RelatedClassPath();
-                }
-
-            if (rhsRelated.IsForwardRelationship())
-                baseRelatedClassPath[i].SetSourceClass(*commonBaseClass);
-            else
-                baseRelatedClassPath[i].SetTargetClass(*commonBaseClass);
-            }
-
-        return baseRelatedClassPath;
-        }
-
+        
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                07/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -397,7 +311,7 @@ private:
                     // if m_pathFromSelectToPropertyClass and existing nested content field paths both target the same class, unify the paths and update the
                     // existing field - no need to create a new one
                     m_nestedContentField = existingField;
-                    m_nestedContentField->SetPathFromSelectToContentClass(GetCommonBaseRelatedClassPath(m_pathFromSelectToPropertyClass, existingFieldPathFromSelectToContentClass));
+                    m_nestedContentField->SetPathFromSelectToContentClass(RelatedClassPath::Unify(m_pathFromSelectToPropertyClass, existingFieldPathFromSelectToContentClass));
                     m_nestedContentField->SetName(CreateNestedContentFieldName(m_nestedContentField->GetPathFromSelectToContentClass()));
                     return m_nestedContentField;
                     }

@@ -184,6 +184,7 @@ public:
 
     //! Get related classes of related instances.
     bvector<RelatedClassPath> const& GetRelatedInstancePaths() const {return m_relatedInstancePaths;}
+    bvector<RelatedClassPath>& GetRelatedInstancePaths() {return m_relatedInstancePaths;}
     //! Set related classes of related instances.
     void SetRelatedInstancePaths(bvector<RelatedClassPath> paths) {m_relatedInstancePaths = paths;}
 };

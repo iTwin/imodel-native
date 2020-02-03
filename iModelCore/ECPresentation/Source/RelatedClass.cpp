@@ -120,3 +120,85 @@ RelatedClassPath& RelatedClassPath::Reverse(Utf8CP resultTargetClassAlias, bool 
 
     return *this;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mantas.Kontrimas                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static void GetAllBaseClasses(bset<ECClassCP>& baseClasses, ECClassCR derivedClass, std::function<bool(ECClassCR)> const& filter)
+    {
+    for (ECClassCP base : derivedClass.GetBaseClasses())
+        {
+        if (!filter(*base))
+            continue;
+
+        baseClasses.insert(base);
+        GetAllBaseClasses(baseClasses, *base, filter);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mantas.Kontrimas                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static ECClassCP FindBaseClassInSet(ECClassCR rhs, bset<ECClassCP> const& lookupClasses)
+    {
+    for (ECClassCP rhsBaseClass : rhs.GetBaseClasses())
+        {
+        if (lookupClasses.end() != lookupClasses.find(rhsBaseClass))
+            return rhsBaseClass;
+        }
+    for (ECClassCP rhsBaseClass : rhs.GetBaseClasses())
+        {
+        ECClassCP foundClass = FindBaseClassInSet(*rhsBaseClass, lookupClasses);
+        if (nullptr != foundClass)
+            return foundClass;
+        }
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mantas.Kontrimas                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static ECClassCP GetNearestCommonRelationshipEndClass(ECClassCR lhsClass, ECClassCR rhsClass, ECClassCR relationshipEnd)
+    {
+    bset<ECClassCP> lhsBaseClasses;
+    lhsBaseClasses.insert(&lhsClass);
+    GetAllBaseClasses(lhsBaseClasses, lhsClass, [&](ECClassCR baseClass){return baseClass.Is(&relationshipEnd);});
+
+    if (lhsBaseClasses.end() != lhsBaseClasses.find(&rhsClass))
+        return &rhsClass;
+
+    return FindBaseClassInSet(rhsClass, lhsBaseClasses);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mantas.Kontrimas                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+RelatedClass RelatedClass::Unify(RelatedClassCR lhs, RelatedClassCR rhs)
+    {
+    RelatedClass base(lhs);
+    ECClassCP baseSource = GetNearestCommonRelationshipEndClass(*lhs.GetSourceClass(), *rhs.GetSourceClass(), 
+        *base.GetRelationship()->GetSource().GetAbstractConstraint());
+    ECClassCP baseTarget = GetNearestCommonRelationshipEndClass(lhs.GetTargetClass().GetClass(), rhs.GetTargetClass().GetClass(),
+        *base.GetRelationship()->GetTarget().GetAbstractConstraint());
+    if (!baseSource || !baseTarget)
+        {
+        BeAssert(false);
+        return RelatedClass();
+        }
+    SelectClassWithExcludes targetSelectClass(base.GetTargetClass());
+    targetSelectClass.SetClass(*baseTarget);
+    base.SetTargetClass(targetSelectClass);
+    base.SetSourceClass(*baseSource);
+    return base;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mantas.Kontrimas                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+RelatedClassPath RelatedClassPath::Unify(RelatedClassPathCR lhs, RelatedClassPathCR rhs)
+    {
+    RelatedClassPath basePath;
+    for (size_t i = 0; i < lhs.size() && i < rhs.size(); ++i)
+        basePath.push_back(RelatedClass::Unify(lhs[i], rhs[i]));
+    return basePath;
+    }

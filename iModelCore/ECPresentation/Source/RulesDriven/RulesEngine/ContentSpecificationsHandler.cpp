@@ -285,6 +285,24 @@ static bvector<RelatedClassPath> GetRelatedClassPaths(ContentSpecificationsHandl
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+static void JoinRelatedInstancePaths(bvector<SelectClassInfo>& infos, bvector<RelatedClassPath> const& paths)
+    {
+    bvector<SelectClassInfo> newInfos;
+    for (SelectClassInfo const& info : infos)
+        {
+        for (RelatedClassPath const& path : paths)
+            {
+            SelectClassInfo copy(info);
+            copy.GetRelatedInstancePaths().push_back(path);
+            newInfos.push_back(copy);
+            }
+        }
+    infos.swap(newInfos);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ContentSpecificationsHandler::AppendContent(ContentSource const& contentSource, ContentSpecificationCR spec, IParsedInput const* input,
@@ -308,22 +326,34 @@ void ContentSpecificationsHandler::AppendContent(ContentSource const& contentSou
         navigationPropertiesPaths = GetContext().GetNavigationPropertiesPaths(selectClass.GetClass());
         }
 
-    SelectClassInfo appendInfo(contentSource.GetSelectClass());
-    appendInfo.SetPathFromInputToSelectClass(contentSource.GetPathFromInputToSelectClass());
-    appendInfo.SetRelatedInstancePaths(ContainerHelpers::SerializeMapListValues(QueryBuilderHelpers::GetRelatedInstancePaths(GetContext().GetSchemaHelper(),
-        selectClass.GetClass(), spec.GetRelatedInstances(), GetContext().GetRelationshipUseCounts())));
-    appendInfo.SetNavigationPropertyClasses(navigationPropertiesPaths);
+    bvector<SelectClassInfo> selectInfos;
+    SelectClassInfo baseSelectInfo(contentSource.GetSelectClass());
+    baseSelectInfo.SetPathFromInputToSelectClass(contentSource.GetPathFromInputToSelectClass());
+    baseSelectInfo.SetNavigationPropertyClasses(navigationPropertiesPaths);
+    selectInfos.push_back(baseSelectInfo);
 
-    if (_ShouldIncludeRelatedProperties())
+    bmap<Utf8String, bvector<RelatedClassPath>> relatedInstancePaths = QueryBuilderHelpers::GetRelatedInstancePaths(GetContext().GetSchemaHelper(),
+        selectClass.GetClass(), spec.GetRelatedInstances(), GetContext().GetRelationshipUseCounts());
+    for (auto const& relatedInstancePathEntry : relatedInstancePaths)
         {
-        InstanceFilteringParams filteringParams(GetContext().GetConnection(), GetContext().GetSchemaHelper().GetECExpressionsCache(),
-            input, appendInfo, recursiveFilteringInfo, instanceFilter.c_str());
-        AppendRelatedPropertiesParams params(s_emptyRelationshipPath, selectClass.GetClass(), "this", spec.GetRelatedProperties(), filteringParams, spec.GetPropertyCategories());
-        bvector<RelatedClassPath> relatedPropertyPaths = AppendRelatedProperties(params, false);
-        appendInfo.SetRelatedPropertyPaths(relatedPropertyPaths);
+        // note: if a single related instance specification results in more than one path, we have to
+        // multiply select infos to avoid having multiple paths based on the same specification being
+        // assigned to the same select info
+        JoinRelatedInstancePaths(selectInfos, relatedInstancePathEntry.second);
         }
 
-    _AppendClass(appendInfo);
+    for (SelectClassInfo& info : selectInfos)
+        {
+        if (_ShouldIncludeRelatedProperties())
+            {
+            InstanceFilteringParams filteringParams(GetContext().GetConnection(), GetContext().GetSchemaHelper().GetECExpressionsCache(),
+                input, info, recursiveFilteringInfo, instanceFilter.c_str());
+            AppendRelatedPropertiesParams params(s_emptyRelationshipPath, selectClass.GetClass(), "this", spec.GetRelatedProperties(), filteringParams, spec.GetPropertyCategories());
+            bvector<RelatedClassPath> relatedPropertyPaths = AppendRelatedProperties(params, false);
+            info.SetRelatedPropertyPaths(relatedPropertyPaths);
+            }
+        _AppendClass(info);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

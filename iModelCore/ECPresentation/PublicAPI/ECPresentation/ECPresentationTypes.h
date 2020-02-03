@@ -168,9 +168,9 @@ public:
         }
     //! Get the select ECClass.
     ECClassCR GetClass() const {return *m_class;}
+    void SetClass(ECClassCR ecClass) {m_class = &ecClass;}
     //! Is the select polymorphic.
     bool IsSelectPolymorphic() const {return m_isPolymorphic;}
-    //! Set whether select is polymorphic.
     void SetIsSelectPolymorphic(bool value) {m_isPolymorphic = value;}
 };
 
@@ -275,6 +275,8 @@ public:
     //! Is related class queried using outer join
     bool IsTargetOptional() const {return m_isTargetOptional;}
     void SetIsTargetOptional(bool value) { m_isTargetOptional = value;}
+
+    ECPRESENTATION_EXPORT static RelatedClass Unify(RelatedClass const&, RelatedClass const&);
 };
 
 //! A stack of ECClass and ECRelationshipClass pairs representing a path of relationships.
@@ -285,6 +287,7 @@ struct RelatedClassPath : bvector<RelatedClass>
     RelatedClassPath() : T_Super() {}
     RelatedClassPath(std::initializer_list<RelatedClass> list) : T_Super(list) {}
     ECPRESENTATION_EXPORT RelatedClassPath& Reverse(Utf8CP resultTargetClassAlias, bool isResultTargetPolymorphic);
+    ECPRESENTATION_EXPORT static RelatedClassPath Unify(RelatedClassPath const&, RelatedClassPath const&);
     };
 typedef RelatedClassPath& RelatedClassPathR;
 typedef RelatedClassPath const& RelatedClassPathCR;

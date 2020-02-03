@@ -891,26 +891,19 @@ static void DetermineJoinClauses(Utf8StringR thisClause, Utf8StringR nextClause,
     {
     ECRelationshipConstraintCP constraint;
     Utf8CP thisClauseECInstanceIdPropertyName,
-           thisClauseECClassIdPropertyName,
-           nextClauseECInstanceIdPropertyName,
-           nextClauseECClassIdPropertyName,
-           joinECInstanceIdPropertyName,
-           joinECClassIdPropertyName;
+        nextClauseECInstanceIdPropertyName,
+        joinECInstanceIdPropertyName;
     if (joinClause.m_isForward)
         {
         constraint = &joinClause.m_using->GetSource();
         thisClauseECInstanceIdPropertyName = "SourceECInstanceId";
-        thisClauseECClassIdPropertyName = "SourceECClassId";
-        nextClauseECClassIdPropertyName = "TargetECClassId";
         nextClauseECInstanceIdPropertyName = "TargetECInstanceId";
         }
     else
         {
         constraint = &joinClause.m_using->GetTarget();
         thisClauseECInstanceIdPropertyName = "TargetECInstanceId";
-        thisClauseECClassIdPropertyName = "TargetECClassId";
         nextClauseECInstanceIdPropertyName = "SourceECInstanceId";
-        nextClauseECClassIdPropertyName = "SourceECClassId";
         }
 
     if (ecClass.IsRelationshipClass())
@@ -932,15 +925,9 @@ static void DetermineJoinClauses(Utf8StringR thisClause, Utf8StringR nextClause,
 #endif
 
         if (wasPreviousJoinForward)
-            {
             joinECInstanceIdPropertyName = "TargetECInstanceId";
-            joinECClassIdPropertyName = "TargetECClassId";
-            }
         else
-            {
             joinECInstanceIdPropertyName = "SourceECInstanceId";
-            joinECClassIdPropertyName = "SourceECClassId";
-            }
         }
     else
         {
@@ -948,12 +935,11 @@ static void DetermineJoinClauses(Utf8StringR thisClause, Utf8StringR nextClause,
         BeAssert(ConstraintSupportsClass(*constraint, ecClass));
 #endif
         joinECInstanceIdPropertyName = "ECInstanceId";
-        joinECClassIdPropertyName = "ECClassId";
         }
 
-    static Utf8CP pattern = " ON [%%s].[%s] = [%%s].[%s] AND [%%s].[%s] = [%%s].[%s]";
-    thisClause = Utf8PrintfString(pattern, joinECInstanceIdPropertyName, thisClauseECInstanceIdPropertyName, joinECClassIdPropertyName, thisClauseECClassIdPropertyName);
-    nextClause = Utf8PrintfString(pattern, "ECInstanceId", nextClauseECInstanceIdPropertyName, "ECClassId", nextClauseECClassIdPropertyName);
+    static Utf8CP pattern = " ON [%%s].[%s] = [%%s].[%s]";
+    thisClause = Utf8PrintfString(pattern, joinECInstanceIdPropertyName, thisClauseECInstanceIdPropertyName);
+    nextClause = Utf8PrintfString(pattern, "ECInstanceId", nextClauseECInstanceIdPropertyName);
 
     BeAssert(!thisClause .empty() && !nextClause.empty());
     }
@@ -1110,7 +1096,7 @@ void ComplexPresentationQuery<TBase>::InitJoinClause() const
                         BeAssert(!join.m_usingAlias.empty());
                         joinClause.append(GetECClassClause(*join.m_using));
                         joinClause.append(" ").append(QueryHelpers::Wrap(join.m_usingAlias));
-                        joinClause.append(Utf8PrintfString(previousClassJoinClause.c_str(), prev.m_alias.c_str(), join.m_usingAlias.c_str(), prev.m_alias.c_str(), join.m_usingAlias.c_str()));
+                        joinClause.append(Utf8PrintfString(previousClassJoinClause.c_str(), prev.m_alias.c_str(), join.m_usingAlias.c_str()));
                         joinedRelationships.Insert(join.m_usingAlias, relationshipJoinInfo);
                         prev = relationshipJoinInfo;
                         }
@@ -1119,8 +1105,11 @@ void ComplexPresentationQuery<TBase>::InitJoinClause() const
                         BeAssert(joinedRelationshipInfoIter->second.m_class == join.m_using);
                         }
 
-                    // only join the other end of the relationship if this is the last join clause in the group or has a join filter
-                    if (&join == &joins[joins.size() - 1] || !join.m_joinFilter.GetClause().empty())
+                    bool shouldJoinTargetClass =
+                        &join == &joins[joins.size() - 1] // this is the last join clause in the group
+                        || !join.m_joinFilter.GetClause().empty() // join has a filter
+                        || !join.m_joinAlias.empty(); // join has an assigned alias
+                    if (shouldJoinTargetClass)
                         {
                         AppendJoinClause(joinClause, join.m_isOuterJoin, true);
                         Utf8String joinedClassName = join.m_join->GetName();
@@ -1130,7 +1119,7 @@ void ComplexPresentationQuery<TBase>::InitJoinClause() const
                             joinClause.append(" ").append(QueryHelpers::Wrap(join.m_joinAlias));
                             joinedClassName = join.m_joinAlias;
                             }
-                        joinClause.append(Utf8PrintfString(joinedClassJoinClause.c_str(), joinedClassName.c_str(), join.m_usingAlias.c_str(), joinedClassName.c_str(), join.m_usingAlias.c_str()));
+                        joinClause.append(Utf8PrintfString(joinedClassJoinClause.c_str(), joinedClassName.c_str(), join.m_usingAlias.c_str()));
                         if (!join.m_joinFilter.GetClause().empty())
                             {
                             joinClause.append(" AND ").append(join.m_joinFilter.GetClause());

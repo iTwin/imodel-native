@@ -380,7 +380,7 @@ public:
             for (RelatedClassCR rel : path)
                 relationships.insert(rel.GetRelationship());
             }
-        return GetRecursiveChildrenIds(relationships, IsRecursiveJoinForward(thisInfo), 
+        return GetRecursiveChildrenIds(relationships, IsRecursiveJoinForward(thisInfo),
             ContainerHelpers::TransformContainer<bset<ECInstanceId>>(input.GetInstanceIds(*thisInfo.GetInputClass())));
         }
     /*---------------------------------------------------------------------------------**//**
@@ -424,7 +424,7 @@ InstanceFilteringResult QueryBuilderHelpers::ApplyInstanceFilter(ComplexPresenta
             }
         else
             {
-            // note: this code path is generally used for ContentRelatedInstances specification - we need to filter either by 
+            // note: this code path is generally used for ContentRelatedInstances specification - we need to filter either by
             // input ids or ids in the path-from-input-to-select-class
             if (nullptr != params.GetRecursiveQueryInfo())
                 {
@@ -443,7 +443,7 @@ InstanceFilteringResult QueryBuilderHelpers::ApplyInstanceFilter(ComplexPresenta
                 pathFromSelectToInputClass.Reverse("related", false);
                 if (pathFromSelectToInputClass.size() == params.GetSelectInfo().GetPathFromInputToSelectClass().size())
                     {
-                    // the reversed path always becomes shorter if there are recursive relationships involved. if not, then 
+                    // the reversed path always becomes shorter if there are recursive relationships involved. if not, then
                     // we just need to filter by the end of the join
                     ContainerHelpers::Push(pathFromSourceClassToSelectClass, pathFromSelectToInputClass);
                     bvector<ECInstanceId> const& ids = params.GetInput()->GetInstanceIds(*params.GetSelectInfo().GetInputClass());
@@ -808,7 +808,7 @@ struct InstanceLabelOverrideSelectFieldsBuilder : InstanceLabelOverrideValueSpec
             m_fields.push_back(PresentationQueryContractSimpleField::Create("/StringValue/", value.c_str()));
             }
     public:
-        InstanceLabelOverrideSelectFieldsBuilder(PresentationQueryContractFieldCP instanceIdField, PresentationQueryContractFieldCP classIdField) 
+        InstanceLabelOverrideSelectFieldsBuilder(PresentationQueryContractFieldCP instanceIdField, PresentationQueryContractFieldCP classIdField)
             : m_ecInstanceIdField(instanceIdField), m_ecClassIdField(classIdField)
             {
             if (m_ecInstanceIdField.IsNull())
@@ -946,10 +946,7 @@ bmap<Utf8String, bvector<RelatedClassPath>> QueryBuilderHelpers::GetRelatedInsta
         for (RelatedClassPathR specPath : specPaths)
             {
             for (RelatedClassR specPathClass : specPath)
-                {
                 specPathClass.SetIsTargetOptional(!spec->IsRequired());
-                specPathClass.SetTargetClassAlias("");
-                }
             if (!specPath.empty())
                 specPath.back().SetTargetClassAlias(spec->GetAlias().c_str());
             }
@@ -1036,7 +1033,7 @@ bvector<RelatedClassPath> QueryBuilderHelpers::GetRelatedClassPaths(ECSchemaHelp
     bvector<RelatedClassPath> paths;
     for (RepeatableRelationshipPathSpecification const* pathSpec : relationshipPathSpecs)
         {
-        ContainerHelpers::Push(paths, ::GetRelatedClassPaths(schemaHelper, sourceClass, sourceIds, 
+        ContainerHelpers::Push(paths, ::GetRelatedClassPaths(schemaHelper, sourceClass, sourceIds,
             pathSpec->GetSteps(), relationshipsUseCount));
         }
     return paths;

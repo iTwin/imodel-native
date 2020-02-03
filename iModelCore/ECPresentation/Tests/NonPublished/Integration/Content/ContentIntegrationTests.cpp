@@ -3176,6 +3176,130 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, HandlesManyEndOfTheRelation
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(CreatesContentWithRelatedInstancesDerivingFromMultipleBaseClasses, R"*(
+    <ECEntityClass typeName="Element">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="ISubModeledElement" modifier="Abstract">
+        <ECCustomAttributes>
+            <IsMixin xmlns="CoreCustomAttributes.1.0">
+                <AppliesToEntityClass>Element</AppliesToEntityClass>
+            </IsMixin>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="ElementA">
+        <BaseClass>Element</BaseClass>
+        <BaseClass>ISubModeledElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="ElementB">
+        <BaseClass>Element</BaseClass>
+        <BaseClass>ISubModeledElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="LinkElement">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="Model">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="ModelA">
+        <BaseClass>Model</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="ModelB">
+        <BaseClass>Model</BaseClass>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ModelContainsElements" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="Model"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="Element" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="ModelModelsElement" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="Model"/>
+        </Source>
+        <Target multiplicity="(1..1)" roleLabel="is contained by" polymorphic="true">
+            <Class class="ISubModeledElement" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="ElementHasLinks" strength="referencing" modifier="None">
+        <Source multiplicity="(1..*)" roleLabel="has" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is referenced by" polymorphic="true">
+            <Class class="LinkElement"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesContentWithRelatedInstancesDerivingFromMultipleBaseClasses)
+    {
+    ECClassCP modelClass = GetClass("Model");
+    ECClassCP modelAClass = GetClass("ModelA");
+    ECClassCP mixinClass = GetClass("ISubModeledElement");
+    ECClassCP elementAClass = GetClass("ElementA");
+    ECClassCP elementBClass = GetClass("ElementB");
+    ECClassCP linkElementClass = GetClass("LinkElement");
+    ECRelationshipClassCP rel_ModelContainsElements = GetClass("ModelContainsElements")->GetRelationshipClassCP();
+    ECRelationshipClassCP rel_ModelModelsElement = GetClass("ModelModelsElement")->GetRelationshipClassCP();
+    ECRelationshipClassCP rel_ElementHasLinks = GetClass("ElementHasLinks")->GetRelationshipClassCP();
+
+    IECInstancePtr modelA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *modelAClass);
+    IECInstancePtr modeledElement = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementAClass);
+    IECInstancePtr containedElement = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementBClass);
+    IECInstancePtr linkElement = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *linkElementClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel_ModelContainsElements, *modelA, *containedElement);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel_ModelModelsElement, *modelA, *modeledElement);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel_ElementHasLinks, *modeledElement, *linkElement);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", elementBClass->GetFullName(), false);
+    spec->AddRelatedInstance(*new RelatedInstanceSpecification(RelationshipPathSpecification({
+        new RelationshipStepSpecification(rel_ModelContainsElements->GetFullName(), RequiredRelationDirection_Backward, modelClass->GetFullName()),
+        new RelationshipStepSpecification(rel_ModelModelsElement->GetFullName(), RequiredRelationDirection_Forward, mixinClass->GetFullName()),
+        new RelationshipStepSpecification(rel_ElementHasLinks->GetFullName(), RequiredRelationDirection_Forward, linkElementClass->GetFullName()),
+        }), "link1", true));
+    spec->AddRelatedInstance(*new RelatedInstanceSpecification(RelationshipPathSpecification({
+        new RelationshipStepSpecification(rel_ModelContainsElements->GetFullName(), RequiredRelationDirection_Backward, modelClass->GetFullName()),
+        new RelationshipStepSpecification(rel_ModelModelsElement->GetFullName(), RequiredRelationDirection_Forward, mixinClass->GetFullName()),
+        new RelationshipStepSpecification(rel_ElementHasLinks->GetFullName(), RequiredRelationDirection_Forward, linkElementClass->GetFullName()),
+        }), "link2", true));
+    rule->AddSpecification(*spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+
+    // request for content
+    ContentCPtr content = m_manager->GetContent(*descriptor, PageOptions()).get();
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*containedElement), contentSet[0]->GetKeys().front());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_SetsDisplayLabelProperty)
