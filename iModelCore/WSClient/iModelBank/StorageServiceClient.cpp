@@ -5,7 +5,7 @@
 #include "ClientInternal.h"
 #include <WebServices/iModelBank/StorageServiceClient.h>
 
-#define HEADER_XCorrelationId "XCorrelationId"
+#define HEADER_XCorrelationId "X-Correlation-Id"
 #define HEADER_TransferEncoding "Transfer-Encoding"
 #define HEADER_VALUE_Chunked "Chunked"
 
@@ -69,6 +69,21 @@ AzureResult StorageServiceClient::ResolveFinalResponse(Http::ResponseCR httpResp
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Algirdas.Mikoliunas             01/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
+void StorageServiceClient::FinishProgressCallback(Http::Request::ProgressCallbackCR progressCallback, Http::ResponseCR httpResponse, BeFileNameCR filePath) const
+    {
+    if (httpResponse.IsSuccess() && progressCallback)
+        {
+        uint64_t size = 0;
+        if (filePath.GetFileSize(size) == BeFileNameStatus::Success)
+            progressCallback(size, size);
+        else
+            progressCallback(1, 1);
+        }
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Algirdas.Mikoliunas             01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<AzureResult> StorageServiceClient::SendGetFileRequest
     (
     Utf8StringCR url,
@@ -85,6 +100,7 @@ AsyncTaskPtr<AzureResult> StorageServiceClient::SendGetFileRequest
 
     return request.PerformAsync()->Then<AzureResult>([=] (Http::ResponseCR httpResponse)
         {
+        FinishProgressCallback(progressCallback, httpResponse, filePath);
         return ResolveFinalResponse(httpResponse);
         });
     }
@@ -110,6 +126,7 @@ AsyncTaskPtr<AzureResult> StorageServiceClient::SendUpdateFileRequest
 
     return request.PerformAsync()->Then<AzureResult>([=](Http::ResponseCR httpResponse)
         {
+        FinishProgressCallback(progressCallback, httpResponse, filePath);
         return ResolveFinalResponse(httpResponse);
         });
     }

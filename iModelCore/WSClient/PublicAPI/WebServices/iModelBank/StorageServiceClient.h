@@ -35,6 +35,7 @@ private:
         ICancellationTokenPtr                      ct
         ) const;
     AzureResult ResolveFinalResponse(Http::ResponseCR httpResponse) const;
+    void FinishProgressCallback(Http::Request::ProgressCallbackCR progressCallback, Http::ResponseCR httpResponse, BeFileNameCR filePath) const;
     StorageServiceClient(IHttpHandlerPtr httpHandler);
 public:
     struct Timeout
