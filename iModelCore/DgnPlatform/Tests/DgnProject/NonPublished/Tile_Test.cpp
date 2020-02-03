@@ -412,6 +412,11 @@ TEST(TreeId, RoundTrip)
     expectInvalidTreeId("4_fffffffff-0x1c"); // too many digits in flags
     expectInvalidTreeId("C:12.340000_0-0x1c"); // must specify UseProjectExtents flag for volume classifier
 
+    // version 8.1: "enforce display priority" flag
+    expectInvalidTreeId("4_2-C:1.0_0x1c"); // display priority incompatible with classifier
+    expectInvalidTreeId("4_3-V:1.0_0x1c"); // display priority incompatible with classifier
+    expectInvalidTreeId("4_3-A:0x1_0x1c"); // display priority incompatible with animation
+
     DgnElementId animId(uint64_t(0xf7));
 
     ExpectedId expectedIds[] =
@@ -484,3 +489,98 @@ TEST(TreeId, RoundTrip)
     //  - etc...
     }
 
+using TreeFlags = Tree::Flags;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+TreeId PrimaryId(TreeFlags flags=TreeFlags::None, DgnElementId animId=DgnElementId(), bool omitEdges=true)
+    {
+    return Tree::Id(DgnModelId(static_cast<uint64_t>(0x1c)), flags, 8, omitEdges, animId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+TreeId ClassifierId(bool isPlanar, TreeFlags flags=TreeFlags::None, DgnElementId animId=DgnElementId())
+    {
+    return Tree::Id(DgnModelId(static_cast<uint64_t>(0x1c)), flags, 8, 1.0, isPlanar, animId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/20
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(TreeId, ValidateIds)
+    {
+    // ###TODO Need to test against ContentId::Flags::AllowInstancing vs Tree::Flags::EnforceDisplayPriority
+    auto kPriority = TreeFlags::EnforceDisplayPriority;
+    auto kExtents = TreeFlags::UseProjectExtents;
+    auto kNone = TreeFlags::None;
+    auto animId = DgnElementId(static_cast<uint64_t>(0x1b));
+
+    struct TreeEntry { TreeId m_tree; bool m_valid; };
+    TreeEntry treeEntries[] =
+        {
+            { ClassifierId(false), false }, // volume classifier must use project extents
+            { ClassifierId(true), true },
+
+            { ClassifierId(false, kExtents), true },
+            { ClassifierId(true, kExtents), true },
+
+            { ClassifierId(false, kNone, animId), false }, // volume classifier must use project extents
+            { ClassifierId(true, kNone, animId), true },
+
+            { ClassifierId(false, kExtents, animId), true },
+            { ClassifierId(true, kExtents, animId), true },
+
+            { PrimaryId(), true },
+            { PrimaryId(kNone, animId), true },
+            { PrimaryId(kExtents), true },
+            { PrimaryId(kExtents, animId), true },
+
+            { PrimaryId(kPriority), true },
+
+            // Display priority incompatible with animation
+            { PrimaryId(kPriority, animId), false },
+
+            // Display priority incompatible with classification
+            { ClassifierId(false, kPriority), false },
+            { ClassifierId(true, kPriority), false },
+        };
+
+    for (auto const& entry : treeEntries)
+        EXPECT_EQ(entry.m_tree.IsValid(), entry.m_valid);
+
+    using TileFlags = ContentId::Flags;
+
+    struct TileId : ContentId
+    {
+        TileId(TileFlags flags = TileFlags::None) : ContentId(0, 0, 0, 0, 1, 1, flags) { }
+    };
+
+    TreeId treeIds[] =
+        {
+        ClassifierId(false, kExtents),
+        ClassifierId(true),
+        PrimaryId(),
+        PrimaryId(kNone, animId),
+        PrimaryId(kPriority),
+        };
+
+    TileId tileIds[] =
+        {
+            { TileFlags::None },
+            { TileFlags::AllowInstancing },
+            { TileFlags::ImprovedElision },
+            { TileFlags::AllowInstancing | TileFlags::ImprovedElision },
+        };
+
+    for (auto const& tree : treeIds)
+        {
+        EXPECT_TRUE(tree.IsValid());
+        for (auto const & tile : tileIds)
+            {
+            EXPECT_EQ(tree.IsValidContentId(tile), (!tree.GetEnforceDisplayPriority() || !tile.AllowInstancing()));
+            }
+        }
+    }

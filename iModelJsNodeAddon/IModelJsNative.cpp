@@ -5095,10 +5095,16 @@ public:
     static DgnDbStatus ParseInputs(GeometricModelPtr& model, Tile::Tree::Id& treeId, Tile::ContentIdR contentId, DgnDbR db, Utf8StringCR treeIdStr, Utf8StringCR contentIdStr)
         {
         auto status = TileWorker::ParseInputs(model, treeId, db, treeIdStr);
-        if (DgnDbStatus::Success == status && !contentId.FromString(contentIdStr.c_str(), treeId.GetMajorVersion()))
-            status = DgnDbStatus::InvalidId;
+        if (DgnDbStatus::Success != status)
+            return status;
 
-        return status;
+        if (!contentId.FromString(contentIdStr.c_str(), treeId.GetMajorVersion()))
+            return DgnDbStatus::InvalidId;
+
+        if (!treeId.IsValidContentId(contentId))
+            return DgnDbStatus::InvalidId;
+
+        return DgnDbStatus::Success;
         }
 };
 

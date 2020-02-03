@@ -58,6 +58,7 @@ private:
     uint32_t m_edgeMask:2;         //!< 0=none, 1=generate mask, 2=use mask
     uint32_t m_animate:1;          //!< Animate view (render continously).
     uint32_t m_backgroundMap:1;    //!< Background (web mercator) map.
+    uint32_t m_forceSurfaceDiscard: 1; //!< Forces expensive shader logic to ensure edges display in front of surfaces and planar surfaces in front of coincident non-planar surfaces.
 
 public:
     BE_JSON_NAME(acs);
@@ -84,6 +85,7 @@ public:
     BE_JSON_NAME(edgeMask);
     BE_JSON_NAME(animate);
     BE_JSON_NAME(backgroundMap);
+    BE_JSON_NAME(forceSurfaceDiscard);
 
     ViewFlags()
         {
@@ -111,6 +113,7 @@ public:
         m_edgeMask = 0;
         m_animate = 0;
         m_backgroundMap = 0;
+        m_forceSurfaceDiscard = 0;
         }
 
     bool ShowDimensions() const {return m_dimensions;}
@@ -161,7 +164,8 @@ public:
     void SetAnimate(bool val) {m_animate = val;}
     bool ShowBackgroundMap() const { return m_backgroundMap; }
     void SetShowBackgroundMap(bool val) {m_backgroundMap = val;}
-
+    bool ForceSurfaceDiscard() const {return m_forceSurfaceDiscard;}
+    void SetForceSurfaceDiscard(bool val) {m_forceSurfaceDiscard = val;}
 
     RenderMode GetRenderMode() const {return m_renderMode; }
     void SetRenderMode(RenderMode value) {m_renderMode = value;}
@@ -219,6 +223,7 @@ private:
         kHlineMaterialColors,
         kEdgeMask,
         kBackgroundMap,
+        kForceSurfaceDiscard,
     };
 
     uint32_t    m_present = 0;
@@ -254,6 +259,7 @@ public:
     void SetUseHlineMaterialColors(bool val) { m_values.SetUseHlineMaterialColors(val); SetPresent(kHlineMaterialColors); }
     void SetEdgeMask(int val) { m_values.SetEdgeMask(val); SetPresent(kEdgeMask); }
     void SetRenderMode(RenderMode val) { m_values.SetRenderMode(val); SetPresent(kRenderMode); }
+    void SetForceSurfaceDiscard(bool val) { m_values.SetForceSurfaceDiscard(val); SetPresent(kForceSurfaceDiscard); }
 
     bool AnyOverridden() const { return 0 != m_present; }
     void Clear() { m_present = 0; }

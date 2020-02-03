@@ -4156,9 +4156,9 @@ MeshBuilderPtr MeshBuilderList::CreateMeshBuilder(DisplayParamsCR params) const
     auto featureTable = m_set.GetFeatureTable();
     auto type = m_key.GetPrimitiveType();
     auto isPlanar = m_key.IsPlanar();
-    auto nodeIndex = m_key.GetNodeIndex();
+    auto nodeId = m_key.GetNodeId();
     auto viOrigin = m_key.GetViewIndependentOrigin();
-    return MeshBuilder::Create(params, vertTol, areaTol, featureTable, type, m_set.GetRange(), m_set.Is2d(), isPlanar, nodeIndex, atlas.get(), viOrigin);
+    return MeshBuilder::Create(params, vertTol, areaTol, featureTable, type, m_set.GetRange(), m_set.Is2d(), isPlanar, nodeId, atlas.get(), viOrigin);
     }
 
 /*---------------------------------------------------------------------------------**//**

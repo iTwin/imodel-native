@@ -147,8 +147,9 @@ public:
     uint16_t GetMajorVersion() const { BeAssert(0 < m_majorVersion); return m_majorVersion; }
     Flags GetFlags() const { return m_flags; }
 
-    bool AllowInstancing() const;
-    bool WantImprovedElision() const;
+    DGNPLATFORM_EXPORT bool IsFlagSet(Flags flag) const;
+    bool AllowInstancing() const { return IsFlagSet(Flags::AllowInstancing); }
+    bool WantImprovedElision() const { return IsFlagSet(Flags::ImprovedElision); }
 };
 
 ENUM_IS_FLAGS(ContentId::Flags);
@@ -270,8 +271,8 @@ public:
     TreeR GetTree() const { return m_tree; }
 
     virtual void Preprocess(Render::Primitives::PolyfaceList& polyfaces, Render::Primitives::StrokesList& strokes) const { }
-    virtual bool CompressMeshQuantization() const { return false; }                             // If true the quantization of each mesh will be compressed to include only the mesh (not tile) range.  ...Classifiers;
-    virtual uint64_t GetNodeId(DgnElementId id) const;
+    virtual bool CompressMeshQuantization() const { return false; } // If true the quantization of each mesh will be compressed to include only the mesh (not tile) range.  ...Classifiers;
+    virtual uint64_t GetNodeId(DgnElementId, Render::Primitives::DisplayParamsCR) const;
 
     struct PtrComparator
     {
@@ -343,8 +344,8 @@ struct Tree : RefCountedBase, NonCopyableClass
     enum class Flags : uint32_t
     {
         None = 0,
-        UseProjectExtents = 1 << 0,
-        All = UseProjectExtents,
+        UseProjectExtents = 1 << 0, //!< Use project extents as basis for tile tree volume.
+        EnforceDisplayPriority = 1 << 1, //!< For 3d plan projection models, group graphics into "layers" by subcategory.
     };
 
     struct Id
@@ -380,7 +381,8 @@ struct Tree : RefCountedBase, NonCopyableClass
         // Create an Id for a V3 model or animation tree
         Id(DgnModelId modelId, bool omitEdges, DgnElementId animationSourceId=DgnElementId()) : Id(modelId, Tree::Flags::None, 3, omitEdges, animationSourceId) { }
 
-        bool IsValid() const { return m_modelId.IsValid() && (!IsVolumeClassifier() || GetUseProjectExtents()); }
+        DGNPLATFORM_EXPORT bool IsValid() const;
+        DGNPLATFORM_EXPORT bool IsValidContentId(ContentIdCR) const;
 
         Tree::Type GetType() const { return m_type; }
         bool ContainsAnimation() const { return m_animationSourceId.IsValid(); }
@@ -395,7 +397,9 @@ struct Tree : RefCountedBase, NonCopyableClass
         DgnElementId GetAnimationSourceId() const { return m_animationSourceId; }
 
         Tree::Flags GetFlags() const { return m_flags; }
-        DGNPLATFORM_EXPORT bool GetUseProjectExtents() const;
+        DGNPLATFORM_EXPORT bool IsFlagSet(Tree::Flags flag) const;
+        bool GetUseProjectExtents() const { return IsFlagSet(Tree::Flags::UseProjectExtents); }
+        bool GetEnforceDisplayPriority() const { return IsFlagSet(Tree::Flags::EnforceDisplayPriority); }
 
         // If a DgnDb is supplied, the Id is validated against its contents. e.g., a model Id pointing to a non-existent or non-geometric model is invalid.
         // Otherwise only basic validation of the Id format itself is performed.
@@ -483,6 +487,8 @@ public:
     DGNPLATFORM_EXPORT static TreePtr Create(GeometricModelR model, Render::SystemR system, Id id);
     DGNPLATFORM_EXPORT static Type TypeFromId(Utf8StringCR treeId);
     DGNPLATFORM_EXPORT static Type ExtractTypeFromid(Utf8StringR treeId);
+
+    bool IsValidContentId(ContentIdCR contentId) const { return GetId().IsValidContentId(contentId); }
 };
 
 ENUM_IS_FLAGS(Tree::Flags);

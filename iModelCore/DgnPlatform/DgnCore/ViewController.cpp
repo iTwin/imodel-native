@@ -34,6 +34,7 @@ void ViewFlags::FromJson(JsonValueCR val)
     m_hLineMaterialColors = val[json_hlMatColors()].asBool();
     m_animate = val[json_animate()].asBool();
     m_backgroundMap = val[json_backgroundMap()].asBool();
+    m_forceSurfaceDiscard = val[json_forceSurfaceDiscard()].asBool();
 
     // Validate render mode. V8 converter only made sure to set everything above Phong to Smooth...
     uint32_t renderModeValue = val[json_renderMode()].asUInt();
@@ -75,6 +76,7 @@ Json::Value ViewFlags::ToJson() const
     if (m_backgroundMap) val[json_backgroundMap()] = true;
     if (m_animate) val[json_animate()] = true;
     if (m_edgeMask!=0) val[json_edgeMask()] = m_edgeMask;
+    if (m_forceSurfaceDiscard) val[json_forceSurfaceDiscard()] = true;
 
     val[json_renderMode()] = (uint8_t) m_renderMode;
     return val;
@@ -118,6 +120,7 @@ void ViewFlagsOverrides::Apply(ViewFlags& base) const
     if (IsPresent(kHlineMaterialColors)) base.SetUseHlineMaterialColors(m_values.UseHlineMaterialColors());
     if (IsPresent(kEdgeMask)) base.SetEdgeMask(m_values.GetEdgeMask());
     if (IsPresent(kRenderMode)) base.SetRenderMode(m_values.GetRenderMode());
+    if (IsPresent(kForceSurfaceDiscard)) base.SetForceSurfaceDiscard(m_values.ForceSurfaceDiscard());
     }
 
 /*---------------------------------------------------------------------------------**//**

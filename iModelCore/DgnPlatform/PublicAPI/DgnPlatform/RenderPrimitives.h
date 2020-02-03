@@ -564,7 +564,7 @@ private:
     PrimitiveType                   m_type;
     mutable MeshEdgesPtr            m_edges;
     PolyfaceAuxData::Channels       m_auxChannels;
-    size_t                          m_nodeIndex;
+    uint64_t                        m_nodeId;
     SharedGeomCPtr                  m_sharedGeom;
     MaterialAtlasPtr                m_materialAtlas;
     DPoint3d                        m_viewIndependentOrigin;
@@ -572,8 +572,8 @@ private:
     bool                            m_isPlanar;
     bool                            m_isViewIndependent;
 
-    Mesh(DisplayParamsCR params, FeatureTableP featureTable, PrimitiveType type, DRange3dCR range, bool is2d, bool isPlanar, size_t nodeIndex, MaterialAtlasP materialAtlas, DPoint3dCP viewIndependentOrigin)
-        : m_displayParams(&params), m_features(featureTable), m_type(type), m_verts(range), m_is2d(is2d), m_isPlanar(isPlanar), m_nodeIndex(nodeIndex), m_materialAtlas(materialAtlas), m_materials(nullptr != materialAtlas)
+    Mesh(DisplayParamsCR params, FeatureTableP featureTable, PrimitiveType type, DRange3dCR range, bool is2d, bool isPlanar, uint64_t nodeId, MaterialAtlasP materialAtlas, DPoint3dCP viewIndependentOrigin)
+        : m_displayParams(&params), m_features(featureTable), m_type(type), m_verts(range), m_is2d(is2d), m_isPlanar(isPlanar), m_nodeId(nodeId), m_materialAtlas(materialAtlas), m_materials(nullptr != materialAtlas)
         {
         m_isViewIndependent = nullptr != viewIndependentOrigin;
         if (m_isViewIndependent)
@@ -583,8 +583,8 @@ private:
     friend struct MeshBuilder;
     void SetDisplayParams(DisplayParamsCR params) { m_displayParams = &params; }
 public:
-    static MeshPtr Create(DisplayParamsCR params, FeatureTableP featureTable, PrimitiveType type, DRange3dCR range, bool is2d, bool isPlanar, size_t nodeIndex, MaterialAtlasP materialAtlas, DPoint3dCP viewIndependentOrigin)
-        { return new Mesh(params, featureTable, type, range, is2d, isPlanar, nodeIndex, materialAtlas, viewIndependentOrigin); }
+    static MeshPtr Create(DisplayParamsCR params, FeatureTableP featureTable, PrimitiveType type, DRange3dCR range, bool is2d, bool isPlanar, uint64_t nodeId, MaterialAtlasP materialAtlas, DPoint3dCP viewIndependentOrigin)
+        { return new Mesh(params, featureTable, type, range, is2d, isPlanar, nodeId, materialAtlas, viewIndependentOrigin); }
 
     DPoint3d                        GetPoint(uint32_t index) const;
     DGNPLATFORM_EXPORT DRange3d     GetTriangleRange(TriangleCR triangle) const;
@@ -613,7 +613,7 @@ public:
     bvector<uint32_t> const&        GetFeatureIndices() const { return m_features.m_indices; }
     bool                            GetUniformFeatureIndex(uint32_t& index) const { if (!m_features.m_initialized || !m_features.m_indices.empty()) return false; index = m_features.m_uniform; return true; }
     void                            CompressVertexQuantization();
-    size_t                          GetNodeIndex() const { return m_nodeIndex; }
+    uint64_t                        GetNodeId() const { return m_nodeId; }
 
     MaterialAtlasP                  GetMaterialAtlas() const { return m_materialAtlas.get(); }
     uint8_t                         GetMaterialIndex(MaterialP material) const;
@@ -672,13 +672,13 @@ struct MeshBuilderKey
 {
 private:
     DisplayParamsCPtr   m_params;
-    uint64_t            m_nodeIndex;
+    uint64_t            m_nodeId;
     DPoint3d            m_viewIndependentOrigin;
     Mesh::PrimitiveType m_type;
     MeshBuilderFlags    m_flags;
 
-    MeshBuilderKey(DisplayParamsCP params, Mesh::PrimitiveType type, MeshBuilderFlags flags, uint64_t nodeIndex, DPoint3dCP viewIndependentOrigin)
-        : m_params(params), m_type(type), m_flags(flags), m_nodeIndex(nodeIndex)
+    MeshBuilderKey(DisplayParamsCP params, Mesh::PrimitiveType type, MeshBuilderFlags flags, uint64_t nodeId, DPoint3dCP viewIndependentOrigin)
+        : m_params(params), m_type(type), m_flags(flags), m_nodeId(nodeId)
         {
         if (nullptr != viewIndependentOrigin)
             {
@@ -688,12 +688,12 @@ private:
         }
 public:
     MeshBuilderKey() : MeshBuilderKey(nullptr, Mesh::PrimitiveType::Mesh, MeshBuilderFlags::None, 0, nullptr) { }
-    MeshBuilderKey(DisplayParamsCR params, Mesh::PrimitiveType type, MeshBuilderFlags flags, uint64_t nodeIndex, DPoint3dCP viewIndependentOrigin)
-        : MeshBuilderKey(&params, type, flags, nodeIndex, viewIndependentOrigin) { }
+    MeshBuilderKey(DisplayParamsCR params, Mesh::PrimitiveType type, MeshBuilderFlags flags, uint64_t nodeId, DPoint3dCP viewIndependentOrigin)
+        : MeshBuilderKey(&params, type, flags, nodeId, viewIndependentOrigin) { }
 
     DisplayParamsCR GetDisplayParams() const { return *m_params; }
     Mesh::PrimitiveType GetPrimitiveType() const { return m_type; }
-    uint64_t GetNodeIndex() const { return m_nodeIndex; }
+    uint64_t GetNodeId() const { return m_nodeId; }
     bool IsPlanar() const { return MeshBuilderFlags::None != (m_flags & MeshBuilderFlags::IsPlanar); }
     bool IsViewIndependent() const { return MeshBuilderFlags::None != (m_flags & MeshBuilderFlags::ViewIndependent); }
     DPoint3dCP GetViewIndependentOrigin() const { return IsViewIndependent() ? &m_viewIndependentOrigin : nullptr; }
@@ -706,8 +706,8 @@ public:
         if (m_flags != rhs.m_flags)
             return m_flags < rhs.m_flags;
 
-        if (m_nodeIndex != rhs.m_nodeIndex)
-            return m_nodeIndex < rhs.m_nodeIndex;
+        if (m_nodeId != rhs.m_nodeId)
+            return m_nodeId < rhs.m_nodeId;
 
         if (IsViewIndependent() && !m_viewIndependentOrigin.AlmostEqual(rhs.m_viewIndependentOrigin))
             {
@@ -839,13 +839,13 @@ private:
     DRange3d                        m_tileRange;
     MeshBuilderPtr                  m_next;
 
-    MeshBuilder(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable, Mesh::PrimitiveType type, DRange3dCR range, bool is2d, bool isPlanar, size_t nodeIndex, MaterialAtlasP materialAtlas, DPoint3dCP viewIndependentOrigin)
-        : m_mesh(Mesh::Create(params, featureTable, type, range, is2d, isPlanar, nodeIndex, materialAtlas, viewIndependentOrigin)), m_tolerance(tolerance), m_areaTolerance(areaTolerance), m_tileRange(range) { }
+    MeshBuilder(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable, Mesh::PrimitiveType type, DRange3dCR range, bool is2d, bool isPlanar, uint64_t nodeId, MaterialAtlasP materialAtlas, DPoint3dCP viewIndependentOrigin)
+        : m_mesh(Mesh::Create(params, featureTable, type, range, is2d, isPlanar, nodeId, materialAtlas, viewIndependentOrigin)), m_tolerance(tolerance), m_areaTolerance(areaTolerance), m_tileRange(range) { }
 
     uint32_t AddVertex(VertexMap& vertices, VertexKeyCR vertex);
 public:
-    static MeshBuilderPtr Create(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable, Mesh::PrimitiveType type, DRange3dCR range, bool is2d, bool isPlanar, size_t nodeIndex, MaterialAtlasP materialAtlas, DPoint3dCP viewIndependentOrigin)
-        { return new MeshBuilder(params, tolerance, areaTolerance, featureTable, type, range, is2d, isPlanar, nodeIndex, materialAtlas, viewIndependentOrigin); }
+    static MeshBuilderPtr Create(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable, Mesh::PrimitiveType type, DRange3dCR range, bool is2d, bool isPlanar, uint64_t nodeId, MaterialAtlasP materialAtlas, DPoint3dCP viewIndependentOrigin)
+        { return new MeshBuilder(params, tolerance, areaTolerance, featureTable, type, range, is2d, isPlanar, nodeId, materialAtlas, viewIndependentOrigin); }
 
     DGNPLATFORM_EXPORT void AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR, DgnDbR dgnDb, FeatureCR feature, bool includeParams, uint32_t fillColor, bool requireNormals, uint8_t materialIndex, TransformCP transformToDgn);
     DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureCR feature, uint32_t fillColor, double startDistance);

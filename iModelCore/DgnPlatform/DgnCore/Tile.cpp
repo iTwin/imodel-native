@@ -98,7 +98,7 @@ private:
 
     bool CompressMeshQuantization() const final { return true; }
     void  Preprocess(PolyfaceList& polyfaces, StrokesList& strokes) const final;
-    virtual uint64_t GetNodeId(DgnElementId elementId) const final { return elementId.GetValue(); }
+    virtual uint64_t GetNodeId(DgnElementId elementId, DisplayParamsCR) const final { return elementId.GetValue(); }
 
 public:
     VolumeClassificationLoader(Tree& tree, ContentIdCR contentId, bool useCache);
@@ -118,6 +118,19 @@ public:
     PlanarClassificationLoader(Tree& tree, ContentIdCR contentId, bool useCache);
 };
 
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   01/20
+//=======================================================================================
+struct PlanProjectionLoader : Loader
+{
+private:
+    virtual uint64_t GetNodeId(DgnElementId, DisplayParamsCR params) const final
+        {
+        return params.GetSubCategoryId().GetValueUnchecked();
+        }
+public:
+    PlanProjectionLoader(TreeR tree, ContentIdCR contentId, bool useCache) : Loader(tree, contentId, useCache) { }
+};
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   08/18
@@ -1692,8 +1705,10 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ContentId::AllowInstancing() const { return Flags::None != (GetFlags() & Flags::AllowInstancing); }
-bool ContentId::WantImprovedElision() const { return Flags::None != (GetFlags() & Flags::ImprovedElision); }
+bool ContentId::IsFlagSet(Flags flag) const
+    {
+    return flag == (GetFlags() & flag);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/19
@@ -2299,7 +2314,7 @@ LoaderPtr Tree::CreateLoader(ContentIdCR contentId, bool useCache)
             return new PlanarClassificationLoader(*this, contentId, useCache);
 
         default:
-            return new Loader(*this, contentId, useCache);
+            return GetId().GetEnforceDisplayPriority() ? new PlanProjectionLoader(*this, contentId, useCache) : new Loader(*this, contentId, useCache);
         }
     }
 
@@ -2365,9 +2380,9 @@ uint16_t Tree::Id::GetDefaultMajorVersion()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Tree::Id::GetUseProjectExtents() const
+bool Tree::Id::IsFlagSet(Tree::Flags flag) const
     {
-    return Tree::Flags::None != (GetFlags() & Tree::Flags::UseProjectExtents);
+    return flag == (GetFlags() & flag);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2401,9 +2416,7 @@ Utf8String Tree::Id::GetPrefixString() const
 
         if (GetOmitEdges())
             prefix.append(s_omitEdgesPrefix).append(1, '_');
-
-        }   
-
+        }
 
     return prefix;
     }
@@ -2552,11 +2565,13 @@ Tree::Id Tree::Id::FromString(Utf8StringCR str, DgnDbP db)
         case Tree::Type::VolumeClassifier:
             if (!hasFlagsAndMajorVersion)
                 flags |= Tree::Flags::UseProjectExtents;
-            else if (Tree::Flags::None == (flags & Tree::Flags::UseProjectExtents))
+            else if (Tree::Flags::None == (flags & Tree::Flags::UseProjectExtents) || Tree::Flags::None != (flags & Tree::Flags::EnforceDisplayPriority))
                 return invalidId;
             // fall-through intentional
         case Tree::Type::PlanarClassifier:
             if (model.IsValid() && !model->Is3d())
+                return invalidId;
+            else if (Tree::Flags::None != (flags & Tree::Flags::EnforceDisplayPriority))
                 return invalidId;
             else
                 return Tree::Id(modelId, flags, majorVersion, expansion, Tree::Type::PlanarClassifier == type, animationId);
@@ -2571,8 +2586,39 @@ Tree::Id Tree::Id::FromString(Utf8StringCR str, DgnDbP db)
             return invalidId;
         }
 
+    if (Tree::Flags::None != (flags & Tree::Flags::EnforceDisplayPriority) && model.IsValid())
+        if (!model->Is3d() || !model->ToGeometricModel3d()->IsPlanProjection())
+            return invalidId;
 
     return Tree::Id(modelId, flags, majorVersion, omitEdges, animationId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/20
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Tree::Id::IsValid() const
+    {
+    if (!m_modelId.IsValid())
+        return false;
+
+    if (IsVolumeClassifier() && !GetUseProjectExtents())
+        return false;
+
+    if (GetEnforceDisplayPriority())
+        if (IsClassifier() || ContainsAnimation())
+            return false;
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/20
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Tree::Id::IsValidContentId(ContentIdCR contentId) const
+    {
+    // ###TODO: Instancing is currently not supported in combination with display priority.
+    // May wish to revisit if we start instancing symbols for line styles or area patterns.
+    return !GetEnforceDisplayPriority() || !contentId.AllowInstancing();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2634,7 +2680,7 @@ Loader::~Loader()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint64_t Loader::GetNodeId(DgnElementId id) const { return m_tree.GetDiscreteNodeId(id); }
+uint64_t Loader::GetNodeId(DgnElementId id, DisplayParamsCR) const { return m_tree.GetDiscreteNodeId(id); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/19
@@ -3635,7 +3681,7 @@ template<typename T> static void addClippedPolyface(MeshBuilderR builder, Polyfa
 void MeshGenerator::AddClippedPolyface(PolyfaceQueryCR polyface, DgnElementId elemId, DisplayParamsCR displayParams, MeshEdgeCreationOptions edgeOptions, bool isPlanar)
     {
     DgnDbR              db = m_loader.GetDgnDb();
-    uint64_t            keyElementId = m_loader.GetLoader().GetNodeId(elemId); // Create separate primitives per element if classifying.
+    uint64_t            keyElementId = m_loader.GetLoader().GetNodeId(elemId, displayParams);
     auto                flags = MeshBuilderKey::MakeFlags(nullptr != polyface.GetNormalIndexCP(), isPlanar);
     MeshBuilderKey      key(displayParams, Mesh::PrimitiveType::Mesh, flags, keyElementId, GetViewIndependentOrigin());
     MeshBuilderR        builder = GetMeshBuilder(key, static_cast<uint32_t>(polyface.GetPointCount()));
@@ -3693,7 +3739,8 @@ void MeshGenerator::AddStrokes(StrokesR strokes, DgnElementId elemId, double ran
 
     auto type = strokes.IsDisjoint() ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline;
     auto flags = MeshBuilderKey::MakeFlags(false, strokes.IsPlanar());
-    MeshBuilderKey key(displayParams, type, flags, 0, GetViewIndependentOrigin());
+    auto nodeId = m_loader.GetLoader().GetNodeId(elemId, displayParams);
+    MeshBuilderKey key(displayParams, type, flags, nodeId, GetViewIndependentOrigin());
     MeshBuilderR builder = GetMeshBuilder(key, strokes.ComputePointCount());
 
     uint32_t fillColor = displayParams.GetLineColor();
@@ -4285,7 +4332,7 @@ void InstanceableGeom::AddInstanced(ElementMeshGeneratorR meshGen)
     auto vertTol = tolerance * ToleranceRatio::Vertex();
     auto areaTol = tolerance * ToleranceRatio::FacetArea(); // ###TODO AFAICT this is vestigial and ratio is same as vertex anyway...
 
-    MeshBuilderPtr builder = MeshBuilder::Create(key.GetDisplayParams(), vertTol, areaTol, nullptr, key.GetPrimitiveType(), geom.GetRange(), meshGen.GetLoader().Is2d(), key.IsPlanar(), key.GetNodeIndex(), nullptr, nullptr);
+    MeshBuilderPtr builder = MeshBuilder::Create(key.GetDisplayParams(), vertTol, areaTol, nullptr, key.GetPrimitiveType(), geom.GetRange(), meshGen.GetLoader().Is2d(), key.IsPlanar(), key.GetNodeId(), nullptr, nullptr);
 
     DRange3d contentRange = DRange3d::NullRange();
     AddInstanced(meshGen, *builder, contentRange);

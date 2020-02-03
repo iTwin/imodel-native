@@ -1526,23 +1526,55 @@ void IModelTileWriter::AddMeshes(Render::Primitives::GeometryCollectionCR geomet
     Json::Value     meshes     = Json::objectValue;
     Json::Value     nodes      = Json::objectValue;
 
+    bool enforceDisplayPriority = m_loader.GetTree().GetId().GetEnforceDisplayPriority();
+    Utf8Char idBuffer[17];
     for (auto& geomMesh : geometry.Meshes())
         {
-        Utf8String  id = (0 == geomMesh->GetNodeIndex()) ? Utf8String("Root") : Utf8PrintfString("%d", geomMesh->GetNodeIndex());
-        Utf8String  meshId = "Mesh_" + id;
+        Utf8CP id;
+        uint64_t nodeIndex = geomMesh->GetNodeId();
+        if (0 == nodeIndex)
+            {
+            id = "Root";
+            }
+        else
+            {
+            BeStringUtilities::FormatHexUInt64(idBuffer, nodeIndex);
+            id = idBuffer;
+            }
+
+        Utf8String meshId("Mesh_");
+        meshId.append(id);
 
         if (!meshes.isMember(meshId))
             {
-            Utf8String     nodeId = "Node_" + id;
+            Utf8String nodeId("Node_");
+            nodeId.append(id);
             nodes[nodeId] = meshId;
+
             meshes[meshId] = Json::objectValue;
             meshes[meshId]["primitives"] = Json::arrayValue;
+
+            if (0 != nodeIndex && enforceDisplayPriority)
+                {
+                Utf8String layerId("0x");
+                layerId.append(id);
+                meshes[meshId]["layer"] = layerId;
+                }
             }
 
         AddMesh(meshes[meshId]["primitives"], *geomMesh, primitiveIndex, geometry.Meshes().FeatureTable());
         if (IsCanceled())
             return;
         }
+
+    // Front-end expects Node_Root to always exist - it won't if all the geometry is contained in nodes. Add as empty array.
+    if (!nodes.isMember("Node_Root"))
+        {
+        nodes["Node_Root"] = "Mesh_Root";
+        meshes["Mesh_Root"] = Json::objectValue;
+        meshes["Mesh_Root"]["primitives"] = Json::arrayValue;
+        }
+
     m_json["meshes"] = meshes;
     m_json["nodes"]  = nodes;
     }
