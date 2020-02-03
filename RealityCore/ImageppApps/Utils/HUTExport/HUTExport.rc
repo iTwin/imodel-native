@@ -1,0 +1,454 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "HUTresource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+#include "HUTClassID.h"
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE
+BEGIN
+    "HUTresource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "#include ""HUTClassID.h""\r\n"
+    "\r\n"
+    "\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE
+BEGIN
+    "#define _AFX_NO_SPLITTER_RESOURCES\r\n"
+    "#define _AFX_NO_OLE_RESOURCES\r\n"
+    "#define _AFX_NO_TRACKER_RESOURCES\r\n"
+    "#define _AFX_NO_PROPERTY_RESOURCES\r\n"
+    "\r\n"
+    "#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)\r\n"
+    "#ifdef _WIN32\r\n"
+    "LANGUAGE 9, 1\r\n"
+    "#pragma code_page(1252)\r\n"
+    "#endif\r\n"
+    "#include ""res\\HUTExport.rc2""  // non-Microsoft Visual C++ edited resources\r\n"
+    "#include ""afxres.rc""         // Standard components\r\n"
+    "#endif\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+#ifndef _MAC
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,0,0,1
+ PRODUCTVERSION 1,0,0,1
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x4L
+ FILETYPE 0x2L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904B0"
+        BEGIN
+            VALUE "CompanyName", "\0"
+            VALUE "FileDescription", "HUTExport DLL\0"
+            VALUE "FileVersion", "1, 0, 0, 1\0"
+            VALUE "InternalName", "HUTExport\0"
+            VALUE "LegalCopyright", "Copyright (C) 1999\0"
+            VALUE "LegalTrademarks", "\0"
+            VALUE "OriginalFilename", "HUTExport.DLL\0"
+            VALUE "ProductName", "HUTExport Dynamic Link Library\0"
+            VALUE "ProductVersion", "1, 0, 0, 1\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
+
+#endif    // !_MAC
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_DLG_EXPORT_DIALOG DIALOGEX 0, 0, 283, 70
+STYLE DS_MODALFRAME | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_CONTROLPARENT
+CAPTION "Save as ..."
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "&Select...",IDC_EXPORTAS_SELECT,170,12,50,14
+    GROUPBOX        "Output",IDC_STATIC,1,1,228,66
+    LTEXT           "File :",IDC_STATIC,7,15,16,8
+    EDITTEXT        IDC_EXPORTAS_FOLDER,32,12,128,14,ES_AUTOHSCROLL
+    LTEXT           "&Format:",IDC_STATIC,7,34,24,8
+    COMBOBOX        IDC_EXPORTAS_FORMAT,32,33,188,134,CBS_DROPDOWNLIST |
+                    WS_VSCROLL | WS_TABSTOP
+    CONTROL         "&Use best options",IDC_EXPORTAS_BESTOPTION,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,8,50,69,10
+    PUSHBUTTON      "&Export",IDC_EXPORTAS_EXPORT,232,5,46,14
+    PUSHBUTTON      "Cancel",IDCANCEL,232,24,45,14
+END
+
+IDD_DLG_COMPRESSION DIALOGEX 0, 0, 280, 65
+STYLE WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    GROUPBOX        "Compression",IDC_STATIC,0,0,279,64
+    LTEXT           "Codec",IDC_STATIC,5,10,22,8
+    COMBOBOX        IDC_CMB_COMPRESSION,50,8,225,76,CBS_DROPDOWN |
+                    WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Quality",IDC_STATIC,5,26,23,8
+    LTEXT           "Low",IDC_STATIC,50,26,15,8
+    GROUPBOX        "",IDC_STATIC,69,24,186,10
+    LTEXT           "High",IDC_STATIC,257,26,18,8
+    EDITTEXT        IDC_EDIT_QUALITY,5,37,43,14,ES_READONLY
+    CONTROL         "Spin1",IDC_SPIN_SET_QUALITY,"msctls_updown32",
+                    UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_ARROWKEYS,38,37,9,
+                    14
+    CONTROL         "Slider1",IDC_COMPRESSION_QUALITY_SLIDER,
+                    "msctls_trackbar32",TBS_AUTOTICKS | TBS_TOP |
+                    TBS_ENABLESELRANGE | WS_TABSTOP,50,37,225,14,
+                    WS_EX_CLIENTEDGE
+    LTEXT           "File",IDC_STATIC,5,52,12,8
+    LTEXT           "Small",IDC_STATIC,50,52,18,8
+    GROUPBOX        "",IDC_STATIC,69,50,186,10
+    LTEXT           "Large",IDC_STATIC,257,52,20,8
+END
+
+IDD_DLG_PIXEL_TYPE DIALOG DISCARDABLE  0, 0, 280, 28
+STYLE WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Sans Serif"
+BEGIN
+    GROUPBOX        "Color",IDC_STATIC,0,0,279,27
+    LTEXT           "Color space",IDC_STATIC,5,10,38,8
+    COMBOBOX        IDC_CMB_PIXEL_TYPE,50,8,225,72,CBS_DROPDOWN | WS_VSCROLL |
+                    WS_TABSTOP
+END
+
+IDD_DLG_ENCODING DIALOG DISCARDABLE  0, 0, 280, 43
+STYLE WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Sans Serif"
+BEGIN
+    GROUPBOX        "Encoding",IDC_STATIC,0,0,279,42
+    LTEXT           "Method",IDC_STATIC,5,10,25,8
+    COMBOBOX        IDC_CMB_ENCODING,50,8,225,71,CBS_DROPDOWN | WS_VSCROLL |
+                    WS_TABSTOP
+    LTEXT           "Resampling",IDC_STATIC,5,26,38,8
+    COMBOBOX        IDC_CMB_RESAMPLING,50,24,225,71,CBS_DROPDOWN |
+                    WS_VSCROLL | WS_TABSTOP
+END
+
+IDD_DLG_IMG_SIZE DIALOGEX 0, 0, 280, 102
+STYLE WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    GROUPBOX        "Size / Scale",IDC_STATIC,0,0,279,98
+    GROUPBOX        "Image size ",IDC_STATIC,7,13,103,62,WS_GROUP
+    LTEXT           "Width",IDC_STATIC,12,27,20,8
+    EDITTEXT        IDC_EDIT_WIDTH,38,25,59,12,ES_AUTOHSCROLL
+    LTEXT           "Heigth",IDC_STATIC,12,42,22,8
+    EDITTEXT        IDC_EDIT_HEIGHT,38,42,59,12,ES_AUTOHSCROLL
+    CONTROL         "Fix Image Size",IDC_CHK_FIX_IMAGE_SIZE,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,15,59,64,10
+    GROUPBOX        "Scaling ",IDC_STATIC,115,13,107,62,WS_GROUP
+    LTEXT           "Scale X",IDC_STATIC,119,27,26,8
+    EDITTEXT        IDC_EDIT_SCALE_X,150,25,61,12,ES_AUTOHSCROLL
+    LTEXT           "Scale Y",IDC_STATIC,119,41,26,8
+    EDITTEXT        IDC_EDIT_SCALE_Y,150,41,61,12,ES_AUTOHSCROLL
+    CONTROL         "Fix Scaling",IDC_CHK_FIX_IMAGE_SCALE,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,123,59,64,10
+    CONTROL         "Resample",IDC_CHK_RESAMPLE,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,225,18,45,10
+    CONTROL         "Maintain aspect ratio",IDC_CHK_ASPECT_RATIO,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,8,78,85,10
+    PUSHBUTTON      "Reset default value",IDC_RESET,117,79,94,11
+END
+
+IDD_DLG_BLOCK DIALOG DISCARDABLE  0, 0, 280, 27
+STYLE WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Sans Serif"
+BEGIN
+    GROUPBOX        "Block",IDC_STATIC,0,0,279,27
+    COMBOBOX        IDC_COMBO_BLOCK_TYPE,5,10,117,59,CBS_DROPDOWN |
+                    WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Width",IDC_STATIC,126,12,20,8
+    EDITTEXT        IDC_EDIT_WIDTH,149,10,50,12,ES_NUMBER
+    CONTROL         "Spin1",IDC_SPIN_WIDTH,"msctls_updown32",UDS_SETBUDDYINT |
+                    UDS_ALIGNRIGHT | UDS_ARROWKEYS,188,10,10,12
+    LTEXT           "Heigth",IDC_STATIC,201,12,22,8
+    EDITTEXT        IDC_EDIT_HEIGHT,224,10,50,12,ES_NUMBER
+    CONTROL         "Spin1",IDC_SPIN_HEIGHT,"msctls_updown32",
+                    UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_ARROWKEYS,264,10,
+                    9,12
+END
+
+IDD_DLG_SMALL_COMPRESSION DIALOG DISCARDABLE  0, 0, 280, 26
+STYLE WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Sans Serif"
+BEGIN
+    GROUPBOX        "Compression",IDC_STATIC,0,0,279,26
+    LTEXT           "Codec",IDC_STATIC,5,10,22,8
+    COMBOBOX        IDC_CMB_COMPRESSION,50,8,225,76,CBS_DROPDOWN |
+                    WS_VSCROLL | WS_TABSTOP
+END
+
+IDD_DLG_GEO_REF_FORMAT DIALOG DISCARDABLE  0, 0, 280, 28
+STYLE WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Sans Serif"
+BEGIN
+    GROUPBOX        "Geo Reference ",IDC_STATIC,0,0,279,27
+    LTEXT           "Geo Reference Format",IDC_STATIC,5,11,73,8
+    COMBOBOX        IDC_CMB_GEO_REF_FORMAT,84,9,186,72,CBS_DROPDOWN |
+                    WS_VSCROLL | WS_TABSTOP
+END
+
+IDD_DLG_DESTINATION DIALOGEX 0, 0, 279, 28
+STYLE WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    GROUPBOX        "Export Location",IDC_STATIC,0,0,279,27
+    LTEXT           "Path",IDC_STATIC,6,11,16,8
+    EDITTEXT        IDC_EDIT_NEW_PATH,25,10,217,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "Browse",IDC_BT_BROWSE,243,10,31,12
+END
+
+IDD_DLG_PROGRESS DIALOG DISCARDABLE  0, 0, 307, 55
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Progression"
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL         "Progress1",IDC_PROGRESS_BAR,"msctls_progress32",
+                    WS_BORDER,7,19,293,10
+    LTEXT           "Time to do",IDC_DURATION,7,7,239,8
+    PUSHBUTTON      "Stop",IDC_STOP_PROGRESSION,128,35,50,14
+    CTEXT           " .................... ",IDC_DRAWSIGNAL,249,7,51,8
+END
+
+IDD_DLG_CONVERT_TO DIALOGEX 0, 0, 280, 124
+STYLE DS_MODALFRAME | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_CONTROLPARENT
+CAPTION "Convert to..."
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    LTEXT           "File Format",IDC_STATIC,5,9,35,8
+    COMBOBOX        IDC_CMB_FILE_FORMAT,44,6,232,81,CBS_DROPDOWN |
+                    WS_VSCROLL | WS_TABSTOP
+    GROUPBOX        "Destination File Options",IDC_STATIC,4,35,175,45
+    CONTROL         "Retain extension",IDC_RD_RETAIN_EXT,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,10,45,69,10
+    CONTROL         "Replace extension",IDC_RD_REPLACE_EXTENSION,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,97,45,75,10
+    CONTROL         "Resume export in file name",IDC_CHK_RESUME_IN_FILENAME,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,56,101,10
+    CONTROL         "Save at source location",IDC_CHK_KEEP_SRCPATH,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,10,67,91,10
+    CONTROL         "Use best options",IDC_CHK_BEST_OPTION,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,10,88,69,10
+    CONTROL         "Export to all possibilities",IDC_CHK_ALL_POSSIBILITY,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,87,88,89,10
+    CONTROL         "Certify export integrity",IDC_CHK_EXPORT_INTEGRITY,
+                    "Button",BS_AUTOCHECKBOX | BS_PUSHLIKE | WS_TABSTOP,184,
+                    39,91,12
+    PUSHBUTTON      "Cancel",IDC_BT_CANCEL,184,53,91,12
+    PUSHBUTTON      "OK",IDC_BT_OK,184,67,91,12
+    CONTROL         "Export to Source File Format",IDC_EXPORTAS_SOURCE,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,23,104,10
+END
+
+IDD_DLG_EXPORT_INTEGRITY DIALOG DISCARDABLE  0, 0, 210, 173
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Certify export integrity"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,103,154,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,154,154,50,14
+    CONTROL         "Compare source from destination",IDC_CHK_GEOREF_COMP,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,19,119,10
+    CONTROL         "Image compare",IDC_CHK_IMAGE_COMP,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,9,54,66,10
+    COMBOBOX        IDC_COMBO_IMAGE_COMP_METHOD,85,52,114,41,CBS_DROPDOWN |
+                    WS_VSCROLL | WS_TABSTOP
+    GROUPBOX        "Image integrity",IDC_STATIC,3,39,201,111
+    LTEXT           "min",IDC_STATIC_THRESHOLD_MIN,69,89,12,8
+    EDITTEXT        IDC_EDIT_THRESHLOD_MIN,85,87,25,12,ES_AUTOHSCROLL |
+                    ES_READONLY
+    CONTROL         "Spin1",IDC_SPINIDC_THRESHLOD_MIN,"msctls_updown32",
+                    UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY |
+                    UDS_ARROWKEYS,109,87,9,13
+    LTEXT           "max",IDC_STATIC_THRESHOLD_MAX,127,89,14,8
+    EDITTEXT        IDC_EDIT_THRESHLOD_MAX,145,87,25,12,ES_AUTOHSCROLL |
+                    ES_READONLY
+    CONTROL         "Spin1",IDC_SPINIDC_THRESHLOD_MAX,"msctls_updown32",
+                    UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY |
+                    UDS_ARROWKEYS,169,87,9,13
+    LTEXT           "Error tolerance (%)",IDC_STATIC_ERROR_TOLERENCE,23,72,
+                    58,8
+    EDITTEXT        IDC_EDIT_ERROR_TOLERENCE,85,70,25,12,ES_AUTOHSCROLL |
+                    ES_READONLY
+    CONTROL         "Spin1",IDC_SPIN_ERROR_TOLERENCE,"msctls_updown32",
+                    UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY |
+                    UDS_ARROWKEYS,109,70,9,13
+    CONTROL         "Threshold",IDC_CHK_TRESHOLD,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,9,89,47,10
+    GROUPBOX        "Georeference integrity",IDC_STATIC,3,6,201,29
+    CONTROL         "Save image result into",IDC_CHK_SAVE_IMAGE_RESULT,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,116,85,10
+    EDITTEXT        IDC_EDIT_IMAGE_RESULT_PATH,23,131,145,12,ES_AUTOHSCROLL |
+                    ES_READONLY
+    PUSHBUTTON      "Browse",IDC_BT_BROWSE,168,131,31,12
+END
+
+IDD_DLG_SUBRES_PIXEL_TYPE DIALOGEX 0, 0, 280, 31
+STYLE WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Sans Serif"
+BEGIN
+    GROUPBOX        "Sub Res Color",IDC_STATIC,0,0,279,27
+    LTEXT           "Color space",IDC_STATIC,5,10,38,8
+    COMBOBOX        IDC_CMB_PIXEL_TYPE,50,8,225,72,CBS_DROPDOWN | WS_VSCROLL |
+                    WS_TABSTOP
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE
+BEGIN
+    IDD_DLG_EXPORT_DIALOG, DIALOG
+    BEGIN
+        RIGHTMARGIN, 282
+        BOTTOMMARGIN, 67
+    END
+
+    IDD_DLG_ENCODING, DIALOG
+    BEGIN
+        TOPMARGIN, 1
+    END
+
+    IDD_DLG_IMG_SIZE, DIALOG
+    BEGIN
+        RIGHTMARGIN, 279
+        BOTTOMMARGIN, 98
+    END
+
+    IDD_DLG_PROGRESS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 300
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 48
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog Info
+//
+
+IDD_DLG_ENCODING DLGINIT
+BEGIN
+    IDC_CMB_RESAMPLING, 0x403, 18, 0
+0x654e, 0x7261, 0x7365, 0x2074, 0x654e, 0x6769, 0x6268, 0x756f, 0x0072,
+
+    IDC_CMB_RESAMPLING, 0x403, 8, 0
+0x7641, 0x7265, 0x6761, 0x0065,
+    IDC_CMB_RESAMPLING, 0x403, 16, 0
+0x6556, 0x7463, 0x726f, 0x4120, 0x6177, 0x6e72, 0x7365, 0x0073,
+    IDC_CMB_RESAMPLING, 0x403, 10, 0
+0x6e55, 0x6564, 0x6966, 0x656e, 0x0064,
+    0
+END
+
+IDD_DLG_EXPORT_INTEGRITY DLGINIT
+BEGIN
+    IDC_COMBO_IMAGE_COMP_METHOD, 0x403, 7, 0
+0x6942, 0x616e, 0x7972, "\000"
+    IDC_COMBO_IMAGE_COMP_METHOD, 0x403, 9, 0
+0x7453, 0x6e61, 0x6164, 0x6472, "\000"
+    IDC_COMBO_IMAGE_COMP_METHOD, 0x403, 9, 0
+0x7053, 0x6365, 0x7274, 0x6c61, "\000"
+    0
+END
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+#define _AFX_NO_SPLITTER_RESOURCES
+#define _AFX_NO_OLE_RESOURCES
+#define _AFX_NO_TRACKER_RESOURCES
+#define _AFX_NO_PROPERTY_RESOURCES
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE 9, 1
+#pragma code_page(1252)
+#endif
+#include "res\HUTExport.rc2"  // non-Microsoft Visual C++ edited resources
+#include "afxres.rc"         // Standard components
+#endif
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

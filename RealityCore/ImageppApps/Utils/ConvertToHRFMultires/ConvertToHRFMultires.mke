@@ -1,0 +1,37 @@
+#----------------------------------------------------------------------
+#
+#     $Source: Utils/ConvertToHRFMultires/ConvertToHRFMultires.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  
+#----------------------------------------------------------------------
+
+appName = ConvertToHRFMultires
+
+%include mdl.mki
+%include $(SrcRoot)Imageppapps/mki/ImageppAppsCommon.mki
+
+baseDir = $(_MakeFilePath)
+
+#----------------------------------------------------------------------
+#   Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------
+#   Build source files
+#----------------------------------------------------------------------
+$(o)ConvertToHRFMultires$(oext) : $(baseDir)ConvertToHRFMultires.cpp
+
+#----------------------------------------------------------------------
+#   DLL/LIB creation
+#----------------------------------------------------------------------
+EXE_DEST     = $(o)
+EXE_NAME     = $(appName)
+EXE_OBJS     = $(o)ConvertToHRFMultires$(oext)
+
+LINKER_LIBRARIES = $(ContextSubpartsLibs)Imagepp.lib $(ContextSubpartsLibs)Bentley.lib
+
+%include $(SharedMki)linktool.mki
+

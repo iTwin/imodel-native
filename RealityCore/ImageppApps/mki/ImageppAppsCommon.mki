@@ -1,0 +1,46 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: mki/ImageppAppsCommon.mki $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+
+#----------------------------------------------------------
+# Common Preprocessor definition.
+#----------------------------------------------------------
+%if defined(IPP_USING_STATIC_LIBRARIES)
+    nameToDefine=IPP_USING_STATIC_LIBRARIES
+    %include cdefapnd.mki
+%endif
+
+
+#-----------------------------------------------------------
+# Source Dirs
+#-----------------------------------------------------------
+
+#----------------------------------------------------------
+# outdirs
+#----------------------------------------------------------
+o = $(OutputRootDir)build/imageppApps/$(appName)/
+
+# dlmlink.mki common options.
+DLM_DEST                    = $(o)
+DLM_SYMB_DEST               = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_OBJECT_DEST             = $(o)
+DLM_NO_INITIALIZE_FUNCTION  = 1
+DLM_NOENTRY                 = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+EXE_LOPT1                   + -STACK:0x200000
+
+
+ContextSubPartsAssembliesDir  = $(BuildContext)SubParts/Assemblies/
+ContextDeliveryDir            = $(BuildContext)Delivery/
+ContextSubpartsLibs           = $(BuildContext)SubParts/Libs/
+
+ASSEMBLY_CONTEXT_LOCATION   = $(ContextDeliveryDir)
+
+BeSQLiteLib                    = $(libprefix)BeSQLite$(libext)

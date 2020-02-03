@@ -1,0 +1,14 @@
+
+#*--------------------------------------------------------------------------------------+
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#--------------------------------------------------------------------------------------*/
+
+PointoolsVortexAPISrcDir = ${SrcRoot}/imodel02/RealityCore/Pointools/PointoolsVortexAPI/
+DeliveryDir=$(OutBuildContexts)PointoolsVortexAPI$(VSOutputSubfolder)/Delivery/
+
+%include $(PointoolsVortexAPISrcDir)mki/PointoolsVortexAPI_Version.mki
+PointoolsVortexAPI_ReleaseNotesFile=PointoolsVortexAPI-ReleaseNotes-$(REL_V).$(MAJ_V).$(MIN_V).$(SUBMIN_V).txt
+
+always:
+    ~linkfile "$(DeliveryDir)${PointoolsVortexAPI_ReleaseNotesFile}"="${PointoolsVortexAPISrcDir}/ReleaseNotes/${PointoolsVortexAPI_ReleaseNotesFile}"

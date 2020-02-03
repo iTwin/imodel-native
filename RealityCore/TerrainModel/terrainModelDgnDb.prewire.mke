@@ -1,0 +1,27 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#--------------------------------------------------------------------------------------*/
+
+%include mdl.mki
+%include $(SrcRoot)imodel02/RealityCore/TerrainModel/privmki/sourcedirsDgnDb.mki
+%include $(SrcRoot)imodel02/RealityCore/TerrainModel/privmki/outputdirsDgnDb.mki
+
+always:
+    !~@mkdir $(BuildPublicApi)TerrainModel/
+
+always:
+    ~linkfile "$(BuildPublicApi)/TerrainModel/TerrainModel.h=$(TerrainModelAPISrc)TerrainModel.h"
+
+
+##  Symlink all src PublicAPI folders into build output PublicAPI folder
+always:
+   ~linkdir "$(BuildPublicApi)TerrainModel/Core=$(TerrainModelCoreDir)PublicAPI"
+   ~linkdir "$(BuildPublicApi)TerrainModel/Formats=$(TerrainModelFormatsDir)PublicAPI"
+   ~linkdir "$(BuildPublicApi)TerrainModel/ElementHandler=$(TerrainModelElementHandlerDir)PublicAPI"
+   ~linkdir "$(BuildPublicApi)TerrainModel/Drainage=$(TerrainModelDrainageDir)PublicAPI"
+
+
+##  Symlink build output PublicAPI folder into BuildContext PublicAPI folder
+always:
+   ~linkdir "$(BuildContext)PublicAPI/TerrainModel=$(BuildPublicApi)TerrainModel"

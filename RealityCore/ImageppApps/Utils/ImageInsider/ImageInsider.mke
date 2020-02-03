@@ -1,0 +1,94 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: Utils/ImageInsider/ImageInsider.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+appName = ImageInsider
+
+MFC_WIN_APP = 1
+%include mdl.mki
+%include $(SrcRoot)Imageppapps/mki/ImageppAppsCommon.mki
+
+ImageInsiderDir = $(_MakeFilePath)
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+    
+#----------------------------------------------------------
+# Preprocessor definition.
+#----------------------------------------------------------
+nameToDefine=UNICODE
+%include cdefapnd.mki
+    
+nameToDefine=_UNICODE
+%include cdefapnd.mki
+
+
+#----------------------------------------------------------------------
+#       Build source files
+#----------------------------------------------------------------------
+# Create PCH
+CCPchOpts = -Yc"StdAfx.h" -Fp$(o)$(appName).pch -Zm110
+$(o)StdAfx$(oext) $(o)$(appName).pch : $(ImageInsiderDir)StdAfx.cpp $(ImageInsiderDir)StdAfx.h
+
+# Use PCH
+CCPchOpts = -Yu"StdAfx.h" -Fp$(o)$(appName).pch -Zm110
+
+MultiCompileDepends=$(_MakeFileSpec) $(ImageInsiderDir)StdAfx.h
+%include MultiCppCompileRule.mki
+
+
+$(o)ImageInsider$(oext) : $(ImageInsiderDir)ImageInsider.cpp $(ImageInsiderDir)ImageInsider.h ${MultiCompileDepends}
+
+$(o)ImageInsiderDlg$(oext) : $(ImageInsiderDir)ImageInsiderDlg.cpp $(ImageInsiderDir)ImageInsiderDlg.h ${MultiCompileDepends}
+
+$(o)Labeler$(oext) :  $(ImageInsiderDir)Labeler.cpp $(ImageInsiderDir)Labeler.h ${MultiCompileDepends}
+
+$(o)MyPropertyPage1$(oext) : $(ImageInsiderDir)MyPropertyPage1.cpp $(ImageInsiderDir)MyPropertyPage1.h ${MultiCompileDepends}
+
+$(o)MyPropertyPage4$(oext) : $(ImageInsiderDir)MyPropertyPage4.cpp $(ImageInsiderDir)MyPropertyPage4.h ${MultiCompileDepends}
+
+$(o)MyPropertySheet$(oext) : $(ImageInsiderDir)MyPropertySheet.cpp $(ImageInsiderDir)MyPropertySheet.h ${MultiCompileDepends}
+
+$(o)Toolbox$(oext) : $(ImageInsiderDir)Toolbox.cpp $(ImageInsiderDir)Toolbox.h ${MultiCompileDepends}
+
+#
+# Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
+# After the below include of MultiCppCompileGo.mki $(MultiCompileObjectList) will represent the
+# list of uniform object files created. You may present $(MultiCompileObjectList) to the linker.
+#
+%include MultiCppCompileGo.mki
+
+
+ProductRcIncludes + -i${ImageInsiderDir}
+
+$(o)ImageInsider.res : $(ImageInsiderDir)ImageInsider.rc $(ImageInsiderDir)resource.h
+
+$(o)Version.res : $(ImageInsiderDir)res/Version.rc $(ImageInsiderDir)resource.h
+
+#----------------------------------------------------------------------
+#       DLL creation
+#----------------------------------------------------------------------
+EXE_DEST = $(o)
+EXE_NAME = $(appName)
+EXE_OBJS = $(o)StdAfx$(oext) $(MultiCompileObjectList) $(o)ImageInsider.res $(o)Version.res
+EXE_UNICODE = 1
+EXE_WIN_APP = 1
+%undef MFC_WIN_APP
+
+LINKER_LIBRARIES = $(ContextSubpartsLibs)Imagepp.lib \
+                   $(ContextSubpartsLibs)Bentley.lib \
+                   $(ContextSubpartsLibs)BaseGeoCoord.lib \
+                   $(ContextSubpartsLibs)$(BeSQLiteLib) 
+
+                  
+
+%include $(SharedMki)linktool.mki
+
+    

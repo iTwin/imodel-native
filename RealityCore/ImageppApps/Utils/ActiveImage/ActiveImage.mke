@@ -1,0 +1,174 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: Utils/ActiveImage/ActiveImage.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+appName = ActiveImage
+
+MFC_WIN_APP = 1
+%include mdl.mki
+%include $(SrcRoot)Imageppapps/mki/ImageppAppsCommon.mki
+
+ActiveImageDir = $(_MakeFilePath)
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+    
+#----------------------------------------------------------
+# Preprocessor definition.
+#----------------------------------------------------------
+nameToDefine=UNICODE
+%include cdefapnd.mki
+    
+nameToDefine=_UNICODE
+%include cdefapnd.mki
+
+nameToDefine=HUTEXPORT_LINK_MODE_LIB
+%include cdefapnd.mki
+
+
+#----------------------------------------------------------------------
+#       Build source files
+#----------------------------------------------------------------------
+# Create PCH
+CCPchOpts = -Yc"StdAfx.h" -Fp$(o)$(appName).pch -Zm110
+$(o)StdAfx$(oext) $(o)$(appName).pch : $(ActiveImageDir)StdAfx.cpp $(ActiveImageDir)StdAfx.h
+
+# Use PCH
+CCPchOpts = -Yu"StdAfx.h" -Fp$(o)$(appName).pch -Zm110
+
+MultiCompileDepends=$(_MakeFileSpec) $(ActiveImageDir)StdAfx.h
+%include MultiCppCompileRule.mki
+
+$(o)ActiveImage$(oext) : $(ActiveImageDir)ActiveImage.cpp $(ActiveImageDir)ActiveImage.h ${MultiCompileDepends}
+
+$(o)ActiveImageDefaultMode$(oext) : $(ActiveImageDir)ActiveImageDefaultMode.cpp $(ActiveImageDir)ActiveImageDefaultMode.h ${MultiCompileDepends}
+
+$(o)ActiveImageDoc$(oext) :  $(ActiveImageDir)ActiveImageDoc.cpp $(ActiveImageDir)ActiveImageDoc.h ${MultiCompileDepends}
+
+$(o)ActiveImageEditMode$(oext) : $(ActiveImageDir)ActiveImageEditMode.cpp $(ActiveImageDir)ActiveImageEditMode.h ${MultiCompileDepends}
+
+$(o)ActiveImageFileDialog$(oext) : $(ActiveImageDir)ActiveImageFileDialog.cpp $(ActiveImageDir)ActiveImageFileDialog.h ${MultiCompileDepends}
+
+$(o)ActiveImageFrame$(oext) : $(ActiveImageDir)ActiveImageFrame.cpp $(ActiveImageDir)ActiveImageFrame.h ${MultiCompileDepends}
+
+$(o)ActiveImageFunctionMode$(oext) : $(ActiveImageDir)ActiveImageFunctionMode.cpp $(ActiveImageDir)ActiveImageFunctionMode.h ${MultiCompileDepends}
+
+$(o)ActiveImageSplash$(oext) : $(ActiveImageDir)ActiveImageSplash.cpp $(ActiveImageDir)ActiveImageSplash.h ${MultiCompileDepends}
+
+$(o)ActiveImageView$(oext) : $(ActiveImageDir)ActiveImageView.cpp $(ActiveImageDir)ActiveImageView.h ${MultiCompileDepends}
+
+$(o)ActiveImageViewMode$(oext) : $(ActiveImageDir)ActiveImageViewMode.cpp $(ActiveImageDir)ActiveImageViewMode.h ${MultiCompileDepends}
+
+$(o)AuthenticationDialog$(oext) : $(ActiveImageDir)AuthenticationDialog.cpp $(ActiveImageDir)AuthenticationDialog.h ${MultiCompileDepends}
+
+$(o)CachePreferences$(oext) : $(ActiveImageDir)CachePreferences.cpp $(ActiveImageDir)CachePreferences.h ${MultiCompileDepends}
+
+$(o)ColorButton$(oext) : $(ActiveImageDir)ColorButton.cpp $(ActiveImageDir)ColorButton.h ${MultiCompileDepends}
+
+$(o)ColorButtonCtrl$(oext) : $(ActiveImageDir)ColorButtonCtrl.cpp $(ActiveImageDir)ColorButtonCtrl.h ${MultiCompileDepends}
+
+$(o)ColorEditBox$(oext) : $(ActiveImageDir)ColorEditBox.cpp $(ActiveImageDir)ColorEditBox.h ${MultiCompileDepends}
+
+$(o)ColorReplacerDlg$(oext) : $(ActiveImageDir)ColorReplacerDlg.cpp $(ActiveImageDir)ColorReplacerDlg.h ${MultiCompileDepends}
+
+$(o)ColorSpaceTest$(oext) : $(ActiveImageDir)ColorSpaceTest.cpp $(ActiveImageDir)ColorSpaceTest.h ${MultiCompileDepends}
+
+$(o)DisplayExtent$(oext) : $(ActiveImageDir)DisplayExtent.cpp $(ActiveImageDir)DisplayExtent.h ${MultiCompileDepends}
+
+$(o)font$(oext) : $(ActiveImageDir)font.cpp $(ActiveImageDir)font.h ${MultiCompileDepends}
+
+$(o)GeoCodingInfoDialog$(oext) : $(ActiveImageDir)GeoCodingInfoDialog.cpp $(ActiveImageDir)GeoCodingInfoDialog.h ${MultiCompileDepends}
+
+$(o)HistogramCtrl$(oext) : $(ActiveImageDir)HistogramCtrl.cpp $(ActiveImageDir)HistogramCtrl.h ${MultiCompileDepends}
+
+$(o)HistogramScaling$(oext) : $(ActiveImageDir)HistogramScaling.cpp $(ActiveImageDir)HistogramScaling.h ${MultiCompileDepends}
+
+$(o)hmrfileopenctrl$(oext) : $(ActiveImageDir)hmrfileopenctrl.cpp $(ActiveImageDir)hmrfileopenctrl.h ${MultiCompileDepends}
+
+$(o)HMRProgressImage$(oext) : $(ActiveImageDir)HMRProgressImage.cpp $(ActiveImageDir)HMRProgressImage.h ${MultiCompileDepends}
+
+$(o)HMRStress$(oext) : $(ActiveImageDir)HMRStress.cpp $(ActiveImageDir)HMRStress.h ${MultiCompileDepends}
+
+$(o)InsertObjectDialog$(oext) : $(ActiveImageDir)InsertObjectDialog.cpp $(ActiveImageDir)InsertObjectDialog.h ${MultiCompileDepends}
+
+$(o)IntensityDialog$(oext) : $(ActiveImageDir)IntensityDialog.cpp $(ActiveImageDir)IntensityDialog.h ${MultiCompileDepends}
+
+$(o)Labeler$(oext) : $(ActiveImageDir)Labeler.cpp $(ActiveImageDir)Labeler.h ${MultiCompileDepends}
+
+$(o)LayersDialog$(oext) : $(ActiveImageDir)LayersDialog.cpp $(ActiveImageDir)LayersDialog.h ${MultiCompileDepends}
+
+$(o)LineTracker$(oext) : $(ActiveImageDir)LineTracker.cpp $(ActiveImageDir)LineTracker.h ${MultiCompileDepends}
+
+$(o)OpenInternetFileDialog$(oext) : $(ActiveImageDir)OpenInternetFileDialog.cpp $(ActiveImageDir)OpenInternetFileDialog.h ${MultiCompileDepends}
+
+$(o)OpenRawFileDialog$(oext) : $(ActiveImageDir)OpenRawFileDialog.cpp $(ActiveImageDir)OpenRawFileDialog.h ${MultiCompileDepends}
+
+$(o)RecenterDialog$(oext) : $(ActiveImageDir)RecenterDialog.cpp $(ActiveImageDir)RecenterDialog.h ${MultiCompileDepends}
+
+$(o)RemoteFileOpenDlg$(oext) : $(ActiveImageDir)RemoteFileOpenDlg.cpp $(ActiveImageDir)RemoteFileOpenDlg.h ${MultiCompileDepends}
+
+$(o)RotationDialog$(oext) : $(ActiveImageDir)RotationDialog.cpp $(ActiveImageDir)RotationDialog.h ${MultiCompileDepends}
+
+$(o)ServerInfo$(oext) : $(ActiveImageDir)ServerInfo.cpp $(ActiveImageDir)ServerInfo.h ${MultiCompileDepends}
+
+$(o)StreesDlg$(oext) : $(ActiveImageDir)StreesDlg.cpp $(ActiveImageDir)StreesDlg.h ${MultiCompileDepends}
+
+$(o)ScaleDialog$(oext) : $(ActiveImageDir)ScaleDialog.cpp $(ActiveImageDir)ScaleDialog.h ${MultiCompileDepends}
+
+$(o)TextLog$(oext) : $(ActiveImageDir)TextLog.cpp $(ActiveImageDir)TextLog.h ${MultiCompileDepends}
+
+$(o)ReprojectDialog$(oext) : $(ActiveImageDir)ReprojectDialog.cpp $(ActiveImageDir)ReprojectDialog.h ${MultiCompileDepends}
+
+$(o)DlgInfoReprojection$(oext) : $(ActiveImageDir)DlgInfoReprojection.cpp $(ActiveImageDir)DlgInfoReprojection.h ${MultiCompileDepends}
+
+$(o)ImageInfo$(oext) : $(ActiveImageDir)ImageInfo.cpp $(ActiveImageDir)ImageInfo.h ${MultiCompileDepends}
+
+$(o)TintDialog$(oext) : $(ActiveImageDir)TintDialog.cpp $(ActiveImageDir)TintDialog.h ${MultiCompileDepends}
+
+#
+# Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
+# After the below include of MultiCppCompileGo.mki $(MultiCompileObjectList) will represent the
+# list of uniform object files created. You may present $(MultiCompileObjectList) to the linker.
+#
+%include MultiCppCompileGo.mki
+
+
+ProductRcIncludes + -i${ActiveImageDir}
+
+$(o)ActiveImage.res : $(ActiveImageDir)ActiveImage.rc $(ActiveImageDir)resource.h
+
+$(o)Version.res : $(ActiveImageDir)res/Version.rc $(ActiveImageDir)resource.h
+
+
+#----------------------------------------------------------------------
+#       DLL creation
+#----------------------------------------------------------------------
+EXE_DEST = $(o)
+EXE_NAME = $(appName)
+EXE_OBJS = $(o)StdAfx$(oext) $(MultiCompileObjectList) $(o)ActiveImage.res $(o)Version.res
+EXE_UNICODE = 1
+EXE_WIN_APP = 1
+%undef MFC_WIN_APP
+
+LINKER_LIBRARIES_DELAYLOADED  =  $(ntPlatformLib)Vfw32.lib
+
+LINKER_LIBRARIES = $(ContextSubpartsLibs)Imagepp.lib \
+                   $(ContextSubpartsLibs)BaseGeoCoord.lib \
+                   $(ContextSubpartsLibs)Bentley.lib \
+                   $(ContextSubpartsLibs)HutExportlib.lib \
+                   $(ContextSubpartsLibs)$(BeSQLiteLib) \
+%ifdef __IPP_EXTERNAL_THIRD_PARTY_SUPPORTED
+                   $(ContextSubpartsLibs)PdfLibInitializer.lib
+%endif
+                  
+
+%include $(SharedMki)linktool.mki
+
+    

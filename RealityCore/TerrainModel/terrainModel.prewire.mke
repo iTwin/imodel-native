@@ -1,0 +1,45 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#--------------------------------------------------------------------------------------*/
+
+PolicyFile = $(SrcRoot)imodel02/RealityCore/TerrainModel/privmki/AssertTerrainModelPolicy.mki
+
+%include mdl.mki
+
+always:
+    !~@mkdir $(buildPublicAPI)TerrainModel/
+
+#FilesToPublish= \
+#$(TerrainModelCoreDir)PublicAPI/TerrainModel.h
+ 
+
+# $(terrainmodelObj)PublicAPITerrainModel.stamp : $(FilesToPublish)
+#    "$(PythonPath)python" $(TerrainModelPublicAPISrc)MakePublicAPI.py \
+#                                --sourcedir=$(TerrainModelCoreDir)PublicAPI \
+#                                --outdir=$(buildPublicAPI)TerrainModel \
+#                                --template=$(TerrainModelPublicAPISrc)PublicAPI.tpl \
+#                                $?
+
+#                                 --privexports=d:\temp\PublicAPI_PrivateExports.txt
+
+
+always:
+  ~linkfile "$(buildPublicAPI)TerrainModel/TerrainModel.h=$(TerrainModelAPISrc)TerrainModel.h"
+
+always:
+   ~linkdir "$(BuildContext)PublicAPI/TerrainModel=$(buildPublicAPI)TerrainModel"
+
+## Move below into seperate prewires.
+
+always:
+   ~linkdir "$(buildPublicAPI)TerrainModel/Core=$(TerrainModelCoreDir)PublicAPI"
+
+always:
+   ~linkdir "$(buildPublicAPI)TerrainModel/Formats=$(TerrainModelFormatsDir)PublicAPI"
+
+always:
+   ~linkdir "$(buildPublicAPI)TerrainModel/ElementHandler=$(TerrainModelElementHandlerDir)PublicAPI"
+
+always:
+   ~linkdir "$(buildPublicAPI)TerrainModel/Drainage=$(TerrainModelDrainageDir)PublicAPI"

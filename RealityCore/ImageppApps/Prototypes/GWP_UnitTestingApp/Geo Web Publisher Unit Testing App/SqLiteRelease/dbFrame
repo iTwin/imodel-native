@@ -1,0 +1,41 @@
+create table Record(
+	Id INTEGER PRIMARY KEY,
+	Name VARCHAR(126),
+	Description TEXT, 
+	Request TEXT,
+	CategoryId INTEGER,
+	MRBaselineId, INTEGER
+);
+
+create table Category(
+	Id INTEGER PRIMARY KEY,
+	Name VARCHAR(50)
+);
+
+create table RequestResult(
+	Id INTEGER PRIMARY KEY,
+	RecordId INTEGER,
+	TestId INTEGER,
+	Status INTEGER,
+	FailureRasterId INTEGER,
+	InvalidPixel INTEGER,
+	BigDifferencePixel INTEGER
+);
+
+create table Baseline(
+	Id INTEGER PRIMARY KEY,
+	RecordId INTEGER,
+	Raster BLOB
+);
+
+create table FailureRaster(
+	Id INTEGER PRIMARY KEY,
+	Raster BLOB
+);
+
+create table Test(
+	Id INTEGER PRIMARY KEY,
+	DateTime INTEGER,
+	Description Text,
+	ServerConnection VARCHAR(258)
+);

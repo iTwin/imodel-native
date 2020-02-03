@@ -1,0 +1,15 @@
+#*--------------------------------------------------------------------------------------+
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#--------------------------------------------------------------------------------------*/
+#PolicyFile=$(SrcRoot)imodel02/RealityCore/Pointools/PointoolsCommon/mki/AssertPolicy.mki
+#%include mdl.mki
+
+#---------------------------------------------------------------------------------------------------------
+# Symlink example
+# INPUT: Example - Name of the example to deliver
+#---------------------------------------------------------------------------------------------------------
+DeliveryDir=$(BuildContext)/Delivery/
+
+always:
+    ~linkdir "$(DeliveryDir)Examples/$(Example)"=$(srcroot)/Pointools/PointoolsVortexAPI/Examples/$(Example)"

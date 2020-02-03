@@ -1,0 +1,67 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+%include mdl.mki
+
+appName         = LoadTestBase
+baseDir         = $(_MakeFilePath)
+
+%include $(SrcRoot)imodel02/RealityCore/RealityModFramework/mki/RealityModFrameworkCommon.mki
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+
+CCompPDBName = $(appName)
+
+#----------------------------------------------------------------------
+#   Define __REALITYPLATFORM_BUILD__ symbol, so that class declarations and function decls will
+#   know to specify dllexport, rather than dllimport (the default)
+#   !No other makefile should define this symbol!
+#----------------------------------------------------------------------
+nameToDefine=__REALITYPLATFORM_BUILD__
+%include cdefapnd.mki
+
+nameToDefine=__WMSPARSER_BUILD__
+%include cdefapnd.mki
+
+#----------------------------------------------------------------------
+#       Build source files
+#----------------------------------------------------------------------
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)LoadTestBase$(oext) : $(baseDir)LoadTestBase.cpp $(baseDir)LoadTestBase.h ${MultiCompileDepends}
+
+#
+# Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
+# After the below include of MultiCppCompileGo.mki $(MultiCompileObjectList) will represent the
+# list of uniform object files created. You may present $(MultiCompileObjectList) to the linker.
+#
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#       Lib creation
+#----------------------------------------------------------------------
+DLM_NAME            = $(appName)
+DLM_OBJECT_FILES    = $(MultiCompileObjectList)
+DLM_NO_SIGN         = 1
+
+
+LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)BeXml$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)RealityPlatform$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)RealityPlatformTools$(libext)\
+                       $(ContextSubpartsLibs)$(libprefix)RealityAdmin$(libext)\
+                       $(ContextSubpartsLibs)$(libprefix)CCAPI$(libext)\
+                       odbc32$(libext)
+
+# windows specific for Unzipfile
+LINKER_LIBRARIES   +  $(ntPlatformLib)OleAut32.lib                       
+
+%include dlmlink.mki

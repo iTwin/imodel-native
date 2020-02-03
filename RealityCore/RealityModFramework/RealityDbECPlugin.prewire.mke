@@ -1,0 +1,23 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+%include mdl.mki
+
+appName     = FeatureTracking.prewire
+%include $(SrcRoot)imodel02/RealityCore/RealityModFramework/mki/RealityModFrameworkCommon.mki
+
+
+MicrosoftWindowsAzureConfigurationSrc       = $(SrcRoot)nuget/Microsoft.WindowsAzure.ConfigurationManager.3.2.3/lib/net40/
+WindowsAzureServiceBusSrc                   = $(SrcRoot)nuget/WindowsAzure.ServiceBus.3.1.1/lib/net45-full/
+BentleySelectServerSaasClientSrc            = $(SrcRoot)nuget/Bentley.SelectServer.SaaS.Client.2017.3.7.2/lib/net45/
+BentleyDiscoveryBuddiClientSrc              = $(SrcRoot)nuget/Bentley.Discovery.Buddi.Client.11.0.0.20/lib/net45
+BentleyDiscoveryBuddiClientSrc              = $(SrcRoot)nuget/Bentley.Discovery.Buddi.Client.11.0.0.20/lib/net45
+CommonLoggingSrc                            = $(SrcRoot)nuget/Common.Logging.3.3.1/lib/net40
+CommonLoggingCoreSrc                        = $(SrcRoot)nuget/Common.Logging.Core.3.3.1/lib/net40
+	
+always:
+~linkfile "$(BuildContext)Delivery/Microsoft.WindowsAzure.Configuration.dll = ${MicrosoftWindowsAzureConfigurationSrc}/Microsoft.WindowsAzure.Configuration.dll"
+~linkfile "$(BuildContext)Delivery/Microsoft.ServiceBus.dll = ${WindowsAzureServiceBusSrc}/Microsoft.ServiceBus.dll"
+~linkfile "$(BuildContext)Delivery/Bentley.SelectServer.SaaS.Client.dll = ${BentleySelectServerSaasClientSrc}/Bentley.SelectServer.SaaS.Client.dll"
+~linkfile "$(BuildContext)Delivery/Bentley.Discovery.Buddi.Client.dll = ${BentleyDiscoveryBuddiClientSrc}/Bentley.Discovery.Buddi.Client.dll"

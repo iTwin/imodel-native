@@ -45,7 +45,7 @@
         <SubPart PartName="PointCloud"                      PartFile="Domains/RealityModeling/RealityModeling"  />
         <SubPart PartName="ThreeMx"                         PartFile="Domains/RealityModeling/RealityModeling"  />
         <SubPart PartName="ScalableMeshSchema"              PartFile="Domains/RealityModeling/RealityModeling"  />
-        <SubPart PartName="RealityPlatformTools"            PartFile="iModelBridgeCore/RealityModFramework/RealityModFramework" />
+        <SubPart PartName="RealityPlatformTools"            PartFile="RealityCore/RealityModFramework/RealityModFramework" />
         <SubPart PartName="ECPresentation"                  PartFile="iModelCore/ECPresentation/ECPresentation"  />
         <!--
         <SubPart PartName="QuantityTakeoffsAspectsDomain"   PartFile="Domains/QuantityTakeoffsAspects/QuantityTakeoffsAspects"/>
@@ -91,7 +91,7 @@
         <SubPart PartName="ScalableMeshV8SDK" />
         <SubPart PartName="RapidXml2Json" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="PublicAPI"/>
-        <SubPart PartName="ImagePP"         PartFile="iModelBridgeCore/Imagepp/ImagePP"/>
+        <SubPart PartName="ImagePP"         PartFile="RealityCore/Imagepp/ImagePP"/>
         <SubPart PartName="BeJpeg"          PartFile="iModelCore/Bentley/Bentley"/>
         <SubPart PartName="Raster"          PartFile="Domains/RealityModeling/RealityModeling"/>
         <SubPart PartName="PointCloud"      PartFile="Domains/RealityModeling/RealityModeling"/>

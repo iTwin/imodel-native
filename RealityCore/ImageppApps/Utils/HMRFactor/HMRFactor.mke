@@ -1,0 +1,89 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: Utils/HMRFactor/HMRFactor.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+appName = HMRFactor
+
+MFC_WIN_APP = 1
+%include mdl.mki
+%include $(SrcRoot)Imageppapps/mki/ImageppAppsCommon.mki
+
+HMRFactorDir = $(_MakeFilePath)
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+    
+#----------------------------------------------------------
+# Preprocessor definition.
+#----------------------------------------------------------
+nameToDefine=UNICODE
+%include cdefapnd.mki
+    
+nameToDefine=_UNICODE
+%include cdefapnd.mki
+
+
+#----------------------------------------------------------------------
+#       Build source files
+#----------------------------------------------------------------------
+# Create PCH
+CCPchOpts = -Yc"StdAfx.h" -Fp$(o)$(appName).pch -Zm110
+$(o)StdAfx$(oext) $(o)$(appName).pch : $(HMRFactorDir)StdAfx.cpp $(HMRFactorDir)StdAfx.h
+
+# Use PCH
+CCPchOpts = -Yu"StdAfx.h" -Fp$(o)$(appName).pch -Zm110
+
+MultiCompileDepends=$(_MakeFileSpec) $(HMRFactorDir)StdAfx.h
+%include MultiCppCompileRule.mki
+
+
+$(o)HMRFactor$(oext) : $(HMRFactorDir)HMRFactor.cpp $(HMRFactorDir)HMRFactor.h ${MultiCompileDepends}
+
+$(o)HMRFactorDlg$(oext) : $(HMRFactorDir)HMRFactorDlg.cpp $(HMRFactorDir)HMRFactorDlg.h ${MultiCompileDepends}
+
+$(o)HMRFile$(oext) :  $(HMRFactorDir)HMRFile.cpp $(HMRFactorDir)HMRFile.h ${MultiCompileDepends}
+
+$(o)HMRListCtrl$(oext) : $(HMRFactorDir)HMRListCtrl.cpp $(HMRFactorDir)HMRListCtrl.h ${MultiCompileDepends}
+
+$(o)NumEditCtrl$(oext) : $(HMRFactorDir)NumEditCtrl.cpp $(HMRFactorDir)NumEditCtrl.h ${MultiCompileDepends}
+
+$(o)SepComboBox$(oext) : $(HMRFactorDir)SepComboBox.cpp $(HMRFactorDir)SepComboBox.h ${MultiCompileDepends}
+
+$(o)UnitComboBox$(oext) : $(HMRFactorDir)UnitComboBox.cpp $(HMRFactorDir)UnitComboBox.h ${MultiCompileDepends}
+
+#
+# Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
+# After the below include of MultiCppCompileGo.mki $(MultiCompileObjectList) will represent the
+# list of uniform object files created. You may present $(MultiCompileObjectList) to the linker.
+#
+%include MultiCppCompileGo.mki
+
+
+ProductRcIncludes + -i${HMRFactorDir}
+
+$(o)HMRFactor.res : $(HMRFactorDir)HMRFactor.rc $(HMRFactorDir)resource.h
+
+#----------------------------------------------------------------------
+#       DLL creation
+#----------------------------------------------------------------------
+EXE_DEST = $(o)
+EXE_NAME = $(appName)
+EXE_OBJS = $(o)StdAfx$(oext) $(MultiCompileObjectList) $(o)HMRFactor.res
+EXE_UNICODE = 1
+EXE_WIN_APP = 1
+%undef MFC_WIN_APP
+
+LINKER_LIBRARIES = $(ContextSubpartsLibs)Imagepp.lib \
+                   $(ContextSubpartsLibs)Bentley.lib
+                  
+
+%include $(SharedMki)linktool.mki
+
+    

@@ -1,0 +1,254 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{0F8D0E77-6BC3-4A09-97C8-2EDC9D720BBC}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Geo_Web_Publisher_Unit_Testing_App</RootNamespace>
+    <AssemblyName>Geo Web Publisher Unit Testing App</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
+    <FileAlignment>512</FileAlignment>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>
+    </DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>
+    </StartupObject>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data.SQLite">
+      <HintPath>External\System.Data.SQLite.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="DeleteResultForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="DeleteResultForm.Designer.cs">
+      <DependentUpon>DeleteResultForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="httpConnector.cs" />
+    <Compile Include="MessageTextBox.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="MessageTextBox.Designer.cs">
+      <DependentUpon>MessageTextBox.cs</DependentUpon>
+    </Compile>
+    <Compile Include="rasterManipulation.cs" />
+    <Compile Include="testManager.cs" />
+    <Compile Include="databaseConnector.cs" />
+    <Compile Include="databaseManager.cs" />
+    <Compile Include="dataStruct.cs" />
+    <Compile Include="mainForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="mainForm.Designer.cs">
+      <DependentUpon>mainForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="requestAnalyser.cs" />
+    <Compile Include="resultComparisonForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="resultComparisonForm.Designer.cs">
+      <DependentUpon>resultComparisonForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="selectWmsBaselineForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="selectWmsBaselineForm.Designer.cs">
+      <DependentUpon>selectWmsBaselineForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="settingForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="settingForm.Designer.cs">
+      <DependentUpon>settingForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="sqlFormater.cs" />
+    <EmbeddedResource Include="DeleteResultForm.resx">
+      <DependentUpon>DeleteResultForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="mainForm.resx">
+      <DependentUpon>mainForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="MessageTextBox.resx">
+      <DependentUpon>MessageTextBox.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="resultComparisonForm.resx">
+      <DependentUpon>resultComparisonForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="selectWmsBaselineForm.resx">
+      <DependentUpon>selectWmsBaselineForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <EmbeddedResource Include="settingForm.resx">
+      <DependentUpon>settingForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <None Include="app.config" />
+    <None Include="Properties\GeoWebPublisherUnitTestingApp.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>GeoWebPublisherUnitTestingApp.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="Properties\GeoWebPublisherUnitTestingApp.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>GeoWebPublisherUnitTestingApp.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Ressources\Save.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Ressources\OpenFolder.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Ressources\open-folder.gif" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Ressources\NewFile.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Ressources\bentley.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Ressources\9_av_stop.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Ressources\9_av_rewind.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Ressources\9_av_previous.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Ressources\9_av_play.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Ressources\9_av_next.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Ressources\9_av_fast_forward.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Ressources\5_content_save.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Ressources\5_content_picture.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Ressources\5_content_new_picture.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Ressources\5_content_edit.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Ressources\5_content_discard.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Ressources\5_content_copy.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Ressources\2_action_settings.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Service References\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Ressources\check.png" />
+    <None Include="Ressources\Warning.gif" />
+    <None Include="Ressources\6_social_reply.png" />
+    <None Include="Ressources\6_social_reply_all.png" />
+    <None Include="Ressources\4_collections_view_as_list.png" />
+    <Content Include="SQLite.Interop.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include=".NETFramework,Version=v4.0,Profile=Client">
+      <Visible>False</Visible>
+      <ProductName>Microsoft .NET Framework 4 Client Profile %28x86 and x64%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Windows.Installer.3.1">
+      <Visible>False</Visible>
+      <ProductName>Windows Installer 3.1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

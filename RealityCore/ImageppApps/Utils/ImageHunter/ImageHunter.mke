@@ -1,0 +1,197 @@
+#----------------------------------------------------------------------
+#
+#     $Source: Utils/ImageHunter/ImageHunter.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+appName         = ImageHunter
+baseDir         = $(_MakeFilePath)
+
+%include        mdl.mki
+%include $(SrcRoot)Imageppapps/mki/ImageppAppsCommon.mki
+
+ImageHunterDir = $(_MakeFilePath)
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    ~mkdir $(o)
+
+#----------------------------------------------------------
+# Preprocessor definition.
+#----------------------------------------------------------
+nameToDefine=UNICODE
+%include cdefapnd.mki
+    
+nameToDefine=_UNICODE
+%include cdefapnd.mki
+          
+#-----------------------------------------------------------------------
+#   Compile Managed C++ Modules
+#-----------------------------------------------------------------------
+%include compileForCLRStart.mki
+
+#----------------------------------------------------------------------
+#     Create precompiled header
+#----------------------------------------------------------------------
+CCPchOpts = -Yc"stdafx.h" -Fp$(o)stdafx.pch -Zm195
+
+$(o)stdafx$(oext):  $(ImageHunterDir)stdafx.cpp $(ImageHunterDir)stdafx.h
+
+#----------------------------------------------------------------------
+#     Compile source files using precompiled header
+#----------------------------------------------------------------------
+CCPchOpts = -Yu"stdafx.h" -Fp$(o)stdafx.pch -Zm195
+
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)AddFolderUI$(oext)          : $(ImageHunterDir)AddFolderUI.cpp        \
+                                          ${MultiCompileDepends}
+                                          
+$(o)ExternalTools$(oext)             : $(ImageHunterDir)ExternalTools.cpp        \
+                                          ${MultiCompileDepends}
+
+$(o)ExternalToolsUI$(oext)   : $(ImageHunterDir)ExternalToolsUI.cpp        \
+                                          ${MultiCompileDepends}
+
+$(o)Hunter$(oext)                : $(ImageHunterDir)Hunter.cpp        \
+                                          ${MultiCompileDepends}
+
+$(o)HuntTools$(oext)      : $(ImageHunterDir)HuntTools.cpp     \
+                                          ${MultiCompileDepends}
+
+$(o)ImageFile$(oext)            : $(ImageHunterDir)ImageFile.cpp        \
+                                          ${MultiCompileDepends}
+
+$(o)ListViewNoFlicker$(oext)          : $(ImageHunterDir)ListViewNoFlicker.cpp        \
+                                          ${MultiCompileDepends}
+
+$(o)MainUI$(oext)          : $(ImageHunterDir)MainUI.cpp     \
+                                          ${MultiCompileDepends}
+
+$(o)OptionsUI$(oext)          : $(ImageHunterDir)OptionsUI.cpp     \
+                                          ${MultiCompileDepends}
+
+$(o)ResultComparer$(oext)               : $(ImageHunterDir)ResultComparer.cpp        \
+                                          ${MultiCompileDepends}
+
+$(o)BlockTypeCriteria$(oext)               : $(ImageHunterDir)BlockTypeCriteria.cpp        \
+                                          ${MultiCompileDepends}
+
+
+$(o)CodecCriteria$(oext)         : $(ImageHunterDir)CodecCriteria.cpp        \
+                                          ${MultiCompileDepends}
+
+$(o)EnumOptionComparer$(oext)               : $(ImageHunterDir)EnumOptionComparer.cpp        \
+                                          ${MultiCompileDepends}
+
+$(o)GeocodingCriteria$(oext)                     : $(ImageHunterDir)GeocodingCriteria.cpp        \
+                                          ${MultiCompileDepends}
+                                          
+$(o)HistogramCriteria$(oext)                : $(ImageHunterDir)HistogramCriteria.cpp        \
+                                          ${MultiCompileDepends}
+
+$(o)ImageFormatCriteria$(oext)      : $(ImageHunterDir)ImageFormatCriteria.cpp        \
+                                          ${MultiCompileDepends}
+
+$(o)ImageSizeCriteria$(oext)         : $(ImageHunterDir)ImageSizeCriteria.cpp        \
+                                          ${MultiCompileDepends}
+
+$(o)MultiPagesCriteria$(oext)               : $(ImageHunterDir)MultiPagesCriteria.cpp        \
+                                          ${MultiCompileDepends}
+
+$(o)MultiResolutionsCriteria$(oext)       : $(ImageHunterDir)MultiResolutionsCriteria.cpp        \
+                                          ${MultiCompileDepends}
+                                          
+$(o)PixelTypeCriteria$(oext)                : $(ImageHunterDir)PixelTypeCriteria.cpp        \
+                                          ${MultiCompileDepends}
+
+$(o)ScanlineOrientationCriteria$(oext)      : $(ImageHunterDir)ScanlineOrientationCriteria.cpp        \
+                                          ${MultiCompileDepends}
+
+$(o)TagCriteria$(oext)                : $(ImageHunterDir)TagCriteria.cpp        \
+                                          ${MultiCompileDepends}
+
+$(o)TransfoModelCriteria$(oext)      : $(ImageHunterDir)TransfoModelCriteria.cpp        \
+                                          ${MultiCompileDepends}
+
+
+# Ignore this warning that occurs when compiling using VS2010 on a machine that also has .NET 4.5 installed on it
+#CCompOpts + -wd4564
+
+%include MultiCppCompileGo.mki
+
+CCPchOpts =
+
+%include compileForCLRStop.mki
+
+#----------------------------------------------------------------------
+# Add other resources
+#----------------------------------------------------------------------
+$(o)app.res : $(ImageHunterDir)app.rc $(ImageHunterDir)resource.h
+
+ASSEMBLY_DEFAULT_NAMESPACE = $(appName)
+
+ASSEMBLY_RES_TO_ADD = AddFolderUI
+ASSEMBLY_RESX_FILE_TO_BUILD = $(ImageHunterDir)AddFolderUI.resx
+%include assemblyResxAppend.mki
+
+ASSEMBLY_RES_TO_ADD = ExternalToolsUI
+ASSEMBLY_RESX_FILE_TO_BUILD = $(ImageHunterDir)ExternalToolsUI.resx
+%include assemblyResxAppend.mki
+
+ASSEMBLY_RES_TO_ADD = MainUI
+ASSEMBLY_RESX_FILE_TO_BUILD = $(ImageHunterDir)MainUI.resx
+%include assemblyResxAppend.mki
+
+ASSEMBLY_RES_TO_ADD = OptionsUI
+ASSEMBLY_RESX_FILE_TO_BUILD = $(ImageHunterDir)OptionsUI.resx
+%include assemblyResxAppend.mki
+
+#----------------------------------------------------------------------
+#   Set up to use dlmlink.mki
+#----------------------------------------------------------------------
+#LINKER_LIBRARIES_DELAYLOADED  = $(ContextSubpartsLibs)$(BaseGeocoordLib)
+   
+ASSEMBLY_FILE_VERSION       = 1.0.0.0
+ASSEMBLY_COMPANY_NAME       = $(companyName)
+ASSEMBLY_COPYRIGHT          = $(Bentley_Copyright)
+ASSEMBLY_DESCRIPTION        = Search for image file with specific criteria
+ASSEMBLY_VERSION            = 1.0.0.0
+ASSEMBLY_NAME               = $(appname)
+ASSEMBLY_PRODUCT_NAME       = Bentley ImageHunter
+ASSEMBLY_TITLE              = $(ASSEMBLY_NAME)
+#ASSEMBLY_STRONGNAME         = 1
+
+ASSEMBLY_COMVISIBLE         = false
+ASSEMBLY_CLSCOMPLIANT       = true
+
+%if !defined(embedResourceSwitch)
+    embedResourceSwitch =-ASSEMBLYRESOURCE:
+%endif
+
+EXE_UNICODE                 = 1
+EXE_WIN_APP                 = 1
+EXE_NAME                    = $(appName)
+EXE_DEST                    = $(o)
+EXE_OBJS                    = $(o)StdAfx$(oext) $(MultiCompileObjectList) $(o)app.res
+EXE_TMP_DIR                 = $(o)
+EXE_LOPT1                   = $(ASSEMBLY_EMBEDDED_RESOURCES)
+EXE_UNICODE                 = 1
+LINKER_LIBRARIES            = $(ContextSubpartsLibs)Bentley.lib \
+                              $(ContextSubpartsLibs)Imagepp.lib    \
+                              $(ContextSubpartsLibs)BentleyAllocator.lib \
+                              Netapi32.lib Shell32.lib Shlwapi.lib
+                              
+COMPILE_FOR_CLR             = 1
+RIGHTSCOMPLIANT             = false
+
+                                    
+%include $(SharedMki)linktool.mki
+
+
+
+

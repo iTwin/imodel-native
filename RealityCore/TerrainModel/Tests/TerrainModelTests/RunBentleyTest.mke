@@ -1,0 +1,48 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+
+PolicyFile      = $(SrcRoot)imodel02/RealityCore/TerrainModel/privmki/AssertTerrainModelPolicy.mki
+
+%include mdl.mki
+
+ExeName = TerrainModelTests
+
+#--------------------------------------------------------------------------------------
+# Tests Directories
+#--------------------------------------------------------------------------------------
+TM_Test_Root   = $(OutputRootDir)Product\TerrainModelTest/
+GTestResults              = $(OutputRootDir)UnitTests\results/
+~@putenv GTestResults=$(GTestResults)
+
+always:
+!~@mkdir $(GTestResults)
+
+
+RunGTest = $(TM_Test_Root)$(ExeName).exe
+Results  = --gtest_output=xml:$(GTestResults)$(ExeName).results.xml
+
+always:
+  @type NUL > $(GTestResults)$(ExeName).results.xml
+
+always:
+!$(RunGTest) $(Results) 
+
+%iffile $(GTestResults)$(ExeName).results.xml
+  always:
+      @type NUL > $(GTestResults)blank
+      -@fc $(GTestResults)$(ExeName).results.xml $(GTestResults)blank > NUL
+
+  %if $(ERRORLEVEL) == 1
+    always:
+      !~@mkdir $(GTestResults)ATPs/
+      -@$(msxslCmd) $(GTestResults)$(ExeName).results.xml $(SrcTerrainModel)Tests/XSL/HtmlReportGTest.xslt -o $(GTestResults)ATPs\$(ExeName).html
+  %endif
+
+  always:
+    -@del $(GTestResults)blank
+%endif
+
+always:
+  ~@putenv GTestResults=

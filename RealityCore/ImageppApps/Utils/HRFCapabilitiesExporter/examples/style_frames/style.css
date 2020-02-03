@@ -1,0 +1,196 @@
+body {
+	background: #002A43;
+    color: #ffffff;
+}
+
+h1 {
+	margin: 0;
+	padding-top: 10px;
+	text-align:center;
+}
+
+a:link, a:visited {
+	color: #002A43;
+    text-decoration: underline;
+}
+
+a:hover {
+	color: #006BA8;
+	text-decoration: none;
+}
+
+a:active {
+	color: #0044A8;
+}
+
+#header {
+	color: #383838;
+	//width: 1013px;
+	height: 60px;
+	background: url('bentley-logo.gif') no-repeat #fff;
+	margin:  5px auto 0px auto;
+	border-top: 4px solid #ccc;
+	border-bottom: 4px solid #ccc;
+}
+
+#documentBody {
+	margin: 0px auto 15px auto;
+	padding-bottom: 15px;
+	display: block;
+	width: 1015px;
+}
+
+#toc {
+    background: #ffffff;
+    color: #000;
+    float: left;
+    margin: 0 15px 15px 0;
+    border: 4px solid #ccc;
+	font-size: 12px;
+	font-family: tahoma;
+	width: 200px;
+}
+
+#toc h3 {
+	padding-left: 10px;
+	color: #56A41D;
+}
+
+#toc ul {
+    //list-style: none;
+    padding: 5px;
+    margin: 0 5px 5px 20px;	
+}
+
+#toc li {
+	padding-bottom: 3px;
+}
+
+#content {
+    background: #ffffff;
+    float: left;
+    border: 4px solid #ccc;
+	padding: 0px 10px 5px 10px;
+	font-family: tahoma;
+	font-size: 12px;
+	width: 763px;
+    margin: 0px auto 10px auto;
+}
+
+#content a:link , #content a:visited{
+	color: #56A41D;
+}
+
+#content h2 {
+    color: #585858;
+	font-size: 18px;
+	text-align: center;
+}
+
+#content h4 {
+	color: #383838;
+	font-size: 12px;
+	margin: 0 0 5px 0;
+}
+
+#content table {
+    color: #000000;
+    border: 1px solid #000000;
+	font-size: 12px;
+	border-collapse: collapse;
+}
+
+#content  tr{
+    border: 1px solid #000000;
+}
+
+#content tr:nth-child(even) {
+	background-color: #EFF5FB;
+}
+
+#content td{
+	text-align: center;
+}
+
+#content th {
+	border: 1px solid #000000;
+	background-color: #003366;
+	color: #ffffff;
+	cursor: pointer;
+}
+
+#footer {
+	clear: both;
+	padding: 0;
+	margin-left: auto;
+	margin-right: auto;
+	//width: 1015px;
+	height: 22px;
+	text-align: right;
+	border-top: 4px solid #ccc;
+	border-bottom: 4px solid #ccc;
+	background-color: #ffffff;
+	color: #000000;
+}
+
+#footer p {
+	background-color: #fff;
+	font-family: tahoma;
+	font-size: 11px;
+	color: #444;
+	padding: 0 10px 0 10px;
+	margin: 5px 0 5px 0;
+}
+
+#copyright{
+	float: left;
+}
+
+#createdDate {
+	float: right;
+}
+
+.FormatFooter {
+	padding: 5px 10px 0 0;
+	text-align: right;
+	clear: both;
+}
+
+.PixelType {
+    float: left;
+}
+
+.PixelType table {
+	width: 763px;
+	margin-bottom: 15px;
+}
+
+.TransfoModel {
+	float: left;
+}
+
+.TransfoModel table {
+	width: 376px;
+	margin-bottom: 15px;
+}
+
+.ImageProperties {
+	float: left;
+}
+
+.ImageProperties  table {
+	margin-right: 10px;
+	width: 376px;
+	margin-bottom: 15px;
+}
+
+.Tags {
+    float: left;
+}
+
+.Tags table {
+	width: 376px;
+	margin-bottom: 15px;
+}
+
+

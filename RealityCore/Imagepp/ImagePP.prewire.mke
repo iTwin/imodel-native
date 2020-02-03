@@ -1,0 +1,32 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#--------------------------------------------------------------------------------------*/
+%include mdl.mki
+
+SrcImagePP      = $(SrcRoot)imodel02/RealityCore/Imagepp/
+%include $(SrcImagepp)mki/imageppdirs.mki
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(ippOutPrivateLibs)
+     ~@mkdir $(ippOutPrivateApi)
+     ~@mkdir ${ippOutPrivateApi}/ImagePPInternal
+     ~@mkdir ${ippOutPrivateApi}/ImagePPInternal/ext
+     ~@mkdir ${ippOutPrivateApi}/ImagePPInternal/ext/MatrixFromTiePts
+     
+PublicApiDir    = $(OutBuildContexts)ImagePP/PublicAPI/
+srcDir          = $(_MakeFilePath)
+
+# Wire in my own public header files.
+always:
+    ~linkdir "$(PublicApiDir)ImagePP=$(srcDir)PublicApi/ImagePP"
+
+#ippExternalLibDir   = $(SrcImagepp)ext/
+
+# Wire in header files of private libs.
+always:
+    ~linkfile "${ippOutPrivateApi}/ImagePPInternal/ext/MatrixFromTiePts/MatrixFromTiePts.h=$(SrcImagePP)ext/MatrixFromTiePts/h/MatrixFromTiePts.h"
+#  ~linkfile                                             "${ippOutPrivateApi}/ImagePPInternal/ext/MatrixFromTiePts/MatrixFromTiePts.h=$(SrcImagePP)ext/MatrixFromTiePts/h/MatrixFromTiePts.h"

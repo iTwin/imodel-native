@@ -8,7 +8,7 @@
 
     <DefaultTarget
         Repository="iModel02"
-        PartFile="iModelBridgeCore/RealityCore"
+        PartFile="RealityCore/RealityCore"
         PartName="RealityCorePRG"
         Platform="x64"
         OnlyPlatforms="x64,linuxx64"

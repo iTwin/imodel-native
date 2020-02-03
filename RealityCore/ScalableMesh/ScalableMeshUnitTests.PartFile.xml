@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="..\bsicommon\build\PartFile.xsd" >
+
+    <Part Name="PrewireForUnitTests" BentleyBuildMakeFile="Tests/GTests/Prewire.mke">
+        <Bindings>
+            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="ScalableMesh" SubPartDirectory="UnitTests/ScalableMesh"> Delivery/UnitTests/ignore_list.txt</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="ScalableMesh-Tested">
+      <SubPart PartName="RunGtest" />
+    </Part>
+
+  <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=ScalableMesh-Gtest -dGTEST_NAME=ScalableMeshTest  -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/ScalableMesh -dBEGTEST_BREAK_ON_FAILURE"  OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <SubProduct ProductName="ScalableMesh-Gtest"/>
+    <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
+  </Part>
+
+    <Part Name="ScalableMesh-GTestWindowsOnlyDependencies" OnlyPlatforms="x64">
+        <SubPart PartName="napi-dll-win" PartFile="node-addon-api/node-addon-api"/>
+    </Part>
+
+  <Product Name="ScalableMesh-Gtest" >
+        <SubPart PartName="Gtest"/>
+        <SubPart PartName="ScalableMesh-Data" PartFile="ScalableMesh-Data" Repository="ScalableMesh-Data" LibType="Dynamic"/>
+        <Directories DirectoryListName="GtestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Directories DirectoryListName="ScalableMeshUnitTestsDir"/>
+  </Product>
+
+  <!-- Define a gtest program to run the tests -->
+  <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ScalableMeshTest -dTEST_COLLECTION_PRODUCT=ScalableMesh-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+    <SubProduct ProductName="ScalableMesh-Tests"/>
+    <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
+    <SubPart PartName="ScalableMesh-GTestWindowsOnlyDependencies"/>
+    <Bindings>
+      <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/ScalableMeshTest/Assemblies/*</Files>
+      <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/ScalableMeshTest/Assets" />
+    </Bindings>
+  </Part>
+
+  <Product Name="ScalableMesh-Tests">
+    <SubPart PartName="Base" PartFile="iModelCore/BeGTest/BeGTest" Repository="imodel02"/>
+    <SubPart PartName="ScalableMeshUnitTests"/>
+    <!-- Lay out the Tests test product according to the standard BeGTest layout: -->
+    <Directories DirectoryListName="CollectionProduct" Repository="imodel02"  PartFile="iModelCore/BeGTest/BeGTest"/>
+    <Directories DirectoryListName="ScalableMeshUnitTestsDir"/>
+  </Product>
+
+    <Part Name="ScalableMeshUnitTestsDependenciesNotForLinux" ExcludePlatforms="Linux*">
+    </Part>
+
+    <Part Name="ScalableMeshUnitTestsLinuxDependencies" OnlyPlatforms="Linux*">
+    </Part>
+    
+    <Part Name="ScalableMeshUnitTestDependencies">
+        <SubPart PartName="PrewireForUnitTests"/>
+        <SubPart PartName="ScalableMeshLib" PartFile="RealityCore/ScalableMesh/ScalableMesh" Repository="imodel02"/>
+        <SubPart PartName="ScalableMeshUnitTestsDependenciesNotForLinux"/>
+        <SubPart PartName="ScalableMeshUnitTestsLinuxDependencies"/>
+    </Part>
+
+  <Part Name="ScalableMeshUnitTests" BentleyBuildMakeFile="Tests/GTests/BuildTests.mke" BentleyBuildMakeOptions="-dIMODEL02=1">
+    <SubPart PartName="PrewireForUnitTests"/>
+    <SubPart PartName="ScalableMeshLib" PartFile="RealityCore/ScalableMesh/ScalableMesh" Repository="imodel02"/>
+    <!--<SubPart PartName="DgnView" PartFile="DgnDisplay" Repository="DgnDisplay"/>-->
+    <Bindings>
+      <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="ScalableMesh" SourceName="Delivery/UnitTests/Objects/ScalableMesh"/>
+    </Bindings> 
+  </Part>
+
+  <Part Name="ScalableMeshUnitTests_M02" BentleyBuildMakeFile="Tests/GTests/BuildTests.mke">
+    <SubPart PartName="PrewireForUnitTests"/>
+    <SubPart PartName="ScalableMeshCreator" PartFile="ScalableMesh" Repository="ScalableMesh"/>
+    <!--<SubPart PartName="DgnView" PartFile="DgnDisplay" Repository="DgnDisplay"/>-->
+    <Bindings>
+      <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="ScalableMesh" SourceName="Delivery/UnitTests/Objects/ScalableMesh"/>
+    </Bindings>
+  </Part>
+
+  <ProductDirectoryList ListName="ScalableMeshUnitTestsDir">
+    <ProductDirectory   Name="ScalableMesh_Data" Deliver="true" Path="SMData"/>
+    <ProductDirectory   Name="DgnGeoCoord" Deliver="true" Path="GeoCoordinateData"/>
+    <ProductDirectory   Name="GdalData" Deliver="true" Path="Gdal_Data"/>
+    <ProductDirectory   Name="BentleyClientSharedAssemblies"            Path=""/>
+    <ProductDirectory   Name="BentleyDesktopClientApi"                  Path="" />
+    <ProductDirectory   Name="BentleyDesktopClientApi_Native"  Deliver="true" Path=""/>
+
+    <ProductDirectory   Name="BentleyEulaDelivery"                      Path="Notices"/>
+    <ProductDirectory   Name="VendorNotices"                            Path="Notices" Deliver="true"/>
+    <ProductDirectory   Name="VendorNotices"                            Path="Notices" Deliver="true" LibType="Static"/>
+  </ProductDirectoryList>
+
+  </BuildContext>

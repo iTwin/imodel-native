@@ -1,0 +1,73 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: Prototypes/CacheMultiAccess/CacheMultiAccess.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+BUILD_USING_VS2012=1
+
+appName = CacheMultiAccess
+
+%include mdl.mki
+%include $(SrcRoot)Imageppapps/mki/ImageppAppsCommon.mki
+
+CacheMultiAccessDir = $(_MakeFilePath)
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+    
+#----------------------------------------------------------
+# Preprocessor definition.
+#----------------------------------------------------------
+nameToDefine=UNICODE
+%include cdefapnd.mki
+    
+nameToDefine=_UNICODE
+%include cdefapnd.mki
+
+
+
+
+#----------------------------------------------------------------------
+#       Build source files
+#----------------------------------------------------------------------
+# Create PCH
+CCPchOpts = -YcCacheMultiAccessPch.h -Fp$(o)$(appName).pch -Zm110
+$(o)CacheMultiAccessPch$(oext) $(o)$(appName).pch : $(CacheMultiAccessDir)CacheMultiAccessPch.cpp $(CacheMultiAccessDir)CacheMultiAccessPch.h
+
+# Use PCH
+CCPchOpts = -YuCacheMultiAccessPch.h -Fp$(o)$(appName).pch -Zm110
+
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+
+$(o)CacheMultiAccess$(oext) : $(CacheMultiAccessDir)CacheMultiAccess.cpp ${MultiCompileDepends}
+
+$(o)HRFCacheFile$(oext) : $(CacheMultiAccessDir)HRFCacheFile.cpp $(CacheMultiAccessDir)HRFCacheFile.h ${MultiCompileDepends}
+
+$(o)HRFCacheFileEditor$(oext) : $(CacheMultiAccessDir)HRFCacheFileEditor.cpp $(CacheMultiAccessDir)HRFCacheFileEditor.h ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+
+#----------------------------------------------------------------------
+#       DLL creation
+#----------------------------------------------------------------------
+EXE_DEST = $(o)
+EXE_NAME = $(appName)
+EXE_OBJS = $(MultiCompileObjectList) $(o)CacheMultiAccessPch$(oext)
+EXE_UNICODE  = 1
+
+
+LINKER_LIBRARIES = $(ContextSubpartsLibs)Imagepp.lib \
+                   $(ContextSubpartsLibs)Bentley.lib \
+                   $(ContextSubpartsLibs)BentleyAllocator.lib  \
+
+%include $(SharedMki)linktool.mki
+
+    

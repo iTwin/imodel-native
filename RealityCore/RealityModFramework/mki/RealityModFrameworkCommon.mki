@@ -1,0 +1,33 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+
+# ++++++++++++++++++++++++++++++++++++++++++++++++
+# DO NOT ADD ANYTHING THAT CANNOT BE SHARED AMONG ALL RealityModFramework PARTS.
+# ++++++++++++++++++++++++++++++++++++++++++++++++
+
+#----------------------------------------------------------
+# Sourcedirs
+#----------------------------------------------------------
+RealityPlatformPublicAPISrc = $(SrcRoot)imodel02/RealityCore/RealityModFramework/PublicApi/RealityPlatform/
+RealityPlatformToolsPublicAPISrc = $(SrcRoot)imodel02/RealityCore/RealityModFramework/PublicApi/RealityPlatformTools/
+RealityAdminPublicAPISrc = $(SrcRoot)imodel02/RealityCore/RealityModFramework/PublicApi/RealityAdmin/
+SpatioTemporalSelectorPublicAPISrc = $(SrcRoot)imodel02/RealityCore/RealityModFramework/PublicApi/SpatioTemporalSelector/
+
+#----------------------------------------------------------
+# outdirs
+#----------------------------------------------------------
+%ifndef appName
+    %error appName must defined
+%endif
+
+o                           = $(OutputRootDir)build/RealityModFramework/$(appName)/
+
+# dlmlink.mki common options.
+DLM_DEST                    = $(o)
+DLM_SYMB_DEST               = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_OBJECT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+

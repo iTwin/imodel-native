@@ -1,0 +1,47 @@
+#----------------------------------------------------------------------
+#
+#     $Source: Utils/HTiffInfo/HTiffInfo.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  
+#----------------------------------------------------------------------
+
+appName = HTiffInfo
+
+%include mdl.mki
+%include $(SrcRoot)Imageppapps/mki/ImageppAppsCommon.mki
+
+baseDir = $(_MakeFilePath)
+
+#----------------------------------------------------------------------
+#   Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------
+#    Append compiler options
+#----------------------------------------------------------------------
+nameToDefine = UNICODE
+%include cdefapnd.mki
+
+nameToDefine = _UNICODE
+%include cdefapnd.mki
+
+#----------------------------------------------------------------------
+#   Build source files
+#----------------------------------------------------------------------
+$(o)HTiffInfo$(oext) : $(baseDir)HTiffInfo.cpp
+
+#----------------------------------------------------------------------
+#   DLL/LIB creation
+#----------------------------------------------------------------------
+EXE_DEST     = $(o)
+EXE_NAME     = $(appName)
+EXE_OBJS     = $(o)HTiffInfo$(oext)
+EXE_UNICODE  = 1
+
+LINKER_LIBRARIES = $(ContextSubpartsLibs)Imagepp.lib $(ContextSubpartsLibs)Bentley.lib
+
+%include $(SharedMki)linktool.mki
+

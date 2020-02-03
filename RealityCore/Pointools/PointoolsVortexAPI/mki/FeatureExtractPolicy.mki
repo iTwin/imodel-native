@@ -1,0 +1,53 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+
+%include $(SrcRoot)/imodel02/RealityCore/Pointools/PointoolsCommon/mki/PolicyCommon.mki
+
+baseDir=$(SrcRoot)imodel02/RealityCore/Pointools/PointoolsVortexAPI/extensions/VortexFeatureExtract/
+
+appName                         = VortexFeatureExtract
+o                               = $(OutputRootDir)Build/Pointools/PointoolsVortexAPI$(VSOutputSubfolder)VortexFeatureExtract/
+CCompPDBName                    = $(appName)
+MultiCompileIntermediatePdbFile = $(o)$(CCompPDBName).pdb
+IntermediatePdbFile             = $(MultiCompileIntermediatePdbFile)
+pointoolsVortexAPIVendorAPI     = $(OutBuildContexts)PointoolsVortexAPI/VendorAPI/
+
+nameToDefine = __FeatureExtract_BUILD__
+%include cdefapnd.mki
+
+nameToDefine = $(baseDir)
+%include cdefapnd.mki
+
+%if defined(HAVE_WILDMAGIC)
+    dirToSearch=$(pointoolsVortexAPIVendorAPI)wildmagic/core
+    %include cincapnd.mki
+%endif
+
+PointoolsVortexAPI=$(SrcRoot)imodel02/RealityCore/Pointools/PointoolsVortexAPI/
+dirToSearch=$(PointoolsVortexAPI)include/
+%include cincapnd.mki
+
+dirToSearch=$(pointoolsVortexAPIVendorAPI)
+%include cincapnd.mki
+
+CCompOpts + -D"_VC80_UPGRADE=0x0710"
+CCompOpts + -D"_WINDLL"
+#CCompOpts + -Gm								# Enable minimal rebuild
+#CCompOpts + -EHsc							# Exception handling
+#CCompOpts + -Gd								# Calling convention (__cdecl except for C++ or __stdcall or __fastcall)
+#CCompOpts + -TP								# Force source file types to C++
+CCompOpts + -wd4005							# Ignore macro redefinition warnings (conflicts between Boost and Microsoft librairies)
+
+CCompOpts + -D"UNICODE"
+CCompOpts + -D"_UNICODE"
+#CCompOpts + -D"WIN64"
+CCompOpts + -D"WIN32"
+CCompOpts + -D"_WINDOWS"
+CCompOpts + -D"_USRDLL"
+CCompOpts + -D"VORTEX_FEATURE_FIT_API"
+
+NOSTRICT=1
+warnLevel = -W1
+BUILD_NO_STACK_CHECK=1

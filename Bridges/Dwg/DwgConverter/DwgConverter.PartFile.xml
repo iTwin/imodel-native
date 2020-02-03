@@ -27,7 +27,7 @@
         <!-- include all that produce xliff's needed to go into our L10N db -->
         <SubPart PartName="BentleyDll"          PartFile="iModelCore/Bentley/Bentley"              Repository="imodel02"/>
         <SubPart PartName="DgnPlatformDLL"      PartFile="iModelCore/DgnPlatform/DgnPlatform"      Repository="imodel02"/>
-        <SubPart PartName="ImagePP"             PartFile="iModelBridgeCore/Imagepp/ImagePP"        Repository="imodel02"/>
+        <SubPart PartName="ImagePP"             PartFile="RealityCore/Imagepp/ImagePP"        Repository="imodel02"/>
         <SubPart PartName="Raster"              PartFile="Domains/RealityModeling/RealityModeling" Repository="imodel02"/>
         <Bindings>
             <Files ProductDirectoryName="DgnPlatformXliffs" Required="false" SubPartDirectory="xliffs">Delivery/xliffs/DwgImporter_en.xliff</Files>
@@ -73,7 +73,7 @@
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="BentleyDll"          PartFile="iModelCore/Bentley/Bentley"              Repository="imodel02"/>
         <SubPart PartName="DgnPlatformDLL"      PartFile="iModelCore/DgnPlatform/DgnPlatform"          Repository="imodel02"/>
-        <SubPart PartName="ImagePP"             PartFile="iModelBridgeCore/Imagepp/ImagePP"              Repository="imodel02"/>
+        <SubPart PartName="ImagePP"             PartFile="RealityCore/Imagepp/ImagePP"              Repository="imodel02"/>
         <SubPart PartName="Raster"              PartFile="Domains/RealityModeling/RealityModeling"      Repository="imodel02"/>
         <SubPart PartName="ECPresentation"      PartFile="iModelCore/ECPresentation/ECPresentation"       Repository="imodel02"/>
         <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"/>
@@ -147,7 +147,7 @@
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="BentleyDll"          PartFile="iModelCore/Bentley/Bentley"              Repository="imodel02"/>
         <SubPart PartName="DgnPlatformDLL"      PartFile="iModelCore/DgnPlatform/DgnPlatform"          Repository="imodel02"/>
-        <SubPart PartName="ImagePP"             PartFile="iModelBridgeCore/Imagepp/ImagePP"              Repository="imodel02"/>
+        <SubPart PartName="ImagePP"             PartFile="RealityCore/Imagepp/ImagePP"              Repository="imodel02"/>
         <SubPart PartName="Raster"              PartFile="Domains/RealityModeling/RealityModeling"      Repository="imodel02"/>
         <SubPart PartName="ECPresentation"      PartFile="iModelCore/ECPresentation/ECPresentation"       Repository="imodel02"/>
         <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"/>
@@ -230,7 +230,7 @@
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="BentleyDll"          PartFile="iModelCore/Bentley/Bentley"/>
         <SubPart PartName="DgnPlatformDLL"      PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
-        <SubPart PartName="ImagePP"             PartFile="iModelBridgeCore/Imagepp/ImagePP"/>
+        <SubPart PartName="ImagePP"             PartFile="RealityCore/Imagepp/ImagePP"/>
         <SubPart PartName="Raster"              PartFile="Domains/RealityModeling/RealityModeling"/>
         <SubPart PartName="ECPresentation"      PartFile="iModelCore/ECPresentation/ECPresentation"/>
         <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"/>

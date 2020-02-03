@@ -1,0 +1,34 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+%if defined (__SourceDirs_MKI__)
+    %warn SourceDirs.mki is being included redundantly in $(_MakeFileSpec)
+    %return
+%endif
+__SourceDirs_MKI__=1
+
+
+#----------------------------------------------------------
+#   Top level directories
+#----------------------------------------------------------
+SrcTerrainModel               =       $(SrcRoot)imodel02/RealityCore/TerrainModel/
+TerrainModelCoreDir           =       $(SrcTerrainModel)Core/
+TerrainModelFormatsDir        =       $(SrcTerrainModel)Formats/
+TerrainModelDrainageDir       =       $(SrcTerrainModel)Drainage/
+TerrainModelSTMDir            =       $(SrcTerrainModel)ScalableTerrainModel/
+TerrainModelElementHandlerDir =       $(SrcTerrainModel)ElementHandler/
+TerrainModelGroundDetectDir   =       $(SrcTerrainModel)AutomaticGroundDetection/
+privmki                       =       $(SrcDgnPlatform)privmki/
+
+
+#------------------------------------------------------
+# Header file locations in source tree
+#------------------------------------------------------
+TerrainModelPublicAPISrc            =  $(SrcTerrainModel)PublicAPI/
+TerrainModelAPISrc                  =  $(TerrainModelPublicAPISrc)TerrainModel/
+TerrainModelCoreAPISrc              =  $(TerrainModelCoreDir)PublicAPI/
+TerrainModelFormatsAPISrc           =  $(TerrainModelFormatsDir)PublicAPI/
+TerrainModelDrainageAPISrc          =  $(TerrainModelDrainageDir)PublicAPI/
+TerrainModelSTMAPISrc               =  $(TerrainModelSTMDir)PublicAPI/
+TerrainModelGroundDetectAPISrc	    =  $(TerrainModelGroundDetectDir)PublicAPI/

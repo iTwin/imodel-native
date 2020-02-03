@@ -1,0 +1,52 @@
+#----------------------------------------------------------------------
+#
+#     $Source: Utils/ImageComparator/ImageComparator.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  
+#----------------------------------------------------------------------
+
+CPP_EXCEPTION_USE_SYNC=1 
+
+appName = ImageComparator
+
+%include mdl.mki
+%include $(SrcRoot)Imageppapps/mki/ImageppAppsCommon.mki
+
+baseDir = $(_MakeFilePath)
+
+#----------------------------------------------------------------------
+#   Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------
+#    Append compiler options
+#----------------------------------------------------------------------
+nameToDefine = UNICODE
+%include cdefapnd.mki
+
+nameToDefine = _UNICODE
+%include cdefapnd.mki
+
+#----------------------------------------------------------------------
+#   Build source files
+#----------------------------------------------------------------------
+$(o)ImageComparator$(oext) : $(baseDir)ImageComparator.cpp
+
+#----------------------------------------------------------------------
+#   DLL/LIB creation
+#----------------------------------------------------------------------
+EXE_DEST     = $(o)
+EXE_NAME     = $(appName)
+EXE_OBJS     = $(o)ImageComparator$(oext)
+EXE_UNICODE  = 1
+
+LINKER_LIBRARIES = $(ContextSubpartsLibs)Imagepp.lib \
+                   $(ContextSubpartsLibs)Bentley.lib \
+                   $(ContextSubpartsLibs)$(BeSQLiteLib) \
+                   $(ContextSubpartsLibs)BaseGeoCoord.lib
+
+%include $(SharedMki)linktool.mki
+

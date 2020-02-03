@@ -1,0 +1,105 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+%include mdl.mki
+
+appName         = RealityAdmin
+baseDir         = $(_MakeFilePath)
+
+%include $(SrcRoot)imodel02/RealityCore/RealityModFramework/mki/RealityModFrameworkCommon.mki
+
+PlatformPublicApiDir    = $(OutBuildContexts)RealityModFramework/PublicAPI/RealityPlatform/
+PublicApiDir    = $(OutBuildContexts)RealityModFramework/PublicAPI/RealityAdmin/
+
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+
+CCompPDBName = $(appName)
+
+#----------------------------------------------------------------------
+#   Define __REALITYPLATFORM_BUILD__ symbol, so that class declarations and function decls will
+#   know to specify dllexport, rather than dllimport (the default)
+#   !No other makefile should define this symbol!
+#----------------------------------------------------------------------
+nameToDefine=__REALITYPLATFORM_BUILD__
+%include cdefapnd.mki
+
+nameToDefine=__WMSPARSER_BUILD__
+%include cdefapnd.mki
+
+#----------------------------------------------------------------------
+#       Build source files
+#----------------------------------------------------------------------
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)SpatialEntityClient$(oext) : $(baseDir)SpatialEntityClient.cpp $(PublicApiDir)SpatialEntityClient.h ${MultiCompileDepends}
+
+$(o)SpatialEntityHandler$(oext) : $(baseDir)SpatialEntityHandler.cpp $(PublicApiDir)SpatialEntityHandler.h ${MultiCompileDepends}
+
+$(o)RealityPlatformUtil$(oext) : $(baseDir)RealityPlatformUtil.cpp $(PublicApiDir)RealityPlatformUtil.h ${MultiCompileDepends}
+
+$(o)RealityDataHandler$(oext) : $(baseDir)RealityDataHandler.cpp $(PublicApiDir)RealityDataHandler.h ${MultiCompileDepends}
+
+$(o)RasterDataHandler$(oext) : $(baseDir)RasterDataHandler.cpp ${MultiCompileDepends}
+
+$(o)PointCloudDataHandler$(oext) : $(baseDir)PointCloudDataHandler.cpp ${MultiCompileDepends}
+
+$(o)RealityPlatformAdmins$(oext) : $(baseDir)RealityPlatformAdmins.cpp $(PublicApiDir)RealityPlatformAdmins.h $(PlatformPublicApiDir)RealityPlatformAPI.h ${MultiCompileDepends}
+
+$(o)PointCloudVortex$(oext) : $(baseDir)PointCloudVortex.cpp $(PublicApiDir)PointCloudVortex.h ${MultiCompileDepends}
+
+$(o)WMSDataHandler$(oext) : $(baseDir)WMSDataHandler.cpp ${MultiCompileDepends}
+
+$(o)WMSCapabilities$(oext) : $(baseDir)WMSCapabilities.cpp $(PublicApiDir)WMSCapabilities.h $(baseDir)WMSTag.h ${MultiCompileDepends}
+
+$(o)FtpTraversalEngine$(oext) : $(baseDir)FtpTraversalEngine.cpp $(PublicApiDir)FtpTraversalEngine.h ${MultiCompileDepends}
+
+$(o)HttpTraversalEngine$(oext) : $(baseDir)HttpTraversalEngine.cpp $(PublicApiDir)HttpTraversalEngine.h ${MultiCompileDepends}
+
+$(o)ODBCSQLConnection$(oext) : $(baseDir)ODBCSQLConnection.cpp $(PublicApiDir)ODBCSQLConnection.h ${MultiCompileDepends}
+
+$(o)ContextServicesWorkbench$(oext) : $(baseDir)ContextServicesWorkbench.cpp $(PublicApiDir)ContextServicesWorkbench.h ${MultiCompileDepends}
+
+$(o)RealityDataServiceConsole$(oext) : $(baseDir)RealityDataServiceConsole.cpp $(PublicApiDir)RealityDataServiceConsole.h ${MultiCompileDepends}
+
+#
+# Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
+# After the below include of MultiCppCompileGo.mki $(MultiCompileObjectList) will represent the
+# list of uniform object files created. You may present $(MultiCompileObjectList) to the linker.
+#
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#       Lib creation
+#----------------------------------------------------------------------
+DLM_NAME            = $(appName)
+DLM_OBJECT_FILES    = $(MultiCompileObjectList)
+DLM_NO_SIGN         = 1
+
+
+LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
+                       $(ContextSubpartsLibs)ImagePP$(libext) \
+                       $(ContextSubpartsLibs)BentleyGeom$(libext) \
+                       $(ContextSubpartsLibs)BaseGeoCoord$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext) \
+                       $(ContextSubPartsStaticLibs)$(libprefix)BeZLib$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)BeXml$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)PointoolsVortexAPI$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)RealityPlatform$(libext)\
+                       $(ContextSubpartsLibs)$(libprefix)RealityPlatformTools$(libext) \
+                       $(ContextSubpartsLibs)CCApi$(libext) \
+                       $(ContextSubPartsLibs)SpatioTemporalSelector$(libext) \
+                       odbc32$(libext)
+                       #$(ContextSubpartsLibs)WebServicesClient$(libext) \
+
+# windows specific for Unzipfile
+LINKER_LIBRARIES   +  $(ntPlatformLib)OleAut32.lib                       
+
+%include dlmlink.mki

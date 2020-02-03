@@ -1,0 +1,41 @@
+﻿<UserControl x:Class="Bentley.ImageViewer.WatchBox"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" Height="147" Width="auto">
+    <Grid>
+        <GroupBox Header="NameOfTheWatch&#xD;&#xA;" Name="WatchName" HorizontalAlignment="Stretch" Height="142" Margin="0,0,0,0" VerticalAlignment="Top" Width="auto">
+            <Grid Margin="0,0,0,0" HorizontalAlignment="Stretch"  Width="auto" >
+                <StackPanel Orientation="Horizontal">
+                    <Image HorizontalAlignment="Left" Name="Thumbnail" Height="100" Margin="10,10,0,0" VerticalAlignment="Top" Width="175" Source="pack://application:,,,/ImageViewer;component/Resources/Error.png"/>
+                            <StackPanel Orientation="Vertical" Width="auto" Margin="0,0,0,0" HorizontalAlignment="Right">
+                    <Label Content="PixelType" Name="PixelTypeValue" Height="29" Width="auto" HorizontalAlignment="Stretch"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Width="auto">
+                        <Label Content="Width:" Margin="0,0,0,0" Height="29"/>
+                        <Label Content="xxxx" Name="WidthValue" Margin="0,0,0,0"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                        <Label Content="Height:" Margin="0,0,0,0" Height="28"/>
+                        <Label Content="xxxx" Name="HeightValue" Margin="0,0,0,0"/>
+                    </StackPanel>
+
+                </StackPanel>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button  Margin="0,0,5,0" HorizontalAlignment="right" VerticalAlignment="Bottom" Width="20" RenderTransformOrigin="0.526,0.955" Height="20" ToolTip="Remove watch"  BorderThickness="0" BorderBrush="Black" Click="ButtonVisualize_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="pack://application:,,,/ImageViewer;component/Resources/5_content_picture.png"/>
+                    </StackPanel>
+                </Button>
+                <Button  Margin="0,0,0,0" HorizontalAlignment="right" VerticalAlignment="Bottom" Width="20" RenderTransformOrigin="0.526,0.955" Height="20" ToolTip="Remove watch"  BorderThickness="0" BorderBrush="Black" Click="ButtonDelete_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="pack://application:,,,/ImageViewer;component/Resources/1_navigation_cancel.png"/>
+                    </StackPanel>
+                </Button>
+                </StackPanel>
+            </Grid>
+
+        </GroupBox>
+    </Grid>
+</UserControl>

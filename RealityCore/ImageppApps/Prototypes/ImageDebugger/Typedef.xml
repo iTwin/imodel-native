@@ -1,0 +1,46 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Typedef>
+    <!--This file is used to tell the visualiser where to look for the data in a image type-->
+
+    <!--This id must be the same than the one specified in BeImageDebugger.Natvis file, id #1 is reserved for every pixel buffer type which do not required a definition-->
+    <!--An attribute content correspond to the path to the variable from the debugged type, note that the pointer -> operator is replace by the . operator-->
+    <!--To acess data in a base class you must specified the class in brackets, much like what the visual studio debugger already does, for exemple [HVE2DRectangle], the %typename% can also be used at the end of an attribute to tell the visualiser not to read the value of the variable but to extract his type name-->
+
+    <!--Possible attributes-->
+    <!--BufferSize : Tell the visualiser where to look for the size of the pixel buffer, only necessary to handle RLE bitmap automatically-->
+    <!--Width: Tell the visualizer where to look for the width of the bitmap -->
+    <!--Height: Tell the visualizer where to look for the width of the bitmap -->
+    <!--Buffer: Tell the visualizer where to look for the pixel buffer-->
+    <!--Palette: Tell the visualizer where to look for the pixel palette, only necessary for type with a palette. If no palette is specified, RLE converter will assume black and white raster-->
+    <!--PaletteSize: Tell the visualizer where to look the palette size, never necessary, only safer to use to handle bitmap which may not have a complete palette-->
+    <!--FixedPaletteSize: Specify a fixed size for the palette-->
+    <!--PixelType: Tell the visualizer where to look for the pixel type, only works for HRPPixelType for now-->
+    <!--FixedPixelType: Specify a pixel type which will always be used to load the bitmap. Use this if the visualiser cannot read your pixel type, once the bitmap at been loaded, you then can change the pixel type in the visualizer-->
+    <!--DefaultPixelType: Specify a pixel type which will be attributed automatically if the visualizer fail to read the pixel type-->
+
+    <Type id="2"> 
+        <!--Typedef for HRABitmap type-->
+        <Version Name ="1.01"> <!--You can specified multiple version of a type, they'll be used in order of appearance. The name attribute will only be used to show what request failed in eachv ersion if no version manage to load the bitmap-->
+            <Attribute Name ="BufferSize">m_pPacket.m_pObject.m_DataSize</Attribute>
+            <Attribute Name ="Width">HRABitmapBase.HRAStoredRaster.m_pPhysicalRect.m_pObject.m_pShape.[HVE2DRectangle].m_XMax</Attribute>
+            <Attribute Name ="Height">HRABitmapBase.HRAStoredRaster.m_pPhysicalRect.m_pObject.m_pShape.[HVE2DRectangle].m_YMax</Attribute>
+            <Attribute Name ="Buffer">m_pPacket.m_pObject.m_pBuffer</Attribute>
+            <Attribute Name ="Palette">HRABitmapBase.HRAStoredRaster.m_pPixelType.m_pObject.m_PixelPalette.m_BufPalette.pData</Attribute>
+            <Attribute Name ="PaletteSize">HRABitmapBase.HRAStoredRaster.m_pPixelType.m_pObject.m_PixelPalette.m_BufPalette.BufSize</Attribute>
+            <Attribute Name ="PixelType">HRABitmapBase.HRAStoredRaster.m_pPixelType.m_pObject.%typename%</Attribute> 
+        </Version>
+    </Type>
+    <Type id="3">
+        <!--Typedef for HGSSurfaceDescriptor type-->
+        <Version Name="1.01">
+            <Attribute Name ="BufferSize">[HGSMemorySurfaceDescriptor].m_pPacket.m_pObject.m_DataSize</Attribute>
+            <Attribute Name ="Width">m_Width</Attribute>
+            <Attribute Name ="Height">m_Height</Attribute>
+            <Attribute Name ="Buffer">[HGSMemorySurfaceDescriptor].m_pPacket.m_pObject.m_pBuffer</Attribute>
+            <Attribute Name ="Palette">[HGSMemorySurfaceDescriptor].HGSMemoryBaseSurfaceDescriptor.m_pPixelType.m_pObject.m_PixelPalette.m_BufPalette.pData</Attribute>
+            <Attribute Name ="PixelType">[HGSMemorySurfaceDescriptor].HGSMemoryBaseSurfaceDescriptor.m_pPixelType.m_pObject.%typename%</Attribute>
+        </Version>
+    </Type>
+</Typedef>
+
+<!---->

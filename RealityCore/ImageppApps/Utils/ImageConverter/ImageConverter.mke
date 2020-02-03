@@ -1,0 +1,74 @@
+#----------------------------------------------------------------------
+#
+#     $Source: Utils/ImageConverter/ImageConverter.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  
+#----------------------------------------------------------------------
+
+appName = ImageConverter
+
+%include mdl.mki
+%include $(SrcRoot)Imageppapps/mki/ImageppAppsCommon.mki
+
+baseDir = $(_MakeFilePath)
+
+#----------------------------------------------------------------------
+#   Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------
+#    Append compiler options
+#----------------------------------------------------------------------
+nameToDefine = UNICODE
+%include cdefapnd.mki
+
+nameToDefine = _UNICODE
+%include cdefapnd.mki
+
+#----------------------------------------------------------------------
+#   Build source files
+#----------------------------------------------------------------------
+
+# Create PCH
+CCPchOpts = -YcImageConverterPch.h -Fp$(o)$(appName).pch -Zm110
+$(o)ImageConverterPch$(oext) $(o)$(appName).pch : $(baseDir)ImageConverterPch.cpp $(baseDir)ImageConverterPch.h
+
+# Use PCH
+CCPchOpts = -YuImageConverterPch.h -Fp$(o)$(appName).pch -Zm110
+
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)ConverterUtilities$(oext) : $(baseDir)ConverterUtilities.cpp $(baseDir)ConverterUtilities.h ${MultiCompileDepends} 
+
+$(o)DirectoryScanner$(oext) : $(baseDir)DirectoryScanner.cpp $(baseDir)DirectoryScanner.h ${MultiCompileDepends}
+
+$(o)ErrorHandling$(oext) : $(baseDir)ErrorHandling.cpp $(baseDir)ErrorHandling.h ${MultiCompileDepends}
+
+$(o)ImageConverter$(oext) : $(baseDir)ImageConverter.cpp ${MultiCompileDepends}
+
+$(o)Parser$(oext) : $(baseDir)Parser.cpp $(baseDir)Parser.h ${MultiCompileDepends}
+
+$(o)PSSUtilities$(oext) : $(baseDir)PSSUtilities.cpp $(baseDir)PSSUtilities.h ${MultiCompileDepends}
+
+$(o)UsageInformation$(oext) : $(baseDir)UsageInformation.cpp $(baseDir)UsageInformation.h ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#   DLL/LIB creation
+#----------------------------------------------------------------------
+EXE_DEST     = $(o)
+EXE_NAME     = $(appName)
+EXE_OBJS     = $(MultiCompileObjectList) $(o)ImageConverterPch$(oext)
+EXE_UNICODE  = 1
+
+LINKER_LIBRARIES = $(ContextSubpartsLibs)Imagepp.lib $(ContextSubpartsLibs)Bentley.lib \
+                   $(ntPlatformLib)Shlwapi.lib $(ntPlatformLib)Shell32.lib
+
+%include $(SharedMki)linktool.mki
+
+

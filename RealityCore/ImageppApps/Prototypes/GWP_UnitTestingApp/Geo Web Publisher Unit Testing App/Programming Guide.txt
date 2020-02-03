@@ -1,0 +1,314 @@
+//////////////////////////////////////////////////////////////////
+Guide Version 1.0
+Last Update: 13/06/2013
+Author: Julien Rossignol
+//////////////////////////////////////////////////////////////////
+
+GWP Unit testing App Programming Guide
+
+
+///--Table of contents--\\\
+
+1.0-Global work flow
+
+2.0-Global functioning
+
+3.0-Data Structures
+	3.1-Database data structures
+	3.2-Application data structures
+
+4.0-Class Usage Analysis
+	4.1-Forms
+		4.1.1-MainForm
+		4.1.2-SelectWmsBaselineForm
+		4.1.3-SettingForm
+		4.1.4-DeleteResultForm
+		4.1.5-ResultComparisonForm
+	4.2-Managers
+		4.2.1-DatabaseManager
+		4.2.2-TestManager
+	4.3-Utility
+		4.3.1-RequestAnalyser
+		4.3.2-SqlFormater
+		4.3.3-RasterManipulation
+	4.4-Connectors
+		4.4.1-HttpConnector
+		4.4.2-DatabaseConnector	
+	4.5-Controls	
+		4.5.1-MessageTextBox
+
+5.0-Setup project
+
+6.0-Addendum
+	6.1 Injected javascript functions
+		
+
+///--1.0-Global work flow--\\\ 
+
+When the user first open the application, a default database is automatically created. 
+The user can then, keep this database, create another one, of select an already build 
+database from the setting form. He then can add record, directly from the grid view or
+with the help of the wms selection form. This form allows the user to add and edit
+records directly via the wms viewer include in the example website of GWP. The form 
+automatically connect to the server specified in the main form, it is an easy to know
+if the connection infos are correct. After adding some records, the users can select
+the ones he wants to test with the checkbox located at the beggining of each row of the
+grid view or he can filter them by using the select all check box, category and status
+filter drop-down. Before using any category, they must be added either in the setting 
+form or directly in the category filter combo box. When the play button is pressed,
+all selected test are then execute of the current server and the server's response is
+compare to the baseline currently in the database(by default, the baseline is fetched
+automatically when the user change or add an Url to a record). Opening the result 
+comparison form allow the user to visually inspect both the baseline and the output
+from the server. He then can decide to save them on disk or use the output as the new
+baseline. He can also cycle through previous failed attempts to help his analyse. 
+Since each test adds multiple bitmap in the database, there is a delete test form to 
+easily clean up useless of too old result to maintain the database's size correct. 
+
+
+
+///--2.0-Global functioning--\\\ 
+
+The program is centered around a list of result to a record. At application startup 
+all result related infos are empty, but the list is already initialize with all the
+record in the database. Every change in the record list are stored in the program's
+list of result and directly in the database. When a test is executed, the current 
+result list is sent to another thread who executes each record and fill each result 
+with information about the latest test result. The UI is centered around the main
+form used to connect every other form in the application. It also contains 
+many basic operations to modify, monitor or execute records easily. Most of the 
+code of the forms consist on safely mutating, visualising and managing the 
+result list as well as others info stocked in the database.   
+
+
+
+///--3.0-Data Structures--\\\
+
+--3.1-Database data structures--
+
+The database frame is define in SqLite/dbFrame and SqLiteRelease/dbFrame.
+Use the first when developping, do not hesitate to insert data at the end to easy 
+development. However, make sure there is only create table command in sqLiteRelease
+/dbFrame as this is the one use by the setup project to create the msi file. 
+
+The database is constitute of 6 tables: Record, Category, RequestResult, Baseline, FailureRaster, Test
+
+Record table is use to stock the information of one request: Id, Name, description, request url, categoryId(linked to the category table), MRBaselineId(linked to the baseline table).
+
+Category table is use to stock the information of one category: Name and Id
+
+RequestResult is use to stock the information of one result of a request: Id, RecordId(linked to the record table), TestId(linked to the test table), Status(failed, error, warning, success etc),  FailureRasterId(linked to FailureRaster Table) invalidpixel number and bigdifferencepixel number
+
+Baseline table is use to stock the baseline of a record
+
+FailureRaster table is use to save the result of a failed test
+
+Test table is use to save the information of a test: description, datetime, and serveconnection info
+
+--3.2-Application data structures--
+
+**Please refer to dataStruct.cs to see a complete definition of all data structures and explanation on their member**
+
+
+
+///--4.0-Class Usage Analysis--\\\
+
+--4.1-Forms--
+
+Manage the UI of the application
+
+4.1.1-MainForm
+This class main element is the grid view showing all current record in the database. 
+It contains everything to safely manipulate those records. Automatically, all changes
+are saved in the database. It also contains filter to easily choose which record to
+execute, and combobox to choose server name, protocol and port number. Finally, it 
+also cotains all other forms since they all are accessible from button of the main 
+form.
+
+4.1.2-SelectWmsBaselineForm
+This form main element is the webBrowser that allow the user to select a request
+by manipulating the map directly in the browser. To achieve a good synchronisation
+between browser and application, the app injects Javascript function directly into
+the web browser source. Those function are found at the end of this file, since they
+are hard to read directly in the c# source file. As the mainform does, this form also
+alow mutation of the record list values.
+
+4.1.3-SettingForm
+This form allow the user to change multiple settings in the application to better fit 
+the user needs. Most of them are directly saved in the user config file. But the 
+categories are stocked in the database to allow an easier manipulation and link with
+the record list. All changes made to the settings are automatically saved and may 
+sometimes executes actions automatically.  
+
+4.1.4-DeleteResultForm
+This form only containts a grid view showing all test in the database. It can serve as
+a easy way to find a test, but mostly it is used to delete old and useless result. 
+
+4.1.5-ResultComparisonForm
+This form allow the user to visually inspect both the baseline and output file. It 
+contains multiple options such as pixel difference identification, text file reading, 
+zooming and panning both images simultaneously. It also contains dialog to save baseline
+and output (with or without difference pixel identification) on the disk. A drop-down list
+allow the user to check old failed result to check if things are evolving.
+
+
+--4.2-Managers--
+
+Manage the execution of vital background task of the application
+
+4.2.1-DatabaseManager
+This class is one of the most important in the application. Each time a data is change
+in the app, one of his method his called. It properly save all changes in the database 
+while making sure every form does update his information correctly. It also update the
+base result list. Furthermore, this class also manage everything connected to the 
+database. It is the only class in the application allowed to execute a command/query 
+from the databaseConnector. This allow for easy minor modification on the data struct
+either in the app or in the database since all the conversion are made in this class.
+
+4.2.2-TestManager
+This class is only active when the play button is pressed in the main form. It executes
+a test, then wait for another one to start. The test execution itself is straight forward,
+for each request to execute, the request response is fetch from the server, then it is 
+send in a thread pool which will excute the comparison while the main thread continues
+to fetch the responses. Result infos (invalid pixels, bigdiffence pixel, result bitmap 
+status) are all set in this class and should not be modified elsewhere.  
+
+
+--4.3-Utility--
+
+Allow easy manipulation of data for other class 
+ 
+4.3.1-RequestAnalyser **static
+This class contains a series of function analysing each aspect of a request. Some of them 
+doesn't have a use yet, but for further addition in the app, they may become usefull. 
+Most of the time, only the analyseRequest function is call since it returns a Request struct
+containing the result of all other functions.
+
+4.3.2-SqlFormater
+This class is used by the databaseManager to automatically create all of his SQL command 
+Only raster command are not format by this class since the conversion to a string would
+corrupt the raster data. All other manipulation(update/insert/select/count/delete) are 
+format from this class.
+
+4.3.3-RasterManipulation **static
+This class allow manipulation of raster, mostly for conversion between byte[] to bitmap 
+type since printing and saving bitmap cannot be made with only one type. This class
+also calculates the differences between two bitmaps.
+
+
+--4.4-Connectors--
+
+Allow connection with external datasource
+
+4.4.1-HttpConnector
+This class fetch the response of a request by the specified server. It then convert it
+into a usable byte[]. 
+
+
+4.4.2-DatabaseConnector
+This class execute a query/command to the database. Except for inserting raster, only 
+the method "execute" should be use. It is the only class that should open the database
+and communicate with it directly. 
+
+
+--4.5-Controls
+
+New control defined for the UI
+
+4.5.1-MessageTextBox
+Simple control asking for a text directly in a message box. 
+
+
+
+///--5.0-Setup project--\\\
+
+To properly use the setup project, make sure the executable is always in bin/release or 
+some of the hard coded path won't work. Also, it is important to change the project version
+or the users will have to manually removes previous version of their computer. 
+
+///--6.0-Addendum--\\\
+
+--6.1 Injected javascript functions
+
+function FitViewWithNewExtent(xmin, ymin, xmax, ymax)//Fit the navigator with the specified extent 
+{
+var newExtent = new CExtent(xmin, ymin, xmax, ymax);//creates an extent with the specified values
+objNavigation.SetExtent(newExtent);//update navigator 
+objNavigation.Fit(); 
+UpdateViewer(); 
+writeLogToScreen(xmin + ymin + xmax + ymax);
+}
+
+function CheckLayer(layerName)//check the checkboxe associate with the specified layer
+{
+var table4 = document.getElementById("TreeView");//get the treeview containing the checkboxes and labels
+
+if(table4)
+	{
+	var checkboxes = table4.getElementsByTagName("input"); //get the checkboxes
+	var labels = table4.getElementsByTagName("label"); //get the labels
+	if ( checkboxes && labels )
+		{
+		for(var i = 0; i < labels.length ; i++)//for every label
+			{
+				if(labels[i].innerText == layerName) 
+					{
+					checkboxes[i].checked = true; 
+					break;
+					}
+			}
+		}
+	}
+}
+
+function ClearLayer()//uncheck every checkbox
+{
+var table4 = document.getElementById("TreeView");
+if(table4)
+	{
+	var checkboxes = table4.getElementsByTagName("input"); //get the checkboxes
+	if ( checkboxes )
+		{
+		for(var i = 0; i < checkboxes.length ; i++)
+			{
+			checkboxes[i].checked = false;
+			}
+		}
+	}
+}
+
+function SetMap(GUID)//set the map with the current GUID
+{
+var MapDropDown = document.getElementsByName("DropDownListMapID")[0];//get the map drop down list
+if(MapDropDown)
+	{
+	for(var i = 0; i < MapDropDown.options.length ; i++)
+		{
+		if(MapDropDown.options[i].value == GUID)
+			{
+			if(i != MapDropDown.selectedIndex)
+				{
+				MapDropDown.selectedIndex = i; //select the map
+				__doPostBack("DropDownListMapID",""); //refresh navigator to change map
+				}
+			}
+		}
+	}
+}
+
+function SetSRS(newSrs)//set the Srs to the specified one
+{
+var SRSDropDownList = document.getElementsByName("DropDownListMapSRS")[0]; //get the srs drop down list
+	if(SRSDropDownList)
+	{
+		for(var i = 0;i < SRSDropDownList.options.length ; i++)
+			{
+			if(SRSDropDownList.options[i].value == newSrs)
+				{
+				SRSDropDownList.selectedIndex = i;
+				UpdateViewer();
+				break;
+				}
+			}
+	}
+}

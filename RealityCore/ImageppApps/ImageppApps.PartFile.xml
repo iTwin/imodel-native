@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+
+    <!-- Translated Sqlang database Xliff files -->
+    <Part Name="ImappApps-en" BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke" BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)Build/imageppApps/imageppapps_en.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff">
+        <SubPart PartName="ImagePP" PartFile="ImagePP" Repository="ImagePP" />
+        <Bindings>
+            <Files ProductDirectoryName="Assets" Required="true">Delivery/sqlang/imageppapps_en.sqlang.db3</Files>
+        </Bindings>
+    </Part>
+    
+    <Part Name="ActiveImageExe" BMakeFile="Utils/ActiveImage/ActiveImage.mke" OnlyPlatforms="x86,x64">
+        <SubPart PartName="ImagePP" PartFile="ImagePP" Repository="ImagePP" />
+        <SubPart PartName="HUTExportLib"/>
+        <SubPart PartName="ImappApps-en"/>
+        <Bindings>
+            <Assemblies>delivery/ActiveImage.exe</Assemblies> 
+        </Bindings>
+    </Part>
+
+    <Part Name="BentleyActiveXPro" BMakeFile="Utils/BentleyActiveXPro/BentleyActiveXPro.mke" OnlyPlatforms="x86,x64">
+        <SubPart PartName="ImageppStaticLib" PartFile="ImagePP" Repository="ImagePP" />
+        <SubPart PartName="HUTExportLibWithIppStaticLib"/>
+        <Bindings>
+            <Assemblies>delivery/BentleyActiveXPro.ocx</Assemblies> 
+        </Bindings>
+    </Part>
+
+    <Part Name="ConvertToHRFMultiresExe" BMakeFile="Utils/ConvertToHRFMultires/ConvertToHRFMultires.mke" OnlyPlatforms="x86,x64">
+        <SubPart PartName="ImagePP" PartFile="ImagePP" Repository="ImagePP" />
+        <Bindings>
+            <Assemblies>delivery/ConvertToHRFMultiRes.exe</Assemblies> 
+        </Bindings>
+    </Part>
+
+    <Part Name="GCoordApproxTester" BMakeFile="Utils/GCoordApproxTester/GCoordApproxTester.mke" OnlyPlatforms="x86,x64">
+        <SubPart PartName="ImagePP" PartFile="ImagePP" Repository="ImagePP" />
+        <Bindings>
+            <Assemblies>delivery/GCoordApproxTester.exe</Assemblies> 
+        </Bindings>
+    </Part>
+
+    <Part Name="HMRFactorExe" BMakeFile="Utils/HMRFactor/HMRFactor.mke" OnlyPlatforms="x86,x64">
+        <SubPart PartName="ImagePP" PartFile="ImagePP" Repository="ImagePP" />
+        <Bindings>
+            <Assemblies>delivery/HMRFactor.exe</Assemblies> 
+        </Bindings>
+    </Part>
+
+    <Part Name="HRFCapabilitiesExporterExe" BMakeFile="Utils/HRFCapabilitiesExporter/HRFCapabilitiesExporter.mke" OnlyPlatforms="x86,x64">
+        <SubPart PartName="ImagePP" PartFile="ImagePP" Repository="ImagePP" />
+        <Bindings>
+            <Assemblies>delivery/HRFCapabilitiesExporter.exe</Assemblies> 
+        </Bindings>
+    </Part>
+
+    <Part Name="HTiffInfoExe" BMakeFile="Utils/HTiffInfo/HTiffInfo.mke" OnlyPlatforms="x86,x64">
+        <SubPart PartName="ImagePP" PartFile="ImagePP" Repository="ImagePP" />
+        <Bindings>
+            <Assemblies>delivery/HTiffInfo.exe</Assemblies> 
+        </Bindings>
+    </Part>
+
+    <Part Name="HUTExportLibWithIppStaticLib" BMakeFile="Utils/HUTExport/HUTExport.mke" OnlyPlatforms="x86,x64">
+        <SubPart PartName="ImageppStaticLib" PartFile="ImagePP" Repository="ImagePP" />
+        <Bindings>
+            <PublicAPI Domain="ImageppApps" />
+            <Libs>Delivery/$(stlibprefix)HUTExportLibWithIppStaticLib$(stlibext)</Libs>
+            <Libs>Delivery/$(stlibprefix)HUTExportLibWithIppStaticLib$(stlibdebugext)</Libs>
+        </Bindings>
+    </Part>
+
+    <Part Name="HUTExportLib" BMakeFile="Utils/HUTExport/HUTExport.mke" BMakeOptions="+dIMAGEPP_DLLMODE=1" OnlyPlatforms="x86,x64">
+        <SubPart PartName="ImagePP" PartFile="ImagePP" Repository="ImagePP" />
+        <Bindings>
+            <PublicAPI Domain="ImageppApps" />
+            <Libs>Delivery/$(stlibprefix)HUTExportLib$(stlibext)</Libs>
+            <Libs>Delivery/$(stlibprefix)HUTExportLib$(stlibdebugext)</Libs>
+        </Bindings>
+    </Part>
+
+    <Part Name="ImageComparatorExe" BMakeFile="Utils/ImageComparator/ImageComparator.mke" OnlyPlatforms="x86,x64">
+        <SubPart PartName="ImagePP" PartFile="ImagePP" Repository="ImagePP" />
+        <Bindings>
+            <Assemblies>delivery/ImageComparator.exe</Assemblies> 
+        </Bindings>
+    </Part>
+    
+    <Part Name="ImageConverterExe" BMakeFile="Utils/ImageConverter/ImageConverter.mke" OnlyPlatforms="x86,x64">
+        <SubPart PartName="ImagePP" PartFile="ImagePP" Repository="ImagePP" />
+        <Bindings>
+            <Assemblies>delivery/ImageConverter.exe</Assemblies> 
+        </Bindings>
+    </Part>
+
+    <Part Name="ImageHunterExe" BMakeFile="Utils/ImageHunter/ImageHunter.mke" OnlyPlatforms="x86,x64">
+        <SubPart PartName="ImagePP" PartFile="ImagePP" Repository="ImagePP" />
+        <Bindings>
+            <Assemblies>delivery/ImageHunter.exe</Assemblies> 
+        </Bindings>
+    </Part>
+
+    <Part Name="ImageInsiderExe" BMakeFile="Utils/ImageInsider/ImageInsider.mke" OnlyPlatforms="x86,x64">
+        <SubPart PartName="ImagePP" PartFile="ImagePP" Repository="ImagePP" />
+        <Bindings>
+            <Assemblies>delivery/ImageInsider.exe</Assemblies> 
+        </Bindings>
+    </Part>
+
+    <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+    <!-- ////////////////////////////////// Products ///////////////////////////////////////// -->
+    <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+    
+    <ProductDirectoryList ListName="IppAppsDirList" >
+        <ProductDirectory Name="applicationroot"            Path=""/>
+        <ProductDirectory Name="Assets"                     Path="Assets" RelativeTo="applicationroot"/>
+        <ProductDirectory Name="Assets"                     Path="Assets" RelativeTo="applicationroot" LibType="static"/>
+        <ProductDirectory Name="Assemblies"                 RelativeTo="applicationroot"/>
+        <ProductDirectory Name="Assemblies"                 LibType="Static" Deliver="false"/>
+
+        <ProductDirectory Name="VendorNotices"              Path="Notices" />
+        <ProductDirectory Name="VendorNotices"              Path="Notices" Deliver="true" LibType="Static"/>
+
+    </ProductDirectoryList>
+
+    <Product Name="ActiveImage">
+        <SubPart PartName="ActiveImageExe"/>
+        <FeatureInclude>GdalData</FeatureInclude>
+        <Directories DirectoryListName="IppAppsDirList" />
+    </Product>
+
+    <Product Name="ImageppAppsWithIppStaticLib">
+      <Directories DirectoryListName="IppAppsDirList" />
+    </Product>
+
+    <Product Name="ImageppApps">
+        <SubPart PartName="ActiveImageExe"/>
+        <SubPart PartName="ConvertToHRFMultiresExe" />
+        <SubPart PartName="GCoordApproxTester"/>
+        <SubPart PartName="HMRFactorExe" />
+        <SubPart PartName="HRFCapabilitiesExporterExe" />
+        <SubPart PartName="HTiffInfoExe" />
+        <SubPart PartName="ImageComparatorExe" />        
+        <SubPart PartName="ImageConverterExe" />
+        <!--<SubPart PartName="ImageHunterExe" />-->
+        <SubPart PartName="ImageInsiderExe" />
+        
+        <FeatureInclude>GdalData</FeatureInclude>
+        <Directories DirectoryListName="IppAppsDirList" />
+    </Product>
+
+    <Product Name="FullImageppApps" OnlyPlatforms="x86,x64">
+        <SubProduct ProductName="ImageppApps" />
+        <SubProduct ProductName="ImageppAppsWithIppStaticLib" />
+        <Directories DirectoryListName="IppAppsDirList" />
+    </Product>
+
+    <Product Name="ImageppAppsAndTests" OnlyPlatforms="x86,x64">
+        <SubPart PartName="ImagePP-Tested" PartFile="ImagePP" Repository="ImagePP" />
+        <SubProduct ProductName="ImageppApps" />
+        <Directories DirectoryListName="IppAppsDirList" />
+    </Product>
+
+</BuildContext>

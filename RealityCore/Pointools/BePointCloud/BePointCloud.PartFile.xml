@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
+
+    <Part Name="BePointCloud" BentleyBuildMakeFile="BePointCloud.mke" ApiNumber="M02">
+        <SubPart PartName="BentleyDll"      PartFile="iModelCore/Bentley/Bentley"   Repository="imodel02"/>
+        <SubPart PartName="BePointCloudSubParts"/>
+        <SubPart PartName="VortexLibs" PartFile="RealityCore/Pointools/PointoolsVortexAPI/PointoolsVortexAPI" Repository="imodel02" />
+        <Bindings>
+          <PublicAPI Domain="BePointCloud" />
+          <Assemblies>Delivery/$(shlibprefix)BePointCloud$(ApiNumber)$(shlibext)</Assemblies>
+          <Libs>Delivery/$(shlibprefix)BePointCloud$(libext)</Libs>
+        </Bindings>
+    </Part>
+
+    <Part Name="BePointCloudSubParts">
+        <SubPart PartName="GeomDlls"        PartFile="iModelCore/GeomLibs/geomlibs"     Repository="imodel02" />
+    </Part>
+
+</BuildContext>

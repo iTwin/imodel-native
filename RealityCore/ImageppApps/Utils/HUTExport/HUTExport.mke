@@ -1,0 +1,112 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: Utils/HUTExport/HUTExport.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+appName = HUTExportLib
+
+%if defined (IPP_USING_STATIC_LIBRARIES)
+    appName = HUTExportLibWithIppStaticLib
+%endif
+
+
+%include mdl.mki
+%include $(SrcRoot)Imageppapps/mki/ImageppAppsCommon.mki
+
+HUTExportDir = $(_MakeFilePath)
+
+# Wire in my own public header files.
+always:
+   @CreateSymLinks.py  -m$(OutBuildContexts)ImageppApps/PublicAPI/ImageppApps/HUTExport/=$(HUTExportDir)*.h"
+   
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+
+# Need the PDB's with the static libs
+CCompPDBName =% $(appName)
+    
+#----------------------------------------------------------
+# Preprocessor definition.
+#----------------------------------------------------------
+nameToDefine=HUTEXPORT_LINK_MODE_LIB
+%include cdefapnd.mki
+
+#Now always build using UNICODE
+nameToDefine=UNICODE
+%include cdefapnd.mki
+    
+nameToDefine=_UNICODE
+%include cdefapnd.mki
+
+nameToDefine=_AFXDLL
+%include cdefapnd.mki
+
+#----------------------------------------------------------------------
+#       Build source files
+#----------------------------------------------------------------------
+# Create PCH
+CCPchOpts = -Yc"StdAfx.h" -Fp$(o)$(appName).pch -Zm110
+$(o)StdAfx$(oext) $(o)$(appName).pch : $(HUTExportDir)StdAfx.cpp $(HUTExportDir)StdAfx.h
+
+# Use PCH
+CCPchOpts = -Yu"StdAfx.h" -Fp$(o)$(appName).pch -Zm110
+
+MultiCompileDepends=$(_MakeFileSpec) $(HUTExportDir)StdAfx.h
+%include MultiCppCompileRule.mki
+
+$(o)HUTBlockSection$(oext) : $(HUTExportDir)HUTBlockSection.cpp $(HUTExportDir)HUTBlockSection.h ${MultiCompileDepends}
+
+$(o)HUTCertifyExport$(oext) : $(HUTExportDir)HUTCertifyExport.cpp $(HUTExportDir)HUTCertifyExport.h ${MultiCompileDepends}
+
+$(o)HUTCompressionSection$(oext) : $(HUTExportDir)HUTCompressionSection.cpp $(HUTExportDir)HUTCompressionSection.h ${MultiCompileDepends}
+
+$(o)HUTConvertToDlg$(oext) : $(HUTExportDir)HUTConvertToDlg.cpp $(HUTExportDir)HUTConvertToDlg.h ${MultiCompileDepends}
+
+$(o)HUTDestination$(oext) : $(HUTExportDir)HUTDestination.cpp $(HUTExportDir)HUTDestination.h ${MultiCompileDepends}
+
+$(o)HUTDialogContainer$(oext) : $(HUTExportDir)HUTDialogContainer.cpp $(HUTExportDir)HUTDialogContainer.h ${MultiCompileDepends}
+
+$(o)HUTEncodingSection$(oext) : $(HUTExportDir)HUTEncodingSection.cpp $(HUTExportDir)HUTEncodingSection.h ${MultiCompileDepends}
+
+$(o)HUTExportDialog$(oext) : $(HUTExportDir)HUTExportDialog.cpp $(HUTExportDir)HUTExportDialog.h ${MultiCompileDepends}
+
+$(o)HUTGeoReferenceSection$(oext) : $(HUTExportDir)HUTGeoReferenceSection.cpp $(HUTExportDir)HUTGeoReferenceSection.h ${MultiCompileDepends}
+
+$(o)HUTImageSize$(oext) : $(HUTExportDir)HUTImageSize.cpp $(HUTExportDir)HUTImageSize.h ${MultiCompileDepends}
+
+$(o)HUTPixelType$(oext) : $(HUTExportDir)HUTPixelType.cpp $(HUTExportDir)HUTPixelType.h ${MultiCompileDepends}
+
+$(o)HUTProgressDialog$(oext) : $(HUTExportDir)HUTProgressDialog.cpp $(HUTExportDir)HUTProgressDialog.h ${MultiCompileDepends}
+
+$(o)HUTSectionDialog$(oext) : $(HUTExportDir)HUTSectionDialog.cpp $(HUTExportDir)HUTSectionDialog.h ${MultiCompileDepends}
+
+$(o)HUTSmallCompressionSection$(oext) : $(HUTExportDir)HUTSmallCompressionSection.cpp $(HUTExportDir)HUTSmallCompressionSection.h ${MultiCompileDepends}
+
+$(o)HUTSubresPixelType$(oext) : $(HUTExportDir)HUTSubresPixelType.cpp $(HUTExportDir)HUTSubresPixelType.h ${MultiCompileDepends}
+
+#
+# Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
+# After the below include of MultiCppCompileGo.mki $(MultiCompileObjectList) will represent the
+# list of uniform object files created. You may present $(MultiCompileObjectList) to the linker.
+#
+%include MultiCppCompileGo.mki
+ 
+ 
+$(o)HUTExport.res                        :   $(HUTExportDir)HUTExport.rc $(HUTExportDir)HUTresource.h
+
+#----------------------------------------------------------------------
+#       Lib creation
+#----------------------------------------------------------------------
+LIB_NAME    = $(appName)
+LIB_DEST    = $(o)
+LIB_OBJS    = $(o)StdAfx$(oext) $(o)HUTExport.res  $(MultiCompileObjectList)
+LIB_CONTEXT_LOCATION = $(DLM_LIB_CONTEXT_LOCATION)
+
+%include creatlib.mki
+

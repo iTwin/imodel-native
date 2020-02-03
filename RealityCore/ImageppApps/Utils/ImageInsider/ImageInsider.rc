@@ -1,0 +1,288 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#define _AFX_NO_SPLITTER_RESOURCES\r\n"
+    "#define _AFX_NO_OLE_RESOURCES\r\n"
+    "#define _AFX_NO_TRACKER_RESOURCES\r\n"
+    "#define _AFX_NO_PROPERTY_RESOURCES\r\n"
+    "\r\n"
+    "#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)\r\n"
+    "#ifdef _WIN32\r\n"
+    "LANGUAGE 9, 1\r\n"
+    "#pragma code_page(1252)\r\n"
+    "#endif\r\n"
+    "#include ""res\\ImageInsider.rc2""  // non-Microsoft Visual C++ edited resources\r\n"
+    "#include ""res\\Version.rc""\r\n"
+    "#include ""afxres.rc""         // Standard components\r\n"
+    "#endif\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDR_MAINFRAME           ICON    DISCARDABLE     "res\\ImageInsider.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_PROPPAGE1 DIALOG DISCARDABLE  0, 0, 275, 317
+STYLE WS_CHILD | WS_DISABLED | WS_CAPTION
+CAPTION "General"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "Type:",IDC_STATIC_2,7,99,19,8
+    LTEXT           "Location:",IDC_STATIC_3,7,113,30,8
+    LTEXT           "Size:",IDC_STATIC_4,7,127,16,8
+    LTEXT           "Uncompressed Size:",IDC_STATIC_5,7,141,66,8
+    LTEXT           "Image Dimensions:",IDC_STATIC_7,7,164,60,8
+    LTEXT           "Compression type:",IDC_STATIC_8,7,178,58,8
+    LTEXT           "Color space:",IDC_STATIC_9,7,200,40,8
+    LTEXT           "Number of Blocks:",IDC_STATIC_13,7,259,59,8
+    LTEXT           "Blocks Dimensions:",IDC_STATIC_14,7,282,62,8
+    CONTROL         "",IDC_STATIC_1,"Static",SS_ETCHEDHORZ,7,93,261,1
+    CONTROL         "",IDC_STATIC_6,"Static",SS_ETCHEDHORZ,7,156,261,1
+    LTEXT           "96060_25.jpg",IDC_FILENAME,100,44,168,8
+    CONTROL         "",IDC_STATIC_12,"Static",SS_ETCHEDHORZ,7,251,261,1
+    LTEXT           "Jpeg File Format",IDC_TYPE,97,99,171,8
+    LTEXT           "F:\\Image\\jpg\\96060_25.jpg",IDC_LOCATION,97,113,171,8
+    LTEXT           "18.4 KB (18,875 bytes)",IDC_IMAGESIZE,97,127,171,8
+    LTEXT           "28.4 KB (28,875 bytes)",IDC_USIZE,97,141,171,8
+    LTEXT           "21000 x 18231",IDC_IMAGED,97,164,171,8
+    LTEXT           "JPEG, JPEG, JPEG, JPEG",IDC_COMPRESSIONT,97,178,171,24
+    LTEXT           "True Color 24bit, GrayScale, 1bit",IDC_COLORS,97,200,
+                    171,8
+    LTEXT           "256 x 256, 256 x 256, 256 x 256, \r256 x 256",
+                    IDC_BLOCKD,97,282,171,18
+    LTEXT           "1000 x 1000, 500 x 500, 25 x 25\r, 1 x 1",IDC_NUMBEROB,
+                    97,259,171,16
+    LTEXT           "Scanline orientation:",IDC_STATIC_10,7,214,65,8
+    LTEXT           "Upper Left Horizontal",IDC_SCANLINEO,97,214,171,8
+    LTEXT           "Overviews Dimensions:",IDC_STATIC_11,7,228,74,8
+    CONTROL         "1150 x 950, 512 x 512,\r 256 x 256",IDC_OVERVIEWSD,
+                    "Static",SS_LEFTNOWORDWRAP | WS_GROUP,97,228,171,18
+    CONTROL         "Quality Thumbnail",IDC_CHECK_QUALITY_THUMB,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,101,62,72,10
+    CONTROL         "Geo Reference",IDC_CHECK_GEO_THUMB,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,101,76,65,10
+    LTEXT           "....",IDC_PROGRESS,100,21,168,8
+END
+
+IDD_PROPPAGE2 DIALOG DISCARDABLE  0, 0, 275, 317
+STYLE WS_CHILD | WS_DISABLED | WS_CAPTION
+CAPTION "Resource"
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL         "List2",IDC_LIST2,"SysListView32",LVS_REPORT | WS_BORDER | 
+                    WS_TABSTOP,7,7,261,302
+END
+
+IDD_PROPPAGE3 DIALOG DISCARDABLE  0, 0, 275, 317
+STYLE WS_CHILD | WS_DISABLED | WS_CAPTION
+CAPTION "Benchmark"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "Thumbnail Best Quality:",IDC_STATIC_1,7,182,75,8
+    LTEXT           "Total Time:",IDC_STATIC_11,7,161,36,8
+    LTEXT           "Compress",IDC_STATIC_7,209,97,32,8
+    LTEXT           "Thumbnail Nearest Neighbour:",IDC_STATIC_2,7,198,97,8
+    LTEXT           "Average:",IDC_STATIC_8,7,113,30,8
+    LTEXT           "Best:",IDC_STATIC_9,7,129,17,8
+    LTEXT           "Worst:",IDC_STATIC_10,7,145,22,8
+    LTEXT           "Read",IDC_STATIC_3,50,97,18,8
+    LTEXT           "Decompress",IDC_STATIC_4,103,97,40,8
+    LTEXT           "Write",IDC_STATIC_6,156,97,18,8
+    CONTROL         "",IDC_STATIC_15,"Static",SS_ETCHEDHORZ,8,214,258,1
+    CONTROL         "",IDC_STATIC_12,"Static",SS_ETCHEDHORZ,8,94,259,1
+    CONTROL         "",IDC_STATIC_14,"Static",SS_ETCHEDHORZ,8,174,259,1
+    LTEXT           "0000.070 s",IDC_THUMBNAILBQ,135,182,133,8
+    LTEXT           "0000.070 seconds",IDC_THUMBNAILNN,135,198,133,8
+    LTEXT           "0000.070 s.",IDC_AVERAGERB,50,113,53,8
+    LTEXT           "0000.070 s.",IDC_BESTRB,50,128,52,8
+    LTEXT           "0000.070 s.",IDC_WORSTRB,50,143,52,8
+    LTEXT           "0000.070 s.",IDC_AVERAGE_DB,103,113,51,8
+    LTEXT           "0000.070 s.",IDC_BESTDB,103,129,53,8
+    LTEXT           "0000.070 s.",IDC_WORSTDB,103,143,53,8
+    LTEXT           "0000.070 s.",IDC_AVERAGEWB,156,113,53,8
+    LTEXT           "0000.070 s.",IDC_BESTWB,156,129,52,8
+    LTEXT           "0000.070 s.",IDC_WORSTWB,156,145,52,8
+    LTEXT           "0000.070 s.",IDC_AVERAGECB,209,113,51,8
+    LTEXT           "0000.070 s.",IDC_BESTCB,209,129,52,8
+    LTEXT           "0000.070 s.",IDC_WORSTCB,209,145,53,8
+    LTEXT           "0000.000 s.",IDC_READTIME,50,161,52,8
+    LTEXT           "0000.070 s.",IDC_DECOMPRESSIONTIME,103,161,52,8
+    LTEXT           "0000.070 s.",IDC_WRITETIME,156,161,52,8
+    LTEXT           "0000.070 s.",IDC_COMPRESSIONTIME,209,161,52,8
+    CONTROL         "",IDC_STATIC_5,"Static",SS_ETCHEDVERT,46,95,1,79
+    PUSHBUTTON      "Start Benchmark",IDC_BUTTON1,7,65,62,14
+    CONTROL         "Send the results to the Image Insider Database",
+                    IDC_CHECK_EMAIL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,
+                    44,163,10
+    CONTROL         "Benchmark Write Blocks",IDC_CHECK_WB,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,27,94,10
+    LTEXT           "Image Benchmark",IDC_STATIC_17,7,7,58,8
+    CONTROL         "",IDC_STATIC_16,"Static",SS_ETCHEDHORZ,9,108,258,1
+END
+
+IDD_IMAGEINSIDER_DIALOG DIALOGEX 0, 0, 325, 271
+STYLE DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_APPWINDOW
+CAPTION "Image Insider"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,160,250,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,215,250,50,14
+    PUSHBUTTON      "Apply",IDAPPLY,270,250,50,14
+END
+
+IDD_PROPPAGE4 DIALOG DISCARDABLE  0, 0, 275, 317
+STYLE WS_CHILD | WS_DISABLED | WS_CAPTION
+CAPTION "About"
+FONT 8, "MS Sans Serif"
+BEGIN
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    IDD_PROPPAGE1, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 268
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 309
+    END
+
+    IDD_PROPPAGE2, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 268
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 309
+    END
+
+    IDD_PROPPAGE3, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 268
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 309
+    END
+
+    IDD_IMAGEINSIDER_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 318
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 264
+    END
+
+    IDD_PROPPAGE4, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 268
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 309
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_BITMAP1             BITMAP  DISCARDABLE     "res\\bitmap1.bmp"
+IDB_BITMAP3             BITMAP  DISCARDABLE     "res\\bitmap3.bmp"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_PROPSHT_CAPTION     "Image Insider"
+END
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+#define _AFX_NO_SPLITTER_RESOURCES
+#define _AFX_NO_OLE_RESOURCES
+#define _AFX_NO_TRACKER_RESOURCES
+#define _AFX_NO_PROPERTY_RESOURCES
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE 9, 1
+#pragma code_page(1252)
+#endif
+#include "res\ImageInsider.rc2"  // non-Microsoft Visual C++ edited resources
+#include "res\Version.rc"
+#include "afxres.rc"         // Standard components
+#endif
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

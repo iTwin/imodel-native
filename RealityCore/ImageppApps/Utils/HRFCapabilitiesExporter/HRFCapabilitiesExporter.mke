@@ -1,0 +1,68 @@
+#----------------------------------------------------------------------
+#
+#     $Source: Utils/HRFCapabilitiesExporter/HRFCapabilitiesExporter.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  
+#----------------------------------------------------------------------
+
+appName = HRFCapabilitiesExporter
+
+%include mdl.mki
+%include $(SrcRoot)Imageppapps/mki/ImageppAppsCommon.mki
+
+baseDir = $(_MakeFilePath)
+
+#----------------------------------------------------------------------
+#   Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------
+#    Append compiler options
+#----------------------------------------------------------------------
+nameToDefine = UNICODE
+%include cdefapnd.mki
+
+nameToDefine = _UNICODE
+%include cdefapnd.mki
+
+#----------------------------------------------------------------------
+#   Build source files
+#----------------------------------------------------------------------
+
+# Create PCH
+CCPchOpts = -Ycstdafx.h -Fp$(o)$(appName).pch -Zm110
+$(o)stdafx$(oext) $(o)$(appName).pch : $(baseDir)stdafx.cpp $(baseDir)stdafx.h
+
+# Use PCH
+CCPchOpts = -Yustdafx.h -Fp$(o)$(appName).pch -Zm110
+
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)CreatorParser$(oext) : $(baseDir)CreatorParser.cpp $(baseDir)CreatorParser.h ${MultiCompileDepends}
+
+$(o)HRFCapabilitiesExporter$(oext) : $(baseDir)HRFCapabilitiesExporter.cpp $(baseDir)CreatorParser.h $(baseDir)HTMLExporter.h $(baseDir)TextExporter.h ${MultiCompileDepends}
+
+$(o)HTMLExporter$(oext) : $(baseDir)HTMLExporter.cpp $(baseDir)HTMLExporter.h ${MultiCompileDepends}
+
+$(o)TextExporter$(oext) : $(baseDir)TextExporter.cpp $(baseDir)TextExporter.h ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#   DLL/LIB creation
+#----------------------------------------------------------------------
+EXE_DEST     = $(o)
+EXE_NAME     = $(appName)
+EXE_OBJS     = $(MultiCompileObjectList) $(o)stdafx$(oext)
+EXE_UNICODE  = 1
+
+LINKER_LIBRARIES = $(ContextSubpartsLibs)Imagepp.lib $(ContextSubpartsLibs)Bentley.lib \
+                   $(ntPlatformLib)Shlwapi.lib $(ntPlatformLib)Shell32.lib
+
+%include $(SharedMki)linktool.mki
+
+

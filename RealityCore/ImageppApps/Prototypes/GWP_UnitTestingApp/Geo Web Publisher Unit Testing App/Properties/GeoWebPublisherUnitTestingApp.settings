@@ -1,0 +1,84 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="Geo_Web_Publisher_Unit_Testing_App.Properties" GeneratedClassName="GeoWebPublisherUnitTestingApp">
+  <Profiles />
+  <Settings>
+    <Setting Name="WindowSizeH" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">681</Value>
+    </Setting>
+    <Setting Name="WindowSizeW" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">963</Value>
+    </Setting>
+    <Setting Name="WindowLocationX" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">100</Value>
+    </Setting>
+    <Setting Name="WindowLocationY" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">100</Value>
+    </Setting>
+    <Setting Name="GridViewIdWidth" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">40</Value>
+    </Setting>
+    <Setting Name="GridViewIdOrder" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">2</Value>
+    </Setting>
+    <Setting Name="GridViewNameWidth" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">160</Value>
+    </Setting>
+    <Setting Name="GridViewNameOrder" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">3</Value>
+    </Setting>
+    <Setting Name="GridViewDescriptionWidth" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">160</Value>
+    </Setting>
+    <Setting Name="GridViewDescriptionOrder" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">4</Value>
+    </Setting>
+    <Setting Name="GridViewCategoryWidth" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">60</Value>
+    </Setting>
+    <Setting Name="GridViewCategoryOrder" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">5</Value>
+    </Setting>
+    <Setting Name="GridViewUrlWidth" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">160</Value>
+    </Setting>
+    <Setting Name="GridViewUrlOrder" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">6</Value>
+    </Setting>
+    <Setting Name="GridViewStatusWidth" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">51</Value>
+    </Setting>
+    <Setting Name="GridViewStatusOrder" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">7</Value>
+    </Setting>
+    <Setting Name="DatabaseName" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="UrlPrefix" Type="System.String" Scope="User">
+      <Value Profile="(Default)">http://localhost:8087/</Value>
+    </Setting>
+    <Setting Name="TestRequest" Type="System.String" Scope="User">
+      <Value Profile="(Default)">2fe1933d-79b3-47b7-8f33-b789fdf432fa.mapdef?SERVICE=wms&amp;REQUEST=getmap&amp;VERSION=1.1.1&amp;LAYERS=Parcel,Landmark&amp;SRS=None&amp;BBOX=486125.24935000005,5540979.5728,514069.3070499998,5559608.9446&amp;WIDTH=600&amp;HEIGHT=400&amp;QUALITY=100&amp;FORMAT=image/jpeg</Value>
+    </Setting>
+    <Setting Name="BackgroundColor" Type="System.Drawing.Color" Scope="User">
+      <Value Profile="(Default)">Black</Value>
+    </Setting>
+    <Setting Name="SmallDifferenceColor" Type="System.Drawing.Color" Scope="User">
+      <Value Profile="(Default)">LightBlue</Value>
+    </Setting>
+    <Setting Name="BigDifferenceColor" Type="System.Drawing.Color" Scope="User">
+      <Value Profile="(Default)">Red</Value>
+    </Setting>
+    <Setting Name="AutoCheckUpdate" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="UpdateServerInfo" Type="System.String" Scope="User">
+      <Value Profile="(Default)">http://localhost:8087/</Value>
+    </Setting>
+    <Setting Name="GridViewUpToDateWidth" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">40</Value>
+    </Setting>
+    <Setting Name="GridViewUpToDateOrder" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">1</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>

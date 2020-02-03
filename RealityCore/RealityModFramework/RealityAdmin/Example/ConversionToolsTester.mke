@@ -1,0 +1,46 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+ 
+%include mdl.mki
+
+appName             = ConversionToolsTester
+baseDir             = $(_MakeFilePath)
+
+%include $(SrcRoot)imodel02/RealityCore/RealityModFramework/mki/RealityModFrameworkCommon.mki
+
+#----------------------------------------------------------------------
+#   Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------
+#    Append compiler options
+#----------------------------------------------------------------------
+#nameToDefine = UNICODE
+#%include cdefapnd.mki
+
+
+#----------------------------------------------------------------------
+#   Build source files
+#----------------------------------------------------------------------
+$(o)ConversionToolsTester$(oext) : $(baseDir)ConversionToolsTester.cpp
+
+#----------------------------------------------------------------------
+#   DLL/LIB creation
+#----------------------------------------------------------------------
+#EXE_UNICODE  = 1
+EXE_DEST     = $(o)
+EXE_NAME     = $(appName)
+EXE_OBJS     = $(o)ConversionToolsTester$(oext)
+#EXE_UNICODE  = 1
+
+LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext) \
+                       $(ContextDeliveryDir)RealityPlatform.lib \
+                       $(ContextDeliveryDir)RealityPlatformTools.lib 
+
+%include $(SharedMki)linktool.mki
+

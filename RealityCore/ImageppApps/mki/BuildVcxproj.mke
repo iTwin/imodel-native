@@ -1,0 +1,111 @@
+#----------------------------------------------------------------------
+#
+#     $Source: mki/BuildVcxproj.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  
+#----------------------------------------------------------------------
+#----------------------------------------------------------------------
+# This mke file just calls devenv/build to build the solution. All the 
+# compiler and linker settings are defined in the associated vcproj files.
+#----------------------------------------------------------------------
+%if !defined (IDE)
+    %if !defined (BuildContext)
+       %error This makefile must be launched from BentleyBuild
+    %endif
+    %if !defined (SlnFile)
+       %error "SlnFile" must be defined
+    %endif
+%else
+    BuildContext = $(OutBuildContexts)imageppapps/
+%endif
+
+#--------------------------------------------------------------------------------------------------
+#  Includes
+#--------------------------------------------------------------------------------------------------
+
+%include mdl.mki
+%include $(SrcRoot)Imageppapps/mki/ImageppAppsCommon.mki
+
+%if !defined(BUILD_USING_VS2012)
+    %error Visual Studio 2012 is required.
+%endif
+   
+
+%if $(TARGET_PROCESSOR_ARCHITECTURE)=="x64"
+    Platform = x64
+    OutSubDir = Winx64
+%else
+    Platform = Win32
+    OutSubDir = Winx86
+%endif
+   
+#
+#  FdSwitchDefault is defined in winntmdl.mki, but we do not want it because $(@D) is not valid for a vcproj
+#  >> FdSwitchDefault = -Fd$(@D)$(CCompPDBName).pdb
+#FdSwitchDefault = -Fd$(o)$(CCompPDBName).pdb
+# PDB options defined in vcproj
+FdSwitchDefault =
+
+BVC_Output       = $(o)
+BVC_Intermediate = $(o)
+BVC_CompOpts	 = $(PublicApiIncludes) $(cIncs) $(cDefs) $(cuser) $(ProductIncludes) $(CCCompOpts) 
+BVC_LinkOpts     =% $[CLinkOpts] -LIBPATH:$(ContextSubpartsLibs) -STACK:0x200000
+BVC_RcOpts       = -i${BuildContext}/PublicAPI/
+
+
+%if defined (IDE)
+
+    #augment path with the ProductDir so we can run our apps from the output location.
+    PATH_IDE = $(OutputRootDir)product/ImageppApps/;$[PATH]
+
+    OpenInIDE:
+        ~putenv BVC_Output=${BVC_Output}
+        ~putenv BVC_Intermediate=${BVC_Intermediate}
+        ~putenv BVC_CompOpts=${BVC_CompOpts}
+        ~putenv BVC_LinkOpts=${BVC_LinkOpts}
+        ~putenv BVC_RcOpts=${BVC_RcOpts}
+        ~putenv PATH=${PATH_IDE}
+        devenv \/nologo $(SlnFile)
+%else  
+    buildConfiguration = "CurrentEnv|$(Platform)"
+
+    %if defined(BMAKE_DELETE_ALL_TARGETS)
+        BuildOp = \/clean
+    %elif defined (BMAKE_BUILD_ALL)
+        BuildOp = \/rebuild
+    %else
+        BuildOp = \/build
+    %endif
+
+    always:
+        !~@task Transform -i:Input="@(SlnFile->'%(filename)')" -o:OutFilename="Output"
+
+    devenvOutDir = $(o)$(OutFilename)/
+
+    BuildOrRebuild:
+        !~@mkdir $(devenvOutDir)
+        >$(devenvOutDir)rundevenv.bat
+        SET BVC_Output=${BVC_Output}
+        SET BVC_Intermediate=${BVC_Intermediate}
+        SET BVC_CompOpts=${BVC_CompOpts}
+        SET BVC_LinkOpts=${BVC_LinkOpts}
+        SET BVC_RcOpts=${BVC_RcOpts}
+        call devenv "$(SlnFile)" $(BuildOp) $(buildConfiguration)
+        <
+        $(devenvOutDir)rundevenv.bat
+
+    # Normally individuall exe/dll/lib would have been wire by dlmlink.mki but since we are using vcproj 
+    # we do it here so our <bindings> could work. See ImageppApps.PartFile.xml
+    %if exists($(devenvOutDir)$(OutFilename).exe)
+        "$(ContextDeliveryDir)$(OutFilename).exe" : "$(devenvOutDir)$(OutFilename).exe"
+            $(LinkFirstDepToFirstTarget)
+    %endif   
+    
+    %if exists($(devenvOutDir)$(OutFilename).dll)
+        "$(ContextDeliveryDir)$(OutFilename).dll" : "$(devenvOutDir)$(OutFilename).dll"
+            $(LinkFirstDepToFirstTarget)
+    %endif   
+
+%endif        
+

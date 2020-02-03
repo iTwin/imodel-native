@@ -1,0 +1,1627 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (United States) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDR_MAINFRAME           ICON                    "res\\ActiveImage.ico"
+
+IDR_ACTIVETYPE          ICON                    "res\\ActiveImageDoc.ico"
+
+IDI_DIR                 ICON                    "res\\dir.ico"
+
+IDI_LOGICAL             ICON                    "res\\logical.ico"
+
+IDI_FILE                ICON                    "res\\file.ico"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_HMR                 BITMAP                  "res\\HMR.bmp"
+
+IDR_FILE_TOOLBAR        BITMAP                  "res\\FileToolbar.bmp"
+
+IDB_SPLASH              BITMAP                  "res\\Splash.bmp"
+
+IDB_TREELISTICONS       BITMAP                  "res\\TreeListIcons.bmp"
+
+IDR_NAV_TOOLBAR         BITMAP                  "res\\NavToolbar.bmp"
+
+IDB_PIN                 BITMAP                  "res\\pin.bmp"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Toolbar
+//
+
+IDR_FILE_TOOLBAR TOOLBAR 17, 15
+BEGIN
+    BUTTON      ID_FILE_NEW
+    BUTTON      ID_FILE_OPEN
+    BUTTON      ID_FILE_SAVE
+    BUTTON      ID_FILE_SAVE_AS
+    SEPARATOR
+    BUTTON      ID_INSERT_FROMTHISDOCUMENT
+    BUTTON      ID_INSERT_FROMEXTERNALDOCUMENT
+    BUTTON      ID_INSERT_NEWOBJECT
+END
+
+IDR_NAV_TOOLBAR TOOLBAR 16, 15
+BEGIN
+    BUTTON      ID_VIEW_ZOOMAREA
+    BUTTON      ID_VIEW_ZOOM11
+    BUTTON      ID_VIEW_ZOOMIN
+    BUTTON      ID_VIEW_ZOOMOUT
+    BUTTON      ID_VIEW_FIT
+    BUTTON      ID_VIEW_REDRAW
+    BUTTON      ID_VIEW_MAGNIFIER
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_MAINFRAME MENU
+BEGIN
+    POPUP "&File"
+    BEGIN
+        MENUITEM "&New",                        57600
+        MENUITEM "&Open...",                    57601
+        MENUITEM "       As Read Only",         32906
+        MENUITEM "       Apply Hgr/Twf/Ers on All files", ID_FILE_OVERWRITEHGRTWF
+        MENUITEM "Open Internet File...",       ID_FILE_OPENINTERNETFILE
+        MENUITEM "&Close",                      57600
+        MENUITEM SEPARATOR
+        MENUITEM "&Save",                       57603
+        MENUITEM "Save &As",                    32914
+        MENUITEM "Save &Region",                32903
+        MENUITEM "Convert &File To File",       32879
+        MENUITEM "Convert C&hannels To File",   32923
+        MENUITEM SEPARATOR
+        MENUITEM "&Print...\tCtrl+P",           57607
+        MENUITEM "Print Pre&view",              57609
+        MENUITEM "P&rint Setup...",             57606
+        MENUITEM SEPARATOR
+        POPUP "Preferences"
+        BEGIN
+            MENUITEM "Cache Compressions",          32911
+            MENUITEM "Use Transparency",            32910, CHECKED
+            MENUITEM "Use Reprojection ...",        32916, CHECKED
+            POPUP "View resampling"
+            BEGIN
+                MENUITEM "Nearest Neighbor",            32919
+                MENUITEM "Average",                     32920
+                MENUITEM "Bilinear",                    32921
+                MENUITEM "Convolution",                 32922
+            END
+            MENUITEM "Fit Image on view",           32934, CHECKED
+        END
+        MENUITEM "Info Date/Time",              32918
+        MENUITEM SEPARATOR
+        MENUITEM "Recent File",                 57616, INACTIVE
+        MENUITEM SEPARATOR
+        MENUITEM "E&xit",                       57665
+    END
+    POPUP "&Edit"
+    BEGIN
+        MENUITEM "Undo",                        ID_MENU_EDIT_UNDO
+        MENUITEM "Redo",                        ID_MENU_EDIT_REDO
+        MENUITEM SEPARATOR
+        MENUITEM "Add ReferenceToRaster",       ID_MENU_EDIT_ADDREFERENCETORASTER
+        MENUITEM "Move ReferenceToRaster",      ID_MENU_EDIT_MOVEREFERENCETORASTER
+        MENUITEM SEPARATOR
+        MENUITEM "C&lear",                      30000
+        MENUITEM "&Copy",                       30001
+        MENUITEM "&Paste",                      30002
+        MENUITEM SEPARATOR
+        POPUP "Add Shape"
+        BEGIN
+            MENUITEM "Add Rectangular Shape",       30003
+            MENUITEM "Add Rectangular Holed Shape", 30004
+            MENUITEM "Add Circular Shape",          30029
+            MENUITEM "Add Circular Holed Shape",    30030
+            MENUITEM "Add Polygon Shape",           30031
+            MENUITEM "Add Polygon Holed Shape",     30032
+        END
+        MENUITEM "Remove Clipping",             ID_EDIT_REMOVE_CLIPPING
+        MENUITEM SEPARATOR
+        MENUITEM "Compute &Histogram",          32922
+        MENUITEM SEPARATOR
+        POPUP "Ch&ange Sub Sampling"
+        BEGIN
+            MENUITEM "Nearest",                     ID_MENU_EDIT_SUBSAMPLING_NEAREST, CHECKED
+            MENUITEM "Average",                     ID_MENU_EDIT_SUBSAMPLING_AVERAGE, CHECKED
+            MENUITEM "Bilinear",                    ID_MENU_EDIT_SUBSAMPLING_BILINEAR, CHECKED
+            MENUITEM "Bicubic",                     ID_MENU_EDIT_SUBSAMPLING_BICUBIC, CHECKED
+        END
+        MENUITEM SEPARATOR
+        MENUITEM "P&roperties...",              32782
+        MENUITEM SEPARATOR
+        POPUP "Reprojection Model"
+        BEGIN
+            MENUITEM "Exact Reprojection",          ID_REPROJECTIONMODEL_EXACTREPROJECTION, CHECKED
+            MENUITEM "Projective Reprojection",     ID_REPROJECTIONMODEL_AFFINE
+            MENUITEM "Polynomial Reprojection",     ID_REPROJECTIONMODEL_POLYNOMIALREPROJECTION
+            MENUITEM "Best Model",                  ID_REPROJECTIONMODEL_BESTMODEL
+        END
+        MENUITEM "Reproject...",                ID_EDIT_REPROJECT
+    END
+    POPUP "&View"
+    BEGIN
+        MENUITEM "&Repaint",                    32786
+        MENUITEM SEPARATOR
+        MENUITEM "Zoom &Area",                  30020
+        MENUITEM "Zoom &1:1",                   30026
+        MENUITEM "Zoom &In",                    30023
+        MENUITEM "Zoom &Out",                   30024
+        MENUITEM "&Fit to screen",              32861, INACTIVE
+        MENUITEM SEPARATOR
+        MENUITEM "Recenter &X, Y",              30022
+        MENUITEM "Scale",                       ID_VIEW_SCALE
+        MENUITEM SEPARATOR
+        MENUITEM "&Layers...",                  ID_VIEW_LAYERS
+        MENUITEM "&Display Annotation Icons",   ID_DISPLAY_ANNOTATION_ICONS, CHECKED
+        MENUITEM SEPARATOR
+        POPUP "View Origin"
+        BEGIN
+            MENUITEM "Top-Left",                    32877
+            MENUITEM "Bottom-Left",                 32878
+        END
+        POPUP "Display Bits"
+        BEGIN
+            MENUITEM "Display in 8-bits &Grayscale", 32865
+            MENUITEM "Display in &8-bits",          32845
+            MENUITEM "Display in &8-bits Dithered", 32902
+            MENUITEM "Display in &24-bits",         32866
+            MENUITEM "Automatic",                   32881
+        END
+        POPUP "Tile Size"
+        BEGIN
+            MENUITEM "32 X 32",                     32850
+            MENUITEM "64 X 64",                     32851
+            MENUITEM "128 X 128",                   32852
+            MENUITEM "256 X 256",                   32853
+            MENUITEM "1024 X 1024",                 32854
+            MENUITEM "2048 X 2048",                 32855
+            MENUITEM "4096 X 4096",                 32856
+            MENUITEM "Custom",                      32857
+        END
+        MENUITEM SEPARATOR
+        MENUITEM "Default &Background Color",   32868
+        POPUP "1Bit Foreground Mode"
+        BEGIN
+            MENUITEM "Off",                         ID_VIEW_1BIT_EQUALWEIGHT, CHECKED
+            MENUITEM "Foreground",                  ID_VIEW_1BIT_FOREGROUND
+            MENUITEM "Background",                  ID_VIEW_1BIT_BACKGROUND
+        END
+        POPUP "Color Space Conversion"
+        BEGIN
+            MENUITEM "Auto",                        ID_CHANGECOLORSPACE_AUTO, CHECKED
+            MENUITEM "Original",                    ID_CHANGECOLORSPACE_ORIGINAL
+            MENUITEM "Rle",                         ID_CHANGECOLORSPACE_RLE
+            MENUITEM "RleLine",                     ID_CHANGECOLORSPACE_RLELINE
+            MENUITEM "Gray1",                       ID_CHANGECOLORSPACE_GRAY1
+            MENUITEM "Gray8",                       ID_CHANGECOLORSPACE_GRAY8
+            MENUITEM "RGB",                         ID_CHANGECOLORSPACE_RGB
+            MENUITEM "RGBA",                        ID_CHANGECOLORSPACE_RGBA
+            MENUITEM "YCC",                         ID_CHANGECOLORSPACE_YCC
+            MENUITEM "YCCA8",                       ID_CHANGECOLORSPACE_YCCA8
+        END
+        MENUITEM SEPARATOR
+        MENUITEM "RemoveTransparency 1Bit",     32904
+        MENUITEM "Pre-calculate display",       32905, CHECKED
+    END
+    POPUP "Info"
+    BEGIN
+        MENUITEM "Extent",                      32929
+        MENUITEM "Geocoding Info",              32930
+        MENUITEM "TextLog",                     ID_INFO_TEXTLOG
+        MENUITEM "Image Info",                  ID_INFO_IMAGEINFO
+        MENUITEM "Reprojection Information",    ID_INFO_REPROJECTIONINFORMATION
+    END
+    POPUP "&Insert"
+    BEGIN
+        MENUITEM "From this &Document...",      32798
+        MENUITEM "From &External Document",     32799
+        MENUITEM "New &Mosaic",                 32800
+    END
+    POPUP "&Object", INACTIVE
+    BEGIN
+        MENUITEM "Choose...",                   32801
+        MENUITEM "Export...",                   32802
+        MENUITEM "Properties...",               32803
+        MENUITEM "Filter",                      32804
+    END
+    POPUP "Internet"
+    BEGIN
+        MENUITEM "Add",                         32870
+    END
+    POPUP "&ToolBars"
+    BEGIN
+        MENUITEM "File Toolbar",                32808
+        MENUITEM "Navigation Toolbar",          30019
+        MENUITEM "Object Toolbar",              32810
+    END
+    MENUITEM "Stress",                      32888
+    POPUP "Options"
+    BEGIN
+        POPUP "Load in Memory"
+        BEGIN
+            MENUITEM "Disabled",                    ID_OPTIONS_LOADINMEMORY_DISABLED, CHECKED
+            MENUITEM "Image",                       ID_OPTIONS_LOADINMEMORY_IMAGE
+            MENUITEM "Strip",                       ID_OPTIONS_LOADINMEMORY_STRIP
+        END
+        MENUITEM "Best Contrast",               ID_OPTIONS_BESTCONTRAST
+        MENUITEM "Disable Cache",               ID_OPTIONS_DISABLECACHE
+        POPUP "Cached Resolutions"
+        BEGIN
+            MENUITEM "16384",                       32939
+            MENUITEM "8192",                        32940
+            MENUITEM "4096",                        32941
+            MENUITEM "2048",                        32942
+            MENUITEM "1024",                        32943
+            MENUITEM "512",                         32944
+            MENUITEM "256",                         32945
+            MENUITEM "128",                         32946
+            MENUITEM "Normal Cache",                32947
+        END
+        POPUP "3Band 16bit to RGB"
+        BEGIN
+            MENUITEM "None",                        ID_3BAND16BITTORGB_NONE
+            MENUITEM "Native Scan",                 ID_3BAND16BITTORGB_NATIVESCAN
+            MENUITEM "0.1",                         ID_3BAND16BITTORGB_0
+            MENUITEM "0.01",                        ID_3BAND16BITTORGB_1
+            MENUITEM "0.001",                       ID_3BAND16BITTORGB_2
+            MENUITEM SEPARATOR
+            MENUITEM "UsedSameValue",               ID_3BAND16BITTORGB_USEDSAMEVALUE
+        END
+    END
+    POPUP "&Redesign"
+    BEGIN
+        MENUITEM "Draw CopyFrom",               ID_REDESIGN_DRAW_ORIGINAL_COPYFROM, CHECKED
+        MENUITEM "Draw 10 times",               ID_REDESIGN_DRAW_10_TIMES, CHECKED
+    END
+    POPUP "&Help"
+    BEGIN
+        MENUITEM "About...",                    57664
+        MENUITEM SEPARATOR
+        MENUITEM "Test Display",                32887
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_ABOUTBOX DIALOGEX 0, 0, 217, 121
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "About ActiveImage"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    ICON            IDR_MAINFRAME,IDC_STATIC,7,48,20,20
+    DEFPUSHBUTTON   "OK",IDOK,83,101,50,14,WS_GROUP
+    LTEXT           "8,11,99,99\nBentley Systems Incorporated\nCopyright(c) 2013",IDC_VERSION_INFO,31,48,165,39
+    CONTROL         IDB_HMR,IDC_STATIC,"=",0x6,96,30,0,513
+END
+
+IDD_OBJECT_TOOLBAR DIALOGEX 0, 0, 112, 218
+STYLE DS_SETFONT | WS_CHILD
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    CONTROL         "Tree1",IDC_OBJECT_TREE,"SysTreeView32",TVS_HASBUTTONS | TVS_HASLINES | TVS_LINESATROOT | TVS_EDITLABELS | TVS_SHOWSELALWAYS | WS_BORDER | WS_TABSTOP,5,5,102,208,WS_EX_DLGMODALFRAME | WS_EX_CLIENTEDGE
+END
+
+IDD_INTENSITY DIALOG 0, 0, 187, 46
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Intensity"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,77,25,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,130,25,50,14
+    CONTROL         "Slider1",IDC_SLIDER1,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,7,7,173,16
+END
+
+IDD_DSTRESS DIALOG 0, 0, 97, 38
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "Stress apps..."
+FONT 8, "MS Sans Serif"
+BEGIN
+    PUSHBUTTON      "Stop Stress",ID_BT_STOP,24,12,50,14
+END
+
+IDD_DFILE_OPEN DIALOG 0, 0, 216, 199
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Dialog"
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL         "",IDC_HMRFILEOPENCTRLCTRL,
+                    "{086E1BD9-60E3-11D1-8C6B-006008482D2E}",WS_TABSTOP,7,7,202,185
+END
+
+IDD_HISTOGRAM_SCALING DIALOGEX 0, 0, 319, 403
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Histogram Scaling"
+FONT 8, "MS Sans Serif", 0, 0, 0x0
+BEGIN
+    CONTROL         "Input Range Clipping",IDC_RD_INPUT_RANGE_CLIPPING,
+                    "Button",BS_AUTORADIOBUTTON | WS_DISABLED | WS_GROUP,192,147,82,10
+    CONTROL         "Output Range Compression",IDC_RD_OUTPUT_RANGE_COMPRESSION,
+                    "Button",BS_AUTORADIOBUTTON | WS_DISABLED,192,164,103,10
+    EDITTEXT        IDC_ED_MIN_VALUE,76,146,33,14,ES_AUTOHSCROLL | ES_NUMBER
+    EDITTEXT        IDC_ED_MAX_VALUE,76,163,33,14,ES_AUTOHSCROLL | ES_NUMBER
+    DEFPUSHBUTTON   "OK",IDOK,202,382,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,262,382,50,14
+    LTEXT           "Start Index:",IDC_STATIC_START_INDEX,15,148,37,8
+    LTEXT           "End Index:",IDC_STATIC_END_INDEX,15,165,35,8
+    CONTROL         "",IDC_HISTOGRAM_DISPLAY,"Static",SS_BLACKRECT | SS_NOTIFY,4,23,308,104
+    COMBOBOX        IDC_CMB_CHANNEL,81,4,121,67,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Channel",IDC_STATIC,47,7,27,8
+    PUSHBUTTON      "Dump",IDC_BUTTON1,257,7,55,13
+    CONTROL         "",IDC_SLIDER_OPACITY,"msctls_trackbar32",TBS_BOTH | WS_TABSTOP,61,216,189,23
+    LTEXT           "Slide Opacity",IDC_STATIC_OPACITY,15,226,42,8
+    CONTROL         "",IDC_SLIDER_DESATURATION,"msctls_trackbar32",TBS_BOTH | WS_TABSTOP,61,243,189,23
+    LTEXT           "Desaturation",IDC_STATIC_DESATURATION,15,253,41,8
+    EDITTEXT        IDC_EDIT_OPACITY,258,223,30,13,ES_AUTOHSCROLL | ES_READONLY | NOT WS_TABSTOP
+    EDITTEXT        IDC_EDIT_OPACITY2,258,249,30,13,ES_AUTOHSCROLL | ES_READONLY | NOT WS_TABSTOP
+    EDITTEXT        IDC_ED_INTERVAL_MIN0,76,322,33,12,ES_AUTOHSCROLL
+    LTEXT           "Interval:",IDC_STATIC_INTERVAL,15,323,26,8
+    GROUPBOX        "Lightness / Density Slicing",IDC_STATIC_GROUP_DENSITY_SLICING,7,132,305,142
+    EDITTEXT        IDC_ED_INTERVAL_MAX0,111,322,34,12,ES_AUTOHSCROLL
+    LTEXT           "Max:",IDC_STATIC_MAX_CHANNEL0,111,310,16,8
+    EDITTEXT        IDC_ED_CONTRAST_MIN0,76,338,34,12,ES_AUTOHSCROLL
+    LTEXT           "Contrast Interval:",IDC_STATIC_CONTRAST,15,340,56,8
+    EDITTEXT        IDC_ED_CONTRAST_MAX0,111,338,34,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_ED_GAMMA_FACTOR0,76,358,34,12,ES_AUTOHSCROLL
+    LTEXT           "Gamma Factor:",IDC_STATIC_GAMMA_FACTOR,15,361,51,8
+    GROUPBOX        "Lightness / Contrast Stretch",IDC_STATIC_GROUP_CONTRAST_STRETCH,7,285,305,92
+    CONTROL         "",IDC_BUTTON_START_COLOR,"Button",BS_OWNERDRAW | WS_TABSTOP,192,182,17,15
+    CONTROL         "",IDC_BUTTON_END_COLOR,"Button",BS_OWNERDRAW | WS_TABSTOP,192,198,17,15
+    LTEXT           "Start Color (RGB):",IDC_STATIC_START_COLOR,15,184,57,8
+    LTEXT           "End Color (RGB):",IDC_STATIC_END_COLOR,15,201,55,8
+    EDITTEXT        IDC_ED_START_COLOR_R,76,182,33,14,ES_AUTOHSCROLL | ES_READONLY | ES_WANTRETURN | ES_NUMBER
+    EDITTEXT        IDC_ED_START_COLOR_G,114,182,33,14,ES_AUTOHSCROLL | ES_READONLY | ES_WANTRETURN | ES_NUMBER
+    EDITTEXT        IDC_ED_START_COLOR_B,152,182,33,14,ES_AUTOHSCROLL | ES_READONLY | ES_WANTRETURN | ES_NUMBER
+    EDITTEXT        IDC_ED_END_COLOR_R,76,198,33,14,ES_AUTOHSCROLL | ES_READONLY | ES_WANTRETURN | ES_NUMBER
+    EDITTEXT        IDC_ED_END_COLOR_G,114,198,33,14,ES_AUTOHSCROLL | ES_READONLY | ES_WANTRETURN | ES_NUMBER
+    EDITTEXT        IDC_ED_END_COLOR_B,152,198,33,14,ES_AUTOHSCROLL | ES_READONLY | ES_WANTRETURN | ES_NUMBER
+    LTEXT           "Min",IDC_STATIC_MIN_CHANNEL0,76,310,12,8
+    LTEXT           "Channel 0",IDC_STATIC_CHANNEL0,76,299,33,8
+    EDITTEXT        IDC_ED_INTERVAL_MIN1,150,322,33,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_ED_INTERVAL_MAX1,186,322,34,12,ES_AUTOHSCROLL
+    LTEXT           "Max:",IDC_STATIC_MAX_CHANNEL1,186,310,16,8
+    EDITTEXT        IDC_ED_CONTRAST_MIN1,150,338,34,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_ED_CONTRAST_MAX1,186,338,34,12,ES_AUTOHSCROLL
+    LTEXT           "Min",IDC_STATIC_MIN_CHANNEL1,150,310,12,8
+    LTEXT           "Channel 1",IDC_STATIC_CHANNEL1,150,299,33,8
+    EDITTEXT        IDC_ED_INTERVAL_MIN2,224,322,33,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_ED_INTERVAL_MAX2,259,322,34,12,ES_AUTOHSCROLL
+    LTEXT           "Max:",IDC_STATIC_MAX_CHANNEL2,259,310,16,8
+    EDITTEXT        IDC_ED_CONTRAST_MIN2,224,338,34,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_ED_CONTRAST_MAX2,259,338,34,12,ES_AUTOHSCROLL
+    LTEXT           "Min",IDC_STATIC_MIN_CHANNEL2,224,310,12,8
+    LTEXT           "Channel 2",IDC_STATIC_CHANNEL2,224,299,33,8
+    EDITTEXT        IDC_ED_GAMMA_FACTOR1,150,358,34,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_ED_GAMMA_FACTOR2,224,358,34,12,ES_AUTOHSCROLL
+END
+
+IDD_DIALOG_CACHE DIALOG 0, 0, 278, 127
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Cache Options"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,110,106,50,14
+    LTEXT           "Codecs",IDC_STATIC,143,66,118,8
+    COMBOBOX        IDC_COMBO_PIXELTYPE,16,76,120,75,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Color space",IDC_STATIC,16,66,118,8
+    COMBOBOX        IDC_COMBO_CODEC,142,76,120,91,CBS_DROPDOWNLIST | CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "Auto destroy",IDC_CHECK_AUTODESTROY,"Button",BS_AUTOCHECKBOX | WS_DISABLED | WS_TABSTOP,189,28,70,12
+    COMBOBOX        IDC_COMBO_CACHEFORMAT,17,29,120,30,CBS_DROPDOWNLIST | CBS_SORT | WS_DISABLED | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Cache format",IDC_STATIC,18,18,118,8
+    GROUPBOX        "Compression options",IDC_STATIC,7,52,264,45
+    GROUPBOX        "General",IDC_STATIC,7,6,263,42
+END
+
+IDD_OPEN_RAWFILE DIALOG 0, 0, 170, 189
+STYLE DS_SYSMODAL | DS_SETFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Open Raw File"
+FONT 8, "MS Sans Serif"
+BEGIN
+    COMBOBOX        IDC_PIXELTYPE,15,47,141,71,CBS_DROPDOWNLIST | CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
+    EDITTEXT        IDC_WIDTH,41,85,40,14,ES_AUTOHSCROLL | ES_NUMBER
+    EDITTEXT        IDC_HEIGHT,117,85,40,14,ES_AUTOHSCROLL | ES_NUMBER
+    CONTROL         "Use sister file",IDC_USE_SISTER_FILE,"Button",BS_AUTOCHECKBOX | WS_DISABLED | WS_TABSTOP,14,100,57,10
+    CONTROL         "AutoDetect",IDC_AUTODETECT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,111,52,10
+    PUSHBUTTON      "Swap",IDC_SWAP,117,105,40,14
+    EDITTEXT        IDC_OFFSET,41,140,40,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_FOOTER,115,140,40,14,ES_AUTOHSCROLL
+    DEFPUSHBUTTON   "OK",IDOK,30,168,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,89,168,50,14
+    GROUPBOX        "Image Size",IDC_STATIC,7,71,156,54
+    LTEXT           "Width :",IDC_STATIC,14,87,24,8
+    LTEXT           "Height :",IDC_STATIC,89,87,26,8
+    GROUPBOX        "Pixel Type",IDC_STATIC,7,34,156,34
+    LTEXT           "Offset :",IDC_STATIC,15,143,24,8
+    GROUPBOX        "Header",IDC_STATIC,7,128,156,33
+    LTEXT           "Footer :",IDC_STATIC,88,143,25,8
+    LTEXT           "File name :",IDC_STATIC,13,7,35,8
+    LTEXT           "Static",IDC_FILENAME,55,7,108,8
+    LTEXT           "FileSize    :",IDC_STATIC,13,18,35,8
+    LTEXT           "Static",IDC_FILESIZE,55,18,108,8
+END
+
+IDD_DLG_SMALL_COMPRESSION DIALOG 0, 0, 280, 26
+STYLE DS_SETFONT | WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Sans Serif"
+BEGIN
+    GROUPBOX        "Compression",IDC_STATIC,0,0,279,26
+    LTEXT           "Codec",IDC_STATIC,5,10,22,8
+    COMBOBOX        IDC_CMB_COMPRESSION,50,8,225,76,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+END
+
+IDD_DLG_PROGRESS DIALOG 0, 0, 307, 55
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Progression"
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL         "Progress1",IDC_PROGRESS_BAR,"msctls_progress32",WS_BORDER,7,19,293,10
+    LTEXT           "Time to do",IDC_DURATION,7,7,239,8
+    PUSHBUTTON      "Stop",IDC_STOP_PROGRESSION,128,35,50,14
+    CTEXT           " .................... ",IDC_DRAWSIGNAL,249,7,51,8
+END
+
+IDD_DLG_PIXEL_TYPE DIALOG 0, 0, 280, 28
+STYLE DS_SETFONT | WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Sans Serif"
+BEGIN
+    GROUPBOX        "Color",IDC_STATIC,0,0,279,27
+    LTEXT           "Color space",IDC_STATIC,5,10,38,8
+    COMBOBOX        IDC_CMB_PIXEL_TYPE,50,8,225,72,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+END
+
+IDD_DLG_IMG_SIZE DIALOGEX 0, 0, 280, 102
+STYLE DS_SETFONT | WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    GROUPBOX        "Size / Scale",IDC_STATIC,0,0,279,98
+    GROUPBOX        "Image size ",IDC_STATIC,7,13,103,62,WS_GROUP
+    LTEXT           "Width",IDC_STATIC,12,27,20,8
+    EDITTEXT        IDC_EDIT_WIDTH,38,25,59,12,ES_AUTOHSCROLL
+    LTEXT           "Heigth",IDC_STATIC,12,42,22,8
+    EDITTEXT        IDC_EDIT_HEIGHT,38,42,59,12,ES_AUTOHSCROLL
+    CONTROL         "Fix Image Size",IDC_CHK_FIX_IMAGE_SIZE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,59,64,10
+    GROUPBOX        "Scaling ",IDC_STATIC,115,13,107,62,WS_GROUP
+    LTEXT           "Scale X",IDC_STATIC,119,27,26,8
+    EDITTEXT        IDC_EDIT_SCALE_X,150,25,61,12,ES_AUTOHSCROLL
+    LTEXT           "Scale Y",IDC_STATIC,119,41,26,8
+    EDITTEXT        IDC_EDIT_SCALE_Y,150,41,61,12,ES_AUTOHSCROLL
+    CONTROL         "Fix Scaling",IDC_CHK_FIX_IMAGE_SCALE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,123,59,64,10
+    CONTROL         "Resample",IDC_CHK_RESAMPLE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,225,18,45,10
+    CONTROL         "Maintain aspect ratio",IDC_CHK_ASPECT_RATIO,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,78,85,10
+    PUSHBUTTON      "Reset default value",IDC_RESET,117,79,94,11
+END
+
+IDD_DLG_GEO_REF_FORMAT DIALOG 0, 0, 280, 28
+STYLE DS_SETFONT | WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Sans Serif"
+BEGIN
+    GROUPBOX        "Geo Reference ",IDC_STATIC,0,0,279,27
+    LTEXT           "Geo Reference Format",IDC_STATIC,5,11,73,8
+    COMBOBOX        IDC_CMB_GEO_REF_FORMAT,84,9,186,72,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+END
+
+IDD_DLG_EXPORT_INTEGRITY DIALOG 0, 0, 210, 173
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Certify export integrity"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,103,154,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,154,154,50,14
+    CONTROL         "Compare source from destination",IDC_CHK_GEOREF_COMP,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,19,119,10
+    CONTROL         "Image compare",IDC_CHK_IMAGE_COMP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,54,66,10
+    COMBOBOX        IDC_COMBO_IMAGE_COMP_METHOD,85,52,114,41,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    GROUPBOX        "Image integrity",IDC_STATIC,3,39,201,111
+    LTEXT           "min",IDC_STATIC_THRESHOLD_MIN,69,89,12,8
+    EDITTEXT        IDC_EDIT_THRESHLOD_MIN,85,87,25,12,ES_AUTOHSCROLL | ES_READONLY
+    CONTROL         "Spin1",IDC_SPINIDC_THRESHLOD_MIN,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS,109,87,9,13
+    LTEXT           "max",IDC_STATIC_THRESHOLD_MAX,127,89,14,8
+    EDITTEXT        IDC_EDIT_THRESHLOD_MAX,145,87,25,12,ES_AUTOHSCROLL | ES_READONLY
+    CONTROL         "Spin1",IDC_SPINIDC_THRESHLOD_MAX,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS,169,87,9,13
+    LTEXT           "Error tolerance (%)",IDC_STATIC_ERROR_TOLERENCE,23,72,58,8
+    EDITTEXT        IDC_EDIT_ERROR_TOLERENCE,85,70,25,12,ES_AUTOHSCROLL | ES_READONLY
+    CONTROL         "Spin1",IDC_SPIN_ERROR_TOLERENCE,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS,109,70,9,13
+    CONTROL         "Threshold",IDC_CHK_TRESHOLD,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,89,47,10
+    GROUPBOX        "Georeference integrity",IDC_STATIC,3,6,201,29
+    CONTROL         "Save image result into",IDC_CHK_SAVE_IMAGE_RESULT,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,116,85,10
+    EDITTEXT        IDC_EDIT_IMAGE_RESULT_PATH,23,131,145,12,ES_AUTOHSCROLL | ES_READONLY
+    PUSHBUTTON      "Browse",IDC_BT_BROWSE,168,131,31,12
+END
+
+IDD_DLG_EXPORT_DIALOG DIALOGEX 0, 0, 283, 70
+STYLE DS_SETFONT | DS_MODALFRAME | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_CONTROLPARENT
+CAPTION "Save as ..."
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "&Select...",IDC_EXPORTAS_SELECT,170,12,50,14
+    GROUPBOX        "Output",IDC_STATIC,1,1,228,66
+    LTEXT           "File :",IDC_STATIC,7,15,16,8
+    EDITTEXT        IDC_EXPORTAS_FOLDER,32,12,128,14,ES_AUTOHSCROLL
+    LTEXT           "&Format:",IDC_STATIC,7,34,24,8
+    COMBOBOX        IDC_EXPORTAS_FORMAT,32,33,188,134,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "&Use best options",IDC_EXPORTAS_BESTOPTION,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,50,69,10
+    PUSHBUTTON      "&Export",IDC_EXPORTAS_EXPORT,232,5,46,14
+    PUSHBUTTON      "Cancel",IDCANCEL,232,24,45,14
+END
+
+IDD_DLG_ENCODING DIALOG 0, 0, 280, 43
+STYLE DS_SETFONT | WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Sans Serif"
+BEGIN
+    GROUPBOX        "Encoding",IDC_STATIC,0,0,279,42
+    LTEXT           "Method",IDC_STATIC,5,10,25,8
+    COMBOBOX        IDC_CMB_ENCODING,50,8,225,71,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Resampling",IDC_STATIC,5,26,38,8
+    COMBOBOX        IDC_CMB_RESAMPLING,50,24,225,71,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+END
+
+IDD_DLG_DESTINATION DIALOG 0, 0, 279, 28
+STYLE DS_SETFONT | WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Sans Serif"
+BEGIN
+    GROUPBOX        "Export Location",IDC_STATIC,0,0,279,27
+    LTEXT           "Path",IDC_STATIC,6,11,16,8
+    EDITTEXT        IDC_EDIT_NEW_PATH,25,10,217,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "Browse",IDC_BT_BROWSE,243,10,31,12
+END
+
+IDD_DLG_CONVERT_TO DIALOG 0, 0, 280, 87
+STYLE DS_SETFONT | DS_MODALFRAME | DS_SETFOREGROUND | DS_CENTER | DS_CENTERMOUSE | WS_POPUP | WS_VISIBLE | WS_CAPTION
+CAPTION "Convert to..."
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "File Format",IDC_STATIC,5,9,35,8
+    COMBOBOX        IDC_CMB_FILE_FORMAT,44,6,232,81,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    GROUPBOX        "Destination File Options",IDC_STATIC,4,24,175,45
+    CONTROL         "Retain extension",IDC_RD_RETAIN_EXT,"Button",BS_AUTORADIOBUTTON | WS_GROUP,10,34,69,10
+    CONTROL         "Replace extension",IDC_RD_REPLACE_EXTENSION,"Button",BS_AUTORADIOBUTTON,94,34,75,10
+    CONTROL         "Resume export in file name",IDC_CHK_RESUME_IN_FILENAME,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,45,101,10
+    CONTROL         "Save at source location",IDC_CHK_KEEP_SRCPATH,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,56,91,10
+    CONTROL         "Use best options",IDC_CHK_BEST_OPTION,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,73,69,10
+    CONTROL         "Export to all possibilities",IDC_CHK_ALL_POSSIBILITY,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,87,73,89,10
+    CONTROL         "Certify export integrity",IDC_CHK_EXPORT_INTEGRITY,
+                    "Button",BS_AUTOCHECKBOX | BS_PUSHLIKE | WS_TABSTOP,184,28,91,12
+    PUSHBUTTON      "Cancel",IDC_BT_CANCEL,184,42,91,12
+    PUSHBUTTON      "OK",IDC_BT_OK,184,56,91,12
+END
+
+IDD_DLG_COMPRESSION DIALOGEX 0, 0, 280, 65
+STYLE DS_SETFONT | WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    GROUPBOX        "Compression",IDC_STATIC,0,0,279,64
+    LTEXT           "Codec",IDC_STATIC,5,10,22,8
+    COMBOBOX        IDC_CMB_COMPRESSION,50,8,225,76,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Quality",IDC_STATIC,5,26,23,8
+    LTEXT           "Low",IDC_STATIC,50,26,15,8
+    GROUPBOX        "",IDC_STATIC,69,24,186,10
+    LTEXT           "High",IDC_STATIC,257,26,18,8
+    EDITTEXT        IDC_EDIT_QUALITY,5,37,43,14,ES_READONLY
+    CONTROL         "Spin1",IDC_SPIN_SET_QUALITY,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_ARROWKEYS,38,37,9,14
+    CONTROL         "Slider1",IDC_COMPRESSION_QUALITY_SLIDER,
+                    "msctls_trackbar32",TBS_AUTOTICKS | TBS_TOP | TBS_ENABLESELRANGE | WS_TABSTOP,50,37,225,14,WS_EX_CLIENTEDGE
+    LTEXT           "File",IDC_STATIC,5,52,12,8
+    LTEXT           "Small",IDC_STATIC,50,52,18,8
+    GROUPBOX        "",IDC_STATIC,69,50,186,10
+    LTEXT           "Large",IDC_STATIC,257,52,20,8
+END
+
+IDD_DLG_BLOCK DIALOG 0, 0, 280, 27
+STYLE DS_SETFONT | WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Sans Serif"
+BEGIN
+    GROUPBOX        "Block",IDC_STATIC,0,0,279,27
+    COMBOBOX        IDC_COMBO_BLOCK_TYPE,5,10,117,59,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Width",IDC_STATIC,126,12,20,8
+    EDITTEXT        IDC_EDIT_WIDTH,149,10,50,12,ES_NUMBER
+    CONTROL         "Spin1",IDC_SPIN_WIDTH,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_ARROWKEYS,188,10,10,12
+    LTEXT           "Heigth",IDC_STATIC,201,12,22,8
+    EDITTEXT        IDC_EDIT_HEIGHT,224,10,50,12,ES_NUMBER
+    CONTROL         "Spin1",IDC_SPIN_HEIGHT,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_ARROWKEYS,264,10,9,12
+END
+
+IDD_DLG_SUBRES_PIXEL_TYPE DIALOGEX 0, 0, 280, 31
+STYLE DS_SETFONT | WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    GROUPBOX        "Sub Res Color",IDC_STATIC,0,0,279,27
+    LTEXT           "Color space",IDC_STATIC,6,9,38,8
+    COMBOBOX        IDC_CMB_PIXEL_TYPE,50,8,225,72,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+END
+
+IDD_DLG_COLOR_REPLACEMENT DIALOGEX 0, 0, 98, 111
+STYLE DS_SETFONT | DS_CENTER | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_TOOLWINDOW
+CAPTION "Dialog"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    PUSHBUTTON      "Done",IDC_BT_CLOSE,10,91,76,12
+    PUSHBUTTON      "Add",IDC_BT_CUBE_SELECT,10,16,76,12
+    GROUPBOX        "Image Color Selection",IDC_STATIC,3,2,87,44
+    GROUPBOX        "New color",IDC_STATIC,4,50,87,37
+    PUSHBUTTON      "Select new color",IDC_BT_NEW_COLOR,10,66,76,12
+    PUSHBUTTON      "Remove",IDC_BT_CUBE_REMOVE,10,29,76,12
+END
+
+IDD_DISPLAY_EXTENT DIALOG 0, 0, 241, 78
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Display Extent"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,103,52,50,14
+    LTEXT           "Min X,Y",IDC_STATIC,7,7,34,15
+    LTEXT           "Max X,Y",IDC_STATIC,7,26,34,15
+    EDITTEXT        IDC_DISPLAY_EXTENT_MIN_X,41,7,93,13,ES_AUTOHSCROLL | ES_READONLY
+    EDITTEXT        IDC_DISPLAY_EXTENT_MIN_Y,141,7,93,13,ES_AUTOHSCROLL | ES_READONLY
+    EDITTEXT        IDC_DISPLAY_EXTENT_MAX_X,42,24,93,13,ES_AUTOHSCROLL | ES_READONLY
+    EDITTEXT        IDC_DISPLAY_EXTENT_MAX_Y,141,24,93,13,ES_AUTOHSCROLL | ES_READONLY
+END
+
+IDD_DLG_GEOCODING_INFO DIALOG 0, 0, 404, 276
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Tag Info"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "Close",IDOK,347,255,50,14
+    CONTROL         "List1",IDC_GEOCODING_INFO_LIST,"SysListView32",LVS_REPORT | WS_BORDER | WS_TABSTOP,13,21,383,68
+    PUSHBUTTON      "Remove",IDC_BT_REMOVE,13,90,50,14,WS_DISABLED
+    PUSHBUTTON      "Add",IDC_BT_ADD,341,148,50,14,WS_DISABLED
+    COMBOBOX        IDC_CMB_TAG_LIST,45,132,295,113,CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    EDITTEXT        IDC_EDIT_TAG_VALUE,45,148,295,14,ES_AUTOHSCROLL | WS_DISABLED
+    LTEXT           "TAG",IDC_STATIC,12,134,16,8
+    LTEXT           "Value",IDC_STATIC,12,150,19,8
+    LTEXT           "(TAG type)",IDC_STATIC_TAG_TYPE,347,135,35,8
+    GROUPBOX        "TAG Found",IDC_STATIC,7,7,390,106
+    GROUPBOX        "Supported TAG ( not found into the current file)",IDC_STATIC,7,117,390,51
+    PUSHBUTTON      "Save",IDC_BT_SAVE,341,191,50,14
+    EDITTEXT        IDC_EDIT_GEOKEYS,45,191,295,53,ES_MULTILINE | ES_AUTOVSCROLL | WS_VSCROLL
+    LTEXT           "Geokeys",IDC_STATIC,12,193,29,8
+    GROUPBOX        "Geocoding Informations",IDC_STATIC,7,176,390,75
+END
+
+IDD_DIALOG1 DIALOGEX 0, 0, 321, 156
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Dialog"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         "Input Range Clipping",IDC_RD_INPUT_RANGE_CLIPPING,
+                    "Button",BS_AUTORADIOBUTTON | WS_GROUP,9,116,82,10
+    CONTROL         "Output Range Compression",IDC_RD_OUTPUT_RANGE_COMPRESSION,
+                    "Button",BS_AUTORADIOBUTTON,9,133,103,10
+    EDITTEXT        IDC_ED_MIN_VALUE,145,115,60,14,ES_AUTOHSCROLL | ES_NUMBER
+    EDITTEXT        IDC_ED_MAX_VALUE,145,132,60,14,ES_AUTOHSCROLL | ES_NUMBER
+    DEFPUSHBUTTON   "OK",IDOK,259,115,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,259,132,50,14
+    LTEXT           "Min",IDC_STATIC,127,117,12,8
+    LTEXT           "Max",IDC_STATIC,127,134,14,8
+    CONTROL         "",IDC_HISTOGRAM_DISPLAY,"Static",SS_BLACKRECT | SS_NOTIFY,4,5,308,104
+END
+
+IDD_DLG_COLORSPACE_TEST DIALOGEX 0, 0, 217, 358
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Dialog"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         "",IDC_BT_SRC_COLOR,"Button",BS_OWNERDRAW,76,24,28,45
+    EDITTEXT        IDC_EDIT_SRC_RED,47,25,27,13,ES_AUTOHSCROLL
+    LTEXT           "Red",IDC_STATIC,24,27,14,8
+    GROUPBOX        "Source",IDC_STATIC,7,7,203,77
+    EDITTEXT        IDC_EDIT_SRC_GREEN,47,40,27,13,ES_AUTOHSCROLL
+    LTEXT           "Green",IDC_STATIC,24,42,20,8
+    EDITTEXT        IDC_EDIT_SRC_BLUE,47,55,27,13,ES_AUTOHSCROLL
+    LTEXT           "Blue",IDC_STATIC,24,58,14,8
+    EDITTEXT        IDC_EDIT_SRC_L,125,25,80,13,ES_AUTOHSCROLL | ES_READONLY
+    LTEXT           "L*",IDC_STATIC,110,27,8,8
+    EDITTEXT        IDC_EDIT_SRC_U,125,40,80,13,ES_AUTOHSCROLL | ES_READONLY
+    LTEXT           "u*",IDC_STATIC,110,42,9,8
+    EDITTEXT        IDC_EDIT_SRC_V,125,55,80,13,ES_AUTOHSCROLL | ES_READONLY
+    LTEXT           "v*",IDC_STATIC,110,58,9,8
+    EDITTEXT        IDC_EDIT_NEW_L,47,98,27,13,ES_AUTOHSCROLL
+    LTEXT           "L*",IDC_STATIC,26,100,8,8
+    GROUPBOX        "Modify",IDC_STATIC,7,87,203,86
+    CONTROL         "",IDC_BT_DEST_COLOR,"Button",BS_OWNERDRAW | WS_DISABLED | WS_TABSTOP,76,118,28,45
+    EDITTEXT        IDC_EDIT_DEST_RED,47,119,27,13,ES_AUTOHSCROLL | ES_READONLY
+    LTEXT           "Red",IDC_STATIC,24,121,14,8
+    GROUPBOX        "Find the best color",IDC_STATIC,7,176,203,77
+    EDITTEXT        IDC_EDIT_DEST_GREEN,47,134,27,13,ES_AUTOHSCROLL | ES_READONLY
+    LTEXT           "Green",IDC_STATIC,24,136,20,8
+    EDITTEXT        IDC_EDIT_DEST_BLUE,47,149,27,13,ES_AUTOHSCROLL | ES_READONLY
+    LTEXT           "Blue",IDC_STATIC,24,152,14,8
+    EDITTEXT        IDC_EDIT_DEST_L,125,119,80,13,ES_AUTOHSCROLL | ES_READONLY
+    LTEXT           "L*",IDC_STATIC,110,121,8,8
+    EDITTEXT        IDC_EDIT_DEST_U,125,134,80,13,ES_AUTOHSCROLL | ES_READONLY
+    LTEXT           "u*",IDC_STATIC,110,136,9,8
+    EDITTEXT        IDC_EDIT_DEST_V,125,149,80,13,ES_AUTOHSCROLL | ES_READONLY
+    LTEXT           "v*",IDC_STATIC,110,152,9,8
+    PUSHBUTTON      " Close",IDC_BT_CLOSE,160,338,50,14
+    CONTROL         "",IDC_BT_DEST_COLOR2,"Button",BS_OWNERDRAW | WS_DISABLED | WS_TABSTOP,76,203,28,45
+    EDITTEXT        IDC_EDIT_DEST_RED2,47,204,27,13,ES_AUTOHSCROLL | ES_READONLY
+    LTEXT           "Red",IDC_STATIC,24,206,14,8
+    EDITTEXT        IDC_EDIT_DEST_GREEN2,47,219,27,13,ES_AUTOHSCROLL | ES_READONLY
+    LTEXT           "Green",IDC_STATIC,24,221,20,8
+    EDITTEXT        IDC_EDIT_DEST_BLUE2,47,234,27,13,ES_AUTOHSCROLL | ES_READONLY
+    LTEXT           "Blue",IDC_STATIC,24,237,14,8
+    EDITTEXT        IDC_EDIT_DEST_L2,125,204,80,13,ES_AUTOHSCROLL | ES_READONLY
+    LTEXT           "L*",IDC_STATIC,110,206,8,8
+    EDITTEXT        IDC_EDIT_DEST_U2,125,219,80,13,ES_AUTOHSCROLL | ES_READONLY
+    LTEXT           "u*",IDC_STATIC,110,221,9,8
+    EDITTEXT        IDC_EDIT_DEST_V2,125,234,80,13,ES_AUTOHSCROLL | ES_READONLY
+    LTEXT           "v*",IDC_STATIC,110,237,9,8
+    PUSHBUTTON      "Nearest",IDC_BT_COMPUTE2,125,185,80,13
+    CONTROL         "",IDC_SLIDER_L_ADJUST,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,78,97,129,15
+    GROUPBOX        "FABC olor",IDC_STATIC,7,256,203,77
+    CONTROL         "",IDC_BT_DEST_COLOR3,"Button",BS_OWNERDRAW | WS_DISABLED | WS_TABSTOP,77,282,28,45
+    EDITTEXT        IDC_EDIT_DEST_RED3,48,284,27,13,ES_AUTOHSCROLL | ES_READONLY
+    LTEXT           "Red",IDC_STATIC,25,285,14,8
+    EDITTEXT        IDC_EDIT_DEST_GREEN3,48,298,27,13,ES_AUTOHSCROLL | ES_READONLY
+    LTEXT           "Green",IDC_STATIC,25,300,20,8
+    EDITTEXT        IDC_EDIT_DEST_BLUE3,48,313,27,13,ES_AUTOHSCROLL | ES_READONLY
+    LTEXT           "Blue",IDC_STATIC,25,316,14,8
+    EDITTEXT        IDC_EDIT_DEST_L3,126,284,80,13,ES_AUTOHSCROLL | ES_READONLY
+    LTEXT           "L*",IDC_STATIC,111,285,8,8
+    EDITTEXT        IDC_EDIT_DEST_U3,126,298,80,13,ES_AUTOHSCROLL | ES_READONLY
+    LTEXT           "u*",IDC_STATIC,111,300,9,8
+    EDITTEXT        IDC_EDIT_DEST_V3,126,313,80,13,ES_AUTOHSCROLL | ES_READONLY
+    LTEXT           "v*",IDC_STATIC,111,316,9,8
+    PUSHBUTTON      "Nearest",IDC_BT_COMPUTE3,126,264,80,13
+END
+
+IDD_DLG_AUTHENTICATION DIALOGEX 0, 0, 294, 90
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Dialog"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,67,69,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,153,69,50,14
+    EDITTEXT        IDC_AUTHENTICATIONSTRING,88,30,148,14,ES_AUTOHSCROLL
+    LTEXT           "Authentication string",IDC_STATIC,13,30,75,8
+    LTEXT           "Static",IDC_AuthenticationFormat,88,16,149,8
+END
+
+IDD_TEXTLOG DIALOGEX 0, 0, 500, 132
+STYLE DS_SETFONT | DS_FIXEDSYS | DS_NOFAILCREATE | WS_CAPTION | WS_THICKFRAME
+EXSTYLE WS_EX_OVERLAPPEDWINDOW
+CAPTION "Text Log"
+FONT 8, "Consolas", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "Hide",IDTEXTLOG_CLOSE,443,111,50,14
+    EDITTEXT        IDC_TEXTLOG,7,7,486,103,ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL | ES_READONLY | WS_VSCROLL
+    PUSHBUTTON      "Clear",IDC_CLEAR,378,111,49,14
+END
+
+IDD_REPROJECT DIALOGEX 0, 0, 400, 180
+STYLE DS_SETFONT | DS_NOFAILCREATE | WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
+CAPTION "Reproject"
+FONT 10, "Consolas", 400, 0, 0x1
+BEGIN
+    PUSHBUTTON      "OK",IDOK,343,160,50,14
+    PUSHBUTTON      "Clear",IDC_CLEAR_WKT,288,160,50,14
+    LTEXT           "Enter ESRI WKT:",IDC_REPROJECT_TEXT_LABEL,7,7,100,10
+    EDITTEXT        IDC_REPROJECT_WKT,7,16,386,90,ES_MULTILINE | ES_AUTOVSCROLL | ES_NOHIDESEL | WS_VSCROLL
+    EDITTEXT        IDC_EDIT_TEXT_REPROJECT,8,109,384,51,ES_MULTILINE | ES_AUTOHSCROLL | ES_READONLY | NOT WS_BORDER
+END
+
+IDD_DLG_TINT DIALOGEX 0, 0, 218, 69
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Tint"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,111,48,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,161,48,50,14
+    CONTROL         "",IDC_BUTTON_TINT_COLOR,"Button",BS_OWNERDRAW | WS_TABSTOP,194,16,17,15
+    LTEXT           "Tint Color (RGB):",IDC_STATIC_TINT_COLOR,16,18,59,8
+    EDITTEXT        IDC_ED_TINT_COLOR_R,80,16,33,14,ES_AUTOHSCROLL | ES_READONLY | ES_WANTRETURN | ES_NUMBER
+    EDITTEXT        IDC_ED_TINT_COLOR_G,118,16,33,14,ES_AUTOHSCROLL | ES_READONLY | ES_WANTRETURN | ES_NUMBER
+    EDITTEXT        IDC_ED_TINT_COLOR_B,156,16,33,14,ES_AUTOHSCROLL | ES_READONLY | ES_WANTRETURN | ES_NUMBER
+END
+
+IDD_SCALE DIALOGEX 0, 0, 137, 63
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Scale Dialog"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,69,14,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,69,34,50,14
+    LTEXT           "Scale factor",IDC_STATIC,7,15,39,8
+    EDITTEXT        IDC_SCALE,7,25,40,14,ES_AUTOHSCROLL
+END
+
+IDD_IMAGE_INFO DIALOGEX 0, 0, 413, 278
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Image Info"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    PUSHBUTTON      "Close",IDCANCEL,176,256,50,14
+    LTEXT           "Type:",IDC_STATIC,12,12,20,8
+    LTEXT           "Size:",IDC_STATIC,12,30,16,8
+    LTEXT           "Uncompressed Size:",IDC_STATIC,12,48,65,8
+    LTEXT           "Image Dimensions:",IDC_STATIC,12,66,61,8
+    LTEXT           "Compression type:",IDC_STATIC,12,84,61,8
+    LTEXT           "Color space:",IDC_STATIC,12,102,41,8
+    LTEXT           "Number of Blocks:",IDC_STATIC,12,138,58,8
+    LTEXT           "Blocks Dimensions:",IDC_STATIC,12,156,60,8
+    EDITTEXT        IDC_INFO_SIZE,108,30,216,14,ES_AUTOHSCROLL | ES_READONLY | NOT WS_BORDER
+    EDITTEXT        IDC_INFO_SIZE_UNCOMP,108,48,216,14,ES_READONLY | NOT WS_BORDER,WS_EX_TRANSPARENT
+    EDITTEXT        IDC_INFO_DIMENSIONS,108,66,216,14,ES_READONLY | NOT WS_BORDER,WS_EX_TRANSPARENT
+    EDITTEXT        IDC_INFO_TYPE_COMP,108,84,216,14,ES_READONLY | NOT WS_BORDER,WS_EX_TRANSPARENT
+    EDITTEXT        IDC_INFO_COLOR_SPACE,108,102,216,14,ES_READONLY | NOT WS_BORDER,WS_EX_TRANSPARENT
+    EDITTEXT        IDC_INFO_BLOCK_COUNT,108,138,216,14,ES_READONLY | NOT WS_BORDER,WS_EX_TRANSPARENT
+    EDITTEXT        IDC_INFO_BLOCK_SIZE,108,156,216,14,ES_READONLY | NOT WS_BORDER
+    LTEXT           "Scanline Orientation:",IDC_STATIC,12,120,68,8
+    EDITTEXT        IDC_INFO_SCANLINE,108,120,216,14,ES_READONLY | NOT WS_BORDER,WS_EX_TRANSPARENT
+    LTEXT           "GCS name:",IDC_STATIC,12,175,36,8
+    EDITTEXT        IDC_INFO_GCS_NAME,108,175,296,45,ES_MULTILINE | ES_READONLY | NOT WS_BORDER,WS_EX_TRANSPARENT
+    LTEXT           "GCS units:",IDC_STATIC,12,238,34,8
+    EDITTEXT        IDC_INFO_GCS_UNITS,108,238,216,14,ES_READONLY | NOT WS_BORDER,WS_EX_TRANSPARENT
+    LTEXT           "Datum Name:",IDC_STATIC,12,220,44,8
+    EDITTEXT        IDC_INFO_DATUM_NAME,108,221,216,14,ES_READONLY | NOT WS_BORDER,WS_EX_TRANSPARENT
+    EDITTEXT        IDC_INFO_TYPE,108,13,298,16,ES_AUTOHSCROLL | ES_READONLY | NOT WS_BORDER
+END
+
+IDD_DLG_INFO_REPROJECTION DIALOGEX 300, 300, 173, 112
+STYLE DS_SETFONT | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
+CAPTION "Reprojection Information"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,59,91,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,116,91,50,14
+    EDITTEXT        IDC_STATIC_TEXT_REPRO_INFO_DLG,7,7,159,76,ES_MULTILINE | ES_AUTOHSCROLL | ES_READONLY | NOT WS_BORDER
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_ABOUTBOX, DIALOG
+    BEGIN
+    END
+
+    IDD_OBJECT_TOOLBAR, DIALOG
+    BEGIN
+    END
+
+    IDD_DFILE_OPEN, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 209
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 192
+    END
+
+    IDD_HISTOGRAM_SCALING, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 312
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 396
+        HORZGUIDE, 57
+    END
+
+    IDD_DIALOG_CACHE, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 271
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 120
+    END
+
+    IDD_OPEN_RAWFILE, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 163
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 182
+    END
+
+    IDD_DLG_PROGRESS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 300
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 48
+    END
+
+    IDD_DLG_IMG_SIZE, DIALOG
+    BEGIN
+        RIGHTMARGIN, 279
+        BOTTOMMARGIN, 98
+    END
+
+    IDD_DLG_EXPORT_DIALOG, DIALOG
+    BEGIN
+        RIGHTMARGIN, 282
+        BOTTOMMARGIN, 67
+    END
+
+    IDD_DLG_ENCODING, DIALOG
+    BEGIN
+        TOPMARGIN, 1
+    END
+
+    IDD_DLG_CONVERT_TO, DIALOG
+    BEGIN
+    END
+
+    IDD_DISPLAY_EXTENT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 234
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 71
+    END
+
+    IDD_DLG_GEOCODING_INFO, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 397
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 269
+    END
+
+    IDD_DIALOG1, DIALOG
+    BEGIN
+    END
+
+    IDD_DLG_COLORSPACE_TEST, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 210
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 351
+    END
+
+    IDD_DLG_AUTHENTICATION, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 287
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 83
+    END
+
+    IDD_TEXTLOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 493
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 125
+    END
+
+    IDD_REPROJECT, DIALOG
+    BEGIN
+    END
+
+    IDD_DLG_TINT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 211
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 62
+    END
+
+    IDD_SCALE, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 130
+        TOPMARGIN, 6
+        BOTTOMMARGIN, 56
+    END
+
+    IDD_IMAGE_INFO, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 406
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 271
+    END
+
+    IDD_DLG_INFO_REPROJECTION, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 166
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 105
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Cursor
+//
+
+IDC_ZOOM_OUT            CURSOR                  "res\\zoom_out.cur"
+
+IDC_ZOOM_IN             CURSOR                  "res\\zoom_in.cur"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog Info
+//
+
+IDD_DFILE_OPEN DLGINIT
+BEGIN
+    IDC_HMRFILEOPENCTRLCTRL, 0x376, 68, 0
+0x0000, 0x0000, 0x0000, 0x0001, 0x1f51, 0x0000, 0x1f1c, 0x0000, 0x0001, 
+0x0000, 0xc0c0, 0x00c0, 0x4407, 0x6665, 0x7561, 0x746c, 0x4407, 0x6665, 
+0x7561, 0x746c, 0x0000, 0x0000, 0x0101, 0x0001, 0x4407, 0x6665, 0x7561, 
+0x746c, 0x0300, 0x2e2a, 0x002a, 0x0101, 0x0100, 0x0101, 
+    0
+END
+
+IDD_DIALOG_CACHE DLGINIT
+BEGIN
+    IDC_COMBO_CACHEFORMAT, 0x403, 23, 0
+0x6143, 0x6863, 0x2065, 0x4954, 0x4646, 0x4620, 0x6c69, 0x2065, 0x6f46, 
+0x6d72, 0x7461, "\000" 
+    0
+END
+
+IDD_DLG_EXPORT_INTEGRITY DLGINIT
+BEGIN
+    IDC_COMBO_IMAGE_COMP_METHOD, 0x403, 7, 0
+0x6942, 0x616e, 0x7972, "\000" 
+    IDC_COMBO_IMAGE_COMP_METHOD, 0x403, 9, 0
+0x7453, 0x6e61, 0x6164, 0x6472, "\000" 
+    IDC_COMBO_IMAGE_COMP_METHOD, 0x403, 9, 0
+0x7053, 0x6365, 0x7274, 0x6c61, "\000" 
+    0
+END
+
+IDD_DLG_ENCODING DLGINIT
+BEGIN
+    IDC_CMB_RESAMPLING, 0x403, 18, 0
+0x654e, 0x7261, 0x7365, 0x2074, 0x654e, 0x6769, 0x6268, 0x756f, 0x0072, 
+
+    IDC_CMB_RESAMPLING, 0x403, 8, 0
+0x7641, 0x7265, 0x6761, 0x0065, 
+    IDC_CMB_RESAMPLING, 0x403, 16, 0
+0x6556, 0x7463, 0x726f, 0x4120, 0x6177, 0x6e72, 0x7365, 0x0073, 
+    IDC_CMB_RESAMPLING, 0x403, 10, 0
+0x6e55, 0x6564, 0x6966, 0x656e, 0x0064, 
+    0
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// AFX_DIALOG_LAYOUT
+//
+
+IDD_REPROJECT AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_DLG_INFO_REPROJECTION AFX_DIALOG_LAYOUT
+BEGIN
+    0,
+    100, 100, 0, 0,
+    100, 100, 0, 0,
+    0, 0, 0, 0
+END
+
+IDD_IMAGE_INFO AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE
+BEGIN
+    IDR_MAINFRAME           "Active Image\n\nActive\n\n\nActiveImage.Document\nActive Document"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_MSGERR_FILENOTSUPPORTED "File not supported : %1"
+END
+
+STRINGTABLE
+BEGIN
+    AFX_IDS_APP_TITLE       "Active Image"
+    AFX_IDS_IDLEMESSAGE     "Ready"
+END
+
+STRINGTABLE
+BEGIN
+    ID_INDICATOR_EXT        "EXT"
+    ID_INDICATOR_CAPS       "CAP"
+    ID_INDICATOR_NUM        "NUM"
+    ID_INDICATOR_SCRL       "SCRL"
+    ID_INDICATOR_OVR        "OVR"
+    ID_INDICATOR_REC        "REC"
+    ID_INDICATOR_MOUSEPOSITION "(x, y)"
+    ID_INDICATOR_READ       "READ"
+    ID_INDICATOR_PROGRESSION "WorkingStatus"
+    ID_INDICATOR_DRAWTIME   "TimeToDisplay"
+    ID_INDICATOR_EXPORTSIZE "ExportSize"
+END
+
+STRINGTABLE
+BEGIN
+    ID_FILE_NEW             "Create a new document"
+    ID_FILE_OPEN            "Open an existing document\nOpen"
+    ID_FILE_CLOSE           "Close the active document\nClose"
+    ID_FILE_SAVE            "Save the active document\nSave"
+    ID_FILE_SAVE_AS         "Save the active document with a new name\nSave As"
+    ID_FILE_PRINT_SETUP     "Change the printer and printing options\nPrint Setup"
+    ID_FILE_PRINT           "Print the active document\nPrint"
+    ID_FILE_PRINT_PREVIEW   "Display full pages\nPrint Preview"
+END
+
+STRINGTABLE
+BEGIN
+    ID_APP_ABOUT            "Display program information, version number and copyright\nAbout"
+    ID_APP_EXIT             "Quit the application; prompts to save documents\nExit"
+END
+
+STRINGTABLE
+BEGIN
+    ID_FILE_MRU_FILE1       "Open this document"
+    ID_FILE_MRU_FILE2       "Open this document"
+    ID_FILE_MRU_FILE3       "Open this document"
+    ID_FILE_MRU_FILE4       "Open this document"
+    ID_FILE_MRU_FILE5       "Open this document"
+    ID_FILE_MRU_FILE6       "Open this document"
+    ID_FILE_MRU_FILE7       "Open this document"
+    ID_FILE_MRU_FILE8       "Open this document"
+    ID_FILE_MRU_FILE9       "Open this document"
+    ID_FILE_MRU_FILE10      "Open this document"
+    ID_FILE_MRU_FILE11      "Open this document"
+    ID_FILE_MRU_FILE12      "Open this document"
+    ID_FILE_MRU_FILE13      "Open this document"
+    ID_FILE_MRU_FILE14      "Open this document"
+    ID_FILE_MRU_FILE15      "Open this document"
+    ID_FILE_MRU_FILE16      "Open this document"
+END
+
+STRINGTABLE
+BEGIN
+    ID_NEXT_PANE            "Switch to the next window pane\nNext Pane"
+    ID_PREV_PANE            "Switch back to the previous window pane\nPrevious Pane"
+END
+
+STRINGTABLE
+BEGIN
+    ID_WINDOW_SPLIT         "Split the active window into panes\nSplit"
+END
+
+STRINGTABLE
+BEGIN
+    ID_EDIT_CLEAR           "Erase the selection\nErase"
+    ID_EDIT_CLEAR_ALL       "Erase everything\nErase All"
+    ID_EDIT_COPY            "Copy the selection and put it on the Clipboard\nCopy"
+    ID_EDIT_CUT             "Cut the selection and put it on the Clipboard\nCut"
+    ID_EDIT_FIND            "Find the specified text\nFind"
+    ID_EDIT_PASTE           "Insert Clipboard contents\nPaste"
+    ID_EDIT_REPEAT          "Repeat the last action\nRepeat"
+    ID_EDIT_REPLACE         "Replace specific text with different text\nReplace"
+    ID_EDIT_SELECT_ALL      "Select the entire document\nSelect All"
+    ID_EDIT_UNDO            "Undo the last action\nUndo"
+    ID_EDIT_REDO            "Redo the previously undone action\nRedo"
+END
+
+STRINGTABLE
+BEGIN
+    ID_VIEW_TOOLBAR         "Show or hide the toolbar\nToggle ToolBar"
+    ID_VIEW_STATUS_BAR      "Show or hide the status bar\nToggle StatusBar"
+END
+
+STRINGTABLE
+BEGIN
+    AFX_IDS_SCSIZE          "Change the window size"
+    AFX_IDS_SCMOVE          "Change the window position"
+    AFX_IDS_SCMINIMIZE      "Reduce the window to an icon"
+    AFX_IDS_SCMAXIMIZE      "Enlarge the window to full size"
+    AFX_IDS_SCNEXTWINDOW    "Switch to the next document window"
+    AFX_IDS_SCPREVWINDOW    "Switch to the previous document window"
+    AFX_IDS_SCCLOSE         "Close the active window and prompts to save the documents"
+END
+
+STRINGTABLE
+BEGIN
+    AFX_IDS_SCRESTORE       "Restore the window to normal size"
+    AFX_IDS_SCTASKLIST      "Activate Task List"
+END
+
+STRINGTABLE
+BEGIN
+    ID_VIEW_REPAINT         "Repaint the current object\nRepaint"
+    ID_INSERT_FROMTHISDOCUMENT 
+                            "Insert an object from this document\nInsert from this document"
+    ID_INSERT_FROMEXTERNALDOCUMENT 
+                            "Insert from an external document\nFrom External Document"
+END
+
+STRINGTABLE
+BEGIN
+    ID_VIEW_NAVIGATIONTOOLBAR 
+                            "Show/Hide the Navigation toolbar\nNavigation ToolBar"
+    ID_VIEW_ZOOMAREA        "Zoom on a specifiec area\nZoom Area"
+    ID_VIEW_RECENTERXY      "Recenter on a specifiec point\nRecenter (X,Y)"
+    ID_VIEW_ZOOMIN          "Zoom in\nZoom In"
+    ID_VIEW_ZOOMOUT         "Zoom out\nZoom Out"
+    ID_VIEW_ZOOM11          "Zoom to original size\nZoom 1:1"
+    ID_VIEW_FIT             "Fit all images on screen.\nFit All"
+    ID_VIEW_REDRAW          "Redraw view"
+END
+
+STRINGTABLE
+BEGIN
+    ID_VIEW_MAGNIFIER       "Start Windows magnifier"
+END
+
+STRINGTABLE
+BEGIN
+    ID_INSERT_NEWOBJECT     "Insert a new mosaic\nNew Mosaic"
+    ID_EDIT_UNSELECT        "Clear the current selection\nClear Selection"
+    ID_VIEW_FILETOOLBAR     "Show/Hide the File ToolBar\nFile ToolBar"
+    ID_VIEW_OBJECTTOOLBAR   "Show/Hide the Object ToolBar\nObject ToolBar"
+END
+
+STRINGTABLE
+BEGIN
+    ID_VIEW_FITTOSCREEN     "Fit to screen\nFit To screen"
+END
+
+STRINGTABLE
+BEGIN
+    ID_VIEW_GRAYSCALE       "8-bit Grayscale\nGrayscale"
+    ID_VIEW_24BITS          "Display in 24-bits\nTrue Color"
+    ID_VIEW_DEFAULTBACKGROUNDCOLOR 
+                            "Select the default background color\nBackground"
+    ID_VIEW_VIEWORIGIN_TOPLEFT "Origin at Top_Left of the window."
+    ID_VIEW_VIEWORIGIN_BOTTOMLEFT "Origin at Bottom_Left of the window."
+    ID_FILE_EXPORT_HMR      "Convert File To File"
+END
+
+STRINGTABLE
+BEGIN
+    ID_EDIT_CLEAR_MODE      "Erase the selection\nErase"
+    ID_EDIT_COPY_MODE       "Copy the selection and put it on the Clipboard\nCopy"
+    ID_EDIT_PASTE_MODE      "Insert Clipboard contents\nPaste"
+    ID_EDIT_ADD_RECT_SHAPE  "Add a Rectangle Shape at the current Raster."
+END
+
+STRINGTABLE
+BEGIN
+    AFX_IDS_SAVEFILECOPY    """Save Copy As"""
+END
+
+STRINGTABLE
+BEGIN
+    ID_HELP_TESTDISPLAY     "Test Display"
+END
+
+STRINGTABLE
+BEGIN
+    ID_FILE_EXPORT_REGION   "Save the active document with a new name\nSave As"
+    ID_VIEW_REMOVETRANSPARENCY 
+                            "Remove all entries in the palette with the transparency."
+    ID_PRECALCULATE_DISPLAY "Calculate all screen tiles before displaying them"
+    ID_FILE_READONLY        "Open file in ReadOnly mode./nReadOnly"
+    ID_FILE_PREFERENCES     "Preferences"
+    ID_FILE_CACHE           "Change compressions use by the cache"
+    ID_FILE_TRANSPARENCY    "Use image transparency at draw"
+END
+
+STRINGTABLE
+BEGIN
+    ID_FILE_OVERWRITEHGRTWF "Try to find a sister file for all types of file./nSisterfiles"
+    ID_FILE_INFO_TIME       "Display Date/Time Creation, Modification, LastAccess\nDate\\Time info"
+END
+
+STRINGTABLE
+BEGIN
+    ID_INFO_DISPLAY_EXTENT  "Display the extent of the current selecyed image\nExtent"
+    ID_PREFERENCES_FITIMAGEONVIEW "Fit image on view when selected"
+END
+
+STRINGTABLE
+BEGIN
+    ID_FILE_OPENINTERNETFILE 
+                            "Open an existing document located on the internet\nOpen"
+END
+
+STRINGTABLE
+BEGIN
+    ID_VIEW_SCALE           "Scale image by a factor"
+END
+
+#endif    // English (United States) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (Canada) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENC)
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_CAN
+#pragma code_page(1252)
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDR_SELECTMOVE_TOOLBAR  BITMAP                  "res\\SelectMove.bmp"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Toolbar
+//
+
+IDR_SELECTMOVE_TOOLBAR TOOLBAR 16, 15
+BEGIN
+    BUTTON      ID_EDIT_SELECTALL
+    BUTTON      ID_EDIT_UNSELECT
+    SEPARATOR
+    BUTTON      ID_ORDER_DEPTH_BRINGTOFRONT
+    BUTTON      ID_ORDER_DEPTH_SENDTOBACK
+    BUTTON      ID_ORDER_DEPTH_MOVEUP
+    BUTTON      ID_ORDER_DEPTH_MOVEDOWN
+    SEPARATOR
+    BUTTON      ID_EDIT_TRANSFORM_ROTATE
+    BUTTON      ID_EDIT_REMOVE
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_ROTATION DIALOG 0, 0, 153, 84
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Raster Rotation and Affinity"
+FONT 8, "MS Sans Serif"
+BEGIN
+    EDITTEXT        IDC_ANGLE,7,17,75,14,ES_AUTOHSCROLL
+    LTEXT           "Angle",IDC_STATIC,7,7,57,8
+    DEFPUSHBUTTON   "OK",IDOK,96,7,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,96,24,50,14
+    LTEXT           "Affinity",IDC_STATIC,7,44,68,12
+    EDITTEXT        IDC_AFFINITY,7,58,75,13,ES_AUTOHSCROLL
+END
+
+IDD_INSERT_OBJECT DIALOGEX 0, 0, 192, 201
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Insert from [Fill in the blank]"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    CONTROL         "Object List",IDC_OBJECT_LIST,"SysTreeView32",TVS_HASBUTTONS | TVS_HASLINES | TVS_LINESATROOT | TVS_EDITLABELS | WS_BORDER | WS_TABSTOP,7,7,123,177,WS_EX_CLIENTEDGE
+    CONTROL         "Insert as link",IDC_LINK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,189,55,10
+    DEFPUSHBUTTON   "OK",IDOK,135,7,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,135,24,50,14
+END
+
+IDD_RECENTER DIALOG 0, 0, 165, 46
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Recenter"
+FONT 8, "MS Sans Serif"
+BEGIN
+    EDITTEXT        IDC_X,7,18,40,14,ES_AUTOHSCROLL
+    LTEXT           "X Position",IDC_STATIC,7,7,32,8
+    EDITTEXT        IDC_Y,57,18,40,14,ES_AUTOHSCROLL
+    LTEXT           "Y Position",IDC_STATIC,57,7,32,8
+    DEFPUSHBUTTON   "OK",IDOK,108,7,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,108,24,50,14
+END
+
+IDD_INTERNET_FILE_OPEN DIALOGEX 0, 0, 300, 136
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Open Internet File"
+FONT 8, "MS Sans Serif", 0, 0, 0x0
+BEGIN
+    EDITTEXT        IDC_INTERNET_URL,7,95,248,14,ES_AUTOHSCROLL
+    DEFPUSHBUTTON   "Open",IDOPEN,7,115,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,58,115,50,14
+    LTEXT           "URL:",IDC_STATIC,7,82,60,8
+    EDITTEXT        IDC_URL_EXAMPLES,6,6,288,72,ES_MULTILINE | ES_AUTOHSCROLL | ES_READONLY | NOT WS_BORDER
+END
+
+IDD_LAYERS_DIALOG DIALOGEX 0, 0, 143, 134
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Layer Display"
+FONT 8, "MS Sans Serif", 0, 0, 0x0
+BEGIN
+    DEFPUSHBUTTON   "Apply",IDAPPLY,7,113,50,14
+    LISTBOX         IDC_LIST1,14,7,112,101,LBS_OWNERDRAWFIXED | LBS_HASSTRINGS | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_ROTATION, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 146
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 77
+    END
+
+    IDD_INSERT_OBJECT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 185
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 194
+    END
+
+    IDD_RECENTER, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 158
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 39
+    END
+
+    IDD_INTERNET_FILE_OPEN, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 293
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 129
+    END
+
+    IDD_LAYERS_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 136
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 127
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "#define _AFX_NO_SPLITTER_RESOURCES\r\n"
+    "#define _AFX_NO_OLE_RESOURCES\r\n"
+    "#define _AFX_NO_TRACKER_RESOURCES\r\n"
+    "#define _AFX_NO_PROPERTY_RESOURCES\r\n"
+    "\r\n"
+    "#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)\r\n"
+    "#ifdef _WIN32\r\n"
+    "LANGUAGE 9, 1\r\n"
+    "#pragma code_page(1252)\r\n"
+    "#endif\r\n"
+    "#include ""res\\ActiveImage.rc2""  // non-Microsoft Visual C++ edited resources\r\n"
+    "#include ""res\\Version.rc""\r\n"
+    "#include ""afxres.rc""         // Standard components\r\n"
+    "#endif\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Accelerator
+//
+
+IDR_MAINFRAME ACCELERATORS
+BEGIN
+    "A",            ID_VIEW_RESAMPLING_AVERAGE, VIRTKEY, CONTROL, NOINVERT
+    "C",            ID_VIEW_RESAMPLING_CONVOLUTION, VIRTKEY, CONTROL, NOINVERT
+    "E",            ID_INSERT_FROMEXTERNALDOCUMENT, VIRTKEY, CONTROL, NOINVERT
+    "M",            ID_INSERT_NEWOBJECT,    VIRTKEY, CONTROL, NOINVERT
+    "N",            ID_VIEW_RESAMPLING_NEAREST, VIRTKEY, CONTROL, NOINVERT
+END
+
+#endif    // English (Canada) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+#define _AFX_NO_SPLITTER_RESOURCES
+#define _AFX_NO_OLE_RESOURCES
+#define _AFX_NO_TRACKER_RESOURCES
+#define _AFX_NO_PROPERTY_RESOURCES
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE 9, 1
+#pragma code_page(1252)
+#endif
+#include "res\ActiveImage.rc2"  // non-Microsoft Visual C++ edited resources
+#include "res\Version.rc"
+#include "afxres.rc"         // Standard components
+#endif
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

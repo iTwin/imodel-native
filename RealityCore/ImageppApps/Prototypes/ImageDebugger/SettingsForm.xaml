@@ -1,0 +1,11 @@
+﻿<Window x:Class="Bentley.ImageViewer.SettingsForm"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Settings" Height="131" Width="302" ResizeMode="NoResize">
+    <Grid Margin="0,0,0,4" HorizontalAlignment="Left" Width="290" Name="Grid">
+        <Button Content="Confirm" HorizontalAlignment="Left" Height="36" Margin="180,52,0,0" VerticalAlignment="Top" Width="100" Click="Button_Click"/>
+        <Label Content="Background color:" HorizontalAlignment="Left" Height="27" Margin="5,10,0,0" VerticalAlignment="Top" Width="108"/>
+        <Rectangle Fill="#FFFFFFFF" HorizontalAlignment="Left" Height="27" Margin="137,10,0,0" Stroke="Black" VerticalAlignment="Top" Width="145" Name="ColorRect"  MouseLeftButtonDown="Rectangle_MouseLeftButtonDown"/>
+
+    </Grid>
+</Window>

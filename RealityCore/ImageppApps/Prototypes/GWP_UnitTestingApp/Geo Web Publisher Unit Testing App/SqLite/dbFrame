@@ -1,0 +1,63 @@
+create table Record(
+	Id INTEGER PRIMARY KEY,
+	Name VARCHAR(126),
+	Description TEXT, 
+	Request TEXT,
+	CategoryId INTEGER,
+	MRBaselineId, INTEGER
+);
+
+create table Category(
+	Id INTEGER PRIMARY KEY,
+	Name VARCHAR(50)
+);
+
+create table RequestResult(
+	Id INTEGER PRIMARY KEY,
+	RecordId INTEGER,
+	TestId INTEGER,
+	Status INTEGER,
+	FailureRasterId INTEGER,
+	InvalidPixel INTEGER,
+	BigDifferencePixel INTEGER
+);
+
+create table Baseline(
+	Id INTEGER PRIMARY KEY,
+	RecordId INTEGER,
+	Raster BLOB
+);
+
+create table FailureRaster(
+	Id INTEGER PRIMARY KEY,
+	Raster BLOB
+);
+
+create table Test(
+	Id INTEGER PRIMARY KEY,
+	DateTime INTEGER,
+	Description Text,
+	ServerConnection VARCHAR(258)
+);
+
+insert into Record(Name, Description, Request, CategoryId, MRBaselineID) VALUES('Requete numero 1', 'Ceci est une requete avec une longue description inutile' , '2fe1933d-79b3-47b7-8f33-b789fdf432fa.mapdef?SERVICE=wms&REQUEST=getmap&VERSION=1.1.1&LAYERS=Ae.rial,Hypsography,Planimetry,Landuse,Landmark,District&SRS=None&BBOX=503642.40762948815,5550500.473474754,504079.0335310829,5550791.5574091505&WIDTH=600&HEIGHT=400&QUALITY=100&FORMAT=image/jpeg', 1, 0);
+
+insert into Record(Name, Description, Request, CategoryId, MRBaselineID) VALUES('Requete numero 2', 'Ceci est une requete' , '2fe1933d-79b3-47b7-8f33-b789fdf432fa.mapdef?SERVICE=wms&REQUEST=getmap&VERSION=1.1.1&LAYERS=Aerial,Hypsography,Planimetry,Landuse,Parcel,Landmark,District&SRS=None&BBOX=503642.40762948815,5550500.473474754,504079.0335310829,5550791.5574091505&WIDTH=600&HEIGHT=400&QUALITY=100&FORMAT=image/jpeg', 1 , 0);
+
+insert into Record(Name, Description, Request, CategoryId, MRBaselineID) VALUES('Requete numero 3', 'Ceci est une requete un peu bizarre' , '2fe1933d-79b3-47b7-8f33-b789fdf432fa.mapdef?SERVICE=wms&REQUEST=getmap&VERSION=1.1.1&LAYERS=Aerial,Hypsography,Planimetry,Landuse,Parcel,Folio,Landmark,District&SRS=None&BBOX=503568.4541174213,5550522.759588484,504005.0800189853,5550813.84352286&WIDTH=600&HEIGHT=400&QUALITY=100&FORMAT=image/jpeg', 1, 0);
+
+insert into Record(Name, Description, Request, CategoryId, MRBaselineID) VALUES('Requete numero 4', 'Ceci n est peut-etre pas une requete' , '2fe1933d-79b3-47b7-8f33-b789fdf432fa.mapdef?SERVICE=wms&REQUEST=getmap&VERSION=1.1.1&LAYERS=Aerial,Hypsography,Planimetry,Landuse,Parcel,Folio,Landmark,District&SRS=None&BBOX=503354.5074256563,5550541.680044219,504227.75922878156,5551123.847912969&WIDTH=600&HEIGHT=400&QUALITY=100&FORMAT=image/jpeg', 2, 0);
+
+insert into Record(Name, Description, Request, CategoryId, MRBaselineID) VALUES('Requete numero 5', 'Ceci est probablement une requete' , '2fe1933d-79b3-47b7-8f33-b789fdf432fa.mapdef?SERVICE=wms&REQUEST=getmap&VERSION=1.1.1&LAYERS=Hypsography,Planimetry,Landuse,Parcel,Folio,Landmark,District&SRS=None&BBOX=499398.67675749975,5549176.4963920005,506384.6911825004,5553833.839342&WIDTH=600&HEIGHT=400&QUALITY=100&FORMAT=image/jpeg', 2, 0);
+
+insert into Record(Name, Description, Request, CategoryId, MRBaselineID) VALUES('Requete numero 6', 'Ce programmeur ne serait pas une bonne requete' , '05b4417c-f4a6-457b-a682-dcafb2c65e4a.mapdef?SERVICE=wms&REQUEST=getmap&VERSION=1.1.1&LAYERS=Aerial,Parcels,Contours,Folio,Planimetry,Landuse&SRS=None&BBOX=502455.7857782724,5552546.520642227,502674.0987290558,5552692.0626094155&WIDTH=600&HEIGHT=400&QUALITY=100&FORMAT=image/jpeg', 4, 0);
+
+insert into Record(Name, Description, Request, CategoryId, MRBaselineID) VALUES('Requete numero 7', 'Certes numero 6, mais il sais programmer de bonnes requetes' , '05b4417c-f4a6-457b-a682-dcafb2c65e4a.mapdef?SERVICE=wms&REQUEST=getmap&VERSION=1.1.1&LAYERS=Aerial,Parcels,Contours,Folio,Planimetry,Landuse&SRS=None&BBOX=502313.8823602648,5552489.0315651875,502750.5082618288,5552780.1154995635&WIDTH=600&HEIGHT=400&QUALITY=100&FORMAT=image/jpeg', 2, 0);
+
+insert into Category(Name) VALUES('Requete pas facile');
+
+insert into Category(Name) VALUES('Difficile');
+
+insert into Category(Name) VALUES('Je ne suis pas très aimé');
+
+insert into Category(Name) VALUES('Facile');
