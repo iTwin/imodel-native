@@ -8437,6 +8437,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Crea
     VerifyNodeInstance(*physical1ClassGroupChildren[0], *physicalElement1);
     }
 
+#ifdef wip_label_definitions_performance_issue
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Saulius.Skliutas                09/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -8477,6 +8478,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceLabelOverride_Da
     EXPECT_STREQ("2019-11-28T00:00:00.000Z", node->GetLabelDefinition().GetRawValue()->AsSimpleValue()->GetValue().GetString());
     EXPECT_STREQ("dateTime", node->GetLabelDefinition().GetTypeName().c_str());
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Saulius.Skliutas                09/2019

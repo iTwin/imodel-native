@@ -1615,11 +1615,11 @@ struct JoinOptionallyRequiredScalar : ECPresentation::ScalarFunction
 
                 continue;
                 }
-                        
+
             if (!displayLabel.empty())
                 displayLabel.append(separator);
             displayLabel.append(value->GetDisplayValue());
-            
+
             parts.push_back(value);
             }
 
@@ -1719,10 +1719,11 @@ struct GetECPropertyValueDisplayLabelScalar : ECPresentation::ScalarFunction
         {}
     void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
+#ifdef wip_label_definitions_performance_issue
         BeAssert(3 == nArgs);
         ECClassId classId = args[0].GetValueId<ECClassId>();
         Utf8CP propertyName = args[1].GetValueText();
-        ECClassCP ecClass = GetContext().GetSchemaHelper().GetConnection().GetECDb().Schemas().GetClass(classId);        
+        ECClassCP ecClass = GetContext().GetSchemaHelper().GetConnection().GetECDb().Schemas().GetClass(classId);
         if (nullptr == ecClass)
             {
             BeAssert(false);
@@ -1730,7 +1731,7 @@ struct GetECPropertyValueDisplayLabelScalar : ECPresentation::ScalarFunction
             return;
             }
         ECPropertyCP ecProperty = ecClass->GetPropertyP(propertyName);
-        if (nullptr == ecProperty) 
+        if (nullptr == ecProperty)
             {
             BeAssert(false);
             ctx.SetResultError("ECProperty not found");
@@ -1738,7 +1739,7 @@ struct GetECPropertyValueDisplayLabelScalar : ECPresentation::ScalarFunction
             }
 
         LabelDefinitionPtr labelDefinition = LabelDefinition::Create();
-        if (ecProperty->GetIsPrimitive()) 
+        if (ecProperty->GetIsPrimitive())
             {
             PrimitiveECPropertyCR primitiveProperty = *ecProperty->GetAsPrimitiveProperty();
             ECValue value = ValueHelpers::GetECValueFromSqlValue(primitiveProperty.GetType(), args[2]);
@@ -1748,7 +1749,9 @@ struct GetECPropertyValueDisplayLabelScalar : ECPresentation::ScalarFunction
 
             labelDefinition->SetECValue(value, formattedValue.c_str());
             }
-
+#else
+        LabelDefinitionPtr labelDefinition = LabelDefinition::Create();
+#endif
         if (!labelDefinition->IsDefinitionValid() && nullptr != args[2].GetValueText())
             {
             labelDefinition->SetStringValue(args[2].GetValueText());
@@ -1782,13 +1785,13 @@ struct GetLabelDefinitionDisplayValueScalar : CachingScalarFunction<bmap<Utf8Str
         Utf8CP displayLabelDefinitionJson = args[0].GetValueText();
 
         auto iter = GetCache().find(displayLabelDefinitionJson);
-        if (GetCache().end() == iter) 
+        if (GetCache().end() == iter)
             {
             Utf8String displayValue = LabelDefinition::FromString(displayLabelDefinitionJson)->GetDisplayValue();
             iter = GetCache().Insert(displayLabelDefinitionJson, displayValue).first;
             }
 
-        ctx.SetResultText(iter->second.c_str(), -1, DbFunction::Context::CopyData::No);
+        ctx.SetResultText(iter->second.c_str(), iter->second.size(), DbFunction::Context::CopyData::No);
         }
     };
 

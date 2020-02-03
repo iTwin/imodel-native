@@ -72,7 +72,7 @@ rapidjson::Document LabelDefinition::CompositeRawValue::_ToInternalJson(rapidjso
     {
     rapidjson::Document doc(allocator);
     doc.SetObject();
-    doc.AddMember(NAVNODE_LABEL_DEFINITION_COMPOSITE_VALUE_Separator, rapidjson::Value(m_separator.c_str(), doc.GetAllocator()), doc.GetAllocator());
+    doc.AddMember(NAVNODE_LABEL_DEFINITION_COMPOSITE_VALUE_Separator, rapidjson::StringRef(m_separator.c_str()), doc.GetAllocator());
     rapidjson::Value values(rapidjson::kArrayType);
     for (LabelDefinitionCPtr value : m_values)
         values.PushBack(value->ToInternalJson(&doc.GetAllocator()), doc.GetAllocator());
@@ -212,8 +212,8 @@ rapidjson::Document LabelDefinition::ToInternalJson(rapidjson::Document::Allocat
     {
     rapidjson::Document doc(allocator);
     doc.SetObject();
-    doc.AddMember(NAVNODE_LABEL_DEFINITION_DisplayValue, rapidjson::Value(m_displayValue.c_str(), doc.GetAllocator()), doc.GetAllocator());
-    doc.AddMember(NAVNODE_LABEL_DEFINITION_TypeName, rapidjson::Value(m_typeName.c_str(), doc.GetAllocator()), doc.GetAllocator());
+    doc.AddMember(NAVNODE_LABEL_DEFINITION_DisplayValue, rapidjson::StringRef(m_displayValue.c_str()), doc.GetAllocator());
+    doc.AddMember(NAVNODE_LABEL_DEFINITION_TypeName, rapidjson::StringRef(m_typeName.c_str()), doc.GetAllocator());
     if (nullptr != m_rawValue)
         doc.AddMember(NAVNODE_LABEL_DEFINITION_RawValue, m_rawValue->ToInternalJson(&doc.GetAllocator()), doc.GetAllocator());
     return doc;

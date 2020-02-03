@@ -3657,6 +3657,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterSkippedOneToManyRelationshipInsert)
     EXPECT_EQ(*rootNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
     }
 
+#ifdef wip_skipped_instance_keys_performance_issue
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3719,6 +3720,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterSkippedOneToManyRelationshipDelete)
     EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
     EXPECT_EQ(*rootNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                06/2017

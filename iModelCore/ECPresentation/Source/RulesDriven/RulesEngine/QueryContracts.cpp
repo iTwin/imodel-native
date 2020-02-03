@@ -312,6 +312,7 @@ static bvector<RefCountedPtr<PresentationQueryContractField const>> CreateFields
     return fieldsList;
     }
 
+#ifdef wip_skipped_instance_keys_performance_issue
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -322,6 +323,7 @@ static bvector<RefCountedPtr<PresentationQueryContractField const>> CreateFields
         fieldsList.push_back(PresentationQueryContractSimpleField::Create(field.c_str(), field.c_str(), allowsPrefix));
     return fieldsList;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
@@ -389,14 +391,22 @@ bvector<PresentationQueryContractFieldCPtr> NavigationQueryContract::_GetFields(
                 args.push_back(instanceIdClause);
                 }
             }
+#ifdef wip_skipped_instance_keys_performance_issue
         m_skippedInstanceKeysInternalField = PresentationQueryContractFunctionField::Create(SkippedInstanceKeysInternalFieldName, FUNCTION_NAME_ECInstanceKeysArray,
             CreateFieldsList(args, false), false, false, FieldVisibility::Inner);
+#else
+        m_skippedInstanceKeysInternalField = PresentationQueryContractSimpleField::Create(SkippedInstanceKeysInternalFieldName, "'[]'", false, false, FieldVisibility::Inner);
+#endif
         }
     if (m_skippedInstanceKeysField.IsNull())
         {
+#ifdef wip_skipped_instance_keys_performance_issue
         BeAssert(m_skippedInstanceKeysInternalField.IsValid());
         m_skippedInstanceKeysField = PresentationQueryContractFunctionField::Create(SkippedInstanceKeysFieldName, FUNCTION_NAME_AggregateJsonArray,
             {m_skippedInstanceKeysInternalField}, false, true, FieldVisibility::Both);
+#else
+        m_skippedInstanceKeysField = PresentationQueryContractSimpleField::Create(SkippedInstanceKeysInternalFieldName, "'[]'", false, true, FieldVisibility::Both);
+#endif
         }
     return {m_skippedInstanceKeysField, m_skippedInstanceKeysInternalField};
     }
