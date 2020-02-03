@@ -630,6 +630,44 @@ struct GeometrySelector2d
 };
 
 //=======================================================================================
+// @bsistruct                                                   Matt.Gooding    02/20
+//=======================================================================================
+struct GeometryPartSelector
+{
+    DgnDbR                  m_db;
+    CachedECSqlStatementPtr m_statement;
+
+    GeometryPartSelector(DgnDbR db) : m_db(db)
+        {
+        const Utf8CP ecSql = "SELECT GeometryStream,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometryPart) " WHERE ECInstanceId=?";
+        m_statement = m_db.GetPreparedECSqlStatement(ecSql);
+        BeAssert(m_statement.IsValid());
+        }
+
+    BentleyStatus ExtractGeometryStream(DgnGeometryPartId partId, GeometryStreamR gs, DRange3dR box)
+        {
+        if (!m_statement.IsValid())
+            return BentleyStatus::ERROR;
+
+        m_statement->Reset();
+        m_statement->BindId(1, partId);
+        if (BE_SQLITE_ROW != m_statement->Step())
+            return BentleyStatus::ERROR;
+
+        int blobSize = 0;
+        const void* blob = m_statement->GetValueBlob(0, &blobSize);
+        if (!blob || blobSize == 0)
+            return BentleyStatus::ERROR;
+
+        if (DgnDbStatus::Success != m_db.Elements().LoadGeometryStream(gs, blob, blobSize))
+            return BentleyStatus::ERROR;
+
+        box.InitFrom(m_statement->GetValuePoint3d(1), m_statement->GetValuePoint3d(2));
+        return BentleyStatus::SUCCESS;
+        }
+};
+
+//=======================================================================================
 // @bsistruct                                                   Paul.Connelly   05/17
 //=======================================================================================
 struct TileBuilder : GeometryListBuilder
@@ -674,13 +712,13 @@ DEFINE_REF_COUNTED_PTR(TileBuilder);
 struct TileSubGraphic : TileBuilder
 {
 private:
-    DgnGeometryPartCPtr m_input;
+    DRange3d            m_boundingBox;
     PartGeom::Key       m_key;
     PartGeomPtr         m_output;
     bool                m_hasSymbologyChanges;
 
     GraphicPtr _FinishGraphic(GeometryAccumulatorR) override;
-    void _Reset() override { m_input = nullptr; m_output = nullptr; }
+    void _Reset() override { m_boundingBox.Init(); m_output = nullptr; }
 
     // NB: Cannot instance solid primitives inside geometry parts...
     void _AddSolidPrimitiveR(ISolidPrimitiveR primitive) override
@@ -688,12 +726,11 @@ private:
         GeometryListBuilder::_AddSolidPrimitiveR(primitive);
         }
 public:
-    TileSubGraphic(TileContext& context, DgnGeometryPartCP part = nullptr, bool hasSymbologyChanges = false, PartGeom::KeyCR key = PartGeom::Key());
-    TileSubGraphic(TileContext& context, DgnGeometryPartCR part, bool hasSymbologyChanges, PartGeom::KeyCR key) : TileSubGraphic(context, &part, hasSymbologyChanges, key) { }
+    TileSubGraphic(TileContext& context, DRange3dCR partBoundingBox, bool hasSymbologyChanges, PartGeom::KeyCR key);
 
-    void ReInitialize(DgnGeometryPartCR part, bool hasSymbologyChanges, PartGeom::KeyCR key);
+    void ReInitialize(DRange3dCR partBoundingBox, bool hasSymbologyChanges, PartGeom::KeyCR key);
 
-    DgnGeometryPartCR GetInput() const { BeAssert(m_input.IsValid()); return *m_input; }
+    DRange3dCR GetBoundingBox() const { BeAssert(!m_boundingBox.IsNull()); return m_boundingBox; }
     PartGeomPtr GetOutput() const { return m_output; }
     bool HasSymbologyChanges() const { return m_hasSymbologyChanges; }
     PartGeom::KeyCR GetPartKey() const { return m_key; }
@@ -739,6 +776,8 @@ private:
     DRange3d                        m_range;
     DRange3d                        m_tileRange;
     BeSQLite::CachedStatementPtr    m_statement;
+    GeometryPartSelector            m_partSelector;
+    
     Transform                       m_transformFromDgn;
     double                          m_minRangeDiagonalSquared;
     double                          m_minTextBoxSize;
@@ -803,7 +842,7 @@ public:
     // Returns false to indicate solid primitive should be added as normal (uninstanced) geometry.
     bool AddSolidPrimitiveGeom(ISolidPrimitiveR primitive, TransformCR localToWorld, DisplayParamsCR displayParams);
     void AddPartGeom(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams, GraphicParamsR graphicParams);
-    PartGeomPtr GeneratePartGeom(PartGeom::KeyCR, DgnGeometryPartCR, GeometryParamsR);
+    PartGeomPtr GeneratePartGeom(PartGeom::KeyCR, GeometryStreamR, DRange3dCR, GeometryParamsR);
 
     TreeR GetTree() const { return m_loader.GetTree(); }
     Render::System& GetRenderSystemR() const { return m_loader.GetRenderSystem(); }
@@ -3791,9 +3830,9 @@ bool TileBuilder::_WantStrokeLineStyle(LineStyleSymbCR lsSymb, IFacetOptionsPtr&
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileSubGraphic::TileSubGraphic(TileContext& context, DgnGeometryPartCP part, bool hasPartSymb, PartGeom::KeyCR key)
-  : TileBuilder(context, nullptr != part ? static_cast<DRange3d>(part->GetBoundingBox()) : DRange3d::NullRange()),
-    m_input(part), m_hasSymbologyChanges(hasPartSymb), m_key(key)
+TileSubGraphic::TileSubGraphic(TileContext& context, DRange3dCR partBoundingBox, bool hasPartSymb, PartGeom::KeyCR key)
+  : TileBuilder(context, partBoundingBox),
+    m_hasSymbologyChanges(hasPartSymb), m_key(key), m_boundingBox(partBoundingBox)
     {
     SetCheckGlyphBoxes(true);
     }
@@ -3801,16 +3840,16 @@ TileSubGraphic::TileSubGraphic(TileContext& context, DgnGeometryPartCP part, boo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileSubGraphic::ReInitialize(DgnGeometryPartCR part, bool hasPartSymb, PartGeom::KeyCR key)
+void TileSubGraphic::ReInitialize(DRange3dCR partBoundingBox, bool hasPartSymb, PartGeom::KeyCR key)
     {
-    DRange3d range = part.GetBoundingBox();
+    DRange3d range = partBoundingBox;
     DPoint3d centroid = DPoint3d::FromInterpolate(range.low, 0.5, range.high);
     centroid.Negate();
     Transform geomToOrigin = Transform::From(centroid);
     geomToOrigin.Multiply(range, range);
 
     TileBuilder::ReInitialize(range, geomToOrigin);
-    m_input = &part;
+    m_boundingBox = partBoundingBox;
     m_key = key;
     m_hasSymbologyChanges = hasPartSymb;
     }
@@ -3829,7 +3868,7 @@ GraphicPtr TileSubGraphic::_FinishGraphic(GeometryAccumulatorR accum)
 TileContext::TileContext(GeometryList& geometries, GeometryLoaderCR loader, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, double tileTolerance, double rangeTolerance, SubRangesR subRanges)
   : m_geometries (geometries), m_facetOptions(facetOptions), m_loader(loader), m_range(range), m_transformFromDgn(transformFromDgn),
     m_tolerance(tileTolerance), m_statement(loader.GetDgnDb().GetCachedStatement(loader.Is3d() ? GeometrySelector3d::GetSql() : GeometrySelector2d::GetSql())),
-    m_finishedGraphic(new Graphic(loader.GetDgnDb())), m_subRanges(subRanges)
+    m_finishedGraphic(new Graphic(loader.GetDgnDb())), m_subRanges(subRanges), m_partSelector(loader.GetDgnDb())
     {
     static const double s_minTextBoxSize = 1.0;     // Below this ratio to tolerance  text is rendered as box.
 
@@ -3844,24 +3883,24 @@ TileContext::TileContext(GeometryList& geometries, GeometryLoaderCR loader, DRan
 
     // These are reused...
     m_tileBuilder = new TileBuilder(*this, DgnElementId(), 0.0, GraphicBuilder::CreateParams::Scene(loader.GetDgnDb()));
-    m_subGraphic = new TileSubGraphic(*this);
+    m_subGraphic = new TileSubGraphic(*this, DRange3d::NullRange(), false, PartGeom::Key());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-PartGeomPtr TileContext::GeneratePartGeom(PartGeom::KeyCR key, DgnGeometryPartCR geomPart, GeometryParamsR geomParams)
+PartGeomPtr TileContext::GeneratePartGeom(PartGeom::KeyCR key, GeometryStreamR gs, DRange3dCR box, GeometryParamsR geomParams)
     {
-    GeometryStreamIO::Collection collection(geomPart.GetGeometryStream().GetData(), geomPart.GetGeometryStream().GetSize());
+    GeometryStreamIO::Collection collection(gs.GetData(), gs.GetSize());
     bool hasPartSymb = hasSymbologyChanges(collection);
 
     TileSubGraphicPtr partBuilder(m_subGraphic);
     if (partBuilder->GetRefCount() > 2)
-        partBuilder = new TileSubGraphic(*this, geomPart, hasPartSymb, key);
+        partBuilder = new TileSubGraphic(*this, box, hasPartSymb, key);
     else
-        partBuilder->ReInitialize(geomPart, hasPartSymb, key);
+        partBuilder->ReInitialize(box, hasPartSymb, key);
 
-    collection.Draw(*partBuilder, *this, geomParams, false, &geomPart);
+    collection.Draw(*partBuilder, *this, geomParams, false, nullptr);
 
     partBuilder->Finish();
     BeAssert(partBuilder->GetRefCount() <= 2);
@@ -3881,9 +3920,10 @@ void TileContext::AddPartGeom(Render::GraphicBuilderR graphic, DgnGeometryPartId
     auto partIter = m_geomParts.find(partKey);
     if (m_geomParts.end() == partIter)
         {
-        DgnGeometryPartCPtr geomPart = GetDgnDb().Elements().Get<DgnGeometryPart>(partId);
-        if (geomPart.IsValid())
-            tilePartGeom = GeneratePartGeom(partKey, *geomPart, geomParams);
+        GeometryStream gs;
+        DRange3d box;
+        if (BentleyStatus::SUCCESS == m_partSelector.ExtractGeometryStream(partId, gs, box))
+            tilePartGeom = GeneratePartGeom(partKey, gs, box, geomParams);
 
         // ###TODO_INSTANCING: Instance symbology gets baked into part...
         // ###TODO_INSTANCING: For now, we do not instance the part if it contains any symbology of its own.
@@ -4001,10 +4041,8 @@ GraphicPtr TileContext::FinishGraphic(GeometryAccumulatorR accum, TileBuilder& b
 +---------------+---------------+---------------+---------------+---------------+------*/
 GraphicPtr TileContext::FinishSubGraphic(GeometryAccumulatorR accum, TileSubGraphic& subGf)
     {
-    DgnGeometryPartCR input = subGf.GetInput();
-
     TransformCR tf = accum.GetTransform();
-    DRange3d range = input.GetBoundingBox();
+    DRange3d range = subGf.GetBoundingBox();
     tf.Multiply(range, range);
 
     DPoint3d translation = tf.Origin();
