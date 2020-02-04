@@ -190,6 +190,7 @@ public:
     // END  
 
 private:
+    Utf8String m_InUsePrincipalId;
     Json::Value m_json;
     Utf8String m_PolicyId;
     double m_PolicyVersion;
@@ -222,6 +223,8 @@ public:
     LICENSING_EXPORT Json::Value GetJson() const { return m_json; };
     LICENSING_EXPORT Utf8String GetPolicyId() const { return m_PolicyId; };
     LICENSING_EXPORT double GetPolicyVersion() const { return m_PolicyVersion; };
+    LICENSING_EXPORT Utf8String GetInUsePrincipalId() { return m_InUsePrincipalId; };
+    LICENSING_EXPORT void SetInUsePrincipalId(Utf8StringCR principalId) { m_InUsePrincipalId = principalId; };
     LICENSING_EXPORT Utf8String GetPolicyCreatedOn() const { return m_PolicyCreatedOn; };
     LICENSING_EXPORT Utf8String GetPolicyExpiresOn() const { return m_PolicyExpiresOn; };
     LICENSING_EXPORT std::shared_ptr<RequestData> GetRequestData() const { return m_RequestData; };
@@ -230,6 +233,7 @@ public:
     LICENSING_EXPORT std::list<Utf8String> GetAppliesToSecurableIds() const { return m_AppliesToSecurableIds; };
     LICENSING_EXPORT std::list<std::shared_ptr<ACL>> GetACLs() const { return m_ACLs; };
     LICENSING_EXPORT std::list<std::shared_ptr<SecurableData>> GetSecurableData() const { return m_SecurableData; };
+	
     LICENSING_EXPORT std::shared_ptr<UserData> GetUserData() const { return m_UserData; };
     LICENSING_EXPORT std::list<std::shared_ptr<Qualifier>> GetDefaultQualifiers() const { return m_DefaultQualifiers; };
     // getter shortcuts for useful portions of the policy
@@ -239,6 +243,7 @@ public:
     LICENSING_EXPORT int64_t GetUltimateSAPId() { return GetUserData()->GetUltimateSAPId(); };
     // helper functions
     LICENSING_EXPORT bool IsValid();
+	LICENSING_EXPORT bool ContainsProduct(Utf8StringCR productId, Utf8StringCR featureString);
     LICENSING_EXPORT bool IsThreeWeeksPastExpired() { return IsPastThreeWeeksExpired(GetPolicyExpiresOn()); }
     LICENSING_EXPORT bool IsExpired() { return IsTimeExpired(GetPolicyExpiresOn()); };
 	LICENSING_EXPORT bool IsCheckout() { return m_IsCheckout; }

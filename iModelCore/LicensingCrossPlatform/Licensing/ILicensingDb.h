@@ -7,6 +7,7 @@
 
 #include <Licensing/Licensing.h>
 #include <BeSQLite/BeSQLite.h>
+#include "Policy.h"
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 
@@ -25,15 +26,16 @@ public:
     virtual BentleyStatus WriteUsageToCSVFile(BeFileNameCR path) = 0;
     virtual BentleyStatus WriteFeatureToCSVFile(BeFileNameCR path) = 0;
 
-    virtual std::list<Json::Value> GetPolicyFiles() = 0;
-    virtual std::list<Json::Value> GetPolicyFilesByUser(Utf8StringCR userId) = 0;
-	virtual std::list<Json::Value> GetCheckoutsByUser(Utf8StringCR userId) = 0;
+    virtual std::list<std::shared_ptr<Policy>> GetPolicyFiles() = 0;
+    virtual std::list<std::shared_ptr<Policy>> GetValidPolicyFilesForUser(Utf8StringCR userId) = 0;
+	virtual std::list<Json::Value> GetAllCheckouts() = 0;
     virtual std::list<Json::Value> GetPolicyFilesByKey(Utf8StringCR accessKey) = 0;
-    virtual BentleyStatus AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR accessKey, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken) = 0;
+    virtual BentleyStatus AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR accessKey, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken, Utf8StringCR projectId) = 0;
 	virtual BentleyStatus AddOrUpdateCheckout(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR accessKey, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken) = 0;
     virtual BentleyStatus DeletePolicyFile(Utf8StringCR policyId) = 0;
     virtual BentleyStatus DeleteAllOtherPolicyFilesByUser(Utf8StringCR policyId, Utf8StringCR userId) = 0;
     virtual BentleyStatus DeleteAllOtherPolicyFilesByKey(Utf8StringCR policyId, Utf8StringCR accessKey) = 0;
+    virtual BentleyStatus DeleteAllOtherPolicyFilesByProject(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR projectId) = 0;
 
     virtual Json::Value GetPolicyFile() = 0;
     virtual Json::Value GetPolicyFile(Utf8StringCR policyId) = 0;

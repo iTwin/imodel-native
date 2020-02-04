@@ -44,23 +44,23 @@ BentleyStatus LicensingDbMock::WriteFeatureToCSVFile(BeFileNameCR path)
     return m_mockedWriteFeatureToCSVFile;
     }
 
-std::list<Json::Value> LicensingDbMock::GetPolicyFiles()
+std::list<std::shared_ptr<Policy>> LicensingDbMock::GetPolicyFiles()
     {
     m_getPolicyFilesCalls++;
     return m_policyList;
     }
 
-std::list<Json::Value> LicensingDbMock::GetPolicyFilesByUser(Utf8StringCR userId)
+std::list<std::shared_ptr<Policy>> LicensingDbMock::GetValidPolicyFilesForUser(Utf8StringCR userId)
     {
     m_getPolicyFilesByUserCallsMap[userId]++;
     return m_userPolicyListMap[userId];
     }
 
-std::list<Json::Value> LicensingDbMock::GetCheckoutsByUser(Utf8StringCR userId)
-{
-	m_getCheckoutsByUserCallsMap[userId]++;
-	return m_userCheckoutListMap[userId];
-}
+std::list<Json::Value> LicensingDbMock::GetAllCheckouts()
+	{
+	m_getAllCheckoutsCalls++;
+	return m_allCheckoutList;
+	}
 
 std::list<Json::Value> LicensingDbMock::GetPolicyFilesByKey(Utf8StringCR accessKey)
     {
@@ -68,7 +68,7 @@ std::list<Json::Value> LicensingDbMock::GetPolicyFilesByKey(Utf8StringCR accessK
     return m_keyPolicyListMap[accessKey];
     }
 
-BentleyStatus LicensingDbMock::AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR accessKey, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken)
+BentleyStatus LicensingDbMock::AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR accessKey, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken, Utf8StringCR projectId)
     {
     m_addOrUpdatePolicyFileCalls++;
     return m_mockedAddOrUpdatePolicyFile;
@@ -98,10 +98,16 @@ BentleyStatus LicensingDbMock::DeleteAllOtherPolicyFilesByKey(Utf8StringCR polic
     return m_mockedDeleteAllOtherPolicyFilesByKey;
     }
 
+BentleyStatus LicensingDbMock::DeleteAllOtherPolicyFilesByProject(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR projectId)
+    {
+    m_deleteAllOtherPolicyFilesByKeyCalls++;
+    return m_mockedDeleteAllOtherPolicyFilesByProject;
+    }
+
 Json::Value LicensingDbMock::GetPolicyFile()
     {
     m_getPolicyFileCalls++;
-    return m_policyList.size() > 0 ? m_policyList.front() : Json::Value::GetNull();
+    return m_policyList.size() > 0 ? m_policyList.front()->GetJson() : Json::Value::GetNull();
     }
 
 Json::Value LicensingDbMock::GetPolicyFile(Utf8StringCR policyId)
@@ -214,12 +220,12 @@ BentleyStatus LicensingDbMock::RecordFeature
     }
 
 // mock/testing functions
-void LicensingDbMock::MockPolicyFiles(std::list<Json::Value> policyFiles)
+void LicensingDbMock::MockPolicyFiles(std::list<std::shared_ptr<Policy>> policyFiles)
     {
     m_policyList = policyFiles;
     }
 
-void LicensingDbMock::MockUserPolicyFiles(Utf8StringCR userId, std::list<Json::Value> policyFiles)
+void LicensingDbMock::MockUserPolicyFiles(Utf8StringCR userId, std::list<std::shared_ptr<Policy>> policyFiles)
     {
     m_userPolicyListMap[userId] = policyFiles;
     m_getPolicyFilesByUserCallsMap[userId] = 0; // initialize count for this user id

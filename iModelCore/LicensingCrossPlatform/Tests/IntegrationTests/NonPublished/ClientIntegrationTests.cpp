@@ -33,6 +33,7 @@
 
 
 #define TEST_PRODUCT_ID      "2545"
+#define TEST_PROJECT_ID      "77000000-0000-0000-0000-000000000077"                             
 
 USING_NAMESPACE_BENTLEY_LICENSING
 USING_NAMESPACE_BENTLEY_LICENSING_INTEGRATION_TESTS
@@ -189,11 +190,38 @@ TEST_F(ClientIntegrationTests, FactoryStartStopApplication_Success)
     EXPECT_SUCCESS(client->StopApplication());
     }
 
+TEST_F(ClientIntegrationTests, FactoryStartStopApplicationForProject_Success)
+    {
+    auto client = CreateTestClient(true, TEST_PRODUCT_ID);
+    if (nullptr == client)
+        {
+        FAIL() << "client is null";
+        }
+    auto startStatus = client->StartApplicationForProject(TEST_PROJECT_ID);
+    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::Error));
+    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::NotEntitled));
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+
+    EXPECT_SUCCESS(client->StopApplication());
+    }
+
 // Tests using the Clients' implementation
 TEST_F(ClientIntegrationTests, StartStopApplication_Success)
     {
     auto client = CreateTestClientImpl(true, TEST_PRODUCT_ID);
     auto startStatus = client->StartApplication();
+    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::Error));
+    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::NotEntitled));
+
+    EXPECT_SUCCESS(client->StopApplication());
+    }
+
+TEST_F(ClientIntegrationTests, StartStopApplicationForProject_Success)
+    {
+    auto client = CreateTestClientImpl(true, TEST_PRODUCT_ID);
+    auto startStatus = client->StartApplicationForProject(TEST_PROJECT_ID);
+
     ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::Error));
     ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::NotEntitled));
 

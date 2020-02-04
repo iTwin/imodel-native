@@ -46,6 +46,23 @@ folly::Future<std::shared_ptr<Policy>> PolicyProvider::GetPolicy()
         });
     }
 
+folly::Future<std::shared_ptr<Policy>> PolicyProvider::GetPolicy(Utf8StringCR projectId)
+    {
+    LOG.debug("ClientImpl::GetPolicy");
+
+    return folly::collectAll(GetCertificate(), PerformGetPolicyRequest(projectId)).then(
+        [] (const std::tuple<folly::Try<Utf8String>, folly::Try<Utf8String>>& tup)
+        {
+        Utf8String cert = std::get<0>(tup).value();
+        cert.ReplaceAll("\"", ""); // TODO move to the function
+
+        Utf8String policyToken = std::get<1>(tup).value();
+        policyToken.ReplaceAll("\"", ""); // TODO move to the function
+
+        return Policy::Create(JWToken::Create(policyToken, cert));
+        });
+    }
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -97,6 +114,61 @@ folly::Future<Utf8String> PolicyProvider::GetCertificate()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<Utf8String> PolicyProvider::PerformGetPolicyRequest(Utf8StringCR projectId)
+    {
+    LOG.debug("ClientImpl::PerformGetPolicyRequest");
+
+    if (m_authHandlerProvider == nullptr)
+        {
+        LOG.error("authHandlerProvider is null, EntilementPolicyService GetPolicy requires authentication");
+        throw AsyncError("EntitlementPolicyService GetPolicy requires authentication");
+        }
+
+    auto url = m_buddiProvider->EntitlementPolicyBaseUrl() + "/GetPolicy";
+
+    LOG.debugv("ClientImpl::PerformGetPolicyRequest - EntitlementPolicyService: %s", url.c_str());
+
+    auto authHandler = m_authHandlerProvider->GetAuthHandler(url, m_headerPrefix);
+
+    HttpClient client(nullptr, authHandler);
+
+    auto request = client.CreatePostRequest(url);
+    Json::Value requestJson(Json::objectValue);
+    requestJson["MachineName"] = m_applicationInfo->GetDeviceId();
+    requestJson["ClientDateTime"] = DateTime::GetCurrentTimeUtc().ToString();
+    requestJson["Locale"] = m_applicationInfo->GetLanguage();
+    requestJson["AppliesTo"] = GETPOLICY_RequestData_AppliesTo_Url;    
+    requestJson["ProjectId"] = projectId;
+
+    Json::Value requestedSecurable(Json::objectValue);
+    requestedSecurable["ProductId"] = m_applicationInfo->GetProductId();
+    requestedSecurable["FeatureString"] = "";
+    requestedSecurable["Version"] = m_applicationInfo->GetVersion().ToString();
+
+    Json::Value requestedSecurables(Json::arrayValue);
+    requestedSecurables[0] = requestedSecurable;
+
+    requestJson["RequestedSecurables"] = requestedSecurables;
+
+    request.SetRequestBody(HttpStringBody::Create(Json::FastWriter().write(requestJson)));
+
+    request.GetHeaders().SetContentType(REQUESTHEADER_ContentType_ApplicationJson);
+
+    return request.Perform().then(
+        [=](Response response)
+        {
+        if (!response.IsSuccess())
+            {
+            LOG.errorv("ClientImpl::PerformGetPolicyRequest ERROR: Unable to perform policy request %s", HttpError(response).GetMessage().c_str());
+            LOG.errorv("ClientImpl::PerformGetPolicyRequest ERROR: Response connection status : ", response.GetConnectionStatus());
+            LOG.errorv("ClientImpl::PerformGetPolicyRequest Response Body (Should contain requestID) :", response.GetBody().AsString().c_str());
+            throw HttpError(response);
+            }
+
+        return response.GetBody().AsString();
+        });
+    }
+
 folly::Future<Utf8String> PolicyProvider::PerformGetPolicyRequest()
     {
     LOG.debug("ClientImpl::PerformGetPolicyRequest");
@@ -137,7 +209,7 @@ folly::Future<Utf8String> PolicyProvider::PerformGetPolicyRequest()
     request.GetHeaders().SetContentType(REQUESTHEADER_ContentType_ApplicationJson);
 
     return request.Perform().then(
-        [=](Response response)
+        [=] (Response response)
         {
         if (!response.IsSuccess())
             {

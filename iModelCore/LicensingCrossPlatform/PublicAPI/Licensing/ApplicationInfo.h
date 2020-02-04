@@ -82,7 +82,7 @@ public:
 
     LICENSING_EXPORT BeVersion GetVersion() const;
     LICENSING_EXPORT Utf8String GetProductId() const;
-    LICENSING_EXPORT Utf8String GetDeviceId() const;
+    LICENSING_EXPORT Utf8String GetDeviceId() const;    
 
 #if defined (__ANDROID__)
     LICENSING_EXPORT static void CacheAndroidDeviceId(Utf8String deviceId);

@@ -11,7 +11,7 @@
 #include <BeSQLite/BeSQLite.h>
 
 #define LICENSE_CLIENT_SCHEMA_NAME      "LICENSINGSCHEMA"
-#define LICENSE_CLIENT_SCHEMA_VERSION   2.0  //DB version 2.0 handles checkouts
+#define LICENSE_CLIENT_SCHEMA_VERSION   3.0  //DB version 2.0 handles checkouts, 3.0 handles project policies
 #define LOG_VERSION 1
 #define PARTITION_ID 1
 
@@ -36,7 +36,7 @@ private:
 
     BentleyStatus SetEimVersion();
     BentleyStatus UpdateDb();
-    BentleyStatus UpdateDbTables();
+    BentleyStatus UpdateDbTables(double startingSchema);
 
     int64_t GetLastUsageRecordRowId();
     int64_t GetLastFeatureRowId();
@@ -51,15 +51,16 @@ public:
     LICENSING_EXPORT BentleyStatus WriteUsageToCSVFile(BeFileNameCR path);
     LICENSING_EXPORT BentleyStatus WriteFeatureToCSVFile(BeFileNameCR path);
 
-    LICENSING_EXPORT std::list<Json::Value> GetPolicyFiles();
-    LICENSING_EXPORT std::list<Json::Value> GetPolicyFilesByUser(Utf8StringCR userId);
-	LICENSING_EXPORT std::list<Json::Value> GetCheckoutsByUser(Utf8StringCR userId);
+    LICENSING_EXPORT std::list<std::shared_ptr<Policy>> GetPolicyFiles();
+    LICENSING_EXPORT std::list<std::shared_ptr<Policy>> GetValidPolicyFilesForUser(Utf8StringCR userId);
+	LICENSING_EXPORT std::list<Json::Value> GetAllCheckouts();
     LICENSING_EXPORT std::list<Json::Value> GetPolicyFilesByKey(Utf8StringCR accessKey);
-    LICENSING_EXPORT BentleyStatus AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR accessKey, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken);
+    LICENSING_EXPORT BentleyStatus AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR accessKey, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken, Utf8StringCR projectId);
 	LICENSING_EXPORT BentleyStatus AddOrUpdateCheckout(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR accessKey, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken);
     LICENSING_EXPORT BentleyStatus DeletePolicyFile(Utf8StringCR policyId);
     LICENSING_EXPORT BentleyStatus DeleteAllOtherPolicyFilesByUser(Utf8StringCR policyId, Utf8StringCR userId);
     LICENSING_EXPORT BentleyStatus DeleteAllOtherPolicyFilesByKey(Utf8StringCR policyId, Utf8StringCR accessKey);
+    LICENSING_EXPORT BentleyStatus DeleteAllOtherPolicyFilesByProject(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR projectId);
 
     LICENSING_EXPORT Json::Value GetPolicyFile();
     LICENSING_EXPORT Json::Value GetPolicyFile(Utf8StringCR policyId);

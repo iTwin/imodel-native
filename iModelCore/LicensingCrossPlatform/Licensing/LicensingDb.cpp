@@ -218,8 +218,8 @@ BentleyStatus LicensingDb::SetUpTables()
         {
         return ERROR;
         }
-	
-    return UpdateDbTables(); //Since they do not have a DB using schema number to update won't work here, already existing DBs will update automatically
+	//first time DB creation
+    return UpdateDbTables(1); //Schema already set to latest number, passing 1 here so that all updates occur
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -476,11 +476,11 @@ BentleyStatus LicensingDb::WriteFeatureToCSVFile(BeFileNameCR path)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::list<Json::Value> LicensingDb::GetPolicyFiles()
+std::list<std::shared_ptr<Policy>> LicensingDb::GetPolicyFiles()
     {
     LOG.info("GetPolicyFiles");
 
-    std::list<Json::Value> policyList;
+    std::list<std::shared_ptr<Policy>> policyList;
 
     Statement stmt;
     stmt.Prepare(m_db, "SELECT PolicyFile FROM Policy");
@@ -492,7 +492,8 @@ std::list<Json::Value> LicensingDb::GetPolicyFiles()
             {
             Utf8String policyUtf8 = stmt.GetValueText(0);
             auto policyJson = Json::Reader::DoParse(policyUtf8);
-            policyList.push_back(policyJson);
+            auto policy = Policy::Create(policyJson);
+            policyList.push_back(policy);
             }
         else
             {
@@ -505,11 +506,11 @@ std::list<Json::Value> LicensingDb::GetPolicyFiles()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::list<Json::Value> LicensingDb::GetPolicyFilesByUser(Utf8StringCR userId)
+std::list<std::shared_ptr<Policy>> LicensingDb::GetValidPolicyFilesForUser(Utf8StringCR userId)
     {
-    LOG.info("GetPolicyFilesByUser(userId)");
+    LOG.info("GetValidPolicyFilesForUser(userId)");
 
-    std::list<Json::Value> policyList;
+    std::list<std::shared_ptr<Policy>> policyList;
 
     Statement stmt;
     if (m_db.IsDbOpen())
@@ -524,7 +525,19 @@ std::list<Json::Value> LicensingDb::GetPolicyFilesByUser(Utf8StringCR userId)
                 {
                 Utf8String policyUtf8 = stmt.GetValueText(0);
                 auto policyJson = Json::Reader::DoParse(policyUtf8);
-                policyList.push_back(policyJson);
+                auto policy = Policy::Create(policyJson);
+                if (!policy->IsValid())
+                    {
+                    // log
+                    continue;
+                    }
+                if (!policy->GetAppliesToUserId().Equals(userId))
+                    {
+                    // log
+                    continue;
+                    }
+
+                policyList.push_back(policy);
                 }
             else
                 {
@@ -535,10 +548,9 @@ std::list<Json::Value> LicensingDb::GetPolicyFilesByUser(Utf8StringCR userId)
     return policyList;
     }
 
-std::list<Json::Value> LicensingDb::GetCheckoutsByUser(Utf8StringCR userId)
+std::list<Json::Value> LicensingDb::GetAllCheckouts()
 {
-	LOG.info("GetCheckoutsByUser(userId)");
-	LOG.info(userId.c_str());
+	LOG.info("GetAllCheckouts(userId)");
 	std::list<Json::Value> policyList;
 
 	Statement stmt;
@@ -631,7 +643,15 @@ BentleyStatus LicensingDb::AddOrUpdateCheckout(Utf8StringCR policyId, Utf8String
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus LicensingDb::AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR accessKey, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken)
+BentleyStatus LicensingDb::AddOrUpdatePolicyFile(
+	Utf8StringCR policyId,
+	Utf8StringCR userId,
+	Utf8StringCR accessKey,
+	Utf8StringCR expirationDate,
+	Utf8StringCR lastUpdateTime,
+	Json::Value policyToken,
+	Utf8StringCR projectId
+	)
     {
     LOG.debug("AddOrUpdatePolicyFile");
 
@@ -641,13 +661,14 @@ BentleyStatus LicensingDb::AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8Stri
         {
         dbchangelocker.lock();
         Utf8String stringToken = Json::FastWriter::ToString(policyToken);
-        stmt.Prepare(m_db, "INSERT INTO Policy VALUES (?, ?, ?, ?, ?, ?)");
+        stmt.Prepare(m_db, "INSERT INTO Policy VALUES (?, ?, ?, ?, ?, ?, ?)");
         stmt.BindText(1, policyId, Statement::MakeCopy::No);
         stmt.BindText(2, userId, Statement::MakeCopy::No);
         stmt.BindText(3, accessKey, Statement::MakeCopy::No);
         stmt.BindText(4, expirationDate, Statement::MakeCopy::No);
         stmt.BindText(5, lastUpdateTime, Statement::MakeCopy::No);
         stmt.BindText(6, stringToken, Statement::MakeCopy::No);
+        stmt.BindText(7, projectId, Statement::MakeCopy::No);
         DbResult result = stmt.Step();
         dbchangelocker.unlock();
         if (result == DbResult::BE_SQLITE_DONE)
@@ -690,9 +711,34 @@ BentleyStatus LicensingDb::DeleteAllOtherPolicyFilesByUser(Utf8StringCR policyId
     if (m_db.IsDbOpen())
         {
         dbchangelocker.lock();
-        stmt.Prepare(m_db, "DELETE FROM Policy WHERE UserId = ? AND PolicyId != ?");
+        stmt.Prepare(m_db, "DELETE FROM Policy WHERE UserId = ? AND PolicyId != ? AND ProjectId == ?");
         stmt.BindText(1, userId, Statement::MakeCopy::No);
         stmt.BindText(2, policyId, Statement::MakeCopy::No);
+        stmt.BindText(3, "", Statement::MakeCopy::No);
+        DbResult result = stmt.Step();
+        dbchangelocker.unlock();
+        if (result == DbResult::BE_SQLITE_DONE)
+            return SUCCESS;
+        }
+    return ERROR;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                        Matt.Yale 1/22/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus LicensingDb::DeleteAllOtherPolicyFilesByProject(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR projectId)
+    {
+    LOG.debug("DeleteAllOtherPolicyFilesByUser");
+
+    Statement stmt;
+
+    if (m_db.IsDbOpen())
+        {
+        dbchangelocker.lock();
+        stmt.Prepare(m_db, "DELETE FROM Policy WHERE UserId = ? AND PolicyId != ? AND ProjectId == ?");
+        stmt.BindText(1, userId, Statement::MakeCopy::No);
+        stmt.BindText(2, policyId, Statement::MakeCopy::No);
+        stmt.BindText(3, projectId, Statement::MakeCopy::No);
         DbResult result = stmt.Step();
         dbchangelocker.unlock();
         if (result == DbResult::BE_SQLITE_DONE)
@@ -1086,10 +1132,10 @@ BentleyStatus LicensingDb::UpdateDb()
 
         if (result == DbResult::BE_SQLITE_ROW)
             {
-            double schemaVersion = stmt.GetValueDouble(1);
-            if (schemaVersion < LICENSE_CLIENT_SCHEMA_VERSION)
+            double originalSchemaVersion = stmt.GetValueDouble(1);
+            if (originalSchemaVersion < LICENSE_CLIENT_SCHEMA_VERSION)
                 {
-                LOG.infov("UpdateDb - Updating schema version %f to %f...", schemaVersion, LICENSE_CLIENT_SCHEMA_VERSION);
+                LOG.infov("UpdateDb - Updating schema version %f to %f...", originalSchemaVersion, LICENSE_CLIENT_SCHEMA_VERSION);
                 Utf8String updateStatement;
                 dbchangelocker.lock();
                 //Statement updateStmt;
@@ -1099,8 +1145,9 @@ BentleyStatus LicensingDb::UpdateDb()
                 result = stmt.Step();
                 dbchangelocker.unlock();
                 if (result == DbResult::BE_SQLITE_DONE)
-                    {					
-                    return UpdateDbTables();					
+                    {
+                    //schema behind most recent value, updating existing DB
+                    return UpdateDbTables(originalSchemaVersion);					
                     }
                 else
                     {
@@ -1117,21 +1164,42 @@ BentleyStatus LicensingDb::UpdateDb()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus LicensingDb::UpdateDbTables()
+BentleyStatus LicensingDb::UpdateDbTables(double startingSchema)
     {
-    LOG.info("UpdateDbTables");
-	//Add new checkout table to DB -- schema 2.0	
-	if (m_db.CreateTableIfNotExists("Checkout",
-		"PolicyId NVARCHAR(20) PRIMARY KEY, "
-		"UserId NVARCHAR(40), "
-		"AccessKey NVARCHAR(40), "
-		"ExpirationDate NVARCHAR(20), "
-		"LastUpdateTime NVARCHAR(20), "
-		"PolicyFile NVARCHAR(900)") != DbResult::BE_SQLITE_OK)  //Any other needed columns? Machine name? SID? 
-	{
-		LOG.error("Failed to create Checkout table.");		
-		return ERROR;
-	}
+    LOG.infov("UpdateDbTables: startingSchema %d", startingSchema);
+   
+    if (startingSchema < 2)
+        {
+        //Add new checkout table to DB -- schema 2.0	
+        if (m_db.CreateTableIfNotExists("Checkout",
+                                        "PolicyId NVARCHAR(20) PRIMARY KEY, "
+                                        "UserId NVARCHAR(40), "
+                                        "AccessKey NVARCHAR(40), "
+                                        "ExpirationDate NVARCHAR(20), "
+                                        "LastUpdateTime NVARCHAR(20), "
+                                        "PolicyFile NVARCHAR(900)") != DbResult::BE_SQLITE_OK)  //Any other needed columns? Machine name? SID? 
+            {
+            LOG.error("Failed to create Checkout table.");
+            return ERROR;
+            }
+        }
+    if (startingSchema < 3)
+        {
+        if (!m_db.ColumnExists("Policy", "ProjectId"))
+            //Our unit tests create DB with latest schema, then change the schema to outdated version, and run the update twice... 
+            //this prevents error if update is ran on an uptodate db
+            {
+            //Add ProjectID to Policy Table -- schema 3.0
+            //ALTER TABLE %s ADD COLUMN %s %s is what AddColumnToTable does under the hood,
+            //according to doc it will allow NULL values : https://www.techonthenet.com/sqlite/tables/alter_table.php
+            //so the default to projectId column is NULL
+            if (m_db.AddColumnToTable("Policy", "ProjectId", "GUID") != DbResult::BE_SQLITE_OK)
+                {
+                LOG.error("Failed to update Policy table");
+                return ERROR;
+                };
+            }               
+        }
 	LOG.info("UpdatedDbTables completed");	
     return SUCCESS;
     }

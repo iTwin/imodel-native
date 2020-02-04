@@ -42,107 +42,91 @@ ClientImpl::ClientImpl
     m_ulasProvider(ulasProvider),
     m_licensingDb(licensingDb)
     {
-    if(m_licensingDb == nullptr) // either pass in a mock, or initialize here
+    if (m_licensingDb == nullptr) // either pass in a mock, or initialize here
         m_licensingDb = std::make_unique<LicensingDb>();
 
     m_correlationId = BeSQLite::BeGuid(true).ToString();
     m_timeRetriever = TimeRetriever::Get();
 
-	if (Utf8String::IsNullOrEmpty(projectId.c_str()))
-	{
-		m_projectId = "00000000-0000-0000-0000-000000000000";
-	}
-	else
-	{
-		m_projectId = projectId;
-	}
+    if (Utf8String::IsNullOrEmpty(projectId.c_str()))
+        {
+        m_projectId = "00000000-0000-0000-0000-000000000000";
+        }
+    else
+        {
+        m_projectId = projectId;
+        }
 
     m_offlineMode = offlineMode;
     }
 
 bool ClientImpl::ValidateParamsAndDB()
-{
-	// start time for offline usage logs
-	m_usageStartTime = DateTime::GetCurrentTimeUtc().ToString();	
-
-	if (m_applicationInfo == nullptr)
-	{
-		LOG.error("ClientImpl::StartApplication ERROR - Application Information object is null.");
-		return false;
-	}
-
-	if (BeFileName::IsNullOrEmpty(m_dbPath))
-	{
-		LOG.error("ClientImpl::StartApplication ERROR - Database path string is null or empty.");
-		return false;
-	}
-
-	if (Utf8String::IsNullOrEmpty(m_correlationId.c_str()))
-	{
-		LOG.error("ClientImpl::StartApplication ERROR - Correlation ID (Usage ID) string is null or empty.");
-		return false;
-	}
-
-	if (m_timeRetriever == nullptr)
-	{
-		LOG.error("ClientImpl::StartApplication ERROR - Time retriever object is null.");
-		return false;
-	}
-
-	if (m_licensingDb == nullptr)
-	{
-		LOG.error("ClientImpl::StartApplication ERROR - Database object is null.");
-		return false;
-	}
-
-	if (SUCCESS != m_licensingDb->OpenOrCreate(m_dbPath))
-	{
-		LOG.error("ClientImpl::StartApplication ERROR - Database creation failed.");
-		return false;
-	}
-	return true;
-}
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-LicenseStatus ClientImpl::StartApplication()
     {
-    LOG.debug("ClientImpl::StartApplication");
+    // start time for offline usage logs
+    m_usageStartTime = DateTime::GetCurrentTimeUtc().ToString();
 
-	if (!ValidateParamsAndDB())
-	{
-		return LicenseStatus::Error;
-	}	
-	//check for checkouts first 
-	const auto productId = m_applicationInfo->GetProductId();
-	auto policy = SearchForCheckout(productId);
-	if (policy != nullptr)
-	{		
-		//found checkout, make sure it isnt expired
-		if (policy->GetPolicyStatus() == Policy::PolicyStatus::Expired)
-		{
-			return LicenseStatus::Expired; //it shouldnt return expired checkouts from DB anymore, but just as a safeguard 
-		}
-		LOG.info("Checkout found returning LicenseStatus OK");
-		m_policy = policy;
-		int64_t currentTime = m_timeRetriever->GetCurrentTimeAsUnixMillis();		
-		m_lastRunningLogPostingHeartbeatStartTime = currentTime; // ensure that StopApplication knows that this heartbeat is started
-		CallOnInterval(m_stopLogPostingHeartbeatThread, m_logPostingHeartbeatThreadStopped, m_lastRunningLogPostingHeartbeatStartTime, HEARTBEAT_THREAD_DELAY_MS, [this]() { return LogPostingHeartbeat(); });
-		return LicenseStatus::Ok;
-	}
-	if (Utf8String::IsNullOrEmpty(m_userInfo.username.c_str()))//not a checkout? needs a user logged in 
-	{
-		LOG.error("ClientImpl::StartApplication ERROR - Username string is null or empty.");
-		return LicenseStatus::Error;
-	}
-	//No checkouts found
-    // get policy from entitlements or database
-    m_policy = GetPolicyToken();
+    if (m_applicationInfo == nullptr)
+        {
+        LOG.error("ClientImpl::StartApplication ERROR - Application Information object is null.");
+        return false;
+        }
+
+    if (BeFileName::IsNullOrEmpty(m_dbPath))
+        {
+        LOG.error("ClientImpl::StartApplication ERROR - Database path string is null or empty.");
+        return false;
+        }
+
+    if (Utf8String::IsNullOrEmpty(m_correlationId.c_str()))
+        {
+        LOG.error("ClientImpl::StartApplication ERROR - Correlation ID (Usage ID) string is null or empty.");
+        return false;
+        }
+
+    if (m_timeRetriever == nullptr)
+        {
+        LOG.error("ClientImpl::StartApplication ERROR - Time retriever object is null.");
+        return false;
+        }
+
+    if (m_licensingDb == nullptr)
+        {
+        LOG.error("ClientImpl::StartApplication ERROR - Database object is null.");
+        return false;
+        }
+
+    if (SUCCESS != m_licensingDb->OpenOrCreate(m_dbPath))
+        {
+        LOG.error("ClientImpl::StartApplication ERROR - Database creation failed.");
+        return false;
+        }
+    return true;
+    }
+
+LicenseStatus ClientImpl::StartApplicationGeneric(std::function<std::shared_ptr<Policy>()> getPolicy)
+    {
+    LOG.debug("ClientImpl::StartApplicationGeneric");
+
+    if (!ValidateParamsAndDB())
+        {
+        return LicenseStatus::Error;
+        }
+
+    const auto productId = m_applicationInfo->GetProductId();
+    auto policy = SearchForCheckout(productId, m_featureString);
+    if (policy != nullptr)
+        {
+        LOG.info("Checkout found returning LicenseStatus OK");
+        m_policy = policy;
+        StartLogPostingHeartbeat();
+        return LicenseStatus::Ok;
+        }
+
+    m_policy = getPolicy();
 
     if (m_policy == nullptr)
         {
-        LOG.error("ClientImpl::StartApplication ERROR - Policy token object is null. No policy obtained from entitlements or cached");
+        LOG.error("ClientImpl::StartApplicationGeneric ERROR - Policy token object is null. No policy obtained from entitlements or cached");
         return LicenseStatus::Error;
         }
 
@@ -153,26 +137,38 @@ LicenseStatus ClientImpl::StartApplication()
         (LicenseStatus::Offline == licStatus) ||
         (LicenseStatus::Trial == licStatus))
         {
-        // spawn one new thread for each heartbeat
-        // TODO: try function pointers as there is less overhead than std::function
-
-        int64_t currentTime = m_timeRetriever->GetCurrentTimeAsUnixMillis();
-
-        m_lastRunningUsageHeartbeatStartTime = currentTime; // ensure that StopApplication knows that this heartbeat is started
-        CallOnInterval(m_stopUsageHeartbeatThread, m_usageHeartbeatThreadStopped, m_lastRunningUsageHeartbeatStartTime, HEARTBEAT_THREAD_DELAY_MS, [this]() { return UsageHeartbeat(); });
-
-        m_lastRunningLogPostingHeartbeatStartTime = currentTime; // ensure that StopApplication knows that this heartbeat is started
-        CallOnInterval(m_stopLogPostingHeartbeatThread, m_logPostingHeartbeatThreadStopped, m_lastRunningLogPostingHeartbeatStartTime, HEARTBEAT_THREAD_DELAY_MS, [this]() { return LogPostingHeartbeat(); });
-
-        m_lastRunningPolicyHeartbeatStartTime = currentTime; // ensure that StopApplication knows that this heartbeat is started
-        CallOnInterval(m_stopPolicyHeartbeatThread, m_policyHeartbeatThreadStopped, m_lastRunningPolicyHeartbeatStartTime, HEARTBEAT_THREAD_DELAY_MS, [this](){ return PolicyHeartbeat(); });
+        StartUsageHeartbeat();
+        StartLogPostingHeartbeat();
+        StartPolicyHeartbeat();
         }
     else
         {
-        LOG.errorv("ClientImpl::StartApplication - LicenseStatus Returned: %d", licStatus);
+        LOG.errorv("ClientImpl::StartApplicationGeneric - LicenseStatus Returned: %d", licStatus);
         }
 
     return licStatus;
+    }
+
+
+LicenseStatus ClientImpl::StartApplicationForProject(Utf8StringCR projectId)
+    {
+    LOG.debug("ClientImpl::StartApplicationForProject");
+
+    auto getPolicy = [this, projectId]() { return GetProjectPolicyToken(projectId); };
+
+    return StartApplicationGeneric(getPolicy);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+LicenseStatus ClientImpl::StartApplication()
+    {
+    LOG.debug("ClientImpl::StartApplication");
+
+    auto getPolicy = [this]() { return GetPolicyToken(); };
+
+    return StartApplicationGeneric(getPolicy);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -196,6 +192,8 @@ BentleyStatus ClientImpl::StopApplication()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ClientImpl::CallOnInterval(std::atomic_bool& stopThread, std::atomic_bool& isFinished, std::atomic<int64_t>& lastRunStartTime, size_t interval, std::function<void(void)> func)
     {
+    // TODO: try function pointers as there is less overhead than std::function
+
     // run a function on a loop, after the first call delay the call by an interval of time each iteration
 
     // all variables used in this thread and the main thread, and modified anywhere must be atomic so there is no race condition
@@ -253,6 +251,12 @@ void ClientImpl::UsageHeartbeat()
         RecordUsage();
         m_lastRunningUsageHeartbeatStartTime.store(currentTime);
         }
+    }
+
+void ClientImpl::StartUsageHeartbeat()
+    {
+    m_lastRunningUsageHeartbeatStartTime = m_timeRetriever->GetCurrentTimeAsUnixMillis(); // ensure that StopApplication knows that this heartbeat is started
+    CallOnInterval(m_stopUsageHeartbeatThread, m_usageHeartbeatThreadStopped, m_lastRunningUsageHeartbeatStartTime, HEARTBEAT_THREAD_DELAY_MS, [this]() { return UsageHeartbeat(); });
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -325,6 +329,12 @@ void ClientImpl::PolicyHeartbeat()
         }
     }
 
+void ClientImpl::StartPolicyHeartbeat()
+    {
+    m_lastRunningPolicyHeartbeatStartTime = m_timeRetriever->GetCurrentTimeAsUnixMillis(); // ensure that StopApplication knows that this heartbeat is started
+    CallOnInterval(m_stopPolicyHeartbeatThread, m_policyHeartbeatThreadStopped, m_lastRunningPolicyHeartbeatStartTime, HEARTBEAT_THREAD_DELAY_MS, [this]() { return PolicyHeartbeat(); });
+    }
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -384,6 +394,12 @@ void ClientImpl::LogPostingHeartbeat()
         m_ulasProvider->PostFeatureLogs(m_applicationInfo, m_dbPath, *m_licensingDb, m_policy);
         m_lastRunningLogPostingHeartbeatStartTime.store(currentTime);
         }
+    }
+
+void ClientImpl::StartLogPostingHeartbeat()
+    {
+    m_lastRunningLogPostingHeartbeatStartTime = m_timeRetriever->GetCurrentTimeAsUnixMillis(); // ensure that StopApplication knows that this heartbeat is started
+    CallOnInterval(m_stopLogPostingHeartbeatThread, m_logPostingHeartbeatThreadStopped, m_lastRunningLogPostingHeartbeatStartTime, HEARTBEAT_THREAD_DELAY_MS, [this]() { return LogPostingHeartbeat(); });
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -449,9 +465,9 @@ BentleyStatus ClientImpl::MarkFeature(Utf8StringCR featureId, FeatureUserDataMap
         (LicenseStatus::Trial != licStatus))
         {
         LOG.errorv("ClientImpl::MarkFeature ERROR - Licenses status of product %s is %d. Feature %s cannot be tracked",
-                   m_applicationInfo->GetProductId().c_str(),
-                   licStatus,
-                   featureId.c_str());
+            m_applicationInfo->GetProductId().c_str(),
+            licStatus,
+            featureId.c_str());
         return ERROR;
         }
 
@@ -486,7 +502,7 @@ BentleyStatus ClientImpl::MarkFeature(Utf8StringCR featureId, FeatureUserDataMap
         }
 
     versionString.Sprintf("%d%.4d%.4d%.4d", m_applicationInfo->GetVersion().GetMajor(), m_applicationInfo->GetVersion().GetMinor(),
-                          m_applicationInfo->GetVersion().GetSub1(), m_applicationInfo->GetVersion().GetSub2());
+        m_applicationInfo->GetVersion().GetSub1(), m_applicationInfo->GetVersion().GetSub2());
 
     LOG.debugv("ClientImpl::MarkFeature - "
         "FeatureLogEntry: "
@@ -526,22 +542,22 @@ BentleyStatus ClientImpl::MarkFeature(Utf8StringCR featureId, FeatureUserDataMap
         userDataString.c_str());
 
     if (SUCCESS != m_licensingDb->RecordFeature(m_policy->GetUltimateSAPId(),
-                                                m_policy->GetCountry(),
-                                                atoi(m_applicationInfo->GetProductId().c_str()),
-                                                m_featureString,
-                                                atoll(versionString.c_str()),
-                                                m_applicationInfo->GetDeviceId(),
-                                                gsid.GetMachineSID(m_applicationInfo->GetDeviceId()),
-                                                m_userInfo.username,
-                                                gsid.GetUserSID(m_userInfo.username, m_applicationInfo->GetDeviceId()),
-                                                m_policy->GetAppliesToUserId(),
-                                                m_projectId,
-                                                m_correlationId,
-                                                featureId,
-                                                startTimeUtc,
-                                                endTimeUtc,
-                                                durationTracked ? "true" : "false",
-                                                userDataString))
+        m_policy->GetCountry(),
+        atoi(m_applicationInfo->GetProductId().c_str()),
+        m_featureString,
+        atoll(versionString.c_str()),
+        m_applicationInfo->GetDeviceId(),
+        gsid.GetMachineSID(m_applicationInfo->GetDeviceId()),
+        m_userInfo.username,
+        gsid.GetUserSID(m_userInfo.username, m_applicationInfo->GetDeviceId()),
+        m_policy->GetAppliesToUserId(),
+        m_projectId,
+        m_correlationId,
+        featureId,
+        startTimeUtc,
+        endTimeUtc,
+        durationTracked ? "true" : "false",
+        userDataString))
         {
         LOG.error("ClientImpl::MarkFeature ERROR - Feature usage failed to be recorded.");
         return ERROR;
@@ -572,80 +588,110 @@ BentleyStatus ClientImpl::RecordUsage()
     Utf8String entryDate = endTimeUtc;
 
     versionString.Sprintf("%d%.4d%.4d%.4d", m_applicationInfo->GetVersion().GetMajor(), m_applicationInfo->GetVersion().GetMinor(),
-                          m_applicationInfo->GetVersion().GetSub1(), m_applicationInfo->GetVersion().GetSub2());
+        m_applicationInfo->GetVersion().GetSub1(), m_applicationInfo->GetVersion().GetSub2());
 
     LOG.debugv("ClientImpl::RecordUsage - "
-               "UsageLogEntry: "
-               "ultimateId:%ld, "
-               "principalId:%s, "
-               "productId:%ld, "
-               "usageCountryIso:%s, "
-               "featureString:%s, "
-               "imsId:%s, "
-               "machineName:%s, "
-               "machineSID:%s, "
-               "userName:%s, "
-               "userSID:%s, "
-               "policyId:%s, "
-               "productVersion:%ld, "
-               "projectId:%s, "
-               "correlationId:%s, "
-               "logVersion:%ld, "
-               "logPostingSource:%s, "
-               "usageType:%s, "
-               "startTimeUtc:%s, "
-               "endTimeUtc:%s, "
-               "entryDate:%s, "
-               "partitionId:%i ",
-               m_policy->GetUltimateSAPId(),
-               m_policy->GetPrincipalId().c_str(),
-               atoi(m_applicationInfo->GetProductId().c_str()),
-               m_policy->GetCountry().c_str(),
-               m_featureString.c_str(),
-               m_policy->GetAppliesToUserId().c_str(),
-               m_applicationInfo->GetDeviceId().c_str(),
-               gsid.GetMachineSID(m_applicationInfo->GetDeviceId()).c_str(),
-               m_userInfo.username.c_str(),
-               gsid.GetUserSID(m_userInfo.username, m_applicationInfo->GetDeviceId()).c_str(),
-               m_policy->GetPolicyId().c_str(),
-               atoll(versionString.c_str()),
-               m_projectId.c_str(),
-               m_correlationId.c_str(),
-               LOG_VERSION,
-               GetLoggingPostSource().c_str(),
-               m_policy->GetUsageType().c_str(),
-               startTimeUtc.c_str(),
-               endTimeUtc.c_str(),
-               entryDate.c_str(),
-               PARTITION_ID);
+        "UsageLogEntry: "
+        "ultimateId:%ld, "
+        "principalId:%s, "
+        "productId:%ld, "
+        "usageCountryIso:%s, "
+        "featureString:%s, "
+        "imsId:%s, "
+        "machineName:%s, "
+        "machineSID:%s, "
+        "userName:%s, "
+        "userSID:%s, "
+        "policyId:%s, "
+        "productVersion:%ld, "
+        "projectId:%s, "
+        "correlationId:%s, "
+        "logVersion:%ld, "
+        "logPostingSource:%s, "
+        "usageType:%s, "
+        "startTimeUtc:%s, "
+        "endTimeUtc:%s, "
+        "entryDate:%s, "
+        "partitionId:%i ",
+        m_policy->GetUltimateSAPId(),
+        m_policy->GetInUsePrincipalId().c_str(),
+        atoi(m_applicationInfo->GetProductId().c_str()),
+        m_policy->GetCountry().c_str(),
+        m_featureString.c_str(),
+        m_policy->GetAppliesToUserId().c_str(),
+        m_applicationInfo->GetDeviceId().c_str(),
+        gsid.GetMachineSID(m_applicationInfo->GetDeviceId()).c_str(),
+        m_userInfo.username.c_str(),
+        gsid.GetUserSID(m_userInfo.username, m_applicationInfo->GetDeviceId()).c_str(),
+        m_policy->GetPolicyId().c_str(),
+        atoll(versionString.c_str()),
+        m_projectId.c_str(),
+        m_correlationId.c_str(),
+        LOG_VERSION,
+        GetLoggingPostSource().c_str(),
+        m_policy->GetUsageType().c_str(),
+        startTimeUtc.c_str(),
+        endTimeUtc.c_str(),
+        entryDate.c_str(),
+        PARTITION_ID);
 
     if (SUCCESS != m_licensingDb->RecordUsage(m_policy->GetUltimateSAPId(),
-                                              m_policy->GetPrincipalId(),
-                                              atoi(m_applicationInfo->GetProductId().c_str()),
-                                              m_policy->GetCountry(),
-                                              m_featureString,
-                                              m_policy->GetAppliesToUserId(),
-                                              m_applicationInfo->GetDeviceId(),
-                                              gsid.GetMachineSID(m_applicationInfo->GetDeviceId()),
-                                              m_userInfo.username,
-                                              gsid.GetUserSID(m_userInfo.username, m_applicationInfo->GetDeviceId()),
-                                              m_policy->GetPolicyId(),
-                                              atoll(versionString.c_str()),
-                                              m_projectId,
-                                              m_correlationId,
-                                              LOG_VERSION,
-                                              GetLoggingPostSource(),
-                                              m_policy->GetUsageType(),
-                                              startTimeUtc,
-                                              endTimeUtc,
-                                              entryDate,
-                                              PARTITION_ID))
+        m_policy->GetPrincipalId(),
+        atoi(m_applicationInfo->GetProductId().c_str()),
+        m_policy->GetCountry(),
+        m_featureString,
+        m_policy->GetAppliesToUserId(),
+        m_applicationInfo->GetDeviceId(),
+        gsid.GetMachineSID(m_applicationInfo->GetDeviceId()),
+        m_userInfo.username,
+        gsid.GetUserSID(m_userInfo.username, m_applicationInfo->GetDeviceId()),
+        m_policy->GetPolicyId(),
+        atoll(versionString.c_str()),
+        m_projectId,
+        m_correlationId,
+        LOG_VERSION,
+        GetLoggingPostSource(),
+        m_policy->GetUsageType(),
+        startTimeUtc,
+        endTimeUtc,
+        entryDate,
+        PARTITION_ID))
         {
         LOG.error("ClientImpl::RecordUsage - ERROR: Usage failed to be recorded.");
         return ERROR;
         }
 
     return SUCCESS;
+    }
+
+std::shared_ptr<Policy> ClientImpl::GetProjectPolicyToken(Utf8StringCR projectId)
+    {
+    LOG.debug("ClientImpl::GetProjectPolicyToken");
+
+    try
+        {
+        auto policy = m_policyProvider->GetPolicy(projectId).get();
+        if (policy != nullptr)
+            {
+            StoreProjectPolicyInLicensingDb(policy, projectId);
+            DeleteAllOtherPoliciesByProject(policy, projectId);
+            }
+
+        return policy;
+        }
+    catch (...)
+        {
+        LOG.info("ClientImpl::GetPolicyToken: Call to entitlements failed, getting policy from DB");
+
+        const auto productId = m_applicationInfo->GetProductId();
+        auto policy = SearchForPolicy(productId);
+
+        // start offline grace period if there is a cached policy
+        if (policy != nullptr && !HasOfflineGracePeriodStarted())
+            m_licensingDb->SetOfflineGracePeriodStart(DateHelper::GetCurrentTime());
+
+        return policy;
+        }
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -656,7 +702,8 @@ std::shared_ptr<Policy> ClientImpl::GetPolicyToken()
     LOG.debug("ClientImpl::GetPolicyToken");
 
     // try to get policy from entitlements, fallback to database if call fails
-    try {
+    try
+        {
         auto policy = m_policyProvider->GetPolicy().get();
         if (policy != nullptr)
             {
@@ -669,7 +716,7 @@ std::shared_ptr<Policy> ClientImpl::GetPolicyToken()
     catch (...)
         {
         LOG.info("ClientImpl::GetPolicyToken: Call to entitlements failed, getting policy from DB");
-        
+
         const auto productId = m_applicationInfo->GetProductId();
         auto policy = SearchForPolicy(productId);
 
@@ -695,6 +742,11 @@ ILicensingDb& ClientImpl::GetLicensingDb()
 folly::Future<std::shared_ptr<Policy>> ClientImpl::GetPolicy()
     {
     return m_policyProvider->GetPolicy();
+    }
+
+folly::Future<std::shared_ptr<Policy>> ClientImpl::GetPolicy(Utf8StringCR projectId)
+    {
+    return m_policyProvider->GetPolicy(projectId);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -726,7 +778,8 @@ void ClientImpl::CleanUpPolicies()
     {
     LOG.debug("ClientImpl::CleanUpPolicies");
 
-    for (auto policy : GetPolicies())
+    auto policies = m_licensingDb->GetPolicyFiles();
+    for (auto policy : policies)
         {
         // if policy is not valid, remove it from the database; no point in keeping it
         if (!policy->IsValid())
@@ -743,132 +796,91 @@ std::shared_ptr<Policy> ClientImpl::GetPolicyWithId(Utf8StringCR policyId)
     {
     LOG.debug("ClientImpl::GetPolicyWithId");
 
-    auto jsonpolicy = m_licensingDb->GetPolicyFile(policyId);
-    if (jsonpolicy == Json::Value::GetNull())
-        return nullptr;
-    return Policy::Create(jsonpolicy);
-    }
+    auto jsonPolicy = m_licensingDb->GetPolicyFile(policyId);
 
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-std::list<std::shared_ptr<Policy>> ClientImpl::GetPolicies()
-    {
-    LOG.debug("ClientImpl::GetPolicies");
-
-    std::list<std::shared_ptr<Policy>> policyList;
-    auto jsonpolicies = m_licensingDb->GetPolicyFiles();
-    for (auto json : jsonpolicies)
+    if (jsonPolicy == Json::Value::GetNull())
         {
-        auto policy = Policy::Create(json);
-        policyList.push_back(policy);
+        return nullptr;
         }
-    return policyList;
+
+    return Policy::Create(jsonPolicy);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::list<std::shared_ptr<Policy>> ClientImpl::GetUserPolicies()
+std::list<std::shared_ptr<Policy>> ClientImpl::GetValidUserPolicies()
     {
-    LOG.debug("ClientImpl::GetUserPolicies");
+    LOG.debug("ClientImpl::GetValidUserPolicies");
 
+    auto policies = m_licensingDb->GetValidPolicyFilesForUser(m_userInfo.userId);
+    return policies;
+    }
+
+std::list<std::shared_ptr<Policy>> ClientImpl::GetValidCheckouts()
+    {
+    LOG.debug("ClientImpl::GetValidCheckouts");
+
+    // TODO more useful logging
     std::list<std::shared_ptr<Policy>> policyList;
-    auto jsonpolicies = m_licensingDb->GetPolicyFilesByUser(m_userInfo.userId);
+    auto jsonpolicies = m_licensingDb->GetAllCheckouts();
     for (auto json : jsonpolicies)
         {
         auto policy = Policy::Create(json);
         if (!policy->IsValid())
             continue;
-        if (policy->GetAppliesToUserId().Equals(m_userInfo.userId))
-            {
-            policyList.push_back(policy);
-            }
+        if (policy->IsExpired())
+            continue;
+        policyList.push_back(policy);
         }
     return policyList;
     }
 
-std::list<std::shared_ptr<Policy>> ClientImpl::GetUserCheckouts()
-{
-	LOG.debug("ClientImpl::GetUserPolicies");
+std::shared_ptr<Policy> ClientImpl::SearchForCheckout(Utf8String productId, Utf8String featureString) // TODO productId should be int
+    {
+    LOG.debug("ClientImpl::SearchForCheckout");
 
-	std::list<std::shared_ptr<Policy>> policyList;
-	auto jsonpolicies = m_licensingDb->GetCheckoutsByUser(m_userInfo.userId);
-	for (auto json : jsonpolicies)
-	{
-		auto policy = Policy::Create(json);
-		if (!policy->IsValid())
-			continue;
-		if (policy->IsExpired())
-			continue;
-		policyList.push_back(policy);		
-	}
-	return policyList;
-}
+    auto policies = GetValidCheckouts();
 
-std::shared_ptr<Policy> ClientImpl::SearchForCheckout(Utf8String requestedProductId)
-{
-	LOG.debug("ClientImpl::SearchForCheckout");
-	std::shared_ptr<Policy> matchingPolicy = nullptr;
-
-	auto policies = GetUserCheckouts();
-
-	Utf8String productId;
-	if (requestedProductId.Equals(""))
-		productId = m_applicationInfo->GetProductId();
-	else
-		productId = requestedProductId;
-
-	for (auto policy : policies)
-	{
-		// policy assumed to be valid due to IsValid check in GetUserCheckouts()
-		// look for a securable that matches productId and featureString
-		for (auto securable : policy->GetSecurableData())
-		{
-			if (Utf8String(std::to_string(securable->GetProductId()).c_str()).Equals(productId) &&
-				securable->GetFeatureString().Equals(m_featureString))
-			{
-				// if matches, return this policy
-				return policy;
-			}
-		}
-	}
-	return matchingPolicy;
-}
+    for (auto policy : policies)
+        {
+        // look for a securable that matches productId and featureString
+        if (policy->ContainsProduct(productId, featureString))
+            {
+            LOG.info("ClientImpl::SearchForCheckout - found checkout from db");
+            return policy;
+            }
+        }
+    LOG.debug("ClientImpl::SearchForCheckout - no checkout found");
+    return nullptr; // not found
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<Policy> ClientImpl::SearchForPolicy(Utf8String requestedProductId)
+std::shared_ptr<Policy> ClientImpl::SearchForPolicy(Utf8String productId)
     {
     LOG.debug("ClientImpl::SearchForPolicy");
 
-    std::shared_ptr<Policy> matchingPolicy = nullptr;
     // get all of user's policies
-    auto policies = GetUserPolicies();
-    // find policy that contains appropriate productId and featureString
-    Utf8String productId;
-    if (requestedProductId.Equals(""))
-        productId = m_applicationInfo->GetProductId();
-    else
-        productId = requestedProductId;
+    auto policies = GetValidUserPolicies();
 
     for (auto policy : policies)
         {
-        // policy assumed to be valid due to IsValid check in GetUserPolicies()
+        // policy assumed to be valid due to IsValid check in GetValidUserPolicies()
         // look for a securable that matches productId and featureString
         for (auto securable : policy->GetSecurableData())
             {
-            if (Utf8String(std::to_string(securable->GetProductId()).c_str()).Equals(productId) &&
-                securable->GetFeatureString().Equals(m_featureString))
+            if (policy->ContainsProduct(productId, m_featureString))
                 {
-                // if matches, return this policy
+                LOG.info("ClientImpl::SearchForPolicy - found policy from db");
                 return policy;
                 }
             }
         }
 
-    return matchingPolicy;
+    LOG.debug("ClientImpl::SearchForPolicy - policy not found");
+    return nullptr; // not found
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -880,6 +892,14 @@ void ClientImpl::DeleteAllOtherPoliciesByUser(std::shared_ptr<Policy> policy)
 
     m_licensingDb->DeleteAllOtherPolicyFilesByUser(policy->GetPolicyId(),
         policy->GetUserData()->GetUserId());
+    }
+
+void ClientImpl::DeleteAllOtherPoliciesByProject(std::shared_ptr<Policy> policy, Utf8StringCR projectId)
+    {
+    LOG.debug("ClientImpl::DeleteAllOtherPoliciesByProject");
+    m_licensingDb->DeleteAllOtherPolicyFilesByProject(policy->GetPolicyId(),
+        policy->GetUserData()->GetUserId(),
+        projectId);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -902,7 +922,7 @@ void ClientImpl::AddPolicyToDb(std::shared_ptr<Policy> policy, bool IsCheckout)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ClientImpl::StorePolicyInLicensingDb(std::shared_ptr<Policy> policy, bool IsCheckout)
+void ClientImpl::StorePolicyInLicensingDb(std::shared_ptr<Policy> policy, bool IsCheckout, Utf8StringCR projectId)
     {
     LOG.debug("ClientImpl::StorePolicyInLicensingDb");
 
@@ -910,23 +930,32 @@ void ClientImpl::StorePolicyInLicensingDb(std::shared_ptr<Policy> policy, bool I
     auto lastUpdate = policy->GetRequestData()->GetClientDateTime();
     auto accessKey = policy->GetRequestData()->GetAccessKey();
 
-	if (IsCheckout)
-	{
-		m_licensingDb->AddOrUpdateCheckout(policy->GetPolicyId(),
-			policy->GetAppliesToUserId(),
-			accessKey,
-			expiration,
-			lastUpdate,
-			policy->GetJson());
-		return;
-	}
+    if (IsCheckout)
+        {
+        m_licensingDb->AddOrUpdateCheckout(policy->GetPolicyId(),
+            policy->GetAppliesToUserId(),
+            accessKey,
+            expiration,
+            lastUpdate,
+            policy->GetJson());
+        return;
+        }
 
-	m_licensingDb->AddOrUpdatePolicyFile(policy->GetPolicyId(),
+    m_licensingDb->AddOrUpdatePolicyFile(policy->GetPolicyId(),
         policy->GetAppliesToUserId(),
         accessKey,
         expiration,
         lastUpdate,
-        policy->GetJson());
+        policy->GetJson(),
+        projectId);
+    }
+
+void ClientImpl::StoreProjectPolicyInLicensingDb(std::shared_ptr<Policy> policy, Utf8StringCR projectId)
+    {
+    LOG.debug("ClientImpl::StoreProjectPolicyInLicensingDb");
+
+    const bool isCheckout = false;
+    StorePolicyInLicensingDb(policy, isCheckout, projectId);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -975,10 +1004,10 @@ LicenseStatus ClientImpl::GetLicenseStatus()
         return LicenseStatus::NotEntitled;
         }
 
-	if (policy->GetPolicyStatus() == Policy::PolicyStatus::Expired)
-	{
-		return LicenseStatus::Expired;
-	}
+    if (policy->GetPolicyStatus() == Policy::PolicyStatus::Expired)
+        {
+        return LicenseStatus::Expired;
+        }
     // if policy not valid, return LicenseStatus::DisabledByPolicy
     if (policy->GetPolicyStatus() != Policy::PolicyStatus::Valid)
         {
@@ -1045,7 +1074,7 @@ int64_t ClientImpl::ImportCheckout(BeFileNameCR filepath)
         LOG.debugv("File does not exist, or user lacks permissions to open %s", filepath.c_str());
         return -1; // Error 
         }
-    
+
     if (!filepath.EndsWithI(L"belic"))
         {
         LOG.debug("not a belic file");
@@ -1055,7 +1084,7 @@ int64_t ClientImpl::ImportCheckout(BeFileNameCR filepath)
     //Read in policy file string 
     std::shared_ptr<Policy> policy = nullptr;
     try
-    {        
+        {
         BeFileStatus status;
         BeTextFilePtr infileReadPtr;
         WString policyToken;
@@ -1086,28 +1115,28 @@ int64_t ClientImpl::ImportCheckout(BeFileNameCR filepath)
 
         //Add policy to DB 
         policy = Policy::Create(JWToken::Create(Token.c_str(), Cert.c_str()));
-    if (policy == nullptr)
-        {
-        LOG.debug("Could not create policy from supplied policy token and cert");
-        return -1; //error occured in JWTToken creation or in Policy creation 
+        if (policy == nullptr)
+            {
+            LOG.debug("Could not create policy from supplied policy token and cert");
+            return -1; //error occured in JWTToken creation or in Policy creation 
+            }
         }
-    }
     catch (...)
-    {
+        {
         LOG.debug("Exception occured attempting to import the belic file");
         return -1;
+        }
+    GenerateSID gsid;
+    Utf8String localDeviceId = m_applicationInfo->GetDeviceId();
+    Utf8String policyDeviceId = policy->GetRequestData()->GetMachineName();
+    //Verify policy is for this device ID before putting in DB
+    auto localSig = gsid.GetMachineSID(localDeviceId);
+    auto policySig = gsid.GetMachineSID(policyDeviceId);
+    if (localSig != policySig)
+        {
+        LOG.debug("Device ID does not match provided policy device id");
+        return -2; // policy and machine signature mismatch, policy not for this device. 
+        }
+    AddPolicyToDb(policy, true);
+    return 0;//success 
     }
-	GenerateSID gsid;
-	Utf8String localDeviceId = m_applicationInfo->GetDeviceId();
-	Utf8String policyDeviceId = policy->GetRequestData()->GetMachineName();
-	//Verify policy is for this device ID before putting in DB
-	auto localSig = gsid.GetMachineSID(localDeviceId); 
-	auto policySig = gsid.GetMachineSID(policyDeviceId);
-	if (localSig != policySig)
-	{
-		LOG.debug("Device ID does not match provided policy device id");		
-		return -2; // policy and machine signature mismatch, policy not for this device. 
-	}
-	AddPolicyToDb(policy, true); 
-	return 0;//success 
-}

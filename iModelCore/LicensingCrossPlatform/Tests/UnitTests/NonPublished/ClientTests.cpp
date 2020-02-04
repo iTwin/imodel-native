@@ -205,8 +205,8 @@ TEST_F(ClientTests, StartApplicationNoHeartbeat_Success)
     GetLicensingDbMock().MockAddOrUpdatePolicyFile(SUCCESS);
     GetLicensingDbMock().MockDeleteAllOtherPolicyFilesByUser(SUCCESS);
 
-    std::list<Json::Value> noUserDataPolicyList;
-    noUserDataPolicyList.push_back(jsonPolicyNoUserData);
+    std::list<std::shared_ptr<Policy>> noUserDataPolicyList;
+    noUserDataPolicyList.push_back(Policy::Create(jsonPolicyNoUserData));
 
     GetLicensingDbMock().MockUserPolicyFiles(userId, noUserDataPolicyList);
 
@@ -236,8 +236,8 @@ TEST_F(ClientTests, StartApplicationStopApplication_Success)
     GetLicensingDbMock().MockAddOrUpdatePolicyFile(SUCCESS);
     GetLicensingDbMock().MockDeleteAllOtherPolicyFilesByUser(SUCCESS);
 
-    std::list<Json::Value> validPolicyList;
-    validPolicyList.push_back(jsonPolicyValid);
+    std::list<std::shared_ptr<Policy>> validPolicyList;
+    validPolicyList.push_back(Policy::Create(jsonPolicyValid));
 
     GetLicensingDbMock().MockUserPolicyFiles(userId, validPolicyList);
 
@@ -312,7 +312,7 @@ TEST_F(ClientTests, GetLicenseStatusEmpty_Test)
     auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
     auto client = CreateTestClient(userInfo);
 
-    std::list<Json::Value> emptyPolicyList;
+    std::list<std::shared_ptr<Policy>> emptyPolicyList;
 
     GetLicensingDbMock().MockUserPolicyFiles(userId, emptyPolicyList);
 
@@ -328,8 +328,8 @@ TEST_F(ClientTests, GetLicenseStatusValid_Test)
     auto client = CreateTestClient(userInfo, TEST_PRODUCT_ID);
 
     auto jsonPolicyValid = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_PRODUCT_ID), "", 1, false);
-    std::list<Json::Value> validPolicyList;
-    validPolicyList.push_back(jsonPolicyValid);
+    std::list<std::shared_ptr<Policy>> validPolicyList;
+    validPolicyList.push_back(Policy::Create(jsonPolicyValid));
 
     GetLicensingDbMock().MockUserPolicyFiles(userId, validPolicyList);
     GetLicensingDbMock().MockGetOfflineGracePeriodStart("");
@@ -355,8 +355,8 @@ TEST_F(ClientTests, GetLicenseStatusEvalValid_Test)
 
     Json::Value jsonPolicyEval = ReadJsonFile(testJson);
     Json::Value jsonPolicyEvalObject = Json::Reader::DoParse(jsonPolicyEval.asString()); // need to convert to Json::Value object type to use as a policy json
-    std::list<Json::Value> validEvalPolicyList;
-    validEvalPolicyList.push_back(jsonPolicyEvalObject);
+    std::list<std::shared_ptr<Policy>> validEvalPolicyList;
+    validEvalPolicyList.push_back(Policy::Create(jsonPolicyEvalObject));
 
     GetLicensingDbMock().MockUserPolicyFiles(userId, validEvalPolicyList);
     GetLicensingDbMock().MockGetOfflineGracePeriodStart("");
@@ -382,8 +382,8 @@ TEST_F(ClientTests, GetLicenseStatusEvalExpired_Test)
 
     Json::Value jsonPolicyEval = ReadJsonFile(testJson);
     Json::Value jsonPolicyEvalObject = Json::Reader::DoParse(jsonPolicyEval.asString()); // need to convert to Json::Value object type to use as a policy json
-    std::list<Json::Value> expiredEvalPolicyList;
-    expiredEvalPolicyList.push_back(jsonPolicyEvalObject);
+    std::list<std::shared_ptr<Policy>> expiredEvalPolicyList;
+    expiredEvalPolicyList.push_back(Policy::Create(jsonPolicyEvalObject));
 
     GetLicensingDbMock().MockUserPolicyFiles(userId, expiredEvalPolicyList);
 
@@ -407,8 +407,8 @@ TEST_F(ClientTests, GetLicenseStatusEvalBadVersion_Test)
 
     Json::Value jsonPolicyEval = ReadJsonFile(testJson);
     Json::Value jsonPolicyEvalObject = Json::Reader::DoParse(jsonPolicyEval.asString()); // need to convert to Json::Value object type to use as a policy json
-    std::list<Json::Value> expiredEvalPolicyList;
-    expiredEvalPolicyList.push_back(jsonPolicyEvalObject);
+    std::list<std::shared_ptr<Policy>> expiredEvalPolicyList;
+    expiredEvalPolicyList.push_back(Policy::Create(jsonPolicyEvalObject));
 
     GetLicensingDbMock().MockUserPolicyFiles(userId, expiredEvalPolicyList);
 
@@ -431,8 +431,8 @@ TEST_F(ClientTests, GetLicenseStatusEvalGoodVersion_Test)
 
     Json::Value jsonPolicyEval = ReadJsonFile(testJson);
     Json::Value jsonPolicyEvalObject = Json::Reader::DoParse(jsonPolicyEval.asString()); // need to convert to Json::Value object type to use as a policy json
-    std::list<Json::Value> expiredEvalPolicyList;
-    expiredEvalPolicyList.push_back(jsonPolicyEvalObject);
+    std::list<std::shared_ptr<Policy>> expiredEvalPolicyList;
+    expiredEvalPolicyList.push_back(Policy::Create(jsonPolicyEvalObject));
 
     GetLicensingDbMock().MockUserPolicyFiles(userId, expiredEvalPolicyList);
 
@@ -455,8 +455,8 @@ TEST_F(ClientTests, GetLicenseStatusEvalGoodFullVersion_Test)
 
     Json::Value jsonPolicyEval = ReadJsonFile(testJson);
     Json::Value jsonPolicyEvalObject = Json::Reader::DoParse(jsonPolicyEval.asString()); // need to convert to Json::Value object type to use as a policy json
-    std::list<Json::Value> expiredEvalPolicyList;
-    expiredEvalPolicyList.push_back(jsonPolicyEvalObject);
+    std::list<std::shared_ptr<Policy>> expiredEvalPolicyList;
+    expiredEvalPolicyList.push_back(Policy::Create(jsonPolicyEvalObject));
 
     GetLicensingDbMock().MockUserPolicyFiles(userId, expiredEvalPolicyList);
 
@@ -479,8 +479,8 @@ TEST_F(ClientTests, GetLicenseStatusEvalBadFullVersion_Test)
 
     Json::Value jsonPolicyEval = ReadJsonFile(testJson);
     Json::Value jsonPolicyEvalObject = Json::Reader::DoParse(jsonPolicyEval.asString()); // need to convert to Json::Value object type to use as a policy json
-    std::list<Json::Value> expiredEvalPolicyList;
-    expiredEvalPolicyList.push_back(jsonPolicyEvalObject);
+    std::list<std::shared_ptr<Policy>> expiredEvalPolicyList;
+    expiredEvalPolicyList.push_back(Policy::Create(jsonPolicyEvalObject));
 
     GetLicensingDbMock().MockUserPolicyFiles(userId, expiredEvalPolicyList);
 
@@ -504,8 +504,8 @@ TEST_F(ClientTests, GetLicenseStatusEvalBackupAcl_Test)
 
     Json::Value jsonPolicyEval = ReadJsonFile(testJson);
     Json::Value jsonPolicyEvalObject = Json::Reader::DoParse(jsonPolicyEval.asString()); // need to convert to Json::Value object type to use as a policy json
-    std::list<Json::Value> expiredEvalPolicyList;
-    expiredEvalPolicyList.push_back(jsonPolicyEvalObject);
+    std::list<std::shared_ptr<Policy>> expiredEvalPolicyList;
+    expiredEvalPolicyList.push_back(Policy::Create(jsonPolicyEvalObject));
 
     GetLicensingDbMock().MockUserPolicyFiles(userId, expiredEvalPolicyList);
     GetLicensingDbMock().MockGetOfflineGracePeriodStart("");
@@ -523,8 +523,8 @@ TEST_F(ClientTests, GetLicenseStatusValidTrial_Test)
     auto client = CreateTestClient(userInfo, TEST_PRODUCT_ID);
 
     auto jsonPolicyValidTrial = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_PRODUCT_ID), "", 1, true);
-    std::list<Json::Value> validTrialPolicyList;
-    validTrialPolicyList.push_back(jsonPolicyValidTrial);
+    std::list<std::shared_ptr<Policy>> validTrialPolicyList;
+    validTrialPolicyList.push_back(Policy::Create(jsonPolicyValidTrial));
 
     GetLicensingDbMock().MockUserPolicyFiles(userId, validTrialPolicyList);
 
@@ -540,8 +540,8 @@ TEST_F(ClientTests, GetLicenseStatusExpiredTrial_Test)
     auto client = CreateTestClient(userInfo, TEST_PRODUCT_ID);
 
     auto jsonPolicyExpiredTrial = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(-1), userId, std::atoi(TEST_PRODUCT_ID), "", 1, true);
-    std::list<Json::Value> expiredTrialPolicyList;
-    expiredTrialPolicyList.push_back(jsonPolicyExpiredTrial);
+    std::list<std::shared_ptr<Policy>> expiredTrialPolicyList;
+    expiredTrialPolicyList.push_back(Policy::Create(jsonPolicyExpiredTrial));
 
     GetLicensingDbMock().MockUserPolicyFiles(userId, expiredTrialPolicyList);
 
@@ -557,8 +557,8 @@ TEST_F(ClientTests, GetLicenseStatusExpired_Test)
     auto client = CreateTestClient(userInfo, TEST_PRODUCT_ID);
 
     auto jsonPolicyExpired = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(-1), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_PRODUCT_ID), "", 1, false);
-    std::list<Json::Value> expiredPolicyList;
-    expiredPolicyList.push_back(jsonPolicyExpired);
+    std::list<std::shared_ptr<Policy>> expiredPolicyList;
+    expiredPolicyList.push_back(Policy::Create(jsonPolicyExpired));
 
     GetLicensingDbMock().MockUserPolicyFiles(userId, expiredPolicyList);
 
@@ -574,8 +574,8 @@ TEST_F(ClientTests, GetLicenseStatusNoSecurables_Test)
     auto client = CreateTestClient(userInfo, TEST_PRODUCT_ID);
 
     auto jsonPolicyNoSecurables = DummyPolicyHelper::CreatePolicyNoSecurables(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_PRODUCT_ID), "", 1, false);
-    std::list<Json::Value> noSecurablesPolicyList;
-    noSecurablesPolicyList.push_back(jsonPolicyNoSecurables);
+    std::list<std::shared_ptr<Policy>> noSecurablesPolicyList;
+    noSecurablesPolicyList.push_back(Policy::Create(jsonPolicyNoSecurables));
 
     GetLicensingDbMock().MockUserPolicyFiles(userId, noSecurablesPolicyList);
 
@@ -591,8 +591,8 @@ TEST_F(ClientTests, GetLicenseStatusNoACLs_Test)
     auto client = CreateTestClient(userInfo, TEST_PRODUCT_ID);
 
     auto jsonPolicyNoACLs = DummyPolicyHelper::CreatePolicyNoACLs(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_PRODUCT_ID), "", 1, false);
-    std::list<Json::Value> noACLsPolicyList;
-    noACLsPolicyList.push_back(jsonPolicyNoACLs);
+    std::list<std::shared_ptr<Policy>> noACLsPolicyList;
+    noACLsPolicyList.push_back(Policy::Create(jsonPolicyNoACLs));
 
     GetLicensingDbMock().MockUserPolicyFiles(userId, noACLsPolicyList);
 
@@ -608,8 +608,8 @@ TEST_F(ClientTests, GetLicenseStatusNoUserData_Test)
     auto client = CreateTestClient(userInfo, TEST_PRODUCT_ID);
 
     auto jsonPolicyNoUserData = DummyPolicyHelper::CreatePolicyNoUserData(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_PRODUCT_ID), "", 1, false);
-    std::list<Json::Value> noUserDataPolicyList;
-    noUserDataPolicyList.push_back(jsonPolicyNoUserData);
+    std::list<std::shared_ptr<Policy>> noUserDataPolicyList;
+    noUserDataPolicyList.push_back(Policy::Create(jsonPolicyNoUserData));
 
     GetLicensingDbMock().MockUserPolicyFiles(userId, noUserDataPolicyList);
 
@@ -625,8 +625,8 @@ TEST_F(ClientTests, GetLicenseStatusNoRequestData_Test)
     auto client = CreateTestClient(userInfo, TEST_PRODUCT_ID);
 
     auto jsonPolicyNoRequestData = DummyPolicyHelper::CreatePolicyNoRequestData(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_PRODUCT_ID), "", 1, false);
-    std::list<Json::Value> noRequestDataPolicyList;
-    noRequestDataPolicyList.push_back(jsonPolicyNoRequestData);
+    std::list<std::shared_ptr<Policy>> noRequestDataPolicyList;
+    noRequestDataPolicyList.push_back(Policy::Create(jsonPolicyNoRequestData));
 
     GetLicensingDbMock().MockUserPolicyFiles(userId, noRequestDataPolicyList);
 
@@ -644,8 +644,8 @@ TEST_F(ClientTests, GetLicenseStatusIdBad_Test)
     Utf8String userIdBad = "00000000-0000-0000-0000-000000000000";
 
     auto jsonPolicyIdBad = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userIdBad, std::atoi(TEST_PRODUCT_ID), "", 1, false);
-    std::list<Json::Value> idBadPolicyList;
-    idBadPolicyList.push_back(jsonPolicyIdBad);
+    std::list<std::shared_ptr<Policy>> idBadPolicyList;
+    idBadPolicyList.push_back(Policy::Create(jsonPolicyIdBad));
 
     GetLicensingDbMock().MockUserPolicyFiles(userId, idBadPolicyList);
 
@@ -661,8 +661,8 @@ TEST_F(ClientTests, GetLicenseStatusOfflineNotAllowed_Test)
     auto client = CreateTestClient(userInfo, TEST_PRODUCT_ID);
 
     auto jsonPolicyOfflineNotAllowed = DummyPolicyHelper::CreatePolicyOfflineNotAllowed(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_PRODUCT_ID), "", 1, false);
-    std::list<Json::Value> offlineNotAllowedPolicyList;
-    offlineNotAllowedPolicyList.push_back(jsonPolicyOfflineNotAllowed);
+    std::list<std::shared_ptr<Policy>> offlineNotAllowedPolicyList;
+    offlineNotAllowedPolicyList.push_back(Policy::Create(jsonPolicyOfflineNotAllowed));
 
     GetLicensingDbMock().MockUserPolicyFiles(userId, offlineNotAllowedPolicyList);
     GetLicensingDbMock().MockGetOfflineGracePeriodStart("");
@@ -680,8 +680,8 @@ TEST_F(ClientTests, GetLicenseStatusGracePeriodStartedOfflineNotAllowed_Test)
     auto client = CreateTestClient(userInfo, TEST_PRODUCT_ID);
 
     auto jsonPolicyOfflineNotAllowed = DummyPolicyHelper::CreatePolicyOfflineNotAllowed(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_PRODUCT_ID), "", 1, false);
-    std::list<Json::Value> offlineNotAllowedPolicyList;
-    offlineNotAllowedPolicyList.push_back(jsonPolicyOfflineNotAllowed);
+    std::list<std::shared_ptr<Policy>> offlineNotAllowedPolicyList;
+    offlineNotAllowedPolicyList.push_back(Policy::Create(jsonPolicyOfflineNotAllowed));
 
     auto timestamp = DateHelper::GetCurrentTime();
 
@@ -700,8 +700,8 @@ TEST_F(ClientTests, GetLicenseStatusGracePeriodStarted_Test)
     auto client = CreateTestClient(userInfo, TEST_PRODUCT_ID);
 
     auto jsonPolicyValid = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_PRODUCT_ID), "", 1, false);
-    std::list<Json::Value> validPolicyList;
-    validPolicyList.push_back(jsonPolicyValid);
+    std::list<std::shared_ptr<Policy>> validPolicyList;
+    validPolicyList.push_back(Policy::Create(jsonPolicyValid));
 
     auto timestamp = DateHelper::GetCurrentTime();
 
@@ -720,8 +720,8 @@ TEST_F(ClientTests, GetLicenseStatusExpiredGracePeriod_Test)
     auto client = CreateTestClient(userInfo, TEST_PRODUCT_ID);
 
     auto jsonPolicyValid = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_PRODUCT_ID), "", 1, false);
-    std::list<Json::Value> validPolicyList;
-    validPolicyList.push_back(jsonPolicyValid);
+    std::list<std::shared_ptr<Policy>> validPolicyList;
+    validPolicyList.push_back(Policy::Create(jsonPolicyValid));
 
     auto timestampPast = DateHelper::AddDaysToCurrentTime(-14); // Two weeks ago; default offline period allowed is only 1 week
 
@@ -750,8 +750,8 @@ TEST_F(ClientTests, GetTrialDaysRemainingEvalValid_Test)
 
     Json::Value jsonPolicyEval = ReadJsonFile(testJson);
     Json::Value jsonPolicyEvalObject = Json::Reader::DoParse(jsonPolicyEval.asString()); // need to convert to Json::Value object type to use as a policy json
-    std::list<Json::Value> validEvalPolicyList;
-    validEvalPolicyList.push_back(jsonPolicyEvalObject);
+    std::list<std::shared_ptr<Policy>> validEvalPolicyList;
+    validEvalPolicyList.push_back(Policy::Create(jsonPolicyEvalObject));
 
     GetLicensingDbMock().MockUserPolicyFiles(userId, validEvalPolicyList);
     // NOTE: the date for this comes from Assets/EvalPolicy.json
@@ -776,8 +776,8 @@ TEST_F(ClientTests, GetTrialDaysRemainingEvalExpired_Test)
 
     Json::Value jsonPolicyEval = ReadJsonFile(testJson);
     Json::Value jsonPolicyEvalObject = Json::Reader::DoParse(jsonPolicyEval.asString()); // need to convert to Json::Value object type to use as a policy json
-    std::list<Json::Value> expiredEvalPolicyList;
-    expiredEvalPolicyList.push_back(jsonPolicyEvalObject);
+    std::list<std::shared_ptr<Policy>> expiredEvalPolicyList;
+    expiredEvalPolicyList.push_back(Policy::Create(jsonPolicyEvalObject));
 
     GetLicensingDbMock().MockUserPolicyFiles(userId, expiredEvalPolicyList);
 
@@ -800,8 +800,8 @@ TEST_F(ClientTests, GetTrialDaysRemainingEvalBackupAcl_Test)
 
     Json::Value jsonPolicyEval = ReadJsonFile(testJson);
     Json::Value jsonPolicyEvalObject = Json::Reader::DoParse(jsonPolicyEval.asString()); // need to convert to Json::Value object type to use as a policy json
-    std::list<Json::Value> expiredEvalPolicyList;
-    expiredEvalPolicyList.push_back(jsonPolicyEvalObject);
+    std::list<std::shared_ptr<Policy>> expiredEvalPolicyList;
+    expiredEvalPolicyList.push_back(Policy::Create(jsonPolicyEvalObject));
 
     GetLicensingDbMock().MockUserPolicyFiles(userId, expiredEvalPolicyList);
 
@@ -817,8 +817,8 @@ TEST_F(ClientTests, GetTrialDaysRemainingValidTrial_Test)
     auto client = CreateTestClient(userInfo, TEST_PRODUCT_ID);
 
     auto jsonPolicyValidTrial = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_PRODUCT_ID), "", 1, true);
-    std::list<Json::Value> validTrialPolicyList;
-    validTrialPolicyList.push_back(jsonPolicyValidTrial);
+    std::list<std::shared_ptr<Policy>> validTrialPolicyList;
+    validTrialPolicyList.push_back(Policy::Create(jsonPolicyValidTrial));
 
     GetLicensingDbMock().MockUserPolicyFiles(userId, validTrialPolicyList);
 
@@ -834,8 +834,8 @@ TEST_F(ClientTests, GetTrialDaysRemainingExpiredTrial_Test)
     auto client = CreateTestClient(userInfo, TEST_PRODUCT_ID);
 
     auto jsonPolicyExpiredTrial = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(-1), userId, std::atoi(TEST_PRODUCT_ID), "", 1, true);
-    std::list<Json::Value> expiredTrialPolicyList;
-    expiredTrialPolicyList.push_back(jsonPolicyExpiredTrial);
+    std::list<std::shared_ptr<Policy>> expiredTrialPolicyList;
+    expiredTrialPolicyList.push_back(Policy::Create(jsonPolicyExpiredTrial));
 
     GetLicensingDbMock().MockUserPolicyFiles(userId, expiredTrialPolicyList);
 
@@ -851,8 +851,8 @@ TEST_F(ClientTests, CleanUpPolicies_Success)
     auto client = CreateTestClient(userInfo);
 
     auto jsonPolicyExpired = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(-22), DateHelper::AddDaysToCurrentTime(7), userId, 9903, "", 1, false);
-    std::list<Json::Value> expiredPolicyList;
-    expiredPolicyList.push_back(jsonPolicyExpired);
+    std::list<std::shared_ptr<Policy>> expiredPolicyList;
+    expiredPolicyList.push_back(Policy::Create(jsonPolicyExpired));
 
     GetLicensingDbMock().MockPolicyFiles(expiredPolicyList);
     GetLicensingDbMock().MockDeletePolicyFile(SUCCESS);
@@ -893,8 +893,8 @@ TEST_F(ClientTests, MarkFeature_Success)
     GetLicensingDbMock().MockAddOrUpdatePolicyFile(SUCCESS);
     GetLicensingDbMock().MockDeleteAllOtherPolicyFilesByUser(SUCCESS);
 
-    std::list<Json::Value> validPolicyList;
-    validPolicyList.push_back(jsonPolicyValid);
+    std::list<std::shared_ptr<Policy>> validPolicyList;
+    validPolicyList.push_back(Policy::Create(jsonPolicyValid));
 
     GetLicensingDbMock().MockUserPolicyFiles(userId, validPolicyList);
     GetLicensingDbMock().MockGetOfflineGracePeriodStart("");

@@ -12,29 +12,29 @@ USING_NAMESPACE_BENTLEY_LICENSING
 * @bsimethod                                                    Jason.Wichert    6/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 ApplicationInfoPtr ApplicationInfo::Create
-    (
+(
     BeVersion version,
     Utf8String productId
-    )
+)
     {
     Utf8String deviceId = BeSystemInfo::GetDeviceId();
 
     return std::shared_ptr<ApplicationInfo>(new ApplicationInfo
-        (
+    (
         version,
         deviceId,
         productId
-        ));
+    ));
     }
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Jason.Wichert    6/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 ApplicationInfo::ApplicationInfo
-    (
+(
     BeVersion version,
     Utf8String deviceId,
     Utf8String productId
-    ) :
+) :
     m_version(version),
     m_productId(productId),
     m_deviceId(deviceId),
@@ -90,6 +90,8 @@ Utf8String ApplicationInfo::GetDeviceId() const
     {
     return m_deviceId;
     }
+
+
 
 #if defined (__ANDROID__)
 /*--------------------------------------------------------------------------------------+

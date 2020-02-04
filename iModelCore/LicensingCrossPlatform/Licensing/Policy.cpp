@@ -411,6 +411,20 @@ bool Policy::IsValid()
     return true;
     }
 
+bool Policy::ContainsProduct(Utf8StringCR productId, Utf8StringCR featureString)
+	{
+	for (auto securable : GetSecurableData())
+		{
+		if (Utf8String(std::to_string(securable->GetProductId()).c_str()).Equals(productId) &&
+			securable->GetFeatureString().Equals(featureString))
+			{
+			// we found the correct securable
+			return true;
+			}
+		}
+	return false;
+	}
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -523,6 +537,8 @@ Policy::EvaluationStatus Policy::GetEvalStatus(Utf8StringCR productId, Utf8Strin
                         {
                         // valid eval found
                         daysLeft = DateHelper::GetDaysLeftUntilTime(acl->GetExpiresOn());
+                        //set principal Id from ACL  
+                        SetInUsePrincipalId(acl->GetPrincipalId());
                         result = EvaluationStatus::Valid;
                         }
                     }
@@ -542,6 +558,8 @@ Policy::EvaluationStatus Policy::GetEvalStatus(Utf8StringCR productId, Utf8Strin
                         {
                         // valid eval found
                         daysLeft = DateHelper::GetDaysLeftUntilTime(acl->GetExpiresOn());
+                        //set principal Id from ACL
+                        SetInUsePrincipalId(acl->GetPrincipalId());
                         result = EvaluationStatus::Valid;
                         }
                     }
@@ -549,7 +567,9 @@ Policy::EvaluationStatus Policy::GetEvalStatus(Utf8StringCR productId, Utf8Strin
             }
         else
             {
-            nonEvalAcl = acl;
+            nonEvalAcl = acl;  
+            //set principal Id from ACL
+            SetInUsePrincipalId(acl->GetPrincipalId());            
             }
         }
 

@@ -102,6 +102,8 @@ public:
     */
     LICENSING_EXPORT LicenseStatus StartApplication();
 
+    LICENSING_EXPORT LicenseStatus StartApplicationForProject(Utf8StringCR projectId);
+
     //! StopApplication signals background threads to stop and cleans up resources.
     /*!
     * Threads are signalled to stop, any remaining usage logs are saved, and the database is closed.

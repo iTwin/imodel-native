@@ -84,6 +84,11 @@ LicenseStatus Client::StartApplication()
     return m_impl->StartApplication();
     }
 
+LicenseStatus Client::StartApplicationForProject(Utf8StringCR projectId)
+    {
+    return m_impl->StartApplicationForProject(projectId);
+    }
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -327,7 +327,7 @@ TEST_F(LicensingDbTests, OfflineGracePeriod_Success)
 	EXPECT_EQ(db.GetOfflineGracePeriodStart(), "");
 	}
 
-TEST_F(LicensingDbTests, DeleteAllOtherPoliciesByUser_Success)
+TEST_F(LicensingDbTests, PolicyCachingTest)
 	{
 	LicensingDb db;
 
@@ -336,19 +336,37 @@ TEST_F(LicensingDbTests, DeleteAllOtherPoliciesByUser_Success)
 	Utf8String userId = "userA";
 	Utf8String policyIdToKeep = "3";
 	// Put in some dummy policies for user
-	db.AddOrUpdatePolicyFile("1", userId, "", "", "", "");
-	db.AddOrUpdatePolicyFile("2", userId, "", "", "", "");
-	db.AddOrUpdatePolicyFile(policyIdToKeep, userId, "", "", "", "");
+	db.AddOrUpdatePolicyFile("1", userId, "", "", "", "", "");
+	db.AddOrUpdatePolicyFile("2", userId, "", "", "", "", "");
+	db.AddOrUpdatePolicyFile(policyIdToKeep, userId, "", "", "", "", "");
 	// Put in a policy for a different user
-	db.AddOrUpdatePolicyFile("4", "userB", "", "", "", "");
+	db.AddOrUpdatePolicyFile("4", "userB", "", "", "", "", "");
+
+    //Add project based policies
+    db.AddOrUpdatePolicyFile("5", userId, "", "", "", "", "projectId");
+    db.AddOrUpdatePolicyFile("6", userId, "", "", "", "", "projectId");
+    db.AddOrUpdatePolicyFile("7", userId, "", "", "", "", "otherProjectId");
 
 	// attempt to delete all other user's policies
 	db.DeleteAllOtherPolicyFilesByUser(policyIdToKeep, userId);
 
-	// Ids 1-2 should no longer exist
-	ASSERT_EQ(db.GetPolicyFile("1"), Json::Value::GetNull());
-	ASSERT_EQ(db.GetPolicyFile("2"), Json::Value::GetNull());
-	// Ids 3 and 4 should still be in the database
-	ASSERT_NE(db.GetPolicyFile(policyIdToKeep), Json::Value::GetNull());
-	ASSERT_NE(db.GetPolicyFile("4"), Json::Value::GetNull());
+	// Ids 1-2 should no longer exist   
+	GTEST_ASSERT_EQ(db.GetPolicyFile("1"), Json::Value::GetNull());
+	GTEST_ASSERT_EQ(db.GetPolicyFile("2"), Json::Value::GetNull());
+	// Ids 3, 4, 5, 6, and 7 should still be in the database
+	GTEST_ASSERT_NE(db.GetPolicyFile(policyIdToKeep), Json::Value::GetNull());
+	GTEST_ASSERT_NE(db.GetPolicyFile("4"), Json::Value::GetNull());
+    //Project Id policies not cleared by DeleteAllOtherPolicyFilesByUser 
+    GTEST_ASSERT_NE(db.GetPolicyFile("5"), Json::Value::GetNull());
+    GTEST_ASSERT_NE(db.GetPolicyFile("6"), Json::Value::GetNull());
+    GTEST_ASSERT_NE(db.GetPolicyFile("7"), Json::Value::GetNull());
+    
+    //attempt to delete all other project policies
+    db.DeleteAllOtherPolicyFilesByProject("6", userId, "projectId");
+
+    GTEST_ASSERT_EQ(db.GetPolicyFile("5"), Json::Value::GetNull());// projectId for 5 should be gone
+    GTEST_ASSERT_NE(db.GetPolicyFile(policyIdToKeep), Json::Value::GetNull()); //Non project policy should be uneffected
+    GTEST_ASSERT_NE(db.GetPolicyFile("4"), Json::Value::GetNull()); //UserB should be uneffected 
+    GTEST_ASSERT_NE(db.GetPolicyFile("6"), Json::Value::GetNull());//projectId for 6 should remain
+    GTEST_ASSERT_NE(db.GetPolicyFile("7"), Json::Value::GetNull());//different projectId should remain
 	}

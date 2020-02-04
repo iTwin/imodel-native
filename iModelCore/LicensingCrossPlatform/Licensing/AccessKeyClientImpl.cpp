@@ -53,14 +53,14 @@ AccessKeyClientImpl::AccessKeyClientImpl
     m_isAccessKeyValid = false; // assume invalid access key to start
 
     if (Utf8String::IsNullOrEmpty(projectId.c_str()))
-	{
-		m_projectId = "00000000-0000-0000-0000-000000000000";
+    {
+        m_projectId = "00000000-0000-0000-0000-000000000000";
+    }
+    else
+    {
+        m_projectId = projectId;
 	}
-	else
-	{
-		m_projectId = projectId;
-	}
-
+	
     if (m_offlineMode)
         {
         // Fake use m_offlineMode in order to avoid unused variable warning 
@@ -122,7 +122,7 @@ LicenseStatus AccessKeyClientImpl::StartApplication()
 
 	//check for checkouts first 
 	const auto productId = m_applicationInfo->GetProductId();
-	auto policy = SearchForCheckout(productId);
+	auto policy = SearchForCheckout(productId, m_featureString);
 	if (policy != nullptr)
 	{
 		//found checkout, make sure it isnt expired
@@ -284,9 +284,9 @@ void AccessKeyClientImpl::DeleteAllOtherPoliciesByKey(std::shared_ptr<Policy> po
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::list<std::shared_ptr<Policy>> AccessKeyClientImpl::GetUserPolicies()
+std::list<std::shared_ptr<Policy>> AccessKeyClientImpl::GetValidUserPolicies()
     {
-    LOG.debug("AccessKeyClientImpl::GetUserPolicies");
+    LOG.debug("AccessKeyClientImpl::GetValidUserPolicies");
 
     std::list<std::shared_ptr<Policy>> policyList;
     auto jsonpolicies = m_licensingDb->GetPolicyFilesByKey(m_accessKey);

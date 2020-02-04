@@ -22,7 +22,7 @@ protected:
     bool m_isAccessKeyValid;
     bool ValidateAccessKey();
     std::shared_ptr<Policy> GetPolicyToken();
-    std::list<std::shared_ptr<Policy>> GetUserPolicies();
+    std::list<std::shared_ptr<Policy>> GetValidUserPolicies();
 
 public:
     LICENSING_EXPORT AccessKeyClientImpl

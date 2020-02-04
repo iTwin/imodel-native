@@ -65,14 +65,15 @@ protected:
 
     // Policy
     std::shared_ptr<Policy> m_policy;
-    void StorePolicyInLicensingDb(std::shared_ptr<Policy> policy, bool IsCheckout = false);
+    void StorePolicyInLicensingDb(std::shared_ptr<Policy> policy, bool IsCheckout = false, Utf8StringCR projectId = "");
+    void StoreProjectPolicyInLicensingDb(std::shared_ptr<Policy> policy, Utf8StringCR projectId);
     virtual std::shared_ptr<Policy> GetPolicyToken();
+    virtual std::shared_ptr<Policy> GetProjectPolicyToken(Utf8StringCR projectId);
 
-    std::list<std::shared_ptr<Policy>> GetPolicies();
-    virtual std::list<std::shared_ptr<Policy>> GetUserPolicies();
-	virtual std::list<std::shared_ptr<Policy>> GetUserCheckouts();
-    std::shared_ptr<Policy> SearchForPolicy(Utf8String requestedProductId="");
-	std::shared_ptr<Policy> SearchForCheckout(Utf8String requestedProductId = "");
+    virtual std::list<std::shared_ptr<Policy>> GetValidUserPolicies();
+	virtual std::list<std::shared_ptr<Policy>> GetValidCheckouts();
+    std::shared_ptr<Policy> SearchForPolicy(Utf8String requestedProductId);
+	std::shared_ptr<Policy> SearchForCheckout(Utf8String productId, Utf8String featureString);
     bool HasOfflineGracePeriodStarted();
     int64_t GetDaysLeftInOfflineGracePeriod(std::shared_ptr<Policy> policy, Utf8String productId, Utf8String featureString);
 
@@ -83,7 +84,8 @@ protected:
     std::atomic_bool m_usageHeartbeatThreadStopped{ false };
 
     void UsageHeartbeat();
-    void StopUsageHeartbeat();
+	void StartUsageHeartbeat(); 
+	void StopUsageHeartbeat();
     BentleyStatus RecordUsage();
     Utf8String m_usageStartTime;
 
@@ -95,6 +97,7 @@ protected:
     int64_t m_logsPostingInterval = 60 * 60 * 1000; // one hour in milliseconds
 
     void LogPostingHeartbeat();
+	void StartLogPostingHeartbeat();
     void StopLogPostingHeartbeat();
 
     // Policy heartbeat
@@ -104,12 +107,15 @@ protected:
     std::atomic_bool m_policyHeartbeatThreadStopped{ false };
 
     virtual void PolicyHeartbeat();
-    void StopPolicyHeartbeat();
+	void StartPolicyHeartbeat();
+	void StopPolicyHeartbeat();
 
     // Get the logging post source as a string
     Utf8String GetLoggingPostSource() const;
 
     void CallOnInterval(std::atomic_bool& stopThread, std::atomic_bool& isFinished, std::atomic<int64_t>& lastRunStartTime, size_t interval, std::function<void(void)> func);
+
+	LicenseStatus StartApplicationGeneric(std::function<std::shared_ptr<Policy>()> getPolicy);
 
 public:
     LICENSING_EXPORT ClientImpl() {};
@@ -129,8 +135,12 @@ public:
 
 	bool ValidateParamsAndDB();
 
-	// Usages
+    //Validation of params and check for valid checkout policy
+    BentleyM0200::Licensing::LicenseStatus CheckoutCheck(bool &retflag);
+
+    // Usages
     LICENSING_EXPORT LicenseStatus StartApplication();
+    LICENSING_EXPORT LicenseStatus StartApplicationForProject(Utf8StringCR projectId);
     LICENSING_EXPORT BentleyStatus StopApplication();
 
     //Features
@@ -138,6 +148,7 @@ public:
 
     // Policy
     LICENSING_EXPORT folly::Future<std::shared_ptr<Policy>> GetPolicy();
+    LICENSING_EXPORT folly::Future<std::shared_ptr<Policy>> GetPolicy(Utf8StringCR projectId);
 
     // Product status
     virtual LICENSING_EXPORT LicenseStatus GetLicenseStatus();
@@ -154,6 +165,7 @@ public:
     // clean up policies; used internally, but also used in unit tests
     LICENSING_EXPORT void CleanUpPolicies();
     LICENSING_EXPORT void DeleteAllOtherPoliciesByUser(std::shared_ptr<Policy> policy);
+    LICENSING_EXPORT void DeleteAllOtherPoliciesByProject(std::shared_ptr<Policy> policy, Utf8StringCR projectId);
 
     virtual ~ClientImpl() {}; // make sure to cleanup
     };
