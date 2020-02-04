@@ -365,6 +365,7 @@ ENUM_IS_FLAGS(DgnTile::Flags);
 //      8.0: Bump version to force new tiles to be generated, preventing old cached tiles that were produced for trees with the "use project extents" flag from being obtained.
 //          The geometry in those old tiles is shifted because we changed the way the tile tree range is computed from project extents.
 //      8.1: Add Tile::Tree::Flags::EnforceDisplayPriority
+//      8.2: Add Tile::ContentId::Flags::IgnoreAreaPatterns
 // @bsistruct                                                   Paul.Connelly   09/18
 //=======================================================================================
 struct IModelTile
@@ -393,7 +394,7 @@ struct IModelTile
         static constexpr Version V5() { return Version(5, 0); }
         static constexpr Version V6() { return Version(6, 0); }
         static constexpr Version V7() { return Version(7, 0); }
-        static constexpr Version V8() { return Version(8, 0); }
+        static constexpr Version V8() { return Version(8, 2); }
 
         // !!! IMPORTANT !!! If you change the major version you must update IModelTile::Version::FromMajorVersion !!!
         static constexpr Version Current() { return V8(); }

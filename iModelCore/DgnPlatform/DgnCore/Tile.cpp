@@ -159,6 +159,7 @@ public:
     Content::MetadataCR GetMetadata() const { return m_metadata; }
     bool IsCanceled() const { return m_loader.IsCanceled(); }
     bool AllowInstancing() const { return m_loader.AllowInstancing(); }
+    bool IgnoreAreaPatterns() const { return m_loader.IgnoreAreaPatterns(); }
 
     DRange3dCR GetTileRange() const { return m_range; }
     DRange3d GetDgnRange() const
@@ -696,6 +697,7 @@ protected:
     void _AddPolyfaceR(PolyfaceHeaderR, bool) override;
     void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR, ClipVectorCP) override;
     bool _WantStrokeLineStyle(LineStyleSymbCR, IFacetOptionsPtr&) override;
+    bool _WantStrokePattern(PatternParamsCR) override;
     void _AddSolidPrimitiveR(ISolidPrimitiveR) override;
 
     GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP) const override;
@@ -790,7 +792,6 @@ private:
     DRange3d                        m_tileRange;
     BeSQLite::CachedStatementPtr    m_statement;
     GeometryPartSelector            m_partSelector;
-    
     Transform                       m_transformFromDgn;
     double                          m_minRangeDiagonalSquared;
     double                          m_minTextBoxSize;
@@ -878,6 +879,7 @@ public:
     IFacetOptionsR GetFacetOptions() { return m_facetOptions; }
     GeometryLoaderCR GetLoader() const { return m_loader; }
     bool AllowInstancing() const { return GetLoader().AllowInstancing(); }
+    bool IgnoreAreaPatterns() const { return GetLoader().IgnoreAreaPatterns(); }
 
     GraphicPtr FinishGraphic(GeometryAccumulatorR accum, TileBuilder& builder);
     GraphicPtr FinishSubGraphic(GeometryAccumulatorR accum, TileSubGraphic& subGf);
@@ -3872,6 +3874,14 @@ bool TileBuilder::_WantStrokeLineStyle(LineStyleSymbCR lsSymb, IFacetOptionsPtr&
         }
 
     return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TileBuilder::_WantStrokePattern(PatternParamsCR)
+    {
+    return !m_context.IgnoreAreaPatterns();
     }
 
 /*---------------------------------------------------------------------------------**//**

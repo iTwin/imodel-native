@@ -112,6 +112,7 @@ struct ContentId : NodeId
         None = 0,
         AllowInstancing = 1 << 0,
         ImprovedElision = 1 << 1,
+        IgnoreAreaPatterns = 1 << 2,
     };
 private:
     DEFINE_T_SUPER(NodeId);
@@ -150,6 +151,7 @@ public:
     DGNPLATFORM_EXPORT bool IsFlagSet(Flags flag) const;
     bool AllowInstancing() const { return IsFlagSet(Flags::AllowInstancing); }
     bool WantImprovedElision() const { return IsFlagSet(Flags::ImprovedElision); }
+    bool IgnoreAreaPatterns() const { return IsFlagSet(Flags::IgnoreAreaPatterns); }
 };
 
 ENUM_IS_FLAGS(ContentId::Flags);
@@ -267,6 +269,8 @@ public:
     ContentIdCR GetContentId() const { return m_contentId; }
     bool AllowInstancing() const;
     bool WantImprovedElision() const { return m_contentId.WantImprovedElision(); }
+    bool IgnoreAreaPatterns() const { return m_contentId.IgnoreAreaPatterns(); }
+
     ContentCP GetContent() const { return m_content.get(); }
     TreeR GetTree() const { return m_tree; }
 
