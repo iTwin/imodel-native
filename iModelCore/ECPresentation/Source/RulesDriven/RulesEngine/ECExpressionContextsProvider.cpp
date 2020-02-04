@@ -345,7 +345,9 @@ protected:
             context.AddSymbol(*ValueSymbol::Create("Label", ECValue("", false)));
             context.AddSymbol(*ValueSymbol::Create("Description", ECValue("", false)));
             context.AddSymbol(*ValueSymbol::Create("ClassName", ECValue("", false)));
+            context.AddSymbol(*ValueSymbol::Create("ClassLabel", ECValue("", false)));
             context.AddSymbol(*ValueSymbol::Create("SchemaName", ECValue("", false)));
+            context.AddSymbol(*ValueSymbol::Create("SchemaLabel", ECValue("", false)));
             context.AddSymbol(*ValueSymbol::Create("SchemaMajorVersion", ECValue(0)));
             context.AddSymbol(*ValueSymbol::Create("SchemaMinorVersion", ECValue(0)));
             context.AddSymbol(*ValueSymbol::Create("InstanceId", ECValue("", false)));
@@ -377,7 +379,9 @@ protected:
             context.AddSymbol(*ValueSymbol::Create("Label", ECValue(node.GetLabelDefinition().GetDisplayValue().c_str(), false)));
             context.AddSymbol(*ValueSymbol::Create("Description", ECValue(node.GetDescription().c_str(), false)));
             context.AddSymbol(*ValueSymbol::Create("ClassName", nullptr != nodeClass ? ECValue(nodeClass->GetName().c_str(), false) : ECValue()));
+            context.AddSymbol(*ValueSymbol::Create("ClassLabel", nullptr != nodeClass ? ECValue(nodeClass->GetDisplayLabel().c_str(), false) : ECValue()));
             context.AddSymbol(*ValueSymbol::Create("SchemaName", nullptr != nodeClass ? ECValue(nodeClass->GetSchema().GetName().c_str(), true) : ECValue()));
+            context.AddSymbol(*ValueSymbol::Create("SchemaLabel", nullptr != nodeClass ? ECValue(nodeClass->GetSchema().GetDisplayLabel().c_str(), true) : ECValue()));
             context.AddSymbol(*ValueSymbol::Create("SchemaMajorVersion", nullptr != nodeClass ? ECValue((int)nodeClass->GetSchema().GetVersionRead()) : ECValue(0)));
             context.AddSymbol(*ValueSymbol::Create("SchemaMinorVersion", nullptr != nodeClass ? ECValue((int)nodeClass->GetSchema().GetVersionMinor()) : ECValue(0)));
             context.AddSymbol(*ValueSymbol::Create("IsClassNode", ECValue(false)));

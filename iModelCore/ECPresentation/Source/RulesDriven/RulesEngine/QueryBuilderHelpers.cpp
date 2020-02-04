@@ -457,7 +457,6 @@ InstanceFilteringResult QueryBuilderHelpers::ApplyInstanceFilter(ComplexPresenta
                     // reversed path becomes empty only if the first step is recursive in which case it means we have
                     // to filter 'this' by path-from-input-to-select-class target ids
                     BeAssert(1 == params.GetSelectInfo().GetPathFromInputToSelectClass().size());
-                    BeAssert(!params.GetSelectInfo().GetPathFromInputToSelectClass().back().GetTargetIds().empty());
                     bset<ECInstanceId> const& ids = params.GetSelectInfo().GetPathFromInputToSelectClass().back().GetTargetIds();
                     IdsFilteringHelper<bset<ECInstanceId>> filteringHelper(ids);
                     query.Where(filteringHelper.CreateWhereClause("[this].[ECInstanceId]").c_str(), filteringHelper.CreateBoundValues());
@@ -1017,6 +1016,9 @@ static bvector<RelatedClassPath> GetRelatedClassPaths(ECSchemaHelper const& sche
 
     if (!hadRecursiveRelationships)
         return {endingPath};
+
+    if (sourceIds.empty())
+        return bvector<RelatedClassPath>();
 
     RelatedClassPath path;
     path.push_back(RelatedClass(inputClass, *sourceClass, sourceIds, "related"));

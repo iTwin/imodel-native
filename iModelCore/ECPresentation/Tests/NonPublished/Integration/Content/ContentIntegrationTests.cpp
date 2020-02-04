@@ -1605,6 +1605,173 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Ret
     }
 
 /*---------------------------------------------------------------------------------**//**
+// @betest                                       Grigas.Petraitis               02/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(ContentRelatedInstances_ReturnsMultiRelationshipRecursivelyRelatedInstancesWithRecursiveRelationshipsInMultiplePlaces, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B" />
+    <ECEntityClass typeName="C" />
+    <ECRelationshipClass typeName="A_To_A" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="A" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="A_To_B" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="B_To_C" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="B"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="C" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="C_To_C" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="C"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="C" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_ReturnsMultiRelationshipRecursivelyRelatedInstancesWithRecursiveRelationshipsInMultiplePlaces)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+    ECRelationshipClassCP relationshipAA = GetClass("A_To_A")->GetRelationshipClassCP();
+    ECRelationshipClassCP relationshipAB = GetClass("A_To_B")->GetRelationshipClassCP();
+    ECRelationshipClassCP relationshipBC = GetClass("B_To_C")->GetRelationshipClassCP();
+    ECRelationshipClassCP relationshipCC = GetClass("C_To_C")->GetRelationshipClassCP();
+
+    IECInstancePtr a1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr a2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr a3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr a4 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr b1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr b2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr b3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr b4 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr c1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+    IECInstancePtr c2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+    IECInstancePtr c3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+    IECInstancePtr c4 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipAB, *a1, *b1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipAA, *a1, *a2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipAB, *a2, *b2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipAA, *a2, *a3);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipAB, *a3, *b3);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipAA, *a3, *a4);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipAB, *a4, *b4);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipBC, *b4, *c1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipCC, *c1, *c2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipCC, *c1, *c3);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipCC, *c3, *c4);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, "", {new RepeatableRelationshipPathSpecification({
+        new RepeatableRelationshipStepSpecification(relationshipAA->GetFullName(), RequiredRelationDirection_Forward, "", 0),
+        new RepeatableRelationshipStepSpecification(relationshipAB->GetFullName(), RequiredRelationDirection_Forward),
+        new RepeatableRelationshipStepSpecification(relationshipBC->GetFullName(), RequiredRelationDirection_Forward),
+        new RepeatableRelationshipStepSpecification(relationshipCC->GetFullName(), RequiredRelationDirection_Forward, "", 0),
+        })}));
+    rules->AddPresentationRule(*rule);
+
+    // options
+    KeySetPtr input = KeySet::Create(*a1);
+    RulesDrivenECPresentationManager::ContentOptions options(BeTest::GetNameOfCurrentTest());
+
+    // request
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *input, nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    ContentCPtr content = m_manager->GetContent(*descriptor, PageOptions()).get();
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    RulesEngineTestHelpers::ValidateContentSet({c1.get(), c2.get(), c3.get(), c4.get()}, *content);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @betest                                       Grigas.Petraitis               02/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(ContentRelatedInstances_ReturnsEmptyResultsWithRecursiveRelationship, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B" />
+    <ECEntityClass typeName="C" />
+    <ECRelationshipClass typeName="A_To_B" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="B_To_C" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="B"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="C" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="C_To_C" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="C"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="C" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_ReturnsEmptyResultsWithRecursiveRelationship)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+    ECRelationshipClassCP relationshipAB = GetClass("A_To_B")->GetRelationshipClassCP();
+    ECRelationshipClassCP relationshipBC = GetClass("B_To_C")->GetRelationshipClassCP();
+    ECRelationshipClassCP relationshipCC = GetClass("C_To_C")->GetRelationshipClassCP();
+
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipAB, *a, *b);
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, "", {new RepeatableRelationshipPathSpecification({
+        new RepeatableRelationshipStepSpecification(relationshipAB->GetFullName(), RequiredRelationDirection_Forward),
+        new RepeatableRelationshipStepSpecification(relationshipBC->GetFullName(), RequiredRelationDirection_Forward),
+        new RepeatableRelationshipStepSpecification(relationshipCC->GetFullName(), RequiredRelationDirection_Forward, "", 0),
+        })}));
+    rules->AddPresentationRule(*rule);
+
+    // options
+    KeySetPtr input = KeySet::Create(*a);
+    RulesDrivenECPresentationManager::ContentOptions options(BeTest::GetNameOfCurrentTest());
+
+    // request
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *input, nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsNull());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 // @betest                                       Pranciskus.Ambrazas             07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerContentTests, DEPRECATED_ContentRelatedInstances_InstanceFilter)
