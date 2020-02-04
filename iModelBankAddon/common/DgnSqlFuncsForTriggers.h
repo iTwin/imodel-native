@@ -15,8 +15,8 @@ BEGIN_BENTLEY_NAMESPACE
 //=======================================================================================
 struct PlacementFunc : ScalarFunction
 {
-  Placement3d &ToPlacement3d(DbValue *args) { return *(Placement3d *)(args[0].GetValueBlob()); }
-  Placement2d &ToPlacement2d(DbValue *args) { return *(Placement2d *)(args[0].GetValueBlob()); }
+  Placement3d &ToPlacement3d(DbValue *args) { return *(Placement3d *)(const_cast<void*>(args[0].GetValueBlob())); }
+  Placement2d &ToPlacement2d(DbValue *args) { return *(Placement2d *)(const_cast<void*>(args[0].GetValueBlob())); }
 
   PlacementFunc(Utf8CP name, DbValueType valType) : ScalarFunction(name, 1, valType) {}
 };

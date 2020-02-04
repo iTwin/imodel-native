@@ -90,6 +90,10 @@ IMODEL_BANK_LIBS +  $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(lx)
 IMODEL_BANK_LIBS +  $(ContextSubpartsLibs)$(libprefix)BeHttp$(lx)
 IMODEL_BANK_LIBS +  $(ContextSubpartsLibs)$(libprefix)BeOpenSSL$(lx)
 IMODEL_BANK_LIBS +  $(ContextSubpartsLibs)$(libprefix)BeFolly$(lx)
+IMODEL_BANK_LIBS +  $(ContextSubpartsLibs)$(libprefix)BeCurl$(lx)
+IMODEL_BANK_LIBS +  $(ContextSubPartsStaticLibs)$(stlibprefix)snappy$(stlibext)
+IMODEL_BANK_LIBS +  $(ContextSubPartsStaticLibs)$(stlibprefix)BeZlib$(stlibext)
+IMODEL_BANK_LIBS +  $(ContextSubPartsStaticLibs)$(stlibprefix)lzma$(stlibext)
 
 %ifdef __unix
 
