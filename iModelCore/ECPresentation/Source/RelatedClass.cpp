@@ -177,9 +177,9 @@ RelatedClass RelatedClass::Unify(RelatedClassCR lhs, RelatedClassCR rhs)
     {
     RelatedClass base(lhs);
     ECClassCP baseSource = GetNearestCommonRelationshipEndClass(*lhs.GetSourceClass(), *rhs.GetSourceClass(), 
-        *base.GetRelationship()->GetSource().GetAbstractConstraint());
+        base.IsForwardRelationship() ? *base.GetRelationship()->GetSource().GetAbstractConstraint() : *base.GetRelationship()->GetTarget().GetAbstractConstraint());
     ECClassCP baseTarget = GetNearestCommonRelationshipEndClass(lhs.GetTargetClass().GetClass(), rhs.GetTargetClass().GetClass(),
-        *base.GetRelationship()->GetTarget().GetAbstractConstraint());
+        base.IsForwardRelationship() ? *base.GetRelationship()->GetTarget().GetAbstractConstraint() : *base.GetRelationship()->GetSource().GetAbstractConstraint());
     if (!baseSource || !baseTarget)
         {
         BeAssert(false);
@@ -199,6 +199,11 @@ RelatedClassPath RelatedClassPath::Unify(RelatedClassPathCR lhs, RelatedClassPat
     {
     RelatedClassPath basePath;
     for (size_t i = 0; i < lhs.size() && i < rhs.size(); ++i)
-        basePath.push_back(RelatedClass::Unify(lhs[i], rhs[i]));
+        {
+        RelatedClass unified = RelatedClass::Unify(lhs[i], rhs[i]);
+        if (!unified.IsValid())
+            return RelatedClassPath();
+        basePath.push_back(unified);
+        }
     return basePath;
     }

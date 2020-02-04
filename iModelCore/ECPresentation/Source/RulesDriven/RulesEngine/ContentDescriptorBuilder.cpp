@@ -310,10 +310,14 @@ private:
                     {
                     // if m_pathFromSelectToPropertyClass and existing nested content field paths both target the same class, unify the paths and update the
                     // existing field - no need to create a new one
-                    m_nestedContentField = existingField;
-                    m_nestedContentField->SetPathFromSelectToContentClass(RelatedClassPath::Unify(m_pathFromSelectToPropertyClass, existingFieldPathFromSelectToContentClass));
-                    m_nestedContentField->SetName(CreateNestedContentFieldName(m_nestedContentField->GetPathFromSelectToContentClass()));
-                    return m_nestedContentField;
+                    RelatedClassPath unifiedPath = RelatedClassPath::Unify(m_pathFromSelectToPropertyClass, existingFieldPathFromSelectToContentClass);
+                    if (!unifiedPath.empty())
+                        {
+                        m_nestedContentField = existingField;
+                        m_nestedContentField->SetPathFromSelectToContentClass(unifiedPath);
+                        m_nestedContentField->SetName(CreateNestedContentFieldName(m_nestedContentField->GetPathFromSelectToContentClass()));
+                        return m_nestedContentField;
+                        }
                     }
                 }
 

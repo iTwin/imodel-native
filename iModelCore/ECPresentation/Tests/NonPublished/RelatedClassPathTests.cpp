@@ -209,7 +209,16 @@ TEST_F(RelatedClassPathTests, Reverse_CorrectlyReversesMultiStepPathWithTargetId
 // @betest                                      Grigas.Petraitis                01/2020
 //---------------------------------------------------------------------------------------
 DEFINE_SCHEMA(Unify_CorrectlyUnifiesMultiStepPath, R"*(
-    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="A">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="AA">
+        <BaseClass>A</BaseClass>
+    </ECEntityClass>
     <ECEntityClass typeName="B" />
     <ECEntityClass typeName="Base_of_CD">
         <ECCustomAttributes>
@@ -225,6 +234,14 @@ DEFINE_SCHEMA(Unify_CorrectlyUnifiesMultiStepPath, R"*(
         <BaseClass>Base_of_CD</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="E" />
+    <ECRelationshipClass typeName="B_To_A" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="B"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is contained by" polymorphic="true">
+            <Class class="A" />
+        </Target>
+    </ECRelationshipClass>
     <ECRelationshipClass typeName="A_To_B" strength="embedding" modifier="Sealed">
         <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
             <Class class="A"/>
@@ -253,29 +270,30 @@ DEFINE_SCHEMA(Unify_CorrectlyUnifiesMultiStepPath, R"*(
 TEST_F(RelatedClassPathTests, Unify_CorrectlyUnifiesMultiStepPath)
     {
     ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
+    ECClassCP classAA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "AA");
     ECClassCP classB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B");
     ECClassCP classCD = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Base_of_CD");
     ECClassCP classC = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "C");
     ECClassCP classD = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "D");
     ECClassCP classE = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "E");
-    ECRelationshipClassCP relAB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A_To_B")->GetRelationshipClassCP();
+    ECRelationshipClassCP relBA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B_To_A")->GetRelationshipClassCP();
     ECRelationshipClassCP relBCD = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B_To_CD")->GetRelationshipClassCP();
     ECRelationshipClassCP relCDE = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "CD_To_E")->GetRelationshipClassCP();
 
     RelatedClassPath path1{
-        RelatedClass(*classA, *relAB, true, "r_ab", *classB, "b"),
+        RelatedClass(*classAA, *relBA, false, "r_ba", *classB, "b"),
         RelatedClass(*classB, *relBCD, true, "r_bcd", *classC, "c"),
         RelatedClass(*classC, *relCDE, true, "r_cde", *classE, "e"),
         };
     RelatedClassPath path2{
-        RelatedClass(*classA, *relAB, true, "r_ab", *classB, "b"),
+        RelatedClass(*classA, *relBA, false, "r_ba", *classB, "b"),
         RelatedClass(*classB, *relBCD, true, "r_bcd", *classD, "d"),
         RelatedClass(*classD, *relCDE, true, "r_cde", *classE, "e"),
         };
     RelatedClassPath result = RelatedClassPath::Unify(path1, path2);
 
     ASSERT_EQ(3, result.size());
-    EXPECT_EQ(RelatedClass(*classA, *relAB, true, "r_ab", *classB, "b"), result[0]);
+    EXPECT_EQ(RelatedClass(*classA, *relBA, false, "r_ba", *classB, "b"), result[0]);
     EXPECT_EQ(RelatedClass(*classB, *relBCD, true, "r_bcd", *classCD, "c"), result[1]);
     EXPECT_EQ(RelatedClass(*classCD, *relCDE, true, "r_cde", *classE, "e"), result[2]);
     }
