@@ -1843,7 +1843,9 @@ public:
             schemaFileName.AppendSeparator();
             schemaFileName.AppendUtf8(schema->GetFullSchemaName().c_str());
             schemaFileName.AppendExtension(L"ecschema.xml");
-            SchemaWriteStatus status = schema->WriteToXmlFile(schemaFileName.GetName());
+            ECVersion xmlVersion = ECSchema::ECVersionToWrite(schema->GetOriginalECXmlVersionMajor(), schema->GetOriginalECXmlVersionMinor());
+
+            SchemaWriteStatus status = schema->WriteToXmlFile(schemaFileName.GetName(), xmlVersion);
             if (SchemaWriteStatus::Success != status)
                 return Napi::Number::New(Env(), (int) status);
             }

@@ -2269,6 +2269,24 @@ TEST_F(SchemaImmutableTest, SetImmutable)
 //=======================================================================================
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Naveed.Khan                     01/20
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaVersionTest, ECVersionToWrite)
+    {
+    ECVersion xmlVersion = ECSchema::ECVersionToWrite(2, 0);
+    EXPECT_EQ(ECVersion::Latest, xmlVersion);
+
+    xmlVersion = ECSchema::ECVersionToWrite(3, 1);
+    EXPECT_EQ(ECVersion::V3_1, xmlVersion);
+
+    xmlVersion = ECSchema::ECVersionToWrite(3, 2);
+    EXPECT_EQ(ECVersion::V3_2, xmlVersion);
+
+    xmlVersion = ECSchema::ECVersionToWrite(3, 0);
+    EXPECT_EQ(ECVersion::Latest, xmlVersion);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                     10/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaVersionTest, CreateECVersionTest)

@@ -4071,6 +4071,15 @@ public:
     //! @return A status code indicating whether the provided major and minor version were successfully used to create an ECVersion.
     ECOBJECTS_EXPORT static ECObjectsStatus CreateECVersion(ECVersion &ecVersion, uint32_t ecVersionMajor, uint32_t ecVersionMinor);
 
+    //! Given a major and minor version number, this will generate an ECVersion that can be used to WriteToXmlFile for exporting schemas.
+    //!
+    //! If the passed in versions are invalid or create an ECVersion less than ECVersion::V3_1, the latest ECVersion will be returned.
+    //! Otherwise, the ECVersion represented by the two version provided will be returned.
+    //! @param[in]  ecVersionMajor  The major version number
+    //! @param[in]  ecVersionMinor  The minor version number
+    //! @return an ECVersion.
+    ECOBJECTS_EXPORT static ECVersion ECVersionToWrite(uint32_t ecMajorVersion, uint32_t ecMinorVersion);
+
     //! Given an ecVersion it will parse it into a version string M.N
     //! @param[in] ecVersion       The ECVersion to convert to a string
     //! @return The string created from the ecVersion. If fails to convert the given ECVersion it will return nullptr.
@@ -4080,7 +4089,7 @@ public:
     //! @param[out] ecVersionMajor  The major version of the ECVersion
     //! @param[out] ecVersionMinor  The minor version of the ECVersion
     //! @param[in] ecVersion        The ECVersion to parse
-    //! @return A status code indicating whether the ECversion was successfully parsed into the a major and minor version.
+    //! @return A status code indicating whether the ECVersion was successfully parsed into the a major and minor version.
     ECOBJECTS_EXPORT static ECObjectsStatus ParseECVersion(uint32_t &ecVersionMajor, uint32_t &ecVersionMinor, ECVersion ecVersion);
 
     //! Reads an ECSchema from an ECSchemaXML-formatted file

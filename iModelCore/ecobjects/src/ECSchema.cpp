@@ -548,6 +548,18 @@ ECObjectsStatus ECSchema::CreateECVersion(ECVersion &ecVersion, uint32_t ecMajor
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+ECVersion ECSchema::ECVersionToWrite(uint32_t ecMajorVersion, uint32_t ecMinorVersion)
+    {
+    ECVersion ecVersion;
+    auto const ecVersionStatus = ECSchema::CreateECVersion(ecVersion, ecMajorVersion, ecMinorVersion);
+    if (ecVersion <= ECVersion::V3_0 || ECObjectsStatus::Success != ecVersionStatus)
+        ecVersion = ECVersion::Latest;
+    return ecVersion;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::ParseECVersion(uint32_t &ecVersionMajor, uint32_t &ecVersionMinor, ECVersion ecVersion)
     {
     ecVersionMajor = (uint32_t) ((uint32_t) ecVersion >> 16);
