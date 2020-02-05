@@ -160,6 +160,7 @@ ECSchemaHelper::~ECSchemaHelper()
 #endif
     if (m_ownsECExpressionsCache)
         DELETE_AND_CLEAR(m_ecexpressionsCache);
+    DELETE_AND_CLEAR(m_relatedPathsCacheDeprecated);
     }
 
 /*---------------------------------------------------------------------------------**//**
