@@ -587,6 +587,18 @@ static bool DrawCellTiles(ViewContextR context, Render::GraphicBuilderR graphic,
     if (!clip.IsValid())
         return false;
 
+    // Ensure edges of clipped regions are not visible.
+    for (auto const& primitive : *clip)
+        {
+        auto planes = primitive->GetMaskOrClipPlanes();
+        if (nullptr != planes)
+            {
+            for (auto const& set : *planes)
+                for (auto const& plane : set)
+                    const_cast<ClipPlaneR>(plane).SetFlags(plane.GetIsInvisible(), true);
+            }
+        }
+
     bool             wasAborted = false;
     DPoint2d         patOrg;
     DPoint3d         tileCorners[8];
