@@ -131,7 +131,7 @@ DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP root
             return nullptr; // caller must call abandon changes
         }
     } while (hasMoreChanges);
-    
+
     db->BriefcaseManager().GetChannelPropsR().isInitializingChannel = true;
     auto jobsubj = _InitializeJob();
     db->BriefcaseManager().GetChannelPropsR().isInitializingChannel = false;
@@ -180,11 +180,11 @@ DgnDbPtr        iModelBridge::OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& d
     // (Note that OpenDgnDb will also merge in any pending schema changes that were recently pulled from iModelHub.)
 
     madeSchemaChanges = false;
-    
+
     auto db = DgnDb::OpenDgnDb(&dbres, dbName, oparams);
     if (!db.IsValid())
         {
-        if (!(BeSQLite::BE_SQLITE_ERROR_SchemaUpgradeRequired == dbres || 
+        if (!(BeSQLite::BE_SQLITE_ERROR_SchemaUpgradeRequired == dbres ||
             BeSQLite::BE_SQLITE_ERROR_SchemaUpgradeRecommended == dbres))
             return nullptr;
 
@@ -300,7 +300,7 @@ BentleyStatus iModelBridge::DoFinalizationChanges(DgnDbR db)
     BeAssert(db.BriefcaseManager().GetChannelPropsR().channelParentId == db.Elements().GetRootSubjectId());
 
     //  Now make normal definition cleanup changes, such as cleaning up unnecessary categories.
-    if (BSISUCCESS != _FinalizeChanges())
+    if (BSISUCCESS != _FinalizeChanges(db))
         {
         LOG.fatalv("_FinalizeChanges failed");
         return BSIERROR; // caller must call abandon changes
@@ -318,7 +318,7 @@ BentleyStatus iModelBridge::DoFinalizationChanges(DgnDbR db)
 
     BeAssert(db.BriefcaseManager().IsSharedChannel());
     BeAssert(db.BriefcaseManager().GetChannelPropsR().channelParentId == db.Elements().GetRootSubjectId());
-    
+
     return BSISUCCESS;
     }
 
@@ -884,8 +884,8 @@ void iModelBridge::GetRepositoryLinkInfo(DgnCode& code, iModelBridgeDocumentProp
             docProps.m_docGuid = guid.ToString();
         }
 
-    // Code. 
-    
+    // Code.
+
     // By default, prefer the document GUID (that's how this was originally coded, and now clients, such as iModelBridgeSyncInfoFile, depend on this behavior).
     // As an option, prefer the code supplied by the caller (that's how DgnV8Converter wants it to work, because it has to deal with i.dgns).
     Utf8String firstChoice(docProps.m_docGuid), secondChoice(defaultCode);
@@ -1014,7 +1014,7 @@ bool iModelBridge::AreTransformsEqual(Transform const& t1, Transform const& t2)
     if (fabs(x1.MaxDiff(x2)) > DoubleOps::SmallCoordinateRelTol())
         LOG.tracev("Existing distance  %f x 1e-10 is greater than SmallCoordinateRelTol for model duplicate detection", x1.MaxDiff(x2) * 1.0e10);
     auto xlatTolerance = std::max<double>(empericalTolernace, BentleyApi::BeNumerical::NextafterDelta(maxCoord));
-    
+
     return t1.IsEqual(t2, matrixTolerance, xlatTolerance);
     }
 
@@ -1188,7 +1188,7 @@ Utf8String iModelBridge::_FormatPushComment(DgnDbR db, Utf8CP commitComment)
     auto const& rcomment = params.GetRevisionComment();
     if (!comment.empty() && !rcomment.empty())
         comment.append(" - ");
-    
+
     comment.append(rcomment);
 
     if (!comment.empty() && NULL != commitComment)
@@ -1294,7 +1294,7 @@ Utf8String iModelBridge::GetFeatureValue(CharCP ff)
     Utf8String value;
     iModelBridgeLdClient::GetInstance((WebServices::UrlProvider::Environment)GetParamsCR().GetUrlEnvironment()).GetFeatureValue(value, ff);
     return value;
-    }    
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
@@ -1311,7 +1311,7 @@ BentleyStatus iModelBridge::doParseCommandLine(int argc, WCharCP argv[])
             fwprintf(stderr, L"unrecognized option: %s\n", argv[i]);
         else
             fwprintf(stderr, L"invalid option: %s\n", argv[i]);
-        
+
         // return BSIERROR;
         }
 
@@ -1354,7 +1354,7 @@ static Licensing::SaasClientPtr GetUlasClientInstance(WebServices::ClientInfoPtr
 //        case WebServices::UrlProvider::Environment::Dev: return "https://dev-connect-ulastm.bentley.com/Bentley.Entitlement.PolicyService/PolicySvcWebApi/api";
 //        case WebServices::UrlProvider::Environment::Perf:
 //        case WebServices::UrlProvider::Environment::Qa: return "https://qa-connect-ulastm.bentley.com/Bentley.Entitlement.PolicyService/PolicySvcWebApi/api";
-//        case WebServices::UrlProvider::Environment::Release: 
+//        case WebServices::UrlProvider::Environment::Release:
 //        default:
 //            return "https://connect-ulastm.bentley.com/Bentley.Entitlement.PolicyService/PolicySvcWebApi/api";
 //        }
@@ -1418,7 +1418,7 @@ BeVersion iModelBridge::Params::GetBridgeVersion() const
 
     return clientInfo->GetApplicationVersion();
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  07/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1435,7 +1435,7 @@ BeVersion iModelBridge::Params::GetBridgeVersion() const
 
     Utf8String formattedDescription;
     formattedDescription.VSprintf(description, args);
-    
+
     rapidjson::Document document;
     document.SetObject();
 
@@ -1487,7 +1487,7 @@ void iModelBridge::FindParentJobSubject(iModelBridge::JobMemberInfo& info, DgnEl
         return;     // found it!
         }
 
-    // The element's parent is not a Subject or is not a Job Subject. 
+    // The element's parent is not a Subject or is not a Job Subject.
     // Recurse to see if the parent is the child of a Job Subject.
     return FindParentJobSubject(info, *thisParent);
     }
@@ -1506,4 +1506,3 @@ iModelBridge::JobMemberInfo iModelBridge::ComputeJobMemberInfo(DgnElementCR el)
         iModelBridge::FindParentJobSubject(info, el);
     return info;
     }
-    

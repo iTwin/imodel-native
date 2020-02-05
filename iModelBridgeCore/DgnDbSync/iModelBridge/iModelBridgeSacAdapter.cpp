@@ -88,7 +88,7 @@ static bool isImodelExt(BeFileNameCR fn)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridgeSacAdapter::InitializeHost(iModelBridge& bridge, Utf8CP productName)
     {
-    BeFileName fwkAssets = bridge._GetParams ().GetAssetsDir (); 
+    BeFileName fwkAssets = bridge._GetParams ().GetAssetsDir ();
     if (fwkAssets.empty ())
         {
         fwkAssets = Desktop::FileSystem::GetExecutableDir ();
@@ -106,7 +106,7 @@ void iModelBridgeSacAdapter::InitializeHost(iModelBridge& bridge, Utf8CP product
     static PrintfProgressMeter s_meter;
     T_HOST.SetProgressMeter(&s_meter);
 
-    // Also initialize the bridge-specific L10N. This is not part of the host. We do 
+    // Also initialize the bridge-specific L10N. This is not part of the host. We do
     // it here anyway, as a convenience to the standalone converter.
     BeFileName bridgeSqlangPath(bridge._GetParams().GetAssetsDir());
     bridgeSqlangPath.AppendToPath(bridge._SupplySqlangRelPath().c_str());
@@ -159,6 +159,24 @@ BentleyStatus iModelBridgeSacAdapter::ExtractFromIModel(BeFileName& outFile, BeF
     return BSISUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void updateProjectExtents(DgnDbR db, iModelBridge& bridge)
+    {
+    AxisAlignedBox3d extents = db.GeoLocation().GetProjectExtents();
+    size_t outlierCount;
+    DRange3d rangeWithOutliers;
+    bvector<BeInt64Id> elementOutliers;
+    AxisAlignedBox3d calculated = db.GeoLocation().ComputeProjectExtents(&rangeWithOutliers, &elementOutliers);
+
+    // Yes, this is evil, but until users are allowed to manually specify a project extent, some bridges and scenarios need to defeat the outlier computation above.
+    bridge._AdjustProjectExtents(calculated, rangeWithOutliers, db);
+
+    if (!extents.IsEqual(calculated))
+        db.GeoLocation().SetProjectExtents(calculated);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -167,7 +185,7 @@ BentleyStatus iModelBridgeSacAdapter::CreateOrUpdateBim(iModelBridge& bridge, Pa
     BeFileName outputFileName = bridge._GetParams().GetBriefcaseName();
     BeFileName inputFileName  = bridge._GetParams().GetInputFileName();     // may be empty (in edge case, where only deleted file detection is needed)
 
-    DgnDbPtr db; 
+    DgnDbPtr db;
     time_t mtime;
 
     if (!outputFileName.DoesPathExist())
@@ -209,10 +227,10 @@ BentleyStatus iModelBridgeSacAdapter::CreateOrUpdateBim(iModelBridge& bridge, Pa
         do {
             bridge._MakeSchemaChanges(hasMoreChanges);
 
-            auto dbres = db->SaveChanges(); 
+            auto dbres = db->SaveChanges();
             if (BeSQLite::BE_SQLITE_OK != dbres)
                 {
-                LOG.fatalv("Db::SaveChanges called after _MakeSchemaChanges failed with status %d", dbres); 
+                LOG.fatalv("Db::SaveChanges called after _MakeSchemaChanges failed with status %d", dbres);
                 return BentleyStatus::ERROR;
                 }
         } while (hasMoreChanges);
@@ -231,7 +249,7 @@ BentleyStatus iModelBridgeSacAdapter::CreateOrUpdateBim(iModelBridge& bridge, Pa
                 return BentleyStatus::ERROR;
                 }
             BeAssert(!_hadDomainSchemaChanges);
-            
+
             callCloseOnReturn.CallOpenFunctions(*db);
             }
 
@@ -246,7 +264,7 @@ BentleyStatus iModelBridgeSacAdapter::CreateOrUpdateBim(iModelBridge& bridge, Pa
 
             bstatus = bridge.DoConvertToExistingBim(*db, *jobsubj, saparams.GetDetectDeletedFiles());
             }
-        
+
         if (BSISUCCESS != bstatus)
             {
             fwprintf(stderr, L"%ls - conversion failed. See %ls for details.\n", inputFileName.GetName(),
@@ -254,6 +272,9 @@ BentleyStatus iModelBridgeSacAdapter::CreateOrUpdateBim(iModelBridge& bridge, Pa
             return BSIERROR;
             }
         }
+
+    bridge.DoFinalizationChanges(*db);
+    updateProjectExtents(*db, bridge);
 
     if (!bridge.HadAnyChanges())
         outputFileName.SetFileTime(nullptr, &mtime);
@@ -315,7 +336,7 @@ BentleyStatus iModelBridgeSacAdapter::Execute(iModelBridge& bridge, Params const
             }
 
         isNewFile = !outputFileName.DoesPathExist();
-    
+
         iModelBridgeBimHost_SetBridge _registerBridgeOnHost(bridge);
 
         bridge._GetParams().SetInputFileName(inputFileName);
@@ -527,7 +548,7 @@ void iModelBridgeSacAdapter::Params::GetDocumentProperties(iModelBridgeDocumentP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool iModelBridgeSacAdapter::Params::_IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) 
+bool iModelBridgeSacAdapter::Params::_IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey)
     {
     return m_isFileAssignedToBridge;
     }
@@ -535,7 +556,7 @@ bool iModelBridgeSacAdapter::Params::_IsFileAssignedToBridge(BeFileNameCR fn, wc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridgeSacAdapter::Params::_QueryAllFilesAssignedToBridge(bvector<BeFileName>& fns, wchar_t const* bridgeRegSubKey) 
+void iModelBridgeSacAdapter::Params::_QueryAllFilesAssignedToBridge(bvector<BeFileName>& fns, wchar_t const* bridgeRegSubKey)
     {
     fns.push_back(m_dupInputFileName);
     }
@@ -543,11 +564,11 @@ void iModelBridgeSacAdapter::Params::_QueryAllFilesAssignedToBridge(bvector<BeFi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeSacAdapter::Params::_GetDocumentProperties(iModelBridgeDocumentProperties& props, BeFileNameCR fn) 
+BentleyStatus iModelBridgeSacAdapter::Params::_GetDocumentProperties(iModelBridgeDocumentProperties& props, BeFileNameCR fn)
     {
     if (!m_dupInputFileName.EqualsI(fn))
         return BSIERROR;
-        
+
     GetDocumentProperties(props);
     return BSISUCCESS;
     }
@@ -559,10 +580,10 @@ BentleyStatus iModelBridgeSacAdapter::Params::_GetDocumentPropertiesByGuid(iMode
     {
     if (!docGuid.IsValid() && !m_docGuid.IsValid())
         return _GetDocumentProperties(props, localFilePath);
-        
+
     if (docGuid != m_docGuid)
         return BSIERROR;
-    
+
     GetDocumentProperties(props);
     return BSISUCCESS;
     }

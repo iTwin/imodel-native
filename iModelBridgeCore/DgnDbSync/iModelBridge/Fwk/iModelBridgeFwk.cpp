@@ -284,7 +284,7 @@ static BeFileName  GetDefaultAssetsDirectory()
     {
     BeFileName fwkAssetsDirRaw = Desktop::FileSystem::GetExecutableDir();
 
-    fwkAssetsDirRaw.AppendToPath(L"Assets");                       
+    fwkAssetsDirRaw.AppendToPath(L"Assets");
     if (fwkAssetsDirRaw.DoesPathExist())
         return fwkAssetsDirRaw;
 
@@ -418,7 +418,7 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
                 {
                 fwprintf(stderr, L"The -fwk-status-message-interval= option takes an integer as its argument. The number of milliseconds between status message pushes.\n");
                 return BSIERROR;
-                } 
+                }
             m_statusMessageInterval = val;
             continue;
             }
@@ -604,7 +604,7 @@ BentleyStatus   iModelBridgeFwk::JobDefArgs::ParseEnvironment(bvector<WCharCP>& 
     Utf8String jsonFile;
     if (SetValueIfEmptyFromEnv(L"imbridge--fwk-inputArgsJsonFile", jsonFile))
         ProcessInputJson(bargptrs, jsonFile);
-    
+
     SetValueIfEmptyFromEnv(L"imbridge_fwk_bridge_library", m_bridgeLibraryName);
     SetValueIfEmptyFromEnv(L"imbridge_fwk_staging_dir", m_stagingDir);
     SetValueIfEmptyFromEnv(L"imbridge--fwk-input", m_inputFileName);
@@ -615,7 +615,7 @@ BentleyStatus   iModelBridgeFwk::JobDefArgs::ParseEnvironment(bvector<WCharCP>& 
         SetValueFromEnv(L"imbridge--fwk-enable-crash-reporting", m_isCrashReportingEnabled);
     /*
         TODO: Map these if neeeded
-        L"--fwk-max-wait=milliseconds       (optional)  The maximum amount of time to wait for other instances of this job to finish. Default value is 60000ms\n"      
+        L"--fwk-max-wait=milliseconds       (optional)  The maximum amount of time to wait for other instances of this job to finish. Default value is 60000ms\n"
         L"--fwk-bridgeAssetsDir=            (optional)  Asset directory for the iModelBridge resources if default location is not suitable.\n"
         L"--fwk-job-subject-name=           (optional)  The unique name of the Job Subject element that the bridge must use.\n"
         L"--fwk-jobrequest-guid=            (optional)  A unique GUID that identifies this job run for correlation. This will be limited to the native callstack.\n"
@@ -817,7 +817,7 @@ BentleyStatus iModelBridgeFwk::ParseCommandLine(int argc, WCharCP argv[])
         m_maxRetryWait = m_iModelHubArgs->m_maxRetryWait;
         dmsCredentialsAreEncrypted = m_iModelHubArgs->m_isEncrypted;
         }
-      
+
     // Parse --dms args and push all unrecognized args to m_bargptrs
     if ((BSISUCCESS != m_dmsServerArgs.ParseCommandLine(m_bargptrs, (int) unparsedArgPtrs.size(), unparsedArgPtrs.data(), dmsCredentialsAreEncrypted)) || (BSISUCCESS != m_dmsServerArgs.Validate((int) unparsedArgPtrs.size(), unparsedArgPtrs.data())))
         {
@@ -825,7 +825,7 @@ BentleyStatus iModelBridgeFwk::ParseCommandLine(int argc, WCharCP argv[])
         return BSIERROR;
         }
 
-    // The args that are now in m_bargptrs will be fowarded to the bridge's _ParseCommandLine function. 
+    // The args that are now in m_bargptrs will be fowarded to the bridge's _ParseCommandLine function.
 
     // Now that we have the server arguments (including the repository name), we can access and parse the arguments that are parked in the registry db
     if (BSISUCCESS != ParseDocProps())
@@ -1025,7 +1025,7 @@ BentleyStatus iModelBridgeFwk::DoInitial(iModelBridgeFwk::FwkContext& context)
         return BSIERROR;
         }
 
-    
+
     SetState(BootstrappingState::CreatedLocalDb);
 
     return BSISUCCESS;
@@ -1203,7 +1203,7 @@ static void setEmbeddedFileIdRecipe(iModelBridge::Params& params)
         params.SetEmbeddedFileIdRecipe(recipe);
         return;
         }
-    
+
     // Set up a recipe with the new features, including a suffix recognizer
     iModelBridge::Params::FileIdRecipe recipe;
     recipe.m_ignorePackage = true;
@@ -1257,7 +1257,7 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin
     if (params.GetEmbeddedFileIdRecipe() != nullptr)
         {
         auto recipe = params.GetEmbeddedFileIdRecipe();
-        GetLogger().infov("bridge:%s iModel:%s - EmbeddedFileIdRecipe=C:%d X:%d P:%d I:%d R:%s", 
+        GetLogger().infov("bridge:%s iModel:%s - EmbeddedFileIdRecipe=C:%d X:%d P:%d I:%d R:%s",
             Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str(),
             recipe->m_ignoreCase, recipe->m_ignoreExtension, recipe->m_ignorePackage, recipe->m_ignorePwDocId, recipe->m_suffixRegex.c_str());
         }
@@ -1557,7 +1557,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
         {
         iModelId = m_iModelBankArgs->m_iModelId;
         }
-    
+
     DbResult dbres;
 
     iModelBridgeError errorContext;
@@ -1568,7 +1568,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
         {
         iModelBridgeLdClient& client = iModelBridgeLdClient::GetInstance(m_iModelHubArgs->m_environment);
 
-        if(!m_iModelHubArgs->m_callBackurl.empty()) 
+        if(!m_iModelHubArgs->m_callBackurl.empty())
             {
             OidcSignInManagerPtr oidcMgr = OidcSignInManager::FromCallBack(m_iModelHubArgs->m_callBackurl);
             client.SetUserName(oidcMgr->GetUserInfo().userId.c_str());
@@ -1580,7 +1580,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
             }
         else
             {
-            client.SetUserName(m_iModelHubArgs->m_credentials.GetUsername().c_str());  
+            client.SetUserName(m_iModelHubArgs->m_credentials.GetUsername().c_str());
             }
 
         client.SetProjectDetails(m_iModelHubArgs->m_repositoryName.c_str(), m_iModelHubArgs->m_bcsProjectId.c_str());
@@ -1649,7 +1649,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
 
         crashProc.SetAnnotation(CrashProcessor::CommonAnnotation::JOB_Id, m_jobEnvArgs.m_jobRequestId.c_str());
         crashProc.SetAnnotation(CrashProcessor::CommonAnnotation::JOB_CorrelationId, m_jobEnvArgs.m_jobRunCorrelationId.c_str());
-        
+
         if (m_useIModelHub)
             {
             crashProc.SetAnnotation(CrashProcessor::CommonAnnotation::IMH_UserName, m_iModelHubArgs->m_credentials.GetUsername().c_str());
@@ -1657,7 +1657,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
             crashProc.SetAnnotation(CrashProcessor::CommonAnnotation::IMH_ProjectId, m_iModelHubArgs->m_bcsProjectId.c_str());
             }
         }
-    
+
     // Initialize the DgnViewLib Host.
     m_repoAdmin = new FwkRepoAdmin(*this);  // TRICKY: This is ultimately passed to the host as a host variable, and host terimation will delete it.
     iModelBridge::Params params;
@@ -1702,7 +1702,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
 
     iModelBridge::LogPerformance(iModelHubSignIn, "Logging into iModelHub");
     }
-    
+
     LOG.tracev(L"Logging into iModel Hub : Done");
     //Initialize the settings.
     Utf8String iModelGuid;
@@ -1791,7 +1791,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     GetProgressMeter().SetCurrentStepName("Releasing bridge");
     if (SUCCESS != ReleaseBridge())
         LOG.errorv(L"%s - Memory leak. This bridge was not released properly.", m_jobEnvArgs.m_bridgeRegSubKey.c_str());
-    
+
     if (m_useIModelHub)
         iModelBridgeLdClient::GetInstance(m_iModelHubArgs->m_environment).Close();
 
@@ -2121,10 +2121,10 @@ int iModelBridgeFwk::MakeSchemaChanges(iModelBridgeCallOpenCloseFunctions& callC
 
     GetLogger().infov("bridge:%s iModel:%s - MakeSchemaChanges.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
     bool importedAspectSchema = false;
-    
+
     BeAssert(!m_briefcaseDgnDb->BriefcaseManager().IsBulkOperation());
 
-    
+
     bool hasMoreSchemaChanges = false;
     do {
         m_briefcaseDgnDb->BriefcaseManager().StartBulkOperation();
@@ -2174,18 +2174,18 @@ int iModelBridgeFwk::MakeSchemaChanges(iModelBridgeCallOpenCloseFunctions& callC
         //!While opening a briefcase, the bridge could have made some changes. These may not be real changes
         // like GetDgnDb().GeoLocation().Save(); Dgnv8GeoCord.cpp. So save the file . This will clear the session and txns. Usually empty.
         //! Push the txns if there are any.
-        DbResult dbres = m_briefcaseDgnDb->SaveChanges(); 
+        DbResult dbres = m_briefcaseDgnDb->SaveChanges();
         if (BeSQLite::BE_SQLITE_OK != dbres)
             {
-            GetLogger().errorv("Db::SaveChanges failed with status %d", dbres); 
+            GetLogger().errorv("Db::SaveChanges failed with status %d", dbres);
             return RETURN_STATUS_LOCAL_ERROR;
             }
         if (iModelBridge::AnyChangesToPush(*m_briefcaseDgnDb)) // if bridge made any changes, they must be pushed and cleared out before we can make schema changes
-            {                                                                                  
+            {
             if (BSISUCCESS != Briefcase_PullMergePush(" File initialization changes"))
                 return RETURN_STATUS_SERVER_ERROR;
             }
-  
+
         BeAssert(!m_briefcaseDgnDb->Txns().HasLocalChanges());//Put a breakpoint in filtertable to catch any changes.
         }while (hasMoreSchemaChanges);
 
@@ -2261,7 +2261,7 @@ int iModelBridgeFwk::DoNormalUpdate()
     if (BSISUCCESS != GetSchemaLock())  // must get schema lock preemptively. This ensures that only one bridge at a time can make schema and definition changes. That then allows me to pull/merge/push between the definition and data steps without closing and reopening
         {
         LOG.fatalv("Bridge cannot obtain schema lock.");
-        return RETURN_STATUS_SERVER_ERROR;                               
+        return RETURN_STATUS_SERVER_ERROR;
         }
                                                                                              // === SCHEMA LOCK
     //  Tell the bridge that the briefcase is now open and ask it to open the source file(s).// === SCHEMA LOCK
@@ -2284,7 +2284,7 @@ int iModelBridgeFwk::DoNormalUpdate()
         if (BSISUCCESS != Briefcase_PullMergePush(iModelBridgeFwkMessages::GetString(iModelBridgeFwkMessages::INITIALIZATION_CHANGES()).c_str()))                 // === SCHEMA LOCK
             return RETURN_STATUS_SERVER_ERROR;                                               // === SCHEMA LOCK
         }                                                                                    // === SCHEMA LOCK
-                       
+
     GetProgressMeter().SetCurrentStepName("Bridge Schema Changes");
                                                                                             // === SCHEMA LOCK
     if (BSISUCCESS != MakeSchemaChanges(callCloseOnReturn))                                  // === SCHEMA LOCK
@@ -2297,7 +2297,7 @@ int iModelBridgeFwk::DoNormalUpdate()
                                                                                              // === SCHEMA LOCK
     if (SUCCESS != StoreHeaderInformation())                                                 // === SCHEMA LOCK
         GetLogger().warningv("bridge:%s iModel:%s - Storing iModel Bridge Header Data Failed.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
-                          
+
     GetProgressMeter().SetCurrentStepName("Bridge Definition Changes");
                                                                                              // === SCHEMA LOCK
     SubjectCPtr jobsubj;                                                                     // === SCHEMA LOCK
@@ -2388,11 +2388,11 @@ int iModelBridgeFwk::OnAllDocsProcessed()
 
     //  Tell the bridge that the briefcase is now open. (Do NOT ask it to open a source file.)
     iModelBridgeBriefcaseCallOpenCloseFunctions callCloseOnReturn(*m_bridge, *m_briefcaseDgnDb);
-    if (!callCloseOnReturn.IsReady())                                                  
-        {                                                                              
-        LOG.fatalv("Bridge is not ready or could not open source file");               
+    if (!callCloseOnReturn.IsReady())
+        {
+        LOG.fatalv("Bridge is not ready or could not open source file");
         return RETURN_STATUS_LOCAL_ERROR;
-        }  
+        }
 
     DbResult dbres = m_briefcaseDgnDb->SaveChanges(); // If the _OnOpenBim or _OpenSource callbacks did things like attaching syncinfo, we need to commit that before going on.
                                                         // This also prevents a call to AbandonChanges in _MakeSchemaChanges from undoing what the open calls did.
@@ -2451,7 +2451,7 @@ int   iModelBridgeFwk::PushDataChanges(Utf8StringCR pushCommentIn)
         Briefcase_ReleaseAllPublicLocks();
         return SUCCESS;
         }
-    
+
     BeAssert(!m_briefcaseDgnDb->Txns().HasChanges());
 
     GetLogger().infov("bridge:%s iModel:%s - Pushing Data Changeset.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
@@ -2556,7 +2556,7 @@ int iModelBridgeFwk::UpdateExistingBim(iModelBridgeFwk::FwkContext& context)
     // Now initialize the bridge.
     if (BSISUCCESS != InitBridge())
         return BentleyStatus::ERROR;
-    
+
     bool hadBridgeChanges = false;
     if (true)
         {
@@ -2579,7 +2579,7 @@ int iModelBridgeFwk::UpdateExistingBim(iModelBridgeFwk::FwkContext& context)
 
         BeAssert(!iModelBridge::AnyTxns(*m_briefcaseDgnDb));
 
-        
+
         int res;
         if (!m_jobEnvArgs.m_allDocsProcessed)
             {
@@ -2622,7 +2622,7 @@ int iModelBridgeFwk::UpdateExistingBim(iModelBridgeFwk::FwkContext& context)
     // Running ANALYZE allows SQLite to create optimize execution plans when running queries. It should be be included in changeset that bridges post.
     if (hadBridgeChanges)
         m_briefcaseDgnDb->ExecuteSql("ANALYZE");
-   
+
     dbres = m_briefcaseDgnDb->SaveChanges();
 
     //*** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
@@ -2635,8 +2635,8 @@ int iModelBridgeFwk::UpdateExistingBim(iModelBridgeFwk::FwkContext& context)
 
     //  Done. Make sure that all changes are pushed and all shared locks are released.
     PushDataChanges(iModelBridgeFwkMessages::GetString(iModelBridgeFwkMessages::EXTENT_CHANGES()));
-        
-    
+
+
     // *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
 
     // Set this value as a report of the Bridge/BriefcaseManager's policy, so that callers can find out afterwards.
@@ -2864,7 +2864,7 @@ bool iModelBridgeFwk::_IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* br
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridgeFwk::_QueryAllFilesAssignedToBridge(bvector<BeFileName>& fns, wchar_t const* bridgeRegSubKey) 
+void iModelBridgeFwk::_QueryAllFilesAssignedToBridge(bvector<BeFileName>& fns, wchar_t const* bridgeRegSubKey)
     {
     return GetRegistry()._QueryAllFilesAssignedToBridge(fns, bridgeRegSubKey);
     }
@@ -2953,12 +2953,12 @@ BeSQLite::BeBriefcaseId iModelBridgeFwk::GetBriefcaseId()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeFwk::TestFeatureFlag(CharCP ff, bool& flag) const
     {
-    if (m_bridge != nullptr) 
+    if (m_bridge != nullptr)
         {
-        flag = m_bridge->TestFeatureFlag(ff); 
+        flag = m_bridge->TestFeatureFlag(ff);
         LOG.debugv("iModelBridgeFwk::TestFeatureFlag: bridge returned %d for feature '%s'.", flag ? 1 : 0, ff);
         return BSISUCCESS;
-        } 
+        }
 
     if (m_useIModelHub && m_iModelHubArgs)
         {
@@ -2971,7 +2971,7 @@ BentleyStatus iModelBridgeFwk::TestFeatureFlag(CharCP ff, bool& flag) const
         return BSISUCCESS;
         }
     LOG.error("iModelBridgeFwk::TestFeatureFlag: unable to determine how to test feature flag.");
-    return BSIERROR; 
+    return BSIERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2979,11 +2979,11 @@ BentleyStatus iModelBridgeFwk::TestFeatureFlag(CharCP ff, bool& flag) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeFwk::GetFeatureValue(Utf8StringR value, CharCP featureName) const
     {
-    if (m_bridge != nullptr) 
+    if (m_bridge != nullptr)
         {
-        value = m_bridge->GetFeatureValue(featureName); 
-        return BSISUCCESS; 
-        } 
+        value = m_bridge->GetFeatureValue(featureName);
+        return BSISUCCESS;
+        }
 
     if (m_useIModelHub && m_iModelHubArgs)
         {
@@ -2994,7 +2994,7 @@ BentleyStatus iModelBridgeFwk::GetFeatureValue(Utf8StringR value, CharCP feature
             }
         return BSISUCCESS;
         }
-    return BSIERROR; 
+    return BSIERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3119,11 +3119,11 @@ static  BentleyStatus        GetLatLongFromUserExtents(GeoPoint& low, GeoPoint& 
     auto iModelInfo = context.m_iModelInfo;
     if (!iModelInfo.IsValid())
         return ERROR;
-    
+
     auto extentValues = iModelInfo->GetExtent();
     if (extentValues.size() < 4)
         return ERROR;
-    
+
     low.Init(extentValues[1], extentValues[0], 0);
     high.Init(extentValues[3], extentValues[2],0);
     return SUCCESS;
@@ -3139,7 +3139,7 @@ BentleyStatus   iModelBridgeFwk::GetUserProvidedExtents(AxisAlignedBox3d& extent
         return ERROR;
 
     LOG.tracev(L"iModel extent values from hub %f, %f x %f,  %f", low.latitude, low.longitude, high.latitude, high.longitude);
-    
+
 
     DgnGCS* gcs = m_briefcaseDgnDb->GeoLocation().GetDgnGCS();
     if (NULL != gcs)//Use the GCS from the db if available.
@@ -3155,7 +3155,7 @@ BentleyStatus   iModelBridgeFwk::GetUserProvidedExtents(AxisAlignedBox3d& extent
     wsg84->InitFromEPSGCode(&warning, &warningMsg, 4326); // We do not care about warnings. This GCS exists in the dictionary
     wsg84->XYZFromLatLong(extents.low, low);
     wsg84->XYZFromLatLong(extents.high, high);
-    
+
     return SUCCESS;
     }
 
@@ -3165,7 +3165,7 @@ BentleyStatus   iModelBridgeFwk::GetUserProvidedExtents(AxisAlignedBox3d& extent
 void            GetElementOutLiers(bvector<BeInt64Id> elementOutliers, DgnDbR db, AxisAlignedBox3d const& range)
     {
     auto stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId,Origin,Yaw,Pitch,Roll,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d));
-    
+
     while (BE_SQLITE_ROW == stmt->Step())
         {
         if (stmt->IsValueNull(1)) // has no placement
@@ -3208,10 +3208,10 @@ int             iModelBridgeFwk::UpdateProjectExtents(iModelBridgeFwk::FwkContex
     AxisAlignedBox3d calculated = m_briefcaseDgnDb->GeoLocation().ComputeProjectExtents(&rangeWithOutliers, &elementOutliers);
 
     // Yes, this is evil, but until users are allowed to manually specify a project extent, some bridges and scenarios need to defeat the outlier computation above.
-    m_bridge->_AdjustProjectExtents(calculated, rangeWithOutliers);
+    m_bridge->_AdjustProjectExtents(calculated, rangeWithOutliers, *m_briefcaseDgnDb);
 
     AxisAlignedBox3d userProvided = calculated;
-    bool useiModelHubExtents = false; 
+    bool useiModelHubExtents = false;
     TestFeatureFlag("allow-imodelhub-projectextents", useiModelHubExtents);
 
     bool modifiedCalculatedRange = false;
@@ -3242,7 +3242,7 @@ int             iModelBridgeFwk::UpdateProjectExtents(iModelBridgeFwk::FwkContex
             modifiedCalculatedRange = true;
         calculated = clampedDownRange;
         }
-    
+
     if (!extents.IsEqual(calculated))
         {
         m_briefcaseDgnDb->GeoLocation().SetProjectExtents(calculated);
@@ -3292,7 +3292,7 @@ BentleyStatus   iModelBridgeFwk::SetUpECEFLocation(FwkContext& context)
     StatusInt warning;
     auto wsg84 = GeoCoordinates::BaseGCS::CreateGCS();        // WGS84 - used to convert Long/Latitude to ECEF.
     wsg84->InitFromEPSGCode(&warning, &warningMsg, 4326); // We do not care about warnings. This GCS exists in the dictionary
-    
+
     DPoint3d origin, originEcef;
     wsg84->CartesianFromLatLong(origin, originLatLong);
     wsg84->XYZFromLatLong(originEcef, originLatLong);
@@ -3319,7 +3319,7 @@ BentleyStatus   iModelBridgeFwk::SetUpECEFLocation(FwkContext& context)
     ecefLocation.m_origin = ecefTrans.Origin();
     YawPitchRollAngles::TryFromRotMatrix(ecefLocation.m_angles, rMatrix);
     ecefLocation.m_isValid = true;
-   
+
     if (currentEcefLocation.m_isValid && currentEcefLocation.m_origin.AlmostEqualXY(ecefLocation.m_origin))
         return SUCCESS;
 
