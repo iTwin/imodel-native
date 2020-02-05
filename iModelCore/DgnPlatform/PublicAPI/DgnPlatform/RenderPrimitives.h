@@ -1221,8 +1221,6 @@ public:
 
     DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(Instance);
 
-    using InstanceList = bvector<Instance>;
-
     // IMPORTANT: These values MUST match OvrFlags in iModel.js frontend (RenderFlags.ts)!!!
     enum class SymbologyOverrides : uint8_t
     {
@@ -1237,7 +1235,10 @@ protected:
 private:
     DPoint3d            m_translation;
     DRange3d            m_range;
-    InstanceList        m_instances;
+    // Memory usage hack... Instance is 112 bytes; bvector won't allocate a backing buffer with fewer than 32 entries.
+    // We run into files with many DgnGeometryParts that only have a single Instance. For that case, this saves ~3MB per DgnGeometryPart.
+    Instance            m_baseInstance;
+    bvector<Instance>   m_auxInstances;
     SymbologyOverrides  m_symbology = SymbologyOverrides::None;
     bool                m_instanceable = true;
 
@@ -1258,8 +1259,8 @@ public:
     // This returns the translation back to the part's coordinate system.
     DPoint3dCR GetTranslation() const { return m_translation; }
 
-    InstanceList const& GetInstances() const { return m_instances; }
-    size_t GetInstanceCount() const { return GetInstances().size(); }
+    Instance const& GetInstance(int index) const;
+    int GetInstanceCount() const;
     void AddInstance(TransformCR tf, DisplayParamsCR dispParams, DgnElementId elemId);
 
     bool IsCurved() const;

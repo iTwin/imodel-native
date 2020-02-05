@@ -1664,8 +1664,7 @@ void IModelTileWriter::AddMesh(Json::Value& primitivesNode, MeshCR mesh, size_t&
         auto part = mesh.GetSharedGeom();
         if (nullptr != part)
             {
-            auto const& instances = part->GetInstances();
-            uint32_t nInstances = static_cast<uint32_t>(instances.size());
+            uint32_t nInstances = static_cast<uint32_t>(part->GetInstanceCount());
             BeAssert(nInstances > 0);
 
             static constexpr uint32_t sizeOfTransform = sizeof(float) * 12;
@@ -1681,15 +1680,14 @@ void IModelTileWriter::AddMesh(Json::Value& primitivesNode, MeshCR mesh, size_t&
             DRange3d transformRange = DRange3d::NullRange();
             for (uint32_t i = 0; i < nInstances; i++)
                 {
-                auto const& instance = instances[i];
-                transformRange.Extend(instance.GetTransform().Origin());
+                transformRange.Extend(part->GetInstance(i).GetTransform().Origin());
                 }
 
             DPoint3d transformCenter = DPoint3d::FromInterpolate(transformRange.low, 0.5, transformRange.high);
 
             for (uint32_t i = 0; i < nInstances; i++)
                 {
-                auto const& instance = instances[i];
+                auto const& instance = part->GetInstance(i);
                 uint32_t featureIndex = 0;
                 if (!featureTable.FindIndex(featureIndex, instance.GetFeature()))
                     {

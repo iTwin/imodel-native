@@ -291,7 +291,7 @@ public:
     SubRanges(DRange3dCR tileRange, bool is2d, bool allowTightIntersectionTests);
 
     void AddRange(DRange3dCR range);
-    void AddRanges(DRange3dCR range, SharedGeom::InstanceList const& instances);
+    void AddRanges(DRange3dCR range, SharedGeom& sharedGeom);
 
     // Compute bitfield with a 1 indicating an empty sub-range where each bit = i + j*2 + k*4
     // NB: This will fit in a single byte but for alignment and other reasons make it occupy 4 bytes in binary tile header.
@@ -305,7 +305,7 @@ public:
 
     void AcceptCurves(CurveVectorCR, TransformCR, DRange3dCR range);
     void AcceptPolyface(PolyfaceHeaderCR, TransformCR, DRange3dCR range);
-    void AcceptPolyfaces(PolyfaceHeaderCR, TransformCR, DRange3dCR range, SharedGeom::InstanceList const& instances);
+    void AcceptPolyfaces(PolyfaceHeaderCR, TransformCR, DRange3dCR range, SharedGeom&);
 };
 
 //=======================================================================================
@@ -1175,13 +1175,13 @@ public:
     DRange3d ComputeContentRange() const;
 
     // RenderPrimitives::Output
-    void AcceptPolyface(PolyfaceHeaderCR geom, TransformCR tf, DRange3dCR range) final { m_gen.GetSubRanges().AcceptPolyfaces(geom, tf, range, m_geom.GetInstances()); }
-    void AcceptRegion(CurveVectorCR geom, TransformCR tf, DRange3dCR range) final { m_gen.GetSubRanges().AddRanges(range, m_geom.GetInstances()); }
-    void AcceptSolidPrimitive(ISolidPrimitiveCR geom, TransformCR tf, DRange3dCR range) final { m_gen.GetSubRanges().AddRanges(range, m_geom.GetInstances()); }
-    void AcceptBSplineSurface(MSBsplineSurfaceCR geom, TransformCR tf, DRange3dCR range) final { m_gen.GetSubRanges().AddRanges(range, m_geom.GetInstances()); }
-    void AcceptBRep(IBRepEntityCR geom, TransformCR tf, DRange3dCR range) final { m_gen.GetSubRanges().AddRanges(range, m_geom.GetInstances()); }
-    void AcceptTextString(TextStringCR geom, TransformCR tf, DRange3dCR range) final { m_gen.GetSubRanges().AddRanges(range, m_geom.GetInstances()); }
-    void AcceptCurves(CurveVectorCR geom, TransformCR tf, DRange3dCR range) final { m_gen.GetSubRanges().AddRanges(range, m_geom.GetInstances()); }
+    void AcceptPolyface(PolyfaceHeaderCR geom, TransformCR tf, DRange3dCR range) final { m_gen.GetSubRanges().AcceptPolyfaces(geom, tf, range, m_geom); }
+    void AcceptRegion(CurveVectorCR geom, TransformCR tf, DRange3dCR range) final { m_gen.GetSubRanges().AddRanges(range, m_geom); }
+    void AcceptSolidPrimitive(ISolidPrimitiveCR geom, TransformCR tf, DRange3dCR range) final { m_gen.GetSubRanges().AddRanges(range, m_geom); }
+    void AcceptBSplineSurface(MSBsplineSurfaceCR geom, TransformCR tf, DRange3dCR range) final { m_gen.GetSubRanges().AddRanges(range, m_geom); }
+    void AcceptBRep(IBRepEntityCR geom, TransformCR tf, DRange3dCR range) final { m_gen.GetSubRanges().AddRanges(range, m_geom); }
+    void AcceptTextString(TextStringCR geom, TransformCR tf, DRange3dCR range) final { m_gen.GetSubRanges().AddRanges(range, m_geom); }
+    void AcceptCurves(CurveVectorCR geom, TransformCR tf, DRange3dCR range) final { m_gen.GetSubRanges().AddRanges(range, m_geom); }
     PolyfaceHeaderPtr ClaimPolyface(PolyfaceHeaderR pf) final { return pf.Clone(); }
     ClippedPolyface ClipPolyface(PolyfaceHeaderR polyface, DRange3dCR range) final
         {
@@ -4268,8 +4268,9 @@ void InstanceableGeom::AddBatched(ElementMeshGeneratorR meshGen)
     // For face-attached materials these may differ from SharedGeom's DisplayParams.
     // Either way, we need to apply any instance-specific overrides below.
     DisplayParamsCPtr baseDisplayParams = &GetDisplayParams();
-    for (auto const& instance : sharedGeom.GetInstances())
+    for (int i = 0, instanceCount = sharedGeom.GetInstanceCount(); i < instanceCount; ++i)
         {
+        auto const& instance = sharedGeom.GetInstance(i);
 #if defined(CLONE_FOR_ADD_BATCHED)
         Transform instanceTransform = instance.GetTransform();
 #else
@@ -4356,8 +4357,9 @@ void InstanceableGeom::AddInstanced(ElementMeshGeneratorR meshGen)
     meshGen.AddSharedMesh(*mesh);
 
     DRange3d instancesContentRange = DRange3d::NullRange();
-    for (auto const& instance : geom.GetInstances())
+    for (int i = 0, instanceCount = geom.GetInstanceCount(); i < instanceCount; ++i)
         {
+        auto const& instance = geom.GetInstance(i);
         DRange3d range;
         instance.GetTransform().Multiply(range, contentRange);
         instancesContentRange.Extend(range);
@@ -4403,8 +4405,9 @@ MeshList ElementMeshGenerator::GetMeshes()
 DRange3d SharedMeshGenerator::ComputeContentRange() const
     {
     auto contentRange = DRange3d::NullRange();
-    for (auto const& instance : m_geom.GetInstances())
+    for (int i = 0, instanceCount = m_geom.GetInstanceCount(); i < instanceCount; ++i)
         {
+        auto const& instance = m_geom.GetInstance(i);
         DRange3d range;
         instance.GetTransform().Multiply(range, m_contentRange);
         contentRange.Extend(range);
@@ -4477,12 +4480,12 @@ void SubRanges::AddRange(DRange3dCR range)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SubRanges::AddRanges(DRange3dCR geomRange, SharedGeom::InstanceList const& instances)
+void SubRanges::AddRanges(DRange3dCR geomRange, SharedGeom& sharedGeom)
     {
-    for (auto iter = instances.begin(); iter != instances.end() && !m_allIntersected; ++iter)
+    for (int i = 0, instanceCount = sharedGeom.GetInstanceCount(); i < instanceCount; ++i)
         {
         DRange3d instanceRange;
-        iter->GetTransform().Multiply(instanceRange, geomRange);
+        sharedGeom.GetInstance(i).GetTransform().Multiply(instanceRange, geomRange);
         AddRange(instanceRange);
         }
     }
@@ -4886,13 +4889,13 @@ void SubRanges::AcceptPolyface(PolyfaceHeaderCR polyface, TransformCR tf, DRange
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SubRanges::AcceptPolyfaces(PolyfaceHeaderCR polyface, TransformCR polyTf, DRange3dCR geomRange, SharedGeom::InstanceList const& instances)
+void SubRanges::AcceptPolyfaces(PolyfaceHeaderCR polyface, TransformCR polyTf, DRange3dCR geomRange, SharedGeom& sharedGeom)
     {
     // NB: polyTf ought to always be identity here...the only time we have a transform for a polyface is from InstancedGeometry, which never ends up in here.
     BeAssert(polyTf.IsIdentity());
-    for (auto iter = instances.begin(); iter != instances.end() && !m_allIntersected; ++iter)
+    for (int i = 0, instanceCount = sharedGeom.GetInstanceCount(); i < instanceCount; ++i)
         {
-        TransformCR tf = iter->GetTransform();
+        TransformCR tf = sharedGeom.GetInstance(i).GetTransform();
         DRange3d instanceRange;
         tf.Multiply(instanceRange, geomRange);
         AcceptPolyface(polyface, tf, instanceRange);

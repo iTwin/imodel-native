@@ -2055,11 +2055,35 @@ StrokesList SharedGeom::GetStrokes(double chordTolerance, GeometryCP instance, O
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Matt.Gooding    02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+SharedGeom::Instance const& SharedGeom::GetInstance(int index) const
+    {
+    if (index == 0)
+        return m_baseInstance;
+    return m_auxInstances[index - 1];
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Matt.Gooding    02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+int SharedGeom::GetInstanceCount() const
+    {
+    if (!m_baseInstance.GetElementId().IsValid())
+        return 0;
+    return 1 + (int)m_auxInstances.size();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/19
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SharedGeom::AddInstance(TransformCR tf, DisplayParamsCR params, DgnElementId elemId)
     {
-    m_instances.push_back(Instance(tf, params, elemId));
+    if (!m_baseInstance.GetElementId().IsValid())
+        m_baseInstance = Instance(tf, params, elemId);
+    else
+        m_auxInstances.push_back(Instance(tf, params, elemId));
+
     auto const& myParams = GetDisplayParams();
     auto myColor = myParams.GetFillColorDef(),
          dpColor = params.GetFillColorDef();
