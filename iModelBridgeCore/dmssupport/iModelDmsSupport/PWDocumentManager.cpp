@@ -259,9 +259,23 @@ DgnDocumentMonikerPtr PWDocumentManager::_CreateMonikerImplFromDMS(WCharCP porta
         BentleyApi::BeFileName portableFileName(portableName);
         BentleyApi::WString refFileName = portableFileName.GetFileNameAndExtension();
         BentleyApi::WString dirPath(BentleyApi::BeFileName::GetDirectoryName(searchPathIn));
-        BentleyApi::BeFileName fullDirPath(dirPath);
+        BentleyApi::BeFileName fullDirPath;
         if (!folderId.empty())
+            {
+            BentleyApi::bvector<BentleyApi::WString> paths;
+            BentleyApi::BeStringUtilities::Split(dirPath.c_str(), L"\\", paths);
+            fullDirPath.append(paths[0].c_str());
+            for (int itr = 1; itr != paths.size(); itr++)
+                {
+                if (paths[itr].EqualsI(folderId))
+                    break;
+
+                fullDirPath.AppendToPath(paths[itr].c_str());
+                }
             fullDirPath.AppendToPath(folderId.c_str());
+            }
+        else
+            fullDirPath.append(dirPath);
 
         fullDirPath.AppendToPath(refFileName.c_str());
 
@@ -271,14 +285,10 @@ DgnDocumentMonikerPtr PWDocumentManager::_CreateMonikerImplFromDMS(WCharCP porta
         // Download Reference File
         if (m_DMSHelper->_InitializeSession(dmsMoniker))
             {
-            if (m_DMSHelper->_StageDocuments(fullDirPath, true))
+            if (m_DMSHelper->_StageDocuments(fullDirPath, false, true))
                 {
-                folderId = m_DMSHelper->_GetFolderId(dmsMoniker);
-                if (!folderId.empty())
-                    BentleyApi::BeFileName::AppendToPath(dirPath, folderId.c_str());
-                BentleyApi::BeFileName::AppendToPath(dirPath, refFileName.c_str());
-                if (BentleyApi::BeFileName::DoesPathExist(dirPath.c_str()))
-                    return parentFunction(portableName, dirPath.c_str(), providerId, searchPathIn, findFullPathFirst, customXMLString);
+                if (fullDirPath.DoesPathExist())
+                    return parentFunction(portableName, fullDirPath.c_str(), providerId, searchPathIn, findFullPathFirst, customXMLString);
                 }
             }
         LOG.errorv("Error downloading reference file.");

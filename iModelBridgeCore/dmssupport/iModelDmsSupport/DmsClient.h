@@ -9,6 +9,7 @@
 
 #define PSREPOSITORYTYPE "PROJECTSHARE"
 #define PWREPOSITORYTYPE "PWDI"
+#define APPLICATIONTYPE "MICROSTATION"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 struct DmsResponseData
@@ -27,12 +28,13 @@ struct DmsClient
         Utf8String m_repositoryType;
         bool _ParseInputUrlForPS(Utf8String url);
         bool _ParseInputUrlForPW(Utf8String url);
-        Utf8PrintfString _CreateQuery(Utf8String datasource = Utf8String());
+        Utf8PrintfString _CreateQuery(Utf8String datasource = Utf8String(), bool isWSQuery = false);
 
     public:
         bool _InitializeSession(Utf8String fileUrl, Utf8String repositoryType);
         bool _UnInitializeSession();
         bvector<DmsResponseData> _GetDownloadURLs(Utf8String token, Utf8String datasource = Utf8String());
+        bvector<DmsResponseData> _GetWorkspaceFiles(Utf8String token, Utf8String datasource, DmsResponseData& cfgData);
     };
 
 END_BENTLEY_DGN_NAMESPACE

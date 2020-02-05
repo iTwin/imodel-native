@@ -21,10 +21,12 @@ struct DmsHelper : public IDmsSupport
         Utf8String m_accessToken;
         Utf8String m_repositoryType;
         Utf8String m_datasource;
+        WString m_cfgfilePath;
         bmap<WString, WString> m_fileFolderIds;
         AzureBlobStorageHelper* m_azureHelper = nullptr;
         IConnectTokenProvider* m_tokenProvider = nullptr;
         Utf8String GetToken();
+        bool CreateCFGFile(BeFileNameCR fileLocation, DmsResponseData fileData);
         virtual bool _Initialize() override;
         virtual bool _UnInitialize() override;
         virtual bool _UnInitializeSession() override;
@@ -43,15 +45,12 @@ struct DmsHelper : public IDmsSupport
             {
             return SUCCESS;
             }
-        virtual StatusInt _FetchWorkspace(BeFileNameR workspaceCfgFile, WStringCR pWMoniker, BeFileNameCR workspaceDir, bool isv8i, bvector<WString> const& additonalFilePatterns) override
-            {
-            return SUCCESS;
-            }
+        virtual StatusInt _FetchWorkspace(BeFileNameR workspaceCfgFile, WStringCR pWMoniker, BeFileNameCR workspaceDir, bool isv8i, bvector<WString> const& additonalFilePatterns) override;
         virtual  void SetApplicationResourcePath(BeFileNameCR applicationResourcePath) override
             {}
         virtual Bentley::DgnPlatform::DgnDocumentManager* _GetDgnDocumentManager() override;
         virtual bool _StageInputFile(BeFileNameCR fileLocation) override;
-        virtual bool _StageDocuments(BeFileNameCR fileLocation, bool dirStructureOn = false);
+        virtual bool _StageDocuments(BeFileNameR fileLocation, bool downloadWS = false, bool downloadRef = false);
         WString _GetFolderId(WStringCR pwMoniker = WString());
     };
 

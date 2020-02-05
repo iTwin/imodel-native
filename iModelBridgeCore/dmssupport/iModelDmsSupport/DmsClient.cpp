@@ -115,6 +115,76 @@ bvector<DmsResponseData> DmsClient::_GetDownloadURLs(Utf8String token, Utf8Strin
     return downloadUrls;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Vishal.Shingare                01/2020
+//-------------------------------------------------------------------------------------
+bvector<DmsResponseData> DmsClient::_GetWorkspaceFiles(Utf8String token, Utf8String datasource, DmsResponseData& cfgData)
+    {
+    Http::HttpClient client;
+    bvector<DmsResponseData> files;
+    if (datasource.empty())
+        {
+        LOG.errorv("Error datasource url is NULL");
+        return files;
+        }
+    Utf8String graphqlRequestUrl = UrlProvider::Urls::ProjectWiseDocumentService.Get();
+    if (graphqlRequestUrl.empty())
+        {
+        LOG.errorv("Error getting ProjectWiseDocumentService url");
+        return files;
+        }
+    graphqlRequestUrl.append("graphql");
+
+    // get workspace related files
+    Utf8PrintfString body = _CreateQuery(datasource, true);
+
+    Http::Request request = client.CreatePostRequest(graphqlRequestUrl);
+    request.SetRequestBody(Http::HttpStringBody::Create(body));
+    request.GetHeaders().SetContentType("application/graphql; charset=utf-8");
+    request.GetHeaders().SetAuthorization(token);
+    auto response = request.Perform().get();
+    if (!response.IsSuccess())
+        {
+        LOG.errorv("Error getting workspace related files");
+        return files;
+        }
+
+    rapidjson::Document document;
+    auto content = response.GetContent()->GetBody()->AsString();
+    document.Parse<0>(content.c_str());
+
+    if (document["data"].IsNull() || document["data"]["pwWorkspaces"].IsNull())
+        {
+        LOG.errorv("Error getting data or workspace related instances");
+        return files;
+        }
+    cfgData.fileId = WString(document["data"]["pwWorkspaces"][0]["id"].GetString(), 0);
+    cfgData.parentFolderId = WString(L"Workspace");
+    cfgData.downloadURL = WString(document["data"]["pwWorkspaces"][0]["content"].GetString(), 0);
+
+    rapidjson::Value& results = document["data"]["pwWorkspaces"][0]["relatedDocuments"];
+
+    for (rapidjson::SizeType i = 0; i < results.Size(); i++)
+        {
+        DmsResponseData wsgResponse;
+
+        // Store the value of the element in a vector
+        Utf8String fileId = results[i]["id"].GetString();
+        Utf8String fileName = results[i]["name"].GetString();
+        Utf8String folderName = results[i]["relativeDirectory"].GetString();
+        Utf8String downloadURL = results[i]["downloadUrl"].GetString();
+        wsgResponse.fileId = WString(fileId.c_str(), 0);
+        wsgResponse.fileName = WString(fileName.c_str(), 0);
+        wsgResponse.parentFolderId = WString(folderName.c_str(), 0);
+        wsgResponse.downloadURL = WString(downloadURL.c_str(), 0);
+
+        files.push_back(wsgResponse);
+
+        }
+
+    return files;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Vishal.Shingare                  11/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -146,11 +216,16 @@ bool DmsClient::_ParseInputUrlForPW(Utf8String url)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Vishal.Shingare                  12/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8PrintfString DmsClient::_CreateQuery(Utf8String datasource)
+Utf8PrintfString DmsClient::_CreateQuery(Utf8String datasource, bool isWSQuery)
     {
-    // PWDI query
     if (m_repositoryType.EqualsI(PWREPOSITORYTYPE))
+        {
+        // WS query
+        if (isWSQuery)
+            return Utf8PrintfString("query{pwWorkspaces(application: \"%s\", location: \"%s\", documentId: \"%s\"){id, content, relatedDocuments {id, name, relativeDirectory, downloadUrl}}}", APPLICATIONTYPE, datasource.c_str(), m_fileId.c_str());
+        // PWDI query
         return Utf8PrintfString("query{item(input: {type: %s, location: \"%s\", id: \"%s\"}){id, parentId, name, downloadUrl, isFolder}}", PWREPOSITORYTYPE, datasource.c_str(), m_fileId.c_str());
+        }
     // Projectshare query
     return Utf8PrintfString("query{item(input: {type: %s, location : \"%s\", id : \"%s\"}){children{id, parentId, name, downloadUrl, isFolder}}}", PSREPOSITORYTYPE, m_projectId.c_str(), m_folderId.c_str());
     }

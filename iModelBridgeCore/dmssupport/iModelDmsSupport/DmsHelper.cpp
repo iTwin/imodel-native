@@ -7,6 +7,7 @@
 #include <Bentley/Desktop/FileSystem.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <rapidjson/document.h>
+#include <Bentley/BeTextFile.h>
 
 #define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger(L"iModelBridge"))
 
@@ -119,13 +120,14 @@ Utf8String       DmsHelper::GetToken()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            DmsHelper::_StageInputFile(BeFileNameCR fileLocation)
     {
-    return _StageDocuments(fileLocation);
+    BeFileName fLocation = fileLocation;
+    return _StageDocuments(fLocation);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Suvik.Rahane                    11/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            DmsHelper::_StageDocuments(BeFileNameCR fileLocation, bool dirStructureOn)
+bool            DmsHelper::_StageDocuments(BeFileNameR fileLocation, bool downloadWS, bool downloadRef)
     {
     _Initialize();
 
@@ -141,8 +143,26 @@ bool            DmsHelper::_StageDocuments(BeFileNameCR fileLocation, bool dirSt
     Utf8String token = GetToken();
     if (token.empty())
         return false;
+
     //Get download URLs
-    bvector<DmsResponseData> downloadUrls = dmsClient._GetDownloadURLs(token, m_datasource);
+    bvector<DmsResponseData> downloadUrls;
+    // download requested files
+    if (!downloadWS)
+        downloadUrls = dmsClient._GetDownloadURLs(token, m_datasource);
+    else
+        {
+        // download workspace
+        DmsResponseData cfgData;
+        downloadUrls = dmsClient._GetWorkspaceFiles(token, m_datasource, cfgData);
+
+        if (!downloadUrls.empty())
+            {
+            bool iscreated = CreateCFGFile(fileLocation, cfgData);
+            fileLocation.AppendToPath(cfgData.fileId.append(L".cfg").c_str());
+            if (!iscreated)
+                LOG.warning("Warning CFG file is not created");
+            }
+        }
 
     if (downloadUrls.empty())
         {
@@ -162,12 +182,22 @@ bool            DmsHelper::_StageDocuments(BeFileNameCR fileLocation, bool dirSt
         WString fileId(itr->fileId);
 
         WString dirPath(BeFileName::GetDirectoryName(fileLocation));
-        BeFileName fullDirPath(dirPath);
-        if (dirStructureOn)
+        BeFileName fullDirPath;
+        if (downloadWS || downloadRef)
             {
             // maintaining directory structure for references
             if (!fileId.empty() && !parentId.empty())
                 {
+                bvector<WString> paths;
+                BeStringUtilities::Split(dirPath.c_str(), L"\\", paths);
+                fullDirPath.append(paths[0].c_str());
+                for (int itr = 1; itr != paths.size(); itr++)
+                    {
+                    if (paths[itr].EqualsI(parentId))
+                        break;
+
+                    fullDirPath.AppendToPath(paths[itr].c_str());
+                    }
                 fullDirPath.AppendToPath(parentId.c_str());
                 if (!fullDirPath.DoesPathExist())
                     BeFileName::CreateNewDirectory(fullDirPath);
@@ -176,9 +206,12 @@ bool            DmsHelper::_StageDocuments(BeFileNameCR fileLocation, bool dirSt
                 m_fileFolderIds.Insert(fileId, parentId);
                 }
             }
+        else
+            fullDirPath.append(dirPath);
 
         fullDirPath.AppendToPath(fileName.c_str());
-
+        if (downloadRef)
+            fileLocation = fullDirPath;
         if (m_azureHelper->_InitializeSession(downloadURL))
             {
             auto result = m_azureHelper->_AsyncStageInputFile(fullDirPath);
@@ -209,6 +242,18 @@ bool            DmsHelper::_StageDocuments(BeFileNameCR fileLocation, bool dirSt
     return true;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                     Vishal.Shingare                 01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt   DmsHelper::_FetchWorkspace(BeFileNameR workspaceCfgFile, WStringCR pwMoniker, BeFileNameCR workspaceDir, bool isv8i, bvector<WString> const& additonalFilePatterns)
+    {
+    BeFileName fLocation = workspaceDir;
+    _StageDocuments(fLocation, true);
+    if (m_cfgfilePath.empty())
+        return ERROR;
+    workspaceCfgFile = BeFileName(m_cfgfilePath.c_str());
+    return SUCCESS;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Vishal.Shingare                  12/2019
@@ -239,4 +284,80 @@ WString   DmsHelper::_GetFolderId(WStringCR pwMoniker)
         return folderId;
         }
     return folderId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Vishal.Shingare                  01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+bool   DmsHelper::CreateCFGFile(BeFileNameCR fileLocation, DmsResponseData fileData)
+    {
+    WString fileDir(fileLocation);
+    BeFileName cfgPath(fileLocation);
+    cfgPath.AppendToPath(fileData.parentFolderId.c_str());
+
+    if (!cfgPath.DoesPathExist())
+        BeFileName::CreateNewDirectory(cfgPath.c_str());
+
+    cfgPath.AppendToPath(fileData.fileId.c_str());
+    cfgPath.AppendExtension(L"cfg");
+    //create and write cfgFile
+    BeFile file;
+    if (!cfgPath.DoesPathExist())
+        file.Create(cfgPath.c_str());
+    BeFileStatus status;
+    BeTextFilePtr m_fileWritePtr = BeTextFile::Open(status, cfgPath.c_str(), TextFileOpenType::Write, TextFileOptions::None, TextFileEncoding::CurrentLocale);
+
+    WPrintfString copyRight
+    (L"#---------------------------------------------------------------------------------------------\n"
+        L"#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.\n"
+        L"#  See COPYRIGHT.md in the repository root for full copyright notice.\n"
+        L"#---------------------------------------------------------------------------------------------\n\n");
+    m_fileWritePtr->PutLine(copyRight.c_str(), true);
+
+    //set _ROOTDIR directory
+    BeFileName installDirectory = Desktop::FileSystem::GetExecutableDir();
+    WPrintfString rootDir(L"_ROOTDIR=%s\\", installDirectory.c_str());
+    m_fileWritePtr->PutLine(rootDir.c_str(), true);
+
+    //set PW_WORKDIR directory
+    WPrintfString workDir(L"PW_WORKDIR=%s\\", fileDir.c_str());
+    m_fileWritePtr->PutLine(workDir.c_str(), true);
+
+    //set PWDIR installed directory
+    WString PWDIR(L"%if !defined (PWDIR) # Check current user first\n"
+        L"PWDIR=${registryread{\"HKEY_CURRENT_USER\\SOFTWARE\\Bentley\\ProjectWise\\Path\"}}\n"
+        L"%if !exists ($(PWDIR)) # Fallback to machine level settings)\n"
+        L"PWDIR=${registryread{\"HKEY_LOCAL_MACHINE\\SOFTWARE\\Bentley\\ProjectWise\\Path\"}}\n"
+        L"%endif %endif");
+    m_fileWritePtr->PutLine(PWDIR.c_str(), true);
+
+    // TODO for v8i Dgnv8/v8i/Config
+    //set _USTN_INSTALLED_CONFIGURATION directory
+    if (installDirectory.AppendToPath(L"DgnV8/Config").DoesPathExist())
+        {
+        WString _USTN_INSTALLED_CONFIGURATION(L"# If it is not defined as an environment variable, define MSDIR to the _ROOTDIR.\n"
+            L"# _ROOTDIR is predefined by the executable as the installation directory of the executable.\n"
+            L"MSDIR = ${_ROOTDIR}\n"
+            L"# Now (if not defined as an environment variable), _USTN_INSTALLED_WORKSPACEROOT is defined relative to the parent directory.\n"
+            L"_USTN_INSTALLED_CONFIGURATION = ${MSDIR}DgnV8/Config/");
+        m_fileWritePtr->PutLine(_USTN_INSTALLED_CONFIGURATION.c_str(), true);
+        }
+    else
+        {
+        WString _USTN_INSTALLED_CONFIGURATION(L"# If it is not defined as an environment variable, define MSDIR to the _ROOTDIR.\n"
+            L"# _ROOTDIR is predefined by the executable as the installation directory of the executable.\n"
+            L"MSDIR = ${_ROOTDIR}\n"
+            L"# Now (if not defined as an environment variable), _USTN_INSTALLED_WORKSPACEROOT is defined relative to the parent directory.\n"
+            L"_USTN_INSTALLED_CONFIGURATION = ${MSDIR}Configuration/");
+        m_fileWritePtr->PutLine(_USTN_INSTALLED_CONFIGURATION.c_str(), true);
+        }
+
+    m_fileWritePtr->PutLine(fileData.downloadURL.c_str(), true);
+
+    m_fileWritePtr->Close();
+    if (!cfgPath.DoesPathExist())
+        return false;
+
+    m_cfgfilePath = cfgPath;
+    return true;
     }
