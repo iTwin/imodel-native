@@ -20,69 +20,70 @@ BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 // @bsiclass                                    Haroldas.Vitunskas             12/2018
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE PresentationRulesDomain : Dgn::DgnDomain
-    {
-    public:
-        PresentationRulesDomain() : DgnDomain(PRESENTATION_RULES_DOMAIN, "", 1) {}
+{
+public:
+    PresentationRulesDomain() : DgnDomain(PRESENTATION_RULES_DOMAIN, "", 1) {}
 
-    protected:
-        WCharCP _GetSchemaRelativePath() const override { return PRESENTATION_RULES_ECSCHEMA_PATH; }
-    };
+protected:
+    WCharCP _GetSchemaRelativePath() const override { return PRESENTATION_RULES_ECSCHEMA_PATH; }
+};
 
 //=======================================================================================
 //! An element for embedding a ruleset in iModelDb
 // @bsiclass                                    Haroldas.Vitunskas             12/2018
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RulesetElement : Dgn::DefinitionElement
-    {
-    public:
-        static Dgn::DgnCode CreateRulesetCode(Dgn::DgnModelCR model, Utf8StringCR rulesetId, Dgn::DgnDbR dgnDb);
-    };
+{
+public:
+    static Dgn::DgnCode CreateRulesetCode(Dgn::DgnModelCR model, Utf8StringCR rulesetId, Dgn::DgnDbR dgnDb);
+};
 
 //=======================================================================================
 //! A class for embedding ruleset in iModelDb
 // @bsiclass                                    Haroldas.Vitunskas             12/2018
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RulesetEmbedder
-    {
-    public:
-        enum class DuplicateHandlingStrategy
-            {
-            SKIP,       /* Skip inserting current ruleset and leave ruleset in db unchanged */
-            REPLACE     /* Replace ruleset in db with current ruleset */
-            };
+{
+public:
+    enum class DuplicateHandlingStrategy
+        {
+        SKIP,       /* Skip inserting current ruleset and leave ruleset in db unchanged */
+        REPLACE     /* Replace ruleset in db with current ruleset */
+        };
 
-    private:
-        Dgn::DgnDbR m_db;
+private:
+    Dgn::DgnDbR m_db;
 
-    private:
-        Dgn::DefinitionModelCPtr GetOrCreateRulesetModel();
-        
-        Dgn::DefinitionModelCPtr QueryRulesetModel() const;
-        Dgn::DefinitionPartitionCPtr QueryDefinitionPartition() const;
-        Dgn::SubjectCPtr QuerySubject() const;
+private:
+    Dgn::DefinitionModelCPtr QueryRulesetModel() const;
+    Dgn::DefinitionPartitionCPtr QueryDefinitionPartition() const;
+    Dgn::SubjectCPtr QuerySubject() const;
 
-        Dgn::DefinitionModelCPtr InsertDefinitionModel(Dgn::DefinitionPartitionCPtr definitionPartition);
-        Dgn::DefinitionPartitionCPtr InsertDefinitionPartition(Dgn::SubjectCPtr subject);
-        Dgn::SubjectCPtr InsertSubject();
-        
-        void InsertCodeSpecs();
-        Dgn::CodeSpecCPtr InsertCodeSpec(Utf8CP name);
+    Dgn::DefinitionModelCPtr InsertDefinitionModel(Dgn::DefinitionPartitionCPtr definitionPartition);
+    Dgn::DefinitionPartitionCPtr InsertDefinitionPartition(Dgn::SubjectCPtr subject);
+    Dgn::SubjectCPtr InsertSubject();
 
-        void HandleElementOperationPrerequisites();
-        Dgn::DgnElementId HandleDuplicateRuleset(ECPresentation::PresentationRuleSetR ruleset, DuplicateHandlingStrategy duplicateHandlingStrategy, Dgn::DgnElementId rulesetId);
-        Dgn::DgnElementId InsertNewRuleset(ECPresentation::PresentationRuleSetR ruleset, Dgn::DgnModelCPtr model, Dgn::DgnCode rulesetCode);
+    void InsertCodeSpecs();
+    Dgn::CodeSpecCPtr InsertCodeSpec(Utf8CP name);
 
-    public:
-        //! Create a new embedder.
-        //! @param[in] db   DgnDb reference to embed rulesets to
-        DGNDBSYNC_EXPORT RulesetEmbedder(Dgn::DgnDbR dgnDb) : m_db(dgnDb) { }
-        
-        //! Embeds a ruleset to Db
-        //! @param[in] ruleset                      a presentation ruleset to embed
-        //! @param[in] duplicateHandlingStrategy    strategy for handling duplicate ruleset
-        //! @returns in case of successful insert returns DgnElementId of inserted element.
-        //!          in case of failure inserts invalid ID (0)
-        DGNDBSYNC_EXPORT Dgn::DgnElementId InsertRuleset(ECPresentation::PresentationRuleSetR ruleset, DuplicateHandlingStrategy duplicateHandlingStrategy = DuplicateHandlingStrategy::SKIP);
-    };
+    void HandleElementOperationPrerequisites();
+    Dgn::DgnElementId HandleDuplicateRuleset(ECPresentation::PresentationRuleSetR ruleset, DuplicateHandlingStrategy duplicateHandlingStrategy, Dgn::DgnElementId rulesetId);
+    Dgn::DgnElementId InsertNewRuleset(ECPresentation::PresentationRuleSetR ruleset, Dgn::DgnModelCPtr model, Dgn::DgnCode rulesetCode);
+
+public:
+    //! Create a new embedder.
+    //! @param[in] db   DgnDb reference to embed rulesets to
+    DGNDBSYNC_EXPORT RulesetEmbedder(Dgn::DgnDbR dgnDb) : m_db(dgnDb) { }
+
+    //! Returns the model rulesets are added to. Creates one if it doesn't exist in the DgnDb yet.
+    Dgn::DefinitionModelCPtr GetOrCreateRulesetModel();
+
+    //! Embeds a ruleset to Db
+    //! @param[in] ruleset                      a presentation ruleset to embed
+    //! @param[in] duplicateHandlingStrategy    strategy for handling duplicate ruleset
+    //! @returns in case of successful insert returns DgnElementId of inserted element.
+    //!          in case of failure inserts invalid ID (0)
+    DGNDBSYNC_EXPORT Dgn::DgnElementId InsertRuleset(ECPresentation::PresentationRuleSetR ruleset, DuplicateHandlingStrategy duplicateHandlingStrategy = DuplicateHandlingStrategy::SKIP);
+};
 
 END_DGNDBSYNC_DGNV8_NAMESPACE

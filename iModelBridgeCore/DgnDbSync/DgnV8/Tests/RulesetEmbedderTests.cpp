@@ -15,50 +15,36 @@ struct RulesetEmbedderTests : public ConverterTestBaseFixture
     DgnDbPtr m_db;
     BentleyApi::ECPresentation::SQLangLocalizationProvider m_localizationProvider;
     BentleyApi::ECPresentation::RulesDrivenECPresentationManager* m_presentationManager;
-    BentleyApi::Utf8CP RuleSetJsonString1 = R"(
-        {
-            "id" : "default",
-            "rules" : 
-            [
-                {
-                    "ruleType": "RootNodes",
-                    "specifications" : 
-                    [{
-                        "specType": "CustomNode",
-                            "type" : "root",
-                            "label" : "root"
-                    }]
-                }
-            ]
-        }
-    )";
+    BentleyApi::Utf8CP RuleSetJsonString1 = R"({
+        "id": "default",
+        "rules": [{
+            "ruleType": "RootNodes",
+            "specifications": [{
+                "specType": "CustomNode",
+                "type": "root",
+                "label": "root"
+            }]
+        }]
+    })";
 
-    BentleyApi::Utf8CP RuleSetJsonString2 = R"(
-        {
-            "id" : "default",
-            "rules" : 
-            [
-                {
-                    "ruleType": "RootNodes",
-                    "specifications" : 
-                    [{
-                        "specType": "CustomNode",
-                            "type" : "root",
-                            "label" : "root"
-                    }]
-                }, 
-                {
-                    "ruleType": "ChildNodes",
-                    "specifications": 
-                    [{
-                        "specType": "AllInstanceNodes",
-                        "groupByClass": true,
-                        "groupByLabel": true
-                    }]
-                }
-            ]
-        }
-    )";
+    BentleyApi::Utf8CP RuleSetJsonString2 = R"({
+        "id": "default",
+        "rules": [{
+            "ruleType": "RootNodes",
+            "specifications": [{
+                "specType": "CustomNode",
+                "type": "root",
+                "label": "root"
+            }]
+        }, {
+            "ruleType": "ChildNodes",
+            "specifications": [{
+                "specType": "AllInstanceNodes",
+                "groupByClass": true,
+                "groupByLabel": true
+            }]
+        }]
+    })";
 
     void SetUp();
     void TearDown();
@@ -129,7 +115,7 @@ TEST_F(RulesetEmbedderTests, RulesetIsEmbeddedAndLocated)
 TEST_F(RulesetEmbedderTests, RulesetIsEmbeddedAndLocatedFromPresentationManager)
     {
     RulesetEmbedder embedder = RulesetEmbedder(*m_db);
-    
+
     BentleyApi::ECPresentation::IConnectionPtr connection = m_presentationManager->GetConnections().CreateConnection(*m_db);
     BentleyApi::bvector<BentleyApi::ECPresentation::PresentationRuleSetPtr> rulesets = m_presentationManager->GetLocaters().LocateRuleSets(*connection, nullptr);
     int countBefore = rulesets.size();
@@ -180,13 +166,13 @@ TEST_F(RulesetEmbedderTests, DuplicateRulesetIsSkipped)
 
     DgnElementId rulesetId2 = embedder.InsertRuleset(*changedRuleset, RulesetEmbedder::DuplicateHandlingStrategy::SKIP);
     ASSERT_EQ(rulesetId1, rulesetId2);
-    
+
     BentleyApi::ECPresentation::ConnectionManager manager;
     BentleyApi::ECPresentation::IConnectionPtr connection = manager.CreateConnection(*m_db);
     BentleyApi::RefCountedPtr<BentleyApi::ECPresentation::EmbeddedRuleSetLocater> locater = BentleyApi::ECPresentation::EmbeddedRuleSetLocater::Create(*connection);
     BentleyApi::bvector<BentleyApi::ECPresentation::PresentationRuleSetPtr> rulesets = locater->LocateRuleSets();
     ASSERT_TRUE(1 == rulesets.size());
-    
+
     BentleyApi::ECPresentation::PresentationRuleSetPtr locatedRuleset = rulesets[0];
     ASSERT_TRUE(0 == std::strcmp(ruleset->GetRuleSetId().c_str(), locatedRuleset->GetRuleSetId().c_str()));
     ASSERT_TRUE(ruleset->WriteToJsonValue() == locatedRuleset->WriteToJsonValue());
