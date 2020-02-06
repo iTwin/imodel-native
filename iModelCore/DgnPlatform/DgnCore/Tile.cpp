@@ -4128,6 +4128,9 @@ void TileContext::ProcessElement(DgnElementId elemId, double rangeDiagonalSquare
 void TileContext::PushGeometry(GeometryR geom)
     {
     auto const& range = geom.GetTileRange();
+    if (!range.IntersectsWith(m_tileRange))
+        return;
+
     if (BelowMinRange(range))
         {
         // It is not worth doing tighter range checks for such small bits of geometry.
