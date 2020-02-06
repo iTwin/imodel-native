@@ -4,14 +4,14 @@
 
     <!-- Translated Sqlang database Xliff files -->
     <Part Name="ImappApps-en" BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke" BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)Build/imageppApps/imageppapps_en.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff">
-        <SubPart PartName="ImagePP" PartFile="ImagePP" Repository="ImagePP" />
+        <SubPart PartName="ImagePP" PartFile="RealityCore/ImagePP/ImagePP" Repository="iModel02" />
         <Bindings>
             <Files ProductDirectoryName="Assets" Required="true">Delivery/sqlang/imageppapps_en.sqlang.db3</Files>
         </Bindings>
     </Part>
     
     <Part Name="ActiveImageExe" BMakeFile="Utils/ActiveImage/ActiveImage.mke" OnlyPlatforms="x86,x64">
-        <SubPart PartName="ImagePP" PartFile="ImagePP" Repository="ImagePP" />
+        <SubPart PartName="ImagePP" PartFile="RealityCore/ImagePP/ImagePP" Repository="iModel02" />
         <SubPart PartName="HUTExportLib"/>
         <SubPart PartName="ImappApps-en"/>
         <Bindings>
@@ -20,7 +20,7 @@
     </Part>
 
     <Part Name="BentleyActiveXPro" BMakeFile="Utils/BentleyActiveXPro/BentleyActiveXPro.mke" OnlyPlatforms="x86,x64">
-        <SubPart PartName="ImageppStaticLib" PartFile="ImagePP" Repository="ImagePP" />
+        <SubPart PartName="ImageppStaticLib" PartFile="RealityCore/ImagePP/ImagePP" Repository="iModel02" />
         <SubPart PartName="HUTExportLibWithIppStaticLib"/>
         <Bindings>
             <Assemblies>delivery/BentleyActiveXPro.ocx</Assemblies> 
@@ -28,42 +28,42 @@
     </Part>
 
     <Part Name="ConvertToHRFMultiresExe" BMakeFile="Utils/ConvertToHRFMultires/ConvertToHRFMultires.mke" OnlyPlatforms="x86,x64">
-        <SubPart PartName="ImagePP" PartFile="ImagePP" Repository="ImagePP" />
+        <SubPart PartName="ImagePP" PartFile="RealityCore/ImagePP/ImagePP" Repository="iModel02" />
         <Bindings>
             <Assemblies>delivery/ConvertToHRFMultiRes.exe</Assemblies> 
         </Bindings>
     </Part>
 
     <Part Name="GCoordApproxTester" BMakeFile="Utils/GCoordApproxTester/GCoordApproxTester.mke" OnlyPlatforms="x86,x64">
-        <SubPart PartName="ImagePP" PartFile="ImagePP" Repository="ImagePP" />
+        <SubPart PartName="ImagePP" PartFile="RealityCore/ImagePP/ImagePP" Repository="iModel02" />
         <Bindings>
             <Assemblies>delivery/GCoordApproxTester.exe</Assemblies> 
         </Bindings>
     </Part>
 
     <Part Name="HMRFactorExe" BMakeFile="Utils/HMRFactor/HMRFactor.mke" OnlyPlatforms="x86,x64">
-        <SubPart PartName="ImagePP" PartFile="ImagePP" Repository="ImagePP" />
+        <SubPart PartName="ImagePP" PartFile="RealityCore/ImagePP/ImagePP" Repository="iModel02" />
         <Bindings>
             <Assemblies>delivery/HMRFactor.exe</Assemblies> 
         </Bindings>
     </Part>
 
     <Part Name="HRFCapabilitiesExporterExe" BMakeFile="Utils/HRFCapabilitiesExporter/HRFCapabilitiesExporter.mke" OnlyPlatforms="x86,x64">
-        <SubPart PartName="ImagePP" PartFile="ImagePP" Repository="ImagePP" />
+        <SubPart PartName="ImagePP" PartFile="RealityCore/ImagePP/ImagePP" Repository="iModel02" />
         <Bindings>
             <Assemblies>delivery/HRFCapabilitiesExporter.exe</Assemblies> 
         </Bindings>
     </Part>
 
     <Part Name="HTiffInfoExe" BMakeFile="Utils/HTiffInfo/HTiffInfo.mke" OnlyPlatforms="x86,x64">
-        <SubPart PartName="ImagePP" PartFile="ImagePP" Repository="ImagePP" />
+        <SubPart PartName="ImagePP" PartFile="RealityCore/ImagePP/ImagePP" Repository="iModel02" />
         <Bindings>
             <Assemblies>delivery/HTiffInfo.exe</Assemblies> 
         </Bindings>
     </Part>
 
     <Part Name="HUTExportLibWithIppStaticLib" BMakeFile="Utils/HUTExport/HUTExport.mke" OnlyPlatforms="x86,x64">
-        <SubPart PartName="ImageppStaticLib" PartFile="ImagePP" Repository="ImagePP" />
+        <SubPart PartName="ImageppStaticLib" PartFile="RealityCore/ImagePP/ImagePP" Repository="iModel02" />
         <Bindings>
             <PublicAPI Domain="ImageppApps" />
             <Libs>Delivery/$(stlibprefix)HUTExportLibWithIppStaticLib$(stlibext)</Libs>
@@ -72,7 +72,7 @@
     </Part>
 
     <Part Name="HUTExportLib" BMakeFile="Utils/HUTExport/HUTExport.mke" BMakeOptions="+dIMAGEPP_DLLMODE=1" OnlyPlatforms="x86,x64">
-        <SubPart PartName="ImagePP" PartFile="ImagePP" Repository="ImagePP" />
+        <SubPart PartName="ImagePP" PartFile="RealityCore/ImagePP/ImagePP" Repository="iModel02" />
         <Bindings>
             <PublicAPI Domain="ImageppApps" />
             <Libs>Delivery/$(stlibprefix)HUTExportLib$(stlibext)</Libs>
@@ -81,28 +81,28 @@
     </Part>
 
     <Part Name="ImageComparatorExe" BMakeFile="Utils/ImageComparator/ImageComparator.mke" OnlyPlatforms="x86,x64">
-        <SubPart PartName="ImagePP" PartFile="ImagePP" Repository="ImagePP" />
+        <SubPart PartName="ImagePP" PartFile="RealityCore/ImagePP/ImagePP" Repository="iModel02" />
         <Bindings>
             <Assemblies>delivery/ImageComparator.exe</Assemblies> 
         </Bindings>
     </Part>
     
     <Part Name="ImageConverterExe" BMakeFile="Utils/ImageConverter/ImageConverter.mke" OnlyPlatforms="x86,x64">
-        <SubPart PartName="ImagePP" PartFile="ImagePP" Repository="ImagePP" />
+        <SubPart PartName="ImagePP" PartFile="RealityCore/ImagePP/ImagePP" Repository="iModel02" />
         <Bindings>
             <Assemblies>delivery/ImageConverter.exe</Assemblies> 
         </Bindings>
     </Part>
 
     <Part Name="ImageHunterExe" BMakeFile="Utils/ImageHunter/ImageHunter.mke" OnlyPlatforms="x86,x64">
-        <SubPart PartName="ImagePP" PartFile="ImagePP" Repository="ImagePP" />
+        <SubPart PartName="ImagePP" PartFile="RealityCore/ImagePP/ImagePP" Repository="iModel02" />
         <Bindings>
             <Assemblies>delivery/ImageHunter.exe</Assemblies> 
         </Bindings>
     </Part>
 
     <Part Name="ImageInsiderExe" BMakeFile="Utils/ImageInsider/ImageInsider.mke" OnlyPlatforms="x86,x64">
-        <SubPart PartName="ImagePP" PartFile="ImagePP" Repository="ImagePP" />
+        <SubPart PartName="ImagePP" PartFile="RealityCore/ImagePP/ImagePP" Repository="iModel02" />
         <Bindings>
             <Assemblies>delivery/ImageInsider.exe</Assemblies> 
         </Bindings>
@@ -157,7 +157,7 @@
     </Product>
 
     <Product Name="ImageppAppsAndTests" OnlyPlatforms="x86,x64">
-        <SubPart PartName="ImagePP-Tested" PartFile="ImagePP" Repository="ImagePP" />
+        <SubPart PartName="ImagePP-Tested" PartFile="RealityCore/ImagePP/ImagePP" Repository="iModel02" />
         <SubProduct ProductName="ImageppApps" />
         <Directories DirectoryListName="IppAppsDirList" />
     </Product>

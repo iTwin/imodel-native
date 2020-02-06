@@ -777,16 +777,6 @@ LINKER_LIBRARIES + \
 LINKER_LIBRARIES + \
     $(ContextSubpartsLibs)DgnView.lib \
     $(ContextSubpartsLibs)RasterCore.lib
-#%if defined (BUILD_USING_VS2013)
-#    $(ContextSubpartsLibs)libboost_system-vc120-mt-1_57$(libext) \
-#    $(ContextSubpartsLibs)libboost_thread-vc120-mt-1_57$(libext) \
-#%elif defined (BUILD_USING_VS2015)
-#    $(ContextSubpartsLibs)libboost_system-vc140-mt-1_57$(libext) \
-#    $(ContextSubpartsLibs)libboost_thread-vc140-mt-1_57$(libext) \
-#%elif defined (BUILD_USING_VS2017)
-#    $(ContextSubpartsLibs)libboost_system-vc140-mt-1_57$(libext) \
-#    $(ContextSubpartsLibs)libboost_thread-vc140-mt-1_57$(libext) \
-#%endif
 %endif
     
 %elif defined(DGNDB06_BUILD)
@@ -800,7 +790,9 @@ LINKER_LIBRARIES + \
 LINKER_LIBRARIES + \
     $(ContextSubpartsStaticLibs)BeLibJpegTurbo.lib \
     $(ContextSubpartsLibs)BeJpeg.lib \
+%if !defined(BUILD_CORE) || defined(BUILD_SINGLE_LIB)
     $(ContextSubpartsLibs)ThreeMxReaderLegacy.lib \
+%endif
 
 %else
 

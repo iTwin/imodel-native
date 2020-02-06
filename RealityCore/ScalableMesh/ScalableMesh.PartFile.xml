@@ -173,7 +173,6 @@
     <SubPart PartName="TerrainModelDependencies"/>
     <SubPart PartName="ScalableMeshCoreDependencies" />
     <Bindings>
-      <!--<Directory SourceName="SdkSources/V8_InternalSDK/Dlls" ProductDirectoryName="ScalableMeshV8SDK" Required="true" />-->
       <Libs ProductDirectoryName="ScalableMeshLibs">Delivery/$(shlibprefix)ScalableMeshCore$(libext)</Libs>
       <Assemblies>delivery/$(shlibprefix)ScalableMeshCore$(ApiNumber)$(shlibext)</Assemblies>
       <Files ProductDirectoryName="Assemblies" Required="true">Delivery/ScalableMeshCacert.pem</Files>
@@ -188,7 +187,6 @@
     <SubPart PartName="TerrainModelDependencies"/>
     <SubPart PartName="CloudDataSource"                 PartFile="CloudDataSource"        Repository="ScalableMesh" />
     <Bindings>
-      <!--<Directory SourceName="SdkSources/V8_InternalSDK/Dlls" ProductDirectoryName="ScalableMeshV8SDK" Required="true" />-->
       <Libs ProductDirectoryName="ScalableMeshLibs">Delivery/$(shlibprefix)ScalableMeshCore$(libext)</Libs>
       <Assemblies>delivery/$(shlibprefix)ScalableMeshCore$(ApiNumber)$(shlibext)</Assemblies>
       <Files ProductDirectoryName="Assemblies" Required="true">Delivery/ScalableMeshCacert.pem</Files>
@@ -203,8 +201,8 @@
   </Part>
 
   <Part Name="ScalableMeshCreator" BentleyBuildMakeFile="ScalableMesh.mke" BentleyBuildMakeOptions="-dBUILD_CREATOR -dIMODEL02=1 -dsubAppName=ScalableMeshCreator -dappName=ScalableMeshLib" ApiNumber="M02" ExcludePlatforms="Linux*">
-    <SubPart PartName="AutomaticGroundDetection" PartFile="RealityCore/TerrainModel/TerrainModelDgnDb" Repository="imodel02"/>
     <SubPart PartName="ThreeMxReaderLegacy" PartFile="Domains/RealityModeling/RealityModeling" Repository="imodel02" />
+    <SubPart PartName="AutomaticGroundDetection" PartFile="RealityCore/TerrainModel/TerrainModelDgnDb" Repository="imodel02"/>
     <SubPart PartName="Cgal" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
     <SubPart PartName="FreeImage"                   PartFile="${SrcRoot}bsicommon/CvsPartfiles/freeimage"   Repository="Bin-FreeImage"/>
     <SubPart PartName="ScalableMeshCore"/>

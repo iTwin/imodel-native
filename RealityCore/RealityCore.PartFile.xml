@@ -35,10 +35,12 @@
         <ProductDirectory Name="VendorNotices"  LibType="Static"    RelativeTo="Root" Path="notices"/>
         <ProductDirectory Name="ScalableMeshLibs"                   RelativeTo="Root" Path="lib"/>
         <ProductDirectory Name="ScalableMeshLibs" LibType="Static"  RelativeTo="Root" Path="lib"/>
-        <ProductDirectory Name="IppPrivateLibs"                   RelativeTo="Root" Path="lib"/>
-        <ProductDirectory Name="IppPrivateLibs" LibType="Static"  RelativeTo="Root" Path="lib"/>
+        <ProductDirectory Name="IppPrivateLibs"                     RelativeTo="Root" Path="lib"/>
+        <ProductDirectory Name="IppPrivateLibs" LibType="Static"    RelativeTo="Root" Path="lib"/>
         <ProductDirectory Name="TerrainModelNativeCoreLibs"                   RelativeTo="Root" Path="lib"/>
         <ProductDirectory Name="TerrainModelNativeCoreLibs" LibType="Static"  RelativeTo="Root" Path="lib"/>
+        <ProductDirectory Name="WSClientXliffs"                               RelativeTo="Root" Path="xliffs"/>
+        <ProductDirectory Name="WSClientXliffs"  LibType="Static"             RelativeTo="Root" Path="xliffs"/>        
     </ProductDirectoryList>
 
     <!-- ======================================================================================================================================== -->

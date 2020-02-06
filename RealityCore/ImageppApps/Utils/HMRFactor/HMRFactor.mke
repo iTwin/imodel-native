@@ -10,7 +10,7 @@ appName = HMRFactor
 
 MFC_WIN_APP = 1
 %include mdl.mki
-%include $(SrcRoot)Imageppapps/mki/ImageppAppsCommon.mki
+%include $(SrcRoot)iModel02/RealityCore/Imageppapps/mki/ImageppAppsCommon.mki
 
 HMRFactorDir = $(_MakeFilePath)
 

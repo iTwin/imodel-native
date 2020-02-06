@@ -9,7 +9,7 @@
 appName = ImageConverter
 
 %include mdl.mki
-%include $(SrcRoot)Imageppapps/mki/ImageppAppsCommon.mki
+%include $(SrcRoot)iModel02/RealityCore/Imageppapps/mki/ImageppAppsCommon.mki
 
 baseDir = $(_MakeFilePath)
 
