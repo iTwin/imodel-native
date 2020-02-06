@@ -1741,7 +1741,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Ret
     {
     ECClassCP classA = GetClass("A");
     ECClassCP classB = GetClass("B");
-    ECClassCP classC = GetClass("C");
     ECRelationshipClassCP relationshipAB = GetClass("A_To_B")->GetRelationshipClassCP();
     ECRelationshipClassCP relationshipBC = GetClass("B_To_C")->GetRelationshipClassCP();
     ECRelationshipClassCP relationshipCC = GetClass("C_To_C")->GetRelationshipClassCP();

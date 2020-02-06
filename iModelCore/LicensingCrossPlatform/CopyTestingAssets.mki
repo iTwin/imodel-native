@@ -14,17 +14,9 @@
     arch=$(TARGET_PROCESSOR_ARCHITECTURE)
 %endif
 
+TestAssetsOutDir = $(OutRoot)/$(arch)/static/ProductCopy/Licensing-GtestUnit/Assets/TestAssets
+TestAssetsSrcDir = $(SrcRoot)imodel02/iModelCore/LicensingCrossPlatform/Tests/UnitTests/Assets
+
 always:
-    ~linkfile $(OutRoot)/$(arch)/static/ProductCopy/Licensing-GtestUnit/Assets/TestAssets/sqlang/DgnClientFx_en.sqlang.db3=$(SrcRoot)imodel02/iModelCore/LicensingCrossPlatform/Tests/UnitTests/Assets/sqlang/DgnClientFx_en.sqlang.db3
-    ~linkfile $(OutRoot)/$(arch)/static/ProductCopy/Licensing-GtestUnit/Assets/TestAssets/EvalPolicy.json=$(SrcRoot)imodel02/iModelCore/LicensingCrossPlatform/Tests/UnitTests/Assets/EvalPolicy.json
-    ~linkfile $(OutRoot)/$(arch)/static/ProductCopy/Licensing-GtestUnit/Assets/TestAssets/EvalPolicyExpired.json=$(SrcRoot)imodel02/iModelCore/LicensingCrossPlatform/Tests/UnitTests/Assets/EvalPolicyExpired.json
-    ~linkfile $(OutRoot)/$(arch)/static/ProductCopy/Licensing-GtestUnit/Assets/TestAssets/EvalPolicyExpiredWithKey.json=$(SrcRoot)imodel02/iModelCore/LicensingCrossPlatform/Tests/UnitTests/Assets/EvalPolicyExpiredWithKey.json
-    ~linkfile $(OutRoot)/$(arch)/static/ProductCopy/Licensing-GtestUnit/Assets/TestAssets/EvalPolicyWithBackup.json=$(SrcRoot)imodel02/iModelCore/LicensingCrossPlatform/Tests/UnitTests/Assets/EvalPolicyWithBackup.json
-    ~linkfile $(OutRoot)/$(arch)/static/ProductCopy/Licensing-GtestUnit/Assets/TestAssets/EvalPolicyWithBackupWithKey.json=$(SrcRoot)imodel02/iModelCore/LicensingCrossPlatform/Tests/UnitTests/Assets/EvalPolicyWithBackupWithKey.json
-    ~linkfile $(OutRoot)/$(arch)/static/ProductCopy/Licensing-GtestUnit/Assets/TestAssets/EvalPolicyWithKey.json=$(SrcRoot)imodel02/iModelCore/LicensingCrossPlatform/Tests/UnitTests/Assets/EvalPolicyWithKey.json
-    ~linkfile $(OutRoot)/$(arch)/static/ProductCopy/Licensing-GtestUnit/Assets/TestAssets/test.json=$(SrcRoot)imodel02/iModelCore/LicensingCrossPlatform/Tests/UnitTests/Assets/test.json
-    ~linkfile $(OutRoot)/$(arch)/static/ProductCopy/Licensing-GtestUnit/Assets/TestAssets/test2.json=$(SrcRoot)imodel02/iModelCore/LicensingCrossPlatform/Tests/UnitTests/Assets/test2.json
-    ~linkfile $(OutRoot)/$(arch)/static/ProductCopy/Licensing-GtestUnit/Assets/TestAssets/test3.json=$(SrcRoot)imodel02/iModelCore/LicensingCrossPlatform/Tests/UnitTests/Assets/test3.json
-
-    
-
+    ~linkfile $(TestAssetsOutDir)/sqlang/DgnClientFx_en.sqlang.db3 = $(TestAssetsSrcDir)/sqlang/DgnClientFx_en.sqlang.db3
+    ~linkmultifiles "$(TestAssetsOutDir)=$(TestAssetsSrcDir)/*.json"
