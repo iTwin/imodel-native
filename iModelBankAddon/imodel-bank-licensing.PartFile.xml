@@ -44,7 +44,7 @@
     <ProductDirectory Name="AddonRoot" Path="" />
     <ProductDirectory Name="AddonRoot" LibType="static" Path="" />
     <ProductDirectory Name="Assemblies" Path="" RelativeTo="AddonRoot"/>
-    <ProductDirectory Name="Assemblies" LibType="static" Path="" RelativeTo="AddonRoot"/>
+    <ProductDirectory Name="Assemblies" LibType="static" Deliver="false" />
     <ProductDirectory Name="Assets" Path="Assets" RelativeTo="AddonRoot"/>
     <ProductDirectory Name="Assets" LibType="static" Path="Assets" RelativeTo="AddonRoot"/>
     <ProductDirectory Name="PresentationRules" Path="PresentationRules" RelativeTo="AddonRoot"/>
