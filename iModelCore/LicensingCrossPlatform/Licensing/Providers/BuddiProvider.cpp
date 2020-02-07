@@ -15,7 +15,6 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String BuddiProvider::UlasLocationBaseUrl()
     {
-    // NOTE: as of 2/2019 UrlProvider's DefaultUrls for this are old (only are used if call to buddi fails)
     return UrlProvider::Urls::UsageLoggingServicesLocation.Get();
     }
 
@@ -24,9 +23,15 @@ Utf8String BuddiProvider::UlasLocationBaseUrl()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String BuddiProvider::UlasRealtimeLoggingBaseUrl()
     {
-    // TODO: make this a generic buddi lookup method with buddiName (string) as input?
-    // Ulas Posting Service url is not in UrlProvider by name
-    return UrlProvider::UrlDescriptor("UsageLoggingServices.RealtimeLogging.Url", "", "", "", "", nullptr).Get();
+    return UrlProvider::UrlDescriptor
+        (
+        "UsageLoggingServices.RealtimeLogging.Url",
+        "https://dev-connect-ulastm.bentley.com/Bentley.ULAS.PostingService/PostingSvcWebApi",
+        "https://qa-connect-ulastm.bentley.com/Bentley.ULAS.PostingService/PostingSvcWebApi",
+        "https://connect-ulastm.bentley.com/Bentley.ULAS.PostingService/PostingSvcWebApi",
+        "https://qa-connect-ulastm.bentley.com/Bentley.ULAS.PostingService/PostingSvcWebApi",
+        nullptr
+        ).Get();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -51,5 +56,13 @@ Utf8String BuddiProvider::EntitlementPolicyBaseUrl()
 Utf8String BuddiProvider::UlasAccessKeyBaseUrl()
     {
     // Ulas AccessKey Service url is not in UrlProvider by name
-    return UrlProvider::UrlDescriptor("UsageLoggingServices.AccessKey.Url", "", "", "", "", nullptr).Get();
+    return UrlProvider::UrlDescriptor
+        (
+        "UsageLoggingServices.AccessKey.Url",
+        "https://dev-connect-ulastm.bentley.com/Bentley.ULAS.AccessKeyService/AccessKeySvcWebApi",
+        "https://qa-connect-ulastm.bentley.com/Bentley.ULAS.AccessKeyService/AccessKeySvcWebApi",
+        "https://connect-ulastm.bentley.com/Bentley.ULAS.AccessKeyService/AccessKeySvcWebApi",
+        "https://qa-connect-ulastm.bentley.com/Bentley.ULAS.AccessKeyService/AccessKeySvcWebApi",
+        nullptr
+        ).Get();
     }

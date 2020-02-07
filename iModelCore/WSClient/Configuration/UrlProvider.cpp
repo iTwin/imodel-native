@@ -265,19 +265,19 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::UsageLoggingServices(
 
 const UrlProvider::UrlDescriptor UrlProvider::Urls::UsageLoggingServicesLocation(
     "UsageLoggingServices.Location.Url",
-    "https://dev-ulas-eus2-sfc01.bentley.com/api/v1/location",
-    "https://qa-ulas-eus2-sfc01.bentley.com/api/v1/location",
-    "https://ulas.bentley.com/api/v1/location",
-    "https://perf-ulas-eus2-sfc01.bentley.com/Bentley.ULAS.LocationService/LocationSvcWebApi",
+    "https://dev-connect-ulastm.bentley.com/Bentley.ULAS.LocationService/LocationSvcWebApi",
+    "https://qa-connect-ulastm.bentley.com/Bentley.ULAS.LocationService/LocationSvcWebApi",
+    "https://connect-ulastm.bentley.com/Bentley.ULAS.LocationService/LocationSvcWebApi",
+    "https://qa-connect-ulastm.bentley.com/Bentley.ULAS.LocationService/LocationSvcWebApi",
     &s_urlRegistry
 );
 
 const UrlProvider::UrlDescriptor UrlProvider::Urls::EntitlementPolicyService(
     "EntitlementPolicyService.Url",
-    "https://dev-ulas-eus2-sfc01.bentley.com/v1/policyservice/api",
-    "https://qa-ulas-eus2-sfc01.bentley.com/v1/policyservice/api",
-    "https://entitlement-search.bentley.com/PolicyService/api",
-    "https://qa-ulas-eus2-sfc01.bentley.com/v1/PolicyService/api",
+    "https://dev-connect-ulastm.bentley.com/Bentley.Entitlement.PolicyService/PolicySvcWebApi/api",
+    "https://qa-connect-ulastm.bentley.com/Bentley.Entitlement.PolicyService/PolicySvcWebApi/api",
+    "https://connect-ulastm.bentley.com/Bentley.Entitlement.PolicyService/PolicySvcWebApi/api",
+    "https://qa-connect-ulastm.bentley.com/Bentley.Entitlement.PolicyService/PolicySvcWebApi/api",
     &s_urlRegistry
 );
 
