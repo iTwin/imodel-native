@@ -273,7 +273,17 @@ BentleyStatus iModelBridgeSacAdapter::CreateOrUpdateBim(iModelBridge& bridge, Pa
             }
         }
 
-    bridge.DoFinalizationChanges(*db);
+    // Finalization should largely be treated like definition changes.
+    db->BriefcaseManager().GetChannelPropsR().channelType = IBriefcaseManager::ChannelType::Shared;
+    db->BriefcaseManager().GetChannelPropsR().channelParentId = db->Elements().GetRootSubjectId();
+    BentleyStatus bStatus = bridge.DoFinalizationChanges(*db);
+    if (BSISUCCESS != bStatus)
+        {
+        fwprintf(stderr, L"%ls - conversion failed. See %ls for details.\n", inputFileName.GetName(), bridge._GetParams().GetReportFileName().GetName());
+        return BSIERROR;
+        }
+    db->BriefcaseManager().GetChannelPropsR().channelType = IBriefcaseManager::ChannelType::Normal;
+    
     updateProjectExtents(*db, bridge);
 
     if (!bridge.HadAnyChanges())
