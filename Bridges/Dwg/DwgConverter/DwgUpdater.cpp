@@ -577,8 +577,9 @@ void UpdaterChangeDetector::_OnModelInserted (DwgImporter& importer, ResolvedMod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UpdaterChangeDetector::_OnModelSeen (DwgImporter& importer, ResolvedModelMappingCR modelMap)
     {
-    if (modelMap.IsValid())
-        m_dwgModelsSeen.insert (modelMap.GetModelId());
+    auto modelId = modelMap.GetModelId ();
+    if (modelId.IsValid())
+        m_dwgModelsSeen.insert (modelId);
     }
 
 /*---------------------------------------------------------------------------------**//**

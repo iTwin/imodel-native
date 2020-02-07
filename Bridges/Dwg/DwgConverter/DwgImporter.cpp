@@ -830,6 +830,13 @@ void            DwgImporter::ParseConfigurationFile (T_Utf8StringVectorR userObj
         m_modelImportRules.push_back(rule);
         }
 
+    // retrieve the modelspace options
+    str = m_config.GetXPathString("/ConvertConfig/Models/Modelspace/@TreatAs", "");
+    if (str.EqualsI("2D"))
+        m_options.SetTreatModelspaceAs2D (true);
+    else
+        m_options.SetTreatModelspaceAs2D (false);
+
     // parse layer options
     if (m_options.GetCopyLayer() != Options::CopyLayer::UseConfig)
         return;

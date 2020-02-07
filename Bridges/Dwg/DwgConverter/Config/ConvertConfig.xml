@@ -18,6 +18,19 @@
                 <Then newName="Layout2[%file]"/>
             </If>
         </ImportRules>
+        <!-- 
+        The DWG modelspace is a 3D database by definition, but end ACAD users, as well as applications, 
+        could treat it as a 2D model by placing geometries on XY plane only.
+
+        This option offers user's intention to treat the modelspace for 2D or 3D purposes:
+
+        2D => Modelspace will be converted as a drawing model, if and only if, its Z-extent is near zero 
+              (i.e. ACAD system variables EXTMAX and EXTMIN both have a near zero Z-value).  If the Z-extent 
+              is not zero, the modelspace will be converted as a 3D graphics model.  Its default 3D view will
+              be attached to a sheet model.
+        3D => Modelspace will be converted as a 3D spatial model (default)
+        -->
+        <Modelspace TreatAs="3D" />
     </Models>
     <Raster ImportAttachments="true" />
     <PointClouds ImportPointClouds="true" LevelOfDetails="3" />

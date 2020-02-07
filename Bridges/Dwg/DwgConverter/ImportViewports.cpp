@@ -44,6 +44,8 @@ ViewportFactory::ViewportFactory (DwgImporter& importer, DwgDbViewportTableRecor
     m_transform = importer.GetRootTransform ();
     m_inputViewport = DwgDbObject::Cast (&viewportRecord);
     m_viewportType = DwgSourceAspects::ViewAspect::SourceType::ModelSpaceViewport;
+    m_syncSpatialView = true;
+    m_isViewRotationValid = false;
     // modelspace viewports do not have clipping entity
     m_clipEntityId.SetNull ();
 
@@ -81,6 +83,8 @@ ViewportFactory::ViewportFactory (DwgImporter& importer, DwgDbViewportCR viewpor
     m_isPrivate = false;
     m_transform = importer.GetRootTransform ();
     m_inputViewport = DwgDbObject::Cast (&viewportEntity);
+    m_syncSpatialView = true;
+    m_isViewRotationValid = false;
     // paperspaview viewports may have clipping entities
     m_clipEntityId = viewportEntity.GetClipEntity ();
 
@@ -154,6 +158,27 @@ void            ViewportFactory::TransformDataToBim ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+RotMatrixCR     ViewportFactory::GetSpatialViewRotationMatrix ()
+    {
+    if (!m_isViewRotationValid)
+        {
+        // initialize rotation matrix for a spatial view
+        DwgHelper::ComputeMatrixFromArbitraryAxis (m_spatialViewRotation, DVec3d::From(m_viewDirection));
+
+        RotMatrix   viewTwist;
+        viewTwist.InitFromAxisAndRotationAngle (2, -m_viewTwistAngle);
+
+        m_spatialViewRotation.InitProduct (m_spatialViewRotation, viewTwist);
+        m_spatialViewRotation.Transpose ();
+
+        m_isViewRotationValid = true;
+        }
+    return  m_spatialViewRotation;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
 void            ViewportFactory::ComputeSpatialView (SpatialViewDefinitionR dgnView)
     {
     DVec3d      zAxis = DVec3d::From (m_viewDirection);
@@ -213,15 +238,7 @@ void            ViewportFactory::ComputeSpatialView (SpatialViewDefinitionR dgnV
     dgnView.SetExtents (delta);
 
     // compose view rotation matrix
-    RotMatrix   rotation;
-    DwgHelper::ComputeMatrixFromArbitraryAxis (rotation, zAxis);
-
-    RotMatrix   viewTwist;
-    viewTwist.InitFromAxisAndRotationAngle (2, -m_viewTwistAngle);
-
-    rotation.InitProduct (rotation, viewTwist);
-    rotation.Transpose ();
-
+    RotMatrixCR rotation = this->GetSpatialViewRotationMatrix ();
     dgnView.SetRotation (rotation);
     
     // compute camera position
@@ -985,7 +1002,12 @@ DgnViewId       ViewportFactory::CreateSpatialView (DgnModelId modelId, Utf8Stri
         }
 
     viewId = view->GetViewId ();
-    this->UpdateViewAspect (*view, proposedName, true);
+
+    // sync the spatial view to the source viewport only as needed
+    if (m_syncSpatialView)
+        this->UpdateViewAspect (*view, proposedName, true);
+    else
+        m_importer._GetChangeDetector()._OnViewSeen (m_importer, viewId);
 
     return  viewId;
     }
@@ -1018,7 +1040,11 @@ BentleyStatus   ViewportFactory::UpdateSpatialView (DgnViewId viewId, Utf8String
     if (!spatialView->Update().IsValid())
         m_importer.ReportError (IssueCategory::Briefcase(), Issue::UpdateFailure(), spatialView->GetName().c_str());
 
-    this->UpdateViewAspect (*spatialView, proposedName, false);
+    // sync the spatial view to the source viewport only as needed
+    if (m_syncSpatialView)
+        this->UpdateViewAspect (*spatialView, proposedName, false);
+    else
+        m_importer._GetChangeDetector()._OnViewSeen (m_importer, viewId);
 
     return BSISUCCESS;
     }
@@ -1204,6 +1230,171 @@ DgnViewId       ViewportFactory::CreateModelView (DgnModelCR targetModel, Utf8St
         return  DgnViewId();
     }
 
+#ifdef WIP_FIX_SHEETVIEW
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+void    ViewportFactory::FitModelspaceInSheetView ()
+    {
+    DRange3d    modelRange = DRange3d::From (m_importer.GetDwgDb().GetEXTMIN(), m_importer.GetDwgDb().GetEXTMAX());
+    Transform   toBimView = Transform::FromProduct (m_transform, this->GetSpatialViewRotationMatrix());
+
+    modelRange.ScaleAboutCenter (modelRange, 1.2);
+
+    // re-target the center of the volume
+    m_hasCamera = false;
+    m_isFrontClipped = false;
+    m_isBackClipped = false;
+    m_target.x = modelRange.low.x + modelRange.XLength() / 2.0;
+    m_target.y = modelRange.low.y + modelRange.XLength() / 2.0;
+    m_target.z = modelRange.low.z + modelRange.ZLength() / 2.0;
+
+    toBimView.Multiply (m_center, m_target);
+    toBimView.Multiply (modelRange, modelRange);
+    m_transform.Multiply (m_target);
+
+    DRange2d    sheetRange = DRange2d::From (modelRange);
+    m_width = sheetRange.XLength ();
+    m_height = sheetRange.YLength ();
+    }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId    ViewportFactory::Attach3dViewToSheetModel (DgnModelCR sheetModel, DgnViewId view3dId)
+    {
+    // place the ViewAttachment on DrawingCategory "0"
+    DwgDbObjectId   nullId;
+    DgnSubCategoryId    subCategoryId;
+    auto categoryId = m_importer.GetOrAddDrawingCategory (subCategoryId, nullId, nullId, sheetModel);
+
+    // align the view attachment corner to corner on the sheet view:
+    Placement2d placement;
+    auto&   boundingBox = placement.GetElementBoxR ();
+
+    boundingBox.low.Zero ();
+    boundingBox.high.Init (m_width, m_height);
+
+    Sheet::ViewAttachmentPtr    viewAttachment;
+    Sheet::ModelPtr sheet = sheetModel.GetDgnDb().Models().Get<Sheet::Model> (sheetModel.GetModelId());
+    if (!sheet.IsValid())
+        return  DgnElementId();
+
+    auto existingIds = sheet->GetSheetAttachmentIds ();
+    if (!existingIds.empty())
+        viewAttachment = sheetModel.GetDgnDb().Elements().GetForEdit<Sheet::ViewAttachment>(existingIds.front());
+
+    // update or create a view attachment
+    if (viewAttachment.IsValid())
+        {
+        viewAttachment->SetAttachedViewId (view3dId);
+        auto geom = viewAttachment->ToGeometrySource2dP ();
+        if (geom != nullptr)
+            geom->SetPlacement (placement);
+        viewAttachment->Update ();
+        }
+    else
+        {
+        viewAttachment = new Sheet::ViewAttachment (m_importer.GetDgnDb(), sheetModel.GetModelId(), view3dId, categoryId, placement);
+        viewAttachment->Insert ();
+        }
+
+    return  viewAttachment->GetElementId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnViewId   ViewportFactory::CreateOrUpdate2dViewFor3dModel (DgnModelCR model3d, DgnViewId sheetViewId)
+    {
+    /*--------------------------------------------------------------------------------------------
+    This is a case where modelspace is desired to be converted as a 2D model but contains 3D data,
+    hence it has ended up as a GraphicalModel3d.  To view this 3D model in a 2D view, we create a 
+    sheet model and attach a 3D view to it.  The sheet view, not the 3D view of the modelspace,
+    will be sync'ed up with the viewport table record.
+    --------------------------------------------------------------------------------------------*/
+    DwgDbBlockTableRecordPtr    modelspace(m_importer.GetDwgDb().GetModelspaceId(), DwgDbOpenMode::ForRead);
+    if (modelspace.OpenStatus() != DwgDbStatus::Success)
+        return  sheetViewId;
+        
+    auto& db = model3d.GetDgnDb ();
+    auto modelType = db.Schemas().GetClassId (BIS_ECSCHEMA_NAME, BIS_CLASS_SheetModel);
+    auto modelName = model3d.GetName ();
+    auto sheetListModel = db.Models().Get<DocumentListModel>(m_importer.GetSheetListModelId());
+    auto jobDefinition = m_importer.GetOrCreateJobDefinitionModel ();
+    if (!sheetListModel.IsValid() || !jobDefinition.IsValid())
+        return  sheetViewId;
+
+    // create or update a sheet model
+    DgnModelId  sheetModelId;
+    DgnElementId    modeledElementId = db.Elements().QueryElementIdByCode (Sheet::Element::CreateCode(*sheetListModel, modelName));
+    if (modeledElementId.IsValid())
+        sheetModelId = DgnModelId (modeledElementId.GetValue());
+    else
+        sheetModelId = m_importer.CreateModel (*modelspace, modelName.c_str(), modelType);
+    if (!sheetModelId.IsValid())
+        return  sheetViewId;
+
+    auto sheetModel = db.Models().GetModel (sheetModelId);
+    if (!sheetModel.IsValid())
+        return  sheetViewId;
+
+    // reset the sheet size from the viewport size
+    Sheet::ElementPtr   sheet = db.Elements().GetForEdit<Sheet::Element> (sheetModel->GetModeledElementId());
+    if (sheet.IsValid())
+        {
+        sheet->SetWidth (m_width);
+        sheet->SetHeight (m_height);
+        sheet->Update ();
+        }
+
+    // create or update the blank sheet view for the 3D model
+    if (sheetViewId.IsValid())
+        this->UpdateSheetView (sheetViewId, modelName);
+    else
+        sheetViewId = this->CreateSheetView (sheetModelId, modelName);
+    if (!sheetViewId.IsValid())
+        return  sheetViewId;
+
+    // reset the sheet view to be at 0,0
+    auto sheetView = db.Elements().GetForEdit<SheetViewDefinition> (sheetViewId);
+    if (sheetView.IsValid())
+        {
+        sheetView->SetOrigin (DPoint3d::FromZero());
+        sheetView->SetUserLabel (modelName.c_str());
+        sheetView->Update ();
+        }
+    
+    // create or update the hidden 3D view
+    Utf8String  viewName = "3DView-" + modelName;
+    this->SetViewSourcePrivate (true);
+    m_syncSpatialView = false;
+
+    auto view3dId = ViewDefinition::QueryViewId (*jobDefinition, viewName);
+    if (view3dId.IsValid())
+        this->UpdateSpatialView (view3dId, viewName);
+    else
+        view3dId = this->CreateSpatialView (model3d.GetModelId(), viewName);
+    if (!view3dId.IsValid())
+        return  sheetViewId;
+
+    // attach the 3D view to the sheet model
+    auto attachmentId = this->Attach3dViewToSheetModel (*sheetModel, view3dId);
+    BeAssert (attachmentId.IsValid());
+
+    // only need the modelId for the modelsSeen list
+    ResolvedModelMapping    unmappedSheet;
+    unmappedSheet.SetModel (sheetModel.get());
+
+    // update change detector so these additional elements won't get deleted
+    m_importer._GetChangeDetector()._OnModelSeen (m_importer, unmappedSheet);
+
+    return  sheetViewId;
+    }
+
+
+
 
 
 
@@ -1363,7 +1554,7 @@ void            DwgImporter::SaveViewDefinition (ViewControllerR viewController)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnViewId   DwgImporter::_ImportModelspaceViewport (DwgDbViewportTableRecordCR dwgVport)
+DgnViewId   DwgImporter::_ImportModelspaceViewport (DwgDbViewportTableRecordCR dwgVport, size_t index)
     {
     DgnViewId       viewId;
     DwgDbDatabaseP  dwg = dwgVport.GetDatabase().get ();
@@ -1380,6 +1571,11 @@ DgnViewId   DwgImporter::_ImportModelspaceViewport (DwgDbViewportTableRecordCR d
         return viewId;
         }
         
+    // if the modelspace has been converted as a GraphicalModel3d, we will need to create a sheet model + a sheet view + a 3D view, only process the first viewport:
+    bool need2dViewFor3dModel = this->GetDgnDb().Schemas().GetClassId(GENERIC_DOMAIN_NAME, "GraphicalModel3d") == rootModel->GetClassId();
+    if (need2dViewFor3dModel && index > 0 && m_defaultViewId.IsValid())
+        return  m_defaultViewId;
+
     // set Model view name as the model name (also the same as the layout name):
     Utf8String  viewName = rootModel->GetName ();
 
@@ -1389,14 +1585,17 @@ DgnViewId   DwgImporter::_ImportModelspaceViewport (DwgDbViewportTableRecordCR d
     if (this->IsUpdating())
         {
         viewId = m_sourceAspects.FindView (dwgVport.GetObjectId(), DwgSourceAspects::ViewAspect::SourceType::ModelSpaceViewport);
-        if (viewId.IsValid())
+        if (viewId.IsValid() && !need2dViewFor3dModel)
             {
             factory.UpdateModelView (*rootModel, viewId, viewName);
             return  viewId;
             }
         }
 
-    viewId = factory.CreateModelView (*rootModel, viewName);
+    if (need2dViewFor3dModel)
+        viewId = factory.CreateOrUpdate2dViewFor3dModel (*rootModel, viewId);
+    else
+        viewId = factory.CreateModelView (*rootModel, viewName);
 
     return viewId;
     }
@@ -1414,6 +1613,7 @@ BentleyStatus   DwgImporter::_ImportModelspaceViewports ()
     if (!iter.IsValid() || !iter->IsValid())
         return  BSIERROR;
 
+    size_t count = 0;
     for (iter->Start(); !iter->Done(); iter->Step())
         {
         DwgDbViewportTableRecordPtr     viewport (iter->GetRecordId(), DwgDbOpenMode::ForRead);
@@ -1423,7 +1623,7 @@ BentleyStatus   DwgImporter::_ImportModelspaceViewports ()
             continue;
             }
 
-        auto viewId = this->_ImportModelspaceViewport (*viewport.get());
+        auto viewId = this->_ImportModelspaceViewport (*viewport.get(), count++);
         if (viewId.IsValid())
             {
             // do not let the default view unset; override it if active viewport exists:

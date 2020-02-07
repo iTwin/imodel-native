@@ -364,6 +364,7 @@ public:
         bool                m_runAsStandaloneApp;
         bool                m_blockAsSharedParts;
         bool                m_filledHatchAsFilledElement;
+        bool                m_treatModelspaceAs2d;
 
     public:
         Options ()
@@ -388,6 +389,7 @@ public:
             m_runAsStandaloneApp = false;
             m_blockAsSharedParts = true;
             m_filledHatchAsFilledElement = true;
+            m_treatModelspaceAs2d = false;
             }
 
         void SetInputRootDir (BentleyApi::BeFileNameCR fileName) {m_rootDir = fileName;}
@@ -416,6 +418,7 @@ public:
         void SetNamePrefix (Utf8CP prefix) { m_namePrefix.assign(prefix); }
         void SetDwgPathInMaterialSearch (bool v) { m_includeDwgPathInMaterialSearchPaths = v; }
         void SetRunAsStandaloneApp (bool v) { m_runAsStandaloneApp = v; }
+        void SetTreatModelspaceAs2D (bool v) { m_treatModelspaceAs2d = v; }
 
         BeFileNameCR GetInputRootDir() const {return m_rootDir;}
         BeFileNameCR GetConfigFile() const {return m_configFile;}
@@ -449,6 +452,7 @@ public:
         Utf8StringCR GetNamePrefix () const { return m_namePrefix; }
         bool IsDwgPathInMaterialSearch () const { return m_includeDwgPathInMaterialSearchPaths; }
         bool IsRunAsStandaloneApp () const { return m_runAsStandaloneApp; }
+        bool IsModelspaceTreatedAs2D () const { return m_treatModelspaceAs2d; }
         };  // Options : iModelBridge::Params
 
     //! Options to control object enablers to draw entities that results in desired geometry
@@ -999,6 +1003,8 @@ protected:
     DwgDbObjectId               m_currentspaceId;
     T_DwgModelMapping           m_dwgModelMap;
     ResolvedModelMapping        m_rootDwgModelMap;
+    DgnClassId                  m_rootDwgModelType;
+    DgnClassId                  m_rootDwgElementType;
     bool                        m_hasBegunProcessing;
     bool                        m_isProcessingDwgModelMap;
     StandardUnit                m_modelspaceUnits;
@@ -1058,6 +1064,7 @@ private:
     BentleyStatus           InitSheetListModel ();
     BentleyStatus           InitDrawingListModel ();
     BentleyStatus           InitGroupModel ();
+    BentleyStatus           InitModelspaceMapping ();
     DgnElementId            CreateModelElement (DwgDbBlockTableRecordCR block, Utf8StringCR modelName, DgnClassId modelId);
     void                    ScaleModelTransformBy (TransformR trans, DwgDbBlockTableRecordCR block);
     void                    AlignSheetToPaperOrigin (TransformR trans, DwgDbObjectIdCR layoutId);
@@ -1210,7 +1217,7 @@ protected:
     // Each layout may have multiple viewports, the first of which is the paperspace viewport which should be used for the sheet model
     // imported from the layout block.
     DWG_EXPORT virtual BentleyStatus  _ImportModelspaceViewports ();
-    DWG_EXPORT virtual DgnViewId      _ImportModelspaceViewport (DwgDbViewportTableRecordCR vport);
+    DWG_EXPORT virtual DgnViewId      _ImportModelspaceViewport (DwgDbViewportTableRecordCR vport, size_t index = 0);
     DWG_EXPORT virtual BentleyStatus  _ImportPaperspaceViewport (DgnModelR model, TransformCR transform, DwgDbLayoutCR layout);
     DWG_EXPORT virtual void           _PostProcessViewports ();
 
@@ -1484,6 +1491,7 @@ public:
     DWG_EXPORT DgnCode          CreateCode (Utf8StringCR value) const;
     DWG_EXPORT uint32_t         GetEntitiesImported () const { return m_entitiesImported; }
     DWG_EXPORT DgnModelId       GetGroupModelId () const { return m_groupModelId; }
+    DWG_EXPORT DgnModelId       GetSheetListModelId () const { return m_sheetListModelId; }
     
     };  // DwgImporter
 DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(DwgImporter)

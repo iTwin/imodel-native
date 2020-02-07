@@ -284,6 +284,9 @@ private:
     CategorySelectorPtr m_categories;
     DwgImporter&        m_importer;
     DwgSourceAspects::ViewAspect::SourceType m_viewportType;
+    bool                m_syncSpatialView;
+    bool                m_isViewRotationValid;
+    RotMatrix           m_spatialViewRotation;
 
     void ComputeSpatialView (SpatialViewDefinitionR dgnView);
     void ComputeSheetView (ViewDefinitionR dgnView);
@@ -304,6 +307,9 @@ private:
     DgnTextureId FindEnvironmentImageFile (BeFileNameCR filename) const;
     bool UpdateViewName (ViewDefinitionR view, Utf8StringCR proposedName);
     void UpdateViewAspect (ViewDefinitionR view, Utf8StringCR viewName, bool isNew);
+    // attach a 3D view of a GraphicalModel3d to a sheet model
+    DgnElementId Attach3dViewToSheetModel (DgnModelCR sheetModel, DgnViewId view3dId);
+    RotMatrixCR GetSpatialViewRotationMatrix ();
 
 public:
     // constructor for a modelspace viewport
@@ -321,6 +327,8 @@ public:
     DgnViewId       CreateDrawingView (DgnModelId modelId, Utf8StringCR proposedName);
     // create a view attachment element in a sheet model for a viewport entity in a paperspace
     DgnElementPtr   CreateViewAttachment (DgnModelCR sheetModel, DgnViewId viewId);
+    // create a sheet model, a sheet view attached by a 3D view of a GraphicalModel3d created from the modelspace
+    DgnViewId       CreateOrUpdate2dViewFor3dModel (DgnModelCR model3d, DgnViewId view3dId);
     // Corresponding Update methods
     BentleyStatus   UpdateModelView (DgnModelCR targetModel, DgnViewId viewId, Utf8StringCR proposedName);
     BentleyStatus   UpdateSpatialView (DgnViewId viewId, Utf8StringCR proposedName);

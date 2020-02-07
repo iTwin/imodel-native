@@ -476,7 +476,10 @@ void            DwgImporter::InitUncategorizedCategory ()
     bool isRoot3d = true;
     DwgDbBlockTableRecordPtr    modelspace(m_dwgdb->GetModelspaceId(), DwgDbOpenMode::ForRead);
     if (modelspace.OpenStatus() == DwgDbStatus::Success)
-        isRoot3d = m_dgndb->Schemas().GetClassId(BIS_ECSCHEMA_NAME,BIS_CLASS_PhysicalModel) == this->_GetModelType(*modelspace);
+        {
+        auto modelspaceType = this->_GetModelType (*modelspace);
+        isRoot3d = m_dgndb->Schemas().GetClassId(BIS_ECSCHEMA_NAME,BIS_CLASS_PhysicalModel) == modelspaceType || m_dgndb->Schemas().GetClassId(GENERIC_DOMAIN_NAME, "GraphicalModel3d") == modelspaceType;
+        }
 
     if (isRoot3d)
         {

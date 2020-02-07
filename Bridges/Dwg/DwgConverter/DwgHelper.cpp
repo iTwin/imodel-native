@@ -2184,7 +2184,7 @@ void DwgHelper::ComposeTransformByExtrusion (TransformR inOut, double elevation)
 
     Transform   transform;
     transform.TranslateInLocalCoordinates (inOut, 0.0, 0.0, elevation);
-    inOut.InitProduct (inOut, transform);
+    inOut = transform;
     }
 
 /*---------------------------------------------------------------------------------**//**

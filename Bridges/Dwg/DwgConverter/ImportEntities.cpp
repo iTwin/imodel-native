@@ -702,13 +702,13 @@ DgnClassId      DwgImporter::_GetElementType (DwgDbBlockTableRecordCR block)
     {
     BentleyApi::ECN::ECClassCP  elementClass = nullptr;
 
-    // a physical class for a modelspace or a drawing graphic class for a paperspace entity
-    if (block.IsModelspace())
-        elementClass = this->GetDgnDb().Schemas().GetClass (GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject);
-    else if (block.IsLayout())
+    // element type for target model mapped from modelspace
+    if (block.IsModelspace() || block.IsExternalReference())
+        return  m_rootDwgElementType;
+
+    // a drawing graphic class for a paperspace entity
+    if (block.IsLayout())
         elementClass = this->GetDgnDb().Schemas().GetClass (BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic);
-    else if (block.IsExternalReference())
-        elementClass = this->GetDgnDb().Schemas().GetClass (GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject);
     else
         BeAssert (false && L"Unexpected element mapping!");
 

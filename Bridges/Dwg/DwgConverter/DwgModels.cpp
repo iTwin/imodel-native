@@ -164,15 +164,52 @@ Utf8String      DwgImporter::ComputeModelName (Utf8StringR proposedName, BeFileN
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DwgImporter::InitModelspaceMapping ()
+    {
+    Utf8String  className;
+    if (m_options.IsModelspaceTreatedAs2D())
+        {
+        // DrawingModel or GraphicalModel3d for modelspace and xRefs, depending on the z-extent
+        double  zExtent = m_dwgdb->GetEXTMAX().z - m_dwgdb->GetEXTMIN().z;
+        if (fabs(zExtent) > 0.01)
+            {
+            m_rootDwgModelType = m_dgndb->Schemas().GetClassId (GENERIC_DOMAIN_NAME, "GraphicalModel3d");
+            m_rootDwgElementType = m_dgndb->Schemas().GetClassId (GENERIC_DOMAIN_NAME, GENERIC_CLASS_Graphic3d);
+            }
+        else
+            {
+            m_rootDwgModelType = m_dgndb->Schemas().GetClassId (BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingModel);
+            m_rootDwgElementType = m_dgndb->Schemas().GetClassId (BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic);
+            }
+        }
+    else
+        {
+        // PhysicalModel for modelspace and xRefs
+        m_rootDwgModelType = m_dgndb->Schemas().GetClassId (BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalModel);
+        m_rootDwgElementType = m_dgndb->Schemas().GetClassId (GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject);
+        }
+
+    return  m_rootDwgModelType.IsValid() ? BentleyStatus::BSISUCCESS : BentleyStatus::BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnClassId      DwgImporter::_GetModelType (DwgDbBlockTableRecordCR block)
     {
-    // spatial models for modelspace and xRef, sheet models for layouts:
-    Utf8String  className = (block.IsModelspace() || block.IsExternalReference()) ? BIS_CLASS_PhysicalModel : BIS_CLASS_SheetModel;
-    DgnClassId  classId (m_dgndb->Schemas().GetClassId(BIS_ECSCHEMA_NAME, className.c_str()));
+    // apply user configs for modelspace and xRef, and set sheet models for layouts:
+    if (block.IsModelspace() || block.IsExternalReference())
+        {
+        // root modelspace or xRef
+        if (!m_rootDwgModelType.IsValid())
+            this->InitModelspaceMapping ();
+        return  m_rootDwgModelType;
+        }
 
-    BeAssert(classId.IsValid());
+    // paperspace
+    DgnClassId  classId (m_dgndb->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SheetModel));
     return classId;
     }
 
@@ -440,7 +477,7 @@ DgnElementId    DwgImporter::CreateModelElement (DwgDbBlockTableRecordCR block, 
         }
     else if (dgndbSchemas.GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingModel) == classId)
         {
-        // app remapped modelspace or xref model
+        // user chosen or app remapped modelspace or xref model
         DocumentListModelPtr drawingListModel = m_dgndb->Models().Get<DocumentListModel>(m_drawingListModelId);
         if (!drawingListModel.IsValid())
             return modelElementId;
@@ -455,6 +492,33 @@ DgnElementId    DwgImporter::CreateModelElement (DwgDbBlockTableRecordCR block, 
         m_dgndb->Elements().Insert <Drawing> (*drawing);
         if (drawing.IsValid())
             modelElementId = drawing->GetElementId ();
+        else
+            this->ReportError (IssueCategory::Unknown(), Issue::CantCreateModel(), modelName.c_str());
+        }
+    else if (dgndbSchemas.GetClassId(GENERIC_DOMAIN_NAME, "GraphicalModel3d") == classId)
+        {
+        // user set or app remapped modelspace
+        auto rootSubject = this->GetSpatialParentSubject ();
+        auto partitionCode = InformationPartitionElement::CreateUniqueCode (*rootSubject, modelName.c_str());
+        auto graphicalPartition3dClass = m_dgndb->Schemas().GetClass (BIS_ECSCHEMA_NAME, "GraphicalPartition3d");
+        auto graphicalPartition3dEnabler = graphicalPartition3dClass->GetDefaultStandaloneEnabler();
+        auto ecInstance = graphicalPartition3dEnabler->CreateInstance ();
+
+        ecInstance->SetValue ("Model", ECN::ECValue(rootSubject->GetModelId()));
+        ecInstance->SetValue ("CodeSpec", ECN::ECValue(partitionCode.GetCodeSpecId()));
+        ecInstance->SetValue ("CodeScope", ECN::ECValue(partitionCode.GetScopeElementId(*m_dgndb)));
+        ecInstance->SetValue ("CodeValue", ECN::ECValue(partitionCode.GetValueUtf8CP()));
+
+        auto element = m_dgndb->Elements().CreateElement (*ecInstance);
+        element->SetParentId (rootSubject->GetElementId(), m_dgndb->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_SubjectOwnsPartitionElements));
+
+        Json::Value modelProps(Json::nullValue);
+        modelProps["Content"] = block.IsExternalReference() ? "Reference" : "Master";
+        element->SetJsonProperties ("GraphicalPartition3d.Model", modelProps);
+
+        auto partition = element->Insert ();
+        if (partition.IsValid())
+            modelElementId = partition->GetElementId ();
         else
             this->ReportError (IssueCategory::Unknown(), Issue::CantCreateModel(), modelName.c_str());
         }
