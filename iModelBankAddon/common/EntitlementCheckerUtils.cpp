@@ -11,7 +11,7 @@ using namespace IModelBank;
 
 namespace IModelBank
 {
-Utf8String calculateHash(Utf8StringCR activityId, Utf8StringCR iModelId, Utf8StringCR time)
+Utf8String calculateHash(Utf8String activityId, Utf8String iModelId, Utf8String time)
 {
     Utf8String salt = "Salt for iModelBank entitlement checking...";
 

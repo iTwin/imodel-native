@@ -26,7 +26,7 @@ struct EntitlementChecker
 
     static void Run(Napi::Env env);
     static void initialize(Napi::CallbackInfo const& info);
-    static EntitlementStatus checkEntitlement();
+    static EntitlementStatus checkEntitlementWithRetries();
 };
 
 }

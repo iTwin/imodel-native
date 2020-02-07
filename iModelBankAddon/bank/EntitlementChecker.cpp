@@ -53,14 +53,12 @@ static void handleEntitlementError(EntitlementStatus status)
     exit(1);
 }
 
-Json::Value createJson(Utf8StringCR iModelId)
+Json::Value createJson(Utf8String activityId, Utf8String iModelId, Utf8String time)
 {
     Json::Value json(Json::objectValue);
-    BeSQLite::BeGuid checkId(true);
-    int64_t time = std::chrono::system_clock::now().time_since_epoch().count();
-    json.SetOrRemoveInt64(Properties::time, time, 0);
+    json[Properties::time] = time;
     json[Properties::iModelId] = iModelId;
-    json[Properties::activityId] = checkId.ToString();
+    json[Properties::activityId] = activityId;
     return json;
 }
 
@@ -88,9 +86,8 @@ Json::Value parseResponse(ResponseCR response)
     return responseJson;
 }
 
-EntitlementStatus ValidateResponse(JsonValueCR requestJson, JsonValueCR responseJson)
+EntitlementStatus ValidateResponse(Utf8StringCR expectedResponse, JsonValueCR responseJson)
 {
-    Utf8String expectedResponse = calculateHashFromJson(requestJson);
     Utf8String actualResponse = responseJson["responseValue"].asString();
     if (!actualResponse.Equals(expectedResponse))
         return EntitlementStatus::InvalidResponse;
@@ -105,7 +102,22 @@ void EntitlementChecker::initialize(const Napi::CallbackInfo& info)
     s_iModelId = iModelId;
 }
 
-EntitlementStatus EntitlementChecker::checkEntitlement()
+EntitlementStatus checkEntitlement(Utf8StringCR url, JsonValueCR requestJson, Utf8StringCR expectedResponse)
+{
+    Request request = createRequest(requestJson, url);
+    Response response = request.Perform().get();
+    HttpStatus status = response.GetHttpStatus();
+    if (HttpStatus::OK != status)
+    {
+        std::cerr << "Entitlement Check request failed with status: " << (int)status << "." << std::endl;
+        return EntitlementStatus::RequestFailed;
+    }
+
+    Json::Value responseJson = parseResponse(response);
+    return ValidateResponse(expectedResponse, responseJson);
+}
+
+EntitlementStatus EntitlementChecker::checkEntitlementWithRetries()
 {
     if (Utf8String::IsNullOrEmpty(s_url.c_str()))
     {
@@ -117,35 +129,25 @@ EntitlementStatus EntitlementChecker::checkEntitlement()
         return EntitlementStatus::iModelIdNotSet;
     }
 
-    Json::Value requestJson = createJson(s_iModelId);
-    Request request = createRequest(requestJson, s_url);
-    Response response = request.Perform().get();
-    HttpStatus status = response.GetHttpStatus();
-    if (HttpStatus::OK != status)
-    {
-        std::cerr << "Entitlement Check request failed with status: " << (int)status << "." << std::endl;
-        return EntitlementStatus::RequestFailed;
-    }
-
-    Json::Value responseJson = parseResponse(response);
-    return ValidateResponse(requestJson, responseJson);
-}
-
-static EntitlementStatus checkEntitlementWithRetries()
-    {
     int delay = 200;
+    Utf8String activityId = BeSQLite::BeGuid(true).ToString();
+    Utf8PrintfString time("%lld", std::chrono::system_clock::now().time_since_epoch().count());
+
+    Json::Value requestJson = createJson(activityId, s_iModelId, time);
+    Utf8String hash = calculateHash(activityId, s_iModelId, time);
+
     EntitlementStatus status = EntitlementStatus::Unknown;
     for (int i = 0; i < 6; ++i)
-        {
-        BeDuration duration = BeDuration::FromMilliseconds(delay);
-        duration.Sleep();
-        status = EntitlementChecker::checkEntitlement();
+    {
+        status = checkEntitlement(s_url, requestJson, hash);
         if (status == EntitlementStatus::Success)
             break;
+        BeDuration duration = BeDuration::FromMilliseconds(delay);
+        duration.Sleep();
         delay *= 2;
-        }
-    return status;
     }
+    return status;
+}
 
 
 static void runEntitlementChecks(BeDuration checkInterval)
@@ -154,7 +156,10 @@ static void runEntitlementChecks(BeDuration checkInterval)
     {
         while (true)
         {
-            auto res = checkEntitlementWithRetries();
+            int delay = 1000;
+            BeDuration duration = BeDuration::FromMilliseconds(delay);
+            duration.Sleep();
+            auto res = EntitlementChecker::checkEntitlementWithRetries();
 
             if (res != EntitlementStatus::Success)
                 handleEntitlementError(res);
