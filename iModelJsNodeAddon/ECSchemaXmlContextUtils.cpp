@@ -72,6 +72,18 @@ void ECSchemaXmlContextUtils::SetSchemaLocater(ECSchemaReadContextR context, Loc
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   Chris.Lawson     02/2020
+//---------------------------------------------------------------------------------------
+void ECSchemaXmlContextUtils::SetFirstSchemaLocater(ECSchemaReadContextR context, LocaterCallbackUPtr& currentLocater, Napi::FunctionReference&& callback)
+	{
+	if (nullptr != currentLocater)
+		context.RemoveSchemaLocater(*currentLocater);
+
+	currentLocater = std::make_unique<LocaterCallback>(std::forward<Napi::FunctionReference&&>(callback));
+	context.AddFirstSchemaLocater(*currentLocater);
+	}
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Bill.Goehrig     03/2018
 //---------------------------------------------------------------------------------------
 void ECSchemaXmlContextUtils::AddSchemaPath(ECSchemaReadContextR context, Utf8StringCR schemaPath)

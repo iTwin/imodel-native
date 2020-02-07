@@ -509,6 +509,7 @@ export declare namespace IModelJsNative {
     constructor();
     public addSchemaPath(path: string): void;
     public setSchemaLocater(locater: ECSchemaXmlContext.SchemaLocaterCallback): void;
+    public setFirstSchemaLocater(locater: ECSchemaXmlContext.SchemaLocaterCallback): void;
     public readSchemaFromXmlFile(filePath: string): ErrorStatusOrResult<BentleyStatus, string>;
   }
 

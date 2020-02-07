@@ -46,6 +46,7 @@ struct ECSchemaXmlContextUtils
     static ECSchemaReadContextPtr CreateSchemaReadContext(Dgn::DgnPlatformLib::Host::IKnownLocationsAdmin&);
     static void AddSchemaPath(ECSchemaReadContextR context, Utf8StringCR schemaPath);
     static void SetSchemaLocater(ECSchemaReadContextR context, LocaterCallbackUPtr& currentLocater, Napi::FunctionReference&& callback);
+	static void SetFirstSchemaLocater(ECSchemaReadContextR context, LocaterCallbackUPtr& currentLocater, Napi::FunctionReference&& callback);
     static SchemaConversionStatus ConvertECSchemaXmlToJson(JsonValueR results, ECSchemaReadContextR context, Utf8StringCR ecSchemaXmlFile);
     static Utf8CP SchemaConversionStatusToString(SchemaConversionStatus status);
     };

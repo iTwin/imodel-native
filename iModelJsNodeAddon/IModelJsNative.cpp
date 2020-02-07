@@ -995,6 +995,12 @@ struct NativeECSchemaXmlContext : BeObjectWrap<NativeECSchemaXmlContext>
             ECSchemaXmlContextUtils::SetSchemaLocater(*m_context, m_locater, Napi::Persistent(locaterCallback));
             }
 
+		void SetFirstSchemaLocater(Napi::CallbackInfo const& info)
+			{
+			REQUIRE_ARGUMENT_FUNCTION(0, locaterCallback, );
+			ECSchemaXmlContextUtils::SetFirstSchemaLocater(*m_context, m_locater, Napi::Persistent(locaterCallback));
+			}
+
         void AddSchemaPath(Napi::CallbackInfo const& info)
             {
             REQUIRE_ARGUMENT_STRING(0, schemaPath, );
@@ -1019,7 +1025,8 @@ struct NativeECSchemaXmlContext : BeObjectWrap<NativeECSchemaXmlContext>
             Napi::Function t = DefineClass(env, "ECSchemaXmlContext", {
                 InstanceMethod("addSchemaPath", &NativeECSchemaXmlContext::AddSchemaPath),
                 InstanceMethod("readSchemaFromXmlFile", &NativeECSchemaXmlContext::ReadSchemaFromXmlFile),
-                InstanceMethod("setSchemaLocater", &NativeECSchemaXmlContext::SetSchemaLocater)
+                InstanceMethod("setSchemaLocater", &NativeECSchemaXmlContext::SetSchemaLocater),
+                InstanceMethod("setFirstSchemaLocater", &NativeECSchemaXmlContext::SetFirstSchemaLocater)
             });
 
             exports.Set("ECSchemaXmlContext", t);
