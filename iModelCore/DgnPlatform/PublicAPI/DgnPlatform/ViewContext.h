@@ -123,11 +123,16 @@ protected:
     DGNPLATFORM_EXPORT virtual void _AddSubGraphic(Render::GraphicBuilderR, DgnGeometryPartId, TransformCR, Render::GeometryParamsR);
     virtual void _OutputGraphic(Render::GraphicR, GeometrySourceCP) {}
     DGNPLATFORM_EXPORT virtual Render::GraphicPtr _StrokeGeometry(GeometrySourceCR source, double pixelSize);
+
     DGNPLATFORM_EXPORT virtual bool _WantAreaPatterns();
     DGNPLATFORM_EXPORT virtual void _DrawAreaPattern(Render::GraphicBuilderR, CurveVectorCR, Render::GeometryParamsR, bool doCook);
+    virtual void _BeginAreaPattern(Render::GraphicBuilderR, CurveVectorCR, Render::GeometryParamsR) { }
+    virtual void _EndAreaPattern(Render::GraphicBuilderR, CurveVectorCR, Render::GeometryParamsR) { }
     virtual AreaPatternTolerance _GetAreaPatternTolerance(CurveVectorCR) {return AreaPatternTolerance();}
+
     DGNPLATFORM_EXPORT virtual bool _WantLineStyles();
     DGNPLATFORM_EXPORT virtual void _DrawStyledCurveVector(Render::GraphicBuilderR, CurveVectorCR, Render::GeometryParamsR, bool doCook);
+
     DGNPLATFORM_EXPORT virtual StatusInt _InitContextForView();
     DGNPLATFORM_EXPORT virtual StatusInt _VisitGeometry(GeometrySourceCR);
     DGNPLATFORM_EXPORT virtual bool _AnyPointVisible(DPoint3dCP worldPoints, int nPts, double tolerance);

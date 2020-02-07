@@ -2132,6 +2132,15 @@ bool Geometry::WantPolylineEdges(uint32_t lineWeight, bool is3d)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+void Geometry::SetClipVector(ClipVectorCP clip)
+    {
+    // NB: We used to clone this. It consumed enormous amounts of memory for area patterns. Let's assume caller will not modify it.
+    m_clip = clip;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 IFacetOptionsPtr Geometry::CreateFacetOptions(double chordTolerance, bool wantEdgeChains)

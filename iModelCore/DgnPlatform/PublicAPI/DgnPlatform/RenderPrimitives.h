@@ -1111,7 +1111,7 @@ private:
     bool                    m_isCurved;
     bool                    m_hasTexture;
 protected:
-    ClipVectorPtr           m_clip;
+    ClipVectorCPtr          m_clip;
 
     Geometry(TransformCR tf, DRange3dCR tileRange, DgnElementId entityId, DisplayParamsCR params, bool isCurved, DgnDbR db);
 
@@ -1137,7 +1137,7 @@ public:
     bool DoVertexCluster() const { return _DoVertexCluster(); }
     StrokesList GetStrokes (double chordTolerance, OutputR context);
     SharedGeomCPtr GetSharedGeom() const { return _GetSharedGeom(); }
-    void SetClipVector(ClipVectorCP clip) { m_clip = nullptr != clip ? ClipVector::CreateCopy(*clip) : nullptr; }
+    DGNPLATFORM_EXPORT void SetClipVector(ClipVectorCP clip);
 
     virtual bool IsInstanceable() const = 0;
 

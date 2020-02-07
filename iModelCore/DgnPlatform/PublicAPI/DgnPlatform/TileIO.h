@@ -366,6 +366,9 @@ ENUM_IS_FLAGS(DgnTile::Flags);
 //          The geometry in those old tiles is shifted because we changed the way the tile tree range is computed from project extents.
 //      8.1: Add Tile::Tree::Flags::EnforceDisplayPriority
 //      8.2: Add Tile::ContentId::Flags::IgnoreAreaPatterns
+//  Major version 9:
+//      9.0: When "use project extents" flag is set, the model range is scaled to the length of the project extents' diagonal and used as the tile tree range.
+//          Tile tree JSON then includes "maxInitialTilesToSkip" indicating how many levels of sub-division occur before intersecting the model range.
 // @bsistruct                                                   Paul.Connelly   09/18
 //=======================================================================================
 struct IModelTile
@@ -395,9 +398,10 @@ struct IModelTile
         static constexpr Version V6() { return Version(6, 0); }
         static constexpr Version V7() { return Version(7, 0); }
         static constexpr Version V8() { return Version(8, 2); }
+        static constexpr Version V9() { return Version(9, 0); }
 
         // !!! IMPORTANT !!! If you change the major version you must update IModelTile::Version::FromMajorVersion !!!
-        static constexpr Version Current() { return V8(); }
+        static constexpr Version Current() { return V9(); }
 
         DGNPLATFORM_EXPORT static Version FromMajorVersion(uint16_t major);
 

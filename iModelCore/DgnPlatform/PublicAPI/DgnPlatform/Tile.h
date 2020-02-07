@@ -439,10 +439,11 @@ private:
     AnimationNodeMap m_nodeMap;
     DRange3d m_contentRange;
     Utf8String m_contentIdQualifier;
+    uint32_t m_maxInitialTilesToSkip;
 
     void CancelTileLoad(LoaderPtr const& loader);
 protected:
-    Tree(GeometricModelCR model, TransformCR location, DRange3dCR range, Render::SystemR system, Id id, RootTile rootTile, DRange3dCR contentRange);
+    Tree(GeometricModelCR model, TransformCR location, DRange3dCR range, Render::SystemR system, Id id, RootTile rootTile, DRange3dCR contentRange, uint32_t maxInitialTilesToSkip);
 
     DGNPLATFORM_EXPORT LoaderPtr CreateLoader(ContentIdCR contentId, bool useCache);
     void LoadNodeMapFromAnimation();

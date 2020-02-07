@@ -1033,6 +1033,7 @@ void ViewContext::_DrawAreaPattern(Render::GraphicBuilderR builder, CurveVectorC
         CookGeometryParams(params, builder);
 
     Render::GeometryParams cookedParams(params);
+    _BeginAreaPattern(builder, boundary, cookedParams);
 
     bool changed = PatternHelper::Cook(*this, builder, cookedParams);
 
@@ -1045,6 +1046,8 @@ void ViewContext::_DrawAreaPattern(Render::GraphicBuilderR builder, CurveVectorC
         PatternHelper::ProcessDWGHatchPattern(*this, builder, cookedParams, boundary);
     else
         PatternHelper::ProcessHatchPattern(*this, builder, cookedParams, boundary);
+
+    _EndAreaPattern(builder, boundary, params);
 
     if (changed)
         CookGeometryParams(params, builder); // Restore original symbology...

@@ -14,6 +14,8 @@
 #include <set>
 #include <map>
 #include <inttypes.h>
+#include <cmath>
+
 #if defined (BENTLEYCONFIG_PARASOLID)
 #include <BRepCore/PSolidUtil.h>
 #endif
@@ -806,6 +808,7 @@ private:
     SubRangesR                      m_subRanges;
     DPoint3d                        m_viewIndependentOrigin;
     bool                            m_isViewIndependent = false;
+    bool                            m_inAreaPattern = false;
 protected:
     void PushGeometry(GeometryR geom);
 
@@ -830,6 +833,9 @@ protected:
     bool _CheckStop() override { return WasAborted() || AddAbortTest(m_loader.IsCanceled()); }
     bool _WantUndisplayed() override { return true; }
     AreaPatternTolerance _GetAreaPatternTolerance(CurveVectorCR) override { return AreaPatternTolerance(m_tolerance); }
+    void _BeginAreaPattern(Render::GraphicBuilderR, CurveVectorCR, Render::GeometryParamsR) override;
+    void _EndAreaPattern(Render::GraphicBuilderR, CurveVectorCR, Render::GeometryParamsR) override;
+    void _CookGeometryParams(Render::GeometryParamsR, Render::GraphicParamsR) override;
     Render::SystemP _GetRenderSystem() const override { return &m_loader.GetRenderSystem(); }
     double _GetPixelSizeAtPoint(DPoint3dCP) const override { return m_tolerance; }
     bool _WantGlyphBoxes(double sizeInPixels) const override { return wantGlyphBoxes(sizeInPixels); }
@@ -2131,6 +2137,7 @@ TreePtr Tree::Create(GeometricModelR model, Render::SystemR system, Id id)
     if (DgnDbStatus::Success != model.FillRangeIndex())
         return nullptr;
 
+    uint32_t maxInitialTilesToSkip = 0;
     DRange3d range;
     DRange3d contentRange = DRange3d::NullRange();
     bool populateRootTile;
@@ -2152,17 +2159,36 @@ TreePtr Tree::Create(GeometricModelR model, Render::SystemR system, Id id)
         contentRange = range;
         if (useProjectExtents)
             {
-            // Actually use the project extents as the tile tree range.
-            // This allows us to produce root tiles of appropriate resolution when model range is small relative to project extents, instead
-            // of producing extremely high-resolution tiles inappropriate for display when fitting to project extents.
-            range = projectExtents;
-
-            // Align the project extents to the model extents to prevent excessive sub-division.
-            if (!id.IsVolumeClassifier())
+            if (id.IsVolumeClassifier() || id.GetMajorVersion() < 9)
                 {
-                auto diagonal = range.DiagonalVector();
-                range.low = contentRange.low;
-                range.high.SumOf(range.low, diagonal, 1.0);
+                range = projectExtents;
+                if (!id.IsVolumeClassifier())
+                    {
+                    auto diagonal = range.DiagonalVector();
+                    range.low = contentRange.low;
+                    range.high.SumOf(range.low, diagonal, 1.0);
+                    }
+                }
+            else
+                {
+                // Make the diagonal of the tile tree range equal to that of the project extents.
+                // This allows us to produce root tiles of appropriate resolution when model range is small relative to project extents, instead
+                // of producing extremely high-resolution tiles inappropriate for display when fitting to project extents.
+                // Keep the tile tree range's origin at the model range's origin so that sub-division trivially produces empty volumes until it intersects the model range.
+                // (Introduced in version 9.0 of the tile format - previous behavior preserved above).
+                auto extentsMagnitude = projectExtents.DiagonalVector().Magnitude();
+                auto rangeDiagonal = range.DiagonalVector();
+                auto rangeMagnitude = rangeDiagonal.Magnitude();
+                rangeDiagonal.ScaleToLength(extentsMagnitude);
+                range.high.SumOf(range.low, rangeDiagonal, 1.0);
+
+                // Determine how many levels of the tile tree before we intersect the model range and therefore must begin sub-dividing.
+                // Front-end can use this to skip directly to tiles of appropriate resolution.
+                if (rangeMagnitude > 0.0 && rangeMagnitude < extentsMagnitude)
+                    {
+                    // This is exact if extentsMagnitude is a multiple of rangeMagnitude; otherwise it rounds down.
+                    maxInitialTilesToSkip = static_cast<uint32_t>(log2(extentsMagnitude / rangeMagnitude));
+                    }
                 }
             }
 
@@ -2212,15 +2238,15 @@ TreePtr Tree::Create(GeometricModelR model, Render::SystemR system, Id id)
             rangeTransform.Multiply(contentRange, contentRange);
         }
 
-    return new Tree(model, transform, tileRange, system, id, rootTile, contentRange);
+    return new Tree(model, transform, tileRange, system, id, rootTile, contentRange, maxInitialTilesToSkip);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Tree::Tree(GeometricModelCR model, TransformCR location, DRange3dCR range, Render::SystemR system, Id id, RootTile rootTile, DRange3dCR contentRange)
+Tree::Tree(GeometricModelCR model, TransformCR location, DRange3dCR range, Render::SystemR system, Id id, RootTile rootTile, DRange3dCR contentRange, uint32_t maxInitialTilesToSkip)
     : m_db(model.GetDgnDb()), m_location(location), m_renderSystem(system), m_id(id), m_is3d(model.Is3d()), m_cache(TileCacheAppData::Get(model.GetDgnDb())),
-    m_rootTile(rootTile), m_contentRange(contentRange)
+    m_rootTile(rootTile), m_contentRange(contentRange), m_maxInitialTilesToSkip(maxInitialTilesToSkip)
     {
     if (!range.IsNull())
         m_range.Extend(range);
@@ -2265,6 +2291,7 @@ Json::Value Tree::ToJson() const
 
     json["id"] = GetId().ToString();
     json["maxTilesToSkip"] = 1;
+    json["maxInitialTilesToSkip"] = m_maxInitialTilesToSkip;
     json["formatVersion"] = Tile::IO::IModelTile::Version::FromMajorVersion(GetId().GetMajorVersion()).ToUint32();
     JsonUtils::TransformToJson(json["location"], GetLocation());
 
@@ -4255,6 +4282,33 @@ void TileContext::AddSharedGeometry(GeometryList& geometryList, ElementMeshGener
             return;
 
     buckets.ProduceMeshes();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileContext::_BeginAreaPattern(GraphicBuilderR builder, CurveVectorCR curve, GeometryParamsR params)
+    {
+    params.SetGeometryClass(DgnGeometryClass::Pattern);
+    m_inAreaPattern = true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileContext::_EndAreaPattern(GraphicBuilderR builder, CurveVectorCR curve, GeometryParamsR params)
+    {
+    m_inAreaPattern = false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileContext::_CookGeometryParams(GeometryParamsR geom, GraphicParamsR gf)
+    {
+    NullContext::_CookGeometryParams(geom, gf);
+    if (m_inAreaPattern)
+        geom.SetGeometryClass(DgnGeometryClass::Pattern);
     }
 
 // #define CLONE_FOR_ADD_BATCHED
