@@ -19,12 +19,11 @@
     "NOTE: Tests may NOT depend on other iModel.js packages"
   ],
   "dependencies": {
-    "@bentley/bentleyjs-core": "1.3.0-dev.10",
-    "@bentley/imodeljs-common": "1.3.0-dev.10",
-    "@bentley/build-tools": "1.8.0-dev.10"
+    "@bentley/bentleyjs-core": "1.10.0",
+    "@bentley/imodeljs-common": "1.10.0"
   },
   "devDependencies": {
-    "@bentley/build-tools": "1.3.0-dev.10",
+    "@bentley/build-tools": "1.10.0",
     "@types/node": "10.14.1",
     "@types/chai": "^4.1.4",
     "@types/mocha": "^5.2.5",
