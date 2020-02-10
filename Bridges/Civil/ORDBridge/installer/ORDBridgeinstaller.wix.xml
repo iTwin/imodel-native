@@ -1,6 +1,6 @@
 <BuildInstallSet  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="..\..\bsicommon\build\buildinstallset.wix.xsd">
     <Product>
-        <ProductName>Bentley Civil iModel Bridge</ProductName>
+        <ProductName>iModel Bridge Service - Bentley Civil</ProductName>
         <ProductShortName>Civil iModel Bridge</ProductShortName>
         <ProductCode>{6E0B46CE-58C6-4E5C-A0F1-F19C782CBB33}</ProductCode>
         <UpgradeCode>{BA04D7DE-6102-4C66-B0C0-7C488B8CDD17}</UpgradeCode>
