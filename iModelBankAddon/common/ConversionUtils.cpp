@@ -111,7 +111,6 @@ Napi::Value ConversionUtils::GetValue(Statement &stmt, int i, Napi::Env env)
     switch (stmt.GetColumnType(i))
     {
     case DbValueType::IntegerVal:
-        return Napi::Number::New(env, stmt.GetValueInt(i));
     case DbValueType::FloatVal:
         return Napi::Number::New(env, stmt.GetValueDouble(i));
     case DbValueType::TextVal:
