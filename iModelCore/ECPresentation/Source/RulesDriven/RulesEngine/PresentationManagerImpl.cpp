@@ -1022,7 +1022,8 @@ bvector<SelectClassInfo> RulesDrivenECPresentationManagerImpl::_GetContentClasse
     // locate the classes
     ECSchemaHelper schemaHelper(connection, &relatedPathsCache, &polymorphicallyRelatedClassesCache, &ecexpressionsCache);
     ContentClassesLocater::Context locaterContext(schemaHelper, m_connections, connection,
-        *ruleset, options.GetLocale(), preferredDisplayType, contentFlags, settings, ecexpressionsCache, *m_nodesCache);
+        *ruleset, options.GetLocale(), preferredDisplayType, settings, ecexpressionsCache, *m_nodesCache);
+    locaterContext.SetContentFlagsCalculator([contentFlags](int){return contentFlags;});
     return ContentClassesLocater(locaterContext).Locate(classes);
     }
 

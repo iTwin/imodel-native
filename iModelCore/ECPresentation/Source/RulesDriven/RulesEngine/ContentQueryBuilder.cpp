@@ -105,8 +105,9 @@ static void JoinRelatedClasses(ComplexContentQueryR query, SelectClassInfo const
 ContentQueryPtr ContentQueryBuilder::CreateQuery(SelectedNodeInstancesSpecificationCR specification, ContentDescriptorCR descriptor, IParsedInput const& input)
     {
     ContentDescriptorBuilder::Context descriptorContext(m_params.GetSchemaHelper(), m_params.GetConnections(), m_params.GetConnection(), m_params.GetRuleset(),
-        descriptor.GetPreferredDisplayType().c_str(), descriptor.GetContentFlags(), m_params.GetCategorySupplier(), m_params.GetPropertyFormatter(),
+        descriptor.GetPreferredDisplayType().c_str(), m_params.GetCategorySupplier(), m_params.GetPropertyFormatter(),
         m_params.GetLocalizationProvider(), m_params.GetLocale(), descriptor.GetInputNodeKeys(), descriptor.GetSelectionInfo());
+    descriptorContext.SetContentFlagsCalculator([flags = descriptor.GetContentFlags()](int){return flags;});
     ContentDescriptorPtr specificationDescriptor = ContentDescriptorBuilder(descriptorContext).CreateDescriptor(specification, input);
     if (specificationDescriptor.IsNull())
         return nullptr;
@@ -171,8 +172,9 @@ struct HandledRecursiveClassesKey
 ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentRelatedInstancesSpecificationCR specification, ContentDescriptorCR descriptor, IParsedInput const& input)
     {
     ContentDescriptorBuilder::Context descriptorContext(m_params.GetSchemaHelper(), m_params.GetConnections(), m_params.GetConnection(), m_params.GetRuleset(),
-        descriptor.GetPreferredDisplayType().c_str(), descriptor.GetContentFlags(), m_params.GetCategorySupplier(), m_params.GetPropertyFormatter(),
+        descriptor.GetPreferredDisplayType().c_str(), m_params.GetCategorySupplier(), m_params.GetPropertyFormatter(),
         m_params.GetLocalizationProvider(), m_params.GetLocale(), descriptor.GetInputNodeKeys(), descriptor.GetSelectionInfo());
+    descriptorContext.SetContentFlagsCalculator([flags = descriptor.GetContentFlags()](int){return flags;});
     ContentDescriptorPtr specificationDescriptor = ContentDescriptorBuilder(descriptorContext).CreateDescriptor(specification, input);
     if (specificationDescriptor.IsNull())
         return nullptr;
@@ -229,8 +231,9 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentRelatedInstancesSpecific
 ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentInstancesOfSpecificClassesSpecificationCR specification, ContentDescriptorCR descriptor)
     {
     ContentDescriptorBuilder::Context descriptorContext(m_params.GetSchemaHelper(), m_params.GetConnections(), m_params.GetConnection(), m_params.GetRuleset(),
-        descriptor.GetPreferredDisplayType().c_str(), descriptor.GetContentFlags(), m_params.GetCategorySupplier(), m_params.GetPropertyFormatter(),
+        descriptor.GetPreferredDisplayType().c_str(), m_params.GetCategorySupplier(), m_params.GetPropertyFormatter(),
         m_params.GetLocalizationProvider(), m_params.GetLocale(), descriptor.GetInputNodeKeys(), descriptor.GetSelectionInfo());
+    descriptorContext.SetContentFlagsCalculator([flags = descriptor.GetContentFlags()](int){return flags;});
     ContentDescriptorPtr specificationDescriptor = ContentDescriptorBuilder(descriptorContext).CreateDescriptor(specification);
     if (specificationDescriptor.IsNull())
         return nullptr;
@@ -273,7 +276,7 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentInstancesOfSpecificClass
 ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentDescriptor::NestedContentField const& contentField)
     {
     ContentDescriptorBuilder::Context descriptorContext(m_params.GetSchemaHelper(), m_params.GetConnections(), m_params.GetConnection(), m_params.GetRuleset(),
-        ContentDisplayType::Undefined, 0, m_params.GetCategorySupplier(), m_params.GetPropertyFormatter(),
+        ContentDisplayType::Undefined, m_params.GetCategorySupplier(), m_params.GetPropertyFormatter(),
         m_params.GetLocalizationProvider(), m_params.GetLocale(), *NavNodeKeyListContainer::Create(), nullptr);
     ContentDescriptorPtr descriptor = ContentDescriptorBuilder(descriptorContext).CreateDescriptor(contentField);
     if (!descriptor.IsValid())

@@ -16,17 +16,15 @@ struct ContentClassesLocater
     struct Context : ContentSpecificationsHandler::Context
     {
     private:
-        int m_contentFlags;
         IUserSettings const& m_settings;
         ECExpressionsCache& m_ecexpressionsCache;
         INavNodeLocater const& m_nodesLocater;
     public:
         Context(ECSchemaHelper const& helper, IConnectionManagerCR connections, IConnectionCR connection,  PresentationRuleSetCR ruleset, Utf8StringCR locale,
-            Utf8CP preferredDisplayType, int contentFlags, IUserSettings const& settings, ECExpressionsCache& expressionsCache, INavNodeLocater const& nodesLocater)
-            : ContentSpecificationsHandler::Context(helper, connections, connection, ruleset, locale, preferredDisplayType), m_settings(settings), 
-            m_contentFlags(contentFlags), m_nodesLocater(nodesLocater), m_ecexpressionsCache(expressionsCache)
+            Utf8CP preferredDisplayType, IUserSettings const& settings, ECExpressionsCache& expressionsCache, INavNodeLocater const& nodesLocater)
+            : ContentSpecificationsHandler::Context(helper, connections, connection, ruleset, locale, preferredDisplayType), 
+            m_settings(settings), m_nodesLocater(nodesLocater), m_ecexpressionsCache(expressionsCache)
             {}
-        int GetContentFlags() const {return m_contentFlags;}
         IUserSettings const& GetUserSettings() const {return m_settings;}
         ECExpressionsCache& GetECExpressionsCache() const {return m_ecexpressionsCache;}
         INavNodeLocater const& GetNodesLocater() const {return m_nodesLocater;}

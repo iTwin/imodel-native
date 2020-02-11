@@ -20,8 +20,10 @@ void QueryBuilderHelpers::SetOrUnion(RefCountedPtr<T>& target, T& source)
     {
     if (target.IsNull())
         target = &source;
+    else if (target->AsUnionQuery())
+        target->AsUnionQuery()->AddQuery(source);
     else
-        target = UnionPresentationQuery<T>::Create(*target, source);
+        target = UnionPresentationQuery<T>::Create({target, &source});
     }
 template void QueryBuilderHelpers::SetOrUnion<ContentQuery>(ContentQueryPtr&, ContentQuery&);
 template void QueryBuilderHelpers::SetOrUnion<NavigationQuery>(NavigationQueryPtr&, NavigationQuery&);
@@ -218,8 +220,11 @@ bool QueryBuilderHelpers::NeedsNestingToUseAlias(T const& query, bvector<Utf8CP>
     if (nullptr != query.AsUnionQuery())
         {
         UnionPresentationQuery<T> const& unionQuery = *query.AsUnionQuery();
-        if (NeedsNestingToUseAlias(*unionQuery.GetFirst(), aliases) || NeedsNestingToUseAlias(*unionQuery.GetSecond(), aliases))
-            return true;
+        for (RefCountedPtr<T> const& q : unionQuery.GetQueries())
+            {
+            if (NeedsNestingToUseAlias(*q, aliases))
+                return true;
+            }
         }
 
     if (nullptr != query.AsExceptQuery())
@@ -267,137 +272,120 @@ template ComplexContentQueryPtr QueryBuilderHelpers::CreateComplexNestedQueryIfN
 template ComplexNavigationQueryPtr QueryBuilderHelpers::CreateComplexNestedQueryIfNecessary<NavigationQuery>(NavigationQuery&, bvector<Utf8CP> const&);
 template ComplexGenericQueryPtr QueryBuilderHelpers::CreateComplexNestedQueryIfNecessary<GenericQuery>(GenericQuery&, bvector<Utf8CP> const&);
 
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                07/2017
-+===============+===============+===============+===============+===============+======*/
-struct RecursiveQueriesHelper
-{
-private:
-    IConnectionCR m_connection;
-    InstanceFilteringParams::RecursiveQueryInfo const& m_recursiveQueryInfo;
-
-private:
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis                04/2017
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    static bool IsRecursiveJoinForward(SelectClassInfo const& selectInfo)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RecursiveQueriesHelper::IsRecursiveJoinForward(SelectClassInfo const& selectInfo)
+    {
+    if (selectInfo.GetPathFromInputToSelectClass().empty())
         {
-        if (selectInfo.GetPathFromInputToSelectClass().empty())
-            {
-            BeAssert(false);
-            return true;
-            }
-
-        return selectInfo.GetPathFromInputToSelectClass().back().IsForwardRelationship();
+        BeAssert(false);
+        return true;
         }
 
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis                03/2017
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    void RecursivelySelectRelatedKeys(bset<ECInstanceId>& result, Utf8StringCR baseQuery, Utf8CP idSelector, bset<ECInstanceId> const& sourceIds)
+    return selectInfo.GetPathFromInputToSelectClass().back().IsForwardRelationship();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void RecursiveQueriesHelper::RecursivelySelectRelatedKeys(bset<ECInstanceId>& result, Utf8StringCR baseQuery, Utf8CP idSelector, bset<ECInstanceId> const& sourceIds)
+    {
+    Savepoint txn(m_connection.GetDb(), "RecursiveQueriesHelper::RecursivelySelectRelatedKeys");
+    BeAssert(txn.IsActive());
+
+    IdsFilteringHelper<bset<ECInstanceId>> filteringHelper(sourceIds);
+    Utf8String query(baseQuery);
+    query.append("WHERE ").append(filteringHelper.CreateWhereClause(idSelector));
+
+    ECSqlStatement stmt;
+    if (!stmt.Prepare(m_connection.GetECDb().Schemas(), m_connection.GetDb(), query.c_str()).IsSuccess())
         {
-        Savepoint txn(m_connection.GetDb(), "RecursiveQueriesHelper::RecursivelySelectRelatedKeys");
-        BeAssert(txn.IsActive());
-
-        IdsFilteringHelper<bset<ECInstanceId>> filteringHelper(sourceIds);
-        Utf8String query(baseQuery);
-        query.append("WHERE ").append(filteringHelper.CreateWhereClause(idSelector));
-
-        ECSqlStatement stmt;
-        if (!stmt.Prepare(m_connection.GetECDb().Schemas(), m_connection.GetDb(), query.c_str()).IsSuccess())
-            {
-            BeAssert(false);
-            return;
-            }
-
-        BoundQueryValuesList bindings = filteringHelper.CreateBoundValues();
-        for (size_t i = 0; i < bindings.size(); ++i)
-            {
-            BoundQueryValue const* binding = bindings[i];
-            binding->Bind(stmt, (uint32_t)(i + 1));
-            }
-
-        bset<ECInstanceId> tempIds;
-        while (BE_SQLITE_ROW == stmt.Step())
-            {
-            ECInstanceId id = stmt.GetValueId<ECInstanceId>(0);
-            result.insert(id);
-            tempIds.insert(id);
-            }
-
-        txn.Cancel();
-
-        for (BoundQueryValue const* binding : bindings)
-            delete binding;
-
-        if (!tempIds.empty())
-            RecursivelySelectRelatedKeys(result, baseQuery, idSelector, tempIds);
+        BeAssert(false);
+        return;
         }
 
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis                02/2018
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    bset<ECInstanceId> GetRecursiveChildrenIds(bset<ECRelationshipClassCP> const& relationships, bool isForward, bset<ECInstanceId> const& parentIds)
+    BoundQueryValuesList bindings = filteringHelper.CreateBoundValues();
+    for (size_t i = 0; i < bindings.size(); ++i)
         {
-        static Utf8CP s_sourceECInstanceIdField = "SourceECInstanceId";
-        static Utf8CP s_targetECInstanceIdField = "TargetECInstanceId";
-        Utf8CP idSelector = isForward ? s_sourceECInstanceIdField : s_targetECInstanceIdField;
-
-        bool first = true;
-        Utf8String query("SELECT ");
-        query.append(isForward ? s_targetECInstanceIdField : s_sourceECInstanceIdField);
-        query.append(" FROM (");
-        for (ECRelationshipClassCP rel : relationships)
-            {
-            if (!first)
-                query.append(" UNION ALL ");
-            query.append("SELECT ").append(s_sourceECInstanceIdField).append(",").append(s_targetECInstanceIdField).append(" ");
-            query.append("FROM ").append(rel->GetECSqlName());
-            first = false;
-            }
-        query.append(") ");
-
-        bset<ECInstanceId> result;
-        RecursivelySelectRelatedKeys(result, query, idSelector, parentIds);
-        return result;
+        BoundQueryValue const* binding = bindings[i];
+        binding->Bind(stmt, (uint32_t)(i + 1));
         }
 
-public:
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis                04/2017
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    RecursiveQueriesHelper(IConnectionCR connection, InstanceFilteringParams::RecursiveQueryInfo const& recursiveQueryInfo)
-        : m_connection(connection), m_recursiveQueryInfo(recursiveQueryInfo)
-        {}
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis                04/2017
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    bset<ECInstanceId> GetRecursiveChildrenIdsDeprecated(IParsedInput const& input, SelectClassInfo const& thisInfo)
+    bset<ECInstanceId> tempIds;
+    while (BE_SQLITE_ROW == stmt.Step())
         {
-        bset<ECRelationshipClassCP> relationships;
-        for (RelatedClassPath const& path : m_recursiveQueryInfo.GetPathsFromInputToSelectClass())
-            {
-            for (RelatedClassCR rel : path)
-                relationships.insert(rel.GetRelationship());
-            }
-        return GetRecursiveChildrenIds(relationships, IsRecursiveJoinForward(thisInfo),
-            ContainerHelpers::TransformContainer<bset<ECInstanceId>>(input.GetInstanceIds(*thisInfo.GetInputClass())));
+        ECInstanceId id = stmt.GetValueId<ECInstanceId>(0);
+        result.insert(id);
+        tempIds.insert(id);
         }
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis                01/2020
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    bset<ECInstanceId> GetRecursiveChildrenIds(bset<ECInstanceId> const& sourceIds)
+
+    txn.Cancel();
+
+    for (BoundQueryValue const* binding : bindings)
+        delete binding;
+
+    if (!tempIds.empty())
+        RecursivelySelectRelatedKeys(result, baseQuery, idSelector, tempIds);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bset<ECInstanceId> RecursiveQueriesHelper::GetRecursiveChildrenIds(bset<ECRelationshipClassCP> const& relationships, bool isForward, bset<ECInstanceId> const& parentIds)
+    {
+    static Utf8CP s_sourceECInstanceIdField = "SourceECInstanceId";
+    static Utf8CP s_targetECInstanceIdField = "TargetECInstanceId";
+    Utf8CP idSelector = isForward ? s_sourceECInstanceIdField : s_targetECInstanceIdField;
+
+    bool first = true;
+    Utf8String query("SELECT ");
+    query.append(isForward ? s_targetECInstanceIdField : s_sourceECInstanceIdField);
+    query.append(" FROM (");
+    for (ECRelationshipClassCP rel : relationships)
         {
-        BeAssert(1 == m_recursiveQueryInfo.GetPathsFromInputToSelectClass().size());
-        bset<ECRelationshipClassCP> relationships;
-        for (RelatedClassPath const& path : m_recursiveQueryInfo.GetPathsFromInputToSelectClass())
-            {
-            for (RelatedClassCR rel : path)
-                relationships.insert(rel.GetRelationship());
-            }
-        return GetRecursiveChildrenIds(relationships, m_recursiveQueryInfo.GetPathsFromInputToSelectClass().back().back().IsForwardRelationship(), sourceIds);
+        if (!first)
+            query.append(" UNION ALL ");
+        query.append("SELECT ").append(s_sourceECInstanceIdField).append(",").append(s_targetECInstanceIdField).append(" ");
+        query.append("FROM ").append(rel->GetECSqlName());
+        first = false;
         }
-};
+    query.append(") ");
+
+    bset<ECInstanceId> result;
+    RecursivelySelectRelatedKeys(result, query, idSelector, parentIds);
+    return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bset<ECInstanceId> RecursiveQueriesHelper::GetRecursiveChildrenIdsDeprecated(IParsedInput const& input, SelectClassInfo const& thisInfo)
+    {
+    bset<ECRelationshipClassCP> relationships;
+    for (RelatedClassPath const& path : m_recursiveQueryInfo.GetPathsFromInputToSelectClass())
+        {
+        for (RelatedClassCR rel : path)
+            relationships.insert(rel.GetRelationship());
+        }
+    return GetRecursiveChildrenIds(relationships, IsRecursiveJoinForward(thisInfo),
+        ContainerHelpers::TransformContainer<bset<ECInstanceId>>(input.GetInstanceIds(*thisInfo.GetInputClass())));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+bset<ECInstanceId> RecursiveQueriesHelper::GetRecursiveChildrenIds(bset<ECInstanceId> const& sourceIds)
+    {
+    BeAssert(1 == m_recursiveQueryInfo.GetPathsFromInputToSelectClass().size());
+    bset<ECRelationshipClassCP> relationships;
+    for (RelatedClassPath const& path : m_recursiveQueryInfo.GetPathsFromInputToSelectClass())
+        {
+        for (RelatedClassCR rel : path)
+            relationships.insert(rel.GetRelationship());
+        }
+    return GetRecursiveChildrenIds(relationships, m_recursiveQueryInfo.GetPathsFromInputToSelectClass().back().back().IsForwardRelationship(), sourceIds);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2018
@@ -622,42 +610,6 @@ void QueryBuilderHelpers::ApplyPagingOptions(RefCountedPtr<ContentQuery>& query,
         return;
 
     QueryBuilderHelpers::Limit<ContentQuery>(*query, opts.GetPageSize(), opts.GetPageStart());
-    }
-
-#define DISPLAY_TYPES_EQUAL(lhs, rhs)   lhs == rhs || 0 == strcmp(lhs, rhs)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void QueryBuilderHelpers::ApplyDefaultContentFlags(ContentDescriptorR descriptor, Utf8CP displayType, ContentSpecificationCR spec)
-    {
-    if (0 != descriptor.GetContentFlags())
-        {
-        // do not apply default flags is there's already something set - we don't
-        // want to override whatever is set by the requestor
-        return;
-        }
-
-    if (DISPLAY_TYPES_EQUAL(ContentDisplayType::Grid, displayType))
-        {
-        descriptor.AddContentFlag(ContentFlags::ShowLabels);
-        }
-    else if (DISPLAY_TYPES_EQUAL(ContentDisplayType::PropertyPane, displayType))
-        {
-        descriptor.AddContentFlag(ContentFlags::MergeResults);
-        }
-    else if (DISPLAY_TYPES_EQUAL(ContentDisplayType::Graphics, displayType))
-        {
-        descriptor.AddContentFlag(ContentFlags::NoFields);
-        descriptor.AddContentFlag(ContentFlags::KeysOnly);
-        }
-    else if (DISPLAY_TYPES_EQUAL(ContentDisplayType::List, displayType))
-        {
-        descriptor.AddContentFlag(ContentFlags::NoFields);
-        descriptor.AddContentFlag(ContentFlags::ShowLabels);
-        }
-
-    if (spec.GetShowImages())
-        descriptor.AddContentFlag(ContentFlags::ShowImages);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -923,122 +875,6 @@ bmap<ECClassCP, bvector<InstanceLabelOverrideValueSpecification const*>> QueryBu
         iter->second.insert(iter->second.end(), labelOverride->GetValueSpeficications().begin(), labelOverride->GetValueSpeficications().end());
         }
     return mappedFields;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-bmap<Utf8String, bvector<RelatedClassPath>> QueryBuilderHelpers::GetRelatedInstancePaths(ECSchemaHelper const& schemaHelper, ECClassCR selectClass,
-    RelatedInstanceSpecificationList const& relatedInstanceSpecs, ECClassUseCounter& relationshipsUseCount)
-    {
-    bmap<Utf8String, bvector<RelatedClassPath>> paths;
-    for (RelatedInstanceSpecificationCP spec : relatedInstanceSpecs)
-        {
-        if (paths.end() != paths.find(spec->GetAlias()))
-            {
-            BeAssert(false && "related instance alias must be unique per parent specification");
-            continue;
-            }
-
-        ECSchemaHelper::MultiRelationshipPathOptions options(selectClass, spec->GetRelationshipPath(), relationshipsUseCount);
-        bvector<RelatedClassPath> specPaths = schemaHelper.GetRelationshipClassPaths(options);
-        for (RelatedClassPathR specPath : specPaths)
-            {
-            for (RelatedClassR specPathClass : specPath)
-                specPathClass.SetIsTargetOptional(!spec->IsRequired());
-            if (!specPath.empty())
-                specPath.back().SetTargetClassAlias(spec->GetAlias().c_str());
-            }
-        if (!specPaths.empty())
-            paths.Insert(spec->GetAlias(), specPaths);
-        }
-    return paths;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bvector<RelatedClassPath> GetRelatedClassPaths(ECSchemaHelper const& schemaHelper, ECClassCR inputClass, bvector<ECInstanceId> const& inputIds,
-    bvector<RepeatableRelationshipStepSpecification*> const& pathSteps, ECClassUseCounter& relationshipsUseCount)
-    {
-    ECClassCP sourceClass = &inputClass;
-    bset<ECInstanceId> sourceIds = ContainerHelpers::TransformContainer<bset<ECInstanceId>>(inputIds);
-    bool hadRecursiveRelationships = false;
-    RepeatableRelationshipPathSpecification intermediatePathSpec;
-    bvector<RelatedClassPath> intermediatePaths;
-    for (RepeatableRelationshipStepSpecification const* stepSpec : pathSteps)
-        {
-        if (stepSpec->GetCount() == 0)
-            {
-            if (!intermediatePathSpec.GetSteps().empty())
-                {
-                // find paths for the intermediate path specification
-                ECSchemaHelper::RepeatableMultiRelationshipPathOptions intermediatePathOptions(*sourceClass, intermediatePathSpec, relationshipsUseCount);
-                bvector<RelatedClassPath> intermediateSpecPaths = schemaHelper.GetRelationshipClassPaths(intermediatePathOptions);
-                if (intermediateSpecPaths.empty())
-                    {
-                    BeAssert(false && "Relationship path specification didn't result to a valid path. Is the specification correct?");
-                    break;
-                    }
-                BeAssert(1 == intermediateSpecPaths.size());
-                RelatedClassCR intermediateTargetClass = intermediateSpecPaths.back().back();
-                // get target ids for the intermediate path
-                sourceIds = schemaHelper.GetTargetIds(intermediateSpecPaths, sourceIds);
-                sourceClass = intermediateTargetClass.IsForwardRelationship() ? &intermediateTargetClass.GetTargetClass().GetClass() : intermediateTargetClass.GetSourceClass();
-                }
-            // recursively find target ids using the recursive path specification
-            RelationshipPathSpecification recursiveStepSpec(*new RelationshipStepSpecification(*stepSpec));
-            ECSchemaHelper::MultiRelationshipPathOptions recursiveStepOptions(*sourceClass, recursiveStepSpec, relationshipsUseCount);
-            bvector<RelatedClassPath> recursiveStepPaths = schemaHelper.GetRelationshipClassPaths(recursiveStepOptions);
-            BeAssert(1 == recursiveStepPaths.size());
-            RelatedClassCR recursiveStepTargetClass = recursiveStepPaths.back().back();
-            InstanceFilteringParams::RecursiveQueryInfo recursiveQueryInfo(recursiveStepPaths);
-            ContainerHelpers::Push(sourceIds, RecursiveQueriesHelper(schemaHelper.GetConnection(), recursiveQueryInfo).GetRecursiveChildrenIds(sourceIds));
-            sourceClass = recursiveStepTargetClass.IsForwardRelationship() ? &recursiveStepTargetClass.GetTargetClass().GetClass() : recursiveStepTargetClass.GetSourceClass();
-            // clear intermediate path
-            intermediatePathSpec.ClearSteps();
-            hadRecursiveRelationships = true;
-            }
-        else
-            {
-            intermediatePathSpec.AddStep(*new RepeatableRelationshipStepSpecification(*stepSpec));
-            }
-        }
-
-    RelatedClassPath endingPath;
-    if (!intermediatePathSpec.GetSteps().empty())
-        {
-        ECSchemaHelper::RepeatableMultiRelationshipPathOptions endingPathOptions(*sourceClass, intermediatePathSpec, relationshipsUseCount);
-        bvector<RelatedClassPath> endingPaths = schemaHelper.GetRelationshipClassPaths(endingPathOptions);
-        BeAssert(1 == endingPaths.size());
-        endingPath = endingPaths.back();
-        }
-
-    if (!hadRecursiveRelationships)
-        return {endingPath};
-
-    if (sourceIds.empty())
-        return bvector<RelatedClassPath>();
-
-    RelatedClassPath path;
-    path.push_back(RelatedClass(inputClass, *sourceClass, sourceIds, "related"));
-    ContainerHelpers::Push(path, endingPath);
-    return {path};
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<RelatedClassPath> QueryBuilderHelpers::GetRelatedClassPaths(ECSchemaHelper const& schemaHelper, ECClassCR sourceClass, bvector<ECInstanceId> const& sourceIds,
-    bvector<RepeatableRelationshipPathSpecification*> const& relationshipPathSpecs, ECClassUseCounter& relationshipsUseCount)
-    {
-    bvector<RelatedClassPath> paths;
-    for (RepeatableRelationshipPathSpecification const* pathSpec : relationshipPathSpecs)
-        {
-        ContainerHelpers::Push(paths, ::GetRelatedClassPaths(schemaHelper, sourceClass, sourceIds,
-            pathSpec->GetSteps(), relationshipsUseCount));
-        }
-    return paths;
     }
 
 /*---------------------------------------------------------------------------------**//**

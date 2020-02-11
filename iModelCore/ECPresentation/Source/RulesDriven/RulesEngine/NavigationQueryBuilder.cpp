@@ -818,9 +818,9 @@ protected:
 
         auto iter = m_groupedQueries.find(&contract->GetProperty());
         if (m_groupedQueries.end() == iter)
-            m_groupedQueries[&contract->GetProperty()] = query;
+            m_groupedQueries.Insert(&contract->GetProperty(), query);
         else
-            m_groupedQueries[&contract->GetProperty()] = UnionNavigationQuery::Create(*iter->second, *query);
+            QueryBuilderHelpers::SetOrUnion<NavigationQuery>(iter->second, *query);
 
         return ApplyGroupingResult::Stored;
         }
@@ -2137,7 +2137,8 @@ private:
                     if (!rhsOrderByClause.empty())
                         rhsQuery = QueryBuilderHelpers::CreateNestedQuery(*rhsQuery);
                     }
-                queryInList = &UnionNavigationQuery::Create(*queryInList, *rhsQuery)->OrderBy(lhsOrderByClause.c_str());
+                QueryBuilderHelpers::SetOrUnion(queryInList, *rhsQuery);
+                QueryBuilderHelpers::Order(*queryInList, lhsOrderByClause.c_str());
                 unioned = true;
                 break;
                 }
@@ -2704,7 +2705,7 @@ static void AssignRelatedInstanceClasses(bvector<SelectQueryInfo>& infos, ChildN
     for (SelectQueryInfo const& info : infos)
         {
         // get related instance paths that suit the given select info
-        bmap<Utf8String, bvector<RelatedClassPath>> relatedInstancePaths = QueryBuilderHelpers::GetRelatedInstancePaths(params.GetSchemaHelper(),
+        bmap<Utf8String, bvector<RelatedClassPath>> relatedInstancePaths = params.GetSchemaHelper().GetRelatedInstancePaths(
             info.GetSelectClass().GetClass(), specification.GetRelatedInstances(), relationshipUseCounter);
         bvector<SelectQueryInfo> thisInfoSplit{info};
         for (auto& pathEntry : relatedInstancePaths)
@@ -2925,8 +2926,8 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
                 }
             else
                 {
-                relationshipClassPaths = QueryBuilderHelpers::GetRelatedClassPaths(m_params.GetSchemaHelper(), parentClass, parentInstanceIds,
-                    specification.GetRelationshipPaths(), queryContext->GetRelationshipUseCounter());
+                relationshipClassPaths = m_params.GetSchemaHelper().GetRecursiveRelationshipClassPaths(parentClass, parentInstanceIds,
+                    specification.GetRelationshipPaths(), queryContext->GetRelationshipUseCounter(), true);
                 }
 
             // create select infos

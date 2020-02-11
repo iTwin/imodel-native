@@ -77,6 +77,7 @@ enum class ContentFlags
     DistinctValues =        1 << 4, //!< Content has only distinct values
     NoFields =              1 << 5, //!< Doesnt create property or calculated fields. Can be used in conjunction with @e ShowLabels.
     ExcludeEditingData =    1 << 6, //!< Should editing data be excluded from the content. This flag increases performance and should be used when requesting data for read-only cases.
+    SkipInstancesCheck =    1 << 7, //!< Skip instances' check when creating content with ContentRelatedInstances specification.
     };
 
 //=======================================================================================
@@ -90,17 +91,17 @@ struct ContentDisplayType
     //! Unknown content type.
     ECPRESENTATION_EXPORT static const Utf8CP Undefined;
 
-    //! Grid or table view content type. By default adds ContentFlags::ShowLabels flag.
+    //! Grid or table view content type. By default adds `ShowLabels` flag.
     ECPRESENTATION_EXPORT static const Utf8CP Grid;
 
-    //! Property pane content type. By default adds ContentFlags::MergeResults flag.
+    //! Property pane content type. By default adds `MergeResults` flag.
     ECPRESENTATION_EXPORT static const Utf8CP PropertyPane;
 
-    //! List view content type. By default adds ContentFlags::NoFields and ContentFlags::ShowLabels flags.
+    //! List view content type. By default adds `NoFields`, `KeysOnly`, `ShowLabels` and `SkipInstancesCheck` flags.
     ECPRESENTATION_EXPORT static const Utf8CP List;
 
     //! Content type for graphic content controls, e.g. the viewport.
-    //! By default adds ContentFlags::KeysOnly flag.
+    //! By default adds `NoFields`, `KeysOnly` and `SkipInstancesCheck` flags.
     ECPRESENTATION_EXPORT static const Utf8CP Graphics;
     };
 

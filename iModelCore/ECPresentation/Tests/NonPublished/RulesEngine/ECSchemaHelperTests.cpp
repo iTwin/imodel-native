@@ -505,14 +505,14 @@ TEST_F(ECSchemaHelperTests, Deprecated_GetRelationshipClassPaths_IncludesBaseAnd
     ASSERT_EQ(1, paths[0].size());
     EXPECT_EQ(elementClass, paths[0][0].GetSourceClass());
     EXPECT_EQ(aspectClass, &paths[0][0].GetTargetClass().GetClass());
-    EXPECT_TRUE(paths[0][0].GetTargetClass().IsSelectPolymorphic());
+    EXPECT_FALSE(paths[0][0].GetTargetClass().IsSelectPolymorphic());
     EXPECT_EQ(rel, paths[0][0].GetRelationship());
     EXPECT_TRUE(paths[0][0].IsForwardRelationship());
 
     ASSERT_EQ(1, paths[1].size());
     EXPECT_EQ(elementClass, paths[1][0].GetSourceClass());
     EXPECT_EQ(customAspectClass, &paths[1][0].GetTargetClass().GetClass());
-    EXPECT_TRUE(paths[1][0].GetTargetClass().IsSelectPolymorphic());
+    EXPECT_FALSE(paths[1][0].GetTargetClass().IsSelectPolymorphic());
     EXPECT_EQ(rel, paths[1][0].GetRelationship());
     EXPECT_TRUE(paths[1][0].IsForwardRelationship());
     }
@@ -765,7 +765,7 @@ TEST_F(ECSchemaHelperTests, GetRelationshipClassPaths_IncludesPathsForRelationsh
 
     ECClassUseCounter relationshipUseCounts;
     RelationshipPathSpecification pathSpecification(*new RelationshipStepSpecification(rel->GetFullName(), RequiredRelationDirection_Forward, ""));
-    ECSchemaHelper::MultiRelationshipPathOptions options(*classA, pathSpecification, relationshipUseCounts);
+    ECSchemaHelper::MultiRelationshipPathOptions options(*classA, pathSpecification, true, relationshipUseCounts);
     bvector<RelatedClassPath> paths = m_helper->GetRelationshipClassPaths(options);
 
     ASSERT_EQ(1, paths.size());
@@ -813,7 +813,7 @@ TEST_F(ECSchemaHelperTests, GetRelationshipClassPaths_IncludesPathsOnlyForSpecif
 
     ECClassUseCounter relationshipUseCounts;
     RelationshipPathSpecification pathSpecification(*new RelationshipStepSpecification(rel->GetFullName(), RequiredRelationDirection_Forward, classC->GetFullName()));
-    ECSchemaHelper::MultiRelationshipPathOptions options(*classA, pathSpecification, relationshipUseCounts);
+    ECSchemaHelper::MultiRelationshipPathOptions options(*classA, pathSpecification, true, relationshipUseCounts);
     bvector<RelatedClassPath> paths = m_helper->GetRelationshipClassPaths(options);
     ASSERT_EQ(1, paths.size());
     ASSERT_EQ(1, paths[0].size());
@@ -862,7 +862,7 @@ TEST_F(ECSchemaHelperTests, GetRelationshipClassPaths_CreatesPathForHiddenClassI
 
     ECClassUseCounter relationshipUseCounts;
     RelationshipPathSpecification pathSpecification(*new RelationshipStepSpecification(rel->GetFullName(), RequiredRelationDirection_Forward, classC->GetFullName()));
-    ECSchemaHelper::MultiRelationshipPathOptions options(*classA, pathSpecification, relationshipUseCounts);
+    ECSchemaHelper::MultiRelationshipPathOptions options(*classA, pathSpecification, true, relationshipUseCounts);
     bvector<RelatedClassPath> paths = m_helper->GetRelationshipClassPaths(options);
 
     ASSERT_EQ(1, paths.size());
@@ -911,120 +911,7 @@ TEST_F (ECSchemaHelperTests, GetECClassesFromSchemaList_DoesNotReturnClassesFrom
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                01/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(SplitIntoDerivedClassPaths_ReturnsPathsForAllDerivedClasses, R"*(
-    <ECEntityClass typeName="Model" />
-    <ECRelationshipClass typeName="ModelContainsElements" strength="embedding" modifier="None">
-        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
-            <Class class="Model"/>
-        </Source>
-        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
-            <Class class="Element" />
-        </Target>
-    </ECRelationshipClass>
-    <ECEntityClass typeName="Element">
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.2.0">
-                <MapStrategy>TablePerHierarchy</MapStrategy>
-            </ClassMap>
-        </ECCustomAttributes>
-    </ECEntityClass>
-    <ECEntityClass typeName="A">
-        <BaseClass>Element</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="B">
-        <BaseClass>Element</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="C">
-        <BaseClass>Element</BaseClass>
-    </ECEntityClass>
-)*");
-TEST_F(ECSchemaHelperTests, SplitIntoDerivedClassPaths_ReturnsPathsForAllDerivedClasses)
-    {
-    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ModelContainsElements")->GetRelationshipClassCP();
-    ECClassCP modelClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Model");
-    ECClassCP baseClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Element");
-    ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
-    ECClassCP classB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B");
-    ECClassCP classC = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "C");
-
-    RelatedClassPath basePath = {RelatedClass(*modelClass, SelectClass(*baseClass), *rel, true)};
-    bvector<RelatedClassPath> result = m_helper->SplitIntoDerivedClassPaths({basePath});
-
-    ASSERT_EQ(4, result.size());
-
-    ASSERT_EQ(1, result[0].size());
-    EXPECT_EQ(baseClass, &result[0][0].GetTargetClass().GetClass());
-    EXPECT_FALSE(result[0][0].GetTargetClass().IsSelectPolymorphic());
-
-    ASSERT_EQ(1, result[1].size());
-    EXPECT_EQ(classA, &result[1][0].GetTargetClass().GetClass());
-    EXPECT_FALSE(result[1][0].GetTargetClass().IsSelectPolymorphic());
-
-    ASSERT_EQ(1, result[2].size());
-    EXPECT_EQ(classB, &result[2][0].GetTargetClass().GetClass());
-    EXPECT_FALSE(result[2][0].GetTargetClass().IsSelectPolymorphic());
-
-    ASSERT_EQ(1, result[3].size());
-    EXPECT_EQ(classC, &result[3][0].GetTargetClass().GetClass());
-    EXPECT_FALSE(result[2][0].GetTargetClass().IsSelectPolymorphic());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* VSTS#202530
-* @bsitest                                      Grigas.Petraitis                01/2020
-+---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(SplitIntoDerivedClassPaths_DoesntIncludeHiddenClasses, R"*(
-    <ECEntityClass typeName="Model" />
-    <ECRelationshipClass typeName="ModelContainsElements" strength="embedding" modifier="None">
-        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
-            <Class class="Model"/>
-        </Source>
-        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
-            <Class class="Element" />
-        </Target>
-    </ECRelationshipClass>
-    <ECEntityClass typeName="Element">
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.2.0">
-                <MapStrategy>TablePerHierarchy</MapStrategy>
-            </ClassMap>
-        </ECCustomAttributes>
-    </ECEntityClass>
-    <ECEntityClass typeName="A">
-        <BaseClass>Element</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="B">
-        <BaseClass>Element</BaseClass>
-        <ECCustomAttributes>
-            <HiddenClass xmlns="CoreCustomAttributes.01.00" />
-        </ECCustomAttributes>"
-    </ECEntityClass>
-)*");
-TEST_F(ECSchemaHelperTests, SplitIntoDerivedClassPaths_DoesntIncludeHiddenClasses)
-    {
-    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ModelContainsElements")->GetRelationshipClassCP();
-    ECClassCP modelClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Model");
-    ECClassCP baseClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Element");
-    ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
-
-    RelatedClassPath basePath = {RelatedClass(*modelClass, SelectClass(*baseClass), *rel, true)};
-    bvector<RelatedClassPath> result = m_helper->SplitIntoDerivedClassPaths({basePath});
-
-    ASSERT_EQ(2, result.size());
-
-    ASSERT_EQ(1, result[0].size());
-    EXPECT_EQ(baseClass, &result[0][0].GetTargetClass().GetClass());
-    EXPECT_FALSE(result[0][0].GetTargetClass().IsSelectPolymorphic());
-
-    ASSERT_EQ(1, result[1].size());
-    EXPECT_EQ(classA, &result[1][0].GetTargetClass().GetClass());
-    EXPECT_FALSE(result[1][0].GetTargetClass().IsSelectPolymorphic());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                01/2020
-+---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(GetRelatedPathsWithInstances_ReturnsPathsWithTargetClassInstances, R"*(
+DEFINE_SCHEMA(DoesRelatedPropertyPathHaveInstances_ReturnsTrueForPathsWithTargetClassInstances, R"*(
     <ECEntityClass typeName="Model" />
     <ECRelationshipClass typeName="ModelContainsElements" strength="embedding" modifier="None">
         <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
@@ -1036,7 +923,7 @@ DEFINE_SCHEMA(GetRelatedPathsWithInstances_ReturnsPathsWithTargetClassInstances,
     </ECRelationshipClass>
     <ECEntityClass typeName="Element" />
 )*");
-TEST_F(ECSchemaHelperTests, GetRelatedPathsWithInstances_ReturnsPathsWithTargetClassInstances)
+TEST_F(ECSchemaHelperTests, DoesRelatedPropertyPathHaveInstances_ReturnsTrueForPathsWithTargetClassInstances)
     {
     ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ModelContainsElements")->GetRelationshipClassCP();
     ECClassCP modelClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Model");
@@ -1047,16 +934,13 @@ TEST_F(ECSchemaHelperTests, GetRelatedPathsWithInstances_ReturnsPathsWithTargetC
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *model, *element);
 
     RelatedClassPath path = {RelatedClass(*modelClass, *rel, true, "r", SelectClass(*elementClass), "e", true)};
-    bvector<RelatedClassPath> result = m_helper->GetRelatedPathsWithInstances(RelatedClassPath(), {path}, nullptr);
-
-    ASSERT_EQ(1, result.size());
-    ASSERT_EQ(1, result[0].size());
+    EXPECT_TRUE(m_helper->DoesRelatedPropertyPathHaveInstances(RelatedClassPath(), path, nullptr));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                01/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(GetRelatedPathsWithInstances_DoesntReturnPathsWithoutTargetClassInstances, R"*(
+DEFINE_SCHEMA(DoesRelatedPropertyPathHaveInstances_ReturnsFalseForPathsWithoutTargetClassInstances, R"*(
     <ECEntityClass typeName="Model" />
     <ECRelationshipClass typeName="ModelContainsElements" strength="embedding" modifier="None">
         <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
@@ -1080,7 +964,7 @@ DEFINE_SCHEMA(GetRelatedPathsWithInstances_DoesntReturnPathsWithoutTargetClassIn
         <BaseClass>Element</BaseClass>
     </ECEntityClass>
 )*");
-TEST_F(ECSchemaHelperTests, GetRelatedPathsWithInstances_DoesntReturnPathsWithoutTargetClassInstances)
+TEST_F(ECSchemaHelperTests, DoesRelatedPropertyPathHaveInstances_ReturnsFalseForPathsWithoutTargetClassInstances)
     {
     ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ModelContainsElements")->GetRelationshipClassCP();
     ECClassCP modelClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Model");
@@ -1093,22 +977,15 @@ TEST_F(ECSchemaHelperTests, GetRelatedPathsWithInstances_DoesntReturnPathsWithou
     IECInstancePtr elementB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *model, *elementB);
 
-    bvector<RelatedClassPath> paths = {
-        RelatedClassPath{RelatedClass(*modelClass, *rel, true, "r", SelectClass(*elementClass), "e", true)},
-        RelatedClassPath{RelatedClass(*modelClass, *rel, true, "r", SelectClass(*classA), "a", true)},
-        RelatedClassPath{RelatedClass(*modelClass, *rel, true, "r", SelectClass(*classB), "b", true)},
-        };
-    bvector<RelatedClassPath> result = m_helper->GetRelatedPathsWithInstances(RelatedClassPath(), {paths}, nullptr);
-
-    ASSERT_EQ(1, result.size());
-    ASSERT_EQ(1, result[0].size());
-    EXPECT_EQ(classB, &result[0][0].GetTargetClass().GetClass());
+    EXPECT_FALSE(m_helper->DoesRelatedPropertyPathHaveInstances(RelatedClassPath(), {RelatedClass(*modelClass, *rel, true, "r", SelectClass(*elementClass), "e", true)}, nullptr));
+    EXPECT_FALSE(m_helper->DoesRelatedPropertyPathHaveInstances(RelatedClassPath(), {RelatedClass(*modelClass, *rel, true, "r", SelectClass(*classA), "a", true)}, nullptr));
+    EXPECT_TRUE(m_helper->DoesRelatedPropertyPathHaveInstances(RelatedClassPath(), {RelatedClass(*modelClass, *rel, true, "r", SelectClass(*classB), "b", true)}, nullptr));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                01/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(GetRelatedPathsWithInstances_ReturnsMultiRelationshipPathsWithTargetClassInstances, R"*(
+DEFINE_SCHEMA(DoesRelatedPropertyPathHaveInstances_ReturnsTrueForMultiRelationshipPathsWithTargetClassInstances, R"*(
     <ECEntityClass typeName="Element">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.2.0">
@@ -1134,7 +1011,7 @@ DEFINE_SCHEMA(GetRelatedPathsWithInstances_ReturnsMultiRelationshipPathsWithTarg
         <BaseClass>Element</BaseClass>
     </ECEntityClass>
 )*");
-TEST_F(ECSchemaHelperTests, GetRelatedPathsWithInstances_ReturnsMultiRelationshipPathsWithTargetClassInstances)
+TEST_F(ECSchemaHelperTests, DoesRelatedPropertyPathHaveInstances_ReturnsTrueForMultiRelationshipPathsWithTargetClassInstances)
     {
     ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ElementOwnsChildElements")->GetRelationshipClassCP();
     ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
@@ -1151,15 +1028,13 @@ TEST_F(ECSchemaHelperTests, GetRelatedPathsWithInstances_ReturnsMultiRelationshi
         RelatedClass(*classB, SelectClass(*classA), *rel, false, "a", "ba"),
         RelatedClass(*classA, SelectClass(*classC), *rel, true, "c", "ac"),
         };
-
-    bvector<RelatedClassPath> result = m_helper->GetRelatedPathsWithInstances(RelatedClassPath(), {pathFromSelectClass}, nullptr);
-    ASSERT_EQ(1, result.size());
+    EXPECT_TRUE(m_helper->DoesRelatedPropertyPathHaveInstances(RelatedClassPath(), pathFromSelectClass, nullptr));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                01/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(GetRelatedPathsWithInstances_ReturnsPathsWithInstancesMatchingInstanceFilter, R"*(
+DEFINE_SCHEMA(DoesRelatedPropertyPathHaveInstances_ReturnsTrueForPathsWithInstancesMatchingInstanceFilter, R"*(
     <ECEntityClass typeName="Model">
         <ECProperty propertyName="Prop" typeName="int" />
     </ECEntityClass>
@@ -1173,7 +1048,7 @@ DEFINE_SCHEMA(GetRelatedPathsWithInstances_ReturnsPathsWithInstancesMatchingInst
     </ECRelationshipClass>
     <ECEntityClass typeName="Element" />
 )*");
-TEST_F(ECSchemaHelperTests, GetRelatedPathsWithInstances_ReturnsPathsWithInstancesMatchingInstanceFilter)
+TEST_F(ECSchemaHelperTests, DoesRelatedPropertyPathHaveInstances_ReturnsTrueForPathsWithInstancesMatchingInstanceFilter)
     {
     ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ModelContainsElements")->GetRelationshipClassCP();
     ECClassCP modelClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Model");
@@ -1185,15 +1060,13 @@ TEST_F(ECSchemaHelperTests, GetRelatedPathsWithInstances_ReturnsPathsWithInstanc
 
     RelatedClassPath path = {RelatedClass(*modelClass, *rel, true, "r", SelectClass(*elementClass), "e", true)};
     InstanceFilteringParams filteringParams(*m_connection, m_helper->GetECExpressionsCache(), nullptr, SelectClassInfo(*modelClass), nullptr, "this.Prop = 1");
-
-    bvector<RelatedClassPath> result = m_helper->GetRelatedPathsWithInstances(RelatedClassPath(), {path}, &filteringParams);
-    ASSERT_EQ(1, result.size());
+    EXPECT_TRUE(m_helper->DoesRelatedPropertyPathHaveInstances(RelatedClassPath(), path, &filteringParams));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                01/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(GetRelatedPathsWithInstances_DoesntReturnPathsWithoutInstancesMatchingInstanceFilter, R"*(
+DEFINE_SCHEMA(DoesRelatedPropertyPathHaveInstances_ReturnsFalseForPathsWithoutInstancesMatchingInstanceFilter, R"*(
     <ECEntityClass typeName="Model">
         <ECProperty propertyName="Prop" typeName="int" />
     </ECEntityClass>
@@ -1207,7 +1080,7 @@ DEFINE_SCHEMA(GetRelatedPathsWithInstances_DoesntReturnPathsWithoutInstancesMatc
     </ECRelationshipClass>
     <ECEntityClass typeName="Element" />
 )*");
-TEST_F(ECSchemaHelperTests, GetRelatedPathsWithInstances_DoesntReturnPathsWithoutInstancesMatchingInstanceFilter)
+TEST_F(ECSchemaHelperTests, DoesRelatedPropertyPathHaveInstances_ReturnsFalseForPathsWithoutInstancesMatchingInstanceFilter)
     {
     ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ModelContainsElements")->GetRelationshipClassCP();
     ECClassCP modelClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Model");
@@ -1219,15 +1092,13 @@ TEST_F(ECSchemaHelperTests, GetRelatedPathsWithInstances_DoesntReturnPathsWithou
 
     RelatedClassPath path = {RelatedClass(*modelClass, *rel, true, "r", SelectClass(*elementClass), "e", true)};
     InstanceFilteringParams filteringParams(*m_connection, m_helper->GetECExpressionsCache(), nullptr, SelectClassInfo(*modelClass), nullptr, "this.Prop = 2");
-
-    bvector<RelatedClassPath> result = m_helper->GetRelatedPathsWithInstances(RelatedClassPath(), {path}, &filteringParams);
-    ASSERT_EQ(0, result.size());
+    EXPECT_FALSE(m_helper->DoesRelatedPropertyPathHaveInstances(RelatedClassPath(), path, &filteringParams));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                01/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(GetRelatedPathsWithInstances_ReturnsPathsWithInstancesRelatedToGivenInput, R"*(
+DEFINE_SCHEMA(DoesRelatedPropertyPathHaveInstances_ReturnsTrueForPathsWithInstancesRelatedToGivenInput, R"*(
     <ECEntityClass typeName="Model" />
     <ECRelationshipClass typeName="ModelContainsElements" strength="embedding" modifier="None">
         <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
@@ -1239,7 +1110,7 @@ DEFINE_SCHEMA(GetRelatedPathsWithInstances_ReturnsPathsWithInstancesRelatedToGiv
     </ECRelationshipClass>
     <ECEntityClass typeName="Element" />
 )*");
-TEST_F(ECSchemaHelperTests, GetRelatedPathsWithInstances_ReturnsPathsWithInstancesRelatedToGivenInput)
+TEST_F(ECSchemaHelperTests, DoesRelatedPropertyPathHaveInstances_ReturnsTrueForPathsWithInstancesRelatedToGivenInput)
     {
     ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ModelContainsElements")->GetRelationshipClassCP();
     ECClassCP modelClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Model");
@@ -1252,15 +1123,13 @@ TEST_F(ECSchemaHelperTests, GetRelatedPathsWithInstances_ReturnsPathsWithInstanc
     RelatedClassPath path = {RelatedClass(*modelClass, *rel, true, "r", SelectClass(*elementClass), "e", true)};
     TestParsedInput input(*model);
     InstanceFilteringParams filteringParams(*m_connection, m_helper->GetECExpressionsCache(), &input, SelectClassInfo(*modelClass), nullptr, "");
-
-    bvector<RelatedClassPath> result = m_helper->GetRelatedPathsWithInstances(RelatedClassPath(), {path}, &filteringParams);
-    ASSERT_EQ(1, result.size());
+    EXPECT_TRUE(m_helper->DoesRelatedPropertyPathHaveInstances(RelatedClassPath(), path, &filteringParams));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                01/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(GetRelatedPathsWithInstances_DoesntReturnPathsWithoutInstancesRelatedToGivenInput, R"*(
+DEFINE_SCHEMA(DoesRelatedPropertyPathHaveInstances_ReturnsFalseForPathsWithoutInstancesRelatedToGivenInput, R"*(
     <ECEntityClass typeName="Model" />
     <ECRelationshipClass typeName="ModelContainsElements" strength="embedding" modifier="None">
         <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
@@ -1272,7 +1141,7 @@ DEFINE_SCHEMA(GetRelatedPathsWithInstances_DoesntReturnPathsWithoutInstancesRela
     </ECRelationshipClass>
     <ECEntityClass typeName="Element" />
 )*");
-TEST_F(ECSchemaHelperTests, GetRelatedPathsWithInstances_DoesntReturnPathsWithoutInstancesRelatedToGivenInput)
+TEST_F(ECSchemaHelperTests, DoesRelatedPropertyPathHaveInstances_ReturnsFalseForPathsWithoutInstancesRelatedToGivenInput)
     {
     ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ModelContainsElements")->GetRelationshipClassCP();
     ECClassCP modelClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Model");
@@ -1286,15 +1155,13 @@ TEST_F(ECSchemaHelperTests, GetRelatedPathsWithInstances_DoesntReturnPathsWithou
     RelatedClassPath path = {RelatedClass(*modelClass, *rel, true, "r", SelectClass(*elementClass), "e", true)};
     TestParsedInput input(*model2);
     InstanceFilteringParams filteringParams(*m_connection, m_helper->GetECExpressionsCache(), &input, SelectClassInfo(*modelClass), nullptr, "");
-
-    bvector<RelatedClassPath> result = m_helper->GetRelatedPathsWithInstances(RelatedClassPath(), {path}, &filteringParams);
-    ASSERT_EQ(0, result.size());
+    EXPECT_FALSE(m_helper->DoesRelatedPropertyPathHaveInstances(RelatedClassPath(), path, &filteringParams));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                01/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(GetRelatedPathsWithInstances_ReturnsPathsWithInstancesMatchingNestedInstanceFilter, R"*(
+DEFINE_SCHEMA(DoesRelatedPropertyPathHaveInstances_ReturnsTrueForPathsWithInstancesMatchingNestedInstanceFilter, R"*(
     <ECEntityClass typeName="Element">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.2.0">
@@ -1327,7 +1194,7 @@ DEFINE_SCHEMA(GetRelatedPathsWithInstances_ReturnsPathsWithInstancesMatchingNest
         <BaseClass>Element</BaseClass>
     </ECEntityClass>
 )*");
-TEST_F(ECSchemaHelperTests, GetRelatedPathsWithInstances_ReturnsPathsWithInstancesMatchingNestedInstanceFilter)
+TEST_F(ECSchemaHelperTests, DoesRelatedPropertyPathHaveInstances_ReturnsTrueForPathsWithInstancesMatchingNestedInstanceFilter)
     {
     ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ElementOwnsChildElements")->GetRelationshipClassCP();
     ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
@@ -1355,15 +1222,13 @@ TEST_F(ECSchemaHelperTests, GetRelatedPathsWithInstances_ReturnsPathsWithInstanc
         RelatedClass(*classD, SelectClass(*classE), *rel, true, "e", "de"),
         };
     InstanceFilteringParams filteringParams(*m_connection, m_helper->GetECExpressionsCache(), nullptr, SelectClassInfo(*classC), nullptr, "this.Prop = 1");
-
-    bvector<RelatedClassPath> result = m_helper->GetRelatedPathsWithInstances(pathToSelectClass, {pathFromSelectClass}, &filteringParams);
-    ASSERT_EQ(1, result.size());
+    EXPECT_TRUE(m_helper->DoesRelatedPropertyPathHaveInstances(pathToSelectClass, pathFromSelectClass, &filteringParams));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                01/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(GetRelatedPathsWithInstances_DoesntReturnPathsWithoutsInstancesMatchingNestedInstanceFilter, R"*(
+DEFINE_SCHEMA(DoesRelatedPropertyPathHaveInstances_ReturnsFalsePathsWithoutsInstancesMatchingNestedInstanceFilter, R"*(
     <ECEntityClass typeName="Element">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.2.0">
@@ -1396,7 +1261,7 @@ DEFINE_SCHEMA(GetRelatedPathsWithInstances_DoesntReturnPathsWithoutsInstancesMat
         <BaseClass>Element</BaseClass>
     </ECEntityClass>
 )*");
-TEST_F(ECSchemaHelperTests, GetRelatedPathsWithInstances_DoesntReturnPathsWithoutsInstancesMatchingNestedInstanceFilter)
+TEST_F(ECSchemaHelperTests, DoesRelatedPropertyPathHaveInstances_ReturnsFalsePathsWithoutsInstancesMatchingNestedInstanceFilter)
     {
     ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ElementOwnsChildElements")->GetRelationshipClassCP();
     ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
@@ -1424,15 +1289,13 @@ TEST_F(ECSchemaHelperTests, GetRelatedPathsWithInstances_DoesntReturnPathsWithou
         RelatedClass(*classD, SelectClass(*classE), *rel, true, "e", "de"),
         };
     InstanceFilteringParams filteringParams(*m_connection, m_helper->GetECExpressionsCache(), nullptr, SelectClassInfo(*classC), nullptr, "this.Prop = 1");
-
-    bvector<RelatedClassPath> result = m_helper->GetRelatedPathsWithInstances(pathToSelectClass, {pathFromSelectClass}, &filteringParams);
-    ASSERT_EQ(0, result.size());
+    EXPECT_FALSE(m_helper->DoesRelatedPropertyPathHaveInstances(pathToSelectClass, pathFromSelectClass, &filteringParams));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                01/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(GetRelatedPathsWithInstances_ReturnsPathsRelatedToRecursivelyFilteredInstances, R"*(
+DEFINE_SCHEMA(DoesRelatedPropertyPathHaveInstances_ReturnsCurrectResultForRelatedToRecursivelyFilteredInstances, R"*(
     <ECEntityClass typeName="Element">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.2.0">
@@ -1470,7 +1333,7 @@ DEFINE_SCHEMA(GetRelatedPathsWithInstances_ReturnsPathsRelatedToRecursivelyFilte
         <BaseClass>Aspect</BaseClass>
     </ECEntityClass>
 )*");
-TEST_F(ECSchemaHelperTests, GetRelatedPathsWithInstances_ReturnsPathsRelatedToRecursivelyFilteredInstances)
+TEST_F(ECSchemaHelperTests, DoesRelatedPropertyPathHaveInstances_ReturnsCurrectResultForRelatedToRecursivelyFilteredInstances)
     {
     ECClassCP elementClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Element");
     ECRelationshipClassCP elementToElementRel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ElementOwnsChildElements")->GetRelationshipClassCP();
@@ -1492,20 +1355,8 @@ TEST_F(ECSchemaHelperTests, GetRelatedPathsWithInstances_ReturnsPathsRelatedToRe
     RelatedClassPath pathToSelectClass{RelatedClass(*elementClass, *elementClass, *elementToElementRel, true, "e", "e_to_e")};
     InstanceFilteringParams::RecursiveQueryInfo recursiveInfo({pathToSelectClass});
     InstanceFilteringParams filteringParams(*m_connection, m_helper->GetECExpressionsCache(), nullptr, selectInfo, &recursiveInfo, "");
-
-    bvector<RelatedClassPath> paths {
-        RelatedClassPath{RelatedClass(*elementClass, *elementToAspectRel, true, "r", *aspectAClass, "a", true)},
-        RelatedClassPath{RelatedClass(*elementClass, *elementToAspectRel, true, "r", *aspectBClass, "b", true)},
-        };
-
-    bvector<RelatedClassPath> result = m_helper->GetRelatedPathsWithInstances(pathToSelectClass, paths, &filteringParams);
-    ASSERT_EQ(2, result.size());
-
-    ASSERT_EQ(1, result[0].size());
-    EXPECT_EQ(aspectAClass , &result[0][0].GetTargetClass().GetClass());
-
-    ASSERT_EQ(1, result[1].size());
-    EXPECT_EQ(aspectBClass, &result[1][0].GetTargetClass().GetClass());
+    EXPECT_TRUE(m_helper->DoesRelatedPropertyPathHaveInstances(pathToSelectClass, {RelatedClass(*elementClass, *elementToAspectRel, true, "r", *aspectAClass, "a", true)}, &filteringParams));
+    EXPECT_TRUE(m_helper->DoesRelatedPropertyPathHaveInstances(pathToSelectClass, {RelatedClass(*elementClass, *elementToAspectRel, true, "r", *aspectBClass, "b", true)}, &filteringParams));
     }
 
 //---------------------------------------------------------------------------------------

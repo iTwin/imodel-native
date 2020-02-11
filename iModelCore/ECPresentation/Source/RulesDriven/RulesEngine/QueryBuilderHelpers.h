@@ -43,14 +43,14 @@ struct InstanceFilteringParams
 private:
     IConnectionCR m_connection;
     ECExpressionsCache& m_ecexpressionsCache;
-    SelectClassInfo const& m_selectInfo;
+    SelectClassInfo m_selectInfo;
     IParsedInput const* m_selection;
     RecursiveQueryInfo const* m_recursiveQueryInfo; // deprecated
     Utf8CP m_instanceFilter;
 
 public:
     InstanceFilteringParams(IConnectionCR connection, ECExpressionsCache& ecexpressionsCache, IParsedInput const* selection,
-        SelectClassInfo const& selectInfo, RecursiveQueryInfo const* recursiveQueryInfo, Utf8CP instanceFilter)
+        SelectClassInfo selectInfo, RecursiveQueryInfo const* recursiveQueryInfo, Utf8CP instanceFilter)
         : m_connection(connection), m_ecexpressionsCache(ecexpressionsCache), m_selection(selection), m_selectInfo(selectInfo),
         m_recursiveQueryInfo(recursiveQueryInfo), m_instanceFilter(instanceFilter)
         {}
@@ -70,6 +70,26 @@ enum class InstanceFilteringResult
     Success,    //!< Filter appied successfully
     NoResults,  //!< Returned when it's clear the query will return no results after applying the filter
     };
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                07/2017
++===============+===============+===============+===============+===============+======*/
+struct RecursiveQueriesHelper
+{
+private:
+    IConnectionCR m_connection;
+    InstanceFilteringParams::RecursiveQueryInfo const& m_recursiveQueryInfo;
+private:
+    static bool IsRecursiveJoinForward(SelectClassInfo const& selectInfo);
+    void RecursivelySelectRelatedKeys(bset<ECInstanceId>& result, Utf8StringCR baseQuery, Utf8CP idSelector, bset<ECInstanceId> const& sourceIds);
+    bset<ECInstanceId> GetRecursiveChildrenIds(bset<ECRelationshipClassCP> const& relationships, bool isForward, bset<ECInstanceId> const& parentIds);
+public:
+    RecursiveQueriesHelper(IConnectionCR connection, InstanceFilteringParams::RecursiveQueryInfo const& recursiveQueryInfo)
+        : m_connection(connection), m_recursiveQueryInfo(recursiveQueryInfo)
+        {}
+    bset<ECInstanceId> GetRecursiveChildrenIdsDeprecated(IParsedInput const& input, SelectClassInfo const& thisInfo);
+    bset<ECInstanceId> GetRecursiveChildrenIds(bset<ECInstanceId> const& sourceIds);
+};
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                12/2019
@@ -133,7 +153,6 @@ public:
 
     static void ApplyDescriptorOverrides(RefCountedPtr<ContentQuery>& query, ContentDescriptorCR ovr, ECExpressionsCache&);
     static void ApplyPagingOptions(RefCountedPtr<ContentQuery>& query, PageOptionsCR opts);
-    static void ApplyDefaultContentFlags(ContentDescriptorR descriptor, Utf8CP displayType, ContentSpecificationCR);
     static void AddCalculatedFields(ContentDescriptorR, CalculatedPropertiesSpecificationList const&, ILocalizationProvider const*, Utf8StringCR, PresentationRuleSetCR, ECClassCP);
     static void Aggregate(ContentDescriptorPtr& aggregateDescriptor, ContentDescriptorR inputDescriptor);
     static ContentQueryPtr CreateMergedResultsQuery(ContentQueryR, ContentDescriptorR);
@@ -142,12 +161,6 @@ public:
     static PresentationQueryContractFieldPtr CreateInstanceLabelField(Utf8CP name, bvector<InstanceLabelOverrideValueSpecification const*> const& labelOverrideValueSpecs, PresentationQueryContractField const* fallback = nullptr, PresentationQueryContractFieldCP instanceIdField = nullptr, PresentationQueryContractFieldCP classIdField = nullptr);
     static GenericQueryPtr CreateInstanceLabelQuery(ECClassInstanceKeyCR key, bvector<InstanceLabelOverrideValueSpecification const*> const& labelOverrideValueSpecs);
     static Utf8String CreateDisplayLabelValueClause(Utf8CP fieldName);
-
-    static bmap<Utf8String, bvector<RelatedClassPath>> GetRelatedInstancePaths(ECSchemaHelper const& schemaHelper, ECClassCR selectClass, 
-        RelatedInstanceSpecificationList const& relatedInstanceSpecs, ECClassUseCounter& relationshipsUseCount);
-
-    static bvector<RelatedClassPath> GetRelatedClassPaths(ECSchemaHelper const& schemaHelper, ECClassCR sourceClass, bvector<ECInstanceId> const& sourceIds,
-        bvector<RepeatableRelationshipPathSpecification*> const& relationshipPathSpecs, ECClassUseCounter& relationshipsUseCount);
 
     static IdSet<BeInt64Id> CreateIdSetFromJsonArray(RapidJsonValueCR);
     static ECValue CreateECValueFromJson(RapidJsonValueCR);

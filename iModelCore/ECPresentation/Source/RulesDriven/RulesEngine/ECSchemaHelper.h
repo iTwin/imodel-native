@@ -118,9 +118,10 @@ struct ECSchemaHelper : NonCopyableClass
         {
         ECClassCR m_sourceClass;
         RelationshipPathSpecification const& m_path;
+        bool m_mergePolymorphicPaths;
         ECClassUseCounter& m_relationshipsUseCounter;
-        MultiRelationshipPathOptions(ECClassCR sourceClass, RelationshipPathSpecification const& path, ECClassUseCounter& relationshipsUseCounter)
-            : m_sourceClass(sourceClass), m_path(path), m_relationshipsUseCounter(relationshipsUseCounter)
+        MultiRelationshipPathOptions(ECClassCR sourceClass, RelationshipPathSpecification const& path, bool mergePolymorphicPaths, ECClassUseCounter& relationshipsUseCounter)
+            : m_sourceClass(sourceClass), m_path(path), m_relationshipsUseCounter(relationshipsUseCounter), m_mergePolymorphicPaths(mergePolymorphicPaths)
             {}
         };
 
@@ -128,9 +129,10 @@ struct ECSchemaHelper : NonCopyableClass
         {
         ECClassCR m_sourceClass;
         RepeatableRelationshipPathSpecification const& m_path;
+        bool m_mergePolymorphicPaths;
         ECClassUseCounter& m_relationshipsUseCounter;
-        RepeatableMultiRelationshipPathOptions(ECClassCR sourceClass, RepeatableRelationshipPathSpecification const& path, ECClassUseCounter& relationshipsUseCounter)
-            : m_sourceClass(sourceClass), m_path(path), m_relationshipsUseCounter(relationshipsUseCounter)
+        RepeatableMultiRelationshipPathOptions(ECClassCR sourceClass, RepeatableRelationshipPathSpecification const& path, bool mergePolymorphicPaths, ECClassUseCounter& relationshipsUseCounter)
+            : m_sourceClass(sourceClass), m_path(path), m_relationshipsUseCounter(relationshipsUseCounter), m_mergePolymorphicPaths(mergePolymorphicPaths)
             {}
         };
 
@@ -173,18 +175,23 @@ public:
     ECPRESENTATION_EXPORT bool AreSchemasSupported(Utf8StringCR schemaListStr) const;
     ECPRESENTATION_EXPORT ECClassSet GetECClassesFromSchemaList(Utf8StringCR schemaListStr) const;
     ECPRESENTATION_EXPORT SupportedEntityClassInfos GetECClassesFromClassList(Utf8StringCR classListStr, bool supportExclusion) const;
-    ECPRESENTATION_EXPORT bvector<RelatedClassPath> GetRelationshipClassPaths(RelationshipClassPathOptions const&) const; // deprecated
-    ECPRESENTATION_EXPORT bvector<RelatedClassPath> GetRelationshipClassPaths(MultiRelationshipPathOptions const&) const;
-    ECPRESENTATION_EXPORT bvector<RelatedClassPath> GetRelationshipClassPaths(RepeatableMultiRelationshipPathOptions const&) const;
     SupportedRelationshipClassInfos GetECRelationshipClasses(Utf8StringCR commaSeparatedClassList) const;
     ECPRESENTATION_EXPORT ECRelationshipConstraintClassList GetRelationshipConstraintClasses(ECRelationshipClassCR relationship,
         ECRelatedInstanceDirection direction, Utf8StringCR supportedSchemas) const;
     ECPRESENTATION_EXPORT RelatedClass GetForeignKeyClass(ECPropertyCR prop) const;
-    ECPRESENTATION_EXPORT bvector<RelatedClassPath> SplitIntoDerivedClassPaths(bvector<RelatedClassPath> const&) const;
-    ECPRESENTATION_EXPORT bvector<RelatedClassPath> GetRelatedPathsWithInstances(RelatedClassPathCR pathToSelectClass,
-        bvector<RelatedClassPath> const& pathsFromSelectToPropertyClass, InstanceFilteringParams const*) const;
-    ECPRESENTATION_EXPORT bset<ECInstanceId> GetTargetIds(bvector<RelatedClassPath> const& paths, 
+    ECPRESENTATION_EXPORT bool DoesRelatedPropertyPathHaveInstances(RelatedClassPathCR pathToSelectClass,
+        RelatedClassPathCR pathFromSelectToPropertyClass, InstanceFilteringParams const*) const;
+    ECPRESENTATION_EXPORT bset<ECInstanceId> GetTargetIds(bvector<RelatedClassPath> const& paths,
         bset<ECInstanceId> const& sourceIds) const;
+
+    ECPRESENTATION_EXPORT bmap<Utf8String, bvector<RelatedClassPath>> GetRelatedInstancePaths(ECClassCR selectClass,
+        RelatedInstanceSpecificationList const&, ECClassUseCounter&) const;
+
+    ECPRESENTATION_EXPORT bvector<RelatedClassPath> GetRelationshipClassPaths(RelationshipClassPathOptions const&) const; // deprecated
+    ECPRESENTATION_EXPORT bvector<RelatedClassPath> GetRelationshipClassPaths(MultiRelationshipPathOptions const&) const;
+    ECPRESENTATION_EXPORT bvector<RelatedClassPath> GetRelationshipClassPaths(RepeatableMultiRelationshipPathOptions const&) const;
+    ECPRESENTATION_EXPORT bvector<RelatedClassPath> GetRecursiveRelationshipClassPaths(ECClassCR sourceClass, bvector<ECInstanceId> const& sourceIds,
+        bvector<RepeatableRelationshipPathSpecification*> const&, ECClassUseCounter&, bool mergePolymorphicPaths) const;
 };
 
 /*=================================================================================**//**
@@ -255,7 +262,9 @@ struct RelatedPathsCache
         {
         ECClassCP m_sourceClass;
         RepeatableRelationshipPathSpecification m_pathSpecification;
+        bool m_mergePolymorphicPaths;
         Key() : m_sourceClass(nullptr) {}
+        Key(Key const& other);
         Key(ECSchemaHelper::MultiRelationshipPathOptions const& options);
         Key(ECSchemaHelper::RepeatableMultiRelationshipPathOptions const& options);
         bool operator<(Key const& other) const;

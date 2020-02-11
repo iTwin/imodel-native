@@ -535,23 +535,21 @@ struct EXPORT_VTABLE_ATTRIBUTE UnionPresentationQuery : TBase
     friend struct PresentationQuery<TBase, Contract, ResultParameters>;
 
 private:
-    RefCountedPtr<TBase> m_first;
-    RefCountedPtr<TBase> m_second;
+    bvector<RefCountedPtr<TBase>> m_queries;
     Utf8String m_orderByClause;
     BoundQueryECValue const* m_limit;
     BoundQueryECValue const* m_offset;
 
 private:
-    ECPRESENTATION_EXPORT void Init();
+    ECPRESENTATION_EXPORT void Init(TBase*);
 
 protected:
-    UnionPresentationQuery(TBase& first, TBase& second) : m_first(&first), m_second(&second), m_limit(nullptr), m_offset(nullptr) {Init();}
+    UnionPresentationQuery(bvector<RefCountedPtr<TBase>> queries) : m_queries(queries), m_limit(nullptr), m_offset(nullptr) {Init(nullptr);}
     UnionPresentationQuery(UnionPresentationQuery<TBase> const& other)
         : TBase(other), m_orderByClause(other.m_orderByClause), m_limit(nullptr), m_offset(nullptr)
         {
-        m_first = other.m_first->Clone();
-        m_second = other.m_second->Clone();
-
+        for (RefCountedPtr<TBase> const& query : other.m_queries)
+            m_queries.push_back(query->Clone());
         if (nullptr != other.m_limit)
             m_limit = new BoundQueryECValue(*other.m_limit);
         if (nullptr != other.m_offset)
@@ -572,12 +570,13 @@ protected:
     ECPRESENTATION_EXPORT void _OnIsOuterQueryValueChanged() override;
 
 public:
-    static RefCountedPtr<UnionPresentationQuery<TBase>> Create(TBase& first, TBase& second) {return new UnionPresentationQuery(first, second);}
+    static RefCountedPtr<UnionPresentationQuery<TBase>> Create(bvector<RefCountedPtr<TBase>> queries) {return new UnionPresentationQuery(queries);}
     Utf8StringCR GetOrderByClause() const {return m_orderByClause;}
     ECPRESENTATION_EXPORT ThisType& OrderBy(Utf8CP orderByClause);
     ECPRESENTATION_EXPORT ThisType& Limit(uint64_t limit, uint64_t offset = 0);
-    RefCountedPtr<TBase> GetFirst() const {return m_first;}
-    RefCountedPtr<TBase> GetSecond() const {return m_second;}
+    bvector<RefCountedPtr<TBase>> const& GetQueries() const {return m_queries;}
+    void SetQueries(bvector<RefCountedPtr<TBase>> queries) {m_queries = queries;}
+    void AddQuery(TBase& query) {m_queries.push_back(&query); Init(&query);}
 };
 
 /*=================================================================================**//**

@@ -24,6 +24,8 @@ private:
     SelectClassWithExcludes m_selectClass;
     ECClassCP m_propertiesSourceOverride;
     RelatedClassPath m_pathFromInputToSelectClass;
+    bvector<RelatedClassPath> m_pathsFromSelectToRelatedInstanceClasses;
+
 public:
     ContentSource(SelectClassWithExcludes selectClass) : m_selectClass(selectClass), m_propertiesSourceOverride(nullptr) {}
     ContentSource(SelectClassWithExcludes selectClass, ECClassCP propertiesSourceOverride) : m_selectClass(selectClass), m_propertiesSourceOverride(propertiesSourceOverride) {}
@@ -37,6 +39,10 @@ public:
     RelatedClassPath const& GetPathFromInputToSelectClass() const {return m_pathFromInputToSelectClass;}
     RelatedClassPath& GetPathFromInputToSelectClass() {return m_pathFromInputToSelectClass;}
     void SetPathFromInputToSelectClass(RelatedClassPath path) {m_pathFromInputToSelectClass = path;}
+
+    bvector<RelatedClassPath> const& GetPathsFromSelectToRelatedInstanceClasses() const {return m_pathsFromSelectToRelatedInstanceClasses;}
+    bvector<RelatedClassPath>& GetPathsFromSelectToRelatedInstanceClasses() {return m_pathsFromSelectToRelatedInstanceClasses;}
+    void SetPathsFromSelectToRelatedInstanceClasses(bvector<RelatedClassPath> paths) {m_pathsFromSelectToRelatedInstanceClasses = paths;}
 };
 
 /*=================================================================================**//**
@@ -60,8 +66,9 @@ struct ContentSpecificationsHandler
         bmap<ECClassCP, size_t> m_classCounter;
         bset<ECClassCP> m_handledClasses;
         bmap<ECSchemaCP, bmap<ECClassCP, RelatedPropertiesSpecificationList>> m_relatedPropertySpecifications;
-        ECClassUseCounter m_relationshipUseCounts;
+        mutable ECClassUseCounter m_relationshipUseCounts;
         bmap<ECClassCP, bvector<RelatedClass>> m_handledNavigationPropertiesPaths;
+        std::function<int(int)> m_contentFlagsCalculator;
 
     public:
         Context(ECSchemaHelper const& helper, IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, Utf8String locale, Utf8CP preferredDisplayType)
@@ -75,11 +82,13 @@ struct ContentSpecificationsHandler
         void SetPreferredDisplayType(Utf8CP value) {m_preferredDisplayType = value;}
         ECSchemaHelper const& GetSchemaHelper() const {return m_helper;}
         size_t GetClassCount(ECClassCR ecClass) {return m_classCounter[&ecClass]++;}
-        ECClassUseCounter& GetRelationshipUseCounts() {return m_relationshipUseCounts;}
+        ECClassUseCounter& GetRelationshipUseCounts() const {return m_relationshipUseCounts;}
         bool IsClassHandled(ECClassCR ecClass) const {return m_handledClasses.end() != m_handledClasses.find(&ecClass);}
         void SetClassHandled(ECClassCR ecClass) {m_handledClasses.insert(&ecClass);}
         void AddNavigationPropertiesPaths(ECClassCR ecClass, bvector<RelatedClass> navigationPropertiesPaths) {m_handledNavigationPropertiesPaths[&ecClass] = navigationPropertiesPaths;}
         bvector<RelatedClass> GetNavigationPropertiesPaths(ECClassCR ecClass) {return m_handledNavigationPropertiesPaths[&ecClass];}
+        std::function<int(int)> const& GetContentFlagsCalculator() const {return m_contentFlagsCalculator;}
+        void SetContentFlagsCalculator(std::function<int(int)> func) {m_contentFlagsCalculator = func;}
     };
 
     /*=================================================================================**//**
@@ -113,13 +122,16 @@ private:
     bvector<RuleApplicationInfo> const& GetCustomizationRuleInfos() const;
 
 protected:
+    ECPRESENTATION_EXPORT virtual int _GetContentFlags(ContentSpecificationCR) const;
     virtual PropertyAppenderPtr _CreatePropertyAppender(ECClassCR propertyClass, RelatedClassPath const& pathToSelectClass, RelationshipMeaning,
         bool expandNestedFields, PropertyCategorySpecificationsList const*) = 0;
     virtual bool _ShouldIncludeRelatedProperties() const {return true;}
     virtual void _AppendClass(SelectClassInfo const&) = 0;
-    ECPRESENTATION_EXPORT virtual bvector<ContentSource> _BuildContentSource(bvector<SelectClass> const&);
-    ECPRESENTATION_EXPORT virtual bvector<ContentSource> _BuildContentSource(bvector<RelatedClassPath> const&);
-    ContentSource CreateContentSource(RelatedClassPath const& path) const;
+    ECPRESENTATION_EXPORT virtual bvector<ContentSource> _BuildContentSource(bvector<SelectClass> const&, ContentSpecificationCR);
+    ECPRESENTATION_EXPORT virtual bvector<ContentSource> _BuildContentSource(bvector<RelatedClassPath> const&, ContentSpecificationCR);
+    bvector<ContentSource> CreateContentSources(SelectClassWithExcludes const& selectClass, ECClassCP propertiesSourceClass, ContentSpecificationCR) const;
+    bvector<ContentSource> CreateContentSources(RelatedClassPath const& pathFromInputToSelectClass, ContentSpecificationCR) const;
+    static int GetDefaultContentFlags(Utf8CP displayType, ContentSpecificationCR spec);
 
 protected:
     ContentSpecificationsHandler(Context& context) : m_context(context), m_customizationRuleInfos(nullptr) {}

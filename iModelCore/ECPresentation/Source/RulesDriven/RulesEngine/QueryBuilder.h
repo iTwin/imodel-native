@@ -145,20 +145,18 @@ struct ContentDescriptorBuilder
     struct Context : ContentSpecificationsHandler::Context
     {
     private:
-        int m_contentFlags;
         IPropertyCategorySupplierCR m_categorySupplier;
         IECPropertyFormatter const* m_propertyFormatter;
         ILocalizationProvider const* m_localizationProvider;
         INavNodeKeysContainerCPtr m_inputKeys;
         SelectionInfo const* m_selectionInfo;
     public:
-        Context(ECSchemaHelper const& helper, IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, Utf8CP preferredDisplayType, int contentFlags,
+        Context(ECSchemaHelper const& helper, IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, Utf8CP preferredDisplayType,
             IPropertyCategorySupplierCR categorySupplier, IECPropertyFormatter const* propertyFormatter, ILocalizationProvider const* localizationProvider, Utf8String locale,
             INavNodeKeysContainerCR input, SelectionInfo const* selection) 
-            : ContentSpecificationsHandler::Context(helper, connections, connection, ruleset, locale, preferredDisplayType), m_contentFlags(contentFlags), m_categorySupplier(categorySupplier),
+            : ContentSpecificationsHandler::Context(helper, connections, connection, ruleset, locale, preferredDisplayType), m_categorySupplier(categorySupplier),
             m_propertyFormatter(propertyFormatter), m_localizationProvider(localizationProvider), m_inputKeys(&input), m_selectionInfo(selection)
             {}
-        int GetContentFlags() const {return m_contentFlags;}
         IPropertyCategorySupplierCR GetCategorySupplier() const {return m_categorySupplier;}
         IECPropertyFormatter const* GetPropertyFormatter() const {return m_propertyFormatter;}
         ILocalizationProvider const* GetLocalizationProvider() const {return m_localizationProvider;}

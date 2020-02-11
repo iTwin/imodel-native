@@ -322,7 +322,7 @@ ComplexNavigationQueryPtr RulesEngineTestHelpers::CreateECInstanceNodesQueryForC
 +---------------+---------------+---------------+---------------+---------------+------*/
 NavigationQueryPtr RulesEngineTestHelpers::CreateECInstanceNodesQueryForClasses(ECClassSet const& classes, Utf8CP alias, ComplexQueryHandler handler)
     {
-    NavigationQueryPtr q;
+    UnionNavigationQueryPtr q = UnionNavigationQuery::Create(bvector<NavigationQueryPtr>());
     for (auto pair: classes)
         {
         ComplexNavigationQueryPtr query = CreateECInstanceNodesQueryForClass(*pair.first, pair.second, alias);
@@ -330,11 +330,10 @@ NavigationQueryPtr RulesEngineTestHelpers::CreateECInstanceNodesQueryForClasses(
             handler(*query);
 
         query = CreateMultiECInstanceNodesQuery(*pair.first, *query);
+        if (1 == classes.size())
+            return query;
 
-        if (q.IsNull())
-            q = query;
-        else
-            q = UnionNavigationQuery::Create(*q, *query);
+        q->AddQuery(*query);
         }
     return q;
     }
@@ -344,7 +343,7 @@ NavigationQueryPtr RulesEngineTestHelpers::CreateECInstanceNodesQueryForClasses(
 +---------------+---------------+---------------+---------------+---------------+------*/
 NavigationQueryPtr RulesEngineTestHelpers::CreateLabelGroupingNodesQueryForClasses(ECClassSet const& classes, Utf8CP alias, ComplexQueryHandler handler)
     {
-    NavigationQueryPtr q;
+    UnionNavigationQueryPtr q = UnionNavigationQuery::Create(bvector<NavigationQueryPtr>());
     for (auto pair : classes)
         {
         RefCountedPtr<DisplayLabelGroupingNodesQueryContract> contract = DisplayLabelGroupingNodesQueryContract::Create(pair.first);
@@ -352,10 +351,10 @@ NavigationQueryPtr RulesEngineTestHelpers::CreateLabelGroupingNodesQueryForClass
         if (handler)
             handler(*query);
 
-        if (q.IsNull())
-            q = query;
-        else
-            q = UnionNavigationQuery::Create(*q, *query);
+        if (1 == classes.size())
+            return query;
+
+        q->AddQuery(*query);
         }
     return q;
     }
@@ -368,17 +367,17 @@ NavigationQueryPtr RulesEngineTestHelpers::CreateQuery(NavigationQueryContract c
     if (classes.empty())
         return nullptr;
 
-    NavigationQueryPtr query;
+    UnionNavigationQueryPtr query = UnionNavigationQuery::Create(bvector<NavigationQueryPtr>());
     for (ECClassCP from : classes)
         {
         ComplexNavigationQueryPtr thisQuery = &ComplexNavigationQuery::Create()->SelectContract(contract, alias).From(*from, polymorphic, alias);
         if (handler)
             handler(*thisQuery);
 
-        if (query.IsNull())
-            query = thisQuery;
-        else
-            query = UnionNavigationQuery::Create(*query, *thisQuery);
+        if (1 == classes.size())
+            return thisQuery;
+
+        query->AddQuery(*thisQuery);
         }
     return query;
     }
@@ -391,17 +390,17 @@ NavigationQueryPtr RulesEngineTestHelpers::CreateQuery(NavigationQueryContract c
     if (classes.empty())
         return nullptr;
 
-    NavigationQueryPtr query;
+    UnionNavigationQueryPtr query = UnionNavigationQuery::Create(bvector<NavigationQueryPtr>());
     for (ECClassCP from : classes)
         {
         ComplexNavigationQueryPtr thisQuery = &ComplexNavigationQuery::Create()->SelectContract(contract, alias).From(*from, polymorphic, alias);
         if (handler)
             handler(*thisQuery);
 
-        if (query.IsNull())
-            query = thisQuery;
-        else
-            query = UnionNavigationQuery::Create(*query, *thisQuery);
+        if (1 == classes.size())
+            return thisQuery;
+
+        query->AddQuery(*thisQuery);
         }
     return query;
     }

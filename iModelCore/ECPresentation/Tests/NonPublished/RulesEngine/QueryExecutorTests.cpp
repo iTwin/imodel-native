@@ -273,7 +273,7 @@ TEST_F (NavigationQueryExecutorTests, GetDisplayLabelGroupingNodes)
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->SelectAll();
-    query->From(*UnionNavigationQuery::Create(*gadgetInstancesQuery, *widgetInstancesQuery));
+    query->From(*UnionNavigationQuery::Create({gadgetInstancesQuery, widgetInstancesQuery}));
     query->GroupByContract(*DisplayLabelGroupingNodesQueryContract::Create(nullptr));
     query->OrderBy(Utf8String("[").append(ECClassGroupingNodesQueryContract::DisplayLabelFieldName).append("]").c_str());
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::DisplayLabelGroupingNodes);
@@ -1260,7 +1260,7 @@ TEST_F(NavigationQueryExecutorTests, SetsGroupedInstanceKeysForBaseClassGrouping
 
     ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
     grouped->SelectAll();
-    grouped->From(*UnionNavigationQuery::Create(*nested1, *nested2));
+    grouped->From(*UnionNavigationQuery::Create({nested1, nested2}));
     grouped->GroupByContract(*contract);
 
     ComplexNavigationQueryPtr sorted = ComplexNavigationQuery::Create();
@@ -1373,7 +1373,7 @@ TEST_F(NavigationQueryExecutorTests, SetsRelatedInstanceKeysForECInstanceNodes)
     ComplexNavigationQueryPtr gadgetsQuery = RulesEngineTestHelpers::CreateECInstanceNodesQueryForClass(*m_gadgetClass, true, "this", {gadgetRelatedClasses});
     gadgetsQuery->Join(RelatedClass(*m_gadgetClass, SelectClass(*m_widgetClass, true), *m_widgetHasGadgetsClass, false, "w", "r", false));
     ComplexNavigationQueryPtr sprocketsQuery = RulesEngineTestHelpers::CreateECInstanceNodesQueryForClass(*m_sprocketClass, true, "this");
-    UnionNavigationQueryPtr unionQuery = UnionNavigationQuery::Create(*gadgetsQuery, *sprocketsQuery);
+    UnionNavigationQueryPtr unionQuery = UnionNavigationQuery::Create({gadgetsQuery, sprocketsQuery});
     unionQuery->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &unionQuery->GetExtendedData());
@@ -1426,7 +1426,7 @@ TEST_F(ContentQueryExecutorTests, HandlesUnionSelectionFromClassWithPointPropert
     q2->SelectContract(*ContentQueryContract::Create(2, *descriptor, classE, *q2), "e");
     q2->From(*classE, false, "e");
 
-    UnionContentQueryPtr query = UnionContentQuery::Create(*q1, *q2);
+    UnionContentQueryPtr query = UnionContentQuery::Create({q1, q2});
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     ContentQueryExecutor executor(*m_connection, *query);
@@ -1535,7 +1535,7 @@ TEST_F(ContentQueryExecutorTests, HandlesResultsMergingFromMultipleClasses)
 
     ComplexContentQueryPtr query = ComplexContentQuery::Create();
     query->SelectContract(*ContentQueryContract::Create(0, *outerDescriptor, nullptr, *query));
-    query->From(*UnionContentQuery::Create(*q1, *q2));
+    query->From(*UnionContentQuery::Create({q1, q2}));
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     ContentQueryExecutor executor(*m_connection, *query);
@@ -1754,7 +1754,7 @@ TEST_F(ContentQueryExecutorTests, SelectsRelatedPropertiesFromOnlySingleClassWhe
     query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &classF, *query2), "this");
     query2->From(classF, false, "this");
 
-    UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
+    UnionContentQueryPtr query = UnionContentQuery::Create({query1, query2});
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     ContentQueryExecutor executor(*m_connection, *query);
@@ -1985,7 +1985,7 @@ TEST_F(QueryExecutorTests, GetDistinctStringValuesFromMergedECPropertyField)
     query2->From(*nestedQuery2);
     query2->GroupByContract(*contract2);
 
-    UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
+    UnionContentQueryPtr query = UnionContentQuery::Create({query1, query2});
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData(), m_propertyFormatter);
     ContentQueryExecutor executor(*m_connection, *query);

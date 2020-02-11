@@ -278,7 +278,7 @@ private:
 
         return false;
         }
-        
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                07/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -516,16 +516,19 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                10/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    bvector<ContentSource> _BuildContentSource(bvector<RelatedClassPath> const& paths) override
+    bvector<ContentSource> _BuildContentSource(bvector<RelatedClassPath> const& paths, ContentSpecificationCR spec) override
         {
         if (m_isRecursiveSpecification)
             {
-            // ContentSpecificationsHandler::_OnBeforeAppendClassPaths splits paths into
+            // ContentSpecificationsHandler::_BuildContentSource splits paths into
             // derived paths based on content modifiers. Don't do that for recursive selects.
-            return ContainerHelpers::TransformContainer<bvector<ContentSource>>(paths, std::bind(&ContentDescriptorBuilderImpl::CreateContentSource, this, std::placeholders::_1));
+            bvector<ContentSource> sources;
+            for (RelatedClassPathCR path : paths)
+                ContainerHelpers::Push(sources, CreateContentSources(path, spec));
+            return sources;
             }
 
-        return ContentSpecificationsHandler::_BuildContentSource(paths);
+        return ContentSpecificationsHandler::_BuildContentSource(paths, spec);
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -549,11 +552,9 @@ public:
         {
         RulesDrivenECPresentationManager::ContentOptions options(GetContext().GetRuleset().GetRuleSetId(), GetContext().GetLocale());
         m_descriptor = ContentDescriptor::Create(GetContext().GetConnection(), options.GetJson(), GetContext().GetInputKeys(), GetContext().GetPreferredDisplayType());
-        m_descriptor->SetContentFlags(context.GetContentFlags());
+        m_descriptor->SetContentFlags(specification ? _GetContentFlags(*specification) : GetContext().GetContentFlagsCalculator() ? context.GetContentFlagsCalculator()(0) : 0);
         if (nullptr != GetContext().GetSelectionInfo())
             m_descriptor->SetSelectionInfo(*GetContext().GetSelectionInfo());
-        if (nullptr != m_specification)
-            QueryBuilderHelpers::ApplyDefaultContentFlags(*m_descriptor, GetContext().GetPreferredDisplayType(), *m_specification);
 
         if (nullptr == m_descriptor->GetDisplayLabelField())
             {

@@ -928,28 +928,53 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DEPRECATED_ContentRelatedIn
 /*---------------------------------------------------------------------------------**//**
 // @betest                                       Grigas.Petraitis               06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, DEPRECATED_ContentRelatedInstances_ReturnsRelatedInstancesPolymorphically)
+DEFINE_SCHEMA(ContentRelatedInstances_ReturnsRelatedInstancesPolymorphically, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="C">
+        <BaseClass>B</BaseClass>
+        <ECProperty propertyName="PropC" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="D">
+        <BaseClass>B</BaseClass>
+        <ECProperty propertyName="PropD" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="A_Has_B" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_ReturnsRelatedInstancesPolymorphically)
     {
-    // insert some widget & gadget instances
-    ECRelationshipClassCR relationshipClassAHasBAndC = *m_schema->GetClassCP("ClassAHasBAndC")->GetRelationshipClassCP();
-    ECEntityClassCP classA = GetClass("RulesEngineTest", "ClassA")->GetEntityClassCP();
-    ECEntityClassCP classB = GetClass("RulesEngineTest", "ClassB")->GetEntityClassCP();
-    ECEntityClassCP classC = GetClass("RulesEngineTest", "ClassC")->GetEntityClassCP();
-    IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) { instance.SetValue("MyID", ECValue("A")); });
-    IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance) { instance.SetValue("MyID", ECValue("B")); });
-    IECInstancePtr instanceC = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance) { instance.SetValue("MyID", ECValue("C")); });
-    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), relationshipClassAHasBAndC, *instanceA, *instanceB);
-    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), relationshipClassAHasBAndC, *instanceA, *instanceC);
+    ECClassCP classA = GetClass("A");
+    ECClassCP classC = GetClass("C");
+    ECRelationshipClassCP rel = GetClass("A_Has_B")->GetRelationshipClassCP();
+
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr c = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance) { instance.SetValue("PropC", ECValue("C")); });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *a, *c);
 
     // set up input
-    KeySetPtr input = KeySet::Create(*instanceA);
+    KeySetPtr input = KeySet::Create(*a);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Forward, "RulesEngineTest:ClassAHasBAndC", "RulesEngineTest:BaseOfBAndC"));
+    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, "", {new RepeatableRelationshipPathSpecification({new RepeatableRelationshipStepSpecification(
+        rel->GetFullName(), RequiredRelationDirection_Forward
+    )})}));
     rules->AddPresentationRule(*rule);
 
     // options
@@ -958,7 +983,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DEPRECATED_ContentRelatedIn
     // validate descriptor
     ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
-    EXPECT_EQ(2, descriptor->GetVisibleFields().size());
+    ASSERT_EQ(1, descriptor->GetVisibleFields().size());
+    EXPECT_STREQ("PropC", descriptor->GetVisibleFields().front()->AsPropertiesField()->GetProperties().front().GetProperty().GetName().c_str());
 
     // request for content
     ContentCPtr content = m_manager->GetContent(*descriptor, PageOptions()).get();
@@ -966,21 +992,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DEPRECATED_ContentRelatedIn
 
     // validate content set
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
-    ASSERT_EQ(2, contentSet.GetSize());
-
-    BeInt64Id instanceAId = ECInstanceId::FromString(instanceA->GetInstanceId().c_str());
-
-    rapidjson::Document item1 = contentSet.Get(0)->AsJson();
-    RapidJsonValueCR values1 = item1["Values"];
-    EXPECT_STREQ("B", values1[descriptor->GetVisibleFields()[0]->GetName().c_str()].GetString());
-    EXPECT_EQ(instanceAId.GetValueUnchecked(), values1[descriptor->GetVisibleFields()[1]->GetName().c_str()].GetInt64());
-
-    rapidjson::Document item2 = contentSet.Get(1)->AsJson();
-    RapidJsonValueCR values2 = item2["Values"];
-    EXPECT_STREQ("C", values2[descriptor->GetVisibleFields()[0]->GetName().c_str()].GetString());
-    EXPECT_EQ(instanceAId.GetValueUnchecked(), values2[descriptor->GetVisibleFields()[1]->GetName().c_str()].GetInt64());
+    ASSERT_EQ(1, contentSet.GetSize());
+    RulesEngineTestHelpers::ValidateContentSet({c.get()}, *content);
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 // @betest                                       Pranciskus.Ambrazas             07/2016
@@ -1748,7 +1762,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Ret
     IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
     IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipAB, *a, *b);
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -4629,7 +4643,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     // validate descriptor
     ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
-    EXPECT_EQ(5, descriptor->GetVisibleFields().size());
+    EXPECT_EQ(6, descriptor->GetVisibleFields().size());
 
     // request for content
     ContentCPtr content = m_manager->GetContent(*descriptor, PageOptions()).get();
@@ -4643,27 +4657,30 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
 
     rapidjson::Document jsonDoc = contentSet.Get(0)->AsJson();
     RapidJsonValueCR jsonValues = jsonDoc["Values"];
-    EXPECT_TRUE(jsonValues["CalculatedProperty_0"].IsNull());
-    EXPECT_TRUE(jsonValues[FIELD_NAME(classE, "IntProperty")].IsNull());
-    EXPECT_TRUE(jsonValues[FIELD_NAME(classF, "PropertyF")].IsNull());
-    EXPECT_TRUE(jsonValues[FIELD_NAME(classE, "LongProperty")].IsNull());
     EXPECT_EQ(instanceDId.GetValueUnchecked(), jsonValues[FIELD_NAME(classE, "ClassD")].GetInt64());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(classE, "IntProperty")].IsNull());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(classE, "LongProperty")].IsNull());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(classF, "PropertyF")].IsNull());
+    EXPECT_TRUE(jsonValues["CalculatedProperty_0"].IsNull());
+    EXPECT_TRUE(jsonValues[FIELD_NAME(classG, "D")].IsNull());
 
-    rapidjson::Document jsonDoc2 = contentSet.Get(1)->AsJson();
-    RapidJsonValueCR jsonValues2 = jsonDoc2["Values"];
-    EXPECT_TRUE(jsonValues2["CalculatedProperty_0"].IsNull());
-    EXPECT_TRUE(jsonValues2[FIELD_NAME(classE, "IntProperty")].IsNull());
-    EXPECT_TRUE(jsonValues2[FIELD_NAME(classF, "PropertyF")].IsNull());
-    EXPECT_TRUE(jsonValues2[FIELD_NAME(classE, "LongProperty")].IsNull());
-    EXPECT_EQ(instanceDId.GetValueUnchecked(), jsonValues2[FIELD_NAME(classE, "ClassD")].GetInt64());
-
-    rapidjson::Document jsonDoc1 = contentSet.Get(2)->AsJson();
+    rapidjson::Document jsonDoc1 = contentSet.Get(1)->AsJson();
     RapidJsonValueCR jsonValues1 = jsonDoc1["Values"];
-    EXPECT_STREQ("1000", jsonValues1["CalculatedProperty_0"].GetString());
-    EXPECT_TRUE(jsonValues1[FIELD_NAME(classE, "IntProperty")].IsNull());
-    EXPECT_EQ(1000, jsonValues1[FIELD_NAME(classF, "PropertyF")].GetInt());
-    EXPECT_TRUE(jsonValues1[FIELD_NAME(classE, "LongProperty")].IsNull());
     EXPECT_EQ(instanceDId.GetValueUnchecked(), jsonValues1[FIELD_NAME(classE, "ClassD")].GetInt64());
+    EXPECT_TRUE(jsonValues1[FIELD_NAME(classE, "IntProperty")].IsNull());
+    EXPECT_TRUE(jsonValues1[FIELD_NAME(classE, "LongProperty")].IsNull());
+    EXPECT_EQ(1000, jsonValues1[FIELD_NAME(classF, "PropertyF")].GetInt());
+    EXPECT_STREQ("1000", jsonValues1["CalculatedProperty_0"].GetString());
+    EXPECT_TRUE(jsonValues1[FIELD_NAME(classG, "D")].IsNull());
+
+    rapidjson::Document jsonDoc2 = contentSet.Get(2)->AsJson();
+    RapidJsonValueCR jsonValues2 = jsonDoc2["Values"];
+    EXPECT_EQ(instanceDId.GetValueUnchecked(), jsonValues2[FIELD_NAME(classE, "ClassD")].GetInt64());
+    EXPECT_TRUE(jsonValues2[FIELD_NAME(classE, "IntProperty")].IsNull());
+    EXPECT_TRUE(jsonValues2[FIELD_NAME(classE, "LongProperty")].IsNull());
+    EXPECT_TRUE(jsonValues2[FIELD_NAME(classF, "PropertyF")].IsNull());
+    EXPECT_TRUE(jsonValues2["CalculatedProperty_0"].IsNull());
+    EXPECT_TRUE(jsonValues2[FIELD_NAME(classG, "D")].IsNull());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -16637,9 +16654,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesContentForRelatedBas
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
     ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(*inputInstance), nullptr, options.GetJson()).get();
 
-    ASSERT_EQ(2, descriptor->GetSelectClasses().size());
-    EXPECT_EQ(baseClass->GetId(), descriptor->GetSelectClasses()[0].GetSelectClass().GetClass().GetId());
-    EXPECT_EQ(derivedClasses[0]->GetId(), descriptor->GetSelectClasses()[1].GetSelectClass().GetClass().GetId());
+    ASSERT_EQ(1, descriptor->GetSelectClasses().size());
+    EXPECT_EQ(derivedClasses[0]->GetId(), descriptor->GetSelectClasses()[0].GetSelectClass().GetClass().GetId());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
     ContentCPtr content = m_manager->GetContent(*descriptor, PageOptions()).get();

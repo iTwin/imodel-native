@@ -1450,9 +1450,25 @@ bool UnionPresentationQuery<TBase>::_IsEqual(TBase const& otherBase) const
     if (nullptr == other)
         return false;
 
-    return m_orderByClause.Equals(other->m_orderByClause) && AreEqual(m_limit, other->m_limit) && AreEqual(m_offset, other->m_offset)
-        && (m_first->IsEqual(*other->m_first) && m_second->IsEqual(*other->m_second)
-        || m_first->IsEqual(*other->m_second) && m_second->IsEqual(*other->m_first));
+    if (m_queries.size() != other->m_queries.size())
+        return false;
+
+    for (RefCountedPtr<TBase> const& query : m_queries)
+        {
+        bool found = false;
+        for (RefCountedPtr<TBase> const& otherQuery : other->m_queries)
+            {
+            if (query->IsEqual(*otherQuery))
+                {
+                found = true;
+                break;
+                }
+            }
+        if (!found)
+            return false;
+        }
+
+    return m_orderByClause.Equals(other->m_orderByClause) && AreEqual(m_limit, other->m_limit) && AreEqual(m_offset, other->m_offset);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1468,9 +1484,12 @@ Utf8String UnionPresentationQuery<TBase>::_ToString() const
         clause.append("SELECT * FROM (");
         }
 
-    clause.append(m_first->ToString());
-    clause.append(" UNION ALL ");
-    clause.append(m_second->ToString());
+    for (size_t i = 0; i < m_queries.size(); ++i)
+        {
+        if (i > 0)
+            clause.append(" UNION ALL ");
+        clause.append(m_queries[i]->ToString());
+        }
 
     if (!m_orderByClause.empty())
         clause.append(") ORDER BY ").append(m_orderByClause);
@@ -1489,23 +1508,23 @@ Utf8String UnionPresentationQuery<TBase>::_ToString() const
 // @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename TBase>
-void UnionPresentationQuery<TBase>::Init()
+void UnionPresentationQuery<TBase>::Init(TBase* initQuery)
     {
-    TBase::GetResultParametersR().MergeWith(m_first->GetResultParameters());
-    TBase::GetResultParametersR().MergeWith(m_second->GetResultParameters());
-
-    m_first->GetResultParametersR() = ResultParameters();
-    m_second->GetResultParametersR() = ResultParameters();
-
-    if (nullptr != m_first->AsComplexQuery())
+    if (nullptr == initQuery)
         {
-        m_orderByClause = m_first->AsComplexQuery()->GetClause(CLAUSE_OrderBy);
-        m_first->AsComplexQuery()->OrderBy("");
+        for (RefCountedPtr<TBase>& query : m_queries)
+            Init(query.get());
+        return;
         }
-    if (nullptr != m_second->AsComplexQuery())
+
+    
+    TBase::GetResultParametersR().MergeWith(initQuery->GetResultParameters());
+    initQuery->GetResultParametersR() = ResultParameters();
+
+    if (nullptr != initQuery->AsComplexQuery())
         {
-        m_orderByClause = m_second->AsComplexQuery()->GetClause(CLAUSE_OrderBy);
-        m_second->AsComplexQuery()->OrderBy("");
+        m_orderByClause = initQuery->AsComplexQuery()->GetClause(CLAUSE_OrderBy);
+        initQuery->AsComplexQuery()->OrderBy("");
         }
     }
 
@@ -1540,14 +1559,12 @@ UnionPresentationQuery<TBase>& UnionPresentationQuery<TBase>::Limit(uint64_t lim
 template<typename TBase>
 typename TBase::Contract const* UnionPresentationQuery<TBase>::_GetContract(uint64_t contractId) const
     {
-    Contract const* contract = m_first->GetContract(contractId);
-    if (nullptr != contract)
-        return contract;
-
-    contract = m_second->GetContract(contractId);
-    if (nullptr != contract)
-        return contract;
-
+    for (RefCountedPtr<TBase> const& query : m_queries)
+        {
+        Contract const* contract = query->GetContract(contractId);
+        if (nullptr != contract)
+            return contract;
+        }
     return nullptr;
     }
 
@@ -1557,14 +1574,12 @@ typename TBase::Contract const* UnionPresentationQuery<TBase>::_GetContract(uint
 template<typename TBase>
 typename TBase::Contract const* UnionPresentationQuery<TBase>::_GetGroupingContract() const
     {
-    Contract const* contract = m_first->GetGroupingContract();
-    if (nullptr != contract)
-        return contract;
-
-    contract = m_second->GetGroupingContract();
-    if (nullptr != contract)
-        return contract;
-
+    for (RefCountedPtr<TBase> const& query : m_queries)
+        {
+        Contract const* contract = query->GetGroupingContract();
+        if (nullptr != contract)
+            return contract;
+        }
     return nullptr;
     }
 
@@ -1574,8 +1589,8 @@ typename TBase::Contract const* UnionPresentationQuery<TBase>::_GetGroupingContr
 template<typename TBase>
 void UnionPresentationQuery<TBase>::_OnIsOuterQueryValueChanged()
     {
-    m_first->SetIsOuterQuery(TBase::IsOuterQuery());
-    m_second->SetIsOuterQuery(TBase::IsOuterQuery());
+    for (RefCountedPtr<TBase>& query : m_queries)
+        query->SetIsOuterQuery(TBase::IsOuterQuery());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1584,11 +1599,9 @@ void UnionPresentationQuery<TBase>::_OnIsOuterQueryValueChanged()
 template<typename TBase>
 bvector<Utf8CP> UnionPresentationQuery<TBase>::_GetSelectAliases(int flags) const
     {
-    bvector<Utf8CP> first = m_first->GetSelectAliases(flags);
-    bvector<Utf8CP> second = m_second->GetSelectAliases(flags);
     bvector<Utf8CP> list;
-    list.insert(list.end(), first.begin(), first.end());
-    list.insert(list.end(), second.begin(), second.end());
+    for (RefCountedPtr<TBase> const& query : m_queries)
+        ContainerHelpers::Push(list, query->GetSelectAliases(flags));
     return list;
     }
 
@@ -1598,12 +1611,9 @@ bvector<Utf8CP> UnionPresentationQuery<TBase>::_GetSelectAliases(int flags) cons
 template<typename TBase>
 BoundQueryValuesList UnionPresentationQuery<TBase>::_GetBoundValues() const
     {
-    BoundQueryValuesList lhsValues = m_first->GetBoundValues();
-    BoundQueryValuesList rhsValues = m_second->GetBoundValues();
     BoundQueryValuesList values;
-    values.reserve(lhsValues.size() + rhsValues.size() + 2);
-    values.insert(values.end(), lhsValues.begin(), lhsValues.end());
-    values.insert(values.end(), rhsValues.begin(), rhsValues.end());
+    for (RefCountedPtr<TBase> const& query : m_queries)
+        ContainerHelpers::Push(values, query->GetBoundValues());
     if (nullptr != m_limit)
         values.push_back(m_limit);
     if (nullptr != m_offset)

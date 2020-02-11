@@ -205,7 +205,7 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                10/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    bvector<ContentSource> _BuildContentSource(bvector<SelectClass> const& selectClasses) override
+    bvector<ContentSource> _BuildContentSource(bvector<SelectClass> const& selectClasses, ContentSpecificationCR spec) override
         {
         bvector<SelectClass> polymorphicSelectClasses = ContainerHelpers::TransformContainer<bvector<SelectClass>>(selectClasses, [](SelectClass const& sc)
             {
@@ -213,7 +213,7 @@ protected:
             return SelectClass(sc.GetClass(), true);
             });
 
-        bvector<ContentSource> result = ContentSpecificationsHandler::_BuildContentSource(polymorphicSelectClasses);
+        bvector<ContentSource> result = ContentSpecificationsHandler::_BuildContentSource(polymorphicSelectClasses, spec);
 
         bvector<ECClassCP> navigationPropertyClasses;
         for (SelectClass const& selectClass : selectClasses)

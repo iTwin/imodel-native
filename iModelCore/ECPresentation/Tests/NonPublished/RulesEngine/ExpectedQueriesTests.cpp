@@ -12,6 +12,11 @@
 
 DEFINE_SCHEMA_REGISTRY(ExpectedQueries)
 
+#define LOGD(...) NativeLogging::LoggingManager::GetLogger("ExpectedQueriesTest")->debugv(__VA_ARGS__)
+#define LOGI(...) NativeLogging::LoggingManager::GetLogger("ExpectedQueriesTest")->infov(__VA_ARGS__)
+#define LOGW(...) NativeLogging::LoggingManager::GetLogger("ExpectedQueriesTest")->warningv(__VA_ARGS__)
+#define LOGE(...) NativeLogging::LoggingManager::GetLogger("ExpectedQueriesTest")->errorv(__VA_ARGS__)
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -30,6 +35,7 @@ void ExpectedQueries::RegisterQuery(Utf8CP name, NavigationQuery const& query)
     {
     BeAssert(m_navigationQueries.end() == m_navigationQueries.find(name));
     m_navigationQueries[name] = &query;
+    LOGI("Registered: '%s'", name);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
@@ -38,6 +44,7 @@ void ExpectedQueries::RegisterQuery(Utf8CP name, ContentQuery const& query)
     {
     BeAssert(m_contentQueries.end() == m_contentQueries.find(name));
     m_contentQueries[name] = &query;
+    LOGI("Registered: '%s'", name);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
@@ -134,7 +141,9 @@ bvector<ECClassCP> ExpectedQueries::GetECClasses(Utf8CP schemaName)
 ContentDescriptorPtr ExpectedQueries::GetEmptyContentDescriptor(Utf8CP displayType = ContentDisplayType::Undefined) const
     {
     RulesDrivenECPresentationManager::ContentOptions options("", "test locale");
-    return ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create(), displayType);
+    ContentDescriptorPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create(), displayType);
+    descriptor->AddContentFlag(ContentFlags::SkipInstancesCheck);
+    return descriptor;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -357,7 +366,7 @@ void ExpectedQueries::RegisterExpectedQueries()
     // AllInstanceNodes_GroupByClass_ChildrenQuery
         {
         NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(&b1_Class1A);
-        ComplexNavigationQueryPtr expected = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(ret_Gadget, 
+        ComplexNavigationQueryPtr expected = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(ret_Gadget,
             ComplexNavigationQuery::Create()->SelectContract(*contract, "this").From(b1_Class1A, false, "this"));
         expected->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
 
@@ -468,9 +477,10 @@ void ExpectedQueries::RegisterExpectedQueries()
         class2Query->SelectContract(*class2Contract, "this");
         class2Query->From(class2, true, "this");
 
-        UnionNavigationQueryPtr sorted = UnionNavigationQuery::Create(
-            *RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(class1, *class1Query),
-            *RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(class2, *class2Query));
+        UnionNavigationQueryPtr sorted = UnionNavigationQuery::Create({
+            RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(class1, *class1Query),
+            RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(class2, *class2Query)
+            });
         sorted->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
 
         RegisterQuery(queryName, *sorted);
@@ -480,19 +490,19 @@ void ExpectedQueries::RegisterExpectedQueries()
         {
         NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(&ret_Gadget);
 
-        ComplexNavigationQueryPtr nestedQuery1 = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(ret_Gadget, 
+        ComplexNavigationQueryPtr nestedQuery1 = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(ret_Gadget,
             ComplexNavigationQuery::Create()->SelectContract(*contract, "this")
             .From(ret_Gadget, true, "this")
             .Join(RelatedClass(ret_Gadget, SelectClass(ret_Widget, true), ret_WidgetHasGadget, false, "related", "rel_RET_WidgetHasGadget_0", false))
             .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))}));
 
-        ComplexNavigationQueryPtr nestedQuery2 = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(ret_Gadget, 
+        ComplexNavigationQueryPtr nestedQuery2 = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(ret_Gadget,
             ComplexNavigationQuery::Create()->SelectContract(*contract, "this")
             .From(ret_Gadget, true, "this")
             .Join(RelatedClass(ret_Gadget, SelectClass(ret_Widget, true), ret_WidgetHasGadgets, false, "related", "rel_RET_WidgetHasGadgets_0", false))
             .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))}));
 
-        ComplexNavigationQueryPtr nestedQuery3 = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(ret_Gadget, 
+        ComplexNavigationQueryPtr nestedQuery3 = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(ret_Gadget,
             ComplexNavigationQuery::Create()->SelectContract(*contract, "this")
             .From(ret_Gadget, true, "this")
             .Join(RelatedClass(ret_Gadget, SelectClass(ret_Widget, true), ret_WidgetsHaveGadgets, false, "related", "rel_RET_WidgetsHaveGadgets_0", false))
@@ -504,7 +514,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             .Join(RelatedClass(ret_Gadget, SelectClass(ret_Widget, true), ret_WidgetsHaveGadgets2, false, "related", "rel_RET_WidgetsHaveGadgets2_0", false))
             .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))}));
 
-        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*nestedQuery1, *nestedQuery2), *nestedQuery3), *nestedQuery4);
+        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create({nestedQuery2, nestedQuery1, nestedQuery3, nestedQuery4});
         expected->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
 
         expected->GetResultParametersR().GetNavNodeExtendedDataR().SetRelationshipDirection(ECRelatedInstanceDirection::Forward);
@@ -540,7 +550,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             .From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, SelectClass(ret_Gadget, true), ret_WidgetsHaveGadgets2, true, "related", "rel_RET_WidgetsHaveGadgets2_0", false))
             .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))}));
 
-        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*nestedQuery1, *nestedQuery2), *nestedQuery3), *nestedQuery4);
+        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create({nestedQuery2, nestedQuery1, nestedQuery3, nestedQuery4});
         expected->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
 
         expected->GetResultParametersR().GetNavNodeExtendedDataR().SetRelationshipDirection(ECRelatedInstanceDirection::Backward);
@@ -584,7 +594,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             .From(ret_Sprocket, true, "this").Join(RelatedClass(ret_Sprocket, SelectClass(ret_Gadget, true), ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", false))
             .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))}));
 
-        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*nestedQuery1, *nestedQuery2), *nestedQuery3), *nestedQuery4), *nestedQuery5), *nestedQuery6);
+        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create({nestedQuery1, nestedQuery2, nestedQuery3, nestedQuery4, nestedQuery5, nestedQuery6});
         expected->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
 
         expected->GetResultParametersR().GetNavNodeExtendedDataR().SetRelationshipDirection(ECRelatedInstanceDirection::Forward);
@@ -626,7 +636,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             .Join(RelatedClass(ret_Gadget, SelectClass(ret_Widget, true), ret_WidgetsHaveGadgets2, false, "related", "rel_RET_WidgetsHaveGadgets2_0", false))
             .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))}));
 
-        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*nestedQuery1, *nestedQuery2), *nestedQuery3), *nestedQuery4);
+        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create({nestedQuery2, nestedQuery1, nestedQuery3, nestedQuery4});
         expected->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
 
         expected->GetResultParametersR().GetNavNodeExtendedDataR().SetRelationshipDirection(ECRelatedInstanceDirection::Forward);
@@ -670,7 +680,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             .From(ret_Sprocket, true, "this").Join(RelatedClass(ret_Sprocket, SelectClass(ret_Gadget, true), ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", false))
             .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))}));
 
-        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*nestedQuery1, *nestedQuery2), *nestedQuery3), *nestedQuery4), *nestedQuery5), *nestedQuery6);
+        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create({nestedQuery1, nestedQuery2, nestedQuery3, nestedQuery4, nestedQuery5, nestedQuery6});
         expected->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
 
         expected->GetResultParametersR().GetNavNodeExtendedDataR().SetRelationshipDirection(ECRelatedInstanceDirection::Forward);
@@ -737,7 +747,7 @@ void ExpectedQueries::RegisterExpectedQueries()
                 .Join(relationshipPath14)
                 .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))}))
             .GroupByContract(*contract14));
-        
+
         NavigationQueryContractPtr contract21 = ECInstanceNodesQueryContract::Create(&ret_Sprocket);
         RelatedClassPath relationshipPath21;
         relationshipPath21.push_back(RelatedClass(ret_Sprocket, SelectClass(ret_Gadget, true), ret_GadgetHasSprockets, false, TABLE_ALIAS("target", ret_Gadget, 0), "rel_RET_GadgetHasSprockets_0", false));
@@ -763,7 +773,7 @@ void ExpectedQueries::RegisterExpectedQueries()
                 .Join(relationshipPath22)
                 .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))}))
             .GroupByContract(*contract22));
-        
+
         NavigationQueryContractPtr contract23 = ECInstanceNodesQueryContract::Create(&ret_Sprocket);
         RelatedClassPath relationshipPath23;
         relationshipPath23.push_back(RelatedClass(ret_Sprocket, SelectClass(ret_Gadget, true), ret_GadgetHasSprockets, false, TABLE_ALIAS("target", ret_Gadget, 2), "rel_RET_GadgetHasSprockets_0", false));
@@ -776,7 +786,7 @@ void ExpectedQueries::RegisterExpectedQueries()
                 .Join(relationshipPath23)
                 .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))}))
             .GroupByContract(*contract23));
-        
+
         NavigationQueryContractPtr contract24 = ECInstanceNodesQueryContract::Create(&ret_Sprocket);
         RelatedClassPath relationshipPath24;
         relationshipPath24.push_back(RelatedClass(ret_Sprocket, SelectClass(ret_Gadget, true), ret_GadgetHasSprockets, false, TABLE_ALIAS("target", ret_Gadget, 3), "rel_RET_GadgetHasSprockets_0", false));
@@ -789,8 +799,8 @@ void ExpectedQueries::RegisterExpectedQueries()
                 .Join(relationshipPath24)
                 .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))}))
             .GroupByContract(*contract24));
-        
-        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*query11, *query12), *query13), *query14), *query21), *query22), *query23), *query24);
+
+        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create({query11, query12, query13, query14, query21, query22, query23, query24});
         expected->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
 
         expected->GetResultParametersR().GetNavNodeExtendedDataR().SetRelationshipDirection(ECRelatedInstanceDirection::Forward);
@@ -830,7 +840,7 @@ void ExpectedQueries::RegisterExpectedQueries()
                 .From(ret_Sprocket, true, "this")
                 .Join(relationshipPath2)
                 .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))}))
-            .GroupByContract(*contract2)); 
+            .GroupByContract(*contract2));
 
         RelatedClassPath relationshipPath3;
         relationshipPath3.push_back(RelatedClass(ret_Sprocket, SelectClass(ret_Gadget, true), ret_GadgetHasSprockets, false, TABLE_ALIAS("target", ret_Gadget, 2), "rel_RET_GadgetHasSprockets_0", false));
@@ -857,8 +867,8 @@ void ExpectedQueries::RegisterExpectedQueries()
                 .Join(relationshipPath4)
                 .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))}))
             .GroupByContract(*contract4));
-        
-        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*query1, *query2), *query3), *query4);
+
+        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create({query1, query2, query3, query4});
         expected->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
 
         expected->GetResultParametersR().GetNavNodeExtendedDataR().SetRelationshipDirection(ECRelatedInstanceDirection::Forward);
@@ -907,7 +917,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
         nested->SelectAll();
-        nested->From(*UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*nestedQuery1, *nestedQuery2), *nestedQuery3), *nestedQuery4), *nestedQuery5), *nestedQuery6));
+        nested->From(*UnionNavigationQuery::Create({nestedQuery1, nestedQuery2, nestedQuery3, nestedQuery4, nestedQuery5, nestedQuery6}));
         nested->GroupByContract(*contract);
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
@@ -951,7 +961,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             .From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, SelectClass(ret_Gadget, true), ret_WidgetsHaveGadgets2, true, "related", "rel_RET_WidgetsHaveGadgets2_0", false))
             .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))}));
 
-        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*nestedQuery1, *nestedQuery2), *nestedQuery3), *nestedQuery4);
+        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create({nestedQuery1, nestedQuery2, nestedQuery3, nestedQuery4});
         expected->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
 
         expected->GetResultParametersR().GetNavNodeExtendedDataR().SetRelationshipDirection(ECRelatedInstanceDirection::Backward);
@@ -993,7 +1003,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             .From(ret_ClassC, true, "this").Join(RelatedClass(ret_ClassC, SelectClass(ret_ClassA, true), ret_ClassAHasBAndC, false, "related", "rel_RET_ClassAHasBAndC", false))
             .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))}));
 
-        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create(*nestedQuery1, *nestedQuery2);
+        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create({nestedQuery1, nestedQuery2});
         expected->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
 
         expected->GetResultParametersR().GetNavNodeExtendedDataR().SetRelationshipDirection(ECRelatedInstanceDirection::Forward);
@@ -1037,7 +1047,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
         expected->SelectAll();
-        expected->From(*UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*nestedQuery1, *nestedQuery2), *nestedQuery3), *nestedQuery4), *nestedQuery5), *nestedQuery6));
+        expected->From(*UnionNavigationQuery::Create({nestedQuery1, nestedQuery2, nestedQuery3, nestedQuery4, nestedQuery5, nestedQuery6}));
         expected->GroupByContract(*DisplayLabelGroupingNodesQueryContract::Create(nullptr));
         expected->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
         expected->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::DisplayLabel);
@@ -1069,7 +1079,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))})
             .Where("[this].[ECInstanceId] IN (?)", { new BoundQueryId(ECInstanceId((uint64_t)1)) }));
 
-        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create(*nestedQuery1, *nestedQuery2);
+        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create({nestedQuery1, nestedQuery2});
         expected->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
 
         expected->GetResultParametersR().GetNavNodeExtendedDataR().SetRelationshipDirection(ECRelatedInstanceDirection::Backward);
@@ -1105,7 +1115,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
         expected->SelectAll();
-        expected->From(*UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*nestedQuery1, *nestedQuery2), *nestedQuery3), *nestedQuery4));
+        expected->From(*UnionNavigationQuery::Create({nestedQuery1, nestedQuery2, nestedQuery3, nestedQuery4}));
         expected->GroupByContract(*contract);
         expected->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
         expected->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::DisplayLabel);
@@ -1147,7 +1157,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))})
             .Where("[this].[ECInstanceId] IN (?)", { new BoundQueryId(ECInstanceId((uint64_t)1)) }));
 
-        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*nestedQuery1, *nestedQuery2), *nestedQuery3), *nestedQuery4);
+        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create({nestedQuery1, nestedQuery2, nestedQuery3, nestedQuery4});
         expected->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
 
         expected->GetResultParametersR().GetNavNodeExtendedDataR().SetRelationshipDirection(ECRelatedInstanceDirection::Backward);
@@ -1275,7 +1285,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             .From(ret_Sprocket, true, "this").Join(RelatedClass(ret_Sprocket, SelectClass(ret_Gadget, true), ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", false))
             .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))}));
 
-        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create(*nestedQuery1, *nestedQuery2);
+        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create({nestedQuery1, nestedQuery2});
         expected->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
 
         expected->GetResultParametersR().GetNavNodeExtendedDataR().SetRelationshipDirection(ECRelatedInstanceDirection::Forward);
@@ -1317,7 +1327,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             .From(ret_Sprocket, true, "this").Join(RelatedClass(ret_Sprocket, SelectClass(ret_Gadget, true), ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", false))
             .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))}));
 
-        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create(*nestedQuery1, *nestedQuery2);
+        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create({nestedQuery1, nestedQuery2});
         expected->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
 
         expected->GetResultParametersR().GetNavNodeExtendedDataR().SetRelationshipDirection(ECRelatedInstanceDirection::Forward);
@@ -1379,7 +1389,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))})
             .Where("[this].[ECClassId] NOT IN (?)", {new BoundQueryId(ret_Gadget.GetId())}));
 
-        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create(*includeQuery1, *includeQuery2);
+        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create({includeQuery1, includeQuery2});
         expected->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
 
         expected->GetResultParametersR().GetNavNodeExtendedDataR().SetRelationshipDirection(ECRelatedInstanceDirection::Backward);
@@ -1405,7 +1415,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         nestedQuery21->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))});
         nestedQuery21->Where("[this].[ECClassId] NOT IN (?)", {new BoundQueryId(ret_Gadget.GetId())});
 
-        UnionNavigationQueryPtr unionQuery = UnionNavigationQuery::Create(*nestedQuery11, *nestedQuery21);
+        UnionNavigationQueryPtr unionQuery = UnionNavigationQuery::Create({nestedQuery11, nestedQuery21});
 
         ComplexNavigationQueryPtr grouped2 = ComplexNavigationQuery::Create();
         grouped2->SelectAll();
@@ -1470,7 +1480,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             .From(ret_ClassG, false, "this").Join(RelatedClass(ret_ClassG, SelectClass(ret_ClassD, true), ret_ClassDHasClassE, false, "related", "rel_RET_ClassDHasClassE_0", false))
             .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))}));
 
-        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*orderedEInclude, *wrappedLabelOrderedEInclude), *unorderedGInclude);
+        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create({orderedEInclude, wrappedLabelOrderedEInclude, unorderedGInclude});
         expected->GetResultParametersR().GetNavNodeExtendedDataR().SetRelationshipDirection(ECRelatedInstanceDirection::Forward);
         expected->GetResultParametersR().GetMatchingRelationshipIds().insert(ret_ClassDHasClassE.GetId());
 
@@ -1493,7 +1503,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             .Where("[related].[ECInstanceId] IN (?)", { new BoundQueryId(ECInstanceId((uint64_t)123)) })
             .Where("[this].[Description] = '2'", BoundQueryValuesList(), true));
 
-        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create(*nestedQuery1, *nestedQuery2);
+        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create({nestedQuery1, nestedQuery2});
         expected->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
 
         expected->GetResultParametersR().GetNavNodeExtendedDataR().SetRelationshipDirection(ECRelatedInstanceDirection::Backward);
@@ -1519,7 +1529,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             .Where("[related].[ECInstanceId] IN (?)", { new BoundQueryId(ECInstanceId((uint64_t)123)) })
             .Where("CAST([this].[Description] AS TEXT) LIKE 'Test' ESCAPE \'\\\'", BoundQueryValuesList(), true));
 
-        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create(*nestedQuery1, *nestedQuery2);
+        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create({nestedQuery1, nestedQuery2});
         expected->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
 
         expected->GetResultParametersR().GetNavNodeExtendedDataR().SetRelationshipDirection(ECRelatedInstanceDirection::Backward);
@@ -1547,7 +1557,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))})
             .Where("IsOfClass([this].[ECClassId], 'ClassName', 'SchemaName')", BoundQueryValuesList(), true));
 
-        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create(*nestedQuery1, *nestedQuery2);
+        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create({nestedQuery1, nestedQuery2});
         expected->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
 
         expected->GetResultParametersR().GetNavNodeExtendedDataR().SetRelationshipDirection(ECRelatedInstanceDirection::Backward);
@@ -1607,7 +1617,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             .From(ret_Sprocket, true, "this").Join(RelatedClass(ret_Sprocket, SelectClass(ret_Gadget, true), ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", false))
             .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))}));
 
-        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create(*nestedQuery1, *nestedQuery2);
+        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create({nestedQuery1, nestedQuery2});
         expected->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
 
         expected->GetResultParametersR().GetNavNodeExtendedDataR().SetRelationshipDirection(ECRelatedInstanceDirection::Forward);
@@ -1626,7 +1636,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ECRelationshipClassCP rel1 = GetECClass(queryName, "AToC")->GetRelationshipClassCP();
         ECRelationshipClassCP rel2 = GetECClass(queryName, "BToC")->GetRelationshipClassCP();
 
-        ComplexNavigationQueryPtr nestedQuery1 = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classC, 
+        ComplexNavigationQueryPtr nestedQuery1 = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classC,
             ComplexNavigationQuery::Create()->SelectContract(*ECInstanceNodesQueryContract::Create(classC), "this")
             .From(*classC, true, "this").Join(RelatedClass(*classC, SelectClass(*classA, true), *rel1, false, "related", TABLE_ALIAS("rel", *rel1, 0), false))
             .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)1))}));
@@ -1636,7 +1646,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             .From(*classC, true, "this").Join(RelatedClass(*classC, SelectClass(*classB, true), *rel2, false, "related", TABLE_ALIAS("rel", *rel2, 0), false))
             .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)2))}));
 
-        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create(*nestedQuery1, *nestedQuery2);
+        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create({nestedQuery2, nestedQuery1});
         expected->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
 
         expected->GetResultParametersR().GetNavNodeExtendedDataR().SetRelationshipDirection(ECRelatedInstanceDirection::Forward);
@@ -1656,7 +1666,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             ComplexNavigationQuery::Create()->SelectContract(*ECInstanceNodesQueryContract::Create(&b1_Class1B), "this")
             .From(b1_Class1B, false, "this"));
 
-        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create(*nestedQuery1, *nestedQuery2);
+        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create({nestedQuery1, nestedQuery2});
         expected->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
 
         RegisterQuery("InstancesOfSpecificClasses_ClassNames_NotPolymorphic", *expected);
@@ -1716,7 +1726,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
         expected->SelectAll();
-        expected->From(*UnionNavigationQuery::Create(*nestedQuery1, *nestedQuery2));
+        expected->From(*UnionNavigationQuery::Create({nestedQuery1, nestedQuery2}));
         expected->GroupByContract(*DisplayLabelGroupingNodesQueryContract::Create(nullptr));
         expected->OrderBy(labelGroupingQuerySortedDisplayLabel.c_str());
         expected->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::DisplayLabel);
@@ -1737,7 +1747,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             .From(b1_Class1B, false, "this")
             .Where("[this].[ECInstanceId] IN (?)", { new BoundQueryId(ECInstanceId((uint64_t)1)) }));
 
-        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create(*nestedQuery1, *nestedQuery2);
+        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create({nestedQuery1, nestedQuery2});
         expected->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
 
         RegisterQuery("InstancesOfSpecificClasses_GroupByLabel_ChildrenQuery", *expected);
@@ -1784,7 +1794,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             .From(b1_Class1B, false, "this")
             .Where("[this].[Name] = 2", BoundQueryValuesList()));
 
-        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create(*nestedQuery1, *nestedQuery2);
+        UnionNavigationQueryPtr expected = UnionNavigationQuery::Create({nestedQuery1, nestedQuery2});
         expected->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
 
         RegisterQuery("InstancesOfSpecificClasses_InstanceFilter", *expected);
@@ -1882,7 +1892,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr widgetQuery = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(ret_Widget,
             ComplexNavigationQuery::Create()->SelectContract(*widgetContract, "this").From(ret_Widget, false, "this"));
 
-        UnionNavigationQueryPtr sorted = UnionNavigationQuery::Create(*gadgetQuery, *widgetQuery);
+        UnionNavigationQueryPtr sorted = UnionNavigationQuery::Create({gadgetQuery, widgetQuery});
         sorted->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
 
         RegisterQuery("InstancesOfSpecificClasses_InstanceLabelOverride_OverrideOnlySpecifiedClassInstancesLabels", *sorted);
@@ -2112,7 +2122,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         ComplexNavigationQueryPtr ordered = ComplexNavigationQuery::Create();
         ordered->SelectAll();
-        ordered->From(*UnionNavigationQuery::Create(*widgetInstancesQuery, *gadgetInstancesQuery));
+        ordered->From(*UnionNavigationQuery::Create({widgetInstancesQuery, gadgetInstancesQuery}));
         ordered->GroupByContract(*gadgetContract);
         ordered->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
         ordered->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::DisplayLabel);
@@ -2140,7 +2150,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr notSortedQuery = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(b4_ClassB,
             ComplexNavigationQuery::Create()->SelectContract(*ECInstanceNodesQueryContract::Create(&b4_ClassB), "this").From(b4_ClassB, false, "this"));
 
-        UnionNavigationQueryPtr unionQuery = UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*rulesSortedQuery, *labelSortedQueryWrapper), *notSortedQuery);
+        UnionNavigationQueryPtr unionQuery = UnionNavigationQuery::Create({rulesSortedQuery, labelSortedQueryWrapper, notSortedQuery});
         RegisterQuery("SortingRule_SortByRulesAndLabelAndNotSorted", *unionQuery);
         }
 
@@ -2194,7 +2204,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr labelSortedQueryWrapper = ComplexNavigationQuery::Create();
         labelSortedQueryWrapper->SelectAll().From(*labelSortedQuery);
 
-        UnionNavigationQueryPtr unionQuery = UnionNavigationQuery::Create(*rulesSortedQuery, *labelSortedQueryWrapper);
+        UnionNavigationQueryPtr unionQuery = UnionNavigationQuery::Create({rulesSortedQuery, labelSortedQueryWrapper});
 
         RegisterQuery("SortingRule_AppliedToAllSchemaClasses", *unionQuery);
         }
@@ -2211,7 +2221,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             .From(b4_ClassA, true, "this")
             .OrderBy("[this].[SomeProperty]"));
 
-        UnionNavigationQueryPtr unionQuery = UnionNavigationQuery::Create(*rulesSortedQuery1, *rulesSortedQuery2);
+        UnionNavigationQueryPtr unionQuery = UnionNavigationQuery::Create({rulesSortedQuery1, rulesSortedQuery2});
 
         RegisterQuery("SortingRule_AppliedToClassesOfAllSchemas", *unionQuery);
         }
@@ -2345,7 +2355,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         grouped2->From(ComplexNavigationQuery::Create()->SelectContract(*contract2, "this").From(b1_Class1B, true, "this"));
         grouped2->GroupByContract(*contract2);
 
-        UnionNavigationQueryPtr sorted = UnionNavigationQuery::Create(*grouped1, *grouped2);
+        UnionNavigationQueryPtr sorted = UnionNavigationQuery::Create({grouped1, grouped2});
         sorted->OrderBy(labelGroupingQuerySortedDisplayLabel.c_str());
         sorted->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::SameLabelInstance);
 
@@ -2366,10 +2376,10 @@ void ExpectedQueries::RegisterExpectedQueries()
         grouped2->From(ComplexNavigationQuery::Create()->SelectContract(*contract2, "this").From(b1_Class1B, true, "this"));
         grouped2->GroupByContract(*contract2);
 
-        ComplexNavigationQueryPtr notGrouped = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(b4_ClassA, 
+        ComplexNavigationQueryPtr notGrouped = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(b4_ClassA,
             *RulesEngineTestHelpers::CreateECInstanceNodesQueryForClass(b4_ClassA, true, "this"));
 
-        UnionNavigationQueryPtr sorted = UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*grouped1, *grouped2), *notGrouped);
+        UnionNavigationQueryPtr sorted = UnionNavigationQuery::Create({grouped1, grouped2, notGrouped});
         sorted->OrderBy(labelGroupingQuerySortedDisplayLabel.c_str());
         sorted->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::SameLabelInstance);
 
@@ -2408,7 +2418,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
         grouped->SelectAll();
-        grouped->From(*UnionNavigationQuery::Create(*nested1, *nested2));
+        grouped->From(*UnionNavigationQuery::Create({nested1, nested2}));
         grouped->GroupByContract(*contract);
 
         ComplexNavigationQueryPtr sorted = ComplexNavigationQuery::Create();
@@ -2436,7 +2446,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         ComplexNavigationQueryPtr baseClassGroupingQueryGrouped = ComplexNavigationQuery::Create();
         baseClassGroupingQueryGrouped->SelectAll();
-        baseClassGroupingQueryGrouped->From(*UnionNavigationQuery::Create(*classCQuery, *classBQuery));
+        baseClassGroupingQueryGrouped->From(*UnionNavigationQuery::Create({classBQuery, classCQuery}));
         baseClassGroupingQueryGrouped->GroupByContract(*baseClassGroupingContract);
 
         ComplexNavigationQueryPtr baseClassGroupingQuery = ComplexNavigationQuery::Create();
@@ -2511,7 +2521,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr grouped2 = ComplexNavigationQuery::Create();
         grouped2->SelectAll().From(*nested2).GroupByContract(*contract2);
 
-        UnionNavigationQueryPtr unionQuery = UnionNavigationQuery::Create(*grouped2, *grouped1);
+        UnionNavigationQueryPtr unionQuery = UnionNavigationQuery::Create({grouped1, grouped2});
         unionQuery->OrderBy(Utf8PrintfString("%s([%s])", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).c_str());
         unionQuery->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
 
@@ -2732,7 +2742,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         ComplexNavigationQueryPtr grouping = ComplexNavigationQuery::Create();
         grouping->SelectAll();
-        grouping->From(*UnionNavigationQuery::Create(*grouped1, *grouped2));
+        grouping->From(*UnionNavigationQuery::Create({grouped1, grouped2}));
         grouping->GroupByContract(*propertyGroupingContract);
         grouping->OrderBy(Utf8PrintfString("%s([%s])", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).c_str());
         grouping->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
@@ -2808,7 +2818,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
         grouped->SelectAll();
-        grouped->From(*UnionNavigationQuery::Create(*query1, *query2));
+        grouped->From(*UnionNavigationQuery::Create({query1, query2}));
         grouped->GroupByContract(*contract1);
         grouped->OrderBy(Utf8PrintfString("%s([%s])", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).c_str());
         grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
@@ -3230,7 +3240,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query2->From(b2_Class2, false, "this");
         query2->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
-        UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
+        UnionContentQueryPtr query = UnionContentQuery::Create({query1, query2});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(ContentQueryContract::ECInstanceIdFieldName);
 #endif
@@ -3269,7 +3279,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query2->Join(RelatedClass(b4_ClassC, SelectClass(b4_ClassB, true), b4_ClassBHasClassC, false, "nav_b4_ClassB_0", "nav_b4_ClassBHasClassC_0"));
         query2->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
-        UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
+        UnionContentQueryPtr query = UnionContentQuery::Create({query1, query2});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(ContentQueryContract::ECInstanceIdFieldName);
 #endif
@@ -3415,7 +3425,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query2->Join(RelatedClass(sc_Class2, SelectClass(sc_Class1, true), sc_Class1HasClass2And3, false, "nav_sc_Class1_1", "nav_sc_Class1HasClass2And3_1"));
         query2->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
-        UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
+        UnionContentQueryPtr query = UnionContentQuery::Create({query1, query2});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(ContentQueryContract::ECInstanceIdFieldName);
 #endif
@@ -3636,7 +3646,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetAllFields().back()->SetName(RELATED_FIELD_NAME(&ret_Gadget, &ret_Widget, "IntProperty"));
         descriptor->GetAllFields().back()->SetLabel("Widget IntProperty");
         widgetKeyField->AddKeyField(*field->AsPropertiesField());
-        
+
         field = &AddField(*descriptor, CreateCategory(ret_Sprocket), CreateProperty("nav_RET_Gadget_0", ret_Sprocket, *ret_Sprocket.GetPropertyP("Gadget"),
             relatedPropertyPathGadgetHasSprocket, RelationshipMeaning::RelatedInstance));
         descriptor->GetAllFields().back()->SetName(RELATED_FIELD_NAME(&ret_Gadget, &ret_Sprocket, "Gadget"));
@@ -3893,7 +3903,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         AddField(*descriptor, ContentDescriptor::Category::GetDefaultCategory(), ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("Description")));
         AddField(*descriptor, ContentDescriptor::Category::GetDefaultCategory(), ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("MyID")));
 
-        descriptor->SetContentFlags((int)ContentFlags::ShowLabels);
+        descriptor->AddContentFlag(ContentFlags::ShowLabels);
 
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Widget, *query), "this");
@@ -3919,7 +3929,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetAllFields().back()->AsPropertiesField()->AddProperty(ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("MyID")));
         descriptor->GetAllFields().back()->SetName(FIELD_NAME((bvector<ECClassCP>{&ret_Gadget, &ret_Widget}), "MyID"));
 
-        descriptor->SetContentFlags((int)ContentFlags::ShowLabels);
+        descriptor->AddContentFlag(ContentFlags::ShowLabels);
 
         ComplexContentQueryPtr q1 = ComplexContentQuery::Create();
         q1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Gadget, *q1), "this");
@@ -3931,7 +3941,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         q2->From(ret_Widget, false, "this");
         q2->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)2))});
 
-        UnionContentQueryPtr query = UnionContentQuery::Create(*q1, *q2);
+        UnionContentQueryPtr query = UnionContentQuery::Create({q1, q2});
         RegisterQuery("SelectedNodeInstances_InstanceLabelOverride_OverrideSpecifiedClassInstancesLabelsWhenMultipleClassesSelected", *query);
         }
 
@@ -3957,7 +3967,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         field = &AddField(*descriptor, ContentDescriptor::Category::GetDefaultCategory(), ContentDescriptor::Property("nav_RET_Widget_0", ret_Gadget, *ret_Gadget.GetPropertyP("Widget")));
         descriptor->AddField(new ContentDescriptor::ECNavigationInstanceIdField(*field->AsPropertiesField()));
 
-        descriptor->SetContentFlags((int)ContentFlags::ShowLabels);
+        descriptor->AddContentFlag(ContentFlags::ShowLabels);
 
         ComplexContentQueryPtr q1 = ComplexContentQuery::Create();
         q1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Gadget, *q1), "this");
@@ -3970,7 +3980,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         q2->From(ret_Widget, false, "this");
         q2->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)2))});
 
-        UnionContentQueryPtr query = UnionContentQuery::Create(*q1, *q2);
+        UnionContentQueryPtr query = UnionContentQuery::Create({q1, q2});
         RegisterQuery("SelectedNodeInstances_InstanceLabelOverride_OverrideNavigationProperty", *query);
         }
 
@@ -4008,7 +4018,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         AddField(*descriptor, ContentDescriptor::Category::GetDefaultCategory(), ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("Name")));
-        descriptor->SetContentFlags((int)ContentFlags::ShowImages);
+        descriptor->AddContentFlag(ContentFlags::ShowImages);
 
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &b1_Class1A, *query), "this");
@@ -4028,7 +4038,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         AddField(*descriptor, ContentDescriptor::Category::GetDefaultCategory(), ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("Name")));
-        descriptor->SetContentFlags((int)ContentFlags::ShowLabels);
+        descriptor->AddContentFlag(ContentFlags::ShowLabels);
 
         ComplexContentQueryPtr nested = ComplexContentQuery::Create();
         nested->SelectContract(*ContentQueryContract::Create(1, *descriptor, &b1_Class1A, *nested), "this");
@@ -4050,7 +4060,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         {
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::Graphics);
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
-        descriptor->SetContentFlags((int)ContentFlags::KeysOnly | (int)ContentFlags::NoFields);
+        descriptor->AddContentFlag(ContentFlags::KeysOnly);
+        descriptor->AddContentFlag(ContentFlags::NoFields);
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
 
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
@@ -4065,7 +4076,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         {
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::List);
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
-        descriptor->SetContentFlags((int)ContentFlags::ShowLabels | (int)ContentFlags::NoFields);
+        descriptor->AddContentFlag(ContentFlags::ShowLabels);
+        descriptor->AddContentFlag(ContentFlags::NoFields);
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
 
         ComplexContentQueryPtr nested = ComplexContentQuery::Create();
@@ -4205,7 +4217,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &b1_Class1B, *query2), "this");
         query2->From(b1_Class1B, false, "this");
 
-        UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
+        UnionContentQueryPtr query = UnionContentQuery::Create({query1, query2});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(ContentQueryContract::ECInstanceIdFieldName);
 #endif
@@ -4231,7 +4243,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &b2_Class2, *query2), "this");
         query2->From(b2_Class2, false, "this");
 
-        UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
+        UnionContentQueryPtr query = UnionContentQuery::Create({query1, query2});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(ContentQueryContract::ECInstanceIdFieldName);
 #endif
@@ -4333,7 +4345,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(0, *outerDescriptor, nullptr, *query)); // note: null for the class argument
-        query->From(*UnionContentQuery::Create(*q1, *q2));
+        query->From(*UnionContentQuery::Create({q1, q2}));
 
         RegisterQuery("ContentInstancesOfSpecificClasses_SetsMergeResultsFlagForPropertyPaneContentType2", *query);
         }
@@ -4372,7 +4384,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->AddField(displayLabelField);
         AddField(*descriptor, ContentDescriptor::Category::GetDefaultCategory(), ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("Description")));
         AddField(*descriptor, ContentDescriptor::Category::GetDefaultCategory(), ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("MyID")));
-        descriptor->SetContentFlags((int)ContentFlags::ShowLabels);
+        descriptor->AddContentFlag(ContentFlags::ShowLabels);
 
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Widget, *query), "this");
@@ -4395,7 +4407,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         AddField(*descriptor, ContentDescriptor::Category::GetDefaultCategory(), ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
         descriptor->GetAllFields().back()->AsPropertiesField()->AddProperty(ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("MyID")));
         descriptor->GetAllFields().back()->SetName(FIELD_NAME((bvector<ECClassCP>{&ret_Gadget, &ret_Widget}), "MyID"));
-        descriptor->SetContentFlags((int)ContentFlags::ShowLabels);
+        descriptor->AddContentFlag(ContentFlags::ShowLabels);
 
         ComplexContentQueryPtr q1 = ComplexContentQuery::Create();
         q1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Gadget, *q1), "this");
@@ -4405,7 +4417,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         q2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &ret_Widget, *q2), "this");
         q2->From(ret_Widget, false, "this");
 
-        UnionContentQueryPtr query = UnionContentQuery::Create(*q1, *q2);
+        UnionContentQueryPtr query = UnionContentQuery::Create({q1, q2});
         RegisterQuery("ContentInstancesOfSpecificClasses_InstanceLabelOverride_OverrideOnlySpecifiedClassInstancesLabels", *query);
         }
 
@@ -4426,7 +4438,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetAllFields().back()->SetName(FIELD_NAME(&ret_Gadget, "MyID"));
         field = &AddField(*descriptor, ContentDescriptor::Category::GetDefaultCategory(), ContentDescriptor::Property("nav_RET_Widget_0", ret_Gadget, *ret_Gadget.GetPropertyP("Widget")));
         descriptor->AddField(new ContentDescriptor::ECNavigationInstanceIdField(*field->AsPropertiesField()));
-        descriptor->SetContentFlags((int)ContentFlags::ShowLabels);
+        descriptor->AddContentFlag(ContentFlags::ShowLabels);
 
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Gadget, *query), "this");
@@ -4473,7 +4485,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query2->Join(RelatedClass(ret_Sprocket, SelectClass(ret_Gadget, true), ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"));
         query2->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
-        UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
+        UnionContentQueryPtr query = UnionContentQuery::Create({query1, query2});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -4534,7 +4546,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query4->Join(RelatedClass(ret_Widget, SelectClass(ret_Gadget, false), ret_WidgetsHaveGadgets2, true, "related", "rel_RET_WidgetsHaveGadgets2_0", false));
         query4->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
-        UnionContentQueryPtr query = UnionContentQuery::Create(*UnionContentQuery::Create(*UnionContentQuery::Create(*query1, *query2), *query3), *query4);
+        UnionContentQueryPtr query = UnionContentQuery::Create({query1, query2, query3, query4});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(ContentQueryContract::ECInstanceIdFieldName);
 #endif
@@ -4631,7 +4643,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query6->Join(RelatedClass(ret_Sprocket, SelectClass(ret_Gadget, true), ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"));
         query6->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
-        UnionContentQueryPtr query = UnionContentQuery::Create(*UnionContentQuery::Create(*UnionContentQuery::Create(*UnionContentQuery::Create(*UnionContentQuery::Create(*query1, *query2), *query3), *query4), *query5), *query6);
+        UnionContentQueryPtr query = UnionContentQuery::Create({query1, query2, query3, query4, query5, query6});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(ContentQueryContract::ECInstanceIdFieldName);
 #endif
@@ -4677,7 +4689,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query2->Join(RelatedClass(ret_Sprocket, SelectClass(ret_Gadget, true), ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"));
         query2->Where("[related].[ECInstanceId] IN (?,?)", {new BoundQueryId(ECInstanceId((uint64_t)123)), new BoundQueryId(ECInstanceId((uint64_t)125))});
 
-        UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
+        UnionContentQueryPtr query = UnionContentQuery::Create({query1, query2});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -4723,7 +4735,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query2->Join(RelatedClass(ret_Gadget, SelectClass(ret_Widget, true), ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0"));
         query2->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)125)})});
 
-        UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
+        UnionContentQueryPtr query = UnionContentQuery::Create({query1, query2});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(ContentQueryContract::ECInstanceIdFieldName);
 #endif
@@ -4771,7 +4783,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query2->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         query2->Where("[this].[MyID] = 'Sprocket MyID'", BoundQueryValuesList());
 
-        UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
+        UnionContentQueryPtr query = UnionContentQuery::Create({query1, query2});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -4939,8 +4951,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query24->Join(navigationPropertyPath);
         query24->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
-        UnionContentQueryPtr query = UnionContentQuery::Create(*UnionContentQuery::Create(*UnionContentQuery::Create(*UnionContentQuery::Create(*UnionContentQuery::Create(
-            *UnionContentQuery::Create(*UnionContentQuery::Create(*query11, *query12), *query13), *query14), *query21), *query22), *query23), *query24);
+        UnionContentQueryPtr query = UnionContentQuery::Create({query11, query12, query13, query14, query21, query22, query23, query24});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(ContentQueryContract::ECInstanceIdFieldName);
 #endif
@@ -4985,7 +4996,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query2->Join(relationshipPath2.Reverse("related", false));
         query2->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
-        UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
+        UnionContentQueryPtr query = UnionContentQuery::Create({query1, query2});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -5203,7 +5214,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->AddField(displayLabelField);
         AddField(*descriptor, ContentDescriptor::Category::GetDefaultCategory(), ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("Description")));
         AddField(*descriptor, ContentDescriptor::Category::GetDefaultCategory(), ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("MyID")));
-        descriptor->SetContentFlags((int)ContentFlags::ShowLabels);
+        descriptor->AddContentFlag(ContentFlags::ShowLabels);
 
         ComplexContentQueryPtr query1 = ComplexContentQuery::Create();
         query1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Sprocket, *query1), "this");
@@ -5217,7 +5228,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query2->Join(RelatedClass(ret_Sprocket, SelectClass(ret_Gadget, false), ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", false));
         query2->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
-        UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
+        UnionContentQueryPtr query = UnionContentQuery::Create({query1, query2});
         RegisterQuery("ContentRelatedInstances_InstanceLabelOverride_AppliedByPriorityForSpecifiedClass", *query);
         }
 
@@ -5262,13 +5273,14 @@ void ExpectedQueries::RegisterExpectedQueries()
         query2->Join(RelatedClass(ret_Sprocket, SelectClass(ret_Gadget, true), ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"));
         query2->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
-        UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
+        UnionContentQueryPtr query = UnionContentQuery::Create({query1, query2});
         RegisterQuery("ContentRelatedInstances_InstanceLabelOverride_OverrideNavigationProperty", *query);
         }
 
     // RelatedContentField_WithSingleStepRelationshipPath
         {
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
+        descriptor->RemoveContentFlag(ContentFlags::SkipInstancesCheck);
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, true));
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         AddField(*descriptor, ContentDescriptor::Category::GetDefaultCategory(), ContentDescriptor::Property("sprocket", ret_Sprocket, *ret_Sprocket.GetPropertyP("MyID")));
@@ -5285,6 +5297,7 @@ void ExpectedQueries::RegisterExpectedQueries()
     // RelatedContentField_WithMultiStepRelationshipPath
         {
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
+        descriptor->RemoveContentFlag(ContentFlags::SkipInstancesCheck);
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, true));
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         AddField(*descriptor, ContentDescriptor::Category::GetDefaultCategory(), ContentDescriptor::Property("sprocket", ret_Sprocket, *ret_Sprocket.GetPropertyP("MyID")));
@@ -5308,11 +5321,12 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentDescriptor::Category category("name", "label", "", 1);
 
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
+        descriptor->RemoveContentFlag(ContentFlags::SkipInstancesCheck);
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Gadget, true));
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         AddField(*descriptor, ContentDescriptor::Category::GetDefaultCategory(), ContentDescriptor::Property("gadget", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
         AddField(*descriptor, ContentDescriptor::Category::GetDefaultCategory(), ContentDescriptor::Property("gadget", ret_Gadget, *ret_Gadget.GetPropertyP("Description")));
-        descriptor->AddField(new ContentDescriptor::RelatedContentField(category, "sprocket_field_name", "sprocket_field_label", 
+        descriptor->AddField(new ContentDescriptor::RelatedContentField(category, "sprocket_field_name", "sprocket_field_label",
             {
             RelatedClass(ret_Gadget, SelectClass(ret_Sprocket, false), ret_GadgetHasSprockets, true, "sprocket_instance", "rel_gs")
             },
@@ -5363,7 +5377,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         q2->From(ret_Widget, false, "this");
         q2->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)2)})});
 
-        UnionContentQueryPtr query = UnionContentQuery::Create(*q1, *q2);
+        UnionContentQueryPtr query = UnionContentQuery::Create({q1, q2});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(ContentQueryContract::ECInstanceIdFieldName);
 #endif
@@ -5426,7 +5440,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         q2->Join(relatedPropertyPathGadgetHasSprockets);
         q2->Join(navigationPropertyPathGadgetHasSprockets);
 
-        UnionContentQueryPtr query = UnionContentQuery::Create(*q1, *q2);
+        UnionContentQueryPtr query = UnionContentQuery::Create({q1, q2});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(ContentQueryContract::ECInstanceIdFieldName);
 #endif
@@ -5594,13 +5608,13 @@ void ExpectedQueries::RegisterExpectedQueries()
         AddField(*descriptor, ContentDescriptor::Category::GetDefaultCategory(), ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("DoubleProperty")));
         AddField(*descriptor, ContentDescriptor::Category::GetDefaultCategory(), ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("LongProperty")));
         AddField(*descriptor, ContentDescriptor::Category::GetDefaultCategory(), ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("DateProperty")));
-        descriptor->AddField(new ContentDescriptor::RelatedContentField(CreateCategory(ret_Gadget), NESTED_CONTENT_FIELD_NAME(&ret_Widget, &ret_Gadget), "Gadget", 
+        descriptor->AddField(new ContentDescriptor::RelatedContentField(CreateCategory(ret_Gadget), NESTED_CONTENT_FIELD_NAME(&ret_Widget, &ret_Gadget), "Gadget",
             {
             RelatedClass(ret_Widget, SelectClass(ret_Gadget, true), ret_WidgetHasGadgets, true, "rel_RET_Gadget_0", "rel_RET_WidgetHasGadgets_0")
             },
             {
             new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category(), ContentDescriptor::Property("rel_RET_Gadget_0", ret_Gadget, *ret_Gadget.GetPropertyP("Description"))),
-            new ContentDescriptor::RelatedContentField(CreateCategory(ret_Sprocket), NESTED_CONTENT_FIELD_NAME(&ret_Gadget, &ret_Sprocket), "Sprocket", 
+            new ContentDescriptor::RelatedContentField(CreateCategory(ret_Sprocket), NESTED_CONTENT_FIELD_NAME(&ret_Gadget, &ret_Sprocket), "Sprocket",
                 {
                 RelatedClass(ret_Gadget, SelectClass(ret_Sprocket, true), ret_GadgetHasSprockets, true, "rel_RET_Sprocket_0", "rel_RET_GadgetHasSprockets_0")
                 },
@@ -5695,7 +5709,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->AddField(displayLabelField);
         AddField(*descriptor, ContentDescriptor::Category::GetDefaultCategory(), ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("Description")));
         AddField(*descriptor, ContentDescriptor::Category::GetDefaultCategory(), ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("MyID")));
-        descriptor->SetContentFlags((int)ContentFlags::ShowLabels);
+        descriptor->AddContentFlag(ContentFlags::ShowLabels);
 
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Widget, *query), "this");
@@ -5707,11 +5721,6 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         Localization::Terminate();
     }
-
-#define LOGD(...) NativeLogging::LoggingManager::GetLogger("ExpectedQueriesTest")->debugv(__VA_ARGS__)
-#define LOGI(...) NativeLogging::LoggingManager::GetLogger("ExpectedQueriesTest")->infov(__VA_ARGS__)
-#define LOGW(...) NativeLogging::LoggingManager::GetLogger("ExpectedQueriesTest")->warningv(__VA_ARGS__)
-#define LOGE(...) NativeLogging::LoggingManager::GetLogger("ExpectedQueriesTest")->errorv(__VA_ARGS__)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                07/2015
