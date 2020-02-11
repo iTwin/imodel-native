@@ -52,10 +52,11 @@ int PublishORDToBimDLL::RunBridge(int argc, WCharCP argv[])
         s_hostInitialized = true;
         }
 
-    // Testing affinity interface
-    WChar buffer[_MAX_PATH];
-    iModelBridgeAffinityLevel affinityLevel;
-    iModelBridge_getAffinity(buffer, _MAX_PATH, affinityLevel, BeFileName(argv[0]).GetDirectoryName(), iModelBridgeP->_GetParams().GetInputFileName());
+    // Testing affinity interface - DISABLED because it can't be tested in the same process as the actual running of the bridge.
+    // That's because the DgnV8Converter will try to initialize the DgnPlatform host, and the affinity itself already did so.
+    //WChar buffer[_MAX_PATH];
+    //iModelBridgeAffinityLevel affinityLevel;
+    //iModelBridge_getAffinity(buffer, _MAX_PATH, affinityLevel, BeFileName(argv[0]).GetDirectoryName(), iModelBridgeP->_GetParams().GetInputFileName());
 
     //Need to add the '--unit-testing' parameter to argv so our ORDBridge instance knows we're unit testing
     argv = AddUnitTestingParameter(argc, argv);
@@ -68,12 +69,12 @@ int PublishORDToBimDLL::RunBridge(int argc, WCharCP argv[])
 
     saparams.Initialize();
 
-    if (affinityLevel != iModelBridgeAffinityLevel::ExactMatch)
+    /*if (affinityLevel != iModelBridgeAffinityLevel::ExactMatch)
         {
         fprintf(stderr, "No Civil data found.\n");
         if (iModelBridgeAffinityLevel::None == affinityLevel)
             return RESULT_AFFINITY_CHECK_NONE;
-        }
+        }*/
 
     //Execute
     auto retVal = iModelBridgeSacAdapter::Execute(*iModelBridgeP, saparams);
