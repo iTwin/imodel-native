@@ -17,6 +17,7 @@
 #include <iModelBridge/TestiModelHubClientForBridges.h>
 #include <iModelBridge/iModelBridgeLdClient.h>
 #include <PlacementonEarth/Placement.h>
+#include <csignal>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -29,6 +30,12 @@ wchar_t const** argv = argptrs.data();\
 
 static Utf8CP s_fooGuid = "6640b375-a539-4e73-b3e1-2c0ceb912551";
 static Utf8CP s_barGuid = "6640b375-a539-4e73-b3e1-2c0ceb912552";
+
+static int s_sigReceived;
+static void testSignalHandler(int s)
+    {
+    s_sigReceived = s;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/17
@@ -873,6 +880,8 @@ TEST_F(iModelBridgeTests, Test1)
     iModelBridgeTests_Test1_Bridge testBridge(testIModelHubClientForBridges);
     iModelBridgeFwk::SetBridgeForTesting(testBridge);
 
+    iModelBridgeFwk::SetSignalHandlerForTesting(testSignalHandler);
+
     BeFileName assignDbName(testDir);
     assignDbName.AppendToPath(L"test1Assignments.db");
     FakeRegistry testRegistry(testDir, assignDbName);
@@ -896,6 +905,10 @@ TEST_F(iModelBridgeTests, Test1)
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
         ASSERT_EQ(0, fwk.Run(argc, argv));
         testIModelHubClientForBridges.m_expect.clear();
+
+        ASSERT_EQ(s_sigReceived, 0);
+        std::raise(SIGINT);
+        ASSERT_EQ(s_sigReceived, SIGINT);
         }
 
     if (true)

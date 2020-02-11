@@ -387,6 +387,8 @@ protected:
 
     BentleyStatus SetUpECEFLocation(FwkContext& context);
 
+    static void OnTerminationSignal(int);
+
 public:
 
     IMODEL_BRIDGE_FWK_EXPORT iModelBridgeFwk();
@@ -425,6 +427,10 @@ public:
     IMODEL_BRIDGE_FWK_EXPORT static void* GetBridgeFunction(BeFileNameCR bridgeDllName, Utf8CP funcName);
     //! @private
     IMODEL_BRIDGE_FWK_EXPORT static void SetIModelClientForBridgesForTesting(IModelClientForBridges&);
+    //! @private
+    typedef void (*SignalHandlerForTesting)(int sig);
+    //! @private
+    IMODEL_BRIDGE_FWK_EXPORT static void SetSignalHandlerForTesting(SignalHandlerForTesting);
     //! @private
     IMODEL_BRIDGE_FWK_EXPORT static void SetBridgeForTesting(iModelBridge&);
     //! @private

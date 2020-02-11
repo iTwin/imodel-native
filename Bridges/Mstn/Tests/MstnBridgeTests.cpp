@@ -736,6 +736,103 @@ TEST_F(MstnBridgeTests, ConvertAttachmentSingleBridge)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static void countElementsInModelByClass(DgnModel const& model, DgnClassId classId, int expected)
+    {
+    auto stmt = model.GetDgnDb().GetPreparedECSqlStatement("SELECT COUNT(*) from " BIS_SCHEMA(BIS_CLASS_Element) " WHERE Model.Id=? AND ECClassId=?");
+    stmt->BindId(1, model.GetModelId());
+    stmt->BindId(2, classId);
+    stmt->Step();
+    EXPECT_EQ(expected, stmt->GetValueInt(0));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MstnBridgeTests, ConvertIfcAttachmentSingleBridge)
+    {
+    auto testDir = CreateTestDir();
+
+    bvector<WString> args;
+    SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, DEFAULT_IMODEL_NAME);
+    
+    BentleyApi::BeFileName inputFile;
+    MakeCopyOfFile(inputFile, L"Test3d.dgn", NULL);
+
+    BentleyApi::BeFileName refFile;
+    MakeCopyOfFile(refFile, L"roof.ifc", NULL);
+
+    args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", inputFile.c_str()));
+
+    SetupClient();
+    CreateRepository();
+    auto runningServer = StartServer();
+
+    BentleyApi::BeFileName assignDbName(testDir);
+    assignDbName.AppendToPath(DEFAULT_IMODEL_NAME L".fwk-registry.db");
+    FakeRegistry testRegistry(testDir, assignDbName);
+    testRegistry.WriteAssignments();
+    testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, iModelBridge_getAffinity);
+
+    std::function<T_iModelBridge_getAffinity> lambda = [=](BentleyApi::WCharP buffer,
+        const size_t bufferSize,
+        iModelBridgeAffinityLevel& affinityLevel,
+        BentleyApi::WCharCP affinityLibraryPath,
+            BentleyApi::WCharCP sourceFileName)
+        {
+        wcscpy(buffer, MSTN_BRIDGE_REG_SUB_KEY);
+        affinityLevel = iModelBridgeAffinityLevel::Medium;
+        };
+
+    testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, lambda);
+    BentleyApi::BeSQLite::BeGuid guid, refGuid;
+    guid.Create();
+    refGuid.Create();
+
+    iModelBridgeDocumentProperties docProps(guid.ToString().c_str(), "wurn1", "durn1", "other1", "");
+    iModelBridgeDocumentProperties refDocProps(refGuid.ToString().c_str(), "wurn2", "durn2", "other2", "");
+    testRegistry.SetDocumentProperties(docProps, inputFile);
+    testRegistry.SetDocumentProperties(refDocProps, refFile);
+    BentleyApi::WString bridgeName;
+    testRegistry.SearchForBridgeToAssignToDocument(bridgeName, inputFile, L"");
+    testRegistry.SearchForBridgeToAssignToDocument(bridgeName, refFile, L"");
+    testRegistry.Save();
+    TerminateHost();
+
+    int modelCount = 0;
+    if (true)
+        {
+        // Ask the framework to run our test bridge to do the initial conversion and create the repo
+        RunTheBridge(args);
+        
+        modelCount = DbFileInfo(m_briefcaseName).GetModelCount();
+        ASSERT_EQ(8, modelCount);
+        }
+
+    CleanupElementECExtensions();
+    AddAttachment(inputFile, refFile, 1, true);
+    if (true)
+        {
+        //We added a new attachment.
+        RunTheBridge(args);
+        ASSERT_EQ(modelCount + 2, DbFileInfo(m_briefcaseName).GetModelCount()); // The bridge adds the ifc model and the special "PresentationRules" definition model.
+        }
+
+    DbFileInfo dbInfo(m_briefcaseName);
+    auto db = dbInfo.m_db;
+    auto ids = db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_PhysicalModel), nullptr, "ORDER BY ECInstanceId ASC").BuildIdList();
+    auto roof = db->Models().GetModel(ids[1]);
+    ASSERT_TRUE(roof.IsValid()) << "Null physical model created from the IFC DgnAttachment!";
+
+    // The roof model should contain these IFC elements
+    countElementsInModelByClass(*roof, db->Schemas().GetClassId("IFC2x3", "IfcSlab"), 14);
+    countElementsInModelByClass(*roof, db->Schemas().GetClassId("IFC2x3", "IfcWallStandardCase"), 10);
+    countElementsInModelByClass(*roof, db->Schemas().GetClassId("IFC2x3", "IfcShapeRepresentation"), 41);
+    countElementsInModelByClass(*roof, db->Schemas().GetClassId("IFC2x3", "IfcStyledRepresentation"), 27);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MstnBridgeTests, ConvertAttachmentSingleBridgeAlternateRegistry)
@@ -1990,21 +2087,33 @@ TEST_F(MstnBridgeTests, ChangeFileNameShouldUpdateModelName)
             {
             BeSQLite::EC::ECSqlStatement stmt;
             EXPECT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.Prepare(*info.m_db, "SELECT UserLabel FROM BisCore.Subject WHERE Parent.Id=1"));
+            bool foundIt = false;
             while (stmt.Step() != BentleyApi::BeSQLite::DbResult::BE_SQLITE_DONE)
                 {
                 Utf8CP text = stmt.GetValueText(0);
                 Utf8String label(text);
-                ASSERT_TRUE(label.Equals("Test3d_2")) << "BisCore.Subject " << label.c_str() << " not equal to 'Test3d_2'";
+                if (label.Equals("Test3d_2"))
+                    {
+                    foundIt = true;
+                    break;
+                    }
                 }
+            ASSERT_TRUE(foundIt);
             }
             {
             BeSQLite::EC::ECSqlStatement stmt;
             EXPECT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.Prepare(*info.m_db, "SELECT CodeValue FROM BisCore.PhysicalPartition"));
+            bool foundIt = false;
             while (stmt.Step() != BentleyApi::BeSQLite::DbResult::BE_SQLITE_DONE)
                 {
                 Utf8String code(stmt.GetValueText(0));
-                ASSERT_TRUE(code.Equals("Test3d_2")) << "BisCore.PhysicalPartition " << code.c_str() << " not equal to 'Test3d_2'";
+                if (code.Equals("Test3d_2"))
+                    {
+                    foundIt = true;
+                    break;
+                    }
                 }
+            ASSERT_TRUE(foundIt);
             }
         }
 
@@ -2085,20 +2194,32 @@ TEST_F(MstnBridgeTests, ChangeFileNameShouldUpdateModelName2d)
         {
         BeSQLite::EC::ECSqlStatement stmt;
         EXPECT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.Prepare(*info.m_db, "SELECT UserLabel FROM BisCore.Subject WHERE Parent.Id=1"));
+        bool foundIt = false;
         while (stmt.Step() != BentleyApi::BeSQLite::DbResult::BE_SQLITE_DONE)
             {
             Utf8String label(stmt.GetValueText(0));
-            ASSERT_TRUE(label.Equals("Test2d_2")) << "BisCore.Subject " << label.c_str() << " not equal to 'Test2d_2'";
+            if (label.Equals("Test2d_2"))
+                {
+                foundIt = true;
+                break;
+                }
             }
+        ASSERT_TRUE(foundIt);
         }
         {
         BeSQLite::EC::ECSqlStatement stmt;
         EXPECT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.Prepare(*info.m_db, "SELECT CodeValue FROM BisCore.Drawing"));
+        bool foundIt = false;
         while (stmt.Step() != BentleyApi::BeSQLite::DbResult::BE_SQLITE_DONE)
             {
             Utf8String code(stmt.GetValueText(0));
-            ASSERT_TRUE(code.Equals("Test2d_2")) << "BisCore.Drawing " << code.c_str() << " not equal to 'Test2d_2'";
+            if (code.Equals("Test2d_2"))
+                {
+                foundIt = true;
+                break;
+                }
             }
+        ASSERT_TRUE(foundIt);
         }
         }
 

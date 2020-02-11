@@ -36,6 +36,8 @@
 #include <iModelBridge/iModelBridgeSyncInfoFile.h>
 #include "iModelBridgeFwkInternal.h"
 
+#include <csignal>
+
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_LOGGING
@@ -76,6 +78,46 @@ static int s_maxWaitForMutex = 60000;
 void iModelBridgeFwk::SetBridgeForTesting(iModelBridge& b)
     {
     s_bridgeForTesting = &b;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+static iModelBridgeFwk::SignalHandlerForTesting s_signalHandlerForTesting;
+static BeFileName s_errorFileForSignalHandler;
+static iModelBridgeFwk* s_fwkInstanceForSignalHandler;
+void iModelBridgeFwk::OnTerminationSignal(int signal)
+    {
+    if (s_signalHandlerForTesting != nullptr)
+        {
+        s_signalHandlerForTesting(signal);
+        return;
+        }
+
+    LOG.fatalv("Received termination signal %d.", signal);
+
+    if (nullptr == s_fwkInstanceForSignalHandler)
+        {
+        std::abort();
+        return;
+        }
+
+    s_fwkInstanceForSignalHandler->Briefcase_ReleaseAllPublicLocks(true);
+
+    if (!s_errorFileForSignalHandler.empty())
+        {
+        iModelBridgeError errorContext;
+        errorContext.m_id = iModelBridgeErrorId::Killed;
+        errorContext.m_description = "Cancelled";
+        errorContext.WriteErrorMessage(s_errorFileForSignalHandler);
+        }
+
+    std::abort();
+    }
+
+void iModelBridgeFwk::SetSignalHandlerForTesting(SignalHandlerForTesting handler)
+    {
+    s_signalHandlerForTesting = handler;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1658,6 +1700,12 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
             }
         }
 
+    s_fwkInstanceForSignalHandler = this;   // Hack - I must pass 'this' to my signal handler, but std::signal only takes a static function.
+    s_errorFileForSignalHandler = errorFile;
+    std::signal(SIGINT, OnTerminationSignal);
+    std::signal(SIGTERM, OnTerminationSignal);
+    // NB: Do not try to handle SIGABRT. OnTerminationSignal calls abort.
+
     // Initialize the DgnViewLib Host.
     m_repoAdmin = new FwkRepoAdmin(*this);  // TRICKY: This is ultimately passed to the host as a host variable, and host terimation will delete it.
     iModelBridge::Params params;
@@ -1794,6 +1842,8 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
 
     if (m_useIModelHub)
         iModelBridgeLdClient::GetInstance(m_iModelHubArgs->m_environment).Close();
+
+    s_fwkInstanceForSignalHandler = nullptr;
 
     if (SUCCESS != status)
         {

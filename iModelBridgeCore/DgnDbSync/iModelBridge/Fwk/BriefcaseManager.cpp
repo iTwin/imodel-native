@@ -519,7 +519,13 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
         else // A Bridge is inserting a model outside of its private hierarchy
         {
             if (modeledElement.GetModelId() != modeledElement.GetDgnDb().GetDictionaryModel().GetModelId())
-                return ReportChannelError(modeledElement, "During the definitions phase, a bridge may not insert top-level shared models. A bridge may add a sub-model of an element in the DictionaryModel only.");
+                {
+                // Make a special case for PresentationRules.
+                if (modeledElement.GetCode().GetValue().Equals("PresentationRules"))
+                    {}
+                else
+                    return ReportChannelError(modeledElement, "During the definitions phase, a bridge may not insert top-level shared models. A bridge may add a sub-model of an element in the DictionaryModel only.");
+                }
         }
         return RepositoryStatus::Success;
     }

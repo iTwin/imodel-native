@@ -39,6 +39,7 @@ enum class iModelBridgeErrorId
     MissingInstance,
     ProjectwiseError,
     FailedToLockChannelParent,
+    Killed, //!< Killed by the user or the executive program
     // The error status could also be a RepositoryStatus, which starts at 86016 (0x15000)
     };
 
