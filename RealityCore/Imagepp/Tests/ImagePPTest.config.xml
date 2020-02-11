@@ -34,15 +34,15 @@
         
         <!-- Location of input files. If blank or invalid tests won't run.
              You can get a copy of the files here: \\TEST33393QBC\Dataset\Images_Files\_forATPs\   -->
-        <Source Enable="false" Dir="D:\_forATPs\"/>
+        <Source Enable="false" Dir="R:\Dataset\Images_Files\_forATPs\"/>
         <!--<Source Enable="true" Dir="D:\Dataset\Images_Files\_forATPsTst\"/>-->
 
         <!-- If not provided it default to gtest output root which is: $(ProgramPath)run\Output\ -->
-        <OutputOverride Enable="false" Dir="D:\Output\"/>
+        <OutputOverride Enable="false" Dir="R:\iModel02_IPP_Output\"/>
 
         <!-- Location of base files for comparaison. A baseline is simply a copy of a previous run.  Copy all the files
              from the output. 'Dir' must point to one level higher than 'FFT' directory-->
-        <BaseLine Enable="false" Dir="D:\_ATPBaseLine\">            
+        <BaseLine Enable="false" Dir="R:\iModel02_IPP_ATPBaseLine\">            
             <!-- Validate with checksum -->
             <!-- *** Not that some file won't binary compare in debug vs release because of double precision error ***
                 Known Issues: 

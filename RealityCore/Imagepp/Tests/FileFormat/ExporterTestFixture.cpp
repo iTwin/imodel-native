@@ -122,7 +122,7 @@ bool RasterTestInfo::Store()
     auto& vRun = value["Run"];
     vRun["Date"] = timeString;
     vRun["ComputerName"] = m_computerName;
-    vRun["DurationMs"] = m_exportDuration;
+    vRun["DurationMs"] = (Json::Value)Json::UInt64(m_exportDuration);
     vRun["MD5"] = m_md5.c_str();
 
     // Build information

@@ -261,7 +261,7 @@ TEST_P(ExportAllTester, ToAllFormats)
                     HFCPtr<HGF2DCoordSys> pLogical = GetWorld()->GetCoordSysReference(pRasterFileSource->GetPageWorldIdentificator(0));
                     HFCPtr<HRSObjectStore> pStore = new HRSObjectStore(&GetPool(), pRasterFileSource, 0, pLogical);
                     ASSERT_TRUE(pStore != nullptr);
-                    HFCPtr<HRARaster> pRaster = pStore->LoadRaster();
+                    HFCPtr<HRARaster> pRaster(pStore->LoadRaster());
                     ASSERT_TRUE(pRaster != nullptr);
 
                     std::unique_ptr<HUTImportFromRasterExportToFile> exporter(new HUTImportFromRasterExportToFile(pRaster, *pRaster->GetEffectiveShape(), GetWorld()));

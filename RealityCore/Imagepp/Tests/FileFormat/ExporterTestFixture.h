@@ -65,7 +65,7 @@ struct ExporterTestFixture : TestingBase_T
     public:
         ExporterTestFixture()
             {
-            m_pWorldCluster = new HGFHMRStdWorldCluster();
+            m_pWorldCluster = new ImagePP::HGFHMRStdWorldCluster();
             }
 
         ~ExporterTestFixture()
@@ -75,7 +75,7 @@ struct ExporterTestFixture : TestingBase_T
 
         ImagePP::HPMPool& GetPool()
             {
-            static HPMPool* s_pPool = new ImagePP::HPMPool(200 * 1024, nullptr);
+            static ImagePP::HPMPool* s_pPool = new ImagePP::HPMPool(200 * 1024, nullptr);
             return *s_pPool;
             }
 

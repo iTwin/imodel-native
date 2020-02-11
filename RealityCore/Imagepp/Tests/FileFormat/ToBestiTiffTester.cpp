@@ -116,7 +116,7 @@ TEST_P(ExportiTiffTester, ToBestiTiff)
             HFCPtr<HGF2DCoordSys> pLogical = GetWorld()->GetCoordSysReference(pRasterFileSource->GetPageWorldIdentificator(0));
             HFCPtr<HRSObjectStore> pStore = new HRSObjectStore(&GetPool(), pRasterFileSource, 0, pLogical);
             ASSERT_TRUE(pStore != nullptr);
-            HFCPtr<HRARaster> pRaster = pStore->LoadRaster();
+            HFCPtr<HRARaster> pRaster(pStore->LoadRaster());
             ASSERT_TRUE(pRaster != nullptr);
 
             double nodata = 0.0;    // 0,0,0 --> transparency
