@@ -258,7 +258,7 @@ DgnElementId    FindElement (DwgDbHandleCR entityHandle, uint64_t dwgModelId, Dg
 void CheckDbElement (size_t expectedCount, DwgDbHandleCR entityHandle, uint64_t dwgModelId, bool shouldExist) const
     {
     // check expected element count matching imported header elements
-    EXPECT_EQ (expectedCount, CountElements(BIS_SCHEMA(BIS_CLASS_SpatialElement), "WHERE Parent.Id IS NULL")) << "Spaitial element count in the DgnDb is incorrect.";
+    EXPECT_EQ (expectedCount, CountElements(BIS_SCHEMA(BIS_CLASS_GeometricElement3d), "WHERE Parent.Id IS NULL")) << "Spaitial element count in the DgnDb is incorrect.";
 
     // retreive element ID for the requested entity handle from the syncInfo:
     auto db = OpenExistingDgnDb (m_dgnDbFileName, Db::OpenMode::Readonly);
@@ -278,7 +278,7 @@ TEST_F(C3dImporterBasicTests, UpdateElements_AddDelete)
     {
     LineUpFiles(L"addDeleteTest.bim", L"c3dtest1.dwg", true); 
     size_t  allElements = CountElements ();
-    size_t  numImported = CountElements (BIS_SCHEMA(BIS_CLASS_SpatialElement), "WHERE Parent.Id IS NULL");
+    size_t  numImported = CountElements (BIS_SCHEMA(BIS_CLASS_GeometricElement3d), "WHERE Parent.Id IS NULL");
     EXPECT_EQ (numImported, GetCount()) << "Imported element count differs";
 
     // add a circle in modelspace
@@ -301,7 +301,7 @@ TEST_F(C3dImporterBasicTests, UpdateElements_AddDelete)
     // none imported?
     EXPECT_EQ (0, GetCount()) << "No element should have been imported";
     // imported elements back to original count?
-    EXPECT_EQ (numImported, CountElements(BIS_SCHEMA(BIS_CLASS_SpatialElement), "WHERE Parent.Id IS NULL")) << "Imported element count differs";
+    EXPECT_EQ (numImported, CountElements(BIS_SCHEMA(BIS_CLASS_GeometricElement3d), "WHERE Parent.Id IS NULL")) << "Imported element count differs";
     // total elements back to original count?
     EXPECT_EQ (allElements, CountElements()) << "Total element count differs";
     }

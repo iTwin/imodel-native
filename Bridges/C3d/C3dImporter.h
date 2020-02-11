@@ -184,6 +184,7 @@ public:
     EXPORT_ATTRIBUTE bool _CreateObjectProvenance (BentleyApi::MD5::HashVal& hash, DwgDbObjectCR object) override;
     EXPORT_ATTRIBUTE void _SetChangeDetector (bool updating) override;
     EXPORT_ATTRIBUTE bool _AllowEntityMaterialOverrides (DwgDbEntityCR entity) const override;
+    EXPORT_ATTRIBUTE BentleyStatus  _ProcessDetectionResults (IDwgChangeDetector::DetectionResultsR detected, ElementImportResultsR results, ElementImportInputsR inputs) override;
 
     // C3dImporter methods
     EXPORT_ATTRIBUTE BentleyStatus  OnBaseBridgeJobInitialized (DgnElementId jobId);
@@ -197,7 +198,6 @@ public:
     DgnDbStatus InsertArrayProperty (DgnElementR element, Utf8StringCR propertyName, uint32_t arraySize) const;
     GeometryOptions& GetCurrentGeometryOptions () { return T_Super::_GetCurrentGeometryOptions(); }
     IDwgChangeDetector& GetChangeDetector () { return T_Super::_GetChangeDetector(); }
-    BentleyStatus   ProcessDetectionResults (IDwgChangeDetector::DetectionResultsR detected, ElementImportResultsR results, ElementImportInputsR inputs) { return T_Super::_ProcessDetectionResults(detected, results, inputs); }
 };  // C3dImporter
 DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(C3dImporter)
 

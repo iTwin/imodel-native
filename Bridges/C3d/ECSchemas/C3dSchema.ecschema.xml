@@ -6,6 +6,10 @@
     <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
     <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
 
+    <ECCustomAttributes>
+        <DynamicSchema xmlns="CoreCustomAttributes.01.00.03"/>
+    </ECCustomAttributes>
+
     <!-- KindOfQuantitys -->
     <KindOfQuantity typeName="LENGTH" displayLabel="Length" persistenceUnit="u:M" presentationUnits="f:DefaultRealU(2)[u:M];f:DefaultRealU(2)[u:FT]" relativeError="0.0001"/>
     <KindOfQuantity typeName="FLOWRATE" displayLabel="Flow Rate" persistenceUnit="u:CUB_M_PER_SEC" presentationUnits="f:DefaultRealU(2)[u:CUB_M_PER_SEC];f:DefaultRealU(2)[u:LITRE_PER_SEC]" relativeError="0.001"/>
@@ -74,7 +78,7 @@
 
     <!-- Entities -->
     <ECEntityClass typeName="AeccBase" modifier="Abstract" displayLabel="C3D Object" description="C3D Object">
-        <BaseClass>bis:SpatialElement</BaseClass>
+        <BaseClass>bis:GeometricElement3d</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="AeccAlignment" modifier="Sealed" displayLabel="Alignment" description="Civil3D alignment object">
         <BaseClass>AeccBase</BaseClass>

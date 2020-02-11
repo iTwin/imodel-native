@@ -18,6 +18,7 @@ public:
     DEFINE_C3DPROTOCOLEXTENSION(AeccAlignmentExt)
 
     BentleyStatus  _ConvertToBim (ProtocolExtensionContext& context, DwgImporterR importer) override;
+    static BentleyStatus UpdateElementRepresentedBy (DgnDbR db, DgnElementId civilAlignmentId, DgnElementId aeccAlignmentId);
 
 private:
     mutable Utf8String  m_name;
@@ -38,8 +39,8 @@ private:
     // Civil domain elements
     BentleyStatus   CreateVerticalAlignment (CurveVectorCR curves, DwgImporter::ElementImportResultsR results);
     BentleyStatus   UpdateVerticalAlignment (CurveVectorCR curves, DwgImporter::ElementImportResultsR results);
-    BentleyStatus   CreateHorizontalAlignment (CurveVectorCR curves, GeometrySourceCP geomSource);
-    BentleyStatus   UpdateHorizontalAlignment (CurveVectorCR curves, GeometrySourceCP geomSource);
+    BentleyStatus   CreateHorizontalAlignment (CurveVectorCR curves, GeometrySourceCP geomSource, DwgImporter::ElementImportResultsR results, size_t index = 0);
+    BentleyStatus   UpdateHorizontalAlignment (CurveVectorCR curves, GeometrySourceCP geomSource, DwgImporter::ElementImportResultsR results, size_t index = 0);
     BentleyStatus   CreateOrUpdateVerticalAlignment (DwgImporter::ElementImportResultsR aeccResults, AECCDbVAlignment* aeccVAlignment);
     BentleyStatus   CreateOrUpdateHorizontalAlignment ();
     // Top level

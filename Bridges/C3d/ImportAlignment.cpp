@@ -306,7 +306,7 @@ BentleyStatus AeccAlignmentExt::DetectAndImportAeccVAlignment (DwgImporter::Elem
         }
 
     // process the imported AeccVAlignment element based on the results from the change detection
-    status = m_importer->ProcessDetectionResults(detectionResults, elementResults, inputs);
+    status = m_importer->_ProcessDetectionResults(detectionResults, elementResults, inputs);
 
     return  status;
     }
@@ -323,7 +323,8 @@ BentleyStatus AeccAlignmentExt::CreateOrUpdateHorizontalAlignment ()
     if (alignType != AlignmentType::Centerline && alignType != AlignmentType::Rail)
         return  BentleyStatus::BSIERROR;
 
-    auto importedElement = m_toDgnContext->GetElementResultsR().GetImportedElement ();
+    auto& results = m_toDgnContext->GetElementResultsR ();
+    auto importedElement = results.GetImportedElement ();
     if (importedElement == nullptr)
         return  BentleyStatus::BSIERROR;
 
@@ -342,11 +343,44 @@ BentleyStatus AeccAlignmentExt::CreateOrUpdateHorizontalAlignment ()
             return  BentleyStatus::BSIERROR;
         }
 
+    // from now on, m_name will be used for Civil domain element codes - make sure it's not empty
+    if (m_name.empty())
+        m_name.assign ("C3DAlignment");
+
     BentleyStatus   status;
-    if (m_importer->GetOptions().IsUpdating())
-        status = this->UpdateHorizontalAlignment (*curves.get(), geomSource);
+    bool            updating = m_importer->GetOptions().IsUpdating ();
+    if (updating)
+        status = this->UpdateHorizontalAlignment (*curves.get(), geomSource, results, 0);
     else
-        status = this->CreateHorizontalAlignment (*curves.get(), geomSource);
+        status = this->CreateHorizontalAlignment (*curves.get(), geomSource, results, 0);
+
+    // create/update children, unless the whole alignment geometry has been modeled by a polyline
+    if (status == BentleyStatus::BSISUCCESS && polyline.IsNull())
+        {
+        size_t  count = 1;
+        for (auto& child : results.m_childElements)
+            {
+            if ((importedElement = child.GetImportedElement()) != nullptr && (geomSource = importedElement->ToGeometrySource()) != nullptr)
+                {
+                curves->clear ();
+                status = C3dHelper::GetLinearCurves (*curves, geomSource);
+
+                if (status == BentleyStatus::BSISUCCESS)
+                    {
+                    if (updating)
+                        status = this->UpdateHorizontalAlignment (*curves.get(), geomSource, child, count);
+                    else
+                        status = this->CreateHorizontalAlignment (*curves.get(), geomSource, child, count);
+                    }
+                if (status != BentleyStatus::BSISUCCESS)
+                    {
+                    Utf8PrintfString msg("missing horizontal segment from AeccAlignment ID=%ls", m_aeccAlignment->objectId().getHandle().ascii().c_str());
+                    m_importer->ReportIssue (DwgImporter::IssueSeverity::Info, IssueCategory::MissingData(), Issue::Message(), msg.c_str());
+                    }
+                count++;
+                }
+            }
+        }
 
     return  status;
     }
@@ -354,17 +388,21 @@ BentleyStatus AeccAlignmentExt::CreateOrUpdateHorizontalAlignment ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          11/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus AeccAlignmentExt::CreateHorizontalAlignment (CurveVectorCR curves, GeometrySourceCP geomSource)
+BentleyStatus AeccAlignmentExt::CreateHorizontalAlignment (CurveVectorCR curves, GeometrySourceCP geomSource, DwgImporter::ElementImportResultsR results, size_t index)
     {
-    m_baseAlignment = RoadRailAlignment::Alignment::Create (*m_alignmentModel);
-    if (!m_baseAlignment.IsValid() || !m_baseAlignment->Insert().IsValid())
-        return  BentleyStatus::BSIERROR;
+    Utf8PrintfString  code("%s_%d", m_name.c_str(), index);
+    if (!m_baseAlignment.IsValid())
+        {
+        m_baseAlignment = RoadRailAlignment::Alignment::Create (*m_alignmentModel);
+        if (!m_baseAlignment.IsValid() || !m_baseAlignment->Insert().IsValid())
+            return  BentleyStatus::BSIERROR;
 
-    m_baseAlignment->SetCode (RoadRailAlignmentDomain::CreateCode(*m_alignmentModel, m_name));
-    m_baseAlignment->SetStartStation (m_aeccAlignment->GetStartStation());
+        m_baseAlignment->SetCode (RoadRailAlignmentDomain::CreateCode(*m_alignmentModel, code));
+        m_baseAlignment->SetStartStation (m_aeccAlignment->GetStartStation());
+        }
 
     auto horizontalAlign = HorizontalAlignment::Create (*m_baseAlignment, curves);
-    horizontalAlign->SetCode (RoadRailAlignmentDomain::CreateCode(*horizontalAlign->GetModel(), m_name));
+    horizontalAlign->SetCode (RoadRailAlignmentDomain::CreateCode(*horizontalAlign->GetModel(), code));
     horizontalAlign->SetUserLabel (m_name.c_str());
 
     // copy GeometrySource from the imported element
@@ -375,7 +413,7 @@ BentleyStatus AeccAlignmentExt::CreateHorizontalAlignment (CurveVectorCR curves,
     // insert the new element to db, and add the element id as a json property in the provenance
     auto inserted = horizontalAlign->Insert ();
     if (inserted.IsValid())
-        C3dHelper::AddCivilReferenceElementId (m_toDgnContext->GetElementResultsR(), inserted->GetElementId());
+        C3dHelper::AddCivilReferenceElementId (results, inserted->GetElementId());
 
     return inserted.IsValid() ? BentleyStatus::BSISUCCESS : BentleyStatus::BSIERROR;
     }
@@ -383,31 +421,34 @@ BentleyStatus AeccAlignmentExt::CreateHorizontalAlignment (CurveVectorCR curves,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          11/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus AeccAlignmentExt::UpdateHorizontalAlignment (CurveVectorCR curves, GeometrySourceCP geomSource)
+BentleyStatus AeccAlignmentExt::UpdateHorizontalAlignment (CurveVectorCR curves, GeometrySourceCP geomSource, DwgImporter::ElementImportResultsR results, size_t index)
     {
-    auto existingId = C3dHelper::GetCivilReferenceElementId (m_toDgnContext->GetElementResults());
+    auto existingId = C3dHelper::GetCivilReferenceElementId (results);
     if (!existingId.IsValid())
-        return  this->CreateHorizontalAlignment(curves, geomSource);
+        return  this->CreateHorizontalAlignment(curves, geomSource, results, index);
 
     HorizontalAlignmentPtr horizontalAlign = HorizontalAlignment::GetForEdit (m_importer->GetDgnDb(), existingId);
     if (!horizontalAlign.IsValid())
         return  BentleyStatus::BSIERROR;
 
-    auto baseElement = horizontalAlign->QueryAlignment ();
-    if (!baseElement.IsValid())
-        return  BentleyStatus::BSIERROR;
-
-    m_baseAlignment = RoadRailAlignment::Alignment::GetForEdit (m_importer->GetDgnDb(), baseElement->GetElementId());
     if (!m_baseAlignment.IsValid())
-        return  BentleyStatus::BSIERROR;
+        {
+        auto baseElement = horizontalAlign->QueryAlignment ();
+        if (!baseElement.IsValid())
+            return  BentleyStatus::BSIERROR;
+
+        m_baseAlignment = RoadRailAlignment::Alignment::GetForEdit (m_importer->GetDgnDb(), baseElement->GetElementId());
+        if (!m_baseAlignment.IsValid())
+            return  BentleyStatus::BSIERROR;
+
+        m_baseAlignment->SetStartStation (m_aeccAlignment->GetStartStation());
+        m_baseAlignment->Update ();
+        }
 
     auto status = C3dHelper::CopyGeometrySource (horizontalAlign->getP(), geomSource);
     if (status == BentleyStatus::BSISUCCESS)
         {
         DgnDbStatus dbStatus = DgnDbStatus::Success;
-
-        m_baseAlignment->SetStartStation (m_aeccAlignment->GetStartStation());
-        m_baseAlignment->Update (&dbStatus);
 
         horizontalAlign->Update (&dbStatus);
 
@@ -481,6 +522,29 @@ BentleyStatus AeccAlignmentExt::UpdateVerticalAlignment (CurveVectorCR curves, D
     verticalAlignment->Update (&status);
 
     return  static_cast<BentleyStatus>(status);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus AeccAlignmentExt::UpdateElementRepresentedBy (DgnDbR db, DgnElementId civilAlignmentId, DgnElementId aeccAlignmentId)
+    {
+    if (!civilAlignmentId.IsValid() || !aeccAlignmentId.IsValid())
+        return  BentleyStatus::BSIERROR;
+
+    auto civilAlignmentElement = RoadRailAlignment::Alignment::Get (db, civilAlignmentId);
+    auto aeccAlignmentElement = db.Elements().Get<GeometricElement3d> (aeccAlignmentId);
+    if (!civilAlignmentElement.IsValid() || !aeccAlignmentElement.IsValid())
+        return  BentleyStatus::BSIERROR;
+
+    auto geomSource = aeccAlignmentElement->ToGeometrySource ();
+    if (geomSource == nullptr)
+        return  BentleyStatus::BSIERROR;
+    
+    if (!civilAlignmentElement->QueryIsRepresentedBy(*geomSource))
+        RoadRailAlignment::Alignment::AddRepresentedBy (*civilAlignmentElement, *geomSource);
+
+    return  BentleyStatus::BSISUCCESS;
     }
 
 END_C3D_NAMESPACE

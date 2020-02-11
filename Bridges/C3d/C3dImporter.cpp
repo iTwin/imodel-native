@@ -355,6 +355,39 @@ void    C3dImporter::_SetChangeDetector (bool updating)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus C3dImporter::_ProcessDetectionResults (IDwgChangeDetector::DetectionResultsR detected, ElementImportResultsR results, ElementImportInputsR inputs)
+    {
+    // process imported results by default
+    auto status = T_Super::_ProcessDetectionResults (detected, results, inputs);
+
+    // post process results as needed
+    if (status == BentleyStatus::BSISUCCESS)
+        {
+        if (inputs.GetEntity().isKindOf(AECCDbAlignment::desc()))
+            {
+            // post-add relationships for the civil alignment vs the aecc element
+            DgnElementId    alignmentId = C3dHelper::GetCivilReferenceElementId (results.GetExistingElement());
+            if (alignmentId.IsValid())
+                {
+                auto&   db = T_Super::GetDgnDb ();
+                // the header element
+                AeccAlignmentExt::UpdateElementRepresentedBy (db, alignmentId, results.GetExistingElementId());
+                // the child elements
+                for (auto& child : results.m_childElements)
+                    {
+                    alignmentId = C3dHelper::GetCivilReferenceElementId (child.GetExistingElement());
+                    if (alignmentId.IsValid())
+                        AeccAlignmentExt::UpdateElementRepresentedBy (db, alignmentId, child.GetExistingElementId());
+                    }
+                }
+            }
+        }
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          12/19
 +---------------+---------------+---------------+---------------+---------------+------*/
 void    C3dUpdaterChangeDetector::_DeleteElement (DgnDbR db, DwgSourceAspects::ObjectAspectCR elementAspect)
