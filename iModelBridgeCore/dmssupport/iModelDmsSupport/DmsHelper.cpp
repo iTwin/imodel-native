@@ -226,6 +226,7 @@ bool            DmsHelper::_StageDocuments(BeFileNameR fileLocation, bool downlo
         m_azureHelper->_UnInitializeSession();
         }
 
+    auto fileDownloaded = true;
     for (int itr = 0; itr != stageFileRequests.size(); itr++)
         {
         auto result = stageFileRequests[itr]->GetResult();
@@ -235,6 +236,12 @@ bool            DmsHelper::_StageDocuments(BeFileNameR fileLocation, bool downlo
             continue;
             }
         LOG.errorv("Error getting file url Error : %s.", result.GetError().GetCode().c_str());
+        fileDownloaded = false;
+        }
+
+    if (!fileDownloaded)
+        {
+        LOG.tracev("Error while downloding file urls to input file location");
         return false;
         }
     LOG.tracev("Successfully download all file urls to input file location");
