@@ -4788,10 +4788,18 @@ void SubRanges::AcceptPoint(DPoint3dCR point, CandidateIndices& candidates)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SubRanges::AcceptSegment(DSegment3dCR segment, CandidateIndices& candidates)
     {
-    // ###TODO: Make a simplified version of IntersectBounded (don't need any of its outputs, just a bool)
-    DSegment3d clippedSegment;
-    double param0, param1;
-    Accept(candidates, [&](DRange3dCR range) { return range.IsContained(segment.point[0]) || range.IsContained(segment.point[1]) || range.IntersectBounded(param0, param1, clippedSegment, segment); });
+    DVec3d dir = DVec3d::FromStartEnd(segment.point[0], segment.point[1]);
+    Accept(candidates, [&](DRange3dCR range) {
+        if (range.IsContained(segment.point[0]) || range.IsContained(segment.point[1]))
+            return true;
+        // Simplified DRange3d::IntersectBounded without return points/params
+        DRange1d rayRange = DRange1d::InfiniteRange();
+        if (!rayRange.UpdateRay1dIntersection(segment.point[0].x, dir.x, range.low.x, range.high.x) ||
+            !rayRange.UpdateRay1dIntersection(segment.point[0].y, dir.y, range.low.y, range.high.y) ||
+            !rayRange.UpdateRay1dIntersection(segment.point[0].z, dir.z, range.low.z, range.high.z))
+            return false;
+        return rayRange.low < rayRange.high;
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -13,22 +13,19 @@
 void PolyfaceHeader::BuildNormalsFast (double creaseTolerance, double sizeTolerance)
     {
     if (0 != GetNormalCount())
-        return;    
+        return;
 
     // So we can skip expensive visitors.
     ConvertToVariableSizeSignedOneBasedIndexedFaceLoops ();
 
-
     bvector<DPoint3d>               facePoints;
     DPoint3dCP                      points = GetPointCP();
-    LightweightPolyfaceBuilderPtr   builder = LightweightPolyfaceBuilder::Create(*this);    
+    LightweightPolyfaceBuilderPtr   builder = LightweightPolyfaceBuilder::Create(*this);
     constexpr   double              s_minArea = 1.0E-14;
     static      DVec3d              s_defaultNormal = DVec3d::From(0.0, 0.0, 1.0);
 
-
     struct      Facet : RefCountedBase
         {
-
         DVec3d      m_normal;
         double      m_area;
 
@@ -67,11 +64,9 @@ void PolyfaceHeader::BuildNormalsFast (double creaseTolerance, double sizeTolera
             }
         };
 
-
-    bmap<int32_t, VertexFacets> pointIndexToFacets;
-    bmap<size_t, FacetPtr>      indexIndexToFacet;
-    FacetPtr                    facet = new Facet();
-
+    bvector<VertexFacets>   pointIndexToFacets(GetPointCount());
+    bvector<FacetPtr>       indexIndexToFacet(GetPointIndexCount());
+    FacetPtr                facet = new Facet();
 
     for (size_t i=0, indexCount = GetPointIndexCount(); i < indexCount; i++)
         {
@@ -79,7 +74,6 @@ void PolyfaceHeader::BuildNormalsFast (double creaseTolerance, double sizeTolera
 
         if (0 == pointIndex && !facePoints.empty())
             {
-            
             facet->Init(facePoints);
             facet = new Facet();
 
@@ -88,17 +82,15 @@ void PolyfaceHeader::BuildNormalsFast (double creaseTolerance, double sizeTolera
         else
             {
             int32_t             zeroBasedIndex = pointIndex - 1;
-            VertexFacets        facets;
 
             facePoints.push_back(points[zeroBasedIndex]);
-            pointIndexToFacets.Insert(pointIndex, facets).first->second.m_facets.push_back(facet);
-            indexIndexToFacet.Insert(i, facet);
+            pointIndexToFacets[zeroBasedIndex].m_facets.push_back(facet);
+            indexIndexToFacet[i] = facet;
             }
         }
 
     double  minDot = cos(creaseTolerance);
     double  minArea = sizeTolerance * sizeTolerance;
-                                            
 
     for (size_t i=0, indexCount = GetPointIndexCount(); i < indexCount; i++)
         {
@@ -110,8 +102,9 @@ void PolyfaceHeader::BuildNormalsFast (double creaseTolerance, double sizeTolera
             }
         else
             {
-            auto        thisFacet = indexIndexToFacet.find(i)->second.get();
-            DVec3d      normal = (thisFacet->m_area < minArea) ? thisFacet->m_normal : pointIndexToFacets.find(pointIndex)->second.ComputeSharedNormal(thisFacet, minDot);
+            auto        thisFacet = indexIndexToFacet[i].get();
+            auto        zeroBasedIndex = pointIndex - 1;
+            DVec3d      normal = (thisFacet->m_area < minArea) ? thisFacet->m_normal : pointIndexToFacets[zeroBasedIndex].ComputeSharedNormal(thisFacet, minDot);
 
             builder->AddNormalIndex(builder->FindOrAddNormal(normal));
             }
@@ -119,5 +112,4 @@ void PolyfaceHeader::BuildNormalsFast (double creaseTolerance, double sizeTolera
 
     Normal().SetActive(true);
     NormalIndex().SetActive(true);
-    };
-
+    }
