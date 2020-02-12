@@ -1380,9 +1380,6 @@ public:
     //! @name V8 ECRelationships and Named Group Conversion
     //! @{
     BentleyStatus InitGroupModel();
-    BentleyStatus ConvertNamedGroupsRelationshipsInModel(DgnV8ModelR);
-    BentleyStatus ConvertECRelationshipsInModel(DgnV8ModelR);
-    BentleyStatus ConvertECRelationships(DgnV8Api::ElementHandle const& v8Element);
     DgnModelId FindModelIdForNamedGroup(DgnV8EhCR v8eh);
     static bool DetermineNamedGroupOwnershipFlag(ECN::ECClassCR);
     DGNDBSYNC_EXPORT DgnModelId GetTargetModelForNamedGroup(DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, DgnClassId elementClassId);
@@ -2631,11 +2628,14 @@ protected:
 
     //! @name  ECRelationships
     //! @{
-    BentleyStatus DropElementRefersToElementsIndices(bmap<Utf8String, Utf8String>& indexDdlList);
+    BentleyStatus DropElementRefersToElementsIndices(bmap<Utf8String, Utf8String>& indexDdlList, Utf8String search);
     BentleyStatus RecreateElementRefersToElementsIndices(bmap<Utf8String, Utf8String>& indexDdlList);
     void ConvertNamedGroupsAndECRelationships();
     BentleyStatus ConvertECRelationships();
+    BentleyStatus ConvertECRelationshipsInModel(DgnV8ModelR);
+    BentleyStatus ConvertECRelationships(DgnV8Api::ElementHandle const& v8Element);
     BentleyStatus ConvertNamedGroupsRelationships();
+    BentleyStatus ConvertNamedGroupsRelationshipsInModel(DgnV8ModelR);
     //! @}
 
     //! @name  V8Files

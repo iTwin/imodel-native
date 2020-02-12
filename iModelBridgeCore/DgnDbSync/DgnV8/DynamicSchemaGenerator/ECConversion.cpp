@@ -3987,7 +3987,7 @@ BentleyStatus Converter::GetECContentOfElement(V8ElementECContent& content, DgnV
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   10/2014
 //---------------------------------------------------------------------------------------
-BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHandle const& v8Element)
+BentleyApi::BentleyStatus RootModelConverter::ConvertECRelationships(DgnV8Api::ElementHandle const& v8Element)
     {
     auto& v8ECManager = DgnV8Api::DgnECManager::GetManager();
     DgnV8Api::RelationshipEntryVector relationships;
@@ -3995,6 +3995,8 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
 
     DgnDbR dgndb = GetDgnDb();
     RepositoryLinkId fileId = GetRepositoryLinkId(*v8Element.GetDgnFileP());
+    bmap<Utf8String, Utf8String> indexDdlList;
+    bool haveDroppedIndexDdl = false;
 
     for (DgnV8Api::RelationshipEntry const& entry : relationships)
         {
@@ -4075,6 +4077,12 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
         // If the relationship class inherits from one ElementRefersToElements base relationship class, then it is a link table relationship, and can use the API
         if (relClass->Is(BIS_ECSCHEMA_NAME, BIS_REL_ElementRefersToElements))
             {
+            if (!haveDroppedIndexDdl)
+                {
+                DropElementRefersToElementsIndices(indexDdlList, "uix_bis_ElementRefersToElements_sourcetargetclassid");
+                haveDroppedIndexDdl = true;
+                }
+
             BeSQLite::EC::ECInstanceKey relKey;
             if (BE_SQLITE_OK != GetDgnDb().InsertLinkTableRelationship(relKey, *relClass->GetRelationshipClassCP(), sourceInstanceKey.GetInstanceId(), targetInstanceKey.GetInstanceId()))
                 {
@@ -4271,6 +4279,8 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
             }
         }
 
+    if (haveDroppedIndexDdl)
+        RecreateElementRefersToElementsIndices(indexDdlList);
     return BentleyApi::SUCCESS;
     }
 

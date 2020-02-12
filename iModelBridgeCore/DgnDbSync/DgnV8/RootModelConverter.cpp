@@ -1320,17 +1320,13 @@ void RootModelConverter::ConvertNamedGroupsAndECRelationships()
     ConverterLogging::LogPerformance(timer, "Convert NamedGroups in dictionary (%" PRIu32 " element(s))", convertedElementCount);
 
     AddTasks(1);
-    bmap<Utf8String, Utf8String> indexDdlList;
     SetTaskName(Converter::ProgressMessage::TASK_CONVERTING_RELATIONSHIPS());
-    DropElementRefersToElementsIndices(indexDdlList);
     ConvertNamedGroupsRelationships();
     ConverterLogging::LogPerformance(timer, "Convert Elements> NamedGroups");
 
     timer.Start();
     ConvertECRelationships();
     ConverterLogging::LogPerformance(timer, "Convert Elements> ECRelationships (total)");
-    RecreateElementRefersToElementsIndices(indexDdlList);
-
     }
 
 //---------------------------------------------------------------------------------------
@@ -1437,15 +1433,16 @@ BentleyApi::BentleyStatus RootModelConverter::ConvertNamedGroupsRelationships()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   04/2015
 //---------------------------------------------------------------------------------------
-BentleyApi::BentleyStatus Converter::ConvertNamedGroupsRelationshipsInModel(DgnV8ModelR v8Model)
+BentleyApi::BentleyStatus RootModelConverter::ConvertNamedGroupsRelationshipsInModel(DgnV8ModelR v8Model)
     {
     struct NamedGroupConverter : DgnV8Api::INamedGroupMemberVisitor
         {
         private:
-            Converter& m_converter;
+            RootModelConverter& m_converter;
             DgnElementId const& m_parentId;
             bool m_namedGroupOwnsMembers;
             bset<DgnElementId> m_visitedMembers;
+            bmap<Utf8String, Utf8String>& m_indexDdlList;
 
             virtual DgnV8Api::MemberTraverseStatus VisitMember(DgnV8Api::NamedGroupMember const* member, DgnV8Api::NamedGroup const* ng, UInt32 index) override
                 {
@@ -1490,6 +1487,11 @@ BentleyApi::BentleyStatus Converter::ConvertNamedGroupsRelationshipsInModel(DgnV
                         group->Update();
                         }
                     DgnDbStatus status;
+                    if (m_indexDdlList.size() == 0)
+                        {
+                        m_converter.DropElementRefersToElementsIndices(m_indexDdlList, "uix_bis_ElementGroupsMembers_sourcetarget");
+                        m_converter.DropElementRefersToElementsIndices(m_indexDdlList, "uix_bis_ElementRefersToElements_sourcetargetclassid");
+                        }
                     if (DgnDbStatus::BadRequest == (status = ElementGroupsMembers::Insert(*group, *child, 0)))
                         {
                         Utf8String error;
@@ -1508,8 +1510,8 @@ BentleyApi::BentleyStatus Converter::ConvertNamedGroupsRelationshipsInModel(DgnV
                 }
 
         public:
-            NamedGroupConverter(Converter& converter, DgnElementId const& parentId, bool namedGroupOwnsMembers)
-                : m_converter(converter), m_parentId(parentId), m_namedGroupOwnsMembers(namedGroupOwnsMembers)
+            NamedGroupConverter(RootModelConverter& converter, DgnElementId const& parentId, bool namedGroupOwnsMembers, bmap<Utf8String, Utf8String> indexDdlList)
+                : m_converter(converter), m_parentId(parentId), m_namedGroupOwnsMembers(namedGroupOwnsMembers), m_indexDdlList(indexDdlList)
                 {}
 
             bool WasVisited(DgnElementId member)
@@ -1526,6 +1528,8 @@ BentleyApi::BentleyStatus Converter::ConvertNamedGroupsRelationshipsInModel(DgnV
     RepositoryLinkId v8FileId = GetRepositoryLinkId(*v8Model.GetDgnFileP());
     bset<DgnV8Api::ElementId> const* namedGroupsWithOwnershipHintPerFile = nullptr;
     V8NamedGroupInfo::TryGetNamedGroupsWithOwnershipHint(namedGroupsWithOwnershipHintPerFile, v8FileId);
+
+    bmap<Utf8String, Utf8String> indexDdlList;
 
     for (auto v8El : *v8Model.GetControlElementsP())
         {
@@ -1560,7 +1564,7 @@ BentleyApi::BentleyStatus Converter::ConvertNamedGroupsRelationshipsInModel(DgnV
             }
 
         const bool namedGroupOwnsMembersFlag = namedGroupsWithOwnershipHintPerFile != nullptr && namedGroupsWithOwnershipHintPerFile->find(v8eh.GetElementId()) != namedGroupsWithOwnershipHintPerFile->end();
-        NamedGroupConverter ngConverter(*this, ngElementId, namedGroupOwnsMembersFlag);
+        NamedGroupConverter ngConverter(*this, ngElementId, namedGroupOwnsMembersFlag, indexDdlList);
         //if traversal fails, still continue with next element, so return value doesn't matter here.
         ng->TraverseMembers(&ngConverter, DgnV8Api::MemberTraverseType::Enumerate, false, false);
 
@@ -1602,6 +1606,8 @@ BentleyApi::BentleyStatus Converter::ConvertNamedGroupsRelationshipsInModel(DgnV
                 }
             }
         }
+    if (indexDdlList.size() > 0)
+        RecreateElementRefersToElementsIndices(indexDdlList);
 
     return BentleyApi::SUCCESS;
     }
@@ -1612,7 +1618,7 @@ BentleyApi::BentleyStatus Converter::ConvertNamedGroupsRelationshipsInModel(DgnV
 // and re-add them later.
 // @bsimethod                                   Carole.MacDonald            12/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyApi::BentleyStatus RootModelConverter::DropElementRefersToElementsIndices(bmap<Utf8String, Utf8String>& indexDdlList)
+BentleyApi::BentleyStatus RootModelConverter::DropElementRefersToElementsIndices(bmap<Utf8String, Utf8String>& indexDdlList, Utf8String search)
     {
     if (!IsUpdating())
         {
@@ -1623,7 +1629,11 @@ BentleyApi::BentleyStatus RootModelConverter::DropElementRefersToElementsIndices
 
         while (stmt.Step() == BE_SQLITE_ROW)
             {
+            Utf8String index(stmt.GetValueText(1));
+            if (!index.Contains(search))
+                continue;
             indexDdlList[Utf8String(stmt.GetValueText(0))] = Utf8String(stmt.GetValueText(1));
+            break;
             }
 
         stmt.Finalize();
@@ -1636,7 +1646,8 @@ BentleyApi::BentleyStatus RootModelConverter::DropElementRefersToElementsIndices
                 return BentleyApi::ERROR;
             }
 
-        ConverterLogging::LogPerformance(timer, "Convert Elements> ECRelationships: Dropped indices for bulk insertion into BisCore:ElementRefersToElements class hierarchy.");
+        Utf8PrintfString msg("Convert Elements> ECRelationships: Dropped %d indices for bulk insertion into BisCore:ElementRefersToElements class hierarchy for index %s.", indexDdlList.size(), search.c_str());
+        ConverterLogging::LogPerformance(timer, msg.c_str());
         }
     return BentleyApi::SUCCESS;
     }
@@ -1754,7 +1765,7 @@ BentleyApi::BentleyStatus RootModelConverter::ConvertECRelationships()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            02/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyApi::BentleyStatus Converter::ConvertECRelationshipsInModel(DgnV8ModelR v8Model)
+BentleyApi::BentleyStatus RootModelConverter::ConvertECRelationshipsInModel(DgnV8ModelR v8Model)
     {
     if (m_skipECContent)
         return BentleyApi::SUCCESS;

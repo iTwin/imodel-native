@@ -1151,7 +1151,9 @@ BentleyStatus iModelBridge::SaveChanges(DgnDbR db, Utf8CP commitComment)
 
     lastCheck->m_rowsChanged = db.GetTotalModifiedRowCount();
 
+    StopWatch timer(true);
     auto status = db.SaveChanges(commitComment);
+    iModelBridge::LogPerformance(timer, "iModelBridge::SaveChanges()");
     if (BE_SQLITE_OK != status)
         return BSIERROR;
 

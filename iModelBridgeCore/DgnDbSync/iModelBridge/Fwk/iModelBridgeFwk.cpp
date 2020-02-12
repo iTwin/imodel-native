@@ -695,10 +695,10 @@ void iModelBridgeFwk::GetLoggingConfigFileNameFromFeatureValue()
             {
             m_jobEnvArgs.m_loggingConfigFileName = loggingConfigFileName;
 
-            // The selected logging.config.xml file requires FWK_STAGINGDIR be assigned to the staging directory
-            putenv(Utf8PrintfString("FWK_STAGINGDIR=%ls", m_jobEnvArgs.m_stagingDir.c_str()).c_str());
             }
         }
+    // The selected logging.config.xml file requires FWK_STAGINGDIR be assigned to the staging directory
+    putenv(Utf8PrintfString("FWK_STAGINGDIR=%ls", m_jobEnvArgs.m_stagingDir.c_str()).c_str());
     }
 
 //---------------------------------------------------------------------------------------
