@@ -1619,12 +1619,12 @@ TEST_F(ECSchemaTests, SequentialProcessing)
     ImportSchemaAndAddInstance(m_v8FileName, eid, schema);
 
     DoConvert(m_dgnDbFileName, m_v8FileName);
-    {
-    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-    BentleyApi::ECN::ECSchemaCP ecSchema = db->Schemas().GetSchema("TestSchema");
-    ASSERT_TRUE(nullptr != ecSchema);
-    VerifyElement(eid, "ClassA", true);
-    }
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        BentleyApi::ECN::ECSchemaCP ecSchema = db->Schemas().GetSchema("TestSchema");
+        ASSERT_TRUE(nullptr != ecSchema);
+        VerifyElement(eid, "ClassA", true);
+        }
 
     BentleyApi::BeFileName secondV8File = GetOutputFileName(L"SecondV8.dgn");
     BentleyApi::BeFileName seedFile = GetInputFileName(L"Test3d.dgn");
@@ -1644,15 +1644,93 @@ TEST_F(ECSchemaTests, SequentialProcessing)
     EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor2.CreateInstanceOnElement(createdDgnECInstance2, *((DgnV8Api::ElementHandle*)&eh), v8editor2.m_defaultModel, L"TestSchema", L"SecondClass"));
 
     DoConvert(m_dgnDbFileName, secondV8File);
-    {
-    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-    VerifyElement(eid, "ClassA", true); // Verify first element is still there and properly classified
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        VerifyElement(eid, "ClassA", true); // Verify first element is still there and properly classified
 
-    auto rlink2 = FindRepositoryLinkIdByFilename(*db, secondV8File);
+        auto rlink2 = FindRepositoryLinkIdByFilename(*db, secondV8File);
 
-    VerifyElement(eid2, "ClassB", true, rlink2); 
-    VerifyElement(eid2, "SecondClass", false);
-    }
+        VerifyElement(eid2, "ClassB", true, rlink2); 
+        VerifyElement(eid2, "SecondClass", false);
+        }
+
+    // Now make a slight change to the schema and ensure that it is updated.
+    ECObjectsV8::ECClassP ecClass2;
+    EXPECT_TRUE(ECObjectsV8::ECOBJECTS_STATUS_Success == schema->CreateClass(ecClass2, L"Foo"));
+    ECObjectsV8::PrimitiveECPropertyP ecProperty2;
+    EXPECT_TRUE(ECObjectsV8::ECOBJECTS_STATUS_Success == ecClass2->CreatePrimitiveProperty(ecProperty2, L"BarProp", ECObjectsV8::PrimitiveType::PRIMITIVETYPE_Integer));
+
+    ECObjectsV8::ECClassP ecClass3;
+    EXPECT_TRUE(ECObjectsV8::ECOBJECTS_STATUS_Success == schema->CreateClass(ecClass3, L"Goo"));
+    ECObjectsV8::PrimitiveECPropertyP ecProperty3;
+    EXPECT_TRUE(ECObjectsV8::ECOBJECTS_STATUS_Success == ecClass3->CreatePrimitiveProperty(ecProperty3, L"Strings", ECObjectsV8::PrimitiveType::PRIMITIVETYPE_String));
+
+    BentleyApi::BeFileName thirdV8File = GetOutputFileName(L"ThirdV8.dgn");
+    ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(seedFile, thirdV8File)) << "Unable to copy file \nSource: [" << Utf8String(seedFile.c_str()).c_str() << "]\nDestination: [" << Utf8String(thirdV8File.c_str()).c_str() << "]";
+    V8FileEditor v8editor3;
+    v8editor3.Open(thirdV8File);
+    EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema, *(v8editor3.m_file)));
+    v8editor3.Save();
+
+    DgnV8Api::ElementId eid3;
+    v8editor3.AddLine(&eid3);
+    DgnV8Api::ElementHandle eh3(eid3, v8editor3.m_defaultModel);
+    DgnV8Api::DgnElementECInstancePtr createdDgnECInstance3;
+    EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor3.CreateInstanceOnElement(createdDgnECInstance3, *((DgnV8Api::ElementHandle*) & eh3), v8editor3.m_defaultModel, L"TestSchema", L"Foo"));
+    v8editor3.Save();
+
+    DoConvert(m_dgnDbFileName, thirdV8File);
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        VerifyElement(eid, "ClassA", true); // Verify first element is still there and properly classified
+
+        auto rlink2 = FindRepositoryLinkIdByFilename(*db, secondV8File);
+
+        VerifyElement(eid2, "ClassB", true, rlink2);
+        VerifyElement(eid2, "SecondClass", false);
+
+        auto rlink3 = FindRepositoryLinkIdByFilename(*db, thirdV8File);
+        VerifyElement(eid3, "Foo", true, rlink3);
+        }
+
+    // Now ensure that the next file with that changed schema that uses a previously unused class gets reimported
+    BentleyApi::BeFileName fourthV8File = GetOutputFileName(L"FourthV8.dgn");
+    ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(seedFile, fourthV8File)) << "Unable to copy file \nSource: [" << Utf8String(seedFile.c_str()).c_str() << "]\nDestination: [" << Utf8String(fourthV8File.c_str()).c_str() << "]";
+    V8FileEditor v8editor4;
+    v8editor4.Open(fourthV8File);
+    EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema, *(v8editor4.m_file)));
+    v8editor4.Save();
+
+    DgnV8Api::ElementId eid4;
+    v8editor4.AddLine(&eid4);
+    DgnV8Api::ElementHandle eh4(eid4, v8editor4.m_defaultModel);
+    DgnV8Api::DgnElementECInstancePtr createdDgnECInstance4;
+    EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor4.CreateInstanceOnElement(createdDgnECInstance4, *((DgnV8Api::ElementHandle*) & eh4), v8editor4.m_defaultModel, L"TestSchema", L"Goo"));
+    v8editor4.Save();
+
+    DoConvert(m_dgnDbFileName, fourthV8File);
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        auto rlink4 = FindRepositoryLinkIdByFilename(*db, fourthV8File);
+        VerifyElement(eid4, "Goo", true, rlink4);
+        }
+
+    // And lastly, ensure that a fifth file with the changed schema, but no previously unused classes doesn't cause a re-import
+    BentleyApi::BeFileName fifthV8File = GetOutputFileName(L"FifthV8.dgn");
+    ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(seedFile, fifthV8File)) << "Unable to copy file \nSource: [" << Utf8String(seedFile.c_str()).c_str() << "]\nDestination: [" << Utf8String(fifthV8File.c_str()).c_str() << "]";
+    V8FileEditor v8editor5;
+    v8editor5.Open(fifthV8File);
+    EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema, *(v8editor5.m_file)));
+    v8editor5.Save();
+
+    DgnV8Api::ElementId eid5;
+    v8editor5.AddLine(&eid5);
+    DgnV8Api::ElementHandle eh5(eid5, v8editor5.m_defaultModel);
+    DgnV8Api::DgnElementECInstancePtr createdDgnECInstance5;
+    EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor5.CreateInstanceOnElement(createdDgnECInstance5, *((DgnV8Api::ElementHandle*)& eh5), v8editor5.m_defaultModel, L"TestSchema", L"Goo"));
+    v8editor5.Save();
+
+    DoConvert(m_dgnDbFileName, fifthV8File);
 
     }
 

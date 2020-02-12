@@ -2930,6 +2930,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ImportTargetECSchemas()
 
     // If we're either updating or mapping a new file, need to see if this schema already exists in the db and if so, increment the minor version
     bvector<ECN::ECSchemaPtr> mergedSchemas;
+    bvector<ECN::ECSchemaCP> exclude;
     for (BECN::ECSchemaCP schema : constSchemas)
         {
         BECN::ECSchemaCP existing = GetDgnDb().Schemas().GetSchema(schema->GetName());
@@ -2956,7 +2957,6 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ImportTargetECSchemas()
             {
             merged->SetVersionRead(existing->GetVersionRead());
             merged->SetVersionWrite(existing->GetVersionWrite());
-            merged->SetVersionMinor(existing->GetVersionMinor() + 1);
 
             // Current merge tool does not handle KoQ, PropertyCategories, or Enumerations
             CopyKOQ(merged, existing);
@@ -2970,7 +2970,15 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ImportTargetECSchemas()
 
             CopyProperties(merged, existing);
             CopyProperties(merged, schema);
-            mergedSchemas.push_back(merged);
+            // See if it did actually change
+            auto diff2 = ECDiff::Diff(*existing, *merged);
+            if (!diff2->IsEmpty())
+                {
+                merged->SetVersionMinor(existing->GetVersionMinor() + 1);
+                mergedSchemas.push_back(merged);
+                }
+            else
+                exclude.push_back(schema);
             }
         }
 
@@ -2979,6 +2987,11 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ImportTargetECSchemas()
         auto removeAt = std::remove_if(constSchemas.begin(), constSchemas.end(), [&merged] (BECN::ECSchemaCP const& arg) { return arg->GetName().EqualsIAscii(merged->GetName().c_str()); });
         constSchemas.erase(removeAt, constSchemas.end());
         constSchemas.push_back(merged.get());
+        }
+    for (ECN::ECSchemaCP schema : exclude)
+        {
+        auto removeAt = std::remove_if(constSchemas.begin(), constSchemas.end(), [&schema] (BECN::ECSchemaCP const& arg) { return arg->GetName().EqualsIAscii(schema->GetName().c_str()); });
+        constSchemas.erase(removeAt, constSchemas.end());
         }
 
 //#define EXPORT_BISIFIEDECSCHEMAS 1
