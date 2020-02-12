@@ -55,6 +55,7 @@ struct iModelBridgeRegistryBase : RefCounted<IModelBridgeRegistry>
         Utf8String m_repositoryName;
         BeFileName m_inputFileName;
         bool m_searchForFilesInStagingDir{};
+        bool m_noBridgeSearch{false};
         int ParseCommandLine(int argc, WCharCP argv[]);
         };
 

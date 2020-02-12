@@ -871,9 +871,10 @@ static void  ParseCxxOptsResult(cxxopts::ParseResult& result, iModelBridgeRegist
     AssignCxxOptsResult(result, "fwk-logging-config-file", args.m_loggingConfigFileName);
 
     if (result.count("fwk-search-in-staging-dir") > 0)
-        {
         args.m_searchForFilesInStagingDir = result["fwk-search-in-staging-dir"].as<bool>();
-        }
+
+    if (result.count("no-bridge-search") > 0)
+        args.m_noBridgeSearch = result["no-bridge-search"].as<bool>();
 
     if (result.count("server-repository") > 0)
         {
@@ -896,6 +897,7 @@ static cxxopts::Options GetCmdLineOptions()
         ("r,registry-dir", "The directory to store assignments.", cxxopts::value<std::string>(),"<Optional>")
         ("l,fwk-logging-config-file", "The configuration file to be used for logging.", cxxopts::value<std::string>(), "<Optional>")
         ("x,fwk-search-in-staging-dir", "Search for files in fwk-staging-dir.", cxxopts::value<bool>(), "<Optional>")
+        ("no-bridge-search", "Don't search for globally installed bridges.", cxxopts::value<bool>(), "<Optional>")
         ("h,help", "Print help")
         ;
     return options;
@@ -1029,7 +1031,9 @@ int iModelBridgeRegistryBase::AssignMain(int argc, WCharCP argv[])
     if (BE_SQLITE_OK != dbres)
         return RETURN_STATUS_LOCAL_ERROR;
 
-    app._DiscoverInstalledBridges();
+    if (!args.m_noBridgeSearch)
+        app._DiscoverInstalledBridges();
+    
     app.m_masterFilePath = args.m_inputFileName;
     app.SearchForBridgesToAssignToDocuments();
     app.m_stateDb.SaveChanges();
