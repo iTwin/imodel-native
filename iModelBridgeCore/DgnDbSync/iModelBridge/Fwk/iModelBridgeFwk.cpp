@@ -2666,7 +2666,7 @@ int iModelBridgeFwk::UpdateExistingBim(iModelBridgeFwk::FwkContext& context)
         {
         m_bridge->DoFinalizationChanges(*m_briefcaseDgnDb);
         UpdateProjectExtents(context);
-        SetUpECEFLocation(context);
+        //SetUpECEFLocation(context);
         }
 
     // Running ANALYZE allows SQLite to create optimize execution plans when running queries. It should be be included in changeset that bridges post.
@@ -3203,9 +3203,15 @@ BentleyStatus   iModelBridgeFwk::GetUserProvidedExtents(AxisAlignedBox3d& extent
     StatusInt warning;
     auto wsg84 = GeoCoordinates::BaseGCS::CreateGCS();        // WGS84 - used to convert Long/Latitude to ECEF.
     wsg84->InitFromEPSGCode(&warning, &warningMsg, 4326); // We do not care about warnings. This GCS exists in the dictionary
-    wsg84->XYZFromLatLong(extents.low, low);
-    wsg84->XYZFromLatLong(extents.high, high);
+    
+    DPoint3d points[2];
+    wsg84->XYZFromLatLong(points[0], low);
+    wsg84->XYZFromLatLong(points[1], high);
 
+    extents.InitFrom(points[0], points[1]);
+    DPoint3d delta;
+    delta.Init(points[1].x - points[0].x, points[1].y - points[0].y, points[1].z - points[1].z);
+    LOG.tracev(L"iModel extent rectangle from hub %f x %f", delta.x, delta.y);  
     return SUCCESS;
     }
 

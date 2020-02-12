@@ -1591,18 +1591,18 @@ TEST_F(iModelBridgeTests, ECEFTransformTest)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  10/2019
+* @bsimethod                                    Abeesh.Basheer                  02/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(iModelBridgeTests, iModelProjectExtentsTest)
+static void DoProjectExtentsTest (bvector <double> &extents, WCharCP testName)
     {
     auto bridgeRegSubKey = L"iModelBridgeTests_Test1_Bridge";
 
-    auto testDir = getiModelBridgeTestsOutputDir(L"iModelProjectExtentsTest");
+    auto testDir = getiModelBridgeTestsOutputDir(testName);
 
     BeFileName bcName = testDir;
     bcName.AppendToPath(L"iModelBridgeTests_iModelProjectExtentsTest.bim");
     ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testDir));
-    
+
     // I have to create a file that I represent as the bridge "library", so that the fwk's argument validation logic will see that it exists.
     // The fwk won't try to load this file, since we will register a fake bridge.
     BeFileName fakeBridgeName(testDir);
@@ -1617,7 +1617,7 @@ TEST_F(iModelBridgeTests, iModelProjectExtentsTest)
     args.push_back(L"--server-environment=Qa");
     args.push_back(L"--server-repository=iModelBridgeTests_iModelProjectExtentsTest");   // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
     args.push_back(L"--server-project-guid=iModelBridgeTests_Project");     // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
-    args.push_back(L"--fwk-create-repository-if-necessary");        
+    args.push_back(L"--fwk-create-repository-if-necessary");
     args.push_back(L"--server-user=imodelbridgetests@bentley.com");                     // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
     args.push_back(L"--server-password=\"password><!@\"");                  // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
     args.push_back(WPrintfString(L"--fwk-bridge-regsubkey=%ls", bridgeRegSubKey).c_str());  // must be consistent with testRegistry.m_bridgeRegSubKey
@@ -1634,7 +1634,7 @@ TEST_F(iModelBridgeTests, iModelProjectExtentsTest)
     iModelBridgeTests_Test1_Bridge testBridge(testIModelHubClientForBridges);
     iModelBridgeFwk::SetBridgeForTesting(testBridge);
 
-    
+
     BeFileName assignDbName(testDir);
     assignDbName.AppendToPath(L"iModelProjectExtentsTest.db");
     FakeRegistry testRegistry(testDir, assignDbName);
@@ -1642,16 +1642,16 @@ TEST_F(iModelBridgeTests, iModelProjectExtentsTest)
     populateRegistryWithFooBar(testRegistry, bridgeRegSubKey);
     testRegistry.AddRef(); // prevent ~iModelBridgeFwk from deleting this object.
     iModelBridgeFwk::SetRegistryForTesting(testRegistry);   // (takes ownership of pointer)
-    
+
     testBridge.m_expect.assignmentCheck = true;
 
-   /* YawPitchRollAngles angles(AngleInDegrees::FromDegrees(30.0), AngleInDegrees::FromDegrees(40.0), AngleInDegrees::FromDegrees(50.0));    
-    EcefLocation location(DPoint3d::From(1000.0, 2000.0, 3000.0), angles);
+    /* YawPitchRollAngles angles(AngleInDegrees::FromDegrees(30.0), AngleInDegrees::FromDegrees(40.0), AngleInDegrees::FromDegrees(50.0));
+     EcefLocation location(DPoint3d::From(1000.0, 2000.0, 3000.0), angles);
 
-    Json::Value ecefJson = Json::Value(Json::ValueType::objectValue);
-    ecefJson["ecef"] = location.ToJson();
-    WPrintfString location_Str(L"--fwk-argsJson=\"%s\"", WString(ecefJson.ToString().c_str(), true).c_str());*/
-    //--fwk-argsJson="{"ecef":{"orientation":{"pitch":40.0,"roll":50.0,"yaw":30.0},"origin":[1000.0,2000.0,3000.0]}}"
+     Json::Value ecefJson = Json::Value(Json::ValueType::objectValue);
+     ecefJson["ecef"] = location.ToJson();
+     WPrintfString location_Str(L"--fwk-argsJson=\"%s\"", WString(ecefJson.ToString().c_str(), true).c_str());*/
+     //--fwk-argsJson="{"ecef":{"orientation":{"pitch":40.0,"roll":50.0,"yaw":30.0},"origin":[1000.0,2000.0,3000.0]}}"
     if (true)
         {
         testIModelHubClientForBridges.m_expect.push_back(false);// Clear this flag at the outset. It is set by the test bridge as it runs.
@@ -1670,12 +1670,13 @@ TEST_F(iModelBridgeTests, iModelProjectExtentsTest)
         args.pop_back();
         testIModelHubClientForBridges.m_expect.clear();
         }
+    
     if (true)
         {
         // Run an update with a spatial data transform change
         testIModelHubClientForBridges.m_expect.push_back(false);// Clear this flag at the outset. It is set by the test bridge as it runs.
         //
-        bvector <double> extents = { 46.803981, -100.826828 , 46.843917, -100.764343 };
+
         testIModelHubClientForBridges.GetIModelInfo()->SetExtent(extents);
         testBridge.m_expect.findJobSubject = true;
         testBridge.m_expect.anyChanges = false;
@@ -1701,13 +1702,28 @@ TEST_F(iModelBridgeTests, iModelProjectExtentsTest)
         ScopedDgnHost host;
         auto db = DgnDb::OpenDgnDb(nullptr, bcName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
         ASSERT_TRUE(db.IsValid());
-        EcefLocation currentEcefLocation = db->GeoLocation().GetEcefLocation();
-        ASSERT_TRUE(currentEcefLocation.m_isValid);
-
+      
         AxisAlignedBox3d extents = db->GeoLocation().GetProjectExtents();
         bvector<BeInt64Id> elementOutliers;
         AxisAlignedBox3d rangeWithOutliers;
         AxisAlignedBox3d calculated = db->GeoLocation().ComputeProjectExtents(&rangeWithOutliers, &elementOutliers);
         calculated.IsContained(extents);
         }
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(iModelBridgeTests, iModelProjectExtentsTest)
+    {
+    bvector <double> extents = { 46.803981, -100.826828 , 46.843917, -100.764343 };
+    DoProjectExtentsTest(extents, L"iModelProjectExtentsTest");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(iModelBridgeTests, iModelProjectExtentsTest_SouthAsia)
+    {
+    bvector <double> extents = { 18.938148519926713, 72.824610710144043 , 18.939833092473123, 72.826917409896851 };
+    DoProjectExtentsTest(extents, L"iModelProjectExtentsTest_SouthAsia");
     }
