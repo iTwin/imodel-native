@@ -116,6 +116,7 @@ BentleyStatus   DwgImporter::_MakeSchemaChanges ()
         1) Load xRef files from xRef block table records
         2) Cache layout block object ID's from paperspace block table records
         3) Collect attribute definitions from regular block table records
+        4) Create DwgAppData schema for Bentley.CCBlockInfo if the regapp present on a block
     -----------------------------------------------------------------------------------*/
     XRefLoader  xrefLoader(*this);
     xrefLoader.LoadXrefsInMasterFile ();
@@ -144,6 +145,15 @@ BentleyStatus   DwgImporter::_MakeSchemaChanges ()
         if (m_dgndb->BriefcaseManager().LockSchemas().Result() != RepositoryStatus::Success)
             return  static_cast<BentleyStatus>(DgnDbStatus::LockNotHeld);
         dwgSchemas.push_back (aecpsetSchema);
+        }
+
+    // create DwgAppData schema
+    auto dwgappdataSchema = xrefLoader.GetDwgAppDataSchema ();
+    if (dwgappdataSchema.IsValid() && dwgappdataSchema->GetClassCount() > 0)
+        {
+        if (m_dgndb->BriefcaseManager().LockSchemas().Result() != RepositoryStatus::Success)
+            return  static_cast<BentleyStatus>(DgnDbStatus::LockNotHeld);
+        dwgSchemas.push_back (dwgappdataSchema);
         }
 
     DwgImportLogging::LogPerformance(timer, "Creating schemas");
@@ -470,6 +480,7 @@ void            DwgImporter::_BeginImport ()
     auto schemaName = DwgHelper::GetAttrdefECSchemaName (m_dwgdb.get());
     m_attributeDefinitionSchema = m_dgndb->Schemas().GetSchema (schemaName.c_str(), true);
     m_aecPropertySetSchema = m_dgndb->Schemas().GetSchema (SCHEMAName_AecPropertySets, true);
+    m_dwgAppDataSchema = m_dgndb->Schemas().GetSchema (SCHEMAName_DwgAppData, true);
 
     m_hasBegunProcessing = true;
     }
@@ -715,6 +726,7 @@ DwgImporter::DwgImporter (DwgImporter::Options& options) : m_options(options), m
     m_errorCount = 0;
     m_attributeDefinitionSchema = 0;
     m_aecPropertySetSchema = 0;
+    m_dwgAppDataSchema = 0;
     m_constantBlockAttrdefList.clear ();
     m_modelspaceUnits = StandardUnit::None;
     m_modelspaceId.SetNull ();

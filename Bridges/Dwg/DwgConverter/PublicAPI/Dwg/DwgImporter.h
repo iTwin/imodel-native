@@ -1047,6 +1047,7 @@ protected:
     MessageCenter               m_messageCenter;
     ECN::ECSchemaCP             m_attributeDefinitionSchema;
     ECN::ECSchemaCP             m_aecPropertySetSchema;
+    ECN::ECSchemaCP             m_dwgAppDataSchema;
     T_ConstantBlockAttrdefList  m_constantBlockAttrdefList;
     DgnModelId                  m_sheetListModelId;
     DgnModelId                  m_drawingListModelId;
@@ -1421,6 +1422,7 @@ public:
     void                        AddDgnMaterialTexture (Utf8StringCR fileName, DgnTextureId texture);
     ECN::ECSchemaCP             GetAttributeDefinitionSchema () { return m_attributeDefinitionSchema; }
     ECN::ECSchemaCP             GetAecPropertySetSchema () { return m_aecPropertySetSchema; }
+    ECN::ECSchemaCP             GetDwgAppSchema () { return m_dwgAppDataSchema; }
     bool                        GetConstantAttrdefIdsFor (DwgDbObjectIdArray& ids, DwgDbObjectIdCR blockId);
     //! Get a spatial category and/or a sub-category for a modelspace entity layer. The syncInfo is read in and cached for fast retrieval.
     DgnCategoryId               GetSpatialCategory (DgnSubCategoryId& subCategoryId, DwgDbObjectIdCR layerId, DwgDbDatabaseP xrefDwg = nullptr);

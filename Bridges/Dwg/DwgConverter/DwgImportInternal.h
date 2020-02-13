@@ -350,6 +350,7 @@ struct XRefLoader
 private:
     DwgImporter&    m_importer;
     ECSchemaPtr     m_attrdefSchema;
+    ECSchemaPtr     m_dwgAppDataSchema;
     bool IsXrefAlreadyLoaded (DwgDbBlockTableRecordCR xrefblock);
     void ReportMissingFile (BeFileNameCR filename, DwgStringCR blockName) const;
 
@@ -358,6 +359,7 @@ public:
     BentleyStatus LoadXrefsInMasterFile ();
     BentleyStatus CacheUnresolvedXrefs ();
     ECSchemaPtr GetAttrdefSchema () { return m_attrdefSchema; }
+    ECSchemaPtr GetDwgAppDataSchema () { return m_dwgAppDataSchema; }
     }; // XRefLoader
 
 /*=================================================================================**//**
@@ -781,6 +783,28 @@ public:
     BentleyStatus ImportFromDwg (DwgDbDatabaseR dwg);
     BentleyStatus CreateUserElementClasses ();
 };  // AecPsetSchemaFactory
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          02/20
++===============+===============+===============+===============+===============+======*/
+struct XDataFactory
+{
+private:
+    ECSchemaCP      m_sourceSchema;
+    DwgImporterR    m_importer;
+    IECInstancePtr  m_ecInstance;
+
+    ECObjectsStatus AddProperty (Utf8StringCR name, T_Utf8StringVectorCR strings);
+    BentleyStatus   CreateECInstance (Utf8StringCR ecClassName);
+    BentleyStatus   ExtractBreadcrumbsFromBlock (T_Utf8StringVectorR strings, DwgDbBlockReferenceCR insert);
+    ECObjectsStatus InitializeTargetSchema (ECSchemaPtr& targetSchema);
+
+public:
+    // constructor for schema creation
+    XDataFactory (DwgImporterR importer);
+    BentleyStatus   CreateBreadcrumbs (DgnElementR targetElement, ECSchemaCP sourceSchema, DwgDbBlockReferenceCR insert);
+    ECObjectsStatus CreateDwgAppDataSchema (ECSchemaPtr& targetSchema, DwgDbBlockTableRecordCR regapp);
+};  // XDataFactory
 
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          08/19

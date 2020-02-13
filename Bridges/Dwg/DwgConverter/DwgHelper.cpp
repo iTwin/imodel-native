@@ -2223,3 +2223,42 @@ BentleyStatus   DwgHelper::ExtractAndConcatenateTextsFrom (Utf8StringR texts, Dg
 
     return  texts.empty() ? BentleyStatus::BSIERROR : BentleyStatus::BSISUCCESS;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus DwgHelper::MakeSchemaDynamicForDwg (DgnDbR db, ECSchemaR targetSchema)
+    {
+    ECObjectsStatus status = ECObjectsStatus::SchemaNotFound;
+
+    // Reference BisCore
+    ECSchemaCP  refSchema = CoreCustomAttributeHelper::GetSchema().get ();
+    if (nullptr != refSchema)
+        status = targetSchema.AddReferencedSchema (const_cast<ECSchemaR>(*refSchema));
+    else
+        BeAssert (false && "Failed finding schema: BisCore!");
+
+    // Reference Generic
+    if (nullptr != (refSchema = db.Schemas().GetSchema(GENERIC_DOMAIN_NAME)))
+        status = targetSchema.AddReferencedSchema (const_cast<ECSchemaR>(*refSchema));
+    else
+        BeAssert (false && "Failed finding schema: Generic!");
+
+    // Reference Dgn
+    if (nullptr != (refSchema = db.Schemas().GetSchema(BIS_ECSCHEMA_NAME)))
+        status = targetSchema.AddReferencedSchema (const_cast<ECSchemaR>(*refSchema));
+    else
+        BeAssert (false && "Failed finding schema: Dgn!");
+
+    if (status != ECObjectsStatus::Success)
+        return  status;
+
+    // Set schema dynamic
+    auto ecInstance = CoreCustomAttributeHelper::CreateCustomAttributeInstance ("DynamicSchema");
+    if (ecInstance.IsValid())
+        status = targetSchema.SetCustomAttribute (*ecInstance);
+    else
+        status = ECObjectsStatus::DynamicSchemaCustomAttributeWasNotFound;
+
+    return  status;
+    }

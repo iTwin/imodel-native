@@ -420,11 +420,15 @@ BentleyStatus XRefLoader::LoadXrefsInMasterFile ()
     // create a repository link from the root file
     auto rootlinkId = m_importer.CreateOrUpdateRepositoryLink ();
 
+    // create a DwgAppData schema as we see app data we support
+    XDataFactory xdataFactory(m_importer);
+
     /*-----------------------------------------------------------------------------------
     Iterate the block table once for multiple tasks per import job:
         1) Load xRef files from xRef block table records
         2) Cache layout block object ID's from paperspace block table records
         3) Collect attribute definitions from regular block table records
+        4) Check xdata Bentley.CCBlockInfo and create DwgAppDataSchema for the first find
     -----------------------------------------------------------------------------------*/
     for (iter->Start(); !iter->Done(); iter->Step())
         {
@@ -466,6 +470,10 @@ BentleyStatus XRefLoader::LoadXrefsInMasterFile ()
         // if the block has ATTRDEF's, create an attrdef ECClass from the block:
         if (block->HasAttributeDefinitions())
             m_importer.AddAttrdefECClassFromBlock(m_attrdefSchema, *block.get());
+
+        // if the block contains regapp Bentley.CCBlockInfo, create a DwgAppData schema
+        if (!m_dwgAppDataSchema.IsValid())
+            xdataFactory.CreateDwgAppDataSchema (m_dwgAppDataSchema, *block);
         }
 
     return  BentleyStatus::BSISUCCESS;
@@ -491,6 +499,7 @@ BentleyStatus XRefLoader::CacheUnresolvedXrefs ()
     pointer.  This toolkit creates and hides new databases for the xRefs it resolves.  A method which
     returns a RefCounted pointer would be invalid (e.g. DwgDbObject::GetDatabase).
     --------------------------------------------------------------------------------------------------*/
+    XDataFactory xdataFactory(m_importer);
     auto& unresolvedXrefs = m_importer.GetUnresolvedXrefs();
     for (auto xref : m_importer.GetLoadedXrefs())
         {
@@ -532,6 +541,10 @@ BentleyStatus XRefLoader::CacheUnresolvedXrefs ()
             // if the block has ATTRDEF's, create an attrdef ECClass from the block:
             if (block->HasAttributeDefinitions())
                 m_importer.AddAttrdefECClassFromBlock(m_attrdefSchema, *block.get());
+
+            // if the block contains regapp Bentley.CCBlockInfo, create a DwgAppData schema
+            if (!m_dwgAppDataSchema.IsValid())
+                xdataFactory.CreateDwgAppDataSchema (m_dwgAppDataSchema, *block);
             }
         }
 

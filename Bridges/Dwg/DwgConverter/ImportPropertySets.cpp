@@ -27,36 +27,7 @@ ECObjectsStatus AecPsetSchemaFactory::CreateTargetSchema ()
     status = m_targetSchema->SetDisplayLabel (SCHEMALabel_AecPropertySets);
     status = m_targetSchema->SetDescription (SCHEMADescription_AecPSets);
 
-    // Reference schema Generic
-    ECSchemaCP  refSchema = m_dgndb.Schemas().GetSchema (GENERIC_DOMAIN_NAME);
-    if (nullptr != refSchema)
-        status = m_targetSchema->AddReferencedSchema (const_cast<ECSchemaR>(*refSchema));
-    else
-        BeAssert (false && "Failed finding schema: Generic!");
-
-    // Reference schema Dgn
-    if (nullptr != (refSchema = m_dgndb.Schemas().GetSchema(BIS_ECSCHEMA_NAME)))
-        status = m_targetSchema->AddReferencedSchema (const_cast<ECSchemaR>(*refSchema));
-    else
-        BeAssert (false && "Failed finding schema: Dgn!");
-
-    // Reference schema BisCore
-    status = ECObjectsStatus::SchemaNotFound;
-    if (nullptr != (refSchema = CoreCustomAttributeHelper::GetSchema().get()))
-        status = m_targetSchema->AddReferencedSchema (const_cast<ECSchemaR>(*refSchema));
-    else
-        BeAssert (false && "Failed finding schema: BisCore!");
-
-    if (status != ECObjectsStatus::Success)
-        return  status;
-
-    // set dynamic schema
-    auto ecInstance = CoreCustomAttributeHelper::CreateCustomAttributeInstance ("DynamicSchema");
-    if (ecInstance.IsValid())
-        status = m_targetSchema->SetCustomAttribute (*ecInstance);
-    else
-        status = ECObjectsStatus::DynamicSchemaCustomAttributeWasNotFound;
-
+    status = DwgHelper::MakeSchemaDynamicForDwg (m_dgndb, *m_targetSchema);
     return  status;
     }
 

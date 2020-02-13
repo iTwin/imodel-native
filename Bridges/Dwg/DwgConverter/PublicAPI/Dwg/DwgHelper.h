@@ -20,6 +20,15 @@
 #define SCHEMAAlias_AecPropertySets         "AdskPset"
 #define SCHEMADescription_AecPSets          "A schema created from Autodesk AEC Property Set definitions"
 
+#define SCHEMAName_DwgAppData               "DwgApplicationData"
+#define SCHEMALabel_DwgAppData              "DWG Application Data"
+#define SCHEMAAlias_DwgAppData              "DwgAppData"
+#define SCHEMADescription_DwgAppData        "A container for certain known DWG application data qualified to be converted as schema classes"
+
+#define ECCLASSName_BentleyCCBlockInfo      "BentleyCCBlockInfo"
+#define PROPERTYName_Breadcrumbs            "Breadcrumbs"
+#define REGAPPName_BentleyCCBlockInfo       L"Bentley.CCBlockInfo"
+
 #define REALDWG_REGISTRY_ROOTKEY            L"REALDWG_REGISTRY_ROOTKEY"
 #define ISVALID_Thickness(t)                (fabs(t) > 1.0e-8)
 #define ISVALID_Distance(d)                 (fabs(d) > 1.0e-8)
@@ -28,6 +37,7 @@
 #define CHAR_CarriageReturn                 0x0D
 
 USING_NAMESPACE_BENTLEY_RENDER
+USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_DWGDB
 
 BEGIN_DWG_NAMESPACE
@@ -119,6 +129,8 @@ public:
     DWG_EXPORT static void             ComposeTransformByExtrusion (TransformR intOut, double elevation);
     DWG_EXPORT static bool             IsBulgeFactorValid (double bulge);
     DWG_EXPORT static BentleyStatus    ExtractAndConcatenateTextsFrom (Utf8StringR texts, DgnElementCR element);
+    //! Add reference schemas and add DynamicSchema attribute to the target schema
+    DWG_EXPORT static ECObjectsStatus  MakeSchemaDynamicForDwg (DgnDbR db, ECSchemaR targetSchema);
     };  // DwgHelper
 
 END_DWG_NAMESPACE

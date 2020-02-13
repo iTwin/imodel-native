@@ -39,7 +39,7 @@ private:
 public:
     DWGDB_EXPORT ~DwgResBuf ();
 
-    // Keep the enum values as they are - they will be static casted to/from a toolkit:
+    //! Keep the enum values as they are - they will be static casted to/from a toolkit:
     enum class DataType
         {
         None                = 0,
@@ -74,6 +74,8 @@ public:
     DWGDB_EXPORT DwgDbStatus    GetPoint3d (DPoint3dR out);
     DWGDB_EXPORT DwgDbHandle    GetHandle ();
     DWGDB_EXPORT DwgDbObjectId  GetObjectId ();
+    //! A regapp entry is of type DataType::Text - call this method to tell the difference between 1001 from 1000
+    DWGDB_EXPORT bool           IsRegappName ();
     };  // DwgResBuf
 DEFINE_NO_NAMESPACE_TYPEDEFS (DwgResBuf)
 
@@ -90,8 +92,11 @@ iterate through the xdata on an entity:
         switch (curr->GetDataType())
              {
              case DwgResBuf::DataType::Text:
-                DwgStringR  name = curr->GetString();
-                ...
+                if (curr->IsRegappName())
+                    regappName = curr->GetString();
+                else
+                    textString = curr->GetString();
+            ...
     }
 @endverbatim
  

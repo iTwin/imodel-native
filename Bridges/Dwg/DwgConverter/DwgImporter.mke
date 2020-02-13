@@ -109,6 +109,8 @@ $(o)DwgHelper$(oext)        : $(baseDir)DwgHelper.cpp $(DwgDepends) ${MultiCompi
 
 $(o)DwgSourceAspects$(oext) : $(baseDir)DwgSourceAspects.cpp $(DwgDepends) ${MultiCompileDepends}
 
+$(o)XDataFactory$(oext)     : $(baseDir)XDataFactory.cpp $(DwgDepends) ${MultiCompileDepends}
+
 $(o)ConvertConfig$(oext)    : $(baseDir)Config/ConvertConfig.cpp $(DwgDepends) ${MultiCompileDepends}
 
 $(o)ProcessLogger$(oext)    : $(baseDir)ProcessLogger.cpp $(DwgDepends) ${MultiCompileDepends}

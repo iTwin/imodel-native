@@ -357,31 +357,7 @@ ECObjectsStatus DwgImporter::AddAttrdefECClassFromBlock (ECSchemaPtr& attrdefSch
             Utf8PrintfString    description (DataStrings::GetString(DataStrings::AttrdefsSchemaDescription()).c_str(), filename.c_str());
             status = attrdefSchema->SetDescription (description.c_str());
 
-            // Reference schema Generic
-            ECSchemaCP  refSchema = this->GetDgnDb().Schemas().GetSchema (GENERIC_DOMAIN_NAME);
-            if (nullptr != refSchema)
-                status = attrdefSchema->AddReferencedSchema (const_cast<ECSchemaR>(*refSchema));
-            else
-                BeAssert (false && "Failed finding schema: Generic!");
-
-            // Reference schema Dgn
-            if (nullptr != (refSchema = this->GetDgnDb().Schemas().GetSchema(BIS_ECSCHEMA_NAME)))
-                status = attrdefSchema->AddReferencedSchema (const_cast<ECSchemaR>(*refSchema));
-            else
-                BeAssert (false && "Failed finding schema: Dgn!");
-
-            // Reference schema BisCore
-            if (nullptr != (refSchema = CoreCustomAttributeHelper::GetSchema().get()))
-                status = attrdefSchema->AddReferencedSchema (const_cast<ECSchemaR>(*refSchema));
-            else
-                BeAssert (false && "Failed finding schema: Dgn!");
-
-            // set dynamic schema
-            auto ecInstance = CoreCustomAttributeHelper::CreateCustomAttributeInstance ("DynamicSchema");
-            if (ecInstance != nullptr)
-                status = attrdefSchema->SetCustomAttribute (*ecInstance);
-            else
-                status = ECObjectsStatus::NullPointerValue;
+            status = DwgHelper::MakeSchemaDynamicForDwg (this->GetDgnDb(), *attrdefSchema);
             }
         }
     if (ECObjectsStatus::Success != status)

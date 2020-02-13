@@ -143,6 +143,13 @@ BentleyStatus   DwgImporter::_ImportBlockReference (ElementImportResults& result
     AttributeFactory        attribFactory(*this, *hostElement, results, inputs);
     attribFactory.CreateElements (*insert);
 
+    // set multi-aspect properties from xdata Bentley.CCBlockInfo attached to the block
+    if (m_dwgAppDataSchema != nullptr)
+        {
+        XDataFactory    xdataFactory(*this);
+        status = xdataFactory.CreateBreadcrumbs (*hostElement, m_dwgAppDataSchema, *insert);
+        }
+
     return  status;
     }
 

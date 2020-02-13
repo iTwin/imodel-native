@@ -433,4 +433,4 @@ DwgResBuf::DataType      DwgResBuf::GetDataType ()
 DwgResBufP  DwgResBuf::Start () { return this; }
 DwgResBufP  DwgResBuf::Next () { return static_cast<DwgResBufP>(DWGDB_CALLSDKMETHOD(T_Super::next().get(), T_Super::rbnext)); }
 DwgResBufP  DwgResBuf::End () { return nullptr; }
-
+bool        DwgResBuf::IsRegappName () { return static_cast<DxfGroupCode>(DWGDB_CALLSDKMETHOD(T_Super::restype(), T_Super::restype)) == DxfGroupCode::RegAppName; }
