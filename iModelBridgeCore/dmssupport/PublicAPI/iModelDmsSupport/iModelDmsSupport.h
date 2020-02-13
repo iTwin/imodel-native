@@ -44,14 +44,16 @@ struct iModelDmsSupport
         PWDIDMS = 4,
         };
 
-    IMODEL_DMSSUPPORT_EXPORT static IDmsSupport* GetInstance(SessionType sessionType, Utf8StringCR userName, Utf8StringCR password, Utf8StringCR callBackurl = Utf8String(), Utf8StringCR accessToken = Utf8String(), Utf8StringCR datasource = Utf8String());
+    IMODEL_DMSSUPPORT_EXPORT static IDmsSupport* GetInstance(SessionType sessionType, Utf8StringCR userName, Utf8StringCR password, 
+		Utf8StringCR callBackurl, Utf8StringCR accessToken, Utf8StringCR datasource, unsigned long  productId);
     };
 
 END_BENTLEY_DGN_NAMESPACE
 
 extern "C"
     {
-    typedef BentleyApi::Dgn::IDmsSupport* T_iModelDmsSupport_getInstance(int sessionType, BentleyApi::Utf8StringCR userName, BentleyApi::Utf8StringCR password, BentleyApi::Utf8StringCR callBackurl, BentleyApi::Utf8StringCR accessToken, BentleyApi::Utf8StringCR datasource);
+    typedef BentleyApi::Dgn::IDmsSupport* T_iModelDmsSupport_getInstance(int sessionType, BentleyApi::Utf8StringCR userName, BentleyApi::Utf8StringCR password,
+        BentleyApi::Utf8StringCR callBackurl, BentleyApi::Utf8StringCR accessToken, BentleyApi::Utf8StringCR dataSource, unsigned long productId);
     }
 
 

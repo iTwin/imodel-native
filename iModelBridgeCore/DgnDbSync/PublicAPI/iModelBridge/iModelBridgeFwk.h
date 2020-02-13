@@ -127,6 +127,8 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
     static void DecryptCredentials(Http::Credentials& credentials);
     static WString getArgValueW(WCharCP arg);
     static Utf8String getArgValue(WCharCP arg);
+    static Utf8String ParseTokenFile(Utf8StringCR tokenFile);
+
     //! The command-line arguments required by the iModelBridgeFwk itself that define the Job
     struct JobDefArgs
         {
@@ -221,7 +223,6 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         uint8_t             m_maxRetryWait = 5;   //!< The maximum number of seconds to wait during retries (each retry waits randomly between 0 and this maximum).
         bvector<WString>    m_bargs;
         
-        Utf8String    ParseTokenFile(Utf8StringCR tokenFile);
         BentleyStatus ParseEnvironment();
         BentleyStatus ParseCommandLine(bvector<WCharCP>& bargptrs, int argc, WCharCP argv[]);
         BentleyStatus Validate(int argc, WCharCP argv[]);
@@ -237,6 +238,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         BeFileName          m_workspaceDir;
         BeFileName          m_dmsLibraryName;
         Http::Credentials   m_dmsCredentials;            //!< DMS credentials
+        Utf8String          m_accessToken;
         WString             m_dataSource;
         int                 m_folderId;
         int                 m_documentId;

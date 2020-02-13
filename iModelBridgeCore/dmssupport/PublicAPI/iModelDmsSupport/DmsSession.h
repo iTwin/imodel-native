@@ -10,9 +10,6 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 struct DmsSession
     {
     private:
-        Utf8String  m_userName;
-        Utf8String  m_password;
-        Utf8String  m_dataSource;
         BeFileName  m_applicationResourcePath;
         BeFileName  m_pwBinaryPath;
 
@@ -21,9 +18,12 @@ struct DmsSession
         void SetPWBinaryPath(BeFileNameCR pwBinaryPath);
         static BeFileName  GetDefaultWorkspacePath(bool isv8i);
         iModelDmsSupport::SessionType m_sessionType;
+    protected:
+        Utf8String  m_dataSource;
     public:
     
-        DmsSession(Utf8StringCR userName, Utf8StringCR password, iModelDmsSupport::SessionType sessionType);
+        DmsSession(iModelDmsSupport::SessionType sessionType);
+        virtual ~DmsSession();
 
         static Utf8StringCR GetDataSourceFromMoniker(Utf8StringCR moniker);
         
@@ -44,6 +44,30 @@ struct DmsSession
         BeFileName GetDefaultConfigPath(bool isv8i) const;
 
         iModelDmsSupport::SessionType GetSessionType() const;
+
+        virtual bool Login() = 0;
+    };
+
+struct UserCredentialsSession : DmsSession
+    {
+    private:
+        Utf8String  m_userName;
+        Utf8String  m_password;
+    public:
+        UserCredentialsSession(Utf8String userName, Utf8String password, iModelDmsSupport::SessionType sessionType);
+        ~UserCredentialsSession() override;
+        bool Login() override;
+    };
+
+struct SamlTokenSession : DmsSession
+    {
+    private:
+        Utf8String m_accessToken;
+        unsigned long m_productId;
+    public:
+        SamlTokenSession(Utf8String accessToken, unsigned long productId, iModelDmsSupport::SessionType sessionType);
+        ~SamlTokenSession() override;
+        bool Login() override;
     };
 
 END_BENTLEY_DGN_NAMESPACE

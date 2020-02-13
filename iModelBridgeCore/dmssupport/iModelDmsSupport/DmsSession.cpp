@@ -40,13 +40,10 @@ bool    DmsSession::Initialize()
     if (NULL != m_activeDataSource)
         return true;
 
-    
     LOG.tracev("PW Initialized successfully.");
-    LOG.tracev("Logging into data source. %s with user %s", m_dataSource.c_str(), m_userName.c_str());
-    WString userName(m_userName.c_str(), true);
-    WString password(m_password.c_str(), true);
-    WString dataSource(m_dataSource.c_str(), true);
-    if (!aaApi_Login(NULL, dataSource.c_str(), userName.c_str(), password.c_str(), NULL))
+
+    bool loggedIn = Login();
+    if (!loggedIn)
         {
         LOG.error("Unable to login to projectwise data source");
         return false;
@@ -60,6 +57,7 @@ bool    DmsSession::Initialize()
 
     HDSOURCE* dataSources = NULL;
     ULONG dataSourceCount = 0;
+    WString dataSource(m_dataSource.c_str(), true);
     if (aaApi_GetDatasourceHandlesByName(dataSource.c_str(), &dataSources, &dataSourceCount))
         {
         LOG.trace("aaApi_GetDatasourceHandlesByName SUCCEEDED");
@@ -110,12 +108,18 @@ BeFileName      DmsSession::GetDefaultConfigPath(bool isv8i) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DmsSession::DmsSession(Utf8StringCR userName, Utf8StringCR password, iModelDmsSupport::SessionType sessionType)
-    :m_userName(userName), m_activeDataSource(NULL), m_password(password),m_sessionType(sessionType)
+DmsSession::DmsSession(iModelDmsSupport::SessionType sessionType)
+    :m_activeDataSource(NULL), m_sessionType(sessionType)
     {
     
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    
++---------------+---------------+---------------+---------------+---------------+------*/
+DmsSession::~DmsSession() 
+    {
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
@@ -167,4 +171,70 @@ bool            DmsSession::SetDataSource(Utf8StringCR dataSource)
 
     m_dataSource = dataSource;
     return true;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+SamlTokenSession::SamlTokenSession(Utf8String accessToken, unsigned long productId, iModelDmsSupport::SessionType sessionType)
+    :DmsSession(sessionType), m_accessToken( accessToken), m_productId(productId)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+SamlTokenSession::~SamlTokenSession() 
+    {
+    };
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SamlTokenSession::Login()
+    {
+    LOG.tracev("Logging into data source %s with token %s", m_dataSource.c_str(), m_accessToken.c_str());
+    WString ds(m_dataSource.c_str(), true);
+    WString token(m_accessToken.c_str(), true);
+
+    ULONG productIDs[] = { m_productId, 0 };
+
+    bool loggedIn = aaApi_LoginWithSecurityToken(ds.c_str(), token.c_str(), false, NULL, productIDs);
+    if (!loggedIn)
+        {
+        int code = aaApi_GetLastErrorId();
+        auto msg = aaApi_GetLastErrorMessage();
+        auto dtl = aaApi_GetLastErrorDetail();
+        LOG.errorv("Unable to login to PW with token. %d, %ls, %ls", code, msg, dtl);
+        }
+    return loggedIn;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+UserCredentialsSession::UserCredentialsSession(Utf8String userName, Utf8String password, iModelDmsSupport::SessionType sessionType)
+    :DmsSession(sessionType), m_userName(userName), m_password(password)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+UserCredentialsSession::~UserCredentialsSession()
+    {
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool UserCredentialsSession::Login()
+    {
+    LOG.tracev("Logging into data source. %s with user %s", m_dataSource.c_str(), m_userName.c_str());
+    WString userName(m_userName.c_str(), true);
+    WString password(m_password.c_str(), true);
+    WString ds(m_dataSource.c_str(), true);
+    return aaApi_Login(NULL, ds.c_str(), userName.c_str(), password.c_str(), NULL);
     }

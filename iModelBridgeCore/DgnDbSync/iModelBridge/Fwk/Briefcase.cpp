@@ -195,7 +195,7 @@ BentleyStatus iModelBridgeFwk::IModelHubArgs::ParseCommandLine(bvector<WCharCP>&
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  11/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String      iModelBridgeFwk::IModelHubArgs::ParseTokenFile(Utf8StringCR tokenFile)
+Utf8String      iModelBridgeFwk::ParseTokenFile(Utf8StringCR tokenFile)
     {
     WString contents;
     if (SUCCESS != iModelBridgeFwk::ReadEntireFile(contents, BeFileName(tokenFile)))
@@ -212,9 +212,7 @@ BentleyStatus   iModelBridgeFwk::IModelHubArgs::ParseEnvironment()
     if (m_accessToken.empty())
         {
         Utf8String tokenFile;
-        if (SetValueIfEmptyFromEnv(L"imbridge--server-token", tokenFile))
-            m_accessToken = ParseTokenFile(tokenFile);
-            
+        (SetValueIfEmptyFromEnv(L"imbridge--server-token", m_accessToken));            
         }
     SetValueIfEmptyFromEnv(L"imbridge--server-oidcCallBackUrl", m_callBackurl);
     

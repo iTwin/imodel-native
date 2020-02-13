@@ -74,7 +74,7 @@ StatusInt   PWWorkspaceHelper::_FetchWorkspace(BeFileNameR workspaceCfgFile, int
                                                 (long)documentId,
                                                 destination.c_str(),//workspaceDir,
                                                 NULL, // additionalCfg
-                                                m_session.GetApplicationResourcePath(isv8i).c_str(), // path to MSTN
+                                                m_session->GetApplicationResourcePath(isv8i).c_str(), // path to MSTN
                                                 NULL,//m_session.GetDefaultConfigPath(isv8i).c_str(), // defaultCfgFile
                                                 NULL, //commandLineArgs,
                                                 NULL, // fnCallback
@@ -117,7 +117,7 @@ StatusInt   PWWorkspaceHelper::_FetchWorkspace(BeFileNameR workspaceCfgFile, int
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 PWWorkspaceHelper::PWWorkspaceHelper(DmsSession& session)
-    :m_initDone(false),m_session(session), m_initPwAppDone(false)
+    :m_initDone(false),m_session(&session), m_initPwAppDone(false)
     {
 
     }
@@ -127,6 +127,8 @@ PWWorkspaceHelper::PWWorkspaceHelper(DmsSession& session)
 +---------------+---------------+---------------+---------------+---------------+------*/
 PWWorkspaceHelper::~PWWorkspaceHelper()
     {
+    if(m_session)
+        delete m_session;
     _UnInitialize();
     _UnInitializeSession();
     }
@@ -192,7 +194,7 @@ bool            PWWorkspaceHelper::InitPwApi()
         return true;
 
     m_initPwAppDone = true;
-    return m_session.InitPwLibraries(BeFileName(L"C:\\Program Files\\Bentley\\ProjectWise\\bin"));
+    return m_session->InitPwLibraries(BeFileName(L"C:\\Program Files\\Bentley\\ProjectWise\\bin"));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -210,6 +212,11 @@ bool            PWWorkspaceHelper::_InitializeSession(WStringCR pwMoniker)
     if (!aaApi_StringsToMonikers(1, &moniker, &monikerArray, AAMONIKERF_DONT_VALIDATE))
         {
         LOG.errorv(L"Cannot call  aaApi_StringsToMonikers for document %ls", pwMoniker.c_str());
+
+        int code = aaApi_GetLastErrorId();
+        auto msg = aaApi_GetLastErrorMessage();
+        auto dtl = aaApi_GetLastErrorDetail();
+        LOG.errorv("%ls, %ls, %ls", code, msg, dtl);
         return false;
         }
     
@@ -233,7 +240,7 @@ bool            PWWorkspaceHelper::_InitializeSession(WStringCR pwMoniker)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            PWWorkspaceHelper::_UnInitializeSession()
     {
-    m_session.UnInitialize();
+    m_session->UnInitialize();
     return true;
     }
 
@@ -242,7 +249,7 @@ bool            PWWorkspaceHelper::_UnInitializeSession()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            PWWorkspaceHelper::SetApplicationResourcePath(BeFileNameCR applicationResourcePath)
     {
-    m_session.SetApplicationResourcePath(applicationResourcePath);
+    m_session->SetApplicationResourcePath(applicationResourcePath);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -253,9 +260,9 @@ bool            PWWorkspaceHelper::_InitializeSessionFromDataSource(WStringCR da
     if (!InitPwApi())
         return false;
 
-    m_session.SetDataSource(Utf8String(dataSource));
+    m_session->SetDataSource(Utf8String(dataSource));
 
-    if (!m_session.Initialize())
+    if (!m_session->Initialize())
         return false;
 
     return true;

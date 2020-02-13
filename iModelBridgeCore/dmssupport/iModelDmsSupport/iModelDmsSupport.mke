@@ -38,7 +38,7 @@ MultiCompileDepends = $(_MakeFileSpec)
 
 %include MultiCppCompileRule.mki
 
-$(o)DmsSession$(oext) : $(_MakeFilePath)DmsSession.cpp $(dmsAPISrc)DmsSession.h  $(dmsAPISrc)iModelDmsSupport.h ${MultiCompileDepends}
+$(o)DmsSession$(oext) : $(_MakeFilePath)DmsSession.cpp $(dmsAPISrc)DmsSession.h  $(dmsAPISrc)iModelDmsSupport.h ${MultiCompileDepends} 
 
 $(o)iModelDmsSupport$(oext) : $(_MakeFilePath)iModelDmsSupport.cpp $(dmsAPISrc)DmsSession.h  $(dmsAPISrc)iModelDmsSupport.h ${MultiCompileDepends}
 
@@ -72,10 +72,10 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
 LINKER_LIBRARIES            = $(ContextSubpartsLibs)$(libprefix)Bentley$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)WebServicesClient$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BeXml$(libext)
-LINKER_LIBRARIES			+ $(ContextSubpartsLibs)$(libprefix)BeHttp$(libext)
-LINKER_LIBRARIES			+ $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
-LINKER_LIBRARIES			+ $(ContextSubpartsLibs)$(libprefix)iModelHubClient$(libext)
-LINKER_LIBRARIES			+ $(ContextSubpartsLibs)$(stlibprefix)BeJsonCpp$(stlibext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BeHttp$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)iModelHubClient$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(stlibprefix)BeJsonCpp$(stlibext)
 
 LINKER_LIBRARIES_DELAYLOADED = $(ContextSubpartsLibs)$(libprefix)PWManagedWorkspace$(stlibext)
 LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)$(libprefix)dmscli$(stlibext)

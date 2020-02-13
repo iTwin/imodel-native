@@ -14,7 +14,7 @@ struct PWWorkspaceHelper : public IDmsSupport
     private:
         bool        m_initPwAppDone;
         bool        m_initDone;
-        DmsSession  m_session;
+        DmsSession* m_session;
         BeFileName  m_inputFile;
         BeFileName  m_activeWorkspaceDir;
         WString     m_inputFileMoniker;

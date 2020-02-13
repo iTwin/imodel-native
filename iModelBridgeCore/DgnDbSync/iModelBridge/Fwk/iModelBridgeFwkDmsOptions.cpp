@@ -45,7 +45,15 @@ BentleyStatus   iModelBridgeFwk::LoadDmsLibrary(iModelBridgeError& errorContext)
     if (nullptr == getInstance)
         return errorContext.GetBentleyStatus();
 
-    m_dmsSupport = getInstance(m_dmsServerArgs.m_dmsType, m_dmsServerArgs.m_dmsCredentials.GetUsername(), m_dmsServerArgs.m_dmsCredentials.GetPassword(), m_iModelHubArgs->m_callBackurl, m_iModelHubArgs->m_accessToken, Utf8String(m_dmsServerArgs.m_dataSource));//m_dmsCredentials
+    ULONG prodId = std::stoul( m_bridge->GetParamsCR().m_clientInfo->GetApplicationProductId().c_str());
+
+    Utf8String accessToken = nullptr;
+    if (m_dmsServerArgs.m_dmsType == iModelDmsSupport::SessionType::PWDI) 
+        accessToken = m_dmsServerArgs.m_accessToken;	// for projectWise we use token from dmsServerArgs
+    else 
+        accessToken = m_iModelHubArgs->m_accessToken;	// for PWShare and other OIDC cases we use same toke as used for logging into iModelHub, in this case token in serverArgs can be undefined and saved
+
+    m_dmsSupport = getInstance(m_dmsServerArgs.m_dmsType, m_dmsServerArgs.m_dmsCredentials.GetUsername(), m_dmsServerArgs.m_dmsCredentials.GetPassword(), m_iModelHubArgs->m_callBackurl, accessToken, Utf8String(m_dmsServerArgs.m_dataSource), prodId);//m_dmsCredentials
     
     if (nullptr == m_dmsSupport)
         {
@@ -175,7 +183,7 @@ void iModelBridgeFwk::DmsServerArgs::PrintUsage()
     L"DMS :\n\
     --dms-library=          (optional)  The full path to the dms library. eg. iModelDmsSupportB02.dll Use this for direct Dms support from the framework.\n\
     --dms-workspaceDir=     (optional)  Directory to cache workspace files.\n\
-    --dms-user=             (optional)  The username for the dms source.\n\
+    --dms-user=             (optional)  The username for the dms source. Ignored if --dms-accessToken is specified.\n\
     --dms-password=         (optional)  The password for the dms source.\n\
     --dms-inputFileUrn=     (optional)  The urn to fetch the input file. This and associated workspace will be downloaded and stored in the location specified by\
     --fwk-input and --dms-workspaceDir= eg.pw://server:datasource/Documents/D{c6cbe438-e200-4567-a98c-dfa55aba33be}\n\
@@ -186,8 +194,8 @@ void iModelBridgeFwk::DmsServerArgs::PrintUsage()
     --dms-retries=          (optional)  The number of times to retry\n\
     --dms-type=             (optional)  Supports the following values 1 ( PW (default)), 2 (PWShare), 3 (Azure SAS Url)\n\
     --dms-additionalFiles=  (optional)  Applicable only for PW. Supports staging files specified by the pattern. (eg *.xml ). Can be specified more than once. \n\
-    --dms-documentGuid=     (optional)  Document identifier in the system. In case of PW this is obtained from inputFileUrn"
-
+    --dms-documentGuid=     (optional)  Document identifier in the system. In case of PW this is obtained from inputFileUrn\n\
+    --dms-accessToken=      (optional)  OIDC or SAML access token used to login to DMS system. If ommited or empty, user credentials are used for login."
     );
     }
 
@@ -315,6 +323,16 @@ BentleyStatus iModelBridgeFwk::DmsServerArgs::ParseCommandLine(bvector<WCharCP>&
             m_additionalFilePatterns.push_back(WString(getArgValueW(argv[iArg])));
             continue;
             }
+        if (argv[iArg] == wcsstr(argv[iArg], L"--dms-accessToken="))
+            {
+            Utf8String tokenFileName = getArgValue(argv[iArg]);
+            GetLogger().tracev(L"Attempting to get token from filename = %s", tokenFileName.c_str());
+            Utf8String encodedToken = ParseTokenFile(getArgValue(argv[iArg]));
+            GetLogger().tracev("... encoded token length = %d", encodedToken.length());
+            m_accessToken = Base64Utilities::Decode(encodedToken);
+            GetLogger().tracev("... decoded token length = %d", m_accessToken.length());
+            continue;
+            }
         BeAssert(false);
         fwprintf(stderr, L"%ls: unrecognized server argument\n", argv[iArg]);
         return BSIERROR;
@@ -350,6 +368,7 @@ BentleyStatus iModelBridgeFwk::DmsServerArgs::ParseCommandLine(bvector<WCharCP>&
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeFwk::DmsServerArgs::ParseEnvironment ()
     {
+    GetLogger().trace("Getting dms variables from environment");
     SetValueIfEmptyFromEnv(L"imbridge--dms-documentGuid", m_documentGuid);
     SetValueIfEmptyFromEnv(L"imbridge--dms-library", m_dmsLibraryName);
     SetValueIfEmptyFromEnv(L"imbridge--dms-datasource", m_dataSource);
@@ -357,8 +376,18 @@ BentleyStatus iModelBridgeFwk::DmsServerArgs::ParseEnvironment ()
         SetValueFromEnv(L"imbridge--dms-documentId=", m_documentId);
 
     SetValueIfEmptyFromEnv(L"imbridge--dms-inputFileUrn", m_inputFileUrn);
-    SetValueIfEmptyFromEnv(L"imbridge-dms-workspaceDir", m_workspaceDir);
-    SetValueFromEnv(L"imbridge-dms-type", m_dmsType);
+    SetValueIfEmptyFromEnv(L"imbridge--dms-workspaceDir", m_workspaceDir);
+    SetValueFromEnv(L"imbridge--dms-type", m_dmsType);
+    if (m_accessToken.empty())
+        {
+        GetLogger().trace("Retrieving dms access token from environment");
+        Utf8String encodedToken;
+        SetValueIfEmptyFromEnv(L"imbridge--dms-accessToken", encodedToken);
+        GetLogger().tracev("... encoded token length = %d", encodedToken.length());
+        m_accessToken = Base64Utilities::Decode(encodedToken);
+        GetLogger().tracev("... decoded token length = %d", m_accessToken.length());
+
+        }
     return SUCCESS;
     }
 

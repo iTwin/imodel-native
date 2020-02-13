@@ -14,28 +14,33 @@ USING_NAMESPACE_BENTLEY_DGN
 extern "C"
     {
 
-    IMODEL_DMSSUPPORT_EXPORT IDmsSupport*    iModelDmsSupport_getInstance(int sessionType, Utf8StringCR userName, Utf8StringCR password, Utf8StringCR callBackurl, Utf8StringCR accessToken, Utf8StringCR datasource)
+    IMODEL_DMSSUPPORT_EXPORT IDmsSupport*    iModelDmsSupport_getInstance(int sessionType, Utf8StringCR userName, Utf8StringCR password, Utf8StringCR callBackurl, Utf8StringCR accessToken, Utf8StringCR datasource, unsigned long productId)
         {
-        return iModelDmsSupport::GetInstance((iModelDmsSupport::SessionType)sessionType, userName, password, callBackurl, accessToken, datasource);
+        return iModelDmsSupport::GetInstance((iModelDmsSupport::SessionType)sessionType, userName, password, callBackurl, accessToken, datasource, productId);
         }
     }
 
- BentleyApi::Dgn::IDmsSupport*   iModelDmsSupport_getInstance(int sessionType, Utf8StringCR userName, Utf8StringCR password, Utf8StringCR callBackurl, Utf8StringCR accessToken, Utf8StringCR datasource);
+ BentleyApi::Dgn::IDmsSupport*   iModelDmsSupport_getInstance(int sessionType, Utf8StringCR userName, Utf8StringCR password, Utf8StringCR callBackurl, Utf8StringCR accessToken, Utf8StringCR datasource, unsigned long productId);
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
- IDmsSupport*    iModelDmsSupport::GetInstance(iModelDmsSupport::SessionType sessionType, Utf8StringCR userName, Utf8StringCR password, Utf8StringCR callBackurl, Utf8StringCR accessToken, Utf8StringCR datasource)
-     {
-     DmsSession session(userName, password, sessionType);
+ IDmsSupport*    iModelDmsSupport::GetInstance(iModelDmsSupport::SessionType sessionType, Utf8StringCR userName, Utf8StringCR password, Utf8StringCR callBackurl, Utf8StringCR accessToken, Utf8StringCR datasource, unsigned long productId)
+    {
+    if (sessionType == SessionType::AzureBlobStorage)
+        return new AzureBlobStorageHelper();
 
-     if (sessionType == SessionType::AzureBlobStorage)
-         return new AzureBlobStorageHelper();
-
-     if (sessionType == SessionType::PWShare)
+    if (sessionType == SessionType::PWShare)
          return new DmsHelper(callBackurl, accessToken);
 
-     if (sessionType == SessionType::PWDIDMS)
+    if (sessionType == SessionType::PWDIDMS)
          return new DmsHelper(callBackurl, accessToken, PWREPOSITORYTYPE, datasource);
 
-     return new PWWorkspaceHelper(session);
-     };
+    // default - PWDI session
+    DmsSession* session = nullptr;
+    if (!accessToken.empty())
+        session = new SamlTokenSession(accessToken, productId, sessionType);
+    else
+        session = new UserCredentialsSession(userName, password, sessionType);
+
+    return new PWWorkspaceHelper(*session);
+    };
