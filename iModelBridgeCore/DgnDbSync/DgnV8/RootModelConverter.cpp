@@ -1326,6 +1326,8 @@ void RootModelConverter::ConvertNamedGroupsAndECRelationships()
 
     timer.Start();
     ConvertECRelationships();
+    if (m_haveDroppedIndexDdl)
+        RecreateElementRefersToElementsIndices(m_indexDdlList);
     ConverterLogging::LogPerformance(timer, "Convert Elements> ECRelationships (total)");
     }
 

@@ -2273,7 +2273,20 @@ BentleyStatus DynamicSchemaGenerator::FlattenSchemas(ECN::ECSchemaP ecSchema)
     for (ECN::ECSchemaP sourceSchema : schemas)
         {
         Utf8String sourceSchemaName(sourceSchema->GetName().c_str());
-        m_schemaReadContext->GetCache().DropSchema(sourceSchema->GetSchemaKey());
+        // Drop uses 'Identical' which matches on checksum.  The checksums could theoretically be different, but we don't care in this situation
+        if (ECN::ECObjectsStatus::SchemaNotFound == m_schemaReadContext->GetCache().DropSchema(sourceSchema->GetSchemaKey()))
+            {
+            ECN::ECSchemaP cacheSchema = m_schemaReadContext->GetCache().GetSchema(sourceSchema->GetSchemaKey(), ECN::SchemaMatchType::Latest);
+            if (nullptr != cacheSchema)
+                m_schemaReadContext->GetCache().DropSchema(cacheSchema->GetSchemaKey());
+            }
+        // It is possible to end up with 2 different entries of this schema (no other schema does this) so make sure no duplicates
+        if (sourceSchemaName.Equals("ECv3ConversionAttributes"))
+            {
+            ECN::ECSchemaP cacheSchema = m_schemaReadContext->GetCache().GetSchema(sourceSchema->GetSchemaKey(), ECN::SchemaMatchType::Latest);
+            if (nullptr != cacheSchema)
+                m_schemaReadContext->GetCache().DropSchema(cacheSchema->GetSchemaKey());
+            }
         m_schemaReadContext->AddSchema(*m_flattenedRefs[sourceSchemaName]);
         }
 
@@ -2755,10 +2768,15 @@ static void BuildDependencyOrderedSchemaList(bvector<ECN::ECSchemaP>& schemas, E
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2019
 //---------------+---------------+---------------+---------------+---------------+-------
-static void CopyKOQ(ECN::ECSchemaPtr mergedSchema, ECN::ECSchemaCP schema)
+static void CopyKOQ(ECN::ECSchemaPtr mergedSchema, ECN::ECSchemaCP schema, bool doCheck = false)
     {
     for (ECN::KindOfQuantityCP koq : schema->GetKindOfQuantities())
         {
+        if (doCheck)
+            {
+            if (nullptr != mergedSchema->GetKindOfQuantityP(koq->GetName().c_str()))
+                continue;
+            }
         ECN::KindOfQuantityP destKoq = nullptr;
         mergedSchema->CopyKindOfQuantity(destKoq, *koq);
         }
@@ -2767,10 +2785,15 @@ static void CopyKOQ(ECN::ECSchemaPtr mergedSchema, ECN::ECSchemaCP schema)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2019
 //---------------+---------------+---------------+---------------+---------------+-------
-static void CopyPropertyCategories(ECN::ECSchemaPtr mergedSchema, ECN::ECSchemaCP schema)
+static void CopyPropertyCategories(ECN::ECSchemaPtr mergedSchema, ECN::ECSchemaCP schema, bool doCheck = false)
     {
     for (auto prop : schema->GetPropertyCategories())
         {
+        if (doCheck)
+            {
+            if (nullptr != mergedSchema->GetPropertyCategoryP(prop->GetName().c_str()))
+                continue;
+            }
         ECN::PropertyCategoryP destProp = nullptr;
         mergedSchema->CopyPropertyCategory(destProp, *prop);
         }
@@ -2779,10 +2802,15 @@ static void CopyPropertyCategories(ECN::ECSchemaPtr mergedSchema, ECN::ECSchemaC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2019
 //---------------+---------------+---------------+---------------+---------------+-------
-static void CopyEnumerations(ECN::ECSchemaPtr mergedSchema, ECN::ECSchemaCP schema)
+static void CopyEnumerations(ECN::ECSchemaPtr mergedSchema, ECN::ECSchemaCP schema, bool doCheck = false)
     {
     for (auto sourceEnum : schema->GetEnumerations())
         {
+        if (doCheck)
+            {
+            if (nullptr != mergedSchema->GetEnumerationP(sourceEnum->GetName().c_str()))
+                continue;
+            }
         ECN::ECEnumerationP destEnum = nullptr;
         mergedSchema->CopyEnumeration(destEnum, *sourceEnum);
         }
@@ -2800,7 +2828,7 @@ static void CopyProperties(ECN::ECSchemaPtr mergedSchema, ECN::ECSchemaCP schema
             {
             ECN::ECPropertyP mergedProp = mergedClass->GetPropertyP(ecProp->GetName().c_str());
             auto KOQ = ecProp->GetKindOfQuantity();
-            if (nullptr != KOQ)
+            if (nullptr != KOQ && ecProp->IsKindOfQuantityDefinedLocally())
                 {
                 auto mergedKOQ = mergedSchema->GetKindOfQuantityCP(KOQ->GetName().c_str());
                 if (nullptr == mergedKOQ)
@@ -2816,7 +2844,7 @@ static void CopyProperties(ECN::ECSchemaPtr mergedSchema, ECN::ECSchemaCP schema
                 }
 
             auto propCat = ecProp->GetCategory();
-            if (nullptr != propCat)
+            if (nullptr != propCat && ecProp->IsCategoryDefinedLocally())
                 {
                 auto mergedCat = mergedSchema->GetPropertyCategoryCP(propCat->GetName().c_str());
                 if (nullptr == mergedCat)
@@ -2830,6 +2858,9 @@ static void CopyProperties(ECN::ECSchemaPtr mergedSchema, ECN::ECSchemaCP schema
                 else
                     mergedProp->SetCategory(mergedCat);
                 }
+
+            if (ecProp->IsPriorityLocallyDefined())
+                mergedProp->SetPriority(ecProp->GetPriority());
 
             if (!ecProp->GetIsPrimitive() && !ecProp->GetIsPrimitiveArray())
                 continue;
@@ -2944,15 +2975,10 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ImportTargetECSchemas()
         auto diff = ECDiff::Diff(*existing, *schema);
         if (diff->IsEmpty())
             {
-            if (existing->GetVersionRead() != schema->GetVersionRead() || existing->GetVersionWrite() != schema->GetVersionWrite() || existing->GetVersionMinor() != schema->GetVersionMinor())
-                {
-                ECN::ECSchemaP nonConst = const_cast<ECN::ECSchemaP>(schema);
-                nonConst->SetVersionRead(existing->GetVersionRead());
-                nonConst->SetVersionWrite(existing->GetVersionWrite());
-                nonConst->SetVersionMinor(existing->GetVersionMinor());
-                }
+            exclude.push_back(schema);
             continue;
             }
+
         if (diff->Merge(merged, CONFLICTRULE_TakeLeft) == MergeStatus::Success)
             {
             merged->SetVersionRead(existing->GetVersionRead());
@@ -2960,13 +2986,13 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ImportTargetECSchemas()
 
             // Current merge tool does not handle KoQ, PropertyCategories, or Enumerations
             CopyKOQ(merged, existing);
-            CopyKOQ(merged, schema);
+            CopyKOQ(merged, schema, true);
 
             CopyPropertyCategories(merged, existing);
-            CopyPropertyCategories(merged, schema);
+            CopyPropertyCategories(merged, schema, true);
 
             CopyEnumerations(merged, existing);
-            CopyEnumerations(merged, schema);
+            CopyEnumerations(merged, schema, true);
 
             CopyProperties(merged, existing);
             CopyProperties(merged, schema);
@@ -4008,8 +4034,6 @@ BentleyApi::BentleyStatus RootModelConverter::ConvertECRelationships(DgnV8Api::E
 
     DgnDbR dgndb = GetDgnDb();
     RepositoryLinkId fileId = GetRepositoryLinkId(*v8Element.GetDgnFileP());
-    bmap<Utf8String, Utf8String> indexDdlList;
-    bool haveDroppedIndexDdl = false;
 
     for (DgnV8Api::RelationshipEntry const& entry : relationships)
         {
@@ -4090,10 +4114,10 @@ BentleyApi::BentleyStatus RootModelConverter::ConvertECRelationships(DgnV8Api::E
         // If the relationship class inherits from one ElementRefersToElements base relationship class, then it is a link table relationship, and can use the API
         if (relClass->Is(BIS_ECSCHEMA_NAME, BIS_REL_ElementRefersToElements))
             {
-            if (!haveDroppedIndexDdl)
+            if (!m_haveDroppedIndexDdl)
                 {
-                DropElementRefersToElementsIndices(indexDdlList, "uix_bis_ElementRefersToElements_sourcetargetclassid");
-                haveDroppedIndexDdl = true;
+                DropElementRefersToElementsIndices(m_indexDdlList, "uix_bis_ElementRefersToElements_sourcetargetclassid");
+                m_haveDroppedIndexDdl = true;
                 }
 
             BeSQLite::EC::ECInstanceKey relKey;
@@ -4292,8 +4316,6 @@ BentleyApi::BentleyStatus RootModelConverter::ConvertECRelationships(DgnV8Api::E
             }
         }
 
-    if (haveDroppedIndexDdl)
-        RecreateElementRefersToElementsIndices(indexDdlList);
     return BentleyApi::SUCCESS;
     }
 

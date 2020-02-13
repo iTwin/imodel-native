@@ -2582,6 +2582,8 @@ protected:
     DgnV8Api::ViewGroupPtr m_viewGroup;
     std::unique_ptr<IChangeDetector> m_changeDetector;
     bool m_considerNormal2dModelsSpatial;   // Unlike the member in RootModelSpatialParams, this considers the config file, too. It is checked often, so calulated once in the constructor.
+    bmap<Utf8String, Utf8String> m_indexDdlList;
+    bool m_haveDroppedIndexDdl = false;
 
     void CorrectSpatialTransforms();
     bool ShouldCorrectSpatialTransform(ResolvedModelMapping const& rmm) {return rmm.GetDgnModel().IsSpatialModel() && IsFileAssignedToBridge(*rmm.GetV8Model().GetDgnFileP());}

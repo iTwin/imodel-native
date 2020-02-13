@@ -1156,7 +1156,7 @@ ECDiffNodeP ECSchemaDiffTool::DiffRelationshipConstraint(ECDiffNodeR parent, ECN
 
     ECN::ECClassCP leftAbstract = left.GetAbstractConstraint();
     ECN::ECClassCP rightAbstract = right.GetAbstractConstraint();
-    if (nullptr != leftAbstract && nullptr != rightAbstract && (strcmp(leftAbstract->GetFullName(), rightAbstract->GetFullName()) != 0))
+    if (nullptr != leftAbstract && nullptr != rightAbstract && (strcmp(leftAbstract->GetFullName(), rightAbstract->GetFullName()) != 0) && (left.IsAbstractConstraintDefined() != right.IsAbstractConstraintDefined()))
         diff->Add(DiffNodeId::AbstractConstraint)->SetValue(leftAbstract->GetFullName(), rightAbstract->GetFullName());
 
     DiffCustomAttributes (*diff, left, right);
@@ -2881,7 +2881,7 @@ MergeStatus ECSchemaMergeTool::AppendRelationshipConstraintToMerge(ECN::ECRelati
         return status;
 
     ECN::ECClassCP abstractConstraint = defaultRelationshipClassConstraint.GetAbstractConstraint();
-    if (nullptr != abstractConstraint)
+    if (nullptr != abstractConstraint && defaultRelationshipClassConstraint.IsAbstractConstraintDefined())
         {
         ECN::ECClassCP resolvedAbstractConstraint = ResolveClass(abstractConstraint->GetFullName());
         BeAssert(resolvedAbstractConstraint != NULL);
