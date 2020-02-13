@@ -113,6 +113,9 @@ private:
     BentleyStatus CreateOrUpdateRequiredTables() const;
     BentleyStatus CreateOrUpdateIndexesInDb(SchemaImportContext&) const;
     BentleyStatus PurgeOrphanTables(SchemaImportContext&) const;
+    BentleyStatus GetNextIndexIds(BeInt64Id& maxIndexId, BeInt64Id& maxIndexColumnId) const;
+    BentleyStatus FindIndexes(std::vector<DbIndex const*>& indexes) const;
+    BentleyStatus LoadIndexesSQL(std::map<Utf8String, Utf8String, CompareIUtf8Ascii>& sqliteIndexes) const;
 
     std::set<ClassMap const*> GetRelationshipConstraintClassMaps(SchemaImportContext&, ECN::ECRelationshipConstraintCR) const;
     BentleyStatus GetRelationshipConstraintClassMaps(SchemaImportContext&, std::set<ClassMap const*>&, ECN::ECClassCR, bool recursive) const;

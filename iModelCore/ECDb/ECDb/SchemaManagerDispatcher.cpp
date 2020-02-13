@@ -1048,6 +1048,76 @@ BentleyStatus MainSchemaManager::CreateOrUpdateRequiredTables() const
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan     02/2020
+//---------------------------------------------------------------------------------------
+BentleyStatus MainSchemaManager::GetNextIndexIds(BeInt64Id& maxIndexId, BeInt64Id& maxIndexColumnId) const 
+    {
+    Statement stmt;
+    stmt.Prepare(m_ecdb, "SELECT MAX(Id) + 1 FROM main." TABLE_Index);
+    if (stmt.Step() != BE_SQLITE_ROW)
+    {
+        BeAssert(false);
+        return ERROR;
+    }
+
+    if (stmt.IsColumnNull(0))
+        maxIndexId = BeInt64Id(1);
+    else
+        maxIndexId = stmt.GetValueId<BeInt64Id>(0);
+
+    stmt.Finalize();
+    stmt.Prepare(m_ecdb, "SELECT MAX(Id) + 1 FROM main." TABLE_IndexColumn);
+    if (stmt.Step() != BE_SQLITE_ROW)
+    {
+        BeAssert(false);
+        return ERROR;
+    }
+
+    if (stmt.IsColumnNull(0))
+        maxIndexColumnId = BeInt64Id(1);
+    else
+        maxIndexColumnId = stmt.GetValueId<BeInt64Id>(0);
+
+    stmt.Finalize();
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan     02/2020
+//---------------------------------------------------------------------------------------
+ BentleyStatus MainSchemaManager::FindIndexes(std::vector<DbIndex const*>& indexes) const
+    {
+     for (DbTable const* table : m_dbSchema.Tables())
+     {
+         for (std::unique_ptr<DbIndex> const& indexPtr : table->GetIndexes())
+         {
+             if (indexPtr->GetColumns().empty())
+             {
+                 BeAssert(false && "Index definition is not valid");
+                 return ERROR;
+             }
+
+             indexes.push_back(indexPtr.get());
+         }
+     }
+     return SUCCESS;
+    }
+
+ //---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan     02/2020
+//---------------------------------------------------------------------------------------
+ BentleyStatus MainSchemaManager::LoadIndexesSQL(std::map<Utf8String, Utf8String, CompareIUtf8Ascii>& sqliteIndexes) const
+    {
+     Statement stmt;
+     stmt.Prepare(m_ecdb, "SELECT sqlite_master.name, sqlite_master.sql FROM main.ec_index LEFT JOIN main.sqlite_master ON sqlite_master.name=ec_index.name where sqlite_master.type='index'");
+     while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        sqliteIndexes.insert(std::make_pair(stmt.GetValueText(0), stmt.GetValueText(1)));
+        }
+     return SUCCESS;
+     }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2016
 //---------------------------------------------------------------------------------------
 BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& ctx) const
@@ -1055,73 +1125,24 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
     if (SUCCESS != m_dbSchema.LoadIndexDefs())
         return ERROR;
     
-    //Delete from index table on all schema import can create a changset that if inorder applied cause fk errros.
+    // Before diving into this make sure we get the next id that can be used for new or updated indexes
     BeInt64Id maxIndexId, maxIndexColumnId;
-    if (true)//make sure we are not looking any tables
-        {
-        Statement stmt;
-        stmt.Prepare(m_ecdb, "SELECT MAX(Id) + 1 FROM main." TABLE_Index);
-        if (stmt.Step() != BE_SQLITE_ROW)
-            {
-            BeAssert(false);
-            return ERROR;
-            }
+    if (GetNextIndexIds(maxIndexId, maxIndexColumnId) != SUCCESS)
+        return ERROR;
 
-        if (stmt.IsColumnNull(0))
-            maxIndexId = BeInt64Id(1);
-        else
-            maxIndexId = stmt.GetValueId<BeInt64Id>(0);
+    std::vector<DbIndex const*> indexes;
+    if (FindIndexes(indexes) != SUCCESS)
+        return ERROR;
 
-        stmt.Finalize();
-        stmt.Prepare(m_ecdb, "SELECT MAX(Id) + 1 FROM main." TABLE_IndexColumn);
-        if (stmt.Step() != BE_SQLITE_ROW)
-            {
-            BeAssert(false);
-            return ERROR;
-            }
-
-        if (stmt.IsColumnNull(0))
-            maxIndexColumnId = BeInt64Id(1);
-        else
-            maxIndexColumnId = stmt.GetValueId<BeInt64Id>(0);
-
-        stmt.Finalize();
-        }
-
-    //Now go ahead and delete it.
-    if (BE_SQLITE_OK != m_ecdb.ExecuteSql("DELETE FROM main." TABLE_Index))
+    std::map<Utf8String, Utf8String, CompareIUtf8Ascii> sqliteIndexes;
+    if (LoadIndexesSQL(sqliteIndexes) != SUCCESS)
         return ERROR;
 
     bmap<Utf8String, DbIndex const*, CompareIUtf8Ascii> comparableIndexDefs;
-    bset<Utf8CP, CompareIUtf8Ascii> usedIndexNames;
-
-    //cache all indexes in local vector as index processing may modify the m_dbSchemas.Tables() iterator
-    std::vector<DbIndex const*> indexes;
-    for (DbTable const* table : m_dbSchema.Tables())
-        {
-        for (std::unique_ptr<DbIndex> const& indexPtr : table->GetIndexes())
-            {
-            if (indexPtr->GetColumns().empty())
-                {
-                BeAssert(false && "Index definition is not valid");
-                return ERROR;
-                }
-
-            indexes.push_back(indexPtr.get());
-            }
-        }
-
+    bset<Utf8CP, CompareIUtf8Ascii> usedIndexNames;   
     for (DbIndex const* indexCP : indexes)
         {
         DbIndex const& index = *indexCP;
-
-        {
-        //drop index first if it exists, as we always have to recreate them to make sure the class id filter is up-to-date
-        Utf8String dropIndexSql;
-        dropIndexSql.Sprintf("DROP INDEX IF EXISTS [%s]", index.GetName().c_str());
-        m_ecdb.ExecuteDdl(dropIndexSql.c_str());
-        }
-
         if (!index.IsAutoGenerated() && index.HasClassId())
             {
             ECClassCP ecClass = m_ecdb.Schemas().GetClass(index.GetClassId());
@@ -1207,14 +1228,59 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
                 }
 
             comparableIndexDefs[comparableIndexDef] = &index;
-            if (SUCCESS != DbSchemaPersistenceManager::CreateIndex(m_ecdb, index, ddl))
+            // Here we check if we need to recreate the index. 
+            auto sqliteIndexItor = sqliteIndexes.find(index.GetName());
+            if (sqliteIndexItor != sqliteIndexes.end() && !sqliteIndexItor->second.empty())
+                {
+                if (!sqliteIndexItor->second.EqualsIAscii(ddl))
+                    {
+                    LOG.debugv("Schema Import> Recreating index '%s'. The index definition has changed.", index.GetName().c_str());
+                    // Delete its entry from ec_index table
+                    if (BE_SQLITE_OK != m_ecdb.ExecuteSql(SqlPrintfString("DELETE FROM main." TABLE_Index " WHERE Name = '%s'", index.GetName().c_str())))
+                        return ERROR;
+
+                    // Drop the existing index as its defintion has modified and need to be recreated.
+                    if (BE_SQLITE_OK != m_ecdb.ExecuteDdl(SqlPrintfString("DROP INDEX [%s]", index.GetName().c_str())))
+                        return ERROR;
+
+                    if (SUCCESS != DbSchemaPersistenceManager::CreateIndex(m_ecdb, index, ddl))
+                        return ERROR;
+
+                    if (SUCCESS != m_dbSchema.PersistIndexDef(index, maxIndexId, maxIndexColumnId))
+                        return ERROR;
+                    }
+                else 
+                    {
+                    LOG.debugv("Schema Import> Skipping index '%s'. Not changed", index.GetName().c_str());
+                    }
+                } 
+            else 
+                {
+                LOG.debugv("Schema Import> Creating Index '%s'.", index.GetName().c_str());
+                if (SUCCESS != DbSchemaPersistenceManager::CreateIndex(m_ecdb, index, ddl))
+                    return ERROR;
+
+                // Delete its entry from ec_index table
+                if (BE_SQLITE_OK != m_ecdb.ExecuteSql(SqlPrintfString("DELETE FROM main." TABLE_Index " WHERE Name = '%s'", index.GetName().c_str())))
+                    return ERROR;
+
+                if (SUCCESS != m_dbSchema.PersistIndexDef(index, maxIndexId, maxIndexColumnId))
+                    return ERROR;
+
+                }
+            }
+        else
+            {
+            //populates the ec_Index table (even for indexes on virtual tables, as they might be necessary
+            //if further schema imports introduce subclasses of abstract classes (which map to virtual tables))
+                              // Delete its entry from ec_index table
+            if (BE_SQLITE_OK != m_ecdb.ExecuteSql(SqlPrintfString("DELETE FROM main." TABLE_Index " WHERE Name = '%s'", index.GetName().c_str())))
+                return ERROR;
+
+            LOG.debugv("Schema Import> Virtual index '%s'. NOP SQLite Index", index.GetName().c_str());
+            if (SUCCESS != m_dbSchema.PersistIndexDef(index, maxIndexId, maxIndexColumnId))
                 return ERROR;
             }
-
-        //populates the ec_Index table (even for indexes on virtual tables, as they might be necessary
-        //if further schema imports introduce subclasses of abstract classes (which map to virtual tables))
-        if (SUCCESS != m_dbSchema.PersistIndexDef(index, maxIndexId, maxIndexColumnId))
-            return ERROR;
         }
 
     return SUCCESS;
