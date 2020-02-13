@@ -1203,6 +1203,215 @@ TEST_F(SchemaUpgradeTestFixture, UpdateBaseClass_AddMixinWithPropertiesToMultipl
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Robert Schili                     02/20
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, UpdateClass_ChangeAbstractIntoConcreteClass)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECEntityClass typeName='Base' modifier='Abstract'>"
+        "       <ECProperty propertyName='BaseProperty' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='MyClass' modifier='Abstract'>"
+        "       <BaseClass>Base</BaseClass>"
+        "       <ECProperty propertyName='MyProperty' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Subclass' modifier='None' >"
+        "       <BaseClass>MyClass</BaseClass>"
+        "       <ECProperty propertyName='SubclassProperty' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
+    {
+    ECClassCP subclass = m_ecdb.Schemas().GetClass("TestSchema", "Subclass");
+    ASSERT_NE(subclass, nullptr);
+    ASSERT_STREQ(subclass->GetBaseClasses().at(0)->GetFullName(), "TestSchema:MyClass");
+    ASSERT_EQ(1, subclass->GetBaseClasses().size());
+    ASSERT_EQ(3, subclass->GetPropertyCount());
+    ECClassCP myClass = m_ecdb.Schemas().GetClass("TestSchema", "MyClass");
+    ASSERT_NE(myClass, nullptr);
+    ASSERT_EQ(ECClassModifier::Abstract, myClass->GetClassModifier()) << "Verify initial state of the class is abstract";
+    }
+
+    //import edited schema with some changes.
+    SchemaItem editedSchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECEntityClass typeName='Base' modifier='Abstract'>"
+        "       <ECProperty propertyName='BaseProperty' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='MyClass' modifier='None'>"
+        "       <BaseClass>Base</BaseClass>"
+        "       <ECProperty propertyName='MyProperty' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Subclass' modifier='None' >"
+        "       <BaseClass>MyClass</BaseClass>"
+        "       <ECProperty propertyName='SubclassProperty' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    ASSERT_EQ(ERROR, ImportSchema(editedSchemaItem)) << "Importing schema should fail because abstract to concrete class requires Table per Hierarchy mapping strategy";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Robert Schili                     02/20
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, UpdateClass_ChangeAbstractIntoConcreteClassUsingTablePerHierarchy)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Base' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "         <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='BaseProperty' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='MyClass' modifier='Abstract'>"
+        "       <BaseClass>Base</BaseClass>"
+        "       <ECProperty propertyName='MyProperty' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Subclass' modifier='None' >"
+        "       <BaseClass>MyClass</BaseClass>"
+        "       <ECProperty propertyName='SubclassProperty' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
+    {
+    ECClassCP subclass = m_ecdb.Schemas().GetClass("TestSchema", "Subclass");
+    ASSERT_NE(subclass, nullptr);
+    ASSERT_STREQ(subclass->GetBaseClasses().at(0)->GetFullName(), "TestSchema:MyClass");
+    ASSERT_EQ(1, subclass->GetBaseClasses().size());
+    ASSERT_EQ(3, subclass->GetPropertyCount());
+    ECClassCP myClass = m_ecdb.Schemas().GetClass("TestSchema", "MyClass");
+    ASSERT_NE(myClass, nullptr);
+    ASSERT_EQ(ECClassModifier::Abstract, myClass->GetClassModifier()) << "Verify initial state of the class is abstract";
+    }
+
+    //import edited schema with some changes.
+    SchemaItem editedSchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Base' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "         <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='BaseProperty' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='MyClass' modifier='None'>"
+        "       <BaseClass>Base</BaseClass>"
+        "       <ECProperty propertyName='MyProperty' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Subclass' modifier='None' >"
+        "       <BaseClass>MyClass</BaseClass>"
+        "       <ECProperty propertyName='SubclassProperty' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
+
+    {
+    ECClassCP subclass = m_ecdb.Schemas().GetClass("TestSchema", "Subclass");
+    ASSERT_NE(subclass, nullptr);
+    ASSERT_STREQ(subclass->GetBaseClasses().at(0)->GetFullName(), "TestSchema:MyClass");
+    ASSERT_EQ(1, subclass->GetBaseClasses().size());
+    ASSERT_EQ(3, subclass->GetPropertyCount());
+    ECClassCP myClass = m_ecdb.Schemas().GetClass("TestSchema", "MyClass");
+    ASSERT_NE(myClass, nullptr);
+    ASSERT_EQ(ECClassModifier::None, myClass->GetClassModifier()) << "Verify new state of the class is abstract";
+    }
+
+    // Verify we can insert and select
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.MyClass (BaseProperty,MyProperty) VALUES ('base', 'value')");
+    ASSERT_EQ(JsonValue(R"json([{"BaseProperty":"base", "MyProperty":"value"}])json"),
+     GetHelper().ExecuteSelectECSql("SELECT BaseProperty, MyProperty FROM TestSchema.MyClass WHERE MyProperty='value'")) << "Verify inserted instance";
+
+    // select polymorphically
+    ASSERT_EQ(JsonValue(R"json([{"BaseProperty":"base"}])json"),
+     GetHelper().ExecuteSelectECSql("SELECT BaseProperty FROM TestSchema.Base")) << "Verify polymorphic query by base class";
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Robert Schili                     02/20
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, UpdateClass_ChangeAbstractIntoConcreteClassWithAbstractSubclass)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Base' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "         <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='BaseProperty' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='MyClass' modifier='Abstract'>"
+        "       <BaseClass>Base</BaseClass>"
+        "       <ECProperty propertyName='MyProperty' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Subclass' modifier='None' >"
+        "       <BaseClass>MyClass</BaseClass>"
+        "       <ECProperty propertyName='SubclassProperty' typeName='string' />"
+        "   </ECEntityClass>"
+       "   <ECEntityClass typeName='AbstractSubclass' modifier='Abstract' >"
+        "       <BaseClass>MyClass</BaseClass>"
+        "       <ECProperty propertyName='AbstractSubclassProperty' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
+    {
+    ECClassCP subclass = m_ecdb.Schemas().GetClass("TestSchema", "Subclass");
+    ASSERT_NE(subclass, nullptr);
+    ASSERT_STREQ(subclass->GetBaseClasses().at(0)->GetFullName(), "TestSchema:MyClass");
+    ASSERT_EQ(1, subclass->GetBaseClasses().size());
+    ASSERT_EQ(3, subclass->GetPropertyCount());
+    ECClassCP myClass = m_ecdb.Schemas().GetClass("TestSchema", "MyClass");
+    ASSERT_NE(myClass, nullptr);
+    ASSERT_EQ(ECClassModifier::Abstract, myClass->GetClassModifier()) << "Verify initial state of the class is abstract";
+    }
+
+    //import edited schema with some changes.
+    SchemaItem editedSchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Base' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "         <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='BaseProperty' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='MyClass' modifier='None'>"
+        "       <BaseClass>Base</BaseClass>"
+        "       <ECProperty propertyName='MyProperty' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Subclass' modifier='None' >"
+        "       <BaseClass>MyClass</BaseClass>"
+        "       <ECProperty propertyName='SubclassProperty' typeName='string' />"
+        "   </ECEntityClass>"
+       "   <ECEntityClass typeName='AbstractSubclass' modifier='Abstract' >"
+        "       <BaseClass>MyClass</BaseClass>"
+        "       <ECProperty propertyName='AbstractSubclassProperty' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    ASSERT_EQ(ERROR, ImportSchema(editedSchemaItem)) << "Import should fail because class has an abstract subclass";
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaUpgradeTestFixture, UpdateBaseClass_AddNewEmptyMixinBaseClasses) //TFS#917566

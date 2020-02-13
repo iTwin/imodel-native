@@ -323,6 +323,25 @@
             ]
         },
         {
+            "name": "Single ECDbTest",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}WinX64/Product/ECDb-Gtest/ECDbTest",
+            "cwd": "${workspaceFolder}",
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "args": [
+              "--gtest_filter=RelationshipMappingTestFixture.UpgradeModifierFromAbstract"
+            ]
+        },
+        {
             "name": "LNX Native ECObjectsTest",
             "type": "cppdbg",
             "request": "launch",

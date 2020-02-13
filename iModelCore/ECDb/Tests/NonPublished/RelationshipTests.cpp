@@ -4825,10 +4825,10 @@ TEST_F(RelationshipMappingTestFixture, UpgradeModifierFromAbstract)
 
             Utf8String schemaV2;
             schemaV2.Sprintf(schema, "None");
-            EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(schemaV2))) << "To None: Upgrading from Abstract is generally not supported";
+            EXPECT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(schemaV2))) << "To None: Upgrading from Abstract should be supported";
 
             schemaV2.Sprintf(schema, "Sealed");
-            EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(schemaV2))) << "To Sealed: Upgrading from Abstract is generally not supported";
+            EXPECT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(schemaV2))) << "To Sealed: Upgrading from Abstract should be supported";
             }
     }
 

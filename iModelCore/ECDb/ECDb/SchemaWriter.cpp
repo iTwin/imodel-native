@@ -2371,10 +2371,27 @@ BentleyStatus SchemaWriter::UpdateClass(Context& ctx, ClassChange& classChange, 
         ECClassModifier newValue = classChange.ClassModifier().GetNew().Value();
         if (oldValue == ECClassModifier::Abstract)
             {
-            ctx.Issues().ReportV("ECSchema Upgrade failed. ECClass %s: Changing the ECClassModifier from 'Abstract' to another value is not supported",
-                                 oldClass.GetFullName());
+            auto& derivedClasses = newClass.GetDerivedClasses();
+            for (ECClassP derivedClass : derivedClasses)
+                {
+                if(derivedClass->GetClassModifier() == ECClassModifier::Abstract)
+                    {
+                    ctx.Issues().ReportV("ECSchema Upgrade failed. ECClass %s: Changing the ECClassModifier from 'Abstract' requires the class to not have any abstract derived classes.",
+                                oldClass.GetFullName());
 
-            return ERROR;
+                    return ERROR;
+                    }
+                }
+            
+            auto classMap = ctx.GetSchemaManager().GetClassMap(oldClass);
+            bool isTablePerHierarchy = classMap != nullptr && classMap->GetMapStrategy().IsTablePerHierarchy();
+            if(!isTablePerHierarchy)
+                {
+                ctx.Issues().ReportV("ECSchema Upgrade failed. ECClass %s: Changing the ECClassModifier from 'Abstract' to another value is requires the map strategy to be 'TablePerHierarchy'.",
+                               oldClass.GetFullName());
+
+                return ERROR;
+                }
             }
 
         if (newValue == ECClassModifier::Sealed)
