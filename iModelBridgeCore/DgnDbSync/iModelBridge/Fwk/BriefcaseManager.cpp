@@ -62,6 +62,13 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
         m_channelProps.stayInChannel = true;                // bridge code must be restricted to write to shared definition models *only* in the Shared channel and to bridge models *only* in the Normal channel
         m_channelProps.oneBriefcaseOwnsChannel = false;     // A given briefcase does *not* hold onto channel locks persistently
         T_HOST.GetTxnAdmin().AddTxnMonitor(*this);
+
+        // All of the initial schema upgrade operations and domain imports are done in the shared channel.
+        // These initialization steps occur while opening the briefcase, and therefore iModelBridgeFwk won't 
+        // have the chance to set the channel parent before hand. So, bc mgr must enter the shared channel at the outset.
+        // (Bug #275103)
+        GetChannelPropsR().channelType = IBriefcaseManager::ChannelType::Shared;
+        GetChannelPropsR().channelParentId = db.Elements().GetRootSubjectId();
     }
 
     ~BriefcaseManager()
