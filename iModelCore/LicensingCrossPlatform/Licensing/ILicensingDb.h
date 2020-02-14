@@ -36,6 +36,7 @@ public:
     virtual BentleyStatus DeleteAllOtherPolicyFilesByUser(Utf8StringCR policyId, Utf8StringCR userId) = 0;
     virtual BentleyStatus DeleteAllOtherPolicyFilesByKey(Utf8StringCR policyId, Utf8StringCR accessKey) = 0;
     virtual BentleyStatus DeleteAllOtherPolicyFilesByProject(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR projectId) = 0;
+    virtual BentleyStatus DeleteLocalCheckout(Utf8StringCR productId) = 0;
 
     virtual Json::Value GetPolicyFile() = 0;
     virtual Json::Value GetPolicyFile(Utf8StringCR policyId) = 0;

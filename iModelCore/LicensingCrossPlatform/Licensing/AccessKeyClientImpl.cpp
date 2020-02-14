@@ -83,13 +83,7 @@ bool AccessKeyClientImpl::ValidateParamsAndDB()
 	{
 		LOG.error("ClientImpl::StartApplication ERROR - Database path string is null or empty.");
 		return false;
-	}
-
-	if (Utf8String::IsNullOrEmpty(m_correlationId.c_str()))
-	{
-		LOG.error("ClientImpl::StartApplication ERROR - Correlation ID (Usage ID) string is null or empty.");
-		return false;
-	}
+	}	
 
 	if (m_timeRetriever == nullptr)
 	{
@@ -125,13 +119,10 @@ LicenseStatus AccessKeyClientImpl::StartApplication()
 	auto policy = SearchForCheckout(productId, m_featureString);
 	if (policy != nullptr)
 	{
-		//found checkout, make sure it isnt expired
-		if (policy->GetPolicyStatus() == Policy::PolicyStatus::Expired)
-		{
-			return LicenseStatus::Expired;
-		}
-		LOG.info("Checkout found returning LicenseStatus OK");
-		return LicenseStatus::Ok;
+        LOG.info("Checkout found returning LicenseStatus OK");
+        m_policy = policy;
+        StartLogPostingHeartbeat();
+        return LicenseStatus::Ok;
 	}
 	//No checkouts found
 

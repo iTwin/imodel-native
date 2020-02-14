@@ -34,12 +34,13 @@ const string commandList = "\n\
 const string clientArgList = "\n\
     - client status - get the current status of the client (e.g. flavor of client, running, stopped, client not created)\n\
     - client create [arg] - create a client with the flavor of client as the argument. Call with no arguments to get a list of valid client flavors\n\
-    - client start - for Client and AccessKeyClient, starts the licensing heartbeats. No effect for SaasClient.\n\
+    - client start - for Client and AccessKeyClient, starts the licensing heartbeats. No effect for SaasClient. Add projectId as arg to start with project\n\
     - client stop - for Client and AccessKeyClient, stops the licensing heartbeats. No effect for SaasClient.\n\
     - client trackusage - for SaasClient, posts usage for the given product ID. No effect for Client and AccessKeyClient.\n\
     - client markfeature - for all client flavors, posts a feature log offline (Client, AccessKeyClient), or in realtime (SaasClient) for the given feature.\n\
     - client licstatus - for AccessKeyClient get the license status of the current policy. No effect for Client and SaasClient.\n\
     - client import [filepath] - For importing a .belic file / checkout to be used. \n\
+    - client deleteimport [productId] For removing the local checkout from DB for product ID specified \n\
     - client help - get an explanation of the client and a list of valid client arguments.\n\
 \n";
 
@@ -195,10 +196,9 @@ The following is a full list of commands (all commands case insensitive):" + com
 
 vector<string> ParseInput(string input)
     {
-    // turn the cli input in to a vector of commands
-
-    // make case not matter
-    std::transform(input.begin(), input.end(), input.begin(), ::tolower);
+    // turn the cli input in to a vector of commands    
+    //std::transform(input.begin(), input.end(), input.begin(), ::tolower);
+    //Case does not matter for filenames passed to demo. Demo is case insensitive now. 
 
     vector<string> result;
     std::istringstream iss(input);
@@ -332,6 +332,36 @@ void ProcessClientCommand(vector<string> input)
 
         return;
         }
+    //delete client import
+    else if (input.at(1) == "deleteimport" || input.at(1) == "di")
+        {
+        if (input.size() < 3)
+            {
+            cout << "You must provide a productId as an arg";
+            return;
+            }
+        if (m_client != nullptr)
+            {
+            DeleteImport(input.at(2).c_str());
+            return;
+            }
+        else if (m_accessKeyClient != nullptr)
+            {
+            DeleteImport(input.at(2).c_str());
+            return;
+            }
+        else if (m_saasClient != nullptr)
+            {
+            cout << "SaaSClient does not use or utilize checkouts";
+            return;
+            }
+        else
+            {
+            cout << "The Licensing Client has not been created. You must create a client with \"client create [arg]\" to import checkouts\n";
+            return;
+            }
+        return;
+        }
     // client import
     else if (input.at(1) == "import" || input.at(1) == "i")
         {
@@ -426,7 +456,17 @@ void ProcessClientCommand(vector<string> input)
         // TODO: move to a function
         if(m_client != nullptr)
             {
-            auto startResult = m_client->StartApplication();
+            Licensing::LicenseStatus result;
+            if (if (input.size() > 2 && input.at(2).length > 1)
+                {
+                   result = m_client->StartApplicationForProject(input.at(2).c_str()); 
+                }
+            else
+                {
+                   result = m_client->StartApplication();
+                }           
+            
+            Licensing::LicenseStatus startResult = result;
             cout << (int)startResult << endl;
 
             if(Licensing::LicenseStatus::Ok == startResult)
@@ -486,7 +526,18 @@ void ProcessClientCommand(vector<string> input)
             }
         else if(m_accessKeyClient != nullptr)
             {
-            auto startResult = m_accessKeyClient->StartApplication();
+            Licensing::LicenseStatus result;
+            if (if (input.size() > 2 && input.at(2).length > 1)
+                {
+                result = m_client->StartApplicationForProject(input.at(2).c_str());
+                }
+            else
+                {
+                result = m_client->StartApplication();
+                }
+
+            Licensing::LicenseStatus startResult = result;
+            
             cout << (int)startResult << endl;
 
             if(Licensing::LicenseStatus::Ok == startResult)
@@ -1300,6 +1351,18 @@ void Import(BeFileNameCR filepath)
     if (m_accessKeyClient != nullptr)
         {
             m_accessKeyClient->ImportCheckout(filepath);
+        }
+    }
+
+void DeleteImport(Utf8StringCR productId)
+    {
+    if (m_client != nullptr)
+        {
+        m_client->DeleteLocalCheckout(productId);
+        }
+    if (m_accessKeyClient != nullptr)
+        {
+        m_accessKeyClient->DeleteLocalCheckout(productId);
         }
     }
 

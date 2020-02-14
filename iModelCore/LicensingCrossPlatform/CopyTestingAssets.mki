@@ -20,3 +20,4 @@ TestAssetsSrcDir = $(SrcRoot)imodel02/iModelCore/LicensingCrossPlatform/Tests/Un
 always:
     ~linkfile $(TestAssetsOutDir)/sqlang/DgnClientFx_en.sqlang.db3 = $(TestAssetsSrcDir)/sqlang/DgnClientFx_en.sqlang.db3
     ~linkmultifiles "$(TestAssetsOutDir)=$(TestAssetsSrcDir)/*.json"
+    ~linkmultifiles "$(TestAssetsOutDir)=$(TestAssetsSrcDir)/*.belic"

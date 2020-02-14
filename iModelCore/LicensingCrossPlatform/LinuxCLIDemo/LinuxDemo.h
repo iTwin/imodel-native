@@ -51,4 +51,6 @@ void SaasMarkFeature();
 
 void Import(BeFileNameCR filepath);
 
+void DeleteImport(Utf8StringCR productId);
+
 void LicenseStatus();

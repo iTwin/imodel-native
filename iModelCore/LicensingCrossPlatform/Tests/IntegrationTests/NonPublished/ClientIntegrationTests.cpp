@@ -372,7 +372,7 @@ TEST_F(ClientIntegrationTests, GetTrialDaysRemainingValidExpiredTrialPolicy_Test
     EXPECT_EQ(client->GetTrialDaysRemaining(), 0);
     }
 
-TEST_F(ClientIntegrationTests, ImportBelicFile)
+TEST_F(ClientIntegrationTests, ImportBelicFile_UseIt_DeleteIt)
 {
 	auto client = CreateTestClientImpl(false, TEST_PRODUCT_ID); //works logged in or not, testing logged out. 
 	BeFileName testbelic;
@@ -384,7 +384,26 @@ TEST_F(ClientIntegrationTests, ImportBelicFile)
 	ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::Error));
 	ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::NotEntitled));
 	EXPECT_SUCCESS(client->StopApplication());
+    client->DeleteLocalCheckout("2545");
+    startStatus = client->StartApplication();
+    ASSERT_EQ(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::Error));
+    EXPECT_SUCCESS(client->StopApplication());
 }
+
+TEST_F(ClientIntegrationTests, DeleteLocalCheckout_InvalidParams)
+    {
+    auto client = CreateTestClientImpl(true, TEST_PRODUCT_ID);
+    auto result = client->DeleteLocalCheckout("123");
+    EXPECT_EQ(result, ERROR);
+    result = client->DeleteLocalCheckout("1a3b");
+    EXPECT_EQ(result, ERROR);
+    result = client->DeleteLocalCheckout("12.12");
+    EXPECT_EQ(result, ERROR);
+    result = client->DeleteLocalCheckout("1$12");
+    EXPECT_EQ(result, ERROR);
+    result = client->DeleteLocalCheckout("9999");//Valid params not in DB should return success, nothing to delete is still a success. 
+    EXPECT_EQ(result, SUCCESS);
+    }
 
 TEST_F(ClientIntegrationTests, ImportBelicFile_MismatchedDeviceID) 
 {

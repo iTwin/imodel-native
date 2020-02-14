@@ -61,6 +61,7 @@ public:
     LICENSING_EXPORT BentleyStatus DeleteAllOtherPolicyFilesByUser(Utf8StringCR policyId, Utf8StringCR userId);
     LICENSING_EXPORT BentleyStatus DeleteAllOtherPolicyFilesByKey(Utf8StringCR policyId, Utf8StringCR accessKey);
     LICENSING_EXPORT BentleyStatus DeleteAllOtherPolicyFilesByProject(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR projectId);
+    LICENSING_EXPORT BentleyStatus DeleteLocalCheckout(Utf8StringCR productId);
 
     LICENSING_EXPORT Json::Value GetPolicyFile();
     LICENSING_EXPORT Json::Value GetPolicyFile(Utf8StringCR policyId);

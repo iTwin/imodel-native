@@ -699,6 +699,27 @@ BentleyStatus LicensingDb::DeletePolicyFile(Utf8StringCR policyId)
     return ERROR;
     }
 
+BentleyStatus LicensingDb::DeleteLocalCheckout(Utf8StringCR productId)
+    {
+    LOG.debug("LicensingDb::DeleteLocalCheckout");
+    Utf8String value = "%ProductId_:";  //ProductId": couldn't escape the " in a way that both C++ and SQLite liked
+    value.append(productId);
+    value.append("%");
+    Statement stmt;
+
+    if (m_db.IsDbOpen())
+        {
+        dbchangelocker.lock();
+        stmt.Prepare(m_db, "DELETE FROM Checkout WHERE PolicyFile LIKE ?");
+        stmt.BindText(1, value, Statement::MakeCopy::No);
+        DbResult result = stmt.Step();
+        dbchangelocker.unlock();
+        if (result == DbResult::BE_SQLITE_DONE)
+            return SUCCESS;
+        }
+    return ERROR;
+    }
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/

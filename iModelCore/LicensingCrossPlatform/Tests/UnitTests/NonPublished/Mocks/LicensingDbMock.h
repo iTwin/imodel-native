@@ -33,6 +33,7 @@ public:
     BentleyStatus DeleteAllOtherPolicyFilesByUser(Utf8StringCR policyId, Utf8StringCR userId) override;
     BentleyStatus DeleteAllOtherPolicyFilesByKey(Utf8StringCR policyId, Utf8StringCR accessKey) override;
     BentleyStatus DeleteAllOtherPolicyFilesByProject(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR projectId) override;
+    BentleyStatus DeleteLocalCheckout(Utf8StringCR productId) override;
 
     Json::Value GetPolicyFile() override;
     Json::Value GetPolicyFile(Utf8StringCR policyId) override;
@@ -113,6 +114,7 @@ public:
     void MockCleanUpFeatures(BentleyStatus mocked) { m_mockedCleanUpFeatures = mocked; }
     void MockRecordUsage(BentleyStatus mocked) { m_mockedRecordUsage = mocked; }
     void MockRecordFeature(BentleyStatus mocked) { m_mockedFeatureUsage = mocked; }
+    void MockDeleteLocalCheckout(BentleyStatus mocked) { m_mockedDeleteLocalCheckout = mocked; }
 
     // get number of times the mocked functions are called
     int OpenOrCreateCount() const { return m_openOrCreateCalls; }
@@ -166,6 +168,7 @@ private:
     BentleyStatus m_mockedCleanUpFeatures = BSIERROR;
     BentleyStatus m_mockedRecordUsage = BSIERROR;
     BentleyStatus m_mockedFeatureUsage = BSIERROR;
+    BentleyStatus m_mockedDeleteLocalCheckout = BSIERROR;
 
     // number of times a mocked function is called
     int m_openOrCreateCalls = 0;
@@ -194,6 +197,7 @@ private:
     int m_cleanUpFeaturesCalls = 0;
     int m_recordUsageCalls = 0;
     int m_recordFeatureCalls = 0;
+    int m_deleteLocalCheckoutCalls = 0;
 
     // mock values
     bool m_isOpen = false;

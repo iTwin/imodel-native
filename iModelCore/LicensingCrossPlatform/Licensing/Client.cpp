@@ -117,3 +117,8 @@ int64_t Client::ImportCheckout(BeFileNameCR filepath)
     {
     return m_impl->ImportCheckout(filepath);
     }
+
+BentleyStatus Client::DeleteLocalCheckout(Utf8StringCR productId)
+    {
+    return m_impl->DeleteLocalCheckout(productId);
+    }

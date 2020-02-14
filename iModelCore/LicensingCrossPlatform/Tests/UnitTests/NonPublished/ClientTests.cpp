@@ -143,6 +143,31 @@ ClientImplPtr ClientTests::CreateTestClient(ConnectSignInManager::UserInfo userI
         );
     }
 
+ClientImplPtr ClientTests::CreateTestClientWithBadParams(ConnectSignInManager::UserInfo userInfo, Utf8StringCR productId, bool BadAppInfo, bool BadDbPath) const
+    {
+    ApplicationInfoPtr appInfo = nullptr;
+    if (!BadAppInfo)
+        {
+        appInfo = std::make_shared<ApplicationInfo>(BeVersion(1, 0), "TestDeviceId", productId);
+        }
+    BeFileName dbPath;
+    if (!BadDbPath)
+        {
+        dbPath = GetLicensingDbPath();
+        }
+    return std::make_shared<ClientImpl>(
+        userInfo,
+        appInfo,
+        dbPath,
+        true,
+        GetPolicyProviderMockPtr(),
+        GetUlasProviderMockPtr(),
+        "",
+        "",
+        GetLicensingDbMockPtr()
+        );
+    }
+
 TEST_F(ClientTests, JsonExample)
     {
     BeFileName testJson;
@@ -843,7 +868,6 @@ TEST_F(ClientTests, GetTrialDaysRemainingExpiredTrial_Test)
     EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByUserCount(userId));
     }
 
-
 TEST_F(ClientTests, CleanUpPolicies_Success)
     {
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
@@ -860,6 +884,90 @@ TEST_F(ClientTests, CleanUpPolicies_Success)
     client->CleanUpPolicies();
     EXPECT_LE(1, GetLicensingDbMock().GetPolicyFilesCount());
     EXPECT_LE(1, GetLicensingDbMock().DeletePolicyFileCount());
+    }
+
+TEST_F(ClientTests, DeleteLocalCheckout_ValidParam)
+    {
+    GetLicensingDbMock().MockOpenOrCreate(SUCCESS);
+    GetLicensingDbMock().MockDeleteLocalCheckout(SUCCESS);
+    
+    Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
+    auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
+    auto client = CreateTestClient(userInfo, "2545");
+    EXPECT_SUCCESS(client->DeleteLocalCheckout("2545"));
+    }
+
+TEST_F(ClientTests, DeleteLocalCheckout_InvalidParam_TooShort)
+    {
+    GetLicensingDbMock().MockOpenOrCreate(SUCCESS);
+    GetLicensingDbMock().MockDeleteLocalCheckout(ERROR);
+    //needs fixed and asserts
+    Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
+    auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
+    auto client = CreateTestClient(userInfo, "123");
+    EXPECT_ERROR(client->DeleteLocalCheckout("123"));
+    }
+
+TEST_F(ClientTests, DeleteLocalCheckout_InvalidParam_AlphaChar)
+    {
+    GetLicensingDbMock().MockOpenOrCreate(SUCCESS);
+    GetLicensingDbMock().MockDeleteLocalCheckout(ERROR);
+    //needs fixed and asserts
+    Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
+    auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
+    auto client = CreateTestClient(userInfo, "1234");
+    EXPECT_ERROR(client->DeleteLocalCheckout("1a23"));
+    }
+
+TEST_F(ClientTests, DeleteLocalCheckout_InvalidParam_Decimal)
+    {
+    GetLicensingDbMock().MockOpenOrCreate(SUCCESS);
+    GetLicensingDbMock().MockDeleteLocalCheckout(ERROR);
+    //needs fixed and asserts
+    Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
+    auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
+    auto client = CreateTestClient(userInfo, "1234");
+    EXPECT_ERROR(client->DeleteLocalCheckout("12.12"));
+    }
+
+TEST_F(ClientTests, DeleteLocalCheckout_InvalidParam_DollarSymbol)
+    {
+    GetLicensingDbMock().MockOpenOrCreate(SUCCESS);
+    GetLicensingDbMock().MockDeleteLocalCheckout(ERROR);
+    //needs fixed and asserts
+    Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
+    auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
+    auto client = CreateTestClient(userInfo, "1234");
+    EXPECT_ERROR(client->DeleteLocalCheckout("1$12"));
+    }
+
+TEST_F(ClientTests, DeleteLocalCheckout_InvalidParam_PercentSymbol)
+    {
+    GetLicensingDbMock().MockOpenOrCreate(SUCCESS);
+    GetLicensingDbMock().MockDeleteLocalCheckout(ERROR);
+    //needs fixed and asserts
+    Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
+    auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
+    auto client = CreateTestClient(userInfo, "1234");
+    EXPECT_ERROR(client->DeleteLocalCheckout("11%2"));
+    }
+
+TEST_F(ClientTests, ClientImplBadParams_StartApplication_BadAppInfo)
+    {
+    Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
+    auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
+    auto client = CreateTestClientWithBadParams(userInfo, "2545", true);//badapp info, null ptr
+    auto result = client->StartApplication();
+    EXPECT_EQ(result, LicenseStatus::Error);
+    }
+
+TEST_F(ClientTests, ClientImplBadParams_StartApplication_BadDBPath)
+    {
+    Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
+    auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
+    auto client = CreateTestClientWithBadParams(userInfo, "2545", false, true);//empty DB path
+    auto result = client->StartApplication();
+    EXPECT_EQ(result, LicenseStatus::Error);
     }
 
 TEST_F(ClientTests, DeleteAllOtherPoliciesByUser_Success)

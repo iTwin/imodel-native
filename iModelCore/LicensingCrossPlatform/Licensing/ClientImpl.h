@@ -156,6 +156,7 @@ public:
 
 	//Import .belic files
 	virtual LICENSING_EXPORT int64_t ImportCheckout(BeFileNameCR filepath);
+    virtual LICENSING_EXPORT BentleyStatus DeleteLocalCheckout(Utf8StringCR productId);
 
     // Used in tests
     LICENSING_EXPORT ILicensingDb& GetLicensingDb();

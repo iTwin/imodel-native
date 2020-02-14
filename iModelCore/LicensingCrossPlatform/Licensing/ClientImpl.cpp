@@ -75,13 +75,7 @@ bool ClientImpl::ValidateParamsAndDB()
         {
         LOG.error("ClientImpl::StartApplication ERROR - Database path string is null or empty.");
         return false;
-        }
-
-    if (Utf8String::IsNullOrEmpty(m_correlationId.c_str()))
-        {
-        LOG.error("ClientImpl::StartApplication ERROR - Correlation ID (Usage ID) string is null or empty.");
-        return false;
-        }
+        }       
 
     if (m_timeRetriever == nullptr)
         {
@@ -1063,6 +1057,33 @@ int64_t ClientImpl::GetTrialDaysRemaining()
 
     int64_t daysLeft = policy->GetTrialDaysRemaining(productId, m_featureString, m_applicationInfo->GetVersion());
     return daysLeft;
+    }
+
+bool IsNumeric(Utf8StringCR str)
+    {
+    return std::all_of(str.begin(), str.end(), ::isdigit);
+    }
+
+BentleyStatus ClientImpl::DeleteLocalCheckout(Utf8StringCR productId)
+    {
+    LOG.debug("ClientImpl::DeleteLocalCheckout");
+
+    if (productId.length() < 4) //currently all productIds greater then 1000 
+        {
+        LOG.error("Invalid product Id passed, must be numeric and 1000 or greater");
+        return ERROR;
+        }
+    if (!IsNumeric(productId))
+        {
+        LOG.error("Invalid product Id passed, not completely numeric.");
+        return ERROR;
+        }
+    if (SUCCESS != m_licensingDb->OpenOrCreate(m_dbPath))
+        {
+        LOG.error("ClientImpl::AddPolicyToDb ERROR - Database creation failed.");
+        return ERROR;
+        }
+    return m_licensingDb->DeleteLocalCheckout(productId);
     }
 
 int64_t ClientImpl::ImportCheckout(BeFileNameCR filepath)

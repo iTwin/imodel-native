@@ -40,6 +40,7 @@ class ClientTests : public ::testing::Test
         std::shared_ptr<LicensingDbMock>         GetLicensingDbMockPtr() const { return m_licensingDbMock; }
 
         Licensing::ClientImplPtr                 CreateTestClient(WebServices::ConnectSignInManager::UserInfo userInfo, Utf8StringCR productId = TEST_PRODUCT_ID, Licensing::ApplicationInfoPtr applicationInfo = nullptr) const;
+        Licensing::ClientImplPtr				 CreateTestClientWithBadParams(WebServices::ConnectSignInManager::UserInfo userInfo, Utf8StringCR productId = TEST_PRODUCT_ID, bool BadAppInfo = false, bool BadDbPath = false) const;
 
         void TearDown();
     };

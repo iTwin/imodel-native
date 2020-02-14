@@ -98,6 +98,12 @@ BentleyStatus LicensingDbMock::DeleteAllOtherPolicyFilesByKey(Utf8StringCR polic
     return m_mockedDeleteAllOtherPolicyFilesByKey;
     }
 
+BentleyStatus LicensingDbMock::DeleteLocalCheckout(Utf8StringCR productId)
+    {
+    m_deleteLocalCheckoutCalls++;
+    return m_mockedDeleteLocalCheckout;
+    }
+
 BentleyStatus LicensingDbMock::DeleteAllOtherPolicyFilesByProject(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR projectId)
     {
     m_deleteAllOtherPolicyFilesByKeyCalls++;

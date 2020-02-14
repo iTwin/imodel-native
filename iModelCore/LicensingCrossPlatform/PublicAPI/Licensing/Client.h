@@ -126,8 +126,15 @@ public:
     LICENSING_EXPORT int64_t GetTrialDaysRemaining();
 
 	//! ImportCheckout allows importing of a .belic file policy into the DB
-	//! -1 for error 0 for success  
+	//! -1 for error 0 for success, -2 if policy and machine signatures are a mismatch   
 	LICENSING_EXPORT int64_t ImportCheckout(BeFileNameCR filepath);
+
+    //! Removes local checkout from DB if present
+    //! Does not check in server side checkout
+    //! ERROR if param not numeric value over 1000, or DB Issue
+    //! SUCCESS if valid param, will return success even if productId not in DB to remove. 
+    //! If productId checkout(s) are in DB they will be removed
+    LICENSING_EXPORT BentleyStatus DeleteLocalCheckout(Utf8StringCR productId);
     };
 
 END_BENTLEY_LICENSING_NAMESPACE
