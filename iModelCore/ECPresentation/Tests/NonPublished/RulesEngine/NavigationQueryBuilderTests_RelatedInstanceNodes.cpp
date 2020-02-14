@@ -447,3 +447,116 @@ TEST_F(NavigationQueryBuilderTests, RelatedInstanceNodes_CreatesQueryForAllNodeE
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Saulius.Skliutas                02/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(RelatedInstanceNodes_CreatesInClauseForOneToManyToOnePath, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B" />
+    <ECEntityClass typeName="C" />
+    <ECRelationshipClass typeName="AToB" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns child" polymorphic="true">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="true">
+            <Class class="B"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="BIsInC" strength="referencing" modifier="None">
+        <Source multiplicity="(0..*)" roleLabel="owns child" polymorphic="true">
+            <Class class="B"/>
+        </Source>
+        <Target multiplicity="(1..1)" roleLabel="is owned by parent" polymorphic="true">
+            <Class class="C"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(NavigationQueryBuilderTests, RelatedInstanceNodes_CreatesInClauseForOneToManyToOnePath)
+    {
+    ECClassCP classA = GetECClass("A");
+    ECClassCP classB = GetECClass("B");
+    ECClassCP classC = GetECClass("C");
+    ECRelationshipClassCP relAToB = GetECClass("AToB")->GetRelationshipClassCP();
+    ECRelationshipClassCP relBIsInC = GetECClass("BIsInC")->GetRelationshipClassCP();
+
+    TestNavNodePtr parentNode = TestNodesHelper::CreateInstancesNode(*m_connection,
+        {
+        ECInstanceKey(classA->GetId(), ECInstanceId((uint64_t)1)),
+        });
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+
+    RelatedInstanceNodesSpecification spec(1, ChildrenHint::Unknown, false, false, false, false, "", { new RepeatableRelationshipPathSpecification({
+        new RepeatableRelationshipStepSpecification(relAToB->GetFullName(), RequiredRelationDirection::RequiredRelationDirection_Forward, classB->GetFullName()),
+        new RepeatableRelationshipStepSpecification(relBIsInC->GetFullName(), RequiredRelationDirection::RequiredRelationDirection_Forward, classC->GetFullName())
+        }) 
+    });
+    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
+    ASSERT_EQ(1, queries.size());
+
+    NavigationQueryPtr query = queries[0];
+    ASSERT_TRUE(query.IsValid());
+
+    NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery(BeTest::GetNameOfCurrentTest(), spec);
+    EXPECT_TRUE(expected->IsEqual(*query))
+        << "Expected: " << expected->ToString() << "\r\n"
+        << "Actual:   " << query->ToString();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Saulius.Skliutas                02/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(RelatedInstanceNodes_CreatesInClauseForOneToManyToOnePathOnNavigationProperty, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B">
+        <ECNavigationProperty propertyName="A" relationshipName="AToB" direction="Backward" />
+        <ECNavigationProperty propertyName="C" relationshipName="BIsInC" direction="Forward" />
+    </ECEntityClass>
+    <ECEntityClass typeName="C" />
+    <ECRelationshipClass typeName="AToB" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns child" polymorphic="true">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="true">
+            <Class class="B"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="BIsInC" strength="referencing" modifier="None">
+        <Source multiplicity="(0..*)" roleLabel="owns child" polymorphic="true">
+            <Class class="B"/>
+        </Source>
+        <Target multiplicity="(1..1)" roleLabel="is owned by parent" polymorphic="true">
+            <Class class="C"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(NavigationQueryBuilderTests, RelatedInstanceNodes_CreatesInClauseForOneToManyToOnePathOnNavigationProperty)
+    {
+    ECClassCP classA = GetECClass("A");
+    ECClassCP classB = GetECClass("B");
+    ECClassCP classC = GetECClass("C");
+    ECRelationshipClassCP relAToB = GetECClass("AToB")->GetRelationshipClassCP();
+    ECRelationshipClassCP relBIsInC = GetECClass("BIsInC")->GetRelationshipClassCP();
+
+    TestNavNodePtr parentNode = TestNodesHelper::CreateInstancesNode(*m_connection,
+        {
+        ECInstanceKey(classA->GetId(), ECInstanceId((uint64_t)1)),
+        });
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+
+    RelatedInstanceNodesSpecification spec(1, ChildrenHint::Unknown, false, false, false, false, "", { new RepeatableRelationshipPathSpecification({
+        new RepeatableRelationshipStepSpecification(relAToB->GetFullName(), RequiredRelationDirection::RequiredRelationDirection_Forward, classB->GetFullName()),
+        new RepeatableRelationshipStepSpecification(relBIsInC->GetFullName(), RequiredRelationDirection::RequiredRelationDirection_Forward, classC->GetFullName())
+        })
+        });
+    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
+    ASSERT_EQ(1, queries.size());
+
+    NavigationQueryPtr query = queries[0];
+    ASSERT_TRUE(query.IsValid());
+
+    NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery(BeTest::GetNameOfCurrentTest(), spec);
+    EXPECT_TRUE(expected->IsEqual(*query))
+        << "Expected: " << expected->ToString() << "\r\n"
+        << "Actual:   " << query->ToString();
+    }

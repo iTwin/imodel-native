@@ -556,7 +556,7 @@ void QueryBuilderHelpers::ApplyDescriptorOverrides(RefCountedPtr<ContentQuery>& 
                 }
             else if (sortingField->IsDisplayLabelField())
                 {
-                orderByClause.append(QueryBuilderHelpers::CreateDisplayLabelValueClause(sortingField->GetName().c_str()));
+                orderByClause.append(QueryHelpers::Wrap(sortingField->GetName().c_str()));
                 }
             else
                 {

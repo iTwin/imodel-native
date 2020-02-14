@@ -2256,6 +2256,14 @@ public:
         }
 
     /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Saulius.Skliutas                02/2020
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    bool HasGrouping(SelectQueryInfo const& selectInfo) const
+        {
+        return nullptr != GetGroupingHandler(selectInfo);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                01/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
     ECClassUseCounter& GetRelationshipUseCounter() {return m_relationshipsUseCounter;}
@@ -2620,11 +2628,87 @@ static Utf8String FormatInstanceFilter(Utf8String filter)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                02/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool HasOneToManyToOneSplit(RelatedClassPathCR classpath)
+    {
+    bool hasOneToManyStep = false;
+    for (auto& path : classpath)
+        {
+        ECRelationshipClassCP rel = path.GetRelationship();
+        ECRelationshipConstraintCR target = path.IsForwardRelationship() ? rel->GetTarget() : rel->GetSource();
+        if (target.GetMultiplicity().IsUpperLimitUnbounded() || target.GetMultiplicity().GetUpperLimit() > 1)
+            hasOneToManyStep = true;
+        if (hasOneToManyStep && target.GetMultiplicity().GetUpperLimit() == 1)
+            return true;
+        }
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                02/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+static NavigationECPropertyCP GetNavigationProperty(ECClassCR source, ECRelationshipClassCP relationship)
+    {
+    ECPropertyIterable sourceIterable = source.GetProperties(true);
+    for (ECPropertyCP prop : sourceIterable)
+        {
+        if (prop->GetIsNavigation()
+            && prop->GetAsNavigationProperty()->GetRelationshipClass() == relationship)
+            {
+            return prop->GetAsNavigationProperty();
+            }
+        }
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                02/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+static QueryClauseAndBindings CreateRelatedInstancesWhereClause(SelectQueryInfo const& selectInfo, RelatedClassPathCR pathFromSelectToParentClass, bvector<ECInstanceId> const& parentInstanceIds)
+    {
+    RelatedClass firstPathStep = pathFromSelectToParentClass.front();
+    ComplexGenericQueryPtr query = ComplexGenericQuery::Create();
+    // if target has navigation property to select class use it to collect ids
+    NavigationECPropertyCP navProp = GetNavigationProperty(firstPathStep.GetTargetClass().GetClass(), firstPathStep.GetRelationship());
+    if (nullptr != navProp)
+        {
+        Utf8String propertyClause = QueryHelpers::Wrap(navProp->GetName()).append(".[Id]");
+        RefCountedPtr<SimpleQueryContract> queryContract = SimpleQueryContract::Create({
+            PresentationQueryContractSimpleField::Create("/RelatedInstanceId/", propertyClause.c_str(), true, false, FieldVisibility::Inner)
+            });
+        query->SelectContract(*queryContract, firstPathStep.GetTargetClassAlias());
+        query->From(firstPathStep.GetTargetClass(), firstPathStep.GetTargetClassAlias());
+        if (pathFromSelectToParentClass.size() > 1)
+            {
+            // remove fist path step because query is selecting from first step target
+            RelatedClassPath copy(pathFromSelectToParentClass);
+            copy.erase(copy.begin());
+            query->Join(copy);
+            }
+        }
+    else 
+        {
+        RefCountedPtr<SimpleQueryContract> queryContract = SimpleQueryContract::Create({
+            PresentationQueryContractSimpleField::Create("/RelatedInstanceId/", "ECInstanceId", true, false, FieldVisibility::Inner)
+            });
+
+        query->SelectContract(*queryContract, "relatedInstances");
+        query->From(selectInfo.GetSelectClass(), "relatedInstances");
+        query->Join(pathFromSelectToParentClass);
+        }
+
+    query->Where(IdsFilteringHelper<bvector<ECInstanceId>>(parentInstanceIds).Create("[related].[ECInstanceId]"));
+    Utf8String whereClause = Utf8String("[this].[ECInstanceId] IN (").append(query->ToString()).append(")");
+    return QueryClauseAndBindings(whereClause, query->GetBoundValues().Clone());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 static ComplexNavigationQueryPtr CreateQuery(NavigationQueryContract& contract, SelectQueryInfo const& selectInfo,
     NavigationQueryBuilderParameters const& params, NavNodeCR parentInstanceNode, ECClassCR parentClass,
-    bvector<ECInstanceId> const& parentInstanceIds, Utf8StringCR instanceFilter, bool groupByContract)
+    bvector<ECInstanceId> const& parentInstanceIds, Utf8StringCR instanceFilter, bool hasGrouping)
     {
     RelatedClassPath pathFromSelectToParentClass(selectInfo.GetPathFromParentToSelectClass());
     pathFromSelectToParentClass.Reverse("related", true);
@@ -2633,12 +2717,23 @@ static ComplexNavigationQueryPtr CreateQuery(NavigationQueryContract& contract, 
     query->SelectContract(contract, "this");
     query->From(selectInfo.GetSelectClass(), "this");
 
+    bool groupByContract = HasOneToManyToOneSplit(pathFromSelectToParentClass);
     if (selectInfo.GetPathFromParentToSelectClass().size() == pathFromSelectToParentClass.size())
         {
         // the reversed path always becomes shorter if there are recursive relationships involved. if not, then 
         // we just need to filter by the end of the join
-        query->Where(IdsFilteringHelper<bvector<ECInstanceId>>(parentInstanceIds).Create("[related].[ECInstanceId]"));
-        query->Join(pathFromSelectToParentClass, false);
+
+        // if path contains steps one -> many and many -> one create IN clause with subquery to avoid GROUP BY
+        if (!hasGrouping && groupByContract)
+            {
+            groupByContract = false;
+            query->Where(CreateRelatedInstancesWhereClause(selectInfo, pathFromSelectToParentClass, parentInstanceIds));
+            }
+        else
+            {
+            query->Where(IdsFilteringHelper<bvector<ECInstanceId>>(parentInstanceIds).Create("[related].[ECInstanceId]"));
+            query->Join(pathFromSelectToParentClass, false);
+            }
         }
     else if (pathFromSelectToParentClass.empty())
         {
@@ -2944,7 +3039,7 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
                 if (contract.IsValid())
                     {
                     ComplexNavigationQueryPtr query = CreateQuery(*contract, info, m_params, *parentNode, parentClass, parentInstanceIds,
-                        FormatInstanceFilter(specification.GetInstanceFilter()), 0 != specification.GetSkipRelatedLevel());
+                        FormatInstanceFilter(specification.GetInstanceFilter()), queryContext->HasGrouping(info));
                     if (queryContext->Accept(query, info))
                         OnSelected(info, m_params);
                     }

@@ -129,6 +129,7 @@ RelationshipPathSpecification::~RelationshipPathSpecification()
 +---------------+---------------+---------------+---------------+---------------+------*/
 RelationshipPathSpecification& RelationshipPathSpecification::operator=(RelationshipPathSpecification const& other)
     {
+    CommonToolsInternal::FreePresentationRules(m_steps);
     CommonToolsInternal::CopyRules(m_steps, other.m_steps, this);
     return *this;
     }
@@ -228,6 +229,7 @@ RepeatableRelationshipPathSpecification::~RepeatableRelationshipPathSpecificatio
 +---------------+---------------+---------------+---------------+---------------+------*/
 RepeatableRelationshipPathSpecification& RepeatableRelationshipPathSpecification::operator=(RepeatableRelationshipPathSpecification const& other)
     {
+    CommonToolsInternal::FreePresentationRules(m_steps);
     CommonToolsInternal::CopyRules(m_steps, other.m_steps, this);
     return *this;
     }

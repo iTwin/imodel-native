@@ -8437,7 +8437,6 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Crea
     VerifyNodeInstance(*physical1ClassGroupChildren[0], *physicalElement1);
     }
 
-#ifdef wip_label_definitions_performance_issue
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Saulius.Skliutas                09/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -8478,7 +8477,6 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceLabelOverride_Da
     EXPECT_STREQ("2019-11-28T00:00:00.000Z", node->GetLabelDefinition().GetRawValue()->AsSimpleValue()->GetValue().GetString());
     EXPECT_STREQ("dateTime", node->GetLabelDefinition().GetTypeName().c_str());
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Saulius.Skliutas                09/2019
@@ -8557,4 +8555,172 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, LabelOverride_OverrideWi
 
     NavNodeCPtr node = rootNodes[0];
     EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_NotSpecified()).c_str(), node->GetLabelDefinition().GetDisplayValue().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Saulius.Skliutas                09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(RelatedInstanceNodes_CreatesHierarchyWithOneToManyToOneRelationships, R"*(
+    <ECEntityClass typeName="Model" />
+    <ECEntityClass typeName="Element" />
+    <ECEntityClass typeName="Category" />
+    <ECRelationshipClass typeName="ModelContainsElements" strength="embedding" modifier="Sealed" description="Associates Elements with a Model">
+        <Source multiplicity="(1..1)" roleLabel="contains" polymorphic="true">
+            <Class class="Model"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="Element" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="ElementIsInCategory" strength="referencing" strengthDirection="Backward" modifier="Sealed" description="Element is in Category">
+        <Source multiplicity="(0..*)" roleLabel="is in" polymorphic="true">
+            <Class class="Element" />
+        </Source>
+        <Target multiplicity="(1..1)" roleLabel="categorizes" polymorphic="false">
+            <Class class="Category"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstanceNodes_CreatesHierarchyWithOneToManyToOneRelationships)
+    {
+    ECClassCP elementClass = GetClass("Element");
+    ECClassCP modelClass = GetClass("Model");
+    ECClassCP categoryClass = GetClass("Category");
+    ECRelationshipClassCP relModelContainsElements = GetClass("ModelContainsElements")->GetRelationshipClassCP();
+    ECRelationshipClassCP relElementIsInCategory = GetClass("ElementIsInCategory")->GetRelationshipClassCP();
+
+    IECInstancePtr model = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *modelClass);
+    IECInstancePtr category = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *categoryClass);
+    IECInstancePtr element1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
+    IECInstancePtr element2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
+
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relModelContainsElements, *model, *element1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relModelContainsElements, *model, *element2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relElementIsInCategory, *element1, *category);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relElementIsInCategory, *element2, *category);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, TargetTree_Both, true);
+    rules->AddPresentationRule(*rootRule);
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
+        "", modelClass->GetFullName(), false));
+
+    //RelatedInstanceNodesSpecification(int priority, ChildrenHint hasChildren, bool hideNodesInHierarchy, bool hideIfNoChildren,
+    // bool groupByClass, bool groupByLabel, Utf8String instanceFilter, bvector<RepeatableRelationshipPathSpecification*> relationshipPaths)
+
+    ChildNodeRule* childRule = new ChildNodeRule("ParentNode.ClassName = \"Model\"", 1000, false, TargetTree_Both);
+    rules->AddPresentationRule(*childRule);
+    childRule->AddSpecification(*new RelatedInstanceNodesSpecification(1000, ChildrenHint::Always, false, false, false, false, "",
+        { new RepeatableRelationshipPathSpecification({
+            new RepeatableRelationshipStepSpecification(relModelContainsElements->GetFullName(), RequiredRelationDirection::RequiredRelationDirection_Forward, elementClass->GetFullName()),
+            new RepeatableRelationshipStepSpecification(relElementIsInCategory->GetFullName(), RequiredRelationDirection::RequiredRelationDirection_Forward, categoryClass->GetFullName())
+            })
+        })
+    );
+
+    // request for nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(BeTest::GetNameOfCurrentTest());
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
+    ASSERT_EQ(1, rootNodes.GetSize());
+
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options.GetJson()).get(); });
+    EXPECT_EQ(1, childNodes.GetSize());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Saulius.Skliutas                09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(RelatedInstanceNodes_CreatesHierarchyWithOneToManyToOneRelationships_WithNavigationProperties, R"*(
+    <ECEntityClass typeName="Model" />
+    <ECEntityClass typeName="Element">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="Model" relationshipName="ModelContainsElements" direction="Backward">
+            <ECCustomAttributes>
+                <ForeignKeyConstraint xmlns="ECDbMap.2.0">
+                    <OnDeleteAction>NoAction</OnDeleteAction>
+                </ForeignKeyConstraint>
+            </ECCustomAttributes>
+        </ECNavigationProperty>
+        <ECNavigationProperty propertyName="Category" relationshipName="ElementIsInCategory" direction="Forward">
+            <ECCustomAttributes>
+                <ForeignKeyConstraint xmlns="ECDbMap.2.0">
+                    <OnDeleteAction>NoAction</OnDeleteAction>
+                </ForeignKeyConstraint>
+            </ECCustomAttributes>
+        </ECNavigationProperty>
+    </ECEntityClass>
+    <ECEntityClass typeName="Category" />
+    <ECRelationshipClass typeName="ModelContainsElements" strength="embedding" modifier="Sealed" description="Associates Elements with a Model">
+        <Source multiplicity="(1..1)" roleLabel="contains" polymorphic="true">
+            <Class class="Model"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="Element" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="ElementIsInCategory" strength="referencing" strengthDirection="Backward" modifier="Sealed" description="Element is in Category">
+        <Source multiplicity="(0..*)" roleLabel="is in" polymorphic="true">
+            <Class class="Element" />
+        </Source>
+        <Target multiplicity="(1..1)" roleLabel="categorizes" polymorphic="false">
+            <Class class="Category"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstanceNodes_CreatesHierarchyWithOneToManyToOneRelationships_WithNavigationProperties)
+    {
+    ECClassCP elementClass = GetClass("Element");
+    ECClassCP modelClass = GetClass("Model");
+    ECClassCP categoryClass = GetClass("Category");
+    ECRelationshipClassCP relModelContainsElements = GetClass("ModelContainsElements")->GetRelationshipClassCP();
+    ECRelationshipClassCP relElementIsInCategory = GetClass("ElementIsInCategory")->GetRelationshipClassCP();
+
+    IECInstancePtr model = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *modelClass);
+    IECInstancePtr category = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *categoryClass);
+    IECInstancePtr element1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass,
+        [&](IECInstanceR inst) {
+            inst.SetValue("Model", ECValue(ECInstanceId::FromString(model->GetInstanceId().c_str()), relModelContainsElements->GetId()));
+            inst.SetValue("Category", ECValue(ECInstanceId::FromString(category->GetInstanceId().c_str()), relElementIsInCategory->GetId()));
+        });
+    IECInstancePtr element2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass,
+        [&](IECInstanceR inst) {
+            inst.SetValue("Model", ECValue(ECInstanceId::FromString(model->GetInstanceId().c_str()), relModelContainsElements->GetId()));
+            inst.SetValue("Category", ECValue(ECInstanceId::FromString(category->GetInstanceId().c_str()), relElementIsInCategory->GetId()));
+        });
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, TargetTree_Both, true);
+    rules->AddPresentationRule(*rootRule);
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
+        "", modelClass->GetFullName(), false));
+
+    ChildNodeRule* childRule = new ChildNodeRule("ParentNode.ClassName = \"Model\"", 1000, false, TargetTree_Both);
+    rules->AddPresentationRule(*childRule);
+    childRule->AddSpecification(*new RelatedInstanceNodesSpecification(1000, ChildrenHint::Always, false, false, false, false, "",
+        { 
+        new RepeatableRelationshipPathSpecification(
+            {
+            new RepeatableRelationshipStepSpecification(relModelContainsElements->GetFullName(), RequiredRelationDirection::RequiredRelationDirection_Forward, elementClass->GetFullName()),
+            new RepeatableRelationshipStepSpecification(relElementIsInCategory->GetFullName(), RequiredRelationDirection::RequiredRelationDirection_Forward, categoryClass->GetFullName())
+            })
+        })
+    );
+
+    // request for nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(BeTest::GetNameOfCurrentTest());
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
+    ASSERT_EQ(1, rootNodes.GetSize());
+
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options.GetJson()).get(); });
+    EXPECT_EQ(1, childNodes.GetSize());
     }

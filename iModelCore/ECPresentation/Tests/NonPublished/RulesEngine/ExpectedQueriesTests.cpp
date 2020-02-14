@@ -702,12 +702,11 @@ void ExpectedQueries::RegisterExpectedQueries()
         relationshipPath11.push_back(RelatedClass(ret_Gadget, SelectClass(ret_Widget, true), ret_WidgetHasGadgets, false, "related", "rel_RET_WidgetHasGadgets_0", false));
         contract11->SetPathFromSelectToParentClass(relationshipPath11);
         ComplexNavigationQueryPtr query11 = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(ret_Sprocket,
-            ComplexNavigationQuery::Create()->SelectAll()
-            .From(ComplexNavigationQuery::Create()->SelectContract(*contract11, "this")
+            ComplexNavigationQuery::Create()->SelectContract(*contract11, "this")
                 .From(ret_Sprocket, true, "this")
                 .Join(relationshipPath11)
-                .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))}))
-            .GroupByContract(*contract11));
+                .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))})
+            );
 
         NavigationQueryContractPtr contract12 = ECInstanceNodesQueryContract::Create(&ret_Sprocket);
         RelatedClassPath relationshipPath12;
@@ -715,12 +714,11 @@ void ExpectedQueries::RegisterExpectedQueries()
         relationshipPath12.push_back(RelatedClass(ret_Gadget, SelectClass(ret_Widget, true), ret_WidgetHasGadget, false, "related", "rel_RET_WidgetHasGadget_0", false));
         contract12->SetPathFromSelectToParentClass(relationshipPath12);
         ComplexNavigationQueryPtr query12 = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(ret_Sprocket,
-            ComplexNavigationQuery::Create()->SelectAll()
-            .From(ComplexNavigationQuery::Create()->SelectContract(*contract12, "this")
+            ComplexNavigationQuery::Create()->SelectContract(*contract12, "this")
                 .From(ret_Sprocket, true, "this")
                 .Join(relationshipPath12)
-                .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))}))
-            .GroupByContract(*contract12));
+                .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))})
+            );
 
         NavigationQueryContractPtr contract13 = ECInstanceNodesQueryContract::Create(&ret_Sprocket);
         RelatedClassPath relationshipPath13;
@@ -728,12 +726,11 @@ void ExpectedQueries::RegisterExpectedQueries()
         relationshipPath13.push_back(RelatedClass(ret_Gadget, SelectClass(ret_Widget, true), ret_WidgetsHaveGadgets, false, "related", "rel_RET_WidgetsHaveGadgets_0", false));
         contract13->SetPathFromSelectToParentClass(relationshipPath13);
         ComplexNavigationQueryPtr query13 = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(ret_Sprocket,
-            ComplexNavigationQuery::Create()->SelectAll()
-            .From(ComplexNavigationQuery::Create()->SelectContract(*contract13, "this")
+            ComplexNavigationQuery::Create()->SelectContract(*contract13, "this")
                 .From(ret_Sprocket, true, "this")
                 .Join(relationshipPath13)
-                .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))}))
-            .GroupByContract(*contract13));
+                .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))})
+            );
 
         NavigationQueryContractPtr contract14 = ECInstanceNodesQueryContract::Create(&ret_Sprocket);
         RelatedClassPath relationshipPath14;
@@ -741,12 +738,11 @@ void ExpectedQueries::RegisterExpectedQueries()
         relationshipPath14.push_back(RelatedClass(ret_Gadget, SelectClass(ret_Widget, true), ret_WidgetsHaveGadgets2, false, "related", "rel_RET_WidgetsHaveGadgets2_0", false));
         contract14->SetPathFromSelectToParentClass(relationshipPath14);
         ComplexNavigationQueryPtr query14 = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(ret_Sprocket,
-            ComplexNavigationQuery::Create()->SelectAll()
-            .From(ComplexNavigationQuery::Create()->SelectContract(*contract14, "this")
+            ComplexNavigationQuery::Create()->SelectContract(*contract14, "this")
                 .From(ret_Sprocket, true, "this")
                 .Join(relationshipPath14)
-                .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))}))
-            .GroupByContract(*contract14));
+                .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))})
+            );
 
         NavigationQueryContractPtr contract21 = ECInstanceNodesQueryContract::Create(&ret_Sprocket);
         RelatedClassPath relationshipPath21;
@@ -754,12 +750,11 @@ void ExpectedQueries::RegisterExpectedQueries()
         relationshipPath21.push_back(RelatedClass(ret_Gadget, SelectClass(ret_Widget, true), ret_WidgetHasGadgets, false, "related", "rel_RET_WidgetHasGadgets_0", false));
         contract21->SetPathFromSelectToParentClass(relationshipPath21);
         ComplexNavigationQueryPtr query21 = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(ret_Sprocket,
-            ComplexNavigationQuery::Create()->SelectAll()
-            .From(ComplexNavigationQuery::Create()->SelectContract(*contract21, "this")
+            ComplexNavigationQuery::Create()->SelectContract(*contract21, "this")
                 .From(ret_Sprocket, true, "this")
                 .Join(relationshipPath21)
-                .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))}))
-            .GroupByContract(*contract21));
+                .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))})
+            );
 
         NavigationQueryContractPtr contract22 = ECInstanceNodesQueryContract::Create(&ret_Sprocket);
         RelatedClassPath relationshipPath22;
@@ -767,12 +762,11 @@ void ExpectedQueries::RegisterExpectedQueries()
         relationshipPath22.push_back(RelatedClass(ret_Gadget, SelectClass(ret_Widget, true), ret_WidgetHasGadget, false, "related", "rel_RET_WidgetHasGadget_0", false));
         contract22->SetPathFromSelectToParentClass(relationshipPath22);
         ComplexNavigationQueryPtr query22 = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(ret_Sprocket,
-            ComplexNavigationQuery::Create()->SelectAll()
-            .From(ComplexNavigationQuery::Create()->SelectContract(*contract22, "this")
+            ComplexNavigationQuery::Create()->SelectContract(*contract22, "this")
                 .From(ret_Sprocket, true, "this")
                 .Join(relationshipPath22)
-                .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))}))
-            .GroupByContract(*contract22));
+                .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))})
+            );
 
         NavigationQueryContractPtr contract23 = ECInstanceNodesQueryContract::Create(&ret_Sprocket);
         RelatedClassPath relationshipPath23;
@@ -780,12 +774,11 @@ void ExpectedQueries::RegisterExpectedQueries()
         relationshipPath23.push_back(RelatedClass(ret_Gadget, SelectClass(ret_Widget, true), ret_WidgetsHaveGadgets, false, "related", "rel_RET_WidgetsHaveGadgets_0", false));
         contract23->SetPathFromSelectToParentClass(relationshipPath23);
         ComplexNavigationQueryPtr query23 = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(ret_Sprocket,
-            ComplexNavigationQuery::Create()->SelectAll()
-            .From(ComplexNavigationQuery::Create()->SelectContract(*contract23, "this")
+            ComplexNavigationQuery::Create()->SelectContract(*contract23, "this")
                 .From(ret_Sprocket, true, "this")
                 .Join(relationshipPath23)
-                .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))}))
-            .GroupByContract(*contract23));
+                .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))})
+            );
 
         NavigationQueryContractPtr contract24 = ECInstanceNodesQueryContract::Create(&ret_Sprocket);
         RelatedClassPath relationshipPath24;
@@ -793,12 +786,11 @@ void ExpectedQueries::RegisterExpectedQueries()
         relationshipPath24.push_back(RelatedClass(ret_Gadget, SelectClass(ret_Widget, true), ret_WidgetsHaveGadgets2, false, "related", "rel_RET_WidgetsHaveGadgets2_0", false));
         contract24->SetPathFromSelectToParentClass(relationshipPath24);
         ComplexNavigationQueryPtr query24 = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(ret_Sprocket,
-            ComplexNavigationQuery::Create()->SelectAll()
-            .From(ComplexNavigationQuery::Create()->SelectContract(*contract24, "this")
+            ComplexNavigationQuery::Create()->SelectContract(*contract24, "this")
                 .From(ret_Sprocket, true, "this")
                 .Join(relationshipPath24)
-                .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))}))
-            .GroupByContract(*contract24));
+                .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))})
+            );
 
         UnionNavigationQueryPtr expected = UnionNavigationQuery::Create({query11, query12, query13, query14, query21, query22, query23, query24});
         expected->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
@@ -822,12 +814,11 @@ void ExpectedQueries::RegisterExpectedQueries()
         NavigationQueryContractPtr contract1 = ECInstanceNodesQueryContract::Create(&ret_Sprocket);
         contract1->SetPathFromSelectToParentClass(relationshipPath1);
         ComplexNavigationQueryPtr query1 = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(ret_Sprocket,
-            ComplexNavigationQuery::Create()->SelectAll()
-            .From(ComplexNavigationQuery::Create()->SelectContract(*contract1, "this")
+            ComplexNavigationQuery::Create()->SelectContract(*contract1, "this")
                 .From(ret_Sprocket, true, "this")
                 .Join(relationshipPath1)
-                .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))}))
-            .GroupByContract(*contract1));
+                .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))})
+            );
 
         RelatedClassPath relationshipPath2;
         relationshipPath2.push_back(RelatedClass(ret_Sprocket, SelectClass(ret_Gadget, true), ret_GadgetHasSprockets, false, TABLE_ALIAS("target", ret_Gadget, 1), "rel_RET_GadgetHasSprockets_0", false));
@@ -835,12 +826,11 @@ void ExpectedQueries::RegisterExpectedQueries()
         NavigationQueryContractPtr contract2 = ECInstanceNodesQueryContract::Create(&ret_Sprocket);
         contract2->SetPathFromSelectToParentClass(relationshipPath2);
         ComplexNavigationQueryPtr query2 = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(ret_Sprocket,
-            ComplexNavigationQuery::Create()->SelectAll()
-            .From(ComplexNavigationQuery::Create()->SelectContract(*contract2, "this")
+            ComplexNavigationQuery::Create()->SelectContract(*contract2, "this")
                 .From(ret_Sprocket, true, "this")
                 .Join(relationshipPath2)
-                .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))}))
-            .GroupByContract(*contract2));
+                .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))})
+            );
 
         RelatedClassPath relationshipPath3;
         relationshipPath3.push_back(RelatedClass(ret_Sprocket, SelectClass(ret_Gadget, true), ret_GadgetHasSprockets, false, TABLE_ALIAS("target", ret_Gadget, 2), "rel_RET_GadgetHasSprockets_0", false));
@@ -848,12 +838,11 @@ void ExpectedQueries::RegisterExpectedQueries()
         NavigationQueryContractPtr contract3 = ECInstanceNodesQueryContract::Create(&ret_Sprocket);
         contract3->SetPathFromSelectToParentClass(relationshipPath3);
         ComplexNavigationQueryPtr query3 = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(ret_Sprocket,
-            ComplexNavigationQuery::Create()->SelectAll()
-            .From(ComplexNavigationQuery::Create()->SelectContract(*contract3, "this")
+            ComplexNavigationQuery::Create()->SelectContract(*contract3, "this")
                 .From(ret_Sprocket, true, "this")
                 .Join(relationshipPath3)
-                .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))}))
-            .GroupByContract(*contract3));
+                .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))})
+            );
 
         RelatedClassPath relationshipPath4;
         relationshipPath4.push_back(RelatedClass(ret_Sprocket, SelectClass(ret_Gadget, true), ret_GadgetHasSprockets, false, TABLE_ALIAS("target", ret_Gadget, 3), "rel_RET_GadgetHasSprockets_0", false));
@@ -861,12 +850,11 @@ void ExpectedQueries::RegisterExpectedQueries()
         NavigationQueryContractPtr contract4 = ECInstanceNodesQueryContract::Create(&ret_Sprocket);
         contract4->SetPathFromSelectToParentClass(relationshipPath4);
         ComplexNavigationQueryPtr query4 = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(ret_Sprocket,
-            ComplexNavigationQuery::Create()->SelectAll()
-            .From(ComplexNavigationQuery::Create()->SelectContract(*contract4, "this")
+            ComplexNavigationQuery::Create()->SelectContract(*contract4, "this")
                 .From(ret_Sprocket, true, "this")
                 .Join(relationshipPath4)
-                .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))}))
-            .GroupByContract(*contract4));
+                .Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))})
+            );
 
         UnionNavigationQueryPtr expected = UnionNavigationQuery::Create({query1, query2, query3, query4});
         expected->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
@@ -1652,6 +1640,71 @@ void ExpectedQueries::RegisterExpectedQueries()
         expected->GetResultParametersR().GetNavNodeExtendedDataR().SetRelationshipDirection(ECRelatedInstanceDirection::Forward);
         expected->GetResultParametersR().GetMatchingRelationshipIds().insert(rel1->GetId());
         expected->GetResultParametersR().GetMatchingRelationshipIds().insert(rel2->GetId());
+
+        RegisterQuery(queryName, *expected);
+        }
+
+    // RelatedInstanceNodes_CreatesInClauseForOneToManyToOnePath
+        {
+        Utf8CP queryName = "RelatedInstanceNodes_CreatesInClauseForOneToManyToOnePath";
+        ECEntityClassCP classA = GetECClass(queryName, "A")->GetEntityClassCP();
+        ECEntityClassCP classB = GetECClass(queryName, "B")->GetEntityClassCP();
+        ECEntityClassCP classC = GetECClass(queryName, "C")->GetEntityClassCP();
+        ECRelationshipClassCP relAToB = GetECClass(queryName, "AToB")->GetRelationshipClassCP();
+        ECRelationshipClassCP relBIsInC = GetECClass(queryName, "BIsInC")->GetRelationshipClassCP();
+
+        ComplexGenericQueryPtr whereQuery = ComplexGenericQuery::Create();
+        RefCountedPtr<SimpleQueryContract> queryContract = SimpleQueryContract::Create({ PresentationQueryContractSimpleField::Create("/RelatedInstanceId/", "ECInstanceId", true, false, FieldVisibility::Inner) });
+        whereQuery->SelectContract(*queryContract, "relatedInstances");
+        whereQuery->From(SelectClass(*classC, true), "relatedInstances");
+        whereQuery->Join({ 
+            RelatedClass(*classC, SelectClass(*classB, true), *relBIsInC, false, TABLE_ALIAS("target", *classB, 0), TABLE_ALIAS("rel", *relBIsInC, 0), false),
+            RelatedClass(*classB, SelectClass(*classA, true), *relAToB, false , "related", TABLE_ALIAS("rel", *relAToB, 0), false) 
+        });
+        whereQuery->Where(IdsFilteringHelper<bvector<ECInstanceId>>({ ECInstanceId((uint64_t)1) }).Create("[related].[ECInstanceId]"));
+        Utf8String whereClause = Utf8String("[this].[ECInstanceId] IN (").append(whereQuery->ToString()).append(")");
+
+        ComplexNavigationQueryPtr expected = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classC,
+            ComplexNavigationQuery::Create()->SelectContract(*ECInstanceNodesQueryContract::Create(classC), "this")
+            .From(*classC, true, "this")
+            .Where(QueryClauseAndBindings(whereClause, whereQuery->GetBoundValues().Clone())));
+
+        expected->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
+
+        expected->GetResultParametersR().GetNavNodeExtendedDataR().SetRelationshipDirection(ECRelatedInstanceDirection::Forward);
+        expected->GetResultParametersR().GetMatchingRelationshipIds().insert(relAToB->GetId());
+        expected->GetResultParametersR().GetMatchingRelationshipIds().insert(relBIsInC->GetId());
+
+        RegisterQuery(queryName, *expected);
+        }
+
+    // RelatedInstanceNodes_CreatesInClauseForOneToManyToOnePathOnNavigationProperty
+        {
+        Utf8CP queryName = "RelatedInstanceNodes_CreatesInClauseForOneToManyToOnePathOnNavigationProperty";
+        ECEntityClassCP classA = GetECClass(queryName, "A")->GetEntityClassCP();
+        ECEntityClassCP classB = GetECClass(queryName, "B")->GetEntityClassCP();
+        ECEntityClassCP classC = GetECClass(queryName, "C")->GetEntityClassCP();
+        ECRelationshipClassCP relAToB = GetECClass(queryName, "AToB")->GetRelationshipClassCP();
+        ECRelationshipClassCP relBIsInC = GetECClass(queryName, "BIsInC")->GetRelationshipClassCP();
+
+        ComplexGenericQueryPtr whereQuery = ComplexGenericQuery::Create();
+        RefCountedPtr<SimpleQueryContract> queryContract = SimpleQueryContract::Create({PresentationQueryContractSimpleField::Create("/RelatedInstanceId/", Utf8String("[C]").append(".[Id]").c_str(), true, false, FieldVisibility::Inner)});
+        whereQuery->SelectContract(*queryContract, TABLE_ALIAS("target", *classB, 0));
+        whereQuery->From(SelectClass(*classB, true), TABLE_ALIAS("target", *classB, 0));
+        whereQuery->Join({ RelatedClass(*classB, SelectClass(*classA, true), *relAToB, false, "related", TABLE_ALIAS("rel", *relAToB, 0), false) });
+        whereQuery->Where(IdsFilteringHelper<bvector<ECInstanceId>>({ ECInstanceId((uint64_t)1) }).Create("[related].[ECInstanceId]"));
+        Utf8String whereClause = Utf8String("[this].[ECInstanceId] IN (").append(whereQuery->ToString()).append(")");
+
+        ComplexNavigationQueryPtr expected = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classC,
+            ComplexNavigationQuery::Create()->SelectContract(*ECInstanceNodesQueryContract::Create(classC), "this")
+            .From(*classC, true, "this")
+            .Where(QueryClauseAndBindings(whereClause, whereQuery->GetBoundValues().Clone())));
+
+        expected->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
+
+        expected->GetResultParametersR().GetNavNodeExtendedDataR().SetRelationshipDirection(ECRelatedInstanceDirection::Forward);
+        expected->GetResultParametersR().GetMatchingRelationshipIds().insert(relAToB->GetId());
+        expected->GetResultParametersR().GetMatchingRelationshipIds().insert(relBIsInC->GetId());
 
         RegisterQuery(queryName, *expected);
         }
