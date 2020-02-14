@@ -169,8 +169,10 @@ void ECDiffValue::SetValue (Utf8CP v)
     if (v == NULL)
        SetNil();
     else
-        m_valueString = v ; 
-    m_type = VALUETYPE_String; 
+        {
+        m_valueString = v;
+        m_type = VALUETYPE_String;
+        }
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
