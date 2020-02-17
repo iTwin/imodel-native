@@ -421,6 +421,26 @@
     <Directories DirectoryListName="MemoryPoolTest" />
   </Product>
 
+  <Part Name="ScalableMeshExamplesParts">
+    <SubPart PartName="IntersectRay"/>
+  </Part>
+  
+
+  <Part Name="IntersectRay" BentleyBuildMakeFile="Tests/Examples/ScalableMeshExamples.mke" BentleyBuildMakeOptions="+dExampleName=IntersectRay -dIMODEL02=1" OnlyPlatforms="x64, x86" ExcludeLibType="Static">
+    <SubPart PartName="ScalableMeshCore"  />
+    <SubPart PartName="ScalableMeshCreator"  />
+    <SubPart PartName="napi-dll-win" PartFile="node-addon-api/node-addon-api"/>
+
+    <Bindings>
+      <Files ProductDirectoryName="ScalableMeshAssemblies">Delivery\IntersectRay.exe</Files>
+    </Bindings>
+  </Part>
+
+  <Product Name="ScalableMeshExamples" SaveProduct="true" >
+    <SubPart PartName="ScalableMeshExamplesParts" />
+    <Directories DirectoryListName="CommonDirectoryList" />
+  </Product>
+
   <!-- ===================================================================================================================-->
   <!-- ScalableMesh unit tests integration -->
   <!-- ===================================================================================================================-->
@@ -480,6 +500,7 @@
     <ProductDirectory Name="Assemblies"                     Path="Dlls"/>
     <ProductDirectory Name="Assemblies"                     Path="Dlls"           LibType="static"        />
     <ProductDirectory Name="Assets"                         Path="Dlls/Assets"/>
+    <ProductDirectory Name="ScalableMeshAssemblies"         Path="Dlls"/>
     <ProductDirectory Name="VendorNotices"                  Path="Dlls/Notices"/>
     <ProductDirectory Name="VendorNotices"                  Path="Dlls/Notices"   LibType="static"        />
     <ProductDirectory Name="TMSchemas"                      Path="Dlls"                                   />

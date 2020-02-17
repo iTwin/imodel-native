@@ -1,0 +1,98 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+baseDir         = $(_MakeFilePath)
+
+appName = $(ExampleName)
+
+%if defined(VANCOUVER_BUILD)
+PolicyFile      = $(SrcRoot)ScalableMesh/mki/AssertScalableMeshPolicy.mki
+SolutionPolicyMki=$(SrcRoot)ScalableMesh/ScalableMesh.mki
+%endif
+
+%include  mdl.mki
+
+%if defined(VANCOUVER_BUILD)
+%include $(SrcRoot)ScalableMesh/mki/ScalableMeshPolicy.mki
+%include $(SrcRoot)ScalableMesh/ScalableMesh.mki
+%endif
+
+consoleAppUnicode = 1
+
+#----------------------------------------------------------------------
+#   Build precompiled header
+#----------------------------------------------------------------------
+
+o = $(OutputRootDir)Build/ScalableMesh/Examples/$(appName)/
+always:
+    ~mkdir $(o)
+
+MultiCompileDepends=$(_MakeFileSpec) 
+%include MultiCppCompileRule.mki
+
+
+
+ScalableMeshDir = $(SrcRoot)ScalableMesh/
+
+CCompOpts + -DUNICODE
+
+
+%if defined(VANCOUVER_BUILD)
+nameToDefine=VANCOUVER_API
+%include cdefapnd.mki
+%endif
+
+%if defined(IMODEL02)
+CCompOpts + -DIMODEL02
+ClangCppCompOpts + -w -DIMODEL02
+%endif
+
+
+$(o)$(appName)$(oext): $(baseDir)$(appName).cpp ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#   Link the executable
+#----------------------------------------------------------------------
+
+EXE_DEST     = $(o)
+EXE_NAME     = $(appname)
+EXE_OBJS     = $(MultiCompileObjectList)
+EXE_LOPT1 = -ENTRY:wmainCRTStartup
+LINKER_LIBRARIES  = $(ContextSubpartsLibs)Bentley.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)ECObjects.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)BentleyGeom.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)BentleyGeomSerialization.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnPlatform.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)BaseGeoCoord.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)ScalableMeshCore.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)ScalableMeshCreator.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)TerrainModelCore.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)CloudDataSource.lib
+
+
+%if defined(VANCOUVER_BUILD)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)BentleyAllocator.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnGeoCoord.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)IppGraLibs.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)IppUtlLibs.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)IppImaging.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(BeJsonCppLib)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)PointCloud.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)IppJpegLibTurbo.lib
+
+
+LINKER_LIBRARIES_DELAYLOADED  + $(ContextSubpartsLibs)DgnView.lib
+%endif
+
+LINKER_LIBRARIES_DELAYLOADED  + $(ContextSubpartsLibs)BeXml.lib
+
+EXE_TMP_DIR  = $(o)
+
+%include $(sharedMki)linktool.mki
+
+always:
+    ~linkfile "$(BuildContext)Delivery/$(appname)$(exeext)=$(o)$(appname)$(exeext)"
+

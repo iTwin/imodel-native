@@ -921,7 +921,7 @@ bool ScalableMeshDraping::_IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction
     bool ret = false;
     for (auto& node : nodes)
         {
-        if (!node->ArePoints3d())
+        if (m_scmPtr->IsTerrain() && !node->ArePoints3d())
             {
             BcDTMPtr dtmP = node->GetBcDTM();
             if (dtmP != nullptr && dtmP->GetDTMDraping()->IntersectRay(pointOnDTM, newDirection, transformedPt))
