@@ -211,8 +211,9 @@ BentleyStatus   iModelBridgeFwk::IModelHubArgs::ParseEnvironment()
     {
     if (m_accessToken.empty())
         {
-        Utf8String tokenFile;
-        (SetValueIfEmptyFromEnv(L"imbridge--server-token", m_accessToken));            
+        Utf8String tokenFileName;
+        SetValueIfEmptyFromEnv(L"imbridge--server-token", tokenFileName);
+        m_accessToken = ParseTokenFile(tokenFileName);
         }
     SetValueIfEmptyFromEnv(L"imbridge--server-oidcCallBackUrl", m_callBackurl);
     

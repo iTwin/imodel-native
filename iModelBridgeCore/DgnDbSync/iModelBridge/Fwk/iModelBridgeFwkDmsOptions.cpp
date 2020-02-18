@@ -381,8 +381,9 @@ BentleyStatus iModelBridgeFwk::DmsServerArgs::ParseEnvironment ()
     if (m_accessToken.empty())
         {
         GetLogger().trace("Retrieving dms access token from environment");
-        Utf8String encodedToken;
-        SetValueIfEmptyFromEnv(L"imbridge--dms-accessToken", encodedToken);
+        Utf8String tokenFileName;
+        SetValueIfEmptyFromEnv(L"imbridge--dms-accessToken", tokenFileName);
+        Utf8String encodedToken = ParseTokenFile(tokenFileName);
         GetLogger().tracev("... encoded token length = %d", encodedToken.length());
         m_accessToken = Base64Utilities::Decode(encodedToken);
         GetLogger().tracev("... decoded token length = %d", m_accessToken.length());
