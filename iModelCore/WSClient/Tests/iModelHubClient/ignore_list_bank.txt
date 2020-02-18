@@ -99,13 +99,6 @@ ThumbnailsTests.*                                   #Thumbnails
 VersionsTests.GetVersionsWithThumbnails             #Thumbnails
 
 #----------------------------------------------------------------------------------------
-#   CodeSequence issues (probably should fix)
-#----------------------------------------------------------------------------------------
-CodesTests.GetCodeMaximumIndex
-CodesTests.GetCodeNextAvailable
-CodesTests.PlantScenario
-
-#----------------------------------------------------------------------------------------
 #   Should fix
 #----------------------------------------------------------------------------------------
 BriefcasePullTests.DownloadStandaloneBriefcaseUpdatedToChangeSet #Incorrect test, should properly query by index
