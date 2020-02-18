@@ -127,7 +127,8 @@ void CollectPointsFromLinearPrimitives
 (
 CurveVectorCR curves,
 bvector<bvector<bvector<DPoint3d>>> &paths,
-bvector<bvector<bool>> &canDecimateFlags
+bvector<bvector<bool>> &canDecimateFlags,
+bool inParityRegion
 )
     {
     if (curves.IsUnionRegion())
@@ -135,12 +136,22 @@ bvector<bvector<bool>> &canDecimateFlags
         // Each child will become a new top level region
         for (auto &prim : curves)
             {
-            CollectPointsFromLinearPrimitives(*prim->GetChildCurveVectorP(), paths, canDecimateFlags);
+            CollectPointsFromLinearPrimitives(*prim->GetChildCurveVectorP(), paths, canDecimateFlags, false);
             }
+        }
+    else if (curves.IsParityRegion())
+        {
+        paths.push_back(bvector<bvector<DPoint3d>>());
+        for (auto& prim : curves)
+            CollectPointsFromLinearPrimitives(*prim->GetChildCurveVectorP(), paths, canDecimateFlags, true);
         }
     else if (curves.IsOpenPath() || curves.IsClosedPath())
         {
-        paths.push_back(bvector<bvector<DPoint3d>>());
+        // If in a parity region, the caller always created an empty bvector of loops at the back.
+        // If not, create a new one
+        if (!inParityRegion)
+            paths.push_back(bvector<bvector<DPoint3d>>());
+
         auto &parityLoops = paths.back();
         parityLoops.push_back(bvector<DPoint3d>());
         auto &loop = parityLoops.back();
@@ -179,7 +190,7 @@ bvector<bvector<bool>> &canDecimateFlags
             {
             auto child = prim->GetChildCurveVectorCP();
             if (nullptr != child)
-                CollectPointsFromLinearPrimitives(*child, paths, canDecimateFlags);
+                CollectPointsFromLinearPrimitives(*child, paths, canDecimateFlags, false);
             else
                 CollectPointsFromSinglePrimitive(*prim, paths, canDecimateFlags);
             }
@@ -196,7 +207,7 @@ static bool collectLinearGeometry(CurveVectorCR curve, bvector<bvector<bvector<D
     {
     LinearGeometryCollectorForDecimation collector(strokeOptions);
     regionPoints.clear ();
-    collector.CollectPointsFromLinearPrimitives(curve, regionPoints, canDecimateFlags);
+    collector.CollectPointsFromLinearPrimitives(curve, regionPoints, canDecimateFlags, false);
     return collector.NumErrors () == 0;
     }
 
