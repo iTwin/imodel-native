@@ -6039,6 +6039,11 @@ void BaseGCS::Initialize (WCharCP dataDirectory)
     {
     BeFileName dir (dataDirectory);
 
+    // Currently the Open Source library csmap does not support Windows Extended paths so we currently
+    // remove the \\?\ character sequence if present. 
+    // TODO Modify csmap so Windows Extended path may be supported.
+    if (dir.StartsWith (L"\\\\?\\"))
+        dir = BeFileName(dir.substr (4));
 
     ::CS_csfnm ("coordsys.dty");
     ::CS_dtfnm ("datum.dty");

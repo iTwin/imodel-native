@@ -1123,22 +1123,6 @@ struct BriefcaseManagerResourcesRequest : BeObjectWrap<BriefcaseManagerResources
         }
 };
 
-static void initializeGcs()
-    {
-    bool s_initialized = false;
-    if (s_initialized)
-        return;
-    s_initialized = true;
-    BeFileName assetsDir = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
-    // we are getting back assetsDir with something like "\\?\d:\bentleyjs\imodeljs\.....". The "\\?\" part won't work when we try to open files with fopen,
-    // so remove it.
-    if (assetsDir.StartsWith (L"\\\\?\\"))
-        assetsDir = BeFileName(assetsDir.substr (4));
-
-    BeFileName dgnGeoCoordDir = assetsDir.AppendToPath(L"DgnGeoCoord");
-    BentleyApi::GeoCoordinates::BaseGCS::Initialize(dgnGeoCoordDir.c_str());
-    }
-
 //=======================================================================================
 // Projects the DgnDb class into JS
 //! @bsiclass
@@ -1516,9 +1500,6 @@ public:
 
     Napi::Value GetIModelCoordsFromGeoCoords(Napi::CallbackInfo const& info)
         {
-        // make sure GCS library is initialized.
-        initializeGcs();
-
         // Use the macro to get the argument (which is JSON string containing an array of points) from the info argument.
         REQUIRE_ARGUMENT_STRING(0, geoCoordStr, Env().Undefined());
         // get a Json::Value from the string.
@@ -1530,9 +1511,6 @@ public:
 
     Napi::Value GetGeoCoordsFromIModelCoords(Napi::CallbackInfo const& info)
         {
-        // make sure GCS library is initialized.
-        initializeGcs();
-
         // Use the macro to get the argument (which is JSON string containing an array of points) from the info argument.
         REQUIRE_ARGUMENT_STRING(0, iModelCoordStr, Env().Undefined());
         // get a Json::Value from the string.

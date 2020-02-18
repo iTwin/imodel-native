@@ -354,6 +354,7 @@ DgnPlatformLib::Host::RepositoryAdmin&      DgnPlatformLib::Host::_SupplyReposit
 DgnPlatformLib::Host::GeoCoordinationAdmin& DgnPlatformLib::Host::_SupplyGeoCoordinationAdmin()
     {
     BeFileName geo = GetIKnownLocationsAdmin().GetGeoCoordinateDataDirectory();
+
     BeFileName path(geo);
     path.AppendToPath(L"DgnGeoCoord");
     if (!path.DoesPathExist())

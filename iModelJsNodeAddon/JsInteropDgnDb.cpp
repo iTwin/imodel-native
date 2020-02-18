@@ -964,7 +964,7 @@ private:
 
         m_converters.emplace_back(sourceDatumName, targetDatumName);
 
-        // ###TODO: There's a bug that causes the first call to DatumConverter::Create() to return NULL.
+        // In some cases the converter returned is null possibly due to misconfiguration of grid shift files
         // So don't cache unless we get a non-null converter.
         auto converter = m_converters.back().GetConverter();
         if (nullptr == converter)
