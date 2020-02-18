@@ -3045,7 +3045,11 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ImportTargetECSchemas()
     }
 #endif
 
-    auto importStatus = GetDgnDb().ImportV8LegacySchemas(constSchemas);
+    size_t numImported = 0;
+    StopWatch importTimer(true);
+    auto importStatus = GetDgnDb().ImportV8LegacySchemas(constSchemas, &numImported);
+    Utf8PrintfString msg("Convert Schemas> Imported %d schemas", numImported);
+    ConverterLogging::LogPerformance(importTimer, msg.c_str());
     if (SchemaStatus::Success != importStatus)
         {
         //By design ECDb must not do transaction management itself. A failed schema import can have changed the dgndb though. 
@@ -3061,7 +3065,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ImportTargetECSchemas()
         return BentleyApi::ERROR;
         }
 
-    m_anyImported = true;
+    m_anyImported = numImported > 0;
 
     if (GetConfig().GetOptionValueBool("ValidateSchemas", false))
         {

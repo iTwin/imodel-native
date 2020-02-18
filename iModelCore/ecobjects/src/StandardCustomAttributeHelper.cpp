@@ -435,6 +435,7 @@ ConversionCustomAttributesSchemaHolder::ConversionCustomAttributesSchemaHolder()
 void ConversionCustomAttributesSchemaHolder::Initialize()
     {
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    schemaContext->SetCalculateChecksum(true);
     SchemaKey key(s_convSchemaName, s_convVersionRead, s_convVersionMinor);
 
     m_schema = ECSchema::LocateSchema(key, *schemaContext);

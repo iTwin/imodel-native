@@ -481,7 +481,7 @@ public:
     //! <li> Errors out if there are local changes (uncommitted or committed). These need to be flushed by committing
     //! the changes if necessary, and then creating a revision. See @ref RevisionManager.
     //! </ul>
-    DGNPLATFORM_EXPORT SchemaStatus ImportV8LegacySchemas(bvector<ECN::ECSchemaCP> const& schemas);
+    DGNPLATFORM_EXPORT SchemaStatus ImportV8LegacySchemas(bvector<ECN::ECSchemaCP> const& schemas, size_t* numImported = nullptr);
 
     //! Utility method to get the next id in a sequence
     //! @private internal use only

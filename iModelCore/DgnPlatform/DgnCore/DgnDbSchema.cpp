@@ -624,7 +624,7 @@ SchemaStatus DgnDb::ImportSchemas(bvector<ECSchemaCP> const& schemas)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                Ramanujam.Raman                    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaStatus DgnDb::ImportV8LegacySchemas(bvector<ECSchemaCP> const& schemas)
+SchemaStatus DgnDb::ImportV8LegacySchemas(bvector<ECSchemaCP> const& schemas, size_t* numImported)
     {
     bvector<ECN::ECSchemaCP> schemasToImport;
     SchemaStatus status = PickSchemasToImport(schemasToImport, schemas, true /*=isImportingFromV8*/);
@@ -634,6 +634,8 @@ SchemaStatus DgnDb::ImportV8LegacySchemas(bvector<ECSchemaCP> const& schemas)
         return status;
         }
 
+    if (nullptr != numImported)
+        *numImported = schemasToImport.size();
     if (schemasToImport.empty())
         return SchemaStatus::Success;
     SchemaManager::SchemaImportOptions options = SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues | SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications;
