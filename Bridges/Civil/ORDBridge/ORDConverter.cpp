@@ -1529,24 +1529,17 @@ Dgn::DgnElementCPtr createCorridorComponent(CorridorSurfaceCR corridorSurface,
     auto endStationAsWStr = corridorSurface.GetEndStation();
 
     WCharP startStationNextCharP, endStationNextCharP;
-    double startStation = wcstod(startStationAsWStr.c_str(), &startStationNextCharP);
-    double endStation = wcstod(endStationAsWStr.c_str(), &endStationNextCharP);
+    double startDistAlong = wcstod(startStationAsWStr.c_str(), &startStationNextCharP);
+    double endDistAlong = wcstod(endStationAsWStr.c_str(), &endStationNextCharP);
 
     auto alignmentCPtr = AlignmentBim::Alignment::Get(corridorPortion.GetDgnDb(), corridorPortion.GetMainAlignmentId());
 
-    auto stationingTranslatorPtr = AlignmentBim::AlignmentStationingTranslator::Create(*alignmentCPtr);
-    auto startDistAlong = stationingTranslatorPtr->ToDistanceAlongFromStart(startStation);
-    auto endDistAlong = stationingTranslatorPtr->ToDistanceAlongFromStart(endStation);
-
-    if (startDistAlong.IsValid() && endDistAlong.IsValid())
-        {
-        auto linearLocationPtr = LinearReferencing::LinearLocation::Create(*corridorComponentElmCPtr, categoryId,
-            LinearReferencing::LinearLocation::ILinearlyLocatedSingleFromTo::CreateFromToParams(
-                *alignmentCPtr,
-                LinearReferencing::DistanceExpression(startDistAlong.Value()),
-                LinearReferencing::DistanceExpression(endDistAlong.Value())));
-        linearLocationPtr->Insert();
-        }
+    auto linearLocationPtr = LinearReferencing::LinearLocation::Create(*corridorComponentElmCPtr, categoryId,
+        LinearReferencing::LinearLocation::ILinearlyLocatedSingleFromTo::CreateFromToParams(
+            *alignmentCPtr,
+            LinearReferencing::DistanceExpression(startDistAlong),
+            LinearReferencing::DistanceExpression(endDistAlong)));
+    linearLocationPtr->Insert();
 
     return corridorComponentElmCPtr;
     }
@@ -1605,32 +1598,33 @@ Dgn::DgnElementCPtr updateCorridorComponent(CorridorSurfaceCR corridorSurface,
     auto endStationAsWStr = corridorSurface.GetEndStation();
 
     WCharP startStationNextCharP, endStationNextCharP;
-    double startStation = wcstod(startStationAsWStr.c_str(), &startStationNextCharP);
-    double endStation = wcstod(endStationAsWStr.c_str(), &endStationNextCharP);
+    double startDistAlong = wcstod(startStationAsWStr.c_str(), &startStationNextCharP);
+    double endDistAlong = wcstod(endStationAsWStr.c_str(), &endStationNextCharP);
+    auto alignmentCPtr = AlignmentBim::Alignment::Get(corridorPortion.GetDgnDb(), corridorPortion.GetMainAlignmentId());
 
     auto linearLocationId = LinearReferencing::LinearLocation::Query(*corridorComponentElmCPtr);
 
     if (linearLocationId.IsValid())
+        {        
+        auto linearLocationPtr = LinearReferencing::LinearLocation::GetForEdit(corridorPortion.GetDgnDb(), linearLocationId);
+
+        if (corridorPortion.GetMainAlignmentId() != linearLocationPtr->GetLinearElementId())
+            linearLocationPtr->SetLinearElement(alignmentCPtr.get());
+
+        linearLocationPtr->SetFromDistanceAlongFromStart(startDistAlong);
+        linearLocationPtr->SetToDistanceAlongFromStart(endDistAlong);
+        linearLocationPtr->Update();
+        }
+    else
         {
-        auto alignmentCPtr = AlignmentBim::Alignment::Get(corridorPortion.GetDgnDb(), corridorPortion.GetMainAlignmentId());
-        auto stationingTranslatorPtr = AlignmentBim::AlignmentStationingTranslator::Create(*alignmentCPtr);
-        auto startDistAlong = stationingTranslatorPtr->ToDistanceAlongFromStart(startStation);
-        auto endDistAlong = stationingTranslatorPtr->ToDistanceAlongFromStart(endStation);
-
-        if (startDistAlong.IsValid() && endDistAlong.IsValid())
-            {
-            auto linearLocationPtr = LinearReferencing::LinearLocation::GetForEdit(corridorPortion.GetDgnDb(), linearLocationId);
-
-            if (corridorPortion.GetMainAlignmentId() != linearLocationPtr->GetLinearElementId())
-                linearLocationPtr->SetLinearElement(alignmentCPtr.get());
-
-            linearLocationPtr->SetFromDistanceAlongFromStart(startDistAlong.Value());
-            linearLocationPtr->SetToDistanceAlongFromStart(endDistAlong.Value());
-            linearLocationPtr->Update();
-            }
+        auto linearLocationPtr = LinearReferencing::LinearLocation::Create(*corridorComponentElmCPtr, categoryId,
+            LinearReferencing::LinearLocation::ILinearlyLocatedSingleFromTo::CreateFromToParams(
+                *alignmentCPtr,
+                LinearReferencing::DistanceExpression(startDistAlong),
+                LinearReferencing::DistanceExpression(endDistAlong)));
+        linearLocationPtr->Insert();
         }
 
-    
 
     return corridorComponentElmCPtr;
     }
