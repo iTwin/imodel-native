@@ -21,6 +21,11 @@ always:
     !~@mkdir $(o)
 
 #--------------------------------------------------------------------------------------
+# Create prg.h header with build version numbers
+#--------------------------------------------------------------------------------------
+%include $(SharedMki)CreateBuildVersionHeader.mki
+
+#--------------------------------------------------------------------------------------
 #   Compile source
 #--------------------------------------------------------------------------------------
 %include MultiCppCompileRule.mki
@@ -111,6 +116,7 @@ LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)Profiles$(libext
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)StructuralDomain$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)CivilBaseGeometry$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BeXml$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)WebServicesClient$(libext)
 
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)Bentley.lib
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)BentleyAllocator.lib

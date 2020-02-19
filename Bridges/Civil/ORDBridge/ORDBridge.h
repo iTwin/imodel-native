@@ -39,6 +39,8 @@ protected:
     Dgn::SubjectCPtr QueryJobSubject(Dgn::DgnDbR db, Utf8CP jobName);
     Dgn::iModelBridge::Params& _GetParams() override { return m_params; }
 
+    ORDBRIDGE_EXPORT virtual void _SetClientInfo();
+
 public:
     virtual Dgn::iModelBridge::CmdLineArgStatus _ParseCommandLineArg(int iArg, int argc, WCharCP argv[]) override;
     virtual BentleyStatus _ParseCommandLine(int argc, WCharCP argv[]) override;

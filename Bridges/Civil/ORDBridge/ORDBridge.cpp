@@ -7,6 +7,9 @@
 #include <windows.h>
 #include <BRepCore/PSolidUtil.h>
 #include "ScalableMeshWrapper.h"
+#include "prg.h" // generated header with build version number
+#include <WebServices/Client/ClientInfo.h>
+
 
 static constexpr Utf8CP DefaultPhysicalPartitionName                = "Physical";
 static constexpr Utf8CP DefaultDesignAlignmentsName                 = "Road/Rail Design Alignments";
@@ -19,6 +22,22 @@ static constexpr Utf8CP SubjectCivilGraphicsBreakdownStructureCode  = "Civil Des
 USING_NAMESPACE_BENTLEY_OBMNET_GEOMETRYMODEL_SDK
 
 BEGIN_ORDBRIDGE_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Jonathan.DeCarlo                    02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+void ORDBridge::_SetClientInfo()
+{
+    static constexpr char s_bridgeName[] = "iModel Bridge Service - Bentley Civil";
+    static constexpr char s_bridgeGuid[] = "6E0B46CE-58C6-4E5C-A0F1-F19C782CBB33";
+    static constexpr char s_bridgePrgId[] = "2716";
+
+    BeVersion bridgeVersion(REL_V "." MAJ_V "." MIN_V "." SUBMIN_V);
+    auto& params = this->_GetParams();
+    auto clientInfo = WebServices::ClientInfo::Create(s_bridgeName, bridgeVersion, s_bridgeGuid, s_bridgePrgId, params.GetDefaultHeaderProvider());
+
+    params.SetClientInfo(clientInfo);
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
@@ -135,6 +154,8 @@ BentleyStatus ORDBridge::_Initialize(int argc, WCharCP argv[])
     BentleyApi::BeFileName configFileName = m_params.GetAssetsDir();
     configFileName.AppendToPath(L"CivilImportConfig.xml");
     m_params.SetConfigFile(configFileName);
+
+    this->_SetClientInfo();
 
     return BentleyStatus::SUCCESS;
     }
