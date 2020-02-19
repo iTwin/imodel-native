@@ -13,6 +13,7 @@ BUILD_NO_STACK_CHECK        = 1
 
 %if $(BUILD_TOOLSET) == "LINUX_CLANG")
     cDefs + -DHAVE_PROTOTYPES
+    LLVMCppCompOpts + -Wno-cast-qual
 %endif
 
 #----------------------------------------------------------
