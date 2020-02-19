@@ -296,15 +296,15 @@ struct BisClassConverter
         BisClassConverter();
         ~BisClassConverter();
 
-        static BentleyStatus ConvertECClass(SchemaConversionContext&, ECClassName const& v8ClassName, BisConversionRule const* parentConversionRule);
-        static BentleyStatus DoConvertECClass(SchemaConversionContext&, BisConversionRule, ECN::ECClassR inputClass, ECClassName const& v8ClassName, bool hasSecondary);
+        static BentleyStatus ConvertECClass(SchemaConversionContext&, ECClassName const& v8ClassName, BisConversionRule const* parentConversionRule, bool consider3dElementsAsGraphics);
+        static BentleyStatus DoConvertECClass(SchemaConversionContext&, BisConversionRule, ECN::ECClassR inputClass, ECClassName const& v8ClassName, bool hasSecondary, bool consider3dElementsAsGraphics);
 
         static bool ShouldConvertECClassToMixin(ECN::ECSchemaR targetSchema, ECN::ECClassR inputClass, SchemaConversionContext& context);
         static BentleyStatus ConvertECClassToMixin(ECN::ECSchemaR targetSchema, ECN::ECClassR inputClass, ECN::ECClassCR appliesTo);
         static BentleyStatus CreateMixinContext(SchemaConversionContext::MixinContext& mixinContext, DynamicSchemaGenerator& converter, ECN::ECSchemaReadContext& syncReadContext, ECN::ECSchemaP schema, bool autoDetect);
         static void FindCommonBaseClass(ECN::ECClassP& commonClass, ECN::ECClassP currentClass, ECN::ECBaseClassesList const& classes, const bvector<ECN::ECClassCP> propogationFilter);
         
-        static void GetBisBaseClasses(ECN::ECClassCP& elementBaseClass, ECN::ECClassCP& elementAspectClass, SchemaConversionContext&, BisConversionRule);
+        static void GetBisBaseClasses(ECN::ECClassCP& elementBaseClass, ECN::ECClassCP& elementAspectClass, SchemaConversionContext&, BisConversionRule, bool consider3dElementsAsGraphics);
 
         //! Injecting a BIS base class might lead to collisions between ECDbMap custom attributes used on the BIS base class and the domain class.
         //! The BIS base class custom attributes should be preferred, therefore the hint on the domain class is deleted.
@@ -322,7 +322,7 @@ struct BisClassConverter
 
     public:
         //! Converts the given v8 ECClass and its direct derived ECClasses
-        static BentleyStatus ConvertECClass(SchemaConversionContext&, ECClassName const& v8ClassName);
+        static BentleyStatus ConvertECClass(SchemaConversionContext&, ECClassName const& v8ClassName, bool consider3dElementsAsGraphics);
         static BentleyStatus ConvertECRelationshipClass(ECClassRemovalContext& context, ECN::ECRelationshipClassR inputClass, ECN::ECSchemaReadContextP syncContext);
         static void CheckForMixinConversion(SchemaConversionContext& context, ECN::ECClassR inputClass);
         static BentleyStatus FindAppliesToClass(ECN::ECClassP& appliesTo, SchemaConversionContext& context, ECN::ECSchemaR targetSchema, ECN::ECClassR mixinClass);

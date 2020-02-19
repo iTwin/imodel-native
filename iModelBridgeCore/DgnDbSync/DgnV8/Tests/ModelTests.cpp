@@ -402,6 +402,48 @@ TEST_F(ModelTests, ConvertDesign2dRootModelTo3d)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      02/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ModelTests, ConvertDesign2dRootModelTo3dGraphics)
+    {
+    LineUpFiles(L"design2drootmodelto3d.bim", L"Test2d.dgn", false);
+    m_wantCleanUp = false;
+
+    V8FileEditor v8editor;
+    v8editor.Open(m_v8FileName);
+    DgnV8Api::DgnModelStatus modelStatus;
+    DgnV8Api::DgnModel* model = v8editor.m_file->CreateNewModel(&modelStatus, TESTMODELNEWW, DgnV8Api::DgnModelType::Normal, /*is3D*/ false);
+    EXPECT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
+    v8editor.Save();
+
+    v8editor.m_file->SetDefaultModelID(model->GetModelId());
+    v8editor.Save();
+    DgnV8Api::ModelId mId = v8editor.m_file->FindModelIdByName(L"Default");
+    DgnV8Api::DgnModel* rootModel = v8editor.m_file->LoadModelById(mId).get();
+    ASSERT_TRUE(NULL != rootModel);
+
+    ASSERT_EQ(SUCCESS, v8editor.m_file->DeleteModel(*rootModel));
+    v8editor.Save();
+
+    m_params.SetConsiderNormal2dModelsSpatial(true);
+    m_params.SetConsider3dElementsAsGraphics(true);
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+
+    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+    ASSERT_TRUE(db->IsDbOpen());
+
+    auto jobSubject = GetJobHierarchySubject(*db);
+    ASSERT_TRUE(jobSubject.IsValid());
+    DgnCode modelCode = InformationPartitionElement::CreateCode(*jobSubject, TESTMODELNEW);
+    DgnModelId rootModelId = db->Models().QuerySubModelId(modelCode);
+    ASSERT_TRUE(rootModelId.IsValid());
+
+    auto rootModelPtr = db->Models().GetModel(rootModelId);
+    ASSERT_TRUE(rootModelPtr->Is3d());
+    ASSERT_TRUE(rootModelPtr->ToPhysicalModel() == nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Muhammad Hassan                   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ModelTests, DrawingModel2D)

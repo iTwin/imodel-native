@@ -799,6 +799,15 @@ bool        RootModelConverter::_ConsiderNormal2dModelsSpatial ()
     return m_considerNormal2dModelsSpatial;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      02/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+bool        RootModelConverter::_Consider3dElementsAsGraphics()
+    {
+    // m_consider3dElementsAsGraphics is set in the RootModelConverter constructor so we don't have to continually check the Config object.
+    return m_consider3dElementsAsGraphics;
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   02/17
@@ -841,10 +850,17 @@ DgnClassId Converter::_ComputeModelType(DgnV8ModelR v8Model)
         thisModelType = ModelType::Drawing;
 
     Utf8String className;
+    Utf8String schemaName = BIS_ECSCHEMA_NAME;
     switch (thisModelType)
         {
         case ModelType::Physical:
-            className = BIS_CLASS_PhysicalModel;
+            if (_Consider3dElementsAsGraphics())
+                {
+                schemaName = GENERIC_DOMAIN_NAME;
+                className = "GraphicalModel3d";
+                }
+            else
+                className = BIS_CLASS_PhysicalModel;
             break;
 
         case ModelType::Sheet:
@@ -867,7 +883,7 @@ DgnClassId Converter::_ComputeModelType(DgnV8ModelR v8Model)
             return DgnClassId();
         }
 
-    DgnClassId classId(m_dgndb->Schemas().GetClassId(BIS_ECSCHEMA_NAME, className.c_str()));
+    DgnClassId classId(m_dgndb->Schemas().GetClassId(schemaName.c_str(), className.c_str()));
     BeAssert(classId.IsValid());
     return classId;
     }
@@ -2504,7 +2520,7 @@ DgnClassId Converter::_ComputeElementClass(DgnV8EhCR v8eh, V8ElementECContent co
     if (ecContent.HasPrimaryInstance())
         elementClassName = ECClassName(ecContent.m_primaryV8Instance->GetClass());
     else
-        elementClassName = BisConversionRuleHelper::GetElementBisBaseClassName(ecContent.m_elementConversionRule);
+        elementClassName = BisConversionRuleHelper::GetElementBisBaseClassName(ecContent.m_elementConversionRule, _Consider3dElementsAsGraphics());
 
     if (0 == BeStringUtilities::Strnicmp(elementClassName.GetSchemaName(), "EWR", 3) && 0 != strcmp("EWRData", elementClassName.GetSchemaName()))
         elementClassName = ECClassName("EWR", elementClassName.GetClassName());

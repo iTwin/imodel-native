@@ -2610,7 +2610,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConvertToBisBasedECSchemas()
     for (BECN::ECClassP rootClass : rootClasses)
         {
         ECClassName rootClassName(*rootClass);
-        if (BisClassConverter::ConvertECClass(context, rootClassName) != BentleyApi::SUCCESS)
+        if (BisClassConverter::ConvertECClass(context, rootClassName, m_converter._Consider3dElementsAsGraphics()) != BentleyApi::SUCCESS)
             return BentleyApi::BSIERROR;
         }
 
@@ -3983,8 +3983,8 @@ BentleyStatus Converter::GetECContentOfElement(V8ElementECContent& content, DgnV
                 BisConversionRule rule = BisConversionRuleHelper::ConvertToBisConversionRule(content.m_v8ElementType, targetModelInfo, namedGroupOwnsMembersFlag, !isNewElement);
                 if (isNewElement)
                     {
-                    ECClassName previousECClass = BisConversionRuleHelper::GetElementBisBaseClassName(conversionRule);
-                    ECClassName newECClass = BisConversionRuleHelper::GetElementBisBaseClassName(rule);
+                    ECClassName previousECClass = BisConversionRuleHelper::GetElementBisBaseClassName(conversionRule, _Consider3dElementsAsGraphics());
+                    ECClassName newECClass = BisConversionRuleHelper::GetElementBisBaseClassName(rule, _Consider3dElementsAsGraphics());
                     if (previousECClass != newECClass)
                         {
                         Utf8String msg;

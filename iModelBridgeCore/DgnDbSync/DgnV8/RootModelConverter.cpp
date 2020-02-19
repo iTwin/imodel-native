@@ -1141,6 +1141,7 @@ RootModelConverter::RootModelConverter(RootModelSpatialParams& params)
     {
     // We do the Config map lookup here and save the result to this variable.
     m_considerNormal2dModelsSpatial = (GetConfig().GetOptionValueBool("Consider2dModelsSpatial", false) || m_params.GetConsiderNormal2dModelsSpatial());
+    m_consider3dElementsAsGraphics = (GetConfig().GetOptionValueBool("Consider3dElementsAsGraphics", false) || m_params.GetConsider3dElementsAsGraphics());
     }
 
 /*---------------------------------------------------------------------------------**//**

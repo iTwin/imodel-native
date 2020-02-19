@@ -120,6 +120,7 @@ BentleyStatus ORDBridge::_Initialize(int argc, WCharCP argv[])
 	ObmGeometryConsensusSchemaProvider::GetInstance();
 
     m_params.SetConsiderNormal2dModelsSpatial(true);
+    m_params.SetConsider3dElementsAsGraphics(true);
     m_params.SetProcessAffected(true);
     m_params.SetConvertViewsOfAllDrawings(true);
 

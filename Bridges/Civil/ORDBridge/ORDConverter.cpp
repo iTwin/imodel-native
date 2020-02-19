@@ -1997,7 +1997,6 @@ void updateProjectExtents(SpatialModelCR spatialModel, ORDConverter::Params& par
 ConvertORDElementXDomain::ConvertORDElementXDomain(ORDConverter& converter) : m_converter(converter)
     {
     m_cifConsensusConnection = ConsensusConnection::Create(*m_converter.GetRootModelRefP());
-    m_graphic3dClassId = converter.GetDgnDb().Schemas().GetClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_Graphic3d);
 
     m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignAlignmentAspect);
     m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignLinear3dAspect);
@@ -2155,9 +2154,6 @@ void ConvertORDElementXDomain::_DetermineElementParams(DgnClassId& classId, DgnC
                     }
                 }
             }
-
-        if (!classId.IsValid())
-            classId = m_graphic3dClassId;
 
         /* TODO: Delete existing element if its classId needs to change
         if (m_converter.IsUpdating())
@@ -3512,10 +3508,8 @@ DgnModelId ORDConverter::_MapModelIntoProject(DgnV8ModelR v8Model, Bentley::Utf8
     {
     bool isPlanarModel = false;
     auto modelClassId = _ComputeModelType(v8Model);
-    if (modelClassId == GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalModel))
+    if (GetDgnDb().Schemas().GetClass(modelClassId)->Is(GetDgnDb().Schemas().GetClass(BIS_ECSCHEMA_NAME, "GraphicalModel3d")))
         {
-        modelClassId = GetDgnDb().Schemas().GetClassId(GENERIC_DOMAIN_NAME, "GraphicalModel3d");
-
         if (!v8Model.Is3D())
             isPlanarModel = true;
         }

@@ -423,6 +423,7 @@ void DgnV8Bridge::_PrintUsage()
                                                             If '.active' then the root comes from the first open view in the active view group. This is the default.\n\
                                                             If '.default' then the default model is used.\n\
 --2d-Models-Spatial     (optional)    If specified, then 2d models (other than Drawing and Sheet models) are considered to be spatial models\n\
+--3d-Elements-Graphics  (optional)    If specified, then 3d elements are semantically considered to be bis:GraphicalElement3d\n\
 --DGN-WorkSpace=        (optional)    Specifies the WorkSpace name for a MicroStation CONNECT configuration\n\
 --DGN-WorkSet=          (optional)    Specifies the WorkSet name for a MicroStation CONNECT configuration\n\
 --DGN-User=             (optional)    Specifies the User name for a MicroStation V8i configuration\n\
@@ -475,6 +476,12 @@ iModelBridge::CmdLineArgStatus DgnV8Bridge::_ParseCommandLineArg(int iArg, int a
     if (0 == wcscmp(argv[iArg], L"--2d-Models-Spatial"))
         {
         m_params.SetConsiderNormal2dModelsSpatial(true);
+        return CmdLineArgStatus::Success;
+        }
+
+    if (0 == wcscmp(argv[iArg], L"--3d-Elements-Graphics"))
+        {
+        m_params.SetConsider3dElementsAsGraphics(true);
         return CmdLineArgStatus::Success;
         }
 

@@ -46,7 +46,7 @@ public:
     static bool ClassNeedsBisification(BisConversionRule conversionRule);
     static Utf8CP ToString(BisConversionRule);
 
-    static ECClassName GetElementBisBaseClassName(BisConversionRule);
+    static ECClassName GetElementBisBaseClassName(BisConversionRule, bool consider3dElementsAsGraphics);
     static ECClassName GetElementAspectBisBaseClassName(BisConversionRule);
     static Utf8CP GetAspectClassSuffix(BisConversionRule);
     };

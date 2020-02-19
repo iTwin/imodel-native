@@ -1048,6 +1048,10 @@ public:
 
     bool SkipECContent() const {return m_skipECContent;}
 
+    //! Return true if 3d elements should be semantically considered as bis:GraphicalElement3d. Otherwise, the default logic
+    //! will apply (generally treated as bis:PhysicalElement).
+    virtual bool _Consider3dElementsAsGraphics() { return false; }
+
     DgnV8FileCP GetPackageFileOf(DgnV8FileCR f) {return _GetPackageFileOf(f);}
     bool WasEmbeddedFileSeen(Utf8StringCR uniqueName) const {return _WasEmbeddedFileSeen(uniqueName);}
 
@@ -1639,11 +1643,12 @@ public:
 
     //! Query the class of the DgnModel that would be created if the specified V8 model were converted.
     //! @see _ConsiderNormal2dModelsSpatial
+    //! @see _Consider3dElementsAsGraphics
     DGNDBSYNC_EXPORT DgnClassId ComputeModelType(DgnV8ModelR v8Model) {return _ComputeModelType(v8Model);}
 
     //! Query if the specified V8 model should be converted to bis PhysicalModel or one of its subclasses.
     //! This is the correct way to tell if a model is "spatial" or not. All other V8 models become drawings or sheets.
-    bool ShouldConvertToPhysicalModel(DgnV8ModelR model) {return DgnClassId(GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalModel)) == _ComputeModelType(model);}
+    bool ShouldConvertToPhysicalModel(DgnV8ModelR model) {return (_Consider3dElementsAsGraphics() ? DgnClassId(GetDgnDb().Schemas().GetClassId(GENERIC_DOMAIN_NAME, "GraphicalModel3d")) : DgnClassId(GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalModel))) == _ComputeModelType(model);}
 
     Utf8String RemapModelName(Utf8StringCR name, DgnV8FileR, Utf8StringCR suffix);
     BentleyApi::Transform ComputeAttachmentTransform(BentleyApi::TransformCR parentTransform, DgnAttachmentCR v8);
@@ -1673,6 +1678,7 @@ public:
     //! When converting this DgnV8 model to DgnDb, decide what type of model it should become.
     //! May cause attachments to be loaded.
     //! @see _ConsiderNormal2dModelsSpatial
+    //! @see _Consider3dElementsAsGraphics
     DGNDBSYNC_EXPORT DgnClassId _ComputeModelType(DgnV8ModelR v8Model);
 
     //! Return true if normal 2d Models should be considered to be spatial models.
@@ -2551,9 +2557,13 @@ struct RootModelConverter : SpatialConverterBase
     {
         RootModelChoice m_rootModelChoice;
         bool m_considerNormal2dModelsSpatial {};
+        bool m_consider3dElementsAsGraphics {};
 
         void SetConsiderNormal2dModelsSpatial(bool b) {m_considerNormal2dModelsSpatial=b;}
         bool GetConsiderNormal2dModelsSpatial() const {return m_considerNormal2dModelsSpatial;}
+
+        void SetConsider3dElementsAsGraphics(bool b) { m_consider3dElementsAsGraphics = b; }
+        bool GetConsider3dElementsAsGraphics() const { return m_consider3dElementsAsGraphics; }
 
         void SetRootModelChoice(RootModelChoice const& c) {m_rootModelChoice=c;}
         RootModelChoice const& GetRootModelChoice() const {return m_rootModelChoice;}
@@ -2582,6 +2592,7 @@ protected:
     DgnV8Api::ViewGroupPtr m_viewGroup;
     std::unique_ptr<IChangeDetector> m_changeDetector;
     bool m_considerNormal2dModelsSpatial;   // Unlike the member in RootModelSpatialParams, this considers the config file, too. It is checked often, so calulated once in the constructor.
+    bool m_consider3dElementsAsGraphics;   // Unlike the member in RootModelSpatialParams, this considers the config file, too. It is checked often, so calulated once in the constructor.
     bmap<Utf8String, Utf8String> m_indexDdlList;
     bool m_haveDroppedIndexDdl = false;
 
@@ -2625,6 +2636,9 @@ protected:
 
     // in the RootModelConverter, treatment of normal 2d models depends the user's input parameters.
     DGNDBSYNC_EXPORT bool _ConsiderNormal2dModelsSpatial() override;
+
+    // in the RootModelConverter, semantics of 3d elements depends the user's input parameters.
+    DGNDBSYNC_EXPORT bool _Consider3dElementsAsGraphics() override;
 
     //! @}
 

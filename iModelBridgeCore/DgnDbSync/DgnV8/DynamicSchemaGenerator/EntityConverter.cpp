@@ -18,18 +18,27 @@ using namespace BECN;
 // @bsimethod                                                 Krischan.Eberle     03/2015
 //---------------------------------------------------------------------------------------
 //static
-ECClassName BisConversionRuleHelper::GetElementBisBaseClassName(BisConversionRule conversionRule)
+ECClassName BisConversionRuleHelper::GetElementBisBaseClassName(BisConversionRule conversionRule, bool consider3dElementsAsGraphics)
     {
     switch (conversionRule)
         {
         case BisConversionRule::ToSpatialLocationElement:
-            return ECClassName(GENERIC_DOMAIN_NAME, GENERIC_CLASS_SpatialLocation);
+            if (consider3dElementsAsGraphics)
+                return ECClassName(GENERIC_DOMAIN_NAME, GENERIC_CLASS_Graphic3d);
+            else
+                return ECClassName(GENERIC_DOMAIN_NAME, GENERIC_CLASS_SpatialLocation);
         case BisConversionRule::ToPhysicalObject:
         case BisConversionRule::ToDefaultBisClass:
-            return ECClassName(GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject);
+            if (consider3dElementsAsGraphics)
+                return ECClassName(GENERIC_DOMAIN_NAME, GENERIC_CLASS_Graphic3d);
+            else
+                return ECClassName(GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject);
         case BisConversionRule::ToDefaultBisBaseClass:
         case BisConversionRule::ToPhysicalElement:
-            return ECClassName(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalElement);
+            if (consider3dElementsAsGraphics)
+                return ECClassName(BIS_ECSCHEMA_NAME, BIS_CLASS_GraphicalElement3d);
+            else
+                return ECClassName(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalElement);
         case BisConversionRule::ToDrawingGraphic:
             return ECClassName(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic);
         case BisConversionRule::ToGroup:
@@ -37,7 +46,13 @@ ECClassName BisConversionRuleHelper::GetElementBisBaseClassName(BisConversionRul
         case BisConversionRule::ToGenericGroup:
             return ECClassName(GENERIC_DOMAIN_NAME, GENERIC_CLASS_Group);
         case BisConversionRule::ToPhysicalType:
-            return ECClassName(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalType);
+            if (consider3dElementsAsGraphics)
+                {
+                BeAssert(false);
+                return ECClassName();
+                }
+            else
+                return ECClassName(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalType);
         default:
             BeAssert(false);
             return ECClassName();
@@ -299,16 +314,16 @@ BentleyStatus BisClassConverter::PreprocessConversion(SchemaConversionContext& c
 // @bsimethod                                                 Krischan.Eberle     02/2015
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus BisClassConverter::ConvertECClass(SchemaConversionContext& context, ECClassName const& v8ClassName)
+BentleyStatus BisClassConverter::ConvertECClass(SchemaConversionContext& context, ECClassName const& v8ClassName, bool consider3dElementsAsGraphics)
     {
-    return ConvertECClass(context, v8ClassName, nullptr);
+    return ConvertECClass(context, v8ClassName, nullptr, consider3dElementsAsGraphics);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle     02/2015
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus BisClassConverter::ConvertECClass(SchemaConversionContext& context, ECClassName const& v8ClassName, BisConversionRule const* parentBisConversionRuleCP)
+BentleyStatus BisClassConverter::ConvertECClass(SchemaConversionContext& context, ECClassName const& v8ClassName, BisConversionRule const* parentBisConversionRuleCP, bool consider3dElementsAsGraphics)
     {
     BisConversionRule conversionRule;
     bool found = false;
@@ -349,7 +364,7 @@ BentleyStatus BisClassConverter::ConvertECClass(SchemaConversionContext& context
         }
 
     BECN::ECClassP inputClass = context.GetInputClass(v8ClassName.GetSchemaName(), v8ClassName.GetClassName());
-    if (BSISUCCESS != DoConvertECClass(context, conversionRule, *inputClass, v8ClassName, hasSecondary))
+    if (BSISUCCESS != DoConvertECClass(context, conversionRule, *inputClass, v8ClassName, hasSecondary, consider3dElementsAsGraphics))
         return BSIERROR;
 
     // If the call to ConvertECClass results in creating a new ElementAspect class, the new class will add the inputClass as a baseclass,
@@ -358,7 +373,7 @@ BentleyStatus BisClassConverter::ConvertECClass(SchemaConversionContext& context
     for (BECN::ECClassP childClass : derived)
         {
         ECClassName childClassName(*childClass);
-        if (BSISUCCESS != ConvertECClass(context, childClassName, &conversionRule))
+        if (BSISUCCESS != ConvertECClass(context, childClassName, &conversionRule, consider3dElementsAsGraphics))
             return BSIERROR;
         }
 
@@ -556,7 +571,7 @@ BentleyStatus BisClassConverter::ConvertECClassToMixin(BECN::ECSchemaR targetSch
 // @bsimethod                                                 Krischan.Eberle     03/2015
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus BisClassConverter::DoConvertECClass(SchemaConversionContext& context, BisConversionRule bisConversionRule, BECN::ECClassR inputClass, ECClassName const& v8ClassName, bool hasSecondary)
+BentleyStatus BisClassConverter::DoConvertECClass(SchemaConversionContext& context, BisConversionRule bisConversionRule, BECN::ECClassR inputClass, ECClassName const& v8ClassName, bool hasSecondary, bool consider3dElementsAsGraphics)
     {
     //need to remove ECDbHints form original schema before injecting BIS base classes as otherwise we would remove the hint from the BIS base class
     RemoveDuplicateClassMapCustomAttributes(inputClass);
@@ -574,7 +589,7 @@ BentleyStatus BisClassConverter::DoConvertECClass(SchemaConversionContext& conte
 
     BECN::ECClassCP elementBisBaseClass = nullptr;
     BECN::ECClassCP elementAspectBisBaseClass = nullptr;
-    GetBisBaseClasses(elementBisBaseClass, elementAspectBisBaseClass, context, bisConversionRule);
+    GetBisBaseClasses(elementBisBaseClass, elementAspectBisBaseClass, context, bisConversionRule, consider3dElementsAsGraphics);
 
     //Class hierarchy for aspects will be established after schema conversion to not collide with moving properties from properties to aspect classes
     BECN::ECClassP elementAspectClass = &inputClass;
@@ -976,11 +991,11 @@ BentleyStatus BisClassConverter::FinalizeConversion(SchemaConversionContext& con
 // @bsimethod                                                 Krischan.Eberle     02/2015
 //---------------------------------------------------------------------------------------
 //static
-void BisClassConverter::GetBisBaseClasses(BECN::ECClassCP& elementBaseClass, BECN::ECClassCP& elementAspectBaseClass, SchemaConversionContext& context, BisConversionRule conversionRule)
+void BisClassConverter::GetBisBaseClasses(BECN::ECClassCP& elementBaseClass, BECN::ECClassCP& elementAspectBaseClass, SchemaConversionContext& context, BisConversionRule conversionRule, bool consider3dElementsAsGraphics)
     {
     if (conversionRule != BisConversionRule::ToAspectOnly)
         {
-        elementBaseClass = context.GetBaseClass(BisConversionRuleHelper::GetElementBisBaseClassName(conversionRule));
+        elementBaseClass = context.GetBaseClass(BisConversionRuleHelper::GetElementBisBaseClassName(conversionRule, consider3dElementsAsGraphics));
         BeAssert(elementBaseClass != nullptr);
         }
     elementAspectBaseClass = context.GetBaseClass(BisConversionRuleHelper::GetElementAspectBisBaseClassName(BisConversionRule::ToAspectOnly));
