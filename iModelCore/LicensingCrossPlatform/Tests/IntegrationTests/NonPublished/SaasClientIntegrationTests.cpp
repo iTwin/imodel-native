@@ -37,6 +37,7 @@
 #define TEST_PRODUCT_ID2     "1000"
 #define OIDC_CLIENT_ID "cplc-integration-tests-guwkmv6sxwn4ro05bvei7l1r2"
 #define OIDC_SCOPES "openid email profile entitlement-policy-service-2576 ulas-log-location-2728 ulas-realtime-log-posting-2733"
+#define OIDC_REDIRECT_URL "https://localhost:44301/signin-oidc"
 #define TEST_DEVICE_ID "ATPDeviceID"
 
 USING_NAMESPACE_BENTLEY_LICENSING
@@ -129,7 +130,7 @@ TEST_F(SaasClientIntegrationTests, FactoryTrackUsage_Success)
     {
     auto client = CreateTestSaasClient(std::atoi(TEST_PRODUCT_ID));
 
-    auto oidcToken = OIDCNative::IssueToken("qa2_devuser2@mailinator.com", "bentley", UrlProvider::Urls::IMSOpenID.Get().c_str(), OIDC_CLIENT_ID, OIDC_SCOPES);
+    auto oidcToken = OIDCNative::IssueToken("qa2_devuser2@mailinator.com", "bentley", UrlProvider::Urls::IMSOpenID.Get().c_str(), OIDC_REDIRECT_URL, OIDC_CLIENT_ID, OIDC_SCOPES);
     LOG.debugv("token issued: %s", Utf8CP(oidcToken));
     auto version = BeVersion(1, 0);
     Utf8String projectId = "00000000-0000-0000-0000-000000000000";
@@ -141,7 +142,7 @@ TEST_F(SaasClientIntegrationTests, FactoryMarkFeature_Success)
     {
     auto client = CreateTestSaasClient(std::atoi(TEST_PRODUCT_ID));
 
-    auto oidcToken = OIDCNative::IssueToken("qa2_devuser2@mailinator.com", "bentley", UrlProvider::Urls::IMSOpenID.Get().c_str(), OIDC_CLIENT_ID, OIDC_SCOPES);
+    auto oidcToken = OIDCNative::IssueToken("qa2_devuser2@mailinator.com", "bentley", UrlProvider::Urls::IMSOpenID.Get().c_str(), OIDC_REDIRECT_URL, OIDC_CLIENT_ID, OIDC_SCOPES);
     LOG.debugv("token issued: %s", Utf8CP(oidcToken));
 
     auto version = BeVersion(1, 0);
@@ -206,7 +207,7 @@ TEST_F(SaasClientIntegrationTests, TrackUsage_Success)
     {
     auto client = CreateTestSaasClientImpl(std::atoi(TEST_PRODUCT_ID));
 
-    auto oidcToken = OIDCNative::IssueToken("qa2_devuser2@mailinator.com", "bentley", UrlProvider::Urls::IMSOpenID.Get().c_str(), OIDC_CLIENT_ID, OIDC_SCOPES);
+    auto oidcToken = OIDCNative::IssueToken("qa2_devuser2@mailinator.com", "bentley", UrlProvider::Urls::IMSOpenID.Get().c_str(), OIDC_REDIRECT_URL, OIDC_CLIENT_ID, OIDC_SCOPES);
     LOG.debugv("token issued: %s", Utf8CP(oidcToken));
 
     auto version = BeVersion(1, 0);
@@ -220,7 +221,7 @@ TEST_F(SaasClientIntegrationTests, TrackUsage_BadParam_NoDeviceIDEmptyString)
 {
     auto client = CreateTestSaasClientImpl(std::atoi(TEST_PRODUCT_ID));
 
-    auto oidcToken = OIDCNative::IssueToken("qa2_devuser2@mailinator.com", "bentley", UrlProvider::Urls::IMSOpenID.Get().c_str(), OIDC_CLIENT_ID, OIDC_SCOPES);
+    auto oidcToken = OIDCNative::IssueToken("qa2_devuser2@mailinator.com", "bentley", UrlProvider::Urls::IMSOpenID.Get().c_str(), OIDC_REDIRECT_URL, OIDC_CLIENT_ID, OIDC_SCOPES);
     LOG.debugv("token issued: %s", Utf8CP(oidcToken));
 
     auto version = BeVersion(1, 0);
@@ -234,7 +235,7 @@ TEST_F(SaasClientIntegrationTests, TrackUsage_Success_MultiProduct)
 {
     auto client = CreateTestSaasClientImpl(std::atoi(TEST_PRODUCT_ID));
 
-    auto oidcToken = OIDCNative::IssueToken("qa2_devuser2@mailinator.com", "bentley", UrlProvider::Urls::IMSOpenID.Get().c_str(), OIDC_CLIENT_ID, OIDC_SCOPES);
+    auto oidcToken = OIDCNative::IssueToken("qa2_devuser2@mailinator.com", "bentley", UrlProvider::Urls::IMSOpenID.Get().c_str(), OIDC_REDIRECT_URL, OIDC_CLIENT_ID, OIDC_SCOPES);
     LOG.debugv("token issued: %s", Utf8CP(oidcToken));
 
     auto version = BeVersion(1, 0);
@@ -249,7 +250,7 @@ TEST_F(SaasClientIntegrationTests, TrackUsage_Success_Original)
 {
     auto client = CreateTestSaasClientImpl(std::atoi(TEST_PRODUCT_ID));
 
-    auto oidcToken = OIDCNative::IssueToken("qa2_devuser2@mailinator.com", "bentley", UrlProvider::Urls::IMSOpenID.Get().c_str(), OIDC_CLIENT_ID, OIDC_SCOPES);
+    auto oidcToken = OIDCNative::IssueToken("qa2_devuser2@mailinator.com", "bentley", UrlProvider::Urls::IMSOpenID.Get().c_str(), OIDC_REDIRECT_URL, OIDC_CLIENT_ID, OIDC_SCOPES);
     LOG.debugv("token issued: %s", Utf8CP(oidcToken));
 
     auto version = BeVersion(1, 0);
@@ -262,7 +263,7 @@ TEST_F(SaasClientIntegrationTests, MarkFeature_Success)
     {
     auto client = CreateTestSaasClientImpl(std::atoi(TEST_PRODUCT_ID));
 
-    auto oidcToken = OIDCNative::IssueToken("qa2_devuser2@mailinator.com", "bentley", UrlProvider::Urls::IMSOpenID.Get().c_str(), OIDC_CLIENT_ID, OIDC_SCOPES);
+    auto oidcToken = OIDCNative::IssueToken("qa2_devuser2@mailinator.com", "bentley", UrlProvider::Urls::IMSOpenID.Get().c_str(), OIDC_REDIRECT_URL, OIDC_CLIENT_ID, OIDC_SCOPES);
     LOG.debugv("token issued: %s", Utf8CP(oidcToken));
 
     auto version = BeVersion(1, 0);
@@ -285,7 +286,7 @@ TEST_F(SaasClientIntegrationTests, CheckEntitlement_Success)
     auto productId = std::atoi(TEST_PRODUCT_ID);
     auto client = CreateTestSaasClientImpl(productId);
     auto expectedPrincipalId = "30450d13-4815-403e-a335-7247a4cf59e0";
-    auto oidcToken = OIDCNative::IssueToken("qa2_devuser2@mailinator.com", "bentley", UrlProvider::Urls::IMSOpenID.Get().c_str(), OIDC_CLIENT_ID, OIDC_SCOPES);
+    auto oidcToken = OIDCNative::IssueToken("qa2_devuser2@mailinator.com", "bentley", UrlProvider::Urls::IMSOpenID.Get().c_str(), OIDC_REDIRECT_URL, OIDC_CLIENT_ID, OIDC_SCOPES);
     LOG.debugv("token issued: %s", Utf8CP(oidcToken));
 
     auto version = BeVersion(1, 0);

@@ -27,6 +27,7 @@ using namespace OidcInterop;
 
 #define IMODELHUB_ClientId            "imodel-hub-integration-tests-2485"
 #define IMODELHUB_Scope               "openid profile email imodelhub"
+#define IMODELHUB_RedirectUrl         "https://localhost:44301/signin-oidc"
 
 Utf8String GenerateErrorMessage(Error const& e)
     {
@@ -87,7 +88,7 @@ namespace iModelHubHelpers
     +---------------+---------------+---------------+---------------+---------------+------*/
     Utf8String GenerateNewToken(CredentialsCR credentials)
         { 
-        return OIDCNative::IssueToken(credentials.GetUsername().c_str(), credentials.GetPassword().c_str(), UrlProvider::Urls::IMSOpenID.Get().c_str(), IMODELHUB_ClientId, IMODELHUB_Scope);
+        return OIDCNative::IssueToken(credentials.GetUsername().c_str(), credentials.GetPassword().c_str(), UrlProvider::Urls::IMSOpenID.Get().c_str(), IMODELHUB_RedirectUrl, IMODELHUB_ClientId, IMODELHUB_Scope);
         }
 
     /*--------------------------------------------------------------------------------------+

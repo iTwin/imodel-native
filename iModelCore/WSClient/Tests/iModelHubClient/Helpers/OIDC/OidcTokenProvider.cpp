@@ -11,6 +11,7 @@ using namespace OidcInterop;
 
 #define IMODELHUB_ClientId            "imodel-hub-integration-tests-2485"
 #define IMODELHUB_Scope               "openid profile email imodelhub"
+#define IMODELHUB_RedirectUrl         "https://localhost:44301/signin-oidc"
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                     Algirdas.Mikoliunas             08/2018
@@ -24,7 +25,7 @@ OidcTokenProvider::OidcTokenProvider(Credentials credentials):
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<ISecurityTokenPtr> OidcTokenProvider::UpdateToken()
     {
-    auto token = OIDCNative::IssueToken(m_credentials.GetUsername().c_str(), m_credentials.GetPassword().c_str(), UrlProvider::Urls::IMSOpenID.Get().c_str(), IMODELHUB_ClientId, IMODELHUB_Scope);
+    auto token = OIDCNative::IssueToken(m_credentials.GetUsername().c_str(), m_credentials.GetPassword().c_str(), UrlProvider::Urls::IMSOpenID.Get().c_str(), IMODELHUB_RedirectUrl, IMODELHUB_ClientId, IMODELHUB_Scope);
     m_token = std::make_shared<OidcToken>(token);
     m_tokenValidUntil = BeTimePoint::FromNow(BeDuration::FromSeconds(60 * 55));
 
