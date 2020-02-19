@@ -132,7 +132,7 @@ static void customAttributesToJson(JsonValueR jcas, ECN::IECCustomAttributeConta
 //---------------------------------------------------------------------------------------
 DgnDbStatus JsInterop::GetECClassMetaData(JsonValueR mjson, DgnDbR dgndb, Utf8CP ecSchemaName, Utf8CP ecClassName)
     {
-    auto ecclass = dgndb.Schemas().GetClass(ecSchemaName, ecClassName);
+    auto ecclass = dgndb.Schemas().GetClass(ecSchemaName, ecClassName, SchemaLookupMode::AutoDetect);
     if (nullptr == ecclass)
         return DgnDbStatus::NotFound;    // This is not an exception. It just returns an empty result.
 
