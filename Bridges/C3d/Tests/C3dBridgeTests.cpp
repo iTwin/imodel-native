@@ -417,9 +417,9 @@ TEST_F(C3dBridgeTests, ConvertAttachmentSingleBridge)
     AddAttachment(inputFile, refFile, 1, true);
     if (true)
         {
-        //We added a new attachment.
+        // We added a new attachment, and new VerticalAlignmentModel
         RunTheBridge(args);
-        ASSERT_EQ(modelCount + 1, DbFileInfo(m_briefcaseName).GetModelCount());
+        ASSERT_EQ(modelCount + 2, DbFileInfo(m_briefcaseName).GetModelCount());
         }
 
     }
@@ -503,9 +503,9 @@ TEST_F(C3dBridgeTests, ConvertAttachmentSingleBridgeAlternateRegistry)
     AddAttachment(inputFile, refFile, 1, true);
     if (true)
         {
-        //We added a new attachment.
+        // We added a new attachment, and new VerticalAlignmentModel
         RunTheBridge(args);
-        ASSERT_EQ(modelCount + 1, DbFileInfo(m_briefcaseName).GetModelCount());
+        ASSERT_EQ(modelCount + 2, DbFileInfo(m_briefcaseName).GetModelCount());
         }
 
     }
@@ -587,7 +587,7 @@ TEST_F(C3dBridgeTests, DISABLED_PushAfterEachModel)
         ASSERT_EQ(s_expectedCount, modelCount);
         }
    
-    // Add two attachments => two new models should be discovered.
+    // Add two attachments => two new 3D models along with two new VerticalAlignmentModel's should be discovered.
     AddAttachment(masterFile, refFile1, 1, true);
     AddAttachment(masterFile, refFile2, 1, true);
     if (true)
@@ -595,7 +595,7 @@ TEST_F(C3dBridgeTests, DISABLED_PushAfterEachModel)
         auto csCountBefore = GetChangesetCount();
         RunTheBridge(args);
         DbFileInfo fileInfo(m_briefcaseName);
-        EXPECT_EQ(modelCount + 2, fileInfo.GetModelCount());
+        EXPECT_EQ(modelCount + 4, fileInfo.GetModelCount());
         // There will be more than just the two model-specific changesets. Assert at least 2 more.
         EXPECT_GE(GetChangesetCount(), csCountBefore + 2) << "each model should have been pushed in its own changeset";
 
@@ -663,7 +663,7 @@ TEST_F(C3dBridgeTests, PushAfterEachFile)
         ASSERT_EQ(s_expectedCount, modelCount);
         }
    
-    // Add two attachments => two new models should be discovered.
+    // Add two attachments => two new models, along with two new VerticalAlignmentModel's, should be discovered.
     AddAttachment(masterFile, refFile1, 1, true);
     AddAttachment(masterFile, refFile2, 1, true);
     if (true)
@@ -671,7 +671,7 @@ TEST_F(C3dBridgeTests, PushAfterEachFile)
         auto csCountBefore = GetChangesetCount();
         RunTheBridge(args);
         DbFileInfo fileInfo(m_briefcaseName);
-        EXPECT_EQ(modelCount + 2, fileInfo.GetModelCount());
+        EXPECT_EQ(modelCount + 4, fileInfo.GetModelCount());
         // There will be more than just the two file-specific changesets. Assert at least 2 more.
         EXPECT_GE(GetChangesetCount(), csCountBefore + 2) << "each model should have been pushed in its own changeset";
 

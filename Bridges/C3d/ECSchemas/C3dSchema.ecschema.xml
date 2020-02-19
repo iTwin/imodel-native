@@ -78,7 +78,7 @@
 
     <!-- Entities -->
     <ECEntityClass typeName="AeccBase" modifier="Abstract" displayLabel="C3D Object" description="C3D Object">
-        <BaseClass>bis:GeometricElement3d</BaseClass>
+        <BaseClass>bis:GraphicalElement3d</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="AeccAlignment" modifier="Sealed" displayLabel="Alignment" description="Civil3D alignment object">
         <BaseClass>AeccBase</BaseClass>

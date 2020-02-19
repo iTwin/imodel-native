@@ -25,7 +25,9 @@
 #define SCHEMAAlias_DwgAppData              "DwgAppData"
 #define SCHEMADescription_DwgAppData        "A container for certain known DWG application data qualified to be converted as schema classes"
 
-#define ECCLASSName_BentleyCCBlockInfo      "BentleyCCBlockInfo"
+#define ECCLASSName_BentleyCCBlockInfo      "BentleyComponentsCenterBlockInfo"
+#define ECCLASSLabel_BentleyCCBlockInfo     "Bentley Components Center"
+#define ECCLASSDesc_BentleyCCBlockInfo      "Bentley Components Center Breadcrumbs are used to trace the instance back to the Component in Components Center. These Breadcrumbs get inserted into the model when you use accepted Components Center workflows in our add-ins."
 #define PROPERTYName_Breadcrumbs            "Breadcrumbs"
 #define REGAPPName_BentleyCCBlockInfo       L"Bentley.CCBlockInfo"
 

@@ -12,6 +12,7 @@ BEGIN_C3D_NAMESPACE
 +===============+===============+===============+===============+===============+======*/
 struct C3dObject
     {
+    static constexpr char CivilBaseElementId[] = "CivilBaseElementId";
     static constexpr char CivilReferenceElementId[] = "CivilReferenceElementId";
     }; // C3dObject
 
@@ -20,7 +21,7 @@ struct C3dObject
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   C3dHelper::GetLinearCurves (CurveVectorR curves, GeometrySourceCP source)
     {
-    // extract  from element created by the base importer and add it to the new Civil element
+    // extract linear curves from element created by the base importer and add it to the new Civil element
     if (nullptr == source)
         return  BentleyStatus::BSIERROR;
 
@@ -34,13 +35,28 @@ BentleyStatus   C3dHelper::GetLinearCurves (CurveVectorR curves, GeometrySourceC
         if (!geometry.IsValid())
             return  BentleyStatus::BSIERROR;
 
+        auto toWorld = entry.GetGeometryToWorld ();
+
         // filter in linear geometries and add them to output collection
         if ((curvePrimitive = geometry->GetAsICurvePrimitive()).IsValid())
+            {
+            // skip circles created by AeccAlignment
+            auto arc = curvePrimitive->GetArcCP ();
+            if (arc != nullptr && arc->IsFullEllipse())
+                continue;
+
+            curvePrimitive->TransformInPlace (toWorld);
             curves.Add (curvePrimitive);
+            }
         else if ((curveVector = geometry->GetAsCurveVector()).IsValid())
+            {
+            curveVector->TransformInPlace (toWorld);
             curves.Add (curveVector);
+            }
         else
+            {
             return  BentleyStatus::BSIERROR;
+            }
         }
 
     return BentleyStatus::SUCCESS;
@@ -105,37 +121,43 @@ BentleyStatus   C3dHelper::CopyGeometrySource (GeometricElement3dP target, Geome
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          12/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId    C3dHelper::GetCivilReferenceElementId (DwgSourceAspects::ObjectAspectCR aspect)
+DgnElementId    C3dHelper::GetCivilReferenceElementId (DwgSourceAspects::ObjectAspectCR aspect, DgnElementId* baseId)
     {
+    DgnElementId    referenceId;
     if (aspect.IsValid())
         {
         auto json = aspect.GetProperties ();
         if (json.HasMember(C3dObject::CivilReferenceElementId))
             {
             uint64_t id = DwgSourceAspects::BaseAspect::ParseUInt64 (json[C3dObject::CivilReferenceElementId].GetString());
-            return  DgnElementId(id);
+            referenceId = DgnElementId (id);
+            }
+        if (baseId != nullptr && json.HasMember(C3dObject::CivilBaseElementId))
+            {
+            uint64_t id = DwgSourceAspects::BaseAspect::ParseUInt64 (json[C3dObject::CivilBaseElementId].GetString());
+            *baseId = DgnElementId (id);
             }
         }
-    return  DgnElementId();
+    return  referenceId;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          12/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId    C3dHelper::GetCivilReferenceElementId (DwgImporter::ElementImportResultsCR results)
+DgnElementId    C3dHelper::GetCivilReferenceElementId (DwgImporter::ElementImportResultsCR results, DgnElementId* baseId)
     {
-    return  C3dHelper::GetCivilReferenceElementId (results.GetExistingElement());
+    return  C3dHelper::GetCivilReferenceElementId (results.GetExistingElement(), baseId);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          12/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   C3dHelper::AddCivilReferenceElementId (DwgImporter::ElementImportResultsR results, DgnElementId elementId)
+BentleyStatus   C3dHelper::AddCivilReferenceElementId (DwgImporter::ElementImportResultsR results, DgnElementId elementId, DgnElementId baseId)
     {
     // retrieve existing source data
     auto source = results.GetObjectSourceData ();
     // append element id in existing json
-    auto jsonstr = C3dHelper::AppendElementIdToJson (source.GetJsonProperties(), elementId);
+    auto jsonstr = C3dHelper::UpdateElementIdToJson (source.GetJsonProperties(), elementId, baseId);
 
     if (!jsonstr.empty())
         {
@@ -151,7 +173,7 @@ BentleyStatus   C3dHelper::AddCivilReferenceElementId (DwgImporter::ElementImpor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          12/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String  C3dHelper::AppendElementIdToJson (Utf8StringCR existingJson, DgnElementId elementId)
+Utf8String  C3dHelper::UpdateElementIdToJson (Utf8StringCR existingJson, DgnElementId elementId, DgnElementId baseId)
     {
     Utf8String  jsonstr;
     if (!elementId.IsValid())
@@ -164,10 +186,27 @@ Utf8String  C3dHelper::AppendElementIdToJson (Utf8StringCR existingJson, DgnElem
 
     // preserve existing json
     if (!existingJson.empty())
+        {
         json.Parse (existingJson.c_str());
+
+        // remove CivilReferenceElementId entry
+        auto found = json.FindMember (C3dObject::CivilReferenceElementId);
+        if (found != json.MemberEnd())
+            json.RemoveMember (found);
+
+        // remove CivilBaseElementId entry
+        found = json.FindMember (C3dObject::CivilBaseElementId);
+        if (found != json.MemberEnd())
+            json.RemoveMember (found);
+        }
 
     // append element id
     json.AddMember (C3dObject::CivilReferenceElementId, rapidjson::Value(idstr.c_str(), allocator), allocator);
+    if (baseId.IsValid())
+        {
+        idstr = DwgSourceAspects::BaseAspect::FormatHexUInt64 (baseId.GetValue());
+        json.AddMember (C3dObject::CivilBaseElementId, rapidjson::Value(idstr.c_str(), allocator), allocator);
+        }
 
     jsonstr = BeRapidJsonUtilities::ToString (json);
 

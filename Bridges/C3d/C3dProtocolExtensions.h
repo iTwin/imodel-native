@@ -39,8 +39,9 @@ private:
     // Civil domain elements
     BentleyStatus   CreateVerticalAlignment (CurveVectorCR curves, DwgImporter::ElementImportResultsR results);
     BentleyStatus   UpdateVerticalAlignment (CurveVectorCR curves, DwgImporter::ElementImportResultsR results);
-    BentleyStatus   CreateHorizontalAlignment (CurveVectorCR curves, GeometrySourceCP geomSource, DwgImporter::ElementImportResultsR results, size_t index = 0);
-    BentleyStatus   UpdateHorizontalAlignment (CurveVectorCR curves, GeometrySourceCP geomSource, DwgImporter::ElementImportResultsR results, size_t index = 0);
+    BentleyStatus   CreateCurveVectorFromImportedElements (CurveVectorPtr& curves);
+    BentleyStatus   CreateHorizontalAlignment (CurveVectorCR curves);
+    BentleyStatus   UpdateHorizontalAlignment (CurveVectorCR curves);
     BentleyStatus   CreateOrUpdateVerticalAlignment (DwgImporter::ElementImportResultsR aeccResults, AECCDbVAlignment* aeccVAlignment);
     BentleyStatus   CreateOrUpdateHorizontalAlignment ();
     // Top level

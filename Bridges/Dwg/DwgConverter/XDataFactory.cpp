@@ -158,8 +158,8 @@ ECObjectsStatus XDataFactory::CreateDwgAppDataSchema (ECSchemaPtr& targetSchema,
         status = targetSchema->CreateEntityClass (ecClass, ECCLASSName_BentleyCCBlockInfo);
         if (ECObjectsStatus::Success == status)
             {
-            ecClass->SetDisplayLabel (ECCLASSName_BentleyCCBlockInfo);
-            ecClass->SetDescription (ECCLASSName_BentleyCCBlockInfo);
+            ecClass->SetDisplayLabel (ECCLASSLabel_BentleyCCBlockInfo);
+            ecClass->SetDescription (ECCLASSDesc_BentleyCCBlockInfo);
 
             // add GenericMultiAspect as a base ECClass:
             ECClassCP   multiAspect = m_importer.GetDgnDb().Schemas().GetClass (BIS_ECSCHEMA_NAME, BIS_CLASS_ElementMultiAspect);

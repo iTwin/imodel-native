@@ -22,10 +22,10 @@ private:
 public:
     EXPORT_ATTRIBUTE static BentleyStatus   GetLinearCurves (CurveVectorR curves, GeometrySourceCP source);
     EXPORT_ATTRIBUTE static BentleyStatus   CopyGeometrySource (GeometricElement3dP target, GeometrySourceCP source);
-    EXPORT_ATTRIBUTE static DgnElementId    GetCivilReferenceElementId (DwgSourceAspects::ObjectAspectCR aspect);
-    EXPORT_ATTRIBUTE static DgnElementId    GetCivilReferenceElementId (DwgImporter::ElementImportResultsCR results);
-    EXPORT_ATTRIBUTE static BentleyStatus   AddCivilReferenceElementId (DwgImporter::ElementImportResultsR results, DgnElementId id);
-    EXPORT_ATTRIBUTE static Utf8String      AppendElementIdToJson (Utf8StringCR existingJson, DgnElementId elementId);
+    EXPORT_ATTRIBUTE static DgnElementId    GetCivilReferenceElementId (DwgSourceAspects::ObjectAspectCR aspect, DgnElementId* baseId = nullptr);
+    EXPORT_ATTRIBUTE static DgnElementId    GetCivilReferenceElementId (DwgImporter::ElementImportResultsCR results, DgnElementId* baseId = nullptr);
+    EXPORT_ATTRIBUTE static BentleyStatus   AddCivilReferenceElementId (DwgImporter::ElementImportResultsR results, DgnElementId id, DgnElementId baseId = DgnElementId());
+    EXPORT_ATTRIBUTE static Utf8String      UpdateElementIdToJson (Utf8StringCR existingJson, DgnElementId elementId, DgnElementId baseId = DgnElementId());
     EXPORT_ATTRIBUTE static BentleyStatus   SetPropertiesInResults (DwgImporter::ElementImportResultsR results, ECN::IECInstanceCR ecInstance);
     };  // C3dHelper
 

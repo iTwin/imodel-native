@@ -365,7 +365,8 @@ BentleyStatus C3dImporter::_ProcessDetectionResults (IDwgChangeDetector::Detecti
     // post process results as needed
     if (status == BentleyStatus::BSISUCCESS)
         {
-        if (inputs.GetEntity().isKindOf(AECCDbAlignment::desc()))
+        DwgDbEntityCR   entity = inputs.GetEntity ();
+        if (entity.isKindOf(AECCDbAlignment::desc()))
             {
             // post-add relationships for the civil alignment vs the aecc element
             DgnElementId    alignmentId = C3dHelper::GetCivilReferenceElementId (results.GetExistingElement());
