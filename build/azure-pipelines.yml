@@ -248,10 +248,10 @@ jobs:
         condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'iModelBridgeCore'))
         artifact: iModelHubNativeTests
         
-      - publish: $(Build.BinariesDirectory)/Winx64/Nugetpkg/DesignModelingSDKNuget
-        displayName: Save DesignModelingSDKNuget
+      - publish: $(Build.BinariesDirectory)/Winx64/Product/DesignModelingSDKPackage
+        displayName: Save DesignModelingSDKPackage
         condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'BuildingDomain'))
-        artifact: DesignModelingSDKNuget
+        artifact: DesignModelingSDKPackage
 
       - powershell: |
           $MstninstallerSearch = [System.IO.Path]::Combine($env:OutRoot, "Winx64", "build", "WixBundleBuild", "MstnBridge", "build", "*iModelBridgeMstnx64*.exe")

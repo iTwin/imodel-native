@@ -10,7 +10,7 @@
 
     <Part Name="DesignModelingSDKDistribution" PrgOutputDir="DesignModelingDomainsSDK">
         <SubPart PartName="BuildingDomains"/>
-        <SubNuGetProduct NuGetProductName="DesignModelingSDKNuget"/>
+        <SubUPackProduct UPackProductName="DesignModelingSDKPackage"/>
     </Part>
 
     <!-- A convenience to platform developers that want to build platform and use Gist as their testbed. -->
@@ -141,7 +141,7 @@
         <ProductDirectory Name="VendorNotices" LibType="static"         RelativeTo="applicationroot"    Path="VendorNotices"/>
     </ProductDirectoryList>
 
-    <NuGetProduct Name="DesignModelingSDKNuget" Description="DesignModelingSDKNuget"> 
+    <UPackProduct Name="DesignModelingSDKPackage" Description="DesignModelingSDKPackage"> 
         <SubPart PartName="AecUnitsDomain"                  PartFile="Domains/AecUnits/AecUnits"/>
         <SubPart PartName="BuildingDomain"/>
         <SubPart PartName="BuildingSpatialDomain"           PartFile="Domains/BuildingSpatial/BuildingSpatial"/>
@@ -157,10 +157,10 @@
 
         <Directories DirectoryListName="DesignModelingDomainsSDK"/>
         <Directories DirectoryListName="DgnV8BridgeDirList" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync" Repository="imodel02"/>
-        <Directories DirectoryListName="DesignModelingSDKNugetDirOverrides"/>
-    </NuGetProduct>
+        <Directories DirectoryListName="DesignModelingSDKPackageDirOverrides"/>
+    </UPackProduct>
 	
-    <ProductDirectoryList ListName="DesignModelingSDKNugetDirOverrides">
+    <ProductDirectoryList ListName="DesignModelingSDKPackageDirOverrides">
         <ProductDirectory Name="applicationroot" Path="native"/>
     </ProductDirectoryList>
 
