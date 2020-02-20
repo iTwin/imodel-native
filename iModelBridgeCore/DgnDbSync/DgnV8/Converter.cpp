@@ -341,12 +341,16 @@ void RootModelConverter::_OnFileDiscovered(DgnV8FileCR file) const
         m_v8Files.push_back(fileP);
         _KeepFileAlive(file);
 
+        SyncInfo::V8FileInfo finfo = const_cast<RootModelConverter*>(this)->GetSyncInfo().ComputeFileInfo(file);
         if (!file.IsEmbeddedFile())
+            {
+            LOG.tracev("Discovered file %s last saved at %lf", file.GetFileName().c_str(), finfo.m_lastSaveTime);
             m_v8FilesByName[BentleyApi::BeFileName(file.GetFileName().c_str())] = fileP;
+            }
         else
             {
-            SyncInfo::V8FileInfo finfo = const_cast<RootModelConverter*>(this)->GetSyncInfo().ComputeFileInfo(file);
             m_embeddedFilesSeen[finfo.m_uniqueName] = fileP;
+            LOG.tracev("Discovered embedded file %s last saved at %lf", finfo.m_uniqueName.c_str(), finfo.m_lastSaveTime);
             }
         }
     }

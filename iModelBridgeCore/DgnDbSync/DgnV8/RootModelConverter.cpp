@@ -83,9 +83,11 @@ DgnV8Api::DgnFileStatus RootModelConverter::_InitRootModel()
     m_rootFile = OpenDgnV8File(openStatus, rootFileName);
     if (!m_rootFile.IsValid())
         {
-        LOG.errorv("Error opening the file %s (Error code: %d)",rootFileName.GetNameUtf8().c_str(), openStatus);
+        LOG.errorv(L"Error opening the file %s (Error code: %d)", rootFileName.GetName(), openStatus);
         return openStatus;
         }
+    else
+        LOG.tracev(L"Opened root model file %ls", rootFileName.GetName());
 
     //  Identify the root model
     auto rootModelId = _GetRootModelId();
@@ -791,6 +793,7 @@ SubjectCPtr SpatialConverterBase::GetOrCreateModelSubject(SubjectCR parent, Utf8
     BeAssert((!IsUpdating() || (ModelSubjectType::Hierarchy != stype)) && "You create a hierarchy subject once when you create the job");
 
     SubjectPtr ed = Subject::Create(parent, modelName.c_str());
+    LOG.tracev("Created model subject %s for parentId %" PRIu64, modelName.c_str(), parent.GetElementId().GetValue());
 
     ed->SetSubjectJsonProperties(Subject::json_Model(), modelProps);
 
@@ -880,7 +883,7 @@ void RootModelConverter::FindSpatialV8Models(DgnV8ModelRefR thisModelRef)
     DgnV8FileR thisV8File = *thisV8Model.GetDgnFileP();
 
     GetRepositoryLinkId(thisV8File); // Register this FILE in syncinfo. Also populates m_v8files
-
+    LOG.tracev("Found spatial model %s", IssueReporter::FmtModelRef(thisModelRef).c_str());
     m_spatialModelsSeen.insert(&thisV8Model);   // Note that we may very well encounter the same model via more than one attachment path. Each path may have a different setting for nesting depth, so keep going.
 
     m_spatialModelsInAttachmentOrder.push_back(&thisV8Model);

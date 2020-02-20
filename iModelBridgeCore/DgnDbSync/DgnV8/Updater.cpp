@@ -523,6 +523,14 @@ BentleyApi::BentleyStatus RootModelConverter::DetectDeletedEmbeddedFiles()
             }
         }
 
+    if (LOG.isSeverityEnabled(NativeLogging::SEVERITY::LOG_TRACE))
+        {
+        LOG.trace("DetectDeletedEmbeddedFiles - The following embedded files were discovered in the current V8 files");
+        for (auto const& embedded : embeddedFileNamesFound)
+            {
+            LOG.trace(embedded.c_str());
+            }
+        }
     // 3. Now review the iModel's record of all of the files that were used by bridges to populate it.
     //    Detect the records that point to files that:
     //          a) were previously mined for content by this bridge
@@ -534,7 +542,7 @@ BentleyApi::BentleyStatus RootModelConverter::DetectDeletedEmbeddedFiles()
     for (auto rlinkAspect = rlinkAspects.begin(); rlinkAspect != rlinkAspects.end(); ++rlinkAspect)
         {
         auto v8FileName = rlinkAspect->GetFileName();   // full V8 filename of previously converted file
-
+        LOG.tracev("DetectDeletedEmbeddedFiles: %s previously converted", v8FileName.c_str());
         Bentley::WString v8PackageName;
         if (SUCCESS != DgnV8Api::DgnFile::ParsePackagedName(&v8PackageName, nullptr, nullptr, WString(v8FileName.c_str(), true).c_str()))
             continue;
@@ -545,6 +553,7 @@ BentleyApi::BentleyStatus RootModelConverter::DetectDeletedEmbeddedFiles()
         if (packageFilesAssignedToMe.find(Utf8String(v8PackageName.c_str()).ToLower()) == packageFilesAssignedToMe.end())
             {
             somePackageFileNotAssignedToMe = true;
+            LOG.tracev("DetectDeletedEmbeddedFiles: Packaged %s is not assigned to this bridge; ignoring.", v8PackageName.c_str());
             continue;
             }
 
@@ -561,6 +570,10 @@ BentleyApi::BentleyStatus RootModelConverter::DetectDeletedEmbeddedFiles()
             DeleteEmbeddedFileAndContents(rlinkAspect->GetRepositoryLinkId());
     
             iModelBridge::PushChanges(*m_dgndb, _GetParams(), Utf8PrintfString("Deleted reference file %s", identifier.c_str()));
+            }
+        else
+            {
+            LOG.tracev("DetectDeletedEmbeddedFiles: found identifier %s in current embedded files, not deleting.", identifier.c_str());
             }
         }
 
