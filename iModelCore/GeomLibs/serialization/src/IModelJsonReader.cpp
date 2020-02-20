@@ -494,13 +494,21 @@ bool tryValueToCone (JsonValueCR value, ISolidPrimitivePtr &result)
         DPoint3d centerA, centerB;
         bool capped;
         double radiusA, radiusB;
+        RotMatrix axes;
+        bool axesOK = derefAxes(value, axes, RotMatrix::FromIdentity());
         derefBool (value, "capped", capped, false);
         if (   tryValueToXYZ (value["start"], centerA)
             && tryValueToXYZ (value["end"], centerB)
             && derefNumeric (value, "startRadius", radiusA))
             {
             derefNumeric (value, "endRadius", radiusB, radiusA);
-            result = ISolidPrimitive::CreateDgnCone (DgnConeDetail (centerA, centerB, radiusA, radiusB, capped));
+            if (axesOK)
+                result = ISolidPrimitive::CreateDgnCone (DgnConeDetail (centerA, centerB, axes, radiusA, radiusB, capped));
+            else
+                {
+                // allow the points to determine axes.
+                result = ISolidPrimitive::CreateDgnCone(DgnConeDetail(centerA, centerB, radiusA, radiusB, capped));
+                }
             return true;
             }
         }
