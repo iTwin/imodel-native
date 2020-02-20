@@ -86,6 +86,7 @@
             <!-- NO [ODBXHOSTAPPREGROOT]: OdbxCore20glob_PS.msm-->
             <!-- NO [ODBXHOSTAPPREGROOT]: OdbxCore20loc.msm-->
             <MergeRef Id="pointcloudglob.msm" />
+            <MergeRef Id="dcm.msm" />
             <!-- NO [ODBXHOSTAPPREGROOT]: PointCloudGlob.msm-->
             <!-- NO [ODBXHOSTAPPREGROOT]: PointCloudLoc.msm-->
             <!-- NO [ODBXHOSTAPPREGROOT]: PointCloudReCapGlob.msm-->

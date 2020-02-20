@@ -224,6 +224,9 @@
             <Merge Id="pointcloudglob.msm" SourceFile="PointCloudGlob.msm" Language="0" DiskId="1" >
                 <ConfigurationData Name="DIR_RETARGET_INSTALLDIR" Value="realdwgassemblies"/>
             </Merge>
+            <Merge Id="dcm.msm" SourceFile="dcm.msm" Language="0" DiskId="1" >
+                <ConfigurationData Name="DIR_RETARGET_INSTALLDIR" Value="realdwgassemblies"/>
+            </Merge>
             <!-- NO [ODBXHOSTAPPREGROOT]: PointCloudLoc.msm-->
             <!-- NO [ODBXHOSTAPPREGROOT]: PointCloudReCapGlob.msm-->
             <!-- NO [ODBXHOSTAPPREGROOT]: tbb.msm-->
