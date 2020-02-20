@@ -11,6 +11,7 @@
     %endif
 %else
     DgnV8Sdk=$(BuildContext)nuget/native/V8_InternalSDKNuget/
+#    DgnV8Sdk=$(BuildContext)upack/V8_InternalSDKPackage/
 %endif
 
 Delivery=$(BuildContext)Delivery/

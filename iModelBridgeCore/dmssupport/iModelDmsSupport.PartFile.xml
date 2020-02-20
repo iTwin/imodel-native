@@ -53,7 +53,6 @@
   </Part>
     
  <Part Name="v8ConfigSupport" BentleyBuildMakeFile="Configuration/Configurationprewire.mke">
-   <NuGetPackage targetFramework="native">V8_InternalSDKNuget</NuGetPackage>
    <Bindings>
         <Directory SourceName="Delivery/DgnPlatformV8Sdk/Dlls/CEConfig/Config" ProductDirectoryName="DgnV8Dlls" ProductSubDirectory="Config" SubPartDirectory="DgnPlatformV8Sdk/Dlls/CEConfig" Required="true"/>
         <Directory SourceName="Delivery/DgnPlatformV8Sdk/Dlls/v8iConfig" ProductDirectoryName="DgnV8Dlls" ProductSubDirectory="v8iConfig" SubPartDirectory="DgnPlatformV8Sdk/Dlls/v8iConfig" Required="true"/>    
