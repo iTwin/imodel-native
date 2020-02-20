@@ -18,7 +18,7 @@ RealDwgInstallFiles = $(BuildContext)RealDwgInstallerFiles$(InstallerSuffix)/
 #----------------------------------------------------------------------*/
 always:
     ~linkfile "$(RealDwgInstallFiles)RealDwgBundle.bundle.wxs=$(_MakeFilePath)RealDwgBundle.bundle.wxs"
-    ~linkfile "$(RealDwgInstallFiles)DwgRegistryFrag.wxs=$(_MakeFilePath)DwgRegistryFrag.wxs"
+    ~linkfile "$(RealDwgInstallFiles)DwgRegistryFrag$(InstallerSuffix).wxs=$(_MakeFilePath)DwgRegistryFrag$(InstallerSuffix).wxs"
     ~linkfile "$(RealDwgInstallFiles)DwgMergeModuleFrag$(InstallerSuffix).wxs=$(_MakeFilePath)DwgMergeModuleFrag$(InstallerSuffix).wxs"
 
 $(RealDwgInstallFiles)RealDwgInstaller$(InstallerSuffix).mki : $(_MakeFilePath)RealDwgInstaller$(InstallerSuffix).mki

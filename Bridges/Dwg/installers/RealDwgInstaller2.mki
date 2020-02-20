@@ -11,7 +11,7 @@ INSTALLER_COMPILER_OPT  + -dLANGUAGE_CULTURE=$(BENTLEYLANGUAGE)
 BB_INSTALLER_SKIP_WIXBUNDLE_INSIGNIA=1
 
 # We may use DwgRegistryFrag2.wxs next time when the msm files differ by a suffix between two releases
-INSTALLER_SOURCE_LIST       + $(BBInstallerWixSourceFileDir)DwgRegistryFrag.wxs
+INSTALLER_SOURCE_LIST       + $(BBInstallerWixSourceFileDir)DwgRegistryFrag2.wxs
 INSTALLER_SOURCE_LIST       + $(BBInstallerWixSourceFileDir)DwgMergeModuleFrag2.wxs
 
 INSTALLER_VALIDATOR_OPT     + -sice:ICE30

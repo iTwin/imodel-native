@@ -274,7 +274,7 @@
         <Bindings>
             <Files BindToWixBuild="true">
                 RealDwgInstallerFiles2\DwgMergeModuleFrag2.wxs
-                RealDwgInstallerFiles2\DwgRegistryFrag.wxs
+                RealDwgInstallerFiles2\DwgRegistryFrag2.wxs
                 RealDwgInstallerFiles2\RealDwgInstaller2.mki
             </Files>
         </Bindings>
