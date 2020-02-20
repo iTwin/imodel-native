@@ -101,6 +101,7 @@ Utf8String C3dImporter::_ComputeImportJobName (DwgDbBlockTableRecordCR modelspac
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus C3dImporter::OnBaseBridgeJobInitialized (DgnElementId jobId)
     {
+    // create & add Aligned json property to the Civil domain subject
     auto alignSubject = this->GetAlignmentSubject ();
     if (!alignSubject.IsValid())
         {
@@ -122,6 +123,20 @@ BentleyStatus C3dImporter::OnBaseBridgeJobInitialized (DgnElementId jobId)
         {
         T_Super::ReportError (IssueCategory::Briefcase(), Issue::Message(), "Failed to get the Alignment subject!");
         return  BentleyStatus::BSIERROR;
+        }
+
+    // add AppGraphics json property into the base bridge's hierarchy subject for Civil tools
+    auto hierarchySubject =T_Super::GetJobHierarchySubject ();
+    if (hierarchySubject.IsValid())
+        {
+        SubjectPtr  subjectEdit = T_Super::GetDgnDb().Elements().GetForEdit<Subject>(hierarchySubject->GetElementId());
+        if (subjectEdit.IsValid())
+            {
+            auto json = subjectEdit->GetJsonProperties (Subject::json_Model());
+            json["Perspective"] = "AppGraphics";
+            subjectEdit->SetJsonProperties (Subject::json_Model(), json);
+            subjectEdit->Update ();
+            }
         }
 
     RoadRailAlignment::RoadRailAlignmentDomain::OnSchemaImported (*alignSubject);

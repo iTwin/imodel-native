@@ -1126,7 +1126,7 @@ protected:
     //! Note that this cannot be done until the ImportJob has been created (when creating a new ImportJob) or read from syncinfo (when updating).
     void        GetOrCreateJobPartitions ();
     //! Get the one and only hierarchy subject for the job
-    SubjectCPtr GetJobHierarchySubject ();
+    DWG_EXPORT SubjectCPtr GetJobHierarchySubject ();
     //! Get/set the one and only one SourceMasterModel subject that owns the import job
     SubjectCPtr FindSourceMasterModelSubject (DgnElementId repositoryLinkId, Utf8StringCR modelName, bool createIfNotFound = false) const;
     BeSQLite::EC::ECInstanceId GetRootModelAspectIdFromSourceMasterModelSubject(SubjectCR) const;

@@ -38,7 +38,7 @@
 #define ALIGNMENTS_PARTITION_NAME   "Road/Rail Physical"
 #define ROADNETWORK_MODEL_NAME      "Road Network"
 #define RAILNETWORK_MODEL_NAME      "Rail Network"
-#define CIVIL_ALIGNED_SUBJECT       "Civil Designer Products"
+#define CIVIL_ALIGNED_SUBJECT       "Civil Alignment"
 
 // Entities
 #define ECCLASSNAME_AeccAlignment       "AeccAlignment"
