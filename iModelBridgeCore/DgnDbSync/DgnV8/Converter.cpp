@@ -2522,9 +2522,6 @@ DgnClassId Converter::_ComputeElementClass(DgnV8EhCR v8eh, V8ElementECContent co
     else
         elementClassName = BisConversionRuleHelper::GetElementBisBaseClassName(ecContent.m_elementConversionRule, _Consider3dElementsAsGraphics());
 
-    if (0 == BeStringUtilities::Strnicmp(elementClassName.GetSchemaName(), "EWR", 3) && 0 != strcmp("EWRData", elementClassName.GetSchemaName()))
-        elementClassName = ECClassName("EWR", elementClassName.GetClassName());
-
     ECN::ECClassId classId = m_dgndb->Schemas().GetClassId(elementClassName.GetSchemaName(), elementClassName.GetClassName());
     return DgnClassId(classId);
     }

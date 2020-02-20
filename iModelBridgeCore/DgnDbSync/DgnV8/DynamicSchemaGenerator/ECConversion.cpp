@@ -917,12 +917,6 @@ BECN::ECSchemaPtr ECSchemaXmlDeserializer::_LocateSchema(BECN::SchemaKeyR key, B
             return leftSchema;
             }
 
-        if (key.GetName().Equals("EWR"))
-            {
-            leftSchema->SetName("EWR");
-            return leftSchema;
-            }
-
         m_converter.SetTaskName(Converter::ProgressMessage::TASK_MERGING_V8_ECSCHEMA(), kvPairs.first.c_str());
         schemaIter++;
         for (; schemaIter != kvPairs.second.end(); schemaIter++)
@@ -1340,18 +1334,6 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
         BECN::SchemaKey key = entry.GetSchemaKey();
         bool isDynamic = entry.GetMappingType() == SyncInfo::ECSchemaMappingType::Dynamic;
         Utf8String schemaName(key.GetName().c_str());
-        if (0 == BeStringUtilities::Strnicmp("EWR", schemaName.c_str(), 3) && 0 != strcmp("EWRData", schemaName.c_str()) &&
-            0 != strcmp("EWR2CulvertsTemplate_01_ThreeD_3D", schemaName.c_str()) &&
-            0 != strcmp("EWR2CulvertsTemplate_02_ThreeD_3D", schemaName.c_str())) // These are entirely different schemas from the rest of the EWR* schemas.  
-                                                                                  // A more accurate comparison would be to check the namespacePrefix.  For the ones
-                                                                                  // we want to consolidate, the prefix is always "BIM_BLOCK".  Any other prefix would
-                                                                                  // be ignored.  Unfortunately, there's no way to get the alias from V8 without 
-                                                                                  // deserializing the schema.  So for now, we just hardcode in the ones we find that need
-                                                                                  // to be excluded from consolidation.
-            {
-            schemaName.AssignOrClear("EWR");
-            key.m_schemaName = schemaName;
-            }
 
         targetSchemaNames.insert(schemaName);
         Utf8CP schemaXml = entry.GetSchemaXml();
@@ -2546,8 +2528,6 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::DoAnalyze(DgnV8Api::ElementHan
             if (nullptr != ecClass)
                 namedGroupOwnsMembers = ecClass->GetCustomAttribute("NamedGroupOwnsMembers") != nullptr;
             }
-        if (0 == BeStringUtilities::Strnicmp("EWR", v8ClassName.GetSchemaName(), 3) && 0 != strcmp("EWRData", v8ClassName.GetSchemaName()))
-            v8ClassName = ECClassName("EWR", v8ClassName.GetClassName());
 
         if (BentleyApi::SUCCESS != V8ECClassInfo::InsertOrUpdate(*this, v8Element, v8ClassName, namedGroupOwnsMembers, !isPrimary, targetModelInfo))
             return BSIERROR;
@@ -3403,7 +3383,6 @@ bool DynamicSchemaGenerator::IsWellKnownDynamicSchema(Bentley::Utf8StringCR sche
         schemaName.EqualsI("BuildingDataGroup") ||
         schemaName.Equals("V8TagSetDefinitions") ||
         BeStringUtilities::Strnicmp(schemaName.c_str(), "Ifc", 3) == 0 ||
-        schemaName.StartsWith("EWR") ||
         schemaName.StartsWith("DgnCustomItemTypes_");
     }
 
@@ -3509,9 +3488,6 @@ void DynamicSchemaGenerator::CheckECSchemasForModel(DgnV8ModelR v8Model, bmap<Ut
 
         // It is possible we scanned the schema previously, but didn't import it.  Make sure it is actually in the db
         Utf8String bimSchemaName(v8SchemaName);
-        if (0 == BeStringUtilities::Strnicmp("EWR", v8SchemaName.c_str(), 3) && 0 != strcmp("EWRData", v8SchemaName.c_str()))
-            bimSchemaName.AssignOrClear("EWR");
-
         // Supplemental schemas are not imported so won't find it in the existing imodel
         if (!m_converter.GetDgnDb().Schemas().ContainsSchema(bimSchemaName) && !bimSchemaName.Contains("_Supplemental"))
             {
@@ -3936,9 +3912,6 @@ BentleyStatus Converter::GetECContentOfElement(V8ElementECContent& content, DgnV
         for (DgnV8Api::DgnECInstance* v8Instance : DgnV8Api::DgnECManager::GetManager().FindInstances(*scope, GetSelectAllV8ECQuery()))
             {
             ECClassName v8ClassName(v8Instance->GetClass());
-            if (0 == BeStringUtilities::Strnicmp("EWR", v8ClassName.GetSchemaName(), 3) && 0 != strcmp("EWRData", v8ClassName.GetSchemaName()))
-                v8ClassName = ECClassName("EWR", v8ClassName.GetClassName());
-
             if (DynamicSchemaGenerator::IsDgnV8DeliveredSchema(v8ClassName.GetSchemaName()))
                 continue;
 
