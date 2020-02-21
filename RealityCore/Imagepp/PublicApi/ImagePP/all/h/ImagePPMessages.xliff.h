@@ -97,6 +97,7 @@ BENTLEY_TRANSLATABLE_STRINGS_START(ImagePPMessages,ImagePPMessages)
     L10N_STRING(FILEFORMAT_GIF)                          // =="Gif"==
     L10N_STRING(FILEFORMAT_SRTM)                         // =="SRTM"==
     L10N_STRING(FILEFORMAT_HMR)                          // =="Bentley HMR"==
+    L10N_STRING(FILEFORMAT_GSGASCII)                     // =="Surfer ASCII Grid"==
     L10N_STRING(FILEFORMAT_ImgMapped)                    // =="Img"==
     L10N_STRING(FILEFORMAT_ImgRGB)                       // =="Image RGB"==
     L10N_STRING(FILEFORMAT_IngrTiff)                     // =="Ingr. TIFF"==
@@ -136,6 +137,7 @@ BENTLEY_TRANSLATABLE_STRINGS_START(ImagePPMessages,ImagePPMessages)
     L10N_STRING(FILEFORMAT_WirelessBitmap)               // =="Wireless BitMap"==
     L10N_STRING(FILEFORMAT_WMS)                          // =="Web Map Server"==
     L10N_STRING(FILEFORMAT_MapBox)                       // =="Mapbox Server"==
+    L10N_STRING(FILEFORMAT_WMTS)                         // =="WMTS Web Map Server"==
 
     // Transfo models
     L10N_STRING(TRANSFO_Identity)                        // =="Identity"==

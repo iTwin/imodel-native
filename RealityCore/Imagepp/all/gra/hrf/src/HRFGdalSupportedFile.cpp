@@ -602,13 +602,38 @@ void HRFGdalSupportedFile::DetectPixelTypeMono()
         m_IsGrayScale = true;
         break;
         case(GDT_Float64):
-            m_IsReadPixelReal = true;
-            m_pPixelType = new HRPPixelTypeV16Gray16();
-            m_BitsPerPixelPerBand = 16;
-            m_Signed = true;
-            m_IsGrayScale = true;
-            m_IsUPixelTypeForSignedData = true;
-            m_IsIntegerPixelTypeForRealData = true;
+            // GSG Surfer grid - convert to float
+            if (m_doubleToFloatCnv)
+                {
+                int Success;
+                double NoDataValue = GetRasterBand(m_GrayBandInd)->GetNoDataValue(&Success);
+
+                if (Success != false)
+                    {
+                    HASSERT((NoDataValue >= (-FLT_MAX)) && (NoDataValue <= FLT_MAX));
+                    float FittedNoDataValue = static_cast<float>(NoDataValue);
+                    m_pPixelType = new HRPPixelTypeV32Float32(GetBandRole(m_GrayBandInd),
+                        &FittedNoDataValue);
+                    }
+                else
+                    {
+                    m_pPixelType = new HRPPixelTypeV32Float32(GetBandRole(m_GrayBandInd));
+                    }
+                m_BitsPerPixelPerBand = 32;
+                m_Signed = true;
+                m_IsReadPixelReal = true;
+                m_IsGrayScale = true;
+                }
+            else
+                {
+                m_IsReadPixelReal = true;
+                m_pPixelType = new HRPPixelTypeV16Gray16();
+                m_BitsPerPixelPerBand = 16;
+                m_Signed = true;
+                m_IsGrayScale = true;
+                m_IsUPixelTypeForSignedData = true;
+                m_IsIntegerPixelTypeForRealData = true;
+                }
             break;
         default :
             //not implemented
@@ -2148,6 +2173,8 @@ HRFGdalSupportedFile::HRFGdalSupportedFile(const char*           pi_pDriverName,
     m_YbandInd        = -1;
     m_CbBandInd       = -1;
     m_CrBandInd       = -1;
+
+    m_doubleToFloatCnv = false;     // Convert double GDT_Float64 to GDT_Float32
     }
 
 //-----------------------------------------------------------------------------

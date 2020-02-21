@@ -139,6 +139,8 @@ protected:
 
     void    WriteColorTable();
 
+    void    DoubleBlock2Float(Byte* po_pData);
+
     //Function Pointer
     ReadBlockFncPtr                 m_pReadBlockFnc;
     ScalePixelFncPtr                m_pScalePixelFnc;

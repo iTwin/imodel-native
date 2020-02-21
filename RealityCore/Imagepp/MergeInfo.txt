@@ -1,0 +1,30 @@
+
+Merge Done:
+
+Topaz Tree
+Revision
+		February 2020
+		---------------
+4457	Accept to open .ctiff file as .tiff64 format.
+4455	TFS# 1071634 Not able to see the attached Tiff image in the view.
+4453	VSTS# 215583 Cannot create file in ECW format.
+4452	Add an utility method (ModifyTag) to be able to modify some tif/geotif tags information. Only use internally for the moment.
+4451	Merge from iModel02, replace the revison 4448
+		m_pGeocoding member was not copied when we add a FileExtender on a file, like a ResBooster when we generate a cache file.
+		Like for the transfoModel, if present in the priority page, we need to copy it.
+4449	EF - TFS#1058318 Shape crash in 3SM when using dataset relying on AGD94 Grid shift file datum (NTv2). (Backported from DgnDb06.
+4448	m_pGeocoding member was not copied when we add a FileExtender on a file, like a ResBooster when we generate a cache file.
+		Like for the transfoModel, if present in the priority page, we need to copy it.
+4447	TFS#1062843 :[Regression][From V8i][Escalation] ECW file incorrect place.
+4446	TFS#1062843 :[Regression][From V8i][Escalation] ECW file incorrect place.	
+4445	TFS#1056098: [security] fix crash with corrupted gif and tiff with lzw compression.
+4444	Exported some methods for Integrating new feature 'WMTS Map' into PPModule\Raster.
+4441	TFS#1022127 Large TIFF files fail to display
+4439	TFS#1022127 Large TIFF files fail to display
+4438	EN - Added Create Sister file for Raster file without geocoding comming from Context Services package. (VSTS#101899)
+4435	TFS#1027824 DEM Tiff file not supported if compressed Packbits.
+4434	TFS#1025053 Initialized the array with {0} to fix static code analysis error no 6054
+4433	TFS:1024162 Add Support for Raster DEM GRD format, it is the Surfer Grid File Format.
+4432	TFS:1024162 Add Support for Raster DEM GRD format, it is the Surfer Grid File Format.
+4431	TFS#1022127 Large TIFF files fail to display.
+4430	 BF:TFS #755734:[Crash] Exiting MS leads in crash Raster.

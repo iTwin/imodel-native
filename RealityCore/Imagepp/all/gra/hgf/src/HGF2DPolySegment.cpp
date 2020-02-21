@@ -5715,10 +5715,16 @@ void HGF2DPolySegment::RecomposeClosedPolySegments(list<HFCPtr<HGF2DPolySegment>
                     for (size_t j = 1 ; j < (*FoundItr)->GetSize() ; ++j)
                         pNewPolySegment->AppendPoint((*FoundItr)->GetPoint(j));
                     }
-                else
+                else if(FoundLinked)
                     {
                     for (int32_t j = (int32_t)((*FoundItr)->GetSize() - 2) ; j >= 0 ; --j)
                         pNewPolySegment->AppendPoint((*FoundItr)->GetPoint(j));
+                    }
+                else if (SecondItr == TempList.end())
+                    {
+                        //case where last point is not the same as the start point
+                        //in that case we force the end point to be the same as the start point
+                        pNewPolySegment->AppendPoint(pNewPolySegment->GetStartPoint());
                     }
 
                 pFlags[FoundIndex] = true;

@@ -185,7 +185,8 @@ private:
                       double                        pi_Rotation,
                       double                        pi_RegistrationX,
                       double                        pi_RegistrationY,
-                      GeoCoordinates::BaseGCSP     pi_pBaseGCS) const;
+                      GeoCoordinates::BaseGCSP      pi_pBaseGCS,
+                      double                        pi_UnitToMeter) const;
 
     // Methods Disabled
     HRFERSPageFile(const HRFERSPageFile& pi_rObj);

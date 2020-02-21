@@ -1287,6 +1287,17 @@ void HTagFile::WriteDirectories()
     }
 
 
+bool HTagFile::ModifyTag(bool pi_GeoTiff, CharP pi_Tag, CharP pi_TagValue)
+    {
+    bool ret;
+
+    HTagFile::DirectoryID CurDir = CurrentDirectory();
+    if ((ret = SetDirectory(0)))
+        ret = _ModifyTag(pi_GeoTiff, pi_Tag, pi_TagValue);
+    SetDirectory(CurDir);
+    return ret;
+    }
+
 void HTagFile::PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
     {
     _PrintCurrentDirectory(po_pOutput, pi_Flag);

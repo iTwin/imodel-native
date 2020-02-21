@@ -24,6 +24,7 @@
 #include "HRFWbmpFile.h"
 #include "HRFCalsFile.h"
 #include "HRFGeoTiffFile.h"
+#include "HRFGSGAsciiGridFile.h"
 #include "HRFHMRFile.h"
 #include "HRFImgMappedFile.h"
 #include "HRFImgRGBFile.h"
@@ -144,6 +145,7 @@
     #define HOST_REGISTER_GDAL_FILEFORMAT               \
         HOST_REGISTER_FILEFORMAT(HRFArcInfoAsciiGridCreator)    \
         HOST_REGISTER_FILEFORMAT(HRFArcInfoGridCreator)         \
+		HOST_REGISTER_FILEFORMAT(HRFGSGAsciiGridCreator)		\
         HOST_REGISTER_FILEFORMAT(HRFBsbCreator)                 \
         HOST_REGISTER_FILEFORMAT(HRFDtedCreator)                \
         HOST_REGISTER_FILEFORMAT(HRFErdasImgCreator)            \

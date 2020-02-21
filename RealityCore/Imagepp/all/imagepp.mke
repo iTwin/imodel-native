@@ -1006,6 +1006,8 @@ $(o)HRFGifImageEditor$(oext) : $(ippGraDir)hrf/src/HRFGifImageEditor.cpp $(ippAl
 
 $(o)HRFGifLineEditor$(oext) : $(ippGraDir)hrf/src/HRFGifLineEditor.cpp $(ippAllInc)HRFGifLineEditor.h ${MultiCompileDepends}
 
+$(o)HRFGSGAsciiGridFile$(oext) : $(ippGraDir)hrf/src/HRFGSGAsciiGridFile.cpp $(ippAllInc)HRFGSGAsciiGridFile.h $(ippAllInc)HRFGdalSupportedFile.h ${MultiCompileDepends}
+
 $(o)HRFSRTMEditor$(oext) : $(ippGraDir)hrf/src/HRFSRTMEditor.cpp $(ippAllInc)HRFSRTMEditor.h ${MultiCompileDepends}
 
 $(o)HRFSRTMFile$(oext) : $(ippGraDir)hrf/src/HRFSRTMFile.cpp $(ippAllInc)HRFSRTMFile.h ${MultiCompileDepends}

@@ -192,7 +192,7 @@ HRFGdalSupportedFileEditor::HRFGdalSupportedFileEditor(HFCPtr<HRFRasterFile> pi_
             }
         else
             {
-            HASSERT(RASTER_FILE->IsIntegerPixelTypeForRealData() == true);
+            HASSERT(RASTER_FILE->IsIntegerPixelTypeForRealData() == true || RASTER_FILE->m_doubleToFloatCnv);
             m_pTempRealBuffer = (Byte*)new double[(size_t)(m_NbBands * m_NbPixelsPerBlock)];
             m_PixelSpaceInBytes *= sizeof(double);
             m_LineSpaceInBytes  *= sizeof(double);
@@ -486,9 +486,12 @@ HSTATUS HRFGdalSupportedFileEditor::ReadRealBlock(uint64_t pi_PosBlockX,
             pTempBuffer++;
             }
 
-        if (Status == H_SUCCESS && m_UseLinearBandScaling == true)
+        if (Status == H_SUCCESS)
             {
-            ScalingDoubleBlock(po_pData);
+            if (m_UseLinearBandScaling == true)
+                ScalingDoubleBlock(po_pData);
+            else if (RASTER_FILE->m_doubleToFloatCnv == true)
+                DoubleBlock2Float(po_pData);
             }
         }
 
@@ -756,6 +759,31 @@ void HRFGdalSupportedFileEditor::ScalingDoubleBlock(Byte* po_pData)
             HASSERT(0);
         }
     }
+
+//-----------------------------------------------------------------------------
+// protected
+// ScalingDoubleBlock
+// Scale a double block.
+//-----------------------------------------------------------------------------
+void HRFGdalSupportedFileEditor::DoubleBlock2Float(Byte* po_pData)
+{
+    HPRECONDITION(po_pData != 0);
+    HPRECONDITION(m_pTempRealBuffer != 0);
+    HPRECONDITION(m_NbBitsPerBandPerPixel != 64);
+
+   float* pScaledData = (float*)po_pData;
+   double* pTempRealBuffer = (double*)m_pTempRealBuffer.get();
+
+   for (uint64_t PixelIndex = 0; PixelIndex < m_NbPixelsPerBlock; PixelIndex++)
+   {
+       for (uint32_t BandInd = 0; BandInd < m_NbBands; ++BandInd, ++pScaledData,++pTempRealBuffer)
+       {
+           *pScaledData = (float)(*pTempRealBuffer);
+       }
+   }
+
+}
+
 
 //-----------------------------------------------------------------------------
 // protected

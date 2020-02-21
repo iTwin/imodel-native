@@ -981,7 +981,7 @@ void HRFERSPageFile::ValidateERSFile(uint32_t pi_DatasetHeadRequiredEntries,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Mathieu.Marchand  09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-static GeoCoordinates::BaseGCSPtr s_CreateRasterGcsFromERSIDS(CharCP projection, CharCP datum, CharCP unit)
+static GeoCoordinates::BaseGCSPtr s_CreateRasterGcsFromERSIDS(CharCP projection, CharCP datum, CharCP unit, double* po_UnitToMeter)
     {
     uint32_t EPSGCodeFomrERLibrary = TIFFGeo_UserDefined;
 
@@ -989,7 +989,7 @@ static GeoCoordinates::BaseGCSPtr s_CreateRasterGcsFromERSIDS(CharCP projection,
         EPSGCodeFomrERLibrary = HRFErMapperSupportedFile::GetEPSGFromProjectionAndDatum(projection, datum);
     #endif
 
-    return HCPGCoordUtility::CreateRasterGcsFromERSIDS(EPSGCodeFomrERLibrary, projection, datum, unit);
+    return HCPGCoordUtility::CreateRasterGcsFromERSIDS(EPSGCodeFomrERLibrary, projection, datum, unit, po_UnitToMeter);
     }
 
 //-----------------------------------------------------------------------------
@@ -998,14 +998,15 @@ static GeoCoordinates::BaseGCSPtr s_CreateRasterGcsFromERSIDS(CharCP projection,
 //-----------------------------------------------------------------------------
 void HRFERSPageFile::CreateDescriptor()
     {
-    HPMAttributeSet               TagList;
-    HFCPtr<HPMGenericAttribute>   pTag;
+    HPMAttributeSet              TagList;
+    HFCPtr<HPMGenericAttribute>  pTag;
     double                       OriginX = 0;
     double                       OriginY = 0;
     double                       PixelSizeX = 1;
     double                       PixelSizeY = 1;
     double                       Rotation = 0;
     GeoCoordinates::BaseGCSPtr   pBaseGCS;
+    double                       UnitToMeter = 1.0;
 
     if (m_ERSInfo.m_RasterInfo.m_pCellInfo != 0)
         {
@@ -1047,16 +1048,16 @@ void HRFERSPageFile::CreateDescriptor()
         // Sometimes the unit is not set
         if (nullptr == m_ERSInfo.m_CoordSpaceInfo.m_pUnits)
             {
-            pBaseGCS = s_CreateRasterGcsFromERSIDS(m_ERSInfo.m_CoordSpaceInfo.m_Projection.c_str(), m_ERSInfo.m_CoordSpaceInfo.m_Datum.c_str(), "");
+            pBaseGCS = s_CreateRasterGcsFromERSIDS(m_ERSInfo.m_CoordSpaceInfo.m_Projection.c_str(), m_ERSInfo.m_CoordSpaceInfo.m_Datum.c_str(), "", &UnitToMeter);
             }
         else
             {
-            pBaseGCS = s_CreateRasterGcsFromERSIDS(m_ERSInfo.m_CoordSpaceInfo.m_Projection.c_str(), m_ERSInfo.m_CoordSpaceInfo.m_Datum.c_str(), m_ERSInfo.m_CoordSpaceInfo.m_pUnits->c_str());
+            pBaseGCS = s_CreateRasterGcsFromERSIDS(m_ERSInfo.m_CoordSpaceInfo.m_Projection.c_str(), m_ERSInfo.m_CoordSpaceInfo.m_Datum.c_str(), m_ERSInfo.m_CoordSpaceInfo.m_pUnits->c_str(), &UnitToMeter);
             }
         }
     else if (nullptr != m_ERSInfo.m_CoordSpaceInfo.m_pUnits && *m_ERSInfo.m_CoordSpaceInfo.m_pUnits.get() != "RAW")
         {
-        pBaseGCS = s_CreateRasterGcsFromERSIDS(m_ERSInfo.m_CoordSpaceInfo.m_Projection.c_str(), m_ERSInfo.m_CoordSpaceInfo.m_Datum.c_str(), m_ERSInfo.m_CoordSpaceInfo.m_pUnits->c_str());
+        pBaseGCS = s_CreateRasterGcsFromERSIDS(m_ERSInfo.m_CoordSpaceInfo.m_Projection.c_str(), m_ERSInfo.m_CoordSpaceInfo.m_Datum.c_str(), m_ERSInfo.m_CoordSpaceInfo.m_pUnits->c_str(), &UnitToMeter);
         }
 
     double RegCellX = 0.0;
@@ -1079,7 +1080,8 @@ void HRFERSPageFile::CreateDescriptor()
                                                                 Rotation,
                                                                 RegCellX,
                                                                 RegCellY,
-                                                                pBaseGCS.get());
+                                                                pBaseGCS.get(),
+                                                                UnitToMeter);
 
     HRFScanlineOrientation TransfoModelSLO = HRFScanlineOrientation::UPPER_LEFT_HORIZONTAL;
 
@@ -1098,7 +1100,6 @@ void HRFERSPageFile::CreateDescriptor()
 
 
     pPage->SetGeocoding(pBaseGCS.get());
-
 
     m_ListOfPageDescriptor.push_back(pPage);
     }
@@ -1128,7 +1129,8 @@ HFCPtr<HGF2DTransfoModel> HRFERSPageFile::BuildTransfoModel(double              
                                                             double                        pi_Rotation,
                                                             double                        pi_RegistrationX,
                                                             double                        pi_RegistrationY,
-                                                            GeoCoordinates::BaseGCSP      pi_pBaseGCS) const
+                                                            GeoCoordinates::BaseGCSP      pi_pBaseGCS,
+                                                            double                        pi_UnitToMeter) const
     {
     // Transform the rotation to ensure the value lies in the range of [-360,360]
     //if it wasn't the case
@@ -1147,6 +1149,10 @@ HFCPtr<HGF2DTransfoModel> HRFERSPageFile::BuildTransfoModel(double              
 
     if (pi_pBaseGCS != nullptr && pi_pBaseGCS->IsValid())
         pModel = HCPGCoordUtility::TranslateToMeter(pModel, 1.0 / pi_pBaseGCS->UnitsFromMeters());
+    else
+        { // Apply unit if possible
+        pModel = HCPGCoordUtility::TranslateToMeter(pModel, pi_UnitToMeter);
+        }
 
     return pModel->CreateSimplifiedModel();
     }

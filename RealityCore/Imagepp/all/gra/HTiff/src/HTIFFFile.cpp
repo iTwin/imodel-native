@@ -3055,7 +3055,16 @@ bool HTIFFFile::OnCurrentDirectoryChanged (HTagFile::DirectoryID pi_DirID, bool 
                         Predictor = 1;
 
                     if (Predictor == 2)
-                        SetDeflateAlgo(m_BitsByPixel, Predictor, m_SamplesByPixel);
+                        {
+                        if (m_PlanarConfig == PLANARCONFIG_SEPARATE && m_SamplesByPixel > 1)
+                            {
+                            // In separate we have only one sample by block/packet.
+                            HASSERT(IsAllSamplesWithSameBitsCount());   // Will return SEPARATE_PLANAR_CONFIGURATION_NOT_SUPPORTED below
+                            SetDeflateAlgo(m_pBitsBySample[0], Predictor, m_SamplesByPixel);
+                            }
+                        else
+                            SetDeflateAlgo(m_BitsByPixel, Predictor, m_SamplesByPixel);
+                        }
                     else
                         SetDeflateAlgo();
                     break;

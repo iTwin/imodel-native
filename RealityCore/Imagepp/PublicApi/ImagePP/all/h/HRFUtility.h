@@ -81,10 +81,10 @@ HFCPtr<HRFRasterFile>  GenericImprove(HFCPtr<HRFRasterFile>       pi_rpRasterFil
 // HRFThumbnail
 //-----------------------------------------------------------------------------
 IMAGEPP_EXPORT HFCPtr<HRFThumbnail> HRFThumbnailMaker(HFCPtr<HRFRasterFile>& pi_rpSource,
-                                              uint32_t               pi_Page,
-                                              uint32_t*                pio_pPreferedWidth,
-                                              uint32_t*                pio_pPreferedHeight,
-                                              bool                  pi_UseBestQuality);
+                                                       uint32_t              pi_Page,
+                                                       uint32_t*             pio_pPreferedWidth,
+                                                       uint32_t*             pio_pPreferedHeight,
+                                                       bool                  pi_UseBestQuality);
 
 //-----------------------------------------------------------------------------
 // IsValidMatrix
@@ -95,5 +95,16 @@ bool IsValidMatrix(const HFCMatrix<3, 3>& pi_rMatrix);
 // WriteEmptyFile
 //-----------------------------------------------------------------------------
 IMAGEPP_EXPORT void WriteEmptyFile(HFCPtr<HRFRasterFile>& pi_prFile,
-                           Byte*                 pi_pRGBDefaultColor);
+                                   Byte*                  pi_pRGBDefaultColor);
+
+//-----------------------------------------------------------------------------
+// Create PRJ(WKT) Sister file: Creates a sister file to a raster file to
+// externally set the Geocoding. The sister file has a .prj extension and contains
+// the definition of the Geographic Coordinate System in WKT format.
+// filename: Name of the raster file to create a sister file for.
+// coordinateSystemKeyName: The keyname of the Geographic Coordinate System
+//     from which is created the sister file content.
+//-----------------------------------------------------------------------------
+IMAGEPP_EXPORT bool CreateSisterFile(Utf8String fileName, Utf8String coordinateSystemKeyName);
+
 END_IMAGEPP_NAMESPACE

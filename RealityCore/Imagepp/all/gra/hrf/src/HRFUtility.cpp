@@ -14,6 +14,7 @@
 
 #include <ImagePP/all/h/HRFUtility.h>
 
+#include <ImagePP/all/h/HFCURLFile.h>
 #include <ImagePP/all/h/HRFRasterFile.h>
 #include <ImagePP/all/h/HRPPixelType.h>
 #include <ImagePP/all/h/HFCException.h>
@@ -36,7 +37,8 @@
 #include <ImagePP/all/h/HRFThumbnail.h>
 #include <ImagePP/all/h/HTIFFTag.h>
 #include <ImagePP/all/h/HRFTiffFile.h>
-
+#include <ImagePP/all/h/HRFPageFileFactory.h>
+#include <ImagePP/all/h/HRFRasterFileFactory.h>
 #include <ImagePP/all/h/HRPPixelTypeFactory.h>
 #include <ImagePP/all/h/HRPPixelTypeI1R8G8B8.h>
 #include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8.h>
@@ -1010,7 +1012,7 @@ bool ImagePP::IsValidMatrix(const HFCMatrix<3,3>& pi_rMatrix)
 // WriteEmptyFile
 //-----------------------------------------------------------------------------
 void ImagePP::WriteEmptyFile(HFCPtr<HRFRasterFile>& pi_prFile,
-                    Byte*                 pi_pRGBDefaultColor)
+                             Byte*                  pi_pRGBDefaultColor)
     {
     HPRECONDITION(pi_prFile->CountPages() == 1);
 
@@ -1086,4 +1088,163 @@ void ImagePP::WriteEmptyFile(HFCPtr<HRFRasterFile>& pi_prFile,
         }
 
     HUTExportProgressIndicator::GetInstance()->SetExportedFile(0);
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     11/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+HFCPtr<HRFRasterFile> sGetRasterFile(Utf8String inFilename)
+    {
+    HFCPtr<HRFRasterFile> rasterFile;
+
+    try
+        {
+        if (Utf8String::IsNullOrEmpty(inFilename.c_str()))
+            return NULL;
+
+
+        // Create URL
+        HFCPtr<HFCURL>  srcFilename(HFCURL::Instanciate(inFilename));
+        if (srcFilename == 0)
+            {
+            // Open the raster file as a file
+            srcFilename = new HFCURLFile(Utf8PrintfString("%s://%s", HFCURLFile::s_SchemeName().c_str(), inFilename.c_str()).c_str());
+            }
+
+        // Open Raster file
+        {
+        // HFCMonitor __keyMonitor(m_KeyByMethod);
+
+        // Create URL
+        HFCPtr<HFCURL>  srcFilename(HFCURL::Instanciate(inFilename));
+        if (srcFilename == 0)
+            {
+            // Open the raster file as a file
+            srcFilename = new HFCURLFile(Utf8PrintfString("%s://%s", HFCURLFile::s_SchemeName().c_str(), inFilename.c_str()).c_str());
+            }
+
+        // Open Raster file without checking "isKindOfFile"
+        rasterFile = HRFRasterFileFactory::GetInstance()->OpenFile((HFCPtr<HFCURL>)srcFilename, true);
+        }
+
+        if (rasterFile == 0)
+            return rasterFile;
+
+        // Check if we have an internet imaging file
+        // DISABLED: We do not support HRFInternetImagingFile
+        //         if (RasterFile->IsCompatibleWith(HRFInternetImagingFile::CLASS_ID))
+        //             ((HFCPtr<HRFInternetImagingFile>&)RasterFile)->DownloadAttributes();
+
+        // Adapt Scan Line Orientation (1 bit images)
+        bool CreateSLOAdapter = false;
+
+        if ((rasterFile->IsCompatibleWith(HRFFileId_Intergraph)) ||
+            (rasterFile->IsCompatibleWith(HRFFileId_Cals)))
+            {
+            if (HRFSLOStripAdapter::NeedSLOAdapterFor(rasterFile))
+                {
+                // Adapt only when the raster file has not a standard scan line orientation
+                // i.e. with an upper left origin, horizontal scan line.
+                //pi_rpRasterFile = HRFSLOStripAdapter::CreateBestAdapterFor(pi_rpRasterFile);
+                CreateSLOAdapter = true;
+                }
+            }
+
+            // Add the Decoration HGR, TFW or ERS Page File
+            if (HRFPageFileFactory::GetInstance()->HasFor(rasterFile, false))
+                {
+                const HRFPageFileCreator* pPageFileCreator(HRFPageFileFactory::GetInstance()->FindCreatorFor(rasterFile, false));
+
+                HASSERT(pPageFileCreator != 0);
+
+                HFCPtr<HRFPageFile> pPageFile(pPageFileCreator->CreateFor(rasterFile));
+
+                pPageFile->SetDefaultRatioToMeter(1.0);
+
+                HASSERT(pPageFile != 0);
+
+                rasterFile = new HRFRasterFilePageDecorator(rasterFile, pPageFile);
+                }
+        }
+    catch (HFCException&)
+        {
+        return NULL;
+        }
+    catch (exception &e)
+        {
+        //C++ exception
+        ostringstream errorStr;
+
+        errorStr << "Caught " << e.what() << endl;
+        errorStr << "Type " << typeid(e).name() << endl;
+
+        return NULL;
+        }
+    catch (...)
+        {
+        return NULL;
+        }
+
+    return rasterFile;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    12/2015
+//-------------------------------------------------------------------------------------
+bool CreateSisterFile(Utf8String fileName, Utf8String coordinateSystemKeyName)
+    {
+    // Get raster file.
+    HFCPtr<HRFRasterFile> pRasterFile = sGetRasterFile(fileName);
+    if (pRasterFile == 0 || pRasterFile->CountPages() <= 0)
+        return false;
+
+    // Get geocoding.
+    HFCPtr<HRFPageDescriptor> pPageDescriptor = pRasterFile->GetPageDescriptor(0);
+    GeoCoordinates::BaseGCSCP pSrcFileGeocoding = pPageDescriptor->GetGeocodingCP();
+    if (pSrcFileGeocoding != nullptr)
+        if (pSrcFileGeocoding->IsValid())
+            return true;
+
+    // No geocoding, create one.
+    WString coordinateSystemKeyNameW(coordinateSystemKeyName.c_str(), BentleyCharEncoding::Utf8);
+    GeoCoordinates::BaseGCSPtr pDestGeoCoding = GeoCoordinates::BaseGCS::CreateGCS(coordinateSystemKeyNameW.c_str());
+    if (pDestGeoCoding == nullptr || !pDestGeoCoding->IsValid())
+        {
+        // Failed to create GCS from keyname, try with epsg code.
+        int epsgCode;
+        size_t pos = coordinateSystemKeyName.rfind("EPSG:");
+        if (Utf8String::npos != pos)
+            epsgCode = atoi(coordinateSystemKeyName.substr(pos + 5).c_str());
+        else
+            epsgCode = atoi(coordinateSystemKeyName.c_str());
+        
+        if (SUCCESS != pDestGeoCoding->InitFromEPSGCode(NULL, NULL, epsgCode))
+            return false;
+        }        
+
+    // Check if a sister file already exists, if not create one and assign geocoding.
+    BeFile sisterFile;
+    WString fileNameW(fileName.c_str(), BentleyCharEncoding::Utf8);
+    BeFileName sisterFileName(BeFileName::GetDevice(fileNameW.c_str()).c_str(), BeFileName::GetDirectoryWithoutDevice(fileNameW.c_str()).c_str(),
+                              BeFileName::GetFileNameWithoutExtension(fileNameW.c_str()).c_str(), L"prj");
+    BeFileStatus status = sisterFile.Create(sisterFileName, false);
+    if (BeFileStatus::Success != status)
+        return true;
+
+    WString wellKnownText;
+    if (SUCCESS != pDestGeoCoding->GetWellKnownText(wellKnownText, GeoCoordinates::BaseGCS::WktFlavor::wktFlavorOGC, false))
+        return false;
+
+    Utf8String wellKnownTextUtf8;
+    BeStringUtilities::WCharToUtf8(wellKnownTextUtf8, wellKnownText.c_str());
+
+    uint32_t byteCount = 0;
+    uint32_t byteCountToCopy = (uint32_t) wellKnownTextUtf8.SizeInBytes();
+    status = sisterFile.Write(&byteCount, wellKnownTextUtf8.c_str(), byteCountToCopy);
+    sisterFile.Close();
+    if (BeFileStatus::Success != status || byteCount != byteCountToCopy)
+        return false;
+
+    return true;
     }

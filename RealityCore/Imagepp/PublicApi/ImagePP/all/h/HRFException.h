@@ -165,12 +165,12 @@ typedef HRFException_T<ImagePPExceptions::HRFAuthenticationInvalidService, false
 class HRFFileParameterException : public HRFException
     {
 public:
-    virtual        ~HRFFileParameterException();
+    IMAGEPP_EXPORT virtual        ~HRFFileParameterException();
     Utf8StringCR    GetParameterName                        () const; 
 protected:
     //Those constructors are protected to make sure we always throw a specific exception and don't lose type information
-    HRFFileParameterException(const Utf8String& pi_rFileName,const Utf8String& pi_rParamName);
-    HRFFileParameterException                   (const HRFFileParameterException&     pi_rObj);
+    IMAGEPP_EXPORT HRFFileParameterException(const Utf8String& pi_rFileName,const Utf8String& pi_rParamName);
+    IMAGEPP_EXPORT HRFFileParameterException                   (const HRFFileParameterException&     pi_rObj);
     Utf8String m_ParameterName;
     virtual Utf8String _BuildMessage(const ImagePPExceptions::StringId& rsID) const override;
 private:
@@ -184,8 +184,8 @@ template<ImagePPExceptions::StringId (*GetStringId)(), bool HasFilenameInMessage
 class HRFFileParameterException_T : public HRFFileParameterException
     {
 public:
-    HRFFileParameterException_T(const Utf8String& pi_rFileName, const Utf8String& pi_rParamName) : HRFFileParameterException(pi_rFileName, pi_rParamName){}
-    HRFFileParameterException_T(const HRFFileParameterException_T& pi_rObj) : HRFFileParameterException(pi_rObj){}
+    IMAGEPP_EXPORT HRFFileParameterException_T(const Utf8String& pi_rFileName, const Utf8String& pi_rParamName) : HRFFileParameterException(pi_rFileName, pi_rParamName){}
+    IMAGEPP_EXPORT HRFFileParameterException_T(const HRFFileParameterException_T& pi_rObj) : HRFFileParameterException(pi_rObj){}
     virtual HFCException* Clone() const override {return new HRFFileParameterException_T(*this);}
     virtual void ThrowMyself() const override {throw *this;} 
     virtual Utf8String GetExceptionMessage() const override

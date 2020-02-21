@@ -16,7 +16,7 @@
 #include <ImagePP/all/h/HTIFFGeoKey.h>
 #include <ImagePP/all/h/HTIFFUtils.h>
 #include <ImagePP/all/h/HTIFFDirectory.h>
-
+#include <ImagePP/all/h/HTIFFTagDefinition.h>
 
 
 static void s_PrintAscii    (FILE* po_pOutput, const char* pi_pCar, int32_t pi_NbCars = -1);
@@ -89,6 +89,97 @@ static const char* s_OrientNames[] = {
     "row 0 lhs, col 0 bottom",              // ORIENTATION_LEFTBOT
     };
 #define NORIENTNAMES    (sizeof (s_OrientNames) / sizeof (s_OrientNames[0]))
+
+
+
+bool HTIFFFile::_ModifyTag(bool pi_GeoTiff, CharP pi_Tag, CharP pi_TagValue) 
+{
+    uint32_t Tag;
+    if ((Tag = atoi(pi_Tag)) == 0)
+        return false;
+
+
+    if (pi_GeoTiff && TagIsPresent(GEOKEYDIRECTORY))
+    {
+        HASSERT(Tag < std::numeric_limits<unsigned short>::max());
+        HTIFFGeoKey::GeoKeyID GeoTag((HTIFFGeoKey::GeoKeyID)Tag);
+
+        HTIFFGeoKey& GeoKey = GetGeoKeyInterpretation();
+        switch (HTIFFGeoKey::sGetExpectedDataType(GeoTag))
+        {
+            case HTagInfo::SHORT:
+            {
+                uint16_t val = (uint16_t)atoi(pi_TagValue);
+                HASSERT(val != 0);
+                GeoKey.SetValue(GeoTag, val);
+            }
+            break;
+
+            case HTagInfo::DOUBLE:
+            {
+                double val = atof(pi_TagValue);
+                HASSERT(val != 0.0);
+                GeoKey.SetValue(GeoTag, val);
+            }
+            break;
+
+            default:
+                HASSERT(false);
+                return false;
+                break;
+        }
+
+    }
+    else
+    {
+        HTagDefinition TagDef(HTIFFTagInfo(), Tag, false);
+        HTIFFError* pTIFFError = 0;
+        if (!TagDef.IsValid(&pTIFFError))
+            return false;
+
+        switch (TagDef.GetDataType())
+        {
+            case HTagInfo::SHORT:
+            {
+                uint16_t val = (uint16_t)atoi(pi_TagValue);
+                HASSERT(val != 0);
+                SetField(TagDef.GetID(), val);
+            }
+            break;
+
+            case HTagInfo::LONG:
+            {
+                uint32_t val = (uint32_t)atol(pi_TagValue);
+                HASSERT(val != 0);
+                SetField(TagDef.GetID(), val);
+            }
+            break;
+
+            case HTagInfo::LONG64:
+            {
+                uint64_t val = atoi(pi_TagValue);
+                HASSERT(val != 0);
+                SetField(TagDef.GetID(), val);
+            }
+            break;
+
+            case HTagInfo::DOUBLE:
+            {
+                double val = atof(pi_TagValue);
+                HASSERT(val != 0.0);
+                SetField(TagDef.GetID(), val);
+            }
+            break;
+
+            default:
+            HASSERT(false);
+            return false;
+            break;
+        }
+    }
+
+    return true;
+}
 
 
 void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
@@ -302,12 +393,27 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
     if (m_pCurDir->TagIsPresent(PREDICTOR))
         {
         fprintf(po_pOutput, "  %s: ", GetTagNameString(PREDICTOR));
-        uint16_t   predict;
+        GetField(PREDICTOR, &ValL);
 
-        GetField(PREDICTOR, &predict);
-        fprintf(po_pOutput, "%u (0x%x)\n", predict, predict);
-        }
+        switch (ValL)
+	        {
+	        case 1:
+	            fprintf(po_pOutput, "No prediction\n");
+	            break;
 
+	        case 2:
+	            fprintf(po_pOutput, "Horizontal differencing\n");
+	            break;
+
+	        case 3:
+	            fprintf(po_pOutput, "Floating point horizontal differencing\n");
+	            break;
+
+	        default:
+	            fprintf(po_pOutput, "%u (0x%x)\n", ValL, ValL);
+	            break;
+	        }
+    	}
 
     if (m_pCurDir->TagIsPresent(PHOTOMETRIC))
         {
@@ -1976,17 +2082,17 @@ void HTIFFFile::PrintEXIFTags(uint32_t pi_PageDirInd,
     HTIFFError*              pTIFFError = 0;
     double                  ConvRationalToDblVals[3];
 
-    Byte                   UByteVal;
-    uint16_t          UShortVal;
-    uint32_t                 ULongVal;
+    Byte                    UByteVal;
+    uint16_t                UShortVal;
+    uint32_t                ULongVal;
     double                  DblVal;
 
     Byte*                   pByteVal;
-    uint16_t*                 pUShortVal;
+    uint16_t*               pUShortVal;
     double*                 pDblVal;
     char*                   pCharVal;
 
-    uint32_t                 NbVals;
+    uint32_t                NbVals;
     vector<Byte>            ByteVec;
     vector<double>          DblVec;
 

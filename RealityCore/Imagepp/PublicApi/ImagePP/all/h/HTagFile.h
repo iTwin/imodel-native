@@ -78,26 +78,27 @@ public:
 
     void                        SetAsBigEndian                 (bool pi_AsBigEndian = true);
 
-    IMAGEPP_EXPORT HFCBinStream*        GetFilePtr                     () const;
+    IMAGEPP_EXPORT HFCBinStream*    GetFilePtr                     () const;
 
-    IMAGEPP_EXPORT uint32_t             NumberOfDirectory              (HTagFile::DirectoryType pi_DirType = STANDARD) const;
+    IMAGEPP_EXPORT uint32_t         NumberOfDirectory              (HTagFile::DirectoryType pi_DirType = STANDARD) const;
 
-    IMAGEPP_EXPORT bool        AppendDirectory                ();
-    bool                       AddHMRDirectory                (HTagID pi_HMRTag);
+    IMAGEPP_EXPORT bool         AppendDirectory                ();
+    bool                        AddHMRDirectory                (HTagID pi_HMRTag);
 
-    IMAGEPP_EXPORT bool                SetDirectory                   (DirectoryID pi_DirID);
+    IMAGEPP_EXPORT bool         SetDirectory                   (DirectoryID pi_DirID);
     DirectoryID                 CurrentDirectory               () const;
 
-    uint64_t                   DirectoryOffset                (DirectoryID pi_DirID) const;
+    uint64_t                    DirectoryOffset                (DirectoryID pi_DirID) const;
 
     void                        PrintCurrentDirectory          (FILE* po_pOutput, uint32_t pi_Flag);
-    IMAGEPP_EXPORT void                 PrintDirectory                 (FILE* po_pOutput, DirectoryID pi_Dir, uint32_t pi_Flag);
+    IMAGEPP_EXPORT void         PrintDirectory                 (FILE* po_pOutput, DirectoryID pi_Dir, uint32_t pi_Flag);
+    IMAGEPP_EXPORT bool         ModifyTag                      (bool pi_GeoTiff, CharP pi_Tag, CharP pi_TagValue);
 
 
     const char*                 GetTagNameString               (HTagID pi_Tag) const;
     HTagInfo::DataType          GetTagDataType                 (HTagID pi_Tag) const;
 
-    bool                       ReadDirectories                (bool pi_ValidateDir = true);
+    bool                        ReadDirectories                (bool pi_ValidateDir = true);
     void                        WriteDirectories               ();
 
     bool                       TagIsPresent                   (HTagID pi_Tag) const;
@@ -308,6 +309,7 @@ private:
                                                                 HTIFFDirectory*         pi_pCurPageDir) = 0;
 
     virtual void                _PrintCurrentDirectory         (FILE* po_pOutput, uint32_t pi_Flag) = 0;
+    virtual bool                _ModifyTag                     (bool pi_GeoTiff, CharP pi_Tag, CharP pi_TagValue) = 0;
 
     // Invoked when the top directory is first initialized and validation is required
     virtual bool               IsValidTopDirectory            (HTIFFError**            po_ppError = 0) = 0;

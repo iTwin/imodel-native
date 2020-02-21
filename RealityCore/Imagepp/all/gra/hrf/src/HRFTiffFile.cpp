@@ -396,6 +396,11 @@ public:
         Add(new HRFCodecCapability(HFC_READ_WRITE_CREATE,
                                    HCDCodecLZW::CLASS_ID,
                                    new HRFTiffBlockCapabilities()));
+
+        // Codec Packbits
+        Add(new HRFCodecCapability(HFC_READ_WRITE,
+                                   HCDCodecHMRPackBits::CLASS_ID,
+                                   new HRFTiffBlockCapabilities()));
         }
     };
 

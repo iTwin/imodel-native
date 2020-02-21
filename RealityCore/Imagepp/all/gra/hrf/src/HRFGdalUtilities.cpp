@@ -47,7 +47,7 @@ HCPGeoTiffKeys* HRFGdalUtilities::ConvertOGCWKTtoGeotiffKeys(char const* pi_pOGC
     //by GTIFKeyGet to assign the variable.
     uint32_t ULongVal = 0;
     double DoubleVal = 0;
-    char   CharVal[1000];
+    char   CharVal[1000] = {0};
        
     if (GTIFKeyGet(pGTIF, GTModelTypeGeoKey, &ULongVal, 0, 1))
         {

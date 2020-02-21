@@ -861,7 +861,7 @@ bool HRFcTiffCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
 
     pTiff = new HTIFFFile (pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
-    if (((pTiff->IsValid(&pErr)) || ((pErr != 0) && !pErr->IsFatal())) && (pTiff->IsTiff64() == false))
+    if (((pTiff->IsValid(&pErr)) || ((pErr != 0) && !pErr->IsFatal())))
         {
         bResult = true;
 
@@ -1034,7 +1034,7 @@ HRFcTiffFile::HRFcTiffFile(const HFCPtr<HFCURL>& pi_rURL,
     m_SourceFileCreationTimeChanged = false;
 
     // if Open success and it is not a new file
-    if (Open() && !GetAccessMode().m_HasCreateAccess)
+    if (Open(true) /* itiff64 TFS#1022127 */  && !GetAccessMode().m_HasCreateAccess)
         {
         // Create Page and Res Descriptors.
         CreateDescriptors();

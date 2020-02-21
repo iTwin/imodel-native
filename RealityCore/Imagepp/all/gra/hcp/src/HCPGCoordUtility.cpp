@@ -49,8 +49,17 @@ bool HCPGCoordUtility::GetUnitsFromMeters(double& unitFromMeter, uint32_t EPSGUn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeoCoordinates::BaseGCSPtr HCPGCoordUtility::CreateRasterGcsFromERSIDS(uint32_t EPSGCode, CharCP pErmProjection, CharCP pErmDatum, CharCP pErmUnits)
+GeoCoordinates::BaseGCSPtr HCPGCoordUtility::CreateRasterGcsFromERSIDS(uint32_t EPSGCode, 
+																	   CharCP  pErmProjection, 
+																	   CharCP  pErmDatum, 
+																	   CharCP  pErmUnits,
+																	   double* po_UnitToMeter)
     {
+    bool Failed = false;
+
+    if (po_UnitToMeter != 0)
+        *po_UnitToMeter = 1.0;
+		
     // To have a GCS we need the engine initialized
     if (!GeoCoordinates::BaseGCS::IsLibraryInitialized())
         return nullptr;
@@ -143,7 +152,7 @@ GeoCoordinates::BaseGCSPtr HCPGCoordUtility::CreateRasterGcsFromERSIDS(uint32_t 
                     Status = pBaseGcs->InitFromWellKnownText(nullptr, nullptr, GeoCoordinates::BaseGCS::wktFlavorUnknown, wktWide.c_str());
         
                     if (SUCCESS != Status)
-                        return NULL; // Too bad!
+                        Failed = true; // Too bad!
                     }
                 }
 #endif
@@ -153,10 +162,13 @@ GeoCoordinates::BaseGCSPtr HCPGCoordUtility::CreateRasterGcsFromERSIDS(uint32_t 
         {
         // Extraction of a WKT from GDAL failed ... We patch up using IDs we have even if user-defined
         if(SUCCESS != pBaseGcs->InitFromGeoTiffKeys(nullptr, nullptr, &geoKeys, true))
-            return NULL;
+            Failed = true;
         }
 
-    if (!pBaseGcs->IsValid())
+    if (0 != po_UnitToMeter && pBaseGcs->IsValid())
+        *po_UnitToMeter = 1.0 / pBaseGcs->UnitsFromMeters();
+
+    if (Failed || !pBaseGcs->IsValid())
         return nullptr;
 
     return pBaseGcs;

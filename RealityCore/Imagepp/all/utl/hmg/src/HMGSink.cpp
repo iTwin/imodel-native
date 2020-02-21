@@ -159,6 +159,8 @@ void HMGSink::ContainerLoaded(HMGMessageReceiver* pi_pReceiver)
     // front the beginning
     m_CurrentQueuePosition =  0;
 
+    if (0 == s_pInternalKey) return;
+
     s_pInternalKey->ClaimKey();
     MessageQueue TempMessages = m_Messages;
     s_pInternalKey->ReleaseKey();
@@ -189,6 +191,8 @@ void HMGSink::Notify(const HMGMessage& pi_rMessage)
     {
     if (m_pReceiver == 0)
         {
+        if (0 == s_pInternalKey) return;
+
         // Keep the message for later
         s_pInternalKey->ClaimKey();
         m_Messages.push_back(pi_rMessage);
@@ -207,6 +211,8 @@ void HMGSink::Notify(const HMGMessage& pi_rMessage)
         // Save message if we need coherence security
         if (m_KeepMessages)
             {
+            if (0 == s_pInternalKey) return;
+
             s_pInternalKey->ClaimKey();
             m_Messages.push_back(pi_rMessage);
             s_pInternalKey->ReleaseKey();
@@ -225,6 +231,8 @@ void HMGSink::ContainerSaved()
     {
     if (m_CurrentQueuePosition >= m_Messages.size())
         {
+        if (0 == s_pInternalKey) return;
+
         // All messages have been processed. Simply
         // clear the list
         s_pInternalKey->ClaimKey();
@@ -236,6 +244,8 @@ void HMGSink::ContainerSaved()
         // Erase messages up to current position
         for (size_t i = 0 ; i < m_CurrentQueuePosition ; i++)
             {
+            if (0 == s_pInternalKey) return;
+
             // Very slow. Should theoretically never get here, though...
             s_pInternalKey->ClaimKey();
             m_Messages.erase(m_Messages.begin());
@@ -252,6 +262,8 @@ void HMGSink::ContainerSaved()
 //-----------------------------------------------------------------------------
 void HMGSink::SenderSaved(HMGMessageSender* pi_pSender)
     {
+    if (0 == s_pInternalKey) return;
+
     s_pInternalKey->ClaimKey();
 
     MessageQueue::iterator Itr(m_Messages.begin());
@@ -275,6 +287,8 @@ void HMGSink::SenderSaved(HMGMessageSender* pi_pSender)
 //-----------------------------------------------------------------------------
 void HMGSink::SenderDestroyed(HMGMessageSender* pi_pSender)
     {
+    if (0 == s_pInternalKey) return;
+
     s_pInternalKey->ClaimKey();
 
     MessageQueue::iterator  Itr(m_Messages.begin());
@@ -322,6 +336,8 @@ void HMGSink::SenderDestroyed(HMGMessageSender* pi_pSender)
 //-----------------------------------------------------------------------------
 void HMGSink::SenderUnlinked(HMGMessageSender* pi_pSender)
     {
+    if (0 == s_pInternalKey) return;
+
     s_pInternalKey->ClaimKey();
 
     MessageQueue::iterator  Itr(m_Messages.begin());

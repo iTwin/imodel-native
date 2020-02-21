@@ -89,69 +89,6 @@ typedef struct {
 } lzw_dec_t;
 
 
-// Byte* lzw_encode(Byte *in, int32_t max_bits)
-// {
-// 	int32_t len = (int32_t)_len(in), bits = 9, next_shift = 512;
-// 	ushort code, c, nc, next_code = M_NEW;
-// 	lzw_enc_t *d = (lzw_enc_t*)_new(lzw_enc_t, 512);
-// 
-// 	if (max_bits > 16) max_bits = 16;
-// 	if (max_bits < 9 ) max_bits = 12;
-// 
-// 	Byte *out = (Byte *)_new(ushort, 4);
-// 	int32_t out_len = 0, o_bits = 0;
-// 	uint32_t tmp = 0;
-// 
-// 	inline void write_bits(ushort x) 
-//         {
-// 		tmp = (tmp << bits) | x;
-// 		o_bits += bits;
-// 		if ((int32_t)_len(out) <= out_len) _extend(out);
-// 		while (o_bits >= 8) 
-//             {
-// 			o_bits -= 8;
-// 			out[out_len++] = tmp >> o_bits;
-// 			tmp &= (1 << o_bits) - 1;
-// 		}
-// 	}
-// 
-// 	//write_bits(M_CLR);
-// 	for (code = *(in++); --len; ) {
-// 		c = *(in++);
-// 		if ((nc = d[code].next[c]))
-// 			code = nc;
-// 		else {
-// 			write_bits(code);
-// 			nc = d[code].next[c] = next_code++;
-// 			code = c;
-// 		}
-// 
-// 		/* next new code would be too long for current table */
-// 		if (next_code == next_shift) {
-// 			/* either reset table back to 9 bits */
-// 			if (++bits > max_bits) {
-// 				/* table clear marker must occur before bit reset */
-// 				write_bits(M_CLR);
-// 
-// 				bits = 9;
-// 				next_shift = 512;
-// 				next_code = M_NEW;
-// 				_clear(d);
-// 			} else	/* or extend table */
-// 				_setsize(d, next_shift *= 2);
-// 		}
-// 	}
-// 
-// 	write_bits(code);
-// 	write_bits(M_EOD);
-// 	if (tmp) write_bits(tmp);
-// 
-// 	_del(d);
-// 
-// 	_setsize(out, out_len);
-// 	return out;
-// }
-
 #define write_out(c) \
 	while (out_len >= _len(out)) _extend(out);\
 		out[out_len++] = (Byte)c;
@@ -355,7 +292,7 @@ size_t HCDCodecLZW::CompressSubset(const void* pi_pInData,
 * @bsimethod                                    Mathieu.Marchand                2/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename DataType_T, uint32_t ChannelCount_T>
-void DecodePredicate(size_t width, size_t height, Byte* pPixels, size_t dataSize)
+void DecodePredicate(size_t width, size_t height, Byte* pPixels, size_t dataSize, uint32_t mask)
 {
     // Based on: https://www.fileformat.info/format/tiff/corion-lzw.htm and \Imagepp\ext\gdal\frmts\gtiff\libtiff\tif_predict.c
     size_t rowSize = width * sizeof(DataType_T) * ChannelCount_T;
@@ -378,7 +315,8 @@ void DecodePredicate(size_t width, size_t height, Byte* pPixels, size_t dataSize
             {
             for (uint32_t channel = 0; channel < ChannelCount_T; ++channel)
                 {
-                pPixelsRow[col * ChannelCount_T + channel] += pPixelsRow[(col - 1) * ChannelCount_T + channel];
+                // Cast to smaller data type is ok here!
+                pPixelsRow[col * ChannelCount_T + channel] = (pPixelsRow[col * ChannelCount_T + channel] + pPixelsRow[(col - 1) * ChannelCount_T + channel]) & mask;
                 }
             }
         }
@@ -388,21 +326,21 @@ void DecodePredicate(size_t width, size_t height, Byte* pPixels, size_t dataSize
 * @bsimethod                                    Mathieu.Marchand                2/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<class Data_t>
-void DecodePredicate(size_t width, size_t height, uint32_t channelCount, Byte* pPixels, size_t dataSize)
+void DecodePredicate(size_t width, size_t height, uint32_t channelCount, Byte* pPixels, size_t dataSize, uint32_t mask)
 {    
     switch (channelCount)
         {
         case 1:
-            DecodePredicate<Data_t, 1>(width, height, pPixels, dataSize);
+            DecodePredicate<Data_t, 1>(width, height, pPixels, dataSize, mask);
             break;
         case 2:
-            DecodePredicate<Data_t, 2>(width, height, pPixels, dataSize);
+            DecodePredicate<Data_t, 2>(width, height, pPixels, dataSize, mask);
             break;
         case 3:
-            DecodePredicate<Data_t, 3>(width, height, pPixels, dataSize);
+            DecodePredicate<Data_t, 3>(width, height, pPixels, dataSize, mask);
             break;
         case 4:
-            DecodePredicate<Data_t, 4>(width, height, pPixels, dataSize);
+            DecodePredicate<Data_t, 4>(width, height, pPixels, dataSize, mask);
             break;
         default:
             BeAssert(!"Channel count not supported");
@@ -420,13 +358,13 @@ void HCDCodecLZW::DecodeHorizontalPredicate(Byte* po_pOutBuffer, size_t dataSize
     switch (bitsPerChannel)
         {
         case 8:
-            DecodePredicate<uint8_t>(GetWidth(), GetHeight(), m_samplePerPixels, po_pOutBuffer, dataSize);
+            DecodePredicate<uint8_t>(GetWidth(), GetHeight(), m_samplePerPixels, po_pOutBuffer, dataSize, 0xff);
             break;
         case 16:
-            DecodePredicate<uint16_t>(GetWidth(), GetHeight(), m_samplePerPixels, po_pOutBuffer, dataSize);
+            DecodePredicate<uint16_t>(GetWidth(), GetHeight(), m_samplePerPixels, po_pOutBuffer, dataSize, 0xffff);
             break;
         case 32:
-            DecodePredicate<uint32_t>(GetWidth(), GetHeight(), m_samplePerPixels, po_pOutBuffer, dataSize);
+            DecodePredicate<uint32_t>(GetWidth(), GetHeight(), m_samplePerPixels, po_pOutBuffer, dataSize, 0xffffffff);
             break;
         default:
             BeAssert(!"Predictor not supported");

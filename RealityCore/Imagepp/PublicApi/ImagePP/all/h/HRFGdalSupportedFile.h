@@ -114,8 +114,8 @@ protected:
 
     GDALRasterBand*         GetRasterBand(int32_t i)const;
     GDALDataset*            GetDataSet() const;
-    int32_t                     GetNbImgBands() const;
-    signed char                  GetBandInd(Byte pi_ColorType) const;
+    int32_t                 GetNbImgBands() const;
+    signed char             GetBandInd(Byte pi_ColorType) const;
 
     //access
     uint32_t                GetBitsPerPixelPerBand()const;
@@ -125,16 +125,16 @@ protected:
     bool                   IsReadPixelSigned() const;
     bool                   IsGrayScale()const;
     bool                   HasPalette()const;
-    int32_t                     GetNbBands()const;
-    int32_t                     GetNbDisplayableBands()const;
-    int32_t                     GetImageWidth()const;
-    int32_t                     GetImageHeight()const;
-    int32_t                     GetBlockWidth()const;
-    int32_t                     GetBlockHeight()const;
-    uint32_t                GetTotalRowBytes() const;
-    void                    SetHasPalette(bool pi_hasPalette);
-    void                    SetColorAttributes();
-    void                    SetNoDataValue(HFCPtr<HRPPixelType>& pixelType);
+    int32_t                GetNbBands()const;
+    int32_t                GetNbDisplayableBands()const;
+    int32_t                GetImageWidth()const;
+    int32_t                GetImageHeight()const;
+    int32_t                GetBlockWidth()const;
+    int32_t                GetBlockHeight()const;
+    uint32_t               GetTotalRowBytes() const;
+    void                   SetHasPalette(bool pi_hasPalette);
+    void                   SetColorAttributes();
+    void                   SetNoDataValue(HFCPtr<HRPPixelType>& pixelType);
 
     bool                               IsValidGeoRefInfo() const;
     virtual HFCPtr<HGF2DTransfoModel>   BuildTransfoModel();
@@ -211,6 +211,7 @@ protected:
     bool                                m_Signed;
     uint16_t                      m_BitsPerPixelPerBand;
     DISPLAY_REP                         m_DisplayRep;
+    bool                                m_doubleToFloatCnv;
 
 private:
 

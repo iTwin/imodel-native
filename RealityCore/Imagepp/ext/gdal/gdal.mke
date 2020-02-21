@@ -94,7 +94,7 @@ nameToDefine=HAVE_LIBZ
 
 cDefs + -DFRMT_ceos -DFRMT_bsb -DFRMT_aigrid -DFRMT_elas -DFRMT_hfa -DFRMT_gtiff -DFRMT_sdts -DFRMT_raw -DFRMT_gxf -DFRMT_ceos2 \
         -DFRMT_png -DFRMT_dted -DFRMT_jdem -DFRMT_mem -DFRMT_gif -DFRMT_envisat -DFRMT_aaigrid -DFRMT_usgsdem -DFRMT_l1b \
-        -DFRMT_fit -DFRMT_vrt -DFRMT_xpm -DFRMT_bmp -DFRMT_nitf -DFRMT_pcidsk -DFRMT_jpeg
+        -DFRMT_fit -DFRMT_vrt -DFRMT_xpm -DFRMT_bmp -DFRMT_nitf -DFRMT_pcidsk -DFRMT_jpeg -DFRMT_gsg
 
 %if defined(gdal_enable_ECW)
     cDefs + -DFRMT_ecw
@@ -502,6 +502,14 @@ $(o)tif_warning$(oext) : $(ippGdalDir)frmts/gtiff/libtiff/tif_warning.c ${MultiC
 $(o)tif_write$(oext) : $(ippGdalDir)frmts/gtiff/libtiff/tif_write.c ${MultiCompileDepends}
 
 $(o)tif_zip$(oext) : $(ippGdalDir)frmts/gtiff/libtiff/tif_zip.c ${MultiCompileDepends}
+
+# gsg  (.grp) :
+
+$(o)gs7bgdataset$(oext) : $(ippGdalDir)frmts/gsg/gs7bgdataset.cpp ${MultiCompileDepends}
+
+$(o)gsagdataset$(oext) : $(ippGdalDir)frmts/gsg/gsagdataset.cpp ${MultiCompileDepends}
+
+$(o)gsbgdataset$(oext) : $(ippGdalDir)frmts/gsg/gsbgdataset.cpp ${MultiCompileDepends}
 
 # gxf :
 

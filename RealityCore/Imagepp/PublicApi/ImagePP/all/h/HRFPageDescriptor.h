@@ -89,7 +89,7 @@ public:
 
     // Page Creation and destruction
     HRFPageDescriptor (bool                                     pi_EmptyPage = false);
-    HRFPageDescriptor (HFCAccessMode                            pi_AccessMode,
+    IMAGEPP_EXPORT HRFPageDescriptor (HFCAccessMode                            pi_AccessMode,
                        const HFCPtr<HRFRasterFileCapabilities>& pi_rpPageCapabilities,
                        const HFCPtr<HRFResolutionDescriptor>&   pi_rpResolutionDescriptor,
                        const HRPPixelPalette*                   pi_pRepresentativePalette,

@@ -1,0 +1,8 @@
+The Imagepp Tests / Atps are control by a .xml file.
+See \Tests\ImagePPTest.config.xml
+	For ATps need to set path and enable them.
+ 
+bb -r imodel02 -f RealityCore/imagepp/imagepp -p ImagePP-Tested build   (build and run)
+
+Run Tests:
+K:\Build\iModel02\RealityCore_buildall\Debug\Winx64\Product\ImagePP-GTest\ImagePPTests.exe --timeout=10000

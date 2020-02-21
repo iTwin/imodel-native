@@ -247,8 +247,8 @@ private:
     virtual bool   IsValidReducedImage (HTIFFDirectory*        pi_ReducedImageDir,
                                          HTIFFDirectory*        pi_pCurPageDir) override;
 
-    virtual void    _PrintCurrentDirectory
-    (FILE* po_pOutput, uint32_t pi_Flag) override;
+    virtual void    _PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag) override;
+    virtual bool    _ModifyTag             (bool pi_GeoTiff, char* pi_Tag, char* pi_TagValue) override;
 
     IMAGEPP_EXPORT bool    IsTiled             (HTIFFDirectory*        pi_Dir) const;
 
