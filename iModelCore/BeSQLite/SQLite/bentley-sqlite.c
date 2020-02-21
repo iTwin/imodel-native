@@ -19,8 +19,8 @@
 #define SQLITE_OMIT_PROGRESS_CALLBACK 1
 #define SQLITE_HAS_CODEC 1
 #define SQLITE_MAX_EXPR_DEPTH 2000
-//Allocate around ~ 64 Mb 
-#define SQLITE_DEFAULT_CACHE_SIZE 16000
+//Allocate around ~ 32 Mb 
+#define SQLITE_DEFAULT_CACHE_SIZE 8000
 
 // uncomment next line to build with explain comments enabled
 // #define SQLITE_ENABLE_EXPLAIN_COMMENTS 1
@@ -68,7 +68,6 @@
 #include "sqlite3.c"
 #include "zipvfs.c"
 #include "closure.c"
-#include "see-aes128-ofb.c"
 
 #if defined (SQLITE_ENABLE_SQLLOG)
 #include "test_sqllog.c"

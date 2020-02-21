@@ -24,7 +24,6 @@
     <ClInclude Include="PublicAPI\BeSQLite\BeLzma.h" />
     <ClInclude Include="PublicAPI\BeSQLite\BeSQLite.h" />
     <ClInclude Include="PublicAPI\BeSQLite\ChangeSet.h" />
-    <ClInclude Include="PublicAPI\BeSQLite\DownloadAdmin.h" />
     <ClInclude Include="PublicAPI\BeSQLite\IModelDb.h" />
     <ClInclude Include="PublicAPI\BeSQLite\L10N.h" />
     <ClInclude Include="PublicAPI\BeSQLite\md5.h" />

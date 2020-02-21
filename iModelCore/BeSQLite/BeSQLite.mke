@@ -58,7 +58,7 @@ always:
 MultiCompileDepends=$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)BeSQLite$(oext) : $(baseDir)BeSQLite.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h  $(baseDir)/PublicAPI/BeSQLite/DownloadAdmin.h ${MultiCompileDepends}
+$(o)BeSQLite$(oext) : $(baseDir)BeSQLite.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h ${MultiCompileDepends}
 
 $(o)ChangeSet$(oext) : $(baseDir)ChangeSet.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h  $(baseDir)/PublicAPI/BeSQLite/ChangeSet.h ${MultiCompileDepends}
 
@@ -82,8 +82,7 @@ CCompFpOpts=precise
 # Third-party section of this library.
 %include $(SrcRoot)bsicommon/sharedmki/PushThirdPartyIgnores.mki
 
-$(o)bentley-sqlite$(oext): $(SQLiteDir)bentley-sqlite.c $(SQLiteDir)sqlite3.c $(SQLiteDir)zipvfs.c $(SQLiteDir)closure.c $(SQLiteDir)see-aes128-ofb.c
-
+$(o)bentley-sqlite$(oext): $(SQLiteDir)bentley-sqlite.c $(SQLiteDir)sqlite3.c $(SQLiteDir)zipvfs.c $(SQLiteDir)closure.c
 %include $(SrcRoot)bsicommon/sharedmki/PopThirdPartyIgnores.mki
 
 objs + $(o)bentley-sqlite$(oext)

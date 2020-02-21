@@ -584,10 +584,6 @@ public:
 
     BE_SQLITE_EXPORT static int CloseSqlDb(void* p);
 
-    BE_SQLITE_EXPORT static void SetDownloadAdmin(struct IDownloadAdmin&);
-
-    BE_SQLITE_EXPORT static struct IDownloadAdmin* GetDownloadAdmin();
-
     //! Sets the static ILanguageSupport object for handling custom language processing.
     //! This should be called once per session before opening any databases and applies to all future opened databases.
     BE_SQLITE_EXPORT static void SetLanguageSupport(ILanguageSupport*);

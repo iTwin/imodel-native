@@ -12,9 +12,6 @@
     <ClInclude Include="PublicAPI\BeSQLite\BeSQLite.h">
       <Filter>PublicAPI</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\BeSQLite\DownloadAdmin.h">
-      <Filter>PublicAPI</Filter>
-    </ClInclude>
     <ClInclude Include="PublicAPI\BeSQLite\L10N.h">
       <Filter>PublicAPI</Filter>
     </ClInclude>
