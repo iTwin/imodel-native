@@ -25,6 +25,7 @@ USING_NAMESPACE_BENTLEY_LOGGING
 
 namespace
 {
+static bool s_failOnChannelConstraintViolation = false;
 
 //=======================================================================================
 // @bsistruct                                                    Sam.Wilson      7/2019
@@ -100,18 +101,30 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
     }
 
     RepositoryStatus ReportChannelError(DgnElementCR el, Utf8StringCR reason)
-    {
+        {
+        Utf8PrintfString msg("Channel error - %s - %s", FmtElement(el).c_str(), reason.c_str());
+        if (!s_failOnChannelConstraintViolation)
+            {
+            LOG.warning(msg.c_str());
+            return RepositoryStatus::Success;
+            }
         BeAssert(false);
-        LOG.fatalv("Channel error - %s - %s", FmtElement(el).c_str(), reason.c_str());
+        LOG.fatal(msg.c_str());
         return RepositoryStatus::InvalidRequest;
-    }
+        }
 
     RepositoryStatus ReportChannelError(Utf8StringCR reason)
-    {
+        {
+        Utf8PrintfString msg("Channel error - %s", reason.c_str());
+        if (!s_failOnChannelConstraintViolation)
+            {
+            LOG.warning(msg.c_str());
+            return RepositoryStatus::Success;
+            }
         BeAssert(false);
-        LOG.fatalv("Channel error - %s", reason.c_str());
+        LOG.fatal(msg.c_str());
         return RepositoryStatus::InvalidRequest;
-    }
+        }
 
     RepositoryStatus InitializeLockCache()
     {
@@ -282,7 +295,10 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
             else
             {
                 if (lock.GetType() == LockableType::Schemas)
-                    return ReportChannelError("Bridges must not attempt to import schemas during the data phase.");
+                    {
+                    if (RepositoryStatus::Success != ReportChannelError("Bridges must not attempt to import schemas during the data phase."))
+                        return RepositoryStatus::InvalidRequest;
+                    }
 
                 if (lock.GetType() == LockableType::CodeSpecs)
                 {
@@ -333,9 +349,13 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
     }
 
     RepositoryStatus _Relinquish(Resources which) override
-    {
+        {
         if (m_inBulkUpdate)
-            return ReportChannelError("A bridge must not attempt to relinquish codes while in bulk update mode.");
+            {
+            auto status = ReportChannelError("A bridge must not attempt to relinquish codes while in bulk update mode.");
+            if (RepositoryStatus::Success != status)
+                return status;
+            }
 
         IRepositoryManagerP server;
         RepositoryStatus stat;
@@ -348,7 +368,7 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
         ClearLockCache();
 
         return stat;
-    }
+        }
 
     LockLevel GetHeldLockLevel(DgnLock const &lock)
     {
@@ -377,17 +397,21 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
     }
 
     RepositoryStatus _Demote(DgnLockSet &locks, DgnCodeSet const &codes) override
-    {
+        {
         if (codes.size() != 0)
-            return ReportChannelError("Bridges must not release reserved Codes directly. Unused Codes are released automatically.");
+            {
+            auto status = ReportChannelError("Bridges must not release reserved Codes directly. Unused Codes are released automatically.");
+            if (RepositoryStatus::Success != status)
+                return status;
+            }
 
         MUST_INITIALIZE_LOCK_CACHE
 
 #ifndef NDEBUG
         for (auto const &lock : locks)
-        {
+            {
             BeAssert(m_heldLocks.find(lock) != m_heldLocks.end());
-        }
+            }
 #endif
 
         IRepositoryManagerP mgr;
@@ -396,55 +420,63 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
 
         // Cull any locks which we known are already at OR BELOW the desired level (this function cannot *increase* a lock's level...)
         for (auto iter = locks.begin(); iter != locks.end(); /**/)
-        {
+            {
             DgnLock &lock = *iter;
             LockLevel curLevel;
             if (GetHeldLockLevel(lock) <= lock.GetLevel())
                 iter = locks.erase(iter);
             else
                 ++iter;
-        }
+            }
 
         if (locks.empty())
             return RepositoryStatus::Success;
 
         // Enforce bridge locking rules
         if (locks.end() != locks.find(DgnLock(LockableId(GetDgnDb()), LockLevel::None)))
-            return ReportChannelError("A bridge must never release its shared lock on the Db");
+            {
+            auto status = ReportChannelError("A bridge must never release its shared lock on the Db");
+            if (RepositoryStatus::Success != status)
+                return status;
+            }
 
         DgnLockSet additionalLocks;
         for (auto const &lock : locks)
-        {
-            if (GetHeldLockLevel(lock) == LockLevel::Exclusive)
             {
+            if (GetHeldLockLevel(lock) == LockLevel::Exclusive)
+                {
                 if (LockableType::Model == lock.GetType())
-                {
-                    return ReportChannelError("A bridge must never release or demote its exclusive model locks.");
-                }
-                else
-                {
-                    if (LockableType::Element == lock.GetType())
                     {
+                    auto status = ReportChannelError("A bridge must never release or demote its exclusive model locks.");
+                    if (RepositoryStatus::Success != status)
+                        return status;
+                    }
+                else
+                    {
+                    if (LockableType::Element == lock.GetType())
+                        {
                         auto lockedElement = GetLockedElement(lock);
                         if (lockedElement.IsValid())
-                        {
+                            {
                             auto jobMemberInfo = iModelBridge::ComputeJobMemberInfo(*lockedElement);
                             if (jobMemberInfo.IsJobOrChild())
-                            {
-                                return ReportChannelError("A bridge must never release or demote its exclusive element or model locks.");
+                                {
+                                auto status = ReportChannelError("A bridge must never release or demote its exclusive element or model locks.");
+                                if (RepositoryStatus::Success != status)
+                                    return status;
+                                }
                             }
                         }
                     }
                 }
-            }
             else // Release Shared lock
-            {
+                {
                 BeAssert(GetHeldLockLevel(lock) == LockLevel::Shared);
 
                 if (LockableType::Model == lock.GetType()) // If we're releasing a shared model lock, we must also release locks on any elements within the model
                     AddElementsInModel(additionalLocks, DgnModelId(lock.GetId().GetValue()));
+                }
             }
-        }
 
         locks.insert(additionalLocks.begin(), additionalLocks.end());
 
@@ -454,25 +486,33 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
 
         ClearLockCache();
         return RepositoryStatus::Success;
-    }
+        }
 
     RepositoryStatus CheckWriteToModelInSharedChannel(DgnElementCR el, bool exclusiveModel, iModelBridge::JobMemberInfo const &jobMemberInfo)
-    {
+        {
         BeAssert(IsSharedChannel());
 
         if (GetChannelProps().isInitializingChannel) // (To avoid breaking existing code, allow the bridge to create its breakdown structure at job *initialization* time.)
             return RepositoryStatus::Success;
 
         if (exclusiveModel)
-            return ReportChannelError(el, "During the definitions phase, a bridge must not write to its Job-specific models.");
+            {
+            auto status = ReportChannelError(el, "During the definitions phase, a bridge must not write to its Job-specific models.");
+            if (RepositoryStatus::Success != status)
+                return status;
+            }
 
         // Bridge is writing to a shared model.
 
         if (jobMemberInfo.IsChildOfJob())
-            return ReportChannelError(el, "During the definitions phase, a bridge must not modify its Job-specific elements. It may modify its Job Subject element.");
+            {
+            auto status = ReportChannelError(el, "During the definitions phase, a bridge must not modify its Job-specific elements. It may modify its Job Subject element.");
+            if (RepositoryStatus::Success != status)
+                return status;
+            }
 
         return RepositoryStatus::Success;
-    }
+        }
 
     bool IsAssignedToChannel(DgnElementCR el)
     {
@@ -483,22 +523,26 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
     }
 
     RepositoryStatus CheckWriteToModelInNormalChannel(DgnElementCR el, bool exclusiveModel, iModelBridge::JobMemberInfo const &jobMemberInfo)
-    {
+        {
         BeAssert(IsNormalChannel());
 
         if (!exclusiveModel) // If bridge is *not* writing to one of its own models ...
-        {
-            if (!jobMemberInfo.IsChildOfJob()) // If bridge is writing to an element that is *not* a child of the bridge's Job Subject ...
             {
+            if (!jobMemberInfo.IsChildOfJob()) // If bridge is writing to an element that is *not* a child of the bridge's Job Subject ...
+                {
                 if (!IsAssignedToChannel(el)) // and if that element is not "assigned" to the bridge's channel ...
-                    return ReportChannelError(el, "During the data phases, a bridge may only write to its Job-specific elements (not including the Job Subject element itself).");
-            }
+                    {
+                    auto status = ReportChannelError(el, "During the data phases, a bridge may only write to its Job-specific elements (not including the Job Subject element itself).");
+                    if (RepositoryStatus::Success != status)
+                        return status;
+                    }
+                }
 
             BeAssert(el.GetElementId() != DgnModel::RepositoryModelId());
-        }
+            }
 
         return RepositoryStatus::Success;
-    }
+        }
 
     RepositoryStatus CheckWriteToModel(DgnElementCR el, iModelBridge::JobMemberInfo const &jobMemberInfo)
     {
@@ -513,39 +557,51 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
     }
 
     RepositoryStatus CheckModelInsertInSharedChannel(DgnElementCR modeledElement, iModelBridge::JobMemberInfo const &jobMemberInfo)
-    {
+        {
         BeAssert(IsSharedChannel());
 
         // In the shared channel, the channel "parent" is element #1
 
         if (jobMemberInfo.IsChildOfJob()) // Bridge is inserting a model in its Job-specific hierarchy
-        {
+            {
             if (!GetChannelProps().isInitializingChannel) // To avoid breaking existing code, allow the bridge to create its breakdown structure at job *initialization* time.
-                return ReportChannelError(modeledElement, "During the definitions phase, a bridge may not insert Job-specific models.");
-        }
+                {
+                auto status = ReportChannelError(modeledElement, "During the definitions phase, a bridge may not insert Job-specific models.");
+                if (RepositoryStatus::Success != status)
+                    return status;
+                }
+            }
         else // A Bridge is inserting a model outside of its private hierarchy
-        {
+            {
             if (modeledElement.GetModelId() != modeledElement.GetDgnDb().GetDictionaryModel().GetModelId())
                 {
                 // Make a special case for PresentationRules.
                 if (modeledElement.GetCode().GetValue().Equals("PresentationRules"))
                     {}
                 else
-                    return ReportChannelError(modeledElement, "During the definitions phase, a bridge may not insert top-level shared models. A bridge may add a sub-model of an element in the DictionaryModel only.");
+                    {
+                    auto status = ReportChannelError(modeledElement, "During the definitions phase, a bridge may not insert top-level shared models. A bridge may add a sub-model of an element in the DictionaryModel only.");
+                    if (RepositoryStatus::Success != status)
+                        return status;
+                    }
                 }
-        }
+            }
         return RepositoryStatus::Success;
-    }
+        }
 
     RepositoryStatus CheckModelInsertInNormalChannel(DgnElementCR modeledElement, iModelBridge::JobMemberInfo const &jobMemberInfo)
-    {
+        {
         BeAssert(IsNormalChannel());
 
         if (!jobMemberInfo.IsChildOfJob() && !IsAssignedToChannel(modeledElement)) // (the submodel of any RepositoryLink element is open for writes by any bridge any time)
-            return ReportChannelError(modeledElement, "During the data phases, a bridge may insert Job-specific models only. Top-level models and sub-models of dictionary elements are off-limits.");
+            {
+            auto status = ReportChannelError(modeledElement, "During the data phases, a bridge may insert Job-specific models only. Top-level models and sub-models of dictionary elements are off-limits.");
+            if (RepositoryStatus::Success != status)
+                return status;
+            }
 
         return RepositoryStatus::Success;
-    }
+        }
 
     RepositoryStatus CheckModelInsert(DgnElementCR modeledElement, iModelBridge::JobMemberInfo const &jobMemberInfo)
     {
@@ -556,7 +612,7 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
     }
 
     RepositoryStatus CheckCodeScope(DgnCodeCR code, DgnElementCR el, iModelBridge::JobMemberInfo const &elementJobMemberInfo)
-    {
+        {
         if (!code.IsValid())
             return RepositoryStatus::Success;
 
@@ -564,30 +620,42 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
 
         auto scopeElement = GetDgnDb().Elements().GetElement(code.GetScopeElementId(GetDgnDb()));
         if (!scopeElement.IsValid())
-        {
+            {
             if (elementJobMemberInfo.IsChildOfJob())
-                return ReportChannelError(el, Utf8PrintfString("Incorrectly scoped code. Code=%s. The Code of an element in the bridge's Job hierarchy must be scoped to an element that is inside that hierarchy.", FmtCode(code).c_str()));
+                {
+                auto status = ReportChannelError(el, Utf8PrintfString("Incorrectly scoped code. Code=%s. The Code of an element in the bridge's Job hierarchy must be scoped to an element that is inside that hierarchy.", FmtCode(code).c_str()));
+                if (RepositoryStatus::Success != status)
+                    return status;
+                }
             return RepositoryStatus::Success; // there is no restriction on how the Codes of elements outside the bridge's hierarhcy most be scoped
-        }
+            }
 
         // The Code is scoped to an element
 
         auto scopeJobMemberInfo = iModelBridge::ComputeJobMemberInfo(*scopeElement);
 
         if (!elementJobMemberInfo.IsChildOfJob()) // This is a Code for an element outside of the bridge's private hierarchy.
-        {
+            {
             if (scopeJobMemberInfo.IsJobOrChild())
-                return ReportChannelError(el, Utf8PrintfString("Element %s is an invalid scope. The Code of an element that is outside of the bridge's Job hierarchy must not be scoped to an element that is inside that hierarchy.",
+                {
+                auto status = ReportChannelError(el, Utf8PrintfString("Element %s is an invalid scope. The Code of an element that is outside of the bridge's Job hierarchy must not be scoped to an element that is inside that hierarchy.",
                                                                FmtElement(*scopeElement).c_str()));
-        }
+                if (RepositoryStatus::Success != status)
+                    return status;
+                }
+            }
         else // This is a Code for an element inside the bridge's private hierarchy.
-        {
+            {
             if (!scopeJobMemberInfo.IsJobOrChild())
-                return ReportChannelError(el, Utf8PrintfString("Element %s is an invalid scope. The Code of an element that is inside the bridge's Job hierarchy must be scoped to an element that is also inside that hierarchy.",
+                {
+                auto status = ReportChannelError(el, Utf8PrintfString("Element %s is an invalid scope. The Code of an element that is inside the bridge's Job hierarchy must be scoped to an element that is also inside that hierarchy.",
                                                                FmtElement(*scopeElement).c_str()));
-        }
+                if (RepositoryStatus::Success != status)
+                    return status;
+                }
+            }
         return RepositoryStatus::Success;
-    }
+        }
 
     RepositoryStatus _PrepareForElementOperation(Request &req, DgnElementCR el, BeSQLite::DbOpcode op) override
     {
@@ -968,6 +1036,18 @@ iModelBridgeFwk::FwkRepoAdmin::_CreateBriefcaseManager(DgnDbR db) const
 
         if (getenv("imodel-bridge-fwk-briefcase-manager") != nullptr) // allow envvar to override
             s_useNewBcMgr = true;
+
+        m_fwk.TestFeatureFlag("imodel-bridge-fwk-briefcase-manager-strict", s_failOnChannelConstraintViolation);
+        if (getenv("imodel-bridge-fwk-briefcase-manager-strict"))
+            s_failOnChannelConstraintViolation = true;
+
+        bool nostrict = false;
+        m_fwk.TestFeatureFlag("imodel-bridge-fwk-briefcase-manager-no-strict", nostrict);
+        if (getenv("imodel-bridge-fwk-briefcase-manager-no-strict"))
+            nostrict = true;
+        
+        if (nostrict)
+            s_failOnChannelConstraintViolation = false;
 
         if (s_useNewBcMgr)
         {
