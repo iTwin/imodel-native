@@ -26,18 +26,29 @@ BEGIN_ORDBRIDGE_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                Jonathan.DeCarlo                    02/20
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ORDBridge::_SetClientInfo()
-{
+ORDBridge::ORDBridge() : 
+    m_converter(nullptr), m_isUnitTesting(false), m_schemaImportPhase(SchemaImportPhase::Base)
+    {
     static constexpr char s_bridgeName[] = "iModel Bridge Service - Bentley Civil";
     static constexpr char s_bridgeGuid[] = "6E0B46CE-58C6-4E5C-A0F1-F19C782CBB33";
     static constexpr char s_bridgePrgId[] = "2716";
 
     BeVersion bridgeVersion(REL_V "." MAJ_V "." MIN_V "." SUBMIN_V);
-    auto& params = this->_GetParams();
-    auto clientInfo = WebServices::ClientInfo::Create(s_bridgeName, bridgeVersion, s_bridgeGuid, s_bridgePrgId, params.GetDefaultHeaderProvider());
+    auto clientInfo = WebServices::ClientInfo::Create(s_bridgeName, bridgeVersion, s_bridgeGuid, s_bridgePrgId, m_params.GetDefaultHeaderProvider());
+    m_params.SetClientInfo(clientInfo);
+    }
 
-    params.SetClientInfo(clientInfo);
-}
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      02/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+ORDBridge::~ORDBridge()
+    {
+    if (m_converter != nullptr)
+        {
+        delete m_converter;
+        m_converter = nullptr;
+        }
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
@@ -154,8 +165,6 @@ BentleyStatus ORDBridge::_Initialize(int argc, WCharCP argv[])
     BentleyApi::BeFileName configFileName = m_params.GetAssetsDir();
     configFileName.AppendToPath(L"CivilImportConfig.xml");
     m_params.SetConfigFile(configFileName);
-
-    this->_SetClientInfo();
 
     return BentleyStatus::SUCCESS;
     }
