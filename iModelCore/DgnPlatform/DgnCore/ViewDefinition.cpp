@@ -2542,3 +2542,112 @@ double  ViewDefinition3d::MinimumFrontDistance(double nearScaleLimit) const
     {
     return GetDgnDb().GeoLocation().GetProjectExtents().DiagonalDistance() * nearScaleLimit;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+TerrainProps TerrainProps::FromJson(JsonValueCR json)
+    {
+    TerrainProps props;
+    if (!json.isObject())
+        return props;
+
+    TerrainProps defs;
+    props.m_providerName = json[json_providerName()].asString(defs.m_providerName.c_str());
+    props.m_exaggeration = json[json_exaggeration()].asDouble(defs.m_exaggeration);
+    props.m_heightOrigin = json[json_heightOrigin()].asDouble(defs.m_heightOrigin);
+    props.m_heightOriginMode = static_cast<TerrainHeightOriginMode>(json[json_heightOriginMode()].asUInt(static_cast<uint32_t>(defs.m_heightOriginMode)));
+    props.m_applyLighting = json[json_applyLighting()].asBool(defs.m_applyLighting);
+
+    return props;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value TerrainProps::ToJson() const
+    {
+    Json::Value json;
+    TerrainProps defs;
+
+    if (!m_providerName.Equals(defs.m_providerName))
+        json[json_providerName()] = m_providerName;
+
+    if (m_exaggeration != defs.m_exaggeration)
+        json[json_exaggeration()] = m_exaggeration;
+
+    if (m_heightOrigin != defs.m_heightOrigin)
+        json[json_heightOrigin()] = m_heightOrigin;
+
+    if (m_heightOriginMode != defs.m_heightOriginMode)
+        json[json_heightOriginMode()] = static_cast<uint32_t>(m_heightOriginMode);
+
+    if (m_applyLighting != defs.m_applyLighting)
+        json[json_applyLighting()] = m_applyLighting;
+
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+BackgroundMapProps BackgroundMapProps::FromJson(JsonValueCR json)
+    {
+    BackgroundMapProps props;
+    if (!json.isObject())
+        return props;
+
+    BackgroundMapProps defs;
+    props.m_providerName = json[json_providerName()].asString(defs.m_providerName.c_str());
+    props.m_groundBias = json[json_groundBias()].asDouble(defs.m_groundBias);
+    props.m_useDepthBuffer = json[json_useDepthBuffer()].asBool(defs.m_useDepthBuffer);
+    props.m_applyTerrain = json[json_applyTerrain()].asBool(defs.m_applyTerrain);
+    props.m_mapType = static_cast<BackgroundMapType>(json[json_providerData()][json_mapType()].asUInt(static_cast<uint32_t>(defs.m_mapType)));
+    props.m_globeMode = static_cast<GlobeMode>(json[json_globeMode()].asUInt(static_cast<uint32_t>(defs.m_globeMode)));
+
+    auto transp = json[json_transparency()];
+    if (transp.isNumeric())
+        props.m_transparency = transp.asDouble(0.0);
+
+    props.m_terrain = TerrainProps::FromJson(json[json_terrainSettings()]);
+
+    return props;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value BackgroundMapProps::ToJson() const
+    {
+    Json::Value json;
+    BackgroundMapProps defs;
+
+    json[json_providerName()] = m_providerName;
+    if (m_groundBias != defs.m_groundBias)
+        json[json_groundBias()] = m_groundBias;
+
+    if (m_transparency)
+        json[json_transparency()] = *m_transparency;
+
+    if (m_useDepthBuffer != defs.m_useDepthBuffer)
+        json[json_useDepthBuffer()] = m_useDepthBuffer;
+
+    if (m_applyTerrain != defs.m_applyTerrain)
+        json[json_applyTerrain()] = m_applyTerrain;
+
+    if (m_globeMode != defs.m_globeMode)
+        json[json_globeMode()] = static_cast<uint32_t>(m_globeMode);
+
+    if (m_mapType != defs.m_mapType)
+        {
+        json[json_providerData()] = Json::Value(Json::objectValue);
+        json[json_providerData()][json_mapType()] = static_cast<uint32_t>(m_mapType);
+        }
+
+    auto terrain = m_terrain.ToJson();
+    if (!terrain.isNull())
+        json[json_terrainSettings()] = terrain;
+
+    return json;
+    }
+

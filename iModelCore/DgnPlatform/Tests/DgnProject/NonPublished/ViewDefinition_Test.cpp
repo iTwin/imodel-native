@@ -349,7 +349,7 @@ TEST_F(ViewDefinitionTests, ViewDefinition2dCRUD)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ViewDefinitionTests, PlanProjectionSettings)
     {
-    using OptDbl = DisplayStyle3d::OptionalDouble;
+    using OptDbl = OptionalDouble;
     using Settings = DisplayStyle3d::PlanProjectionSettings;
     using Map = DisplayStyle3d::PlanProjectionSettingsMap;
 
@@ -431,6 +431,96 @@ TEST_F(ViewDefinitionTests, PlanProjectionSettings)
             Entry(0x3, empty, empty, true, false),
             Entry(0x4, empty, empty, false, true)
         });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(BackgroundMap, Defaults)
+    {
+    auto test = [](JsonValueCR json)
+        {
+        EXPECT_FALSE(json.isNull());
+        EXPECT_TRUE(json.isObject());
+        EXPECT_EQ(json.size(), 1);
+        Utf8String providerName(json["providerName"].asString("WRONG"));
+        EXPECT_TRUE(providerName.Equals("BingProvider"));
+        };
+
+    BackgroundMapProps props;
+    test(props.ToJson());
+
+    props = BackgroundMapProps::FromJson(Json::nullValue);
+    test(props.ToJson());
+
+    props = BackgroundMapProps::FromJson(Json::objectValue);
+    test(props.ToJson());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(BackgroundMap, RoundTrip)
+    {
+    auto test = [](BackgroundMapPropsCR input)
+        {
+        auto json = input.ToJson();
+        auto output = BackgroundMapProps::FromJson(json);
+        EXPECT_TRUE(output == input);
+        };
+
+    BackgroundMapProps props(BackgroundMapProviderType::MapBox, BackgroundMapType::Street);
+    props.m_groundBias += 2.5;
+    props.m_useDepthBuffer = !props.m_useDepthBuffer;
+    props.m_applyTerrain = !props.m_applyTerrain;
+    props.m_globeMode = GlobeMode::Plane;
+    props.SetTransparency(0.5);
+
+    test(props);
+
+    EXPECT_FALSE(props.ToJson().isMember("terrainSettings"));
+
+    props.m_terrain.m_exaggeration += 3.2;
+    props.m_terrain.m_heightOrigin -= 2.3;
+    props.m_terrain.m_heightOriginMode = TerrainHeightOriginMode::Geoid;
+    props.m_terrain.m_applyLighting = !props.m_terrain.m_applyLighting;
+
+    test(props);
+
+    EXPECT_TRUE(props.ToJson().isMember("terrainSettings"));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(BackgroundMap, Transparency)
+    {
+    auto test = [](BackgroundMapPropsCR props, double expectedTransparency)
+        {
+        auto json = props.ToJson();
+        EXPECT_TRUE(json["transparency"].isDouble());
+        EXPECT_EQ(json["transparency"].asDouble(1234.5678), expectedTransparency);
+        };
+
+    BackgroundMapProps props;
+    props.SetTransparency(0.5);
+    test(props, 0.5);
+
+    props.SetTransparency(0);
+    test(props, 0);
+
+    props.SetTransparency(-1);
+    test(props, 0);
+
+    props.SetTransparency(1);
+    test(props, 1);
+
+    props.SetTransparency(100);
+    test(props, 1);
+
+    props.ClearTransparency();
+    auto json = props.ToJson();
+    EXPECT_FALSE(json.isMember("transparency"));
     }
 
 #ifdef NOTNOW

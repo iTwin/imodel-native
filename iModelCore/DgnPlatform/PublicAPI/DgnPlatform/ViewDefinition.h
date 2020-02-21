@@ -12,6 +12,7 @@
 #include "ECSqlStatementIterator.h"
 #include "Lighting.h"
 #include "Render.h"
+#include "WebMercator.h"
 
 #define BIS_CLASS_SpatialViewDefinition "SpatialViewDefinition"
 #define BIS_CLASS_OrthographicViewDefinition "OrthographicViewDefinition"
@@ -25,6 +26,150 @@ namespace ViewElementHandler
     struct View; struct View3d; struct View2d; struct OrthographicView; struct DrawingView; struct SheetView; struct TemplateView2d; struct TemplateView3d;
     struct ViewModels; struct ViewCategories; struct ViewDisplayStyle; struct ViewDisplayStyle2d; struct ViewDisplayStyle3d;
 }
+
+//! Since we're not yet using C++17, a simple replacement for std::optional<double>.
+struct OptionalDouble
+{
+private:
+    double  m_value;
+    bool    m_hasValue;
+public:
+    OptionalDouble() : m_hasValue(false) { }
+    OptionalDouble(double value) : m_value(value), m_hasValue(true) { }
+    OptionalDouble(OptionalDouble const& src) = default;
+
+    OptionalDouble& operator=(OptionalDouble const& src) { m_value = src.m_value; m_hasValue = src.m_hasValue; return *this; }
+    OptionalDouble& operator=(double value) { m_value = value; m_hasValue = true; return *this; }
+
+    operator bool() const { return m_hasValue; }
+    double operator*() const { BeAssert(m_hasValue); return m_value; }
+    bool operator==(OptionalDouble const& rhs) const { return m_hasValue == rhs.m_hasValue && (!m_hasValue || m_value == rhs.m_value); }
+    bool operator==(double value) const { return m_hasValue && m_value == value; }
+
+    void reset() { m_hasValue = false; }
+};
+
+using BackgroundMapType = WebMercator::MapType;
+
+//=======================================================================================
+//! Currently-supported background map providers.
+// @bsistruct                                                   Paul.Connelly   02/20
+//=======================================================================================
+enum class BackgroundMapProviderType : uint8_t
+{
+    Bing,
+    MapBox,
+};
+
+//=======================================================================================
+//! Correction modes for terrain height.
+// @bsistruct                                                   Paul.Connelly   02/20
+//=======================================================================================
+enum class TerrainHeightOriginMode
+{
+  Geodetic = 0,   //!< Height value indicates the geodetic height of the IModel origin (also referred to as ellipsoidal or GPS height)
+  Geoid = 1,      //!< Height value indicates the geoidal height of the IModel origin (commonly referred to as sea level).
+  Ground = 2,     //!< Height value indicates the height of the IModel origin relative to ground level at project center.
+};
+
+//=======================================================================================
+//! Settings associated with a BackgroundMapProps controlling how terrain is displayed.
+// @bsistruct                                                   Paul.Connelly   02/20
+//=======================================================================================
+struct TerrainProps
+{
+private:
+    Utf8String m_providerName = "CesiumWorldTerrain";
+
+    BE_JSON_NAME(providerName);
+    BE_JSON_NAME(exaggeration);
+    BE_JSON_NAME(applyLighting);
+    BE_JSON_NAME(heightOrigin);
+    BE_JSON_NAME(heightOriginMode);
+public:
+    // Scales the terrain height.
+    double m_exaggeration = 1.0;
+    // Height of the iModel origin at the project center as defined by m_heightOriginMode.
+    double m_heightOrigin = 0.0;
+    // Determines how/if m_heightOrigin is applied to the terrain height.
+    TerrainHeightOriginMode m_heightOriginMode = TerrainHeightOriginMode::Ground;
+    // Apply lighting when drawing terrain. NOTE: Currently has no effect.
+    bool m_applyLighting = false;
+
+    DGNPLATFORM_EXPORT static TerrainProps FromJson(JsonValueCR);
+    Json::Value ToJson() const;
+
+    bool operator==(TerrainPropsCR rhs) const
+        {
+        return m_exaggeration == rhs.m_exaggeration && m_heightOrigin == rhs.m_heightOrigin && m_providerName.Equals(rhs.m_providerName)
+            && m_heightOriginMode == rhs.m_heightOriginMode && m_applyLighting == rhs.m_applyLighting;
+        }
+};
+
+//=======================================================================================
+//! Describes the projection of the background map.
+// @bsistruct                                                   Paul.Connelly   02/20
+//=======================================================================================
+enum class GlobeMode : uint8_t
+{
+    Ellipsoid, //!< Display Earth as a 3d ellipsoid
+    Plane, //!< Display Earth as a plane.
+};
+
+//=======================================================================================
+//! Settings associated with a DisplayStyle controlling how to display a background map.
+// @bsistruct                                                   Paul.Connelly   02/20
+//=======================================================================================
+struct BackgroundMapProps
+{
+private:
+    Utf8String m_providerName;
+    OptionalDouble m_transparency;
+    static constexpr Utf8CP GetProviderName(BackgroundMapProviderType type) { return BackgroundMapProviderType::MapBox != type ? "BingProvider" : "MapBoxProvider"; }
+
+    BE_JSON_NAME(groundBias);
+    BE_JSON_NAME(providerName);
+    BE_JSON_NAME(providerData);
+    BE_JSON_NAME(mapType);
+    BE_JSON_NAME(transparency);
+    BE_JSON_NAME(useDepthBuffer);
+    BE_JSON_NAME(applyTerrain);
+    BE_JSON_NAME(terrainSettings);
+    BE_JSON_NAME(globeMode);
+public:
+    // Controls terrain display, if m_applyTerrain is true.
+    TerrainProps m_terrain;
+    // Applies an elevation in meters to the map when drawing.
+    double m_groundBias = 0.0;
+    // If true, the map can obscure geometry behind it when drawing; if false, the map always draws behind all other geometry.
+    bool m_useDepthBuffer = false;
+    // If true, use m_terrain to apply terrain heights when drawing the map.
+    bool m_applyTerrain = false;
+    // The type of map graphics to request.
+    BackgroundMapType m_mapType;
+    // How to project the map onto the Earth.
+    GlobeMode m_globeMode = GlobeMode::Ellipsoid;
+
+    explicit BackgroundMapProps(BackgroundMapProviderType provider=BackgroundMapProviderType::Bing, BackgroundMapType type=BackgroundMapType::Hybrid)
+        : m_providerName(GetProviderName(provider)), m_mapType(type) { }
+
+    DGNPLATFORM_EXPORT static BackgroundMapProps FromJson(JsonValueCR);
+    DGNPLATFORM_EXPORT Json::Value ToJson() const;
+
+    // The map provider from which to request map graphics.
+    void SetProviderType(BackgroundMapProviderType type) { m_providerName = GetProviderName(type); }
+    // Override the transparency of the map, where 0.0 = fully opaque and 1.0 = fully transparent.
+    void SetTransparency(double transp) { m_transparency = transp > 1.0 ? 1.0 : (transp < 0.0 ? 0.0 : transp); }
+    // Clear the transparency override.
+    void ClearTransparency() { m_transparency.reset(); }
+
+    bool operator==(BackgroundMapPropsCR rhs) const
+        {
+        return m_providerName.Equals(rhs.m_providerName) && m_transparency == rhs.m_transparency && m_terrain == rhs.m_terrain
+            && m_groundBias == rhs.m_groundBias && m_useDepthBuffer == rhs.m_useDepthBuffer && m_applyTerrain == rhs.m_applyTerrain
+            && m_mapType == rhs.m_mapType && m_globeMode == rhs.m_globeMode;
+        }
+};
 
 //=======================================================================================
 //! The Display Style for a view. DisplayStyles can be shared by many Views. They define the "styling" parameters for rendering the contents of a view.
@@ -41,28 +186,12 @@ struct EXPORT_VTABLE_ATTRIBUTE DisplayStyle : DefinitionElement
     friend struct ViewElementHandler::ViewDisplayStyle;
     friend struct ViewDefinition;
 
-public:
-    //! The background map.  Generally supplied through a web mercator provider.
-    struct BackgroundMap
-    {
-        Utf8String  m_provider;     // Provider name (bing, mapbox etc.).
-        double      m_groundBias = 0.0;
-        double      m_transparency = 0.0;
-        Utf8String  m_providerData;
-        Utf8String  m_bingProvider;
-
-        bool IsValid() const { return !m_provider.empty(); }
-        Json::Value   ToJson() const;
-        void FromJson(JsonValueCR value);
-    };
-
 protected:
     mutable BeMutex m_mutex;
     mutable bmap<DgnSubCategoryId,DgnSubCategory::Appearance> m_subCategories;
     mutable bmap<DgnSubCategoryId,DgnSubCategory::Override> m_subCategoryOverrides;
     DgnElementIdSet m_excludedElements;
     Render::ViewFlags m_viewFlags;
-    BackgroundMap m_backgroundMap;
 
     DgnSubCategory::Appearance LoadSubCategory(DgnSubCategoryId) const;
     Utf8String ToJson() const;
@@ -145,8 +274,8 @@ public:
     DGNPLATFORM_EXPORT DgnSubCategory::Appearance GetSubCategoryAppearance(DgnSubCategoryId id) const;
 
     //! Get the background map.
-    BackgroundMap const& GetBackgroundMap() const { return m_backgroundMap; }
-    void SetBackgroundMap(BackgroundMap const& backgroundMap) { m_backgroundMap = backgroundMap; }
+    BackgroundMapProps GetBackgroundMap() const { return BackgroundMapProps::FromJson(GetStyle(json_backgroundMap())); }
+    void SetBackgroundMap(BackgroundMapPropsCR props) { SetStyle(json_backgroundMap(), props.ToJson()); }
 
     //! Get the IDs of the elements that should never be drawn for this DisplayStyle
     DgnElementIdSet const& GetExcludedElements() const { return m_excludedElements; }
@@ -237,28 +366,6 @@ public:
         SkyBox& GetSkyBox() {return m_skybox;}
 
         DGNPLATFORM_EXPORT void Initialize();
-    };
-
-    //! Since we're not yet using C++17, a simple replacement for std::optional<double>.
-    struct OptionalDouble
-    {
-    private:
-        double  m_value;
-        bool    m_hasValue;
-    public:
-        OptionalDouble() : m_hasValue(false) { }
-        OptionalDouble(double value) : m_value(value), m_hasValue(true) { }
-        OptionalDouble(OptionalDouble const& src) = default;
-
-        OptionalDouble& operator=(OptionalDouble const& src) { m_value = src.m_value; m_hasValue = src.m_hasValue; return *this; }
-        OptionalDouble& operator=(double value) { m_value = value; m_hasValue = true; return *this; }
-
-        operator bool() const { return m_hasValue; }
-        double operator*() const { BeAssert(m_hasValue); return m_value; }
-        bool operator==(OptionalDouble const& rhs) const { return m_hasValue == rhs.m_hasValue && (!m_hasValue || m_value == rhs.m_value); }
-        bool operator==(double value) const { return m_hasValue && m_value == value; }
-
-        void reset() { m_hasValue = false; }
     };
 
     //=======================================================================================
