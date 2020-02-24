@@ -118,10 +118,7 @@
     <Part Name="__MstnBridgeNugetCrt" BentleyBuildMakeFile="MstnBridgeNugetCrt.mke">
         <RequiredRepository>Thirdparty-msvcrt_14_16_27012</RequiredRepository>
         <Bindings>
-            <Assemblies>
-                Delivery/msvcrt/msvcp140.dll
-                Delivery/msvcrt/vcruntime140.dll
-            </Assemblies>
+            <Assemblies>Delivery/msvcrt/*.dll</Assemblies>
         </Bindings>
     </Part>
 
