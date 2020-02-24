@@ -4091,11 +4091,7 @@ BentleyApi::BentleyStatus RootModelConverter::ConvertECRelationships(DgnV8Api::E
         // If the relationship class inherits from one ElementRefersToElements base relationship class, then it is a link table relationship, and can use the API
         if (relClass->Is(BIS_ECSCHEMA_NAME, BIS_REL_ElementRefersToElements))
             {
-            if (!m_haveDroppedIndexDdl)
-                {
-                DropElementRefersToElementsIndices(m_indexDdlList, "uix_bis_ElementRefersToElements_sourcetargetclassid");
-                m_haveDroppedIndexDdl = true;
-                }
+            DropElementRefersToElementsIndices();
 
             BeSQLite::EC::ECInstanceKey relKey;
             if (BE_SQLITE_OK != GetDgnDb().InsertLinkTableRelationship(relKey, *relClass->GetRelationshipClassCP(), sourceInstanceKey.GetInstanceId(), targetInstanceKey.GetInstanceId()))

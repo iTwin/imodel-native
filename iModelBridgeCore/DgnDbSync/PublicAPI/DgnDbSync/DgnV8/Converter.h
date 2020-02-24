@@ -2644,8 +2644,8 @@ protected:
 
     //! @name  ECRelationships
     //! @{
-    BentleyStatus DropElementRefersToElementsIndices(bmap<Utf8String, Utf8String>& indexDdlList, Utf8String search);
-    BentleyStatus RecreateElementRefersToElementsIndices(bmap<Utf8String, Utf8String>& indexDdlList);
+    BentleyStatus DropElementRefersToElementsIndices();
+    BentleyStatus RecreateElementRefersToElementsIndices();
     void ConvertNamedGroupsAndECRelationships();
     BentleyStatus ConvertECRelationships();
     BentleyStatus ConvertECRelationshipsInModel(DgnV8ModelR);

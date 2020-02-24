@@ -1331,7 +1331,7 @@ void RootModelConverter::ConvertNamedGroupsAndECRelationships()
     timer.Start();
     ConvertECRelationships();
     if (m_haveDroppedIndexDdl)
-        RecreateElementRefersToElementsIndices(m_indexDdlList);
+        RecreateElementRefersToElementsIndices();
     ConverterLogging::LogPerformance(timer, "Convert Elements> ECRelationships (total)");
     }
 
@@ -1448,7 +1448,6 @@ BentleyApi::BentleyStatus RootModelConverter::ConvertNamedGroupsRelationshipsInM
             DgnElementId const& m_parentId;
             bool m_namedGroupOwnsMembers;
             bset<DgnElementId> m_visitedMembers;
-            bmap<Utf8String, Utf8String>& m_indexDdlList;
 
             virtual DgnV8Api::MemberTraverseStatus VisitMember(DgnV8Api::NamedGroupMember const* member, DgnV8Api::NamedGroup const* ng, UInt32 index) override
                 {
@@ -1493,11 +1492,7 @@ BentleyApi::BentleyStatus RootModelConverter::ConvertNamedGroupsRelationshipsInM
                         group->Update();
                         }
                     DgnDbStatus status;
-                    if (m_indexDdlList.size() == 0)
-                        {
-                        m_converter.DropElementRefersToElementsIndices(m_indexDdlList, "uix_bis_ElementGroupsMembers_sourcetarget");
-                        m_converter.DropElementRefersToElementsIndices(m_indexDdlList, "uix_bis_ElementRefersToElements_sourcetargetclassid");
-                        }
+                    m_converter.DropElementRefersToElementsIndices();
                     if (DgnDbStatus::BadRequest == (status = ElementGroupsMembers::Insert(*group, *child, 0)))
                         {
                         Utf8String error;
@@ -1516,8 +1511,8 @@ BentleyApi::BentleyStatus RootModelConverter::ConvertNamedGroupsRelationshipsInM
                 }
 
         public:
-            NamedGroupConverter(RootModelConverter& converter, DgnElementId const& parentId, bool namedGroupOwnsMembers, bmap<Utf8String, Utf8String> indexDdlList)
-                : m_converter(converter), m_parentId(parentId), m_namedGroupOwnsMembers(namedGroupOwnsMembers), m_indexDdlList(indexDdlList)
+            NamedGroupConverter(RootModelConverter& converter, DgnElementId const& parentId, bool namedGroupOwnsMembers)
+                : m_converter(converter), m_parentId(parentId), m_namedGroupOwnsMembers(namedGroupOwnsMembers)
                 {}
 
             bool WasVisited(DgnElementId member)
@@ -1534,8 +1529,6 @@ BentleyApi::BentleyStatus RootModelConverter::ConvertNamedGroupsRelationshipsInM
     RepositoryLinkId v8FileId = GetRepositoryLinkId(*v8Model.GetDgnFileP());
     bset<DgnV8Api::ElementId> const* namedGroupsWithOwnershipHintPerFile = nullptr;
     V8NamedGroupInfo::TryGetNamedGroupsWithOwnershipHint(namedGroupsWithOwnershipHintPerFile, v8FileId);
-
-    bmap<Utf8String, Utf8String> indexDdlList;
 
     for (auto v8El : *v8Model.GetControlElementsP())
         {
@@ -1570,7 +1563,7 @@ BentleyApi::BentleyStatus RootModelConverter::ConvertNamedGroupsRelationshipsInM
             }
 
         const bool namedGroupOwnsMembersFlag = namedGroupsWithOwnershipHintPerFile != nullptr && namedGroupsWithOwnershipHintPerFile->find(v8eh.GetElementId()) != namedGroupsWithOwnershipHintPerFile->end();
-        NamedGroupConverter ngConverter(*this, ngElementId, namedGroupOwnsMembersFlag, indexDdlList);
+        NamedGroupConverter ngConverter(*this, ngElementId, namedGroupOwnsMembersFlag);
         //if traversal fails, still continue with next element, so return value doesn't matter here.
         ng->TraverseMembers(&ngConverter, DgnV8Api::MemberTraverseType::Enumerate, false, false);
 
@@ -1612,8 +1605,6 @@ BentleyApi::BentleyStatus RootModelConverter::ConvertNamedGroupsRelationshipsInM
                 }
             }
         }
-    if (indexDdlList.size() > 0)
-        RecreateElementRefersToElementsIndices(indexDdlList);
 
     return BentleyApi::SUCCESS;
     }
@@ -1624,8 +1615,12 @@ BentleyApi::BentleyStatus RootModelConverter::ConvertNamedGroupsRelationshipsInM
 // and re-add them later.
 // @bsimethod                                   Carole.MacDonald            12/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyApi::BentleyStatus RootModelConverter::DropElementRefersToElementsIndices(bmap<Utf8String, Utf8String>& indexDdlList, Utf8String search)
+BentleyApi::BentleyStatus RootModelConverter::DropElementRefersToElementsIndices()
     {
+    if (m_haveDroppedIndexDdl)
+        return BentleyApi::SUCCESS;
+
+    bvector<Utf8CP> indices {"uix_bis_ElementGroupsMembers_sourcetarget", "uix_bis_ElementRefersToElements_sourcetargetclassid"};
     if (!IsUpdating())
         {
         StopWatch timer(true);
@@ -1636,15 +1631,15 @@ BentleyApi::BentleyStatus RootModelConverter::DropElementRefersToElementsIndices
         while (stmt.Step() == BE_SQLITE_ROW)
             {
             Utf8String index(stmt.GetValueText(1));
-            if (!index.Contains(search))
+            if (std::find(indices.begin(), indices.end(), index.c_str()) == indices.end())
                 continue;
-            indexDdlList[Utf8String(stmt.GetValueText(0))] = Utf8String(stmt.GetValueText(1));
+            m_indexDdlList[Utf8String(stmt.GetValueText(0))] = Utf8String(stmt.GetValueText(1));
             break;
             }
 
         stmt.Finalize();
 
-        for (auto const& index : indexDdlList)
+        for (auto const& index : m_indexDdlList)
             {
             Utf8String sql("DROP INDEX ");
             sql.append(index.first);
@@ -1652,22 +1647,23 @@ BentleyApi::BentleyStatus RootModelConverter::DropElementRefersToElementsIndices
                 return BentleyApi::ERROR;
             }
 
-        Utf8PrintfString msg("Convert Elements> ECRelationships: Dropped %d indices for bulk insertion into BisCore:ElementRefersToElements class hierarchy for index %s.", indexDdlList.size(), search.c_str());
+        Utf8PrintfString msg("Convert Elements> ECRelationships: Dropped %d indices for bulk insertion into BisCore:ElementRefersToElements class hierarchy for index uix_bis_ElementGroupsMembers_sourcetarget and uix_bis_ElementRefersToElements_sourcetargetclassid.", m_indexDdlList.size());
         ConverterLogging::LogPerformance(timer, msg.c_str());
         }
+    m_haveDroppedIndexDdl = true;
     return BentleyApi::SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            12/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyApi::BentleyStatus RootModelConverter::RecreateElementRefersToElementsIndices(bmap<Utf8String, Utf8String>& indexDdlList)
+BentleyApi::BentleyStatus RootModelConverter::RecreateElementRefersToElementsIndices()
     {
     //recreate indexes that were previously dropped
     if (!IsUpdating())
         {
         StopWatch timer(true);
-        for (auto const& index : indexDdlList)
+        for (auto const& index : m_indexDdlList)
             {
             DbResult result = GetDgnDb().TryExecuteSql(index.second.c_str());
             if (BE_SQLITE_OK != result)
