@@ -19,11 +19,13 @@ typedef NS_ENUM(NSUInteger , ReadyState) {
     LOADING,      // Downloading; responseText holds partial data.
     DONE          // The operation is complete.
 };
-@protocol XMLHttpRequest<JSExport>
+@protocol XMLHttpRequest<JSExport, NSURLSessionDelegate, NSURLSessionDownloadDelegate>
 // An EventHandler that is called whenever the readyState attribute changes.
 @property (nonatomic) JSValue* onload;
 // An EventHandler that is called whenever the readyState attribute changes.
 @property (nonatomic) JSValue* onerror;
+// An EventHandler that is called when error is encounter
+@property (nonatomic) JSValue* onprogress;
 // An EventHandler that is called when error is encounter
 @property (nonatomic) JSValue* onreadystatechange;
 // Returns an unsigned short, the state of the request.
@@ -45,6 +47,7 @@ typedef NS_ENUM(NSUInteger , ReadyState) {
 // Is an EventHandler that is called whenever the request times out.
 @property (nonatomic) JSValue* ontimeout;
 @property (nonatomic) JSValue* withCredentials;
+@property (nonatomic) NSError *errorObj;
 // Aborts the request if it has already been sent.
 - (void) abort;
 // Returns all the response headers, separated by CRLF, as a string, or null if no response has been received.
@@ -55,7 +58,7 @@ typedef NS_ENUM(NSUInteger , ReadyState) {
              :(JSValue*)async
              :(JSValue*)user
              :(JSValue*)password;
-
+- (void) cancel;
 // Overrides the MIME type returned by the server.
 - (void) overrideMimeType:(NSString*)mimeType;
 // Sends the request. If the request is asynchronous (which is the default), this method returns as soon as the request is sent.

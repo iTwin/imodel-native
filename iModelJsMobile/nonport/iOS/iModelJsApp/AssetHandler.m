@@ -82,7 +82,7 @@ NSString* _mainPage;
                                          [self cancelWithFileNotFound:urlSchemeTask];
                                          return;
                                      }
-                                     NSURLResponse* taskReponse = [[NSURLResponse alloc]
+                                     NSURLResponse* taskReponse = [[NSHTTPURLResponse alloc]
                                                                    initWithURL:urlSchemeTaskRef.request.URL
                                                                    MIMEType:response.MIMEType
                                                                    expectedContentLength:response.expectedContentLength

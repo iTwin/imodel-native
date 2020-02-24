@@ -7,7 +7,7 @@
 //
 
 #import "XMLHttpRequest.h"
-
+#import <JavaScriptCore/JavaScriptCore.h>
 @implementation XMLHttpRequest {
     NSURLSession *_urlSession;
     NSString *_method;
@@ -23,18 +23,18 @@
     bool _aborted;
     NSString* _downloadFile;
     NSString* _uploadFile;
-    NSError *_error;
-    
+
     JSManagedValue* _onload;
     JSManagedValue* _onerror;
     JSManagedValue* _onreadystatechange;
     JSManagedValue* _withCredentials;
-
 };
+
 -(void)setWithCredentials:(JSValue *)withCredentials {
     _withCredentials = [JSManagedValue managedValueWithValue:withCredentials];
     [[[JSContext currentContext] virtualMachine] addManagedReference:_withCredentials withOwner:self];
 }
+
 -(JSValue*)withCredentials { return _withCredentials.value; }
 
 
@@ -42,12 +42,14 @@
     _onload = [JSManagedValue managedValueWithValue:onload];
     [[[JSContext currentContext] virtualMachine] addManagedReference:_onload withOwner:self];
 }
+
 -(JSValue*)onload { return _onload.value; }
 
 -(void)setOnerror:(JSValue *)onerror {
     _onerror = [JSManagedValue managedValueWithValue:onerror];
     [[[JSContext currentContext] virtualMachine] addManagedReference:_onerror withOwner:self];
 }
+
 -(JSValue*)onerror { return _onerror.value; }
 
 -(void)setOnreadystatechange:(JSValue *)onreadystatechange {
@@ -65,30 +67,15 @@
 @synthesize ontimeout;
 @synthesize responseURL;
 @synthesize timeout;
+@synthesize errorObj;
+@synthesize onprogress;
 // @synthesize withCredentials;
 
 - (instancetype)init {
-    // UrlCache
-    /*
-    NSURLCache* urlCache = [NSURLCache sharedURLCache];
-    NSHTTPCookieStorage* cookieStorage = [NSHTTPCookieStorage sharedHTTPCookieStorage];
-    NSString *sessionConfigurationIdentifier = [[NSBundle mainBundle] bundleIdentifier];
-
-    //Config
-    NSURLSessionConfiguration* configuration = [NSURLSessionConfiguration backgroundSessionConfigurationWithIdentifier:sessionConfigurationIdentifier];
-    [configuration setRequestCachePolicy:NSURLRequestReturnCacheDataElseLoad];
-    [configuration setTimeoutIntervalForResource:0];
-    [configuration setDiscretionary:YES];
-    [configuration setSessionSendsLaunchEvents:YES];
-    [configuration setURLCache:urlCache];
-    [configuration setHTTPCookieStorage:cookieStorage];
-    */
     NSURLSessionConfiguration* configuration = NSURLSessionConfiguration.defaultSessionConfiguration;
     configuration.timeoutIntervalForRequest = 500.0;
     configuration.HTTPMaximumConnectionsPerHost = 8;
-    // configuration.timeoutIntervalForResource = 600.0;
-    return [self initWithURLSession:[NSURLSession sessionWithConfiguration:configuration]];
-    // return [self initWithURLSession:[NSURLSession sessionWithConfiguration:NSURLSessionConfiguration.defaultSessionConfiguration]];
+    return [self initWithURLSession:[NSURLSession sessionWithConfiguration:configuration delegate:self delegateQueue:nil]];
 }
 
 - (instancetype)initWithURLSession:(NSURLSession *)urlSession {
@@ -99,10 +86,11 @@
         _semaphore = NULL;
         _task = NULL;
         _aborted =false;
-        _error = NULL;
+        self.errorObj = NULL;
     }
     return self;
 }
+
 -(void)dealloc {
     NSLog(@"dealloc() XmlHttpRequest %@", _url.absoluteString);
 }
@@ -150,7 +138,7 @@
      NSString *unescaped = [[url toString] stringByReplacingOccurrencesOfString:@" " withString:@"%20"];
     _url =  [url isUndefined]? NULL : [NSURL URLWithString:unescaped];
     _method =  [method isUndefined]? NULL : [method toString];
-    _error = NULL;
+    self.errorObj = NULL;
     if (!_url) {
         [_ctx setException:[JSValue valueWithNewErrorFromMessage:@"url is required parameter" inContext:_ctx]];
         return;
@@ -176,7 +164,7 @@
 
 - (void)uploadChunk: (NSString*)fileName :(JSValue*)blkNo :(JSValue*)blkSize {
     _aborted = false;
-    _error = nil;
+    self.errorObj = nil;
     _uploadFile  = fileName;
     size_t blockNo = [blkNo toUInt32];
     size_t blockSize = [blkSize toUInt32];
@@ -203,7 +191,7 @@
    __block __weak typeof(self) weakSelf = self;
    id completionHandler = ^(NSData *data, NSURLResponse *response, NSError *error){
            if (error) {
-               _error = error;
+               self.errorObj = error;
                if (weakSelf.onerror != nil) {
                    [weakSelf.onerror callWithArguments:@[]];
                }
@@ -245,10 +233,24 @@
     return [NSData dataWithBytesNoCopy:data length:nread];
 }
 
+- (void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask didWriteData:(int64_t)bytesWritten totalBytesWritten:(int64_t)totalBytesWritten totalBytesExpectedToWrite:(int64_t)totalBytesExpectedToWrite {
+    NSLog(@"[XHR] PROGRESS [bytesWritten:%lld] [totalBytesWritten:%lld] [totalBytesExpectedToWrite:%lld]",
+          bytesWritten, totalBytesWritten, totalBytesExpectedToWrite);
+    if (self.onprogress != nil) {
+        JSContext* context = self.onprogress.context;
+        JSValue* doneBytes = [JSValue valueWithDouble:(double)bytesWritten inContext:context];
+        JSValue* totalBytes = [JSValue valueWithDouble:(double)totalBytesExpectedToWrite inContext:context];
+        [self.onprogress callWithArguments:@[doneBytes, totalBytes]];
+    }
+}
+
+- (void)URLSession:(nonnull NSURLSession *)session downloadTask:(nonnull NSURLSessionDownloadTask *)downloadTask didFinishDownloadingToURL:(nonnull NSURL *)location {
+}
+
 - (void)downloadFile:(NSString*)fileName {
     _downloadFile  = fileName;
     _aborted = false;
-    _error = nil;
+    self.errorObj = nil;
     
     bool exists = [[NSFileManager defaultManager] fileExistsAtPath:_downloadFile];
     if (exists) {
@@ -272,7 +274,7 @@
     __block typeof(_downloadFile) fileUrl = _downloadFile;
     id completionHandler = ^(NSURL *location, NSURLResponse *response, NSError *error){
         if (error) {
-            _error = error;
+            self.errorObj = error;
             if (weakSelf.onerror != nil) {
                 [weakSelf.onerror callWithArguments:@[]];
             }
@@ -307,86 +309,101 @@
                          completionHandler:completionHandler];
     [_task resume];
 }
-- (void)completionHandlerEx:(NSData*)receivedData :(NSURLResponse*)clientResponse :(NSError*)error {
- NSLog(@"complete: %@", _url.absoluteString);
+
+- (void)cancel {
+    if (_task != nil) {
+        [_task cancel];
+        self.status = [NSNumber  numberWithInt:404];
+        if (self.onreadystatechange != nil) {
+            [self.onreadystatechange callWithArguments:@[]];
+        }
         if (_semaphore) {
             dispatch_semaphore_signal(_semaphore);
         }
-        if (error) {
-            _error = error;
-            NSLog(@"Error1: %@   %@", _url.absoluteString , error.description);
-    
-            return;
-        }
-        NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *) clientResponse;
-        [self setAllResponseHeaders:[httpResponse allHeaderFields]];
-        self.readyState = @(DONE); // TODO
-        self.status = @(httpResponse.statusCode);
-        self.statusText = [NSString stringWithFormat:@"%ld",httpResponse.statusCode];
-        if (error != NULL) {
-            if (self.onerror != nil) {
-                [self.onerror callWithArguments:@[]];
-            }
-            if (self.onreadystatechange != nil ) {
-                [self.onreadystatechange callWithArguments:@[]];
-            }
-            if (error) {
-                NSLog(@"Error: %@", [error description]);
-            } else {
-                NSLog(@"Error: HTTP statusCode = %ld", (long)[httpResponse statusCode]);
-            }
-            return;
-        }
-        NSString* responseTypeStr = @"";
-        NSString* mimeType = [httpResponse MIMEType];
-        if ([mimeType containsString:@"text"])
-            responseTypeStr = @"text";
-        else if ([mimeType containsString:@"octet-stream"] || [mimeType containsString:@"image"])
-            responseTypeStr = @"arraybuffer";
-        else if([mimeType containsString:@"json"])
-            responseTypeStr = @"json";
-         //NSLog(@"responseText: %@", weakSelf.responseText);
-        self.responseType = responseTypeStr;
-        //arraybuffer/blob/document/json/text
-        //weakSelf.response = weakSelf.responseText;
-        
-        if ( [responseTypeStr caseInsensitiveCompare:@"blob"] == NSOrderedSame ||
-            [responseTypeStr caseInsensitiveCompare:@"arraybuffer"] == NSOrderedSame) {
-            // create a array
-            const NSUInteger length = [receivedData length];
-            const void* src = [receivedData bytes];
-            JSGlobalContextRef ctxRef = [_ctx JSGlobalContextRef];
-        
-            JSObjectRef binArray = JSObjectMakeTypedArray(ctxRef, kJSTypedArrayTypeUint8Array, length, NULL);
-            void* dst = JSObjectGetTypedArrayBytesPtr(ctxRef, binArray, NULL);
-            memcpy(dst, src, length);
-            
-            self.response = [JSValue valueWithJSValueRef:binArray inContext:_ctx];
-        } else if ([responseTypeStr caseInsensitiveCompare:@"json"] == NSOrderedSame) {
-            if (receivedData.length > 0 ) {
-            NSString* json= [[NSString alloc] initWithData:receivedData
-                                                      encoding:NSUTF8StringEncoding];
-            json = [json stringByReplacingOccurrencesOfString:@"\"\\\""
-                                                     withString:@"\""];
-            json = [json stringByReplacingOccurrencesOfString:@"\\\"\""
-                                                   withString:@"\""];
-                
-            [JSValue valueWithObject:json inContext:_ctx];
-            self.response =  [JSValue valueWithObject:json inContext:_ctx];
-            }
-          
-        } else {
-            self.responseText = [[NSString alloc] initWithData:receivedData
-                                                          encoding:NSUTF8StringEncoding];
-        }
+    }
+}
 
-        if (self.onreadystatechange != nil && !_aborted) {
+- (void)completionHandlerEx:(NSData*)receivedData :(NSURLResponse*)clientResponse :(NSError*)error {
+    NSLog(@"complete: %@", _url.absoluteString);
+    if (_semaphore) {
+        dispatch_semaphore_signal(_semaphore);
+    }
+    if (error) {
+        self.errorObj = error;
+        NSLog(@"Error1: %@   %@", _url.absoluteString , error.description);
+
+        return;
+    }
+    NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *) clientResponse;
+    [self setAllResponseHeaders:[httpResponse allHeaderFields]];
+    self.readyState = @(DONE); // TODO
+    self.status = @(httpResponse.statusCode);
+    self.statusText = [NSString stringWithFormat:@"%ld",httpResponse.statusCode];
+    if (error != NULL) {
+        if (self.onerror != nil) {
+            [self.onerror callWithArguments:@[]];
+        }
+        if (self.onreadystatechange != nil ) {
             [self.onreadystatechange callWithArguments:@[]];
         }
-        if (self.onload != nil && ! !_aborted) {
-            [self.onload callWithArguments:@[]];
+        if (error) {
+            NSLog(@"Error: %@", [error description]);
+        } else {
+            NSLog(@"Error: HTTP statusCode = %ld", (long)[httpResponse statusCode]);
         }
+        return;
+    }
+    NSString* responseTypeStr = @"";
+    NSString* mimeType = [httpResponse MIMEType];
+    if ([mimeType containsString:@"text"])
+        responseTypeStr = @"text";
+    else if ([mimeType containsString:@"octet-stream"] || [mimeType containsString:@"image"])
+        responseTypeStr = @"arraybuffer";
+    else if([mimeType containsString:@"json"])
+        responseTypeStr = @"json";
+     //NSLog(@"responseText: %@", weakSelf.responseText);
+    self.responseType = responseTypeStr;
+    //arraybuffer/blob/document/json/text
+    //weakSelf.response = weakSelf.responseText;
+    
+    if ( [responseTypeStr caseInsensitiveCompare:@"blob"] == NSOrderedSame ||
+        [responseTypeStr caseInsensitiveCompare:@"arraybuffer"] == NSOrderedSame) {
+        // create a array
+        const NSUInteger length = [receivedData length];
+        const void* src = [receivedData bytes];
+        JSGlobalContextRef ctxRef = [_ctx JSGlobalContextRef];
+    
+        JSObjectRef binArray = JSObjectMakeTypedArray(ctxRef, kJSTypedArrayTypeUint8Array, length, NULL);
+        void* dst = JSObjectGetTypedArrayBytesPtr(ctxRef, binArray, NULL);
+        memcpy(dst, src, length);
+        
+        self.response = [JSValue valueWithJSValueRef:binArray inContext:_ctx];
+    } else if ([responseTypeStr caseInsensitiveCompare:@"json"] == NSOrderedSame) {
+        if (receivedData.length > 0 ) {
+        NSString* json= [[NSString alloc] initWithData:receivedData
+                                                  encoding:NSUTF8StringEncoding];
+        json = [json stringByReplacingOccurrencesOfString:@"\"\\\""
+                                                 withString:@"\""];
+        json = [json stringByReplacingOccurrencesOfString:@"\\\"\""
+                                               withString:@"\""];
+            
+        [JSValue valueWithObject:json inContext:_ctx];
+        self.response =  [JSValue valueWithObject:json inContext:_ctx];
+        }
+      
+    } else {
+        self.responseText = [[NSString alloc] initWithData:receivedData
+                                                      encoding:NSUTF8StringEncoding];
+    }
+
+    if (self.onreadystatechange != nil && !_aborted) {
+        [self.onreadystatechange callWithArguments:@[]];
+    }
+    if (self.onload != nil && ! !_aborted) {
+        [self.onload callWithArguments:@[]];
+    }
 }
+
 - (NSString *)base64String:(NSString *)str
 {
     NSData *theData = [str dataUsingEncoding: NSASCIIStringEncoding];
@@ -416,12 +433,12 @@
         output[theIndex + 2] = (i + 1) < length ? table[(value >> 6)  & 0x3F] : '=';
         output[theIndex + 3] = (i + 2) < length ? table[(value >> 0)  & 0x3F] : '=';
     }
-
     return [[NSString alloc] initWithData:data encoding:NSASCIIStringEncoding];
 }
+
 - (void)send:(JSValue*)data {
     _aborted = false;
-    _error = nil;
+    self.errorObj = nil;
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:_url];
     if (_user) {
         NSString *authStr = [NSString stringWithFormat:@"%@:%@", _user, _password];
@@ -453,18 +470,6 @@
     }
 
     [request setHTTPMethod:_method];
-    //debug
-    //allHTTPHeaderFields
-    /*
-    for (NSString *name in request.allHTTPHeaderFields) {
-        NSLog(@"REQ %@ : %@", name, request.allHTTPHeaderFields[name]);
-    }
-*/
-    
-    // application/octet-stream arrayBuffer
-    // application/json         json
-    // application/xml
-    // text/plain
     __block __weak typeof(self) weakSelf = self;
     _task = [_urlSession dataTaskWithRequest:request
                                             completionHandler: ^(NSData* receivedData, NSURLResponse* clientResponse, NSError* error ){
@@ -475,8 +480,8 @@
     
     if (_semaphore) {
         dispatch_semaphore_wait(_semaphore, DISPATCH_TIME_FOREVER);
-        if (_error) {
-            [_ctx setException:[JSValue valueWithNewErrorFromMessage:_error.description inContext:_ctx]];
+        if (self.errorObj) {
+            [_ctx setException:[JSValue valueWithNewErrorFromMessage:self.errorObj.description inContext:_ctx]];
         }
     }
 }
@@ -500,6 +505,7 @@
 - (void)overrideMimeType:(NSString *)mimeType {
     NSLog(@"Mime Type override : %@", mimeType);
 }
+
 - (NSString *)getAllResponseHeaders {
     NSMutableString *responseHeaders = [NSMutableString new];
     for (NSString *key in _responseHeaders) {
@@ -514,7 +520,4 @@
 - (NSString *)getResponseHeader:(NSString *)name {
     return _responseHeaders[name];
 }
-
-
-
 @end
