@@ -106,6 +106,271 @@ TEST_F(UnitConversionTests, VolumetricFlowUnitConversions)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Laurynas.Tamasevicius       02/2020
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(UnitConversionTests, RotationalSpringConstantUnitConversions)
+    {
+    ECUnitCP newtonMeterPerRadian = ECTestFixture::GetUnitsSchema()->GetUnitCP("N_M_PER_RAD");
+    ECUnitCP kiloNewtonMeterPetRadian = ECTestFixture::GetUnitsSchema()->GetUnitCP("KN_M_PER_RAD");
+    ECUnitCP newtonMeterPerDegree = ECTestFixture::GetUnitsSchema()->GetUnitCP("N_M_PER_DEG");
+    ECUnitCP kiloPoundForceFootPerRadian = ECTestFixture::GetUnitsSchema()->GetUnitCP("KPF_FT_PER_RAD");
+
+    double expected = 1e3;
+    double actual;
+    kiloNewtonMeterPetRadian->Convert(actual, 1.0, newtonMeterPerRadian);
+    CompareValues(expected, actual, 6, "Conversion from kilo Newton-meter per radian to Newton-meter per radian");
+
+    double pi = 3.1415926535897932;
+    expected = 180.0 / pi;
+    newtonMeterPerDegree->Convert(actual, 1.0, newtonMeterPerRadian);
+    CompareValues(expected, actual, 6, "Conversion from Newton-meter per degree to Newton-meter per radian");
+
+    expected = 1.3558179483e3; // Value from: http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
+    kiloPoundForceFootPerRadian->Convert(actual, 1.0, newtonMeterPerRadian);
+    CompareValues(expected, actual, 6, "Conversion from kilo Pound-foot per radian to Newton-meter per radian");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Laurynas.Tamasevicius       02/2020
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(UnitConversionTests, LinearRotationalSpringConstantUnitConversions)
+    {
+    ECUnitCP newtonPerRadian = ECTestFixture::GetUnitsSchema()->GetUnitCP("N_PER_RAD");
+    ECUnitCP kiloNewtonPetRadian = ECTestFixture::GetUnitsSchema()->GetUnitCP("KN_PER_RAD");
+    ECUnitCP kiloPoundForcePerRadian = ECTestFixture::GetUnitsSchema()->GetUnitCP("KPF_PER_RAD");
+
+    double expected = 1e3;
+    double actual;
+    kiloNewtonPetRadian->Convert(actual, 1.0, newtonPerRadian);
+    CompareValues(expected, actual, 6, "Conversion from kilo Newton per radian to Newton per radian");
+
+    expected = 4.4482216153e3;
+    kiloPoundForcePerRadian->Convert(actual, 1.0, newtonPerRadian);
+    CompareValues(expected, actual, 6, "Conversion from kilo kilo Pound per radian to Newton per radian");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Laurynas.Tamasevicius       02/2020
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(UnitConversionTests, SpringConstantUnitConversions)
+    {
+    ECUnitCP newtonPerMeter = ECTestFixture::GetUnitsSchema()->GetUnitCP("SPRING_CONSTANT_N_PER_M");
+    ECUnitCP kiloNewtonPerMeter = ECTestFixture::GetUnitsSchema()->GetUnitCP("SPRING_CONSTANT_KN_PER_M");
+    ECUnitCP kiloPoundForcePerFoot = ECTestFixture::GetUnitsSchema()->GetUnitCP("SPRING_CONSTANT_KPF_PER_FT");
+
+    double expected = 1e3;
+    double actual;
+    kiloNewtonPerMeter->Convert(actual, 1.0, newtonPerMeter);
+    CompareValues(expected, actual, 6, "Conversion from kilo Newton per Meter to Newton per Meter");
+
+    expected = 1.4593902937e4; // Value from: http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
+    kiloPoundForcePerFoot->Convert(actual, 1.0, newtonPerMeter);
+    CompareValues(expected, actual, 6, "Conversion from kilo Pound force per Foot to Newton per Foot");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Laurynas.Tamasevicius       02/2020
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(UnitConversionTests, LinearSpringConstantUnitConversions)
+    {
+    ECUnitCP newtonPerSquareMeter = ECTestFixture::GetUnitsSchema()->GetUnitCP("LINEAR_SPRING_CONSTANT_N_PER_SQ_M");
+    ECUnitCP kiloNewtonPerSquareMeter = ECTestFixture::GetUnitsSchema()->GetUnitCP("LINEAR_SPRING_CONSTANT_KN_PER_SQ_M");
+    ECUnitCP kiloPoundForcePerSquareFoot = ECTestFixture::GetUnitsSchema()->GetUnitCP("LINEAR_SPRING_CONSTANT_KPF_PER_SQ_FT");
+
+    double expected = 1e3;
+    double actual;
+    kiloNewtonPerSquareMeter->Convert(actual, 1.0, newtonPerSquareMeter);
+    CompareValues(expected, actual, 6, "Conversion from kilo Newton per square Meter to Newton per square Meter");
+
+    expected = 4.788025898e4; // Value from: http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
+    kiloPoundForcePerSquareFoot->Convert(actual, 1.0, newtonPerSquareMeter);
+    CompareValues(expected, actual, 6, "Conversion from kilo Pound force per square Foot to Newton per square Foot");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Laurynas.Tamasevicius       02/2020
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(UnitConversionTests, AreaSpringConstantUnitConversions)
+    {
+    ECUnitCP newtonPerCubeMeter = ECTestFixture::GetUnitsSchema()->GetUnitCP("AREA_SPRING_CONSTANT_N_PER_CUB_M");
+    ECUnitCP kiloNewtonPetCubeMeter = ECTestFixture::GetUnitsSchema()->GetUnitCP("AREA_SPRING_CONSTANT_KN_PER_CUB_M");
+    ECUnitCP kiloPoundForcePerCubeFoot = ECTestFixture::GetUnitsSchema()->GetUnitCP("AREA_SPRING_CONSTANT_KPF_PER_CUB_FT");
+
+    double expected = 1e3;
+    double actual;
+    kiloNewtonPetCubeMeter->Convert(actual, 1.0, newtonPerCubeMeter);
+    CompareValues(expected, actual, 6, "Conversion from kilo Newton per cube Meter to Newton per cube Meter");
+
+    expected = 1.5708746385e5; // Value from: http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
+    kiloPoundForcePerCubeFoot->Convert(actual, 1.0, newtonPerCubeMeter);
+    CompareValues(expected, actual, 6, "Conversion from kilo Pound force per cube Foot to Newton per cube Foot");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Laurynas.Tamasevicius       01/2020
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(UnitConversionTests, LinearLoadUnitConversions)
+    {
+    ECUnitCP newtonPerMeter = ECTestFixture::GetUnitsSchema()->GetUnitCP("N_PER_M");
+    ECUnitCP kiloNewtonPerMeter = ECTestFixture::GetUnitsSchema()->GetUnitCP("KN_PER_M");
+    ECUnitCP megaNewtonPerMeter = ECTestFixture::GetUnitsSchema()->GetUnitCP("MEGAN_PER_M");
+    ECUnitCP poundForcePerFoot = ECTestFixture::GetUnitsSchema()->GetUnitCP("LBF_PER_FT");
+    ECUnitCP kiloPoundForcePerFeet = ECTestFixture::GetUnitsSchema()->GetUnitCP("KPF_PER_FT");
+
+    double expected = 1e3;
+    double actual;
+    kiloNewtonPerMeter->Convert(actual, 1.0, newtonPerMeter);
+    CompareValues(expected, actual, 6, "Conversion from kilo Newton per Meter to Newton per Meter not as expected");
+
+    expected = 1e6; // Value from: http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
+    megaNewtonPerMeter->Convert(actual, 1.0, newtonPerMeter);
+    CompareValues(expected, actual, 6, "Conversion from kilo Pound per Feet to Newton per Meter not as expected");
+
+    expected = 14.593902937; // Value from: http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
+    poundForcePerFoot->Convert(actual, 1.0, newtonPerMeter);
+    CompareValues(expected, actual, 6, "Conversion from kilo Pound per Feet to Newton per Meter not as expected");
+
+    expected = 1.4593902937e4; // Value from: http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
+    kiloPoundForcePerFeet->Convert(actual, 1.0, newtonPerMeter);
+    CompareValues(expected, actual, 6, "Conversion from kilo Pound per Feet to Newton per Meter not as expected");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Laurynas.Tamasevicius       02/2020
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(UnitConversionTests, TorqueUnitConversions)
+    {
+    ECUnitCP newtonMeter = ECTestFixture::GetUnitsSchema()->GetUnitCP("N_M");
+    ECUnitCP kiloNewtonMeter = ECTestFixture::GetUnitsSchema()->GetUnitCP("KN_M");
+    ECUnitCP megaNewtonMeter = ECTestFixture::GetUnitsSchema()->GetUnitCP("MEGAN_M");
+    ECUnitCP poundForceInch = ECTestFixture::GetUnitsSchema()->GetUnitCP("LBF_IN");
+    ECUnitCP kiloPoundForceFeet = ECTestFixture::GetUnitsSchema()->GetUnitCP("KPF_FT");
+
+    double expected = 1e3;
+    double actual;
+    kiloNewtonMeter->Convert(actual, 1.0, newtonMeter);
+    CompareValues(expected, actual, 6, "Conversion from kilo Newton Meter to Newton Meter not as expected");
+
+    expected = 1e6;
+    megaNewtonMeter->Convert(actual, 1.0, newtonMeter);
+    CompareValues(expected, actual, 6, "Conversion from mega Newton Meter to Newton Meter not as expected");
+
+    expected = 0.11298482903 ; // Value from: http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
+    poundForceInch->Convert(actual, 1.0, newtonMeter);
+    CompareValues(expected, actual, 6, "Conversion from Pound inch to Newton Meter not as expected");
+
+    expected = 1.3558179483e3 ; // Value from: http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
+    kiloPoundForceFeet->Convert(actual, 1.0, newtonMeter);
+    CompareValues(expected, actual, 6, "Conversion from kilo Pound Feet to Newton Meter not as expected");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Laurynas.Tamasevicius       02/2020
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(UnitConversionTests, LinearTorqueUnitsConversions)
+    {
+    ECUnitCP newtonMeterPerMeter = ECTestFixture::GetUnitsSchema()->GetUnitCP("N_M_PER_M");
+    ECUnitCP kiloNewtonMeterPerMeter = ECTestFixture::GetUnitsSchema()->GetUnitCP("KN_M_PER_M");
+    ECUnitCP megaNewtonMeterPerMeter = ECTestFixture::GetUnitsSchema()->GetUnitCP("MEGAN_M_PER_M");
+    ECUnitCP newtonCentimeterPerCentieter = ECTestFixture::GetUnitsSchema()->GetUnitCP("N_CM_PER_CM");
+    ECUnitCP poundForceInchPerInch = ECTestFixture::GetUnitsSchema()->GetUnitCP("LBF_IN_PER_IN");
+    ECUnitCP poundForceFeetPerFeet = ECTestFixture::GetUnitsSchema()->GetUnitCP("LBF_FT_PER_FT");
+    ECUnitCP kiloPoundForceFootPerFoot = ECTestFixture::GetUnitsSchema()->GetUnitCP("KPF_FT_PER_FT");
+
+    double expected = 1e3;
+    double actual;
+    kiloNewtonMeterPerMeter->Convert(actual, 1.0, newtonMeterPerMeter);
+    CompareValues(expected, actual, 6, "Conversion from kilo Newton Meter per Meter to Newton Meter per Meter not as expected");
+
+    expected = 1e6;
+    megaNewtonMeterPerMeter->Convert(actual, 1.0, newtonMeterPerMeter);
+    CompareValues(expected, actual, 6, "Conversion from mega Newton Meter per Meter to Newton Meter per Meter not as expected");
+
+    expected = 1.0;
+    newtonCentimeterPerCentieter->Convert(actual, 1.0, newtonMeterPerMeter);
+    CompareValues(expected, actual, 6, "Conversion from Newton Centimeter per Centimeter to Newton Meter per Meter not as expected");
+
+    expected = 4.4482216153; // Value from: http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
+    poundForceInchPerInch->Convert(actual, 1.0, newtonMeterPerMeter);
+    CompareValues(expected, actual, 6, "Conversion from Pound-force Inch per Inch to Newton Meter per Meter not as expected");
+
+    expected = 4.4482216153; // Value from: http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
+    poundForceFeetPerFeet->Convert(actual, 1.0, newtonMeterPerMeter);
+    CompareValues(expected, actual, 6, "Conversion from Pound-force Foot per Foot to Newton Meter per Meter not as expected");
+
+    expected = 4.4482216153e3; // Value from: http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
+    kiloPoundForceFootPerFoot->Convert(actual, 1.0, newtonMeterPerMeter);
+    CompareValues(expected, actual, 6, "Conversion from kilo Pound-force Foot per Foot to Newton Meter per Meter not as expected");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Laurynas.Tamasevicius       02/2020
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(UnitConversionTests, AreaTorqueUnitsConversions)
+    {
+    ECUnitCP newtonMeterPerSquareMeter = ECTestFixture::GetUnitsSchema()->GetUnitCP("N_M_PER_SQ_M");
+    ECUnitCP kiloNewtonMeterPerSquareMeter = ECTestFixture::GetUnitsSchema()->GetUnitCP("KN_M_PER_SQ_M");
+    ECUnitCP megaNewtonMeterPerSquareMeter = ECTestFixture::GetUnitsSchema()->GetUnitCP("MEGAN_M_PER_SQ_M");
+    ECUnitCP newtonCentimeterPerSquareCentieter = ECTestFixture::GetUnitsSchema()->GetUnitCP("N_CM_PER_SQ_CM");
+    ECUnitCP poundForceInchPerSquareInch = ECTestFixture::GetUnitsSchema()->GetUnitCP("LBF_IN_PER_SQ_IN");
+    ECUnitCP poundForceFeetPerSquareFeet = ECTestFixture::GetUnitsSchema()->GetUnitCP("LBF_FT_PER_SQ_FT");
+    ECUnitCP kiloPoundForceFootPerSquareFoot = ECTestFixture::GetUnitsSchema()->GetUnitCP("KPF_FT_PER_SQ_FT");
+
+    double expected = 1e3;
+    double actual;
+    kiloNewtonMeterPerSquareMeter->Convert(actual, 1.0, newtonMeterPerSquareMeter);
+    CompareValues(expected, actual, 6, "Conversion from kilo Newton Meter per square Meter to Newton Meter per square Meter not as expected");
+
+    expected = 1e6;
+    megaNewtonMeterPerSquareMeter->Convert(actual, 1.0, newtonMeterPerSquareMeter);
+    CompareValues(expected, actual, 6, "Conversion from mega Newton Meter per square Meter to Newton Meter per square Meter not as expected");
+
+    expected = 1e2;
+    newtonCentimeterPerSquareCentieter->Convert(actual, 1.0, newtonMeterPerSquareMeter);
+    CompareValues(expected, actual, 6, "Conversion from Newton Centimeter per square Centimeter to Newton Meter per square Meter not as expected");
+
+    expected = 175.12683525; // Value from: http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
+    poundForceInchPerSquareInch->Convert(actual, 1.0, newtonMeterPerSquareMeter);
+    CompareValues(expected, actual, 6, "Conversion from Pound-force Inch per Inch to Newton square Meter per square Meter not as expected");
+
+    expected = 14.593902937; // Value from: http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
+    poundForceFeetPerSquareFeet->Convert(actual, 1.0, newtonMeterPerSquareMeter);
+    CompareValues(expected, actual, 6, "Conversion from Pound-force Foot per Foot to Newton square Meter per square Meter not as expected");
+
+    expected = 14.593902937e3; // Value from: http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
+    kiloPoundForceFootPerSquareFoot->Convert(actual, 1.0, newtonMeterPerSquareMeter);
+    CompareValues(expected, actual, 6, "Conversion from kilo Pound-force Foot per Foot to Newton square Meter per square Meter not as expected");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Laurynas.Tamasevicius       02/2020
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(UnitConversionTests, ForceDensityUnitsConversions)
+    {
+    ECUnitCP newtonPerCubeMeter = ECTestFixture::GetUnitsSchema()->GetUnitCP("N_PER_CUB_M");
+    ECUnitCP kiloPoundForcePerCubeFoot = ECTestFixture::GetUnitsSchema()->GetUnitCP("KPF_PER_CUB_FT");
+
+    double expected = 1.5708746385e5;
+    double actual;
+    kiloPoundForcePerCubeFoot->Convert(actual, 1.0, newtonPerCubeMeter);
+    CompareValues(expected, actual, 6, "Conversion from kilo Pound-force per cube Foot to Newton per cube Meter not as expected");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Laurynas.Tamasevicius       02/2020
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(UnitConversionTests, ForceUnitsConversions)
+    {
+    ECUnitCP newton = ECTestFixture::GetUnitsSchema()->GetUnitCP("N");
+    ECUnitCP megaNewton = ECTestFixture::GetUnitsSchema()->GetUnitCP("MEGAN");
+
+    double expected = 1e6;
+    double actual;
+    megaNewton->Convert(actual, 1.0, newton);
+    CompareValues(expected, actual, 6, "Conversion from mega Newton to Newton not as expected");
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                  09/2019
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(UnitConversionTests, ProbabilityUnitConversions)
