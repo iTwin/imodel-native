@@ -1047,6 +1047,19 @@ public:
 };
 
 //=======================================================================================
+//! A GraphicalModel3d contains 3-dimensional geometric elements for graphical presentation purposes.
+//! @ingroup GROUP_DgnModel
+// @bsiclass                                                    Shaun.Sewall    01/2020
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE GraphicalModel3d : GeometricModel3d
+{
+    DEFINE_T_SUPER(GeometricModel3d);
+
+public:
+    explicit GraphicalModel3d(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
 //! A GeometricModel3d that occupies physical space in the DgnDb. All SpatialModels in a DgnDb have the same coordinate
 //! space (CoordinateSpace::World), aka "Physical Space".
 //! DgnElements from SpatialModels are indexed in the persistent range tree of the DgnDb (the DGN_VTABLE_SpatialIndex).

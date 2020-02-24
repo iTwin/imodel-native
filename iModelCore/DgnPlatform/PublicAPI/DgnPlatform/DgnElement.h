@@ -2946,9 +2946,25 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override {return !codeSpec.IsNullCodeSpec();}
     DGNPLATFORM_EXPORT static DgnElement::CreateParams InitCreateParams(SubjectCR parentSubject, Utf8StringCR name, DgnDomain::Handler& handler);
-    explicit InformationPartitionElement(CreateParams const& params) : T_Super(params) {}
 
 public:
+    explicit InformationPartitionElement(CreateParams const& params) : T_Super(params) {}
+
+    //! Create a new instance of a subclass of InformationPartitionElement
+    //! @param[in] classId Identifies the subclass of InformationPartitionElement to create
+    //! @param[in] parentSubject The new InformationPartitionElement will be a child element of this Subject
+    //! @param[in] name The name of the new partition which will be used as the CodeValue
+    //! @param[in] description Optional description for this InformationPartitionElement
+    //! @note This method should only be used for subclasses of InformationPartitionElement that do not have their own C++ handlers.
+    DGNPLATFORM_EXPORT static InformationPartitionElementPtr Create(DgnClassId classId, SubjectCR parentSubject, Utf8StringCR name, Utf8CP description=nullptr);
+    //! Create and insert a new instance of a subclass of InformationPartitionElement
+    //! @param[in] classId Identifies the subclass of InformationPartitionElement to create
+    //! @param[in] parentSubject The new InformationPartitionElement will be a child element of this Subject
+    //! @param[in] name The name of the new partition which will be used as the CodeValue
+    //! @param[in] description Optional description for this InformationPartitionElement
+    //! @note This method should only be used for subclasses of InformationPartitionElement that do not have their own C++ handlers.
+    DGNPLATFORM_EXPORT static InformationPartitionElementCPtr CreateAndInsert(DgnClassId classId, SubjectCR parentSubject, Utf8StringCR name, Utf8CP description=nullptr);
+
     //! Create a DgnCode for an InformationPartitionElement with the specified Subject as its parent
     DGNPLATFORM_EXPORT static DgnCode CreateCode(SubjectCR parentSubject, Utf8StringCR name);
     //! Create a unique DgnCode for an InformationPartitionElement with the specified Subject as its parent
@@ -2982,13 +2998,11 @@ public:
     //! @param[in] parentSubject The new DefinitionPartition will be a child element of this Subject
     //! @param[in] name The name of the new partition which will be used as the CodeValue
     //! @param[in] description Optional description for this DefinitionPartition
-    //! @see DgnElements::GetRootSubject
     DGNPLATFORM_EXPORT static DefinitionPartitionPtr Create(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description=nullptr);
     //! Create and insert a new DefinitionPartition
     //! @param[in] parentSubject The new DefinitionPartition will be a child element of this Subject
     //! @param[in] name The name of the new partition which will be used as the CodeValue
     //! @param[in] description Optional description for this DefinitionPartition
-    //! @see DgnElements::GetRootSubject
     DGNPLATFORM_EXPORT static DefinitionPartitionCPtr CreateAndInsert(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description=nullptr);
 };
 
@@ -3011,13 +3025,11 @@ public:
     //! @param[in] parentSubject The new DocumentPartition will be a child element of this Subject
     //! @param[in] name The name of the new partition which will be used as the CodeValue
     //! @param[in] description Optional description for this DocumentPartition
-    //! @see DgnElements::GetRootSubject
     DGNPLATFORM_EXPORT static DocumentPartitionPtr Create(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description=nullptr);
     //! Create and insert a new DocumentPartition
     //! @param[in] parentSubject The new DocumentPartition will be a child element of this Subject
     //! @param[in] name The name of the new partition which will be used as the CodeValue
     //! @param[in] description Optional description for this DocumentPartition
-    //! @see DgnElements::GetRootSubject
     DGNPLATFORM_EXPORT static DocumentPartitionCPtr CreateAndInsert(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description=nullptr);
 };
 
@@ -3040,13 +3052,11 @@ public:
     //! @param[in] parentSubject The new GroupInformationPartition will be a child element of this Subject
     //! @param[in] name The name of the new partition which will be used as the CodeValue
     //! @param[in] description Optional description for this GroupInformationPartition
-    //! @see DgnElements::GetRootSubject
     DGNPLATFORM_EXPORT static GroupInformationPartitionPtr Create(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description=nullptr);
     //! Create and insert a new GroupInformationPartition
     //! @param[in] parentSubject The new GroupInformationPartition will be a child element of this Subject
     //! @param[in] name The name of the new partition which will be used as the CodeValue
     //! @param[in] description Optional description for this GroupInformationPartition
-    //! @see DgnElements::GetRootSubject
     DGNPLATFORM_EXPORT static GroupInformationPartitionCPtr CreateAndInsert(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description=nullptr);
 };
 
@@ -3069,13 +3079,11 @@ public:
     //! @param[in] parentSubject The new InformationRecordPartition will be a child element of this Subject
     //! @param[in] name The name of the new partition which will be used as the CodeValue
     //! @param[in] description Optional description for this InformationRecordPartition
-    //! @see DgnElements::GetRootSubject
     DGNPLATFORM_EXPORT static InformationRecordPartitionPtr Create(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description=nullptr);
     //! Create and insert a new InformationRecordPartition
     //! @param[in] parentSubject The new InformationRecordPartition will be a child element of this Subject
     //! @param[in] name The name of the new partition which will be used as the CodeValue
     //! @param[in] description Optional description for this InformationRecordPartition
-    //! @see DgnElements::GetRootSubject
     DGNPLATFORM_EXPORT static InformationRecordPartitionCPtr CreateAndInsert(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description=nullptr);
 };
 
@@ -3098,13 +3106,11 @@ public:
     //! @param[in] parentSubject The new PhysicalPartition will be a child element of this Subject
     //! @param[in] name The name of the new partition which will be used as the CodeValue
     //! @param[in] description Optional description for this PhysicalPartition
-    //! @see DgnElements::GetRootSubject
     DGNPLATFORM_EXPORT static PhysicalPartitionPtr Create(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description=nullptr);
     //! Create and insert a new PhysicalPartition
     //! @param[in] parentSubject The new PhysicalPartition will be a child element of this Subject
     //! @param[in] name The name of the new partition which will be used as the CodeValue
     //! @param[in] description Optional description for this PhysicalPartition
-    //! @see DgnElements::GetRootSubject
     DGNPLATFORM_EXPORT static PhysicalPartitionCPtr CreateAndInsert(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description=nullptr);
 
     BE_JSON_NAME(PhysicalPartition); //<! The namespace reserved for PhysicalPartition Json properties
@@ -3143,13 +3149,11 @@ public:
     //! @param[in] parentSubject The new SpatialLocationPartition will be a child element of this Subject
     //! @param[in] name The name of the new partition which will be used as the CodeValue
     //! @param[in] description Optional description for this SpatialLocationPartition
-    //! @see DgnElements::GetRootSubject
     DGNPLATFORM_EXPORT static SpatialLocationPartitionPtr Create(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description=nullptr);
     //! Create and insert a new SpatialLocationPartition
     //! @param[in] parentSubject The new SpatialLocationPartition will be a child element of this Subject
     //! @param[in] name The name of the new partition which will be used as the CodeValue
     //! @param[in] description Optional description for this SpatialLocationPartition
-    //! @see DgnElements::GetRootSubject
     DGNPLATFORM_EXPORT static SpatialLocationPartitionCPtr CreateAndInsert(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description=nullptr);
 };
 

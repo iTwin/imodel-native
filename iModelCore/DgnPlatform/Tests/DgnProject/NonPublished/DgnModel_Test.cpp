@@ -682,6 +682,20 @@ TEST_F(DgnModelTests, GenericGroupModelCreation)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    02/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnModelTests, GraphicalModel3d)
+    {
+    SetupSeedProject();
+    SubjectCPtr subject = m_db->Elements().GetRootSubject();
+    DgnClassId classId = m_db->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_GraphicalPartition3d);
+    InformationPartitionElementCPtr partition = InformationPartitionElement::CreateAndInsert(classId, *subject, "GraphicalPartition3d", "Description of GraphicalPartition3d");
+    ASSERT_TRUE(partition.IsValid());
+	GeometricModel3dPtr model = GenericGraphicalModel3d::CreateAndInsert(*partition);
+    ASSERT_TRUE(model.IsValid());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnModelTests, ModelSelectorAndDelete)

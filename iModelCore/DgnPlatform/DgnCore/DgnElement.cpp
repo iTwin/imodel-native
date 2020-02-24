@@ -475,6 +475,32 @@ DgnElement::CreateParams InformationPartitionElement::InitCreateParams(SubjectCR
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    02/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+InformationPartitionElementPtr InformationPartitionElement::Create(DgnClassId classId, SubjectCR parentSubject, Utf8StringCR name, Utf8CP description)
+    {
+    CreateParams createParams = InitCreateParams(parentSubject, name, dgn_ElementHandler::InformationPartition::GetHandler());
+    createParams.m_classId = classId;
+    if (!createParams.IsValid())
+        return nullptr;
+
+    InformationPartitionElementPtr partition = new InformationPartitionElement(createParams);
+    if (description && *description)
+        partition->SetDescription(description);
+
+    return partition;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    02/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+InformationPartitionElementCPtr InformationPartitionElement::CreateAndInsert(DgnClassId classId, SubjectCR parentSubject, Utf8StringCR name, Utf8CP description)
+    {
+    InformationPartitionElementPtr partition = Create(classId, parentSubject, name, description);
+    return partition.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<InformationPartitionElement>(*partition) : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode InformationPartitionElement::CreateCode(SubjectCR parentSubject, Utf8StringCR name)

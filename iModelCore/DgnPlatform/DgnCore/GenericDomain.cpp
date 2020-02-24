@@ -174,6 +174,42 @@ DgnDbStatus GenericGroupModel::_OnInsertElement(DgnElementR element)
     return DgnDbStatus::WrongModel;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    01/2020
+//---------------------------------------------------------------------------------------
+GeometricModel3dPtr GenericGraphicalModel3d::Create(DgnElementCR modeledElement)
+    {
+    ModelHandlerR handler = dgn_ModelHandler::Geometric3d::GetHandler();
+    DgnDbR db = modeledElement.GetDgnDb();
+    DgnClassId classId = db.Schemas().GetClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_GraphicalModel3d);
+    if (!classId.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modeledElement.GetElementId()));
+    if (!model.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    return dynamic_cast<GeometricModel3dP>(model.get());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    01/2020
+//---------------------------------------------------------------------------------------
+GeometricModel3dPtr GenericGraphicalModel3d::CreateAndInsert(DgnElementCR modeledElement)
+    {
+    GeometricModel3dPtr model = Create(modeledElement);
+    if (!model.IsValid())
+        return nullptr;
+
+    return (DgnDbStatus::Success != model->Insert()) ? nullptr : model;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson  02/17
 +---------------+---------------+---------------+---------------+---------------+------*/

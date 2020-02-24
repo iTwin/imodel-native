@@ -1523,7 +1523,7 @@ DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, BeSQLite::EC::ECIn
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, Utf8CP value, PropertyArrayIndex const& arrayIndex)
     {
-    DgnDbStatus status = SetPropertyValue(propertyName, ECValue(value, false), arrayIndex);
+    DgnDbStatus status = SetPropertyValue(propertyName, ECValue(value), arrayIndex);
     BeAssert(DgnDbStatus::Success == status);
     return status;
     }

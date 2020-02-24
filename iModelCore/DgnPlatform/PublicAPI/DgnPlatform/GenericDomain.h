@@ -32,9 +32,10 @@ DGNPLATFORM_REF_COUNTED_PTR(GenericViewAttachmentLabel)
 #define GENERIC_DOMAIN_NAME                 "Generic"
 #define GENERIC_SCHEMA(className)           GENERIC_DOMAIN_NAME "." className
 
-#define GENERIC_CLASS_Graphic3d             "Graphic3d"
 #define GENERIC_CLASS_PhysicalObject        "PhysicalObject"
 #define GENERIC_CLASS_SpatialLocation       "SpatialLocation"
+#define GENERIC_CLASS_Graphic3d             "Graphic3d"
+#define GENERIC_CLASS_GraphicalModel3d      "GraphicalModel3d"
 #define GENERIC_CLASS_Group                 "Group"
 #define GENERIC_CLASS_GroupModel            "GroupModel"
 #define GENERIC_CLASS_Callout               "Callout"
@@ -255,6 +256,19 @@ public:
 };
 
 //=======================================================================================
+// @bsiclass                                                    Shaun.Sewall    01/2020
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE GenericGraphicalModel3d : GraphicalModel3d
+{
+    DEFINE_T_SUPER(GraphicalModel3d);
+
+public:
+    explicit GenericGraphicalModel3d(CreateParams const& params) : T_Super(params) {}
+    DGNPLATFORM_EXPORT static GeometricModel3dPtr Create(DgnElementCR modeledElement);
+    DGNPLATFORM_EXPORT static GeometricModel3dPtr CreateAndInsert(DgnElementCR modeledElement);
+};
+
+//=======================================================================================
 //! A model which contains only GenericGroups.
 //! @see GenericGroup
 // @bsiclass                                                    Shaun.Sewall    05/16
@@ -328,7 +342,6 @@ public:
 //=======================================================================================
 namespace generic_ModelHandler
 {
-    //! The ModelHandler for GroupModel
     //! @private
     struct EXPORT_VTABLE_ATTRIBUTE GroupModel : dgn_ModelHandler::GroupInformation
     {

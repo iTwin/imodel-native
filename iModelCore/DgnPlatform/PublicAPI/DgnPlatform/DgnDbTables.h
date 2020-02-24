@@ -60,6 +60,7 @@
 #define BIS_CLASS_GraphicalElement2d        "GraphicalElement2d"
 #define BIS_CLASS_GraphicalElement3d        "GraphicalElement3d"
 #define BIS_CLASS_GraphicalModel2d          "GraphicalModel2d"
+#define BIS_CLASS_GraphicalPartition3d      "GraphicalPartition3d"
 #define BIS_CLASS_GraphicalType2d           "GraphicalType2d"
 #define BIS_CLASS_GroupInformationElement   "GroupInformationElement"
 #define BIS_CLASS_GroupInformationModel     "GroupInformationModel"
