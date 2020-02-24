@@ -6,7 +6,7 @@
         <ProductName>iModel Bridge Service - Civil3d</ProductName>
         <ProductShortName>C3dBridge</ProductShortName>
         <ProductCode>${REL_V}.${MAJ_V}.${MIN_V}.${SUBMIN_V}.${PartName}.${Platform}.C3dBridge.MSI</ProductCode>
-        <UpgradeCode>${REL_V}.${MAJ_V}.${MIN_V}.${PartName}.${Platform}.C3dBridge</UpgradeCode>
+        <UpgradeCode>{EA5A0937-CA0D-418E-B1D0-9B2EC4257F5B}</UpgradeCode>
         <PropertyRef>C3dBridgeRegistryFeature</PropertyRef>
         <WxsElementRefs>UIRef=WixUI_WithInstallLocations</WxsElementRefs>
         <MkiBeforeCompile>C3dBridgeInstaller.mki</MkiBeforeCompile>

@@ -12,7 +12,7 @@
     <Fragment Id="C3dBridgeBridgeStandardRegistry">
         <Property Id="C3dBridgeRegistryFeature" Value="1"/>
 
-        <Upgrade Id="!(wix.wixUpgradeCode)">
+        <Upgrade Id="{EA5A0937-CA0D-418E-B1D0-9B2EC4257F5B}">
             <UpgradeVersion IncludeMaximum="no" Maximum="!(wix.wixProductVersion)" IgnoreRemoveFailure="no" OnlyDetect="no" Property="C3DBRIDGE_MAJOR_UPGRADE"/>
         </Upgrade>
 
