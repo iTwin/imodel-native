@@ -172,7 +172,7 @@
     <Part Name="__iModelBridgeGetAffinityHostForFwk" BentleyBuildMakeFile="iModelBridgeGetAffinityHostForFwk.mke">
         <SubProduct ProductName="__iModelBridgeGetAffinityHostWrapper"/>
         <Bindings>
-            <Files ProductDirectoryName="Assemblies" ProductSubDirectory="iModelBridgeGetAffinityHost">Delivery/__iModelBridgeGetAffinityHostWrapper/iModelBridgeGetAffinityHost$(exeext)</Files>
+            <Files ProductDirectoryName="Assemblies">Delivery/__iModelBridgeGetAffinityHostWrapper/iModelBridgeGetAffinityHost$(exeext)</Files>
         </Bindings>
     </Part>
 
