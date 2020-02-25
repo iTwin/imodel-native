@@ -204,6 +204,21 @@ BentleyStatus iModelBridgeRegistryBase::QueryBridgeAssignedToDocument(BeFileName
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  02/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+void GetAffinityHostExePath(BeFileNameR calcExe, BeFileNameCR affinityLibraryPath)
+    {
+    calcExe = affinityLibraryPath.GetDirectoryName();
+    calcExe.AppendToPath(L"iModelBridgeGetAffinityHost" EXE_EXT);
+    if (calcExe.DoesPathExist())
+        return;
+
+    calcExe = Desktop::FileSystem::GetExecutableDir();
+    calcExe.AppendToPath(L"iModelBridgeGetAffinityHost/");
+    calcExe.AppendToPath(L"iModelBridgeGetAffinityHost" EXE_EXT);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 static CPLSpawnedProcess* findOrStartAffinityCalculator(BeFileNameCR affinityLibraryPath, bool forceNew)
@@ -215,10 +230,10 @@ static CPLSpawnedProcess* findOrStartAffinityCalculator(BeFileNameCR affinityLib
     if (iFound != s_affinityCalculators.end())
         return iFound->second;
 
-    auto calcexe = Desktop::FileSystem::GetExecutableDir();
-    calcexe.AppendToPath(L"iModelBridgeGetAffinityHost/");
-    calcexe.AppendToPath(L"iModelBridgeGetAffinityHost" EXE_EXT);
-    BeAssert(calcexe.DoesPathExist());
+    BeFileName calcexe;
+    GetAffinityHostExePath(calcexe, affinityLibraryPath);
+    if (!calcexe.DoesPathExist())
+        return nullptr;
 
     Utf8String calcexeU(calcexe);
     Utf8String libU(affinityLibraryPath);

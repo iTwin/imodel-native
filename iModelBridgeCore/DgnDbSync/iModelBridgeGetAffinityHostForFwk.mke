@@ -5,8 +5,9 @@
 
 %include mdl.mki
 
-exeFromSubProduct = $(OutputRootDir)Product/__iModelBridgeGetAffinityHostWrapper/iModelBridgeGetAffinityHost/iModelBridgeGetAffinityHost$(exeext)
+exeFromSubProduct = $(OutputRootDir)Product/__iModelBridgeGetAffinityHostWrapper/iModelBridgeGetAffinityHost$(exeext)
 deliveryExe = $(BuildContext)Delivery/__iModelBridgeGetAffinityHostWrapper/iModelBridgeGetAffinityHost$(exeext)
 
 always:
+    ~mkdir $(OutputRootDir)Product/__iModelBridgeGetAffinityHostWrapper/
     ~linkfile "$(deliveryExe)=$(exeFromSubProduct)"

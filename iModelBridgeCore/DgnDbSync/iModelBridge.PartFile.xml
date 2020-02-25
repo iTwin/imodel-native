@@ -90,7 +90,7 @@
         <SubPart PartName="Docs-Unix-Shim"/>
         <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
         <SubPart PartName="iModelBridgeAssignExeShim" />
-        <SubPart PartName="__iModelBridgeGetAffinityHostForFwk" />
+        <SubPart PartName="iModelBridgeGetAffinityHostExe" />
 
         <Directories DirectoryListName="iModelBridgeAppCommonDirList"/>
         <Directories DirectoryListName="iModelBridgeFwkDirList"/>
@@ -135,7 +135,7 @@
         <SubPart PartName="Docs-Unix-Shim"/>
         <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
         <SubPart PartName="iModelBridgeAssignExeShim"/>
-        <SubPart PartName="__iModelBridgeGetAffinityHostForFwk"/>
+        <SubPart PartName="iModelBridgeGetAffinityHostExe"/>
         <SubPart PartName="Domains" />
         <SubPart PartName="UpdateClientRegistrationMsm"/>
 
@@ -172,7 +172,7 @@
     <Part Name="__iModelBridgeGetAffinityHostForFwk" BentleyBuildMakeFile="iModelBridgeGetAffinityHostForFwk.mke">
         <SubProduct ProductName="__iModelBridgeGetAffinityHostWrapper"/>
         <Bindings>
-            <Files ProductDirectoryName="Assemblies">Delivery/__iModelBridgeGetAffinityHostWrapper/iModelBridgeGetAffinityHost$(exeext)</Files>
+            <Files ProductDirectoryName="Assemblies" ProductSubDirectory="iModelBridgeGetAffinityHost">Delivery/__iModelBridgeGetAffinityHostWrapper/iModelBridgeGetAffinityHost$(exeext)</Files>
         </Bindings>
     </Part>
 
@@ -240,6 +240,7 @@
 
     <Part Name="iModelBridgeFwkExe" BentleyBuildMakeFile="iModelBridge/Fwk/iModelBridgeFwk.mke">
         <SubPart PartName="iModelBridgeFwkLib"/>
+        <SubPart PartName="iModelBridgeGetAffinityHostExe" />
         <Bindings>
             <Files ProductDirectoryName="Assemblies">Delivery/exe/iModelBridgeFwk$(exeext)</Files>
         </Bindings>
@@ -250,7 +251,7 @@
     <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
     <Product Name="iModelBridgeAssign" SaveProduct="true">
         <SubPart PartName="iModelBridgeAssignExeShim" />
-        <SubPart PartName="iModelBridgeGetAffinityHostExe" LibType="Static"/>
+        <SubPart PartName="__iModelBridgeGetAffinityHostForFwk"/>
         <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
         <Directories DirectoryListName="iModelBridgeAssignDirList" />
     </Product>
@@ -333,7 +334,7 @@
         <SubPart PartName="BentleyDll" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02" />
         <SubPart PartName="PublicApi"/>
         <Bindings>
-            <Files ProductDirectoryName="Assemblies" ProductSubDirectory="iModelBridgeGetAffinityHost">Delivery/exe/iModelBridgeGetAffinityHost$(exeext)</Files>
+            <Files ProductDirectoryName="Assemblies">Delivery/exe/iModelBridgeGetAffinityHost$(exeext)</Files>
         </Bindings>
     </Part>
 
