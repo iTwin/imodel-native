@@ -117,6 +117,9 @@
 #define LOG_MODEL       ConverterLogging::GetLogger (ConverterLogging::Namespace::Model)
 #define LOG_MODEL_IS_SEVERITY_ENABLED(sev) ConverterLogging::IsSeverityEnabled (ConverterLogging::Namespace::Model,sev)
 
+#define LOG_LSTYLE      ConverterLogging::GetLogger(ConverterLogging::Namespace::LineStyle)
+#define LOG_LSTYLE_IS_SEVERITY_ENABLED(sev) ConverterLogging::IsSeverityEnabled(ConverterLogging::Namespace::LineStyle, sev)
+
 using namespace BentleyApi::Dgn;
 using namespace BentleyApi::BeSQLite;
 USING_NAMESPACE_BENTLEY_LOGGING

@@ -84,6 +84,8 @@ LineStyleStatus LineStyleConverter::ConvertLineCode (LsComponentId& v10Id, DgnV8
     Json::Value     jsonValue(Json::objectValue);
 
     SetDescription(jsonValue, strokePattern);
+    if (LOG_LSTYLE_IS_SEVERITY_ENABLED(LOG_TRACE))
+        LOG_LSTYLE.tracev(L"ConvertLsComponent: Begin converting LineCode %ls.", strokePattern.GetDescription().c_str());
 
     v10Id = LsComponentId();
 
@@ -163,7 +165,11 @@ LineStyleStatus LineStyleConverter::ConvertLineCode (LsComponentId& v10Id, DgnV8
 
     jsonValue["strokes"] = strokes;
 
-    return LsComponent::AddComponentAsJsonProperty(v10Id, GetDgnDb(), LsComponentType::LineCode, jsonValue);
+    auto retval = LsComponent::AddComponentAsJsonProperty(v10Id, GetDgnDb(), LsComponentType::LineCode, jsonValue);
+    if (LOG_LSTYLE_IS_SEVERITY_ENABLED(LOG_TRACE))
+        LOG_LSTYLE.tracev(L"ConvertLsComponent: End converting LineCode %ls.", strokePattern.GetDescription().c_str());
+
+    return retval;
     }
 
 //---------------------------------------------------------------------------------------
@@ -199,6 +205,9 @@ LineStyleStatus LineStyleConverter::ConvertLinePoint (LsComponentId& v10Id, DgnV
     BeAssert(nullptr != strokePattern);
     if (nullptr == strokePattern)
         return LINESTYLE_STATUS_ComponentNotFound;
+
+    if (LOG_LSTYLE_IS_SEVERITY_ENABLED(LOG_TRACE))
+        LOG_LSTYLE.tracev(L"ConvertLsComponent: Begin converting LinePointComponent %ls.", linePointComponent.GetDescription().c_str());
 
     LsComponentId newId;
     ConvertLsComponent(newId, v8File, *strokePattern, lsScale);
@@ -249,7 +258,11 @@ LineStyleStatus LineStyleConverter::ConvertLinePoint (LsComponentId& v10Id, DgnV
 
     jsonValue["symbols"]=symbols;
 
-    return LsComponent::AddComponentAsJsonProperty(v10Id, GetDgnDb(), LsComponentType::LinePoint, jsonValue);
+    auto retval = LsComponent::AddComponentAsJsonProperty(v10Id, GetDgnDb(), LsComponentType::LinePoint, jsonValue);
+    if (LOG_LSTYLE_IS_SEVERITY_ENABLED(LOG_TRACE))
+        LOG_LSTYLE.tracev(L"ConvertLsComponent: End converting LinePointComponent %ls.", linePointComponent.GetDescription().c_str());
+
+    return retval;
     }
 
 //---------------------------------------------------------------------------------------
@@ -281,6 +294,8 @@ LineStyleStatus LineStyleConverter::ConvertCompoundComponent (LsComponentId&v10I
 
     uint32_t numComponents = (uint32_t)compoundComponent.GetNumComponents();
     Json::Value components(Json::arrayValue);
+    if (LOG_LSTYLE_IS_SEVERITY_ENABLED(LOG_TRACE))
+        LOG_LSTYLE.tracev(L"ConvertLsComponent: Begin converting CompoundComponent %ls with %" PRIu32 " components.", compoundComponent.GetDescription().c_str(), numComponents);
 
     for (size_t i = 0; i < numComponents; ++i)
         {
@@ -318,8 +333,11 @@ LineStyleStatus LineStyleConverter::ConvertCompoundComponent (LsComponentId&v10I
         }
 
     jsonValue["comps"]=components;
+    auto retval = LsComponent::AddComponentAsJsonProperty(v10Id, GetDgnDb(), LsComponentType::Compound, jsonValue);
+    if (LOG_LSTYLE_IS_SEVERITY_ENABLED(LOG_TRACE))
+        LOG_LSTYLE.tracev(L"ConvertLsComponent: End converting CompoundComponent %ls.", compoundComponent.GetDescription().c_str());
 
-    return LsComponent::AddComponentAsJsonProperty(v10Id, GetDgnDb(), LsComponentType::Compound, jsonValue);
+    return retval;
     }
 
 //---------------------------------------------------------------------------------------
@@ -398,6 +416,8 @@ LineStyleStatus LineStyleConverter::ConvertLsComponent (LsComponentId& v10Id, Dg
         }
 
     LineStyleStatus retval = LINESTYLE_STATUS_Success;
+    if (LOG_LSTYLE_IS_SEVERITY_ENABLED(LOG_TRACE))
+        LOG_LSTYLE.tracev(L"ConvertLsComponent: Begin converting %ls", component.GetDescription().c_str());
 
     switch (compType)
         {
@@ -442,6 +462,8 @@ LineStyleStatus LineStyleConverter::ConvertLsComponent (LsComponentId& v10Id, Dg
         }
 
     m_v8ComponentToV10Id[v8Location] = v10Id.GetValue();
+    if (LOG_LSTYLE_IS_SEVERITY_ENABLED(LOG_TRACE))
+        LOG_LSTYLE.tracev(L"ConvertLsComponent: End converting %ls", component.GetDescription().c_str());
 
     return retval;
     }

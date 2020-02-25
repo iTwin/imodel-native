@@ -394,7 +394,7 @@ NativeLogging::ILogger& ConverterLogging::GetLogger(Namespace ns)
 
     if (s_loggers[idx] == nullptr)
         {
-        static char const* s_loggerNs[] = {"DgnV8Converter", "DgnV8Converter.Level", "DgnV8Converter.Level.Mask", "DgnV8Converter.Model", "DgnV8Converter.Performance"};
+        static char const* s_loggerNs[] = {"DgnV8Converter", "DgnV8Converter.Level", "DgnV8Converter.Level.Mask", "DgnV8Converter.Model", "DgnV8Converter.LineStyle", "DgnV8Converter.Performance"};
         s_loggers[idx] = LoggingManager::GetLogger(s_loggerNs[idx]);
         }
     return *s_loggers[idx];

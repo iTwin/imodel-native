@@ -3118,7 +3118,8 @@ struct ConvertV8Lights : ConvertToDgnDbElementExtension
 //=======================================================================================
 struct ConverterLogging
 {
-    enum class Namespace {General, Level, LevelMask, Model, Performance, MaxLoggers};
+    // Make sure to add the logger in Issues.cpp
+    enum class Namespace {General, Level, LevelMask, Model, LineStyle, Performance, MaxLoggers};
 
     DGNDBSYNC_EXPORT static NativeLogging::ILogger& GetLogger(Namespace ns);
     DGNDBSYNC_EXPORT static bool IsSeverityEnabled(Namespace ns, NativeLogging::SEVERITY);

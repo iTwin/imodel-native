@@ -7,6 +7,8 @@
 
 static LsComponent*  loadComponent (LsComponentReader* reader);
 
+DPILOG_DEFINE(LsCache)
+#define LSLOG(sev,...) {if (LsCache_getLogger().isSeverityEnabled(sev)) { LsCache_getLogger().messagev(sev, __VA_ARGS__); }}
 
 USING_NAMESPACE_BENTLEY_SQLITE
 
@@ -162,10 +164,14 @@ LineStyleStatus LsComponent::AddComponentAsJsonProperty (LsComponentId& componen
 
     Utf8String data = Json::FastWriter::ToString(jsonValue);
 
-    if (project.SavePropertyString (spec, data.c_str(), componentNumber, 0) != BE_SQLITE_OK)
+    if (project.SavePropertyString(spec, data.c_str(), componentNumber, 0) != BE_SQLITE_OK)
+        {
+        LOG.errorv("LsComponent::AddComponentAsJsonProperty - failed to save property string '%s' for component number %" PRIu32, data.c_str(), componentNumber);
         return LINESTYLE_STATUS_SQLITE_Error;
+        }
 
     componentId = LsComponentId(componentType, componentNumber);
+    LSLOG(LOG_TRACE, "LsComponent::AddComponentAsJsonProperty - Component number: %" PRIu32 " Component Type: %d  Property String: %s", componentNumber, (int) componentType, data.c_str());
     return LINESTYLE_STATUS_Success;
     }
 
