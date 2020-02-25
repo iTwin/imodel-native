@@ -37,6 +37,7 @@ enum class iModelBridgeErrorId
     MissingBridgeInRegistry,
     MissingFunctionExport,
     MissingInstance,
+    MissingClientInfo,
     ProjectwiseError,
     FailedToLockChannelParent,
     Killed, //!< Killed by the user or the executive program

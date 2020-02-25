@@ -45,7 +45,15 @@ BentleyStatus   iModelBridgeFwk::LoadDmsLibrary(iModelBridgeError& errorContext)
     if (nullptr == getInstance)
         return errorContext.GetBentleyStatus();
 
-    ULONG prodId = std::stoul( m_bridge->GetParamsCR().m_clientInfo->GetApplicationProductId().c_str());
+    auto clientInfo = m_bridge->GetParamsCR().GetClientInfo ();
+    if (clientInfo == nullptr)
+        {
+        errorContext.m_message.assign ("Missing ClientInfo from currently loaded bridge");
+        errorContext.m_id = iModelBridgeErrorId::MissingClientInfo;
+        return errorContext.GetBentleyStatus();
+        }
+
+    ULONG prodId = std::stoul(clientInfo->GetApplicationProductId().c_str());
 
     Utf8String accessToken = nullptr;
     if (m_dmsServerArgs.m_dmsType == iModelDmsSupport::SessionType::PWDI) 
