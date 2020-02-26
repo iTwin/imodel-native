@@ -682,7 +682,7 @@ void ConvertDTMElement::_ProcessResults(ElementConversionResults& results, DgnV8
                 DGNV8_DTMFeatureType::Island,
                 DGNV8_DTMFeatureType::Void,
                 DGNV8_DTMFeatureType::Hull,
-                DGNV8_DTMFeatureType::Contour,
+                DGNV8_DTMFeatureType::ContourLine,
                 DGNV8_DTMFeatureType::FeatureSpot,
                 };
 
