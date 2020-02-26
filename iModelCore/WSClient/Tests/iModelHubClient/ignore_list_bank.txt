@@ -78,7 +78,6 @@ BriefcaseTests.AcquireAfterQueryingByName           #222170 - UserInfo
 iModelTests.SuccessfulCreateiModelWithASpaceInName  #222170 - UserInfo
 UserInfoTests.*                                     #222170 - UserInfo
 StatisticsTests.*                                   #222170 - UserInfo
-ChangeSetsTests.PushWithBridgeProperties            #206035 - BridgeProperties
 iModelTests.CreateiModelUsingOidcLogin              #222174 - Initialization
 CodesTests.QueryUnavailableCodesTest                #222174 - Initialization
 iModelTests.FilterGetiModels                        #222174 - Initialization
