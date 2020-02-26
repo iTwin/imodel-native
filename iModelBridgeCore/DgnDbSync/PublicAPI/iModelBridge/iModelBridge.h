@@ -877,6 +877,9 @@ public:
     //! @see _ParseCommandLineArg for handling an individual argument
     IMODEL_BRIDGE_EXPORT virtual BentleyStatus _ParseCommandLine(int argc, WCharCP argv[]);
 
+    //! The bridge should register its identify in this call. Typicall GetParams().SetClientInfo
+    virtual void _InitIdentity() {}
+
     //! The bridge should register domains and handlers and do any other initilization that is not specific to a particular BIM.
     //! @note The framework will have already registered the DgnPlatformLib::Host. The bridge does not do that.
     //! @param argc the number of command line arguments

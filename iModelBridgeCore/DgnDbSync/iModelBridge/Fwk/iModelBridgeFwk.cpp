@@ -1338,6 +1338,8 @@ BentleyStatus iModelBridgeFwk::LoadBridge(iModelBridgeError& errorContext)
         return errorContext.GetBentleyStatus();
         }
 
+    m_bridge->_InitIdentity();
+
     return BentleyStatus::SUCCESS;
     }
 
@@ -1682,7 +1684,15 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
         errorContext.WriteErrorMessage(errorFile);
         return errorContext.GetIntErrorId();
         }
-
+    
+    m_bridge->_InitIdentity();
+    iModelBridgeLdClient& client = iModelBridgeLdClient::GetInstance(m_iModelHubArgs->m_environment);
+    auto clientInfo = m_bridge->GetParamsCR().GetClientInfo();
+    if (nullptr != clientInfo)
+        {
+        client.SetBridgeDetails(clientInfo->GetApplicationProductId(), clientInfo->GetApplicationName(), clientInfo->GetApplicationVersion().ToString(VERSION_PARSE_FORMAT));
+        client.RestartClient();
+        }
     // Initialize crash reporting.
     if (m_jobEnvArgs.m_isCrashReportingEnabled)
         {

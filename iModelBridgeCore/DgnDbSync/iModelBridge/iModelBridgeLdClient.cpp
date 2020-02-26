@@ -18,7 +18,8 @@ BentleyStatus   iModelBridgeLdClient::Init(CharCP authKey)
     {
     if (NULL == authKey)
         return ERROR;
-
+    
+    m_key = authKey;
     LDSetLogFunction(LD_LOG_TRACE, [](const char* msg) {
         NativeLogging::LoggingManager::GetLogger(L"iModelBridge")->info(msg);
     });
@@ -43,6 +44,7 @@ BentleyStatus   iModelBridgeLdClient::InitClient()
     if (NULL == m_user)
         return ERROR;
 
+    InitUserCustomAttributes();
     m_client = LDClientInit(m_config, m_user, 0);
     if (NULL == m_client)
         {
@@ -186,13 +188,13 @@ CharCP          iModelBridgeLdClient::GetSDKKey(WebServices::UrlProvider::Enviro
 BentleyStatus   iModelBridgeLdClient::SetUserName(CharCP userNameIn)
     {
     Utf8String userName(userNameIn);
-    userName.ToLower();
+    m_userName = userName.ToLower();
     if (NULL == m_user)
-        m_user = LDUserNew(userName.c_str());//TODO check whether we need the user key.
+        m_user = LDUserNew(m_userName.c_str());//TODO check whether we need the user key.
     else
         {
         LDFree(m_user);
-        m_user = LDUserNew(userName.c_str());
+        m_user = LDUserNew(m_userName.c_str());
         }
     
     LDUserSetName(m_user, userName.c_str());
@@ -211,16 +213,69 @@ BentleyStatus   iModelBridgeLdClient::SetProjectDetails(CharCP iModelNameIn, Cha
     if (NULL == m_user)
         return ERROR;
 
-    LDNode* customAttributes = LDNodeCreateHash();
     Utf8String iModelName(iModelNameIn);
     iModelName.ToLower();
     Utf8String guid(guidIn);
     guid.ToLower();
-    LDNodeAddString(&customAttributes, "iModelName", iModelName.c_str());
-    LDNodeAddString(&customAttributes, "ConnectProjectGuid", guid.c_str());
     
-    //return LDUserSetCustomAttributesJSON(m_user, BeRapidJsonUtilities::ToString(json).c_str()) ? SUCCESS : ERROR;
-
-    LDUserSetCustomAttributes(m_user, customAttributes);
     return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  02/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+void            iModelBridgeLdClient::InitUserCustomAttributes()
+    {
+    LDNode* customAttributes = LDNodeCreateHash();
+    if (!m_imodelName.empty())
+        LDNodeAddString(&customAttributes, "iModelName", m_imodelName.c_str());
+    if (!m_connectGuid.empty())
+        LDNodeAddString(&customAttributes, "ConnectProjectGuid", m_connectGuid.c_str());
+    if (!m_applicationProductId.empty())
+        LDNodeAddString(&customAttributes, "ApplicationProductId", m_applicationProductId.c_str());
+    if (!m_applicationName.empty())
+        LDNodeAddString(&customAttributes, "ApplicationName", m_applicationName.c_str());
+    if (!m_applicationVersion.empty())
+        LDNodeAddString(&customAttributes, "ApplicationVersion", m_applicationVersion.c_str());
+    LDUserSetCustomAttributes(m_user, customAttributes);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  02/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   iModelBridgeLdClient::SetBridgeDetails(Utf8StringCR applicationProductIdIn, Utf8StringCR applicationNameIn, Utf8StringCR applicationVersionIn)
+    {
+    if (NULL == m_user)
+        return ERROR;
+
+    Utf8String applicationProductId(applicationProductIdIn);
+    m_applicationProductId = applicationProductId.ToLower();
+
+    Utf8String applicationName(applicationNameIn);
+    m_applicationName = applicationName.ToLower();
+
+    Utf8String applicationVersion(applicationVersionIn);
+    m_applicationVersion = applicationVersion.ToLower();
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  02/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   iModelBridgeLdClient::RestartClient()
+    {
+    if (NULL != m_client)
+        {
+        LDClientFlush(m_client);
+        LDClientClose(m_client);//Closing the client releases config and user.
+        m_user = NULL;
+        m_config = NULL;
+        m_client = NULL;
+        }
+    
+    Init(m_key.c_str());
+    //Let's Create a new user
+    SetUserName(m_userName.c_str());
+    return InitClient();
     }

@@ -1484,6 +1484,11 @@ TEST_F(iModelBridgeTests, LaunchDarklyQa)
     instance.SetUserName("abeesh.basheer@bentley.com");
     instance.IsFeatureOn(flag, "allow-imodelhub-projectextents");
     ASSERT_EQ(true, flag);
+
+    flag = false;
+    ASSERT_EQ(SUCCESS, instance.RestartClient());
+    instance.IsFeatureOn(flag, "allow-imodelhub-projectextents");
+    ASSERT_EQ(true, flag);
     instance.Close();
     }
 
