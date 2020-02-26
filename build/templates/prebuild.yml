@@ -5,6 +5,14 @@ steps:
       SourceFolder: $(BB_SRC_ROOT)/teamConfig
       Contents: '*.cache'
 
+  # A bit strange but based on the way BB currently handles git branches, it will not switch to a Repository Tag (which represents a branch),
+  # if the local repo already exists.  It will only honor the tag if it's a fresh clone of the repo.
+  - task: DeleteFiles@1
+    displayName: Purge BisSchemas
+    inputs:
+      SourceFolder: $(BB_SRC_ROOT)
+      Contents: 'BisSchemas'
+
   - task: setenv@0
     displayName: Windows Environment
     condition: and(succeeded(), eq('windows_nt', variables['Agent.OS']))
