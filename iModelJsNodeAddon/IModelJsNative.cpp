@@ -1262,14 +1262,23 @@ public:
 
     Napi::Value OpenIModel(Napi::CallbackInfo const& info)
         {
-        REQUIRE_ARGUMENT_STRING(0, dbname, Env().Undefined());
+        REQUIRE_ARGUMENT_STRING(0, dbName, Env().Undefined());
         REQUIRE_ARGUMENT_INTEGER(1, mode, Env().Undefined());
         OPTIONAL_ARGUMENT_INTEGER(2, upgrade, (int) SchemaUpgradeOptions::DomainUpgradeOptions::CheckRequiredUpgrades, Env().Undefined());
+        OPTIONAL_ARGUMENT_STRING(3, encryptionPropsString, Env().Undefined());
 
+        BeFileName dbFileName(dbName.c_str(), true);
         SchemaUpgradeOptions schemaUpgradeOptions((SchemaUpgradeOptions::DomainUpgradeOptions) upgrade);
         DgnDb::OpenParams openParams((Db::OpenMode)mode, BeSQLite::DefaultTxn::Yes, schemaUpgradeOptions);
 
-        DbResult result = OpenDgnDb(BeFileName(dbname.c_str(), true), openParams);
+        if (!encryptionPropsString.empty() && BeSQLite::Db::IsEncryptedDb(dbFileName))
+            {
+            Json::Value encryptionPropsJson = Json::Value::From(encryptionPropsString);
+            if (encryptionPropsJson.isMember(JsInterop::json_password()))
+                openParams.GetEncryptionParamsR().SetPassword(encryptionPropsJson[JsInterop::json_password()].asCString());
+            }
+
+        DbResult result = OpenDgnDb(dbFileName, openParams);
         return Napi::Number::New(Env(), (int) result);
         }
 
@@ -1892,6 +1901,7 @@ public:
         {
         REQUIRE_DB_TO_BE_OPEN
         REQUIRE_ARGUMENT_INTEGER(0, idValue, Env().Undefined());
+        OPTIONAL_ARGUMENT_STRING(1, encryptionPropsString, Env().Undefined());
         BeFileName name(m_dgndb->GetFileName());
 
         // TODO: This routine has excessive logging to diagnose performance issues with this
@@ -1915,7 +1925,15 @@ public:
             PERFLOG_START("iModelJsNative", "OpenDgnDb");
             SchemaUpgradeOptions schemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::SkipCheck);
             DgnDb::OpenParams openParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, schemaUpgradeOptions);
-            OpenDgnDb(name, openParams);
+
+            if (!encryptionPropsString.empty())
+                {
+                Json::Value encryptionPropsJson = Json::Value::From(encryptionPropsString);
+                if (encryptionPropsJson.isMember(JsInterop::json_password()))
+                    openParams.GetEncryptionParamsR().SetPassword(encryptionPropsJson[JsInterop::json_password()].asCString());
+                }
+
+            result = OpenDgnDb(name, openParams);
             PERFLOG_FINISH("iModelJsNative", "OpenDgnDb");
             }
 
@@ -2103,12 +2121,40 @@ public:
         BeFileName asset = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
         return Napi::String::New(info.Env(), asset.GetNameUtf8().c_str());
         }
+
     static Napi::Value EnableSharedCache(Napi::CallbackInfo const& info)
         {
         REQUIRE_ARGUMENT_BOOL(0, enabled, Napi::Number::New(info.Env(), (int) BE_SQLITE_ERROR));
         DbResult r = BeSQLiteLib::EnableSharedCache(enabled);
         return Napi::Number::New(info.Env(), (int) r);
         }
+
+    static Napi::Value EncryptDb(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, dbName, Napi::Number::New(info.Env(), (int) BE_SQLITE_ERROR));
+        REQUIRE_ARGUMENT_STRING(1, encryptionPropsString, Napi::Number::New(info.Env(), (int) BE_SQLITE_ERROR));
+
+        BeFileName dbFileName(dbName.c_str(), true);
+        Json::Value encryptionPropsJson = Json::Value::From(encryptionPropsString);
+        
+        DbResult status = BE_SQLITE_ERROR;
+        BeSQLite::Db::EncryptionParams encryptionParams;
+        if (encryptionPropsJson.isMember(JsInterop::json_password()))
+            {
+            encryptionParams.SetPassword(encryptionPropsJson[JsInterop::json_password()].asCString());
+            status = BeSQLite::Db::EncryptDb(dbFileName, encryptionParams);
+            }
+
+        return Napi::Number::New(info.Env(), (int) status);
+        }
+
+    Napi::Value IsEncrypted(Napi::CallbackInfo const&)
+        {
+        REQUIRE_DB_TO_BE_OPEN
+        bool isEncrypted = BeSQLite::Db::IsEncryptedDb(GetDgnDb().GetFileName());
+        return Napi::Boolean::New(Env(), isEncrypted);
+        }
+
     void UpdateProjectExtents(Napi::CallbackInfo const& info)
         {
         REQUIRE_ARGUMENT_STRING(0, newExtentsJson, )
@@ -2426,6 +2472,7 @@ public:
             InstanceMethod("insertLinkTableRelationship", &NativeDgnDb::InsertLinkTableRelationship),
             InstanceMethod("insertModel", &NativeDgnDb::InsertModel),
             InstanceMethod("isChangeCacheAttached", &NativeDgnDb::IsChangeCacheAttached),
+            InstanceMethod("isEncrypted", &NativeDgnDb::IsEncrypted),
             InstanceMethod("isOpen", &NativeDgnDb::IsDgnDbOpen),
             InstanceMethod("isReadonly", &NativeDgnDb::IsReadonly),
             InstanceMethod("isRedoPossible", &NativeDgnDb::IsRedoPossible),
@@ -2468,6 +2515,7 @@ public:
             InstanceMethod("pollConcurrentQuery", &NativeDgnDb::PollConcurrentQuery),
             StaticMethod("getAssetsDir", &NativeDgnDb::GetAssetDir),
             StaticMethod("enableSharedCache", &NativeDgnDb::EnableSharedCache),
+            StaticMethod("encryptDb", &NativeDgnDb::EncryptDb),
             StaticMethod("vacuum", &NativeDgnDb::Vacuum),
             StaticMethod("unsafeSetBriefcaseId", &NativeDgnDb::UnsafeSetBriefcaseId),
         });

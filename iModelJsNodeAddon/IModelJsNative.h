@@ -129,6 +129,7 @@ struct JsInterop
     BE_JSON_NAME(namespace)
     BE_JSON_NAME(orientation)
     BE_JSON_NAME(origin)
+    BE_JSON_NAME(password)
     BE_JSON_NAME(projectExtents)
     BE_JSON_NAME(rootSubject)
     BE_JSON_NAME(subId)

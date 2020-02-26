@@ -102,6 +102,49 @@ TEST_F(DgnDbTest, ConnectedContextId)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    02/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnDbTest, PasswordProtectDgnDb)
+    {
+    // Create a password-protected DgnDb
+    BeFileName dbFileName = DgnDbTestDgnManager::GetOutputFilePath(L"PasswordProtected.bim");
+    DbResult createStatus;
+    Utf8String password("password");
+    CreateDgnDbParams createParams("PasswordProtected");
+    createParams.GetEncryptionParamsR().SetPassword(password.c_str());
+    DgnDbPtr db = DgnDb::CreateDgnDb(&createStatus, dbFileName, createParams);
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, createStatus);
+    ASSERT_TRUE(db.IsValid());
+    ASSERT_TRUE(db->IsDbOpen());
+    ASSERT_TRUE(BeSQLite::Db::IsEncryptedDb(dbFileName));
+    db->CloseDb();
+
+    // Try to open it without a password
+    DbResult openStatus;
+    DgnDb::OpenParams openParams(Db::OpenMode::Readonly);
+    db = DgnDb::OpenDgnDb(&openStatus, dbFileName, openParams);
+    ASSERT_FALSE(db.IsValid());
+    ASSERT_NE(DbResult::BE_SQLITE_OK, openStatus);
+    ASSERT_EQ(DbResult::BE_SQLITE_NOTADB, openStatus);
+
+    // Try to open it with a wrong password
+    openParams.GetEncryptionParamsR().SetPassword("wrongPassword");
+    db = DgnDb::OpenDgnDb(&openStatus, dbFileName, openParams);
+    ASSERT_FALSE(db.IsValid());
+    ASSERT_NE(DbResult::BE_SQLITE_OK, openStatus);
+    ASSERT_EQ(DbResult::BE_SQLITE_NOTADB, openStatus);
+
+    // Open it with the right password
+    openParams.GetEncryptionParamsR().SetPassword(password.c_str());
+    password.clear(); // ensure EncryptionParams is maintaining a copy of the password
+    db = DgnDb::OpenDgnDb(&openStatus, dbFileName, openParams);
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, openStatus);
+    ASSERT_TRUE(db.IsValid());
+    ASSERT_TRUE(db->IsDbOpen());
+    db->CloseDb();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Schema Version can be accessed and it is correct
 * @bsimethod                                    Majd.Uddin                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -791,28 +834,28 @@ TEST_F(ImportTests, SimpleSchemaImport)
     ASSERT_TRUE(m_db->IsDbOpen());
 }
 
-// Waiting for BisCore.01.00.06 to enable
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    08/2019
+// BisCore restricts subclasses of RoleElement. This test confirms AssetElement as a known exception.
+// @bsimethod                                   Shaun.Sewall                    02/2020
 //---------------------------------------------------------------------------------------
-//TEST_F(ImportTests, AssetSchemaImport)
-//    {
-//    Utf8CP schemaXml =
-//        "<ECSchema schemaName=\"Asset\" alias=\"asset\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
-//        "  <ECSchemaReference name='BisCore' version='01.00' alias='bis'/>"
-//        "  <ECEntityClass typeName='AssetElement' modifier='Abstract'>"
-//        "    <BaseClass>bis:RoleElement</BaseClass>"
-//        "  </ECEntityClass>"
-//        "  <ECEntityClass typeName='AssetModel'>"
-//        "    <BaseClass>bis:RoleModel</BaseClass>"
-//        "  </ECEntityClass>"
-//        "</ECSchema>";
-//
-//    SetupSeedProject();
-//    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-//    schemaContext->AddSchemaLocater(m_db->GetSchemaLocater());
-//
-//    ECSchemaPtr schema;
-//    SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-//    ASSERT_EQ(SchemaReadStatus::Success, schemaStatus);
-//    }
+TEST_F(ImportTests, AssetSchemaImport)
+   {
+   Utf8CP schemaXml =
+       "<ECSchema schemaName=\"Asset\" alias=\"asset\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
+       "  <ECSchemaReference name='BisCore' version='01.00' alias='bis'/>"
+       "  <ECEntityClass typeName='AssetElement' modifier='Abstract'>"
+       "    <BaseClass>bis:RoleElement</BaseClass>"
+       "  </ECEntityClass>"
+       "  <ECEntityClass typeName='AssetModel'>"
+       "    <BaseClass>bis:RoleModel</BaseClass>"
+       "  </ECEntityClass>"
+       "</ECSchema>";
+
+   SetupSeedProject();
+   ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+   schemaContext->AddSchemaLocater(m_db->GetSchemaLocater());
+
+   ECSchemaPtr schema;
+   SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+   ASSERT_EQ(SchemaReadStatus::Success, schemaStatus);
+   }

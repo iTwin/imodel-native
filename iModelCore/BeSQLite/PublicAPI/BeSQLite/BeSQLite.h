@@ -2203,23 +2203,25 @@ public:
     //=======================================================================================
     struct EncryptionParams
     {
-        const void* m_key = nullptr;
-        uint32_t m_keySize = 0;
+        bvector<Byte> m_key;
         EncryptionKeySource m_keySource = EncryptionKeySource::NotSpecified;
         uint32_t m_encryptionAlgorithm = 0;
         uint32_t m_reservedFlags = 0;
         Utf8String m_extraData;
 
         EncryptionParams() {}
-        EncryptionParams(const void* key, uint32_t keySize, EncryptionKeySource keySource=EncryptionKeySource::NotSpecified, Utf8StringCR extraData = "") : m_key(key), m_keySize(keySize), m_keySource(keySource), m_extraData(extraData) {}
+        EncryptionParams(const void* key, uint32_t keySize, EncryptionKeySource keySource=EncryptionKeySource::NotSpecified, Utf8StringCR extraData = "")
+            : m_extraData(extraData) {SetKey(key, keySize, keySource);}
 
-        void SetKey(const void* key, uint32_t keySize, EncryptionKeySource keySource=EncryptionKeySource::NotSpecified) {m_key=key; m_keySize=keySize; m_keySource=keySource;}
-        bool HasKey() const {return (nullptr != m_key);}
-        const void* GetKey() const {return m_key;}
-        uint32_t GetKeySize() const {return HasPassword() ? -1 : m_keySize;}
+        void SetKey(const void* key, uint32_t keySize, EncryptionKeySource keySource=EncryptionKeySource::NotSpecified)
+            {m_key.resize(keySize); memcpy(m_key.data(), key, keySize); m_keySource=keySource;}
 
-        void SetPassword(Utf8CP password) {m_key=password; m_keySize=-1; m_keySource=EncryptionKeySource::Password;}
-        bool HasPassword() const {return HasKey() && (EncryptionKeySource::Password == m_keySource);}
+        bool HasKey() const {return !m_key.empty();}
+        const void* GetKey() const {return (void*)m_key.data();}
+        uint32_t GetKeySize() const {return HasPassword() ? -1 : static_cast<uint32_t>(m_key.size());} //!< Returns the key size in bytes or -1 for null-terminated
+
+        void SetPassword(Utf8CP password) {SetKey(password, static_cast<uint32_t>(1+strlen(password)), EncryptionKeySource::Password);}
+        bool HasPassword() const {return (EncryptionKeySource::Password == m_keySource) && HasKey();}
 
         bool HasExtraData() const {return !m_extraData.empty();}
         uint32_t GetExtraDataSize() const {return static_cast<uint32_t>(m_extraData.length());}

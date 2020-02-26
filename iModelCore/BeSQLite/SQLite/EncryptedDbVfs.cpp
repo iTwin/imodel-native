@@ -398,20 +398,24 @@ DbResult Db::EncryptDb(BeFileNameCR originalFileName, EncryptionParams const& pa
     // encrypt a copy so original will be left alone in case of error
     BeFileName encryptedFileName = originalFileName;
     encryptedFileName.AppendExtension(L"enc_temp");
-    BeFile encryptedFile;
+    BeFile encryptedFile; // will contain an encrypted copy of originalFileName
 
     // write to new file so original will be left alone in case of error
     BeFileName newFileName = originalFileName;
     newFileName.AppendExtension(L"new_temp");
-    BeFile newFile;
+    BeFile newFile; // will contain a standard encryption FileHeader + encryptedFile contents
 
     if ((BeFileStatus::Success != newFile.Create(newFileName.GetName())) ||
         (BeFileNameStatus::Success != BeFileName::BeCopyFile(originalFileName, encryptedFileName)) ||
         (BeFileStatus::Success != encryptedFile.Open(encryptedFileName.GetName(), BeFileAccess::Read)))
         return BE_SQLITE_IOERR;
 
+    // SQLite recommends a larger page size for encrypted files
+    DbResult rc = Vacuum(encryptedFileName.GetNameUtf8().c_str(), static_cast<int>(PageSize::PAGESIZE_64K));
+    if (BE_SQLITE_OK != rc)
+        return rc;
+
     Db db;
-    DbResult rc;
     Db::OpenParams openParams(Db::OpenMode::ReadWrite, DefaultTxn::No);
     openParams.SetRawSQLite();
     rc = db.OpenBeSQLiteDb(encryptedFileName, openParams);

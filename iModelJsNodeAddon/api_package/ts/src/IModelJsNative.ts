@@ -243,6 +243,7 @@ export declare namespace IModelJsNative {
     public insertLinkTableRelationship(props: string): ErrorStatusOrResult<DbResult, string>;
     public insertModel(modelProps: string): ErrorStatusOrResult<IModelStatus, string>;
     public isChangeCacheAttached(): boolean;
+    public isEncrypted(): boolean;
     public isOpen(): boolean;
     public isReadonly(): boolean;
     public isRedoPossible(): boolean;
@@ -250,7 +251,7 @@ export declare namespace IModelJsNative {
     public isUndoPossible(): boolean;
     public logTxnError(fatal: boolean): void;
     public getMassProperties(props: string): string;
-    public openIModel(dbName: string, mode: OpenMode, upgrade?: UpgradeOptions): DbResult;
+    public openIModel(dbName: string, mode: OpenMode, upgrade?: UpgradeOptions, encryptionProps?: string /* JSON.stringify(IModelEncryptionProps) */): DbResult;
     public queryFileProperty(props: string, wantString: boolean): string | Uint8Array | undefined;
     public queryFirstTxnId(): TxnIdString;
     public queryModelExtents(options: string): ErrorStatusOrResult<IModelStatus, string>;
@@ -268,7 +269,7 @@ export declare namespace IModelJsNative {
     public saveFileProperty(props: string, strValue: string | undefined, blobVal: Uint8Array | undefined): number;
     public saveProjectGuid(guid: GuidString): DbResult;
     public setAsMaster(guid?: GuidString): DbResult;
-    public setBriefcaseId(idValue: number): DbResult;
+    public setBriefcaseId(idValue: number, encryptionProps?: string /* JSON.stringify(IModelEncryptionProps) */): DbResult;
     public setBriefcaseManagerOptimisticConcurrencyControlPolicy(conflictPolicy: BriefcaseManagerOnConflictPolicy): RepositoryStatus;
     public setBriefcaseManagerPessimisticConcurrencyControlPolicy(): RepositoryStatus;
     public setDbGuid(guid: GuidString): DbResult;
@@ -286,6 +287,7 @@ export declare namespace IModelJsNative {
     public static vacuum(dbName: string, pageSize?: number): DbResult;
     public static unsafeSetBriefcaseId(dbName: string, briefcaseId: number, dbGuid?: GuidString, projectGuid?: GuidString): DbResult;
     public static enableSharedCache(enable: boolean): DbResult;
+    public static encryptDb(dbFileName: string, encryptionProps: string /* JSON.stringify(IModelEncryptionProps) */): DbResult;
   }
 
   /**

@@ -371,6 +371,11 @@ DgnDbPtr JsInterop::CreateDgnDb(DbResult& result, BeFileNameCR filename, JsonVal
         params.m_projectExtents.FromJson(props[json_projectExtents()]);
     if (props.isMember(json_client()))
         params.m_client = props[json_client()].asCString();
+    if (props.isMember(json_password()))
+        {
+        params.GetEncryptionParamsR().SetPassword(props[json_password()].asCString());
+        params.SetPageSize(BeSQLite::Db::PageSize::PAGESIZE_64K); // SQLite recommends a larger page size for encrypted files
+        }
 
     DgnDbPtr db = DgnDb::CreateDgnDb(&result, filename, params);
     if (!db.IsValid())
