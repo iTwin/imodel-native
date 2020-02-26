@@ -260,9 +260,16 @@ BentleyStatus   DwgBridge::_Initialize (int argc, WCharCP argv[])
     // Set dir prefix to be dropped from filenames when coming up with unique but portable filenames in syncinfo
     GetImportOptions().SetInputRootDir (_GetParams().GetInputFileName().GetDirectoryName());
 
-    this->_SetClientInfo ();
-
     return BentleyStatus::SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+void    DwgBridge::_InitIdentity ()
+    {
+    // this method is called after the bridge is loaded, but before _Initialize is called, given us an chance to call _SetClientInfo, which shouldn't be called in a constructor
+    this->_SetClientInfo ();
     }
 
 /*---------------------------------------------------------------------------------**//**

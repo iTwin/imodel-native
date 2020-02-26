@@ -46,7 +46,8 @@ protected:
 
     // iModelBridge overrides
     DWG_EXPORT WString        _SupplySqlangRelPath () override;
-    DWG_EXPORT BentleyStatus   _Initialize (int argc, WCharCP argv[]) override;
+    DWG_EXPORT void           _InitIdentity () override;
+    DWG_EXPORT BentleyStatus  _Initialize (int argc, WCharCP argv[]) override;
     DWG_EXPORT Dgn::SubjectCPtr _InitializeJob () override;
     DWG_EXPORT Dgn::SubjectCPtr _FindJob () override;
     DWG_EXPORT BentleyStatus  _ConvertToBim (Dgn::SubjectCR jobSubject) override;
