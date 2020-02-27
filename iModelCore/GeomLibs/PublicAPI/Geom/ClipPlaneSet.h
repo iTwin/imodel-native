@@ -1,7 +1,8 @@
-/*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See COPYRIGHT.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
@@ -424,6 +425,14 @@ struct  ClipPlaneSet :  bvector <ConvexClipPlaneSet>
     ClipPlaneSetCP holeClip,
     CurveVectorCR planarRegion
     );
+
+    //! Test if any points on the boundary of a DRange3d are inside the clipper.
+    //! Successively clip faces of the range against the clipper.
+    //! Return true (immediately) when any of these clip steps returns non-empty clip.
+    //! optionally return the representative clipped face.
+    //! Note that this specifically tests only faces of the range.
+    //! If the clip is a closed clipper COMPLETELY INSIDE THE RANGE the return is false.
+    GEOMDLLIMPEXP bool IsAnyRangeFacePointInside(DRange3dCR range, bvector<DPoint3d> *clippedFacePoints = nullptr) const;
 };
 
 END_BENTLEY_GEOMETRY_NAMESPACE

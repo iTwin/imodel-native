@@ -492,3 +492,279 @@ TEST (Polyface, PolygonFixRaggedTunnel)
     Check::Size ((size_t)allocationCounter, (size_t)BSIBaseGeom::GetAllocationDifference ());
     Check::ClearGeometry ("Polyface.PolygonFixRaggedTunnel");
     }
+#include <algorithm>
+/*
+* struct PointWithAltitudes contains:
+* * xyz = a point
+* * altitudes[i] = its altitude (positive is OUT) from plane i.
+* * outBit = bit map, with bits addressed by the 6 static constants BitLowX, BitHighX, BitLowY, BitHighY, BitLowZ, BitHighZ
+*
+* The Init method
+* * saves xyz
+* * sets all 6 altitudes
+* * sets the 6 bits of outBit
+*/
+struct PointWithAltitudes {
+    static const uint32_t BitLowX = 0x01;
+    static const uint32_t BitHighX = 0x02;
+    static const uint32_t BitLowY = 0x04;
+    static const uint32_t BitHighY = 0x08;
+    static const uint32_t BitLowZ = 0x10;
+    static const uint32_t BitHighZ = 0x20;
+
+    DPoint3d xyz;
+    // altitude (out positive) from low.x, high.x, low.y. high.y, low.z, high.z
+    double altitude[6];
+    uint32_t outBit;
+    void Init(DPoint3d const &point, DRange3d const & range) {
+        xyz = point;
+        outBit = 0;
+        altitude[0] = range.low.x - point.x;
+        if (altitude[0] > 0.0)
+            outBit |= BitLowX;
+        altitude[1] = point.x - range.high.x;
+        if (altitude[1] > 0.0)
+            outBit |= BitHighX;
+
+        altitude[2] = range.low.y - point.y;
+        if (altitude[2] > 0.0)
+            outBit |= BitLowY;
+        altitude[3] = point.y - range.high.y;
+        if (altitude[3] > 0.0)
+            outBit |= BitHighY;
+
+        altitude[4] = range.low.z - point.z;
+        if (altitude[4] > 0.0)
+            outBit |= BitLowZ;
+        altitude[5] = point.z - range.high.z;
+        if (altitude[5] > 0.0)
+            outBit |= BitHighZ;
+        }
+    };
+/** Array with the 6 plane bits */
+static const uint32_t s_planeBits[] =
+    {
+        PointWithAltitudes::BitLowX,
+        PointWithAltitudes::BitHighX,
+        PointWithAltitudes::BitLowY,
+        PointWithAltitudes::BitHighY,
+        PointWithAltitudes::BitLowZ,
+        PointWithAltitudes::BitHighZ
+    };
+
+
+/**
+ * * return 1 if any part of the triangular area is within the range.
+ * * return 0 if the triangle is entirely outside.
+ * * return -1 if ambiguous (This should not happen)
+ */
+extern int32_t ClassifyTriangleInOutRange
+(
+    DRange3d const & range,
+    DPoint3d const &point0,
+    DPoint3d const &point1,
+    DPoint3d const &point2
+)
+    {
+    PointWithAltitudes points[2][11];	// clip may produce more points. also allow for a wraparound.
+    // uint32_t currentIndex = 0;
+    points[0][0].Init(point0, range);
+    if (points[0][0].outBit == 0)
+        return 1;
+    points[0][1].Init(point1, range);
+    if (points[0][1].outBit == 0)
+        return 1;
+    points[0][2].Init(point2, range);
+    if (points[0][2].outBit == 0)
+        return 1;
+    // any surviving 1 in the AND of all bits indicates completely outside in that direction . . .
+    uint32_t andBits = points[0][0].outBit & points[0][1].outBit & points[0][2].outBit;
+    uint32_t orBits = points[0][0].outBit | points[0][1].outBit | points[0][2].outBit;
+    if (andBits != 0)
+        return 0;
+    // Simple tests are ambiguous ... do proper clip
+    uint32_t numOld = 3;
+    uint32_t numNew;
+    uint32_t oldPointsIndex = 0;
+    uint32_t newPointsIndex;
+    uint32_t i;
+    double altitude0, altitude1, fraction;
+    for (auto planeSelector = 0; planeSelector < 6; planeSelector++)
+        {
+        // If the original points did not have both IN and OUT for this plane, don't bother clipping it.
+        if ((andBits & s_planeBits[planeSelector]) != (orBits & s_planeBits[planeSelector]))
+            {
+            newPointsIndex = 1 - oldPointsIndex;
+            points[oldPointsIndex][numOld] = points[oldPointsIndex][0];
+            altitude0 = points[oldPointsIndex][0].altitude[planeSelector];
+            numNew = 0;
+            for (i = 1; i <= numOld; i++)
+                {
+                altitude1 = points[oldPointsIndex][i].altitude[planeSelector];
+                if (altitude0 <= 0)
+                    {
+                    points[newPointsIndex][numNew++] = points[oldPointsIndex][i - 1];
+                    }
+                if (altitude0 * altitude1 < 0.0)
+                    {
+                    // the edge is split.
+                    // division for the fraction is safe because the altitudes are different enough to have negative product.
+                    fraction = altitude0 / (altitude0 - altitude1);
+                    points[newPointsIndex][numNew].Init(DPoint3d::FromInterpolate(
+                        points[oldPointsIndex][i - 1].xyz,
+                        fraction,
+                        points[oldPointsIndex][i].xyz), range);
+                    if (points[newPointsIndex][numNew].outBit == 0)
+                        return 1;
+                    numNew++;
+                    }
+                altitude0 = altitude1;
+                }
+            if (numNew == 0)
+                return 0;
+            oldPointsIndex = newPointsIndex;
+            numOld = numNew;
+            }
+        }
+    // numOld tells if anything is left ..
+    return numOld > 0 ? 1 : 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(Range3d,ClassifyTriangle)
+    {
+    Check::ClearGeometry("Range3d.ClassifyTriangle");
+    auto point0 = DPoint3d::From (-343884.83689709584, 153920.80327865816, 9048.5880518645045);
+    auto point1 = DPoint3d::From(310187.35062496824, 153347.97073685721, 9048.5880518645045);
+    auto point2 = DPoint3d::From(227941.46285813852, -137168.89271681113, 9048.5880518645045);
+
+    auto range = DRange3d::NullRange ();
+    range.Extend (23670.156381845838, -44808.704728785844, -9.0949470177292824e-13);
+    range.Extend(35505.234572768757, -29872.469819190566, 9050.3983600652864);
+    Check::SaveTransformedEdges(range);
+    Check::SaveTransformed({ point0, point1, point2 });
+
+    for (auto dz : {0.0, -3.0, 3.0})
+        {
+        auto point0A = point0;
+        auto point1A = point1;
+        auto point2A = point2;
+        point0A.z += dz;
+        point1A.z += dz;
+        point2A.z += dz;
+        auto q = ClassifyTriangleInOutRange (range, point0A, point1A, point2A);
+        printf ("  q= %d", q);
+        }
+    Check::ClearGeometry("Range3d.ClassifyTriangle");
+    }
+
+TEST(Range3d, isAnyRangeFaceInsideA)
+    {
+    // get a first-pierce on each face of the range ...
+    // triangle not on any primary plane ...
+    bvector<DPoint3d> triangle {DPoint3d::From (1,0,0), DPoint3d::From (0,1,0), DPoint3d::From (0,0,1)};
+    auto xyz0 = triangle.front();
+    triangle.push_back(xyz0);
+
+    auto range = DRange3d::From (DPoint3d::From (-4,-6,-3), DPoint3d::From (3,4,8));
+    Check::SaveTransformedEdges (range);
+    for (auto sweepDirection : {
+        DVec3d::From (1,0,0),
+        DVec3d::From (-1,0,0),
+        DVec3d::From (0,1,0),
+        DVec3d::From (0,-1,0),
+        DVec3d::From (0,0,1),
+        DVec3d::From (0,0,-1)
+        })
+        {
+        auto loop = CurveVector::CreateLinear (triangle, CurveVector::BOUNDARY_TYPE_Outer);
+        auto solid = ISolidPrimitive::CreateDgnExtrusion(
+            DgnExtrusionDetail (loop, sweepDirection * 10.0, false));
+        auto clipper = ClipPlaneSet::FromSweptPolygon(&triangle[0], 4, &sweepDirection);
+        ClipPlane backPlane (sweepDirection, DPoint3d::From (0,0,0));
+        clipper.front ().push_back (backPlane);
+
+        Check::SaveTransformed (*solid);
+        bvector<DPoint3d> clippedFace;
+        if (clipper.IsAnyRangeFacePointInside(range, &clippedFace))
+            Check::SaveTransformed (clippedFace, true);
+        }
+    Check::ClearGeometry("Range3d.isAnyRangeFaceInsideA");
+    }
+TEST(Range3d, isAnyRangeFaceInsideB)
+    {
+    bvector<DPoint3d> triangle{ DPoint3d::From(5, 4, 0), DPoint3d::From(7.5, 3, 0.5), DPoint3d::From (4, 8, 3) };
+    auto xyz0 = triangle.front ();
+    triangle.push_back (xyz0);
+    DVec3d normal = DVec3d::FromCrossProductToPoints(triangle[0], triangle[1], triangle[2]);
+    normal.ScaleToLength(3.0);
+    auto loop = CurveVector::CreateLinear(triangle, CurveVector::BOUNDARY_TYPE_Outer);
+    auto solid = ISolidPrimitive::CreateDgnExtrusion(DgnExtrusionDetail(loop, normal, false));
+    Check::SaveTransformed(*solid);
+    auto clipper = ClipPlaneSet::FromSweptPolygon(&triangle[0], triangle.size (), &normal);
+
+    for (double x0 = 0; x0 < 10; x0 += 2.0)
+        {
+        for (double y0 = 0; y0 < 12; y0 += 3)
+            {
+            auto range = DRange3d::From(DPoint3d::From(x0, y0, 1), DPoint3d::From(x0 + 1.9, y0 + 2.5, 2));
+            Check::SaveTransformedEdges(range);
+   
+            bvector<DPoint3d> clippedFace;
+            if (clipper.IsAnyRangeFacePointInside(range, &clippedFace))
+                {
+                Check::Shift (0,0,10);
+                Check::SaveTransformed(clippedFace, true);
+                Check::SaveTransformedEdges(range);
+                Check::Shift (0,0, -10);
+                }
+            }
+        }
+    Check::ClearGeometry("Range3d.isAnyRangeFaceInsideB");
+    }
+TEST(Range3d, isAnyRangeFaceInsideC)
+    {
+    bvector<DPoint3d> polygon{
+            DPoint3d::From(5, 4, 0),
+            DPoint3d::From(9,4,0),
+            DPoint3d::From(14,16,0),
+            DPoint3d::From(10,16,0),
+            DPoint3d::From (13,15,0),
+            DPoint3d::From (8,6,0),
+            DPoint3d::From (5,6,0)};
+    auto xyz0 = polygon.front();
+    polygon.push_back(xyz0);
+    double sweepDistance  = 8.0;
+    double zShift = 20.0;
+    for (double skewFactor : {0.0, 0.50, 1.0, 2.0})
+        {
+        SaveAndRestoreCheckTransform shifter (40.0, 0,0);
+        DVec3d normal = DVec3d::From (-skewFactor, 0.5 * skewFactor, 1.0);
+
+        auto loop = CurveVector::CreateLinear(polygon, CurveVector::BOUNDARY_TYPE_Outer);
+        auto solid = ISolidPrimitive::CreateDgnExtrusion(DgnExtrusionDetail(loop, sweepDistance * normal, false));
+        Check::SaveTransformed(*solid);
+        auto clipper = ClipPlaneSet::FromSweptPolygon(&polygon[0], polygon.size(), &normal);
+
+        for (double x0 = 0; x0 < 15; x0 += 2.0)
+            {
+            for (double y0 = 0; y0 < 20; y0 += 3)
+                {
+                auto range = DRange3d::From(DPoint3d::From(x0, y0, 1), DPoint3d::From(x0 + 1.9, y0 + 2.5, 2));
+                Check::SaveTransformedEdges(range);
+
+                bvector<DPoint3d> clippedFace;
+                if (clipper.IsAnyRangeFacePointInside(range, &clippedFace))
+                    {
+                    Check::Shift(0, 0, zShift);
+                    Check::SaveTransformed(clippedFace, true);
+                    Check::SaveTransformedEdges(range);
+                    Check::Shift(0, 0, -zShift);
+                    }
+                }
+            }
+        }
+    Check::ClearGeometry("Range3d.isAnyRangeFaceInsideC");
+    }

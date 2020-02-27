@@ -1,7 +1,8 @@
-/*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See COPYRIGHT.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
 
 
@@ -1645,6 +1646,44 @@ CurveVectorCR planarRegion
     return nullptr;
     }
 
-
+/**
+* Successively clip faces of the range against the clipper.
+* Return true (immediately) when any of these clip steps returns non-empty clip.
+* optionally return the representative clipped face.
+* Note that this specifically tests only faces.
+* If the clip is a closed clipper COMPLETELY INSIDE THE RANGE the return is false.
+*/
+bool ClipPlaneSet::IsAnyRangeFacePointInside(DRange3dCR range, bvector<DPoint3d> *clippedFacePoints) const
+    {
+    DPoint3d corners[8];
+    int cornerIndices[][4] = {
+        {1, 0, 2, 3},
+        {4, 5, 7, 6},
+        {0, 1, 5, 4},
+        {1, 3, 7, 5},
+        {3, 2, 6, 7},
+        {2, 0, 4, 6} };
+    range.Get8Corners(corners);
+    bvector<DPoint3d> facePoints;
+    bvector<DPoint3d> clippedPoints;
+    bvector<DPoint3d> work;
+    for (int i = 0; i < 6; i++)
+        {
+        facePoints.clear();
+        for (int j = 0; j < 4; j++)
+            facePoints.push_back(corners[cornerIndices[i][j]]);
+        for (auto &convexClipper : *this)
+            {
+            convexClipper.ConvexPolygonClip(facePoints, clippedPoints, work, 1);
+            if (clippedPoints.size() > 0)
+                {
+                if (clippedFacePoints != nullptr)
+                    clippedPoints.swap(*clippedFacePoints);
+                return true;
+                }
+            }
+        }
+    return false;
+    }
 
 END_BENTLEY_GEOMETRY_NAMESPACE
