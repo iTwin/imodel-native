@@ -630,6 +630,13 @@ void Converter::DeleteView(DgnViewId previouslyConvertedViewId, SyncInfo& syncIn
     if (!isAttached)
         {
         ViewDefinitionCPtr tempView = GetDgnDb().Elements().Get<ViewDefinition>(previouslyConvertedViewId);
+
+        if (tempView.IsNull())
+            {
+            LOG.warningv("Converter::DeleteView tried to delete %d but it was not found.", previouslyConvertedViewId.GetValue());
+            return;
+            }
+
         DgnElementId categorySelectorId = tempView->GetCategorySelectorId();
         DgnElementId displayStyleId = tempView->GetDisplayStyleId();
         DgnElementId modelSelectorId;
