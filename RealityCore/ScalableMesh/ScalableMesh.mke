@@ -140,7 +140,7 @@ CCompOpts + -wd4018 -wd4309 -wd4305
     cUser + -fdelayed-template-parsing
 
     %if $(BUILD_TOOLSET) == "LINUX_CLANG"
-        cUser + -fopenmp=libomp -w
+        cUser + -fopenmp=libomp -w -I/usr/lib/llvm-7/include/openmp
     %endif
 %endif
 
