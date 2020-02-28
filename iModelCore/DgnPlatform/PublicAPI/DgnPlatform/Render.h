@@ -3161,12 +3161,11 @@ struct MeshEdgeCreationOptions
     enum    Options
         {
         NoEdges                 = 0x0000,
-        SheetEdges              = 0x0001 << 0,
         CreaseEdges             = 0x0001 << 1,
         SmoothEdges             = 0x0001 << 2,
         CreateChains            = 0x0001 << 3,
-        DefaultEdges            = CreaseEdges | SheetEdges,
-        AllEdges                = CreaseEdges | SheetEdges | SmoothEdges
+        DefaultEdges            = CreaseEdges,
+        AllEdges                = CreaseEdges | SmoothEdges
         };
 
     Options     m_options               = DefaultEdges;
@@ -3177,7 +3176,6 @@ struct MeshEdgeCreationOptions
 
     bool GenerateAllEdges() const    { return m_options == AllEdges; }
     bool GenerateNoEdges() const     { return m_options == NoEdges;   }
-    bool GenerateSheetEdges() const  { return 0 != (m_options & SheetEdges); }
     bool GenerateCreaseEdges() const { return 0 != (m_options & CreaseEdges); }
     bool CreateEdgeChains() const    { return 0 != (m_options & CreateChains); }     // Create edge chains for polyfaces that do not already have them.
     };

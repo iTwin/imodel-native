@@ -18,34 +18,6 @@ struct MeshEdgesBuilder
 {
 private:
 
-    struct  PointComparator 
-        {
-        bool operator()(QPoint3dCR lhs, QPoint3dCR rhs) const
-            {
-            COMPARE_VALUES(lhs.x, rhs.x);
-            COMPARE_VALUES(lhs.y, rhs.y);
-            return lhs.z < rhs.z; 
-            }
-        };
-
-    struct  PointMap : bmap<QPoint3d, uint32_t, PointComparator> 
-        {
-        PointMap(DRange3dCR range) : m_range(range) { }
-
-        uint32_t        m_next = 0;
-        DRange3dCR      m_range;
-
-        uint32_t GetIndex(QPoint3d point)
-            {
-            auto insertPair = Insert(point, m_next);
-            if (insertPair.second)
-                m_next++;
-
-            return insertPair.first->second;
-            }
-        };
-
-
     struct  EdgeInfo
         {
         bool        m_visible;
@@ -71,15 +43,14 @@ private:
     bvector<FVec3d>                 m_triangleNormals;
     MeshEdgeCreationOptionsCR       m_options;
 
-public:    
+public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017
 * Build maps from a MeshBuilder::Polyface...
 +---------------+---------------+---------------+---------------+---------------+------*/
-MeshEdgesBuilder (DRange3dCR tileRange, MeshCR mesh, MeshBuilder::Polyface const& builderPolyface) : m_options(builderPolyface.m_edgeOptions)
+MeshEdgesBuilder (MeshCR mesh, MeshBuilder::Polyface const& builderPolyface) : m_options(builderPolyface.m_edgeOptions)
     {
     TriangleList const&     triangles = mesh.Triangles();
-    bool                    anyHidden = false;
     
     // We need to detect the edge pairs -- Can't do that from the Mesh indices as these are not shared - so we'll
     // assume that the polyface indices are properly shared, this should be true as a seperate index array is used
@@ -116,8 +87,6 @@ MeshEdgesBuilder (DRange3dCR tileRange, MeshCR mesh, MeshBuilder::Polyface const
             EdgeInfo        edgeInfo(triangle.GetEdgeVisible(j), triangleNormalIndex, meshEdge, polyfacePoints[j], polyfacePoints[jNext]);
             auto            insertPair = m_edgeMap.Insert(polyfaceEdge, edgeInfo);
 
-            anyHidden |= !edgeInfo.m_visible;
-
             if (!insertPair.second)
                 insertPair.first->second.AddFace(edgeInfo.m_visible, triangleNormalIndex);
             }
@@ -125,85 +94,25 @@ MeshEdgesBuilder (DRange3dCR tileRange, MeshCR mesh, MeshBuilder::Polyface const
         m_triangleNormals.push_back(FVec3d::From(DVec3d::FromNormalizedCrossProductToPoints(polyfacePoints[0], polyfacePoints[1], polyfacePoints[2])));
         }
 
-    if (!anyHidden)
-        CalculateEdgeVisibility (tileRange);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     05/2017
-* Build maps from TriMeshArgs  - Could be used by a reality source...
-+---------------+---------------+---------------+---------------+---------------+------*/
-MeshEdgesBuilder (TriMeshArgsCR args, DRange3dCR tileRange, MeshEdgeCreationOptionsCR options) : m_options (options)
-    {
-    PointMap            pointMap(tileRange);
-    uint32_t            triangleIndex = 0;
-    bool                anyHidden = false;
-
-    for (uint32_t i = 0; i < args.m_numIndices; i+= 3, triangleIndex++)
+    if (!builderPolyface.m_anyHiddenEdgesInSource && !m_options.GenerateAllEdges())
         {
-        uint32_t const* triIndex = args.m_vertIndex + i;
+        // If there is no visibility indication in the mesh, infer from the mesh geometry.
+        // All edges start off marked as visible, so this will only mark smooth edges as invisible.
 
-        DPoint3d dpts[3] =
+        // Note that tile clipping will mark edges along boundaries as invisible; this special case is
+        // handled via the "anyHiddenEdgesInSource" flag so that edge calculation behavior doesn't change
+        // based on whether a Polyface intersects a tile boundary.
+        double minEdgeDot = cos(m_options.m_minCreaseAngle);
+        for (auto& edge : m_edgeMap)
             {
-            args.m_points[triIndex[0]].Unquantize(args.m_pointParams),
-            args.m_points[triIndex[1]].Unquantize(args.m_pointParams),
-            args.m_points[triIndex[2]].Unquantize(args.m_pointParams)
-            };
+            if (2 == edge.second.m_faceCount)
+                {
+                FVec3d const&  normal0 = m_triangleNormals[edge.second.m_faceIndices[0]];
+                FVec3d const&  normal1 = m_triangleNormals[edge.second.m_faceIndices[1]];
 
-        for (size_t j=0; j<3; j++)
-            {
-            MeshEdge        meshEdge(triIndex[j], triIndex[(j+1)%3]);
-            EdgeInfo        edgeInfo(true, triangleIndex, meshEdge, dpts[j], dpts[(j+1) %3]);
-
-            if (m_options.GenerateAllEdges())
-                meshEdge = MeshEdge(pointMap.GetIndex(args.m_points[meshEdge.m_indices[0]]),            // Remap the edge indices to indices based on the PointMap -- An expensive operation - if "AllOptions" is set We'll skip it and just use
-                                    pointMap.GetIndex(args.m_points[meshEdge.m_indices[1]]));           // The raw indices - which is fast but will generate duplicate edges.
-
-            auto            insertPair = m_edgeMap.Insert(meshEdge, edgeInfo);
-
-            anyHidden |= !edgeInfo.m_visible;
-
-            if (!insertPair.second)
-                insertPair.first->second.AddFace(edgeInfo.m_visible, triangleIndex);
-            }
-
-        m_triangleNormals.push_back(FVec3d::From(DVec3d::FromNormalizedCrossProductToPoints(dpts[0], dpts[1], dpts[2])));
-        }
-
-    if (!anyHidden)
-        CalculateEdgeVisibility (tileRange);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     05/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CalculateEdgeVisibility(DRange3dCR tileRange)
-    {
-    if (m_options.GenerateAllEdges())
-        return;
-
-    double  minEdgeDot = cos(m_options.m_minCreaseAngle);
-
-    // If there is no visibility indication in the mesh, infer from the mesh geometry.
-    for (auto& edge : m_edgeMap)
-        {
-        if (!tileRange.IsContained(edge.second.m_points[0]) &&
-            !tileRange.IsContained(edge.second.m_points[1]))
-            {
-            // An edge that is outside the tile should never be displayed. (avoid incorrect sheet edge detection on triangles overlapping tile boundary).
-            edge.second.m_visible = false;
-            }
-        else if (2 == edge.second.m_faceCount)
-            {
-            FVec3d const&  normal0 = m_triangleNormals[edge.second.m_faceIndices[0]];
-            FVec3d const&  normal1 = m_triangleNormals[edge.second.m_faceIndices[1]];
-                                         
-            if (fabs(normal0.DotProduct(normal1)) > minEdgeDot)
-                edge.second.m_visible = false;
-            }
-        else if (m_options.GenerateSheetEdges())
-            {
-            edge.second.m_visible = true;
+                if (fabs(normal0.DotProduct(normal1)) > minEdgeDot)
+                    edge.second.m_visible = false;
+                }
             }
         }
     }
@@ -282,7 +191,7 @@ void BuildEdges (MeshEdgesR edges, MeshBuilder::Polyface const* builderPolyface)
             }
         }
 
-    if (nullptr != builderPolyface)
+    if (nullptr != builderPolyface && (m_options.CreateEdgeChains() || 0 != builderPolyface->m_polyface.GetEdgeChainCount()))
         {
         bmap <uint32_t, uint32_t>   inverseVertexIndexMap;
 
@@ -302,14 +211,18 @@ void BuildEdges (MeshEdgesR edges, MeshBuilder::Polyface const* builderPolyface)
     }
 };  // MeshEdgesBuilder
 
-
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::BeginPolyface(PolyfaceQueryCR polyface, MeshEdgeCreationOptionsCR options) 
+void MeshBuilder::BeginPolyface(PolyfaceQueryCR polyface, MeshEdgeCreationOptionsCR options, bool hadHiddenEdgesBeforeClipping) 
     { 
-    m_currentPolyface = (options.GenerateNoEdges() && 0 == polyface.GetEdgeChainCount()) ? nullptr : new Polyface (polyface, options, m_mesh->Triangles().Count()); 
+    if (options.GenerateNoEdges() && 0 == polyface.GetEdgeChainCount())
+        {
+        m_currentPolyface = nullptr;
+        return;
+        }
+
+    m_currentPolyface = new Polyface (polyface, hadHiddenEdgesBeforeClipping, options, m_mesh->Triangles().Count()); 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -323,6 +236,5 @@ void MeshBuilder::EndPolyface()
     if (!m_mesh->m_edges.IsValid())
         m_mesh->m_edges = new MeshEdges();
 
-    MeshEdgesBuilder(m_tileRange, *m_mesh, *m_currentPolyface).BuildEdges(*m_mesh->m_edges, m_currentPolyface.get());
+    MeshEdgesBuilder(*m_mesh, *m_currentPolyface).BuildEdges(*m_mesh->m_edges, m_currentPolyface.get());
     }
-

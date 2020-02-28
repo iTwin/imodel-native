@@ -1038,7 +1038,7 @@ protected:
     MeshBuilderR GetMeshBuilder(MeshBuilderKey const& key, uint32_t numVertices);
 
     void AddPolyfaces(PolyfaceList& polyfaces, DgnElementId, double rangePixels, bool isContained);
-    void AddClippedPolyface(PolyfaceQueryCR, DgnElementId, DisplayParamsCR, MeshEdgeCreationOptions, bool isPlanar);
+    void AddClippedPolyface(PolyfaceQueryCR, DgnElementId, bool hadHiddenEdgesBeforeClipping, DisplayParamsCR, MeshEdgeCreationOptions, bool isPlanar);
 
     void AddStrokes(StrokesList& strokes, DgnElementId, double rangePixels, bool isContained);
 
@@ -1066,7 +1066,7 @@ protected:
 public:
     bool DidDecimation() const { return m_didDecimate; }
     void MarkDecimated() { m_didDecimate = true; }
-    bool GetOmitEdges() const { return m_loader.GetTree().GetOmitEdges(); }
+    bool GetOmitEdges() const override { return m_loader.GetTree().GetOmitEdges(); }
 
     // Add meshes to the MeshBuilder map
     void AddMeshes(GeometryList const& geometries, bool doRangeTest);
@@ -1080,7 +1080,7 @@ public:
     virtual FeatureTableR GetFeatureTable() = 0;
     virtual double GetTolerance() const = 0;
     virtual void AddDeferredPolyface(Polyface& tilePolyface, DgnElementId, double rangePixels, bool isContained) = 0;
-    virtual void ClipAndAddPolyface(PolyfaceHeaderR polyface, DgnElementId elemId, DisplayParamsCR displayParams, MeshEdgeCreationOptions const& edgeOptions, bool isPlanar) = 0;
+    virtual void ClipAndAddPolyface(PolyfaceHeaderR polyface, DgnElementId elemId, bool hadHiddenEdgesBeforeClipping, DisplayParamsCR displayParams, MeshEdgeCreationOptions const& edgeOptions, bool isPlanar) = 0;
     virtual void ClipStrokes(StrokesR) const = 0;
     virtual DPoint3dCP GetViewIndependentOrigin() const { return nullptr; }
 
@@ -1128,7 +1128,7 @@ public:
     double GetTolerance() const final { return m_loader.GetTolerance(); }
     DRange3dCR GetContentRange() const { return m_contentRange; }
     void AddDeferredPolyface(Polyface& tilePolyface, DgnElementId, double rangePixels, bool isContained) final;
-    void ClipAndAddPolyface(PolyfaceHeaderR polyface, DgnElementId elemId, DisplayParamsCR displayParams, MeshEdgeCreationOptions const& edgeOptions, bool isPlanar) final;
+    void ClipAndAddPolyface(PolyfaceHeaderR polyface, DgnElementId elemId, bool hadHiddenEdgesBeforeClipping, DisplayParamsCR displayParams, MeshEdgeCreationOptions const& edgeOptions, bool isPlanar) final;
     void ClipStrokes(StrokesR strokes) const final { strokes.ClipToRange(GetTileRange()); }
 
     MeshList GetMeshes();
@@ -1174,7 +1174,7 @@ public:
     FeatureTableR GetFeatureTable() final { return m_gen.GetFeatureTable(); }
     double GetTolerance() const final { return m_geom.GetTolerance(m_gen.GetTolerance()); }
     void AddDeferredPolyface(Polyface&, DgnElementId, double, bool) final { BeAssert(false); }
-    void ClipAndAddPolyface(PolyfaceHeaderR, DgnElementId, DisplayParamsCR, MeshEdgeCreationOptions const&, bool) final { BeAssert(false); }
+    void ClipAndAddPolyface(PolyfaceHeaderR, DgnElementId, bool, DisplayParamsCR, MeshEdgeCreationOptions const&, bool) final { BeAssert(false); }
     void ClipStrokes(StrokesR) const final { }
 
     void AddMeshes(bvector<MeshPtr>& meshes);
@@ -3655,25 +3655,25 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, DgnElementId elemId, dou
     DisplayParamsCR displayParams = tilePolyface.GetDisplayParams();
 
     if (isContained)
-        AddClippedPolyface(tilePolyface.GetPolyface(), elemId, displayParams, edges, isPlanar);
+        AddClippedPolyface(tilePolyface.GetPolyface(), elemId, tilePolyface.HadHiddenEdgesBeforeClipping(), displayParams, edges, isPlanar);
     else
-        ClipAndAddPolyface(tilePolyface.GetPolyface(), elemId, displayParams, edges, isPlanar);
+        ClipAndAddPolyface(tilePolyface.GetPolyface(), elemId, tilePolyface.HadHiddenEdgesBeforeClipping(), displayParams, edges, isPlanar);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementMeshGenerator::ClipAndAddPolyface(PolyfaceHeaderR polyface, DgnElementId elemId, DisplayParamsCR displayParams, MeshEdgeCreationOptions const& edgeOptions, bool isPlanar)
+void ElementMeshGenerator::ClipAndAddPolyface(PolyfaceHeaderR polyface, DgnElementId elemId, bool hadHiddenEdgesBeforeClipping, DisplayParamsCR displayParams, MeshEdgeCreationOptions const& edgeOptions, bool isPlanar)
     {
     auto clipped = TileRangeClipper::Clip(polyface, GetTileRange());
     if (clipped.IsValid())
-        AddClippedPolyface(*clipped, elemId, displayParams, edgeOptions, isPlanar);
+        AddClippedPolyface(*clipped, elemId, hadHiddenEdgesBeforeClipping, displayParams, edgeOptions, isPlanar);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T> static void addClippedPolyface(MeshBuilderR builder, PolyfaceQueryCR polyface, MeshEdgeCreationOptions edgeOptions, FeatureCR feature, DisplayParamsCR displayParams, DgnDbR db, TransformCP transformToDgn, T extendContentRange)
+template<typename T> static void addClippedPolyface(MeshBuilderR builder, PolyfaceQueryCR polyface, MeshEdgeCreationOptions edgeOptions, bool hadHiddenEdgesBeforeClipping, FeatureCR feature, DisplayParamsCR displayParams, DgnDbR db, TransformCP transformToDgn, T extendContentRange)
     {
     bool anyContributed = false;
     uint32_t fillColor = displayParams.GetFillColor();
@@ -3682,7 +3682,7 @@ template<typename T> static void addClippedPolyface(MeshBuilderR builder, Polyfa
     TextureMappingCR texture = displayParams.GetSurfaceMaterial().GetTextureMapping();
     uint8_t materialIndex = builder.GetMaterialIndex(displayParams.GetSurfaceMaterial().GetMaterial());
 
-    builder.BeginPolyface(polyface, edgeOptions);
+    builder.BeginPolyface(polyface, edgeOptions, hadHiddenEdgesBeforeClipping);
 
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); /**/)
         {
@@ -3707,7 +3707,7 @@ template<typename T> static void addClippedPolyface(MeshBuilderR builder, Polyfa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshGenerator::AddClippedPolyface(PolyfaceQueryCR polyface, DgnElementId elemId, DisplayParamsCR displayParams, MeshEdgeCreationOptions edgeOptions, bool isPlanar)
+void MeshGenerator::AddClippedPolyface(PolyfaceQueryCR polyface, DgnElementId elemId, bool hadHiddenEdgesBeforeClipping, DisplayParamsCR displayParams, MeshEdgeCreationOptions edgeOptions, bool isPlanar)
     {
     DgnDbR              db = m_loader.GetDgnDb();
     uint64_t            keyElementId = m_loader.GetLoader().GetNodeId(elemId, displayParams);
@@ -3717,7 +3717,7 @@ void MeshGenerator::AddClippedPolyface(PolyfaceQueryCR polyface, DgnElementId el
     TransformCR         tileLocation = m_loader.GetTree().GetLocation();
 
     auto extendRange = [&](bvector<DPoint3d> const& points) { ExtendContentRange(points); };
-    addClippedPolyface(builder, polyface, edgeOptions, featureFromParams(elemId, displayParams), displayParams, db, &tileLocation, extendRange);
+    addClippedPolyface(builder, polyface, edgeOptions, hadHiddenEdgesBeforeClipping, featureFromParams(elemId, displayParams), displayParams, db, &tileLocation, extendRange);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4367,7 +4367,7 @@ void InstanceablePolyface::AddInstanced(MeshGeneratorR meshGen, MeshBuilderR bui
     auto extendRange = [&contentRange](bvector<DPoint3d> const& points) { contentRange.Extend(points); };
     auto edgeOptions = !meshGen.GetOmitEdges() && m_polyface.DisplayEdges() ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges;
     DgnDbR db = meshGen.GetLoader().GetDgnDb();
-    addClippedPolyface(builder, m_polyface.GetPolyface(), edgeOptions, Feature(), GetDisplayParams(), db, nullptr, extendRange);
+    addClippedPolyface(builder, m_polyface.GetPolyface(), edgeOptions, m_polyface.HadHiddenEdgesBeforeClipping(), Feature(), GetDisplayParams(), db, nullptr, extendRange);
     }
 
 /*---------------------------------------------------------------------------------**//**

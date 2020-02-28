@@ -821,10 +821,11 @@ struct MeshBuilder : RefCountedBase
         {
         PolyfaceQueryCR             m_polyface;
         MeshEdgeCreationOptions     m_edgeOptions;
+        bool                        m_anyHiddenEdgesInSource;
         size_t                      m_baseTriangleIndex;
         bmap<uint32_t, uint32_t>    m_vertexIndexMap;           // Map from the Mesh vertex index to the polyface vertex index.
 
-        Polyface(PolyfaceQueryCR polyface, MeshEdgeCreationOptionsCR edgeOptions, size_t baseTriangleIndex) : m_polyface(polyface), m_edgeOptions(edgeOptions), m_baseTriangleIndex(baseTriangleIndex) { }
+        Polyface(PolyfaceQueryCR polyface, bool anyHidden, MeshEdgeCreationOptionsCR edgeOptions, size_t baseTriangleIndex) : m_polyface(polyface), m_anyHiddenEdgesInSource(anyHidden), m_edgeOptions(edgeOptions), m_baseTriangleIndex(baseTriangleIndex) { }
         };
 
 private:
@@ -851,7 +852,7 @@ public:
     DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureCR feature, uint32_t fillColor, double startDistance);
     void AddPolyline(bvector<QPoint3d> const&, FeatureCR, uint32_t fillColor, double startDistance);
     void AddPointString(bvector<DPoint3d> const& pointString, FeatureCR feature, uint32_t fillColor, double startDistance);
-    DGNPLATFORM_EXPORT void BeginPolyface(PolyfaceQueryCR polyface, MeshEdgeCreationOptionsCR options);
+    DGNPLATFORM_EXPORT void BeginPolyface(PolyfaceQueryCR polyface, MeshEdgeCreationOptionsCR options, bool hadHiddenEdgesBeforeClipping);
     DGNPLATFORM_EXPORT void EndPolyface();
 
     void AddMesh(TriangleCR triangle);
@@ -984,6 +985,8 @@ private:
     bool                m_isPlanar;
     // True if the original geometry was a polyface and is known to be contained within output range.
     bool                m_isContained = false;
+    // True if the original geometry was a polyface and had an edge marked as hidden (clipping may mark edges as hidden).
+    bool                m_anyHiddenEdgesInSource = false;
 public:
     Polyface(DisplayParamsCR displayParams, PolyfaceHeaderR polyface, bool displayEdges=true, bool isPlanar=false, Image* glyphImage=nullptr, double decimationTolerance=0.0)
         : m_displayParams(&displayParams), m_polyface(&polyface), m_displayEdges(displayEdges), m_isPlanar(isPlanar), m_glyphImage(glyphImage), m_decimationTolerance(decimationTolerance) { }
@@ -1000,6 +1003,9 @@ public:
 
     bool IsContained() const { return m_isContained; }
     void SetContained(bool contained) { m_isContained = contained; }
+
+    bool HadHiddenEdgesBeforeClipping() const { return m_anyHiddenEdgesInSource; }
+    void SetHadHiddenEdgesBeforeClipping(bool hadHiddenEdges) { m_anyHiddenEdgesInSource = hadHiddenEdges; }
 
     bool CanDecimate() const { return 0.0 < m_decimationTolerance; }
     bool IsDecimated() const { return m_decimationTolerance < 0.0; }
@@ -1596,6 +1602,8 @@ struct Output
 public:
     virtual ViewContextR GetContext() = 0;
 
+    virtual bool GetOmitEdges() const = 0;
+
     // The Add*() methods return false to reject the input primitive.
     // Subclasses can use these functions to perform tighter intersection tests than the already-established AABB-AABB intersection.
 
@@ -1634,6 +1642,7 @@ public:
     NullOutput(ViewContextR context) : m_context(context) { }
 
     ViewContextR GetContext() final { return m_context; }
+    bool GetOmitEdges() const { return false; }
 
     void AcceptRegion(CurveVectorCR, TransformCR, DRange3dCR range) final { }
     void AcceptSolidPrimitive(ISolidPrimitiveCR, TransformCR, DRange3dCR range) final { }
@@ -1665,6 +1674,7 @@ public:
     TransformedOutput(OutputR output, TransformCR transform) : m_output(output), m_transform(transform) { }
 
     ViewContextR GetContext() final { return m_output.GetContext(); }
+    bool GetOmitEdges() const { return m_output.GetOmitEdges(); }
 
     void AcceptRegion(CurveVectorCR geom, TransformCR inTf, DRange3dCR inRange) final
         {

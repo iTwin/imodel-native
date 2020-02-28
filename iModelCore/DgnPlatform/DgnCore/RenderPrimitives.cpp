@@ -2306,6 +2306,19 @@ void Polyface::FixUp(IFacetOptionsR facetOptions)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Matt.Gooding    02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool hasAnyHiddenEdges(PolyfaceQueryCR pf)
+    {
+    for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(pf); visitor->AdvanceToNextFace(); )
+        for (bool isEdgeVisible : visitor->Visible())
+            if (!isEdgeVisible)
+                return true;
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 PolyfaceList PrimitiveGeometry::_GetPolyfaces(IFacetOptionsR facetOptions, OutputR output)
@@ -2320,6 +2333,8 @@ PolyfaceList PrimitiveGeometry::_GetPolyfaces(IFacetOptionsR facetOptions, Outpu
         polyface = output.ClaimPolyface(*polyface);
         if (polyface.IsNull())
             return polyfaces;
+
+        bool hadHiddenEdgesBeforeClipping = !output.GetOmitEdges() ? hasAnyHiddenEdges(*polyface) : false;
 
         // Clip before any further processing to reduce number of facets processed.
         bvector<PolyfaceHeaderPtr> clippedPolyfaces;
@@ -2337,6 +2352,7 @@ PolyfaceList PrimitiveGeometry::_GetPolyfaces(IFacetOptionsR facetOptions, Outpu
         bool isContained = clipped.second;
         polyfaces.push_back(Polyface(GetDisplayParams(), *polyface, true, false, nullptr, facetOptions.GetChordTolerance()));
         polyfaces.back().SetContained(isContained);
+        polyfaces.back().SetHadHiddenEdgesBeforeClipping(hadHiddenEdgesBeforeClipping);
 
         // Decimate before fixing up so we don't waste time generating more normals/params than we need.
         polyfaces.back().Decimate();
@@ -2774,7 +2790,7 @@ MeshBuilderSet GeometryAccumulator::ToMeshBuilders(GeometryOptionsCR options, do
             MeshBuilderR meshBuilder = builders.GetMeshBuilder(key, static_cast<uint32_t>(polyface.GetPointCount()));
 
             auto edgeOptions = (options.WantEdges() && tilePolyface.DisplayEdges()) ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges;
-            meshBuilder.BeginPolyface(polyface, edgeOptions);
+            meshBuilder.BeginPolyface(polyface, edgeOptions, tilePolyface.HadHiddenEdgesBeforeClipping());
 
             uint32_t fillColor = displayParams->GetFillColor();
             uint8_t materialIndex = meshBuilder.GetMaterialIndex(displayParams->GetSurfaceMaterial().GetMaterial());
