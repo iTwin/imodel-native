@@ -360,6 +360,21 @@ jobs:
           rootFolderOrFile: $(Build.BinariesDirectory)/Winx64/Product/C3dBridgeTests
           artifactName: C3dBridgeTests
 
+      - task: ArchiveFiles@2
+        displayName: Archive C3dBridge
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'C3dBridge'))
+        inputs:
+          rootFolderOrFile: $(Build.BinariesDirectory)/Winx64/Product/C3dBridge
+          includeRootFolder: false
+          archiveType: zip
+          archiveFile: $(Build.ArtifactStagingDirectory)/C3dBridge.zip
+          replaceExistingArchive: true
+
+      - publish: $(Build.ArtifactStagingDirectory)/C3dBridge.zip
+        displayName: Save C3dBridge-Portable
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'C3dBridge'))
+        artifact: C3dBridge-Portable
+
   # ================================================================================================
   - job: build_linuxx64
     displayName: Build Linux x64
