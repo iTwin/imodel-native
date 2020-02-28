@@ -5,15 +5,12 @@
 
 #pragma warning ( disable : 4786 )
 
-
 #include "PublicAPI/log4cxx.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-
 #include <map>
-
 #include <log4cxx/logger.h>
 #include <log4cxx/logmanager.h>
 #include <log4cxx/basicconfigurator.h>
@@ -33,6 +30,7 @@ using namespace log4cxx;
 using namespace log4cxx::helpers;
 
 BEGIN_BENTLEY_LOGGING_NAMESPACE;
+PUSH_DISABLE_DEPRECATION_WARNINGS
 
 namespace Provider {
 
@@ -444,8 +442,8 @@ Utf8CP msg
 )
     {
     const wchar_t* converted = nullptr;
-    int length = (int)strlen (msg); 
-    
+    int length = (int)strlen (msg);
+
 #if defined (BENTLEY_WIN32)
     int outStrCount = ::MultiByteToWideChar (CP_UTF8, 0, msg, length, NULL, 0);
     std::wstring outStr; outStr.resize (outStrCount); // (allocates space for outStrCount + 1 wchar_t's)
@@ -454,7 +452,7 @@ Utf8CP msg
     converted = outStr.c_str();
 #else
     std::vector<char32_t> outBuff;
-    try 
+    try
         {
         utf8::utf8to32(msg, (msg + length), std::back_inserter(outBuff));
         }
@@ -608,5 +606,6 @@ ILogProvider* InstanceLoggingProvider( void )
     }
 
 }
+POP_DISABLE_DEPRECATION_WARNINGS
 
 END_BENTLEY_LOGGING_NAMESPACE;

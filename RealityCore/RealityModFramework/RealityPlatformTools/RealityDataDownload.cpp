@@ -11,6 +11,7 @@
 
 #include <zlib/zip/unzip.h>
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 
 //#define TRACE_DEBUG 1
 
@@ -114,7 +115,7 @@ bool RealityDataDownload::SetupMirror(size_t index, int errorCode)
         errorCode,
         m_pEntries[index].mirrors[1].filename.c_str());
     ReportStatus((int)m_pEntries[index].index, &(m_pEntries[index]), REALITYDATADOWNLOAD_MIRROR_CHANGE, errorMsg);
-        
+
     m_pEntries[index].mirrors.erase(m_pEntries[index].mirrors.begin());
     m_pEntries[index].filename = m_pEntries[index].mirrors.front().filename;
     m_pEntries[index].iAppend = 0;
@@ -126,12 +127,12 @@ bool RealityDataDownload::SetupMirror(size_t index, int errorCode)
     m_pEntries[index].progressStep = 0.01f;
     SetupRequestandFile(&m_pEntries[index]);
     return true;
-    }   
+    }
 
 bool RealityDataDownload::SetupNextEntry()
     {
     SetupRequestStatus status;
-    do 
+    do
         {
         while(m_omittedEntries.count(m_curEntry) > 0)
             ++m_curEntry;
@@ -146,7 +147,7 @@ bool RealityDataDownload::SetupNextEntry()
         } while (SetupRequestStatus::FromCache == status);
 
     return true;
-    }   
+    }
 
 
 //----------------------------------------------------------------------------------------
@@ -184,7 +185,7 @@ bool RealityDataDownload::UnZipFile(const char* pi_strSrc, const char* pi_strDes
     {
     if(!strstr(pi_strSrc, ".zip"))
         return false;
-    
+
     unzFile uf = unzOpen(pi_strSrc);
     if(nullptr == uf)
         return false;
@@ -206,7 +207,7 @@ bool RealityDataDownload::UnZipFile(const char* pi_strSrc, const char* pi_strDes
             MAX_FILENAME,
             NULL, 0, NULL, 0 ) != UNZ_OK )
             return false;
-        
+
         char fullpath[MAX_FILENAME];
         sprintf(fullpath, "%s%s", pi_strDest,filename);
 
@@ -245,14 +246,14 @@ bool RealityDataDownload::UnZipFile(const char* pi_strSrc, const char* pi_strDes
                 return false;
             }
         unzCloseCurrentFile( uf );
-    
+
         if( ( i+1 ) < unzGlobalInfo.number_entry )
             {
             if ( unzGoToNextFile( uf ) != UNZ_OK)
                 return false;
             }
         }
-    
+
     return (unzClose (uf) == 0);
     }
 
@@ -262,7 +263,7 @@ void RealityDataDownload::ReportStatus(int index, void *pClient, int ErrorCode, 
         m_pStatusFunc(index, pClient, ErrorCode, pMsg);
 
     RealityDataDownload::FileTransfer* pEntry = (RealityDataDownload::FileTransfer*)pClient;
-        
+
     bmap<WString, TransferReport*>::iterator it = m_dlReport->results.find(pEntry->filename);
     if(it == m_dlReport->results.end())
         return;//something went wrong
@@ -283,3 +284,4 @@ void RealityDataDownload::ReportStatus(int index, void *pClient, int ErrorCode, 
         tr->timeSpent = time(nullptr) - pEntry->mirrors[0].DownloadStart;
         }
     }
+POP_DISABLE_DEPRECATION_WARNINGS

@@ -77,9 +77,9 @@ BentleyStatus Scene::LocateFromSRS()
 
     int epsgCode;
     double latitude, longitude;
-    if (1 == sscanf(m_sceneInfo.m_reprojectionSystem.c_str(), "EPSG:%d", &epsgCode))
+    if (1 == Utf8String::Sscanf_safe(m_sceneInfo.m_reprojectionSystem.c_str(), "EPSG:%d", &epsgCode))
         status = threeMxGCS->InitFromEPSGCode(&warning, &warningMsg, epsgCode);
-    else if (2 == sscanf(m_sceneInfo.m_reprojectionSystem.c_str(), "ENU:%lf,%lf", &latitude, &longitude))
+    else if (2 == Utf8String::Sscanf_safe(m_sceneInfo.m_reprojectionSystem.c_str(), "ENU:%lf,%lf", &latitude, &longitude))
         {
         // ENU specification does not impose any projection method so we use the first azimuthal available using values that will
         // mimic the intent (North is Y positive, no offset)
@@ -204,10 +204,10 @@ void ThreeMxModel::_OnLoadedJsonProperties()
 
     if (val.isMember(json_clip()))
         m_clip = ClipVector::FromJson(val[json_clip()]);
-    
+
     Json::Value     classifiers = GetJsonProperties(json_classifiers());
     if (classifiers.isNull())
-        classifiers = m_classifiers.FromJson(val[json_classifiers()]);       // Old location.                                                                                                                                                             
+        classifiers = m_classifiers.FromJson(val[json_classifiers()]);       // Old location.
 
     if (!classifiers.isNull())
         m_classifiers.FromJson(classifiers);
@@ -225,7 +225,7 @@ struct NullOutput : Dgn::Cesium::Output
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Ray.Bentley     10/2019
 //----------------------------------------------------------------------------------------
-AxisAlignedBox3d ThreeMxModel::_QueryNonElementModelRange() const 
+AxisAlignedBox3d ThreeMxModel::_QueryNonElementModelRange() const
     {
     AxisAlignedBox3d    range;
     auto                nullOutput = new NullOutput();

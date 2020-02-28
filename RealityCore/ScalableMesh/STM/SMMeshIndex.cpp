@@ -16,7 +16,7 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH
 #include "SMMeshIndex.h"
 #include "SMMeshIndex.hpp"
 #include "ScalableMeshQuery.h"
-   
+
 extern bool s_simplifyOverviewClips = true;
 
 //template class SMPointIndex<DPoint3d, ISMStore::Extent3d64f>;

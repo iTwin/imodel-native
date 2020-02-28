@@ -198,7 +198,7 @@ uint32_t XYZFormat::ReadLine   (FILE*       file,
                             WChar        newDelimiter)
     {
     bool inWS = true;
-    uint32_t fieldCount = 0;    
+    uint32_t fieldCount = 0;
     OutIt outIt(outBeginIt);
 
     // Copy until new line or comment
@@ -206,9 +206,9 @@ uint32_t XYZFormat::ReadLine   (FILE*       file,
     while (outEndIt != outIt && feof (file) == 0)
         {
         char tempC = getc(file);
-        
-        mbstowcs(&c, &tempC, 1);            
-        
+
+        mbstowcs(&c, &tempC, 1);
+
         if (c == NEW_LINE || c == COMMENT || tempC == EOF)
             break;
 
@@ -239,10 +239,12 @@ uint32_t XYZFormat::ReadLine   (FILE*       file,
     // Skip commented section if required
     while (c != NEW_LINE && feof (file) == 0)
         {
-        char tempC = getc(file);        
-        mbstowcs(&c, &tempC, 1);             
+        char tempC = getc(file);
+PUSH_DISABLE_DEPRECATION_WARNINGS
+        mbstowcs(&c, &tempC, 1);
+POP_DISABLE_DEPRECATION_WARNINGS
         }
-    
+
     outBeginIt = outIt;
     return fieldCount;
     }

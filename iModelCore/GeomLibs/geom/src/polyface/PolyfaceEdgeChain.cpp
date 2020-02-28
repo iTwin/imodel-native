@@ -14,8 +14,8 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 CurveTopologyIdCR PolyfaceEdgeChain::GetId () const        { return m_id; }
 int32_t const*    PolyfaceEdgeChain::GetIndexCP() const     { return m_vertexIndices.empty() ? NULL : &m_vertexIndices[0]; }
 size_t            PolyfaceEdgeChain::GetIndexCount () const   { return m_vertexIndices.size(); }
-                  PolyfaceEdgeChain::PolyfaceEdgeChain ()     {} 
-                  PolyfaceEdgeChain::PolyfaceEdgeChain (CurveTopologyIdCR id) : m_id (id) {} 
+                  PolyfaceEdgeChain::PolyfaceEdgeChain ()     {}
+                  PolyfaceEdgeChain::PolyfaceEdgeChain (CurveTopologyIdCR id) : m_id (id) {}
                   PolyfaceEdgeChain::PolyfaceEdgeChain (CurveTopologyIdCR id, bvector<int32_t>&& indices) : m_id(id), m_vertexIndices(std::move(indices)) { }
 
 /*--------------------------------------------------------------------------------**//**
@@ -84,7 +84,7 @@ struct  OrderedIndexPair
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-OrderedIndexPair (size_t index0, size_t index1) 
+OrderedIndexPair (size_t index0, size_t index1)
     {
     // Ignore signs; we just want to pair manifold edges
     if (index0 < index1)
@@ -122,7 +122,7 @@ bool operator < (OrderedIndexPair const& rhs) const
     {
     if (m_index0 == rhs.m_index0)
         return m_index1 < rhs.m_index1;
-    else 
+    else
         return m_index0 < rhs.m_index0;
     }
 };  //  OrderedIndexPair
@@ -137,7 +137,7 @@ BentleyStatus PolyfaceHeader::AddEdgeChains (size_t)
     {
     if (0 != GetEdgeChainCount())
         return ERROR;           // Edge chains already exist.
-    
+
     T_EdgeFaceMap       edgeFaceMap;
     PolyfaceVisitorPtr  visitor = PolyfaceVisitor::Attach (*this);
 
@@ -150,7 +150,7 @@ BentleyStatus PolyfaceHeader::AddEdgeChains (size_t)
         facetIndex++;                            // Match erroneous increment in SS3.
 
         int32_t const* index   = visitor->GetClientPointIndexCP();
-        bool    const* visible = visitor->GetVisibleCP();
+        bvector<BoolTypeForVector> &visible = visitor->Visible();
         for (size_t i=0; i < visitor->NumEdgesThisFace(); i++)
             {
             if (visible[i])
@@ -168,7 +168,7 @@ BentleyStatus PolyfaceHeader::AddEdgeChains (size_t)
         facetIndex++;
         }
 
-    
+
 
     for (visitor->Reset (); visitor->AdvanceToNextFace();)
         {
@@ -215,7 +215,7 @@ PolyfaceEdgeChain::PolyfaceEdgeChain(CurveTopologyIdCR id, PolyfaceQueryCR polyf
         uint32_t    edgeCount = visitor->NumEdgesThisFace();
         for (size_t i=0; i<edgeCount; i++)
             {
-            if (visitor->GetVisibleCP()[i])
+            if (visitor->Visible()[i])
                 edges.push_back(PolyfaceEdge(visitor->GetClientPointIndexCP()[i]+1, visitor->GetClientPointIndexCP()[(i+1)%edgeCount]+1));
             }
         }
@@ -243,7 +243,7 @@ void PolyfaceEdgeChain::Build(bvector<PolyfaceEdge>&& edges)
         MapEntry() { }
         MapEntry(uint32_t endIndex, EdgeSegment* segment) : m_endIndex(endIndex), m_segment(segment) { }
         };
-    
+
     bvector<EdgeSegment>            edgeSegments;
     std::set<PolyfaceEdge>          edgeSet;
 
@@ -253,8 +253,8 @@ void PolyfaceEdgeChain::Build(bvector<PolyfaceEdge>&& edges)
         if (insertPair.second)
             edgeSegments.push_back(EdgeSegment(edge));
         }
-        
-    
+
+
     bmultimap <uint32_t, MapEntry>  segmentMap;
 
     for (auto& edgeSegment : edgeSegments)
@@ -267,16 +267,16 @@ void PolyfaceEdgeChain::Build(bvector<PolyfaceEdge>&& edges)
         {
         if (edgeSegment.m_processed)
             continue;
-        
+
         std::list<uint32_t> indexList;
 
         indexList.push_back (edgeSegment.m_edge.m_indices[0]);
         indexList.push_back (edgeSegment.m_edge.m_indices[1]);
 
         edgeSegment.m_processed = true;
-        
+
         bool    linkFound = false;
-        
+
         do
             {
             linkFound = false;
@@ -304,7 +304,7 @@ void PolyfaceEdgeChain::Build(bvector<PolyfaceEdge>&& edges)
 
         if(!m_vertexIndices.empty() && !indexList.empty())
             m_vertexIndices.push_back(0); // Seperator.
-       
+
         for (auto& index : indexList)
             m_vertexIndices.push_back(index);
         }

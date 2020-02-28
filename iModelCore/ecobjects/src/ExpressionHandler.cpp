@@ -11,22 +11,22 @@
 #include <ECObjects/ECExpressionNode.h>
 
 /*  TODO list
-Want to optimize the code handling PrimaryListNode.  It should be able to detect when the pertinent 
+Want to optimize the code handling PrimaryListNode.  It should be able to detect when the pertinent
 data changes to avoid looking up symbols and properties.
 
-Need much better handling and reporting of errors; distinguish between parsing and 
+Need much better handling and reporting of errors; distinguish between parsing and
 evaluation errors.
 
 Assignment needs to cast to type being assigned.  Should this be built into SetValue?
 
-Adjust handling of primitives to include point members.  
+Adjust handling of primitives to include point members.
 
 Add libraries for math, string, and date/time processing.
 
-Handling of units – reporting errors, automatic conversions.
+Handling of units ï¿½ reporting errors, automatic conversions.
 
-Limiting syntax in "formula" mode. formulas should not use many of the operators that make it difficult to determine 
-type.  Shifting, OR’ing, don't allow string if trying to get numeric type
+Limiting syntax in "formula" mode. formulas should not use many of the operators that make it difficult to determine
+type.  Shifting, ORï¿½ing, don't allow string if trying to get numeric type
 
 Support for spaces in identifiers; involves eliminating reserved word operators.  This also is probably only for "formula" mode.
 
@@ -38,12 +38,12 @@ ECValue assignment operator causes all kinds of problems
 
 Automatic conversions of types.  Can we build that into ECValue?
 
-Assignment operators: should array assignment allocate array entries if necessary? Only if array is not fixed?  What about arrays of structs? 
+Assignment operators: should array assignment allocate array entries if necessary? Only if array is not fixed?  What about arrays of structs?
 Do we always start by creating a stand-alone instance?  Do we want syntax extensions for initializing structs, arrays, and points?
 
-Can we include relationships? What syntax (-> and <-)? What happens if the relationship is not found?  Is it an error or a null result? 
-How can support accessing the properties of the related object?  How can we use the properties of the related object for criteria? 
-for generating a value of the expression?  Can this modify the related instances? If so, how can we decide when to stop processing 
+Can we include relationships? What syntax (-> and <-)? What happens if the relationship is not found?  Is it an error or a null result?
+How can support accessing the properties of the related object?  How can we use the properties of the related object for criteria?
+for generating a value of the expression?  Can this modify the related instances? If so, how can we decide when to stop processing
 the related instances?
 
 Verify propagation of null results; compare to errors; it an array index too large an error or a null result?  Current strategy is error forces
@@ -57,7 +57,7 @@ Tools for helping with method implementation; checking of types, conversion of t
 
 Threading issues -- can optimization modify nodes?  Do we generate nodes every time?  Allow for DeepCopy so we can keep a per-thread copy?
 
-Instance methods -- what instances are allowed?  It seems that we cannot allow an instance that is an embedded 
+Instance methods -- what instances are allowed?  It seems that we cannot allow an instance that is an embedded
 */
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
@@ -187,7 +187,7 @@ Utf8String         Lexer::GetString(ExpressionToken tokenName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP  Lexer::getTokenStringCP () 
+Utf8CP  Lexer::getTokenStringCP ()
     {
     m_tokenBuilder[m_outputIndex] = 0;
     return m_tokenBuilder;
@@ -789,7 +789,7 @@ if (m_lexer->GetTokenType() == TOKEN_Minus)     \
 else     \
     fac = 1.0;     \
  \
-if (1 != BE_STRING_UTILITIES_UTF8_SSCANF(m_lexer->GetTokenStringCP(), "%lg", &COORD))     \
+if (1 != Utf8String::Sscanf_safe(m_lexer->GetTokenStringCP(), "%lg", &COORD))     \
     return GetErrorNode ("PointLiteralExpected");     \
 else     \
     {   \
@@ -887,7 +887,7 @@ NodePtr         ECEvaluator::ParsePrimary
                         case TOKEN_LParen:
                             {
                             m_lexer->Advance ();
-                            NodePtr temp = ParseArguments (); 
+                            NodePtr temp = ParseArguments ();
                             ArgumentTreeNodeP args = dynamic_cast<ArgumentTreeNodeP>(temp.get());
                             if (NULL == args)
                                 {
@@ -998,8 +998,8 @@ NodePtr         ECEvaluator::ParsePrimary
             case TOKEN_IntegerConstant:
                 {
                 int64_t   value;
-                
-                BE_STRING_UTILITIES_UTF8_SSCANF(m_lexer->GetTokenStringCP (), "%" PRId64, &value);
+
+                Utf8String::Sscanf_safe(m_lexer->GetTokenStringCP (), "%" PRId64, &value);
 
                 if (value >= INT_MIN && value <= INT_MAX)
                     {
@@ -1020,7 +1020,7 @@ NodePtr         ECEvaluator::ParsePrimary
             case TOKEN_FloatConst:
                 {
                 double d;
-                BE_STRING_UTILITIES_UTF8_SSCANF(m_lexer->GetTokenStringCP (), "%lg", &d);
+                Utf8String::Sscanf_safe(m_lexer->GetTokenStringCP (), "%lg", &d);
                 result = Node::CreateFloatLiteral (d);
                 ECEXPRESSIONS_PARSE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("Created float literal. Result: %s", result->ToExpressionString().c_str()).c_str());
                 m_lexer->Advance ();
@@ -1038,7 +1038,7 @@ NodePtr         ECEvaluator::ParsePrimary
                 {
                 m_lexer->Advance();
                 double x, y, z, fac;
-                
+
                 EXTRACT_COORDINATE(x)
                 if (m_lexer->GetTokenType() != TOKEN_Comma)
                     return GetErrorNode ("PointLiteralExpected");
@@ -1071,7 +1071,7 @@ NodePtr         ECEvaluator::ParsePrimary
                 {
                 m_lexer->Advance();
                 int64_t ticks;
-                if (1 != BE_STRING_UTILITIES_UTF8_SSCANF(m_lexer->GetTokenStringCP(), "%" PRId64, &ticks))
+                if (1 != Utf8String::Sscanf_safe(m_lexer->GetTokenStringCP(), "%" PRId64, &ticks))
                     return GetErrorNode ("DateTimeLiteralExpected");
 
                 result = Node::CreateDateTimeLiteral (ticks);
@@ -1174,7 +1174,7 @@ NodePtr         ECEvaluator::ParseUnitSpec()
             nQualifiers++;
             double qualifier;
             bool valid = false;
-            if (1 == sscanf(m_lexer->GetTokenStringCP (), "%lg", &qualifier))
+            if (1 == Utf8String::Sscanf_safe(m_lexer->GetTokenStringCP (), "%lg", &qualifier))
                 {
                 switch (nQualifiers)
                     {
@@ -1192,7 +1192,7 @@ NodePtr         ECEvaluator::ParseUnitSpec()
                         break;
                     }
                 }
-            
+
             m_lexer->Advance();
             if (!valid)
                 {

@@ -588,7 +588,7 @@ TaggedPolygonVector* debugPolygons
     // cache clip plane sets for all the clippers ...
     bvector<DPoint3d> hullPoints;
     bvector<ClipperData> clippers;
-    bvector<bool> interior;
+    bvector<BoolTypeForVector> interior;
     for (size_t i = 0; i < punchPolygons.size (); i++)
         {
         bvector<DPoint3d> const &points = punchPolygons[i].GetPointsCR ();

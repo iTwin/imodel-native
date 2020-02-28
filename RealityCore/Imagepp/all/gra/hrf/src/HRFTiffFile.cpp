@@ -92,7 +92,7 @@
 #define DEFAULT_STRIPSIZE                       (16384)     // 16k, represent 16k for an 8bits image
 //      32k for an 16 bits image, .....
 
-
+PUSH_DISABLE_DEPRECATION_WARNINGS
 
 bool HRFTiffFile::s_BypassFileSharing = false;
 
@@ -1952,7 +1952,7 @@ bool HRFTiffFile::Open(bool pi_CreateBigTifFormat)
 
         m_pTiff = new HTIFFFile (GetURL(), m_Offset, AccessMode);
 
-        m_pTiff->GetFilePtr()->ThrowOnError(); 
+        m_pTiff->GetFilePtr()->ThrowOnError();
 
         HTIFFError* pErr;
         m_pTiff->IsValid(&pErr);
@@ -1986,7 +1986,7 @@ bool HRFTiffFile::Open(const HFCPtr<HFCURL>&  pi_rpURL)
 
         if (m_pTiff->GetFilePtr() == 0)
             throw HFCCannotOpenFileException(pi_rpURL->GetURL());
-        m_pTiff->GetFilePtr()->ThrowOnError(); 
+        m_pTiff->GetFilePtr()->ThrowOnError();
 
         HTIFFError* pErr;
         m_pTiff->IsValid(&pErr);
@@ -2418,7 +2418,7 @@ bool HRFTiffFile::Create(bool pi_CreateBigTifFormat)
     // Create the tiff
     m_pTiff = new HTIFFFile (GetURL(), 0/*offset*/, HFC_READ_WRITE_CREATE, pi_CreateBigTifFormat);
 
-    m_pTiff->GetFilePtr()->ThrowOnError(); 
+    m_pTiff->GetFilePtr()->ThrowOnError();
 
     HTIFFError* pErr;
     m_pTiff->IsValid(&pErr);
@@ -2702,7 +2702,7 @@ HFCPtr<HRPPixelType> HRFTiffFile::CreatePixelTypeFromFile(HTIFFFile*            
                             }
                         else if (pi_pTIFFFile->TagIsPresent (GDALNODATA))
                             {
-                            CharP pNoDataValueTag = nullptr;   
+                            CharP pNoDataValueTag = nullptr;
                             bool  hasTag = pi_pTIFFFile->GetFieldA (GDALNODATA, &pNoDataValueTag);
                             assert(hasTag == true);
 
@@ -2729,7 +2729,7 @@ HFCPtr<HRPPixelType> HRFTiffFile::CreatePixelTypeFromFile(HTIFFFile*            
                                 }
                             else
                                 {
-                                pPixelType = new HRPPixelTypeV32Float32(HRPChannelType::USER);                                
+                                pPixelType = new HRPPixelTypeV32Float32(HRPChannelType::USER);
                                 }
                             }
                         else if ((IsSampleFormatTag == true) && (SampleFormat == SAMPLEFORMAT_INT))
@@ -2755,7 +2755,7 @@ HFCPtr<HRPPixelType> HRFTiffFile::CreatePixelTypeFromFile(HTIFFFile*            
                                                                                                         HRPChannelType::VOID_CH,
                                                                                                         0),
                                                                                     0);
-                                                                                    
+
                             if (HasNoDataValues && 0 != pPixelType)
                                 {
                                 HRPChannelType* channelTypeP = const_cast<HRPChannelType*>(pPixelType->GetChannelOrg().GetChannelPtr(0));
@@ -2817,7 +2817,7 @@ HFCPtr<HRPPixelType> HRFTiffFile::CreatePixelTypeFromFile(HTIFFFile*            
                 // BitPerSample = 8,8,8
                 // Compression : none, LZW, JPEG.
                 // *** iTiff variance: Added Compression=FlashPix and SamplePerPixel=4 and ??
-                // Note that JPEG/flashpix decoder will automatically convert YCbCr to RGB so they are handled like PHOTOMETRIC_RGB. 
+                // Note that JPEG/flashpix decoder will automatically convert YCbCr to RGB so they are handled like PHOTOMETRIC_RGB.
                 // Others compression mode do not so me must handle them as true YCC.
                 uint32_t Compression;
                 if (SamplePerPixel == 3 && NbSample == 3 && pBitPerSample[0] == 8 && pBitPerSample[1] == 8 && pBitPerSample[2] == 8 &&
@@ -3172,10 +3172,10 @@ void HRFTiffFile::SaveTiffFile(bool pi_CloseFile)
                             }
 
                         // Display each tag.
-                        HPMAttributeSet::HPMASiterator TagIterator; 
+                        HPMAttributeSet::HPMASiterator TagIterator;
                         bool isMinSampleTagPresent = false;
                         bool isMaxSampleTagPresent = false;
-   
+
                         for (TagIterator  = GetPageDescriptor(Page)->GetTags().begin();
                              TagIterator != GetPageDescriptor(Page)->GetTags().end(); TagIterator++)
                             {
@@ -3273,7 +3273,7 @@ void HRFTiffFile::SaveTiffFile(bool pi_CloseFile)
 
                         if (GetFilePtr()->TagIsPresent(MAXSAMPLEVALUE) && !isMaxSampleTagPresent)
                             GetFilePtr()->RemoveTag(MAXSAMPLEVALUE);
-        
+
                         if (GetFilePtr()->TagIsPresent(SMINSAMPLEVALUE) && !isMinSampleTagPresent)
                             GetFilePtr()->RemoveTag(SMINSAMPLEVALUE);
 
@@ -3627,7 +3627,7 @@ HFCPtr<HCDCodec> HRFTiffFile::CreateCodecFromFile(HTIFFFile* pi_pTIFFFile,
                 pCodec = new HCDCodecZlib();
                 break;
 
-        case COMPRESSION_LZW:         
+        case COMPRESSION_LZW:
                 // Create codec for LZW (compress) compression.
                 pCodec = new HCDCodecLZW();
                 break;
@@ -3846,3 +3846,4 @@ HTIFFFile* HRFTiffFile::GetFilePtr  () const
 
     return (m_pTiff);
     }
+POP_DISABLE_DEPRECATION_WARNINGS

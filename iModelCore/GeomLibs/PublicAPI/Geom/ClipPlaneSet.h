@@ -129,7 +129,7 @@ struct  ConvexClipPlaneSet : T_ClipPlanes
     GEOMDLLIMPEXP static ConvexClipPlaneSet  FromXYPolyLine
     (
     bvector<DPoint3d> const &points,
-    bvector<bool> const &hiddenEdge,
+    bvector<BoolTypeForVector> const &hiddenEdge,
     bool leftIsInside
     );
 

@@ -13,7 +13,7 @@
 
 #if defined (BENTLEY_WIN32)
     #include <Wincrypt.h>
-    #include <Wtsapi32.h>    
+    #include <Wtsapi32.h>
     #include <Bentley/Base64Utilities.h>
 #endif
 
@@ -243,9 +243,12 @@ Utf8String BeSystemInfo::GetOSName ()
 Utf8String BeSystemInfo::GetOSVersion ()
     {
 #if defined (BENTLEY_WIN32)
+
     OSVERSIONINFO version = {0};
     version.dwOSVersionInfoSize = sizeof (OSVERSIONINFO);
+PUSH_DISABLE_DEPRECATION_WARNINGS
     ::GetVersionEx (&version);
+POP_DISABLE_DEPRECATION_WARNINGS
     return Utf8PrintfString ("%d.%d", version.dwMajorVersion, version.dwMinorVersion);
 
 #elif defined (ANDROID)
@@ -319,7 +322,7 @@ static StatusInt HashBytes(Utf8StringR hashedValue, Utf8StringCR unhashedValue)
 * @bsimethod                                        Grigas.Petraitis            06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 static Utf8String HashString(Utf8StringCR clearString, uint32_t iterations)
-    {    
+    {
     Utf8String hashedString = clearString;
     for (uint32_t iPass = 0; iPass < iterations; iPass++)
         {
@@ -374,7 +377,9 @@ static Utf8String GetHostName()
     if (computerName.empty())
         {
         WCharCP computerNameP = NULL;
+PUSH_DISABLE_DEPRECATION_WARNINGS
         if (NULL != (computerNameP = ::_wgetenv(L"COMPUTERNAME")))
+POP_DISABLE_DEPRECATION_WARNINGS
             computerName.assign(computerNameP);
         else
             computerName.assign(L"UnknownHostName");
@@ -431,7 +436,7 @@ Utf8String BeSystemInfo::GetDeviceId ()
         BentleyApi::NativeLogging::LoggingManager::GetLogger (L"BeAssert")->errorv ("Opening '%ls' failed with error code %d", fname.c_str (), file.GetLastError ());
         return "";
         }
-    
+
     ByteStream rawUUID;
     status = file.ReadEntireFile(rawUUID);
     if (BeFileStatus::Success != status)
@@ -440,11 +445,11 @@ Utf8String BeSystemInfo::GetDeviceId ()
         file.Close();
         return "";
         }
-    
+
     Utf8String id = "";
     Base64Utilities::Encode(id, rawUUID.data(), rawUUID.size());
     file.Close();
-    
+
     return id;
 #else
     BeAssert (false);

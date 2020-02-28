@@ -17,6 +17,8 @@
 #define STRUCT_OFFSET(s, m)  offsetof (s, m)
 #endif
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
+
 /*-------------------------------------------------------------------+
 |                                                                    |
 |  int bcdtmRead_dataFileToDataObject                                |
@@ -930,7 +932,7 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionVer500DataObject(DTM_DAT_OBJ
    char     dataObjectFileName[DTM_FILE_SIZE] ;
    char     userMessage[256] ;
    long     *featureCodeP ;
-   int64_t  *userTagP ; 
+   int64_t  *userTagP ;
    struct Dataod   *pointsP ;
   } dataObj ;
 // struct Dataod *pod,*DataOd=NULL ;
@@ -1140,7 +1142,7 @@ __time32_t   creationTime,modifiedTime,userTime ;
    char     dataObjectFileName[DTM_FILE_SIZE] ;
    char     userMessage[256] ;
    long     *featureCodeP ;
-   int64_t  *userTagP ; 
+   int64_t  *userTagP ;
    struct Dataod   *pointsP ;
   } dataObj ;
 /*
@@ -5244,6 +5246,4 @@ BENTLEYDTM_EXPORT int bcdtmList_copyDtmFeaturePointsToPointArrayTinObject(DTM_TI
  goto cleanup ;
 }
 
-
-
-
+POP_DISABLE_DEPRECATION_WARNINGS

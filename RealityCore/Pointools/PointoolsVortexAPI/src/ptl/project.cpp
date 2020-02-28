@@ -2,9 +2,9 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See COPYRIGHT.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-/*--------------------------------------------------------------------------*/ 
-/*	Pointools Project														*/ 
-/*--------------------------------------------------------------------------*/ 
+/*--------------------------------------------------------------------------*/
+/*	Pointools Project														*/
+/*--------------------------------------------------------------------------*/
 
 #include "PointoolsVortexAPIInternal.h"
 #include <ptl/project.h>
@@ -22,10 +22,11 @@
 #include <set>
 
 using namespace ptl;
-using namespace ptds; 
+using namespace ptds;
 
 #define POINTOOLS_1_53_TAG 20042005
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 //
 // Globals	force visibility accross process/heaps ect
 //			found statics not reliable enough
@@ -51,7 +52,7 @@ namespace __ptl
 	void notifyOpen()
 	{
 		for (unsigned int i=0; i<openhandlers.size(); i++)
-			openhandlers[i]();		
+			openhandlers[i]();
 	}
 }
 void Project::clearConfigs()
@@ -60,7 +61,7 @@ void Project::clearConfigs()
 
 	Configurations::iterator it = _configs.begin();
 	Configuration *cg = _configs.find("Start-up")->second;
-	
+
 	while (it != Project::project()->_configs.end())
 	{
 		if (it->second != cg) delete it->second;
@@ -72,7 +73,7 @@ void Project::clearConfigs()
 //
 // Constructor
 //
-Project *Project::project() 
+Project *Project::project()
 {
 	if (!__ptl::_project)
 		__ptl::_project = new Project;
@@ -80,7 +81,7 @@ Project *Project::project()
 }
 Project::Project()
 {
-	/*setup default values*/ 
+	/*setup default values*/
 	_block_count =0;
 	_blocks_read = 0;
 	_modified = false;
@@ -90,12 +91,12 @@ Project::Project()
 	static bool reg = false;
 	if (!reg || __ptl::_handlers[0] == 0)
 	{
-		/*register block handlers for 1.56*/ 
+		/*register block handlers for 1.56*/
 		__ptl::_handlers[0] = new Handler("PROJPROP", &Project::PROJPROPR, &Project::PROJPROPW);
 		__ptl::_handlers[1] = new Handler("VERSION_", &Project::VERSION_R, &Project::VERSION_W);
 		//__ptl::_handlers[2] = new Handler("CONFIGBK", &Project::CONFIG_R, &Project::CONFIG_W);
 
-		/*register branch handlers */ 
+		/*register branch handlers */
 		__ptl::branchHandler[0] = new BranchHandler("Project", &Project::ReadProjectBranch, &Project::WriteProjectBranch);
 		__ptl::branchHandler[1] = new BranchHandler("Product", &Project::ReadVersionBranch, &Project::WriteVersionBranch);
 
@@ -108,7 +109,7 @@ void Project::initialize()
 	__ptl::pjtool.initialize();
 #endif
 }
-Project::~Project() 
+Project::~Project()
 {
 	delete __ptl::_handlers[0];
 	delete __ptl::_handlers[1];
@@ -148,7 +149,7 @@ bool Project::WriteProjectBranch(pt::datatree::Branch *br)
 bool Project::ReadProjectBranch(const pt::datatree::Branch *br)
 {
 	PTTRACE("Project::ReadProjectBranch");
-	
+
 	pt::String s;
 	br->getNode("Title", s);
 	project()->title(s);
@@ -178,7 +179,7 @@ bool Project::WriteVersionBranch(pt::datatree::Branch *br)
 }
 bool Project::ReadVersionBranch(const pt::datatree::Branch *br)
 {
-	/*no need to read anything*/ 
+	/*no need to read anything*/
 	return true;
 }
 //
@@ -188,14 +189,14 @@ static char fn[PT_MAXPATH];
 
 void Project::setFilepath(const ptds::FilePath &fp)
 {
-	/*no validation at this point*/ 
+	/*no validation at this point*/
 	_filepath = fp;
 	ptds::FilePath::setProjectDirectory(fp.path());
 	fn[0] = '.';
 }
 const ptds::FilePath* Project::filepath() const { return &_filepath; }
 
-const char* Project::filename() const 
+const char* Project::filename() const
 {
 	if (fn[0] == '<') return fn;
 
@@ -214,7 +215,7 @@ struct BranchDispatcher
 	{
 		if (!Dispatcher::instance()->dispatchBranch(br))
 		{
-//#ifdef DATATREE_DEBUGGING	
+//#ifdef DATATREE_DEBUGGING
 	char brid[NODE_ID_SIZE];
 	br->id().get(brid);
 	std::cout << "unable to find branch handler for " << brid << std::endl;
@@ -227,11 +228,11 @@ bool Project::open()
 	std::cout << "Project::Open\n";
 	PTTRACE("Project::open");
 
-	/* version 1.6 and later */ 
+	/* version 1.6 and later */
 	if (_filepath.checkExists())
 	{
 		pt::datatree::DataTree dt( pt::String(_filepath.path()) );
-		
+
 		dt.setReadOnly();
 		BranchDispatcher bd;
 		dt.visitBranches(bd);
@@ -254,7 +255,7 @@ bool Project::save()
 	pt::datatree::DataTree dt;
 	Dispatcher::instance()->writeTree(&dt);
 	bool result =  dt.writeTree( pt::String(_filepath.path()) );
-	
+
 	/*pt::datatree::ListBranchVisitor v;
 	dt.visitNodes(v);*/
 	dt.clear();
@@ -314,11 +315,11 @@ bool Project::VERSION_R(const Block *block)
 // write block
 //
 Block *Project::PROJPROPW()
-{	
+{
 	Block *block = Block::allocBlock();
 	memcpy(block->identifier, "PROJPROP", 8);
 
-	/*version*/ 
+	/*version*/
 	block->write_s(project()->title());
 	block->write_s(project()->author());
 	block->write_s(project()->company());
@@ -339,3 +340,5 @@ Block *Project::VERSION_W()
 	block->write(version);
 	return block;
 }
+
+POP_DISABLE_DEPRECATION_WARNINGS

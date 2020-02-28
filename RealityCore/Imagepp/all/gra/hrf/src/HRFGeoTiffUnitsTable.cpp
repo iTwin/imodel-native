@@ -15,6 +15,7 @@
 #include <ImagePP/all/h/HCDCodecZlib.h>
 #include <ImagePP/all/h/HFCURL.h>
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 /**----------------------------------------------------------------------------
  HRFGeoTiffUnitsTable.tbl
 
@@ -143,3 +144,4 @@ HRFGeoTiffUnitsTable::HRFGeoTiffUnitsTable(const HFCPtr<HFCURL>& pi_rpUnitsTable
     //:> set the number of record
     m_RecordSize = s_RecordSize;
     }
+POP_DISABLE_DEPRECATION_WARNINGS

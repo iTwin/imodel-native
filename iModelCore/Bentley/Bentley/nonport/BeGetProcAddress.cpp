@@ -21,16 +21,16 @@ void BeGetProcAddress::SetLibrarySearchPath(BeFileNameCR pathname)
     {
 #if defined(BENTLEYCONFIG_OS_WINDOWS) && !defined(BENTLEYCONFIG_OS_WINRT)
     /*
-    * Note: We use two mechanisms to setup the PATH - it otherwise results in hard to find and/or reproduce bugs 
-    * with the converter:   
+    * Note: We use two mechanisms to setup the PATH - it otherwise results in hard to find and/or reproduce bugs
+    * with the converter:
     *
-    * 1. ::SetDllDirectoryW() by itself was unreliable on some machines - ::SetDllDirectoryA() was getting called 
-    * from other Dlls not under our control clobbering up the DgnV8 path setup here. So we ended up setting 
+    * 1. ::SetDllDirectoryW() by itself was unreliable on some machines - ::SetDllDirectoryA() was getting called
+    * from other Dlls not under our control clobbering up the DgnV8 path setup here. So we ended up setting
     * system PATH environment for these cases (as is done in V8 Microstation)
-    * 
-    * 2. System PATH by itself wasn't sufficient to load some DLLs like SPAXAcis.dll. I couldn't find a reasonable 
-    * explanation for why this is the case. 
-    * 
+    *
+    * 2. System PATH by itself wasn't sufficient to load some DLLs like SPAXAcis.dll. I couldn't find a reasonable
+    * explanation for why this is the case.
+    *
     * See description @ https://msdn.microsoft.com/en-us/library/ms686203(VS.85).aspx
     */
     ::SetDllDirectoryW(pathname.c_str());
@@ -38,7 +38,9 @@ void BeGetProcAddress::SetLibrarySearchPath(BeFileNameCR pathname)
     WString newPath(L"PATH=");
     newPath.append(pathname);
     newPath.append(L";");
+PUSH_DISABLE_DEPRECATION_WARNINGS
     newPath.append(::_wgetenv(L"PATH"));
+POP_DISABLE_DEPRECATION_WARNINGS
     _wputenv(newPath.c_str());
 
 #elif defined(__unix__)

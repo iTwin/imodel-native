@@ -552,7 +552,7 @@ BentleyStatus CodeSpecReader::_Read(Json::Value& object)
 BentleyStatus LsComponentReader::_Read(Json::Value& object)
     {
     LsComponentId v10Id;
-    
+
     Json::Value jsonValue;
     Utf8String name = object["Name"].asString();
     LsComponentType componentType = LsComponentType::LineCode;
@@ -806,7 +806,7 @@ BentleyStatus PartitionReader::_Read(Json::Value& partition)
 //---------------+---------------+---------------+---------------+---------------+-------
 Utf8String ElementReader::_GetRelationshipClassName()
     {
-    return BIS_SCHEMA(BIS_REL_ElementOwnsChildElements); 
+    return BIS_SCHEMA(BIS_REL_ElementOwnsChildElements);
     }
 
 //---------------------------------------------------------------------------------------
@@ -907,7 +907,7 @@ BentleyStatus GeometryReader::_OnInstanceCreated(ECN::IECInstanceR ecInstance)
     ECValue empty;
     empty.SetIsNull(true);
     ecInstance.SetValue("GeometryStream", empty);
-    
+
     return SUCCESS;
     }
 
@@ -1024,7 +1024,7 @@ BentleyStatus LineStyleReader::_OnElementCreated(DgnElementR element, ECN::IECIn
     properties.GetValue(v, "Data");
     Json::Value json;
     Json::Reader::Parse(Utf8String(v.GetUtf8CP()), json);
-    
+
     uint32_t id = json["compId"].asUInt();
     int32_t type = json["compType"].asInt();
     LsComponentId oldId((LsComponentType) type, id);
@@ -1344,7 +1344,7 @@ BentleyStatus SubCategoryReader::_Read(Json::Value& subCategory)
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus ModelReader::_Read(Json::Value& model)
     {
-    
+
     // need to change the modeled element id before creating the instance
     if (!m_isDictionary)
         {
@@ -1676,7 +1676,7 @@ BentleyStatus DisplayStyleReader::_Read(Json::Value& object)
     if (object["Is3d"].asBool())
         {
         DisplayStyle3d* disp3d = new DisplayStyle3d(*model, displayStyleName);
-         
+
         if (object.isMember("IsEnvironmentEnabled") && object["IsEnvironmentEnabled"].asBool())
             {
             DisplayStyle3d::EnvironmentDisplay& envDisplay = disp3d->GetEnvironmentDisplayR();
@@ -2170,12 +2170,12 @@ ECN::ECObjectsStatus ExtendTypeConverter::ReplaceWithKOQ(ECN::ECSchemaR schema, 
                 return ECN::ECObjectsStatus::SchemaNotFound;
                 }
             }
-        
+
         // Locate persistence Unit within Format Schema
         ECN::ECUnitCP persistenceUnit = m_unitsStandardSchema->GetUnitCP(persistenceUnitName);
         if (nullptr == persistenceUnit)
             return ECN::ECObjectsStatus::Error;
-        
+
         // Check if Units Schema is referenced
         if (!ECN::ECSchema::IsSchemaReferenced(schema, *m_unitsStandardSchema) && ECN::ECObjectsStatus::Success != schema.AddReferencedSchema(*m_unitsStandardSchema))
             {
@@ -2288,7 +2288,7 @@ ECN::ECObjectsStatus ExtendTypeConverter::Convert(ECN::ECSchemaR schema, ECN::IE
     ECN::ECPropertyP prop = dynamic_cast<ECN::ECPropertyP> (&container);
     if (prop == nullptr)
         {
-        GetLogger().warningv("Found ExtendType custom attribute on a container which is not a property, removing.  Container is %s", container.GetContainerName());
+        GetLogger().warningv("Found ExtendType custom attribute on a container which is not a property, removing.  Container is %s", container.GetContainerName().c_str());
         container.RemoveCustomAttribute("EditorCustomAttributes", EXTEND_TYPE);
         container.RemoveSupplementedCustomAttribute("EditorCustomAttributes", EXTEND_TYPE);
         return ECN::ECObjectsStatus::Success;
@@ -2340,7 +2340,7 @@ ECN::ECObjectsStatus ExtendTypeConverter::Convert(ECN::ECSchemaR schema, ECN::IE
                          prop->GetClass().GetFullName(), prop->GetName().c_str());
             break;
         }
-    
+
     // Need to clear the cache of the units and formats schema.
     m_unitsStandardSchema = nullptr;
     m_formatsStandardSchema = nullptr;

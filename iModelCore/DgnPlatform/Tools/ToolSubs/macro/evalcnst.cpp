@@ -10,6 +10,8 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Gray.Yu         03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -25,7 +27,7 @@ static bool     IsIntegerConstant (WCharCP stringValue, int *pValue)
     if ('-' == *pC)
         pC++;
 
-    while ( (*pC != 0) && isdigit (*pC) ) 
+    while ( (*pC != 0) && isdigit (*pC) )
         pC++;
 
     if (0 == *pC)
@@ -429,15 +431,15 @@ void    Advance ()
             m_expression--;
             break;
 
-        case '\0':  
+        case '\0':
             m_token = TOKEN_EndOfString;
             break;
 
-        case '(':   
+        case '(':
             m_token = TOKEN_LeftParen;
             break;
 
-        case ')':   
+        case ')':
             m_token = TOKEN_RightParen;
             break;
 
@@ -491,16 +493,16 @@ void    Advance ()
                 m_token = TOKEN_LessThan;
             break;
 
-        case '+':   m_token = TOKEN_Add;            
+        case '+':   m_token = TOKEN_Add;
             break;
 
-        case '-':   m_token = TOKEN_Subtract;            
+        case '-':   m_token = TOKEN_Subtract;
             break;
 
-        case '*':   m_token = TOKEN_Multiply;            
+        case '*':   m_token = TOKEN_Multiply;
             break;
 
-        case '/':   m_token = TOKEN_Divide;            
+        case '/':   m_token = TOKEN_Divide;
             break;
 
         case '%':   m_token = TOKEN_Modulus;
@@ -508,7 +510,7 @@ void    Advance ()
             WCharP  pEndOfWord = m_expression;
             WChar   saveChar;
 
-            while (!isspace(*pEndOfWord)) 
+            while (!isspace(*pEndOfWord))
                 pEndOfWord++;
 
             if (pEndOfWord == m_expression)
@@ -605,7 +607,7 @@ EvaluatorNodeP   CalculateBinaryNode (int type, EvaluatorNode& left, EvaluatorNo
         case    TOKEN_LogicalOr:
             left.ConvertToInteger (true);
             right.ConvertToInteger (true);
-            left.SetToBoolean (left.GetBooleanValue() || right.GetBooleanValue()); 
+            left.SetToBoolean (left.GetBooleanValue() || right.GetBooleanValue());
             break;
 
         case    TOKEN_LogicalAnd:
@@ -617,19 +619,19 @@ EvaluatorNodeP   CalculateBinaryNode (int type, EvaluatorNode& left, EvaluatorNo
         case    TOKEN_BinaryOr:
             left.ConvertToInteger (true);
             right.ConvertToInteger (true);
-            left.SetToBoolean (0 != (left.GetIntegerValue() | right.GetIntegerValue())); 
+            left.SetToBoolean (0 != (left.GetIntegerValue() | right.GetIntegerValue()));
             break;
 
         case    TOKEN_BinaryXor:
             left.ConvertToInteger (true);
             right.ConvertToInteger (true);
-            left.SetToBoolean (0 != (left.GetIntegerValue() ^ right.GetIntegerValue())); 
+            left.SetToBoolean (0 != (left.GetIntegerValue() ^ right.GetIntegerValue()));
             break;
 
         case    TOKEN_BinaryAnd:
             left.ConvertToInteger (true);
             right.ConvertToInteger (true);
-            left.SetToBoolean (0 != (left.GetIntegerValue() & right.GetIntegerValue())); 
+            left.SetToBoolean (0 != (left.GetIntegerValue() & right.GetIntegerValue()));
             break;
 
         case    TOKEN_Equals:
@@ -682,7 +684,7 @@ EvaluatorNodeP   CalculateBinaryNode (int type, EvaluatorNode& left, EvaluatorNo
                 right.RequireArithType ();
                 left.SetToInteger (left.GetIntegerValue() + right.GetIntegerValue());
                 }
-            else 
+            else
                 {
                 left.Concatenate (right);
                 }
@@ -781,12 +783,12 @@ bool    IsSymbolDefined (EvaluatorNodeP *ppNode, bool mustBeDefined)
     m_expression = wskipSpace (m_expression);
 
     WChar    symbol[500], *outP, *endP;
-    for (outP=symbol, endP = outP + (_countof (symbol)-1); (outP < endP) && IsSymbolChar(*m_expression); outP++, m_expression++) 
+    for (outP=symbol, endP = outP + (_countof (symbol)-1); (outP < endP) && IsSymbolChar(*m_expression); outP++, m_expression++)
         *outP = *m_expression;
 
     if (outP >= endP)
         m_macroFileProc.FatalError (L"string constant too long");
-    
+
     // null terminate the string.
     *outP = 0;
 
@@ -812,7 +814,7 @@ bool    IsSymbolDefined (EvaluatorNodeP *ppNode, bool mustBeDefined)
             *outP = 0;
 
             wstripSpace (symbol);
-                        
+
             // in this case, we got $(MACRONAME) or ${MACRONAME}. It must exist and expand to something.
             MacroExpandOptions  options (m_level);
             WString             expansion;
@@ -955,9 +957,9 @@ EvaluatorNodeP   ReadStringNode ()
     WChar    symbol[500], *outP, *endP;
 
     m_expression++; /* skip over the leading quote */
-    for (outP=symbol, endP = outP + (_countof (symbol)-1); (outP < endP) && (*m_expression != '"') && (*m_expression != '\n'); outP++, m_expression++) 
+    for (outP=symbol, endP = outP + (_countof (symbol)-1); (outP < endP) && (*m_expression != '"') && (*m_expression != '\n'); outP++, m_expression++)
         *outP = *m_expression;
-    
+
     // null terminate the string.
     *outP = 0;
 
@@ -973,7 +975,7 @@ EvaluatorNodeP   ReadStringNode ()
         }
 
     // skip past the last quote */
-    m_expression++; 
+    m_expression++;
 
     return new EvaluatorNode (symbol, m_macroFileProc);
     }
@@ -1008,7 +1010,7 @@ EvaluatorNodeP   PreProcessCommand()
     WChar   savechar;
     EvaluatorNodeP   node = NULL;
 
-    while (!isspace(*pEndOfWord)) 
+    while (!isspace(*pEndOfWord))
         pEndOfWord++;
 
     if (pEndOfWord == m_expression)
@@ -1112,7 +1114,7 @@ EvaluatorNodeP   ReadUnaryNode ()
         Advance ();
         IsSymbolDefined (&node, false);
         if (NULL == node)
-            m_macroFileProc.FatalError (L"invalid symbol");   
+            m_macroFileProc.FatalError (L"invalid symbol");
         Advance ();
         }
     else if (m_token == TOKEN_LeftParen)
@@ -1417,3 +1419,4 @@ MacroFileProcessor&         mfp
     }
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
+POP_DISABLE_DEPRECATION_WARNINGS

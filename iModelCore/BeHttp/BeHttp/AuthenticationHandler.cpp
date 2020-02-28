@@ -112,7 +112,7 @@ m_attemptNumber(attemptNumber)
 +---------------+---------------+---------------+---------------+---------------+------*/
 AuthenticationHandler::AuthenticationState::AuthenticationState(Request request) :
 m_request(std::move(request)),
-m_attempt(request.GetUrl(), "", DateTime(), 0)
+m_attempt(m_request.GetUrl(), "", DateTime(), 0)
     {
     }
 

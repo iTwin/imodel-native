@@ -38,6 +38,7 @@
 
 #define  BLOCKSIZE  0x400000
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 /**-----------------------------------------------------------------------------
  This class declare the Block Capabilitie of the none-compressed TGA file format.
  In this case, the only block type supported is the Line one. The lines can be
@@ -692,7 +693,7 @@ void HRFTgaFile::SaveTgaFile(bool pi_CloseFile)
         // Update each tag to the file when has changed.
         HPMAttributeSet::HPMASiterator TagIterator;
 
-        for (TagIterator  = pPageDescriptor->GetTags().begin(); 
+        for (TagIterator  = pPageDescriptor->GetTags().begin();
              TagIterator != pPageDescriptor->GetTags().end();
              TagIterator++)
             {
@@ -1905,3 +1906,4 @@ uint16_t HRFTgaFile::GetBitsPerPixel() const
     {
     return m_pTgaFileHeader->m_PixelDepth;
     }
+POP_DISABLE_DEPRECATION_WARNINGS

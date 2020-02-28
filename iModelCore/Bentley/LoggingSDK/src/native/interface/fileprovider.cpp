@@ -50,11 +50,8 @@ int SimpleFileProvider::openlog ( void )
     closelog();
 
     Utf8String aname (m_name);
-PUSH_MSVC_IGNORE(4996)
-    FILE* pFile = fopen ( aname.c_str(), "a");
-POP_MSVC_IGNORE
-
-    if ( NULL == pFile  )
+    FILE* pFile;
+    if (0 != BeFile::Fopen (&pFile, aname.c_str(), "a"))
         {
         return ERROR;
         }

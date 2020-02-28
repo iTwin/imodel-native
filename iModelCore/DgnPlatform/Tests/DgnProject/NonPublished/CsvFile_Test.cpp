@@ -33,12 +33,13 @@ static BeFileName GetTestFilePath()
 void CsvFileTests::SetUpTestCase()
     {
     auto testFilePath = GetTestFilePath();
-    
+
     ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testFilePath.GetDirectoryName().c_str()));
 
     Utf8String outRootUtf8(testFilePath);
-    FILE* fp = fopen(outRootUtf8.c_str(), "w+");
-    ASSERT_TRUE(nullptr != fp);
+    FILE* fp;
+    auto err = BeFile::Fopen(&fp, outRootUtf8.c_str(), "w+");
+    ASSERT_TRUE(0 == err);
     fputs(
 "1,003_PetroBras.i.dgn,PDS\n"
 "2,033_Master_GSA.i.dgn,Building\n"
@@ -46,7 +47,7 @@ void CsvFileTests::SetUpTestCase()
     fclose(fp);
     }
 
-void CsvFileTests::TearDownTestCase() 
+void CsvFileTests::TearDownTestCase()
     {
     auto testFilePath = GetTestFilePath();
     BeFileName::EmptyAndRemoveDirectory(testFilePath.GetDirectoryName().c_str());

@@ -650,9 +650,9 @@ ECSchemaCP ECProperty::_GetContainerSchema () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-Utf8CP ECProperty::_GetContainerName() const
+Utf8String ECProperty::_GetContainerName() const
     {
-    return Utf8String(Utf8String(GetClass().GetFullName()) + ":" + GetName()).c_str();
+    return Utf8String(GetClass().GetFullName()) + ":" + GetName();
     }
 
 ECObjectsStatus resolveKindOfQuantityType(KindOfQuantityCP& kindOfQuantity, Utf8StringCR typeName, ECSchemaCR parentSchema)
@@ -1508,7 +1508,7 @@ ECObjectsStatus StructECProperty::_SetTypeName (Utf8StringCR typeName)
         LOG.errorv ("Failed to set the type name of ECStructProperty '%s' to '%s' because the typeName could not be parsed into a resolvable ECClass.", this->GetName().c_str(), typeName.c_str());
         return status;
         }
-    
+
     if (structClass->Is(&this->GetClass()))
         {
         LOG.errorv("Failed to set typename of ECStructProperty '%s:%s' to '%s' because the struct type is the same class as the containing class.", this->GetClass().GetName().c_str(), this->GetName().c_str(), typeName.c_str());
@@ -1737,7 +1737,7 @@ ECObjectsStatus ArrayECProperty::SetMinOccurs (uint32_t minOccurs)
 ECObjectsStatus ArrayECProperty::SetMinOccurs (Utf8StringCR minOccurs)
     {
     uint32_t iMinOccurs;
-    int count = BE_STRING_UTILITIES_UTF8_SSCANF (minOccurs.c_str(), "%u", &iMinOccurs);
+    int count = Utf8String::Sscanf_safe (minOccurs.c_str(), "%u", &iMinOccurs);
     if (count != 1)
         {
         LOG.errorv ("Failed to set MinOccurs of ECProperty '%s' to '%s' because the value could not be parsed.  It must be a valid unsigned integer.",
@@ -1772,7 +1772,7 @@ ECObjectsStatus ArrayECProperty::SetMaxOccurs (uint32_t maxOccurs)
 ECObjectsStatus ArrayECProperty::SetMaxOccurs (Utf8StringCR maxOccurs)
     {
     uint32_t iMaxOccurs;
-    int count = BE_STRING_UTILITIES_UTF8_SSCANF (maxOccurs.c_str(), "%u", &iMaxOccurs);
+    int count = Utf8String::Sscanf_safe (maxOccurs.c_str(), "%u", &iMaxOccurs);
     if (count != 1)
         {
         if (0 == strcmp (maxOccurs.c_str(), ECXML_UNBOUNDED))
@@ -2228,7 +2228,8 @@ SchemaWriteStatus NavigationECProperty::_WriteXml(BeXmlWriterR xmlWriter, ECVers
         return T_Super::_WriteXml(xmlWriter, EC_PROPERTY_ELEMENT, ecXmlVersion);
 
     bvector<bpair<Utf8CP, Utf8CP>> additionalAttributes;
-    additionalAttributes.push_back(make_bpair(RELATIONSHIP_NAME_ATTRIBUTE, GetRelationshipClassName().c_str()));
+    auto relClassName = GetRelationshipClassName(); // must be automatic variable to hold value in scope until this routine returns
+    additionalAttributes.push_back(make_bpair(RELATIONSHIP_NAME_ATTRIBUTE, relClassName.c_str()));
     additionalAttributes.push_back(make_bpair(DIRECTION_ATTRIBUTE, SchemaParseUtils::DirectionToXmlString(m_direction)));
 
     return T_Super::_WriteXml(xmlWriter, EC_NAVIGATIONPROPERTY_ELEMENT, ecXmlVersion, &additionalAttributes, false);

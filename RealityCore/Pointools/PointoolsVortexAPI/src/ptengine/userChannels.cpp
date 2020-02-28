@@ -16,8 +16,8 @@ using namespace pointsengine;
 //-----------------------------------------------------------------------------
 // Constructor
 //-----------------------------------------------------------------------------
-VoxelChannelData::VoxelChannelData( uint num_points, uint bytesPerPnt, uint full_num_points, ubyte setup_flags, uint user_0, uint user_1 ) : 
-		data(0), uniform_value(0), min_value(0), max_value(0), numPoints( num_points ), 
+VoxelChannelData::VoxelChannelData( uint num_points, uint bytesPerPnt, uint full_num_points, ubyte setup_flags, uint user_0, uint user_1 ) :
+		data(0), uniform_value(0), min_value(0), max_value(0), numPoints( num_points ),
 			bytesPerPoint( (ubyte)bytesPerPnt ), filepos(PT_NULL_FILE_POS), flags(setup_flags),
 			fullNumPoints(full_num_points), user0((ubyte)user_0), user1((ubyte)user_1)
 		{
@@ -25,14 +25,14 @@ VoxelChannelData::VoxelChannelData( uint num_points, uint bytesPerPnt, uint full
 // if OOC
 // The data member of the VoxelChannelData points to a buffer shared by the channel
 // and does not destroy on destruct
-// 
+//
 // unlock and lock methods
 // ensure that the data is valid and ready to read
 //-----------------------------------------------------------------------------
 bool VoxelChannelData::allocate()
 {
 	if (data) return false;
-		
+
 	try
 	{
 		data = new ubyte[bytesPerPoint * numPoints];
@@ -61,7 +61,7 @@ void VoxelChannelData::destroy(bool dataOnly)
 		uniform_value = 0;
 		max_value = 0;
 		min_value = 0;
-	}	
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -115,7 +115,7 @@ bool VoxelChannelData::copy(VoxelChannelData &source)
 //-----------------------------------------------------------------------------
 // CloudChannelData : Constructor
 //-----------------------------------------------------------------------------
-CloudChannelData::CloudChannelData( const pcloud::PointCloud* cloud, uint bitsize, 
+CloudChannelData::CloudChannelData( const pcloud::PointCloud* cloud, uint bitsize,
 								   uint multiple, void* defaultVal, ubyte flags, CloudChannelData *source, UserChannel *sourceChannel, UserChannel *destChannel)
 {
 	m_bitsize = bitsize;
@@ -129,7 +129,7 @@ CloudChannelData::CloudChannelData( const pcloud::PointCloud* cloud, uint bitsiz
 		memcpy(m_defaultValue, defaultVal, BYTES_PER_ELEMENT);
 	}
 
-	/* create the voxel channel data and set to default */ 
+	/* create the voxel channel data and set to default */
 	if (cloud) // construction from file does not have a cloud pointer
 	{
         for (size_t i = 0; i < cloud->voxels().size(); i++)
@@ -139,7 +139,7 @@ CloudChannelData::CloudChannelData( const pcloud::PointCloud* cloud, uint bitsiz
 			VoxelChannelData &v = data.back();
 
 			v.uniform_value = new ubyte[BYTES_PER_ELEMENT];
-			if (m_defaultValue) 
+			if (m_defaultValue)
 				memcpy( v.uniform_value, m_defaultValue, BYTES_PER_ELEMENT );
 															// If copying voxel user channel data
 			if(source)
@@ -179,12 +179,12 @@ CloudChannelData::~CloudChannelData()
 //-----------------------------------------------------------------------------
 struct CreateChannelsVisitor : public PointsVisitor
 {
-	CreateChannelsVisitor( UserChannel::MapByCloud &m, uint bitsize, uint multiple, void* defaultVal, ubyte flags ) 
+	CreateChannelsVisitor( UserChannel::MapByCloud &m, uint bitsize, uint multiple, void* defaultVal, ubyte flags )
 		: _channels(m), _bitsize(bitsize), _multiple(multiple), _defaultVal(defaultVal), _flags(flags) {}
 
-	bool cloud(pcloud::PointCloud *cloud)	
-	{ 
-		_channels.insert( 
+	bool cloud(pcloud::PointCloud *cloud)
+	{
+		_channels.insert(
 			UserChannel::MapByCloud::value_type(
 				cloud->guid(), new CloudChannelData( cloud, _bitsize, _multiple, _defaultVal, (ubyte)_flags )));
 		return true;
@@ -204,7 +204,7 @@ struct CopyChannelsVisitor : public CreateChannelsVisitor
 	UserChannel *	sourceUserChannel;
 	UserChannel *	destUserChannel;
 
-	//CopyChannelsVisitor(UserChannel::MapByCloud &m, uint bitsize, uint multiple, void* defaultVal, ubyte flags) 
+	//CopyChannelsVisitor(UserChannel::MapByCloud &m, uint bitsize, uint multiple, void* defaultVal, ubyte flags)
 	//	: _channels(m), _bitsize(bitsize), _multiple(multiple), _defaultVal(defaultVal), _flags(flags) {}
 
 	CopyChannelsVisitor(UserChannel &sourceChannel, UserChannel &destChannel, uint bitsize, uint multiple, void* defaultVal, ubyte destFlags) : CreateChannelsVisitor(sourceChannel.getData(), bitsize, multiple, defaultVal, destFlags)
@@ -213,8 +213,8 @@ struct CopyChannelsVisitor : public CreateChannelsVisitor
 		destUserChannel		= &destChannel;
 	}
 
-	bool cloud(pcloud::PointCloud *cloud)	
-	{ 
+	bool cloud(pcloud::PointCloud *cloud)
+	{
 		UserChannel::MapByCloud::iterator it;
 
 		if((it = _channels.find(cloud->guid())) != _channels.end())
@@ -246,7 +246,7 @@ UserChannel::UserChannel(const pt::String &name, uint bitsize, uint multiple, vo
 
 	CreateChannelsVisitor v( m_data, bitsize, multiple, defaultVal, flags );
 
-	/* iterate clouds and enter this in */ 
+	/* iterate clouds and enter this in */
 	if (scene)
 	{
 		for (uint c=0;c<scene->size();c++)
@@ -281,7 +281,7 @@ UserChannel::UserChannel(UserChannel *sourceChannel, const pt::String &destName,
 		memcpy(m_defaultValue, sourceChannel->defaultValue(), BYTES_PER_ELEMENT);
 	}
 
-	/* iterate clouds and enter this in */ 
+	/* iterate clouds and enter this in */
 	CopyChannelsVisitor v(*sourceChannel, *this, m_bitsize, m_multiple, m_defaultValue, (ubyte)destFlags);
 
 	thePointsScene().visitPointClouds( &v );
@@ -323,10 +323,10 @@ void UserChannel::unlock( VoxelChannelData *vcd, int numPoints )
 
 	if (vcd->isOOC() && !vcd->isUniform())
 	{
-		/* read from OOC if available */ 
+		/* read from OOC if available */
 		if (!m_ooc.readVCD( vcd, numPoints ))
 		{
-			/*otherwise create IC for write, OOC will be creaed on first use */ 
+			/*otherwise create IC for write, OOC will be creaed on first use */
 			vcd->numPoints = numPoints;
 			vcd->allocate();
 		}
@@ -340,8 +340,8 @@ void UserChannel::update( VoxelChannelData *vcd, int numPoints )
 	if (vcd && vcd->isOOC() && !vcd->isUniform())
 	{
 		m_ooc.create( this );				// ensure the the OOC is setup already
-		m_ooc.writeVCD( vcd, numPoints );	
-	}	
+		m_ooc.writeVCD( vcd, numPoints );
+	}
 }
 //=============================================================================
 //	PERSISTANCE
@@ -354,24 +354,24 @@ void UserChannel::update( VoxelChannelData *vcd, int numPoints )
 
 	// Note that a version check on reading was only added recently. This means that
 	// this file format is fixed and cannot be added to or changed without
-	// breaking loading of newer UserChannel files into older versions of Vortex	
+	// breaking loading of newer UserChannel files into older versions of Vortex
 	int version = 1;
 	int bytesPerPoint = (m_bitsize / 8) * m_multiple;
 
 	// Meta Data
-	bool res = 
+	bool res =
 			wb.write( version )
 		&&	wb.write( m_name )
 		&&	wb.write( m_bitsize )
 		&&	wb.write( m_multiple );
 
-	if (m_defaultValue)	
+	if (m_defaultValue)
 	{
 		res &=	wb.write( (int)1 )	// marker to indicate default val exists
 				&& wb.write( m_defaultValue, bytesPerPoint);
 	}
 	else wb.write( (int)0 );
-	
+
 
 	res &= wb.write( m_flags );
 	res &= wb.write( (int)m_data.size() );	// num of point clouds
@@ -382,7 +382,7 @@ void UserChannel::update( VoxelChannelData *vcd, int numPoints )
 	for (MapByCloud::iterator i = m_data.begin(); i!= m_data.end(); i++)
 	{
 		CloudChannelData* c = i->second;
-		
+
 		res &= wb.write ( i->first );				// Point cloud GUID
 		res &= wb.write ( (int)c->data.size() );	// per voxel channel data size
 
@@ -395,28 +395,28 @@ void UserChannel::update( VoxelChannelData *vcd, int numPoints )
 			VoxelChannelData &chd = c->data[i];
 
 			unlock( &chd, chd.fullNumPoints );	// unlock to ensure all points are loaded for write
-			
-			res &= wb.write( chd.fullNumPoints );	
-			res &= wb.write( chd.numPoints );	
+
+			res &= wb.write( chd.fullNumPoints );
+			res &= wb.write( chd.numPoints );
 			res &= wb.write( chd.flags );
-			
+
 			uint values = 0;
-			
+
 			if (chd.uniform_value)	values |= 1;	// these may be null so need a marker
 			if (chd.min_value)		values |= 2;
 			if (chd.max_value)		values |= 4;
 
 			res &= wb.write( values );
 			res &= chd.uniform_value ?  wb.write( chd.uniform_value, bytesPerPoint ) : true;	// write if available
-			res &= chd.min_value ?  wb.write( chd.min_value, bytesPerPoint ) : true; 
-			res &= chd.max_value ?  wb.write( chd.max_value, bytesPerPoint ) : true; 
+			res &= chd.min_value ?  wb.write( chd.min_value, bytesPerPoint ) : true;
+			res &= chd.max_value ?  wb.write( chd.max_value, bytesPerPoint ) : true;
 
 			if (chd.data)	res &= wb.write( (int) 1 );	//marker for data
 			else			wb.write( (int) 0 );		//or null data
 
 			if (chd.data)	// write the perpoint channel data
 				res &= wb.write( chd.data, chd.fullNumPoints * chd.bytesPerPoint );
-			
+
 			lock( &chd );				// relock
 
 			if (!res) return false;
@@ -435,14 +435,14 @@ bool UserChannel::writeToBranch( pt::datatree::Branch *branch, bool copy )
 	branch->addNode("name", m_name );
 	branch->addNode("bitsize", m_bitsize );
 	branch->addNode("multiple", m_multiple );
-		
-	if (m_defaultValue)	
+
+	if (m_defaultValue)
 	{
 		branch->addBlob("default_value", bytesPerPoint, m_defaultValue, true, true );
 	}
 	branch->addNode("flags", m_flags );
 	branch->addNode("num_clouds", (int)m_data.size() );
-	
+
 	pt::datatree::Branch *clouds = branch->addBranch("clouds");
 
 	for (MapByCloud::iterator i = m_data.begin(); i!= m_data.end(); i++)
@@ -462,11 +462,11 @@ bool UserChannel::writeToBranch( pt::datatree::Branch *branch, bool copy )
 		for (size_t j=0; j< c->data.size(); j++)
 		{
 			VoxelChannelData &chd = c->data[j];
-			
+
 			pt::datatree::Branch *leaf = leaves->addIndexedBranch();
 
 			unlock( &chd, chd.fullNumPoints );	// unlock to ensure all points are loaded for write
-			
+
 			leaf->addNode( "full_num_points", chd.fullNumPoints );
 			leaf->addNode( "num_points", chd.numPoints );
 			leaf->addNode( "flags", (uint)chd.flags );
@@ -480,11 +480,11 @@ bool UserChannel::writeToBranch( pt::datatree::Branch *branch, bool copy )
 				leaf->addBlob( "min", bytesPerPoint, chd.min_value, true, true );
 
 			if (chd.max_value)
-				leaf->addBlob( "max", bytesPerPoint, chd.max_value, true, true );			
-			
+				leaf->addBlob( "max", bytesPerPoint, chd.max_value, true, true );
+
 			if (chd.data)	// write the per-point channel data
 				leaf->addBlob( "data", chd.fullNumPoints * chd.bytesPerPoint, chd.data, copy, true, false/*compress*/);
-				
+
 			lock( &chd );				// relock
 		}
 	}
@@ -512,7 +512,7 @@ UserChannel::UserChannel() :  m_multiple(0), m_defaultValue(nullptr), m_flags(0)
 	// Note that this version check was only added recently. This means that
 	// this file format is fixed and cannot be added to or changed without
 	// breaking loading of newer UserChannel files into older versions of Vortex
-	if (version != 1)   
+	if (version != 1)
 		return NULL;
 
 	rb.read( userChannel->m_name );
@@ -527,7 +527,7 @@ UserChannel::UserChannel() :  m_multiple(0), m_defaultValue(nullptr), m_flags(0)
 		userChannel->m_defaultValue = new ubyte[bytesPerPoint];
 		rb.read( userChannel->m_defaultValue, bytesPerPoint);
 	}
-	
+
 	rb.read( userChannel->m_flags );
 	rb.read( numCHD );
 
@@ -540,7 +540,7 @@ UserChannel::UserChannel() :  m_multiple(0), m_defaultValue(nullptr), m_flags(0)
 		rb.read( numVoxels );
 
 		// create the per cloud channel structure
-		CloudChannelData * ccd = new CloudChannelData( 0, userChannel->m_bitsize, userChannel->m_multiple, 
+		CloudChannelData * ccd = new CloudChannelData( 0, userChannel->m_bitsize, userChannel->m_multiple,
 			userChannel->m_defaultValue, userChannel->m_flags );
 
 		userChannel->m_data.insert( MapByCloud::value_type( guid, ccd ) );
@@ -552,18 +552,18 @@ UserChannel::UserChannel() :  m_multiple(0), m_defaultValue(nullptr), m_flags(0)
 			uint numPoints, fullNumPoints;
 			uint user0 = 0, user1 = 0; // note that this is incorrect, but due to the version issue mentioned above, user0 and user1 cannot be written or read from file
 
-			rb.read( fullNumPoints );	
-			rb.read( numPoints );	
-			rb.read( flags );			
+			rb.read( fullNumPoints );
+			rb.read( numPoints );
+			rb.read( flags );
 
 			ccd->data.push_back( VoxelChannelData(numPoints, bytesPerPoint, fullNumPoints, flags, user0, user1) );
 			VoxelChannelData &chd = ccd->data.back();
-			/* do not set filepos here */ 
+			/* do not set filepos here */
 
 		/*	uint values = 0;
 			rb.read( values );
 
-			
+
 			if (values & 1)
 			{
 				chd.uniform_value = new ubyte[bytesPerPoint];
@@ -579,7 +579,7 @@ UserChannel::UserChannel() :  m_multiple(0), m_defaultValue(nullptr), m_flags(0)
 				chd.max_value = new ubyte[bytesPerPoint];
 				rb.read( chd.max_value, bytesPerPoint );
 			}
-			
+
 			rb.read( hasVal );
 
 			if (hasVal)		// read the point data
@@ -613,12 +613,12 @@ UserChannel * UserChannel::createFromBranch( pt::datatree::Branch *branch )
 	branch->getNode("name", userChannel->m_name );
 	branch->getNode("bitsize", userChannel->m_bitsize );
 	branch->getNode("multiple", userChannel->m_multiple );
-		
+
 	int bytesPerPoint = (userChannel->m_bitsize / 8) * userChannel->m_multiple;
 
 	const pt::datatree::Blob *default_val = branch->getBlob("default_value");
 
-	if (default_val)	
+	if (default_val)
 	{
 		userChannel->m_defaultValue = new ubyte[ default_val->_size ];
 		memcpy( userChannel->m_defaultValue, default_val->_data, default_val->_size );
@@ -626,7 +626,7 @@ UserChannel * UserChannel::createFromBranch( pt::datatree::Branch *branch )
 
 	branch->getNode("flags", userChannel->m_flags );
 	branch->getNode("num_clouds", num_clouds );
-	
+
 	const pt::datatree::Branch *clouds = branch->getBranch("clouds");
 
 	if (!clouds)
@@ -652,9 +652,9 @@ UserChannel * UserChannel::createFromBranch( pt::datatree::Branch *branch )
 		if (!leaves) continue;
 
 		// create the per-cloud structure
-		CloudChannelData * ccd = new CloudChannelData( 0, userChannel->m_bitsize, userChannel->m_multiple, 
+		CloudChannelData * ccd = new CloudChannelData( 0, userChannel->m_bitsize, userChannel->m_multiple,
 			userChannel->m_defaultValue, (ubyte)userChannel->m_flags );
-		
+
 		//add using guid as key
 		userChannel->m_data.insert( MapByCloud::value_type( guid, ccd ) );
 
@@ -664,7 +664,7 @@ UserChannel * UserChannel::createFromBranch( pt::datatree::Branch *branch )
 			const pt::datatree::Branch *leaf = leaves->getIndexedBranch(j+1);
 
 			if (!leaf) continue;
-			
+
 			// get meta for voxel channel data
 			uint flags;
 			uint numPoints, fullNumPoints;
@@ -675,7 +675,7 @@ UserChannel * UserChannel::createFromBranch( pt::datatree::Branch *branch )
 			leaf->getNode( "flags", flags );
 			leaf->getNode( "user0", u0 );
 			leaf->getNode( "user1", u1 );
-			
+
 			// add this to the cloud channel
 			ccd->data.push_back( VoxelChannelData(numPoints, bytesPerPoint, fullNumPoints, (ubyte)flags/*, u0, u1*/) );
 			VoxelChannelData &chd = ccd->data.back();
@@ -684,9 +684,9 @@ UserChannel * UserChannel::createFromBranch( pt::datatree::Branch *branch )
 
 			// read uniforms, min and max
 			const pt::datatree::Blob *uniform_val = leaf->getBlob("uniform");
-			
+
 			//default value
-			if (uniform_val)	
+			if (uniform_val)
 			{
 				chd.uniform_value = new ubyte[ uniform_val->_size ];
 				memcpy( chd.uniform_value, uniform_val->_data, uniform_val->_size );
@@ -694,7 +694,7 @@ UserChannel * UserChannel::createFromBranch( pt::datatree::Branch *branch )
 			const pt::datatree::Blob *min_val = leaf->getBlob("min");
 
 			// min value
-			if (min_val)	
+			if (min_val)
 			{
 				chd.min_value = new ubyte[ min_val->_size ];
 				memcpy( chd.min_value, min_val->_data, min_val->_size );
@@ -702,12 +702,12 @@ UserChannel * UserChannel::createFromBranch( pt::datatree::Branch *branch )
 			const pt::datatree::Blob *max_val = leaf->getBlob("max");
 
 			// max value
-			if (max_val)	
+			if (max_val)
 			{
 				chd.max_value = new ubyte[ max_val->_size ];
 				memcpy( chd.max_value, max_val->_data, max_val->_size );
 			}
-			
+
 			// per-point data
 			const pt::datatree::Blob *data = leaf->getBlob( "data" );
 			if (data)
@@ -715,7 +715,7 @@ UserChannel * UserChannel::createFromBranch( pt::datatree::Branch *branch )
 				chd.allocate();
 				memcpy( chd.data, data->_data, data->_size );
 			}
-			userChannel->update( &chd, chd.numPoints );			
+			userChannel->update( &chd, chd.numPoints );
 			userChannel->lock( &chd );				// clean local store
 		}
 	}
@@ -734,10 +734,10 @@ void UserChannel::remFromChannel( const pcloud::Scene *scene )
 		if (f != m_data.end())
 		{
 			CloudChannelData *ch = f->second;
-			
+
 			for (size_t j=0; j<ch->data.size(); j++)
 				ch->data[j].destroy();
-			
+
 			m_data.erase(f);
 		}
 	}
@@ -796,8 +796,10 @@ void OOCFile::create( class UserChannel *uchannel )
 
 		if (s_tempFolder.length())
 		{
+PUSH_DISABLE_DEPRECATION_WARNINGS
 			wcsncpy( path, s_tempFolder.c_wstr(), MAX_PATH-1 );	// user user provided folder
             path[MAX_PATH - 1] = 0;
+POP_DISABLE_DEPRECATION_WARNINGS
 		}
 		else
 		{
@@ -833,7 +835,7 @@ bool OOCFile::writeVCD( class VoxelChannelData* vcd, size_t numPoints )
 {
 	if (!vcd->isOOC()) return false;
 
-	/* write the channel to file */ 
+	/* write the channel to file */
 	if (vcd->getData())
 	{
 		if (!numPoints) numPoints = vcd->getNumPoints();
@@ -843,15 +845,15 @@ bool OOCFile::writeVCD( class VoxelChannelData* vcd, size_t numPoints )
 
 		uint zeroBufferSize = 0;
 
-		/* position in the file if needed */ 
+		/* position in the file if needed */
 		if (vcd->getFilePos() == PT_NULL_FILE_POS)
 		{
 			fhandle->movePointerTo(fend );
 			vcd->filepos = fend;
-			
-			/* must use full point count first time to reserve enough space */ 
+
+			/* must use full point count first time to reserve enough space */
 			fend += vcd->getBytesPerPoint() * vcd->getFullNumPoints();
-		
+
 			zeroBufferSize = static_cast<uint>((vcd->getFullNumPoints() - numPoints) * vcd->getBytesPerPoint());
 		}
 		else
@@ -859,10 +861,10 @@ bool OOCFile::writeVCD( class VoxelChannelData* vcd, size_t numPoints )
 			fhandle->movePointerTo(vcd->getFilePos());
 		}
 
-		/* write actual data part */ 
+		/* write actual data part */
 		int bytesWritten = static_cast<int>(fhandle->writeBytes(vcd->getData(), numBytes ));
-		
-		/* write zeros if first time and numPoints < numFullPoints - maybe should be default value*/ 
+
+		/* write zeros if first time and numPoints < numFullPoints - maybe should be default value*/
 		if (zeroBufferSize)
 		{
 			ubyte *zeroBuffer = new ubyte[zeroBufferSize];
@@ -883,15 +885,15 @@ bool OOCFile::readVCD( class VoxelChannelData* vcd, size_t numPoints )
 	if (!vcd->isOOC()) return false;	// only for OOC
 
 	if (vcd->getFilePos() == PT_NULL_FILE_POS) return false;	// no valid file pointer
-	
-	if (numPoints) 
+
+	if (numPoints)
 	{
 		if (numPoints > vcd->numPoints) vcd->destroy(true);		//need larger buffer
 		vcd->numPoints = static_cast<uint>(numPoints);
 	}
 
 	if (!vcd->getData()) vcd->allocate();
-	
+
 	int numBytes = static_cast<int>(numPoints * vcd->getBytesPerPoint());
 	fhandle->movePointerTo((ptds::DataPointer)vcd->getFilePos());
 	int bytesRead = static_cast<int>(fhandle->readBytes(vcd->getData(), numBytes ));

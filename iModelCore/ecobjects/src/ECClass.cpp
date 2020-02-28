@@ -2932,9 +2932,9 @@ ECSchemaCP ECRelationshipConstraint::_GetContainerSchema() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-Utf8CP ECRelationshipConstraint::_GetContainerName() const
+Utf8String ECRelationshipConstraint::_GetContainerName() const
     {
-    return Utf8String(Utf8String(m_relClass->GetFullName()) + ":" + GetRoleLabel()).c_str();
+    return Utf8String(m_relClass->GetFullName()) + ":" + GetRoleLabel();
     }
 
 //---------------------------------------------------------------------------------------
@@ -3885,12 +3885,12 @@ ECObjectsStatus ECRelationshipConstraint::SetCardinality (Utf8CP cardinality)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String const ECRelationshipConstraint::GetRoleLabel () const
+Utf8String ECRelationshipConstraint::GetRoleLabel () const
     {
     if(&(m_relClass->GetTarget()) == this)
         return m_relClass->GetSchema().GetLocalizedStrings().GetRelationshipTargetRoleLabel(m_relClass, GetInvariantRoleLabel());
-    else
-        return m_relClass->GetSchema().GetLocalizedStrings().GetRelationshipSourceRoleLabel(m_relClass, GetInvariantRoleLabel());
+
+    return m_relClass->GetSchema().GetLocalizedStrings().GetRelationshipSourceRoleLabel(m_relClass, GetInvariantRoleLabel());
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -7,6 +7,7 @@
 /*----------------------------------------------------------------------------*/
 #include    "stdafx.h"
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 #define PNTFMT L"     (%*.*lf, %*.*lf, %*.*lf)"            /* DO_NOT_TRANSLATE */
 
 /*----------------------------------------------------------------------------*/
@@ -137,14 +138,14 @@ static int aecDTM_crossingCheckProcess
   //  to do with the clip/join logic that determines whether a series of segments are closed.  Therefore,
   //  if you use np as passed to you as the number of points in the breakline (or any other linear series)
   //  you are actually checking a crossing with (a) the first point(s) of the next breakline in the dtm, or
-  //  (b) whatever garbage happens to be in memory after the last point in the breakline.  To ensure that 
-  //  we do not walk into invalid memory, we are counting the true number of points that are in this linear 
-  //  feature according to what the dtm data structure knows about.  We are also checking below to see if the 
+  //  (b) whatever garbage happens to be in memory after the last point in the breakline.  To ensure that
+  //  we do not walk into invalid memory, we are counting the true number of points that are in this linear
+  //  feature according to what the dtm data structure knows about.  We are also checking below to see if the
   //  pen-up/down flag is not set on the next point, which indicates that we are no longer on the breakline.
   //  This is just a safety check that shouldn't be encountered if 're-counting' the points works in all
   //  cases, and the check is not fail safe if the 'garbage' happens to have the DTM_C_PNTPUD set.
   //          - dakloske - 10/25/98
-  if ( typ == DTM_C_DTMBRK || typ == DTM_C_DTMCTR || typ == DTM_C_DTMINF || typ == DTM_C_DTMINT || typ == DTM_C_DTMEXT ) 
+  if ( typ == DTM_C_DTMBRK || typ == DTM_C_DTMCTR || typ == DTM_C_DTMINF || typ == DTM_C_DTMINT || typ == DTM_C_DTMEXT )
   {
       long numActualPoints = 0;
       aecDTM_countPointsInLinearFeature ( &numActualPoints, datP->srfP, NULL, pnt);
@@ -260,7 +261,7 @@ static int aecDTM_crossingCheckFound
           else
           {
             DPoint3d vec1, vec2;
-  
+
             VSUBXY( pnt1P[0].cor, pnt1P[1].cor, vec1 );
             VSUBXY( pnt2P[0].cor, pnt2P[1].cor, vec2 );
 
@@ -384,4 +385,4 @@ static double segElevation
   return( z );
 }
 
-
+POP_DISABLE_DEPRECATION_WARNINGS

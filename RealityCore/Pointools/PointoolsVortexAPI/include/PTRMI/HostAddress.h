@@ -386,7 +386,7 @@ namespace PTRMI
             wsprintfW(buffer, L"%d.%d.%d.%d.%d.%d", getSubValue(0), getSubValue(1), getSubValue(2), getSubValue(3), getSubValue(4), getSubValue(5), getSubValue(6));
 			}
 
-			setURL(buffer);			
+			setURL(buffer);
 		}
 
 		return found;
@@ -443,12 +443,14 @@ namespace PTRMI
 
 		unsigned int i[4];
 
-		if((items = swscanf(&(string.c_str()[start]), L"%d.%d.%d.%d:%d", &i[0], &i[1], &i[2], &i[3], &p)) >= 4)
+		if((items = WString::Swscanf_safe(&(string.c_str()[start]), L"%d.%d.%d.%d:%d", &i[0], &i[1], &i[2], &i[3], &p)) >= 4)
 		{
 			setSubValues(i);
 		}
 		else
+PUSH_DISABLE_DEPRECATION_WARNINGS
 		if(swscanf(&(string.c_str()[start]), L"%[^:/]:%d", buffer, &p) == 0)
+POP_DISABLE_DEPRECATION_WARNINGS
 		{
 			return 0;
 		}

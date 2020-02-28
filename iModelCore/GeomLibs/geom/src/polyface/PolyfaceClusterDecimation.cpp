@@ -193,7 +193,7 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance, do
     bvector<int32_t>            outputAuxIndices;
 
     bvector<Cluster*>           faceClusters;
-    bvector<bool>               faceClusterVisibility;
+    bvector<BoolTypeForVector>  faceClusterVisibility;
     bvector<DPoint3d>           faceVertices;
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*this); visitor->AdvanceToNextFace(); )
         {
@@ -207,7 +207,7 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance, do
             if (cluster == nullptr)
                 continue; // degenerate facet, ignored above...
 
-            bool isVisible = visitor->GetVisibleCP()[i];
+            bool isVisible = visitor->Visible()[i];
             // Ensure clustered points aren't repeated.
             auto faceClusterIter = std::find(faceClusters.begin(), faceClusters.end(), cluster);
             if (faceClusterIter == faceClusters.end())

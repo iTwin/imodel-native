@@ -262,7 +262,7 @@ TEST(ClipPlaneSet,LineSelect)
     // make a region in the (a,a) (c,c) sqaure . . .
     auto box = CurveVector::CreateRectangle (a, a, c, c, 0.0, CurveVector::BOUNDARY_TYPE_Outer);
     // unused - DVec3d vectorToEye = DVec3d::From (0,0,1);
-    bvector<bool> hiddenEdge {false, false, false, false};
+    bvector<BoolTypeForVector> hiddenEdge {false, false, false, false};
     static double offset = -0.0001;
     for (auto yClip : {-5.0, 5.0, 25.0})
         {
@@ -901,7 +901,7 @@ TEST(ClipPlaneSet,ClipToSetDifference_MutlipleClips_NoMasks)
     polyface->ConvertToVariableSizeSignedOneBasedIndexedFaceLoops ();
     auto convexClipA = ConvexClipPlaneSet::FromXYBox (1,-1, 3,20);
     auto convexClipB = ConvexClipPlaneSet::FromXYBox (5,0.1, 12,2.8);
-    bvector<bool> hidden;   // empty vector for arg
+    bvector<BoolTypeForVector> hidden;   // empty vector for arg
     auto convexClipC = ConvexClipPlaneSet::FromXYPolyLine (
             bvector<DPoint3d> {DPoint3d::From (12, 6, 0), DPoint3d::From (15,0,0)}, 
             hidden, true);
@@ -940,7 +940,7 @@ TEST(ClipPlaneSet,ClipToSetDifference_OneClip_MutlipleMasks)
     polyface->ConvertToVariableSizeSignedOneBasedIndexedFaceLoops ();
     auto convexClipA = ConvexClipPlaneSet::FromXYBox (1,-1, 3,4);
     auto convexClipB = ConvexClipPlaneSet::FromXYBox (5,0.1, 12,2.8);
-    bvector<bool> hidden;   // empty vector for arg
+    bvector<BoolTypeForVector> hidden;   // empty vector for arg
     ClipPlaneSet masks;
     masks.push_back (convexClipA);
     masks.push_back (convexClipB);
@@ -992,7 +992,7 @@ TEST(ClipPlaneSet,ClipToSetDifference_MultipleClips_MutlipleMasks)
     polyface->ConvertToVariableSizeSignedOneBasedIndexedFaceLoops ();
     auto convexClipA = ConvexClipPlaneSet::FromXYBox (1,-1, 3,4);
     auto convexClipB = ConvexClipPlaneSet::FromXYBox (5,0.1, 12,2.8);
-    bvector<bool> hidden;   // empty vector for arg
+    bvector<BoolTypeForVector> hidden;   // empty vector for arg
     ClipPlaneSet masks;
     masks.push_back (convexClipA);
     masks.push_back (convexClipB);

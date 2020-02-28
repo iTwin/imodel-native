@@ -195,12 +195,13 @@ bool ECPresentationTasksScheduler::CanExecute(IECPresentationTaskCR task) const
 IECPresentationTaskPtr ECPresentationTasksScheduler::PopTask(IECPresentationTask::Predicate const& filter, TThreadAllocationsMap& availableThreadAllocationsMap)
     {
     // first we try the pending tasks list
-    for (IECPresentationTaskPtr& pendingTask : m_pendingTasks)
+    for (auto it=m_pendingTasks.begin(); it!=m_pendingTasks.end(); ++it)
         {
+        auto pendingTask = *it;
         if (CanExecute(*pendingTask))
             {
             IECPresentationTaskPtr result = pendingTask;
-            m_pendingTasks.erase(&pendingTask);
+            m_pendingTasks.erase(it);
             return result;
             }
         }
@@ -311,7 +312,7 @@ TasksCancelationResult ECPresentationTasksScheduler::_Cancel(IECPresentationTask
     {
     BeMutexHolder lock(GetMutex());
     bset<IECPresentationTaskCPtr> matchingTasks;
-    
+
     // cancel queued tasks
     TasksCancelationResult queueCancelationResult = m_queue->Cancel(pred);
     for (IECPresentationTaskCPtr const& task : queueCancelationResult.GetTasks())

@@ -283,7 +283,7 @@ ECObjectsStatus IECInstance::GetQuantity(Units::QuantityR q, Utf8CP propertyAcce
 
     if (ECObjectsStatus::Success != status)
         return status;
-    
+
     ECValue v;
     if (ECObjectsStatus::Success != (status = GetValue(v, propertyIndex, useArrayIndex, arrayIndex)))
         return status;
@@ -770,13 +770,15 @@ static ECObjectsStatus getECValueUsingFullAccessString(Utf8P asBuffer, Utf8P ind
     // see if access string specifies an array
     Utf8CP pos1 = strchr(managedPropertyAccessor, '[');
 
-    // if not an array then 
+    // if not an array then
     if (NULL == pos1)
         return instance.GetValue(v, managedPropertyAccessor);
 
     size_t numChars = 0;
     numChars = pos1 - managedPropertyAccessor;
+PUSH_DISABLE_DEPRECATION_WARNINGS
     strncpy(asBuffer, managedPropertyAccessor, numChars > NUM_ACCESSSTRING_BUFFER_CHARS ? NUM_ACCESSSTRING_BUFFER_CHARS : numChars);
+POP_DISABLE_DEPRECATION_WARNINGS
     asBuffer[numChars] = 0;
 
     // BRACKETS_OKAY: Brackets contain an array index
@@ -786,11 +788,13 @@ static ECObjectsStatus getECValueUsingFullAccessString(Utf8P asBuffer, Utf8P ind
 
     numChars = pos2 - pos1 - 1;
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
     strncpy(indexBuffer, pos1 + 1, numChars > NUM_INDEX_BUFFER_CHARS ? NUM_INDEX_BUFFER_CHARS : numChars);
+POP_DISABLE_DEPRECATION_WARNINGS
     indexBuffer[numChars] = 0;
 
     uint32_t indexValue = -1;
-    BE_STRING_UTILITIES_UTF8_SSCANF(indexBuffer, "%ud", &indexValue);
+    Utf8String::Sscanf_safe(indexBuffer, "%ud", &indexValue);
 
     ECValue         arrayVal;
     ECObjectsStatus status;
@@ -1289,7 +1293,7 @@ ECObjectsStatus IECInstance::ShouldSerializeProperty(bool& serialize, Utf8CP pro
     {
     uint32_t propertyIndex = 0;
     ECObjectsStatus status = GetEnabler().GetPropertyIndex(propertyIndex, propertyAccessString);
-    
+
     if (ECObjectsStatus::Success != status)
         return status;
 
@@ -1460,12 +1464,13 @@ static ECObjectsStatus setECValueUsingFullAccessString(Utf8Char* asBuffer, Utf8C
     // see if access string specifies an array
     Utf8CP pos1 = strchr(managedPropertyAccessor, '[');
 
-    // if not an array then 
+    // if not an array then
     if (NULL == pos1)
         return instance.SetValue(managedPropertyAccessor, v);
 
     size_t numChars = 0;
     numChars = pos1 - managedPropertyAccessor;
+PUSH_DISABLE_DEPRECATION_WARNINGS
     strncpy(asBuffer, managedPropertyAccessor, numChars > NUM_ACCESSSTRING_BUFFER_CHARS ? NUM_ACCESSSTRING_BUFFER_CHARS : numChars);
     asBuffer[numChars] = 0;
 
@@ -1476,10 +1481,11 @@ static ECObjectsStatus setECValueUsingFullAccessString(Utf8Char* asBuffer, Utf8C
     numChars = pos2 - pos1 - 1;
 
     strncpy(indexBuffer, pos1 + 1, numChars > NUM_INDEX_BUFFER_CHARS ? NUM_INDEX_BUFFER_CHARS : numChars);
+POP_DISABLE_DEPRECATION_WARNINGS
     indexBuffer[numChars] = 0;
 
     uint32_t indexValue = 0;
-    if (1 != BE_STRING_UTILITIES_UTF8_SSCANF(indexBuffer, "%ud", &indexValue))
+    if (1 != Utf8String::Sscanf_safe(indexBuffer, "%ud", &indexValue))
         return ECObjectsStatus::Error;
 
     ECValue         arrayVal;
@@ -1506,7 +1512,9 @@ static ECObjectsStatus setECValueUsingFullAccessString(Utf8Char* asBuffer, Utf8C
             ECClassCR    ecClass = instance.GetClass();
 
             Utf8Char buffer[NUM_INDEX_BUFFER_CHARS + 1];
+PUSH_DISABLE_DEPRECATION_WARNINGS
             strncpy(buffer, asBuffer, NUM_INDEX_BUFFER_CHARS);
+POP_DISABLE_DEPRECATION_WARNINGS
             ECPropertyP prop = getProperty(ecClass, asBuffer, buffer);
 
             if (!prop->GetIsArray())
@@ -2095,7 +2103,9 @@ bool  ECInstanceInteropHelper::IsCalculatedECProperty(IECInstanceCR instance, in
 
     Utf8Char buffer[NUM_INDEX_BUFFER_CHARS + 1];
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
     strncpy(buffer, accessor, NUM_INDEX_BUFFER_CHARS);
+POP_DISABLE_DEPRECATION_WARNINGS
 
     ECPropertyP ecProperty = getProperty(ecClass, accessor, buffer);
 
@@ -2620,7 +2630,7 @@ struct  InstanceXmlReader
             if (ECObjectsStatus::Success != SchemaKey::ParseSchemaFullName(key, schemaName.c_str()))
                 return NULL;
 
-            return m_context.FindSchemaCP(key, SchemaMatchType::LatestReadCompatible);//Abeesh: Preserving old behavior. Ideally it should be exact 
+            return m_context.FindSchemaCP(key, SchemaMatchType::LatestReadCompatible);//Abeesh: Preserving old behavior. Ideally it should be exact
             }
         /*---------------------------------------------------------------------------------**//**
         * @bsimethod                                    Barry.Bentley                   10/2011
@@ -2634,7 +2644,7 @@ struct  InstanceXmlReader
             if (ECObjectsStatus::Success != SchemaKey::ParseSchemaFullName(key, m_fullSchemaName.c_str()))
                 return NULL;
 
-            m_schema = m_context.FindSchemaCP(key, SchemaMatchType::LatestReadCompatible);//Abeesh: Preserving old behavior. Ideally it should be exact 
+            m_schema = m_context.FindSchemaCP(key, SchemaMatchType::LatestReadCompatible);//Abeesh: Preserving old behavior. Ideally it should be exact
             return m_schema;
             }
 
@@ -2888,7 +2898,7 @@ struct  InstanceXmlReader
                     else if (ecValue.GetPrimitiveType() == PrimitiveType::PRIMITIVETYPE_String && !Utf8String::IsNullOrEmpty(ecValue.GetUtf8CP()))
                         {
                         double d;
-                        if (1 == BE_STRING_UTILITIES_UTF8_SSCANF(ecValue.GetUtf8CP(), "%lg", &d))
+                        if (1 == Utf8String::Sscanf_safe(ecValue.GetUtf8CP(), "%lg", &d))
                             {
                             oldUnit->Convert(convertedValue, d, koq->GetPersistenceUnit());
                             Utf8PrintfString dStr("%lg", d);
@@ -2938,7 +2948,7 @@ struct  InstanceXmlReader
                 if (InstanceReadStatus::Success == (ixrStatus = ReadPrimitiveValue(ecValue, memberType, *arrayValueNode, serializedMemberType)))
                     {
                     // If we failed to read the value above, the array member will have been allocated but left null.
-                    // This allows any default value to be applied to it via CalculatedECPropertySpecification, 
+                    // This allows any default value to be applied to it via CalculatedECPropertySpecification,
                     // and is less surprising than the old behavior which would have omitted the member entirely.
                     ECObjectsStatus   setStatus = ecInstance->SetInternalValue(accessString.c_str(), ecValue, index);
                     if (ECObjectsStatus::Success != setStatus && ECObjectsStatus::PropertyValueMatchesNoChange != setStatus)
@@ -2999,7 +3009,7 @@ struct  InstanceXmlReader
         InstanceReadStatus   ReadPrimitivePropertyValue(PrimitiveECPropertyP primitiveProperty, IECInstanceP ecInstance, Utf8String* baseAccessString, BeXmlNodeR propertyValueNode)
             {
             Utf8String oldUnitName = m_context.GetOldUnitName(*primitiveProperty);
-            return ReadSimplePropertyValue(primitiveProperty->GetName(), primitiveProperty->GetType(), baseAccessString, ecInstance, propertyValueNode, m_context.GetSerializedPrimitiveType(*primitiveProperty), 
+            return ReadSimplePropertyValue(primitiveProperty->GetName(), primitiveProperty->GetType(), baseAccessString, ecInstance, propertyValueNode, m_context.GetSerializedPrimitiveType(*primitiveProperty),
                     primitiveProperty->GetKindOfQuantity(), oldUnitName.c_str());
             }
 
@@ -3118,8 +3128,8 @@ struct  InstanceXmlReader
             if (InstanceReadStatus::Success != (ixrStatus = ReadInstanceOrStructMembers(structClass, structInstance.get(), NULL, arrayMemberValue)))
                 return ixrStatus;
 
-            // every StructArrayMember is a new ECInstance, 
-            // set the value 
+            // every StructArrayMember is a new ECInstance,
+            // set the value
             ECValue structValue;
             structValue.SetStruct(structInstance.get());
 
@@ -3149,7 +3159,7 @@ struct  InstanceXmlReader
             ecValue.SetToNull();
             ecValue.SetPrimitiveType(propertyType);
 
-            // On entry primitiveValueNode is the XML node that holds the value. 
+            // On entry primitiveValueNode is the XML node that holds the value.
             // First check to see if the value is set to NULL
             bool         nullValue;
             if (BEXML_Success == primitiveValueNode.GetAttributeBooleanValue(nullValue, ECINSTANCE_XSI_NIL_ATTRIBUTE))
@@ -3394,7 +3404,7 @@ struct  InstanceXmlReader
             // If we fail to read the property value for some reason, return it as null
             ecValue.SetToNull();
 
-            // On entry navigationValueNode is the XML node that holds the value. 
+            // On entry navigationValueNode is the XML node that holds the value.
             // First check to see if the value is set to NULL
             bool         nullValue;
             if (BEXML_Success == navigationValueNode.GetAttributeBooleanValue(nullValue, ECINSTANCE_XSI_NIL_ATTRIBUTE))
@@ -3581,7 +3591,7 @@ struct NamedAttributeDeserializer : ICustomAttributeDeserializer
             if (ECObjectsStatus::Success != SchemaKey::ParseSchemaFullName(key, schemaName.c_str()))
                 return NULL;
 
-            return context.LocateSchema(key, SchemaMatchType::LatestReadCompatible);//Abeesh: Preserving old behavior. Ideally it should be exact 
+            return context.LocateSchema(key, SchemaMatchType::LatestReadCompatible);//Abeesh: Preserving old behavior. Ideally it should be exact
             }
 
     public:
@@ -3731,8 +3741,9 @@ struct  InstanceXmlWriter
                     return InstanceWriteStatus::XmlWriteError;
 
                 Utf8String sourceClassName;
-                if (0 != relationshipInstance->GetSource()->GetClass().GetSchema().GetLegacyFullSchemaName().CompareTo(fullSchemaName))
-                    sourceClassName.Sprintf("%s:%s", relationshipInstance->GetSource()->GetClass().GetSchema().GetLegacyFullSchemaName().c_str(), relationshipInstance->GetSource()->GetClass().GetName().c_str());
+                Utf8String sourceFullSchemaName = relationshipInstance->GetSource()->GetClass().GetSchema().GetLegacyFullSchemaName();
+                if (0 != sourceFullSchemaName.CompareTo(fullSchemaName))
+                    sourceClassName.Sprintf("%s:%s", sourceFullSchemaName.c_str(), relationshipInstance->GetSource()->GetClass().GetName().c_str());
                 else
                     sourceClassName.Sprintf("%s", relationshipInstance->GetSource()->GetClass().GetName().c_str());
                 m_xmlWriter->WriteAttribute(ECINSTANCE_SOURCEINSTANCEID_ATTRIBUTE, relationshipInstance->GetSource()->GetInstanceId().c_str());
@@ -3742,8 +3753,9 @@ struct  InstanceXmlWriter
                     return InstanceWriteStatus::XmlWriteError;
 
                 Utf8String targetClassName;
-                if (0 != relationshipInstance->GetTarget()->GetClass().GetSchema().GetLegacyFullSchemaName().CompareTo(fullSchemaName))
-                    targetClassName.Sprintf("%s:%s", relationshipInstance->GetTarget()->GetClass().GetSchema().GetLegacyFullSchemaName().c_str(), relationshipInstance->GetTarget()->GetClass().GetName().c_str());
+                Utf8String targetFullSchemaName = relationshipInstance->GetTarget()->GetClass().GetSchema().GetLegacyFullSchemaName();
+                if (0 != targetFullSchemaName.CompareTo(fullSchemaName))
+                    targetClassName.Sprintf("%s:%s", targetFullSchemaName.c_str(), relationshipInstance->GetTarget()->GetClass().GetName().c_str());
                 else
                     targetClassName.Sprintf("%s", relationshipInstance->GetTarget()->GetClass().GetName().c_str());
                 m_xmlWriter->WriteAttribute(ECINSTANCE_TARGETINSTANCEID_ATTRIBUTE, relationshipInstance->GetTarget()->GetInstanceId().c_str());
@@ -3979,7 +3991,7 @@ struct  InstanceXmlWriter
                     m_xmlWriter->WriteRaw(classId);
                     m_xmlWriter->WriteElementEnd(); // End of class id
                     }
-                
+
                 m_xmlWriter->WriteElementEnd(); // End of Nav Value
                 }
 

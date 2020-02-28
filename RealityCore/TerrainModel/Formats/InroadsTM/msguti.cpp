@@ -14,6 +14,7 @@
 /*----------------------------------------------------------------------------*/
 #define    AECMSGSIZE          512     /* global message size                 */
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 /*----------------------------------------------------------------------------*/
 /* Externals                                                                  */
 /*----------------------------------------------------------------------------*/
@@ -101,10 +102,10 @@ static int aecOutput_valistToString
 //---------------------------------------------------------------------------
 // DESC: Sends the message to the status-bar on the civil explorer
 // HIST: Original - dakloske - 10/98
-// MISC: 
+// MISC:
 //---------------------------------------------------------------------------
 void aecOutput_status
-    ( 
+    (
     int msgId,                           // => msg number
     ...                                  // => other, optional args.
     )
@@ -131,15 +132,15 @@ void aecOutput_status
 //              MB_OKCANCEL
 //              MB_RETRYCANCEL
 //              MB_YESNO
-//              MB_YESNOCANCEL 
-//      
+//              MB_YESNOCANCEL
+//
 //       Possible Return Values are:
 //              ACTIONBUTTON_OK         - Yes, Ok, Retry
 //              ACTIONBUTTON_NO         - No
 //              ACTIONBUTTON_CANCEL     - anything else
 //---------------------------------------------------------------------------
 static int aecOutput_msgboxVAList
-    ( 
+    (
     int msgId,                           // => msg number
     int msgType,                         // => is this a yes/no, ok/cancel, ...
     va_list ap                           // => other, optional args.
@@ -188,15 +189,15 @@ static int aecOutput_msgboxVAList
 //              MB_OKCANCEL
 //              MB_RETRYCANCEL
 //              MB_YESNO
-//              MB_YESNOCANCEL 
-//      
+//              MB_YESNOCANCEL
+//
 //       Possible Return Values are:
 //              ACTIONBUTTON_OK         - Yes, Ok, Retry
 //              ACTIONBUTTON_NO         - No
 //              ACTIONBUTTON_CANCEL     - anything else
 //---------------------------------------------------------------------------
 int aecOutput_msgbox
-    ( 
+    (
     int msgId,                           // => msg number
     int msgType,                         // => is this a yes/no, ok/cancel, ...
     ...                                  // => other, optional args.
@@ -323,8 +324,9 @@ wchar_t *aecOutput_getMessage  /* <= returned message                 */
 
     va_end ( ap );
 
-    if ( msg ) 
+    if ( msg )
         wcscpy ( msg, res );
     return res;
     }
 
+POP_DISABLE_DEPRECATION_WARNINGS

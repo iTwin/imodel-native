@@ -4,8 +4,9 @@
 *--------------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
 #include "DTMEvars.h"
-#include "bcdtminlines.h" 
+#include "bcdtminlines.h"
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -38,7 +39,7 @@ BENTLEYDTM_EXPORT int bcdtmUtility_getDtmStateDtmObject (BC_DTM_OBJ *dtmP, DTMSt
 **             <==    3  Mixed State  - Dtm Is Triangulated but dtmFeatures have been added since the dtm was triangulated
 **             <==    4  Invalid State - Dtm Not In An State That Can be exposed at the API level
 **
-*/ 
+*/
 {
  long dtmFeature ;
  BC_DTM_FEATURE *dtmFeatureP ;
@@ -60,7 +61,7 @@ BENTLEYDTM_EXPORT int bcdtmUtility_getDtmStateDtmObject (BC_DTM_OBJ *dtmP, DTMSt
 /*
 **  Scan Features To Determine If Any Features Have Been Added Since Triangulation
 */
-    if( dtmP->numFeatures > 0 )   
+    if( dtmP->numFeatures > 0 )
       {
        for( dtmFeature = 0 ; dtmFeature < dtmP->numFeatures && *dtmStateP == DTMState::DuplicatesRemoved ; ++dtmFeature )
          {
@@ -68,7 +69,7 @@ BENTLEYDTM_EXPORT int bcdtmUtility_getDtmStateDtmObject (BC_DTM_OBJ *dtmP, DTMSt
           if( dtmFeatureP->dtmFeatureState == DTMFeatureState::PointsArray ) *dtmStateP =  DTMState::Tin ;
          }
       }
-   } 
+   }
 /*
 **  Check For Valid DTM State
 */
@@ -116,7 +117,7 @@ BENTLEYDTM_EXPORT int bcdtmUtility_getCurrentDtmObject(BC_DTM_OBJ **dtmP,WCharCP
 BENTLEYDTM_EXPORT int bcdtmUtility_setCurrentDataObject(DTM_DAT_OBJ *dtmP,WCharCP dtmFileP)
 /*
 ** This function sets the current Tin Object
-** Call By gpk DTM To Set The Current Geopk Tin Object 
+** Call By gpk DTM To Set The Current Geopk Tin Object
 ** So It Not Destroyed By IbcDTM
 **
 */
@@ -129,7 +130,7 @@ BENTLEYDTM_EXPORT int bcdtmUtility_setCurrentDataObject(DTM_DAT_OBJ *dtmP,WCharC
  DTM_CDOBJ = dtmP ;
  if( *dtmFileP != 0 )  wcscpy(DTM_CDOBJ_FILE,dtmFileP) ;
  else                  wcscpy(DTM_CDOBJ_FILE,L"MEMORY.DTM") ;
-*/ 
+*/
 /*
 ** Job Completed
 */
@@ -143,7 +144,7 @@ BENTLEYDTM_EXPORT int bcdtmUtility_setCurrentDataObject(DTM_DAT_OBJ *dtmP,WCharC
 BENTLEYDTM_EXPORT int bcdtmUtility_setCurrentTinObject(DTM_TIN_OBJ *dtmP,WCharCP dtmFileP)
 /*
 ** This function sets the current Tin Object
-** Call By gpk DTM To Set The Current Geopk Tin Object 
+** Call By gpk DTM To Set The Current Geopk Tin Object
 ** So It Not Destroyed By IbcDTM
 **
 */
@@ -156,7 +157,7 @@ BENTLEYDTM_EXPORT int bcdtmUtility_setCurrentTinObject(DTM_TIN_OBJ *dtmP,WCharCP
  DTM_CTOBJ = dtmP ;
  if( *dtmFileP != 0 )  wcscpy(DTM_CTOBJ_FILE,dtmFileP) ;
  else                  wcscpy(DTM_CTOBJ_FILE,L"MEMORY.DTM") ;
-*/ 
+*/
 /*
 ** Job Completed
 */
@@ -182,11 +183,11 @@ BENTLEYDTM_EXPORT int bcdtmUtility_setCurrentDtmObject(BC_DTM_OBJ *dtmP,WCharCP 
 ** Delete Current Dtm Object If It Exists
 */
 /*
- if( DTM_CDTM != NULL && DTM_CDTM != dtmP ) 
+ if( DTM_CDTM != NULL && DTM_CDTM != dtmP )
    {
     if( bcdtmObject_destroyDtmObject(&DTM_CDTM)) goto errexit ;
    }
-*/   
+*/
 /*
 ** Set Current Dtm Object
 */
@@ -194,7 +195,7 @@ BENTLEYDTM_EXPORT int bcdtmUtility_setCurrentDtmObject(BC_DTM_OBJ *dtmP,WCharCP 
  DTM_CDTM = dtmP ;
  if( *dtmFileP != 0 )  wcscpy(DTM_CDTM_FILE,dtmFileP) ;
  else                  wcscpy(DTM_CDTM_FILE,L"MEMORY.DTM") ;
-*/ 
+*/
 /*
 ** Clean Up
 */
@@ -227,11 +228,11 @@ BENTLEYDTM_EXPORT int bcdtmUtility_destroyCurrentDtmObject(void)
 ** Delete Current Dtm Object If It Exists
 */
 /*
- if( DTM_CDTM != NULL ) 
+ if( DTM_CDTM != NULL )
    {
     if( bcdtmObject_destroyDtmObject(&DTM_CDTM)) goto errexit ;
    }
-*/   
+*/
 /*
 ** Clean Up
 */
@@ -264,7 +265,7 @@ BENTLEYDTM_EXPORT int bcdtmUtility_testForAndSetCurrentDtmObject(BC_DTM_OBJ **dt
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Testing For And Setting Current Dtm Object") ;
     bcdtmWrite_message(0,0,0,"dtmPP         = %p",*dtmPP) ;
@@ -272,7 +273,7 @@ BENTLEYDTM_EXPORT int bcdtmUtility_testForAndSetCurrentDtmObject(BC_DTM_OBJ **dt
 //    bcdtmWrite_message(0,0,0,"DTM_CDTM      = %p",DTM_CDTM) ;
 //    bcdtmWrite_message(0,0,0,"DTM_CDTM_FILE = %s",DTM_CDTM_FILE) ;
    }
- goto errexit ;  
+ goto errexit ;
 /*
 ** Test If Current Dtm File Is The Requested File
 */
@@ -281,15 +282,15 @@ BENTLEYDTM_EXPORT int bcdtmUtility_testForAndSetCurrentDtmObject(BC_DTM_OBJ **dt
    {
     if( DTM_CDTM != NULL ) bcdtmObject_destroyDtmObject(&DTM_CDTM) ;
     DTM_CDTM_FILE[0] = 0 ;
-    if( bcdtmRead_fromFileDtmObject(dtmPP,dtmFileP) ) 
-      { 
+    if( bcdtmRead_fromFileDtmObject(dtmPP,dtmFileP) )
+      {
        if( *dtmPP != NULL ) bcdtmObject_destroyDtmObject(dtmPP) ;
-       goto errexit ; 
+       goto errexit ;
       }
     wcscpy(DTM_CDTM_FILE,dtmFileP) ;
     DTM_CDTM = *dtmPP ;
    }
-*/   
+*/
 /*
 ** Requested File Is Current File
 */
@@ -329,7 +330,7 @@ BENTLEYDTM_EXPORT int bcdtmUtility_getBoundingCubeDtmObject(BC_DTM_OBJ *dtmP,dou
  if( bcdtmObject_testForValidDtmObject(dtmP)) goto errexit ;
 /*
 ** Log DTM Memory Array Parameters
-*/ 
+*/
  if( dbg == 1 && firstCall )
    {
     bcdtmWrite_message(0,0,0,"Reading Bounding Cube ** dtmP = %p",dtmP) ;
@@ -342,24 +343,24 @@ BENTLEYDTM_EXPORT int bcdtmUtility_getBoundingCubeDtmObject(BC_DTM_OBJ *dtmP,dou
    }
 /*
 ** Catch And Report DTM
-*/ 
- if( dbg ) 
+*/
+ if( dbg )
    {
-    bcdtmWrite_message(0,0,0,"Getting Bounding Cube dtmP = %p dtmP->dtmState = %2ld dtmP->dtmCleanUp = %2ld dtmP->numPoints = %8ld dtmP->numFeatures = %8ld",dtmP,dtmP->dtmState,dtmP->dtmCleanUp,dtmP->numPoints,dtmP->numFeatures) ;  
+    bcdtmWrite_message(0,0,0,"Getting Bounding Cube dtmP = %p dtmP->dtmState = %2ld dtmP->dtmCleanUp = %2ld dtmP->numPoints = %8ld dtmP->numFeatures = %8ld",dtmP,dtmP->dtmState,dtmP->dtmCleanUp,dtmP->numPoints,dtmP->numFeatures) ;
     if( firstCall ) bcdtmWrite_toFileDtmObject(dtmP,L"boundingCube.bcdtm") ;
     if( dbg == 2 ) bcdtmObject_reportStatisticsDtmObject(dtmP) ;
     firstCall = 0  ;
    }
 /*
 ** Check DTM
-*/    
+*/
  if( cdbg )
    {
-    if( bcdtmCheck_tinComponentDtmObject(dtmP)) 
+    if( bcdtmCheck_tinComponentDtmObject(dtmP))
       {
        bcdtmWrite_message(1,0,0,"Tin Invalid ** dtmP = %p",dtmP) ;
        goto errexit ;
-      } 
+      }
     else  bcdtmWrite_message(0,0,0,"Tin Valid ** dtmP = %p",dtmP) ;
    }
 /*
@@ -417,7 +418,7 @@ BENTLEYDTM_EXPORT int bcdtmUtility_getStatisticsDtmObject
 /*
 ** Write Entry Message
 */
- if( dbg ) bcdtmWrite_message(0,0,0,"Getting Statistics For Dtm Object %p",dtmP) ; 
+ if( dbg ) bcdtmWrite_message(0,0,0,"Getting Statistics For Dtm Object %p",dtmP) ;
 /*
 ** Test For Valid Dtm Object
 */
@@ -443,12 +444,12 @@ BENTLEYDTM_EXPORT int bcdtmUtility_getStatisticsDtmObject
     dtmFeatureP = ftableAddrP(dtmP,dtmFeature) ;
     if( dtmFeatureP->dtmFeatureState != DTMFeatureState::Deleted && dtmFeatureP->dtmFeatureState != DTMFeatureState::Rollback && dtmFeatureP->dtmFeatureState != DTMFeatureState::TinError )
       {
-       if( dtmFeatureP->dtmFeatureType == DTMFeatureType::Breakline )         ++numBreaks ; 
-       else if( dtmFeatureP->dtmFeatureType == DTMFeatureType::ContourLine )  ++numContourLines  ; 
-       else if( dtmFeatureP->dtmFeatureType == DTMFeatureType::Void )         ++numVoids; 
-       else if( dtmFeatureP->dtmFeatureType == DTMFeatureType::Island )       ++numIslands  ; 
-       else if( dtmFeatureP->dtmFeatureType == DTMFeatureType::Hole )         ++numHoles  ; 
-       else if( dtmFeatureP->dtmFeatureType == DTMFeatureType::GroupSpots )   ++numGroupSpots  ; 
+       if( dtmFeatureP->dtmFeatureType == DTMFeatureType::Breakline )         ++numBreaks ;
+       else if( dtmFeatureP->dtmFeatureType == DTMFeatureType::ContourLine )  ++numContourLines  ;
+       else if( dtmFeatureP->dtmFeatureType == DTMFeatureType::Void )         ++numVoids;
+       else if( dtmFeatureP->dtmFeatureType == DTMFeatureType::Island )       ++numIslands  ;
+       else if( dtmFeatureP->dtmFeatureType == DTMFeatureType::Hole )         ++numHoles  ;
+       else if( dtmFeatureP->dtmFeatureType == DTMFeatureType::GroupSpots )   ++numGroupSpots  ;
        else if (dtmFeatureP->dtmFeatureType == DTMFeatureType::Hull)          hasHull = true;
        else if (dtmFeatureP->dtmFeatureType == DTMFeatureType::DrapeHull)     hasHull = true;
         }
@@ -460,8 +461,8 @@ BENTLEYDTM_EXPORT int bcdtmUtility_getStatisticsDtmObject
 /*
 ** Job Completed
 */
- if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Getting Statistics For Dtm Object %p Completed",dtmP) ; 
- if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Getting Statistics For Dtm Object %p Error",dtmP) ; 
+ if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Getting Statistics For Dtm Object %p Completed",dtmP) ;
+ if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Getting Statistics For Dtm Object %p Error",dtmP) ;
  return(ret) ;
 /*
 ** Error Exit
@@ -551,7 +552,7 @@ BENTLEYDTM_Public int bcdtmUtility_copyTinDtmFeatureTypeToPolygonObjectDtmObject
 */
 {
  int   ret=DTM_SUCCESS ;
- long  dtmFeature ; 
+ long  dtmFeature ;
  BC_DTM_FEATURE *dtmFeatureP ;
 /*
 ** Test For Valid Tin Object
@@ -570,7 +571,7 @@ BENTLEYDTM_Public int bcdtmUtility_copyTinDtmFeatureTypeToPolygonObjectDtmObject
     if( dtmFeatureP->dtmFeatureState == DTMFeatureState::Tin && dtmFeatureP->dtmFeatureType == dtmFeatureType )
       {
        if( bcdtmUtility_copyTinDtmFeatureToPolygonObjectDtmObject(dtmP,polyP,dtmFeature,userTag)) goto errexit ;
-      } 
+      }
    }
 /*
 ** Clean Up
@@ -581,7 +582,7 @@ BENTLEYDTM_Public int bcdtmUtility_copyTinDtmFeatureTypeToPolygonObjectDtmObject
 */
  return(ret) ;
 /*
-** Error Exit 
+** Error Exit
 */
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
@@ -610,8 +611,8 @@ BENTLEYDTM_Public int bcdtmUtility_copyTinDtmFeatureToPolygonObjectDtmObject(BC_
 /*
 ** Test For Valid Dtm Feature
 */
- if( dtmFeature < 0 || dtmFeature >= dtmP->numFeatures ) 
-   { 
+ if( dtmFeature < 0 || dtmFeature >= dtmP->numFeatures )
+   {
     bcdtmWrite_message(2,0,0,"Dtm Feature Range Error") ;
     goto errexit ;
    }
@@ -636,7 +637,7 @@ BENTLEYDTM_Public int bcdtmUtility_copyTinDtmFeatureToPolygonObjectDtmObject(BC_
 */
  return(ret) ;
 /*
-** Error Exit 
+** Error Exit
 */
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
@@ -647,7 +648,7 @@ BENTLEYDTM_Public int bcdtmUtility_copyTinDtmFeatureToPolygonObjectDtmObject(BC_
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_EXPORT int bcdtmUtility_convertMbsToWcs(char *mbsP, wchar_t **wcsPP ) 
+BENTLEYDTM_EXPORT int bcdtmUtility_convertMbsToWcs(char *mbsP, wchar_t **wcsPP )
 {
  int ret=DTM_SUCCESS ;
  size_t size ;
@@ -657,11 +658,11 @@ BENTLEYDTM_EXPORT int bcdtmUtility_convertMbsToWcs(char *mbsP, wchar_t **wcsPP )
  if( *wcsPP != NULL ) { free( *wcsPP ) ; *wcsPP = NULL ; }
  size = strlen(mbsP) + 1 ;
  *wcsPP = ( wchar_t * ) malloc( size * sizeof(wchar_t)) ;
- if( *wcsPP == NULL ) 
+ if( *wcsPP == NULL )
    {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
     goto errexit ;
-   } 
+   }
  mbstowcs(*wcsPP,mbsP,size) ;
 /*
 ** Clean Up
@@ -672,7 +673,7 @@ BENTLEYDTM_EXPORT int bcdtmUtility_convertMbsToWcs(char *mbsP, wchar_t **wcsPP )
 */
  return(ret) ;
 /*
-** Error Exit 
+** Error Exit
 */
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
@@ -683,7 +684,7 @@ BENTLEYDTM_EXPORT int bcdtmUtility_convertMbsToWcs(char *mbsP, wchar_t **wcsPP )
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_EXPORT int bcdtmUtility_convertWcsToMbs( WCharCP wcsP, char **mbsPP ) 
+BENTLEYDTM_EXPORT int bcdtmUtility_convertWcsToMbs( WCharCP wcsP, char **mbsPP )
 {
  int ret=DTM_SUCCESS ;
  size_t size ;
@@ -693,11 +694,11 @@ BENTLEYDTM_EXPORT int bcdtmUtility_convertWcsToMbs( WCharCP wcsP, char **mbsPP )
  if( *mbsPP != NULL ) { free( *mbsPP ) ; *mbsPP = NULL ; }
  size = wcslen(wcsP) + 1 ;
  *mbsPP = ( char * ) malloc( size * sizeof(char)) ;
- if( *mbsPP == NULL ) 
+ if( *mbsPP == NULL )
    {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
     goto errexit ;
-   } 
+   }
  wcstombs(*mbsPP,wcsP,size) ;
 /*
 ** Clean Up
@@ -708,7 +709,7 @@ BENTLEYDTM_EXPORT int bcdtmUtility_convertWcsToMbs( WCharCP wcsP, char **mbsPP )
 */
  return(ret) ;
 /*
-** Error Exit 
+** Error Exit
 */
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
@@ -722,7 +723,7 @@ BENTLEYDTM_EXPORT int bcdtmUtility_convertWcsToMbs( WCharCP wcsP, char **mbsPP )
 BENTLEYDTM_EXPORT int bcdtmUtility_boreHoleApp00DtmObject
 (
  BC_DTM_OBJ  *groundDtmP ,
- BC_DTM_OBJ  *materialDtmP 
+ BC_DTM_OBJ  *materialDtmP
 )
 {
  int           ret=DTM_SUCCESS ;
@@ -732,8 +733,8 @@ BENTLEYDTM_EXPORT int bcdtmUtility_boreHoleApp00DtmObject
 /*
 ** Check For Valid DTM Objects
 */
- if( bcdtmObject_testForValidDtmObject(groundDtmP)) goto errexit ; 
- if( bcdtmObject_testForValidDtmObject(materialDtmP)) goto errexit ; 
+ if( bcdtmObject_testForValidDtmObject(groundDtmP)) goto errexit ;
+ if( bcdtmObject_testForValidDtmObject(materialDtmP)) goto errexit ;
 /*
 ** Scan Ground Tin Points And Drape On Material Tin
 */
@@ -757,7 +758,7 @@ BENTLEYDTM_EXPORT int bcdtmUtility_boreHoleApp00DtmObject
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
-}      
+}
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -767,7 +768,7 @@ BENTLEYDTM_Public int bcdtmUtility_setNullValuesForBackwardsCompatibilityTinObje
 (
  DTM_TIN_OBJ          *tinP
 )
-{ 
+{
  int  dbg=DTM_TRACE_VALUE(0) ;
  long offset, tinNullPnt=TIN_NULL_PNT,tinNullPtr=TIN_NULL_PTR ;
 /*
@@ -783,11 +784,11 @@ BENTLEYDTM_Public int bcdtmUtility_setNullValuesForBackwardsCompatibilityTinObje
       {
        for( offset = 0 ; offset < tinP->memPts ; ++offset )
          {
-          if( (tinP->nodesP+offset)->tPtr  == tinP->nullPnt ) (tinP->nodesP+offset)->tPtr  = tinNullPnt ;         
-          if( (tinP->nodesP+offset)->sPtr  == tinP->nullPnt ) (tinP->nodesP+offset)->sPtr  = tinNullPnt ;         
-          if( (tinP->nodesP+offset)->hPtr  == tinP->nullPnt ) (tinP->nodesP+offset)->hPtr  = tinNullPnt ;         
-          if( (tinP->nodesP+offset)->cPtr  == tinP->nullPtr ) (tinP->nodesP+offset)->cPtr  = tinNullPtr ;         
-          if( (tinP->nodesP+offset)->fPtr  == tinP->nullPtr ) (tinP->nodesP+offset)->fPtr  = tinNullPtr ;         
+          if( (tinP->nodesP+offset)->tPtr  == tinP->nullPnt ) (tinP->nodesP+offset)->tPtr  = tinNullPnt ;
+          if( (tinP->nodesP+offset)->sPtr  == tinP->nullPnt ) (tinP->nodesP+offset)->sPtr  = tinNullPnt ;
+          if( (tinP->nodesP+offset)->hPtr  == tinP->nullPnt ) (tinP->nodesP+offset)->hPtr  = tinNullPnt ;
+          if( (tinP->nodesP+offset)->cPtr  == tinP->nullPtr ) (tinP->nodesP+offset)->cPtr  = tinNullPtr ;
+          if( (tinP->nodesP+offset)->fPtr  == tinP->nullPtr ) (tinP->nodesP+offset)->fPtr  = tinNullPtr ;
          }
       }
 /*
@@ -824,7 +825,7 @@ BENTLEYDTM_Public int bcdtmUtility_setNullValuesForBackwardsCompatibilityTinObje
 /*
 ** Return
 */
- return(DTM_SUCCESS) ;    
+ return(DTM_SUCCESS) ;
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -835,7 +836,7 @@ BENTLEYDTM_Public int bcdtmUtility_setNullValuesForForwardsCompatibilityTinObjec
 (
  DTM_TIN_OBJ          *tinP
 )
-{ 
+{
  int  dbg=DTM_TRACE_VALUE(0) ;
  long offset ;
 /*
@@ -851,11 +852,11 @@ BENTLEYDTM_Public int bcdtmUtility_setNullValuesForForwardsCompatibilityTinObjec
       {
        for( offset = 0 ; offset < tinP->memPts ; ++offset )
          {
-          if( (tinP->nodesP+offset)->tPtr  == tinP->nullPnt ) (tinP->nodesP+offset)->tPtr  = DTM_NULL_PNT ;         
-          if( (tinP->nodesP+offset)->sPtr  == tinP->nullPnt ) (tinP->nodesP+offset)->sPtr  = DTM_NULL_PNT ;         
-          if( (tinP->nodesP+offset)->hPtr  == tinP->nullPnt ) (tinP->nodesP+offset)->hPtr  = DTM_NULL_PNT ;         
-          if( (tinP->nodesP+offset)->cPtr  == tinP->nullPtr ) (tinP->nodesP+offset)->cPtr  = DTM_NULL_PTR ;         
-          if( (tinP->nodesP+offset)->fPtr  == tinP->nullPtr ) (tinP->nodesP+offset)->fPtr  = DTM_NULL_PTR ;         
+          if( (tinP->nodesP+offset)->tPtr  == tinP->nullPnt ) (tinP->nodesP+offset)->tPtr  = DTM_NULL_PNT ;
+          if( (tinP->nodesP+offset)->sPtr  == tinP->nullPnt ) (tinP->nodesP+offset)->sPtr  = DTM_NULL_PNT ;
+          if( (tinP->nodesP+offset)->hPtr  == tinP->nullPnt ) (tinP->nodesP+offset)->hPtr  = DTM_NULL_PNT ;
+          if( (tinP->nodesP+offset)->cPtr  == tinP->nullPtr ) (tinP->nodesP+offset)->cPtr  = DTM_NULL_PTR ;
+          if( (tinP->nodesP+offset)->fPtr  == tinP->nullPtr ) (tinP->nodesP+offset)->fPtr  = DTM_NULL_PTR ;
          }
       }
 /*
@@ -892,7 +893,7 @@ BENTLEYDTM_Public int bcdtmUtility_setNullValuesForForwardsCompatibilityTinObjec
 /*
 ** Return
 */
- return(DTM_SUCCESS) ;    
+ return(DTM_SUCCESS) ;
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -906,7 +907,7 @@ BENTLEYDTM_EXPORT long bcdtmClock(void)
 {
 #ifdef _WIN32_WCE
  return(0) ;
-#else   
+#else
  return((long)clock()) ;
 #endif
 }
@@ -922,7 +923,7 @@ BENTLEYDTM_EXPORT double bcdtmClock_elapsedTime(long Finish,long Start)
 {
 #ifdef _WIN32_WCE
  return(0.0) ;
-#else   
+#else
  return((double)(Finish-Start)/CLOCKS_PER_SEC) ;
 #endif
 }
@@ -1010,13 +1011,13 @@ BENTLEYDTM_EXPORT int bcdtmUtl_detectXYZFileType( WCharCP fileName,long *fileTyp
     if( cVal >= 32 && cVal <=127 ) ++ascCnt ;
     else                           ++binCnt ;
     if( cVal == '\r' || cVal == '\n' ) --binCnt ;
-    if( cVal == '\n' ) ++lfCnt ; 
+    if( cVal == '\n' ) ++lfCnt ;
     ++charCnt ;
    }
- if( charCnt == 0 ) 
-   { 
+ if( charCnt == 0 )
+   {
     bcdtmWrite_message(1,0,0,"Data File %s is empty",fileName) ;
-    goto errexit; 
+    goto errexit;
    }
  if( feof(fpTmp) ) binCnt -= 4 ;
  if( lfCnt == 0  )  lfCnt  = 1 ;
@@ -1035,18 +1036,18 @@ BENTLEYDTM_EXPORT int bcdtmUtl_detectXYZFileType( WCharCP fileName,long *fileTyp
 ** Set Return Values
 */
  if( binCnt > 0 ) { *fileType = 2 ; *fileEntries = numChar / 24  ; }
- else             { *fileType = 1 ; *fileEntries = numChar / lfCnt + 10  ; } 
+ else             { *fileType = 1 ; *fileEntries = numChar / lfCnt + 10  ; }
 /*
 ** Check Binary File For Correct Size
 */
  if( *fileType == 2 )
    {
-    if( numChar % 24 != 0 ) 
+    if( numChar % 24 != 0 )
       {
        bcdtmWrite_message(1,0,0,"Size Error In Binary XYZ File %ws",fileName) ;
        goto errexit;
-      } 
-   } 
+      }
+   }
 /*
 ** Clean Up
 */
@@ -1100,7 +1101,7 @@ BENTLEYDTM_Public double bcdtmUtl_adjustValueDown(double Val,double Vreg,double 
  long   Lfactor ;
  Dfactor = ( Val - Vreg ) / Vinc ;
  if ( Dfactor < 0.0 )  --Dfactor ;
- Lfactor = ( long   ) Dfactor ; 
+ Lfactor = ( long   ) Dfactor ;
  Dfactor = ( double ) Lfactor ;
  return( Vreg + Dfactor * Vinc ) ;
 }
@@ -1115,7 +1116,7 @@ BENTLEYDTM_Public double bcdtmUtl_adjustValueUp(double Val,double Vreg,double Vi
  long   Lfactor ;
  Dfactor = ( Val - Vreg ) / Vinc ;
  if ( Dfactor > 0.0 )  ++Dfactor ;
- Lfactor = ( long   ) Dfactor ; 
+ Lfactor = ( long   ) Dfactor ;
  Dfactor = ( double ) Lfactor ;
  return( Vreg + Dfactor * Vinc ) ;
 }
@@ -1153,7 +1154,7 @@ BENTLEYDTM_EXPORT int bcdtmUtl_mallocMemory(void **Pointer,long MemoryAmount)
 /*
 ** Free Memory
 */
- *Pointer = ( void * ) malloc(MemoryAmount) ; 
+ *Pointer = ( void * ) malloc(MemoryAmount) ;
 /*
 ** Job Completed
 */
@@ -1272,3 +1273,4 @@ BENTLEYDTM_Public int bcdtmConvert_eliminateBlanks( char *msgStr )
  *c1P = 0 ;
  return(0) ;
 }
+POP_DISABLE_DEPRECATION_WARNINGS

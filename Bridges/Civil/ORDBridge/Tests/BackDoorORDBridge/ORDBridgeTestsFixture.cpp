@@ -4,6 +4,8 @@
 *--------------------------------------------------------------------------------------------*/
 #include "../BackDoorORDBridge/PublicApi/BackDoor/ORDBridge/BackDoor.h"
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
+
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
@@ -1126,3 +1128,4 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedElementItemType
 
     return dgnDbPtr;
     }
+POP_DISABLE_DEPRECATION_WARNINGS

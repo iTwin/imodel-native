@@ -40,6 +40,7 @@ pt::Project3D	*	_project = NULL;
 
 extern int setLastErrorCode( int );
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 
 PTbool initializeScenesProject(void)
 {
@@ -96,7 +97,7 @@ PTres		PTAPI	ptSetCloudTransform( PThandle cloud, const PTdouble *transform4x4, 
 	pcloud::PointCloud *pcloud = cloudFromHandle(cloud);
 	if (!pcloud)
 	{
-		return setLastErrorCode( PTV_INVALID_HANDLE );	
+		return setLastErrorCode( PTV_INVALID_HANDLE );
 	}
 
 	mmatrix4d m;
@@ -107,7 +108,7 @@ PTres		PTAPI	ptSetCloudTransform( PThandle cloud, const PTdouble *transform4x4, 
 	pcloud->localBounds().dirtyBounds();
 	pcloud->projectBounds().dirtyBounds();
 
-	return setLastErrorCode( PTV_SUCCESS );	
+	return setLastErrorCode( PTV_SUCCESS );
 }
 //-----------------------------------------------------------------------------
 PTres  PTAPI ptSetSceneTransform( PThandle scene, const PTdouble *transform4x4, bool row_order )
@@ -117,7 +118,7 @@ PTres  PTAPI ptSetSceneTransform( PThandle scene, const PTdouble *transform4x4, 
 	pcloud::Scene *sc = sceneFromHandle( scene );
 	if (!scene)
 	{
-		return setLastErrorCode( PTV_INVALID_HANDLE );   
+		return setLastErrorCode( PTV_INVALID_HANDLE );
 	}
 
 	unsigned int numClouds = ptGetNumCloudsInScene(scene);
@@ -144,8 +145,8 @@ PTres  PTAPI ptSetSceneTransform( PThandle scene, const PTdouble *transform4x4, 
 	sc->projectBounds().dirtyBounds();
 	sc->computeBounds();
 
-	setLastErrorCode( PTV_NOT_IMPLEMENTED_IN_VERSION ); 
-	return setLastErrorCode( PTV_SUCCESS ); 
+	setLastErrorCode( PTV_NOT_IMPLEMENTED_IN_VERSION );
+	return setLastErrorCode( PTV_SUCCESS );
 }
 //-----------------------------------------------------------------------------
 PTres		PTAPI	ptGetCloudTransform( PThandle cloud, PTdouble *transform4x4, bool row_order )
@@ -153,7 +154,7 @@ PTres		PTAPI	ptGetCloudTransform( PThandle cloud, PTdouble *transform4x4, bool r
 	pcloud::PointCloud *pcloud = cloudFromHandle(cloud);
 	if (!pcloud)
 	{
-		return setLastErrorCode( PTV_INVALID_HANDLE );						
+		return setLastErrorCode( PTV_INVALID_HANDLE );
 	}
 
 	mmatrix4d mat = pcloud->transform().matrix();
@@ -161,7 +162,7 @@ PTres		PTAPI	ptGetCloudTransform( PThandle cloud, PTdouble *transform4x4, bool r
 
 	memcpy(transform4x4, mat.data(), sizeof(double)*16);
 
-	return setLastErrorCode( PTV_SUCCESS );	
+	return setLastErrorCode( PTV_SUCCESS );
 }
 //-----------------------------------------------------------------------------
 PTres		PTAPI	ptGetSceneTransform( PThandle scene, PTdouble *transform4x4, bool row_order )
@@ -180,7 +181,7 @@ PTres		PTAPI	ptGetSceneTransform( PThandle scene, PTdouble *transform4x4, bool r
 
 	memcpy(transform4x4, mat.data(), sizeof(double)*16);
 
-	return setLastErrorCode( PTV_SUCCESS );	
+	return setLastErrorCode( PTV_SUCCESS );
 }
 //-------------------------------------------------------------------------------
 // ptSceneHandles
@@ -250,7 +251,7 @@ PTbool	PTAPI ptSceneInfo(PThandle scene, PTstr name, PTint &clouds, PTuint &num_
 
 		clouds = sc->size();
 		num_points = 0;
-		
+
 		spec = 0;
 
 		for (int i=0; i<clouds;i++)
@@ -261,11 +262,11 @@ PTbool	PTAPI ptSceneInfo(PThandle scene, PTstr name, PTint &clouds, PTuint &num_
 			spec |= sc->cloud(i)->hasChannel( pcloud::PCloud_Normal ) ? PT_HAS_NORMAL : 0;
 			spec |= sc->cloud(i)->hasChannel( pcloud::PCloud_Classification ) ? PT_HAS_CLASSIFICATION : 0;
 		}
-		
+
 		visible = sc->displayInfo().visible();
 		loaded = sc->loaded();
 
-		return setLastErrorCode( PTV_SUCCESS ) != 0;	
+		return setLastErrorCode( PTV_SUCCESS ) != 0;
 	}
 	return setLastErrorCode( PTV_INVALID_HANDLE ) != 0;
 }
@@ -277,7 +278,7 @@ PTres PTAPI ptUnloadScene( PThandle scene )
 	PTTRACE_FUNC_P1( scene )
 
 	pcloud::Scene *sc = sceneFromHandle(scene);
-	if (!sc) 
+	if (!sc)
 	{
 		return setLastErrorCode( PTV_INVALID_HANDLE );
 	}
@@ -292,10 +293,10 @@ PTres PTAPI ptReloadScene( PThandle scene )
 	PTTRACE_FUNC_P1( scene )
 
 	pcloud::Scene *sc = sceneFromHandle(scene);
-	if (!sc) 
+	if (!sc)
 	{
 		return setLastErrorCode( PTV_INVALID_HANDLE );
-	}	
+	}
 	sc->reload();
 	return setLastErrorCode( PTV_SUCCESS );
 }
@@ -305,7 +306,7 @@ PTres PTAPI ptReloadScene( PThandle scene )
 PTbool PTAPI ptIsSceneVisible( PThandle scene )
 {
 	const pcloud::Scene *sc = sceneFromHandle(scene);
-	if (!sc) 
+	if (!sc)
 	{
 		setLastErrorCode( PTV_INVALID_HANDLE );
 	}
@@ -317,7 +318,7 @@ PTbool PTAPI ptIsSceneVisible( PThandle scene )
 PTbool PTAPI ptIsCloudVisible( PThandle scene )
 {
 	const pcloud::PointCloud* pc = cloudFromHandle(scene);
-	if (!pc) 
+	if (!pc)
 	{
 		setLastErrorCode( PTV_INVALID_HANDLE );
 	}
@@ -355,9 +356,9 @@ PTres	PTAPI ptCloudInfo(PThandle cloud, PTstr name, PTuint &num_points, PTuint &
 		spec |= pc->hasChannel( pcloud::PCloud_Normal ) ? PT_HAS_NORMAL : 0;
 		spec |= pc->hasChannel( pcloud::PCloud_Classification ) ? PT_HAS_CLASSIFICATION : 0;
 
-		return setLastErrorCode( PTV_SUCCESS );	
+		return setLastErrorCode( PTV_SUCCESS );
 	}
-	return setLastErrorCode( PTV_INVALID_HANDLE );	
+	return setLastErrorCode( PTV_INVALID_HANDLE );
 }
 //-------------------------------------------------------------------------------
 // ptGetProxyPoints
@@ -372,24 +373,24 @@ using namespace pcloud;
 struct PointLimit
 {
 	PointLimit(float _lod) : pcount(0), lod(_lod) {}
-	
+
 	template<class T> bool operator()(const T &pnt)	{
 		++pcount;
 		return pcount < limit;
 	}
-	void setVoxel(Voxel *vox) 
-	{ 
+	void setVoxel(Voxel *vox)
+	{
 		limit = static_cast<int>(vox->fullPointCount() * lod);
 		pcount = 0;
 	}
-	int pcount; 
-	int limit;	
+	int pcount;
+	int limit;
 	float lod;
 };
 //-------------------------------------------------------------------------------
 struct ReadPoints
 {
-	ReadPoints(PTfloat *_pnts, PTubyte *_col, PTint _limit) 
+	ReadPoints(PTfloat *_pnts, PTubyte *_col, PTint _limit)
 		: pnts(_pnts), col(_col), pcount(0), limit(_limit)	{}
 
 	PTfloat *pnts;
@@ -438,7 +439,7 @@ PTuint	PTAPI PTAPI ptGetSceneProxyPoints(PThandle scene, PTint num_points, PTflo
 		// return the voxel extent corners
 		PointsScene::VOXELSLIST voxels;
 		PointsScene::UseSceneVoxels voxelslock(voxels, state);
-		PointsScene::VoxIterator it = voxels.begin(); 
+		PointsScene::VoxIterator it = voxels.begin();
 
 		pt::vector3d world2prj;
 		world2prj.set(static_cast<float>(-pt::Project3D::project().registration().matrix()(3,0)),
@@ -446,7 +447,7 @@ PTuint	PTAPI PTAPI ptGetSceneProxyPoints(PThandle scene, PTint num_points, PTflo
                       static_cast<float>(-pt::Project3D::project().registration().matrix()(3,2)));
 
 		int num_actual_pnts=0;
-	
+
 		// count voxels in scene
 		while (it != voxels.end())
 		{
@@ -455,7 +456,7 @@ PTuint	PTAPI PTAPI ptGetSceneProxyPoints(PThandle scene, PTint num_points, PTflo
 
 			++it;
 		};
-		it = voxels.begin(); 
+		it = voxels.begin();
 		int count = 0;
 
 		while (it != voxels.end())
@@ -465,32 +466,32 @@ PTuint	PTAPI PTAPI ptGetSceneProxyPoints(PThandle scene, PTint num_points, PTflo
 				const pcloud::Voxel *v = (*it);
 				BoundingBoxD bb = v->extents();
 				bb.translateBy( world2prj );
-				
+
 				vector3d pnt;
 
 				// extract corners
 				for (int i=0; i<8; i++)
 				{
 					bb.getExtrema(i, pnt);
-				
+
 					pnts[count++] =  static_cast<PTfloat>(pnt.x);
 					pnts[count++] =  static_cast<PTfloat>(pnt.y);
 					pnts[count++] =  static_cast<PTfloat>(pnt.z);
 				}
 
-				if (count / 3 == num_points) 
+				if (count / 3 == num_points)
 					break;
 			}
 			++it;
 		}
 		num_actual_pnts = count / 3;
 
-		/* 1 / 255 is the smallest lod possible */ 
+		/* 1 / 255 is the smallest lod possible */
 /*
 		int state;
 		PointsScene::VOXELSLIST voxels;
 		PointsScene::UseSceneVoxels voxelslock(voxels, state);
-		PointsScene::VoxIterator it = voxels.begin(); 
+		PointsScene::VoxIterator it = voxels.begin();
 
 		//
 		PointLimit plimit(lod);
@@ -505,7 +506,7 @@ PTuint	PTAPI PTAPI ptGetSceneProxyPoints(PThandle scene, PTint num_points, PTflo
 		while (it != voxels.end())
 		{
 			Voxel *vox = *it;
-			
+
 			if (vox->pointCloud()->scene() == sc)
 			{
 				VoxelLoader loader( vox, lod < 0.0039216 ? 0.0039216 : lod );
@@ -519,7 +520,7 @@ PTuint	PTAPI PTAPI ptGetSceneProxyPoints(PThandle scene, PTint num_points, PTflo
 		return num_actual_pnts;
 	}
 	setLastErrorCode( PTV_INVALID_HANDLE );
-	return 0;	
+	return 0;
 }
 
 //-------------------------------------------------------------------------------
@@ -528,9 +529,9 @@ PTuint	PTAPI PTAPI ptGetSceneProxyPoints(PThandle scene, PTint num_points, PTflo
 PTres	PTAPI ptSceneBounds(PThandle scene, PTfloat *lower, PTfloat *upper)
 {
 	const pcloud::Scene *sc = sceneFromHandle(scene);
-	
-	/* TODO: use all scenes */ 
-	if (!sc && thePointsScene().size()) 
+
+	/* TODO: use all scenes */
+	if (!sc && thePointsScene().size())
 		sc = thePointsScene()[0];
 
 	if (sc)
@@ -553,8 +554,8 @@ PTres	PTAPI ptSceneBoundsd(PThandle scene, PTdouble *lower, PTdouble *upper)
 {
 	const pcloud::Scene *sc = sceneFromHandle(scene);
 
-	/* TODO: use all scenes */ 
-	if (!sc && thePointsScene().size()) 
+	/* TODO: use all scenes */
+	if (!sc && thePointsScene().size())
 		sc = thePointsScene()[0];
 
 	if (sc)
@@ -633,7 +634,7 @@ PTres	PTAPI ptShowCloud(PThandle cloud, PTbool visible)
 	PTTRACE_FUNC_P2( cloud, visible )
 
 	pcloud::PointCloud *pc = cloudFromHandle(cloud);
-	if (pc) 
+	if (pc)
 	{
 		pc->displayInfo().visible(visible);
 		return 	setLastErrorCode( PTV_SUCCESS );
@@ -696,3 +697,4 @@ PTvoid PTAPI ptWorldToProjectCoords( PTdouble *v )
 	_project->world2ProjectSpace( vw, vp );
 	vp.get(v);
 }
+POP_DISABLE_DEPRECATION_WARNINGS

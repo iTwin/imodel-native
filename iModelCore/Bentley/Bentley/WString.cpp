@@ -140,11 +140,11 @@ WStringR WString::Trim ()
     size_t firstNonSpaceIdx = 0;
     for (; (firstNonSpaceIdx < length ()) && iswspace (at (firstNonSpaceIdx)); ++firstNonSpaceIdx)
         ;
-    
+
     size_t lastNonSpaceIdx = length () - 1;
     for (; (lastNonSpaceIdx > firstNonSpaceIdx) && iswspace (at (lastNonSpaceIdx)); --lastNonSpaceIdx)
         ;
-    
+
     erase ((begin () + lastNonSpaceIdx + 1), end ());
     erase (begin (), (begin () + firstNonSpaceIdx));
     return *this;
@@ -157,20 +157,20 @@ WStringR WString::Trim (WCharCP trimCharacters)
     {
     if (empty ())
         return *this;
-    
+
     size_t firstNonTrimIdx = 0;
     for (; (firstNonTrimIdx < length ()) && (NULL != wcschr (trimCharacters, at (firstNonTrimIdx))); ++firstNonTrimIdx)
         ;
-    
+
     size_t lastNonTrimIdx = length () - 1;
     for (; (lastNonTrimIdx > firstNonTrimIdx) && (NULL != wcschr (trimCharacters, at (lastNonTrimIdx))); --lastNonTrimIdx)
         ;
-    
+
     erase ((begin() + lastNonTrimIdx + 1), end ());
     erase (begin(), (begin () + firstNonTrimIdx));
     return *this;
     }
-    
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -182,7 +182,7 @@ WStringR WString::PadLeft (size_t totalSize, value_type charToPadWith)
     insert (begin (), (totalSize - length ()), charToPadWith);
     return *this;
     }
-    
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -272,7 +272,7 @@ bool WString::StartsWith(WCharCP value) const
     size_t valueLen = wcslen(value);
     if (valueLen > size())
         return false;
-    
+
     return (0 == memcmp(c_str(), value, sizeof(WChar) * valueLen));
     }
 
@@ -287,7 +287,7 @@ bool WString::StartsWithI (WCharCP value) const
     size_t valueLen = wcslen(value);
     if (valueLen > size())
         return false;
-    
+
     WString temp = this->substr (0, valueLen);
     return (0 == temp.CompareToI (value));
     }
@@ -303,7 +303,7 @@ bool WString::EndsWith (WCharCP value) const
     size_t valueLen = wcslen(value);
     if (valueLen > size())
         return false;
-    
+
     WString temp = this->substr (size()-valueLen);
     return (0 == temp.CompareTo (value));
     }
@@ -319,7 +319,7 @@ bool WString::EndsWithI (WCharCP value) const
     size_t valueLen = wcslen(value);
     if (valueLen > size())
         return false;
-    
+
     WString temp = this->substr (size()-valueLen);
     return (0 == temp.CompareToI (value));
     }
@@ -364,11 +364,11 @@ Utf8StringR Utf8String::Trim ()
     size_t firstNonSpaceIdx = 0;
     for (; (firstNonSpaceIdx < length ()) && isspace (at (firstNonSpaceIdx)); ++firstNonSpaceIdx)
         ;
-    
+
     size_t lastNonSpaceIdx = length () - 1;
     for (; (lastNonSpaceIdx > firstNonSpaceIdx) && isspace (at (lastNonSpaceIdx)); --lastNonSpaceIdx)
         ;
-    
+
     erase ((begin () + lastNonSpaceIdx + 1), end ());
     erase (begin (), (begin () + firstNonSpaceIdx));
     return *this;
@@ -397,15 +397,15 @@ Utf8StringR Utf8String::Trim (Utf8CP trimCharacters)
     {
     if (empty ())
         return *this;
-    
+
     size_t firstNonTrimIdx = 0;
     for (; (firstNonTrimIdx < length ()) && (NULL != strchr (trimCharacters, at (firstNonTrimIdx))); ++firstNonTrimIdx)
         ;
-    
+
     size_t lastNonTrimIdx = length () - 1;
     for (; (lastNonTrimIdx > firstNonTrimIdx) && (NULL != strchr (trimCharacters, at (lastNonTrimIdx))); --lastNonTrimIdx)
         ;
-    
+
     erase ((begin () + lastNonTrimIdx + 1), end ());
     erase (begin (), (begin () + firstNonTrimIdx));
     return *this;
@@ -429,7 +429,7 @@ Utf8StringR Utf8String::ToUpper()
         std::transform(begin(), end(), begin(), [](char const& c){return (char)toupper(c);});
         return *this;
         }
-    
+
     WString wstr(c_str(), BentleyCharEncoding::Utf8);
     wstr.ToUpper();
     clear();
@@ -486,8 +486,8 @@ bool Utf8String::StartsWith(Utf8CP value) const
     size_t valueLen = strlen(value);
     if (valueLen > size())
         return false;
-    
-    Utf8String temp = this->substr (0, valueLen);
+
+    Utf8String temp(this->substr (0, valueLen));
     return (0 == temp.CompareTo (value));
     }
 
@@ -502,8 +502,8 @@ bool Utf8String::StartsWithI (Utf8CP value) const
     size_t valueLen = strlen(value);
     if (valueLen > size())
         return false;
-    
-    Utf8String temp = this->substr (0, valueLen);
+
+    Utf8String temp(this->substr (0, valueLen));
     return (0 == temp.CompareToI (value));
     }
 
@@ -519,7 +519,7 @@ bool Utf8String::StartsWithIAscii(Utf8CP value) const
     if (valueLen > size())
         return false;
 
-    Utf8String temp = this->substr(0, valueLen);
+    Utf8String temp(this->substr(0, valueLen));
     return (0 == temp.CompareToIAscii(value));
     }
 
@@ -534,7 +534,7 @@ bool Utf8String::EndsWith (Utf8CP value) const
     size_t valueLen = strlen(value);
     if (valueLen > size())
         return false;
-    
+
     Utf8String temp = this->substr (size()-valueLen);
     return (0 == temp.CompareTo (value));
     }
@@ -550,7 +550,7 @@ bool Utf8String::EndsWithI (Utf8CP value) const
     size_t valueLen = strlen(value);
     if (valueLen > size())
         return false;
-    
+
     Utf8String temp = this->substr (size()-valueLen);
     return (0 == temp.CompareToI (value));
     }

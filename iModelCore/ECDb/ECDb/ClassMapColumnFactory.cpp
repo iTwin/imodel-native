@@ -11,34 +11,22 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
 //-----------------------------------------------------------------------------------------
-bool ColumnMaps::IsColumnInUsed(DbColumn const& column) const { return n_columns.find(&column) != n_columns.end(); }
+bool ColumnMaps::IsColumnInUsed(DbColumn const& column) const { return m_columns.find(&column) != m_columns.end(); }
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
 //-----------------------------------------------------------------------------------------
-void ColumnMaps::Insert(SingleColumnDataPropertyMap const& propertyMap) { Insert(propertyMap.GetAccessString().c_str(), propertyMap.GetColumn()); }
+void ColumnMaps::Insert(SingleColumnDataPropertyMap const& propertyMap) { Insert(propertyMap.GetAccessString(), propertyMap.GetColumn()); }
 
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       05 / 2017
-//-----------------------------------------------------------------------------------------
-Utf8StringCR ColumnMaps::Copy(Utf8StringCR str)
-    {
-    auto itor = m_strings.find(str);
-    if (itor != m_strings.end())
-        return *itor;
-
-    return *(m_strings.insert(str).first);
-    }
 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
 //-----------------------------------------------------------------------------------------
 void ColumnMaps::Insert(Utf8StringCR accessString, DbColumn const& column, bool newlyMappedColumn)
     {
-    Utf8StringCR copiedAccessString = Copy(accessString);
-    m_maps.insert(make_bpair(copiedAccessString.c_str(), &column));
-    n_columns.insert(&column);
+    m_maps.insert(make_bpair(accessString, &column));
+    m_columns.insert(&column);
     if (newlyMappedColumn)
-        m_newMappedColumns.insert(copiedAccessString.c_str());
+        m_newMappedColumns.insert(accessString);
     }
 
 //------------------------------------------------------------------------------------------

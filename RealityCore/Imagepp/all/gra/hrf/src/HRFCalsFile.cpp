@@ -35,7 +35,7 @@
 #include <ImagePP/all/h/HGF2DStretch.h>
 #include <ImagePP/all/h/HCDCodecCCITTFax4.h>
 
-
+PUSH_DISABLE_DEPRECATION_WARNINGS
 //-----------------------------------------------------------------------------
 // HRFCalsBlockCapabilities
 //-----------------------------------------------------------------------------
@@ -814,7 +814,7 @@ bool HRFCalsFile::CreateHeaderBlock(HRFResolutionDescriptor* pi_pResolutionDescr
     BeStringUtilities::Snprintf (HeightString, 7, "%I64u", pi_pResolutionDescriptor->GetHeight());
 
     strcpy(pHeader28002C->PelCount, "rpelcnt: ");
-    
+
     // width: 6 char. Prefix with spaces if required
     size_t stringLen = strlen(WidthString);
     if (stringLen < 6)
@@ -1099,3 +1099,4 @@ void HRFCalsFile::SetDefaultRatioToMeter(double pi_RatioToMeter,
     //The transformation matrix is used only for SLO compensation,
     //not for geo-localization.
     }
+POP_DISABLE_DEPRECATION_WARNINGS

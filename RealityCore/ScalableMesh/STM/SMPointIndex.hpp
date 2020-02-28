@@ -11,13 +11,14 @@
 
 using namespace ISMStore;
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 
 //=======================================================================================
 // @bsimethod                                                     Mathieu.St-Pierre 10/19
 //=======================================================================================
 SMNodeDataToLoad::SMNodeDataToLoad()
     {
-    m_pts = true;    
+    m_pts = true;
     };
 
 //=======================================================================================
@@ -30,12 +31,12 @@ SMNodeDataToLoad::~SMNodeDataToLoad()
 //=======================================================================================
 // @bsimethod                                                   Alain.Robert 10/10
 //=======================================================================================
-template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointIndexNode(uint64_t nodeInd, 
+template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointIndexNode(uint64_t nodeInd,
         size_t pi_SplitTreshold,
-        const EXTENT& pi_rExtent,        
+        const EXTENT& pi_rExtent,
         ISMPointIndexFilter<POINT, EXTENT>* filter,
         bool balanced,
-        bool propagateDataDown,         
+        bool propagateDataDown,
         CreatedNodeMap*                      createdNodeMap)
     {
     m_pointsPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
@@ -54,7 +55,7 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_nodeHeader.m_IsUnSplitSubLevel = false;
     m_nodeHeader.m_IsBranched = false;
     m_nodeHeader.m_level = 0;
-    m_needsBalancing = balanced; 
+    m_needsBalancing = balanced;
     m_wasBalanced = false;
     m_nodeHeader.m_balanced = false;
     m_nodeHeader.m_nodeCount = 0;
@@ -89,20 +90,20 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     HINVARIANTS;
     m_NbObjects = -1;
 
-    m_filter = filter; 
+    m_filter = filter;
     m_createdNodeMap = createdNodeMap;
     m_nodeHeader.m_filtered = false;
     m_nodeHeader.m_nbFaceIndexes = 0;
     m_nodeHeader.m_isTextured = false;
     m_nodeHeader.m_nbTextures = 0;
-    m_nodeHeader.m_nbUvIndexes = 0;    
+    m_nodeHeader.m_nbUvIndexes = 0;
     m_nodeHeader.m_numberOfMeshComponents = 0;
     m_nodeHeader.m_meshComponents = nullptr;
     for (size_t indexNode = 0 ; indexNode < GetNumberOfSubNodesOnSplit(); indexNode++)
         {
         m_nodeHeader.m_apSubNodeID[indexNode] = HPMBlockID();
         }
-    
+
     m_isGrid = false;
     m_nodeId = nodeInd;
 
@@ -110,7 +111,7 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
 
     this->ValidateInvariantsSoft();
     }
- 
+
 //=======================================================================================
 // @bsimethod                                                   Alain.Robert 10/10
 //=======================================================================================
@@ -129,7 +130,7 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_delayedDataPropagation = !pi_rpParentNode->PropagatesDataDown();
     m_isParentNodeSet = true;
 	m_loadNeighbors = true;
-	
+
     m_isGenerating = pi_rpParentNode->m_isGenerating;
 
     m_nodeHeader.m_IsBranched = false;
@@ -160,7 +161,7 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
 
         // Call soft invariant as the parent is most probably reconfiguring
         this->ValidateInvariantsSoft();
-        
+
     m_filter = pi_rpParentNode->GetFilter();
     m_nodeHeader.m_filtered = false;
     m_nodeHeader.m_nbFaceIndexes = 0;
@@ -179,7 +180,7 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
         m_nodeHeader.m_apSubNodeID[indexNode] = HPMBlockID();
         }
     m_isGrid = pi_rpParentNode->m_isGrid;
-    
+
 
     m_nodeId = pi_rpParentNode->m_SMIndex->GetNextNodeId();
     m_nodeHeader.m_parentNodeID = pi_rpParentNode->GetBlockID();
@@ -206,7 +207,7 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_delayedDataPropagation = !pi_rpParentNode->PropagatesDataDown();
     m_isParentNodeSet = true;
 	m_loadNeighbors = true;
-	
+
     m_isGenerating = pi_rpParentNode->m_isGenerating;
 
     m_nodeHeader.m_IsBranched = false;
@@ -321,7 +322,7 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
         // Call soft invariant as the parent is most probably reconfiguring
         this->ValidateInvariantsSoft();
     m_NbObjects = -1;
-    
+
     m_filter = pi_rpParentNode->GetFilter();
     m_nodeHeader.m_filtered = false;
     m_nodeHeader.m_nbFaceIndexes = 0;
@@ -329,18 +330,18 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_nodeHeader.m_nbTextures = 0;
     m_nodeHeader.m_nbUvIndexes = 0;
     m_nodeHeader.m_numberOfMeshComponents = 0;
-    m_nodeHeader.m_meshComponents = nullptr;    
+    m_nodeHeader.m_meshComponents = nullptr;
     m_nodeHeader.m_arePoints3d = pi_rpParentNode->m_nodeHeader.m_arePoints3d;
     if (!m_nodeHeader.m_arePoints3d) SetNumberOfSubNodesOnSplit(4);
     else SetNumberOfSubNodesOnSplit(8);
-    
+
     for (size_t indexNode = 0 ; indexNode < m_nodeHeader.m_numberOfSubNodesOnSplit; indexNode++)
         {
         m_nodeHeader.m_apSubNodeID[indexNode] = HPMBlockID();
         }
     m_isGrid = pi_rpParentNode->m_isGrid;
-    
-   
+
+
     m_nodeId = pi_rpParentNode->m_SMIndex->GetNextNodeId();
     m_nodeHeader.m_parentNodeID = pi_rpParentNode->GetBlockID();
 
@@ -355,11 +356,11 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
 // @bsimethod                                                   Alain.Robert 10/10
 //=======================================================================================
 template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointIndexNode(HPMBlockID blockID,
-        HFCPtr<SMPointIndexNode<POINT, EXTENT> > parent,                
+        HFCPtr<SMPointIndexNode<POINT, EXTENT> > parent,
         ISMPointIndexFilter<POINT, EXTENT>* filter,
         bool balanced,
-        bool propagateDataDown, 
-        CreatedNodeMap* createdNodeMap)        
+        bool propagateDataDown,
+        CreatedNodeMap* createdNodeMap)
     {
     m_pointsPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
     m_loaded = true;
@@ -382,7 +383,7 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_nodeHeader.m_IsUnSplitSubLevel = false;
     m_nodeHeader.m_IsBranched = false;
     m_nodeHeader.m_level = 0;
-    m_nodeHeader.m_balanced = false;    
+    m_nodeHeader.m_balanced = false;
     m_nodeHeader.m_numberOfSubNodesOnSplit = 8;
     m_nodeHeader.m_apSubNodeID.resize(m_nodeHeader.m_numberOfSubNodesOnSplit);
     m_apSubNodes.resize(m_nodeHeader.m_numberOfSubNodesOnSplit);
@@ -403,18 +404,18 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
         HDEBUGCODE(m_parentOfAnUnspliteableNode = false;)
 
         HINVARIANTS;
-    HPRECONDITION (blockID.IsValid());    
+    HPRECONDITION (blockID.IsValid());
 
     m_loaded = false;
     m_NbObjects = -1;
-    m_filter = filter; 
+    m_filter = filter;
     m_createdNodeMap = createdNodeMap;
 
-    m_nodeId = blockID.m_integerID;    
-    SetParentNodePtr(parent);     
+    m_nodeId = blockID.m_integerID;
+    SetParentNodePtr(parent);
     m_nodeHeader.m_balanced = false;
     m_needsBalancing = balanced;
-    m_wasBalanced = false;    
+    m_wasBalanced = false;
     m_isGrid = false;
     m_isDirty = false;
     this->ValidateInvariantsSoft();
@@ -423,10 +424,10 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
 //=======================================================================================
 // @bsimethod                                                   Mathieu.St-Pierre 12/14
 //=======================================================================================
-template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointIndexNode(HPMBlockID blockID,                        
+template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointIndexNode(HPMBlockID blockID,
         ISMPointIndexFilter<POINT, EXTENT>* filter,
         bool balanced,
-        bool propagateDataDown, 
+        bool propagateDataDown,
         CreatedNodeMap* createdNodeMap)
     {
     m_pointsPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
@@ -437,7 +438,7 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_delayedDataPropagation = propagateDataDown;
     m_pParentNode = 0;
     m_isParentNodeSet = false;
-	m_loadNeighbors = true;	
+	m_loadNeighbors = true;
     m_isGenerating = false;
     m_nodeHeader.m_SplitTreshold = 10000;
     m_nodeHeader.m_IsLeaf = true;
@@ -467,32 +468,32 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
 
         HINVARIANTS;
     HPRECONDITION (blockID.IsValid());
-    
+
     m_loaded = false;
     m_NbObjects = -1;
     m_filter = filter;
     m_createdNodeMap = createdNodeMap;
 
-    m_nodeId = blockID.m_integerID;        
+    m_nodeId = blockID.m_integerID;
     m_needsBalancing = balanced;
     m_nodeHeader.m_balanced = false;
-    m_wasBalanced = false;    
+    m_wasBalanced = false;
     m_isGrid = false;
     m_isDirty = false;
-    this->ValidateInvariantsSoft(); 
+    this->ValidateInvariantsSoft();
     }
 
 //=======================================================================================
 // @bsimethod                                                   Alain.Robert 10/10
 //=======================================================================================
 template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::~SMPointIndexNode()
-    {  
+    {
     HINVARIANTS;
     if (!IsDestroyed())
-        {           
-        // Unload self ... this should result in discard 
+        {
+        // Unload self ... this should result in discard
         Unload();
-        Discard();        
+        Discard();
         }
     }
 
@@ -531,7 +532,7 @@ template<class POINT, class EXTENT>  HFCPtr<SMPointIndexNode<POINT, EXTENT> > SM
     }
 
 template<class POINT, class EXTENT>  HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMPointIndexNode<POINT, EXTENT>::CreateNewNode(HPMBlockID blockID, bool isRootNode)
-    {    
+    {
     assert(!"Should not be called. Not yet implemented. Implementation should be similar to SMMeshIndex::CreateNewNode");
     HFCPtr<SMPointIndexNode<POINT, EXTENT> > pNewNode;
     return pNewNode;
@@ -549,7 +550,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Load()
     if (m_SMIndex->m_forceReload && m_loaded)
         UNCONSTTHIS->Unload();
 
-    HPRECONDITION (!IsLoaded());        
+    HPRECONDITION (!IsLoaded());
 
     if (0 == (((SMPointIndexNode<POINT, EXTENT>*)this)->GetDataStore())->LoadNodeHeader (&m_nodeHeader, GetBlockID()))
         {
@@ -557,9 +558,9 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Load()
         assert(!"Cannot load node header");
         throw HFCUnknownException();
         }
-   
+
     m_wasBalanced = true;
-    
+
     if (this == m_SMIndex->GetRootNode())
         {
 
@@ -570,7 +571,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Load()
             m_createdNodeMap->insert(std::pair<int64_t, HFCPtr<SMPointIndexNode<POINT, EXTENT>>>(GetBlockID().m_integerID, UNCONSTTHIS));
             }
         }
-    
+
     UNCONSTTHIS->m_apSubNodes.resize(UNCONSTTHIS->m_nodeHeader.m_numberOfSubNodesOnSplit);
 
     // If there are sub-nodes we must create them
@@ -579,60 +580,60 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Load()
         if (!UNCONSTTHIS->m_nodeHeader.m_IsBranched)
             {
             assert(UNCONSTTHIS->m_nodeHeader.m_SubNodeNoSplitID.m_integerInitialized == true && UNCONSTTHIS->m_nodeHeader.m_SubNodeNoSplitID.m_alternateID == 0);
-            
-            s_createdNodeMutex.lock(); 
+
+            s_createdNodeMutex.lock();
 
             typename CreatedNodeMap::iterator nodeIter(m_createdNodeMap->find(UNCONSTTHIS->m_nodeHeader.m_SubNodeNoSplitID.m_integerID));
 
             if (nodeIter == m_createdNodeMap->end())
-                {                
+                {
                 UNCONSTTHIS->m_pSubNodeNoSplit = UNCONSTTHIS->CreateNewChildNode(UNCONSTTHIS->m_nodeHeader.m_SubNodeNoSplitID);
-                m_createdNodeMap->insert(std::pair<int64_t, HFCPtr<SMPointIndexNode<POINT, EXTENT>>>(UNCONSTTHIS->m_nodeHeader.m_SubNodeNoSplitID.m_integerID, UNCONSTTHIS->m_pSubNodeNoSplit));                
+                m_createdNodeMap->insert(std::pair<int64_t, HFCPtr<SMPointIndexNode<POINT, EXTENT>>>(UNCONSTTHIS->m_nodeHeader.m_SubNodeNoSplitID.m_integerID, UNCONSTTHIS->m_pSubNodeNoSplit));
                 }
             else
                 {
                 UNCONSTTHIS->m_pSubNodeNoSplit = nodeIter->second;
                 //NEEDS_WORK_SM : Load shouldn't be const, too many mutable.
-                HFCPtr<SMPointIndexNode<POINT,EXTENT>> parentNodePtr(const_cast<SMPointIndexNode<POINT,EXTENT> *>(this));                 
+                HFCPtr<SMPointIndexNode<POINT,EXTENT>> parentNodePtr(const_cast<SMPointIndexNode<POINT,EXTENT> *>(this));
                 UNCONSTTHIS->m_pSubNodeNoSplit->SetParentNodePtr(parentNodePtr);
                 }
 
-            s_createdNodeMutex.unlock(); 
+            s_createdNodeMutex.unlock();
 
             UNCONSTTHIS->m_pSubNodeNoSplit->m_nodeHeader.m_IsUnSplitSubLevel = true;
             }
         else
             {
-            
+
             // ATTENTION! DO NOT CALL GetNumberOfSubNodesOnSplit() FUNCTION AS IT WILL CALL Load() RESULTING
             // INTO AN INFINITE LOOP
             for (size_t indexNode = 0 ; indexNode < m_nodeHeader.m_numberOfSubNodesOnSplit; indexNode++)
                 {
                 if (!UNCONSTTHIS->m_nodeHeader.m_apSubNodeID[indexNode].IsValid()) continue;
 
-                s_createdNodeMutex.lock(); 
+                s_createdNodeMutex.lock();
 
                 typename CreatedNodeMap::iterator nodeIter(m_createdNodeMap->find(UNCONSTTHIS->m_nodeHeader.m_apSubNodeID[indexNode].m_integerID));
 
                 if (nodeIter == m_createdNodeMap->end())
-                    {                
+                    {
                     UNCONSTTHIS->m_apSubNodes[indexNode] = UNCONSTTHIS->CreateNewChildNode(UNCONSTTHIS->m_nodeHeader.m_apSubNodeID[indexNode]);
-                    m_createdNodeMap->insert(std::pair<int64_t, HFCPtr<SMPointIndexNode<POINT, EXTENT>>>(UNCONSTTHIS->m_nodeHeader.m_apSubNodeID[indexNode].m_integerID, UNCONSTTHIS->m_apSubNodes[indexNode]));                
-                    }   
+                    m_createdNodeMap->insert(std::pair<int64_t, HFCPtr<SMPointIndexNode<POINT, EXTENT>>>(UNCONSTTHIS->m_nodeHeader.m_apSubNodeID[indexNode].m_integerID, UNCONSTTHIS->m_apSubNodes[indexNode]));
+                    }
                 else
                     {
-                    UNCONSTTHIS->m_apSubNodes[indexNode] = nodeIter->second;                    
-                    HFCPtr<SMPointIndexNode<POINT,EXTENT>> parentNodePtr(const_cast<SMPointIndexNode<POINT,EXTENT> *>(this));                 
+                    UNCONSTTHIS->m_apSubNodes[indexNode] = nodeIter->second;
+                    HFCPtr<SMPointIndexNode<POINT,EXTENT>> parentNodePtr(const_cast<SMPointIndexNode<POINT,EXTENT> *>(this));
                     UNCONSTTHIS->m_apSubNodes[indexNode]->SetParentNodePtr(parentNodePtr);
                     }
 
-                s_createdNodeMutex.unlock(); 
-                
+                s_createdNodeMutex.unlock();
+
                 UNCONSTTHIS->m_apSubNodes[indexNode]->m_nodeHeader.m_IsUnSplitSubLevel = false;
                 }
             }
         }
-   
+
     if (m_loadNeighbors)
         {
         for (size_t neighborPosIndex = 0; neighborPosIndex < MAX_NEIGHBORNODES_COUNT; neighborPosIndex++)
@@ -667,22 +668,22 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Load()
     if (!IsParentSet())
         {
         if (UNCONSTTHIS->m_nodeHeader.m_parentNodeID != ISMStore::GetNullNodeID())
-            {      
-            s_createdNodeMutex.lock(); 
+            {
+            s_createdNodeMutex.lock();
 
-            typename CreatedNodeMap::iterator nodeIter(m_createdNodeMap->find(UNCONSTTHIS->m_nodeHeader.m_parentNodeID.m_integerID));            
+            typename CreatedNodeMap::iterator nodeIter(m_createdNodeMap->find(UNCONSTTHIS->m_nodeHeader.m_parentNodeID.m_integerID));
 
             if (nodeIter == m_createdNodeMap->end())
                 {
                 UNCONSTTHIS->SetParentNodePtr(UNCONSTTHIS->CreateNewNode(UNCONSTTHIS->m_nodeHeader.m_parentNodeID.m_integerID));
-                m_createdNodeMap->insert(std::pair<int64_t, HFCPtr<SMPointIndexNode<POINT, EXTENT>>>(UNCONSTTHIS->m_nodeHeader.m_parentNodeID.m_integerID, UNCONSTTHIS->GetParentNodePtr()));                
+                m_createdNodeMap->insert(std::pair<int64_t, HFCPtr<SMPointIndexNode<POINT, EXTENT>>>(UNCONSTTHIS->m_nodeHeader.m_parentNodeID.m_integerID, UNCONSTTHIS->GetParentNodePtr()));
                 }
             else
                 {
                 UNCONSTTHIS->SetParentNodePtr(nodeIter->second);
                 }
 
-            s_createdNodeMutex.unlock(); 
+            s_createdNodeMutex.unlock();
             }
         else UNCONSTTHIS->m_isParentNodeSet = true;
         }
@@ -738,7 +739,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Unload
                 }
             }
 
-        
+
         for (size_t indexNode = 0 ; indexNode < MAX_NEIGHBORNODES_COUNT; indexNode++)
             {
             if (UNCONSTTHIS->m_apNeighborNodes[indexNode].size() > 0)
@@ -757,7 +758,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Unload
             {
             if (UNCONSTTHIS->m_pSubNodeNoSplit != NULL)
                 {
-                UNCONSTTHIS->m_pSubNodeNoSplit->SetParentNodePtr(0); 
+                UNCONSTTHIS->m_pSubNodeNoSplit->SetParentNodePtr(0);
 
                 UNCONSTTHIS->m_pSubNodeNoSplit = NULL;
                 }
@@ -765,8 +766,8 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Unload
                 {
                 for (size_t indexNode = 0 ; indexNode <UNCONSTTHIS->m_apSubNodes.size(); indexNode++)
                     {
-                    if (UNCONSTTHIS->m_apSubNodes[indexNode] != NULL) 
-                        {                        
+                    if (UNCONSTTHIS->m_apSubNodes[indexNode] != NULL)
+                        {
                         UNCONSTTHIS->m_apSubNodes[indexNode]->SetParentNodePtr(0);
                         UNCONSTTHIS->m_apSubNodes[indexNode] = NULL;
                         }
@@ -801,7 +802,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Discon
             if (UNCONSTTHIS->m_pSubNodeNoSplit != NULL)
                 {
                 UNCONSTTHIS->m_pSubNodeNoSplit->SetParentNodePtr(0);
-                
+
                 s_createdNodeMutex.lock();
 
                 typename CreatedNodeMap::iterator nodeIter(m_createdNodeMap->find(UNCONSTTHIS->m_pSubNodeNoSplit->GetBlockID().m_integerID));
@@ -825,7 +826,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Discon
                     if (UNCONSTTHIS->m_apSubNodes[indexNode] != NULL)
                         {
                         UNCONSTTHIS->m_apSubNodes[indexNode]->SetParentNodePtr(0);
-                        
+
                         s_createdNodeMutex.lock();
 
                         typename CreatedNodeMap::iterator nodeIter(m_createdNodeMap->find(UNCONSTTHIS->m_apSubNodes[indexNode]->GetBlockID().m_integerID));
@@ -854,7 +855,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Discon
 // @bsimethod                                                   Alain.Robert 10/10
 //=======================================================================================
 template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::IsLoaded() const
-    {    
+    {
     return m_loaded && (m_SMIndex == nullptr || !m_SMIndex->m_forceReload);
     }
 
@@ -909,28 +910,28 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Destro
 
 
     m_destroyed = true;
-       
+
     SetDirty(false);
     m_loaded = false;
 
     HINVARIANTS;
     if (GetBlockID().IsValid())
-        {        
+        {
         SMMemoryPool::GetInstance()->RemoveItem(m_pointsPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Points, (uint64_t)m_SMIndex);
 
         ISM3DPtDataStorePtr pointDataStore;
         bool result = GetDataStore()->GetNodeDataStore(pointDataStore, &m_nodeHeader, SMStoreDataType::Points);
-        assert(result == true);        
+        assert(result == true);
 
-        pointDataStore->DestroyBlock(GetBlockID());                
+        pointDataStore->DestroyBlock(GetBlockID());
         m_pointsPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
         }
-        
+
     HINVARIANTS;
 
     return true;
-    }   
-    
+    }
+
 //=======================================================================================
 // @bsimethod                                                 Elenie.Godzaridis 09/17
 //=======================================================================================
@@ -1098,11 +1099,11 @@ void SMPointIndexNode<POINT, EXTENT>::SplitNode(POINT splitPosition, bool propag
             // In this case we must regather all the points back to current level then split...
             HFCPtr<SMPointIndexNode<POINT, EXTENT> > pCurrentNode = m_pSubNodeNoSplit;
             RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
-            
+
             while (pCurrentNode != NULL)
                 {
                 RefCountedPtr<SMMemoryPoolVectorItem<POINT>> currentNodePointsPtr = pCurrentNode->GetPointsPtr();
-                
+
                 deepestLevelNumber = pCurrentNode->m_nodeHeader.m_level;
                 pointsPtr->push_back(&(*currentNodePointsPtr)[0], currentNodePointsPtr->size());
                 // Note that we do not need to update the Z mins and Max even though we are quadtree because
@@ -1342,7 +1343,7 @@ void SMPointIndexNode<POINT, EXTENT>::SplitNode(POINT splitPosition, bool propag
                 PointOp<POINT>::GetZ(splitPosition),
                 ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent),
                 PointOp<POINT>::GetY(splitPosition),
-                ExtentOp<EXTENT>::GetZMax(m_nodeHeader.m_nodeExtent)));            
+                ExtentOp<EXTENT>::GetZMax(m_nodeHeader.m_nodeExtent)));
             }
         else if (newNumberOfChildNodesOnSplit == 4)
             {
@@ -1372,7 +1373,7 @@ void SMPointIndexNode<POINT, EXTENT>::SplitNode(POINT splitPosition, bool propag
                 ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent),
                 ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent),
                 PointOp<POINT>::GetY(splitPosition),
-                ExtentOp<EXTENT>::GetZMax(m_nodeHeader.m_nodeExtent)));            
+                ExtentOp<EXTENT>::GetZMax(m_nodeHeader.m_nodeExtent)));
             }
 
         SetupNeighborNodesAfterSplit();
@@ -1651,7 +1652,7 @@ void SMPointIndexNode<POINT, EXTENT>::SetupNeighborNodesAfterSplit()
     if (m_needsNeighborSetting == false)
         return;
 
-/* Neighbor nodes are ordered as follow :  
+/* Neighbor nodes are ordered as follow :
 
 Middle layer                Bottom layer                Top layer
 ---------------------       ---------------------       ---------------------
@@ -1669,8 +1670,8 @@ Middle layer                Bottom layer                Top layer
 
 */
     //Assigned neighbor nodes for sub-nodes
-    m_apSubNodes[0]->m_apNeighborNodes[4].push_back(m_apSubNodes[1]);    
-    m_apSubNodes[0]->m_apNeighborNodes[6].push_back(m_apSubNodes[2]);    
+    m_apSubNodes[0]->m_apNeighborNodes[4].push_back(m_apSubNodes[1]);
+    m_apSubNodes[0]->m_apNeighborNodes[6].push_back(m_apSubNodes[2]);
     m_apSubNodes[0]->m_apNeighborNodes[7].push_back(m_apSubNodes[3]);
     if (m_apSubNodes.size() == 8)
         {
@@ -1679,7 +1680,7 @@ Middle layer                Bottom layer                Top layer
         m_apSubNodes[0]->m_apNeighborNodes[24].push_back(m_apSubNodes[6]);
         m_apSubNodes[0]->m_apNeighborNodes[25].push_back(m_apSubNodes[7]);
         }
-      
+
 
     SetNeighborRelationAfterSplit(0, 0);
     SetNeighborRelationAfterSplit(0, 1);
@@ -1718,7 +1719,7 @@ Middle layer                Bottom layer                Top layer
     SetNeighborRelationAfterSplit(1, 10);
     SetNeighborRelationAfterSplit(1, 12);
     SetNeighborRelationAfterSplit(1, 13);
-    
+
 #ifndef NDEBUG
     //ValidateNeighborsAfterSplit(m_apSubNodes[1]);
 #endif
@@ -1742,7 +1743,7 @@ Middle layer                Bottom layer                Top layer
     SetNeighborRelationAfterSplit(2, 12);
     SetNeighborRelationAfterSplit(2, 14);
     SetNeighborRelationAfterSplit(2, 15);
-    
+
 
 #ifndef NDEBUG
     //ValidateNeighborsAfterSplit(m_apSubNodes[2]);
@@ -1771,7 +1772,7 @@ Middle layer                Bottom layer                Top layer
 #ifndef NDEBUG
     //ValidateNeighborsAfterSplit(m_apSubNodes[3]);
 #endif
-        
+
     if (m_apSubNodes.size() == 8)
         {
         m_apSubNodes[4]->m_apNeighborNodes[12].push_back(m_apSubNodes[0]);
@@ -1867,8 +1868,8 @@ Middle layer                Bottom layer                Top layer
 #ifndef NDEBUG
     for (size_t indexNodes = 0; indexNodes < GetNumberOfSubNodesOnSplit() && m_apSubNodes.size() == 8; indexNodes++)
         {
-        //ValidateNeighborsAfterSplit(m_apSubNodes[indexNodes]);                
-        }     
+        //ValidateNeighborsAfterSplit(m_apSubNodes[indexNodes]);
+        }
 #endif
 
     ValidateNeighborsOfChildren();
@@ -1878,7 +1879,7 @@ Middle layer                Bottom layer                Top layer
         for (size_t indexNodes = 0 ; indexNodes < GetNumberOfSubNodesOnSplit() ; indexNodes++)
             {
             m_apSubNodes[indexNodes]->InvalidateStitching();
-            }     
+            }
         }
 
     m_needsNeighborSetting = false;
@@ -1935,7 +1936,7 @@ void SMPointIndexNode<POINT, EXTENT>::PushNodeDown(size_t targetLevel)
         m_pSubNodeNoSplit->m_nodeHeader.m_arePoints3d = m_nodeHeader.m_arePoints3d;
         if (!m_pSubNodeNoSplit->m_nodeHeader.m_arePoints3d) m_pSubNodeNoSplit->SetNumberOfSubNodesOnSplit(4);
         else m_pSubNodeNoSplit->SetNumberOfSubNodesOnSplit(8);
-        
+
         RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePtsPtr(m_pSubNodeNoSplit->GetPointsPtr());
         if(ptsPtr->size() > 0)
             {
@@ -1954,7 +1955,7 @@ void SMPointIndexNode<POINT, EXTENT>::PushNodeDown(size_t targetLevel)
         m_pSubNodeNoSplit->m_nodeHeader.m_contentExtentDefined = m_nodeHeader.m_contentExtentDefined;
 
         SetupNeighborNodesAfterPushDown();
-        
+
         // Check if the new node is deep enough
         if (m_pSubNodeNoSplit->GetLevel() < targetLevel)
             m_pSubNodeNoSplit->PushNodeDown(targetLevel);
@@ -2001,7 +2002,7 @@ void SMPointIndexNode<POINT, EXTENT>::PushNodeDownVirtual(size_t targetLevel)
         // The node is a leaf and its level is insufficiant
         m_pSubNodeNoSplit = this->CloneUnsplitChildVirtual();
 
-      
+
         SetupNeighborNodesAfterPushDown();
 
         m_nodeHeader.m_IsLeaf = false;
@@ -2062,7 +2063,7 @@ size_t SMPointIndexNode<POINT, EXTENT>::GetReciprocalNeighborPos(size_t neighbor
 //=======================================================================================
 template<class POINT, class EXTENT>
 void SMPointIndexNode<POINT, EXTENT>::Balance(size_t depth, bool splitNode)
-    {    
+    {
     this->ValidateInvariantsSoft();
 
     if (!IsLoaded())
@@ -2076,12 +2077,12 @@ void SMPointIndexNode<POINT, EXTENT>::Balance(size_t depth, bool splitNode)
         if (m_nodeHeader.m_IsLeaf)
             {
             if (m_nodeHeader.m_level < depth)
-                { 
-                if (m_needsBalancing) 
+                {
+                if (m_needsBalancing)
                     {
-                    if (splitNode) 
+                    if (splitNode)
                         {
-                        SplitNode(GetDefaultSplitPosition());                        
+                        SplitNode(GetDefaultSplitPosition());
 
                         for (size_t indexNode = 0; indexNode < m_nodeHeader.m_numberOfSubNodesOnSplit; indexNode++)
                             {
@@ -2091,7 +2092,7 @@ void SMPointIndexNode<POINT, EXTENT>::Balance(size_t depth, bool splitNode)
                     else
                         PushNodeDown(depth);
                     }
-                else 
+                else
                     PushNodeDownVirtual(depth);
                 }
 
@@ -2179,8 +2180,8 @@ void SMPointIndexNode<POINT, EXTENT>::SetupNeighborNodes()
 
     if (!IsLoaded())
         Load();
-                                
-    if (!m_nodeHeader.m_IsLeaf)                     
+
+    if (!m_nodeHeader.m_IsLeaf)
         {
         SetupNeighborNodesAfterSplit();
 
@@ -2198,7 +2199,7 @@ void SMPointIndexNode<POINT, EXTENT>::SetupNeighborNodes()
         }
 
     HINVARIANTS;
-    }                
+    }
 
 //=======================================================================================
 // @bsimethod                                                   Alain.Robert 10/10
@@ -2393,7 +2394,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Store(
 
         if (m_pSubNodeNoSplit != NULL && !m_pSubNodeNoSplit->IsVirtualNode())
             {
-            static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*m_pSubNodeNoSplit)->Store();     
+            static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*m_pSubNodeNoSplit)->Store();
 
             //HASSERT (m_nodeHeader.m_SubNodeNoSplitID.IsValid());
             }
@@ -2408,10 +2409,10 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Store(
             }
         }
 
-    
+
     if (IsDirty())
-        {        
-        Discard();        
+        {
+        Discard();
         }
 
     HINVARIANTS;
@@ -2422,7 +2423,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Store(
 //=======================================================================================
 // @bsimethod                                                   Mathieu.St-Pierre 04/2016
 //=======================================================================================
-template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::IsDirty () const 
+template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::IsDirty () const
     {
     return m_isDirty;
     }
@@ -2435,7 +2436,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SetDir
     // In theory the two next variable invalidations are not required as
     // but just in case the HGFIndexNode
     m_NbObjects = -1;
-    m_isDirty = dirty;    
+    m_isDirty = dirty;
     }
 
 #ifndef NDEBUG
@@ -2470,7 +2471,7 @@ void SMPointIndexNode<POINT, EXTENT>::ValidateDualNeighborship(HFCPtr<SMPointInd
     {
 
     for (size_t neighborPosInd = 0; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
-        {        
+        {
         for (size_t neighborInd = 0; neighborInd < pi_node->m_apNeighborNodes[neighborPosInd].size(); neighborInd++)
             {
             size_t otherNeighborPosInd = 0;
@@ -3673,7 +3674,7 @@ void SMPointIndexNode<POINT, EXTENT>::SetNeighborRelationAfterSplit(size_t subNo
                BeAssert(currentSubNodeNeighbor.size() == 0);
 
                currentSubNodeNeighbor.push_back(neighborSubNode);
-                
+
                 //NEEDS_WORK_SM:Reactivate this
                 BeAssert(neighborSubNode->m_apNeighborNodes[parentNeighborInfo[i].neighborSubNodeNeighborID].size() == 0);
 
@@ -3693,7 +3694,7 @@ void SMPointIndexNode<POINT, EXTENT>::SetNeighborRelationAfterPushDown(size_t   
     {
 
 #ifndef NDEBUG
-    //Corner at different layer (e.g. : middle versus top) must not have more than one neighbor. 
+    //Corner at different layer (e.g. : middle versus top) must not have more than one neighbor.
     switch (neighborNodeInd)
         {
         case 8:
@@ -3717,7 +3718,7 @@ void SMPointIndexNode<POINT, EXTENT>::SetNeighborRelationAfterPushDown(size_t   
             assert(m_apNeighborNodes[neighborNodeInd][nodeInd]->m_pSubNodeNoSplit->m_nodeHeader.m_level == m_pSubNodeNoSplit->m_nodeHeader.m_level);
             m_pSubNodeNoSplit->m_apNeighborNodes[neighborNodeInd].push_back(m_apNeighborNodes[neighborNodeInd][nodeInd]->m_pSubNodeNoSplit);
 
-            //assert(m_apNeighborNodes[neighborNodeInd][nodeInd]->m_pSubNodeNoSplit->m_apNeighborNodes[neighborSubNodeNeighborInd].size() == 0);            
+            //assert(m_apNeighborNodes[neighborNodeInd][nodeInd]->m_pSubNodeNoSplit->m_apNeighborNodes[neighborSubNodeNeighborInd].size() == 0);
             m_apNeighborNodes[neighborNodeInd][nodeInd]->m_pSubNodeNoSplit->m_apNeighborNodes[neighborSubNodeNeighborInd].push_back(m_pSubNodeNoSplit);
 
 #ifndef NDEBUG
@@ -3737,7 +3738,7 @@ void SMPointIndexNode<POINT, EXTENT>::SetNeighborRelationAfterPushDown(size_t   
                     assert(m_apNeighborNodes[neighborNodeInd][nodeInd]->m_apSubNodes[*neighborSubNodeIndexIter]->m_nodeHeader.m_level == m_pSubNodeNoSplit->m_nodeHeader.m_level);
                     m_pSubNodeNoSplit->m_apNeighborNodes[neighborNodeInd].push_back(m_apNeighborNodes[neighborNodeInd][nodeInd]->m_apSubNodes[*neighborSubNodeIndexIter]);
 
-                    //assert(m_apNeighborNodes[neighborNodeInd][nodeInd]->m_apSubNodes[*neighborSubNodeIndexIter]->m_apNeighborNodes[neighborSubNodeNeighborInd].size() == 0);            
+                    //assert(m_apNeighborNodes[neighborNodeInd][nodeInd]->m_apSubNodes[*neighborSubNodeIndexIter]->m_apNeighborNodes[neighborSubNodeNeighborInd].size() == 0);
                     m_apNeighborNodes[neighborNodeInd][nodeInd]->m_apSubNodes[*neighborSubNodeIndexIter]->m_apNeighborNodes[neighborSubNodeNeighborInd].push_back(m_pSubNodeNoSplit);
 
 #ifndef NDEBUG
@@ -3773,7 +3774,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Propag
 #if DEBUG && SM_TRACE_PROPAGATION
     std::string s;
     s += "LEVEL " + std::to_string(m_nodeHeader.m_level) + " PARENT " + std::to_string((unsigned long long)m_pParentNode.GetPtr());
-        
+
     s += " SIZE " + std::to_string(ptsPtr->size()) + " NBINS " + std::to_string(m_nodeHeader.m_3dPointsDescBins.size());
     if (m_nodeHeader.m_3dPointsDescBins.size() > 0)  s += " LAST INDX " + std::to_string(m_nodeHeader.m_3dPointsDescBins.back().m_startIndex);
 #endif
@@ -3789,7 +3790,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Propag
             ptsPtr = GetPointsPtr();
             size_t numberSpatial = ptsPtr->size();
             POINT* spatialArray = new POINT[numberSpatial];
-            memcpy(spatialArray, &(*ptsPtr)[0], ptsPtr->size() * sizeof(DPoint3d));            
+            memcpy(spatialArray, &(*ptsPtr)[0], ptsPtr->size() * sizeof(DPoint3d));
             ptsPtr->clear();
             m_nodeHeader.m_3dPointsDescBins.clear();
             // We copy the whole content to this sub-node
@@ -3798,12 +3799,12 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Propag
             delete[] spatialArray;
             }
         else
-            {                        
+            {
             size_t numberSpatial = ptsPtr->size();
             POINT* INSpatialArray = new POINT[numberSpatial];
 
             memcpy(INSpatialArray, &(*ptsPtr)[0], ptsPtr->size() * sizeof(DPoint3d));
-            
+
             vector<bool>   areSpatialArray3dPoints(m_nodeHeader.m_numberOfSubNodesOnSplit,false);
             vector<POINT*> spatialArray(m_nodeHeader.m_numberOfSubNodesOnSplit);
             vector<size_t> spatialArrayNumber(m_nodeHeader.m_numberOfSubNodesOnSplit);
@@ -3815,16 +3816,16 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Propag
                 }
 
             size_t points3dDescBinInd = 0;
-            bool is3d;             
+            bool is3d;
             size_t nextFirst2dInd; //2.5D data
             size_t nextFirst3dInd;
-                            
+
             if (m_nodeHeader.m_3dPointsDescBins.size() > 0)
                 {
                 is3d = m_nodeHeader.m_3dPointsDescBins[points3dDescBinInd].m_startIndex == 0;
                 nextFirst2dInd = m_nodeHeader.m_3dPointsDescBins[points3dDescBinInd].m_startIndex + m_nodeHeader.m_3dPointsDescBins[points3dDescBinInd].m_length;
                 nextFirst3dInd = m_nodeHeader.m_3dPointsDescBins[points3dDescBinInd].m_startIndex;
-                }   
+                }
             else
                 {
                 is3d = m_nodeHeader.m_arePoints3d;
@@ -3844,16 +3845,16 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Propag
                         points3dDescBinInd++;
                         nextFirst2dInd = m_nodeHeader.m_3dPointsDescBins[points3dDescBinInd].m_startIndex + m_nodeHeader.m_3dPointsDescBins[points3dDescBinInd].m_length;
                         nextFirst3dInd = m_nodeHeader.m_3dPointsDescBins[points3dDescBinInd].m_startIndex;
-                        }                    
+                        }
                     }
                 else
                     {
                     if (indexSpatial == nextFirst3dInd)
                         {
-                        is3d = true;                        
+                        is3d = true;
                         }
                     }
-                                                
+
                 if (m_nodeHeader.m_arePoints3d)
                     {
                     for (size_t indexNodes = 0; !addedToNode && indexNodes < m_nodeHeader.m_numberOfSubNodesOnSplit; indexNodes++)
@@ -3865,7 +3866,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Propag
                             areSpatialArray3dPoints[indexNodes] = is3d ? true : areSpatialArray3dPoints[indexNodes];
                             addedToNode = true;
                             }
-                        } 
+                        }
                     if (!addedToNode)
                         for (size_t indexNodes = 0; !addedToNode && indexNodes < m_nodeHeader.m_numberOfSubNodesOnSplit; indexNodes++)
                             {
@@ -3878,7 +3879,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Propag
                     }
                 else
                     {/*
-                    //In 2.5D always push the data in the lowest sub-node to allow the stitching to work correctly.                                                                
+                    //In 2.5D always push the data in the lowest sub-node to allow the stitching to work correctly.
                     assert(ExtentOp<EXTENT>::GetZMin(m_apSubNodes[0]->m_nodeHeader.m_nodeExtent) < ExtentOp<EXTENT>::GetZMax(m_apSubNodes[4]->m_nodeHeader.m_nodeExtent));
                     assert(ExtentOp<EXTENT>::GetZMin(m_apSubNodes[0]->m_nodeHeader.m_nodeExtent) < ExtentOp<EXTENT>::GetZMax(m_apSubNodes[5]->m_nodeHeader.m_nodeExtent));
                     assert(ExtentOp<EXTENT>::GetZMin(m_apSubNodes[0]->m_nodeHeader.m_nodeExtent) < ExtentOp<EXTENT>::GetZMax(m_apSubNodes[6]->m_nodeHeader.m_nodeExtent));
@@ -3894,10 +3895,10 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Propag
                         if (m_apSubNodes[indexNodes]!= NULL && SpatialOp<POINT, POINT, EXTENT>::IsSpatialInExtent2D(INSpatialArray[indexSpatial], m_apSubNodes[indexNodes]->m_nodeHeader.m_nodeExtent))
                             {
                             spatialArray[indexNodes][spatialArrayNumber[indexNodes]] = INSpatialArray[indexSpatial];
-                            spatialArrayNumber[indexNodes]++;                            
+                            spatialArrayNumber[indexNodes]++;
                             addedToNode = true;
                             }
-                        } 
+                        }
                     if (!addedToNode)
                         for (size_t indexNodes = 0; indexNodes < nbNodes; indexNodes++)
                             {
@@ -3907,7 +3908,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Propag
 
 
                     //assert(addedToNode == true);
-                    }                
+                    }
                 }
 
             ptsPtr->clear();
@@ -3928,13 +3929,13 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Propag
             delete [] INSpatialArray;
             }
         }
-        
+
 #if DEBUG && SM_TRACE_PROPAGATION
         s += " IS SPLIT REQUESTED ?";
         s += (m_DelayedSplitRequested ? "TRUE " : "FALSE ") + std::to_string(ptsPtr->size());
 #endif
     // As a result of previous operations it is possible that delayed split be invoked for the present node ...
-    if (m_DelayedSplitRequested || (ptsPtr->size() > m_nodeHeader.m_SplitTreshold 
+    if (m_DelayedSplitRequested || (ptsPtr->size() > m_nodeHeader.m_SplitTreshold
         ))
         SplitNode(GetDefaultSplitPosition());
 
@@ -3953,9 +3954,9 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Propag
             }
         }
 
-    //NEEDS_WORK_SM - Why setting that? propagating should be done after importing as a separate call. 
-    m_nodeHeader.m_filtered = false;    
-    
+    //NEEDS_WORK_SM - Why setting that? propagating should be done after importing as a separate call.
+    m_nodeHeader.m_filtered = false;
+
     HINVARIANTS;
 
     }
@@ -3969,10 +3970,10 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Discar
     bool returnValue = true;
 
     if (!m_destroyed)
-        {        
-        // Save the current blockID        
+        {
+        // Save the current blockID
         bool needStoreHeader = m_isDirty;
-        
+
         if (needStoreHeader && IsLoaded())
         {
             //RefCountedPtr<SMMemoryPoolVectorItem<POINT>> ptsPtr(GetPointsPtr());
@@ -3980,9 +3981,9 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Discar
             //NEEDS_WORK_SM : During partial update some synchro problem can occur.
             //NEEDS_WORK_SM : Should not be required now that ID is attributed during node creation.
             if (m_loadNeighbors)
-                {                
+                {
                 for (size_t neighborPosInd = 0; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
-                    {                    
+                    {
                     m_nodeHeader.m_apNeighborNodeID[neighborPosInd].resize(m_apNeighborNodes[neighborPosInd].size());
 
                     for (size_t neighborInd = 0; neighborInd < m_apNeighborNodes[neighborPosInd].size(); neighborInd++)
@@ -4003,9 +4004,9 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Discar
                 m_nodeHeader.m_apSubNodeID.clear();
                 m_nodeHeader.m_numberOfSubNodesOnSplit = 0;
                 }
-            GetDataStore()->StoreNodeHeader(&m_nodeHeader, GetBlockID());                 
-            }            
-                    
+            GetDataStore()->StoreNodeHeader(&m_nodeHeader, GetBlockID());
+            }
+
         SMMemoryPool::GetInstance()->RemoveItem(m_pointsPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Points, (uint64_t)m_SMIndex);
 
         m_isDirty = false;
@@ -4063,33 +4064,33 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Advise
     //NEEDS_WORK_SM_NEIGHBOR_ID_STORAGE - Not done yet.
     if (!IsLoaded())
         Load();
-        
+
     size_t neighborPosInd = 0;
-    
+
     for (; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
-        {       
+        {
         size_t neighborInd = 0;
 
         for (; neighborInd < m_apNeighborNodes[neighborPosInd].size(); neighborInd++)
-            {                    
+            {
             if (m_apNeighborNodes[neighborPosInd][neighborInd].GetPtr() == p_neighborNode.GetPtr())
-                {              
+                {
                 if (m_nodeHeader.m_apNeighborNodeID[neighborPosInd].size() <= neighborInd)
                     {
-                    m_nodeHeader.m_apNeighborNodeID[neighborPosInd].resize(neighborInd + 1); 
+                    m_nodeHeader.m_apNeighborNodeID[neighborPosInd].resize(neighborInd + 1);
                     }
-                
-                m_nodeHeader.m_apNeighborNodeID[neighborPosInd][neighborInd] = p_neighborNode->GetBlockID();                
+
+                m_nodeHeader.m_apNeighborNodeID[neighborPosInd][neighborInd] = p_neighborNode->GetBlockID();
                 break;
-                }            
-            }    
+                }
+            }
 
         if (neighborInd < m_apNeighborNodes[neighborPosInd].size())
             {
             break;
             }
         }
-    
+
     assert(neighborPosInd < MAX_NEIGHBORNODES_COUNT);
 
     SetDirty(true);
@@ -4113,11 +4114,11 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Advise
         else
             {
             for (size_t indexNode = 0 ; indexNode < GetNumberOfSubNodesOnSplit(); indexNode++)
-                {                                
-                m_apSubNodes[indexNode]->m_nodeHeader.m_parentNodeID = GetBlockID();                                
+                {
+                m_apSubNodes[indexNode]->m_nodeHeader.m_parentNodeID = GetBlockID();
                 m_apSubNodes[indexNode]->SetDirty(true);
                 }
-            }        
+            }
         }
     //HINVARIANTS;
     }
@@ -4299,7 +4300,7 @@ template<class POINT, class EXTENT> const HFCPtr<SMPointIndexNode<POINT, EXTENT>
 // @bsimethod                                                   Mathieu.St-Pierre 07/16
 //=======================================================================================
 template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolVectorItem<POINT>> SMPointIndexNode<POINT, EXTENT>::GetPointsPtr(bool loadPts)
-    {  
+    {
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> poolMemVectorItemPtr;
     if (!loadPts) return poolMemVectorItemPtr;
 
@@ -4315,33 +4316,33 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolVectorItem<POINT>>
         }
     return poolMemVectorItemPtr;
 
-#if 0 
+#if 0
     //Sample code of using store capabilities to load but the point and triangle pt indices atomically
     /*
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> poolMemVectorItemPtr;
     SMMemoryPoolMultiItemsBasePtr poolMemMultiItemsPtr;
-                        
+
     if (!SMMemoryPool::GetInstance()->GetItem(poolMemMultiItemsPtr, m_pointsPoolItemId, GetBlockID().m_integerID, SMStoreDataType::PointAndTriPtIndices, (uint64_t)m_SMIndex) && loadPts)
-        {                         
-        ISMPointTriPtIndDataStorePtr pointTriIndDataStore;        
+        {
+        ISMPointTriPtIndDataStorePtr pointTriIndDataStore;
         bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(pointTriIndDataStore, &m_nodeHeader);
-        assert(result == true);        
-        
+        assert(result == true);
+
         RefCountedPtr<SMStoredMemoryPoolMultiItems<PointAndTriPtIndicesBase>> storedMemoryMultiItemPool;
-        
+
         storedMemoryMultiItemPool = new SMStoredMemoryPoolMultiItems<PointAndTriPtIndicesBase>(pointTriIndDataStore, GetBlockID().m_integerID, SMStoreDataType::PointAndTriPtIndices, (uint64_t)m_SMIndex);
 
         SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryMultiItemPool.get());
         m_pointsPoolItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
         assert(m_pointsPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
-        poolMemMultiItemsPtr = (SMMemoryPoolMultiItemsBase*)storedMemoryMultiItemPool.get();            
+        poolMemMultiItemsPtr = (SMMemoryPoolMultiItemsBase*)storedMemoryMultiItemPool.get();
         }
-                
+
     bool result = poolMemMultiItemsPtr->GetItem<POINT>(poolMemVectorItemPtr, SMStoreDataType::Points);
     assert(result == true);
     */
 #endif
-    }        
+    }
 
 //=======================================================================================
 // @bsimethod                                                   Mathieu.St-Pierre 02/15
@@ -4426,9 +4427,9 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SetSub
 // @bsimethod                                                   Mathieu.St-Pierre 11/14
 //=======================================================================================
 template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SetNeighborNodes()
-    {  
+    {
     HINVARIANTS;
-       
+
     assert(m_loadNeighbors == true);
 
     size_t neighborPosIndex;
@@ -4436,11 +4437,11 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SetNei
         {
         for (size_t neighborInd = 0; neighborInd < m_apNeighborNodes[neighborPosIndex].size(); neighborInd++)
             {
-            //Should be call only when the node is created.             
+            //Should be call only when the node is created.
             if (m_nodeHeader.m_apNeighborNodeID[neighborPosIndex].size() <= neighborInd)
                 {
                 m_nodeHeader.m_apNeighborNodeID[neighborPosIndex].resize(neighborInd + 1);
-                }            
+                }
 
             m_nodeHeader.m_apNeighborNodeID[neighborPosIndex][neighborInd] = m_apNeighborNodes[neighborPosIndex][neighborInd]->GetBlockID();
             }
@@ -4526,7 +4527,7 @@ bool SMPointIndexNode<POINT, EXTENT>::IsTextured() const
     {
     if(!IsLoaded())
         Load();
-    
+
     return(m_nodeHeader.m_isTextured);
     }
 
@@ -4614,7 +4615,7 @@ HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMPointIndexNode<POINT, EXTENT>::PullSu
         else
             if (m_pSubNodeNoSplit->m_nodeHeader.m_level == levelToPullTo)
                 {
-                
+
 
                 if (m_pSubNodeNoSplit->m_pSubNodeNoSplit != 0)
                     {
@@ -4824,7 +4825,7 @@ bool SMPointIndexNode<POINT, EXTENT>::InvalidateFilteringMeshing(bool becauseDat
     {
 
     // In theory the two next variable invalidations are not required as
-    // but just in case the HGFIndexNode            
+    // but just in case the HGFIndexNode
     if (m_nodeHeader.m_filtered)
         {
         if (!m_nodeHeader.m_IsLeaf)
@@ -4832,15 +4833,15 @@ bool SMPointIndexNode<POINT, EXTENT>::InvalidateFilteringMeshing(bool becauseDat
             //Remove the sub-resolution data.
 //            setNbPointsUsedForMeshIndex(0);
             RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
-            
+
             pointsPtr->clear();
             }
         else
             {
             //Remove only the mesh data.
-            //NEEDS_WORK_SM : STITCH_ADD             
+            //NEEDS_WORK_SM : STITCH_ADD
             //NEEDS_WORK_SM : Should have some kind of invalid stitching here instead of invalidating the whole mesh
-            //                of neighbor nodes. 
+            //                of neighbor nodes.
             RefCountedPtr<SMMemoryPoolVectorItem<POINT>> ptsPtr(GetPointsPtr());
             size_t ind = ptsPtr->size();
             //size_t totalSize = sizeTotal();
@@ -4908,7 +4909,7 @@ template<class POINT, class EXTENT>
 bool SMPointIndexNode<POINT, EXTENT>::InvalidateParentFiltering()
     {
     // In theory the two next variable invalidations are not required as
-    // but just in case the HGFIndexNode            
+    // but just in case the HGFIndexNode
     if (GetParentNodePtr() != 0 && GetParentNodePtr()->m_nodeHeader.m_filtered)
         {
         assert(GetParentNodePtr()->m_nodeHeader.m_IsLeaf == false);
@@ -4917,7 +4918,7 @@ bool SMPointIndexNode<POINT, EXTENT>::InvalidateParentFiltering()
         //GetParentNodePtr()->setNbPointsUsedForMeshIndex(0);
         RefCountedPtr<SMMemoryPoolVectorItem<POINT>> parentPointsPtr(GetParentNodePtr()->GetPointsPtr());
         parentPointsPtr->clear();
-                
+
         GetParentNodePtr()->m_nodeHeader.m_filtered = false;
         GetParentNodePtr()->m_nodeHeader.m_nbFaceIndexes = 0;
         GetParentNodePtr()->SetDirty(true);
@@ -5002,21 +5003,21 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::AddCon
         m_nodeHeader.m_nodeExtent = ExtentOp<EXTENT>::MergeExtents(m_nodeHeader.m_nodeExtent, SpatialOp<POINT, POINT, EXTENT>::GetExtent(pi_rpSpatialObject));
 
         // We maintain the extent square
-        if (ExtentOp<EXTENT>::GetThickness(m_nodeHeader.m_nodeExtent) < ExtentOp<EXTENT>::GetHeight(m_nodeHeader.m_nodeExtent) && 
+        if (ExtentOp<EXTENT>::GetThickness(m_nodeHeader.m_nodeExtent) < ExtentOp<EXTENT>::GetHeight(m_nodeHeader.m_nodeExtent) &&
             ExtentOp<EXTENT>::GetWidth(m_nodeHeader.m_nodeExtent) < ExtentOp<EXTENT>::GetHeight(m_nodeHeader.m_nodeExtent))
             {
             ExtentOp<EXTENT>::SetXMax(m_nodeHeader.m_nodeExtent, (ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent) + ExtentOp<EXTENT>::GetHeight(m_nodeHeader.m_nodeExtent)));
             ExtentOp<EXTENT>::SetZMax(m_nodeHeader.m_nodeExtent, (ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent) + ExtentOp<EXTENT>::GetHeight(m_nodeHeader.m_nodeExtent)));
             }
         else
-        if (ExtentOp<EXTENT>::GetThickness(m_nodeHeader.m_nodeExtent) < ExtentOp<EXTENT>::GetWidth(m_nodeHeader.m_nodeExtent) && 
+        if (ExtentOp<EXTENT>::GetThickness(m_nodeHeader.m_nodeExtent) < ExtentOp<EXTENT>::GetWidth(m_nodeHeader.m_nodeExtent) &&
             ExtentOp<EXTENT>::GetHeight(m_nodeHeader.m_nodeExtent) < ExtentOp<EXTENT>::GetWidth(m_nodeHeader.m_nodeExtent))
             {
             ExtentOp<EXTENT>::SetYMax(m_nodeHeader.m_nodeExtent, (ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent) + ExtentOp<EXTENT>::GetWidth(m_nodeHeader.m_nodeExtent)));
             ExtentOp<EXTENT>::SetZMax(m_nodeHeader.m_nodeExtent, (ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent) + ExtentOp<EXTENT>::GetWidth(m_nodeHeader.m_nodeExtent)));
             }
         else
-        if (ExtentOp<EXTENT>::GetWidth(m_nodeHeader.m_nodeExtent) < ExtentOp<EXTENT>::GetThickness(m_nodeHeader.m_nodeExtent) && 
+        if (ExtentOp<EXTENT>::GetWidth(m_nodeHeader.m_nodeExtent) < ExtentOp<EXTENT>::GetThickness(m_nodeHeader.m_nodeExtent) &&
             ExtentOp<EXTENT>::GetHeight(m_nodeHeader.m_nodeExtent) < ExtentOp<EXTENT>::GetThickness(m_nodeHeader.m_nodeExtent))
             {
             ExtentOp<EXTENT>::SetXMax(m_nodeHeader.m_nodeExtent, (ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent) + ExtentOp<EXTENT>::GetThickness(m_nodeHeader.m_nodeExtent)));
@@ -5039,7 +5040,7 @@ template<class POINT, class EXTENT> size_t SMPointIndexNode<POINT, EXTENT>::AddA
     {
     HINVARIANTS;
     if (!IsLoaded())
-        Load();     
+        Load();
 
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> ptsPtr(GetPointsPtr());
 
@@ -5047,7 +5048,7 @@ template<class POINT, class EXTENT> size_t SMPointIndexNode<POINT, EXTENT>::AddA
     //NEEDS_WORK_SM : s_inEditing must not be a static member.
     if (s_inEditing)
         {
-        InvalidateFilteringMeshing (); 
+        InvalidateFilteringMeshing ();
         }
 
     if (ptsPtr->size() == 0) m_nodeHeader.m_arePoints3d = are3dPoints;
@@ -5056,7 +5057,7 @@ template<class POINT, class EXTENT> size_t SMPointIndexNode<POINT, EXTENT>::AddA
     else SetNumberOfSubNodesOnSplit(8);
 
     if (m_DelayedSplitRequested)
-        SplitNode(GetDefaultSplitPosition());    
+        SplitNode(GetDefaultSplitPosition());
 
     // If nothing to be added ... get out right away
     if (startPointIndex >= countPoints)
@@ -5084,27 +5085,27 @@ template<class POINT, class EXTENT> size_t SMPointIndexNode<POINT, EXTENT>::AddA
             }
 
         // We maintain the extent square
-         if (ExtentOp<EXTENT>::GetThickness(m_nodeHeader.m_nodeExtent) < ExtentOp<EXTENT>::GetHeight(m_nodeHeader.m_nodeExtent) && 
+         if (ExtentOp<EXTENT>::GetThickness(m_nodeHeader.m_nodeExtent) < ExtentOp<EXTENT>::GetHeight(m_nodeHeader.m_nodeExtent) &&
              ExtentOp<EXTENT>::GetWidth(m_nodeHeader.m_nodeExtent) < ExtentOp<EXTENT>::GetHeight(m_nodeHeader.m_nodeExtent))
             {
             ExtentOp<EXTENT>::SetXMax(m_nodeHeader.m_nodeExtent, (ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent) + ExtentOp<EXTENT>::GetHeight(m_nodeHeader.m_nodeExtent)));
             ExtentOp<EXTENT>::SetZMax(m_nodeHeader.m_nodeExtent, (ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent) + ExtentOp<EXTENT>::GetHeight(m_nodeHeader.m_nodeExtent)));
             }
         else
-        if (ExtentOp<EXTENT>::GetThickness(m_nodeHeader.m_nodeExtent) < ExtentOp<EXTENT>::GetWidth(m_nodeHeader.m_nodeExtent) && 
+        if (ExtentOp<EXTENT>::GetThickness(m_nodeHeader.m_nodeExtent) < ExtentOp<EXTENT>::GetWidth(m_nodeHeader.m_nodeExtent) &&
             ExtentOp<EXTENT>::GetHeight(m_nodeHeader.m_nodeExtent) < ExtentOp<EXTENT>::GetWidth(m_nodeHeader.m_nodeExtent))
             {
             ExtentOp<EXTENT>::SetYMax(m_nodeHeader.m_nodeExtent, (ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent) + ExtentOp<EXTENT>::GetWidth(m_nodeHeader.m_nodeExtent)));
             ExtentOp<EXTENT>::SetZMax(m_nodeHeader.m_nodeExtent, (ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent) + ExtentOp<EXTENT>::GetWidth(m_nodeHeader.m_nodeExtent)));
             }
         else
-        if (ExtentOp<EXTENT>::GetWidth(m_nodeHeader.m_nodeExtent) < ExtentOp<EXTENT>::GetThickness(m_nodeHeader.m_nodeExtent) && 
+        if (ExtentOp<EXTENT>::GetWidth(m_nodeHeader.m_nodeExtent) < ExtentOp<EXTENT>::GetThickness(m_nodeHeader.m_nodeExtent) &&
             ExtentOp<EXTENT>::GetHeight(m_nodeHeader.m_nodeExtent) < ExtentOp<EXTENT>::GetThickness(m_nodeHeader.m_nodeExtent))
             {
             ExtentOp<EXTENT>::SetXMax(m_nodeHeader.m_nodeExtent, (ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent) + ExtentOp<EXTENT>::GetThickness(m_nodeHeader.m_nodeExtent)));
             ExtentOp<EXTENT>::SetYMax(m_nodeHeader.m_nodeExtent, (ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent) + ExtentOp<EXTENT>::GetThickness(m_nodeHeader.m_nodeExtent)));
             }
-       
+
         AddArrayUnconditional (&(pointsArray[startPointIndex]), endPointIndex - startPointIndex, are3dPoints, isRegularGrid);
 
 
@@ -5120,7 +5121,7 @@ template<class POINT, class EXTENT> size_t SMPointIndexNode<POINT, EXTENT>::AddA
         size_t lastPointsIndexInExtent = startPointIndex;
 
         if (m_nodeHeader.m_arePoints3d)
-            {        
+            {
             while ((lastPointsIndexInExtent < countPoints) && (SpatialOp<POINT, POINT, EXTENT>::IsSpatialInExtent3D(pointsArray[lastPointsIndexInExtent], m_nodeHeader.m_nodeExtent)))
                 {
                 lastPointsIndexInExtent++;
@@ -5280,13 +5281,13 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::AddArr
     {
     HINVARIANTS;
     HASSERT (countPoints > 0);
-    
+
     if (!IsLoaded())
         Load();
-        
+
     if (s_inEditing)
         {
-        InvalidateFilteringMeshing (); 
+        InvalidateFilteringMeshing ();
         m_delayedDataPropagation = false;
         }
 
@@ -5294,15 +5295,15 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::AddArr
 
     assert(m_nodeHeader.m_3dPointsDescBins.size() == 0 || m_nodeHeader.m_3dPointsDescBins.back().m_startIndex < pointsPtr->size());
     if ((pointsPtr->size() == 0 && isRegularGrid) || (!isRegularGrid && m_isGrid)) m_isGrid = isRegularGrid;
-    //If the node turns 3d redistribute the points in a 3D fashion (i.e. : not only in the lowest node). 
+    //If the node turns 3d redistribute the points in a 3D fashion (i.e. : not only in the lowest node).
     /*
     if (!m_nodeHeader.m_arePoints3d && arePoints3d && node->GetParentNode() != 0 && pointsPtr->size() > 0)
-        {        
-        assert(node->GetParentNode()->m_pSubNodeNoSplit == 0);         
-                        
+        {
+        assert(node->GetParentNode()->m_pSubNodeNoSplit == 0);
+
         for (size_t pointInd = 0; pointInd < pointsPtr->size(); pointInd++)
             {
-            
+
             }
 
         for (size_t indexNode = 0 ; indexNode < node->GetParentNode()->GetNumberOfSubNodesOnSplit(); indexNode++)
@@ -5358,9 +5359,9 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::AddArr
     assert(m_nodeHeader.m_3dPointsDescBins.size() == 0 || m_nodeHeader.m_3dPointsDescBins.back().m_startIndex < pointsPtr->size());
     // Check if node is still a leaf ...
     if (!HasRealChildren() || (m_delayedDataPropagation && (pointsPtr->size() + countPoints < m_nodeHeader.m_SplitTreshold)) )
-        {        
+        {
         HDEBUGCODE(size_t initialSize = pointsPtr->size());
-                
+
         if (pointsPtr->size() + countPoints >= pointsPtr->capacity())
             pointsPtr->reserve (pointsPtr->size() + countPoints + m_nodeHeader.m_SplitTreshold / 10);
 
@@ -5369,10 +5370,10 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::AddArr
         if (arePoints3d)
             {
             Track3dPoints(countPoints);
-            }        
+            }
 
         // It is a leaf ... we add reference in list
-        pointsPtr->push_back(pointsArray, countPoints);        
+        pointsPtr->push_back(pointsArray, countPoints);
         }
     else
         {
@@ -5428,7 +5429,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Add(co
         Load();
 
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
-    
+
     if (pointsPtr->size() == 0) m_nodeHeader.m_arePoints3d = isPoint3d;
     else m_nodeHeader.m_arePoints3d |= isPoint3d;
     if (!m_nodeHeader.m_arePoints3d) SetNumberOfSubNodesOnSplit(4);
@@ -5441,7 +5442,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Add(co
 
     // The object must be fully contained in node extent
     HPRECONDITION((SpatialOp<POINT, POINT, EXTENT>::IsSpatialInExtent2D(pi_rpSpatialObject, m_nodeHeader.m_nodeExtent)));
-    
+
     // Check if the threshold amount of objects is attained
     if ((!HasRealChildren() || m_nodeHeader.m_IsUnSplitSubLevel) && (pointsPtr->size() + 1 >= m_nodeHeader.m_SplitTreshold))
         {
@@ -5485,7 +5486,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Add(co
         // Attempt to add in one of the subnodes
         bool Added = false;
         if (m_pSubNodeNoSplit != NULL)
-            {            
+            {
             m_pSubNodeNoSplit->Add (pi_rpSpatialObject, isPoint3d);
             Added = true;
             }
@@ -5566,7 +5567,7 @@ template<class POINT, class EXTENT> size_t SMPointIndexNode<POINT, EXTENT>::Clea
                     {
                     // The object is contained ... we add to subnode
                     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(m_apSubNodes[i]->GetPointsPtr());
-                    
+
                     removedCount += m_apSubNodes[i]->Clear(pi_shapeToClear, pi_minZ, pi_maxZ);
                     }
                 }
@@ -5620,11 +5621,11 @@ template<class POINT, class EXTENT> size_t SMPointIndexNode<POINT, EXTENT>::Remo
     assert(s_inEditing == true);
 
     size_t removedCount = 0;
-    
+
     if (ExtentOp<EXTENT>::Overlap(GetContentExtent(), pi_extentToClear))
         {
-        InvalidateFilteringMeshing (true); 
-    
+        InvalidateFilteringMeshing (true);
+
         // Check if node is a leaf ...
         if (!m_nodeHeader.m_IsLeaf)
             {
@@ -5653,16 +5654,16 @@ template<class POINT, class EXTENT> size_t SMPointIndexNode<POINT, EXTENT>::Remo
             RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
             bvector<POINT> pointsToKeep;
             pointsToKeep.reserve(pointsPtr->size());
-            
-            for (size_t ptInd = 0; ptInd < pointsPtr->size(); ptInd++)                                                                 
-                {                              
-                if (!ExtentPointOp<EXTENT, POINT>::IsPointOutterIn3D(pi_extentToClear, (*pointsPtr)[ptInd]))      
-                    {   
-                    pointsToKeep.push_back((*pointsPtr)[ptInd]);                                                            
+
+            for (size_t ptInd = 0; ptInd < pointsPtr->size(); ptInd++)
+                {
+                if (!ExtentPointOp<EXTENT, POINT>::IsPointOutterIn3D(pi_extentToClear, (*pointsPtr)[ptInd]))
+                    {
+                    pointsToKeep.push_back((*pointsPtr)[ptInd]);
                     }
                 else
                     {
-                    removedCount++;                    
+                    removedCount++;
                     }
                 }
 
@@ -5895,7 +5896,7 @@ void SMPointIndexNode<POINT, EXTENT>::GetResolution(float& geometricResolution, 
         Load();
 
     geometricResolution = m_nodeHeader.m_geometricResolution;
-    textureResolution = m_nodeHeader.m_textureResolution;    
+    textureResolution = m_nodeHeader.m_textureResolution;
     }
 
 //=======================================================================================
@@ -5930,7 +5931,7 @@ uint64_t SMPointIndexNode<POINT, EXTENT>::GetCount() const
     if (false/*m_filter->IsProgressiveFilter() == true*/)
         {
         if (!m_nodeHeader.m_totalCountDefined)
-            {            
+            {
             uint64_t count = const_cast<SMPointIndexNode<POINT, EXTENT>*>(this)->GetNbPoints();
             if (!IsLeaf())
                 {
@@ -5973,8 +5974,8 @@ uint64_t SMPointIndexNode<POINT, EXTENT>::GetCount() const
                     }
                 }
             else
-                {                
-                count += GetNbPoints(); 
+                {
+                count += GetNbPoints();
                 }
 
             m_nodeHeader.m_totalCount = count;
@@ -6044,7 +6045,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::GetAll
             if (node != nullptr) nodes.push_back(node.GetPtr());
             }
         }
-    }    
+    }
 
 //=======================================================================================
 // @bsimethod                                                   Mathieu.St-Pierre   06/18
@@ -6074,7 +6075,7 @@ bool SMPointIndexNode<POINT, EXTENT>::IsEmpty() const
 
     if (m_nodeHeader.m_totalCountDefined)
         return (m_nodeHeader.m_totalCount == 0);
-    
+
     if (GetNbPoints() > 0)
         return false;
 
@@ -6088,7 +6089,7 @@ bool SMPointIndexNode<POINT, EXTENT>::IsEmpty() const
         }
 
     return UNCONSTTHIS->GetPointsPtr()->size() > 0;
-    
+
     //if (HasRealChildren())
     //    {
     //    if (m_pSubNodeNoSplit != NULL)
@@ -6164,7 +6165,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::PreQue
 #if 0
 template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query (ISMPointIndexQuery<POINT, EXTENT>* queryObject, HPMMemoryManagedVector<POINT>& resultPoints)
     {
-    HINVARIANTS;    
+    HINVARIANTS;
 
     if (!IsLoaded())
         Load();
@@ -6195,11 +6196,11 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query 
                 vector<size_t> queryNodeOrder;
 
                 queryObject->GetQueryNodeOrder(queryNodeOrder, this, &subNodes[0], GetNumberOfSubNodesOnSplit());
-                                
+
                 for (size_t indexNodes = 0 ; indexNodes < GetNumberOfSubNodesOnSplit() ; indexNodes++)
                     {
                     static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[queryNodeOrder[indexNodes]]))->Query(queryObject, resultPoints);
-                    }                
+                    }
                 }
             }
         }
@@ -6219,7 +6220,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query 
 
 template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query(ISMPointIndexQuery<POINT, EXTENT>* queryObject, BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesh* resultMesh)
     {
-    HINVARIANTS;    
+    HINVARIANTS;
 
     if (!IsLoaded())
         Load();
@@ -6250,11 +6251,11 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query(
                 vector<size_t> queryNodeOrder;
 
                 queryObject->GetQueryNodeOrder(queryNodeOrder, this, &subNodes[0], GetNumberOfSubNodesOnSplit());
-                                
+
                 for (size_t indexNodes = 0 ; indexNodes < GetNumberOfSubNodesOnSplit() ; indexNodes++)
                     {
                     static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[queryNodeOrder[indexNodes]]))->Query(queryObject, resultMesh);
-                    }                                
+                    }
                 }
             }
         }
@@ -6273,15 +6274,15 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query(
 static bool s_queryNodeOrder = true;
 
 template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query (ISMPointIndexQuery<POINT, EXTENT>* queryObject, ProducedNodeContainer<POINT, EXTENT>& foundNodes, IStopQuery* stopQueryP)
-    {    
+    {
     HINVARIANTS;
 
     bool digDown = true;
-    
+
     if (0 != stopQueryP && stopQueryP->DoStop())
         {
         digDown = false;
-    
+
         return digDown;
         }
 
@@ -6289,7 +6290,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query 
         {
         Load();
         }
-        
+
     if (!m_nodeHeader.m_IsLeaf)
         {
         if (m_pSubNodeNoSplit != NULL)
@@ -6297,11 +6298,11 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query 
             HFCPtr<SMPointIndexNode<POINT, EXTENT> > pSubNodes[1];
             pSubNodes[0] = static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*m_pSubNodeNoSplit);
             digDown = queryObject->Query (this, pSubNodes, 1, foundNodes);
-                                    
+
             if (digDown)
-                {                               
-                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*m_pSubNodeNoSplit)->Query (queryObject, foundNodes, stopQueryP);                
-                }                                    
+                {
+                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*m_pSubNodeNoSplit)->Query (queryObject, foundNodes, stopQueryP);
+                }
             }
         else
             {
@@ -6312,29 +6313,29 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query 
             digDown = queryObject->Query(this, &subNodes[0], GetNumberOfSubNodesOnSplit(), foundNodes);
 
             if (digDown)
-                {                                              
+                {
 				if (s_queryNodeOrder)
-					{                
+					{
 					vector<size_t> queryNodeOrder;
-                
-					queryObject->GetQueryNodeOrder(queryNodeOrder, this, &subNodes[0], GetNumberOfSubNodesOnSplit());					
+
+					queryObject->GetQueryNodeOrder(queryNodeOrder, this, &subNodes[0], GetNumberOfSubNodesOnSplit());
 
 					for (auto& nodeOrder : queryNodeOrder)
-						{                                      
-						static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[nodeOrder]))->Query(queryObject, foundNodes, stopQueryP);                  
-						}                                
+						{
+						static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[nodeOrder]))->Query(queryObject, foundNodes, stopQueryP);
+						}
 					}
 				else
-					{                                                                
+					{
 					for (size_t indexNodes = 0; indexNodes < GetNumberOfSubNodesOnSplit() ; indexNodes++)
-						{                                      
-						static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNodes]))->Query(queryObject, foundNodes, stopQueryP);                  
-						}                                
+						{
+						static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNodes]))->Query(queryObject, foundNodes, stopQueryP);
+						}
 					}
                 }
             }
         }
-    else        
+    else
         {
         HFCPtr<SMPointIndexNode<POINT, EXTENT> > pSubNodes[1];
         queryObject->Query (this, pSubNodes, 0, foundNodes);
@@ -6347,7 +6348,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query 
 
 
 template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::QueryOverview (ISMPointIndexQuery<POINT, EXTENT>* queryObject, size_t maxLevel, ProducedNodeContainer<POINT, EXTENT>& overviewNodes, ProducedNodeContainer<POINT, EXTENT>& foundNodes, ProducedNodeContainer<POINT, EXTENT>& nodesToSearch, IStopQuery* stopQueryP)
-    {    
+    {
     HINVARIANTS;
 
     bool digDown = true;
@@ -6356,7 +6357,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::QueryO
     if (0 != stopQueryP && (*stopQueryP)())
         {
         digDown = false;
-    
+
         return digDown;
         }
         */
@@ -6365,7 +6366,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::QueryO
         {
         Load();
         }
-        
+
     if (!m_nodeHeader.m_IsLeaf)
         {
         if (m_pSubNodeNoSplit != NULL)
@@ -6373,24 +6374,24 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::QueryO
             HFCPtr<SMPointIndexNode<POINT, EXTENT> > pSubNodes[1];
             pSubNodes[0] = static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*m_pSubNodeNoSplit);
             digDown = queryObject->Query (this, pSubNodes, 1, overviewNodes);
-                                    
+
             if (digDown)
-                {      
+                {
                 if (maxLevel > GetLevel())
                     {
-                    static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*m_pSubNodeNoSplit)->QueryOverview (queryObject, maxLevel, overviewNodes, foundNodes, nodesToSearch, stopQueryP);                
+                    static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*m_pSubNodeNoSplit)->QueryOverview (queryObject, maxLevel, overviewNodes, foundNodes, nodesToSearch, stopQueryP);
                     }
                 else
-                    {                        
+                    {
                     HFCPtr<SMPointIndexNode<POINT, EXTENT>> node(this);
 
                     overviewNodes.AddNode(node);
 
                     node = m_pSubNodeNoSplit;
 
-                    assert(!node->IsEmpty());                                        
+                    assert(!node->IsEmpty());
                     }
-                }                              
+                }
             }
         else
             {
@@ -6401,17 +6402,17 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::QueryO
             digDown = queryObject->Query(this, &subNodes[0], GetNumberOfSubNodesOnSplit(), overviewNodes);
 
             if (digDown)
-                {         
+                {
                 if (maxLevel > GetLevel())
                     {
                     vector<size_t> queryNodeOrder;
-                
+
                     queryObject->GetQueryNodeOrder(queryNodeOrder, this, &subNodes[0], GetNumberOfSubNodesOnSplit());
-                                                
+
                     for (size_t indexNodes = 0; indexNodes < GetNumberOfSubNodesOnSplit() ; indexNodes++)
-                        {                                      
-                        static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[queryNodeOrder[indexNodes]]))->QueryOverview(queryObject, maxLevel, overviewNodes, foundNodes, nodesToSearch, stopQueryP);                  
-                        }                                
+                        {
+                        static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[queryNodeOrder[indexNodes]]))->QueryOverview(queryObject, maxLevel, overviewNodes, foundNodes, nodesToSearch, stopQueryP);
+                        }
                     }
                 else
                     {
@@ -6420,21 +6421,21 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::QueryO
                     overviewNodes.AddNode(node);
 
                     vector<size_t> queryNodeOrder;
-                
+
                     queryObject->GetQueryNodeOrder(queryNodeOrder, this, &subNodes[0], GetNumberOfSubNodesOnSplit());
-                                                
+
                     for (size_t indexNodes = 0; indexNodes < GetNumberOfSubNodesOnSplit() ; indexNodes++)
-                        {                                      
+                        {
                         node = m_apSubNodes[queryNodeOrder[indexNodes]];
 
                         if (!node->IsEmpty())
-                            nodesToSearch.AddNode(node);                            
-                        }                                                    
+                            nodesToSearch.AddNode(node);
+                        }
                     }
                 }
             }
         }
-    else        
+    else
         {
         HFCPtr<SMPointIndexNode<POINT, EXTENT> > pSubNodes[1];
         queryObject->Query (this, pSubNodes, 0, overviewNodes);
@@ -6446,7 +6447,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::QueryO
     }
 
 template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::QueryVisibleNode (ISMPointIndexQuery<POINT, EXTENT>* queryObject, size_t maxLevel, ProducedNodeContainer<POINT, EXTENT>& overviewNodes, ProducedNodeContainer<POINT, EXTENT>& foundNodes, ProducedNodeContainer<POINT, EXTENT>& nodesToSearch, IStopQuery* stopQueryP)
-    {    
+    {
     HINVARIANTS;
 
     bool digDown = true;
@@ -6455,7 +6456,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::QueryV
     if (0 != stopQueryP && (*stopQueryP)())
         {
         digDown = false;
-    
+
         return digDown;
         }
         */
@@ -6464,7 +6465,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::QueryV
         {
         Load();
         }
-        
+
     if (!m_nodeHeader.m_IsLeaf)
         {
         if (m_pSubNodeNoSplit != NULL)
@@ -6472,11 +6473,11 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::QueryV
             HFCPtr<SMPointIndexNode<POINT, EXTENT> > pSubNodes[1];
             pSubNodes[0] = static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*m_pSubNodeNoSplit);
             digDown = queryObject->Query (this, pSubNodes, 1, foundNodes);
-                                    
+
             if (digDown)
-                {                   
+                {
                 nodesToSearch.AddNode(m_pSubNodeNoSplit);
-                }                              
+                }
             }
         else
             {
@@ -6487,15 +6488,15 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::QueryV
             digDown = queryObject->Query(this, &subNodes[0], GetNumberOfSubNodesOnSplit(), foundNodes);
 
             if (digDown)
-                {         
+                {
                 for (size_t indexNodes = 0; indexNodes < GetNumberOfSubNodesOnSplit() ; indexNodes++)
-                    {                                                          
+                    {
                     nodesToSearch.AddNode(m_apSubNodes[indexNodes]);
                     }
                 }
             }
         }
-    else        
+    else
         {
         HFCPtr<SMPointIndexNode<POINT, EXTENT> > pSubNodes[1];
         queryObject->Query (this, pSubNodes, 0, foundNodes);
@@ -6510,15 +6511,15 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query 
     {
     static bool s_delayLoadNode = false;
 
-    HINVARIANTS;    
+    HINVARIANTS;
 
     bool digDown = true;
-    
+
     if (!IsLoaded())
-        {        
+        {
         Load();
         }
-        
+
     if (!m_nodeHeader.m_IsLeaf)
         {
         if (m_pSubNodeNoSplit != NULL)
@@ -6526,11 +6527,11 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query 
             HFCPtr<SMPointIndexNode<POINT, EXTENT> > pSubNodes[1];
             pSubNodes[0] = static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*m_pSubNodeNoSplit);
             digDown = queryObject->Query (this, pSubNodes, 1, meshNodes);
-                                    
+
             if (digDown)
-                {                               
-                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*m_pSubNodeNoSplit)->Query (queryObject, meshNodes);               
-                }                                    
+                {
+                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*m_pSubNodeNoSplit)->Query (queryObject, meshNodes);
+                }
             }
         else
             {
@@ -6541,15 +6542,15 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query 
             digDown = queryObject->Query(this, &subNodes[0], GetNumberOfSubNodesOnSplit(), meshNodes);
 
             if (digDown)
-                {                                                                                                                                               
+                {
                 for (size_t indexNodes = 0; indexNodes < GetNumberOfSubNodesOnSplit() ; indexNodes++)
-                    {                                                          
-                    static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNodes]))->Query(queryObject, meshNodes);                  
-                    }                                
+                    {
+                    static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNodes]))->Query(queryObject, meshNodes);
+                    }
                 }
             }
         }
-    else        
+    else
         {
         HFCPtr<SMPointIndexNode<POINT, EXTENT> > pSubNodes[1];
         queryObject->Query (this, pSubNodes, 0, meshNodes);
@@ -6566,7 +6567,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query 
     {
     static bool s_delayLoadNode = false;
 
-    HINVARIANTS;    
+    HINVARIANTS;
 
     bool digDown = true;
 
@@ -6574,7 +6575,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query 
         {
         digDown = false;
 
-        if (pIsComplete != 0) 
+        if (pIsComplete != 0)
             *pIsComplete = false;
 
         return digDown;
@@ -6585,7 +6586,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query 
         //assert(isProgressiveDisplay == false);
         Load();
         }
-        
+
     if (!m_nodeHeader.m_IsLeaf)
         {
         if (m_pSubNodeNoSplit != NULL)
@@ -6593,9 +6594,9 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query 
             HFCPtr<SMPointIndexNode<POINT, EXTENT> > pSubNodes[1];
             pSubNodes[0] = static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*m_pSubNodeNoSplit);
             digDown = queryObject->Query (this, pSubNodes, 1, meshNodes);
-                                    
+
             if (digDown)
-                {                
+                {
                 if (isProgressiveDisplay)
                     {
                     if (!hasOverview)
@@ -6604,7 +6605,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query 
                         RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePointsPtr(m_pSubNodeNoSplit->GetPointsPtr(false));
 
                         if (!subNodePointsPtr.IsValid() && pointsPtr.IsValid() && pointsPtr->size() > 0)
-                            {                                
+                            {
                             meshNodes.push_back(SMPointIndexNode<POINT, EXTENT>::QueriedNode(this, true));
                             hasOverview = true;
                             }
@@ -6616,17 +6617,17 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query 
                         }
                     else
                         {
-                        if (pIsComplete != 0) 
+                        if (pIsComplete != 0)
                             *pIsComplete = false;
 
                         meshNodes.push_back(SMPointIndexNode<POINT, EXTENT>::QueriedNode(m_pSubNodeNoSplit));
-                        }                    
+                        }
                     }
                 else
                     {
                     static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*m_pSubNodeNoSplit)->Query (queryObject, meshNodes, pIsComplete, isProgressiveDisplay, hasOverview);
                     }
-                }                                    
+                }
             }
         else
             {
@@ -6637,7 +6638,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query 
             digDown = queryObject->Query(this, &subNodes[0], GetNumberOfSubNodesOnSplit(), meshNodes);
 
             if (digDown)
-                {   
+                {
                 RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr(false));
 
                 if (isProgressiveDisplay && !hasOverview && pointsPtr.IsValid() && pointsPtr->size() > 0)
@@ -6645,14 +6646,14 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query 
                     size_t indexNodes = 0;
 
                     for (; indexNodes < GetNumberOfSubNodesOnSplit(); indexNodes++)
-                        {    
+                        {
                         if (m_apSubNodes[indexNodes] == nullptr) continue;
 
                         RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePointsPtr(m_apSubNodes[indexNodes]->GetPointsPtr(false));
-                        
+
                         if (!subNodePointsPtr.IsValid())
                             break;
-                        }                      
+                        }
 
                     if (indexNodes < GetNumberOfSubNodesOnSplit())
                         {
@@ -6663,9 +6664,9 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query 
 
                 //NEEDS_WORK_SM_PROGRESSIF : GetQueryNodeOrder triggers header loading.
                 vector<size_t> queryNodeOrder;
-                
+
                 queryObject->GetQueryNodeOrder(queryNodeOrder, this, &subNodes[0], GetNumberOfSubNodesOnSplit());
-                                                
+
                 for (size_t indexNodes = 0; indexNodes < GetNumberOfSubNodesOnSplit() ; indexNodes++)
                     {
                     if (queryNodeOrder[indexNodes] >= GetNumberOfSubNodesOnSplit()) continue;
@@ -6673,14 +6674,14 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query 
                     if (isProgressiveDisplay)
                         {
                         if (m_apSubNodes[queryNodeOrder[indexNodes]]->IsLoaded() == true || !s_delayLoadNode)
-                            {                            
+                            {
                             static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[queryNodeOrder[indexNodes]]))->Query(queryObject, meshNodes, pIsComplete, isProgressiveDisplay, hasOverview, stopQueryCallbackFP);
                             }
                         else
                             {
                             meshNodes.push_back(SMPointIndexNode<POINT, EXTENT>::QueriedNode(m_apSubNodes[queryNodeOrder[indexNodes]]));
 
-                            if (pIsComplete != 0) 
+                            if (pIsComplete != 0)
                                 *pIsComplete = false;
                             }
                         }
@@ -6688,11 +6689,11 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query 
                         {
                         static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[queryNodeOrder[indexNodes]]))->Query(queryObject, meshNodes, pIsComplete, isProgressiveDisplay, hasOverview, stopQueryCallbackFP);
                         }
-                    }                                
+                    }
                 }
             }
         }
-    else        
+    else
         {
         HFCPtr<SMPointIndexNode<POINT, EXTENT> > pSubNodes[1];
         queryObject->Query (this, pSubNodes, 0, meshNodes);
@@ -6714,7 +6715,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::LoadIn
     nLoaded++;
 
     if (!headersOnly)
-        {        
+        {
         RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
         }
 
@@ -6905,7 +6906,7 @@ template<class POINT, class EXTENT> uint64_t SMPointIndexNode<POINT, EXTENT>::Ge
     uint64_t nbObjects = 0;
 
     if (m_filter->IsProgressiveFilter() == true)
-        {        
+        {
         nbObjects = GetNbPoints();
 
         if (GetLevel() < pi_depthLevel)
@@ -7012,7 +7013,7 @@ This method saves the node for streaming using the grouping strategy.
 template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::SaveGroupedNodeHeaders(SMNodeGroupPtr pi_pGroup, IScalableMeshProgressPtr progress)
     {
     if (progress != nullptr && progress->IsCanceled()) return false;
- 
+
     if (!IsLoaded())
         Load();
 
@@ -7031,7 +7032,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::SaveGr
         doSkip = true;
 
     if (!doSkip) pi_pGroup->AddNode<EXTENT>(this->m_nodeHeader);
-    
+
     if (!doSkip && !m_nodeHeader.m_IsLeaf)
         {
         pi_pGroup->IncreaseDepth();
@@ -7111,7 +7112,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::DumpOc
 
     char   TempBuffer[3000];
     int    NbChars;
-    size_t NbWrittenChars;        
+    size_t NbWrittenChars;
     int64_t nodeId;
 
     if (GetBlockID().IsValid())
@@ -7121,7 +7122,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::DumpOc
     else
         {
         nodeId = ISMStore::GetNullNodeID();
-        }   
+        }
 
     NbChars = sprintf(TempBuffer, "<ChildNode NodeId=\"%lli\" TotalPoints=\"%lli\" SplitDepth=\"%zi\" ArePoints3d=\"%i\">", nodeId, GetCount(), GetSplitDepth(), m_nodeHeader.m_arePoints3d ? 1 : 0);
 
@@ -7135,7 +7136,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::DumpOc
                       ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent),
                       ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent),
                       ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent),
-                      ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent), 
+                      ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent),
                       ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent),
                       ExtentOp<EXTENT>::GetZMax(m_nodeHeader.m_nodeExtent));
 
@@ -7150,7 +7151,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::DumpOc
                           ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_contentExtent),
                           ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_contentExtent),
                           ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_contentExtent),
-                          ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_contentExtent), 
+                          ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_contentExtent),
                           ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_contentExtent),
                           ExtentOp<EXTENT>::GetZMax(m_nodeHeader.m_contentExtent));
 
@@ -7198,24 +7199,24 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::DumpOc
 
     HASSERT(NbWrittenChars == NbChars);
 
-    
-    // Neighbor Node    
+
+    // Neighbor Node
     NbChars = sprintf(TempBuffer, "<NeighborNode> ");
-        
+
     NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pi_pOutputXmlFileStream);
 
     HASSERT(NbWrittenChars == NbChars);
 
     for (size_t neighborPosInd = 0; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
-        {              
+        {
         for (size_t neighborInd = 0; neighborInd < m_nodeHeader.m_apNeighborNodeID[neighborPosInd].size(); neighborInd++)
             {
             NbChars = sprintf(TempBuffer, "P %zi I %zi Id %lli ", neighborPosInd, neighborInd, m_nodeHeader.m_apNeighborNodeID[neighborPosInd][neighborInd].m_integerID);
-        
+
             NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pi_pOutputXmlFileStream);
 
-            HASSERT(NbWrittenChars == NbChars);                        
-            }                                     
+            HASSERT(NbWrittenChars == NbChars);
+            }
         }
 
     NbChars = sprintf(TempBuffer, "</NeighborNode>");
@@ -7231,19 +7232,19 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::DumpOc
 
     HASSERT(NbWrittenChars == NbChars);
 
-    // Neighbor Stitching    
+    // Neighbor Stitching
     NbChars = sprintf(TempBuffer, "<NeighborStitching> ");
-        
+
     NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pi_pOutputXmlFileStream);
 
     HASSERT(NbWrittenChars == NbChars);
 
     for (size_t neighborPosInd = 0; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
-        {      
+        {
         if (m_nodeHeader.m_apAreNeighborNodesStitched[neighborPosInd] == true)
             {
             NbChars = sprintf(TempBuffer, "1 ");
-        
+
             NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pi_pOutputXmlFileStream);
 
             HASSERT(NbWrittenChars == NbChars);
@@ -7251,11 +7252,11 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::DumpOc
         else
             {
             NbChars = sprintf(TempBuffer, "0 ");
-        
+
             NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pi_pOutputXmlFileStream);
 
             HASSERT(NbWrittenChars == NbChars);
-            }                                       
+            }
         }
 
     NbChars = sprintf(TempBuffer, "</NeighborStitching>");
@@ -7292,26 +7293,26 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::DumpOc
         {
         if (!m_nodeHeader.m_IsLeaf)
             {
-            size_t nbPointsInChildren = 0; 
+            size_t nbPointsInChildren = 0;
 
             if (m_pSubNodeNoSplit != 0)
                 {
                 RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePointsPtr(m_pSubNodeNoSplit->GetPointsPtr());
 
                 nbPointsInChildren = subNodePointsPtr->size();
-                }  
+                }
             else
-                {                
+                {
                 for (size_t indexNode = 0 ; indexNode < GetNumberOfSubNodesOnSplit(); indexNode++)
                     {
                     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePointsPtr(m_apSubNodes[indexNode]->GetPointsPtr());
 
                     nbPointsInChildren += subNodePointsPtr->size();
-                    }                
+                    }
                 }
-                        
+
             if (nbPointsInChildren > 50)
-                {                
+                {
                 RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(const_cast<SMPointIndexNode<POINT, EXTENT>*>(this)->GetPointsPtr());
 
                 double diff = (double)GetNbPoints() / nbPointsInChildren;
@@ -7319,23 +7320,23 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::DumpOc
                 static FILE* pFile = 0;
 
                 if (pFile == 0)
-                    {                        
+                    {
                     pFile = fopen("D:\\MyDoc\\Scalable Mesh Iteration 8\\Display Optimisation\\Log\\filtering.csv", "w+");
                     }
 
                 NbChars = sprintf(TempBuffer, "%.05f\n", diff);
 
                 NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pFile);
-    
+
                 HASSERT(NbChars == NbWrittenChars);
-                
+
                 fflush(pFile);
 
                 if (diff < 1/8.0 * 0.95 || diff > 1/8.0 * 1.05)
                     {
-                    
+
                     //assert(0);
-                    }   
+                    }
                 }
             }
         }
@@ -7349,16 +7350,16 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::DumpOc
  This method returns the number of points corresponding to a particular node.
 
  @param
------------------------------------------------------------------------------*/        
+-----------------------------------------------------------------------------*/
 template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::ValidateIs3dDataNodeState(const vector<DRange3d>& source2_5dRanges, const vector<DRange3d>& source3dRanges) const
-    {     
+    {
     //Content extent must intersect with extent of a source containing same point type.
     DRange3d contentRange(DRange3d::From(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_contentExtent),
                                          ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_contentExtent),
                                          ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_contentExtent),
                                          ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_contentExtent),
                                          ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_contentExtent),
-                                         ExtentOp<EXTENT>::GetZMax(m_nodeHeader.m_contentExtent)));            
+                                         ExtentOp<EXTENT>::GetZMax(m_nodeHeader.m_contentExtent)));
 
     if (!m_nodeHeader.m_arePoints3d)
         {
@@ -7366,7 +7367,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Valida
         auto source2_5dRangeIterEnd(source2_5dRanges.end());
 
         while (source2_5dRangeIter != source2_5dRangeIterEnd)
-            {            
+            {
             if (source2_5dRangeIter->IntersectsWith(contentRange))
                 break;
 
@@ -7389,9 +7390,9 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Valida
             }
 
         assert(source3dRangeIter != source3dRangeIterEnd);
-        }           
+        }
 
-    //Only bottommost node can have points in 2.5D.   
+    //Only bottommost node can have points in 2.5D.
     HASSERT (m_nodeHeader.m_arePoints3d || GetNbPoints() == 0 || m_apNeighborNodes[12].size() == 0);
 
     if (!m_nodeHeader.m_IsLeaf)
@@ -7407,8 +7408,8 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Valida
                 static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->ValidateIs3dDataNodeState(source2_5dRanges, source3dRanges);
                 }
             }
-        }        
-    }    
+        }
+    }
 #endif
 
 
@@ -7426,7 +7427,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::AddNum
 
     for (uint32_t PtInd = 0; PtInd < pointsPtr->size(); PtInd++)
         {
-        if (SpatialOp<POINT, POINT, EXTENT>::IsSpatialInExtent3D(pointsPtr->operator[](PtInd), pi_rChildNodeExtent))                        
+        if (SpatialOp<POINT, POINT, EXTENT>::IsSpatialInExtent3D(pointsPtr->operator[](PtInd), pi_rChildNodeExtent))
             {
             pio_rNbPoints++;
             }
@@ -7541,7 +7542,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Filter
                     if (!m_pSubNodeNoSplit->IsLoaded())
                         m_pSubNodeNoSplit->Load();
 
-                    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePointsPtr(m_pSubNodeNoSplit->GetPointsPtr());                    
+                    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePointsPtr(m_pSubNodeNoSplit->GetPointsPtr());
 
                     if (subNodePointsPtr->size() > 0)
                         {
@@ -7574,14 +7575,14 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Filter
 
                             SetDirty(true);
                             }
-                    
+
                         if (m_filter->IsProgressiveFilter())
                             {
                             m_pSubNodeNoSplit->SetDirty(true);
                             }
                         }
 
-                    }                
+                    }
                 }
             else
                 {
@@ -7606,7 +7607,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Filter
                         pNodesToFilter->push_back(this);
                         return;
                         }
-                        
+
                     vector<HFCPtr<SMPointIndexNode<POINT, EXTENT>>> subNodes(GetNumberOfSubNodesOnSplit());
                     for (size_t indexNodes = 0 ; indexNodes < GetNumberOfSubNodesOnSplit(); indexNodes++)
                         subNodes[indexNodes] = static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*m_apSubNodes[indexNodes]);
@@ -7658,14 +7659,14 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Filter
                 else
                     {
                     m_nodeHeader.m_totalCount = 0;
-            
+
                     for (size_t indexNodes = 0; indexNodes < m_nodeHeader.m_numberOfSubNodesOnSplit; indexNodes++)
                         {
                         if (m_apSubNodes[indexNodes] != NULL)
-                            {                        
+                            {
                             m_nodeHeader.m_totalCount += m_apSubNodes[indexNodes]->m_nodeHeader.m_totalCount;
                             }
-                        }                                       
+                        }
                     }
                 }
             }
@@ -7679,7 +7680,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Filter
                 SetDirty (true);
 
             m_nodeHeader.m_filtered = true;
-            }        
+            }
         }
         if (m_nodeHeader.m_level == 0 && s_useThreadsInFiltering)
             WaitForThreadStop(m_SMIndex->m_progress.get());
@@ -7794,7 +7795,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::NeedsF
         else
             {
             needsFiltering = !m_nodeHeader.m_filtered;
-            
+
             for (size_t indexNode = 0 ; !needsFiltering && indexNode < GetNumberOfSubNodesOnSplit(); indexNode++)
                 {
                 needsFiltering = (needsFiltering || static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->NeedsFiltering());
@@ -7897,7 +7898,7 @@ template<class POINT, class EXTENT> SMPointIndex<POINT, EXTENT>::SMPointIndex(IS
         if (0 != m_dataStore->LoadMasterHeader(&m_indexHeader, sizeof(m_indexHeader)))
             {
             m_isGenerating = false;
-                       
+
             // Index header just loaded ... it is clean
             m_indexHeaderDirty = false;
             }
@@ -7918,7 +7919,7 @@ template<class POINT, class EXTENT> SMPointIndex<POINT, EXTENT>::SMPointIndex(IS
         {
         m_pRootNode = CreateNewNode(m_indexHeader.m_rootNodeBlockID);
         m_createdNodeMap.insert(std::pair<int64_t, HFCPtr<SMPointIndexNode<POINT, EXTENT>>>(m_pRootNode->m_nodeHeader.m_parentNodeID.m_integerID, m_pRootNode));
-        }  
+        }
     }
 
 /**----------------------------------------------------------------------------
@@ -7928,7 +7929,7 @@ template<class POINT, class EXTENT> SMPointIndex<POINT, EXTENT>::SMPointIndex(IS
 template<class POINT, class EXTENT> SMPointIndex<POINT, EXTENT>::~SMPointIndex()
     {
     HINVARIANTS;
-    Store();            
+    Store();
 
     m_createdNodeMap.clear();
     if (m_pRootNode != NULL)
@@ -7944,7 +7945,7 @@ template<class POINT, class EXTENT> SMPointIndex<POINT, EXTENT>::~SMPointIndex()
     if (m_filter != NULL)
         delete m_filter;
 
-    
+
     m_dataStore = NULL;
     }
 
@@ -7996,7 +7997,7 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveG
 
     GetRootNode()->SaveGroupedNodeHeaders(group, nullptr /*no progress*/);
 
-    // Handle all open groups 
+    // Handle all open groups
     strategy->SaveAllOpenGroups(true /*save root*/);
 
     // Save group master file which contains info about all the generated groups (groupID and blockID)
@@ -8029,7 +8030,7 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveP
    #else
    SMStreamingStore<Extent3dType>::Create(pi_pOutputDirPath, pi_pCompress)
    #endif
-    );                    
+    );
 
     this->SaveMasterHeaderToCloud(dataStore);
 
@@ -8086,7 +8087,7 @@ template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::DumpOctTre
     NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pOutputFileStream);
 
     HASSERT(NbWrittenChars == NbChars);
-    
+
     GetRootNode()->DumpOctTreeNode(pOutputFileStream, pi_OnlyLoadedNode);
 
     NbChars = sprintf(TempBuffer, "</RootNode>");
@@ -8112,13 +8113,13 @@ template<class POINT, class EXTENT> uint64_t SMPointIndex<POINT, EXTENT>::GetNex
 
 #ifdef __HMR_DEBUG
 /**----------------------------------------------------------------------------
- ValidateIs3dDataStates 
+ ValidateIs3dDataStates
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::ValidateIs3dDataStates(const vector<DRange3d>& source2_5dRanges, const vector<DRange3d>& source3dRanges) const        
-    {        
+template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::ValidateIs3dDataStates(const vector<DRange3d>& source2_5dRanges, const vector<DRange3d>& source3dRanges) const
+    {
     if (m_pRootNode != 0)
         {
-        m_pRootNode->ValidateIs3dDataNodeState(source2_5dRanges, source3dRanges);    
+        m_pRootNode->ValidateIs3dDataNodeState(source2_5dRanges, source3dRanges);
         }
     }
 #endif
@@ -8128,16 +8129,16 @@ template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::ValidateIs
  Balance the data.
 -----------------------------------------------------------------------------*/
 template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::BalanceDown(size_t depthBeforePartialUpdate, bool keepUnbalanced, bool splitNode, bool propagateDownImmediately)
-    {    
+    {
 
     if (propagateDownImmediately)
         m_pRootNode->PropagateDataDownImmediately (true);
-//#ifndef WIP_MESH_IMPORT    
-    //size_t depth = m_pRootNode->GetDepth();    
+//#ifndef WIP_MESH_IMPORT
+    //size_t depth = m_pRootNode->GetDepth();
 
-    //NEEDS_WORK_SM - Not good when removing points, probably only good when adding points. 
+    //NEEDS_WORK_SM - Not good when removing points, probably only good when adding points.
     if (true/*depthBeforePartialUpdate != depth*/)
-        {               
+        {
         if (s_inEditing)
             {
             //Not supported yet
@@ -8147,17 +8148,17 @@ template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::BalanceDow
             bool hasUnsplitDone = UnsplitEmptyNode();
 
             if (hasRootChanged || hasUnsplitDone)
-                {            
+                {
                 PullSubNodeNoSplitUp();
                 }
             }
 
         assert(m_pRootNode->m_nodeHeader.m_balanced == false);
         m_indexHeader.m_balanced = false;
- 
+
         //SetBalanced(!keepUnbalanced);
 
-        //NEEDS_WORK_SM - Couldn't we pass the depth to the function given that it 
+        //NEEDS_WORK_SM - Couldn't we pass the depth to the function given that it
         //might require loading and passing all the node.
          Balance(splitNode);
         }
@@ -8167,7 +8168,7 @@ template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::BalanceDow
 
     splitDepth = depth;
 
-    assert(m_pRootNode->GetSplitDepth() == m_pRootNode->GetDepth());    
+    assert(m_pRootNode->GetSplitDepth() == m_pRootNode->GetDepth());
 //#endif
     //assert(depth == m_pRootNode->GetDepth());
     }
@@ -8181,8 +8182,8 @@ template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::SetBalance
 
 /**----------------------------------------------------------------------------
  BalanceRoot
- Change the root node if after points removal all the points are found in 
- only one children. 
+ Change the root node if after points removal all the points are found in
+ only one children.
 -----------------------------------------------------------------------------*/
 template<class POINT, class EXTENT> bool SMPointIndex<POINT, EXTENT>::BalanceRoot()
     {
@@ -8196,7 +8197,7 @@ template<class POINT, class EXTENT> bool SMPointIndex<POINT, EXTENT>::BalanceRoo
         {
         if (m_pRootNode->m_apSubNodes[indexNode]->m_nodeHeader.m_totalCount > 0)
             {
-            nbNodesWithPoint++;        
+            nbNodesWithPoint++;
             lastIndexNodeWithPoints = indexNode;
             }
         }
@@ -8209,10 +8210,10 @@ template<class POINT, class EXTENT> bool SMPointIndex<POINT, EXTENT>::BalanceRoo
 
         if (!pNewRootNode->IsLoaded())
             pNewRootNode->Load();
-        
-        pNewRootNode->SetParentNodePtr(0);         
-        
-        //Avoid some assert by calling Destroy on sub-node separately. 
+
+        pNewRootNode->SetParentNodePtr(0);
+
+        //Avoid some assert by calling Destroy on sub-node separately.
         for (size_t indexNode = 0 ; indexNode < m_pRootNode->m_nodeHeader.m_numberOfSubNodesOnSplit; indexNode++)
             {
             if (indexNode != lastIndexNodeWithPoints)
@@ -8223,9 +8224,9 @@ template<class POINT, class EXTENT> bool SMPointIndex<POINT, EXTENT>::BalanceRoo
             m_pRootNode->m_apSubNodes[indexNode] = 0;
             }
 
-#ifndef NDEBUG        
+#ifndef NDEBUG
         for (size_t neighborPosInd = 0; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
-            {       
+            {
             assert(pNewRootNode->m_apNeighborNodes[neighborPosInd].size() == 0);
             assert(pNewRootNode->m_nodeHeader.m_apNeighborNodeID[neighborPosInd].size() == 0);
             }
@@ -8241,10 +8242,10 @@ template<class POINT, class EXTENT> bool SMPointIndex<POINT, EXTENT>::BalanceRoo
         //NEEDS_WORK_SM : Could but this function in the node and decrease level only once in the index.
         m_pRootNode->DecreaseLevel(1);
         m_pRootNode->SetDirty(true);
-        
+
         hasRootChanged = true;
-        
-        BalanceRoot();        
+
+        BalanceRoot();
         }
 
     return hasRootChanged;
@@ -8262,9 +8263,9 @@ template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::PullSubNod
     assert(depth >= splitDepth);
 
     if (depth > splitDepth)
-        {        
+        {
         m_pRootNode->PullSubNodeNoSplitUp(splitDepth);
-        }    
+        }
     }
 
 /**----------------------------------------------------------------------------
@@ -8305,7 +8306,7 @@ template<class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMP
     }
 
 template<class POINT, class EXTENT>  HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMPointIndex<POINT, EXTENT>::CreateNewNode(HPMBlockID blockID, bool isRootNode)
-    {    
+    {
     assert(!"Should not be called. Not yet implemented. Implementation should be similar to SMMeshIndex::CreateNewNode");
     HFCPtr<SMPointIndexNode<POINT, EXTENT> > pNewNode;
     return pNewNode;
@@ -8327,7 +8328,7 @@ template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::GatherCoun
     m_nFilteredNodes = 0;
     m_nStitchedNodes = 0;
     m_nTexturedNodes = 0;
-    }     
+    }
 
 
 /**----------------------------------------------------------------------------
@@ -8340,7 +8341,7 @@ template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::Filter(int
 
     // Check if root node is present
     if (m_pRootNode != NULL)
-        {        
+        {
         if (m_pRootNode->GetFilter()->GlobalPreFilter (*this))
             {
             try
@@ -8399,10 +8400,10 @@ template<class POINT, class EXTENT> ISMDataStoreTypePtr<EXTENT> SMPointIndex<POI
     }
 
 /**----------------------------------------------------------------------------
- This method returns the next node ID available 
+ This method returns the next node ID available
 -----------------------------------------------------------------------------*/
 template<class POINT, class EXTENT> uint64_t SMPointIndex<POINT, EXTENT>::GetNextNodeId()
-    {    
+    {
     HINVARIANTS;
     return ++m_nextNodeID;
     }
@@ -8426,10 +8427,10 @@ template<class POINT, class EXTENT> bool SMPointIndex<POINT, EXTENT>::Store()
             {
             const_cast<SMPointIndex<POINT, EXTENT>*>(this)->m_indexHeader.m_terrainDepth = const_cast<SMPointIndex<POINT, EXTENT>*>(this)->m_indexHeader.m_depth;
             }
-        m_pRootNode->Store();        
+        m_pRootNode->Store();
 
-        //NEEDS_WORK_SM : Ugly hack to ensure the neighbor node ID are saved. Check if the ID couldn't be determine before 
-        //storing the node to avoid doing double store.        
+        //NEEDS_WORK_SM : Ugly hack to ensure the neighbor node ID are saved. Check if the ID couldn't be determine before
+        //storing the node to avoid doing double store.
         if (!m_pRootNode->IsLoaded())
             {
             m_pRootNode->Load();
@@ -8442,14 +8443,14 @@ template<class POINT, class EXTENT> bool SMPointIndex<POINT, EXTENT>::Store()
         static bool s_dropNodes = false;
 
         if (s_dropNodes)
-            {                           
-            DumpOctTree((char *)"D:\\MyDoc\\Scalable Mesh Iteration 8\\PartialUpdate\\Neighbor\\Log\\NodeAferCreationR.xml", false);                
+            {
+            DumpOctTree((char *)"D:\\MyDoc\\Scalable Mesh Iteration 8\\PartialUpdate\\Neighbor\\Log\\NodeAferCreationR.xml", false);
             //DumpOctTree("C:\\Users\\Richard.Bois\\Documents\\ScalableMeshWorkDir\\QuebecCityMini\\nodeAfterCreation.xml", false);
             //  ValidateNeighbors();
-            }        
+            }
 #endif
 
-        HPMBlockID newBlockID = m_pRootNode->GetBlockID();        
+        HPMBlockID newBlockID = m_pRootNode->GetBlockID();
         if (m_indexHeader.m_rootNodeBlockID != newBlockID)
             {
             m_indexHeader.m_rootNodeBlockID = newBlockID;
@@ -8500,9 +8501,9 @@ template<class POINT, class EXTENT> bool SMPointIndex<POINT, EXTENT>::AddArray(c
         // There is no root node at the moment
         // Allocate root node the size of the object extent
         if (m_indexHeader.m_HasMaxExtent)
-           m_pRootNode = CreateNewNode(m_indexHeader.m_MaxExtent, true); 
+           m_pRootNode = CreateNewNode(m_indexHeader.m_MaxExtent, true);
         else
-            m_pRootNode = CreateNewNode(SpatialOp<POINT, POINT, EXTENT>::GetExtent(pointsArray[0]), true); 
+            m_pRootNode = CreateNewNode(SpatialOp<POINT, POINT, EXTENT>::GetExtent(pointsArray[0]), true);
 
         m_createdNodeMap.insert(std::pair<int64_t, HFCPtr<SMPointIndexNode<POINT, EXTENT>>>(m_pRootNode->m_nodeHeader.m_parentNodeID.m_integerID, m_pRootNode));
 
@@ -8529,7 +8530,7 @@ template<class POINT, class EXTENT> bool SMPointIndex<POINT, EXTENT>::AddArray(c
             // The extent is not contained... we must create a new node
             PushRootDown(SpatialOp<POINT, POINT, EXTENT>::GetExtent(pointsArray[numberOfPointsAdded]));
             }
-        }    
+        }
 
     HINVARIANTS;
     return true;
@@ -8633,14 +8634,14 @@ template<class POINT, class EXTENT> size_t SMPointIndex<POINT, EXTENT>::Query (I
 
     if (m_pRootNode != NULL)
         {
-        // Call global pre query        
+        // Call global pre query
         if (queryObject->GlobalPreQuery (*this, resultMesh))
             {
             try
                 {
                 try
                     {
-                    //m_pRootNode->PreQuery (queryObject);                        
+                    //m_pRootNode->PreQuery (queryObject);
                     m_pRootNode->Query (queryObject, resultMesh);
                     }
                 catch (...)
@@ -8673,15 +8674,15 @@ template<class POINT, class EXTENT> size_t SMPointIndex<POINT, EXTENT>::Query (I
 /*NEEDS_WORK_SM : WIP
 template<class POINT, class EXTENT> class PointIndexParallelQuerier
     {
-    private: 
+    private:
 
         std::vector<SMPointIndex<POINT, EXTENT>> m_vector
 
     public:
         PointIndexParallelQuerier() {};
         virtual ~PointIndexParallelQuerier() {};
-    
-    
+
+
 
         RunQuery()
             {
@@ -8689,7 +8690,7 @@ template<class POINT, class EXTENT> class PointIndexParallelQuerier
             }
 
 
-        
+
 
     }
 */
@@ -9135,7 +9136,7 @@ template<class POINT, class EXTENT> uint64_t SMPointIndex<POINT, EXTENT>::GetCou
 template<class POINT, class EXTENT> uint64_t SMPointIndex<POINT, EXTENT>::GetNodeCount()
     {
     HINVARIANTS;
-    
+
     // NEEDS_WORK_SM : Would querying the node count directly from sqlite be more efficient?
     if (m_countsOfNodesTotal <= 1)
         GatherCounts();
@@ -9171,7 +9172,7 @@ size_t SMPointIndex<POINT, EXTENT>::GetDepth() const
         const_cast<SMPointIndex<POINT, EXTENT>*>(this)->m_indexHeaderDirty = true;
         const_cast<SMPointIndex<POINT, EXTENT>*>(this)->m_dataStore->StoreMasterHeader(&const_cast<SMPointIndex<POINT, EXTENT>*>(this)->m_indexHeader, sizeof(m_indexHeader));
         }
-    return m_indexHeader.m_depth;    
+    return m_indexHeader.m_depth;
     }
 
 
@@ -9196,7 +9197,7 @@ Returns the root node of the spatial index.
 template<class POINT, class EXTENT>
 HFCPtr<SMPointIndexNode<POINT, EXTENT> >   SMPointIndex<POINT, EXTENT>::GetRootNode() const
     {
-    //NEEDS_WORK_SM : Duplicate from SMPointIndex<POINT, EXTENT>::Query(ISMPointIndexQuery<POINT, EXTENT>* queryObject, HFCPtr<SMPointIndexNode<POINT, EXTENT>>& resultNode)    
+    //NEEDS_WORK_SM : Duplicate from SMPointIndex<POINT, EXTENT>::Query(ISMPointIndexQuery<POINT, EXTENT>* queryObject, HFCPtr<SMPointIndexNode<POINT, EXTENT>>& resultNode)
     if (m_pRootNode == nullptr && m_indexHeader.m_rootNodeBlockID.IsValid())
         {
         const_cast<SMPointIndex<POINT, EXTENT>*>(this)->m_pRootNode = const_cast<SMPointIndex<POINT, EXTENT>*>(this)->CreateNewNode(m_indexHeader.m_rootNodeBlockID);
@@ -9212,23 +9213,23 @@ Returns the root node of the spatial index.
 @return Root node.
 -----------------------------------------------------------------------------*/
 template<class POINT, class EXTENT>
-HFCPtr<SMPointIndexNode<POINT, EXTENT> >    SMPointIndex<POINT, EXTENT>::CreateRootNode() 
+HFCPtr<SMPointIndexNode<POINT, EXTENT> >    SMPointIndex<POINT, EXTENT>::CreateRootNode()
     {
     assert(m_pRootNode == 0);
 
     // Check if initial node allocated
-    
+
     // There is no root node at the moment
     // Allocate root node the size of the object extent
     if (m_indexHeader.m_HasMaxExtent)
-        m_pRootNode = CreateNewNode(m_indexHeader.m_MaxExtent, true); 
+        m_pRootNode = CreateNewNode(m_indexHeader.m_MaxExtent, true);
     else
-        {        
-        m_pRootNode = CreateNewNode(ExtentOp<EXTENT>::Create(0, 0, 0, 0, 0, 0), true); 
-        }    
+        {
+        m_pRootNode = CreateNewNode(ExtentOp<EXTENT>::Create(0, 0, 0, 0, 0, 0), true);
+        }
 
     m_createdNodeMap.insert(std::pair<int64_t, HFCPtr<SMPointIndexNode<POINT, EXTENT>>>(m_pRootNode->m_nodeHeader.m_parentNodeID.m_integerID, m_pRootNode));
-    
+
     return m_pRootNode;
     }
 
@@ -9362,12 +9363,12 @@ template<class POINT, class EXTENT>
 void SMPointIndex<POINT, EXTENT>::SetupNeighborNodes()
     {
     HINVARIANTS;
-    
+
     if (m_pRootNode != NULL)
-        {        
+        {
         m_pRootNode->SetupNeighborNodes();
         }
-    
+
     HINVARIANTS;
     }
 
@@ -9376,7 +9377,7 @@ void SMPointIndex<POINT, EXTENT>::SetupNeighborNodes()
 
 template<class POINT, class EXTENT> size_t SMPointIndex<POINT, EXTENT>::Query (ISMPointIndexQuery<POINT, EXTENT>* queryObject,
                                                                                vector<typename SMPointIndexNode<POINT, EXTENT>::QueriedNode>& meshNodes)
-    {    
+    {
 
 #ifdef ACTIVATE_NODE_QUERY_TRACING
     queryObject->OpenTracingXMLFile();
@@ -9388,14 +9389,14 @@ template<class POINT, class EXTENT> size_t SMPointIndex<POINT, EXTENT>::Query (I
 
     if (m_pRootNode != NULL)
         {
-        // Call global pre query        
+        // Call global pre query
         if (queryObject->GlobalPreQuery (*this, meshNodes))
             {
             try
                 {
                 try
                     {
-                    //m_pRootNode->PreQuery (queryObject);                                                
+                    //m_pRootNode->PreQuery (queryObject);
                     m_pRootNode->Query (queryObject, meshNodes);
                     }
                 catch (...)
@@ -9428,12 +9429,12 @@ template<class POINT, class EXTENT> size_t SMPointIndex<POINT, EXTENT>::Query (I
 
 
 template<class POINT, class EXTENT> size_t SMPointIndex<POINT, EXTENT>::Query (ISMPointIndexQuery<POINT, EXTENT>* queryObject,
-                                                                               vector<typename SMPointIndexNode<POINT, EXTENT>::QueriedNode>& meshNodes, 
+                                                                               vector<typename SMPointIndexNode<POINT, EXTENT>::QueriedNode>& meshNodes,
                                                                                bool* pIsComplete,
-                                                                               bool isProgressiveDisplay, 
-                                                                               bool hasOverview, 
+                                                                               bool isProgressiveDisplay,
+                                                                               bool hasOverview,
                                                                                StopQueryCallbackFP stopQueryCallbackFP)
-    {    
+    {
 
 #ifdef ACTIVATE_NODE_QUERY_TRACING
     queryObject->OpenTracingXMLFile();
@@ -9445,14 +9446,14 @@ template<class POINT, class EXTENT> size_t SMPointIndex<POINT, EXTENT>::Query (I
 
     if (m_pRootNode != NULL)
         {
-        // Call global pre query        
+        // Call global pre query
         if (queryObject->GlobalPreQuery (*this, meshNodes))
             {
             try
                 {
                 try
                     {
-                    //m_pRootNode->PreQuery (queryObject);                                                
+                    //m_pRootNode->PreQuery (queryObject);
                     m_pRootNode->Query (queryObject, meshNodes, pIsComplete, isProgressiveDisplay, hasOverview, stopQueryCallbackFP);
                     }
                 catch (...)
@@ -9506,8 +9507,8 @@ template<class POINT, class EXTENT> size_t SMPointIndex<POINT, EXTENT>::Query(IS
 
  @param pi_extentToClear IN The extent to clear.
 
- @return true if something was clear and false otherwise. 
- 
+ @return true if something was clear and false otherwise.
+
 -----------------------------------------------------------------------------*/
 template<class POINT, class EXTENT> bool SMPointIndex<POINT, EXTENT>::RemovePoints(const EXTENT& pi_extentToClear)
     {
@@ -9516,11 +9517,11 @@ template<class POINT, class EXTENT> bool SMPointIndex<POINT, EXTENT>::RemovePoin
     // Check if initial node allocated
     if (m_pRootNode == 0)
         {
-        return false; 
+        return false;
         }
 
     size_t nbPoints = m_pRootNode->RemovePoints(pi_extentToClear);
-        
+
     HINVARIANTS;
     return (nbPoints != 0);
     }
@@ -9531,9 +9532,4 @@ template<class POINT, class EXTENT> void  SMPointIndex<POINT, EXTENT>::SetProgre
     m_progress = progress;
     }
 
-
-
-
-
-
-
+POP_DISABLE_DEPRECATION_WARNINGS

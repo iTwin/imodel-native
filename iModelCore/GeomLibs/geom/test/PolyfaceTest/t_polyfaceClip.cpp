@@ -6,7 +6,7 @@
 #include <stdio.h>
 
 // Return coordianates for a rectangle with corners x0,y0 and x1,y1, with interiorFlags all false.
-void MakeRectangle (double x0, double y0, double x1, double y1, double z, bvector<DPoint3d> &points, bvector<bool> &interiorFlags)
+void MakeRectangle (double x0, double y0, double x1, double y1, double z, bvector<DPoint3d> &points, bvector<BoolTypeForVector> &interiorFlags)
     {
     points = bvector<DPoint3d>
         {
@@ -22,7 +22,7 @@ void MakeRectangle (double x0, double y0, double x1, double y1, double z, bvecto
     }
 
 // Return coordianates for a parallelogram with given origin and directions
-void MakeParallelogram(DPoint3dCR origin, DVec3dCR xVector, DVec3dCR yVector, bvector<DPoint3d> &points, bvector<bool> &interiorFlags)
+void MakeParallelogram(DPoint3dCR origin, DVec3dCR xVector, DVec3dCR yVector, bvector<DPoint3d> &points, bvector<BoolTypeForVector> &interiorFlags)
     {
     points.clear ();
     points.push_back (origin);
@@ -96,7 +96,7 @@ TEST (Polyface, ClipNGonSweeps)
             else
                 {
                 bvector<DPoint3d> rectanglePoints;
-                bvector<bool> interiorFlag;
+                bvector<BoolTypeForVector> interiorFlag;
                 MakeRectangle (1, -2, 3, 3, 0, rectanglePoints, interiorFlag);
                 Check::SaveTransformed (rectanglePoints);
                 Check::Shift (0,10,0);
@@ -214,7 +214,7 @@ TEST (Polyface, ClipDiamond)
         SaveAndRestoreCheckTransform shifter (20,0,0);
         Check::SaveTransformed (builder->GetClientMeshR ());
         bvector<DPoint3d> rectanglePoints;
-        bvector<bool> interiorFlag;
+        bvector<BoolTypeForVector> interiorFlag;
         double dx = shift.x;
         double dy = shift.y;
         MakeRectangle (dx + 1.1, dy - 2.023, dx + 3, dy + 3, 0, rectanglePoints, interiorFlag);
@@ -254,7 +254,7 @@ TEST (Polyface, ClipTunnel)
 
     // tunnel cap in xz plane . .
     bvector<DPoint3d> outerLoop, innerLoop;
-    bvector<bool> outerVisible, innerVisible;
+    bvector<BoolTypeForVector> outerVisible, innerVisible;
     MakeParallelogram (DPoint3d::From (0,0,0), DVec3d::From (10,0,0), DVec3d::From (0,0,10), outerLoop, outerVisible);
     MakeParallelogram (DPoint3d::From (1,0,1), DVec3d::From (8,0,0), DVec3d::From (0,0,8), innerLoop, innerVisible);
 
@@ -282,7 +282,7 @@ TEST (Polyface, ClipTunnel)
         SaveAndRestoreCheckTransform shifter (30,0,0);
         Check::SaveTransformed (builder->GetClientMeshR ());
         bvector<DPoint3d> rectanglePoints;
-        bvector<bool> interiorFlag;
+        bvector<BoolTypeForVector> interiorFlag;
         double ax = clipOrigin.x;
         double ay = clipOrigin.y;
         double bx = clipOrigin.x + diagonal.x;
@@ -323,7 +323,7 @@ TEST (Polyface, PolygonClipTunnel)
 
     // tunnel cap in xz plane . .
     bvector<DPoint3d> outerLoop, innerLoop;
-    bvector<bool> outerVisible, innerVisible;
+    bvector<BoolTypeForVector> outerVisible, innerVisible;
     MakeParallelogram (DPoint3d::From (0,0,0), DVec3d::From (10,0,0), DVec3d::From (0,0,10), outerLoop, outerVisible);
     MakeParallelogram (DPoint3d::From (1,0,1), DVec3d::From (8,0,0), DVec3d::From (0,0,8), innerLoop, innerVisible);
 
@@ -354,7 +354,7 @@ TEST (Polyface, PolygonClipTunnel)
             SaveAndRestoreCheckTransform shifter (30,0,0);
             Check::SaveTransformed (builder->GetClientMeshR ());
             bvector<DPoint3d> rectanglePoints;
-            bvector<bool> interiorFlag;
+            bvector<BoolTypeForVector> interiorFlag;
             double ax = clipOrigin.x;
             double ay = clipOrigin.y;
             double bx = clipOrigin.x + diagonal.x;
@@ -427,7 +427,7 @@ TEST (Polyface, ClipPolygonPrism)
                     SaveAndRestoreCheckTransform shifter(0, 40, 0);
 
                     bvector<DPoint3d> rectanglePoints;
-                    bvector<bool> interiorFlag;
+                    bvector<BoolTypeForVector> interiorFlag;
                     double ax = clipOrigin.x;
                     double ay = clipOrigin.y;
                     double bx = clipOrigin.x + diagonal.x;
@@ -472,7 +472,7 @@ TEST (Polyface, PolygonFixRaggedTunnel)
 
     // tunnel cap in xz plane . .
     bvector<DPoint3d> outerLoop, innerLoop;
-    bvector<bool> outerVisible, innerVisible;
+    bvector<BoolTypeForVector> outerVisible, innerVisible;
     MakeParallelogram (DPoint3d::From (0,0,0), DVec3d::From (10,0,0), DVec3d::From (0,0,10), outerLoop, outerVisible);
     MakeParallelogram (DPoint3d::From (1,0,1), DVec3d::From (8,0,0), DVec3d::From (0,0,8), innerLoop, innerVisible);
 

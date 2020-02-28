@@ -14,24 +14,24 @@ struct ORDConverterExtension
 {
     friend struct ORDConverter;
     friend struct ConvertORDElementXDomain;
-    
+
 protected:
     virtual Dgn::DgnDbSync::DgnV8::XDomain::Result _PreConvertElement(DgnV8EhCR, ORDConverter&, Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const&) { return Dgn::DgnDbSync::DgnV8::XDomain::Result::Proceed; }
     virtual void _DetermineElementParams(Dgn::DgnClassId&, Dgn::DgnCode&, Dgn::DgnCategoryId&, DgnV8EhCR, ORDConverter&, ECObjectsV8::IECInstance const* primaryV8Instance, Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const&) {}
     virtual void _ProcessResults(Dgn::DgnDbSync::DgnV8::ElementConversionResults&, DgnV8EhCR, Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const&, ORDConverter&) {}
     virtual void _OnConversionComplete(ORDConverter&) {}
     virtual BentleyStatus _MakeSchemaChanges() { return BentleyStatus::SUCCESS; }
-    
+
 private:
     Dgn::DgnDbSync::DgnV8::XDomain::Result PreConvertElement(DgnV8EhCR v8el, ORDConverter& conv, Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const& rmm) { return _PreConvertElement(v8el, conv, rmm); }
     void DetermineElementParams(Dgn::DgnClassId& classId, Dgn::DgnCode& code, Dgn::DgnCategoryId& catId, DgnV8EhCR v8el, ORDConverter& conv, ECObjectsV8::IECInstance const* primaryV8Instance, Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const& rmm) { _DetermineElementParams(classId, code, catId, v8el, conv, primaryV8Instance, rmm); }
     void ProcessResults(Dgn::DgnDbSync::DgnV8::ElementConversionResults& res, DgnV8EhCR v8el, Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const& rmm, ORDConverter& conv) { _ProcessResults(res, v8el, rmm, conv); }
     void OnConversionComplete(ORDConverter& conv) { _OnConversionComplete(conv); }
     BentleyStatus MakeSchemaChanges() { return _MakeSchemaChanges(); }
-    
+
 public:
     ORDConverterExtension() {}
-    
+
     static void Register(ORDConverterExtension& ext);
     static void UnRegister(ORDConverterExtension& ext);
     static void UnRegisterAll();
@@ -48,7 +48,7 @@ struct ORDConverter : Dgn::DgnDbSync::DgnV8::RootModelConverter
 protected:
     virtual void _OnConversionComplete() override;
     virtual bool _ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model) override;
-    virtual void _OnSheetsConvertViewAttachment(Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const& v8SheetModelMapping, DgnAttachmentR v8DgnAttachment) override;    
+    virtual void _OnSheetsConvertViewAttachment(Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const& v8SheetModelMapping, DgnAttachmentR v8DgnAttachment) override;
     virtual void _ConvertModels() override;
     virtual Dgn::DgnModelId _MapModelIntoProject(DgnV8ModelR v8Model, Utf8CP newName, DgnAttachment const* attachment);// override;
     virtual Bentley::DgnPlatform::ModelId _GetRootModelId() override;
@@ -56,9 +56,9 @@ protected:
 public:
     struct Params
         {
-        Params(Dgn::iModelBridge::Params const& iModelBridgeParams, Dgn::SubjectCR subject, Dgn::iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, 
+        Params(Dgn::iModelBridge::Params const& iModelBridgeParams, Dgn::SubjectCR subject, Dgn::iModelBridgeSyncInfoFile::ChangeDetector& changeDetector,
             Dgn::iModelBridgeSyncInfoFile::ROWID fileScopeId, Dgn::UnitSystem rootModelUnitSystem, Dgn::iModelBridgeSyncInfoFile& syncInfo) :
-            iModelBridgeParamsCP(&iModelBridgeParams), subjectCPtr(&subject), changeDetectorP(&changeDetector), fileScopeId(fileScopeId), 
+            iModelBridgeParamsCP(&iModelBridgeParams), subjectCPtr(&subject), changeDetectorP(&changeDetector), fileScopeId(fileScopeId),
             spatialDataTransformHasChanged(false), rootModelUnitSystem(rootModelUnitSystem), syncInfo(syncInfo), domainModelsPrivate(true)
             {}
 
@@ -76,6 +76,7 @@ public:
 
 private:
     Params* m_ordParams;
+    bool m_iterValid = false;
     bvector<ORDConverterExtension*>::iterator m_makeSchemaChangeExtIter;
     RoadPhysical::RoadNetworkCPtr m_roadNetworkCPtr;
     RailPhysical::RailNetworkCPtr m_railNetworkCPtr;
@@ -84,7 +85,7 @@ private:
     bmap<Bentley::ElementRefP, Dgn::DgnElementId> m_cifAlignmentToBimID;
 
     bvector<Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::Corridor>> m_cifCorridors;
-    bvector<Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::Alignment>> m_cifAlignments;    
+    bvector<Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::Alignment>> m_cifAlignments;
     bvector<Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::LinearEntity3d>> m_cifGeneratedLinear3ds;
     bvector<Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::CorridorSurface>> m_cifCorridorSurfaces;
     bool m_isProcessing;
@@ -98,7 +99,7 @@ private:
     void CreatePathways();
     void AssociateGeneratedAlignments();
     void CreateDefaultSavedViews();
-    
+
     typedef Dgn::iModelBridge iModelBridge;
 
     //! Progress messages for the conversion process
@@ -119,10 +120,10 @@ private:
 
 
 public:
-    ORDConverter(Dgn::DgnDbSync::DgnV8::RootModelConverter::RootModelSpatialParams& params) : 
-        Dgn::DgnDbSync::DgnV8::RootModelConverter(params), m_isProcessing(false), m_makeSchemaChangeExtIter(nullptr)
+    ORDConverter(Dgn::DgnDbSync::DgnV8::RootModelConverter::RootModelSpatialParams& params) :
+        Dgn::DgnDbSync::DgnV8::RootModelConverter(params), m_isProcessing(false)
         {
-        // When EC Content is skipped, item types don't get converted.  By default, the framework has this 
+        // When EC Content is skipped, item types don't get converted.  By default, the framework has this
         // m_skipECContent set to true.  Let's change that for us to default to false so we default to getting
         // item types converted.
         m_skipECContent = false;
@@ -164,7 +165,7 @@ struct ConvertORDElementXDomain : Dgn::DgnDbSync::DgnV8::XDomain
 {
 private:
     ORDConverter& m_converter;
-    bset<Bentley::ElementRefP> m_elementsSeen;    
+    bset<Bentley::ElementRefP> m_elementsSeen;
     bset<Bentley::ElementRefP> m_alignmentV8RefSet;
     bset<Bentley::ElementRefP> m_corridorV8RefSet;
     Bentley::Cif::ConsensusConnectionPtr m_cifConsensusConnection;

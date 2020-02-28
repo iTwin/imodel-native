@@ -933,15 +933,16 @@ static void AppendPath(bvector<RelatedClassPath>& paths, RelatedClassPath const&
     {
     if (paths.size() > 0)
         {
-        size_t index = paths.size();
-        while (index > 0)
+        size_t frontIndex = 0;
+        while (frontIndex < paths.size())
             {
-            RelatedClassPath const& includedPath = paths[index - 1];
+            size_t backIndex = paths.size() - frontIndex - 1;
+            RelatedClassPath const& includedPath = paths[backIndex];
 
             // if path lengths are different, they can't be similar
             if (includedPath.size() != path.size())
                 {
-                --index;
+                ++frontIndex;
                 continue;
                 }
 
@@ -953,11 +954,11 @@ static void AppendPath(bvector<RelatedClassPath>& paths, RelatedClassPath const&
             // the included path must be removed
             if (DoesPathContainAnotherPath(path, includedPath, handleTargetClassPolymorphically))
                 {
-                paths.erase(paths.begin() + index - 1);
+                paths.erase(paths.begin() + backIndex);
                 continue;
                 }
 
-            --index;
+            ++frontIndex;
             }
         }
 

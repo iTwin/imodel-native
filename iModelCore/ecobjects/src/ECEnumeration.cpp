@@ -267,7 +267,7 @@ static BentleyStatus createEnumeratorFromXmlNode(ECEnumerationP enumeration, BeX
             enumeratorName = ECEnumerator::DetermineName(enumeration->GetName(), enumeratorValueString.c_str(), nullptr);
         }
 
-    const auto ecobjectsStatusToMsg = [](ECObjectsStatus status) -> Utf8CP 
+    const auto ecobjectsStatusToMsg = [](ECObjectsStatus status) -> Utf8CP
         {
         switch (status)
             {
@@ -322,7 +322,7 @@ SchemaReadStatus ECEnumeration::ReadXml(BeXmlNodeR enumerationNode, ECSchemaRead
 
     if (BEXML_Success == enumerationNode.GetAttributeStringValue(value, ECXML_DISPLAY_LABEL_ATTRIBUTE))
         SetDisplayLabel(value.c_str());
-    
+
     // BACKING_TYPE_NAME_ATTRIBUTE is a required attribute.  If it is missing, an error will be returned.
     if (BEXML_Success != enumerationNode.GetAttributeStringValue(value, ECXML_BACKING_TYPE_NAME_ATTRIBUTE))
         {
@@ -342,7 +342,7 @@ SchemaReadStatus ECEnumeration::ReadXml(BeXmlNodeR enumerationNode, ECSchemaRead
         SetIsStrict(isStrict);
 
     for (BeXmlNodeP childNode = enumerationNode.GetFirstChild(); childNode != nullptr; childNode = childNode->GetNextSibling())
-        { 
+        {
         if (SUCCESS != createEnumeratorFromXmlNode(this, childNode))
             return SchemaReadStatus::InvalidECSchemaXml;
         }
@@ -474,7 +474,7 @@ ECEnumeratorP ECEnumeration::FindEnumerator(Utf8CP value) const
 ECObjectsStatus ECEnumeration::DeleteEnumerator(ECEnumeratorCR enumerator)
     {
     auto existing = std::find(m_enumeratorList.begin(), m_enumeratorList.end(), &enumerator);
-    if (existing == nullptr)
+    if (existing == m_enumeratorList.end())
         return ECObjectsStatus::EnumeratorNotFound;
 
     m_enumeratorList.erase(existing);

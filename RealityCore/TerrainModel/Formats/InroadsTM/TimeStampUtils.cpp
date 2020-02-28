@@ -6,10 +6,11 @@
 #include "stdafx.h"
 #include "TimeStampUtils.h"
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 //---------------------------------------------------------------------------
-// DESC: 
+// DESC:
 // HIST: Original - tigger - 6/99
-// MISC: 
+// MISC:
 //---------------------------------------------------------------------------
 wchar_t *aecTimeStamp_getUserName
     (
@@ -45,9 +46,9 @@ wchar_t *aecTimeStamp_getUserName
     }
 
 //---------------------------------------------------------------------------
-// DESC: 
+// DESC:
 // HIST: Original - tigger - 6/99
-// MISC: 
+// MISC:
 //---------------------------------------------------------------------------
 int aecTimeStamp_getStamp
     (
@@ -68,3 +69,4 @@ int aecTimeStamp_getStamp
 
     return(sts);
     }
+POP_DISABLE_DEPRECATION_WARNINGS

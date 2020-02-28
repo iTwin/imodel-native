@@ -19,6 +19,7 @@ int __setDefaultPrint ()
     {
     printf (" ACCESSING VERBOSE flag\n");
 #ifdef BENTLEY_WIN32
+PUSH_DISABLE_DEPRECATION_WARNINGS
     auto s = getenv("GTEST_GEOMLIBS_VERBOSE");
     if (s == nullptr)
         return 0;
@@ -31,6 +32,7 @@ int __setDefaultPrint ()
         }
     // not recognized format  . . . call it noisy
     return 100;
+POP_DISABLE_DEPRECATION_WARNINGS
 #else
     return 0;
 #endif
@@ -108,7 +110,7 @@ void Check::EndScope ()
 
 void Check::PrintScope ()
     {
-    ScopedPrintState printState; 
+    ScopedPrintState printState;
 
     if (s_stack.size () == 0)
         return;
@@ -551,12 +553,12 @@ bool Check::Near (RotMatrixCR A, RotMatrixCR B, char const*pString, double refVa
     double a = A.MaxAbs () + B.MaxAbs ();
     return Check::Near (a, a+d, pString, refValue);
     }
-    
+
 bool Check::TrueZero (double a, char const*pString)
     {
     return Check::True (a == 0.0, pString);
-    }    
-    
+    }
+
 
 void Check::Near (TransformCR a, TransformCR b, char const*pString, double refValue)
     {
@@ -607,7 +609,7 @@ bool Check::Near (DPoint4dCR a, DPoint4dCR b, char const*pString, double refValu
         return false;
         }
     return true;
-        
+
     }
 
 
@@ -831,7 +833,7 @@ void Check::PrintCoordinate (char const *s0, double d, char const *s1)
         printf ("%s%.3g%s", s0, d, s1);
     else
         printf ("%s%.17g%s", s0, d, s1);
-    }    
+    }
 void Check::Print (PathLocationDetail const &data, int selectBits)
     {
     if (!PrintPrimitives ())
@@ -865,8 +867,8 @@ void Check::Print (PathLocationDetail const &data, int selectBits)
             PrintCoordinate ("(f ", data.CurveFraction (), ") ");
     if (0 != (selectBits & PLD_newline1))
         printf ("\n");
-    
-    }        
+
+    }
 
 void Check::Print
 (
@@ -887,7 +889,7 @@ int pldSelectBits
             if (i >= dataA.size ())
                 printf ("   (----------------)");
             else
-                {   
+                {
                 printf (" (%d)", (int)dataA[i].GetTag(k));
                 Print (dataA[i].Detail(k), pldSelectBits);
                 }
@@ -984,7 +986,7 @@ void Check::PrintStructure (CurveVectorCP top, size_t depth)
             printf ("Parity");
         else if (type == CurveVector::BOUNDARY_TYPE_UnionRegion)
             printf ("Union");
-        else 
+        else
             printf ("UNKNOWNCV");
         for (size_t i = 0; i < top->size (); i++)
             PrintStructure (top->at(i).get (), depth + 1);
@@ -1059,7 +1061,7 @@ static char const* NameString (ICurvePrimitiveCR cp)
     }
 
 
-    
+
 void Check::Print (ICurvePrimitiveCR curve)
     {
     if (!PrintDeepStructs ())
@@ -1273,7 +1275,7 @@ void Check::Print (DPoint2dCR data, char const *name)
     printf (" (%s %g, %g)", NULL != name ? name : "xy", data.x, data.y);
     }
 void Check::Print (DVec3dCR data, char const *name)
-    { 
+    {
     if (!PrintFixedStructs ())
         return;
     printf (" (%s %g, %g, %g)", NULL != name ? name : "Vxyz", data.x, data.y, data.z);
@@ -1308,7 +1310,7 @@ void Check::PrintPtrDiff (bvector<ptrdiff_t> const &data, char const *name)
         }
     printf (")\n");
     }
-   
+
 void Check::Print (bvector<size_t> const &data, char const *name)
     {
     if (!PrintDeepStructs ())
@@ -1381,7 +1383,7 @@ void Check::Print (bvector<DSegment3dSizeSize> const &data, char const *name)
     for (auto &s: data)
         {
         DSegment3d segment = s.Get ();
-        printf (" (%.17g, %.17g, %.17g)  (%.17g, %.17g, %.17g)   %d %d\n", 
+        printf (" (%.17g, %.17g, %.17g)  (%.17g, %.17g, %.17g)   %d %d\n",
                 segment.point[0].x, segment.point[0].y, segment.point[0].z,
                 segment.point[1].x, segment.point[1].y, segment.point[1].z,
                 (int)s.GetTagA (), (int)s.GetTagB ()
@@ -1630,7 +1632,7 @@ void Check::SetTransform (TransformCR transform) {s_transform = transform;}
 
 static bvector<Utf8String> s_keyinCache;
 void Check::DirectKeyin (char const *message)
-    {    
+    {
     s_keyinCache.push_back (Utf8String (message));
     }
 void Check::KeyinText (DPoint3dCR xyz, char const *text)
@@ -1824,7 +1826,7 @@ void Check::ClearGeometry (char const *name)
 
 BeFileName path;
 BeFile file;
-void Check::SetUp() 
+void Check::SetUp()
     {
     // initialize standard services ...
     s_cache.clear ();
@@ -1836,7 +1838,7 @@ void Check::SetUp()
     s_lowerRightBaseIndex = 0;
     }
 
-void Check::TearDown() 
+void Check::TearDown()
     {
     BeAssert (s_cache.empty ());    // saved geometry was cleared
     BeAssert (s_stack.empty ());    // scope setups were cleared in reverse order

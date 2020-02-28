@@ -149,7 +149,7 @@ protected:
 * - Related instances' info JSON (serialized to string). Format: [{"Alias":"related_1","ECClassId":1,"ECInstanceId":1},{"Alias":"related_2","ECClassId":2,"ECInstanceId":2},...]
 * @bsiclass                                     Grigas.Petraitis                04/2015
 +===============+===============+===============+===============+===============+======*/
-struct GetECInstanceDisplayLabelScalar : CachingScalarFunction<bmap<ECInstanceKey, Utf8String>>
+struct GetECInstanceDisplayLabelScalar : CachingScalarFunction<bmap<ECInstanceKey, std::shared_ptr<Utf8String>>>
 {
 private:
     /*---------------------------------------------------------------------------------**//**
@@ -203,9 +203,9 @@ public:
 
             LocalizeLabelDefinition(*labelDefinition, GetContext());
 
-            iter = GetCache().Insert(key, labelDefinition->ToJsonString()).first;
+            iter = GetCache().Insert(key, std::make_shared<Utf8String>(labelDefinition->ToJsonString())).first;
             }
-        ctx.SetResultText(iter->second.c_str(), (int)iter->second.size(), BeSQLite::DbFunction::Context::CopyData::No);
+        ctx.SetResultText(iter->second->c_str(), (int)iter->second->size(), BeSQLite::DbFunction::Context::CopyData::No);
         }
 };
 
@@ -215,7 +215,7 @@ public:
 * - ECInstanceId
 * @bsiclass                                                Mantas.Kontrimas    05/2018
 +===============+===============+===============+===============+===============+======*/
-struct GetRelatedDisplayLabelScalar : CachingScalarFunction<bmap<ECInstanceKey, Utf8String>>
+struct GetRelatedDisplayLabelScalar : CachingScalarFunction<bmap<ECInstanceKey, std::shared_ptr<Utf8String>>>
     {
 private:
     bool m_applyLocalization;
@@ -268,10 +268,10 @@ public:
             if (m_applyLocalization)
                 LocalizeLabelDefinition(*label, GetContext());
 
-            iter = GetCache().Insert(key, label->ToJsonString()).first;
+            iter = GetCache().Insert(key, std::make_shared<Utf8String>(label->ToJsonString())).first;
             }
 
-        ctx.SetResultText(iter->second.c_str(), (int)iter->second.size(), BeSQLite::DbFunction::Context::CopyData::No);
+        ctx.SetResultText(iter->second->c_str(), (int)iter->second->size(), BeSQLite::DbFunction::Context::CopyData::No);
         }
     };
 
@@ -281,7 +281,7 @@ public:
 * - Number of grouped instances
 * @bsiclass                                     Grigas.Petraitis                04/2015
 +===============+===============+===============+===============+===============+======*/
-struct GetECClassDisplayLabelScalar : CachingScalarFunction<bmap<ECClassId, Utf8String>>
+struct GetECClassDisplayLabelScalar : CachingScalarFunction<bmap<ECClassId, std::shared_ptr<Utf8String>>>
     {
     GetECClassDisplayLabelScalar(CustomFunctionsManager const& manager)
         : CachingScalarFunction(FUNCTION_NAME_GetECClassDisplayLabel, 2, DbValueType::TextVal, manager)
@@ -326,9 +326,9 @@ struct GetECClassDisplayLabelScalar : CachingScalarFunction<bmap<ECClassId, Utf8
 
             LocalizeLabelDefinition(*labelDefinition, GetContext());
 
-            iter = GetCache().Insert(classId, labelDefinition->ToJsonString()).first;
+            iter = GetCache().Insert(classId, std::make_shared<Utf8String>(labelDefinition->ToJsonString())).first;
             }
-        ctx.SetResultText(iter->second.c_str(), (int)iter->second.size(), BeSQLite::DbFunction::Context::CopyData::No);
+        ctx.SetResultText(iter->second->c_str(), (int)iter->second->size(), BeSQLite::DbFunction::Context::CopyData::No);
         }
     };
 
@@ -355,7 +355,7 @@ struct ECExpressionScalarCacheKey
 * - Expression
 * @bsiclass                                     Tautvydas.Zinys                10/2016
 +===============+===============+===============+===============+===============+======*/
-struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScalarCacheKey, Utf8String>>
+struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScalarCacheKey, std::shared_ptr<Utf8String>>>
     {
     EvaluateECExpressionScalar(CustomFunctionsManager const& manager)
         : CachingScalarFunction(FUNCTION_NAME_EvaluateECExpression, 3, DbValueType::TextVal, manager)
@@ -389,10 +389,10 @@ struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScala
                 }
 
             ApplyLocalization(expressionResult, GetContext());
-            iter = GetCache().Insert(key, expressionResult).first;
+            iter = GetCache().Insert(key, std::make_shared<Utf8String>(expressionResult)).first;
             }
 
-        ctx.SetResultText(iter->second.c_str(), (int)iter->second.size(), BeSQLite::DbFunction::Context::CopyData::No);
+        ctx.SetResultText(iter->second->c_str(), (int)iter->second->size(), BeSQLite::DbFunction::Context::CopyData::No);
         }
    };
 
@@ -445,7 +445,7 @@ struct ECPropertyDisplayLabelScalarCacheKey
 * value ranges if this is a range grouping
 * @bsiclass                                     Grigas.Petraitis                07/2015
 +===============+===============+===============+===============+===============+======*/
-struct GetECPropertyDisplayLabelScalar : CachingScalarFunction<bmap<ECPropertyDisplayLabelScalarCacheKey, Utf8String>>
+struct GetECPropertyDisplayLabelScalar : CachingScalarFunction<bmap<ECPropertyDisplayLabelScalarCacheKey, std::shared_ptr<Utf8String>>>
 {
     GetECPropertyDisplayLabelScalar(CustomFunctionsManager const& manager)
         : CachingScalarFunction(FUNCTION_NAME_GetECPropertyDisplayLabel, 5, DbValueType::TextVal, manager)
@@ -537,10 +537,10 @@ struct GetECPropertyDisplayLabelScalar : CachingScalarFunction<bmap<ECPropertyDi
 
             LocalizeLabelDefinition(*labelDefinition, GetContext());
 
-            iter = GetCache().Insert(key, labelDefinition->ToJsonString()).first;
+            iter = GetCache().Insert(key, std::make_shared<Utf8String>(labelDefinition->ToJsonString())).first;
             }
 
-        ctx.SetResultText(iter->second.c_str(), (int)iter->second.size(), BeSQLite::DbFunction::Context::CopyData::No);
+        ctx.SetResultText(iter->second->c_str(), (int)iter->second->size(), BeSQLite::DbFunction::Context::CopyData::No);
         }
 };
 
@@ -674,7 +674,7 @@ struct AreDoublesEqualByValueScalar : ECPresentation::ScalarFunction
 * - LabelDefinition json string
 * @bsiclass                                     Grigas.Petraitis                07/2015
 +===============+===============+===============+===============+===============+======*/
-struct GetSortingValueScalar : CachingScalarFunction<bmap<Utf8String, Utf8String>>
+struct GetSortingValueScalar : CachingScalarFunction<bmap<Utf8String, std::shared_ptr<Utf8String>>>
 {
 private:
     static const unsigned PADDING = 10;
@@ -733,10 +733,10 @@ public:
             if (nullptr != numberBegin)
                 output.append(GetPaddedNumber(numberBegin, (int)(inputP - numberBegin)));
 
-            iter = GetCache().Insert(inputStr, output).first;
+            iter = GetCache().Insert(inputStr, std::make_shared<Utf8String>(output)).first;
             }
 
-        ctx.SetResultText(iter->second.c_str(), (int)iter->second.size(), BeSQLite::DbFunction::Context::CopyData::No);
+        ctx.SetResultText(iter->second->c_str(), (int)iter->second->size(), BeSQLite::DbFunction::Context::CopyData::No);
         }
 };
 
@@ -793,7 +793,7 @@ struct GetRangeIndexScalar : CachingScalarFunction<bmap<double, int>>
 * value ranges.
 * @bsiclass                                     Grigas.Petraitis                07/2015
 +===============+===============+===============+===============+===============+======*/
-struct GetRangeImageIdScalar : CachingScalarFunction<bmap<double, Utf8String>>
+struct GetRangeImageIdScalar : CachingScalarFunction<bmap<double, std::shared_ptr<Utf8String>>>
     {
     GetRangeImageIdScalar(CustomFunctionsManager const& manager)
         : CachingScalarFunction(FUNCTION_NAME_GetRangeImageId, 1, DbValueType::TextVal, manager)
@@ -830,10 +830,10 @@ struct GetRangeImageIdScalar : CachingScalarFunction<bmap<double, Utf8String>>
             if (-1 != rangeIndex)
                 imageId = extendedData.GetRangeImageId(rangeIndex);
 
-            iter = GetCache().Insert(args[0].GetValueDouble(), imageId).first;
+            iter = GetCache().Insert(args[0].GetValueDouble(), std::make_shared<Utf8String>(imageId)).first;
             }
 
-        ctx.SetResultText(iter->second.c_str(), (int)iter->second.size(), DbFunction::Context::CopyData::No);
+        ctx.SetResultText(iter->second->c_str(), (int)iter->second->size(), DbFunction::Context::CopyData::No);
         }
     };
 
@@ -1800,7 +1800,7 @@ struct GetECPropertyValueDisplayLabelScalar : CachingScalarFunction<bmap<ECPrope
 * - LabelDefinition json string
 * @bsiclass                                     Saulius.Skliutas                12/2019
 +===============+===============+===============+===============+===============+======*/
-struct GetLabelDefinitionDisplayValueScalar : CachingScalarFunction<bmap<Utf8String, Utf8String>>
+struct GetLabelDefinitionDisplayValueScalar : CachingScalarFunction<bmap<Utf8String, std::shared_ptr<Utf8String>>>
     {
     GetLabelDefinitionDisplayValueScalar(CustomFunctionsManager const& manager)
         : CachingScalarFunction(FUNCTION_NAME_GetLabelDefinitionDisplayValue, 1, DbValueType::TextVal, manager)
@@ -1815,10 +1815,10 @@ struct GetLabelDefinitionDisplayValueScalar : CachingScalarFunction<bmap<Utf8Str
         if (GetCache().end() == iter)
             {
             Utf8String displayValue = LabelDefinition::FromString(displayLabelDefinitionJson)->GetDisplayValue();
-            iter = GetCache().Insert(displayLabelDefinitionJson, displayValue).first;
+            iter = GetCache().Insert(displayLabelDefinitionJson, std::make_shared<Utf8String>(displayValue)).first;
             }
 
-        ctx.SetResultText(iter->second.c_str(), iter->second.size(), DbFunction::Context::CopyData::No);
+        ctx.SetResultText(iter->second->c_str(), iter->second->size(), DbFunction::Context::CopyData::No);
         }
     };
 

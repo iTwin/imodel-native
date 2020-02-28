@@ -2,7 +2,7 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See COPYRIGHT.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-  
+
 #include <ScalableMeshPCH.h>
 #include "ScalableMeshGroundExtractor.h"
 #include "ScalableMeshPointsProvider.h"
@@ -28,6 +28,7 @@
 #include <Bentley/BeDirectoryIterator.h>
 #include <Bentley/BeConsole.h>
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 #ifdef VANCOUVER_API
 #include <DgnGeoCoord/DgnGeoCoord.h>
 #else
@@ -46,7 +47,7 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 static int s_xyzId = 0;
 
 BeFileName GetTempXyzFilePath()
-    {    
+    {
     BeFileName tempPath;
 
 #ifdef VANCOUVER_API
@@ -57,11 +58,11 @@ BeFileName GetTempXyzFilePath()
     tempPath = locationAdmin.GetLocalTempDirectoryBaseName();
     assert(!tempPath.IsEmpty());
 #endif
-    
+
     wchar_t bufferId[10];
     _swprintf(bufferId, L"%i", s_xyzId);
     tempPath.AppendToPath(L"detectGround");
-    tempPath.AppendString(bufferId);    
+    tempPath.AppendString(bufferId);
     tempPath.AppendString(L".xyz");
     return tempPath;
     }
@@ -99,7 +100,7 @@ IScalableMeshGroundExtractorPtr IScalableMeshGroundExtractor::Create(const WStri
 SMStatus IScalableMeshGroundExtractor::ExtractAndEmbed(const BeFileName& coverageTempDataFolder)
     {
     return _ExtractAndEmbed(coverageTempDataFolder);
-    }        
+    }
 
 StatusInt IScalableMeshGroundExtractor::SetDestinationGcs(GeoCoordinates::BaseGCSPtr& destinationGcs)
     {
@@ -109,14 +110,14 @@ StatusInt IScalableMeshGroundExtractor::SetDestinationGcs(GeoCoordinates::BaseGC
 StatusInt IScalableMeshGroundExtractor::SetExtractionArea(const bvector<DPoint3d>& area)
     {
     return _SetExtractionArea(area);
-    }  
+    }
 
-StatusInt IScalableMeshGroundExtractor::SetDataSourceDir(const BeFileName& dataSourceDir) 
+StatusInt IScalableMeshGroundExtractor::SetDataSourceDir(const BeFileName& dataSourceDir)
     {
     return _SetDataSourceDir(dataSourceDir);
-    }  
+    }
 
-StatusInt IScalableMeshGroundExtractor::SetReprojectElevation(bool doReproject) 
+StatusInt IScalableMeshGroundExtractor::SetReprojectElevation(bool doReproject)
     {
     return _SetReprojectElevation(doReproject);
     }
@@ -133,11 +134,11 @@ StatusInt IScalableMeshGroundExtractor::SetGroundPreviewer(IScalableMeshGroundPr
 
 void IScalableMeshGroundExtractor::GetTempDataLocation(BeFileName& textureSubFolderName, BeFileName& extraLinearFeatureFileName)
     {
-    textureSubFolderName = BeFileName(L"\\Textures\\");    
+    textureSubFolderName = BeFileName(L"\\Textures\\");
     extraLinearFeatureFileName = BeFileName(L"CoverageBreaklines");
     extraLinearFeatureFileName.append(std::to_wstring(s_xyzId).c_str());
-    extraLinearFeatureFileName.append(L".dat");        
-    }        
+    extraLinearFeatureFileName.append(L".dat");
+    }
 
 
 bool s_shouldStopContinueEarly = false;
@@ -147,7 +148,7 @@ bool s_shouldStopContinueEarly = false;
 +----------------------------------------------------------------------------*/
 struct ScalableMeshPointsAccumulator : public IGroundPointsAccumulator
     {
-    private : 
+    private :
 
         FILE*                           m_xyzFile;
         size_t                          m_nbPoints;
@@ -165,7 +166,7 @@ struct ScalableMeshPointsAccumulator : public IGroundPointsAccumulator
                 {
                 assert(m_sourceGcs.IsValid());
                 GeoPoint srcLatLong;
-                GeoPoint dstLatLong;                
+                GeoPoint dstLatLong;
 
                 if (m_geocoordInterpretation == GeoCoordInterpretation::Cartesian)
                     {
@@ -185,9 +186,9 @@ struct ScalableMeshPointsAccumulator : public IGroundPointsAccumulator
                 ptOut = ptIn;
                 }
             }
-        
 
-    protected : 
+
+    protected :
 
         virtual void _AddPoints(const bvector<DPoint3d>& points) override
             {
@@ -197,9 +198,9 @@ struct ScalableMeshPointsAccumulator : public IGroundPointsAccumulator
                 {
                 DPoint3d reprojPoint;
                 Reproject(reprojPoint, point);
-                
-                int nbChars = sprintf(buffer, 
-                                     "%.20f,%.20f,%.20f\r\n", 
+
+                int nbChars = sprintf(buffer,
+                                     "%.20f,%.20f,%.20f\r\n",
                                      reprojPoint.x,
                                      reprojPoint.y,
                                      reprojPoint.z);
@@ -232,12 +233,12 @@ struct ScalableMeshPointsAccumulator : public IGroundPointsAccumulator
                 return !m_groundPreviewer->IsCurrentPreviewEnough();
 
             return true;
-            }        
+            }
 
     public :
 
         ScalableMeshPointsAccumulator(IScalableMeshGroundPreviewerPtr& groundPreviewer, Transform previewTransform)
-            {            
+            {
             BeFileName xyzFile(GetTempXyzFilePath());
             m_xyzFile = _wfopen(xyzFile.c_str(), L"w+");
             m_nbPoints = 0;
@@ -256,13 +257,13 @@ struct ScalableMeshPointsAccumulator : public IGroundPointsAccumulator
             m_sourceGcs = sourceGcs;
             m_destinationGcs = destinationGcs;
             }
-        
+
         void Close()
             {
             fclose(m_xyzFile);
             }
 
-        size_t GetNbPoints() const 
+        size_t GetNbPoints() const
             {
             return m_nbPoints;
             }
@@ -280,9 +281,9 @@ ScalableMeshGroundExtractor::ScalableMeshGroundExtractor(const WString& smTerrai
     m_scalableMesh = scalableMesh;
     m_smTerrainPath = smTerrainPath;
 	m_limitTextureResolution = false;
-    m_reprojectElevation = false;    
+    m_reprojectElevation = false;
 
-    const GeoCoords::GCS& gcs(m_scalableMesh->GetGCS());    
+    const GeoCoords::GCS& gcs(m_scalableMesh->GetGCS());
     m_smGcsRatioToMeter = m_scalableMesh->IsCesium3DTiles() ? 1.0 : gcs.GetUnit().GetRatioToBase();
     }
 
@@ -297,8 +298,8 @@ static DRange3d s_availableRange;
 void ScalableMeshGroundExtractor::GetColor(uint8_t* currentColor, const DRay3d& ray, IScalableMeshMeshQueryPtr& meshQueryInterface)
     {
     bvector<IScalableMeshNodePtr> nodes;
-    
-    bvector<DPoint3d> points(5); 
+
+    bvector<DPoint3d> points(5);
     points[0].x = origin.x - s_pixelSize;
     points[0].y = origin.y - s_pixelSize;
     points[0].z = origin.z;
@@ -322,7 +323,7 @@ void ScalableMeshGroundExtractor::GetColor(uint8_t* currentColor, const DRay3d& 
     meshQueryInterface->Query(nodes, points, 5, params);
 
     for (auto& node : nodes)
-        {        
+        {
         if (node->IntersectRay(intersectPointTemp, ray, valTemp))
             {
             double param;
@@ -335,9 +336,9 @@ void ScalableMeshGroundExtractor::GetColor(uint8_t* currentColor, const DRay3d& 
                 }
             }
         }
-        
 
-    }    
+
+    }
 
 StatusInt ScalableMeshGroundExtractor::CreateAndAddTexture(IDTMSourceCollection& terrainSources)
     {
@@ -357,7 +358,7 @@ StatusInt ScalableMeshGroundExtractor::CreateAndAddTexture(IDTMSourceCollection&
     IScalableMeshMeshQueryParamsPtr params = IScalableMeshMeshQueryParams::CreateParams();
     params->SetLevel(smDesign->GetTerrainDepth());
 
-            
+
     for (size_t xInd = 0; xInd < nbPixelsX; xInd++)
         {
         double currentY = s_availableRange.low.y;
@@ -384,9 +385,9 @@ double ScalableMeshGroundExtractor::ComputeTextureResolution()
     bvector<IScalableMeshNodePtr> returnedNodes;
     IScalableMeshMeshQueryParamsPtr params = IScalableMeshMeshQueryParams::CreateParams();
     params->SetLevel(m_scalableMesh->GetNbResolutions() - 1);
-       
+
     bvector<IScalableMeshNodePtr> nodes;
-    meshQueryInterface->Query(nodes, m_extractionArea.begin(), (int)m_extractionArea.size(), params);
+    meshQueryInterface->Query(nodes, &*m_extractionArea.begin(), (int)m_extractionArea.size(), params);
 
     double minTextureResolution = DBL_MAX;
     float  geometricResolution;
@@ -394,7 +395,7 @@ double ScalableMeshGroundExtractor::ComputeTextureResolution()
 
     for (auto& node : nodes)
         {
-        node->GetResolutions(geometricResolution, textureResolution);        
+        node->GetResolutions(geometricResolution, textureResolution);
         if (textureResolution != 0)
             {
             minTextureResolution = std::min(minTextureResolution, (double)textureResolution);
@@ -403,12 +404,12 @@ double ScalableMeshGroundExtractor::ComputeTextureResolution()
 
 	DRange3d extractionRange = DRange3d::From(m_extractionArea);
 	double targetResolutionThreshold = 0.01;//1 cm max
-    
+
     if (m_smGcsRatioToMeter != 0)
         {
         targetResolutionThreshold /= m_smGcsRatioToMeter;
         }
-        
+
     if (minTextureResolution != DBL_MAX)
         return  m_limitTextureResolution ? std::max(targetResolutionThreshold,minTextureResolution) * m_smGcsRatioToMeter
 		: minTextureResolution * m_smGcsRatioToMeter;
@@ -428,8 +429,8 @@ SMStatus ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverage
         {
         BeFileNameStatus dirCreateStatus = BeFileName::CreateNewDirectory(directory.c_str());
         assert(BeFileNameStatus::Success == dirCreateStatus);
-        }            
-            
+        }
+
 	StatusInt statusOpen;
     IScalableMeshSourceCreatorPtr terrainCreator(IScalableMeshSourceCreator::GetFor(m_smTerrainPath.c_str(), statusOpen));
 
@@ -438,10 +439,10 @@ SMStatus ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverage
     m_createProgress.ProgressStep() = ScalableMeshStep::STEP_GENERATE_TEXTURE;
     m_createProgress.ProgressStepIndex() = 1;
     m_createProgress.Progress() = 0.0f;
-    
+
     if (m_groundPreviewer.IsValid())
         m_groundPreviewer->UpdateProgress(&m_createProgress);
-                                               
+
     if (m_destinationGcs.IsValid())
         {
         status = terrainCreator->SetBaseGCS(m_destinationGcs) == SUCCESS ? SMStatus::S_SUCCESS : SMStatus::S_ERROR;
@@ -454,16 +455,16 @@ SMStatus ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverage
 
     BaseGCSCPtr destinationGcsPtr(terrainCreator->GetBaseGCS());
     const GCS& gcs(terrainCreator->GetGCS());
-        
+
     BeFileName xyzFile(GetTempXyzFilePath());
-    BeFileName xyzSourceFile(xyzFile); 
+    BeFileName xyzSourceFile(xyzFile);
 
     if (!m_dataSourceDir.empty())
         {
         assert(BeFileName::DoesPathExist(m_dataSourceDir.c_str()));
-        BeFileName newXyzFileName(m_dataSourceDir); 
+        BeFileName newXyzFileName(m_dataSourceDir);
         newXyzFileName.AppendString(BeFileName::GetFileNameAndExtension(xyzFile.c_str()).c_str());
-                    
+
         BeFileNameStatus statusCopy = BeFileName::BeCopyFile(xyzFile.c_str(), newXyzFileName.c_str());
         assert(statusCopy == BeFileNameStatus::Success);
 
@@ -471,7 +472,7 @@ SMStatus ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverage
         }
 
     IDTMLocalFileSourcePtr groundPtsSource(IDTMLocalFileSource::Create(DTM_SOURCE_DATA_POINT, xyzSourceFile.c_str()));
-     
+
     SourceImportConfig& sourceImportConfig = groundPtsSource->EditConfig();
     Import::ScalableMeshData data = sourceImportConfig.GetReplacementSMData();
 
@@ -479,25 +480,25 @@ SMStatus ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverage
 
     sourceImportConfig.SetReplacementSMData(data);
     sourceImportConfig.SetReplacementGCS(gcs, true, false, false);
-     
 
-    terrainCreator->EditSources().Add(groundPtsSource);    
 
-    //Add texture if any        
+    terrainCreator->EditSources().Add(groundPtsSource);
+
+    //Add texture if any
     BeFileName currentTextureDir(coverageTempDataFolder);
     BeFileName textureSubFolderName;
     BeFileName extraLinearFeatureFileName;
 
-    IScalableMeshGroundExtractor::GetTempDataLocation(textureSubFolderName, extraLinearFeatureFileName);        
+    IScalableMeshGroundExtractor::GetTempDataLocation(textureSubFolderName, extraLinearFeatureFileName);
 
-    currentTextureDir.AppendString(textureSubFolderName.c_str());    
+    currentTextureDir.AppendString(textureSubFolderName.c_str());
 
     IScalableMeshTextureGeneratorPtr textureGenerator(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetTextureGenerator());
 
     if (!s_deactivateTexturing && textureGenerator.IsValid())
-        {        
+        {
         assert(textureGenerator.IsValid());
-        
+
         textureGenerator->SetPixelSize(ComputeTextureResolution());
         textureGenerator->SetTextureTempDir(currentTextureDir);
         textureGenerator->SetTransform(m_scalableMesh->GetReprojectionTransform());
@@ -515,34 +516,34 @@ SMStatus ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverage
         BeDirectoryIterator directoryIter(currentTextureDir);
 
         BeFileName currentTextureName;
-        bool       isDir;            
+        bool       isDir;
         while (SUCCESS == directoryIter.GetCurrentEntry (currentTextureName, isDir))
-            {        
+            {
 #ifndef VANCOUVER_API
-            if (0 == currentTextureName.GetExtension().CompareToI(L"jpg") || 
+            if (0 == currentTextureName.GetExtension().CompareToI(L"jpg") ||
                 0 == currentTextureName.GetExtension().CompareToI(L"itiff64"))
 #else
-            if (0 == BeFileName::GetExtension(currentTextureName.c_str()).CompareToI(L"jpg") || 
+            if (0 == BeFileName::GetExtension(currentTextureName.c_str()).CompareToI(L"jpg") ||
                 0 == BeFileName::GetExtension(currentTextureName.c_str()).CompareToI(L"itiff64"))
 #endif
                 {
                 if (!m_dataSourceDir.empty())
                     {
                     assert(BeFileName::DoesPathExist(m_dataSourceDir.c_str()));
-                    BeFileName newTextureName(directory); 
+                    BeFileName newTextureName(directory);
                     newTextureName.AppendString(BeFileName::GetFileNameAndExtension(currentTextureName.c_str()).c_str());
-                    
+
                     BeFileNameStatus statusCopy = BeFileName::BeCopyFile(currentTextureName.c_str(), newTextureName.c_str());
                     assert(statusCopy == BeFileNameStatus::Success);
 
-                    currentTextureName = newTextureName;                
+                    currentTextureName = newTextureName;
                     }
 
-                IDTMLocalFileSourcePtr textureSource(IDTMLocalFileSource::Create(DTM_SOURCE_DATA_IMAGE, currentTextureName.c_str()));            
+                IDTMLocalFileSourcePtr textureSource(IDTMLocalFileSource::Create(DTM_SOURCE_DATA_IMAGE, currentTextureName.c_str()));
                 textureSource->EditConfig().SetReplacementGCS(gcs, true, false, false);
-                
-                terrainCreator->EditSources().Add(textureSource);                       
-                }        
+
+                terrainCreator->EditSources().Add(textureSource);
+                }
 
             directoryIter.ToNext();
             }
@@ -550,49 +551,49 @@ SMStatus ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverage
 
 
     m_createProgress.Progress() = 1.0f;
-    
+
     if (m_groundPreviewer.IsValid())
         m_groundPreviewer->UpdateProgress(&m_createProgress);
 
     if (m_createProgress.IsCanceled()) return SMStatus::S_ERROR_CANCELED_BY_USER;
 
     BeFileName coverageBreaklineFile(coverageTempDataFolder);
-    coverageBreaklineFile.AppendString(L"\\");    
-    coverageBreaklineFile.AppendString(extraLinearFeatureFileName.c_str());    
+    coverageBreaklineFile.AppendString(L"\\");
+    coverageBreaklineFile.AppendString(extraLinearFeatureFileName.c_str());
 
-#ifndef VANCOUVER_API    
+#ifndef VANCOUVER_API
     if (coverageBreaklineFile.DoesPathExist())
 #else
     if (BeFileName::DoesPathExist(coverageBreaklineFile.c_str()))
-#endif     
-        {        
+#endif
+        {
         if (!m_dataSourceDir.empty())
             {
             assert(BeFileName::DoesPathExist(m_dataSourceDir.c_str()));
-            BeFileName newCoverageBreaklineFileName(m_dataSourceDir); 
+            BeFileName newCoverageBreaklineFileName(m_dataSourceDir);
             newCoverageBreaklineFileName.AppendString(BeFileName::GetFileNameAndExtension(coverageBreaklineFile.c_str()).c_str());
-                    
+
             BeFileNameStatus statusCopy = BeFileName::BeCopyFile(coverageBreaklineFile.c_str(), newCoverageBreaklineFileName.c_str());
             assert(statusCopy == BeFileNameStatus::Success);
 
-            coverageBreaklineFile = newCoverageBreaklineFileName;                
+            coverageBreaklineFile = newCoverageBreaklineFileName;
             }
 
         IDTMLocalFileSourcePtr coverageBreaklineSource(IDTMLocalFileSource::Create(DTM_SOURCE_DATA_BREAKLINE, coverageBreaklineFile.c_str()));
         coverageBreaklineSource->EditConfig().SetReplacementGCS(gcs, true, false, false);
-        
-        terrainCreator->EditSources().Add(coverageBreaklineSource); 
+
+        terrainCreator->EditSources().Add(coverageBreaklineSource);
         }
 
     if (m_groundPreviewer.IsValid())
         m_groundPreviewer->UpdateProgress(terrainCreator->GetProgress());
-    
+
     status = terrainCreator->Create();
     terrainCreator->SaveToFile();
 
 	if (terrainCreator->GetProgress()->IsCanceled())
 		return SMStatus::S_ERROR_CANCELED_BY_USER;
-    
+
     if (m_groundPreviewer.IsValid())
         m_groundPreviewer->UpdateProgress(nullptr);
     terrainCreator = nullptr;
@@ -613,15 +614,15 @@ SMStatus ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverage
 
     assert(status == SMStatus::S_SUCCESS);
     s_xyzId++;
-    
+
     int result = _wremove(xyzFile.c_str());
-    assert(result == 0);    
+    assert(result == 0);
 
     return status;
     }
 
-//#define LARGEST_STRUCTURE_SIZE_DEFAULT 60 
-#define LARGEST_STRUCTURE_SIZE_DEFAULT 30 
+//#define LARGEST_STRUCTURE_SIZE_DEFAULT 60
+#define LARGEST_STRUCTURE_SIZE_DEFAULT 30
 /*
 static double s_anglePercentile = 30;
 static double s_heightPercentile = 60;
@@ -648,7 +649,7 @@ void ScalableMeshGroundExtractor::AddXYZFilePointsAsSeedPoints(GroundDetectionPa
     coverageBreaklineFile.AppendString(L"\\");
     coverageBreaklineFile.AppendString(extraLinearFeatureFileName.c_str());
 
-#ifndef VANCOUVER_API    
+#ifndef VANCOUVER_API
     if (coverageBreaklineFile.DoesPathExist())
 #else
     if (BeFileName::DoesPathExist(coverageBreaklineFile.c_str()))
@@ -658,9 +659,9 @@ void ScalableMeshGroundExtractor::AddXYZFilePointsAsSeedPoints(GroundDetectionPa
 
         if (!dtmPtr.IsValid())
             return;
-        
-        DPoint3d pt;                
-        bvector<DPoint3d> addtionalSeedPts; 
+
+        DPoint3d pt;
+        bvector<DPoint3d> addtionalSeedPts;
 
         BaseGCSPtr sourceGcs;
 
@@ -674,9 +675,9 @@ void ScalableMeshGroundExtractor::AddXYZFilePointsAsSeedPoints(GroundDetectionPa
                 m_destinationGcs->SetReprojectElevation(true);
                 }
             }
-            
+
         for (int ptInd = 0; ptInd < dtmPtr->GetPointCount(); ptInd++)
-            {             
+            {
             DTMStatusInt status = dtmPtr->GetPoint(ptInd, pt);
             assert(status == SUCCESS);
 
@@ -696,7 +697,7 @@ void ScalableMeshGroundExtractor::AddXYZFilePointsAsSeedPoints(GroundDetectionPa
             int value = _wtoi(envVarStr.c_str());
 
             if (value > 0 && addtionalSeedPts.size() > (double)value)
-                {                
+                {
                 int skipIncrement = ceil(addtionalSeedPts.size() / (double)value);
 
                 auto seedPtIter = addtionalSeedPts.begin();
@@ -709,23 +710,23 @@ void ScalableMeshGroundExtractor::AddXYZFilePointsAsSeedPoints(GroundDetectionPa
                         seedPtIter = addtionalSeedPts.erase(seedPtIter);
                     else
                         seedPtIter++;
-                    
+
                     iterInd++;
-                    }                
+                    }
                 }
             }
 #endif
 
-        params->AddAdditionalSeedPoints(addtionalSeedPts);        
-        }    
+        params->AddAdditionalSeedPoints(addtionalSeedPts);
+        }
     }
 
 SMStatus ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& coverageTempDataFolder)
-    {    
+    {
     IGroundDetectionServices* serviceP(GroundDetectionManager::GetServices());
 
-    bvector<DPoint3d> seedpoints;    
-    GroundDetectionParametersPtr params(GroundDetectionParameters::Create());        
+    bvector<DPoint3d> seedpoints;
+    GroundDetectionParametersPtr params(GroundDetectionParameters::Create());
     params->SetLargestStructureSize(LARGEST_STRUCTURE_SIZE_DEFAULT);
 
 /*
@@ -747,12 +748,12 @@ SMStatus ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& coverag
             params->SetTriangleEdgeThreshold(value);
         }
 #endif
-	 
+
     params->SetAnglePercentileFactor(s_anglePercentile);
     params->SetHeightPercentileFactor(s_heightPercentile);
 
-    params->SetUseMultiThread(s_useMultiThread);        
-    
+    params->SetUseMultiThread(s_useMultiThread);
+
 
 //#ifndef VANCOUVER_API //TFS# 725973 - Descartes prefers faster processing than more precise results.
     AddXYZFilePointsAsSeedPoints(params, coverageTempDataFolder);
@@ -768,7 +769,7 @@ SMStatus ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& coverag
         m_groundPreviewer->UpdateProgress(&m_createProgress);
 
     if (m_createProgress.IsCanceled()) return SMStatus::S_ERROR_CANCELED_BY_USER;
-    ScalableMeshPointsProviderCreatorPtr smPtsProviderCreator(ScalableMeshPointsProviderCreator::Create(m_scalableMesh));    
+    ScalableMeshPointsProviderCreatorPtr smPtsProviderCreator(ScalableMeshPointsProviderCreator::Create(m_scalableMesh));
 
     if (!m_scalableMesh->GetGCS().IsNull() && m_destinationGcs.IsValid() && m_scalableMesh->IsCesium3DTiles())
         {
@@ -778,7 +779,7 @@ SMStatus ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& coverag
             {
             sourceGcs->SetReprojectElevation(true);
             }
-        
+
 
         auto coordInterp = m_scalableMesh->IsCesium3DTiles() ? GeoCoordInterpretation::XYZ : GeoCoordInterpretation::Cartesian;
 
@@ -802,14 +803,14 @@ SMStatus ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& coverag
         {
         params->SetLargestStructureSize(maxLength / 2);
         }
-    
-    IPointsProviderCreatorPtr ptsProviderCreator(smPtsProviderCreator.get());     
-    params->SetPointsProviderCreator(ptsProviderCreator);        
+
+    IPointsProviderCreatorPtr ptsProviderCreator(smPtsProviderCreator.get());
+    params->SetPointsProviderCreator(ptsProviderCreator);
 
     IGroundPointsAccumulatorPtr accumPtr(new ScalableMeshPointsAccumulator(m_groundPreviewer, m_scalableMesh->GetReprojectionTransform()));
 
     if (!m_scalableMesh->GetGCS().IsNull() && m_destinationGcs.IsValid() && !m_scalableMesh->IsCesium3DTiles())
-        {                 
+        {
         auto coordInterp = m_scalableMesh->IsCesium3DTiles() ? GeoCoordInterpretation::XYZ : GeoCoordInterpretation::Cartesian;
 
         BaseGCSPtr sourceGcs(BaseGCS::CreateGCS(*m_scalableMesh->GetGCS().GetGeoRef().GetBasePtr()));
@@ -818,7 +819,7 @@ SMStatus ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& coverag
             {
             sourceGcs->SetReprojectElevation(true);
             }
-        
+
         ((ScalableMeshPointsAccumulator*)accumPtr.get())->SetReprojGCS(coordInterp, sourceGcs, m_destinationGcs);
         }
 
@@ -830,7 +831,7 @@ SMStatus ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& coverag
     */
 
     clock_t startTime = clock();
-    
+
     StatusInt status = serviceP->_DoGroundDetection(*params.get());
     m_createProgress.Progress() = 1.0f;
 
@@ -857,16 +858,16 @@ SMStatus ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& coverag
 
         fclose(logfile);
         }
-        
+
     IGroundPointsAccumulatorPtr nullAcc;
 
     params->SetGroundPointsAccumulator(nullAcc);
     accumPtr = 0;
 
     SMStatus statusTerrain = CreateSmTerrain(coverageTempDataFolder);
-    
+
     return statusTerrain;
-    } 
+    }
 
 static bool s_fixTest = false;
 
@@ -883,15 +884,15 @@ StatusInt ScalableMeshGroundExtractor::_SetLimitTextureResolution(bool limitText
 	return SUCCESS;
     }
 
-StatusInt ScalableMeshGroundExtractor::_SetExtractionArea(const bvector<DPoint3d>& area) 
+StatusInt ScalableMeshGroundExtractor::_SetExtractionArea(const bvector<DPoint3d>& area)
     {
     if (!s_fixTest)
-        {                 
+        {
         Transform transform(m_scalableMesh->GetReprojectionTransform());
 
         if (transform.IsIdentity())
-            { 
-            m_extractionArea.insert(m_extractionArea.end(), area.begin(), area.end());            
+            {
+            m_extractionArea.insert(m_extractionArea.end(), area.begin(), area.end());
 
             double ratioFromMeter = 1.0 / m_smGcsRatioToMeter;
 
@@ -900,17 +901,17 @@ StatusInt ScalableMeshGroundExtractor::_SetExtractionArea(const bvector<DPoint3d
                 {
                 pt.Scale(ratioFromMeter);
                 }
-            }            
+            }
         else
-            {        
+            {
             Transform transformToSm;
             bool result = transformToSm.InverseOf(transform);
-            assert(result == true);            
+            assert(result == true);
             transformToSm.Multiply(m_extractionArea, area);
-            }               
+            }
         }
     else
-        {        
+        {
         /*Small Melaka*/
         m_extractionArea.push_back(DPoint3d::From(194142.31717461502, 243656.46210683032, -3.4523928137150506));
         m_extractionArea.push_back(DPoint3d::From(194165.08343336626, 243603.61276573580, -3.6304642277846142));
@@ -918,7 +919,7 @@ StatusInt ScalableMeshGroundExtractor::_SetExtractionArea(const bvector<DPoint3d
         m_extractionArea.push_back(DPoint3d::From(194276.55219083698, 243624.66656828567, -4.6135505912207009));
         m_extractionArea.push_back(DPoint3d::From(194147.68657526391, 243662.26264426752, -3.6141459398750158));
         m_extractionArea.push_back(DPoint3d::From(194146.39791910816, 243662.47747898742, -3.6220131969348586));
-        m_extractionArea.push_back(DPoint3d::From(194142.31717461502, 243656.46210683032, -3.4523928137150506));               
+        m_extractionArea.push_back(DPoint3d::From(194142.31717461502, 243656.46210683032, -3.4523928137150506));
 
         /*Big Melaka*/
         /*
@@ -954,17 +955,17 @@ StatusInt ScalableMeshGroundExtractor::_SetExtractionArea(const bvector<DPoint3d
     return SUCCESS;
     }
 
-StatusInt ScalableMeshGroundExtractor::_SetDataSourceDir(const BeFileName& dataSourceDir) 
+StatusInt ScalableMeshGroundExtractor::_SetDataSourceDir(const BeFileName& dataSourceDir)
     {
     if (!BeFileName::DoesPathExist(dataSourceDir.c_str()))
         {
         BeFileNameStatus dirCreateStatus = BeFileName::CreateNewDirectory(dataSourceDir.c_str());
         assert(BeFileNameStatus::Success == dirCreateStatus);
-        }            
+        }
 
-    m_dataSourceDir = dataSourceDir;    
+    m_dataSourceDir = dataSourceDir;
     return SUCCESS;
-    }  
+    }
 
 StatusInt ScalableMeshGroundExtractor::_SetReprojectElevation(bool doReproject)
     {
@@ -979,3 +980,4 @@ StatusInt ScalableMeshGroundExtractor::_SetGroundPreviewer(IScalableMeshGroundPr
     }
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
+POP_DISABLE_DEPRECATION_WARNINGS

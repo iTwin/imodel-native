@@ -8,6 +8,7 @@
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                10/2017
 //-------------------------------------------------------------------------------------
@@ -82,3 +83,4 @@ void ConnectTokenManager::RefreshToken() const
     delete charToken;
     CCApi_FreeApi(api);
     }
+POP_DISABLE_DEPRECATION_WARNINGS

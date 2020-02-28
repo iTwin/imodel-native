@@ -72,7 +72,7 @@ void CurvePrimitiveManipulationStrategy::_InsertKeyPoint
     if (m_keyPoints.size() >= index)
         {
         if (m_keyPoints.size() > index)
-            m_keyPoints.insert(&m_keyPoints[index], newKeyPoint);
+            m_keyPoints.insert(m_keyPoints.begin() +index, newKeyPoint);
         else
             _AppendKeyPoint(newKeyPoint);
         }
@@ -123,7 +123,7 @@ void CurvePrimitiveManipulationStrategy::_RemoveKeyPoint
         return;
         }
 
-    m_keyPoints.erase(&m_keyPoints[index]);
+    m_keyPoints.erase(m_keyPoints.begin() + index);
     }
 
 //--------------------------------------------------------------------------------------
@@ -185,7 +185,7 @@ void CurvePrimitiveManipulationStrategy::_InsertDynamicKeyPoint
         return;
         }
 
-    m_keyPointsWithDynamicKeyPoint.insert(&m_keyPointsWithDynamicKeyPoint[index], newDynamicKeyPoint);
+    m_keyPointsWithDynamicKeyPoint.insert(m_keyPointsWithDynamicKeyPoint.begin() + index, newDynamicKeyPoint);
     m_dynamicKeyPointSet = true;
     }
 
@@ -218,7 +218,7 @@ void CurvePrimitiveManipulationStrategy::_InsertDynamicKeyPoints
         if (m_keyPointsWithDynamicKeyPoint.size() == i)
             m_keyPointsWithDynamicKeyPoint.push_back(newDynamicKeyPoints[i - index]);
         else
-            m_keyPointsWithDynamicKeyPoint.insert(&m_keyPointsWithDynamicKeyPoint[i], newDynamicKeyPoints[i - index]);
+            m_keyPointsWithDynamicKeyPoint.insert(m_keyPointsWithDynamicKeyPoint.begin() + i, newDynamicKeyPoints[i - index]);
         }
     m_dynamicKeyPointSet = true;
     }
@@ -345,17 +345,17 @@ CurvePrimitivePlacementStrategyPtr CurvePrimitiveManipulationStrategy::CreateDef
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
-bool CurvePrimitiveManipulationStrategy::_IsEmpty() const 
+bool CurvePrimitiveManipulationStrategy::_IsEmpty() const
     {
-    return _GetKeyPoints().empty(); 
+    return _GetKeyPoints().empty();
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
-bool CurvePrimitiveManipulationStrategy::_IsSingleKeyPointLeft() const 
-    { 
-    return _GetKeyPoints().size() == 1; 
+bool CurvePrimitiveManipulationStrategy::_IsSingleKeyPointLeft() const
+    {
+    return _GetKeyPoints().size() == 1;
     }
 
 //--------------------------------------------------------------------------------------

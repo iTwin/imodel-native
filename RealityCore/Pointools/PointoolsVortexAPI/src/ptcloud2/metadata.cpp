@@ -19,6 +19,8 @@ enum ImportFlags
 	Meta_GenNormals = 4
 };
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
+
 MetaImportSettings::MetaImportSettings()
 {
 	channels_in_scan = 0;
@@ -48,7 +50,7 @@ int		MetaImportSettings::writeToBlock( WriteBlock &wb ) const
 	wb.write(spatial_filtering);
 	wb.write(scan_point_max_dist);
 	wb.write(min_range);
-	wb.write(max_range);	
+	wb.write(max_range);
 
 	return 1;
 }
@@ -68,7 +70,7 @@ void	MetaImportSettings::readFromBlock( ReadBlock &rb )
 	rb.read(spatial_filtering);
 	rb.read(scan_point_max_dist);
 	rb.read(min_range);
-	rb.read(max_range);			
+	rb.read(max_range);
 }
 //---------------------------------------------------------------------------
 // Get the meta data as a string
@@ -106,11 +108,11 @@ bool	MetaImportSettings::getMetaDataString(const pt::String &item, pt::String &v
 	{
 		value = (import_options & Meta_ScanLineFiltered)
 			? pt::String("true") : pt::String("false");
-	}		
+	}
 	else if (item.compare(L"UpperScanRowRemoval")==0)
 	{
 		value.format("%d", upper_scan_row_skip );
-	}	
+	}
 	else if (item.compare(L"LowerScanRowRemoval")==0)
 	{
 		value.format("%d", lower_scan_row_skip );
@@ -150,18 +152,18 @@ int			MetaImportSettings::numItems()
 pt::String	MetaImportSettings::itemName(int index)
 {
 	switch (index)
-	{	
-	case 0: return pt::String(L"ChannelsInSource"); 
-	case 1: return pt::String(L"ChannelsImported"); 
-	case 2: return pt::String(L"CombinedOnImport"); 
-	case 3: return pt::String(L"ScanLineFiltered"); 
-	case 4: return pt::String(L"UpperScanRowRemoval"); 
-	case 5: return pt::String(L"LowerScanRowRemoval"); 
-	case 6: return pt::String(L"CompressionTolerance"); 
-	case 7: return pt::String(L"SpatialFiltering"); 
-	case 8: return pt::String(L"MaxScanLinePointDist"); 
-	case 9: return pt::String(L"ScanMinRange"); 
-	case 10: return pt::String(L"ScanMaxRange"); 
+	{
+	case 0: return pt::String(L"ChannelsInSource");
+	case 1: return pt::String(L"ChannelsImported");
+	case 2: return pt::String(L"CombinedOnImport");
+	case 3: return pt::String(L"ScanLineFiltered");
+	case 4: return pt::String(L"UpperScanRowRemoval");
+	case 5: return pt::String(L"LowerScanRowRemoval");
+	case 6: return pt::String(L"CompressionTolerance");
+	case 7: return pt::String(L"SpatialFiltering");
+	case 8: return pt::String(L"MaxScanLinePointDist");
+	case 9: return pt::String(L"ScanMinRange");
+	case 10: return pt::String(L"ScanMaxRange");
 	}
 	return pt::String("");
 }
@@ -270,24 +272,24 @@ int			MetaHardware::numItems()
 	return 6;
 }
 //---------------------------------------------------------------------------
-// 
+//
 //---------------------------------------------------------------------------
 pt::String	MetaHardware::itemName(int index)
 {
 	switch (index)
-	{	
-	case 0: return pt::String(L"ScannerManufacturer"); 
-	case 1: return pt::String(L"ScannerModel"); 
-	case 2: return pt::String(L"ScannerSerial"); 
-	case 3: return pt::String(L"CameraModel"); 
-	case 4: return pt::String(L"CameraSerial"); 
-	case 5: return pt::String(L"CameraLens"); 
+	{
+	case 0: return pt::String(L"ScannerManufacturer");
+	case 1: return pt::String(L"ScannerModel");
+	case 2: return pt::String(L"ScannerSerial");
+	case 3: return pt::String(L"CameraModel");
+	case 4: return pt::String(L"CameraSerial");
+	case 5: return pt::String(L"CameraLens");
 	}
 	return pt::String("");
 }
 MetaSurvey::MetaSurvey()
 {
-	site_location = ""; 
+	site_location = "";
 	site_lat = 0;
 	site_long =0;
 	post_code = "";
@@ -347,7 +349,7 @@ bool	MetaSurvey::getMetaDataString(const pt::String &item, pt::String &value ) c
 {
 	if (item.compare( L"Site" ) == 0)
 		value = site_location;
-	
+
 	else if (item.compare( L"SiteLat" ) == 0 && fabs(site_lat) > 0)
 		value.format( "%0.2f", site_lat );
 
@@ -366,7 +368,7 @@ bool	MetaSurvey::getMetaDataString(const pt::String &item, pt::String &value ) c
 	else if (item.compare( L"DateOfCapture" ) == 0 && capture_date!= 0)
 	{
 		char buf[256];
-		
+
 		try
 		{
 			if (capture_date < 10e9)
@@ -412,17 +414,17 @@ bool	MetaSurvey::setMetaDataString(const pt::String &item, const pt::String &val
 {
 	if (item.compare( L"Site" ) == 0)
 		site_location = value;
-	
+
 	else if (item.compare( L"SiteLat" ) == 0)
 	{
 		if (value.length())
-			site_lat = atof( value.c_str() );		
+			site_lat = atof( value.c_str() );
 		else site_lat = 0;
 	}
 	else if (item.compare( L"SiteLong" ) == 0)
 	{
 		if (value.length())
-			site_long = atof( value.c_str() );		
+			site_long = atof( value.c_str() );
 		else site_long = 0;
 	}
 	else if (item.compare( L"PostCode" ) == 0)
@@ -437,7 +439,7 @@ bool	MetaSurvey::setMetaDataString(const pt::String &item, const pt::String &val
 	else if (item.compare( L"DateOfCapture" ) == 0)
 	{
 		char buf[16];
-		strncpy(buf, value.c_str(), 8);	
+		strncpy(buf, value.c_str(), 8);
 		buf[4] = 0;
 		buf[7] = 0;
 		buf[10] = 0;
@@ -482,23 +484,23 @@ int			MetaSurvey::numItems()
 pt::String	MetaSurvey::itemName(int index)
 {
 	switch (index)
-	{	
-	case 0: return pt::String(L"Site"); 
-	case 1: return pt::String(L"SiteLat"); 
-	case 2: return pt::String(L"SiteLong"); 
-	case 3: return pt::String(L"PostCode"); 
-	case 4: return pt::String(L"DateOfCapture"); 
-	case 5: return pt::String(L"Company"); 
-	case 6: return pt::String(L"Operator"); 
-	case 7: return pt::String(L"ProjectName"); 
-	case 8: return pt::String(L"ProjectCode"); 
-	case 9: return pt::String(L"GeoReference"); 
+	{
+	case 0: return pt::String(L"Site");
+	case 1: return pt::String(L"SiteLat");
+	case 2: return pt::String(L"SiteLong");
+	case 3: return pt::String(L"PostCode");
+	case 4: return pt::String(L"DateOfCapture");
+	case 5: return pt::String(L"Company");
+	case 6: return pt::String(L"Operator");
+	case 7: return pt::String(L"ProjectName");
+	case 8: return pt::String(L"ProjectCode");
+	case 9: return pt::String(L"GeoReference");
 	}
 	return pt::String("");
 }
 MetaDesc::MetaDesc()
 {
-	/* nothing to do, strings are initialised anyway */ 
+	/* nothing to do, strings are initialised anyway */
 }
 //--------------------------------------------------------------------------------------
 //
@@ -573,10 +575,10 @@ int			MetaDesc::numItems()
 pt::String	MetaDesc::itemName(int index)
 {
 	switch (index)
-	{	
-	case 0: return pt::String(L"Description"); 
-	case 1: return pt::String(L"Keywords"); 
-	case 2: return pt::String(L"Category"); 
+	{
+	case 0: return pt::String(L"Description");
+	case 1: return pt::String(L"Keywords");
+	case 2: return pt::String(L"Category");
 	}
 	return pt::String("");
 }
@@ -596,8 +598,8 @@ MetaAudit::MetaAudit()
 int		MetaAudit::writeToBlock( WriteBlock &wb ) const
 {
 	int version = 1;
-	wb.write( version ); 
-	
+	wb.write( version );
+
 	wb.write( (int)scan_file_paths.size() );
 
 
@@ -612,14 +614,14 @@ int		MetaAudit::writeToBlock( WriteBlock &wb ) const
 	}
 	import_settings.writeToBlock( wb );
 
-	/* edits */ 
+	/* edits */
 	wb.write( (int)edits.size() );
 	for (size_t i=0;i<edits.size();i++)
 	{
 		wb.write( edits[i].generation );
 		wb.write( edits[i].timestamp );
 		wb.write( edits[i].editor );
-	}	
+	}
 
 	wb.write( original_num_scans );
 	wb.write( import_date );
@@ -628,7 +630,7 @@ int		MetaAudit::writeToBlock( WriteBlock &wb ) const
 	return 1;
 }
 //--------------------------------------------------------------------------------------
-// 
+//
 //--------------------------------------------------------------------------------------
 void	MetaAudit::readFromBlock( ReadBlock &rb )
 {
@@ -636,9 +638,9 @@ void	MetaAudit::readFromBlock( ReadBlock &rb )
 	int num=0;
 	int i;
 
-	rb.read( version );	
+	rb.read( version );
 	rb.read( num );
-	
+
 	pt::String path;
 	time_t t;
 
@@ -652,7 +654,7 @@ void	MetaAudit::readFromBlock( ReadBlock &rb )
 	}
 	import_settings.readFromBlock( rb );
 
-	/* edits */ 
+	/* edits */
 	rb.read( num );
 	for (i=0;i<num;i++)
 	{
@@ -663,7 +665,7 @@ void	MetaAudit::readFromBlock( ReadBlock &rb )
 		rb.read( e.editor );
 
 		edits.push_back( e );
-	}	
+	}
 
 	rb.read( original_num_scans );
 	rb.read( import_date );
@@ -678,7 +680,7 @@ bool	MetaAudit::getMetaDataString(const pt::String &item, pt::String &value ) co
 	{
 		value = "";
 
-		/* have to hack around the const */ 
+		/* have to hack around the const */
 		int *mutable_file_iterator_ptr = const_cast<int*>(&file_iterator);
 		int &mutable_file_iterator = *mutable_file_iterator_ptr;
 
@@ -687,7 +689,7 @@ bool	MetaAudit::getMetaDataString(const pt::String &item, pt::String &value ) co
 			value = scan_file_paths[file_iterator];
 			++mutable_file_iterator;
 		}
-		else 
+		else
 		{
 			mutable_file_iterator = 0;
 			value = "";
@@ -697,7 +699,7 @@ bool	MetaAudit::getMetaDataString(const pt::String &item, pt::String &value ) co
 	else if (item.compare( "OriginalNumScans" ) == 0)
 	{
 		value.format( "%d", original_num_scans );
-	}	
+	}
 	else if (item.compare( "CreatorApp" ) == 0 || item.compare( "Application" ) == 0)
 	{
 		value = application;
@@ -747,13 +749,13 @@ bool	MetaAudit::setMetaDataString(const pt::String &item, const pt::String &valu
 	else if (item.compare( "OriginalNumScans" ) == 0)
 	{
 		original_num_scans = atoi(value.c_str());
-	}	
+	}
 	else if (item.compare( "CreatorApp" ) == 0 || item.compare( "Application" ) == 0)
 	{
 		application = value;
 	}
-	else return false;	
-	
+	else return false;
+
 	return true;
 }
 //--------------------------------------------------------------------------------------
@@ -769,11 +771,11 @@ int			MetaAudit::numItems()
 pt::String	MetaAudit::itemName(int index)
 {
 	switch (index)
-	{	
-	case 0: return pt::String(L"Description"); 
-	case 1: return pt::String(L"Keywords"); 
-	case 2: return pt::String(L"Category"); 
-	case 3: return pt::String(L"Category"); 
+	{
+	case 0: return pt::String(L"Description");
+	case 1: return pt::String(L"Keywords");
+	case 2: return pt::String(L"Category");
+	case 3: return pt::String(L"Category");
 	default:
 		index -= numItems();
 		return import_settings.itemName(index);
@@ -825,7 +827,7 @@ bool	MetaData::getMetaDataString( const pt::String &section, const pt::String &i
 		if (section.compare(L"Instrument")==0)	return hardware.getMetaDataString(item, value);
 		if (section.compare(L"Survey")==0)		return survey.getMetaDataString(item, value);
 		if (section.compare(L"Description")==0)	return desc.getMetaDataString(item, value);
-		if (section.compare(L"Process")==0 || section.compare(L"Audit")==0) 
+		if (section.compare(L"Process")==0 || section.compare(L"Audit")==0)
 			return audit.getMetaDataString(item, value);
 	}
 	return user.getMetaTag(section, item, value);
@@ -847,7 +849,7 @@ bool	MetaData::setMetaDataString( const pt::String &section, const pt::String &i
 		if (section.compare("Instrument")==0)	return hardware.setMetaDataString(item, value);
 		if (section.compare("Survey")==0)		return survey.setMetaDataString(item, value);
 		if (section.compare("Description")==0)	return desc.setMetaDataString(item, value);
-		if (section.compare("Process")==0 || section.compare("Audit")==0) 
+		if (section.compare("Process")==0 || section.compare("Audit")==0)
 			return audit.setMetaDataString(item, value);
 	}
 //	user.setMetaTag(section, item, value); // always succeeds, creates group and tag if not exists
@@ -902,7 +904,7 @@ void MetaSurvey::operator=( const MetaSurvey &m )
 	post_code = m.post_code;
 	georef = m.georef;
 
-	/* time */ 
+	/* time */
 	capture_date = m.capture_date;
 
 	/* personnel */
@@ -937,3 +939,5 @@ void MetaImportSettings::operator=( const MetaImportSettings &m )
 
 	metatags = m.metatags;
 }
+
+POP_DISABLE_DEPRECATION_WARNINGS

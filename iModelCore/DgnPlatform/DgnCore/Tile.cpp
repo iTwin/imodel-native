@@ -1791,7 +1791,7 @@ bool ContentId::FromString(Utf8CP str, uint16_t inMajorVersion)
     uint8_t depth;
 
     auto fmt = "_%" SCNx16 "_%" SCNx32 "_%" SCNx8 "_%" SCNx64 "_%" SCNx64 "_%" SCNx64 "_%" SCNx32 ;
-    if (7 != BE_STRING_UTILITIES_UTF8_SSCANF(str, fmt, &majorVersion, &flags, &depth, &i, &j, &k, &mult))
+    if (7 != Utf8String::Sscanf_safe(str, fmt, &majorVersion, &flags, &depth, &i, &j, &k, &mult))
         return false;
     else if (!Tile::IO::IModelTile::Version::IsKnownMajorVersion(majorVersion))
         return false;
@@ -1808,7 +1808,7 @@ bool ContentId::FromV1String(Utf8CP str)
     uint64_t i, j, k;
     uint32_t mult;
     uint8_t depth;
-    if (5 != BE_STRING_UTILITIES_UTF8_SSCANF(str, "%" SCNx8 "/%" SCNx64 "/%" SCNx64 "/%" SCNx64 "/%" SCNx32, &depth, &i, &j, &k, &mult))
+    if (5 != Utf8String::Sscanf_safe(str, "%" SCNx8 "/%" SCNx64 "/%" SCNx64 "/%" SCNx64 "/%" SCNx32, &depth, &i, &j, &k, &mult))
         return false;
 
     *this = ContentId(depth, i, j, k, mult, 1, Flags::None);
@@ -1829,7 +1829,7 @@ bool ContentId::FromV4String(Utf8CP str, uint16_t majorVersion)
     uint8_t depth;
 
     auto fmt = "-%" SCNx32 "-%" SCNx8 "-%" SCNx64 "-%" SCNx64 "-%" SCNx64 "-%" SCNx32 ;
-    if (6 != BE_STRING_UTILITIES_UTF8_SSCANF(str, fmt, &flags, &depth, &i, &j, &k, &mult))
+    if (6 != Utf8String::Sscanf_safe(str, fmt, &flags, &depth, &i, &j, &k, &mult))
         return false;
     else if (!Tile::IO::IModelTile::Version::IsKnownMajorVersion(majorVersion))
         return false;
@@ -2528,7 +2528,7 @@ Tree::Id Tree::Id::FromString(Utf8StringCR str, DgnDbP db)
             if (nullptr == pCur)
                 return invalidId;
 
-            if ('A' == *pCur) 
+            if ('A' == *pCur)
                 {
                 if (':' != *(++pCur))
                     return invalidId;
@@ -4944,7 +4944,7 @@ void SubRanges::AcceptPolyface(PolyfaceHeaderCR polyface, TransformCR tf, DRange
                 AcceptTriangle(p0, p1, p2, candidates);
                 if (candidates.empty())
                     return;
-                
+
                 p1 = p2;
                 }
             }

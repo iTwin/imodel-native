@@ -16,13 +16,13 @@ struct MyEmptyStruct {};
 struct MyNonEmptyStruct { int val; };
 
 /* */
-struct MyBase1 
+struct MyBase1
 {
 virtual ~MyBase1 () {}
 virtual void v1 () = 0;
 };
 
-struct MyBase2 
+struct MyBase2
 {
 virtual ~MyBase2 () {}
 virtual void v2 () = 0;
@@ -102,7 +102,7 @@ TEST (AssertTests, BeTestAssertMacros)
     EXPECT_GT (2, 1);
     EXPECT_TRUE (TRUE);
     EXPECT_FALSE (FALSE);
-    
+
     SUCCEED ();
 }
 
@@ -140,7 +140,7 @@ TEST (CRuntimeTests, SprintfLLD)
 {
     char    buffer[128];
     int64_t num64 = -1;
-    
+
     strcpy (buffer, "?");
 
     int numCharsPrinted = BeStringUtilities::Snprintf (buffer, "lld=%lld", num64);
@@ -157,7 +157,7 @@ TEST (CRuntimeTests, SprintfLLU)
 {
     char    buffer[128];
     uint64_t num64 = 103;
-    
+
     strcpy (buffer, "?");
 
     int numCharsPrinted = BeStringUtilities::Snprintf (buffer, "llu=%llu", num64);
@@ -361,7 +361,7 @@ TEST (CRuntimeTests, Iswctype)
 TEST (CRuntimeTests, Swscanf)
 {
     int d = 0;
-    BE_STRING_UTILITIES_SWSCANF (L"1252", L"%d", &d);
+    WString::Swscanf_safe (L"1252", L"%d", &d);
     ASSERT_TRUE (1252 == d);
     SUCCEED ();
 }
@@ -497,7 +497,7 @@ TEST (BuildEnvTests, Sizeof)
 #endif
 
 //---------------------------------------------------------------------------------------
-// ensure Bentley typedefs are properly seen by the compiler - which implies header files 
+// ensure Bentley typedefs are properly seen by the compiler - which implies header files
 //  were properly processed...
 //
 // @betest                                      Shaun.Sewall                    08/11
@@ -535,7 +535,7 @@ TEST (BuildEnvTests, BentleyTypedefs)
     Byte b2 = 0;
     int32_t    l32 = 0;
     uint32_t   ul32 = 0;
-    
+
     ASSERT_NE (ERROR,            SUCCESS);
     ASSERT_NE (TRUE,             FALSE);
     ASSERT_NE (sizeof (*charCP), sizeof (*wcharCP));
@@ -638,7 +638,7 @@ static void testPosixRegex (char const* regexPattern, char const* str, size_t nm
     int status = regcomp (&regex, regexPattern, REG_EXTENDED|REG_ICASE);
     if (0 == status)
         status = regexec (&regex, str, _countof(matches), matches, 0);
-    
+
     if (0 != status)
         {
         NativeLogging::LoggingManager::GetLogger(L"TestRunner")->tracev (L"%hs %hs", regexPattern, str);
@@ -682,14 +682,14 @@ TEST(CRuntimeTests, posixregex)
 
     // from http://www.tutorialguide.net/introduction_to_regular_expressions_part_2_-_ere_posix_tutorial.html
     testPosixRegex ("([0-9]{4})-([0-9]{1,2})-([0-9]{1,2})",                     "1986-05-28",   1+3); // regexec matches the whole string and returns that as item 0. The matached subexpressions follow that.
-    testPosixRegex ("([[:digit:]]{4})-([[:digit:]]{1,2})-([[:digit:]]{1,2})",   "1986-05-28",   1+3); 
-    testPosixRegex ("([+-]?[[:digit:]]{4})-?(1[0-2]|0[1-9])-?(3[0-1]|0[1-9]|[1-2][[:digit:]])",   "1986-05-28",   1+3); 
+    testPosixRegex ("([[:digit:]]{4})-([[:digit:]]{1,2})-([[:digit:]]{1,2})",   "1986-05-28",   1+3);
+    testPosixRegex ("([+-]?[[:digit:]]{4})-?(1[0-2]|0[1-9])-?(3[0-1]|0[1-9]|[1-2][[:digit:]])",   "1986-05-28",   1+3);
     testPosixRegex ("([+-]?[[:digit:]]{4})-?(1[0-2]|0[1-9])-?(3[0-1]|0[1-9]|[1-2][[:digit:]])(T(2[0-3]|[0-1][[:digit:]]):?([0-5][[:digit:]])(:?([0-5][[:digit:]])(\\.[[:digit:]]+)?)?(Z|[+-](2[0-3]|[0-1][[:digit:]]):?[0-5][[:digit:]])?)?",
-                                                                                                    "1986-05-28",   1+3); 
+                                                                                                    "1986-05-28",   1+3);
     testPosixRegex ("([+-]?[[:digit:]]{4})-?(1[0-2]|0[1-9])-?(3[0-1]|0[1-9]|[1-2][[:digit:]])(T(2[0-3]|[0-1][[:digit:]]):?([0-5][[:digit:]])(:?([0-5][[:digit:]])(\\.[[:digit:]]+)?)?(Z|[+-](2[0-3]|[0-1][[:digit:]]):?[0-5][[:digit:]])?)?",
-                                                                                                    "2012-12-05T23:44:59.500Z",   1+10); 
+                                                                                                    "2012-12-05T23:44:59.500Z",   1+10);
     testPosixRegex ("([+-]?[[:digit:]]{4})-?(1[0-2]|0[1-9])-?(3[0-1]|0[1-9]|[1-2][[:digit:]])(T(2[0-3]|[0-1][[:digit:]]):?([0-5][[:digit:]])(:?([0-5][[:digit:]])(\\.[[:digit:]]+)?)?(Z|[+-](2[0-3]|[0-1][[:digit:]]):?[0-5][[:digit:]])?)?",
-                                                                                                    "2012-12-05T13:11:00.1234567Z",   1+10); 
+                                                                                                    "2012-12-05T13:11:00.1234567Z",   1+10);
     }
 #endif
 
@@ -702,6 +702,6 @@ TEST (CLanguageTests, SignedChar)
     ASSERT_EQ (c, EOF);
     c = -1;
     ASSERT_EQ (c, -1);
-    
+
     // c = 0xff;  should not compile -- truncation
     }

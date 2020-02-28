@@ -65,11 +65,12 @@ struct GeoKeyItem
 
         if (KeyDataType == ASCII)
             {
-            size_t StrLength = strlen(pi_rObj.KeyValue.StringVal) + 1;
-            char* pStrVal = new char[StrLength];
+            size_t strLength = strlen(pi_rObj.KeyValue.StringVal) + 1;
+            char* pStrVal = new char[strLength];
 
-            strcpy (pStrVal, pi_rObj.KeyValue.StringVal);
-
+PUSH_DISABLE_DEPRECATION_WARNINGS
+            strcpy(pStrVal, pi_rObj.KeyValue.StringVal);
+POP_DISABLE_DEPRECATION_WARNINGS
             KeyValue.StringVal = pStrVal;
             }
         else

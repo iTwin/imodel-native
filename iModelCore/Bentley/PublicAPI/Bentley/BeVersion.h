@@ -93,7 +93,7 @@ public:
     void FromString(Utf8CP versionStr, Utf8CP format = VERSION_PARSE_FORMAT)
         {
         int major = 0, minor = 0, sub1 = 0, sub2 = 0;
-        BE_STRING_UTILITIES_UTF8_SSCANF(versionStr, format, &major, &minor, &sub1, &sub2);
+        Utf8String::Sscanf_safe(versionStr, format, &major, &minor, &sub1, &sub2);
         m_major = (uint16_t) (0xFFFF & major);
         m_minor = (uint16_t) (0xFFFF & minor);
         m_sub1 = (uint16_t) (0xFFFF & sub1);

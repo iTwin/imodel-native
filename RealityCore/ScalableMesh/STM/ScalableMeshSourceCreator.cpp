@@ -51,10 +51,11 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include "RasterUtilities.h"
 #include "CGALEdgeCollapse.h"
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 using namespace ISMStore;
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
 
-#if !defined(__BENTLEYSTM_BUILD__) && defined(WIN32) 
+#if !defined(__BENTLEYSTM_BUILD__) && defined(WIN32)
  bool s_inEditing = false;
  bool s_useThreadsInStitching = true;
  bool s_useThreadsInMeshing = true;
@@ -182,7 +183,7 @@ ScalableMeshMesherType Get2_5dMesherType()
 
 ScalableMeshMesherType Get3dMesherType()
 {
-    //return SCM_MESHER_2D_DELAUNAY;    
+    //return SCM_MESHER_2D_DELAUNAY;
     //return SCM_MESHER_3D_DELAUNAY;
 #ifndef NO_3D_MESH
     return SCM_MESHER_TETGEN;
@@ -194,7 +195,7 @@ ScalableMeshMesherType Get3dMesherType()
 
 void IScalableMeshSourceCreator::Impl::ConfigureMesherFilter(ISMPointIndexFilter<PointType, PointIndexExtentType>*& pFilter, ISMPointIndexMesher<PointType, PointIndexExtentType>*& pMesher2d, ISMPointIndexMesher<PointType, PointIndexExtentType>*& pMesher3d)
 {
-   pFilter = 
+   pFilter =
         scm_createFilterFromType<PointType, PointIndexExtentType>(scm_getFilterType());
 
     pMesher2d =
@@ -218,7 +219,7 @@ IScalableMeshSourceCreatorPtr IScalableMeshSourceCreator::GetFor(const WChar*  f
     if (fileName.IsUrl() || (!BeFileName::DoesPathExist(fileName.c_str()) && !canCreateFile(filePath)))
 #else
     if (IsUrl(fileName) || (!fileName.DoesPathExist() && !canCreateFile(filePath)))
-#endif	
+#endif
 	    {
 		status = BSIERROR;
 		return 0;
@@ -258,7 +259,7 @@ IScalableMeshSourceCreator::IScalableMeshSourceCreator(Impl* implP)
 
 IScalableMeshSourceCreator::~IScalableMeshSourceCreator()
     {
-    //Since ScalableMeshCreator::~Impl is implemented in another DLL and its implementation is hidden the code below is require to ensure that the destructors of the 
+    //Since ScalableMeshCreator::~Impl is implemented in another DLL and its implementation is hidden the code below is require to ensure that the destructors of the
     //Impl classes inheriting from ScalableMeshCreator::Impl are called.
     if (m_implP.get() != nullptr)
         {
@@ -356,7 +357,7 @@ IScalableMeshSourceCreator::Impl::Impl(const IScalableMeshPtr& scmPtr)
     m_extent(DRange2d::NullRange())
     {
     InitSources();
-    }   
+    }
 
 IScalableMeshSourceCreator::Impl::~Impl()
     {
@@ -412,7 +413,7 @@ int IScalableMeshSourceCreator::Impl::CreateScalableMesh(bool isSingleFile, bool
 
         // Update last synchronization time
         m_lastSyncTime = Time::CreateActual();
-        
+
         // Ensure that last modified times are up-to-date and that sources are saved.
         if (BSISUCCESS != UpdateLastModified() ||
             (isSingleFile && BSISUCCESS != SaveSources(m_smSQLitePtr)) ||
@@ -465,7 +466,7 @@ void IScalableMeshSourceCreator::Impl::SetupFileForCreation(bool doPartialUpdate
         m_smSQLitePtr = nullptr;
 
         if (FileExist() && BeFileName::BeDeleteFile(m_scmFileName.c_str()) != BeFileNameStatus::Success)
-            return ;        
+            return ;
 
         m_smSQLitePtr = IScalableMeshCreator::Impl::GetFile(false);
 
@@ -479,8 +480,8 @@ void IScalableMeshSourceCreator::Impl::SetupFileForCreation(bool doPartialUpdate
             if (data.GetUpToDateState() == UpToDateState::REMOVE)
                 {
                 it = m_sources.Remove(it);
-                }                
-            else 
+                }
+            else
             if (data.GetUpToDateState() == UpToDateState::MODIFY || data.GetUpToDateState() == UpToDateState::PARTIAL_ADD || data.GetUpToDateState() == UpToDateState::UP_TO_DATE)
                 {
                 data.SetUpToDateState(UpToDateState::ADD);
@@ -490,9 +491,9 @@ void IScalableMeshSourceCreator::Impl::SetupFileForCreation(bool doPartialUpdate
         }
 
 
-    // Ensure GCS and sources are save to the file.  
+    // Ensure GCS and sources are save to the file.
     m_gcsDirty = true;
-    m_sourcesDirty = true;   
+    m_sourcesDirty = true;
     //return filePtr;
 }
 
@@ -501,7 +502,7 @@ void IScalableMeshSourceCreator::SetUserFilterCallback(MeshUserFilterCallback ca
 //#ifdef WIP_MESH_IMPORT
     if (s_filterClass == nullptr) s_filterClass = new ScalableMeshQuadTreeBCLIB_UserMeshFilter<DPoint3d, PointIndexExtentType>();
     ((ScalableMeshQuadTreeBCLIB_UserMeshFilter<DPoint3d, PointIndexExtentType>*)s_filterClass)->SetCallback(callback);
-//#endif 
+//#endif
     }
 
 
@@ -571,7 +572,7 @@ double IScalableMeshSourceCreator::GetLastFinalStoreDuration()
 
 
 void IScalableMeshSourceCreator::ImportRastersTo(const IScalableMeshPtr& scmPtr)
-    {    
+    {
     ITextureProviderPtr textureProviderPtr;
     int status = dynamic_cast<IScalableMeshSourceCreator::Impl*>(m_implP.get())->GetTextureProvider(textureProviderPtr);
     scmPtr->TextureFromRaster(textureProviderPtr);
@@ -597,7 +598,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 
     HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment myMemMgr(100, 2000 * sizeof(PointType));
 
-    uint32_t splitThreshold;    
+    uint32_t splitThreshold;
 
     if (m_sourceCreationMethod == SCM_CREATION_METHOD_BIG_SPLIT_CUT)
         {
@@ -608,7 +609,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         assert(m_sourceCreationMethod == SCM_CREATION_METHOD_ONE_SPLIT);
         splitThreshold = m_splitThreshold;
         }
-    
+
     CreateDataIndex(pDataIndex, true, splitThreshold);
 
     m_pDataIndex = pDataIndex;
@@ -628,7 +629,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     s_getLastStitchingDuration = -1;
     s_getLastClippingDuration = -1;
     s_getLastFinalStoreDuration = -1;
-    
+
     pDataIndex->m_nbInputPoints = 0;
 
     clock_t startClock = clock();
@@ -707,7 +708,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
             }
         }
 
-           
+
     // Remove sources which have been removed or modified
 
     if (BSISUCCESS != RemoveSourcesFrom<MeshIndexType>(*pDataIndex, listRemoveExtent))
@@ -726,7 +727,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         return BSIERROR;
 
     if (GetProgress()->IsCanceled()) return BSISUCCESS;
-        
+
 #ifndef VANCOUVER_API
 //apparently they don't have this here. Either way, we only need the non-convex polygon support for ConceptStation
     if (m_filterPolygon.size() > 0 && !PolygonOps::IsConvex(m_filterPolygon))
@@ -783,7 +784,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         if (m_sourceCreationMethod == SCM_CREATION_METHOD_BIG_SPLIT_CUT)
             splitNode = true;
 
-        // Balance data             
+        // Balance data
         if (BSISUCCESS != this->template BalanceDown<MeshIndexType>(*pDataIndex, previousDepth, splitNode))
             return BSIERROR;
         }
@@ -805,7 +806,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 
 
     if (m_sourceCreationCompleteness == SCM_CREATION_COMPLETENESS_INDEX_ONLY)
-        {        
+        {
         assert(dynamic_cast<SMSQLiteStore<PointIndexExtentType>*>(pDataIndex->GetDataStore().get()) != nullptr);
 
         SMSQLiteStore<PointIndexExtentType>* pSqliteStore(static_cast<SMSQLiteStore<PointIndexExtentType>*>(pDataIndex->GetDataStore().get()));
@@ -821,43 +822,43 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         GetProgress()->Progress() = 0.0;
 	    GetProgress()->UpdateListeners();
 
-                
+
         if (s_mesh)
             {
-            // Mesh data             
+            // Mesh data
             if (BSISUCCESS != IScalableMeshCreator::Impl::Mesh<MeshIndexType>(*pDataIndex))
-                return BSIERROR;        
-            }    
+                return BSIERROR;
+            }
 
 #ifdef SCALABLE_MESH_ATP
         s_getLastMeshingDuration = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;
 #endif
-      
-    
+
+
         GetProgress()->Progress() = 1.0;
 	    GetProgress()->UpdateListeners();
         if (GetProgress()->IsCanceled()) return BSISUCCESS;
 
 
-#ifdef SCALABLE_MESH_ATP        
-        s_getLastStitchingDuration = 0;    
+#ifdef SCALABLE_MESH_ATP
+        s_getLastStitchingDuration = 0;
         s_getLastClippingDuration = 0;
-        s_getLastMeshBalancingDuration = 0;    
+        s_getLastMeshBalancingDuration = 0;
 #endif
-     
+
 
         if (m_sourceCreationMethod == SCM_CREATION_METHOD_BIG_SPLIT_CUT)
-            {        
+            {
             int depth = (int)pDataIndex->GetDepth();
 
-#ifdef SCALABLE_MESH_ATP    
+#ifdef SCALABLE_MESH_ATP
             startClock = clock();
 #endif
 
             if (BSISUCCESS != IScalableMeshCreator::Impl::Stitch<MeshIndexType>(*pDataIndex, depth, false))
-                return BSIERROR;    
+                return BSIERROR;
 
-#ifdef SCALABLE_MESH_ATP    
+#ifdef SCALABLE_MESH_ATP
             s_getLastStitchingDuration += clock() - startClock;
             startClock = clock();
 #endif
@@ -868,35 +869,35 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
             s_getLastClippingDuration = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;
             startClock = clock();
 #endif
-     
-            // Balance data             
+
+            // Balance data
             if (BSISUCCESS != this->template BalanceDown<MeshIndexType>(*pDataIndex, previousDepth, false, false))
                 return BSIERROR;
 
 #ifdef SCALABLE_MESH_ATP
-            s_getLastMeshBalancingDuration = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;        
+            s_getLastMeshBalancingDuration = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;
 #endif
             }
 
             {
 
-#ifdef SCALABLE_MESH_ATP            
+#ifdef SCALABLE_MESH_ATP
             s_getLastFilteringDuration = 0;
 #endif
 
             int depth = (int)pDataIndex->GetDepth();
-      
+
             GetProgress()->ProgressStep() = ScalableMeshStep::STEP_GENERATE_LOD;
             GetProgress()->ProgressStepIndex() = 4;
             GetProgress()->Progress() = 0.0;
 		    GetProgress()->UpdateListeners();
 
             CachedDataEventTracer::GetInstance()->start();
-   
+
             for (int level = depth; level >= 0; level--)
                 {
 
-#ifdef SCALABLE_MESH_ATP    
+#ifdef SCALABLE_MESH_ATP
                 startClock = clock();
 #endif
                 if (BSISUCCESS != IScalableMeshCreator::Impl::Filter<MeshIndexType>(*pDataIndex, level))
@@ -904,7 +905,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 
                 if (GetProgress()->IsCanceled()) return BSISUCCESS;
 
-#ifdef SCALABLE_MESH_ATP    
+#ifdef SCALABLE_MESH_ATP
                 s_getLastFilteringDuration += clock() - startClock;
                 startClock = clock();
 #endif
@@ -913,12 +914,12 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
                 if ((m_sourceCreationMethod != SCM_CREATION_METHOD_BIG_SPLIT_CUT) || (level < depth))
                     {
                     if (BSISUCCESS != IScalableMeshCreator::Impl::Stitch<MeshIndexType>(*pDataIndex, level, false))
-                        return BSIERROR;                
+                        return BSIERROR;
                     }
 
                 if (GetProgress()->IsCanceled()) return BSISUCCESS;
 
-#ifdef SCALABLE_MESH_ATP    
+#ifdef SCALABLE_MESH_ATP
                 s_getLastStitchingDuration += clock() - startClock;
                 startClock = clock();
 #endif
@@ -926,12 +927,12 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 
             GetProgress()->Progress() = 1.0;
 		    GetProgress()->UpdateListeners();
-#ifdef SCALABLE_MESH_ATP    
+#ifdef SCALABLE_MESH_ATP
             s_getLastStitchingDuration = s_getLastStitchingDuration / CLOCKS_PER_SEC / 60.0;
             s_getLastFilteringDuration = s_getLastFilteringDuration / CLOCKS_PER_SEC / 60.0;
 #endif
                 }
-            //ShowMessageBoxWithTimes(s_getLastMeshingDuration, s_getLastFilteringDuration, s_getLastStitchingDuration);    
+            //ShowMessageBoxWithTimes(s_getLastMeshingDuration, s_getLastFilteringDuration, s_getLastStitchingDuration);
 
 
         #if 0
@@ -983,14 +984,14 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     #ifdef INDEX_DUMPING_ACTIVATED
             if (s_dumpOctreeNodes)
                 {
-                //pointIndex.DumpOctTree("D:\\MyDoc\\Scalable Mesh Iteration 7\\Partial Update - Remove\\Log\\NodeAferCreation.xml", false);    
+                //pointIndex.DumpOctTree("D:\\MyDoc\\Scalable Mesh Iteration 7\\Partial Update - Remove\\Log\\NodeAferCreation.xml", false);
                 //pDataIndex->DumpOctTree("C:\\Users\\Thomas.Butzbach\\Documents\\data_scalableMesh\\ATP\\NodeAferCreation.xml", false);
                 pDataIndex->DumpOctTree((char*)"e:\\output\\scmesh\\NodeAferCreation.xml", false);
                 //pDataIndex->DumpOctTree("C:\\Users\\Richard.Bois\\Documents\\ScalableMesh\\Streaming\\QuebecCityMini\\NodeAferCreationAfterTextures.xml", false);
                 }
     #endif
     }
-    
+
 
     GetProgress()->ProgressStep() = ScalableMeshStep::STEP_SAVE;
     GetProgress()->ProgressStepIndex() = 6;
@@ -998,7 +999,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 	GetProgress()->UpdateListeners();
 
 #ifdef SCALABLE_MESH_ATP
-    startClock = clock();    
+    startClock = clock();
 #endif
 
     pDataIndex->Store();
@@ -1018,7 +1019,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         delete RasterUtilities::s_rasterMemPool;
         RasterUtilities::s_rasterMemPool = nullptr;
         }
-           
+
     return BSISUCCESS;
     }
 
@@ -1146,7 +1147,7 @@ int IScalableMeshSourceCreator::Impl::ApplyEditsFromSources(HFCPtr<MeshIndexType
 
 
 StatusInt IScalableMeshSourceCreator::Impl::GetLocalSourceTextureProvider(ITextureProviderPtr& textureProviderPtr, bvector<IDTMSource*>& filteredSources)
-    {       
+    {
     HFCPtr<HIMMosaic> pMosaicP(new HIMMosaic(HFCPtr<HGF2DCoordSys>(RasterUtilities::GetWorldCluster()->GetWorldReference(HGF2DWorld_HMRWORLD).GetPtr())));
     HIMMosaic::RasterList rasterList;
 
@@ -1155,9 +1156,9 @@ StatusInt IScalableMeshSourceCreator::Impl::GetLocalSourceTextureProvider(ITextu
         WString path;
 
         assert(IsUrl(source->GetPath().c_str()) == false);
-                
+
         path = WString(L"file://") + source->GetPath();
-        
+
 
 
             // HFCPtr<HGF2DCoordSys>  pLogicalCoordSys;
@@ -1193,11 +1194,11 @@ StatusInt IScalableMeshSourceCreator::Impl::GetLocalSourceTextureProvider(ITextu
 
         GCSCPTR replacementGcsPtr;
         const GCS& gcs(const_cast<SourceImportConfig*>(&source->GetConfig())->GetReplacementGCS());
-        
+
 
         if (gcs.HasGeoRef())
             {
-            replacementGcsPtr = gcs.GetGeoRef().GetBasePtr();                            
+            replacementGcsPtr = gcs.GetGeoRef().GetBasePtr();
             }
 
         GCSCPTR destinationGcsPtr;
@@ -1205,16 +1206,16 @@ StatusInt IScalableMeshSourceCreator::Impl::GetLocalSourceTextureProvider(ITextu
         if (m_gcs.HasGeoRef())
             {
             destinationGcsPtr = m_gcs.GetGeoRef().GetBasePtr();
-            }        
-        
+            }
+
         HASSERT(m_pDataIndex != nullptr);
-          
+
         DRange2d extentInTargetCS(DRange2d::From(m_pDataIndex->GetContentExtent()));
 
         pRaster = RasterUtilities::LoadRaster(path, destinationGcsPtr, extentInTargetCS, replacementGcsPtr);
 
-        HASSERT(pRaster != NULL);        
-    
+        HASSERT(pRaster != NULL);
+
         //NEEDS_WORK_SM: do not do this if raster does not intersect sm extent
         rasterList.push_back(pRaster.GetPtr());
         pRaster = 0;
@@ -1309,15 +1310,15 @@ int IScalableMeshSourceCreator::Impl::ImportRasterSourcesTo(HFCPtr<MeshIndexType
     StatusInt status = GetTextureProvider(textureProviderPtr);
 
     if (BSISUCCESS != status) return BSIERROR;
-    if (textureProviderPtr == nullptr) return BSISUCCESS;    
-    
+    if (textureProviderPtr == nullptr) return BSISUCCESS;
+
     //Image++ is always in meters, so ensure 3SM data are transformed to meter
     Transform unitTransform;
 
     unitTransform.InitFromRowValues(m_gcs.GetUnit().GetRatioToBase(), 0 ,0, 0,
                                     0, m_gcs.GetUnit().GetRatioToBase(), 0, 0,
                                     0, 0, m_gcs.GetUnit().GetRatioToBase(), 0);
-            
+
     pIndex->TextureFromRaster(textureProviderPtr, unitTransform);
     return BSISUCCESS;
     }
@@ -1326,10 +1327,10 @@ int IScalableMeshSourceCreator::Impl::ImportRasterSourcesTo(HFCPtr<MeshIndexType
 * @description
 * @bsimethod                                                  Mathieu.St-Pierre   11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-template <typename PointIndex>       
+template <typename PointIndex>
 StatusInt IScalableMeshSourceCreator::Impl::RemoveSourcesFrom(PointIndex& pointIndex, std::list<DRange3d> listRemoveExtent) const
     {
-    //NEEDS_WORK_SM : Logic for determining the extent to remove should be here.  
+    //NEEDS_WORK_SM : Logic for determining the extent to remove should be here.
     std::list<DRange3d>::const_iterator it = listRemoveExtent.begin();
     for (std::list<DRange3d>::const_iterator itRemove = listRemoveExtent.begin(); itRemove != listRemoveExtent.end(); itRemove++)
         {
@@ -1428,7 +1429,7 @@ int IScalableMeshSourceCreator::Impl::LoadSources(SMSQLiteFilePtr& smSQLiteFile)
 void IScalableMeshSourceCreator::Impl::SetSplitThreshold(uint32_t splitThreshold)
     {
     m_splitThreshold = splitThreshold;
-    }    
+    }
 
 
 int IScalableMeshSourceCreator::Impl::SaveSources(SMSQLiteFilePtr& smSQLiteFile)
@@ -1568,7 +1569,7 @@ int IScalableMeshSourceCreator::Impl::TraverseSource(SourcesImporter&           
 
         SourceRef sourceRef(CreateSourceRefFromIDTMSource(dataSource, m_scmFileName));
 
-#ifndef VANCOUVER_API    
+#ifndef VANCOUVER_API
         if (dynamic_cast<DGNLevelByNameSourceRef*>((sourceRef.m_basePtr.get())) != nullptr || dynamic_cast<DGNReferenceLevelByNameSourceRef*>((sourceRef.m_basePtr.get())) != nullptr)
             {
             importConfig->SetClipShape(clipShapePtr);
@@ -1765,3 +1766,4 @@ int IScalableMeshSourceCreator::Impl::TraverseSourceCollectionRasters(bvector<ID
     return status;
     }
 END_BENTLEY_SCALABLEMESH_NAMESPACE
+POP_DISABLE_DEPRECATION_WARNINGS

@@ -21,14 +21,14 @@
 #elif defined (USE_SYSLOG)
     #include <syslog.h>
 
-    #undef LOG_EMERG   
-    #undef LOG_ALERT   
-    #undef LOG_CRIT    
-    #undef LOG_ERR     
-    #undef LOG_WARNING 
-    #undef LOG_NOTICE  
-    #undef LOG_INFO    
-    #undef LOG_DEBUG   
+    #undef LOG_EMERG
+    #undef LOG_ALERT
+    #undef LOG_CRIT
+    #undef LOG_ERR
+    #undef LOG_WARNING
+    #undef LOG_NOTICE
+    #undef LOG_INFO
+    #undef LOG_DEBUG
 
     enum SyslogLevels {
     SYSLOG_EMERG     = 0,       /* system is unusable */
@@ -607,7 +607,7 @@ private:
     Title           m_title;
     BeAtomic<uint32_t>  m_sequenceId;
     bool                m_wantSequenceId;
-    
+
     static WCharCP GetNameSpace(ILogProviderContext* pContext)
         {
         auto pWString = reinterpret_cast<WString*>(pContext);
@@ -617,14 +617,14 @@ private:
     static bool GetMaxPaneWidth(dim_t& maxWidth)
         {
         int value;
-PUSH_MSVC_IGNORE(4996)
+PUSH_DISABLE_DEPRECATION_WARNINGS
         WString envVar(getenv("BENTLEY_SPLIT_CONSOLE_MAX_WIDTH"), BentleyCharEncoding::Utf8);
-        if (!envVar.empty() && 1 == BE_STRING_UTILITIES_SWSCANF(envVar.c_str(), L"%d", &value) && value > 0 && value <= maxWidth)
+POP_DISABLE_DEPRECATION_WARNINGS
+        if (!envVar.empty() && 1 == WString::Swscanf_safe(envVar.c_str(), L"%d", &value) && value > 0 && value <= maxWidth)
             {
             maxWidth = static_cast<dim_t>(value);
             return true;
             }
-POP_MSVC_IGNORE
 
         return false;
         }
@@ -652,13 +652,13 @@ POP_MSVC_IGNORE
     virtual void STDCALL_ATTRIBUTE LogMessage ( ILogProviderContext * context, SEVERITY sev, WCharCP msg ) override;
     virtual void STDCALL_ATTRIBUTE LogMessage ( ILogProviderContext * context, SEVERITY sev, Utf8CP msg ) override;       // we have an optimized version for Android and iOS
 public:
-PUSH_MSVC_IGNORE(4996)
+PUSH_DISABLE_DEPRECATION_WARNINGS
     SplitConsoleProvider(bvector<WString> const& paneNames) : m_severity(LOG_TRACE), m_defaultPane(nullptr),
         m_sequenceId(0), m_wantSequenceId(nullptr != getenv("BENTLEY_SPLIT_CONSOLE_SHOW_SEQUENCE"))
         {
         InitPanes(paneNames);
         }
-POP_MSVC_IGNORE
+POP_DISABLE_DEPRECATION_WARNINGS
 
     virtual ~SplitConsoleProvider(void) { }
 
@@ -683,7 +683,7 @@ void SplitConsoleProvider::Pane::Log(WCharCP msg, SEVERITY sev, WCharCP nameSpac
         Rect scrollRect = m_rect;
         scrollRect.Top += nRows;
         ScrollConsoleScreenBuffer(m_provider->GetScreenBuffer(), &scrollRect, &m_rect, m_rect.GetTopLeft(), &s_fillChar);
-        
+
         // Write new text at bottom
         Rect writeRect = m_rect;
         writeRect.Top = writeRect.Bottom - nRows;
@@ -741,7 +741,7 @@ SplitConsoleProvider::dim_t SplitConsoleProvider::Pane::PrepareMessage(WCharCP r
                 size_t dist = pChar+1 - msg + nPrefixChars;
                 nextSegment = rawMsg + dist;
                 }
-                
+
             buf.Char.UnicodeChar = done ? ' ' : *pChar++;
             buf.Attributes = attributes;
             done = done || '\0' == *pChar || (++nChars > s_maxMessageLength);

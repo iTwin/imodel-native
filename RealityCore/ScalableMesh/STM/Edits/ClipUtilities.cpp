@@ -2,7 +2,7 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See COPYRIGHT.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-#include "ScalableMeshPCH.h" 
+#include "ScalableMeshPCH.h"
 #include "../ImagePPHeaders.h"
 #include "ClipUtilities.h"
 #include <TerrainModel/TerrainModel.h>
@@ -17,7 +17,8 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 #define SM_TRACE_CLIPS_GETMESH 0
 #define SM_TRACE_CLIPS_FULL 0
 static const wchar_t* s_path = L"C:\\work\\2017q3\\tmp\\";
-   
+
+PUSH_DISABLE_DEPRECATION_WARNINGS
 void print_polygonarray(std::string& s, const char* tag, DPoint3d* polyArray, int polySize)
     {
     s += tag;
@@ -129,7 +130,7 @@ void FaceToUVMap::RemoveFacet(const int32_t* indices)
         RemoveFacetFromEdge(indices, edges[i]);
     }
 
-bool FaceToUVMap::GetFacet(const int32_t* indices, DPoint2d* uvCoords) 
+bool FaceToUVMap::GetFacet(const int32_t* indices, DPoint2d* uvCoords)
     {
     std::array<int32_t, 3> idx = {{ 0, 1, 2 }};
     std::sort(idx.begin(), idx.end(), [&indices] (const int32_t& a, const int32_t&b) { return indices[a] < indices[b]; });
@@ -844,7 +845,7 @@ DTMInsertPointCallback Clipper::GetInsertPointCallback(FaceToUVMap& faceToUVMap,
                 DPoint3d triangle[3];
                 for (size_t i = 0; i < 3; ++i)
                     ptr->GetBcDTM()->GetPoint(indices[i], triangle[i]);
-                
+
                 DPoint3d barycentric;
                 bsiDPoint3d_barycentricFromDPoint3dTriangle(&barycentric, &pt, &triangle[0], &triangle[1], &triangle[2]);
                 DPoint2d newUv;
@@ -947,14 +948,14 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
                 {
                 closedPoly.push_back(point);
                 }
-            
+
             if (poly[0].x != poly[poly.size() - 1].x ||
                 poly[0].y != poly[poly.size() - 1].y ||
                 poly[0].z != poly[poly.size() - 1].z)
                 {
                 closedPoly.push_back(poly[0]);
                 }
-                        
+
             stat = bcdtmInsert_internalDtmFeatureMrDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(),
                                                              DTMFeatureType::Region,
                                                              1,
@@ -1125,7 +1126,7 @@ PolyfaceHeaderPtr CreateFromFaceSubset(PolyfaceHeaderPtr& originalMesh, const bv
     for (vis->Reset(); vis->AdvanceToNextFace()&& current < facesToKeep.size();faceIdx++)
         {
         if (facesToKeep[current] != faceIdx) continue;
-            
+
         for (size_t i = 0; i < 3; ++i)
             {
             if (oldToNewIndicesMap.count(pointIndex[i]) == 0)
@@ -1141,7 +1142,7 @@ PolyfaceHeaderPtr CreateFromFaceSubset(PolyfaceHeaderPtr& originalMesh, const bv
             indices.push_back(oldToNewIndicesMap[pointIndex[i]]);
             if (originalMesh->GetParamCount() > 0)  paramIndices.push_back(oldToNewParamIndicesMap[param[i]]);
             }
-        current++;          
+        current++;
         }
     PolyfaceQueryCarrier* query = new PolyfaceQueryCarrier(3, false, indices.size(), pts.size(), pts.empty() ? 0 : &pts[0], indices.empty() ? 0 : &indices[0], 0, 0, 0, params.size(),
                                                            params.empty() ? 0 : &params[0], paramIndices.empty() ? 0 : &paramIndices[0]);
@@ -1269,7 +1270,7 @@ bool Process3dRegions(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, PolyfaceHe
                 indices.push_back(vis2->ClientPointIndex()[1] + 1);
                 indices.push_back(vis2->ClientPointIndex()[2] + 1);
 
-               
+
                 }
 
             if (!indices.empty() && !pts.empty())
@@ -1288,7 +1289,7 @@ bool Process3dRegions(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, PolyfaceHe
                 fwrite(indices.data(), sizeof(int32_t), count, meshBeforeClip);
                 fclose(meshBeforeClip);
                 }
-                
+
             }*/
 
         polyfaces[i].push_back(vec);
@@ -1529,7 +1530,7 @@ void ComputeReplacementFacets(bvector<bvector<int32_t>>& newFacets, bvector<Inte
         bvector<int32_t> thirdTri(3);
         if (foundIntersects[0].edgeIdx == ((edgeId + 1) % 3))
             thirdTri[0] = useParam ? foundIntersects[0].newParamIdx : foundIntersects[0].newPtIdx;
-        else 
+        else
             thirdTri[0] = useParam ? foundIntersects[1].newParamIdx : foundIntersects[1].newPtIdx;
         thirdTri[1] = splitFacet[edgeId];
         thirdTri[2] = splitFacet[(edgeId+1) % 3];
@@ -2369,7 +2370,7 @@ void MeshClipper::OrderClipGeometryList()
 
     std::sort(orderedClipList.begin(), orderedClipList.end(),[](ClipInfo* a, ClipInfo* b) {
         if (!a->isClipMask() && b->isClipMask())
-            return true; 
+            return true;
         return false;
     });
 }
@@ -2606,7 +2607,7 @@ MeshClipper::RegionResult MeshClipper::GetClippedMesh(PolyfaceHeaderPtr& mesh)
 
         return MeshClipper::RegionResult::Success;
         }
-    
+
     if (orderedClipList[0]->isClipMask())
         return MeshClipper::RegionResult::NoIntersectionWithClips;
     else
@@ -2814,3 +2815,4 @@ void MeshClipper::ClearSelection()
     }
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
+POP_DISABLE_DEPRECATION_WARNINGS

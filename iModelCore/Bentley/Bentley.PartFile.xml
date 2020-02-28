@@ -26,8 +26,6 @@
                 Delivery/bentley-notice.txt
                 Delivery/btree-notice.txt
                 Delivery/btree-license.txt
-                Delivery/bvector-notice.txt
-                Delivery/bvector-license.txt
             </VendorNotices>
             <Directory SourceName="Dox/Pages/Bentley" SubPartDirectory="Dox/Pages/Bentley"/>
         </Bindings>
@@ -220,5 +218,5 @@
             <PublicAPI Domain="BeRapidJson"/>
         </Bindings>
     </Part>
-    
+
 </BuildContext>

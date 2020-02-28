@@ -69,8 +69,8 @@ struct HttpRequestTests : ::testing::Test
         NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_HTTP, NativeLogging::LOG_INFO);
         NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BEHTTP_TESTS, NativeLogging::SEVERITY::LOG_INFO);
 
-        putenv("http_proxy=");
-        putenv("https_proxy=");
+        _putenv("http_proxy=");
+        _putenv("https_proxy=");
 
         AsyncTasksManager::SetDefaultScheduler(nullptr);
 
@@ -1445,7 +1445,7 @@ TEST_F(HttpRequestTestsProxy, Perform_EnvVarProxyNotExisting_CouldNotResolveProx
     VerifyProxyLogEmpty();
 
     Request request(HTTPBIN_HTTP_URL "/ip");
-    putenv("http_proxy=" NONEXISTING_PROXY_URL);
+    _putenv("http_proxy=" NONEXISTING_PROXY_URL);
 
     Response response = request.Perform().get();
     EXPECT_EQ(ConnectionStatus::CouldNotResolveProxy, response.GetConnectionStatus());
@@ -1461,7 +1461,7 @@ TEST_F(HttpRequestTestsProxy, Perform_EnvVarProxyNotExistingForHttps_CouldNotRes
     VerifyProxyLogEmpty();
 
     Request request(HTTPBIN_HTTPS_URL "/ip");
-    putenv("https_proxy=" NONEXISTING_PROXY_URL);
+    _putenv("https_proxy=" NONEXISTING_PROXY_URL);
 
     Response response = request.Perform().get();
     EXPECT_EQ(ConnectionStatus::CouldNotResolveProxy, response.GetConnectionStatus());
@@ -1477,7 +1477,7 @@ TEST_F(HttpRequestTestsProxy, Perform_EnvVarProxy_ExecutesViaProxy)
     VerifyProxyLogEmpty();
 
     Request request(HTTPBIN_HTTP_URL "/ip");
-    putenv("http_proxy=" LOCAL_PROXY_URL);
+    _putenv("http_proxy=" LOCAL_PROXY_URL);
 
     Response response = request.Perform().get();
     EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
@@ -1493,7 +1493,7 @@ TEST_F(HttpRequestTestsProxy, Perform_EnvVarProxyForHttps_ExecutesViaProxy)
     VerifyProxyLogEmpty();
 
     Request request(HTTPBIN_HTTPS_URL "/ip");
-    putenv("https_proxy=" LOCAL_PROXY_URL);
+    _putenv("https_proxy=" LOCAL_PROXY_URL);
 
     Response response = request.Perform().get();
     EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
@@ -1509,7 +1509,7 @@ TEST_F(HttpRequestTestsProxy, Perform_EnvVarProxyForHttpsButRequestHttp_Executes
     VerifyProxyLogEmpty();
 
     Request request(HTTPBIN_HTTP_URL "/ip");
-    putenv("https_proxy=" LOCAL_PROXY_URL);
+    _putenv("https_proxy=" LOCAL_PROXY_URL);
 
     Response response = request.Perform().get();
     EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
@@ -1525,7 +1525,7 @@ TEST_F(HttpRequestTestsProxy, Perform_EnvVarProxyForHttpButRequestHttps_Executes
     VerifyProxyLogEmpty();
 
     Request request(HTTPBIN_HTTPS_URL "/ip");
-    putenv("http_proxy=" LOCAL_PROXY_URL);
+    _putenv("http_proxy=" LOCAL_PROXY_URL);
 
     Response response = request.Perform().get();
     EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
@@ -1542,7 +1542,7 @@ TEST_F(HttpRequestTestsProxy, Perform_EnvVarProxyButRequestOverrides_ExecutesVia
 
     Request request(HTTPBIN_HTTP_URL "/ip");
     request.SetProxy(LOCAL_PROXY_URL);
-    putenv("http_proxy=" NONEXISTING_PROXY_URL);
+    _putenv("http_proxy=" NONEXISTING_PROXY_URL);
 
     Response response = request.Perform().get();
     EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
@@ -1559,14 +1559,14 @@ TEST_F(HttpRequestTestsProxy, Perform_EnvVarProxyButDefaultOverrides_ExecutesVia
 
     Request request(HTTPBIN_HTTP_URL "/ip");
     HttpProxy::SetDefaultProxy(HttpProxy(LOCAL_PROXY_URL));
-    putenv("http_proxy=" NONEXISTING_PROXY_URL);
+    _putenv("http_proxy=" NONEXISTING_PROXY_URL);
 
     Response response = request.Perform().get();
     EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
 
     EXPECT_THAT(GetLocalProxyLog().c_str(), HasSubstr("GET " HTTPBIN_HTTP_URL "/ip"));
     }
-    
+
 enum class TlsVersion
     {
     v1_0,
@@ -1576,8 +1576,8 @@ enum class TlsVersion
 
 static const bvector<TlsVersion> AllTlsVersions
     {
-    TlsVersion::v1_0, 
-    TlsVersion::v1_1, 
+    TlsVersion::v1_0,
+    TlsVersion::v1_1,
     TlsVersion::v1_2
     };
 
@@ -1604,7 +1604,7 @@ struct HttpRequestTestsTls : HttpRequestTests, WithParamInterface<TlsRequestSett
         unsigned short port = s_portMap[serverTlsVersion];
         return "https://" + host + ":" + std::to_string(port).c_str();
         }
-    static void AssertServerIsStopped (TlsVersion serverTlsVersion) 
+    static void AssertServerIsStopped (TlsVersion serverTlsVersion)
         {
         auto serverUrl = MakeServerUrl(serverTlsVersion);
         Request request = Request(serverUrl);
@@ -1626,7 +1626,7 @@ struct HttpRequestTestsTls : HttpRequestTests, WithParamInterface<TlsRequestSett
 
         AsyncTask::WhenAll(serversAreStoppedTasks)->Wait();
         }
-    static void StartServers () 
+    static void StartServers ()
         {
         static const Utf8String tlsServersBatFile = "tls-server.bat";
         ScriptRunner::RunScriptAsync(tlsServersBatFile);
@@ -1657,7 +1657,7 @@ struct HttpRequestTestsTls : HttpRequestTests, WithParamInterface<TlsRequestSett
             if (HttpStatus::OK == response.GetHttpStatus() ||
                 ConnectionStatus::CertificateError == response.GetConnectionStatus())
                 break;
-            
+
             uint64_t nowMs = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
             if (nowMs - startMs > WAITTIMEOUT)
                 {

@@ -219,7 +219,9 @@ bool HRFGSGAsciiGridCreator::IsKindOfFile (const HFCPtr<HFCURL>&    pi_rpURL,
             Success = FALSE;
 
         /* Check for signature */
+PUSH_DISABLE_DEPRECATION_WARNINGS
         else if (!EQUALN((const char *)HeaderSampleBuffer, "DSAA", 4)
+POP_DISABLE_DEPRECATION_WARNINGS
             || (HeaderSampleBuffer[4] != '\x0D'
                 && HeaderSampleBuffer[4] != '\x0A'))
             {

@@ -48,7 +48,7 @@ struct CategoryTests : public DgnDbTestFixture
             EXPECT_STREQ(subcat->GetSubCategoryName().c_str(), other.GetSubCategoryName().c_str());
             EXPECT_EQ(subcat->GetCategoryId(), other.GetCategoryId());
             EXPECT_EQ(subcat->GetCode().GetScopeElementId(*m_db), other.GetCode().GetScopeElementId(*m_db));
-            EXPECT_EQ(subcat->GetDescription(), other.GetDescription());
+            EXPECT_STREQ(subcat->GetDescription(), other.GetDescription());
             EXPECT_TRUE(subcat->GetAppearance().IsEqual(other.GetAppearance()));
             }
         }

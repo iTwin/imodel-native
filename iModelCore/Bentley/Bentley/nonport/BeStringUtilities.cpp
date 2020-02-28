@@ -14,7 +14,7 @@
     #endif
 
 #elif defined (__unix__)
-    
+
     #include <wchar.h>
     #include <netdb.h>
     #include <unistd.h>
@@ -105,10 +105,10 @@ static BentleyStatus directUtf16ToUtf8(bvector<Byte>& outStringBuff, Byte const*
     {
     // UTF-16 is 2 or 4 bytes per-character; UTF-8 is 1-6... without getting clever, I believe this is a fair compromise between memory and re-allocation costs.
     outStringBuff.reserve(inStringNumBytes);
-    
+
     try { utf8::utf16to8((char16_t const*)inString, (char16_t const*)(inString + inStringNumBytes), std::back_inserter(outStringBuff)); }
     catch(...) { return ERROR; }
-    
+
     return SUCCESS;
     }
 
@@ -119,10 +119,10 @@ static BentleyStatus directUtf32ToUtf8(bvector<Byte>& outStringBuff, Byte const*
     {
     // UTF-32 is 4 bytes per-character; UTF-8 is 1-6 bytes... without getting clever, I believe this is a fair compromise between memory and re-allocation costs.
     outStringBuff.reserve(inStringNumBytes / 2);
-    
+
     try { utf8::utf32to8((char32_t const*)inString, (char32_t const*)(inString + inStringNumBytes), std::back_inserter(outStringBuff)); }
     catch(...) { return ERROR; }
-    
+
     return SUCCESS;
     }
 
@@ -134,10 +134,10 @@ static BentleyStatus directUtf8ToUtf16(bvector<Byte>& outStringBuff, Byte const*
     // UTF-8 is 1-6 bytes per-character; UTF-16 is 2 or 4... without getting clever, I believe this is a fair compromise between memory and re-allocation costs.
     bvector<char16_t> utf16;
     utf16.reserve(inStringNumBytes / 2);
-    
+
     try { utf8::utf8to16(inString, (inString + inStringNumBytes), std::back_inserter(utf16)); }
     catch(...) { return ERROR; }
-    
+
     size_t outStringBuffNumBytes = (utf16.size() * sizeof(char16_t));
     outStringBuff.resize(outStringBuffNumBytes);
     memcpy(&outStringBuff[0], &utf16[0], outStringBuffNumBytes);
@@ -153,10 +153,10 @@ static BentleyStatus directUtf8ToUtf32(bvector<Byte>& outStringBuff, Byte const*
     // UTF-8 is 1-6 bytes per-character; UTF-32 is 4... without getting clever, I believe this is a fair compromise between memory and re-allocation costs.
     bvector<char32_t> utf32;
     utf32.reserve(inStringNumBytes / 2);
-    
+
     try { utf8::utf8to32(inString, (inString + inStringNumBytes), std::back_inserter(utf32)); }
     catch(...) { return ERROR; }
-    
+
     size_t outStringBuffNumBytes = (utf32.size() * sizeof(char32_t));
     outStringBuff.resize(outStringBuffNumBytes);
     memcpy(&outStringBuff[0], &utf32[0], outStringBuffNumBytes);
@@ -184,13 +184,13 @@ static bool handleDirectUtfConversion(BentleyStatus& status, bvector<Byte>& outS
         status = directUtf32ToUtf8(outStringBuff, inString, inStringNumBytes);
         return true;
         }
-    
+
     if (isEncodingUtf8(inEncoding) && (0 == strcmp("UTF-32LE", outEncoding)))
         {
         status = directUtf8ToUtf32(outStringBuff, inString, inStringNumBytes);
         return true;
         }
-        
+
     if ((0 == strcmp("UTF-32LE", inEncoding)) && (0 == strcmp("UTF-16LE", outEncoding)))
         {
         bvector<Byte> utf8;
@@ -198,7 +198,7 @@ static bool handleDirectUtfConversion(BentleyStatus& status, bvector<Byte>& outS
             status = ERROR;
         else
             status = directUtf8ToUtf16(outStringBuff, &utf8[0], utf8.size());
-        
+
         return true;
         }
 
@@ -209,22 +209,22 @@ static bool handleDirectUtfConversion(BentleyStatus& status, bvector<Byte>& outS
             status = ERROR;
         else
             status = directUtf8ToUtf32(outStringBuff, &utf8[0], utf8.size());
-        
+
         return true;
         }
-    
+
     if ((0 == strcmp("UTF-16LE", inEncoding)) && isEncodingUtf8(outEncoding))
         {
         status = directUtf16ToUtf8(outStringBuff, inString, inStringNumBytes);
         return true;
         }
-    
+
     if (isEncodingUtf8(inEncoding) && (0 == strcmp("UTF-16", outEncoding)))
         {
         status = directUtf8ToUtf16(outStringBuff, inString, inStringNumBytes);
         return true;
         }
-    
+
     return false;
     }
 
@@ -251,7 +251,7 @@ BentleyStatus BeStringUtilities::TranscodeStringDirect(bvector<Byte>& outStringB
         { BeAssert(false); return ERROR; }
 
     icuError = U_ZERO_ERROR;
-    
+
     icu::LocalUConverterPointer fromUnicodeConverter(ucnv_open(outEncoding, &icuError));
     if (fromUnicodeConverter.isNull() || U_FAILURE(icuError))
         { BeAssert(false); return ERROR; }
@@ -260,13 +260,13 @@ BentleyStatus BeStringUtilities::TranscodeStringDirect(bvector<Byte>& outStringB
 
     // Convert to Unicode.
     bvector<UChar> unicodeBuffer;
-    
+
     // Seems like a good initial guess. UChar is UTF-16, so I feel on average one locale char will go to 1 UChar.
     // At worst, this will need to double once (e.g. each input char goes to a UTF-16 surrogate pair).
     unicodeBuffer.resize(inStringNumBytes);
 
     int32_t unicodeBufferLength = 0;
-    
+
     for (;;)
         {
         unicodeBufferLength = ucnv_toUChars(toUnicodeConverter.getAlias(), &unicodeBuffer[0], (int32_t)unicodeBuffer.size(), (CharCP)inString, (int32_t)inStringNumBytes, &icuError);
@@ -276,7 +276,7 @@ BentleyStatus BeStringUtilities::TranscodeStringDirect(bvector<Byte>& outStringB
             icuError = U_ZERO_ERROR;
             continue;
             }
-        
+
         break;
         }
 
@@ -289,7 +289,7 @@ BentleyStatus BeStringUtilities::TranscodeStringDirect(bvector<Byte>& outStringB
     // Normal worst case, this will need to double once (e.g. each input UChar goes to a multibyte pair).
     // Worst case, this will need to double twice (e.g. each input UChar goes to a 4-byte UCS-4 character).
     outStringBuff.resize(unicodeBufferLength);
-    
+
     // *** NEEDS WORK: It looks like outStringBufferLength is not really used. We could get rid of it, right?
     int32_t outStringBufferLength = 0;
 
@@ -302,7 +302,7 @@ BentleyStatus BeStringUtilities::TranscodeStringDirect(bvector<Byte>& outStringB
             icuError = U_ZERO_ERROR;
             continue;
             }
-        
+
         break;
         }
 
@@ -363,7 +363,7 @@ BentleyStatus BeStringUtilities::Utf16ToWChar(WStringR outStr, Utf16CP inStr, si
         BeAssert(false && L"Unicode to Unicode should never fail.");
         return ERROR;
         }
-    
+
     // basic_string objects maintain a NULL-terminated buffer internally; the value given to resize is the number of real characters.
     outStr.resize(resultBytes.size() / sizeof (uint32_t));
     memcpy((CharP)const_cast<WCharP>(outStr.data()), &resultBytes[0], resultBytes.size());
@@ -446,11 +446,11 @@ BentleyStatus BeStringUtilities::WCharToUtf16(Utf16BufferR outStr, WCharCP inStr
         outStr[0] = 0;
         return SUCCESS;
         }
-    
+
     // Note: 'inStrCount' does NOT include the NULL-terminator
     size_t inStrLen = wcslen(inStr);
     int inStrCount = (int)( (_count == NPOS)? inStrLen: std::min(_count, inStrLen) );
-    
+
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
 
     outStr.resize(inStrCount+1);                                    // (allocates space for 1+inStrCount to leave room for the trailing \0)
@@ -470,7 +470,7 @@ BentleyStatus BeStringUtilities::WCharToUtf16(Utf16BufferR outStr, WCharCP inStr
         outStr[0] = 0;
         return ERROR;
         }
-    
+
     outStr.resize((resultBytes.size() / sizeof (uint16_t)) + 1);
     memcpy((CharP)outStr.data(), &resultBytes[0], resultBytes.size());
     outStr.back() = 0;
@@ -495,7 +495,7 @@ BentleyStatus BeStringUtilities::WCharToUtf8(Utf8StringR outStr, WCharCP inStr, 
 //---------------------------------------------------------------------------------------
 BentleyStatus BeStringUtilities::Utf8ToWChar(WStringR outStr, Utf8CP inStr, size_t _count)
     {
-    return LocaleCharToWChar(outStr, reinterpret_cast<CharCP>(inStr), LangCodePage::ISCII_UNICODE_UTF_8, _count); 
+    return LocaleCharToWChar(outStr, reinterpret_cast<CharCP>(inStr), LangCodePage::ISCII_UNICODE_UTF_8, _count);
     }
 
 //---------------------------------------------------------------------------------------
@@ -503,7 +503,7 @@ BentleyStatus BeStringUtilities::Utf8ToWChar(WStringR outStr, Utf8CP inStr, size
 //---------------------------------------------------------------------------------------
 WCharP        BeStringUtilities::Utf8ToWChar(WCharP outWChar, Utf8CP inStr, size_t outMaxChars)
     {
-    return LocaleCharToWChar(outWChar, reinterpret_cast<CharCP>(inStr), LangCodePage::ISCII_UNICODE_UTF_8, outMaxChars); 
+    return LocaleCharToWChar(outWChar, reinterpret_cast<CharCP>(inStr), LangCodePage::ISCII_UNICODE_UTF_8, outMaxChars);
     }
 
 //---------------------------------------------------------------------------------------
@@ -526,7 +526,7 @@ BentleyStatus BeStringUtilities::Utf8ToUtf16(Utf16BufferR outStr, Utf8CP inStr, 
 
     outStr.resize(outStrCount + 1);
     ::MultiByteToWideChar(CP_UTF8, 0, inStr, inStrCount, (LPWSTR)&outStr[0], outStrCount);
-    
+
     outStr[outStrCount] = '\0';
 
 #elif defined (__unix__)
@@ -546,7 +546,7 @@ BentleyStatus BeStringUtilities::Utf8ToUtf16(Utf16BufferR outStr, Utf8CP inStr, 
 #error unknown runtime
 #endif
 
-    return SUCCESS;    
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -577,7 +577,7 @@ BentleyStatus BeStringUtilities::Utf16ToUtf8(Utf8StringR utf8Buffer, Utf16CP utf
         return ERROR;
 
     size_t outStrCount = (resultBytes.size() / sizeof (Utf8Char));
-    
+
     utf8Buffer.resize(outStrCount);
     memcpy(const_cast<CharP>(utf8Buffer.data()), &resultBytes[0], resultBytes.size());
     utf8Buffer[outStrCount] = 0;
@@ -618,7 +618,7 @@ BentleyStatus BeStringUtilities::WCharToLocaleChar(AStringR outStr, LangCodePage
         }
 
     outStr.resize((size_t)outStrCount); // (allocates space for outStrCount + 1 chars)
-    
+
     int conversionStatus = ::WideCharToMultiByte(codePage, 0, inStr, inStrCount, &outStr[0], outStrCount, NULL, NULL);
     if (0 == conversionStatus)
         {
@@ -628,7 +628,7 @@ BentleyStatus BeStringUtilities::WCharToLocaleChar(AStringR outStr, LangCodePage
 
     #if !defined (PRG) && defined (DEBUG_UNICODE)
         printf("Warning: BeStringUtilities::WCharToLocaleChar: '%ls'\n", inStr);
-    #endif    
+    #endif
 
 #elif defined (__unix__)
 
@@ -668,7 +668,7 @@ BentleyStatus BeStringUtilities::WCharToLocaleChar(AStringR outStr, LangCodePage
     // basic_string objects maintain a NULL-terminated buffer internally; the value given to resize is the number of real characters.
     outStr.resize(resultBytes.size() / sizeof (char));
     memcpy(const_cast<CharP>(outStr.data()), &resultBytes[0], resultBytes.size());
-    
+
 #else
 #error unknown runtime
 #endif
@@ -699,7 +699,9 @@ char* BeStringUtilities::WCharToCurrentLocaleChar(char* outChar, wchar_t const* 
         }
 
     size_t outCount = std::min(astr.length(), outMaxBytes-1);     // max chars to copy INCLUDING \0
+PUSH_DISABLE_DEPRECATION_WARNINGS
     strncpy(outChar, astr.c_str(), outCount);
+POP_DISABLE_DEPRECATION_WARNINGS
     outChar[outCount] = 0;
 
     return outChar;
@@ -741,7 +743,7 @@ BentleyStatus BeStringUtilities::LocaleCharToWChar(WStringR outStr, CharCP inStr
 
     int inStrCount;
     if (_count == NPOS)
-        inStrCount = (int)strlen(inStr);               // strlen is necessary, because MultiByteToWideChar count or does not count the NULL 
+        inStrCount = (int)strlen(inStr);               // strlen is necessary, because MultiByteToWideChar count or does not count the NULL
     else
         inStrCount = (int)strnlen(inStr, _count);      // Need to stop at _count or less, if a NULL is not present
 
@@ -751,7 +753,7 @@ BentleyStatus BeStringUtilities::LocaleCharToWChar(WStringR outStr, CharCP inStr
 
     outStr.resize(outStrCount); // (allocates space for outStrCount + 1 wchar_t's)
     ::MultiByteToWideChar(codePage, 0, inStr, inStrCount, &outStr[0], outStrCount);
-    
+
     outStr[outStrCount] = '\0';
 
 #elif defined (__unix__)
@@ -782,7 +784,7 @@ BentleyStatus BeStringUtilities::LocaleCharToWChar(WStringR outStr, CharCP inStr
         {
         BeStringUtilities::Snprintf(cpStrBuf, _countof(cpStrBuf), "cp%u", codePage);
         cpStr = cpStrBuf;
-        }    
+        }
 
     // "LE" (little endian) is implied on all intended platforms, but being specific anyway.
 
@@ -793,7 +795,7 @@ BentleyStatus BeStringUtilities::LocaleCharToWChar(WStringR outStr, CharCP inStr
     // basic_string objects maintain a NULL-terminated buffer internally; the value given to resize is the number of real characters.
     outStr.resize(resultBytes.size() / sizeof (WChar));
     memcpy(const_cast<WCharP>(outStr.data()), &resultBytes[0], resultBytes.size());
-    
+
 #else
 #error unknown runtime
 #endif
@@ -858,7 +860,7 @@ WCharP  BeStringUtilities::LocaleCharToWChar(WCharP outWChar, CharCP inChar, Lan
         {
         BeStringUtilities::Snprintf(cpStrBuf, _countof(cpStrBuf), "CP%u", codePage);
         cpStr = cpStrBuf;
-        }    
+        }
 
     // "LE" (little endian) is implied on all intended platforms, but being specific anyway.
     bvector<Byte> resultBytes;
@@ -869,7 +871,7 @@ WCharP  BeStringUtilities::LocaleCharToWChar(WCharP outWChar, CharCP inChar, Lan
     size_t  copySize = std::min(resultBytes.size(), ((outMaxChars-1) * sizeof (WChar)));
     memcpy(outWChar, &resultBytes[0], copySize);
     outWChar[copySize/sizeof(WChar)] = 0;
-    
+
 #endif
 
     return outWChar;
@@ -919,10 +921,10 @@ BentleyStatus Utf8String::VSprintf(Utf8CP format, va_list argptr)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Utf8String::Sprintf(Utf8CP format, ...) 
+BentleyStatus Utf8String::Sprintf(Utf8CP format, ...)
     {
-    va_list args; 
-    va_start(args, format); 
+    va_list args;
+    va_start(args, format);
     auto result = BeUtf8StringSprintf(*this, format, args);
     va_end(args);
 
@@ -931,7 +933,7 @@ BentleyStatus Utf8String::Sprintf(Utf8CP format, ...)
 
     if (result > (int)size()) // on *nix, the initial attempt may fail, because it can only guess at the length of the formatted string.
         {                // Note that we have to re-create 'args' in order make a second attempt.
-        va_start(args, format); 
+        va_start(args, format);
         result = BeUtf8StringSprintf(*this, format, args, result);
         va_end(args);
 
@@ -947,8 +949,8 @@ BentleyStatus Utf8String::Sprintf(Utf8CP format, ...)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8PrintfString::Utf8PrintfString(Utf8CP format, ...) : Utf8String()
     {
-    va_list args; 
-    va_start(args, format); 
+    va_list args;
+    va_start(args, format);
     auto result = BeUtf8StringSprintf(*this, format, args);
     va_end(args);
 
@@ -980,18 +982,18 @@ Utf8PrintfString Utf8PrintfString::CreateFromVaList(Utf8CP format, va_list args)
         if (result < 0)
             return str;
         }
-    
+
     return str;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WString::Sprintf(WCharCP format, ...) 
+BentleyStatus WString::Sprintf(WCharCP format, ...)
     {
 #if defined (_WIN32)
-    va_list args; 
-    va_start(args, format); 
+    va_list args;
+    va_start(args, format);
     auto result = BeWStringSprintf(*this, format, args);
     va_end(args);
 
@@ -1000,7 +1002,7 @@ BentleyStatus WString::Sprintf(WCharCP format, ...)
 
     if (result > (int)size()) // on *nix, the initial attempt may fail, because it can only guess at the length of the formatted string.
         {                // Note that we have to re-create 'args' in order make a second attempt.
-        va_start(args, format); 
+        va_start(args, format);
         result = BeWStringSprintf(*this, format, args, result);
         va_end(args);
 
@@ -1017,11 +1019,11 @@ BentleyStatus WString::Sprintf(WCharCP format, ...)
     while (formatResult < 0)
         {
         resultBufferGuess += FORMAT_RESULT_BUFFER_GUESS;
-        va_start(args, format); 
+        va_start(args, format);
         formatResult = BeWStringSprintf(*this, format, args, resultBufferGuess);
         va_end(args);
         }
-    
+
     return BSISUCCESS;
 #endif
     }
@@ -1068,17 +1070,17 @@ WPrintfString::WPrintfString(WCharCP format, va_list args) : WString()
 static int wcsicmp_portable(WCharCP lhs, WCharCP rhs, size_t n)
     {
     // I have yet to find an equivalent. Some systems have wcscasecmp, but this is POSIX 2008, and not on Android, for example.
-    
+
     if (n==0)
         return 0;
 
     WChar lhsChar;
     WChar rhsChar;
-    
+
     do  {
         lhsChar = towlower(*lhs);
         ++lhs;
-        
+
         rhsChar = towlower(*rhs);
         ++rhs;
         }
@@ -1163,17 +1165,17 @@ static const char s_safeForUri[256] =
     /* 1 */ 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,
     /* 2 */ 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,
     /* 3 */ 1,1,1,1, 1,1,1,1, 1,1,0,0, 0,0,0,0,
-    
+
     /* 4 */ 0,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1,
     /* 5 */ 1,1,1,1, 1,1,1,1, 1,1,1,0, 0,0,0,0,
     /* 6 */ 0,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1,
     /* 7 */ 1,1,1,1, 1,1,1,1, 1,1,1,0, 0,0,0,0,
-    
+
     /* 8 */ 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,
     /* 9 */ 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,
     /* A */ 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,
     /* B */ 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,
-    
+
     /* C */ 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,
     /* D */ 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,
     /* E */ 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,
@@ -1194,10 +1196,10 @@ Utf8String BeStringUtilities::UriEncode(Utf8CP charsToEncode)
     unsigned char* start  = new unsigned char[length * 3];
     unsigned char* end    = start;
     Utf8CP         srcEnd = charsToEncode + length;
- 
+
     for ( ; charsToEncode < srcEnd; charsToEncode++)
         {
-        if (s_safeForUri[(uint8_t)*charsToEncode]) 
+        if (s_safeForUri[(uint8_t)*charsToEncode])
             {
             *end++ = *charsToEncode;
             }
@@ -1208,7 +1210,7 @@ Utf8String BeStringUtilities::UriEncode(Utf8CP charsToEncode)
             *end++ = DEC2HEX[(unsigned char) *charsToEncode & 0x0F];
             }
         }
- 
+
     Utf8String result((Utf8CP) start, (Utf8CP) end);
     delete [] start;
     return result;
@@ -1224,26 +1226,26 @@ char from_hex(char ch) {
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      08/2013
 //---------------------------------------------------------------------------------------
-Utf8String BeStringUtilities::UriDecode(Utf8CP start, Utf8CP end) 
+Utf8String BeStringUtilities::UriDecode(Utf8CP start, Utf8CP end)
     {
     Utf8String decoded;
     decoded.reserve(end-start); // that will be at least long enough
 
     for (Utf8CP pstr = start; pstr < end; ++pstr)
         {
-        if (*pstr == '%') 
+        if (*pstr == '%')
             {
-            if (pstr[1] && pstr[2]) 
+            if (pstr[1] && pstr[2])
                 {
                 decoded.append(1, static_cast <Utf8Char> ((from_hex(pstr[1]) << 4 | from_hex(pstr[2]))));
                 pstr += 2;
                 }
             }
         else if (*pstr == '+') // Some encoders turn space into '+'
-            { 
+            {
             decoded.append(1, ' ');
-            } 
-        else 
+            }
+        else
             {
             decoded.append(1, *pstr);
             }
@@ -1254,7 +1256,7 @@ Utf8String BeStringUtilities::UriDecode(Utf8CP start, Utf8CP end)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      08/2013
 //---------------------------------------------------------------------------------------
-Utf8String BeStringUtilities::UriDecode(Utf8CP str) 
+Utf8String BeStringUtilities::UriDecode(Utf8CP str)
     {
     return UriDecode(str, str+strlen(str));
     }
@@ -1820,7 +1822,7 @@ static _locale_t getEnUsLocale()
     // Note that you cannot pick apart or re-create va_list objects on-the-fly, so by the time we're in this function, we don't have the ability to remap to wprintf, which in theory is what Microsoft wants.
     // The best workaround I've come up with is to force the en_US locale. I believe apps do NOT need actual custom formatting per locale via printf, and en_US is a single-byte locale, thus side-stepping the multi-byte check.
     // In a future branch, we should investigate third-party libraries to better correct this scenario.
-    
+
     static bool s_isCreated = false;
     static _locale_t s_enUsLocale;
 
@@ -1829,7 +1831,7 @@ static _locale_t getEnUsLocale()
         s_enUsLocale = _create_locale(LC_CTYPE, "en-US");
         s_isCreated = true;
         }
-    
+
     return s_enUsLocale;
     }
 #endif
@@ -1946,6 +1948,7 @@ int BentleyApi::Bevsnprintf(CharP buffer, size_t numCharsInBuffer, CharCP fmt, v
         return EOF;
         }
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
     //  Truncate the formatted string as necessary to fit into the output buffer
     if (NULL != buffer)
         {
@@ -1957,6 +1960,7 @@ int BentleyApi::Bevsnprintf(CharP buffer, size_t numCharsInBuffer, CharCP fmt, v
             buffer[numCharsInBuffer-1] = 0;
             }
         }
+POP_DISABLE_DEPRECATION_WARNINGS
 
     if ((numCharsInBuffer==0) && (!s.empty()))// For strings that must be truncated, this function mimics the Windows behavior of copying as much as will fit and then returning -1
         return EOF;
@@ -1984,6 +1988,7 @@ int BentleyApi::Bevsnwprintf(WCharP buffer, size_t numCharsInBuffer, WCharCP fmt
         return EOF;
         }
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
     //  Truncate the formatted string as necessary to fit into the output buffer
     if (NULL != buffer)
         {
@@ -1995,6 +2000,7 @@ int BentleyApi::Bevsnwprintf(WCharP buffer, size_t numCharsInBuffer, WCharCP fmt
             buffer[numCharsInBuffer-1] = 0;
             }
         }
+POP_DISABLE_DEPRECATION_WARNINGS
 
     if ((numCharsInBuffer==0) && (!s.empty()))// For strings that must be truncated, this function mimics the Windows behavior of copying as much as will fit and then returning -1
         return EOF;
@@ -2021,15 +2027,19 @@ char* BeStringUtilities::Strlwr(char* s)
             BeAssert(false);
             return s;
             }
+PUSH_DISABLE_DEPRECATION_WARNINGS
         strcpy(s, a.c_str());
+POP_DISABLE_DEPRECATION_WARNINGS
         return s;
         }
 
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
+PUSH_DISABLE_DEPRECATION_WARNINGS
     return _strlwr(s);
+POP_MSVC_IGNORE
 #elif defined (__unix__)
     return strlwr_ascii_only(s);
-        
+
 #else
 #error unknown runtime
 #endif
@@ -2041,7 +2051,9 @@ char* BeStringUtilities::Strlwr(char* s)
 wchar_t* BeStringUtilities::Wcslwr(wchar_t* s)
     {
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
+PUSH_DISABLE_DEPRECATION_WARNINGS
     return _wcslwr(s);
+POP_DISABLE_DEPRECATION_WARNINGS
 #elif defined (__unix__)
     return wcslwr_portable(s);
 #else
@@ -2049,6 +2061,7 @@ wchar_t* BeStringUtilities::Wcslwr(wchar_t* s)
 #endif
     }
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2090,6 +2103,7 @@ wchar_t* BeStringUtilities::Wcsupr(wchar_t* s)
 #error unknown runtime
 #endif
     }
+POP_DISABLE_DEPRECATION_WARNINGS
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
@@ -2228,16 +2242,16 @@ wchar_t* BeStringUtilities::Wcstok(wchar_t *wcsToken, const wchar_t *wcsDelimit,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald               07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-char* BeStringUtilities::Strrev(char *s) 
+char* BeStringUtilities::Strrev(char *s)
     {
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    return _strrev(s); 
+    return _strrev(s);
 #elif defined (__unix__)
      for (size_t i=0, j=strlen(s)-1;  i < j; ++i, --j)
         {
         char temp = s[i];
         s[i] = s[j];
-        s[j] = temp;  
+        s[j] = temp;
         }
     return s;
 #else
@@ -2247,16 +2261,16 @@ char* BeStringUtilities::Strrev(char *s)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-wchar_t* BeStringUtilities::Wcsrev(wchar_t *s) 
+wchar_t* BeStringUtilities::Wcsrev(wchar_t *s)
     {
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    return _wcsrev(s); 
+    return _wcsrev(s);
 #elif defined (__unix__)
      for (size_t i=0, j=wcslen(s)-1;  i < j; ++i, --j)
         {
         wchar_t temp = s[i];
         s[i] = s[j];
-        s[j] = temp;  
+        s[j] = temp;
         }
     return s;
 #else
@@ -2267,10 +2281,10 @@ wchar_t* BeStringUtilities::Wcsrev(wchar_t *s)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-wchar_t* BeStringUtilities::Wcsncpy(wchar_t *strDest, size_t destLen, const wchar_t *strSource, size_t count) 
+wchar_t* BeStringUtilities::Wcsncpy(wchar_t *strDest, size_t destLen, const wchar_t *strSource, size_t count)
     {
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    wcsncpy_s(strDest, destLen, strSource, count); 
+    wcsncpy_s(strDest, destLen, strSource, count);
 #elif defined (__unix__)
     unixWcsncpy(strDest, destLen, strSource, count);
 #else
@@ -2282,10 +2296,10 @@ wchar_t* BeStringUtilities::Wcsncpy(wchar_t *strDest, size_t destLen, const wcha
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-char* BeStringUtilities::Strncpy(char *strDest, size_t destLen, const char *strSource, size_t count) 
+char* BeStringUtilities::Strncpy(char *strDest, size_t destLen, const char *strSource, size_t count)
     {
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    strncpy_s(strDest, destLen, strSource, count); 
+    strncpy_s(strDest, destLen, strSource, count);
 #elif defined (__unix__)
     unixStrncpy(strDest, destLen, strSource, count);
 #else
@@ -2306,10 +2320,10 @@ char* BeStringUtilities::Strncpy(char *strDest, size_t destLen, const char *strS
 
         // check that the base if valid
         if (base < 2 || base > 36) { *result = '\0'; return result; }
-    
+
         wchar_t* ptr = result, *ptr1 = result, tmp_char;
         int tmp_value;
-    
+
         do {
             if (0 == --sizeInCharacters)
                 return NULL;
@@ -2317,7 +2331,7 @@ char* BeStringUtilities::Strncpy(char *strDest, size_t destLen, const char *strS
             value /= base;
             *ptr++ = L"zyxwvutsrqponmlkjihgfedcba9876543210123456789abcdefghijklmnopqrstuvwxyz" [35 + (tmp_value - value * base)];
         } while ( value );
-    
+
         // Apply negative sign
         if (tmp_value < 0) *ptr++ = '-';
         *ptr-- = '\0';
@@ -2340,7 +2354,7 @@ void*   BeStringUtilities::WCharToPointer (WCharCP inWChar)
         return NULL;
 
     uintptr_t v;
-    BE_STRING_UTILITIES_SWSCANF(inWChar, L"%" SCNxPTR, &v);
+    WString::Swscanf_safe(inWChar, L"%" SCNxPTR, &v);
     return (void*)v;
     }
 
@@ -2353,7 +2367,7 @@ void*   BeStringUtilities::Utf8ToPointer (Utf8CP inChar)
         return NULL;
 
     uintptr_t v;
-    sscanf(inChar, "%" SCNxPTR, &v);
+    Utf8String::Sscanf_safe(inChar, "%" SCNxPTR, &v);
     return (void*)v;
     }
 
@@ -2410,9 +2424,9 @@ void BeStringUtilities::FormatUInt64(WCharP string, uint64_t number, uint64_t ba
         }
 
     WCharP bufpt = string;
-    // Convert to ascii 
-    do  
-        {     
+    // Convert to ascii
+    do
+        {
         *bufpt = digits[number%base];
         bufpt++;
         number /= base;
@@ -2445,9 +2459,9 @@ void BeStringUtilities::FormatUInt64(Utf8P string, uint64_t number, uint64_t bas
         }
 
     Utf8P bufpt = string;
-    // Convert to ascii 
-    do  
-        {     
+    // Convert to ascii
+    do
+        {
         *bufpt = digits[number%base];
         bufpt++;
         number /= base;
@@ -2523,7 +2537,7 @@ uint64_t BeStringUtilities::ParseHex(Utf8CP hs, BentleyStatus* outStat)
         }
 
     status = SUCCESS;
-    return value;    
+    return value;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2678,11 +2692,11 @@ template<> void MyStrCpy<wchar_t>(wchar_t* pDest, size_t count, wchar_t* src)
     {    BeStringUtilities::Wcsncpy (pDest, count, src);    }
 
 /*---------------------------------------------------------------------------------**//**
-* Note: This method was motivated by a significant performance degradation in 
+* Note: This method was motivated by a significant performance degradation in
 * BeStringUtilities::Snwprintf(). DgnECManager::FormatInstanceId() and PersistentElementPath::
 * ToWString() were making frequent use of Snwprintf() to format hexadecimal values.
 * Snwprintf() must convert the incoming format string and any wchar_t arguments from wchar_t
-* to Utf8, and convert the result from Utf8 to wchar_t. Switching to a dedicated formatting 
+* to Utf8, and convert the result from Utf8 to wchar_t. Switching to a dedicated formatting
 * function reduced time spent formatting integers by two orders of magnitude.
 *
 * If similar bottlenecks appear in other code making  heavy use of Snwprintf(), it is suggested
@@ -2700,7 +2714,7 @@ template <typename value_type> int _FormatUInt64(value_type *dest, size_t numCha
     {
     if (NULL == dest || 0 >= numCharsInBuffer)
         { BeAssert(false); return 0; }
-    
+
     static const value_type s_offsets[2][2] = { { '0', 'a'-0xA }, { '0', 'A'-0xA } };
     static const size_t bufSize = 0x12      // max minWidth (== max minPrecision + max prefix length)
                                 + 1;        // null terminator
@@ -2748,7 +2762,7 @@ template <typename value_type> int _FormatUInt64(value_type *dest, size_t numCha
         }
 
     size_t nDigits = pStart - pCur;                         // this can be 0 if val==0; this is correct if minPrecision is also 0, otherwise we will add zeros below
-    
+
     // 5. Meet minimum precision
     while (nDigits < minPrecision)
         {
@@ -2799,7 +2813,7 @@ template <typename value_type> int _FormatUInt64(value_type *dest, size_t numCha
     // 10. Null-terminate
     BeAssert(width < numCharsInBuffer);
     dest[width] = '\0';
-        
+
     return (int)width;
     }
 
@@ -2961,18 +2975,18 @@ size_t BeStringUtilities::ComputeNumLogicalChars(WCharCP str, size_t numUnits)
                 if (*str >= 0xD800 && *str < 0xE000)
                     {
                     ++str;
-                    
+
                     if (str >= end)
                         {
                         BeAssert(false); // Invalid UTF-16 lead byte.
                         return numLogChars;
                         }
                     }
-                
+
                 ++numLogChars;
                 ++str;
                 }
-            
+
             return numLogChars;
             }
         case 4:
@@ -3000,7 +3014,7 @@ size_t BeStringUtilities::ComputeByteOffsetOfLogicalChar(Utf8CP str, size_t numL
     for (size_t iLogChar = 0; iLogChar < numLogicalChars; ++iLogChar)
         {
         bytesInLogChar = 1;
-        
+
         if ((*str & 0xE0) == 0xC0)
             bytesInLogChar = 2;
         else if ((*str & 0xF0) == 0xE0)
@@ -3009,11 +3023,11 @@ size_t BeStringUtilities::ComputeByteOffsetOfLogicalChar(Utf8CP str, size_t numL
             bytesInLogChar = 4;
         else if (0 != (*str & 0x80))
             BeAssert(false); // Invalid UTF-8 lead byte.
-        
+
         str += bytesInLogChar;
         byteOffset += bytesInLogChar;
         }
-    
+
     return byteOffset;
     }
 

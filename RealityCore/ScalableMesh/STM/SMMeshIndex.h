@@ -155,7 +155,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
                                      const HFCPtr<SMMeshIndexNode<POINT, EXTENT> >& pi_rpParentNode,
                                      bool IsUnsplitSubLevel);
 
-    SMMeshIndexNode(const SMMeshIndexNode<POINT, EXTENT>& pi_rNode);    
+    // SMMeshIndexNode(const SMMeshIndexNode<POINT, EXTENT>& pi_rNode);    
 
     SMMeshIndexNode(uint64_t nodeID,
                     size_t pi_SplitTreshold,
@@ -355,7 +355,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     bool ModifyClip(uint64_t clipId, bool isVisible, bool setToggledWhenIdIsOn = true, Transform tr = Transform::FromIdentity());
 
     //Completes an async clip operation.
-    void DoClip(uint64_t clipId, bool isVisible);
+    // void DoClip(uint64_t clipId, bool isVisible);
 
     void CollectClipIds(bset<uint64_t>& clipIds) const;
 
@@ -774,7 +774,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     void         ChangeGeometricError(ISMDataStoreTypePtr<EXTENT>&    pi_pDataStore, const double& newGeometricErrorValue);
 
-    void         SaveMeshToCloud(ISMDataStoreTypePtr<EXTENT>&    pi_pDataStore);
+    // void         SaveMeshToCloud(ISMDataStoreTypePtr<EXTENT>&    pi_pDataStore);
 
     virtual void LoadIndexNodes(size_t& nLoaded, int level, bool headersOnly) override;
 
@@ -970,7 +970,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         virtual void        Stitch(int pi_levelToStitch, bool do2_5dStitchFirst = false, vector<SMMeshIndexNode<POINT, EXTENT>*>* nodesToStitchInfo = nullptr);
         
-        void                SetClipStore(HFCPtr<IScalableMeshDataStore<DifferenceSet, Byte, Byte>>& clipStore);
+        // void                SetClipStore(HFCPtr<IScalableMeshDataStore<DifferenceSet, Byte, Byte>>& clipStore);
         void                SetClipRegistry(ClipRegistry* registry);       
 
 
@@ -985,7 +985,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         //ISMStore::FeatureType is the same as DTMFeatureType defined in TerrainModel.h.
         BENTLEY_SM_EXPORT void                AddFeatureDefinition(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
 //#ifdef WIP_MESH_IMPORT                           
-        BENTLEY_SM_EXPORT void                AddMeshDefinition(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, const char* metadata="", bool isMesh3d = true);
+        // BENTLEY_SM_EXPORT void                AddMeshDefinition(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, const char* metadata="", bool isMesh3d = true);
 
         BENTLEY_SM_EXPORT void                AddMeshDefinition(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, const char* metadata, const uint8_t* texData, size_t texSize, const DPoint2d* uvs, bool isMesh3d);
 //#endif
@@ -1027,8 +1027,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
 		bool m_canUseBcLibClips;
 
-        void SetSMTerrain(SMMeshIndex<POINT, EXTENT>* terrainP);
-        SMMeshIndex<POINT, EXTENT>* GetSMTerrain();
+        // void SetSMTerrain(SMMeshIndex<POINT, EXTENT>* terrainP);
+        // SMMeshIndex<POINT, EXTENT>* GetSMTerrain();
 #if 0
         void SetSMTerrainMesh(IScalableMesh* terrainP);
         IScalableMesh* GetSMTerrainMesh();

@@ -48,8 +48,9 @@ void iModelBridgeError::WriteErrorMessage(BeFileNameCR errorFileName)
         extendedData.Parse(Json::FastWriter::ToString(m_extendedData).c_str());
         document.AddMember("ExtendedData", extendedData, allocator);
         }
-    
-    FILE* fp = fopen(fileNameutf8.c_str(), "w");
+
+    FILE* fp;
+    BeFile::Fopen(&fp, fileNameutf8.c_str(), "w");
     char buffer[1024];
     rapidjson::FileWriteStream fs(fp, buffer, sizeof(buffer));
     rapidjson::PrettyWriter<rapidjson::FileWriteStream> writer(fs);

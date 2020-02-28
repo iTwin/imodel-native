@@ -47,7 +47,7 @@ static void TryParseInput(int argc, char** argv, GtestOptions& options)
             else if (0 == strcmp(tokens[0].c_str(), "--timeout"))
                 options.timeout = atoi(tokens[1].c_str());
             }
-        
+
         }
     }
 
@@ -91,7 +91,7 @@ bool SpawnProcessWin32 (char *command, DWORD &returnCode)
 
     GetExitCodeProcess (pi.hProcess, &dwExitCode);
 
-    if(dwExitCode == STILL_ACTIVE)    
+    if(dwExitCode == STILL_ACTIVE)
         {
         // Process did not terminate -> force it
         TerminateProcess (pi.hProcess, 0); // Zero is the exit code in this example
@@ -117,7 +117,9 @@ exit:
 +---------------+---------------+---------------+---------------+---------------+------*/
 static BentleyStatus getFileNameFromEnv (BeFileName& fn, CharCP envname)
     {
+PUSH_DISABLE_DEPRECATION_WARNINGS
     WString filepath (getenv(envname), BentleyCharEncoding::Utf8);
+POP_DISABLE_DEPRECATION_WARNINGS
     if (filepath.empty())
         return ERROR;
     fn.SetName (filepath);
@@ -133,7 +135,7 @@ CharCP WinGetEnv(const char * name)
     static char buffer[buffSize];
     if (GetEnvironmentVariableA(name, buffer, buffSize))
         return buffer;
-    
+
     return 0;
     }
 #endif  // BENTLEY_WIN32
@@ -149,7 +151,7 @@ struct BeGTestHost : RefCounted<BeTest::Host>
     BeGTestHost (char const* progDir)
         {
         m_programPath = BeFileName (BeFileName::DevAndDir, WString(progDir, true).c_str());
-        if ( m_programPath.IsEmpty() ) // We get progdir from argv[0] , if we execute it from CWD argv[0] is blank. in which case BeFileName is not able to resolve full path. So creating path ".\" 
+        if ( m_programPath.IsEmpty() ) // We get progdir from argv[0] , if we execute it from CWD argv[0] is blank. in which case BeFileName is not able to resolve full path. So creating path ".\"
             {
             m_programPath.AppendString(L".");
             m_programPath.AppendSeparator();
@@ -330,7 +332,7 @@ static int runAllTestsWithTimeout(uint64_t timeoutInSeconds)
     auto futureResult = promisedFinished.get_future();
     int testResult = 0;
     bool didComplete = false;
-    
+
     std::thread ([&]
         {
         BeThreadUtilities::SetCurrentThreadName("Test Runner Thread");
@@ -339,9 +341,9 @@ static int runAllTestsWithTimeout(uint64_t timeoutInSeconds)
         didComplete = true;
         promisedFinished.set_value(true);
         }).detach();
-    
+
     EXPECT_TRUE(std::future_status::ready == futureResult.wait_for(std::chrono::seconds(timeoutInSeconds)));
-    
+
     if (!didComplete)
         {
         printf("\n");
@@ -351,10 +353,10 @@ static int runAllTestsWithTimeout(uint64_t timeoutInSeconds)
         printf("       or may be clues for the hang and/or deadlock.\n");
         printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
         printf("\n");
-        
+
         return 1;
         }
-    
+
     return testResult;
     }
 
@@ -531,7 +533,7 @@ int main(int argc, char **argv)
     // Always run tests with a timeout unless "-1" is provided
     int errors = 0;
     if (-1 != options.timeout)
-        errors = runAllTestsWithTimeout(options.timeout); 
+        errors = runAllTestsWithTimeout(options.timeout);
     else
         errors = RUN_ALL_TESTS(); //run tests without timeout
 

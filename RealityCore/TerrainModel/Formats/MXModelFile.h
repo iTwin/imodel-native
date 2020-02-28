@@ -11,6 +11,7 @@ class MXTriangle;
 #include <Bentley/bvector.h>
 #include <Bentley/BeFile.h>
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 #pragma warning( disable: 4275 4251 )
 #ifdef MXMODEL_EXPORTS
 #define DLL  __declspec( dllexport )
@@ -2761,3 +2762,4 @@ template<class T> class MXModelObjectPtr
 
 
 END_BENTLEY_TERRAINMODEL_NAMESPACE
+POP_DISABLE_DEPRECATION_WARNINGS

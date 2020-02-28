@@ -46,7 +46,9 @@ void InitLogging(BeFileNameCR exeDir)
 //---------------------------------------------------------------------------------------
 bool TryGetLogConfigPath(BeFileNameR logConfigPath, BeFileNameCR exeDir)
     {
+PUSH_DISABLE_DEPRECATION_WARNINGS
     Utf8String configFilePathStr(getenv("IMODELCONSOLE_LOGGING_CONFIG"));
+POP_DISABLE_DEPRECATION_WARNINGS
     logConfigPath = BeFileName(configFilePathStr);
     if (!configFilePathStr.empty() && logConfigPath.DoesPathExist())
         return true;
@@ -80,13 +82,13 @@ int wmain(int argc, WCharCP argv[])
 
     InitLogging(exeDir);
 
-    // C++ programs start-up with the "C" locale in effect by default, and the "C" locale does not support conversions of any characters outside 
-    // the "basic character set". ... The call to setlocale() says "I want to use the user's default narrow string encoding". This encoding is 
-    // based on the Posix-locale for Posix environments. In Windows, this encoding is the ACP, which is based on the system-locale. 
-    // However, the success of this code is dependent on two things: 
-    //      1) The narrow encoding must support the wide character being converted. 
-    //      2) The font/gui must support the rendering of that character. 
-    // In Windows, #2 is often solved by setting cmd.exe's font to Lucida Console." 
+    // C++ programs start-up with the "C" locale in effect by default, and the "C" locale does not support conversions of any characters outside
+    // the "basic character set". ... The call to setlocale() says "I want to use the user's default narrow string encoding". This encoding is
+    // based on the Posix-locale for Posix environments. In Windows, this encoding is the ACP, which is based on the system-locale.
+    // However, the success of this code is dependent on two things:
+    //      1) The narrow encoding must support the wide character being converted.
+    //      2) The font/gui must support the rendering of that character.
+    // In Windows, #2 is often solved by setting cmd.exe's font to Lucida Console."
     // (http://cboard.cprogramming.com/cplusplus-programming/145590-non-english-characters-cout-2.html)
     setlocale(LC_CTYPE, "");
 

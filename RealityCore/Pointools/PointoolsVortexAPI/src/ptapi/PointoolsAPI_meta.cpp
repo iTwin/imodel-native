@@ -25,7 +25,7 @@
 
 using namespace pcloud;
 using namespace pointsengine;
-
+PUSH_DISABLE_DEPRECATION_WARNINGS
 struct FileMeta
 {
 	MetaData		mdata;
@@ -71,7 +71,7 @@ FileMeta *extractSceneMeta( const pcloud::Scene *scene, bool inGraph )
 		meta->sceneSpec |= scene->cloud(i)->hasChannel( pcloud::PCloud_RGB ) ? PT_HAS_RGB : 0;
 		meta->sceneSpec |= scene->cloud(i)->hasChannel( pcloud::PCloud_Normal ) ? PT_HAS_NORMAL : 0;
 	}
-	
+
 	if (!inGraph)
 	{
 		pt::BoundingBox bb = scene->localBounds().bounds();
@@ -87,7 +87,7 @@ FileMeta *extractSceneMeta( const pcloud::Scene *scene, bool inGraph )
 	else
 	{
 		pt::BoundingBoxD bb = scene->projectBounds().bounds();
-		
+
 		pt::vector3d lower( &bb.lower(0)), wlower;
 		pt::vector3d upper( &bb.upper(0)), wupper;
 
@@ -100,7 +100,7 @@ FileMeta *extractSceneMeta( const pcloud::Scene *scene, bool inGraph )
 
 
 	meta->mdata = scene->metaData();
-	
+
 	return meta;
 }
 //--------------------------------------------------------------------------------------------------
@@ -108,13 +108,13 @@ FileMeta *extractSceneMeta( const pcloud::Scene *scene, bool inGraph )
 //--------------------------------------------------------------------------------------------------
 PThandle PTAPI	ptReadPODMeta( const PTstr filepath )
 {
-	/* open the file and read the meta */ 
+	/* open the file and read the meta */
 
 	ptds::FilePath path( filepath );
 	pcloud::Scene *scene = pcloud::Scene::createFromFile(path);
 
 	if (!scene) return 0; // TODO: set last error
-	
+
 	PThandle retHandle = 0;
 	if (path.checkExists())
 	{
@@ -132,7 +132,7 @@ PThandle PTAPI	ptReadPODMeta( const PTstr filepath )
 					pcloud::PointCloud *pc = scene->cloud(i);
 					if (!pcloud::PodIO::readCloudStructure(job, pc))
 					{
-						setLastErrorCode( PTV_FILE_READ_FAILURE );		
+						setLastErrorCode( PTV_FILE_READ_FAILURE );
 						break;
 					}
 				}
@@ -145,21 +145,21 @@ PThandle PTAPI	ptReadPODMeta( const PTstr filepath )
 	{
 		setLastErrorCode( PTV_FILE_NOT_EXIST );
 	}
-	
+
 	if (retHandle)
 	{
 		FileMeta *meta = extractSceneMeta(scene,false);	//do the meta extraction and copy into local meta
-		if (meta) 
+		if (meta)
 		{
-			meta->sceneHandle = 0;	
+			meta->sceneHandle = 0;
 			meta->filepath = filepath;
 			m_fileMeta.insert( FileMetaMap::value_type( m_lastHandle, meta ) );	//store
 		}
 	}
 	delete scene;			//clean up
-	
+
 	++m_lastHandle;
-	return retHandle;	
+	return retHandle;
 }
 //--------------------------------------------------------------------------------------------------
 // get meta data handle from a scenehandle
@@ -173,7 +173,7 @@ PThandle	PTAPI	ptGetMetaDataHandle( PThandle sceneHandle )
 	if (meta)
 	{
 		meta->sceneHandle = sceneHandle;
-		m_fileMeta.insert( FileMetaMap::value_type( ++m_lastHandle, meta ) );			
+		m_fileMeta.insert( FileMetaMap::value_type( ++m_lastHandle, meta ) );
 	}
 	else return 0;
 
@@ -182,11 +182,11 @@ PThandle	PTAPI	ptGetMetaDataHandle( PThandle sceneHandle )
 //--------------------------------------------------------------------------------------------------
 // get basic metadata using a metadata handle
 //--------------------------------------------------------------------------------------------------
-PTres		PTAPI	ptGetMetaData( PThandle metadataHandle, PTstr name, PTint &num_clouds, 
+PTres		PTAPI	ptGetMetaData( PThandle metadataHandle, PTstr name, PTint &num_clouds,
 						PTuint64 &num_points, PTuint &scene_spec, PTdouble *lower3, PTdouble *upper3 )
 {
 	FileMetaMap::iterator i = m_fileMeta.find( metadataHandle );
-	if (i == m_fileMeta.end()) 
+	if (i == m_fileMeta.end())
 	{
 		return setLastErrorCode( PTV_INVALID_HANDLE );
 	}
@@ -228,7 +228,7 @@ PTres		PTAPI	ptGetMetaTag( PThandle metadataHandle, const PTstr tagName, PTstr v
 	}
 	if (!value)
 		return setLastErrorCode( PTV_VOID_POINTER );
-	
+
 	FileMeta *meta = i->second;
 
 	wchar_t tagName_str[PT_MAX_META_STR_LEN+1];
@@ -246,7 +246,7 @@ PTres		PTAPI	ptGetMetaTag( PThandle metadataHandle, const PTstr tagName, PTstr v
 		tsection = pt::String("Any");
 		titem = pt::String( first_tok );
 	}
-	else 
+	else
 	{
 		tsection = pt::String(first_tok);
 		titem = pt::String( second_tok );
@@ -256,7 +256,7 @@ PTres		PTAPI	ptGetMetaTag( PThandle metadataHandle, const PTstr tagName, PTstr v
 	{
 		if (tvalue.length())
 		{
-			wcsncpy( value, tvalue.c_wstr(), PT_MAX_META_STR_LEN ); 
+			wcsncpy( value, tvalue.c_wstr(), PT_MAX_META_STR_LEN );
 			return  setLastErrorCode( PTV_SUCCESS );
 		}
 	}
@@ -277,13 +277,13 @@ PTres		PTAPI	ptSetMetaTag( PThandle metadataHandle, const PTstr tagName, const P
 	}
 	if (!value)
 		return setLastErrorCode( PTV_VOID_POINTER );
-	
+
 	FileMeta *meta = i->second;
 
 	wchar_t tagName_str[PT_MAX_META_STR_LEN+1];
 	wcsncpy(tagName_str, tagName, PT_MAX_META_STR_LEN);
     tagName_str[PT_MAX_META_STR_LEN] = 0;
-	
+
     wchar_t * context;
 	wchar_t *first_tok = wcstok( tagName_str, L".", &context);
 	wchar_t *second_tok = wcstok(nullptr, L".", &context);
@@ -295,7 +295,7 @@ PTres		PTAPI	ptSetMetaTag( PThandle metadataHandle, const PTstr tagName, const P
 		tsection = pt::String("Any");
 		titem = pt::String( first_tok );
 	}
-	else 
+	else
 	{
 		tsection = pt::String(first_tok);
 		titem = pt::String( second_tok );
@@ -315,7 +315,7 @@ PTvoid		PTAPI	ptFreeMetaData( PThandle metadataHandle )
 {
 	FileMetaMap::iterator i = m_fileMeta.find( metadataHandle );
 	if (i == m_fileMeta.end()) return ;
-	
+
 	delete i->second;
 	m_fileMeta.erase( i );
 }
@@ -327,15 +327,15 @@ PTres		PTAPI	ptWriteMetaTags( PThandle metadataHandle )
 {
 	// check the file version supports meta tag writing
 	FileMetaMap::iterator i = m_fileMeta.find( metadataHandle );
-	if (i == m_fileMeta.end()) 
+	if (i == m_fileMeta.end())
 		return setLastErrorCode( PTV_INVALID_HANDLE );
 
 	FileMeta *meta = i->second;
-	
+
 	// check the meta tags section is not too large to fit into the reserve
 	pcloud::Scene *scene = sceneFromHandle( meta->sceneHandle );	// would fail if ptReadPODMeta was used
 
-	if (!scene && meta->filepath.isEmpty()) 
+	if (!scene && meta->filepath.isEmpty())
 		return setLastErrorCode( PTV_INVALID_HANDLE );
 
 	ptds::FilePath filepath = scene ? scene->filepath() : meta->filepath;
@@ -346,9 +346,9 @@ PTres		PTAPI	ptWriteMetaTags( PThandle metadataHandle )
 		thePointsPager().pause();
 		thePointsPager().closeSceneFile(scene);
 	}
-	
+
 	bool retval = setLastErrorCode( PTV_SUCCESS ) != 0;
-	
+
 	// reopen read write
 	ptds::DataSourcePtr dataSrc = ptds::DataSourceManager().openForReadWrite( &filepath );
 
@@ -357,19 +357,19 @@ PTres		PTAPI	ptWriteMetaTags( PThandle metadataHandle )
 		// write the meta data
 		pcloud::PodJob pod(0, filepath);
 		pod.h = dataSrc;
-		
+
 		ptds::Tracker t(pod.h);
 		pod.tracker = &t;
-		
+
 		if (!PodIO::writeMetaUpdate( pod, meta->mdata ))
 		{
 			retval = setLastErrorCode( PTV_FILE_WRITE_FAILURE ) != 0;
 		}
-		dataSrc->close();			
+		dataSrc->close();
 	}
-	else 
+	else
 		retval = setLastErrorCode ( PTV_FILE_WRITE_FAILURE ) != 0;
-	
+
 	if (scene)
 	{
 		thePointsPager().reopenScene(scene);
@@ -413,7 +413,7 @@ PTint		PTAPI	ptNumUserMetaTagsInSection( PThandle h , PTint section_index )
 	FileMetaMap::iterator i = m_fileMeta.find( h );
 	if (i == m_fileMeta.end()) return 0;
 
-	FileMeta *meta = i->second;	
+	FileMeta *meta = i->second;
 
 	pt::String section;
 
@@ -426,7 +426,7 @@ PTint		PTAPI	ptNumUserMetaTagsInSection( PThandle h , PTint section_index )
 PTres		PTAPI	ptGetUserMetaTagByIndex( PThandle h , PTint section_index, PTint tag_index, PTstr name, PTstr value )
 {
 	FileMetaMap::iterator i = m_fileMeta.find( h );
-	if (i == m_fileMeta.end()) 
+	if (i == m_fileMeta.end())
 		return setLastErrorCode( PTV_INVALID_HANDLE );
 
 	if (!value)
@@ -436,12 +436,12 @@ PTres		PTAPI	ptGetUserMetaTagByIndex( PThandle h , PTint section_index, PTint ta
 
 	pt::String sname, svalue;
 
-	if (!meta->mdata.user.getMetaTag( section_index, tag_index, sname, svalue )) 	
+	if (!meta->mdata.user.getMetaTag( section_index, tag_index, sname, svalue ))
 	{
 		return setLastErrorCode( PTV_METATAG_NOT_FOUND );
 	}
-	
-	if (!sname.length() || !svalue.length()) 
+
+	if (!sname.length() || !svalue.length())
 	{
 		return setLastErrorCode( PTV_METATAG_EMPTY );
 	}
@@ -468,7 +468,7 @@ PTres		PTAPI	ptGetUserMetaTagByName( PThandle h , const PTstr sectionDotName, PT
 	wchar_t tagName_str[PT_MAX_META_STR_LEN+1];
 	wcsncpy(tagName_str, sectionDotName, PT_MAX_META_STR_LEN);
     tagName_str[PT_MAX_META_STR_LEN] = 0;
-	
+
     wchar_t * context;
 	wchar_t *first_tok = wcstok( tagName_str, L".", &context);
 	wchar_t *second_tok = wcstok(nullptr, L".", &context);
@@ -480,7 +480,7 @@ PTres		PTAPI	ptGetUserMetaTagByName( PThandle h , const PTstr sectionDotName, PT
 		tsection = pt::String("Any");
 		titem = pt::String( first_tok );
 	}
-	else 
+	else
 	{
 		tsection = pt::String(first_tok);
 		titem = pt::String( second_tok );
@@ -488,9 +488,10 @@ PTres		PTAPI	ptGetUserMetaTagByName( PThandle h , const PTstr sectionDotName, PT
 
 	if (meta->mdata.user.getMetaTag( tsection, titem, tvalue ))
 	{
-		wcsncpy( value, tvalue.c_wstr(), PT_MAX_META_STR_LEN ); 
+		wcsncpy( value, tvalue.c_wstr(), PT_MAX_META_STR_LEN );
 		return setLastErrorCode( PTV_SUCCESS );
 	}
 	value[0] = 0;
 	return setLastErrorCode( PTV_METATAG_NOT_FOUND );
 }
+POP_DISABLE_DEPRECATION_WARNINGS

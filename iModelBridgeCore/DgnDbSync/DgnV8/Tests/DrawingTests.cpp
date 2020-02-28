@@ -19,7 +19,7 @@ void AddAttachment(BentleyApi::BeFileNameCR attachmentFileName, DgnV8ModelP v8mo
     //  Add refV8File as an attachment to v8File
     Bentley::DgnDocumentMonikerPtr moniker = DgnV8Api::DgnDocumentMoniker::CreateFromFileName(attachmentFileName.c_str());
     ASSERT_EQ( BentleyApi::SUCCESS, v8model->CreateDgnAttachment(attachment, *moniker, modelrefName, true));
-    ASSERT_TRUE(nullptr != attachment);        
+    ASSERT_TRUE(nullptr != attachment);
         attachment->SetNestDepth(99);
     ASSERT_EQ( BentleyApi::SUCCESS, attachment->WriteToModel());
     }
@@ -103,7 +103,7 @@ TEST_F(DrawingTests, Basic3dAttachment)
         auto physicalModel = physical->GetSub<PhysicalModel>();
         ASSERT_TRUE(physicalModel.IsValid());
         countElements(*physicalModel, 1);
-        
+
         // The converted DrawingModel should contain a 2D copy of that line. (3D attachments are merged into drawings.)
         auto drawing = db->Elements().Get<Drawing>(findFirstElementByClass(*db, getBisClassId(*db, BIS_CLASS_Drawing)));
         ASSERT_TRUE(drawing.IsValid());
@@ -111,7 +111,7 @@ TEST_F(DrawingTests, Basic3dAttachment)
         ASSERT_TRUE(drawingModel.IsValid());
         countElements(*drawingModel, 1);
         }
-    
+
     if (true)
         {
         V8FileEditor v8editor;
@@ -168,7 +168,7 @@ TEST_F(DrawingTests, Basic3dAttachment)
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DisplayStyle3d), 1);
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_ModelSelector), 1);
         }
-    
+
     if (true)
         {
         V8FileEditor v8editor;
@@ -208,7 +208,7 @@ TEST_F(DrawingTests, Basic3dAttachment)
         countElements(*physicalModel, 1); // there should still only be 1 element in the spatial model
 
         }
-    
+
     // ASSERT_TRUE(m_count == 0); *** WIP_SHEETS - when we compute proxy graphics, we end up changing the type-100's XAttribute linkages, which causes us to record a changed hash in syncinfo
     }
 
@@ -308,7 +308,7 @@ TEST_F(DrawingTests, SheetProperties)
         // Create a SheetModel1 ...
         Bentley::DgnModelP SheetModel = v8editor.m_file->CreateNewModel(&modelStatus, L"sheet1", DgnV8Api::DgnModelType::Sheet, /*is3D*/ false);
         EXPECT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
-        // and attach the 2D drawing as a reference to the 2D sheet1 
+        // and attach the 2D drawing as a reference to the 2D sheet1
         DgnV8Api::DgnAttachment* attachment = NULL;
         AddAttachment(m_v8FileName, SheetModel, L"Drawing1", attachment);
         DgnV8Api::ModelId SheetmodelId = v8editor.m_file->FindModelIdByName(L"sheet1");
@@ -338,7 +338,7 @@ TEST_F(DrawingTests, SheetProperties)
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
         countModels(*db, 2, 2); // expect 1 sheet model and 2 physical model (includes WebMercatorModel)
 
-        // There should be 1 spatial (orthographic) view 
+        // There should be 1 spatial (orthographic) view
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 1);
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 1);
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_CategorySelector), 2);
@@ -349,7 +349,7 @@ TEST_F(DrawingTests, SheetProperties)
         ASSERT_TRUE(sheet.IsValid());
         Sheet::ModelPtr sheetModel = sheet->GetSub<Sheet::Model>();
         ASSERT_TRUE(sheetModel.IsValid());
-        //Count elements on sheet 
+        //Count elements on sheet
         countElements(*sheetModel, 3);
         ASSERT_EQ(2,sheet->GetWidth());
         ASSERT_EQ(2,sheet->GetHeight());
@@ -391,11 +391,11 @@ TEST_F(DrawingTests, SheetScale_WithMultiAttachmentOfSameStoredScale)
         // and attach the 3D model as a reference to the new drawing2 model
         DgnV8Api::DgnAttachment* attachment2 = NULL;
         AddAttachment(m_v8FileName, drawingModel2, threeDModel->GetModelName(), attachment2);
- 
+
         // Create a SheetModel1 ...
         Bentley::DgnModelP SheetModel = v8editor.m_file->CreateNewModel(&modelStatus, L"sheet1", DgnV8Api::DgnModelType::Sheet, /*is3D*/ false);
         EXPECT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
-        // and attach the 2D drawing1 as a reference to the 2D sheet1 
+        // and attach the 2D drawing1 as a reference to the 2D sheet1
         DgnV8Api::DgnAttachment* attachment3 = NULL;
         AddAttachment(m_v8FileName, SheetModel, L"Drawing1", attachment3);
         attachment3->SetScaleByUnits(true);
@@ -403,7 +403,7 @@ TEST_F(DrawingTests, SheetScale_WithMultiAttachmentOfSameStoredScale)
         attachment3->SetStoredScale(100);
         ASSERT_EQ(100, attachment3->GetScaleStored());
         ASSERT_EQ(BentleyApi::SUCCESS, attachment3->WriteToModel());
-        // and attach the 2D drawing2 as a reference to the 2D sheet1 
+        // and attach the 2D drawing2 as a reference to the 2D sheet1
         DgnV8Api::DgnAttachment* attachment4 = NULL;
         AddAttachment(m_v8FileName, SheetModel, L"Drawing2", attachment4);
         attachment4->SetScaleByUnits(true);
@@ -446,7 +446,7 @@ TEST_F(DrawingTests, SheetScale_WithMultiAttachmentOfSameStoredScale)
         ASSERT_TRUE(sheet.IsValid());
         Sheet::ModelPtr sheetModel = sheet->GetSub<Sheet::Model>();
         ASSERT_TRUE(sheetModel.IsValid());
-        //Count elements on sheet 
+        //Count elements on sheet
         countElements(*sheetModel, 3); // 3 ViewAttachments + 1 line
         ASSERT_EQ(2,sheet->GetWidth());
         ASSERT_EQ(2,sheet->GetHeight());
@@ -500,7 +500,7 @@ TEST_F(DrawingTests, SheetScale_WithMultiAttachmentOfDiffStoredScale)
         // Create a SheetModel1 ...
         Bentley::DgnModelP SheetModel = v8editor.m_file->CreateNewModel(&modelStatus, L"sheet1", DgnV8Api::DgnModelType::Sheet, /*is3D*/ false);
         EXPECT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
-        // and attach the 2D drawing1 as a reference to the 2D sheet1 
+        // and attach the 2D drawing1 as a reference to the 2D sheet1
         DgnV8Api::DgnAttachment* attachment4 = NULL;
         AddAttachment(m_v8FileName, SheetModel, L"Drawing1", attachment4);
         attachment4->SetScaleByUnits(true);
@@ -508,7 +508,7 @@ TEST_F(DrawingTests, SheetScale_WithMultiAttachmentOfDiffStoredScale)
         attachment4->SetStoredScale(20);
         ASSERT_EQ(20, attachment4->GetScaleStored());
         ASSERT_EQ(BentleyApi::SUCCESS, attachment4->WriteToModel());
-        // and attach the 2D drawing2 as a reference to the 2D sheet1 
+        // and attach the 2D drawing2 as a reference to the 2D sheet1
         DgnV8Api::DgnAttachment* attachment5 = NULL;
         AddAttachment(m_v8FileName, SheetModel, L"Drawing2", attachment5);
         attachment5->SetScaleByUnits(true);
@@ -517,7 +517,7 @@ TEST_F(DrawingTests, SheetScale_WithMultiAttachmentOfDiffStoredScale)
         ASSERT_EQ(20, attachment5->GetScaleStored());
         ASSERT_EQ(BentleyApi::SUCCESS, attachment5->WriteToModel());
         DgnV8Api::DgnAttachment* attachment6 = NULL;
-        // and attach the 2D drawing3 as a reference to the 2D sheet1 
+        // and attach the 2D drawing3 as a reference to the 2D sheet1
         AddAttachment(m_v8FileName, SheetModel, L"Drawing3", attachment6);
         attachment6->SetScaleByUnits(true);
         ASSERT_EQ(true, attachment6->IsScaleByUnits());
@@ -542,7 +542,7 @@ TEST_F(DrawingTests, SheetScale_WithMultiAttachmentOfDiffStoredScale)
         // Create a SheetModel2 ...
         Bentley::DgnModelP SheetModel2 = v8editor.m_file->CreateNewModel(&modelStatus, L"sheet2", DgnV8Api::DgnModelType::Sheet, /*is3D*/ false);
         EXPECT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
-        // and attach the 2D drawing1 as a reference to the 2D sheet2 
+        // and attach the 2D drawing1 as a reference to the 2D sheet2
         DgnV8Api::DgnAttachment* attachment7 = NULL;
         AddAttachment(m_v8FileName, SheetModel2, L"Drawing1",attachment7);
         attachment7->SetScaleByUnits(true);
@@ -550,7 +550,7 @@ TEST_F(DrawingTests, SheetScale_WithMultiAttachmentOfDiffStoredScale)
         attachment7->SetStoredScale(0.1);
         ASSERT_EQ(0.1, attachment7->GetScaleStored());
         ASSERT_EQ(BentleyApi::SUCCESS, attachment7->WriteToModel());
-        // and attach the 2D drawing2 as a reference to the 2D sheet2 
+        // and attach the 2D drawing2 as a reference to the 2D sheet2
         DgnV8Api::DgnAttachment* attachment8 = NULL;
         AddAttachment(m_v8FileName, SheetModel2, L"Drawing2", attachment8);
         attachment8->SetScaleByUnits(true);
@@ -558,7 +558,7 @@ TEST_F(DrawingTests, SheetScale_WithMultiAttachmentOfDiffStoredScale)
         attachment8->SetStoredScale(0.1);
         ASSERT_EQ(0.1, attachment8->GetScaleStored());
         ASSERT_EQ(BentleyApi::SUCCESS, attachment8->WriteToModel());
-        // and attach the 2D drawing3 as a reference to the 2D sheet2 
+        // and attach the 2D drawing3 as a reference to the 2D sheet2
         DgnV8Api::DgnAttachment* attachment9 = NULL;
         AddAttachment(m_v8FileName, SheetModel2, L"Drawing3", attachment9);
         attachment9->SetScaleByUnits(true);
@@ -602,8 +602,8 @@ TEST_F(DrawingTests, SheetScale_WithMultiAttachmentOfDiffStoredScale)
         ASSERT_TRUE(sheetmodel1.IsValid());
         Sheet::ElementCPtr sheet1 = db->Elements().Get<Sheet::Element>(sheetmodel1->GetModeledElementId());
         ASSERT_TRUE(sheet1.IsValid());
-        //Count elements on sheet 
-        countElements(*sheetmodel1, 4); 
+        //Count elements on sheet
+        countElements(*sheetmodel1, 4);
         ASSERT_EQ(2,sheet1->GetWidth());
         ASSERT_EQ(2,sheet1->GetHeight());
         ASSERT_EQ(0.05,sheet1->GetScale());
@@ -614,7 +614,7 @@ TEST_F(DrawingTests, SheetScale_WithMultiAttachmentOfDiffStoredScale)
         ASSERT_TRUE(sheetmodel2.IsValid());
         Sheet::ElementCPtr sheet2 = db->Elements().Get<Sheet::Element>(sheetmodel2->GetModeledElementId());
         ASSERT_TRUE(sheet2.IsValid());
-        //Count elements on sheet 
+        //Count elements on sheet
         countElements(*sheetmodel2, 4);
         ASSERT_EQ(2, sheet2->GetWidth());
         ASSERT_EQ(2, sheet2->GetHeight());
@@ -645,11 +645,11 @@ TEST_F(DrawingTests, Attach3dmodeltoSheet)
         Bentley::DgnModelP SheetModel = v8editor.m_file->CreateNewModel(&modelStatus, L"sheet1", DgnV8Api::DgnModelType::Sheet, /*is3D*/ false);
         EXPECT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
         DgnV8Api::DgnAttachment* attachment = NULL;
-        // and attach the 3D model as a reference to the 2D sheet1 
+        // and attach the 3D model as a reference to the 2D sheet1
         AddAttachment(m_v8FileName, SheetModel, threeDModel->GetModelName(), attachment);
         v8editor.Save();
         }
-    DoConvert(m_dgnDbFileName, m_v8FileName); 
+    DoConvert(m_dgnDbFileName, m_v8FileName);
     if (true)
        {
 
@@ -701,7 +701,7 @@ TEST_F(DrawingTests, BorderAttachmenttoSheet)
         EXPECT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
         Bentley::DgnPlatform::ModelInfoPtr  SheetModelifo = SheetModel->GetModelInfo().MakeCopy();
         SheetDefP sheetdef = SheetModelifo->GetSheetDefP();
-        // and attach the 3D model as a reference to the new 2D sheet1 
+        // and attach the 3D model as a reference to the new 2D sheet1
         DgnV8Api::DgnAttachment* attachmentToBorder = NULL;
         AddAttachment(m_v8FileName, SheetModel, threeDModel->GetModelName(), attachmentToBorder);
 
@@ -709,7 +709,7 @@ TEST_F(DrawingTests, BorderAttachmenttoSheet)
         sheetdef->SetBorderAttachmentId(attachmentToBorder->GetElementId());
         ASSERT_EQ(SUCCESS, SheetModel->SetModelInfo(*SheetModelifo));
         EXPECT_EQ(attachmentToBorder->GetElementId(), SheetModel->GetModelInfo().GetSheetDefCP()->GetBorderAttachmentId()); // make sure border attachment id propagates to the model.
-        
+
         // Create a drawing1 model ...
         Bentley::DgnModelP drawingModel = v8editor.m_file->CreateNewModel(&modelStatus, L"Drawing1", DgnV8Api::DgnModelType::Normal, /*is3D*/ false);
         EXPECT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
@@ -721,7 +721,7 @@ TEST_F(DrawingTests, BorderAttachmenttoSheet)
         // Create a SheetModel2...
         Bentley::DgnModelP SheetModel2 = v8editor.m_file->CreateNewModel(&modelStatus, L"sheet2", DgnV8Api::DgnModelType::Sheet, /*is3D*/ false);
         EXPECT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
-        // and attach the Drawing model as a reference to the new 2D sheet2 
+        // and attach the Drawing model as a reference to the new 2D sheet2
         DgnV8Api::DgnAttachment* attachmentToBorder2 = NULL;
         AddAttachment(m_v8FileName, SheetModel2, L"Drawing1", attachmentToBorder2);
 
@@ -734,7 +734,7 @@ TEST_F(DrawingTests, BorderAttachmenttoSheet)
 
         v8editor.Save();
         }
-    DoConvert(m_dgnDbFileName, m_v8FileName); 
+    DoConvert(m_dgnDbFileName, m_v8FileName);
     if (true)
        {
 
@@ -802,13 +802,13 @@ TEST_F(DrawingTests, AttachDwg)
         // Create a SheetModel1 ...
         Bentley::DgnModelP SheetModel = v8editor.m_file->CreateNewModel(&modelStatus, L"sheet1", DgnV8Api::DgnModelType::Sheet, /*is3D*/ false);
         EXPECT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
-        // and attach the 3D model as a reference to the 2D sheet1 
+        // and attach the 3D model as a reference to the 2D sheet1
         DgnV8Api::DgnAttachment* attachment2 = NULL;
         AddAttachment(m_v8FileName, SheetModel, threeDModel->GetModelName(), attachment2);
         v8editor.Save();
         }
 
-    DoConvert(m_dgnDbFileName, m_v8FileName); 
+    DoConvert(m_dgnDbFileName, m_v8FileName);
 
     if (true)
         {
@@ -835,8 +835,7 @@ TEST_F(DrawingTests, AttachDwg)
         Sheet::ModelPtr sheetmodel3 = ele3->GetSub<Sheet::Model>();
         ASSERT_TRUE(sheetmodel3.IsValid());
         countElementsInModelByClass(*sheetmodel3, getBisClassId(*db, "ViewAttachment"), 1);
-        BentleyApi::Bstdcxx::bvector<DgnModelId>idlist;
-        idlist = db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_PhysicalModel), nullptr, "ORDER BY ECInstanceId ASC").BuildIdList();
+        auto idlist = db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_PhysicalModel), nullptr, "ORDER BY ECInstanceId ASC").BuildIdList();
         ASSERT_EQ(2, idlist.size());
         auto physicalmodel1 = db->Models().GetModel(idlist[0]);
         ASSERT_TRUE(physicalmodel1.IsValid());
@@ -844,7 +843,7 @@ TEST_F(DrawingTests, AttachDwg)
         countElements(*physicalmodel1, 1);
         auto physicalmodel2 = db->Models().GetModel(idlist[1]);
         ASSERT_TRUE(physicalmodel2.IsValid());
-        //Count elements in DWG model 
+        //Count elements in DWG model
         countElements(*physicalmodel2, 5);
         }
     }
@@ -870,7 +869,7 @@ TEST_F(DrawingTests, AttachNameViewtoSheet)
         Bentley::DgnModelP SheetModel = v8editor.m_file->CreateNewModel(&modelStatus, L"sheet1", DgnV8Api::DgnModelType::Sheet, /*is3D*/ false);
         EXPECT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
         DgnV8Api::DgnAttachment* attachment = NULL;
-        // and attach the 3D model as a reference to the 2D sheet1 
+        // and attach the 3D model as a reference to the 2D sheet1
         Bentley::DgnDocumentMonikerPtr moniker = DgnV8Api::DgnDocumentMoniker::CreateFromFileName(m_v8FileName.c_str());
         ASSERT_EQ(BentleyApi::SUCCESS, SheetModel->CreateDgnAttachment(attachment, *moniker, threeDModel->GetModelName(), true));
         ASSERT_TRUE(nullptr != attachment);
@@ -983,17 +982,17 @@ TEST_F(DrawingTests, Attachments_With2dRootModel)
         Bentley::DgnModelP DrawingModel3 = v8editor.m_file->CreateNewModel(&modelStatus, L"drawing3", DgnV8Api::DgnModelType::Drawing, /*is3D*/ false);
         EXPECT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
         v8editor.AddLine(&eid, DrawingModel3);
-        // and attach the 2D drawing1 as a reference to the default 2d rootmodel 
+        // and attach the 2D drawing1 as a reference to the default 2d rootmodel
         DgnV8Api::DgnAttachment* attachment1 = NULL;
         AddAttachment(m_v8FileName, twoDModel, L"drawing1" ,attachment1);
         attachment1->SetNestDepth(1);
         ASSERT_EQ(BentleyApi::SUCCESS, attachment1->WriteToModel());
-        // and attach the 2D drawing1 as a reference to the default 2d rootmodel 
+        // and attach the 2D drawing1 as a reference to the default 2d rootmodel
         DgnV8Api::DgnAttachment* attachment2 = NULL;
         AddAttachment(m_v8FileName, twoDModel, L"drawing2", attachment2);
         attachment2->SetNestDepth(1);
         ASSERT_EQ(BentleyApi::SUCCESS, attachment2->WriteToModel());
-        // and attach the 2D Drawing3 as a reference to the default 2d rootmodel 
+        // and attach the 2D Drawing3 as a reference to the default 2d rootmodel
         DgnV8Api::DgnAttachment* attachment3 = NULL;
         AddAttachment(m_v8FileName, twoDModel, L"drawing3", attachment3);
         attachment3->SetNestDepth(2);
@@ -1125,7 +1124,7 @@ TEST_F(DrawingTests, Cyclic2dModels_AttachToSheet)
         ASSERT_TRUE(eleModel.IsValid());
         countElements(*eleModel, 2);
         countElementsInModelByClass(*eleModel, getBisClassId(*db, "DrawingGraphic"), 2);
-        
+
         // Sheet1. We expect 2 Sheet.ViewAttachment elements.
         auto ele1 = db->Elements().Get<Sheet::Element>(FindElementByCodeValue(*db, BIS_CLASS_Sheet, "sheet1"));
         ASSERT_TRUE(ele1.IsValid());
@@ -1134,7 +1133,7 @@ TEST_F(DrawingTests, Cyclic2dModels_AttachToSheet)
         countElementsInModelByClass(*sheetmodel1, getBisClassId(*db, "ViewAttachment"), 1);
         }
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mayuresh.Kanade                 03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1243,7 +1242,7 @@ TEST_F (SheetCompositionTests, HasDrawingBoundary)
     LineUpFiles (L"HasDrawingBoundary.bim", L"DVTest_Case1.dgn", true);
     m_wantCleanUp = true;
     DgnDbPtr db = OpenExistingDgnDb (m_dgnDbFileName);
-    
+
     auto drawingBoundary= db->Elements ().Get<BentleyApi::Dgn::GenericViewAttachmentLabel> (findFirstElementByClass (*db, db->Schemas ().GetClassId (GENERIC_DOMAIN_NAME, GENERIC_CLASS_ViewAttachmentLabel)));
     ASSERT_TRUE (drawingBoundary.IsValid ());
     }
@@ -1301,7 +1300,7 @@ void SheetCompositionTests::AnalyzeProxyGraphics(std::vector<DrawingGraphicInfo>
         "SELECT x.Identifier, dg.ECInstanceId, dg.Category.Id from " BIS_SCHEMA(BIS_CLASS_GraphicalElement2d) " dg JOIN " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " x ON (x.Element.id=dg.ECInstanceId)"
         " WHERE dg.Model.Id=? and x.Kind='ProxyGraphic'");
     selGraphics->BindId(1, drawingModel.GetModelId());
-    
+
     while (BE_SQLITE_ROW == selGraphics->Step())
         {
         DrawingGraphicInfo info;
@@ -1334,7 +1333,7 @@ void SheetCompositionTests::CheckExtractedDrawingGraphics(
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb (m_dgnDbFileName);
-    
+
         auto itModels = db->Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_Document));
         for (auto entry: itModels)
             {
@@ -1378,7 +1377,7 @@ void SheetCompositionTests::CheckExtractedDrawingGraphics(
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb (m_dgnDbFileName);
-    
+
         BentleyApi::Dgn::Sheet::ModelCP sheetModel = GetSheetModel (*db, expectedSeetName);
         ASSERT_TRUE (nullptr != sheetModel);
 
@@ -1428,7 +1427,7 @@ void SheetCompositionTests::CheckExtractedDrawingGraphics(
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb (m_dgnDbFileName);
-    
+
         BentleyApi::Dgn::Sheet::ModelCP sheetModel = GetSheetModel (*db, expectedSeetName);
         ASSERT_TRUE (nullptr != sheetModel);
 
@@ -1489,7 +1488,7 @@ void SheetCompositionTests::CheckExtractedDrawingGraphics(
      if (true)
          {
          DgnDbPtr db = OpenExistingDgnDb (m_dgnDbFileName);
-     
+
          BentleyApi::Dgn::Sheet::ModelCP sheetModel = GetSheetModel (*db, expectedSeetName);
          ASSERT_TRUE (nullptr != sheetModel);
 
@@ -1530,7 +1529,7 @@ void SheetCompositionTests::CheckExtractedDrawingGraphics(
          }
 
 #ifdef WIP_DRAWING_CONVERTER // Can't explain results. Seem like converter should create two DrawingGraphics, each in a different Category:
-                             // one shape in Category "ClipShape" and all the rest in Category "Default". 
+                             // one shape in Category "ClipShape" and all the rest in Category "Default".
                              // Instead, it creates only one DrawingGraphic, puts it in "ClipShape" ... and the DrawingGraphic is not displayed!
     // Change the level of a 3-D element and then update
    if (true)
@@ -1548,7 +1547,7 @@ void SheetCompositionTests::CheckExtractedDrawingGraphics(
         ASSERT_TRUE(eh.IsValid());
         auto edP = eh.GetElementDescrP();
         auto topShape = edP->h.firstElem->h.next;                // The top-most shape within the SmartSolid
-        ASSERT_EQ(87766, topShape);                                 
+        ASSERT_EQ(87766, topShape);
         topShape->el.ehdr.level = clipShapeLevel->GetLevelId();
         ASSERT_EQ(0, eh.ReplaceInModel(eh.GetElementRef()));
 
@@ -1561,7 +1560,7 @@ void SheetCompositionTests::CheckExtractedDrawingGraphics(
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb (m_dgnDbFileName);
-    
+
         BentleyApi::Dgn::Sheet::ModelCP sheetModel = GetSheetModel (*db, expectedSeetName);
         ASSERT_TRUE (nullptr != sheetModel);
 

@@ -5602,7 +5602,7 @@ void TrimHull::UmbrellaFiltering()
         //    int j = 0;
         //    ++j;
         //    }
-        
+
         // Compute Gabriel Simplices and set of points around pt
         bool facesContainPoint = false;
         std::priority_queue<UmbrellaFaceInfo*, bvector<UmbrellaFaceInfo*>, compareUmbrellaFaces> gabrielSimplices;
@@ -5771,7 +5771,7 @@ void TrimHull::UmbrellaFiltering()
             //for (int i = 0; i < 3; i++) if (face.points[i] != pt) pointSet.insert(face.points[i]);
             if (face.keep) chosenSimplices.push_back(&face);
             }
-        int numFace = (int)pointToFaces[pt].size(); 
+        int numFace = (int)pointToFaces[pt].size();
         int numKeptFaces = (int)chosenSimplices.size();
         MTGLoopDetector ld;
         bvector<int> vertexIndicesAroundLoop;
@@ -5940,7 +5940,7 @@ void TrimHull::UmbrellaFiltering()
                 {
                 auto& face = faces[faceIndex];
                 for (auto facePt : face.points) if (facePt == 1883) facesContainPoint = true;
-                for (int i = 0; i < 3; i++) 
+                for (int i = 0; i < 3; i++)
                     if (face.points[i] == pt)
                         {
                         face.centerPoint = i;
@@ -6867,7 +6867,7 @@ void TrimHull::WriteMeshCallBack (int (*draw) (DTMFeatureType dtmFeatureType, in
 void TrimHull::WritePoints (const char* filename)
     {
     FILE* m_fp;
-    fopen_s (&m_fp, filename, "wt");
+    BeFile::Fopen (&m_fp, filename, "wt");
 
     for (const DPoint3d& p : m_points)
         {
@@ -6880,7 +6880,7 @@ void TrimHull::WritePoints (const char* filename)
 void TrimHull::WriteTetrahedronsWithPointIndices(const char* filename)
     {
     FILE* m_fp;
-    fopen_s(&m_fp, filename, "wt");
+    BeFile::Fopen(&m_fp, filename, "wt");
     int totalNumTetraHedrons = 0;
     int num = 0;
     std::vector<bool> usedPoint;

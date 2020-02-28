@@ -12,7 +12,7 @@
 //----------------------------------------------------------------------------------------
 // @bsiclass                                    Umar.Hayat                      02/16
 //----------------------------------------------------------------------------------------
-struct DimensionTests : public GeomTestFixture 
+struct DimensionTests : public GeomTestFixture
 {
     DEFINE_T_SUPER(GeomTestFixture);
     static WChar* noteStyleName;
@@ -87,10 +87,10 @@ TEST_F(DimensionTests, Dimension)
     DgnV8Api::DimensionStylePtr   dimStyle = DgnV8Api::DimensionStyle::Create(L"", *v8editor.m_file);
     dimHandlerTest_createLinearDimension(eeh, *dimStyle, *v8editor.m_defaultModel);
     v8editor.SetActiveLevel(eeh);
-    
+
     v8editor.Save();
     DoConvert(m_dgnDbFileName, m_v8FileName);
-    // 
+    //
     //DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
     //VerifyElement(*db, eeh.GetElementId(), GeometricPrimitive::GeometryType::CurveVector);
 
@@ -128,7 +128,7 @@ void            DimensionTests::SetUpStyles(V8FileEditor& v8editor)
 BentleyStatus   DimensionTests::CreateNote(EditElementHandleR leader, EditElementHandleR noteElem, V8FileEditor& v8editor)
     {
     DgnV8Api::DimensionStylePtr dimStyle = GetDimStyle(v8editor);
-    
+
     DgnV8Api::TextBlockPtr text = GetText(TMPNAME(__LINE__), v8editor);
 
     DgnV8Api::NoteCellHeaderHandler::StdDPointVector points;
@@ -179,9 +179,9 @@ TEST_F (DimensionTests, Note)
     v8editor.SetActiveLevel(leader);
     v8editor.Save();
 
-    
+
     DoConvert(m_dgnDbFileName, m_v8FileName);
-    // 
+    //
     //DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
     //VerifyElement(*db, eeh1.GetElementId(), GeometricPrimitive::GeometryType::CurveVector);
     }
@@ -247,7 +247,7 @@ TEST_F(DimensionTests, NotetoSheet)
         // Create a SheetModel1 ...
         Bentley::DgnModelP SheetModel = v8editor.m_file->CreateNewModel(&modelStatus, L"sheet1", DgnV8Api::DgnModelType::Sheet, /*is3D*/ false);
         EXPECT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
-        // and attach the 2D drawing as a reference to the 2D sheet1 
+        // and attach the 2D drawing as a reference to the 2D sheet1
         DgnV8Api::DgnAttachment* attachment1 = NULL;
         Bentley::DgnDocumentMonikerPtr moniker1 = DgnV8Api::DgnDocumentMoniker::CreateFromFileName(m_v8FileName.c_str());
         ASSERT_EQ(BentleyApi::SUCCESS, SheetModel->CreateDgnAttachment(attachment1, *moniker1, L"Drawing1", true));
@@ -272,7 +272,7 @@ TEST_F(DimensionTests, NotetoSheet)
         v8editor.Save();
         }
 
-    DoConvert(m_dgnDbFileName, m_v8FileName); 
+    DoConvert(m_dgnDbFileName, m_v8FileName);
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
@@ -288,12 +288,11 @@ TEST_F(DimensionTests, NotetoSheet)
         ASSERT_TRUE(drawingele.IsValid());
         auto drawingmodel = drawingele->GetSub<DrawingModel>();
         ASSERT_TRUE(drawingmodel.IsValid());
-        //Count elements on drawing model 
-        countElements(*drawingmodel, 3); 
+        //Count elements on drawing model
+        countElements(*drawingmodel, 3);
         countElementsInModelByClass(*drawingmodel, getBisClassId(*db, "DrawingGraphic"), 3);
 
-        BentleyApi::Bstdcxx::bvector<DgnElementId>idlist;
-        idlist = db->Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_DrawingGraphic), nullptr, "ORDER BY ECInstanceId ASC").BuildIdList<DgnElementId>();
+        auto idlist = db->Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_DrawingGraphic), nullptr, "ORDER BY ECInstanceId ASC").BuildIdList<DgnElementId>();
         ASSERT_EQ(3, idlist.size());
         BentleyApi::RefCountedCPtr<DrawingGraphic> Dragraphic1 = db->Elements().Get<DrawingGraphic>(idlist[0]);
         ASSERT_TRUE(Dragraphic1.IsValid());
@@ -303,15 +302,15 @@ TEST_F(DimensionTests, NotetoSheet)
         ASSERT_TRUE(sheet.IsValid());
         Sheet::ModelPtr sheetModel = sheet->GetSub<Sheet::Model>();
         ASSERT_TRUE(sheetModel.IsValid());
-        //Count elements on sheet 
+        //Count elements on sheet
         countElements(*sheetModel, 2);
         countElementsInModelByClass(*sheetModel, getBisClassId(*db, "ViewAttachment"), 2);
-        //First Scaled Drawing attacment 
+        //First Scaled Drawing attacment
         idlist = db->Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_ViewAttachment), nullptr, "ORDER BY ECInstanceId ASC").BuildIdList<DgnElementId>();
         BentleyApi::RefCountedCPtr<Sheet::ViewAttachment> viewattachment1 = db->Elements().Get<Sheet::ViewAttachment>(idlist[0]);
         ASSERT_TRUE(viewattachment1.IsValid());
         verifyview(db,viewattachment1, 0.020, drawingmodel);
-        //Second Scaled Drawing attacment 
+        //Second Scaled Drawing attacment
         BentleyApi::RefCountedCPtr<Sheet::ViewAttachment> viewattachment2 = db->Elements().Get<Sheet::ViewAttachment>(idlist[1]);
         ASSERT_TRUE(viewattachment2.IsValid());
         verifyview(db, viewattachment2, 0.0125, drawingmodel);

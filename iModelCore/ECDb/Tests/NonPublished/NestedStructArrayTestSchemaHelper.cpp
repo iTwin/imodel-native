@@ -246,8 +246,8 @@ void NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(BeSQLite::
         {
         ECSqlStatement stmt;
         ASSERT_EQ(stmt.Prepare(ecdb, "UPDATE ECST.[Order] SET Customer.Id=? WHERE ECInstanceId=?"), ECSqlStatus::Success);
-        stmt.BindText(1, customer->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-        stmt.BindText(2, order->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
+        stmt.BindText(1, customer->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::Yes);
+        stmt.BindText(2, order->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::Yes);
         ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
         };
 
@@ -266,8 +266,8 @@ void NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(BeSQLite::
         {
         ECSqlStatement stmt;
         ASSERT_EQ(stmt.Prepare(ecdb, "UPDATE ECST.[Order] SET Employee.Id=? WHERE ECInstanceId=?"), ECSqlStatus::Success);
-        stmt.BindText(1, customer->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-        stmt.BindText(2, order->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
+        stmt.BindText(1, customer->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::Yes);
+        stmt.BindText(2, order->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::Yes);
         ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
         };
 

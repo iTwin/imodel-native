@@ -13,6 +13,7 @@
 #include <RealityPlatformTools/WSGServices.h>
 #include <RealityPlatform/RealityPlatformAPI.h>
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 //-------------------------------------------------------------------------------------
@@ -112,7 +113,7 @@ void WSGRequest::PerformAzureRequest(const WSGURL& wsgRequest, RawServerResponse
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                02/2017
 //-------------------------------------------------------------------------------------
-WSGURL::WSGURL(Utf8String url, bool validString) : 
+WSGURL::WSGURL(Utf8String url, bool validString) :
     m_validRequestString(validString), m_requestType(HttpRequestType::GET_Request), m_requestHeader(bvector<Utf8String>())
     {
     if (validString)
@@ -315,7 +316,7 @@ bvector<NavNode> NodeNavigator::GetRootNodes(WSGServer& server, Utf8String repoI
     delete navRoot;
     Json::Value instances(Json::objectValue);
     if(responseObject.ValidateJSONResponse(instances, "instances") != RequestStatus::OK)
-        return returnVector; 
+        return returnVector;
 
     for (auto instance : instances["instances"])
         returnVector.push_back(NavNode(instance));
@@ -629,11 +630,11 @@ bvector<Utf8String> WSGServer::GetRepositories(RawServerResponse& responseObject
     WSGURL wsgurl = WSGURL(serverName, false);
 
     WSGRequest::GetInstance().PerformRequest(wsgurl, responseObject, m_verifyPeer);
-    
+
     Json::Value instances(Json::objectValue);
     if (responseObject.ValidateJSONResponse(instances, "instances") != RequestStatus::OK)
         return returnVec;
-    
+
     for (auto instance : instances["instances"])
         {
         if (instance.isMember("instanceId"))
@@ -672,7 +673,7 @@ bvector<Utf8String> WSGServer::GetSchemaNames(Utf8String repoName, RawServerResp
     Json::Value instances(Json::objectValue);
     if (responseObject.ValidateJSONResponse(instances, "instances") != RequestStatus::OK)
         return returnVec;
-    
+
     for (auto instance : instances["instances"])
         {
         if (instance.isMember("properties") && instance["properties"].isMember("Name"))
@@ -821,3 +822,4 @@ Utf8String ConnectTokenManager::GetToken() const
         RefreshToken();
     return m_token;
     }
+POP_DISABLE_DEPRECATION_WARNINGS

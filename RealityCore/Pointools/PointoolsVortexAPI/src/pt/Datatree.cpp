@@ -45,7 +45,7 @@ bool DataTree::addNodes( const ParameterMap &pm )
 {
 	if (_branchstack.size())
 		return _branchstack.top()->addNodes(pm);
-	else return Branch::addNodes(pm);	
+	else return Branch::addNodes(pm);
 	return false;
 }
 #endif
@@ -76,23 +76,23 @@ struct WriteValueVisitor
 struct NodeWriteVisitor
 {
 	void operator() (const NodeID &nid, const Node *node)
-	{	
+	{
 		uint8 type_index = (uint8)node->typeId();
 
-		/*identifier	*/ 
-		fwrite(&nid, NODE_ID_SIZE, 1, _file); 
+		/*identifier	*/
+		fwrite(&nid, NODE_ID_SIZE, 1, _file);
 
-		/* type index	*/ 
+		/* type index	*/
 		fwrite(&type_index, 1, 1, _file);
 
-		/* parameter	*/ 
+		/* parameter	*/
 		WriteValueVisitor wv;
 		wv._file = _file;
 		node->visitType(wv);
 	};
 	bool operator () (Branch *b)
 	{
-		/* type index	*/ 
+		/* type index	*/
 		uint32 num_subbranches = (uint32)b->numBranches();
 		uint32 num_nodes = (uint32)b->numNodes();
 		uint32 num_blobs = (uint32)b->numBlobs();
@@ -105,7 +105,7 @@ struct NodeWriteVisitor
 		uint8 v[] = { b->level(), b->flags(0),b->flags(1),b->flags(2) };
 		fwrite(&v, 1, 4, _file);
 
-		/*write blobs*/ 
+		/*write blobs*/
 		for (int i=0; i<b->numBlobs(); i++)
 		{
 			NodeID id;
@@ -128,7 +128,7 @@ bool DataTree::writeTree( const String &path )
 	Meta::makeMeta(m);
 
 	NodeWriteVisitor wv;
-    wv._file = fopen(path.c_str(), "wb");
+	BeFile::Fopen(&wv._file, path.c_str(), "wb");
 	if (NULL == wv._file)
 		return false;
 
@@ -137,7 +137,7 @@ bool DataTree::writeTree( const String &path )
 
 	if (!wv._file) return false;
 
-	/*write the identifier*/ 
+	/*write the identifier*/
 
 	fwrite(&m, m.sizeof_meta, 1, wv._file);
 	visitNodes(wv);
@@ -148,12 +148,14 @@ bool DataTree::writeTree( const String &path )
 //-----------------------------------------------------------------------------
 bool DataTree::isDTreeFile( const String &filepath )
 {
-	/*read tree from file*/ 
+	/*read tree from file*/
+PUSH_DISABLE_DEPRECATION_WARNINGS
 	FILE * file = fopen(filepath.c_str(), "rb");
+POP_DISABLE_DEPRECATION_WARNINGS
 	if(NULL == file)
         return false;
 
-	/*is this a valid dtree file*/ 
+	/*is this a valid dtree file*/
 	char id[9];
 	fread(id, 8, 1, file);
 
@@ -174,7 +176,7 @@ struct Reader
 		readBranch(file, root);
 	}
 
-	/*read functions*/ 
+	/*read functions*/
 	void	readBranch(FILE *file, Branch *root, Branch *parent=0);
 	void	readNode(FILE *file, Branch *owner);
 
@@ -183,12 +185,14 @@ struct Reader
 //-----------------------------------------------------------------------------
 bool DataTree::readTree( const String &filepath )
 {
-	/*read tree from file*/ 
+PUSH_DISABLE_DEPRECATION_WARNINGS
+	/*read tree from file*/
     FILE * file = fopen(filepath.c_str(), "rb");
     if (NULL == file)
         return false;
+POP_DISABLE_DEPRECATION_WARNINGS
 
-	/*is this a valid dtree file*/ 
+	/*is this a valid dtree file*/
 	char id[9];
 	fread(id, 8, 1, file);
 	if (memcmp(id, "dtree", 5) != 0)
@@ -196,15 +200,15 @@ bool DataTree::readTree( const String &filepath )
 		fclose(file);
 		return false;
 	}
-	/* note that this does not handle	*/ 
-	/* differing size Meta				*/ 
+	/* note that this does not handle	*/
+	/* differing size Meta				*/
 	Meta m;
 	fread(&m, sizeof(Meta), 1, file);
 
 	Reader r(m);
 	r.readBranch(file, this);
 
-	/*read root*/ 
+	/*read root*/
 	fclose(file);
 
 	return true;
@@ -235,7 +239,7 @@ void Reader::readBranch( FILE *file, Branch *root, Branch *parent/*=0*/ )
 
 	Branch *branch = 0;
 
-	/*root case*/ 
+	/*root case*/
 	if (!parent)
 	{
 		branch = root;
@@ -243,7 +247,7 @@ void Reader::readBranch( FILE *file, Branch *root, Branch *parent/*=0*/ )
 	}
 	else
 	{
-		/*other cases*/ 
+		/*other cases*/
 		branch = parent->getBranch(nodeid, true);
 	}
 	unsigned int i;
@@ -251,7 +255,7 @@ void Reader::readBranch( FILE *file, Branch *root, Branch *parent/*=0*/ )
 	// copy flags
 	memcpy(branch->_flags, flags, 3);
 
-	// read blobs 
+	// read blobs
 	NodeID nid;
 	uint32	blob_size;
 	uint8*	blob_data;
@@ -304,37 +308,37 @@ void Reader::readNode( FILE *file, Branch *owner )
 	case 4: { uint32 v; fread(&v, sizeof(uint32), 1, file); owner->addNode(nodeid, v); } break;
 	case 5: { int64_t v; fread(&v, sizeof(int64_t), 1, file); owner->addNode(nodeid, v); } break;
 	case 6: { vector3i v; fread(&v, sizeof(int)*3, 1, file); owner->addNode(nodeid, v); } break;
-	case 7: { vector3 v; fread(&v, sizeof(float)*3, 1, file); owner->addNode(nodeid, v); } break; 
+	case 7: { vector3 v; fread(&v, sizeof(float)*3, 1, file); owner->addNode(nodeid, v); } break;
 	case 8: { vector3d v; fread(&v, sizeof(double)*3, 1, file); owner->addNode(nodeid, v); } break;
-	case 9: { 
+	case 9: {
 		pt::String v;
 		uint32 strlength;
-		fread(&strlength, 4, 1, file); 
+		fread(&strlength, 4, 1, file);
 
 		if (strlength > 1  && strlength < 1024)
 		{
-			if (meta.version[2] >= 2) /* wchar */ 
+			if (meta.version[2] >= 2) /* wchar */
 			{
 				wchar_t buff[1024];
-				fread(buff, strlength*sizeof(wchar_t), 1, file); 
+				fread(buff, strlength*sizeof(wchar_t), 1, file);
 				String str(buff);
-				owner->addNode(nodeid, str); 
+				owner->addNode(nodeid, str);
 			}
 			else
 			{
 				char buff[1024];
-				fread(buff, strlength, 1, file); 
+				fread(buff, strlength, 1, file);
 				String str(buff);
-				owner->addNode(nodeid, str); 
+				owner->addNode(nodeid, str);
 			}
 		}
 		else
 		{
 			owner->addNode(nodeid, pt::String("[empty]"));
 		}
-			} 
+			}
 			break;
-	} /* switch */ 
+	} /* switch */
 #ifdef DATATREE_DEBUGGING
 	Node* nd = const_cast<Node*>(owner->getNode(nodeid));
 	ListBranchVisitor::_nodeInfo(nodeid, nd, owner);

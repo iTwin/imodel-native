@@ -348,7 +348,7 @@ template<typename T>
 uint32_t BlockedVector<T>::ClearAndAppendByOneBasedIndices
 (
 bvector<int> &zeroBasedIndices,
-bvector<bool> *positive,
+bvector<BoolTypeForVector> *positive,
 bvector<T> &source,
 bvector<int> &oneBasedIndices,
 uint32_t i0,
@@ -404,7 +404,7 @@ template<typename T>
 uint32_t BlockedVector<T>::ClearAndAppendByOneBasedIndices
 (
 bvector<int> &zeroBasedIndices,
-bvector<bool> *positive,
+bvector<BoolTypeForVector> *positive,
 T const *source,
 size_t sourceCount,            
 int const *oneBasedIndices,

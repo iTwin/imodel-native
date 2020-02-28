@@ -53,7 +53,7 @@
 #include <ImagePP-GdalLib/cpl_string.h>
 
 
-
+PUSH_DISABLE_DEPRECATION_WARNINGS
 //-----------------------------------------------------------------------------
 // HRFErdasImgBlockCapabilities
 //-----------------------------------------------------------------------------
@@ -317,7 +317,7 @@ bool HRFErdasImgCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     bool  Result = false;
 
     GDALDriver* pHFADriver = GetGDALDriverManager()->GetDriverByName("HFA");
-    if(pHFADriver != NULL && pHFADriver->pfnIdentify != NULL) 
+    if(pHFADriver != NULL && pHFADriver->pfnIdentify != NULL)
         {
         // TFS#86887: GDAL_FILENAME_IS_UTF8
         Utf8String filenameUtf8 = static_cast<HFCURLFile*>(pi_rpURL.GetPtr())->GetAbsoluteFileName();
@@ -692,7 +692,7 @@ void HRFErdasImgFile::CreateDescriptors()
     HFCPtr<HRPHistogram>  pHistogram;
 
     GetHistogramFromImgHeader(pHistogram);
-    
+
     HRFGdalSupportedFile::CreateDescriptorsWith(new HCDCodecIdentity(), TagList, pHistogram);
     }
 
@@ -921,3 +921,4 @@ void HRFErdasImgFile::CreateUnitNameToEPSGCodeMap()
     m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("gold_coast_foot",(uint16_t) 9094));
     }
 #endif
+POP_DISABLE_DEPRECATION_WARNINGS

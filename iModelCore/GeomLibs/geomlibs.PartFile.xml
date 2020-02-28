@@ -35,7 +35,7 @@
     <Part Name="GeomlibsSerialization" BentleyBuildMakeFile="serialization/src/serialization.mke" ApiNumber="M02">
         <SubPart PartName="GeomDlls"/>
         <SubPart PartName="BentleyDll" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02"/>
-        <SubPart PartName="FlatBuffers" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart PartName="Headers" PartFile="iModelCore/libsrc/flatbuffers/flatbuffers"/>
         <SubPart PartName="BeXml" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02"/>
         <SubPart PartName="BeJsonCpp"       PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" Repository="imodel02"/>
         <Bindings>

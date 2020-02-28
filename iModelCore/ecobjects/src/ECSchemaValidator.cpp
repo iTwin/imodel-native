@@ -84,7 +84,7 @@ static ECClassCP GetClassDefinedCustomAttribute(ECClassCR ecClass, Utf8StringCR 
         return &ecClass;
 
     ECClassCP res = nullptr;
-    auto CABaseGetter = [&](ECClassCP base) 
+    auto CABaseGetter = [&](ECClassCP base)
         {
         bool found = false;
         if (base->IsDefinedLocal(schemaName, customAttributeName))
@@ -253,7 +253,7 @@ ECObjectsStatus ECSchemaValidator::BaseECValidator(ECSchemaCR schema)
             if (refName.EqualsIAscii("ECDbMap"))
                 {
                 // RULE: Only the latest ECDbMap is valid
-                if (refSchema->GetVersionRead() <= 1) 
+                if (refSchema->GetVersionRead() <= 1)
                     {
                     LOG.errorv("Failed to validate '%s' as the read version is less than 2.0",
                                schema.GetFullSchemaName().c_str(), refSchema->GetFullSchemaName().c_str());
@@ -349,8 +349,8 @@ ECObjectsStatus ECSchemaValidator::AllClassValidator(ECClassCR ecClass)
     bool isThisClassDeprecated = ecClass.IsDefinedLocal(CORECA_SCHEMA_NAME, CORECA_DEPRECATED);
     if (!isThisClassDeprecated)
         {
-        // We only check the first base because all ECClasses except ECEntityClass will only have one base class. This is consitent with 
-        // typescript validator side as well where we check deprecated only for the main base of all ECClasses. We will check deprecated for mixin bases in the ECEntityClass rule 
+        // We only check the first base because all ECClasses except ECEntityClass will only have one base class. This is consitent with
+        // typescript validator side as well where we check deprecated only for the main base of all ECClasses. We will check deprecated for mixin bases in the ECEntityClass rule
         const auto &baseList = ecClass.GetBaseClasses();
         auto mainBaseIter = baseList.begin();
         if (mainBaseIter != baseList.end())
@@ -358,7 +358,7 @@ ECObjectsStatus ECSchemaValidator::AllClassValidator(ECClassCR ecClass)
             auto mainBase = *mainBaseIter;
             auto deprecated = GetClassDefinedCustomAttribute(*mainBase, CORECA_SCHEMA_NAME, CORECA_DEPRECATED);
             if (deprecated)
-                LOG.warningv("Class '%s' derived from a deprecated class, '%s'.", 
+                LOG.warningv("Class '%s' derived from a deprecated class, '%s'.",
                     ecClass.GetFullName(), deprecated->GetFullName());
             }
         }
@@ -547,7 +547,7 @@ ECObjectsStatus CheckForModelBaseClasses(ECClassCR baseClass, ECClassCR entity)
     notSubClassable["SpatialLocationModel"] = { "RoadRailAlignment:AlignmentModel", "RoadRailAlignment:AlignmentModel", "RoadRailAlignment:HorizontalAlignmentModel" };
     notSubClassable["PhysicalModel"] = { "BuildingPhysical:BuildingPhysicalModel", "StructuralPhysical:StructuralPhysicalModel" };
     notSubClassable["DefinitionModel"] = { "BisCore:DictionaryModel", "BisCore:RepositoryModel",
-        "BuildingPhysical:BuildingTypeDefinitionModel", 
+        "BuildingPhysical:BuildingTypeDefinitionModel",
         "RoadRailAlignment:ConfigurationModel", "RoadRailAlignment:RoadRailCategoryModel",
         "RoadRailPhysical:RailwayStandardsModel" };
     notSubClassable["InformationRecordModel"] = {};
@@ -668,7 +668,7 @@ ECObjectsStatus ECSchemaValidator::EntityValidator(ECClassCR entity)
             {
             auto propKOQ = prop->GetKindOfQuantity();
             auto basePropKOQ = prop->GetBaseProperty()->GetKindOfQuantity();
-            // RULE: Defined kind of quantities on derived properties of entity classes must override their base property's kind of quantity. 
+            // RULE: Defined kind of quantities on derived properties of entity classes must override their base property's kind of quantity.
             if (nullptr == basePropKOQ)
                 {
                 LOG.errorv("Property '%s.%s' specifies a KindOfQuantity locally but its base property '%s.%s' does not define or inherit a KindOfQuantity",
@@ -693,7 +693,7 @@ ECObjectsStatus ECSchemaValidator::EntityValidator(ECClassCR entity)
         {
         return propPair.first->GetName().EqualsIAscii(prop->GetName());
         };
-    auto const findProperty = [&isPropertyMatch, &seenProperties] (ECPropertyP prop) -> bpair<ECPropertyP, ECClassP>*
+    auto const findProperty = [&isPropertyMatch, &seenProperties] (ECPropertyP prop) -> auto
         {
         auto isMatch = std::bind(isPropertyMatch, std::placeholders::_1, prop);
         return std::find_if(
@@ -730,7 +730,7 @@ ECObjectsStatus ECSchemaValidator::EntityValidator(ECClassCR entity)
         // iterate through all inherited properties and check for duplicates
         for (ECPropertyP prop : baseClass->GetProperties(true))
             {
-            bpair<ECPropertyP, ECClassP>* propertyClassPair = findProperty(prop);
+            auto propertyClassPair = findProperty(prop);
             if (seenProperties.end() == propertyClassPair)
                 seenProperties.push_back(make_bpair<ECPropertyP, ECClassP>(prop, baseClass));
             else
@@ -744,13 +744,13 @@ ECObjectsStatus ECSchemaValidator::EntityValidator(ECClassCR entity)
                         LOG.errorv("Error at property '%s'. Mixin class '%s' overrides a property inherited from mixin class '%s'",
                                 prop->GetName().c_str(), baseClass->GetFullName(), prevClass->GetFullName());
                         status = ECObjectsStatus::Error;
-                        } 
+                        }
                     else
                         {
                         ECClassP mixinClass = prevIsMixin ? prevClass : baseClass;
                         ECClassP entityClass = prevIsMixin ? baseClass : prevClass;
-                        if (prop->GetName().EqualsI("MODEL_NUMBER") && mixinClass->GetName().EqualsI("INSTRUMENT") && prevClass->GetSchema().GetFullSchemaName().StartsWithI("ProcessPhysical.01") && 
-                            (entityClass->GetName().EqualsI("VALVE") || entityClass->GetName().EqualsI("PIPING_COMPONENT") || entityClass->GetName().EqualsI("SPACER") || 
+                        if (prop->GetName().EqualsI("MODEL_NUMBER") && mixinClass->GetName().EqualsI("INSTRUMENT") && prevClass->GetSchema().GetFullSchemaName().StartsWithI("ProcessPhysical.01") &&
+                            (entityClass->GetName().EqualsI("VALVE") || entityClass->GetName().EqualsI("PIPING_COMPONENT") || entityClass->GetName().EqualsI("SPACER") ||
                              entityClass->GetName().EqualsI("PIPING_AND_INSTRUMENT_COMPONENT")))
                             {
                             LOG.warningv("Warning at property '%s'. Mixin class '%s' overrides a property inherited from entity class '%s'.  Supppressed for some ProcessPhysical instruments.",
@@ -925,11 +925,11 @@ static void CheckDeprecatedRelationshipConstraint(ECRelationshipConstraintCR end
     {
     // check abstract constraint class
     const auto abstractConstraint = endpoint.GetAbstractConstraint();
-    if (abstractConstraint) 
+    if (abstractConstraint)
         {
         if (abstractConstraint->IsDefinedLocal(CORECA_SCHEMA_NAME, CORECA_DEPRECATED))
             {
-            LOG.warningv("%s Relationship Constraint of Relationship class '%s' has deprecated abstract constraint '%s'", 
+            LOG.warningv("%s Relationship Constraint of Relationship class '%s' has deprecated abstract constraint '%s'",
                 constraintType, classname, abstractConstraint->GetFullName());
             }
         else
@@ -949,7 +949,7 @@ static void CheckDeprecatedRelationshipConstraint(ECRelationshipConstraintCR end
         {
         if (constraintClass->IsDefinedLocal(CORECA_SCHEMA_NAME, CORECA_DEPRECATED))
             {
-            LOG.warningv("%s Relationship Constraint of Relationship class '%s' has deprecated constraint class '%s'", 
+            LOG.warningv("%s Relationship Constraint of Relationship class '%s' has deprecated constraint class '%s'",
                 constraintType, classname, constraintClass->GetFullName());
             continue;
             }
@@ -1079,4 +1079,3 @@ ECObjectsStatus ECSchemaValidator::KindOfQuantityValidator(KindOfQuantityCR koq)
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
- 

@@ -5,6 +5,8 @@
 #include <ScalableMeshPCH.h>
 #include "ImagePPHeaders.h"
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
+
 #if defined(VANCOUVER_API) || defined(DGNDB06_API)
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 #endif
@@ -124,9 +126,9 @@ void GetCertificateAutoritiesFileUrl(Utf8String& pemFileName)
     GetModuleFileNameW(hm, &wccwd[0], (DWORD) FILENAME_MAX);
     BeFileName cwdfn(wccwd);
 
-#ifdef VANCOUVER_API    
+#ifdef VANCOUVER_API
     pemFileName.append(Utf8String(BeFileName::GetDirectoryName(cwdfn.c_str()).c_str()).c_str());
-#else    
+#else
     pemFileName.append(Utf8String(cwdfn.GetDirectoryName().c_str()).c_str());
 #endif
 
@@ -157,7 +159,7 @@ CURLcode RequestHttp(Utf8StringCR url, Utf8StringCP writeString, FILE* fp, Utf8S
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postFields.c_str());
         curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, postFields.length());
         }
-  
+
 #ifdef DGNDB06_API
     CurlConstructor curlConstructor;
 #else
@@ -177,7 +179,7 @@ CURLcode RequestHttp(Utf8StringCR url, Utf8StringCP writeString, FILE* fp, Utf8S
 #endif
 
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-    curl_easy_setopt(curl, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE);    
+    curl_easy_setopt(curl, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE);
 
     ScalableMeshAdmin::ProxyInfo proxyInfo(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProxyInfo());
     if (!proxyInfo.m_serverUrl.empty())
@@ -216,7 +218,7 @@ CURLcode RequestHttp(Utf8StringCR url, Utf8StringCP writeString, FILE* fp, Utf8S
 //+---------------+---------------+---------------+---------------+---------------+------*/
 CURLcode PerformCurl(Utf8StringCR url, Utf8StringCP writeString, FILE* fp, Utf8StringCR postFields)
     {
-    CURLcode code = RequestHttp(url, writeString, fp, postFields);    
+    CURLcode code = RequestHttp(url, writeString, fp, postFields);
     return code;
     }
 //#endif
@@ -224,9 +226,9 @@ CURLcode PerformCurl(Utf8StringCR url, Utf8StringCP writeString, FILE* fp, Utf8S
 * @bsimethod                                                    Mathieu.St-Pierre  10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 WebServiceKey GetBingKey()
-    {    
+    {
 
-    Utf8String readBuffer;    
+    Utf8String readBuffer;
     BENTLEY_NAMESPACE_NAME::NativeLogging::ILogger*   logger = BENTLEY_NAMESPACE_NAME::NativeLogging::LoggingManager::GetLogger("Bing");
 
     logger->debug("Retrieving Bing Key from CC");
@@ -282,8 +284,8 @@ WebServiceKey GetBingKey()
 
     Utf8String productIdStr;
 
-#ifdef VANCOUVER_API    
-    wchar_t prodIdStr[200];    
+#ifdef VANCOUVER_API
+    wchar_t prodIdStr[200];
     BeStringUtilities::Snwprintf(prodIdStr, 200, L"%u", productId);
     BeStringUtilities::WCharToUtf8(productIdStr, prodIdStr);
 #else
@@ -309,7 +311,7 @@ WebServiceKey GetBingKey()
 
     RequestConstructor curlConstructor;
     Utf8String token = curlConstructor.GetToken();
-    
+
     Utf8String field;
     Utf8String value;
 
@@ -348,12 +350,12 @@ WebServiceKey GetBingKey()
     */
 
     Http::HttpBodyPtr httpBody(httpRequest.GetResponseBody());
-    readBuffer = httpBody->AsString();        
+    readBuffer = httpBody->AsString();
 #endif
 
     Utf8String postFields;
     CURLcode result = PerformCurl(bingKeyUrl, &readBuffer, nullptr, postFields);
-    
+
     if (CURLE_OK != result)
         {
         logger->error("curl failed, returning empty key");
@@ -472,14 +474,14 @@ bool BingAuthenticationCallback::GetAuthentication(HFCAuthentication* pio_Authen
 
         Utf8String pemFileName;
 
-        GetCertificateAutoritiesFileUrl(pemFileName);        
+        GetCertificateAutoritiesFileUrl(pemFileName);
 
         if (!pemFileName.empty())
             {
 #if defined(VANCOUVER_API) || defined(DGNDB06_API)
             pCertAutorityAuth->SetCertificateAuthFileUrl(WString(pemFileName.c_str(), true));
 #else
-            //On Bim02 CURL seems not to use OpenSSL, so using certificate file will result in an error. 
+            //On Bim02 CURL seems not to use OpenSSL, so using certificate file will result in an error.
             //pCertAutorityAuth->SetCertificateAuthFileUrl(pemFileName);
 #endif
             return true;
@@ -495,15 +497,15 @@ bool BingAuthenticationCallback::GetAuthentication(HFCAuthentication* pio_Authen
 
 #ifdef VANCOUVER_API
 
-    #if defined(__BENTLEYSTM_BUILD__) && defined(__BENTLEYSTMIMPORT_BUILD__) 
+    #if defined(__BENTLEYSTM_BUILD__) && defined(__BENTLEYSTMIMPORT_BUILD__)
         void RegisterPODImportPlugin();
     #else
-        RegisterPODImportPluginFP ScalableMeshLib::s_PODImportRegisterFP = nullptr;        
+        RegisterPODImportPluginFP ScalableMeshLib::s_PODImportRegisterFP = nullptr;
     #endif
 #else
     #ifdef DGNDB06_API
         void RegisterPODImportPlugin();
-    #endif    
+    #endif
 #endif
 
 
@@ -523,27 +525,27 @@ void ScalableMeshLib::Host::Initialize()
 
 #ifdef VANCOUVER_API
 
-#if defined(__BENTLEYSTM_BUILD__) && defined(__BENTLEYSTMIMPORT_BUILD__) 
+#if defined(__BENTLEYSTM_BUILD__) && defined(__BENTLEYSTMIMPORT_BUILD__)
 
     RegisterPODImportPlugin();
 
 #else
-       
+
     if (ScalableMeshLib::GetPodRegister() != nullptr)
         {
         (*ScalableMeshLib::GetPodRegister())();
         }
 #endif
-    
+
 #else
     #ifdef DGNDB06_API
         RegisterPODImportPlugin();
     #else
         //NEEDS_WORK_SM_POD_B0200
         //RegisterPODImportPlugin();
-    #endif    
+    #endif
 #endif
-    
+
     BeFileName geocoordinateDataPath(L".\\GeoCoordinateData\\");
     GeoCoordinates::BaseGCS::Initialize(geocoordinateDataPath.c_str());
     //BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMElementHandlerManager::InitializeDgnPlatform();
@@ -752,8 +754,8 @@ void ScalableMeshLib::Initialize(ScalableMeshLib::Host& host)
     t_scalableTerrainModelHost = &host;
     t_scalableTerrainModelHost->Initialize();
     BeFileName tempDir;
-    
-#ifdef VANCOUVER_API       
+
+#ifdef VANCOUVER_API
     BeFileNameStatus beStatus = BeFileName::BeGetTempPath(tempDir);
     assert(BeFileNameStatus::Success == beStatus);
 #else
@@ -792,11 +794,11 @@ bool ScalableMeshLib::IsInitialized()
 ScalableMeshLib::Host& ScalableMeshLib::GetHost()
     {
     return *t_scalableTerrainModelHost;
-    }   
+    }
 
 #ifdef VANCOUVER_API
 
-#if defined(__BENTLEYSTM_BUILD__) && !defined(__BENTLEYSTMIMPORT_BUILD__)     
+#if defined(__BENTLEYSTM_BUILD__) && !defined(__BENTLEYSTMIMPORT_BUILD__)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mathieu.St-Pierre                 05/2018
@@ -820,3 +822,4 @@ void ScalableMeshLib::SetPodRegister(RegisterPODImportPluginFP podRegisterFP)
 
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
+POP_DISABLE_DEPRECATION_WARNINGS

@@ -1142,7 +1142,7 @@ private:
             return json;
             }
         data.push_back(0);
-        json.Parse((Utf8CP)data.begin());
+        json.Parse((Utf8CP)&*data.begin());
         return json;
         }
     static void MergeLocalizationData(RapidJsonValueR target, rapidjson::Document::AllocatorType& targetAllocator, RapidJsonValueCR source)

@@ -5,6 +5,8 @@
 #include    <Bentley/BeTest.h>
 #include    <Bentley/BeStringUtilities.h>
 #include    <Bentley/WString.h>
+PUSH_DISABLE_DEPRECATION_WARNINGS
+
 #if defined (ANDROID)
     #include <android/log.h>
 #elif defined (__unix__)
@@ -65,7 +67,7 @@ static void ok (bool b, WCharCP fmt, ...)
  * the following macro is defined.
  */
 #define _CRT_NON_CONFORMING_SWPRINTFS
- 
+
 #include <stdio.h>
 #include <errno.h>
 
@@ -646,14 +648,14 @@ static void test_fprintf(void)
     fclose(fp);
     unlink(file_name);
 }
-#endif 
+#endif
 
 #if defined (NOT_NOW)
 static void test_fcvt(void)
 {
     char *str;
     int dec=100, sign=100;
-    
+
     /* Numbers less than 1.0 with different precisions */
     str = _fcvt(0.0001, 1, &dec, &sign );
     ok( 0 == wcscmp(str,L""), L"bad return '%ls'\n", str);
@@ -925,33 +927,33 @@ static void test_vsnwprintf(void)
      const wchar_t number[] = {'n','u','m','b','e','r',0};
      const wchar_t out[] = {'n','u','m','b','e','r',' ','1','2','3',0};
      wchar_t buf[20];
- 
+
      int ret;
- 
+
      ret = BeStringUtilities::Snwprintf(buf, format, number, 123);
      ok(ret == 10, L"got %d, expected 10\n", ret);
      ok(!memcmp(buf, out, sizeof(out)), L"buf = %ls\n", (buf));
- 
+
      memset(buf, 0, sizeof(buf));
      ret = BeStringUtilities::Snwprintf(buf, format, number, 123);
      ok(ret == 10, L"got %d, expected 10\n", ret);
      ok(!memcmp(buf, out, sizeof(out)), L"buf = %ls\n", (buf));
- 
+
      memset(buf, 0, sizeof(buf));
      ret = BeStringUtilities::Snwprintf(buf, format, number, 123);
      ok(ret == 10, L"got %d, expected 10\n", ret);
      ok(!memcmp(buf, out, sizeof(out)), L"buf = %ls\n", (buf));
- 
+
      memset(buf, 0, sizeof(buf));
      ret = BeStringUtilities::Snwprintf(buf, 20, format, number, 123);
      ok(ret == 10, L"got %d, expected 10\n", ret);
      ok(!memcmp(buf, out, sizeof(out)), L"buf = %ls\n", (buf));
- 
+
      memset(buf, 0, sizeof(buf));
      ret = BeStringUtilities::Snwprintf(buf, 20, format, number, 123);
      ok(ret == 10, L"got %d, expected 10\n", ret);
      ok(!memcmp(buf, out, sizeof(out)), L"buf = %ls\n", (buf));
- 
+
      memset(buf, 0, sizeof(buf));
      ret = BeStringUtilities::Snwprintf(buf, 20, format, number, 123);
      ok(ret == 10, L"got %d, expected 10\n", ret);
@@ -969,3 +971,4 @@ static void test_vsnwprintf(void)
      test_vsnwprintf();
      test_vswprintf();
  }
+POP_DISABLE_DEPRECATION_WARNINGS

@@ -54,6 +54,7 @@
 -----------------------------------------------------------------------------*/
 #include "HRFGeoTiffProjectionTable.dat"
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 //-----------------------------------------------------------------------------
 // Macros
 //-----------------------------------------------------------------------------
@@ -146,3 +147,4 @@ HRFGeoTiffProjectionTable::HRFGeoTiffProjectionTable(const HFCPtr<HFCURL>& pi_rp
     //:> set the number of record
     m_RecordSize = s_RecordSize;
     }
+POP_DISABLE_DEPRECATION_WARNINGS

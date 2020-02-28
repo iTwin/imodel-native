@@ -72,7 +72,9 @@ static wchar_t const* s_configFileName = L"logging.config.xml";
 void WSClientBaseTest::InitLogging()
     {
 #if defined(BENTLEY_WIN32)
+PUSH_DISABLE_DEPRECATION_WARNINGS
     BeFileName loggingConfigFile(_wgetenv(L"WSCLIENT_TEST_LOGGING_CONFIG_FILE"));
+POP_DISABLE_DEPRECATION_WARNINGS
     if (!BeFileName::DoesPathExist(loggingConfigFile))
         {
         loggingConfigFile.AssignOrClear(s_pathProvider->GetAssetsRootDirectory());

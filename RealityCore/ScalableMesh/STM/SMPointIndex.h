@@ -50,11 +50,11 @@ namespace BENTLEY_NAMESPACE_NAME
         }
     }
 //NEEDS_WORK_SM : Temp global variable probably only for debug purpose, not sure we want to know if we are in editing.
-extern bool s_inEditing; 
+extern bool s_inEditing;
 extern bool s_useThreadsInFiltering;
 
 // Predeclaration of the Point Index Filter interface. This interface is defined lower in this same file.
-template<class POINT, class EXTENT> class ISMPointIndexFilter; 
+template<class POINT, class EXTENT> class ISMPointIndexFilter;
 template<class POINT, class EXTENT> class ISMPointIndexQuery;
 template<class POINT, class EXTENT> class SMPointIndex;
 
@@ -72,8 +72,8 @@ template<bool, class T> class OverrideSizeTypeTrait : public T
 template<class T> class OverrideSizeTypeTrait<true, T> : public T
     {
     private:
-    
-    
+
+
     public:
 
     void setNbPointsUsedForMeshIndex(size_t nbPointsUsedForMeshIndex) const
@@ -86,40 +86,40 @@ template<class T> class OverrideSizeTypeTrait<true, T> : public T
 namespace BENTLEY_NAMESPACE_NAME
     {
     namespace ScalableMesh
-        {        
+        {
         template <class POINT, class EXTENT> class NodeQueryProcessor;
-        class ScalableMeshProgressiveQueryEngine;      
+        class ScalableMeshProgressiveQueryEngine;
         }
     }
 
 
-struct IStopQuery 
-    {    
-                           
+struct IStopQuery
+    {
+
     public:
-        
-        virtual bool DoStop() const = 0;    
+
+        virtual bool DoStop() const = 0;
     };
 
 
 struct IDisplayCacheNodeManager
-    {    
-                           
+    {
+
     public:
-        
+
         virtual bool IsNodeCached(HPMBlockID blockId) const = 0;
     };
 
 
 template <class POINT, class EXTENT> class ProducedNodeContainer;
 
-template <class POINT, class EXTENT> class SMMeshIndex;    
-template <class POINT, class EXTENT> class SMMeshIndexNode;    
+template <class POINT, class EXTENT> class SMMeshIndex;
+template <class POINT, class EXTENT> class SMMeshIndexNode;
 
 
-struct SMNodeDataToLoad 
+struct SMNodeDataToLoad
     {
-    SMNodeDataToLoad();        
+    SMNodeDataToLoad();
 
     virtual ~SMNodeDataToLoad();
 
@@ -130,9 +130,9 @@ struct SMNodeDataToLoad
 template <class POINT, class EXTENT> class SMPointIndexNode : public HFCShareableObject<SMPointIndexNode<POINT, EXTENT>>
     {
     friend class ISMPointIndexFilter<POINT, EXTENT>;
-    friend class SMPointIndex<POINT, EXTENT>;    
-    friend class SMMeshIndex<POINT, EXTENT>;    
-    friend class SMMeshIndexNode<POINT, EXTENT>;    
+    friend class SMPointIndex<POINT, EXTENT>;
+    friend class SMMeshIndex<POINT, EXTENT>;
+    friend class SMMeshIndexNode<POINT, EXTENT>;
     friend class BENTLEY_NAMESPACE_NAME::ScalableMesh::NodeQueryProcessor<POINT, EXTENT>;
     friend class BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshProgressiveQueryEngine;
 
@@ -140,12 +140,12 @@ template <class POINT, class EXTENT> class SMPointIndexNode : public HFCShareabl
     //typedef HPMStoredPooledVector<POINT> CONTAINER;
 
 public:
-    
-    class QueriedNode 
+
+    class QueriedNode
         {
         public :
 
-            QueriedNode(HFCPtr<SMPointIndexNode<POINT, EXTENT>> indexNode, 
+            QueriedNode(HFCPtr<SMPointIndexNode<POINT, EXTENT>> indexNode,
                         bool                                    isOverview = false)
                 {
                 m_indexNode = indexNode;
@@ -158,15 +158,15 @@ public:
 
     typedef std::map<int64_t, HFCPtr<SMPointIndexNode<POINT, EXTENT>>> CreatedNodeMap;
 
-   
-    SMPointIndexNode(uint64_t nodeInd, 
+
+    SMPointIndexNode(uint64_t nodeInd,
                       size_t pi_SplitTreshold,
-                      const EXTENT& pi_rExtent,                                            
+                      const EXTENT& pi_rExtent,
                       ISMPointIndexFilter<POINT, EXTENT>* filter,
                       bool balanced,
-                      bool propagateDataDown,                                            
+                      bool propagateDataDown,
                       CreatedNodeMap*                      createdNodeMap);
-  
+
     SMPointIndexNode<POINT, EXTENT>(size_t pi_SplitTreshold,
                                       const EXTENT& pi_rExtent,
                                       const HFCPtr<SMPointIndexNode<POINT, EXTENT> >& pi_rpParentNode);
@@ -175,26 +175,26 @@ public:
                                     size_t pi_SplitTreshold,
                                     const EXTENT& pi_rExtent,
                                     const HFCPtr<SMPointIndexNode<POINT, EXTENT> >& pi_rpParentNode);
-    
+
 
 
     SMPointIndexNode<POINT, EXTENT>(size_t pi_SplitTreshold,
                                       const EXTENT& pi_rExtent,
                                       const HFCPtr<SMPointIndexNode<POINT, EXTENT> >& pi_rpParentNode,
                                       bool IsUnsplitSubLevel);
-        
-   
+
+
     SMPointIndexNode(HPMBlockID blockID,
-                     HFCPtr<SMPointIndexNode<POINT, EXTENT> > parent,                                          
+                     HFCPtr<SMPointIndexNode<POINT, EXTENT> > parent,
                       ISMPointIndexFilter<POINT, EXTENT>* filter,
                       bool balanced,
-                      bool propagateDataDown, 
+                      bool propagateDataDown,
                       CreatedNodeMap*                      createdNodeMap);
- 
-    SMPointIndexNode(HPMBlockID blockID,                      
+
+    SMPointIndexNode(HPMBlockID blockID,
                       ISMPointIndexFilter<POINT, EXTENT>* filter,
                       bool balanced,
-                      bool propagateDataDown, 
+                      bool propagateDataDown,
                       CreatedNodeMap* createdNodeMap);
 
     /**----------------------------------------------------------------------------
@@ -206,7 +206,7 @@ public:
         {
         return false;
         }
-       
+
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneChild(uint64_t nodeId, const EXTENT& newNodeExtent) const;
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneChild(const EXTENT& newNodeExtent) const;
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneUnsplitChild(const EXTENT& newNodeExtent) const;
@@ -214,13 +214,13 @@ public:
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewChildNode(HPMBlockID blockID);
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(HPMBlockID blockID, bool isRootNode = false);
 
-        
+
     BENTLEY_SM_EXPORT bool IsDirty() const;
 
-    virtual void SetDirty(bool dirty); 
+    virtual void SetDirty(bool dirty);
 
     size_t GetMaxFilledLevel();
-                
+
     /**----------------------------------------------------------------------------
     Sets the parent node ..
 
@@ -236,7 +236,7 @@ public:
     uint64_t GetNextID() const;
 
     virtual RefCountedPtr<SMMemoryPoolVectorItem<POINT>> GetPointsPtr(bool loadPts = true);
-            
+
     /**----------------------------------------------------------------------------
     Returns the parent node
 
@@ -244,12 +244,12 @@ public:
     -----------------------------------------------------------------------------*/
     BENTLEY_SM_EXPORT const HFCPtr<SMPointIndexNode<POINT, EXTENT> >& GetParentNode() const;
 
-    //NEEDS_WORK_SM : In the original STM code sometime SMPointIndexNode access directly to the pointer without loading 
-    //the parent node. 
+    //NEEDS_WORK_SM : In the original STM code sometime SMPointIndexNode access directly to the pointer without loading
+    //the parent node.
     const HFCPtr<SMPointIndexNode<POINT, EXTENT> >& GetParentNodePtr() const;
 
     bool  IsParentSet() const { return m_isParentNodeSet; }
-    
+
     /**----------------------------------------------------------------------------
     Returns the split treshold value for node
 
@@ -377,7 +377,7 @@ public:
 
     BENTLEY_SM_EXPORT bool IsNeighborsLoaded() const;
 
-    BENTLEY_SM_EXPORT void NeedToLoadNeighbors(const bool& needsNeighbors);    
+    BENTLEY_SM_EXPORT void NeedToLoadNeighbors(const bool& needsNeighbors);
 
     /**----------------------------------------------------------------------------
     Indicates if node is leaf
@@ -429,7 +429,7 @@ public:
     @return Children nodes.
     -----------------------------------------------------------------------------*/
     BENTLEY_SM_EXPORT vector<HFCPtr<SMPointIndexNode<POINT, EXTENT>>> GetSubNodes() const;
-        
+
     /**----------------------------------------------------------------------------
     Returns the minimum resolution between the geometric resolution and texture resolution..
 
@@ -450,7 +450,7 @@ public:
     @return true if node and sub-nodes are empty
     -----------------------------------------------------------------------------*/
     bool IsEmpty() const;
-        
+
     /**----------------------------------------------------------------------------
      Get the data store
     -----------------------------------------------------------------------------*/
@@ -519,7 +519,7 @@ public:
      @param Point to add
     -----------------------------------------------------------------------------*/
     virtual bool Add(const POINT pi_rpSpatialObject, bool isPoint3d);
-                  
+
     /**----------------------------------------------------------------------------
      Clears all points that are included in given shape.
 
@@ -527,7 +527,7 @@ public:
 
      @returns The number of points removed
     -----------------------------------------------------------------------------*/
-    virtual size_t Clear(HFCPtr<HVEShape> pi_shapeToClear, double pi_minZ, double pi_maxZ);    
+    virtual size_t Clear(HFCPtr<HVEShape> pi_shapeToClear, double pi_minZ, double pi_maxZ);
 
     /**----------------------------------------------------------------------------
     Remove all points in the giving region.
@@ -536,7 +536,7 @@ public:
 
     @returns The number of points removed
     ----------------------------------------------------------------------------*/
-    virtual size_t RemovePoints(const EXTENT& pi_extentToClear);    
+    virtual size_t RemovePoints(const EXTENT& pi_extentToClear);
 
     /**----------------------------------------------------------------------------
      This method provoques the propagation of data down immediately.
@@ -580,16 +580,16 @@ public:
      post-filtering.
     -----------------------------------------------------------------------------*/
     virtual bool PostFilter();
-            
+
     /**----------------------------------------------------------------------------
      Loads the present tile if delay loaded.
     -----------------------------------------------------------------------------*/
-    virtual void Load() const; 
+    virtual void Load() const;
 
     /**----------------------------------------------------------------------------
     Loads the data for a node
     -----------------------------------------------------------------------------*/
-    virtual void LoadData(SMNodeDataToLoad* dataToLoad = nullptr); 
+    virtual void LoadData(SMNodeDataToLoad* dataToLoad = nullptr);
 
     /**----------------------------------------------------------------------------
     Unloads the present tile if delay loaded.
@@ -640,7 +640,7 @@ public:
                                   bool pi_OnlyLoadedNode) const;
 #endif
 
-#ifdef __HMR_DEBUG    
+#ifdef __HMR_DEBUG
     void         ValidateIs3dDataNodeState(const vector<DRange3d>& source2_5dRanges, const vector<DRange3d>& source3dRanges) const;
 #endif
 
@@ -723,7 +723,7 @@ public:
     virtual void SplitNode(POINT splitPosition, bool propagateSplit = true);
 
     BENTLEY_SM_EXPORT HFCPtr<SMPointIndexNode<POINT, EXTENT> > AddChild(EXTENT newExtent, bool computeNodeId=true, uint64_t nodeId=0);
-    
+
     BENTLEY_SM_EXPORT void SortSubNodes();
 
     /*
@@ -747,10 +747,10 @@ public:
         if (!IsLoaded())
             Load();
 
-        //NEEDS_WORK_SM : Try do create something cleaner when doing storage factoring 
+        //NEEDS_WORK_SM : Try do create something cleaner when doing storage factoring
         //(i.e. : having count only in header automatically modified when storedpoolvector is modified).
         if (m_nodeHeader.m_nodeCount > 0)
-            return m_nodeHeader.m_nodeCount;       
+            return m_nodeHeader.m_nodeCount;
 
         // Maybe points are not loaded yet...
         SMPointIndexNode<POINT, EXTENT>* UNCONSTTHIS = const_cast<SMPointIndexNode<POINT, EXTENT>*>(this);
@@ -761,11 +761,11 @@ public:
 
     void LockPts()
         {
-        m_ptsLock.lock();        
+        m_ptsLock.lock();
         }
 
     void UnlockPts()
-        {        
+        {
         m_ptsLock.unlock();
         }
 
@@ -795,13 +795,13 @@ public:
     void SetupNeighborNodesAfterPushDown();
 
     /**----------------------------------------------------------------------------
-    Setup a neighbor relation between two nodes. 
+    Setup a neighbor relation between two nodes.
     -----------------------------------------------------------------------------*/
     void SetNeighborRelationAfterPushDown(size_t          neighborNodeInd,
                                           vector<size_t>& neighborSubNodeIndexes,
                                           size_t          neighborSubNodeNeighborInd);
 
-    HFCPtr<SMPointIndexNode<POINT, EXTENT> > FindNode(EXTENT ext, size_t level, bool use2d = false) const;    
+    HFCPtr<SMPointIndexNode<POINT, EXTENT> > FindNode(EXTENT ext, size_t level, bool use2d = false) const;
 
     void FindNodes(bvector< HFCPtr<SMPointIndexNode<POINT, EXTENT> >>& nodes, EXTENT ext, size_t level, bool use2d = false) const;
 
@@ -821,7 +821,7 @@ public:
 
     void ValidateNeighborsAfterPushDown(HFCPtr<SMPointIndexNode<POINT, EXTENT> > pi_node);
 #endif
-    
+
     // Did tried to make this not public but it is accessed by HGFSpatialIndex which has some unknown and undefinable template arguments by the node so
     // it cannot be made friend either.
     vector<HFCPtr<SMPointIndexNode<POINT, EXTENT> >>         m_apSubNodes;
@@ -872,12 +872,12 @@ public:
 
             if (m_nodeHeader.m_totalCountDefined)
                 {
-                // The total number of points in a leaf node must be the node content itself        
+                // The total number of points in a leaf node must be the node content itself
                 //NEEDS_WORK_SM:Reactivate this
                 //HASSERT((!m_nodeHeader.m_IsLeaf)|| (m_nodeHeader.m_totalCount == this->size()) || IsVirtualNode());
 
-                // If the node is not leaf and is unsplit then total count must be equal to self size + unsplit child                
-                //NEEDS_WORK_SM - depends on filtering. 
+                // If the node is not leaf and is unsplit then total count must be equal to self size + unsplit child
+                //NEEDS_WORK_SM - depends on filtering.
                 HASSERT(m_nodeHeader.m_IsLeaf || (m_pSubNodeNoSplit == 0) || true /*|| (m_nodeHeader.m_totalCount == this->size() + m_pSubNodeNoSplit->m_nodeHeader.m_totalCount) || ((this->GetFilter()->IsProgressiveFilter() == false) && (m_nodeHeader.m_totalCount == m_pSubNodeNoSplit->m_nodeHeader.m_totalCount))*/);
 
                 // If the node is not leaf and is unsplit then total count must be equal to self size + unsplit child
@@ -923,7 +923,7 @@ public:
                 }
             if (GetParentNodePtr() != NULL)
                 {
-                //NEEDS_WORK_SM : During balancing it is posisble that the parent node is balanced but some 
+                //NEEDS_WORK_SM : During balancing it is posisble that the parent node is balanced but some
                 //of its children has not been balanced yet.
                 //HASSERT (GetParentNodePtr()->m_nodeHeader.m_balanced == m_nodeHeader.m_balanced);
                 }
@@ -936,13 +936,13 @@ public:
         };
 
     virtual void               ValidateInvariantsSoft() const
-        {            
+        {
 #ifdef __HMR_DEBUG
         // We only check invariants if the node is loaded ...
         if (IsLoaded())
             {
 
-            // If the node is a leaf, then subnodes must not exist                
+            // If the node is a leaf, then subnodes must not exist
             HASSERT(!m_nodeHeader.m_IsLeaf || m_apSubNodes.size() < 8 || ((m_pSubNodeNoSplit == 0) && (m_apSubNodes[0] == 0) && (m_apSubNodes[1] == 0) && (m_apSubNodes[2] == 0) && (m_apSubNodes[3] == 0) && (m_apSubNodes[4] == 0) && (m_apSubNodes[5] == 0) && (m_apSubNodes[6] == 0) && (m_apSubNodes[7] == 0)));
 
             // If the node is not a leaf, then subnodes must exist
@@ -964,7 +964,7 @@ public:
             // The content extent must fit completely into the node extent at all times (if defined).
             if (m_nodeHeader.m_contentExtentDefined)
                 {
-                //NEEDS_WORK_SM : Deactivated for now since the stitching triangles of the mesh might intersect the tile boundary. 
+                //NEEDS_WORK_SM : Deactivated for now since the stitching triangles of the mesh might intersect the tile boundary.
                 /*
                 HASSERT(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_contentExtent) >= ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent));
                 HASSERT(ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_contentExtent) <= ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent));
@@ -1028,7 +1028,7 @@ protected:
     /**----------------------------------------------------------------------------
      Sets the neighbor nodes.
 
-     @param pi_apNeighborNodes - Array of neighbor nodes. 
+     @param pi_apNeighborNodes - Array of neighbor nodes.
     -----------------------------------------------------------------------------*/
     virtual void SetNeighborNodes();
 
@@ -1052,15 +1052,15 @@ protected:
 
      @return true if the process should dig down into sub-nodes and false otherwise.
      TBD Something wrong with query return value.
-    -----------------------------------------------------------------------------*/      
+    -----------------------------------------------------------------------------*/
     bool              Query (ISMPointIndexQuery<POINT, EXTENT>* queryObject, BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesh* mesh);
     bool              Query (ISMPointIndexQuery<POINT, EXTENT>* queryObject, ProducedNodeContainer<POINT, EXTENT>& foundNodes, IStopQuery* stopQueryP);
     bool              Query (ISMPointIndexQuery<POINT, EXTENT>* queryObject, vector<QueriedNode>& meshNodes);
-    bool              Query (ISMPointIndexQuery<POINT, EXTENT>* queryObject, vector<QueriedNode>& meshNodes, bool* pIsComplete, bool isProgressiveDisplay = false, bool hasOverview = false, StopQueryCallbackFP stopQueryCallbackFP = 0);        
-    bool              Query (ISMPointIndexQuery<POINT, EXTENT>* queryObject, HFCPtr<SMPointIndexNode<POINT, EXTENT>>& resultNode);        
+    bool              Query (ISMPointIndexQuery<POINT, EXTENT>* queryObject, vector<QueriedNode>& meshNodes, bool* pIsComplete, bool isProgressiveDisplay = false, bool hasOverview = false, StopQueryCallbackFP stopQueryCallbackFP = 0);
+    bool              Query (ISMPointIndexQuery<POINT, EXTENT>* queryObject, HFCPtr<SMPointIndexNode<POINT, EXTENT>>& resultNode);
 
-    bool              QueryVisibleNode (ISMPointIndexQuery<POINT, EXTENT>* queryObject, size_t maxLevel, ProducedNodeContainer<POINT, EXTENT>& overviewNodes, ProducedNodeContainer<POINT, EXTENT>& foundNodes, ProducedNodeContainer<POINT, EXTENT>& nodesToSearch, IStopQuery* stopQueryP);   
-    bool              QueryOverview (ISMPointIndexQuery<POINT, EXTENT>* queryObject, size_t maxLevel, ProducedNodeContainer<POINT, EXTENT>& overviewNodes, ProducedNodeContainer<POINT, EXTENT>& foundNodes, ProducedNodeContainer<POINT, EXTENT>& nodesToSearch, IStopQuery* stopQueryP);       
+    bool              QueryVisibleNode (ISMPointIndexQuery<POINT, EXTENT>* queryObject, size_t maxLevel, ProducedNodeContainer<POINT, EXTENT>& overviewNodes, ProducedNodeContainer<POINT, EXTENT>& foundNodes, ProducedNodeContainer<POINT, EXTENT>& nodesToSearch, IStopQuery* stopQueryP);
+    bool              QueryOverview (ISMPointIndexQuery<POINT, EXTENT>* queryObject, size_t maxLevel, ProducedNodeContainer<POINT, EXTENT>& overviewNodes, ProducedNodeContainer<POINT, EXTENT>& foundNodes, ProducedNodeContainer<POINT, EXTENT>& nodesToSearch, IStopQuery* stopQueryP);
 
 
     /**----------------------------------------------------------------------------
@@ -1074,7 +1074,7 @@ protected:
 
     void              AddNumberObjectsInAncestors(EXTENT& pi_rNodeExtent,
                                                   uint32_t& pio_rNbPoints) const;
-    
+
 
     /**----------------------------------------------------------------------------
      Adds a reference to spatial object in node.
@@ -1102,9 +1102,9 @@ protected:
 
     /**----------------------------------------------------------------------------
      This method advises the children nodes that the storage block ID of their parent has changed
-     as a result of reallocation, destruction or initial store.     
+     as a result of reallocation, destruction or initial store.
     -----------------------------------------------------------------------------*/
-    virtual void AdviseParentNodeIDChanged();    
+    virtual void AdviseParentNodeIDChanged();
 
     /**----------------------------------------------------------------------------
      Indicates if the node is filtered
@@ -1130,19 +1130,19 @@ protected:
     /**----------------------------------------------------------------------------
     Publishes node header and point data in Cesium 3D tile format.
     -----------------------------------------------------------------------------*/
-    void Publish3DTile(ISMDataStoreTypePtr<EXTENT>& pi_pDataStreamingStore, TransformCR transform, ClipVectorPtr clips, const uint64_t& coverageID, bool isClipBoundary, const GeoCoordinates::BaseGCSCPtr sourceGCS, const GeoCoordinates::BaseGCSCPtr destinationGCS);
+    // void Publish3DTile(ISMDataStoreTypePtr<EXTENT>& pi_pDataStreamingStore, TransformCR transform, ClipVectorPtr clips, const uint64_t& coverageID, bool isClipBoundary, const GeoCoordinates::BaseGCSCPtr sourceGCS, const GeoCoordinates::BaseGCSCPtr destinationGCS);
 
     ISMPointIndexFilter<POINT, EXTENT>* m_filter;
 
-        
-    CreatedNodeMap* m_createdNodeMap;     
 
-    virtual void SetNodeExtent(const EXTENT& extent);    
+    CreatedNodeMap* m_createdNodeMap;
 
-    void               SetParentNodePtr(const HFCPtr<SMPointIndexNode<POINT, EXTENT> >& parentNodePtr);    
+    virtual void SetNodeExtent(const EXTENT& extent);
+
+    void               SetParentNodePtr(const HFCPtr<SMPointIndexNode<POINT, EXTENT> >& parentNodePtr);
 
     void               Track3dPoints(size_t countPoints);
-    
+
     size_t         m_numSubNodes;
 
     HFCPtr<SMPointIndexNode<POINT, EXTENT> > m_pSubNodeNoSplit;  // Pointer to non-split sub-node. If NULL then node is either a leaf or has split sub-nodes
@@ -1162,7 +1162,7 @@ protected:
         // This member is set upon filtering only. If the node has never been filtered then it is meaningless.
         HDEBUGCODE(mutable bool m_parentOfAnUnspliteableNode;)
 
-        //NEEDS_WORK_SM : Cached here but should eventually be in the header        
+        //NEEDS_WORK_SM : Cached here but should eventually be in the header
         //NEEDS_WORK_SM : Only different if progressive filtering, which is not supported anymore.
         mutable int32_t   m_NbObjects;     // The total number of object in and over(in parent nodes (within tile extent)) this node.
 
@@ -1241,10 +1241,10 @@ protected:
             }
 
 
-        //Should be accessed using GetParentNode.        
+        //Should be accessed using GetParentNode.
         bool m_isParentNodeSet;
-        HFCPtr<SMPointIndexNode<POINT, EXTENT> > m_pParentNode;      // Parent node      
-        uint64_t           m_nodeId; 
+        HFCPtr<SMPointIndexNode<POINT, EXTENT> > m_pParentNode;      // Parent node
+        uint64_t           m_nodeId;
         bool               m_isDirty;
         std::mutex         m_ptsLock;
         bool               m_loadNeighbors;
@@ -1271,7 +1271,7 @@ template <class POINT, class EXTENT, class NODE> class SMIndexNodeVirtual : publ
         virtual bool IsVirtualNode() const override
             {
             return true;
-           }      
+           }
 
         virtual bool Destroy() override
             {
@@ -1280,7 +1280,7 @@ template <class POINT, class EXTENT, class NODE> class SMIndexNodeVirtual : publ
 
         virtual void Load() const override
             {};
-        
+
         virtual void LoadData(SMNodeDataToLoad* dataToLoad = nullptr) override
             {};
 
@@ -1349,7 +1349,7 @@ public:
      Forces an immmediate store (to minimize the chances of corruption
     -----------------------------------------------------------------------------*/
     virtual bool        Store();
-    
+
     /**----------------------------------------------------------------------------
      Returns the filter used for filtering the points when promoting them to upper levels.
 
@@ -1374,7 +1374,7 @@ public:
     void SetBalanced(bool balanced);
 
     /**----------------------------------------------------------------------------
-    If maximum depth termined only by no splitted subnode then pull them up. 
+    If maximum depth termined only by no splitted subnode then pull them up.
     -----------------------------------------------------------------------------*/
     void PullSubNodeNoSplitUp();
 
@@ -1383,7 +1383,7 @@ public:
     -----------------------------------------------------------------------------*/
     bool UnsplitEmptyNode();
 
-    
+
     /**----------------------------------------------------------------------------
      Initiates the filtering of the point index, This filtering process includes
      recursively calling global pre-filtering, pre=filtering of nodes, filtering,
@@ -1398,22 +1398,22 @@ public:
      recursively calling global pre-query, pre-query of nodes, query proper,
      node post-query then global post-filtering.
 
-    -----------------------------------------------------------------------------*/       
+    -----------------------------------------------------------------------------*/
     size_t              Query (ISMPointIndexQuery<POINT, EXTENT>* queryObject,
                                BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesh* resultMesh);
     size_t              Query(ISMPointIndexQuery<POINT, EXTENT>* queryObject,
-                              HFCPtr<SMPointIndexNode<POINT, EXTENT>>& resultNode);   
+                              HFCPtr<SMPointIndexNode<POINT, EXTENT>>& resultNode);
     size_t              Query (ISMPointIndexQuery<POINT, EXTENT>* queryObject,
-                               vector<typename SMPointIndexNode<POINT, EXTENT>::QueriedNode>& meshNodes);           
+                               vector<typename SMPointIndexNode<POINT, EXTENT>::QueriedNode>& meshNodes);
 
-    //NEEDS_WORK_SM : Could be removed once new display is activated. 
+    //NEEDS_WORK_SM : Could be removed once new display is activated.
     size_t              Query (ISMPointIndexQuery<POINT, EXTENT>* queryObject,
-                               vector<typename SMPointIndexNode<POINT, EXTENT>::QueriedNode>& meshNodes, 
-                               bool* pIsComplete, 
-                               bool isProgressiveDisplay, 
-                               bool hasOverview = false, 
-                               StopQueryCallbackFP stopQueryCallbackFP = 0);           
-   
+                               vector<typename SMPointIndexNode<POINT, EXTENT>::QueriedNode>& meshNodes,
+                               bool* pIsComplete,
+                               bool isProgressiveDisplay,
+                               bool hasOverview = false,
+                               StopQueryCallbackFP stopQueryCallbackFP = 0);
+
     uint64_t             GetNbObjectsAtLevel(size_t pi_depthLevel);
 
     /*
@@ -1422,26 +1422,26 @@ public:
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(uint64_t nodeId, EXTENT extent, bool isRootNode = false);
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(EXTENT extent, bool isRootNode = false);
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(HPMBlockID blockID, bool isRootNode = false);
-    
+
     BENTLEY_SM_EXPORT bool                AddArray (const POINT* pointsArray, size_t countOfPoints, bool arePoints3d, bool regularGrid=false);
-    bool                                  Clear(HFCPtr<HVEShape> pi_shapeToClear);        
+    // bool                                  Clear(HFCPtr<HVEShape> pi_shapeToClear);
     BENTLEY_SM_EXPORT bool                RemovePoints(const EXTENT& pi_extentToClear);
 
     StatusInt           SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirectoryName, const short& pi_pGroupMode, bool pi_pCompress = true);
     StatusInt           SavePointsToCloud(const WString& pi_pOutputDirectoryName, bool pi_pCompress = true);
     StatusInt           SaveMasterHeaderToCloud(ISMDataStoreTypePtr<EXTENT>& pi_pDataStore);
 
-#ifdef INDEX_DUMPING_ACTIVATED    
+#ifdef INDEX_DUMPING_ACTIVATED
     virtual void                DumpOctTree(char* pi_pOutputXMLFileName, bool pi_OnlyLoadedNode) const;
 #endif
 
 #ifdef __HMR_DEBUG
-    void         ValidateIs3dDataStates(const vector<DRange3d>& source2_5dRanges, const vector<DRange3d>& source3dRanges) const;            
+    void         ValidateIs3dDataStates(const vector<DRange3d>& source2_5dRanges, const vector<DRange3d>& source3dRanges) const;
 #endif
 
 #ifdef SCALABLE_MESH_ATP
     uint64_t    m_nbInputPoints;
-#endif    
+#endif
 
     BENTLEY_SM_EXPORT void SetNextID(const uint64_t& id);
     uint64_t GetNextID() const;
@@ -1464,7 +1464,7 @@ public:
     this propagation will prevent data to immediately propagate data. Newly added
     data will remain in upper parent nodes till required.
     -----------------------------------------------------------------------------*/
-    void SetPropagateDataDown(bool propagate);
+    // void SetPropagateDataDown(bool propagate);
 
     /**----------------------------------------------------------------------------
     This method provoques the propagation of data down immediately.
@@ -1567,11 +1567,11 @@ public:
 
     @return The root node
 
-   -----------------------------------------------------------------------------*/        
+   -----------------------------------------------------------------------------*/
     BENTLEY_SM_EXPORT HFCPtr<SMPointIndexNode<POINT, EXTENT> >       CreateRootNode();
 
     BENTLEY_SM_EXPORT HFCPtr<SMPointIndexNode<POINT, EXTENT> >       CreateRootNode(uint64_t nodeId);
-      
+
     /**----------------------------------------------------------------------------
     Gets the effective limiting outter extent. This extent is the node extent
     of the root node.
@@ -1663,14 +1663,13 @@ public:
 
     uint64_t                    m_smID;
 #ifndef NDEBUG
-    void                ValidateNeighbors();
+    // void                ValidateNeighbors();
 #endif
 protected:
 
-    SMPointIndex(const SMPointIndex&   pi_rSpatialObject);
+    // SMPointIndex(const SMPointIndex&   pi_rSpatialObject);
 
-    SMPointIndex&
-    operator=(const SMPointIndex& pi_rObj);
+    // SMPointIndex& operator=(const SMPointIndex& pi_rObj);
 
     virtual void                ValidateInvariants() const
         {
@@ -1682,19 +1681,19 @@ protected:
         // Notice that even if we have strong aggregation we do not check invariants of root node
 #endif
         };
-       
+
     ISMDataStoreTypePtr<EXTENT> m_dataStore;
     std::atomic<uint64_t>       m_nextNodeID;
 
     static uint64_t             m_nextSMID;
 
-    //For nodes to reload during access. 
+    //For nodes to reload during access.
     bool                        m_forceReload = false;
 
-    ISMPointIndexFilter<POINT, EXTENT>* m_filter;    
+    ISMPointIndexFilter<POINT, EXTENT>* m_filter;
     typename SMPointIndexNode<POINT, EXTENT>::CreatedNodeMap m_createdNodeMap;
 
-    virtual void        PushRootDown(const EXTENT& pi_rObjectExtent);    
+    virtual void        PushRootDown(const EXTENT& pi_rObjectExtent);
 
     bool                HasMaxExtent() const;
     EXTENT              GetMaxExtent() const;
@@ -1712,7 +1711,7 @@ protected:
 
     bool                    m_needsBalancing;
 
-    bool                    m_propagatesDataDown; 
+    bool                    m_propagatesDataDown;
 
     std::atomic<bool>       m_isCanceled;
 
@@ -1722,7 +1721,7 @@ protected:
     bvector<size_t> m_countsOfNodesAtLevel;
 
     //Avoid division by 0 if not used.
-    size_t m_countsOfNodesTotal = 1; 
+    size_t m_countsOfNodesTotal = 1;
 
     bool m_precomputedCountNodes = false;
 
@@ -1792,7 +1791,7 @@ template<class POINT, class EXTENT> class ISMPointIndexFilter
 public:
     ISMPointIndexFilter() {};
     virtual ~ISMPointIndexFilter() {};
-    
+
     /*======================================================================================================
     ** This property indicates if the filtering process is progressive or not. Since the main purpose of
     ** filtering is to spread spatially index points conceptually located at the leaf towards parent nodes
@@ -1801,7 +1800,7 @@ public:
     ** filter is not progressive. This state is very important to understand the structure of the point
     ** distribution and essential when Query process will be performed.
     **====================================================================================================*/
-    virtual bool        IsProgressiveFilter() const 
+    virtual bool        IsProgressiveFilter() const
         {
         return false;
         }
@@ -1868,7 +1867,7 @@ public:
     **====================================================================================================*/
     virtual bool        FilterLeaf(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node) const
         {
-        // Nothing to be done    
+        // Nothing to be done
 
         return false;
         }
@@ -1967,20 +1966,20 @@ public:
     **
     ** @return true if the query must continue and false to cancle it all together. If false neither
     ** pre-query, query or post-query will be called, but the global post-query will still be callsed
-    **====================================================================================================*/   
-  
+    **====================================================================================================*/
+
     virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,
                                         BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesh* resultMesh)
         {
         return true;
         };
 
-    virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,                    
+    virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,
                                         vector<typename SMPointIndexNode<POINT, EXTENT>::QueriedNode>& meshNodes) {
         return true;
         };
 
-    
+
 
 
 
@@ -2010,7 +2009,7 @@ public:
     ** process will complete promptly in just a few calls.
     **
     ** Even if the query is stopped, the post-query process will be called
-    **====================================================================================================*/      
+    **====================================================================================================*/
     virtual bool        Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
                               HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                size_t numSubNodes,
@@ -2021,13 +2020,13 @@ public:
     virtual bool        Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
                               HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                size_t numSubNodes,
-                               vector<typename SMPointIndexNode<POINT, EXTENT>::QueriedNode>& meshNodes) {assert(!"Not implemented"); return 0;};    
+                               vector<typename SMPointIndexNode<POINT, EXTENT>::QueriedNode>& meshNodes) {assert(!"Not implemented"); return 0;};
 
     virtual bool        Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
                               HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                size_t numSubNodes,
-                               ProducedNodeContainer<POINT, EXTENT>& foundNodes) {assert(!"Not implemented"); return 0;};    
-    
+                               ProducedNodeContainer<POINT, EXTENT>& foundNodes) {assert(!"Not implemented"); return 0;};
+
     virtual bool        Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
                               HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                size_t numSubNodes,
@@ -2059,7 +2058,7 @@ public:
     **
     ** @return true if the query was successful and false otherwise. This value may be returned as indication
     ** of the global success of the query
-    **====================================================================================================*/    
+    **====================================================================================================*/
   /*  virtual bool        GlobalPostQuery (SMPointIndex<POINT, EXTENT>& index,
                                          HPMMemoryManagedVector<POINT>& points) {
         return true;
@@ -2070,7 +2069,7 @@ public:
         return false;
         }
 
-    virtual void GetQueryNodeOrder(vector<size_t>&                            queryNodeOrder, 
+    virtual void GetQueryNodeOrder(vector<size_t>&                            queryNodeOrder,
                                    HFCPtr<SMPointIndexNode<POINT, EXTENT> >  node,
                                    HFCPtr<SMPointIndexNode<POINT, EXTENT> >  subNodes[],
                                    size_t numSubNodes)
@@ -2199,8 +2198,8 @@ public:
             // Shapes are disjoint
             return false;
             }
-        
-        HPMMemoryManagedVector<POINT> tempList(&s_queryMemoryManager);    
+
+        HPMMemoryManagedVector<POINT> tempList(&s_queryMemoryManager);
 
         // Called wrapped query
         bool status =  m_wrappedQuery->Query(node, subNodes, numSubNodes, tempList);
@@ -2295,17 +2294,17 @@ protected:
 public:
 
 
-        HGFLevelPointIndexQuery(const EXTENT extent, /*double meterToNPCMatrix[][4],*/ size_t level, bool returnAllPtsForLowestLevel = true, 
-                                size_t maxNumberOfPoints = std::numeric_limits<size_t>::max()) 
+        HGFLevelPointIndexQuery(const EXTENT extent, /*double meterToNPCMatrix[][4],*/ size_t level, bool returnAllPtsForLowestLevel = true,
+                                size_t maxNumberOfPoints = std::numeric_limits<size_t>::max())
         {
                                 m_extent = extent;
-                                m_requestedLevel = level;                                
-            m_returnAllPtsForLowestLevel = returnAllPtsForLowestLevel;   
+                                m_requestedLevel = level;
+            m_returnAllPtsForLowestLevel = returnAllPtsForLowestLevel;
             m_maxNumberOfPoints = maxNumberOfPoints;
         }
 
                             virtual ~HGFLevelPointIndexQuery() {}
-   
+
    /* virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,
                                         HPMMemoryManagedVector<POINT>& points)
         {
@@ -2327,11 +2326,11 @@ public:
                                HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                size_t numSubNodes,
                                HPMMemoryManagedVector<POINT>& resultPoints)
-        {       
-            // Before to continue, make sure we don't already have the maximum of points allow   
+        {
+            // Before to continue, make sure we don't already have the maximum of points allow
             if (m_maxNumberOfPoints < resultPoints.size())
                 return false;
-            
+
         // Before we make sure requested level is appropriate
         if (m_requestedLevel < 0)
             m_requestedLevel = 0;
@@ -2350,11 +2349,11 @@ public:
                 POINT nodeExtentCorner = PointOp<POINT>::Create (ExtentOp<EXTENT>::GetXMax(node->GetNodeExtent()), ExtentOp<EXTENT>::GetYMax(node->GetNodeExtent()), ExtentOp<EXTENT>::GetZMax(node->GetNodeExtent()));
 
                 // If the whole node is located within extent ... copy it all
-                if ((ExtentPointOp<EXTENT, POINT>::IsPointOutterIn2D(m_extent, nodeExtentOrigin) && 
-                     ExtentPointOp<EXTENT, POINT>::IsPointOutterIn2D(m_extent, nodeExtentCorner)) || 
-                        ((node->GetLevel() == 0) && m_returnAllPtsForLowestLevel && //Always return all the points in the lowest level. 
-                      (node->GetFilter()->IsProgressiveFilter() == true)))  
-                    {                     
+                if ((ExtentPointOp<EXTENT, POINT>::IsPointOutterIn2D(m_extent, nodeExtentOrigin) &&
+                     ExtentPointOp<EXTENT, POINT>::IsPointOutterIn2D(m_extent, nodeExtentCorner)) ||
+                        ((node->GetLevel() == 0) && m_returnAllPtsForLowestLevel && //Always return all the points in the lowest level.
+                      (node->GetFilter()->IsProgressiveFilter() == true)))
+                    {
                     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> ptsPtr(node->GetPointsPtr());
 
                     for (size_t currentIndex = 0 ; currentIndex < ptsPtr->size(); currentIndex++)
@@ -2370,7 +2369,7 @@ public:
 
                     for (size_t currentIndex = 0 ; currentIndex < ptsPtr->size(); currentIndex++)
                         {
-                        // Check if point is in extent of object                        
+                        // Check if point is in extent of object
                         if (ExtentPointOp<EXTENT, POINT>::IsPointOutterIn2D(m_extent, ptsPtr->operator[](currentIndex)))
                             {
                             // The point falls inside extent of object .. we add a reference to the list
@@ -2378,12 +2377,12 @@ public:
                             }
                         }
                     }
-                }                
-                
+                }
+
                 // Verify if we have the maximum of point allow
                 if (m_maxNumberOfPoints < resultPoints.size())
                     return false;
-                    
+
             return true;
             }
         else
@@ -2402,7 +2401,7 @@ public:
     };
 
 /*======================================================================================================
-** HGFLevelPointIndexByShapeQuery 
+** HGFLevelPointIndexByShapeQuery
 **
 ** This query fetches points within a specified area (shape) at a specified depth level. If the level
 ** requested is deeper than the maximum depth of the index then it is automatically limited
@@ -2414,28 +2413,28 @@ template<class POINT, class EXTENT> class HGFLevelPointIndexByShapeQuery: public
 private:
     size_t m_expectedLevel;
 
-protected: 
+protected:
     size_t m_requestedLevel;
     HFCPtr<HVE2DShape> m_areaShape;
     bool m_returnAllPtsForLowestLevel;
     size_t m_maxNumberOfPoints;
-    
+
 public:
 
 
-    HGFLevelPointIndexByShapeQuery(HFCPtr<HVE2DShape> areaShape, /*double meterToNPCMatrix[][4],*/ size_t level, bool returnAllPtsForLowestLevel = true, 
-                                   size_t maxNumberOfPoints = std::numeric_limits<size_t>::max()) 
+    HGFLevelPointIndexByShapeQuery(HFCPtr<HVE2DShape> areaShape, /*double meterToNPCMatrix[][4],*/ size_t level, bool returnAllPtsForLowestLevel = true,
+                                   size_t maxNumberOfPoints = std::numeric_limits<size_t>::max())
         {
         m_areaShape = areaShape;
-        m_requestedLevel = level; 
-        m_returnAllPtsForLowestLevel = returnAllPtsForLowestLevel; 
-        m_maxNumberOfPoints = maxNumberOfPoints;                             
+        m_requestedLevel = level;
+        m_returnAllPtsForLowestLevel = returnAllPtsForLowestLevel;
+        m_maxNumberOfPoints = maxNumberOfPoints;
         }
 
     virtual ~HGFLevelPointIndexByShapeQuery() {}
-    
+
  /*   virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,
-        HPMMemoryManagedVector<POINT>& points) 
+        HPMMemoryManagedVector<POINT>& points)
         {
         // Make sure the index is balanced ... we stop if it is not
         if (!index.IsBalanced())
@@ -2444,7 +2443,7 @@ public:
         // Obtain the deepest level of index and make sure requested index is
         size_t fullIndexDepth = index.GetDepth();
 
-        // If requested level is deeper than actual index depth we limit to index depth            
+        // If requested level is deeper than actual index depth we limit to index depth
         if (fullIndexDepth < m_requestedLevel)
             return false;
 
@@ -2452,51 +2451,51 @@ public:
         }*/
 
 
-  /*  // The Query process gathers points up to level depth  
-    virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node, 
+  /*  // The Query process gathers points up to level depth
+    virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
         HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
         size_t numSubNodes,
         HPMMemoryManagedVector<POINT>& resultPoints)
-        {   
-        // Before to continue, make sure we don't already have the maximum of points allow   
+        {
+        // Before to continue, make sure we don't already have the maximum of points allow
         if (m_maxNumberOfPoints < resultPoints.size())
             return false;
-                         
+
         // Before we make sure requested level is appropriate
         if (m_requestedLevel < 0)
             m_requestedLevel = 0;
 
-        HFCPtr<HVE2DShape> pNodeShape(new HVE2DRectangle(ExtentOp<EXTENT>::GetXMin(node->GetNodeExtent()), ExtentOp<EXTENT>::GetYMin(node->GetNodeExtent()), 
+        HFCPtr<HVE2DShape> pNodeShape(new HVE2DRectangle(ExtentOp<EXTENT>::GetXMin(node->GetNodeExtent()), ExtentOp<EXTENT>::GetYMin(node->GetNodeExtent()),
                                                          ExtentOp<EXTENT>::GetXMax(node->GetNodeExtent()), ExtentOp<EXTENT>::GetYMax(node->GetNodeExtent()), m_areaShape->GetCoordSys()));
 
-      
+
 
         HVE2DShape::SpatialPosition finalePosition = HVE2DShape::S_OUT;
-        
+
         HVE2DShape::SpatialPosition nodePosition = m_areaShape->CalculateSpatialPositionOf(*pNodeShape);
-        
+
         if (nodePosition != HVE2DShape::S_OUT)
             finalePosition = nodePosition;
-        else 
+        else
             {
             // We need to do this test because if the shape is all inside the node, we need to return S_PARTIALY_IN
             HVE2DShape::SpatialPosition shapePosition = pNodeShape->CalculateSpatialPositionOf(*m_areaShape);
 
             if (shapePosition == HVE2DShape::S_IN)
-                finalePosition = HVE2DShape::S_PARTIALY_IN;            
+                finalePosition = HVE2DShape::S_PARTIALY_IN;
             }
-            
+
         if (finalePosition != HVE2DShape::S_OUT && node->GetLevel() <= m_requestedLevel)
-            {            
+            {
             // If this is the appropriate level or it is a higher level and progressive is set.
-            if (node->IsLeaf() || 
-                m_requestedLevel == node->GetLevel() || 
+            if (node->IsLeaf() ||
+                m_requestedLevel == node->GetLevel() ||
                 (node->GetFilter()->IsProgressiveFilter() && m_requestedLevel > node->GetLevel()))
                 {
                 // If the whole node is located within extent ... copy it all
-                if ((finalePosition == HVE2DShape::S_IN) || 
-                    ((node->GetLevel() == 0) && m_returnAllPtsForLowestLevel && //Always return all the points in the lowest level. 
-                    (node->GetFilter()->IsProgressiveFilter() == true)))  
+                if ((finalePosition == HVE2DShape::S_IN) ||
+                    ((node->GetLevel() == 0) && m_returnAllPtsForLowestLevel && //Always return all the points in the lowest level.
+                    (node->GetFilter()->IsProgressiveFilter() == true)))
                     {
                     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> ptsPtr(node->GetPointsPtr());
 
@@ -2507,7 +2506,7 @@ public:
                         }
                     }
                 else
-                    {                    
+                    {
                     // Search in present list of objects for current node
                     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> ptsPtr(node->GetPointsPtr());
 
@@ -2520,18 +2519,18 @@ public:
                             resultPoints.push_back(ptsPtr->operator[](currentIndex));
                             }
                         }
-                    }  
-                }                
+                    }
+                }
 
             // Verify if we have the maximum of point allow
             if (m_maxNumberOfPoints < resultPoints.size())
                 return false;
-                
+
             return true;
             }
         else
             {
-            // No need to dig deeper in subnodes ... either extents do not overlap or 
+            // No need to dig deeper in subnodes ... either extents do not overlap or
             // level reached
             return false;
             }
@@ -2542,7 +2541,7 @@ virtual ISMPointIndexQuery<POINT, EXTENT>* Clone()
     return new HGFLevelPointIndexByShapeQuery<POINT, EXTENT>(m_areaShape, m_requestedLevel, m_returnAllPtsForLowestLevel, m_maxNumberOfPoints);
 }
 };
-    
+
 /*======================================================================================================
 ** HGFAutoLevelPointIndexQuery
 **
@@ -2568,7 +2567,7 @@ public:
         }
     virtual ~HGFAutoLevelPointIndexQuery();
 
-  /*  // The global prequery simply cleans pre-query specific structure    
+  /*  // The global prequery simply cleans pre-query specific structure
     virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,
                                         HPMMemoryManagedVector<POINT>& points)
         {
@@ -2647,7 +2646,7 @@ public:
         return m_neighborNodes;
         }
 
-    // The global prequery simply cleans pre-query specific structure   
+    // The global prequery simply cleans pre-query specific structure
   /*  virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,
                                         HPMMemoryManagedVector<POINT>& points)
         {
@@ -2657,7 +2656,7 @@ public:
         return true;
         };*/
 
-    // The Query process gathers points up to level depth   
+    // The Query process gathers points up to level depth
   /*  virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
                                HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                size_t numSubNodes,
@@ -2753,7 +2752,7 @@ private:
 protected :
 
     EXTENT m_extent;
-    bool   m_gatherTileBreaklines;    
+    bool   m_gatherTileBreaklines;
     double m_viewportRotMatrix[3][3];
     double m_rootToViewMatrix[4][4];
 
@@ -2778,7 +2777,7 @@ public:
                                     const double viewportRotMatrix[][3],
                                     bool gatherTileBreaklines)
         {
-        m_extent = extent;        
+        m_extent = extent;
         m_gatherTileBreaklines = gatherTileBreaklines;
 
         for (size_t i = 0 ; i < 3 ; i++)
@@ -2799,28 +2798,28 @@ public:
         return m_listOfTileBreaklines;
         }
 
-    // The global prequery simply cleans query specific structure (the list of tile breaklines)    
+    // The global prequery simply cleans query specific structure (the list of tile breaklines)
   /*  virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,
                                         HPMMemoryManagedVector<POINT>& points)
         {
-        m_listOfTileBreaklines.clear();        
+        m_listOfTileBreaklines.clear();
         return true;
         };*/
 
     virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,
                                         BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesh* mesh)
         {
-        m_listOfTileBreaklines.clear();        
+        m_listOfTileBreaklines.clear();
         return true;
         };
 
     virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,
                                         vector<typename SMPointIndexNode<POINT, EXTENT>::QueriedNode>& meshNodes)
         {
-        m_listOfTileBreaklines.clear();        
+        m_listOfTileBreaklines.clear();
         return true;
         };
- 
+
 
    /* virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
                                HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
@@ -2889,7 +2888,7 @@ public:
 
 
     virtual bool IsCorrectForCurrentView(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
-                                         const EXTENT& pi_visibleExtent,                                         
+                                         const EXTENT& pi_visibleExtent,
                                          double        pi_RootToViewMatrix[][4]) const = 0;
 
     virtual ISMPointIndexQuery<POINT, EXTENT>* Clone() = 0;
@@ -2935,7 +2934,7 @@ public:
                 RefCountedPtr<SMMemoryPoolVectorItem<POINT>> ptsPtr(subNodes[indexNode]->GetPointsPtr());
                 RefCountedPtr<SMMemoryPoolVectorItem<POINT>> parentPtsPtr(parentNode->GetPointsPtr());
 
-                parentPtsPtr->push_back (&(*ptsPtr[0]), ptsPtr->size());                
+                parentPtsPtr->push_back (&(*ptsPtr[0]), ptsPtr->size());
                 }
             }
 
@@ -2984,13 +2983,13 @@ template<class POINT, class EXTENT> class SMLeafPointIndexQuery : public ISMPoin
             }
 
         virtual ~SMLeafPointIndexQuery() {}
-      
+
       /*  virtual bool        Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
                                   HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                   size_t numSubNodes,
                                   HPMMemoryManagedVector<POINT>& resultPoints)
             {
-            // Before to continue, make sure we don't already have the maximum of points allow   
+            // Before to continue, make sure we don't already have the maximum of points allow
             if (m_maxNumberOfPoints < resultPoints.size())
                 return false;
 
@@ -3008,7 +3007,7 @@ template<class POINT, class EXTENT> class SMLeafPointIndexQuery : public ISMPoin
                     // If the whole node is located within extent ... copy it all
                     if ((ExtentPointOp<EXTENT, POINT>::IsPointOutterIn2D(m_extent, nodeExtentOrigin) &&
                         ExtentPointOp<EXTENT, POINT>::IsPointOutterIn2D(m_extent, nodeExtentCorner)) ||
-                        (m_returnAllPtsForLowestLevel //Always return all the points in the lowest level. 
+                        (m_returnAllPtsForLowestLevel //Always return all the points in the lowest level.
                         ))
                         {
                         RefCountedPtr<SMMemoryPoolVectorItem<POINT>> ptsPtr(node->GetPointsPtr());
@@ -3084,11 +3083,11 @@ template<class POINT, class EXTENT> class SMLeafPointIndexQuery : public ISMPoin
 
 template <class POINT, class EXTENT> class ProducedNodeContainer
     {
-     private : 
-             
+     private :
+
          bvector<HFCPtr<SMPointIndexNode<POINT, EXTENT>>> m_producedNodes;
-         std::mutex                                       m_producedNodesMutex;          
-         bool                                             m_threadSafe;         
+         std::mutex                                       m_producedNodesMutex;
+         bool                                             m_threadSafe;
 
      public :
 
@@ -3104,17 +3103,17 @@ template <class POINT, class EXTENT> class ProducedNodeContainer
 
          void AddNode(HFCPtr<SMPointIndexNode<POINT, EXTENT>>& nodePtr)
              {
-             while (m_threadSafe && !m_producedNodesMutex.try_lock());             
+             while (m_threadSafe && !m_producedNodesMutex.try_lock());
 
 #ifndef NDEBUG
              for (auto& node : m_producedNodes)
                  {
                  assert(node.GetPtr() != nodePtr.GetPtr());
                  assert(!(node->GetBlockID() == nodePtr->GetBlockID()));
-                 }             
+                 }
 #endif
 
-             m_producedNodes.push_back(nodePtr);      
+             m_producedNodes.push_back(nodePtr);
 
              if (m_threadSafe)
                 m_producedNodesMutex.unlock();
@@ -3124,18 +3123,18 @@ template <class POINT, class EXTENT> class ProducedNodeContainer
              {
              assert(m_threadSafe == false);
              return m_producedNodes;
-             }         
+             }
 
          bool ConsumeNode(HFCPtr<SMPointIndexNode<POINT, EXTENT>>& consumedNodePtr)
-             {  
+             {
              assert(consumedNodePtr == 0);
 
-             while (m_threadSafe && !m_producedNodesMutex.try_lock());             
+             while (m_threadSafe && !m_producedNodesMutex.try_lock());
 
              if (m_producedNodes.size() > 0)
                 {
                 consumedNodePtr = m_producedNodes.back();
-                m_producedNodes.pop_back();                
+                m_producedNodes.pop_back();
                 }
 
              if (m_threadSafe)
@@ -3149,7 +3148,7 @@ template <class POINT, class EXTENT> class ProducedNodeContainer
              if (StopProducing())
                  return false;
 
-             while (m_threadSafe && !m_producedNodesMutex.try_lock());             
+             while (m_threadSafe && !m_producedNodesMutex.try_lock());
 
              bool waitConsumption = m_producedNodes.size() > 0;
 

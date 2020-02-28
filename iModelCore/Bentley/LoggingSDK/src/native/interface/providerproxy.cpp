@@ -313,7 +313,7 @@ Provider::ILogProvider* pProvider
 Provider::ILogProvider* LogProviderProxy::unregisterProvider ()
     {
     BeSystemMutexHolder beCS;
-    
+
     Provider::ILogProvider* was = m_pLogProvider;
     m_pLogProvider = nullptr;
     return was;
@@ -369,17 +369,17 @@ bool EmergencyLogProvider::IsActive ( void )
 #else
 
     if ( UNKNOWN_LOGGING_PROVIDER == m_emergencyProviderType )
-        {   
-PUSH_MSVC_IGNORE(4996)
+        {
+PUSH_DISABLE_DEPRECATION_WARNINGS
         char const* env = getenv ( "EMERGENCY_LOGGING_SEVERITY" );
-POP_MSVC_IGNORE
+
         WString sevStr (env? env: "", false);
 
         SEVERITY sev = GetSeverityFromText ( sevStr.c_str() );
-        
-PUSH_MSVC_IGNORE(4996)
+
         env = getenv ( "EMERGENCY_LOGGING" );
-POP_MSVC_IGNORE
+POP_DISABLE_DEPRECATION_WARNINGS
+
         WString val (env? env: "", false);
 
         if ( val.EqualsI ( L"CONSOLE" ))
@@ -392,7 +392,7 @@ POP_MSVC_IGNORE
 
             m_emergencyProviderType = CONSOLE_LOGGING_PROVIDER;
             }
-        else if ( val.substr(0,4).EqualsI (L"FILE") )
+        else if (0 == BeStringUtilities::Wcsnicmp(val.c_str(), L"FILE", 4) )
             {
             m_emergencyProvider = new SimpleFileProvider();
 

@@ -16,6 +16,7 @@
 #include    <shlwapi.h>
 #include    <psapi.h>
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 // ...\DbgHelp.h(1544): error C2220: warning treated as error - no 'object' file generated
 // ...\DbgHelp.h(1544): warning C4091: 'typedef ': ignored on left of '' when no variable is declared
 // ...\DbgHelp.h(3190): warning C4091: 'typedef ': ignored on left of '' when no variable is declared
@@ -181,7 +182,7 @@ char const * const  sz9CharacterThreadName      // => Thread name, 9 characters 
 )
     {
     //  This is to get around a debugger bug.  When running a managed debugging session
-    //  RaiseException does not save RBX. However, in an optimized build the caller 
+    //  RaiseException does not save RBX. However, in an optimized build the caller
     //  relies on RBX being saved and crashes when RBX is not saved. Therefore we
     //  use this code to explicitly save and restore the registers.
     CONTEXT ctxt = { 0 };
@@ -390,7 +391,7 @@ bool*                           wantFullMemoryDump
         FreeLibrary (hDbgHelp);
         return;
         }
-    
+
     typedef BOOL (__stdcall *FPMiniDumpWriteDump) (HANDLE hProcess, DWORD ProcessId, HANDLE hFile, MINIDUMP_TYPE DumpType, PMINIDUMP_EXCEPTION_INFORMATION, PVOID, PVOID);
 
     FPMiniDumpWriteDump const fpMiniDumpWriteDump = (FPMiniDumpWriteDump) GetProcAddress (hDbgHelp, "MiniDumpWriteDump");
@@ -401,7 +402,7 @@ bool*                           wantFullMemoryDump
         FreeLibrary (hDbgHelp);
         return;
         }
-    
+
     uint32_t     dumpOpts = MiniDumpNormal | MiniDumpWithHandleData;
         {
         WString     miniDumpType;
@@ -422,14 +423,14 @@ bool*                           wantFullMemoryDump
         if (wantFullMemoryDump && *wantFullMemoryDump)
             dumpOpts = (MiniDumpWithFullMemory | MiniDumpWithFullMemoryInfo | MiniDumpWithHandleData | MiniDumpWithUnloadedModules | MiniDumpWithThreadInfo);
         }
-    
+
     HANDLE          hDumpFile = INVALID_HANDLE_VALUE;
     WCharP          szDumpFile = modulePath;                            // Reuse the buffer from above to minimize stack consumption
     if (NULL == dmpFileName)
         {
         WCharP szMS_TMP = exePath;                               // Reuse the buffer from above to minimize stack consumption
         wcscpy(szMS_TMP, T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName().GetName ());
-        
+
         BeStringUtilities::Snwprintf(szDumpFile, MAX_PATH, L"%ls%ls", szMS_TMP, L"MiniDump.dmp");
 
         hDumpFile = ::CreateFileW (szDumpFile, GENERIC_WRITE, FILE_SHARE_READ, ___, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, ___);
@@ -453,7 +454,7 @@ bool*                           wantFullMemoryDump
             }
         CloseHandle (hDumpFile);
         }
-    
+
     FreeLibrary (hDbgHelp);
     }
 
@@ -509,8 +510,8 @@ uint32_t newFpuMask     /* => new excp. mask or 0 to use default or previously s
             which is equivalent to the previous default of (MCW_EM & ~(EM_OVERFLOW | EM_ZERODIVIDE)).
             -------------------------------------------------------------------*/
             /* -------------------------------------------------------------------
-            Setting the Ribbon as the default user interface for MicroStation, which uses 
-            WPF & Telerik controls. These cause DivideByZero exceptions a lot internally, 
+            Setting the Ribbon as the default user interface for MicroStation, which uses
+            WPF & Telerik controls. These cause DivideByZero exceptions a lot internally,
             so we can't include EM_ZERODIVIDE.
             //defaultMask = MCW_EM & ~(EM_ZERODIVIDE);
             -------------------------------------------------------------------*/
@@ -774,7 +775,7 @@ WChar   const * const   szDumpFile                              // => Optional
                 si.dwFlags     = STARTF_USESHOWWINDOW;
                 si.wShowWindow = (WORD) swFlags;
                 psi = &si;
-    
+
                 cmd = pDigitsEnd;               // skip white space after window show value
                 while (*cmd && isspace (*cmd))
                     cmd++;
@@ -818,7 +819,7 @@ static void    win32Tools_displayMemoryStats (BeTextFile* stream)
     if (GlobalMemoryStatusEx (&stat))
         {
         stream->PrintfTo (FALSE,  L"    %10I64u MB Total Phys\n",                 stat.ullTotalPhys >> 20);
-        stream->PrintfTo (FALSE,  L"    %10I64u MB Avail Phys\n",                 stat.ullAvailPhys >> 20); 
+        stream->PrintfTo (FALSE,  L"    %10I64u MB Avail Phys\n",                 stat.ullAvailPhys >> 20);
         stream->PrintfTo (FALSE,  L"    %10I64u MB Total Page File\n",            stat.ullTotalPageFile >> 20);
         stream->PrintfTo (FALSE,  L"    %10I64u MB Avail Page File\n",            stat.ullAvailPageFile >> 20);
         stream->PrintfTo (FALSE,  L"    %10I64u MB Total Virtual\n",              stat.ullTotalVirtual >> 20);
@@ -830,7 +831,7 @@ static void    win32Tools_displayMemoryStats (BeTextFile* stream)
         {
         stream->PrintfTo (FALSE,  L"    %10u MB PeakWorkingSetSize\n",            pmc.PeakWorkingSetSize >> 20);
         stream->PrintfTo (FALSE,  L"    %10u MB WorkingSetSize\n",                pmc.WorkingSetSize >> 20);
-        stream->PrintfTo (FALSE,  L"    %10u MB PagefileUsage\n",                 pmc.PagefileUsage >> 20); 
+        stream->PrintfTo (FALSE,  L"    %10u MB PagefileUsage\n",                 pmc.PagefileUsage >> 20);
         stream->PrintfTo (FALSE,  L"    %10u MB PeakPagefileUsage\n\n",           pmc.PeakPagefileUsage >> 20);
 
         stream->PrintfTo (FALSE,  L"       %10u PageFaultCount\n",                pmc.PageFaultCount);
@@ -873,7 +874,7 @@ PBYTE   espRegister     // =>
     if (outSizeP)
         *outSizeP = (SIZE_T)(stackEnd - stackBase);
     }
-   
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    GeorgeDulchinos 10/12
@@ -953,10 +954,10 @@ static void    invokeManagedStackDump (BeTextFile* stream)
     _makepath (moduleName, ___, exePath, managedWalkerDLL,___);
 
     generalLib = LoadLibrary (moduleName);
-        
+
     if (NULL != generalLib)
         dumper = (void (*)(BeTextFilePtr stream))GetProcAddress (generalLib, "ManagedStackWalker_dumpToFile");
-        
+
     if (NULL != dumper)
         {
         BeTextFilePtr streamPtr (stream);
@@ -979,7 +980,7 @@ static void __stdcall logCallback (LPCTSTR pMsg)
 #endif
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    MichaelStratoti                 12/92  
+* @bsimethod                                    MichaelStratoti                 12/92
 +---------------+---------------+---------------+---------------+---------------+------*/
 DGNPLATFORM_EXPORT void    win32Tools_dumpExceptionCallStack           // WIP - Must implement
 (
@@ -997,17 +998,17 @@ int32_t                    const debugLevel
     dejavu = true;
 
     memset (&regs, 0, sizeof regs);
-    PBYTE stackPointer = 0; 
+    PBYTE stackPointer = 0;
 
     if (exceptionInfoP  &&  exceptionInfoP->ExceptionRecord)
         {
         /*-------------------------------------------------------------------
          Display Exception Text
         -------------------------------------------------------------------*/
-        __try 
-            {  
+        __try
+            {
             stream->PrintfTo (FALSE,  L"\nException String:  '%ls'\n", win32Tools_exceptionToString (exceptionInfoP->ExceptionRecord->ExceptionCode) );
-            }    
+            }
         __except (EXCEPTION_EXECUTE_HANDLER) { ; }
         }
 
@@ -1019,7 +1020,7 @@ int32_t                    const debugLevel
         regs = *exceptionInfoP->ContextRecord;
 
 #if defined (_WIN64)
-        stackPointer = (PBYTE)regs.Rsp; 
+        stackPointer = (PBYTE)regs.Rsp;
 #else
         stackPointer = (PBYTE)regs.Esp;
         dumpRegistersX86 (stream, regs);
@@ -1037,8 +1038,8 @@ int32_t                    const debugLevel
     g_logStream = NULL;
 #endif
 
-    __try 
-        { 
+    __try
+        {
         invokeManagedStackDump (stream); }  __except (EXCEPTION_EXECUTE_HANDLER) { ; }
         }
 
@@ -1096,3 +1097,4 @@ int32_t                    const debugLevel
     dejavu = false;
     }
 
+POP_DISABLE_DEPRECATION_WARNINGS

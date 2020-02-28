@@ -57,7 +57,7 @@ void DataSourceAnalyzer::initializeGraphs(int positionOffsetX, int positionOffse
 	{
 		setEnableGraphs(false);
 
-		swscanf_s(graphEnvValue, L"%d", &positionOffsetX);
+		WString::Swscanf_safe(graphEnvValue, L"%d", &positionOffsetX);
 															// Do not enable test graphs if window position offset is -1
 		if(positionOffsetX != -1)
 		{
@@ -303,7 +303,7 @@ void DataSourceAnalyzer::endPeriod(void)
 
         DataSourceAnalyzerSeries::Point	p(static_cast<float>(currentTime), static_cast<float>(period));
 
-		periodSeries->add(p);		
+		periodSeries->add(p);
 	}
 
 }

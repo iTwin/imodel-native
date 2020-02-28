@@ -25,8 +25,8 @@ ImplementNullArgPolyfaceQueryDispatcher (FacetFaceDataCP,GetFaceData)
 ImplementNullArgPolyfaceQueryDispatcher (PolyfaceEdgeChainCP, GetEdgeChain)
 ImplementNullArgPolyfaceQueryDispatcher (uint32_t const*,GetIntColor)
 ImplementNullArgPolyfaceQueryDispatcher (int32_t const*,GetPointIndex)
-                                                                                                
-                                                                                                
+
+
 PolyfaceVectors* PolyfaceQuery::_AsPolyfaceVectorsP () const { return nullptr;}
 PolyfaceAuxDataCPtr PolyfaceQuery::_GetAuxDataCP() const { return nullptr; }
 
@@ -149,12 +149,12 @@ BlockedVectorInt::IndexAction           normalArrayIndexAction
     int const*pNormalIndex = (int const*)GetNormalIndexCP ();
     int const*pParamIndex  = (int const*)GetParamIndexCP ();
     int const*pColorIndex  = (int const*)GetColorIndexCP ();
-    
+
     //TR #164587: preserve hidden edges in vertex index array
     ShiftSignsFromCyclicPredecessorsInRange (const_cast<int*>(pPointIndex), iFirst, iLast);
     ReverseInRange (const_cast<int*>(pPointIndex), iFirst, iLast);
 
-    
+
     if (pNormalIndex)
         {
         ReverseInRange (const_cast<int*>(pNormalIndex), iFirst, iLast);
@@ -784,7 +784,7 @@ bool PolyfaceQuery::ComputePrincipalAreaMoments (double &area, DPoint3dR centroi
     {
     if (GetPointCount () > 0)
         {
-        DPoint3d origin0 = GetPointCP ()[0];       
+        DPoint3d origin0 = GetPointCP ()[0];
         DMatrix4d products;
         DVec3d moment0, centroid1;
         double area0 = SumFacetFirstAreaMoments (origin0, moment0);
@@ -819,7 +819,7 @@ double PolyfaceQuery::SumFacetAreas () const
         }
     return sum;
     }
-                    
+
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Earlin.Lutz      04/2012
@@ -1110,8 +1110,8 @@ size_t &numInvisibleEdges
     numImplicitTriangle = 0;
     numVisibleEdges = 0;
     numInvisibleEdges = 0;
-    
-    bvector<bool> &visible = visitor->Visible ();
+
+    auto &visible = visitor->Visible ();
     for (visitor->Reset (); visitor->AdvanceToNextFace (); )
         {
         numFacet++;
@@ -1318,7 +1318,7 @@ MeshAnnotationVector &description    //!< (optional) array describing errors che
     size_t numPointIndex = GetPointIndexCount ();        // all or nothing !!!
     bool isIndexed = GetMeshStyle () == MESH_ELM_STYLE_INDEXED_FACE_LOOPS;
     if (isIndexed)
-        { 
+        {
         if (vectors != nullptr)
             {
             // In a header, all index arrays expose individual counts.

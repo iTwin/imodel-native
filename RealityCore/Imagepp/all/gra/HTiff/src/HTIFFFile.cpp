@@ -3503,7 +3503,9 @@ bool HTIFFFile::ValidateAndCorrectBlocInfo()
                 struct tm gm;
 
                 time (&timer);
+PUSH_DISABLE_DEPRECATION_WARNINGS
                 gm = *localtime (&timer);
+POP_DISABLE_DEPRECATION_WARNINGS
 
                 sprintf ((char*)aDateTime, "%4d:%02d:%02d %02d:%02d:%02d",1900+gm.tm_year,
                          1+gm.tm_mon,

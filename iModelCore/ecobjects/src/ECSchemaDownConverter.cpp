@@ -120,9 +120,9 @@ bool ECSchemaDownConverter::Convert(ECSchemaR schema)
             }
         }
 
-    static SchemaKey unitsKey = SchemaKey("Units", 1, 0, 0);
+    static SchemaKey unitsKey ("Units", 1, 0, 0);
     auto unitsSchema = schema.FindSchema(unitsKey, SchemaMatchType::LatestReadCompatible);
-    static SchemaKey formatsKey = SchemaKey("Formats", 1, 0, 0);
+    static SchemaKey formatsKey ("Formats", 1, 0, 0);
     auto formatsSchema = schema.FindSchema(formatsKey, SchemaMatchType::LatestReadCompatible);
     if(nullptr != unitsSchema && schema.IsSchemaReferenced(schema, *unitsSchema))
         {

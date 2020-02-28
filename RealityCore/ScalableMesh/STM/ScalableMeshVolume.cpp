@@ -11,6 +11,7 @@
 #include <ScalableMesh/IScalableMeshATP.h>
 #endif
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
@@ -53,22 +54,22 @@ DTMStatusInt ScalableMeshVolume::_ComputeCutFillVolume(double* cut, double* fill
     if (meshRange.IsEmpty()) return DTMStatusInt::DTM_SUCCESS;
     params->SetLevel(targetedMesh->GetTerrainDepth());
     meshQueryInterface->Query(returnedNodes, box, 4, params);
-    for (auto& node : returnedNodes)   
-        {                  
-        if (hasRestrictions) 
+    for (auto& node : returnedNodes)
+        {
+        if (hasRestrictions)
             {
-            if (!node->HasClip(m_restrictedId)) 
-                {                
+            if (!node->HasClip(m_restrictedId))
+                {
                 continue;
                 }
             }
 
-        IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create(); 
-        if (hasRestrictions) 
+        IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+        if (hasRestrictions)
             node->RefreshMergedClip(targetedMesh->GetReprojectionTransform());
-        
+
         IScalableMeshMeshPtr scalableMesh;
-                                
+
         //TFS# 1014935 - Even if restricted don't use possibly simplified clip here to avoid volume error.
         if (hasRestrictions && (!s_simplifyOverviewClips || node->GetLevel() > SM_SIMPLIFY_OVERVIEW_CLIPS_MAX_LEVEL))
             {
@@ -129,13 +130,13 @@ DTMStatusInt ScalableMeshVolume::_ComputeVolumeCutAndFill(PolyfaceHeaderPtr& ter
 #endif
     if (!is2d)
         {
-        
+
         mesh.MarkTopologicalBoundariesVisible(false); // mesh->MarkTopologicalBoundaries(2pi);
 //        size_t numOpen =0, numClosed = 0;
 //        CurveVectorPtr curveBoundary = mesh.ExtractBoundaryStrings(numOpen, numClosed);
         bvector<DSegment3d> segments;
         bvector<DSegment3dSizeSize> segmentsTerrain;
-        
+
         //curveBoundary->get
         mesh.CollectSegments(segments, true);
         //PolyfaceHeaderPtr meshPtr(&mesh, true);
@@ -156,7 +157,7 @@ DTMStatusInt ScalableMeshVolume::_ComputeVolumeCutAndFill(PolyfaceHeaderPtr& ter
 
 //        MTGGraph *graph = jmdlMTGFacets_getGraph(mtgFacets);
 
-        
+
         IFacetOptionsPtr options = IFacetOptions::Create();
         IPolyfaceConstructionPtr builder2 = IPolyfaceConstruction::New(*options);
         builder2->AddPolyface(mesh);
@@ -219,7 +220,7 @@ DTMStatusInt ScalableMeshVolume::_ComputeVolumeCutAndFill(PolyfaceHeaderPtr& ter
             linePtsP = segments[i].point;
             // found dtmObject
             // Found linePtsP
-            
+
 
             DTM_DRAPE_POINT* drapePtsP = 0;
             long numDrapePts;
@@ -232,7 +233,7 @@ DTMStatusInt ScalableMeshVolume::_ComputeVolumeCutAndFill(PolyfaceHeaderPtr& ter
             PolyfaceSearchContext polyfaceSearch2(meshPtr, true, true, false);
 
             bvector<DrapeSegment> drapeSegments1;
-            
+
             polyfaceSearch1.DoDrapeXY(segments[i], drapeSegments1);
             size_t size = drapeSegments1.size();
             DPoint3d triangle[4];
@@ -256,7 +257,7 @@ DTMStatusInt ScalableMeshVolume::_ComputeVolumeCutAndFill(PolyfaceHeaderPtr& ter
                 // found dtmObject
                 // Found linePtsP
                 //DPoint3d triangle2[4];
-                 
+
 
                 DTM_DRAPE_POINT* drapePtsP2 = 0;
                 long numDrapePts2;
@@ -266,7 +267,7 @@ DTMStatusInt ScalableMeshVolume::_ComputeVolumeCutAndFill(PolyfaceHeaderPtr& ter
 
 
 #else
-                
+
                 triangle[0] = drapeSegments1[j].m_segment.point[0];
                 triangle[1] = segments[i].point[0];
                 triangle[2] = drapeSegments1[j].m_segment.point[1];
@@ -279,7 +280,7 @@ DTMStatusInt ScalableMeshVolume::_ComputeVolumeCutAndFill(PolyfaceHeaderPtr& ter
                 triangle[2] = segments[i].point[1];
                 builder2->AddTriStrip(triangle, NULL, NULL, 3, true);
                 areTriangle = true;
-                
+
 
 
 
@@ -316,7 +317,7 @@ DTMStatusInt ScalableMeshVolume::_ComputeVolumeCutAndFill(PolyfaceHeaderPtr& ter
                     triangle[1] = pts2;
                     triangle[2] = linePtsP2[1];
                     builder2->AddTriStrip(triangle, NULL, NULL, 3, true);
-//#else                
+//#else
                     triangle[0] = drapeSegments2[k].m_segment.point[0];
                     triangle[1] = segment.point[0];
                     triangle[2] = drapeSegments2[k].m_segment.point[1];
@@ -343,7 +344,7 @@ DTMStatusInt ScalableMeshVolume::_ComputeVolumeCutAndFill(PolyfaceHeaderPtr& ter
             }
 
 
-  /*      
+  /*
         PolyfaceQuery::CopyFacetsWithSegmentSplitImprint(*builder3, *terrainMesh, segmentsTerrain, true);
         PolyfaceHeaderPtr meshTerrain;
         meshTerrain = builder3->GetClientMeshPtr();
@@ -362,10 +363,10 @@ DTMStatusInt ScalableMeshVolume::_ComputeVolumeCutAndFill(PolyfaceHeaderPtr& ter
 
         bvector<DSegment3d> segmentsTerrainMesh;
         //bvector<DSegment3dSizeSize> segmentsTerrain;
-        
+
         terrainMesh->CollectSegments(segmentsTerrainMesh, true);
 
-        
+
 
         IFacetOptionsPtr option2 = IFacetOptions::Create();
         IPolyfaceConstructionPtr builder4 = IPolyfaceConstruction::New(*option2);
@@ -385,7 +386,7 @@ DTMStatusInt ScalableMeshVolume::_ComputeVolumeCutAndFill(PolyfaceHeaderPtr& ter
                 {
                 //if(bfirst)
                   //  first = points->at(i);
-                
+
                 //bfirst = false;
                 segmentMesh.point[0] = points->at(i);
                 segmentMesh.point[0] = points->at(i+1);
@@ -397,7 +398,7 @@ DTMStatusInt ScalableMeshVolume::_ComputeVolumeCutAndFill(PolyfaceHeaderPtr& ter
 #if 0
             DPoint3dP linePtsP = new DPoint3d[2];
             linePtsP = segmentsTerrainMesh[k].point;
-            
+
             DTM_DRAPE_POINT* drapePtsP = 0;
             long numDrapePts;
 
@@ -483,7 +484,7 @@ DTMStatusInt ScalableMeshVolume::_ComputeVolumeCutAndFill(PolyfaceHeaderPtr& ter
                     builder4->AddTriStrip(triangle, NULL, NULL, 3, true);
 #else
 
-                    
+
                     triangle[0] = drapeSegments2[j].m_segment.point[0];
                     triangle[1] = segment.point[0];
                     triangle[2] = drapeSegments2[j].m_segment.point[1];
@@ -522,7 +523,7 @@ DTMStatusInt ScalableMeshVolume::_ComputeVolumeCutAndFill(PolyfaceHeaderPtr& ter
             {
             //segmentsTest[i].
             }
-      */  
+      */
         meshClosed->Triangulate();
 
         // Write Mesh in file
@@ -532,7 +533,7 @@ DTMStatusInt ScalableMeshVolume::_ComputeVolumeCutAndFill(PolyfaceHeaderPtr& ter
         char TempBuffer[500];
         int  NbChars;
 
-        
+
         PolyfaceVisitorPtr visitorPtr = PolyfaceVisitor::Attach(*terrainMesh, false);
         PolyfaceVisitor & visitor = *visitorPtr.get();
 //        DPoint3d triangle[4];
@@ -630,7 +631,7 @@ DTMStatusInt ScalableMeshVolume::_ComputeVolumeCutAndFill(PolyfaceHeaderPtr& ter
             DPoint3d origin;
             origin.Zero ();
             double volume1 = enclosedVolumes[i]->SumTetrahedralVolumes (origin);
-            
+
             //PolyfaceQuery::ComputeCutAndFill(*terrainMesh, mesh, cutSections, fillSections);
             //double v = enclosedVolumes[i]->SumTetrahedralVolumes (origin);
             double sectionFill = 0.0;
@@ -652,8 +653,8 @@ DTMStatusInt ScalableMeshVolume::_ComputeVolumeCutAndFill(PolyfaceHeaderPtr& ter
 
             // Vertical direction ray
             DVec3d drapeDirection = DVec3d::From(0, 0, -1);
-            DRay3d ray = DRay3d::FromOriginAndVector(centroid, drapeDirection); 
-            
+            DRay3d ray = DRay3d::FromOriginAndVector(centroid, drapeDirection);
+
             // Get intersection ray with meshes
             //PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*enclosedVolumes[i]);
             double maxDist = std::numeric_limits<double>::max();
@@ -834,3 +835,4 @@ DTMStatusInt ScalableMeshVolume::_ComputeVolumeCutAndFill(double& cut, double& f
 ScalableMeshVolume::ScalableMeshVolume(IScalableMeshPtr scMesh) : m_scmPtr(scMesh.get()), hasRestrictions(false), m_transform(Transform::FromIdentity()), m_UorsToStorage(Transform::FromIdentity()) {}
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
+POP_DISABLE_DEPRECATION_WARNINGS

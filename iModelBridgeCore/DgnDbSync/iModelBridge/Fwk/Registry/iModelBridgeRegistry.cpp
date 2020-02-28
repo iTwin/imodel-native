@@ -62,7 +62,7 @@ int RegistryBusyHandler::_OnBusy(int count) const
             LOG.errorv(L"Waiting for SQLITE_BUSY to yield. (t=%d s)", count);
             }
         else
-            { 
+            {
             LOG.tracev(L"Waiting for SQLITE_BUSY to yield. (t=%d s)", count);
             }
         }
@@ -322,7 +322,7 @@ BentleyStatus iModelBridgeRegistryBase::ComputeBridgeAffinityToDocument(iModelBr
         }
 
     int v = 0;
-    if (1 != sscanf(line0.c_str(), "%d", &v))
+    if (1 != Utf8String::Sscanf_safe(line0.c_str(), "%d", &v))
         {
         LOG.errorv(L"%ls - \"%ls\" is an invalid affinity value?!", affinityLibraryPath.c_str(), WString(line0.c_str(), true).c_str());
         return BSIERROR;
@@ -355,7 +355,7 @@ BentleyStatus       iModelBridgeRegistryBase::ComputeBridgeAffinityInParentConte
         bridgeAffinity.m_bridgeRegSubKey = parent;
         return SUCCESS;
         }
-    
+
     //We have a ifc bridge file. But parent is not ifc bridge. Lets ignore its affinity
     if (0 == bridgeAffinity.m_bridgeRegSubKey.CompareToI(L"IFCBridge"))
         {
@@ -377,7 +377,7 @@ BentleyStatus       iModelBridgeRegistryBase::ComputeBridgeAffinityInParentConte
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeRegistryBase::SearchForBridgeToAssignToDocument(WStringR bridgeName, BeFileNameCR sourceFilePath, WStringCR parentBridgeName)
     {
-    BeFileName a; 
+    BeFileName a;
     if (BSISUCCESS == QueryBridgeAssignedToDocument(a, bridgeName, sourceFilePath)) // If we have already assigned a bridge to this document, then stick with that.
         return BSISUCCESS;
 
@@ -485,7 +485,7 @@ BentleyStatus iModelBridgeRegistryBase::_AssignFileToBridge(BeFileNameCR sourceF
 
     LOG.tracev(L"File %ls assigned to %ls .", sourceFilePath.c_str(), bridgeRegSubKey);
 
-    //!Lets insert default document properties for this 
+    //!Lets insert default document properties for this
     EnsureDocumentPropertiesFor(sourceFilePath, guid);
 
     m_stateDb.SaveChanges();
@@ -665,7 +665,7 @@ BentleyStatus iModelBridgeRegistryBase::WriteBridgesFile()
             BeFileName sourceFile(stmt->GetValueText(2), true);
 
             bridgeNames.insert(bridgeName);
-            
+
             bridgesFile->PrintfTo(false, L"%ls;%ls;%d\n", bridgeName.c_str(), sourceFile.c_str(), isPowerPlatformBased);
             }
 
@@ -938,14 +938,14 @@ int iModelBridgeRegistryBase::AssignCmdLineArgs::ParseCommandLine(int argc, WCha
 
     cxxopts::Options options = GetCmdLineOptions();
     auto result = options.parse(argc, argPtrs);
-    
-    
+
+
     if (result.count("options-file") > 0)
         {
         Utf8String contents;
         BeFileName optionsFileName;
         AssignCxxOptsResult(result, "options-file", optionsFileName);
-        
+
         if (BSISUCCESS != readEntireFile(contents, optionsFileName))
             {
             WString escapedName = optionsFileName;
@@ -967,7 +967,7 @@ int iModelBridgeRegistryBase::AssignCmdLineArgs::ParseCommandLine(int argc, WCha
             delete[]argPtrs;
             argc = (int) args.size();
             argPtrs = new char*[argc];
-            
+
             for (int index = 0; index < argc; ++index)
                 argPtrs[index] = &args[index][0];
             auto finalResult = options.parse(argc, argPtrs);
@@ -1233,7 +1233,7 @@ BentleyStatus   BASFileLocator::GetDocumentInfoFromPrp(DmsInfo& info, BeFileName
         return BSIERROR;
         }
 
-    BeXmlStatus status = BEXML_Success;   
+    BeXmlStatus status = BEXML_Success;
     WString errmsg;
     BeXmlReaderPtr  reader = BeXmlReader::CreateAndReadFromFile(status, fileName.c_str(), &errmsg);
     if (!reader.IsValid() || status != BEXML_Success)
@@ -1433,16 +1433,16 @@ BentleyStatus  BASFileLocator::GetDocumentInfo(DmsInfo& info, T_DocumentId const
 /*
 "Don't pass empty string to bridge"
 
-This is very tricky. An empty string is initialized with pointer to a static "null string" buffer object. 
+This is very tricky. An empty string is initialized with pointer to a static "null string" buffer object.
 The Bstdcxx::basic_string code for assigning, reallocating, and destroying a string recognizes the pointer to
-this special object and does the right thing. 
+this special object and does the right thing.
 
-iModelBridgeRegistry is compiled into a standalone program called iModelBridgeGetAffinityHost.exe, which statically 
-links with the bentley libraries. That program loads the bridge dll dynamically, as shown above, and invokes the 
-bridge's getaffinity function. The affinity function assigns a value to a string in the iModelBridgeWithAffinity object 
-that is created by and passed in by the iModelBridgeGetAffinityHost.exe program. So, this leads to a problem. 
+iModelBridgeRegistry is compiled into a standalone program called iModelBridgeGetAffinityHost.exe, which statically
+links with the bentley libraries. That program loads the bridge dll dynamically, as shown above, and invokes the
+bridge's getaffinity function. The affinity function assigns a value to a string in the iModelBridgeWithAffinity object
+that is created by and passed in by the iModelBridgeGetAffinityHost.exe program. So, this leads to a problem.
 iModelBridgeGetAffinityHost.exe constructs the string to point to the special "null string" buffer object in the
-iModelBridgeGetAffinityHost.exe program. The the bridge dll links with the dynamic bentley library, and so its copy 
+iModelBridgeGetAffinityHost.exe program. The the bridge dll links with the dynamic bentley library, and so its copy
 of the Bstdcxx::basic_string code will be checking for the special null string object that is specific to the dynamic
 bentley library and will not recognize the one set up by the iModelBridgeGetAffinityHost.exe program.
 

@@ -24,7 +24,7 @@
 #include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
 
 #include <ImagePP/all/h/ImagePPMessages.xliff.h>
-
+PUSH_DISABLE_DEPRECATION_WARNINGS
 /** ---------------------------------------------------------------------------
     Block capabilities of the ImgRGB file format.
     ImgRGB file format only supports line capability with random access.
@@ -469,7 +469,7 @@ bool HRFImgRGBFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
             // Set the image file information
             m_FileHeader.m_Width  = (uint32_t)pResolutionDescriptor->GetWidth();
             m_FileHeader.m_Height = (uint32_t)pResolutionDescriptor->GetHeight();
-            
+
             SetFileHeaderToFile();
             }
         else
@@ -736,3 +736,4 @@ const HGF2DWorldIdentificator HRFImgRGBFile::GetWorldIdentificator () const
     {
     return HGF2DWorld_UNKNOWNWORLD;
     }
+POP_DISABLE_DEPRECATION_WARNINGS

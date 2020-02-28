@@ -21,6 +21,8 @@ USING_NAMESPACE_BENTLEY_DGN
 #define UF_INTERNALUSE_RELATIVEPATH 0x40
 #define DOUBLEQUOTE                 0x22
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -380,7 +382,7 @@ wchar_t const   *curdir,
 int             option
 )
     {
-    WChar       tmpVar[4096]; 
+    WChar       tmpVar[4096];
     WCharP      nextVar = NULL;
     WString     tmpVarExpansion;
 
@@ -501,7 +503,7 @@ int             option              /* => Open mode / search options           *
 
         size_t      colonIndex = tempString.find_first_of (L':');
 
-        if (WString::npos != colonIndex && 
+        if (WString::npos != colonIndex &&
             colonIndex > 0 &&
             ! (deviceString = tempString.substr (0, colonIndex)).empty() &&
             ConfigurationManager::IsVariableDefined  (deviceString.c_str()))
@@ -636,3 +638,4 @@ WCharCP         extensionP
     /* see if we can find the file in the modified path */
     return util_findFile (NULL, expandedNameP, filenameP, processedPath.c_str(), extensionP, 0);
     }
+POP_DISABLE_DEPRECATION_WARNINGS

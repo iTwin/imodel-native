@@ -38,26 +38,25 @@
 
 #include "btree.h"
 #include "btree_container.h"
+#include <Bentley/BentleyAllocator.h>
 
 BEGIN_BENTLEY_NAMESPACE
 
 //=======================================================================================
 /**
-A Bentley supplied implementation @c std::set. This class is used in the Bentley APIs to 
+A Bentley supplied implementation @c std::set. This class is used in the Bentley APIs to
 avoid dependencies on compiler-supplied implementations of @c std::set that sometimes vary
 with compiler settings or compiler versions. The @c bset class does not
-suffer from these problems. This makes @c bset suitable for use in Bentley 
+suffer from these problems. This makes @c bset suitable for use in Bentley
 public APIs.
 <p>
 The bset implementation is based on the Google cpp-btree (see https://code.google.com/p/cpp-btree/).
 It generally has much better performance than the r-b based @c std::set implementations, in terms of
 memory usage, creation time, and lookup performance (though not always, YMMV). However, it does suffer from the limitation that
-inserts and deletes can invalidate all existing iterators. It also requires that all key types be 
+inserts and deletes can invalidate all existing iterators. It also requires that all key types be
 default-constructable (see CAVEATS at Bentley/btree/btree.h).
 <p>
-There is also another Bentley supplied implementation of std::set called bstdset. bset is generally
-the preferable std::set implementation for most use cases. If you cannot live with bset's restrictions,
-you should use bstdset.
+If you cannot live with bset's restrictions, you should use std::set.
 <p>
 To understand the @c bset class, consult the documentation for @c std::set.
 @see http://www.cplusplus.com/reference/set/set/
@@ -107,7 +106,7 @@ class bset : public btree_unique_container<
 };
 
 template <typename K, typename C, int N, typename A>
-inline void swap(bset<K, C, N, A> &x, 
+inline void swap(bset<K, C, N, A> &x,
                  bset<K, C, N, A> &y) {
   x.swap(y);
 }

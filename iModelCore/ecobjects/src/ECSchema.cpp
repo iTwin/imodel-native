@@ -78,7 +78,7 @@ bool ECNameValidation::DecodeFromValidName (Utf8StringR decoded, Utf8StringCR na
         if ('_' == buf[pos+7] && '_' == buf[pos+8])
             {
             uint32_t charCode;
-            if (1 == BE_STRING_UTILITIES_SWSCANF(buf.c_str() + pos + 3, L"%x", &charCode))
+            if (1 == WString::Swscanf_safe(buf.c_str() + pos + 3, L"%x", &charCode))
                 {
                 buf[pos] = (WChar)charCode;
                 buf.erase (pos+1, 8);
@@ -2920,7 +2920,7 @@ ECSchemaPtr SearchPathSchemaFileLocater::_LocateSchema(SchemaKeyR key, SchemaMat
         return schemaOut;
         }
 
-    if (SchemaReadStatus::Success != ECSchema::ReadFromXmlFile(schemaOut, schemaToLoad.FileName.c_str(), schemaContext))
+    if (SchemaReadStatus::Success != ECSchema::ReadFromXmlFile(schemaOut, schemaToLoad.FileName.c_str(), schemaContext, false))
         {
         m_knownSchemas.Insert(lookup, nullptr);
         return nullptr;
@@ -3017,7 +3017,7 @@ Utf8String ECSchema::ComputeCheckSum()
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECSchema::ReadFromXmlFile(ECSchemaPtr& schemaOut, WCharCP ecSchemaXmlFile, ECSchemaReadContextR schemaContext)
+SchemaReadStatus ECSchema::ReadFromXmlFile(ECSchemaPtr& schemaOut, WCharCP ecSchemaXmlFile, ECSchemaReadContextR schemaContext, bool addFilePathAsSearchPath)
     {
     StopWatch timer(true);
     LOG.debugv (L"About to read native ECSchema from file: fileName='%ls'", ecSchemaXmlFile);
@@ -3034,7 +3034,8 @@ SchemaReadStatus ECSchema::ReadFromXmlFile(ECSchemaPtr& schemaOut, WCharCP ecSch
         return SchemaReadStatus::FailedToParseXml;
         }
 
-    AddFilePathToSchemaPaths(schemaContext, ecSchemaXmlFile);
+    if (addFilePathAsSearchPath)
+        AddFilePathToSchemaPaths(schemaContext, ecSchemaXmlFile);
 
     SchemaXmlReader reader(schemaContext, *xmlDom.get());
     status = reader.Deserialize(schemaOut, schemaContext.GetCalculateChecksum() ? ChecksumHelper::ComputeCheckSumForFile(ecSchemaXmlFile).c_str() : nullptr);
@@ -3053,7 +3054,7 @@ SchemaReadStatus ECSchema::ReadFromXmlFile(ECSchemaPtr& schemaOut, WCharCP ecSch
         {
         //We have serialized a schema and its valid.
         timer.Stop();
-        LOG.infov (L"Read (in %.4f seconds) [%3" PRIx64 " ECClasses] %ls", timer.GetElapsedSeconds(), (uint64_t) schemaOut->m_classMap.size(), ecSchemaXmlFile);
+        LOG.infov (L"Read (in %.4f seconds) [%3" PRIu64 " ECClasses] %ls", timer.GetElapsedSeconds(), (uint64_t) schemaOut->m_classMap.size(), ecSchemaXmlFile);
         }
 
     return status;
@@ -3136,7 +3137,9 @@ SchemaReadStatus ECSchema::ReadFromXmlString(ECSchemaPtr& schemaOut, WCharCP ecS
     if (SchemaReadStatus::Success != status)
         {
         WChar first200Characters[201];
+PUSH_DISABLE_DEPRECATION_WARNINGS
         wcsncpy(first200Characters, ecSchemaXml, 200);
+POP_DISABLE_DEPRECATION_WARNINGS
         first200Characters[200] = L'\0';
         if (SchemaReadStatus::DuplicateSchema == status)
             LOG.errorv(L"Failed to read XML from string(1st 200 characters approx.): %s.  \nSchema already loaded.  Use ECSchemaReadContext::LocateSchema to load schema", first200Characters);
@@ -3564,7 +3567,8 @@ void ECSchemaElementsOrder::CreateAlphabeticalOrder(ECSchemaCR ecSchema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String SchemaKey::FormatFullSchemaName(Utf8CP schemaName, uint32_t versionRead, uint32_t versionWrite, uint32_t versionMinor)
     {
-    Utf8PrintfString formattedString("%s.%s", schemaName, FormatSchemaVersion(versionRead, versionWrite, versionMinor).c_str());
+    Utf8String versionString = FormatSchemaVersion(versionRead, versionWrite, versionMinor);
+    Utf8PrintfString formattedString("%s.%s", schemaName, versionString.c_str());
     return formattedString;
     }
 

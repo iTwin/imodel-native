@@ -66,7 +66,9 @@ Utf8String WSGRequestManager::MakeBuddiCall(WString serviceName)
     CCApi_GetBuddiUrl(api, serviceName.c_str(), buddiUrl, &strlen);
 
     char* charServer = new char[strlen];
+PUSH_DISABLE_DEPRECATION_WARNINGS
     wcstombs(charServer, buddiUrl, strlen);
+POP_DISABLE_DEPRECATION_WARNINGS
 
     CCApi_FreeApi(api);
 

@@ -95,7 +95,7 @@ StatusInt IScalableMeshSaveAs::DoSaveAs(const IScalableMeshPtr& source, const WS
     scMeshDestination->SetIsTerrain(source->IsTerrain());
     scMeshDestination->SetIsSingleFile(!source->IsCesium3DTiles());
     scMeshDestination->SetTextured(textureInfo->GetTextureType());
-    
+
     //copy sources
     IDTMSourceCollection sourceCollection;
     source->LoadSources(sourceCollection);
@@ -222,7 +222,7 @@ bool Publish3DTile(IScalableMeshNodePtr& node, ISMDataStoreTypePtr<DRange3d>& pi
                     {
                     SMSAVEAS_LOG.errorv("No Cesium 3DTiles data generated for node [%I64d]", nodeP->GetNodeId());
                     }
-                
+
                 //// Store header
                 //pi_pDataStore->StoreNodeHeader(&node->m_nodeHeader, node->GetBlockID());
 
@@ -295,7 +295,7 @@ bool Publish3DTile(IScalableMeshNodePtr& node, ISMDataStoreTypePtr<DRange3d>& pi
     IScalableMeshNodePtr ptr(node);
     if (node->GetPointCount() > 2)
     {
- 
+
         distributor->AddWorkItem(std::move(ptr)/*, false*/);
     }
 
@@ -460,7 +460,7 @@ StatusInt Publish3DTiles(SMMeshIndex<DPoint3d,DRange3d>* index, const WString& p
     {
         index->GetRootNode()->SaveGroupedNodeHeaders(rootNodeGroup, progress);
 
-        // Handle all open groups 
+        // Handle all open groups
         strategy->SaveAllOpenGroups(false/*saveRoot*/);
         if (progress != nullptr) progress->Progress() = 1.0f;
     });
@@ -519,7 +519,7 @@ StatusInt IScalableMeshSaveAs::Generate3DTiles(const IScalableMeshPtr& meshP, co
     if (server == SMCloudServerType::Azure)
         {
         // Setup streaming stores to use Azure
-        //s_stream_from_disk = false; 
+        //s_stream_from_disk = false;
         s_stream_from_wsg = false;
 
         path += outContainerName + L"/" + outDatasetName;

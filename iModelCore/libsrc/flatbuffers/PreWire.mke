@@ -1,0 +1,21 @@
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+#     $Source: PreWire.mke $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+%include mdl.mki
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+%if !defined (BuildContext)
+%error
+%endif
+
+DeliveryDir         = $(BuildContext)Delivery/
+VendorApiContextDir = $(BuildContext)VendorAPI/flatbuffers/
+SourceDir           = $(_MakeFilePath)source/src/
+SourceIncludeDir    = $(_MakeFilePath)source/include/
+
+$(DeliveryDir)flatbuffers-license.txt : $(_MakeFilePath)source/LICENSE.txt
+    $(LinkFirstDepToFirstTarget)
+
+$(VendorApiContextDir) : $(SourceIncludeDir)flatbuffers
+    $(LinkFirstDepToFirstTargetAsDirectory)

@@ -101,7 +101,7 @@ BentleyStatus RangeHeaderValue::Parse(Utf8CP stringValue, RangeHeaderValue& valu
         {
         return ERROR;
         }
-    if (2 != sscanf(stringValue, "bytes=%" SCNu64 "-%" SCNu64, &valueOut.m_from, &valueOut.m_to))
+    if (2 != Utf8String::Sscanf_safe(stringValue, "bytes=%" SCNu64 "-%" SCNu64, &valueOut.m_from, &valueOut.m_to))
         {
         return ERROR;
         }
@@ -125,19 +125,19 @@ BentleyStatus ContentRangeHeaderValue::Parse(Utf8CP stringValue, ContentRangeHea
         {
         return ERROR;
         }
-    if (3 == sscanf(stringValue, "bytes %" PRIu64 "-%" PRIu64 "/%" PRIu64, &valueOut.m_from, &valueOut.m_to, &valueOut.m_length))
+    if (3 == Utf8String::Sscanf_safe(stringValue, "bytes %" PRIu64 "-%" PRIu64 "/%" PRIu64, &valueOut.m_from, &valueOut.m_to, &valueOut.m_length))
         {
         valueOut.m_hasRange = true;
         valueOut.m_hasLength = true;
         return SUCCESS;
         }
-    if (2 == sscanf(stringValue, "bytes %" PRIu64 "-%" PRIu64 "/*", &valueOut.m_from, &valueOut.m_to))
+    if (2 == Utf8String::Sscanf_safe(stringValue, "bytes %" PRIu64 "-%" PRIu64 "/*", &valueOut.m_from, &valueOut.m_to))
         {
         valueOut.m_hasRange = true;
         valueOut.m_hasLength = false;
         return SUCCESS;
         }
-    if (1 == sscanf(stringValue, "bytes */%" PRIu64, &valueOut.m_length))
+    if (1 == Utf8String::Sscanf_safe(stringValue, "bytes */%" PRIu64, &valueOut.m_length))
         {
         valueOut.m_hasRange = false;
         valueOut.m_hasLength = true;

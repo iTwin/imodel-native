@@ -32,12 +32,12 @@
 //=====================================================================================================================
 
 
-//If a metric cannot be computed, set the metric to a very large number. This 
-//will ensure that points in such leaf node are used (i.e. : always greater than the 
-//minimum metric threshold) and that points in such parent node are not used. 
-//Note that HDOUBLE_MAX is not used to avoid overflow when computing the metric depending 
+//If a metric cannot be computed, set the metric to a very large number. This
+//will ensure that points in such leaf node are used (i.e. : always greater than the
+//minimum metric threshold) and that points in such parent node are not used.
+//Note that HDOUBLE_MAX is not used to avoid overflow when computing the metric depending
 //on the current root to view transformation matrix.
-#ifndef DEFAULT_VIEW_DEPENDENT_METRIC 
+#ifndef DEFAULT_VIEW_DEPENDENT_METRIC
     #define DEFAULT_VIEW_DEPENDENT_METRIC HFLOAT_MAX
 #endif
 
@@ -47,7 +47,7 @@
  will compute the sub-resolution and the view oriented parameters.
 -----------------------------------------------------------------------------*/
 template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBFilter1<POINT, EXTENT>::Filter(
-                                    HFCPtr<SMPointIndexNode<POINT, EXTENT> > parentNode, 
+                                    HFCPtr<SMPointIndexNode<POINT, EXTENT> > parentNode,
                                     std::vector<HFCPtr<SMPointIndexNode<POINT, EXTENT> >>& subNodes,
                                     size_t numSubNodes) const
 
@@ -71,15 +71,15 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBFilter1<POINT,
         for (size_t indexNodes = 0; indexNodes < numSubNodes ; indexNodes++)
         {
             if (subNodes[indexNodes] != NULL)
-                {                                
+                {
                 RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePointsPtr(subNodes[indexNodes]->GetPointsPtr());
                 RefCountedPtr<SMMemoryPoolVectorItem<POINT>> parentPointsPtr(parentNode->GetPointsPtr());
-                parentPointsPtr->push_back(&(*subNodePointsPtr)[0], subNodePointsPtr->size());                                    
+                parentPointsPtr->push_back(&(*subNodePointsPtr)[0], subNodePointsPtr->size());
                 }
         }
     }
     else
-    {    
+    {
         size_t pointArrayInitialNumber[8];
         RefCountedPtr<SMMemoryPoolVectorItem<POINT>> parentPointsPtr(parentNode->GetPointsPtr());
         parentPointsPtr->reserve (parentPointsPtr->size() + (totalNumberOfPoints * 1 /8) + 20);
@@ -93,22 +93,22 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBFilter1<POINT,
 
                 if (subNodePointsPtr->size() <= 10)
                     {
-                    // Too few content in node ... promote them all                                        
+                    // Too few content in node ... promote them all
                     parentPointsPtr = parentNode->GetPointsPtr();
-                    parentPointsPtr->push_back(&(*subNodePointsPtr)[0], subNodePointsPtr->size());                           
+                    parentPointsPtr->push_back(&(*subNodePointsPtr)[0], subNodePointsPtr->size());
                     }
                 else
                     {
                     pointArrayInitialNumber[indexNodes] = subNodePointsPtr->size();
 
-                    // Randomize the node content                                        
+                    // Randomize the node content
                     subNodePointsPtr->random_shuffle();
-                                                                   
+
                     size_t indexStart = (subNodePointsPtr->size() * 7 / 8) + 1;
                     HASSERT ((indexStart > 0) && (indexStart <= (subNodePointsPtr->size() - 1)));
-                    
+
                     parentPointsPtr = parentNode->GetPointsPtr();
-                    parentPointsPtr->push_back(&(*subNodePointsPtr)[indexStart], subNodePointsPtr->size() - 1);                                               
+                    parentPointsPtr->push_back(&(*subNodePointsPtr)[indexStart], subNodePointsPtr->size() - 1);
                 }
             }
         }
@@ -132,7 +132,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBProgressiveFil
  will compute the sub-resolution and the view oriented parameters.
 -----------------------------------------------------------------------------*/
 template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBProgressiveFilter1<POINT, EXTENT>::Filter(
-                                    HFCPtr<SMPointIndexNode<POINT, EXTENT> > parentNode, 
+                                    HFCPtr<SMPointIndexNode<POINT, EXTENT> > parentNode,
                                     std::vector<HFCPtr<SMPointIndexNode<POINT, EXTENT> >>& subNodes,
                                     size_t numSubNodes) const
 
@@ -156,18 +156,18 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBProgressiveFil
         for (size_t indexNodes = 0; indexNodes < numSubNodes ; indexNodes++)
         {
             if (subNodes[indexNodes] != NULL)
-            {                
+            {
                 size_t initialNodeCount = subNodes[indexNodes]->size();
                 parentNode->push_back(subNodes[indexNodes]);
                 subNodes[indexNodes]->m_nodeHeader.m_totalCount -= initialNodeCount;
-                subNodes[indexNodes]->clear();                
+                subNodes[indexNodes]->clear();
             }
         }
     }
     else
     {
 
-    
+
 #if (1)
         size_t pointArrayInitialNumber[8];
         parentNode->reserve (parentNode->size() + (totalNumberOfPoints * 3 /4) + 20);
@@ -191,7 +191,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBProgressiveFil
 
                     // Randomize the node content
                     subNodes[indexNodes]->random_shuffle();
-                                                                   
+
                     size_t indexStart = (subNodes[indexNodes]->size() * 3 / 4) + 1;
                     HASSERT ((indexStart > 0) && (indexStart <= (subNodes[indexNodes]->size() - 1)));
 
@@ -247,7 +247,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBProgressiveFil
             }
         }
 
-        // Although doubtful, if there are already points in the parent node then we should assume 
+        // Although doubtful, if there are already points in the parent node then we should assume
         // they were previously promoted somehow and should be retained.
 
         for (size_t indexNodes = 0; indexNodes < numSubNodes ; indexNodes++)
@@ -263,7 +263,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBProgressiveFil
         }
 
         parentNode->push_back(pointArrayPromoted, pointArrayPromotedNumber);
-        
+
 
         delete [] pointArrayPromoted;
 
@@ -312,14 +312,14 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
     // Get children linear features
     for (size_t indexNodes = 0; indexNodes < numSubNodes; indexNodes++)
     {
-        if (subNodes[indexNodes] != NULL) 
+        if (subNodes[indexNodes] != NULL)
         {
             if (!subNodes[indexNodes]->IsLoaded())
                 subNodes[indexNodes]->Load();
-                    
+
             RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePointsPtr(subNodes[indexNodes]->GetPointsPtr());
             totalNumberOfPoints += subNodePointsPtr->size();
-        
+
             HFCPtr<SMMeshIndexNode<POINT, EXTENT>> subMeshNode = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(subNodes[indexNodes]);
 
             bvector<bvector<DPoint3d>> polylinesNode;
@@ -352,7 +352,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
         // representativity is retained in this area.
         DRange3d extent = DRange3d::NullRange();
         for (size_t indexNodes = 0; indexNodes < numSubNodes; indexNodes++)
-        {            			
+        {
             if (subNodes[indexNodes] != NULL)
             {
                 if (subNodes[indexNodes]->GetNbObjects() == 0) continue;
@@ -364,7 +364,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
                 memcpy(&ptsToInclude[0], &(*subNodesPointsPtr)[0], ptsToInclude.size() * sizeof(POINT));
 
             }
-        }   
+        }
         if (!extent.IsNull()) parentNode->m_nodeHeader.m_contentExtent = extent;
         if (pParentMeshNode->m_nodeHeader.m_contentExtent.low.x == 0 && pParentMeshNode->m_nodeHeader.m_contentExtent.high.x != 0)
         {
@@ -374,7 +374,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
     else
     {
         // Get children points
-        
+
         DRange3d extent = DRange3d::NullRange();
 
         parentPointsPtr->reserve(parentPointsPtr->size() + (totalNumberOfPoints * 1 / pParentMeshNode->m_nodeHeader.m_numberOfSubNodesOnSplit) + 20);
@@ -396,7 +396,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
                 // In reality starting at 9 not all points are used but let's gives us a little margin.
                 if (subNodePointsPtr->size() <= 10)
                 {
-                    // Too few content in node ... promote them all                           
+                    // Too few content in node ... promote them all
                     ptsToInclude.resize(ptsToInclude.size() + subNodePointsPtr->size());
                     memcpy(&ptsToInclude[currentNbPoints], &(*subNodePointsPtr)[0], subNodePointsPtr->size() * sizeof(POINT));
                 }
@@ -430,11 +430,11 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
                     memcpy(&ptsToInclude[currentNbPoints], &points[0], points.size() * sizeof(POINT));
                 }
             }
-            if (!extent.IsNull())  
+            if (!extent.IsNull())
                 parentNode->m_nodeHeader.m_contentExtent = extent;
         }
     }
-   
+
     // Merge and simplify children linear features
     bvector<bvector<DPoint3d>> newLines;
     bvector<DTMFeatureType> types;
@@ -498,7 +498,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
         }
 
     // Add points and features
-    if (!ptsToInclude.empty()) parentPointsPtr->push_back(ptsToInclude.begin(), ptsToInclude.size());
+    if (!ptsToInclude.empty()) parentPointsPtr->push_back(&(*ptsToInclude.begin()), ptsToInclude.size());
 
     for (auto& polyline : newLines)
     {
@@ -514,7 +514,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
         parentPointsPtr = 0;
         pParentMeshNode->m_pointsPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
         }
-    
+
     // Mesh filtered points and linear features
     if (pParentMeshNode->m_nodeHeader.m_arePoints3d)
     {
@@ -548,7 +548,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
     }
 
     //In multi-process flushing to disk needs to be controlled by the the workers.
-    if (!m_isMultiProcessGeneration)    
+    if (!m_isMultiProcessGeneration)
         {
         //Flushing tiles to disk during filtering result in less tiles being flushed sequentially at the end of the generation process, leading to potential huge performance gain.
         for (size_t indexNodes = 0; indexNodes < numSubNodes; indexNodes++)
@@ -559,7 +559,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
                 }
             }
         }
-    
+
     return true;
 }
 
@@ -571,8 +571,8 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_CGALMeshFilte
     std::vector<HFCPtr<SMPointIndexNode<POINT, EXTENT> >>&  subNodes,
     size_t numSubNodes) const
     {
-    HFCPtr<SMMeshIndexNode<POINT, EXTENT> > pParentMeshNode = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(parentNode);    
-  
+    HFCPtr<SMMeshIndexNode<POINT, EXTENT> > pParentMeshNode = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(parentNode);
+
     RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(pParentMeshNode->GetGraphPtr());
     MTGGraph* meshInput = nullptr;
     std::vector<DPoint3d> inputPts;
@@ -592,8 +592,8 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_CGALMeshFilte
 
             if (numFaceIndexes > 0)
                 {
-                HFCPtr<SMMeshIndexNode<POINT, EXTENT>> subMeshNode = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(subNodes[indexNodes]);                
-              
+                HFCPtr<SMMeshIndexNode<POINT, EXTENT>> subMeshNode = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(subNodes[indexNodes]);
+
                 RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> subMeshGraphPtr(subMeshNode->GetGraphPtr());
                 if (meshInput == nullptr)
                     {
@@ -602,14 +602,14 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_CGALMeshFilte
                     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subMeshPointsPtr(subMeshNode->GetPointsPtr());
                     inputPts.resize(subMeshPointsPtr->size());
 
-                    PtToPtConverter::Transform(&inputPts[0], &(*subMeshPointsPtr)[0], inputPts.size());        
+                    PtToPtConverter::Transform(&inputPts[0], &(*subMeshPointsPtr)[0], inputPts.size());
                     subMeshNode->ReadFeatureDefinitions(polylines, types, ids, false);
 
                     }
                 else
                     {
-                    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(subMeshNode->GetPointsPtr());                    
-                    std::vector<DPoint3d> pts(pointsPtr->size());                    
+                    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(subMeshNode->GetPointsPtr());
+                    std::vector<DPoint3d> pts(pointsPtr->size());
                     PtToPtConverter::Transform(&pts[0], &(*pointsPtr)[0], pts.size());
                     subMeshNode->ReadFeatureDefinitions(polylines, types, ids, false);
 
@@ -620,7 +620,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_CGALMeshFilte
                     for (int i = 0; i < (int)inputPts.size(); i++)
                         {
                         stitchedSet.insert(std::make_pair(inputPts[i], i));
-                        
+
                         }
 
                     for (size_t i = 0; i < pts.size(); i++)
@@ -634,7 +634,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_CGALMeshFilte
                     subMeshGraphPtr = subMeshNode->GetGraphPtr();
                     if(nullptr != subMeshGraphPtr->GetData()) MergeGraphs(meshInput, inputPts, subMeshGraphPtr->EditData(), pts, extentMin, extentMax, pointsToDestPointsMap, contours);
 
-                    }                
+                    }
                 }
             }
         }
@@ -644,7 +644,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_CGALMeshFilte
 // WIP_NEEDS_WORK_2017
 //    bool ret = CGALEdgeCollapse(meshInput, inputPts, pParentMeshNode->GetBlockID().m_integerID);
     bvector<DPoint3d> vecPts;
-    vecPts.assign(inputPts.begin(), inputPts.end());    
+    vecPts.assign(inputPts.begin(), inputPts.end());
     //if (polylines.size() > 0)
     //    {
     //
@@ -687,7 +687,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_CGALMeshFilte
     //        if (tag != -1) n2++;
     //        }
     //    MTGARRAY_END_SET_LOOP(edgeID, meshInput)
-    //            
+    //
     //    dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(parentNode)->UpdateFromGraph(meshInput, vecPts);
     //    for (auto& polyline : polylines)
     //        {
@@ -740,7 +740,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_UserMeshFilte
     return false;
 
 #ifdef WIP_MESH_IMPORT
-    HFCPtr<SMMeshIndexNode<POINT, EXTENT> > pParentMeshNode = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(parentNode);    
+    HFCPtr<SMMeshIndexNode<POINT, EXTENT> > pParentMeshNode = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(parentNode);
     DRange3d extent = DRange3d::NullRange();
     bvector<IScalableMeshMeshPtr> subMeshes;
     bvector<Utf8String> subMetadata;
@@ -753,7 +753,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_UserMeshFilte
 
             if (numFaceIndexes > 0)
                 {
-                HFCPtr<SMMeshIndexNode<POINT, EXTENT>> subMeshNode = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(subNodes[indexNodes]);          
+                HFCPtr<SMMeshIndexNode<POINT, EXTENT>> subMeshNode = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(subNodes[indexNodes]);
                 if(!subMeshNode->IsLoaded())subMeshNode->Load();
                 bvector<IScalableMeshMeshPtr> meshParts;
                 bvector<Utf8String> meshMetadata;

@@ -1,0 +1,22 @@
+{
+    "authors": "Bentley Systems, Incorporated",
+    "copyright": "",
+    "description": "FlatBuffersNuget",
+    "homepage": "https://www.bentley.com/",
+    "licenseUrl": "https://connect.bentley.com/Assets/Eula/eula_en.pdf",
+    "name": "FlatBuffersNuget",
+    "SPDX-ID": "",
+    
+    "sublicenses" : [
+        {
+        "authors": "",
+        "copyright": "Google Inc.",
+        "description": "An efficient cross platform serialization library.",
+        "homepage": "https://google.github.io/flatbuffers",
+        "licenseUrl": "https://github.com/google/flatbuffers/blob/master/LICENSE.txt",
+        "name": "FlatBuffers",
+        "SPDX-ID": "Apache-2.0",
+        "version": "118abc2871c05fb0b38b7fa8a3fe6278162e4b08"
+        }
+    ]
+}

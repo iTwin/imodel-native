@@ -58,8 +58,8 @@
 #ifndef BENTLEY_UTIL_BTREE_BTREE_H__
 #define BENTLEY_UTIL_BTREE_BTREE_H__
 
-#include <Bentley/WString.h>  
-#include <Bentley/stdcxx/rw/bpair.h>
+#include <Bentley/WString.h>
+#include <Bentley/bpair.h>
 #include <assert.h>
 #include <stddef.h>
 #include <sys/types.h>
@@ -77,9 +77,6 @@
 #endif
 
 BEGIN_BENTLEY_NAMESPACE
-
-using Bstdcxx::bpair;
-using Bstdcxx::make_bpair;
 
 #if defined(_MSC_VER)
 typedef intptr_t ssize_t;
@@ -981,10 +978,10 @@ class btree : public Params::key_compare {
   // the returned pair is equal to lower_bound(key). The second member pair of
   // the pair is equal to upper_bound(key).
   bpair<iterator,iterator> equal_range(const key_type &key) {
-    return Bstdcxx::make_bpair(lower_bound(key), upper_bound(key));
+    return std::make_pair(lower_bound(key), upper_bound(key));
   }
   bpair<const_iterator,const_iterator> equal_range(const key_type &key) const {
-    return Bstdcxx::make_bpair(lower_bound(key), upper_bound(key));
+    return std::make_pair(lower_bound(key), upper_bound(key));
   }
 
   // Inserts a value into the btree only if it does not already exist. The
@@ -1742,16 +1739,16 @@ btree<P>::insert_unique(const key_type &key, ValuePointer value) {
   iterator &iter = res.first;
   if (res.second == kExactMatch) {
     // The key already exists in the tree, do nothing.
-    return Bstdcxx::make_bpair(internal_last(iter), false);
+    return std::make_pair(internal_last(iter), false);
   } else if (!res.second) {
     iterator last = internal_last(iter);
     if (last.node && !compare_keys(key, last.key())) {
       // The key already exists in the tree, do nothing.
-      return Bstdcxx::make_bpair(last, false);
+      return std::make_pair(last, false);
     }
   }
 
-  return Bstdcxx::make_bpair(internal_insert(iter, *value), true);
+  return std::make_pair(internal_insert(iter, *value), true);
 }
 
 template <typename P>
@@ -2235,7 +2232,7 @@ inline bpair<IterType, int> btree<P>::internal_locate_plain_compare(
     }
     iter.node = iter.node->child(iter.position);
   }
-  return Bstdcxx::make_bpair(iter, 0);
+  return std::make_pair(iter, 0);
 }
 
 template <typename P> template <typename IterType>
@@ -2245,14 +2242,14 @@ inline bpair<IterType, int> btree<P>::internal_locate_compare_to(
     int res = iter.node->lower_bound(key, key_comp());
     iter.position = res & kMatchMask;
     if (res & kExactMatch) {
-      return Bstdcxx::make_bpair(iter, static_cast<int>(kExactMatch));
+      return std::make_pair(iter, static_cast<int>(kExactMatch));
     }
     if (iter.node->leaf()) {
       break;
     }
     iter.node = iter.node->child(iter.position);
   }
-  return Bstdcxx::make_bpair(iter, -kExactMatch);
+  return std::make_pair(iter, -kExactMatch);
 }
 
 template <typename P> template <typename IterType>

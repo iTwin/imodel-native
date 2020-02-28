@@ -489,7 +489,7 @@ BentleyStatus   DwgImporter::_ProcessDetectionResults (IDwgChangeDetector::Detec
             // no change - just update input entity for output results
             changeDetector._OnElementSeen (*this, detectionResults.GetExistingElementId());
             // add children into the element seen list
-            auto allFromSameSource = iModelExternalSourceAspect::GetSelectFromSameSource(*m_dgndb, detectionResults.GetObjectAspect(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+            auto allFromSameSource = iModelExternalSourceAspect::GetSelectFromSameSource(*m_dgndb, detectionResults.GetObjectAspect());
             while(BE_SQLITE_ROW == allFromSameSource->Step())
                 changeDetector._OnElementSeen (*this, allFromSameSource->GetValueId<DgnElementId>(0));
             break;

@@ -1883,7 +1883,7 @@ static void RemoveExpressionWhitespaces(Utf8StringR expression)
     bool nextAlphaNum = false;
     bool lastWSpace = false;
     size_t currentIndex = 0;
-    char* removedItems = std::remove_if
+    auto removedItems = std::remove_if
     (
         expression.begin(),
         expression.end(),

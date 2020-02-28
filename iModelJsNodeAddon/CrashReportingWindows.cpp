@@ -63,7 +63,8 @@ static void writeCustomPropertiesFile(std::map<std::wstring, std::wstring> const
     paramsFile.assign(dumpFileName.c_str());
     paramsFile.append(L".properties.txt");
 
-    FILE* fp = _wfopen(paramsFile.c_str(), L"w+");
+    FILE* fp;
+    _wfopen_s(&fp, paramsFile.c_str(), L"w+");
 
     char tbuf[128];
     JsInterop::FormatCurrentTime(tbuf, sizeof(tbuf));
@@ -100,7 +101,8 @@ static void writeMarkerFile(WCharCP name, Utf8CP message)
     dmpFileName.append(_itow(++s_nextNativeCrashTxtFileNo, buf, 10));
     dmpFileName.append(L".txt");
 
-    FILE* fp = _wfopen(dmpFileName.c_str(), L"w+");
+    FILE* fp;
+    _wfopen_s(&fp, dmpFileName.c_str(), L"w+");
     fputs(message, fp);
     fclose(fp);
 
@@ -116,7 +118,9 @@ static int safeStrCat(wchar_t* dest, wchar_t const* source, size_t& remainingDes
     if (slen >= remainingDestCapacity)
         return -1;
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
     wcscat(dest, source);
+POP_DISABLE_DEPRECATION_WARNINGS
     remainingDestCapacity -= slen;
     return 0;
     }
@@ -128,7 +132,7 @@ static void runScript(wchar_t const* dumpFilename)
     {
     if (s_config->m_dumpProcessorScriptFileName.empty())
         return;
-    
+
     static wchar_t cmd[2*MAX_PATH + 7]; // NB: avoid allocating memory
     size_t canCopy = _countof(cmd);
     cmd[0] = '\0';
@@ -263,7 +267,7 @@ static void abortHandler(int signal)
         writeCustomPropertiesFileAlone();
         return;
         }
-        
+
     RaiseException(0, 0, 0, NULL);
     }
 
@@ -278,7 +282,7 @@ void JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
     BeFileName::CreateNewDirectory(cfg.m_crashDir);
 
     s_crashFilesDir = cfg.m_crashDir.c_str();
-    
+
     MaintainCrashDumpDir(s_nextNativeCrashTxtFileNo, cfg);
 
     if (cfg.m_enableCrashDumps)
@@ -297,7 +301,7 @@ void JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
         // Create a helper class for the server to use to upload crash reports
         BeFileName checkpointFileName(cfg.m_crashDir);
         checkpointFileName.AppendToPath(L"crashesSent.txt");
-        
+
 #ifdef WIP_DUMP_UPLOAD
         s_uploadUrl = WString(cfg.m_uploadUrl.c_str(), true).c_str();
 
@@ -307,7 +311,7 @@ void JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
 
         s_dumpFiles = new std::map<std::wstring, std::wstring>();
         (*s_dumpFiles)[L"upload_file_minidump"] = std::wstring(MAX_PATH, ' ');  // preallocate space for the longest file name.
-#endif        
+#endif
         MINIDUMP_TYPE dumptype;
 
         if (cfg.m_wantFullMemory)
@@ -320,7 +324,7 @@ void JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
         }
 
     s_customCrashProperties = new std::map<std::wstring, std::wstring>();
-    
+
     for (auto& prop : GetCrashReportCustomProperties(cfg))
         (*s_customCrashProperties)[WString(prop.first.c_str(), true).c_str()] = WString(prop.second.c_str(), true).c_str();
 

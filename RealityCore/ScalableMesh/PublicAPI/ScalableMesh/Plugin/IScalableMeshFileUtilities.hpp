@@ -6,6 +6,7 @@
 /*__PUBLISH_SECTION_START__*/
 
 #include <io.h>
+PUSH_DISABLE_DEPRECATION_WARNINGS
 
 template <typename FileType>
 struct FileAnalysisStreamTrait
@@ -56,9 +57,9 @@ struct FileAnalysisStreamTrait<int>
 
         if (readSize > 0)
             {
-            mbstowcs(buffer, &s_tempBuffer[0], readSize);            
-            }        
-        
+            mbstowcs(buffer, &s_tempBuffer[0], readSize);
+            }
+
         return readSize;
         }
 
@@ -80,7 +81,7 @@ struct FileAnalysisStreamTrait<istream>
     static bool                         GetFileSize                                (istream& fileStream, SizeType& size)
         {
         assert(0 == fileStream.tellg());
-        
+
         fileStream.clear();
         if (!fileStream.seekg(0, std::ios::end).good())
             {
@@ -93,7 +94,7 @@ struct FileAnalysisStreamTrait<istream>
 
         return fileStream.seekg(0).good();
         }
-    
+
     static bool                         SeekBegin                                  (istream& fileStream)
         {
         fileStream.clear();
@@ -113,7 +114,7 @@ struct FileAnalysisStreamTrait<istream>
         const ReadSizeType readSize = (fileStream.good() || fileStream.eof()) ? fileStream.gcount() : ReadSizeType(-1);
 
         if (readSize > 0)
-            {            
+            {
             BeStringUtilities::CurrentLocaleCharToWChar(buffer, tmpBuffer.get(), readSize);
             }
 
@@ -136,12 +137,12 @@ struct FileAnalysisStreamTrait<iostream> : public FileAnalysisStreamTrait<istrea
 // TDORAY: Specialization for standard C FILE
 
 /*---------------------------------------------------------------------------------**//**
-* @description  
+* @description
 * @bsimethod                                               Raymond.Gauthier    12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-template <const uint32_t MAX_SAMPLE_SIZE, const uint32_t MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES> 
+template <const uint32_t MAX_SAMPLE_SIZE, const uint32_t MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES>
 template <typename AccumulateFnT, typename StatT>
-StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run       (const WChar*      filePath, 
+StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run       (const WChar*      filePath,
                                                                                     AccumulateFnT       accumulateFn,
                                                                                     const StatT&        initStats,
                                                                                     FileStatistics&     fileStatistics,
@@ -152,12 +153,12 @@ StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run    
 
 
 /*---------------------------------------------------------------------------------**//**
-* @description  
+* @description
 * @bsimethod                                               Raymond.Gauthier    12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-template <const uint32_t MAX_SAMPLE_SIZE, const uint32_t MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES> 
+template <const uint32_t MAX_SAMPLE_SIZE, const uint32_t MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES>
 template <typename AccumulateFnT, typename StatT>
-StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run       (const WChar*      filePath, 
+StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run       (const WChar*      filePath,
                                                                                     AccumulateFnT       accumulateFn,
                                                                                     const StatT&        initStats,
                                                                                     StatusInt&          status)
@@ -169,12 +170,12 @@ StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run    
 
 
 /*---------------------------------------------------------------------------------**//**
-* @description  
+* @description
 * @bsimethod                                               Raymond.Gauthier    12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-template <const uint32_t MAX_SAMPLE_SIZE, const uint32_t MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES> 
+template <const uint32_t MAX_SAMPLE_SIZE, const uint32_t MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES>
 template <typename InitAccumulateFnT, typename AccumulateFnT, typename StatT>
-StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run       (const WChar*      filePath, 
+StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run       (const WChar*      filePath,
                                                                                     InitAccumulateFnT   initAccumulateFn,
                                                                                     AccumulateFnT       accumulateFn,
                                                                                     const StatT&        initStats,
@@ -201,7 +202,7 @@ StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run    
 
     fileStatistics.size = fileStat.st_size;
 
-    WChar fileSampleBuffer[MAX_SAMPLE_SIZE];    
+    WChar fileSampleBuffer[MAX_SAMPLE_SIZE];
 
     bool success;
     const StatT fileStats = Strategy::Run(fileHandle, fileStatistics, fileSampleBuffer, initAccumulateFn, accumulateFn, initStats, success);
@@ -215,12 +216,12 @@ StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run    
 
 
 /*---------------------------------------------------------------------------------**//**
-* @description  
+* @description
 * @bsimethod                                               Raymond.Gauthier    12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-template <const uint32_t MAX_SAMPLE_SIZE, const uint32_t MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES> 
+template <const uint32_t MAX_SAMPLE_SIZE, const uint32_t MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES>
 template <typename InitAccumulateFnT, typename AccumulateFnT, typename StatT>
-StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run       (const WChar*      filePath, 
+StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run       (const WChar*      filePath,
                                                                                     InitAccumulateFnT   initAccumulateFn,
                                                                                     AccumulateFnT       accumulateFn,
                                                                                     const StatT&        initStats,
@@ -233,10 +234,10 @@ StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run    
 
 
 /*---------------------------------------------------------------------------------**//**
-* @description  
+* @description
 * @bsimethod                                               Raymond.Gauthier    12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-template <const uint32_t MAX_SAMPLE_SIZE, const uint32_t MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES> 
+template <const uint32_t MAX_SAMPLE_SIZE, const uint32_t MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES>
 template <typename StreamT, typename AccumulateFnT, typename StatT>
 StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run       (StreamT&            fileStream,
                                                                                     AccumulateFnT       accumulateFn,
@@ -249,10 +250,10 @@ StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run    
 
 
 /*---------------------------------------------------------------------------------**//**
-* @description  
+* @description
 * @bsimethod                                               Raymond.Gauthier    12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-template <const uint32_t MAX_SAMPLE_SIZE, const uint32_t MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES> 
+template <const uint32_t MAX_SAMPLE_SIZE, const uint32_t MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES>
 template <typename StreamT, typename AccumulateFnT, typename StatT>
 StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run       (StreamT&            fileStream,
                                                                                     AccumulateFnT       accumulateFn,
@@ -263,12 +264,12 @@ StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run    
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @description  
+* @description
 * @bsimethod                                               Raymond.Gauthier    12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-template <const uint32_t MAX_SAMPLE_SIZE, const uint32_t MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES> 
+template <const uint32_t MAX_SAMPLE_SIZE, const uint32_t MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES>
 template <typename StreamT, typename InitAccumulateFnT, typename AccumulateFnT, typename StatT>
-StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run       (StreamT&            fileStream, 
+StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run       (StreamT&            fileStream,
                                                                                     InitAccumulateFnT   initAccumulateFn,
                                                                                     AccumulateFnT       accumulateFn,
                                                                                     const StatT&        initStats,
@@ -297,7 +298,7 @@ StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run    
 
     fileStatistics.size = fileSize;
 
-    WChar fileSampleBuffer[MAX_SAMPLE_SIZE];    
+    WChar fileSampleBuffer[MAX_SAMPLE_SIZE];
 
     bool success;
     const StatT fileStats = Strategy::Run(fileStream, fileStatistics, fileSampleBuffer, initAccumulateFn, accumulateFn, initStats, success);
@@ -310,12 +311,12 @@ StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run    
 
 
 /*---------------------------------------------------------------------------------**//**
-* @description  
+* @description
 * @bsimethod                                               Raymond.Gauthier    12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-template <const uint32_t MAX_SAMPLE_SIZE, const uint32_t MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES> 
+template <const uint32_t MAX_SAMPLE_SIZE, const uint32_t MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES>
 template <typename StreamT, typename InitAccumulateFnT, typename AccumulateFnT, typename StatT>
-StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run       (StreamT&            fileStream, 
+StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run       (StreamT&            fileStream,
                                                                                     InitAccumulateFnT   initAccumulateFn,
                                                                                     AccumulateFnT       accumulateFn,
                                                                                     const StatT&        initStats,
@@ -327,7 +328,7 @@ StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run    
 
 
 /*---------------------------------------------------------------------------------**//**
-* @description  
+* @description
 * @bsiclass                                               Raymond.Gauthier    12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <const uint32_t MAX_SAMPLE_SIZE, const uint32_t MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES, typename StatT, typename StreamT>
@@ -336,13 +337,13 @@ struct FileAnalysisStrategyBase
 protected:
     typedef FileAnalysisStreamTrait<StreamT>
                                         StreamTraitType;
-    typedef typename StreamTraitType::OffsetType   
+    typedef typename StreamTraitType::OffsetType
                                         OffsetType;
-    typedef typename StreamTraitType::ReadSizeType   
+    typedef typename StreamTraitType::ReadSizeType
                                         ReadSizeType;
 
     template <typename AccumulateFnT>
-    static StatT                        RunOnSingleSample                          (StreamT&                fileStream, 
+    static StatT                        RunOnSingleSample                          (StreamT&                fileStream,
                                                                                     const FileStatistics&   fileStatistics,
                                                                                     WChar                    fileSampleBuffer[],
                                                                                     AccumulateFnT           accumulateFn,
@@ -362,12 +363,12 @@ protected:
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @description  
+* @description
 * NOTE: See specialization for case 1 == MAX_SAMPLE_QTY
 * TDORAY: It may become interesting to generate random offsets instead of linearly spaced ones
 * @bsiclass                                               Raymond.Gauthier    12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-template <const uint32_t MAX_SAMPLE_SIZE, const uint32_t MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES, 
+template <const uint32_t MAX_SAMPLE_SIZE, const uint32_t MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES,
           typename InitAccumulateFnT, typename AccumulateFnT, typename StatT, typename StreamT>
 struct FileAnalysisStrategy : private FileAnalysisStrategyBase<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES, StatT, StreamT>
     {
@@ -379,7 +380,7 @@ struct FileAnalysisStrategy : private FileAnalysisStrategyBase<MAX_SAMPLE_SIZE, 
 private:
     friend struct FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>;
 
-    static StatT                        Run                                    (StreamT&                fileStream, 
+    static StatT                        Run                                    (StreamT&                fileStream,
                                                                                 const FileStatistics&   fileStatistics,
                                                                                 WChar                    fileSampleBuffer[],
                                                                                 InitAccumulateFnT       initAccumulateFn,
@@ -394,11 +395,11 @@ private:
         if (!cummuledStats)
             return cummuledStats;
         assert(success);
-    
+
         const uint32_t remainingSampleQty = max<uint32_t>(1, static_cast<uint32_t>(min<uint64_t>(MAX_SAMPLE_QTY, fileStatistics.size / MAX_SAMPLE_SIZE))) - 1;
-        if (0 == remainingSampleQty) 
+        if (0 == remainingSampleQty)
             return cummuledStats; // First sample was representative enough
-    
+
         assert(fileStatistics.size <= static_cast<uint64_t>((numeric_limits<OffsetType>::max)()));
         const OffsetType sampleOffsetDelta = static_cast<OffsetType>(fileStatistics.size / (remainingSampleQty + 1));
 
@@ -425,24 +426,24 @@ private:
             if (!cummuledStats)
                 break;
             };
-    
+
         return success ? cummuledStats : StatT();
         }
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @description  
+* @description
 * @bsiclass                                               Raymond.Gauthier    12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-template <const uint32_t MAX_SAMPLE_SIZE, const bool RANDOM_SAMPLES, 
+template <const uint32_t MAX_SAMPLE_SIZE, const bool RANDOM_SAMPLES,
           typename InitAccumulateFnT, typename AccumulateFnT, typename StatT, typename StreamT>
-struct FileAnalysisStrategy<MAX_SAMPLE_SIZE, 1, RANDOM_SAMPLES, InitAccumulateFnT, AccumulateFnT, StatT, StreamT> 
+struct FileAnalysisStrategy<MAX_SAMPLE_SIZE, 1, RANDOM_SAMPLES, InitAccumulateFnT, AccumulateFnT, StatT, StreamT>
     : private FileAnalysisStrategyBase<MAX_SAMPLE_SIZE, 1, RANDOM_SAMPLES, StatT, StreamT>
     {
 private:
     friend struct FileAnalysisTool<MAX_SAMPLE_SIZE, 1, RANDOM_SAMPLES>;
-    
-    static StatT                        Run                                        (StreamT&                fileStream, 
+
+    static StatT                        Run                                        (StreamT&                fileStream,
                                                                                     const FileStatistics&   fileStatistics,
                                                                                     WChar                    fileSampleBuffer[],
                                                                                     InitAccumulateFnT       initAccumulateFn,
@@ -453,3 +454,4 @@ private:
         return RunOnSingleSample(fileStream, fileStatistics, fileSampleBuffer, initAccumulateFn, stats, success);
         }
     };
+PUSH_DISABLE_DEPRECATION_WARNINGS

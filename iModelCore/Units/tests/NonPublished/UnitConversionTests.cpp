@@ -30,7 +30,7 @@ struct UnitConversionTests : UnitsTestFixture
     static int GetInt(Utf8CP intValue)
         {
         int value = 0;
-        BE_STRING_UTILITIES_UTF8_SSCANF(intValue, "%d", &value);
+        Utf8String::Sscanf_safe(intValue, "%d", &value);
         return value;
         }
 };
@@ -85,7 +85,7 @@ bool UnitConversionTests::TestUnitConversion (double fromVal, Utf8CP fromUnitNam
 
     if (expectedCode != actualCode)
         {
-        Utf8PrintfString formattedText("Conversion from %s (%s) to %s (%s) returned unexpected code.  Expected: %s  Actual:  %s.", 
+        Utf8PrintfString formattedText("Conversion from %s (%s) to %s (%s) returned unexpected code.  Expected: %s  Actual:  %s.",
                                        fromUnitName, fromUnit->GetName().c_str(), targetUnitName, targetUnit->GetName().c_str(),
                                        UnitsProblemCodeToString(expectedCode), UnitsProblemCodeToString(actualCode));
         EXPECT_EQ(expectedCode, actualCode) << formattedText;
@@ -160,10 +160,10 @@ TEST_F(UnitConversionTests, TestTemperatureConversions)
     bvector<bpair<Utf8String, Utf8String>> handledUnits;
 
     // Expected values generated using the following equations and windows calculator
-    // Celsius = (Fahrenheit–32)×5÷9
-    // Kelvin = ((Fahrenheit–32)×5/9)+273.15
+    // Celsius = (Fahrenheitï¿½32)ï¿½5ï¿½9
+    // Kelvin = ((Fahrenheitï¿½32)ï¿½5/9)+273.15
     // Rankine = Fahrenheit+459.67
-    // Rømer = (Fahrenheit–32)×7/24+7.5
+    // Rï¿½mer = (Fahrenheitï¿½32)ï¿½7/24+7.5
     TestUnitConversion(32, "FAHRENHEIT", 0, "CELSIUS", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(20, "FAHRENHEIT", -6.666666666666666666666666666, "CELSIUS", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(122, "FAHRENHEIT", 50, "CELSIUS", 1, loadErrors, conversionErrors, handledUnits);
@@ -176,7 +176,7 @@ TEST_F(UnitConversionTests, TestTemperatureConversions)
     TestUnitConversion(0, "FAHRENHEIT", 459.67, "RANKINE", 1, loadErrors, conversionErrors, handledUnits);
     //TestUnitConversion(0, "FAHRENHEIT", -1.8333333333333333333333333333333, "ROMER", 10, loadErrors, conversionErrors, handledUnits);
 
-    //The usable precision of IEEE - 754 double is around 16 decimal digits - so excluding educational purposes, 
+    //The usable precision of IEEE - 754 double is around 16 decimal digits - so excluding educational purposes,
     //representations longer than that are just a waste of resources and computing power :
     //Users are not getting more informed when they see a 700 - digit - number on the screeen.
     //Configuration variables stored in that "more accurate" form are useless
@@ -184,10 +184,10 @@ TEST_F(UnitConversionTests, TestTemperatureConversions)
 
 
     // Expected values generated using the following equations and windows calculator
-    // Fahrenheit = Celsius×9÷5+32
+    // Fahrenheit = Celsiusï¿½9ï¿½5+32
     // Kelvin = Celsius+273.15
-    // Rankine = Celsius×9/5+32+459.67
-    // Rømer = Celsius×21/40+7.5
+    // Rankine = Celsiusï¿½9/5+32+459.67
+    // Rï¿½mer = Celsiusï¿½21/40+7.5
     TestUnitConversion(1, "CELSIUS", 33.8, "FAHRENHEIT", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(-15, "CELSIUS", 5, "FAHRENHEIT", 10, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(-25, "CELSIUS", -13, "FAHRENHEIT", 10, loadErrors, conversionErrors, handledUnits);
@@ -211,10 +211,10 @@ TEST_F(UnitConversionTests, TestTemperatureConversions)
 
 
     // Expected values generated using the following equations and windows calculator
-    // Celsius = (Rankine–459.67–32)×5/9
-    // Fahrenheit = Rankine–459.67
-    // Kelvin = (Rankine–459.67–32)×5/9+273.15
-    // Rømer = (Rankine–491.67)×7/24+7.5
+    // Celsius = (Rankineï¿½459.67ï¿½32)ï¿½5/9
+    // Fahrenheit = Rankineï¿½459.67
+    // Kelvin = (Rankineï¿½459.67ï¿½32)ï¿½5/9+273.15
+    // Rï¿½mer = (Rankineï¿½491.67)ï¿½7/24+7.5
     TestUnitConversion(42, "RANKINE", -249.81666666666666666666666666667, "CELSIUS", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(42, "RANKINE", -417.67, "FAHRENHEIT", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(42, "RANKINE", 23.333333333333333, "K", 1, loadErrors, conversionErrors, handledUnits);
@@ -223,12 +223,12 @@ TEST_F(UnitConversionTests, TestTemperatureConversions)
     TestUnitConversion(0, "RANKINE", -459.67, "FAHRENHEIT", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(0, "RANKINE", 0, "K", 1, loadErrors, conversionErrors, handledUnits);
     //TestUnitConversion(0, "RANKINE", -135.90375, "ROMER", 1, loadErrors, conversionErrors, handledUnits);
-    
+
     // Expected values generated using the following equations and windows calculator
-    // Celsius = (Rømer–7.5)×40/21
-    // Fahrenheit = (Rømer–7.5)×24/7+32
-    // Kelvin = (Rømer–7.5)×40/21+273.15
-    // Rankine = (Rømer–7.5)×24/7+491.67
+    // Celsius = (Rï¿½merï¿½7.5)ï¿½40/21
+    // Fahrenheit = (Rï¿½merï¿½7.5)ï¿½24/7+32
+    // Kelvin = (Rï¿½merï¿½7.5)ï¿½40/21+273.15
+    // Rankine = (Rï¿½merï¿½7.5)ï¿½24/7+491.67
     //TestUnitConversion(42, "ROMER", 65.714285714285714285714285714286, "CELSIUS", 1, loadErrors, conversionErrors, handledUnits);
     //TestUnitConversion(42, "ROMER", 150.28571428571428571428571428571, "FAHRENHEIT", 1, loadErrors, conversionErrors, handledUnits);
     //TestUnitConversion(42, "ROMER", 338.86428571428571428571428571429, "K", 1, loadErrors, conversionErrors, handledUnits);
@@ -643,7 +643,7 @@ TEST_F(UnitConversionTests, USSurveyAreas)
     TestUnitConversion(1.0, "SQ.US_SURVEY_MILE", 640, "US_SURVEY_ACRE", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(1.0, "SQ.US_SURVEY_CHAIN", 0.1, "US_SURVEY_ACRE", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(1.0, "US_SURVEY_ACRE", 43560, "SQ.US_SURVEY_FT", 1, loadErrors, conversionErrors, handledUnits);
-    
+
     // Derived from exact values
     TestUnitConversion(1.0, "SQ.IN", pow(0.999998, 2), "SQ.US_SURVEY_IN", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(1.0, "SQ.FT", pow(0.999998, 2), "SQ.US_SURVEY_FT", 1, loadErrors, conversionErrors, handledUnits);
@@ -806,7 +806,7 @@ TEST_F(UnitConversionTests, UnitsConversions_Complex)
     TestUnitConversion(1.0e6 / 0.00023884589662749597, "JOULE_PER_KILOGRAM_DELTA_DEGREE_KELVIN", 1.0e6, "BTU_PER_POUND_MASS_PER_DELTA_DEGREE_RANKINE", 1000, loadErrors, conversionErrors, handledUnits, true);
     TestUnitConversion(1.0 / 0.42992261392949271, "KILOJOULE_PER_KILOMOLE", 1.0, "BTU_PER_POUND_MOLE", 1000, loadErrors, conversionErrors, handledUnits, true);
     TestUnitConversion(1.0e6 / 0.42992261392949271, "KILOJOULE_PER_KILOMOLE", 1.0e6, "BTU_PER_POUND_MOLE", 1000, loadErrors, conversionErrors, handledUnits, true);
-    
+
     //Missing Units: KNOT, MEGAJOULE_PER_METRE_CUBED, GRAM_PER_DAY, ONE_OVER_SLOPE, ONE_PER_HOUR, ONE_PER_YEAR, ONE_PER_DAY, ONE_PER_MINUTE, KILOJOULE_PER_KILOMOLE, BTU_PER_POUND_MOLE
     EXPECT_EQ(10, loadErrors.size()) << "The following units were not found: " << BeStringUtilities::Join(loadErrors, ", ");
     EXPECT_EQ(0, conversionErrors.size()) << "Failed to convert between the following units: " << BeStringUtilities::Join(conversionErrors, ", ");

@@ -11,7 +11,7 @@
 #include    <wchar.h>
 #include    <DgnPlatform/Tools/stringop.h>
 
-
+PUSH_DISABLE_DEPRECATION_WARNINGS
 /*---------------------------------------------------------------------------------**//**
 * different from isspace since it does not return true for '\n' or '\r'.
 * @bsimethod                                                    Keith.Bentley   10/92
@@ -138,7 +138,7 @@ WChar *end
 /*---------------------------------------------------------------------------------**//**
 * author kab .
 * Use skipBlankTab if you do not want to skip newlines. isspace returns true to newlines.
-* @bsimethod                                                                         
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Public WCharP       wskipSpace
 (
@@ -170,7 +170,7 @@ WChar *stringP
 /*---------------------------------------------------------------------------------**//**
 * author kab .
 * Strip leading and trailing spaces.
-* @bsimethod                                                                         
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Public void  wstripSpace
 (
@@ -275,7 +275,7 @@ WChar    chr
 
 /*---------------------------------------------------------------------------------**//**
 * author John.Gooding 06/05
-* @bsimethod                                                                         
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Public void     wstripLeadingZero
 (
@@ -388,4 +388,4 @@ WCharP          output          /* <= output string */
     strutil_wstrpwspc (origOutput);
     }
 
-
+POP_DISABLE_DEPRECATION_WARNINGS

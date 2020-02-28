@@ -10,9 +10,10 @@
 #include <ctime>
 
 #ifndef BENTLEYCONFIG_64BIT_HARDWARE
-    #error 64-bit builds only 
+    #error 64-bit builds only
 #endif
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 using namespace IModelJsNative;
 
 bmap<Utf8String, Utf8String> JsInterop::s_crashReportProperties;
@@ -49,7 +50,7 @@ void JsInterop::RemoveCrashReportProperty(Utf8StringCR key)
     {
     s_crashReportProperties.erase(key);
     }
-    
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  05/19
 //---------------------------------------------------------------------------------------
@@ -77,18 +78,18 @@ void JsInterop::MaintainCrashDumpDir(int& maxNativeCrashTxtFileNo, CrashReportin
         {
         if (isDir)
             continue;
-            
+
         ++count;
 
         int i;
-        if ((1 == swscanf(entryName.GetBaseName().c_str(), L"iModelJsNativeCrash-%d.txt", &i)) && (i > maxNativeCrashTxtFileNo))
+        if ((1 == WString::Swscanf_safe(entryName.GetBaseName().c_str(), L"iModelJsNativeCrash-%d.txt", &i)) && (i > maxNativeCrashTxtFileNo))
             maxNativeCrashTxtFileNo = i;
         }
 
     // Make sure there is room for one more!
     if (count <= (cfg.m_maxDumpsInDir - 1))
         return;
-    
+
     // TODO: Sort oldest to newest and delete the oldest first.
     for (BeDirectoryIterator dirs(cfg.m_crashDir); dirs.GetCurrentEntry(entryName, isDir) == SUCCESS; dirs.ToNext())
         {
@@ -116,3 +117,4 @@ bmap<Utf8String,Utf8String> JsInterop::GetCrashReportCustomProperties(CrashRepor
 
     return props;
     }
+POP_DISABLE_DEPRECATION_WARNINGS

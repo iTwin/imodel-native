@@ -371,7 +371,7 @@ void V8AttachmentTests::AttachForeignReferenceFile (WCharCP foreignFilename)
     DgnV8Api::DgnAttachment* attachment = nullptr;
     Bentley::DgnDocumentMonikerPtr moniker = DgnV8Api::DgnDocumentMoniker::CreateFromFileName(outputFilename.c_str());
     ASSERT_EQ( BentleyApi::SUCCESS, model->CreateDgnAttachment(attachment, *moniker, L"Default", true));
-    ASSERT_TRUE(nullptr != attachment);        
+    ASSERT_TRUE(nullptr != attachment);
     ASSERT_EQ( BentleyApi::SUCCESS, attachment->WriteToModel());
 
     v8editor.Save();
@@ -396,8 +396,7 @@ void V8AttachmentTests::CheckForeignReferenceOutput (int expectedElements)
     if (expectedElements < 1)
         return;
 
-    BentleyApi::Bstdcxx::bvector<DgnModelId>idlist;
-    idlist = db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_PhysicalModel), nullptr, "ORDER BY ECInstanceId ASC").BuildIdList();
+    auto idlist = db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_PhysicalModel), nullptr, "ORDER BY ECInstanceId ASC").BuildIdList();
     ASSERT_EQ(2, idlist.size());
     auto physical = db->Models().GetModel(idlist[0]);
     ASSERT_TRUE(physical.IsValid());
@@ -423,7 +422,7 @@ TEST_F(V8AttachmentTests, Attach3dm)
     LineUpFiles(L"rhino.bim", L"Test3d.dgn", false);
     ASSERT_EQ( 0 , m_count ) << L"Expect an empty seed file!";
     AttachForeignReferenceFile (L"HumanHead.3dm");
-    DoConvert(m_dgnDbFileName, m_v8FileName); 
+    DoConvert(m_dgnDbFileName, m_v8FileName);
     CheckForeignReferenceOutput (81);
     }
 
@@ -435,7 +434,7 @@ TEST_F(V8AttachmentTests, Attach3ds)
     LineUpFiles(L"3ds.bim", L"Test3d.dgn", false);
     ASSERT_EQ( 0 , m_count ) << L"Expect an empty seed file!";
     AttachForeignReferenceFile (L"bed.3ds");
-    DoConvert(m_dgnDbFileName, m_v8FileName); 
+    DoConvert(m_dgnDbFileName, m_v8FileName);
     CheckForeignReferenceOutput (13);
     }
 
@@ -447,7 +446,7 @@ TEST_F(V8AttachmentTests, AttachFbx)
     LineUpFiles(L"fbx.bim", L"Test3d.dgn", false);
     ASSERT_EQ( 0 , m_count ) << L"Expect an empty seed file!";
     AttachForeignReferenceFile (L"candles.fbx");
-    DoConvert(m_dgnDbFileName, m_v8FileName); 
+    DoConvert(m_dgnDbFileName, m_v8FileName);
     CheckForeignReferenceOutput (103);
     }
 
@@ -459,7 +458,7 @@ TEST_F(V8AttachmentTests, AttachIfc)
     LineUpFiles(L"ifc.bim", L"Test3d.dgn", false);
     ASSERT_EQ( 0 , m_count ) << L"Expect an empty seed file!";
     AttachForeignReferenceFile (L"roof.ifc");
-    DoConvert(m_dgnDbFileName, m_v8FileName); 
+    DoConvert(m_dgnDbFileName, m_v8FileName);
 
     // Count common models/elements/etc
     CheckForeignReferenceOutput (-1);
@@ -484,7 +483,7 @@ TEST_F(V8AttachmentTests, AttachObj)
     LineUpFiles(L"obj.bim", L"Test3d.dgn", false);
     ASSERT_EQ( 0 , m_count ) << L"Expect an empty seed file!";
     AttachForeignReferenceFile (L"bottle.obj");
-    DoConvert(m_dgnDbFileName, m_v8FileName); 
+    DoConvert(m_dgnDbFileName, m_v8FileName);
     // a mesh in a cell - only counts the cell header
     CheckForeignReferenceOutput (1);
     }
@@ -497,7 +496,7 @@ TEST_F(V8AttachmentTests, AttachSkp)
     LineUpFiles(L"sketchup.bim", L"Test3d.dgn", false);
     ASSERT_EQ( 0 , m_count ) << L"Expect an empty seed file!";
     AttachForeignReferenceFile (L"Kubelis.skp");
-    DoConvert(m_dgnDbFileName, m_v8FileName); 
+    DoConvert(m_dgnDbFileName, m_v8FileName);
     CheckForeignReferenceOutput (2);
     }
 

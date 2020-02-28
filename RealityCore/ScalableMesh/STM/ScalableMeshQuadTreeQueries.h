@@ -55,9 +55,10 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentPoint
         FILE*  m_pTracingXMLFile;        
 #endif
 
-        void MoveIntersectionPointFromVanishingLine(const HGF2DLocation& intersectionPoint, 
+        /* void MoveIntersectionPointFromVanishingLine(const HGF2DLocation& intersectionPoint, 
                                                     const HGF2DLocation& pointOnIntersectedSegment, 
                                                     HGF2DLocation&       movedIntersectionPoint) const;
+        */
 
         EXTENT ComputeExtent(HFCPtr<HVE2DShape> shape)
             {

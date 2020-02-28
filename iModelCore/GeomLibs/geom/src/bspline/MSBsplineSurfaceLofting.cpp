@@ -20,7 +20,7 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    peter.yu                        03/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-void curveMinWeightAndMaxProjectedMagnitude 
+void curveMinWeightAndMaxProjectedMagnitude
 (
 double              &wMin,
 double              &pMax,
@@ -113,7 +113,7 @@ int             derivative      /* => Highest derivatives maintained. Ignored wh
             {
             curveMinWeightAndMaxProjectedMagnitude(wmin, pmax, out[ll].get ());
             bet = (tol*wmin)/(1.0 + pmax);
-            if( bet < alf )  
+            if( bet < alf )
                 alf = bet;
             }
         tol = alf;
@@ -161,7 +161,7 @@ int             derivative      /* => Highest derivatives maintained. Ignored wh
             }
 
         r++;
-        } 
+        }
 
     /* Try to remove each knot from each curve */
 
@@ -176,7 +176,7 @@ int             derivative      /* => Highest derivatives maintained. Ignored wh
                 {
                 alf = 0.0;
                 for( ll=0; ll<=kk; ll++ )  alf += br[ll][j];
-        
+
                 if( alf < bsum )
                     {
                     bsum = alf;  s = sr[j];  r = j;
@@ -201,19 +201,19 @@ int             derivative      /* => Highest derivatives maintained. Ignored wh
             {
             rmf = true;
             if( tangentControl == 1  ||  tangentControl == 3 )
-                { 
+                {
                 if( r <= (p+derivative) )  rmf = false;
                 }
 
             if( tangentControl == 2  ||  tangentControl == 3 )
-                { 
+                {
                 if( r >= (n-derivative+1) )  rmf = false;
                 }
 
-            if( !rmf )  
-                {  
-                for( ll=0; ll<=kk; ll++ )  br[ll][r] = NOREM;  
-                continue;  
+            if( !rmf )
+                {
+                for( ll=0; ll<=kk; ll++ )  br[ll][r] = NOREM;
+                continue;
                 }
             }
 
@@ -226,7 +226,7 @@ int             derivative      /* => Highest derivatives maintained. Ignored wh
             alf = (U[r]-U[r-k  ])/(U[r-k+p+1]-U[r-k  ]);
             bet = (U[r]-U[r-k+1])/(U[r-k+p+2]-U[r-k+1]);
             lam = alf/(alf+bet);
-            oml = 1.0-lam; 
+            oml = 1.0-lam;
             }
         else
             {
@@ -237,11 +237,11 @@ int             derivative      /* => Highest derivatives maintained. Ignored wh
         rmf = true;
         for( j=r-k; j<=l; j++ )
             {
-            if( U[j] != U[j+1] )  
-                { 
+            if( U[j] != U[j+1] )
+                {
                 for( ll=0; ll<=kk; ll++ )
                     {
-                    te[ll][j] = er[ll][j]+b[ll]; 
+                    te[ll][j] = er[ll][j]+b[ll];
                     if( te[ll][j] > tol )  {  rmf = false;  break;  }
                     }
                 }
@@ -253,7 +253,7 @@ int             derivative      /* => Highest derivatives maintained. Ignored wh
 
         if( rmf )
             {
-            for( j=r-k; j<=l; j++ )  
+            for( j=r-k; j<=l; j++ )
                 {
                 if( U[j] != U[j+1] )
                     {
@@ -261,14 +261,14 @@ int             derivative      /* => Highest derivatives maintained. Ignored wh
                     }
                 }
 
-            fout  = (2*r-s-p)/2;    
-            first = r-p;    
+            fout  = (2*r-s-p)/2;
+            first = r-p;
             last  = r-s;
-            off   = first-1;        
+            off   = first-1;
 
             /* Save alphas and betas */
 
-            i = first;  
+            i = first;
             j = last;
             while( (j-i) > 0 )
                 {
@@ -276,9 +276,9 @@ int             derivative      /* => Highest derivatives maintained. Ignored wh
                 omas[i-first] = 1.0-alfs[i-first];
                 bets[j-first] = (U[j+p+1]-U[j])/(U[j+p+1]-U[r]);
                 ombs[j-first] = 1.0-bets[j-first];
-                i ++;  j --;  
+                i ++;  j --;
                 }
-            
+
             /* Remove the knot from all curves */
 
             wfl = true;
@@ -288,7 +288,7 @@ int             derivative      /* => Highest derivatives maintained. Ignored wh
                     Pw[iTemp] = out[ll]->GetPoleDPoint4d (iTemp);
                 a = out[ll]->knots;
 
-                i  = first;  
+                i  = first;
                 j  = last;
                 ii = 1;
                 jj = last-off;
@@ -302,10 +302,10 @@ int             derivative      /* => Highest derivatives maintained. Ignored wh
                     {
                     Rw[ll][ii].SumOf (Pw[i], alfs[i-first], Rw[ll][ii-1], omas[i-first]);
                     Rw[ll][jj].SumOf (Pw[j], bets[j-first], Rw[ll][jj+1], ombs[j-first]);
-                    i ++;  j --;  
+                    i ++;  j --;
                     ii++;  jj--;
                     }
-            
+
                 /* Check for disallowed weights */
 
                 if( rat )
@@ -333,7 +333,7 @@ int             derivative      /* => Highest derivatives maintained. Ignored wh
                     Rw[ll][jj+1].SumOf (Rw[ll][jj+1],  lam, Rw[ll][ii-1], oml);
                     }
                 } /* End for each curve */
-        
+
             /* Check weights */
 
             if( !wfl )
@@ -344,7 +344,7 @@ int             derivative      /* => Highest derivatives maintained. Ignored wh
             else
                 {
                 /* Save control points */
-  
+
                 for( ll=0; ll<=kk; ll++ )
                     {
                     for (int iTemp=0; iTemp<out[ll]->NumberAllocatedPoles (); iTemp++)
@@ -361,12 +361,12 @@ int             derivative      /* => Highest derivatives maintained. Ignored wh
                         }
                     }
                 }
-        
+
             /* Shift down some parameters */
 
-            if( s == 1 )  
+            if( s == 1 )
                 {
-                for( ll=0; ll<=kk; ll++ )  
+                for( ll=0; ll<=kk; ll++ )
                     {
                     er[ll][r-1] = std::max(er[ll][r-1], er[ll][r]);
                     }
@@ -383,7 +383,7 @@ int             derivative      /* => Highest derivatives maintained. Ignored wh
                     er[ll][j-1] = er[ll][j];
                     }
                 }
-        
+
             /* Shift down knots and control points */
 
             for( ll=0; ll<=kk; ll++ )
@@ -409,7 +409,7 @@ int             derivative      /* => Highest derivatives maintained. Ignored wh
                         out[ll]->weights[cpi] = Pw[cpi].w;
                     }
                 }
-            n--;   m--;  
+            n--;   m--;
 
             /* If no more internal knots -> finished */
 
@@ -421,8 +421,8 @@ int             derivative      /* => Highest derivatives maintained. Ignored wh
             l = std::max(n,r+p-s);
             for( j=k; j<=l; j++ )
                 {
-                if( U[j] != U[j+1] ) 
-                    { 
+                if( U[j] != U[j+1] )
+                    {
                     for( ll=0; ll<=kk; ll++ )
                         {
                         if( br[ll][j] != NOREM )
@@ -441,7 +441,7 @@ int             derivative      /* => Highest derivatives maintained. Ignored wh
             }
 
         } /* End of while loop */
-    
+
     return true;
     }
 
@@ -512,18 +512,18 @@ bool            *shift          /* if true, the coincident points are shifted */
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Peter.Yu                        11/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-MSBsplineStatus MSBsplineSurface::InitLoftingSurface 
+MSBsplineStatus MSBsplineSurface::InitLoftingSurface
 (
-bvector<MSBsplineCurvePtr> const &curves,     
+bvector<MSBsplineCurvePtr> const &curves,
 DVec3dP             pStartNormal,
-DVec3dP             pEndNormal,  
-bool                approxComp,   
-bool                closed,       
-bool                smoothStart,  
-bool                smoothEnd,    
-bool                chordLength,  
-bool                applyComp,    
-double              tolerance     
+DVec3dP             pEndNormal,
+bool                approxComp,
+bool                closed,
+bool                smoothStart,
+bool                smoothEnd,
+bool                chordLength,
+bool                applyComp,
+double              tolerance
 )
     {
     int             status = SUCCESS;
@@ -576,7 +576,7 @@ double              tolerance
             bvector<DPoint3d> curvePoints (numCurves);  // points to fit jumping curve-to-curve at fixed i
             bvector<DPoint3d> vPoles(numV);             // poles of fit curve for curvePoints
             bvector<double> curveWeights(numCurves);  // was wPts
-            bvector<double> vWeights(numCurves);  // was wPoles
+            bvector<double> vWeights(numV);  // was wPoles
 
 
             /* Compute the poles and weights if rational */

@@ -26,7 +26,7 @@ PointCloudScenePtr PointCloudScene::Create(WCharCP fileName)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     1/2015
 //----------------------------------------------------------------------------------------
-PointCloudScene::PointCloudScene(WCharCP fileName) 
+PointCloudScene::PointCloudScene(WCharCP fileName)
 : m_frustumQueryHandle(NULL)
     {
     PThandle pcFileHandle = ptOpenPOD(fileName);
@@ -68,12 +68,13 @@ bool PointCloudScene::IsPwFile()
         {
         //Check if the file is a tempFile = PW file
         //TODO: This chunk of code should change in the future for a simple call to Pointool
-        WString temp = GetResolvedPath();  
+        WString temp = GetResolvedPath();
         char fileNameChar[1024];
         temp.ConvertToLocaleChars(&fileNameChar[0], _countof(fileNameChar));
 
-        FILE* pFile = fopen(&fileNameChar[0], "rb");
-        if (pFile != 0)
+        FILE* pFile;
+        auto err  = BeFile::Fopen(&pFile, &fileNameChar[0], "rb");
+        if (err == 0)
             {
             char FileIdentification[9];
 
@@ -88,7 +89,7 @@ bool PointCloudScene::IsPwFile()
             }
         m_isPWfileInitialized = true;
         }
-    
+
     return m_isPWFile;
     }
 
@@ -158,7 +159,7 @@ void PointCloudScene::GetRange (DRange3d& range) const
     range.high.x = range.high.y = range.high.z = -DBL_MAX;
 
     float lower [3], upper [3];
-    ptSceneBounds (GetSceneHandle(), lower, upper);        
+    ptSceneBounds (GetSceneHandle(), lower, upper);
     range.low.x = lower[0];
     range.low.y = lower[1];
     range.low.z = lower[2];
@@ -178,7 +179,7 @@ void PointCloudScene::SetFrustumQueryHandle(PointCloudQueryHandleP handle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ray.Bentley                     01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-PointCloudQueryHandlePtr PointCloudScene::CreateBoundingBoxQuery(DRange3dCR range, int densityType, float densityValue) const 
+PointCloudQueryHandlePtr PointCloudScene::CreateBoundingBoxQuery(DRange3dCR range, int densityType, float densityValue) const
     {
     PointCloudQueryHandlePtr    queryHandle = PointCloudQueryHandle::Create(ptCreateBoundingBoxQuery(range.low.x, range.low.y, range.low.z, range.high.x, range.high.y, range.high.z));
 
@@ -190,7 +191,7 @@ PointCloudQueryHandlePtr PointCloudScene::CreateBoundingBoxQuery(DRange3dCR rang
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Stephane.Poulin                 07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-PointCloudQueryHandleP PointCloudScene::GetFrustumQueryHandle() const 
+PointCloudQueryHandleP PointCloudScene::GetFrustumQueryHandle() const
     {
     if (m_frustumQueryHandle.IsNull())
         {
@@ -199,13 +200,13 @@ PointCloudQueryHandleP PointCloudScene::GetFrustumQueryHandle() const
         ptSetQueryScope(m_frustumQueryHandle->GetHandle(), GetSceneHandle());
         }
 
-    return m_frustumQueryHandle.get(); 
+    return m_frustumQueryHandle.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Stephane.Poulin                 07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-PointCloudQueryHandleP PointCloudScene::GetVisiblePointsQueryHandle() const 
+PointCloudQueryHandleP PointCloudScene::GetVisiblePointsQueryHandle() const
     {
     if (m_visiblePointsQueryHandle.IsNull())
         {
@@ -214,7 +215,7 @@ PointCloudQueryHandleP PointCloudScene::GetVisiblePointsQueryHandle() const
         ptSetQueryScope(m_visiblePointsQueryHandle->GetHandle(), GetSceneHandle());
         }
 
-    return m_visiblePointsQueryHandle.get(); 
+    return m_visiblePointsQueryHandle.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -237,7 +238,7 @@ uint64_t PointCloudScene::_GetNumberOfPoints() const
 
     if (PTV_SUCCESS == ptSceneInfo (GetSceneHandle(), name, numClouds, numPoints, specification, loaded, visible))
         return numPoints;
-        
+
     return 0;
     }
 /*---------------------------------------------------------------------------------**//**
@@ -268,7 +269,7 @@ bool PointCloudScene::_HasIntensityChannel() const
 
     if (PTV_SUCCESS == ptSceneInfo (GetSceneHandle(), name, numClouds, numPoints, specification, loaded, visible))
         return TO_BOOL(specification & HAS_INTENSITY);
-    
+
     return false;
     }
 
@@ -281,10 +282,10 @@ bool PointCloudScene::_HasClassificationChannel() const
     uint32_t numPoints, specification;
     bool loaded, visible;
     WChar name [256];
-    
+
     if (PTV_SUCCESS == ptSceneInfo (GetSceneHandle(), name, numClouds, numPoints, specification, loaded, visible))
         return TO_BOOL(specification & HAS_CLASSIFICATION);
-        
+
     return false;
     }
 /*---------------------------------------------------------------------------------**//**
@@ -299,7 +300,7 @@ bool PointCloudScene::_HasRGBChannel() const
 
     if (PTV_SUCCESS == ptSceneInfo (GetSceneHandle(), name, numClouds, numPoints, specification, loaded, visible))
         return TO_BOOL(specification & HAS_RGB);
-    
+
     return false;
     }
 /*---------------------------------------------------------------------------------**//**
@@ -372,7 +373,7 @@ StatusInt   PointCloudScene::_GetUserMetaSectionName (int32_t sectionIndex, WStr
 
     return SUCCESS;
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Simon.Normand                   09/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -409,14 +410,14 @@ StatusInt   PointCloudScene::_GetUserMetaTagByName(WStringCR tagName, WStringR t
 * @bsimethod                                    Daniel.McKenzie                   10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt PointCloudScene::_SetMetaTag(WStringCR tagName, WStringCR tagValue)
-    { 
-    return ptSetMetaTag(GetMetadataHandle (),tagName.GetWCharCP(), tagValue.GetWCharCP()); 
+    {
+    return ptSetMetaTag(GetMetadataHandle (),tagName.GetWCharCP(), tagValue.GetWCharCP());
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Daniel.McKenzie                   10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt PointCloudScene::_WriteMetaTags()
-    { 
-    return ptWriteMetaTags(GetMetadataHandle ()); 
+    {
+    return ptWriteMetaTags(GetMetadataHandle ());
     }
 

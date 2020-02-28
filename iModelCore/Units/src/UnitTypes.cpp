@@ -159,7 +159,7 @@ ExpressionCR Unit::Evaluate() const
     if (IsInvertedUnit())
         return m_parent->Evaluate();
 
-    return T_Super::Evaluate(0, [=](Utf8CP unitName, IUnitsContextCP context) 
+    return T_Super::Evaluate(0, [=](Utf8CP unitName, IUnitsContextCP context)
         {
         return context->LookupUnit(unitName);
         });
@@ -178,7 +178,7 @@ Utf8StringCR Unit::GetInvariantDisplayLabel() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 04/2018
 //---------------------------------------------------------------------------------------
-bool Unit::IsNumber() const  
+bool Unit::IsNumber() const
     {
     return (nullptr == m_phenomenon) ? false : m_phenomenon->IsNumber();
     }
@@ -419,7 +419,7 @@ bool Unit::AreCompatible(UnitCP unitA, UnitCP unitB)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
-Phenomenon::Phenomenon(Utf8CP name, Utf8CP definition) : UnitsSymbol(name, definition, 0.0, 0.0, 0) 
+Phenomenon::Phenomenon(Utf8CP name, Utf8CP definition) : UnitsSymbol(name, definition, 0.0, 0.0, 0)
     {
     m_isNumber = m_definition.Equals(NUMBER);
     }
@@ -442,7 +442,7 @@ Phenomenon::~Phenomenon()
 UnitCP Phenomenon::LookupUnit(Utf8CP unitName) const
     {
     auto it = std::find_if(m_units.begin(), m_units.end(), [&unitName](UnitCP unit) {return unit->GetName().EqualsI(unitName);});
-    if (nullptr == it)
+    if (m_units.end() == it)
         return nullptr;
     return *it;
     }

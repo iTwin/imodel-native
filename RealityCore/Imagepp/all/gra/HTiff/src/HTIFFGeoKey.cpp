@@ -7,16 +7,12 @@
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HTIFFGeoKey
 //-----------------------------------------------------------------------------
-
 #include <ImageppInternal.h>
-
-
 #include <ImagePP/all/h/HTIFFGeoKey.h>
 #include <ImagePP/all/h/HTIFFUtils.h>
 #include <ImagePP/all/h/HTIFFTagDefinition.h>
 
-
-
+PUSH_DISABLE_DEPRECATION_WARNINGS
 static const int32_t KEYVALUE       = 0;
 static const int32_t TAGVALUE       = 1;
 static const int32_t COUNTVALUE     = 2;
@@ -797,3 +793,4 @@ void HTIFFGeoKey::InsertNewKey(GeoKeyID pi_Key, HTagInfo::DataType pi_Type, cons
     if (Status)
         m_KeyList.insert(GeoKeyList::value_type(pi_Key, KeyData));
     }
+POP_DISABLE_DEPRECATION_WARNINGS

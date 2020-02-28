@@ -14,7 +14,7 @@
 #include <pt/format.h>
 #include <pt/Array.h>
 #include <ptfs/filepath.h>
-#include <pt/ptmath.h> 
+#include <pt/ptmath.h>
 #include <time.h>
 
 namespace pt {
@@ -28,7 +28,7 @@ Log::Log(const std::wstring& filename, int stripFromStackBottom)
     this->filename = filename;
 
     AString filenameA(filename.c_str());
-    logFile = fopen(filenameA.c_str(), "w");
+    BeFile::Fopen(&logFile, filenameA.c_str(), "w");
 
     if (logFile == NULL)
         {
@@ -52,7 +52,7 @@ Log::Log(const std::wstring& filename, int stripFromStackBottom)
         logName = std::string("/tmp/") + logName;
 #endif
 
-        logFile = fopen(logName.c_str(), "w");
+        BeFile::Fopen(&logFile, logName.c_str(), "w");
         }
 
     // Turn off buffering.
@@ -61,7 +61,9 @@ Log::Log(const std::wstring& filename, int stripFromStackBottom)
     fprintf(logFile, "Application Log\n");
     time_t t;
     time(&t);
+PUSH_DISABLE_DEPRECATION_WARNINGS
     fprintf(logFile, "Start: %s\n", ctime(&t));
+POP_DISABLE_DEPRECATION_WARNINGS
     fflush(logFile);
 
     if (commonLog == NULL)
@@ -74,7 +76,7 @@ Log::Log(const std::wstring& filename, int stripFromStackBottom)
 Log::~Log() {
     section(L"Shutdown");
     println(L"Closing log file");
-    
+
     // Make sure we don't leave a dangling pointer
     if (Log::commonLog == this) {
         Log::commonLog = NULL;
@@ -151,13 +153,13 @@ static std::string getBacktrace(
 	    BOOL success = SymInitialize(process, NULL, true);
 
 	    int _ebp;
-	    __asm { mov _ebp,ebp } 
+	    __asm { mov _ebp,ebp }
 
 	    int frame = 0;
 	    while (frame < maxFrames) {
 		    int pc = ((int*)_ebp)[1];
 		    _ebp = ((int*)_ebp)[0];
-            
+
             if (pc == 0) {
                 break;
             }
@@ -210,7 +212,7 @@ void Log::printHeader() {
         /*
         char buf[32];
         strftime(buf, 32, "[%H:%M:%S]", localtime(&t));
-    
+
          Removed because this doesn't work on SDL threads.
 
         #ifdef _DEBUG

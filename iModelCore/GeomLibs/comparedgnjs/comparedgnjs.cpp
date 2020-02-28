@@ -144,15 +144,15 @@ bvector<JsonData> &data
             {
             int value;
 			double dValue;
-            if (1 == sscanf (s, "-v%d", &value))
+            if (1 == Utf8String::Sscanf_safe (s, "-v%d", &value))
                 {
                 verbose = value;
                 }
-			else if (1 == sscanf (s, "-n%d", &value))
+			else if (1 == Utf8String::Sscanf_safe (s, "-n%d", &value))
 				{
 				dif = value;
 				}
-			else if (1 == sscanf(s, "-t%lf", &dValue))
+			else if (1 == Utf8String::Sscanf_safe(s, "-t%lf", &dValue))
 				{
 				compareTol = dValue;
 				}
@@ -372,7 +372,7 @@ bool compareArrays(Json::Value const &a, Json::Value const &b, struct TypeCounts
 		messagePrefix(); printf("     JSON COMPARE FAIL: Mismatched array lengths file 1: [%d] file 2: [%d]\n", a.size(), b.size());
 		return false;
 	}
-	
+
 	// Keep track of result for each element of array
 	bool toReturn = true;
 	int n = a.size();
@@ -584,7 +584,7 @@ int launchCompare(bvector<JsonData> allData, bool &canUseGeometry, int &type, in
 	return 1;
 	}
 extern "C"
-int main(int argc, char **argv) 
+int main(int argc, char **argv)
     {
     bvector<JsonData> allData;
     int verbose = 0;    // enables final filename echos

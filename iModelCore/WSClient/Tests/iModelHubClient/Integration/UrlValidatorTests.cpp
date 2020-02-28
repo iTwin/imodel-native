@@ -22,7 +22,7 @@ class UrlValidatorTests : public WSClientBaseTest
 * @bsitest                                    Daniel.Bednarczyk                08/27
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool lineIsValid(Utf8String line)
-    { 
+    {
     // 1) Ensure every line has a scope
     std::regex scopeRegex(R"(Scope)", std::regex::ECMAScript);
     std::cmatch scopeMatches;
@@ -216,8 +216,10 @@ TEST(UrlValidator, WhitelistCheck)
     iModelHubHost& host = iModelHubHost::Instance();
     BeFileName assetsPath = host.GetDgnPlatformAssetsDirectory();
     Utf8String whitelistPath = assetsPath.GetNameUtf8().append("whitelist.txt");
-    
+
+PUSH_DISABLE_DEPRECATION_WARNINGS
     Utf8String localAppDataPath = getenv("LOCALAPPDATA");
+POP_DISABLE_DEPRECATION_WARNINGS
     Utf8String logFileName = GetLogFileName(assetsPath);
     Utf8String logPath = localAppDataPath.append("\\Bentley\\Logs\\").append(logFileName);
 
@@ -229,7 +231,7 @@ TEST(UrlValidator, WhitelistCheck)
     Utf8String(*callback)(Utf8String) = &parseUrlcallback;
     bset<Utf8String> logURLs = loadUrlFile(logPath, callback);
     ASSERT_GT(logURLs.size(), 0);
-    
+
     // Assert that all log URLs are whitelisted
     bset<Utf8String>::iterator url;
     bset<Utf8String>::iterator findResult;

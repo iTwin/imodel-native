@@ -49,14 +49,14 @@ BeUri::BeUri(Utf8StringCR uri)
         return;
 
     MatchResults schemeAndAuthority;
-    if (!std::regex_search(uri.c_str(), schemeAndAuthority.matches, s_uriSchemeAndAuthorityPattern))
+    if (!std::regex_search(uri, schemeAndAuthority.matches, s_uriSchemeAndAuthorityPattern))
         return;
 
     bool authorityIsPresent = schemeAndAuthority.matches[static_cast<size_t>(CAPTURE_GROUP_AUTHORITY)].matched;
 
     Utf8String unmatchedPart = uri.substr(schemeAndAuthority.matches[0].length());
     MatchResults pathQueryAndFragment;
-    if (!std::regex_match(unmatchedPart.c_str(), pathQueryAndFragment.matches, s_uriPathQueryAndFragmentPattern))
+    if (!std::regex_match(unmatchedPart, pathQueryAndFragment.matches, s_uriPathQueryAndFragmentPattern))
         return;
 
     Utf8String path = EscapeUriComponent(GetUriComponent(CAPTURE_GROUP_PATH, pathQueryAndFragment));

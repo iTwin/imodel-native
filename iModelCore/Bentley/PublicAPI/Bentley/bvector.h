@@ -4,12 +4,11 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 
-// __PUBLISH_SECTION_START__
 #include <Bentley/Bentley.h>
-#include "stdcxx/bvector.h"
+#include <vector>
 
 BEGIN_BENTLEY_NAMESPACE
 
-using Bstdcxx::bvector;
+template <typename T, class Alloc = std::allocator<T>> using bvector = std::vector<T, Alloc>;
 
 END_BENTLEY_NAMESPACE

@@ -170,7 +170,7 @@ OBMConverter::OBMConverter(ORDConverter& converter) : m_converter(converter)
     {
     InitializeObmElementMappings();
     ObmApplicationSchemaCreator::InitializePhrases();
-    
+
     bool shouldUpdateOBMApplicationSchema = CheckShouldUpdateOBMSchema();
     if (shouldUpdateOBMApplicationSchema)
     {
@@ -235,7 +235,7 @@ void OBMConverter::_ProcessResults(DgnDbSync::DgnV8::ElementConversionResults& e
         }
 
     /* Disabling the logic associated with splitting parasolids from OBM barriers into smaller chunks
-    
+
     // Temporary hack while the OBM-iModelBridge is developed...
     // Splitting up parasolids from OBM barriers into smaller chunks
     // in order to avoid inacurracies when equivalent meshes are used
@@ -439,7 +439,7 @@ void OBMConverter::CreateBimBridgeComponents(Bentley::ObmNET::BridgeR obmBridgeR
                 auto viewDefCPtr = structuralSystemModelCP->GetDgnDb().Elements().Get<SpatialViewDefinition>(defaultViewId);
                 auto modelSelectorPtr = structuralSystemModelCP->GetDgnDb().Elements().GetForEdit<ModelSelector>(viewDefCPtr->GetModelSelectorId());
                 auto categorySelectorPtr = structuralSystemModelCP->GetDgnDb().Elements().GetForEdit<CategorySelector>(viewDefCPtr->GetCategorySelectorId());
-                
+
                 modelSelectorPtr->AddModel(structuralSystemModelCP->GetModelId());
                 modelSelectorPtr->Update();
                 }*/
@@ -727,7 +727,7 @@ void OBMConverter::ProcessObmAbutmentWingWallComponents(Bentley::ObmNET::Abutmen
     auto iterator = m_SupportLineRefToConvertedSubstructureMap.find(supportLinePtr->GetElementHandle()->GetElementRef());
     if (iterator != m_SupportLineRefToConvertedSubstructureMap.end())
         bimSubstructurePtr = iterator->second;
-    
+
     if (bimSubstructurePtr != nullptr)
         {
         if (m_obmSchemaCreatorP != nullptr)
@@ -989,7 +989,7 @@ void OBMConverter::ConvertObmPierStruts(Bentley::ObmNET::PierComponentCollection
             }
         }
     }
-    
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Matt.Balnis                     10/2018
@@ -1325,7 +1325,7 @@ void OBMConverter::ConvertSerializedProperties(Bentley::WString serializedProper
         return;
 
     Utf8String aspectName = elementPropertiesRootNodeP->GetName();
-    auto aspectNameCopy = aspectName.copy();
+    auto aspectNameCopy = aspectName;
     aspectName.append("Aspect");
     StandaloneECInstancePtr  aspectInstancePtr;
     auto ecClassP = m_converter.GetDgnDb().Schemas().GetClass(OBM_SCHEMA_NAME, aspectName);
@@ -1348,7 +1348,7 @@ void OBMConverter::ConvertSerializedProperties(Bentley::WString serializedProper
             propertyName = aspectNameCopy.c_str();
             }
         currentNode->GetContent(propertyValue, nullptr);
-        
+
         BentleyM0200::ECN::ECValue ecPropertyValue = CreatePropertyECValue(propertyName, propertyValue);
         aspectInstancePtr->SetValue(propertyName, ecPropertyValue);
         currentNode = (BeXmlNodeP) currentNode->next;
@@ -1368,7 +1368,7 @@ void OBMConverter::ConvertSerializedProperties(Bentley::WString serializedProper
         return;
 
     Utf8String aspectName = elementPropertiesRootNodeP->GetName();
-    auto aspectNameCopy = aspectName.copy();
+    auto aspectNameCopy = aspectName;
     aspectName.append("Aspect");
     StandaloneECInstancePtr  aspectInstancePtr;
     BentleyM0200::ECN::ECClassCP ecClassP = nullptr;
@@ -1525,7 +1525,7 @@ void OBMConverter::CreateBimStructuralElement(Bentley::ObmNET::BMSolidR obmSolid
         auto graphicalElementPtr = parentStructureP->GetDgnDb().Elements().GetForEdit<GraphicalElement3d>(graphicsElementId);
         ConvertProperties(obmSolidR.GetECInstance(), *graphicalElementPtr);
         graphicalElementPtr->Update();
-        
+
         CreateGraphicsRelationship(*bimElementPtr, graphicsElementId, relClassName);
         }
     }
@@ -1575,7 +1575,7 @@ BimElementTypePtr OBMConverter::CreateBimStructuralElement2(Bentley::ObmNET::BMS
         auto graphicalElementPtr = structuralSystemModelP->GetDgnDb().Elements().GetForEdit<GraphicalElement3d>(graphicsElementId);
         ConvertProperties(obmSolidR.GetECInstance(), *graphicalElementPtr);
         graphicalElementPtr->Update();
-        
+
         CreateGraphicsRelationship(*bimElementPtr, graphicsElementId, relClassName);
         }
     return bimElementPtr;
@@ -1593,7 +1593,7 @@ ObmApplicationSchemaCreator::ObmApplicationSchemaCreator(BentleyM0200::BeFileNam
     m_propertiesToIgnore.insert("AssociatedComponents");
     m_propertiesToIgnore.insert("Sections");
 
-    WString schemaFileNameCopy = WString(schemaFileName.copy());
+    WString schemaFileNameCopy = WString(schemaFileName);
     schemaFileNameCopy.ReplaceAll(WCharP(L".ecschema.xml"), WCharP(L""));
     schemaFileNameCopy.AppendA("_Updated.ecschema.xml");
     m_updatedSchemaFileName = BeFileName(schemaFileNameCopy);
@@ -1634,7 +1634,7 @@ void ObmApplicationSchemaCreator::InitializeSchema()
     m_currentNodeP->AddAttributeStringValue("persistenceUnit", "M(DefaultReal)");
     m_currentNodeP->AddAttributeStringValue("presentationUnits", "M(real2u);FT(real2u)");
     m_currentNodeP->AddAttributeStringValue("relativeError", "0.0001");
-    
+
     m_xmlDom->ToFile(WCharP(L"C:/Users/Matt.Balnis/Documents/Demos/Civil Sprint Review 11-2-2018/schemaGenerationTest.xml"), (BentleyM0200::BeXmlDom::ToStringOption)(BentleyM0200::BeXmlDom::TO_STRING_OPTION_Formatted | BentleyM0200::BeXmlDom::TO_STRING_OPTION_Indent), BentleyM0200::BeXmlDom::FILE_ENCODING_Utf8);
     }
 
@@ -1763,7 +1763,7 @@ void ObmApplicationSchemaCreator::AddNewAspectProperty(BeXmlNodeP parentNodeP, B
 
     if(!kindOfQuantity.IsNullOrEmpty(kindOfQuantity.c_str()))
         propertyNodeP->AddAttributeStringValue("kindOfQuantity", kindOfQuantity.c_str());
-    
+
     WriteXmlDomToFile();
     }
 
@@ -1853,7 +1853,7 @@ bool ObmApplicationSchemaCreator::DoesAspectContainProperty(BentleyM0200::Utf8St
     {
     BentleyM0200::Utf8String aspectPropertyName;
     BeXmlNodeP childNodeP = aspectNodeP->GetFirstChild();
-    
+
     while (childNodeP != nullptr)
         {
         childNodeP->GetAttributeStringValue(aspectPropertyName, "propertyName");
@@ -1879,7 +1879,7 @@ Bentley::Utf8String ObmApplicationSchemaCreator::DetermineKindOfQuantity(Bentley
         else
             return "LENGTH";
         }
-    else    
+    else
         return "";
     }
 
@@ -1916,7 +1916,7 @@ Bentley::Utf8String ObmApplicationSchemaCreator::DetermineDisplayLabel(BentleyM0
         }
 
     propertyName.ReplaceAll("_", "");
-    
+
     auto iterator = m_localizableStringsMap.find(propertyName);
     if (iterator != m_localizableStringsMap.end() && !endsWithID)
         {
@@ -1924,7 +1924,7 @@ Bentley::Utf8String ObmApplicationSchemaCreator::DetermineDisplayLabel(BentleyM0
         return displayLabel.c_str();
         }
 
-    BentleyM0200::Utf8P propertyNameP = propertyName.begin();
+    auto propertyNameP = propertyName.begin();
 
     while (propertyNameP != propertyName.end())
         {
@@ -1940,7 +1940,7 @@ Bentley::Utf8String ObmApplicationSchemaCreator::DetermineDisplayLabel(BentleyM0
         displayLabel.append(" ID");
 
     displayLabel.ReplaceAll("Prop ", "");
-    
+
     return Bentley::Utf8String(displayLabel.c_str());
     }
 
@@ -1978,7 +1978,7 @@ void ObmApplicationSchemaCreator::ParseSerializedProperties(Bentley::WString ser
         return;
 
     Utf8String aspectName = elementPropertiesRootNodeP->GetName();
-    auto aspectNameCopy = aspectName.copy();
+    auto aspectNameCopy = aspectName;
     aspectNameCopy.append("Aspect");
     BeXmlNodeP aspectNode = AddNewAspect(m_rootNodeP, aspectNameCopy.c_str(), Bentley::Utf8String("sealed"), elementPropertiesRootNodeP->GetName(), elementPropertiesRootNodeP->GetName());
     if (aspectNode == nullptr)
@@ -1997,7 +1997,7 @@ void ObmApplicationSchemaCreator::ParseSerializedProperties(Bentley::WString ser
             currentNode = (BeXmlNodeP) currentNode->next;
             continue;
             }
-            
+
         if (propertyNameUtf8String.Contains("ID"))
             {
             aspectName.append(Utf8String("ID"));
@@ -2024,7 +2024,7 @@ void ObmApplicationSchemaCreator::ParseSerializedProperties(Bentley::WString ser
 
     BeXmlNodeP aspectNodeP;
     Utf8String aspectName = elementPropertiesRootNodeP->GetName();
-    auto aspectNameCopy = aspectName.copy();
+    auto aspectNameCopy = aspectName;
     aspectNameCopy.append("Aspect");
     if (!parentAspectName.Equals(aspectNameCopy.c_str()))
         {
@@ -2073,7 +2073,7 @@ void ObmApplicationSchemaCreator::UpdateOBMApplicationSchema(Bentley::DgnECInsta
     DgnECInstanceR ecInstance = const_cast<DgnECInstanceR>(ecInstanceCR);
 
     auto ecClassName = ecInstance.GetClass().GetName();
-    auto ecClassNameCopy = ecClassName.copy();
+    auto ecClassNameCopy = ecClassName;
     auto aspectName = ecClassName.append(WString("Aspect").c_str());
     BeXmlNodeP aspectNodeP = AddNewAspect(m_rootNodeP, Bentley::Utf8String(aspectName.c_str()), Bentley::Utf8String("sealed"), Bentley::Utf8String(ecInstance.GetClass().GetDisplayLabel().c_str()), Bentley::Utf8String(ecClassName.c_str()));
     if (aspectNodeP == nullptr)
@@ -2081,14 +2081,16 @@ void ObmApplicationSchemaCreator::UpdateOBMApplicationSchema(Bentley::DgnECInsta
         //We've already seen this type of element, but we need to check the serialized properties and attributes fragment to see if the specific type of element exists in the schema
         aspectNodeP = FindAspectByName(BentleyM0200::Utf8String(aspectName.c_str()));
         Bentley::ECN::ECValue serializedProperties;
-        auto serializedPropertiesName = ecClassNameCopy.copy().append((WString("_SerializedProperties")).c_str());
+        auto cpy = ecClassNameCopy;
+        auto serializedPropertiesName = cpy.append((WString("_SerializedProperties")).c_str());
         ecInstance.GetValue(serializedProperties, serializedPropertiesName.c_str());
         if (!serializedProperties.IsNull())
             ParseSerializedProperties(serializedProperties.ToString(), BentleyM0200::Utf8String(aspectName.c_str()), aspectNodeP);
         else
             {
             Bentley::WString beamSegmentAttributesName("Prop");
-            serializedPropertiesName = ecClassNameCopy.copy().append((WString("AttributesXmlFragment")).c_str());
+            auto cpy = ecClassNameCopy;
+            serializedPropertiesName = cpy.append((WString("AttributesXmlFragment")).c_str());
             beamSegmentAttributesName.append(serializedPropertiesName);
             ecInstance.GetValue(serializedProperties, beamSegmentAttributesName.c_str());
             if (!serializedProperties.IsNull())

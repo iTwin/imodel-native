@@ -161,8 +161,7 @@ TEST_F(BackwardsCompatibilityTests, OpenDgndbInCurrent)
     resultsFilePath.AppendToPath(L"CompatibilityResults_").AppendA(activeStream.c_str()).AppendA(".csv");
 
     FILE *f;
-    f = fopen(resultsFilePath.GetNameUtf8().c_str(), "a");
-    if (f != NULL)
+    if (0 != BeFile::Fopen(&f, resultsFilePath.GetNameUtf8().c_str(), "a"))
         {
         fprintf(f, "FileName, ConvertedThrough, TestedIn, FileOpeningStatus\n");
         }

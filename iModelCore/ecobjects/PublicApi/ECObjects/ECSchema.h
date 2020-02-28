@@ -105,13 +105,13 @@ protected:
     virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const;
     virtual ECSchemaCP                  _GetContainerSchema() const = 0;
     virtual CustomAttributeContainerType _GetContainerType() const = 0;
-    virtual Utf8CP                      _GetContainerName() const = 0;
+    virtual Utf8String _GetContainerName() const = 0;
 
     ECOBJECTS_EXPORT virtual ~IECCustomAttributeContainer();
 
 public:
     ECOBJECTS_EXPORT ECSchemaP                           GetContainerSchema();
-    Utf8CP                              GetContainerName() const { return _GetContainerName(); }
+    Utf8String GetContainerName() const { return _GetContainerName(); }
 
     //! Retrieves the local custom attribute matching the class name.  If the attribute is not
     //! a supplemented attribute it will be copied and added to the supplemented list before it is returned.
@@ -606,7 +606,7 @@ protected:
 
     void _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const override;
     ECSchemaCP _GetContainerSchema() const override;
-    Utf8CP _GetContainerName() const override;
+    Utf8String _GetContainerName() const override;
 
     virtual bool _IsSame(ECPropertyCR target) const;
 
@@ -1704,7 +1704,7 @@ protected:
     void _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const override;
 
     ECSchemaCP _GetContainerSchema() const override {return &m_schema;}
-    Utf8CP _GetContainerName() const override {return GetFullName();}
+    Utf8String _GetContainerName() const override {return GetFullName();}
 
     virtual ECObjectsStatus GetProperties(bool includeBaseProperties, PropertyList* propertyList) const;
     // schemas index class by name so publicly name can not be reset
@@ -2197,7 +2197,7 @@ private:
 
 protected:
     ECSchemaCP _GetContainerSchema() const override;
-    Utf8CP _GetContainerName() const override;
+    Utf8String _GetContainerName() const override;
     CustomAttributeContainerType _GetContainerType() const override {return m_isSource ? CustomAttributeContainerType::SourceRelationshipConstraint : CustomAttributeContainerType::TargetRelationshipConstraint;}
 
 public:
@@ -2213,11 +2213,11 @@ public:
 
     //! Get the label of the constraint role in the relationship.
     //! @remarks If the role label is not defined on this constraint it will be inherited from its base constraint, if one exists.
-    ECOBJECTS_EXPORT Utf8String const GetRoleLabel() const;
+    ECOBJECTS_EXPORT Utf8String GetRoleLabel() const;
 
     //! Get the invariant label of the constraint role in the relationship.
     //! @remarks If the role label is not defined on this constraint it will be inherited from its base constraint, if one exists.
-    Utf8String const GetInvariantRoleLabel() const {return m_roleLabel;}
+    Utf8StringCR GetInvariantRoleLabel() const {return m_roleLabel;}
 
     //! Determine whether the label of the constraint role has been set explicitly set on this constraint or inherited from a base constraint.
     bool IsRoleLabelDefined() const {return GetInvariantRoleLabel().length() > 0;}
@@ -2472,6 +2472,7 @@ struct SchemaKey
     uint32_t      m_versionMinor;
     Utf8String    m_schemaName;
     Utf8String    m_checksum;
+    CachedUtf8String    m_schemaFullName;
 
     //! Creates a new SchemaKey with the given name and version information
     //! @param[in]  name    The name of the ECSchema
@@ -2488,6 +2489,20 @@ struct SchemaKey
 
     //! Default constructor
     SchemaKey () : m_versionRead(DEFAULT_VERSION_READ), m_versionWrite(DEFAULT_VERSION_WRITE), m_versionMinor(DEFAULT_VERSION_MINOR){}
+
+    //! Copy constructor does not copy the cached full name.
+    SchemaKey (const SchemaKey & key) : m_schemaName(key.m_schemaName), m_versionRead(key.m_versionRead), m_versionWrite(key.m_versionWrite), m_versionMinor(key.m_versionMinor), m_checksum(key.m_checksum) {}
+
+    //! Assignment operator does not copy the cached full name.
+    SchemaKey& operator= (const SchemaKey& key)
+        {
+        m_schemaName = key.m_schemaName;
+        m_versionRead = key.m_versionRead;
+        m_versionWrite = key.m_versionWrite;
+        m_versionMinor = key.m_versionMinor;
+        m_checksum = key.m_checksum;
+        return *this;
+        }
 
     Utf8StringCR GetName() const {return m_schemaName;}
 
@@ -2534,7 +2549,7 @@ struct SchemaKey
     ECOBJECTS_EXPORT static ECObjectsStatus ParseSchemaFullName(Utf8StringR schemaName, uint32_t& versionRead, uint32_t& versionWrite, uint32_t& versionMinor, Utf8CP fullName);
 
     //! Return full schema name in format GetName().RR.ww.mm where Name is the schema name RR is read version, ww is the write version and mm is minor version.
-    Utf8String GetFullSchemaName() const {return FormatFullSchemaName(m_schemaName.c_str(), m_versionRead, m_versionWrite, m_versionMinor);}
+    Utf8StringCR GetFullSchemaName() const { return m_schemaFullName.Get([&]() { return FormatFullSchemaName(m_schemaName.c_str(), m_versionRead, m_versionWrite, m_versionMinor); }); }
 
     //! Generate a schema full name string given the read, write and minor version values.
     //! @param[in] schemaName      Name of the schema
@@ -3365,7 +3380,7 @@ private:
 
 protected:
     ECSchemaCP _GetContainerSchema() const override {return this;}
-    Utf8CP _GetContainerName() const override {return GetName().c_str();}
+    Utf8String _GetContainerName() const override  {return GetName();}
     CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::Schema;}
 
 public:
@@ -3913,7 +3928,7 @@ public:
     ECOBJECTS_EXPORT bool WriteToJsonString(Utf8StringR ecSchemaJsonString, bool minify = false) const;
 
     //! Return full schema name in format GetName().RR.ww.mm where Name is the schema name RR is read version, ww is the write compatibility version and mm is minor version.
-    Utf8String GetFullSchemaName() const {return m_key.GetFullSchemaName();}
+    Utf8StringCR GetFullSchemaName() const {return m_key.GetFullSchemaName();}
 
     //! Return a legacy full schema name in format GetName().RR.mm where Name is the schema name RR is read version and mm is minor version.
     //! This overload is missing the  write compatibility version
@@ -4110,10 +4125,11 @@ public:
     //! @endcode
     //! @param[out]   schemaOut           The read schema
     //! @param[in]    ecSchemaXmlFile     The absolute path of the file to write.
-    //! @param[in]    schemaContext       Required to create schemas
+    //! @param[in]    schemaContext       Required to create schemas.
+    //! @param[in]    addFilePathAsSearchPath   If true the directory containing the schema file will be added as a search path of the context.  Optional, defaults to true.
     //! @return   A status code indicating whether the schema was successfully read.  If SUCCESS is returned then schemaOut will
     //!           contain the read schema.  Otherwise schemaOut will be unmodified.
-    ECOBJECTS_EXPORT static SchemaReadStatus ReadFromXmlFile(ECSchemaPtr& schemaOut, WCharCP ecSchemaXmlFile, ECSchemaReadContextR schemaContext);
+    ECOBJECTS_EXPORT static SchemaReadStatus ReadFromXmlFile(ECSchemaPtr& schemaOut, WCharCP ecSchemaXmlFile, ECSchemaReadContextR schemaContext, bool addFilePathAsSearchPath = true);
 
     //! Locate a schema using the provided schema locators and paths. If not found in those by either of those parameters standard schema paths
     //! relative to the executing dll will be searched.

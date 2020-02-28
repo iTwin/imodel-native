@@ -1,0 +1,16 @@
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+#     $Source: PreWireBin.mke $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+%include mdl.mki
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+%if !defined (BuildContext)
+%error
+%endif
+
+DeliveryDir = $(BuildContext)Delivery/
+BinDir      = $(_MakeFilePath)bin/
+
+$(DeliveryDir)beflatc.exe : $(BinDir)beflatc.exe
+    $(LinkFirstDepToFirstTarget)

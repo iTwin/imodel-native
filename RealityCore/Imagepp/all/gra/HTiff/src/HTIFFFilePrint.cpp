@@ -10,7 +10,6 @@
 
 #include <ImageppInternal.h>
 
-
 #include <ImagePP/all/h/HTIFFFile.h>
 #include <ImagePP/all/h/HTIFFTag.h>
 #include <ImagePP/all/h/HTIFFGeoKey.h>
@@ -18,12 +17,13 @@
 #include <ImagePP/all/h/HTIFFDirectory.h>
 #include <ImagePP/all/h/HTIFFTagDefinition.h>
 
-
 static void s_PrintAscii    (FILE* po_pOutput, const char* pi_pCar, int32_t pi_NbCars = -1);
 static void s_PrintAsciiTag (FILE* po_pOutput, const char* pi_pTagName, const char* pi_pString);
 
 static void s_PrintDoubleArray   (FILE* po_pOutput, const double* pi_pArray, uint32_t pi_NbLongs);
 
+
+PUSH_DISABLE_DEPRECATION_WARNINGS
 
 //---------------------------------------------------------------------------
 // Print value functor that accept custom separator
@@ -92,7 +92,7 @@ static const char* s_OrientNames[] = {
 
 
 
-bool HTIFFFile::_ModifyTag(bool pi_GeoTiff, CharP pi_Tag, CharP pi_TagValue) 
+bool HTIFFFile::_ModifyTag(bool pi_GeoTiff, CharP pi_Tag, CharP pi_TagValue)
 {
     uint32_t Tag;
     if ((Tag = atoi(pi_Tag)) == 0)
@@ -365,7 +365,7 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
             case COMPRESSION_ADOBE_DEFLATE:
                 fprintf(po_pOutput, "Deflate (Adobe)\n");
                 break;
-                
+
             case COMPRESSION_HMR_FLASHPIX:
                 fprintf(po_pOutput, "FLASHPIX-JPEG (HMR)\n");
                 break;
@@ -841,7 +841,7 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
         fputc('\n', po_pOutput);
         }
 
-    if (m_pCurDir->TagIsPresent(GDALNODATA)) 
+    if (m_pCurDir->TagIsPresent(GDALNODATA))
         {
         GetFieldA(GDALNODATA, &pValC);
 
@@ -3324,3 +3324,5 @@ void s_PrintDoubleArray(FILE* po_pOutput, const double* pi_pArray, uint32_t pi_N
         fprintf(po_pOutput, "%8.6lf ", pi_pArray[iElement]);
         }
     }
+
+POP_DISABLE_DEPRECATION_WARNINGS

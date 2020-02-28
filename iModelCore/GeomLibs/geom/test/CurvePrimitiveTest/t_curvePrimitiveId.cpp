@@ -28,7 +28,7 @@ TEST(CurvePrimitiveId, Hello)
         auto idB = CurvePrimitiveId::Create (*idA);
         auto idC = idA->Clone ();
 
-        bvector<uint8_t>   bytes;
+        bvector<BoolTypeForVector>   bytes;
         idA->Store(bytes);
         auto idD = CurvePrimitiveId::Create(bytes.data(), bytes.size());
         
@@ -51,7 +51,7 @@ void testTopologyId(CurveTopologyIdCR idA)
     {
     auto    idB = CurveTopologyId(idA);
 
-    bvector<uint8_t>   bytes;
+    bvector<BoolTypeForVector>   bytes;
 
     idA.Pack(bytes);
     auto    idC = CurveTopologyId(bytes.data(), bytes.size());

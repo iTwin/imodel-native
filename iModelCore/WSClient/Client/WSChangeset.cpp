@@ -278,14 +278,14 @@ WSChangeset::Instance* WSChangeset::FindInstance(ObjectIdCR id) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool WSChangeset::RemoveInstance(Instance& instanceToRemove)
     {
-    for (auto& instance : m_instances)
+    for (auto it=m_instances.begin(); it!=m_instances.end(); ++it)
         {
-        if (instance.get() == &instanceToRemove)
+        if (it->get() == &instanceToRemove)
             {
-            m_instances.erase(&instance);
+            m_instances.erase(it);
             return true;
             }
-        if (instance->RemoveRelatedInstance(instanceToRemove))
+        if ((*it)->RemoveRelatedInstance(instanceToRemove))
             {
             return true;
             }
@@ -347,14 +347,14 @@ WSChangeset::Instance* WSChangeset::Instance::FindRelatedInstance(ObjectIdCR id)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool WSChangeset::Instance::RemoveRelatedInstance(Instance& instanceToRemove)
     {
-    for (auto& relationship : m_relationships)
+    for (auto it=m_relationships.begin(); it!=m_relationships.end(); ++it)
         {
-        if (&relationship->m_instance == &instanceToRemove)
+        if (&(*it)->m_instance == &instanceToRemove)
             {
-            m_relationships.erase(&relationship);
+            m_relationships.erase(it);
             return true;
             }
-        if (relationship->m_instance.RemoveRelatedInstance(instanceToRemove))
+        if ((*it)->m_instance.RemoveRelatedInstance(instanceToRemove))
             {
             return true;
             }
@@ -780,7 +780,7 @@ Utf8CP WSChangeset::Options::GetFailureStrategyStr(FailureStrategy failureStrate
 * @bsimethod                                                    julius.cepukenas    08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP WSChangeset::Options::GetResponseContentStr(ResponseContent response)
-    {  
+    {
     switch (response)
         {
         case ResponseContent::FullInstance:

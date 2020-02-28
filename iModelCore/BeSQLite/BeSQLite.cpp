@@ -836,7 +836,7 @@ DbResult Savepoint::_Cancel() {return m_dbFile ? m_dbFile->StopSavepoint(*this, 
 DbResult Savepoint::_Commit(Utf8CP operation) {return m_dbFile ? m_dbFile->StopSavepoint(*this, true, operation) : BE_SQLITE_ERROR;}
 DbResult Savepoint::Begin(BeSQLiteTxnMode mode)  {return _Begin(mode);}
 DbResult Savepoint::Commit(Utf8CP operation) {return _Commit(operation);}
-DbResult Savepoint::Save(Utf8CP operation) 
+DbResult Savepoint::Save(Utf8CP operation)
     {
     DbResult res = Commit(operation);
     if (BE_SQLITE_BUSY == res)
@@ -5251,7 +5251,9 @@ DbResult BeSQLiteLib::Initialize(BeFileNameCR tempDir, LogErrors logErrors)
         }
 
     sqlite3_temp_directory = (char*) sqlite3_malloc((int) (tempDirUtf8.size()) + 1);
+PUSH_DISABLE_DEPRECATION_WARNINGS
     strcpy(sqlite3_temp_directory, tempDirUtf8.c_str());
+POP_DISABLE_DEPRECATION_WARNINGS
 
     //Set streaming chuck size to 64KiB
     const int streamChuckSize = 64 * 1024;
@@ -5275,7 +5277,7 @@ void BeIdSet::FromReadableString(Utf8StringCR str)
     while (true)
         {
         uint64_t startRange, endRange;
-        int converted = BE_STRING_UTILITIES_UTF8_SSCANF(curr, "%" SCNu64 "-%" SCNu64, &startRange, &endRange);
+        int converted = Utf8String::Sscanf_safe(curr, "%" SCNu64 "-%" SCNu64, &startRange, &endRange);
         if (0 == converted)
             return;
 

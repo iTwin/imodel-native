@@ -1638,7 +1638,7 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
         return;
 
     auto const&     points = visitor.Point();
-    bool const*     visitorVisibility = visitor.GetVisibleCP();
+    auto const&     visitorVisibility = visitor.Visible();
     size_t          nTriangles = points.size() - 2;
 
     if (requireNormals && visitor.Normal().size() < points.size())

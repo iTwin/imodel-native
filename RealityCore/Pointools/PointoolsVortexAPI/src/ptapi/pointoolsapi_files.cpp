@@ -27,7 +27,7 @@
 #include <pt/project.h>
 #include <pt/registry.h>
 #include <pt/timestamp.h>
- 
+
 #include <encryption/TEA.h>
 
 #include <ptds/DataSourceManager.h>
@@ -36,7 +36,7 @@
 
 #include <ptengine/StreamHost.h>
 
-#if NEEDS_WORK_VORTEX_DGNDB 
+#if NEEDS_WORK_VORTEX_DGNDB
 #include <PTRMI/ClientInterfaceExtDataBentley.h>
 #include <PTRMI/TestPTRMI.h>
 #include <PTRMI/Manager.h>
@@ -48,6 +48,7 @@
 #define xstr(s) str(s)
 #define str(s) #s
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 
 PTbool				initializeScenesProject					(void);
 PTbool				initializeSceneGraphProject				(void);
@@ -151,7 +152,7 @@ static const PTstr txt_expired = L"License has expired";
 static const char* txt_restricted = "restricted";
 static const char* txt_demo = "demo";
 
-#if defined(NEEDS_WORK_VORTEX_DGNDB) 
+#if defined(NEEDS_WORK_VORTEX_DGNDB)
     static const PTstr txt_licDemoTimeFailure = L"Not yet available for demo re-use, please try again";
     static bool _hasPSTimeOut = true;
 #endif
@@ -164,7 +165,7 @@ static std::wstring lastrunKeySetback = L"Software\\Pointools\\Vortex\\lr";
 bool checkSetback()
 {
 	SYSTEMTIME st;
-	GetSystemTime(&st); 
+	GetSystemTime(&st);
 	int day = (st.wYear-1995) * 10000 + (st.wMonth + 8) * 100 + st.wDay+34;
 
 	CRegStdWORD reg(lastrunKeySetback, 0, FALSE, HKEY_CURRENT_USER);
@@ -176,7 +177,7 @@ bool checkSetback()
 	reg = day;
 	reg.write();
 	return false;
-} 
+}
 #endif
 
 //-----------------------------------------------------------------------------
@@ -186,26 +187,26 @@ bool checkPreSessionTimeOut()
 #if defined(NEEDS_WORK_VORTEX_DGNDB)    // has always returned true!
 	if (g_timeOut < 0 || !_hasPSTimeOut) return false;
 
-	/* check wait period */ 
+	/* check wait period */
 	CRegStdWORD reg(lastrunKey, 0, FALSE, HKEY_LOCAL_MACHINE);
-	
+
 	if (reg.exists())
-	{ 
+	{
 		int slr = reg;
 		SYSTEMTIME st;
-		GetSystemTime(&st); 
+		GetSystemTime(&st);
 		int s = st.wHour * 3600 + st.wMinute * 60 + st.wSecond;
-		int s_remaining = g_timeOut - (s-slr); 
-		
+		int s_remaining = g_timeOut - (s-slr);
+
 		if (s_remaining > 0)
 		{
 			if (s_remaining < 60)
 				swprintf(g_lastError, L"%s, <1min remaining", txt_licDemoTimeFailure);
 			else if (s_remaining < 60*60)
 				swprintf(g_lastError, L"%s, %imins remaining", txt_licDemoTimeFailure, (s_remaining/60+1));
-			else 
+			else
 			{
-				/* 24 hrboundary */ 
+				/* 24 hrboundary */
 				reg = s;
 				reg.write();
 				g_startTime.tick();
@@ -215,9 +216,9 @@ bool checkPreSessionTimeOut()
 			_hasPSTimeOut = true;
 			return false;
 		}
-		
+
 	}
-	/* reset timers*/ 
+	/* reset timers*/
 	g_startTime.tick();
 	_hasPSTimeOut = false;
 	return true;
@@ -284,7 +285,7 @@ PTstr PTAPI ptGetLastErrorString(void)
 //-----------------------------------------------------------------------------
 PTres PTAPI ptGetLastErrorCode()
 {
-	return g_lastErrorCode; 
+	return g_lastErrorCode;
 }
 //-----------------------------------------------------------------------------
 void clearLastError()
@@ -305,10 +306,10 @@ int setLastErrorCode( int code )
 //-------------------------------------------------------------------------------
 // Version info
 //-------------------------------------------------------------------------------
-	 
+
 void PTAPI ptGetVersionNum(PTubyte *version)
 {
-	sscanf(str(VERSION), "%u.%u.%u.%u", (uint*)&(version[0]), (uint*)&(version[1]), (uint*)&(version[2]), (uint*)&(version[3]));
+	Utf8String::Sscanf_safe(str(VERSION), "%u.%u.%u.%u", (uint*)&(version[0]), (uint*)&(version[1]), (uint*)&(version[2]), (uint*)&(version[3]));
 }
 
 //-------------------------------------------------------------------------------
@@ -320,14 +321,14 @@ std::wstring version;
 const PTstr getShortVersionString()
 {
 	// this string is used with SELECT and must be of the form xx.xx.xx.xx
-	// Note that versions of the for xx.xx.xx.xxx are not accepted by the 
+	// Note that versions of the for xx.xx.xx.xxx are not accepted by the
 	// Bentley licensing lib.
 	if(version.length() == 0)
 	{
 		PTubyte	v[4];
-		
+
 		ptGetVersionNum(v);
-		
+
 		wchar_t versionString[12];
 		swprintf(versionString, 12, L"%02d.%02d.%02d.%02d", v[0], v[1], v[2], v[3]);
 
@@ -345,7 +346,7 @@ const PTstr PTAPI ptGetVersionString()
 //-------------------------------------------------------------------------------
 // demo license code and some global stuff
 //-------------------------------------------------------------------------------
-namespace pod 
+namespace pod
 {
 	extern unsigned char g_demoCode;
 	static ptl::BranchHandler *s_ptlHandler = 0;
@@ -360,7 +361,7 @@ bool _extractPODfromPTL(const pt::datatree::Branch *b)
 	if (!checkPreSessionTimeOut()) return false;
 
 	std::vector<ptds::FilePath *> paths;
-	
+
 	int size;
 	b->getNode("number_of_PODs", size);
 
@@ -379,24 +380,24 @@ bool _extractPODfromPTL(const pt::datatree::Branch *b)
 		datatree::Branch *cbr = b->getBranch(pod);
 		if (!cbr) continue;
 
-		cbr->getNode("absolute_path", path);	
+		cbr->getNode("absolute_path", path);
 		paths.push_back(new ptds::FilePath (path.c_str()));
-		
-		cbr->getNode("relative_path", path);	
+
+		cbr->getNode("relative_path", path);
 		ptds::FilePath *fp = new ptds::FilePath(path.c_wstr());
-		
+
 		fp->setParent(ptl::Project::project()->filepath());
 		fp->setRelative();
 
 		paths.push_back(fp);
 	}
-	/*load files in*/ 
+	/*load files in*/
 	for (i=0; i<size*2; i+=2)
 	{
 		ptds::FilePath *afp = paths[i];
 		ptds::FilePath *rfp = paths[i+1];
 
-		/*relative path*/ 
+		/*relative path*/
 		PThandle h = ptOpenPOD(rfp->filename());
 
 		if (!h)
@@ -410,13 +411,13 @@ bool _extractPODfromPTL(const pt::datatree::Branch *b)
 		//{
 		//	sprintf(pod, "cloud%d", i/2);
 		//	datatree::Branch *cbr = b->getBranch(pod);
-		//	
+		//
 		//	if (cbr)
 		//	{
 		//		for (int c =0; c < sc->numObjects(); c++)
 		//		{
 		//			pcloud::PointCloud *pc = sc->cloud(c);
-		//			
+		//
 		//			sprintf(pod, "pc_%d", c);
 		//			datatree::Branch *pcbr = cbr->getBranch(pod);
 
@@ -447,7 +448,7 @@ bool _extractPODfromPTL(const pt::datatree::Branch *b)
 //-------------------------------------------------------------------------------
 PTbool ptInitializeEnvVariables(void)
 {
-#if defined (BENTLEY_WIN32)     //NEEDS_WORK_VORTEX_DGNDB 
+#if defined (BENTLEY_WIN32)     //NEEDS_WORK_VORTEX_DGNDB
 	wchar_t envValue[512];
 
 	if(::GetEnvironmentVariableW(L"PTVORTEX_LOG", envValue, 512) > 0)
@@ -463,7 +464,7 @@ PTbool ptInitializeEnvVariables(void)
 		if(wcscmp(envValue, L"") != 0)
 		{
 			unsigned int maxReads = 0;
-			swscanf(envValue, L"%d", &maxReads);
+			WString::Swscanf_safe(envValue, L"%d", &maxReads);
 			if(maxReads > 0)
 			{
 				StreamHost::setStreamMaxReadsDefault(maxReads);
@@ -476,7 +477,7 @@ PTbool ptInitializeEnvVariables(void)
 		if(wcscmp(envValue, L"") != 0)
 		{
 			unsigned int minVoxelBudget = 0;
-			swscanf(envValue, L"%d", &minVoxelBudget);
+			WString::Swscanf_safe(envValue, L"%d", &minVoxelBudget);
 			if(minVoxelBudget > 0)
 			{
 				StreamHost::setStreamMinVoxelBudget(minVoxelBudget);
@@ -489,7 +490,7 @@ PTbool ptInitializeEnvVariables(void)
 		if(wcscmp(envValue, L"") != 0)
 		{
 			unsigned int minBudget = 0;
-			swscanf(envValue, L"%d", &minBudget);
+			WString::Swscanf_safe(envValue, L"%d", &minBudget);
 			if(minBudget > 0)
 			{
 				StreamHost::setStreamMinDefault(minBudget);
@@ -503,7 +504,7 @@ PTbool ptInitializeEnvVariables(void)
 		if(wcscmp(envValue, L"") != 0)
 		{
 			unsigned int maxBudget = 0;
-			swscanf(envValue, L"%d", &maxBudget);
+			WString::Swscanf_safe(envValue, L"%d", &maxBudget);
 			if(maxBudget > 0)
 			{
 				StreamHost::setStreamMaxDefault(maxBudget);
@@ -536,7 +537,7 @@ PTbool ptInitializeEnvVariables(void)
 const unsigned int COMPANY_NON_SELECT_LICENSES_NUM = 2;
 const unsigned int COMPANY_NON_SELECT_LICENSES_MAX_NAME_LENGTH = 64;
 
-auto scrambler = [](std::string toScramble) -> std::string 
+auto scrambler = [](std::string toScramble) -> std::string
     {
     int i = 0;
     std::string out;
@@ -613,7 +614,7 @@ PTbool PTAPI ptInitialize(const PTubyte* licenseData)
     PTTRACE_FUNC
 
     g_dateTile = DateTime::GetCurrentTime();
-	
+
     g_startTime.tick();
 
 	_failed = false;
@@ -647,7 +648,7 @@ PTbool PTAPI ptInitialize(const PTubyte* licenseData)
 				memset(plaintxt, 0, sizeof(plaintxt));
 				tea.Decrypt( cyphertxt, plaintxt, 128);
 			}
-			/* company + "#" + module + "#" + type + "#" + expires; */ 
+			/* company + "#" + module + "#" + type + "#" + expires; */
 			company = strtok( plaintxt, "#");
 			module = strtok( 0, "#");
 			type = strtok( 0, "#");
@@ -657,14 +658,14 @@ PTbool PTAPI ptInitialize(const PTubyte* licenseData)
 			{
 				expires = ex;
 				const char* secs = strtok(0, "#");
-				if (secs) 
+				if (secs)
 				{
 					int s = atoi(secs);
-					if (s > DEFAULT_DEMO_TIMEOUT) 
+					if (s > DEFAULT_DEMO_TIMEOUT)
 						g_timeOut = s;
 				}
 			}
-		
+
 			//std::cout << "company = " << company << std::endl;
 			//std::cout << "module = " << module << std::endl;
 			//std::cout << "type = " << type << std::endl;
@@ -675,7 +676,7 @@ PTbool PTAPI ptInitialize(const PTubyte* licenseData)
 			{
 				char year[] = { expires[0], expires[1], 0 };
 				char month[] = { expires[2], expires[3], 0 };
-				expire_day = atoi(&expires[4]); 
+				expire_day = atoi(&expires[4]);
 				expire_month =  atoi(month);
 				expire_year = 2000 +  atoi(year);
 			}
@@ -687,23 +688,23 @@ PTbool PTAPI ptInitialize(const PTubyte* licenseData)
 				hasExpiry = false;
 			}
 
-			/* check module name if NOT set to 'any' */ 
+			/* check module name if NOT set to 'any' */
 			if (strcmp(module.c_str(), txt_any))
 			{
-#if defined (BENTLEY_WIN32)     //NEEDS_WORK_VORTEX_DGNDB 
+#if defined (BENTLEY_WIN32)     //NEEDS_WORK_VORTEX_DGNDB
 				char mod[64];
 				::GetModuleFileNameA(NULL, mod, 64);
 				::PathStripPathA(mod);
 
 				if (strnicmp(mod, module.c_str(), 64))
 				{
-					wcscpy(g_lastError, txt_licModuleFailure);			
+					wcscpy(g_lastError, txt_licModuleFailure);
 					_failed = true;
 					setLastErrorCode( PTV_LICENSE_MODULE_ERROR );
 				}
 #endif
 			}
-			if (hasExpiry && (HAS_EXPIRED && !_failed)) 
+			if (hasExpiry && (HAS_EXPIRED && !_failed))
 			{
                 wcscpy(g_lastError, txt_expired);
 				_failed = true;
@@ -711,22 +712,22 @@ PTbool PTAPI ptInitialize(const PTubyte* licenseData)
 			}
 
 	// Pip Option
-			//if ( hasExpiry && checkSetback() && t.wYear != 2100 && t.wYear != 2050 && !_failed) 
+			//if ( hasExpiry && checkSetback() && t.wYear != 2100 && t.wYear != 2050 && !_failed)
 			//{
-			//	wcscpy(g_lastError, txt_setback); 
+			//	wcscpy(g_lastError, txt_setback);
 			//	_failed = true;
 			//}
 
-			if (!_failed && strcmp(type.c_str(), txt_restricted)) /* only demo datasets can be used */ 
+			if (!_failed && strcmp(type.c_str(), txt_restricted)) /* only demo datasets can be used */
 			{
-				pod::g_demoCode = _nonDemoCode;		
+				pod::g_demoCode = _nonDemoCode;
 			}
 
 			if (strcmp(type.c_str(), txt_demo)==0)
 			{
-				if (g_timeOut < 0) 
+				if (g_timeOut < 0)
 				{
-					g_timeOut = DEFAULT_DEMO_TIMEOUT; /* default if 5 mins */ 
+					g_timeOut = DEFAULT_DEMO_TIMEOUT; /* default if 5 mins */
 				}
 				_failed = !checkPreSessionTimeOut();
 			}
@@ -736,17 +737,17 @@ PTbool PTAPI ptInitialize(const PTubyte* licenseData)
 #ifdef POINTOOLS_BENTLEY_LICENSING
 		// Check for special users that do not require a SELECT license and allow these to skip the SELECT license check in startLicenseBentley().
 		// Note that any ditribution of Vortex that uses SELECT licensing now requires the bentley licensing DLLs to be distributed with it
-		// or startLicenseBentley() will fail when unable to load Bentley.liblib.DLL. 
+		// or startLicenseBentley() will fail when unable to load Bentley.liblib.DLL.
 		if (licenseData == NULL || useSELECTLicense(company, module, type, ex, expires))
-		{					
+		{
 															// Don't support demo mode files with SELECT licensing
-			pod::g_demoCode = _nonDemoCode;		
+			pod::g_demoCode = _nonDemoCode;
 
-			const PointoolsBentleyLicense::ProductVersion productVersion(getShortVersionString());			
-			if(startLicenseBentley(productVersion) == false) 
+			const PointoolsBentleyLicense::ProductVersion productVersion(getShortVersionString());
+			if(startLicenseBentley(productVersion) == false)
 			{
-				setLastErrorCode( PTV_NO_LICENSE_FOR_FEATURE );	
-				return PT_FALSE;		
+				setLastErrorCode( PTV_NO_LICENSE_FOR_FEATURE );
+				return PT_FALSE;
 			}
 		}
 #endif
@@ -755,7 +756,7 @@ PTbool PTAPI ptInitialize(const PTubyte* licenseData)
         PTRMI::initialize();
 #endif
 
-#ifdef NEEDS_WORK_VORTEX_DGNDB								
+#ifdef NEEDS_WORK_VORTEX_DGNDB
         // Initialize server data sources with PTRMI
 		PTRMI::getManager().newMetaInterface<ptds::DataSourceServer>(L"DataSourceServer");
 #endif
@@ -770,7 +771,7 @@ PTbool PTAPI ptInitialize(const PTubyte* licenseData)
 	}
 	_initialized = true;
 
-	if (_failed) 
+	if (_failed)
 	{
 		return PT_FALSE;
 	}
@@ -792,7 +793,7 @@ PTvoid PTAPI ptRelease()
 	{
 		pointsengine::destroy();
 
-#if defined (NEEDS_WORK_VORTEX_DGNDB) 
+#if defined (NEEDS_WORK_VORTEX_DGNDB)
 		SYSTEMTIME st;
 		GetSystemTime(&st);
 		int s = st.wHour * 3600 + st.wMinute * 60 + st.wSecond;
@@ -836,7 +837,7 @@ const PTstr PTAPI ptGetWorkingFolder()
 // Check if file is already opened
 //-------------------------------------------------------------------------------
 PThandle PTAPI ptIsOpen(const PTstr filepath)
-{	
+{
 	int numScenes = thePointsScene().size();
 
 	for (int i=0; i<numScenes; i++)
@@ -865,7 +866,7 @@ PThandle PTAPI ptOpenPTL(const PTstr filepath)
 //-------------------------------------------------------------------------------
 PThandle PTAPI ptBrowseAndOpenPOD()
 {
-#if defined (BENTLEY_WIN32)     //NEEDS_WORK_VORTEX_DGNDB 
+#if defined (BENTLEY_WIN32)     //NEEDS_WORK_VORTEX_DGNDB
 	PTTRACE_FUNC
 
 	if (!checkPreSessionTimeOut())
@@ -879,19 +880,19 @@ PThandle PTAPI ptBrowseAndOpenPOD()
 	// get file name first
 	wchar_t filename[4096];
 
-	OPENFILENAMEW ofn;       
+	OPENFILENAMEW ofn;
 
-	/* Initialize OPENFILENAME*/ 
+	/* Initialize OPENFILENAME*/
 	ZeroMemory(&ofn, sizeof(ofn));
 	ofn.lStructSize = sizeof(ofn);
 	ofn.hwndOwner = ::GetActiveWindow();
 	ofn.lpstrFile = filename;
-	
+
 	//
-	// Set lpstrFile[0] to '\0' so that GetOpenFileName does not 
+	// Set lpstrFile[0] to '\0' so that GetOpenFileName does not
 	// use the contents of szFile to initialize itself.
 	//
-	ofn.lpstrFile[0] = '\0'; 
+	ofn.lpstrFile[0] = '\0';
 	ofn.nMaxFile = sizeof(filename);
 	ofn.lpstrFilter = L"Pointools POD file(*.pod)\0*.pod\0Pointools PTL files(*.ptl)\0*.ptl\0";
 	ofn.nFilterIndex = 1;
@@ -914,7 +915,7 @@ PThandle PTAPI ptBrowseAndOpenPOD()
 		else setLastErrorCode( PTV_FILE_USER_CANCELLED );
 		return PT_NULL;
 	}
-	
+
 	size_t len = wcslen(filename);
 	if ( wcsicmp(&filename[len-3], L"ptl") == 0 )
 	{
@@ -938,7 +939,7 @@ PThandle PTAPI ptBrowseAndOpenPOD()
 		PThandle lastHandle = 0;
 
 		while (strptr[0] != 0)
-		{	
+		{
 			numscenes++;
 			swprintf(fname, L"%s\\%s", fpath, strptr);
 			strptr += wcslen(fname) - pathlen;
@@ -946,7 +947,7 @@ PThandle PTAPI ptBrowseAndOpenPOD()
 			PThandle h = ptOpenPOD(fname);
 			if (h) lastHandle = h;
 		}
-		/* single file picked */ 
+		/* single file picked */
 		if (!numscenes) return ptOpenPOD(filename);
 		return lastHandle;
 	}
@@ -975,7 +976,7 @@ unsigned int sceneErrorToVortexError( int error )
 	return PTV_UNKNOWN_ERROR;
 }
 //-------------------------------------------------------------------------------
-// Open a POD file. 
+// Open a POD file.
 // Todo: Returns a handle to the scene
 //-------------------------------------------------------------------------------
 
@@ -993,7 +994,7 @@ if(firstCall)
 {
 	firstCall = false;
 
-	IStorage *	storage = NULL; 
+	IStorage *	storage = NULL;
 	IStream	 *	stream = NULL;
 
 	HRESULT		error;
@@ -1017,7 +1018,7 @@ if(firstCall)
 */
 
 
-PThandle ptOpenPODFromDataSource(ptds::DataSourcePtr dataSource, const PTstr filepath) 
+PThandle ptOpenPODFromDataSource(ptds::DataSourcePtr dataSource, const PTstr filepath)
 {
 	PTTRACE_FUNC
 
@@ -1035,15 +1036,15 @@ PThandle ptOpenPODFromDataSource(ptds::DataSourcePtr dataSource, const PTstr fil
 
 	PThandle sceneHandle = ptIsOpen(filepath);
 
-	if (sceneHandle && blockDuplicates) 
+	if (sceneHandle && blockDuplicates)
 	{
-		setLastErrorCode( PTV_FILE_ALREADY_OPENED );	
+		setLastErrorCode( PTV_FILE_ALREADY_OPENED );
 		return PT_NULL;
 	}
 
 	if (HAS_EXPIRED)
 	{
-		setLastErrorCode( PTV_LICENSE_EXPIRY );	
+		setLastErrorCode( PTV_LICENSE_EXPIRY );
 		return PT_NULL;
 	}
 
@@ -1060,7 +1061,7 @@ PThandle ptOpenPODFromDataSource(ptds::DataSourcePtr dataSource, const PTstr fil
 
 		pcloud::Scene *sc = thePointsScene().openScene(filepath, error);
 
-		if (sc) 
+		if (sc)
 		{
 			sceneHandle = sc->key();
 			pt::Project3D::project().addScene(sc);
@@ -1073,7 +1074,7 @@ PThandle ptOpenPODFromDataSource(ptds::DataSourcePtr dataSource, const PTstr fil
 
 			if ( g_autoBaseMethod )
 			{
-				if ( !(g_autoBaseMethod & PT_AUTO_BASE_FIRST_ONLY) 
+				if ( !(g_autoBaseMethod & PT_AUTO_BASE_FIRST_ONLY)
 					|| pt::Project3D::project().numObjects() == 1 )
 				{
 					if ( g_autoBaseMethod & PT_AUTO_BASE_CENTER )
@@ -1105,10 +1106,10 @@ PThandle ptOpenPODFromDataSource(ptds::DataSourcePtr dataSource, const PTstr fil
 }
 
 #ifdef NEEDS_WORK_VORTEX_DGNDB
-PThandle PTAPI test_ptOpenPODStructuredStorageStream(const PTstr filepath) 
+PThandle PTAPI test_ptOpenPODStructuredStorageStream(const PTstr filepath)
 {
 	//  Pip Test
-	IStorage *	storage = NULL; 
+	IStorage *	storage = NULL;
 	IStream	 *	stream = NULL;
 
 	HRESULT		error;
@@ -1254,7 +1255,7 @@ PThandle PTAPI ptOpenPOD(const PTstr filepath)
 															// Try to open POD local file
 	if(h = ptOpenPODFile(filepath))
 	{
-		PTTRACEOUT << " Handle = " << h; 
+		PTTRACEOUT << " Handle = " << h;
 		return h;
 	}
 															// Return failed to open
@@ -1358,7 +1359,7 @@ PThandle ptOpenPODFakeServerFile(const PTstr filepath)
 	PTRMI::URL							serverFilepath;
 	PTRMI::URL							serverFileURL;
 	ClientInterfaceExtDataBentley		extData;
-															// Attempt to read POD as an Ext fake POD file													
+															// Attempt to read POD as an Ext fake POD file
 	if(extData.readFile(filepath).isFailed())
 	{
 		return NULL;
@@ -1764,7 +1765,7 @@ PThandle PTAPI ptCreateSceneInstance( PThandle h )
 	pcloud::Scene* scene = sceneFromHandle( h );
 	if (!scene)
 	{
-		setLastErrorCode( PTV_INVALID_HANDLE );	
+		setLastErrorCode( PTV_INVALID_HANDLE );
 		return PT_NULL;
 	}
 
@@ -1774,7 +1775,7 @@ PThandle PTAPI ptCreateSceneInstance( PThandle h )
 															// Create a data source of the required type
 	if((dataSource = ptds::dataSourceManager.openForRead(&(scene->filepath()))) == NULL)
 	{
-		setLastErrorCode( PTV_FILE_READ_FAILURE );	
+		setLastErrorCode( PTV_FILE_READ_FAILURE );
 		return 0;
 	}
 															// Open using the data source
@@ -1782,7 +1783,7 @@ PThandle PTAPI ptCreateSceneInstance( PThandle h )
 
 	if(hInstance == 0)
 	{
-		setLastErrorCode( PTV_FILE_READ_FAILURE );	
+		setLastErrorCode( PTV_FILE_READ_FAILURE );
 	}
 
 
@@ -1811,7 +1812,7 @@ PTvoid PTAPI ptSetCoordinateBase(PTdouble *coordinateBase)
 		pt::vector3d base(coordinateBase[0], coordinateBase[1], coordinateBase[2] );
 		pt::Project3D::project().setProjectSpaceOrigin( base );
 	}
-	else setLastErrorCode( PTV_VOID_POINTER );	
+	else setLastErrorCode( PTV_VOID_POINTER );
 }
 //-------------------------------------------------------------------------------
 // Clear all scenes
@@ -1820,10 +1821,10 @@ PTvoid PTAPI ptRemoveAll()
 {
 	PTTRACE_FUNC
 
-	pauseEngine(); 
+	pauseEngine();
 
 	pt::Project3D::project().removeAllScenes();
-	thePointsScene().clear(); 
+	thePointsScene().clear();
 
 	unpauseEngine();
 
@@ -1836,3 +1837,4 @@ PTvoid PTAPI ptRemoveAll()
 	PointsPager::completeRequests();
 }
 
+POP_DISABLE_DEPRECATION_WARNINGS

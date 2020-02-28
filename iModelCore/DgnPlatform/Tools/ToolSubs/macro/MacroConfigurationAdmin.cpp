@@ -9,15 +9,16 @@
 #include <DgnPlatform/DesktopTools/MacroFileProcessor.h>
 #include <Bentley/BeFileListIterator.h>
 #include <Bentley/Desktop/FileSystem.h>
-
 #include "macro.h"
+
+PUSH_DISABLE_DEPRECATION_WARNINGS
+
 #if defined (BENTLEY_WIN32)
 #include <shlwapi.h>
 #include <shlobj.h>
 #undef EXTERN_C
 #include <KnownFolders.h>
 #endif
-
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -117,15 +118,15 @@ static bool    s_doDebug = false;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void     ConfigVariableDebug (WCharCP format, ...) 
+static void     ConfigVariableDebug (WCharCP format, ...)
     {
     if (!s_doDebug)
         return;
 
-    va_list args; 
-    va_start (args, format); 
+    va_list args;
+    va_start (args, format);
     WString tmp;
-    tmp.VSprintf (format, args); 
+    tmp.VSprintf (format, args);
     va_end (args);
 
     wprintf (tmp.c_str());
@@ -255,7 +256,7 @@ MacroEntry ()
 * @bsimethod                                    Barry.Bentley                   05/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 MacroEntry (MacroEntryCR source)        // copy constructor
-    {                                        
+    {
     *this = source;
     }
 
@@ -772,7 +773,7 @@ bool            RemoveAtLevel (bool& stillHasTranslation, bool& nowHasDifferentT
         }
     else
         {
-        // has translation only at this level. 
+        // has translation only at this level.
         if (CFGVAR_DEFINED_NULL != *translation)
             RemoveFromRootsAsDependent (mca);
         }
@@ -965,7 +966,7 @@ void    SetLocked (bool locked) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool     HasAnyTranslation () const
     {
-    return ( (nullptr != m_user) || (nullptr != m_role) || (nullptr != m_workset) || (nullptr != m_workspace) || (nullptr != m_organization) || 
+    return ( (nullptr != m_user) || (nullptr != m_role) || (nullptr != m_workset) || (nullptr != m_workspace) || (nullptr != m_organization) ||
              (nullptr != m_application) || (nullptr != m_system) || (nullptr != m_preDefined) ||  (nullptr != m_sysEnv) );
     }
 
@@ -1202,7 +1203,7 @@ void            ProcessDependencies (bool add, MacroConfigurationAdmin& mca) con
                     {
                     if (--parenNestDepth <= 0)
                         state = MacroSearchState::LookingForStart;
-                        
+
                     }
                 }
             }
@@ -1288,7 +1289,7 @@ BentleyStatus   GetAppropriateAssignmentStatement (WStringR assignmentStatement,
 
     WStringP        nextLowerAssignment;
     // if there is no priority assignment, or if the new assignment is the same, then it's a simple assignment.
-    if ( (nullptr == (nextLowerAssignment = GetTranslationAtNextLowerLevel (level)) ) || 
+    if ( (nullptr == (nextLowerAssignment = GetTranslationAtNextLowerLevel (level)) ) ||
          (currentAssignment.size() <= nextLowerAssignment->size()) )
         {
         currentAssignment.ReplaceAll (L"\\", L"/");
@@ -1298,7 +1299,7 @@ BentleyStatus   GetAppropriateAssignmentStatement (WStringR assignmentStatement,
 
     ReplaceFromMap (*nextLowerAssignment, replacementMap);
 
-    // is it an append? 
+    // is it an append?
     if (currentAssignment.StartsWithI (nextLowerAssignment->c_str()))
         {
         // could be a '+' or a '>' type. They are distinguished by a semicolon separating or not.
@@ -2514,7 +2515,7 @@ class           CONNECTMacroFileProcessor : public MacroFileProcessor
 {
 WString             m_workSpaceName;
 WString             m_workSetName;
-WString             m_configurationRootDir; // the location of the install/Configuration directory. 
+WString             m_configurationRootDir; // the location of the install/Configuration directory.
 WString             m_msConfigFileName;     // the full name of the msconfig file
 WString             m_connectInstallDir;    // the directory containing the MicroStation exe.
 WString             m_fallbackConfigDir;    // the location where we have stored the CONNECT system .cfg files in the delivery of the client of this macro file reader, in case there isn't a MicroStation installation on the machine.
@@ -2577,7 +2578,7 @@ CONNECTMacroFileProcessor (MacroConfigurationAdmin& mca, WCharCP workSpaceName, 
 
     if (nullptr != msConfigFileName)
         m_msConfigFileName.assign (msConfigFileName);
-    
+
     if (nullptr != installDir)
         m_connectInstallDir.assign (installDir);
     if (!m_connectInstallDir.empty())
@@ -2733,7 +2734,7 @@ void    GetCONNECTSubDirectory (WStringR subDirectory)
     // There's a way to install multiple builds of a particular xx.xx.xx version that ends up
     // with names like 10.0.0_1, but we pay no attention to that here. We look for the most recent
     // build number in the (%LOCALAPPDATA%)Bentley\MicroStation directory. If we don't find anything,
-    // (which is possible on a machine where MicroStation has never been installed) we just use 10.0.0. 
+    // (which is possible on a machine where MicroStation has never been installed) we just use 10.0.0.
 
     WCharP      localAppData;
     SHGetKnownFolderPath (FOLDERID_LocalAppData, 0, nullptr, &localAppData);
@@ -2782,7 +2783,7 @@ void    GetCONNECTSubDirectory (WStringR subDirectory)
         subDirectory.append (L"10.0.0");
         return;
         }
-        
+
     std::sort (possibleDirs.begin(), possibleDirs.end(), CompareDirectories);
     subDirectory.append (possibleDirs[0].c_str());
     }
@@ -2884,7 +2885,7 @@ class           V8iMacroFileProcessor : public MacroFileProcessor
 {
 WString             m_userName;
 WString             m_projectName;
-WString             m_workspaceRootDir;     // the location of the install/WorkSpace directory. 
+WString             m_workspaceRootDir;     // the location of the install/WorkSpace directory.
 WString             m_msConfigFileName;     // the full name of the msconfig file
 WString             m_v8iInstallDir;        // the location of the directory containing the V8i MicroStation.exe.
 WString             m_fallbackConfigDir;    // the location where we have stored the v8i system .cfg files in the delivery of the client of this macro file reader, in case there isn't a MicroStation installation on the machine.
@@ -2917,7 +2918,7 @@ V8iMacroFileProcessor (MacroConfigurationAdmin& mca, WCharCP userName, WCharCP p
 
     if (nullptr != msConfigFileName)
         m_msConfigFileName.assign (msConfigFileName);
-    
+
     if (nullptr != v8iInstallDir)
         m_v8iInstallDir.assign (v8iInstallDir);
     if (!m_v8iInstallDir.empty())
@@ -3141,7 +3142,7 @@ void DefineBuiltinRuntimeMacros (WCharCP installDirectory)
     m_macroCfgAdmin.DefineBuiltinMacro (L"_USTN_LocalUserAppDataPath", ourLocalAppData.c_str());
     CoTaskMemFree (localAppData);
 
-    
+
     // _USTN_LocalUserTempPath
     BeFileName  tempPath;
     Desktop::FileSystem::BeGetTempPath (tempPath);
@@ -3176,9 +3177,9 @@ void DefineBuiltinRuntimeMacros (WCharCP installDirectory)
 // The methods below are used by applications that use DgnPlatform only, but want to
 //  process configuration files like PowerPlatform applications do. For example, the
 //  converter from DgnV8 to DgnDb uses these methods.
-// 
-// We can read either V8i configuration files or CONNECT configuration files. 
-//  If we know where the V8i or CONNECT installation directory is, we can get 
+//
+// We can read either V8i configuration files or CONNECT configuration files.
+//  If we know where the V8i or CONNECT installation directory is, we can get
 //  everything right. But if you are running on a server where there is no
 //  V8i or CONNECT installation, the temporary files that are based on the name
 //  and version of the MicroStation product, such as _USTN_LocalUserAppDataPath,
@@ -3189,14 +3190,14 @@ void DefineBuiltinRuntimeMacros (WCharCP installDirectory)
 //  resources, materials, reference file directories, and other display-oriented
 //  configuration variables, and those aren't in the user- or appdata- directories.
 //
-// When we read V8i configuration files, we convert the V8i configuration levels (system, 
+// When we read V8i configuration files, we convert the V8i configuration levels (system,
 // site, project, user) to the corresponding CONNECT configuration levels, but we do not
 // convert any of the names of the configuration variables. We count on V8i and CONNECT
 // both using MS_PATTERN or MS_MATERIAL or MS_LINESTYLERSC, etc., and those are defined
 // for both V8i and CONNECT.
 
 // These are instance methods. The caller constructs a MacroConfigurationAdmin instance so
-//  it can be passed to the constructor of a MacroFileProcessor. The caller subclasses 
+//  it can be passed to the constructor of a MacroFileProcessor. The caller subclasses
 //  MacroFileProcessor so it can get control over error handleing.
 
 
@@ -3223,3 +3224,5 @@ StatusInt   MacroConfigurationAdmin::ReadCONNECTConfigurationFiles (WCharCP work
     }
 
 #endif // BENTLEY_WIN32
+
+POP_DISABLE_DEPRECATION_WARNINGS

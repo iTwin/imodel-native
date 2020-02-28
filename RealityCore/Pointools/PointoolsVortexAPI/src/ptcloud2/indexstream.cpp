@@ -2,10 +2,10 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See COPYRIGHT.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-/*----------------------------------------------------------*/ 
-/* IndexStream.cpp											*/ 
-/* Point Cloud Index stream Implementation file				*/ 
-/*----------------------------------------------------------*/ 
+/*----------------------------------------------------------*/
+/* IndexStream.cpp											*/
+/* Point Cloud Index stream Implementation file				*/
+/*----------------------------------------------------------*/
 #undef _VERBOSE
 
 #include "PointoolsVortexAPIInternal.h"
@@ -31,7 +31,7 @@ using namespace pt;
 
 #ifdef POINTOOLS_API_INCLUDE
 #undef debugAssertM
-#define debugAssertM(a,b) //if(!a) std::cout << "assertion failed!!"  << std::endl 
+#define debugAssertM(a,b) //if(!a) std::cout << "assertion failed!!"  << std::endl
 #endif
 
 #define IMAGE_BASE		10000
@@ -39,7 +39,7 @@ using namespace pt;
 
 #define CLOUD_KEY(g,c) g * 1000 + c
 
-
+PUSH_DISABLE_DEPRECATION_WARNINGS
 // Pip Option Begin
 pcloud::PointStreamFilter *pcloud::IndexStream::globalPointStreamFilter;
 // Pip Option End
@@ -49,7 +49,7 @@ pcloud::PointStreamFilter *pcloud::IndexStream::globalPointStreamFilter;
 // IndexStream constructor
 //----------------------------------------------------------------------------
 IndexStream::IndexStream()
-{	
+{
 	_cloud = 0;
 	_image = 0;
 	_pager = 0;
@@ -74,7 +74,7 @@ IndexStream::~IndexStream()
 	try
 	{
 		if (_pager) delete _pager;
-		if (_normalpager) delete _normalpager;	
+		if (_normalpager) delete _normalpager;
 		if (_writeblock) delete _writeblock;
 		if (_readblock) delete _readblock;
 		if (_normalreadblock) delete _normalreadblock;
@@ -121,7 +121,7 @@ int IndexStream::addGroup(bool combine, float tolerance, bool gen_normals, float
 		if (tolerance > 0)
 		{
             _truncationMultiplier = static_cast<int>(tolerance * 1e6);
-			/* remove inaccuraccy */ 
+			/* remove inaccuraccy */
 			_truncationMultiplier /= 10;
 			_truncationMultiplier *= 10;
 		}
@@ -136,7 +136,7 @@ int IndexStream::addGroup(bool combine, float tolerance, bool gen_normals, float
 
 	_clouds = &_group->clouds;
 	_groups.push_back(_group);
-	
+
 	_groupidx = static_cast<int>(_groups.size() - 1);
 	return _groupidx;
 }
@@ -157,7 +157,7 @@ bool IndexStream::startStream(const wchar_t *filename)
 	if(applyPointStreamFilter())
 		return globalPointStreamFilter->startStream(filename);
 
-	/*create file*/ 
+	/*create file*/
 	_filePath.setPath(filename);
 	_filePath.setExtension(L"pod_tmp");
 
@@ -179,8 +179,8 @@ bool IndexStream::closeStream()
 			return false;
 	}
 
-	/*center cloud bounding boxes and add this offset to the registration matrix	*/ 
-	/*shift large part of coords to matrix to prevent lage coords from hitting gl*/ 
+	/*center cloud bounding boxes and add this offset to the registration matrix	*/
+	/*shift large part of coords to matrix to prevent lage coords from hitting gl*/
 
 	for (size_t i= 0; i<_groups.size(); i++)
 	{
@@ -197,17 +197,17 @@ bool IndexStream::closeStream()
 			if (!ci->truncation.is_zero())
 			{
 				vector3d c = ci->bounds.center();
-				
+
 				ci->bounds.translateBy(-c);
 
 				ci->xbounds.translateBy(vector3(
                     static_cast<float>(ci->truncation.x * TRUNCATE_MULTIPLIER),
-					static_cast<float>(ci->truncation.y * TRUNCATE_MULTIPLIER), 
+					static_cast<float>(ci->truncation.y * TRUNCATE_MULTIPLIER),
 					static_cast<float>(ci->truncation.z * TRUNCATE_MULTIPLIER)));
 
 				ci->matrix.translate(vector4d(
-					(double)c.x + (double)(ci->truncation.x * TRUNCATE_MULTIPLIER), 
-					(double)c.y + (double)(ci->truncation.y * TRUNCATE_MULTIPLIER), 
+					(double)c.x + (double)(ci->truncation.x * TRUNCATE_MULTIPLIER),
+					(double)c.y + (double)(ci->truncation.y * TRUNCATE_MULTIPLIER),
 					(double)c.z + (double)(ci->truncation.z * TRUNCATE_MULTIPLIER), 0)
 					);
 				ci->offset = c;
@@ -219,12 +219,12 @@ bool IndexStream::closeStream()
 	}
 	if (_groups.size()) setGroup(0);
 
-	/* process intensity histo and take off upper 10% of values */ 
+	/* process intensity histo and take off upper 10% of values */
 	unsigned int mx=0;
 	int mxh = 0;
-	/*check for mis interpreted intensity */ 
+	/*check for mis interpreted intensity */
 	_intensityBounds.makeEmpty();
-	
+
 	for (int i=0;i<255;i++)
 	{
 		if (_intensityHist[i] > mx)
@@ -232,34 +232,34 @@ bool IndexStream::closeStream()
 			mx = _intensityHist[i];
 			mxh = i;
 		}
-			
+
 	}
-	
+
 	int val;
     mx = static_cast<unsigned int>(mx * 0.05);
-	
+
 	for (int i=0; i<255; i++)
 	{
 		val = i*255-32768;
 		if (_intensityHist[i] > mx) _intensityBounds.expand(&val);
 	}
-	
-	/* this can fail if intensities are actually 0-255, this shold fix it mostly */ 
+
+	/* this can fail if intensities are actually 0-255, this shold fix it mostly */
 	if (_intensityBounds.size(0) <= 1)
 	{
 		int upper_bound = _intensityBounds.lower(0) + 255;
 		_intensityBounds.expand( &upper_bound );
 	}
 
-	/* update Metadata */ 
+	/* update Metadata */
 	//_metaData.audit.import_settings.channels_imported  =
 	_metaData.audit.import_date = time(NULL);
 	_metaData.audit.import_settings.compression_tolerance = group()->tolerance;
 	_metaData.audit.import_settings.import_options = 0;
 
-	if (group()->generate_normals) 
+	if (group()->generate_normals)
 		_metaData.audit.import_settings.import_options |= MetaImportSettings::GenerateNormals;
-	
+
 	if (group()->combine)
 		_metaData.audit.import_settings.import_options |= MetaImportSettings::CombineClouds;
 
@@ -280,8 +280,8 @@ bool IndexStream::closeStream()
 	}
 
 	_metaData.audit.import_settings.channels_imported |= spec;
-	
-	/* dump structure, calling close() before deleting allows the number of write block errors to be checked */ 
+
+	/* dump structure, calling close() before deleting allows the number of write block errors to be checked */
 	bool res = true;
 	if (_writeblock)
 	{
@@ -292,7 +292,7 @@ bool IndexStream::closeStream()
 	delete _writeblock;
 
 	_writeblock = 0;
-	
+
 	return true;
 }
 //------------------------------------------------------------------------------------------------
@@ -300,10 +300,10 @@ bool IndexStream::closeStream()
 //------------------------------------------------------------------------------------------------
 // this is undistorted here and resaved
 //------------------------------------------------------------------------------------------------
-/* add an image to the last cloud / scan position */ 
-void	IndexStream::addCalibratedImageToCloud(const char *filename, const mmatrix4d &extrinsic, 
-	double cx, double cy, double fx, double fy, 
-	double k1, double k2, double k3, double k4, 
+/* add an image to the last cloud / scan position */
+void	IndexStream::addCalibratedImageToCloud(const char *filename, const mmatrix4d &extrinsic,
+	double cx, double cy, double fx, double fy,
+	double k1, double k2, double k3, double k4,
 	double p1, double p2)
 {
 	assert(_cloud);
@@ -328,20 +328,20 @@ void	IndexStream::addCalibratedImageToCloud(const char *filename, const mmatrix4
 
 	strncpy(file, filename, 260);
 
-	/* get the extension */ 
+	/* get the extension */
 	char ext[8];
 	strncpy(ext, &filename[l-4], 4);
 
-	/* chop off extension */ 
+	/* chop off extension */
 	file[l-5] = '\0';
 
-	/* append the word undistorted at the end */ 
+	/* append the word undistorted at the end */
 	sprintf(newfile, "%s_undistorted.%s", file, ext);
 	scanimage.undistort(newfile);
 
 	_cloud->images.push_back(scanimage);
 }
-/* add an image to the last cloud / scan position */ 
+/* add an image to the last cloud / scan position */
 void	IndexStream::addCallibratedImageToCloud(const ScanImage &si)
 {
 	assert(_cloud);
@@ -353,15 +353,15 @@ void	IndexStream::addCallibratedImageToCloud(const ScanImage &si)
 
 	strncpy(file, si.filepath().c_str(), 260);
 
-	/* get the extension */ 
+	/* get the extension */
 	char ext[8];
 	strncpy(ext, &file[l-3], 3);
 	ext[3] = '\0';
 
-	/* chop off extension */ 
+	/* chop off extension */
 	file[l-4] = '\0';
 
-	/* append the word undistorted at the end */ 
+	/* append the word undistorted at the end */
 	sprintf(newfile, "%s_undistorted.%s", file, ext);
 	const_cast<ScanImage*>(&si)->undistort(newfile);
 
@@ -391,11 +391,11 @@ bool IndexStream::addCloud(uint cloud_spec, const mmatrix4d *mat, uint ibound, u
 	_cloud->numPoints = 0;
 	_cloud->_orderedpos = 0;
 	_cloud->truncation.zero();
-	
+
 	if (name) ptstr::copy(_cloud->name, name, 128);
 	else _cloud->name[0] = L'\0';
 
-	if (mat) memcpy(&_cloud->matrix, mat, sizeof(mmatrix4d)); 
+	if (mat) memcpy(&_cloud->matrix, mat, sizeof(mmatrix4d));
 	else _cloud->matrix = mmatrix4d::identity();
 
 	if (_image)
@@ -406,7 +406,7 @@ bool IndexStream::addCloud(uint cloud_spec, const mmatrix4d *mat, uint ibound, u
 		if (!res)
 			return false;
 	}
-	if (_writeblock) 
+	if (_writeblock)
 	{
 		_writeblock->close();
 		int errors = _writeblock->numErrors();
@@ -417,13 +417,13 @@ bool IndexStream::addCloud(uint cloud_spec, const mmatrix4d *mat, uint ibound, u
 	_writeblock = _pager->newWriteBlock(PCLOUD_STREAM_BLOCKSIZE, CLOUD_KEY(_groupidx, static_cast<uint>(_clouds->size())), "Cloud", true);
 	if (!_writeblock)
 		return false;
-	
+
 	//std::cout << "+c";
 	_cloud->bytesPerPoint = sizeof(pt::vector3);
 	_cloud->bytesPerPoint += cloud_spec & PCLOUD_CLOUD_INTENSITY ? sizeof(short) : 0;
 	_cloud->bytesPerPoint += cloud_spec & PCLOUD_CLOUD_RGB ? 3 : 0;
 	_cloud->bytesPerPoint += cloud_spec & PCLOUD_CLOUD_NORMAL ? sizeof(pt::vector3) : 0;
-	 
+
 	if (ibound >0 && jbound >0 && (ibound * jbound < 64000000) )
 	{
 		_image = new PointsImage(ibound,jbound, static_cast<int>(_clouds->size()),
@@ -449,7 +449,7 @@ void IndexStream::restartCloudPass()
 	assert( _cloud );
 	if ( !_writeblock || !_cloud ) return;
 
-	/* reposition the writeblock back to the start */ 
+	/* reposition the writeblock back to the start */
 	_writeblock->startWriteThroughPass();
 	_cloud->_orderedpos=0;
 }
@@ -471,14 +471,14 @@ void IndexStream::addPassPointColour(const ubyte *rgb)
 
 	debugAssertM(_cloud->spec & PCLOUD_CLOUD_RGB, "Cloud must have RGB Spec");
 
-	/* bypass geometry*/ 
+	/* bypass geometry*/
 	_writeblock->writeThroughAdvance(sizeof(pt::vector3));
-	
+
 	if (_cloud->spec & PCLOUD_CLOUD_INTENSITY)
 	{
 		_writeblock->writeThroughAdvance(sizeof(short));
 	}
-	/* create static array sp write through can get size */ 
+	/* create static array sp write through can get size */
 	ubyte col[3] = {rgb[0], rgb[1], rgb[2]};
 	_writeblock->writeThrough(col);
 
@@ -491,7 +491,7 @@ void IndexStream::addPassPointColour(const ubyte *rgb)
 		_writeblock->writeThroughAdvance(sizeof(_cloud->_orderedpos));
 	}
 	_cloud->_orderedpos++;
-}	
+}
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
@@ -509,10 +509,10 @@ void IndexStream::addPassPointIntensity(const short *intensity)
 
 	debugAssertM(_cloud->spec & PCLOUD_CLOUD_INTENSITY, "Cloud must have Intensity Spec");
 
-	/* bypass geometry*/ 
+	/* bypass geometry*/
 	_writeblock->writeThroughAdvance(sizeof(pt::vector3));
-	
-	/* create static array sp write through can get size */ 
+
+	/* create static array sp write through can get size */
 	_writeblock->writeThrough(*intensity);
 
 	if (_cloud->spec & PCLOUD_CLOUD_RGB)
@@ -543,7 +543,7 @@ int64_t IndexStream::writeStreamPosition()
 //
 //------------------------------------------------------------------------------
 void IndexStream::addNull()
-{ 
+{
 	if(applyPointStreamFilter())
 	{
 		globalPointStreamFilter->addNull();
@@ -556,14 +556,14 @@ void IndexStream::addNull()
 //------------------------------------------------------------------------------
 // add Point
 //------------------------------------------------------------------------------
-bool IndexStream::addPoint(const pt::vector3d &geomd, const ubyte * const rgb, 
+bool IndexStream::addPoint(const pt::vector3d &geomd, const ubyte * const rgb,
 						   const short * const intensity, const pt::vector3s * const normal, const ubyte * const category)
 {
 	if(applyPointStreamFilter())
 	{
 		setAddedPointCount(getAddedPointCount() + 1);
 		return globalPointStreamFilter->addPoint(geomd, rgb, intensity, normal);
-	} 
+	}
 
 	assert( _writeblock );
 	assert( _cloud );
@@ -571,14 +571,14 @@ bool IndexStream::addPoint(const pt::vector3d &geomd, const ubyte * const rgb,
 	if ( !_writeblock || !_cloud ) return false;
 
 	static pt::vector3d geomdn;
-	
+
 	if (geomd.is_zero())
 	{
 		addNull();
 		return true;
 	}
-	/* sanity check */ 
-	if (geomd.is_nan() || 
+	/* sanity check */
+	if (geomd.is_nan() ||
 		geomd.x > 1e50 || geomd.x < -1e50 ||
 		geomd.y > 1e50 || geomd.y < -1e50 ||
 		geomd.z > 1e50 || geomd.z < -1e50)
@@ -587,12 +587,12 @@ bool IndexStream::addPoint(const pt::vector3d &geomd, const ubyte * const rgb,
 	}
 	if (!_cloud->numPoints)
 	{
-		/* check size of values for truncation*/ 
+		/* check size of values for truncation*/
 		_cloud->truncation.x = static_cast<int>(geomd.x / TRUNCATE_MULTIPLIER);
 		_cloud->truncation.y = static_cast<int>(geomd.y / TRUNCATE_MULTIPLIER);
 		_cloud->truncation.z = static_cast<int>(geomd.z / TRUNCATE_MULTIPLIER);
 	}
-	/* remove any large component */ 
+	/* remove any large component */
 	geomdn.x = geomd.x - _cloud->truncation.x * TRUNCATE_MULTIPLIER;
 	geomdn.y = geomd.y - _cloud->truncation.y * TRUNCATE_MULTIPLIER;
 	geomdn.z = geomd.z - _cloud->truncation.z * TRUNCATE_MULTIPLIER;
@@ -608,10 +608,10 @@ bool IndexStream::addPoint(const pt::vector3d &geomd, const ubyte * const rgb,
 	_cloud->numPoints++;
 	_cloud->_orderedpos++;
 
-	/*geometry into buffer*/ 
+	/*geometry into buffer*/
 	if (!_writeblock->write(geom) || _writeblock->numErrors())
 		return false;
-	 
+
 	if (_cloud->spec & PCLOUD_CLOUD_INTENSITY)
 	{
 		debugAssertM(intensity, "Intensity specified but not provided");
@@ -635,7 +635,7 @@ bool IndexStream::addPoint(const pt::vector3d &geomd, const ubyte * const rgb,
 		_intensityBounds.expand(&inteni);
 		inteni += 32768;
 		inteni /= 256;
-		
+
 		++_intensityHist[inteni];
 	}
 	if (_cloud->spec & PCLOUD_CLOUD_RGB)
@@ -680,14 +680,14 @@ bool IndexStream::addPoint(const pt::vector3d &geomd, const ubyte * const rgb,
 		return false;
 
 	return true;
-} 
+}
 //------------------------------------------------------------------------------
 // start read stream
 //------------------------------------------------------------------------------
 bool IndexStream::startReadStream()
 {
 	//std::cout << "Starting read stream" << std::endl;
-	return true;	
+	return true;
 }
 //------------------------------------------------------------------------------
 // start read stream
@@ -723,13 +723,13 @@ int IndexStream::readPoint(pt::vector3 &geom, ubyte *rgb, short *intensity, pt::
 	CloudInfo *ci = _cloud;
 	int pos = -1;
 
-	/*geometry into buffer*/ 
+	/*geometry into buffer*/
 	if (!_readblock->read(geom) || _readblock->numErrors())
 	{
 		return Scene::ReadPntStreamFailure;
 	}
 
-	/*correction for normalized coords*/ 
+	/*correction for normalized coords*/
     geom.x -= static_cast<float>(ci->offset.x);
 	geom.y -= static_cast<float>(ci->offset.y);
 	geom.z -= static_cast<float>(ci->offset.z);
@@ -747,13 +747,13 @@ int IndexStream::readPoint(pt::vector3 &geom, ubyte *rgb, short *intensity, pt::
 				_intensityBounds.normalizedValue(&inteni, &intd, -32767, 32767);
 				if (intd > 32767) intd = 32767;
 				if (intd < -32767) intd = -32767;
-				
-				/* reduce contrast */ 
+
+				/* reduce contrast */
 				intd *= 0.5;
 				*intensity = static_cast<short>(intd);
 			}
 		}
-		else _readblock->advance(sizeof(short)); 
+		else _readblock->advance(sizeof(short));
 	}
 	if (ci->spec & PCLOUD_CLOUD_RGB)
 	{
@@ -768,7 +768,7 @@ int IndexStream::readPoint(pt::vector3 &geom, ubyte *rgb, short *intensity, pt::
 			else  _normalreadblock->advance(sizeof(pt::vector3s));
 		}
 		else if (normal) _readblock->read(*normal);
-		else _readblock->advance(sizeof(pt::vector3s)); 
+		else _readblock->advance(sizeof(pt::vector3s));
 	}
 	if (ci->spec & PCLOUD_CLOUD_CLASSIFICATION)
 	{
@@ -798,13 +798,13 @@ const IndexStream::CloudInfo *IndexStream::readCloud(int idx)
 
 	if (_readblock) delete _readblock;
 	_readblock = _pager->newReadBlock(CLOUD_KEY(_groupidx, idx), "Cloud", true);
-	if (_normalpager) 
+	if (_normalpager)
 	{
 		if (_normalreadblock) delete _normalreadblock;
 		_normalreadblock = _normalpager->newReadBlock(CLOUD_KEY(_groupidx, idx), "Normal", true);
 	}
 
-	/*move file pointer*/ 
+	/*move file pointer*/
 	_cloud = (*_clouds)[idx];
 
 	if ((_readblock && _readblock->numErrors())
@@ -825,7 +825,7 @@ bool IndexStream::readImage(PointsImage *image, int cloud_idx)
 	if (_pager->readBlock(cloud_idx + IMAGE_BASE, image->data(), "CloudImage"))
 	{
 #ifdef _VERBOSE
-		std::cout << "Reading Image(" << image->ibound() << "x" << image->jbound() 
+		std::cout << "Reading Image(" << image->ibound() << "x" << image->jbound()
 			<<  "  " << image->validPoints() << " points )" << std::endl;
 #endif
 
@@ -844,11 +844,11 @@ bool IndexStream::writeImage(PointsImage *image)
 	if (!_image || !image) return false;
 
 #ifdef _VERBOSE
-	std::cout << "Writing Image(" << image->ibound() << "x" << image->jbound() <<  "  " 
+	std::cout << "Writing Image(" << image->ibound() << "x" << image->jbound() <<  "  "
 		<< image->validPoints() << " points )" << std::endl;
 #endif
 
-	if (_writeblock) 
+	if (_writeblock)
 	{
 		_writeblock->close();
 		errors =_writeblock->numErrors();
@@ -867,7 +867,7 @@ bool IndexStream::writeImage(PointsImage *image)
 	_writeblock = 0;
 
 	return (errors == 0);
-} 
+}
 //------------------------------------------------------------------------------
 // build normals for ordered cloud
 //------------------------------------------------------------------------------
@@ -884,7 +884,7 @@ bool IndexStream::_buildNormals(int cloud_idx, pt::vector3s* _normals, bool tran
 			_x = (short)(32768 * x);
 			_y = (short)(32768 * y);
 			_z = (short)(32768 * z);
-		}	
+		}
 		short _x;
 		short _y;
 		short _z;
@@ -898,7 +898,7 @@ bool IndexStream::_buildNormals(int cloud_idx, pt::vector3s* _normals, bool tran
 
 	if (!ci->ibound || !ci->jbound || !ci->numPoints) return false;
 
-	/*read image*/ 
+	/*read image*/
 	PointsImage image(ci->ibound, ci->jbound, cloud_idx);
 	if (!readImage(&image, cloud_idx)) return false;
 
@@ -911,15 +911,15 @@ bool IndexStream::_buildNormals(int cloud_idx, pt::vector3s* _normals, bool tran
 	{
 		return false;
 	}
-	/*read these points in*/ 
+	/*read these points in*/
 	readCloud(cloud_idx);
-	
+
 	uint i;
 	for (i=0; i<ci->numPoints; i++)
 		readPoint(points[i],0,0,0);
 
-	/*load data*/ 
-	/*allocate channel*/ 
+	/*load data*/
+	/*allocate channel*/
 	int cpm[150];
 #ifdef HAVE_WILDMAGIC
 	Wm5::Vector3f _v[150];
@@ -960,7 +960,7 @@ bool IndexStream::_buildNormals(int cloud_idx, pt::vector3s* _normals, bool tran
 			{
 				// validate points
 				//crude check to see if all the points are the same
-				//this is required to avoid exception occuring in Wm5::method  
+				//this is required to avoid exception occuring in Wm5::method
 				//also invalidate points with z distance
 
 				int valid_points = 0;
@@ -1000,9 +1000,9 @@ bool IndexStream::_buildNormals(int cloud_idx, pt::vector3s* _normals, bool tran
 					_o = plane.Constant * plane.Normal;
 #else
                     // &&RB TODO: the following geomlibs function call must be tested in this context
-                    if (false == bsiGeom_planeThroughPoints(reinterpret_cast<DPoint3dP>(&_n), 
-                                                            reinterpret_cast<DPoint3dP>(&_origin), 
-                                                            reinterpret_cast<DPoint3dCP>(_v), valid_points)) 
+                    if (false == bsiGeom_planeThroughPoints(reinterpret_cast<DPoint3dP>(&_n),
+                                                            reinterpret_cast<DPoint3dP>(&_origin),
+                                                            reinterpret_cast<DPoint3dCP>(_v), valid_points))
                         assert(!"Every point lies on the line joining the two extremal points");
 #endif
 
@@ -1015,8 +1015,8 @@ bool IndexStream::_buildNormals(int cloud_idx, pt::vector3s* _normals, bool tran
 					_n.normalize();
 
 #endif
-					
-					/*check side for flip*/ 
+
+					/*check side for flip*/
 #ifdef HAVE_WILDMAGIC
 					float dot = _n.Dot(_origin);
 #else
@@ -1032,7 +1032,7 @@ bool IndexStream::_buildNormals(int cloud_idx, pt::vector3s* _normals, bool tran
 						_n.invert();
 #endif
 					}
-					if (transform) 
+					if (transform)
 					{
 						mat.vec3_multiply_mat4f(_n);
 #ifdef HAVE_WILDMAGIC
@@ -1044,7 +1044,7 @@ bool IndexStream::_buildNormals(int cloud_idx, pt::vector3s* _normals, bool tran
 				}
 				else
 				{
-					/*point toward scanner by default*/ 
+					/*point toward scanner by default*/
 #ifdef HAVE_WILDMAGIC
 					_n = Wm5::Vector3f(zvec.x, zvec.y, zvec.z);
 #else
@@ -1063,12 +1063,12 @@ bool IndexStream::_buildNormals(int cloud_idx, pt::vector3s* _normals, bool tran
 				sparse++;
 			}
 #ifdef HAVE_WILDMAGIC
-			normals[p].set(_n.X(), _n.Y(), _n.Z()); 
+			normals[p].set(_n.X(), _n.Y(), _n.Z());
 #else
-			normals[p].set(_n.x, _n.y, _n.z); 
+			normals[p].set(_n.x, _n.y, _n.z);
 #endif
 		}
-	}	
+	}
 	////post process - use neighbour normal for zero normals
 	//for (i=0; i<ci->ibound * ci->jbound; i++)
 	//{
@@ -1080,7 +1080,7 @@ bool IndexStream::_buildNormals(int cloud_idx, pt::vector3s* _normals, bool tran
 	//		{
 	//			if (cpm[j] >= 0) points[cpm[j]]
 	//		}
-	//	}	
+	//	}
 	//}
 #ifdef _VERBOSE
 	std::cout << "done "<< std::endl;
@@ -1089,7 +1089,7 @@ bool IndexStream::_buildNormals(int cloud_idx, pt::vector3s* _normals, bool tran
 	std::cout << "    " << ci->numPoints - sparse - count << " points not present in image" << std::endl;
 #endif
 	delete [] points;
-	
+
 	return true;
 }
 void IndexStream::generateNormals()
@@ -1103,15 +1103,15 @@ void IndexStream::generateNormals()
 	}
 }
 //------------------------------------------------------------------------------
-// 
-// 
+//
+//
 //------------------------------------------------------------------------------
 void IndexStream::setRootStream(bool isRoot)
 {
 	_rootStream = isRoot;
 }
 //------------------------------------------------------------------------------
-// 
+//
 //------------------------------------------------------------------------------
 bool IndexStream::getRootStream(void) const
 {
@@ -1131,7 +1131,7 @@ void IndexStream::buildNormals(bool transform, float quality)
 	if (!_clouds || !_pager ) return;
 
 	if (! _clouds ) return;
-	/*build all normal channels to page file*/ 
+	/*build all normal channels to page file*/
 	if (!_normalpager)
 	{
 		wchar_t filepath[PT_PATH_SIZE-4];
@@ -1147,10 +1147,10 @@ void IndexStream::buildNormals(bool transform, float quality)
 		CloudInfo *ci = (*_clouds)[i];
 		if (!ci->hasNormals() && ci->ibound && ci->jbound && ci->numPoints > 1)
 		{
-			/*build channels and record normal pointer in _cloud_info*/ 
+			/*build channels and record normal pointer in _cloud_info*/
 
 			pt::vector3s *normals = 0;
-			
+
 			try {
                 normals = new pt::vector3s[(size_t)ci->numPoints];
 			}
@@ -1200,3 +1200,4 @@ uint64_t IndexStream::getNumCloudPoints() const
 	}
 	return numPoints;
 }
+POP_DISABLE_DEPRECATION_WARNINGS

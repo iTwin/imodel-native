@@ -131,7 +131,7 @@ double &perpendicularAbsoluteSum
 ) const
     {
     double volume;
-    return SumDirectedAreas (vectorToEye, numPositive, numPerpendicular, numNegative, 
+    return SumDirectedAreas (vectorToEye, numPositive, numPerpendicular, numNegative,
                 forwardProjectedSum, reverseProjectedSum,
                 forwardAbsoluteSum, reverseAbsoluteSum,
                 perpendicularAbsoluteSum,
@@ -219,11 +219,11 @@ bool triangulateSides
     BlockedVectorIntR clientPointIndex = visitor->ClientPointIndex ();
     //BlockedVectorIntR clientParamIndex = visitor->ClientParamIndex ();
     //BlockedVectorIntR clientColorIndex = visitor->ClientColorIndex ();
-    bvector<bool> &visible = visitor->Visible ();
+    auto &visible = visitor->Visible ();
     size_t originalIndexCount = PointIndex ().size ();
     bvector<IndexPair> edges;
     visitor->SetNumWrap (1);
-    for (visitor->Reset (); 
+    for (visitor->Reset ();
         visitor->AdvanceToNextFace () && visitor->GetReadIndex () < originalIndexCount;
         )
         {

@@ -186,15 +186,16 @@ TEST_F(PhenomenonTests, AllPhenomenonInStandardUnitsSchemaHaveValidDefinitions)
     ECSchemaPtr schema = ECTestFixture::GetUnitsSchema();
 
     bvector<Units::PhenomenonCP> allPhenom;
-    bvector<Utf8String> dimensionlessPhenomena = {"LENGTH_RATIO", "VOLUME_RATIO", "SLOPE"};
+    bvector<Utf8String> dimensionlessPhenomena = {/*ratio phen*/ "LENGTH_RATIO", "VOLUME_RATIO", "SLOPE", "MASS_RATIO",
+        /*Numeric phen*/"NUMBER", "PERCENTAGE","PROBABILITY"};
     schema->GetUnitsContext().AllPhenomena(allPhenom);
 
     for(auto const& p: allPhenom)
         {
-        if (std::find(dimensionlessPhenomena.begin(), dimensionlessPhenomena.end(), p->GetName()))
+        if (dimensionlessPhenomena.end() != std::find(dimensionlessPhenomena.begin(), dimensionlessPhenomena.end(), p->GetName()))
             continue;
         Utf8StringCR expression = p->GetPhenomenonSignature();
-        ASSERT_FALSE(expression.empty());
+        EXPECT_FALSE(expression.empty()) << p->GetName();
         }
     }
 
@@ -212,7 +213,7 @@ TEST_F(PhenomenonTests, AllUnitsInPhenomenaAreConvertibleBetweenEachOther)
 
     for(auto const& p: allPhenom)
         {
-        if (std::find(excludedPhenomenon.begin(), excludedPhenomenon.end(), p->GetName()))
+        if (excludedPhenomenon.end() != std::find(excludedPhenomenon.begin(), excludedPhenomenon.end(), p->GetName()))
             continue;
         auto units = p->GetUnits();
         for (auto const& u : units)

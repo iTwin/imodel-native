@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32)
     #include <windows.h>
+
 #elif defined (BENTLEY_WINRT)
     #include <windows.h>
     //#include <wrl.h>
@@ -54,7 +55,7 @@ static bool                                     s_assertHandlerCanBeChanged=true
 static bvector<BeTest::T_BeAssertListener*>     s_assertListeners;                  // MT: s_bentleyCS
 static bool                                     s_failOnAssert[(int)BeAssertFunctions::AssertType::TypeCount]; // MT: Problem! If one thread sets this, it will affect assertions that fail on other threads. *** WIP_MT make this thread-local?
 static bool                                     s_failOnInvalidParameterAssert = true;
-static bool                                     s_runningUnderGtest;                // indicates that we are running under gtest. MT: set only during initialization 
+static bool                                     s_runningUnderGtest;                // indicates that we are running under gtest. MT: set only during initialization
 static bool                                     s_hadAssert;
 static RefCountedPtr<BeTest::Host>              s_host;                             // MT: set only during initialization. Used on multiple threads. Must be thread-safe internally.
 #if defined (__unix__)
@@ -92,7 +93,7 @@ static LONG WINAPI ExpFilter(EXCEPTION_POINTERS* pExp, DWORD dwExpCode)
 
 #else
 
-#define BE_TEST_SEH_TRY            
+#define BE_TEST_SEH_TRY
 #define BE_TEST_SEH_EXCEPT(CLEANUP)
 
 #endif
@@ -108,7 +109,7 @@ void BeTest::SetRunningUnderGtest () {s_runningUnderGtest=true;}
 void BeTest::BreakInDebugger (CharCP msg1, CharCP msg2)
     {
 #if defined (BENTLEY_WIN32)||defined (BENTLEY_WINRT)
-    
+
     WString debugMessage (msg1, BentleyCharEncoding::Utf8);
     debugMessage.append (L":");
     debugMessage.AppendUtf8 (msg2);
@@ -171,7 +172,9 @@ static WString getAssertTypeDesc (BeAssertFunctions::AssertType t)
 void BentleyApi::BeAssertFunctions::DefaultAssertionFailureHandler (WCharCP message, WCharCP file, unsigned line)
     {
 #if !defined (BENTLEY_WINRT) // *** WIP_WINRT_GETENV
+PUSH_DISABLE_DEPRECATION_WARNINGS
     CharCP env = getenv ("MS_IGNORE_ASSERTS");
+POP_DISABLE_DEPRECATION_WARNINGS
     if (NULL != env && (*env == '1' || tolower(*env) == 't'))
         return;
 #endif
@@ -217,11 +220,13 @@ void BentleyApi::BeAssertFunctions::PerformBeAssert (WCharCP message, WCharCP fi
 void BentleyApi::BeAssertFunctions::PerformBeDataAssert (WCharCP message, WCharCP file, unsigned line)
     {
 #if !defined (BENTLEY_WINRT) // *** WIP_WINRT_GETENV
+PUSH_DISABLE_DEPRECATION_WARNINGS
     CharCP env = getenv ("MS_IGNORE_DATA_ASSERTS");
+POP_DISABLE_DEPRECATION_WARNINGS
     if (NULL != env && (*env == '1' || tolower(*env) == 't'))
         return;
 #endif
-    
+
     s_bentleyCS.lock();
     T_BeAssertHandler* host = s_assertHandler;
     s_hadAssert = true;
@@ -291,7 +296,7 @@ void            BeTest::SetFailOnAssert (bool doFail, BeAssertFunctions::AssertT
     else
         {
         s_failOnAssert[(int)atype] = doFail;
-        } 
+        }
 
     s_bentleyCS.unlock();
     }
@@ -313,7 +318,7 @@ void BeTest::SetFailOnInvalidParameterAssert(bool doFail)
     BeMutexHolder lock(s_bentleyCS);
     s_failOnInvalidParameterAssert = doFail;
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -335,7 +340,7 @@ bool BeTest::GetFailOnAssert (BeAssertFunctions::AssertType atype)
     else
         {
         allWillFail = s_failOnAssert[(int)atype];
-        } 
+        }
 
     s_bentleyCS.unlock();
 
@@ -381,7 +386,7 @@ void BeTest::Initialize (Host& host)
 
 #if defined (BENTLEY_WIN32)
 
-    // We do this to cause asserts to always output to a message box.  Without this the gtest process will abort without giving the developer the opportunity to 
+    // We do this to cause asserts to always output to a message box.  Without this the gtest process will abort without giving the developer the opportunity to
     // attach with a debugger and analyze the situation.
     _set_error_mode (_OUT_TO_STDERR);
 
@@ -393,7 +398,7 @@ void BeTest::Initialize (Host& host)
 
 #elif defined (BENTLEY_WINRT)
 
-    // We do this to cause asserts to always output to a message box.  Without this the process will abort without giving the developer the opportunity to 
+    // We do this to cause asserts to always output to a message box.  Without this the process will abort without giving the developer the opportunity to
     // attach with a debugger and analyze the situation.
     _set_error_mode(_OUT_TO_STDERR);
 
@@ -458,7 +463,8 @@ void BeTest::LoadTestList (Utf8String& filters, BeFileName const& ignoreDir)
     while (it.GetNextFileName (fn) == SUCCESS)
         {
         Utf8String afn (fn);
-        FILE* fp = fopen (afn.c_str(), "r");
+        FILE* fp;
+        BeFile::Fopen (&fp, afn.c_str(), "r");
         ReadTestList (filters, fp);
         fclose (fp);
         }
@@ -496,20 +502,20 @@ void BeTest::SetAssertionFailureHandler(T_AssertionFailureHandler const& f)
 static std::map<Utf8String, BeTest::TestCaseInfo*>* s_testCases;                    // MT: s_testCases is populated at code load time (by static constructors), so there is no danger of a race
 
 /*---------------------------------------------------------------------------------**//**
-* Default handler for test test and assertion failures. Handles failures by throwing 
+* Default handler for test test and assertion failures. Handles failures by throwing
 * an exception. This stragey works on all platforms but may not be optimal for some,
 * such as gtest.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct BeTestThrowFailureHandler : BeTest::IFailureHandler
     {
     private:
-    static bool s_disableThrows; 
+    static bool s_disableThrows;
 
     void ThrowException (WCharCP msg) THROW_SPECIFIER(CharCP)
         {
         if (!s_runningUnderGtest)
             {
-            // Ignore BeAssert failures that occur when we are unwinding an assertion failure or a test failure. 
+            // Ignore BeAssert failures that occur when we are unwinding an assertion failure or a test failure.
             // Note that throwing while unwinding an exception will terminate the process!
             if (s_disableThrows)
                 return;
@@ -617,7 +623,7 @@ BeTest::ExpectedResult::ExpectedResult (bool isAsExpected, CharCP actualValue, C
     m_message = "";
     m_message.append ("("); m_message.append (actualExpression); m_message.append ("="); m_message.append(actualValue); m_message.append(")");
     m_message.append (expectedEq? " was expected to equal ": " was not expected to equal ");
-    m_message.append ("("); m_message.append (expectedExpression); m_message.append ("="); m_message.append(expectedValue); m_message.append(")"); 
+    m_message.append ("("); m_message.append (expectedExpression); m_message.append ("="); m_message.append(expectedValue); m_message.append(")");
     m_message.append (" @ "); m_message.append (fileName); m_message.append (lnStr);
     m_abortImmediately = abortImmediately;
     }
@@ -646,7 +652,7 @@ BeTest::ExpectedResult::~ExpectedResult() THROW_SPECIFIER(CharCP)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeTest::ExpectedResult& BeTest::ExpectedResult::operator<< (WCharCP msg)
     {
-    if (m_message.empty())	
+    if (m_message.empty())
         return *this;
 
     Utf8String details;
@@ -796,7 +802,7 @@ void BeTest::IncrementErrorCountAndEnableThrows()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeTest::RethrowAssertFromOtherTreads () 
+void BeTest::RethrowAssertFromOtherTreads ()
     {
     BeMutexHolder holder (s_bentleyCS);
     if (s_hadAssertOnAnotherThread)
@@ -846,15 +852,15 @@ void testing::Test::RunTest()
         BeTest::IncrementErrorCountAndEnableThrows();
         return;
         }
-   
+
     InvokeTestBody();
     BeTest::RethrowAssertFromOtherTreads ();
 #else
     try {
         InvokeTestBody();
         BeTest::RethrowAssertFromOtherTreads ();
-        } 
-    catch(...) 
+        }
+    catch(...)
         {
         BeTest::IncrementErrorCountAndEnableThrows();
         }
@@ -867,14 +873,14 @@ void testing::Test::RunTest()
 void testing::Test::Run()
     {
     BentleyApi::NativeLogging::LoggingManager::GetLogger(L"TestRunner")->infov ("%s.%s", GetTestCaseNameA(), GetTestNameA());
-    
+
     size_t e = BeTest::GetErrorCount();
-    
+
     s_bentleyCS.lock();
     s_hadAssert = false;
     s_hadAssertOnAnotherThread = false;
     s_bentleyCS.unlock();
-    
+
     BeAssert(s_currentTestCaseName.Equals(GetTestCaseNameA()));
     BeAssert(s_currentTestName.Equals(GetTestNameA()));
 
@@ -899,7 +905,7 @@ void testing::Test::Run()
         // If setup failed, don't call the test.
         return;
         }
-    
+
     BE_TEST_SEH_TRY
         {
         RunTest();
@@ -909,14 +915,14 @@ void testing::Test::Run()
         try {
             TearDown();             // always call teardown, even if the test itself failed.
             BeTest::RethrowAssertFromOtherTreads ();
-            } 
-        catch(...) 
+            }
+        catch(...)
             {
             BeTest::IncrementErrorCountAndEnableThrows();
             }
         }
     BE_TEST_SEH_EXCEPT( BeTest::IncrementErrorCountAndEnableThrows(); )
-    
+
     s_IFailureHandler->_OnFailureHandled();
 
     if (BeTest::GetErrorCount() > e)
@@ -1108,7 +1114,7 @@ uintptr_t pReserved
         BentleyApi::NativeLogging::LoggingManager::GetLogger(L"BeAssert")->infov(L"Ignoring parameter failure: %ls\n", parameterFailure.c_str());
         return;
         }
-    
+
     BentleyApi::NativeLogging::LoggingManager::GetLogger(L"BeAssert")->error(parameterFailure.c_str());
 
 #ifdef USE_GTEST
@@ -1179,7 +1185,7 @@ void PerformanceResultRecorder::WriteResults(Utf8CP testcaseName, Utf8CP testNam
 
     bool existingFile = dir.DoesPathExist();
 
-    logFile = fopen(dir.GetNameUtf8().c_str(), "a+");
+    BeFile::Fopen(&logFile, dir.GetNameUtf8().c_str(), "a+");
     PERFORMANCELOG.infov(L"CSV Results filename: %ls\n", dir.GetName());
 
     if (!existingFile)
@@ -1208,7 +1214,7 @@ void PerformanceResultRecorder::WriteResultsPerf(Utf8CP testcaseName, Utf8CP tes
 
     bool existingFile = dir.DoesPathExist();
 
-    logFile = fopen(dir.GetNameUtf8().c_str(), "a+");
+    BeFile::Fopen(&logFile, dir.GetNameUtf8().c_str(), "a+");
     PERFORMANCELOG.infov(L"CSV Results filename: %ls\n", dir.GetName());
 
     if (!existingFile)

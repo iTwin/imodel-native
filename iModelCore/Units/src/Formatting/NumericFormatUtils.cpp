@@ -249,13 +249,13 @@ size_t FactorizedNumber::GetGreatestCommonFactor(FactorizedNumber other)
     FactorPowerP fpp;
     for (auto curr = m_factors.begin(), end = m_factors.end(); curr != end; curr++)
         {
-        fpp = curr;
+        fpp = &*curr;
         fact1[fpp->GetIndex()].CopyValues(fpp);
         }
     bvector<FactorPower> otherPwr = other.GetFactors();
     for (auto curr = otherPwr.begin(), end = otherPwr.end(); curr != end; curr++)
         {
-        fpp = curr;
+        fpp = &*curr;
         fact2[fpp->GetIndex()].CopyValues(fpp);
         }
     size_t fact = 1;
@@ -286,7 +286,7 @@ size_t StringUtils::AppendText(Utf8P buf, size_t bufLen, size_t index, Utf8CP st
         strL = static_cast<size_t>(cap);
     memcpy(static_cast<void*>(buf + index), str, strL);
     index += strL;
-    buf[index] = FormatConstant::EndOfLine();     
+    buf[index] = FormatConstant::EndOfLine();
     return index;
     }
 

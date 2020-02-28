@@ -16,6 +16,7 @@
 //std::mutex s_consoleMutex;
 //#endif
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 
 uint32_t s_max_number_nodes_in_group = 100;
 size_t s_max_group_size = 256 << 10; // 256 KB
@@ -447,7 +448,7 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
                     // Since this is not immediately recoverable, we throw here.
                     throw runtime_error("Error loading root Cesium tileset!");
                     }
-                // The connection may be temporarily lost and the entire tileset will be missing 
+                // The connection may be temporarily lost and the entire tileset will be missing
                 // but can be recoverable when the connection comes back live.
                 m_isLoading = false;
                 return ERROR;
@@ -772,7 +773,7 @@ bool SMNodeGroup::DownloadBlob(std::vector<DataSourceBuffer::BufferData>& dest, 
                         // Construct path to tempory folder
                         BeFileName tempPath;
 #if defined(VANCOUVER_API) || defined(DGNDB06_API)
-                        if (BeFileNameStatus::Success != BeFileName::BeGetTempPath(tempPath))                        
+                        if (BeFileNameStatus::Success != BeFileName::BeGetTempPath(tempPath))
 #else
                         if (BeFileNameStatus::Success != Desktop::FileSystem::BeGetTempPath(tempPath))
 #endif
@@ -897,7 +898,7 @@ void SMNodeGroup::Append3DTile(const uint64_t& nodeID, const uint64_t& parentNod
         m_tileTreeMap[nodeID] = &children.append(tile);
         }
     else
-        { 
+        {
         // We are adding the first tile in a new group
         // So keep the tile for later reference
         m_tilesetRootNode = tile;
@@ -1038,9 +1039,9 @@ Json::Value * SMGroupCache::GetNodeFromCache(const uint64_t & nodeId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mathieu.St-Pierre 08/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t SMGroupCache::_GetExcessiveRefCountThreshold() const 
-    { 
-    return numeric_limits<uint32_t>::max(); 
+uint32_t SMGroupCache::_GetExcessiveRefCountThreshold() const
+    {
+    return numeric_limits<uint32_t>::max();
     }
 #endif
 
@@ -1086,4 +1087,4 @@ SMGroupGlobalParameters::Ptr SMGroupGlobalParameters::Create(StrategyType strate
     return new SMGroupGlobalParameters(strategy, account, session);
     }
 
-
+POP_DISABLE_DEPRECATION_WARNINGS

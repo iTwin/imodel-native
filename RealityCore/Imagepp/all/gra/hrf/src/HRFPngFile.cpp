@@ -55,6 +55,7 @@
 
 #include <ImagePP/all/h/HRFRasterFileCapabilities.h>
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 static void hmr_png_read_data(png_structp png_ptr, png_bytep data, png_size_t length)
     {
     png_size_t check;
@@ -513,7 +514,7 @@ bool HRFPngFile::AssignStructTo(HFCPtr<HRFPageDescriptor> pi_pPage)
     double YResolution = 0;
 
 	// setPngText lambda
-	auto setPngText = [&](CharCP key, Utf8CP text) 
+	auto setPngText = [&](CharCP key, Utf8CP text)
 		{
         //&&MM_UTF8
         AString textA(text);
@@ -523,13 +524,13 @@ bool HRFPngFile::AssignStructTo(HFCPtr<HRFPageDescriptor> pi_pPage)
         pngText.text = const_cast<char*>(textA.c_str());// wont be modified by pnglib
         pngText.compression = PNG_TEXT_COMPRESSION_NONE;
         png_set_text(m_pPngFileStruct, m_pPngInfo, &pngText, 1);
-        };  
+        };
 
-    for (TagIterator  = pi_pPage->GetTags().begin(); 
+    for (TagIterator  = pi_pPage->GetTags().begin();
          TagIterator != pi_pPage->GetTags().end(); TagIterator++)
         {
         HFCPtr<HPMGenericAttribute> pTag = (*TagIterator);
-        
+
         // Image Gamma Tag
         if (pTag->GetID() == (HPMAttributesID)HRFAttributeImageGamma::ATTRIBUTE_ID)
             png_set_gAMA(m_pPngFileStruct, m_pPngInfo, ((HFCPtr<HRFAttributeImageGamma>&)pTag)->GetData());
@@ -770,7 +771,7 @@ bool HRFPngFile::Open()
 
             if (m_pPngFileStruct == 0)
                 {
-                //         throw HFCFileException(HFC_CANNOT_CREATE_PNG_COMP_INFO_EXCEPTION, GetURL()->GetURL()); 
+                //         throw HFCFileException(HFC_CANNOT_CREATE_PNG_COMP_INFO_EXCEPTION, GetURL()->GetURL());
                 }
             else
                 {
@@ -796,7 +797,7 @@ void HRFPngFile::CreateDescriptors ()
     HFCPtr<HRFPageDescriptor>           pPage;
 
     HFCPtr<HCDCodec> pZlibCodec(new HCDCodecZlib());
-    
+
     // Find blocks Data Flag
     HRFBlockType blockType = HRFBlockType::LINE;
     uint32_t BlockHeight = 1;                               // IMAGE if very small #TR 202714
@@ -1800,9 +1801,9 @@ BentleyStatus HRFPngFile::ReadToBuffer(bvector<Byte>& outPixels, uint32_t& width
     png_set_sig_bytes(png_ptr, sig_read);
 
     // We assumed that we have enough memory to read the entire image at once.
-    // PNG_TRANSFORM_STRIP_16       >> strip 16 bit/color files down to 8 bits per color.   
-    // PNG_TRANSFORM_PACKING        >> forces 8 bit     
-    // PNG_TRANSFORM_EXPAND         >> forces to expand a palette into RGB   
+    // PNG_TRANSFORM_STRIP_16       >> strip 16 bit/color files down to 8 bits per color.
+    // PNG_TRANSFORM_PACKING        >> forces 8 bit
+    // PNG_TRANSFORM_EXPAND         >> forces to expand a palette into RGB
     // PNG_TRANSFORM_GRAY_TO_RGB    >> convert grayscale to rgb.
     png_read_png(png_ptr, info_ptr, PNG_TRANSFORM_STRIP_16 | PNG_TRANSFORM_EXPAND | PNG_TRANSFORM_GRAY_TO_RGB | PNG_TRANSFORM_PACKING, NULL);
 
@@ -1815,7 +1816,7 @@ BentleyStatus HRFPngFile::ReadToBuffer(bvector<Byte>& outPixels, uint32_t& width
         png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
         return ERROR;
         }
-        
+
     // Fill in the outputs.
     width = info_ptr->width;
     height = info_ptr->height;
@@ -1825,8 +1826,9 @@ BentleyStatus HRFPngFile::ReadToBuffer(bvector<Byte>& outPixels, uint32_t& width
     for(uint32_t line=0; line < height; ++line)
         memcpy(outPixels.data() + line*bytesPerRow, rows_pointers[line], bytesPerRow);
 
-    // Clean up after the read, and free any memory allocated 
+    // Clean up after the read, and free any memory allocated
     png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
 
     return SUCCESS;
     }
+POP_DISABLE_DEPRECATION_WARNINGS

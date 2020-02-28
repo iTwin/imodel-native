@@ -23,7 +23,7 @@ FormattingScannerCursor::FormattingScannerCursor(Utf8CP utf8Text, int scanLength
     {
     m_text = Utf8String(utf8Text);  // we make a copy of the original string
     m_status = ScannerCursorStatus::Success;
-    m_breakIndex = 0; 
+    m_breakIndex = 0;
     m_totalScanLength = StringUtils::TextLength(utf8Text);
     if (scanLength > 0 && scanLength <= (int)m_totalScanLength)
         m_totalScanLength = scanLength;
@@ -40,7 +40,7 @@ Utf8String FormattingScannerCursor::ExtractLastEnclosure()
     m_status = ScannerCursorStatus::Success;
     m_breakIndex = m_totalScanLength; // points to the terminating zero
     Utf8CP txt = m_text.c_str();
-    
+
     while (isspace(txt[--m_breakIndex]) && 0 < m_breakIndex);  // skip blanks from the end
 
     if (!m_dividers.IsDivider(txt[m_breakIndex]))
@@ -96,7 +96,7 @@ Utf8String FormattingScannerCursor::ExtractBeforeEnclosure()
         }
 
     size_t len = m_breakIndex - indx;
-    
+
     Utf8P buf = (Utf8P)alloca(len + 2);
 
     memcpy(buf, txt + indx, len);
@@ -124,7 +124,7 @@ Utf8String FormattingScannerCursor::ExtractSegment(size_t from, size_t to)
         buf[len] = FormatConstant::EndOfLine();
         return Utf8String(buf);
         }
- 
+
     m_status = ScannerCursorStatus::NoEnclosure;
     return emptyBuf;
     }
@@ -205,7 +205,7 @@ FormatDividerInstance::FormatDividerInstance(Utf8CP  txt, Utf8CP divs)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 04/17
 //----------------------------------------------------------------------------------------
-bool FormatDividerInstance::IsDivLast() 
+bool FormatDividerInstance::IsDivLast()
     {
     if (0 >= m_divCount)
         return false;
@@ -356,7 +356,7 @@ void CursorScanPoint::ProcessNext(Utf8CP input)
 //    2.  Checks for a sign character.
 //    3.  Iterates through any digits until a non-digit char is hit
 //    4.  Checks for a "bar" char, signifies a fractional number.
-//       a) 
+//       a)
 //    5.  Checks for decimal or thousands separator
 //       a)  Iterates through any further digits after separator
 //    6.  Checks for exponent
@@ -370,7 +370,7 @@ size_t NumberGrabber::Grab(Utf8CP input, size_t start, Utf8Char const decimalSep
         }
     m_next = m_start;
     m_ival = 0;
-    m_dval = 0;  
+    m_dval = 0;
     CursorScanPoint csp = CursorScanPoint(m_input, m_next);
     if (csp.IsEndOfLine())
         {
@@ -421,7 +421,7 @@ size_t NumberGrabber::Grab(Utf8CP input, size_t start, Utf8Char const decimalSep
         csp.Iterate(m_input);
         }
 
-    if (csp.IsBar())  // a very special case of a fraction 
+    if (csp.IsBar())  // a very special case of a fraction
         {
         if (iCount > 0)
             {
@@ -429,7 +429,7 @@ size_t NumberGrabber::Grab(Utf8CP input, size_t start, Utf8Char const decimalSep
             csp.Iterate(m_input);
             while (csp.IsDigit())    // if there any digits - they will be accumulated in the int part
                 {
-                if (dCount + 1 >= MAX_PARSING_DIGITS) 
+                if (dCount + 1 >= MAX_PARSING_DIGITS)
                     {
                     m_problem.UpdateProblemCode(FormatProblemCode::TooManyDigits);
                     return m_next - m_start;
@@ -452,7 +452,7 @@ size_t NumberGrabber::Grab(Utf8CP input, size_t start, Utf8Char const decimalSep
                 m_next = m_start;
             }
         else
-           m_next = m_start;    // the sequence cannot be recognized 
+           m_next = m_start;    // the sequence cannot be recognized
         return m_next - m_start;
         }
 
@@ -550,7 +550,7 @@ size_t NumberGrabber::Grab(Utf8CP input, size_t start, Utf8Char const decimalSep
         double f = (double)fval;
         for (int i = 0; i < fCount; ++i) { f *= 0.1; }
         dval = (double)ival + f;
-             
+
         if (expMark && eCount > 0)
             {
             double f = 1.0;
@@ -618,7 +618,7 @@ FormatParsingSegment::FormatParsingSegment(bvector<CursorScanPoint> vect, size_t
     m_name.get_allocator().allocate(vect.size() * 4 + 2);
     unsigned char* ptr;
 
-    for (CursorScanPointP vp = vect.begin(); vp != vect.end(); ++vp)
+    for (auto vp = vect.begin(); vp != vect.end(); ++vp)
         {
         m_vect.push_back(*vp);
         for (ptr = vp->GetBytes(); *ptr != '\0'; ++ptr)
@@ -644,7 +644,7 @@ FormatParsingSegment::FormatParsingSegment(bvector<CursorScanPoint> vect, size_t
                     m_name.AssignOrClear("ARC_DEG");
 
                 auto const& units = ph->GetUnits();
-                auto matchingUnit = std::find_if(units.begin(), units.end(), 
+                auto matchingUnit = std::find_if(units.begin(), units.end(),
                     [&](BEU::UnitCP unit) {return ((unit->GetName().EqualsI(m_name)) || (unit->GetDisplayLabel() == m_name));});
                 if (matchingUnit != units.end())
                     m_unit = *matchingUnit;
@@ -858,7 +858,7 @@ Utf8String FormatParsingSet::GetSignature(bool distinct) //, int* colonCount)
 
     ParsingSegmentType type;
 
-    for (FormatParsingSegmentP fps = m_segs.begin(); fps != m_segs.end(); fps++)
+    for (auto fps = m_segs.begin(); fps != m_segs.end(); fps++)
         {
         type = fps->GetType();
         if (type == ParsingSegmentType::Real)
@@ -924,9 +924,9 @@ BEU::Quantity FormatParsingSet::GetQuantity(FormatProblemCode* probCode, FormatC
     //      1/3 FT - FU
     //  50+00.1    - NN (station)
     BEU::UnitCP majP, midP;
-    
+
     BEU::UnitCP inputUnit;
-    
+
     if (nullptr != format && nullptr != format->GetCompositeMajorUnit())
         inputUnit = format->GetCompositeMajorUnit();
     else
@@ -935,7 +935,7 @@ BEU::Quantity FormatParsingSet::GetQuantity(FormatProblemCode* probCode, FormatC
     double sign = 1.0;
 
     m_problem.Reset();
-   
+
     Formatting::FormatSpecialCodes cod = Formatting::FormatConstant::ParsingPatternCode(sig.c_str());
     switch (cod)
         {

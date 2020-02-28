@@ -6,7 +6,7 @@
 #include    <Bentley/BeStringUtilities.h>
 #include    <Bentley/WString.h>
 
-PUSH_MSVC_IGNORE(6054) // don't care about NULL termination warnings in tests...
+PUSH_MSVC_IGNORE(6054 4996) // don't care about NULL termination warnings in tests...
 
 static void ok (bool b, CharCP fmt, ...)
     {
@@ -255,13 +255,13 @@ static void test_sscanf_s(void)
 {
     int i, ret;
     char buf[100];
-/* 
+/*
     int (__cdecl *psscanf_s)(const char*,const char*,...);
     HMODULE hmod = GetModuleHandleA("msvcrt.dll");
 
-    psscanf_s = (void*)GetProcAddress(hmod, "sscanf_s");
+    psscanf_s = (void*)GetProcAddress(hmod, "Utf8String::Sscanf_safe");
     if(!psscanf_s) {
-        win_skip("sscanf_s not available\n");
+        win_skip("Utf8String::Sscanf_safe not available\n");
         return;
     }
 */

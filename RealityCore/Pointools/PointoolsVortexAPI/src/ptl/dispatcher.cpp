@@ -2,9 +2,9 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See COPYRIGHT.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-/*--------------------------------------------------------------------------*/ 
-/*	Pointools Dispatcher													*/ 
-/*--------------------------------------------------------------------------*/ 
+/*--------------------------------------------------------------------------*/
+/*	Pointools Dispatcher													*/
+/*--------------------------------------------------------------------------*/
 #include "PointoolsVortexAPIInternal.h"
 #include <ptl/block.h>
 #include <ptl/dispatcher.h>
@@ -13,11 +13,12 @@
 using namespace ptl;
 using namespace pt;
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 namespace __ptl
 {
 	typedef Loki::AssocVector<datatree::NodeID, BranchHandler*> BRANCH_HANDLER_MAP;
 
-	/*handlers used for backward compatibility with View 1.56 and earlier*/ 
+	/*handlers used for backward compatibility with View 1.56 and earlier*/
 	typedef Loki::AssocVector<const char *, Handler*, id_cmp> HANDLERMAP;
 	typedef Loki::AssocVector<const char *, const char*, id_cmp> IDMAP;
 
@@ -54,7 +55,7 @@ Dispatcher::Dispatcher()
 }
 Dispatcher::~Dispatcher()
 {
-	/*cleanup*/ 
+	/*cleanup*/
 }
 //---------------------------------------------------------------------------
 // registerHandler
@@ -91,7 +92,7 @@ void Dispatcher::registerClearHandler(clear_cb cb)
 }
 void Dispatcher::registerOpenHandler(clear_cb cb)
 {
-	openhandlers.push_back(cb);	
+	openhandlers.push_back(cb);
 }
 //---------------------------------------------------------------------------
 // unregisterHandler
@@ -146,7 +147,7 @@ bool Dispatcher::dispatchBranch(datatree::Branch *br, bool configuration)
 		it->second->readbranch(br);
 		return true;
 	}
-#ifdef DATATREE_DEBUGGING	
+#ifdef DATATREE_DEBUGGING
 	char brid[32];
 	br->id().get(brid);
 	std::cout << "unable to find" << (configuration ? " config" : " ") << " branch handler for " << brid << std::endl;
@@ -159,8 +160,8 @@ bool Dispatcher::dispatchBranch(datatree::Branch *br, bool configuration)
 int Dispatcher::writeBlocks(Blocks &blocks)
 {
 	int block_count = 0;
-	/*some of these can get quite large for embedded data*/ 
-	/*so we need a flush mechanism*/ 
+	/*some of these can get quite large for embedded data*/
+	/*so we need a flush mechanism*/
 	HANDLERMAP::iterator bg = hmap.begin();
 	HANDLERMAP::iterator en = hmap.end();
 
@@ -171,7 +172,7 @@ int Dispatcher::writeBlocks(Blocks &blocks)
 		if (b)
 		{
 			blocks.push_back(b);
-			/*write to file*/ 
+			/*write to file*/
 			block_count ++;
 		}
 	}
@@ -203,7 +204,7 @@ void Dispatcher::freeBlocks(Blocks &blocks)
 {
 	for (unsigned int i=0; i<blocks.size(); i++)
 	{
-		/*data deletetion is responsibility of handler*/ 
+		/*data deletetion is responsibility of handler*/
 		Block::freeBlock(blocks[i]);
 	}
 	blocks.clear();
@@ -213,7 +214,7 @@ void Dispatcher::freeBlocks(Blocks &blocks)
 //---------------------------------------------------------------------------
 bool Dispatcher::writeBlock(Block *block, bool configuration)
 {
-	/*find handler*/ 
+	/*find handler*/
 	HANDLERMAP::iterator it =  hmap.find(block->identifier);
 	if (it != hmap.end())
 	{
@@ -228,7 +229,7 @@ bool Dispatcher::writeBlock(Block *block, bool configuration)
 const char*	Dispatcher::blockHandlerName(const char *id) const
 {
 	HANDLERMAP::const_iterator it = hmap.find(id);
-	if (it != hmap.end()) return it->second->descriptor;	
+	if (it != hmap.end()) return it->second->descriptor;
 	return 0;
 }
 //---------------------------------------------------------------------------
@@ -239,7 +240,7 @@ BranchHandler::BranchHandler(datatree::NodeID id, read_cb rcb, write_cb wcb, boo
 {
 	if (!config)
 		Dispatcher::instance()->registerBranchHandler(this);
-	else 
+	else
 		Dispatcher::instance()->registerConfigurationHandler(this);
 
 	configuration = config;
@@ -260,10 +261,10 @@ Handler::Handler(const char *id, read_cb rcb, write_cb wcb, bool config, const c
 	memcpy(identifier, id, 8);
 	if (!config)
 		Dispatcher::instance()->registerHandler(this);
-//	else 
+//	else
 //		Dispatcher::instance()->registerConfigurationHandler(this);
-	
-	/*else ignore for now */ 
+
+	/*else ignore for now */
 
 	if (desc) strncpy(descriptor, desc, sizeof(descriptor));
 	else descriptor[0] = '\0';
@@ -287,7 +288,7 @@ void Block::freeBlock(Block *b)						{ delete b; }
 //write a sub block allocation + free
 //---------------------------------------------------------------------------
 void Block::write_block(Block *b)
-{ 
+{
 	write(b->identifier);
 	write(b->version);
 
@@ -308,7 +309,7 @@ void Block::write_block(Block *b)
 	}
 }
 Block *Block::read_block() const
-{	
+{
 	Block *b = allocBlock();
 	read(b->identifier);
 	read(b->version);
@@ -345,7 +346,7 @@ Block *BlockIO::load(DataSourcePtr h)
 		block = Block::allocBlock(bytes);
 		memcpy(block->identifier, id, 8);
 
-		/*sanity check*/ 
+		/*sanity check*/
 		assert(bytes < 5242880);
 		if (bytes > 5242880) return 0;
 
@@ -368,7 +369,7 @@ bool BlockIO::store(Block *block, DataSourcePtr h)
 		char id[] = "________";
 		memcpy(id, block->identifier, 8);
 
-		/*iterate through chunks*/ 
+		/*iterate through chunks*/
 		Chunk *ch = block->firstchunk();
 		while (ch)
 		{
@@ -380,3 +381,4 @@ bool BlockIO::store(Block *block, DataSourcePtr h)
 	}
 	return false;
 }
+POP_DISABLE_DEPRECATION_WARNINGS

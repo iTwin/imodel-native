@@ -323,9 +323,9 @@ BentleyStatus MemberFunctionCallExp::ValidateArgument(ValueExp const& arg, Utf8S
     expList = arg.Find (Exp::Type::PropertyName, true);
     if (!expList.empty())
         {
-        msg.Sprintf("Invalid MemberFunctionCall expression '%s'. Argument %s is invalid. A MemberFunctionCall expression cannot not contain a PropertyName expression. ", 
+        msg.Sprintf("Invalid MemberFunctionCall expression '%s'. Argument %s is invalid. A MemberFunctionCall expression cannot not contain a PropertyName expression. ",
                     m_functionName.c_str(), expList.front()->ToString().c_str());
-        
+
         return ERROR;
         }
 
@@ -354,7 +354,7 @@ Exp::FinalizeParseStatus MemberFunctionCallExp::_FinalizeParsing(ECSqlParseConte
             ctx.Issues().ReportV("Unknown member function '%s'", m_functionName.c_str());
             return Exp::FinalizeParseStatus::Error;
             }
-        
+
         if (funcSig->SetParameterType(GetChildrenR()) != SUCCESS)
             {
             ctx.Issues().ReportV("Error in function call '%s' - Varying argument list cannot be parameterized.", m_functionName.c_str());
@@ -374,7 +374,7 @@ Exp::FinalizeParseStatus MemberFunctionCallExp::_FinalizeParsing(ECSqlParseConte
 
     return FinalizeParseStatus::NotCompleted;
     }
-    
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       10/2017
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -451,7 +451,7 @@ ValueExp const* MemberFunctionCallExp::GetArgument(size_t index) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-//static 
+//static
 bmap<Utf8CP, ECSqlTypeInfo, CompareIUtf8Ascii>* FunctionCallExp::s_builtInFunctionReturnTypes = nullptr;
 
 //-----------------------------------------------------------------------------------------
@@ -556,7 +556,7 @@ void FunctionCallExp::DetermineReturnType(ECDbCR ecdb)
     auto it = GetBuiltInFunctionReturnTypes().find(m_functionName.c_str());
     if (it == GetBuiltInFunctionReturnTypes().end())
         {
-        //all other functions get the default return type 
+        //all other functions get the default return type
         SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Double));
         return;
         }
@@ -588,7 +588,7 @@ void FunctionCallExp::_ToECSql(ECSqlRenderContext& ctx) const
         ctx.AppendToECSql("(");
 
     ctx.AppendToECSql(m_functionName);
-    
+
     if (!m_isGetter)
         {
         ctx.AppendToECSql("(");
@@ -699,7 +699,7 @@ Exp::FinalizeParseStatus LikeRhsValueExp::_FinalizeParsing(ECSqlParseContext& ct
     {
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         return FinalizeParseStatus::NotCompleted;
-        
+
     SetTypeInfo(GetRhsExp()->GetTypeInfo());
     return FinalizeParseStatus::Completed;
     }
@@ -746,7 +746,7 @@ void LikeRhsValueExp::_ToECSql(ECSqlRenderContext& ctx) const
 // @bsimethod                                    Affan.Khan                       10/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 EnumValueExp::EnumValueExp(ECEnumeratorCR value, PropertyPath const& expPath) : ValueExp(Type::EnumValue, true), m_enumerator(value), m_expPath(expPath)
-    {    
+    {
     SetTypeInfo(ECSqlTypeInfo::CreateEnum(value.GetEnumeration()));
     }
 
@@ -863,14 +863,14 @@ BentleyStatus LiteralValueExp::TryParse(ECN::ECValue& val) const
             case PRIMITIVETYPE_Integer:
             {
             int32_t v = 0;
-            sscanf(m_rawValue.c_str(), "%" SCNd32, &v);
+            Utf8String::Sscanf_safe(m_rawValue.c_str(), "%" SCNd32, &v);
             return val.SetInteger(v);
             }
 
             case PRIMITIVETYPE_Long:
             {
             int64_t v = 0;
-            sscanf(m_rawValue.c_str(), "%" SCNd64, &v);
+            Utf8String::Sscanf_safe(m_rawValue.c_str(), "%" SCNd64, &v);
             return val.SetLong(v);
             }
 
@@ -1224,7 +1224,7 @@ FunctionSignature const* FunctionSignatureSet::Find(Utf8CP name) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       10/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-//static 
+//static
 FunctionSignatureSet& FunctionSignatureSet::GetInstance()
     {
 
@@ -1323,7 +1323,7 @@ BentleyStatus FunctionSignature::SetReturnType(ValueType type, bool member)
        m_scope = FunctionScope::Class;
     else if (member && type != ValueType::Resultset)
         m_scope = FunctionScope::Property;
-    else 
+    else
         m_scope = FunctionScope::Global;
 
     m_returnType = type;
@@ -1348,7 +1348,7 @@ BentleyStatus FunctionSignature::Append(Utf8CP name, ValueType type, bool option
 
     if (last != nullptr && last->IsVariadic())
         return ERROR;
-    
+
     if (arg->IsVariadic() && optional)
         return ERROR;
 
@@ -1367,7 +1367,7 @@ BentleyStatus FunctionSignature::Append(Utf8CP name, ValueType type, bool option
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       10/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-//static 
+//static
 Utf8CP FunctionSignature::ValueTypeToString(ValueType type)
     {
     if (type == ValueType::String) return "string";
@@ -1384,10 +1384,10 @@ Utf8CP FunctionSignature::ValueTypeToString(ValueType type)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       10/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-//static  
+//static
 BentleyStatus FunctionSignature::Parse(std::unique_ptr<FunctionSignature>& funcSig, Utf8CP signature, Utf8CP description)
     {
-    Utf8String temp = Utf8String(signature).Trim();   
+    Utf8String temp = Utf8String(signature).Trim();
     bool member = temp.StartsWith("::");
     if (member)
         temp = temp.substr(2);
@@ -1523,7 +1523,7 @@ Utf8String FunctionSignature::ToString() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       10/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-//static 
+//static
 bool FunctionSignature::ParseValueType(ValueType& type, Utf8CP str)
     {
     if (BeStringUtilities::StricmpAscii("string", str) == 0)
@@ -1579,7 +1579,7 @@ BentleyStatus FunctionSignature::SetParameterType(Exp::Collection& argExps) cons
     do
         {
         Arg const* arg = args[i];
-        ValueExp& test = const_cast<ValueExp&>(argExps[j]->GetAs<ValueExp>());          
+        ValueExp& test = const_cast<ValueExp&>(argExps[j]->GetAs<ValueExp>());
         if (test.GetTypeInfo().GetKind() == ECSqlTypeInfo::Kind::Unset && test.IsParameterExp())
             {
             if (arg->IsVariadic())
@@ -1749,7 +1749,7 @@ bool FunctionSignature::HasVariadicArg() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       10/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-//static 
+//static
 std::unique_ptr<FunctionSignature> FunctionSignature::Parse(Utf8CP signature, Utf8CP description)
     {
     std::unique_ptr<FunctionSignature> sig;

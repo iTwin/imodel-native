@@ -18,6 +18,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
+
 #pragma pack(2)
 typedef struct
 {
@@ -184,7 +186,7 @@ typedef struct _DBASERecordHeader
        unsigned char                                            reserved5;    // reserved
        unsigned char                                            reserved6;    // reserved
        unsigned char                                            reserved7;    // reserved
-       unsigned char                                            indexed;      // index field flag, 00 = no key (ignored), 01 = key exists in MDX 
+       unsigned char                                            indexed;      // index field flag, 00 = no key (ignored), 01 = key exists in MDX
 } DBASERecordHeader;                                                 // 32 unsigned char fixed length header
 
 typedef struct _DBASEHeaderEx
@@ -868,7 +870,7 @@ BENTLEYDTM_Private int bcdtmFormatEsri_closeEsriShapeFiles(EsriFileInfo *esriFil
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmFormatEsri_openEsriShapeFilesForExport(EsriFileInfo *esriFileInfoP,wchar_t const*dtmTypeP,uint32_t shapeType) 
+BENTLEYDTM_Private int bcdtmFormatEsri_openEsriShapeFilesForExport(EsriFileInfo *esriFileInfoP,wchar_t const*dtmTypeP,uint32_t shapeType)
 {
  int ret=DTM_SUCCESS,dbg=0 ;
  wchar_t fileName[256] = L"";
@@ -2544,3 +2546,4 @@ BENTLEYDTM_Private int        bcdtmFormatEsri_writeFileHeader
        return (byteswritten);
 }
 
+POP_DISABLE_DEPRECATION_WARNINGS

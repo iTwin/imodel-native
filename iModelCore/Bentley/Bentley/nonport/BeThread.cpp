@@ -38,7 +38,7 @@
 
 USING_NAMESPACE_BENTLEY
 
-#if defined (BENTLEYCONFIG_OS_WINDOWS) 
+#if defined (BENTLEYCONFIG_OS_WINDOWS)
     static DWORD toKey(void* k) {return (DWORD) (intptr_t)k;}
     static void* toPtr(DWORD k) {return (void*) (intptr_t)k;}
 #elif defined (__unix__)
@@ -140,9 +140,9 @@ uint32_t BeThreadUtilities::GetHardwareConcurrency()
 
 //=======================================================================================
 // The classe BeMutex, BeMutexHolder, and BeConditionVariable are each meant to be implemented by
-// std::recursive_mutex, std::unique_lock, and std::condition_variable_any respectively. All of this nonsense below 
+// std::recursive_mutex, std::unique_lock, and std::condition_variable_any respectively. All of this nonsense below
 // is due to the fact that the MSVC compiler in /clr mode doesn't support them. Hence,
-// we can't include <mutex>, or <condition_variable> in our header files and we must hide those 
+// we can't include <mutex>, or <condition_variable> in our header files and we must hide those
 // classes inside this file. The public types must be at least as large as the std types, and then
 // we simply forward the methods to them below.
 //=======================================================================================
@@ -189,7 +189,7 @@ bool BeConditionVariable::ProtectedWaitOnCondition(BeMutexHolder& holder, ICondi
         {
         if (Infinite == timeoutMillis)
             InfiniteWait(holder);
-        else  
+        else
             {
             uint32_t    startTicks = BeTimeUtilities::QueryMillisecondsCounterUInt32();
 
@@ -208,16 +208,16 @@ bool BeConditionVariable::ProtectedWaitOnCondition(BeMutexHolder& holder, ICondi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-intptr_t BeThreadUtilities::GetCurrentThreadId() 
-    { 
+intptr_t BeThreadUtilities::GetCurrentThreadId()
+    {
 #if defined (BENTLEY_WIN32)||defined (BENTLEY_WINRT)
 
-    return ::GetCurrentThreadId(); 
+    return ::GetCurrentThreadId();
 
 #elif defined (__unix__)
 
     #if defined (BETHREAD_USE_PTHREAD)
-        //  Don't change this to gettid.  MobileDgnRPC uses 
+        //  Don't change this to gettid.  MobileDgnRPC uses
         //  the value that pthread_create returns.  On Android that
         //  matches what pthread_self returns and does not match what
         //  gettid returns.
@@ -232,7 +232,7 @@ intptr_t BeThreadUtilities::GetCurrentThreadId()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  07/2009  
+* @bsimethod                                                    Brien.Bastings  07/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint32_t BeNumerical::ResetFloatingPointExceptions(uint32_t newFpuMask)
     {
@@ -242,10 +242,12 @@ uint32_t BeNumerical::ResetFloatingPointExceptions(uint32_t newFpuMask)
     _fpreset();
 
     if (0 == newFpuMask)
+PUSH_DISABLE_DEPRECATION_WARNINGS
         newFpuMask = _controlfp(0, 0);
 
     uint32_t retval =  _controlfp(newFpuMask, MCW_EM);
     return retval;
+POP_DISABLE_DEPRECATION_WARNINGS
 
 #elif defined (__unix__)
 
@@ -325,7 +327,7 @@ int BeThreadUtilities::GetDefaultStackSize()
     {
     //on linux, we can only use 16k, 2MB, 8MB, etc
     //8MB is default on linux
-    return 2 * 1024 * 1024; 
+    return 2 * 1024 * 1024;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -368,14 +370,14 @@ BentleyStatus BeThreadUtilities::StartNewThread(T_ThreadStart startAddr, void* a
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeThread::BeThread(Utf8CP threadName) : m_threadId(0), m_threadName(threadName) 
+BeThread::BeThread(Utf8CP threadName) : m_threadId(0), m_threadName(threadName)
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP BeThread::GetThreadName() const 
+Utf8CP BeThread::GetThreadName() const
     {
     return m_threadName.c_str();
     }

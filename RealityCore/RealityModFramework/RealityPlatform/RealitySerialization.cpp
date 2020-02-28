@@ -90,12 +90,12 @@ RealityPackageStatus RealityDataSerializer::ReadGeoPoint2d(GeoPoint2dR point, Be
     // Use UTF8 since it is the native format.
     Utf8String pointStr;
     if(BEXML_Success != parent.GetContent(pointStr, childName))
-        return RealityPackageStatus::UnknownError;  
+        return RealityPackageStatus::UnknownError;
 
     Utf8StringTokenizer tokenizer(pointStr, SPACE_DELIMITER);
 
     if(!tokenizer.Get(point.longitude) || !tokenizer.Get(point.latitude))
-        return RealityPackageStatus::UnknownError;  
+        return RealityPackageStatus::UnknownError;
 
     return RealityPackageStatus::Success;
     }
@@ -163,7 +163,7 @@ RealityPackageStatus RealityDataSerializer::_ReadPackageInfo(RealityDataPackageR
     package.SetId(id.c_str());
 
     // Bounding polygon.
-    Utf8String polygonString; 
+    Utf8String polygonString;
     BoundingPolygonPtr pPolygon = BoundingPolygon::Create();
     xmlDom.SelectNodeContent(polygonString, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_BoundingPolygon, pContext, BeXmlDom::NODE_BIAS_First);
     if (!polygonString.empty() && (pPolygon = BoundingPolygon::FromString(polygonString.c_str())).IsNull())
@@ -185,8 +185,8 @@ RealityPackageStatus RealityDataSerializer::_ReadPackageInfo(RealityDataPackageR
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
 RealityPackageStatus RealityDataSerializer::_ReadImageryGroup(RealityDataPackageR package, BeXmlDomR xmlDom)
-    { 
-    return RealityPackageStatus::UnknownError; 
+    {
+    return RealityPackageStatus::UnknownError;
     };
 
 //-------------------------------------------------------------------------------------
@@ -194,7 +194,7 @@ RealityPackageStatus RealityDataSerializer::_ReadImageryGroup(RealityDataPackage
 //-------------------------------------------------------------------------------------
 RealityPackageStatus RealityDataSerializer::_ReadModelGroup(RealityDataPackageR package, BeXmlDomR xmlDom)
     {
-    return RealityPackageStatus::UnknownError; 
+    return RealityPackageStatus::UnknownError;
     };
 
 //-------------------------------------------------------------------------------------
@@ -231,7 +231,7 @@ RealityPackageStatus RealityDataSerializer::_ReadUnknownElements(RealityDataPack
     if (package.HasUnknownElements())
         return RealityPackageStatus::Success;
 
-    // Check if it is an unknown element.       
+    // Check if it is an unknown element.
     if (0 == pNode->NameStricmp(PACKAGE_ELEMENT_Name) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_Description) ||
         0 == pNode->NameStricmp(PACKAGE_ELEMENT_CreationDate) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_Copyright) ||
         0 == pNode->NameStricmp(PACKAGE_ELEMENT_PackageId) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_BoundingPolygon) ||
@@ -381,7 +381,7 @@ SpatialEntityDataSourcePtr RealityDataSerializer::_ReadSource(RealityPackageStat
     pNode->GetContent(nodatavalue, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_NoDataValue);
     pDataSource->SetNoDataValue(nodatavalue.c_str());
 
-    // Sister files.    
+    // Sister files.
     BeXmlNodeP pSisterFilesNode = pNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_SisterFiles);
     if (NULL != pSisterFilesNode)
         {
@@ -454,7 +454,7 @@ MultiBandSourcePtr RealityDataSerializer::_ReadMultiBandSource(RealityPackageSta
     Utf8String provider;
     pNode->GetContent(provider, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Provider);
     pDataSource->SetProvider(provider.c_str());
-    
+
     // Server login key.
     Utf8String serverLoginKey;
     pNode->GetContent(serverLoginKey, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_ServerLoginKey);
@@ -513,7 +513,7 @@ MultiBandSourcePtr RealityDataSerializer::_ReadMultiBandSource(RealityPackageSta
     pNode->GetContent(nodatavalue, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_NoDataValue);
     pDataSource->SetNoDataValue(nodatavalue.c_str());
 
-    // Sister files.    
+    // Sister files.
     BeXmlNodeP pSisterFilesNode = pNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_SisterFiles);
     if (NULL != pSisterFilesNode)
         {
@@ -593,15 +593,15 @@ MultiBandSourcePtr RealityDataSerializer::_ReadMultiBandSource(RealityPackageSta
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-RealityPackageStatus RealityDataSerializer::_WritePackageInfo(BeXmlNodeR node, RealityDataPackageCR package) const 
-    { 
+RealityPackageStatus RealityDataSerializer::_WritePackageInfo(BeXmlNodeR node, RealityDataPackageCR package) const
+    {
     // Optional fields, if empty don't add them to the package.
     if (!package.GetOrigin().empty())
         node.AddElementStringValue(PACKAGE_ELEMENT_Origin, package.GetOrigin().c_str());
 
     if (!package.GetRequestingApplication().empty())
         node.AddElementStringValue(PACKAGE_ELEMENT_RequestingApplication, package.GetRequestingApplication().c_str());
-    
+
     if (!package.GetName().empty())
         node.AddElementStringValue(PACKAGE_ELEMENT_Name, package.GetName().c_str());
 
@@ -626,8 +626,8 @@ RealityPackageStatus RealityDataSerializer::_WritePackageInfo(BeXmlNodeR node, R
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-RealityPackageStatus RealityDataSerializer::_WriteImageryGroup(BeXmlNodeR node, RealityDataPackageCR package) const 
-    { 
+RealityPackageStatus RealityDataSerializer::_WriteImageryGroup(BeXmlNodeR node, RealityDataPackageCR package) const
+    {
     return RealityPackageStatus::UnknownError;
     }
 
@@ -709,7 +709,7 @@ RealityDataSerializerPtr RealityDataSerializerFactory::CreateSerializer(uint32_t
 // @bsimethod                                   Jean-Francois.Cote         	    6/2016
 //-------------------------------------------------------------------------------------
 RealityPackageStatus RealityDataSerializerFactory::ReadVersion(uint32_t& majorVersion, uint32_t& minorVersion, BeXmlDomR xmlDom)
-    {  
+    {
     BeXmlNodeP pRootNode = xmlDom.GetRootElement();
     if (NULL == pRootNode)
         return RealityPackageStatus::XmlReadError;
@@ -720,7 +720,7 @@ RealityPackageStatus RealityDataSerializerFactory::ReadVersion(uint32_t& majorVe
         return RealityPackageStatus::XmlReadError;
 
     // Parse.
-    if (2 != BE_STRING_UTILITIES_UTF8_SSCANF(version.c_str(), "%u.%u", &majorVersion, &minorVersion))
+    if (2 != Utf8String::Sscanf_safe(version.c_str(), "%u.%u", &majorVersion, &minorVersion))
         return RealityPackageStatus::XmlReadError;
 
     return RealityPackageStatus::Success;

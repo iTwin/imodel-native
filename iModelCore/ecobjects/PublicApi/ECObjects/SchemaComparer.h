@@ -163,7 +163,7 @@ public:
 
         ECOBJECTS_EXPORT static void AppendBegin(Utf8StringR str, ECChange const& change, int currentIndex);
         static void AppendEnd(Utf8StringR str) { str.append("\r\n"); }
-        
+
         ECOBJECTS_EXPORT static Utf8CP TypeToString(Type);
 
     public:
@@ -226,8 +226,8 @@ struct CompositeECChange : public ECChange
     public:
         virtual ~CompositeECChange() {}
 
-        size_t MemberChangesCount() const 
-            { 
+        size_t MemberChangesCount() const
+            {
             size_t count = 0;
             for (auto const& kvPair : m_changes)
                 {
@@ -235,7 +235,7 @@ struct CompositeECChange : public ECChange
                     count++;
                 }
 
-            return count; 
+            return count;
             }
     };
 
@@ -284,10 +284,10 @@ struct ECChangeArray final : public ECChange
         bool IsEmpty() const { return m_changes.empty(); }
         TArrayElement& operator[](size_t index) { return static_cast<TArrayElement&>(*m_changes[index]); }
 
-        RefCountedPtr<TArrayElement> const* begin() const { return reinterpret_cast<RefCountedPtr<TArrayElement> const*>(m_changes.begin()); }
-        RefCountedPtr<TArrayElement>* begin() { return reinterpret_cast<RefCountedPtr<TArrayElement>*>(m_changes.begin()); }
-        RefCountedPtr<TArrayElement> const* end() const { return reinterpret_cast<RefCountedPtr<TArrayElement> const*>(m_changes.end()); }
-        RefCountedPtr<TArrayElement>* end() { return reinterpret_cast<RefCountedPtr<TArrayElement>*>(m_changes.end()); }
+        RefCountedPtr<TArrayElement> const* begin() const { return reinterpret_cast<RefCountedPtr<TArrayElement> const*>(&*m_changes.begin()); }
+        RefCountedPtr<TArrayElement>* begin() { return reinterpret_cast<RefCountedPtr<TArrayElement>*>(&*m_changes.begin()); }
+        RefCountedPtr<TArrayElement> const* end() const { return reinterpret_cast<RefCountedPtr<TArrayElement> const*>(&*m_changes.end()); }
+        RefCountedPtr<TArrayElement>* end() { return reinterpret_cast<RefCountedPtr<TArrayElement>*>(&*m_changes.end()); }
 
         RefCountedPtr<TArrayElement> CreateElement(OpCode opCode, Type elementType, Utf8CP name = nullptr) { return new TArrayElement(opCode, elementType, this, name); }
 
@@ -583,7 +583,7 @@ struct CustomAttributeChange final : public ECChange
 
     public:
         CustomAttributeChange(OpCode opCode, Type type, ECChange const* parent = nullptr, Utf8CP name = nullptr) : ECChange(opCode, Type::CustomAttribute, parent, name)
-            { 
+            {
             BeAssert(type == GetType());
             m_propValueChanges = std::make_unique<ECChangeArray<PropertyValueChange>>(opCode, GetType(), this, GetChangeName());
             }

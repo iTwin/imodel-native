@@ -16,6 +16,7 @@
 #include "timestamputils.h"
 #include "filfnc.h"
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 /*----------------------------------------------------------------------------*/
 /* Constants and macros                                                       */
 /*----------------------------------------------------------------------------*/
@@ -1153,4 +1154,4 @@ static int aecDTM_saveComponentMembers
   return ( sts );
 }
 
-
+POP_DISABLE_DEPRECATION_WARNINGS

@@ -12,6 +12,7 @@
 #include <WebServices/iModelHub/Client/Client.h>
 #include "C3dBridgeTestsLogProvider.h"
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 
 enum class CodeScope
     {
@@ -38,7 +39,7 @@ int argc = (int)argptrs.size();\
 wchar_t const** argv = argptrs.data();\
 
 //=======================================================================================
-// @bsistruct                              
+// @bsistruct
 //=======================================================================================
 struct ScopedEnvvar
     {
@@ -54,7 +55,7 @@ struct ScopedEnvvar
     };
 
 //=======================================================================================
-// @bsistruct                              
+// @bsistruct
 //=======================================================================================
 struct SetRulesFileInEnv : ScopedEnvvar
     {
@@ -65,7 +66,7 @@ struct ProcessRunner;
 typedef void (*T_SendKillSignal)(ProcessRunner&);
 
 //=======================================================================================
-// @bsistruct                              
+// @bsistruct
 //=======================================================================================
 struct ProcessRunner
     {
@@ -104,7 +105,7 @@ struct ProcessRunner
     };
 
 //=======================================================================================
-// @bsistruct                              
+// @bsistruct
 //=======================================================================================
 struct BriefClientRepositoryAdmin : BentleyApi::Dgn::DgnPlatformLib::Host::RepositoryAdmin
 {
@@ -122,7 +123,7 @@ struct BriefClientRepositoryAdmin : BentleyApi::Dgn::DgnPlatformLib::Host::Repos
 struct LogProcessor;
 struct FwkArgvMaker;
 //=======================================================================================
-// @bsistruct                              
+// @bsistruct
 //=======================================================================================
 struct C3dBridgeTestsFixture : ::testing::Test
     {
@@ -196,7 +197,7 @@ struct C3dBridgeTestsFixture : ::testing::Test
         {
         BentleyApi::Dgn::ScopedDgnHost m_host;
         BentleyApi::Dgn::DgnDbPtr m_db;
-        
+
         DbFileInfo(BentleyApi::BeFileNameCR fileName);
         ~DbFileInfo();
         int32_t GetElementCount();
@@ -221,22 +222,22 @@ struct C3dBridgeTestsFixture : ::testing::Test
         };
 
     void RunTheBridge(BentleyApi::bvector<BentleyApi::WString> const& args);
-    
+
     static void TerminateHost();
 
     static void SetupTestDirectory(BentleyApi::BeFileNameR dirPath,  BentleyApi::WCharCP dirName, BentleyApi::WCharCP iModelName,
-                                   BentleyApi::BeFileNameCR input1, BentleyApi::BeSQLite::BeGuidCR inputGuid, 
+                                   BentleyApi::BeFileNameCR input1, BentleyApi::BeSQLite::BeGuidCR inputGuid,
                                    BentleyApi::BeFileNameCR refFile, BentleyApi::BeSQLite::BeGuidCR refGuid);
     };
 
 //=======================================================================================
-// @bsistruct                              
+// @bsistruct
 //=======================================================================================
 struct LogProcessor
     {
     std::function<C3dBridgeTestsLogProvider::T_IsSeverityEnabled> m_wasSev;
     std::function<C3dBridgeTestsLogProvider::T_LogMessage> m_wasProc;
-    
+
     LogProcessor(std::function<C3dBridgeTestsLogProvider::T_IsSeverityEnabled> sevf, std::function<C3dBridgeTestsLogProvider::T_LogMessage> logf)
         {
         m_wasSev = C3dBridgeTestsFixture::s_logProvider.m_sev;
@@ -253,7 +254,7 @@ struct LogProcessor
     };
 
 //=======================================================================================
-// @bsistruct                              
+// @bsistruct
 //=======================================================================================
 struct FwkArgvMaker
     {
@@ -288,7 +289,7 @@ struct FwkArgvMaker
     };
 
 //=======================================================================================
-// @bsistruct                              
+// @bsistruct
 //=======================================================================================
 struct ExternalSourceAspectTests : C3dBridgeTestsFixture, ::testing::WithParamInterface<WString>
 {
@@ -300,3 +301,4 @@ struct ExternalSourceAspectTests : C3dBridgeTestsFixture, ::testing::WithParamIn
     void ValidateLayerAspect (BentleyApi::BeFileName& dbFile, uint64_t sourceId);
 };
 
+POP_DISABLE_DEPRECATION_WARNINGS

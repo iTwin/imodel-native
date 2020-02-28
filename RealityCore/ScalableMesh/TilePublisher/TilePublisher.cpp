@@ -10,10 +10,7 @@
 //#include "..\STM\ScalableMeshQuery.h"
 
 
-//USING_NAMESPACE_BENTLEY_DGN
-//USING_NAMESPACE_BENTLEY_RENDER
-//using namespace BentleyApi::Dgn::Render::Tile3d;
-
+PUSH_DISABLE_DEPRECATION_WARNINGS
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
@@ -44,7 +41,7 @@ uint16_t BatchIdMap::GetBatchId(BeInt64Id elemId)
         found = m_map.insert(bmap<BeInt64Id, uint16_t>::value_type(elemId, batchId)).first;
         }
 
-    return found->second; 
+    return found->second;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -127,7 +124,7 @@ TilePublisher::TilePublisher(TileNodeCR tile, GeoCoordinates::BaseGCSCPtr source
         Transform transform = Transform::FromRowValues(1, 0, 0, -m_centroid.x,
                                                        0, 1, 0, -m_centroid.y,
                                                        0, 0, 1, -m_centroid.z);
-        
+
         m_meshes[0]->ApplyTransform(transform);
         }
     }
@@ -153,7 +150,7 @@ void TilePublisher::AppendUInt32(uint32_t value)
 * @bsimethod                                                    Richard.Bois   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileMeshList ScalableMeshTileNode::_GenerateMeshes(TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doPolylines) const
-    {   
+    {
     TileMeshList        tileMeshes;
     IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create(m_outputTexture, false, m_coverageID != -1);
     auto meshP = m_node->GetMeshUnderClip2(flags, m_clips, m_coverageID, m_isClipBoundary);
@@ -161,7 +158,7 @@ TileMeshList ScalableMeshTileNode::_GenerateMeshes(TileGeometry::NormalMode norm
 
     TileMeshBuilderPtr      builder;
     TileDisplayParamsPtr    displayParams;
-    
+
     if (m_node->IsTextured() && m_outputTexture)
         {
         auto textureP = m_node->GetTextureCompressed();
@@ -290,7 +287,7 @@ template<typename T> void TilePublisher::AddBufferView(Json::Value& views, Utf8C
 //        return PublisherContext::Status::NoGeometry;       // Nothing to write...Ignore this tile (it will be omitted when writing tileset data as its published range will be NullRange.
 //
 //    BeFileName  binaryDataFileName (nullptr, GetDataDirectory().c_str(), m_tile->GetRelativePath (m_context->GetRootName().c_str(), s_binaryDataExtension).c_str(), nullptr);
-//    
+//
 //    // .b3dm file
 //    Json::Value sceneJson(Json::objectValue);
 //
@@ -356,7 +353,7 @@ template<typename T> void TilePublisher::AddBufferView(Json::Value& views, Utf8C
 //    {
 //
 //    BeFileName  binaryDataFileName (nullptr, GetDataDirectory().c_str(), m_tile.IsValid() ? m_tile->GetRelativePath (m_context->GetRootName().c_str(), s_binaryDataExtension).c_str() : m_context->GetRootName().c_str(), nullptr);
-//    
+//
 //    // .b3dm file
 //    Json::Value sceneJson(Json::objectValue);
 //
@@ -574,7 +571,7 @@ void TilePublisher::AddExtensions(Json::Value& rootNode)
 //static int32_t  roundToMultipleOfTwo (int32_t value)
 //    {
 //    int32_t rounded = 2;
-//    
+//
 //    while (rounded < value && rounded < 0x01000000)
 //        rounded <<= 1;
 //
@@ -683,7 +680,7 @@ Utf8String TilePublisher::AddPolylineShaderTechnique (Json::Value& rootNode)
     auto& bufferViews = rootNode["bufferViews"];
     std::string vertexShaderString = s_shaderPrecision + s_unlitVertexShader;
     AddBufferView(bufferViews, s_vertexShaderBufferViewName, vertexShaderString);
-    AddBufferView(bufferViews, s_fragmentShaderBufferViewName, s_unlitFragmentShader); 
+    AddBufferView(bufferViews, s_fragmentShaderBufferViewName, s_unlitFragmentShader);
 
     AddTechniqueParameter(technique, "color", GLTF_FLOAT_VEC4, nullptr);
     techniqueUniforms["u_color"] = "color";
@@ -708,7 +705,7 @@ Utf8String     TilePublisher::AddMeshShaderTechnique (Json::Value& rootNode, boo
         prefix = prefix + "Unlit";
 
     Utf8String  techniqueName = prefix + "Technique";
-    
+
     if (rootNode.isMember("techniques") &&
         rootNode["techniques"].isMember(techniqueName.c_str()))
         return techniqueName;
@@ -767,7 +764,7 @@ Utf8String     TilePublisher::AddMeshShaderTechnique (Json::Value& rootNode, boo
 
 
     AddBufferView(bufferViews, vertexShaderBufferView.c_str(),   ignoreLighting ? s_unlitTextureVertexShader  : (textured ? s_texturedVertexShader : s_untexturedVertexShader));
-    AddBufferView(bufferViews, fragmentShaderBufferView.c_str(), ignoreLighting ? s_unlitTextureFragmentShader: (textured ? s_texturedFragShader    : s_untexturedFragShader)); 
+    AddBufferView(bufferViews, fragmentShaderBufferView.c_str(), ignoreLighting ? s_unlitTextureFragmentShader: (textured ? s_texturedFragShader    : s_untexturedFragShader));
 
     // Diffuse...
     if (textured)
@@ -809,12 +806,12 @@ Utf8String     TilePublisher::AddMeshShaderTechnique (Json::Value& rootNode, boo
 
         techniqueFunctions["blendEquationSeparate"].append (32774);   // FUNC_ADD (rgb)
         techniqueFunctions["blendEquationSeparate"].append (32774);   // FUNC_ADD (aphla)
-    
+
         techniqueFunctions["blendFuncSeparate"].append(1);            // ONE (srcRGB)
         techniqueFunctions["blendFuncSeparate"].append(771);          // ONE_MINUS_SRC_ALPHA (dstRGB)
         techniqueFunctions["blendFuncSeparate"].append(1);            // ONE (srcAlpha)
         techniqueFunctions["blendFuncSeparate"].append(771);          // ONE_MINUS_SRC_ALPHA (dstAlpha)
-        
+
         techniqueFunctions["depthMask"] = "false";
         }
 
@@ -933,12 +930,12 @@ void TilePublisher::AddMeshVertexAttribute (Json::Value& rootNode, double const*
     if (quantize)
         {
         double      range = (double) (0xffff);
-        
+
         accessor["componentType"] = GLTF_UNSIGNED_SHORT;
-            
+
         auto&       quantizeExtension = accessor["extensions"]["WEB3D_quantized_attributes"];
         auto&       decodeMatrix = quantizeExtension["decodeMatrix"] = Json::arrayValue;
-         
+
         for (size_t i=0; i<nComponents; i++)
             {
             for (size_t j=0; j<nComponents; j++)
@@ -950,7 +947,7 @@ void TilePublisher::AddMeshVertexAttribute (Json::Value& rootNode, double const*
             decodeMatrix.append (min[i]);
 
         decodeMatrix.append (1.0);
-        
+
         for (size_t i=0; i<nComponents; i++)
             {
             quantizeExtension["decodedMin"].append (min[i]);
@@ -1110,8 +1107,8 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
     if (!mesh.Normals().empty() &&
         nullptr != mesh.GetDisplayParams() && !mesh.GetDisplayParams()->GetIgnoreLighting())        // No normals if ignoring lighting (reality meshes).
         {
-        DRange3d        normalRange = DRange3d::From (-1.0, -1.0, -1.0, 1.0, 1.0, 1.0); 
-    
+        DRange3d        normalRange = DRange3d::From (-1.0, -1.0, -1.0, 1.0, 1.0, 1.0);
+
         attr["attributes"]["NORMAL"] = accNormalId;
         AddMeshVertexAttribute (rootNode, &mesh.Normals().front().x, bvNormalId, accNormalId, 3, mesh.Normals().size(), (char*)"VEC3", quantizeNormals, &normalRange.low.x, &normalRange.high.x);
         }
@@ -1146,7 +1143,7 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
         rootNode["accessors"][accBatchId]["count"] = Json::Value(batchIds.size());
         rootNode["accessors"][accBatchId]["type"] = "SCALAR";
         }
-    
+
     rootNode["accessors"][accPositionId]["min"] = Json::arrayValue;
     rootNode["accessors"][accPositionId]["max"] = Json::arrayValue;
     if (quantizePositions)
@@ -1217,7 +1214,7 @@ static DPoint3d  cartesianFromRadians (double longitude, double latitude, double
 //    {
 //    return nullptr != GetDgnDb().Units().GetDgnGCS();
 //    }
-    
+
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -1255,7 +1252,7 @@ PublisherContext::PublisherContext(/*ViewControllerR view,*/ BeFileNameCR output
 //        {
 //        GeoPoint        originLatLong, northLatLong;
 //        DPoint3d        north = origin;
-//    
+//
 //        north.y += 100.0;
 //
 //        dgnGCS->LatLongFromUors (originLatLong, origin);
@@ -1342,11 +1339,11 @@ void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, Ti
 
     // If we are publishing standalone datasets then the tiles are all published before we write the metadata tree.
     // In that case we can trust the published ranges and use them to only write non-empty nodes and branches.
-    // In the server case we don't have this information and have to trust the tile ranges.  
+    // In the server case we don't have this information and have to trust the tile ranges.
     if (!_AllTilesPublished() && publishedRange.IsNull())
         publishedRange = tile.GetTileRange();
-    
-    // the published range represents the actual range of the published meshes. - This may be smaller than the 
+
+    // the published range represents the actual range of the published meshes. - This may be smaller than the
     // range estimated when we built the tile tree. -- However we do not clip the meshes to the tile range.
     // so start the range out as the intersection of the tile range and the published range.
     contentRange.IntersectionOf (tile.GetTileRange(), publishedRange);
@@ -1485,11 +1482,11 @@ void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR r
 //    progressMeter._SetModel (&model);
 //    progressMeter._SetTaskName (ITileGenerationProgressMonitor::TaskName::GeneratingTileNodes);       // Needs work -- meter progress in model publisher.
 //    progressMeter._IndicateProgress (0, 1);
-//                                                                            
+//
 //    if (Status::Success != (status = ConvertStatus (generateMeshTiles->_GenerateMeshTiles (rootTile, m_dbToTile))))
 //        return status;
 //
-//    return CollectOutputTiles (rootJson, rootRange, *rootTile, name, generator, collector); 
+//    return CollectOutputTiles (rootJson, rootRange, *rootTile, name, generator, collector);
 //    }
 
 ///*---------------------------------------------------------------------------------**//**
@@ -1504,8 +1501,8 @@ void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR r
 //
 //    if (Status::Success != (status = ConvertStatus(generator.GenerateTiles (rootTile, s_maxPointsPerTile))))
 //        return status;
-//        
-//    return CollectOutputTiles (rootJson, rootRange, *rootTile, name, generator, collector); 
+//
+//    return CollectOutputTiles (rootJson, rootRange, *rootTile, name, generator, collector);
 //    }
 
 ///*---------------------------------------------------------------------------------**//**
@@ -1545,7 +1542,7 @@ void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR r
 //    if (realityModelTilesets.empty())
 //        return elementPublishStatus;
 //
-//    
+//
 //    // We have relity models... create a tile set that includes both the reality models and the elements.
 //    Json::Value     value;
 //    value["asset"]["version"] = "0.0";
@@ -1583,7 +1580,7 @@ void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR r
 //Json::Value PublisherContext::GetModelsJson (DgnModelIdSet const& modelIds)
 //    {
 //    Json::Value     modelJson (Json::objectValue);
-//    
+//
 //    for (auto& modelId : modelIds)
 //        {
 //        auto const&  model = GetDgnDb().Models().GetModel (modelId);
@@ -1599,8 +1596,8 @@ void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR r
 //+---------------+---------------+---------------+---------------+---------------+------*/
 //Json::Value PublisherContext::GetCategoriesJson (DgnCategoryIdSet const& categoryIds)
 //    {
-//    Json::Value categoryJson (Json::objectValue); 
-//    
+//    Json::Value categoryJson (Json::objectValue);
+//
 //    for (auto& categoryId : categoryIds)
 //        {
 //        auto const& category = DgnCategory::QueryCategory (categoryId, GetDgnDb());
@@ -1690,3 +1687,4 @@ void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR r
 
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
+POP_DISABLE_DEPRECATION_WARNINGS

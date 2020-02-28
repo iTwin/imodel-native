@@ -149,7 +149,7 @@ PolyfaceQueryCR _GetClientPolyfaceQueryCR () const override {return m_parentMesh
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-bool _MoveToFacetByReadIndex (size_t readIndex) override 
+bool _MoveToFacetByReadIndex (size_t readIndex) override
     {
     m_nextFaceIndex = (uint32_t)readIndex;
     return _AdvanceToNextFace ();
@@ -262,7 +262,7 @@ PolyfaceQueryCR _GetClientPolyfaceQueryCR () const override {return m_parentMesh
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-bool _MoveToFacetByReadIndex (size_t readIndex) override 
+bool _MoveToFacetByReadIndex (size_t readIndex) override
     {
     m_nextFaceIndex = (uint32_t)readIndex;
     return _AdvanceToNextFace ();
@@ -292,7 +292,7 @@ bool _AdvanceToNextFace () override
     size_t i11 = i01 + 1;
 #define MAX_WRAP 10
     size_t indices[4 + MAX_WRAP];
-    
+
     if (m_triangulate)
         {
         m_numEdgesThisFace = 3;
@@ -422,7 +422,7 @@ bool DelimitIndicesInFace (uint32_t readIndex, uint32_t &numThisFace, uint32_t &
         firstReadIndexThisFace = readIndex;
         while (firstReadIndexThisFace < arraySize && pointIndex[firstReadIndexThisFace] == 0)
             firstReadIndexThisFace++;
-        
+
         while (  firstReadIndexThisFace + numThisFace < arraySize
               && pointIndex[firstReadIndexThisFace + numThisFace] != 0)
             numThisFace++;
@@ -441,7 +441,7 @@ PolyfaceQueryCR _GetClientPolyfaceQueryCR () const override {return m_parentMesh
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-bool _MoveToFacetByReadIndex (size_t readIndex) override 
+bool _MoveToFacetByReadIndex (size_t readIndex) override
     {
     m_nextReadIndex = (uint32_t)readIndex;
     return _AdvanceToNextFace ();
@@ -471,14 +471,14 @@ bool _AdvanceToNextFace () override
             m_visible.push_back (m_parentMesh.GetPointIndexCP()[m_nextReadIndex + i] > 0);
             m_indexPosition.push_back (m_nextReadIndex + i);
             }
-            
+
         for (size_t i1 = 0; i1 < m_numWrap; i1++)
             {
             int i0 = i1 % m_numEdgesThisFace;
             m_visible.push_back (m_parentMesh.GetPointIndexCP()[m_nextReadIndex + i0] > 0);
-            m_indexPosition.push_back (m_nextReadIndex + i0);            
+            m_indexPosition.push_back (m_nextReadIndex + i0);
             }
-            
+
 
         if (m_allData)
             {
@@ -563,7 +563,7 @@ bool _AddVertexByReadIndex (size_t readIndex) override
                 m_parentMesh.GetNormalCP (),
                 m_parentMesh.GetNormalCount (),
                 m_parentMesh.GetNormalIndexCP (),
-                m_parentMesh.GetPointIndexCP (), 
+                m_parentMesh.GetPointIndexCP (),
                 numIndex
                 )))
                 return false;
@@ -575,7 +575,7 @@ bool _AddVertexByReadIndex (size_t readIndex) override
                 m_parentMesh.GetParamCP (),
                 m_parentMesh.GetParamCount (),
                 m_parentMesh.GetParamIndexCP (),
-                m_parentMesh.GetPointIndexCP (), 
+                m_parentMesh.GetPointIndexCP (),
                 numIndex
                 )))
                 return false;
@@ -587,7 +587,7 @@ bool _AddVertexByReadIndex (size_t readIndex) override
                 m_parentMesh.GetIntColorCP (),
                 m_parentMesh.GetColorCount (),
                 m_parentMesh.GetColorIndexCP (),
-                m_parentMesh.GetPointIndexCP (), 
+                m_parentMesh.GetPointIndexCP (),
                 numIndex
                 )))
                 return false;
@@ -680,13 +680,12 @@ void PolyfaceVisitor::TrimFaceData (size_t index0, size_t count)
         m_visible[n1] = m_visible[index0 + n1];
         n1++;
         }
-    m_visible.resize (n1);    
+    m_visible.resize (n1);
     }
 
 
-bool const* PolyfaceVisitor::GetVisibleCP () const      { return &m_visible[0]; }
-bvector <bool> &PolyfaceVisitor::Visible ()             { return m_visible;}
-bvector <size_t> &PolyfaceVisitor::IndexPosition()      { return m_indexPosition;}
+bvector<BoolTypeForVector> &PolyfaceVisitor::Visible ()             { return m_visible;}
+bvector<size_t> &PolyfaceVisitor::IndexPosition()      { return m_indexPosition;}
 
 // Hidden virtual dispatch for polyface services ...
 void PolyfaceVisitor::Reset () {_Reset ();}
@@ -816,7 +815,7 @@ void PolyfaceVisitor::CompressClosePoints (double tolerance)
             i0 = numAccept++;
             }
         }
-    TrimData (numAccept);        
+    TrimData (numAccept);
     }
 
 
@@ -847,7 +846,7 @@ size_t PolyfaceVisitor::PushInterpolatedFaceData (PolyfaceVisitor &source, size_
         {
         DPoint2d param;
         param.Interpolate (source.m_param[i0], fraction, source.m_param[i1]);
-        m_param.push_back (param);        
+        m_param.push_back (param);
         }
 
     if (m_intColor.Active ())
@@ -906,14 +905,14 @@ bool   PolyfaceVisitor::TryGetNormalizedParameter (size_t index, DPoint2dR norma
     if (index >= NumEdgesThisFace())
         return false;
 
-    DPoint2dCP        param; 
+    DPoint2dCP        param;
     FacetFaceDataCP   faceData;
 
     if (NULL == (param = GetParamCP()) ||
         NULL == (faceData = GetFaceDataCP()))
         return false;
 
-   
+
     faceData[index].ConvertParamToNormalized (normalizedParam, param[index]);
     return true;
     }
@@ -927,13 +926,13 @@ bool   PolyfaceVisitor::TryGetDistanceParameter (size_t index, DPoint2dR distanc
     if (index >= NumEdgesThisFace())
         return false;
 
-    DPoint2dCP        param; 
+    DPoint2dCP        param;
     FacetFaceDataCP   faceData;
 
     if (NULL == (param = GetParamCP()) ||
         NULL == (faceData = GetFaceDataCP()))
         return false;
-   
+
     faceData[index].ConvertParamToDistance (distanceParam, param[index]);
     return true;
     }
@@ -1077,7 +1076,7 @@ PolyfaceQueryCR _GetClientPolyfaceQueryCR () const override {return m_parentMesh
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-bool _MoveToFacetByReadIndex (size_t readIndex) override 
+bool _MoveToFacetByReadIndex (size_t readIndex) override
     {
     m_nextReadIndex = (uint32_t)readIndex;
     return _AdvanceToNextFace ();

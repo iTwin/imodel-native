@@ -159,7 +159,7 @@ public:
 
     //! Append \a additionComponent to this filepath. A directory separator character is inserted, if necessary, before \a additionComponent.
     BENTLEYDLL_EXPORT BeFileNameR AppendToPath(WCharCP additionComponent);
-    
+
     //! Append \a extension to this filepath. A period is inserted, if necessary, before \a extension.
     BENTLEYDLL_EXPORT BeFileNameR AppendExtension(WCharCP extension);
 
@@ -191,9 +191,9 @@ public:
     //! Copy name into WChar buffer.
     void GetName(WCharP name, size_t size) const
         {
-PUSH_MSVC_IGNORE(4996)
+PUSH_DISABLE_DEPRECATION_WARNINGS
         wcsncpy(name, c_str(), size-1); name[size-1] = 0;
-POP_MSVC_IGNORE
+POP_DISABLE_DEPRECATION_WARNINGS
         }
 
     //! Convert the filename into a null-terminated multibyte string according to the current locale (ACP).
@@ -311,7 +311,7 @@ POP_MSVC_IGNORE
     //! @private
     BENTLEYDLL_EXPORT static WString GetDevice(WCharCP path);
 
-    //! Returns the device from this BeFileName - Empty if the path doesn't start with a device. 
+    //! Returns the device from this BeFileName - Empty if the path doesn't start with a device.
     //! @note Always empty on unix.
     BENTLEYDLL_EXPORT WString GetDevice() const;
 /** @} */
@@ -467,7 +467,7 @@ POP_MSVC_IGNORE
     //! @remarks This function behaves differently on different operating systems if the calling program currently has the target file open.
     //! On Windows, this function will not delete an open file. On other operating systems, this function will delete an open file.
     BENTLEYDLL_EXPORT BeFileNameStatus BeDeleteFile() const;
-    
+
     //! Delete an existing file.
     //! @param[in] fileNameP The name of an existing file.
     //! @return BeFileNameStatus::Success if the file was successfully deleted. It returns BeFileNameStatus::CantDeleteFile if not.
@@ -477,7 +477,7 @@ POP_MSVC_IGNORE
     //! @deprecated Use instance version of BeFileName::BeDeleteFile instead
     //! @private
     BENTLEYDLL_EXPORT static BeFileNameStatus BeDeleteFile(WCharCP fileNameP);
-    
+
     //! Move or rename an existing file.
     //! @param[in] oldFileName The name of an existing file.
     //! @param[in] newFileName The new name for the file.
@@ -513,7 +513,7 @@ POP_MSVC_IGNORE
     BENTLEYDLL_EXPORT  bool IsFileReadOnly() const;
 
     //! Query if a file is read-only
-    //! @param[in] fileName The name of the file 
+    //! @param[in] fileName The name of the file
     //! @remarks On unix, this function tests if the owner does not have write permission
     //! @return true if the file exists and is read-only
     BENTLEYDLL_EXPORT static bool IsFileReadOnly(WCharCP fileName);

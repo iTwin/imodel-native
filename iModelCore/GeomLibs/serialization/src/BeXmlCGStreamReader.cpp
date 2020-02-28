@@ -14,6 +14,7 @@ typedef struct PlacementOriginZX &PlacementOriginZXR;
 #define DVector3d DVec3d
 #define String Utf8String
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 
 typedef int LoopType;
 
@@ -35,14 +36,14 @@ DVec3d   m_vectorZ;
 DVec3d   m_vectorX;
 
 void InitIdentity ()
-    {    
+    {
     m_origin = DPoint3d::From (0,0,0);
     m_vectorX = DVec3d::From (1,0,0);
     m_vectorZ = DVec3d::From (0,0,1);
     }
-    
+
 void InitOriginVectorZVectorX (DPoint3dCR origin, DVec3dCR vectorZ, DVec3dCR vectorX)
-    {    
+    {
     m_origin = origin;
     m_vectorZ = vectorZ;
     m_vectorX = vectorX;
@@ -53,7 +54,7 @@ PlacementOriginZX ()
     {
     InitIdentity ();
     }
-    
+
 static PlacementOriginZX FromIdentity ()
     {
     PlacementOriginZX value;
@@ -427,7 +428,7 @@ bool ReadTagTransform (CharCP name, TransformR value)
     AdvanceAfterContentExtraction ();
     return stat;
     }
-    
+
 bool ReadTagLoopType (CharCP name, LoopType value)
     {
     if (!CurrentElementNameMatch (name))
@@ -670,7 +671,7 @@ bool ReadListOfIGeometry (CharCP listName, CharCP shortListName, bvector<IGeomet
         ReadOverWhiteSpace ();
         return true;
         }
-				
+
     ReadToChildOrEnd ();
     IGeometryPtr member;
     while (IsStartElement ()
@@ -693,7 +694,7 @@ bool ReadListOfISinglePoint (CharCP listName, CharCP shortListName, bvector<IGeo
         ReadOverWhiteSpace ();
         return true;
         }
-				
+
     ReadToChildOrEnd ();
     IGeometryPtr member;
     while (IsStartElement ()
@@ -830,7 +831,7 @@ bool ReadTagdouble(CharCP name, double &value)
     AdvanceAfterContentExtraction ();
     return stat;
     }    }
-    
+
 bool ReadTagint(CharCP name, int &value)
     {
     {
@@ -1194,7 +1195,7 @@ public: bool TryParse (bvector<IGeometryPtr> &geometry, bmap<OrderedIGeometryPtr
         {
         ReadExtendedObject(geometry);
         }
-    else 
+    else
         {
         for (;IsStartElement ();)
             {
@@ -1301,7 +1302,8 @@ bool BeXmlCGStreamReader::TryParse (Byte* buffer, int bufferLength, bvector<IGeo
     BeXmlCGStreamReaderImplementation parser (reader, factory);
     return parser.TryParse(geometry, extendedData, maxDepth);
     }
-    
+
 BeXmlCGStreamReaderImplementation::ParseDictionary BeXmlCGStreamReaderImplementation::s_parseTable;
+POP_DISABLE_DEPRECATION_WARNINGS
 
 END_BENTLEY_GEOMETRY_NAMESPACE

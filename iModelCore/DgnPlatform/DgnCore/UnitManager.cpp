@@ -195,7 +195,7 @@ static StandardUnitTableEntryCP    FindByNumber(StandardUnit unitNum)
             return standardUnit;
         }
 
-    return NULL;    
+    return NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -212,7 +212,7 @@ static StandardUnitTableEntryCP    FindMatchingScaleFactor(UnitDefinitionCR unit
             return standardUnit;
         }
 
-    return NULL;    
+    return NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -222,21 +222,21 @@ static StandardUnitTableEntryCP    FindByName(Utf8CP name)
     {
     if (NULL == name)
         {BeAssert(false); return NULL;}
-    
+
     int                         iUnit;
     StandardUnitTableEntryCP    standardUnit;
 
     for (iUnit = 0, standardUnit = s_standardUnits; iUnit < _countof(s_standardUnits); iUnit++, standardUnit++)
         {
         // Try to match either the singular or plural name
-        if (standardUnit->GetName(true).EqualsI (name) || 
+        if (standardUnit->GetName(true).EqualsI (name) ||
             standardUnit->GetName(false).EqualsI (name) )
             {
             return standardUnit;
             }
         }
 
-    return NULL;    
+    return NULL;
     }
 
 }; //StandardUnitTable
@@ -261,7 +261,7 @@ UnitDefinition  UnitDefinition::GetStandardUnitByName(Utf8CP name)
     {
     if (NULL == name)
         {BeAssert(false); return UnitDefinition();}
-    
+
     StandardUnitTableEntryCP    unitEntry = StandardUnitTable::FindByName(name);
 
     if (NULL == unitEntry)
@@ -527,7 +527,7 @@ bool    StandardUnitCollection::const_iterator::UnitValidForIterator(StandardUni
         if (0 > iComparison && ! m_options->GetCompareAllowLarger())
             return false;
 
-        if (0 == iComparison && ! m_options->GetCompareAllowEqual())            
+        if (0 == iComparison && ! m_options->GetCompareAllowEqual())
             return false;
 
         if (0 < iComparison && ! m_options->GetCompareAllowSmaller())
@@ -853,7 +853,7 @@ UserUnitTableEntryCR    newEntry        /* => add this to the table */
             found = true;
             break;
             }
-        
+
         // Within a base, put the smaller units first
         if (0 < iCompare)
             break;
@@ -983,10 +983,10 @@ bool UserUnitTable::ParseLine(Utf8StringR labels, Utf8StringR singularName, Utf8
     makeStrippedString(singularName, b+1, c-1);
     makeStrippedString(pluralName, c+1, d-1);
 
-    return  1 == BE_STRING_UTILITIES_UTF8_SSCANF (d+1, "%lf", &numerator) &&
-            1 == BE_STRING_UTILITIES_UTF8_SSCANF (e+1, "%lf", &denominator) &&
-            1 == BE_STRING_UTILITIES_UTF8_SSCANF (f+1, "%d", &base) &&
-            1 == BE_STRING_UTILITIES_UTF8_SSCANF (g+1, "%d", &system);
+    return  1 == Utf8String::Sscanf_safe (d+1, "%lf", &numerator) &&
+            1 == Utf8String::Sscanf_safe (e+1, "%lf", &denominator) &&
+            1 == Utf8String::Sscanf_safe (f+1, "%d", &base) &&
+            1 == Utf8String::Sscanf_safe (g+1, "%d", &system);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1061,7 +1061,7 @@ bool UserUnitCollection::const_iterator::UnitValidForIterator(size_t tableIndex)
     if (compare.IsValid())
         {
         int iComparison = unit.CompareByScale(compare);
-        
+
         // iComp is reversed: positive if candidate is smaller
         if ((0 > iComparison && !m_options->GetCompareAllowLarger()) ||
             (0 == iComparison && !m_options->GetCompareAllowEqual()) ||

@@ -12,9 +12,10 @@ using namespace pt;
 
 #define MIN_CHUNK		8
 #define INITIAL_CHUNK	32
-#define INITIALISE_STRING _wbuffer(0), _abuffer(0), _wbuffsize(0), _abufferDirty(true), _encoding(UnknownEncoding) 
+#define INITIALISE_STRING _wbuffer(0), _abuffer(0), _wbuffsize(0), _abufferDirty(true), _encoding(UnknownEncoding)
 #define MAX_STRING_LENGTH 4096
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 //
 // Constructors
 //
@@ -35,7 +36,7 @@ String::String(const wchar_t *s) : INITIALISE_STRING
 {
 	if (s && s[0] != L'\0')
 		(*this) = s;
-} 
+}
 String::~String()
 {
 	try
@@ -80,7 +81,7 @@ String &String::operator = (const String &s)
 		return *this;
 	}
 	else
-	{		
+	{
 		len++;
 		allocBuffer(len);
 		wcscpy(_wbuffer, s.c_wstr());
@@ -119,13 +120,13 @@ String &String::operator = (const char *s)
 		allocBuffer(len);
 
         BeStringUtilities::Utf8ToWChar(_wbuffer, s, _wbuffsize);
-		
+
 		_abufferDirty = false;
 		_abuffer = new char[len];
 		memcpy(_abuffer, s, len);
 		_abuffer[len-1] = '\0';
 	}
-	else 
+	else
 	{
 		if (_wbuffer) _wbuffer[0] = '\0';
 		_abufferDirty = false;
@@ -166,7 +167,7 @@ void String::operator += (const String &s)
 {
         int len = s.length();
         int tlen = length();
-	
+
 	String st;
 	st.allocBuffer(len+tlen);
 	memcpy(st._wbuffer, _wbuffer, sizeof(wchar_t)*tlen);
@@ -183,7 +184,7 @@ String String::operator + (const String &s) const
 {
 	int len = s.length();
 	int tlen = length();
-	
+
 	String st;
 	st.allocBuffer(len+tlen);
 	memcpy(st._wbuffer, _wbuffer, sizeof(wchar_t)*tlen);
@@ -213,7 +214,7 @@ const char* String::getEncoded(Encoding enc, char * buffer, int buffsize) const
     /* check for string truncation */
     assert(buffsize >= chars);
 
-    if (buffsize < chars) 
+    if (buffsize < chars)
         chars = buffsize;
 
     if (_abuffer && !_abufferDirty && _encoding == enc)
@@ -248,7 +249,7 @@ const char* String::getEncoded(Encoding enc, char * buffer, int buffsize) const
 //
 void String::allocBuffer(size_t size)
 {
-	/*round size to chunk boundary*/ 
+	/*round size to chunk boundary*/
 	size_t newsize = ((size / MIN_CHUNK) + 1) * MIN_CHUNK;
 	if (newsize > _wbuffsize)
 	{
@@ -258,7 +259,7 @@ void String::allocBuffer(size_t size)
 		_wbuffer = new wchar_t[newsize];
 		_wbuffsize = (unsigned short)newsize;
 		}
-		catch(...) 
+		catch(...)
 		{
 			_wbuffsize = 0;
 			_wbuffer = 0;
@@ -289,7 +290,7 @@ void String::format(const char *str, ...)
 	va_start(ap, str);
 	vsprintf((char*)s, str, ap);
 	va_end(ap);
-	
+
 	(*this) = s;
 }
 //
@@ -301,12 +302,13 @@ const char* String::encode(Encoding enc)
 	if (!_abufferDirty && _abuffer && _encoding == enc) return _abuffer;
 
 	if (_abuffer) delete [] _abuffer;
-	
+
 	int abuffsize = _wbuffsize * sizeof(wchar_t);
 	_abuffer = new char[abuffsize];
 	getEncoded(enc, _abuffer, abuffsize);
-	
+
 	_encoding = (unsigned char)enc;
 	_abufferDirty = false;
 	return _abuffer;
 }
+POP_DISABLE_DEPRECATION_WARNINGS

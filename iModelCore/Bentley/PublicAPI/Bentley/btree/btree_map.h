@@ -43,21 +43,22 @@
 
 #include "btree.h"
 #include "btree_container.h"
+#include <Bentley/BentleyAllocator.h>
 
 BEGIN_BENTLEY_NAMESPACE
 
 //=======================================================================================
 /**
-A %Bentley supplied implementation @c std::map. This class is used in the %Bentley APIs to 
+A %Bentley supplied implementation @c std::map. This class is used in the %Bentley APIs to
 avoid dependencies on compiler-supplied implementations of @c std::map that sometimes vary
 with compiler settings or compiler versions. The @c bmap class does not
-suffer from these problems. This makes @c bmap suitable for use in %Bentley 
+suffer from these problems. This makes @c bmap suitable for use in %Bentley
 public APIs.
 <p>
 The bmap implementation is based on the Google cpp-btree (see https://code.google.com/p/cpp-btree/).
 It generally has much better performance than the r-b based @c std::map implementations, in terms of
 memory usage, creation time, and lookup performance. However, it does suffer from the limitation that
-inserts and deletes can invalidate all existing iterators. It also requires that all key types be 
+inserts and deletes can invalidate all existing iterators. It also requires that all key types be
 default-constructable (see CAVEATS at Bentley/btree/btree.h).
 <p>
 There is also another %Bentley supplied implementation of std::map called bstdmap. bmap is generally

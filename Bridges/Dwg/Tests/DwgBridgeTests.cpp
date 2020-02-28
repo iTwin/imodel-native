@@ -11,13 +11,14 @@
 
 USING_NAMESPACE_BENTLEY_DGN
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 
 //=======================================================================================
-// @bsistruct                              
+// @bsistruct
 //=======================================================================================
 struct DwgBridgeTests : public DwgBridgeTestsFixture
     {
-    void SetupTwoRefs(bvector<WString>& args, BentleyApi::BeFileName& masterFile, BentleyApi::BeFileName& refFile1, 
+    void SetupTwoRefs(bvector<WString>& args, BentleyApi::BeFileName& masterFile, BentleyApi::BeFileName& refFile1,
                       BentleyApi::BeFileName& refFile2, BentleyApi::BeFileName const& testDir, FakeRegistry& testRegistry);
     void VerifyLineHasCode(int prevCount, BeFileNameCR bcName, int64_t srcId, Utf8CP codeValuePrefix, bool codeShouldBeRecorded);
     };
@@ -36,17 +37,17 @@ TEST_F(DwgBridgeTests, TestDenySchemaLock)
     auto testDir = CreateTestDir();
 
     SetRulesFileInEnv setRulesFileVar(WriteRulesFile(L"testDenySchemaLock.json",    // Specify user1's permissions:
-          R"(       [                                 
-                        {                            
-                            "user": "user1",             
-                            "rules": [                   
-                                {                        
+          R"(       [
+                        {
+                            "user": "user1",
+                            "rules": [
+                                {
                                     "request": "Lock/Create",
-                                    "rule": { "verb": "deny" }                        
-                                }                        
-                            ]                            
-                        }                            
-                    ]                               
+                                    "rule": { "verb": "deny" }
+                                }
+                            ]
+                        }
+                    ]
             )"));
 
     BentleyApi::BeFileName inputFile;
@@ -65,7 +66,7 @@ TEST_F(DwgBridgeTests, TestDenySchemaLock)
     argvMaker.SetSkipAssignmentCheck();
 
     iModelBridgeFwk fwk;
-    
+
     ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argvMaker.GetArgC(), argvMaker.GetArgV()));
 
     bool fatalFwkMsgFound = false;
@@ -114,31 +115,31 @@ TEST_F(DwgBridgeTests, MultiBridgeSequencing)
 
     BeFileName a_can_run(testDir);
     a_can_run.AppendToPath(L"a_can_run.txt");
-    
+
     BeFileName b_can_run(testDir);
     b_can_run.AppendToPath(L"b_can_run.txt");
 
     Utf8PrintfString rules(
-        R"(   [                                 
-                  {                            
-                      "user": "A",             
-                      "rules": [                   
-                          {                        
+        R"(   [
+                  {
+                      "user": "A",
+                      "rules": [
+                          {
                               "request": "Lock/Create",
-                              "rule": { "verb": "wait file", "object": "%s" }                        
-                          }                        
-                      ]                            
+                              "rule": { "verb": "wait file", "object": "%s" }
+                          }
+                      ]
                   },
-                  {                            
-                      "user": "B",             
-                      "rules": [                   
-                          {                        
+                  {
+                      "user": "B",
+                      "rules": [
+                          {
                               "request": "Lock/Create",
-                              "rule": { "verb": "wait file", "object": "%s" }                        
-                          }                        
-                      ]                            
-                  }                  
-              ]                               
+                              "rule": { "verb": "wait file", "object": "%s" }
+                          }
+                      ]
+                  }
+              ]
           )", Utf8String(a_can_run).c_str(), Utf8String(b_can_run).c_str());
     rules.ReplaceAll("\\", "/");
 
@@ -156,14 +157,14 @@ TEST_F(DwgBridgeTests, MultiBridgeSequencing)
     std::unique_ptr<BentleyApi::Dgn::IModelBankClient> bankClient(CreateIModelBankClient(""));
     { // make sure server is stopped before releasing bankClient, as that is used by runningServer's Stop method.
     auto runningServer = StartImodelBankServer(GetIModelDir(), *bankClient);
-    
+
     ASSERT_TRUE(m_client == nullptr);
     iModelBridgeFwk::ClearIModelClientForBridgesForTesting(); // nobody should have set the test client, but clear it just in case.
 
     // -------------------------------------------------------
     // Bridge A
     // -------------------------------------------------------
-    std::thread bridge_a([&] 
+    std::thread bridge_a([&]
         {
         BeFileName aDir(testDir);
         aDir.AppendToPath(L"A");
@@ -180,7 +181,7 @@ TEST_F(DwgBridgeTests, MultiBridgeSequencing)
         argvMaker.SetSkipAssignmentCheck();
 
         argvMaker.SetMaxRetries(255, true);   // must allow lots of time for bridge B to run to completion. Unfortunately, there is no way to predict how many retries will be required.
-    
+
         iModelBridgeFwk fwk;
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argvMaker.GetArgC(), argvMaker.GetArgV()));
 
@@ -220,20 +221,20 @@ TEST_F(DwgBridgeTests, MultiBridgeSequencing)
 
         argvMaker.SetInputFileArg(inputFile);
         argvMaker.SetSkipAssignmentCheck();
-    
+
         auto bridge_b = StartImodelBridgeFwkExe(argvMaker);
 
         createFile(b_can_run);      // let b run
 
         ASSERT_EQ(BSISUCCESS, bridge_b.Stop(5*60*1000));   // wait for up to 5 minutes for b to finish
-                
+
         ASSERT_EQ(0, bridge_b.GetExitCode());
 
         bridge_b_briefcaseName = bDir;
         bridge_b_briefcaseName.AppendToPath(DEFAULT_IMODEL_NAME);
         bridge_b_briefcaseName.append(L".bim");
         }
-    
+
     createFile(a_can_run);      // now let a run
 
     bridge_a.join();
@@ -250,7 +251,7 @@ TEST_F(DwgBridgeTests, MultiBridgeSequencing)
     if (true)
         {
         // If bridge A ran second, it must have had to pull bridge B's changesets before it could push.
-        // Therefore, A's briefcase should contain the RepositoryLink for B's input file as well as its own. 
+        // Therefore, A's briefcase should contain the RepositoryLink for B's input file as well as its own.
         DbFileInfo info(bridge_a_briefcaseName);
         auto aSourceFileId = info.GetRepositoryLinkByFileNameLike("%basictype_a.dwg");
         auto bSourceFileId = info.GetRepositoryLinkByFileNameLike("%basictype_b.dwg");
@@ -279,7 +280,7 @@ TEST_F(DwgBridgeTests, ConvertLinesUsingBridgeFwk)
 
     bvector<WString> args;
     SetUpBridgeProcessingArgs(args, testDir.c_str(), DwgBridgeTestsFixture::GetDwgBridgeRegSubKey());
-    
+
     BentleyApi::BeFileName inputFile;
     MakeCopyOfFile(inputFile, L"basictype.dwg", NULL);
 
@@ -289,7 +290,7 @@ TEST_F(DwgBridgeTests, ConvertLinesUsingBridgeFwk)
     SetupClient();
     CreateRepository();
     auto runningServer = StartServer();
-    
+
     if (true)
         {
         // Ask the framework to run our test bridge to do the initial conversion and create the repo
@@ -329,7 +330,7 @@ TEST_F(DwgBridgeTests, TestSourceElementIdAspect)
 
     bvector<WString> args;
     SetUpBridgeProcessingArgs(args, testDir.c_str(), DwgBridgeTestsFixture::GetDwgBridgeRegSubKey());
-    
+
     BentleyApi::BeFileName inputFile;
     MakeCopyOfFile(inputFile, L"basictype.dwg", NULL);
 
@@ -339,7 +340,7 @@ TEST_F(DwgBridgeTests, TestSourceElementIdAspect)
     SetupClient();
     CreateRepository();
     auto runningServer = StartServer();
-    
+
     uint64_t srcId = AddLine(inputFile);
     if (true)
         {
@@ -368,7 +369,7 @@ TEST_F(DwgBridgeTests, ConvertAttachmentSingleBridge)
 
     bvector<WString> args;
     SetUpBridgeProcessingArgs(args, testDir.c_str(), DwgBridgeTestsFixture::GetDwgBridgeRegSubKey(), DEFAULT_IMODEL_NAME);
-    
+
     BentleyApi::BeFileName inputFile;
     MakeCopyOfFile(inputFile, L"basictype.dwg", NULL);
     AddLine(inputFile);
@@ -407,7 +408,7 @@ TEST_F(DwgBridgeTests, ConvertAttachmentSingleBridge)
         {
         // Ask the framework to run our test bridge to do the initial conversion and create the repo
         RunTheBridge(args);
-        
+
         modelCount = DbFileInfo(m_briefcaseName).GetModelCount();
         ASSERT_EQ(10, modelCount);
         }
@@ -428,11 +429,11 @@ TEST_F(DwgBridgeTests, ConvertAttachmentSingleBridge)
 TEST_F(DwgBridgeTests, ConvertAttachmentSingleBridgeAlternateRegistry)
     {
     auto testDir = CreateTestDir();
-    
+
     BentleyApi::BeFileName stagingDir(testDir);
     stagingDir.AppendToPath(L"staging");
     EXPECT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::CreateNewDirectory(stagingDir.c_str()));
-    
+
     BentleyApi::BeFileName registryDir(testDir);
     registryDir.AppendToPath(L"assignments");
     EXPECT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::CreateNewDirectory(registryDir.c_str()));
@@ -441,7 +442,7 @@ TEST_F(DwgBridgeTests, ConvertAttachmentSingleBridgeAlternateRegistry)
     bvector<WString> args;
     SetUpBridgeProcessingArgs(args, stagingDir.c_str(), regsubKey, DEFAULT_IMODEL_NAME);
     args.push_back(_wcsdup(BentleyApi::WPrintfString(L"--registry-dir=%s", registryDir.c_str()).c_str()));
-    
+
     BentleyApi::BeFileName inputFile;
     MakeCopyOfFile(inputFile, L"basictype.dwg", NULL);
     AddLine(inputFile);
@@ -491,12 +492,12 @@ TEST_F(DwgBridgeTests, ConvertAttachmentSingleBridgeAlternateRegistry)
         {
         // Ask the framework to run our test bridge to do the initial conversion and create the repo
         RunTheBridge(args);
-        
+
         modelCount = DbFileInfo(m_briefcaseName).GetModelCount();
         ASSERT_EQ(10, modelCount);
         }
 
-   
+
     AddAttachment(inputFile, refFile, 1, true);
     if (true)
         {
@@ -517,23 +518,23 @@ TEST_F(DwgBridgeTests, CodeReservation)
 
     BeFileName noCodesAllowed(testDir);
     noCodesAllowed.AppendToPath(L"noCodesAllowed.txt");
-    
+
     bool usingIModelBank = (GetIModelBankServerJs() != nullptr);
 
     if (usingIModelBank)
         {
         Utf8PrintfString rules(
-            R"(   [                                 
-                      {                            
-                          "user": "user1",             
-                          "rules": [                   
-                              {                        
+            R"(   [
+                      {
+                          "user": "user1",
+                          "rules": [
+                              {
                                   "request": "Code/Create",
-                                  "rule": { "verb": "ifnofile", "object": "%s" }                        
-                              }                        
-                          ]                            
-                      }                
-                  ]                               
+                                  "rule": { "verb": "ifnofile", "object": "%s" }
+                              }
+                          ]
+                      }
+                  ]
               )", Utf8String(noCodesAllowed).c_str());
         rules.ReplaceAll("\\", "/");
 
@@ -566,10 +567,10 @@ TEST_F(DwgBridgeTests, CodeReservation)
     BeFileName bcName;
     if (true)
         {
-        // Must allow Code reservations during the initial conversion. That is where the bridge creates the Subject 
+        // Must allow Code reservations during the initial conversion. That is where the bridge creates the Subject
         // elements in the repository model, and each Subject has a Code that must be reserved (because they must
         // be unique across bridges). So, do not create the "noCodesAllowed" file yet.
-        
+
         iModelBridgeFwk fwk;
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argvMaker.GetArgC(), argvMaker.GetArgV()));
         ASSERT_EQ(0, fwk.Run(argvMaker.GetArgC(), argvMaker.GetArgV()));
@@ -655,7 +656,7 @@ TEST_F(DwgBridgeTests, CodeReservation)
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argvMaker.GetArgC(), argvMaker.GetArgV()));
         ASSERT_EQ(0, fwk.Run(argvMaker.GetArgC(), argvMaker.GetArgV()));
         }
-    
+
     VerifyLineHasCode(prevCount, bcName, srcId, prefix, true);
     ++prevCount;
 
@@ -694,7 +695,7 @@ void DwgBridgeTests::SetupTwoRefs(bvector<WString>& args, BentleyApi::BeFileName
     AddLine(refFile2);
 
     args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", masterFile.c_str()));
-    
+
     BentleyApi::BeSQLite::BeGuid guid, ref1Guid, ref2Guid;
     guid.Create();
     ref1Guid.Create();
@@ -750,11 +751,11 @@ TEST_F(DwgBridgeTests, DISABLED_PushAfterEachModel)
         {
         // Ask the framework to run our test bridge to do the initial conversion and create the repo
         RunTheBridge(args);
-        
+
         modelCount = DbFileInfo(m_briefcaseName).GetModelCount();
         ASSERT_EQ(8, modelCount);
         }
-   
+
     // Add two attachments => two new models should be discovered.
     AddAttachment(masterFile, refFile1, 1, true);
     AddAttachment(masterFile, refFile2, 1, true);
@@ -794,7 +795,7 @@ static bool containsSubstr(BentleyApi::bset<BentleyApi::Utf8String> const& strin
 TEST_F(DwgBridgeTests, PushAfterEachFile)
     {
     auto testDir = CreateTestDir();
-     
+
     SetupClient();
     CreateRepository();
     auto runningServer = StartServer();
@@ -819,17 +820,17 @@ TEST_F(DwgBridgeTests, PushAfterEachFile)
     SetupTwoRefs(args, masterFile, refFile1, refFile2, testDir, testRegistry);
 
     testRegistry.Save();
-    
+
     int modelCount = 0;
     if (true)
         {
         // Ask the framework to run our test bridge to do the initial conversion and create the repo
         RunTheBridge(args);
-        
+
         modelCount = DbFileInfo(m_briefcaseName).GetModelCount();
         ASSERT_EQ(10, modelCount);
         }
-   
+
     // Add two attachments => two new models should be discovered.
     AddAttachment(masterFile, refFile1, 1, true);
     AddAttachment(masterFile, refFile2, 1, true);
@@ -859,20 +860,20 @@ TEST_F(DwgBridgeTests, DISABLED_OidcTest)
 
     bvector<WString> args;
     SetUpBridgeProcessingArgs(args, testDir.c_str(), DwgBridgeTestsFixture::GetDwgBridgeRegSubKey());
-    
+
     BentleyApi::BeFileName inputFile;
     MakeCopyOfFile(inputFile, L"basictype.dwg", NULL);
 
     args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", inputFile.c_str()));
     args.push_back(L"--fwk-skip-assignment-check");
-    
+
     iModelBridgeFwk fwk;
     bvector<WCharCP> argptrs;
 
     for (auto& arg : args)
         argptrs.push_back(arg.c_str());
 
-    int argc = (int) argptrs.size(); 
+    int argc = (int) argptrs.size();
     wchar_t const** argv = argptrs.data();
 
     ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
@@ -892,7 +893,7 @@ TEST_F(DwgBridgeTests, DISABLED_TestCodeRemovalPerformance)
     SetUpBridgeProcessingArgs(args, testDir.c_str(), DwgBridgeTestsFixture::GetDwgBridgeRegSubKey());
 
     args.push_back(L"--set-DebugCodes");
-    
+
     BentleyApi::BeFileName inputFile;
     MakeCopyOfFile(inputFile, L"basictype.dwg", NULL);
 
@@ -967,3 +968,4 @@ TEST_P (ExternalSourceAspectTests, TestExternalSourceAspectAspect)
 
 const WString params[] = {L"Model", L"Element", L"Layer"};
 INSTANTIATE_TEST_CASE_P (AllExternalSourceAspectTests, ExternalSourceAspectTests, ::testing::ValuesIn (params));
+POP_DISABLE_DEPRECATION_WARNINGS

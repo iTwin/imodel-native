@@ -38,6 +38,7 @@ static FrustrumOutput s_frustrumOutput;
 #define IS_DELTA_OPEN_FOR_READ(pDelta)  (DELTA_IS_OPEN == pDelta->openFlag && DELTA_IS_FOR_READ == pDelta->readwriteFlag)
 #define IS_DELTA_OPEN_FOR_WRITE(pDelta) (DELTA_IS_OPEN == pDelta->openFlag && DELTA_IS_FOR_WRITE == pDelta->readwriteFlag)
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 struct ppiDeltaStruct
     {
     PK_PMARK_t                  partitionMarkTag;       // partition mark to which this delta corresponds.
@@ -3148,3 +3149,4 @@ bool PSolidKernelManager::SetExternalFrustrum(bool isActive)
 
     return wasActive;
     }
+POP_DISABLE_DEPRECATION_WARNINGS

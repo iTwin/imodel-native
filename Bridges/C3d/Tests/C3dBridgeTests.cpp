@@ -12,13 +12,13 @@
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_DGN
 
-
+PUSH_DISABLE_DEPRECATION_WARNINGS
 //=======================================================================================
-// @bsistruct                              
+// @bsistruct
 //=======================================================================================
 struct C3dBridgeTests : public C3dBridgeTestsFixture
     {
-    void SetupTwoRefs(bvector<WString>& args, BentleyApi::BeFileName& masterFile, BentleyApi::BeFileName& refFile1, 
+    void SetupTwoRefs(bvector<WString>& args, BentleyApi::BeFileName& masterFile, BentleyApi::BeFileName& refFile1,
                       BentleyApi::BeFileName& refFile2, BentleyApi::BeFileName const& testDir, FakeRegistry& testRegistry);
     void VerifyLineHasCode(int prevCount, BeFileNameCR bcName, int64_t srcId, Utf8CP codeValuePrefix, bool codeShouldBeRecorded);
     };
@@ -66,7 +66,7 @@ TEST_F(C3dBridgeTests, TestDenySchemaLock)
     argvMaker.SetSkipAssignmentCheck();
 
     iModelBridgeFwk fwk;
-    
+
     ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argvMaker.GetArgC(), argvMaker.GetArgV()));
 
     bool fatalFwkMsgFound = false;
@@ -115,7 +115,7 @@ TEST_F(C3dBridgeTests, MultiBridgeSequencing)
 
     BeFileName a_can_run(testDir);
     a_can_run.AppendToPath(L"a_can_run.txt");
-    
+
     BeFileName b_can_run(testDir);
     b_can_run.AppendToPath(L"b_can_run.txt");
 
@@ -157,14 +157,14 @@ TEST_F(C3dBridgeTests, MultiBridgeSequencing)
     std::unique_ptr<BentleyApi::Dgn::IModelBankClient> bankClient(CreateIModelBankClient(""));
     { // make sure server is stopped before releasing bankClient, as that is used by runningServer's Stop method.
     auto runningServer = StartImodelBankServer(GetIModelDir(), *bankClient);
-    
+
     ASSERT_TRUE(m_client == nullptr);
     iModelBridgeFwk::ClearIModelClientForBridgesForTesting(); // nobody should have set the test client, but clear it just in case.
 
     // -------------------------------------------------------
     // Bridge A
     // -------------------------------------------------------
-    std::thread bridge_a([&] 
+    std::thread bridge_a([&]
         {
         BeFileName aDir(testDir);
         aDir.AppendToPath(L"A");
@@ -181,7 +181,7 @@ TEST_F(C3dBridgeTests, MultiBridgeSequencing)
         argvMaker.SetSkipAssignmentCheck();
 
         argvMaker.SetMaxRetries(255, true);   // must allow lots of time for bridge B to run to completion. Unfortunately, there is no way to predict how many retries will be required.
-    
+
         iModelBridgeFwk fwk;
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argvMaker.GetArgC(), argvMaker.GetArgV()));
 
@@ -221,20 +221,20 @@ TEST_F(C3dBridgeTests, MultiBridgeSequencing)
 
         argvMaker.SetInputFileArg(inputFile);
         argvMaker.SetSkipAssignmentCheck();
-    
+
         auto bridge_b = StartImodelBridgeFwkExe(argvMaker);
 
         createFile(b_can_run);      // let b run
 
         ASSERT_EQ(BSISUCCESS, bridge_b.Stop(5*60*1000));   // wait for up to 5 minutes for b to finish
-                
+
         ASSERT_EQ(0, bridge_b.GetExitCode());
 
         bridge_b_briefcaseName = bDir;
         bridge_b_briefcaseName.AppendToPath(DEFAULT_IMODEL_NAME);
         bridge_b_briefcaseName.append(L".bim");
         }
-    
+
     createFile(a_can_run);      // now let a run
 
     bridge_a.join();
@@ -251,7 +251,7 @@ TEST_F(C3dBridgeTests, MultiBridgeSequencing)
     if (true)
         {
         // If bridge A ran second, it must have had to pull bridge B's changesets before it could push.
-        // Therefore, A's briefcase should contain the RepositoryLink for B's input file as well as its own. 
+        // Therefore, A's briefcase should contain the RepositoryLink for B's input file as well as its own.
         DbFileInfo info(bridge_a_briefcaseName);
         auto aSourceFileId = info.GetRepositoryLinkByFileNameLike("%c3dtest1_a.dwg");
         auto bSourceFileId = info.GetRepositoryLinkByFileNameLike("%c3dtest1_b.dwg");
@@ -280,7 +280,7 @@ TEST_F(C3dBridgeTests, ConvertLinesUsingBridgeFwk)
 
     bvector<WString> args;
     SetUpBridgeProcessingArgs(args, testDir.c_str(), C3dBridgeTestsFixture::GetC3dBridgeRegSubKey());
-    
+
     BentleyApi::BeFileName inputFile;
     MakeCopyOfFile(inputFile, L"c3dtest1.dwg", NULL);
 
@@ -290,7 +290,7 @@ TEST_F(C3dBridgeTests, ConvertLinesUsingBridgeFwk)
     SetupClient();
     CreateRepository();
     auto runningServer = StartServer();
-    
+
     if (true)
         {
         // Ask the framework to run our test bridge to do the initial conversion and create the repo
@@ -330,7 +330,7 @@ TEST_F(C3dBridgeTests, TestSourceElementIdAspect)
 
     bvector<WString> args;
     SetUpBridgeProcessingArgs(args, testDir.c_str(), C3dBridgeTestsFixture::GetC3dBridgeRegSubKey());
-    
+
     BentleyApi::BeFileName inputFile;
     MakeCopyOfFile(inputFile, L"c3dtest1.dwg", NULL);
 
@@ -340,7 +340,7 @@ TEST_F(C3dBridgeTests, TestSourceElementIdAspect)
     SetupClient();
     CreateRepository();
     auto runningServer = StartServer();
-    
+
     uint64_t srcId = AddLine(inputFile);
     if (true)
         {
@@ -369,7 +369,7 @@ TEST_F(C3dBridgeTests, ConvertAttachmentSingleBridge)
 
     bvector<WString> args;
     SetUpBridgeProcessingArgs(args, testDir.c_str(), C3dBridgeTestsFixture::GetC3dBridgeRegSubKey(), DEFAULT_IMODEL_NAME);
-    
+
     BentleyApi::BeFileName inputFile;
     MakeCopyOfFile(inputFile, L"c3dtest1.dwg", NULL);
     AddLine(inputFile);
@@ -409,7 +409,7 @@ TEST_F(C3dBridgeTests, ConvertAttachmentSingleBridge)
         {
         // Ask the framework to run our test bridge to do the initial conversion and create the repo
         RunTheBridge(args);
-        
+
         modelCount = DbFileInfo(m_briefcaseName).GetModelCount();
         ASSERT_EQ(s_expectedCount, modelCount);
         }
@@ -430,11 +430,11 @@ TEST_F(C3dBridgeTests, ConvertAttachmentSingleBridge)
 TEST_F(C3dBridgeTests, ConvertAttachmentSingleBridgeAlternateRegistry)
     {
     auto testDir = CreateTestDir();
-    
+
     BentleyApi::BeFileName stagingDir(testDir);
     stagingDir.AppendToPath(L"staging");
     EXPECT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::CreateNewDirectory(stagingDir.c_str()));
-    
+
     BentleyApi::BeFileName registryDir(testDir);
     registryDir.AppendToPath(L"assignments");
     EXPECT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::CreateNewDirectory(registryDir.c_str()));
@@ -443,7 +443,7 @@ TEST_F(C3dBridgeTests, ConvertAttachmentSingleBridgeAlternateRegistry)
     bvector<WString> args;
     SetUpBridgeProcessingArgs(args, stagingDir.c_str(), regsubKey, DEFAULT_IMODEL_NAME);
     args.push_back(_wcsdup(BentleyApi::WPrintfString(L"--registry-dir=%s", registryDir.c_str()).c_str()));
-    
+
     BentleyApi::BeFileName inputFile;
     MakeCopyOfFile(inputFile, L"c3dtest1.dwg", NULL);
     AddLine(inputFile);
@@ -494,12 +494,12 @@ TEST_F(C3dBridgeTests, ConvertAttachmentSingleBridgeAlternateRegistry)
         {
         // Ask the framework to run our test bridge to do the initial conversion and create the repo
         RunTheBridge(args);
-        
+
         modelCount = DbFileInfo(m_briefcaseName).GetModelCount();
         ASSERT_EQ(s_expectedCount, modelCount);
         }
 
-   
+
     AddAttachment(inputFile, refFile, 1, true);
     if (true)
         {
@@ -525,7 +525,7 @@ void C3dBridgeTests::SetupTwoRefs(bvector<WString>& args, BentleyApi::BeFileName
     AddLine(refFile2);
 
     args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", masterFile.c_str()));
-    
+
     BentleyApi::BeSQLite::BeGuid guid, ref1Guid, ref2Guid;
     guid.Create();
     ref1Guid.Create();
@@ -582,11 +582,11 @@ TEST_F(C3dBridgeTests, DISABLED_PushAfterEachModel)
         {
         // Ask the framework to run our test bridge to do the initial conversion and create the repo
         RunTheBridge(args);
-        
+
         modelCount = DbFileInfo(m_briefcaseName).GetModelCount();
         ASSERT_EQ(s_expectedCount, modelCount);
         }
-   
+
     // Add two attachments => two new 3D models along with two new VerticalAlignmentModel's should be discovered.
     AddAttachment(masterFile, refFile1, 1, true);
     AddAttachment(masterFile, refFile2, 1, true);
@@ -626,7 +626,7 @@ static bool containsSubstr(BentleyApi::bset<BentleyApi::Utf8String> const& strin
 TEST_F(C3dBridgeTests, PushAfterEachFile)
     {
     auto testDir = CreateTestDir();
-     
+
     SetupClient();
     CreateRepository();
     auto runningServer = StartServer();
@@ -651,18 +651,18 @@ TEST_F(C3dBridgeTests, PushAfterEachFile)
     SetupTwoRefs(args, masterFile, refFile1, refFile2, testDir, testRegistry);
 
     testRegistry.Save();
-    
+
     int modelCount = 0;
     static int s_expectedCount = 22;
     if (true)
         {
         // Ask the framework to run our test bridge to do the initial conversion and create the repo
         RunTheBridge(args);
-        
+
         modelCount = DbFileInfo(m_briefcaseName).GetModelCount();
         ASSERT_EQ(s_expectedCount, modelCount);
         }
-   
+
     // Add two attachments => two new models, along with two new VerticalAlignmentModel's, should be discovered.
     AddAttachment(masterFile, refFile1, 1, true);
     AddAttachment(masterFile, refFile2, 1, true);
@@ -692,20 +692,20 @@ TEST_F(C3dBridgeTests, DISABLED_OidcTest)
 
     bvector<WString> args;
     SetUpBridgeProcessingArgs(args, testDir.c_str(), C3dBridgeTestsFixture::GetC3dBridgeRegSubKey());
-    
+
     BentleyApi::BeFileName inputFile;
     MakeCopyOfFile(inputFile, L"c3dtest1.dwg", NULL);
 
     args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", inputFile.c_str()));
     args.push_back(L"--fwk-skip-assignment-check");
-    
+
     iModelBridgeFwk fwk;
     bvector<WCharCP> argptrs;
 
     for (auto& arg : args)
         argptrs.push_back(arg.c_str());
 
-    int argc = (int) argptrs.size(); 
+    int argc = (int) argptrs.size();
     wchar_t const** argv = argptrs.data();
 
     ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
@@ -725,7 +725,7 @@ TEST_F(C3dBridgeTests, DISABLED_TestCodeRemovalPerformance)
     SetUpBridgeProcessingArgs(args, testDir.c_str(), C3dBridgeTestsFixture::GetC3dBridgeRegSubKey());
 
     args.push_back(L"--set-DebugCodes");
-    
+
     BentleyApi::BeFileName inputFile;
     MakeCopyOfFile(inputFile, L"c3dtest1.dwg", NULL);
 
@@ -800,3 +800,4 @@ TEST_P (ExternalSourceAspectTests, TestExternalSourceAspectAspect)
 
 const WString params[] = {L"Model", L"Element", L"Layer"};
 INSTANTIATE_TEST_CASE_P (AllExternalSourceAspectTests, ExternalSourceAspectTests, ::testing::ValuesIn (params));
+POP_DISABLE_DEPRECATION_WARNINGS

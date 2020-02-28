@@ -23,6 +23,7 @@
 #include <ImagePP/all/h/HRFCacheController.h>
 #include <ImagePP/all/h/HRFBilFile.h>
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 // MakeDir and Access
 
 static const Utf8String s_cTiffExtensionCache = ".cache.cTIFF"; // ctiff extension
@@ -282,7 +283,7 @@ HFCPtr<HFCURL> HRFiTiffCacheFileCreator::ComposeURLFor(const HFCPtr<HFCURL>& pi_
     {
     if (pi_Page != -1 && pi_Page != 0)
         {
-        Utf8PrintfString extension(".page%d%s", pi_Page, pi_Extension.c_str());        
+        Utf8PrintfString extension(".page%d%s", pi_Page, pi_Extension.c_str());
         return HRFLocalCacheFileCreator::ComposeURLFor(pi_rpURLFileName, extension.c_str(), pi_Offset);
         }
     else
@@ -352,3 +353,4 @@ bool HRFiTiffCacheFileCreator::HasCacheFor(const HFCPtr<HFCURL>& pi_rForRasterFi
 
     return HasCacheFor;
     }
+POP_DISABLE_DEPRECATION_WARNINGS

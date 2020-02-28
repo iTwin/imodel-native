@@ -17,7 +17,7 @@ bvector<LinearSegment> ISegmentableLinearElement::_QueryLinearSegments(QueryPara
         currentStartStops.push_back({ linearLocation.GetStartDistanceAlong(), linearLocation.GetStopDistanceAlong() });
 
     bvector<LinearSegment> retVal;
-    
+
     bvector<LinearLocationReference> segmentReferences;
     while (!currentStartStops.empty())
         {
@@ -40,11 +40,11 @@ bvector<LinearSegment> ISegmentableLinearElement::_QueryLinearSegments(QueryPara
             if (fabs(currentStartStops.at(i).first - minStart) < DBL_EPSILON)
                 {
                 segmentReferences.push_back(linearLocations.at(i));
-                
+
                 if (fabs(currentStartStops.at(i).second - minStopAfterStart) < DBL_EPSILON)
                     {
-                    currentStartStops.erase(&currentStartStops.at(i));
-                    linearLocations.erase(&linearLocations.at(i));
+                    currentStartStops.erase(currentStartStops.begin() + i);
+                    linearLocations.erase(linearLocations.begin() + i);
                     }
                 else
                     currentStartStops.at(i).first = minStopAfterStart;

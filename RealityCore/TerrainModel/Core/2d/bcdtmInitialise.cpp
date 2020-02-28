@@ -12,6 +12,7 @@
 #include "dtmvars.h"
 FILE    *fpLOG = NULL;
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -42,22 +43,22 @@ BENTLEYDTM_EXPORT int bcdtmInitialise(void)
 ** Set Number Of CPU Processors
 */
     DTM_NUM_PROCESSORS = std::thread::hardware_concurrency();
-    if( dbg ) bcdtmWrite_message(0,0,0,"DTM_NUM_PROCESSORS = %2ld",DTM_NUM_PROCESSORS) ; 
+    if( dbg ) bcdtmWrite_message(0,0,0,"DTM_NUM_PROCESSORS = %2ld",DTM_NUM_PROCESSORS) ;
 /*
 ** Set Floating Point Control Word To 64 Bit Precision
 */
 //    bcdtmWrite_message(11,0,0,"FCW = 0x%.4x ",_control87(0,0)) ;
 //
-//    #ifdef winNT   
+//    #ifdef winNT
 //    bcdtmWrite_message(0,0,0,"Set    I1 - FCW = 0x%.4x ",_control87(0,0)) ;
-//    _control87(_PC_64,MCW_PC) ;  
+//    _control87(_PC_64,MCW_PC) ;
 //    bcdtmWrite_message(0,0,0,"64 Bit I2 - FCW = 0x%.4x ",_control87(0,0)) ;
-//    _control87(_PC_53,MCW_PC) ;  
+//    _control87(_PC_53,MCW_PC) ;
 //    bcdtmWrite_message(0,0,0,"53 Bit I2 - FCW = 0x%.4x ",_control87(0,0)) ;
-//    _control87(_PC_24,MCW_PC) ;  
+//    _control87(_PC_24,MCW_PC) ;
 //    bcdtmWrite_message(0,0,0,"24 Bit I2 - FCW = 0x%.4x ",_control87(0,0)) ;
-//    #endif 
-   } 
+//    #endif
+   }
 /*
 ** Job Completed
 */
@@ -78,34 +79,34 @@ BENTLEYDTM_EXPORT int bcdtmInitialise_openGpkDtmLogFile(void)
  if( fpLOG == NULL )
    {
     // Modified by Joe Roberts on 10/15/2008 for D-28436
-    // This is the GEOPAK/PW problem caused by inclusion of Civil Accudraw, GPS, and Roundabouts 
-    // into the GEOPAK install.  The inclusion caused the BCivilDTM.2.0.dll to load earlier - before PW is ready.  
-    // The first thing the init function for the DTM dll did was to try to create a log file in PW.  
-    // But PW wasn't ready, so the connection failed and because of the optimization of the connection function, 
-    // it did not retry.  So as far as GEOPAK was concerned, PW was not active. The solution was since the dtm 
-    // log file truly did not need to be created in PW, then don't do it.  Create the log file on the local disk.  
+    // This is the GEOPAK/PW problem caused by inclusion of Civil Accudraw, GPS, and Roundabouts
+    // into the GEOPAK install.  The inclusion caused the BCivilDTM.2.0.dll to load earlier - before PW is ready.
+    // The first thing the init function for the DTM dll did was to try to create a log file in PW.
+    // But PW wasn't ready, so the connection failed and because of the optimization of the connection function,
+    // it did not retry.  So as far as GEOPAK was concerned, PW was not active. The solution was since the dtm
+    // log file truly did not need to be created in PW, then don't do it.  Create the log file on the local disk.
     // End of problem.
 /*
 **  Check Log File Environment Variable Exists
 */
-    logFileEnvP = getenv("BCDTM_LOG_FILE"); 
+    logFileEnvP = getenv("BCDTM_LOG_FILE");
 /*
 **  If Environment Variable Exists Try And Open Log File
-*/ 
+*/
     if( logFileEnvP != NULL )
-      { 
+      {
        if( ( fpLOG = fopen(logFileEnvP,"r")) != NULL )
          {
           fclose(fpLOG) ;
           fpLOG = fopen(logFileEnvP,"w") ;
           if( fpLOG != NULL )
-            { 
+            {
              fprintf(fpLOG,"Bentley Civil DTM LOG FILE\n") ;
              fprintf(fpLOG,"==========================\n") ;
              fprintf(fpLOG,"SS3 BcDTM Server Running\n") ;
              bcdtmUtl_getDateAndTime(Dstr,Tstr) ;
              fprintf(fpLOG,"Start = %s %s\n",Dstr,Tstr) ;
-             fflush(fpLOG) ;  
+             fflush(fpLOG) ;
             }
          }
       }
@@ -143,7 +144,7 @@ BENTLEYDTM_EXPORT int bcdtmInitialise_openLogFile(WCharCP LogFileName)
        fprintf(fpLOG,"bcDTM Server Running\n") ;
        bcdtmUtl_getDateAndTime(Dstr,Tstr) ;
        fprintf(fpLOG,"Start = %s %s\n",Dstr,Tstr) ;
-       fflush(fpLOG) ;  
+       fflush(fpLOG) ;
       }
    }
 /*
@@ -166,7 +167,7 @@ BENTLEYDTM_EXPORT int bcdtmInitialise_closeLogFile(void)
    {
     bcdtmUtl_getDateAndTime(Dstr,Tstr) ;
     fprintf(fpLOG,"End = %s %s\n",Dstr,Tstr) ;
-    fflush(fpLOG) ;  
+    fflush(fpLOG) ;
     fclose(fpLOG) ;
     fpLOG = NULL  ;
    }
@@ -175,3 +176,4 @@ BENTLEYDTM_EXPORT int bcdtmInitialise_closeLogFile(void)
 */
  return(0) ;
 }
+POP_DISABLE_DEPRECATION_WARNINGS

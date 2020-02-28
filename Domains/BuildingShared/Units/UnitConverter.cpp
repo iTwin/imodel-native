@@ -4,7 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include "PublicApi/UnitsApi.h"
 #define _USE_MATH_DEFINES
-#include <cmath> 
+#include <cmath>
 #include <cstring>
 #include <cctype>
 
@@ -212,7 +212,9 @@ double value
 StatusInt UnitConverter::MeetsAndBoundsStringToDouble(double& angle, Utf8CP string)
     {
     char bearing[MAXLEN_ANGLE_STRING];
+PUSH_DISABLE_DEPRECATION_WARNINGS
     std::strncpy(bearing, string, std::strlen(string) + 1); //copying chars of string starting with string[1] ending with string[strlen(string)-2]
+POP_DISABLE_DEPRECATION_WARNINGS
 
     //trim whitespaces
     while (0 != std::isspace(bearing[0]))
@@ -238,14 +240,16 @@ StatusInt UnitConverter::MeetsAndBoundsStringToDouble(double& angle, Utf8CP stri
         return BentleyStatus::ERROR;
 
     char angleString[MAXLEN_ANGLE_STRING];
+PUSH_DISABLE_DEPRECATION_WARNINGS
     std::strncpy(angleString, bearing + 1, std::strlen(bearing) - 2); //copying chars of string starting with string[1] ending with string[strlen(string)-2]
+POP_DISABLE_DEPRECATION_WARNINGS
     angleString[std::strlen(bearing) - 2] = '\0';
 
     char* converted;
     strtod(angleString, &converted);
     if ('\0' != *converted || converted == angleString)
         return BentleyStatus::ERROR;
-    
+
 
 	angle = std::stod(angleString); //convert bearing to double value
 
@@ -263,7 +267,7 @@ StatusInt UnitConverter::MeetsAndBoundsStringToDouble(double& angle, Utf8CP stri
 	if (std::isnan(angle))
 		return BentleyStatus::ERROR;
 
-    if ('n' == first && 'e' == last) 
+    if ('n' == first && 'e' == last)
         {
         angle = M_PI / 2 - angle;
         return BentleyStatus::SUCCESS;
@@ -299,7 +303,7 @@ void UnitConverter::DirectionToMeetsAndBoundsString(Utf8String & string, DVec3d 
 
     // Get the direction parts of string
     char first, last;
-    
+
     if (angle >= 0 && angle < M_PI)
         first = 'n';
     else

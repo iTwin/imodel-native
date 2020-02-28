@@ -334,7 +334,7 @@ bool PolyfaceVisitor::IntepolateDataOnEdge (FacetLocationDetailR detail, size_t 
 bool PolyfaceVisitor::AccumulateScaledData
 (
 FacetLocationDetailR detail,
-size_t index, 
+size_t index,
 double fraction
 )
     {
@@ -372,7 +372,7 @@ bool PolyfaceVisitor::TryParamToScanBrackets
     for (size_t i1 = 0; i1 < numEdgesThisFace; i0 = i1++)
         {
         DPoint2d uv0 = m_param[i0];
-        DPoint2d uv1 = m_param[i1];    
+        DPoint2d uv1 = m_param[i1];
         hScan.TestAndUpdateCrossing (uv0.x, uv0.y, uv1.x, uv1.y, i0);
         vScan.TestAndUpdateCrossing (uv0.y, uv0.x, uv1.y, uv1.x, i0);
         }
@@ -450,7 +450,7 @@ size_t i2
     }
 
 // Compute point and normal at uvParam wrt the triangle on (locally numbered) vertices 0,i1,(i1+1),
-// i.e. 
+// i.e.
 // Return false if i0,i1,i2 not a valid triangle with non-colinear points
 ValidatedDRay3d PolyfaceVisitor::TryTriangleParamToPerpendicularRay
 (
@@ -521,7 +521,7 @@ size_t i2
             }
         else
             {
-            // visitor does not have parameters.  Put the directions along 
+            // visitor does not have parameters.  Put the directions along
             // the edges
             detail.dXdu = DVec3d::FromStartEnd (triangle.point[0], triangle.point[1]);
             detail.dXdv = DVec3d::FromStartEnd (triangle.point[0], triangle.point[2]);
@@ -850,9 +850,9 @@ double maxDistance                  //!< ignore larger distances.  Send 0 to con
             return m_numNeedProcessing.Count (
                 //rangeA.IntersectsWith (rangeB, m_minDistanceFound, 3));
                 rangeA.DistanceSquaredTo (rangeB) <= m_minDistanceFound * m_minDistanceFound);
-            } 
+            }
 
-    void Process (size_t iA, size_t iB) override 
+    void Process (size_t iA, size_t iB) override
             {
             size_t readIndexA, readIndexB;
             m_numProcess++;
@@ -864,7 +864,7 @@ double maxDistance                  //!< ignore larger distances.  Send 0 to con
                 return;
             if (!m_visitorB->MoveToFacetByReadIndex (readIndexB))
                 return;
-                
+
             DPoint3d pointA, pointB;
             if (bsiPolygon_closestApproachBetweenPolygons (
                         &pointA, &pointB,
@@ -880,10 +880,10 @@ double maxDistance                  //!< ignore larger distances.  Send 0 to con
                     m_minDistanceFound = d;
                     m_segment.point[0] = pointA;
                     m_segment.point[1] = pointB;
-                    } 
-                }        
+                    }
+                }
             }
-            
+
     bool IsLive () const override
         {
         return m_looking;
@@ -919,7 +919,7 @@ struct PolyfaceIndexedHeapRangeTree *treeB     //! optional range tree for polyf
             {
             tester.Process (iA, iB);
             }
-    
+
     IndexedRangeHeap::Search (treeA->GetHeapR (), treeB->GetHeapR (), tester, 1);
     return tester.GetSegment (segment);
     }
@@ -1019,7 +1019,7 @@ double normalTestRadians
                                 accept = false;
                             }
                         if (accept)
-                            {                            
+                            {
                             found = true;
                             minDistance = d;
                             segment.point[0] = pointA;
@@ -1032,7 +1032,7 @@ double normalTestRadians
         }
     return found;
     }
-    
+
 GEOMDLLIMPEXP bool PolyfaceQuery::SearchClosestApproach (
 PolyfaceQueryR polyfaceA,           //!< first polyface
 double maxDistance,                 //!< ignore larger distances.  Send 0 to consider all pairs.
@@ -1040,7 +1040,7 @@ DSegment3dR segment                 //!< shortest segment.
 )
     {
     return SearchClosestApproach (polyfaceA, maxDistance, segment, 0.0);
-    }    
+    }
 
 /*=================================================================================**//**
 * Filter class for selecting facets presented by a visitor.
@@ -1069,7 +1069,7 @@ size_t maxNewHit
     size_t numNewHit = 0;
     size_t numTest = 0;
     bvector<DPoint3d> &points = m_visitor->Point ();
-    bvector<bool> &visible = m_visitor->Visible ();
+    auto &visible = m_visitor->Visible ();
 
     // NEEDSWORK: TryDRay3dIntersectionToFacetLocationDetail currently needs "world" DRay3d...
     DRay3d boresite;
@@ -1107,7 +1107,7 @@ size_t maxNewHit
         numTest++;
 
         if (nullptr != edgeHits)
-            {            
+            {
             for (size_t i = 0, numEdge = m_visitor->NumEdgesThisFace (); i < numEdge; i++)
                 {
                 if (!m_ignoreInvisibleEdges || visible[i])
@@ -1134,7 +1134,7 @@ size_t maxNewHit
                     }
                 }
             }
-        
+
         if (nullptr != facetHits)
             {
             FacetLocationDetail facetDetail;
@@ -1333,7 +1333,7 @@ void PolyfacePolygonPicker::SetVisibilityBits (bvector<StrokePick> &picks)
     {
     // left = evolving array of picks that start to the left and have not ended at u0 of sweep through sorted picks.
     // right = reused array of picks that are found by lookahead from current pick.
-    bvector<StrokePick> left, right;    
+    bvector<StrokePick> left, right;
     bvector<double> uBreak;
     // Sort by left ends.  The right ends are ragged
     std::sort (picks.begin (), picks.end (), cb_strokePickU0_LT);

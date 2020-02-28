@@ -8,12 +8,9 @@
 /* Contains various feature utilities.				                 	              */
 /*----------------------------------------------------------------------------*/
 
-
-/*----------------------------------------------------------------------------*/
-/* Include files                                                              */
-/*----------------------------------------------------------------------------*/
 #include "stdafx.h"
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 #define     PNT_SAME    0
 #define     PNT_NEW     1
 #define     PNT_MOVED   2
@@ -1678,3 +1675,4 @@ static int aecDTM_tinMatchProcess
 
     return ( SUCCESS );
 }
+POP_DISABLE_DEPRECATION_WARNINGS

@@ -47,7 +47,9 @@ BentleyStatus IMHSClientExe::Initialize(Utf8String exePath)
     ClientPtr client = clientHelper->SignInWithManager(manager, IntegrationTestsSettings::Instance().GetEnvironment());
 
     WString logFileName = L"iModelHubIntgerationTests.log";
+PUSH_DISABLE_DEPRECATION_WARNINGS
     WString path = _wgetenv(L"LOCALAPPDATA") + WString(L"\\Bentley\\LogsThread\\");
+POP_DISABLE_DEPRECATION_WARNINGS
     WString fullPath = path + logFileName;
 
     BeFileName::CreateNewDirectory(path.c_str());

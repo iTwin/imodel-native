@@ -121,3 +121,31 @@ TEST(IModelJson, BlockedPolyface)
 
     Check::ClearGeometry("IModelJson.BlockedPolyface");
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(Cone, AnnulusJSON)
+    {
+    auto centerA = DPoint3d::From(1, 0, 0);
+    auto centerB = DPoint3d::From(1, 0, 0);
+    auto matrix = RotMatrix::FromRowValues(
+        0, 0, 1,
+        1, 0, 0,
+        0, 1, 0
+    );
+    auto coneA = ISolidPrimitive::CreateDgnCone(
+        DgnConeDetail(centerA, centerB, matrix,
+            1.0, 0.5, false
+        ));
+    auto jsonA = Json::Value();
+    Check::True(IModelJson::TryGeometryToIModelJsonValue(jsonA, *IGeometry::Create(coneA)));
+    bvector<IGeometryPtr> geometryB;
+    Check::True(IModelJson::TryIModelJsonValueToGeometry(jsonA, geometryB));
+    auto jsonB = Json::Value();
+    Check::True(IModelJson::TryGeometryToIModelJsonValue(jsonB, geometryB));
+    Check::SaveTransformed(*coneA);
+    for (auto &g : geometryB)
+        Check::SaveTransformed(g);
+    Check::ClearGeometry("Cone.AnnulusJSON");
+    }

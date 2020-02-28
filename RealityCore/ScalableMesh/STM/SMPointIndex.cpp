@@ -10,7 +10,7 @@
 #include "SMPointIndex.h"
 #include "SMPointIndex.hpp"
 #include "HGF3DFilterCoord.h"
-   
+
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
 template <> class SpatialOp<HGF3DFilterCoord<double, double>, HGF3DFilterCoord<double, double>, HGF3DExtent<double> >

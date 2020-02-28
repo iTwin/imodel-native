@@ -16,6 +16,7 @@
 #include    "vector"
 #include    "string"
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 typedef struct
 {
     DPoint3d cor;
@@ -703,3 +704,4 @@ void aecDTM_getCPFeatureInfoByFeatureId(__int64 featureID, const wchar_t* &featu
             }
         }
     }
+POP_DISABLE_DEPRECATION_WARNINGS

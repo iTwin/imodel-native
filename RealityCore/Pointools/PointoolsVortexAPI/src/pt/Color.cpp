@@ -4,8 +4,8 @@ Projekt: Farbverwaltung
 Inhalt : Color Implementierung
 Datum  : 10.01.1999
 Autor  : Christian Rodemeyer
-Hinweis: © 1999 by Christian Rodemeyer
-         Info über HLS Konvertierungsfunktion
+Hinweis: ï¿½ 1999 by Christian Rodemeyer
+         Info ï¿½ber HLS Konvertierungsfunktion
          - Foley and Van Dam: "Fundamentals of Interactive Computer Graphics"
          - MSDN: 'HLS Color Spaces'
          - MSDN: 'Converting Colors Between RGB and HLS'
@@ -16,7 +16,7 @@ Hinweis: © 1999 by Christian Rodemeyer
 #include <cstdio>
 #include <string.h>
 #ifdef __INTEL_COMPILER
-#pragma warning ( disable : 1572 ) /* floating-point equality and inequality comparisons are unreliable */ 
+#pragma warning ( disable : 1572 ) /* floating-point equality and inequality comparisons are unreliable */
 #endif
 using namespace pt;
 
@@ -189,7 +189,7 @@ Color Color::colorFromName(const char* name)
 {
 	for (int i=0; i<numNamedColors; i++)
 	{
-		if (m_namedColor[i].name && 
+		if (m_namedColor[i].name &&
 			strcmp(name, m_namedColor[i].name) == 0)
 			return m_namedColor[i].color;
 	}
@@ -427,7 +427,7 @@ bool Color::string(const char* pColor)
 {
   assert(pColor);
   int r, g, b;
-  if (sscanf(pColor, "%2x%2x%2x", &r, &g, &b) != 3)
+  if (Utf8String::Sscanf_safe(pColor, "%2x%2x%2x", &r, &g, &b) != 3)
   {
     m_color[c_red] = m_color[c_green] = m_color[c_blue] = 0;
     return false;

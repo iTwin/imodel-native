@@ -13,7 +13,7 @@
 #include <ImagePP/all/h/HRFPWRasterFile.h>
 #include <ImagePP/all/h/HRFPWEditor.h>
 
-#if defined(IPP_HAVE_PROJECTWISE_SUPPORT) 
+#if defined(IPP_HAVE_PROJECTWISE_SUPPORT)
 
 #include <ImagePP/all/h/HFCURLFile.h>
 #include <ImagePP/all/h/HRFRasterFileFactory.h>
@@ -24,7 +24,7 @@
 #include <ImagePP/all/h/HRFException.h>
 
 #include <ImagePP/all/h/interface/IHRFPWFileHandler.h>
-
+PUSH_DISABLE_DEPRECATION_WARNINGS
 //-----------------------------------------------------------------------------
 // class HRFPWCapabilities
 //-----------------------------------------------------------------------------
@@ -390,3 +390,4 @@ const HGF2DWorldIdentificator HRFPWRasterFile::GetWorldIdentificator () const
     }
 
 #endif  // IPP_HAVE_PROJECTWISE_SUPPORT
+POP_DISABLE_DEPRECATION_WARNINGS

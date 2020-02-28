@@ -7,6 +7,8 @@
 #include <vector>
 #include <Bentley/Desktop/FileSystem.h>
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
+
 #if defined (BENTLEY_WIN32)
     #include "Shlwapi.h"
 #else
@@ -99,16 +101,16 @@ TEST (BeFileNameTests, BeFileNameSetNameUtf8)
 #endif
 
     BeFileName fromFileNameUtf8 (fileNameUtf8);
-    
+
     ASSERT_TRUE (0 == wcscmp (expectedFileName, fromFileNameUtf8.GetName ()));
     ASSERT_TRUE (0 == strcmp (fileNameUtf8.c_str (), fromFileNameUtf8.GetNameUtf8().c_str ()));
-    
+
     fromFileNameUtf8.Clear ();
     fromFileNameUtf8.SetNameUtf8 (fileNameUtf8);
-    
+
     ASSERT_TRUE (0 == wcscmp (expectedFileName, fromFileNameUtf8.GetName ()));
     ASSERT_TRUE (0 == strcmp (fileNameUtf8.c_str (), fromFileNameUtf8.GetNameUtf8().c_str ()));
-    
+
 #if defined (_WIN32)
     //Added a few tests where a befilename constructed from utf8 string was misbehaving.
     CharCP filePathUtf8 = "\\\\naou19755\\basworkdir\\87\\1069_1\\A-CurtainWalls.dgn";
@@ -189,7 +191,7 @@ TEST (BeFileNameTests, BeFileNameParseName3)
 {
     BeFileName  fileName (L"/junk1/junk2/temp.txt");
     WString     driveName, dirName, baseName, extName;
-    Utf8String s=fileName.GetUri(); 
+    Utf8String s=fileName.GetUri();
 #if defined (_WIN32)
     WCharCP     expectedDirName = L"\\junk1\\junk2\\";
 #else
@@ -259,26 +261,26 @@ TEST (BeFileNameTests, BeFileNameParseName6)
 #else
     WCharCP expectedDirName = L"/junk1/junk2/";
 #endif
-    
+
     BeFileName::ParseName (&driveName, &dirName, &baseName, &extName, fileNameUnix);
-    
+
     ASSERT_TRUE (0 == wcscmp (L"", driveName.c_str ()));
     ASSERT_TRUE (0 == wcscmp (expectedDirName, dirName.c_str ()));
     ASSERT_TRUE (0 == wcscmp (L"temp", baseName.c_str ()));
     ASSERT_TRUE (0 == wcscmp (L"txt", extName.c_str ()));
-    
+
     driveName.clear ();
     dirName.clear ();
     baseName.clear ();
     extName.clear ();
-    
+
     BeFileName::ParseName (&driveName, &dirName, &baseName, &extName, fileNameWindows);
-    
+
     ASSERT_TRUE (0 == wcscmp (L"", driveName.c_str ()));
     ASSERT_TRUE (0 == wcscmp (expectedDirName, dirName.c_str ()));
     ASSERT_TRUE (0 == wcscmp (L"temp", baseName.c_str ()));
     ASSERT_TRUE (0 == wcscmp (L"txt", extName.c_str ()));
-    
+
     SUCCEED ();
 }
 
@@ -459,7 +461,7 @@ TEST (BeFileNameTests, GetDirectoryNameNoDriveAbsolute)
 #else
     WString expected (L"/foo/bar/");
 #endif
-    
+
     // static version
     WString actual (BeFileName::GetDirectoryName (L"/foo/bar/bat.txt"));
     ASSERT_TRUE (expected == actual);
@@ -626,24 +628,24 @@ TEST (BeFileNameTests, BeFileNameDoesPathExist2)
     BeFileName fileName (NULL, NULL, L"C:\\", NULL);
 
 #elif defined (BENTLEY_WINRT)
-    
+
     BeFileName fileName;
     BeTest::GetHost().GetOutputRoot (fileName);
 
-#elif defined (ANDROID)    
+#elif defined (ANDROID)
 
     BeFileName fileName (NULL, NULL, L"/data", NULL);
-    
-#elif defined (__APPLE__)    
-    
+
+#elif defined (__APPLE__)
+
     BeFileName fileName (NULL, NULL, L"/var", NULL);
-    
-#elif defined (__unix__)    
-    
+
+#elif defined (__unix__)
+
     BeFileName fileName (NULL, NULL, L"/usr", NULL);
 
 #endif
-    
+
     ASSERT_TRUE (BeFileName::DoesPathExist (fileName.GetName ()));
     ASSERT_TRUE (BeFileName::DoesPathExist (fileName)); // test BeFileName operator WCharCP()
     SUCCEED ();
@@ -657,7 +659,7 @@ TEST (BeFileNameTests, BeFileNameIsDirectory1)
 {
     BeFileName fileName;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory (fileName);
-    
+
     ASSERT_TRUE (BeFileName::IsDirectory (fileName));
     SUCCEED ();
 }
@@ -695,7 +697,7 @@ TEST (BeFileNameTests, GetFileSizeAndLastModificationTime)
     uint64_t sz;
     ASSERT_TRUE( BeFileName::GetFileSize (sz, tmp) == BeFileNameStatus::Success );
     ASSERT_EQ( sz, 10 );
-    
+
     time_t           fileModificationTime = 0;
     ASSERT_TRUE (BeFileNameStatus::Success == BeFileName::GetFileTime (NULL, NULL, &fileModificationTime, tmp.GetName()) );
 
@@ -938,7 +940,7 @@ TEST (BeFileNameTests, CreateNewDirectory)
     ASSERT_TRUE (BeFileNameStatus::CantCreate == status);
 #endif
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                Julija.Suboc   09/13
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -984,7 +986,7 @@ TEST (BeFileNameTests, AppendSeparatorToWString)
     if (*testPath.rbegin() != WCSDIR_SEPARATOR_CHAR)    // don't assume that outRoot has a trailing separator
         testPath.append (WCSDIR_SEPARATOR);
     testPath.AppendA("newFolder");
-    WString testPathExpected(testPath); 
+    WString testPathExpected(testPath);
     testPathExpected.AppendA(DIR_SEPARATOR);
     //Append separator to string without separator
     BeFileName::AppendSeparator(testPath);
@@ -1018,16 +1020,16 @@ TEST (BeFileNameTests, BeFileNameSetNameUtf8Rev3)
 #endif
 
     BeFileName fromFileNameUtf8 (fileNameUtf8);
-    
+
     ASSERT_TRUE (0 == wcscmp (expectedFileName, fromFileNameUtf8.GetName ()));
     ASSERT_TRUE (0 == strcmp (fileNameUtf8.c_str (), fromFileNameUtf8.GetNameUtf8().c_str ()));
-    
+
     fromFileNameUtf8.Clear ();
     fromFileNameUtf8.SetNameUtf8 (fileNameUtf8);
-    
+
     ASSERT_TRUE (0 == wcscmp (expectedFileName, fromFileNameUtf8.GetName ()));
     ASSERT_TRUE (0 == strcmp (fileNameUtf8.c_str (), fromFileNameUtf8.GetNameUtf8().c_str ()));
-    
+
     SUCCEED ();
 }
 
@@ -1044,7 +1046,7 @@ TEST (BeFileNameTests, BeMoveFile)
     BeTest::GetHost ().GetOutputRoot (inRoot);
     BeFileName dest(inRoot);
     BeFileName path(outRoot);
-    
+
     dest.AppendToPath(L"destDir");
     if (BeFileName::DoesPathExist (dest))
         {
@@ -1077,11 +1079,11 @@ TEST (BeFileNameTests, BeMoveFile)
     ASSERT_TRUE(status1 == BeFileStatus::Success)<<"Failed to create file, file: "<<path;
     EXPECT_TRUE(testFile.IsOpen())<<"Open?";
     testFile.Close();
-    
+
     BeFileName::BeMoveFile (path ,dest);
 
     ASSERT_TRUE (BeFileName::DoesPathExist (dest));
-       
+
     SUCCEED ();
 }
 
@@ -1103,11 +1105,11 @@ TEST (BeFileNameTests, BeMoveFile2)
 
     BeFileName fromFileName1 (fileName1);
     BeFileName fromFileWcharCP (expectedFileName);
-    
+
     BeFileNameStatus status = fromFileName1.BeMoveFile (fromFileName1 ,fromFileWcharCP, numRetries);
-   
+
     ASSERT_TRUE (BeFileNameStatus::UnknownError == status); //returns an unknown error becasue there is no physical file present to be replaced
-       
+
     SUCCEED ();
 }
 
@@ -1275,7 +1277,7 @@ TEST (BeFileNameTests, LongPaths)
     ASSERT_TRUE (BeFileName::DoesPathExist (fileName.GetName()));
     ASSERT_TRUE (!BeFileName::IsDirectory (fileName.GetName()));
     ASSERT_TRUE (!BeFileName::IsSymbolicLink (fileName.GetName()));
-    
+
     // verify CheckAccess supports long names (both instance and static versions)
     fileNameStatus = fileName.CheckAccess (BeFileNameAccess::ReadWrite);
     ASSERT_TRUE (BeFileNameStatus::Success == fileNameStatus);
@@ -1412,7 +1414,7 @@ TEST (BeFileNameTests, CreateNewDirectoryLongPaths)
         ASSERT_TRUE (subDir.IsDirectory());
         }
 
-    // clean out everything from this run 
+    // clean out everything from this run
     BeFileName::EmptyAndRemoveDirectory (fileName.GetName());
     ASSERT_TRUE (!fileName.DoesPathExist());
     }
@@ -1456,7 +1458,7 @@ TEST (BeFileNameTests, FileTimeAlternatives)
     ASSERT_EQ (ctime, status.st_ctime);
     ASSERT_EQ (atime, status.st_atime);
     ASSERT_EQ (mtime, status.st_mtime);
-    
+
 #endif
     }
 
@@ -1530,7 +1532,7 @@ TEST (BeFileNameTests, GetFileSizeForSymbolicLink)
     targetFileName = symLinkFileName = rootDir;
     targetFileName.AppendToPath(L"targetFile.txt");
     symLinkFileName.AppendToPath(L"SymlinkedFile.txt");
-    
+
     BeFile file;
     ASSERT_TRUE(BeFileStatus::Success == file.Create(targetFileName.c_str(), true));
     Utf8String someData = "hakuna matata";
@@ -1637,11 +1639,11 @@ TEST (BeFileNameTests, BeFileNameGetDirectoryWithoutDevice)
 {
 #ifdef _WIN32
     WCharCP Path = L"C:\\bar\\bat.txt";
-    
+
     ASSERT_TRUE (L"\\bar\\"==BeFileName::GetDirectoryWithoutDevice (Path));
 #else
     WCharCP Path = L"/bar/bat.txt";
-    
+
     ASSERT_TRUE (L"/bar/" == BeFileName::GetDirectoryWithoutDevice (Path));
 #endif
     SUCCEED ();
@@ -1657,18 +1659,18 @@ TEST (BeFileNameTests, BeFileNameOverrideNameParts)
 #if defined (_WIN32)
     WCharCP fileName1  = L"temp.txt";
     WCharCP overrideName = L"dump.txt";
-  
+
 #else
      WCharCP fileName1  = L"temp.txt";
      WCharCP overrideName = L"dump.txt";
-    
+
 #endif
 
     BeFileName fromFileName1 (fileName1);
-        
+
     fromFileName1.OverrideNameParts (overrideName);
     EXPECT_TRUE(0==wcscmp(fromFileName1.GetName(),overrideName)) ;
-    
+
     SUCCEED ();
 }
 
@@ -1682,18 +1684,18 @@ TEST (BeFileNameTests, BeFileNameOverrideNameParts1)
 #if defined (_WIN32)
     WCharCP fileName1  = L"temp.txt";
     WCharCP overrideName = L"";
-  
+
 #else
      WCharCP fileName1  = L"temp.txt";
      WCharCP overrideName = L"";
-    
+
 #endif
 
     BeFileName fromFileName1 (fileName1);
-        
+
     fromFileName1.OverrideNameParts (overrideName);
     EXPECT_TRUE(0==wcscmp(fromFileName1.GetName(),fileName1)) ;
-    
+
     SUCCEED ();
 }
 
@@ -1709,10 +1711,10 @@ TEST (BeFileNameTests,BeFileNameCheckAccessRead)
     BeFileNameAccess accs = BeFileNameAccess::Read  ;
 
     BeFileName fromFileName1;
-        
+
     BeFileNameStatus status= BeFileName::CheckAccess(fileName1, accs);
     EXPECT_TRUE(BeFileNameStatus::FileNotFound==status) ;
-    
+
     SUCCEED ();
 }
 
@@ -1741,8 +1743,8 @@ TEST (BeFileNameTests, BeFileNameCheckAccessWrite)
     status = BeFileName::CreateNewDirectory (path);
     ASSERT_TRUE (BeFileNameStatus::Success == status);
     ASSERT_TRUE (BeFileName::DoesPathExist (path));
-    
-    
+
+
     // make sure we get "alredy exists" flag when creating existing directory
     status = BeFileName::CreateNewDirectory (path);
     ASSERT_TRUE (BeFileNameStatus::AlreadyExists == status);
@@ -1801,7 +1803,7 @@ TEST (BeFileNameTests, BeFileNameCheckAccessReadWrite)
     status = BeFileName::CreateNewDirectory (path);
     ASSERT_TRUE (BeFileNameStatus::Success == status);
     ASSERT_TRUE (BeFileName::DoesPathExist (path));
-    
+
     // make sure we get "alredy exists" flag when creating existing directory
     status = BeFileName::CreateNewDirectory (path);
     ASSERT_TRUE (BeFileNameStatus::AlreadyExists == status);
@@ -1860,7 +1862,7 @@ TEST (BeFileNameTests, FileSystemBeGetDiskFreeSpace)
     status = BeFileName::CreateNewDirectory (path);
     ASSERT_TRUE (BeFileNameStatus::Success == status);
     ASSERT_TRUE (BeFileName::DoesPathExist (path));
-    
+
     // make sure we get "alredy exists" flag when creating existing directory
     status = BeFileName::CreateNewDirectory (path);
     ASSERT_TRUE (BeFileNameStatus::AlreadyExists == status);
@@ -1900,7 +1902,7 @@ TEST (BeFileNameTests, Abbreviate)
     size_t maxLength = 12;
 
     BeFileName fromFileName1(fileName1);
-        
+
     WString abbreviatedName = fromFileName1.Abbreviate (maxLength);
     //EXPECT_STREQ(fromFileName1.GetName(),fileName1)<< "After removing quotes\n"<<fromFileName1.GetName()<<"\n"<<"before removing quotes\n"<<fileName1 ;
     EXPECT_TRUE (0==wcscmp(expectedName, abbreviatedName.c_str()))<<"\n"<<abbreviatedName.c_str();
@@ -1986,7 +1988,7 @@ TEST(BeFileNameTests, BeFileNameUNCPathTest)
 //---------------------------------------------------------------------------------------
 // @betest                                     Hassan.Arshad                  2/14
 // Desc: Testing of prefixed UNC path Support.
-// 
+//
 //---------------------------------------------------------------------------------------
 TEST(BeFileNameTests, UNCPrefixedTest)
 {
@@ -2039,7 +2041,7 @@ TEST(BeFileNameTests, UNCPrefixedTest)
 //---------------------------------------------------------------------------------------
 // @betest                                     Hassan.Arshad                  2/14
 // Desc: Testing of prefixed UNC path Support.
-// 
+//
 //---------------------------------------------------------------------------------------
 TEST(BeFileNameTests, UNCReadOnlyTest)
 {
@@ -2123,7 +2125,7 @@ TEST(BeFileNameTests, ReadOnly)
     ASSERT_TRUE (tempFileName.IsFileReadOnly());
     ASSERT_TRUE (tempFile.Close() == BeFileStatus::Success);
 #endif
-    
+
     ASSERT_TRUE (tempFileName.IsFileReadOnly());
     ASSERT_TRUE (tempFileName.BeDeleteFile() == BeFileNameStatus::Success); // should blow right by the read-only status
     ASSERT_TRUE (!tempFileName.DoesPathExist());
@@ -2159,7 +2161,7 @@ static void SetupDirectory(BeFileNameCR root)
     fileName2.AppendToPath(L"File2.txt");
     file2.Create(fileName2, true);
     }
-    
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                         Umar.Hayat                    02/16
 //---------------------------------------------------------------------------------------
@@ -2203,18 +2205,18 @@ TEST (BeFileNameTests, CloneDirectory)
     SetupDirectory(srcDir.AppendToPath(L"srcDir"));
 
     //--------------------------------------------------------------------------------------------------------------------
-    // Clone with sub directry 
+    // Clone with sub directry
     EXPECT_TRUE(BeFileNameStatus::Success == BeFileName::CloneDirectory(srcDir, destDir1.AppendToPath(L"destDir1WithSub"), true));
     VerifyDirectory(destDir1);
     BeFileName::EmptyAndRemoveDirectory(destDir1.c_str());
-    
+
     //--------------------------------------------------------------------------------------------------------------------
     // Clone without sub directories
     EXPECT_TRUE(BeFileNameStatus::Success == BeFileName::CloneDirectory(srcDir, destDir2.AppendToPath(L"destDir2"),false));
     VerifyDirectory(destDir2, false);
     BeFileName::EmptyAndRemoveDirectory(destDir2.c_str());
     //--------------------------------------------------------------------------------------------------------------------
-    // Source Does not exist 
+    // Source Does not exist
     EXPECT_TRUE(BeFileNameStatus::Success != BeFileName::CloneDirectory(BeFileName(rootDir).AppendToPath(L"DirNoExist"), BeFileName(rootDir).AppendToPath(L"DestDirNoExist")));
 
 #endif
@@ -2413,3 +2415,4 @@ TEST(BeFileNameTests, IsEquivalentTo)
     EXPECT_FALSE(path1.Equals(PATH_1));         // relative path should have been mutated
     EXPECT_TRUE(path1.IsEquivalentTo(PATH_1));  // should perform the same mutation before comparing
     }
+POP_DISABLE_DEPRECATION_WARNINGS

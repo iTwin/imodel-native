@@ -41,7 +41,7 @@ extern void utf8ToWChar (wchar_t* outStr, size_t outStrCount, char const* inStr,
 
 /*
     As of 21-Mar-2014...
-    
+
     Number one guiding principle: do NOT allow mixed encodings. If the format string type is char*, only char* format specifiers are allowed; vice versa for wchar_t* format strings.
     Ideally, char* strings should only include %s specifiers, and wchar_t* strings should only include %ls specifiers.
     %hs will continue to be accepted for the time being, but this is a Microsoft-only extension, and it causes overhead in our pre-processor to strip it off on non-Win32.
@@ -227,7 +227,7 @@ void DoFormat (va_list args)
                         break;
 
                     case 'l': case 'L':
-                        *pbuild++ = (char)c;        
+                        *pbuild++ = (char)c;
                         *pbuild++ = *m_currFormat++;
                         flags |= FLAGS_HAVE_LONG_LONG;
                         break;
@@ -276,17 +276,17 @@ void DoFormat (va_list args)
                     char    *newStringP = va_arg(args,char*);
                     *pbuild++ = 's';
                     *pbuild = 0;
-                    
+
                     // See top of file: char* fmt strings only accept %s and %hs, wchar_t* fmt strings only accept %ls
                     if (m_naturalStringIsWchar && ((0 == (flags & FLAGS_HAVE_LONG)) || (0 != (flags & FLAGS_HAVE_SHORT))))
                         {
                         REPORT_BAD_STRING_TYPE("wchar_t*", (0 != (flags & FLAGS_HAVE_SHORT)) ? "%hs" : "%s");
-                        
+
                         // For now, preserve Microsoft behavior that %s in wchar_t* means wchar_t*.
                         // This should be removed in the future, and/or always forced to consider FLAGS_HAVE_LONG.
                         if (0 == (flags & (FLAGS_HAVE_LONG | FLAGS_HAVE_SHORT)))
                             flags |= FLAGS_HAVE_LONG;
-                        
+
                         // Also for now, allow the conversions below to continue.
                         // This should be removed in the future, and/or always forced to consider FLAGS_HAVE_LONG.
                         }
@@ -300,14 +300,14 @@ void DoFormat (va_list args)
                             {
                             flags |= FLAGS_HAVE_SHORT;
                             }
-                        
+
                         // For now, preserve Microsoft behavior that %hs means char*.
                         // This should be removed in the future, and/or always forced to consider FLAGS_HAVE_LONG.
-                        
+
                         // Also for now, allow the conversions below to continue.
                         // This should be removed in the future, and/or always forced to consider FLAGS_HAVE_SHORT.
                         }
-                    
+
                     if ((flags & FLAGS_HAVE_LONG) && (newStringP != NULL))
                         {
                         Utf8String u ((wchar_t*)newStringP);
@@ -372,7 +372,7 @@ void DoFormat (va_list args)
                         // Also for now, allow the conversions below to continue.
                         // This should be removed in the future, and/or always forced to consider FLAGS_HAVE_SHORT.
                         }
-                    
+
                     *pbuild++ = 'c';
                     *pbuild = 0;
                     sprintf (buf, build, va_arg(args,int));
@@ -399,7 +399,7 @@ void DoFormat (va_list args)
                     *pbuild = (char)0;
                     if (flags & FLAGS_HAVE_LONG_LONG)
                         n = sprintf (buf, build, va_arg(args,long double));
-                    else                        
+                    else
                         n = sprintf (buf, build, va_arg(args,double));
                     if (0 == n)
                         perror (build);
@@ -1513,7 +1513,7 @@ char        *pTarget            /* <=> Area to receive characters. */
     return SUCCESS;
     }
 
- 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    sam.wilson      03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1528,7 +1528,7 @@ wchar_t     *pTarget            /* <=> Area to receive characters. */
     ScopedArray<char> ubuf (maxFieldWidth > 0? maxFieldWidth*4 + 4: 4096);
 
     StatusInt status = getFormatS (pCharsScanned, maxFieldWidth, ubuf.GetData());   // read in UTF-8 format
-    
+
     if (status != SUCCESS || pTarget == NULL)
         return status;
 
@@ -1893,7 +1893,7 @@ va_list         args
                     if (!suppressOutput)
                         {
                         CharP obuf = va_arg(args,char*);
-                        
+
                         // See top of file: char* fmt strings only accept %s and %hs, wchar_t* fmt strings only accept %ls
                         if (m_naturalStringIsWchar && (typeModifier != 'l'))
                             {
@@ -1903,14 +1903,14 @@ va_list         args
                             {
                             REPORT_BAD_STRING_TYPE("char*", "%ls");
                             }
-                        
+
                         if (typeModifier=='l')
                             status = getFormatLS (&lastFieldScanned, fieldWidth, (WCharP)obuf);
                         else
                             status = getFormatS (&lastFieldScanned, fieldWidth, obuf);
-                        
+
                         totalScanned += lastFieldScanned;
-                        
+
                         if (status == SUCCESS)
                             fieldsScannedAndAssigned++;
                         }
@@ -2029,11 +2029,11 @@ int     PrintSink::GetError() const                 {return m_error;}
 
 WStringPrintSink::WStringPrintSink (WString& s) : m_s(s) {;}
 void    WStringPrintSink::PutChar (char c)          {m_s.append (1,c);}
-void    WStringPrintSink::PutCharCP (CharCP s)      
+void    WStringPrintSink::PutCharCP (CharCP s)
     {
-    // NB: #chars in UTF-8 string is always >= UTF-32/16 array 
+    // NB: #chars in UTF-8 string is always >= UTF-32/16 array
     size_t nChars = strlen(s)+1;
-    ScopedArray<wchar_t> wbuf (nChars); 
+    ScopedArray<wchar_t> wbuf (nChars);
     BeStringUtilities::Utf8ToWChar (wbuf.GetData(), s, nChars);
     m_s.append (wbuf.GetData());
     }
@@ -2044,21 +2044,21 @@ void    WStringPrintSink::PutWCharCP (WCharCP s)    {m_s.append (s);}
 size_t  WStringPrintSink::GetCount() const          {return m_s.size();}
 
 /*
-void    Utf8PrintSink::PutWCharCP (WCharCP s)   
+void    Utf8PrintSink::PutWCharCP (WCharCP s)
     {
     Utf8String u (s);
     PutCharCP (u.c_str());
     }
 
-void    Utf8PrintSink::PutWChar (wchar_t c)  
+void    Utf8PrintSink::PutWChar (wchar_t c)
     {
-    if (c < 127) 
-        Putc((char)c); 
-    else 
+    if (c < 127)
+        Putc((char)c);
+    else
         {
-        wchar_t buf[2]; 
-        buf[0]=c; 
-        buf[1]=0; 
+        wchar_t buf[2];
+        buf[0]=c;
+        buf[1]=0;
         Utf8String u (buf);
         PutCharCP (u.c_str());
         }
@@ -2070,64 +2070,6 @@ void    Utf8StringPrintSink::PutChar (char c)       {m_s.append (1,c);}
 void    Utf8StringPrintSink::PutCharCP (CharCP s)   {m_s.append (s);}
 size_t  Utf8StringPrintSink::GetCount() const       {return m_s.size();}
 
-ScanSource::ScanSource () : m_error(0)              {;}
-void    ScanSource::OnError (int e)                 {m_error=e;};
-int     ScanSource::GetError() const                {return m_error;}
-int     ScanSource::Getc () 
-    {
-    int c;
-    if (!m_pushedBack.empty())
-        {
-        c = m_pushedBack.back();
-        m_pushedBack.pop_back();
-        }
-    else
-        {
-        c = GetNextChar();
-        }
-    return c;
-    }
-
-void    ScanSource::PutBack (char c) 
-    {
-    m_pushedBack.push_back(c);
-    }
-
-StringScanSource::StringScanSource (CharCP p) : m_string(p) {;}
-int     StringScanSource::GetNextChar ()    {return *m_string? *m_string++: EOF;}
-
-WStringScanSource::WStringScanSource (WCharCP p) : m_string(p) {;}
-int     WStringScanSource::GetNextChar ()   {return *m_string? *m_string++: EOF;}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////
-// scanf cover functions
-static int doscanf (ScanSource& ss, CharCP fmt, va_list args, bool isNaturalWchar)
-    {
-    Scanner scanner (ss, const_cast<CharP>(fmt), isNaturalWchar);
-    return scanner.DoScan (args);
-    }
-
-int BeStringUtilities::Sscanf (CharCP stringSource, CharCP fmt, ...)
-    {
-    va_list args;
-    va_start (args, fmt);
-    StringScanSource sss (stringSource);
-    int count = doscanf (sss, fmt, args, false);
-    va_end(args);
-    return count;
-    }
-
-int BeStringUtilities::Swscanf (WCharCP stringSource, WCharCP fmt, ...)
-    {
-    va_list args;
-    va_start (args, fmt);
-    Utf8String usource (stringSource);
-    Utf8String ufmt    (fmt);
-    StringScanSource sss (usource.c_str());
-    int count = doscanf (sss, ufmt.c_str(), args, true);
-    va_end(args);
-    return count;
-    }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 // printf cover functions

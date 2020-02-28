@@ -50,7 +50,7 @@ static bool SetParamScales (FacetParamMode mode, double dx, double dy, double &a
         }
     return false;
     }
-   
+
 // Append points, curve tangents, and trig parameters for a full ellipse scaled radially
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
@@ -74,7 +74,7 @@ double radiusFraction = 1.0
             double theta = ellipse.start + i * dTheta;
             if (i == numChord)
                 theta = finalAngle;     // Prevent bit drop
-                
+
             double c = radiusFraction * cos (theta);
             double s = radiusFraction * sin (theta);
             if (points)
@@ -469,7 +469,7 @@ static void AddSmoothRuledQuads1 (IPolyfaceConstructionR builder,
             bvector<size_t>   indexC = indexA;
             bvector<DVec3d>   tangentC = tangentA;
             bvector<DPoint3d> pointD;
-            bvector<size_t>   indexD;            
+            bvector<size_t>   indexD;
             bvector<DVec3d>   tangentD;
             bvector<DPoint2d> paramC = paramA;
             bvector<DPoint2d> paramD = paramA;  // first step will recompute immediately
@@ -508,7 +508,7 @@ static void AddSmoothRuledQuads1 (IPolyfaceConstructionR builder,
             }
         }
     // fall out if no splitting along the sweep ..
-    AddSmoothRuledQuads (builder, 
+    AddSmoothRuledQuads (builder,
         true, 0.0, pointA, indexA, tangentA, paramA, curveA,
         true, 1.0, pointB, indexB, tangentB, paramB, curveA, nominalLength,
         alwaysSmooth);
@@ -578,7 +578,7 @@ size_t &pointCount
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
 static void EvaluateBlockedBezier(
-        IPolyfaceConstructionR builder, 
+        IPolyfaceConstructionR builder,
         bvector<size_t> &xyzIndex,
         bvector <DPoint3d> &xyz,
         bvector <DVec3d>   &tangent,
@@ -715,7 +715,7 @@ void AnnounceGridToBuilder (bool applyTolerances)
         uvA.swap (uvB);
         }
     // EDL March 24 2017 setting the distance range here interferes with EndFace.
-    // 
+    //
     static bool s_buildDistanceRangeHere = false;
     if (s_buildDistanceRangeHere)
         {
@@ -939,7 +939,7 @@ static bool AddRuledBetweenCorrespondingBsplineCurves
                 knotsMatch = false;
         if (numAdvanced != numContour || !knotsMatch)
             break;      // numAdvanced == 0 is the expected exit condition.
-        // Get largest stroke point count among the beziers ...        
+        // Get largest stroke point count among the beziers ...
         size_t maxCount = minEdges;
         for (size_t contourIndex = 0; contourIndex < numContour; contourIndex++)
             {
@@ -956,7 +956,7 @@ static bool AddRuledBetweenCorrespondingBsplineCurves
             strokeGrid.AddBezierEvaluationsAndIndices (strokeGrid, contourIndex, segments[contourIndex], primitives[contourIndex], maxCount);
             }
         }
-                         
+
     return true;
     }
 
@@ -1135,10 +1135,10 @@ DPoint3d IPolyfaceConstruction::MultiplyByLocalToWorld (DPoint3dCR localPoint) c
 +--------------------------------------------------------------------------------------*/
 DVec3d IPolyfaceConstruction::MultiplyNormalByLocalToWorld (DVec3dCR localNormal) const
     {
-    DVec3d worldNormal = localNormal;    
+    DVec3d worldNormal = localNormal;
     if (m_state.m_isTransformed)
         m_state.m_localToWorldNormals.Multiply (worldNormal, localNormal);
-        
+
     if (GetReverseNewNormals ())
         worldNormal.Negate ();
     worldNormal.Normalize ();
@@ -1167,7 +1167,7 @@ bool IPolyfaceConstruction::SetLocalToWorld (TransformCR transform)
         m_state.m_localToWorldScale = pow (fabs (det), 1.0 / 3.0) * (det >= 0.0 ? 1.0 : -1.0);
         m_state.m_worldToLocalScale = 1.0 / m_state.m_localToWorldScale;    // InverseOf guarantees that this is not divide by zero !!!
         m_state.m_isTransformed = !m_state.m_localToWorld.IsIdentity ();
-        
+
         return true;
         }
     return false;
@@ -1431,7 +1431,7 @@ void IPolyfaceConstruction::AddParamIndexStrip (bvector<size_t> &indexA, bvector
         AddParamIndexStrip (indexB, indexA, numQuad, false);
         return;
         }
-        
+
     size_t nA = indexA.size ();
     size_t nB = indexB.size ();
     size_t n = std::min (nA, nB);
@@ -1568,16 +1568,16 @@ void IPolyfaceConstruction::AddFullDisk (DEllipse3dCR ellipse, size_t numPerQuad
     size_t numChord;
     double magnitude0 = ellipse.vector0.Magnitude ();
     double magnitude90 = ellipse.vector90.Magnitude ();
-    
+
     bool reversed = false;
     size_t numRadius = GetFacetOptionsR ().DistanceStrokeCount (DoubleOps::Max (magnitude0, magnitude90));
 
-    double radiusFraction = 1.0 / (double)numRadius;                
+    double radiusFraction = 1.0 / (double)numRadius;
     if (numPerQuadrant > 0)
         numChord = 4 * numPerQuadrant;
-    else 
+    else
         numChord = GetFacetOptionsR ().FullEllipseStrokeCount (fullEllipse);
-        
+
     AppendFullEllipseStrokes (ellipse, numChord, &pointB, NULL, &trigPointB, radiusFraction);
 
     //double df = 1.0 / numChord;
@@ -1585,7 +1585,7 @@ void IPolyfaceConstruction::AddFullDisk (DEllipse3dCR ellipse, size_t numPerQuad
     FindOrAddPoints (pointB, numChord, 1, pointIndexB);
     size_t centerPointIndex = FindOrAddPoint (ellipse.center);
 
-    
+
     AddPointIndexFan (centerPointIndex, pointIndexB, numChord, reversed);
 
     DVec3d normal;
@@ -1593,7 +1593,7 @@ void IPolyfaceConstruction::AddFullDisk (DEllipse3dCR ellipse, size_t numPerQuad
     if (reversed)
         normal.Negate ();
     size_t normalIndex = FindOrAddNormal (normal);
-    
+
     if (NeedNormals ())
         AddNormalIndexPlanarFan (normalIndex, numChord);
 
@@ -1601,7 +1601,7 @@ void IPolyfaceConstruction::AddFullDisk (DEllipse3dCR ellipse, size_t numPerQuad
     centerParam.Zero ();
     Transform uvTransform = Transform::FromIdentity ();
     bvector<size_t> paramIndexB;
-    
+
     if (NeedParams ())
         {
         centerParam.Zero ();
@@ -1615,7 +1615,7 @@ void IPolyfaceConstruction::AddFullDisk (DEllipse3dCR ellipse, size_t numPerQuad
         paramIndexB.push_back (centerParamIndex);
         AddParamIndexFan (centerParamIndex, paramIndexB, numChord, reversed);
         }
-        
+
     if (numRadius > 1)
         {
         bvector<DPoint3d> pointA;
@@ -1631,7 +1631,7 @@ void IPolyfaceConstruction::AddFullDisk (DEllipse3dCR ellipse, size_t numPerQuad
             pointB.clear ();
             trigPointB.clear ();
             paramIndexB.clear ();
-            pointIndexB.clear ();        
+            pointIndexB.clear ();
             AppendFullEllipseStrokes (ellipse, numChord, &pointB, NULL, &trigPointB, i * radiusFraction);
             FindOrAddPoints (pointB, numChord, 1, pointIndexB);
             AddPointIndexStrip (false, pointIndexB, false, pointIndexA, i == numRadius, false, numChord, reversed);
@@ -1646,7 +1646,7 @@ void IPolyfaceConstruction::AddFullDisk (DEllipse3dCR ellipse, size_t numPerQuad
                 AddParamIndexStrip (paramIndexB, paramIndexA, numChord, reversed);    // how many really?
                 }
             }
-        }        
+        }
     EndFace_internal ();
     }
 
@@ -1678,7 +1678,7 @@ void IPolyfaceConstruction::AddFullDiskTriangles (DEllipse3dCR ellipse, size_t n
     size_t numChord;
     double magnitude0 = ellipse.vector0.Magnitude ();
     double magnitude90 = ellipse.vector90.Magnitude ();
-    
+
     // Precompute uv transform and transformed center parameter ...
     trigPointB.push_back (DPoint2d::From (-1.0, -1.0));
     trigPointB.push_back (DPoint2d::From ( 1.0,  1.0));
@@ -1697,10 +1697,10 @@ void IPolyfaceConstruction::AddFullDiskTriangles (DEllipse3dCR ellipse, size_t n
     size_t numRadius = GetFacetOptionsR ().DistanceStrokeCount (DoubleOps::Max (magnitude0, magnitude90));
     if (numRadius > MAX_RADIAL_LAYER)
         numRadius = MAX_RADIAL_LAYER;
-    double radiusFraction = 1.0 / (double)numRadius;                
+    double radiusFraction = 1.0 / (double)numRadius;
     if (numPerQuadrant > 0)
         numChord = 4 * numPerQuadrant;
-    else 
+    else
         numChord = GetFacetOptionsR ().FullEllipseStrokeCount (fullEllipse);
 
 
@@ -1710,7 +1710,7 @@ void IPolyfaceConstruction::AddFullDiskTriangles (DEllipse3dCR ellipse, size_t n
     DPoint3dOps::AppendXY0 (trigPointBXYZ, trigPointB);
 
     uvTransform.Multiply (trigPointB, trigPointB);
-    
+
     bvector<size_t>pointIndexB;
     FindOrAddPoints (pointB, numChordB, 1, pointIndexB);
     size_t centerPointIndex = FindOrAddPoint (ellipse.center);
@@ -1724,12 +1724,12 @@ void IPolyfaceConstruction::AddFullDiskTriangles (DEllipse3dCR ellipse, size_t n
 
     bool needNormals = NeedNormals ();
     size_t normalIndex = needNormals ? FindOrAddNormal (normal) : 0;
-    
+
     if (needNormals)
         AddNormalIndexPlanarFan (normalIndex, numChordB);
 
     bvector<size_t> paramIndexB;
-    
+
     bool needParams = NeedParams ();
     if (needParams)
         {
@@ -1740,7 +1740,7 @@ void IPolyfaceConstruction::AddFullDiskTriangles (DEllipse3dCR ellipse, size_t n
         paramIndexB.push_back (paramIndexB.front ());
         AddParamIndexFan (centerParamIndex, paramIndexB, numChordB, reversed);
         }
-        
+
     if (numRadius > 1)
         {
         bvector<DPoint3d> trigPointAXYZ;
@@ -1785,7 +1785,7 @@ void IPolyfaceConstruction::AddFullDiskTriangles (DEllipse3dCR ellipse, size_t n
                         AddNormalIndexPlanarFan (normalIndex, 1);
                 }
             }
-        }        
+        }
     EndFace_internal ();
     }
 
@@ -1814,7 +1814,7 @@ bool IPolyfaceConstruction::AddSweptNGon (size_t n, double rOuter, double z0, do
         double theta = i * dtheta;
         double c = cos (theta);
         double s = sin (theta);
-        
+
         double rc = rOuter * c;
         double rs = rOuter * s;
 
@@ -2045,9 +2045,9 @@ int  orientationSelect
     bvector<DPoint3d> theta;
     bvector<DPoint3d> phi;
 
-        
-        
-        
+
+
+
     // Evaluate angle functions in first quadrant.  Use rotations to copy to others.
     for (size_t i = 0; i <= numEastWestEdge; i++)
         AppendTrigPoint (theta, theta0 + dTheta * (double)i);
@@ -2182,7 +2182,7 @@ int  orientationSelect
             }
         AddEdgeChainZeroBased (CurveTopologyId::Type::SweepProfile, 0, cap0PointIndex);
         }
-        
+
     trigPoint = phi[numNorthSouthEdge];
     if (fabs (trigPoint.x) > s_poleTolerance)
         {
@@ -2213,7 +2213,7 @@ static bool AllPhysicallyClosed (bvector<CurveVectorPtr> const &curves)
 // Return common boundary type (if any).  Return BOUNDARY_TYPE_None if mixed or mismatched sizes.
 static CurveVector::BoundaryType CommonBoundaryType (bvector<CurveVectorPtr> const &curves)
     {
-    if (curves.size () == 0)                    
+    if (curves.size () == 0)
         return CurveVector::BOUNDARY_TYPE_None;
     size_t firstSize = curves[0]->size ();
     size_t numOpen = 0;
@@ -2287,7 +2287,7 @@ bool reverse
     for (size_t i = 0; i < contours.size (); i++)
         {
         if (contours[i]->empty())        // Degenerate chain - This happens on XGraphics from Petrobras that has a boundary with point strings....
-            return false;       
+            return false;
 
         DPoint3d xyz;
         DVec3d tangent;
@@ -2566,7 +2566,7 @@ bool IPolyfaceConstruction::AddRuledBetweenCorrespondingCurves
     }
 
 
-    
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
@@ -2584,7 +2584,7 @@ void IPolyfaceConstruction::AddRuled (DEllipse3dR ellipse0, DEllipse3dR ellipse1
     size_t numCapChord[2];
     fullEllipse[0] = ellipse0;
     fullEllipse[1] = ellipse1;
-    
+
     double length0 = ellipse0.ArcLength ();
     double length1 = ellipse1.ArcLength ();
     double nominalLength = length0 > length1 ? length0 : length1;
@@ -2610,7 +2610,7 @@ void IPolyfaceConstruction::AddRuled (DEllipse3dR ellipse0, DEllipse3dR ellipse1
         {
         paramA.push_back (DPoint2d::From (i * df, 0.0));
         paramB.push_back (DPoint2d::From (i * df, 1.0));
-        }    
+        }
 
     if (cap)
         {
@@ -2639,7 +2639,7 @@ void IPolyfaceConstruction::AddRuled (DEllipse3dR ellipse0, DEllipse3dR ellipse1
                 }
             if (NeedNormals ())
                 AddNormalIndexPlanarFan (fullEllipse[i].vector0, fullEllipse[i].vector90, reverse, numChord);
-            EndFace_internal ();    
+            EndFace_internal ();
             }
         }
     AddSmoothRuledQuads1 (*this,
@@ -2723,7 +2723,7 @@ void IPolyfaceConstruction::AddRowMajorQuadGrid (DPoint3dCP points, DVec3dCP nor
         paramIndex.reserve (n);
         FindOrAddParams (params, n, paramIndex);
         }
-    
+
     for (size_t j1 = 1; j1 < numRow; j1++)
         {
         size_t j0 = j1 - 1;
@@ -2744,7 +2744,7 @@ void IPolyfaceConstruction::AddRowMajorQuadGrid (DPoint3dCP points, DVec3dCP nor
                 AddTriangle (*this, k0, visible01, k1, s_foldVisible, k3, visible30, pointIndex, normalIndex, paramIndex);
                 AddTriangle (*this, k1, visible12, k2, visible23, k3, s_foldVisible, pointIndex, normalIndex, paramIndex);
                 }
-            else if (pointIndex[k1] == pointIndex[k3])  // degenerate quad becomes facing triangles 
+            else if (pointIndex[k1] == pointIndex[k3])  // degenerate quad becomes facing triangles
                 {
                 AddTriangle (*this, k0, visible01, k1, visible12, k2, s_foldVisible, pointIndex, normalIndex, paramIndex);
                 AddTriangle (*this, k2, visible23, k3, visible30, k0, s_foldVisible, pointIndex, normalIndex, paramIndex);
@@ -2802,7 +2802,7 @@ int numSectionEdge      //
         }
     else
         planeNormal.NormalizedCrossProduct (tangentA, tangentB);
-    
+
     // Build the sections ...
     bvector<DPoint3d> pointGrid;
     bvector<DVec3d> normalGrid;
@@ -2853,7 +2853,7 @@ void IPolyfaceConstruction::AddTriStrip (DPoint3dCP points, DVec3dCP normals, DP
     {
     bvector<size_t> index;
     index.reserve (n);
-	
+
 // Odd count:
 //    1--3--5
 //    |\ |\ |\
@@ -2880,7 +2880,7 @@ void IPolyfaceConstruction::AddTriStrip (DPoint3dCP points, DVec3dCP normals, DP
     if (NULL != params
         && params[0].IsEqual (params[1], s_duplicateParamTolerance))
         firstOutputK++;
-// 
+//
     size_t select0 = firstTriangle012 ? 0 : 1;
     for (size_t k2 = 2, select = select0; k2 < n; k2 += 1, select = 1 - select)
         {
@@ -2911,7 +2911,7 @@ void IPolyfaceConstruction::AddTriStrip (DPoint3dCP points, DVec3dCP normals, DP
                                 );
             }
         }
-    
+
     if (NeedParams () && NULL != params)
         {
         FindOrAddParams (params, n, index);
@@ -3154,8 +3154,8 @@ bool IPolyfaceConstruction::Add (PolyfaceHeaderR mesh)
 
     bvector<int32_t> &vParamIndex = visitor->ClientParamIndex ();
     bvector<int32_t> &vColorIndex = visitor->ClientColorIndex ();
-    bvector<bool> &vVisible = visitor->Visible ();
-                                                                                                                      
+    auto &vVisible = visitor->Visible ();
+
     visitor->Reset ();
     for (;visitor->AdvanceToNextFace ();)
         {
@@ -3206,7 +3206,7 @@ bool IPolyfaceConstruction::Add (PolyfaceHeaderR mesh)
 static bool ComputeRotationalSweepLoopSense
 (
 bvector<DPoint3d> const &points,
-DPoint3dCR origin, 
+DPoint3dCR origin,
 DVec3dCR axis,
 double sweepRadians
 )
@@ -3276,7 +3276,7 @@ bvector <ICurvePrimitiveP> *curve
     bvector<DPoint3d> workPoint;
     bvector<DPoint2d>workParam;
     bvector<DVec3d>baseNormal;
-    bvector<bool>baseCurveBreak;
+    bvector<BoolTypeForVector>baseCurveBreak;
     // true sweep vector per point is axis cross radial vector.
     // but that is zero if point is on or near axis.
     // and it flips direction if point is just "behind" the axis.
@@ -3334,7 +3334,7 @@ bvector <ICurvePrimitiveP> *curve
             aMax = a;
         }
     double polylineLength = PolylineOps::Length (pointA);
-    double curveParameterScale = 
+    double curveParameterScale =
                 nominalBaseCurveLength == 0.0
                 ? 1.0
                 : (nominalBaseCurveLength / polylineLength);
@@ -3384,7 +3384,7 @@ bvector <ICurvePrimitiveP> *curve
         Transform stepTransform;
         RotMatrix stepMatrix = RotMatrix::FromVectorAndRotationAngle (axis, angleStep * step);
         stepTransform = Transform::FromMatrixAndFixedPoint (stepMatrix, origin);
-        
+
         workPoint = pointA;
         DPoint3dOps::Multiply (&workPoint, stepTransform);
         DVec3d normal;
@@ -3486,7 +3486,7 @@ bvector <ICurvePrimitiveP> *curve
                             chains.back ().AddZeroBasedIndex ((int32_t)pointIndexA[j]);
                             edgeChainIndex[j] = chainIndex;
                             }
-                        // Add the pointB index to the evolving chain . . 
+                        // Add the pointB index to the evolving chain . .
                         chains[chainIndex].AddZeroBasedIndex((int32_t)pointIndexB[j]);
                         }
                     else

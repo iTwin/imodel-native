@@ -72,7 +72,7 @@ bvector<PolyfaceHeaderPtr> &submeshArray
     {
     if (PartitionByIndexedRangeHeap (*this, submeshArray, targetFaceCount, targetMeshCount))
         return true;
-    
+
     bvector<ptrdiff_t> blockedReadIndex;
     submeshArray.clear ();
     return PartitionByXYRange (targetFaceCount, targetMeshCount, blockedReadIndex)
@@ -132,7 +132,7 @@ bool PolyfaceQuery::PartitionReadIndicesByNormal(DVec3dCR vector, bvector<bvecto
                 double d = normal.DotProduct (unit);
                 if (d > 0.0)
                     readIndices[forwardIndex].push_back(readIndex);
-                else 
+                else
                     readIndices[reverseIndex].push_back(readIndex);
                 }
             }
@@ -923,7 +923,7 @@ static void AppendShiftedIndicesWithTerminator(BlockedVectorIntCR source, Blocke
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-static void AppendSignedOneBasedIndicesWithTerminator(BlockedVectorIntCR source, bvector<bool> &flag, BlockedVectorIntR dest)
+static void AppendSignedOneBasedIndicesWithTerminator(BlockedVectorIntCR source, bvector<BoolTypeForVector> &flag, BlockedVectorIntR dest)
     {
     if (source.Active ())
         {
@@ -932,7 +932,7 @@ static void AppendSignedOneBasedIndicesWithTerminator(BlockedVectorIntCR source,
             dest.push_back (flag[i] ? source[i] + 1 : -(source[i] + 1));
             }
         dest.push_back (0);
-        }    
+        }
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -992,7 +992,7 @@ bvector<ptrdiff_t> &blockedReadIndexOut
                 {
                 for (size_t i = i0; i <= i1; i++)
                     blockedReadIndexOut.push_back (blockedReadIndex[i]);
-                }                
+                }
             i0 = i1 + 1;
             }
         }
@@ -1000,7 +1000,7 @@ bvector<ptrdiff_t> &blockedReadIndexOut
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-bool PolyfaceQuery::CopyPartitions 
+bool PolyfaceQuery::CopyPartitions
 (
 bvector<ptrdiff_t> const& blockedReadIndex,
 bvector<PolyfaceHeaderPtr> &submeshArray
@@ -1071,7 +1071,7 @@ bvector<PolyfaceHeaderPtr> &submeshArray
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-bool PolyfaceQuery::CopyPartitions 
+bool PolyfaceQuery::CopyPartitions
 (
 bvector<bvector<ptrdiff_t>> &blockedReadIndex,
 bvector<PolyfaceHeaderPtr> &submeshArray
@@ -1130,7 +1130,7 @@ bool PolyfaceQuery::PartitionByConnectivity (int connectivityType, bvector<ptrdi
     bvector<EdgeComponentData> edgeSortArray;
     bvector<int> clusterArray;
     bvector<int> &indices = visitor->ClientPointIndex ();
-    bvector<bool> &visible = visitor->Visible ();
+    auto &visible = visitor->Visible ();
     for (visitor->Reset (); visitor->AdvanceToNextFace ();)
         {
         int clusterIndex = jmdlVArrayInt_newClusterIndex (&clusterArray);
@@ -1188,7 +1188,7 @@ bool PolyfaceQuery::PartitionByConnectivity (int connectivityType, bvector<ptrdi
                     }
                 }
             }
-        
+
         }
 
 

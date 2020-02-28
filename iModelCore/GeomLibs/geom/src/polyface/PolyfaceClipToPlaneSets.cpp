@@ -360,7 +360,7 @@ struct PolyfaceClipFacet
     bvector <DPoint3d>                  m_points;
     bvector <DVec3d>                    m_normals;
     bvector <DPoint2d>                  m_params;
-    bvector <bool>                      m_visibility;
+    bvector <BoolTypeForVector>         m_visibility;
     bvector <OutputChainEdge*>          m_chainEdges;
     PolyfaceAuxData::Channels           m_auxChannels;
     mutable  size_t                     m_index;

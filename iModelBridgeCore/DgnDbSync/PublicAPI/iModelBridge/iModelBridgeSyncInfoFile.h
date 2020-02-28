@@ -11,30 +11,30 @@
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-/** @addtogroup GROUP_syncinfo 
+/** @addtogroup GROUP_syncinfo
 
-"SyncInfo" is a strategy or pattern for saving information to help with change detection. 
+"SyncInfo" is a strategy or pattern for saving information to help with change detection.
 The term "syncinfo" is short for "synchronization information." When a bridge converts a data source
 to a BIM, it must save information about how the source data was mapped to elements in an iModel. Later,
 when called to detect changes in the source and to update the BIM, the bridge must use this saved information
-to look up the elements in the BIM that must be updated. 
+to look up the elements in the BIM that must be updated.
 
 Syncinfo is specific to a single job.
 
-A bridge may implement syncinfo in whatever way best fits the data source. 
+A bridge may implement syncinfo in whatever way best fits the data source.
 
 \ref iModelBridgeSyncInfoFile is a general-purpose implementation of syncinfo.
 
-Change detection is closely related to syncinfo. If the datasource itself does not track changes, a bridge 
+Change detection is closely related to syncinfo. If the datasource itself does not track changes, a bridge
 must detect changes by comparing the current state of an item in a data source with information that it recorded in syncinfo.
 Similarly, a bridge must have a way of detecting when source items are deleted.
-It is a good design to encapsulate change detection logic in a "change detector" class that is 
-tied to its implementation of syncinfo. The bridge then creates and employs an instance of its change detector class 
-to detect new or changed items as it traverses the source dataset. The change detector compares the source items 
-that it sees with data recorded in syncinfo. After traversing the entire source dataset, the change detector can then 
+It is a good design to encapsulate change detection logic in a "change detector" class that is
+tied to its implementation of syncinfo. The bridge then creates and employs an instance of its change detector class
+to detect new or changed items as it traverses the source dataset. The change detector compares the source items
+that it sees with data recorded in syncinfo. After traversing the entire source dataset, the change detector can then
 infer deletions by comparing what was seen to what was previously recorded in syncinfo.
 
-\ref iModelBridgeSyncInfoFile::ChangeDetector is an implementation of a change detector that is tied to the iModelBridgeSyncInfoFile 
+\ref iModelBridgeSyncInfoFile::ChangeDetector is an implementation of a change detector that is tied to the iModelBridgeSyncInfoFile
 implementation of syncinfo.
 
 */
@@ -51,8 +51,8 @@ implementation of syncinfo.
 * A syncinfo file must be specific to a single @ref ANCHOR_iModelBridgeJobOverview "bridge job".
 *
 * <h2>Source "Items"</h2>
-* 
-* The design of iModelBridgeSyncInfoFile is based on the idea that source data files contain "items" that 
+*
+* The design of iModelBridgeSyncInfoFile is based on the idea that source data files contain "items" that
 * the bridge converts to elements.
 *
 * The concept of an "item" is very general, so that bridges can present the information stored in many
@@ -86,7 +86,7 @@ implementation of syncinfo.
         }
     };
 * @endcode
-* 
+*
 * Note that a bridge can have many different implementations of iModelBridgeSyncInfoFile::ISourceItem to match
 * different kinds of source data. Or, possibly a single generic implementation could handle the job of computing
 * hashes, and the bridge could use the source "kind" parameter to differentiate different kinds of items. It's up
@@ -96,7 +96,7 @@ implementation of syncinfo.
 *
 * iModelBridgeSyncInfoFile also supports the concept that one item can be, logically, contained in another item.
 * That concept can be used to capture source format constructs such as a file containing models, or models
-* containing objects, or a parent object having children. 
+* containing objects, or a parent object having children.
 *
 * iModelBridgeSyncInfoFile considers an item's scope to be part if its identity. Therefore, as far as iModelBridgeSyncInfoFile
 * is concerned, an item's ID (if it has one) only has to be unique within its scope.
@@ -113,7 +113,7 @@ implementation of syncinfo.
 * - The bridge will call ChangeDetector to write the conversion results to SyncInfo and the BIM.
 *
 * <h3>Use iModelBridgeWithSyncInfoBase to make things easy</h3>
-* Most bridges will not need to write any custom logic at all to get SyncInfo or a ChangeDetector. They can just derive from 
+* Most bridges will not need to write any custom logic at all to get SyncInfo or a ChangeDetector. They can just derive from
 * iModelBridgeWithSyncInfoBase, which will provide syncinfo. A typical bridge will be defined like this:
 * @code
 * struct MyBridge : iModelBridgeWithSyncInfoBase
@@ -130,7 +130,7 @@ implementation of syncinfo.
 *   BentleyStatus ConvertMyItem(void* nativeItem, iModelBridgeSyncInfoFile::ROWID scopingItem, Utf8CP sourceKind, DgnModelR model, iModelBridgeSyncInfoFile::ChangeDetector& changeDetector); // Convert this item
 *   DgnModelPtr DetermineModelForMyItem(Dgn::SubjectCR, ExampleSourceItem&);  // Pick a destination model when converting this item
 *   }
-* @endcode 
+* @endcode
 *
 * <h3>1:1 Conversion Pattern</h3>
 * The conversion logic of a typical 1:1 bridge looks like this:
@@ -145,7 +145,7 @@ implementation of syncinfo.
 *           Utf8CP sourceKind = "abc";                                      // @see iModelBridgeSyncInfoFile::SourceIdentity
 *           DgnModelPtr model = DetermineModelForMyItem(jobSubject, nativeitem);  // organize your models under your jobSubject
 *           ConvertMyItem(nativeItem, scopeItem, sourceKind, *model, *changeDetector); // Convert the item to one or more elements in the BIM
-*           // Note that the bridge does not stop if conversion of a single item fails. Instead, it logs the details and keeps on going! 
+*           // Note that the bridge does not stop if conversion of a single item fails. Instead, it logs the details and keeps on going!
 *           // A bridge should always succeed!
 *           }
 *       changeDetector->_DeleteElementsNotSeenInScopes(scopes);                     // Infer deletions
@@ -153,9 +153,9 @@ implementation of syncinfo.
 *       }
 *  @endcode
 *
-* The logic to convert an item into one or more elements follows a pattern, too. It begins by asking the ChangeDetector if the source item 
-* has changed. If a change is detected, then the bridge runs its conversion logic, but does not write directly to the BIM. Instead, 
-* it finished by asking the ChangeDetector to process the results of the conversion. This pattern is 
+* The logic to convert an item into one or more elements follows a pattern, too. It begins by asking the ChangeDetector if the source item
+* has changed. If a change is detected, then the bridge runs its conversion logic, but does not write directly to the BIM. Instead,
+* it finished by asking the ChangeDetector to process the results of the conversion. This pattern is
 * typical of all converters. Only the conversion logic will vary. The following is a typical example:
 * @code
 * // Convert an item to one or more BIM elements.
@@ -175,12 +175,12 @@ implementation of syncinfo.
 *           {
 *           // the item has already been converted and has not changed in the source
 *           changeDetector._OnElementSeen(change.GetSyncInfoRecord().GetDgnElementId());
-*           return BentleyStatus::SUCCESS; 
+*           return BentleyStatus::SUCCESS;
 *           }
-*       
+*
 *       // The item is new or has changed in the source. Convert it. YOu could also convert this item to more than one element, perhaps as an assembly.
 *       DgnElementPtr convertedElement = ConvertMyItemToAnElement(model, item);
-*       
+*
 *       // write the converted element to the BIM and to syncinfo
 *       iModelBridgeSyncInfoFile::ConversionResults results;
 *       results.m_element = convertedElement;                           // If this were an assembly, you would put the children in the iModelBridgeSyncInfoFile::ConversionResults::m_childElements member.
@@ -196,27 +196,27 @@ implementation of syncinfo.
 * As noted above, if the bridge skips an unchanged item (not forgetting to call _OnElementSeen), then the ChangeDetector
 * infers that the children of the item were also unchanged.
 *
-* Later, after it has visited all of the source data, the bridge calls ChangeDetector::_DeleteElementsNotSeenInScopes to 
-* delete the elements in the BIM that correspond to items that were not processed by the conversion logic. 
+* Later, after it has visited all of the source data, the bridge calls ChangeDetector::_DeleteElementsNotSeenInScopes to
+* delete the elements in the BIM that correspond to items that were not processed by the conversion logic.
 * The change detector is making the inference that the only reason why an item was not seen is because it is not there.
 *
 * <h2>Complex Mappings</h2>
 *
-* A single source item can be mapped to one or more DgnElements. To do that, the bridge 
+* A single source item can be mapped to one or more DgnElements. To do that, the bridge
 * would convert the same item to multiple elements and then call changeDetector._UpdateBimAndSyncInfo
-* multiple times, each time with the same source item and a different resulting element. 
+* multiple times, each time with the same source item and a different resulting element.
 *
 * Or, multiple source items can be mapped to a single DgnElement. To do that, the bridge
 * would use the items to generate a single element and the call changeDetector._UpdateBimAndSyncInfo
 * multiple times, each time with a differnt source item and the same resulting element.
-* 
+*
 * A mapping with a 0 DgnElementId indicates a source item that was not mapped into the BIM.
 * The bridge can create this kind of mapping by setting iModelBridgeSyncInfoFile::ConversionResults::m_element to
 * null before calling _UpdateBimAndSyncInfo. This kind of mapping is useful if the bridge wants to keep
 * track of items that it has deliberately excluded from the conversion.
 *
 *  @ingroup GROUP_iModelBridgeSyncInfoFile
-* @bsiclass                                    BentleySystems 
+* @bsiclass                                    BentleySystems
 */
 
 //! iModelExternalSourceAspect holds information that identifies a piece of data in a source repository. It is part of a mapping of that data to an element in an iModel. It also
@@ -229,19 +229,19 @@ implementation of syncinfo.
 //! Optional properties:
 //!
 //! SourceState
-//! The "lastModHash" - Optional value that is a version number or last modified time -- something quick that will allow the synchronizer to detect that an item is unchanged and avoid computing 
-//! a cryptographic hash. If present, this value must be guaranteed to change when *any* of the source item's content changes. If LastModHash is non-empty and if the current value equals the stored 
+//! The "lastModHash" - Optional value that is a version number or last modified time -- something quick that will allow the synchronizer to detect that an item is unchanged and avoid computing
+//! a cryptographic hash. If present, this value must be guaranteed to change when *any* of the source item's content changes. If LastModHash is non-empty and if the current value equals the stored
 //! value, then a bridge will conclude that the item is unchanged. Otherwise, the bridge will ask for and use the cryptographic hash.
 //! The "hash" property must capture the state of the source item's content. Its value must be guaranteed to be unique to the content. A cryptographic hash or message digest is ideal for this purpose.
 //! For very small items, the item's state itself would also work.
 //!
 //!
-//! The "properties" property is for the private use of the bridge to store additional qualifying data on a mapping. This can be used, for example to capture a transform in the 
+//! The "properties" property is for the private use of the bridge to store additional qualifying data on a mapping. This can be used, for example to capture a transform in the
 //! case where a single item in the source is intstanced multiple times in the iModel, each instance being transformed in some way. It is recommended that the bridge store auxilliary properties
 //! in JSON format, but that is up to the bridge.
 struct iModelExternalSourceAspect
     {
-    //! Utility function to convert a fixed-length byte array to its hex string representation. This is useful when 
+    //! Utility function to convert a fixed-length byte array to its hex string representation. This is useful when
     //! converting an MD5 or SHA1 hash value to a string in order to store it. This is a common operation.
     template<size_t BYTE_COUNT> static void HexStrFromBytes(Utf8StringR str, const Byte (&bytes)[BYTE_COUNT])
         {
@@ -255,7 +255,7 @@ struct iModelExternalSourceAspect
             }
         }
 
-    //! Utility function to convert a hex string representation of a byte array to a fixed-length byte array. This is useful when 
+    //! Utility function to convert a hex string representation of a byte array to a fixed-length byte array. This is useful when
     //! converting a stored hash value back to a MD5 or SHA1 binary hash value. This should be rarely needed, as hash values can
     //! be compared for equality in their stringified form.
     template<size_t BYTE_COUNT> static void HextStrToBytes(Byte (&bytes)[BYTE_COUNT], Utf8StringCR str)
@@ -273,7 +273,7 @@ struct iModelExternalSourceAspect
     //! Reconstruct a double by parsing a string representation
     static double DoubleFromString(Utf8CP str) {return ::atof(str);}
 
-    //! Useful when writing uint64_t to JSON 
+    //! Useful when writing uint64_t to JSON
     static void UInt64ToString(Utf8StringR str, uint64_t v)
         {
         str.Sprintf("%llu", v);
@@ -289,7 +289,7 @@ struct iModelExternalSourceAspect
     static uint64_t UInt64FromString(Utf8CP str)
         {
         uint64_t v;
-        return (1 == sscanf(str, "%llu", &v))? v: 0;
+        return (1 == Utf8String::Sscanf_safe(str, "%llu", &v))? v: 0;
         }
 
     struct SourceState
@@ -308,7 +308,7 @@ struct iModelExternalSourceAspect
 
     iModelExternalSourceAspect(ECN::IECInstance* i = nullptr) :m_instance(i) {}
     iModelExternalSourceAspect(ECN::IECInstance const* i) : m_instance(const_cast<ECN::IECInstance*>(i)) {}
- 
+
     bool IsValid() const {return m_instance.IsValid();}
     void Invalidate() {m_instance = nullptr;}
     ECN::IECInstance* GetInstanceP() {return m_instance.get();}
@@ -326,7 +326,7 @@ struct iModelExternalSourceAspect
 
     IMODEL_BRIDGE_EXPORT void SetProperties(rapidjson::Document const&); //!< Update the custom properties
     IMODEL_BRIDGE_EXPORT void SetSourceState(SourceState const& ss) {SetSourceState(*m_instance, ss);} //!< Update the state-tracking properties of the ECInstance
-    
+
     //! Add this aspect to the specified element. (Caller must then call element's Insert or Update method.)
     IMODEL_BRIDGE_EXPORT DgnDbStatus AddAspect(DgnElementR);
 
@@ -376,9 +376,9 @@ struct iModelExternalSourceAspect
         }
 
     //! Return a statement that finds all aspects from the same source as the specified aspect and returns the Element.Id and ECInstanceId of each
-    static BeSQLite::EC::CachedECSqlStatementPtr GetSelectFromSameSource(DgnDbR db, iModelExternalSourceAspect const& aspect, BeSQLite::EC::IECSqlBinder::MakeCopy cc = BeSQLite::EC::IECSqlBinder::MakeCopy::Yes)
+    static BeSQLite::EC::CachedECSqlStatementPtr GetSelectFromSameSource(DgnDbR db, iModelExternalSourceAspect const& aspect, BeSQLite::EC::IECSqlBinder::MakeCopy _deprecatedArg = BeSQLite::EC::IECSqlBinder::MakeCopy::Yes)
         {
-        return GetSelect(db, aspect.GetKind(), aspect.GetScope(), aspect.GetIdentifier(), cc);
+        return GetSelect(db, aspect.GetKind(), aspect.GetScope(), aspect.GetIdentifier(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes); // We always have to bind a copy of pointers into temp Utf8Strings!!
         }
 
     IMODEL_BRIDGE_EXPORT Utf8String FormatForDump(DgnDbR, bool includeProperties, bool includeSourceState) const;
@@ -388,7 +388,7 @@ struct iModelExternalSourceAspect
 
 //=======================================================================================
 // Identifies an iModelExternalSourceAspect on an element.
-// @bsiclass                                                    
+// @bsiclass
 //=======================================================================================
 #ifdef COMMENT_OUT_NOT_USED
 struct iModelExternalSourceAspectID
@@ -410,10 +410,10 @@ struct iModelExternalSourceAspectID
 
 //=======================================================================================
 //! Helper class for stepping through all ExternalSourceAspects in a specified Scope
-//! with optional WHERE clause. 
+//! with optional WHERE clause.
 //! NB: It is generally unsafe to use positional parameter binding. Use named parameters
 //! and call GetParameterIndex instead.
-// @bsiclass                                                    
+// @bsiclass
 //=======================================================================================
 template<typename T>
 struct ExternalSourceAspectIterator : NonCopyableClass
@@ -477,9 +477,9 @@ public:
         Entry(ExternalSourceAspectIterator const* it) : m_it(it) {Step();}
         void Step()
             {
-            if (m_it) 
+            if (m_it)
                 {
-                if (BeSQLite::BE_SQLITE_ROW != m_it->Step()) 
+                if (BeSQLite::BE_SQLITE_ROW != m_it->Step())
                     m_it = nullptr;
                 }
             }
@@ -512,12 +512,12 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
 
     //=======================================================================================
     //! The identity of an item in the source repository
-    //! - scope ROWID.    The ROWID in syncinfo of the item that is the scope/container/parent of the item. This is optional. 
-    //! - kind.          A mark that is assigned to the item by the caller that helps the caller differentiate different kinds of items and to make IDs unique. This value is specific to this one syncinfo file. This value is meaninful only to the source repository. This is optional. 
+    //! - scope ROWID.    The ROWID in syncinfo of the item that is the scope/container/parent of the item. This is optional.
+    //! - kind.          A mark that is assigned to the item by the caller that helps the caller differentiate different kinds of items and to make IDs unique. This value is specific to this one syncinfo file. This value is meaninful only to the source repository. This is optional.
     //! - Id.            The ID of the item, unique within its scope and kind. The ID is presumably assigned by the source repository. This is optional. If no ID is available, then the hash is used as an item's ID./
     //! An item @em may be uniquely identified in the source repository by the combination of (SourceROWID, Kind, and ID).
     //! An item @em may have no unique ID in the source repository. In that case, the iModelBridgeSyncInfoFile::SourceState hash value is used to identify the item.
-    // @bsiclass                                    BentleySystems 
+    // @bsiclass                                    BentleySystems
     //=======================================================================================
     struct SourceIdentity
         {
@@ -527,7 +527,7 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
 
       public:
         SourceIdentity() : m_scopeROWID(0) {}
-        SourceIdentity(ROWID srid, Utf8StringCR k, Utf8StringCR i) 
+        SourceIdentity(ROWID srid, Utf8StringCR k, Utf8StringCR i)
             : m_scopeROWID(srid), m_kind(k), m_id(i) {}
 
         //! Scope ROWID
@@ -543,15 +543,15 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
     //=======================================================================================
     //! The state of the item in the source repository
     //! - hash.                      The cryptographic hash of the item's content. SyncInfo assumes that if the current hash of a
-    //!                             source item matches the stored value, then the item's content is unchanged. To compute this value, the implementor can use any algorithm that 
+    //!                             source item matches the stored value, then the item's content is unchanged. To compute this value, the implementor can use any algorithm that
     //!                             does not produce the same value for different contents. <em>This is required.</em>
     //! - Last modified time (LMT).  The last "time" that the item's content was modified, if known. SyncInfo assumes that if the current LMT of a source item
-    //!                             is equal to the stored value, then the item's content is unchanged. 
+    //!                             is equal to the stored value, then the item's content is unchanged.
     //!                             The source repository must guarantee this! If in doubt, \ref iModelBridgeSyncInfoFile::ISourceItem should return 0 for LMT. Note that the definition of this value is known only to the source repository.
     //!                             It may be a real timestamp or just a counter. SyncInfo just needs to check for equality. Optionally, if the "ignore stale items" is true, then SyncInfo will detect a change only if the item's
     //!                             current LMT is greater than the stored value. If it is less, then the item will be classified as "stale". A stale item is treated as unchanged. Stale items may be reported in the issues file.
     //! @note The hash value is the only required field. Hash can serve as the item's identity (relative to scope and kind) in the soure repository if it has no other identity.
-    // @bsiclass                                    BentleySystems 
+    // @bsiclass                                    BentleySystems
     //=======================================================================================
     struct SourceState
         {
@@ -561,9 +561,9 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
 
       public:
         SourceState() : m_lmt(0) {}
-        SourceState(double d, Utf8StringCR h) 
+        SourceState(double d, Utf8StringCR h)
             : m_lmt(d), m_hash(h) {}
-        
+
         IMODEL_BRIDGE_EXPORT SourceState(iModelExternalSourceAspect::SourceState aspectState);
 
         //! The last "time" the source item was created or modified. The definition of this value is known only to source repository.
@@ -576,7 +576,7 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
 
     //=======================================================================================
     //! Interface for presenting an item in the source repository to SyncInfo and its ChangeDetector
-    // @bsiclass                                    BentleySystems 
+    // @bsiclass                                    BentleySystems
     //=======================================================================================
     struct ISourceItem
         {
@@ -590,7 +590,7 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
 
     //=======================================================================================
     //! Information about an item that is stored in SyncInfo
-    // @bsiclass                                    BentleySystems 
+    // @bsiclass                                    BentleySystems
     //=======================================================================================
     struct Record
         {
@@ -604,7 +604,7 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
 
       public:
         Record() : m_sourceState(0, "") {}
-        Record(DgnElementId eid, SourceIdentity const& sid, SourceState const& sstate, BeSQLite::EC::ECInstanceId aspectInstanceId) : 
+        Record(DgnElementId eid, SourceIdentity const& sid, SourceState const& sstate, BeSQLite::EC::ECInstanceId aspectInstanceId) :
             m_elementId(eid), m_sourceId(sid), m_sourceState(sstate), m_externalSourceAspectInstanceId(aspectInstanceId) {}
 
         //! Query if this record is valid
@@ -623,7 +623,7 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
 
     //=======================================================================================
     //! The result of converting an Item to a DgnElement (possibly an assembly)
-    // @bsiclass                                    BentleySystems 
+    // @bsiclass                                    BentleySystems
     //=======================================================================================
     struct ConversionResults
         {
@@ -635,8 +635,8 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
 
     //=======================================================================================
     //! Detects changes to source items, as compared with info recorded in syncinfo.
-    //! @note You should use the same change detector object for an entire update. 
-    // @bsiclass                                    BentleySystems 
+    //! @note You should use the same change detector object for an entire update.
+    // @bsiclass                                    BentleySystems
     //=======================================================================================
     struct EXPORT_VTABLE_ATTRIBUTE ChangeDetector : RefCountedBase
         {
@@ -644,7 +644,7 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
 
         DgnDbR m_dgnDb;
 
-        //! The result of a conversion. 
+        //! The result of a conversion.
         struct Results
             {
           private:
@@ -682,7 +682,7 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
         IMODEL_BRIDGE_EXPORT DgnElementPtr MakeCopyForUpdate(DgnElementCR newEl, DgnElementCR originalEl);;
         IMODEL_BRIDGE_EXPORT DgnDbStatus UpdateResultsInBIMForOneElement(ConversionResults& conversionResults, DgnElementId existingElementId);;
         IMODEL_BRIDGE_EXPORT DgnDbStatus UpdateResultsInBIMForChildren(ConversionResults& parentConversionResults);;
-        
+
 
         //! Invoked just before an an element is deleted
         IMODEL_BRIDGE_EXPORT virtual void _OnItemDelete(Record const&);
@@ -694,7 +694,7 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
         IMODEL_BRIDGE_EXPORT DgnDbStatus UpdateResultsInBIM(ConversionResults& conversionResults, DgnElementId existingElementId);
 
         DgnDbStatus AddProvenanceAspect(SourceIdentity const& identity, SourceState const &state, DgnElementR element);
-      
+
         //! @private
         //! Construct a change detector object. This will invoke the iModelBridgeSyncInfoFile::_OnNewUpdate method on @a si
         //! @note You should generally call iModelSyncInfoFile::GetChangeDetectorFor to get a change detector.
@@ -762,18 +762,18 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
     Utf8String          m_lastErrorDescription;
     DgnDbPtr            m_bim;
 
-    
+
     IMODEL_BRIDGE_EXPORT void SetLastError(BeSQLite::DbResult rc);
 
   public:
     //! Construct a syncinfo object. @see AttachToBIM
     //! @note iModelBridgeWithSyncInfoBase will manage "syncinfo" (aka ExternalSourceAspects) for you.
     iModelBridgeSyncInfoFile() : m_bim(nullptr) {}
-    
+
     //! Destructor - detaches from m_bim
     //! @note iModelBridgeWithSyncInfoBase will manage "syncinfo" (aka ExternalSourceAspects) for you.
     IMODEL_BRIDGE_EXPORT ~iModelBridgeSyncInfoFile();
-    
+
     //! Open the syncinfo file and attach it to a BIM
     //! @param bim  The BIM
     //! @param createIfNecessary create an empty syncinfo file if it does not exist?
@@ -792,26 +792,26 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
 
     //! Return the ChangeDetector that this bridge should use.
     IMODEL_BRIDGE_EXPORT ChangeDetectorPtr GetChangeDetectorFor(iModelBridge& bridge);
-        
+
 };
 
 //=======================================================================================
 //! Base class for iModel bridges that use iModelBridgeSyncInfoFile. This base class implements
-//! the bridge methods that must deal with syncinfo, including _OnOpenBim to attach and 
+//! the bridge methods that must deal with syncinfo, including _OnOpenBim to attach and
 //! _OnCloseBim to detach.
 //! @ingroup GROUP_iModelBridge
-// @bsiclass                                    BentleySystems 
+// @bsiclass                                    BentleySystems
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeWithSyncInfoBase : iModelBridgeBase
 {
     DEFINE_T_SUPER(iModelBridgeBase)
 protected:
     iModelBridgeSyncInfoFile m_syncInfo;
-    
+
 public:
     //! Returns a reference to the syncinfo
     iModelBridgeSyncInfoFile& GetSyncInfo() {return m_syncInfo;}
-    
+
     //! Attaches syncinfo to the BIM
     IMODEL_BRIDGE_EXPORT BentleyStatus _OnOpenBim(DgnDbR db) override;
     //! Detaches syncinfo from the BIM
@@ -831,7 +831,7 @@ public:
     //! @name Document-tracking Methods
     //! @{
 
-    //! Convenience method to insert or update a RepositoryLink element in the BIM to represent a source document, and to insert or update a record in syncinfo to track it. 
+    //! Convenience method to insert or update a RepositoryLink element in the BIM to represent a source document, and to insert or update a record in syncinfo to track it.
     //! Calls GetSourceItemForDocument and then uses the supplied ChangeDetector to write the item to syncinfo.
     //! @param changeDetector The change detector
     //! @param fileName Optional. The local filename of the document. If not supplied, this defaults to the input filename.
@@ -846,7 +846,7 @@ public:
                                                                 Utf8CP kind = "DocumentWithBeGuid", iModelBridgeSyncInfoFile::ROWID srid = iModelBridgeSyncInfoFile::ROWID(),
                                                                 Utf8StringCR knownUrn = Utf8String());
 
-    //! Convenience method to insert or update a RepositoryLink element in the BIM to represent a source document, and to insert or update a record in syncinfo to track it. 
+    //! Convenience method to insert or update a RepositoryLink element in the BIM to represent a source document, and to insert or update a record in syncinfo to track it.
     //! Calls GetSourceItemForDocument and then uses the supplied ChangeDetector to write the item to syncinfo.
     //! The 'changeDetectionResults' output argument allws you to detect if the RepositoryLink element was already present in the iModel and is unchanged.
     //! If so, you may be able to skip everything in the document. In that case and if the RepositoryLink element is used as a scope, be sure to mark it as skipped.
@@ -861,7 +861,7 @@ public:
     //!      return;
     //!      }
     //! </pre>
-    //! @param changeDetectionResults The returned status of the RepositoryLink element. 
+    //! @param changeDetectionResults The returned status of the RepositoryLink element.
     //! @param changeDetector The change detector
     //! @param fileName Optional. The local filename of the document. If not supplied, this defaults to the input filename.
     //! @param sstate Optional. If specified, the state of the document. If not specified, the state defaults to an empty hash and the last modified time of the file.
@@ -901,7 +901,7 @@ public:
         iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, iModelBridgeSyncInfoFile::ROWID srid, Utf8CP kind, Utf8StringCR id);
 };
 //=======================================================================================
-// @bsiclass                                    BentleySystems 
+// @bsiclass                                    BentleySystems
 //=======================================================================================
 struct DocSourceItem : iModelBridgeSyncInfoFile::ISourceItem
     {

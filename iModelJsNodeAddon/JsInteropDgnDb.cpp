@@ -1057,7 +1057,7 @@ BentleyStatus JsInterop::GetGeoCoordsFromIModelCoords(JsonValueR results, DgnDbR
             if (nullptr != datumConverter)
                 datumConverter->ConvertLatLong3D((GeoPointR)*output, tempPoint);
             else
-                *((GeoPointP)output) = tempPoint;
+                (GeoPointR) *output = tempPoint;
             }
         else
             {
@@ -1099,7 +1099,7 @@ BentleyStatus JsInterop::GetIModelCoordsFromGeoCoords (JsonValueR results, DgnDb
             if (nullptr != datumConverter)
                 datumConverter->ConvertLatLong3D (tempPoint, (GeoPointCR)*input);
             else
-                tempPoint = *((GeoPointCP)input);
+                tempPoint = (GeoPointCR) *input;
 
             *outputStatus = gcs->UorsFromLatLong(*output, tempPoint);
             }

@@ -39,18 +39,18 @@ enum class HexFormatOptions
 
 //=======================================================================================
 //!  Static utility methods for working with strings.
-//!  The C++ standard library and STL provide most of the functions you need to work with 
-//!  strings in a portable way. The BeStringUtilities provides wrapper functions for 
-//!  standard library functions that are missing on some platforms and for the more common 
-//!  string operations that are not part of the portable standard library. Note that 
-//!  BeStringUtilities is not a complete set of string functions. It wraps only those 
-//!  functions for which there is no portable standard library function on every platform. 
-//!  If a standard library function has no wrapper in BeStringUtiliites, then you should 
+//!  The C++ standard library and STL provide most of the functions you need to work with
+//!  strings in a portable way. The BeStringUtilities provides wrapper functions for
+//!  standard library functions that are missing on some platforms and for the more common
+//!  string operations that are not part of the portable standard library. Note that
+//!  BeStringUtilities is not a complete set of string functions. It wraps only those
+//!  functions for which there is no portable standard library function on every platform.
+//!  If a standard library function has no wrapper in BeStringUtiliites, then you should
 //!  assume that you can use it on all platforms.
 //!
-//!  There are a number of conversion methods for switching between UTF-16, UTF-8, WChars, 
+//!  There are a number of conversion methods for switching between UTF-16, UTF-8, WChars,
 //!    and locale-encoded chars.
-//!  The second group of functions are cross-platform compatible versions of C-runtime 
+//!  The second group of functions are cross-platform compatible versions of C-runtime
 //!    specific functions.  They are all buffer-overrun safe.
 //!  There are also methods for parsing arguments that may be quoted, and for extracting
 //!    common username and computername information.
@@ -85,7 +85,7 @@ public:
 
 public:
     static const size_t NPOS = (size_t)-1;                  //!< A maximum value used to indicate that the buffer is NULL-terminated.
-    static const size_t AsManyAsPossible = ((size_t)-1);    //!< A large value indicating to use as many characters as possible. 
+    static const size_t AsManyAsPossible = ((size_t)-1);    //!< A large value indicating to use as many characters as possible.
 
     //! Must be called once per process before any conversion methods are called.
     //! This initializes the third-party library that we use for character encoding and analysis.
@@ -278,7 +278,7 @@ public:
     //! This is meant to allow advanced usage of ICU to transcode odd encodings that are not worth writing high-level wrappers for (e.g. reasing strings from TrueType font metadata).
     //! @note outStringBuff will effectively be NULL-terminated only if inString (up to inStringNumBytes) is also NULL-terminated; otherwise it will not.
     BENTLEYDLL_EXPORT static BentleyStatus TranscodeStringDirect(bvector<Byte>& outStringBuff, CharCP outEncoding, Byte const* inString, size_t inStringNumBytes, CharCP inEncoding);
-    
+
     //! Computes the number of logical characters in the span. Remember that on some platforms, WChar can be a multi-byte sequence.
     BENTLEYDLL_EXPORT static size_t ComputeNumLogicalChars(WCharCP, size_t numUnits);
 
@@ -325,7 +325,9 @@ public:
         {
         va_list args;
         va_start(args, format);
-        return Vsnprintf(destArray, destArraySize, format, args);
+        auto val = Vsnprintf(destArray, destArraySize, format, args);
+        va_end(args);
+        return val;
         }
 
     //! Format a string following the rules of sprintf.
@@ -355,7 +357,9 @@ public:
         {
         va_list args;
         va_start(args, format);
-        return Vsnwprintf(destArray, destArraySize, format, args);
+        auto val =  Vsnwprintf(destArray, destArraySize, format, args);
+        va_end(args);
+        return val;
         }
 
     //! Format a string following the rules of sprintf.
@@ -367,22 +371,9 @@ public:
     //! @remarks If the length of the formatted string exceeds \a numCharsInBuffer, the string is truncated (i.e., buffer[numCharsInBuffer-1] = 0;)
     BENTLEYDLL_EXPORT static int Vsnwprintf(WCharP buffer, size_t numCharsInBuffer, WCharCP format, va_list args);
 
-#if !defined (BENTLEY_CPP_MISSING_WCHAR_SUPPORT)
+
     #define BE_STRING_UTILITIES_SWSCANF(SRC,FMT,...)     swscanf(SRC,FMT,__VA_ARGS__)
     #define BE_STRING_UTILITIES_UTF8_SSCANF(SRC,FMT,...) sscanf(SRC,FMT,__VA_ARGS__)
-#else
-    //! Extract values from a formatted string
-    //! @param stringSource the formatted string to read
-    //! @param fmt the format of the string
-    BENTLEYDLL_EXPORT static int Sscanf(CharCP stringSource, CharCP fmt, ...);
-    #define BE_STRING_UTILITIES_UTF8_SSCANF(SRC,FMT,...) BeStringUtilities::Sscanf(SRC,FMT,__VA_ARGS__)
-
-    //! Extract values from a formatted string
-    //! @param stringSource the formatted string to read
-    //! @param fmt the format of the string
-    BENTLEYDLL_EXPORT static int Swscanf(WCharCP stringSource, WCharCP fmt, ...);
-    #define BE_STRING_UTILITIES_SWSCANF(SRC,FMT,...)     BeStringUtilities::Swscanf(SRC,FMT,__VA_ARGS__)
-#endif
 
     //! Convert all characters to lowercase.
     BENTLEYDLL_EXPORT static char* Strlwr(char* s);
@@ -400,7 +391,7 @@ public:
     BENTLEYDLL_EXPORT static int Stricmp(const char* s1, const char* s2);
 
     //! Compare two strings in a case-insensitive way. Equivalent to MSVC _stricmp and a character-by-character comparision in GCC. @return 0 if the strings are equal (ignoring case), otherwise a negative or positive number representing order.
-    //! @note Use only if you know that both strings contain only ASCII characters. 
+    //! @note Use only if you know that both strings contain only ASCII characters.
     BENTLEYDLL_EXPORT static int StricmpAscii(const char* s1, const char* s2);
 
     //! Compare two strings in a case-insensitive way. Equivalent to MSVC _wcsicmp and a character-by-character comparision in GCC. @return 0 if the strings are equal (ignoring case), otherwise a negative or positive number representing order.
@@ -418,10 +409,10 @@ public:
     //! Make a copy of a string into a new buffer.  Note that you must call free on the returned pointer or it will leak.
     BENTLEYDLL_EXPORT static wchar_t* Wcsdup(wchar_t const* s);
 
-    //! This is the equivelent of strtok_s in MSVC and strtok_r in GCC.  
+    //! This is the equivelent of strtok_s in MSVC and strtok_r in GCC.
     BENTLEYDLL_EXPORT static char *Strtok(char *strToken, const char *strDelimit, char **context);
 
-    //! This is the equivelent of wcstok_s in MSVC and wcstok in GCC.  
+    //! This is the equivelent of wcstok_s in MSVC and wcstok in GCC.
     BENTLEYDLL_EXPORT static wchar_t *Wcstok(wchar_t *wcsToken, const wchar_t *wcsDelimit, wchar_t **context);
 
     //! reverse the letters in str
@@ -460,7 +451,7 @@ public:
     //! @param[out] status optional status
     BENTLEYDLL_EXPORT static uint64_t ParseHex(Utf8CP string, BentleyStatus* status=nullptr);
 
-    //! Converts an integer number to a string using the decimal format, e.g. 1234ULL becomes "1234" 
+    //! Converts an integer number to a string using the decimal format, e.g. 1234ULL becomes "1234"
     //! @param[out] buf  The output buffer for the formatted string.
     //! @param[in] value the integer value to be formatted.
     static void FormatUInt64(Utf8P buf, uint64_t value) {FormatUInt64(buf, value, 10ULL);}
@@ -492,7 +483,7 @@ public:
     //! @param[in] dest     The output buffer
     //! @param[in] numberOfElements The number of bytes that \a dest can hold.
     //! @param[in] src      The input buffer
-    //! @param[in] count    The number of bytes to copy 
+    //! @param[in] count    The number of bytes to copy
     //! @return non-zero error status if (NULL == dest || NULL == src || numberOfElements < count)
     BENTLEYDLL_EXPORT static BentleyStatus Memmove(void *dest, size_t numberOfElements, const void *src, size_t count);
 
@@ -500,7 +491,7 @@ public:
     //! @param[in] dest     The output buffer
     //! @param[in] numberOfElements The number of chars that \a dest can hold.
     //! @param[in] src      The input buffer
-    //! @param[in] count    The number of chars to copy 
+    //! @param[in] count    The number of chars to copy
     //! @return non-zero error status if (NULL == dest || NULL == src || numberOfElements < count)
     BENTLEYDLL_EXPORT static BentleyStatus Wmemmove(wchar_t *dest, size_t numberOfElements, const wchar_t *src, size_t count);
 
@@ -508,7 +499,7 @@ public:
     //! @param[in] dest     The output buffer
     //! @param[in] numberOfElements The number of chars that \a dest can hold.
     //! @param[in] src      The input buffer
-    //! @param[in] count    The number of chars to copy 
+    //! @param[in] count    The number of chars to copy
     //! @return non-zero error status if (NULL == dest || NULL == src || numberOfElements < count)
     BENTLEYDLL_EXPORT static BentleyStatus Memcpy(void *dest, size_t numberOfElements, const void *src, size_t count);
 
@@ -516,7 +507,7 @@ public:
     //! @param[in] dest     The output buffer
     //! @param[in] numberOfElements The number of wchar_t's that \a dest can hold.
     //! @param[in] src      The input buffer
-    //! @param[in] count    The number of wchar_t's to copy 
+    //! @param[in] count    The number of wchar_t's to copy
     //! @return non-zero error status if (NULL == dest || NULL == src || numberOfElements < count)
     BENTLEYDLL_EXPORT static BentleyStatus Wmemcpy(wchar_t *dest, size_t numberOfElements, const wchar_t *src, size_t count);
 

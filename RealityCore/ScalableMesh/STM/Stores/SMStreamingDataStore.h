@@ -483,7 +483,7 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
         SMNodeGroupPtr           m_nodeGroup;
         SMStoreDataType               m_dataType;
 
-        uint64_t GetBlockSizeFromNodeHeader() const;
+        // uint64_t GetBlockSizeFromNodeHeader() const;
         void     SetDecompressTexture(bool decompressTexture) const
             {
             m_decompressTexture = decompressTexture;

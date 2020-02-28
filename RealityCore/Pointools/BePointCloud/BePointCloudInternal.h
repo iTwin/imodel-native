@@ -9,6 +9,7 @@
 #include <Bentley/BeThread.h>
 #include <Bentley/RefCounted.h>
 #include <Bentley/bvector.h>
+#include <Bentley/BeFile.h>
 #include <Geom/GeomApi.h>
 #include <Vortex/VortexAPI.h>
 #include <stdlib.h>

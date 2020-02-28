@@ -55,7 +55,7 @@
 -----------------------------------------------------------------------------*/
 #include "HRFGeoTiffCoordSysTable.dat"
 
-
+PUSH_DISABLE_DEPRECATION_WARNINGS
 //-----------------------------------------------------------------------------
 // Macros
 //-----------------------------------------------------------------------------
@@ -300,3 +300,4 @@ void HRFGeoTiffCoordSysTable::FillRecord(size_t                    pi_IndexRecor
     m_pWorkingBuffer[TableColumnsItr->m_ColumnSize] = 0;
     po_pRecord->HorizCS_EPSG_Name = (char*)m_pWorkingBuffer.get();
     }
+POP_DISABLE_DEPRECATION_WARNINGS

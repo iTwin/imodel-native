@@ -317,7 +317,7 @@ ECN::ECObjectsStatus ExtendTypeConverter::Convert(ECN::ECSchemaR schema, ECN::IE
     ECN::ECPropertyP prop = dynamic_cast<ECN::ECPropertyP> (&container);
     if (prop == nullptr)
         {
-        LOG.warningv("Found ExtendType custom attribute on a container which is not a property, removing.  Container is %s", container.GetContainerName());
+        LOG.warningv("Found ExtendType custom attribute on a container which is not a property, removing.  Container is %s", container.GetContainerName().c_str());
         container.RemoveCustomAttribute("EditorCustomAttributes", EXTEND_TYPE);
         container.RemoveSupplementedCustomAttribute("EditorCustomAttributes", EXTEND_TYPE);
         return ECN::ECObjectsStatus::Success;
@@ -1373,7 +1373,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
 
      bvector<BECN::ECSchemaP> schemas;
      m_schemaReadContext->GetCache().GetSchemas(schemas);
-     bvector<Utf8CP> schemasWithMultiInheritance = {"OpenPlant_3D", "BuildingDataGroup", "StructuralModelingComponents", "OpenPlant", "jclass", "pds", "group", 
+     bvector<Utf8CP> schemasWithMultiInheritance = {"OpenPlant_3D", "BuildingDataGroup", "StructuralModelingComponents", "OpenPlant", "jclass", "pds", "group",
          "ams", "bmf", "pid", "schematics", "OpenPlant_PID", "OpenPlant3D_PID", "speedikon", "autoplant_PIW", "ECXA_autoplant_PIW", "Bentley_Plant", "globals",
          "Electrical_RCM", "pid_ansi", "PDMx_Base", "TUAS", "HS2", "BMHDesigner"};
      bool needsFlattening = false;
@@ -1476,7 +1476,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
              for (ECN::ECPropertyP ecProp : ecClass->GetProperties())
                  RemoveDgnV8CustomAttributes(*ecProp);
              }
-         
+
          if (coreSchema.IsValid())
             {
              ECN::ECObjectsStatus stat = schema->AddReferencedSchema(*coreSchema);
@@ -1634,7 +1634,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::SupplementV8ECSchemas()
             continue;
             }
 
-        // Later versions of OP3D don't use a separate units schema for supplementation.  Instead, they share the OpenPlant version.  
+        // Later versions of OP3D don't use a separate units schema for supplementation.  Instead, they share the OpenPlant version.
         if (primarySchema->GetName().EqualsIAscii("OpenPlant_3D") || primarySchema->GetName().EqualsIAscii("OpenPlant_PID"))
             {
             SwizzleOpenPlantSupplementals(tmpSupplementals, primarySchema, supplementalSchemas);
@@ -2509,7 +2509,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::DoAnalyze(DgnV8Api::ElementHan
         {
         auto& ecClass = ecClassInfo.first;
         bool isPrimary = ecClassInfo.second;
-        
+
         Utf8String v8SchemaName(ecClass.m_schemaName.c_str());
         if (IsDgnV8DeliveredSchema(v8SchemaName))
             continue;
@@ -3032,7 +3032,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ImportTargetECSchemas()
     ConverterLogging::LogPerformance(importTimer, msg.c_str());
     if (SchemaStatus::Success != importStatus)
         {
-        //By design ECDb must not do transaction management itself. A failed schema import can have changed the dgndb though. 
+        //By design ECDb must not do transaction management itself. A failed schema import can have changed the dgndb though.
         //So we must abandon these changes.
         //(Cannot use Savepoints, as the change tracker might be enabled)
         GetDgnDb().AbandonChanges();
@@ -3356,8 +3356,8 @@ bool DynamicSchemaGenerator::IsDynamicSchema(Bentley::Utf8StringCR schemaName, B
 
     std::regex exp("DynamicSchema\\s+xmlns\\s*=\\s*[\'\"]\\s*Bentley_Standard_CustomAttributes\\.[0-9]+\\.+[0-9]+");
     size_t searchEndOffset = schemaXml.find("ECClass");
-    Utf8String::const_iterator endIt = (searchEndOffset == Utf8String::npos) ? schemaXml.begin() : (schemaXml.begin() + searchEndOffset);
-    return std::regex_search<Utf8String::const_iterator>(schemaXml.begin(), endIt, exp);
+    Bentley::Utf8String::const_iterator endIt = (searchEndOffset == Utf8String::npos) ? schemaXml.begin() : (schemaXml.begin() + searchEndOffset);
+    return std::regex_search<Bentley::Utf8String::const_iterator>(schemaXml.begin(), endIt, exp);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3570,7 +3570,7 @@ void DynamicSchemaGenerator::BisifyV8Schemas(bvector<DgnV8FileP> const& uniqueFi
     SchemaConversionScope scope(*this);
 
     StopWatch timer(true);
-    
+
     AddTasks((uint32_t)uniqueModels.size());
 
     for (DgnV8ModelP v8Model : uniqueModels)
@@ -3667,7 +3667,7 @@ void DynamicSchemaGenerator::GenerateSchemas(bvector<DgnV8FileP> const& files, b
         if (!m_needReimportSchemas)
             return;
         }
-        
+
     BisifyV8Schemas(files, models);
     }
 

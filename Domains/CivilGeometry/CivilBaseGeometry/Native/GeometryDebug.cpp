@@ -113,7 +113,7 @@ void GeometryDebug::AddDebugPrimitive(ICurvePrimitiveP prim, ColorInt colorInt)
 //---------------------------------------------------------------------------------------
 void GeometryDebug::AddDebugPoints(bvector<DPoint3d> const& points, ColorInt colorInt)
     {
-    ICurvePrimitivePtr primitive = ICurvePrimitive::CreatePointString(points.begin(), points.size());
+    ICurvePrimitivePtr primitive = ICurvePrimitive::CreatePointString(&*points.begin(), points.size());
     CurveVectorPtr cv = CurveVector::Create(primitive);
     AddDebugCurve(cv.get(), colorInt);
     }
@@ -129,6 +129,6 @@ void GeometryDebug::AddDebugPoint(DPoint3dCR point, ColorInt colorInt)
 * @bsimethod                                    Sandy.Bugai                      06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryDebug::ClearDebugCurves()
-    { 
-    s_debugCurves.clear(); 
+    {
+    s_debugCurves.clear();
     }

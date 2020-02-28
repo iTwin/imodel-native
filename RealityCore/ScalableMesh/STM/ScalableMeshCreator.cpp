@@ -10,6 +10,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include "ScalableMeshCreator.h"
 #include <ScalableMesh/GeoCoords/GCS.h>
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 /*----------------------------------------------------------------------+
 | Include internal dependencies                                         |
 +----------------------------------------------------------------------*/
@@ -78,7 +79,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #define SCALABLE_MESH_TIMINGS
 
 //NEEDS_WORK_SM : Temp global variable probably only for debug purpose, not sure we want to know if we are in editing.
-bool s_inEditing = false; 
+bool s_inEditing = false;
 bool s_useThreadsInStitching = false;
 bool s_useThreadsInMeshing = false;
 bool s_useThreadsInFiltering = false;
@@ -136,7 +137,7 @@ inline const GCS& GetDefaultGCS ()
 void RegisterPODImportPlugin();
 
 void RegisterDelayedImporters()
-    {    
+    {
     static bool s_areRegistered = false;
 
     if (!s_areRegistered)
@@ -195,14 +196,14 @@ IScalableMeshCreatorPtr IScalableMeshCreator::GetFor (const IScalableMeshPtr& sc
 
 IScalableMeshCreator::IScalableMeshCreator (Impl* implP)
     :   m_implP(implP)
-    {        
+    {
     }
 
 
 IScalableMeshCreator::~IScalableMeshCreator ()
     {
     }
-  
+
 
 SMStatus IScalableMeshCreator::Create (bool isSingleFile, bool restrictLevelForPropagation, bool doPartialUpdate)
     {
@@ -236,7 +237,7 @@ const GeoCoords::GCS& IScalableMeshCreator::GetGCS () const
 #ifdef SCALABLE_MESH_ATP
 
 static uint64_t s_getNbImportedPoints = 0;
-static double s_getImportPointsDuration = -1; 
+static double s_getImportPointsDuration = -1;
 static double s_getLastPointBalancingDuration = -1;
 static double s_getLastMeshBalancingDuration = -1;
 static double s_getLastMeshingDuration = -1;
@@ -363,7 +364,7 @@ IScalableMeshProgress* IScalableMeshCreator::GetProgress()
     {
     return &*m_implP->GetProgress();
     }
-   
+
 bool  IScalableMeshCreator::IsShareable()
     {
     return m_implP->IsShareable();
@@ -406,13 +407,13 @@ IScalableMeshCreator::Impl::Impl(const IScalableMeshPtr& scmPtr)
     :   m_gcs(GetDefaultGCS()),
         m_scmPtr(scmPtr),
         m_lastSyncTime(Time::CreateSmallestPossible()),
-        m_gcsDirty(false),     
+        m_gcsDirty(false),
         m_compressionType(SCM_COMPRESSION_DEFLATE),
         m_workingLayer(DEFAULT_WORKING_LAYER),
         m_isShareable(false),
         m_isCanceled(false),
         m_progress(new ScalableMeshProgress())
-    {  
+    {
     WString smStoreDgnDbStr;
     m_isDgnDb = false;
 	s_useThreadsInMeshing = true;
@@ -432,7 +433,7 @@ IScalableMeshCreator::Impl::~Impl()
     StatusInt status = SaveToFile();
     assert(BSISUCCESS == status);
     m_scmPtr = 0;
-    }   
+    }
 
 StatusInt IScalableMeshCreator::Impl::SetTextureMosaic(MOSAIC_TYPE* mosaicP)
     {
@@ -493,7 +494,7 @@ StatusInt IScalableMeshCreator::Impl::GetStreamedTextureProvider(ITextureProvide
     unitTransform.form3d[0][0] = ratioToMeterH;
     unitTransform.form3d[1][1] = ratioToMeterH;
     unitTransform.form3d[2][2] = ratioToMeterV;
-#else  
+#else
     unitTransform.InitFromScaleFactors(ratioToMeterH, ratioToMeterH, ratioToMeterV);
 #endif
 
@@ -531,7 +532,7 @@ StatusInt IScalableMeshCreator::Impl::SetTextureStreamFromUrl(WString url)
 	GetProgress()->Progress() = 0.0;
 	GetProgress()->UpdateListeners();
 
-    
+
     ITextureProviderPtr textureStreamProviderPtr;
     StatusInt status;
 
@@ -563,7 +564,7 @@ void  IScalableMeshCreator::Impl::SetShareable(bool isShareable)
 {
     if (m_smSQLitePtr.IsValid())
         return;
-    m_isShareable = isShareable;    
+    m_isShareable = isShareable;
 }
 
 ScalableMeshDb* IScalableMeshCreator::Impl::GetDatabaseFile()
@@ -575,19 +576,19 @@ ScalableMeshDb* IScalableMeshCreator::Impl::GetDatabaseFile()
 
 /*
 ScalableMeshFilterType scm_getFilterType ()
-    {    
+    {
     //return SCM_FILTER_CGAL_SIMPLIFIER;
     return SCM_FILTER_DUMB_MESH;
     }
 
 ScalableMeshMesherType Get2_5dMesherType ()
-    {    
+    {
     return SCM_MESHER_2D_DELAUNAY;
     }
 
 ScalableMeshMesherType Get3dMesherType ()
-    {    
-    //return SCM_MESHER_2D_DELAUNAY;    
+    {
+    //return SCM_MESHER_2D_DELAUNAY;
     //return SCM_MESHER_3D_DELAUNAY;
 #ifndef NO_3D_MESH
     return SCM_MESHER_TETGEN;
@@ -674,7 +675,7 @@ SourceRef CreateSourceRefFromIDTMSource(const IDTMSource& source, const WString&
         }
         virtual void                _Visit(const IDTMSourceGroup&      source) override
         {
-      
+
         }
 
 #ifdef VANCOUVER_API
@@ -690,7 +691,7 @@ SourceRef CreateSourceRefFromIDTMSource(const IDTMSource& source, const WString&
 
             if (BSISUCCESS != status)
                 throw SourceNotFoundException();
-            
+
             for (PersistentElementRefP const& elemRef : fileHolder.GetP()->GetAllElementsCollection())
                 if (elemRef->GetElementId() == source.GetTerrainModelID())
                     {
@@ -713,7 +714,7 @@ SourceRef CreateSourceRefFromIDTMSource(const IDTMSource& source, const WString&
 }
 
 int IScalableMeshCreator::Impl::CreateScalableMesh(bool isSingleFile, bool restrictLevelForPropagation, bool doPartialUpdate)
-    {    
+    {
     int status = BSIERROR;
     return status;
     }
@@ -724,7 +725,7 @@ void IScalableMeshCreator::Impl::ConfigureMesherFilter(ISMPointIndexFilter<Point
 }
 
 void IScalableMeshCreator::Impl::SetThreadingOptions(bool useThreadsInMeshing, bool useThreadsInStitching, bool useThreadsInFiltering)
-    {    
+    {
     s_useThreadsInMeshing = useThreadsInMeshing;
     s_useThreadsInStitching = useThreadsInStitching;
     s_useThreadsInFiltering = useThreadsInFiltering;
@@ -734,29 +735,29 @@ void IScalableMeshCreator::Impl::SetThreadingOptions(bool useThreadsInMeshing, b
 * @description
 * @bsimethod                                                  Raymond.Gauthier   12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>& pDataIndex, 
-                                                       bool                   needBalancing, 
-                                                       uint32_t               splitThreshold) 
-    {                                    
+StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>& pDataIndex,
+                                                       bool                   needBalancing,
+                                                       uint32_t               splitThreshold)
+    {
     HFCPtr<IScalableMeshDataStore<MTGGraph, Byte, Byte>> pGraphTileStore;
     bool isSingleFile = true;
 
     isSingleFile = m_smSQLitePtr->IsSingleFile();
-            
+
     // HFC_CREATE_ONLY if all sources are ADD (if one remove or one uptodate => read_write)
     //accessMode = filePtr->GetAccessMode();
     s_inEditing = false;
 
 
    /* ISMPointIndexFilter<PointType, PointIndexExtentType>* pFilter = s_filter != nullptr? s_filter:
-        scm_createFilterFromType<PointType, PointIndexExtentType>(scm_getFilterType()); 
+        scm_createFilterFromType<PointType, PointIndexExtentType>(scm_getFilterType());
 
     ISMPointIndexMesher<PointType, PointIndexExtentType>* pMesher2_5d =
                 Create2_5dMesherFromType<PointType, PointIndexExtentType>(Get2_5dMesherType());
 
     ISMPointIndexMesher<PointType, PointIndexExtentType>* pMesher3d =
                 Create3dMesherFromType<PointType, PointIndexExtentType>(Get3dMesherType());*/
-       
+
     ISMPointIndexFilter<PointType, PointIndexExtentType>* pFilter = nullptr;
     ISMPointIndexMesher<PointType, PointIndexExtentType>* pMesher2_5d = nullptr;
     ISMPointIndexMesher<PointType, PointIndexExtentType>* pMesher3d = nullptr;
@@ -767,9 +768,9 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>& pD
         // SM_NEEDS_WORK_STREAMING : path should not depend on path to stm file. It should be a parameter to the creation process?
         auto position = m_scmFileName.find_last_of(L".3sm");
         int positionShift = 3;
-    
+
         if (position == string::npos)
-            {            
+            {
             position = m_scmFileName.find_last_of(L".stm2");
             positionShift = 4;
             }
@@ -782,11 +783,11 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>& pD
             return ERROR;
             }
 
-         #ifndef LINUX_SCALABLEMESH_BUILD      
+         #ifndef LINUX_SCALABLEMESH_BUILD
         ISMDataStoreTypePtr<Extent3dType> dataStore(new SMStreamingStore<Extent3dType>(streamingFilePath, (SCM_COMPRESSION_DEFLATE == m_compressionType), true));
-        
-        pDataIndex = new MeshIndexType(dataStore, 
-                                       ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),                                                                                                                                                                                         
+
+        pDataIndex = new MeshIndexType(dataStore,
+                                       ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),
                                        splitThreshold,
                                        pFilter,
                                        needBalancing, false, false, true,
@@ -810,9 +811,9 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>& pD
         pDataIndex->SetGenerating(true);
         #endif
 
-       
+
         }
-    else 
+    else
         {
         ISMDataStoreTypePtr<Extent3dType> dataStore(new SMSQLiteStore<Extent3dType>(m_smSQLitePtr));
 
@@ -835,8 +836,8 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>& pD
         newFileNameDir.append(fileNameDir.GetFileNameWithoutExtension());
 #endif
         dataStore->SetProjectFilesPath(newFileNameDir);
-        pDataIndex->SetGenerating(true);        
-        }           
+        pDataIndex->SetGenerating(true);
+        }
     if (pDataIndex != nullptr) pDataIndex->SetProgressCallback(GetProgress());
 
     return SUCCESS;
@@ -870,7 +871,7 @@ SMSQLiteFilePtr IScalableMeshCreator::Impl::GetFile(bool fileExists)
         //m_smSQLitePtr = new SMSQLiteFile();
 
         // Create the storage object and databases
-        if (m_scmPtr == 0) 
+        if (m_scmPtr == 0)
         {
             assert(!m_scmFileName.empty());
             m_smSQLitePtr = new SMSQLiteFile();
@@ -971,7 +972,7 @@ int IScalableMeshCreator::Impl::SaveGCS()
 
     if (!m_smSQLitePtr->SetWkt(extendedWktStr.c_str()))
         return BSIERROR;
-    
+
     m_gcsDirty = false;
     return BSISUCCESS;
 }
@@ -984,7 +985,7 @@ int IScalableMeshCreator::Impl::SaveGCS()
 StatusInt IScalableMeshCreator::Impl::LoadFromFile  ()
     {
     m_smSQLitePtr = GetFile(fileExist(m_scmFileName.c_str()));
-        
+
     if (!Load())
         return BSIERROR;
 
@@ -1042,7 +1043,7 @@ IScalableMeshProgressPtr IScalableMeshCreator::Impl::GetProgress()
 int IScalableMeshCreator::Impl::SaveToFile()
     {
         const bool fileExists = FileExist();
-        
+
         if (fileExists && !IsFileDirty())
             return BSISUCCESS; // Nothing to save
 
@@ -1080,3 +1081,4 @@ void IScalableMeshCreator::Impl::ShowMessageBoxWithTimes(double meshingDuration,
 /*==================================================================*/
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
+POP_DISABLE_DEPRECATION_WARNINGS

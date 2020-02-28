@@ -3,7 +3,6 @@
 * See COPYRIGHT.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #pragma once
-//__PUBLISH_SECTION_START__
 
 #if !defined (__cplusplus)
   #if !defined (mdl_resource_compiler) && !defined (mdl_type_resource_generator)
@@ -150,7 +149,7 @@
     #define INT64_MIN   LLONG_MIN
     #endif
 
-  /** @namespace BentleyApi Contains types defined by %Bentley Systems. 
+  /** @namespace BentleyApi Contains types defined by %Bentley Systems.
       The %Bentley API strategy includes a major-version-specific suffix on the top-level %Bentley namespace.
       This prevents conflicts and allows a single process to link with multiple versions of the %Bentley API
       (which is critical for data upgrade and conversion scenarios).  By default, a @c using for the %Bentley namespace
@@ -194,13 +193,13 @@
       struct _structname_; \
       typedef _structname_* _structname_##P, &_structname_##R; \
       typedef _structname_ const* _structname_##CP; \
-      typedef _structname_ const& _structname_##CR; 
+      typedef _structname_ const& _structname_##CR;
 
   // Define standard pointer types (P, CP, R, CR) in the current namespace for the specified type, without forward-declaring _typename_ as a struct
   #define DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(_typename_) \
       typedef _typename_* _typename_##P, &_typename_##R; \
       typedef _typename_ const* _typename_##CP; \
-      typedef _typename_ const& _typename_##CR; 
+      typedef _typename_ const& _typename_##CR;
 
   // These macros should only be used for classes in the Bentley namespace (consider using DEFINE_POINTER_SUFFIX_TYPEDEFS instead)
   #define ADD_BENTLEY_NAMESPACE_TYPEDEFS1(_namespace_,_sourceName_,_name_,structclass) \
@@ -223,7 +222,7 @@
       #endif
   #endif
 
-#else 
+#else
   // make BENTLEY_NAMESPACE_TYPEDEF do nothing.
   #define BEGIN_BENTLEY_NAMESPACE
   #define END_BENTLEY_NAMESPACE
@@ -327,37 +326,36 @@ BENTLEY_NAMESPACE_TYPEDEFS (BeFileName)
 
 #if defined (_MSC_VER)
     #if (_MSC_VER <= 1600)
-        #error MSC 11 or newer required 
+        #error MSC 11 or newer required
     #endif
 #endif
 
 #if !defined (FOR_EACH)
     #define FOR_EACH(VAR,COL) for (VAR : COL)
-#endif                        
+#endif
 
-//__PUBLISH_SECTION_END__
 #undef BENTLEYDLL_EXPORT
 #ifdef __BENTLEYDLL_BUILD__
     #define BENTLEYDLL_EXPORT EXPORT_ATTRIBUTE
 #else
-//__PUBLISH_SECTION_START__
     #define BENTLEYDLL_EXPORT IMPORT_ATTRIBUTE
-//__PUBLISH_SECTION_END__
 #endif
-
-//__PUBLISH_SECTION_START__
 
 #if defined (_MSC_VER) && !defined (mdl_resource_compiler) && !defined (mdl_type_resource_generator)
     #define PUSH_MSVC_IGNORE(ERRORS_TO_IGNORE)\
         __pragma(warning(push))\
         __pragma(warning(disable:ERRORS_TO_IGNORE))
-    
+
     #define POP_MSVC_IGNORE\
         __pragma(warning(pop))
-    
+
     #include <codeanalysis/warnings.h>
     #define PUSH_MSVC_IGNORE_ANALYZE PUSH_MSVC_IGNORE(ALL_CODE_ANALYSIS_WARNINGS)
     #define POP_MSVC_IGNORE_ANALYZE POP_MSVC_IGNORE
+
+    #define PUSH_DISABLE_DEPRECATION_WARNINGS PUSH_MSVC_IGNORE(4996)
+    #define POP_DISABLE_DEPRECATION_WARNINGS POP_MSVC_IGNORE
+
 #else
     #define PUSH_MSVC_IGNORE(ERRORS_TO_IGNORE)
     #define POP_MSVC_IGNORE
@@ -374,12 +372,16 @@ BENTLEY_NAMESPACE_TYPEDEFS (BeFileName)
     #define CLANG_DIAG_JOINSTR(x,y) CLANG_DIAG_STR(x ## y)
     #define CLANG_DIAG_DO_PRAGMA(x) _Pragma (#x)
     #define CLANG_DIAG_PRAGMA(x) CLANG_DIAG_DO_PRAGMA(clang diagnostic x)
-    
+
     #define PUSH_CLANG_IGNORE(x)\
         CLANG_DIAG_PRAGMA(push)\
         CLANG_DIAG_PRAGMA(ignored CLANG_DIAG_JOINSTR(-W,x))
     #define POP_CLANG_IGNORE\
         CLANG_DIAG_PRAGMA(pop)
+
+    #define PUSH_DISABLE_DEPRECATION_WARNINGS
+    #define POP_DISABLE_DEPRECATION_WARNINGS
+
 #else
     #define PUSH_CLANG_IGNORE(x)
     #define POP_CLANG_IGNORE

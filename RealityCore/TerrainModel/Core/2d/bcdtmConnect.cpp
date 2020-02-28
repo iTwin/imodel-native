@@ -4,7 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
 #include "DTMEvars.h"
-#include "bcdtminlines.h" 
+#include "bcdtminlines.h"
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -12,7 +12,7 @@
 +-------------------------------------------------------------------*/
 BENTLEYDTM_EXPORT int bcdtmConnect_reportValidationErrorsInConnectStrings
 (
- DTM_POINT_ARRAY  **lineStringsPP,              /* ==> Pointer To Line Strings            */ 
+ DTM_POINT_ARRAY  **lineStringsPP,              /* ==> Pointer To Line Strings            */
  DTM_CONNECT_INPUT_STRING_ERROR *stringErrorsP, /* ==> Pointer To Connect String Errors   */
  long    numStringErrors,                       /* ==> Number Of Connect String Errors    */
  WCharCP reportFileP                           /* ==> Point To Report File Name          */
@@ -36,20 +36,22 @@ BENTLEYDTM_EXPORT int bcdtmConnect_reportValidationErrorsInConnectStrings
     if( errorFP == NULL )
       {
        bcdtmWrite_message(1,0,0,"Cannot Open Report File") ;
-       goto errexit ; 
-      }  
+       goto errexit ;
+      }
 /*
 **  Get Date
 */
     time(&localTime) ;
+PUSH_DISABLE_DEPRECATION_WARNINGS
     strcpy(dateStrP,ctime(&localTime)) ;
+POP_DISABLE_DEPRECATION_WARNINGS
     fprintf(errorFP,"%s \n\n",dateStrP) ;
 /*
 **  Write Errors
 */
     if( numStringErrors > 0 )
       {
-       fprintf(errorFP,"Number Of Connect Strings Validation Errors = %6ld\n",numStringErrors) ;  
+       fprintf(errorFP,"Number Of Connect Strings Validation Errors = %6ld\n",numStringErrors) ;
        for( strErrP = stringErrorsP ; strErrP < stringErrorsP + numStringErrors ; ++strErrP )
          {
           switch( strErrP->errorType )
@@ -57,7 +59,7 @@ BENTLEYDTM_EXPORT int bcdtmConnect_reportValidationErrorsInConnectStrings
              case 1  :  // Zero Length String
              fprintf(errorFP,"\nError[%6ld] ** Zero Length String - String Offset = %6ld\n",((long)(strErrP-stringErrorsP)+1),strErrP->string1Offset) ;
              break   ;
-          
+
              case 2  :  // Closed  String
              fprintf(errorFP,"\nError[%6ld] ** Closed String - String Offset = %6ld ** Location = %15.5lf %15.5lf\n",((long)(strErrP-stringErrorsP)+1),strErrP->string1Offset,strErrP->x,strErrP->y) ;
              break   ;
@@ -74,14 +76,14 @@ BENTLEYDTM_EXPORT int bcdtmConnect_reportValidationErrorsInConnectStrings
              fprintf(errorFP,"String 1 Segment = %15.5lf %15.5lf ** %15.5lf %15.5lf\n",p3d1P->x,p3d1P->y,(p3d1P+1)->x,(p3d1P+1)->y) ;
              fprintf(errorFP,"String 2 Segment = %15.5lf %15.5lf ** %15.5lf %15.5lf\n",p3d2P->x,p3d2P->y,(p3d2P+1)->x,(p3d2P+1)->y) ;
              break   ;
-          
+
              case 5  :  // More Than Two Coincident String End Points
              fprintf(errorFP,"\nError[%6ld] ** More Than Two Concident String End Points ** Location = %15.5lf %15.5lf\n",((long)(strErrP-stringErrorsP)+1),strErrP->x,strErrP->y) ;
              break   ;
 
              default :
              break   ;
-          
+
             } ;
          }
       }
@@ -101,7 +103,7 @@ BENTLEYDTM_EXPORT int bcdtmConnect_reportValidationErrorsInConnectStrings
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
-}  
+}
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -110,7 +112,7 @@ BENTLEYDTM_EXPORT int bcdtmConnect_reportValidationErrorsInConnectStrings
 BENTLEYDTM_Private int bcdtmConnect_releaseConnectPointsMemory
 (
  DTM_CONNECT_POINT  **connectPtsPP,           /* Pointer To Connection Line Table      */
- long               numConnectPts             /* Number Of Lines                       */  
+ long               numConnectPts             /* Number Of Lines                       */
 )
 {
  DTM_CONNECT_POINT   *conPntP ;
@@ -126,14 +128,14 @@ BENTLEYDTM_Private int bcdtmConnect_releaseConnectPointsMemory
     for( conPntP = *connectPtsPP ; conPntP < *connectPtsPP + numConnectPts ; ++conPntP )
       {
        if( conPntP->conLineP != NULL )
-         { 
+         {
           for( linePntP = conPntP->conLineP ; linePntP < conPntP->conLineP + conPntP->numConLine ; ++linePntP )
             {
              if( linePntP->intConLineP != NULL ) free(linePntP->intConLineP) ;
-            } 
+            }
           free(conPntP->conLineP) ;
          }
-      } 
+      }
     free(*connectPtsPP) ;
     *connectPtsPP = NULL ;
    }
@@ -154,38 +156,38 @@ BENTLEYDTM_EXPORT int bcdtmConnect_strings
  DTM_CONNECT_INPUT_STRING_ERROR **stringErrorsPP, /* <== Pointer To Line String Intersections   */
  long    *numStringErrorsP,                       /* <== Number Of Intersect Points             */
  DTM_CONNECTED_STRING **connectedStringPP,        /* <== Pointer To Sring Connection Offsets    */
- long    *numConnectedStringsP,                   /* <== Number Of String Connection Offsets    */         
+ long    *numConnectedStringsP,                   /* <== Number Of String Connection Offsets    */
  int     *connectedStringResultP,                 /* <== Connected String Result                */
  int     *connectedStringCloseP,                  /* <== Indicates If Connected String Closes   */
  double  *connectedStringLengthP                  /* <== Length Of Connected String             */
 )
 /*
-** This Function Connects Line Strings 
+** This Function Connects Line Strings
 **
-** Notes 
+** Notes
 **
 ** 1. *connectedStringResultP    ==  0   Lines Connected
 **                               ==  1   Failed To Connect Lines
 **
-** 2. If Knots Or Intersecting Strings Are Detected Then Examine "intersectPointsPP" to get points of intersection. 
+** 2. If Knots Or Intersecting Strings Are Detected Then Examine "intersectPointsPP" to get points of intersection.
 **    If string1Offset and string2Offset are the same value then it is a knot.
 **
-** 3. *connectedStringCloseP indicates that the connected line can be closed. 
-**    The returned connected line is not closed. 
+** 3. *connectedStringCloseP indicates that the connected line can be closed.
+**    The returned connected line is not closed.
 **    It is the responsibility of calling function to close the connected line
 **
 */
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),tdbg=DTM_TIME_VALUE(0) ;
- long   startTime,numConnectLines=0,numConnectPoints=0,numLineConnections=0,numNotConnected=0 ; 
+ long   startTime,numConnectLines=0,numConnectPoints=0,numLineConnections=0,numNotConnected=0 ;
  long   useTinMethod=TRUE,reportErrors=FALSE ;
  DTM_CONNECT_LINE  *connectLinesP=NULL ;
- DTM_CONNECT_POINT *conPntP,*connectPointsP=NULL ; 
+ DTM_CONNECT_POINT *conPntP,*connectPointsP=NULL ;
  BC_DTM_OBJ *dtmP=NULL ;
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Connecting Line Strings") ;
     bcdtmWrite_message(0,0,0,"lineStringsPP   = %p",lineStringsPP) ;
@@ -199,13 +201,13 @@ BENTLEYDTM_EXPORT int bcdtmConnect_strings
  *connectedStringResultP = 0   ;
  *connectedStringCloseP  = 0   ;
  *connectedStringLengthP = 0.0 ;
- *numStringErrorsP       = 0   ; 
+ *numStringErrorsP       = 0   ;
  if( *stringErrorsPP != NULL ) { free(*stringErrorsPP) ; *stringErrorsPP = NULL ; }
 /*
 ** Validate Arguments
 */
  if( lineStringsPP == NULL || numLineStrings < 1 )
-   { 
+   {
     bcdtmWrite_message(2,0,0,"No Line Strings") ;
     goto errexit ;
    }
@@ -229,13 +231,13 @@ BENTLEYDTM_EXPORT int bcdtmConnect_strings
       {
        *numStringErrorsP = 0  ;
        free(*stringErrorsPP)  ;
-       *stringErrorsPP = NULL ; 
+       *stringErrorsPP = NULL ;
        *connectedStringResultP = 0 ;
       }
 /*
 **  Calculate String Length And Test For Closure
 */
-    if( *numStringErrorsP == 0 ) 
+    if( *numStringErrorsP == 0 )
       {
        if( bcdtmString_getStringLength2D((*lineStringsPP)->pointsP,(*lineStringsPP)->numPoints,connectedStringLengthP)) goto errexit ;
        if( bcdtmString_testIfStringCanBeClosed2D((*lineStringsPP)->pointsP,(*lineStringsPP)->numPoints,connectedStringCloseP)) goto errexit ;
@@ -261,13 +263,13 @@ BENTLEYDTM_EXPORT int bcdtmConnect_strings
 /*
 ** Continue If No Validation Errors Detected
 */
- if( ! *numStringErrorsP ) 
+ if( ! *numStringErrorsP )
    {
 /*
 **  Use Tin Method To Determine Connection Lines
 */
     if( useTinMethod == TRUE )
-      { 
+      {
 /*
 **     Build Connect Tin
 */
@@ -290,11 +292,11 @@ BENTLEYDTM_EXPORT int bcdtmConnect_strings
 */
        if( dbg ) bcdtmWrite_message(0,0,0,"Building Connect Tables From Strings") ;
        if( bcdtmConnect_buildConnectLineTablesFromStrings(lineStringsPP,numLineStrings,&connectLinesP,&numConnectLines,&connectPointsP,&numConnectPoints)) goto errexit ;
-      } 
+      }
 /*
 **  Count Number Of Line Connections
 */
-    if( dbg ) 
+    if( dbg )
       {
        bcdtmWrite_message(0,0,0,"Counting Line Connections") ;
        numNotConnected    = 0 ;
@@ -311,14 +313,14 @@ BENTLEYDTM_EXPORT int bcdtmConnect_strings
 /*
 **  Connect Line Strings
 */
-    if( dbg ) bcdtmWrite_message(0,0,0,"Connecting Strings") ; 
+    if( dbg ) bcdtmWrite_message(0,0,0,"Connecting Strings") ;
     if( bcdtmConnect_lineStringsUsingConnectionTables(connectLinesP,numConnectLines,connectPointsP,numConnectPoints,connectedStringPP,numConnectedStringsP,connectedStringResultP,connectedStringCloseP,connectedStringLengthP) ) goto errexit ;
 /*
 **  Check If Connected Line String Can Close
 */
     if( useTinMethod == TRUE && ! *connectedStringResultP && ! *connectedStringCloseP )
       {
-       if( bcdtmConnect_testForConnectedStringClosureDtmObject(dtmP,lineStringsPP,*connectedStringPP,*numConnectedStringsP,connectedStringCloseP)) goto errexit ; 
+       if( bcdtmConnect_testForConnectedStringClosureDtmObject(dtmP,lineStringsPP,*connectedStringPP,*numConnectedStringsP,connectedStringCloseP)) goto errexit ;
       }
    }
 /*
@@ -355,7 +357,7 @@ BENTLEYDTM_Private int bcdtmConnect_testForConnectedStringClosureDtmObject
  long                 numConnectedStrings,
  int                  *stringCloseP
  )
-{ 
+{
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long   ofs,closePnt1,closePnt2,numBreaks ;
  double closeLineX1,closeLineY1,closeLineX2,closeLineY2,conLineX1,conLineY1,conLineX2,conLineY2 ;
@@ -373,7 +375,7 @@ BENTLEYDTM_Private int bcdtmConnect_testForConnectedStringClosureDtmObject
 */
  ofs = connectedStringP->stringOffset ;
  if( connectedStringP->isReversed == 0 )
-   { 
+   {
     closeLineX1 = ((*(lineStringsPP+ofs))->pointsP)->x ;
     closeLineY1 = ((*(lineStringsPP+ofs))->pointsP)->y ;
    }
@@ -381,7 +383,7 @@ BENTLEYDTM_Private int bcdtmConnect_testForConnectedStringClosureDtmObject
    {
     closeLineX1 = ((*(lineStringsPP+ofs))->pointsP+(*(lineStringsPP+ofs))->numPoints-1)->x ;
     closeLineY1 = ((*(lineStringsPP+ofs))->pointsP+(*(lineStringsPP+ofs))->numPoints-1)->y ;
-   } 
+   }
 /*
 **  Get The Last Point Of The Connected String
 */
@@ -391,8 +393,8 @@ BENTLEYDTM_Private int bcdtmConnect_testForConnectedStringClosureDtmObject
     closeLineX2 = ((*(lineStringsPP+ofs))->pointsP+(*(lineStringsPP+ofs))->numPoints-1)->x ;
     closeLineY2 = ((*(lineStringsPP+ofs))->pointsP+(*(lineStringsPP+ofs))->numPoints-1)->y ;
    }
- else 
-   { 
+ else
+   {
     closeLineX2 = ((*(lineStringsPP+ofs))->pointsP)->x ;
     closeLineY2 = ((*(lineStringsPP+ofs))->pointsP)->y ;
    }
@@ -409,7 +411,7 @@ BENTLEYDTM_Private int bcdtmConnect_testForConnectedStringClosureDtmObject
 /*
 ** Test For Intersection With Connection Lines
 */
- if( numBreaks == 2 ) 
+ if( numBreaks == 2 )
    {
     *stringCloseP = 1 ;
 /*
@@ -422,7 +424,7 @@ BENTLEYDTM_Private int bcdtmConnect_testForConnectedStringClosureDtmObject
 */
        ofs = conStrP->stringOffset ;
        if( conStrP->isReversed == 0 )
-         { 
+         {
           conLineX1 = ((*(lineStringsPP+ofs))->pointsP+(*(lineStringsPP+ofs))->numPoints-1)->x ;
           conLineY1 = ((*(lineStringsPP+ofs))->pointsP+(*(lineStringsPP+ofs))->numPoints-1)->y ;
          }
@@ -430,13 +432,13 @@ BENTLEYDTM_Private int bcdtmConnect_testForConnectedStringClosureDtmObject
          {
           conLineX1 = ((*(lineStringsPP+ofs))->pointsP)->x ;
           conLineY1 = ((*(lineStringsPP+ofs))->pointsP)->y ;
-         } 
+         }
 /*
 **     Get Start Coordinates For Connection Line
 */
        ofs = (conStrP+1)->stringOffset ;
        if( (conStrP+1)->isReversed == 0 )
-         { 
+         {
           conLineX2 = ((*(lineStringsPP+ofs))->pointsP)->x ;
           conLineY2 = ((*(lineStringsPP+ofs))->pointsP)->y ;
          }
@@ -444,7 +446,7 @@ BENTLEYDTM_Private int bcdtmConnect_testForConnectedStringClosureDtmObject
          {
           conLineX2 = ((*(lineStringsPP+ofs))->pointsP+(*(lineStringsPP+ofs))->numPoints-1)->x ;
           conLineY2 = ((*(lineStringsPP+ofs))->pointsP+(*(lineStringsPP+ofs))->numPoints-1)->y ;
-         } 
+         }
 /*
 **     Test For Intesection With Closing Connection
 */
@@ -488,7 +490,7 @@ BENTLEYDTM_EXPORT int bcdtmConnect_validateConnectLineStrings
 ** This Function Validates Line Strings Prior To Processing By The Connection Function
 **
 ** Error Codes                 ==  1   Zero Length Line String
-**                             ==  2   Closed Line String 
+**                             ==  2   Closed Line String
 **                             ==  3   Knot(s) Detected In String
 **                             ==  4   Intersecting String
 **                             ==  5   More Than Two Coincident Line String End Points
@@ -517,13 +519,13 @@ BENTLEYDTM_EXPORT int bcdtmConnect_validateConnectLineStrings
 // if( bcdtmString_roundArrayOfLineStrings3D(lineStringsPP,numLineStrings,numDecPlaces)) goto errexit ;
    if( bcdtmString_makeCloseEndPointsOfArrayOfLineStringsCoincident2D(lineStringsPP,numLineStrings,pptol)) goto errexit ;
 /*
-**  Remove Duplicate XY Points From Line Strings 
+**  Remove Duplicate XY Points From Line Strings
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Removing Duplicate XY Points From Line Strings") ;
  for( pointArrayPP = lineStringsPP ; pointArrayPP < lineStringsPP + numLineStrings ; ++pointArrayPP )
    {
     if( bcdtmString_removeDuplicatePoints2D((*pointArrayPP)->pointsP,&(*pointArrayPP)->numPoints,0.0)) goto errexit ;
-   } 
+   }
 /*
 **  Check For Zero Length Strings
 */
@@ -531,8 +533,8 @@ BENTLEYDTM_EXPORT int bcdtmConnect_validateConnectLineStrings
  for( pointArrayPP = lineStringsPP ; pointArrayPP < lineStringsPP + numLineStrings ; ++pointArrayPP )
    {
     if( bcdtmString_getStringLength2D((*pointArrayPP)->pointsP,(*pointArrayPP)->numPoints,&length)) goto errexit ;
-    if( length == 0.0 ) 
-      {  
+    if( length == 0.0 )
+      {
 /*
 **     Check Memory
 */
@@ -560,7 +562,7 @@ BENTLEYDTM_EXPORT int bcdtmConnect_validateConnectLineStrings
        (*stringErrorsPP+*numStringErrorsP)->z = 0.0  ;
        ++*numStringErrorsP ;
       }
-   } 
+   }
 /*
 **  Check For Closed Line Strings
 */
@@ -568,8 +570,8 @@ BENTLEYDTM_EXPORT int bcdtmConnect_validateConnectLineStrings
  for( pointArrayPP = lineStringsPP ; pointArrayPP < lineStringsPP + numLineStrings ; ++pointArrayPP )
    {
     if( bcdtmString_testForClosedString2D((*pointArrayPP)->pointsP,(*pointArrayPP)->numPoints,&closeFlag)) goto errexit ;
-    if( closeFlag ) 
-      {  
+    if( closeFlag )
+      {
 /*
 **     Check Memory
 */
@@ -597,14 +599,14 @@ BENTLEYDTM_EXPORT int bcdtmConnect_validateConnectLineStrings
        (*stringErrorsPP+*numStringErrorsP)->z = (*pointArrayPP)->pointsP->y  ;
        ++*numStringErrorsP ;
       }
-   } 
+   }
 /*
 ** Check For Intersecting Line Strings
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Checking For Intersecting Line Strings") ;
  if( bcdtmString_detectStringIntersections2D(lineStringsPP,numLineStrings,intersectType,&intPtsP,&numIntPts) ) goto errexit ;
- if( numIntPts > 0 ) 
-   {  
+ if( numIntPts > 0 )
+   {
 /*
 **  Qsort Intersection Points
 */
@@ -618,18 +620,18 @@ BENTLEYDTM_EXPORT int bcdtmConnect_validateConnectLineStrings
        for( intPntP = intPtsP ; intPntP < intPtsP + numIntPts ; ++intPntP )
          {
           bcdtmWrite_message(0,0,0,"intPnt[%6ld] ** str1 = %6ld seg1 = %6ld ** str2 = %6ld seg2 = %6ld ** %12.4lf %12.4lf",(long)(intPntP-intPtsP),intPntP->string1Offset,intPntP->segment1Offset,intPntP->string2Offset,intPntP->segment2Offset,intPntP->x,intPntP->y) ;
-         } 
+         }
       }
 /*
 **  Remove Duplicate Intersection Points
 */
     for( intPnt1P = intPtsP , intPnt2P = intPtsP + 1  ; intPnt2P < intPtsP + numIntPts ; ++intPnt2P )
       {
-       if( intPnt2P->x != intPnt1P->x || intPnt2P->y != intPnt1P->y ) 
+       if( intPnt2P->x != intPnt1P->x || intPnt2P->y != intPnt1P->y )
          {
           ++intPnt1P ;
           *intPnt1P = *intPnt2P ;
-         } 
+         }
       }
     numIntPts = (long)(intPnt1P-intPtsP) + 1  ;
 /*
@@ -641,11 +643,11 @@ BENTLEYDTM_EXPORT int bcdtmConnect_validateConnectLineStrings
        for( intPntP = intPtsP ; intPntP < intPtsP + numIntPts ; ++intPntP )
          {
           bcdtmWrite_message(0,0,0,"intPnt[%6ld] ** str1 = %6ld seg1 = %6ld ** str2 = %6ld seg2 = %6ld ** %12.4lf %12.4lf",(long)(intPntP-intPtsP),intPntP->string1Offset,intPntP->segment1Offset,intPntP->string2Offset,intPntP->segment2Offset,intPntP->x,intPntP->y) ;
-         } 
+         }
       }
 /*
 **  Store Intersection Points In String Errors
-*/   
+*/
     for( intPntP = intPtsP ; intPntP < intPtsP + numIntPts ; ++intPntP )
       {
 /*
@@ -666,7 +668,7 @@ BENTLEYDTM_EXPORT int bcdtmConnect_validateConnectLineStrings
 **     Store Error
 */
        if( intPntP->string1Offset == intPntP->string2Offset ) (*stringErrorsPP+*numStringErrorsP)->errorType = 3 ;
-       else                                                   (*stringErrorsPP+*numStringErrorsP)->errorType = 4 ; 
+       else                                                   (*stringErrorsPP+*numStringErrorsP)->errorType = 4 ;
        (*stringErrorsPP+*numStringErrorsP)->string1Offset  = intPntP->string1Offset  ;
        (*stringErrorsPP+*numStringErrorsP)->segment1Offset = intPntP->segment1Offset ;
        (*stringErrorsPP+*numStringErrorsP)->string2Offset  = intPntP->string2Offset  ;
@@ -699,11 +701,11 @@ BENTLEYDTM_EXPORT int bcdtmConnect_validateConnectLineStrings
     (endPtsP+numEndPts)->x = (*pointArrayPP)->pointsP->x ;
     (endPtsP+numEndPts)->y = (*pointArrayPP)->pointsP->y ;
     (endPtsP+numEndPts)->z = (*pointArrayPP)->pointsP->z ;
-    ++numEndPts ; 
+    ++numEndPts ;
     (endPtsP+numEndPts)->x = ((*pointArrayPP)->pointsP+(*pointArrayPP)->numPoints-1)->x ;
     (endPtsP+numEndPts)->y = ((*pointArrayPP)->pointsP+(*pointArrayPP)->numPoints-1)->y ;
     (endPtsP+numEndPts)->z = ((*pointArrayPP)->pointsP+(*pointArrayPP)->numPoints-1)->z ;
-    ++numEndPts ; 
+    ++numEndPts ;
    }
 /*
 ** Qsort End Points
@@ -762,7 +764,7 @@ BENTLEYDTM_EXPORT int bcdtmConnect_validateConnectLineStrings
 ** Cleanup
 */
  cleanup :
- if( endPtsP != NULL ) free(endPtsP) ; 
+ if( endPtsP != NULL ) free(endPtsP) ;
 /*
 ** Job Completed
 */
@@ -818,7 +820,7 @@ BENTLEYDTM_EXPORT int bcdtmConnect_dtmFeatureTypeOccurrencesInDtmObject
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
     ++seqConnect ;
     bcdtmWrite_message(0,0,0,"Connecting Feature Strings ** Sequence %4ld",seqConnect) ;
@@ -848,12 +850,12 @@ BENTLEYDTM_EXPORT int bcdtmConnect_dtmFeatureTypeOccurrencesInDtmObject
        for( p3dP = (*pointArrayPP)->pointsP ; p3dP < (*pointArrayPP)->pointsP + (*pointArrayPP)->numPoints ; ++p3dP )
          {
           bcdtmWrite_message(0,0,0,"**** Point[%6ld] = %12.5lf %12.5lf %10.4lf",(long)(p3dP-(*pointArrayPP)->pointsP),p3dP->x,p3dP->y,p3dP->y) ;
-         } 
+         }
       }
    }
 /*
 ** Build Connect Tin From Features
-*/  
+*/
  if( dbg ) bcdtmWrite_message(0,0,0,"Building Connect Tin") ;
  if( bcdtmConnect_buildConnectDtmObject(&dtmP,featureArrayPP,numFeatureArray)) goto errexit ;
  if( dbg ) bcdtmWrite_toFileDtmObject(dtmP,L"connect.tin") ;
@@ -883,11 +885,11 @@ BENTLEYDTM_EXPORT int bcdtmConnect_dtmFeatureTypeOccurrencesInDtmObject
 */
  if( dbg )
    {
-    bcdtmWrite_message(0,0,0,"numConnectLines              = %6ld",*numConnectLinesP) ; 
+    bcdtmWrite_message(0,0,0,"numConnectLines              = %6ld",*numConnectLinesP) ;
     bcdtmWrite_message(0,0,0,"numConnectPoints             = %6ld",*numConnectPointsP) ;
     bcdtmWrite_message(0,0,0,"Number Of Line Connections   = %6ld",*numLineConnectionsP) ;
     bcdtmWrite_message(0,0,0,"Number Of Unconnected Points = %6ld",numNotConnected) ;
-   } 
+   }
 /*
 ** Cleanup
 */
@@ -924,7 +926,7 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectDtmObject
  double  dx,dy,extInc,xMin,yMin,zMin,xMax,yMax,zMax ;
  DPoint3d     randomSpot[4] ;
  DTM_POINT_ARRAY **pntArrayPP ;
- DTMFeatureId  nullFeatureId=DTM_NULL_FEATURE_ID  ; 
+ DTMFeatureId  nullFeatureId=DTM_NULL_FEATURE_ID  ;
 
 /*
 ** Write Entry Message
@@ -952,7 +954,7 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectDtmObject
  dx = xMax - xMin ;
  dy = yMax - yMin ;
  if( dx >= dy ) extInc = dx / (double)(numInc ) ;
- else           extInc = dy / (double)(numInc ) ;         
+ else           extInc = dy / (double)(numInc ) ;
  xMin -= extInc ;
  xMax += extInc ;
  yMin -= extInc ;
@@ -1015,7 +1017,7 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectTablesFromTinLinesDtmObject
  long   firstPnt,lastPnt,numBreaks,pointOneFeature,numIntPts,intersectType=1,numConOfs,numIntConLines,numPntConLines=0 ;
  double dx,dy,lineLength=0.0 ;
  DPoint3d    *p3dP,*conLinePtsP=NULL ;
- 
+
  DTM_POINT_ARRAY        *pntArrayP=NULL,**pntArrayPP,**connectionLinesPP=NULL ;
  DTM_CONNECT_LINE       *lineP ;
  DTM_CONNECT_POINT      *pointP ;
@@ -1069,10 +1071,10 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectTablesFromTinLinesDtmObject
     lineLength = 0 ;
     for( p3dP = (*pntArrayPP)->pointsP + 1 ; p3dP <  (*pntArrayPP)->pointsP + (*pntArrayPP)->numPoints ; ++p3dP )
       {
-       dx = p3dP->x - (p3dP-1)->x ; 
-       dy = p3dP->y - (p3dP-1)->y ; 
+       dx = p3dP->x - (p3dP-1)->x ;
+       dy = p3dP->y - (p3dP-1)->y ;
        lineLength = lineLength + sqrt( dx*dx + dy*dy) ;
-      }   
+      }
 /*
 **  Populate Connect Line Table
 */
@@ -1141,19 +1143,19 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectTablesFromTinLinesDtmObject
        pnt1 = node ;
        if( bcdtmConnect_storeConnectionLineDtmObject(dtmP,&conLinesP,pnt1,pnt1,&numConLines,&memConLines,memConLinesInc)) goto errexit ;
        nodesP->sPtr = nodesP->tPtr = dtmP->nullPnt ;
-      }   
+      }
    }
 /*
 **  Write Number Of Connection Lines
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Number Of Zero Length Connection Lines = %6ld",numConLines) ;
     for( conLineP = conLinesP ; conLineP < conLinesP + numConLines ; ++conLineP)
       {
        bcdtmWrite_message(0,0,0,"Connection Line[%4ld] ** fromPoint = %6ld toPoint = %6ld line = %6ld distance = %10.4lf",(long)(conLineP-conLinesP),conLineP->fromPoint,conLineP->toPoint,conLineP->line,conLineP->distance) ;
       }
-   } 
+   }
 /*
 ** Scan Tin And Store None Zero Length Connection Lines
 */
@@ -1172,22 +1174,22 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectTablesFromTinLinesDtmObject
 */
        line = nodesP->sPtr / 2 ;
        if( nodesP->sPtr % 2 == 1 )  bcdtmFind_closestPointDtmObject(dtmP,(*(lineStringsPP+line))->pointsP->x,(*(lineStringsPP+line))->pointsP->y,&pnt2) ;
-       else                         bcdtmFind_closestPointDtmObject(dtmP,((*(lineStringsPP+line))->pointsP+(*(lineStringsPP+line))->numPoints-1)->x,((*(lineStringsPP+line))->pointsP+(*(lineStringsPP+line))->numPoints-1)->y,&pnt2) ; 
-       if( dbg ) 
+       else                         bcdtmFind_closestPointDtmObject(dtmP,((*(lineStringsPP+line))->pointsP+(*(lineStringsPP+line))->numPoints-1)->x,((*(lineStringsPP+line))->pointsP+(*(lineStringsPP+line))->numPoints-1)->y,&pnt2) ;
+       if( dbg )
          {
-          bcdtmWrite_message(0,0,0,"tin-pnt1 = %8ld ** %12.5lf %12.5lf ** Connect Point = %6ld",pnt1,pointAddrP(dtmP,pnt1)->x,pointAddrP(dtmP,pnt1)->y,nodeAddrP(dtmP,pnt1)->sPtr) ; 
-          bcdtmWrite_message(0,0,0,"tin-pnt2 = %8ld ** %12.5lf %12.5lf ** Connect Point = %6ld",pnt2,pointAddrP(dtmP,pnt2)->x,pointAddrP(dtmP,pnt2)->y,nodeAddrP(dtmP,pnt2)->sPtr) ; 
+          bcdtmWrite_message(0,0,0,"tin-pnt1 = %8ld ** %12.5lf %12.5lf ** Connect Point = %6ld",pnt1,pointAddrP(dtmP,pnt1)->x,pointAddrP(dtmP,pnt1)->y,nodeAddrP(dtmP,pnt1)->sPtr) ;
+          bcdtmWrite_message(0,0,0,"tin-pnt2 = %8ld ** %12.5lf %12.5lf ** Connect Point = %6ld",pnt2,pointAddrP(dtmP,pnt2)->x,pointAddrP(dtmP,pnt2)->y,nodeAddrP(dtmP,pnt2)->sPtr) ;
          }
 /*
 **     Get Dtm Feature For Point One
-*/ 
+*/
        if( bcdtmList_getDtmFeaturesForPointDtmObject(dtmP,pnt1,pointFeaturesP) ) goto errexit ;
        numPointFeatures = (long)pointFeaturesP.size();
        pointOneFeature = pointFeaturesP[0].dtmFeature ;
        if( dbg ) bcdtmWrite_message(0,0,0,"pointOneFeature = %6ld",pointOneFeature) ;
 /*
 **     Scan Point One
-*/ 
+*/
        cPtr = nodeAddrP(dtmP,pnt1)->cPtr ;
        while( cPtr != dtmP->nullPtr )
          {
@@ -1197,7 +1199,7 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectTablesFromTinLinesDtmObject
 /*
 **        Check For Connection To Another Line End Point
 */
-          if( pnt3 != pnt2 && nodeAddrP(dtmP,pnt3)->sPtr != dtmP->nullPnt && ! bcdtmList_testForLineOnDtmFeatureTypeDtmObject(dtmP,DTMFeatureType::Breakline,pnt1,pnt3) ) 
+          if( pnt3 != pnt2 && nodeAddrP(dtmP,pnt3)->sPtr != dtmP->nullPnt && ! bcdtmList_testForLineOnDtmFeatureTypeDtmObject(dtmP,DTMFeatureType::Breakline,pnt1,pnt3) )
             {
              if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Storing Connection Line = %6ld %6ld ** %6ld %6ld",pnt1,pnt3,nodeAddrP(dtmP,pnt1)->sPtr,nodeAddrP(dtmP,pnt3)->sPtr) ;
              if( bcdtmConnect_storeConnectionLineDtmObject(dtmP,&conLinesP,pnt1,pnt3,&numConLines,&memConLines,memConLinesInc)) goto errexit ;
@@ -1211,7 +1213,7 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectTablesFromTinLinesDtmObject
              numPointFeatures = (long)pointFeaturesP.size();
              if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Point Features = %6ld",numPointFeatures) ;
              if( numPointFeatures > 0 && pointOneFeature != pointFeaturesP[0].dtmFeature  )
-               { 
+               {
                 if( bcdtmList_getFirstAndLastPointForDtmFeatureDtmObject(dtmP,pointFeaturesP[0].dtmFeature,&firstPnt,&lastPnt)) goto errexit ;
 /*
 **              Check For Connection To Feature First Point
@@ -1227,7 +1229,7 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectTablesFromTinLinesDtmObject
                       if( bcdtmConnect_storeConnectionLineDtmObject(dtmP,&conLinesP,pnt1,firstPnt,&numConLines,&memConLines,memConLinesInc)) goto errexit ;
                       if( bcdtmConnect_storeConnectionLineDtmObject(dtmP,&conLinesP,firstPnt,pnt1,&numConLines,&memConLines,memConLinesInc)) goto errexit ;
                      }
-                  } 
+                  }
 /*
 **              Check For Connection To Feature Last Point
 */
@@ -1242,23 +1244,23 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectTablesFromTinLinesDtmObject
                       if( bcdtmConnect_storeConnectionLineDtmObject(dtmP,&conLinesP,pnt1,lastPnt,&numConLines,&memConLines,memConLinesInc)) goto errexit ;
                       if( bcdtmConnect_storeConnectionLineDtmObject(dtmP,&conLinesP,lastPnt,pnt1,&numConLines,&memConLines,memConLinesInc)) goto errexit ;
                      }
-                  } 
+                  }
                }
             }
-         } 
+         }
       }
-   } 
+   }
 /*
 **  Write Number Of Connection Lines
 */
- if( dbg == 2 ) 
+ if( dbg == 2 )
    {
     bcdtmWrite_message(0,0,0,"Number Of Connection Lines = %6ld",numConLines) ;
     for( conLineP = conLinesP ; conLineP < conLinesP + numConLines ; ++conLineP)
       {
        bcdtmWrite_message(0,0,0,"Connection Line[%4ld] ** fromPoint = %6ld toPoint = %6ld distance = %10.4lf",(long)(conLineP-conLinesP),conLineP->fromPoint,conLineP->toPoint,conLineP->distance) ;
       }
-   } 
+   }
 /*
 **  Add Connection Lines To Connect Points Table
 */
@@ -1289,20 +1291,20 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectTablesFromTinLinesDtmObject
          {
           ++conLine1P ;
           if( conLine1P != conLine2P ) *conLine1P = *conLine2P ;
-         } 
+         }
       }
     numConLines = (long)(conLine1P-conLinesP) + 1 ;
 /*
 **  Write Connection Lines
 */
-    if( dbg ) 
+    if( dbg )
       {
        bcdtmWrite_message(0,0,0,"Number Of Connection Lines = %6ld",numConLines) ;
        for( conLineP = conLinesP ; conLineP < conLinesP + numConLines ; ++conLineP)
          {
           bcdtmWrite_message(0,0,0,"Connection Line[%4ld] ** fromPoint = %6ld toPoint = %6ld distance = %10.4lf",(long)(conLineP-conLinesP),conLineP->fromPoint,conLineP->toPoint,conLineP->distance) ;
          }
-      } 
+      }
 /*
 **  Scan Connection Lines And Populate Connect Points Table With Connection Lines
 */
@@ -1323,7 +1325,7 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectTablesFromTinLinesDtmObject
          {
           bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
           goto errexit ;
-         }  
+         }
 /*
 **     Populate Connection Lines
 */
@@ -1335,14 +1337,14 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectTablesFromTinLinesDtmObject
 /*
 **     Write Connection Lines For Point
 */
-       if( dbg ) 
+       if( dbg )
          {
           bcdtmWrite_message(0,0,0,"Number Of Connection Lines For Point %6ld = %6ld",conLine1P->fromPoint,numPntConLines) ;
           for( conLineP = pntConLinesP ; conLineP < pntConLinesP + numPntConLines ; ++conLineP)
             {
              bcdtmWrite_message(0,0,0,"Connection Line[%4ld] ** fromPoint = %6ld toPoint = %6ld distance = %10.4lf",(long)(conLineP-pntConLinesP),conLineP->fromPoint,conLineP->toPoint,conLineP->distance) ;
             }
-         } 
+         }
 /*
 **     Populate Connection Lines
 */
@@ -1352,7 +1354,7 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectTablesFromTinLinesDtmObject
 /*
 **     Reset Connection Line Pointer
 */
-       conLine1P = conLine2P ;  
+       conLine1P = conLine2P ;
       }
    }
 /*
@@ -1386,11 +1388,11 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectTablesFromTinLinesDtmObject
        bcdtmWrite_message(0,0,0,"Point[%4ld] ** line = %4ld ** pnt1 = %4ld pnt2 = %4ld isRev = %2ld ** numConLines = %4ld",(long)(pointP-*connectPointsPP),pointP->line,pointP->point1,pointP->point2,pointP->isReversed,pointP->numConLine) ;
        if( pointP->numConLine > 0 )
          {
-          for( conLineP = pointP->conLineP ; conLineP < pointP->conLineP + pointP->numConLine ; ++conLineP ) 
+          for( conLineP = pointP->conLineP ; conLineP < pointP->conLineP + pointP->numConLine ; ++conLineP )
             {
              bcdtmWrite_message(0,0,0,"**** Connected Point[%4ld] ** pnt = %8ld line = %4ld distance = %10.4lf",(long)(conLineP-pointP->conLineP),conLineP->toPoint,conLineP->line,conLineP->distance) ;
-            }  
-         } 
+            }
+         }
       }
    }
 /*
@@ -1426,7 +1428,7 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectTablesFromTinLinesDtmObject
       {
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        goto errexit ;
-      }  
+      }
     for( pntArrayPP = connectionLinesPP ; pntArrayPP < connectionLinesPP + numConnectionLines ; ++pntArrayPP ) *pntArrayPP = NULL ;
 /*
 **  Polulate Connection Lines Array
@@ -1452,7 +1454,7 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectTablesFromTinLinesDtmObject
             {
              bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
              goto errexit ;
-            }  
+            }
 /*
 **        Set Connection Line Start Coordinates
 */
@@ -1493,7 +1495,7 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectTablesFromTinLinesDtmObject
             {
              bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
              goto errexit ;
-            } 
+            }
 /*
 **        Populate Point Array
 */
@@ -1516,25 +1518,25 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectTablesFromTinLinesDtmObject
     if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Connection Line Intersections = %6ld",numIntPts) ;
 /*
 **  Write Intersection Points
-*/ 
-    if( dbg == 1 ) 
+*/
+    if( dbg == 1 )
       {
        bcdtmWrite_message(0,0,0,"Number Of Intersection Points With Other Connect Lines = %6ld",numIntPts) ;
        for( int1P = intPtsP ; int1P < intPtsP + numIntPts ; ++int1P )
          {
-          bcdtmWrite_message(0,0,0,"intPoint[%4ld] ** str1 = %6ld seg1 = %6ld ** str2 = %6ld seg2 = %6ld ** %12.5lf %12.5lf %10.4lf",(long)(int1P-intPtsP),int1P->string1Offset,int1P->segment1Offset,int1P->string2Offset,int1P->segment2Offset,int1P->x,int1P->y,int1P->zSegment1) ; 
+          bcdtmWrite_message(0,0,0,"intPoint[%4ld] ** str1 = %6ld seg1 = %6ld ** str2 = %6ld seg2 = %6ld ** %12.5lf %12.5lf %10.4lf",(long)(int1P-intPtsP),int1P->string1Offset,int1P->segment1Offset,int1P->string2Offset,int1P->segment2Offset,int1P->x,int1P->y,int1P->zSegment1) ;
          }
       }
 /*
 **  Add Intersections To Connection Line Tables Of Connect Points
-*/ 
+*/
     if( numIntPts > 0 )
       {
 /*
 **     Convert Line And Segment Offsets To Connect Point Offsets
 */
        if( dbg ) bcdtmWrite_message(0,0,0,"Coverting Line Segment Offsets To Connect Point Offsets") ;
-       for( intP = intPtsP ; intP < intPtsP + numIntPts ; ++intP) 
+       for( intP = intPtsP ; intP < intPtsP + numIntPts ; ++intP)
          {
           line = intP->string1Offset ;
           intP->string1Offset  = (conOffsetsP+line)->pnt1 ;
@@ -1545,13 +1547,13 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectTablesFromTinLinesDtmObject
          }
 /*
 **     Write Intersection Points
-*/ 
-       if( dbg == 1 ) 
+*/
+       if( dbg == 1 )
          {
           bcdtmWrite_message(0,0,0,"Number Of Intersection Points With Other Connect Lines = %6ld",numIntPts) ;
           for( int1P = intPtsP ; int1P < intPtsP + numIntPts ; ++int1P )
             {
-             bcdtmWrite_message(0,0,0,"intPoint[%4ld] ** str1 = %6ld seg1 = %6ld ** str2 = %6ld seg2 = %6ld ** %12.5lf %12.5lf %10.4lf",(long)(int1P-intPtsP),int1P->string1Offset,int1P->segment1Offset,int1P->string2Offset,int1P->segment2Offset,int1P->x,int1P->y,int1P->zSegment1) ; 
+             bcdtmWrite_message(0,0,0,"intPoint[%4ld] ** str1 = %6ld seg1 = %6ld ** str2 = %6ld seg2 = %6ld ** %12.5lf %12.5lf %10.4lf",(long)(int1P-intPtsP),int1P->string1Offset,int1P->segment1Offset,int1P->string2Offset,int1P->segment2Offset,int1P->x,int1P->y,int1P->zSegment1) ;
             }
          }
 /*
@@ -1575,33 +1577,33 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectTablesFromTinLinesDtmObject
 */
           if( dbg )
             {
-             for( intP = int1P ; intP <= int2P ; ++intP) 
+             for( intP = int1P ; intP <= int2P ; ++intP)
                {
-                bcdtmWrite_message(0,0,0,"Connection Line %6ld %6ld Intersects Connection Line %6ld %6ld",intP->string1Offset,intP->segment1Offset,intP->string2Offset,intP->segment2Offset) ;  
-               } 
+                bcdtmWrite_message(0,0,0,"Connection Line %6ld %6ld Intersects Connection Line %6ld %6ld",intP->string1Offset,intP->segment1Offset,intP->string2Offset,intP->segment2Offset) ;
+               }
             }
 /*
 **        Count Number Of Intersected Connection Lines
-*/   
+*/
           numIntConLines = (long)(int2P-int1P) + 1 ;
           if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Intersections For Connect Line %6ld %6ld = %6ld",int1P->string1Offset,int1P->segment1Offset,numIntConLines) ;
           intConLinesP = ( DTM_CONNECTION_LINE_INTERSECT * ) malloc ( numIntConLines * sizeof(DTM_CONNECTION_LINE_INTERSECT)) ;
           if( intConLinesP == NULL )
             {
              bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-             goto errexit ; 
+             goto errexit ;
             }
 /*
 **        Store Connection Line Intersections
 */
           intConLineP = intConLinesP ;
-          for( intP = int1P ; intP <= int2P ; ++intP) 
+          for( intP = int1P ; intP <= int2P ; ++intP)
             {
 /*
 **           Find Offset For Intersected Connection Lines
 */
              ofsIntConLine = -1 ;
-             pointP  = *connectPointsPP + intP->string2Offset  ;      
+             pointP  = *connectPointsPP + intP->string2Offset  ;
              for( conLineP = pointP->conLineP ; conLineP < pointP->conLineP + pointP->numConLine && ofsIntConLine == -1 ; ++conLineP )
                {
                if( conLineP->toPoint == intP->segment2Offset ) ofsIntConLine = (long)(conLineP-pointP->conLineP) ;
@@ -1625,18 +1627,18 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectTablesFromTinLinesDtmObject
 /*
 **        Find Offset For Intersecting Connection Line
 */
-          pointP = *connectPointsPP + int1P->string1Offset  ; 
+          pointP = *connectPointsPP + int1P->string1Offset  ;
           for( conLineP = pointP->conLineP ; conLineP < pointP->conLineP + pointP->numConLine && intConLinesP != NULL ; ++conLineP )
             {
-             if( conLineP->toPoint == int1P->segment1Offset ) 
+             if( conLineP->toPoint == int1P->segment1Offset )
                {
                 conLineP->intConLineP   = intConLinesP ;
                 conLineP->numIntConLine = numIntConLines ;
-                intConLinesP = NULL ;      
+                intConLinesP = NULL ;
                }
             }
 /*
-**        Check Connection Line Found  
+**        Check Connection Line Found
 */
           if( intConLinesP != NULL )
             {
@@ -1649,7 +1651,7 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectTablesFromTinLinesDtmObject
           int1P = int2P ;
          }
       }
-   }  
+   }
 /*
 ** Cleanup
 */
@@ -1663,8 +1665,8 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectTablesFromTinLinesDtmObject
    {
     if( pntArrayP->pointsP != NULL ) free(pntArrayP->pointsP ) ;
     free( pntArrayP) ;
-    pntArrayP = NULL ; 
-   } 
+    pntArrayP = NULL ;
+   }
  if( connectionLinesPP != NULL ) bcdtmMem_freePointerArrayToPointArrayMemory(&connectionLinesPP,numConnectionLines) ;
 /*
 ** Job Completed
@@ -1699,7 +1701,7 @@ BENTLEYDTM_Private int bcdtmConnect_getNumberOfDrapeBreakBetweenPointsDtmObject
  int               ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long              numDrapePts = 0, numStringPts = 2;
  bool  dtmFeatureOption = false;
- DPoint3d               stringPts[2] ;          
+ DPoint3d               stringPts[2] ;
  DTMDrapePoint   *drapeP;
  bvector<DTMDrapePoint> drapePtsP;
 /*
@@ -1767,7 +1769,7 @@ BENTLEYDTM_Private int bcdtmConnect_storeConnectionLineDtmObject
  BC_DTM_OBJ  *dtmP ,                  /*  ==> Pointer To Tin Object                */
  DTM_CONNECTION_LINE **conLinesPP,     /* <==> Pointer To Connection Lines          */
  long  fromPoint,                      /*  ==> Connection From Point                */
- long  toPoint,                        /*  ==> Connection To Point                  */                        
+ long  toPoint,                        /*  ==> Connection To Point                  */
  long  *numConLinesP,                  /* <==> Number Of Connection Lines           */
  long  *memConLinesP,                  /* <==> Memory Connection Lines              */
  long  memConLinesInc                  /*  ==> Memory Increment Amount              */
@@ -1808,7 +1810,7 @@ BENTLEYDTM_Private int bcdtmConnect_storeConnectionLineDtmObject
       {
        *memConLinesP = *memConLinesP + memConLinesInc ;
        if( *conLinesPP == NULL ) *conLinesPP = ( DTM_CONNECTION_LINE * ) malloc( *memConLinesP * sizeof(DTM_CONNECTION_LINE)) ;
-       else                      *conLinesPP = ( DTM_CONNECTION_LINE * ) realloc( *conLinesPP , *memConLinesP * sizeof(DTM_CONNECTION_LINE)) ;  
+       else                      *conLinesPP = ( DTM_CONNECTION_LINE * ) realloc( *conLinesPP , *memConLinesP * sizeof(DTM_CONNECTION_LINE)) ;
        if( *conLinesPP == NULL )
          {
           bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
@@ -1819,33 +1821,33 @@ BENTLEYDTM_Private int bcdtmConnect_storeConnectionLineDtmObject
 **  Store Connected Line
 */
     if( ! zeroLength )
-      { 
+      {
        (*conLinesPP+*numConLinesP)->fromPoint     = nodeAddrP(dtmP,fromPoint)->sPtr ;
        (*conLinesPP+*numConLinesP)->toPoint       = nodeAddrP(dtmP,toPoint)->sPtr ;
-       (*conLinesPP+*numConLinesP)->line          = nodeAddrP(dtmP,toPoint)->sPtr / 2 ; 
+       (*conLinesPP+*numConLinesP)->line          = nodeAddrP(dtmP,toPoint)->sPtr / 2 ;
        (*conLinesPP+*numConLinesP)->distance      = bcdtmMath_pointDistanceDtmObject(dtmP,fromPoint,toPoint) ;
-       (*conLinesPP+*numConLinesP)->intConLineP   = NULL  ; 
-       (*conLinesPP+*numConLinesP)->numIntConLine = 0     ; 
-       ++*numConLinesP ; 
+       (*conLinesPP+*numConLinesP)->intConLineP   = NULL  ;
+       (*conLinesPP+*numConLinesP)->numIntConLine = 0     ;
+       ++*numConLinesP ;
       }
     else
       {
        (*conLinesPP+*numConLinesP)->fromPoint     = nodeAddrP(dtmP,fromPoint)->tPtr ;
        (*conLinesPP+*numConLinesP)->toPoint       = nodeAddrP(dtmP,toPoint)->sPtr ;
-       (*conLinesPP+*numConLinesP)->line          = nodeAddrP(dtmP,toPoint)->sPtr / 2 ; 
+       (*conLinesPP+*numConLinesP)->line          = nodeAddrP(dtmP,toPoint)->sPtr / 2 ;
        (*conLinesPP+*numConLinesP)->distance      = 0.0 ;
-       (*conLinesPP+*numConLinesP)->intConLineP   = NULL  ; 
-       (*conLinesPP+*numConLinesP)->numIntConLine = 0     ; 
-       ++*numConLinesP ; 
+       (*conLinesPP+*numConLinesP)->intConLineP   = NULL  ;
+       (*conLinesPP+*numConLinesP)->numIntConLine = 0     ;
+       ++*numConLinesP ;
        (*conLinesPP+*numConLinesP)->fromPoint     = nodeAddrP(dtmP,fromPoint)->sPtr ;
        (*conLinesPP+*numConLinesP)->toPoint       = nodeAddrP(dtmP,toPoint)->tPtr ;
-       (*conLinesPP+*numConLinesP)->line          = nodeAddrP(dtmP,toPoint)->tPtr / 2 ; 
+       (*conLinesPP+*numConLinesP)->line          = nodeAddrP(dtmP,toPoint)->tPtr / 2 ;
        (*conLinesPP+*numConLinesP)->distance      = 0.0 ;
-       (*conLinesPP+*numConLinesP)->intConLineP   = NULL  ; 
-       (*conLinesPP+*numConLinesP)->numIntConLine = 0     ; 
-       ++*numConLinesP ; 
+       (*conLinesPP+*numConLinesP)->intConLineP   = NULL  ;
+       (*conLinesPP+*numConLinesP)->numIntConLine = 0     ;
+       ++*numConLinesP ;
       }
-   } 
+   }
 /*
 ** Cleanup
 */
@@ -1914,7 +1916,7 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectLineTablesFromStrings
  long   numConnectPts,numConOfs=0,numConIntPts=0,numConIntPtsFnd=0 ;
  double dx,dy,lineLength=0.0,pntX,pntY,conPntX,conPntY ;
  DPoint3d    *p3dP,*ptsP ;
- 
+
  DTM_POINT_ARRAY   **pntArrayPP,**pntArray1PP,**pntArray2PP,**localStringsPP=NULL,*newLineP=NULL ;
  DTM_CONNECT_LINE  *lineP ;
  DTM_CONNECT_POINT *pointP ;
@@ -1938,7 +1940,7 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectLineTablesFromStrings
        p3dP   = (*pntArrayPP)->pointsP ;
        numPts = (*pntArrayPP)->numPoints ;
        bcdtmWrite_message(0,0,0,"EndPoint[%6ld] = %12.5lf %12.5lf %10.4lf",pnt1,p3dP->x,p3dP->y,p3dP->z) ;
-       p3dP   = p3dP + numPts - 1 ; 
+       p3dP   = p3dP + numPts - 1 ;
        bcdtmWrite_message(0,0,0,"EndPoint[%6ld] = %12.5lf %12.5lf %10.4lf",pnt2,p3dP->x,p3dP->y,p3dP->z) ;
       }
    }
@@ -1978,7 +1980,7 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectLineTablesFromStrings
     *pntArray1PP = newLineP ;
     ptsP     = NULL ;
     newLineP = NULL ;
-   } 
+   }
 /*
 ** Allocate memory To Hold Connection Point Offsets
 */
@@ -1993,7 +1995,7 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectLineTablesFromStrings
 ** Populate Connection Points Offset
 */
  numConOfs = 0 ;
- for( pntArray1PP = lineStringsPP  ; pntArray1PP < lineStringsPP + numLineStrings ; ++pntArray1PP ) 
+ for( pntArray1PP = lineStringsPP  ; pntArray1PP < lineStringsPP + numLineStrings ; ++pntArray1PP )
    {
     line1 = (long)(pntArray1PP-lineStringsPP) ;
 /*
@@ -2006,14 +2008,14 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectLineTablesFromStrings
 */
        if( numPts == 0 ) pnt1 = line1 * 2 ;
        else              pnt1 = line1 * 2 + 1 ;
-       for( pntArray2PP = lineStringsPP ; pntArray2PP < lineStringsPP + numLineStrings ; ++pntArray2PP ) 
+       for( pntArray2PP = lineStringsPP ; pntArray2PP < lineStringsPP + numLineStrings ; ++pntArray2PP )
          {
           if( pntArray2PP != pntArray1PP )
             {
-             line2 = (long)(pntArray2PP-lineStringsPP) ; 
+             line2 = (long)(pntArray2PP-lineStringsPP) ;
 /*
 **           Populate Connect Offsets
-*/         
+*/
              pnt2  = line2 * 2 ;
              (conOffsetsP+numConOfs)->pnt1  = pnt1 ;
              (conOffsetsP+numConOfs)->pnt2  = pnt2 ;
@@ -2025,8 +2027,8 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectLineTablesFromStrings
              (conOffsetsP+numConOfs)->valid = 1    ;
              ++numConOfs ;
             }
-         } 
-      } 
+         }
+      }
    }
 /*
 **  Write Connection Offsets
@@ -2057,14 +2059,14 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectLineTablesFromStrings
     if( conOfsP->pnt1 < conOfsP->pnt2 )
       {
        line1 = conOfsP->pnt1 / 2 ;
-       line2 = conOfsP->pnt2 / 2 ; 
+       line2 = conOfsP->pnt2 / 2 ;
        pnt1  = conOfsP->pnt1 - line1 * 2 ;
        pnt2  = conOfsP->pnt2 - line2 * 2 ;
        *(conLineIndexP+numLine) = (long)(conOfsP-conOffsetsP) ;
        ++numLine ;
 /*
 **     Allocate Memory For Connection Line Points
-*/ 
+*/
        numPts = 2 ;
        ptsP = (DPoint3d * ) malloc( numPts * sizeof(DPoint3d)) ;
        if( ptsP == NULL )
@@ -2076,7 +2078,7 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectLineTablesFromStrings
 **     Set Coordinates For Pnt1
 */
        if( pnt1 == 0 )
-         { 
+         {
           ptsP[0].x = (*(lineStringsPP+line1))->pointsP->x ;
           ptsP[0].y = (*(lineStringsPP+line1))->pointsP->y ;
           ptsP[0].z = (*(lineStringsPP+line1))->pointsP->z ;
@@ -2086,12 +2088,12 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectLineTablesFromStrings
           ptsP[0].x = ((*(lineStringsPP+line1))->pointsP+(*(lineStringsPP+line1))->numPoints-1)->x ;
           ptsP[0].y = ((*(lineStringsPP+line1))->pointsP+(*(lineStringsPP+line1))->numPoints-1)->y ;
           ptsP[0].z = ((*(lineStringsPP+line1))->pointsP+(*(lineStringsPP+line1))->numPoints-1)->z ;
-         } 
+         }
 /*
 **     Set Coordinates For Pnt2
 */
        if( pnt2 == 0 )
-         { 
+         {
           ptsP[1].x = (*(lineStringsPP+line2))->pointsP->x ;
           ptsP[1].y = (*(lineStringsPP+line2))->pointsP->y ;
           ptsP[1].z = (*(lineStringsPP+line2))->pointsP->z ;
@@ -2101,7 +2103,7 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectLineTablesFromStrings
          ptsP[1].x = ((*(lineStringsPP+line2))->pointsP+(*(lineStringsPP+line2))->numPoints-1)->x ;
          ptsP[1].y = ((*(lineStringsPP+line2))->pointsP+(*(lineStringsPP+line2))->numPoints-1)->y ;
          ptsP[1].z = ((*(lineStringsPP+line2))->pointsP+(*(lineStringsPP+line2))->numPoints-1)->z ;
-        } 
+        }
 /*
 **    Allocate Point Array Memory For Connection Line
 */
@@ -2110,13 +2112,13 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectLineTablesFromStrings
         {
          bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
          goto errexit ;
-        } 
+        }
 /*
 **    Store Point Array
 */
       newLineP->pointsP   = ptsP ;
       newLineP->numPoints = numPts ;
-      ptsP = NULL ; 
+      ptsP = NULL ;
 /*
 **     Check Local Lines Memory
 */
@@ -2137,12 +2139,12 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectLineTablesFromStrings
        *(localStringsPP+numLocalStrings) = newLineP ;
        ++numLocalStrings ;
        newLineP = NULL ;
-      } 
-   } 
+      }
+   }
 /*
 ** Write Stats
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Number Of Local Line Strings  = %6ld",numLocalStrings) ;
     bcdtmWrite_message(0,0,0,"Number Of Connection Strings  = %6ld",numLocalStrings - numLineStrings ) ;
@@ -2155,15 +2157,15 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectLineTablesFromStrings
  if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Intersection Points = %6ld",numIntPts) ;
 /*
 **  Write Intersection Points
-*/ 
- if( dbg == 2 ) 
+*/
+ if( dbg == 2 )
    {
     bcdtmWrite_message(0,0,0,"Number Of Intersection Points With Other Connect Lines = %6ld",numIntPts) ;
     numLine = numIntPts ;
     if( numLine > 100 ) numLine = 100 ;
     for( int1P = intPtsP ; int1P < intPtsP + numLine ; ++int1P )
       {
-       bcdtmWrite_message(0,0,0,"intPoint[%4ld] ** str1 = %6ld seg1 = %6ld ** str2 = %6ld seg2 = %6ld ** %12.5lf %12.5lf %10.4lf",(long)(int1P-intPtsP),int1P->string1Offset,int1P->segment1Offset,int1P->string2Offset,int1P->segment2Offset,int1P->x,int1P->y,int1P->zSegment1) ; 
+       bcdtmWrite_message(0,0,0,"intPoint[%4ld] ** str1 = %6ld seg1 = %6ld ** str2 = %6ld seg2 = %6ld ** %12.5lf %12.5lf %10.4lf",(long)(int1P-intPtsP),int1P->string1Offset,int1P->segment1Offset,int1P->string2Offset,int1P->segment2Offset,int1P->x,int1P->y,int1P->zSegment1) ;
       }
    }
 /*
@@ -2176,7 +2178,7 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectLineTablesFromStrings
 */
     for( int1P =  intPtsP ; int1P < intPtsP + numIntPts ; ++int1P )
       {
-       if( int1P->string1Offset >= numLineStrings && int1P->string2Offset < numLineStrings ) 
+       if( int1P->string1Offset >= numLineStrings && int1P->string2Offset < numLineStrings )
          {
           lineNum = int1P->string1Offset - numLineStrings ;
           conOfsP = conOffsetsP + *(conLineIndexP+lineNum ) ;
@@ -2187,7 +2189,7 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectLineTablesFromStrings
           conOfsP->valid = 0 ;
           int1P->string2Offset = - 1 ;
          }
-       if( int1P->string2Offset >= numLineStrings && int1P->string1Offset < numLineStrings ) 
+       if( int1P->string2Offset >= numLineStrings && int1P->string1Offset < numLineStrings )
          {
           lineNum = int1P->string2Offset - numLineStrings ;
           conOfsP = conOffsetsP + *(conLineIndexP+lineNum ) ;
@@ -2222,7 +2224,7 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectLineTablesFromStrings
          {
           if( con1P != con2P ) *con1P = *con2P ;
           ++con1P ;
-         } 
+         }
       }
     numConOfs = (long)(con1P-conOffsetsP) ;
 /*
@@ -2267,12 +2269,12 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectLineTablesFromStrings
    for( conOfsP = conOffsetsP ; conOfsP < conOffsetsP + numConOfs ; ++conOfsP )
      {
       line1 = conOfsP->pnt1 / 2 ;
-      line2 = conOfsP->pnt2 / 2 ; 
+      line2 = conOfsP->pnt2 / 2 ;
       pnt1  = conOfsP->pnt1 - line1 * 2 ;
       pnt2  = conOfsP->pnt2 - line2 * 2 ;
 /*
 **    Allocate Memory For Connection Line Points
-*/ 
+*/
       numPts = 2 ;
       ptsP = (DPoint3d * ) malloc( numPts * sizeof(DPoint3d)) ;
       if( ptsP == NULL )
@@ -2284,7 +2286,7 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectLineTablesFromStrings
 **    Set Coordinates For Pnt1
 */
       if( pnt1 == 0 )
-        { 
+        {
          ptsP[0].x = (*(lineStringsPP+line1))->pointsP->x ;
          ptsP[0].y = (*(lineStringsPP+line1))->pointsP->y ;
          ptsP[0].z = (*(lineStringsPP+line1))->pointsP->z ;
@@ -2294,12 +2296,12 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectLineTablesFromStrings
          ptsP[0].x = ((*(lineStringsPP+line1))->pointsP+(*(lineStringsPP+line1))->numPoints-1)->x ;
          ptsP[0].y = ((*(lineStringsPP+line1))->pointsP+(*(lineStringsPP+line1))->numPoints-1)->y ;
          ptsP[0].z = ((*(lineStringsPP+line1))->pointsP+(*(lineStringsPP+line1))->numPoints-1)->z ;
-        } 
+        }
 /*
 **    Set Coordinates For Pnt2
 */
       if( pnt2 == 0 )
-        { 
+        {
          ptsP[1].x = (*(lineStringsPP+line2))->pointsP->x ;
          ptsP[1].y = (*(lineStringsPP+line2))->pointsP->y ;
          ptsP[1].z = (*(lineStringsPP+line2))->pointsP->z ;
@@ -2309,7 +2311,7 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectLineTablesFromStrings
          ptsP[1].x = ((*(lineStringsPP+line2))->pointsP+(*(lineStringsPP+line2))->numPoints-1)->x ;
          ptsP[1].y = ((*(lineStringsPP+line2))->pointsP+(*(lineStringsPP+line2))->numPoints-1)->y ;
          ptsP[1].z = ((*(lineStringsPP+line2))->pointsP+(*(lineStringsPP+line2))->numPoints-1)->z ;
-        } 
+        }
 /*
 **   Allocate Point Array Memory For Connection Line
 */
@@ -2318,13 +2320,13 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectLineTablesFromStrings
        {
         bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
         goto errexit ;
-       } 
+       }
 /*
 **   Store Point Array
 */
      newLineP->pointsP   = ptsP ;
      newLineP->numPoints = numPts ;
-     ptsP = NULL ; 
+     ptsP = NULL ;
 /*
 **   Store Line Connection In Local Line Strings
 */
@@ -2334,7 +2336,7 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectLineTablesFromStrings
      }
 /*
 **  Determine Connection Line Intersections
-*/ 
+*/
    if( dbg ) bcdtmWrite_message(0,0,0,"Determine Connection Line Intersections") ;
    if( bcdtmString_detectStringIntersections2D(localStringsPP,numLocalStrings,intersectType,&intPtsP,&numIntPts) ) goto errexit ;
    if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Connection Line Intersections = %6ld",numIntPts) ;
@@ -2357,15 +2359,15 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectLineTablesFromStrings
     qsortCPP(intPtsP,numIntPts,sizeof(DTM_INTERSECT_POINT),bcdtmString_intersectPointsCompareFunction) ;
 /*
 **  Write Intersection Points
-*/ 
-    if( dbg == 2 ) 
+*/
+    if( dbg == 2 )
       {
        bcdtmWrite_message(0,0,0,"Number Of Intersection Points With Other Connect Lines = %6ld",numIntPts) ;
        numLine = numIntPts ;
        if( numLine > 100 ) numLine = 100 ;
        for( int1P = intPtsP ; int1P < intPtsP + numLine ; ++int1P )
          {
-          bcdtmWrite_message(0,0,0,"intPoint[%4ld] ** str1 = %6ld seg1 = %6ld ** str2 = %6ld seg2 = %6ld ** %12.5lf %12.5lf %10.4lf",(long)(int1P-intPtsP),int1P->string1Offset,int1P->segment1Offset,int1P->string2Offset,int1P->segment2Offset,int1P->x,int1P->y,int1P->zSegment1) ; 
+          bcdtmWrite_message(0,0,0,"intPoint[%4ld] ** str1 = %6ld seg1 = %6ld ** str2 = %6ld seg2 = %6ld ** %12.5lf %12.5lf %10.4lf",(long)(int1P-intPtsP),int1P->string1Offset,int1P->segment1Offset,int1P->string2Offset,int1P->segment2Offset,int1P->x,int1P->y,int1P->zSegment1) ;
          }
       }
    }
@@ -2406,10 +2408,10 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectLineTablesFromStrings
     lineLength = 0 ;
     for( p3dP = (*pntArrayPP)->pointsP + 1 ; p3dP <  (*pntArrayPP)->pointsP + (*pntArrayPP)->numPoints ; ++p3dP )
       {
-       dx = p3dP->x - (p3dP-1)->x ; 
-       dy = p3dP->y - (p3dP-1)->y ; 
+       dx = p3dP->x - (p3dP-1)->x ;
+       dy = p3dP->y - (p3dP-1)->y ;
        lineLength = lineLength + sqrt( dx*dx + dy*dy) ;
-      }   
+      }
 /*
 **  Populate Connect Line Table
 */
@@ -2424,7 +2426,7 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectLineTablesFromStrings
     (*connectPointsPP+lineNum*2)->line   = lineNum ;
     (*connectPointsPP+lineNum*2)->point1 = pnt1 ;
     (*connectPointsPP+lineNum*2)->point2 = pnt2 ;
-    (*connectPointsPP+lineNum*2)->isReversed = 0 ; 
+    (*connectPointsPP+lineNum*2)->isReversed = 0 ;
     (*connectPointsPP+lineNum*2)->numConLine = 0 ;
     (*connectPointsPP+lineNum*2)->conLineP   = NULL ;
 
@@ -2445,7 +2447,7 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectLineTablesFromStrings
 /*
 **   Set Connect Point Coordinates
 */
-      if( pnt1 % 2 == 0 ) 
+      if( pnt1 % 2 == 0 )
         {
          pntX = (*(lineStringsPP+pnt1/2))->pointsP->x ;
          pntY = (*(lineStringsPP+pnt1/2))->pointsP->y ;
@@ -2458,11 +2460,11 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectLineTablesFromStrings
      if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Point[%4ld] ** pntX = %12.5lf pntY = %12.5lf ** con1P->pnt1 = %6ld ",pnt1,pntX,pntY,con1P->pnt1) ;
 /*
 **   Get Set Of Connecting Points
-*/ 
+*/
      if( con1P->pnt1 == pnt1 )
        {
         con2P = con1P + 1 ;
-        while( con2P < conOffsetsP + numConOfs && con2P->pnt1 == pnt1 ) ++con2P ; 
+        while( con2P < conOffsetsP + numConOfs && con2P->pnt1 == pnt1 ) ++con2P ;
         --con2P ;
         numConnectPts = (long) ( con2P - con1P ) + 1 ;
 /*
@@ -2489,7 +2491,7 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectLineTablesFromStrings
 /*
 **         Set Connected Point Coordinates
 */
-           if( conOfsP->pnt2 % 2 == 0 ) 
+           if( conOfsP->pnt2 % 2 == 0 )
              {
               conPntX = (*(lineStringsPP+conOfsP->pnt2/2))->pointsP->x ;
               conPntY = (*(lineStringsPP+conOfsP->pnt2/2))->pointsP->y ;
@@ -2504,7 +2506,7 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectLineTablesFromStrings
 */
            conLineP->distance = bcdtmMath_distance(pntX,pntY,conPntX,conPntY) ;
            ++conLineP ;
-          } 
+          }
 /*
 **      Sort Connection Points
 */
@@ -2566,7 +2568,7 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectLineTablesFromStrings
 **  Find Connection Line Offset To Check If It Is valid
 */
     ofsConLine = -1 ;
-    pointP  = *connectPointsPP + int1P->string1Offset ;      
+    pointP  = *connectPointsPP + int1P->string1Offset ;
     for( conLineP = pointP->conLineP ; conLineP < pointP->conLineP + pointP->numConLine &&  ofsConLine == -1 ; ++conLineP )
       {
        if( conLineP->toPoint == int1P->segment1Offset ) ofsConLine = (long)(conLineP-pointP->conLineP) ;
@@ -2578,26 +2580,26 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectLineTablesFromStrings
       {
 /*
 **     Count Number Of Intersected Connection Lines
-*/   
+*/
        numConIntPts = (long)(int2P-int1P) + 1 ;
        intConLinesP = ( DTM_CONNECTION_LINE_INTERSECT * ) malloc ( numConIntPts * sizeof(DTM_CONNECTION_LINE_INTERSECT)) ;
        if( intConLinesP == NULL )
          {
           bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-          goto errexit ; 
+          goto errexit ;
          }
 /*
 **     Scan Connection Line Intersects For Valid Connection Lines
 */
        numConIntPtsFnd = 0 ;
        intConLineP = intConLinesP ;
-       for( intP = int1P ; intP <= int2P ; ++intP) 
+       for( intP = int1P ; intP <= int2P ; ++intP)
          {
 /*
 **        Find Offset For Intersected Connected Line
 */
           ofsIntConLine = -1 ;
-          pointP  = *connectPointsPP + intP->string2Offset  ;      
+          pointP  = *connectPointsPP + intP->string2Offset  ;
           for( conLineP = pointP->conLineP ; conLineP < pointP->conLineP + pointP->numConLine && ofsIntConLine == -1 ; ++conLineP )
             {
              if( conLineP->toPoint == intP->segment2Offset ) ofsIntConLine = (long)(conLineP-pointP->conLineP) ;
@@ -2610,7 +2612,7 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectLineTablesFromStrings
              intConLineP->point1 = intP->string2Offset  ;
              intConLineP->point2 = intP->segment2Offset ;
              intConLineP->index  = ofsIntConLine ;
-             ++numConIntPtsFnd ; 
+             ++numConIntPtsFnd ;
              ++intConLineP ;
             }
          }
@@ -2634,21 +2636,21 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectLineTablesFromStrings
           free(intConLinesP) ;
           intConLinesP = NULL ;
           numConIntPts = 0 ;
-         }  
+         }
 /*
 **     Reallocate Memory And Update Connected Lines
 */
        else
          {
-          if( numConIntPtsFnd < numConIntPts ) 
+          if( numConIntPtsFnd < numConIntPts )
             {
              numConIntPts = numConIntPtsFnd ;
-             intConLinesP = ( DTM_CONNECTION_LINE_INTERSECT * ) realloc (intConLinesP,numConIntPts * sizeof(DTM_CONNECTION_LINE_INTERSECT)) ; 
+             intConLinesP = ( DTM_CONNECTION_LINE_INTERSECT * ) realloc (intConLinesP,numConIntPts * sizeof(DTM_CONNECTION_LINE_INTERSECT)) ;
             }
 /*
 **        Update Connected Lines
 */
-          conLineP = (*connectPointsPP + int1P->string1Offset)->conLineP + ofsConLine ;  
+          conLineP = (*connectPointsPP + int1P->string1Offset)->conLineP + ofsConLine ;
           conLineP->intConLineP   = intConLinesP ;
           conLineP->numIntConLine = numConIntPts ;
           intConLinesP = NULL ;
@@ -2676,11 +2678,11 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectLineTablesFromStrings
        bcdtmWrite_message(0,0,0,"Point[%4ld] ** line = %4ld ** pnt1 = %4ld pnt2 = %4ld isRev = %2ld ** numConnectPts = %4ld",(long)(pointP-*connectPointsPP),pointP->line,pointP->point1,pointP->point2,pointP->isReversed,pointP->numConLine) ;
 //       if( pointP->numConLine > 0 )
 //         {
-//          for( conLineP = pointP->conLineP ; conLineP < pointP->conLineP + pointP->numConLine ; ++conLineP ) 
+//          for( conLineP = pointP->conLineP ; conLineP < pointP->conLineP + pointP->numConLine ; ++conLineP )
 //            {
 //             bcdtmWrite_message(0,0,0,"**** Connected Point[%4ld] ** pnt = %8ld line = %4ld distance = %10.4lf",(long)(conLineP-pointP->conLineP),conLineP->toPoint,conLineP->line,conLineP->distance) ;
-//            }  
-//         } 
+//            }
+//         }
       }
    }
 /*
@@ -2688,7 +2690,7 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectLineTablesFromStrings
 */
  cleanup :
  if( localStringsPP != NULL )  bcdtmMem_freePointerArrayToPointArrayMemory(&localStringsPP,numLocalStrings) ;
- if( intPtsP        != NULL )  free(intPtsP) ; 
+ if( intPtsP        != NULL )  free(intPtsP) ;
  if( newLineP != NULL )
    {
     if( newLineP->pointsP != NULL ) free(newLineP->pointsP) ;
@@ -2743,14 +2745,14 @@ BENTLEYDTM_Private int bcdtmConnect_lineStringsUsingConnectionTables
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Connecting Lines Using Connection Tables") ;
     bcdtmWrite_message(0,0,0,"connectLinesP    = %p",*connectLinesP) ;
     bcdtmWrite_message(0,0,0,"numConnectLines  = %8ld",numConnectLines) ;
     bcdtmWrite_message(0,0,0,"connectPointsP   = %p",*connectPointsP) ;
     bcdtmWrite_message(0,0,0,"numConnectPoints = %8ld",numConnectPoints) ;
-   } 
+   }
 /*
 **  Write Out Connect Lines And Connect Points List
 */
@@ -2767,17 +2769,17 @@ BENTLEYDTM_Private int bcdtmConnect_lineStringsUsingConnectionTables
        bcdtmWrite_message(0,0,0,"Point[%4ld]  line = %4ld  pnt1 = %4ld pnt2 = %4ld isRev = %2ld  connectPtsP = %p numConnectPts = %4ld",(long)(conPntP-connectPointsP),conPntP->line,conPntP->point1,conPntP->point2,conPntP->isReversed,conPntP->conLineP,conPntP->numConLine) ;
        if( conPntP->numConLine > 0 )
          {
-          for( conLineP = conPntP->conLineP ; conLineP < conPntP->conLineP + conPntP->numConLine ; ++conLineP ) 
+          for( conLineP = conPntP->conLineP ; conLineP < conPntP->conLineP + conPntP->numConLine ; ++conLineP )
             {
              bcdtmWrite_message(0,0,0," Connected Point[%4ld]  pnt = %8ld line = %4ld distance = %10.4lf numIntConPts = %6ld",(long)(conLineP-conPntP->conLineP),conLineP->toPoint,conLineP->line,conLineP->distance,conLineP->numIntConLine) ;
-            }  
-         } 
+            }
+         }
       }
    }
 /*
 ** Initialise Return Arguments
 */
- *connectResultP    = 1   ; 
+ *connectResultP    = 1   ;
  *connectCloseP     = 0   ;
  *connectLengthP    = 0.0 ;
  *numConnectStringP = 0   ;
@@ -2787,13 +2789,13 @@ BENTLEYDTM_Private int bcdtmConnect_lineStringsUsingConnectionTables
 */
  for( conPntP = connectPointsP ; conPntP < connectPointsP + numConnectPoints ; ++conPntP )
    {
-    if( conPntP->numConLine > 1 && conPntP->conLineP->distance == 0.0 ) 
+    if( conPntP->numConLine > 1 && conPntP->conLineP->distance == 0.0 )
       {
-       if( (conPntP->conLineP+1)->distance == 0.0 ) 
+       if( (conPntP->conLineP+1)->distance == 0.0 )
          {
           *connectResultP = 1 ;
           bcdtmWrite_message(1,0,0,"More Than Two Coincident Connect Line End Points") ;
-          goto errexit ;  
+          goto errexit ;
          }
        conPntP->numConLine = 1 ;
       }
@@ -2810,10 +2812,10 @@ BENTLEYDTM_Private int bcdtmConnect_lineStringsUsingConnectionTables
        if( bcdtmConnect_lineStringsFromStartPoint(connectLinesP,numConnectLines,connectPointsP,numConnectPoints,startPnt,&numSolutions,&conStringP,&numConString,&result,&close,&length)) goto errexit ;
        if( ! result )
          {
-          ++totalNumSolutions ;  
+          ++totalNumSolutions ;
           if( *connectResultP != 0  || length < *connectLengthP )
             {
-             *connectResultP    = 0 ; 
+             *connectResultP    = 0 ;
              *connectCloseP     = close ;
              *connectStringPP   = conStringP ;
              *numConnectStringP = numConString ;
@@ -2852,7 +2854,7 @@ BENTLEYDTM_Private int bcdtmConnect_lineStringsFromStartPoint
  long                 numConnectLines,           /* ==> Number Of Connect Lines                */
  DTM_CONNECT_POINT    *connectPointsP,           /* ==> Pointer To Connect Points              */
  long                 numConnectPoints,          /* ==> Number Of Connect Points               */
- long                 startPoint,                /* ==> Start Point Offset To Begin Connection */ 
+ long                 startPoint,                /* ==> Start Point Offset To Begin Connection */
  long                 *numSolutionsP,            /* <== Number Of Solutions Found              */
  DTM_CONNECTED_STRING **connectStringPP,         /* <== Pointer To Connected String            */
  long                 *numConnectStringP,        /* <== Number Of Connected Strings            */
@@ -2872,7 +2874,7 @@ BENTLEYDTM_Private int bcdtmConnect_lineStringsFromStartPoint
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Connecting Line Strings From Start Points") ;
     bcdtmWrite_message(0,0,0,"connectLinesP    = %p",*connectLinesP) ;
@@ -2880,12 +2882,12 @@ BENTLEYDTM_Private int bcdtmConnect_lineStringsFromStartPoint
     bcdtmWrite_message(0,0,0,"connectPointsP   = %p",*connectPointsP) ;
     bcdtmWrite_message(0,0,0,"numConnectPoints = %8ld",numConnectPoints) ;
     bcdtmWrite_message(0,0,0,"startPoint       = %8ld",startPoint) ;
-   } 
+   }
 /*
 ** Initialise Return Arguments
 */
  *numSolutionsP     = 0   ;
- *connectResultP    = 1   ; 
+ *connectResultP    = 1   ;
  *connectCloseP     = 0   ;
  *connectLengthP    = 0.0 ;
  *numConnectStringP = 0   ;
@@ -2908,7 +2910,7 @@ BENTLEYDTM_Private int bcdtmConnect_lineStringsFromStartPoint
    {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
     goto errexit ;
-   }     
+   }
 /*
 ** Allocate Memory To Mark Processed Lines
 */
@@ -2917,7 +2919,7 @@ BENTLEYDTM_Private int bcdtmConnect_lineStringsFromStartPoint
    {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
     goto errexit ;
-   }  
+   }
  for( longP = lineMarkP ; longP < lineMarkP + numConnectLines ; ++longP ) *longP = 0 ;
 /*
 ** Initialise For Scanning
@@ -2931,8 +2933,8 @@ BENTLEYDTM_Private int bcdtmConnect_lineStringsFromStartPoint
 */
  allScanned = FALSE ;
  while ( allScanned == FALSE )
-   { 
-    allScanned = TRUE ; 
+   {
+    allScanned = TRUE ;
 /*
 **  Connect Strings
 */
@@ -2945,7 +2947,7 @@ BENTLEYDTM_Private int bcdtmConnect_lineStringsFromStartPoint
        else                    (conStringP+numConString)->isReversed = 1 ;
        *(lineMarkP+(connectPointsP+startPnt)->line) = 1 ;
        ++numConString ;
-       nextPnt = (connectPointsP+startPnt)->point2 ; 
+       nextPnt = (connectPointsP+startPnt)->point2 ;
        if( dbg ) bcdtmWrite_message(0,0,0,"numConString = %2ld length = %12.3lf ** startPnt  = %6ld line = %6ld nextPnt = %6ld",numConString,length,startPnt,(connectPointsP+startPnt)->line,nextPnt) ;
       }   while ( numConString < numConnectLines && bcdtmConnect_lineStringsGetNextConnectPoint(connectPointsP,lineMarkP,nextPnt,&startPnt,&distance))  ;
 /*
@@ -2953,14 +2955,14 @@ BENTLEYDTM_Private int bcdtmConnect_lineStringsFromStartPoint
 */
     if( dbg  )
       {
-       bcdtmWrite_message(0,0,0,"Number Of Connected Lines = %6ld **  Connected Length = %12.4lf",numConString,length) ; 
+       bcdtmWrite_message(0,0,0,"Number Of Connected Lines = %6ld **  Connected Length = %12.4lf",numConString,length) ;
        for( conStrP = conStringP ; conStrP < conStringP + numConString ; ++conStrP )
          {
           if( conStrP->isReversed == 0 ) { pnt1 = conStrP->stringOffset * 2     ; pnt2 = pnt1 + 1 ; }
           else                          { pnt1 = conStrP->stringOffset * 2 + 1 ; pnt2 = pnt1 - 1 ; }
           bcdtmWrite_message(0,0,0,"Line[%4ld] ** pnt1 = %6ld line = %6ld pnt2  = %6ld mark = %2ld",(long)(conStrP-conStringP),pnt1,conStrP->stringOffset,pnt2,*(lineMarkP+conStrP->stringOffset)) ;
          }
-      } 
+      }
 /*
 **  Test For Solution
 */
@@ -2988,7 +2990,7 @@ BENTLEYDTM_Private int bcdtmConnect_lineStringsFromStartPoint
                {
                 bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
                 goto errexit ;
-               } 
+               }
             }
 /*
 **        Check For Closing String
@@ -3000,13 +3002,13 @@ BENTLEYDTM_Private int bcdtmConnect_lineStringsFromStartPoint
           for( conLineP = (connectPointsP+startPoint)->conLineP ; conLineP < (connectPointsP+startPoint)->conLineP + (connectPointsP+startPoint)->numConLine && minClose == 0 ; ++conLineP )
             {
              if( conLineP->toPoint == lastPnt && ! conLineP->isMarked ) minClose = 1 ;
-            } 
+            }
 /*
 **        Copy Solution To Minimum Solution
 */
           memcpy(minConStringP,conStringP,numConnectLines*sizeof(DTM_CONNECTED_STRING)) ;
           minLength = length ;
-         }   
+         }
       }
 /*
 **  Post Order Traverse Connection Tree Looking For Alternative Connection Paths
@@ -3014,20 +3016,20 @@ BENTLEYDTM_Private int bcdtmConnect_lineStringsFromStartPoint
     if( dbg ) bcdtmWrite_message(0,0,0,"Post Order Traversing Connect Tree") ;
     startScanFound = FALSE ;
     while ( numConString > 1 && startScanFound == FALSE )
-      { 
+      {
 /*
 **     Set Node Point
 */
        --numConString ;
        line = (conStringP+numConString)->stringOffset ;
-       if( (conStringP+numConString)->isReversed == 0 ) nodePnt = line * 2     ; 
-       else                                             nodePnt = line * 2 + 1 ; 
+       if( (conStringP+numConString)->isReversed == 0 ) nodePnt = line * 2     ;
+       else                                             nodePnt = line * 2 + 1 ;
        if( dbg ) bcdtmWrite_message(0,0,0,"Current Line  = %6ld Node = %6ld",line,nodePnt) ;
        *(lineMarkP+line) = 0 ;
        length = length - (connectLinesP+line)->length ;
 /*
 **     Set Previous Node
-*/ 
+*/
        line = (conStringP+numConString-1)->stringOffset ;
        if( (conStringP+numConString-1)->isReversed == 0 ) prevPnt = line * 2 + 1 ; // Set To Opposite End Of Line
        else                                               prevPnt = line * 2     ; // Set To Opposite End Of Line
@@ -3040,15 +3042,15 @@ BENTLEYDTM_Private int bcdtmConnect_lineStringsFromStartPoint
        for( conLineP = (connectPointsP+prevPnt)->conLineP ; conLineP <  (connectPointsP+prevPnt)->conLineP + (connectPointsP+prevPnt)->numConLine && startScanFound == FALSE ; ++conLineP )
          {
           if( dbg ) bcdtmWrite_message(0,0,0,"point = %6ld line = %6ld isMarked = %6ld lineMark = %2ld",conLineP->toPoint,conLineP->line,conLineP->isMarked,*(lineMarkP+conLineP->line)) ;
-          if( nodeFound && ! conLineP->isMarked && ! *(lineMarkP+conLineP->line) ) 
+          if( nodeFound && ! conLineP->isMarked && ! *(lineMarkP+conLineP->line) )
             {
              startScanFound = TRUE ;
-             startPnt = conLineP->toPoint ; 
+             startPnt = conLineP->toPoint ;
              distance = conLineP->distance ;
              if( dbg ) bcdtmWrite_message(0,0,0,"Scan Start From startPnt = %6ld numConString = %6ld length = %12.4lf",startPnt,numConString,length) ;
 /*
 **           Mark Connection Lines Intersected By This Connection Line
-*/ 
+*/
              if( dbg ) bcdtmWrite_message(0,0,0,"Marking Connection Line Intersections With Connect Line %6ld %6ld",prevPnt,startPnt) ;
              for( intLineP = conLineP->intConLineP ; intLineP < conLineP->intConLineP + conLineP->numIntConLine ; ++intLineP )
                {
@@ -3059,16 +3061,16 @@ BENTLEYDTM_Private int bcdtmConnect_lineStringsFromStartPoint
 /*
 **        Check For node point
 */
-          if( conLineP->toPoint == nodePnt ) 
+          if( conLineP->toPoint == nodePnt )
             {
              nodeFound = 1 ;
              length = length - conLineP->distance ;
             }
-         } 
+         }
 /*
 **     Un Mark Connection Lines Intersected By Removed Connection
 */
-       if( startScanFound == FALSE ) 
+       if( startScanFound == FALSE )
          {
           if( dbg ) bcdtmWrite_message(0,0,0,"Unmarking Connection Line Intersections With Connection Line %6ld %6ld",prevPnt,nodePnt) ;
           for( conLineP = (connectPointsP+prevPnt)->conLineP ; conLineP <  (connectPointsP+prevPnt)->conLineP + (connectPointsP+prevPnt)->numConLine ; ++conLineP )
@@ -3078,7 +3080,7 @@ BENTLEYDTM_Private int bcdtmConnect_lineStringsFromStartPoint
                 for( intLineP = conLineP->intConLineP ; intLineP < conLineP->intConLineP + conLineP->numIntConLine ; ++intLineP )
                   {
                    if( dbg ) bcdtmWrite_message(0,0,0,"Unmarking Connection Line %6ld %6ld ** %3ld",intLineP->point1,intLineP->point2,((connectPointsP+intLineP->point1)->conLineP+intLineP->index)->isMarked) ;
-                   if( ((connectPointsP+intLineP->point1)->conLineP+intLineP->index)->isMarked == 0 ) 
+                   if( ((connectPointsP+intLineP->point1)->conLineP+intLineP->index)->isMarked == 0 )
                      {
                       bcdtmWrite_message(0,0,0,"Connect Line %6ld %6ld isMark = %6ld",intLineP->point1,intLineP->point2,((connectPointsP+intLineP->point1)->conLineP+intLineP->index)->isMarked) ;
                       goto errexit ;
@@ -3092,9 +3094,9 @@ BENTLEYDTM_Private int bcdtmConnect_lineStringsFromStartPoint
 /*
 **  Check For Continuing Post Order Scan
 */
-    if( startScanFound == TRUE ) 
+    if( startScanFound == TRUE )
       {
-       allScanned = FALSE ;  
+       allScanned = FALSE ;
       }
    }
 /*
@@ -3102,7 +3104,7 @@ BENTLEYDTM_Private int bcdtmConnect_lineStringsFromStartPoint
 */
  if( minConStringP != NULL )
    {
-    *connectResultP    = 0   ; 
+    *connectResultP    = 0   ;
     *connectCloseP     = minClose  ;
     *connectLengthP    = minLength ;
     *numConnectStringP = numConnectLines  ;
@@ -3175,7 +3177,7 @@ BENTLEYDTM_Private int bcdtmConnect_lineStringsGetNextConnectPoint
              if( dbg ) bcdtmWrite_message(0,0,0,"Marking Connection Line %6ld %6ld ** %3ld",intLineP->point1,intLineP->point2,((connectPointsP+intLineP->point1)->conLineP+intLineP->index)->isMarked) ;
              ++((connectPointsP+intLineP->point1)->conLineP+intLineP->index)->isMarked ;
             }
-         } 
+         }
       }
    }
 /*

@@ -157,7 +157,7 @@ private:
     struct ClipVectorInfo :ClipInfo
     {
         ClipVectorCP clip = nullptr;
-        bvector<bool> arePrimitivesMasks;
+        bvector<Byte> arePrimitivesMasks;
         DRange3d clipExt;
         ClipVectorInfo() { type = Type::Vector; }
         virtual bool isClipMask() {
@@ -193,7 +193,7 @@ private:
     bvector<ClippedRegion> computedRegions;
     bvector<ClippedRegion*> selectedRegions;
     RegionResult selectionError;
-    
+
 
     //private functions
     enum PointClassification

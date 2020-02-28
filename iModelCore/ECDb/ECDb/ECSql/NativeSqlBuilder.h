@@ -62,7 +62,7 @@ struct NativeSqlBuilder final
         void Clear() { m_nativeSql.clear(); m_stack.clear(); }
         bool IsEmpty() const { return m_nativeSql.empty(); }
         Utf8StringCR GetSql() const { return m_nativeSql; }
-        
+
         static List FlattenJaggedList(ListOfLists const& listOfLists, std::vector<size_t> const& indexSkipList);
     };
 
@@ -76,7 +76,7 @@ private:
     Utf8String m_table;
     std::vector<std::pair<Utf8String, ECN::ECValue>> m_updateExpressions;
     std::vector<std::pair<Utf8String, ECN::ECValue>> m_whereExpressions;
-    
+
     BentleyStatus Bind(BeSQLite::Statement&, int paramIndex, Utf8CP columnName, ECN::ECValueCR) const;
 
 public:

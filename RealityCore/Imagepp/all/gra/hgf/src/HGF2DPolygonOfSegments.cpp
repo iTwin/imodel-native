@@ -36,9 +36,7 @@ enum PointUsage
     USED
     };
 
-
-
-
+PUSH_DISABLE_DEPRECATION_WARNINGS
 
 //----------------------------------------------------------------------------
 // Class HGFDecompositionException
@@ -835,16 +833,16 @@ double HGF2DPolygonOfSegments::CalculateRawArea() const
     if (m_PolySegment.GetSize() > 3)
         {
         // Calculate area of first and last triangles
-        TotalArea += (m_PolySegment.GetPoint(m_PolySegment.GetSize() - 1).GetX()) * 
+        TotalArea += (m_PolySegment.GetPoint(m_PolySegment.GetSize() - 1).GetX()) *
                      (m_PolySegment.GetPoint(0).GetY() - m_PolySegment.GetPoint(m_PolySegment.GetSize() - 2).GetY());
 
-        TotalArea += (m_PolySegment.GetPoint(0).GetX()) * 
+        TotalArea += (m_PolySegment.GetPoint(0).GetX()) *
                      (m_PolySegment.GetPoint(1).GetY() - m_PolySegment.GetPoint(m_PolySegment.GetSize() - 1).GetY());
 
         // Add all other triangles
         for(size_t Index = 2 ; Index < m_PolySegment.GetSize() ; Index++)
             {
-            TotalArea += (m_PolySegment.GetPoint(Index - 1).GetX()) * 
+            TotalArea += (m_PolySegment.GetPoint(Index - 1).GetX()) *
                          (m_PolySegment.GetPoint(Index).GetY() - m_PolySegment.GetPoint(Index - 2).GetY());
             }
         }
@@ -2425,12 +2423,12 @@ HGF2DShape* HGF2DPolygonOfSegments::UnifyCrossingPolygon(const HGF2DPolygonOfSeg
     	{
         HFCPtr<HGF2DShape> pNewShape1 = static_cast<HGF2DShape*>(this->Clone());
         HFCPtr<HGF2DShape> pNewShape2 = static_cast<HGF2DShape*>(pi_rPolygon.Clone());
-    
+
         pNewShape1->SetAutoToleranceActive(FALSE);
         pNewShape1->SetTolerance(this->GetTolerance() * 2.0);
         pNewShape2->SetAutoToleranceActive(FALSE);
         pNewShape2->SetTolerance(pi_rPolygon.GetTolerance() * 2.0);
-    
+
         pMyResultShape = pNewShape1->UnifyShape(*pNewShape2);
     	}
     else
@@ -2459,9 +2457,9 @@ HGF2DShape* HGF2DPolygonOfSegments::UnifyCrossingPolygon(const HGF2DPolygonOfSeg
                         Found = ((*MyShapeIterator)->CalculateSpatialPositionOf(**MyOtherShapeIterator) == HGF2DShape::S_IN);
 
                     MyOtherShapeIterator++;
-            		}   
+            		}
                 if (!Found)
-                	MyShapeIterator++;   
+                	MyShapeIterator++;
             	}
 
             // Check if the outter shape was found ...
@@ -2483,7 +2481,7 @@ HGF2DShape* HGF2DPolygonOfSegments::UnifyCrossingPolygon(const HGF2DPolygonOfSeg
                     delete *MyFinalShapeIterator;
 
                     MyFinalShapeIterator++;
-            		}   
+            		}
 
                 pMyResultShape = pMyResultHoledShape;
             	}
@@ -4965,7 +4963,7 @@ HFCPtr<HGF2DShape> HGF2DPolygonOfSegments::AllocTransformDirect(const HGF2DTrans
         HASSERTDUMP2(pMyPrimaryResultLinear->GetStartPoint().IsEqualTo(pMyPrimaryResultLinear->GetEndPoint()), *this, *pMyPrimaryResultLinear);
 
         // &&AR Is this still meaningful in the context of light vectors
-        HASSERT(pMyPrimaryResultLinear->IsABasicLinear());              
+        HASSERT(pMyPrimaryResultLinear->IsABasicLinear());
 
         // A basic linear must be a polysegment (cannot be a segment)
         HASSERT((static_cast<HGF2DBasicLinear*>(&*(pMyPrimaryResultLinear)))->GetBasicLinearType() == HGF2DPolySegment::CLASS_ID);
@@ -5234,3 +5232,4 @@ HGF2DShape* HGF2DPolygonOfSegments::AllocateComplexShapeFromAutoContiguousPolySe
     return pResultShape.release();
     }
 
+POP_DISABLE_DEPRECATION_WARNINGS

@@ -12,6 +12,7 @@
 #include <string>
 #include <iostream>
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 using namespace pcloud;
 using namespace ptds;
 
@@ -59,11 +60,11 @@ namespace pod
 	{
 	public:
 		ReWriteSizes(ptds::Tracker *_tracker, int cloudindex, int structure_version)
-			: tracker(_tracker), 
-			_cloudindex(cloudindex), 
+			: tracker(_tracker),
+			_cloudindex(cloudindex),
 			_nodeindex(0)
 		{};
-		
+
 
 		bool visitNode(const Node* node)
 		{
@@ -80,15 +81,15 @@ namespace pod
 
 
 #ifdef VOXEL_STRATA_ORDERING_HEADER_V5
-	
+
 				if (vox)	// not for non-leaf nodes
 				{
 					int numStrata = NUM_STRATA;
 					float strataSpacing  = 0;
 					int strata[NUM_STRATA];
 					memset(strata, 0, sizeof(strata));
-					
-					for (int s=0; s<NUM_STRATA; s++)	
+
+					for (int s=0; s<NUM_STRATA; s++)
 						strata[s] = vox->strataSize(s);
 
 					tracker->writeThrough( numStrata );
@@ -112,15 +113,15 @@ namespace pod
 	class WriteTree : public Node::Visitor
 	{
 	public:
-		WriteTree(WriteBlock *db, int cloudindex, int structure_version) 
+		WriteTree(WriteBlock *db, int cloudindex, int structure_version)
 			: block(db), _cloudindex(cloudindex), _nodeindex(0), _structure(structure_version)
 		{}
-		
+
 		bool visitNode(const Node*node)
-		{			
-			/*write out node data*/ 
+		{
+			/*write out node data*/
 			ubyte depth = (ubyte)node->depth();
-			  
+
 			int children[8] = {-1,-1,-1,-1,-1,-1,-1,-1};
 			int parent = -1;
 			int i;
@@ -146,18 +147,18 @@ namespace pod
 			}
 			block->write(nodetype);
 			block->write(depth);
-			
+
 			// bounding box save - must be done like this due to historic reasons
 		//	const ubyte *ptr = (const ubyte*)(const void*)&node->extents(); // Old version
 			// save bounding box as floats to allow backward compatibilty in all products that are not expecting bounding boxes as doubles
-			pt::BoundingBox bbf(static_cast<float>(node->extents().ux()), 
-                                static_cast<float>(node->extents().lx()), 
-                                static_cast<float>(node->extents().uy()), 
-                                static_cast<float>(node->extents().ly()), 
-                                static_cast<float>(node->extents().uz()), 
+			pt::BoundingBox bbf(static_cast<float>(node->extents().ux()),
+                                static_cast<float>(node->extents().lx()),
+                                static_cast<float>(node->extents().uy()),
+                                static_cast<float>(node->extents().ly()),
+                                static_cast<float>(node->extents().uz()),
                                 static_cast<float>(node->extents().lz()));
 			const ubyte *ptr = (const ubyte*)(const void*)&bbf;
-			
+
 			// push forward by size of vftable pointer
 			ptr += sizeof(pt::BoundingBox)-48;	// TEST ON 64BIT BUILD
 
@@ -180,23 +181,23 @@ namespace pod
 
 			block->write(&node->lx(), sizeof(float)*3);
 			block->write(&node->ux(), sizeof(float)*3);
-			
-			/* store this position for position later rewrite when exact size is known */ 
+
+			/* store this position for position later rewrite when exact size is known */
 			block->tracker()->saveFilePointer(CLOUD_MULTIPLIER * _cloudindex + _nodeindex);
 			block->write(size);
 
 			// HEADER STRUCTURE VERSION 5 : Density / Strata info
-#ifdef VOXEL_STRATA_ORDERING_HEADER_V5			
+#ifdef VOXEL_STRATA_ORDERING_HEADER_V5
 
 			{
-				
+
 				if (nodetype)
 				{
 					int numStrata = NUM_STRATA;
 					float strataSpacing  = 0;
 					int strata[NUM_STRATA];
 					memset(strata, 0, sizeof(strata));
-				
+
 					block->write( numStrata );
 					block->write( strataSpacing );
 					block->write( strata, sizeof(strata) );
@@ -204,7 +205,7 @@ namespace pod
 			}
 #endif
 			// END V5
-			
+
 			if (node->isLeaf())
 			{
 				const Voxel *v = static_cast<const Voxel*>(node);
@@ -214,14 +215,14 @@ namespace pod
 
 				int version = 160906;//221004; overall file version ensures earlier versions don't try to read this.
 				block->write(version);
-				
-				/*channel specs*/ 
+
+				/*channel specs*/
 				uint channels = 0;
 
 				int c;
 				for (c=0;c<NUM_DATA_CHANNELS; c++)
 					if (v->channel(c)) channels++;
-				
+
 				block->write(channels);
 
 				for (c=1;c<NUM_DATA_CHANNELS; c++)
@@ -230,7 +231,7 @@ namespace pod
 					pt::vector3d offset(0,0,0), scaler(1.0f,1.0f,1.0f);
 
 					if (ch)
-					{			
+					{
 						memcpy(&offset, ch->offset(), sizeof(double) * ch->multiple());
 						memcpy(&scaler, ch->scaler(), sizeof(double) * ch->multiple());
 
@@ -245,22 +246,22 @@ namespace pod
 						block->write(offset);
 						block->write(scaler);
 
-						/* data placeholder - sample points for proxy loading */ 
+						/* data placeholder - sample points for proxy loading */
 						uint num_samples = PT_NUM_DC_SAMPLES;
 						block->write(num_samples);
 						block->insertDataPlaceholder(
 							CHANNEL_PLACE_HOLDER_ID(c, index, _cloudindex), ch->multiple() * ch->typesize() * PT_NUM_DC_SAMPLES);
-					} 
+					}
 				}
-				/*placeholder - filepointer for beginning of data*/ 
-				block->insertPlaceholder(VOXEL_PLACE_HOLDER_ID(index, _cloudindex));	
+				/*placeholder - filepointer for beginning of data*/
+				block->insertPlaceholder(VOXEL_PLACE_HOLDER_ID(index, _cloudindex));
 			}
 #ifdef VOXEL_STRATA_ORDERING_HEADER_V5
 			/* some reserve - this was added in 080510 as version[1] = 5 */
 			block->reserve(1024);
 #endif
 			//END V5
-			
+
 			_nodeindex++;
 
 			return true;
@@ -296,12 +297,12 @@ namespace pod
 	};
 
 	//-------------------------------------------------------------------------
-	// Visitor for writing voxel extents as doubles. 
+	// Visitor for writing voxel extents as doubles.
 	//-------------------------------------------------------------------------
 	class WriteDoubleBoundsToBlock : public Node::Visitor, public PodBlock::WriteDataCallback
 	{
 	public:
-		WriteDoubleBoundsToBlock(PointCloud* pc) : m_pointCloud(pc), m_writeBlock(NULL) { ; }		
+		WriteDoubleBoundsToBlock(PointCloud* pc) : m_pointCloud(pc), m_writeBlock(NULL) { ; }
 
 		bool visitNode(const Node *node)
 		{
@@ -350,7 +351,7 @@ namespace pod
 	class WriteDoubleBoundsBlockSizeToBlock : public Node::Visitor, public PodBlock::WriteDataSizeCallback
 	{
 	public:
-		WriteDoubleBoundsBlockSizeToBlock(PointCloud* pc) : m_pointCloud(pc), m_size(0) { ; }		
+		WriteDoubleBoundsBlockSizeToBlock(PointCloud* pc) : m_pointCloud(pc), m_size(0) { ; }
 
 		bool visitNode(const Node *node)
 		{
@@ -402,7 +403,7 @@ namespace pod
 
 			// The size of the PodBlock (mandatory element of a PodBlock)
 			rb.read(size);
-			
+
 			// Read the number of bounding boxes to expect
 			rb.read(numBoxes);
 
@@ -429,7 +430,7 @@ namespace pod
 			DBBXMap::iterator it;
 			std::vector<Voxel*>::iterator vit;
 			std::vector<Voxel*> voxels = cloud->voxels();
-		
+
 			for (it = m_boxes.begin(); it != m_boxes.end(); it++)
 			{
 				unsigned int voxelID = it->first;
@@ -473,9 +474,9 @@ namespace pod
         buffer[sizeof(buffer) - 1] = 0;
 
 		std::wstring ws;
-		/* check if this is wide char */ 
+		/* check if this is wide char */
 		uint16 widecheck; memcpy(&widecheck, buffer, 2);
-		ws = (widecheck == 65335) ? 
+		ws = (widecheck == 65335) ?
 			(wchar_t*)&buffer[sizeof(widecheck)] : Ascii2Unicode::convert(std::string((char*)buffer));
 		return ws;
 	}
@@ -484,10 +485,10 @@ namespace pod
 		wchar_t buffer[512];
 		memset(buffer, 0, sizeof(buffer));
 		debugAssertM(numbytes < sizeof(buffer), "Buffer overflow in pod::writeString");
-		
+
 		wcsncpy( buffer, str, numbytes / 2);
 
-		uint16 i = 65335; /* wide byte version */ 
+		uint16 i = 65335; /* wide byte version */
 		wb.write(i);
 		wb.write(buffer, numbytes - sizeof(uint16));
 	}
@@ -495,7 +496,7 @@ namespace pod
 	{
 		int len = str.length();
 		wb.write(len);
-		
+
 		/* write string and include null char */
 		wb.write(str.c_wstr(), (len+1) * sizeof(wchar_t));
 	}
@@ -506,7 +507,7 @@ namespace pod
 
 		int len = 0;
 		rb.read(len);
-		if (len > 0 && len < 1024) /* sanity check */ 
+		if (len > 0 && len < 1024) /* sanity check */
 		{
 			rb.read(buffer, len+1);
 			str = buffer;
@@ -526,7 +527,7 @@ bool PodIO::openForRead(PodJob &job)
 	job.h = ptds::dataSourceManager.openForRead(&(job.filepath));
 
 	bool valid = false;
-	
+
 	if(job.h)
 	{
 		valid = job.h->validHandle();
@@ -563,14 +564,14 @@ bool PodIO::writeVersion(PodJob &job)
 {
 	/* versions, see pod.h for currently supported version */
 	ubyte version [] = { POD_HEADER_VERSION, POD_STRUCTURE_VERSION, POD_DATA_VERSION, POD_RESERVED_VERSION }; // header, structure, data, res
-	ubyte endian_ = 0; /*little*/ 
-	
-	/* only write a version 4 header if there are images, otherwise don't */ 
+	ubyte endian_ = 0; /*little*/
+
+	/* only write a version 4 header if there are images, otherwise don't */
 	uint num_scanpos = job.scene->numScanPositions();
 	for (uint i=0; i<num_scanpos; i++)
 	{
 		const ScanPosition *sp = job.scene->scanPos(i);
-		if (sp->numImages()) 
+		if (sp->numImages())
 		{
 			version[0] = 4;
 			break;
@@ -589,22 +590,22 @@ bool PodIO::writeVersion(PodJob &job)
 bool PodIO::writeHeader(PodJob &job)
 {
 	{
-	/*version as 4 bytes*/ 
+	/*version as 4 bytes*/
 	WriteBlock db(job.h, 65536, TRACKER(job.tracker), 0, "Header");
 
-	/* pre unicode compatibility */ 
+	/* pre unicode compatibility */
 	writeString(db, job.scene->identifier(), 64);
-	
+
 	uint num_clouds = job.scene->size();
 	db.write(num_clouds, "Number of Clouds");
 
-	/* buffer for padding		*/ 
+	/* buffer for padding		*/
 	char buff[64];
 	memset(buff, 0, sizeof(buff));
 
 	uint i = 0;
 
-	/*for each cloud			*/ 
+	/*for each cloud			*/
 	for (i=0; i<num_clouds; i++)
 	{
 		const PointCloud *pc = job.scene->cloud(i);
@@ -616,7 +617,7 @@ bool PodIO::writeHeader(PodJob &job)
 		db.insertPlaceholder(STRUCTURE_BASE + i);
 		db.insertPlaceholder(DATA_BASE + i);
 	}
-	/* write scan positions		*/ 
+	/* write scan positions		*/
 	uint num_scanpos = job.scene->numScanPositions();
 	db.write(num_scanpos, "Number of Scan Positions");
 
@@ -627,21 +628,21 @@ bool PodIO::writeHeader(PodJob &job)
 		writeString(db, sp->identifier(), 128);
 		db.write(sp->registration().matrix().data(), sizeof(double) * 16);
 
-		/* write scan image references and callibration */ 
-		/* new in header version 4						*/ 
+		/* write scan image references and callibration */
+		/* new in header version 4						*/
 		db.write((uint)sp->numImages());
 		for (int img=0;img<sp->numImages();img++)
 		{
-			/* stupid mistake, this is bytes not char, here it actually matters, 
+			/* stupid mistake, this is bytes not char, here it actually matters,
 			130 char not enough for filepath in some cases...what to do - backward compatibility
-			would be broken by update, could put strings in again at end */ 
+			would be broken by update, could put strings in again at end */
 			writeString(db, sp->image(img).filepath().c_wstr(), 260);
 			db.write(sp->image(img).calibration());
 		}
 	}
 
-	/* Updated July 2009 for Metadata tags and Keywords */ 
-	/* scene name again for full 64 wchars */ 
+	/* Updated July 2009 for Metadata tags and Keywords */
+	/* scene name again for full 64 wchars */
 	/* stupid mistake made in older code, writeString take numBytes not numChars
 	this has caused most strings to be written half size, metatags + keywords use variable length strings
 	*/
@@ -653,16 +654,16 @@ bool PodIO::writeHeader(PodJob &job)
 	int zero = 0;
 	int subv = 1;
 
-	/* write sub version */ 
+	/* write sub version */
 	mb.write( zero );	// prevent previous release from reading
 	mb.write( zero );
 	mb.write( subv );
-	
-	/* does have meta tags ?? */ 
+
+	/* does have meta tags ?? */
 	MetaData &metadata = job.scene->metaData();
 	metadata.writeToBlock(mb);
 	}
-	/* reserved space for meta edits */ 
+	/* reserved space for meta edits */
 	{
 		WriteBlock mb(job.h, 65536, TRACKER(job.tracker), 0, "Reserved");
 		char *emptyBuffer = new char[32768];
@@ -681,17 +682,17 @@ bool PodIO::writeHeader(PodJob &job)
 bool PodIO::handlesVersion(ubyte *version)
 {
 #ifndef PTAPI_DEMO_DATA
-	
+
 	return (
-			version[0] < 5 
-		&&	(version[1] >= 2 && version[1] <= 5) 
-		&&	(version[2] == g_demoCode || version[2] == 254) 
+			version[0] < 5
+		&&	(version[1] >= 2 && version[1] <= 5)
+		&&	(version[2] == g_demoCode || version[2] == 254)
 		&&	version[3] == 255) ? true : false;
 #else
 	return (
-		version[0] < 4 
-		&&	(version[1] >= 2 && version[1] <= 4) 
-		&&	version[2] == 254 
+		version[0] < 4
+		&&	(version[1] >= 2 && version[1] <= 4)
+		&&	version[2] == 254
 		&&	version[3] == 255) ? true : false;
 #endif
 }
@@ -711,7 +712,7 @@ bool PodIO::writeStructure(PodJob &j)
 //-------------------------------------------------------------------------
 bool PodIO::writeData(PodJob &job)
 {
-	/*write voxel datachannels*/ 
+	/*write voxel datachannels*/
 	for (uint i=0; i<job.scene->size(); i++)
 		writeCloudData(job, i);
 
@@ -741,12 +742,12 @@ bool PodIO::writeCloudData(PodJob &job, int cloud_idx, int start_voxel, int num_
 		tracker->placeReference(VOXEL_PLACE_HOLDER_ID(j, cloud_idx));
 
 		Voxel* v= pc->voxels()[j];
-		
-		/* data is initialised, channels are randomised. */ 
+
+		/* data is initialised, channels are randomised. */
 		if (initialization_sizes)
 		{
-			if (!v->initializeChannels( initialization_sizes[j-start_voxel] )) 
-				return false; /* most likely memory error */ 
+			if (!v->initializeChannels( initialization_sizes[j-start_voxel] ))
+				return false; /* most likely memory error */
 		}
 
 		for (int c=1; c<NUM_DATA_CHANNELS; c++)
@@ -755,13 +756,13 @@ bool PodIO::writeCloudData(PodJob &job, int cloud_idx, int start_voxel, int num_
 			if (dc && dc->size())
 			{
 				tracker->writeThrough(dc->begin(), dc->bytesize());
-				/* write the samples via the data placeholders */ 
+				/* write the samples via the data placeholders */
 
 				int num_samples = PT_NUM_DC_SAMPLES < dc->size() ? PT_NUM_DC_SAMPLES : dc->size();
 
 				tracker->writePlacedData(CHANNEL_PLACE_HOLDER_ID(c, j, cloud_idx), dc->begin(), dc->typesize() * dc->multiple() * num_samples);
 
-				/* this deletes the data after its written to conserve memory */ 
+				/* this deletes the data after its written to conserve memory */
 				if (delete_after_write) const_cast<DataChannel*>(dc)->dump();
 			}
 		}
@@ -777,7 +778,7 @@ bool PodIO::writeCloudStructure(PodJob &job, int cloud_idx)
 
 	PointCloud *pc = job.scene->cloud(cloud_idx);
 
-	/*position placeholder*/ 
+	/*position placeholder*/
 	{
 		WriteBlock pcinfo(job.h, 1024, tracker, DATA_BASE + cloud_idx, "CloudInfo");
 		pcinfo.write(pc->ibound());
@@ -786,21 +787,21 @@ bool PodIO::writeCloudStructure(PodJob &job, int cloud_idx)
 		pcinfo.write(pc->compressionTolerance());
 		pcinfo.insertPlaceholder(STRUCTURE_BLOCK_TRACKER_ID);
 		pcinfo.reserve(256-sizeof(float)-INT64_SIZE);
-	}	
+	}
 	WriteBlock pcstruct(job.h, 16000, tracker, STRUCTURE_BASE + cloud_idx, "Structure");
-	
-	/*write out octree structure*/ 
-	/*key nodes to ids*/ 
+
+	/*write out octree structure*/
+	/*key nodes to ids*/
 	WriteTree wt(&pcstruct, cloud_idx, job.version[POD_STRUCTURE_VERSION]);
 	CollectNodes cn(&wt.nodes);
 	pc->root()->traverseTopDown(&cn);
-	
-	/*key and write partitions*/ 
+
+	/*key and write partitions*/
 	int v_count = static_cast<int>(pc->voxels().size());
 	int n_count = pc->root()->countNodes();
-	int p_count = 0; /* no partition system - hangover from previous version*/ 
+	int p_count = 0; /* no partition system - hangover from previous version*/
 
-	/*write nodes*/ 
+	/*write nodes*/
 	pcstruct.write(p_count);
 	pcstruct.write(n_count);
 
@@ -810,7 +811,7 @@ bool PodIO::writeCloudStructure(PodJob &job, int cloud_idx)
 		Voxel*v = pc->voxels()[k];
 		wt.voxels.insert(VOXELMAP::value_type(v, k));
 	}
-	/*base offset*/ 
+	/*base offset*/
 	pc->root()->traverseTopDown(&wt);
 
 	// Write the double bounding box details to a PodBlock ready for writing with any other PodBlocks
@@ -835,15 +836,15 @@ bool PodIO::reWriteCloudSizes(PodJob &job, int cloud_idx)
 	int64_t savepos = tracker->position();
 
 	ReWriteSizes rw(tracker, cloud_idx, job.version[POD_STRUCTURE_VERSION]);
-	
+
 	PointCloud *pc = job.scene->cloud(cloud_idx);
 	if (pc)
 	{
 		pc->root()->traverseTopDown(&rw);
 	}
 	else return false;
-	
-	/*restore position */ 
+
+	/*restore position */
 	tracker->moveTo(savepos);
 
 	return true;
@@ -893,7 +894,7 @@ bool PodIO::writeMetaUpdate(pcloud::PodJob &job, const MetaData &meta)
 {
 	if (job.h)
 	{
-		if (!job.h->isReadWrite()) 
+		if (!job.h->isReadWrite())
 			return false;	// must be openend read/write
 
 		readVersion(job);
@@ -915,12 +916,12 @@ bool PodIO::writeMetaUpdate(pcloud::PodJob &job, const MetaData &meta)
 			int zero = 0;
 			int subv = 1;
 
-			/* write sub version */ 
+			/* write sub version */
 			mb.write( zero );	// prevent previous release from reading
 			mb.write( zero );
 			mb.write( subv );
-			
-			/* does have meta tags ?? */ 
+
+			/* does have meta tags ?? */
 			meta.writeToBlock(mb);
 
 			return true;
@@ -945,7 +946,7 @@ bool PodIO::readHeader(pcloud::PodJob &job, bool skip)
 
 	if (!handlesVersion(job.version))
 		return false;
-	
+
 	pos += VERSION_NUM_BYTES;	// version, 4 bytes
 	pos += sizeof(int);			// ReadBlock block size
 
@@ -983,15 +984,15 @@ bool PodIO::readHeader(pcloud::PodJob &job, bool skip)
 
 		if (job.version[0] >= 2)
 			ws = readString(rb, 128);
-		
+
 		if (!ws.length())
 			ws = L"Cloud";
 
 		pos += rb.read(structure_pointer);
 		pos += rb.read(data_pointer);
-		
+
 		PointCloud *pc = 0;
-		if (!skip) 
+		if (!skip)
 		{
 			pc = job.scene->newCloud(guid);
 			pc->setIdentifier(ws.c_str());
@@ -1005,7 +1006,7 @@ bool PodIO::readHeader(pcloud::PodJob &job, bool skip)
 	}
 	for (i=0; i<num_clouds; i++)
 	{
-		if (data_pointers[i] && job.h->movePointerTo(data_pointers[i]))	
+		if (data_pointers[i] && job.h->movePointerTo(data_pointers[i]))
 		{
 			ReadBlock hrb(job.h, 0);
 			uint ibound, jbound;
@@ -1032,8 +1033,8 @@ bool PodIO::readHeader(pcloud::PodJob &job, bool skip)
 				if (podBlockPos > 0)
 					job.m_podBlockManager.setReadBlockPos(podBlockPos);
 			}
- 
-			if (!skip) 
+
+			if (!skip)
 			{
 				pointclouds[i]->registration().matrix(mat);
 			}
@@ -1042,7 +1043,7 @@ bool PodIO::readHeader(pcloud::PodJob &job, bool skip)
 		}
 	}
 
-	/* read scan positions		 - version 3 of header*/ 
+	/* read scan positions		 - version 3 of header*/
 	if (job.version[0] >= 3)
 	{
 		// This must be read as it is always written even if it is zero
@@ -1061,8 +1062,8 @@ bool PodIO::readHeader(pcloud::PodJob &job, bool skip)
 
 			ScanPosition *sp = 0;
 			if (!skip) sp = job.scene->addScanPosition(mat);
-			
-			// read Images - version 4 or later of header (1.7b5+) 
+
+			// read Images - version 4 or later of header (1.7b5+)
 			if (job.version[0] >= 4)
 			{
 				uint numImages;
@@ -1079,7 +1080,7 @@ bool PodIO::readHeader(pcloud::PodJob &job, bool skip)
 
 					Calibration callib;
 					rb.read(callib);
-					
+
 					if (!skip)
 					{
 						ScanImage si(filepath, callib);
@@ -1090,24 +1091,24 @@ bool PodIO::readHeader(pcloud::PodJob &job, bool skip)
 			}
 		}
 	}
-	/* Meta Data - July 2009*/ 
+	/* Meta Data - July 2009*/
 	if (job.version[0] >= 4)
 	{
 		if (!num_scanpos)
 		{
-			/* correct full string read */ 
+			/* correct full string read */
 			std::wstring ws = readString(rb, 128);
-			
+
 			if (!skip && ws.length()) // Should never be zero length, if it is something is wrong with the read/write alignment of the header
 				job.scene->setIdentifier(ws.c_str());
 		}
 
-		/* move the pointer back into place */ 
+		/* move the pointer back into place */
 		job.h->movePointerTo(VERSION_NUM_BYTES + //version block
 										rb.size() + // previous block
 										+ sizeof(int)); // size as uint of previous block
 
-		/* check for meta block */ 
+		/* check for meta block */
 		ReadBlock mb(job.h, 0);
 
 		if (mb.size() > 32)
@@ -1120,13 +1121,13 @@ bool PodIO::readHeader(pcloud::PodJob &job, bool skip)
 
 			if ( subversion == 1)
 			{
-				// Ignore errors from this ReadBlock, 
+				// Ignore errors from this ReadBlock,
 				// the meta data being read here may not actually be available for this particular scan
-				if (!skip) 
+				if (!skip)
 				{
 					job.scene->metaData().readFromBlock( mb );
 				}
-			}		
+			}
 		}
 	}
 
@@ -1154,38 +1155,38 @@ bool PodIO::readCloudStructure(pcloud::PodJob &job, PointCloud *cloud, bool skip
 	{
 		job.state = ptds::DataSourceStateRead;
 
-		/*position placeholder*/ 
+		/*position placeholder*/
 		uint p_count, n_count;
 
-		/*position file pointer*/ 
+		/*position file pointer*/
 		int64_t fp = cloud->filepointer();
 
-		if (!fp || !job.h->movePointerTo(fp))	
+		if (!fp || !job.h->movePointerTo(fp))
 		{
-			//std::cout << "filepointer move failed, filepointer = " << ((int)fp) << std::endl;		
+			//std::cout << "filepointer move failed, filepointer = " << ((int)fp) << std::endl;
 			return false;
 		}
 
 		ReadBlock block(job.h, 0);
 
-		/*read num partitions and nodes*/ 
+		/*read num partitions and nodes*/
 		block.read(p_count);
 		block.read(n_count);
 
-		/*build partitions*/ 
+		/*build partitions*/
 		uint i;
 		float v;
 		std::vector<Voxel*> *voxels = const_cast< std::vector<Voxel*>* >(&cloud->voxels());
 		std::vector<float> partitions;
 
-		/* old version */ 
+		/* old version */
 		for (i=0;i<p_count;i++)
 		{
 			block.read(v);
 			partitions.push_back(v);
 		}
 
-		/*build nodes*/ 
+		/*build nodes*/
 		ubyte depth;
 		ubyte nodetype;
 		pt::BoundingBox extents;
@@ -1197,7 +1198,7 @@ bool PodIO::readCloudStructure(pcloud::PodJob &job, PointCloud *cloud, bool skip
 		int *node_children = new int[n_count*8];
 		int *parents = new int[n_count];
 		uint size = 0;
-		
+
 		// V5 Structure
 		int numStrata = NUM_STRATA;
 		float strataSpacing  = 0;
@@ -1217,17 +1218,17 @@ bool PodIO::readCloudStructure(pcloud::PodJob &job, PointCloud *cloud, bool skip
 			block.read(depth);
 			ubyte *ptr = (ubyte*)(void*)(&extents);
 			ptr += sizeof(void*);
-			
+
 			//block.read( buff );
 			block.read( hasQT );	// byte 1 unused
 			block.read( hasQT );	// byte 2 unused
 			block.read( hasQT );	// byte 3, should be 133 if following qt valid
 			block.read( qt );
 
-			block.read( ptr, 48 ); /* 44 bytes for BB + got a vftable 32 bit ptr in here from old implementation */ 
+			block.read( ptr, 48 ); /* 44 bytes for BB + got a vftable 32 bit ptr in here from old implementation */
 
 			// the extents are set here from the float values written to the POD file, however if the POD file being
-			// loaded contains a double bounding box data block, these extents will be overwritten by the 
+			// loaded contains a double bounding box data block, these extents will be overwritten by the
 			// DoubleBoundingPodBlockBoxHandler handler (@see dbbxHandler->apply(cloud);)
 			extentsD.setBox(extents.ux(), extents.lx(), extents.uy(), extents.ly(), extents.uz(), extents.lz());
 
@@ -1260,7 +1261,7 @@ bool PodIO::readCloudStructure(pcloud::PodJob &job, PointCloud *cloud, bool skip
 					tree[i] = vox = new Voxel(p, &p[3], depth, extentsD, size);
 					vox->pointCloud(cloud);
 				}
-				
+
 				uint c, ch, multiple;
 				uint native, storeas;
 				uint channels;
@@ -1269,7 +1270,7 @@ bool PodIO::readCloudStructure(pcloud::PodJob &job, PointCloud *cloud, bool skip
 
 				pt::vector3 offset32, scaler32;
 				pt::vector3d offset64, scaler64;
-				
+
 				block.read(channels);
 
 				int version = channels;
@@ -1291,7 +1292,7 @@ bool PodIO::readCloudStructure(pcloud::PodJob &job, PointCloud *cloud, bool skip
 					block.read(native);
 					block.read(storeas);
 					block.read(multiple);
-					
+
 					if (!quan64)
 					{
 						block.read(offset32);
@@ -1305,12 +1306,12 @@ bool PodIO::readCloudStructure(pcloud::PodJob &job, PointCloud *cloud, bool skip
 						block.read(scaler64);
 					}
 					if (hasSamples)
-					{	
-						/* read samples */ 
+					{
+						/* read samples */
 						block.read(num_samples, "Num samples");
 						block.read(sampledata, num_samples * dataTypeSize(pcloud::datatype(storeas)) * multiple, "Sample Data");
 
-						/* read past rubbish samples */ 
+						/* read past rubbish samples */
 						if (PT_NUM_DC_SAMPLES - num_samples > 0)
 						{
 							block.read(samplebuffer, (PT_NUM_DC_SAMPLES - num_samples) * dataTypeSize(pcloud::datatype(storeas)) * multiple);
@@ -1318,15 +1319,15 @@ bool PodIO::readCloudStructure(pcloud::PodJob &job, PointCloud *cloud, bool skip
 					}
 					if (!skip)
 					{
-						vox->addChannel(pcloud::channel(ch), pcloud::datatype(native), pcloud::datatype(storeas), 
+						vox->addChannel(pcloud::channel(ch), pcloud::datatype(native), pcloud::datatype(storeas),
 							multiple, 0, offset64, scaler64, sampledata, num_samples);
 					}
 				}
 
 				block.read(filepointer);
-				
+
 				vox->filePointer(filepointer);
-				
+
 				if (job.version[1] > 4)
 				{
 					block.advance(1024);	//reserved block
@@ -1334,7 +1335,7 @@ bool PodIO::readCloudStructure(pcloud::PodJob &job, PointCloud *cloud, bool skip
 					// V5 strata stuff
 					vox->setStrataSizes( numStrata, strata, strataSpacing );
 				}
-				
+
 				if (!skip)
 				{
 					voxels->push_back(vox);
@@ -1347,7 +1348,7 @@ bool PodIO::readCloudStructure(pcloud::PodJob &job, PointCloud *cloud, bool skip
 
 				if (!skip)
 				{
-					tree[i] = new Node(p, &p[3], depth, extentsD, qt);	
+					tree[i] = new Node(p, &p[3], depth, extentsD, qt);
 				}
 
 				if (job.version[1] > 4)
@@ -1357,7 +1358,7 @@ bool PodIO::readCloudStructure(pcloud::PodJob &job, PointCloud *cloud, bool skip
 			}
 		}
 
-		/*link parent/child*/ 
+		/*link parent/child*/
 		if (!skip)
 		{
 			for (i=0;i<n_count;i++)
@@ -1373,7 +1374,7 @@ bool PodIO::readCloudStructure(pcloud::PodJob &job, PointCloud *cloud, bool skip
 				if (parents[i] != -1)
 					tree[i]->reparent(tree[parents[i]]);
 			}
-			/*set root of point cloud*/ 
+			/*set root of point cloud*/
 			cloud->setRoot(tree[0]);
 		}
 
@@ -1411,7 +1412,7 @@ bool PodIO::dumpVersion(PodJob &job)
 	else readTracker->reset();
 
 	ubyte version[4];
-	ubyte endian_ = 0; 
+	ubyte endian_ = 0;
 
 	job.h->readBytes(version, 4);
 	job.h->readBytes(endian_);
@@ -1419,11 +1420,11 @@ bool PodIO::dumpVersion(PodJob &job)
 	readTracker->advance(5);
 
 	std::cout << "=========================================" << std::endl;
-	std::cout << "Pointools POD file Version " 
-		<< (int)version[0] 
-		<< (int)version[1] 
-		<< (int)version[2] 
-		<< (int)version[3] 
+	std::cout << "Pointools POD file Version "
+		<< (int)version[0]
+		<< (int)version[1]
+		<< (int)version[2]
+		<< (int)version[3]
 		<< std::endl;
 	std::cout << (endian_ ?  "Big " : "Little ") << "Endian" << std::endl;
 
@@ -1457,7 +1458,7 @@ bool PodIO::dumpHeader(pcloud::PodJob &job)
 		rb.read(guid, "Cloud GUID");
 		rb.read(structure_pointer, "Structure Pointer");
 		rb.read(data_pointer, "Data Pointer");
-		
+
 		PointCloud *pc = job.scene->newCloud();
 		job.scene->addCloud(pc);
 
@@ -1508,11 +1509,11 @@ bool PodIO::dumpCloudStructure(pcloud::PodJob &job, PointCloud *cloud)
 
 		uint p_count, n_count;
 
-		/*position file pointer*/ 
+		/*position file pointer*/
 		int64_t fp = cloud->filepointer();
 		if (!fp) return false;
-		
-		std::cout << "Current pos = " << readTracker->position() 
+
+		std::cout << "Current pos = " << readTracker->position()
 			<< " file pointer = " << ((int)fp) << std::endl;
 
 		if (!readTracker->moveTo(fp))
@@ -1523,11 +1524,11 @@ bool PodIO::dumpCloudStructure(pcloud::PodJob &job, PointCloud *cloud)
 
 		ReadBlock block(job.h, readTracker, "Structure");
 
-		/*read num partitions and nodes*/ 
+		/*read num partitions and nodes*/
 		block.read(p_count, "Partitions");
 		block.read(n_count, "Nodes");
 
-		/*build partitions*/ 
+		/*build partitions*/
 		uint i;
 		float v;
 
@@ -1538,7 +1539,7 @@ bool PodIO::dumpCloudStructure(pcloud::PodJob &job, PointCloud *cloud)
 		std::cout << "\tRead " << p_count << " partitions" << std::endl;
 		std::cout << "Position after Partitions = " << block.position() << std::endl;
 
-		/*build nodes*/ 
+		/*build nodes*/
 		ubyte depth;
 		ubyte nodetype;
 		pt::BoundingBox extents;
@@ -1572,7 +1573,7 @@ bool PodIO::dumpCloudStructure(pcloud::PodJob &job, PointCloud *cloud)
 				uint c,ch, multiple;
 				DataType native, storeas;
 				uint channels;
-				
+
 				block.read(channels, "Number Channels");
 
 				for (c=0; c<channels; c++)
@@ -1615,7 +1616,7 @@ bool PodIO::dumpCloudStructure(pcloud::PodJob &job, PointCloud *cloud)
  @param data	Pointer to the data to be written for this PodBlock
  @param dataLen	Size of data in bytes
  */
-void PodBlock::setData(void* data, unsigned long dataLen) 
+void PodBlock::setData(void* data, unsigned long dataLen)
 {
 #ifdef _DEBUG
 	// The data should only be set if this PodBlock does not already have data and does
@@ -1624,8 +1625,8 @@ void PodBlock::setData(void* data, unsigned long dataLen)
 	assert(m_data == NULL);
 	assert(m_writeDataCallback == NULL);
 #endif // _DEBUG
-	m_data = data; 
-	m_dataLen = dataLen; 
+	m_data = data;
+	m_dataLen = dataLen;
 }
 /** Write this PodBlock to the passed WriteBlock.
  PodBlocks are written as follows:
@@ -1674,7 +1675,7 @@ PodBlockManager* PodBlockManager::_instance = NULL;
 
 PodBlockManager::PodBlockManager() :
 m_blockReadPos(0)
-{ 
+{
 #ifdef _DEBUG
 	assert(_instance == NULL);
 #endif // _DEBUG
@@ -1688,7 +1689,7 @@ PodBlockManager::~PodBlockManager()
 	assert(_instance);
 #endif // _DEBUG
 
-	clear();	
+	clear();
 
 	PodBlockHandlers::iterator it;
 	for (it = m_handlers.begin(); it != m_handlers.end(); it++)
@@ -1701,13 +1702,13 @@ PodBlockManager::~PodBlockManager()
 	_instance = NULL;
 }
 
-const PodBlockManager& PodBlockManager::instance() 
+const PodBlockManager& PodBlockManager::instance()
 {
 #ifdef _DEBUG
 	assert(_instance);
 #endif // _DEBUG
 
-	return *_instance; 
+	return *_instance;
 }
 
 void PodBlockManager::clear()
@@ -1757,7 +1758,7 @@ bool PodBlockManager::read(ptds::ReadBlock& rb)
 		// Read the type of PodBlock then match it with a registered PodBlock handler
 		char type[5] = {0};
 		rb.read(type, 4);
-		
+
 		readPodBlock(type, rb);
 	}
 
@@ -1785,13 +1786,14 @@ bool PodBlockManager::readPodBlock(const char* type, ptds::ReadBlock& rb)
 	return false;
 }
 
-PodBlockReadHandler::PodBlockReadHandler(std::string const& id) : 
-m_id(id) 
-{ 
+PodBlockReadHandler::PodBlockReadHandler(std::string const& id) :
+m_id(id)
+{
 #ifdef _DEBUG
 	// PodBlock IDs must be 4 characters long
 	assert(m_id.length() == 4);
 #endif // _DEBUG
 
-	PodBlockManager::instance().registerHandler(id, this); 
+	PodBlockManager::instance().registerHandler(id, this);
 }
+POP_DISABLE_DEPRECATION_WARNINGS

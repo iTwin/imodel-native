@@ -421,7 +421,7 @@ PresentationRuleSetPtr PresentationRuleSet::ReadFromJsonFile(BeFileNameCR jsonFi
         }
     f.Close();
 
-    Utf8String serializedJson((Utf8CP)fileContents.begin(), (Utf8CP)fileContents.end());
+    Utf8String serializedJson((Utf8CP)&*fileContents.begin(), (Utf8CP)&*fileContents.end());
     PresentationRuleSetPtr ruleset = ReadFromJsonString(serializedJson);
     if (ruleset.IsValid())
         {

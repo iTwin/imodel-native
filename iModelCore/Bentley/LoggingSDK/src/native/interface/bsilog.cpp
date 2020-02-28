@@ -40,7 +40,7 @@ WCharCP         msg
     GetLogProvider().LogMessage ( m_context, sev, Utf8String(msg).c_str() );
 
 #else
-    
+
     #error unknown platform
 
 #endif
@@ -69,9 +69,9 @@ Utf8CP          msg
 
         ScopedArray<char> tempBuffer (tempStrLen+1);
         char* tempStr = tempBuffer.GetData();
-PUSH_MSVC_IGNORE(4996)
+PUSH_DISABLE_DEPRECATION_WARNINGS
         strncpy (tempStr, msg, tempStrLen);
-POP_MSVC_IGNORE
+POP_DISABLE_DEPRECATION_WARNINGS
         tempStr[tempStrLen] = '\0';
 
         GetLogProvider().LogMessage ( m_context, sev, tempStr );
@@ -93,7 +93,7 @@ va_list     args
         return;
 
     ScopedArray<WChar> buffer (g_maxMessageSize.Get());
-    BeStringUtilities::Vsnwprintf (buffer.GetData(), g_maxMessageSize.Get(), msg, args); 
+    BeStringUtilities::Vsnwprintf (buffer.GetData(), g_maxMessageSize.Get(), msg, args);
 
     message (sev, buffer.GetData());
     }
@@ -113,7 +113,7 @@ va_list     args
         return;
 
     ScopedArray<char> buffer (g_maxMessageSize.Get());
-    BeStringUtilities::Vsnprintf (buffer.GetData(), g_maxMessageSize.Get(), msg, args); 
+    BeStringUtilities::Vsnprintf (buffer.GetData(), g_maxMessageSize.Get(), msg, args);
 
     message (sev, buffer.GetData());
     }

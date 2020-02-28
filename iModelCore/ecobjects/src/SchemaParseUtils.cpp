@@ -57,7 +57,7 @@ ECObjectsStatus SchemaParseUtils::ParseCardinalityString(uint32_t &lowerLimit, u
     size_t openParenIndex = cardinalityWithoutSpaces.find('(');
     if (openParenIndex == std::string::npos)
         {
-        if (0 == BE_STRING_UTILITIES_UTF8_SSCANF(cardinalityWithoutSpaces.c_str(), "%d", &upperLimit))
+        if (0 == Utf8String::Sscanf_safe(cardinalityWithoutSpaces.c_str(), "%d", &upperLimit))
             return ECObjectsStatus::ParseError;
         LOG.debugv("Legacy cardinality of '%d' interpreted as '(0,%d)'", upperLimit, upperLimit);
         lowerLimit = 0;
@@ -70,7 +70,7 @@ ECObjectsStatus SchemaParseUtils::ParseCardinalityString(uint32_t &lowerLimit, u
         return ECObjectsStatus::ParseError;
         }
 
-    int scanned = BE_STRING_UTILITIES_UTF8_SSCANF(cardinalityWithoutSpaces.c_str(), "(%d,%d)", &lowerLimit, &upperLimit);
+    int scanned = Utf8String::Sscanf_safe(cardinalityWithoutSpaces.c_str(), "(%d,%d)", &lowerLimit, &upperLimit);
     if (2 == scanned)
         return ECObjectsStatus::Success;
 
@@ -248,7 +248,7 @@ ECObjectsStatus SchemaParseUtils::ParseLegacyMultiplicityString(uint32_t &lowerL
         return ECObjectsStatus::ParseError;
         }
 
-    int scanned = BE_STRING_UTILITIES_UTF8_SSCANF(multiplicityWithoutSpaces.c_str(), "(%d..%d)", &lowerLimit, &upperLimit);
+    int scanned = Utf8String::Sscanf_safe(multiplicityWithoutSpaces.c_str(), "(%d..%d)", &lowerLimit, &upperLimit);
     if (2 == scanned)
         return ECObjectsStatus::Success;
 
@@ -654,7 +654,7 @@ Utf8String SchemaParseUtils::GetJsonFormatString(NamedFormatCR format, ECSchemaC
         }
 
     for(int i = 0; i < unitNames.size(); i++)
-        { 
+        {
         qualifiedFormatName += "[";
         qualifiedFormatName += ECJsonUtilities::ECNameToJsonName(*primarySchema.LookupUnit(unitNames[i].c_str()));
 
@@ -671,7 +671,7 @@ Utf8String SchemaParseUtils::GetJsonFormatString(NamedFormatCR format, ECSchemaC
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    06/2018
 //--------------------------------------------------------------------------------------
-// static 
+// static
 ECObjectsStatus SchemaParseUtils::ParseName(Utf8StringR alias, Utf8StringR itemName, Utf8StringCR stringToParse)
     {
     if (0 == stringToParse.length())

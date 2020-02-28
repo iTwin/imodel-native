@@ -619,7 +619,7 @@ BENTLEYDTM_Public int bcdtmLoad_buildContourIndexDtmObject
 // RobC 24Apr2008 - Allocate memory For One Partition Only
  memContourIndex = memContourIndexInc ;
  contourIndexPP.resize(memContourIndex);
- index = contourIndexPP.data();
+ index = contourIndexPP.begin();
 /*
 ** Populate Contour Index
 */
@@ -671,7 +671,7 @@ BENTLEYDTM_Public int bcdtmLoad_buildContourIndexDtmObject
                       memContourIndex = memContourIndex + memContourIndexInc ;
                       contourIndexPP.resize(memContourIndex);
                       if( dbg ) bcdtmWrite_message(0,0,0,"01 *numContourIndexP = %8ld ** memContourIndex = %8ld",*numContourIndexP,memContourIndex) ;
-                      index = contourIndexPP.data() + *numContourIndexP ;
+                      index = contourIndexPP.begin() + *numContourIndexP ;
                       if( dbg ) bcdtmWrite_message(0,0,0,"Index Reset") ;
                      }
 /*
@@ -771,7 +771,7 @@ BENTLEYDTM_Public int bcdtmLoad_getFirstTinLineForContourFromIndexDtmObject(BC_D
 /*
 **  Set Start Index Position
 */
-    DTMContourIndexArray::iterator index = contourIndexP.data() + ofs;
+    DTMContourIndexArray::iterator index = contourIndexP.begin() + ofs;
 /*
 **  Scan Index To First Entry For Contour Value
 */
@@ -1847,7 +1847,7 @@ BENTLEYDTM_Private int bcdtmLoad_plotContourDtmObject
 **     Set Contour Index Start
 */
        contourStartOffset = *contourStartLineP ;
-       DTMContourIndexArray::iterator index = contourIndexP.data() + *contourStartLineP ;
+       DTMContourIndexArray::iterator index = contourIndexP.begin() + *contourStartLineP ;
 /*
 **     Set Zmin And Zmax For Start Contour Index
 */

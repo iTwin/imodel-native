@@ -13,6 +13,7 @@
 #endif
 
 #include <Bentley/bvector.h>
+#include <Bentley/BeAtomic.h>
 
 BEGIN_BENTLEY_NAMESPACE
 
@@ -100,7 +101,7 @@ struct MergeCancellationToken : ICancellationToken
         BENTLEYDLL_EXPORT static MergeCancellationTokenPtr Create(const bvector<ICancellationTokenPtr>& tokens);
         //! Create token that will be cancelled when any of supplied tokens gets cancelled
         BENTLEYDLL_EXPORT static MergeCancellationTokenPtr Create (ICancellationTokenPtr ct1, ICancellationTokenPtr ct2);
-        
+
         //! Check if token is cancelled
         BENTLEYDLL_EXPORT virtual bool IsCanceled() override;
         //! Register custom listener for cancellation event

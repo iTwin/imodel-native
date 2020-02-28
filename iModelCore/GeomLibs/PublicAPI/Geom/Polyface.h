@@ -29,10 +29,8 @@ typedef PolyfaceCoordinateMap *PolyfaceCoordinateMapP;
 typedef PolyfaceCoordinateMap &PolyfaceCoordinateMapR;
 
 
-
-
 //=======================================================================================
-//! 
+//!
 //! Data for face containing facets.
 //!  This is built up cooperatively by the IPolyfaceConstruction and its callers
 //!  and stored as FaceData array in PolyfaceHeader.
@@ -57,7 +55,7 @@ GEOMDLLIMPEXP void ConvertParamToNormalized (DPoint2dR normalizedParam, DPoint2d
 
 
 //! Scale distance parameters
-GEOMDLLIMPEXP void ScaleDistances (double distanceScale); 
+GEOMDLLIMPEXP void ScaleDistances (double distanceScale);
 //! To be called just after one or more "one-based, zero terminated" facets have been added to the polyface.
 //! The new facets are identified as a "face" and the face size data is recorded.
 //! Face size is tied to parameter range by scale factors from simple triangulation of all facets.
@@ -108,7 +106,7 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 /**
 @ingroup BentleyGeom_MeshSupport
    A BlockedVector<T> is an in-memory bvector<T> augmented with blocking and context information corresponding to a DGN file "MATRIX_ELM".
-  
+
    <p>The following information in the BlockedVector directly matches what is stored in a DGN file MATRIX_HEADER_ELM:
    <TABLE BORDER="1">
    <TR><TD>NumPerStruct</TD> <TD>Number of machine primitives (int or double) in the template structure T.</TD>
@@ -125,34 +123,34 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
    </TR>
    </TABLE>
    </p>
-  
+
    <p>In addition, the BlockedVector has a boolean Active.  In a runtime PolyfaceVectors structure, all possible arrays are present, and those not in use
    for a particular mesh instance have the Active property false.
-  
+
    The NumPerStruct values for common arrayed type T are:
    <TABLE BORDER="1">
    <TR>
    <TH>typename T
-   </TH> 
+   </TH>
    <TH>matrix primitive
-   </TH>   
+   </TH>
    <TH>NumPerStruct
    </TH>
    </TR>
-   <TR><TD>DPoint3d</TD> <TD>double</TD>   <TD>3</TD>   
+   <TR><TD>DPoint3d</TD> <TD>double</TD>   <TD>3</TD>
    </TR>
-   <TR><TD>DPoint2d</TD> <TD>double</TD>   <TD>2</TD>   
+   <TR><TD>DPoint2d</TD> <TD>double</TD>   <TD>2</TD>
    </TR>
-   <TR><TD>DVec3d</TD> <TD>double</TD>   <TD>3</TD>     
+   <TR><TD>DVec3d</TD> <TD>double</TD>   <TD>3</TD>
    </TR>
-   <TR><TD>RgbFactor</TD> <TD>double</TD>   <TD>3</TD>  
+   <TR><TD>RgbFactor</TD> <TD>double</TD>   <TD>3</TD>
    </TR>
-   <TR><TD>int</TD> <TD>int</TD>   <TD>1</TD>        
+   <TR><TD>int</TD> <TD>int</TD>   <TD>1</TD>
    </TR>
-   <TR><TD>double</TD> <TD>double</TD>   <TD>1</TD>   
+   <TR><TD>double</TD> <TD>double</TD>   <TD>1</TD>
    </TR>
    </TABLE>
-*/   
+*/
 template <typename T>
 struct BlockedVector : bvector <T>
 {
@@ -163,7 +161,7 @@ protected:
     uint32_t m_structsPerRow;
     //! Application tag.
     uint32_t m_tag;              // application tag
-    uint32_t m_indexFamily; 
+    uint32_t m_indexFamily;
     //! Tag of the blocked vector that indexes into this one.
     uint32_t m_indexedBy;
     //! Indicates if this blocked vector is to be filled.
@@ -187,7 +185,7 @@ public:
     GEOMDLLIMPEXP uint32_t Tag () const;
 //! Return the IndexFamily.
     GEOMDLLIMPEXP uint32_t IndexFamily () const;
-//! Return the IndexedBy 
+//! Return the IndexedBy
     GEOMDLLIMPEXP uint32_t IndexedBy () const;
 //! Set all blocking and tag data at once
     GEOMDLLIMPEXP void SetTags (uint32_t numPeStruct, uint32_t structsPerRow, uint32_t tag, uint32_t IndexFamily, uint32_t IndexedBy, bool active);
@@ -203,7 +201,7 @@ public:
 //! Clear this vector.   Append up to n values from source, with first source index i0.   Replicate leading numWrap values at end.
     GEOMDLLIMPEXP uint32_t ClearAndAppendBlock (T const *source, size_t sourceSize, uint32_t i0, uint32_t numWrap, uint32_t n);
 
-//! Clear this vector.   Append all data from source 
+//! Clear this vector.   Append all data from source
     GEOMDLLIMPEXP void ClearAndAppend (bvector<T> const &source);
 
 //! clear the bvector, then append (push_back) {numItem+numWrap} source values identified by contiguous indices in index array.
@@ -213,7 +211,7 @@ public:
     GEOMDLLIMPEXP uint32_t ClearAndAppendByOneBasedIndices
             (
             bvector<int> &zeroBasedIndices,
-            bvector<bool> *positive,
+            bvector<BoolTypeForVector> *positive,
             bvector<T> &source,
             bvector<int> &oneBasedIndices,
             uint32_t i0,
@@ -229,7 +227,7 @@ public:
     GEOMDLLIMPEXP uint32_t ClearAndAppendByOneBasedIndices
             (
             bvector<int> &zeroBasedIndices,
-            bvector<bool> *positive,
+            bvector<BoolTypeForVector> *positive,
             T const *pSource,
             size_t sourceCount,
             int const *oneBasedIndices,
@@ -266,16 +264,16 @@ public:
 //! Return pointer to the flat buffer.  Illicit in std, but ....
     GEOMDLLIMPEXP T const * GetCP () const;
 
-//! Reverse entries iFirst < i < iLast 
+//! Reverse entries iFirst < i < iLast
 
     GEOMDLLIMPEXP void ReverseInRange (size_t iFirst, size_t iLast);
 
-//! Copy (or quietly ignore range errors) from one place to another 
+//! Copy (or quietly ignore range errors) from one place to another
 
     GEOMDLLIMPEXP void CopyData (size_t fromIndex, size_t toIndex);
 
 //! Copy {count} values (or quietly ignore range errors) from index0 to 0.
-//!        Trim all others. 
+//!        Trim all others.
 
     GEOMDLLIMPEXP void Trim (size_t index0, size_t count);
 
@@ -353,10 +351,10 @@ bool clearFirst,
 int firstValue,
 int terminator);
 
-//! Negate a portion of the array. 
+//! Negate a portion of the array.
 
 GEOMDLLIMPEXP void NegateInRange (size_t iFirst, size_t iLast);
-//! Shift signs from (cyclic) predecessors. 
+//! Shift signs from (cyclic) predecessors.
 
 //! for each k in the inclusive range kFirst<=k<=kLast, set the sign to the prior value from its
 GEOMDLLIMPEXP void ShiftSignsFromCyclicPredecessorsInRange (size_t kFirst, size_t kLast);
@@ -370,7 +368,7 @@ GEOMDLLIMPEXP bool AllNegativeInRange (size_t iFirst, size_t iLast);
 GEOMDLLIMPEXP void NegativeAbsInRange (size_t iFirst, size_t iLast);
 //! From given start position, find final (inclusive) position and position for next start search.
 //!  Initialize iFirst to zero before first call.
-//!  Return false if no more faces. 
+//!  Return false if no more faces.
 GEOMDLLIMPEXP bool DelimitFace (int numPerFace, size_t iFirst, size_t &iLast, size_t &iNext);
 
 //! Return min and max values in entire vector.
@@ -378,7 +376,7 @@ GEOMDLLIMPEXP bool DelimitFace (int numPerFace, size_t iFirst, size_t &iLast, si
 //! @param [out] maxValue largest value, INT_MIN if empty array.
 GEOMDLLIMPEXP bool MinMax (int &minValue, int &maxValue) const;
 
-//! Append from source array, shifting each nonzero index by signed shift 
+//! Append from source array, shifting each nonzero index by signed shift
 
 GEOMDLLIMPEXP void AppendShifted (BlockedVectorInt const & source, int shift);
 
@@ -535,7 +533,7 @@ double fraction;
 
 
 //=======================================================================================
-//! 
+//!
 //! Data for describing a polyface edge.
 //! @ingroup BentleyGeom_MeshMarkup
 //!
@@ -551,11 +549,11 @@ struct  PolyfaceEdge
     GEOMDLLIMPEXP PolyfaceEdge(uint32_t index0, uint32_t index1);
 
     GEOMDLLIMPEXP bool operator < (PolyfaceEdge const& rhs) const;
-    };                 
+    };
 
 
 //=======================================================================================
-//! 
+//!
 //! Data for describing a set of connected edges of a polyface and their source.
 //! @ingroup BentleyGeom_MeshMarkup
 //!
@@ -564,7 +562,7 @@ struct PolyfaceEdgeChain
 private:
     CurveTopologyId                 m_id;
     bvector<int32_t>                m_vertexIndices;
-    
+
     void Build(bvector<PolyfaceEdge>&& edges);
 public:
 //! Construct an empty chain with default CurveTopologyId.
@@ -644,7 +642,7 @@ bvector<DPoint3d> &dtm,             //!< [in] points around the dtm loop
 size_t dtmReadIndex,                //!< [in] read index for the dtm facet this came from.
 bvector<DPoint3d> &road,            //!< [in] points around the road loop.
 size_t roadReadIndex,               //!< [in] read index for the road facet this came freom.
-bvector<bool> &roadBoundaryFlag,    //!< [in] true if the succeeding edge is a boundary of the cutFill component.
+bvector<BoolTypeForVector> &roadBoundaryFlag,    //!< [in] true if the succeeding edge is a boundary of the cutFill component.
 bool isCut                          //!< [in] true if this is a "cut" -- road below dtm.  false if this is "fill" -- dtm below road
 ) {}
 
@@ -690,7 +688,7 @@ GEOMAPI_VIRTUAL size_t                       _GetEdgeChainCount () const = 0;
 GEOMAPI_VIRTUAL DPoint3dCP                   _GetPointCP () const = 0;
 GEOMAPI_VIRTUAL DVec3dCP                     _GetNormalCP () const = 0;
 GEOMAPI_VIRTUAL DPoint2dCP                   _GetParamCP () const = 0;
-GEOMAPI_VIRTUAL uint32_t const *             _GetIntColorCP () const = 0; 
+GEOMAPI_VIRTUAL uint32_t const *             _GetIntColorCP () const = 0;
 GEOMAPI_VIRTUAL FacetFaceDataCP              _GetFaceDataCP () const = 0;
 GEOMAPI_VIRTUAL int32_t const*               _GetPointIndexCP () const = 0;
 GEOMAPI_VIRTUAL int32_t const*               _GetColorIndexCP () const = 0;
@@ -746,7 +744,7 @@ GEOMDLLIMPEXP PolyfaceAuxDataCPtr           GetAuxDataCP() const;
 
 
 //! For Color, Param, and normal indices, resolveToDefaults allows caller to request using
-//! PointIndex (or other default decision) if respective index is same as PointIndex. 
+//! PointIndex (or other default decision) if respective index is same as PointIndex.
 
 //! Return pointer to contiguous point indices.
 GEOMDLLIMPEXP int32_t const*                  GetPointIndexCP () const;
@@ -807,7 +805,7 @@ GEOMDLLIMPEXP ValidatedDouble ValidatedVolume () const;
 //! Return the sum of tetrahedral volumes from the specified origin.
 //!        If the mesh is closed and all facets are simply connected planar, this is the signed enclosed volume.
 //!        (The facets and volume are not require to be convex.)
-//!    
+//!
 GEOMDLLIMPEXP double SumTetrahedralVolumes (DPoint3dCR origin) const;
 
 //! Return the sum of areas as viewed with given direction toward the eye.
@@ -875,7 +873,7 @@ double &volume
 //!        (The facets and volume are not require to be convex.)
 //! @param [in] origin origin for tetrahedra.
 //! @param [out] moments sum of (x,y,z) dV
-//! @return summed volume 
+//! @return summed volume
 GEOMDLLIMPEXP double SumTetrahedralFirstMoments (DPoint3dCR origin, DVec3dR moments) const;
 
 
@@ -884,7 +882,7 @@ GEOMDLLIMPEXP double SumTetrahedralFirstMoments (DPoint3dCR origin, DVec3dR mome
 //! @param [out] volume summed volume.
 //! @param [out] moment1 first moments
 //! @param [out] products product integrals [xx xy xz; yx yy yz; zx xy zz].    Note that this is the products; inertial tensor can be computed from the diagonals.
-//!    
+//!
 GEOMDLLIMPEXP void SumTetrahedralMomentProducts (TransformCR worldToLocal, double &volume, DVec3dR moment1, RotMatrixR products) const;
 
 //! Return the volume, centroid, orientation, and principal moments
@@ -899,7 +897,7 @@ DVec3dR momentxyz,       //!< [out] moments (yy+zz,xx+zz,xx+yy) around the princ
 bool forcePositiveVolume = false    //!< [in] if true, the volume and moments are reversed if volume is negative.
 ) const;
 
-//! Return the sum of facet areas. There is no check for planarity. 
+//! Return the sum of facet areas. There is no check for planarity.
 GEOMDLLIMPEXP double SumFacetAreas () const;
 
 //! Return the sum of facet areas.  Return moment with respect to origin.
@@ -1148,7 +1146,7 @@ IPolyfaceVisitorFilter *filter
 //! @description  (DEPRECATED) Compute volumes "between" primary and barrier facets
 //! @param [in] polyfaceA first facet set (e.g. road surface)
 //! @param [in] polyfaceB second facet set (e.g. ground dtm)
-//! @param [out] resultAaboveB volume where polyfaceA is above polyfaceB 
+//! @param [out] resultAaboveB volume where polyfaceA is above polyfaceB
 //! @param [out] resultBaboveA volume where polyfaceB is above polyfaceA
 static GEOMDLLIMPEXP void ComputeCutAndFill
 (
@@ -1187,7 +1185,7 @@ T data;
 //! @description Compute volumes "between" primary and barrier facets
 //! @param [in] polyfaceA first facet set (e.g. road surface)
 //! @param [in] polyfaceB second facet set (e.g. ground dtm)
-//! @param [out] resultAaboveB volume where polyfaceA is above polyfaceB 
+//! @param [out] resultAaboveB volume where polyfaceA is above polyfaceB
 //! @param [out] resultBaboveA volume where polyfaceB is above polyfaceA
 static GEOMDLLIMPEXP void ComputeCutAndFill
 (
@@ -1215,7 +1213,7 @@ bvector<PolyfaceHeaderPtr> &result
 // sweep a punching mesh in the xy direction to clip a target mesh.
 static GEOMDLLIMPEXP void ComputePunchXYByPlaneSets
 (
-PolyfaceQueryCR punch,  //!< [in] each facet of this is used as a "punch" 
+PolyfaceQueryCR punch,  //!< [in] each facet of this is used as a "punch"
 PolyfaceQueryCR target, //!< [in] facets to be split by the punch.
 PolyfaceHeaderPtr *inside,  //!< [out] (target intersect punch)
 PolyfaceHeaderPtr *outside,  //!< [out] (target outsideOf punch)
@@ -1257,7 +1255,7 @@ GEOMDLLIMPEXP double BuildConvexClipPlaneSet (ConvexClipPlaneSetR planes);
 //! <ul>
 //!    <li>pData[0], pData[1], pData[2] = view along respective axes.   Use signed area, so result should be zero
 //!              if all facets are present to cancel.
-//!    <li>pData[0], pData[1], pData[2] = view along respective axes.   Use absolute area, so result should be useful for 
+//!    <li>pData[0], pData[1], pData[2] = view along respective axes.   Use absolute area, so result should be useful for
 //!             setting tolerances.
 //!    <li>pData[6] = full 3d area.
 //! </ul>
@@ -1449,7 +1447,7 @@ GEOMDLLIMPEXP bool PartitionByConnectivity (int connectivityType, bvector<ptrdif
 //! @param [in] blockedReadIndex Array of read indices with -1 as terminator between blocks that are to go to the same destination mesh.
 //! @param [out] submeshArray This is initially cleared, then filled with as many (smartpointers to) new arrays as needed
 //!     for the blocking.  Each new array receives data from a block.
-GEOMDLLIMPEXP bool CopyPartitions 
+GEOMDLLIMPEXP bool CopyPartitions
 (
 bvector<ptrdiff_t> const& blockedReadIndex,
 bvector<PolyfaceHeaderPtr> &submeshArray
@@ -1480,7 +1478,7 @@ GEOMDLLIMPEXP bool PartitionByConnectivity (int connectivityType, bvector<Polyfa
 //! <li> facets wtihin tolerance of perpendicular to the vector are in readIndices[2]
 //! </ul>
 //! @param [in] vector viewing direction vector
-//! @param [out] readIndices read indices for forward, reverse, and perpendicular facets 
+//! @param [out] readIndices read indices for forward, reverse, and perpendicular facets
 //! @param [in] sideFaceRadiansTolerance for declaring a facet's normal is perpenducular to the vector.
 //! @return false if vector is 000.
 GEOMDLLIMPEXP bool PartitionReadIndicesByNormal(
@@ -1527,7 +1525,7 @@ private:
     uint32_t            m_numPerRow;
 public:
 
-//! Constructor with parameters for all the data storable in a mesh element 
+//! Constructor with parameters for all the data storable in a mesh element
 
 GEOMDLLIMPEXP PolyfaceQueryCarrier (
     uint32_t numPerFace,
@@ -1540,7 +1538,7 @@ GEOMDLLIMPEXP PolyfaceQueryCarrier (
     void const* unused = nullptr,                // Was illuminated name.
     uint32_t                meshStyle = 1,       // MESH_ELM_STYLE_INDEXED_FACE_LOOPS
     uint32_t                numPerRow = 0        // only needed for QUAD_GRID and TRIANGLE_GRID
-    );                                    
+    );
 
 
 //! set FacetFaceData array and count.
@@ -1573,7 +1571,7 @@ PolyfaceAuxDataCPtr _GetAuxDataCP()             const override { return m_auxDat
 
 
 //! For Color, Param, and normal indices, resolveToDefaults allows caller to request using
-//! PointIndex (or other default decision) if respective index is same as PointIndex. 
+//! PointIndex (or other default decision) if respective index is same as PointIndex.
 
 int32_t const*      _GetPointIndexCP ()         const override { return m_pointIndexPtr;}
 int32_t const*      _GetColorIndexCP ()         const override { return m_colorIndexPtr;}
@@ -1663,7 +1661,7 @@ PolyfaceAuxDataCPtr     _GetAuxDataCP ()        const override;
 
 
 //! These virtuals are called by plain methods with additional argument for default control.
-//!    The defualt logic is implemented by the plain methods.  The virtuals are simple queries, 
+//!    The defualt logic is implemented by the plain methods.  The virtuals are simple queries,
 //!    return null if no specific array provided.
 //!
 int32_t const*          _GetPointIndexCP  ()     const override;
@@ -1697,7 +1695,7 @@ public:
     //! Set the row count for gridded facets.
     GEOMDLLIMPEXP void  SetNumPerRow (uint32_t numPerRow);
     //! Set the facet data style.
-    GEOMDLLIMPEXP void  SetMeshStyle (uint32_t meshStyle); 
+    GEOMDLLIMPEXP void  SetMeshStyle (uint32_t meshStyle);
     //! Set the auxilliary data.
     GEOMDLLIMPEXP void SetAuxData(PolyfaceAuxDataPtr& auxData);
 
@@ -1767,8 +1765,8 @@ protected:
 
 
 public:
-//! Compress duplicate coordinate data 
-GEOMDLLIMPEXP void Compress ();                                             
+//! Compress duplicate coordinate data
+GEOMDLLIMPEXP void Compress ();
 
 //! Initial setup for tag data in blocked vectors.
 //! Points are active.
@@ -1776,7 +1774,7 @@ GEOMDLLIMPEXP void Compress ();
 //! All other coordinate and index arrays are NOT active.
 //! TwoSided is true.
 GEOMDLLIMPEXP void ClearTags (uint32_t numPerFace, uint32_t meshStyle);
-                                                                                                                                                                                                 
+
 //! Add data to index arrays.
 GEOMDLLIMPEXP bool AddIndexedFacet
     (
@@ -1970,7 +1968,7 @@ bvector<ptrdiff_t> *topFacetReadIndex,     //!< [out] optional array of read ind
 bvector<ptrdiff_t> *bottomFacetReadIndex,     //!< [out] optional array of read indices of lower surface facets
 bvector<ptrdiff_t> *sideFacetReadIndex     //!< [out] optional array of read indices of side facets
 );
-//! Create a (smart pointer to a) new (empty) PolyfaceHeader, with each facet defined 
+//! Create a (smart pointer to a) new (empty) PolyfaceHeader, with each facet defined
 //! by 3 or 4 unindexed points as indicated by the arg.
 //! @returns invalid if numPerFace is other than 3 or 4.
 GEOMDLLIMPEXP static PolyfaceHeaderPtr CreateFixedBlockCoordinates (int numPerFace);
@@ -2004,7 +2002,7 @@ TransformR worldToLocal             //!< [out] transform used to put the polygon
 );
 
 //! Find visible parts from facets in multiple input polygons.
-//! 
+//!
 GEOMDLLIMPEXP void static VisibleParts
 (
 bvector<PolyfaceHeaderPtr> &source, //!< [in] multiple meshes for viewing
@@ -2129,7 +2127,7 @@ IPolyfaceVisitorFilter *filter  //!< [in] optional object to ask if current face
 GEOMDLLIMPEXP bool CompactIndexArrays ();
 
 
-//! Apply a transform to all coordinates. Optionally reverse index order (to maintain cross product relationships) 
+//! Apply a transform to all coordinates. Optionally reverse index order (to maintain cross product relationships)
 
 GEOMDLLIMPEXP void Transform
 (
@@ -2137,7 +2135,7 @@ TransformCR transform,
 bool        reverseIndicesIfMirrored = true
 );
 
-//! Apply a transform to all coordinates of an array of meshes. Optionally reverse index order (to maintain cross product relationships) 
+//! Apply a transform to all coordinates of an array of meshes. Optionally reverse index order (to maintain cross product relationships)
 
 static GEOMDLLIMPEXP void Transform
 (
@@ -2223,7 +2221,7 @@ GEOMDLLIMPEXP size_t DecimateByEdgeCollapse
 double abstol,  //!< [in] absolute tolerance for collapsing vertices
 double rangeFractionTol //!< [in] tolerance as fraction of range of the mesh points
 );
-//!  @description Fast normal generation - used during tile generation. 
+//!  @description Fast normal generation - used during tile generation.
 //! @param [in] creaseTolerance dihedral angle considered "smooth" for a single edge.
 //! @param[in] sharedEdgeSizeTolerance if facet is smaller than this tolerance then expenseive shared normal calculation is omitted.
 GEOMDLLIMPEXP void BuildNormalsFast(double creaseTolerance, double sharedEdgeSizeTolerance);
@@ -2355,11 +2353,11 @@ TransformCR worldToLocal         //!< [in] transform from world to params
 );
 
 
-//! Clear current normal data. 
+//! Clear current normal data.
 //! @param [in] active active state (true/false) to be applied after clearing.
 GEOMDLLIMPEXP void ClearNormals (bool active);
 
-//! Clear current param data. 
+//! Clear current param data.
 //! @param [in] active active state (true/false) to be applied after clearing.
 GEOMDLLIMPEXP void ClearParameters (bool active);
 
@@ -2496,7 +2494,7 @@ GEOMDLLIMPEXP void CollectEdgeMateData (bvector<FacetEdgeDetail> &segments,
 
 //! If (1) param, normal, or color indices are missing and (2) their respective data arrays have size match with points,
 //!    fill up the index array as duplicate of the pointIndex
-GEOMDLLIMPEXP void  ReplicateMissingIndexArrays (); 
+GEOMDLLIMPEXP void  ReplicateMissingIndexArrays ();
 };
 
 /*__PUBLISH_SECTION_END__*/
@@ -2567,7 +2565,7 @@ enum class SearchState
     SuspendByMaxNewHit
     };
 
-//! Initialize for search 
+//! Initialize for search
 GEOMDLLIMPEXP PolyfaceEdgeSearcher (PolyfaceQueryCR polyface, DMatrix4dCR worldToLocal, double localAperture, bool ignoreInvisibleEdges);
 //! Reset for further search.
 GEOMDLLIMPEXP void Reset ();
@@ -2657,7 +2655,7 @@ enum class SearchState
     SuspendByMaxNewHit
     };
 
-//! Initialize for search 
+//! Initialize for search
 GEOMDLLIMPEXP PolyfacePolygonPicker (PolyfaceQueryCR polyface, DMatrix4dCR worldToLocal);
 //! Reset for further search.
 GEOMDLLIMPEXP void Reset ();
@@ -2756,7 +2754,6 @@ GEOMDLLIMPEXP void SelectFacetsXY (DPoint3dCR spacePoint, size_t pointIndex, bve
 
 /*__PUBLISH_SECTION_START__*/
 
-
 //! @description Helper object to assist visiting each face of a polyface mesh.
 //!  Access queries for header of polyface mesh.
 //! A PolyfaceVisitor is a PolyfaceHeader which at any time contains (only) one face of a client Polyface.
@@ -2789,7 +2786,7 @@ GEOMAPI_VIRTUAL bool _AddVertexByReadIndex (size_t readIndex);
 // To be established by each implementation during AdvanceToNextFace ....
     uint32_t            m_numEdgesThisFace;
     uint32_t            m_numWrap;
-    bvector<bool>       m_visible;
+    bvector<BoolTypeForVector>       m_visible;
     bvector<size_t>     m_indexPosition;
     bool                m_allData;
 
@@ -2966,7 +2963,7 @@ GEOMDLLIMPEXP bool AccumulateScaledData (FacetLocationDetailR detail, size_t ver
 //!<li>The prefered z direction is the outward normal of the xyz loop with CCW direction.
 //!<li>The selector parameter chooses among 4 options:
 //!   <ul>
-//!   <li>LOCAL_COORDINATE_SCALE_UnitAxesAtStart -- origin at first point (even if not lower left!!), local axes have unit length, so 
+//!   <li>LOCAL_COORDINATE_SCALE_UnitAxesAtStart -- origin at first point (even if not lower left!!), local axes have unit length, so
 //!        local coordinates are real distances.
 //!   <li>LOCAL_COORDINATE_SCALE_UnitAxesAtLowerLeft -- origin at lower left.  All xy local coordinates are 0 or positive, and local coordinates
 //!         are real distances along the local directions
@@ -3001,10 +2998,8 @@ GEOMDLLIMPEXP uint32_t  NumEdgesThisFace() const;
 GEOMDLLIMPEXP uint32_t  GetNumWrap () const;
 //! Set the number of wraparound vertices to be added to faces when they are read.
 GEOMDLLIMPEXP void      SetNumWrap (uint32_t numWrap);
-//!return const pointer to array of per-edge visiblity flags
-GEOMDLLIMPEXP bool const* GetVisibleCP() const;
 //! return the (reference to) the array of per-edge visibility flags.
-GEOMDLLIMPEXP bvector<bool> &Visible ();
+GEOMDLLIMPEXP bvector<BoolTypeForVector> &Visible ();
 //!  return the (reference to) the array indicating where vertex indices were read from the attached mesh.
 GEOMDLLIMPEXP bvector<size_t>& IndexPosition ();
 //!  Save data for traversing the given parentMesh
@@ -3031,7 +3026,7 @@ GEOMDLLIMPEXP size_t PushFaceData (PolyfaceVisitor &source, size_t i0);
 //! Active state is checked in receiver. Index is not checked.
 GEOMDLLIMPEXP void PushIndexData (PolyfaceVisitor &source, size_t i0);
 
-//! In source, interpolate between specified indices of face data. 
+//! In source, interpolate between specified indices of face data.
 //! Active state is checked in receiver. Index is not checked.
 //!
 //! return the index of new point.
@@ -3147,25 +3142,25 @@ PolyfaceZYXDVec3dMap (DVec3dZYXTolerancedSortComparison const &compare);
 
 
 struct DPoint3dZYXSortComparison
-    : public std::binary_function <DPoint3d, DPoint3d, bool> 
+    : public std::binary_function <DPoint3d, DPoint3d, bool>
 {
 bool operator () (const DPoint3d& pointA, const DPoint3d &pointB) const;
 };
 
 struct DVec3dZYXSortComparison
-    : public std::binary_function <DVec3d, DVec3d, bool> 
+    : public std::binary_function <DVec3d, DVec3d, bool>
 {
 bool operator () (const DVec3d& vecA, const DVec3d &vecB) const;
 };
 
 struct DPoint2dYXSortComparison
-    : public std::binary_function <DPoint2d, DPoint2d, bool> 
+    : public std::binary_function <DPoint2d, DPoint2d, bool>
 {
 bool operator () (const DPoint2d& pointA, const DPoint2d &pointB) const;
 };
 
 struct UInt32SortComparison
-    : public std::binary_function <uint32_t, uint32_t, bool> 
+    : public std::binary_function <uint32_t, uint32_t, bool>
 {
 bool operator () (const uint32_t & pointA, const uint32_t &pointB) const;
 };
@@ -3227,7 +3222,7 @@ public:
     GEOMDLLIMPEXP void SetCurrentParamZ (double data);
     //! Query the current z assigned to parameters in the mapping.
     GEOMDLLIMPEXP double GetCurrentParamZ () const;
-    
+
     //! set range data to null range.
     GEOMDLLIMPEXP void ResetCurrentFaceData ();
 //! (Find or) Add a point.  Return its (0 based) index.
@@ -3267,7 +3262,7 @@ public:
     GEOMDLLIMPEXP bool   FindIntColor (uint32_t color, size_t &index);
 
 //! Try to dereference a point by index.
-    GEOMDLLIMPEXP bool TryGetPoint (size_t index, DPoint3dR xyz) const;    
+    GEOMDLLIMPEXP bool TryGetPoint (size_t index, DPoint3dR xyz) const;
 
 //! DEPRECATED -- use Create(polyface)
     static GEOMDLLIMPEXP PolyfaceCoordinateMapPtr New (PolyfaceHeaderR polyface);
@@ -3315,7 +3310,7 @@ public:
 //! @param [in] formNewFacesOnClipPlanes true to attempt reassembling faces on clip planes.
 //! @param [in] filter for mesh
 //! @param [out] cutLoops optional coordinate data for cut loops
-//! @param [out] cutChains optional coordinate data for cut chains 
+//! @param [out] cutChains optional coordinate data for cut chains
     GEOMDLLIMPEXP static void AddClippedPolyface (PolyfaceQueryR source,
         PolyfaceCoordinateMapP insideDest,
         PolyfaceCoordinateMapP outsideDest,
@@ -3386,8 +3381,8 @@ struct LightweightPolyfaceBuilder : RefCountedBase
         int64_t     m_x, m_y, m_z;
 
         QPoint3d() { }
-        QPoint3d(DPoint3dCR point, double tol); 
-        QPoint3d(DVec3dCR vector, double tol); 
+        QPoint3d(DPoint3dCR point, double tol);
+        QPoint3d(DVec3dCR vector, double tol);
         bool operator < (struct QPoint3d const& rhs) const;
         };
     struct QPoint2d
@@ -3395,11 +3390,11 @@ struct LightweightPolyfaceBuilder : RefCountedBase
         int64_t     m_x, m_y, m_z;
 
         QPoint2d() { }
-        QPoint2d(DPoint2dCR point, double tol); 
+        QPoint2d(DPoint2dCR point, double tol);
         bool operator < (struct QPoint2d const& rhs) const;
         };
 
-private:       
+private:
     bmap<QPoint3d, size_t>  m_pointMap;
     bmap<QPoint3d, size_t>  m_normalMap;
     bmap<QPoint2d, size_t>  m_paramMap;
@@ -3425,25 +3420,25 @@ public:
     GEOMDLLIMPEXP size_t FindOrAddParam (DPoint2dCR param);
 
 
-    //! Add a point index, adjusted to 1-based indexing with visibility in sign. 
+    //! Add a point index, adjusted to 1-based indexing with visibility in sign.
     GEOMDLLIMPEXP void AddPointIndex (size_t zeroBasedIndex, bool visible);
 
-    //! Add a normal index, adjusted to 1-based indexing. 
+    //! Add a normal index, adjusted to 1-based indexing.
     GEOMDLLIMPEXP void AddNormalIndex (size_t zeroBasedIndex);
 
-    //! Add a param index, adjusted to 1-based indexing  
+    //! Add a param index, adjusted to 1-based indexing
     GEOMDLLIMPEXP void AddParamIndex (size_t zeroBasedIndex);
 
     //! Add terminators.
     GEOMDLLIMPEXP void AddIndexTerminators();
 
-    //! Add a terminator to the point index table.  
+    //! Add a terminator to the point index table.
     GEOMDLLIMPEXP void AddPointIndexTerminator ( );
 
-    //! Add a terminator to the normal index table. 
+    //! Add a terminator to the normal index table.
     GEOMDLLIMPEXP void AddNormalIndexTerminator ( );
 
-    //! Add a terminator to the param index table.  
+    //! Add a terminator to the param index table.
     GEOMDLLIMPEXP void AddParamIndexTerminator ( );
 
     //! Return polyface

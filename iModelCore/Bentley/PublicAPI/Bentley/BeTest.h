@@ -33,8 +33,10 @@
         #define UNICODE 1
         #define _UNICODE 1
     #endif
+PUSH_DISABLE_DEPRECATION_WARNINGS
     #include <gtest/gtest.h>
     #include <gmock/gmock.h>
+POP_DISABLE_DEPRECATION_WARNINGS
     #endif
 
 #else
@@ -91,11 +93,11 @@
 
         #undef  TEST
         #define TEST(testCaseName, testName) DEFINE_BETEST_INTERNAL(testing::Test,testCaseName,testName)
-    
+
     #endif
 
     #define RUN_ALL_TESTS BeTest::RunAllTests
-    
+
 #endif
 
 BEGIN_BENTLEY_NAMESPACE
@@ -148,7 +150,7 @@ public:
     BENTLEYDLL_EXPORT void GetDgnPlatformAssetsDirectory (BeFileName& path);
     //! Where a unit test can write temporary data files
     BENTLEYDLL_EXPORT void GetOutputRoot (BeFileName& path);
-    //! Where a unit test can purely temporary files. 
+    //! Where a unit test can purely temporary files.
     //! @Note: Do not plan to store much in the temp directory. Files are deleted automatically when this directory gets too large. This directory is deleted entirely when the test finishes.
     //! @Note: Use GetOutputRoot for large files or files that should stick around for a long time.
     BENTLEYDLL_EXPORT void GetTempDir (BeFileName& path);
@@ -187,7 +189,7 @@ struct TestCaseInfo
 
 ///@}
 
-struct IFailureHandler 
+struct IFailureHandler
     {
     virtual void _OnAssertionFailure (WCharCP msg) THROW_SPECIFIER(CharCP) = 0;
     virtual void _OnUnexpectedResult (WCharCP msg) THROW_SPECIFIER(CharCP) = 0;
@@ -233,14 +235,14 @@ BENTLEYDLL_EXPORT static void setS_mainThreadId (intptr_t id);
 
 ///@}
 
-///@name Information about the currently running test 
+///@name Information about the currently running test
 ///@{
 
-//! Get name of currently running test. 
+//! Get name of currently running test.
 //! @return the name of a test or "" if no test is running
 static Utf8CP GetNameOfCurrentTest()
     {
-#if defined (USE_GTEST) 
+#if defined (USE_GTEST)
 #if !defined(BETEST_NO_INCLUDE_GTEST)
     ::testing::TestInfo const* tinfo = ::testing::UnitTest::GetInstance()->current_test_info();
     if (nullptr == tinfo)
@@ -255,7 +257,7 @@ static Utf8CP GetNameOfCurrentTest()
 #endif
     }
 
-//! Get name of the "test case" of the currently running test. 
+//! Get name of the "test case" of the currently running test.
 //! @return the name of a test case or "" if no test is running
 static Utf8CP GetNameOfCurrentTestCase()
     {
@@ -317,8 +319,8 @@ BENTLEYDLL_EXPORT static void TearDownTestCase(Utf8CP);
 ///@}
 
 
-    // NB: the macros expand to 
-    //  if(test) ; else ExpectedResult(...) 
+    // NB: the macros expand to
+    //  if(test) ; else ExpectedResult(...)
     // to mimic the gtest implementation. Note that the error handling is the in else clause and has no trailing ;
     // The main reason for doing it this way is that whatever comes after the test macro must be evaluated only if the expression is false. For example,
     // In the test
@@ -451,7 +453,7 @@ public:
     BENTLEYDLL_EXPORT static void RethrowAssertFromOtherTreads();
 
 #ifdef BENTLEY_WINRT
-    //! Non-gtest only / WinRT only: Tell failure-handling code where to resume execution when aborting a failing test. 
+    //! Non-gtest only / WinRT only: Tell failure-handling code where to resume execution when aborting a failing test.
     //! @note This function is needed only by a test that overrides InvokeTestBody. In that case, the test must do its
     //! own error-checking and reporting. On UWP only, when a test fails and must be terminated, BeTest calls longjmp.
     //! The purpose of this function is to allow the caller to tell BeTest what jmp_buf it should use.

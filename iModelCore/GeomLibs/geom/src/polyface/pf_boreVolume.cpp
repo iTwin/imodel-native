@@ -79,7 +79,7 @@ bvector<ptrdiff_t> *sideFacetReadIndex     //!< [out] optional array of read ind
     bvector<DPoint3d> &builderPoints = builder->GetClientMeshR ().Point ();  // REFERENCE to points
     auto &builderPointIndex = builder->GetClientMeshR ().PointIndex ();
     bvector<size_t> bottomIndex, topIndex;
-    bvector<bool> visible;
+    bvector<BoolTypeForVector> visible;
     bvector<DPoint3d> bottomFacet;
     size_t iNext, iLast;
     for (size_t iFirst = 0; triangleIndices.DelimitFace (0, iFirst, iLast, iNext); iFirst = iNext)

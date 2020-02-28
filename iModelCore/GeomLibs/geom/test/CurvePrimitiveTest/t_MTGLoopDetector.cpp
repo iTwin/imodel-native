@@ -157,13 +157,13 @@ TEST(MTG,LoopDetector)
     TestLoopDetector (6);
     }
 
-  
+
 void CheckInteriorTetrahedralGraph (MTGMultiCellularTetrahedralTopology &graph,
       size_t expectedComponents,
       size_t expectedBoundaryFaces
       )
     {
-    bvector<MTGNodeId> faceSeeds, vertexSeeds;    
+    bvector<MTGNodeId> faceSeeds, vertexSeeds;
     bvector<bvector<MTGNodeId>> componentNodes;
     graph.CollectFaceLoops (faceSeeds);
     graph.CollectVertexLoops (vertexSeeds);
@@ -184,7 +184,7 @@ void CheckInteriorTetrahedralGraph (MTGMultiCellularTetrahedralTopology &graph,
                 numErrors++;
             }
         }
-    
+
     for (MTGNodeId vertexSeed : vertexSeeds)
         {
         if (graph.CountNodesAroundVertex (vertexSeed) != 3)
@@ -340,7 +340,7 @@ bool noisy = false
         }
 
 // CONFIRM: Every node has a vertex index.
-    size_t numErrors = 0; 
+    size_t numErrors = 0;
 
     MTGARRAY_SET_LOOP (node, &graph)
         {
@@ -396,7 +396,7 @@ bool IsTriangulated (MTGMultiCellularTetrahedralTopology &graph)
     //     2) graph visit control + mask check for seed
     //         2a) at each seed, one visit for loop count, 1 for mask set.
     // total 5 touches.
-    // 
+    //
     // If triangulated, there are 4 touches -- once in graph visit control, 3 times in loop counts.
 
     MTGARRAY_SET_LOOP (node, &graph)
@@ -417,7 +417,7 @@ bool IsTrivalentInterior (MTGMultiCellularTetrahedralTopology &graph)
     //     2) graph visit control + mask check for seed
     //         2a) at each seed, one visit for loop count, 1 for mask set.
     // total 5 touches.
-    // 
+    //
     // If triangulated, there are 4 touches -- once in graph visit control, 3 times in loop counts.
 
     MTGARRAY_SET_LOOP (node, &graph)
@@ -453,13 +453,13 @@ TEST(MTG,TetrahedralAssembler)
 void TestTetrahedralFile (char const *filename)
     {
     MTGMultiCellularTetrahedralTopology graph;
-    FILE* m_fp = fopen(filename, "r");
-    if (nullptr != m_fp)
+    FILE* m_fp;
+    if (0 == BeFile::Fopen(&m_fp, filename, "r"))
         {
         printf ("\n\n Tetrahedral solid from file %s\n", filename);
         int vertexIndexA, vertexIndexB, vertexIndexC, vertexIndexD;
         size_t numTet = 0;
-        for (;4 == fscanf (m_fp, "%d %d %d %d", &vertexIndexA, &vertexIndexB, &vertexIndexC, &vertexIndexD);)
+        for (;4 == fscanf_s (m_fp, "%d %d %d %d", &vertexIndexA, &vertexIndexB, &vertexIndexC, &vertexIndexD);)
             {
             numTet++;
             graph.AddTetrahedron (vertexIndexA, vertexIndexB, vertexIndexC, vertexIndexD);
@@ -469,9 +469,8 @@ void TestTetrahedralFile (char const *filename)
         CheckCompleteMulticellularGraph (graph, numTet, 0); // we know how many tets, not how many exterior.
         Check::True (IsTriangulated (graph), "Triangulated graph");
 
-
+        fclose (m_fp);
         }
-    fclose (m_fp);
     }
 
 /*---------------------------------------------------------------------------------**//**

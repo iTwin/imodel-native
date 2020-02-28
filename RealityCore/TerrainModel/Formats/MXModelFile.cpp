@@ -9,6 +9,7 @@
 #include "MXModelFile.h"
 #include "mxtriangle.h"
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 #ifndef PUSH_MSVC_IGNORE
 #define PUSH_MSVC_IGNORE(a)
 #define POP_MSVC_IGNORE
@@ -1483,7 +1484,7 @@ void ModelTableRecord::UpdateFile()
             asLong(str.strings[j].stringName) = asLong("    ");
             asLong(str.strings[j].subReference) = asLong("    ");
             }
-        
+
         str.nextRecord = mt.models[recordEntry].stringTablePos;
         str.lastRecord = stringTableType;
         str.pad[0] = 0xffdbed2d;
@@ -3190,7 +3191,7 @@ ErrorStatus MXTriangleString::loadData(MXTriangle* tri)
         triangleP = triangles->getArrayPtr();
         pNum = points->size();
         bvector<long> ptNums;
-        
+
         ptNums.resize(pNum, 0);
 
         for(i = 0; i < reUsePointNum.size(); i++)
@@ -6071,3 +6072,5 @@ END_BENTLEY_TERRAINMODEL_NAMESPACE
 
 //Change arrays and maps to use the bmap/blist etc
 //Create unmanaged classes to get models and get files. all this is interested in is Models and triangulation strings.
+
+POP_DISABLE_DEPRECATION_WARNINGS

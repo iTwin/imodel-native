@@ -34,7 +34,7 @@ BentleyStatus   DwgImporter::_ImportXReference (ElementImportResults& results, E
     If an xref file is not loaded, it is a serious error and we should not bother to try
     loading the file.
 
-    However, xref instances may not all be seen in the block section, therefore there is 
+    However, xref instances may not all be seen in the block section, therefore there is
     a chance that this xref insert could be new and a model will need to be created.
     It gets trickier if the root transform has been changed from iModelBridge as we have
     to invert the current root transform in order to find the model from the syncInfo.
@@ -90,12 +90,12 @@ BentleyStatus   DwgImporter::_ImportXReference (ElementImportResults& results, E
     // get or create a model for the xRefBlock with the blockReference's transformation:
     Transform   xtrans = inputs.GetTransform ();
     this->CompoundModelTransformBy (xtrans, *xrefInsert);
-    
+
     /*-----------------------------------------------------------------------------------
     We take 3 steps in order to catch potential missing xRef inserts in model dicovery phase
     and also to take account of possible change of root transformation:
 
-    Step 1 - try to look the model up in the cached model list only - an xref insert not 
+    Step 1 - try to look the model up in the cached model list only - an xref insert not
     found in the list is a potential missing xref instance.
     -----------------------------------------------------------------------------------*/
     DgnModelP               model = nullptr;
@@ -210,7 +210,7 @@ BentleyStatus   DwgImporter::_ImportXReference (ElementImportResults& results, E
         factory.SetXrefRange (m_currentXref.GetComputedRange());
         factory.ConvertToBim (results, inputs);
         }
-    
+
     auto revOption = this->GetOptions().GetPushIntermediateRevisions ();
     if (revOption == iModelBridge::Params::PushIntermediateRevisions::ByModel || revOption == iModelBridge::Params::PushIntermediateRevisions::ByFile)
         {
@@ -233,7 +233,7 @@ BentleyStatus   DwgImporter::_ImportXReference (ElementImportResults& results, E
 BentleyStatus   DwgImporter::DwgXRefHolder::InitFrom (DwgDbBlockTableRecordCR xrefBlock, DwgImporter& importer)
     {
     /*-----------------------------------------------------------------------------------
-    This xRef holder is initiated from root the block section of the root master file, 
+    This xRef holder is initiated from root the block section of the root master file,
     should guarantee no circular xRef blocks to be loaded by either toolkit, so we should
     not have to bother checking circular xref's here.
     -----------------------------------------------------------------------------------*/
@@ -354,7 +354,7 @@ DwgImporter::DwgXRefHolder* DwgImporter::FindXRefHolder (DwgDbBlockTableRecordCR
                 return  true;
 
             /*----------------------------------------------------------------------------------
-            Handle a special case: ProjectWise changes dms path only in an immediate parent file, 
+            Handle a special case: ProjectWise changes dms path only in an immediate parent file,
             not in the root master file, causing saved paths out of sync!  In this case, we try
             comparing resolved paths, with below consideration of:
                 a) Only do this for PW files to minimize the need for expensive file search.
@@ -380,7 +380,7 @@ DwgImporter::DwgXRefHolder* DwgImporter::FindXRefHolder (DwgDbBlockTableRecordCR
     FindXrefPredicate  pred (xrefBlock, this->GetRootDwgFileName());
     auto found = std::find_if (m_loadedXrefFiles.begin(), m_loadedXrefFiles.end(), pred);
     if (found != m_loadedXrefFiles.end())
-        return  found;
+        return  &*found;
 
     // if the caller does not request for creating a new xRef holder, we are done.
     if (!createIfNotFound)
@@ -411,7 +411,7 @@ BentleyStatus XRefLoader::LoadXrefsInMasterFile ()
     DwgDbBlockTablePtr  blockTable (dwg.GetBlockTableId(), DwgDbOpenMode::ForRead);
     if (DwgDbStatus::Success != blockTable.OpenStatus())
         return  BSIERROR;
-    
+
     auto modelspaceId = dwg.GetModelspaceId ();
     auto iter = blockTable->NewIterator ();
     if (!iter.IsValid() || !iter->IsValid())
@@ -486,11 +486,11 @@ BentleyStatus XRefLoader::CacheUnresolvedXrefs ()
     {
     /*-------------------------------------------------------------------------------------------------
     Nested xRef's may not be present in master file's block table, hence absent in our loaded xRef cache.
-    A practical scenario is when a user has attached a new DWG file to an existing xRef file as a nested 
-    xRef, but has not updated the master file.  Thus the master file does not have the nested xRef block 
-    defined.  We can force loading all nested xRef's by recursively drilling into xRefs in above method, 
+    A practical scenario is when a user has attached a new DWG file to an existing xRef file as a nested
+    xRef, but has not updated the master file.  Thus the master file does not have the nested xRef block
+    defined.  We can force loading all nested xRef's by recursively drilling into xRefs in above method,
     but we still do not have their instances from which we can create models with correct transformation.
-    It is expensive to evaluate the xRef graph and drill into the entity level for model creation and then 
+    It is expensive to evaluate the xRef graph and drill into the entity level for model creation and then
     repeat the same operation for import.  For the sake of performance, we opt for caching nested Xrefs
     not defined in the master file so we can detect xRef changes accordingly.
 
@@ -647,7 +647,7 @@ bool    LayoutXrefFactory::UpdateViewName ()
     auto userLabel = DataStrings::GetString (DataStrings::CategorySelector());
     auto& categorySelector = m_spatialView->GetCategorySelector ();
     m_importer.UpdateElementName (categorySelector, m_viewName, userLabel.c_str(), false);
-    
+
     // change display style name - caller shall update element
     userLabel = DataStrings::GetString (DataStrings::DisplayStyle());
     auto& displayStyle = m_spatialView->GetDisplayStyle ();
@@ -693,11 +693,11 @@ size_t  LayoutXrefFactory::GetViewportFrozenLayers (DwgDbObjectIdArrayR frozenLa
     DwgDbBlockTableRecordPtr paperspace(m_paperspaceId, DwgDbOpenMode::ForRead);
     if (paperspace.OpenStatus() != DwgDbStatus::Success)
         return  0;
-    
+
     DwgDbViewportPtr viewport0(LayoutFactory::FindOverallViewport(*paperspace), DwgDbOpenMode::ForRead);
     if (viewport0.OpenStatus() != DwgDbStatus::Success)
         return  0;
-    
+
     if (viewport0->GetFrozenLayers(frozenLayers) != DwgDbStatus::Success)
         return  0;
 
@@ -801,7 +801,7 @@ BentleyStatus   LayoutXrefFactory::ComputeSpatialView ()
         {
         // WIP - clip xref in SpatialView, and update m_xrefRange to the clipped extents
         }
-    
+
     m_spatialView->SetExtents (range.DiagonalVector());
     m_spatialView->SetOrigin (range.low);
     return  BSISUCCESS;

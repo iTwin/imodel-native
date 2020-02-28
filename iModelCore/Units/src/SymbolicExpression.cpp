@@ -41,7 +41,7 @@ bool Expression::PhenomenonMatch(UnitsSymbolCR a, UnitsSymbolCR b)
 int Exponent::GetExponent()
     {
     int value = 0;
-    BE_STRING_UTILITIES_UTF8_SSCANF(m_exponentChars.c_str(), "%d", &value);
+    Utf8String::Sscanf_safe(m_exponentChars.c_str(), "%d", &value);
     m_exponentChars.clear();
     return value;
     }
@@ -65,7 +65,7 @@ Utf8String Expression::ToString(bool includeFactors) const
     {
     bvector <Utf8String> result;
 
-    std::for_each(m_symbolExpression.begin(), m_symbolExpression.end(), [&result, includeFactors] (ExpressionSymbolCR symbol) 
+    std::for_each(m_symbolExpression.begin(), m_symbolExpression.end(), [&result, includeFactors] (ExpressionSymbolCR symbol)
         {
         result.push_back(symbol.ToString(includeFactors));
         });
@@ -90,7 +90,7 @@ void Expression::CreateExpressionWithOnlyBaseSymbols(ExpressionCR source, Expres
 // static
 BentleyStatus Expression::GenerateConversionExpression(UnitCR from, UnitCR to, ExpressionR conversionExpression)
     {
-    // TODO: Now that we are not checking if they are dimensionally compatible we will need to add some dimensionality checking 
+    // TODO: Now that we are not checking if they are dimensionally compatible we will need to add some dimensionality checking
     // somewhere in the API when adding dynamic units.
     if (!from.GetPhenomenon()->GetName().EqualsI(to.GetPhenomenon()->GetName().c_str()))
         {
@@ -225,7 +225,7 @@ void Expression::MergeExpressions(Utf8CP targetDefinition, ExpressionR targetExp
 // @bsimethod                                              Colin.Kerr         02/16
 //--------------------------------------------------------------------------------------
 // static
-BentleyStatus Expression::HandleToken(UnitsSymbolCR owner, int& depth, ExpressionR expression, 
+BentleyStatus Expression::HandleToken(UnitsSymbolCR owner, int& depth, ExpressionR expression,
     Utf8CP definition, TokenCR token, int startingExponent, std::function<UnitsSymbolCP(Utf8CP, IUnitsContextCP)> getSymbolByName)
     {
     LOG.debugv("%s - Handle Token: %s  TokenExp: %d  StartExp: %d", definition, token.GetName(), token.GetExponent(), startingExponent);

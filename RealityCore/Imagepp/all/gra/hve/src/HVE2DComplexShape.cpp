@@ -9,19 +9,16 @@
 //-----------------------------------------------------------------------------
 
 #include <ImageppInternal.h>
-
-
-
 #include <ImagePP/all/h/HVE2DComplexShape.h>
 #include <ImagePP/all/h/HGF2DComplexShape.h>
 #include <ImagePP/all/h/HGF2DPolygonOfSegments.h>
 
 HPM_REGISTER_CLASS(HVE2DComplexShape, HVE2DShape)
 
-
 #include <ImagePP/all/h/HVE2DVoidShape.h>
 #include <ImagePP/all/h/HGFScanlines.h>
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 
 /** -----------------------------------------------------------------------------
     Constructor for a complex shape.
@@ -1095,7 +1092,7 @@ HGF2DShape* HVE2DComplexShape::GetLightShape() const
             // Add fence component to complex fence
             pNewComplex->AddShape(*pComponent);
         }
-        
+
         // Copy fence pointer
         pResultFence.reset(pNewComplex.release());
     }
@@ -1255,3 +1252,4 @@ void HVE2DComplexShape::Rasterize(HGFScanLines& pio_rScanlines) const
             }
         }
     }
+POP_DISABLE_DEPRECATION_WARNINGS

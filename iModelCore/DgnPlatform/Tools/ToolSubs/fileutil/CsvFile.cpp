@@ -446,7 +446,7 @@ uint32_t        CsvFile::CountTokens (WStringR stringIn, WChar separatorCharIn, 
         WCharCP         m_begin;
         WCharCP         m_end;
     public:
-        LineAdapter (WStringCR str) : m_begin(str.begin()), m_end(str.end()) { }
+        LineAdapter (WStringCR str) : m_begin(&*str.begin()), m_end(&*str.end()) { }
 
         size_t  length() const                  { return m_end - m_begin; }
         bool    empty() const                   { return m_end <= m_begin; }

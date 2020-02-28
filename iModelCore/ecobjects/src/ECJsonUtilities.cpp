@@ -181,7 +181,7 @@ BentleyStatus ECJsonUtilities::JsonToInt64(int64_t& int64Val, JsonValueCR json)
             return hexParseStat;
             }
 
-        sscanf(strVal, "%" SCNi64, &int64Val);
+        Utf8String::Sscanf_safe(strVal, "%" SCNi64, &int64Val);
         return SUCCESS;
         }
 
@@ -546,7 +546,7 @@ BentleyStatus ECJsonUtilities::JsonToInt64(int64_t& val, RapidJsonValueCR json)
             return hexParseStat;
             }
 
-        sscanf(strVal, "%" SCNi64, &val);
+        Utf8String::Sscanf_safe(strVal, "%" SCNi64, &val);
         return SUCCESS;
         }
 
@@ -1491,7 +1491,7 @@ void JsonEcInstanceWriter::AppendAccessString(Utf8StringR compoundAccessString, 
     compoundAccessString = baseAccessString;
     if (!compoundAccessString.EndsWith("."))
         compoundAccessString.append(".");
-    
+
     compoundAccessString.append(propertyName);
     }
 
@@ -1624,7 +1624,7 @@ StatusInt JsonEcInstanceWriter::WritePrimitiveValue(Json::Value& valueToPopulate
             {
             if (koq)
                 BeAssert(false && "KOQ not yet support for this type");
-            
+
             valueToPopulate[FormatMemberName(propertyName, casing)] = ecValue.GetUtf8CP();
             return BSISUCCESS;
             }
@@ -1900,7 +1900,7 @@ StatusInt JsonEcInstanceWriter::WriteNavigationPropertyValue(Json::Value& valueT
                 return BSIERROR;
                 }
             }
-        
+
         ECJsonUtilities::ClassNameToJson(navObj[ECJsonUtilities::json_navRelClassName()], *relationshipClass);
         }
 

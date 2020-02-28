@@ -45,9 +45,7 @@ struct BeRapidJsonUtilities
         if (value.IsString())
             {
             uint64_t returnValueInt64 = defaultOnError;
-PUSH_MSVC_IGNORE(4996)
-            sscanf(value.GetString(), "%" PRIu64, &returnValueInt64);
-POP_MSVC_IGNORE
+            Utf8String::Sscanf_safe(value.GetString(), "%" PRIu64, &returnValueInt64);
             return returnValueInt64;
             }
         return defaultOnError;
@@ -65,14 +63,12 @@ POP_MSVC_IGNORE
         if (value.IsString())
             {
             int64_t returnValueInt64 = defaultOnError;
-PUSH_MSVC_IGNORE(4996)
-            sscanf(value.GetString(), "%" PRId64, &returnValueInt64);
-POP_MSVC_IGNORE
+            Utf8String::Sscanf_safe(value.GetString(), "%" PRId64, &returnValueInt64);
             return returnValueInt64;
             }
         return defaultOnError;
         }
-    
+
     //! Serializes the supplied JSON value.
     static Utf8String ToString(RapidJsonValueCR json)
         {
@@ -81,7 +77,7 @@ POP_MSVC_IGNORE
         json.Accept(writer);
         return buf.GetString();
         }
-    
+
     //! Serializes the supplied JSON value in a pretty formatted way.
     static Utf8String ToPrettyString(RapidJsonValueCR json)
         {

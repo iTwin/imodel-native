@@ -716,7 +716,7 @@ void            ECValue::ShallowCopy(ECValueCR v)
             break;
             }
 
-            // the memcpy takes care of these...            
+            // the memcpy takes care of these...
             case VALUEKIND_Array:
         case VALUEKIND_Navigation:
             case PRIMITIVETYPE_Boolean:
@@ -1099,7 +1099,7 @@ BentleyStatus       ECValue::SetBoolean(bool value)
     }
 
 //////////////////////////////////////////////////////////////////////////////////////////
-// DateTime   - The DateTime ticks are the number of 100-nanosecond intervals 
+// DateTime   - The DateTime ticks are the number of 100-nanosecond intervals
 //              that have elapsed since the beginning of the Common Era epoch (0001-01-01 00:00:00 UTC)
 //              (This is the same as in managed ECObjects and .NET's System.DateTime respectively)
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -1770,7 +1770,7 @@ bool ECValue::ConvertToPrimitiveFromString(PrimitiveType primitiveType)
             case PRIMITIVETYPE_Long:
             {
             int64_t i;
-            if (1 != BE_STRING_UTILITIES_UTF8_SSCANF(str, "%" PRId64, &i))
+            if (1 != Utf8String::Sscanf_safe(str, "%" PRId64, &i))
                 return false;
             else if (PRIMITIVETYPE_Long == primitiveType)
                 SetLong(i);
@@ -1781,7 +1781,7 @@ bool ECValue::ConvertToPrimitiveFromString(PrimitiveType primitiveType)
             case PRIMITIVETYPE_Double:
             {
             double d;
-            if (1 == BE_STRING_UTILITIES_UTF8_SSCANF(str, "%lg", &d))
+            if (1 == Utf8String::Sscanf_safe(str, "%lg", &d))
                 SetDouble(d);
             else
                 return false;
@@ -1790,7 +1790,7 @@ bool ECValue::ConvertToPrimitiveFromString(PrimitiveType primitiveType)
             case PRIMITIVETYPE_Integer:
             {
             int64_t i;
-            if (1 == BE_STRING_UTILITIES_UTF8_SSCANF(str, "%" PRId64, &i))
+            if (1 == Utf8String::Sscanf_safe(str, "%" PRId64, &i))
                 {
                 if (INT_MAX >= i && INT_MIN <= i)
                     SetInteger((int32_t) i);
@@ -1804,7 +1804,7 @@ bool ECValue::ConvertToPrimitiveFromString(PrimitiveType primitiveType)
             case PRIMITIVETYPE_Point2d:
             {
             DPoint2d pt;
-            if (2 == BE_STRING_UTILITIES_UTF8_SSCANF(str, "%lg,%lg", &pt.x, &pt.y))
+            if (2 == Utf8String::Sscanf_safe(str, "%lg,%lg", &pt.x, &pt.y))
                 SetPoint2d(pt);
             else
                 return false;
@@ -1813,7 +1813,7 @@ bool ECValue::ConvertToPrimitiveFromString(PrimitiveType primitiveType)
             case PRIMITIVETYPE_Point3d:
             {
             DPoint3d pt;
-            if (3 == BE_STRING_UTILITIES_UTF8_SSCANF(str, "%lg,%lg,%lg", &pt.x, &pt.y, &pt.z))
+            if (3 == Utf8String::Sscanf_safe(str, "%lg,%lg,%lg", &pt.x, &pt.y, &pt.z))
                 SetPoint3d(pt);
             else
                 return false;
@@ -2126,7 +2126,7 @@ uint32_t        ECValue::GetNavigationValueSize (PrimitiveType primitiveType)
     // A navigation value has 3 parts:
     // 1. a single bit that tells whether a pointer or id is used to identify the relationship
     // 2. an int64_t that contains either a pointer or id identifying the relationship used to set the nav value
-    // 3. The actual navigation value 
+    // 3. The actual navigation value
     uint32_t size = sizeof(int64_t);
     size += GetFixedPrimitiveValueSize(primitiveType);
     size += 1;
@@ -2226,7 +2226,7 @@ ECObjectsStatus ECValue::SetNavigationInfo(BeInt64Id value, ECRelationshipClassC
     SetIsNull(false);
 
     m_valueKind = VALUEKIND_Navigation;
-    
+
     m_navigationInfo.Set(value);
     m_navigationInfo.SetRelationship(relationshipClass);
 
@@ -2667,7 +2667,7 @@ static ECObjectsStatus getECValueAccessorUsingManagedAccessString(Utf8Char* asBu
     // see if access string specifies an array
     Utf8CP pos1 = strchr(managedPropertyAccessor, '[');
 
-    // if not an array then we have a primitive that we can access directly 
+    // if not an array then we have a primitive that we can access directly
     if (NULL == pos1)
         {
         status = enabler.GetPropertyIndex(propertyIndex, managedPropertyAccessor);
@@ -2688,6 +2688,7 @@ static ECObjectsStatus getECValueAccessorUsingManagedAccessString(Utf8Char* asBu
 
     size_t numChars = 0;
     numChars = pos1 - managedPropertyAccessor;
+PUSH_DISABLE_DEPRECATION_WARNINGS
     strncpy(asBuffer, managedPropertyAccessor, numChars > NUM_ACCESSSTRING_BUFFER_CHARS ? NUM_ACCESSSTRING_BUFFER_CHARS : numChars);
     asBuffer[numChars] = 0;
 
@@ -2697,10 +2698,11 @@ static ECObjectsStatus getECValueAccessorUsingManagedAccessString(Utf8Char* asBu
 
     numChars = pos2 - pos1 - 1;
     strncpy(indexBuffer, pos1 + 1, numChars > NUM_INDEX_BUFFER_CHARS ? NUM_INDEX_BUFFER_CHARS : numChars);
+POP_DISABLE_DEPRECATION_WARNINGS
     indexBuffer[numChars] = 0;
 
     uint32_t indexValue = -1;
-    BE_STRING_UTILITIES_UTF8_SSCANF(indexBuffer, "%ud", &indexValue);
+    Utf8String::Sscanf_safe(indexBuffer, "%ud", &indexValue);
 
     ECValue  arrayVal;
 
@@ -2885,7 +2887,7 @@ ECObjectsStatus ECValueAccessor::PopulateAndRemapValueAccessor(ECValueAccessor& 
             // extract array index
             chunk[bracPos] = 0;
             uint32_t arrayIndex;
-            if (1 != sscanf(chunk.c_str(), "%ud", &arrayIndex))
+            if (1 != Utf8String::Sscanf_safe(chunk.c_str(), "%ud", &arrayIndex))
                 return ECObjectsStatus::Error;
 
             va.DeepestLocation().SetArrayIndex(arrayIndex);
@@ -3119,7 +3121,7 @@ ECPropertyValue ECValuesCollectionIterator::GetChildPropertyValue(ECPropertyValu
                 }
             else
                 {
-                // if the parent struct array entry contains a NULL instance then there are no 
+                // if the parent struct array entry contains a NULL instance then there are no
                 // child properties to iterate.
                 childAccessor.Clear();
                 }

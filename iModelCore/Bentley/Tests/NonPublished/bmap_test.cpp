@@ -4,12 +4,12 @@
 *--------------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
 #include <Bentley/bmap.h>
-#include <Bentley/bstdmap.h>
+#include <map>
 
 #define __attribute__(IGNOREDSTUFF)
 #define VERIFY(X) ASSERT_TRUE(X)
 
-//  Adapted from unit tests that are part of GCC 
+//  Adapted from unit tests that are part of GCC
 // Copyright (C) 1999, 2000, 2001, 2002, 2003, 2009
 // Free Software Foundation, Inc.
 
@@ -45,11 +45,11 @@ typedef bpair<int,char> MyMapPairType;
 TEST (bmap_test, InitBMap)
 {
     MyMapType map;
-    
+
     map.insert (MyMapPairType (1, 'a'));
     map.insert (MyMapPairType (2, 'b'));
     map.insert (MyMapPairType (3, 'c'));
-    
+
     ASSERT_EQ ('a', map[1]);
     ASSERT_EQ ('b', map[2]);
     ASSERT_EQ ('c', map[3]);
@@ -63,11 +63,11 @@ TEST (bmap_test, InitBMap)
     ASSERT_EQ (1, map.count (3));
     ASSERT_EQ (3, map.size ());
     ASSERT_FALSE (map.empty ());
-    
+
     map.erase (1);
     map.erase (2);
     map.erase (3);
-    
+
     ASSERT_NE ('a', map[1]);
     ASSERT_NE ('b', map[2]);
     ASSERT_NE ('c', map[3]);
@@ -80,8 +80,8 @@ TEST (bmap_test, InitBMap)
 // @bsimethod                                      Sam.Wilson                    4/13
 //---------------------------------------------------------------------------------------
 // libstdc++/23578
-TEST (bmap_test, ElementAccess01) 
-{ 
+TEST (bmap_test, ElementAccess01)
+{
 #ifndef NO_CPP_EXCEPTION_HANDLERS
   typedef bmap<int, double> map_type;
 
@@ -103,7 +103,7 @@ TEST (bmap_test, ElementAccess01)
       {
 	// Failed.
 	throw;
-      }    
+      }
   }
 
   {
@@ -125,7 +125,7 @@ TEST (bmap_test, ElementAccess01)
       {
 	// Failed.
 	throw;
-      }    
+      }
   }
 #endif
 }
@@ -177,9 +177,9 @@ bool operator<(T l, T r) { return l.i < r.i; }
 static int bmap_swap_calls;
 
 namespace bc_stdcxx {
-  template<> 
-    void 
-    bmap<T, int>::swap(bmap<T, int>&) 
+  template<>
+    void
+    bmap<T, int>::swap(bmap<T, int>&)
     { ++bmap_swap_calls; }
 };
 
@@ -221,17 +221,17 @@ TEST (bmap_test, Operations01)
 
   {
   insert_return_type irt2 = m0.insert(value_type(3, 3));
- 
+
   pp0 = m0.equal_range(2);
   VERIFY( m0.count(2) == 1 );
   VERIFY( *pp0.first == value_type(2, 2) );
   VERIFY( *pp0.second == value_type(3, 3) );
 
-  // NOTE: these tests were designed to test the stability of iterators across inserts. With BTREE maps, that is no longer 
+  // NOTE: these tests were designed to test the stability of iterators across inserts. With BTREE maps, that is no longer
   // true (iterators are never guaranteed to be stable across inserts/deletes).
 #if defined REMOVED_BY_BENTLEY
   VERIFY( pp0.first == irt1.first );
-  VERIFY( --pp0.first == irt0.first );  
+  VERIFY( --pp0.first == irt0.first );
 #endif
   VERIFY( pp0.second == irt2.first );
   }
@@ -247,7 +247,7 @@ TEST (bmap_test, Operations01)
   VERIFY( *pp0.second == value_type(4, 6) );
 #if defined REMOVED_BY_BENTLEY
   VERIFY( pp0.first == irt2.first );
-  VERIFY( --pp0.first == irt1.first );  
+  VERIFY( --pp0.first == irt1.first );
 #endif
   VERIFY( pp0.second == irt4.first );
     }
@@ -263,7 +263,7 @@ TEST (bmap_test, Operations01)
   VERIFY( *pp0.second == value_type(2, 2) );
 #if defined REMOVED_BY_BENTLEY
   VERIFY( pp0.first == irt0.first );
-  VERIFY( --pp0.first == irt5.first );  
+  VERIFY( --pp0.first == irt5.first );
   VERIFY( pp0.second == irt1.first );
 #endif
 
@@ -276,7 +276,7 @@ TEST (bmap_test, Operations01)
   VERIFY( *pp0.first == value_type(5, 11) );
 #if defined REMOVED_BY_BENTLEY
   VERIFY( pp0.first == irt6.first );
-  VERIFY( --pp0.first == irt4.first );  
+  VERIFY( --pp0.first == irt4.first );
   VERIFY( pp0.second == m0.end() );
 #endif
 
@@ -285,12 +285,12 @@ TEST (bmap_test, Operations01)
   m0.insert(value_type(4, 16));
 
   pp0 = m0.equal_range(4);
-  VERIFY( m0.count(4) == 1 );  
+  VERIFY( m0.count(4) == 1 );
   VERIFY( *pp0.first == value_type(4, 6) );
-  VERIFY( *pp0.second == value_type(5, 11) );  
+  VERIFY( *pp0.second == value_type(5, 11) );
 #if defined REMOVED_BY_BENTLEY
   VERIFY( pp0.first == irt4.first );
-  VERIFY( --pp0.first == irt3.first );  
+  VERIFY( --pp0.first == irt3.first );
   VERIFY( pp0.second == irt6.first );
 #endif
 
@@ -299,9 +299,9 @@ TEST (bmap_test, Operations01)
   m0.insert(value_type(1, 19));
 
   pp0 = m0.equal_range(0);
-  VERIFY( m0.count(0) == 1 );  
+  VERIFY( m0.count(0) == 1 );
   VERIFY( *pp0.first == value_type(0, 7) );
-  VERIFY( *pp0.second == value_type(1, 1) );  
+  VERIFY( *pp0.second == value_type(1, 1) );
 #if defined REMOVED_BY_BENTLEY
   VERIFY( pp0.first == irt5.first );
 #endif
@@ -311,9 +311,9 @@ TEST (bmap_test, Operations01)
 #endif
 
   pp0 = m0.equal_range(1);
-  VERIFY( m0.count(1) == 1 );  
+  VERIFY( m0.count(1) == 1 );
   VERIFY( *pp0.first == value_type(1, 1) );
-  VERIFY( *pp0.second == value_type(2, 2) );  
+  VERIFY( *pp0.second == value_type(2, 2) );
 #if defined REMOVED_BY_BENTLEY
   VERIFY( pp0.first == irt0.first );
   VERIFY( --pp0.first == irt7.first);
@@ -324,27 +324,46 @@ TEST (bmap_test, Operations01)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Sam.Wilson                    4/13
 //---------------------------------------------------------------------------------------
+// A few tests for equal_range of bmaps
+TEST (bmap_test, utf8string)
+{
+    bmap<Utf8String, int> values;
+    bvector<Utf8CP> returned;
+
+    values.Insert("abc", 10);
+    values.Insert("def", 20);
+    values.Insert("ghi", 30);
+
+    for (auto const&  v: values)
+      returned.push_back(v.first.c_str());
+
+    VERIFY(strcmp(returned[0], "abc") == 0);
+    VERIFY(strcmp(returned[1], "def") == 0);
+    VERIFY(strcmp(returned[2], "ghi") == 0);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Sam.Wilson                    4/13
+//---------------------------------------------------------------------------------------
 // A few tests for equal_range, in the occasion of libstdc++/29385.
 TEST (bstdmap_test, Operations01)
 {
-  using namespace std;
-
-  bstdmap<int, int> m0;
-  typedef bstdmap<int, int>::iterator iterator;
+  std::map<int, int> m0;
+  typedef std::map<int, int>::iterator iterator;
   typedef bpair<iterator, bool> insert_return_type;
   bpair<iterator, iterator> pp0;
-  typedef bstdmap<int, int>::value_type value_type;
+  typedef std::map<int, int>::value_type value_type;
 
   insert_return_type irt0 = m0.insert(value_type(1, 1));
   insert_return_type irt1 = m0.insert(value_type(2, 2));
   insert_return_type irt2 = m0.insert(value_type(3, 3));
- 
+
   pp0 = m0.equal_range(2);
   VERIFY( m0.count(2) == 1 );
   VERIFY( *pp0.first == value_type(2, 2) );
   VERIFY( *pp0.second == value_type(3, 3) );
   VERIFY( pp0.first == irt1.first );
-  VERIFY( --pp0.first == irt0.first );  
+  VERIFY( --pp0.first == irt0.first );
   VERIFY( pp0.second == irt2.first );
 
   m0.insert(value_type(3, 4));
@@ -356,7 +375,7 @@ TEST (bstdmap_test, Operations01)
   VERIFY( *pp0.first == value_type(3, 3) );
   VERIFY( *pp0.second == value_type(4, 6) );
   VERIFY( pp0.first == irt2.first );
-  VERIFY( --pp0.first == irt1.first );  
+  VERIFY( --pp0.first == irt1.first );
   VERIFY( pp0.second == irt4.first );
 
   insert_return_type irt5 = m0.insert(value_type(0, 7));
@@ -369,7 +388,7 @@ TEST (bstdmap_test, Operations01)
   VERIFY( *pp0.first == value_type(1, 1) );
   VERIFY( *pp0.second == value_type(2, 2) );
   VERIFY( pp0.first == irt0.first );
-  VERIFY( --pp0.first == irt5.first );  
+  VERIFY( --pp0.first == irt5.first );
   VERIFY( pp0.second == irt1.first );
 
   insert_return_type irt6 = m0.insert(value_type(5, 11));
@@ -380,7 +399,7 @@ TEST (bstdmap_test, Operations01)
   VERIFY( m0.count(5) == 1 );
   VERIFY( *pp0.first == value_type(5, 11) );
   VERIFY( pp0.first == irt6.first );
-  VERIFY( --pp0.first == irt4.first );  
+  VERIFY( --pp0.first == irt4.first );
   VERIFY( pp0.second == m0.end() );
 
   m0.insert(value_type(4, 14));
@@ -388,11 +407,11 @@ TEST (bstdmap_test, Operations01)
   m0.insert(value_type(4, 16));
 
   pp0 = m0.equal_range(4);
-  VERIFY( m0.count(4) == 1 );  
+  VERIFY( m0.count(4) == 1 );
   VERIFY( *pp0.first == value_type(4, 6) );
-  VERIFY( *pp0.second == value_type(5, 11) );  
+  VERIFY( *pp0.second == value_type(5, 11) );
   VERIFY( pp0.first == irt4.first );
-  VERIFY( --pp0.first == irt3.first );  
+  VERIFY( --pp0.first == irt3.first );
   VERIFY( pp0.second == irt6.first );
 
   m0.insert(value_type(0, 17));
@@ -400,17 +419,17 @@ TEST (bstdmap_test, Operations01)
   m0.insert(value_type(1, 19));
 
   pp0 = m0.equal_range(0);
-  VERIFY( m0.count(0) == 1 );  
+  VERIFY( m0.count(0) == 1 );
   VERIFY( *pp0.first == value_type(0, 7) );
-  VERIFY( *pp0.second == value_type(1, 1) );  
+  VERIFY( *pp0.second == value_type(1, 1) );
   VERIFY( pp0.first == irt5.first );
   VERIFY( pp0.first == m0.begin() );
   VERIFY( pp0.second == irt0.first );
 
   pp0 = m0.equal_range(1);
-  VERIFY( m0.count(1) == 1 );  
+  VERIFY( m0.count(1) == 1 );
   VERIFY( *pp0.first == value_type(1, 1) );
-  VERIFY( *pp0.second == value_type(2, 2) );  
+  VERIFY( *pp0.second == value_type(2, 2) );
   VERIFY( pp0.first == irt0.first );
   VERIFY( --pp0.first == irt7.first);
   VERIFY( pp0.second == irt1.first );

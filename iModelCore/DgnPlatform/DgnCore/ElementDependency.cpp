@@ -411,7 +411,7 @@ Utf8String Graph::FmtElementPath(Utf8CP epath)
         if ('.' == *dot || 0 == *dot)
             {
             uint64_t id;
-            if (sscanf(start, "%" SCNu64, &id) == 1)
+            if (Utf8String::Sscanf_safe(start, "%" SCNu64, &id) == 1)
                 {
                 if (!path.empty())
                     path.append(".");
@@ -457,8 +457,9 @@ static Utf8String GetValidDotName(Utf8StringCR str)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Graph::WriteDot(BeFileNameCR dotFilename, bvector<bvector<uint64_t>> const& cyclePaths)
     {
-    auto fp = fopen(Utf8String(dotFilename).c_str(), "w+");
-    if (NULL == fp)
+    FILE* fp;
+    auto err = BeFile::Fopen(&fp, dotFilename.GetNameUtf8().c_str(), "w+");
+    if (0 != err)
         return;
 
     fwprintf(fp, L"digraph G {\n");

@@ -43,7 +43,7 @@ static base::FilePath getHandlerPath()
 #else
     handlerPathW.AppendToPath(L"CrashpadHandler");
 #endif
-    
+
     if (!handlerPathW.DoesPathExist())
         {
         fprintf(stderr, "%s does NOT exist, so cannot enable crash processing.\n", Utf8String(handlerPathW).c_str());
@@ -63,7 +63,9 @@ static base::FilePath getHandlerPath()
 static base::FilePath getDbPath()
     {
 #if defined(BENTLEYCONFIG_OS_WINDOWS)
+PUSH_DISABLE_DEPRECATION_WARNINGS
     BeFileName dbPathW(_wgetenv(L"TEMP"));
+POP_DISABLE_DEPRECATION_WARNINGS
 #else
     BeFileName dbPathW(getenv("TEMP"), BentleyCharEncoding::Utf8);
 #endif
@@ -86,7 +88,7 @@ static base::FilePath getDbPath()
             return base::FilePath();
             }
         }
-    
+
 #if defined(BENTLEYCONFIG_OS_WINDOWS)
     return base::FilePath(dbPathW.c_str());
 #else
@@ -116,11 +118,11 @@ CrashProcessor& CrashProcessor::CreateSentryInstance(Utf8CP appName)
     base::FilePath handlerPath = getHandlerPath();
     if (handlerPath.empty())
         return *s_instance;
-    
+
     base::FilePath dbPath = getDbPath();
     if (dbPath.empty())
         return *s_instance;
-    
+
     string reportingUrl = GetSentryReportingUrl(appName);
     // DO NOT early return if empty -- allow for crash processing, even if not uploading, for local diagnostics.
 
@@ -156,7 +158,7 @@ CrashProcessor& CrashProcessor::CreateSentryInstance(Utf8CP appName)
         BeAssert(false);
         return *s_instance;
         }
-    
+
     return *s_instance;
     }
 
@@ -168,14 +170,14 @@ BentleyStatus CrashProcessor::SetAnnotation(Utf8CP key, Utf8CP val)
     CrashpadInfo* info = CrashpadInfo::GetCrashpadInfo();
     if (info == nullptr)
         return BSIERROR;
-    
+
     SimpleStringDictionary* annotations = info->simple_annotations();
     if (annotations == nullptr)
         {
         annotations = new SimpleStringDictionary();
         info->set_simple_annotations(annotations);
         }
-    
+
     annotations->SetKeyValue(key, val);
     return BSISUCCESS;
     }

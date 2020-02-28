@@ -19,7 +19,7 @@ ImageFile::ImageFile(wstring const& filename)
     try
         {
         WString fullURL = HFCURLFile::s_SchemeName() + L"://" + filename.c_str();
-        
+
         HFCPtr<HFCURL> pURL = new HFCURLFile(fullURL);
 
         m_pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(pURL, HFC_READ_ONLY | HFC_SHARE_READ_ONLY);
@@ -29,7 +29,7 @@ ImageFile::ImageFile(wstring const& filename)
         if (!HRFRasterFileBlockAdapter::CanAdapt(m_pRasterFile, HRFBlockType::IMAGE, HRF_EQUAL_TO_RESOLUTION_WIDTH, HRF_EQUAL_TO_RESOLUTION_HEIGHT) &&
             m_pRasterFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockType() != HRFBlockType::IMAGE) //Make sure we don't try to adapt something we don't have to adapt
             throw HRFException(HFC_CANNOT_OPEN_FILE_EXCEPTION, m_pRasterFile->GetURL()->GetURL());
-                
+
         HFCPtr<HRFRasterFile> pAdaptedRasterFile(new HRFRasterFileBlockAdapter(m_pRasterFile, HRFBlockType::IMAGE, HRF_EQUAL_TO_RESOLUTION_WIDTH, HRF_EQUAL_TO_RESOLUTION_HEIGHT));
 
         HFCPtr<HGF2DCoordSys> pLogical = gWorldClusterP->GetCoordSysReference(pAdaptedRasterFile->GetWorldIdentificator());
@@ -43,7 +43,7 @@ ImageFile::ImageFile(wstring const& filename)
     catch (...)
         {
         m_pRasterFile = NULL;
-        }  
+        }
     }
 
 
@@ -57,8 +57,8 @@ ImageFile::~ImageFile(void)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ImageFile::WriteRaw(Byte const* pIn, size_t bufferSize, string const& filename)
     {
-    FILE* pFile = 0; 
-    if(0 != fopen_s (&pFile, filename.c_str(), "wb+"))
+    FILE* pFile = 0;
+    if(0 != BeFile::Fopen (&pFile, filename.c_str(), "wb+"))
         return false;
 
     bool success = bufferSize == fwrite(pIn, 1, bufferSize, pFile);
@@ -73,8 +73,8 @@ bool ImageFile::WriteRaw(Byte const* pIn, size_t bufferSize, string const& filen
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ImageFile::ReadRaw_256x256_RGBA(Byte* pOut, string const& filename)
     {
-    FILE* pFile = 0; 
-    if(0 != fopen_s (&pFile, filename.c_str(), "rb"))
+    FILE* pFile = 0;
+    if(0 != BeFile::Fopen (&pFile, filename.c_str(), "rb"))
         return false;
 
     size_t sizeRead = fread(pOut, 1, TILE_SIZE_BYTES, pFile);
@@ -100,14 +100,14 @@ bool ImageFile::CreateTiffFromRGBATile(Byte const* pIn, wstring const& filename)
     else
         {
         fullURL += filename.c_str();
-        }        
+        }
 
     HFCPtr<HRABitmap> pBitmap = new HRABitmap(TILE_SIZE, TILE_SIZE, &HGF2DIdentity(), UPPER_LEFT_COORDSYS, new HRPPixelTypeV32R8G8B8A8);
 
     HFCPtr<HCDPacket> pPacket = new HCDPacket(const_cast<Byte*>(pIn), TILE_SIZE_BYTES, TILE_SIZE_BYTES);
     pPacket->SetBufferOwnership(false);
     pBitmap->SetPacket(pPacket);
-       
+
     HFCPtr<HFCURL> pURL = new HFCURLFile(fullURL);
 
     return ImageFile::CreateTiff(pURL, pBitmap);
@@ -120,7 +120,7 @@ bool ImageFile::CreateTiffFromRGBATile(Byte const* pIn, wstring const& filename)
 bool ImageFile::CreateTiff(HFCPtr<HFCURL> pURL, HFCPtr<HRABitmap> pBitmap)
     {
     try
-        {           
+        {
         HUTImportFromRasterExportToFile exporter(pBitmap.GetPtr(), *pBitmap->GetEffectiveShape(), gWorldClusterP);
 
         // Select destination URL
@@ -133,11 +133,11 @@ bool ImageFile::CreateTiff(HFCPtr<HFCURL> pURL, HFCPtr<HRABitmap> pBitmap)
         exporter.SelectBestPixelType(pBitmap->GetPixelType());
         assert(exporter.GetSelectedPixelType() == pBitmap->GetPixelType()->GetClassID());
 
-        exporter.SelectBlockType(HRFBlockType::TILE);                    
-        
+        exporter.SelectBlockType(HRFBlockType::TILE);
+
         // Prefer single resolution file.
         exporter.SelectEncoding(HRFEncodingType(HRFEncodingType::STANDARD));
-        
+
         if(NULL != exporter.StartExport())
             return true;
         }

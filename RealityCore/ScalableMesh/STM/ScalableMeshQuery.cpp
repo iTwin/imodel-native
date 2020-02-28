@@ -14,6 +14,7 @@
 #endif
 #endif
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 // NEEDS_WORK_SM : add pragma to disable wnarning for templating
 #pragma warning (disable: 4250)
 #pragma warning (disable: 4589)
@@ -316,7 +317,7 @@ int IScalableMeshPointQuery::RemoveAllClip()
 |IScalableMeshPointQuery::GetReprojectionQueryInterface
 +----------------------------------------------------------------------------*/
 IScalableMeshPointQueryPtr ScalableMeshPointQuery::GetReprojectionQueryInterface(IScalableMeshPtr       scmToQueryPtr,
-                                                                                 ScalableMeshQueryType  queryType,                                                         
+                                                                                 ScalableMeshQueryType  queryType,
                                                                                  const GCS&             sourceGCS,
                                                                                  const GCS&             targetGCS,
                                                                                  const DRange3d&        extentInTargetGCS)
@@ -408,7 +409,7 @@ int ScalableMeshPointQuery::_RemoveAllClip()
     {
     m_clips = 0;
     return SUCCESS;
-    }  
+    }
 
 // Provide default implementation of the Query method
 int ScalableMeshPointQuery::_Query(bvector<DPoint3d>&               points,
@@ -784,7 +785,7 @@ bool IScalableMeshMesh::CutWithPlane(bvector<DSegment3d>& segmentList, DPlane3d&
     return _CutWithPlane(segmentList, cuttingPlane);
     }
 
-void IScalableMeshMesh::SetTransform(Transform myTransform) 
+void IScalableMeshMesh::SetTransform(Transform myTransform)
 {
 	return _SetTransform(myTransform);
 }
@@ -942,7 +943,7 @@ void ScalableMeshMesh::CalcNormals () const
         }
     }
 #endif
-   
+
 static bool s_dontCalculNormal = true;
 
 const PolyfaceQuery* ScalableMeshMesh::_GetPolyfaceQuery() const
@@ -1054,7 +1055,7 @@ bool ScalableMeshMesh::_FindTriangleForProjectedPoint(int* outTriangle, DPoint3d
                     }
                 else
 #ifdef VANCOUVER_API
-                    intersectTri = bsiDRay3d_intersectTriangle(&ray, &projectedPt, &bary, &param, pts) 
+                    intersectTri = bsiDRay3d_intersectTriangle(&ray, &projectedPt, &bary, &param, pts)
 #else
                     intersectTri = DTriangle3d (pts[0], pts[1], pts[2]).TransverseIntersection (ray, projectedPt, bary, param)
 #endif
@@ -1309,7 +1310,7 @@ int ScalableMeshMesh::AppendMesh(size_t nbPoints, DPoint3d* points, size_t nbFac
             m_pUvIndex = newUvIndex;*/
             m_pUv = newUv;
             m_pUvIndex = newUvIndex;
-            
+
         }
 //        delete[] m_pUvIndex;
 
@@ -1429,7 +1430,7 @@ int numIndices
         goto errexit;
         }
 
- 
+
     // Process For Triangulation
     if (dbg) bcdtmWrite_message(0, 0, 0, "Processing For Triangulation ** Number Of DTM Points = %8ld", dtmP->numPoints);
     if (bcdtmObject_processForTriangulationDtmObject(dtmP))goto errexit;
@@ -1587,7 +1588,7 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm, bool pointsOnly)
     }
 
 DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
-    { 
+    {
     BC_DTM_OBJ* bcDtmP = 0;
     int dtmCreateStatus = bcdtmObject_createDtmObject(&bcDtmP);
     if (dtmCreateStatus == 0)
@@ -1723,7 +1724,7 @@ bool ScalableMeshMesh::_IntersectRay(DPoint3d& pt, const DRay3d& ray) const
 #ifdef VANCOUVER_API
         bool intersectTri = bsiDRay3d_intersectTriangle(&ray, &projectedPt, &bary, &param, pts)
 #else
-        bool intersectTri = DTriangle3d (pts[0], pts[1], pts[2]).TransverseIntersection (ray, projectedPt, bary, param) 
+        bool intersectTri = DTriangle3d (pts[0], pts[1], pts[2]).TransverseIntersection (ray, projectedPt, bary, param)
 #endif
             && bary.x >= -1.0e-6f && bary.x <= 1.0&& bary.y >= -1.0e-6f && bary.y <= 1.0 && bary.z >= -1.0e-6f && bary.z <= 1.0 && param >= -1e-6 &&param < minParam;
         if (intersectTri)
@@ -1739,7 +1740,7 @@ bool ScalableMeshMesh::_IntersectRay(bvector<DTMRayIntersection>& hits, const DR
     {
     if (m_nbPoints < 3 || m_nbFaceIndexes < 3) return false;
     double minParam = DBL_MAX;
- 
+
     for (size_t i = 0; i < m_nbFaceIndexes; i += 3)
         {
         DPoint3d projectedPt;
@@ -1760,7 +1761,7 @@ bool ScalableMeshMesh::_IntersectRay(bvector<DTMRayIntersection>& hits, const DR
 #ifdef VANCOUVER_API
         bool intersectTri = bsiDRay3d_intersectTriangle(&ray, &projectedPt, &bary, &param, pts)
 #else
-        bool intersectTri = DTriangle3d (pts[0], pts[1], pts[2]).TransverseIntersection (ray, projectedPt, bary, param) 
+        bool intersectTri = DTriangle3d (pts[0], pts[1], pts[2]).TransverseIntersection (ray, projectedPt, bary, param)
 #endif
             && bary.x >= -1.0e-6f && bary.x <= 1.0&& bary.y >= -1.0e-6f && bary.y <= 1.0 && bary.z >= -1.0e-6f && bary.z <= 1.0;
         //&& param < minParam;
@@ -1783,7 +1784,7 @@ bool ScalableMeshMesh::_IntersectRay(bvector<DTMRayIntersection>& hits, const DR
     // Sort
     DTMIntersectionCompare Comparator;
     std::sort(hits.begin(), hits.end(), Comparator);
-    
+
     // filter the intersections
     // TODO : need to filter the intersection to remove same points, update normals for degenrate cases
 
@@ -1836,7 +1837,7 @@ bool ScalableMeshMesh::_CutWithPlane(bvector<DSegment3d>& segmentList, DPlane3d&
             DSegment3d intersectSegment = DSegment3d::From(intersectPts[0], intersectPts[1]);
             segmentList.push_back(intersectSegment);
             }
-        
+
         }
     return true;
     }
@@ -1885,9 +1886,9 @@ Point2d ScalableMeshTexture::_GetDimension() const
 ScalableMeshTexture::ScalableMeshTexture(RefCountedPtr<SMMemoryPoolBlobItem<Byte>>& pPoolBlobItem)
     : m_texturePtr(pPoolBlobItem)
     {
-    
+
     if (m_texturePtr.IsValid() && m_texturePtr->GetSize() > 0)
-        {        
+        {
         int dimensionX;
 #if _WIN32
         memcpy_s(&dimensionX, sizeof(int), m_texturePtr->GetData(), sizeof(int));
@@ -1915,7 +1916,7 @@ ScalableMeshTexture::ScalableMeshTexture(RefCountedPtr<SMMemoryPoolBlobItem<Byte
             m_textureData = m_texturePtr->GetData() + sizeof(int) * 4;
             }
 
-        } 
+        }
     else
         {
         m_dimension.x = m_dimension.y = 0;
@@ -1924,7 +1925,7 @@ ScalableMeshTexture::ScalableMeshTexture(RefCountedPtr<SMMemoryPoolBlobItem<Byte
     }
 
 ScalableMeshTexture::~ScalableMeshTexture()
-    {    
+    {
     }
 
 DTMStatusInt ScalableMeshMeshWithGraph::_GetBoundary(bvector<DPoint3d>& pts)
@@ -1979,7 +1980,7 @@ bool ScalableMeshMeshWithGraph::_FindTriangleAlongRay(int* outTriangle, DRay3d& 
     if (!FindNextTriangleOnRay(triangleStartEdge, pt, NULL, m_graphData, ray, NULL, m_points, vec, NULL, m_nbPoints, m_is3d)) return false;
     GetFaceDefinition(m_graphData, outTriangle, triangleStartEdge);
     return true;
-    }    
+    }
 
 bool ScalableMeshMeshWithGraph::_FindTriangleAlongRay(MTGNodeId& outTriangle, DRay3d& ray) const
     {
@@ -1994,7 +1995,7 @@ bool ScalableMeshMeshWithGraph::_FindTriangleAlongRay(MTGNodeId& outTriangle, DR
 bool ScalableMeshMeshWithGraph::_FindTriangleForProjectedPoint(MTGNodeId& outTriangle, DPoint3d& point, bool use2d) const
     {
     double maxParam = -DBL_MAX;
-/*    //we find a close point based on point sort order 
+/*    //we find a close point based on point sort order
     auto it = std::lower_bound(&m_points[0], &m_points[0] + m_nbPoints, point, [] (const DPoint3d&i, const DPoint3d&j)
         {
         if (i.x <j.x) return true;
@@ -2101,7 +2102,7 @@ bool ScalableMeshMeshWithGraph::_FindTriangleForProjectedPoint(MTGNodeId& outTri
             }
         }*/
 
-    
+
     MTGMask visitedMask = m_graphData->GrabMask();
     MTGARRAY_SET_LOOP(edgeId, m_graphData)
         {
@@ -2140,7 +2141,7 @@ bool ScalableMeshMeshWithGraph::_FindTriangleForProjectedPoint(MTGNodeId& outTri
 #ifdef VANCOUVER_API
             intersectTri = bsiDRay3d_intersectTriangle(&ray, &projectedPt, &bary, &param, pts)
 #else
-            intersectTri = DTriangle3d (pts[0], pts[1], pts[2]).TransverseIntersection (ray, projectedPt, bary, param) 
+            intersectTri = DTriangle3d (pts[0], pts[1], pts[2]).TransverseIntersection (ray, projectedPt, bary, param)
 #endif
             && bary.x >= -1.0e-6f && bary.x <= 1.0&& bary.y >= -1.0e-6f && bary.y <= 1.0 && bary.z >= -1.0e-6f && bary.z <= 1.0 && param > maxParam;
         if (intersectTri)
@@ -2167,7 +2168,7 @@ bool ScalableMeshMeshWithGraph::_FindTriangleForProjectedPoint(MTGNodeId& outTri
 
 static const char* s_path = "E:\\output\\scmesh\\2015-11-27\\";
 size_t s_nClips = 0;
-     
+
 
 void ScalableMeshMesh::ApplyClipMesh(const DifferenceSet& d)
     {
@@ -2205,7 +2206,7 @@ void ScalableMeshMesh::ApplyClipMesh(const DifferenceSet& d)
         stats.close();
     }
 #endif
-  
+
 #if SM_TRACE_CLIPS_GETMESH
     if (m_uvCount > 0 && m_pUvIndex && d.addedFaces.size() >= 3)
         {
@@ -2256,8 +2257,8 @@ void ScalableMeshMesh::ApplyClipMesh(const DifferenceSet& d)
                             break;
                             }
                         }
-                    }              
-                    
+                    }
+
                 }
             }
         stats2.close();
@@ -2574,7 +2575,7 @@ const DPoint3d* IScalableMeshViewDependentMeshQueryParams::GetViewBox() const
     return _GetViewBox();
     }
 
-bool IScalableMeshViewDependentMeshQueryParams::IsProgressiveDisplay() const 
+bool IScalableMeshViewDependentMeshQueryParams::IsProgressiveDisplay() const
     {
     return _IsProgressiveDisplay();
     }
@@ -2673,7 +2674,7 @@ int IScalableMeshMeshQuery::Query(IScalableMeshMeshPtr&                         
     return _Query(meshPtr, pQueryExtentPts, nbQueryExtentPts, scmQueryParamsPtr);
     }
 
-int IScalableMeshMeshQuery::Query(bvector<IScalableMeshNodePtr>&                      meshNodes, 
+int IScalableMeshMeshQuery::Query(bvector<IScalableMeshNodePtr>&                      meshNodes,
                            const DPoint3d*                              pQueryExtentPts,
                            int                                          nbQueryExtentPts,
                            const IScalableMeshMeshQueryParamsPtr& scmQueryParamsPtr) const
@@ -2779,17 +2780,17 @@ void IScalableMeshMeshFlags::SetLoadClips(bool loadClips)
     _SetLoadClips(loadClips);
     }
 
-void IScalableMeshMeshFlags::SetLoadTexture(bool loadTexture) 
+void IScalableMeshMeshFlags::SetLoadTexture(bool loadTexture)
     {
     _SetLoadTexture(loadTexture);
     }
 
-void IScalableMeshMeshFlags::SetLoadIndices(bool loadIndices) 
+void IScalableMeshMeshFlags::SetLoadIndices(bool loadIndices)
     {
     _SetLoadIndices(loadIndices);
     }
 
-void IScalableMeshMeshFlags::SetLoadGraph(bool loadGraph) 
+void IScalableMeshMeshFlags::SetLoadGraph(bool loadGraph)
     {
     _SetLoadGraph(loadGraph);
     }
@@ -2870,7 +2871,7 @@ bool ScalableMeshMeshFlags::_ShouldUseClipsToShow() const
     }
 
 void ScalableMeshMeshFlags::_GetClipsToShow(bset<uint64_t>& clipsToShow) const
-    {    
+    {
     clipsToShow.insert(m_clipsToShow.begin(), m_clipsToShow.end());
     }
 
@@ -2905,7 +2906,7 @@ void ScalableMeshMeshFlags::_SetPrecomputeBoxes(bool precomputeBoxes)
 }
 
 void ScalableMeshMeshFlags::_SetClipsToShow(bset<uint64_t>& clipsToShow, bool shouldInvertClips)
-    {    
+    {
     m_useClipsToShow = true;
     m_shouldInvertClips = shouldInvertClips;
     m_clipsToShow.insert(clipsToShow.begin(), clipsToShow.end());
@@ -2931,7 +2932,7 @@ bool IScalableMeshNode::IsDataUpToDate() const
     return _IsDataUpToDate();
     }
 
-void IScalableMeshNode::UpdateData() 
+void IScalableMeshNode::UpdateData()
     {
     return _UpdateData();
     }
@@ -2939,7 +2940,7 @@ void IScalableMeshNode::UpdateData()
 IScalableMeshMeshPtr IScalableMeshNode::GetMesh(IScalableMeshMeshFlagsPtr& flags) const
     {
     return _GetMesh(flags);
-    }  
+    }
 
 IScalableMeshMeshPtr IScalableMeshNode::GetMeshUnderClip(IScalableMeshMeshFlagsPtr& flags, uint64_t clip) const
     {
@@ -2971,12 +2972,12 @@ bool IScalableMeshNode::IsTextured() const
     return _IsTextured();
     }
 
-void IScalableMeshNode::GetResolutions(float& geometricResolution, float& textureResolution) const 
+void IScalableMeshNode::GetResolutions(float& geometricResolution, float& textureResolution) const
     {
     return _GetResolutions(geometricResolution, textureResolution);
     }
 
-//Gets neighbors by relative position. For example, neighbor (-1, 0, 0) shares the node's left face. (1,1,0) shares the node's top-right diagonal. 
+//Gets neighbors by relative position. For example, neighbor (-1, 0, 0) shares the node's left face. (1,1,0) shares the node's top-right diagonal.
 bvector<IScalableMeshNodePtr>  IScalableMeshNode::GetNeighborAt( char relativePosX, char relativePosY, char relativePosZ) const
     {
     return _GetNeighborAt(relativePosX, relativePosY, relativePosZ);
@@ -3037,12 +3038,12 @@ size_t  IScalableMeshNode::GetPointCount() const
     return _GetPointCount();
     }
 
-bool IScalableMeshNode::IsHeaderLoaded() const 
+bool IScalableMeshNode::IsHeaderLoaded() const
     {
     return _IsHeaderLoaded();
     }
 
-void IScalableMeshNode::LoadNodeHeader() const 
+void IScalableMeshNode::LoadNodeHeader() const
     {
     return _LoadHeader();
     }
@@ -3153,7 +3154,7 @@ int IScalableMeshNodeRayQuery::Query(bvector<IScalableMeshNodePtr>&             
     {
     return _Query(nodesPtr, pTestPt, pClipShapePts, nbClipShapePts, scmQueryParamsPtr);
     }
-  
+
 
 StatusInt  IScalableMeshNodeEdit::AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices, bool computeGraph, bool arePoints3D)
     {
@@ -3235,7 +3236,7 @@ IScalableMesh* IScalableMeshCachedDisplayNode::GetScalableMesh()
 IScalableMeshCachedDisplayNodePtr IScalableMeshCachedDisplayNode::Create(uint64_t nodeId, IScalableMesh* smP)
     {
     if (smP == nullptr)
-        { 
+        {
         IScalableMeshCachedDisplayNodePtr displayNodePtr;
         return displayNodePtr;
         }
@@ -3246,7 +3247,7 @@ IScalableMeshCachedDisplayNodePtr IScalableMeshCachedDisplayNode::Create(uint64_
     }
 
 
-    
+
 /*==================================================================*/
 /*        3D MESH RELATED CODE - END                                */
 /*==================================================================*/
@@ -3404,7 +3405,7 @@ template class ScalableMeshCachedMeshNode<DPoint3d>;
 
 template class ScalableMeshCachedDisplayNode<DPoint3d>;
 
-template class ScalableMeshNodeEdit<DPoint3d>;   
+template class ScalableMeshNodeEdit<DPoint3d>;
 
 template class ScalableMeshNodeWithReprojection<DPoint3d>;
 
@@ -3429,3 +3430,4 @@ template int BuildQueryObject<DPoint3d>(//ScalableMeshQuadTreeViewDependentMeshQ
 
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
+POP_DISABLE_DEPRECATION_WARNINGS

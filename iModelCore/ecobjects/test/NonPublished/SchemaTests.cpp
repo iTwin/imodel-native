@@ -378,6 +378,9 @@ TEST_F(SchemaTest, TestCircularReference)
     SchemaKey key("CircleSchema", 01, 00);
     testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Latest);
     EXPECT_FALSE(testSchema.IsValid ());
+    SchemaKey sqKey("SquareSchema", 1, 0);
+    testSchema = schemaContext->LocateSchema(sqKey, SchemaMatchType::Latest);
+    EXPECT_FALSE(testSchema.IsValid());
     }
 
 //---------------------------------------------------------------------------------**//**

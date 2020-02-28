@@ -53,7 +53,7 @@ struct iModelBridgePerformanceTests : ::testing::Test
         CreateDgnDbParams createProjectParams;
         createProjectParams.SetRootSubjectName("iModelBridgePerformanceTests");
 
-        // Create the seed DgnDb file. The BisCore domain schema is also imported. 
+        // Create the seed DgnDb file. The BisCore domain schema is also imported.
         BeSQLite::DbResult createStatus;
         DgnDbPtr db = DgnDb::CreateDgnDb(&createStatus, seedDbName, createProjectParams);
         ASSERT_TRUE(db.IsValid());
@@ -162,7 +162,7 @@ static BeFileName getiModelBridgeTestsOutputDir(WCharCP subdir)
 BEGIN_BENTLEY_DGN_NAMESPACE
 struct TestIModelHubFwkClientForBridges : TestIModelHubClientForBridges
     {
-    TestIModelHubFwkClientForBridges(BeFileNameCR testWorkDir) 
+    TestIModelHubFwkClientForBridges(BeFileNameCR testWorkDir)
         : TestIModelHubClientForBridges(testWorkDir)
         {  }
 
@@ -180,7 +180,7 @@ struct iModelBridgeTests_PerfTest_Bridge : iModelBridgeWithSyncInfoBase
     bool m_jobTransChanged = false;
     int m_changeCount = 0;
 
-    
+
     int m_numItems;
     int m_numScopes;
     std::vector< iModelBridgeSyncInfoFile::ROWID> m_scopes;
@@ -220,13 +220,13 @@ struct iModelBridgeTests_PerfTest_Bridge : iModelBridgeWithSyncInfoBase
 
         auto subjectObj = Subject::Create(*GetDgnDbR().Elements().GetRootSubject(), ComputeJobSubjectCodeValue().c_str());
         JobSubjectUtils::InitializeProperties(*subjectObj, _GetParams().GetBridgeRegSubKeyUtf8());
-        
+
         SubjectCPtr subj =  subjectObj->InsertT<Subject>();
 
         // register the document. This then becomes the scope for all of my items.
         iModelBridgeSyncInfoFile::ConversionResults docLink = RecordDocument(*GetSyncInfo().GetChangeDetectorFor(*this), _GetParams().GetInputFileName(), nullptr,
             "DocumentWithBeGuid", iModelBridgeSyncInfoFile::ROWID(subj->GetElementId().GetValue()));
-        
+
         return subj;
         }
 
@@ -260,7 +260,9 @@ static void populateRegistryWithFooBar(FakeRegistry& testRegistry, WString bridg
                                                           BentleyApi::WCharCP sourceFileName)
         {
         affinityLevel = iModelBridgeAffinityLevel::Medium;
+PUSH_DISABLE_DEPRECATION_WARNINGS
         wcsncpy(buffer, bridgeRegSubKey.c_str(), bridgeRegSubKey.length());
+POP_DISABLE_DEPRECATION_WARNINGS
         };
 
     testRegistry.AddBridge(bridgeRegSubKey, lambda);
@@ -282,7 +284,7 @@ DgnRevisionPtr TestIModelHubFwkClientForBridges::CaptureChangeSet(DgnDbP db, Utf
     BeAssert(db != nullptr);
 
     BeAssert(db->IsBriefcase());
-    
+
     // printf("*** %s : %d\n", comment, anyTxnsInFile(*db));
 
     if (!anyTxnsInFile(*db))
@@ -319,7 +321,7 @@ DgnElementId iModelBridgeTests_PerfTest_Bridge::ConvertItem(TestSourceItemWithId
         changeDetector._OnElementSeen(change.GetSyncInfoRecord().GetDgnElementId());
         return change.GetSyncInfoRecord().GetDgnElementId();
         }
-    
+
     ++m_changeCount;
     iModelBridgeSyncInfoFile::ConversionResults results;
     results.m_element = iModelBridgePerformanceTests::CreateGenericPhysicalObject(*m_db);
@@ -336,7 +338,7 @@ void iModelBridgeTests_PerfTest_Bridge::DoConvertToBim(SubjectCR jobSubject)
     {
     // (Note: superclass iModelBridgeWithSyncInfoBase::_OnConvertToBim has already attached my syncinfo file to the bim.)
 
-    
+
     iModelBridgeSyncInfoFile::ChangeDetectorPtr changeDetector = GetSyncInfo().GetChangeDetectorFor(*this);
 
     iModelBridgeSyncInfoFile::ConversionResults docLink = RecordDocument(*changeDetector, _GetParams().GetInputFileName(), nullptr,
@@ -353,7 +355,7 @@ void iModelBridgeTests_PerfTest_Bridge::DoConvertToBim(SubjectCR jobSubject)
         TestSourceItemWithId scopeItem(index, index, m_docScopeId, "Scope");
         m_scopes.push_back(iModelBridgeSyncInfoFile::ROWID (ConvertItem(scopeItem, *changeDetector).GetValue()));
         }
-    
+
     // Convert the "items" in my (non-existant) source file.
     for (int index =0; index <m_numItems; ++ index)
         {
@@ -375,7 +377,7 @@ TEST_F(iModelBridgePerformanceTests, PerformanceTest)
     auto testDir = getiModelBridgeTestsOutputDir(L"Test1");
 
     ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testDir));
-    
+
     // I have to create a file that I represent as the bridge "library", so that the fwk's argument validation logic will see that it exists.
     // The fwk won't try to load this file, since we will register a fake bridge.
     BeFileName fakeBridgeName(testDir);
@@ -394,7 +396,7 @@ TEST_F(iModelBridgePerformanceTests, PerformanceTest)
     args.push_back(L"--fwk-revision-comment=\"comment in quotes\"");
     args.push_back(L"--server-user=username=username");                                         // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
     args.push_back(L"--server-password=\"password><!@\"");                                      // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
-    args.push_back(WPrintfString(L"--fwk-bridge-library=\"%ls\"", fakeBridgeName.c_str()));     // must refer to a path that exists! 
+    args.push_back(WPrintfString(L"--fwk-bridge-library=\"%ls\"", fakeBridgeName.c_str()));     // must refer to a path that exists!
     args.push_back(WPrintfString(L"--fwk-bridge-regsubkey=%ls", bridgeRegSubKey).c_str());      // must be consistent with testRegistry.m_bridgeRegSubKey
     args.push_back(L"--fwk-storeElementIdsInBIM");
     BeFileName platformAssetsDir;
@@ -415,7 +417,7 @@ TEST_F(iModelBridgePerformanceTests, PerformanceTest)
     FakeRegistry testRegistry(testDir, assignDbName);
     testRegistry.WriteAssignments();
     populateRegistryWithFooBar(testRegistry, bridgeRegSubKey);
-    
+
     testRegistry.AddRef(); // prevent ~iModelBridgeFwk from deleting this object.
     iModelBridgeFwk::SetRegistryForTesting(testRegistry);   // (takes ownership of pointer)
 
@@ -434,7 +436,7 @@ TEST_F(iModelBridgePerformanceTests, PerformanceTest)
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
         ASSERT_EQ(0, fwk.Run(argc, argv));
         }
-    
+
     testBridge.m_numScopes = numFiles;
     testBridge.m_numItems = numFiles * numElementPerFile;
     if (true)

@@ -13,6 +13,7 @@
 #include "MstnBridgeTestsLogProvider.h"
 #include "CodeScope.h"
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 struct RevisionStats
     {
     size_t nSchemaRevs {};
@@ -31,7 +32,7 @@ int argc = (int)argptrs.size();\
 wchar_t const** argv = argptrs.data();\
 
 //=======================================================================================
-// @bsistruct                              
+// @bsistruct
 //=======================================================================================
 struct ScopedEnvvar
     {
@@ -47,7 +48,7 @@ struct ScopedEnvvar
     };
 
 //=======================================================================================
-// @bsistruct                              
+// @bsistruct
 //=======================================================================================
 struct SetRulesFileInEnv : ScopedEnvvar
     {
@@ -58,7 +59,7 @@ struct ProcessRunner;
 typedef void (*T_SendKillSignal)(ProcessRunner&);
 
 //=======================================================================================
-// @bsistruct                              
+// @bsistruct
 //=======================================================================================
 struct ProcessRunner
     {
@@ -97,7 +98,7 @@ struct ProcessRunner
     };
 
 //=======================================================================================
-// @bsistruct                              
+// @bsistruct
 //=======================================================================================
 struct BriefClientRepositoryAdmin : BentleyApi::Dgn::DgnPlatformLib::Host::RepositoryAdmin
 {
@@ -115,7 +116,7 @@ struct BriefClientRepositoryAdmin : BentleyApi::Dgn::DgnPlatformLib::Host::Repos
 struct LogProcessor;
 struct FwkArgvMaker;
 //=======================================================================================
-// @bsistruct                              
+// @bsistruct
 //=======================================================================================
 struct MstnBridgeTestsFixture : ::testing::Test
     {
@@ -186,7 +187,7 @@ struct MstnBridgeTestsFixture : ::testing::Test
     static BentleyApi::BeFileName GetSeedFile();
 
     static void SetUpTestCase();
-    
+
     static void TearDownTestCase();
 
     void MakeCopyOfFile(BentleyApi::BeFileNameR outFile, BentleyApi::WCharCP filename, BentleyApi::WCharCP suffix);
@@ -203,7 +204,7 @@ struct MstnBridgeTestsFixture : ::testing::Test
         {
         BentleyApi::Dgn::ScopedDgnHost m_host;
         BentleyApi::Dgn::DgnDbPtr m_db;
-        
+
         DbFileInfo(BentleyApi::BeFileNameCR fileName);
         ~DbFileInfo();
         int32_t GetElementCount();
@@ -236,7 +237,7 @@ struct MstnBridgeTestsFixture : ::testing::Test
     static void TerminateHost();
 
     static void SetupTestDirectory(BentleyApi::BeFileNameR dirPath,  BentleyApi::WCharCP dirName, BentleyApi::WCharCP iModelName,
-                                   BentleyApi::BeFileNameCR input1, BentleyApi::BeSQLite::BeGuidCR inputGuid, 
+                                   BentleyApi::BeFileNameCR input1, BentleyApi::BeSQLite::BeGuidCR inputGuid,
                                    BentleyApi::BeFileNameCR refFile, BentleyApi::BeSQLite::BeGuidCR refGuid);
     };
 
@@ -248,13 +249,13 @@ struct ScopedCodeAssignerXDomain
     };
 
 //=======================================================================================
-// @bsistruct                              
+// @bsistruct
 //=======================================================================================
 struct LogProcessor
     {
     std::function<MstnBridgeTestsLogProvider::T_IsSeverityEnabled> m_wasSev;
     std::function<MstnBridgeTestsLogProvider::T_LogMessage> m_wasProc;
-    
+
     LogProcessor(std::function<MstnBridgeTestsLogProvider::T_IsSeverityEnabled> sevf, std::function<MstnBridgeTestsLogProvider::T_LogMessage> logf)
         {
         m_wasSev = MstnBridgeTestsFixture::s_logProvider.m_sev;
@@ -271,7 +272,7 @@ struct LogProcessor
     };
 
 //=======================================================================================
-// @bsistruct                              
+// @bsistruct
 //=======================================================================================
 struct FwkArgvMaker
     {
@@ -308,7 +309,7 @@ struct FwkArgvMaker
     };
 
 //=======================================================================================
-// @bsistruct                              
+// @bsistruct
 //=======================================================================================
 struct SynchInfoTests : public MstnBridgeTestsFixture, public ::testing::WithParamInterface<WString>
 {
@@ -322,3 +323,4 @@ struct SynchInfoTests : public MstnBridgeTestsFixture, public ::testing::WithPar
     void ValidateLevelSynchInfo (BentleyApi::BeFileName& dbFile, int64_t srcId);
 };
 
+POP_DISABLE_DEPRECATION_WARNINGS

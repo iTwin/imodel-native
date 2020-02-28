@@ -22,8 +22,8 @@ struct UnitsTests : UnitsTestFixture
         {
         auto lineProcessor = [&unitNameMap, &notMapped] (bvector<Utf8String>& tokens)
             {
-            Utf8String newName1 = ParseUOM(tokens[1].begin(), notMapped);
-            Utf8String newName2 = ParseUOM(tokens[3].begin(), notMapped);
+            Utf8String newName1 = ParseUOM(tokens[1].c_str(), notMapped);
+            Utf8String newName2 = ParseUOM(tokens[3].c_str(), notMapped);
             unitNameMap[tokens[1]] = newName1;
             unitNameMap[tokens[3]] = newName2;
             };
@@ -150,7 +150,7 @@ TEST_F(UnitsTests, PrintOutAllUnitsGroupedByPhenonmenon)
         WriteLine(file, line.c_str());
 
         WriteLine(file);
-        
+
         for (auto const& unit : phenomenon->GetUnits())
             {
             if (unit->IsConstant())

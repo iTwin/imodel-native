@@ -24,7 +24,7 @@
     #else
         #include <sys/mount.h>
         #include <CoreFoundation/CoreFoundation.h>
-    #endif 
+    #endif
     #include <utime.h>
     #include <dlfcn.h>
     #include <unistd.h>
@@ -120,7 +120,7 @@ BeFileName::BeFileName(CharCP name, BentleyCharEncoding encoding)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeFileName::GetNameA (char name[MAX_PATH]) const 
+void BeFileName::GetNameA (char name[MAX_PATH]) const
     {
     BeStringUtilities::WCharToCurrentLocaleChar(name, this->c_str(), MAX_PATH);
     }
@@ -128,7 +128,7 @@ void BeFileName::GetNameA (char name[MAX_PATH]) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeFileName::GetNameA (CharP name, size_t numBytes) const 
+void BeFileName::GetNameA (CharP name, size_t numBytes) const
     {
     BeStringUtilities::WCharToCurrentLocaleChar(name, this->c_str(), numBytes);
     }
@@ -220,9 +220,9 @@ BeFileName::BeFileName(FileNameParts mask, WCharCP fullName)
     {
     WString    fileDev, fileDir, fileBase, fileExt;
     ParseName(&fileDev, &fileDir, &fileBase, &fileExt, fullName);
-    BuildName((mask & Device)    ? fileDev.c_str() : NULL, 
-               (mask & Directory) ? fileDir.c_str() : NULL, 
-               (mask & Basename)  ? fileBase.c_str() : NULL, 
+    BuildName((mask & Device)    ? fileDev.c_str() : NULL,
+               (mask & Directory) ? fileDir.c_str() : NULL,
+               (mask & Basename)  ? fileBase.c_str() : NULL,
                (mask & Extension) ? fileExt.c_str() : NULL);
     }
 
@@ -241,7 +241,7 @@ void BeFileName::SupplyDefaultNameParts(WCharCP defaultName)
     if (dir.empty()) dir = defdir;
     if (name.empty()) name = defname;
     if (ext.empty()) ext = defext;
-    
+
     BuildName(dev.c_str(), dir.c_str(), name.c_str(), ext.c_str());
     }
 
@@ -260,30 +260,30 @@ void BeFileName::OverrideNameParts(WCharCP overrideName)
     if (dir.empty()) dir = defdir;
     if (name.empty()) name = defname;
     if (ext.empty()) ext = defext;
-    
+
     BuildName(dev.c_str(), dir.c_str(), name.c_str(), ext.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
     path - Full path buffer.
 
-    drive - Contains a letter (A, B, and so on) corresponding to the desired drive and an optional trailing colon. _makepath inserts 
-    the colon automatically in the composite path if it is missing. If drive is NULL or points to an empty string, no drive letter 
+    drive - Contains a letter (A, B, and so on) corresponding to the desired drive and an optional trailing colon. _makepath inserts
+    the colon automatically in the composite path if it is missing. If drive is NULL or points to an empty string, no drive letter
     appears in the composite path string.
 
-    dir - Contains the path of directories, not including the drive designator or the actual file name. The trailing slash is optional, 
-    and either a forward slash (/) or a backslash (\) or both might be used in a single dir argument. If no trailing slash (/ or \) is 
+    dir - Contains the path of directories, not including the drive designator or the actual file name. The trailing slash is optional,
+    and either a forward slash (/) or a backslash (\) or both might be used in a single dir argument. If no trailing slash (/ or \) is
     specified, it is inserted automatically. If dir is NULL or points to an empty string, no directory path is inserted in the composite path string.
 
-    fname - Contains the base file name without any file name extensions. If fname is NULL or points to an empty string, no filename is inserted in 
+    fname - Contains the base file name without any file name extensions. If fname is NULL or points to an empty string, no filename is inserted in
     the composite path string.
 
-    ext - Contains the actual file name extension, with or without a leading period (.). _makepath inserts the period automatically if it does not 
+    ext - Contains the actual file name extension, with or without a leading period (.). _makepath inserts the period automatically if it does not
     appear in ext. If ext is NULL or points to an empty string, no extension is inserted in the composite path string.
 
 * @bsimethod                                    Keith.Bentley                   04/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileNameR BeFileName::BuildName (WCharCP dev, WCharCP dir, WCharCP name, WCharCP ext) 
+BeFileNameR BeFileName::BuildName (WCharCP dev, WCharCP dir, WCharCP name, WCharCP ext)
     {
     WString combinedPath;
     BeFileName::BuildName(combinedPath, dev, dir, name, ext);
@@ -301,7 +301,7 @@ void BeFileName::BuildName(WStringR combinedPath, WCharCP dev, WCharCP dir, WCha
     WChar outPath[4*MAX_PATH];
     if (0 != _wmakepath_s(outPath, 4*MAX_PATH, dev, dir, name, ext))
         *outPath = 0;
-    
+
     combinedPath = outPath;
     }
 #elif defined (__unix__)
@@ -662,11 +662,11 @@ BeFileNameR BeFileName::PopDir ()
         return *this;
 
     WString::iterator lastChar = this->end()-1;
-        
+
     // A trailing separator doesn't count.
     if (lastChar > this->begin() && *lastChar == WCSDIR_SEPARATOR_CHAR)
         --lastChar;
-        
+
     while (lastChar > this->begin() && *lastChar != WCSDIR_SEPARATOR_CHAR)
         --lastChar;
 
@@ -920,7 +920,9 @@ static bool UNCPathExists(WCharCP filename)
     // make a local copy of just the UNC server part of the name.
     ptrdiff_t   numChars        = endServerName - serverName;
     WCharP      localServerName = (WCharP) _alloca( (numChars+1) * sizeof (WChar));
+PUSH_DISABLE_DEPRECATION_WARNINGS
     wcsncpy(localServerName, serverName, numChars);
+POP_DISABLE_DEPRECATION_WARNINGS
     localServerName[numChars] = 0;
 
     double timeNow = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
@@ -963,10 +965,10 @@ bool BeFileName::DoesPathExist(WCharCP path)
 
     WString pathFixed;
     BeFileNameStatus status = FixPathName(pathFixed, path, false);
-    
+
     if (BeFileNameStatus::Success != status)
         return false;
-    
+
     return -1 != _waccess(pathFixed.c_str(), 0);
 
 #elif defined (__unix__)
@@ -999,11 +1001,11 @@ bool BeFileName::IsDirectory(WCharCP path)
     FixPathName(pathFixed, path, false);
 
     BeFileName resolvedPath(pathFixed);
-    
+
     // resolve the target if it's a link.
     if (IsSymbolicLink(pathFixed.c_str()) && (SUCCESS != GetTargetOfSymbolicLink(resolvedPath, pathFixed.c_str())))
         BeAssert(false);
-    
+
     if (WCSDIR_SEPARATOR_CHAR == resolvedPath[resolvedPath.size() - 1])
         resolvedPath.resize(resolvedPath.size() - 1);
 
@@ -1090,11 +1092,12 @@ BeFileNameStatus BeFileName::FixPathName(WStringR path, WCharCP src, bool keepTr
     size_t numToAllocate = wcslen(src) + 1;
     if (extendedPathPrefixNeeded)
         numToAllocate += wcslen(WINDOWS_EXTENDED_PATH_PREFIX);
-        
+
     ScopedArray<WChar, (MAX_PATH * sizeof (WChar))> tmp1Buff(numToAllocate);
     WCharP tmp1 = tmp1Buff.GetData();
     WCharP dst=tmp1;
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
     if (extendedPathPrefixNeeded)
         {
         wcscpy(dst, WINDOWS_EXTENDED_PATH_PREFIX);
@@ -1102,18 +1105,18 @@ BeFileNameStatus BeFileName::FixPathName(WStringR path, WCharCP src, bool keepTr
         }
 
     bool hasBeginQuotes = *src && *src == '\"';
-    
+
     for (int charCount = 0; *src; ++src, ++dst, ++charCount)
         {
         if (*src)
         *dst = ('/' == *src) ? '\\' : *src;
-        
+
         bool skipStripSlashCheck = (0 == charCount) || (hasBeginQuotes && charCount <3);
         // don't copy embedded multiple backskashes (keep leading double backslash for UNC's)
         if ('\\' == dst[0]  &&  ('\\' == src[1] || '/'== src[1]) && !skipStripSlashCheck)
             dst--;
         }
-        
+
     *dst = '\0';
 
     if (('\\' == dst[-1]) && !keepTrailingSeparator)
@@ -1123,6 +1126,7 @@ BeFileNameStatus BeFileName::FixPathName(WStringR path, WCharCP src, bool keepTr
     ScopedArray<WChar, (MAX_PATH * sizeof (WChar))> tmpBuff(wcslen(tmp1) + 1);
     WCharP tmp = tmpBuff.GetData();
     wcscpy(tmp, tmp1);
+POP_DISABLE_DEPRECATION_WARNINGS
 
   #if defined (BENTLEY_WIN32)
 
@@ -1167,7 +1171,7 @@ BeFileNameStatus BeFileName::FixPathName(WStringR path, WCharCP src, bool keepTr
     if (realpath(toUtf8(src).c_str(), buf))
         {
         BeStringUtilities::Utf8ToWChar(path, buf);
-        
+
         if (keepTrailingSeparator)
             {
             // realpath removes trailing separators which can cause problems downstream
@@ -1175,7 +1179,7 @@ BeFileNameStatus BeFileName::FixPathName(WStringR path, WCharCP src, bool keepTr
             if (WCSDIR_SEPARATOR_CHAR == *lastSrcChar)
                 BeFileName::AppendSeparator(path);
             }
-        
+
         return BeFileNameStatus::Success;
         }
   #endif
@@ -1200,7 +1204,7 @@ BeFileNameStatus BeFileName::FixPathName(WStringR path, WCharCP src, bool keepTr
         path.push_back(c);
         prevc = c;
         }
-    
+
     if (!keepTrailingSeparator && (WCSDIR_SEPARATOR_CHAR == path.end()[-1]))
         path.resize(path.size()-1);
 
@@ -1224,7 +1228,7 @@ BeFileNameStatus BeFileName::BeGetFullPathName(WStringR path, WCharCP src)
 
     if (PathSize == 0) // Error
         {
-        path = src;   
+        path = src;
         return BeFileNameStatus::UnknownError;
         }
 
@@ -1238,7 +1242,7 @@ BeFileNameStatus BeFileName::BeGetFullPathName(WStringR path, WCharCP src)
     GetFullPathNameW (src, PathSize+1, longFileName.GetData(), NULL);
     path = longFileName.GetData();
     return  BeFileNameStatus::Success;
-         
+
 #elif defined (BENTLEY_WINRT)
 
     // WIP_WINRT
@@ -1348,7 +1352,7 @@ BeFileNameStatus BeFileName::CreateNewDirectory(WCharCP inPath)
         {
         size_t end = pathUtf8.find("/", start);
         Utf8String partialPath = pathUtf8.substr(0, end);
-        
+
         if (Utf8String::npos == end)
             start = pathUtf8.size();
         else
@@ -1402,7 +1406,7 @@ BeFileNameStatus BeFileName::BeDeleteFile(WCharCP fileNameP)
     memset(&wasAttributes, 0, sizeof(wasAttributes));
     ::GetFileAttributesExW (fileNameFixed.c_str(), GetFileExInfoStandard, &wasAttributes);
     ::SetFileAttributesW (fileNameFixed.c_str(), FILE_ATTRIBUTE_NORMAL);   // remove read-only attribute (and anything else that might be in the way)
-    
+
     if (!::DeleteFileW(fileNameFixed.c_str()))
         {
         ::SetFileAttributesW (fileNameFixed.c_str(), wasAttributes.dwFileAttributes);   // restore original attributes
@@ -1415,7 +1419,7 @@ BeFileNameStatus BeFileName::BeDeleteFile(WCharCP fileNameP)
     return BeFileNameStatus::Success;
 
 #elif defined (__unix__)
-    
+
     return remove(toUtf8(fileNameP).c_str()) == 0? BeFileNameStatus::Success: BeFileNameStatus::CantDeleteFile;
 
 #else
@@ -1504,13 +1508,13 @@ BeFileNameStatus BeFileName::CloneDirectory(WCharCP sourceDirIn, WCharCP destDir
     stat = FixPathName(destDir2, destDirIn, false);
     if (BeFileNameStatus::Success != stat)
         return  stat;
-    
+
     BeFileName destDir(destDir2.c_str());
 
     stat = CreateNewDirectory(destDir);
     if (BeFileNameStatus::Success != stat)
         return  stat;
-    
+
     BeFileName filename;
     bool       isDir;
     for (BeDirectoryIterator dir(sourceDir); dir.GetCurrentEntry(filename,isDir,true) == SUCCESS; dir.ToNext())
@@ -1609,9 +1613,9 @@ BeFileNameStatus BeFileName::BeCopyFile(WCharCP sourceFile, WCharCP destinationF
     if (failIfFileExists && BeFileName(destinationFile).DoesPathExist())
         return BeFileNameStatus::AccessViolation;
 
-    if (!(sFile = fopen(toUtf8(sourceFile).c_str(), "rb"))) 
+    if (!(sFile = fopen(toUtf8(sourceFile).c_str(), "rb")))
         return (ENOENT==errno)? BeFileNameStatus::FileNotFound: BeFileNameStatus::AccessViolation;
-    if (!(dFile = fopen(toUtf8(destinationFile).c_str(), "w+b"))) 
+    if (!(dFile = fopen(toUtf8(destinationFile).c_str(), "w+b")))
         {
         fclose(sFile);
         return BeFileNameStatus::AccessViolation;
@@ -1721,7 +1725,7 @@ bool BeFileName::IsFileReadOnly(WCharCP fileName)
         return false;
 
     return (attributes.dwFileAttributes & FILE_ATTRIBUTE_READONLY) != 0;
- 
+
 #elif defined (__unix__)
 
     struct stat info;
@@ -1767,7 +1771,7 @@ BeFileNameStatus BeFileName::SetFileReadOnly(WCharCP fileName, bool readOnly)
     return BeFileNameStatus::Success;
 
 #elif defined (__unix__)
-    
+
     struct stat statbuf;
     Utf8String ufilename = toUtf8(fileName);
     if (stat(ufilename.c_str(), &statbuf) == -1)
@@ -1824,7 +1828,7 @@ BeFileNameStatus BeFileName::GetFileSize(uint64_t& sz, WCharCP fileName)
         // FixPathName adds the "extended path prefix" if name length >= MAX_PATH
         FixPathName(fileNameFixed, fileName, true);
         }
-    
+
     WIN32_FILE_ATTRIBUTE_DATA fileAttributeData;
     if (GetFileAttributesExW (fileNameFixed.c_str(), GetFileExInfoStandard, &fileAttributeData))
         {
@@ -1929,10 +1933,10 @@ BeFileNameStatus BeFileName::GetFileTime(time_t* ctime, time_t* atime, time_t* m
 
     if (ctime)
         *ctime = status.st_ctime;
-    
+
     if (atime)
         *atime = status.st_atime;
-    
+
     if (mtime)
         *mtime = status.st_mtime;
 
@@ -2008,7 +2012,7 @@ BeFileNameStatus BeFileName::SetFileTime(WCharCP fileName, time_t const* atime, 
     FixPathName(fileNameFixed, fileName, true);
 
     _wutime64(fileNameFixed.c_str(), &ut);
-    
+
 #elif defined (__unix__)
 
     T_Stat64 status;
@@ -2030,7 +2034,7 @@ BeFileNameStatus BeFileName::SetFileTime(WCharCP fileName, time_t const* atime, 
     utime(toUtf8(fileName).c_str(), &ut);
 
 #else
-    
+
     #error unknown runtime
 
 #endif
@@ -2100,7 +2104,7 @@ WString BeFileName::Abbreviate(size_t maxLength) const
     // This is documented as undefined behavior; arbitrarily deciding to return the full string.
     if (maxLength <= LEADING_INDICATOR_COUNT)
         return *this;
-    
+
     WCharCP start = c_str();
     bool isOnLastComponent = false;
 
@@ -2113,7 +2117,7 @@ WString BeFileName::Abbreviate(size_t maxLength) const
             isOnLastComponent = true;
             break;
             }
-        
+
         start = newStart;
         }
 
@@ -2137,11 +2141,11 @@ bool BeFileName::IsSymbolicLink() const
 bool BeFileName::IsSymbolicLink(WCharCP path)
     {
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    
+
     // FixPathName adds the "extended path prefix" if name length >= MAX_PATH
     WString pathFixed;
     FixPathName(pathFixed, path, false);
-    
+
     WIN32_FILE_ATTRIBUTE_DATA fileAttributeData;
     if (GetFileAttributesExW (pathFixed.c_str(), GetFileExInfoStandard, &fileAttributeData))
         return (0 != (fileAttributeData.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT));
@@ -2153,7 +2157,7 @@ bool BeFileName::IsSymbolicLink(WCharCP path)
     struct stat attrs;
     if (0 != lstat(Utf8String(path).c_str(), &attrs))
         return false;
-    
+
     return S_ISLNK (attrs.st_mode);
 
 #else
@@ -2173,7 +2177,7 @@ typedef struct _REPARSE_DATA_BUFFER
     ULONG ReparseTag;
     USHORT ReparseDataLength;
     USHORT Reserved;
-    
+
     union
     {
         struct
@@ -2201,7 +2205,7 @@ typedef struct _REPARSE_DATA_BUFFER
 } REPARSE_DATA_BUFFER, *PREPARSE_DATA_BUFFER;
 
 #endif
-    
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     07/2013
 //---------------------------------------------------------------------------------------
@@ -2221,19 +2225,19 @@ static BentleyStatus getImmediateTargetOfSymLink(BeFileNameR target, WCharCP pat
     REPARSE_DATA_BUFFER*    reparsePointData    = (REPARSE_DATA_BUFFER*)_alloca(MAXIMUM_REPARSE_DATA_BUFFER_SIZE);
     DWORD                   bytesReturned       = 0;
     bool                    succeeded           = (0 != ::DeviceIoControl(hFile, FSCTL_GET_REPARSE_POINT, NULL, 0, reparsePointData, MAXIMUM_REPARSE_DATA_BUFFER_SIZE, &bytesReturned, NULL));
-    
+
     if (0 == ::CloseHandle(hFile))
         { BeAssert(false); }
 
     if (!succeeded || (IO_REPARSE_TAG_SYMLINK != reparsePointData->ReparseTag))
         return ERROR;
-    
+
     target.assign(reparsePointData->SymbolicLinkReparseBuffer.PathBuffer + (reparsePointData->SymbolicLinkReparseBuffer.PrintNameOffset / sizeof (WChar)), (reparsePointData->SymbolicLinkReparseBuffer.PrintNameLength / sizeof (WChar)));
 
     return SUCCESS;
 
 #elif defined (BENTLEY_WINRT)
-    
+
     // Not expecting reprase point / symbolic link support within WinRT.
     // I believe GetFileAttributesEx could be used within WinRT to detect them, but I haven't found a way to get link targets yet.
     return ERROR;
@@ -2242,15 +2246,15 @@ static BentleyStatus getImmediateTargetOfSymLink(BeFileNameR target, WCharCP pat
 
     Utf8String pathUtf8(path);
     struct stat attrs;
-    
+
     if (0 != lstat(pathUtf8.c_str(), &attrs))
         return ERROR;
-    
+
     size_t linkTargetLen = attrs.st_size;
     Utf8String targetPathUtf8;
     targetPathUtf8.resize(linkTargetLen);
     size_t bytesRead = readlink(pathUtf8.c_str(), const_cast<Utf8P>(&targetPathUtf8[0]), (linkTargetLen + 1));
-    
+
     if (-1 == bytesRead)
         return ERROR;
 
@@ -2279,10 +2283,10 @@ BentleyStatus BeFileName::GetTargetOfSymbolicLink(BeFileNameR target, WCharCP pa
     {
     if (SUCCESS != getImmediateTargetOfSymLink(target, path))
         return ERROR;
-    
+
     while (shouldRecurse && (SUCCESS == getImmediateTargetOfSymLink(target, target.GetName())))
         ;
-    
+
     return SUCCESS;
     }
 
@@ -2405,7 +2409,7 @@ BeFileName Desktop::FileSystem::GetExecutableDir(BeFileNameCP)
     Utf8PrintfString exelink("/proc/%ld/exe", getpid());
 
     char exepath[PATH_MAX + 1] = {0};
-    
+
     ssize_t linklen = readlink(exelink.c_str(), exepath, _countof(exepath)-1);
 
     if( linklen >= 0 )

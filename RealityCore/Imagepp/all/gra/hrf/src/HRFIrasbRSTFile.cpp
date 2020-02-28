@@ -16,6 +16,7 @@
 
 #include <ImagePP/all/h/ImagePPMessages.xliff.h>
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 HFC_IMPLEMENT_SINGLETON(HRFIrasbRSTCreator)
 
 //-----------------------------------------------------------------------------
@@ -168,7 +169,7 @@ bool HRFIrasbRSTCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                                        uint64_t             pi_Offset) const
     {
     HPRECONDITION(pi_rpURL != 0);
-    
+
     HAutoPtr<HFCBinStream> pFile;
 
     bool                  Result  = false;
@@ -484,3 +485,4 @@ const list<RSTSubFileInfo>& HRFIrasbRSTFile::GetFileInfoList () const
     {
     return m_listOfFileInfo;
     }
+POP_DISABLE_DEPRECATION_WARNINGS

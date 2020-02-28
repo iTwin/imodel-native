@@ -83,7 +83,7 @@ DataSourceAccountCURL::DataSourceAccountCURL(const AccountName & account, const 
 void DataSourceAccountCURL::setProxy(const Utf8String& proxyUserIn, const Utf8String& proxyPasswordIn, const Utf8String& proxyServerUrlIn)
     {
     proxyUser = proxyUserIn;
-    proxyPassword = proxyPasswordIn;  
+    proxyPassword = proxyPasswordIn;
     proxyServerUrl = proxyServerUrlIn;
     }
 
@@ -199,7 +199,7 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, Dat
 
     setupCertificateAuthorities(curl);
     setupProxyToCurl(curl);
-    
+
     auto res = curl_easy_perform(curl);
     if (CURLE_OK != res)
         {
@@ -223,7 +223,7 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, Dat
         utf8URL += "\r\n";
         file.Write(&NbCharsWritten, utf8URL.c_str(), (uint32_t)utf8URL.size());
         char message[10000];
-        sprintf(message, "Date: %s\r\nServer: %s\r\ncurl_easy_perform() result message: %s\r\nHTTP result code: %s\r\n", 
+        sprintf(message, "Date: %s\r\nServer: %s\r\ncurl_easy_perform() result message: %s\r\nHTTP result code: %s\r\n",
             response_header.data["Date"].c_str(), response_header.data["Server"].c_str(), curl_easy_strerror(res), response_header.data["HTTP"].c_str());
         std::string curl_message(message);
         file.Write(&NbCharsWritten, curl_message.c_str(), (uint32_t)curl_message.size());
@@ -312,7 +312,7 @@ bool DataSourceAccountCURL::IsResponseOK(const CURLHandle::CURLDataResponseHeade
 void DataSourceAccountCURL::setupProxyToCurl(CURL* curl)
     {
     assert(curl != nullptr);
-    
+
     if (!proxyServerUrl.empty())
         {
         curl_easy_setopt(curl, CURLOPT_PROXY, proxyServerUrl.c_str());
@@ -376,8 +376,8 @@ DataSourceStatus DataSourceAccountCURL::uploadBlobSync(DataSourceURL &url, const
 
     setupCertificateAuthorities(curl);
     setupProxyToCurl(curl);
-    
-    
+
+
     /* put it! */
     CURLcode res = curl_easy_perform(curl);
 
@@ -468,7 +468,7 @@ DataSourceStatus DataSourceAccountCURL::uploadBlobSync(const DataSourceURL &url,
 size_t DataSourceAccountCURL::CURLHandle::CURLWriteHeaderCallback(void * contents, size_t size, size_t nmemb, void * userp)
     {
     if (userp == nullptr) return 0;
- 
+
     struct CURLDataResponseHeader *header = (struct CURLDataResponseHeader *)userp;
 
     std::istringstream resp((char*)contents);
@@ -485,20 +485,20 @@ size_t DataSourceAccountCURL::CURLHandle::CURLWriteHeaderCallback(void * content
         else if ((index = line.find('/', 0)) != std::string::npos)
             {
             std::map<std::string, std::string>::iterator findIter(header->data.find(line.substr(0, index)));
-                
+
             if (findIter == header->data.end())
-                { 
+                {
                 header->data.insert(std::make_pair(line.substr(0, index), line.substr(index + 1)));
                 }
             else //When doing proxy connection multiple http statements are sent, keep the last one.
 #if defined(__APPLE__) || ANDROID || defined(__linux__)
             if (strcasecmp(findIter->first.c_str(), "http") == 0)
 #else
-            if (stricmp(findIter->first.c_str(), "http") == 0)
+            if (_stricmp(findIter->first.c_str(), "http") == 0)
 #endif
                 {
-                findIter->second = line.substr(index + 1);                
-                }            
+                findIter->second = line.substr(index + 1);
+                }
             }
         }
 
@@ -509,11 +509,11 @@ size_t DataSourceAccountCURL::CURLHandle::CURLWriteDataCallbackRaw(void * conten
     {
     size_t realsize = size * nmemb;
     struct CURLDataMemoryBuffer *mem = (struct CURLDataMemoryBuffer *)userp;
-    
+
     memcpy(&mem->data.raw_data[0], (uint8_t*)contents, realsize);
     mem->data.raw_data += realsize;
     mem->size += realsize;
-    
+
     return realsize;
     }
 

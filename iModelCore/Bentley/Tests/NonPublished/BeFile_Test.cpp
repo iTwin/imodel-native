@@ -8,7 +8,7 @@
 #include <Bentley/Bentley.h>
 #include  <Bentley/BeTest.h>
 
-PUSH_MSVC_IGNORE(6053 6054) // don't care about NULL termination warnings in tests...
+PUSH_MSVC_IGNORE(6053 6054 4996) // don't care about NULL termination warnings in tests...
 
 USING_NAMESPACE_BENTLEY
 
@@ -163,7 +163,7 @@ TEST_F(BeFileTests, CreateFile)
     }
 
 //---------------------------------------------------------------------------------------
-// Gets size for the file with one set of data in it, and then adds more data and 
+// Gets size for the file with one set of data in it, and then adds more data and
 // compares new size to old one
 //
 // @bsimethod                                        Julija.Suboc                02/13
@@ -294,7 +294,7 @@ TEST_F(BeFileTests, ReadEntireFile_ByteStream)
 // @bsimethod                                        Julija.Suboc                02/13
 //---------------------------------------------------------------------------------------
 TEST_F(BeFileTests, Write)
-    {   
+    {
     while(!m_testData.empty())
         {
         //------Preparations----------
@@ -400,12 +400,12 @@ TEST_F(BeFileTests, WriteWithPointerSet)
         status = m_file.Write(&bytesWritten, buf2, byteCountToCopy);
         EXPECT_TRUE(status == BeFileStatus::Success)<<"Failed to write to file, File: "<<filePath;
         EXPECT_EQ(bytesWritten, byteCountToCopy)<<"Failed to write bytes count specified. File: "<<filePath;
-        
+
         m_file.SetPointer(0, BeFileSeekOrigin::End);
         status = m_file.Write(&bytesWritten, buf2, byteCountToCopy);
         EXPECT_TRUE(status == BeFileStatus::Success)<<"Failed to write to file, File: "<<filePath;
         EXPECT_EQ(bytesWritten, byteCountToCopy)<<"Failed to write bytes count specified. File: "<<filePath;
-        
+
         //Cunstruct expected string
         std::string expected = buf;
         expected.replace(0, strlen(buf2), buf2);
@@ -476,7 +476,7 @@ TEST_F(BeFileTests, ReadWithPointerSet)
     }
 
 //---------------------------------------------------------------------------------------
-// Swaps two files and reads some data from file to verify that file swapping was 
+// Swaps two files and reads some data from file to verify that file swapping was
 //successfull
 //
 // @bsimethod                                        Julija.Suboc                02/13
@@ -501,7 +501,7 @@ TEST_F(BeFileTests, SwapFiles)
         BeFileStatus status =m_file.Write(&byteCount, buf, byteCountToCopy);
         EXPECT_TRUE(status == BeFileStatus::Success);
         EXPECT_EQ(byteCountToCopy, byteCount);
-    
+
         byteCountToCopy = 26;
         const char* buf2 = "Hi Mario, its me princess!";
         status =m_file2.Write(&byteCount, buf2, byteCountToCopy);
@@ -531,7 +531,7 @@ TEST_F(BeFileTests, SwapFiles)
         status =m_file2.Read(readBuf2, &byteCount, 46);
         int cmp = strcmp(readBuf, expected2);
         EXPECT_EQ(cmp, 0)<<"File contains other data than expected. Found: "<<readBuf<<". Expected: "<<expected2;
-    
+
         cmp = strcmp(readBuf2, expected);
         EXPECT_EQ(cmp, 0)<<"File2 contains other data than expected. Found: "<<readBuf2<<". Expected: "<<expected;
         free(expected);
@@ -564,7 +564,7 @@ TEST_F(BeFileTests, GetLastError)
         EXPECT_TRUE(status != BeFileStatus::Success)<<"Write operation suceeded without opening file";
         status2 =m_file.GetLastError();
         EXPECT_TRUE(status ==status2)<<"Last error does not match after trying to write to not opened file.";
-        
+
         status =m_file.Open(filePath, BeFileAccess::Read);
         EXPECT_TRUE(status == BeFileStatus::Success) << "File failed to open for read operation";
         status =m_file.Write(&bytesWritten, buf, numBytes);
@@ -624,7 +624,7 @@ TEST_F(BeFileTests, Read)
 // @bsimethod                                        Julija.Suboc                08/13
 //---------------------------------------------------------------------------------------
 TEST_F(BeFileTests, Flush)
-    {   
+    {
         //------Preparations----------
         BeFileName fileName;
         CreatePathForTempFile(&fileName, L"Write", m_testData.back());

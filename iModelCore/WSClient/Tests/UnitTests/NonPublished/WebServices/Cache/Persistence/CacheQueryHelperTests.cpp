@@ -358,11 +358,11 @@ TEST_F(CacheQueryHelperTests, ReadJsonInstance_ExistingInstance_ReturnsRapidJson
     EXPECT_STREQ("TestSchema.Table", document[DataSourceCache_PROPERTY_ClassKey].GetString());
     Utf8String instanceIdString = document[DataSourceCache_PROPERTY_LocalInstanceId].GetString();
     uint64_t instanceId = 0;
-    auto result = sscanf(instanceIdString.c_str(), "%" PRIx64, &instanceId);
+    auto result = Utf8String::Sscanf_safe(instanceIdString.c_str(), "%" PRIx64, &instanceId);
     EXPECT_EQ(1, result);
     EXPECT_EQ(instance.GetInstanceId().GetValue(), instanceId);
     }
-    
+
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                 Petras.Sukys                   11/18
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -391,7 +391,7 @@ TEST_F(CacheQueryHelperTests, ReadJsonInstance_ExistingInstanceWithProperties_Re
     EXPECT_STREQ("TestSchema.Table", jsonValue[DataSourceCache_PROPERTY_ClassKey].asCString());
     Utf8String instanceIdString = jsonValue[DataSourceCache_PROPERTY_LocalInstanceId].asCString();
     uint64_t instanceId = 0;
-    auto result = sscanf(instanceIdString.c_str(), "%" PRIx64, &instanceId);
+    auto result = Utf8String::Sscanf_safe(instanceIdString.c_str(), "%" PRIx64, &instanceId);
     EXPECT_EQ(1, result);
     EXPECT_EQ(instance.GetInstanceId().GetValue(), instanceId);
     }

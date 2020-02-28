@@ -574,7 +574,7 @@ ConvexClipPlaneSet ConvexClipPlaneSet::FromXYBox (double x0, double y0, double x
     return convexSet;
     }
 
-ConvexClipPlaneSet ConvexClipPlaneSet::FromXYPolyLine (bvector<DPoint3d> const &points, bvector<bool> const &interior, bool leftIsInside)
+ConvexClipPlaneSet ConvexClipPlaneSet::FromXYPolyLine (bvector<DPoint3d> const &points, bvector<BoolTypeForVector> const &interior, bool leftIsInside)
     {
     ConvexClipPlaneSet  convexSet;
     for (size_t i0 = 0; i0 + 1 < points.size (); i0++)
@@ -1446,7 +1446,7 @@ PolyfaceHeaderPtr *inside,
 PolyfaceHeaderPtr *outside
 )
     {
-    bvector<bool> interiorFlag; // empty ==> all active.
+    bvector<BoolTypeForVector> interiorFlag; // empty ==> all active.
     ClipPlaneSet clipper = ClipPlaneSet::FromSweptPolygon (polygon.data (), polygon.size (), &sweepDirection);
     ClipPlaneSet::ClipPlaneSetIntersectPolyface (polyface, clipper, constructNewFacetsOnClipSetPlanes, inside, outside);
     }

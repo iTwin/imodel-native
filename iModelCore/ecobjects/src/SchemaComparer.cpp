@@ -54,8 +54,8 @@ struct SchemaProxy final
         ECN::UnitSystemContainerCP UnitSystems() const { return m_schema != nullptr ? &m_schema->GetUnitSystems() : nullptr; }
         ECN::UnitContainerCP Units() const { return m_schema != nullptr ? &m_schema->GetUnits() : nullptr; }
         ECN::FormatContainerCP Formats() const { return m_schema != nullptr ? &m_schema->GetFormats() : nullptr; }
-        bvector<ECN::IECInstancePtr> CustomAttributes() const 
-            { 
+        bvector<ECN::IECInstancePtr> CustomAttributes() const
+            {
             bvector<ECN::IECInstancePtr> cas;
             if (m_schema == nullptr)
                 return cas;
@@ -92,8 +92,8 @@ struct ClassProxy final
         ECN::ECRelationshipConstraint const* RelationTarget() const { return IsRelationship() ? &m_class->GetRelationshipClassCP()->GetTarget() : nullptr; }
 
         ECN::ECBaseClassesList const* BaseClasses() const { return m_class != nullptr ? &m_class->GetBaseClasses() : nullptr; }
-        bvector<ECN::ECPropertyCP> Properties() const 
-            { 
+        bvector<ECN::ECPropertyCP> Properties() const
+            {
             bvector<ECN::ECPropertyCP> props;
             if (m_class == nullptr)
                 return props;
@@ -242,7 +242,7 @@ struct PropertyProxy final
             return Nullable<Utf8String>();
             }
 
-        Nullable<ECRelatedInstanceDirection> NavigationDirection() const 
+        Nullable<ECRelatedInstanceDirection> NavigationDirection() const
             {
             Nullable<ECRelatedInstanceDirection> direction;
             if (m_prop == nullptr || !m_prop->GetIsNavigation())
@@ -296,7 +296,7 @@ struct EnumProxy final
 
         Nullable<bool> IsStrict() const { return m_enum != nullptr ? m_enum->GetIsStrict() : Nullable<bool>(); }
         Nullable<Utf8String> TypeName() const { return m_enum != nullptr ? m_enum->GetTypeName() : Nullable<Utf8String>(); }
-        bvector<ECN::ECEnumeratorCP> Enumerators() const 
+        bvector<ECN::ECEnumeratorCP> Enumerators() const
             {
             bvector<ECN::ECEnumeratorCP> ens;
             if (m_enum == nullptr)
@@ -351,7 +351,7 @@ struct KoqProxy final
 
         Nullable<double> RelativeError() const { return m_koq != nullptr ? m_koq->GetRelativeError() : Nullable<double>(); }
         Nullable<Utf8String> PersistenceUnit() const { return m_koq != nullptr && m_koq->GetPersistenceUnit() != nullptr ? m_koq->GetPersistenceUnit()->GetFullName() : Nullable<Utf8String>(); }
-        bvector<Utf8String> PresentationFormats() const 
+        bvector<Utf8String> PresentationFormats() const
             {
             bvector<Utf8String> formats;
             if (m_koq == nullptr || m_koq->GetPresentationFormats().empty())
@@ -612,7 +612,7 @@ BentleyStatus SchemaComparer::CompareSchema(SchemaChange& change, ECSchemaCP old
         LOG.errorv("CustomAttribute comparison for schema %s failed", change.GetChangeName());
         return ERROR;
         }
-    
+
     return SUCCESS;
     }
 
@@ -1058,7 +1058,7 @@ BentleyStatus SchemaComparer::CompareProperty(PropertyChange& change, ECProperty
     change.IsStructArray().Set(oldProp.IsStructArray(), newProp.IsStructArray());
     change.IsPrimitiveArray().Set(oldProp.IsPrimitiveArray(), newProp.IsPrimitiveArray());
     change.IsNavigation().Set(oldProp.IsNavigation(), newProp.IsNavigation());
-    
+
     change.IsReadonly().Set(oldProp.IsReadOnly(), newProp.IsReadOnly());
     change.Priority().Set(oldProp.Priority(), newProp.Priority());
 
@@ -1941,13 +1941,12 @@ BentleyStatus SchemaComparer::CompareCustomAttribute(CustomAttributeChange& chan
             return ERROR;
             }
         }
-
-    for (bpair<Utf8String, ECValue> const& kvPair : oldPropValues)
+    for (auto const& kvPair : oldPropValues)
         {
         allAccessStrings.insert(kvPair.first.c_str());
         }
 
-    for (bpair<Utf8String, ECValue> const& kvPair : newPropValues)
+    for (auto const& kvPair : newPropValues)
         {
         allAccessStrings.insert(kvPair.first.c_str());
         }

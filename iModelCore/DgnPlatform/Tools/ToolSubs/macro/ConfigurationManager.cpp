@@ -10,6 +10,7 @@
 #include <Bentley/Desktop/FileSystem.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+PUSH_DISABLE_DEPRECATION_WARNINGS
 
 BentleyStatus IConfigurationAdmin::GetConfigVariable(WStringR cfgValue, WCharCP cfgVarName, ConfigurationVariableLevel level) { return _GetConfigVariable(cfgValue, cfgVarName, level); }
 
@@ -503,7 +504,7 @@ int     GetMonitoredValue (WCharCP variableName)
         else if (intValue > m_maximumValue)
             intValue = m_maximumValue;
 
-        return intValue; 
+        return intValue;
         }
 
     // if swcanf doesn't work, return original value
@@ -762,7 +763,7 @@ bool    DgnPlatformConfigVars::NoStrokeNonPlanarPolygon ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool    DgnPlatformConfigVars::StrokeNonPlanarPolygonTopView () 
+bool    DgnPlatformConfigVars::StrokeNonPlanarPolygonTopView ()
     {
     return ConfigurationManager::MonitorBoolean (m_strokeNonPlanarPolygonTopView.m_monitor, m_strokeNonPlanarPolygonTopView.m_value, L"MS_STROKE_NONPLANAR_POLYGONS_TOP_VIEW", false);
     }
@@ -836,3 +837,4 @@ bool        DgnPlatformConfigVars::DisableQuickScan()
     }
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
+POP_DISABLE_DEPRECATION_WARNINGS

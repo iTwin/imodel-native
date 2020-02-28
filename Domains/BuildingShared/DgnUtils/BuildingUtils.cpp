@@ -59,7 +59,7 @@ BEGIN_BUILDING_SHARED_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool BuildingUtils::TryExtractIndexFromName
 (
-Utf8CP name, 
+Utf8CP name,
 int& indexOut
 )
     {
@@ -69,7 +69,7 @@ int& indexOut
     size_t lastDash = tmpStr.find_last_of ('-');
     if (lastDash != Utf8String::npos)
         {
-        if (BE_STRING_UTILITIES_UTF8_SSCANF (&tmpStr[lastDash], "-%d", &indexOut) == 1)
+        if (Utf8String::Sscanf_safe(&tmpStr[lastDash], "-%d", &indexOut) == 1)
             {
             return true;
             }
@@ -90,7 +90,7 @@ Utf8String& tmpStr
     size_t lastDash = tmpStr.find_last_of('-');
     if (lastDash != Utf8String::npos)
         {
-        if (BE_STRING_UTILITIES_UTF8_SSCANF(&tmpStr[lastDash], "-%d", &index) == 1)
+        if (Utf8String::Sscanf_safe(&tmpStr[lastDash], "-%d", &index) == 1)
             {
             addDash = false;
             tmpStr.resize(lastDash + 1);
@@ -106,7 +106,7 @@ Utf8String& tmpStr
         size_t lastNonDigitIndex = tmpStr.find_last_not_of("0123456789");
         if (lastNonDigitIndex != Utf8String::npos && tmpStr.length() > (lastNonDigitIndex + 1))
             {
-            if (BE_STRING_UTILITIES_UTF8_SSCANF(&tmpStr[lastNonDigitIndex + 1], "%d", &index) == 1)
+            if (Utf8String::Sscanf_safe(&tmpStr[lastNonDigitIndex + 1], "%d", &index) == 1)
                 {
                 tmpStr.resize(lastNonDigitIndex + 1);
                 }
@@ -447,7 +447,7 @@ Dgn::DisplayStyle3dR displaystyle
     displaystyle.OverrideSubCategory(DgnCategory::GetDefaultSubCategoryId(drawingCategoryId), genericGraphics2dOverride);
     displaystyle.OverrideSubCategory(DgnCategory::GetDefaultSubCategoryId(spatialCategoryId), genericGraphics3dOverride);
     }
-    
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Mindaugas.Butkus                05/2017
 //--------------+---------------+---------------+---------------+---------------+--------
@@ -468,7 +468,7 @@ DgnStyleId BuildingUtils::GetCenterLineStyleId (DgnDbR dgnDb)
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Mindaugas.Butkus                05/2017
-//--------------+---------------+---------------+---------------+---------------+-------- 
+//--------------+---------------+---------------+---------------+---------------+--------
 CurveVectorPtr BuildingUtils::CreateRoadwayCurveVector (const bvector<DPoint3d>& points, double width)
     {
     CurveVectorPtr centerLine = CurveVector::CreateLinear (points, CurveVector::BOUNDARY_TYPE_Open);
@@ -505,7 +505,7 @@ CurveVectorPtr BuildingUtils::CreateRoadwayCurveVector (const bvector<DPoint3d>&
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Mindaugas.Butkus                06/2017
-//--------------+---------------+---------------+---------------+---------------+-------- 
+//--------------+---------------+---------------+---------------+---------------+--------
 void BuildingUtils::AppendRoadwayGeometry (Dgn::DgnElementPtr roadway, CurveVectorPtr horizAlignment, double width)
     {
     bvector<DPoint3d> points = GeometryUtils::ExtractSingleCurvePoints (*horizAlignment);
@@ -593,7 +593,7 @@ DgnElementId BuildingElementsUtils::GetElementIdByParentElementAuthorityAndName(
 //---------------+---------------+---------------+---------------+---------------+------
 Dgn::ElementIterator BuildingElementsUtils::MakeIterator
 (
-    Dgn::DgnElementCR element, 
+    Dgn::DgnElementCR element,
     ECN::ECClassId classId
 )
     {
@@ -637,8 +637,8 @@ void BuildingElement_notifyFail(Utf8CP pOperation, Dgn::DgnElement& elm, Dgn::Dg
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            DisplayLockFailedMessage
 (
-Dgn::DgnElementCR el, 
-BeSQLite::DbOpcode op, 
+Dgn::DgnElementCR el,
+BeSQLite::DbOpcode op,
 Dgn::IBriefcaseManager::Response* pResponse
 )
     {
@@ -715,7 +715,7 @@ Dgn::IBriefcaseManager::Response* pResponse
 #endif
     }
 
-    
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Mindaugas.Butkus                06/2017
 //--------------+---------------+---------------+---------------+---------------+--------
@@ -759,7 +759,7 @@ Dgn::DgnCode BuildingUtils::GetDefinitionPartitionCode
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Mindaugas.Butkus                06/2017
-//--------------+---------------+---------------+---------------+---------------+-------- 
+//--------------+---------------+---------------+---------------+---------------+--------
 Dgn::DefinitionPartitionCPtr BuildingUtils::GetOrCreateDefinitionPartition
 (
     Dgn::DgnDbR db,
@@ -776,7 +776,7 @@ Dgn::DefinitionPartitionCPtr BuildingUtils::GetOrCreateDefinitionPartition
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Mindaugas.Butkus                06/2017
-//--------------+---------------+---------------+---------------+---------------+-------- 
+//--------------+---------------+---------------+---------------+---------------+--------
 Dgn::DefinitionModelPtr BuildingUtils::CreateDefinitionModel
 (
     Dgn::DgnDbR db,
@@ -793,7 +793,7 @@ Dgn::DefinitionModelPtr BuildingUtils::CreateDefinitionModel
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Mindaugas.Butkus                06/2017
-//--------------+---------------+---------------+---------------+---------------+-------- 
+//--------------+---------------+---------------+---------------+---------------+--------
 Dgn::DefinitionModelCPtr BuildingUtils::GetDefinitionModel
 (
     Dgn::DgnDbR db,
@@ -806,7 +806,7 @@ Dgn::DefinitionModelCPtr BuildingUtils::GetDefinitionModel
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Mindaugas.Butkus                06/2017
-//--------------+---------------+---------------+---------------+---------------+-------- 
+//--------------+---------------+---------------+---------------+---------------+--------
 Dgn::DefinitionModelCPtr BuildingUtils::GetOrCreateDefinitionModel
 (
     Dgn::DgnDbR db,

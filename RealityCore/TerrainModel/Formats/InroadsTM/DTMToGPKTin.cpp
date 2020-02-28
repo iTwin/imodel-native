@@ -6,6 +6,7 @@
 #include "inroadstm.h"
 #include    "DTMToGPKTin.h"
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 typedef struct
 {
     unsigned long index;
@@ -446,3 +447,4 @@ static int _getSurfacePerimeterIndices ( struct CIVdtmsrf *srfP, DPoint3d **poin
 
     return SUCCESS;
 }
+POP_DISABLE_DEPRECATION_WARNINGS

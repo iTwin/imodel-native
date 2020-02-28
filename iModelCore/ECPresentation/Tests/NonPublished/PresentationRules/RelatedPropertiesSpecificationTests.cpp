@@ -79,7 +79,7 @@ TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromJson)
 
     RelatedPropertiesSpecification spec;
     ASSERT_TRUE(spec.ReadJson(json));
-    
+
     ASSERT_EQ(2, spec.GetProperties().size());
     EXPECT_STREQ("Property", spec.GetProperties()[0]->GetPropertyName().c_str());
     EXPECT_STREQ("Names", spec.GetProperties()[1]->GetPropertyName().c_str());
@@ -192,7 +192,7 @@ TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromJsonWithEmptyDeprecatedPro
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     ASSERT_FALSE(json.isNull());
-    
+
     RelatedPropertiesSpecification spec;
     ASSERT_TRUE(spec.ReadJson(json));
     EXPECT_TRUE(spec.GetProperties().empty());
@@ -246,7 +246,8 @@ TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromJsonWithDefaultValues)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RelatedPropertiesSpecificationsTests, WriteToJsonDeprecated)
     {
-    RelatedPropertiesSpecification spec(RequiredRelationDirection_Backward, "s1:c1", "s2:c2,c3", {new PropertySpecification("p1"), new PropertySpecification("p2")},
+    PropertySpecificationsList list =  {new PropertySpecification("p1"), new PropertySpecification(Utf8String("p2"))};
+    RelatedPropertiesSpecification spec(RequiredRelationDirection_Backward, "s1:c1", "s2:c2,c3", list,
         RelationshipMeaning::SameInstance, true, true);
     Json::Value json = spec.WriteJson();
     Json::Value expected = Json::Reader::DoParse(R"({
@@ -270,7 +271,7 @@ TEST_F(RelatedPropertiesSpecificationsTests, WriteToJsonDeprecated)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RelatedPropertiesSpecificationsTests, WriteToJson)
     {
-    RelatedPropertiesSpecification spec(*new RelationshipPathSpecification(*new RelationshipStepSpecification("s1:c1", RequiredRelationDirection_Backward, "s2:c2")), 
+    RelatedPropertiesSpecification spec(*new RelationshipPathSpecification(*new RelationshipStepSpecification("s1:c1", RequiredRelationDirection_Backward, "s2:c2")),
         {new PropertySpecification("p1"), new PropertySpecification("p2")}, RelationshipMeaning::SameInstance, true, true);
     Json::Value json = spec.WriteJson();
     Json::Value expected = Json::Reader::DoParse(R"({
@@ -311,9 +312,9 @@ TEST_F(RelatedPropertiesSpecificationsTests, WriteToJsonWithPropertyNamesSetToNo
 TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromXml)
     {
     static Utf8CP xmlString = R"(
-        <RelatedProperties RelationshipClassNames="Relationship:Names" 
+        <RelatedProperties RelationshipClassNames="Relationship:Names"
             RelatedClassNames="Related:Class,Names"
-            RequiredDirection="Backward" 
+            RequiredDirection="Backward"
             PropertyNames="Property,Names"
             RelationshipMeaning="SameInstance"
             IsPolymorphic="True">
@@ -323,7 +324,7 @@ TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromXml)
     BeXmlStatus xmlStatus;
     BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
     ASSERT_EQ(BEXML_Success, xmlStatus);
-    
+
     RelatedPropertiesSpecification spec;
     EXPECT_TRUE(spec.ReadXml(xml->GetRootElement()));
     EXPECT_STREQ("Related:Class,Names", spec.GetRelatedClassNames().c_str());
@@ -348,7 +349,7 @@ TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromXmlWithDefaultValues)
     BeXmlStatus xmlStatus;
     BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
     ASSERT_EQ(BEXML_Success, xmlStatus);
-    
+
     RelatedPropertiesSpecification spec;
     EXPECT_TRUE(spec.ReadXml(xml->GetRootElement()));
     EXPECT_STREQ("", spec.GetRelatedClassNames().c_str());
@@ -381,7 +382,7 @@ TEST_F(RelatedPropertiesSpecificationsTests, WritesToXml)
     spec.SetAutoExpand(true);
     spec.AddNestedRelatedProperty(*new RelatedPropertiesSpecification());
     spec.WriteXml(xml->GetRootElement());
-    
+
     static Utf8CP expected = ""
         "<Root>"
             "<RelatedProperties "
@@ -411,17 +412,17 @@ TEST_F(RelatedPropertiesSpecificationsTests, WritesToXml)
 TEST_F(RelatedPropertiesSpecificationsTests, ComputesCorrectHashesDeprecated)
     {
     RelatedPropertiesSpecification spec1(RequiredRelationDirection_Backward, "Relationship:Names",
-        "Related:Class,Names", { new PropertySpecification("p1"), new PropertySpecification("p2") }, RelationshipMeaning::RelatedInstance, true);
+        "Related:Class,Names", PropertySpecificationsList({ new PropertySpecification("p1"), new PropertySpecification("p2") }), RelationshipMeaning::RelatedInstance, true);
     spec1.AddNestedRelatedProperty(*new RelatedPropertiesSpecification());
 
     RelatedPropertiesSpecification spec2(RequiredRelationDirection_Backward, "Relationship:Names",
-        "Related:Class,Names", { new PropertySpecification("p1"), new PropertySpecification("p2") }, RelationshipMeaning::RelatedInstance, true);
+        "Related:Class,Names", PropertySpecificationsList({ new PropertySpecification("p1"), new PropertySpecification("p2") }), RelationshipMeaning::RelatedInstance, true);
     spec2.AddNestedRelatedProperty(*new RelatedPropertiesSpecification());
 
     RelatedPropertiesSpecification spec3(RequiredRelationDirection_Backward, "Relationship:Names",
-        "Related:Class,Names", { new PropertySpecification("p1"), new PropertySpecification("p2") }, RelationshipMeaning::RelatedInstance);
+        "Related:Class,Names", PropertySpecificationsList({ new PropertySpecification("p1"), new PropertySpecification("p2") }), RelationshipMeaning::RelatedInstance);
     spec3.AddNestedRelatedProperty(*new RelatedPropertiesSpecification());
-    spec3.AddNestedRelatedProperty(*new RelatedPropertiesSpecification());    
+    spec3.AddNestedRelatedProperty(*new RelatedPropertiesSpecification());
 
     // Hashes are same for specifications with same properties
     EXPECT_STREQ(spec1.GetHash().c_str(), spec2.GetHash().c_str());

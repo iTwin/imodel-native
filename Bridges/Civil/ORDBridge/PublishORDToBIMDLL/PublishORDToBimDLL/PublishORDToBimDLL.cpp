@@ -31,10 +31,12 @@ int PublishORDToBimDLL::RunBridge(int argc, WCharCP argv[])
     if (BentleyStatus::SUCCESS != iModelBridgeSacAdapter::ParseCommandLine(*iModelBridgeP, saparams, argc, argv))
         return RESULT_ERROR_FAILED_TO_PARSE_COMMANDLINE;
 
-    // Need to add the '--logging-config-file' parameter since 
+    // Need to add the '--logging-config-file' parameter since
     // is not done by caller and we are unit testing and the default is not good enough
     // Not able to pass as args in ParseCommandLine ... strings get killed
+PUSH_DISABLE_DEPRECATION_WARNINGS
     char* logFile = getenv("BEGTEST_LOGGING_CONFIG");
+POP_DISABLE_DEPRECATION_WARNINGS
     BeFileName logFilePath(logFile);
     if (logFilePath.DoesPathExist())
         {
@@ -106,7 +108,9 @@ WCharCP* PublishORDToBimDLL::AddUnitTestingParameter(int& argc, WCharCP argv[])
 
 WCharCP* PublishORDToBimDLL::AddLoggingConfigParameter(int& argc, WCharCP argv[])
     {
+PUSH_DISABLE_DEPRECATION_WARNINGS
     char* logFile = getenv("BEGTEST_LOGGING_CONFIG");
+POP_DISABLE_DEPRECATION_WARNINGS
 
     BeFileName filePath(logFile);
     if (filePath.DoesPathExist())

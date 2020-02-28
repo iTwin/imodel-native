@@ -28,7 +28,7 @@
 
 #include <ImagePP/all/h/HRFBmpFile.h>
 
-
+PUSH_DISABLE_DEPRECATION_WARNINGS
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 HPMPool* RasterUtilities::s_rasterMemPool = nullptr;
@@ -47,23 +47,23 @@ HFCPtr<HRFRasterFile> RasterUtilities::LoadRasterFile(WString path)
 #ifndef VANCOUVER_API
 /*
     if (HRFMapBoxCreator::GetInstance()->IsKindOfFile(pImageURL))
-        {           
-        pRasterFile = HRFMapBoxCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);        
+        {
+        pRasterFile = HRFMapBoxCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);
         }
     else
 */
 #endif
 
     try
-        {     
+        {
        if (pImageURL != nullptr && HRFVirtualEarthCreator::GetInstance()->IsKindOfFile(pImageURL))
             {
             pRasterFile = HRFVirtualEarthCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);
 #ifdef VANCOUVER_API
             HRFVirtualEarthFile& rasterFile = static_cast<HRFVirtualEarthFile&>(*pRasterFile);
-            rasterFile.ActivateDgnDb06Mode();            
+            rasterFile.ActivateDgnDb06Mode();
 #endif
-            }    
+            }
         else
             {
             WString localFilePath;
@@ -77,7 +77,7 @@ HFCPtr<HRFRasterFile> RasterUtilities::LoadRasterFile(WString path)
                 {
                 localFilePath.append(path);
                 }
-#if defined(VANCOUVER_API) || defined(DGNDB06_API)         
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
             pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(localFilePath), TRUE);
 #else
 			pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(Utf8String(localFilePath)), TRUE);
@@ -126,11 +126,11 @@ HFCPtr<HRARASTER> RasterUtilities::LoadRaster(WString path)
     HFCPtr<HRFRasterFile> pRasterFile = LoadRasterFile(path);
 
     if (pRasterFile == nullptr)
-        { 
+        {
         HFCPtr<HRARASTER> pVoidRaster;
         return pVoidRaster;
         }
-    
+
     pLogicalCoordSys = cluster->GetWorldReference(pRasterFile->GetPageWorldIdentificator(0));
     pObjectStore = new HRSObjectStore(s_rasterMemPool,
                                       pRasterFile,
@@ -192,7 +192,7 @@ HFCPtr<HRARASTER> RasterUtilities::LoadRaster(HFCPtr<HRFRasterFile>& rasterFile,
         }
     else
         {
-        pReprojectionModel = new HGF2DIdentity();   // assumed to be coincident        
+        pReprojectionModel = new HGF2DIdentity();   // assumed to be coincident
         }
 
     HFCPtr<HGF2DTransfoModel> pRasterTransfoModel;
@@ -223,7 +223,7 @@ HFCPtr<HRARASTER> RasterUtilities::LoadRaster(HFCPtr<HRFRasterFile>& rasterFile,
 
     HGF2DExtent imageExtent;
 
-    // If the model doesn't preserve linearity try to simplify it. 
+    // If the model doesn't preserve linearity try to simplify it.
     if (!pReprojectionModel->PreservesLinearity())
         {
         // Compute image extent in source CS
@@ -251,7 +251,7 @@ HFCPtr<HRARASTER> RasterUtilities::LoadRaster(HFCPtr<HRFRasterFile>& rasterFile,
         double ExpectedMeanError = MIN(pixelExtentInDgnCS.GetWidth() * 0.5, pixelExtentInDgnCS.GetHeight() * 0.5);
         double ExpectedMaxError = MIN(pixelExtentInDgnCS.GetWidth(), pixelExtentInDgnCS.GetHeight());
 
-        //Increase the error so that a simplifed model is always returned by CreateAdaptedModel. This is for avoiding some problem that the grid transsfo model is having with BingMap 
+        //Increase the error so that a simplifed model is always returned by CreateAdaptedModel. This is for avoiding some problem that the grid transsfo model is having with BingMap
         //(TFS 760210) and considering that 3SM only uses a transfo matrix when reprojecting.
         if (s_allowForceProjective && forceProjective)
             {
@@ -286,7 +286,7 @@ HFCPtr<HRARASTER> RasterUtilities::LoadRaster(HFCPtr<HRFRasterFile>& rasterFile,
 
     // Get the raster from the store
     HFCPtr<HRARaster> rasterSource = &*pObjectStore->LoadRaster();
-    
+
     HVEShape imageReprojectShape(imageExtent);
     rasterSource->SetShape(imageReprojectShape);
 
@@ -300,13 +300,13 @@ HFCPtr<HRARASTER> RasterUtilities::LoadRaster(HFCPtr<HRFRasterFile>& rasterFile,
     return mosaicPtr.GetPtr();
     }
 
-#ifndef NDEBUG	
-static bool s_outputTile = false; 
+#ifndef NDEBUG
+static bool s_outputTile = false;
 #endif
 
 #ifdef VANCOUVER_API
 //Imagepp on Topaz is different then Imagepp (the redesigned Imagepp) on DgnDb06/Bim02 platform, and thus less thread safe.
-std::mutex s_imageppCopyFromLock; 
+std::mutex s_imageppCopyFromLock;
 #endif
 
 StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, int height, const DRange2d area, const float* textureResolution, HRARASTER& raster, bool isRGBA, bool addHeader)
@@ -320,7 +320,7 @@ StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, in
         transfoMatrix[0][0] = (area.high.x - area.low.x) / width;
 
 
-    
+
 
     transfoMatrix[0][1] = 0;
     transfoMatrix[0][2] = area.low.x;
@@ -359,8 +359,8 @@ StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, in
         {
         pPixelType = new HRPPixelTypeV24R8G8B8();
         nbChannels = 3;
-        }    
-   
+        }
+
 #ifdef VANCOUVER_API
     HFCPtr<HCDCodec>     pCodec(new HCDCodecIdentity());
 #endif
@@ -408,7 +408,7 @@ StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, in
 
     HRACopyFromOptions copyFromOptions;
 
-    //Rasterlib set this option on the last tile of a row or a column to avoid black lines.     
+    //Rasterlib set this option on the last tile of a row or a column to avoid black lines.
     copyFromOptions.SetAlphaBlend(true);
 
 #ifdef VANCOUVER_API
@@ -424,7 +424,7 @@ StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, in
 
     if (addHeader)
         {
-        pPixel = &texData[0] + nbChannels * sizeof(int);        
+        pPixel = &texData[0] + nbChannels * sizeof(int);
         memcpy(&texData[0], &width, sizeof(int));
         memcpy(&texData[0] + sizeof(int), &height, sizeof(int));
         memcpy(&texData[0] + 2 * sizeof(int), &nbChannels, sizeof(int));
@@ -445,7 +445,7 @@ StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, in
             *pPixel++ = pixelBufferPRGB[i * nbChannels + 3];
             }
         }
-    
+
 #ifndef NDEBUG
     if (s_outputTile)
 	{
@@ -477,10 +477,11 @@ StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, in
         &texData[0] + nbChannels * sizeof(int));
 	}
 #endif
-    
+
     delete[] pixelBufferPRGB;
     pTextureBitmap = 0;
     return SUCCESS;
     }
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
+POP_DISABLE_DEPRECATION_WARNINGS

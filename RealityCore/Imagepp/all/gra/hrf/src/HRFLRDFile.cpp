@@ -37,7 +37,7 @@
 
 #include <ImagePP/all/h/ImagePPMessages.xliff.h>
 
-
+PUSH_DISABLE_DEPRECATION_WARNINGS
 //-----------------------------------------------------------------------------
 // HRFLRDBlockCapabilities
 //-----------------------------------------------------------------------------
@@ -1056,7 +1056,7 @@ void HRFLRDFile::GetAsciiDateTime(char adate[], char atime[])
     adate[6]='-';
     adate[7]=s[22];
     adate[8]=s[23];
-    adate[9]=0;    
+    adate[9]=0;
 
     for (auto i = 0; i <= 7; i++)
         atime[i] = s[11 + i];
@@ -1106,3 +1106,4 @@ void HRFLRDFile::SetDefaultRatioToMeter(double pi_RatioToMeter,
     {
     //The unit used by an Intergraph file format is always UoR.
     }
+POP_DISABLE_DEPRECATION_WARNINGS

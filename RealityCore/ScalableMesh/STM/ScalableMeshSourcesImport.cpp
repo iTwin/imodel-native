@@ -28,9 +28,10 @@
 #endif
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
-     
+
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 struct TransmittedDataHeader
     {
     TransmittedDataHeader(bool arePoints, bool is3dData)
@@ -85,7 +86,7 @@ struct  TransmittedFeatureHeader : public TransmittedDataHeader
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @description  
+* @description
 * @bsiclass                                                  Raymond.Gauthier   05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct SourcesImporter::Impl
@@ -154,7 +155,7 @@ struct SourcesImporter::Impl
 
 
 /*---------------------------------------------------------------------------------**//**
-* @description  
+* @description
 * @bsimethod                                                  Raymond.Gauthier   05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 SourcesImporter::SourcesImporter   (const LocalFileSourceRef&   sinkSourceRef,
@@ -165,7 +166,7 @@ SourcesImporter::SourcesImporter   (const LocalFileSourceRef&   sinkSourceRef,
 
 
 /*---------------------------------------------------------------------------------**//**
-* @description  
+* @description
 * @bsimethod                                                  Raymond.Gauthier   05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 SourcesImporter::~SourcesImporter ()
@@ -192,7 +193,7 @@ void SourcesImporter::AddSDKSource(const SourceRef&        sourceRef,
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @description  
+* @description
 * @bsimethod                                                  Raymond.Gauthier   05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SourcesImporter::AddSource    (const SourceRef&        sourceRef,
@@ -211,7 +212,7 @@ void SourcesImporter::AddSource    (const SourceRef&        sourceRef,
     else
         {
         m_implP->m_sources.push_back(Impl::SourceItem(sourceRef, contentConfig, config, sequence, sourceImportConf));
-        }            
+        }
     }
 
 bool SourcesImporter::IsEmpty () const
@@ -220,7 +221,7 @@ bool SourcesImporter::IsEmpty () const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @description  
+* @description
 * @bsimethod                                                  Raymond.Gauthier   05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 SMStatus SourcesImporter::Import() const
@@ -314,7 +315,7 @@ void SourcesImporter::Impl::ParseFeatureOrPointBuffer(unsigned char* buffer, siz
 
 #define MAX_EXE_WAIT_TIME 60
 /*---------------------------------------------------------------------------------**//**
-* @description  
+* @description
 * @bsimethod                                                  Elenie.Godzaridis   05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SourcesImporter::Impl::ImportFromSDK(Utf8CP inputFileName)
@@ -373,7 +374,7 @@ void SourcesImporter::Impl::ImportFromSDK(Utf8CP inputFileName)
             dataLeftToRead = (ReadFile(
                 pipe,
                 buffer, // the data from the pipe will be put here
-                1024 * 1024, // number of bytes allocated            
+                1024 * 1024, // number of bytes allocated
                 &numBytesRead, // this will store number of bytes actually read
                 (bool)0 // not using overlapped IO
                 ) != 0);
@@ -396,7 +397,7 @@ void SourcesImporter::Impl::ImportFromSDK(Utf8CP inputFileName)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @description  
+* @description
 * @bsimethod                                                  Elenie.Godzaridis   05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 SMStatus SourcesImporter::Impl::ImportSDKSources()
@@ -523,7 +524,7 @@ assert(!"Not available on this platform");
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @description  
+* @description
 * @bsimethod                                                  Raymond.Gauthier   05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 SMStatus SourcesImporter::Impl::Import()
@@ -550,7 +551,7 @@ SMStatus SourcesImporter::Impl::Import()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @description  
+* @description
 * @bsimethod                                                  Raymond.Gauthier   05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 SMStatus SourcesImporter::Impl::ImportSource(SourceItem&    sourceItem,
@@ -563,7 +564,7 @@ SMStatus SourcesImporter::Impl::ImportSource(SourceItem&    sourceItem,
     if (0 == originalSourcePtr.get())
         return S_ERROR;
 
-    const SourcePtr sourcePtr(Configure(originalSourcePtr, 
+    const SourcePtr sourcePtr(Configure(originalSourcePtr,
                                         sourceItem.m_contentConfig/*,
                                         GetLog()*/));
     if (0 == sourcePtr.get())
@@ -571,7 +572,7 @@ SMStatus SourcesImporter::Impl::ImportSource(SourceItem&    sourceItem,
 
     sourcePtr->SetImportConfig(sourceItem.m_sourceImportConf);
 
-    const ImporterPtr importerPtr = IMPORTER_FACTORY.Create(sourcePtr, 
+    const ImporterPtr importerPtr = IMPORTER_FACTORY.Create(sourcePtr,
                                                             m_sinkPtr);
     if (0 == importerPtr.get())
         return S_ERROR;
@@ -594,7 +595,7 @@ namespace {
 
 
 /*---------------------------------------------------------------------------------**//**
-* @description  
+* @description
 * @bsimethod                                                  Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 ImportSequence              CreateAttachmentImportSequence                 (const ImportSequence&           sequence,
@@ -614,7 +615,7 @@ ImportSequence              CreateAttachmentImportSequence                 (cons
 }
 
 /*---------------------------------------------------------------------------------**//**
-* @description  
+* @description
 * @bsimethod                                                  Raymond.Gauthier   05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SourcesImporter::Impl::AddAttachments (const Source&       source,
@@ -628,8 +629,8 @@ void SourcesImporter::Impl::AddAttachments (const Source&       source,
     const ContentDescriptor& contentDesc = source.GetDescriptor();
 
 
-    for (ContentDescriptor::const_iterator layerIt = contentDesc.LayersBegin(), layersEnd = contentDesc.LayersEnd(); 
-         layerIt != layersEnd; 
+    for (ContentDescriptor::const_iterator layerIt = contentDesc.LayersBegin(), layersEnd = contentDesc.LayersEnd();
+         layerIt != layersEnd;
          ++layerIt)
         {
         ImportSequence attachmentImportSequence(CreateAttachmentImportSequence(sourceItem.m_importSequence, contentDesc.GetLayerIDFor(layerIt)));
@@ -661,3 +662,4 @@ void SourcesImporter::Impl::AddAttachments (const Source&       source,
 
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
+POP_DISABLE_DEPRECATION_WARNINGS

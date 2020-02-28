@@ -37,14 +37,14 @@ protected:
         }
 };
 
-struct NavigationECPropertyTests : ECTestFixture 
+struct NavigationECPropertyTests : ECTestFixture
 {
     void ValidateDeserializedNavProp(ECSchemaPtr deserializedSchema, NavigationECPropertyCP expectedNavProp, Utf8StringCR className, Utf8StringCR propName);
     void ValidateRoundTripEC3Serialization(ECSchemaPtr schema, bvector<NavigationECPropertyCP> expectedNavProps);
     void VerifyFailedToDeserialize(Utf8StringCR invalidSchemaString, Utf8StringCR failureMessage);
 };
 
-struct NavigationPropertyValueTests : ECTestFixture 
+struct NavigationPropertyValueTests : ECTestFixture
 {
     void InstanceWithNavProp();
     void DeserializeAndVerifyInstanceJson(ECSchemaPtr schema, IECInstanceR sourceInstance, JsonValueCR instanceJson);
@@ -314,7 +314,7 @@ TEST_F(NavigationECPropertyTests, InvalidOverrideWithDifferentRelationshipClass)
     ECSchema::CreateSchema(schema, "NavTest", "ts", 4, 0, 2);
     schema->CreateRelationshipClass(relClass, "RelClass");
     schema->CreateRelationshipClass(relClass2, "RelClass2");
-    
+
     schema->CreateEntityClass(sourceClass, "Source");
     schema->CreateEntityClass(targetClass, "Target");
 
@@ -333,7 +333,7 @@ TEST_F(NavigationECPropertyTests, InvalidOverrideWithDifferentRelationshipClass)
 
     NavigationECPropertyP navProp;
     CreateNavProp(sourceClass, "NavProp", *relClass, ECRelatedInstanceDirection::Forward, navProp);
-    
+
     NavigationECPropertyP derivedNavProp;
     EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, derivedSource->CreateNavigationProperty(derivedNavProp, "NavProp", *relClass2, ECRelatedInstanceDirection::Forward))
         << "The navigation property should fail to be created because the overriding navigation property has a different relationship than the overridden property.";
@@ -359,7 +359,7 @@ TEST_F(NavigationECPropertyTests, InvalidOverrideWithDifferentRelationshipClass)
     sourceClass->AddBaseClass(*baseClass);
     schema->CreateEntityClass(derivedSource, "DerivedSource");
     derivedSource->AddBaseClass(*baseClass);
-    
+
     relClass->GetSource().SetAbstractConstraint(*baseClass);
     relClass->GetSource().AddClass(*sourceClass);
     relClass->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
@@ -403,12 +403,12 @@ TEST_F(NavigationECPropertyTests, InvalidOverrideWithDifferentRelationshipClass)
 
     NavigationECPropertyP navProp;
     CreateNavProp(sourceClass, "NavProp", *relClass, ECRelatedInstanceDirection::Forward, navProp);
-    
+
     NavigationECPropertyP derivedNavProp;
-    EXPECT_EQ(ECObjectsStatus::Success, derivedSource->CreateNavigationProperty(derivedNavProp, "NavProp", *relClass, ECRelatedInstanceDirection::Forward)) 
+    EXPECT_EQ(ECObjectsStatus::Success, derivedSource->CreateNavigationProperty(derivedNavProp, "NavProp", *relClass, ECRelatedInstanceDirection::Forward))
         << "The navigation property should be successfully created because the overriding navigation property has the same relationship as the overridden property.";
     }
-    
+
     {
     Utf8CP schemaXml = R"xml(<?xml version='1.0' encoding='UTF-8'?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
@@ -574,7 +574,7 @@ TEST_F(NavigationECPropertyTests, MustBeAddedToConcreteConstraintClass)
     schema->CreateRelationshipClass(relClass, "TestRelationship");
 
     derivedFromSource->AddBaseClass(*source);
-    
+
     relClass->GetSource().AddClass(*source);
     relClass->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
     relClass->GetTarget().AddClass(*target);
@@ -597,7 +597,7 @@ TEST_F(NavigationECPropertyTests, MustBeAddedToConcreteConstraintClass)
     schema->CreateRelationshipClass(relClass, "TestRelationship");
 
     derivedFromSource->AddBaseClass(*source);
-    
+
     relClass->GetSource().SetAbstractConstraint(*source);
     relClass->GetSource().AddClass(*source);
     relClass->GetSource().AddClass(*derivedFromSource);
@@ -627,7 +627,7 @@ TEST_F(NavigationECPropertyTests, EndpointsWithRelationshipsCannotBeUsed)
     schema->CreateEntityClass(source, "Source");
     schema->CreateEntityClass(target, "Target");
     schema->CreateRelationshipClass(relClass, "TestRelationship", *source, "Source", *target, "Target");
-    
+
     schema->CreateRelationshipClass(relWithRelEndpoint, "RelWithRelEndpoint");
     relWithRelEndpoint->GetSource().SetRoleLabel("Source");
     relWithRelEndpoint->GetSource().AddClass(*source);
@@ -648,7 +648,7 @@ TEST_F(NavigationECPropertyTests, EndpointsWithRelationshipsCannotBeUsed)
     schema->CreateEntityClass(source, "Source");
     schema->CreateEntityClass(target, "Target");
     schema->CreateRelationshipClass(relClass, "TestRelationship", *source, "Source", *target, "Target");
-    
+
     schema->CreateRelationshipClass(relWithRelEndpoint, "RelWithRelEndpoint");
     relWithRelEndpoint->SetStrengthDirection(ECRelatedInstanceDirection::Backward);
     relWithRelEndpoint->GetSource().SetRoleLabel("Source");
@@ -725,23 +725,23 @@ TEST_F(NavigationECPropertyTests, InvalidXml)
     SchemaWriteStatus writeStatus = schema->WriteToXmlString(schemaString, ECVersion::V3_0);
     ASSERT_EQ(SchemaWriteStatus::Success, writeStatus) << "Failed to serialize schema with navigation property";
 
-    Utf8String invalidSchemaString = schemaString.copy();
+    Utf8String invalidSchemaString = schemaString;
     ASSERT_NE(0, invalidSchemaString.ReplaceAll("direction=\"forward\"", "direction=\"backward\"")) << "Failed to replace forward with backward";
     VerifyFailedToDeserialize(invalidSchemaString, "forward direction set to backward");
 
-    invalidSchemaString = schemaString.copy();
+    invalidSchemaString = schemaString;
     ASSERT_NE(0, invalidSchemaString.ReplaceAll("direction=\"backward\"", "direction=\"forward\"")) << "Failed to replace backward with forward";
     VerifyFailedToDeserialize(invalidSchemaString, "backward direction set to forward");
 
-    invalidSchemaString = schemaString.copy();
+    invalidSchemaString = schemaString;
     ASSERT_NE(0, invalidSchemaString.ReplaceAll("Class class=\"Source\"", "Class class=\"Other\"")) << "Failed to replace Source class with Other class";
     VerifyFailedToDeserialize(invalidSchemaString, "Relationship source constraint changed to 'Other'");
 
-    invalidSchemaString = schemaString.copy();
+    invalidSchemaString = schemaString;
     ASSERT_NE(0, invalidSchemaString.ReplaceAll("Class class=\"Target\"", "Class class=\"Other\"")) << "Failed to replace Target class with Other class";
     VerifyFailedToDeserialize(invalidSchemaString, "Relationship target constraint changed to 'Other'");
 
-    invalidSchemaString = schemaString.copy();
+    invalidSchemaString = schemaString;
     ASSERT_NE(0, invalidSchemaString.ReplaceAll("relationshipName=\"RelClass\"", "relationshipName=\"OtherRelClass\"")) << "Failed to replace RelClass with OtherRelClass";
     VerifyFailedToDeserialize(invalidSchemaString, "Replaced navigation property relationship class 'RelClass' name with 'OtherRelClass'");
     }
@@ -1067,7 +1067,7 @@ TEST_F(NavigationPropertyValueTests, TestNavigationValueEquality)
     ECRelationshipClassP relClass2;
     schema->CreateRelationshipClass(relClass, "RelClass");
     schema->CreateRelationshipClass(relClass2, "RelClass2");
-    
+
     BeInt64Id navId(42);
     ECClassId relClassId((uint64_t) 10);
     relClass->SetId(relClassId);

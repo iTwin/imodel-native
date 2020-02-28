@@ -94,10 +94,10 @@ class btree_container {
   const_iterator upper_bound(const key_type &key) const {
     return tree_.upper_bound(key);
   }
-  Bstdcxx::bpair<iterator,iterator> equal_range(const key_type &key) {
+  bpair<iterator,iterator> equal_range(const key_type &key) {
     return tree_.equal_range(key);
   }
-  Bstdcxx::bpair<const_iterator,const_iterator> equal_range(const key_type &key) const {
+  bpair<const_iterator,const_iterator> equal_range(const key_type &key) const {
     return tree_.equal_range(key);
   }
 
@@ -209,7 +209,7 @@ class btree_unique_container : public btree_container<Tree> {
   }
 
   // Insertion routines.
-  Bstdcxx::bpair<iterator,bool> insert(const value_type &x) {
+  bpair<iterator,bool> insert(const value_type &x) {
     return this->tree_.insert_unique(x);
   }
   iterator insert(iterator position, const value_type &x) {
@@ -258,7 +258,7 @@ class bmap_container : public btree_unique_container<Tree> {
         : key(k) {
     }
     value_type operator*() const {
-      return Bstdcxx::make_bpair(key, data_type());
+      return std::make_pair(key, data_type());
     }
     const key_type &key;
   };

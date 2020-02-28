@@ -36,13 +36,13 @@ struct pi_ClassName : BentleyApi::ImagePP::ImageppLib::Host             \
         {                                                               \
         REGISTER_SUPPORTED_FILEFORMAT                                   \
         }                                                               \
-};                                      
+};
 
 
 BEGIN_IMAGEPP_NAMESPACE
 
 //=======================================================================================
-// An ImagePPHost is an object that uniquely identifies a usage of the ImagePP libraries for a single purpose. 
+// An ImagePPHost is an object that uniquely identifies a usage of the ImagePP libraries for a single purpose.
 // For a given process, there can be more than one ImagePPHost, but each ImagePPHost must be on a different thread.
 // ImagePPHost holds a collection of key/pointer pairs that are used to store and retrieve host-based data.
 // @bsiclass                                                    Marc.Bedard   10/2012
@@ -54,7 +54,7 @@ public:
     virtual ~ImagePPHost()  {}
 
     //! Each "type" of data stored on a ImagePPHost must have a unique key to identify it. To add data to a ImagePPHost, create a single *static*
-    //! instance of this class and pass it to the SetHostVariable method. The same static instance should be used to set and retrieve your data from 
+    //! instance of this class and pass it to the SetHostVariable method. The same static instance should be used to set and retrieve your data from
     //! the ImagePPHost.
     struct Key
         {
@@ -117,17 +117,17 @@ protected:
     ObjEntry& GetObjEntry(Key& key);
 
 //__PUBLISH_SECTION_END__     // end of SCOPE_1
-//__PUBLISH_SECTION_START__ 
+//__PUBLISH_SECTION_START__
 public:
 
-    //! Get the value of a host-based variable identified by key. 
+    //! Get the value of a host-based variable identified by key.
     //! @param[in] key The key that identifies this variable. Keys must always be static variables, as their values are assigned when they are first used
     //! and must remain the same for the entire run of a host program.
-    //! @return The value of the host variable identified by key. If the variable has never been set on this instance of ImagePPHost, 
+    //! @return The value of the host variable identified by key. If the variable has never been set on this instance of ImagePPHost,
     //! the value will be 0.
     IMAGEPP_EXPORT void* GetHostVariable (Key& key);
 
-    //! Set the value of a host-based variable identified by key. 
+    //! Set the value of a host-based variable identified by key.
     //! @param[in] key The key that identifies this variable. Keys must always be static variables, as their values are assigned when they are first used
     //! and must remain the same for the entire run of a host program.
     //! @param[in] val The value to be associated with key for this ImagePPHost.
@@ -136,12 +136,12 @@ public:
     //! Get the value of a host-based integer variable identified by key.
     //! @param[in] key The key that identifies this variable. Keys must always be static variables, as their values are assigned when they are first used
     //! and must remain the same for the entire run of a host program.
-    //! @return The integer value of the host variable identified by key. If the variable has never been set on this instance of ImagePPHost, 
+    //! @return The integer value of the host variable identified by key. If the variable has never been set on this instance of ImagePPHost,
     //! the value will be 0.
     template <typename INT_TYPE>
     INT_TYPE  GetHostIntVariable (Key& key) {return (INT_TYPE)(intptr_t)GetHostVariable (key);}
 
-    //! Set the value of a host-based integer variable identified by key. 
+    //! Set the value of a host-based integer variable identified by key.
     //! @param[in] key The key that identifies this variable. Keys must always be static variables, as their values are assigned when they are first used
     //! and must remain the same for the entire run of a host program.
     //! @param[in] val The integer value to be associated with key for this ImagePPHost.
@@ -151,24 +151,24 @@ public:
     //! Get the value of a host-based boolean variable identified by key.
     //! @param[in] key The key that identifies this variable. Keys must always be static variables, as their values are assigned when they are first used
     //! and must remain the same for the entire run of a host program.
-    //! @return The boolean value of the host variable identified by key. If the variable has never been set on this instance of ImagePPHost, 
+    //! @return The boolean value of the host variable identified by key. If the variable has never been set on this instance of ImagePPHost,
     //! the value will be 0.
     bool  GetHostBoolVariable (Key& key) {return 0 != (intptr_t)GetHostVariable (key);}
 
-    //! Set the value of a host-based boolean variable identified by key. 
+    //! Set the value of a host-based boolean variable identified by key.
     //! @param[in] key The key that identifies this variable. Keys must always be static variables, as their values are assigned when they are first used
     //! and must remain the same for the entire run of a host program.
     //! @param[in] val The boolean value to be associated with key for this ImagePPHost.
     void SetHostBoolVariable (Key& key, bool val) {SetHostVariable (key, (void*)(intptr_t)val);}
 
-    //! Get the value of a host-based variable identified by key. 
+    //! Get the value of a host-based variable identified by key.
     //! @param[in] key The key that identifies this variable. Keys must always be static variables, as their values are assigned when they are first used
     //! and must remain the same for the entire run of a host program.
-    //! @return The value of the host variable identified by key. If the variable has never been set on this instance of ImagePPHost, 
+    //! @return The value of the host variable identified by key. If the variable has never been set on this instance of ImagePPHost,
     //! the value will be 0.
     IMAGEPP_EXPORT IHostObject* GetHostObject (Key& key);
 
-    //! Set the value of a host-based variable identified by key. 
+    //! Set the value of a host-based variable identified by key.
     //! @param[in] key The key that identifies this variable. Keys must always be static variables, as their values are assigned when they are first used
     //! and must remain the same for the entire run of a host program.
     //! @param[in] val The value to be associated with key for this ImagePPHost.
@@ -259,10 +259,10 @@ public:
     * In some cases, the users want to flip the data if the model is defined by 7 to 24 tiepoints.
     * This static method imposes a different interpretation for the model of ALL GeoTIFF
     * files with a model defined by (7 to 24)TiePoints.
-    * 
+    *
     * In the previous version of MicroStation, before V8i, we added a flip in Y when the
     * model was defined by (7 to 24)TiePoints, now we don't do that by default.
-    * 
+    *
     * By default, false (no Flip in Y)
     * return true if the model is stored with (7 to 24)TiePoints, we add a flip in Y
     * false: If the model is stored with (7 to 24)TiePoints, we don't add a flip in Y
@@ -270,7 +270,7 @@ public:
     * @bsimethod                                                            05/2012
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual bool    _IsSetFlipInY_IfModelDefinedBy7to24TiePoints() const  {return false;}
-    
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                            05/2012
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -298,7 +298,7 @@ public:
     *- Temporary patch to allow the user to specify the mapping between
     *  bands found in an image file and the color channels of the pixel type used
     *  to display the image.
-    *Return true if channel mapping is defined    
+    *Return true if channel mapping is defined
     * @bsimethod                                                            05/2012
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual bool    _GetChannelToBandIndexMapping(ChannelToBandIndexMapping& mapping) const {return false;}
@@ -331,7 +331,7 @@ public:
     * This setting must not be changed while GeoTIFF files are opened
     * since result is then unpredictable.
     * This method don't override the StoreUsingModelTransformationTag method.
-    * 
+    *
     * By default, true (no geotiff standard)
     * @param pi_LimitedTiePoints true : The model stored in the file will be, Matrix or
     * Translation(1Tiepoint), stretch(1TiePoint+Scale)
@@ -353,9 +353,11 @@ public:
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual BentleyStatus  _GetDefaultTempDirectory(BeFileName& tempFileName) const
         {
-#ifndef BENTLEY_WINRT 
+#ifndef BENTLEY_WINRT
         // Try to get the HMR temp directory
+PUSH_DISABLE_DEPRECATION_WARNINGS
         char* pDir = getenv ("HMRTempDirectory");
+POP_DISABLE_DEPRECATION_WARNINGS
         if (nullptr != pDir)
             {
             tempFileName.AssignA(pDir);
@@ -366,7 +368,7 @@ public:
         // non-portable but work on some platform.
         if(BeFileNameStatus::Success == Desktop::FileSystem::BeGetTempPath(tempFileName))
             return BSISUCCESS;
-            
+
         BeAssert(!"_GetDefaultTempDirectory must be implemented by Imagepp Host in ImageppLibAdmin implementation.");
 
         return BSIERROR;
@@ -376,19 +378,19 @@ public:
     * Return default directory path to store transaction files (undo/redo)
     * @bsimethod                                                            05/2012
     +---------------+---------------+---------------+---------------+---------------+------*/
-    virtual BentleyStatus _GetFileTransactionRecorderDirPath(BeFileName& tempPath) const   
+    virtual BentleyStatus _GetFileTransactionRecorderDirPath(BeFileName& tempPath) const
         {
         // Try to get the HMR temp directory ("HMRTempDirectory")
         return _GetDefaultTempDirectory(tempPath);
         }
 
     /*---------------------------------------------------------------------------------**//**
-    * Return default directory path to store image cache files 
+    * Return default directory path to store image cache files
     * @bsimethod                                                            05/2012
     +---------------+---------------+---------------+---------------+---------------+------*/
-    virtual BentleyStatus _GetLocalCacheDirPath(BeFileName& tempPath, bool checkForChange=false) const   
+    virtual BentleyStatus _GetLocalCacheDirPath(BeFileName& tempPath, bool checkForChange=false) const
         {
-        //If not empty and it exist, return it 
+        //If not empty and it exist, return it
         if (!checkForChange && !m_localDirPath.IsEmpty() && BeFileName::IsDirectory(m_localDirPath.GetName()))
             {
             tempPath = m_localDirPath;
@@ -416,7 +418,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                            05/2012
     +---------------+---------------+---------------+---------------+---------------+------*/
-    virtual size_t _GetDirectoryCacheSize() const   
+    virtual size_t _GetDirectoryCacheSize() const
         {
         return 0; // 0 means no limit size
         }
@@ -426,9 +428,9 @@ public:
     * that is allowed before canceling a previous request
     * @bsimethod                                                            05/2012
     +---------------+---------------+---------------+---------------+---------------+------*/
-    virtual size_t _GetLookAheadCancelThreshold() const   
+    virtual size_t _GetLookAheadCancelThreshold() const
         {
-        return UINT_MAX; 
+        return UINT_MAX;
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -439,17 +441,17 @@ public:
     * a cache multi-res.
     * @bsimethod                                                            05/2012
     +---------------+---------------+---------------+---------------+---------------+------*/
-    virtual bool _Is1BitMultiresCacheSupportEnable() const   
+    virtual bool _Is1BitMultiresCacheSupportEnable() const
         {
-        return false; 
+        return false;
         }
     /*---------------------------------------------------------------------------------**//**
     * The default ratio to meter of a specific HRFTWFPageFile instance.
     * @bsimethod                                                            05/2012
     +---------------+---------------+---------------+---------------+---------------+------*/
-    virtual double _GetDefaultRatioToMeter() const   
+    virtual double _GetDefaultRatioToMeter() const
         {
-        return 1.0; 
+        return 1.0;
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -457,17 +459,17 @@ public:
     * old behavior but the "real" type should be CCITT_PHOTOMETRIC_MINISWHITE
     * @bsimethod                                                            05/2012
     +---------------+---------------+---------------+---------------+---------------+------*/
-    virtual CCITT_PHOTOMETRIC_INTERPRETATION _GetDefaultPhotometricInterpretation() const   
+    virtual CCITT_PHOTOMETRIC_INTERPRETATION _GetDefaultPhotometricInterpretation() const
         {
-        return BentleyApi::ImagePP::CCITT_PHOTOMETRIC_MINISBLACK; 
+        return BentleyApi::ImagePP::CCITT_PHOTOMETRIC_MINISBLACK;
         }
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                            12/2014
     +---------------+---------------+---------------+---------------+---------------+------*/
-    virtual bool _IsSamplerMultiThreadingEnabled() const   
+    virtual bool _IsSamplerMultiThreadingEnabled() const
         {
-        return true; 
+        return true;
         }
 };
 
@@ -480,7 +482,7 @@ class ImageppLib
 {
 public:
 
-    //! The object that a host application must create and supply in order to use imagepp functions and methods  
+    //! The object that a host application must create and supply in order to use imagepp functions and methods
     //! see also the macro IMPLEMENT_DEFAULT_IMAGEPP_LIBHOST in ImageppLib.h.
     struct Host : ImagePPHost
         {
@@ -492,8 +494,8 @@ public:
 
 
             //! Register supported file format for this session. This method is guaranteed to be called once and never again.
-            //! This method must be implemented by the host application 
-            //! Implementation should look like this: 
+            //! This method must be implemented by the host application
+            //! Implementation should look like this:
             //! virtual void _RegisterFileFormat() override { REGISTER_SUPPORTED_FILEFORMAT }
             //! where REGISTER_SUPPORTED_FILEFORMAT is a macro in HRFFileFormats.h
             virtual void             _RegisterFileFormat()=0;
@@ -517,13 +519,13 @@ public:
         IMAGEPP_EXPORT void Terminate(bool onProgramExit);
         };
 
-    //! Must be called once per Host before calling any method in imagepp. Applications can have more than one Host. 
+    //! Must be called once per Host before calling any method in imagepp. Applications can have more than one Host.
     IMAGEPP_EXPORT static void Initialize (Host& host);
 
     //! Query if the imagepp library has been initialized on this thread.
     IMAGEPP_EXPORT static bool IsInitialized ();
 
-    //! Get the imagepp library host for this thread. 
+    //! Get the imagepp library host for this thread.
     IMAGEPP_EXPORT static Host& GetHost();
 };
 

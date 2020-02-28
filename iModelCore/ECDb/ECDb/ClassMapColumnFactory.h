@@ -21,20 +21,17 @@ struct ColumnMaps
     {
     typedef std::unique_ptr<ColumnMaps> Ptr;
     private:
-        bmap<Utf8CP, DbColumn const*, CompareIUtf8Ascii> m_maps;
-        bset<DbColumn const*> n_columns;
-        bset<Utf8CP, CompareIUtf8Ascii> m_newMappedColumns;
-        bset<Utf8String, CompareIUtf8Ascii> m_strings;
-
-        Utf8StringCR Copy(Utf8StringCR);
+        bmap<Utf8String, DbColumn const*, CompareIUtf8Ascii> m_maps;
+        bset<DbColumn const*> m_columns;
+        bset<Utf8String, CompareIUtf8Ascii> m_newMappedColumns;
 
     public:
         ColumnMaps() {}
         ~ColumnMaps() {}
 
         bool IsNew(Utf8CP accessString) const { return m_newMappedColumns.find(accessString) != m_newMappedColumns.end(); }
-        bmap<Utf8CP, DbColumn const*, CompareIUtf8Ascii> const& GetEntries() const { return m_maps; }
-        bset< Utf8CP, CompareIUtf8Ascii>  const& GetNewlyAddedAccessStrings() const { return m_newMappedColumns; }
+        bmap<Utf8String, DbColumn const*, CompareIUtf8Ascii> const& GetEntries() const { return m_maps; }
+        bset<Utf8String, CompareIUtf8Ascii>  const& GetNewlyAddedAccessStrings() const { return m_newMappedColumns; }
         bool IsColumnInUsed(DbColumn const& column) const;
         void Insert(Utf8StringCR accessString, DbColumn const& column, bool newlyMappedColumn = false);
         void Insert(SingleColumnDataPropertyMap const& propertyMap);
@@ -49,7 +46,7 @@ struct ColumnMaps
         void Debug() const
             {
             for (auto const& map : m_maps)
-                printf("[AccessString=%s] [Column=%s]\n", map.first, map.second->GetName().c_str());
+                printf("[AccessString=%s] [Column=%s]\n", map.first.c_str(), map.second->GetName().c_str());
             }
     };
 

@@ -314,15 +314,14 @@ void ECInstanceKeyFilter::AddLabelFilter(Utf8StringCR label)
         if (nullptr == property)
             return ERROR;
 
-        Utf8String labelProperty(property->GetName());
-        if (labelProperty.empty())
+        if (property->GetName().empty())
             return ERROR;
 
-        outWhereClause = labelProperty + " = ?";
+        outWhereClause = property->GetName() + " = ?";
 
         outBindArgs = [=] (ECSqlStatement& statement, int firstArgIndex)
             {
-            if (ECSqlStatus::Success == statement.BindText(firstArgIndex, label.c_str(), IECSqlBinder::MakeCopy::No))
+            if (ECSqlStatus::Success == statement.BindText(firstArgIndex, label.c_str(), IECSqlBinder::MakeCopy::Yes))
                 return SUCCESS;
 
             return ERROR;

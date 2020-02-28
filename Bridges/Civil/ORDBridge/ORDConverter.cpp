@@ -474,7 +474,7 @@ void ORDConverterExtension::UnRegisterAll()
     std::for_each(ORDConverterExtensionRegistry::s_extensions.begin(), ORDConverterExtensionRegistry::s_extensions.end(),
         [](ORDConverterExtension* pExtension) { ORDConverterExtension::UnRegister(*pExtension); });
     }
-	
+
 
 struct ConsensusSourceItem : iModelBridgeSyncInfoFile::ISourceItem
     {
@@ -949,7 +949,7 @@ void ORDAlignmentsConverter::AssignGeomStream(ConsensusItemCR consensusItem, Dgn
         auto geomParams = iter.GetGeometryParams(); // Intentionally copied
 
         auto subCatId = geomParams.GetSubCategoryId();
-        DgnSubCategoryId targetSubCatId = getOrInsertSubCategory(m_ordConverter.GetDgnDb(), subCategoryMap, 
+        DgnSubCategoryId targetSubCatId = getOrInsertSubCategory(m_ordConverter.GetDgnDb(), subCategoryMap,
                                                                  geomParams.GetCategoryId(), subCatId, bimAlignmentCatCPtr->GetCategoryId());
         if (targetSubCatId.IsValid())
             {
@@ -1242,7 +1242,7 @@ BentleyStatus ORDAlignmentsConverter::UpdateBimVerticalAlignment(ProfileCR cifPr
 BentleyStatus ORDAlignmentsConverter::ConvertProfiles(AlignmentCR cifAlignment, AlignmentBim::AlignmentCR alignment, ORDConverter::Params& params)
     {
     StopWatchOnStack stopWatch(*s_convertProfilesStopWatch);
-    
+
     m_ordConverter.GetProgressMeter().SetCurrentTaskName(
         ORDConverter::ORDBridgeProgressMessage::GetString(ORDConverter::ORDBridgeProgressMessage::TASK_PROCESS_PROFILE()).c_str());
 
@@ -1605,7 +1605,7 @@ Dgn::DgnElementCPtr updateCorridorComponent(CorridorSurfaceCR corridorSurface,
     auto linearLocationId = LinearReferencing::LinearLocation::Query(*corridorComponentElmCPtr);
 
     if (linearLocationId.IsValid())
-        {        
+        {
         auto linearLocationPtr = LinearReferencing::LinearLocation::GetForEdit(corridorPortion.GetDgnDb(), linearLocationId);
 
         if (corridorPortion.GetMainAlignmentId() != linearLocationPtr->GetLinearElementId())
@@ -1650,7 +1650,7 @@ BentleyStatus ORDCorridorsConverter::CreateCorridorComponents(CorridorCR cifCorr
         categoryId = RoadRailBim::RoadRailCategory::GetCorridor(corridorPortion.GetDgnDb());
 
     bmap<DgnSubCategoryId, DgnSubCategoryId> subCategoryMap;
-    
+
     auto cifCorridorElmRefP = cifCorridor.GetElementHandle()->GetElementRef();
     for (auto& corridorSurfacePtr : m_converter.m_cifCorridorSurfaces)
         {
@@ -1768,8 +1768,8 @@ BentleyStatus ORDCorridorsConverter::CreateNewCorridor(
         network = m_converter.GetRoadNetwork();
 
     // TODO: Assuming BIM corridor start = 0, end = alignment's length. Those are not exposed through CIF SDK.
-    auto corridorPtr = RoadRailBim::Corridor::Create(*network, RoadRailBim::Corridor::CreateFromToParams(*bimAlignmentCPtr, 
-                                                                                               DistanceExpression(0), 
+    auto corridorPtr = RoadRailBim::Corridor::Create(*network, RoadRailBim::Corridor::CreateFromToParams(*bimAlignmentCPtr,
+                                                                                               DistanceExpression(0),
                                                                                                DistanceExpression(bimAlignmentCPtr->GetLength())));
 
     ORDConverterUtils::AssignFederationGuid(*corridorPtr->getP(), cifCorridor.GetSyncId());
@@ -1830,7 +1830,7 @@ BentleyStatus ORDCorridorsConverter::CreateNewCorridor(
         horizontalAlignmentsCPtr->GetHorizontalModel()->SetIsPrivate(params.domainModelsPrivate);
         horizontalAlignmentsCPtr->GetHorizontalModel()->Update();
         }
-    
+
     RoadRailBim::CorridorPortionElementCPtr corridorPortionCPtr;
     if (networkType == NetworkType::Rail)
         {
@@ -1850,7 +1850,7 @@ BentleyStatus ORDCorridorsConverter::CreateNewCorridor(
         undeterminedPtr->SetMainAlignment(bimAlignmentCPtr.get());
         corridorPortionCPtr = undeterminedPtr->Insert();
         }
-    
+
     if (corridorPortionCPtr.IsNull())
         {
         ORDBRIDGE_LOGE("CreateNewCorridor '%s' - failed pathway insert.", Utf8String(cifCorridor.GetName().c_str()).c_str());
@@ -1889,7 +1889,7 @@ BentleyStatus ORDCorridorsConverter::UpdateCorridor(CorridorCR cifCorridor,
     auto corridorPortionIds = transportSystemCPtr->QueryCorridorPortionIds();
     if (corridorPortionIds.size() != 1)
         return BentleyStatus::ERROR;
-    
+
     auto corridorPortionCPtr = RoadRailBim::CorridorPortionElement::Get(changeDetector.GetDgnDb(), *corridorPortionIds.begin());
 
     UpdateCorridorComponents(cifCorridor, *corridorPortionCPtr);
@@ -1994,7 +1994,7 @@ ConvertORDElementXDomain::ConvertORDElementXDomain(ORDConverter& converter) : m_
 
     m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignAlignmentAspect);
     m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignLinear3dAspect);
-    m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignCorridorSurfaceAspect);    
+    m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignCorridorSurfaceAspect);
     m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignCorridorAspect);
     m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignTemplateDropAspect);
     m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignSuperelevationAspect);
@@ -2072,13 +2072,13 @@ ConvertORDElementXDomain::Result ConvertORDElementXDomain::_PreConvertElement(Dg
 bool ConvertORDElementXDomain::_GetBasisTransform(Bentley::Transform& transform, DgnV8EhCR v8el, Dgn::DgnDbSync::DgnV8::Converter&)
     {
     // From Sam Wilson:
-    // Brien and I found a problem that causes project extents to be extended unduly. 
-    // It happens when the converter tries to guess at the local coordinate system or basis for long complex chains 
-    // that wind through space. Sometimes it computes an LCS that is rotated. In the ORD case, we clearly want an LCS 
-    // that is aligned with global x, y, z. We are thinking about various rules of thumb that might be used to improve 
-    // the converter’s guesses. But it would be simpler and more reliable for ORDBridge to register handler extensions 
-    // that supply a sensible basis transform for these problem elements. 
-    // ORDBridge should override the _GetBasisTransform method on its XDomain. That should return a transform with a 
+    // Brien and I found a problem that causes project extents to be extended unduly.
+    // It happens when the converter tries to guess at the local coordinate system or basis for long complex chains
+    // that wind through space. Sometimes it computes an LCS that is rotated. In the ORD case, we clearly want an LCS
+    // that is aligned with global x, y, z. We are thinking about various rules of thumb that might be used to improve
+    // the converterï¿½s guesses. But it would be simpler and more reliable for ORDBridge to register handler extensions
+    // that supply a sensible basis transform for these problem elements.
+    // ORDBridge should override the _GetBasisTransform method on its XDomain. That should return a transform with a
     // rotation matrix component that is the identity matrix. The translation part should ideally be a point in the chain,
     // but 0,0 shouldn't cause further problems.
     if (FeaturizedConsensusItem::CreateFromElementHandle(*m_cifConsensusConnection, v8el).IsNull())
@@ -2111,7 +2111,7 @@ void ConvertORDElementXDomain::_DetermineElementParams(DgnClassId& classId, DgnC
         return;
 
     if (!classId.IsValid())
-        {        
+        {
         auto featurizedPtr = FeaturizedConsensusItem::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
         if (featurizedPtr.IsValid())
             {
@@ -2153,8 +2153,8 @@ void ConvertORDElementXDomain::_DetermineElementParams(DgnClassId& classId, DgnC
         if (m_converter.IsUpdating())
             {
             iModelExternalSourceAspect::ElementAndAspectId elementAndAspectId =
-                iModelExternalSourceAspect::FindElementBySourceId(m_converter.GetDgnDb(), 
-                    DgnElementId(m_converter.m_ordParams->fileScopeId), "Element", 
+                iModelExternalSourceAspect::FindElementBySourceId(m_converter.GetDgnDb(),
+                    DgnElementId(m_converter.m_ordParams->fileScopeId), "Element",
                     Utf8PrintfString("%d", v8el.GetElementId()).c_str());
             if (elementAndAspectId.elementId.IsValid())
                 {
@@ -2266,7 +2266,7 @@ void assignCorridorAspect(Dgn::DgnElementR element, CorridorCR corridor)
     {
     auto name = Utf8String(corridor.GetName().c_str());
     auto corridorAlignmentPtr = corridor.GetCorridorAlignment();
-    
+
     Utf8String activeProfileName, horizontalName;
     if (corridorAlignmentPtr.IsValid())
         {
@@ -2338,7 +2338,7 @@ void assignCorridorSurfaceAspect(Dgn::DgnElementR element, Cif::CorridorSurfaceC
 
     Utf8String corridorName, horizontalName, profileName;
     auto corridorPtr = cifCorridorSurface.GetCorridor();
-    
+
     if (corridorPtr.IsValid())
         {
         corridorName = Utf8String(corridorPtr->GetName().c_str());
@@ -2647,7 +2647,7 @@ bool ConvertORDElementXDomain::AssignCorridorAspect(Dgn::DgnElementR element, Dg
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ConvertORDElementXDomain::AssignFeatureAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const
     {
-    if (!Utf8String::IsNullOrEmpty(m_currentFeatureDefName.c_str()) || 
+    if (!Utf8String::IsNullOrEmpty(m_currentFeatureDefName.c_str()) ||
         !Utf8String::IsNullOrEmpty(m_currentFeatureName.c_str()))
         {
         assignORDFeatureAspect(element, m_currentFeatureName, m_currentFeatureDefName, m_currentFeatureDescription);
@@ -2679,7 +2679,7 @@ bool ConvertORDElementXDomain::AssignAlignmentAspect(Dgn::DgnElementR element, D
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      10/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-void insertClippingElement(CorridorSurfaceCR corridorSurface, DgnDbR dgnDb, 
+void insertClippingElement(CorridorSurfaceCR corridorSurface, DgnDbR dgnDb,
                            DgnModelId const& clippingsModelId, Dgn::DgnCategoryId const& categoryId)
     {
     auto v8MeshPtr = corridorSurface.GetMesh();
@@ -2775,8 +2775,8 @@ bool ConvertORDElementXDomain::AssignCorridorSurfaceAspect(Dgn::DgnElementR elem
                 assignCorridorSurfaceAspect(element, *cifCorridorSurfaceP);
                 assignStationRangeAspect(element, *cifCorridorSurfaceP);
                 assignQuantityAspect(element, *cifCorridorSurfaceP);
-                
-                insertClippingElement(*cifCorridorSurfaceP, m_converter.GetDgnDb(), m_converter.m_clippingsModelId, 
+
+                insertClippingElement(*cifCorridorSurfaceP, m_converter.GetDgnDb(), m_converter.m_clippingsModelId,
                                       element.ToGeometrySource()->GetCategoryId());
                 return true;
                 }
@@ -2877,7 +2877,7 @@ void ORDConverter::CreateDesignAlignments()
             continue;
 
         auto bimAlignmentId = alignmentsConverterPtr->ConvertAlignment(*cifAlignmentPtr, *m_ordParams, true);
-        m_cifAlignmentToBimID.insert({cifAlignmentPtr->GetElementHandle()->GetElementRef(), bimAlignmentId});        
+        m_cifAlignmentToBimID.insert({cifAlignmentPtr->GetElementHandle()->GetElementRef(), bimAlignmentId});
         }
     }
 
@@ -2925,13 +2925,13 @@ void ORDConverter::Create3dLinears()
 
         if (0 == lastSyncId.CompareTo(cifAlignmentPtr->GetSyncId()))
             continue;
-        
+
         lastAlignmentRefP = cifAlgElmRefP;
         if (m_cifAlignmentToBimID.find(cifAlgElmRefP) != m_cifAlignmentToBimID.end())
             continue;
 
         auto bimAlignmentId = alignmentsConverterPtr->ConvertAlignment(*cifAlignmentPtr, *m_ordParams, false);
-        lastSyncId = cifAlignmentPtr->GetSyncId();        
+        lastSyncId = cifAlignmentPtr->GetSyncId();
 
         m_cifAlignmentToBimID.insert({cifAlgElmRefP, bimAlignmentId});
         }
@@ -3175,7 +3175,7 @@ DgnViewId create3dView(DefinitionModelR model, Utf8StringCR viewName,
     else
         {
         view.SetStandardViewRotation(Dgn::StandardView::Top);
-        view.LookAtVolume(db.GeoLocation().GetProjectExtents());        
+        view.LookAtVolume(db.GeoLocation().GetProjectExtents());
 
         if (!view.Insert().IsValid())
             return viewId;
@@ -3405,8 +3405,10 @@ size_t ORDConverter::GetExtensionCount() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ORDConverter::AddExtensionSchema(bool& hasMoreChanges)
     {
-    if (!m_makeSchemaChangeExtIter)
+    if (!m_iterValid) {
         m_makeSchemaChangeExtIter = ORDConverterExtensionRegistry::s_extensions.begin();
+        m_iterValid = true;
+    }
 
     BeAssert(m_makeSchemaChangeExtIter != ORDConverterExtensionRegistry::s_extensions.end());
 

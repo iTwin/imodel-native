@@ -17,7 +17,7 @@
 #include <ImagePP/all/h/HGF2DVoidShape.h>
 #include <ImagePP/all/h/HGFScanlines.h>
 
-
+PUSH_DISABLE_DEPRECATION_WARNINGS
 /** -----------------------------------------------------------------------------
     Constructor for a complex shape.
     The interpretation coordinate system is the coordinate system of
@@ -1182,3 +1182,4 @@ void HGF2DComplexShape::GetBestOrientedExtent(HGF2DPositionCollection* po_pMinim
 
     }
 
+POP_DISABLE_DEPRECATION_WARNINGS

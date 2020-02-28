@@ -765,7 +765,7 @@ TEST(FlatBuffer,CurvePrimitiveIdInSolidPrimitive)
                     );
             if (id.IsValid ())
                 {
-                bvector<uint8_t> myBytes {1,2,3,0};
+                bvector<BoolTypeForVector> myBytes {1,2,3,0};
                 id->Store (myBytes);
                 cp0->SetId (id.get ());
                 }

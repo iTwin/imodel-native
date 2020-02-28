@@ -56,8 +56,8 @@ bool  SchemaXmlReaderImpl::IsOpenPlantPidCircularReferenceSpecialCase
     }
 
 //---------------------------------------------------------------------------------------
-// The DgnV8Converter ignores any Dgn system delivered schemas.  Unfortunately, we occasionally come across a 
-// domain schema that references one of these schemas and uses their classes as a base class.  
+// The DgnV8Converter ignores any Dgn system delivered schemas.  Unfortunately, we occasionally come across a
+// domain schema that references one of these schemas and uses their classes as a base class.
 // These schemas have absolutely no meaning in the bis world, so it is fine to bring the domain schema
 // in without those references.
 // @bsimethod                                   Carole.MacDonald            12/2017
@@ -216,7 +216,7 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadClassStubsFromXml(ECSchemaPtr& schemaO
             ecClass->m_xmlComments = comments;
             comments.clear();
             }
-            
+
         if (SchemaReadStatus::Success != (status = ecClass->_ReadXmlAttributes(*classNode)))
             {
             delete ecClass;
@@ -291,7 +291,7 @@ SchemaReadStatus SchemaXmlReaderImpl::_ReadClassContentsFromXml(ECSchemaPtr& sch
             LOG.errorv("Unable to load NavigationECProperty '%s:%s.%s' because the relationship '%s' does not support this class as a constraint when traversed in the '%s' direction or max multiplicity is greater than 1.",
                         navProp->GetClass().GetSchema().GetName().c_str(), navProp->GetClass().GetName().c_str(), navProp->GetName().c_str(),
                         navProp->GetRelationshipClass()->GetName().c_str(), SchemaParseUtils::DirectionToXmlString(navProp->GetDirection()));
-                
+
             return SchemaReadStatus::InvalidECSchemaXml;
             }
 
@@ -389,7 +389,7 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadUnitTypeFromXml(ECSchemaPtr& schemaOut
             return SchemaReadStatus::InvalidECSchemaXml;
             }
         }
-        
+
     return status;
     }
 
@@ -546,9 +546,9 @@ void SchemaXmlReader2::DetermineClassTypeAndModifier(Utf8StringCR className, ECS
             else
                 {
                 LOG.warningv("Class '%s' in schema '%s' has more than one type flag set to true: isStruct(%d) isDomainClass(%d) isCustomAttributeClass(%d).  Only one is allowed, defaulting to %s.  "
-                             "Modify the schema or use the ECv3ConversionAttributes in a conversion schema named '%s' to force a different class type.",
+                             "Modify the schema or use the ECv3ConversionAttributes in a conversion schema named '%s'_V3Conversion to force a different class type.",
                              className.c_str(), schemaOut->GetFullSchemaName().c_str(), isStruct, isDomain, isCA, isStruct ? "Struct" : "CustomAttribute",
-                             schemaOut->GetFullSchemaName().insert(schemaOut->GetName().length(), "_V3Conversion").c_str());
+                             schemaOut->GetFullSchemaName().c_str());
                 }
             }
         return;
@@ -575,9 +575,9 @@ void SchemaXmlReader2::DetermineClassTypeAndModifier(Utf8StringCR className, ECS
         }
     else if (1 < sum)
         LOG.warningv("Class '%s' in schema '%s' has more than one type flag set to true: isStruct(%d) isDomainClass(%d) isCustomAttributeClass(%d).  Only one is allowed, defaulting to %s.  "
-                     "Modify the schema or use the ECv3ConversionAttributes in a conversion schema named '%s' to force a different class type.",
+                     "Modify the schema or use the ECv3ConversionAttributes in a conversion schema named '%s'_V3Conversion to force a different class type.",
                      className.c_str(), schemaOut->GetFullSchemaName().c_str(), isStruct, isDomain, isCA, isStruct ? "Struct" : "CustomAttribute",
-                     schemaOut->GetFullSchemaName().insert(schemaOut->GetName().length(), "_V3Conversion").c_str());
+                     schemaOut->GetFullSchemaName().c_str());
 
 
     if (ecClass->IsDefined("ForceAbstract"))
@@ -658,7 +658,7 @@ bool SchemaXmlReaderImpl::_IsSchemaChildElementNode(BeXmlNodeR schemaNode, ECSch
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   
+// @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
  void SchemaXmlReaderImpl::PopulateSchemaElementOrder(ECSchemaElementsOrder& elementOrder, BeXmlNodeR schemaNode)
     {
@@ -728,7 +728,7 @@ SchemaReadStatus SchemaXmlReader::ReadSchemaStub(SchemaKey& schemaKey, uint32_t&
         }
 
     Utf8String version = schemaNamespace.substr(strlen(ECXML_URI) + 1);
-    sscanf(version.c_str(), "%d.%d", &ecXmlMajorVersion, &ecXmlMinorVersion);
+    Utf8String::Sscanf_safe(version.c_str(), "%d.%d", &ecXmlMajorVersion, &ecXmlMinorVersion);
     if (2 != ecXmlMajorVersion && 3 != ecXmlMajorVersion)
         {
         LOG.errorv("Unsupported ecXml version %d.%d", ecXmlMajorVersion, ecXmlMinorVersion);
@@ -767,7 +767,7 @@ SchemaReadStatus SchemaXmlReader::ReadSchemaStub(SchemaKey& schemaKey, uint32_t&
             return SchemaReadStatus::InvalidECSchemaXml;
             }
         }
-    else 
+    else
         {
         // OPTIONAL attributes - If these attributes exist they do not need to be valid.  We will ignore any errors setting them and use default values.
         // NEEDSWORK This is due to the current implementation in managed ECObjects.  We should reconsider whether it is the correct behavior.
@@ -780,9 +780,9 @@ SchemaReadStatus SchemaXmlReader::ReadSchemaStub(SchemaKey& schemaKey, uint32_t&
             }
         }
 
-    LOG.debugv("Reading ECSchema %s", SchemaKey::FormatFullSchemaName(schemaName.c_str(), versionRead, versionWrite, versionMinor).c_str());
-
     schemaKey = SchemaKey(schemaName.c_str(), versionRead, versionWrite, versionMinor);
+
+    LOG.debugv("Reading ECSchema %s", schemaKey.GetFullSchemaName().c_str());
 
     return SchemaReadStatus::Success;
     }
@@ -826,7 +826,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, Utf8CP che
     schemaOut->m_originalECXmlVersionMajor = ecXmlMajorVersion;
     schemaOut->m_originalECXmlVersionMinor = ecXmlMinorVersion;
 
-    // If checksum comparison is enabled on context then use the original context 
+    // If checksum comparison is enabled on context then use the original context
     if (m_schemaContext.GetCalculateChecksum() && nullptr != checksum)
         schemaOut->m_key.m_checksum = checksum;
 
@@ -851,7 +851,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, Utf8CP che
 
     if (SchemaReadStatus::Success != (status = reader->ReadSchemaReferencesFromXml(schemaOut, *schemaNode)))
         {
-        delete reader; reader = nullptr; 
+        delete reader; reader = nullptr;
         return status;
         }
 
@@ -1016,7 +1016,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, Utf8CP che
     if (m_schemaContext.GetPreserveElementOrder())
         reader->PopulateSchemaElementOrder(schemaOut->m_serializationOrder, *schemaNode);
 
-    
+
     overallTimer.Stop();
     LOG.debugv("Overall schema de-serialization for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), overallTimer.GetElapsedSeconds());
 
@@ -1099,7 +1099,7 @@ SchemaWriteStatus SchemaXmlWriter::WriteClass(ECClassCR ecClass)
     // Make sure we don't write any class twice
     if (setIterator != m_context.m_alreadyWrittenClasses.end())
         return status;
-    
+
     m_context.m_alreadyWrittenClasses.insert(ecClass.GetName().c_str());
 
     // If schema element order shouldn't be preserved, baseclasses and contraints will be written

@@ -38,10 +38,7 @@ enum PointUsage
     USED
     };
 
-
-
-
-
+PUSH_DISABLE_DEPRECATION_WARNINGS
 //----------------------------------------------------------------------------
 // Class HVEDecompositionException
 // This class is a local file internal exception used during decomposition.
@@ -2729,12 +2726,12 @@ HVE2DShape* HVE2DPolygonOfSegments::UnifyCrossingPolygonSCS(const HVE2DPolygonOf
     	{
         HFCPtr<HVE2DShape> pNewShape1 = static_cast<HVE2DShape*>(this->Clone());
         HFCPtr<HVE2DShape> pNewShape2 = static_cast<HVE2DShape*>(pi_rPolygon.Clone());
-    
+
         pNewShape1->SetAutoToleranceActive(FALSE);
         pNewShape1->SetTolerance(this->GetTolerance() * 2.0);
         pNewShape2->SetAutoToleranceActive(FALSE);
         pNewShape2->SetTolerance(pi_rPolygon.GetTolerance() * 2.0);
-    
+
         pMyResultShape = pNewShape1->UnifyShape(*pNewShape2);
     	}
     else
@@ -2763,9 +2760,9 @@ HVE2DShape* HVE2DPolygonOfSegments::UnifyCrossingPolygonSCS(const HVE2DPolygonOf
                         Found = ((*MyShapeIterator)->CalculateSpatialPositionOf(**MyOtherShapeIterator) == HVE2DShape::S_IN);
 
                     MyOtherShapeIterator++;
-            		}   
+            		}
                 if (!Found)
-                	MyShapeIterator++;   
+                	MyShapeIterator++;
             	}
 
             // Check if the outter shape was found ...
@@ -2787,7 +2784,7 @@ HVE2DShape* HVE2DPolygonOfSegments::UnifyCrossingPolygonSCS(const HVE2DPolygonOf
                     delete *MyFinalShapeIterator;
 
                     MyFinalShapeIterator++;
-            		}   
+            		}
 
                 pMyResultShape = pMyResultHoledShape;
             	}
@@ -4350,7 +4347,7 @@ void HVE2DPolygonOfSegments::PrintState(ostream& po_rOutput) const
 
 //-----------------------------------------------------------------------------
 // GetLightShape
-// Allocates a light shape representing polygon 
+// Allocates a light shape representing polygon
 //-----------------------------------------------------------------------------
 HGF2DShape* HVE2DPolygonOfSegments::GetLightShape() const
 {
@@ -4367,7 +4364,7 @@ HGF2DShape* HVE2DPolygonOfSegments::GetLightShape() const
 
         // Reserve space for all points
         ListOfPoints.reserve(m_PolySegment.GetSize());
-        
+
         // Create iterator
         HGF2DPositionCollection::const_iterator Itr = m_PolySegment.GetPoints().begin();
 
@@ -4549,7 +4546,7 @@ HVE2DShape::SpatialPosition HVE2DPolygonOfSegments::CalculateSpatialPositionOfNo
         size_t index = 0;
         for (ThePosition = HVE2DShape::S_ON; index < pi_rPolygon.m_PolySegment.GetSize() && ThePosition == HVE2DShape::S_ON ; index++)
             ThePosition = CalculateSpatialPositionOfPosition(pi_rPolygon.m_PolySegment.GetPosition(index));
-            
+
 
         // Check that this point is not ON
         if (ThePosition == HVE2DShape::S_ON)
@@ -4558,8 +4555,8 @@ HVE2DShape::SpatialPosition HVE2DPolygonOfSegments::CalculateSpatialPositionOfNo
             // relative to given polygon of segments
             // Obtain the position of each point until IN or OUT is obtained
             for (size_t index2 = 0 ; index2 < m_PolySegment.GetSize() && ThePosition == HVE2DShape::S_ON ; index2++)
-                ThePosition = pi_rPolygon.CalculateSpatialPositionOfPosition(m_PolySegment.GetPosition(index2), Tolerance); 
-            
+                ThePosition = pi_rPolygon.CalculateSpatialPositionOfPosition(m_PolySegment.GetPosition(index2), Tolerance);
+
             // Check that this point is not ON
             if (ThePosition != HVE2DShape::S_ON)
                 {
@@ -5818,3 +5815,4 @@ HVE2DVector* HVE2DPolygonOfSegments::AllocateCopyInGeneralRelatedCoordSys(const 
     return pResultVector;
     }
 
+POP_DISABLE_DEPRECATION_WARNINGS

@@ -86,7 +86,7 @@ TEST_F(UnitRegistryTests, TestEveryDefaultUnitIsAddedToItsPhenomenon)
         ASSERT_NE(nullptr, unitPhenomenon) << "Unit " << unit->GetName() << " does not have phenomenon";
         auto it = find_if(unitPhenomenon->GetUnits().begin(), unitPhenomenon->GetUnits().end(),
                        [&unit] (UnitCP unitInPhenomenon) { return 0 == strcmp(unitInPhenomenon->GetName().c_str(), unit->GetName().c_str()); });
-        
+
         T_Utf8StringVector unitNames;
         if (unitPhenomenon->GetUnits().end() == it)
             {
@@ -370,10 +370,10 @@ TEST_F(UnitRegistryTests, TestCaseInsensitiveLookup)
 TEST_F(UnitRegistryTests, AllNewNamesMapToECNames)
     {
     Utf8String path = UnitsTestFixture::GetConversionDataPath(L"All3_1Names.csv");
-    std::ifstream ifs(path.begin(), std::ifstream::in);
+    std::ifstream ifs(path.c_str(), std::ifstream::in);
     std::string line;
     bvector<Utf8String> ignoredNames = {"CM/REVOLUTION", "FT/REVOLUTION", "IN/DEGREE", "IN/RAD", "IN/REVOLUTION", "M/DEGREE", "MM/RAD", "MM/REVOLUTION"};
-    
+
     bool isIgnoredName;
     Utf8String parsedName;
     while (std::getline(ifs, line))
@@ -381,14 +381,14 @@ TEST_F(UnitRegistryTests, AllNewNamesMapToECNames)
         parsedName = line.c_str();
         parsedName.Trim();
         isIgnoredName = false;
-        
+
         for (auto const& ignoredName : ignoredNames)
             {
             if(ignoredName.EqualsI(parsedName.c_str()))
                 isIgnoredName = true;
             }
         if (!isIgnoredName)
-            { 
+            {
             auto mapped = UnitNameMappings::TryGetECNameFromNewName(parsedName.c_str());
             if (nullptr == mapped)
                 {
@@ -407,7 +407,7 @@ TEST_F(UnitRegistryTests, AllNewNamesMapToECNames)
                 parsedName = "HUNDRED_PERSON";
             if (0 == BeStringUtilities::StricmpAscii(mapped, "UNITS:THOUSAND_PERSON"))
                 parsedName = "THOUSAND_PERSON";
-            
+
             auto roundtrippedName = UnitNameMappings::TryGetNewNameFromECName(mapped);
             if (nullptr == roundtrippedName)
                 {

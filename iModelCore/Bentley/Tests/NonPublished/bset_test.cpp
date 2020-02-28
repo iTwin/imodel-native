@@ -4,13 +4,13 @@
 *--------------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
 #include <Bentley/bset.h>
-#include <Bentley/bstdset.h>
+#include <set>
 #include <vector>
 
 #define __attribute__(IGNOREDSTUFF)
 #define VERIFY(X) ASSERT_TRUE(X)
 
-//  Adapted from unit tests that are part of GCC 
+//  Adapted from unit tests that are part of GCC
 // Copyright (C) 1999, 2000, 2001, 2002, 2003, 2009
 // Free Software Foundation, Inc.
 
@@ -38,7 +38,7 @@ TEST(bset_test, ModifiersInsert01)
 
   bset<int> s0, s1;
   bset<int>::iterator iter1;
-  
+
   s0.insert(1);
   s1.insert(s1.end(), 1);
   VERIFY( s0 == s1 );
@@ -74,7 +74,7 @@ TEST(bset_test, ModifiersInsert01)
   s0.insert(8);
   s1.insert(s1.find(3), 8);
   VERIFY( s0 == s1 );
-  
+
   s0.insert(9);
   s1.insert(s1.end(), 9);
   VERIFY( s0 == s1 );
@@ -104,7 +104,7 @@ TEST(bset_test, EqualRange)
   s0.insert(1);
   s0.insert(2);
   insert_return_type irt2 = s0.insert(3);
- 
+
   pp0 = s0.equal_range(2);
   VERIFY( s0.count(2) == 1 );
   VERIFY( *pp0.first == 2 );
@@ -116,7 +116,7 @@ TEST(bset_test, EqualRange)
   s0.insert(3);
   s0.insert(3);
   insert_return_type irt4 = s0.insert(4);
-  
+
   pp0 = s0.equal_range(3);
   VERIFY( s0.count(3) == 1 );
   VERIFY( *pp0.first == 3 );
@@ -148,24 +148,24 @@ TEST(bset_test, EqualRange)
   s0.insert(4);
 
   pp0 = s0.equal_range(4);
-  VERIFY( s0.count(4) == 1 );  
+  VERIFY( s0.count(4) == 1 );
   VERIFY( *pp0.first == 4 );
-  VERIFY( *pp0.second == 5 );  
-  
+  VERIFY( *pp0.second == 5 );
+
   s0.insert(0);
   s0.insert(0);
   s0.insert(1);
 
   pp0 = s0.equal_range(0);
-  VERIFY( s0.count(0) == 1 );  
+  VERIFY( s0.count(0) == 1 );
   VERIFY( *pp0.first == 0 );
-  VERIFY( *pp0.second == 1 );  
+  VERIFY( *pp0.second == 1 );
   VERIFY( pp0.first == s0.begin() );
 
   pp0 = s0.equal_range(1);
-  VERIFY( s0.count(1) == 1 );  
+  VERIFY( s0.count(1) == 1 );
   VERIFY( *pp0.first == 1 );
-  VERIFY( *pp0.second == 2 );  
+  VERIFY( *pp0.second == 2 );
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Sam.Wilson                    4/13
@@ -173,8 +173,8 @@ TEST(bset_test, EqualRange)
 // A few tests for equal_range, in the occasion of libstdc++/29385.
 TEST(bstdset_test, EqualRange)
 {
-  bstdset<int> s0;
-  typedef bstdset<int>::iterator iterator;
+  std::set<int> s0;
+  typedef std::set<int>::iterator iterator;
   typedef bpair<iterator, bool> insert_return_type;
   bpair<iterator, iterator> pp0;
 
@@ -186,7 +186,7 @@ TEST(bstdset_test, EqualRange)
   insert_return_type irt0 = s0.insert(1);
   insert_return_type irt1 = s0.insert(2);
   insert_return_type irt2 = s0.insert(3);
- 
+
   pp0 = s0.equal_range(2);
   VERIFY( s0.count(2) == 1 );
   VERIFY( *pp0.first == 2 );
@@ -198,13 +198,13 @@ TEST(bstdset_test, EqualRange)
   s0.insert(3);
   insert_return_type irt3 = s0.insert(3);
   insert_return_type irt4 = s0.insert(4);
-  
+
   pp0 = s0.equal_range(3);
   VERIFY( s0.count(3) == 1 );
   VERIFY( *pp0.first == 3 );
   VERIFY( *pp0.second == 4 );
   VERIFY( pp0.first == irt2.first );
-  VERIFY( --pp0.first == irt1.first );  
+  VERIFY( --pp0.first == irt1.first );
   VERIFY( pp0.second == irt4.first );
 
   insert_return_type irt5 = s0.insert(0);
@@ -217,7 +217,7 @@ TEST(bstdset_test, EqualRange)
   VERIFY( *pp0.first == 1 );
   VERIFY( *pp0.second == 2 );
   VERIFY( pp0.first == irt0.first );
-  VERIFY( --pp0.first == irt5.first );  
+  VERIFY( --pp0.first == irt5.first );
   VERIFY( pp0.second == irt1.first );
 
   insert_return_type irt6 = s0.insert(5);
@@ -228,7 +228,7 @@ TEST(bstdset_test, EqualRange)
   VERIFY( s0.count(5) == 1 );
   VERIFY( *pp0.first == 5 );
   VERIFY( pp0.first == irt6.first );
-  VERIFY( --pp0.first == irt4.first );  
+  VERIFY( --pp0.first == irt4.first );
   VERIFY( pp0.second == s0.end() );
 
   s0.insert(4);
@@ -236,29 +236,29 @@ TEST(bstdset_test, EqualRange)
   s0.insert(4);
 
   pp0 = s0.equal_range(4);
-  VERIFY( s0.count(4) == 1 );  
+  VERIFY( s0.count(4) == 1 );
   VERIFY( *pp0.first == 4 );
-  VERIFY( *pp0.second == 5 );  
+  VERIFY( *pp0.second == 5 );
   VERIFY( pp0.first == irt4.first );
-  VERIFY( --pp0.first == irt3.first );  
+  VERIFY( --pp0.first == irt3.first );
   VERIFY( pp0.second == irt6.first );
-  
+
   s0.insert(0);
   insert_return_type irt7 = s0.insert(0);
   s0.insert(1);
 
   pp0 = s0.equal_range(0);
-  VERIFY( s0.count(0) == 1 );  
+  VERIFY( s0.count(0) == 1 );
   VERIFY( *pp0.first == 0 );
-  VERIFY( *pp0.second == 1 );  
+  VERIFY( *pp0.second == 1 );
   VERIFY( pp0.first == irt5.first );
   VERIFY( pp0.first == s0.begin() );
   VERIFY( pp0.second == irt0.first );
 
   pp0 = s0.equal_range(1);
-  VERIFY( s0.count(1) == 1 );  
+  VERIFY( s0.count(1) == 1 );
   VERIFY( *pp0.first == 1 );
-  VERIFY( *pp0.second == 2 );  
+  VERIFY( *pp0.second == 2 );
   VERIFY( pp0.first == irt0.first );
   VERIFY( --pp0.first == irt7.first );
   VERIFY( pp0.second == irt1.first );
@@ -315,7 +315,7 @@ TEST(bstdset_test, EqualRange)
 //            bset<int>                                                   sbentley;
 //
 //            std::vector<int> values;        // values to be inserted into each set.
-//            for (int i=0; i<nitems; ++i)      // since we are only testing allocator performance, 
+//            for (int i=0; i<nitems; ++i)      // since we are only testing allocator performance,
 //                values.push_back (i);       //  it doesn't matter what set of values we use.
 //
 //            wprintf (L"bset_test:AllocatorPerformance - %d ints\n", nitems);
@@ -333,7 +333,7 @@ TEST(bstdset_test, EqualRange)
 //
 //            std::vector<std::string> svalues;        // values to be inserted into each set.
 //            char buf[32];
-//            for (int i=0; i<nitems; ++i)              // since we are only testing allocator performance, 
+//            for (int i=0; i<nitems; ++i)              // since we are only testing allocator performance,
 //                svalues.push_back (itoa(i,buf,10));         //  it doesn't matter what set of values we use.
 //
 //            wprintf (L"bset_test:AllocatorPerformance - %d std::strings\n", nitems);
@@ -423,9 +423,9 @@ TEST(bstdset_test, EqualRange)
 //            bset    <int, std::less<int>, std::allocator<int> > sbentley;
 //            std::set<int, std::less<int>, std::allocator<int> > sstd;
 //
-//            std::vector<int> values;        
-//            for (int i=0; i<nitems; ++i)     
-//                values.push_back (i);       
+//            std::vector<int> values;
+//            for (int i=0; i<nitems; ++i)
+//                values.push_back (i);
 //
 //            wprintf (L"bset_test:ImplPerformance - %d ints\n", nitems);
 //            exerciseSet (sstd,      L"std::set", values);
@@ -438,10 +438,10 @@ TEST(bstdset_test, EqualRange)
 //            bset    <std::string, std::less<std::string>, std::allocator<std::string> > sbentley;
 //            std::set<std::string, std::less<std::string>, std::allocator<std::string> > sstd;
 //
-//            std::vector<std::string> values;        
+//            std::vector<std::string> values;
 //            char buf[32];
-//            for (int i=0; i<nitems; ++i)     
-//                values.push_back (itoa(i,buf,10));       
+//            for (int i=0; i<nitems; ++i)
+//                values.push_back (itoa(i,buf,10));
 //
 //            wprintf (L"bset_test:ImplPerformance - %d std::strings\n", nitems);
 //            exerciseSet (sstd,      L"std::set", values);

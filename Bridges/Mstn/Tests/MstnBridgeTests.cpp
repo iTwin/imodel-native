@@ -8,6 +8,7 @@
 #include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
 #include <Bentley/Desktop/FileSystem.h>
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 extern "C"
     {
     EXPORT_ATTRIBUTE T_iModelBridge_getAffinity iModelBridge_getAffinity;
@@ -19,11 +20,11 @@ USING_NAMESPACE_BENTLEY_DGN
 #define MSTN_BRIDGE_REG_SUB_KEY_A "iModelBridgeForMstn"
 
 //=======================================================================================
-// @bsistruct                              
+// @bsistruct
 //=======================================================================================
 struct MstnBridgeTests : public MstnBridgeTestsFixture
     {
-    void SetupTwoRefs(bvector<WString>& args, BentleyApi::BeFileName& masterFile, BentleyApi::BeFileName& refFile1, 
+    void SetupTwoRefs(bvector<WString>& args, BentleyApi::BeFileName& masterFile, BentleyApi::BeFileName& refFile1,
                       BentleyApi::BeFileName& refFile2, BentleyApi::BeFileName const& testDir, FakeRegistry& testRegistry);
     void VerifyCodeIsRegistered(DbFileInfo&, DgnCodeCR, Utf8CP codeValuePrefix, bool codeShouldBeRecorded);
     void VerifyElementHasCode(DgnElementCR, Utf8CP codeValuePrefix);
@@ -46,17 +47,17 @@ TEST_F(MstnBridgeTests, TestDenySchemaLock)
     auto testDir = CreateTestDir();
 
     SetRulesFileInEnv setRulesFileVar(WriteRulesFile(L"testDenySchemaLock.json",    // Specify user1's permissions:
-          R"(       [                                 
-                        {                            
-                            "user": "user1",             
-                            "rules": [                   
-                                {                        
+          R"(       [
+                        {
+                            "user": "user1",
+                            "rules": [
+                                {
                                     "request": "Lock/Create",
-                                    "rule": { "verb": "deny" }                        
-                                }                        
-                            ]                            
-                        }                            
-                    ]                               
+                                    "rule": { "verb": "deny" }
+                                }
+                            ]
+                        }
+                    ]
             )"));
 
     BentleyApi::BeFileName inputFile;
@@ -76,7 +77,7 @@ TEST_F(MstnBridgeTests, TestDenySchemaLock)
     argvMaker.SetSkipAssignmentCheck();
 
     iModelBridgeFwk fwk;
-    
+
     ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argvMaker.GetArgC(), argvMaker.GetArgV()));
 
     bool fatalFwkMsgFound = false;
@@ -125,31 +126,31 @@ TEST_F(MstnBridgeTests, MultiBridgeSequencing)
 
     BeFileName a_can_run(testDir);
     a_can_run.AppendToPath(L"a_can_run.txt");
-    
+
     BeFileName b_can_run(testDir);
     b_can_run.AppendToPath(L"b_can_run.txt");
 
     Utf8PrintfString rules(
-        R"(   [                                 
-                  {                            
-                      "user": "A",             
-                      "rules": [                   
-                          {                        
+        R"(   [
+                  {
+                      "user": "A",
+                      "rules": [
+                          {
                               "request": "Lock/Create",
-                              "rule": { "verb": "wait file", "object": "%s", "retryCount": 0 }                        
-                          }                        
-                      ]                            
+                              "rule": { "verb": "wait file", "object": "%s", "retryCount": 0 }
+                          }
+                      ]
                   },
-                  {                            
-                      "user": "B",             
-                      "rules": [                   
-                          {                        
+                  {
+                      "user": "B",
+                      "rules": [
+                          {
                               "request": "Lock/Create",
-                              "rule": { "verb": "wait file", "object": "%s", "retryCount": 0 }                        
-                          }                        
-                      ]                            
-                  }                  
-              ]                               
+                              "rule": { "verb": "wait file", "object": "%s", "retryCount": 0 }
+                          }
+                      ]
+                  }
+              ]
           )", Utf8String(a_can_run).c_str(), Utf8String(b_can_run).c_str());
     rules.ReplaceAll("\\", "/");
 
@@ -168,7 +169,7 @@ TEST_F(MstnBridgeTests, MultiBridgeSequencing)
     std::unique_ptr<BentleyApi::Dgn::IModelBankClient> bankClient(CreateIModelBankClient(""));
     { // make sure server is stopped before releasing bankClient, as that is used by runningServer's Stop method.
     auto runningServer = StartImodelBankServer(GetIModelDir(), *bankClient);
-    
+
     ASSERT_TRUE(m_client == nullptr);
     iModelBridgeFwk::ClearIModelClientForBridgesForTesting(); // nobody should have set the test client, but clear it just in case.
 
@@ -191,7 +192,7 @@ TEST_F(MstnBridgeTests, MultiBridgeSequencing)
     // -------------------------------------------------------
     // Bridge A
     // -------------------------------------------------------
-    std::thread bridge_a([&] 
+    std::thread bridge_a([&]
         {
         BeFileName aDir(testDir);
         aDir.AppendToPath(L"A");
@@ -208,7 +209,7 @@ TEST_F(MstnBridgeTests, MultiBridgeSequencing)
         argvMaker.SetSkipAssignmentCheck();
 
         argvMaker.SetMaxRetries(255, true);   // must allow lots of time for bridge B to run to completion. Unfortunately, there is no way to predict how many retries will be required.
-    
+
         iModelBridgeFwk fwk;
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argvMaker.GetArgC(), argvMaker.GetArgV()));
 
@@ -248,20 +249,20 @@ TEST_F(MstnBridgeTests, MultiBridgeSequencing)
 
         argvMaker.SetInputFileArg(inputFile);
         argvMaker.SetSkipAssignmentCheck();
-    
+
         auto bridge_b = StartImodelBridgeFwkExe(argvMaker);
 
         createFile(b_can_run);      // let b run
 
         ASSERT_EQ(BSISUCCESS, bridge_b.Stop(5*60*1000));   // wait for up to 5 minutes for b to finish
-                
+
         ASSERT_EQ(0, bridge_b.GetExitCode());
 
         bridge_b_briefcaseName = bDir;
         bridge_b_briefcaseName.AppendToPath(DEFAULT_IMODEL_NAME);
         bridge_b_briefcaseName.append(L".bim");
         }
-    
+
     BeThreadUtilities::BeSleep(5000); // *** WIP flakey/depends on timings *** make sure thread A runs and has a chance to make its request for schema lock (so that it can be denied!)
     createFile(a_can_run);      // now let A have the schema lock
 
@@ -281,7 +282,7 @@ TEST_F(MstnBridgeTests, MultiBridgeSequencing)
     if (true)
         {
         // If bridge A ran second, it must have had to pull bridge B's changesets before it could push.
-        // Therefore, A's briefcase should contain the RepositoryLink for B's input file as well as its own. 
+        // Therefore, A's briefcase should contain the RepositoryLink for B's input file as well as its own.
         DbFileInfo info(bridge_a_briefcaseName);
         auto aSourceFileId = info.GetRepositoryLinkByFileNameLike("%test3d_a.dgn");
         auto bSourceFileId = info.GetRepositoryLinkByFileNameLike("%test3d_b.dgn");
@@ -344,13 +345,13 @@ TEST_F(MstnBridgeTests, MultiUsersSameBridgeSequential)
         std::unique_ptr<BentleyApi::Dgn::IModelBankClient> bankClient(CreateIModelBankClient(""));
             { // make sure server is stopped before releasing bankClient, as that is used by runningServer's Stop method.
             auto runningServer = StartImodelBankServer(GetIModelDir(), *bankClient);
-            
+
             ASSERT_TRUE(m_client == nullptr);
             iModelBridgeFwk::ClearIModelClientForBridgesForTesting(); // nobody should have set the test client, but clear it just in case.
 
             // A - converts input file for first time
             RunBridgeAsUser(bridge_a_briefcaseName, testDir, "A", inputFile);
-    
+
             int countAfterA;
             int repositoryLinkCount;
                 {
@@ -366,7 +367,7 @@ TEST_F(MstnBridgeTests, MultiUsersSameBridgeSequential)
             AddLine(inputFile);
 
             RunBridgeAsUser(bridge_b_briefcaseName, testDir, "B", inputFile);
-            
+
             int countAfterB;
                 {
                 DbFileInfo bInfo(bridge_b_briefcaseName);
@@ -415,20 +416,20 @@ TEST_F(MstnBridgeTests, MultiUsersSameBridgeSequential)
 //         std::unique_ptr<BentleyApi::Dgn::IModelBankClient> bankClient(CreateIModelBankClient(""));
 //             { // make sure server is stopped before releasing bankClient, as that is used by runningServer's Stop method.
 //             auto runningServer = StartImodelBankServer(GetIModelDir(), *bankClient);
-            
+
 //             ASSERT_TRUE(m_client == nullptr);
 //             iModelBridgeFwk::ClearIModelClientForBridgesForTesting(); // nobody should have set the test client, but clear it just in case.
 
-//             std::thread user_a([&] 
+//             std::thread user_a([&]
 //                 {
 //                 RunBridgeAsUser(bridge_a_briefcaseName, testDir, "A", inputFile);
 //                 });
 
-//             std::thread user_b([&] 
+//             std::thread user_b([&]
 //                 {
 //                 RunBridgeAsUser(bridge_b_briefcaseName, testDir, "B", inputFile);
 //                 });
-            
+
 //             user_a.join();
 //             user_b.join();
 
@@ -455,7 +456,7 @@ TEST_F(MstnBridgeTests, ConvertLinesUsingBridgeFwk)
 
     bvector<WString> args;
     SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY);
-    
+
     BentleyApi::BeFileName inputFile;
     MakeCopyOfFile(inputFile, L"Test3d.dgn", NULL);
 
@@ -466,7 +467,7 @@ TEST_F(MstnBridgeTests, ConvertLinesUsingBridgeFwk)
     CreateRepository();
     // ASSERT_EQ(0, ProcessRunner::FindProcessId("node.exe"));
     auto runningServer = StartServer();
-    
+
     if (true)
         {
         // Ask the framework to run our test bridge to do the initial conversion and create the repo
@@ -511,7 +512,7 @@ TEST_F(MstnBridgeTests, ConvertCve)
 
     bvector<WString> args;
     SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY);
-    
+
     BentleyApi::BeFileName emptyFile = GetTestDataFileName(L"Test3d.dgn");
     BentleyApi::BeFileName cveFile = GetTestDataFileName(L"cve.dgn");
 
@@ -520,10 +521,10 @@ TEST_F(MstnBridgeTests, ConvertCve)
     SetupClient();
     CreateRepository();
     auto runningServer = StartServer();
-    
+
     args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", emptyFile.c_str()));
     RunTheBridge(args);
-    
+
     args.pop_back();
     args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", cveFile.c_str()));
     RunTheBridge(args);
@@ -538,7 +539,7 @@ TEST_F(MstnBridgeTests, TestSourceElementIdAspect)
 
     bvector<WString> args;
     SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY);
-    
+
     BentleyApi::BeFileName inputFile;
     MakeCopyOfFile(inputFile, L"Test3d.dgn", NULL);
 
@@ -548,7 +549,7 @@ TEST_F(MstnBridgeTests, TestSourceElementIdAspect)
     SetupClient();
     CreateRepository();
     auto runningServer = StartServer();
-    
+
     int64_t srcId = AddLine(inputFile);
     if (true)
         {
@@ -599,18 +600,18 @@ TEST_F(MstnBridgeTests, TestSourceElementIdAspect)
 //        XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo"
 //        " WHERE (sourceInfo.Element.Id=m.ModeledElement.Id) AND (sourceInfo.SourceId = ?)");
 //    estmt.BindInt64 (1, modelid);
-//    
+//
 //    ASSERT_TRUE (BentleyApi::BeSQLite::BE_SQLITE_ROW == estmt.Step ());
 //    BentleyApi::Utf8String kind, properties, modelName;
 //    int64_t srcid;
 //    rapidjson::Document json;
-//    
+//
 //    kind = estmt.GetValueText (0);
 //    ASSERT_TRUE (kind.Equals ("Model"));
 //
 //    srcid = estmt.GetValueId<int64_t> (1);
 //    ASSERT_TRUE (srcid == modelid);
-//    
+//
 //    properties = estmt.GetValueText (2);
 //    json.Parse (properties.c_str ());
 //    modelName = json["v8ModelName"].GetString ();
@@ -678,7 +679,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentSingleBridge)
 
     bvector<WString> args;
     SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, DEFAULT_IMODEL_NAME);
-    
+
     BentleyApi::BeFileName inputFile;
     MakeCopyOfFile(inputFile, L"Test3d.dgn", NULL);
     AddLine(inputFile);
@@ -718,7 +719,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentSingleBridge)
         {
         // Ask the framework to run our test bridge to do the initial conversion and create the repo
         RunTheBridge(args);
-        
+
         modelCount = DbFileInfo(m_briefcaseName).GetModelCount();
         ASSERT_EQ(8, modelCount);
         }
@@ -838,11 +839,11 @@ TEST_F(MstnBridgeTests, ConvertIfcAttachmentSingleBridge)
 TEST_F(MstnBridgeTests, ConvertAttachmentSingleBridgeAlternateRegistry)
     {
     auto testDir = CreateTestDir();
-    
+
     BentleyApi::BeFileName stagingDir(testDir);
     stagingDir.AppendToPath(L"staging");
     EXPECT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::CreateNewDirectory(stagingDir.c_str()));
-    
+
     BentleyApi::BeFileName registryDir(testDir);
     registryDir.AppendToPath(L"assignments");
     EXPECT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::CreateNewDirectory(registryDir.c_str()));
@@ -850,7 +851,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentSingleBridgeAlternateRegistry)
     bvector<WString> args;
     SetUpBridgeProcessingArgs(args, stagingDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, DEFAULT_IMODEL_NAME);
     args.push_back(_wcsdup(BentleyApi::WPrintfString(L"--registry-dir=%s", registryDir.c_str()).c_str()));
-    
+
     BentleyApi::BeFileName inputFile;
     MakeCopyOfFile(inputFile, L"Test3d.dgn", NULL);
     AddLine(inputFile);
@@ -903,7 +904,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentSingleBridgeAlternateRegistry)
         {
         // Ask the framework to run our test bridge to do the initial conversion and create the repo
         RunTheBridge(args);
-        
+
         modelCount = DbFileInfo(m_briefcaseName).GetModelCount();
         ASSERT_EQ(8, modelCount);
         }
@@ -928,7 +929,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridge)
 
     bvector<WString> args;
     SetUpBridgeProcessingArgs(args, testDir.c_str(), nullptr, DEFAULT_IMODEL_NAME);
-    
+
     SetupClient();
     CreateRepository();
     auto runningServer = StartServer();
@@ -1008,7 +1009,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridge)
     // Add an ABD-specific attachment (twice)
     AddAttachment(inputFile, refFile, 1, true);
     AddAttachment(inputFile, refFile, 1, true);
-    
+
     if (true)
         {
         bvector<WString> margs(args);
@@ -1032,11 +1033,11 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridge)
 TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridgeSharedReference)
     {
     CreateTestDir();
-    
+
     WCharCP iModelName = L"ConvertAttachmentMultiBridgeSharedReference";
     bvector<WString> args;
     SetUpBridgeProcessingArgs(args,nullptr, nullptr, iModelName);
-    
+
     SetupClient();
     CreateRepository("ConvertAttachmentMultiBridgeSharedReference");
     auto runningServer = StartServer();
@@ -1089,7 +1090,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridgeSharedReference)
 
         b1BriefcaseName = m_briefcaseName;
         }
-    
+
     CleanupElementECExtensions();
     if (true)
         {
@@ -1111,10 +1112,10 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridgeSharedReference)
         int provenanceCountRef = info.GetModelProvenanceCount(refGuid);
         ASSERT_EQ(1, provenanceCount1);
         ASSERT_EQ(1, provenanceCountRef);
-        
+
         ASSERT_TRUE(!b1BriefcaseName.EqualsI(m_briefcaseName)) << "Different bridges should use different briefcases";
         }
-    
+
     CleanupElementECExtensions();
     if (true)
         {
@@ -1159,7 +1160,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridgeSharedReference)
         int provenanceCount2 = info.GetModelProvenanceCount(guid2);
         ASSERT_EQ(1, provenanceCount1);
         ASSERT_EQ(1, provenanceCountRef);
-        ASSERT_EQ(1, provenanceCount2);        
+        ASSERT_EQ(1, provenanceCount2);
         }
     }
 
@@ -1236,21 +1237,21 @@ TEST_F(MstnBridgeTests, CodeReservation)
 
     BeFileName noCodesAllowed(testDir);
     noCodesAllowed.AppendToPath(L"noCodesAllowed.txt");
-    
+
     bool usingIModelBank = (GetIModelBankServerJs() != nullptr);
 
     Utf8PrintfString rules(
-        R"(   [                                 
-                    {                            
-                        "user": "user1",             
-                        "rules": [                   
-                            {                        
+        R"(   [
+                    {
+                        "user": "user1",
+                        "rules": [
+                            {
                                 "request": "Code/Create",
-                                "rule": { "verb": "ifnofile", "object": "%s" }                        
-                            }                        
-                        ]                            
-                    }                
-                ]                               
+                                "rule": { "verb": "ifnofile", "object": "%s" }
+                            }
+                        ]
+                    }
+                ]
             )", Utf8String(noCodesAllowed).c_str());
     rules.ReplaceAll("\\", "/");
 
@@ -1284,10 +1285,10 @@ TEST_F(MstnBridgeTests, CodeReservation)
     BentleyApi::Dgn::LockLevel expectedRetainedChannelLockLevel = BentleyApi::Dgn::LockLevel::Exclusive;
     if (true)
         {
-        // Must allow Code reservations during the initial conversion. That is where the bridge creates the Subject 
+        // Must allow Code reservations during the initial conversion. That is where the bridge creates the Subject
         // elements in the repository model, and each Subject has a Code that must be reserved (because they must
         // be unique across bridges). So, do not create the "noCodesAllowed" file yet.
-        
+
         iModelBridgeFwk fwk;
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argvMaker.GetArgC(), argvMaker.GetArgV()));
         ASSERT_EQ(0, fwk.Run(argvMaker.GetArgC(), argvMaker.GetArgV()));
@@ -1382,7 +1383,7 @@ TEST_F(MstnBridgeTests, CodeReservation)
     //     ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argvMaker.GetArgC(), argvMaker.GetArgV()));
     //     ASSERT_EQ(0, fwk.Run(argvMaker.GetArgC(), argvMaker.GetArgV()));
     //     }
-    
+
     // VerifyConvertedElementHasCode(prevCount, bcName, srcId, prefix, true);
     // ++prevCount;
 
@@ -1421,7 +1422,7 @@ void MstnBridgeTests::SetupTwoRefs(bvector<WString>& args, BentleyApi::BeFileNam
     AddLine(refFile2);
 
     args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", masterFile.c_str()));
-    
+
     BentleyApi::BeSQLite::BeGuid guid, ref1Guid, ref2Guid;
     guid.Create();
     ref1Guid.Create();
@@ -1477,11 +1478,11 @@ TEST_F(MstnBridgeTests, DISABLED_PushAfterEachModel)
         {
         // Ask the framework to run our test bridge to do the initial conversion and create the repo
         RunTheBridge(args);
-        
+
         modelCount = DbFileInfo(m_briefcaseName).GetModelCount();
         ASSERT_EQ(8, modelCount);
         }
-   
+
     // Add two attachments => two new models should be discovered.
     AddAttachment(masterFile, refFile1, 1, true);
     AddAttachment(masterFile, refFile2, 1, true);
@@ -1521,7 +1522,7 @@ static bool containsSubstr(BentleyApi::bset<BentleyApi::Utf8String> const& strin
 TEST_F(MstnBridgeTests, PushAfterEachFile)
     {
     auto testDir = CreateTestDir();
-     
+
     SetupClient();
     CreateRepository();
     auto runningServer = StartServer();
@@ -1546,17 +1547,17 @@ TEST_F(MstnBridgeTests, PushAfterEachFile)
     SetupTwoRefs(args, masterFile, refFile1, refFile2, testDir, testRegistry);
 
     testRegistry.Save();
-    
+
     int modelCount = 0;
     if (true)
         {
         // Ask the framework to run our test bridge to do the initial conversion and create the repo
         RunTheBridge(args);
-        
+
         modelCount = DbFileInfo(m_briefcaseName).GetModelCount();
         ASSERT_EQ(8, modelCount);
         }
-   
+
     CleanupElementECExtensions();
     // Add two attachments => two new models should be discovered.
     AddAttachment(masterFile, refFile1, 1, true);
@@ -1587,20 +1588,20 @@ TEST_F(MstnBridgeTests, DISABLED_OidcTest)
 
     bvector<WString> args;
     SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY);
-    
+
     BentleyApi::BeFileName inputFile;
     MakeCopyOfFile(inputFile, L"Test3d.dgn", NULL);
 
     args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", inputFile.c_str()));
     args.push_back(L"--fwk-skip-assignment-check");
-    
+
     iModelBridgeFwk fwk;
     bvector<WCharCP> argptrs;
 
     for (auto& arg : args)
         argptrs.push_back(arg.c_str());
 
-    int argc = (int) argptrs.size(); 
+    int argc = (int) argptrs.size();
     wchar_t const** argv = argptrs.data();
 
     ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
@@ -1620,7 +1621,7 @@ TEST_F(MstnBridgeTests, DISABLED_TestCodeRemovalPerformance)
     SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY);
 
     args.push_back(L"--set-DebugCodes");
-    
+
     BentleyApi::BeFileName inputFile;
     MakeCopyOfFile(inputFile, L"Test3d.dgn", NULL);
 
@@ -1662,7 +1663,7 @@ TEST_F(MstnBridgeTests, DetectDeletionsInEmbeddedFiles)
         }
 
     auto testDir = CreateTestDir();
-    
+
     putenv("iModelBridge_MatchOnEmbeddedFileBasename=1");     // TODO: Replace this with a settings service parameter check
     putenv("MS_PROTECTION_PASSWORD_CACHE_LIFETIME=0"); // must disable pw caching, as we copy new files on top of old ones too quickly
     static const uint32_t s_v8PasswordCacheLifetime = 2*1000; // the timeout is 1 second. Wait for 2 to be safe.
@@ -1719,7 +1720,7 @@ TEST_F(MstnBridgeTests, DetectDeletionsInEmbeddedFiles)
         // In v1, master1 and master2 both embed commonRef
         bvector<WString> args;
         SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, DEFAULT_IMODEL_NAME);
-        
+
         auto master_1_v1 = GetTestDataFileName(L"SharedEmbeddedReferences/v1/master1.i.dgn");
         auto master_2_v1 = GetTestDataFileName(L"SharedEmbeddedReferences/v1/master2.i.dgn");
 
@@ -1728,13 +1729,13 @@ TEST_F(MstnBridgeTests, DetectDeletionsInEmbeddedFiles)
 
         args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", master1.c_str()));
         RunTheBridge(args);
-        
+
         CleanupElementECExtensions();
         args.pop_back();
         args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", master2.c_str()));
         RunTheBridge(args);
         CleanupElementECExtensions();
-        
+
         args.push_back(WPrintfString(L"--fwk-all-docs-processed"));
         RunTheBridge(args);
         CleanupElementECExtensions();
@@ -1761,7 +1762,7 @@ TEST_F(MstnBridgeTests, DetectDeletionsInEmbeddedFiles)
         args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", master1.c_str()));
         RunTheBridge(args);
         CleanupElementECExtensions();
-        
+
         args.pop_back();
         args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", master2.c_str()));
         RunTheBridge(args);
@@ -1792,7 +1793,7 @@ TEST_F(MstnBridgeTests, DetectDeletionsInEmbeddedFiles)
         args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", master1.c_str()));
         RunTheBridge(args);
         CleanupElementECExtensions();
-        
+
         args.pop_back();
         args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", master2.c_str()));
         RunTheBridge(args);
@@ -1800,12 +1801,12 @@ TEST_F(MstnBridgeTests, DetectDeletionsInEmbeddedFiles)
 
         args.push_back(WPrintfString(L"--fwk-all-docs-processed"));
         RunTheBridge(args);
-        
+
         ASSERT_EQ(modelCount - 1, DbFileInfo(m_briefcaseName).GetPhysicalModelCount()) << "commonRef should have been deleted";
         }
 
     putenv("MS_PROTECTION_PASSWORD_CACHE_LIFETIME=1"); // restore default
-    putenv("iModelBridge_MatchOnEmbeddedFileBasename="); 
+    putenv("iModelBridge_MatchOnEmbeddedFileBasename=");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1820,7 +1821,7 @@ TEST_F(MstnBridgeTests, DetectCommonReferencesUsingRecipes)
         }
 
     auto testDir = CreateTestDir();
-    
+
     putenv("MS_PROTECTION_PASSWORD_CACHE_LIFETIME=0"); // must disable pw caching, as we copy new files on top of old ones too quickly
     static const uint32_t s_v8PasswordCacheLifetime = 2*1000; // the timeout is 1 second. Wait for 2 to be safe.
 
@@ -1882,7 +1883,7 @@ TEST_F(MstnBridgeTests, DetectCommonReferencesUsingRecipes)
         // In v0, master embeds commonref.dgn.i.dgn
         bvector<WString> args;
         SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, DEFAULT_IMODEL_NAME);
-        
+
         auto master_v0 = GetTestDataFileName(L"master_common.i.dgn");
 
         ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(master_v0.c_str(), masterFileName.c_str()));
@@ -1890,7 +1891,7 @@ TEST_F(MstnBridgeTests, DetectCommonReferencesUsingRecipes)
         args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", masterFileName.c_str()));
         RunTheBridge(args);
         CleanupElementECExtensions();
-        
+
         args.push_back(WPrintfString(L"--fwk-all-docs-processed"));
         RunTheBridge(args);
         CleanupElementECExtensions();
@@ -1919,7 +1920,7 @@ TEST_F(MstnBridgeTests, DetectCommonReferencesUsingRecipes)
         args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", masterFileName.c_str()));
         RunTheBridge(args);
         CleanupElementECExtensions();
-        
+
         args.push_back(WPrintfString(L"--fwk-all-docs-processed"));
         RunTheBridge(args);
         CleanupElementECExtensions();
@@ -1934,7 +1935,7 @@ TEST_F(MstnBridgeTests, DetectCommonReferencesUsingRecipes)
         }
 
     putenv("MS_PROTECTION_PASSWORD_CACHE_LIFETIME=1"); // restore default
-    putenv("iModelBridge_MatchOnEmbeddedFileBasename="); 
+    putenv("iModelBridge_MatchOnEmbeddedFileBasename=");
     }
 
 //---------------------------------------------------------------------------------------
@@ -2280,7 +2281,7 @@ const WString params[] = {L"Model", L"Element", L"Level", /*L"NamedView"*/ };
 INSTANTIATE_TEST_CASE_P (AllSynchInfoTests, SynchInfoTests, ::testing::ValuesIn (params));
 
 //=======================================================================================
-// @bsistruct                              
+// @bsistruct
 //=======================================================================================
 struct Bridge : public MstnBridgeTestsFixture
     {
@@ -2375,10 +2376,10 @@ TEST_F(Bridge, File)
     SetupClient();
     CreateRepository();
     auto runningServer = StartServer();
-    
+
     argvMaker.SetInputFileArg(GetTestDataFileName(L"Test3d.dgn"));
     RunTheBridge(argvMaker.GetArgVector());
-    
+
     argvMaker.PopArg();
     argvMaker.SetInputFileArg(inputFile);
     RunTheBridge(argvMaker.GetArgVector());
@@ -2386,7 +2387,7 @@ TEST_F(Bridge, File)
 
 /*
     If you run multiple bridges simultaneously, and if they both import the same schemas, then there is a race condition.
-    Scenario: User A and User B register the same domains, and the domains import the same schemas in both briefcases. 
+    Scenario: User A and User B register the same domains, and the domains import the same schemas in both briefcases.
                 A pushes.
                 B pulls.
                 B gets an error when applying A's schema change revision, because B already made the same changes.
@@ -2446,3 +2447,4 @@ TEST_F(Bridge, File)
     MstnBridgeTests.exe!MstnBridgeTests_MultiBridgeSequencing_Test::TestBody::__l7::<lambda>() Line 210 (d:\imodel02\source\imodel02\Bridges\Mstn\Tests\MstnBridgeTests.cpp:210)
 */
 
+POP_DISABLE_DEPRECATION_WARNINGS

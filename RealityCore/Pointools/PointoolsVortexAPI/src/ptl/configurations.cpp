@@ -2,17 +2,16 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See COPYRIGHT.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-/*--------------------------------------------------------------------------*/ 
-/*	Pointools Configurations												*/ 
-/*--------------------------------------------------------------------------*/ 
+/*--------------------------------------------------------------------------*/
+/*	Pointools Configurations												*/
+/*--------------------------------------------------------------------------*/
 
 #include "PointoolsVortexAPIInternal.h"
 #include <ptl/project.h>
 #include <ptl/block.h>
 #include <ptappdll/ptapp.h>
 
-
-
+PUSH_DISABLE_DEPRECATION_WARNINGS
 #include <ptl/dispatcher.h>
 #include <ptl/projecttool.h>
 
@@ -23,7 +22,7 @@
 #include <iostream>
 
 using namespace ptl;
-using namespace ptds; 
+using namespace ptds;
 
 #define PT_MAX_CONFIG_COMPONENTS 10
 
@@ -33,9 +32,9 @@ using namespace ptds;
 Project::Configuration::Configuration(const char *id, bool empty) : tree(id)
 {
 	if (id)	strncpy(identifier, id, 64);
-	if (!empty) 
+	if (!empty)
 	{
-		Dispatcher::instance()->writeTree(&tree, true);	
+		Dispatcher::instance()->writeTree(&tree, true);
 	}
 }
 Project::Configuration::~Configuration()
@@ -53,7 +52,7 @@ struct CopySubbranchVisitor : private Project::Configuration
 	{
 		br->id().get(id);
 
-		Project::Configuration *config = Project::project()->createConfiguration(id, true);		
+		Project::Configuration *config = Project::project()->createConfiguration(id, true);
 		(*config->configs())= *br;
 	}
 };
@@ -84,14 +83,14 @@ bool Project::writeConfigsBranch(pt::datatree::Branch *branch)
 	while (it != Project::project()->_configs.end())
 	{
 		if (strcmp("Start-up", it->first.c_str())!=0)
-			branch->addBranchCopy(it->second->configs());	
+			branch->addBranchCopy(it->second->configs());
 		++it;
 	}
 
     */
 }
 //
-/*configuration handling																			*/ 
+/*configuration handling																			*/
 //
 struct ConfigurationBuilder : public Project::Configuration
 {
@@ -102,8 +101,8 @@ Project::Configuration *Project::createConfiguration(const char *identifier, boo
 	Project::Configuration *config = new ConfigurationBuilder(identifier, empty);
 	bool success = _configs.insert(Configurations::value_type(identifier, config)).second;
 	if (success && _configs.size() > 1) project()->modify();
-	
-	if (!success) 
+
+	if (!success)
 	{
 		delete config;
 		config = 0;
@@ -116,7 +115,7 @@ Project::Configuration *Project::createConfiguration(const char *identifier, boo
 bool Project::removeConfiguration(const char *identifier)
 {
 	Configurations::iterator it = _configs.find(identifier);
-	if (it != _configs.end()) 
+	if (it != _configs.end())
 	{
 		delete it->second;
 		_configs.erase(it);
@@ -171,7 +170,7 @@ void Project::Configuration::apply()
 	tree.visitNodes(pn);
 #endif
 
-	/*iterate branches and dispatch*/ 
+	/*iterate branches and dispatch*/
 	ComponentApplyVisitor v;
 	tree.visitBranches(v);
 }
@@ -180,7 +179,7 @@ void  Project::Configuration::component(int i, const char **desc, bool &enabled)
 	static pt::String strings[PT_MAX_CONFIG_COMPONENTS];
 
 	pt::datatree::Branch * br = tree.getNthBranch(i);
-	
+
 	if (!br)
 	{
 		(*desc) = 0;
@@ -207,3 +206,4 @@ void Project::Configuration::applyComponent(int i)
 	pt::datatree::Branch * br = tree.getNthBranch(i);
 	if (br) Dispatcher::instance()->dispatchBranch(br, true);
 }
+POP_DISABLE_DEPRECATION_WARNINGS

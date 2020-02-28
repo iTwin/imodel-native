@@ -135,7 +135,7 @@ bool                         queryOnly
 )
     {
     Json::Value properties;
-    DgnCode const* firstCode = codes.begin();
+    DgnCode const* firstCode = &*codes.begin();
 
     properties[ServerSchema::Property::CodeSpecId]   = FormatBeInt64Id(firstCode->GetCodeSpecId());
     properties[ServerSchema::Property::CodeScope]    = firstCode->GetScopeString();

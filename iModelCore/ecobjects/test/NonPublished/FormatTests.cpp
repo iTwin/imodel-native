@@ -68,7 +68,7 @@ TEST_F(FormatTest, EmptySpacerRoundTrips)
         ASSERT_EQ(schema.get(), &ufmt->GetSchema());
         ASSERT_STREQ("MrNoSpacer", ufmt->GetName().c_str());
         ASSERT_EQ(Formatting::PresentationType::Fractional, ufmt->GetNumericSpec()->GetPresentationType());
-        ASSERT_STREQ("", ufmt->GetCompositeSpec()->GetSpacer().c_str());   
+        ASSERT_STREQ("", ufmt->GetCompositeSpec()->GetSpacer().c_str());
         };
 
     // Deserialize original XML and serialize it back out.
@@ -128,8 +128,8 @@ TEST_F(FormatTest, BasicRoundTripTest)
         bvector<Utf8String> traits;
         BeStringUtilities::Split(ufmt->GetNumericSpec()->GetFormatTraitsString().c_str(), "|", traits);
         ASSERT_EQ(2, traits.size());
-        ASSERT_NE(nullptr, std::find(traits.begin(), traits.end(), "trailZeroes"));
-        ASSERT_NE(nullptr, std::find(traits.begin(), traits.end(), "prependUnitName"));
+        ASSERT_TRUE(traits.end() != std::find(traits.begin(), traits.end(), "TrailZeroes"));
+        ASSERT_TRUE(traits.end() != std::find(traits.begin(), traits.end(), "PrependUnitLabel"));
         ASSERT_TRUE(ufmt->HasComposite());
         ASSERT_EQ(4, ufmt->GetCompositeSpec()->GetUnitCount());
         ASSERT_STRCASEEQ("MILE", ufmt->GetCompositeMajorUnit()->GetName().c_str());
@@ -499,7 +499,7 @@ TEST_F(FormatRequiredAttributesTest, VerifyValidDecimalPrecision)
             <Format typeName="AmerMYFI4" type="decimal" precision="13"/>
         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail with decimal precision higher than max");
     for (int i = 0; i <= 12; ++i)
-        { 
+        {
         Utf8String goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <Format typeName="AmerMYFI4" type="decimal" precision=")xml";
@@ -544,7 +544,7 @@ TEST_F(FormatRequiredAttributesTest, VerifyValidFractionalPrecision)
     int i = 1;
     int j = 0;
     while(i <= 256)
-        { 
+        {
         Utf8String goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <ECSchemaReference name="Units" version="01.00.00" alias="u"/>

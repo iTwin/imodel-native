@@ -48,7 +48,10 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
 
 
-
+// std::vector<bool> type has custom code to use a single bit per indexed entry.
+// This saves memory but is very slow.
+// In PolyfaceVisitor, use uint8_t for the vector of Visible() bits.
+typedef uint8_t BoolTypeForVector;
 
 /*----------------------------------------------------------------------+
 |                                                                       |

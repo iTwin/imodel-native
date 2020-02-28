@@ -15,7 +15,7 @@ PersistentObjectRef::PersistentObjectRef()
 PersistentObjectRef::PersistentObjectRef( const PersistentObjectRef &ref )
 {
 	m_dataType[0]=0;
-	*this = ref;	
+	*this = ref;
 }
 //-----------------------------------------------------------------------------
 PersistentObjectRef::PersistentObjectRef( const pt::Object3D *obj )
@@ -37,8 +37,8 @@ PersistentObjectRef::PersistentObjectRef( pt::Object3D *obj )	// required for sc
 bool PersistentObjectRef::operator == ( const PersistentObjectRef &ref ) const
 {
 	bool same = false;
-	
-	if (m_guid.isValid()	
+
+	if (m_guid.isValid()
 		&& ((ref.m_guid == m_guid) || (ref.m_file == m_file)))
 			same = true;
 
@@ -69,7 +69,7 @@ PersistentObjectRef			&PersistentObjectRef::operator = ( const PersistentObjectR
 int PersistentObjectRef::findIndexInParent( const pt::Object3D *obj ) const
 {
 	if (!obj) return -1;
-	if (obj->parent() && 
+	if (obj->parent() &&
 		(
 		strncmp( obj->parent()->objectClass(), "Group3D", 7)==0
 		|| strncmp( obj->parent()->objectClass(), "Scene3D", 7)==0))
@@ -82,21 +82,21 @@ int PersistentObjectRef::findIndexInParent( const pt::Object3D *obj ) const
 	}
 	return -1;
 }
-//-----------------------------------------------------------------------------	
+//-----------------------------------------------------------------------------
 bool PersistentObjectRef::isEmpty() const
 {
-	return (m_guid.isValid() || 
-		m_identifier.length() || 
-		!m_file.isEmpty() || 
-		m_key) 
+	return (m_guid.isValid() ||
+		m_identifier.length() ||
+		!m_file.isEmpty() ||
+		m_key)
 		? false : true;
 }
-//-----------------------------------------------------------------------------	
+//-----------------------------------------------------------------------------
 bool PersistentObjectRef::isObjectAvailable() const
 {
 	return resolveReference(false) ? true : false;
 }
-//-----------------------------------------------------------------------------	
+//-----------------------------------------------------------------------------
 PersistentObjectRef::PersistentObjectRef( const Guid &objGuid )
 {
 	m_guid = objGuid;
@@ -135,17 +135,19 @@ pt::Object3D	*PersistentObjectRef::resolveReference(bool loadIfNeeded) const
 				if (obj) break;
 			}
 			delete [] managers;
-			
+
 			if (obj)
 			{
 				// store data type name to make future resolution easier
-				wcsncpy( const_cast<PersistentObjectRef*>(this)->m_dataType, 
+PUSH_DISABLE_DEPRECATION_WARNINGS
+				wcsncpy( const_cast<PersistentObjectRef*>(this)->m_dataType,
 					obj->typeDescriptor(), sizeof( m_dataType )/sizeof(wchar_t));
+POP_DISABLE_DEPRECATION_WARNINGS
 				return obj;
 			}
 		}
 	}
-	if (!manager) return 0;	// catastrophic failure	
+	if (!manager) return 0;	// catastrophic failure
 
 	// then filename
 	Scene3D *scene = manager->findSceneByFilepath( m_file );
@@ -154,21 +156,23 @@ pt::Object3D	*PersistentObjectRef::resolveReference(bool loadIfNeeded) const
 	if (!obj) obj = manager->findObjectByKey( m_key );
 
 	return obj;
-	
+
 	// then identifier ?? - risky, might give false positive
 }
 //-----------------------------------------------------------------------------
 bool PersistentObjectRef::createReference( const pt::Object3D *obj )
 {
 	m_identifier = obj->identifier();
+PUSH_DISABLE_DEPRECATION_WARNINGS
 	wcsncpy( m_dataType, obj->typeDescriptor(), sizeof( m_dataType )/sizeof(wchar_t));
+POP_DISABLE_DEPRECATION_WARNINGS
 
 	m_guid = obj->objectGuid();	// preferred way, but it might be null
-	
+
 	m_key = obj->key();	// session key - needed for instance handling
 
 	const pt::Object3D *sceneObj=obj;
-	
+
 	m_index[0]=m_index[1]=m_index[2]=m_index[3]=-1;
 
 	while ( sceneObj && strncmp(sceneObj->objectClass(), "Scene3D", 7) != 0)
@@ -207,7 +211,7 @@ Object3D *PersistentObjectRef::findObjectInSceneByIndex( pt::Scene3D *scene ) co
 	while (index >0 && depth < 4)
 	{
 		Group3D *group=0;
-		if (obj->isGroup()) 
+		if (obj->isGroup())
 		{
 			group = static_cast<Group3D*>(obj);
 			if (index >= group->numObjects()) return 0;	// bad index

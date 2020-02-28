@@ -21,7 +21,7 @@ bool NumericFormatSpec::ImbueLocale(Utf8CP name) // en-US en-UK   en-GB
     const std::numpunct<char>& myfacet(std::use_facet < std::numpunct<char> >(loc));
 
     m_decimalSeparator = myfacet.decimal_point();
-    m_thousandsSeparator = myfacet.thousands_sep(); 
+    m_thousandsSeparator = myfacet.thousands_sep();
     return true;
     }
 
@@ -159,7 +159,7 @@ bool NumericFormatSpec::FromJson(NumericFormatSpecR out, JsonValueCR jval)
 bool NumericFormatSpec::ToJson(Json::Value& out, bool verbose) const
     {
     out[json_type()] = Utils::GetPresentationTypeString(GetPresentationType());
-    
+
     // Always show ScientificType if the type is Scientific.
     if (PresentationType::Scientific == GetPresentationType())
         out[json_scientificType()] = Utils::GetScientificTypeString(GetScientificType());
@@ -322,7 +322,7 @@ bool NumericFormatSpec::SetFormatTraits(Utf8CP input)
             this->SetTraitsBit(FormatTraits::Use1000Separator, true);
         else if (BeStringUtilities::StricmpAscii(s.c_str(), FormatConstant::FPN_ExponentOnlyNegative().c_str()) == 0)
             this->SetTraitsBit(FormatTraits::ExponenentOnlyNegative, true);
-        else 
+        else
             continue;
         ++numProcessed;
         }
@@ -640,7 +640,7 @@ int NumericFormatSpec::FormatInt(int n, Utf8P bufOut,  int bufLen) const
         }
 
     if (IsZeroEmpty() && n == 0)
-        { 
+        {
         *bufOut = 0;
         return 0;
         }
@@ -685,7 +685,7 @@ int NumericFormatSpec::FormatInt(int n, Utf8P bufOut,  int bufLen) const
         LOG.warningv("A minWidth of %d is too large. Setting min width to %d", GetMinWidth(), minWidth);
         }
 
-    while (numberLength < minWidth) 
+    while (numberLength < minWidth)
         {
         buf[--ind] = '0';
         ++numberLength;
@@ -717,7 +717,7 @@ size_t NumericFormatSpec::FormatDouble(double dval, Utf8P buf, size_t bufLen) co
     char locBuf[128];
     size_t ind = 0;
     if (IsZeroEmpty() && (std::abs(dval - 0.0) < 0.0001))
-        { 
+        {
         *buf = 0;
         return 0;
         }
@@ -824,9 +824,9 @@ size_t NumericFormatSpec::FormatDouble(double dval, Utf8P buf, size_t bufLen) co
             }
         auto* bufView = buf;
         memset(buf, 0, bufLen);
-        if (m_signOption == SignOption::SignAlways || 
+        if (m_signOption == SignOption::SignAlways ||
             ((m_signOption == SignOption::OnlyNegative || m_signOption == SignOption::NegativeParentheses) && sign != '+'))
-            { 
+            {
             *bufView = sign;
             ++bufView;
             }
@@ -839,8 +839,10 @@ size_t NumericFormatSpec::FormatDouble(double dval, Utf8P buf, size_t bufLen) co
         memcpy(bufView, locBuf, ind);
         bufView+=ind;
         // closing formatting
+PUSH_DISABLE_DEPRECATION_WARNINGS
         if ('(' == sign)
             strcat(buf, ")");
+POP_DISABLE_DEPRECATION_WARNINGS
         } // decimal
     else if (fractional)
         {
@@ -874,7 +876,7 @@ size_t NumericFormatSpec::FormatDouble(double dval, Utf8P buf, size_t bufLen) co
         memcpy(buf, locBuf, ind);
         POP_MSVC_IGNORE
         } // end fractional
-    else if (stops) // we assume that stopping value is always positive 
+    else if (stops) // we assume that stopping value is always positive
         {
         int denom = static_cast<int>(pow(10, m_stationSize));
         int tval = static_cast<int>(dval); // this is the integer part only
@@ -891,7 +893,7 @@ size_t NumericFormatSpec::FormatDouble(double dval, Utf8P buf, size_t bufLen) co
             }
         else
             locBuf[k++] = '0';
-        
+
         locBuf[k++] = GetStationSeparator();
         Utf8String loS = FormatToString(loPart, m_minWidth);
         memcpy(&locBuf[k], loS.c_str(), loS.length());

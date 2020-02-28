@@ -17,7 +17,7 @@
 #include "cmpmemuti.h"
 #include "coruti.h"
 
-
+PUSH_DISABLE_DEPRECATION_WARNINGS
 /*----------------------------------------------------------------------------*/
 /* Constants and macros                                                       */
 /*----------------------------------------------------------------------------*/
@@ -1485,4 +1485,4 @@ static int aecDTM_loadCheckFormat  /* <= TRUE if error              */
     return ( sts );
     }
 
-
+POP_DISABLE_DEPRECATION_WARNINGS

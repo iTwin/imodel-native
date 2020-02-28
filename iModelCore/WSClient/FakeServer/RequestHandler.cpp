@@ -276,11 +276,11 @@ Response RequestHandler::CreateiModelInstance(Request req)
     {
     BeGuid projGuid(true);
     Json::Value settings = ParsedJson(req);
-    bvector<Utf8String> input = 
+    bvector<Utf8String> input =
         {
         projGuid.ToString(),
         settings["instance"]["properties"]["Name"].asString(),
-        settings["instance"]["properties"]["Description"].asString() 
+        settings["instance"]["properties"]["Description"].asString()
         };
 
     const auto iModelAlreadyExists = [&](Utf8StringCR name)
@@ -337,7 +337,7 @@ Response RequestHandler::CreateSeedFileInstance(Request req)
     Json::Value settings = ParsedJson(req);
     bvector<Utf8String> args = ParseUrl(req, "/");
     Utf8String iModelid = GetInstanceid(args[4]);
-    bvector<Utf8String> input = 
+    bvector<Utf8String> input =
         {
         settings[ServerSchema::Instance][ServerSchema::Properties][ServerSchema::Property::FileId].asString(),
         settings[ServerSchema::Instance][ServerSchema::Properties][ServerSchema::Property::FileName].asString(),
@@ -445,7 +445,7 @@ Response RequestHandler::FileCreationConfirmation(Request req)
     bvector<Utf8String> args = ParseUrl(req, "/");
     Utf8String iModelid = args[7];
     Json::Value settings = ParsedJson(req);
-    bvector<Utf8String> input = 
+    bvector<Utf8String> input =
         {
         settings[ServerSchema::Instance][ServerSchema::Properties][ServerSchema::Property::FileId].asString(),
         settings[ServerSchema::Instance][ServerSchema::Properties][ServerSchema::Property::FileName].asString(),
@@ -690,13 +690,13 @@ Response RequestHandler::DeleteBriefcaseInstance(Request req)
         Statement st;
         st.Prepare(m_db, "DELETE from Briefcases where iModelId = ? AND BriefcaseId = ?");
         st.BindText(1, instanceid, Statement::MakeCopy::No);
-        sscanf(args[7].c_str(), "%d", &briefcaseId);
+        Utf8String::Sscanf_safe(args[7].c_str(), "%d", &briefcaseId);
         st.BindInt(2, briefcaseId);
         st.Step();
         st.Finalize();
         st.Prepare(m_db, "DELETE from Locks where iModelId = ? AND BriefcaseId = ?");
         st.BindText(1, instanceid, Statement::MakeCopy::No);
-        sscanf(args[7].c_str(), "%d", &briefcaseId);
+        Utf8String::Sscanf_safe(args[7].c_str(), "%d", &briefcaseId);
         st.BindInt(2, briefcaseId);
         st.Step();
         }
@@ -720,7 +720,7 @@ Response RequestHandler::GetBriefcaseInfo(Request req)
     Utf8String sql = "SELECT B.BriefcaseId, S.Id, S.FileName, S.FileDescription, S.FileSize FROM Briefcases As B Inner Join SeedFile As S ON B.iModelid = S.iModelid where B.iModelid = ? ";
     if (args.size() == 8)
         {
-        sscanf(args[7].c_str(), "%d", &briefcaseId);
+        Utf8String::Sscanf_safe(args[7].c_str(), "%d", &briefcaseId);
         sql.append(" AND B.BriefcaseId = ");
         sql.append(args[7]);
         }
@@ -797,7 +797,7 @@ Response RequestHandler::DownloadiModel(Request req)
             st.Step();
             filetoDownload = st.GetValueText(0);
             }
-        
+
         else filetoDownload = tokens[0].c_str();
 
         BeFileName serverFilePath(serverPath);
@@ -1226,7 +1226,7 @@ Response RequestHandler::PushAcquiredLocks(Request req)
                 st.Prepare(m_db, "Select * from Locks where iModelId = ? AND BriefcaseId = ?");
                 st.BindText(1, iModelid, Statement::MakeCopy::No);
                 int briefcaseId;
-                sscanf(tokens[1].c_str(), "%d", &briefcaseId);
+                Utf8String::Sscanf_safe(tokens[1].c_str(), "%d", &briefcaseId);
                 st.BindInt(2, briefcaseId);
                 DbResult result = st.Step();
                 Statement updateSt;

@@ -14,16 +14,16 @@
  * the rights to use, copy, modify, merge, publish, distribute, sublicense,
  * and/or sell copies of the Software, and to permit persons to whom the
  * Software is furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included
  * in all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
@@ -31,7 +31,7 @@
 
 #ifdef __unix__
 #include <sys/types.h>
-#include <unistd.h> 
+#include <unistd.h>
 #endif
 
 //#include "cpl_error.h"
@@ -52,7 +52,7 @@
 #define CPL_STDCALL
 #define CPLString Utf8String
 #define CPLFree free
-#define CPLStrdup strdup
+#define CPLStrdup _strdup
 
 #define CPL_FRMT_GIB     "%" CPL_FRMT_GB_WITHOUT_PREFIX "d"
 #define CPL_FRMT_GUIB    "%" CPL_FRMT_GB_WITHOUT_PREFIX "u"
@@ -103,7 +103,7 @@ static void FillFileFromPipe(CPL_FILE_HANDLE pipe_fd, VSILFILE* fout);
 // ********************
 
 /* 100 - 299 reserved for GDAL */
-void CPL_DLL CPLError(CPLErr eErrClass, int err_no, const char *fmt, ...)  
+void CPL_DLL CPLError(CPLErr eErrClass, int err_no, const char *fmt, ...)
     {
     BeAssert(false);
     }
@@ -265,8 +265,9 @@ int CPLSpawn(const char * const papszArgv[], VSILFILE* fin, VSILFILE* fout,
     CPL_FILE_HANDLE err_child = CPLSpawnAsyncGetErrorFileHandle(sp);
     CPLString osName;
     osName.Sprintf("/vsimem/child_stderr_" CPL_FRMT_GIB, CPLGetPID());
+PUSH_DISABLE_DEPRECATION_WARNINGS
     VSILFILE* ferr = VSIFOpenL(osName.c_str(), "w");
-
+POP_DISABLE_DEPRECATION_WARNINGS
     FillFileFromPipe(err_child, ferr);
     CPLSpawnAsyncCloseErrorFileHandle(sp);
 
@@ -307,8 +308,8 @@ int CPLSystem( const char* pszApplicationName, const char* pszCommandLine )
 
     char* pszDupedCommandLine = (pszCommandLine) ? CPLStrdup(pszCommandLine) : NULL;
 
-    if( !CreateProcess( pszApplicationName, 
-                        pszDupedCommandLine, 
+    if( !CreateProcess( pszApplicationName,
+                        pszDupedCommandLine,
                         NULL,
                         NULL,
                         FALSE,
@@ -477,7 +478,7 @@ CPLSpawnedProcess* CPLSpawnAsync(int (*pfnMain)(CPL_FILE_HANDLE, CPL_FILE_HANDLE
 
     memset(&piProcInfo, 0, sizeof(PROCESS_INFORMATION));
     memset(&siStartInfo, 0, sizeof(STARTUPINFO));
-    siStartInfo.cb = sizeof(STARTUPINFO); 
+    siStartInfo.cb = sizeof(STARTUPINFO);
     siStartInfo.hStdInput = (bCreateInputPipe) ? pipe_in[IN_FOR_PARENT] : GetStdHandle(STD_INPUT_HANDLE);
     siStartInfo.hStdOutput = (bCreateOutputPipe) ? pipe_out[OUT_FOR_PARENT] : GetStdHandle(STD_OUTPUT_HANDLE);
     siStartInfo.hStdError = (bCreateErrorPipe) ? pipe_err[OUT_FOR_PARENT] : GetStdHandle(STD_ERROR_HANDLE);
@@ -499,14 +500,14 @@ CPLSpawnedProcess* CPLSpawnAsync(int (*pfnMain)(CPL_FILE_HANDLE, CPL_FILE_HANDLE
             osCommandLine += papszArgv[i];
     }
 
-    if (!CreateProcess(NULL, 
+    if (!CreateProcess(NULL,
                        (CHAR*)osCommandLine.c_str(),
-                       NULL,          // process security attributes 
-                       NULL,          // primary thread security attributes 
-                       TRUE,          // handles are inherited 
-                       CREATE_NO_WINDOW|NORMAL_PRIORITY_CLASS,             // creation flags 
-                       NULL,          // use parent's environment 
-                       NULL,          // use parent's current directory 
+                       NULL,          // process security attributes
+                       NULL,          // primary thread security attributes
+                       TRUE,          // handles are inherited
+                       CREATE_NO_WINDOW|NORMAL_PRIORITY_CLASS,             // creation flags
+                       NULL,          // use parent's environment
+                       NULL,          // use parent's current directory
                        &siStartInfo,
                        &piProcInfo))
     {
@@ -656,7 +657,7 @@ void CPLSpawnAsyncCloseErrorFileHandle(CPLSpawnedProcess* p)
  *
  * @param pszApplicationName the lpApplicationName for Windows (might be NULL),
  *                           or ignored on other platforms.
- * @param pszCommandLine the command line, starting with the executable name 
+ * @param pszCommandLine the command line, starting with the executable name
  *
  * @return the exit code of the spawned process, or -1 in case of error.
  *

@@ -26,6 +26,7 @@
 
 #include <ImagePP/all/h/ImagePPMessages.xliff.h>
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 
 /** ---------------------------------------------------------------------------
     Block capabilities of the ImgMapped file format.
@@ -340,7 +341,7 @@ HRFImgMappedFile::~HRFImgMappedFile()
 
             // Delete file
             HASSERT(GetURL()->IsCompatibleWith(HFCURLFile::CLASS_ID));
-            
+
             BeFileName(static_cast<HFCURLFile*>(GetURL().GetPtr())->GetAbsoluteFileName()).BeDeleteFile();
             }
         }
@@ -808,3 +809,4 @@ const HGF2DWorldIdentificator HRFImgMappedFile::GetWorldIdentificator () const
     {
     return HGF2DWorld_UNKNOWNWORLD;
     }
+POP_DISABLE_DEPRECATION_WARNINGS

@@ -58,7 +58,7 @@ enum class BeFileSeekOrigin
     };
 
 //=======================================================================================
-//! BeFile represents a file in the native file system. BeFile has functions to open a file 
+//! BeFile represents a file in the native file system. BeFile has functions to open a file
 //! and to access its contents and attributes. BeFile reads and writes binary data. It
 //! does not transform stored data to/from text. I/O operations are un-buffered.
 //! @ingroup GROUP_File
@@ -80,6 +80,14 @@ private:
     BeFile& operator=(BeFile const&) {BeAssert(false); return *this;} // No!
 
 public:
+    // use this in place of fopen_s, which is only available under Windows.
+    static int Fopen(FILE**file, char const* name, char const* mode) {
+#if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
+    return fopen_s(file, name, mode);
+#else
+    return (0 == (*file = fopen(name, mode)));
+#endif
+    }
     //! Construct a BeFile object. @see Create and Open.
     BENTLEYDLL_EXPORT BeFile();
 
@@ -90,7 +98,7 @@ public:
     //! @param[in] other    The other file.
     BENTLEYDLL_EXPORT void Swap(BeFile& other);
 
-    //! Creates a new disk file 
+    //! Creates a new disk file
     //! @param[in] filename     The full path of the file to create.
     //! @param[in] createAlways If false, returns a status other than BeFileStatus::Success, and does not create a new file if \a filename already exists. If true, deletes any existing file before creating a new one by the same name.
     //! @return BeFileStatus::Success if the file was created or non-zero if create failed.

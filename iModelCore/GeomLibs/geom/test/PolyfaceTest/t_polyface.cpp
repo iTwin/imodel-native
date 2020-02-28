@@ -85,7 +85,7 @@ static void PrintPolyfaceXYZ (PolyfaceHeader &mesh, char const* title, size_t ma
             {
             if (visitor->Visible()[i])
               PrintPoint ("Vis", visitor->Point()[i]);
-            else 
+            else
               PrintPoint ("Hid", visitor->Point()[i]);
             }
         printf ("  </face>\n");
@@ -97,7 +97,7 @@ void PrintPolyfaceSummary (PolyfaceHeader& mesh, char const* title, FILE *file)
     {
     size_t numVertex, numFacet, numTri, numQuad, numImplicitTri, numVisible, numInvisible;
     mesh.CollectCounts (numVertex, numFacet, numTri, numQuad, numImplicitTri, numVisible, numInvisible);
-    Check::PrintIndent (1); 
+    Check::PrintIndent (1);
         Check::Print (title);
         Check::Print ((int)numVertex, "NV");
         Check::Print ((int)numFacet, "NF");
@@ -574,10 +574,10 @@ void VerifyFaceData (PolyfaceHeader  &mesh, char const*  name)
                 if (!mesh.TryGetFacetFaceDataAtReadIndex (i, faceData, faceDataIndex))
                     errors++;
                 }
-                
+
             }
         Check::Size (0, errors, "faceIndex errors");
-        
+
         }
     }
 
@@ -591,9 +591,9 @@ void VerifyPolyface (PolyfaceHeader  &meshVectors, PolyfaceQueryR meshQuery, cha
     PolyfaceVisitorPtr queryVisitor  = PolyfaceVisitor::Attach (meshQuery);
     VerifyFaceData (meshVectors, name);
 #ifdef abc
-    Check::Size (meshVectors.GetNumFacet (), meshQuery.GetNumFacet ());    
-    Check::Bool (meshVectors.GetHasFacets (), meshQuery.HasFacets ());    
-    Check::Bool (meshVectors.HasConvexFacets (), meshQuery.HasConvexFacets ());    
+    Check::Size (meshVectors.GetNumFacet (), meshQuery.GetNumFacet ());
+    Check::Bool (meshVectors.GetHasFacets (), meshQuery.HasFacets ());
+    Check::Bool (meshVectors.HasConvexFacets (), meshQuery.HasConvexFacets ());
     Check::Bool (meshVectors.IsTriangulated (), meshQuery.IsTriangulated ());
 #endif
     size_t numFacet0 = 0;
@@ -726,7 +726,7 @@ double MaxNormalDeviation (PolyfaceHeaderR meshWithNormals)
     //varunused bvector <int> &pointIndex = visitor->PointIndex ();
     //varunused bvector <size_t> &readIndex = visitor->IndexPosition ();
     bvector <DPoint3d> &points = visitor->Point ();
-    
+
     double thetaMax = 0.0;
     for (;visitor->AdvanceToNextFace ();)
         {
@@ -767,15 +767,15 @@ void VerifyMTG (PolyfaceHeaderR mesh, char const*  title)
         double relTol = 0.0;
         bool dropToSingleFace = true;
         Check::True ( PolyfaceToMTG (mtgFacets, &vertexToNodeId, &nodeIdToPolyfaceIndexPosition, mesh, dropToSingleFace,
-                absTol, relTol));    
-        
+                absTol, relTol));
+
         if (s_dumpMTG)
             PrintGraphSummary (jmdlMTGFacets_getGraph (mtgFacets), "MTG From Coordinates");
         jmdlMTGFacets_free (mtgFacets);
         }
     }
 
-// 
+//
 void CheckSurfaceMesh (MSBsplineSurfaceCR surface, IPolyfaceConstructionR builder, bool noisy = false)
     {
     PolyfaceHeaderR mesh = builder.GetClientMeshR ();
@@ -809,7 +809,7 @@ void CheckSurfaceMesh (MSBsplineSurfaceCR surface, IPolyfaceConstructionR builde
             }
         }
     }
-    
+
 void ExamineCounts (PolyfaceQueryCR mesh, char const* title)
     {
     size_t numEdgeUse;
@@ -830,7 +830,7 @@ void ExamineCounts (PolyfaceQueryCR mesh, char const* title)
         {
         }
     }
-    
+
 void ExaminePolyface (PolyfaceHeaderR mesh, char const* title)
     {
     static int s_print = 0;
@@ -844,7 +844,7 @@ void ExaminePolyface (PolyfaceHeaderR mesh, char const* title)
     mesh.CopyTo (*compactee);
     compactee->CompactIndexArrays ();
     VerifyPolyface (*compactee, *compactee, "compacted");
-    
+
 
     PolyfaceHeaderPtr meshWithNormals = PolyfaceHeader::CreateVariableSizeIndexed ();
     mesh.CopyTo (*meshWithNormals);
@@ -862,7 +862,7 @@ void ExaminePolyface (PolyfaceHeaderR mesh, char const* title)
     // blast the normals away, replace with per face.
     meshWithNormals->BuildPerFaceNormals ();
     double thetaB = MaxNormalDeviation (*meshWithNormals);
-    Check::True (thetaB <= s_planarDeviationAngle, 
+    Check::True (thetaB <= s_planarDeviationAngle,
                 "Computed normals close to face planes");
 
     ExamineCounts (mesh, title);
@@ -939,8 +939,8 @@ TEST(Polyface, StitchCube)
             double relTol = 0.0;
             polyfaceMesh.get()->Compress ();
             MTGGraphP pGraph = jmdlMTGFacets_getGraph (mtgFacets);
-            Check::True ( PolyfaceToMTG (mtgFacets, &vertexToNodeId, &nodeIdToPolyfaceIndexPosition, *polyfaceMesh.get(), dropToSingleFace, absTol, relTol));    
- 
+            Check::True ( PolyfaceToMTG (mtgFacets, &vertexToNodeId, &nodeIdToPolyfaceIndexPosition, *polyfaceMesh.get(), dropToSingleFace, absTol, relTol));
+
             int num0, num1;
             jmdlMTGGraph_countMasksInSet (&num1, &num0, pGraph, MTG_EXTERIOR_MASK);
             int numFace = (int)pGraph->CountFaceLoops ();
@@ -984,7 +984,7 @@ TEST(Polyface, StitchCube)
             else
                 {
                 Check::Size (numFaceC, numPanel * 2);
-                }                    
+                }
             jmdlMTGFacets_free (mtgFacets);
             }
         }
@@ -1022,7 +1022,7 @@ TEST (Polyface, ClipCube_TwoPlanesCut)
     clipper.push_back ( ConvexClipPlaneSet::FromXYBox (xyz0.x, xyz0.y, xyz1.x, xyz1.y));
 
     Check::SaveTransformed (header0);
-   
+
     Check::Shift (0, 10, 0);
     PolyfaceHeaderPtr insideClip, outsideClip;
     ClipPlaneSet::ClipPlaneSetIntersectPolyface (
@@ -1066,7 +1066,7 @@ TEST(Polyface, ClipSphere)
 
 
     Check::SaveTransformed (header0);
-   
+
     Check::Shift (0, 10, 0);
     PolyfaceHeaderPtr insideClip, outsideClip;
     ClipPlaneSet::ClipPlaneSetIntersectPolyface (
@@ -1147,14 +1147,14 @@ TEST (PolyfaceConstruction, CylinderCapped)
                     DVec3d::From (0,0,1));
     CurveVectorPtr section0 = header.PlaneSlice (sectionPlane, true);
 
-    
+
     size_t numVertex, numFacet, numTri, numQuad, numImplicitTri, numVisibleA, numInvisible, numVisibleB, numVisibleC;
     closedCylinderMesh->Triangulate ();  // make sure there are interior edges in the caps.
     closedCylinderMesh->MarkAllEdgesVisible ();
     closedCylinderMesh->CollectCounts (numVertex, numFacet, numTri, numQuad, numImplicitTri, numVisibleA, numInvisible);
     // really tight angle to get caps invisible ...
     closedCylinderMesh->MarkInvisibleEdges (1e-8);
-    closedCylinderMesh->CollectCounts (numVertex, numFacet, numTri, numQuad, numImplicitTri, numVisibleB, numInvisible);    
+    closedCylinderMesh->CollectCounts (numVertex, numFacet, numTri, numQuad, numImplicitTri, numVisibleB, numInvisible);
     // looser angle to hide sides ...
     closedCylinderMesh->MarkInvisibleEdges (1.0);
     closedCylinderMesh->CollectCounts (numVertex, numFacet, numTri, numQuad, numImplicitTri, numVisibleC, numInvisible);
@@ -1294,7 +1294,7 @@ TEST(PolyfaceConstruction, BsplineSurface1)
     Check::ShiftToLowerRight ();
     Check::SaveTransformed (builder->GetClientMeshR ());
     Check::ClearGeometry ("PolyfaceConstruction.BsplineSurface1");
-    
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1389,9 +1389,9 @@ TEST(PolyfaceConstruction, BsplineSurface3)
     IFacetOptionsPtr options = CreateFacetOptions ();
     IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
     options->SetMaxEdgeLength (b);
-    builder->Add (*surface);    
+    builder->Add (*surface);
     CheckSurfaceMesh (*surface, *builder);
-    
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1425,7 +1425,7 @@ TEST(PolyfaceConstruction, BsplineSurfaceEdgeHiding)
             }
         }
     Check::ClearGeometry ("PolyfaceConstruction.BsplineSurfaceEdgeHiding");
-    
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1601,7 +1601,7 @@ void testSweptLinestrings (size_t numContour, double z0, double zStep, bool capp
                 baseArea -= db * db;
             double expectedVolume = baseArea * (numContour - 1) * zStep;
             Check::Near (expectedVolume, volume, "volume");
-            }                
+            }
         }
     }
 
@@ -1720,7 +1720,7 @@ bool isTransformed
     builder.GetWorldToLocal (worldToLocal);
     Transform product;
     product.InitProduct (localToWorld, worldToLocal);
-    Check::True (product.IsIdentity ());    
+    Check::True (product.IsIdentity ());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1732,7 +1732,7 @@ TEST (PolyfaceConstruction, Stack)
                 1,0,0,1,
                 0,1,0,2,
                 0,0,1,3);
-                
+
     double a = 2.0;
     Transform uniformScale = Transform::FromRowValues (
                 a,0,0,0,
@@ -1907,7 +1907,7 @@ bool normals
     DPoint3d pointA, pointB;
     centerlineCurve.FractionToPoint (pointA, tangentA, 0.0);
     centerlineCurve.FractionToPoint (pointB, tangentB, 0.12318);
-    
+
 
     DVec3d planeNormal;
     if (tangentA.IsParallelTo (tangentB))
@@ -1918,7 +1918,7 @@ bool normals
         }
     else
         planeNormal.NormalizedCrossProduct (tangentA, tangentB);
-    
+
     // Build the sections ...
     bvector<DPoint3d> pointGrid;
     bvector<DVec3d> normalGrid;
@@ -1965,7 +1965,7 @@ TEST(PolyfaceConstruction, Tube2)
     MSBsplineCurvePtr centerlineCurve = CreateTestCenterline ();
     int numEdgePerSection = s_numEdgePerSection;
     int numSectionEdge = s_numSectionEdge;
-    
+
 
     // Set up to build a mesh ...
     IFacetOptionsPtr options = CreateFacetOptions ();
@@ -1973,7 +1973,7 @@ TEST(PolyfaceConstruction, Tube2)
     IPolyfaceConstructionPtr builder = PolyfaceConstruction::Create (*options);
     PolyfaceHeaderR mesh = builder->GetClientMeshR ();
 
-    
+
 
     builder->AddTubeMesh (*centerlineCurve, circleRadius, numEdgePerSection, numSectionEdge);
 
@@ -2013,7 +2013,7 @@ TEST(PolyfaceConstruction, DimpleNormals)
         indices.push_back (i);
         indices.push_back (0);
         }
-    
+
     Check::True (mesh->BuildApproximateNormals (dz * 50, dz * 200), "Build normals");
     if (s_checkNormals)
         Check::Size (mesh->Point ().size (), mesh->Normal().size (), "All normals smoothed");
@@ -2109,7 +2109,7 @@ void TestGridSample (int numPerFace, int numPerRow, int numRow)
     Check::True (mesh->TryGetMaxSingleFacetParamLength (uvSize), "uvSize");
     Check::Near (DVec2d::From (du, dv), uvSize, "uvSize");
     PolyfaceVisitorPtr  visitor = PolyfaceVisitor::Attach (*mesh, false);
-    
+
     visitor->Reset ();
     visitor->SetNumWrap (2);
     BlockedVectorDPoint3dR points  = visitor->Point ();
@@ -2134,7 +2134,7 @@ void TestGridSample (int numPerFace, int numPerRow, int numRow)
             if (Check::True (visitor->TryParamToFacetLocationDetail (uv, detail), "ParamToLocation"))
                 {
                 Check::Ptrdiff (readIndex, detail.GetReadIndex (), "Param detail readindex");
-                Check::Near (uv, detail.param, "ParamToDetail:param");            
+                Check::Near (uv, detail.param, "ParamToDetail:param");
                 Check::Near (xyz, detail.point, "ParamToDetail:param");
 
                 double maxDelta = DoubleOps::MaxAbs (
@@ -2158,7 +2158,7 @@ void TestGridSample (int numPerFace, int numPerRow, int numRow)
                 {
                 Check::Ptrdiff (readIndex, detail.GetReadIndex (), "Param detail readindex");
 
-                Check::Near (uv, detail.param, "ParamToDetail:param");            
+                Check::Near (uv, detail.param, "ParamToDetail:param");
                 Check::Near (xyz, detail.point, "ParamToDetail:param");
 
                 double maxDelta = DoubleOps::MaxAbs (
@@ -2416,8 +2416,8 @@ TEST(Polyface,CubeMoments)
     double scaleX = 2.0;
     double scaleY = 1.0;
     PolyfaceHeaderR mesh = builder->GetClientMeshR ();
-    
-    
+
+
     DPoint3d centroidIn = DPoint3d::From (1,2,3);
     Transform T1 = Transform::FromRowValues
         (
@@ -2497,15 +2497,15 @@ TEST(PolyfaceConstruction, ConeNormals)
     c0.InitFromDEllipse3d (e0);
     MSBsplineSurfacePtr surface = MSBsplineSurface::CreateLinearSweep (c0, sweepVector);
     c0.ReleaseMem ();
-    
+
     IPolyfaceConstructionPtr builder = CreateBuilder (false, false);
     builder->GetFacetOptionsR ().SetMaxPerFace (4);
     builder->GetFacetOptionsR ().SetAngleTolerance (atan (1.0));
     builder->Add (*surface);
     CheckSurfaceMesh (*surface, *builder);
-    
+
     PrintPolyface (builder->GetClientMeshR (), "Unit Cylinder", stdout, s_maxPolyfacePrint, false);
-    
+
     DRay3d zAxis = DRay3d::FromOriginAndVector (DPoint3d::From (0,0,0), DVec3d::From (0,0,1));
     CheckCylinderCurvature (*surface, 0.5, 0.5, zAxis);
     CheckCylinderCurvature (*surface, 0.25, 0.3, zAxis);
@@ -2518,7 +2518,7 @@ TEST(PolyfaceConstruction, ConeNormals)
         0, 0, zScale, 0
         );
     MSBsplineSurfacePtr surface1 = surface->CreateCopyTransformed (scale);
-    
+
     CheckCylinderCurvature (*surface1, 0.5, 0.5, zAxis);
     CheckCylinderCurvature (*surface1, 0.25, 0.3, zAxis);
     double yScale = sqrt (0.5);
@@ -2533,7 +2533,7 @@ TEST(PolyfaceConstruction, ConeNormals)
         0, yScale, 0, 0,
         0, 0, 1, 0
         );
-    
+
     DRay3d skewAxis = DRay3d::FromOriginAndVector (DPoint3d::From (0,0,0), DVec3d::From (1,0,1));
     MSBsplineSurfacePtr surface2 = surface->CreateCopyTransformed (skew);
     CheckCylinderCurvature (*surface2, 0.5, 0.5, skewAxis);
@@ -2548,7 +2548,7 @@ void BlindCopyFaceLoops (PolyfaceHeaderR mesh, bvector<DPoint3d> &points)
         {
         for (size_t i = 0; i < visitor->Point().size (); i++)
             points.push_back (visitor->Point()[i]);
-        }    
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2567,7 +2567,7 @@ TEST(PolyfaceCoordinateQuads, Test1)
     // blast it to indexed ...
     mesh->Triangulate ();
     }
-    
+
 
 void AddQuads (IPolyfaceConstructionPtr &builder, DPoint3d xyz00, DPoint3d xyz11, size_t numX, size_t numY)
     {
@@ -2597,7 +2597,7 @@ void AddQuads (IPolyfaceConstructionPtr &builder, DPoint3d xyz00, DPoint3d xyz11
             area = builder->GetClientMeshR ().SumFacetAreas ();
             }
         }
-    }    
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17
@@ -2645,7 +2645,7 @@ PolyfaceHeaderPtr BoxMesh (DPoint3d xyz00, double ax, double ay, double az)
     builder->GetFacetOptionsR ().SetMaxPerFace (10);
     builder->AddSolidPrimitive (*box);
     return builder->GetClientMeshPtr ();
-    }    
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17
@@ -2655,7 +2655,7 @@ TEST(Polyface, ClipPlaneSet1)
     PolyfaceHeaderPtr box = BoxMesh (DPoint3d::From (0,0,0), 5.0, 3.0, 2.0);
     ClipPlaneSet clipper;
     bvector<DPoint3d> xyz;
-    bvector<bool>hiddenEdge;
+    bvector<BoolTypeForVector>hiddenEdge;
     xyz.push_back (DPoint3d::From (1,-1,0));
     xyz.push_back (DPoint3d::From (1,1,0));
     hiddenEdge.push_back (false);
@@ -2681,7 +2681,7 @@ TEST(Polyface, ClipPlaneSet2)
     PolyfaceHeaderPtr box = BoxMesh (DPoint3d::From (0,0,0), 5.0, 3.0, 2.0);
     ClipPlaneSet clipper;
     bvector<DPoint3d> xyz;
-    bvector<bool>hiddenEdge;
+    bvector<BoolTypeForVector>hiddenEdge;
     xyz.push_back (DPoint3d::From (1,-1,0));
     xyz.push_back (DPoint3d::From (1,1,0));
     xyz.push_back (DPoint3d::From (-1,1,0));
@@ -2729,7 +2729,7 @@ TEST(Polyface,ClipRoadSurface)
         DPoint3d::From (10.0, 0.5, 0),
         };
     // have to fill up a vector saying all edges matter ...
-    bvector<bool> isHidden;
+    bvector<BoolTypeForVector> isHidden;
     for (size_t iStripe = 0; iStripe < stripe.size(); ++iStripe)
         isHidden.push_back (false);
     // Make some copies of the stripe ...
@@ -2760,7 +2760,7 @@ TEST(Polyface,ClipRoadSurface)
     Check::SaveTransformed (*outsideClip);
 
 
-    Check::ClearGeometry ("Polyface.StripeOnRoad");    
+    Check::ClearGeometry ("Polyface.StripeOnRoad");
     }
 #ifdef TestPolygonDecomp
 template<typename T>
@@ -2815,7 +2815,7 @@ TEST(Polygon,Decomposition)
             }
         }
 
-    }   
+    }
 #endif
 
 
@@ -3212,7 +3212,7 @@ TEST(Polyface,MaximalPlanarFaces0)
     auto mesh0 = PolyfaceHeader::CreateVariableSizeIndexed ();
     mesh0->Point ().push_back (DPoint3d::From (0,0,0));
     mesh0->Point ().push_back (DPoint3d::From (2,0,0));
-    mesh0->Point ().push_back (DPoint3d::From (4,0,1));  
+    mesh0->Point ().push_back (DPoint3d::From (4,0,1));
     mesh0->Point ().push_back (DPoint3d::From (0,1,0));
     mesh0->Point ().push_back (DPoint3d::From (2,1,0));
     mesh0->Point ().push_back (DPoint3d::From (4,1,1));
@@ -3377,7 +3377,7 @@ TEST(Polyface,ConvexSetPunch)
     clipper1.push_back (clipper0);
 
     Check::SaveTransformed (*solidFacets);
-   
+
     Check::Shift (0, (double)numY, 0);
     PolyfaceHeaderPtr insideClip, outsideClip;
     ClipPlaneSet::ClipPlaneSetIntersectPolyface (
@@ -3393,7 +3393,7 @@ TEST(Polyface,ConvexSetPunch)
     }
 
 
-//! 
+//!
 //!<ul>
 //!<li>Input:
 //!  <ul>
@@ -3402,7 +3402,7 @@ TEST(Polyface,ConvexSetPunch)
 //!  <li>the (possibly multiple) loops of the punch
 //!  </ul>
 //!<li>Among the multiple loops, choose the one with centroid closest to the centroid of the culvert front
-//!<li>Reorder points in both the centroid front and the closest clip loop so that the starting points of each 
+//!<li>Reorder points in both the centroid front and the closest clip loop so that the starting points of each
 //!    of those two loops are on an intersection edge within the planes.  (i.e. they both correspond to the same culvert front point)
 //!</ul>
 static bool AlignLoops
@@ -3503,7 +3503,7 @@ void DoClip (PolyfaceHeaderR facets, ConvexClipPlaneSetCR planes, DVec3dCR viewV
     bvector<DPoint3d> loopA, loopB;
     size_t indexB;
     if (AlignLoops (
-            planes, triangulationMate.size () - 1, 
+            planes, triangulationMate.size () - 1,
             viewVector,
             triangulationMate, loops,
             loopA, loopB, indexB)
@@ -3744,7 +3744,7 @@ void ExercisePunchAndMaximal (PolyfaceHeaderPtr &clipper, PolyfaceHeaderPtr & ta
     Check::SaveTransformed (*outside);
 
     Check::Shift (a,0,0);
-    bvector<bool> trueFalse { true, false};
+    bvector<BoolTypeForVector> trueFalse { true, false};
     for (auto mergeEdges : trueFalse)
         {
         SaveAndRestoreCheckTransform shifter (0,a,0);
@@ -3921,8 +3921,8 @@ RotMatrix Frame1 ()
     static int s_clearMode = 2;
     double radiusA = 5.0;
     IFacetOptionsPtr options = CreateFacetOptions ();
-    options->SetParamsRequired (true); 
-    options->SetNormalsRequired (true); 
+    options->SetParamsRequired (true);
+    options->SetNormalsRequired (true);
     int counter = 0;
     char title[1024];
     for (double maxEdgeLength : {10.0, 5.0, 1.0})

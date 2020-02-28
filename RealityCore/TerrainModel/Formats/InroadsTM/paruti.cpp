@@ -5,6 +5,7 @@
 
 #include "stdafx.h"
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 /*----------------------------------------------------------------------------*/
 /* Constants and macros                                                       */
 /*----------------------------------------------------------------------------*/
@@ -241,3 +242,4 @@ void aecParams_getProductNameAndID
 
     }
 
+POP_DISABLE_DEPRECATION_WARNINGS

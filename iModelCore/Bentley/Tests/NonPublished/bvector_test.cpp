@@ -6,7 +6,7 @@
 #include <Bentley/bvector.h>
 #include <vector>
 
-//  Adapted from unit tests that are part of GCC 
+//  Adapted from unit tests that are part of GCC
 // Copyright (C) 1999, 2000, 2001, 2002, 2003, 2009
 // Free Software Foundation, Inc.
 
@@ -23,7 +23,7 @@ struct B { int m_int;};
   public:
     static unsigned int
     count() { return count_; }
-    
+
     static void
     mark_call()
     {
@@ -31,14 +31,14 @@ struct B { int m_int;};
       if (count_ == throw_on_)
     throw std::runtime_error("copy_constructor::mark_call");
     }
-      
+
     static void
     reset()
     {
       count_ = 0;
       throw_on_ = 0;
     }
-      
+
     static void
     throw_on(unsigned int count) { throw_on_ = count; }
 
@@ -54,7 +54,7 @@ struct B { int m_int;};
   public:
     static unsigned int
     count() { return count_; }
-    
+
     static void
     mark_call()
     {
@@ -77,14 +77,14 @@ struct B { int m_int;};
     static unsigned int count_;
     static unsigned int throw_on_;
   };
-  
+
   // A (static) class for tracking calls to an object's destructor.
   class destructor
   {
   public:
     static unsigned int
     count() { return _M_count; }
-    
+
     static void
     mark_call() { _M_count++; }
 
@@ -94,7 +94,7 @@ struct B { int m_int;};
   private:
     static unsigned int _M_count;
   };
-  
+
 
   // An class of objects that can be used for validating various
   // behaviours and guarantees of containers and algorithms defined in
@@ -124,7 +124,7 @@ struct B { int m_int;};
     // copied, well, make it so.
     copy_tracker&
     operator=(const copy_tracker& rhs)
-    { 
+    {
       id_ = rhs.id();
       if (rhs.throw_on_copy_)
         assignment_operator::throw_on(assignment_operator::count() + 1);
@@ -163,15 +163,15 @@ struct B { int m_int;};
   class tracker_allocator_counter
   {
   public:
-    typedef std::size_t    size_type; 
-    
+    typedef std::size_t    size_type;
+
     static void*
     allocate(size_type blocksize)
     {
       allocationCount_ += blocksize;
       return ::operator new(blocksize);
     }
-    
+
     static void
     construct() { constructCount_++; }
 
@@ -184,19 +184,19 @@ struct B { int m_int;};
       ::operator delete(p);
       deallocationCount_ += blocksize;
     }
-    
+
     static size_type
     get_allocation_count() { return allocationCount_; }
-    
+
     static size_type
     get_deallocation_count() { return deallocationCount_; }
-    
+
     static int
     get_construct_count() { return constructCount_; }
 
     static int
     get_destruct_count() { return destructCount_; }
-    
+
     static void
     reset()
     {
@@ -227,19 +227,19 @@ struct B { int m_int;};
     typedef const T*       const_pointer;
     typedef T&             reference;
     typedef const T&       const_reference;
-    typedef std::size_t    size_type; 
-    typedef std::ptrdiff_t difference_type; 
-    
+    typedef std::size_t    size_type;
+    typedef std::ptrdiff_t difference_type;
+
     template<class U> struct rebind { typedef tracker_allocator<U> other; };
-    
+
     pointer
     address(reference value) const
     { return &value; }
-    
+
     const_pointer
     address(const_reference value) const
     { return &value; }
-    
+
     tracker_allocator() throw()
     { }
 
@@ -271,7 +271,7 @@ struct B { int m_int;};
 #ifdef __GXX_EXPERIMENTAL_CXX0X__BENTLEY_REMOVED
       template<typename... Args>
         void
-        construct(pointer p, Args&&... args) 
+        construct(pointer p, Args&&... args)
     {
       ::new((void *)p) T(std::forward<Args>(args)...);
       counter_type::construct();
@@ -292,13 +292,13 @@ struct B { int m_int;};
 
   template<class T1, class T2>
     bool
-    operator==(const tracker_allocator<T1>&, 
+    operator==(const tracker_allocator<T1>&,
            const tracker_allocator<T2>&) throw()
     { return true; }
 
   template<class T1, class T2>
     bool
-    operator!=(const tracker_allocator<T1>&, 
+    operator!=(const tracker_allocator<T1>&,
            const tracker_allocator<T2>&) throw()
     { return false; }
 
@@ -310,10 +310,10 @@ struct B { int m_int;};
   unsigned int destructor::_M_count = 0;
   int copy_tracker::next_id_ = 0;
 
-  tracker_allocator_counter::size_type 
+  tracker_allocator_counter::size_type
   tracker_allocator_counter::allocationCount_ = 0;
-  
-  tracker_allocator_counter::size_type 
+
+  tracker_allocator_counter::size_type
   tracker_allocator_counter::deallocationCount_ = 0;
 
   int tracker_allocator_counter::constructCount_ = 0;
@@ -342,7 +342,7 @@ bvector_test ()
 //      bvector<int> v;
 //      try
 //        {
-//          v.resize(v.max_size());  
+//          v.resize(v.max_size());
 //          v[v.max_size() - 1] = 2002;
 //        }
 //      catch (const std::bad_alloc&)
@@ -369,7 +369,7 @@ TEST_F (bvector_test, Capacity_2)
   vec01.reserve(100);
   size_type sz02 = vec01.capacity();
   ASSERT_TRUE( sz02 >= sz01 );
-  
+
   sz01 = vec01.size() + 5;
   vec01.resize(sz01);
   sz02 = vec01.size();
@@ -396,7 +396,7 @@ TEST_F (bvector_test, test_reserve)
     const X::size_type old_capacity = a.capacity();
     const X::size_type new_capacity = old_capacity + 10;
     T::reset();
-    
+
     a.reserve(new_capacity);
 
     // [23.2.4.1 (2)]
@@ -429,7 +429,7 @@ TEST_F (bvector_test, test_reserve_exception_guarantee)
     const X::size_type new_capacity = old_capacity + 10;
     T::reset();
     copy_constructor::throw_on(3);
-    
+
     try
     {
       a.reserve(new_capacity);
@@ -481,11 +481,6 @@ TEST_F (bvector_test, ConstructorCompilation)
 }
 
 // 2
-#if !defined (__clang__) // error: explicit instantiation ... must occur in namespace 'bc_stdcxx'
-template class bvector<double>;
-template class bvector< A<B> >;
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      05/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -505,13 +500,13 @@ TEST_F (bvector_test, Range_constructors)
   const int B[] = {7, 7, 7, 7, 7};
   const int N = sizeof(A) / sizeof(int);
   const int M = sizeof(B) / sizeof(int);
-  
+
   bvector<int> v3(A, A + N);
   ASSERT_TRUE(std::equal(v3.begin(), v3.end(), A));
-  
+
   bvector<int> v4(v3.begin(), v3.end());
   ASSERT_TRUE(std::equal(v4.begin(), v4.end(), A));
-  
+
   bvector<int> v5(M, 7);
   ASSERT_TRUE(std::equal(v5.begin(), v5.end(), B));
   ASSERT_TRUE(std::equal(B, B + M, v5.begin()));
@@ -855,11 +850,11 @@ TEST_F (bvector_test, test_range_assign_4)
 * @bsimethod                                    sam.wilson                      05/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (bvector_test, S23578)
-{ 
+{
   typedef bvector<int> vector_type;
 
   {
-    const int A[] = { 0, 1, 2, 3, 4 };    
+    const int A[] = { 0, 1, 2, 3, 4 };
     vector_type v(A, A + 5);
     ASSERT_TRUE( v.data() == &v.front() );
     int* pi = v.data();
@@ -867,7 +862,7 @@ TEST_F (bvector_test, S23578)
   }
 
   {
-    const int A[] = { 4, 3, 2, 1, 0 };    
+    const int A[] = { 4, 3, 2, 1, 0 };
     const vector_type cv(A, A + 5);
     ASSERT_TRUE( cv.data() == &cv.front() );
     const int* pci = cv.data();
@@ -925,7 +920,7 @@ TEST_F (bvector_test, Assign)
   ASSERT_TRUE((v4.size() == M) && (M != N));
 }
 
-namespace EraseTest 
+namespace EraseTest
     {
     const int  A[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
     const int A1[] = {0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
@@ -955,12 +950,12 @@ TEST_F (bvector_test, Erase1)
   ASSERT_TRUE( it1 == v.begin() + 1 );
   ASSERT_TRUE( v.size() == EraseTest::N1 );
   ASSERT_TRUE( std::equal(v.begin(), v.end(), EraseTest::A1) );
-  
+
   iterator_type it2 = v.erase(v.begin() + 4, v.begin() + 9);
   ASSERT_TRUE( it2 == v.begin() + 4 );
   ASSERT_TRUE( v.size() == EraseTest::N2 );
   ASSERT_TRUE( std::equal(v.begin(), v.end(), EraseTest::A2) );
-  
+
   iterator_type it3 = v.erase(v.begin() + 6, v.end());
   ASSERT_TRUE( it3 == v.begin() + 6 );
   ASSERT_TRUE( v.size() == EraseTest::N3 );
@@ -1002,17 +997,17 @@ TEST_F (bvector_test, Erase2)
     v4.push_back(bvector<int>(1, EraseTest::A4[i]));
   for (unsigned int i = 0; i < EraseTest::N5; ++i)
     v5.push_back(bvector<int>(1, EraseTest::A5[i]));
-  
+
   iterator_type it1 = v.erase(v.begin() + 1);
   ASSERT_TRUE( it1 == v.begin() + 1 );
   ASSERT_TRUE( v.size() == EraseTest::N1 );
   ASSERT_TRUE( std::equal(v.begin(), v.end(), v1.begin()) );
-  
+
   iterator_type it2 = v.erase(v.begin() + 4, v.begin() + 9);
   ASSERT_TRUE( it2 == v.begin() + 4 );
   ASSERT_TRUE( v.size() == EraseTest::N2 );
   ASSERT_TRUE( std::equal(v.begin(), v.end(), v2.begin()) );
-  
+
   iterator_type it3 = v.erase(v.begin() + 6, v.end());
   ASSERT_TRUE( it3 == v.begin() + 6 );
   ASSERT_TRUE( v.size() == EraseTest::N3 );
@@ -1035,97 +1030,26 @@ TEST_F (bvector_test, Erase2)
 
 struct T { int i; };
 
-static int swap_calls;
-
-// provide specialization of std::swap to handle bvectors
-namespace std
-{
-  template<> 
-    void swap(BentleyApi::bvector<T>&, BentleyApi::bvector<T>&) 
-    { ++swap_calls; }
-}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    sam.wilson                      05/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-// Should use swap function specialization above for swap.
-TEST_F (bvector_test, Swap01)
-{
-  bvector<T> A;
-  bvector<T> B;
-  swap_calls = 0;
-  std::swap(A, B);
-  ASSERT_TRUE(1 == swap_calls);
-}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    sam.wilson                      05/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-// Should not use swap function specialization for swap.
-TEST_F (bvector_test, Swap02)
-{
-  using namespace std;
-  vector<T> A;
-  vector<T> B;
-  swap_calls = 0;
-  swap(A, B);
-  ASSERT_TRUE(0 == swap_calls);
-}
-
-#ifdef LIBCXX_NOT_NOW
-namespace InsertTypes
-{
-    struct X { int m_int; };
-
-  template<typename T>
-    X operator+(T, std::size_t)
-    { return X(); }
-
-  template<typename T>
-    X operator-(T, T)
-    { return X(); }
-}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    sam.wilson                      05/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (bvector_test, InsertTypesCompilationTest)
-{
-  bvector<InsertTypes::X> v(5);
-  const bvector<InsertTypes::X> w(1);
-
-  v[0];
-  w[0];
-  v.size();
-  v.capacity();
-  v.resize(1);
-  v.insert(v.begin(), InsertTypes::X());
-  v.insert(v.begin(), 1, InsertTypes::X());
-  v.insert(v.begin(), w.begin(), w.end());
-  v = w;
-}
-#endif
-
 //---------------------------------------------------------------------------------------
 // @betest                                      Shaun.Sewall                    08/11
 //---------------------------------------------------------------------------------------
 TEST (BVectorTests, InitBVector)
 {
     bvector<int> vector;
-    
+
     vector.push_back (0);
     vector.push_back (1);
     vector.push_back (2);
-    
+
     ASSERT_EQ (0, vector[0]);
     ASSERT_EQ (1, vector[1]);
     ASSERT_EQ (2, vector[2]);
     ASSERT_EQ (3, vector.size ());
-    
+
     vector.pop_back ();
     vector.pop_back ();
     vector.pop_back ();
-    
+
     ASSERT_EQ(0, vector.size ());
     SUCCEED ();
 }

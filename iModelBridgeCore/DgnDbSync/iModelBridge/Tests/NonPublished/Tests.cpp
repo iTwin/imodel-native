@@ -22,6 +22,7 @@
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 #define MAKE_ARGC_ARGV(argptrs, args)\
 for (auto& arg: args)\
    argptrs.push_back(arg.c_str());\
@@ -77,7 +78,7 @@ struct iModelBridgeTests : ::testing::Test
         CreateDgnDbParams createProjectParams;
         createProjectParams.SetRootSubjectName("iModelBridgeTests");
 
-        // Create the seed DgnDb file. The BisCore domain schema is also imported. 
+        // Create the seed DgnDb file. The BisCore domain schema is also imported.
         BeSQLite::DbResult createStatus;
         DgnDbPtr db = DgnDb::CreateDgnDb(&createStatus, seedDbName, createProjectParams);
         ASSERT_TRUE(db.IsValid());
@@ -153,7 +154,7 @@ struct iModelBridgeSyncInfoFileTester : iModelBridgeWithSyncInfoBase
             return;
 
         stmt->BindId(1, BeInt64Id(docrid));
-       
+
         while  (BeSQLite::BE_SQLITE_ROW == stmt->Step())
             {
             DgnElementId id = stmt->GetValueId<DgnElementId>(1);
@@ -270,7 +271,7 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
         iModelBridgeSyncInfoFile::SourceState noState(0.0, "");;
         iModelBridgeSyncInfoFile::ConversionResults docLink1 = RecordDocument(*GetSyncInfo().GetChangeDetectorFor(*this), BeFileName( L"First One"), nullptr,
             "DocumentWithBeGuid", iModelBridgeSyncInfoFile::ROWID(jobSubject.GetElementId().GetValue()));
-        
+
         scope1 = docLink1.m_syncInfoRecord.GetROWID();
         iModelBridgeSyncInfoFile::ConversionResults docLink2 = RecordDocument(*GetSyncInfo().GetChangeDetectorFor(*this), BeFileName(L"Second One"), nullptr,
             "DocumentWithBeGuid", iModelBridgeSyncInfoFile::ROWID(jobSubject.GetElementId().GetValue()));
@@ -350,7 +351,7 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
         ASSERT_FALSE(change.IsItemStale());
 
         // Note that the "change" resulted in a *NEW* item. That is how it works for items with no IDs.
-        // We have actually added a new element and syncinfo record for the original item and abandoned the first. 
+        // We have actually added a new element and syncinfo record for the original item and abandoned the first.
         // It will get cleaned up when we call DeleteElementsNotSeenInScope later on.
         ++expected_counts.first;
         ++expected_counts.second;
@@ -553,11 +554,11 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 struct TestIModelHubFwkClientForBridges : TestIModelHubClientForBridges
     {
     std::deque < bool> m_expect;
-    
-    TestIModelHubFwkClientForBridges(BeFileNameCR testWorkDir) 
+
+    TestIModelHubFwkClientForBridges(BeFileNameCR testWorkDir)
         : TestIModelHubClientForBridges(testWorkDir)
-        {  
-        
+        {
+
         }
 
     iModel::Hub::iModelInfoPtr GetIModelInfo() override { return m_iModelInfo; }
@@ -571,7 +572,7 @@ END_BENTLEY_DGN_NAMESPACE
 struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
 {
     std::vector <TestSourceItemWithId> m_foo_items;
-    
+
     TestIModelHubFwkClientForBridges& m_testIModelHubClientForBridges;
     iModelBridgeSyncInfoFile::ROWID m_docScopeId;
     bool m_jobTransChanged = false;
@@ -611,7 +612,7 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
             return;
 
         stmt->BindId(1, BeInt64Id(docrid));
-       
+
         while  (BeSQLite::BE_SQLITE_ROW == stmt->Step())
             {
             ASSERT_TRUE(m_expect.anyDeleted);
@@ -622,7 +623,7 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
             ASSERT_TRUE(el.IsValid());
             el->Delete();
             }
-    
+
         m_testIModelHubClientForBridges.m_expect.push_back(m_expect.anyDeleted);
         }
 
@@ -633,12 +634,12 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
         EXPECT_EQ(m_expect.findJobSubject, jobId.IsValid());
         return GetDgnDbR().Elements().Get<Subject>(jobId);
         }
-     
+
     SubjectCPtr _InitializeJob() override
         {
         EXPECT_TRUE(!m_expect.findJobSubject);
 
-        
+
         // Set up the model and category that my superclass's DoTest method uses
         DgnCode partitionCode = PhysicalPartition::CreateCode(*GetDgnDbR().Elements().GetRootSubject(), "PhysicalModel");
         if (!GetDgnDbR().Elements().QueryElementIdByCode(partitionCode).IsValid())
@@ -657,7 +658,7 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
         // register the document. This then becomes the scope for all of my items.
         iModelBridgeSyncInfoFile::ConversionResults docLink = RecordDocument(*GetSyncInfo().GetChangeDetectorFor(*this), _GetParams().GetInputFileName(), nullptr,
             "DocumentWithBeGuid", iModelBridgeSyncInfoFile::ROWID(subj->GetElementId().GetValue()));
-        
+
         return subj;
         }
 
@@ -779,7 +780,7 @@ void iModelBridgeTests_Test1_Bridge::ConvertItem(TestSourceItemWithId& item, iMo
         changeDetector._OnElementSeen(change.GetSyncInfoRecord().GetDgnElementId());
         return;
         }
-    
+
     ++m_changeCount;
     ASSERT_TRUE(m_expect.anyChanges);
     iModelBridgeSyncInfoFile::ConversionResults results;
@@ -846,7 +847,7 @@ TEST_F(iModelBridgeTests, Test1)
     auto testDir = getiModelBridgeTestsOutputDir(L"Test1");
 
     ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testDir));
-    
+
     // I have to create a file that I represent as the bridge "library", so that the fwk's argument validation logic will see that it exists.
     // The fwk won't try to load this file, since we will register a fake bridge.
     BeFileName fakeBridgeName(testDir);
@@ -865,7 +866,7 @@ TEST_F(iModelBridgeTests, Test1)
     args.push_back(L"--fwk-revision-comment=\"comment in quotes\"");
     args.push_back(L"--server-user=username=username");                                         // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
     args.push_back(L"--server-password=\"password><!@\"");                                      // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
-    args.push_back(WPrintfString(L"--fwk-bridge-library=\"%ls\"", fakeBridgeName.c_str()));     // must refer to a path that exists! 
+    args.push_back(WPrintfString(L"--fwk-bridge-library=\"%ls\"", fakeBridgeName.c_str()));     // must refer to a path that exists!
     args.push_back(WPrintfString(L"--fwk-bridge-regsubkey=%ls", bridgeRegSubKey).c_str());      // must be consistent with testRegistry.m_bridgeRegSubKey
     BeFileName platformAssetsDir;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(platformAssetsDir);
@@ -887,7 +888,7 @@ TEST_F(iModelBridgeTests, Test1)
     FakeRegistry testRegistry(testDir, assignDbName);
     testRegistry.WriteAssignments();
     populateRegistryWithFooBar(testRegistry, bridgeRegSubKey);
-    
+
     testRegistry.AddRef(); // prevent ~iModelBridgeFwk from deleting this object.
     iModelBridgeFwk::SetRegistryForTesting(testRegistry);   // (takes ownership of pointer)
 
@@ -913,7 +914,7 @@ TEST_F(iModelBridgeTests, Test1)
 
     if (true)
         {
-        // Modify an item 
+        // Modify an item
         testBridge.m_foo_items[0].m_content = "changed";
 
         // and run an update
@@ -975,7 +976,7 @@ TEST_F(iModelBridgeTests, DelDocTest1)
     auto testDir = getiModelBridgeTestsOutputDir(L"DelDocTest1");
 
     ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testDir));
-    
+
     // I have to create a file that I represent as the bridge "library", so that the fwk's argument validation logic will see that it exists.
     // The fwk won't try to load this file, since we will register a fake bridge.
     BeFileName fakeBridgeName(testDir);
@@ -990,11 +991,11 @@ TEST_F(iModelBridgeTests, DelDocTest1)
     args.push_back(L"--server-environment=Qa");
     args.push_back(L"--server-repository=iModelBridgeTests_DelDocTest1");   // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
     args.push_back(L"--server-project-guid=iModelBridgeTests_Project");     // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
-    args.push_back(L"--fwk-create-repository-if-necessary");        
+    args.push_back(L"--fwk-create-repository-if-necessary");
     args.push_back(L"--server-user=username=username");                     // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
     args.push_back(L"--server-password=\"password><!@\"");                  // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
     args.push_back(WPrintfString(L"--fwk-bridge-regsubkey=%ls", bridgeRegSubKey).c_str());  // must be consistent with testRegistry.m_bridgeRegSubKey
-    args.push_back(WPrintfString(L"--fwk-bridge-library=\"%ls\"", fakeBridgeName.c_str())); // must refer to a path that exists! 
+    args.push_back(WPrintfString(L"--fwk-bridge-library=\"%ls\"", fakeBridgeName.c_str())); // must refer to a path that exists!
     BeFileName platformAssetsDir;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(platformAssetsDir);
     args.push_back(WPrintfString(L"--fwk-bridgeAssetsDir=\"%ls\"", platformAssetsDir.c_str())); // must be a real assets dir! the platform's assets dir will serve just find as the test bridge's assets dir.
@@ -1121,7 +1122,7 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
     auto testDir = getiModelBridgeTestsOutputDir(L"SpatialDataTransformTest");
 
     ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testDir));
-    
+
     // I have to create a file that I represent as the bridge "library", so that the fwk's argument validation logic will see that it exists.
     // The fwk won't try to load this file, since we will register a fake bridge.
     BeFileName fakeBridgeName(testDir);
@@ -1136,11 +1137,11 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
     args.push_back(L"--server-environment=Qa");
     args.push_back(L"--server-repository=iModelBridgeTests_SpatialDataTransformTest");   // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
     args.push_back(L"--server-project-guid=iModelBridgeTests_Project");     // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
-    args.push_back(L"--fwk-create-repository-if-necessary");        
+    args.push_back(L"--fwk-create-repository-if-necessary");
     args.push_back(L"--server-user=username=username");                     // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
     args.push_back(L"--server-password=\"password><!@\"");                  // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
     args.push_back(WPrintfString(L"--fwk-bridge-regsubkey=%ls", bridgeRegSubKey).c_str());  // must be consistent with testRegistry.m_bridgeRegSubKey
-    args.push_back(WPrintfString(L"--fwk-bridge-library=\"%ls\"", fakeBridgeName.c_str())); // must refer to a path that exists! 
+    args.push_back(WPrintfString(L"--fwk-bridge-library=\"%ls\"", fakeBridgeName.c_str())); // must refer to a path that exists!
     BeFileName platformAssetsDir;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(platformAssetsDir);
     args.push_back(WPrintfString(L"--fwk-bridgeAssetsDir=\"%ls\"", platformAssetsDir.c_str())); // must be a real assets dir! the platform's assets dir will serve just find as the test bridge's assets dir.
@@ -1153,7 +1154,7 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
     iModelBridgeTests_Test1_Bridge testBridge(testIModelHubClientForBridges);
     iModelBridgeFwk::SetBridgeForTesting(testBridge);
 
-    
+
     BeFileName assignDbName(testDir);
     assignDbName.AppendToPath(L"SpatialDataTransformTest.db");
     FakeRegistry testRegistry(testDir, assignDbName);
@@ -1161,9 +1162,9 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
     populateRegistryWithFooBar(testRegistry, bridgeRegSubKey);
     testRegistry.AddRef(); // prevent ~iModelBridgeFwk from deleting this object.
     iModelBridgeFwk::SetRegistryForTesting(testRegistry);   // (takes ownership of pointer)
-    
-    
-    
+
+
+
 
     testBridge.m_expect.assignmentCheck = true;
 
@@ -1191,7 +1192,7 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
         args.pop_back();
         testIModelHubClientForBridges.m_expect.clear();
         }
-    
+
     if (true)
         {
         // Run an update with no changes
@@ -1278,7 +1279,7 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
         fooDocProps.m_spatialRootTransformJSON = transform_offset1.ToString();
         testRegistry.SetDocumentProperties(fooDocProps, BeFileName(L"Foo"));
         testRegistry.Save();
-        
+
         //args.push_back(transform_offset1_str.c_str());
         MAKE_ARGC_ARGV(argptrs, args);
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
@@ -1340,7 +1341,7 @@ TEST_F(iModelBridgeTests, MixedFileTypeBridgeAssignmentTest)
         BeFileName srcFile(sourceFileName);
         if (srcFile.GetExtension().CompareToI(L"Dgn"))
             {
-                
+
             affinityLevel = iModelBridgeAffinityLevel::Medium;
             wcsncpy(buffer, mstnBridgeRegSubKey.c_str(), mstnBridgeRegSubKey.length());
             }
@@ -1348,7 +1349,7 @@ TEST_F(iModelBridgeTests, MixedFileTypeBridgeAssignmentTest)
 
     testRegistry.AddBridge(mstnBridgeRegSubKey, mstnLamda);
 
-        
+
     WString realDwgBridgeRegSubKey(L"RealDWG");
     std::function<T_iModelBridge_getAffinity> realDWGLamda = [=](BentleyApi::WCharP buffer,
                                                                 const size_t bufferSize,
@@ -1380,7 +1381,7 @@ TEST_F(iModelBridgeTests, DISABLED_TestMultipleRootsSameSubject_ToyTile) // disa
 	bcName.AppendToPath(L"iModelBridgeTests_Test1.bim");
 
     ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testDir));
-    
+
 	BeFileName toyTileBridge_dll(L"d:\\bim0200dev\\out\\Winx64\\Product\\ToyTileBridge\\ToyTileBridge.dll");
 	BeFileName toyTileBridge_assetsDir(toyTileBridge_dll.GetDirectoryName());
 	toyTileBridge_assetsDir.AppendToPath(L"assets");
@@ -1425,7 +1426,7 @@ TEST_F(iModelBridgeTests, DISABLED_TestMultipleRootsSameSubject_ToyTile) // disa
     WString bridgeName;
     testRegistry.SearchForBridgeToAssignToDocument(bridgeName,BeFileName(toyTileFile1),L"");
     testRegistry.SearchForBridgeToAssignToDocument(bridgeName,BeFileName(toyTileFile2),L"");
-    
+
     testRegistry.AddRef(); // prevent ~iModelBridgeFwk from deleting this object.
     iModelBridgeFwk::SetRegistryForTesting(testRegistry);   // (takes ownership of pointer)
 
@@ -1502,7 +1503,7 @@ TEST_F(iModelBridgeTests, ECEFTransformTest)
     auto testDir = getiModelBridgeTestsOutputDir(L"ECEFTransformTest");
 
     ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testDir));
-    
+
     // I have to create a file that I represent as the bridge "library", so that the fwk's argument validation logic will see that it exists.
     // The fwk won't try to load this file, since we will register a fake bridge.
     BeFileName fakeBridgeName(testDir);
@@ -1517,11 +1518,11 @@ TEST_F(iModelBridgeTests, ECEFTransformTest)
     args.push_back(L"--server-environment=Qa");
     args.push_back(L"--server-repository=iModelBridgeTests_ECEFTransformTest");   // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
     args.push_back(L"--server-project-guid=iModelBridgeTests_Project");     // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
-    args.push_back(L"--fwk-create-repository-if-necessary");        
+    args.push_back(L"--fwk-create-repository-if-necessary");
     args.push_back(L"--server-user=username=username");                     // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
     args.push_back(L"--server-password=\"password><!@\"");                  // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
     args.push_back(WPrintfString(L"--fwk-bridge-regsubkey=%ls", bridgeRegSubKey).c_str());  // must be consistent with testRegistry.m_bridgeRegSubKey
-    args.push_back(WPrintfString(L"--fwk-bridge-library=\"%ls\"", fakeBridgeName.c_str())); // must refer to a path that exists! 
+    args.push_back(WPrintfString(L"--fwk-bridge-library=\"%ls\"", fakeBridgeName.c_str())); // must refer to a path that exists!
     BeFileName platformAssetsDir;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(platformAssetsDir);
     args.push_back(WPrintfString(L"--fwk-bridgeAssetsDir=\"%ls\"", platformAssetsDir.c_str())); // must be a real assets dir! the platform's assets dir will serve just find as the test bridge's assets dir.
@@ -1534,7 +1535,7 @@ TEST_F(iModelBridgeTests, ECEFTransformTest)
     iModelBridgeTests_Test1_Bridge testBridge(testIModelHubClientForBridges);
     iModelBridgeFwk::SetBridgeForTesting(testBridge);
 
-    
+
     BeFileName assignDbName(testDir);
     assignDbName.AppendToPath(L"ECEFTransformTest.db");
     FakeRegistry testRegistry(testDir, assignDbName);
@@ -1542,10 +1543,10 @@ TEST_F(iModelBridgeTests, ECEFTransformTest)
     populateRegistryWithFooBar(testRegistry, bridgeRegSubKey);
     testRegistry.AddRef(); // prevent ~iModelBridgeFwk from deleting this object.
     iModelBridgeFwk::SetRegistryForTesting(testRegistry);   // (takes ownership of pointer)
-    
+
     testBridge.m_expect.assignmentCheck = true;
 
-    YawPitchRollAngles angles(AngleInDegrees::FromDegrees(30.0), AngleInDegrees::FromDegrees(40.0), AngleInDegrees::FromDegrees(50.0));    
+    YawPitchRollAngles angles(AngleInDegrees::FromDegrees(30.0), AngleInDegrees::FromDegrees(40.0), AngleInDegrees::FromDegrees(50.0));
     EcefLocation location(DPoint3d::From(1000.0, 2000.0, 3000.0), angles);
 
     Json::Value ecefJson = Json::Value(Json::ValueType::objectValue);
@@ -1626,7 +1627,7 @@ static void DoProjectExtentsTest (bvector <double> &extents, WCharCP testName)
     args.push_back(L"--server-user=imodelbridgetests@bentley.com");                     // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
     args.push_back(L"--server-password=\"password><!@\"");                  // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
     args.push_back(WPrintfString(L"--fwk-bridge-regsubkey=%ls", bridgeRegSubKey).c_str());  // must be consistent with testRegistry.m_bridgeRegSubKey
-    args.push_back(WPrintfString(L"--fwk-bridge-library=\"%ls\"", fakeBridgeName.c_str())); // must refer to a path that exists! 
+    args.push_back(WPrintfString(L"--fwk-bridge-library=\"%ls\"", fakeBridgeName.c_str())); // must refer to a path that exists!
     BeFileName platformAssetsDir;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(platformAssetsDir);
     args.push_back(WPrintfString(L"--fwk-bridgeAssetsDir=\"%ls\"", platformAssetsDir.c_str())); // must be a real assets dir! the platform's assets dir will serve just find as the test bridge's assets dir.
@@ -1675,7 +1676,7 @@ static void DoProjectExtentsTest (bvector <double> &extents, WCharCP testName)
         args.pop_back();
         testIModelHubClientForBridges.m_expect.clear();
         }
-    
+
     if (true)
         {
         // Run an update with a spatial data transform change
@@ -1707,7 +1708,7 @@ static void DoProjectExtentsTest (bvector <double> &extents, WCharCP testName)
         ScopedDgnHost host;
         auto db = DgnDb::OpenDgnDb(nullptr, bcName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
         ASSERT_TRUE(db.IsValid());
-      
+
         AxisAlignedBox3d extents = db->GeoLocation().GetProjectExtents();
         bvector<BeInt64Id> elementOutliers;
         AxisAlignedBox3d rangeWithOutliers;
@@ -1732,3 +1733,5 @@ TEST_F(iModelBridgeTests, iModelProjectExtentsTest_SouthAsia)
     bvector <double> extents = { 18.938148519926713, 72.824610710144043 , 18.939833092473123, 72.826917409896851 };
     DoProjectExtentsTest(extents, L"iModelProjectExtentsTest_SouthAsia");
     }
+
+POP_DISABLE_DEPRECATION_WARNINGS

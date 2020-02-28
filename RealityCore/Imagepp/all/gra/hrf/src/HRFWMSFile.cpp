@@ -38,9 +38,7 @@
 #include <BeXml/BeXml.h>
 #include <ImagePPInternal/HttpConnection.h>
 
-
-
-
+PUSH_DISABLE_DEPRECATION_WARNINGS
 
 //-----------------------------------------------------------------------------
 // Static Members
@@ -163,7 +161,7 @@ bool HRFWMSCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
             BeXmlStatus xmlStatus;
             BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromFile(xmlStatus, XMLFileName.c_str());
             if (!pXmlDom.IsNull() && BEXML_Success == xmlStatus)
-                {            
+                {
                 // Read data in XML file (strings)
                 BeXmlNodeP pMainNode = pXmlDom->GetRootElement();
                 if (NULL != pMainNode && BeStringUtilities::Stricmp (pMainNode->GetName(), "BentleyWMSFile") == 0)
@@ -188,7 +186,7 @@ bool HRFWMSCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
             BeXmlStatus xmlStatus;
             BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromMemory(xmlStatus, pBuffer->GetData(), pBuffer->GetDataSize());
             if (!pXmlDom.IsNull() && BEXML_Success == xmlStatus)
-                {            
+                {
                 // Read data in XML file (strings)
                 BeXmlNodeP pMainNode = pXmlDom->GetRootElement();
                 if (NULL != pMainNode && BeStringUtilities::Stricmp (pMainNode->GetName(), "BentleyWMSFile") == 0)
@@ -279,7 +277,7 @@ HRFWMSFile::HRFWMSFile(const HFCPtr<HFCURL>& pi_rpURL,
     //and the isn't found.
     if (NULL == pMainNode || BeStringUtilities::Stricmp (pMainNode->GetName(), "BentleyWMSFile") != 0)
         throw HFCCorruptedFileException(pi_rpURL->GetURL());
-   
+
     // default values
     m_MinImageSize.m_Width  = 16;            // see capabilities
     m_MinImageSize.m_Height = 16;            // see capabilities
@@ -355,7 +353,7 @@ HRFWMSFile::HRFWMSFile(const HFCPtr<HFCURL>& pi_rpURL,
         {
         baseUrl.append("&");        // ex: http://www.host.com/Path?wms=WorldMap.  Request append after '&'
         }
-        
+
     m_requestTemplate.reset(new HttpRequest(baseUrl.c_str()));
     m_requestTemplate->SetTimeoutMs(m_ConnectionTimeOut);
 
@@ -570,8 +568,8 @@ void HRFWMSFile::CreateDescriptors(uint64_t pi_Width,
         WString keyName;
         BeStringUtilities::CurrentLocaleCharToWChar(keyName, SRS.c_str());
         pBaseGCS->SetFromCSName(keyName.c_str());
-        }    
-    
+        }
+
     HFCPtr<HRFPageDescriptor> pPage = new HRFPageDescriptor (GetAccessMode(),
                                                              GetCapabilities(),
                                                              pResolutionDescriptor,
@@ -788,7 +786,7 @@ void HRFWMSFile::ReadWMS_1_1(BeXmlNodeP pi_pBentleyWMSFileNode)
 
     BeXmlNodeP pChildNode;
     BeXmlNodeP pSubChildNode;
-    
+
     // tag URL
     if ((pChildNode = pi_pBentleyWMSFileNode->SelectSingleNode("URL")) == 0)
         throw HRFMissingParameterException(GetURL()->GetURL(),
@@ -811,7 +809,7 @@ void HRFWMSFile::ReadWMS_1_1(BeXmlNodeP pi_pBentleyWMSFileNode)
     for(BeXmlNodeP pSubNode = pChildNode->GetFirstChild (); NULL != pSubNode; pSubNode = pSubNode->GetNextSibling())
         {
         Utf8String content;
-    
+
         if (BeStringUtilities::Stricmp(pSubNode->GetName(), "BBOX") == 0)
             {
             bvector<double> BBoxValues;
@@ -839,7 +837,7 @@ void HRFWMSFile::ReadWMS_1_1(BeXmlNodeP pi_pBentleyWMSFileNode)
             {
             WString contentW;
             pSubNode->GetContent(contentW);
-            
+
             AString contentA;
             BeStringUtilities::WCharToCurrentLocaleChar(contentA, contentW.c_str());
 
@@ -1020,9 +1018,9 @@ void HRFWMSFile::ReadWMS_1_2(BeXmlNodeP pi_pBentleyWMSFileNode, Utf8String const
             pSubNode->GetContent(version);
             if (BeStringUtilities::Strnicmp(version.c_str(), "1.3", 3) != 0)
                 WMSVersionIs1_3 = false;
-            
+
             // Only one VERSION clause is possible ... we can break out of the loop
-            break;    
+            break;
             }
         }
 
@@ -1031,7 +1029,7 @@ void HRFWMSFile::ReadWMS_1_2(BeXmlNodeP pi_pBentleyWMSFileNode, Utf8String const
         {
         Utf8String content;
         pSubNode->GetContent(content);
-   
+
         // BBOX must be set into MAPEXTENT tag
         // LAYERS and STYLES will be added with the SetLayersContext on
         // the editor
@@ -1199,18 +1197,18 @@ void HRFWMSFile::ReadWMS_1_2(BeXmlNodeP pi_pBentleyWMSFileNode, Utf8String const
             Utf8String StyleAbstract;
             double MinScaleHint = -1;
             double MaxScaleHint = -1;
-             
-            pLayerNode->GetAttributeStringValue(LayerName,      "NAME");           
-            pLayerNode->GetAttributeStringValue(LayerTitle,     "TITLE");           
-            pLayerNode->GetAttributeStringValue(LayerAbstract,  "ABSTRACT");            
+
+            pLayerNode->GetAttributeStringValue(LayerName,      "NAME");
+            pLayerNode->GetAttributeStringValue(LayerTitle,     "TITLE");
+            pLayerNode->GetAttributeStringValue(LayerAbstract,  "ABSTRACT");
             pLayerNode->GetAttributeUInt32Value(LayerOpaque,    "Opaque");
-                      
+
             for(BeXmlNodeP pSubLayerNode = pLayerNode->GetFirstChild (); NULL != pSubLayerNode; pSubLayerNode = pSubLayerNode->GetNextSibling())
                 {
                 if (BeStringUtilities::Stricmp(pSubLayerNode->GetName(), "ScaleHint") == 0)
                     {
                     BeXmlStatus attributeStatus;
-                    
+
                     // get ScaleHint attributes
                     if(BEXML_Success != (attributeStatus = pSubLayerNode->GetAttributeDoubleValue(MinScaleHint, "Min")))
                         {
@@ -1251,3 +1249,4 @@ void HRFWMSFile::ReadWMS_1_2(BeXmlNodeP pi_pBentleyWMSFileNode, Utf8String const
             }
         }
     }
+POP_DISABLE_DEPRECATION_WARNINGS

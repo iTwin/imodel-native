@@ -26,6 +26,7 @@
 #include <WebServices/iModelHub/Client/Error.h>
 #include "CrashProcessor.h"
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 #if defined (BENTLEYCONFIG_OS_WINDOWS)
 #include <DgnPlatform\DesktopTools\w32tools.h>
 #endif
@@ -3393,3 +3394,4 @@ BentleyStatus   iModelBridgeFwk::SetUpECEFLocation(FwkContext& context)
     m_briefcaseDgnDb->GeoLocation().Save();
     return SUCCESS;
     }
+POP_DISABLE_DEPRECATION_WARNINGS

@@ -23,6 +23,7 @@ USING_NAMESPACE_BENTLEY_LOGGING
     if (RepositoryStatus::Success != InitializeLockCache()) \
         return __ERR_RET__;
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 namespace
 {
 static bool s_failOnChannelConstraintViolation = false;
@@ -1068,3 +1069,4 @@ iModelBridgeFwk::FwkRepoAdmin::_CreateBriefcaseManager(DgnDbR db) const
 
     return new BriefcaseManager(db);
 }
+POP_DISABLE_DEPRECATION_WARNINGS

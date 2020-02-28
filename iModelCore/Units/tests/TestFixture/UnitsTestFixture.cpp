@@ -100,7 +100,7 @@ UnitCP UnitsTestFixture::LocateUOM(Utf8CP unitName, bool useLegacyNames)
     {
     if (useLegacyNames)
         return s_unitsContext->LookupUnitUsingOldName(unitName);
-        
+
     return s_unitsContext->LookupUnit(unitName);
     }
 
@@ -110,7 +110,7 @@ UnitCP UnitsTestFixture::LocateUOM(Utf8CP unitName, bool useLegacyNames)
 void UnitsTestFixture::ReadCSVFile(WCharCP fileName, MultipleTokensProcessor const& lineProcessor)
     {
     Utf8String path = UnitsTestFixture::GetConversionDataPath(fileName);
-    std::ifstream ifs(path.begin(), std::ifstream::in);
+    std::ifstream ifs(path.c_str(), std::ifstream::in);
     std::string line;
 
     ASSERT_TRUE(ifs.good()) << "File '" + path + "' does not exist.";
@@ -129,9 +129,9 @@ void UnitsTestFixture::ReadCSVFile(WCharCP fileName, MultipleTokensProcessor con
 void UnitsTestFixture::ReadCSVFile(WCharCP fileName, SingleTokenProcessor const& lineProcessor)
     {
     Utf8String path = UnitsTestFixture::GetConversionDataPath(fileName);
-    std::ifstream ifs(path.begin(), std::ifstream::in);
+    std::ifstream ifs(path.c_str(), std::ifstream::in);
     std::string line;
-    
+
     ASSERT_TRUE(ifs.good()) << "File '" + path + "' does not exist.";
 
     while (std::getline(ifs, line))
@@ -148,7 +148,7 @@ void UnitsTestFixture::ReadCSVFile(WCharCP fileName, SingleTokenProcessor const&
 int UnitsTestFixture::GetCSVFileLineCount(WCharCP fileName)
     {
     Utf8String path = UnitsTestFixture::GetConversionDataPath(fileName);
-    std::ifstream ifs(path.begin(), std::ifstream::in);
+    std::ifstream ifs(path.c_str(), std::ifstream::in);
     std::string line;
 
     ASSERT_TRUE(ifs.good()) << "File '" + path + "' does not exist.", 0;

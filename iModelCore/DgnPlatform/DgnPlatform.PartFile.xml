@@ -30,7 +30,7 @@
         <SubPart PartName="BeJsonCpp"           PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp"    Repository="imodel02"/>
         <SubPart LibType="Static" PartName="Png" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BeJpeg" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02"/>
-        <SubPart PartName="FlatBuffers" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart PartName="Headers" PartFile="iModelCore/libsrc/flatbuffers/flatbuffers"/>
         <SubPart PartName="GeoCoord"            PartFile="iModelCore/GeoCoord/GeoCoord"     Repository="imodel02"/>
         <SubPart PartName="BRepCore"            PartFile="iModelCore/BRepCore/BRepCore"     Repository="imodel02"/>
         <SubPart PartName="PublicApi"           PartFile="iModelCore/libsrc/csmap/csmap"        Repository="imodel02"/>

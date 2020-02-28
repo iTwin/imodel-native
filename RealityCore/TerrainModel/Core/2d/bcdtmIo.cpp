@@ -11,6 +11,7 @@
 #include <errno.h>
 #endif
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 BENTLEYDTM_EXPORT bool sOutputToConsole = false;
 
 thread_local long    DTM_DTM_ERROR_STATUS = 0;
@@ -1305,7 +1306,7 @@ BENTLEYDTM_Public int bcdtmReadStream_version200DtmObject(BC_DTM_OBJ *dtmP,BENTL
  headerSize = DTMIOHeaderSize_VER200 ;
  #ifndef _M_IX86
  headerSize = headerSize - 20 ;
- #endif 
+ #endif
 /*
 ** Read Dtm Header
 */
@@ -3286,7 +3287,7 @@ if( dbg ) bcdtmWrite_message(0,0,0,"Writing Tin  Object At File Position %8ld Fr
  headerSize = sizeof(DTM_TIN_OBJ) ;
  #ifndef _M_IX86
  headerSize = headerSize - 40 ;
- #endif 
+ #endif
  if( dbg ) bcdtmWrite_message(0,0,0,"Writing Dtm Header         ** Size = %9ld",headerSize) ;
  if( bcdtmStream_fwrite(&geopakTin,headerSize,1,dtmStreamP) != 1 )
    {
@@ -5355,7 +5356,7 @@ BENTLEYDTM_Public int bcdtmRead_binaryFileP3D(WCharCP FileName, DPoint3d **DataP
 +-------------------------------------------------------------------*/
 BENTLEYDTM_EXPORT int bcdtmUtility_getLastDtmErrorMessage(long *errorStatusP,long *errorNumberP,char **errorMessagePP)
 /*
-** This function gets the last dtm error number and message 
+** This function gets the last dtm error number and message
 **
 */
     {
@@ -5378,3 +5379,4 @@ BENTLEYDTM_EXPORT int bcdtmUtility_getLastDtmErrorMessage(long *errorStatusP,lon
 errexit :
     return(DTM_ERROR) ;
     }
+POP_DISABLE_DEPRECATION_WARNINGS

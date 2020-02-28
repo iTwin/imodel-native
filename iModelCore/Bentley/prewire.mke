@@ -25,12 +25,6 @@ $(BuildContext)Delivery/btree-notice.txt : $(_MakeFilePath)btree-notice.txt
 $(BuildContext)Delivery/btree-license.txt : $(_MakeFilePath)btree-license.txt
     $(LinkFirstDepToFirstTarget)
 
-$(BuildContext)Delivery/bvector-notice.txt : $(_MakeFilePath)bvector-notice.txt
-    $(LinkFirstDepToFirstTarget)
-
-$(BuildContext)Delivery/bvector-license.txt : $(_MakeFilePath)bvector-license.txt
-    $(LinkFirstDepToFirstTarget)
-
 $(BuildContext)Dox/Pages/Bentley/BeFileName.doxpage : $(_MakeFilePath)Docs/Overview/BeFileName.doxpage
     $(LinkFirstDepToFirstTarget)
 

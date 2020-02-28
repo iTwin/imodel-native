@@ -414,7 +414,7 @@ BentleyStatus SchemaWriter::ImportEnumeration(Context& ctx, ECEnumerationCR ecEn
     if (SUCCESS != SchemaPersistenceHelper::SerializeEnumerationValues(enumValueJson, ecEnum, ctx.IsEC32AvailableInFile()))
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindText(7, enumValueJson, Statement::MakeCopy::No))
+    if (BE_SQLITE_OK != stmt->BindText(7, enumValueJson, Statement::MakeCopy::Yes))
         return ERROR;
 
     if (BE_SQLITE_DONE != stmt->Step())
@@ -579,7 +579,7 @@ BentleyStatus SchemaWriter::ImportUnit(Context& ctx, ECUnitCR unit)
         if (SUCCESS != ImportUnit(ctx, *invertingUnit))
             return ERROR;
         }
-    
+
 
     CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main." TABLE_Unit "(SchemaId,Name,DisplayLabel,Description,PhenomenonId,UnitSystemId,Definition,Numerator,Denominator,Offset,IsConstant,InvertingUnitId) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)");
     if (stmt == nullptr)
@@ -898,7 +898,7 @@ BentleyStatus SchemaWriter::ImportKindOfQuantity(Context& ctx, KindOfQuantityCR 
         persistenceUnitStr = koq.GetDescriptorCache().first;
 
     BeAssert(!persistenceUnitStr.empty());
-    if (BE_SQLITE_OK != stmt->BindText(6, persistenceUnitStr, Statement::MakeCopy::No))
+    if (BE_SQLITE_OK != stmt->BindText(6, persistenceUnitStr, Statement::MakeCopy::Yes))
         return ERROR;
 
     Utf8String presUnitsJsonStr;
@@ -907,7 +907,7 @@ BentleyStatus SchemaWriter::ImportKindOfQuantity(Context& ctx, KindOfQuantityCR 
         if (SUCCESS != SchemaPersistenceHelper::SerializeKoqPresentationFormats(presUnitsJsonStr, ctx.GetECDb(), koq, ctx.IsEC32AvailableInFile()))
             return ERROR;
 
-        if (BE_SQLITE_OK != stmt->BindText(7, presUnitsJsonStr, Statement::MakeCopy::No))
+        if (BE_SQLITE_OK != stmt->BindText(7, presUnitsJsonStr, Statement::MakeCopy::Yes))
             return ERROR;
         }
 
@@ -1057,10 +1057,10 @@ BentleyStatus SchemaWriter::InsertRelationshipConstraintEntry(Context& ctx, ECRe
     if (BE_SQLITE_OK != stmt->BindBoolean(5, relationshipConstraint.GetIsPolymorphic()))
         return ERROR;
 
-    
+
     if (!relationshipConstraint.GetRoleLabel().empty())
         {
-        if (BE_SQLITE_OK != stmt->BindText(6, relationshipConstraint.GetRoleLabel(), Statement::MakeCopy::No))
+        if (BE_SQLITE_OK != stmt->BindText(6, relationshipConstraint.GetRoleLabel(), Statement::MakeCopy::Yes))
             return ERROR;
         }
 
@@ -1274,7 +1274,7 @@ BentleyStatus SchemaWriter::ImportProperty(Context& ctx, ECN::ECPropertyCR ecPro
             return ERROR;
         }
 
-    
+
     DbResult stat = stmt->Step();
     if (BE_SQLITE_DONE != stat)
         {
@@ -1824,7 +1824,7 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, PropertyChange& propert
         else
             sqlUpdateBuilder.AddSetExp(kPrimitiveTypeMinLength, propertyChange.MinimumLength().GetNew().Value());
         }
-    
+
     if (propertyChange.MaximumLength().IsChanged())
         {
         constexpr Utf8CP kPrimitiveTypeMaxLength = "PrimitiveTypeMaxLength";
@@ -1883,7 +1883,7 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, PropertyChange& propert
                 }
             }
         }
-    
+
     if (propertyChange.ExtendedTypeName().IsChanged())
         {
         constexpr Utf8CP kExtendedTypeName = "ExtendedTypeName";
@@ -1986,7 +1986,7 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, PropertyChange& propert
                 BeAssert(false);
                 return ERROR;
                 }
-           
+
             if (!oldKoq->GetPersistenceUnit()->GetFullName().EqualsIAscii(newKoq->GetPersistenceUnit()->GetFullName()))
                 {
                 ctx.Issues().ReportV("ECSchema Upgrade failed. ECProperty %s.%s: Replacing KindOfQuantity '%s' by '%s' is not supported because their persistent units differ.",
@@ -2015,7 +2015,7 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, PropertyChange& propert
         else
             {
             PropertyCategoryCP cat = newProperty.GetCategory();
-  
+
             if (cat == nullptr)
                 {
                 BeAssert(false);
@@ -2144,7 +2144,7 @@ BentleyStatus SchemaWriter::UpdateCustomAttributes(Context& ctx, SchemaPersisten
             //only validate CA rules, if the container has not just been added with this schema import/update
             if (ctx.GetSchemaUpgradeCustomAttributeValidator().Validate(change) == CustomAttributeValidator::Policy::Reject)
                 {
-                ctx.Issues().ReportV("ECSchema Upgrade failed. Adding or modifying %s custom attributes is not supported. Container: %s.", schemaName.c_str(), oldContainer.GetContainerName());
+                ctx.Issues().ReportV("ECSchema Upgrade failed. Adding or modifying %s custom attributes is not supported. Container: %s.", schemaName.c_str(), oldContainer.GetContainerName().c_str());
                 return ERROR;
                 }
             }
@@ -2236,7 +2236,7 @@ BentleyStatus SchemaWriter::UpdateBaseClasses(Context& ctx, BaseClassChanges& ba
                 break;
                 }
             }
-       
+
         return baseClass;
         };
 
@@ -2603,14 +2603,14 @@ BentleyStatus SchemaWriter::UpdateSchemaReferences(Context& ctx, SchemaReference
                 return ERROR;
                 }
 
-            
+
             if (existingRef.LessThan(newRef, SchemaMatchType::Exact))
                 {
                 ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Referenced ECSchema %s that has newer version than one present in ECDb.",
                                      oldSchema.GetFullSchemaName().c_str(), newRef.GetFullSchemaName().c_str());
                 return ERROR;
                 }
-            
+
             // no action is taken.
             }
         else if (change.GetOpCode() == ECChange::OpCode::New)
@@ -2859,7 +2859,7 @@ BentleyStatus SchemaWriter::DeleteCustomAttributes(Context& ctx, ECContainerId i
 BentleyStatus SchemaWriter::DeleteProperty(Context& ctx, PropertyChange& propertyChange, ECPropertyCR deletedProperty)
     {
     ECClassCR ecClass = deletedProperty.GetClass();
-    
+
     if (!ctx.AreMajorSchemaVersionChangesAllowed() || !ctx.IsMajorSchemaVersionChange(deletedProperty.GetClass().GetSchema().GetId()))
         {
         if (ctx.IgnoreIllegalDeletionsAndModifications())
@@ -3156,7 +3156,7 @@ BentleyStatus SchemaWriter::UpdateKindOfQuantity(Context& ctx, KindOfQuantityCha
         actualChanges++;
         sqlUpdateBuilder.AddSetExp("RelativeError", change.RelativeError().GetNew().Value());
         }
-    
+
     if (change.PresentationFormats().IsChanged())
         {
         actualChanges++;
@@ -3207,7 +3207,7 @@ BentleyStatus SchemaWriter::UpdatePropertyCategories(Context& ctx, PropertyCateg
                             oldSchema.GetFullSchemaName().c_str());
             return ERROR;
             }
-        
+
         if (change.GetOpCode() == ECChange::OpCode::New)
             {
             PropertyCategoryCP cat = newSchema.GetPropertyCategoryCP(change.GetChangeName());
@@ -3372,7 +3372,7 @@ BentleyStatus SchemaWriter::UpdateEnumeration(Context& ctx, EnumerationChange& e
         {
         if (SUCCESS != VerifyEnumeratorChanges(ctx, oldEnum, enumeratorChanges))
             return ERROR;
-    
+
         Utf8String enumValueJson;
         if (SUCCESS != SchemaPersistenceHelper::SerializeEnumerationValues(enumValueJson, newEnum, ctx.IsEC32AvailableInFile()))
             return ERROR;
@@ -4483,7 +4483,7 @@ BentleyStatus SchemaWriter::Context::PreprocessSchemas(bvector<ECN::ECSchemaCP>&
 
     // The dependency order may have *changed* due to supplementation adding new ECSchema references! Re-sort them.
     bvector<ECN::ECSchemaCP> sortedSchemas = Sort(primarySchemas);
-        
+
     //If we import into pre-EC3.2 files, we must not import the units and formats schema
     //as they are only deserialized temporarily by ECObjects
     if (IsEC32AvailableInFile())
@@ -4619,7 +4619,7 @@ ECClassCP SchemaWriter::Context::ReservedPropertyNamesPolicy::FindCustomAttribut
     if (entityClass->GetCustomAttributeLocal(ca->GetClass().GetName()).get() == ca)
         return entityClass;
 
-    // ignore mixin. Only traverse base class hierarchy 
+    // ignore mixin. Only traverse base class hierarchy
     if (entityClass->HasBaseClasses())
         {
         if (ECClassCP baseClass = entityClass->GetBaseClasses()[0])

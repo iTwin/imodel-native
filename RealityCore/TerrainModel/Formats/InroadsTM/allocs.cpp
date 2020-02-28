@@ -14,6 +14,7 @@
 /*----------------------------------------------------------------------------*/
 #include "stdafx.h"
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_allocateSurface
@@ -241,3 +242,4 @@ int aecDTM_allocateBlock    /* <= TRUE if error                    */
 
   return ( sts );
 }
+POP_DISABLE_DEPRECATION_WARNINGS

@@ -15,6 +15,7 @@
 #include "stdafx.h"
 #include "TimeStampUtils.h"
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 static int aecDTM_removeChildlessFtrsProc ( void *, struct CIVdtmsrf *, int, struct CIVdtmftr * );
 //static int aecDTM_updateCorridorCtrlGuidsProc (void*,struct CIVdtmsrf*,struct CIVdtmcor*);
 //static int aecDTM_assignNewComponentGuidsProc (void*,struct CIVdtmsrf*,struct CIVdtmcmp*);
@@ -298,7 +299,7 @@ static int aecDTM_assignNewComponentGuidsProc
 
     aecGuid_toString ( oldGuid, &cmpP->guid );
     aecGuid_generate ( &cmpP->guid );
-    aecGuid_toString ( newGuid, &cmpP->guid );  
+    aecGuid_toString ( newGuid, &cmpP->guid );
 
     cmpGuidMapP->SetAt ( oldGuid, newGuid );
 
@@ -367,7 +368,7 @@ static int aecDTM_assignNewFeatureGuidsProc
 
     aecGuid_toString ( oldGuid, &ftrP->guid );
     aecGuid_generate ( &ftrP->guid );
-    
+
     if ( guidMapP->Lookup ( oldGuid, strValue ) )
     {
         wchar_t newGuid[GUID_STRING_MAX_SIZE];
@@ -379,3 +380,4 @@ static int aecDTM_assignNewFeatureGuidsProc
 }
 
 #endif
+POP_DISABLE_DEPRECATION_WARNINGS

@@ -15,19 +15,20 @@
 /*----------------------------------------------------------------------------*/
 #include "filfnc.h"
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
 //
-// We DO NOT need to call _wmakepath directly.  It assumes complete pathnames can be 260 (which 
-// is the Windows NT limit) but we are using 256 so we do not have to translate .alg files.  
+// We DO NOT need to call _wmakepath directly.  It assumes complete pathnames can be 260 (which
+// is the Windows NT limit) but we are using 256 so we do not have to translate .alg files.
 //
 // We will robably need to check other calls that generate file/path names
 //
 static void _AECwmakepath
 (
-wchar_t *path, 
-const wchar_t *drive, 
-const wchar_t *dir, 
-const wchar_t *fname, 
-const wchar_t *ext 
+wchar_t *path,
+const wchar_t *drive,
+const wchar_t *dir,
+const wchar_t *fname,
+const wchar_t *ext
 )
 {
     wchar_t wcsFileName[512] = L"";
@@ -104,3 +105,4 @@ LPWSTR extensionP                     /*  => string with extension           */
 
     return;
 }
+POP_DISABLE_DEPRECATION_WARNINGS

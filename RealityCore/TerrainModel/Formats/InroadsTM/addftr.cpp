@@ -14,10 +14,7 @@
 #include "stdafx.h"
 
 
-/*----------------------------------------------------------------------------*/
-/* Private static function prototypes                                         */
-/*----------------------------------------------------------------------------*/
-
+PUSH_DISABLE_DEPRECATION_WARNINGS
 
 
 /*%-----------------------------------------------------------------------------
@@ -421,3 +418,4 @@ int aecDTM_addFeaturePointsToFile /* <= TRUE if error              */
 
   return ( sts );
 }
+POP_DISABLE_DEPRECATION_WARNINGS

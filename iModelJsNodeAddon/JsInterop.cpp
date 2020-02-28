@@ -148,7 +148,9 @@ void JsInterop::Initialize(BeFileNameCR addonDllDir, Napi::Env env, BeFileNameCR
     // Include this location for delay load of pskernel...
     WString newPath;
     newPath = L"PATH=" + addonDllDir + L";";
+PUSH_DISABLE_DEPRECATION_WARNINGS
     newPath.append(::_wgetenv(L"PATH"));
+POP_DISABLE_DEPRECATION_WARNINGS
     _wputenv(newPath.c_str());
 
     // Defeat node's attempt to turn off WER
@@ -400,7 +402,7 @@ DbResult JsInterop::OpenDgnDb(DgnDbPtr& db, BeFileNameCR fileOrPathname, DgnDb::
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
 //---------------------------------------------------------------------------------------
-BeFileName JsInterop::ResolveFileName(BeFileNameCR fileOrPathname) 
+BeFileName JsInterop::ResolveFileName(BeFileNameCR fileOrPathname)
     {
     BeFileName pathname;
     if (fileOrPathname.DoesPathExist())
@@ -413,7 +415,9 @@ BeFileName JsInterop::ResolveFileName(BeFileNameCR fileOrPathname)
         //                  define an envvar that defines the directory.
         BeFileName dbDir;
 #if defined(BENTLEYCONFIG_OS_WINDOWS) && !defined(BENTLEYCONFIG_OS_WINRT)
+PUSH_DISABLE_DEPRECATION_WARNINGS
         Utf8CP dbdirenv = getenv("NODE_DGNDB_DIR");
+POP_DISABLE_DEPRECATION_WARNINGS
 #else
         auto mobileDir = DgnPlatformLib::GetHost().GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName().GetNameUtf8();
         Utf8CP dbdirenv = mobileDir.c_str();
@@ -459,7 +463,7 @@ DbResult JsInterop::UnsafeSetBriefcaseId(BeFileNameCR fileOrPathname, BeBriefcas
         db->SaveProjectGuid(id);
         }
 
-    if (!dbGuid.empty()) 
+    if (!dbGuid.empty())
         {
         BeGuid id;
         if (id.FromString(dbGuid.c_str()) != SUCCESS)

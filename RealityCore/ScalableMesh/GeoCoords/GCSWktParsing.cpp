@@ -14,11 +14,9 @@
 
 #include <STMInternal/Foundations/PrivateStringTools.h>
 
-
-
+PUSH_DISABLE_DEPRECATION_WARNINGS
 
 using namespace std;
-
 
 BEGIN_BENTLEY_SCALABLEMESH_GEOCOORDINATES_NAMESPACE
 
@@ -43,7 +41,7 @@ enum BentleyAuthorityID
 
 
 /*---------------------------------------------------------------------------------**//**
-* @description  
+* @description
 * @bsimethod                                                  Raymond.Gauthier   10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PrintTransformWkt(wostringstream&       transformStream,
@@ -51,7 +49,7 @@ void PrintTransformWkt(wostringstream&       transformStream,
                        bool                 isInversed)
     {
     // Open transform section
-    transformStream 
+    transformStream
         << (isInversed ? L"INVERSE_MT[" : L"") << L"PARAM_MT[\"Affine\", ";
 
     size_t alteredParamRow[3*4];
@@ -81,23 +79,23 @@ void PrintTransformWkt(wostringstream&       transformStream,
     for (size_t i = 0; i < lastAlteredParamIdx; ++i)
         {
         transformStream <<
-            L"PARAMETER[\"elt_" << alteredParamRow[i] << L"_" << transfoParamColumn[i] << L"\", " << 
+            L"PARAMETER[\"elt_" << alteredParamRow[i] << L"_" << transfoParamColumn[i] << L"\", " <<
             transform[alteredParamRow[i]][transfoParamColumn[i]] << L"],";
         }
 
     // Print last parameter without colon
     transformStream <<
-            L"PARAMETER[\"elt_" << alteredParamRow[lastAlteredParamIdx] << L"_" << transfoParamColumn[lastAlteredParamIdx] << L"\", " << 
+            L"PARAMETER[\"elt_" << alteredParamRow[lastAlteredParamIdx] << L"_" << transfoParamColumn[lastAlteredParamIdx] << L"\", " <<
             transform[alteredParamRow[lastAlteredParamIdx]][transfoParamColumn[lastAlteredParamIdx]] << L"]";
 
     // Close transform section
-    transformStream 
+    transformStream
         << (isInversed ? L"]]" : L"]");
     }
 }
 
 /*---------------------------------------------------------------------------------**//**
-* @description  
+* @description
 * @bsimethod                                                  Raymond.Gauthier   10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GetLocalCsWkt         (WString&         wkt,
@@ -108,17 +106,17 @@ void GetLocalCsWkt         (WString&         wkt,
 
     const WString unitName(unit.GetNameCStr());
 
-    localCsWktStream 
-        << L"LOCAL_CS[\"\", " << 
+    localCsWktStream
+        << L"LOCAL_CS[\"\", " <<
            L"LOCAL_DATUM[\"AnywhereXYZ\", " << BLDT_ANYWHERE_XYZ << L", AUTHORITY[\"BENTLEY_SYSTEMS\", \"" << BAI_ANYWHERE_XYZ << L"\"]], " <<
-           L"UNIT[\"" << unitName << L"\", " << unit.GetRatioToBase() << L"], " << 
+           L"UNIT[\"" << unitName << L"\", " << unit.GetRatioToBase() << L"], " <<
            L"AXIS[\"X\", OTHER], AXIS[\"Y\", OTHER], AXIS[\"Z\", OTHER], AUTHORITY[\"BENTLEY_SYSTEMS\", \"0\"]]";
 
     wkt = localCsWktStream.str().c_str();
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @description  
+* @description
 * @bsimethod                                                  Raymond.Gauthier   10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GetLocalCsWkt         (WString&         wkt,
@@ -131,15 +129,15 @@ void GetLocalCsWkt         (WString&         wkt,
     const WString horizontalUnitName(horizontalUnit.GetNameCStr());
     const WString verticalUnitName(verticalUnit.GetNameCStr());
 
-    composedCsWktStream 
+    composedCsWktStream
         << L"COMPD_CS[\"\", " <<
-           L"LOCAL_CS[\"\", " << 
+           L"LOCAL_CS[\"\", " <<
            L"LOCAL_DATUM[\"AnywhereLatLong\", " << BLDT_ANYWHERE_LAT_LONG << L", AUTHORITY[\"BENTLEY_SYSTEMS\", \"" << BAI_ANYWHERE_LAT_LONG << L"\"]], " <<
-           L"UNIT[\"" << horizontalUnitName << L"\", " << horizontalUnit.GetRatioToBase() << L"], " << 
+           L"UNIT[\"" << horizontalUnitName << L"\", " << horizontalUnit.GetRatioToBase() << L"], " <<
            L"AXIS[\"Lat\", OTHER], AXIS[\"Long\", OTHER], AUTHORITY[\"BENTLEY_SYSTEMS\", \"0\"]], " <<
-           L"LOCAL_CS[\"\", " << 
+           L"LOCAL_CS[\"\", " <<
            L"LOCAL_DATUM[\"AnywhereVertical\", " << BLDT_ANYWHERE_VERTICAL << L", AUTHORITY[\"BENTLEY_SYSTEMS\", \"" << BAI_ANYWHERE_VERTICAL << L"\"]], " <<
-           L"UNIT[\"" << verticalUnitName << L"\", " << verticalUnit.GetRatioToBase() << L"], " << 
+           L"UNIT[\"" << verticalUnitName << L"\", " << verticalUnit.GetRatioToBase() << L"], " <<
            L"AXIS[\"Up\", UP], AUTHORITY[\"BENTLEY_SYSTEMS\", \"0\"]], " <<
            L"AUTHORITY[\"BENTLEY_SYSTEMS\", \"0\"]]";
 
@@ -148,10 +146,10 @@ void GetLocalCsWkt         (WString&         wkt,
 
 
 /*---------------------------------------------------------------------------------**//**
-* @description  
+* @description
 * @bsimethod                                                  Raymond.Gauthier   10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GetFittedCsWkt    (WString&                 wkt, 
+void GetFittedCsWkt    (WString&                 wkt,
                         const TransfoMatrix&    transform,
                         bool                    transformIsToBase,
                         const WString&           baseCsWkt)
@@ -159,14 +157,14 @@ void GetFittedCsWkt    (WString&                 wkt,
     wostringstream fittedCSStream;
     fittedCSStream.precision(numeric_limits<double>::digits10 + 1);
 
-    fittedCSStream 
+    fittedCSStream
         << L"FITTED_CS[\"\", ";
 
     PrintTransformWkt(fittedCSStream, transform, !transformIsToBase);
 
     fittedCSStream
         << L", " <<
-        baseCsWkt << L", " << 
+        baseCsWkt << L", " <<
         L"AUTHORITY[\"BENTLEY_SYSTEMS\", \"0\"]]";
 
     wkt = fittedCSStream.str().c_str();
@@ -174,7 +172,7 @@ void GetFittedCsWkt    (WString&                 wkt,
 
 
 /*---------------------------------------------------------------------------------**//**
-* @description  
+* @description
 * @bsimethod                                                  Raymond.Gauthier   09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool HasBentleyAsAuthority (const WKTSection& wktSection)
@@ -188,7 +186,7 @@ bool HasBentleyAsAuthority (const WKTSection& wktSection)
 
     const WKTSection& authoritySection = authorityParameter.GetSection();
 
-    if (2 != authoritySection.GetSize() && 
+    if (2 != authoritySection.GetSize() &&
         WKTKeyword::TYPE_AUTHORITY != GetWKTKeyword(authoritySection.keywordBegin()).type)
         return false;
 
@@ -196,9 +194,9 @@ bool HasBentleyAsAuthority (const WKTSection& wktSection)
 
     static const WChar BENTLEY_AUTHORITY_NAME[] = L"\"BENTLEY_SYSTEMS\"";
     static const size_t BENTLEY_AUTHORITY_NAME_LEN = CSTRING_LEN(BENTLEY_AUTHORITY_NAME);
-    
 
-    const bool hasBentleyAsAuthority 
+
+    const bool hasBentleyAsAuthority
         = (BENTLEY_AUTHORITY_NAME_LEN == authorityNameParameter.strLen()) &&
           std::equal(BENTLEY_AUTHORITY_NAME, BENTLEY_AUTHORITY_NAME + BENTLEY_AUTHORITY_NAME_LEN,
                      authorityNameParameter.strBegin());
@@ -207,7 +205,7 @@ bool HasBentleyAsAuthority (const WKTSection& wktSection)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @description  
+* @description
 * @bsimethod                                                  Raymond.Gauthier   09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ExtractLocalCS(const WKTSection&       wktSection,
@@ -270,7 +268,7 @@ bool ExtractLocalCS(const WKTSection&       wktSection,
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @description  
+* @description
 * @bsimethod                                                  Raymond.Gauthier   09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ExtractLocalComposedCS(const WKTSection&       wktSection,
@@ -280,7 +278,7 @@ bool ExtractLocalComposedCS(const WKTSection&       wktSection,
     if (WKTKeyword::TYPE_COMPD_CS != GetWKTKeyword(wktSection.keywordBegin()).type ||
         3 > wktSection.GetSize())
         return false;
-    
+
     const WKTParameter& horizontalCSParameter(wktSection[1]);
     if (!horizontalCSParameter.IsSection())
         return false;
@@ -306,7 +304,7 @@ struct MatrixParameter
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @description  
+* @description
 * @bsimethod                                                  Raymond.Gauthier   10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ExtractParameter (const WKTSection&    wktSection,
@@ -345,7 +343,7 @@ if (0 != wcsncasecmp(ELT_PREFIX, &name[0], CSTRING_LEN(ELT_PREFIX)) ||
 
     WChar* valueEnd = 0;
     const double value = wcstod(valueParameter.strBegin(), &valueEnd);
-    
+
     if (rowEnd != &name[5] ||
         colEnd != &name[7] ||
         valueEnd != valueParameter.strEnd() ||
@@ -362,7 +360,7 @@ if (0 != wcsncasecmp(ELT_PREFIX, &name[0], CSTRING_LEN(ELT_PREFIX)) ||
 
 
 /*---------------------------------------------------------------------------------**//**
-* @description  
+* @description
 * @bsimethod                                                  Raymond.Gauthier   10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ExtractParamMt (const WKTSection&   wktSection,
@@ -371,7 +369,7 @@ bool ExtractParamMt (const WKTSection&   wktSection,
     if (WKTKeyword::TYPE_PARAM_MT != GetWKTKeyword(wktSection.keywordBegin()).type ||
         wktSection.GetSize() < 1)
         return false;
-        
+
     const WKTParameter& nameParameter = wktSection[0];
 
     static const WChar AFFINE_NAME[] = L"Affine";
@@ -385,7 +383,7 @@ bool ExtractParamMt (const WKTSection&   wktSection,
         return false;
 
     TransfoMatrix extracted;
-    
+
     for (WKTSection::const_iterator paramIt = wktSection.begin() + 1, paramsEnd = wktSection.end();
          paramIt != paramsEnd;
          ++paramIt)
@@ -406,7 +404,7 @@ bool ExtractParamMt (const WKTSection&   wktSection,
 }
 
 /*---------------------------------------------------------------------------------**//**
-* @description  
+* @description
 * @bsimethod                                                  Raymond.Gauthier   10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ExtractFittedCS   (const WKTSection&       wktSection,
@@ -417,7 +415,7 @@ bool ExtractFittedCS   (const WKTSection&       wktSection,
     if (WKTKeyword::TYPE_FITTED_CS != GetWKTKeyword(wktSection.keywordBegin()).type ||
         wktSection.GetSize() < 3)
         return false;
-    
+
     const WKTParameter& toBaseParameter(wktSection[1]);
     const WKTParameter& baseCsParameter(wktSection[2]);
 
@@ -459,3 +457,5 @@ bool ExtractFittedCS   (const WKTSection&       wktSection,
 
 
 END_BENTLEY_SCALABLEMESH_GEOCOORDINATES_NAMESPACE
+
+POP_DISABLE_DEPRECATION_WARNINGS

@@ -3004,7 +3004,7 @@ void Converter::ProcessConversionResults(ElementConversionResults& conversionRes
         _GetChangeDetector()._OnElementSeen(*this, csearch.GetExistingElementId());
         conversionResults.m_mapping = csearch.m_v8ElementAspect;
 
-        auto allFromSameSource = iModelExternalSourceAspect::GetSelectFromSameSource(GetDgnDb(), csearch.m_v8ElementAspect, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+        auto allFromSameSource = iModelExternalSourceAspect::GetSelectFromSameSource(GetDgnDb(), csearch.m_v8ElementAspect);
         while(BE_SQLITE_ROW == allFromSameSource->Step())
             _GetChangeDetector()._OnElementSeen(*this, allFromSameSource->GetValueId<DgnElementId>(0));
 

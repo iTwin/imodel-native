@@ -9,8 +9,8 @@
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 /*--------------------------------------------------------------------------------**//**
-* NOTE: This code was brought up from MstnPlatform to preserve the old behavior until it is refactored correctly. 
-*    I prefixed everything with vp_ so it is clear that it is coming from here. 
+* NOTE: This code was brought up from MstnPlatform to preserve the old behavior until it is refactored correctly.
+*    I prefixed everything with vp_ so it is clear that it is coming from here.
 *    This stuff either needs refactored into an API that the MstnPlatform methods wrap or it needs to just be coded into the new API.
 *
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -50,19 +50,19 @@ double          scale           // => units */
 
     if (0 != denominatorString[0])
         {
-        if (BE_STRING_UTILITIES_SWSCANF(denominatorString, L"%lf", &denominator) != 1)
+        if (WString::Swscanf_safe(denominatorString, L"%lf", &denominator) != 1)
             return (ERROR);
         }
 
     if (0 != inputString[0])
         {
-        if (BE_STRING_UTILITIES_SWSCANF(inputString, L"%lf", &integerPart) != 1)
+        if (WString::Swscanf_safe(inputString, L"%lf", &integerPart) != 1)
             return (ERROR);
         }
 
     if ( (0 != numeratorString[0]) && (0 != denominatorString[0]) )
         {
-        if (BE_STRING_UTILITIES_SWSCANF(numeratorString, L"%lf", &numerator) != 1)
+        if (WString::Swscanf_safe(numeratorString, L"%lf", &numerator) != 1)
             return (ERROR);
         }
     else
@@ -93,7 +93,9 @@ double          scale           // => units */
     {
     size_t l = wcslen(input) + 1;
     WCharP buffer = (WCharP) _alloca(l * sizeof (WChar));
+PUSH_DISABLE_DEPRECATION_WARNINGS
     wcscpy(buffer, input);
+POP_DISABLE_DEPRECATION_WARNINGS
 
     return vp_AddNumberStringScaled(value, szParsed, negative, buffer, scale);
     }
@@ -249,7 +251,7 @@ static bool    vp_parseAsDegreeString(AngleMode mode, WCharCP inputString)
     }
 
 /*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void  vp_wgetsubstr
 (
@@ -312,7 +314,7 @@ double          uorPerSub
         p = NULL;
     else
         p = ::wcsstr(str, masterUnitsLabel.c_str());
-    bool doMuSu = true; 
+    bool doMuSu = true;
     if (NULL != p)
         {
         /* allow units labels, for example 1'-2.0000" format */
@@ -680,7 +682,9 @@ int         DirectionParser::StringToDirection(double& dir, WCharCP input) const
     size_t  szInput = str.size() + 1;
     WCharP  strng = (WCharP) _alloca(szInput * sizeof (WChar));
     WCharP  nw_str = (WCharP) _alloca(szInput * sizeof (WChar));
+PUSH_DISABLE_DEPRECATION_WARNINGS
     wcscpy(strng, str.c_str());
+POP_DISABLE_DEPRECATION_WARNINGS
     BeStringUtilities::Wcsupr(strng);
 
     dir = 0.0;         /* default value */
@@ -691,9 +695,9 @@ int         DirectionParser::StringToDirection(double& dir, WCharCP input) const
 
     WChar default_delimiters[] = {L" =/"};
     WChar* context;
-    
+
     WCharP res = BeStringUtilities::Wcstok(nw_str, default_delimiters, &context);
-    if (res) 
+    if (res)
         {
         if (vp_cmdStartsWith(L"NORTH", res))
             ns_command = 1;
@@ -809,7 +813,7 @@ BentleyStatus DirectionParser::ToValue(double& outDirection, Utf8CP input)
     vp_removeWhiteSpaceAndCount(whiteSpaceCount, str);
 
     if (SUCCESS != StringToDirection(outDirection, str.c_str()))
-        return ERROR; 
+        return ERROR;
 
     outDirection += m_trueNorth;
     return SUCCESS;
@@ -834,10 +838,10 @@ void DistanceParser::InitModelSettings(GeometricModelCR model)
 
     UnitDefinitionCR  subUnit = displayInfo.GetSubUnits();
     UnitDefinitionCR  masterUnit = displayInfo.GetMasterUnits();
-    
+
     double  uorPerMast = masterUnit.ToMeters();
     double  uorPerSub  = subUnit.ToMeters();
-    
+
     SetMasterUnitLabel(masterUnit.GetLabelCP());
     SetSubUnitLabel(subUnit.GetLabelCP());
     SetMasterUnitScale(uorPerMast);
@@ -878,7 +882,7 @@ DistanceParserPtr       DistanceParser::Create(GeometricModelCR model)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DistanceParser::ToValue(double& outValue, size_t& numCharsParsed, Utf8CP input) 
+BentleyStatus DistanceParser::ToValue(double& outValue, size_t& numCharsParsed, Utf8CP input)
     {
     outValue = 0.0;
     if (NULL == input || 0 == *input)
@@ -889,12 +893,12 @@ BentleyStatus DistanceParser::ToValue(double& outValue, size_t& numCharsParsed, 
     size_t whiteSpaceCount = 0;
     vp_removeWhiteSpaceAndCount(whiteSpaceCount, inString);
 
-    BentleyStatus result = SUCCESS == vp_mdlString_toUors2(&outValue, 
+    BentleyStatus result = SUCCESS == vp_mdlString_toUors2(&outValue,
             numCharsParsed,
             inString.c_str(),
-            m_masterUnitLabel.c_str(), 
-            m_subUnitLabel.c_str(), 
-            m_masterUnitScale, 
+            m_masterUnitLabel.c_str(),
+            m_subUnitLabel.c_str(),
+            m_masterUnitScale,
             m_subUnitScale) ? SUCCESS: ERROR;
 
     if (SUCCESS == result)
@@ -908,7 +912,7 @@ BentleyStatus DistanceParser::ToValue(double& outValue, size_t& numCharsParsed, 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DistanceParser::ToValue(double& outValue, Utf8CP input) 
+BentleyStatus DistanceParser::ToValue(double& outValue, Utf8CP input)
     {
     size_t  numChars;
 
@@ -971,8 +975,8 @@ BentleyStatus PointParser::StringToPoint (DPoint3dR point, Point3dP relativeFlag
 
     int         numCoords = 0;
     WString     coordStr[3];
-    WCharCP     currPos = inString.begin();
-    WCharCP     endPos  = inString.end();
+    WCharCP currPos = &*inString.begin();
+    WCharCP endPos  = &*inString.end();
 
     for (int iCoord = 0; iCoord < 3; iCoord++)
         {
@@ -1073,14 +1077,14 @@ void AreaOrVolumeParser::InitModelSettings(GeometricModelCR model)
 
     UnitDefinition  masterUnit = displayInfo.GetMasterUnits();
     double          uorPerMast = masterUnit.ToMeters();
-    
+
     SetMasterUnitScale(uorPerMast);
     }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus AreaOrVolumeParser::ToValue(double& outValue, size_t& numCharsParsed, Utf8CP input) 
+BentleyStatus AreaOrVolumeParser::ToValue(double& outValue, size_t& numCharsParsed, Utf8CP input)
     {
     outValue = 0.0;
     if (NULL == input || 0 == *input)

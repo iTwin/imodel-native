@@ -12,6 +12,8 @@
 #include <Bentley/BeAssert.h>
 #include <Bentley/BeThread.h>
 
+PUSH_DISABLE_DEPRECATION_WARNINGS
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Daryl.Holmwood  04/2014
 //--------------+------------------------------------------------------------------------
@@ -231,7 +233,7 @@ BeXmlDomPtr BeXmlDom::CreateAndReadFromFile (BeXmlStatus& xmlStatus, WCharCP fil
 
     if (WString::IsNullOrEmpty (filePath))
         {
-        BeAssert (false); 
+        BeAssert (false);
         xmlStatus = BEXML_FileNotFound;
         return wrapper;
         }
@@ -413,10 +415,10 @@ BeXmlDomPtr BeXmlDom::CreateAndReadFromString (BeXmlStatus& xmlStatus, Utf16CP s
         xmlStatus = BEXML_ParseError;
         return wrapper;
         }
-    
+
     if (0 == characterCount)
         characterCount = BeStringUtilities::Utf16Len(source);
-    
+
     // this is here because the semantics of this method was changed from taking "bufferSize" to "characterCount", and I want to make sure all the old callers get an Assert.
     // It's ok if characterCount includes the zero terminator.
 #if defined (_WIN32)
@@ -914,7 +916,7 @@ BeXmlStatus BeXmlDom::SchemaValidate(WCharCP _xsdFile)
     {
     Utf8String xsdFile;
     BeStringUtilities::WCharToUtf8 (xsdFile, _xsdFile);
-    
+
     // Parse and load schema.
     xmlSchemaParserCtxtPtr pParserCtxt = xmlSchemaNewParserCtxt(xsdFile.c_str());
     if(pParserCtxt == NULL)
@@ -932,11 +934,11 @@ BeXmlStatus BeXmlDom::SchemaValidate(WCharCP _xsdFile)
         validateStatus = xmlSchemaValidateDoc(pSchemaCtxt, m_doc);
         xmlSchemaFreeValidCtxt(pSchemaCtxt);
         }
-    
+
     if (pSchema != NULL)
         xmlSchemaFree(pSchema);
-   
-    return 0 == validateStatus ? BEXML_Success : BEXML_ParseError; 
+
+    return 0 == validateStatus ? BEXML_Success : BEXML_ParseError;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1052,12 +1054,12 @@ BeXmlStatus BeXmlDom::SelectNodeContent(Utf8StringR resultContent, Utf8CP expres
 BeXmlStatus BeXmlDom::SelectNodeContent (WStringR resultContent, Utf8CP expression, xmlXPathContextPtr context, BeXmlDom::NodeBias bias)
     {
     resultContent.clear();
-    
+
     Utf8String resultContentUtf8;
     BeXmlStatus status = SelectNodeContent(resultContentUtf8, expression, context, bias);
     if (BEXML_Success != status)
         return status;
-    
+
     resultContent.AssignUtf8(resultContentUtf8.c_str());
 
     return BEXML_Success;
@@ -1272,13 +1274,13 @@ BeXmlStatus BeXmlNode::GetXmlString (Utf16BufferR xmlString)
 BeXmlStatus BeXmlNode::GetXmlString (Utf8StringR xmlString)
     {
     xmlOutputBufferPtr buf = xmlAllocOutputBuffer (NULL);
-    
+
     xmlNodeDumpOutput (buf, this->doc, this, 0, 0, NULL);
 
     xmlString.assign ((Utf8CP)xmlBufContent(buf->buffer));
 
     xmlOutputBufferClose (buf);
-    
+
     return BEXML_Success;
     }
 
@@ -1426,13 +1428,13 @@ BeXmlStatus BeXmlNode::GetContent(Utf8StringR content, Utf8CP relativePath)
     content.clear();
     BeXmlInternalStatus internalStatus;
     xmlChar* rawContent = GetRawContent(this, internalStatus, relativePath);
-    
+
     if (BEXMLINT_NodeNotFound == internalStatus)
         return BEXML_NodeNotFound;
-    
+
     if (BEXMLINT_NullNodeValue == internalStatus)
         return BEXML_NullNodeValue;
-    
+
     if (BEXMLINT_EmptyNeedsFree == internalStatus)
         {
         xmlFree(rawContent);
@@ -1456,7 +1458,7 @@ BeXmlStatus BeXmlNode::GetContent(Utf8StringR content, Utf8CP relativePath)
 BeXmlStatus     BeXmlNode::GetContent (WStringR content, Utf8CP relativePath)
     {
     content.clear();
-    
+
     Utf8String contentUtf8;
     BeXmlStatus status = GetContent(contentUtf8, relativePath);
 
@@ -2032,9 +2034,9 @@ BeXmlStatus     BeXmlNode::GetAttributeStringValue (WStringR resultValue, Utf8CP
     {
     Utf8String  resultValueUtf8;
     BeXmlStatus status          = GetAttributeStringValue(resultValueUtf8, attributeName);
-    
+
     resultValue.AssignUtf8(resultValueUtf8.c_str());
-    
+
     return status;
     }
 
@@ -2637,7 +2639,7 @@ BeXmlReader::ReadResult BeXmlReader::_ReadTo (NodeType nodeType, Utf8CP name, bo
     {
     if (value)
         value->clear ();
-    
+
     ReadResult  status;
     bool        checkName           = ((NULL != name) && (0 != *name));
     size_t      nestedElementCount  = 0;
@@ -2657,14 +2659,14 @@ BeXmlReader::ReadResult BeXmlReader::_ReadTo (NodeType nodeType, Utf8CP name, bo
                 {
                 if (0 == nestedElementCount)
                     return READ_RESULT_Error;
-                
+
                 --nestedElementCount;
                 }
             }
-        
+
         if (nodeType != this->GetCurrentNodeType ())
             continue;
-        
+
         if (checkName)
             {
             Utf8String currName;
@@ -2678,10 +2680,10 @@ BeXmlReader::ReadResult BeXmlReader::_ReadTo (NodeType nodeType, Utf8CP name, bo
 
         break;
         }
-    
+
     if ((READ_RESULT_Success == status) && (NULL != value))
         this->_GetCurrentNodeValue (*value);
-    
+
     return status;
     }
 
@@ -2702,7 +2704,7 @@ BeXmlReader::ReadResult BeXmlReader::ReadToEndOfCurrentElement ()
                 ++nestedElementCount;
                 break;
                 }
-            
+
             case NODE_TYPE_EndElement:
                 {
                 if (0 == nestedElementCount)
@@ -2712,7 +2714,7 @@ BeXmlReader::ReadResult BeXmlReader::ReadToEndOfCurrentElement ()
                 }
             }
         }
-    
+
     return status;
     }
 
@@ -2749,7 +2751,7 @@ BeXmlReader::ReadResult BeXmlReader::_ReadToEndOfElement()
                 break;
             }
         }
-    
+
     return moveStatus;
     }
 
@@ -3134,7 +3136,7 @@ BeXmlStatus BeXmlWriter::WriteDocumentStart(xmlCharEncoding encoding)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2011
 //---------------------------------------------------------------------------------------
-BeXmlStatus BeXmlWriter::_WriteElementStart (Utf8CP elementName) 
+BeXmlStatus BeXmlWriter::_WriteElementStart (Utf8CP elementName)
     {
     if ( (NULL == elementName) || (0 == *elementName) )
         return BEXML_ArgumentError;
@@ -3145,7 +3147,7 @@ BeXmlStatus BeXmlWriter::_WriteElementStart (Utf8CP elementName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2011
 //---------------------------------------------------------------------------------------
-BeXmlStatus BeXmlWriter::_WriteElementStart (Utf8CP elementName, Utf8CP namespaceURI) 
+BeXmlStatus BeXmlWriter::_WriteElementStart (Utf8CP elementName, Utf8CP namespaceURI)
     {
     if ( (NULL == elementName) || (0 == *elementName) )
         return BEXML_ArgumentError;
@@ -3518,3 +3520,4 @@ BeXmlStatus IBeXmlWriter::WriteAttribute(Utf8CP name, WCharCP value)
     {
     return _WriteAttribute(name, value);
     }
+POP_DISABLE_DEPRECATION_WARNINGS

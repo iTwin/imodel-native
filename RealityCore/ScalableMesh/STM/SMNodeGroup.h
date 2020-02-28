@@ -5,12 +5,7 @@
 //:>  See COPYRIGHT.md in the repository root for full copyright notice.
 //:>
 //:>+--------------------------------------------------------------------------------------
-
-
 #pragma once
-
-
-
 
 #include <ImagePP/all/h/HFCPtr.h>
 #include <TilePublisher/TilePublisher.h>
@@ -21,6 +16,8 @@
 #include <json/json.h>
 #include <CloudDataSource/DataSourceManager.h>
 #include "ScalableMeshModuleInfo.h"
+
+PUSH_DISABLE_DEPRECATION_WARNINGS
 
 #define SESSION_NAME DataSource::SessionName
 
@@ -114,7 +111,7 @@ private:
     WString                     m_wktStr;
     };
 
-struct SMGroupCache : public BENTLEY_NAMESPACE_NAME::RefCountedBase 
+struct SMGroupCache : public BENTLEY_NAMESPACE_NAME::RefCountedBase
     {
 
 public:
@@ -616,7 +613,7 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
 
         void SetURL(DataSourceURL url);
 
-        Json::Value GetJsonHeader(const uint64_t& id) 
+        Json::Value GetJsonHeader(const uint64_t& id)
             {
             assert(m_tileTreeMap.count(id) == 1);
             return *m_tileTreeMap[id];
@@ -657,8 +654,8 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
         WString GetFilePath() { return m_outputDirPath; }
 
         void Open(const uint32_t& pi_pGroupID)
-            { 
-            SetID(pi_pGroupID); 
+            {
+            SetID(pi_pGroupID);
             }
 
         template<class EXTENT> void Close()
@@ -772,7 +769,7 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
 
         SMNodeHeader* GetNodeHeader(const size_t& pi_pNodeHeaderID)
             {
-            return (std::find_if(begin(*m_groupHeader), end(*m_groupHeader), [&](SMNodeHeader& nodeId)
+            return (&*std::find_if(begin(*m_groupHeader), end(*m_groupHeader), [&](SMNodeHeader& nodeId)
                 {
                 return pi_pNodeHeaderID == nodeId.blockid;
                 }));
@@ -1089,7 +1086,7 @@ class SMBentleyGroupingStrategy : public SMGroupingStrategy<EXTENT>
         SMGroupGlobalParameters::StrategyType m_Mode;
     };
 
-template<class EXTENT> 
+template<class EXTENT>
 void SMBentleyGroupingStrategy<EXTENT>::_Apply(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroupPtr pi_Group)
     {
     if (pi_Group->IsFull() || pi_Group->IsCommonAncestorTooFar((uint32_t)pi_NodeHeader.m_level))
@@ -1306,7 +1303,7 @@ size_t SMCesium3DTileStrategy<EXTENT>::_AddNodeToGroup(SMIndexNodeHeader<EXTENT>
     SMStreamingStore<EXTENT>::SerializeHeaderToCesium3DTileJSON(&pi_NodeHeader, pi_NodeHeader.m_id, nodeTile);
     pi_Group->Append3DTile(pi_NodeHeader.m_id.m_integerID, pi_NodeHeader.m_parentNodeID.m_integerID, nodeTile);
     this->m_GroupMasterHeader.AddNodeToGroup(pi_Group->GetID(), (uint64_t)pi_NodeHeader.m_id.m_integerID, 0);
- 
+
     return 0;
     }
 
@@ -1366,7 +1363,7 @@ void SMCesium3DTileStrategy<EXTENT>::_SaveMasterHeader(const WString pi_pOutputD
     // Save SM master header
     this->m_GroupMasterHeader.SaveToFile(pi_pOutputDirPath/*, SMNodeGroup::StrategyType::CESIUM*/);
 
-    // NEEDS_WORK_SM_STREAMING: Save Cesium master header 
+    // NEEDS_WORK_SM_STREAMING: Save Cesium master header
     }
 
 template<class EXTENT>
@@ -1405,7 +1402,7 @@ void SMCesium3DTileStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) con
             SMMasterHeader["GCS"] = Utf8String(wktString.c_str());
 #if defined(VANCOUVER_API) || defined(DGNDB06_API)
         SMMasterHeader["LastModifiedDateTime"] = DateTime::GetCurrentTimeUtc().ToUtf8String();
-#else        
+#else
         SMMasterHeader["LastModifiedDateTime"] = DateTime::GetCurrentTimeUtc().ToString();
 #endif
 
@@ -1449,3 +1446,4 @@ void SMCesium3DTileStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) con
         }
 
     }
+POP_DISABLE_DEPRECATION_WARNINGS

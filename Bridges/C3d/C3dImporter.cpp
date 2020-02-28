@@ -58,7 +58,7 @@ void C3dImporter::ParseC3dConfigurations ()
         {
         if (BeXmlStatus::BEXML_Success == node->GetAttributeStringValue(strValue, "name") && !strValue.empty())
             m_entitiesNeedProxyGeometry.insert (strValue.ToUpper());
-        }   
+        }
 
     xmlDom->SelectNodes (nodes, "/ConvertConfig/Options/OptionBool", nullptr);
     for (auto node : nodes)
@@ -304,7 +304,7 @@ bool    C3dImporter::_FilterEntity (ElementImportInputsR inputs) const
                 auto& changeDetector = importer->GetChangeDetector ();
                 if (!changeDetector._IsElementChanged(detectionResults, *importer, *object, inputs.GetModelMapping()))
                     {
-                    auto existingElements = iModelExternalSourceAspect::GetSelectFromSameSource(this->GetDgnDb(), detectionResults.GetObjectAspect(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+                    auto existingElements = iModelExternalSourceAspect::GetSelectFromSameSource(this->GetDgnDb(), detectionResults.GetObjectAspect());
                     while(BE_SQLITE_ROW == existingElements->Step())
                         changeDetector._OnElementSeen (*importer, existingElements->GetValueId<DgnElementId>(0));
                     }
@@ -322,8 +322,8 @@ bool    C3dImporter::_FilterEntity (ElementImportInputsR inputs) const
 BentleyStatus   C3dImporter::_ImportEntity (ElementImportResultsR results, ElementImportInputsR inputs)
     {
     /*-----------------------------------------------------------------------------------
-    Below code is only needed as a workaround for some AECC entities which are known to be 
-    incorrectly drawn by the Civil toolkit.  We filter these entities in or out on a case 
+    Below code is only needed as a workaround for some AECC entities which are known to be
+    incorrectly drawn by the Civil toolkit.  We filter these entities in or out on a case
     by case.  After we have obtained an ODA fix for an entity, update the filter below.
     -----------------------------------------------------------------------------------*/
     auto sourceEntity = inputs.GetEntityP ();
