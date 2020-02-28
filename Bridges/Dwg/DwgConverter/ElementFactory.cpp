@@ -39,6 +39,7 @@ ElementFactory::ElementFactory (DwgImporter::ElementImportResults& results, DwgI
     m_canCreateSharedParts = m_importer.GetOptions().IsBlockAsSharedParts ();
     m_sourceBlockId.SetNull ();
     m_sourceLayerId.SetNull ();
+    m_elementCount = 0;
 
     // find the element handler
     m_elementHandler = dgn_ElementHandler::Element::FindHandler (m_inputs.GetTargetModelR().GetDgnDb(), m_inputs.GetClassId());
@@ -620,7 +621,7 @@ BentleyStatus   ElementFactory::CreateIndividualElements ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   ElementFactory::CreateEmptyElement ()
     {
-    m_results.m_importedElement = m_importer._CreateElement (m_elementParams, m_inputs);
+    m_results.m_importedElement = m_importer._CreateElement (m_elementParams, m_inputs, m_elementCount);
     if (m_results.m_importedElement.IsNull() && m_elementHandler != nullptr)
         m_results.m_importedElement = m_elementHandler->Create (m_elementParams);
 
@@ -637,6 +638,8 @@ BentleyStatus   ElementFactory::CreateEmptyElement ()
         return  BSIERROR;
         }
     geomSource->SetCategoryId (m_createParams.GetCategoryId());
+
+    m_elementCount++;
     return  BSISUCCESS;
     }
 
@@ -663,7 +666,7 @@ BentleyStatus   ElementFactory::CreateElement ()
 #endif  // NEED_UNIQUE_CODE_PER_ELEMENT
 
     // create a new element from current geometry builder:
-    DgnElementPtr   element = m_importer._CreateElement (m_elementParams, m_inputs);
+    DgnElementPtr   element = m_importer._CreateElement (m_elementParams, m_inputs, m_elementCount);
     if (!element.IsValid() && m_elementHandler != nullptr)
         element = m_elementHandler->Create (m_elementParams);
 
@@ -701,6 +704,7 @@ BentleyStatus   ElementFactory::CreateElement ()
 
     // reset the geometry builder for next new element
     m_geometryBuilder = nullptr;
+    m_elementCount++;
 
     return  BSISUCCESS;
     }

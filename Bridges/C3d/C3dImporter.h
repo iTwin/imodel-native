@@ -39,6 +39,7 @@
 #define ROADNETWORK_MODEL_NAME      "Road Network"
 #define RAILNETWORK_MODEL_NAME      "Rail Network"
 #define CIVIL_ALIGNED_SUBJECT       "Civil Alignment"
+#define TRANSPORTATIONSYSTEM_NAME   "Transportation System"
 
 // Entities
 #define ECCLASSNAME_AeccAlignment       "AeccAlignment"
@@ -153,7 +154,7 @@ struct C3dImporter : public DwgImporter
         C3dOptions () : m_isAlignedModelPrivate(true)
             {
             }
-        bool IsAlignedModelPrivate () { return m_isAlignedModelPrivate; }
+        bool IsAlignedModelPrivate () const { return m_isAlignedModelPrivate; }
         void SetAlignedModelPrivate (bool hide) { m_isAlignedModelPrivate = hide; }
         };  // C3dOptions
 
@@ -164,10 +165,12 @@ private:
     ECN::ECSchemaCP     m_c3dSchema;
     C3dOptions          m_c3dOptions;
     bset<Utf8String>    m_entitiesNeedProxyGeometry;
+    DwgDbObjectIdArray  m_entitiesForPostImport;
     
 private:
     SubjectCPtr GetAlignmentSubject ();
     void ParseC3dConfigurations ();
+    void SetRenderableDefaultView ();
 
 public:
     // Constructor
@@ -179,18 +182,20 @@ public:
     EXPORT_ATTRIBUTE BentleyStatus  _ImportEntitySection () override;
     EXPORT_ATTRIBUTE BentleyStatus  _ImportEntity(ElementImportResultsR results, ElementImportInputsR inputs) override;
     EXPORT_ATTRIBUTE Utf8String     _ComputeImportJobName (DwgDbBlockTableRecordCR modelspaceBlock) const override;
-    EXPORT_ATTRIBUTE bool           _FilterEntity (ElementImportInputsR inputs) const override;
+    EXPORT_ATTRIBUTE bool           _FilterEntity (ElementImportInputsR inputs) override;
+    EXPORT_ATTRIBUTE DgnElementPtr  _CreateElement (DgnElement::CreateParams& params, ElementImportInputsR inputs, size_t elementIndex) override;
     EXPORT_ATTRIBUTE DPoint3d       _GetElementPlacementPoint (DwgDbEntityCR entity) override;
     EXPORT_ATTRIBUTE bool _CreateObjectProvenance (BentleyApi::MD5::HashVal& hash, DwgDbObjectCR object) override;
     EXPORT_ATTRIBUTE void _SetChangeDetector (bool updating) override;
     EXPORT_ATTRIBUTE bool _AllowEntityMaterialOverrides (DwgDbEntityCR entity) const override;
     EXPORT_ATTRIBUTE BentleyStatus  _ProcessDetectionResults (IDwgChangeDetector::DetectionResultsR detected, ElementImportResultsR results, ElementImportInputsR inputs) override;
+    EXPORT_ATTRIBUTE void           _PostProcessViewports () override;
 
     // C3dImporter methods
     EXPORT_ATTRIBUTE BentleyStatus  OnBaseBridgeJobInitialized (DgnElementId jobId);
     EXPORT_ATTRIBUTE BentleyStatus  OnBaseBridgeJobFound (DgnElementId jobId);
-    PhysicalModelPtr    GetRoadNetworkModel ();
-    PhysicalModelPtr    GetRailNetworkModel ();
+    PhysicalModelPtr    GetRoadNetworkModel () { return m_roadNetworkModel; }
+    PhysicalModelPtr    GetRailNetworkModel () { return m_railNetworkModel; }
     SpatialLocationModelPtr GetAlignmentModel () { return m_alignmentModel; }
     ECN::ECSchemaCP     GetC3dSchema () const { return m_c3dSchema; }
     ECN::ECClassCP      GetC3dECClass (Utf8StringCR name) const;
@@ -198,6 +203,10 @@ public:
     DgnDbStatus InsertArrayProperty (DgnElementR element, Utf8StringCR propertyName, uint32_t arraySize) const;
     GeometryOptions& GetCurrentGeometryOptions () { return T_Super::_GetCurrentGeometryOptions(); }
     IDwgChangeDetector& GetChangeDetector () { return T_Super::_GetChangeDetector(); }
+    C3dOptions const&   GetC3dOptions () const { return m_c3dOptions; }
+    ResolvedModelMapping GetRootModel () const { return  T_Super::GetRootModel(); }
+    void    RegisterEntityForPostImport (DwgDbObjectIdCR id) { m_entitiesForPostImport.push_back(id); }
+    bool    IsUpdating() const { return T_Super::IsUpdating(); }
 };  // C3dImporter
 DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(C3dImporter)
 

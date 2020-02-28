@@ -26,6 +26,9 @@ BentleyStatus AeccCorridorExt::_ConvertToBim (ProtocolExtensionContext& context,
     m_toDgnContext = &context;
     m_importedElement = nullptr;
     m_parametersInstance = nullptr;
+    m_baseAlignmentId.Invalidate ();
+
+    this->FindCandidateAeccAlignment ();
 
     status = this->ImportCorridor ();
     if (status != BentleyStatus::BSISUCCESS)
@@ -43,22 +46,42 @@ BentleyStatus AeccCorridorExt::ImportCorridor ()
     if (corridorClass == nullptr)
         return  BentleyStatus::BSIERROR;
 
+    m_c3dCorridorInstance = corridorClass->GetDefaultStandaloneEnabler()->CreateInstance ();
+    if (!m_c3dCorridorInstance.IsValid())
+        return  BentleyStatus::BSIERROR;
+
     auto& results = m_toDgnContext->GetElementResultsR ();
     auto& inputs = m_toDgnContext->GetElementInputsR ();
 
-    inputs.SetClassId (corridorClass->GetId());
-    if (!m_name.empty())
-        inputs.SetElementLabel (m_name);
+    // re-target the corridor element to an appropriate network model
+    if (m_aeccAlignment->GetAlignmentType() == AlignmentType::Rail)
+        m_networkModel = m_importer->GetRailNetworkModel ();
+    else
+        m_networkModel = m_importer->GetRoadNetworkModel ();
+    if (!m_networkModel.IsValid())
+        return  BentleyStatus::BSIERROR;
 
-    auto status = m_importer->_ImportEntity (results, inputs);
+    DwgImporter::ElementImportInputs retargetedInputs(*m_networkModel);
+    retargetedInputs.SetClassId (inputs.GetClassId());
+    retargetedInputs.SetElementLabel (m_name.empty() ? inputs.GetElementLabel() : m_name);
+    retargetedInputs.SetTransform (inputs.GetTransform());
+    retargetedInputs.SetModelMapping (inputs.GetModelMapping());
+    retargetedInputs.SetEntityId (inputs.GetEntityId());
+
+    // need to add a refCounted within the scope of this method:
+    retargetedInputs.m_entity = inputs.m_entity;
+
+    // now ready to have base bridge create geometry - will callback to CreateElement and UpdateElement to handle the the Civil domain element
+    auto status = m_importer->_ImportEntity (results, retargetedInputs);
     if (status != BentleyStatus::BSISUCCESS)
         return  status;
 
+    // we are back with the corridor element created as imported elements in results - add AeccCorridor properties as multi-aspects
     m_importedElement = results.GetImportedElement ();
     if (m_importedElement != nullptr)
         {
         if (!m_description.empty())
-            m_importedElement->SetPropertyValue (ECPROPNAME_Description, m_description.c_str());
+            m_c3dCorridorInstance->SetValue (ECPROPNAME_Description, ECValue(m_description.c_str()));
 
         // Parameters
         this->ProcessBaselines ();
@@ -68,6 +91,13 @@ BentleyStatus AeccCorridorExt::ImportCorridor ()
 
         // Codes
         this->ProcessCodes ();
+
+        // set the ECInstance as a multi-aspect to the element
+        ECValue corridorValue(VALUEKIND_Struct);
+        corridorValue.SetStruct (m_c3dCorridorInstance.get());
+
+        auto dbStatus = DgnElement::GenericMultiAspect::AddAspect (*m_importedElement, *m_c3dCorridorInstance.get());
+        status = static_cast<BentleyStatus>(dbStatus);
         }
 
     return  status;
@@ -86,8 +116,8 @@ BentleyStatus AeccCorridorExt::ProcessBaselines ()
     if (!m_parametersInstance.IsValid())
         return  BentleyStatus::BSIERROR;
 
-    auto status = m_importer->InsertArrayProperty (*m_importedElement, ECPROPNAME_CorridorParameters, count);
-    if (status != DgnDbStatus::Success)
+    auto status = m_c3dCorridorInstance->InsertArrayElements (ECPROPNAME_CorridorParameters, 0, count);
+    if (status != ECObjectsStatus::Success)
         return  static_cast<BentleyStatus>(status);
 
     for (uint32_t i = 0; i < count; i++)
@@ -100,8 +130,8 @@ BentleyStatus AeccCorridorExt::ProcessBaselines ()
                 ECValue paramsValue(VALUEKIND_Struct);
                 paramsValue.SetStruct (m_parametersInstance.get());
 
-                status = m_importedElement->SetPropertyValue (ECPROPNAME_CorridorParameters, paramsValue, PropertyArrayIndex(i));
-                if (status != DgnDbStatus::Success)
+                status = m_c3dCorridorInstance->SetValue (ECPROPNAME_CorridorParameters, paramsValue, i);
+                if (status != ECObjectsStatus::Success)
                     break;
                 }
             }
@@ -203,8 +233,8 @@ BentleyStatus AeccCorridorExt::ProcessFeatureStyles ()
     if (count < 1)
         return  BentleyStatus::BSISUCCESS;
 
-    auto status = m_importer->InsertArrayProperty (*m_importedElement, ECPROPNAME_CorridorFeatures, count);
-    if (status != DgnDbStatus::Success)
+    auto status = m_c3dCorridorInstance->InsertArrayElements (ECPROPNAME_CorridorFeatures, 0, count);
+    if (status != ECObjectsStatus::Success)
         return  static_cast<BentleyStatus>(status);
     
     for (uint32_t i = 0; i < count; i++)
@@ -239,8 +269,8 @@ BentleyStatus AeccCorridorExt::ProcessFeatureStyles ()
             ECValue featureValue(VALUEKIND_Struct);
             featureValue.SetStruct (featureInstance.get());
 
-            status = m_importedElement->SetPropertyValue (ECPROPNAME_CorridorFeatures, featureValue, PropertyArrayIndex(i));
-            if (status != DgnDbStatus::Success)
+            status = m_c3dCorridorInstance->SetValue (ECPROPNAME_CorridorFeatures, featureValue, i);
+            if (status != ECObjectsStatus::Success)
                 break;
             }
         }
@@ -322,8 +352,8 @@ BentleyStatus AeccCorridorExt::ProcessCodes ()
     uint32_t count = roadwayStyleSet->GetCustomLinkCount ();
     if (count > 1)
         {
-        auto status = m_importer->InsertArrayProperty (*m_importedElement, ECPROPNAME_LinkCodes, count);
-        if (status != DgnDbStatus::Success)
+        auto status = m_c3dCorridorInstance->InsertArrayElements (ECPROPNAME_LinkCodes, 0, count);
+        if (status != ECObjectsStatus::Success)
             return  static_cast<BentleyStatus>(status);
 
         for (uint32_t i = 0; i < count; i++)
@@ -333,7 +363,7 @@ BentleyStatus AeccCorridorExt::ProcessCodes ()
             if (!linkCustom.isNull())
                 {
                 status = this->ProcessCode (code, *linkCustom, ECPROPNAME_LinkCodes, i);
-                if (status != DgnDbStatus::Success)
+                if (status != ECObjectsStatus::Success)
                     return  static_cast<BentleyStatus>(status);
                 }
             }
@@ -343,8 +373,8 @@ BentleyStatus AeccCorridorExt::ProcessCodes ()
     count = roadwayStyleSet->GetCustomPointCount ();
     if (count > 1)
         {
-        auto status = m_importer->InsertArrayProperty (*m_importedElement, ECPROPNAME_PointCodes, count);
-        if (status != DgnDbStatus::Success)
+        auto status = m_c3dCorridorInstance->InsertArrayElements (ECPROPNAME_PointCodes, 0, count);
+        if (status != ECObjectsStatus::Success)
             return  static_cast<BentleyStatus>(status);
 
         for (uint32_t i = 0; i < count; i++)
@@ -354,7 +384,7 @@ BentleyStatus AeccCorridorExt::ProcessCodes ()
             if (!pointCustom.isNull())
                 {
                 status = this->ProcessCode (code, *pointCustom, ECPROPNAME_PointCodes, i);
-                if (status != DgnDbStatus::Success)
+                if (status != ECObjectsStatus::Success)
                     return  static_cast<BentleyStatus>(status);
                 }
             }
@@ -364,8 +394,8 @@ BentleyStatus AeccCorridorExt::ProcessCodes ()
     count = roadwayStyleSet->GetCustomShapeCount ();
     if (count > 1)
         {
-        auto status = m_importer->InsertArrayProperty (*m_importedElement, ECPROPNAME_ShapeCodes, count);
-        if (status != DgnDbStatus::Success)
+        auto status = m_c3dCorridorInstance->InsertArrayElements (ECPROPNAME_ShapeCodes, 0, count);
+        if (status != ECObjectsStatus::Success)
             return  static_cast<BentleyStatus>(status);
 
         for (uint32_t i = 0; i < count; i++)
@@ -375,7 +405,7 @@ BentleyStatus AeccCorridorExt::ProcessCodes ()
             if (!shapeCustom.isNull())
                 {
                 status = this->ProcessCode (code, *shapeCustom, ECPROPNAME_ShapeCodes, i);
-                if (status != DgnDbStatus::Success)
+                if (status != ECObjectsStatus::Success)
                     return  static_cast<BentleyStatus>(status);
                 }
             }
@@ -387,11 +417,11 @@ BentleyStatus AeccCorridorExt::ProcessCodes ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          11/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus AeccCorridorExt::ProcessCode (OdString const& code, AECCSubassemblyEntTraits const& subassentTraits, Utf8StringCR propName, uint32_t index)
+ECObjectsStatus AeccCorridorExt::ProcessCode (OdString const& code, AECCSubassemblyEntTraits const& subassentTraits, Utf8StringCR propName, uint32_t index)
     {
     auto codeInstance = m_importer->CreateC3dECInstance (ECCLASSNAME_CorridorCode);
     if (!codeInstance.IsValid())
-        return  DgnDbStatus::WrongClass;
+        return  ECObjectsStatus::Error;
 
     // Code
     Utf8String  codeString(reinterpret_cast<WCharCP>(code.c_str()));
@@ -429,7 +459,192 @@ DgnDbStatus AeccCorridorExt::ProcessCode (OdString const& code, AECCSubassemblyE
     ECValue codeValue(VALUEKIND_Struct);
     codeValue.SetStruct (codeInstance.get());
 
-    return  m_importedElement->SetPropertyValue(propName.c_str(), codeValue, PropertyArrayIndex(index));
+    return  m_c3dCorridorInstance->SetValue(propName.c_str(), codeValue, index);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementPtr   AeccCorridorExt::CreateElement (DgnElement::CreateParams& params, DwgImporter::ElementImportInputsR inputs, size_t elementIndex)
+    {
+    /*-----------------------------------------------------------------------------------
+    This method is called back from ElementFactory for both the header and child elements 
+    as a result of above call to m_importer->_ImportEntity.  It only creates and returns 
+    a Civil corridor element.  Leave the insertion or update to the base bridge, which will
+    also insert or update ExternalSourceAspect.  For dependents and relationships that
+    require the corridor to be inserted, next method UpdateElement will be called upon
+    detection results have been processed.
+    -----------------------------------------------------------------------------------*/
+    if (m_aeccCorridor == nullptr || m_importer == nullptr || m_toDgnContext == nullptr || !m_networkModel.IsValid())
+        {
+        BeAssert (false && "An uninitialized AeccCorridorExt is not expected at this step!");
+        return  nullptr;
+        }
+
+    if (elementIndex > 0 || m_aeccAlignment.isNull())
+        {
+        // we are either creating a child element, or the corridor has no alignment - fallback to the base bridge to create a default SpatialObject
+        if (!m_name.empty())
+            inputs.SetElementLabel (m_name);
+        return  nullptr;
+        }
+    
+    // we are creating a header element - try to create a Civil corridor in a re-targeted model
+    auto& db = m_importer->GetDgnDb ();
+
+    // AeccCorridors are post-imported, so when we reached here, all alignments should have been imported in the C3D model (not the re-targeted corridor model)
+    DwgDbHandle entityHandle = m_aeccAlignment->objectId().getHandle ();
+    auto aspect = m_importer->GetSourceAspects().FindObjectAspect (entityHandle, m_toDgnContext->GetElementInputsR().GetTargetModelR());
+    if (!aspect.IsValid())
+        return  nullptr;
+
+    // extract the Civil alignment from the imported C3D element
+    auto horizontalId = C3dHelper::GetCivilReferenceElementId (aspect, &m_baseAlignmentId);
+    auto baseAlignment = RoadRailAlignment::Alignment::Get (db, m_baseAlignmentId);
+    if (!baseAlignment.IsValid())
+        return  nullptr;
+
+    double totalLength = baseAlignment->GetLength ();
+
+    // create either a Rail or a Road network
+    RoadRailPhysical::TransportationNetworkCPtr network;
+    if (m_aeccAlignment->GetAlignmentType() == AlignmentType::Rail)
+        network = RailPhysical::RailNetwork::Get (db, m_networkModel->GetModeledElementId());
+    else
+        network = RoadPhysical::RoadNetwork::Get (db, m_networkModel->GetModeledElementId());
+    if (!network.IsValid() || network->get() == nullptr)
+        return  nullptr;
+
+    RoadRailPhysical::Corridor::CreateFromToParams fromTo(*baseAlignment, LinearReferencing::DistanceExpression(0.0), LinearReferencing::DistanceExpression(totalLength));
+    m_corridorElement = RoadRailPhysical::Corridor::Create (*network, fromTo);
+
+    if (m_networkModel->IsPrivate())
+        m_networkModel->SetIsPrivate (false);
+
+    return m_corridorElement.IsValid() ? m_corridorElement->getP() : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   AeccCorridorExt::UpdateElement (DwgImporter::ElementImportResultsR results)
+    {
+    /*-----------------------------------------------------------------------------------
+    This method is called after the change detection results have been successfully processed 
+    by the base bridge, such that the corridor is now a database resident.
+    -----------------------------------------------------------------------------------*/
+    if (m_aeccCorridor == nullptr || m_importer == nullptr || m_toDgnContext == nullptr || !m_baseAlignmentId.IsValid() || !m_corridorElement.IsValid() || m_aeccAlignment.isNull())
+        {
+        BeAssert (false && "An uninitialized AeccCorridorExt is not expected at this step!");
+        return  BentleyStatus::BSIERROR;
+        }
+
+    auto& db = m_importer->GetDgnDb ();
+    if (!m_importer->IsUpdating())
+        {
+        // insert relationship
+        auto status = m_corridorElement->InsertLinearElementRelationship ();
+        if (status == DgnDbStatus::Success)
+            m_corridorElement->Update (&status);
+        if (status != DgnDbStatus::Success)
+            return  static_cast<BentleyStatus>(status);
+
+        // create a new model
+        auto corridorModel = PhysicalModel::Create (*m_corridorElement->get());
+        if (corridorModel.IsValid())
+            {
+            // copy unit formats
+            auto rootModel = m_importer->GetRootModel().GetModel ();
+            if (rootModel != nullptr)
+                {
+                auto c3dModel = rootModel->ToGeometricModelP ();
+                if (c3dModel != nullptr)
+                    corridorModel->GetFormatterR() = c3dModel->GetFormatter ();
+                }
+            corridorModel->Insert ();
+            }
+        }
+
+    auto baseAlignment = RoadRailAlignment::Alignment::GetForEdit (db, m_baseAlignmentId);
+    if (!baseAlignment.IsValid())
+        return  BentleyStatus::BSIERROR;
+
+    // set the corridor as an ILinearElementSource to the alignment
+    baseAlignment->SetSource (m_corridorElement.get());
+    baseAlignment->Update ();
+
+    // get or set transforportation system
+    auto existingId = RoadRailPhysical::TransportationSystem::QueryId (*m_corridorElement, TRANSPORTATIONSYSTEM_NAME);
+    RoadRailPhysical::TransportationSystemCPtr  transportation;
+    if (existingId.IsValid())
+        transportation = RoadRailPhysical::TransportationSystem::Get (db, existingId);
+    else
+        transportation = RoadRailPhysical::TransportationSystem::Insert (*m_corridorElement, TRANSPORTATIONSYSTEM_NAME);
+    if (!transportation.IsValid() || transportation->get() == nullptr)
+        return  BentleyStatus::BSIERROR;
+
+    if (m_importer->GetC3dOptions().IsAlignedModelPrivate())
+        {
+        transportation->GetTransportationSystemModel()->SetIsPrivate (true);
+        transportation->GetTransportationSystemModel()->Update();
+        }
+
+    // get or set a corridor portion
+    RoadRailPhysical::CorridorPortionElementCPtr corridorPortion;
+    auto existingIds = transportation->QueryCorridorPortionIds ();
+    if (!existingIds.empty())
+        corridorPortion = RoadRailPhysical::CorridorPortionElement::Get (db, *existingIds.begin());
+    if (!corridorPortion.IsValid() || corridorPortion->get() == nullptr)
+        {
+        if (m_aeccAlignment->GetAlignmentType() == AlignmentType::Rail)
+            {
+            auto rail = RailPhysical::Railway::Create (*transportation, baseAlignment.get());
+            if (rail.IsValid())
+                {
+                rail->SetMainAlignment (baseAlignment.get());
+                corridorPortion = rail->Insert ();
+                }
+            }
+        else
+            {
+            // WIP - how to tell this really is a road or not?
+            auto road = RoadPhysical::Roadway::Create (*transportation, baseAlignment.get());
+            if (road.IsValid())
+                {
+                road->SetMainAlignment (baseAlignment.get());
+                corridorPortion = road->Insert ();
+                }
+            }
+        }
+
+    return  BentleyStatus::BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AeccCorridorExt::FindCandidateAeccAlignment ()
+    {
+    if (m_aeccCorridor == nullptr)
+        return  false;
+
+    // get the first center or rail alignment from the corridor; otherwise the last baseline is returned:
+    uint32_t count = m_aeccCorridor->GetBaselineCount ();
+    for (uint32_t i = 0; i < count; count++)
+        {
+        auto baseline = m_aeccCorridor->GetBaselineByIndex (i);
+        if (!baseline.isNull())
+            {
+            m_aeccAlignment = baseline->GetAlignment().openObject (OdDb::OpenMode::kForRead);
+            if (!m_aeccAlignment.isNull())
+                {
+                auto type = m_aeccAlignment->GetAlignmentType ();
+                if (type == AlignmentType::Centerline || type == AlignmentType::Rail)
+                    return  true;
+                }
+            }
+        }
+    return  !m_aeccAlignment.isNull();
     }
 
 

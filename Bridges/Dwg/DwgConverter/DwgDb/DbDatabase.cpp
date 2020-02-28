@@ -64,6 +64,7 @@ DwgDbObjectId       DwgDbDatabase::GetMaterialDictionaryId () const { return DWG
 DwgDbObjectId       DwgDbDatabase::GetMaterialByLayerId () const { return DWGDB_CALLSDKMETHOD(T_Super::byLayerMaterialId(), T_Super::byLayerMaterial()); }
 DwgDbObjectId       DwgDbDatabase::GetMaterialByBlockId () const { return DWGDB_CALLSDKMETHOD(T_Super::byBlockMaterialId(), T_Super::byBlockMaterial()); }
 DwgDbObjectId       DwgDbDatabase::GetMaterialGlobalId () const { return DWGDB_CALLSDKMETHOD(T_Super::globalMaterialId(), T_Super::globalMaterial()); }
+DwgDbObjectId       DwgDbDatabase::GetVisualStyleDictionaryId () const { return DWGDB_CALLSDKMETHOD(T_Super::getVisualStyleDictionaryId(), T_Super::visualStyleDictionaryId()); }
 DwgDbObjectId       DwgDbDatabase::GetNamedObjectsDictionaryId () const { return DWGDB_CALLSDKMETHOD(T_Super::getNamedObjectsDictionaryId(), T_Super::namedObjectsDictionaryId()); }
 DwgDbLightingUnits  DwgDbDatabase::GetLightingUnits () const { return static_cast<DwgDbLightingUnits>(DWGDB_CALLSDKMETHOD(T_Super::getLIGHTINGUNITS, T_Super::lightingUnits)()); }
 bool                DwgDbDatabase::GetLightGlyphDisplay () const { return DWGDB_CALLSDKMETHOD(T_Super::getLIGHTGLYPHDISPLAY, T_Super::lightGlyphDisplay)() != 0; }

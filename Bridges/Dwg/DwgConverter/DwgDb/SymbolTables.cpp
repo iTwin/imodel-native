@@ -512,6 +512,8 @@ int16_t        DwgDbViewportTableRecord::GetGridMajor () const { return T_Super:
 double         DwgDbViewportTableRecord::GetBrightness () const { return T_Super::brightness(); }
 DwgCmColor     DwgDbViewportTableRecord::GetAmbientLightColor () const { return static_cast<DwgCmColor>(T_Super::ambientLightColor()); }
 DwgDbObjectId  DwgDbViewportTableRecord::GetSunId () const { return T_Super::sunId(); }
+DwgDbStatus    DwgDbViewportTableRecord::SetVisualStyle (DwgDbObjectIdCR id) { DwgDbStatus e=DwgDbStatus::Success; DWGDB_CALLSDKMETHOD(T_Super::setVisualStyle(id), e=ToDwgDbStatus(T_Super::setVisualStyle(id))); return e; }
+void           DwgDbViewportTableRecord::SetViewDirection (DVec3dCR viewDir) { T_Super::setViewDirection(Util::GeVector3dFrom(viewDir)); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16

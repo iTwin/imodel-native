@@ -378,7 +378,7 @@ BentleyStatus   DwgImporter::_GetElementCreateParams (DwgImporter::ElementCreate
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            DwgImporter::_FilterEntity (ElementImportInputs& inputs) const
+bool            DwgImporter::_FilterEntity (ElementImportInputs& inputs)
     {
     auto entity = inputs.GetEntityP ();
     if (nullptr == entity)

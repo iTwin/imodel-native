@@ -328,6 +328,8 @@ public:
     DWGDB_EXPORT int16_t                    GetGridMajor () const;
     DWGDB_EXPORT double                     GetBrightness () const;
     DWGDB_EXPORT DwgCmColor                 GetAmbientLightColor () const;
+    DWGDB_EXPORT DwgDbStatus                SetVisualStyle (DwgDbObjectIdCR id);
+    DWGDB_EXPORT void                       SetViewDirection (DVec3dCR viewDir);
     };  // DwgDbViewportTableRecord
 DWGDB_DEFINE_OBJECTPTR (ViewportTableRecord)
 

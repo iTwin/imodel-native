@@ -58,26 +58,35 @@ public:
     DEFINE_C3DPROTOCOLEXTENSION(AeccCorridorExt)
 
     BentleyStatus  _ConvertToBim (ProtocolExtensionContext& context, DwgImporterR importer) override;
+    DgnElementPtr  CreateElement (DgnElement::CreateParams& params, DwgImporter::ElementImportInputsR inputs, size_t elementIndex);
+    BentleyStatus  UpdateElement (DwgImporter::ElementImportResultsR results);
 
 private:
     mutable Utf8String  m_name;
     mutable Utf8String  m_description;
     mutable DgnElementP m_importedElement;
-    mutable ECN::IECInstancePtr  m_parametersInstance;
-    mutable C3dImporterP    m_importer;
-    mutable AECCDbCorridor* m_aeccCorridor;
+    mutable ECN::IECInstancePtr m_c3dCorridorInstance;
+    mutable ECN::IECInstancePtr m_parametersInstance;
+    mutable C3dImporterP        m_importer;
+    mutable AECCDbCorridor*     m_aeccCorridor;
+    mutable AECCDbAlignmentPtr  m_aeccAlignment;
+    mutable DgnElementId        m_baseAlignmentId;
+    mutable PhysicalModelPtr    m_networkModel;
+    mutable RoadRailPhysical::CorridorPtr m_corridorElement;
     mutable ProtocolExtensionContext* m_toDgnContext;
     
 #ifdef FEATURE_COLLECTIONS
     BentleyStatus ProcessFeatureCollections (AECCCorridorBaseline const& baseline);
 #endif
-    DgnDbStatus ProcessCode (OdString const& code, AECCSubassemblyEntTraits const& subassentTraits, Utf8StringCR propName, uint32_t index);
+    ECObjectsStatus ProcessCode (OdString const& code, AECCSubassemblyEntTraits const& subassentTraits, Utf8StringCR propName, uint32_t index);
     BentleyStatus ProcessRegions (AECCCorridorBaseline const& baseline);
     BentleyStatus ProcessBaseline (AECCCorridorBaseline const& baseline);
     BentleyStatus ProcessBaselines ();
     BentleyStatus ProcessFeatureStyles ();
     BentleyStatus ProcessCodes ();
     BentleyStatus ImportCorridor ();
+    BentleyStatus CreateOrUpdateCorridorDependents (RoadRailPhysical::CorridorCR corridor, RoadRailAlignment::AlignmentCR alignment);
+    bool FindCandidateAeccAlignment ();
 };  // AeccCorridorExt
 
 /*=================================================================================**//**
@@ -165,19 +174,19 @@ public:
 
             AECCDbCorridor::rxInit ();
             AeccCorridorExt::RxInit ();
-            DwgRxClass::AddProtocolExtension (AECCDbCorridor::desc(), DwgProtocolExtension::Desc(), &m_aeccCorridorExt);
+            DwgRxClass::AddProtocolExtension (AECCDbCorridor::desc(), AeccCorridorExt::Desc(), &m_aeccCorridorExt);
 
             AECCDbFeatureLine::rxInit ();
             AeccFeatureLineExt::RxInit ();
-            DwgRxClass::AddProtocolExtension (AECCDbFeatureLine::desc(), DwgProtocolExtension::Desc(), &m_aeccFeatureLineExt);
+            DwgRxClass::AddProtocolExtension (AECCDbFeatureLine::desc(), AeccFeatureLineExt::Desc(), &m_aeccFeatureLineExt);
 
             AECCDbPipe::rxInit ();
             AeccPipeExt::RxInit ();
-            DwgRxClass::AddProtocolExtension (AECCDbPipe::desc(), DwgProtocolExtension::Desc(), &m_aeccPipeExt);
+            DwgRxClass::AddProtocolExtension (AECCDbPipe::desc(), AeccPipeExt::Desc(), &m_aeccPipeExt);
 
             AECCDbStructure::rxInit ();
             AeccStructureExt::RxInit ();
-            DwgRxClass::AddProtocolExtension (AECCDbStructure::desc(), DwgProtocolExtension::Desc(), &m_aeccStructureExt);
+            DwgRxClass::AddProtocolExtension (AECCDbStructure::desc(), AeccStructureExt::Desc(), &m_aeccStructureExt);
             }
         catch (OdError& error)
             {

@@ -299,8 +299,33 @@ BentleyStatus   C3dImporter::_ImportEntitySection ()
     if (m_c3dSchema == nullptr)
         T_Super::ReportError (IssueCategory::Unknown(), Issue::Error(), "Missing C3D schema");
 
+    // set default view to be rendered for corridors
+    this->SetRenderableDefaultView ();
+
     // begin importing entities
-    return T_Super::_ImportEntitySection ();
+    auto status = T_Super::_ImportEntitySection ();
+
+    // if there exist modelspace entities registered for post import, prepare to import them
+    ResolvedModelMapping    rootModel;
+    if (status != BentleyStatus::BSISUCCESS || m_entitiesForPostImport.empty() || !(rootModel = T_Super::GetRootModel()).IsValid())
+        return  status;
+
+    // post import entities
+    ElementImportInputs     inputs (*rootModel.GetModel());
+    inputs.SetModelMapping (rootModel);
+    inputs.SetClassId (T_Super::GetRootModelElementType());
+    inputs.SetTransform (T_Super::GetRootTransform());
+    inputs.SetSpatialFilter (nullptr);
+
+    for (auto entityId : m_entitiesForPostImport)
+        {
+        inputs.m_entityId = entityId;
+        inputs.m_entity.OpenObject (entityId, DwgDbOpenMode::ForRead);
+        if (inputs.m_entity.OpenStatus() == DwgDbStatus::Success)
+            T_Super::ImportOrUpdateEntity (inputs);
+        }
+
+    return  status;
     }
 
 END_C3D_NAMESPACE

@@ -18,6 +18,7 @@ C3dImporter::C3dImporter (DwgImporter::Options& options) : T_Super(options)
     s_c3dProtocolExtensions = new C3dProtocolExtensions ();
 
     m_entitiesNeedProxyGeometry.clear ();
+    m_entitiesForPostImport.clear ();
 
     this->ParseC3dConfigurations ();
 
@@ -166,6 +167,18 @@ BentleyStatus C3dImporter::OnBaseBridgeJobInitialized (DgnElementId jobId)
 
     m_roadNetworkModel = roadNetwork->GetNetworkModel ();
     m_railNetworkModel = railNetwork->GetNetworkModel ();
+    if (!m_roadNetworkModel.IsValid() || !m_railNetworkModel.IsValid())
+        return  BentleyStatus::BSIERROR;
+
+    // set the unit formatter of Civil domain models from the C3D model
+    GeometricModelP c3dModel = nullptr;
+    auto rootModel = T_Super::GetRootModel().GetModel ();
+    if (rootModel != nullptr)
+        c3dModel = rootModel->ToGeometricModelP ();
+
+    auto civilModel = m_roadNetworkModel->ToGeometricModelP ();
+    if (civilModel != nullptr && c3dModel != nullptr)
+        civilModel->GetFormatterR() = c3dModel->GetFormatter ();
 
     auto designAlignments = RoadRailAlignment::DesignAlignments::Insert (*m_roadNetworkModel, DESIGNALIGNMENTS_NAME);
     if (!designAlignments.IsValid())
@@ -177,6 +190,9 @@ BentleyStatus C3dImporter::OnBaseBridgeJobInitialized (DgnElementId jobId)
     m_alignmentModel = designAlignments->GetAlignmentModel ();
     if (!m_alignmentModel.IsValid())
         return  BentleyStatus::BSIERROR;
+
+    if ((civilModel = m_alignmentModel->ToGeometricModelP()) != nullptr && c3dModel != nullptr)
+        civilModel->GetFormatterR() = c3dModel->GetFormatter ();
 
     if (m_c3dOptions.IsAlignedModelPrivate())
         {
@@ -253,6 +269,82 @@ BentleyStatus C3dImporter::OnBaseBridgeJobFound (DgnElementId jobId)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+void    C3dImporter::_PostProcessViewports ()
+    {
+    T_Super::_PostProcessViewports ();
+
+    // if we have turned on road or rail network models, this is the time to add it to the modelspace view:
+    bool showRoads = (m_roadNetworkModel.IsValid() && !m_roadNetworkModel->IsPrivate());
+    bool showRails = (m_railNetworkModel.IsValid() && !m_railNetworkModel->IsPrivate());
+    if (!showRoads && !showRails)
+        return;
+
+    for (auto aspect : DwgSourceAspects::ViewAspectIterator(*m_dgndb, this->GetRepositoryLink(m_dwgdb.get())))
+        {
+        if (aspect.GetSourceType() == DwgSourceAspects::ViewAspect::SourceType::ModelSpaceViewport)
+            {
+            auto view = ViewDefinition::Get (*m_dgndb, aspect.GetViewId());
+            if (view.IsValid())
+                {
+                auto editView = view->LoadViewController ();
+                if (editView.IsValid())
+                    {
+                    auto modelspaceView = editView->ToSpatialViewP ();
+                    if (modelspaceView != nullptr)
+                        {
+                        auto& modelSelector = modelspaceView->GetSpatialViewDefinition().GetModelSelector ();
+                        if (showRoads)
+                            modelSelector.AddModel (m_roadNetworkModel->GetModelId());
+                        if (showRails)
+                            modelSelector.AddModel (m_railNetworkModel->GetModelId());
+                        modelSelector.Update ();
+                        break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+void C3dImporter::SetRenderableDefaultView ()
+    {
+    // set the modelspace viewport to a renderable visual style, and isometric view, to obtain mesh or Brep's
+    static DVec3d   s_isoviewNormal = DVec3d::From (-0.577, -0.577, 0.577);
+    DwgDbViewportTableRecordPtr vport(T_Super::GetDwgDb().GetActiveModelspaceViewportId(), DwgDbOpenMode::ForWrite);
+    if (vport.OpenStatus() == DwgDbStatus::Success)
+        {
+        DwgDbDictionaryPtr  dictionary(T_Super::GetDwgDb().GetVisualStyleDictionaryId(), DwgDbOpenMode::ForRead);
+        if (dictionary.OpenStatus() == DwgDbStatus::Success)
+            {
+            auto iter = dictionary->GetIterator ();
+            if (iter.IsValid())
+                {
+                for (; !iter->Done(); iter->Next())
+                    {
+                    DwgDbVisualStylePtr visualStyle(iter->GetObjectId(), DwgDbOpenMode::ForRead);
+                    if (visualStyle.OpenStatus() == DwgDbStatus::Success)
+                        {
+                        auto renderMode = DwgHelper::GetRenderModeFromVisualStyle (*visualStyle);
+                        if (renderMode != RenderMode::Wireframe)
+                            {
+                            // first non-wireframe visual style found:
+                            vport->SetVisualStyle (visualStyle->GetObjectId());
+                            break;
+                            }
+                        }
+                    }
+                }
+            vport->SetViewDirection (s_isoviewNormal);
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/20
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool C3dImporter::_AllowEntityMaterialOverrides (DwgDbEntityCR entity) const
@@ -261,6 +353,23 @@ bool C3dImporter::_AllowEntityMaterialOverrides (DwgDbEntityCR entity) const
     if (entity.isKindOf(AECCDbSurface::desc()))
         return  false;
     return  T_Super::_AllowEntityMaterialOverrides(entity);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementPtr C3dImporter::_CreateElement (DgnElement::CreateParams& params, ElementImportInputsR inputs, size_t elementIndex)
+    {
+    // create a DgnElement that opts in for special handlings
+    if (inputs.GetEntity().isKindOf(AECCDbCorridor::desc()))
+        {
+        auto corridorExt = static_cast<AeccCorridorExt*>(AeccCorridorExt::Cast(inputs.GetEntity().QueryX(AeccCorridorExt::Desc())));
+        if (nullptr != corridorExt)
+            return  corridorExt->CreateElement(params, inputs, elementIndex);
+        }
+
+    // fallback to creating elements that are either based on AeccBase or PhysicalObject
+    return T_Super::_CreateElement(params, inputs, elementIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -282,34 +391,50 @@ DPoint3d    C3dImporter::_GetElementPlacementPoint (DwgDbEntityCR entity)
         return  DPoint3d::From(origin.x, origin.y, origin.z);
         }
 
+    AECCDbAlignment const* alignment = AECCDbAlignment::cast (&entity);
+    if (alignment != nullptr)
+        {
+        auto ecs = alignment->getEcs ();
+        auto point2d = alignment->GetBeginPointByIndex (0);
+        OdGePoint3d point3d(point2d.x, point2d.y, 0);
+        point3d.transformBy (ecs);
+        return  DPoint3d::From(point3d.x, point3d.y, point3d.z);
+        }
+
     return  T_Super::_GetElementPlacementPoint(entity);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          12/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool    C3dImporter::_FilterEntity (ElementImportInputsR inputs) const
+bool    C3dImporter::_FilterEntity (ElementImportInputsR inputs)
     {
     // vertical alignments are processed together with horizontal alignments
-    if (inputs.GetEntity().isKindOf(AECCDbVAlignment::desc()))
+    auto const& entity = inputs.GetEntity ();
+    if (entity.isKindOf(AECCDbVAlignment::desc()))
         {
         // however, if a VAlignment is not changed when updating, get and record existing elements mapped from it, so they won't be deleted
         if (this->IsUpdating())
             {
             IDwgChangeDetector::DetectionResults    detectionResults;
             DwgDbObjectP    object = DwgDbObject::Cast (inputs.GetEntityP());
-            C3dImporter*    importer = const_cast<C3dImporter*> (this);
-            if (object != nullptr && importer != nullptr)
+            if (object != nullptr)
                 {
-                auto& changeDetector = importer->GetChangeDetector ();
-                if (!changeDetector._IsElementChanged(detectionResults, *importer, *object, inputs.GetModelMapping()))
+                auto& changeDetector = this->GetChangeDetector ();
+                if (!changeDetector._IsElementChanged(detectionResults, *this, *object, inputs.GetModelMapping()))
                     {
                     auto existingElements = iModelExternalSourceAspect::GetSelectFromSameSource(this->GetDgnDb(), detectionResults.GetObjectAspect());
                     while(BE_SQLITE_ROW == existingElements->Step())
-                        changeDetector._OnElementSeen (*importer, existingElements->GetValueId<DgnElementId>(0));
+                        changeDetector._OnElementSeen (*this, existingElements->GetValueId<DgnElementId>(0));
                     }
                 }
             }
+        return  true;
+        }
+    else if (entity.isKindOf(AECCDbCorridor::desc()))
+        {
+        // AeccCorridors shall be post imported
+        this->RegisterEntityForPostImport (entity.GetObjectId());
         return  true;
         }
 
@@ -398,6 +523,13 @@ BentleyStatus C3dImporter::_ProcessDetectionResults (IDwgChangeDetector::Detecti
                         AeccAlignmentExt::UpdateElementRepresentedBy (db, alignmentId, child.GetExistingElementId());
                     }
                 }
+            }
+        else if (entity.isKindOf(AECCDbCorridor::desc()))
+            {
+            // post add or update relationships and other corridor dependents
+            auto corridorExt = static_cast<AeccCorridorExt*>(AeccCorridorExt::Cast(inputs.GetEntity().QueryX(AeccCorridorExt::Desc())));
+            if (nullptr != corridorExt)
+                return  corridorExt->UpdateElement (results);
             }
         }
     return  status;

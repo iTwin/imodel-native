@@ -1293,10 +1293,11 @@ protected:
     //! This method is called from the ElementFactory to create a new DgnElement for an input entity.  Return nullptr to have to the caller fallback to the element handler.
     //! @param[in] params The parameters brewed by ElementFactory used to create a DgnElement
     //! @param[in] inputs The source entity info from which the new DgnElement shall be created
+    //! @param[in] elementIndex The index at which the new element is to be created. For the header element, the index is zero. Child elements have index values > 0.
     //! @note The returned DgnElement will be updated in ElementImportResults by ElementFactory
-    DWG_EXPORT virtual DgnElementPtr  _CreateElement (DgnElement::CreateParams& params, ElementImportInputs& inputs) { return nullptr; }
+    DWG_EXPORT virtual DgnElementPtr  _CreateElement (DgnElement::CreateParams& params, ElementImportInputs& inputs, size_t elementIndex) { return nullptr; }
     //! Should the entity be imported at all?
-    DWG_EXPORT virtual bool           _FilterEntity (ElementImportInputs& inputs) const;
+    DWG_EXPORT virtual bool           _FilterEntity (ElementImportInputs& inputs);
     //! Should create a DgnElement if there is no geometry at all?
     DWG_EXPORT virtual bool           _SkipEmptyElement (DwgDbEntityCP entity);
     //! Process the results from the change detector
@@ -1443,6 +1444,10 @@ public:
     DWG_EXPORT virtual BentleyStatus  _AddPresentationRuleContent (DgnElementCR hostElement, ECN::ECClassCR sourceClass);
     //! Create and embed PresentationRules for DwgAttributeDefinitions schema:
     DWG_EXPORT virtual BentleyStatus  _EmbedPresentationRules ();
+    //! Get the DgnClassId of the root model mapped for the Modelspace
+    DgnClassId GetRootModelType () { return m_rootDwgModelType; }
+    //! Get the DgnClassId of the geometrical elements in the root model mapped for the Modelspace
+    DgnClassId GetRootModelElementType () { return m_rootDwgElementType; }
 
     //! An iModelBridge must call this method from _MakeSchemaChanges, to change schemas.
     //! The default implementation iterates DWG block table for multiple tasks:

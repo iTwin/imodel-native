@@ -709,6 +709,7 @@ private:
     DwgDbObjectId       m_sourceBlockId;
     DwgDbObjectId       m_sourceLayerId;
     DwgImporter&        m_importer;
+    size_t              m_elementCount;
 
     void            SetDefaultCreation ();
     Utf8String      BuildPartCodeValue (DwgImporter::GeometryEntry const& geomEntry);
