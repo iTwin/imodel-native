@@ -85,7 +85,15 @@ void DBilinearPatch3d::Evaluate (double u, double v, DPoint3dR xyz, DVec3dR dXdu
 void DBilinearPatch3d::EvaluateNormal (double u, double v, DPoint3dR xyz, DVec3dR unitNormal) const
     {
     DVec3d dXdu, dXdv;
+    DVec3d unusedVector;
+    DPoint3d unusedPoint;
     Evaluate (u, v, xyz, dXdu, dXdv);
+    double tolerance = DoubleOps::SmallMetricDistance ();
+    // if local parameter space is collapsed, move transversely in parameter space to a nearby parallel  . .
+    if (dXdu.Magnitude () < tolerance)
+        Evaluate (u, DoubleOps::Interpolate (0.5, 0.95, v), unusedPoint, dXdu, unusedVector);
+    if (dXdv.Magnitude() < tolerance)
+        Evaluate(DoubleOps::Interpolate(0.5, 0.95, u), v, unusedPoint, unusedVector, dXdv);
     unitNormal.NormalizedCrossProduct (dXdu, dXdv);
     }
 

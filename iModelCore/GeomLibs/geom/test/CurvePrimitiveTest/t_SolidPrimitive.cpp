@@ -3249,3 +3249,41 @@ TEST(Cone,IntersectgBoundedArc)
         }
     Check::ClearGeometry ("Cone.IntersectgBoundedArc");
     }
+TEST(Box, ZeroSizeCap)
+    {
+    IFacetOptionsPtr options = IFacetOptions::Create();
+    options->SetParamsRequired (true);
+    options->SetNormalsRequired (true);
+
+    DPoint3d bottomOrigin = DPoint3d::From (1,1,1);
+    DPoint3d topOrigin = DPoint3d::From (3,2,2);
+    DVec3d vectorX = DVec3d::From (1,0,0);
+    DVec3d vectorY = DVec3d::From (0,1,0);
+    bool capped = true;
+    for (double bottomXSize : {3.0, 0.0})
+        {
+        SaveAndRestoreCheckTransform shifter(30, 0, 0);
+        for (double bottomYSize : {2.5, 0.0})
+            {
+            SaveAndRestoreCheckTransform (0, 30, 0);
+            for (double topXSize : {0.2, 0.0})
+                {
+                SaveAndRestoreCheckTransform shifter(5, 0, 0);
+                for (double topYSize : { 0.5, 0.0})
+                    {
+                    SaveAndRestoreCheckTransform shifter (0, 5,0);
+                    auto box = ISolidPrimitive::CreateDgnBox(
+                            DgnBoxDetail(bottomOrigin, topOrigin, vectorX, vectorY,
+                            bottomXSize, bottomYSize, topXSize, topYSize, capped));
+                    IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create(*options);
+                    if (Check::True(builder->AddSolidPrimitive(*box), "Adding box with size combinations"))
+                        {
+                        PolyfaceHeaderPtr mesh = builder->GetClientMeshPtr();
+                        Check::SaveTransformed(*mesh);
+                        }
+                    }
+                }
+            }
+        }
+    Check::ClearGeometry("Box.ZeroSizedCap");
+    }

@@ -6,7 +6,30 @@
 #include <bsibasegeomPCH.h>
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
+// Return indication of non-degenerate triangles . .  .
+// 0 == no good triangles.
+// 1 == only triangle 012 is non-degenerate
+// 2 == only triangle 023 is non-degenerate
+// 3 == any diagonal pair is good.
+static int SelectNonDegenerateTriangle(size_t i0, size_t i1, size_t i2, size_t i3)
+    {
+    if (i0 == i3 && i1 == i2)
+        return 0;
+    if (i0 == i1 && i2 == i3)
+        return 0;
 
+    if (i0 == i3)
+        return 1;
+    if (i2 == i3)
+        return 1;
+
+    if (i1 == i2)
+        return 2;
+    if (i0 == i1)
+        return 2;
+
+    return 3;
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Earlin.Lutz     04/12
 +-------------+---------------+---------------+---------------+---------------+------*/
@@ -92,29 +115,83 @@ bool IPolyfaceConstruction::Add (DgnBoxDetailCR box)
                 {
                 for (size_t iX = 0; iX < numX; iX++)
                     {
-                    AddPointIndexQuad (
-                        pointIndexA[iX], iY == 1,
-                        pointIndexA[iX+1], iX + 1 == numX,
-                        pointIndexB[iX+1], iY  == numY,
-                        pointIndexB[iX], iX == 0
-                        );
-                    if (needParams)
+                    int triangleSelect = SelectNonDegenerateTriangle (
+                            pointIndexA[iX], pointIndexA[iX+1],
+                            pointIndexB[iX+1], pointIndexB[iX]);
+                    if (triangleSelect == 3)
                         {
-                        AddParamIndexQuad (
-                            paramIndexA[iX],
-                            paramIndexA[iX+1],
-                            paramIndexB[iX+1],
-                            paramIndexB[iX]
+                        AddPointIndexQuad (
+                            pointIndexA[iX], iY == 1,
+                            pointIndexA[iX+1], iX + 1 == numX,
+                            pointIndexB[iX+1], iY  == numY,
+                            pointIndexB[iX], iX == 0
                             );
+                        if (needParams)
+                            {
+                            AddParamIndexQuad (
+                                paramIndexA[iX],
+                                paramIndexA[iX+1],
+                                paramIndexB[iX+1],
+                                paramIndexB[iX]
+                                );
+                            }
+                        if (needNormals)
+                            {
+                            AddNormalIndexQuad (
+                                normalIndexA[iX],
+                                normalIndexA[iX+1],
+                                normalIndexB[iX+1],
+                                normalIndexB[iX]
+                                );
+                            }
                         }
-                    if (needNormals)
+                    else if (triangleSelect == 1)
                         {
-                        AddNormalIndexQuad (
-                            normalIndexA[iX],
-                            normalIndexB[iX+1],
-                            normalIndexB[iX+1],
-                            normalIndexA[iX]
+                        AddPointIndexTriangle(
+                            pointIndexA[iX], iY == 1,
+                            pointIndexA[iX + 1], iX + 1 == numX,
+                            pointIndexB[iX + 1], iY == numY
+                        );
+                        if (needParams)
+                            {
+                            AddParamIndexTriangle(
+                                paramIndexA[iX],
+                                paramIndexA[iX + 1],
+                                paramIndexB[iX + 1]
                             );
+                            }
+                        if (needNormals)
+                            {
+                            AddNormalIndexTriangle(
+                                normalIndexA[iX],
+                                normalIndexA[iX + 1],
+                                normalIndexB[iX + 1]
+                            );
+                            }
+                        }
+                    else if (triangleSelect == 2)
+                        {
+                        AddPointIndexTriangle(
+                            pointIndexA[iX], iY == 1,
+                            pointIndexB[iX + 1], iY == numY,
+                            pointIndexB[iX], iX == 0
+                        );
+                        if (needParams)
+                            {
+                            AddParamIndexTriangle(
+                                paramIndexA[iX],
+                                paramIndexB[iX + 1],
+                                paramIndexB[iX]
+                            );
+                            }
+                        if (needNormals)
+                            {
+                            AddNormalIndexTriangle(
+                                normalIndexA[iX],
+                                normalIndexB[iX + 1],
+                                normalIndexB[iX]
+                            );
+                            }
                         }
                     }
                 }
