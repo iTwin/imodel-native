@@ -9,6 +9,7 @@ steps:
   # if the local repo already exists.  It will only honor the tag if it's a fresh clone of the repo.
   - task: DeleteFiles@1
     displayName: Purge BisSchemas
+    continueOnError: true 
     inputs:
       SourceFolder: $(BB_SRC_ROOT)
       Contents: 'BisSchemas'
