@@ -6,7 +6,6 @@
     <!-- ======================================================================================================================================== -->
 
     <Part Name="RealityCorePRG" PrgOutputDir="RealityCore">
-        <SubPart PartName="iModelCorePRG" PartFile="iModelCore/iModelCore" Repository="imodel02" />
         <SubPart PartName="__RealityCorePRG-Dynamic"/>
         <SubPart PartName="__RealityCorePRG-Static"/>
         <SubNuGetProduct NuGetProductName="RealityCoreNuget"/>
@@ -14,7 +13,6 @@
 
     <NuGetProduct Name="RealityCoreNuget" Description="RealityCore SDK">
         <Directories DirectoryListName="RealityCoreNuget"/>
-        <SubPart PartName="iModelCorePRG" PartFile="iModelCore/iModelCore" Repository="imodel02" />
         <SubPart PartName="__RealityCorePRG-Dynamic"/>
         <SubPart PartName="__RealityCorePRG-Static"/>
     </NuGetProduct>
@@ -48,12 +46,14 @@
     <!-- ======================================================================================================================================== -->
 
     <Part Name="__RealityCorePRG-Dynamic" OnlyPlatforms="x64,winrt*">
+        <SubPart PartName="iModelCore" PartFile="iModelCore/iModelCore" Repository="imodel02" LibType="Dynamic"/>
         <SubPart PartName="ScalableMeshLib" PartFile="RealityCore/ScalableMesh/ScalableMesh" Repository="imodel02"  LibType="Dynamic"/>
 		<!-- TODO: uncomment this when ScalableMesh unit tests are more robust-->
         <!-- <SubPart PartName="ScalableMesh-Tested" PartFile="RealityCore/ScalableMesh/ScalableMeshUnitTests" Repository="imodel02" LibType="Dynamic"/> -->
     </Part>
 
     <Part Name="__RealityCorePRG-Static" OnlyPlatforms="linux*">
+        <SubPart PartName="iModelCore" PartFile="iModelCore/iModelCore" Repository="imodel02" LibType="Static"/>
         <SubPart PartName="ScalableMeshLib" PartFile="RealityCore/ScalableMesh/ScalableMesh" Repository="imodel02"  LibType="Static"/>
         <SubPart PartName="MatrixFromTiePtsLib" PartFile="RealityCore/Imagepp/ImagePP" Repository="imodel02" LibType="Static"/> 
 		<!-- TODO: uncomment this when ScalableMesh unit tests are more robust-->
