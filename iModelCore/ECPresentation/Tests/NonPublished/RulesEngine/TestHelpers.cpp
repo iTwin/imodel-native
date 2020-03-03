@@ -11,7 +11,7 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesEngineTestHelpers::InitSchemaRegistry(ECDbR ecdb, bmap<Utf8String, Utf8String> const& schemaXmls)
+void RulesEngineTestHelpers::InitSchemaRegistry(ECDbR ecdb, bvector<bpair<Utf8String, Utf8String>> const& schemaXmls)
     {
     bvector<ECSchemaPtr> schemas;
     ECSchemaReadContextPtr schemaReadContext = ECSchemaReadContext::CreateContext();

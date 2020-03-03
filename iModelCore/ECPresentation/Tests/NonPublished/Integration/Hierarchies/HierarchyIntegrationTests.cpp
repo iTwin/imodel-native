@@ -7503,7 +7503,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceLabelOverride_As
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(InstanceLabelOverride_HandlesDefaultBisRulesCorrectly, R"*(
+DEFINE_SCHEMA(InstanceLabelOverride_HandlesDefaultBisRulesCorrectlyForRootNodes, R"*(
     <ECEntityClass typeName="Element">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
@@ -7523,7 +7523,7 @@ DEFINE_SCHEMA(InstanceLabelOverride_HandlesDefaultBisRulesCorrectly, R"*(
         <BaseClass>GeometricElement</BaseClass>
     </ECEntityClass>
 )*");
-TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceLabelOverride_HandlesDefaultBisRulesCorrectly)
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceLabelOverride_HandlesDefaultBisRulesCorrectlyForRootNodes)
     {
     // set up data set
     ECClassCP elementClass = GetClass("Element");

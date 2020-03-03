@@ -231,7 +231,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Acce
 /*---------------------------------------------------------------------------------**//**
 // @betest                                       Pranciskus.Ambrazas             07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_AcceptablePolymorphically)
+TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_ClassesAcceptablePolymorphically)
     {
     // insert some classE & classF instances
     ECClassCP classE = m_schema->GetClassCP("ClassE");
@@ -265,6 +265,98 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Acce
 
     // validate content set
     RulesEngineTestHelpers::ValidateContentSet({classEInstance.get(), classFInstance.get()}, *content);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @betest                                       Grigas.Petraitis               02/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(SelectedNodeInstances_SchemasAcceptablePolymorphically_BaseSchema, R"*(
+    <ECEntityClass typeName="A" />
+)*");
+DEFINE_SCHEMA(SelectedNodeInstances_SchemasAcceptablePolymorphically, R"*(
+    <ECSchemaReference name="SelectedNodeInstances_SchemasAcceptablePolymorphically_BaseSchema" version="01.00" alias="base" />
+    <ECEntityClass typeName="B">
+        <BaseClass>base:A</BaseClass>
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_SchemasAcceptablePolymorphically)
+    {
+    // set up the dataset
+    ECClassCP classA = GetClass(Utf8PrintfString("%s_BaseSchema", BeTest::GetNameOfCurrentTest()).c_str(), "A");
+    ECClassCP classB = GetClass("B");
+
+    IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+
+    // set up input
+    KeySetPtr input = KeySet::Create(*b);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, classA->GetSchema().GetName(), "", true));
+    rules->AddPresentationRule(*rule);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *input, nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+
+    // request for content
+    ContentCPtr content = m_manager->GetContent(*descriptor, PageOptions()).get();
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    RulesEngineTestHelpers::ValidateContentSet({b.get()}, *content);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @betest                                       Grigas.Petraitis               02/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(SelectedNodeInstances_SchemasAndClassesAcceptablePolymorphically_BaseSchema, R"*(
+    <ECEntityClass typeName="A" />
+)*");
+DEFINE_SCHEMA(SelectedNodeInstances_SchemasAndClassesAcceptablePolymorphically, R"*(
+    <ECSchemaReference name="SelectedNodeInstances_SchemasAndClassesAcceptablePolymorphically_BaseSchema" version="01.00" alias="base" />
+    <ECEntityClass typeName="B">
+        <BaseClass>base:A</BaseClass>
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_SchemasAndClassesAcceptablePolymorphically)
+    {
+    // set up the dataset
+    ECClassCP classA = GetClass(Utf8PrintfString("%s_BaseSchema", BeTest::GetNameOfCurrentTest()).c_str(), "A");
+    ECClassCP classB = GetClass("B");
+
+    IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+
+    // set up input
+    KeySetPtr input = KeySet::Create(*b);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, classA->GetSchema().GetName(), classA->GetName(), true));
+    rules->AddPresentationRule(*rule);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *input, nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+
+    // request for content
+    ContentCPtr content = m_manager->GetContent(*descriptor, PageOptions()).get();
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    RulesEngineTestHelpers::ValidateContentSet({b.get()}, *content);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -11983,7 +12075,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_Asser
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(InstanceLabelOverride_HandlesDefaultBisRulesCorrectly, R"*(
+DEFINE_SCHEMA(InstanceLabelOverride_HandlesDefaultBisRulesCorrectlyForContent, R"*(
     <ECEntityClass typeName="Element">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
@@ -12003,7 +12095,7 @@ DEFINE_SCHEMA(InstanceLabelOverride_HandlesDefaultBisRulesCorrectly, R"*(
         <BaseClass>GeometricElement</BaseClass>
     </ECEntityClass>
 )*");
-TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_HandlesDefaultBisRulesCorrectly)
+TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_HandlesDefaultBisRulesCorrectlyForContent)
     {
     // set up data set
     ECClassCP elementClass = GetClass("Element");

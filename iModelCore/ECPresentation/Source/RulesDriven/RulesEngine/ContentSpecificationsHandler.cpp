@@ -463,12 +463,45 @@ void ContentSpecificationsHandler::AppendContent(ContentSource const& contentSou
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                02/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+static ECSchemaCP FindECSchemaOnBaseClasses(Utf8StringCR schemaName, ECClassCR ecClass)
+    {
+    if (ecClass.GetSchema().GetName().Equals(schemaName))
+        return &ecClass.GetSchema();
+
+    for (ECClassCP baseClass : ecClass.GetBaseClasses())
+        {
+        ECSchemaCP matchingBaseClassSchema = FindECSchemaOnBaseClasses(schemaName, *baseClass);
+        if (nullptr != matchingBaseClassSchema)
+            return matchingBaseClassSchema;
+        }
+
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool IsECClassAccepted(SelectedNodeInstancesSpecificationCR specification, ECClassCR selectedClass)
     {
-    if (!specification.GetAcceptableSchemaName().empty() && !specification.GetAcceptableSchemaName().Equals(selectedClass.GetSchema().GetName()))
-        return false;
+    ECSchemaCP acceptableSchema = nullptr;
+    if (!specification.GetAcceptableSchemaName().empty())
+        {
+        if (specification.GetAcceptablePolymorphically())
+            {
+            acceptableSchema = FindECSchemaOnBaseClasses(specification.GetAcceptableSchemaName(), selectedClass);
+            if (nullptr == acceptableSchema)
+                return false;
+            }
+        else 
+            {
+            if (specification.GetAcceptableSchemaName().Equals(selectedClass.GetSchema().GetName()))
+                acceptableSchema = &selectedClass.GetSchema();
+            else
+                return false;
+            }
+        }
 
     if (!specification.GetAcceptableClassNames().empty())
         {
@@ -479,7 +512,8 @@ static bool IsECClassAccepted(SelectedNodeInstancesSpecificationCR specification
             {
             className.Trim();
             if (className.Equals(selectedClass.GetName())
-                || specification.GetAcceptablePolymorphically() && selectedClass.Is(selectedClass.GetSchema().GetName().c_str(), className.c_str()))
+                || specification.GetAcceptablePolymorphically() && selectedClass.Is(selectedClass.GetSchema().GetName().c_str(), className.c_str())
+                || specification.GetAcceptablePolymorphically() && nullptr != acceptableSchema && selectedClass.Is(acceptableSchema->GetName().c_str(), className.c_str()))
                 {
                 didFindAccepted = true;
                 break;

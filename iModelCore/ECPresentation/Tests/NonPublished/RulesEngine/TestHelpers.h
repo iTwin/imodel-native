@@ -35,16 +35,16 @@ template<typename TRegistry> struct RegisterSchemaHelper
     };
 // add this to class declaration
 #define DECLARE_SCHEMA_REGISTRY(registry) \
-    static bmap<Utf8String, Utf8String>& GetRegisteredSchemaXmls(); \
+    static bvector<bpair<Utf8String, Utf8String>>& GetRegisteredSchemaXmls(); \
     static void RegisterSchemaXml(Utf8String name, Utf8String schemaXml);
 // add this to source file (registry = test class name)
 #define DEFINE_SCHEMA_REGISTRY(registry) \
-    bmap<Utf8String, Utf8String>& registry::GetRegisteredSchemaXmls() \
+    bvector<bpair<Utf8String, Utf8String>>& registry::GetRegisteredSchemaXmls() \
         { \
-        static bmap<Utf8String, Utf8String> s_registeredSchemaXmls; \
+        static bvector<bpair<Utf8String, Utf8String>> s_registeredSchemaXmls; \
         return s_registeredSchemaXmls; \
         } \
-    void registry::RegisterSchemaXml(Utf8String name, Utf8String schemaXml) {GetRegisteredSchemaXmls()[name] = schemaXml;}
+    void registry::RegisterSchemaXml(Utf8String name, Utf8String schemaXml) {GetRegisteredSchemaXmls().push_back(bpair<Utf8String, Utf8String>(name, schemaXml));}
 // add this to test setup
 #define INIT_SCHEMA_REGISTRY(ecdb) \
     RulesEngineTestHelpers::InitSchemaRegistry(ecdb, GetRegisteredSchemaXmls());
@@ -65,7 +65,7 @@ struct RulesEngineTestHelpers
     {
     typedef std::function<void(ComplexNavigationQueryR)> ComplexQueryHandler;
 
-    static void InitSchemaRegistry(ECDbR ecdb, bmap<Utf8String, Utf8String> const& schemas);
+    static void InitSchemaRegistry(ECDbR ecdb, bvector<bpair<Utf8String, Utf8String>> const& schemas);
 
     static RulesDrivenECPresentationManager::Paths GetPaths(BeTest::Host&);
 
