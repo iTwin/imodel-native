@@ -815,7 +815,18 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
 
         // When the display style is loaded from the db, the type of the background color is set to type int instead of uint.  This makes comparisons to a display style that was set on the
         // fly give a false negative.
-        existingDef->GetDisplayStyle().SetBackgroundColor(existingDef->GetDisplayStyle().GetBackgroundColor());
+        DisplayStyleR existingStyle = existingDef->GetDisplayStyle();
+        existingStyle.SetBackgroundColor(existingStyle.GetBackgroundColor());
+
+        // if the display style is 3d, and has HiddenLineParams set, need to ensure they are set to uint
+        DisplayStyle3dP display3d = existingStyle.ToDisplayStyle3dP();
+        if (nullptr != display3d)
+            {
+            Render::HiddenLineParams hline = display3d->GetHiddenLineParams();
+            if (hline != Render::HiddenLineParams())
+                display3d->SetHiddenLineParams(hline);
+            }
+
         ViewControllerPtr viewController = existingDef->LoadViewController();
         if (viewController.IsValid())
             {
@@ -830,33 +841,14 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
 
     auto v8displayStyle = parms.m_viewInfo.GetDisplayStyleCP();
     DisplayStylePtr existingStyle;
-    if (v8displayStyle)
-        {
-        Utf8String styleName = Utf8String(v8displayStyle->GetName().c_str());
-        existingStyle = m_dgndb->Elements().GetForEdit<DisplayStyle>(m_dgndb->Elements().QueryElementIdByCode(DisplayStyle::CreateCode(*definitionModel, styleName)));
-        // Need to ensure that the json value holds a uint, not an int
-        if (existingStyle.IsValid())
-            existingStyle->SetBackgroundColor(existingStyle->GetBackgroundColor());
-        if (existingStyle.IsValid() && (existingStyle->Is3d() == parms.m_dstyle->Is3d())) // only share display styles if the same dimension (V8 doesn't care)
-            parms.m_dstyle = existingStyle->MakeCopy<DisplayStyle>();
-        else
-            {
-            if (!existingStyle.IsValid())
-                parms.m_dstyle->SetCode(DisplayStyle::CreateCode(*definitionModel, styleName));
-            ConvertDisplayStyle(*parms.m_dstyle, *v8displayStyle);
-            }
-        }
-    else if (existingDef.IsValid())
+    if (existingDef.IsValid())
         {
         existingStyle = m_dgndb->Elements().GetForEdit<DisplayStyle>(existingDef->GetDisplayStyleId());
         if (existingStyle.IsValid())
-            {
-            // Need to ensure that the json value holds a uint, not an int
-            existingStyle->SetBackgroundColor(existingStyle->GetBackgroundColor());
-            if (existingStyle->Is3d() == parms.m_dstyle->Is3d()) // only share display styles if the same dimension (V8 doesn't care)
-                parms.m_dstyle = existingStyle->MakeCopy<DisplayStyle>();
-            }
+            parms.m_dstyle = existingStyle->MakeCopy<DisplayStyle>();
         }
+    if (v8displayStyle)
+        ConvertDisplayStyle(*parms.m_dstyle, *v8displayStyle);
 
     // View geometry
     trans.Multiply(parms.m_origin, (DPoint3dCR)viewInfo.GetOrigin());
@@ -921,13 +913,6 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
             auto aspect = SyncInfo::ViewDefinitionExternalSourceAspect::CreateAspect(externalSourceAspectScope, defaultName, viewInfo, GetDgnDb());
             if (aspect.IsValid())
                 aspect.AddAspect(*view);
-            }
-
-        if (existingStyle.IsValid())
-            {
-            DisplayStyle *nonConst = const_cast<DisplayStyleP>(existingStyle.get());
-            if (!nonConst->EqualState(view->GetDisplayStyle()))
-                view->GetDisplayStyle().Update();
             }
 
         if (!view->Insert().IsValid())

@@ -152,8 +152,40 @@ TEST_F(ViewTests, SavedViewsCRUD)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            07/2018
+// @bsimethod                                   Carole.MacDonald            03/2020
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ViewTests, SavedViewsInDrawings)
-    { }
+TEST_F(ViewTests, UpdateDisplayStyle)
+    {
+    LineUpFiles(L"UpdateViews.bim", L"Test3d.dgn", false);
+    V8FileEditor v8editor;
+    v8editor.Open(m_v8FileName);
+    DgnFileR dgnFile = *v8editor.m_file;
+    DgnV8Api::ModelId mId = dgnFile.FindModelIdByName(L"Default");
+    DgnV8Api::ViewGroupPtr viewGroup = dgnFile.GetViewGroupsR().FindByModelId(mId, true, -1);
+
+    DgnV8Api::DisplayStylePtr dStyle = DgnV8Api::DisplayStyle::Create(dgnFile, L"Test View");
+    DgnV8Api::DisplayStyleFlags dsFlags;
+    dsFlags.m_overrideBackgroundColor = 1;
+    dStyle->SetFlags(dsFlags);
+    dStyle->SetIsUsableForViews(true);
+    DgnV8Api::DisplayStyleManager::WriteDisplayStyleToFile(*dStyle, dgnFile);
+
+    DgnV8ViewInfoR viewInfo = viewGroup->GetViewInfoR(0);
+    DgnV8Api::DisplayStyleManager::ApplyDisplayStyleToView(*dStyle, viewInfo);
+    v8editor.Save();
+
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+    // Confirm no changes on an update
+    DoUpdate(m_dgnDbFileName, m_v8FileName, false, false);
+
+    // Now update one of the display settings and make sure it updates
+    RgbColorDef color1;
+    color1.red = 110;
+    color1.green = 120;
+    color1.blue = 130;
+    viewInfo.SetBackgroundColor(color1);
+    v8editor.Save();
+
+    DoUpdate(m_dgnDbFileName, m_v8FileName, false, true);
+    }
 
