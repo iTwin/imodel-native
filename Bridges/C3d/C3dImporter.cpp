@@ -136,6 +136,7 @@ BentleyStatus C3dImporter::OnBaseBridgeJobInitialized (DgnElementId jobId)
             auto json = subjectEdit->GetJsonProperties (Subject::json_Model());
             json["Perspective"] = "AppGraphics";
             subjectEdit->SetJsonProperties (Subject::json_Model(), json);
+            subjectEdit->SetUserLabel (CIVIL3D_DEFAULT_SUBJECT);
             subjectEdit->Update ();
             }
         }
@@ -157,8 +158,12 @@ BentleyStatus C3dImporter::OnBaseBridgeJobInitialized (DgnElementId jobId)
     auto& db = T_Super::GetDgnDb ();
     iModelBridge::InsertElementHasLinksRelationship (db, alignedPartition->GetElementId(), T_Super::GetRepositoryLink(nullptr));
 
-    auto roadNetwork = RoadPhysical::RoadNetwork::Insert (*alignedPartition->GetSubModel()->ToPhysicalModelP(), ROADNETWORK_MODEL_NAME);
-    auto railNetwork = RailPhysical::RailNetwork::Insert (*alignedPartition->GetSubModel()->ToPhysicalModelP(), RAILNETWORK_MODEL_NAME);
+    auto roadrailPhysical = alignedPartition->GetSubModel()->ToPhysicalModelP ();
+    if (roadrailPhysical == nullptr)
+        return  BentleyStatus::BSIERROR;
+
+    auto roadNetwork = RoadPhysical::RoadNetwork::Insert (*roadrailPhysical, ROADNETWORK_MODEL_NAME);
+    auto railNetwork = RailPhysical::RailNetwork::Insert (*roadrailPhysical, RAILNETWORK_MODEL_NAME);
     if (!roadNetwork.IsValid() || !railNetwork.IsValid())
         {
         T_Super::ReportError (IssueCategory::Unknown(), Issue::Message(), Utf8PrintfString("Error creating road/rail network in the Aligned model %s!", alignSubject->GetDisplayLabel().c_str()).c_str());
@@ -196,8 +201,8 @@ BentleyStatus C3dImporter::OnBaseBridgeJobInitialized (DgnElementId jobId)
 
     if (m_c3dOptions.IsAlignedModelPrivate())
         {
-        alignedPartition->GetSubModel()->SetIsPrivate (true);
-        alignedPartition->GetSubModel()->Update ();
+        roadrailPhysical->SetIsPrivate (true);
+        roadrailPhysical->Update ();
         m_roadNetworkModel->SetIsPrivate (true);
         m_roadNetworkModel->Update ();
         m_railNetworkModel->SetIsPrivate (true);

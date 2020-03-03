@@ -177,6 +177,7 @@ DwgImporter::ImportJobLoadStatus DwgImporter::FindJob ()
 DefinitionModelPtr  DwgImporter::GetOrCreateJobDefinitionModel ()
     {
     static Utf8CP   s_definitionPartitionName = "DwgDefinitionModel";
+    static Utf8CP   s_definitionModelLabel = "Definitions";
     if (m_jobDefinitionModel.IsValid() && m_jobDefinitionModel->GetModelId().IsValid())
         return  m_jobDefinitionModel;
 
@@ -206,9 +207,13 @@ DefinitionModelPtr  DwgImporter::GetOrCreateJobDefinitionModel ()
     if (m_jobDefinitionModel.IsValid())
         return m_jobDefinitionModel;
     
-    auto defPartition = m_dgndb->Elements().Get<DefinitionPartition> (partitionId);
+    auto defPartition = m_dgndb->Elements().GetForEdit<DefinitionPartition> (partitionId);
     if (!defPartition.IsValid())
         return nullptr;
+
+    // set a readable label
+    defPartition->SetUserLabel (s_definitionModelLabel);
+    defPartition->Update ();
 
     // create & insert a new DefinitionModel in our partition
     m_jobDefinitionModel = DefinitionModel::CreateAndInsert (*defPartition);

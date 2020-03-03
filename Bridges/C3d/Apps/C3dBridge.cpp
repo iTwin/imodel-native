@@ -100,9 +100,9 @@ void C3dBridge::_SetClientInfo ()
 #endif
         
     auto& params = this->_GetParams();
-    auto sampleInfo = WebServices::ClientInfo::Create(s_bridgeName, bridgeVersion, s_bridgeGuid, s_bridgePrgId, params.GetDefaultHeaderProvider());
+    auto info = WebServices::ClientInfo::Create(s_bridgeName, bridgeVersion, s_bridgeGuid, s_bridgePrgId, params.GetDefaultHeaderProvider());
 
-    params.SetClientInfo (sampleInfo);
+    params.SetClientInfo (info);
     }
 
 

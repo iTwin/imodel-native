@@ -1686,7 +1686,6 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
         return errorContext.GetIntErrorId();
         }
     
-    m_bridge->_InitIdentity();
     iModelBridgeLdClient& client = iModelBridgeLdClient::GetInstance(m_iModelHubArgs->m_environment);
     auto clientInfo = m_bridge->GetParamsCR().GetClientInfo();
     if (nullptr != clientInfo)

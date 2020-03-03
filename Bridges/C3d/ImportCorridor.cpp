@@ -519,7 +519,10 @@ DgnElementPtr   AeccCorridorExt::CreateElement (DgnElement::CreateParams& params
     m_corridorElement = RoadRailPhysical::Corridor::Create (*network, fromTo);
 
     if (m_networkModel->IsPrivate())
+        {
         m_networkModel->SetIsPrivate (false);
+        m_networkModel->Update ();
+        }
 
     return m_corridorElement.IsValid() ? m_corridorElement->getP() : nullptr;
     }
@@ -585,8 +588,19 @@ BentleyStatus   AeccCorridorExt::UpdateElement (DwgImporter::ElementImportResult
 
     if (m_importer->GetC3dOptions().IsAlignedModelPrivate())
         {
-        transportation->GetTransportationSystemModel()->SetIsPrivate (true);
-        transportation->GetTransportationSystemModel()->Update();
+        auto transportationModel = transportation->GetTransportationSystemModel ();
+        if (transportationModel == nullptr)
+            return  BentleyStatus::BSIERROR;
+
+        transportationModel->SetIsPrivate (true);
+        transportationModel->Update();
+
+        auto horizontalAlignments = RoadRailAlignment::HorizontalAlignments::Query (*transportationModel);
+        if (horizontalAlignments.IsValid())
+            {
+            horizontalAlignments->GetHorizontalModel()->SetIsPrivate (true);
+            horizontalAlignments->GetHorizontalModel()->Update();
+            }
         }
 
     // get or set a corridor portion

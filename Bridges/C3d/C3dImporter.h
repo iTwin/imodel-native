@@ -39,6 +39,7 @@
 #define ROADNETWORK_MODEL_NAME      "Road Network"
 #define RAILNETWORK_MODEL_NAME      "Rail Network"
 #define CIVIL_ALIGNED_SUBJECT       "Civil Alignment"
+#define CIVIL3D_DEFAULT_SUBJECT     "Civil3d Default Model"
 #define TRANSPORTATIONSYSTEM_NAME   "Transportation System"
 
 // Entities
