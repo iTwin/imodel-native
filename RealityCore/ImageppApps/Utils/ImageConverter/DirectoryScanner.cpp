@@ -42,7 +42,7 @@ DirectoryScanner::FILELIST DirectoryScanner::GetFileList(const Utf8String& pi_rP
     WChar FileName[_MAX_FNAME];
     WChar Ext[_MAX_EXT];
 
-    _tsplitpath(WString(pi_rPath.c_str(), BentleyCharEncoding::Utf8).c_str(), Drive, Dir, FileName, Ext);
+    _tsplitpath_s(WString(pi_rPath.c_str(), BentleyCharEncoding::Utf8).c_str(), Drive, _MAX_DRIVE, Dir, _MAX_DRIVE, FileName, _MAX_FNAME, Ext, _MAX_DRIVE);
 
     // All supported files
     if( Ext[0] == 0x00 || Utf8String(Ext) == ".*")
@@ -125,7 +125,7 @@ bool DirectoryScanner::IsCompliant(const EXTENSIONLIST& pi_rList, const Utf8Stri
     bool Done = false;
     WChar Ext[_MAX_EXT];
 
-    _tsplitpath(WString(pi_rName.c_str(), BentleyCharEncoding::Utf8).c_str(), 0, 0, 0, Ext);
+    _tsplitpath_s(WString(pi_rName.c_str(), BentleyCharEncoding::Utf8).c_str(), 0, 0, 0, 0, 0, 0, Ext, _MAX_EXT);
 
     Utf8String LowerExt(Ext + 1);
     WString LowerExtW(LowerExt.c_str(), BentleyCharEncoding::Utf8);

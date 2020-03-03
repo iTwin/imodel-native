@@ -145,12 +145,6 @@ BOOL CImageInsiderApp::InitInstance()
 
       if (HRFRasterFileFactory::GetInstance()->FindCreator(SrcFileName) != 0) 
       {
-#ifdef _AFXDLL
-	Enable3dControls();			// Call this when using MFC in a shared DLL
-#else
-	Enable3dControlsStatic();	// Call this when linking to MFC statically
-#endif
-
 	    CMyPropertySheet propSheet;
         m_pMainWnd = &propSheet;
 

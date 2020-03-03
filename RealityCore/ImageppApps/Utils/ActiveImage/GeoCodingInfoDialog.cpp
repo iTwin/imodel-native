@@ -258,9 +258,8 @@ void GeoCodingInfoDialog::OnBtSave()
         CString DumpFileName = MySaveDialog.GetPathName();
         CString GeoKeys;
 
-        FILE* pDumpFile = _tfopen(DumpFileName, _TEXT("wt"));
-
-        if (pDumpFile)
+        FILE* pDumpFile;
+        if (_tfopen_s(&pDumpFile, DumpFileName, _TEXT("wt")) == 0)
         {
             m_EditGeoKeys.GetWindowText(GeoKeys);
 

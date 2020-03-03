@@ -1462,7 +1462,7 @@ void  ResourceListCtrl::OnEditCopy()
         TCHAR * pchData;
         pchData = (TCHAR*)GlobalLock(g_hClipboardData);
 
-        _tcscpy(pchData, tlpcstr(strData.GetString()));
+        _tcscpy_s(pchData, strData.GetLength() + 1, tlpcstr(strData.GetString()));
 
         GlobalUnlock(g_hClipboardData);
 
@@ -1616,12 +1616,12 @@ void CMyPropertyPage3::OnStartBench()
 
     {
         // Use Env for the location
-        const WChar* pDir = 0;
+        WChar pDir[MAX_PATH + MAX_PATH];
 
         // Try to get the HMR temp directory ("HMRTempDirectory")
-        if ((pDir = _tgetenv (_TEXT("HMRTempDirectory"))) ||
-            (pDir = _tgetenv (_TEXT("TMP"))             ) ||
-            (pDir = _tgetenv (_TEXT("TEMP"))            ) )
+        if (_tgetenv_s (0, pDir, MAX_PATH + MAX_PATH, _TEXT("HMRTempDirectory")) == 0 ||
+            _tgetenv_s (0, pDir, MAX_PATH + MAX_PATH, _TEXT("TMP")) == 0       ||
+            _tgetenv_s (0, pDir, MAX_PATH + MAX_PATH, _TEXT("TEMP")) == 0      )
         {
             HCURSOR TheCursor = ::SetCursor(LoadCursor(NULL, IDC_WAIT));
 

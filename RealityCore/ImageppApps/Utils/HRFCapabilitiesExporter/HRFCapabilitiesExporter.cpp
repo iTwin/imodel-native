@@ -256,7 +256,7 @@ int _tmain(int argc, TCHAR *argv[])
     if (pauseBeforeExit)
     {
         _tcout << _T("\nPress a key to continue...");
-        getch();
+        _getch();
     }
     //Terminate ImagePP lib host
     ImagePP::ImageppLib::GetHost().Terminate(true);

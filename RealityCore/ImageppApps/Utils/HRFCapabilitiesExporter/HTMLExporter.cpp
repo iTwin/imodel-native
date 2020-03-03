@@ -962,7 +962,7 @@ void HTMLExporter::Export(ImageFormatMap const& imageFormats,  itstream& templat
         {
             pos = (int) (_tcslen(line) - _tcslen(str));
             // Outputting the string before the tag
-            _tcsncpy(tmpStr, line, pos);
+            _tcsncpy_s(tmpStr, MAX_LINE_LENGTH, line, pos);
             tmpStr[pos] = _T('\0');
             output << tmpStr;
             // Exporting the header
@@ -978,7 +978,7 @@ void HTMLExporter::Export(ImageFormatMap const& imageFormats,  itstream& templat
         {
             pos = (int) (_tcslen(line) - _tcslen(str));
             // Outputting the string before the tag
-            _tcsncpy(tmpStr, line, pos);
+            _tcsncpy_s(tmpStr, MAX_LINE_LENGTH, line, pos);
             tmpStr[pos] = _T('\0');
             output << tmpStr;
             // Exporting the content
@@ -996,7 +996,7 @@ void HTMLExporter::Export(ImageFormatMap const& imageFormats,  itstream& templat
         {
             pos = (int) (_tcslen(line) - _tcslen(str));
             // Outputting the string before the tag
-            _tcsncpy(tmpStr, line, pos);
+            _tcsncpy_s(tmpStr, MAX_LINE_LENGTH, line, pos);
             tmpStr[pos] = _T('\0');
             output << tmpStr;
             // Exporting the footer

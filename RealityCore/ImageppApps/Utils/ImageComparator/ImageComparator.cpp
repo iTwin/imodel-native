@@ -739,7 +739,7 @@ int wmain(int pi_Argc, wchar_t *pi_ppArgv[])
     if (pauseAtEnd)
         {
         _ftprintf(stderr, _TEXT("\n\nPress any key to exit\n"));
-        getch();
+        _getch();
         }
 
     //Terminate ImagePP lib host

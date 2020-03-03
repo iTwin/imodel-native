@@ -844,7 +844,7 @@ uint32_t ArgumentParser(ExportPropertiesContainer* po_pExportProperties, int arg
         // COMPRESSION QUALITY SECTION
         else if (_tcsncmp(_TEXT("-q"), argv[CurrentParamPos], 2) == 0)
         {
-            _stscanf(argv[CurrentParamPos]+2, _TEXT("%ld"), &po_pExportProperties->Quality);
+            _stscanf_s(argv[CurrentParamPos]+2, _TEXT("%ld"), &po_pExportProperties->Quality);
             if ((po_pExportProperties->Quality < 1) || (po_pExportProperties->Quality > 100))
             {
                 po_pExportProperties->WrongArgumentFound = true;
@@ -858,7 +858,7 @@ uint32_t ArgumentParser(ExportPropertiesContainer* po_pExportProperties, int arg
         {
             po_pExportProperties->Reproject = true;
 
-            if( _stscanf(argv[CurrentParamPos]+3, 
+            if( _stscanf_s(argv[CurrentParamPos]+3, 
                        _TEXT("%ld,%ld,%lf"), 
                        &po_pExportProperties->SourceProjection, 
                        &po_pExportProperties->DestinationProjection, 
@@ -985,7 +985,7 @@ uint32_t ArgumentParser(ExportPropertiesContainer* po_pExportProperties, int arg
         }
         else if (_tcsncmp(_TEXT("-pool:"), argv[CurrentParamPos], 6) == 0)
         {
-            _stscanf(argv[CurrentParamPos]+6, _TEXT("%ld"), &po_pExportProperties->PoolSizeInKB);
+            _stscanf_s(argv[CurrentParamPos]+6, _TEXT("%ld"), &po_pExportProperties->PoolSizeInKB);
             if (po_pExportProperties->PoolSizeInKB < 16192)
             {
                 po_pExportProperties->WrongArgumentFound = true;
@@ -1305,7 +1305,7 @@ bool IsFileNameExist(HFCPtr<HFCURLFile>& pi_pSrcFilename)
     else
     {
         // Be sure to remove any wildcard extention, before executing Stat!
-        _tsplitpath(WString((pi_pSrcFilename->GetHost() + "\\" + pi_pSrcFilename->GetPath()).c_str(), BentleyCharEncoding::Utf8).c_str(), 0, Dir, FileName, Ext);
+        _tsplitpath_s(WString((pi_pSrcFilename->GetHost() + "\\" + pi_pSrcFilename->GetPath()).c_str(), BentleyCharEncoding::Utf8).c_str(), 0, 0, Dir, _MAX_DIR, FileName, _MAX_FNAME, Ext, _MAX_EXT);
         
         NewName =  WString(pi_pSrcFilename->GetHost().c_str(), BentleyCharEncoding::Utf8);
         NewName += Dir;
@@ -1331,7 +1331,7 @@ HFCPtr<HFCURLFile> ConvertName(HFCPtr<HFCURLFile>& pi_pSrcFilename, const Utf8St
     WChar Dir[_MAX_DIR];
     WChar Ext[_MAX_EXT];
 
-    _tsplitpath(WString((pi_pSrcFilename->GetHost() + "\\" + pi_pSrcFilename->GetPath()).c_str(), BentleyCharEncoding::Utf8).c_str(), 0, Dir, FileName, Ext);
+    _tsplitpath_s(WString((pi_pSrcFilename->GetHost() + "\\" + pi_pSrcFilename->GetPath()).c_str(), BentleyCharEncoding::Utf8).c_str(), 0, 0, Dir, _MAX_DIR, FileName, _MAX_FNAME, Ext, _MAX_EXT);
 
     NewName =  WString(pi_pSrcFilename->GetHost().c_str(), BentleyCharEncoding::Utf8);
     NewName += Dir;
@@ -1356,7 +1356,7 @@ HFCPtr<HFCURLFile> ConvertExtension(HFCPtr<HFCURLFile>& pi_pSrcFilename, const U
     WChar Dir[_MAX_DIR];
     WChar Ext[_MAX_EXT];
 
-    _tsplitpath(WString((pi_pSrcFilename->GetHost() + "\\" + pi_pSrcFilename->GetPath()).c_str(), BentleyCharEncoding::Utf8).c_str(), 0, Dir, FileName, Ext);
+    _tsplitpath_s(WString((pi_pSrcFilename->GetHost() + "\\" + pi_pSrcFilename->GetPath()).c_str(), BentleyCharEncoding::Utf8).c_str(), 0, 0, Dir, _MAX_DIR, FileName, _MAX_FNAME, Ext, _MAX_EXT);
 
     NewName =  WString(pi_pSrcFilename->GetHost().c_str(), BentleyCharEncoding::Utf8);
     NewName += Dir;
@@ -1383,8 +1383,8 @@ HFCPtr<HFCURLFile> ComposeFileNameWithNewPath(HFCPtr<HFCURLFile>& pi_pSrcFilenam
     if (NewName[NewName.size() - 1] != '\\' && NewName[NewName.size() - 1] != '/')
         NewName += '\\';
     
-    _tsplitpath(WString((pi_pSrcFilename->GetHost() + "\\" + pi_pSrcFilename->GetPath()).c_str(), BentleyCharEncoding::Utf8).c_str(),
-                0, Dir, FileName, Ext);
+    _tsplitpath_s(WString((pi_pSrcFilename->GetHost() + "\\" + pi_pSrcFilename->GetPath()).c_str(), BentleyCharEncoding::Utf8).c_str(),
+                0, 0, Dir, _MAX_DIR, FileName, _MAX_FNAME, Ext, _MAX_EXT);
     
     NewName += Utf8String(FileName);
     NewName += Utf8String(Ext);

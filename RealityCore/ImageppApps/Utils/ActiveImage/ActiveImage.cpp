@@ -297,11 +297,6 @@ _CrtSetBreakAlloc(MemCount);
     }
 #endif
 
-    // Get the OS Version infor
-    memset(&m_OSInfo, 0, sizeof(OSVERSIONINFO));
-    m_OSInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-    GetVersionEx(&m_OSInfo);
-
 #ifdef __IPP_EXTERNAL_THIRD_PARTY_SUPPORTED     // IPP_HAVE_PDF_SUPPORT
     //Application needs to initialize PdfLibInitializer dll if it wants support for PDF raster attachment.
     Bentley::PdfLibInitializer::Initialize(*new ActiveImagePdfLibInitializerHost());
@@ -396,16 +391,7 @@ BOOL CActiveImageApp::InitInstance()
 	}
 	// Standard initialization
 
-#ifdef _AFXDLL
-	Enable3dControls();			// Call this when using MFC in a shared DLL
-#else
-	Enable3dControlsStatic();	// Call this when linking to MFC statically
-#endif
-
 	LoadStdProfileSettings(8);  // Load standard INI file options (including MRU)
-
-
-
 
     // Profile ...
     m_ObjectStore_Mem = GetProfileInt (SECTION_MEMORY, MEMORY_OBJECTSTORE_MEM, DEF_OBJECTSTORE_MEM);
@@ -435,7 +421,8 @@ BOOL CActiveImageApp::InitInstance()
 		return false;
 
     BOOL allocResult = AllocConsole();
-    freopen("CONOUT$", "w", stdout);
+    FILE* pFile;
+    freopen_s(&pFile, "CONOUT$", "w", stdout);
     printf("ActiveImage console \n");
 
     m_pMainWnd->DragAcceptFiles();

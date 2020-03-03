@@ -23,6 +23,8 @@
         <ProductDirectory Name="Assemblies"     LibType="Static"    Deliver="false"/>
         <ProductDirectory Name="Assets"                             RelativeTo="Root" Path="assets"/>
         <ProductDirectory Name="Assets"         LibType="Static"    RelativeTo="Root" Path="assets"/>
+        <ProductDirectory Name="Gtest-Assets"                                         Path="Assets"/>
+        <ProductDirectory Name="Gtest-Assets"                                         Path="Assets" LibType="Static"/>
         <ProductDirectory Name="Libs"                               RelativeTo="Root" Path="lib"/>
         <ProductDirectory Name="Libs"           LibType="Static"    RelativeTo="Root" Path="lib"/>
         <ProductDirectory Name="PublicApi"                          RelativeTo="Root" Path="include"/>

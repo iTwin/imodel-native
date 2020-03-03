@@ -262,7 +262,7 @@ int wmain(int pi_Argc, wchar_t *pi_ppArgv[])
     }
 
     if (PauseProg)
-        getch();
+        _getch();
 
     //Terminate ImagePP lib host
     ImagePP::ImageppLib::GetHost().Terminate(true);

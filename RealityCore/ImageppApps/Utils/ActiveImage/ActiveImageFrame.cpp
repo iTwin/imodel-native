@@ -97,7 +97,7 @@ static BOOL PASCAL NEAR ReadWindowPlacement(LPWINDOWPLACEMENT pwp)
 		return false;
 
 	WINDOWPLACEMENT wp;
-	int nRead = _stscanf(strBuffer, szFormat,
+	int nRead = _stscanf_s(strBuffer, szFormat,
 		&wp.flags, &wp.showCmd,
 		&wp.ptMinPosition.x, &wp.ptMinPosition.y,
 		&wp.ptMaxPosition.x, &wp.ptMaxPosition.y,

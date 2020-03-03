@@ -142,12 +142,14 @@ void NumEditCtrl::SetNumericText
 BOOL ShowFormatting
 )
     {
-    CString workstr1, workstr2 = _T("");
+    CString workstr2 = _T("");
     int  decimal, sign, loop;
     int wholenum_place, string_length, num_whole_nums;
 
     // take value from edit control's double value
-    workstr1 = _fcvt( m_NumericValue, m_NumDecimalPlaces, &decimal, &sign );
+    char buf[1024];
+    _fcvt_s( buf, 1024, m_NumericValue, m_NumDecimalPlaces, &decimal, &sign );
+    CString workstr1(buf);
 
     string_length = workstr1.GetLength();
     num_whole_nums = string_length - m_NumDecimalPlaces;
@@ -239,7 +241,7 @@ BOOL NumEditCtrl::OnKillfocus()
     if(workstr.GetLength()>0)
         {
         // properly round and convert
-        _tscanf(workstr, "%lf", &value);
+        _tscanf_s(workstr, "%lf", &value);
         value = RoundToDecimal(value, m_NumDecimalPlaces);
 
         // Set member value

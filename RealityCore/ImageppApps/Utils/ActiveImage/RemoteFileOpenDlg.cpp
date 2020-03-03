@@ -127,7 +127,7 @@ const WChar* CRemoteFileOpenDlg::GetFirstSel()
         FileName = m_FileList.GetNext(m_FilePos);
 
         FileNameSTR = new WChar[FileName.GetLength() + 1];
-        _tcscpy(FileNameSTR, (LPCTSTR)FileName);
+        _tcscpy_s(FileNameSTR, FileName.GetLength() + 1, (LPCTSTR)FileName);
     }
 
     return FileNameSTR;
@@ -147,7 +147,7 @@ const WChar* CRemoteFileOpenDlg::GetNextSel()
         CString FileName = m_FileList.GetNext(m_FilePos);
 
         FileNameSTR = new WChar[FileName.GetLength() + 1];
-        _tcscpy(FileNameSTR, (LPCTSTR)FileName);
+        _tcscpy_s(FileNameSTR, FileName.GetLength() + 1, (LPCTSTR)FileName);
     }
 
     return FileNameSTR;

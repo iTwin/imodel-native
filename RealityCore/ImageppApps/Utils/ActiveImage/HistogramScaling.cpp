@@ -484,7 +484,8 @@ void CHistogramScaling::OnBnClickedButton1()
     {
         CString DumpFileName = HistoDumpFile.GetPathName();
 
-        FILE *pHistoFile = _tfopen(DumpFileName, _TEXT("wt+"));
+        FILE* pHistoFile;
+        _tfopen_s(&pHistoFile, DumpFileName, _TEXT("wt+"));
         ASSERT(pHistoFile);
 
         for (uint32_t ChIndex=0; ChIndex < pHistogram->GetChannelCount();  ChIndex++)
