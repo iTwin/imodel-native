@@ -1,0 +1,125 @@
+{
+    "Children": [
+        {
+            "Children": [],
+            "class": "BisCore:GroupInformationPartition",
+            "code": "Groups"
+        },
+        {
+            "Children": [],
+            "class": "BisCore:DocumentPartition",
+            "code": "Drawings"
+        },
+        {
+            "Children": [],
+            "class": "BisCore:DocumentPartition",
+            "code": "Sheets"
+        },
+        {
+            "Children": [],
+            "class": "BisCore:DefinitionPartition",
+            "code": "Definitions"
+        },
+        {
+            "Children": [
+                {
+                    "Children": [],
+                    "class": "BisCore:PhysicalPartition",
+                    "code": "nestedrefs"
+                },
+                {
+                    "Children": [
+                        {
+                            "Children": [],
+                            "class": "BisCore:PhysicalPartition",
+                            "code": "ref1"
+                        },
+                        {
+                            "Children": [
+                                {
+                                    "Children": [],
+                                    "class": "BisCore:PhysicalPartition",
+                                    "code": "nested11"
+                                }
+                            ],
+                            "class": "BisCore:Subject",
+                            "code": "nested11.dgn.i.dgn"
+                        },
+                        {
+                            "Children": [
+                                {
+                                    "Children": [],
+                                    "class": "BisCore:PhysicalPartition",
+                                    "code": "nested12"
+                                }
+                            ],
+                            "class": "BisCore:Subject",
+                            "code": "nested12.dgn.i.dgn"
+                        }
+                    ],
+                    "class": "BisCore:Subject",
+                    "code": "ref1.dgn.i.dgn"
+                },
+                {
+                    "Children": [
+                        {
+                            "Children": [],
+                            "class": "BisCore:PhysicalPartition",
+                            "code": "ref2"
+                        },
+                        {
+                            "Children": [
+                                {
+                                    "Children": [],
+                                    "class": "BisCore:PhysicalPartition",
+                                    "code": "nested21"
+                                }
+                            ],
+                            "class": "BisCore:Subject",
+                            "code": "nested21.dgn.i.dgn"
+                        }
+                    ],
+                    "class": "BisCore:Subject",
+                    "code": "ref2.dgn.i.dgn"
+                },
+                {
+                    "Children": [
+                        {
+                            "Children": [],
+                            "class": "BisCore:PhysicalPartition",
+                            "code": "ref3"
+                        }
+                    ],
+                    "class": "BisCore:Subject",
+                    "code": "ref3.dgn.i.dgn"
+                },
+                {
+                    "Children": [
+                        {
+                            "Children": [],
+                            "class": "BisCore:PhysicalPartition",
+                            "code": "ref4"
+                        },
+                        {
+                            "Children": [
+                                {
+                                    "Children": [],
+                                    "class": "BisCore:PhysicalPartition",
+                                    "code": "nested41"
+                                }
+                            ],
+                            "class": "BisCore:Subject",
+                            "code": "nested41.dgn.i.dgn"
+                        }
+                    ],
+                    "class": "BisCore:Subject",
+                    "code": "ref4.dgn.i.dgn"
+                }
+            ],
+            "class": "BisCore:Subject",
+            "code": "Physical"
+        }
+    ],
+    "class": "BisCore:Subject",
+    "code": "iModelBridgeForMstn"
+}

@@ -18,6 +18,14 @@ MstnBridgeTestsLogProvider MstnBridgeTestsFixture::s_logProvider;
 int MstnBridgeTestsFixture::s_argc;
 char **MstnBridgeTestsFixture::s_argv;
 
+struct FixtureTestProbe : iModelBridgeFwk::TestProbe
+    {
+    DgnElementId m_jobSubjectId;
+    virtual void _ReportJobSubjectId(DgnElementId id) override { m_jobSubjectId = id; }
+    };
+
+static FixtureTestProbe s_testProbe;
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1044,6 +1052,8 @@ void MstnBridgeTestsFixture::RunTheBridge(BentleyApi::bvector<BentleyApi::WStrin
     iModelBridgeFwk fwk;
     bvector<WCharCP> argptrs;
     
+    fwk.SetTestProbe(s_testProbe);
+
     MAKE_ARGC_ARGV(argptrs, args);
 
     ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
@@ -1051,6 +1061,7 @@ void MstnBridgeTestsFixture::RunTheBridge(BentleyApi::bvector<BentleyApi::WStrin
     ASSERT_EQ(0, fwk.Run(argc, argv));
 
     m_briefcaseName = fwk.GetBriefcaseName();
+    m_jobSubjectId =  s_testProbe.m_jobSubjectId;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1485,6 +1496,42 @@ int MstnBridgeTestsFixture::DbFileInfo::GetJobSubjectCount()
         return 0;
 
     return stmt.GetValueInt(0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+std::vector<DgnElementId> MstnBridgeTestsFixture::DbFileInfo::GetReferencesSubjects()
+    {
+    std::vector<DgnElementId> results;
+
+    EC::ECSqlStatement stmt;
+    stmt.Prepare(*m_db, "SELECT ecinstanceid FROM " BIS_SCHEMA(BIS_CLASS_Subject) " WHERE json_extract(JsonProperties, '$.Subject.Model.Type') = 'References'");
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        results.push_back(stmt.GetValueId<DgnElementId>(0));
+        }
+
+    return results;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+bool MstnBridgeTestsFixture::DbFileInfo::IsChildOf(DgnElementId elid, DgnElementId parentToFind, int maxDepth)
+    {
+    for (int i=0; i < maxDepth; ++i)
+        {
+        auto el = m_db->Elements().GetElement(elid);
+        auto parentId = el->GetParentId();
+        if (!parentId.IsValid())
+            return false;
+        if (parentId == parentToFind)
+            return true;
+        elid = parentId;
+        }
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**

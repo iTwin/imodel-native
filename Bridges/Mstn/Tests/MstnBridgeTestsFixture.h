@@ -12,6 +12,7 @@
 #include <WebServices/iModelHub/Client/Client.h>
 #include "MstnBridgeTestsLogProvider.h"
 #include "CodeScope.h"
+#include <vector>
 
 PUSH_DISABLE_DEPRECATION_WARNINGS
 struct RevisionStats
@@ -126,6 +127,7 @@ struct MstnBridgeTestsFixture : ::testing::Test
     static int s_argc;
     static char **s_argv;
     BentleyApi::BeFileName m_briefcaseName;
+    BentleyApi::Dgn::DgnElementId m_jobSubjectId;
     BentleyApi::Dgn::IModelClientForBridges* m_client {};
     BentleyApi::BeFileName GetIModelParentDir();
     BentleyApi::BeFileName GetIModelDir();
@@ -200,6 +202,12 @@ struct MstnBridgeTestsFixture : ::testing::Test
 
     int32_t GetDefaultV8ModelId(BentleyApi::BeFileNameCR inputFile);
 
+    struct SubjectInfo
+        {
+        BentleyApi::Dgn::DgnElementId elementId;
+        BentleyApi::Dgn::DgnElementId parentId;
+        };
+
     struct DbFileInfo
         {
         BentleyApi::Dgn::ScopedDgnHost m_host;
@@ -219,6 +227,8 @@ struct MstnBridgeTestsFixture : ::testing::Test
         void MustFindElementByV8ElementId(BentleyApi::Dgn::DgnElementId& eid, BentleyApi::Dgn::DgnModelId fmid, uint64_t v8ElementId, int expectedCount);
         BentleyApi::Dgn::SubjectCPtr GetFirstJobSubject();
         int GetJobSubjectCount();
+        std::vector<BentleyApi::Dgn::DgnElementId> GetReferencesSubjects();
+        bool IsChildOf(BentleyApi::Dgn::DgnElementId elid, BentleyApi::Dgn::DgnElementId parentToFind, int maxDepth = INT_MAX); // return true if the element identified by `elid` is a child (or grandchild, etc.) of the element identified by `parentId`. maxDepth specifies how may generations of parents to search. Specify maxDepth=1 to consider only the immediate parent.
         int GetRepositoryLinkCount();
         void SetRepositoryAdminFromBriefcaseClient(BentleyApi::Dgn::IModelClientForBridges&);
         void ClearRepositoryAdmin();

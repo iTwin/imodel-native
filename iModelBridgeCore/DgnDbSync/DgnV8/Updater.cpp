@@ -225,7 +225,6 @@ void Converter::_DeleteModel(DgnModelR model, SyncInfo::V8ModelExternalSourceAsp
     auto modeledElementId = model.GetModeledElementId();
     model.Delete();
     db.Elements().Delete(modeledElementId);
-
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -240,7 +239,7 @@ void ChangeDetector::_DetectDeletedModels(Converter& converter, SyncInfo::V8Mode
     // them were missing this time around. Those models and their constituent Models must to be deleted.
     for (auto wasModel=iter.begin(); wasModel!=iter.end(); ++wasModel)
         {
-        if (!converter.IsBimModelAssignedToJobSubject(wasModel->GetModelId()))
+        if (!converter.IsBimModelAssignedToJobSubject(wasModel->GetModelId()) && !_WasReferenceJustDropped(wasModel->GetModelId()))
             continue;
 
         if (m_v8ModelsSeen.find(wasModel->GetModelId()) == m_v8ModelsSeen.end())
@@ -270,7 +269,19 @@ void Converter::_DeleteElement(DgnElementId eid)
     LOG.tracev("Delete element %lld", eid.GetValue());
 
     _OnElementBeforeDelete(eid);
-    GetDgnDb().Elements().Delete(eid);
+    auto status = GetDgnDb().Elements().Delete(eid);
+    if (DgnDbStatus::Success != status)
+        {
+        auto el = GetDgnDb().Elements().GetElement(eid);
+        if (!el.IsValid())
+            {
+            // I guess the element was already deleted, and so this error is not an error.
+            }
+        else
+            {
+            LOG.errorv("Failed to delete element %s - status = %x", Converter::IssueReporter::FmtElement(*el).c_str(), status);
+            }
+        }
 
     _OnElementConverted(eid, nullptr, Converter::ChangeOperation::Delete);
     }
@@ -278,7 +289,7 @@ void Converter::_DeleteElement(DgnElementId eid)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ChangeDetector::_DetectDeletedElements(Converter& converter, SyncInfo::V8ElementExternalSourceAspectIterator& iter)
+void ChangeDetector::_DetectDeletedElements(Converter& converter, SyncInfo::V8ElementExternalSourceAspectIterator& iter, T_SyncInfoElementFilter* filter)
     {
     // *** NB: This alogorithm *infers* that an element was deleted in V8 if we did not see it, its model, or its file during processing.
     //          This inference is valid only if we know that a) we saw all models and/or files, and b) they were all registered in m_v8Files/ModelsSkipped or m_elementsSeen.
@@ -286,6 +297,9 @@ void ChangeDetector::_DetectDeletedElements(Converter& converter, SyncInfo::V8El
     // iterate over all of the previously converted elements from the syncinfo.
     for (auto elementInSyncInfo=iter.begin(); elementInSyncInfo!=iter.end(); ++elementInSyncInfo)
         {
+        if (filter && !(*filter)(elementInSyncInfo, converter))
+            continue;
+
         auto previouslyConvertedElementId = elementInSyncInfo->GetElementId();
         if (m_elementsSeen.Contains(previouslyConvertedElementId)) // if update encountered at least one V8 element that was mapped to this BIM element,
             continue;   // keep this BIM element alive
@@ -309,7 +323,7 @@ void ChangeDetector::_DetectDeletedElementsInFile(Converter& converter, DgnV8Fil
     SyncInfo::V8ModelExternalSourceAspectIterator modelsInFile(*converter.GetRepositoryLinkElement(v8File));
     for (auto modelInFile = modelsInFile.begin(); modelInFile != modelsInFile.end(); ++modelInFile)
         {
-        if (!converter.IsBimModelAssignedToJobSubject(modelInFile->GetModelId()))
+        if (!converter.IsBimModelAssignedToJobSubject(modelInFile->GetModelId()) && !_WasReferenceJustDropped(modelInFile->GetModelId()))
             continue;
         auto model = converter.GetDgnDb().Models().GetModel(modelInFile->GetModelId());
         if (!model.IsValid())
@@ -360,7 +374,7 @@ void Converter::_DeleteFileAndContents(RepositoryLinkId repositoryLinkId)
     bool isFirstModel = true;
     for (auto wasModel : modelsInFile)
         {
-        if (!IsBimModelAssignedToJobSubject(wasModel.GetModelId()))
+        if (!IsBimModelAssignedToJobSubject(wasModel.GetModelId()) && !_GetChangeDetector()._WasReferenceJustDropped(wasModel.GetModelId()))
             {
             if (!isFirstModel)
                 {

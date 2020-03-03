@@ -71,6 +71,8 @@ static BeSQLite::PropertySpec s_briefcaseIdPropSpec("BriefcaseId", "be_iModelBri
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
+static iModelBridgeFwk::TestProbe* s_testProbe;
+
 static iModelBridge* s_bridgeForTesting;
 static IModelBridgeRegistry* s_registryForTesting;
 
@@ -79,6 +81,11 @@ static int s_maxWaitForMutex = 60000;
 void iModelBridgeFwk::SetBridgeForTesting(iModelBridge& b)
     {
     s_bridgeForTesting = &b;
+    }
+
+void iModelBridgeFwk::SetTestProbe(TestProbe& p)
+    {
+    s_testProbe = &p;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1802,6 +1809,10 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     if (m_bridge->TestFeatureFlag("imodel-bridge-terrain-conversion"))
         m_bridge->_GetParams().SetDoTerrainModelConversion(true);
 
+    bool doNotTrackRefs = false;
+    TestFeatureFlag("imodel-bridge-do-not-track-references-subjects", doNotTrackRefs);
+    m_bridge->_GetParams().SetDoNotTrackReferencesSubjects(doNotTrackRefs);
+    
     bool createdNewRepo = false;
     if (BSISUCCESS != BootstrapBriefcase(createdNewRepo, context))
         {
@@ -2368,6 +2379,9 @@ int iModelBridgeFwk::DoNormalUpdate()
         }                                                                                    // === SCHEMA LOCK
                                                                                              // === SCHEMA LOCK
     Briefcase_ReleaseAllPublicLocks();
+
+    if (s_testProbe)
+        s_testProbe->_ReportJobSubjectId(jobsubj->GetElementId());
 
     // ---------------------------------------------------
     //  Normal data changes => bridge's private channel

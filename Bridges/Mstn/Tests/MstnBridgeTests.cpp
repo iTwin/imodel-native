@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include "MstnBridgeTestsFixture.h"
 #include <iModelBridge/iModelBridgeFwk.h>
+#include <iModelBridge/iModelBridgeSyncInfoFile.h>
 #include <iModelBridge/FakeRegistry.h>
 #include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
 #include <Bentley/Desktop/FileSystem.h>
@@ -19,6 +20,37 @@ USING_NAMESPACE_BENTLEY_DGN
 #define MSTN_BRIDGE_REG_SUB_KEY L"iModelBridgeForMstn"
 #define MSTN_BRIDGE_REG_SUB_KEY_A "iModelBridgeForMstn"
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+static Json::Value readJsonFromFile(BentleyApi::BeFileNameCR fileName)
+    {
+    BentleyApi::BeFile errfile;
+    if (BentleyApi::BeFileStatus::Success != errfile.Open(fileName.c_str(), BentleyApi::BeFileAccess::Read))
+        return Json::nullValue;
+
+    BentleyApi::bvector<Byte> bytes;
+    if (BentleyApi::BeFileStatus::Success != errfile.ReadEntireFile(bytes))
+        return Json::nullValue;
+
+    if (bytes.empty())
+        return Json::objectValue;
+
+    bytes.push_back('\0'); // End of stream
+
+    Utf8String contents;
+
+    const Byte utf8BOM[] = {0xef, 0xbb, 0xbf};
+    if (bytes[0] == utf8BOM[0] || bytes[1] == utf8BOM[1] || bytes[2] == utf8BOM[2])
+        contents.assign((Utf8CP) (bytes.data() + 3));
+    else
+        contents.assign((Utf8CP) bytes.data());
+
+    Json::Value json(Json::objectValue);
+    Json::Reader::Parse(contents.c_str(), json);
+    return json;
+    }
+
 //=======================================================================================
 // @bsistruct
 //=======================================================================================
@@ -31,6 +63,10 @@ struct MstnBridgeTests : public MstnBridgeTestsFixture
     void VerifyElementHasCode(BeFileNameCR bcName, DgnElementId eid, Utf8CP codeValuePrefix, bool codeShouldBeRecorded);
     void VerifyConvertedElementHasCode(int prevCount, BeFileNameCR bcName, int64_t srcId, Utf8CP codeValuePrefix, bool codeShouldBeRecorded);
     void RunBridgeAsUser(BeFileNameR briefcaseName, BeFileNameCR testDir, Utf8CP userName, BeFileNameCR inputFile, WCharCP bridgeName = L"theBridge");
+    void DoMoveEmbeddedReferenceToDifferentFile(bool simulateOldBridge);
+    void DoDetectDeletionsInEmbeddedFiles(bool simulateOldBridge);
+    void DoAddRemoveNestedEmbeddedRefs(bool simulateOldBridge);
+    void DoAddRemoveNestedEmbeddedRefsV2(bool simulateOldBridge);
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -1654,7 +1690,7 @@ TEST_F(MstnBridgeTests, DISABLED_TestCodeRemovalPerformance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MstnBridgeTests, DetectDeletionsInEmbeddedFiles)
+void MstnBridgeTests::DoDetectDeletionsInEmbeddedFiles(bool simulateOldBridge)
     {
     if (nullptr != GetIModelBankServerJs())
         {
@@ -1715,12 +1751,17 @@ TEST_F(MstnBridgeTests, DetectDeletionsInEmbeddedFiles)
     TerminateHost();
 
     int modelCount = 0;
+    DgnElementId master1JobSubjectId;
+    DgnElementId master2JobSubjectId;
     if (true)
         {
         // In v1, master1 and master2 both embed commonRef
         bvector<WString> args;
         SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, DEFAULT_IMODEL_NAME);
-
+        
+        if (simulateOldBridge)
+            args.push_back(L"--do-not-track-references-subjects");
+            
         auto master_1_v1 = GetTestDataFileName(L"SharedEmbeddedReferences/v1/master1.i.dgn");
         auto master_2_v1 = GetTestDataFileName(L"SharedEmbeddedReferences/v1/master2.i.dgn");
 
@@ -1729,19 +1770,28 @@ TEST_F(MstnBridgeTests, DetectDeletionsInEmbeddedFiles)
 
         args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", master1.c_str()));
         RunTheBridge(args);
-
+        master1JobSubjectId = m_jobSubjectId;
+        
         CleanupElementECExtensions();
         args.pop_back();
+        
         args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", master2.c_str()));
         RunTheBridge(args);
+        master2JobSubjectId = m_jobSubjectId;
+        
         CleanupElementECExtensions();
 
         args.push_back(WPrintfString(L"--fwk-all-docs-processed"));
         RunTheBridge(args);
+        
         CleanupElementECExtensions();
 
-        modelCount = DbFileInfo(m_briefcaseName).GetPhysicalModelCount();
+        DbFileInfo dbInfo(m_briefcaseName);
+        modelCount = dbInfo.GetPhysicalModelCount();
         ASSERT_EQ(3, modelCount);
+        auto references = dbInfo.GetReferencesSubjects();
+        ASSERT_EQ(2, references.size()) << "There should be two References to commonRef";
+        ASSERT_TRUE(dbInfo.IsChildOf(references[0], master1JobSubjectId)) << "Since master1 was the first to see commonRef, it is the parent";
         }
 
     if (true)
@@ -1749,6 +1799,9 @@ TEST_F(MstnBridgeTests, DetectDeletionsInEmbeddedFiles)
         // In v2, master1 still embeds commonRef, but master2 has dropped it.
         bvector<WString> args;
         SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, DEFAULT_IMODEL_NAME);
+
+        if (simulateOldBridge)
+            args.push_back(L"--do-not-track-references-subjects");
 
         auto master_1_v2 = GetTestDataFileName(L"SharedEmbeddedReferences/v2/master1.i.dgn");
         auto master_2_v2 = GetTestDataFileName(L"SharedEmbeddedReferences/v2/master2.i.dgn");
@@ -1772,7 +1825,19 @@ TEST_F(MstnBridgeTests, DetectDeletionsInEmbeddedFiles)
         RunTheBridge(args);
         CleanupElementECExtensions();
 
-        ASSERT_EQ(modelCount, DbFileInfo(m_briefcaseName).GetPhysicalModelCount()) << "commonRef should still be in the iModel";
+        DbFileInfo dbInfo(m_briefcaseName);
+        ASSERT_EQ(modelCount, dbInfo.GetPhysicalModelCount()) << "commonRef should still be in the iModel";
+        auto references = dbInfo.GetReferencesSubjects();
+        if (simulateOldBridge)
+            {
+            // This is how old bridges used to leave it. There is an orphan References Subject still in the iModel.
+            ASSERT_EQ(2, references.size());
+            }
+        else
+            {
+            ASSERT_EQ(1, references.size()) << "There should be just one Reference to commonRef left";
+            ASSERT_TRUE(dbInfo.IsChildOf(references[0], master1JobSubjectId)) << "The Reference to commonRef should be from master1";
+            }
         }
 
      if (true)
@@ -1780,6 +1845,9 @@ TEST_F(MstnBridgeTests, DetectDeletionsInEmbeddedFiles)
         // In v3, master1 has dropped its reference to commonRef, and so commonRef should be removed from the iModel.
         bvector<WString> args;
         SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, DEFAULT_IMODEL_NAME);
+
+        if (simulateOldBridge)
+            args.push_back(L"--do-not-track-references-subjects");
 
         auto master_1_v3 = GetTestDataFileName(L"SharedEmbeddedReferences/v3/master1.i.dgn");
         auto master_2_v3 = GetTestDataFileName(L"SharedEmbeddedReferences/v3/master2.i.dgn");
@@ -1801,12 +1869,592 @@ TEST_F(MstnBridgeTests, DetectDeletionsInEmbeddedFiles)
 
         args.push_back(WPrintfString(L"--fwk-all-docs-processed"));
         RunTheBridge(args);
+        
+        DbFileInfo dbInfo(m_briefcaseName);
+        ASSERT_EQ(modelCount - 1, dbInfo.GetPhysicalModelCount()) << "commonRef should have been deleted";
+        auto references = dbInfo.GetReferencesSubjects();
+        if (simulateOldBridge)
+            {
+            // This is how old bridges used to leave it. There is an orphan References Subject still in the iModel.
+            ASSERT_EQ(2, references.size());
+            }
+        else
+            {
+            ASSERT_EQ(0, references.size()) << "There should be no References to commonRef left";
+            }
+        }
 
-        ASSERT_EQ(modelCount - 1, DbFileInfo(m_briefcaseName).GetPhysicalModelCount()) << "commonRef should have been deleted";
+    if (simulateOldBridge)
+        {
+        // In the steps above, the bridges ran as though they had the old logic that neglected to track
+        // References Subjects with ExternalSourceAspects.
+        // Now run the bridges again using the new logic that both tracks Refs Subjects and also cleans
+        // up orphan Refs Subjects that were left over by old bridges. In this test, the above bridges
+        // left both master1->commonRef and master2->commonRef Refs Subjects in place. We expect the "new" bridges to detect and delete them.
+        bvector<WString> args;
+        SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, DEFAULT_IMODEL_NAME);
+
+        args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", master1.c_str()));
+        RunTheBridge(args);
+        CleanupElementECExtensions();
+        ASSERT_EQ(master1JobSubjectId.GetValue(), m_jobSubjectId.GetValue());
+
+        args.pop_back();
+
+        args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", master2.c_str()));
+        RunTheBridge(args);
+        CleanupElementECExtensions();
+        ASSERT_EQ(master2JobSubjectId.GetValue(), m_jobSubjectId.GetValue());
+
+        args.push_back(WPrintfString(L"--fwk-all-docs-processed"));
+        RunTheBridge(args);
+        CleanupElementECExtensions();
+
+        DbFileInfo dbInfo(m_briefcaseName);
+        ASSERT_EQ(modelCount - 1, dbInfo.GetPhysicalModelCount()) << "commonRef should still be gone";
+
+        auto references = dbInfo.GetReferencesSubjects();
+        ASSERT_EQ(0, references.size()) << "There should be no References to commonRef left";
         }
 
     putenv("MS_PROTECTION_PASSWORD_CACHE_LIFETIME=1"); // restore default
     putenv("iModelBridge_MatchOnEmbeddedFileBasename=");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MstnBridgeTests, DetectDeletionsInEmbeddedFiles)
+    {
+    DoDetectDeletionsInEmbeddedFiles(false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MstnBridgeTests, DetectDeletionsInEmbeddedFilesWithOrphanCleanup)
+    {
+    DoDetectDeletionsInEmbeddedFiles(true);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2020
+//---------------+---------------+---------------+---------------+---------------+-------
+void MstnBridgeTests::DoMoveEmbeddedReferenceToDifferentFile(bool simulateOldBridge)
+    {
+    auto testDir = CreateTestDir();
+
+    auto master1 = GetOutputFileName(L"master1.i.dgn");      // These are the names of the staged input files
+    auto master2 = GetOutputFileName(L"master2.i.dgn");      //          "
+    BeFileName commonRef(L"commonRef.i.dgn");                   // The common embedded file will be identified by its basename only
+
+    putenv("iModelBridge_MatchOnEmbeddedFileBasename=1");     // TODO: Replace this with a settings service parameter check
+
+    SetupClient();
+    CreateRepository();
+    auto runningServer = StartServer();
+
+    BentleyApi::BeFileName assignDbName(testDir);
+    assignDbName.AppendToPath(DEFAULT_IMODEL_NAME L".fwk-registry.db");
+    FakeRegistry testRegistry(testDir, assignDbName);
+    testRegistry.WriteAssignments();
+    testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, iModelBridge_getAffinity);
+
+    BentleyApi::BeSQLite::BeGuid guid1, guid2, guidC;
+    guid1.Create();
+    guid2.Create();
+    guidC.Create();
+
+    iModelBridgeDocumentProperties docProps1(guid1.ToString().c_str(), "wurn1", "durn1", "other1", "");
+    iModelBridgeDocumentProperties docProps2(guid2.ToString().c_str(), "wurn2", "durn2", "other2", "");
+    iModelBridgeDocumentProperties docPropsC(guidC.ToString().c_str(), "wurnC", "durnC", "otherC", "");
+    testRegistry.SetDocumentProperties(docProps1, master1);
+    testRegistry.SetDocumentProperties(docProps2, master2);
+    testRegistry.SetDocumentProperties(docPropsC, commonRef);
+    std::function<T_iModelBridge_getAffinity> lambda = [=](BentleyApi::WCharP buffer,
+                                                           const size_t bufferSize,
+                                                           iModelBridgeAffinityLevel& affinityLevel,
+                                                           BentleyApi::WCharCP affinityLibraryPath,
+                                                           BentleyApi::WCharCP sourceFileName)
+        {
+        wcscpy(buffer, MSTN_BRIDGE_REG_SUB_KEY);
+        affinityLevel = iModelBridgeAffinityLevel::Medium;
+        };
+
+    testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, lambda);
+    BentleyApi::WString bridgeName;
+    testRegistry.SearchForBridgeToAssignToDocument(bridgeName, master1, L"");
+    ASSERT_TRUE(bridgeName.Equals(MSTN_BRIDGE_REG_SUB_KEY));
+    testRegistry.SearchForBridgeToAssignToDocument(bridgeName, master2, L"");
+    ASSERT_TRUE(bridgeName.Equals(MSTN_BRIDGE_REG_SUB_KEY));
+    testRegistry.Save();
+    TerminateHost();
+
+    int modelCount = 0;
+    DgnElementId master1JobSubjectId;
+    DgnElementId master2JobSubjectId;
+    if (true)
+        {
+        bvector<WString> args;
+        SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, DEFAULT_IMODEL_NAME);
+
+        if (simulateOldBridge)
+            args.push_back(L"--do-not-track-references-subjects");
+
+        auto master_1_v3 = GetTestDataFileName(L"SharedEmbeddedReferences/v3/master1.i.dgn"); // no embedded ref
+        auto master_2_v1 = GetTestDataFileName(L"SharedEmbeddedReferences/v1/master2.i.dgn"); // embedded ref
+
+        ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(master_1_v3.c_str(), master1.c_str()));
+        ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(master_2_v1.c_str(), master2.c_str()));
+
+        args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", master1.c_str()));
+        RunTheBridge(args);
+        master1JobSubjectId = m_jobSubjectId;
+
+        CleanupElementECExtensions();
+        args.pop_back();
+        args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", master2.c_str()));
+        RunTheBridge(args);
+        CleanupElementECExtensions();
+        master2JobSubjectId = m_jobSubjectId;
+
+        args.push_back(WPrintfString(L"--fwk-all-docs-processed"));
+        RunTheBridge(args);
+        CleanupElementECExtensions();
+
+        DbFileInfo dbInfo(m_briefcaseName);
+        modelCount = dbInfo.GetPhysicalModelCount();
+        ASSERT_EQ(3, modelCount);
+        
+        auto references = dbInfo.GetReferencesSubjects();
+        ASSERT_EQ(1, references.size());
+        ASSERT_TRUE(dbInfo.IsChildOf(references[0], master2JobSubjectId));
+        }
+
+    if (true)
+        {
+        // In v2, master1 embeds commonRef, but master2 has dropped it.
+        bvector<WString> args;
+        SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, DEFAULT_IMODEL_NAME);
+
+        if (simulateOldBridge)
+            args.push_back(L"--do-not-track-references-subjects");
+
+        auto master_1_v2 = GetTestDataFileName(L"SharedEmbeddedReferences/v2/master1.i.dgn");
+        auto master_2_v2 = GetTestDataFileName(L"SharedEmbeddedReferences/v2/master2.i.dgn");
+
+        ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(master_1_v2.c_str(), master1.c_str()));
+        ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(master_2_v2.c_str(), master2.c_str()));
+
+        args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", master1.c_str()));
+        RunTheBridge(args);
+        CleanupElementECExtensions();
+        ASSERT_EQ(master1JobSubjectId.GetValue(), m_jobSubjectId.GetValue());
+
+        args.pop_back();
+        args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", master2.c_str()));
+        RunTheBridge(args);
+        CleanupElementECExtensions();
+        ASSERT_EQ(master2JobSubjectId.GetValue(), m_jobSubjectId.GetValue());
+
+        args.push_back(WPrintfString(L"--fwk-all-docs-processed"));
+        RunTheBridge(args);
+        CleanupElementECExtensions();
+
+        DbFileInfo dbInfo(m_briefcaseName);
+        ASSERT_EQ(modelCount, dbInfo.GetPhysicalModelCount()) << "commonRef should still be in the iModel";
+
+        auto references = dbInfo.GetReferencesSubjects();
+        if (simulateOldBridge)
+            {
+            // This is how old bridges used to leave it. There is an orphan References Subject still in the iModel.
+            ASSERT_EQ(2, references.size());
+            }
+        else
+            {
+            ASSERT_EQ(1, references.size());
+            ASSERT_TRUE(dbInfo.IsChildOf(references[0], master1JobSubjectId));
+            }
+        }
+
+    if (simulateOldBridge)
+        {
+        // In the steps above, the bridges ran as though they had the old logic that neglected to track
+        // References Subjects with ExternalSourceAspects.
+        // Now run the bridges again using the new logic that both tracks Refs Subjects and also cleans
+        // up orphan Refs Subjects that were left over by old bridges. In this test, the above bridges
+        // left the master2->commonRef Refs Subject in place. We expect the "new" bridge to detect and delete that.
+        bvector<WString> args;
+        SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, DEFAULT_IMODEL_NAME);
+
+        args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", master1.c_str()));
+        RunTheBridge(args);
+        CleanupElementECExtensions();
+        ASSERT_EQ(master1JobSubjectId.GetValue(), m_jobSubjectId.GetValue());
+
+        args.pop_back();
+
+        args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", master2.c_str()));
+        RunTheBridge(args);
+        CleanupElementECExtensions();
+        ASSERT_EQ(master2JobSubjectId.GetValue(), m_jobSubjectId.GetValue());
+
+        args.push_back(WPrintfString(L"--fwk-all-docs-processed"));
+        RunTheBridge(args);
+        CleanupElementECExtensions();
+
+        DbFileInfo dbInfo(m_briefcaseName);
+        ASSERT_EQ(modelCount, dbInfo.GetPhysicalModelCount()) << "commonRef should still be in the iModel";
+
+        auto references = dbInfo.GetReferencesSubjects();
+        ASSERT_EQ(1, references.size()) << "The orphan References Subject should have been detected and deleted";
+        ASSERT_TRUE(dbInfo.IsChildOf(references[0], master1JobSubjectId));
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2020
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(MstnBridgeTests, MoveEmbeddedReferenceToDifferentFile)
+    {
+    DoMoveEmbeddedReferenceToDifferentFile(false);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2020
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(MstnBridgeTests, MoveEmbeddedReferenceToDifferentFileWithOrphanCleanup)
+    {
+    DoMoveEmbeddedReferenceToDifferentFile(true);
+    }
+
+static Json::Value collectElementAndChildren(DgnDbR db, DgnElementId elementId)
+    {
+    auto el = db.Elements().GetElement(elementId);
+
+    Json::Value json = Json::objectValue;
+    json["class"] = el->GetElementClass()->GetFullName();
+    json["code"] = el->GetCode().GetValueUtf8CP();
+
+    json["Children"] = Json::arrayValue;
+    for (auto child : el->QueryChildren())
+        {
+        auto c = collectElementAndChildren(db, child);
+        json["Children"].append(c);
+        }
+    return json;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                       02/2020
+//---------------+---------------+---------------+---------------+---------------+-------
+void MstnBridgeTests::DoAddRemoveNestedEmbeddedRefs(bool simulateOldBridge)
+    {
+    auto testDir = CreateTestDir();
+
+    auto masterfile = GetOutputFileName(L"nestedrefs.i.dgn");      // The name of the staged input file
+
+    putenv("iModelBridge_MatchOnEmbeddedFileBasename=1");     // TODO: Replace this with a settings service parameter check
+
+    SetupClient();
+    CreateRepository();
+    auto runningServer = StartServer();
+
+    BentleyApi::BeFileName assignDbName(testDir);
+    assignDbName.AppendToPath(DEFAULT_IMODEL_NAME L".fwk-registry.db");
+    FakeRegistry testRegistry(testDir, assignDbName);
+    testRegistry.WriteAssignments();
+    testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, iModelBridge_getAffinity);
+
+    BentleyApi::BeSQLite::BeGuid guid1, guid2, guidC;
+    guid1.Create();
+    guid2.Create();
+    guidC.Create();
+
+    iModelBridgeDocumentProperties docProps1(guid1.ToString().c_str(), "wurn1", "durn1", "other1", "");
+    testRegistry.SetDocumentProperties(docProps1, masterfile);
+    std::function<T_iModelBridge_getAffinity> lambda = [=](BentleyApi::WCharP buffer,
+                                                           const size_t bufferSize,
+                                                           iModelBridgeAffinityLevel& affinityLevel,
+                                                           BentleyApi::WCharCP affinityLibraryPath,
+                                                           BentleyApi::WCharCP sourceFileName)
+        {
+        wcscpy(buffer, MSTN_BRIDGE_REG_SUB_KEY);
+        affinityLevel = iModelBridgeAffinityLevel::Medium;
+        };
+
+    testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, lambda);
+    BentleyApi::WString bridgeName;
+    testRegistry.SearchForBridgeToAssignToDocument(bridgeName, masterfile, L"");
+    ASSERT_TRUE(bridgeName.Equals(MSTN_BRIDGE_REG_SUB_KEY));
+    testRegistry.Save();
+    TerminateHost();
+
+    int modelCount = 0;
+    DgnElementId jobSubjectId;
+    Json::Value v1Json;
+    if (true)
+        {
+        bvector<WString> args;
+        SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, DEFAULT_IMODEL_NAME);
+
+        if (simulateOldBridge)
+            args.push_back(L"--do-not-track-references-subjects");
+
+        auto master_v1 = GetTestDataFileName(L"nestedrefs-v1.i.dgn");
+
+        ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(master_v1.c_str(), masterfile.c_str()));
+
+        args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", masterfile.c_str()));
+        RunTheBridge(args);
+        jobSubjectId = m_jobSubjectId;
+
+        CleanupElementECExtensions();
+        args.pop_back();
+
+        args.push_back(WPrintfString(L"--fwk-all-docs-processed"));
+        RunTheBridge(args);
+        CleanupElementECExtensions();
+
+        DbFileInfo dbInfo(m_briefcaseName);
+        v1Json = collectElementAndChildren(*dbInfo.m_db, jobSubjectId);
+        }
+
+    Json::Value v2Json;
+    if (true)
+        {
+        bvector<WString> args;
+        SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, DEFAULT_IMODEL_NAME);
+
+        if (simulateOldBridge)
+            args.push_back(L"--do-not-track-references-subjects");
+
+        auto master_v2 = GetTestDataFileName(L"nestedrefs-v2.i.dgn");
+
+        ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(master_v2.c_str(), masterfile.c_str()));
+
+        args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", masterfile.c_str()));
+        RunTheBridge(args);
+        CleanupElementECExtensions();
+        ASSERT_EQ(jobSubjectId.GetValue(), m_jobSubjectId.GetValue());
+
+        args.pop_back();
+
+        args.push_back(WPrintfString(L"--fwk-all-docs-processed"));
+        RunTheBridge(args);
+        CleanupElementECExtensions();
+
+        DbFileInfo dbInfo(m_briefcaseName);
+        v2Json = collectElementAndChildren(*dbInfo.m_db, jobSubjectId);
+        }
+
+    if (simulateOldBridge)
+        {
+        // In the steps above, the bridges ran as though they had the old logic that neglected to track
+        // References Subjects with ExternalSourceAspects.
+        // Now run the bridges again using the new logic that both tracks Refs Subjects and also cleans
+        // up orphan Refs Subjects that were left over by old bridges. In this test, the above bridges
+        // left the master2->commonRef Refs Subject in place. We expect the "new" bridge to detect and delete that.
+        bvector<WString> args;
+        SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, DEFAULT_IMODEL_NAME);
+
+        args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", masterfile.c_str()));
+        RunTheBridge(args);
+        CleanupElementECExtensions();
+        ASSERT_EQ(jobSubjectId.GetValue(), m_jobSubjectId.GetValue());
+
+        args.pop_back();
+
+        args.push_back(WPrintfString(L"--fwk-all-docs-processed"));
+        RunTheBridge(args);
+        CleanupElementECExtensions();
+
+        DbFileInfo dbInfo(m_briefcaseName);
+        // ASSERT_EQ(modelCount, dbInfo.GetPhysicalModelCount()) << "commonRef should still be in the iModel";
+
+        v2Json = collectElementAndChildren(*dbInfo.m_db, jobSubjectId);
+        }
+  
+    // printf("----------------------- v1 --------------------------\n%s\n", v1Json.toStyledString().c_str());
+    // printf("----------------------- v2 --------------------------\n%s\n", v2Json.toStyledString().c_str());
+
+    auto expected_master_v1 = readJsonFromFile(GetTestDataFileName(L"nestedrefs-v1.json"));
+    auto expected_master_v2 = readJsonFromFile(GetTestDataFileName(L"nestedrefs-v2.json"));
+
+    EXPECT_TRUE(expected_master_v1 == v1Json);
+    EXPECT_TRUE(expected_master_v2 == v2Json);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      02/20
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(MstnBridgeTests, AddRemoveNestedEmbeddedRefs)
+    {
+    DoAddRemoveNestedEmbeddedRefs(false);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      02/20
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(MstnBridgeTests, AddRemoveNestedEmbeddedRefsOldBridge)
+    {
+    DoAddRemoveNestedEmbeddedRefs(true);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                       02/2020
+//---------------+---------------+---------------+---------------+---------------+-------
+void MstnBridgeTests::DoAddRemoveNestedEmbeddedRefsV2(bool simulateOldBridge)
+    {
+    auto testDir = CreateTestDir();
+
+    auto masterfile = GetOutputFileName(L"Master_nested.i.dgn");      // The name of the staged input file
+
+    putenv("iModelBridge_MatchOnEmbeddedFileBasename=1");     // TODO: Replace this with a settings service parameter check
+
+    SetupClient();
+    CreateRepository();
+    auto runningServer = StartServer();
+
+    BentleyApi::BeFileName assignDbName(testDir);
+    assignDbName.AppendToPath(DEFAULT_IMODEL_NAME L".fwk-registry.db");
+    FakeRegistry testRegistry(testDir, assignDbName);
+    testRegistry.WriteAssignments();
+    testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, iModelBridge_getAffinity);
+
+    BentleyApi::BeSQLite::BeGuid guid1, guid2, guidC;
+    guid1.Create();
+    guid2.Create();
+    guidC.Create();
+
+    iModelBridgeDocumentProperties docProps1(guid1.ToString().c_str(), "wurn1", "durn1", "other1", "");
+    testRegistry.SetDocumentProperties(docProps1, masterfile);
+    std::function<T_iModelBridge_getAffinity> lambda = [=](BentleyApi::WCharP buffer,
+                                                           const size_t bufferSize,
+                                                           iModelBridgeAffinityLevel& affinityLevel,
+                                                           BentleyApi::WCharCP affinityLibraryPath,
+                                                           BentleyApi::WCharCP sourceFileName)
+        {
+        wcscpy(buffer, MSTN_BRIDGE_REG_SUB_KEY);
+        affinityLevel = iModelBridgeAffinityLevel::Medium;
+        };
+
+    testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, lambda);
+    BentleyApi::WString bridgeName;
+    testRegistry.SearchForBridgeToAssignToDocument(bridgeName, masterfile, L"");
+    ASSERT_TRUE(bridgeName.Equals(MSTN_BRIDGE_REG_SUB_KEY));
+    testRegistry.Save();
+    TerminateHost();
+
+    int modelCount = 0;
+    DgnElementId jobSubjectId;
+    Json::Value v1Json;
+    if (true)
+        {
+        // In version 1, we have master -> ref1 -> model1,nestedv1 (has a circle)
+        bvector<WString> args;
+        SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, DEFAULT_IMODEL_NAME);
+
+        if (simulateOldBridge)
+            args.push_back(L"--do-not-track-references-subjects");
+
+        auto master_v1 = GetTestDataFileName(L"Master_nested_v1.i.dgn");
+
+        ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(master_v1.c_str(), masterfile.c_str()));
+
+        args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", masterfile.c_str()));
+        RunTheBridge(args);
+        jobSubjectId = m_jobSubjectId;
+
+        CleanupElementECExtensions();
+        args.pop_back();
+
+        args.push_back(WPrintfString(L"--fwk-all-docs-processed"));
+        RunTheBridge(args);
+        CleanupElementECExtensions();
+
+        DbFileInfo dbInfo(m_briefcaseName);
+        v1Json = collectElementAndChildren(*dbInfo.m_db, jobSubjectId);
+        }
+
+    Json::Value v2Json;
+    if (true)
+        {
+        // In version 2, we have master -> ref1 -> model1,nestedv2 (has a square)           Note that the reference is to a different file. The referenced model has the same name as the ref in version 1.
+        bvector<WString> args;
+        SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, DEFAULT_IMODEL_NAME);
+
+        if (simulateOldBridge)
+            args.push_back(L"--do-not-track-references-subjects");
+
+        auto master_v2 = GetTestDataFileName(L"Master_nested_v2.i.dgn");
+
+        ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(master_v2.c_str(), masterfile.c_str()));
+
+        args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", masterfile.c_str()));
+        RunTheBridge(args);
+        CleanupElementECExtensions();
+        ASSERT_EQ(jobSubjectId.GetValue(), m_jobSubjectId.GetValue());
+
+        args.pop_back();
+
+        args.push_back(WPrintfString(L"--fwk-all-docs-processed"));
+        RunTheBridge(args);
+        CleanupElementECExtensions();
+
+        DbFileInfo dbInfo(m_briefcaseName);
+        v2Json = collectElementAndChildren(*dbInfo.m_db, jobSubjectId);
+        }
+
+    if (simulateOldBridge)
+        {
+        // In the steps above, the bridges ran as though they had the old logic that neglected to track
+        // References Subjects with ExternalSourceAspects.
+        // Now run the bridges again using the new logic that both tracks Refs Subjects and also cleans
+        // up orphan Refs Subjects that were left over by old bridges. In this test, the above bridges
+        // left the master2->commonRef Refs Subject in place. We expect the "new" bridge to detect and delete that.
+        bvector<WString> args;
+        SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, DEFAULT_IMODEL_NAME);
+
+        args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", masterfile.c_str()));
+        RunTheBridge(args);
+        CleanupElementECExtensions();
+        ASSERT_EQ(jobSubjectId.GetValue(), m_jobSubjectId.GetValue());
+
+        args.pop_back();
+
+        args.push_back(WPrintfString(L"--fwk-all-docs-processed"));
+        RunTheBridge(args);
+        CleanupElementECExtensions();
+
+        DbFileInfo dbInfo(m_briefcaseName);
+        v2Json = collectElementAndChildren(*dbInfo.m_db, jobSubjectId);
+        }
+  
+    // printf("----------------------- v1 --------------------------\n%s\n", v1Json.toStyledString().c_str());
+    // printf("----------------------- v2 --------------------------\n%s\n", v2Json.toStyledString().c_str());
+
+    auto expected_master_v1 = readJsonFromFile(GetTestDataFileName(L"Master_nested_v1.json"));
+    auto expected_master_v2 = readJsonFromFile(GetTestDataFileName(L"Master_nested_v2.json"));
+
+    EXPECT_TRUE(expected_master_v1 == v1Json);
+    EXPECT_TRUE(expected_master_v2 == v2Json);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      02/20
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(MstnBridgeTests, AddRemoveNestedEmbeddedRefsV2)
+    {
+    DoAddRemoveNestedEmbeddedRefsV2(false);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      02/20
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(MstnBridgeTests, AddRemoveNestedEmbeddedRefsV2OldBridge)
+    {
+    DoAddRemoveNestedEmbeddedRefsV2(true);
     }
 
 /*---------------------------------------------------------------------------------**//**

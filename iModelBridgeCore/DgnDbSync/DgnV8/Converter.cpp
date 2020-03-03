@@ -1953,12 +1953,133 @@ void Converter::_OnElementConverted(DgnElementId elementId, DgnV8EhCP v8eh, Chan
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::_OnElementBeforeDelete(DgnElementId elementId)
     {
+    // *** TODO make RootModelConverter override _OnElementBeforeDelete, and move this logic into it
+    OnDeleteReferencesSubject(elementId);
+
     if (nullptr != m_linkConverter)
         m_linkConverter->RemoveLinksOnElement(elementId);
 
     for (auto xdomain : XDomainRegistry::s_xdomains)
         {
         xdomain->_OnElementBeforeDelete(*this, elementId);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+static std::vector<DgnElementId> getReferencesSubjects(DgnDbR db, Utf8StringCR codeValue)
+    {
+    std::vector<DgnElementId> results;
+
+    auto stmt = db.GetPreparedECSqlStatement("SELECT ecinstanceid FROM " BIS_SCHEMA(BIS_CLASS_Subject) " WHERE CodeValue = ? AND json_extract(JsonProperties, '$.Subject.Model.Type') = 'References'");
+    stmt->BindText(1, codeValue.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        results.push_back(stmt->GetValueId<DgnElementId>(0));
+        }
+
+    return results;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnElementId getChildInformationPartitionElement(DgnDbR db, DgnElementId parentId)
+    {
+    DgnElementId physicalPartitionId;
+
+    auto stmt = db.GetPreparedECSqlStatement("SELECT ecinstanceid FROM " BIS_SCHEMA(BIS_CLASS_InformationPartitionElement) " WHERE Parent.Id = ?");
+    stmt->BindId(1, parentId);
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        if (physicalPartitionId.IsValid())
+            {
+            BeAssert(false && "expected only one InformationPartition child of Refs Subject");
+            return DgnElementId();
+            }
+        physicalPartitionId = stmt->GetValueId<DgnElementId>(0);
+        }
+
+    return physicalPartitionId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+static std::vector<DgnElementId> getChildSubjects(DgnDbR db, DgnElementId parentId)
+    {
+    std::vector<DgnElementId> results;
+
+    auto stmt = db.GetPreparedECSqlStatement("SELECT ecinstanceid FROM " BIS_SCHEMA(BIS_CLASS_Subject) " WHERE Parent.Id = ?");
+    stmt->BindId(1, parentId);
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        results.push_back(stmt->GetValueId<DgnElementId>(0));
+        }
+
+    return results;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+// *** TODO make RootModelConverter override _OnElementBeforeDelete, and move this logic into it
+void Converter::OnDeleteReferencesSubject(DgnElementId eid)
+    {
+    if (DoNotTrackReferencesSubjects())
+        return;
+
+    auto subj = GetDgnDb().Elements().Get<Subject>(eid);
+    if (!subj.IsValid() || (subj->GetSubjectJsonProperties(Subject::json_Model()).GetMember("Type") != "References"))
+        return;
+
+    // We want to delete a References Subject element, that is, an element that represents a reference attachment to a model.
+
+    // First, delete all Child Subjects bottom-up, to avoid FK errors.
+    for (auto childSubjId : getChildSubjects(GetDgnDb(), eid))
+        {
+        _DeleteElement(childSubjId);
+        }
+
+    // This Subject element *may* be the parent of an InformationPartition element.
+    auto infoPartitionId = getChildInformationPartitionElement(GetDgnDb(), eid);
+    if (!infoPartitionId.IsValid())
+        {
+        // If the Refs Subject is not the parent of an InformationPartition element, then we can let the caller go ahead and delete this Subject now.
+        return;
+        }
+
+    _GetChangeDetector()._OnReferenceDropped(infoPartitionId);
+
+    // This Subject is the parent of an InformationPartition element. We must move that child to another parent before we delete this Subject.
+    // (Otherwise, deleting this Subject would try to delete the child InformationPartition. We don't know that the child should be deleted. There maybe another reference to it.)
+    auto allRefs = getReferencesSubjects(GetDgnDb(), subj->GetCode().GetValue().GetUtf8());
+    BeAssert(allRefs.size() != 0); // Must at least find this one!
+    DgnElementId newParentId;
+    auto itOtherSubj = std::find_if(allRefs.begin(), allRefs.end(), [eid](auto refId) { return refId != eid; });
+    if (itOtherSubj != allRefs.end())
+        newParentId = *itOtherSubj;
+    else
+        {
+        // This is the only reference to the child InformationPartition. It will eventually be deleted by DetectDeletedEmbeddedFiles or DetectDeletedDocuments.
+        // Nevertheless, we want to to delete this References Subject element. So, move the child PP to the root subject temporarily.
+        newParentId = GetDgnDb().Elements().GetRootSubjectId();
+        }
+
+    // Now, re-parent the InformationPartition element
+    auto pp = GetDgnDb().Elements().GetForEdit<InformationPartitionElement>(infoPartitionId);
+    if (!pp.IsValid())
+        {
+        BeAssert(false);
+        return;
+        }
+    pp->SetParentId(newParentId, pp->GetParentRelClassId());
+    pp->SetCode(DgnCode(pp->GetCode().GetCodeSpecId(), newParentId, pp->GetCode().GetValue().GetUtf8()));
+    auto updated = pp->Update();
+    if (!updated.IsValid())
+        {
+        LOG.errorv("Failed to update %s while re-parenting", Converter::IssueReporter::FmtElement(*pp).c_str());
         }
     }
 
@@ -2188,6 +2309,18 @@ static bool isChildOfJob(DgnDbR db, DgnElementId elId, DgnElementId jobSubjectId
     return isChildOfJob(db, thisParent, jobSubjectId);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Converter::IsElementInRootModelAssignedToJobSubject(DgnElementId eid) const
+    {
+    #ifndef NDEBUG
+    auto el = m_dgndb->Elements().GetElement(eid);
+    BeAssert(!el.IsValid() || el->GetModel()->GetModelId() == m_dgndb->GetRepositoryModel()->GetModelId());
+    #endif
+    return isChildOfJob(*m_dgndb, eid, GetJobSubject().GetElementId());
+    }
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/2018
 +---------------+---------------+---------------+---------------+---------------+------*/

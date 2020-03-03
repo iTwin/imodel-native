@@ -8,6 +8,8 @@
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 #include "RuleSetEmbedder.h"
 
+#define BRIDGE_SCHEMA_VERSION "1.0"
+
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 
 // We enter this namespace in order to avoid having to qualify all of the types, such as bmap, that are common
@@ -660,6 +662,8 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
     // Set up m_importJob with the subject. Do this before calling GetOrCreateJobPartitions.
     m_importJob = ResolvedImportJob(*jobSubject, jtype);
 
+    SetBridgeSchemaVersion();
+
     // Create DocumentPartitions, GroupInformationPartition, and other organizer partitions, all as children of the jobSubject that we just created.
     // Write some default Categories and CodeSpecs into the models under these partitions.
     GetOrCreateJobPartitions();
@@ -906,6 +910,18 @@ void RootModelConverter::FindSpatialV8Models(DgnV8ModelRefR thisModelRef)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/20
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8String getParentPath(DgnElementCR child)
+    {
+    auto parent = child.GetDgnDb().Elements().GetElement(child.GetParentId());
+    if (!parent.IsValid())
+        return "";
+    auto grandParentPath = getParentPath(*parent);
+    return Utf8PrintfString("%s/%llx", grandParentPath.c_str(), parent->GetElementId().GetValue());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * The purpose of this function is to *discover* spatial models, not to convert their contents.
 * The outcome of this function is to a) create an (empty) BIM spatial model for each discovered V8 spatial model,
 * and b) to discover and record the spatial transform that should be applied when (later) converting
@@ -972,6 +988,41 @@ void RootModelConverter::ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8Mo
             }
         // iModelExternalSourceAspect::Dump(*myRefsSubject, nullptr, NativeLogging::SEVERITY::LOG_DEBUG);
 
+        if (!DoNotTrackReferencesSubjects())
+            {
+            _GetChangeDetector()._OnElementSeen(*this, myRefsSubject->GetElementId());
+
+            // Put an ExternalSourceAspect on the References Subject. This Subject tracks the V8 attachment itself. 
+            // This is a little unusual. We are mapping a DgnAttachment element in a V8 3D model to a Subject element in the iModel's Repository model.
+            // So, the scope of the mapping is the Repository model and NOT the PhysicalPartition to which the parent or referenced V8 model was or will be converted.
+            DgnModelId scope = myRefsSubject->GetModelId();
+            // Also, we identify the attachment in the V8 model BY DESCRIPTION, not by ID. That is so that we will take a detach + reattach of the same V8 file in stride.
+            Utf8String attachmentDescription = getParentPath(*myRefsSubject).append("/").append(myRefsSubject->GetCode().GetValueUtf8()); 
+
+            auto existingAspect = SyncInfo::V8ElementExternalSourceAspect::GetAspect(*myRefsSubject, attachmentDescription);
+            if (existingAspect.IsValid())
+                {
+                // We are already tracking an attachment with this description.
+                BeAssert(existingAspect.GetScope() == scope);
+                BeAssert(existingAspect.GetIdentifier().Equals(attachmentDescription));
+                // For now, we don't do anything with changes to V8 Attachments. 
+                // If the attachment's ref transform changes, the GetResolvedModelMapping method will treat that as a delete + add of the referenced PhysicalPartition and its model.
+                // Other attachment parameters are ignored altogether.
+                }
+            else
+                {
+                // The is the first time we've seen an attachment with this description. Track it.
+                DgnV8Api::EditElementHandle refEh;
+                attachment->FindDgnAttachmentElement(refEh);
+                auto myRefsSubjectEd = myRefsSubject->CopyForEdit();
+                SyncInfo::ElementProvenance attachmentElProv(refEh, GetSyncInfo(), GetCurrentIdPolicy());
+                SyncInfo::V8ElementExternalSourceAspectData attachmentElAspectData(scope, attachmentDescription, attachmentElProv, "");
+                auto aspect = AddOrUpdateV8ElementExternalSourceAspect(*myRefsSubjectEd, attachmentElAspectData);
+                myRefsSubjectEd->Update();
+                iModelExternalSourceAspect::Dump(*myRefsSubjectEd, "DgnV8Converter", NativeLogging::SEVERITY::LOG_INFO);
+                }
+            }
+
         SetSpatialParentSubject(*myRefsSubject); // >>>>>>>>>> Push spatial parent subject
 
         Transform refTrans = ComputeAttachmentTransform(trans, *attachment);
@@ -980,6 +1031,39 @@ void RootModelConverter::ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8Mo
 
     if (hasPushedReferencesSubject)
         SetSpatialParentSubject(*parentRefsSubject); // <<<<<<<<<<<< Pop spatial parent subject
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+std::pair<int,int> Converter::GetBridgeSchemaVersion()
+    {
+    auto bridgeSchemaVersion = JobSubjectUtils::GetProperty(_GetJobSubject(), "Properties")["BridgeSchemaVersion"];
+    if (!bridgeSchemaVersion.isString())
+        return std::make_pair(0,0);
+
+    int major=0, minor=0;
+    sscanf_s(bridgeSchemaVersion.asCString(), "%d.%d", &major, &minor);
+    return std::make_pair(major,minor);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+void Converter::SetBridgeSchemaVersion()
+    {
+    if (DoNotTrackReferencesSubjects())
+        return;
+
+    auto props = JobSubjectUtils::GetProperty(_GetJobSubject(), "Properties");
+    auto ver = props["BridgeSchemaVersion"];
+    if (ver.isString() && (0 == strcmp(ver.asCString(), BRIDGE_SCHEMA_VERSION)))
+        return;
+    
+    auto jobSubjEd = GetDgnDb().Elements().GetForEdit<Subject>(GetJobSubject().GetElementId());
+    props["BridgeSchemaVersion"] = BRIDGE_SCHEMA_VERSION;
+    JobSubjectUtils::SetProperty(*jobSubjEd, "Properties", props);
+    jobSubjEd->Update();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1928,6 +2012,8 @@ void RootModelConverter::_FinishConversion()
             SetStepName(ProgressMessage::STEP_DETECT_DELETIONS());
             StopWatch timer(true);
 
+            DeleteOldOrphanReferencesSubjects();
+
             // Detect deletions in the V8 files that we processed. (Don't assume we saw all V8 files.)
             for (DgnV8FileP v8File : m_v8Files)
                 {
@@ -1938,6 +2024,15 @@ void RootModelConverter::_FinishConversion()
                 GetChangeDetector()._DetectDeletedViewsInFile(*this, *v8File);
                 GetChangeDetector()._DetectDeletedModelsInFile(*this, *v8File);    // NB: call this *after* DetectDeletedElements!
                 }
+
+            SyncInfo::V8ElementExternalSourceAspectIterator elementsInRootModel(*m_dgndb->GetRepositoryModel());
+            IChangeDetector::T_SyncInfoElementFilter onlyMine = 
+                [](SyncInfo::V8ElementExternalSourceAspectIterator::Entry const& entry, Converter& cvt)
+                    {
+                    return cvt.IsElementInRootModelAssignedToJobSubject(entry->GetElementId());
+                    };
+            GetChangeDetector()._DetectDeletedElements(*this, elementsInRootModel, &onlyMine);
+
             GetChangeDetector()._DetectDeletedElementsEnd(*this);
             GetChangeDetector()._DetectDeletedViewsEnd(*this);
             GetChangeDetector()._DetectDeletedModelsEnd(*this);
@@ -1965,7 +2060,77 @@ void RootModelConverter::_FinishConversion()
 
     CopyExpirationDate(*m_rootFile);
 
+    SetBridgeSchemaVersion();
     ValidateJob();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isChildOf(DgnDbR db, DgnElementId elid, DgnElementId parentToFind)
+    {
+    for (;;)
+        {
+        auto el = db.Elements().GetElement(elid);
+        auto parentId = el->GetParentId();
+        if (!parentId.IsValid() || parentId == elid)
+            return false;
+        if (parentId == parentToFind)
+            return true;
+        elid = parentId;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+void Converter::DeleteOldOrphanReferencesSubjects()
+    {
+    if (DoNotTrackReferencesSubjects())
+        return;
+
+    auto schemaVer = GetBridgeSchemaVersion();
+    if (schemaVer.first >= 1)
+        return;
+
+    // In older versions, we did not add an ExternalSourceAspect to References Subject elements. As a result,
+    // the normal delete-detection logic will not be able to tell when an old References Subject should be deleted.
+
+    auto myJobSubjectId = GetJobSubject().GetElementId();
+
+    std::vector<DgnElementId> orphanRefs;
+    auto stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT ecinstanceid FROM " BIS_SCHEMA(BIS_CLASS_Subject) " WHERE json_extract(JsonProperties, '$.Subject.Model.Type') = 'References'");
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        auto refSubjId = stmt->GetValueId<DgnElementId>(0);
+
+        if (!isChildOf(GetDgnDb(), refSubjId, myJobSubjectId))
+            continue;
+
+        auto refSubj = GetDgnDb().Elements().Get<Subject>(refSubjId);
+        if (!refSubj.IsValid())
+            {
+            BeAssert(false);
+            continue;
+            }
+
+        if (iModelExternalSourceAspect::GetAllByKind(*refSubj, SyncInfo::ExternalSourceAspect::Kind::Element).size() != 0)
+            continue;
+
+        // This Refs Subject has no Element XSA.
+        // This function is called after all existing reference attachments have been discovered, starting from the root model,
+        // and the converter has added ExternalSourceAspects to them. So, we know that any References Subject element that does not 
+        // have an XSA corresponds to a V8 reference attachment that was NOT seen. Therefore, this Subject should be deleted.
+        orphanRefs.push_back(stmt->GetValueId<DgnElementId>(0));
+        }
+
+    // We can delete in any order. DgnElements::PerformDelete takes care of deleting children before parent.
+
+    for (auto orphanref : orphanRefs)
+        {
+        if (GetDgnDb().Elements().GetElement(orphanref).IsValid()) // if not already (recursively) deleted by OnDeleteReferencesSubject
+            _DeleteElement(orphanref);
+        }
     }
 
 /*=================================================================================**//**

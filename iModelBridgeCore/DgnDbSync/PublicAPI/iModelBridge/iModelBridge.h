@@ -557,6 +557,7 @@ struct iModelBridge
         bool m_doTerrainModelConversion = false;
         bool m_ignoreStaleFiles = false;
         bool m_errorOnStaleFiles = false;
+        bool m_doNotTrackReferencesSubjects = false;
         FileIdRecipe m_embeddedFileIdRecipe;
         PushIntermediateRevisions m_pushIntermediateRevisions = PushIntermediateRevisions::None;
         BeFileName m_inputFileName;
@@ -682,6 +683,8 @@ struct iModelBridge
         bool IgnoreStaleFiles() const {return m_ignoreStaleFiles;}
         void SetErrorOnStaleFiles(bool b) {m_errorOnStaleFiles = b;}
         bool ErrorOnStaleFiles() const {return m_errorOnStaleFiles;}
+        void SetDoNotTrackReferencesSubjects(bool b) {m_doNotTrackReferencesSubjects = b;}
+        bool DoNotTrackReferencesSubjects() const {return m_doNotTrackReferencesSubjects;}
 
         void SetDoTerrainModelConversion(bool b) { m_doTerrainModelConversion = b; }
         bool DoTerrainModelConversion() const { return m_doTerrainModelConversion; }

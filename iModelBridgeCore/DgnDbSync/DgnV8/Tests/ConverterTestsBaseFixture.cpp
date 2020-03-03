@@ -724,7 +724,8 @@ DgnElementCPtr ConverterTestBaseFixture::FindV8ElementInDgnDb(DgnDbR db, DgnV8Ap
             SyncInfo::V8ModelExternalSourceAspect modelAspect;
             DgnElementCPtr modeledElement;
             std::tie(modeledElement, modelAspect) = SyncInfo::V8ModelExternalSourceAspect::GetAspect(*element->GetModel());
-            BeAssert(modelAspect.IsValid());
+            if (!modelAspect.IsValid()) // we found a Subject element in the RepositoryModel, which is not mapped to any V8 file.
+                continue;
             if (modelAspect.GetRepositoryLinkId() != rlinkId)
                 continue;
             }

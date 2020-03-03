@@ -41,6 +41,12 @@ WString ConverterApp::GetCommonCommandLineOptions()
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelBridge::CmdLineArgStatus ConverterApp::_ParseCommandLineArg(int iArg, int argc, WCharCP argv[])
     {
+    if (0 == wcscmp(argv[iArg], L"--do-not-track-references-subjects"))
+        {
+        _GetConverterParams().SetDoNotTrackReferencesSubjects(true);
+        return CmdLineArgStatus::Success;
+        }
+        
     if (0 == wcscmp(argv[iArg], L"--unstableIds"))
         {
         _GetConverterParams().SetStableIdPolicy(StableIdPolicy::ByHash);

@@ -200,13 +200,14 @@
             "request": "launch",
             "program": "${env:OutRoot}WinX64/Product/MstnBridgeTests/MstnBridgeTests.exe",
             "args": [
-                "--gtest_break_on_failure"
+                "--gtest_break_on_failure",
+                "--gtest_filter=MstnBridgeTests.AddRemoveNestedEmbeddedRefsV2OldBridge"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [
                 {
-                    "name": "MSTN_BRIDGE_TESTS_IMODEL_BANK_SERVER_JS",
+                    "name": "//MSTN_BRIDGE_TESTS_IMODEL_BANK_SERVER_JS",
                     "value": "${env:SrcRoot}imodel-bank/server/lib/WebServer/hub-api/runWebServer.js"
                 },
                 {

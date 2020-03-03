@@ -436,6 +436,12 @@ struct IChangeDetector
     //! @note Converter must not call this during the model-discovery step but only during the element-conversion step.
     virtual bool _AreContentsOfModelUnChanged(Converter&, ResolvedModelMapping const&) = 0;
 
+    //! Call this when you discover that a V8 reference attachment was dropped
+    virtual void _OnReferenceDropped(DgnElementId eid) {}
+
+    //! Call this to check if a reference to this model was just dropped.
+    virtual bool _WasReferenceJustDropped(DgnModelId mid) { return false; }
+
     //! Used to choose one of many existing entries in SyncInfo
     typedef std::function<bool(SyncInfo::V8ElementExternalSourceAspectIterator::Entry const&, Converter& converter)> T_SyncInfoElementFilter;
 
@@ -473,7 +479,7 @@ struct IChangeDetector
 
     //! @name  Inferring Deletions - call these methods after processing all models in a conversion unit. Don't forget to call the ...End function when done.
     //! @{
-    virtual void _DetectDeletedElements(Converter&, SyncInfo::V8ElementExternalSourceAspectIterator&) = 0;    //!< don't forget to call _DetectDeletedElementsEnd when done
+    virtual void _DetectDeletedElements(Converter&, SyncInfo::V8ElementExternalSourceAspectIterator&, T_SyncInfoElementFilter* filter = nullptr) = 0;    //!< don't forget to call _DetectDeletedElementsEnd when done
     virtual void _DetectDeletedElementsInFile(Converter&, DgnV8FileR) = 0;              //!< don't forget to call _DetectDeletedElementsEnd when done
     virtual void _DetectDeletedElementsEnd(Converter&) = 0;
     virtual void _DetectDeletedModels(Converter&, SyncInfo::V8ModelExternalSourceAspectIterator&) = 0;        //!< don't forget to call _DetectDeletedModelsEnd when done
@@ -1039,6 +1045,8 @@ protected:
     virtual DgnV8FileCP _GetPackageFileOf(DgnV8FileCR f) {return &f;}
     virtual bool _WasEmbeddedFileSeen(Utf8StringCR uniqueName) const {return false;}
 
+    bool DoNotTrackReferencesSubjects() { return _GetParams().DoNotTrackReferencesSubjects(); }
+
 public:
     virtual Params const& _GetParams() const = 0;
     virtual Params& _GetParamsR() = 0;
@@ -1066,6 +1074,11 @@ public:
 
     //! This returns false if the V8 file should not be converted by the bridge.
     DGNDBSYNC_EXPORT bool IsFileAssignedToBridge(DgnV8FileCR v8File) const;
+
+    //! This returns true if the specified BIM element may be converted or otherwise processed by the current job subject.
+    //! NB: Call this directly only for children of the JobSubject element that are stored in the Repository Model.
+    //! For normal elements, call IsBimModelAssignedToJobSubject, passing the model of the element.
+    DGNDBSYNC_EXPORT bool IsElementInRootModelAssignedToJobSubject(DgnElementId eid) const;
 
     //! This returns true if the specified BIM model may be converted or otherwise processed by the current job subject.
     DGNDBSYNC_EXPORT bool IsBimModelAssignedToJobSubject(DgnModelId) const;
@@ -1776,6 +1789,14 @@ public:
     //! @{
     DGNDBSYNC_EXPORT virtual void _OnElementConverted(DgnElementId elementId, DgnV8EhCP v8eh, ChangeOperation changeOperation);
     DGNDBSYNC_EXPORT virtual void _OnElementBeforeDelete(DgnElementId elementId);
+    //! @private
+    void OnDeleteReferencesSubject(DgnElementId); // *** TODO make RootModelConverter override _OnElementBeforeDelete, and move this logic into it
+    //! @private
+    std::pair<int,int> GetBridgeSchemaVersion();
+    //! @private
+    void SetBridgeSchemaVersion();
+    //! @private
+    void DeleteOldOrphanReferencesSubjects();
 
     DgnDbStatus InsertResults(ElementConversionResults&, SyncInfo::V8ElementExternalSourceAspectData const&);
     DgnDbStatus UpdateResultsForOneElement(ElementConversionResults&, DgnElementId existingElementId, SyncInfo::V8ElementExternalSourceAspectData const&);
@@ -2183,9 +2204,13 @@ struct ChangeDetector : IChangeDetector
     bset<DgnModelId> m_v8ModelsSeen;
     bset<DgnModelId> m_v8ModelsSkipped;
     bset<DgnModelId> m_newlyDiscoveredModels; // models created during this run
+    bset<DgnModelId> m_referencesJustDropped; // models that were once converted by this job but are are now no longer referenced
 
     void ReleaseIterators() {}
     void PrepareIterators(DgnDbCR db);
+
+    void _OnReferenceDropped(DgnElementId eid) override {m_referencesJustDropped.insert(DgnModelId(eid.GetValue()));}
+    bool _WasReferenceJustDropped(DgnModelId mid) override { return m_referencesJustDropped.find(mid) != m_referencesJustDropped.end(); }
 
     DGNDBSYNC_EXPORT bool _ShouldSkipFile(Converter&, DgnV8FileCR) override;
     void _OnElementSeen(Converter&, DgnElementId id) override {if (id.IsValid()) m_elementsSeen.insert(id);}
@@ -2201,7 +2226,7 @@ struct ChangeDetector : IChangeDetector
 
     //! @name  Inferring Deletions - call these methods after processing all models in a conversion unit. Don't forget to call the ...End function when done.
     //! @{
-    DGNDBSYNC_EXPORT void _DetectDeletedElements(Converter&, SyncInfo::V8ElementExternalSourceAspectIterator&) override;    //!< don't forget to call _DetectDeletedElementsEnd when done
+    DGNDBSYNC_EXPORT void _DetectDeletedElements(Converter&, SyncInfo::V8ElementExternalSourceAspectIterator&, T_SyncInfoElementFilter* filter = nullptr) override;    //!< don't forget to call _DetectDeletedElementsEnd when done
     DGNDBSYNC_EXPORT void _DetectDeletedElementsInFile(Converter&, DgnV8FileR) override;              //!< don't forget to call _DetectDeletedElementsEnd when done
     DGNDBSYNC_EXPORT void _DetectDeletedElementsEnd(Converter&) override {m_elementsSeen.clear();}
 

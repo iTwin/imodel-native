@@ -29,6 +29,8 @@ struct MstnBridgeTestsLogProvider : BentleyApi::NativeLogging::Provider::ILogPro
         {
         m_sev = [](BentleyApi::Utf8StringCR ns, BentleyApi::NativeLogging::SEVERITY sev)
             {
+            // if (ns[0] == 'D')
+            //    return true;
             if (ns.Equals("MstnBridgeTests"))
                 return true;
             if (ns.Equals("Performance"))

@@ -439,6 +439,13 @@ public:
     IMODEL_BRIDGE_FWK_EXPORT static void ClearIModelClientForBridgesForTesting();
     //! @private
     IMODEL_BRIDGE_FWK_EXPORT static void SetRegistryForTesting(IModelBridgeRegistry&);
+    //! @private
+    struct TestProbe
+        {
+        virtual void _ReportJobSubjectId(DgnElementId) {;}
+        };
+    //! @private
+    IMODEL_BRIDGE_FWK_EXPORT static void SetTestProbe(TestProbe&);
 
     IMODEL_BRIDGE_FWK_EXPORT void SetConnectSignInManager(WebServices::ConnectSignInManagerPtr mgr);
 
