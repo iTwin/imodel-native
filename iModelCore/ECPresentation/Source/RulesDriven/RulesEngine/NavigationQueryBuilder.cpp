@@ -1246,6 +1246,15 @@ private:
         RefCountedPtr<NavNode const> node = m_parentNode;
         while (node.IsValid() && SpecificationMatches(*node))
             {
+            if (node->GetType().Equals(NAVNODE_TYPE_ECInstancesNode))
+                {
+                // if we found an ECInstance parent created using the same specification, it means the specification
+                // is used to create multiple hierarchy levels - when looking for class grouping node we have to break
+                // as soon as we find the first parent ECInstance node or otherwise we'll be grouping children by 
+                // parent's class
+                break;
+                }
+
             if (node->GetType().Equals(NAVNODE_TYPE_ECClassGroupingNode))
                 {
                 ECClassCP candidateClass = m_schemaHelper.GetECClass(NavNodeExtendedData(*node).GetECClassId());
