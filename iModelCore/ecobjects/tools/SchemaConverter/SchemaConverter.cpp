@@ -4,8 +4,8 @@
 *--------------------------------------------------------------------------------------------*/
 #include <ECObjects/ECObjectsAPI.h>
 #include <Bentley/BeFileName.h>
-#include <Bentley/stdcxx/bvector.h>
-#include <Bentley/stdcxx/rw/bpair.h>
+#include <Bentley/bvector.h>
+#include <Bentley/bpair.h>
 #include <BeXml/BeXml.h>
 #include <Bentley/BeStringUtilities.h>
 #include <Bentley/BeFileListIterator.h>
@@ -343,7 +343,7 @@ static bool TryParseInput(int argc, char** argv, ConversionOptions& options)
                     }
                 }
             }
-        else if (0 == strcmpi(argv[i], "--removeUnusedReferences"))
+        else if (0 == _strcmpi(argv[i], "--removeUnusedReferences"))
             {
             options.RemoveUnusedSchemaReferences = true;
             }
