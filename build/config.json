@@ -57,19 +57,19 @@
             ]
         },
         {
-            "name": "iModelBridgeCore",
-            "archs": "x64",
+            "name": "RealityCore",
+            "archs": "x64+linuxx64",
             "version_seed": "2.1.0",
             "depends" : [
                 "iModelCore"
             ]
         },
         {
-            "name": "RealityCore",
-            "archs": "x64+linuxx64",
+            "name": "iModelBridgeCore",
+            "archs": "x64",
             "version_seed": "2.1.0",
             "depends" : [
-                "iModelCore"
+                "RealityCore"
             ]
         },
         {

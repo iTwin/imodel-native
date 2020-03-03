@@ -22,7 +22,7 @@
     </Part>
 
     <Part Name="iModelBridgeCore.Dev" PrgOutputDir="iModelBridgeCore">
-        <SubPart PartName="iModelCorePRG" PartFile="iModelCore/iModelCore" Repository="imodel02"/>
+        <SubPart PartName="RealityCorePRG" PartFile="RealityCore/RealityCore" Repository="imodel02"/>
         <SubPart PartName="iModelBridgeCore"/>
     </Part>
 </BuildContext>
