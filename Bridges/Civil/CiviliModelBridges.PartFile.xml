@@ -96,7 +96,7 @@
         </Bindings>
     </Part>
 
-    <Product Name="ORDBridge" PrgOutputDir="ORDBridge" BuildInstallSet="true" SaveProduct="true">
+    <Part Name="__ORDBridgeProductSubParts">
         <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
         <SubPart PartName="PublishORDToBIMExe"/>
         <SubPart PartName="ORDBridgeInstallerFiles"/>
@@ -107,6 +107,15 @@
         <SubPart PartName="RoadRailAlignment-Tested" Repository="imodel02" PartFile="Domains/RoadRailAlignment/RoadRailAlignment" />
         <SubPart PartName="RoadRailPhysical-Tested" Repository="imodel02" PartFile="Domains/RoadRailPhysical/RoadRailPhysical" />
         <SubPart PartName="CiviliModelBridgesTested" />
+    </Part>
+
+    <Part Name="ORDBridgeAll" PrgOutputDir="ORDBridge">
+        <SubProduct ProductName="ORDBridge"/>
+        <SubProduct ProductName="ORDBridge-Portable"/>
+    </Part>
+
+    <Product Name="ORDBridge" PrgOutputDir="ORDBridge" BuildInstallSet="true" SaveProduct="true">
+        <SubPart PartName="__ORDBridgeProductSubParts"/>
         <FeatureExclude>imodel02_Workspace_System_Fonts</FeatureExclude>
         
         <!-- <SubPart PartName="ORDBridgeGUI" /> -->
@@ -114,6 +123,21 @@
         <InstallerWixFile SourceFile="ORDBridge\Installer\ORDBridgeInstaller"/>
         <Directories DirectoryListName="DgnDbSyncAppCommonDirList" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync" Repository="imodel02"/>
         <Directories DirectoryListName="ORDBridgeDirectoryList" />
+    </Product>
+
+    <Part Name="__ORDBridgeCrt" BentleyBuildMakeFile="ORDBridgeCrt.mke">
+        <RequiredRepository>Thirdparty-msvcrt_14_16_27012</RequiredRepository>
+        <Bindings>
+            <Assemblies>Delivery/msvcrt/*.dll</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Product Name="ORDBridge-Portable">
+        <SubPart PartName="__ORDBridgeProductSubParts"/>
+        <SubPart PartName="__ORDBridgeCrt"/>
+        <FeatureExclude>imodel02_Workspace_System_Fonts</FeatureExclude>
+        <Directories DirectoryListName="DgnDbSyncAppCommonDirList" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync" Repository="imodel02"/>
+        <Directories DirectoryListName="ORDBridgeDirectoryList"/>
     </Product>
 
     <Part Name="ORDBridgePublicAPI" BentleyBuildMakeFile="ORDBridge/ORDBridge.prewire.mke">
@@ -148,7 +172,7 @@
         <ProductDirectory Name="BentleyClientSharedAssemblies" RelativeTo="ApplicationRoot"/>
     </ProductDirectoryList>
 
-    <Part Name="ORDBridgeTestAppExe" BentleyBuildMakeFile="ORDBridge/TestApp/ORDBridgeTestApp.mke" >
+    <Part Name="ORDBridgeTestAppExe" DeferType="BuildUnitTests" BentleyBuildMakeFile="ORDBridge/TestApp/ORDBridgeTestApp.mke" >
         <SubPart PartName="ORDBridgeLibrary"/>
         <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
         <Bindings>
@@ -156,14 +180,14 @@
         </Bindings>
     </Part>
 
-    <Part Name="PrewireForORDBridgeUnitTests" BentleyBuildMakeFile="ORDBridge/Tests/prewire.mke">
+    <Part Name="PrewireForORDBridgeUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="ORDBridge/Tests/prewire.mke">
         <SubPart PartName="ORD-TestFiles" PartFile="CivilTestFiles" Repository="Civil-TestFiles"/>
         <Bindings>
             <Files ProductDirectoryName="UnitTests-IgnoreList"  ProductSubDirectory="CiviliModelBridgesORDBridge" SubPartDirectory="UnitTests/CivilORDBridge"> Delivery/UnitTests/ordbridge_ignore_list.txt</Files>
         </Bindings>
     </Part>
 
-    <Part Name="BackdoorForORDBridgeUnitTests" BentleyBuildMakeFile="ORDBridge/Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=BackdoorORDBridge">
+    <Part Name="BackdoorForORDBridgeUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="ORDBridge/Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=BackdoorORDBridge">
         <SubProduct ProductName="PublishORDToBIM"/>
         <SubPart PartName="PrewireForORDBridgeUnitTests" />
         <SubPart PartName="PublishORDToBimDLL"/>
@@ -175,14 +199,14 @@
         </Bindings>
     </Part>
 
-    <Part Name="CiviliModelBridgesORDBridge-UnitTests-NonPublished" BentleyBuildMakeFile="ORDBridge/Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublishedORDBridge">
+    <Part Name="CiviliModelBridgesORDBridge-UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="ORDBridge/Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublishedORDBridge">
         <SubPart PartName="BackdoorForORDBridgeUnitTests" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="CiviliModelBridgesORDBridge/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublishedORDBridge"/>
         </Bindings>
     </Part>
 
-    <Part Name="CiviliModelBridgesORDBridge-UnitTests-Published" BentleyBuildMakeFile="ORDBridge/Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=PublishedORDBridge">
+    <Part Name="CiviliModelBridgesORDBridge-UnitTests-Published" DeferType="BuildUnitTests" BentleyBuildMakeFile="ORDBridge/Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=PublishedORDBridge">
         <SubPart PartName="BackdoorForORDBridgeUnitTests" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="CiviliModelBridgesORDBridge/Published" SourceName="Delivery/UnitTests/Objects/PublishedORDBridge"/>
@@ -256,7 +280,8 @@
     <!-- Silencing warnings... are these actually needed? -->
     <ProductDirectory Name="DgnV8Dlls" Deliver="false" />
     <ProductDirectory Name="CifDlls" Deliver="false" />    
-    <ProductDirectory Name="ApplicationRoot" Deliver="false" />    
+    <ProductDirectory Name="ApplicationRoot" Deliver="false" />
+    <ProductDirectory Name="Dgnlibs" Deliver="false" />
   </ProductDirectoryList>
 
   <ProductDirectoryList ListName="GtestProduct">
@@ -282,7 +307,7 @@
         <ProductDirectory Name="PublisherLoggingConfigXml" Deliver="false"/>
     </ProductDirectoryList>
 
-    <Part Name="ORDBridgeUnitTests" BentleyBuildMakeFile="ORDBridge/Tests/UnitTestsPostBuild.mke" >
+    <Part Name="ORDBridgeUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="ORDBridge/Tests/UnitTestsPostBuild.mke" >
         <SubProduct ProductName="CiviliModelBridges-Gtest" />
         <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
       <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest" Repository="imodel02"/>
@@ -293,7 +318,7 @@
         <SubPart PartName="ORDBridgeUnitTests" />
     </Part>
 
-    <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}/imodel02/iModelCore/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="
+    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}/imodel02/iModelCore/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="
         -dTEST_NAME=CiviliModelBridgesTests
         -dTEST_COLLECTION_PRODUCT=CiviliModelBridges-Tests
         -dTEST_FRAMEWORK_SQLANG=DgnClientFx_en.sqlang.db3" OnlyPlatforms="x86,x64,MacOs*,Linux*">
@@ -306,7 +331,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}/imodel02/iModelCore/BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=CiviliModelBridges-Gtest -dGTEST_NAME=CiviliModelBridgesTests -dGTEST_SHOW_PROGRESS -dGTEST_EXTRA_ARGS=--timeout=300" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}/imodel02/iModelCore/BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=CiviliModelBridges-Gtest -dGTEST_NAME=CiviliModelBridgesTests -dGTEST_SHOW_PROGRESS -dGTEST_EXTRA_ARGS=--timeout=300" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubPart PartName="ORDBridgeUnitTests" />
     </Part>
 

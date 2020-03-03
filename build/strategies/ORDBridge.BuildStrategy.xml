@@ -8,7 +8,7 @@
     <DefaultTarget
         Repository="imodel02"
         PartFile="Bridges/Civil/CiviliModelBridges"
-        PartName="ORDBridge"
+        PartName="ORDBridgeAll"
         Platform="x64"
         LKGPlatforms="x64"
         OnlyPlatforms="x64"

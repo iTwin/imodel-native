@@ -36,13 +36,13 @@
     <!-- ********************************************************************************************** -->
     <!-- Unit tests -->
     <!-- ********************************************************************************************** -->
-    <Part Name="PrewireForUnitTests" BentleyBuildMakeFile="Tests/prewire.mke">
+    <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/prewire.mke">
         <Bindings>
             <Files ProductDirectoryName="UnitTests-IgnoreList"  ProductSubDirectory="RoadRailPhysical" SubPartDirectory="UnitTests/RoadRailPhysical"> Delivery/UnitTests/ignore_list.txt</Files>
         </Bindings>
     </Part>
 
-    <Part Name="BackdoorForUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Backdoor">
+    <Part Name="BackdoorForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Backdoor">
         <SubPart PartName="RoadRailPhysical"/>
         <SubPart PartName="PrewireForUnitTests" />
         <Bindings>
@@ -50,14 +50,14 @@
         </Bindings>
     </Part>
 
-    <Part Name="UnitTests-NonPublished" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
+    <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
         <SubPart PartName="BackdoorForUnitTests" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="RoadRailPhysical/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
         </Bindings>
     </Part>
 
-    <Part Name="UnitTests-Published" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published">
+    <Part Name="UnitTests-Published" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published">
         <SubPart PartName="BackdoorForUnitTests" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="RoadRailPhysical/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
@@ -83,6 +83,7 @@
 
     <ProductDirectoryList ListName="Tests">
         <ProductDirectory Name="ApplicationRoot" Path=""/>
+        <ProductDirectory Name="DgnV8Dlls" Deliver="false"/>
     </ProductDirectoryList>
 
     <!-- Build a gtest exe to run the tests -->

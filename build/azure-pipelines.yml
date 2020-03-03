@@ -342,6 +342,21 @@ jobs:
         displayName: 'Save ORDBridge Installer'
         condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'ORDBridge'))
         artifact: OrdBridge
+
+      - task: ArchiveFiles@2
+        displayName: Archive ORDBridge-Portable
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'ORDBridge'))
+        inputs:
+          rootFolderOrFile: $(Build.BinariesDirectory)/Winx64/Product/ORDBridge-Portable
+          includeRootFolder: false
+          archiveType: zip
+          archiveFile: $(Build.ArtifactStagingDirectory)/ORDBridge-Portable.zip
+          replaceExistingArchive: true
+
+      - publish: $(Build.ArtifactStagingDirectory)/ORDBridge-Portable.zip
+        displayName: Save ORDBridge-Portable
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'ORDBridge'))
+        artifact: ORDBridge-Portable
         
       - publish: $(Build.BinariesDirectory)/Winx64/Nugetpkg/RealityCoreNuget
         displayName: Save RealityCoreNuget

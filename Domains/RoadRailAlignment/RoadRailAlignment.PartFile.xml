@@ -37,13 +37,13 @@
     <!-- ********************************************************************************************** -->
     <!-- Unit tests -->
     <!-- ********************************************************************************************** -->
-    <Part Name="PrewireForUnitTests" BentleyBuildMakeFile="Tests/prewire.mke">
+    <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/prewire.mke">
         <Bindings>
             <Files ProductDirectoryName="UnitTests-IgnoreList"  ProductSubDirectory="RoadRailAlignment" SubPartDirectory="UnitTests/RoadRailAlignment"> Delivery/UnitTests/ignore_list.txt</Files>
         </Bindings>
     </Part>
 
-    <Part Name="BackdoorForUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Backdoor">
+    <Part Name="BackdoorForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Backdoor">
         <SubPart PartName="RoadRailAlignment"/>
         <SubPart PartName="iModelBridgeFwkLib" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
         <SubPart PartName="PrewireForUnitTests" />
@@ -52,14 +52,14 @@
         </Bindings>
     </Part>
 
-    <Part Name="UnitTests-NonPublished" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
+    <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
         <SubPart PartName="BackdoorForUnitTests" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="RoadRailAlignment/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
         </Bindings>
     </Part>
 
-    <Part Name="UnitTests-Published" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published">
+    <Part Name="UnitTests-Published" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published">
         <SubPart PartName="BackdoorForUnitTests" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="RoadRailAlignment/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
@@ -85,6 +85,7 @@
 
     <ProductDirectoryList ListName="Tests">
         <ProductDirectory Name="ApplicationRoot" Path=""/>
+        <ProductDirectory Name="DgnV8Dlls" Deliver="false"/>
     </ProductDirectoryList>
 
     <!-- Build a gtest exe to run the tests -->
@@ -93,7 +94,7 @@
         <SubPart PartName="Gtest"/>
     </Product>
 
-    <Part Name="Gtest" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=RoadRailAlignmentTests -dTEST_COLLECTION_PRODUCT=RoadRailAlignment-Tests -dTEST_FRAMEWORK_SQLANG=RoadRailAlignment_en.sqlang.db3" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=RoadRailAlignmentTests -dTEST_COLLECTION_PRODUCT=RoadRailAlignment-Tests -dTEST_FRAMEWORK_SQLANG=RoadRailAlignment_en.sqlang.db3" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="RoadRailAlignment-Tests"/>
         <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <Bindings>
@@ -108,7 +109,7 @@
     </Part>
 
     <!-- This part runs RoadRailAlignmentTests on platforms that support it. -->
-    <Part Name="RoadRailAlignment-Tested">
+    <Part Name="RoadRailAlignment-Tested" DeferType="BuildUnitTests">
         <SubPart PartName="RunGtest" />
     </Part>
 
