@@ -98,7 +98,8 @@ WString* ORDBridgeTestsHost::GetInputFileArgument(BeFileName inputPath, WCharCP 
     inputPath1.AppendString(WCharCP(L"Winx64\\Product\\CiviliModelBridges-Tests\\Assets\\TestFiles\\ORD\\"));
     inputPath1.AppendString(WCharCP(input));
 
-    WCharCP inputArgument(WString(WCharCP(L"--input=\"")).append(inputPath1.c_str()).append(WCharCP(L"\"")).c_str());
+    WString inArg(WString(L"--input=\"").append(inputPath1.c_str()).append(L"\"").c_str());
+    WCharCP inputArgument(inArg.c_str());
     auto inputArgumentAllocated = new WString(inputArgument);
     return inputArgumentAllocated;
     }
@@ -107,7 +108,8 @@ WString* ORDBridgeTestsHost::GetOutputFileArgument(BeFileName outputPath1, WChar
     {
     BeFileName outputPath = GetOutputDirectory();
     outputPath.AppendString(WCharCP(bimFileName));
-    WCharCP outputArgument(WString(WCharCP(L"--output=\"")).append(outputPath.c_str()).append(WCharCP(L"\"")).c_str());
+    WString outArg(WString(L"--output=\"").append(outputPath.c_str()).append(L"\"").c_str());
+    WCharCP outputArgument(outArg.c_str());
     auto outputArgumentAllocated = new WString(outputArgument);
     return outputArgumentAllocated;
     }
