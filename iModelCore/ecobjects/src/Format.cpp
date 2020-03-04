@@ -444,7 +444,13 @@ SchemaWriteStatus ECFormat::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVers
         if (nfs->HasThousandsSeparator())
             xmlWriter.WriteAttribute(FORMAT_THOUSANDS_SEPARATOR_ATTRIBUTE, Utf8String(1,nfs->GetThousandSeparator()).c_str());
         if (nfs->HasUomSeparator())
-            xmlWriter.WriteAttribute(FORMAT_UOM_SEPARATOR_ATTRIBUTE, nfs->GetUomSeparator());
+			{
+            Utf8String uomSeparator = nfs->GetUomSeparator();
+            if (Utf8String::IsNullOrEmpty(uomSeparator.c_str()))
+                xmlWriter.WriteEmptyAttribute(FORMAT_UOM_SEPARATOR_ATTRIBUTE);
+            else
+                xmlWriter.WriteAttribute(FORMAT_UOM_SEPARATOR_ATTRIBUTE, uomSeparator.c_str());
+            }
         if (nfs->HasStationSeparator())
             xmlWriter.WriteAttribute(FORMAT_STAT_SEPARATOR_ATTRIBUTE, Utf8String(1, nfs->GetStationSeparator()).c_str());
         if (Formatting::PresentationType::Station == GetPresentationType())

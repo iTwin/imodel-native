@@ -89,6 +89,45 @@ TEST_F(FormatTest, EmptySpacerRoundTrips)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                      01/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(FormatTest, EmptyUomSeparatorRoundTrips)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+            <Format typeName="NoUomSeparator" type="fractional" precision="4" uomSeparator="">
+            </Format>
+        </ECSchema>)xml";
+    Utf8String serializedSchemaXml;
+
+    static auto const verify = [](ECSchemaPtr schema) -> void
+        {
+        ECFormatCP ufmt = schema->GetFormatCP("NoUomSeparator");
+        ASSERT_NE(nullptr, ufmt);
+        ASSERT_EQ(schema.get(), &ufmt->GetSchema());
+        ASSERT_STREQ("NoUomSeparator", ufmt->GetName().c_str());
+        ASSERT_STREQ("", ufmt->GetNumericSpec()->GetUomSeparator());
+        };
+
+    // Deserialize original XML and serialize it back out.
+    {
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    verify(schema);
+    ASSERT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(serializedSchemaXml, ECVersion::Latest));
+    }
+    // Deserialize roundtripped schema XML.
+    {
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, serializedSchemaXml.c_str(), *context));
+    verify(schema);
+    }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                 Kyle.Abramowitz                   03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(FormatTest, BasicRoundTripTest)
