@@ -1975,12 +1975,12 @@ void Converter::_OnElementBeforeDelete(DgnElementId elementId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-static std::vector<DgnElementId> getReferencesSubjects(DgnDbR db, Utf8StringCR codeValue)
+static std::vector<DgnElementId> getReferencesSubjects(DgnDbR db, DgnElementId infoPartitionId)
     {
     std::vector<DgnElementId> results;
 
-    auto stmt = db.GetPreparedECSqlStatement("SELECT ecinstanceid FROM " BIS_SCHEMA(BIS_CLASS_Subject) " WHERE CodeValue = ? AND json_extract(JsonProperties, '$.Subject.Model.Type') = 'References'");
-    stmt->BindText(1, codeValue.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    auto stmt = db.GetPreparedECSqlStatement("SELECT ecinstanceid FROM " BIS_SCHEMA(BIS_CLASS_Subject) " WHERE json_extract(JsonProperties, '$.Subject.Model.Type') = 'References' AND json_extract(JsonProperties, '$.Subject.Model.TargetPartition') = ?");
+    stmt->BindText(1, infoPartitionId.ToHexStr().c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
     while (BE_SQLITE_ROW == stmt->Step())
         {
         results.push_back(stmt->GetValueId<DgnElementId>(0));
@@ -2061,7 +2061,7 @@ void Converter::OnDeleteReferencesSubject(DgnElementId eid)
 
     // This Subject is the parent of an InformationPartition element. We must move that child to another parent before we delete this Subject.
     // (Otherwise, deleting this Subject would try to delete the child InformationPartition. We don't know that the child should be deleted. There maybe another reference to it.)
-    auto allRefs = getReferencesSubjects(GetDgnDb(), subj->GetCode().GetValue().GetUtf8());
+    auto allRefs = getReferencesSubjects(GetDgnDb(), infoPartitionId);
     BeAssert(allRefs.size() != 0); // Must at least find this one!
     DgnElementId newParentId;
     auto itOtherSubj = std::find_if(allRefs.begin(), allRefs.end(), [eid](auto refId) { return refId != eid; });
@@ -2069,13 +2069,22 @@ void Converter::OnDeleteReferencesSubject(DgnElementId eid)
         newParentId = *itOtherSubj;
     else
         {
-        // This is the only reference to the child InformationPartition. It will eventually be deleted by DetectDeletedEmbeddedFiles or DetectDeletedDocuments.
+        // This is the only reference to the child InformationPartition. It will eventually be deleted by DetectDeletedEmbeddedFiles or DetectDeletedDocuments or DeleteOrphanReferenceModels.
         // Nevertheless, we want to to delete this References Subject element. So, move the child PP to the root subject temporarily.
         newParentId = GetDgnDb().Elements().GetRootSubjectId();
         }
 
     // Now, re-parent the InformationPartition element
-    auto pp = GetDgnDb().Elements().GetForEdit<InformationPartitionElement>(infoPartitionId);
+    ReparentElement(infoPartitionId, newParentId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/20
++---------------+---------------+---------------+---------------+---------------+------*/
+void Converter::ReparentElement(DgnElementId elid, DgnElementId newParentId)
+    {
+    // Now, re-parent the InformationPartition element
+    auto pp = GetDgnDb().Elements().GetForEdit<DgnElement>(elid);
     if (!pp.IsValid())
         {
         BeAssert(false);

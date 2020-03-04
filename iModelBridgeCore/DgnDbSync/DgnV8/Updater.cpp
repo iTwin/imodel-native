@@ -495,6 +495,35 @@ void Converter::_DetectDeletedDocuments()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/19
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyApi::BentleyStatus RootModelConverter::DeleteOrphanReferenceModels()
+    {
+    auto stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_PhysicalPartition) " WHERE Parent.Id=? AND json_extract(JsonProperties, '$.PhysicalPartition.Model.Content') = 'Reference'");
+    stmt->BindId(1, GetDgnDb().Elements().GetRootSubjectId());
+    bvector<DgnModelId> tbd;
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        tbd.push_back(stmt->GetValueId<DgnModelId>(0));
+        }
+
+    for (auto mid : tbd)
+        {
+        auto model = GetDgnDb().Models().GetModel(mid);
+        if (!model.IsValid())
+            continue;
+        auto xsa = std::get <1> (SyncInfo::V8ModelExternalSourceAspect::GetAspect(*model));
+        if (!xsa.IsValid())
+            continue;
+        setChannelParentFromModel(*model);
+        auto modelName = IssueReporter::FmtModel(*model);
+        _DeleteModel(*model, xsa);
+        iModelBridge::PushChanges(*m_dgndb, _GetParams(), Utf8PrintfString("Deleted reference model %s", modelName.c_str()));
+        }
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/19
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyApi::BentleyStatus RootModelConverter::DetectDeletedEmbeddedFiles()
     {
     // This is "garbage collection" for common embedded files. Several package files

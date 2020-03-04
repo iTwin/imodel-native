@@ -711,6 +711,7 @@ BentleyStatus DgnV8Bridge::_DetectDeletedDocuments()
 BentleyStatus DgnV8Bridge::_OnAllDocumentsProcessed()
     {
     m_converter->DetectDeletedEmbeddedFiles();
+    m_converter->DeleteOrphanReferenceModels();
     m_hadAnyChanges |= m_converter->HadAnyChanges();
     return m_converter->WasAborted()? BSIERROR: BSISUCCESS;
     }

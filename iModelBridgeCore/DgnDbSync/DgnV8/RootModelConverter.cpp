@@ -784,14 +784,21 @@ BentleyStatus SpatialConverterBase::CheckJobBelongsToMe(SubjectCR jobSubject, Su
 +---------------+---------------+---------------+---------------+---------------+------*/
 SubjectCPtr SpatialConverterBase::GetOrCreateModelSubject(SubjectCR parent, Utf8StringCR modelName, ModelSubjectType stype)
     {
-    Json::Value modelProps(Json::nullValue);
-    modelProps["Type"] = (ModelSubjectType::Hierarchy == stype) ? "Hierarchy" : "References";
+    Utf8CP mpType = (ModelSubjectType::Hierarchy == stype) ? "Hierarchy" : "References";
 
     for (auto childid : parent.QueryChildren())
         {
         auto subj = GetDgnDb().Elements().Get<Subject>(childid);
-        if (subj.IsValid() && modelName.Equals(subj->GetCode().GetValueUtf8CP()) && (modelProps == subj->GetSubjectJsonProperties().GetMember(Subject::json_Model())))
-            return subj;
+        if (subj.IsValid() && modelName.Equals(subj->GetCode().GetValueUtf8CP()))
+            {
+            auto modelProps = subj->GetSubjectJsonProperties().GetMember(Subject::json_Model());
+            if (modelProps.isMember("Type"))
+                {
+                auto mptprop = modelProps["Type"];
+                if (mptprop.isString() && 0==strcmp(mpType, mptprop.asCString()))
+                    return subj;
+                }
+            }
         }
 
     BeAssert((!IsUpdating() || (ModelSubjectType::Hierarchy != stype)) && "You create a hierarchy subject once when you create the job");
@@ -799,9 +806,56 @@ SubjectCPtr SpatialConverterBase::GetOrCreateModelSubject(SubjectCR parent, Utf8
     SubjectPtr ed = Subject::Create(parent, modelName.c_str());
     LOG.tracev("Created model subject %s for parentId %" PRIu64, modelName.c_str(), parent.GetElementId().GetValue());
 
+    Json::Value modelProps(Json::nullValue);
+    modelProps["Type"] = mpType;
+    modelProps["TargetPartition"] = Json::nullValue;
     ed->SetSubjectJsonProperties(Subject::json_Model(), modelProps);
 
     return ed->InsertT<Subject>();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus SpatialConverterBase::SetModelSubjectTargetPartition(SubjectCR modelSubject, DgnModelCR targetModel)
+    {
+    auto targetPartitionId = targetModel.GetModeledElementId();
+
+    if (GetModelSubjectTargetPartition(modelSubject) == targetPartitionId)
+        return DgnDbStatus::Success;
+
+    // #ifndef NDEBUG
+    // if (true)
+    //     {
+    //     auto pel = GetDgnDb().Elements().Get<InformationPartitionElement*>(targetPartitionId);
+    //     BeAssert(pel.IsValid()); // TODO insist on PhysicalPartition or "GraphicalModel3d" - that would require looking at the ECClass ...
+    //     }
+    // #endif
+
+    LOG.tracev("Setting link from model subject %s to partition %s", modelSubject.GetCode().GetValueUtf8CP(), targetPartitionId.ToHexStr().c_str());
+
+    auto ed = modelSubject.MakeCopy<Subject>();
+    auto modelProps = ed->GetSubjectJsonProperties(Subject::json_Model());
+    modelProps["TargetPartition"] = targetPartitionId.ToHexStr();
+    ed->SetSubjectJsonProperties(Subject::json_Model(), modelProps);
+
+    DgnDbStatus status;
+    ed->Update(&status);
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId SpatialConverterBase::GetModelSubjectTargetPartition(SubjectCR modelSubject)
+    {
+    auto modelProps = modelSubject.GetSubjectJsonProperties(Subject::json_Model());
+    if (!modelProps.isMember("TargetPartition") || !modelProps["TargetPartition"].isString())
+        return DgnElementId();
+    auto tp = modelProps["TargetPartition"];
+    DgnElementId eid;
+    DgnElementId::FromString(eid, tp.asCString());
+    return eid;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -929,7 +983,7 @@ static Utf8String getParentPath(DgnElementCR child)
 * This function also has the side effect of creating or updating the job subject hierarchy.
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RootModelConverter::ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8ModelRefR thisModelRef, BentleyApi::TransformCR trans)
+ResolvedModelMapping RootModelConverter::ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8ModelRefR thisModelRef, BentleyApi::TransformCR trans)
     {
     // NB: Don't filter out files or models here. We need to know about the existence of all of them 
     // (e.g., so that we can infer deleted models). We will do any applicable filtering in ConvertElementsInModel.
@@ -954,8 +1008,14 @@ void RootModelConverter::ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8Mo
     // Map this v8 model into the project
     ResolvedModelMapping v8mm = GetResolvedModelMapping(thisModelRef, trans);
 
+    auto modeledElement = GetDgnDb().Elements().GetElement(v8mm.GetDgnModel().GetModeledElementId());
+    if (modeledElement->GetParentId() == GetDgnDb().Elements().GetRootSubjectId())
+        {
+        ReparentElement(v8mm.GetDgnModel().GetModeledElementId(), _GetSpatialParentSubject().GetElementId());
+        }
+
     if (nullptr == thisModelRef.GetDgnAttachmentsP())
-        return;
+        return v8mm;
 
 	// FindSpatialV8Models has already forced children of a spatial root to be spatial
 
@@ -1019,18 +1079,24 @@ void RootModelConverter::ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8Mo
                 SyncInfo::V8ElementExternalSourceAspectData attachmentElAspectData(scope, attachmentDescription, attachmentElProv, "");
                 auto aspect = AddOrUpdateV8ElementExternalSourceAspect(*myRefsSubjectEd, attachmentElAspectData);
                 myRefsSubjectEd->Update();
-                iModelExternalSourceAspect::Dump(*myRefsSubjectEd, "DgnV8Converter", NativeLogging::SEVERITY::LOG_INFO);
+                LOG.tracev("Detected new reference attachment");
+                iModelExternalSourceAspect::Dump(*myRefsSubjectEd, "DgnV8Converter", NativeLogging::SEVERITY::LOG_TRACE);
                 }
             }
 
         SetSpatialParentSubject(*myRefsSubject); // >>>>>>>>>> Push spatial parent subject
 
         Transform refTrans = ComputeAttachmentTransform(trans, *attachment);
-        ImportSpatialModels(haveFoundSpatialRoot, *attachment, refTrans);
+        auto refmm = ImportSpatialModels(haveFoundSpatialRoot, *attachment, refTrans);
+
+        if (refmm.IsValid())
+            SetModelSubjectTargetPartition(*myRefsSubject, refmm.GetDgnModel()); // record the link between this reference attachment and the imported model
         }
 
     if (hasPushedReferencesSubject)
         SetSpatialParentSubject(*parentRefsSubject); // <<<<<<<<<<<< Pop spatial parent subject
+
+    return v8mm;
     }
 
 /*---------------------------------------------------------------------------------**//**

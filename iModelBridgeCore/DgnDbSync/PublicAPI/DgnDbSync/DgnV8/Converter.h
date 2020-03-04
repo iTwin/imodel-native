@@ -1792,6 +1792,8 @@ public:
     //! @private
     void OnDeleteReferencesSubject(DgnElementId); // *** TODO make RootModelConverter override _OnElementBeforeDelete, and move this logic into it
     //! @private
+    void ReparentElement(DgnElementId elid, DgnElementId newParentId);
+    //! @private
     std::pair<int,int> GetBridgeSchemaVersion();
     //! @private
     void SetBridgeSchemaVersion();
@@ -2338,6 +2340,8 @@ protected:
 
     enum class ModelSubjectType {Hierarchy, References};
     SubjectCPtr GetOrCreateModelSubject(SubjectCR parent, Utf8StringCR, ModelSubjectType);
+    DgnDbStatus SetModelSubjectTargetPartition(SubjectCR modelSubject, DgnModelCR);
+    DgnElementId GetModelSubjectTargetPartition(SubjectCR modelSubject);
 
     virtual void _SetChangeDetector(bool isUpdate) = 0;
 
@@ -2722,7 +2726,7 @@ protected:
     //! @private
     void ForceAttachmentsToSpatial(Bentley::DgnAttachmentArrayR attachments);
     //! @private
-    void ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8ModelRefR, TransformCR);
+    ResolvedModelMapping ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8ModelRefR, TransformCR);
     //! @private
     void UpdateCalculatedProperties();
     //! @private
@@ -2765,6 +2769,7 @@ public:
     DGNDBSYNC_EXPORT BentleyStatus MakeDefinitionChanges();
     DGNDBSYNC_EXPORT BentleyStatus ConvertData();
     DGNDBSYNC_EXPORT BentleyStatus DetectDeletedEmbeddedFiles();
+    DGNDBSYNC_EXPORT BentleyStatus DeleteOrphanReferenceModels();
 };
 
 //=======================================================================================

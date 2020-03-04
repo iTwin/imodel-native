@@ -2046,16 +2046,18 @@ void MstnBridgeTests::DoMoveEmbeddedReferenceToDifferentFile(bool simulateOldBri
         ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(master_1_v2.c_str(), master1.c_str()));
         ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(master_2_v2.c_str(), master2.c_str()));
 
+        // Process master2 first. That will cause commonRef to be orphaned temporarily.
+        args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", master2.c_str()));
+        RunTheBridge(args);
+        args.pop_back();
+        CleanupElementECExtensions();
+        ASSERT_EQ(master2JobSubjectId.GetValue(), m_jobSubjectId.GetValue());
+
+        // When we process master1, it should pick up the orphan.
         args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", master1.c_str()));
         RunTheBridge(args);
         CleanupElementECExtensions();
         ASSERT_EQ(master1JobSubjectId.GetValue(), m_jobSubjectId.GetValue());
-
-        args.pop_back();
-        args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", master2.c_str()));
-        RunTheBridge(args);
-        CleanupElementECExtensions();
-        ASSERT_EQ(master2JobSubjectId.GetValue(), m_jobSubjectId.GetValue());
 
         args.push_back(WPrintfString(L"--fwk-all-docs-processed"));
         RunTheBridge(args);
@@ -2575,8 +2577,8 @@ TEST_F(MstnBridgeTests, DetectCommonReferencesUsingRecipes)
 
         // No change in model count is expected, as we still have the same two files in v1 as we did in v0
         DbFileInfo bcInfo(m_briefcaseName);
-        modelCount = bcInfo.GetPhysicalModelCount();
-        ASSERT_EQ(2, modelCount);
+        auto newModelCount = bcInfo.GetPhysicalModelCount();
+        ASSERT_EQ(modelCount, newModelCount) << "No change in model count is expected, as we still have the same two files in v1 as we did in v0";
         RepositoryLinkId rid;
         bcInfo.MustFindFileByName(rid, masterFileName, 1);
         bcInfo.MustFindFileByName(rid, commonRefEmbeddedFileName_firstOccurence, 1); // The RepositoryLink still refers to the first occurrence.
