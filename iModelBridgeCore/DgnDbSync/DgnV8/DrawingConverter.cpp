@@ -397,6 +397,33 @@ void RootModelConverter::FindV8DrawingsAndSheets()
             }
         }
 
+    bvector<DgnV8FileP> filesToSearchPhaseI(filesToSearch);
+    for (auto v8 : filesToSearchPhaseI) // Pull in embedded references
+        {
+        if (!IsFileAssignedToBridge(*v8))
+            continue;
+            
+        auto embeddedFiles = v8->GetEmbeddedFileList();
+        if (nullptr == embeddedFiles)
+            continue;
+
+        for (auto const& efn : *embeddedFiles)
+            {
+            auto efnname = DgnV8Api::DgnFile::BuildPackagedName(v8->GetFileName().c_str(), efn.GetID(), efn.GetNameOnly().c_str());
+
+            if (nullptr != findOpenV8FileByName(m_v8Files, BeFileName(efnname.c_str())))
+                continue;
+            
+            DgnV8Api::DgnFileStatus openStatus;    
+            auto eFile = OpenDgnV8File(openStatus, BeFileName(efnname.c_str()));
+            if (!eFile.IsValid())
+                continue;
+
+            tempKeepAlive.push_back(eFile);
+            filesToSearch.push_back(eFile.get());
+            }
+        }
+
     for (auto fileToSearch : filesToSearch)
         ClassifyNormal2dModels (*fileToSearch); // This tells us whether a given 2d design model should become a drawing or a spatial model
 

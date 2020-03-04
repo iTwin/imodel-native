@@ -41,8 +41,7 @@
             "request": "launch",
             "program": "${env:OutRoot}/Winx64/Product/DgnV8Converter/DgnV8Converter.exe",
             "args": [
-                "--standalone",
-                "--input=d:/dgn/test/sourceFiles/TestFieldBuildings.dgn",
+                "--input=d:/dgn/problem/284079/ANOTHER_GUINNESS.i.dgn",
                 "--output=d:/tmp"
             ],
             "stopAtEntry": false,
