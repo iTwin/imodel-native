@@ -4,9 +4,9 @@
 #---------------------------------------------------------------------------------------------
 %include mdl.mki
 
-%if $(BUILD_TOOLSET) == "ANDROID_CLANG" || $(BUILD_TOOLSET) == "LINUX_CLANG"
-    ClangCommonCompOpts+ -Wno-undefined-var-template
-%endif
+#%if $(BUILD_TOOLSET) == "ANDROID_CLANG" || $(BUILD_TOOLSET) == "LINUX_CLANG"
+#    ClangCommonCompOpts+ -Wno-undefined-var-template
+#%endif
 
 #-----------------------------------------------------------
 # Root directory
