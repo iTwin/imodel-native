@@ -625,7 +625,7 @@ public:
         m_context = new ContentDescriptorBuilder::Context(context.GetSchemaHelper(), context.GetConnections(), context.GetConnection(), context.GetRuleset(),
             context.GetPreferredDisplayType().c_str(), context.GetCategorySupplier(), formatter, localizationProvider, context.GetLocale(), 
             context.GetInputKeys(), context.GetSelectionInfo());
-        m_context->SetContentFlagsCalculator([flags = context.GetContentFlags()](int defaultFlags){return flags ? flags : defaultFlags;});
+        m_context->SetContentFlagsCalculator([flags = context.GetContentFlags()](int defaultFlags){return flags | defaultFlags;});
         m_descriptorBuilder = new ContentDescriptorBuilder(*m_context);
 
         m_functionsContext = new CustomFunctionsContext(context.GetSchemaHelper(), context.GetConnections(), context.GetConnection(), 

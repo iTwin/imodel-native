@@ -313,8 +313,8 @@ static bvector<RelatedClassPath> FilterOutAbstractTargetClasses(bvector<RelatedC
         if (path.empty())
             continue;
 
-        ECClassCR targetClass = path.back().GetTargetClass().GetClass();
-        if (targetClass.GetClassModifier() == ECClassModifier::Abstract)
+        SelectClass const& targetClass = path.back().GetTargetClass();
+        if (targetClass.GetClass().GetClassModifier() == ECClassModifier::Abstract && !targetClass.IsSelectPolymorphic())
             continue;
 
         filteredPaths.push_back(path);
@@ -344,11 +344,8 @@ static bvector<RelatedClassPath> GetRelatedClassPaths(ContentSpecificationsHandl
             specification.GetRelationshipPaths(), context.GetRelationshipUseCounts(), mergePolymorphicPaths);
         }
 
-    if (!mergePolymorphicPaths)
-        {
-        // need to reduce the number of paths...
-        paths = FilterOutAbstractTargetClasses(paths);
-        }
+    // reduce the number of paths...
+    paths = FilterOutAbstractTargetClasses(paths);
 
     return paths;
     }
