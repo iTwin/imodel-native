@@ -1972,7 +1972,7 @@ BentleyStatus   iModelBridgeFwk::TryOpenBimWithOptions(DgnDb::OpenParams& oparam
     if (m_briefcaseDgnDb.IsValid())
         return SUCCESS;
 
-    GetLogger().trace("Entering TryOpenBimWitOptions");
+    GetLogger().trace("Entering TryOpenBimWithOptions");
     StopWatch openBimWithProfileUpgrade(true);
     bool madeSchemaChanges = false;
     DbResult dbres;
@@ -2455,7 +2455,7 @@ BentleyStatus iModelBridgeFwk::LockAllJobSubjects()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-int iModelBridgeFwk::OnAllDocsProcessed()
+int iModelBridgeFwk::OnAllDocsProcessed(FwkContext& context)
     {
     m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().channelType = IBriefcaseManager::ChannelType::Normal;
     m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().channelParentId = DgnElementId(); // This operation applies to multiple channels
@@ -2504,10 +2504,13 @@ int iModelBridgeFwk::OnAllDocsProcessed()
         GetLogger().errorv("Bridge::DoOnAllDocumentsProcessed failed with status %d", bridgeCvtStatus); // ==== CHANNEL LOCKS
         return RETURN_STATUS_CONVERTER_ERROR;                                                           // ==== CHANNEL LOCKS
         }                                                                                               // ==== CHANNEL LOCKS
+
+	// Technically we only need to do this if the files were converted with the 'skipExtents' flag, but to be safe we always do it
+    UpdateProjectExtents(context);
                                                                                                         // ==== CHANNEL LOCKS
     //Call save changes before the bridge is closed.                                                    // ==== CHANNEL LOCKS
-    dbres = m_briefcaseDgnDb->SaveChanges();                                                            // ==== CHANNEL LOCKS
-                                                                                                        // ==== CHANNEL LOCKS
+    //dbres = m_briefcaseDgnDb->SaveChanges();                                                            // ==== CHANNEL LOCKS
+    PushDataChanges(iModelBridgeFwkMessages::GetString(iModelBridgeFwkMessages::EXTENT_CHANGES()));     // ==== CHANNEL LOCKS
     callCloseOnReturn.m_status = BSISUCCESS;                                                            // ==== CHANNEL LOCKS
                                                                                                         // ==== CHANNEL LOCKS
     BeAssert(!iModelBridge::HoldsSchemaLock(*m_briefcaseDgnDb));                                        // ==== CHANNEL LOCKS
@@ -2661,7 +2664,7 @@ int iModelBridgeFwk::UpdateExistingBim(iModelBridgeFwk::FwkContext& context)
             }
         else
             {
-            res = OnAllDocsProcessed();
+            res = OnAllDocsProcessed(context);
             }
 
         if (0 != res)
@@ -2689,7 +2692,8 @@ int iModelBridgeFwk::UpdateExistingBim(iModelBridgeFwk::FwkContext& context)
     if (!m_jobEnvArgs.m_allDocsProcessed)
         {
         m_bridge->DoFinalizationChanges(*m_briefcaseDgnDb);
-        UpdateProjectExtents(context);
+        if (!m_jobEnvArgs.m_argsJson.isMember("skipExtents"))
+            UpdateProjectExtents(context);
         //SetUpECEFLocation(context);
         }
 
@@ -2708,7 +2712,7 @@ int iModelBridgeFwk::UpdateExistingBim(iModelBridgeFwk::FwkContext& context)
         }
 
     //  Done. Make sure that all changes are pushed and all shared locks are released.
-    PushDataChanges(iModelBridgeFwkMessages::GetString(iModelBridgeFwkMessages::EXTENT_CHANGES()));
+    PushDataChanges(iModelBridgeFwkMessages::GetString(iModelBridgeFwkMessages::FINALIZATION()));
 
 
     // *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***

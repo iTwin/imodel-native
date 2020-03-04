@@ -1670,11 +1670,46 @@ static void DoProjectExtentsTest (bvector <double> &extents, WCharCP testName)
         iModelBridgeFwk fwk;
         bvector<WCharCP> argptrs;
         args.push_back(L"--fwk-input=Foo");
+        args.push_back(L"--fwk-argsJson=\"{\"skipExtents\":true}\"");
         MAKE_ARGC_ARGV(argptrs, args);
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
         ASSERT_EQ(0, fwk.Run(argc, argv));
         args.pop_back();
+        args.pop_back();
         testIModelHubClientForBridges.m_expect.clear();
+        }
+
+    AxisAlignedBox3d initalExtents;
+    if (true)
+        {
+        ScopedDgnHost host;
+        // these should be the default extents
+        auto db = DgnDb::OpenDgnDb(nullptr, bcName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+        ASSERT_TRUE(db.IsValid());
+        initalExtents = db->GeoLocation().GetProjectExtents();
+        }
+
+    if (true)
+        {
+        iModelBridgeFwk fwk;
+        bvector<WCharCP> argptrs;
+        args.push_back(L"--fwk-input=Foo");
+        args.push_back(L"--fwk-all-docs-processed"); // This will cause the extents to be calculated
+        MAKE_ARGC_ARGV(argptrs, args);
+        ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
+        ASSERT_EQ(0, fwk.Run(argc, argv));
+        args.pop_back();
+        args.pop_back();
+        }
+
+    if (true)
+        {
+        ScopedDgnHost host;
+        // these should be the calculated extents
+        auto db = DgnDb::OpenDgnDb(nullptr, bcName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+        ASSERT_TRUE(db.IsValid());
+        AxisAlignedBox3d calculatedExtents = db->GeoLocation().GetProjectExtents();
+        ASSERT_TRUE(!calculatedExtents.IsEqual(initalExtents)) << "Extents should have been recalculated during AllDocsProcessed";
         }
 
     if (true)
@@ -1709,11 +1744,11 @@ static void DoProjectExtentsTest (bvector <double> &extents, WCharCP testName)
         auto db = DgnDb::OpenDgnDb(nullptr, bcName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
         ASSERT_TRUE(db.IsValid());
 
-        AxisAlignedBox3d extents = db->GeoLocation().GetProjectExtents();
+        AxisAlignedBox3d newExtents = db->GeoLocation().GetProjectExtents();
         bvector<BeInt64Id> elementOutliers;
         AxisAlignedBox3d rangeWithOutliers;
         AxisAlignedBox3d calculated = db->GeoLocation().ComputeProjectExtents(&rangeWithOutliers, &elementOutliers);
-        calculated.IsContained(extents);
+        calculated.IsContained(newExtents);
         }
     }
 /*---------------------------------------------------------------------------------**//**

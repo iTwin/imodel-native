@@ -41,6 +41,7 @@ BENTLEY_TRANSLATABLE_STRINGS_START(iModelBridgeFwkMessages, iModelBridgeFwkMessa
     L10N_STRING(DOMAIN_SCHEMA_UPGRADE)         // =="Domain schema upgrade"==
     L10N_STRING(INITIALIZATION_CHANGES)        // =="Initialization changes"==
     L10N_STRING(DEFINITIONS)                   // =="Definitions"==
+    L10N_STRING(FINALIZATION)                  // =="Finalization changes"==
 BENTLEY_TRANSLATABLE_STRINGS_END
 
 //=======================================================================================
@@ -361,7 +362,7 @@ protected:
     int MakeSchemaChanges(iModelBridgeCallOpenCloseFunctions&);
     int MakeDefinitionChanges(SubjectCPtr& jobsubj, iModelBridgeCallOpenCloseFunctions&);
     int DoNormalUpdate();
-    int OnAllDocsProcessed();
+    int OnAllDocsProcessed(FwkContext& context);
     BentleyStatus LockAllJobSubjects();
     Utf8String GetRevisionComment();
     void SetBridgeParams(iModelBridge::Params&, FwkRepoAdmin*);

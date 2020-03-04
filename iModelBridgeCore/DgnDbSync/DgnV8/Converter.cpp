@@ -1845,18 +1845,25 @@ void Converter::OnCreateComplete()
     {
     _EmbedFonts();
 
-    size_t      outlierCount;
-    DRange3d    rangeWithOutliers;
-    bvector<BeInt64Id> elementOutliers;
-    m_dgndb->GeoLocation().InitializeProjectExtents(&rangeWithOutliers, &elementOutliers);
-
-    if (elementOutliers.size () > 0)
+    if (NULL == GetParams().GetBridgeInstance()) //In the imodel bridge case set up project extents in the fwk.
         {
-        Utf8String message;
-        getFirstOutlierElementInfo (elementOutliers, m_dgndb.get (), message, this);
-        ReportAdjustedProjectExtents (elementOutliers.size (), m_dgndb->GeoLocation ().GetProjectExtents (), rangeWithOutliers, message);
-        }
+        auto extents = m_dgndb->GeoLocation().GetProjectExtents();
 
+        size_t      outlierCount;
+        DRange3d    rangeWithOutliers;
+        bvector<BeInt64Id> elementOutliers;
+        auto calculated = m_dgndb->GeoLocation().ComputeProjectExtents(&rangeWithOutliers, &elementOutliers);
+
+        if (elementOutliers.size() > 0)
+            {
+            Utf8String message;
+            getFirstOutlierElementInfo(elementOutliers, m_dgndb.get(), message, this);
+            ReportAdjustedProjectExtents(elementOutliers.size(), m_dgndb->GeoLocation().GetProjectExtents(), rangeWithOutliers, message);
+            }
+
+        if (!extents.IsEqual(calculated))
+            m_dgndb->GeoLocation().SetProjectExtents(calculated);
+        }
     // *** NEEDS WORK: What is this for? m_rootScaleFactor is never set anywhere in the converter
     //m_dgndb->SaveProperty(PropertySpec("SourceRootScaleFactor", "dgn_Proj"), &m_rootScaleFactor, sizeof(m_rootScaleFactor));
 

@@ -623,12 +623,6 @@ BentleyStatus iModelBridge::Params::ParseJsonArgs(JsonValueCR obj, bool isForInp
             m_ecEFLocation.FromJson(obj[json_ecef()]);
             return m_ecEFLocation.m_isValid ? SUCCESS : ERROR;
             }
-        else
-            {
-            BeAssert(false);
-            fprintf(stderr, "%s - unrecognized JSON value\n", propName.c_str());
-            return BSIERROR;
-            }
         }
 
     return BSISUCCESS;
