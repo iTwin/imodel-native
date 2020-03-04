@@ -60,6 +60,7 @@ Error::Id Error::ErrorIdFromString(Utf8StringCR errorIdString)
         map["iModelHub.JobSchedulingFailed"]                        = Id::JobSchedulingFailed;
         map["iModelHub.ConflictsAggregate"]                         = Id::ConflictsAggregate;
         map["iModelHub.FailedToGetProjectById"]                     = Id::FailedToGetProjectById;
+        map["iModelHub.ContextDoesNotExist"]                        = Id::ContextDoesNotExist;
         
         map["iModelHub.DatabaseOperationFailed"]                    = Id::DatabaseOperationFailed;
         map["iModelHub.SQLiteOperationFailed"]                      = Id::SQLiteOperationFailed;

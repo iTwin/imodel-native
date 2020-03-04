@@ -920,6 +920,12 @@ TEST_F(CodesTests, ExternalCodesPushTest)
     ASSERT_SUCCESS(pushResult);
     EXPECT_EQ(1, externalAssignedCodes.size());
     EXPECT_EQ(1, externalDiscardedCodes.size());
+
+    // Cleanup
+    mutableElement = db1.Elements().GetForEdit<DgnElement>(element->GetElementId());
+    mutableElement->Delete();
+    db1.SaveChanges();
+    briefcase1->PullMergeAndPush(nullptr, false, nullptr, nullptr, nullptr, 1, nullptr, &callback)->GetResult();
     }
 
 //---------------------------------------------------------------------------------------

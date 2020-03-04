@@ -116,7 +116,7 @@ unsigned __stdcall EventCallbackManagerThread(void* arg)
                 Error::Id errorId = errorResult.GetId();
                 
                 if (errorId == Error::Id::NoSubscriptionFound || errorId == Error::Id::iModelDoesNotExist || errorId == Error::Id::UserDoesNotHavePermission
-                    || errorId == Error::Id::FailedToGetAssetPermissions || errorId == Error::Id::FailedToGetProjectPermissions)
+                    || errorId == Error::Id::FailedToGetAssetPermissions || errorId == Error::Id::FailedToGetProjectPermissions || errorId == Error::Id::ContextDoesNotExist)
                     {
                     LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "EventCallbackManagerThread is stopping. Possible reasons: Event subscription or iModel does not exist any more, user does not have required permissions. Error code: %d", errorId);
                     return 0;

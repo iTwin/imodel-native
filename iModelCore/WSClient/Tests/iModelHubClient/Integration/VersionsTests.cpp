@@ -68,6 +68,18 @@ struct VersionsTests : public iModelTestsBase
                 EXPECT_EQ("", version->GetLargeThumbnailId());
             }
         }
+    
+    /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                    Algirdas.Mikoliunas             03/2020
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    VersionInfoPtr GetBaselineVersion()
+        {
+        VersionInfoPtr version0 = iModelHubHelpers::GetVersionByChangeSetId(s_connection, "");
+        if (!version0.IsValid())
+            iModelHubHelpers::CreateNamedVersion(version0, s_connection, TestCodeName(), 0);
+
+        return version0;
+        }
     };
 VersionInfoPtr VersionsTests::s_version5 = nullptr;
 VersionInfoPtr VersionsTests::s_version10 = nullptr;
@@ -139,8 +151,7 @@ TEST_F(VersionsTests, CreateChangeSetAlreadyHasVersion)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(VersionsTests, CreateBaselineiModelAlreadyHasVersion)
     {
-    VersionInfoPtr version1;
-    iModelHubHelpers::CreateNamedVersion(version1, s_connection, TestCodeName(), 0);
+    GetBaselineVersion();
 
     VersionsManagerCR versionManager = s_connection->GetVersionsManager();
     VersionInfo version2 = VersionInfo(TestCodeName(1), nullptr, "");
@@ -353,10 +364,7 @@ TEST_F(VersionsTests, GetChangeSetsAfterVersionInvalidVersion)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(VersionsTests, GetChangeSetsAfterBaselineVersionSucceeds)
     {
-    VersionInfoPtr version0 = iModelHubHelpers::GetVersionByChangeSetId(s_connection, "");
-    if (!version0.IsValid())
-        iModelHubHelpers::CreateNamedVersion(version0, s_connection, TestCodeName(), 0);
-
+    VersionInfoPtr version0 = GetBaselineVersion();
     VersionsManagerCR versionManager = s_connection->GetVersionsManager();
     ChangeSetsInfoResult result = versionManager.GetChangeSetsAfterVersion(version0->GetId())->GetResult();
     ASSERT_SUCCESS(result);
@@ -372,10 +380,7 @@ TEST_F(VersionsTests, GetChangeSetsBetweenBaselineVersionAndChangeSetSucceeds)
     ChangeSetInfoPtr changeset1 = iModelHubHelpers::GetChangeSetByIndex(s_connection, 1);
     ChangeSetInfoPtr changeset2 = iModelHubHelpers::GetChangeSetByIndex(s_connection, 2);
 
-    VersionInfoPtr version0 = iModelHubHelpers::GetVersionByChangeSetId(s_connection, "");
-    if (!version0.IsValid())
-        iModelHubHelpers::CreateNamedVersion(version0, s_connection, TestCodeName(), 0);
-
+    VersionInfoPtr version0 = GetBaselineVersion();
     VersionsManagerCR versionManager = s_connection->GetVersionsManager();
     ChangeSetsInfoResult result = versionManager.GetChangeSetsBetweenVersionAndChangeSet(version0->GetId(), changeset2->GetId())->GetResult();
     ASSERT_SUCCESS(result);

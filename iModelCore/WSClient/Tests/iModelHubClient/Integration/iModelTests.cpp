@@ -259,7 +259,7 @@ TEST_F(iModelTests, CancelCreateiModel)
 TEST_F(iModelTests, UnsuccessfulCreateiModel)
     {
     iModelResult result = iModelHubHelpers::CreateNewiModel(s_client, m_db, BeSQLite::BeGuid(true).ToString(), false);
-    EXPECT_EQ(Error::Id::FailedToGetProjectPermissions, result.GetError().GetId());
+    EXPECT_EQ(Error::Id::ContextDoesNotExist, result.GetError().GetId());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -289,7 +289,7 @@ TEST_F(iModelTests, UnsuccessfulGetiModels)
     {
     iModelsResult result = s_client->GetiModels(BeSQLite::BeGuid(true).ToString())->GetResult();
     ASSERT_FAILURE(result);
-    EXPECT_EQ(Error::Id::FailedToGetProjectPermissions, result.GetError().GetId());
+    EXPECT_EQ(Error::Id::ContextDoesNotExist, result.GetError().GetId());
     }
 
 /*--------------------------------------------------------------------------------------+

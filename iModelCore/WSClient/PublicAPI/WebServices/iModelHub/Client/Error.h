@@ -62,6 +62,7 @@ public:
         JobSchedulingFailed,
         ConflictsAggregate,
         FailedToGetProjectById,
+        ContextDoesNotExist,
 
         DatabaseOperationFailed,
         SQLiteOperationFailed,
