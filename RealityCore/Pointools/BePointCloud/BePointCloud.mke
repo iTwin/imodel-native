@@ -4,6 +4,10 @@
 #---------------------------------------------------------------------------------------------
 %include mdl.mki
 
+%if $(BUILD_TOOLSET) == "ANDROID_CLANG" || $(BUILD_TOOLSET) == "LINUX_CLANG"
+    ClangCommonCompOpts+ -Wno-undefined-var-template
+%endif
+
 #-----------------------------------------------------------
 # Root directory
 #-----------------------------------------------------------
@@ -110,9 +114,16 @@ DLM_DEST                    = $(o)
 DLM_EXPORT_DEST             = $(o)
 DLM_NOENTRY                 = 1
 
-LINKER_LIBRARIES            =   $(ContextSubpartsLibs)$(libprefix)PointoolsVortexAPI$(libext) \
-                                $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
+%if $(TARGET_PLATFORM)=="Linux"
+LINKER_LIBRARIES            = $(ContextSubpartsStaticLibs)$(stlibprefix)PointoolsVortexAPI$(stlibext)
+LINKER_LIBRARIES            + $(ContextSubpartsStaticLibs)$(stlibprefix)BentleyGeom$(stlibext)
+LINKER_LIBRARIES            + $(ContextSubpartsStaticLibs)$(stlibprefix)Bentley$(stlibext)
+LINKER_LIBRARIES            + $(ContextSubpartsStaticLibs)$(stlibprefix)BeIcu4c$(stlibext)
+LINKER_LIBRARIES            + $(ContextSubpartsStaticLibs)$(stlibprefix)scz_compress$(stlibext)
+%else
+LINKER_LIBRARIES            = $(ContextSubpartsLibs)$(libprefix)PointoolsVortexAPI$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
+%endif
 
-
-%include $(sharedMki)LinkLibrary.mki
+%include $(sharedMki)linkLibrary.mki
 

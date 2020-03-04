@@ -6,7 +6,7 @@
 
 //TEA.cpp
 #include <encryption/TEA.h>
-#include <encryption/SHA.H>
+#include <encryption/SHA.h>
 #include <encryption/DoubleBuffering.h>
 
 using namespace std;

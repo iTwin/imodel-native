@@ -181,7 +181,7 @@ namespace PTRMI
 		DataBuffer &						operator >>				(char &value);	
 		DataBuffer &						operator >>				(unsigned short &value);
 		DataBuffer &						operator >>				(short &value);	
-#if !defined (ANDROID) || !defined(__clang__) || !defined(__LP64__)
+#if !defined (ANDROID) && !defined(__clang__) && !defined(__LP64__)
 		DataBuffer &						operator >>				(unsigned long &value);
 		DataBuffer &						operator >>				(long &value);
 #endif
@@ -198,7 +198,7 @@ namespace PTRMI
 		DataBuffer &						operator <<				(char value);	
 		DataBuffer &						operator <<				(unsigned short value);
 		DataBuffer &						operator <<				(short value);	
-#if !defined (ANDROID) || !defined(__clang__) || !defined(__LP64__)
+#if !defined (ANDROID) && !defined(__clang__) && !defined(__LP64__)
 		DataBuffer &						operator <<				(unsigned long value);
 		DataBuffer &						operator <<				(long value);
 #endif
@@ -420,7 +420,7 @@ namespace PTRMI
 	inline DataBuffer &DataBuffer::operator>>(char &value)				{readFromBuffer(value); return (*this);}
 	inline DataBuffer &DataBuffer::operator>>(unsigned short &value)	{readFromBuffer(value); return (*this);}
 	inline DataBuffer &DataBuffer::operator>>(short &value)				{readFromBuffer(value); return (*this);}
-#if !defined (ANDROID) || !defined(__clang__) || !defined(__LP64__)
+#if !defined (ANDROID) && !defined(__clang__) && !defined(__LP64__)
 	inline DataBuffer &DataBuffer::operator>>(unsigned long &value)		{readFromBuffer(value); return (*this);}
 	inline DataBuffer &DataBuffer::operator>>(long &value)				{readFromBuffer(value); return (*this);}
 #endif
@@ -439,7 +439,7 @@ namespace PTRMI
 	inline DataBuffer &DataBuffer::operator<<(char value)				{writeToBuffer(value); return (*this);}
 	inline DataBuffer &DataBuffer::operator<<(unsigned short value)		{writeToBuffer(value); return (*this);}
 	inline DataBuffer &DataBuffer::operator<<(short value)				{writeToBuffer(value); return (*this);}
-#if !defined (ANDROID) || !defined(__clang__) || !defined(__LP64__)
+#if !defined (ANDROID) && !defined(__clang__) && !defined(__LP64__)
 	inline DataBuffer &DataBuffer::operator<<(unsigned long value)		{writeToBuffer(value); return (*this);}
 	inline DataBuffer &DataBuffer::operator<<(long value)				{writeToBuffer(value); return (*this);}
 #endif

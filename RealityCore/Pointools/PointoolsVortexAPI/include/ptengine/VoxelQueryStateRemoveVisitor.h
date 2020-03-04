@@ -4,10 +4,10 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <ptcloud2/Node.h>
+#include <ptcloud2/node.h>
 #include <ptengine/VoxelQueryStateSet.h>
 #include <ptcloud2/scene.h>
-#include <ptengine/PointsVisitor.h>
+#include <ptengine/pointsvisitor.h>
 
 namespace pointsengine
 {

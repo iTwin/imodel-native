@@ -5,7 +5,7 @@
 #include "PointoolsVortexAPIInternal.h"
 
 //SHA.cpp
-#include <encryption/SHA.H>
+#include <encryption/SHA.h>
 
 using namespace std;
 

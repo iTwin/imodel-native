@@ -2,7 +2,13 @@
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
 
-    <Part Name="BePointCloud" BentleyBuildMakeFile="BePointCloud.mke" ApiNumber="M02">
+
+    <Part Name="BePointCloud" ApiNumber="M02">
+        <SubPart PartName="BePointCloudGeneric"/>
+        <SubPart PartName="BePointCloudLinux" LibType="Static"/>
+    </Part>
+
+    <Part Name="BePointCloudGeneric" BentleyBuildMakeFile="BePointCloud.mke" ApiNumber="M02" ExcludePlatforms="Linux*">
         <SubPart PartName="BentleyDll"      PartFile="iModelCore/Bentley/Bentley"   Repository="imodel02"/>
         <SubPart PartName="BePointCloudSubParts"/>
         <SubPart PartName="VortexLibs" PartFile="RealityCore/Pointools/PointoolsVortexAPI/PointoolsVortexAPI" Repository="imodel02" />
@@ -13,8 +19,23 @@
         </Bindings>
     </Part>
 
+    <Part Name="BePointCloudLinux" BentleyBuildMakeFile="BePointCloud.mke" ApiNumber="M02" OnlyPlatforms="Linux*">
+        <SubPart PartName="BentleyDll"      PartFile="iModelCore/Bentley/Bentley"   Repository="imodel02" LibType="Static"/>
+        <SubPart PartName="BePointCloudSubPartsStatic" LibType="Static"/>
+        <SubPart PartName="VortexLibs" PartFile="RealityCore/Pointools/PointoolsVortexAPI/PointoolsVortexAPI" Repository="imodel02" LibType="Static"/>
+        <Bindings>
+          <PublicAPI Domain="BePointCloud" />
+          <Assemblies>Delivery/$(shlibprefix)BePointCloud$(ApiNumber)$(shlibext)</Assemblies>
+          <Libs>Delivery/$(shlibprefix)BePointCloud$(libext)</Libs>
+        </Bindings>
+    </Part>
+
     <Part Name="BePointCloudSubParts">
         <SubPart PartName="GeomDlls"        PartFile="iModelCore/GeomLibs/geomlibs"     Repository="imodel02" />
+    </Part>
+
+    <Part Name="BePointCloudSubPartsStatic">
+        <SubPart PartName="GeomDlls"        PartFile="iModelCore/GeomLibs/geomlibs"     Repository="imodel02" LibType="Static"/>
     </Part>
 
 </BuildContext>

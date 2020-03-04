@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- ***************************************************************************************************************** -->
+<!-- PointoolsVortexAPI BuildStrategy -->
+<!-- (c) 2016 Bentley Systems Ltd. -->
+<!-- Author : Lee Bull -->
+<!-- ***************************************************************************************************************** -->
+
+
+<BuildStrategy  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"  xsi:noNamespaceSchemaLocation="../bsicommon/build/BuildStrategy.xsd">
+
+  <ImportStrategy Name="Base" />
+
+  <DefaultTarget Repository="iModel02" PartFile="RealityCore/Pointools/BePointCloud/BePointCloud" PartName="BePointCloud" Platform="x64" OnlyPlatforms="x64,linuxx64" OutputRootDir="${OutRoot}" />
+
+  <BuildControl SaveNugetProducts="true"/> 
+
+    <!-- Build and run "extras" like docs and tests after the libraries to find compile errors sooner. -->
+  <DeferStrategy Name="*" BuildPass="1"/>
+
+  <ImportStrategy Name="BuildIModelCore"/>
+
+<!-- ***************************************************************************************************************** -->
+<!--  -->
+<!-- ***************************************************************************************************************** -->
+
+  <PartStrategy PartFile="PointoolsVortexAPI" PartName="*" BuildFromSource="Once"/>
+  <PartStrategy PartFile="BePointCloud" PartName="*" BuildFromSource="Once"/>
+
+</BuildStrategy>

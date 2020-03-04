@@ -6,7 +6,7 @@ BUILD_NO_STACK_CHECK=1
 
 %include mdl.mki
 
-%if $(BUILD_TOOLSET) == "ANDROID_CLANG"
+%if $(BUILD_TOOLSET) == "ANDROID_CLANG" || $(BUILD_TOOLSET) == "LINUX_CLANG"
     # pt/boundsTree.h:295:4: error: delete called on non-final 'BoundsTreeNode<pt::OBBox<double> >' that has virtual functions but non-virtual destructor [-Werror,-Wdelete-non-virtual-dtor]
     ClangCommonCompOpts+ -Wno-delete-non-virtual-dtor
 %endif
@@ -88,7 +88,7 @@ $(o)PointoolsBentleyLicenseAPI$(oext)    : $(basedir)src/ptlic/PointoolsBentleyL
 
 $(o)OBBox$(oext)                         : $(basedir)src/pt/OBBox.cpp                                            $(basedir)include/pt/OBBox.h                                     ${MultiCompileDepends}
 
-$(o)DebugAssert$(oext)                   : $(basedir)src/pt/DebugAssert.cpp                                      $(basedir)include/pt/DebugAssert.h                               ${MultiCompileDepends}
+$(o)DebugAssert$(oext)                   : $(basedir)src/pt/DebugAssert.cpp                                      $(basedir)include/pt/debugassert.h                               ${MultiCompileDepends}
 
 $(o)System$(oext)                        : $(basedir)src/pt/System.cpp                                           $(basedir)include/pt/System.h                                    ${MultiCompileDepends}
 
@@ -120,11 +120,11 @@ $(o)renderFrameData$(oext)               : $(basedir)src/ptengine/renderFrameDat
 
 $(o)editNodeDef$(oext)                   : $(basedir)src/ptedit/editNodeDef.cpp                                  $(basedir)include/ptedit/editNodeDef.h                           ${MultiCompileDepends}
 
-$(o)pointsExchanger$(oext)               : $(basedir)src/ptengine/pointsExchanger.cpp                            $(basedir)include/ptengine/pointsExchanger.h                     ${MultiCompileDepends}
+$(o)pointsExchanger$(oext)               : $(basedir)src/ptengine/pointsExchanger.cpp                            $(basedir)include/ptengine/pointsexchanger.h                     ${MultiCompileDepends}
 
 $(o)projAreaApproximation$(oext)         : $(basedir)src/ptengine/projAreaApproximation.cpp                      $(basedir)include/ptengine/projAreaApproximation.h               ${MultiCompileDepends}
 
-$(o)Registry$(oext)                      : $(basedir)src/pt/Registry.cpp                                         $(basedir)include/pt/Registry.h                                  ${MultiCompileDepends}
+$(o)Registry$(oext)                      : $(basedir)src/pt/Registry.cpp                                         $(basedir)include/pt/registry.h                                  ${MultiCompileDepends}
 
 $(o)PointoolsAPI_shader$(oext)           : $(basedir)src/ptapi/PointoolsAPI_shader.cpp                                                                                             ${MultiCompileDepends}
 
@@ -150,13 +150,13 @@ $(o)consolidate$(oext)                   : $(basedir)src/ptedit/consolidate.cpp 
                                                                                                                   
 $(o)renderPointsBuffer$(oext)            : $(basedir)src/ptengine/renderPointsBuffer.cpp                         $(basedir)include/ptengine/renderPointsBuffer.h                  ${MultiCompileDepends}
                                                                                                                   
-$(o)cloudSelect$(oext)                   : $(basedir)src/ptedit/cloudSelect.cpp                                  $(basedir)include/ptedit/cloudSelect.h                           ${MultiCompileDepends}
+$(o)cloudSelect$(oext)                   : $(basedir)src/ptedit/cloudSelect.cpp                                  $(basedir)include/ptedit/cloudselect.h                           ${MultiCompileDepends}
                                                                                                                   
 $(o)DataSourceMultiRead$(oext)           : $(basedir)src/ptds/DataSourceMultiRead.cpp                            $(basedir)include/ptds/DataSourceMultiRead.h                     ${MultiCompileDepends}
                                                                                                                   
 $(o)userChannels$(oext)                  : $(basedir)src/ptengine/userChannels.cpp                               $(basedir)include/ptengine/userChannels.h                        ${MultiCompileDepends}
                                                                                                                                                                                                                                                                                                                                             
-$(o)editState$(oext)                     : $(basedir)src/ptedit/editState.cpp                                    $(basedir)include/ptedit/editState.h                             ${MultiCompileDepends}
+$(o)editState$(oext)                     : $(basedir)src/ptedit/editState.cpp                                    $(basedir)include/ptedit/editstate.h                             ${MultiCompileDepends}
                                                                                                                                                                                                                                     
 $(o)userChannelManager$(oext)            : $(basedir)src/ptengine/userChannelManager.cpp                                                                                           ${MultiCompileDepends}
                                                                                                                   
@@ -164,7 +164,7 @@ $(o)queryDensity$(oext)                  : $(basedir)src/ptengine/queryDensity.c
                                                                                                               
 $(o)DataSourceFile$(oext)                : $(basedir)src/ptds/DataSourceFile.cpp                                 $(basedir)include/ptds/DataSourceFile.h                          ${MultiCompileDepends}
 
-$(o)pointsPager$(oext)                   : $(basedir)src/ptengine/pointsPager.cpp                                $(basedir)include/ptengine/pointsPager.h                         ${MultiCompileDepends}
+$(o)pointsPager$(oext)                   : $(basedir)src/ptengine/pointsPager.cpp                                $(basedir)include/ptengine/pointspager.h                         ${MultiCompileDepends}
 
 $(o)DataSourceManager$(oext)             : $(basedir)src/ptds/DataSourceManager.cpp                              $(basedir)include/ptds/DataSourceManager.h                       ${MultiCompileDepends}
      
@@ -174,7 +174,7 @@ $(o)DataSourceStructuredStorage$(oext)   : $(basedir)src/ptds/DataSourceStructur
 
 %endif      
                                                                                                                   
-$(o)editEvaluatedStackNode$(oext)        : $(basedir)src/ptedit/editEvaluatedStackNode.cpp                       $(basedir)include/ptedit/editEvaluatedStackNode.h                ${MultiCompileDepends}
+$(o)editEvaluatedStackNode$(oext)        : $(basedir)src/ptedit/editEvaluatedStackNode.cpp                       $(basedir)include/ptedit/editevaluatedstacknode.h                ${MultiCompileDepends}
                                                                                                                                                                                                                                                                                                                                                     
 $(o)datachannel$(oext)                   : $(basedir)src/ptcloud2/datachannel.cpp                                $(basedir)include/ptcloud2/datachannel.h                         ${MultiCompileDepends}
                                                                                                                   
@@ -184,7 +184,7 @@ $(o)clashTree$(oext)                     : $(basedir)src/ptclash/clashTree.cpp  
                                                                                                                   
 $(o)indexstream$(oext)                   : $(basedir)src/ptcloud2/indexstream.cpp                                $(basedir)include/ptcloud2/indexstream.h                         ${MultiCompileDepends}
                                                                                                                   
-$(o)SceneClassManager$(oext)             : $(basedir)src/pt/SceneClassManager.cpp                                $(basedir)include/pt/SceneClassManager.h                         ${MultiCompileDepends}
+$(o)SceneClassManager$(oext)             : $(basedir)src/pt/SceneClassManager.cpp                                $(basedir)include/pt/sceneclassmanager.h                         ${MultiCompileDepends}
                                                                                                                                                                                                                                    
 $(o)ObjectRef$(oext)                     : $(basedir)src/pt/ObjectRef.cpp                                        $(basedir)include/pt/ObjectRef.h                                 ${MultiCompileDepends}
                                                                                                                                                                                                                                                                                                                                                       
@@ -196,19 +196,19 @@ $(o)PointStreamFilter$(oext)             : $(basedir)src/ptcloud2/PointStreamFil
                                                                                                                   
 $(o)PointoolsAPI_clipping$(oext)         : $(basedir)src/ptapi/PointoolsAPI_clipping.cpp                                                                                           ${MultiCompileDepends}
                                                                                                                   
-$(o)editFilters$(oext)                   : $(basedir)src/ptedit/editFilters.cpp                                  $(basedir)include/ptedit/editFilters.h                           ${MultiCompileDepends}
+$(o)editFilters$(oext)                   : $(basedir)src/ptedit/editFilters.cpp                                  $(basedir)include/ptedit/editfilters.h                           ${MultiCompileDepends}
                                                                                                                   
 $(o)dispatcher$(oext)                    : $(basedir)src/ptl/dispatcher.cpp                                      $(basedir)include/ptl/dispatcher.h                               ${MultiCompileDepends}
                                                                                                                   
 $(o)select$(oext)                        : $(basedir)src/ptedit/select.cpp                                                                                                         ${MultiCompileDepends}
                                                                                                                   
-$(o)planeFilter$(oext)                   : $(basedir)src/ptedit/planeFilter.cpp                                  $(basedir)include/ptedit/planeFilter.h                           ${MultiCompileDepends}
+$(o)planefilter$(oext)                   : $(basedir)src/ptedit/planefilter.cpp                                  $(basedir)include/ptedit/planefilter.h                           ${MultiCompileDepends}
                                                                                                                                                                                                                                    
 $(o)PointoolsAPI_edit$(oext)             : $(basedir)src/ptapi/PointoolsAPI_edit.cpp                                                                                               ${MultiCompileDepends}
                                                                                                                   
 $(o)DataSource$(oext)                    : $(basedir)src/ptds/DataSource.cpp                                     $(basedir)include/ptds/DataSource.h                              ${MultiCompileDepends}
                                                                                                                                                                                                                                     
-$(o)editStackState$(oext)                : $(basedir)src/ptedit/editStackState.cpp                               $(basedir)include/ptedit/editStackState.h                        ${MultiCompileDepends}
+$(o)editStackState$(oext)                : $(basedir)src/ptedit/editStackState.cpp                               $(basedir)include/ptedit/editstackstate.h                        ${MultiCompileDepends}
 
 $(o)StreamSchedulerSequential$(oext)     : $(basedir)src/ptengine/StreamSchedulerSequential.cpp                  $(basedir)include/ptengine/StreamSchedulerSequential.h           ${MultiCompileDepends}                                                                                                                                                                                                                            
                                                                                                                  
@@ -222,7 +222,7 @@ $(o)StreamScheduler$(oext)               : $(basedir)src/ptengine/StreamSchedule
 
 $(o)StreamHost$(oext)                    : $(basedir)src/ptengine/StreamHost.cpp                                 $(basedir)include/ptengine/StreamHost.h                          ${MultiCompileDepends}
                                                                                                                                                                                                                                     
-$(o)editManager$(oext)                   : $(basedir)src/ptedit/editManager.cpp                                  $(basedir)include/ptedit/editManager.h                           ${MultiCompileDepends}                                                                                                                
+$(o)editManager$(oext)                   : $(basedir)src/ptedit/editManager.cpp                                  $(basedir)include/ptedit/editmanager.h                           ${MultiCompileDepends}                                                                                                                
                                                                                                                   
 $(o)PointoolsAPI_meta$(oext)             : $(basedir)src/ptapi/PointoolsAPI_meta.cpp                                                                                               ${MultiCompileDepends}
                                                                                                                   
@@ -234,13 +234,13 @@ $(o)scene$(oext)                         : $(basedir)src/ptcloud2/scene.cpp     
                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
 $(o)DataSourceMemBlock$(oext)            : $(basedir)src/ptds/DataSourceMemBlock.cpp                             $(basedir)include/ptds/DataSourceMemBlock.h                      ${MultiCompileDepends}
                                                                                                                   
-$(o)Color$(oext)                         : $(basedir)src/pt/Color.cpp                                            $(basedir)include/pt/Color.h                                     ${MultiCompileDepends}
+$(o)Color$(oext)                         : $(basedir)src/pt/Color.cpp                                            $(basedir)include/pt/color.h                                     ${MultiCompileDepends}
                                                                                                                   
 $(o)configurations$(oext)                : $(basedir)src/ptl/configurations.cpp                                                                                                    ${MultiCompileDepends}
                                                                                                                                                                                                                                     
 $(o)diagnostics$(oext)                   : $(basedir)src/diagnostics/diagnostics.cpp                             $(basedir)include/diagnostics/diagnostics.h                      ${MultiCompileDepends}
                                                                                                                   
-$(o)Trace$(oext)                         : $(basedir)src/pt/Trace.cpp                                            $(basedir)include/pt/Trace.h                                     ${MultiCompileDepends}
+$(o)Trace$(oext)                         : $(basedir)src/pt/Trace.cpp                                            $(basedir)include/pt/trace.h                                     ${MultiCompileDepends}
                                                                                                                   
 $(o)datatreeBranch$(oext)                : $(basedir)src/pt/datatreeBranch.cpp                                   $(basedir)include/pt/datatreeBranch.h                            ${MultiCompileDepends}
                                                                                                                                                                                                                                     
@@ -284,7 +284,7 @@ $(o)timestamp$(oext)                     : $(basedir)src/pt/timestamp.cpp       
                                                                                                                   
 $(o)engine$(oext)                        : $(basedir)src/ptengine/engine.cpp                                     $(basedir)include/ptengine/engine.h                              ${MultiCompileDepends}
                                                                                                                   
-$(o)paintFilters$(oext)                  : $(basedir)src/ptedit/paintFilters.cpp                                 $(basedir)include/ptedit/paintFilters.h                          ${MultiCompileDepends}
+$(o)paintfilters$(oext)                  : $(basedir)src/ptedit/paintfilters.cpp                                 $(basedir)include/ptedit/paintfilters.h                          ${MultiCompileDepends}
                                                                                                                   
 $(o)renderContext$(oext)                 : $(basedir)src/ptengine/renderContext.cpp                              $(basedir)include/ptengine/renderContext.h                       ${MultiCompileDepends}
                                                                                                                                                                                                                                     
@@ -306,13 +306,13 @@ $(o)clashObject$(oext)                   : $(basedir)src/ptclash/clashObject.cpp
                                                                                                                                                                                                                                     
 $(o)renderSettings$(oext)                : $(basedir)src/ptengine/renderSettings.cpp                             $(basedir)include/ptengine/renderSettings.h                      ${MultiCompileDepends}
                                                                                                                   
-$(o)editStack$(oext)                     : $(basedir)src/ptedit/editStack.cpp                                    $(basedir)include/ptedit/editStack.h                             ${MultiCompileDepends}
+$(o)editStack$(oext)                     : $(basedir)src/ptedit/editStack.cpp                                    $(basedir)include/ptedit/editstack.h                             ${MultiCompileDepends}
                                                                                                                   
-$(o)SpatialPartitionGraph$(oext)         : $(basedir)src/ptcloud2/SpatialPartitionGraph.cpp                      $(basedir)include/ptcloud2/SpatialPartitionGraph.h               ${MultiCompileDepends}
+$(o)SpatialPartitionGraph$(oext)         : $(basedir)src/ptcloud2/SpatialPartitionGraph.cpp                      $(basedir)include/ptcloud2/spatialPartitionGraph.h               ${MultiCompileDepends}
                                                                                                                   
 $(o)DataSourceNull$(oext)                : $(basedir)src/ptds/DataSourceNull.cpp                                 $(basedir)include/ptds/DataSourceNull.h                          ${MultiCompileDepends}
                                                                                                                                                                                                                                     
-$(o)SceneGraph$(oext)                    : $(basedir)src/pt/SceneGraph.cpp                                       $(basedir)include/pt/SceneGraph.h                                ${MultiCompileDepends}
+$(o)SceneGraph$(oext)                    : $(basedir)src/pt/SceneGraph.cpp                                       $(basedir)include/pt/scenegraph.h                                ${MultiCompileDepends}
                                                                                                                   
 $(o)buildindex$(oext)                    : $(basedir)src/ptcloud2/buildindex.cpp                                 $(basedir)include/ptcloud2/buildindex.h                          ${MultiCompileDepends}
                                                                                                                   
@@ -336,9 +336,9 @@ $(o)renderResourceManager$(oext)         : $(basedir)src/ptengine/renderResource
                                                                                                                   
 $(o)StreamManagerParameters$(oext)       : $(basedir)src/ptengine/StreamManagerParameters.cpp                    $(basedir)include/ptengine/StreamManagerParameters.h             ${MultiCompileDepends}
                                                                                                                   
-$(o)Timer$(oext)                         : $(basedir)src/pt/Timer.cpp                                            $(basedir)include/pt/Timer.h                                     ${MultiCompileDepends}
+$(o)Timer$(oext)                         : $(basedir)src/pt/Timer.cpp                                            $(basedir)include/pt/timer.h                                     ${MultiCompileDepends}
 
-$(o)Datatree$(oext)                      : $(basedir)src/pt/Datatree.cpp                                         $(basedir)include/pt/Datatree.h                                  ${MultiCompileDepends}
+$(o)Datatree$(oext)                      : $(basedir)src/pt/Datatree.cpp                                         $(basedir)include/pt/datatree.h                                  ${MultiCompileDepends}
 
 $(o)cmdprogress$(oext)                   : $(basedir)src/ptcmdppe/cmdprogress.cpp                                $(basedir)include/ptcmdppe/cmdprogress.h                         ${MultiCompileDepends}
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
@@ -360,17 +360,17 @@ $(o)format$(oext)                        : $(basedir)src/pt/format.cpp          
                                                                                                                                                                                                                                     
 $(o)voxel$(oext)                         : $(basedir)src/ptcloud2/voxel.cpp                                      $(basedir)include/ptcloud2/voxel.h                               ${MultiCompileDepends}
                                                                                                                   
-$(o)ClipObject$(oext)                    : $(basedir)src/ptengine/ClipObject.cpp                                 $(basedir)include/ptengine/ClipObject.h                          ${MultiCompileDepends}
+$(o)clipObject$(oext)                    : $(basedir)src/ptengine/clipObject.cpp                                 $(basedir)include/ptengine/clipObject.h                          ${MultiCompileDepends}
 
-$(o)ClipPlane$(oext)                     : $(basedir)src/ptengine/ClipPlane.cpp                                  $(basedir)include/ptengine/ClipPlane.h                           ${MultiCompileDepends}
+$(o)clipPlane$(oext)                     : $(basedir)src/ptengine/clipPlane.cpp                                  $(basedir)include/ptengine/clipPlane.h                           ${MultiCompileDepends}
 
-$(o)ClipManager$(oext)                   : $(basedir)src/ptengine/ClipManager.cpp                                $(basedir)include/ptengine/ClipManager.h                         ${MultiCompileDepends}
+$(o)clipManager$(oext)                   : $(basedir)src/ptengine/clipManager.cpp                                $(basedir)include/ptengine/clipManager.h                         ${MultiCompileDepends}
 
-$(o)IsolationFilter$(oext)               : $(basedir)src/ptedit/IsolationFilter.cpp                              $(basedir)include/ptedit/IsolationFilter.h                       ${MultiCompileDepends}
+$(o)isolationFilter$(oext)               : $(basedir)src/ptedit/isolationFilter.cpp                              $(basedir)include/ptedit/isolationFilter.h                       ${MultiCompileDepends}
 
-$(o)visibilityEngine$(oext)              : $(basedir)src/ptengine/visibilityEngine.cpp                           $(basedir)include/ptengine/visibilityEngine.h                    ${MultiCompileDepends}
+$(o)visibilityEngine$(oext)              : $(basedir)src/ptengine/visibilityEngine.cpp                           $(basedir)include/ptengine/visibilityengine.h                    ${MultiCompileDepends}
 
-$(o)glFrustum$(oext)                     : $(basedir)src/ptgl/glFrustum.cpp                                      $(basedir)include/ptgl/glFrustum.h                               ${MultiCompileDepends}
+$(o)glFrustum$(oext)                     : $(basedir)src/ptgl/glFrustum.cpp                                      $(basedir)include/ptgl/glfrustum.h                               ${MultiCompileDepends}
 
 #----------------------- HAVE_OPENGL -------------------------------------------
 %if defined(HAVE_OPENGL)
@@ -557,7 +557,16 @@ LINKER_LIBRARIES + Comdlg32.lib Ws2_32.lib
 %if defined(HAVE_WILDMAGIC)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(stlibprefix)wildmagic$(stlibext)
 %else
+%if $(TARGET_PLATFORM)=="Linux"
+LINKER_LIBRARIES + $(ContextSubpartsStaticLibs)$(stlibprefix)BentleyGeom$(stlibext)
+%else
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(stlibprefix)BentleyGeom$(libext)
+%endif
+%endif
+
+%if $(TARGET_PLATFORM)=="Linux"
+LINKER_LIBRARIES + $(ContextSubpartsStaticLibs)$(stlibprefix)Bentley$(stlibext)
+LINKER_LIBRARIES + $(ContextSubpartsStaticLibs)$(stlibprefix)BeIcu4c$(stlibext)
 %endif
 
 %include $(sharedMki)linkLibrary.mki

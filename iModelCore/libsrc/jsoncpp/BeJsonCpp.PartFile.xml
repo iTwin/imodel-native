@@ -4,6 +4,7 @@
 
     <Part Name="BeJsonCpp">
         <SubPart PartName="BeJsonCppStaticLib" />
+        <SubPart PartName="BeJsonCppStaticLibLinux" />
     </Part>
 
     <Part Name="PublicAPI" BentleyBuildMakeFile="prewire.mke">
@@ -13,8 +14,8 @@
         </Bindings>
     </Part>
 
-    <Part Name="BeJsonCppStaticLib" BentleyBuildMakeFile="BeJsonCpp.mke">
-        <SubPart PartName="BentleyDll" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02" />
+    <Part Name="BeJsonCppStaticLib" BentleyBuildMakeFile="BeJsonCpp.mke" ExcludePlatforms="Linux*">
+        <SubPart PartName="BentleyDll" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02"/>
         <!-- Now in plain Bentley namespace to be shared with Vancouver <SubPart PartName="BENTLEY_NAMESPACE_NAME" PartFile="BENTLEY_NAMESPACE_NAME" Repository="BENTLEY_NAMESPACE_NAME" /> -->
         <SubPart PartName="PublicAPI" />
         <Bindings>
@@ -24,6 +25,16 @@
         </Bindings>
     </Part>
 
+    <Part Name="BeJsonCppStaticLibLinux" BentleyBuildMakeFile="BeJsonCpp.mke" OnlyPlatforms="Linux*">
+        <SubPart PartName="BentleyDll" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02" LibType="Static"/>
+        <!-- Now in plain Bentley namespace to be shared with Vancouver <SubPart PartName="BENTLEY_NAMESPACE_NAME" PartFile="BENTLEY_NAMESPACE_NAME" Repository="BENTLEY_NAMESPACE_NAME" /> -->
+        <SubPart PartName="PublicAPI" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)BeJsonCpp$(stlibext)</Libs>
+            <!-- N.B. This library is forced to build statically, and chooses to embed symbols directly in the LIB file (vs. a PDB). -->
+            <VendorNotices>Delivery/jsoncpp-license.txt</VendorNotices>
+        </Bindings>
+    </Part>
 
     <!-- ******************************** Unit Tests ************************************** -->
     <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
