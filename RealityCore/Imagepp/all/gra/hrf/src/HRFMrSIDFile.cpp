@@ -1159,19 +1159,19 @@ void HRFMrSIDFile::GetFileInfo(HPMAttributeSet&               po_rTagList,
                     // Convert the date to Attribute format
                     // format: "%4d:%02d:%02d %02d:%02d:%02d"
                     //        Year Month  Day  H    M   S
-                    char AttDate[20];
+                    char AttDate[21];
                     memset(AttDate, 0, 20);
                     AttDate[0] = pDate[20];     // year
                     AttDate[1] = pDate[21];
                     AttDate[2] = pDate[22];
                     AttDate[3] = pDate[23];
                     AttDate[4] = ':';
-                    strncpy(&(AttDate[5]), ConvertTextMonthtoNumberText(&(pDate[4])).c_str(),2);
+                    strncpy_s(&(AttDate[5]), 14, ConvertTextMonthtoNumberText(&(pDate[4])).c_str(),2);
                     AttDate[7] = ':';
                     AttDate[8] = pDate[8];      // day
                     AttDate[9] = pDate[9];
                     AttDate[10] = ' ';
-                    strncpy (&(AttDate[11]), &(pDate[11]), 8);  // hour
+                    strncpy_s (&(AttDate[11]), 9, &(pDate[11]), 8);  // hour
 
                     pTag = new HRFAttributeDateTime(Utf8String(AttDate));
                     po_rTagList.Set(pTag);

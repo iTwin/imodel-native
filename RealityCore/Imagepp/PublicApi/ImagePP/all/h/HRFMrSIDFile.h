@@ -9,9 +9,7 @@
 
 #if defined(BENTLEY_WIN32)
     #if !defined(_DEBUG)    // We do not support these format when using the debug version of the C run-time library
-        #if (_MSC_VER <= 1900) // VC14 VS2015 and less.
-            #define IPP_HAVE_MRSID_SUPPORT
-        #endif
+        #define IPP_HAVE_MRSID_SUPPORT
     #endif
 #endif
 
