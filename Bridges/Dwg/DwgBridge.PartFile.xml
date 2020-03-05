@@ -9,6 +9,10 @@
         <SubNuGetProduct NuGetProductName="RealDwgBridgeSdkNuget"/>
         <SubPart PartName="RunRealDwgImporterTests" PartFile="Bridges/Dwg/DwgConverter/DwgConverter"/>
         <SubProduct ProductName="RealDwgBridgeTests"/>
+        <!-- OpenDwgBridge -->
+        <SubProduct ProductName="OpenDwgBridge"/>
+        <SubNuGetProduct NuGetProductName="OpenDwgBridgeSdkNuget"/>
+        <SubPart PartName="RunOpenDwgImporterTests" PartFile="Bridges/Dwg/DwgConverter/DwgConverter"/>
         <!-- Another DwgBridge using an older release of RealDWG -->
         <SubProduct ProductName="RealDwg2019Bridge"/>
         <SubNuGetProduct NuGetProductName="RealDwg2019BridgeSdkNuget"/>
@@ -17,10 +21,6 @@
     <!-- Build by the developer strategy, DwgBridge.Dev -->
     <Part Name="DwgBridge.Dev" PrgOutputDir="DwgBridge">
         <SubPart PartName="DwgBridgePRG"/>
-        <!-- OpenDwgBridge -->
-        <SubProduct ProductName="OpenDwgBridge"/>
-        <SubNuGetProduct NuGetProductName="OpenDwgBridgeSdkNuget"/>
-        <SubPart PartName="RunOpenDwgImporterTests" PartFile="Bridges/Dwg/DwgConverter/DwgConverter"/>
     </Part>
 
 
@@ -56,7 +56,7 @@
 
 
     <!-- An SDK zip delivery for DwgBridge using OpenDWG -->
-    <NuGetProduct Name="OpenDwgBridgeSdkNuget" OnlyPlatforms="x64" Description="An iModelBridge-DWG extension SDK based on ODA-Drawing toolkit">
+    <NuGetProduct Name="OpenDwgBridgeSdkNuget" OnlyPlatforms="x64" Description="An iModelBridge-DWG extension SDK based on ODA-Drawing-Architecture toolkit">
         <SubPart PartName="OpenDwgImportDLL" PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
         <SubPart PartName="OpenDwgBridgeDLL" PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
         <SubPart PartName="OpenDwgDb" PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
@@ -65,6 +65,11 @@
         <SubPart PartName="CodeSamples" PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
         <SubPart PartName="DwgResources" PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
         <SubPart PartName="iModelBridgeFwkLib" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
+        <!-- add Civil domains for C3dBridge -->
+        <SubPart PartName="CivilBaseGeometry" PartFile="Domains/CivilGeometry/CivilBaseGeometry" Repository="imodel02"/>
+        <SubPart PartName="LinearReferencing" PartFile="Domains/LinearReferencing/LinearReferencing" Repository="imodel02"/>
+        <SubPart PartName="RoadRailAlignment" PartFile="Domains/RoadRailAlignment/RoadRailAlignment" Repository="imodel02"/>
+        <SubPart PartName="RoadRailPhysical" PartFile="Domains/RoadRailPhysical/RoadRailPhysical" Repository="imodel02"/>
         <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api" Repository="imodel02"/>
         <SubPart PartName="DwgImporterHeaderDelivery"/>
         <SubPart PartName="SelectedVendorHeaderDelivery"/>

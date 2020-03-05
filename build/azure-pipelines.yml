@@ -331,6 +331,11 @@ jobs:
         condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'DwgBridge'))
         artifact: RealDwg2019BridgeSdkNuget_x64
 
+      - publish: $(Build.BinariesDirectory)/Winx64/Nugetpkg/OpenDwgBridgeSdkNuget
+        displayName: Save OpenDwgBridgeSdkNuget_x64
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'DwgBridge'))
+        artifact: OpenDwgBridgeSdkNuget_x64
+
       - powershell: |
           $installerSearch = [System.IO.Path]::Combine($env:OutRoot, "Winx64", "InstallSetContext", "CiviliModelBridges", "*Setup_CiviliModelBridgex64*.msi")
           $installerPath = (Get-ChildItem $installerSearch).FullName
