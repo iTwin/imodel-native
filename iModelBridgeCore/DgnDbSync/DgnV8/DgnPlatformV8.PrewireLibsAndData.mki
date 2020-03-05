@@ -532,8 +532,9 @@ $(Delivery)DgnPlatformV8Sdk/Dlls/ECSchemas : $(DgnV8Sdk)Dlls/ECSchemas
 $(Delivery)DgnPlatformV8Sdk/Dlls/Fonts : $(DgnV8Sdk)Dlls/Fonts
     $(LinkFirstDepToFirstTargetAsDirectory)
 
-$(Delivery)DgnPlatformV8Sdk/Dlls/schema : $(DgnV8Sdk)Dlls/schema
-    $(LinkFirstDepToFirstTargetAsDirectory)
+# PowerPlatform gives us a CVS directory under schema... joy...
+always:
+    ~linkmultifiles "$(Delivery)DgnPlatformV8Sdk/Dlls/schema=$(DgnV8Sdk)Dlls/schema/*.*"
 
 $(Delivery)DgnPlatformV8Sdk/Dlls/Symb : $(DgnV8Sdk)Dlls/Symb
     $(LinkFirstDepToFirstTargetAsDirectory)
