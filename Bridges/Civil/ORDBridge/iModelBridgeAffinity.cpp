@@ -142,7 +142,7 @@ extern "C" void iModelBridge_getAffinity(WCharP buffer, const size_t bufferSize,
 
         if (BentleyApi::Dgn::iModelBridgeAffinityLevel::None == affinityLevel)
             {
-            BeStringUtilities::Wcsncpy(buffer, bufferSize, L"MicroStation");
+            BeStringUtilities::Wcsncpy(buffer, bufferSize, ORDBridge::GetRegistrySubKey());
             affinityLevel = BentleyApi::Dgn::iModelBridgeAffinityLevel::Low;
             }
         }
