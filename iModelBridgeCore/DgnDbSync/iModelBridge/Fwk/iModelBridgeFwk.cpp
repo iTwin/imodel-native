@@ -2512,7 +2512,8 @@ int iModelBridgeFwk::OnAllDocsProcessed(FwkContext& context)
     UpdateProjectExtents(context);
                                                                                                         // ==== CHANNEL LOCKS
     //Call save changes before the bridge is closed.                                                    // ==== CHANNEL LOCKS
-    //dbres = m_briefcaseDgnDb->SaveChanges();                                                            // ==== CHANNEL LOCKS
+    if (m_briefcaseDgnDb->Txns().HasChanges())
+        m_briefcaseDgnDb->SaveChanges();                                                                // ==== CHANNEL LOCKS
     PushDataChanges(iModelBridgeFwkMessages::GetString(iModelBridgeFwkMessages::EXTENT_CHANGES()));     // ==== CHANNEL LOCKS
     callCloseOnReturn.m_status = BSISUCCESS;                                                            // ==== CHANNEL LOCKS
                                                                                                         // ==== CHANNEL LOCKS
