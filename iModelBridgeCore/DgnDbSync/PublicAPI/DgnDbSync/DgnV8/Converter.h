@@ -822,7 +822,7 @@ struct Converter
         L10N_STRING(V8FileError)                 // =="DgnV8 file open error %s."==
         L10N_STRING(ViewNoneFound)               // =="No view was found"==
         L10N_STRING(PointCloudCreationError)     // =="Can't create point cloud file: %s"==
-        L10N_STRING(DwgFileIgnored)              // =="master DWG/DXF file [%s] is ignored - use DwgImporter to convert these"==
+        L10N_STRING(DwgFileAsRootModel)          // =="DWG/DXF file [%s] is used as a root model - consider using DwgBridge instead, for better DWG compatibility"==
         L10N_STRING(FailedLoadingFileIO)         // =="Unable to load file handler %s"==
         L10N_STRING(MissingFileIOImplementer)    // =="File handler %s missing V8 file type implementation"==
         L10N_STRING(TemporaryDirectoryNotFound)  // =="Failed to find/create temporary directory %s"==

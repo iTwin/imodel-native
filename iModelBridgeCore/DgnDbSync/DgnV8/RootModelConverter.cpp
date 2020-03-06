@@ -68,13 +68,10 @@ DgnV8Api::DgnFileStatus RootModelConverter::_InitRootModel()
     // *** NB: Do not create elements (or models) in here. This is running as part of the initialization phase.
     //          Only schema changes are allowed in this phase.
 
-    // don't bother to convert a DWG master file - let DwgImporter do the job.
+    // Warn about converting a DWG master file - DwgBridge is preferred for DWG conversion.
     BeFileNameCR rootFileName = GetRootFileName();
     if (Converter::IsDwgOrDxfFile(rootFileName))
-        {
-        ReportError (IssueCategory::Unsupported(), Converter::Issue::DwgFileIgnored(), Utf8String(rootFileName.c_str()).c_str());
-        return  DgnV8Api::DGNFILE_ERROR_UnknownFormat;
-        }
+        ReportIssue (IssueSeverity::Warning, IssueCategory::Compatibility(), Converter::Issue::DwgFileAsRootModel(), Utf8String(rootFileName.c_str()).c_str());
 
     SetStepName(ProgressMessage::STEP_LOADING_V8());
 
