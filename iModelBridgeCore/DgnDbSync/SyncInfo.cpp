@@ -961,14 +961,17 @@ StableIdPolicy SyncInfo::RepositoryLinkExternalSourceAspect::GetStableIdPolicy()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      1/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::GeomPartExternalSourceAspect SyncInfo::GeomPartExternalSourceAspect::CreateAspect(DgnElementId scopeId, Utf8StringCR tag, DgnDbR db)
+SyncInfo::GeomPartExternalSourceAspect SyncInfo::GeomPartExternalSourceAspect::CreateAspect(DgnElementId scopeId, Utf8StringCR tag, DgnDbR db, SyncInfo::ElementProvenance elementProvenance)
     {
     auto aspectClass = GetAspectClass(db);
     if (nullptr == aspectClass)
         return GeomPartExternalSourceAspect(nullptr);
                 
     auto instance = iModelExternalSourceAspect::CreateInstance(scopeId, Kind::GeomPart, tag, nullptr, *aspectClass);
-    return GeomPartExternalSourceAspect(instance.get());
+    GeomPartExternalSourceAspect aspect(instance.get());
+
+    aspect.Update(elementProvenance);
+    return aspect;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -976,10 +979,51 @@ SyncInfo::GeomPartExternalSourceAspect SyncInfo::GeomPartExternalSourceAspect::C
 +---------------+---------------+---------------+---------------+---------------+------*/
 SyncInfo::GeomPartExternalSourceAspect SyncInfo::GeomPartExternalSourceAspect::GetAspect(DgnGeometryPartCR el)
     {
-    auto id = SyncInfo::GetSoleAspectIdByKind(el, Kind::Level);
+    auto id = SyncInfo::GetSoleAspectIdByKind(el, Kind::GeomPart);
     if (!id.IsValid())
         return nullptr;
     return GeomPartExternalSourceAspect(ExternalSourceAspect::GetAspect(el, id).m_instance.get());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2020
+//---------------+---------------+---------------+---------------+---------------+-------
+SyncInfo::GeomPartExternalSourceAspect SyncInfo::GeomPartExternalSourceAspect::GetAspectForEdit(DgnGeometryPartR el)
+    {
+    auto id = SyncInfo::GetSoleAspectIdByKind(el, Kind::GeomPart);
+    if (!id.IsValid())
+        return nullptr;
+    return GeomPartExternalSourceAspect(ExternalSourceAspect::GetAspectForEdit(el, id).m_instance.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SyncInfo::GeomPartExternalSourceAspect::DoesProvenanceMatch(ElementProvenance const& elprov, bool allowUpdateOnEmpty) const
+    {
+    auto ss = GetSourceState();
+
+    Utf8String provLastMod;
+    iModelExternalSourceAspect::DoubleToString(provLastMod, elprov.m_lastModified);
+    if ((!Utf8String::IsNullOrEmpty(ss.m_version.c_str()) || allowUpdateOnEmpty) && ss.m_version != provLastMod)
+        return false;
+
+    Utf8String provHash;
+    iModelExternalSourceAspect::HexStrFromBytes(provHash, elprov.m_hash.m_buffer);
+    if (Utf8String::IsNullOrEmpty(ss.m_checksum.c_str()) && !allowUpdateOnEmpty)
+        return true;
+    return ss.m_checksum.Equals(provHash);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void SyncInfo::GeomPartExternalSourceAspect::Update(ElementProvenance const& prov)
+    {
+    SourceState ss;
+    iModelExternalSourceAspect::HexStrFromBytes(ss.m_checksum, prov.m_hash.m_buffer);
+    DoubleToString(ss.m_version, prov.m_lastModified);
+    SetSourceState(ss);
     }
 
 /*---------------------------------------------------------------------------------**//**

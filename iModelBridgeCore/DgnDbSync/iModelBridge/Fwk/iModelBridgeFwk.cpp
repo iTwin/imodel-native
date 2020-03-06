@@ -1806,6 +1806,9 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
             m_bridge->_GetParams().SetRealityDataDir(m_jobEnvArgs.m_realityDataDir);
         }
 
+    if (m_bridge->TestFeatureFlag("imodel-bridge-update-geometry-parts"))
+        m_bridge->_GetParams().SetUpdateGeometryParts(true);
+
     if (m_bridge->TestFeatureFlag("imodel-bridge-terrain-conversion"))
         m_bridge->_GetParams().SetDoTerrainModelConversion(true);
 

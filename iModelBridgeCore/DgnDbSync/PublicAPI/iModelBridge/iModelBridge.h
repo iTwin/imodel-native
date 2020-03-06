@@ -555,6 +555,7 @@ struct iModelBridge
         bool m_hasEmbeddedFileIdRecipe = false;
         bool m_doRealityDataUpload = false;
         bool m_doTerrainModelConversion = false;
+        bool m_updateGeometryParts = false;
         bool m_ignoreStaleFiles = false;
         bool m_errorOnStaleFiles = false;
         bool m_doNotTrackReferencesSubjects = false;
@@ -690,6 +691,8 @@ struct iModelBridge
         bool DoTerrainModelConversion() const { return m_doTerrainModelConversion; }
         void SetDoRealityDataUpload(bool b) { m_doRealityDataUpload = b; }
         bool DoRealityDataUpload() const { return m_doRealityDataUpload; }
+        void SetUpdateGeometryParts(bool b) { m_updateGeometryParts = b; }
+        bool UpdateGeometryParts() const { return m_updateGeometryParts; }
         void SetRealityDataDir(BeFileNameCR filename) { m_realityDataDir = filename; }
         BeFileNameCR GetRealityDataDir() { return m_realityDataDir; }
         void SetMergeDefinitions(bool b) {m_mergeDefinitions = b;}

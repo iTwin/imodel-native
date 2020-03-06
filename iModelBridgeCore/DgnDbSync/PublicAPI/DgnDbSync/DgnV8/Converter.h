@@ -1135,7 +1135,7 @@ public:
 
     DGNDBSYNC_EXPORT DgnGeometryPartId QueryGeometryPartId(Utf8StringCR name);
     DGNDBSYNC_EXPORT Utf8String QueryGeometryPartTag(DgnGeometryPartId);
-    DGNDBSYNC_EXPORT BentleyStatus RecordGeometryPartId(DgnGeometryPartId, Utf8StringCR name);
+    DGNDBSYNC_EXPORT BentleyStatus RecordGeometryPartId(DgnGeometryPartId, Utf8StringCR name, SyncInfo::ElementProvenance elementProv);
 
     //! @}
 

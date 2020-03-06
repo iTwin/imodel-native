@@ -385,11 +385,14 @@ struct SyncInfo
 
         public:
         //! Create a new aspect in memory. scopeId should be the bridge's job definition model. Caller must call AddAspect, passing in the DgnGeometryPart element.
-        DGNDBSYNC_EXPORT static GeomPartExternalSourceAspect CreateAspect(DgnElementId scopeId, Utf8StringCR tag, DgnDbR);
+        DGNDBSYNC_EXPORT static GeomPartExternalSourceAspect CreateAspect(DgnElementId scopeId, Utf8StringCR tag, DgnDbR, ElementProvenance elementProv);
         //! Look up the element that has the GeomPart aspect with the specified tag. Note that this is based on the assumption that GeometryPart "tags" are unique within the specified scope!
-        static DgnGeometryPartId GetAspectByTag(DgnDbR db, DgnElementId scopeId, Utf8StringCR tag) {return DgnGeometryPartId(FindElementBySourceId(db, scopeId, Kind::GeomPart, tag).elementId.GetValueUnchecked());}
+        static DgnGeometryPartId GetPartIdByTag(DgnDbR db, DgnElementId scopeId, Utf8StringCR tag) {return DgnGeometryPartId(FindElementBySourceId(db, scopeId, Kind::GeomPart, tag).elementId.GetValueUnchecked());}
         //! Get an existing GeomPart aspect from the specified DgnGeometryPart
         DGNDBSYNC_EXPORT static GeomPartExternalSourceAspect GetAspect(DgnGeometryPartCR el);
+        DGNDBSYNC_EXPORT static GeomPartExternalSourceAspect GetAspectForEdit(DgnGeometryPartR el);
+        DGNDBSYNC_EXPORT bool DoesProvenanceMatch(ElementProvenance const&, bool allowUpdateOnEmpty) const;
+        DGNDBSYNC_EXPORT void Update(ElementProvenance const& prov);
         };
 
     //! An Id that is per-file

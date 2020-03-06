@@ -979,7 +979,7 @@ void ProcessSymbol(DgnV8Api::IDisplaySymbol& symbol, DgnV8ModelR model) {DgnV8Ap
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnGeometryPartId Converter::QueryGeometryPartId(Utf8StringCR name)
     {
-    return SyncInfo::GeomPartExternalSourceAspect::GetAspectByTag(*m_dgndb, GetJobDefinitionModel()->GetModeledElementId(), name);
+    return SyncInfo::GeomPartExternalSourceAspect::GetPartIdByTag(*m_dgndb, GetJobDefinitionModel()->GetModeledElementId(), name);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1000,9 +1000,9 @@ Utf8String Converter::QueryGeometryPartTag(DgnGeometryPartId partId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      11/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Converter::RecordGeometryPartId(DgnGeometryPartId partId, Utf8StringCR partTag)
+BentleyStatus Converter::RecordGeometryPartId(DgnGeometryPartId partId, Utf8StringCR partTag, SyncInfo::ElementProvenance elementProv)
     {
-    auto aspect = SyncInfo::GeomPartExternalSourceAspect::CreateAspect(GetJobDefinitionModel()->GetModeledElementId(), partTag, GetDgnDb());
+    auto aspect = SyncInfo::GeomPartExternalSourceAspect::CreateAspect(GetJobDefinitionModel()->GetModeledElementId(), partTag, GetDgnDb(), elementProv);
     auto partElem = GetDgnDb().Elements().GetForEdit<DgnGeometryPart>(partId);
     aspect.AddAspect(*partElem);
     return partElem->Update().IsValid()? BSISUCCESS: BSIERROR;
@@ -1022,13 +1022,24 @@ bool Converter::InitPatternParams(PatternParamsR pattern, DgnV8Api::PatternParam
         Utf8PrintfString partTag("PatternV8-%lld-%s-%lld", GetRepositoryLinkId(*context.GetCurrentModel()->GetDgnFileP()).GetValue(), nameStr.c_str(), patternV8.cellId);
         DgnGeometryPartId partId = QueryGeometryPartId(partTag.c_str());
 
-        if (!partId.IsValid())
+        DgnV8Api::ElementHandle v8Eh(patternV8.cellId, context.GetCurrentModel());
+        if (!v8Eh.IsValid())
+            return false;
+
+        SyncInfo::ElementProvenance elementProv(v8Eh, GetSyncInfo(), GetCurrentIdPolicy());
+
+        bool needUpdate = false;
+        DgnGeometryPartPtr geomPart;
+        if (partId.IsValid())
             {
-            DgnV8Api::ElementHandle v8Eh(patternV8.cellId, context.GetCurrentModel());
-
-            if (!v8Eh.IsValid())
-                return false;
-
+            geomPart = GetDgnDb().Elements().GetForEdit<DgnGeometryPart>(partId);
+            SyncInfo::GeomPartExternalSourceAspect aspect = SyncInfo::GeomPartExternalSourceAspect::GetAspectForEdit(*geomPart.get());
+            bool allowUpdateOnEmpty = _GetParamsR().UpdateGeometryParts();
+            if (!aspect.DoesProvenanceMatch(elementProv, allowUpdateOnEmpty))
+                needUpdate = true;
+            }
+        if (!partId.IsValid() || needUpdate)
+            {
             bool isPointCell = (!v8Eh.GetElementCP()->hdr.dhdr.props.b.s && v8Eh.GetElementCP()->hdr.dhdr.props.b.r);
             double scale = 1.0/uorPerMeter;
             Transform scaleTransform = Transform::FromScaleFactors(scale, scale, scale);
@@ -1055,13 +1066,21 @@ bool Converter::InitPatternParams(PatternParamsR pattern, DgnV8Api::PatternParam
                 builder->Append(*geom);
                 }
 
-            DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(*GetJobDefinitionModel());
+            if (!geomPart.IsValid())
+                geomPart = DgnGeometryPart::Create(*GetJobDefinitionModel());
 
-            if (SUCCESS != builder->Finish(*geomPart) || !GetDgnDb().Elements().Insert<DgnGeometryPart>(*geomPart).IsValid())
+            if (SUCCESS != builder->Finish(*geomPart) || 
+                (needUpdate ? !geomPart->Update().IsValid() : !GetDgnDb().Elements().Insert<DgnGeometryPart>(*geomPart).IsValid()))
                 return false;
 
             partId = geomPart->GetId();
-            RecordGeometryPartId(partId, partTag);
+            RecordGeometryPartId(partId, partTag, elementProv);
+            }
+        
+        if (needUpdate)
+            {
+            SyncInfo::GeomPartExternalSourceAspect aspect = SyncInfo::GeomPartExternalSourceAspect::GetAspectForEdit(*geomPart.get());
+            aspect.Update(elementProv);
             }
 
         pattern.SetSymbolId(partId);
@@ -2698,32 +2717,51 @@ void CreatePartReferences(bvector<DgnV8PartReference>& geomParts, TransformCR ba
             Utf8String        partTag = GetPartTag(m_converter, instanceElRef, nullptr == scDefElRef ? "XGSymbV8" : "SCDefV8", sequenceNo, pathEntry.m_partScale);
             DgnGeometryPartId partId = m_converter.QueryGeometryPartId(partTag);
             DRange3d          localRange = DRange3d::NullRange();
-
-            if (!partId.IsValid())
+            DgnV8Api::ElementHandle eh(instanceElRef);
+            SyncInfo::ElementProvenance elementProv(eh, m_converter.GetSyncInfo(), m_converter.GetCurrentIdPolicy());
+            bool needUpdate = false;
+            DgnGeometryPartPtr geomPart;
+            if (partId.IsValid())
+                {
+                geomPart = m_model.GetDgnDb().Elements().GetForEdit<DgnGeometryPart>(partId);
+                SyncInfo::GeomPartExternalSourceAspect aspect = SyncInfo::GeomPartExternalSourceAspect::GetAspectForEdit(*geomPart.get());
+                bool allowUpdateOnEmpty = m_converter._GetParamsR().UpdateGeometryParts();
+                if (!aspect.DoesProvenanceMatch(elementProv, allowUpdateOnEmpty))
+                    needUpdate = true;
+                }
+            if (!partId.IsValid() || needUpdate)
                 {
                 GeometricPrimitivePtr geometry = pathEntry.GetGeometry(*dgnFile, m_converter, true);
-
                 if (!geometry.IsValid())
                     continue;
 
                 GeometryBuilderPtr  partBuilder = GeometryBuilder::CreateGeometryPart(m_model.GetDgnDb(), m_model.Is3d());
-
                 partBuilder->Append(*geometry);
 
-                DgnGeometryPartPtr  geomPart = DgnGeometryPart::Create(*(m_converter.GetJobDefinitionModel()));
-
-                if (SUCCESS == partBuilder->Finish(*geomPart) && m_model.GetDgnDb().Elements().Insert<DgnGeometryPart>(*geomPart).IsValid())
+                if (!geomPart.IsValid())
+                    geomPart = DgnGeometryPart::Create(*(m_converter.GetJobDefinitionModel()));
+                if (SUCCESS == partBuilder->Finish(*geomPart))
                     {
-                    partId = geomPart->GetId();
-                    m_converter.RecordGeometryPartId(partId, partTag);
-                    localRange = geomPart->GetBoundingBox();
+                    if (needUpdate)
+                        {
+                        if (geomPart->Update().IsValid())
+                            {
+                            SyncInfo::GeomPartExternalSourceAspect aspect = SyncInfo::GeomPartExternalSourceAspect::GetAspectForEdit(*geomPart.get());
+                            aspect.Update(elementProv);
+                            localRange = geomPart->GetBoundingBox();
+                            }
+                        }
+                    else if (m_model.GetDgnDb().Elements().Insert<DgnGeometryPart>(*geomPart).IsValid())
+                        {
+                        partId = geomPart->GetId();
+                        m_converter.RecordGeometryPartId(partId, partTag, elementProv);
+                        localRange = geomPart->GetBoundingBox();
+                        }
                     }
                 }
-            else
-                {
-                if (SUCCESS != DgnGeometryPart::QueryGeometryPartRange(localRange, m_model.GetDgnDb(), partId))
-                    partId = DgnGeometryPartId(); // Shouldn't happen, we know part exists...
-                }
+
+            if (SUCCESS != DgnGeometryPart::QueryGeometryPartRange(localRange, m_model.GetDgnDb(), partId))
+                partId = DgnGeometryPartId(); // Shouldn't happen, we know part exists...
 
             if (!partId.IsValid())
                 {
@@ -2828,12 +2866,24 @@ void PostInstanceGeometry(Dgn::GeometryBuilderR builder, GeometricPrimitiveR geo
             }
         }
 
-    if (!partId.IsValid())
+    DgnV8Api::ElementHandle eh(instanceElRef);
+    SyncInfo::ElementProvenance elementProv(eh, m_converter.GetSyncInfo(), m_converter.GetCurrentIdPolicy());
+    DgnGeometryPartPtr geomPart;
+    bool needUpdate = false;
+    if (partId.IsValid())
+        {
+        geomPart = m_model.GetDgnDb().Elements().GetForEdit<DgnGeometryPart>(partId);
+        SyncInfo::GeomPartExternalSourceAspect aspect = SyncInfo::GeomPartExternalSourceAspect::GetAspectForEdit(*geomPart.get());
+        bool allowUpdateOnEmpty = m_converter._GetParamsR().UpdateGeometryParts();
+        if (!aspect.DoesProvenanceMatch(elementProv, allowUpdateOnEmpty))
+            needUpdate = true;
+        }
+    if (!partId.IsValid() || needUpdate)
         {
         Utf8String         partTag = GetPartTag(m_converter, instanceElRef, "CvtV8", sequenceNo, 1.0);
-        DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(*(m_converter.GetJobDefinitionModel()));
+        if (!geomPart.IsValid())
+            geomPart = DgnGeometryPart::Create(*(m_converter.GetJobDefinitionModel()));
         GeometryBuilderPtr partBuilder = GeometryBuilder::CreateGeometryPart(m_model.GetDgnDb(), true);
-
         partBuilder->Append(geometry);
 
         if (SUCCESS == partBuilder->Finish(*geomPart))
@@ -2855,10 +2905,22 @@ void PostInstanceGeometry(Dgn::GeometryBuilderR builder, GeometricPrimitiveR geo
                     }
                 }
 
-            if (isValidInstance && m_model.GetDgnDb().Elements().Insert<DgnGeometryPart>(*geomPart).IsValid())
+            if (isValidInstance)
                 {
-                m_converter.GetRangePartIdMap().insert(Converter::RangePartIdMap::value_type(PartRangeKey(geomPart->GetBoundingBox()), partId = geomPart->GetId()));
-                m_converter.RecordGeometryPartId(geomPart->GetId(), partTag);
+                if (needUpdate)
+                    {
+                    if (geomPart->Update().IsValid())
+                        {
+                        m_converter.GetRangePartIdMap().insert(Converter::RangePartIdMap::value_type(PartRangeKey(geomPart->GetBoundingBox()), partId = geomPart->GetId()));
+                        SyncInfo::GeomPartExternalSourceAspect aspect = SyncInfo::GeomPartExternalSourceAspect::GetAspectForEdit(*geomPart.get());
+                        aspect.Update(elementProv);
+                        }
+                    }
+                else if (m_model.GetDgnDb().Elements().Insert<DgnGeometryPart>(*geomPart).IsValid())
+                    {
+                    m_converter.GetRangePartIdMap().insert(Converter::RangePartIdMap::value_type(PartRangeKey(geomPart->GetBoundingBox()), partId = geomPart->GetId()));
+                    m_converter.RecordGeometryPartId(geomPart->GetId(), partTag, elementProv);
+                    }
                 }
             }
         }
