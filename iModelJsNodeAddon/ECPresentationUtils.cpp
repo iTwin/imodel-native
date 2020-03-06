@@ -120,7 +120,7 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
         {
         fieldBaseJson.SetObject();
         fieldBaseJson.AddMember("category", field.GetCategory().AsJson(&fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
-        fieldBaseJson.AddMember("name", rapidjson::Value(field.GetName().c_str(), fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
+        fieldBaseJson.AddMember("name", rapidjson::Value(field.GetUniqueName().c_str(), fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
         fieldBaseJson.AddMember("label", rapidjson::Value(field.GetLabel().c_str(), fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
         fieldBaseJson.AddMember("type", field.GetTypeDescription().AsJson(&fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
         fieldBaseJson.AddMember("isReadonly", field.IsReadOnly(), fieldBaseJson.GetAllocator());
@@ -357,7 +357,7 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
         for (ContentDescriptor::Field const* nestedField : nestedContentTypeDescription.GetNestedContentField().GetFields())
             {
             rapidjson::Value member(rapidjson::kObjectType);
-            member.AddMember("name", rapidjson::Value(nestedField->GetName().c_str(), typeDescriptionBaseJson.GetAllocator()), typeDescriptionBaseJson.GetAllocator());
+            member.AddMember("name", rapidjson::Value(nestedField->GetUniqueName().c_str(), typeDescriptionBaseJson.GetAllocator()), typeDescriptionBaseJson.GetAllocator());
             member.AddMember("label", rapidjson::Value(nestedField->GetLabel().c_str(), typeDescriptionBaseJson.GetAllocator()), typeDescriptionBaseJson.GetAllocator());
             member.AddMember("type", nestedField->GetTypeDescription().AsJson(&typeDescriptionBaseJson.GetAllocator()), typeDescriptionBaseJson.GetAllocator());
             members.PushBack(member, typeDescriptionBaseJson.GetAllocator());
@@ -416,7 +416,7 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
             json["fields"].PushBack(field->AsJson(&json.GetAllocator()), json.GetAllocator());
         if (-1 != contentDescriptor.GetSortingFieldIndex())
             {
-            json.AddMember("sortingFieldName", rapidjson::Value(contentDescriptor.GetSortingField()->GetName().c_str(), json.GetAllocator()), json.GetAllocator());
+            json.AddMember("sortingFieldName", rapidjson::Value(contentDescriptor.GetSortingField()->GetUniqueName().c_str(), json.GetAllocator()), json.GetAllocator());
             json.AddMember("sortDirection", (int)contentDescriptor.GetSortDirection(), json.GetAllocator());
             }
 
@@ -1847,8 +1847,8 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetDistinctValues(Rules
             bvector<ContentDescriptor::Field*> fieldsCopy = descriptor->GetAllFields();
             for (ContentDescriptor::Field const* field : fieldsCopy)
                 {
-                if (!field->GetName().Equals(fieldName))
-                    overridenDescriptor->RemoveField(field->GetName().c_str());
+                if (!field->GetUniqueName().Equals(fieldName))
+                    overridenDescriptor->RemoveField(field->GetUniqueName().c_str());
                 }
             overridenDescriptor->AddContentFlag(ContentFlags::DistinctValues);
 

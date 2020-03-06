@@ -111,16 +111,18 @@ struct RulesEngineTestHelpers
             }
         return str;
         }
-    static Utf8String CreateFieldName(bvector<ECClassCP> const& ecClasses, Utf8CP propertyName)
+    static Utf8String CreateFieldName(bvector<ECClassCP> const& ecClasses, Utf8CP propertyName, uint64_t counter = 0)
         {
         Utf8String name("pc_");
         name.append(SerializeClassNames(ecClasses));
         name.append("_").append(propertyName);
+        if (counter != 0)
+            name.append("_").append(std::to_string(counter));
         return name;
         }
-    static Utf8String CreateFieldName(ECClassCP ecClass, Utf8CP propertyName)
+    static Utf8String CreateFieldName(ECClassCP ecClass, Utf8CP propertyName, uint64_t counter = 0)
         {
-        return CreateFieldName(bvector<ECClassCP>{ecClass}, propertyName);
+        return CreateFieldName(bvector<ECClassCP>{ecClass}, propertyName, counter);
         }
     static Utf8String CreateRelatedFieldName(bvector<ECClassCP> relatedClasses, bvector<ECClassCP> propertyClasses, Utf8CP propertyName)
         {
@@ -138,16 +140,18 @@ struct RulesEngineTestHelpers
         {
         return CreateRelatedFieldName(bvector<ECClassCP>{relatedClass}, bvector<ECClassCP>{propertyClass}, propertyName);
         }
-    static Utf8String CreateNestedContentFieldName(bvector<ECClassCP> relationshipClasses, ECClassCP nestedContentClass)
+    static Utf8String CreateNestedContentFieldName(bvector<ECClassCP> relationshipClasses, ECClassCP nestedContentClass, uint64_t counter = 0)
         {
         Utf8String name;
         name.append("rc_").append(SerializeClassNames(relationshipClasses));
         name.append("_ncc_").append(QueryBuilderHelpers::CreateClassNameForDescriptor(*nestedContentClass));
+        if (counter != 0)
+            name.append("_").append(std::to_string(counter));
         return name;
         }
-    static Utf8String CreateNestedContentFieldName(ECClassCP relationshipClass, ECClassCP nestedContentClass)
+    static Utf8String CreateNestedContentFieldName(ECClassCP relationshipClass, ECClassCP nestedContentClass, uint64_t counter = 0)
         {
-        return CreateNestedContentFieldName(bvector<ECClassCP>{relationshipClass}, nestedContentClass);
+        return CreateNestedContentFieldName(bvector<ECClassCP>{relationshipClass}, nestedContentClass, counter);
         }
     static Utf8String CreateDisplayLabelValueClause(Utf8CP fieldName)
         {
@@ -155,8 +159,10 @@ struct RulesEngineTestHelpers
         }
     };
 #define FIELD_NAME(ecClass, propertyName) RulesEngineTestHelpers::CreateFieldName(ecClass, propertyName).c_str()
+#define FIELD_NAME_C(ecClass, propertyName, counter) RulesEngineTestHelpers::CreateFieldName(ecClass, propertyName, counter).c_str()
 #define RELATED_FIELD_NAME(relatedClass, propertyClass, propertyName) RulesEngineTestHelpers::CreateRelatedFieldName(relatedClass, propertyClass, propertyName).c_str()
 #define NESTED_CONTENT_FIELD_NAME(selectClass, nestedContentClass) RulesEngineTestHelpers::CreateNestedContentFieldName(selectClass, nestedContentClass).c_str()
+#define NESTED_CONTENT_FIELD_NAME_C(selectClass, nestedContentClass, counter) RulesEngineTestHelpers::CreateNestedContentFieldName(selectClass, nestedContentClass, counter).c_str()
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                07/2015

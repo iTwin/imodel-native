@@ -123,10 +123,10 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Retu
     bvector<ContentDescriptor::Field*> fields = descriptor->GetVisibleFields();
     ASSERT_EQ(1, fields.size());
     ASSERT_TRUE(fields.front()->IsNestedContentField());
-    EXPECT_STREQ(NESTED_CONTENT_FIELD_NAME(elementClass, aspectClass), fields.front()->GetName().c_str());
+    EXPECT_STREQ(NESTED_CONTENT_FIELD_NAME(elementClass, aspectClass), fields.front()->GetUniqueName().c_str());
     ContentDescriptor::NestedContentField const* field = fields.front()->AsNestedContentField();
     ASSERT_EQ(1, field->GetFields().size());
-    EXPECT_STREQ(FIELD_NAME(aspectClass, "AspectName"), field->GetFields().front()->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME(aspectClass, "AspectName"), field->GetFields().front()->GetUniqueName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -527,7 +527,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_SortByD
 
     // create the override
     ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
-    ovr->SetSortingField(descriptor->GetDisplayLabelField()->GetName().c_str());
+    ovr->SetSortingField(descriptor->GetDisplayLabelField()->GetUniqueName().c_str());
     ovr->SetSortDirection(SortDirection::Ascending);
 
     // get the content with descriptor override
@@ -624,7 +624,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_Removes
     // make sure the IntProperty field has been removed
     EXPECT_EQ(6, content->GetDescriptor().GetVisibleFields().size());
     EXPECT_TRUE(content->GetDescriptor().GetAllFields().end() == std::find_if(content->GetDescriptor().GetAllFields().begin(), content->GetDescriptor().GetAllFields().end(),
-        [&](ContentDescriptor::Field const* field){return field->GetName().Equals(FIELD_NAME(m_widgetClass, "IntProperty"));}));
+        [&](ContentDescriptor::Field const* field){return field->GetUniqueName().Equals(FIELD_NAME(m_widgetClass, "IntProperty"));}));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -799,7 +799,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_Filters
 
     // create the override
     ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
-    ovr->SetFilterExpression(Utf8PrintfString("%s = \"b\"", descriptor->GetDisplayLabelField()->GetName().c_str()));
+    ovr->SetFilterExpression(Utf8PrintfString("%s = \"b\"", descriptor->GetDisplayLabelField()->GetUniqueName().c_str()));
 
     // get the content with descriptor override
     content = m_manager->GetContent(*ovr, PageOptions()).get();
@@ -2474,15 +2474,15 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, RelatedPropertyValuesAreCor
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR values1 = recordJson["Values"];
-    EXPECT_TRUE(values1[descriptor->GetVisibleFields()[0]->GetName().c_str()].IsNull());
-    EXPECT_STREQ("Test Gadget", values1[descriptor->GetVisibleFields()[1]->GetName().c_str()].GetString());
-    EXPECT_STREQ("Test Widget 1", values1[descriptor->GetVisibleFields()[2]->GetName().c_str()].GetString());
+    EXPECT_TRUE(values1[descriptor->GetVisibleFields()[0]->GetUniqueName().c_str()].IsNull());
+    EXPECT_STREQ("Test Gadget", values1[descriptor->GetVisibleFields()[1]->GetUniqueName().c_str()].GetString());
+    EXPECT_STREQ("Test Widget 1", values1[descriptor->GetVisibleFields()[2]->GetUniqueName().c_str()].GetString());
 
     recordJson = contentSet.Get(1)->AsJson();
     RapidJsonValueCR values2 = recordJson["Values"];
-    EXPECT_STREQ("Test Widget 2", values2[descriptor->GetVisibleFields()[0]->GetName().c_str()].GetString());
-    EXPECT_TRUE(values2[descriptor->GetVisibleFields()[1]->GetName().c_str()].IsNull());
-    EXPECT_TRUE(values2[descriptor->GetVisibleFields()[2]->GetName().c_str()].IsNull());
+    EXPECT_STREQ("Test Widget 2", values2[descriptor->GetVisibleFields()[0]->GetUniqueName().c_str()].GetString());
+    EXPECT_TRUE(values2[descriptor->GetVisibleFields()[1]->GetUniqueName().c_str()].IsNull());
+    EXPECT_TRUE(values2[descriptor->GetVisibleFields()[2]->GetUniqueName().c_str()].IsNull());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2836,13 +2836,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsRelatedPropertyValue
     ContentSetItemCPtr widgetRecord = contentSet.Get(0);
     bvector<ECClassInstanceKey> widgetKeys = widgetRecord->GetPropertyValueKeys(fp);
     EXPECT_TRUE(widgetKeys.empty());
-    EXPECT_TRUE(widgetRecord->AsJson()["Values"][fp.GetField().GetName().c_str()].IsNull());
+    EXPECT_TRUE(widgetRecord->AsJson()["Values"][fp.GetField().GetUniqueName().c_str()].IsNull());
 
     ContentSetItemCPtr sprocketRecord = contentSet.Get(1);
     bvector<ECClassInstanceKey> sprocketKeys = sprocketRecord->GetPropertyValueKeys(fp);
     ASSERT_EQ(1, sprocketKeys.size());
     EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*gadget), sprocketKeys[0]);
-    EXPECT_STREQ("Gadget", sprocketRecord->AsJson()["Values"][fp.GetField().GetName().c_str()].GetString());
+    EXPECT_STREQ("Gadget", sprocketRecord->AsJson()["Values"][fp.GetField().GetUniqueName().c_str()].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2911,7 +2911,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsRelatedPropertyValue
     ASSERT_EQ(2, keys.size());
     EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*gadget1), keys[0]);
     EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*gadget2), keys[1]);
-    EXPECT_STREQ("Gadget", record->AsJson()["Values"][fp.GetField().GetName().c_str()].GetString());
+    EXPECT_STREQ("Gadget", record->AsJson()["Values"][fp.GetField().GetUniqueName().c_str()].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2975,7 +2975,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsNullRelatedPropertyV
     bvector<ECClassInstanceKey> sprocketKeys = sprocketRecord->GetPropertyValueKeys(fp);
     ASSERT_EQ(1, sprocketKeys.size());
     EXPECT_EQ(ECClassInstanceKey(m_gadgetClass, ECInstanceId()), sprocketKeys[0]);
-    EXPECT_TRUE(sprocketRecord->AsJson()["Values"][fp.GetField().GetName().c_str()].IsNull());
+    EXPECT_TRUE(sprocketRecord->AsJson()["Values"][fp.GetField().GetUniqueName().c_str()].IsNull());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4085,8 +4085,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, RecordFromDifferrentSpecifi
     RapidJsonValueCR values = recordJson["Values"];
 
     Utf8PrintfString expectedValue(CONTENTRECORD_MERGED_VALUE_FORMAT, RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_Varies()).c_str());
-    EXPECT_STREQ(expectedValue.c_str(), values[content->GetDescriptor().GetVisibleFields()[0]->GetName().c_str()].GetString());
-    EXPECT_TRUE(contentSet.Get(0)->IsMerged(content->GetDescriptor().GetVisibleFields()[0]->GetName()));
+    EXPECT_STREQ(expectedValue.c_str(), values[content->GetDescriptor().GetVisibleFields()[0]->GetUniqueName().c_str()].GetString());
+    EXPECT_TRUE(contentSet.Get(0)->IsMerged(content->GetDescriptor().GetVisibleFields()[0]->GetUniqueName()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4450,7 +4450,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesPrope
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR values1 = recordJson["Values"];
-    EXPECT_STREQ("TestID", values1[descriptor->GetVisibleFields()[0]->GetName().c_str()].GetString());
+    EXPECT_STREQ("TestID", values1[descriptor->GetVisibleFields()[0]->GetUniqueName().c_str()].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4498,10 +4498,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesRelat
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR values1 = recordJson["Values"];
-    EXPECT_STREQ("GadgetID", values1[descriptor->GetVisibleFields()[0]->GetName().c_str()].GetString());
-    EXPECT_TRUE(values1[descriptor->GetVisibleFields()[1]->GetName().c_str()].IsNull());
-    EXPECT_EQ(widgetId.GetValueUnchecked(), values1[descriptor->GetVisibleFields()[2]->GetName().c_str()].GetInt64());
-    EXPECT_STREQ("WidgetID", values1[descriptor->GetVisibleFields()[3]->GetName().c_str()].GetString());
+    EXPECT_STREQ("GadgetID", values1[descriptor->GetVisibleFields()[0]->GetUniqueName().c_str()].GetString());
+    EXPECT_TRUE(values1[descriptor->GetVisibleFields()[1]->GetUniqueName().c_str()].IsNull());
+    EXPECT_EQ(widgetId.GetValueUnchecked(), values1[descriptor->GetVisibleFields()[2]->GetUniqueName().c_str()].GetInt64());
+    EXPECT_STREQ("WidgetID", values1[descriptor->GetVisibleFields()[3]->GetUniqueName().c_str()].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5014,10 +5014,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsCorrectEnumValues)
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR values = recordJson["Values"];
     RapidJsonValueCR dispalyValues = recordJson["DisplayValues"];
-    EXPECT_EQ(2, values[descriptor->GetVisibleFields()[0]->GetName().c_str()].GetInt());
-    EXPECT_STREQ("M", dispalyValues[descriptor->GetVisibleFields()[0]->GetName().c_str()].GetString());
-    EXPECT_STREQ("Three", values[descriptor->GetVisibleFields()[1]->GetName().c_str()].GetString());
-    EXPECT_STREQ("1", dispalyValues[descriptor->GetVisibleFields()[1]->GetName().c_str()].GetString());
+    EXPECT_EQ(2, values[descriptor->GetVisibleFields()[0]->GetUniqueName().c_str()].GetInt());
+    EXPECT_STREQ("M", dispalyValues[descriptor->GetVisibleFields()[0]->GetUniqueName().c_str()].GetString());
+    EXPECT_STREQ("Three", values[descriptor->GetVisibleFields()[1]->GetUniqueName().c_str()].GetString());
+    EXPECT_STREQ("1", dispalyValues[descriptor->GetVisibleFields()[1]->GetUniqueName().c_str()].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5057,7 +5057,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyDisplayOverride_App
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR values1 = recordJson["Values"];
-    EXPECT_STREQ("TestID", values1[descriptor->GetVisibleFields()[0]->GetName().c_str()].GetString());
+    EXPECT_STREQ("TestID", values1[descriptor->GetVisibleFields()[0]->GetUniqueName().c_str()].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5100,7 +5100,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyDisplayOverride_App
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR values1 = recordJson["Values"];
-    EXPECT_STREQ("TestID", values1[descriptor->GetVisibleFields()[0]->GetName().c_str()].GetString());
+    EXPECT_STREQ("TestID", values1[descriptor->GetVisibleFields()[0]->GetUniqueName().c_str()].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5146,7 +5146,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyDisplayOverride_App
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR values1 = recordJson["Values"];
-    EXPECT_STREQ("TestID", values1[descriptor->GetVisibleFields()[0]->GetName().c_str()].GetString());
+    EXPECT_STREQ("TestID", values1[descriptor->GetVisibleFields()[0]->GetUniqueName().c_str()].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5187,7 +5187,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyDisplayOverride_Pri
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR values1 = recordJson["Values"];
-    EXPECT_STREQ("TestID", values1[descriptor->GetVisibleFields()[0]->GetName().c_str()].GetString());
+    EXPECT_STREQ("TestID", values1[descriptor->GetVisibleFields()[0]->GetUniqueName().c_str()].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5229,7 +5229,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyDisplayOverride_Pri
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR values1 = recordJson["Values"];
-    EXPECT_STREQ("TestID", values1[descriptor->GetVisibleFields()[0]->GetName().c_str()].GetString());
+    EXPECT_STREQ("TestID", values1[descriptor->GetVisibleFields()[0]->GetUniqueName().c_str()].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5273,7 +5273,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyDisplayOverride_Pri
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR values1 = recordJson["Values"];
-    EXPECT_EQ(1, values1[descriptor->GetVisibleFields()[0]->GetName().c_str()].GetInt());
+    EXPECT_EQ(1, values1[descriptor->GetVisibleFields()[0]->GetUniqueName().c_str()].GetInt());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5346,7 +5346,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyDisplayOverride_Pri
     ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(1, descriptor->GetVisibleFields().size());
-    EXPECT_STREQ(FIELD_NAME(classA, "UserLabel"), descriptor->GetVisibleFields()[0]->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME(classA, "UserLabel"), descriptor->GetVisibleFields()[0]->GetUniqueName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5491,7 +5491,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyDisplayOverride_Pol
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR values1 = recordJson["Values"];
-    EXPECT_EQ(10, values1[descriptor->GetVisibleFields()[0]->GetName().c_str()].GetInt());
+    EXPECT_EQ(10, values1[descriptor->GetVisibleFields()[0]->GetUniqueName().c_str()].GetInt());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5539,8 +5539,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyDisplayOverride_Pol
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR values = recordJson["Values"];
-    EXPECT_EQ(123, values[descriptor->GetVisibleFields()[0]->GetName().c_str()].GetInt());
-    EXPECT_EQ(456, values[descriptor->GetVisibleFields()[1]->GetName().c_str()].GetInt());
+    EXPECT_EQ(123, values[descriptor->GetVisibleFields()[0]->GetUniqueName().c_str()].GetInt());
+    EXPECT_EQ(456, values[descriptor->GetVisibleFields()[1]->GetUniqueName().c_str()].GetInt());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5962,7 +5962,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyLabelOverride_Field
     ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
-    EXPECT_STREQ(FIELD_NAME((bvector<ECClassCP>{m_gadgetClass, m_widgetClass}), "MyID"), descriptor->GetVisibleFields()[0]->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME((bvector<ECClassCP>{m_gadgetClass, m_widgetClass}), "MyID"), descriptor->GetVisibleFields()[0]->GetUniqueName().c_str());
     EXPECT_STREQ("Custom Property Label", descriptor->GetVisibleFields()[0]->GetLabel().c_str());
     }
 
@@ -6000,10 +6000,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyLabelOverride_Field
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(2, descriptor->GetVisibleFields().size()); // Widget_MyID, Gadget_MyID
 
-    EXPECT_STREQ(FIELD_NAME(m_gadgetClass, "MyID"), descriptor->GetVisibleFields()[0]->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME(m_gadgetClass, "MyID"), descriptor->GetVisibleFields()[0]->GetUniqueName().c_str());
     EXPECT_STREQ("Custom Gadget Property Label", descriptor->GetVisibleFields()[0]->GetLabel().c_str());
 
-    EXPECT_STREQ(FIELD_NAME(m_widgetClass, "MyID"), descriptor->GetVisibleFields()[1]->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME(m_widgetClass, "MyID"), descriptor->GetVisibleFields()[1]->GetUniqueName().c_str());
     EXPECT_STREQ("MyID", descriptor->GetVisibleFields()[1]->GetLabel().c_str());
     }
 
@@ -6042,7 +6042,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyLabelOverride_Polym
     ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
-    EXPECT_STREQ(FIELD_NAME(classE, "IntProperty"), descriptor->GetVisibleFields()[0]->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME(classE, "IntProperty"), descriptor->GetVisibleFields()[0]->GetUniqueName().c_str());
     EXPECT_STREQ("Custom ClassE Property Label", descriptor->GetVisibleFields()[0]->GetLabel().c_str());
     }
 
@@ -6084,10 +6084,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyLabelOverride_Polym
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(2, descriptor->GetVisibleFields().size());
 
-    EXPECT_STREQ(FIELD_NAME(classE, "IntProperty"), descriptor->GetVisibleFields()[0]->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME(classE, "IntProperty"), descriptor->GetVisibleFields()[0]->GetUniqueName().c_str());
     EXPECT_STREQ("IntProperty", descriptor->GetVisibleFields()[0]->GetLabel().c_str());
 
-    EXPECT_STREQ(FIELD_NAME(classE, "IntProperty"), descriptor->GetVisibleFields()[1]->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME_C(classE, "IntProperty", 2), descriptor->GetVisibleFields()[1]->GetUniqueName().c_str());
     EXPECT_STREQ("Custom ClassF Property Label", descriptor->GetVisibleFields()[1]->GetLabel().c_str());
     }
 
@@ -6352,7 +6352,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategoryOverride_Fi
     ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
-    EXPECT_STREQ(FIELD_NAME((bvector<ECClassCP>{classA, classB}), "UserLabel"), descriptor->GetVisibleFields()[0]->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME((bvector<ECClassCP>{classA, classB}), "UserLabel"), descriptor->GetVisibleFields()[0]->GetUniqueName().c_str());
     EXPECT_STREQ("my_category", descriptor->GetVisibleFields()[0]->GetCategory().GetName().c_str());
     EXPECT_STREQ("My Category", descriptor->GetVisibleFields()[0]->GetCategory().GetLabel().c_str());
     }
@@ -6399,11 +6399,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategoryOverride_Fi
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(2, descriptor->GetVisibleFields().size());
 
-    EXPECT_STREQ(FIELD_NAME(classA, "UserLabel"), descriptor->GetVisibleFields()[0]->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME(classA, "UserLabel"), descriptor->GetVisibleFields()[0]->GetUniqueName().c_str());
     EXPECT_STREQ("my_category_1", descriptor->GetVisibleFields()[0]->GetCategory().GetName().c_str());
     EXPECT_STREQ("My Category 1", descriptor->GetVisibleFields()[0]->GetCategory().GetLabel().c_str());
 
-    EXPECT_STREQ(FIELD_NAME(classB, "UserLabel"), descriptor->GetVisibleFields()[1]->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME(classB, "UserLabel"), descriptor->GetVisibleFields()[1]->GetUniqueName().c_str());
     EXPECT_STREQ("my_category_2", descriptor->GetVisibleFields()[1]->GetCategory().GetName().c_str());
     EXPECT_STREQ("My Category 2", descriptor->GetVisibleFields()[1]->GetCategory().GetLabel().c_str());
     }
@@ -6449,7 +6449,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategoryOverride_Po
     ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
-    EXPECT_STREQ(FIELD_NAME(baseClass, "UserLabel"), descriptor->GetVisibleFields()[0]->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME(baseClass, "UserLabel"), descriptor->GetVisibleFields()[0]->GetUniqueName().c_str());
     EXPECT_STREQ("my_category", descriptor->GetVisibleFields()[0]->GetCategory().GetName().c_str());
     EXPECT_STREQ("My Category", descriptor->GetVisibleFields()[0]->GetCategory().GetLabel().c_str());
     }
@@ -6495,9 +6495,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategoryOverride_Po
     ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(2, descriptor->GetVisibleFields().size());
-    EXPECT_STREQ(FIELD_NAME(baseClass, "UserLabel"), descriptor->GetVisibleFields()[0]->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME(baseClass, "UserLabel"), descriptor->GetVisibleFields()[0]->GetUniqueName().c_str());
     EXPECT_STRNE("my_category", descriptor->GetVisibleFields()[0]->GetCategory().GetName().c_str());
-    EXPECT_STREQ(FIELD_NAME(baseClass, "UserLabel"), descriptor->GetVisibleFields()[1]->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME_C(baseClass, "UserLabel", 2), descriptor->GetVisibleFields()[1]->GetUniqueName().c_str());
     EXPECT_STREQ("my_category", descriptor->GetVisibleFields()[1]->GetCategory().GetName().c_str());
     }
 
@@ -10724,8 +10724,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDifferentFieldsIfPropert
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(2, descriptor->GetVisibleFields().size());
 
-    EXPECT_STREQ(FIELD_NAME(classK, "LengthProperty"), descriptor->GetVisibleFields()[0]->GetName().c_str());
-    EXPECT_STREQ(FIELD_NAME(classL, "LengthProperty"), descriptor->GetVisibleFields()[1]->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME(classK, "LengthProperty"), descriptor->GetVisibleFields()[0]->GetUniqueName().c_str());
+    EXPECT_STREQ(FIELD_NAME(classL, "LengthProperty"), descriptor->GetVisibleFields()[1]->GetUniqueName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -10758,8 +10758,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValues)
     // hide all fields except Widget_MyID
     for (ContentDescriptor::Field const* field : fieldVectorCopy)
         {
-        if (!field->GetName().EndsWithI("MyID"))
-            overridenDescriptor->RemoveField(field->GetName().c_str());
+        if (!field->GetUniqueName().EndsWithI("MyID"))
+            overridenDescriptor->RemoveField(field->GetUniqueName().c_str());
         }
     overridenDescriptor->AddContentFlag(ContentFlags::DistinctValues);
 
@@ -10824,8 +10824,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValuesFromRelate
     // hide all fields except Gadget_MyID
     for (ContentDescriptor::Field const* field : fieldVectorCopy)
         {
-        if (!field->GetName().EndsWithI("MyID"))
-            overridenDescriptor->RemoveField(field->GetName().c_str());
+        if (!field->GetUniqueName().EndsWithI("MyID"))
+            overridenDescriptor->RemoveField(field->GetUniqueName().c_str());
         }
     overridenDescriptor->AddContentFlag(ContentFlags::DistinctValues);
 
@@ -10903,8 +10903,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValuesOfCalculat
     // hide all fields except CalculatedProperty_0
     for (ContentDescriptor::Field const* field : fieldVectorCopy)
         {
-        if (!field->GetName().Equals("CalculatedProperty_0"))
-            overridenDescriptor->RemoveField(field->GetName().c_str());
+        if (!field->GetUniqueName().Equals("CalculatedProperty_0"))
+            overridenDescriptor->RemoveField(field->GetUniqueName().c_str());
         }
     overridenDescriptor->AddContentFlag(ContentFlags::DistinctValues);
 
@@ -10975,7 +10975,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValuesOfDisplayL
     for (ContentDescriptor::Field const* field : fieldVectorCopy)
         {
         if (!field->IsDisplayLabelField())
-            overridenDescriptor->RemoveField(field->GetName().c_str());
+            overridenDescriptor->RemoveField(field->GetUniqueName().c_str());
         }
     overridenDescriptor->AddContentFlag(ContentFlags::DistinctValues);
     overridenDescriptor->AddContentFlag(ContentFlags::ShowLabels);
@@ -11030,8 +11030,8 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, GetDistinctValuesFromMerge
     // hide all fields except Widget_MyID
     for (ContentDescriptor::Field const* field : fieldVectorCopy)
         {
-        if (!field->GetName().EndsWithI("MyID"))
-            overridenDescriptor->RemoveField(field->GetName().c_str());
+        if (!field->GetUniqueName().EndsWithI("MyID"))
+            overridenDescriptor->RemoveField(field->GetUniqueName().c_str());
         }
     ASSERT_EQ(1, overridenDescriptor->GetVisibleFields().size());
     overridenDescriptor->AddContentFlag(ContentFlags::DistinctValues);
@@ -16559,9 +16559,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CategorizesNestedContentFie
     ASSERT_TRUE(fields[0]->IsNestedContentField());
     EXPECT_STREQ(aspectClass->GetName().c_str(), fields[0]->GetCategory().GetName().c_str());
     ASSERT_EQ(2, fields[0]->AsNestedContentField()->GetFields().size());
-    EXPECT_STREQ(FIELD_NAME(aspectClass, "CategorizedProp"), fields[0]->AsNestedContentField()->GetFields()[0]->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME(aspectClass, "CategorizedProp"), fields[0]->AsNestedContentField()->GetFields()[0]->GetUniqueName().c_str());
     EXPECT_STREQ("GeometryAttributes", fields[0]->AsNestedContentField()->GetFields()[0]->GetCategory().GetName().c_str());
-    EXPECT_STREQ(FIELD_NAME(aspectClass, "UncategorizedProp"), fields[0]->AsNestedContentField()->GetFields()[1]->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME(aspectClass, "UncategorizedProp"), fields[0]->AsNestedContentField()->GetFields()[1]->GetUniqueName().c_str());
     EXPECT_STREQ("", fields[0]->AsNestedContentField()->GetFields()[1]->GetCategory().GetName().c_str());
     }
 
@@ -16703,11 +16703,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DoesNotIncludeHiddenRelated
 
     // HiddenAspect1.Prop1 is _not_ included because it's hidden and we're including it's base class - not it specifically
     // HiddenAspect2.Prop2 is included because we have a rule that specifically requests it polymorphically
-    EXPECT_TRUE(fields.end() != std::find_if(fields.begin(), fields.end(), [&](ContentDescriptor::Field const* f){return f->GetName().Equals(NESTED_CONTENT_FIELD_NAME(elementClass, aspectClass2));}));
+    EXPECT_TRUE(fields.end() != std::find_if(fields.begin(), fields.end(), [&](ContentDescriptor::Field const* f){return f->GetUniqueName().Equals(NESTED_CONTENT_FIELD_NAME(elementClass, aspectClass2));}));
     // HiddenAspect3.Prop3 is included because we have a rule that specifically requests it non-polymorphically
-    EXPECT_TRUE(fields.end() != std::find_if(fields.begin(), fields.end(), [&](ContentDescriptor::Field const* f){return f->GetName().Equals(NESTED_CONTENT_FIELD_NAME(elementClass, aspectClass3));}));
+    EXPECT_TRUE(fields.end() != std::find_if(fields.begin(), fields.end(), [&](ContentDescriptor::Field const* f){return f->GetUniqueName().Equals(NESTED_CONTENT_FIELD_NAME(elementClass, aspectClass3));}));
     // Aspect4.Prop4 is included because it's not hidden
-    EXPECT_TRUE(fields.end() != std::find_if(fields.begin(), fields.end(), [&](ContentDescriptor::Field const* f){return f->GetName().Equals(NESTED_CONTENT_FIELD_NAME(elementClass, aspectClass4));}));
+    EXPECT_TRUE(fields.end() != std::find_if(fields.begin(), fields.end(), [&](ContentDescriptor::Field const* f){return f->GetUniqueName().Equals(NESTED_CONTENT_FIELD_NAME(elementClass, aspectClass4));}));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -16826,6 +16826,130 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesContentForRelatedBas
     ContentCPtr content = m_manager->GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
     EXPECT_EQ(1, content->GetContentSet().GetSize());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* VSTS#278739
+* @bsitest                                      Grigas.Petraitis                02/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(AppendsTheSameRelatedContentMultipleTimes, R"*(
+    <ECEntityClass typeName="Element" />
+    <ECEntityClass typeName="ElementUniqueAspect" modifier="Abstract">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsUniqueAspect" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="ElementUniqueAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="MyAspect">
+        <BaseClass>ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="Prop1" typeName="string" />
+        <ECProperty propertyName="Prop2" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, AppendsTheSameRelatedContentMultipleTimes)
+    {
+    // set up the dataset
+    ECClassCP elementClass = GetClass("Element");
+    ECClassCP baseAspectClass = GetClass("ElementUniqueAspect");
+    ECClassCP myAspectClass = GetClass("MyAspect");
+    ECRelationshipClassCP rel = GetClass("ElementOwnsUniqueAspect")->GetRelationshipClassCP();
+
+    IECInstancePtr element = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
+    IECInstancePtr aspect = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *myAspectClass, [](IECInstanceR instance)
+        {
+        instance.SetValue("Prop1", ECValue("a"));
+        instance.SetValue("Prop2", ECValue("b"));
+        });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *element, *aspect);
+
+    // set up ruleset
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRule* rule = new ContentRule();
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", elementClass->GetFullName(), true));
+    rules->AddPresentationRule(*rule);
+
+    ContentModifier* modifier = new ContentModifier(elementClass->GetSchema().GetName(), elementClass->GetName());
+    modifier->AddRelatedProperty(*new RelatedPropertiesSpecification(
+        *new RelationshipPathSpecification(*new RelationshipStepSpecification(rel->GetFullName(), RequiredRelationDirection_Forward, baseAspectClass->GetFullName())),
+        PropertySpecificationsList(), RelationshipMeaning::SameInstance, true));
+    modifier->AddRelatedProperty(*new RelatedPropertiesSpecification(
+        *new RelationshipPathSpecification(*new RelationshipStepSpecification(rel->GetFullName(), RequiredRelationDirection_Forward, myAspectClass->GetFullName())),
+        {new PropertySpecification("Prop1", 1000, "Custom 1")}, RelationshipMeaning::SameInstance, false));
+    modifier->AddRelatedProperty(*new RelatedPropertiesSpecification(
+        *new RelationshipPathSpecification(*new RelationshipStepSpecification(rel->GetFullName(), RequiredRelationDirection_Forward, myAspectClass->GetFullName())),
+        {new PropertySpecification("Prop1", 1000, "Custom 2")}, RelationshipMeaning::SameInstance, false));
+    rules->AddPresentationRule(*modifier);
+
+    // request content
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(2, descriptor->GetVisibleFields().size());
+    ASSERT_TRUE(descriptor->GetVisibleFields().back()->IsNestedContentField());
+
+    bvector<ContentDescriptor::Field*> nestedFields1 = descriptor->GetVisibleFields()[0]->AsNestedContentField()->GetFields();
+    EXPECT_EQ(2, nestedFields1.size());
+
+    bvector<ContentDescriptor::Field*> nestedFields2 = descriptor->GetVisibleFields()[1]->AsNestedContentField()->GetFields();
+    EXPECT_EQ(2, nestedFields2.size());
+
+    ContentCPtr content = m_manager->GetContent(*descriptor, PageOptions()).get();
+    ASSERT_TRUE(content.IsValid());
+
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": [{
+            "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
+            "Values": {
+                "%s": "a",
+                "%s": "b"
+                },
+            "DisplayValues": {
+                "%s": "a",
+                "%s": "b"
+                },
+            "MergedFieldNames": []
+            }],
+        "%s": [{
+            "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
+            "Values": {
+                "%s": "a",
+                "%s": "a"
+                },
+            "DisplayValues": {
+                "%s": "a",
+                "%s": "a"
+                },
+            "MergedFieldNames": []
+            }]
+        })",
+        NESTED_CONTENT_FIELD_NAME(elementClass, myAspectClass),
+        myAspectClass->GetId().ToString().c_str(), aspect->GetInstanceId().c_str(),
+        FIELD_NAME(myAspectClass, "Prop1"), FIELD_NAME(myAspectClass, "Prop2"),
+        FIELD_NAME(myAspectClass, "Prop1"), FIELD_NAME(myAspectClass, "Prop2"),
+        NESTED_CONTENT_FIELD_NAME_C(elementClass, myAspectClass, 2),
+        myAspectClass->GetId().ToString().c_str(), aspect->GetInstanceId().c_str(),
+        FIELD_NAME(myAspectClass, "Prop1"), FIELD_NAME(myAspectClass, "Prop1"),
+        FIELD_NAME_C(myAspectClass, "Prop1", 2), FIELD_NAME_C(myAspectClass, "Prop1", 2)        
+        ).c_str());
+    EXPECT_EQ(expectedValues, recordJson["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
     }
 
 //=======================================================================================

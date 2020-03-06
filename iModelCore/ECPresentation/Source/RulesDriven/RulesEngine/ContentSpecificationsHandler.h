@@ -127,6 +127,7 @@ protected:
         bool expandNestedFields, PropertyCategorySpecificationsList const*) = 0;
     virtual bool _ShouldIncludeRelatedProperties() const {return true;}
     virtual void _AppendClass(SelectClassInfo const&) = 0;
+    virtual void _OnContentAppended() {}
     ECPRESENTATION_EXPORT virtual bvector<ContentSource> _BuildContentSource(bvector<SelectClass> const&, ContentSpecificationCR);
     ECPRESENTATION_EXPORT virtual bvector<ContentSource> _BuildContentSource(bvector<RelatedClassPath> const&, ContentSpecificationCR);
     bvector<ContentSource> CreateContentSources(SelectClassWithExcludes const& selectClass, ECClassCP propertiesSourceClass, ContentSpecificationCR) const;

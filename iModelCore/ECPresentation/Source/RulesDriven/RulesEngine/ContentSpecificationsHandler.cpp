@@ -678,6 +678,7 @@ void ContentSpecificationsHandler::HandleSpecification(SelectedNodeInstancesSpec
         if (IsECClassAccepted(specification, src.GetSelectClass().GetClass()))
             AppendContent(src, specification, &input, "", nullptr);
         }
+    _OnContentAppended();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -700,6 +701,7 @@ void ContentSpecificationsHandler::HandleSpecification(ContentRelatedInstancesSp
         for (ContentSource const& src : contentSource)
             AppendContent(src, specification, &input, specification.GetInstanceFilter(), recursiveInfo.get());
         }
+    _OnContentAppended();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -715,4 +717,5 @@ void ContentSpecificationsHandler::HandleSpecification(ContentInstancesOfSpecifi
     bvector<ContentSource> contentSource = _BuildContentSource(selectClasses, specification);
     for (ContentSource const& src : contentSource)
         AppendContent(src, specification, nullptr, specification.GetInstanceFilter(), nullptr);
+    _OnContentAppended();
     }

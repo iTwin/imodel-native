@@ -771,6 +771,7 @@ TEST_F(DefaultECPresentationSerializerTests, CalculatedPropertyFieldSerializatio
     {
     ECClassCP testClass = GetClass("PropertyTestClassA");
     ContentDescriptor::CalculatedPropertyField field("10", "FieldName", "ValueExpression", testClass, 10);
+    field.SetUniqueName(field.CreateName());
     rapidjson::Document actual = field.AsJson();
 
     rapidjson::Document expected;
@@ -804,7 +805,7 @@ TEST_F(DefaultECPresentationSerializerTests, CalculatedPropertyFieldSerializatio
 TEST_F(DefaultECPresentationSerializerTests, ECPropertiesFieldSerialization)
     {
     ECClassCP testClass = GetClass("PropertyTestClassA");
-    ContentDescriptor::ECPropertiesField field(ContentDescriptor::Category(), ContentDescriptor::Property("this", *testClass, *testClass->GetPropertyP("String")));
+    ContentDescriptor::ECPropertiesField field(ContentDescriptor::Category(), "my name", ContentDescriptor::Property("this", *testClass, *testClass->GetPropertyP("String")));
     rapidjson::Document actual = field.AsJson();
 
     rapidjson::Document expected;
@@ -816,7 +817,7 @@ TEST_F(DefaultECPresentationSerializerTests, ECPropertiesFieldSerialization)
             "Expand": false,
             "Priority": 0
         },
-        "Name": "%s",
+        "Name": "my name",
         "DisplayLabel": "String",
         "Type": {
             "TypeName": "string",
@@ -842,7 +843,6 @@ TEST_F(DefaultECPresentationSerializerTests, ECPropertiesFieldSerialization)
             "RelatedClassPath": []
         }]
     })",
-        FIELD_NAME(testClass, "String"),
         testClass->GetId().ToString().c_str(), testClass->GetId().ToString().c_str()
     ).c_str());
 
@@ -857,7 +857,7 @@ TEST_F(DefaultECPresentationSerializerTests, ECPropertiesFieldSerialization)
 TEST_F(DefaultECPresentationSerializerTests, ECPropertiesFieldSerializationWithMoreThanOneProperty)
     {
     ECClassCP testClass = GetClass("PropertyTestClassA");
-    ContentDescriptor::ECPropertiesField field(ContentDescriptor::Category(), ContentDescriptor::Property("this", *testClass, *testClass->GetPropertyP("String")));
+    ContentDescriptor::ECPropertiesField field(ContentDescriptor::Category(), "my name", ContentDescriptor::Property("this", *testClass, *testClass->GetPropertyP("String")));
     field.AddProperty(ContentDescriptor::Property("this", *testClass, *testClass->GetPropertyP("Int")));
     rapidjson::Document actual = field.AsJson();
 
@@ -870,7 +870,7 @@ TEST_F(DefaultECPresentationSerializerTests, ECPropertiesFieldSerializationWithM
             "Expand": false,
             "Priority": 0
         },
-        "Name": "%s",
+        "Name": "my name",
         "DisplayLabel": "String",
         "Type": {
             "TypeName": "string",
@@ -912,7 +912,6 @@ TEST_F(DefaultECPresentationSerializerTests, ECPropertiesFieldSerializationWithM
             "RelatedClassPath": []
         }]
     })",
-        FIELD_NAME(testClass, "String"),
         testClass->GetId().ToString().c_str(), testClass->GetId().ToString().c_str(),
         testClass->GetId().ToString().c_str(), testClass->GetId().ToString().c_str()
     ).c_str());
@@ -938,7 +937,7 @@ TEST_F(DefaultECPresentationSerializerTests, ECInstanceKeyFieldSerialization)
             "Expand": false,
             "Priority": 0
             },
-        "Name": "/key/",
+        "Name": "",
         "DisplayLabel": "",
         "Type": {
             "TypeName": "ECInstanceKey",
@@ -959,8 +958,9 @@ TEST_F(DefaultECPresentationSerializerTests, ECInstanceKeyFieldSerialization)
 TEST_F(DefaultECPresentationSerializerTests, ECNavigationInstanceIdFieldSerialization)
     {
     ECClassCP testClass = GetClass("PropertyTestClassA");
-    ContentDescriptor::ECPropertiesField propertiesField(ContentDescriptor::Category(), ContentDescriptor::Property("this", *testClass, *testClass->GetPropertyP("String")));
+    ContentDescriptor::ECPropertiesField propertiesField(ContentDescriptor::Category(), "my name", ContentDescriptor::Property("this", *testClass, *testClass->GetPropertyP("String")));
     ContentDescriptor::ECNavigationInstanceIdField navigationInstanceIdField(propertiesField);
+    navigationInstanceIdField.SetUniqueName(navigationInstanceIdField.CreateName());
     rapidjson::Document actual = navigationInstanceIdField.AsJson();
 
     rapidjson::Document expected;
@@ -972,7 +972,7 @@ TEST_F(DefaultECPresentationSerializerTests, ECNavigationInstanceIdFieldSerializ
             "Expand": false,
             "Priority": 0
         },
-        "Name": "/id/%s",
+        "Name": "/id/my name",
         "DisplayLabel": "",
         "Type": {
             "TypeName": "ECInstanceId",
@@ -980,9 +980,7 @@ TEST_F(DefaultECPresentationSerializerTests, ECNavigationInstanceIdFieldSerializ
         },
         "IsReadOnly": true,
         "Priority": 0
-    })",
-        FIELD_NAME(testClass, "String")
-    ).c_str());
+    })").c_str());
 
     EXPECT_EQ(expected, actual)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
@@ -1378,7 +1376,7 @@ TEST_F(DefaultECPresentationSerializerTests, NestedContentTypeDescriptionSeriali
     ContentDescriptor::CompositeContentField field(category, "field_name", "field_label", *testClassA, "PropertyTestClassA",
         {
         new ContentDescriptor::DisplayLabelField("NestedLabel", 10),
-        new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category(), ContentDescriptor::Property("rel_RET_PropertyTestClassA_0", *testClassA, *testClassA->GetPropertyP("String")))
+        new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category(), "nested_field_name", ContentDescriptor::Property("rel_RET_PropertyTestClassA_0", *testClassA, *testClassA->GetPropertyP("String")))
         });
     ContentDescriptor::Field::TypeDescriptionPtr typeDescription = new ContentDescriptor::Field::NestedContentTypeDescription(field);
     rapidjson::Document actual = typeDescription->AsJson();
@@ -1394,16 +1392,14 @@ TEST_F(DefaultECPresentationSerializerTests, NestedContentTypeDescriptionSeriali
                 "ValueFormat": "Primitive"
             }
         }, {
-            "Name": "%s",
+            "Name": "nested_field_name",
             "Label": "String",
             "Type": {
                 "TypeName": "string",
                 "ValueFormat": "Primitive"
             }
         }]
-    })",
-        FIELD_NAME(testClassA, "String")
-    ).c_str());
+    })").c_str());
     EXPECT_EQ(expected, actual)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actual);
@@ -2069,8 +2065,8 @@ TEST_F(DefaultECPresentationSerializerTests, ContentSetSerializationItemWithClas
     rapidjson::Document displayValues(rapidjson::kObjectType);
     displayValues.AddMember("FieldName", "FieldDisplayValue", values.GetAllocator());
     bvector<Utf8String> mergedFieldNames {"MergedField1", "MergedField2"};
-    ContentDescriptor::ECPropertiesField ecPropertiesField(ContentDescriptor::Category(), ContentDescriptor::Property("this", *testClass, *testClass->GetPropertyP("String")));
-    ContentDescriptor::ECPropertiesField ecPropertiesField1(ContentDescriptor::Category(), ContentDescriptor::Property("this", *testClass, *testClass->GetPropertyP("Int")));
+    ContentDescriptor::ECPropertiesField ecPropertiesField(ContentDescriptor::Category(), "field1", ContentDescriptor::Property("this", *testClass, *testClass->GetPropertyP("String")));
+    ContentDescriptor::ECPropertiesField ecPropertiesField1(ContentDescriptor::Category(), "field2", ContentDescriptor::Property("this", *testClass, *testClass->GetPropertyP("Int")));
     ContentSetItem::FieldPropertyInstanceKeyMap fieldPropertyInstanceKeys;
     fieldPropertyInstanceKeys.Insert(ContentSetItem::FieldProperty(ecPropertiesField, 0), keys);
     fieldPropertyInstanceKeys.Insert(ContentSetItem::FieldProperty(ecPropertiesField1, 1), keys);
@@ -2110,7 +2106,7 @@ TEST_F(DefaultECPresentationSerializerTests, ContentSetSerializationItemWithClas
             "MergedField2"
         ],
         "FieldValueKeys": {
-            "%s": [{
+            "field1": [{
                 "PropertyIndex": 0,
                 "Keys": [{
                     "ECClassId": "%s",
@@ -2120,7 +2116,7 @@ TEST_F(DefaultECPresentationSerializerTests, ContentSetSerializationItemWithClas
                     "ECInstanceId": "2"
                 }]
             }],
-            "%s": [{
+            "field2": [{
                 "PropertyIndex": 1,
                 "Keys": [{
                     "ECClassId": "%s",
@@ -2134,8 +2130,8 @@ TEST_F(DefaultECPresentationSerializerTests, ContentSetSerializationItemWithClas
     })",
         testClass->GetId().ToString().c_str(),
         GetClassA()->GetId().ToString().c_str(), GetClassB()->GetId().ToString().c_str(),
-        FIELD_NAME(testClass, "String"), GetClassA()->GetId().ToString().c_str(), GetClassB()->GetId().ToString().c_str(),
-        FIELD_NAME(testClass, "Int"), GetClassA()->GetId().ToString().c_str(), GetClassB()->GetId().ToString().c_str()
+        GetClassA()->GetId().ToString().c_str(), GetClassB()->GetId().ToString().c_str(),
+        GetClassA()->GetId().ToString().c_str(), GetClassB()->GetId().ToString().c_str()
     ).c_str());
 
     EXPECT_EQ(expected, actual)

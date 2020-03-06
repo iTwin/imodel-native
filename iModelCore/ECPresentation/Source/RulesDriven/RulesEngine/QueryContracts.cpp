@@ -871,7 +871,7 @@ PresentationQueryContractField const& ContentQueryContract::GetDisplayLabelField
         PresentationQueryContractFieldCPtr instanceIdField = PresentationQueryContractSimpleField::Create("ECInstanceId", "ECInstanceId");
         bvector<InstanceLabelOverrideValueSpecification const*> labelOverrideValuesList =
             m_class ? QueryBuilderHelpers::SerializeECClassMapPolymorphically(field.GetOverrideValueSpecs(), *m_class) : bvector<InstanceLabelOverrideValueSpecification const*>();
-        m_displayLabelField = CreateDisplayLabelField(field.GetName().c_str(), *classIdField, *instanceIdField, m_class, m_relatedInstancePaths, labelOverrideValuesList);
+        m_displayLabelField = CreateDisplayLabelField(field.GetUniqueName().c_str(), *classIdField, *instanceIdField, m_class, m_relatedInstancePaths, labelOverrideValuesList);
         }
     return *m_displayLabelField;
     }
@@ -987,7 +987,7 @@ static PresentationQueryContractFieldCPtr CreatePropertySelectField(Utf8CP field
         }
     if (prop.GetIsNavigation())
         {
-        RefCountedPtr<PresentationQueryContractFunctionField> navigationLabelfield = PresentationQueryContractFunctionField::Create(Utf8String(fieldName).append("_inner").c_str(), 
+        RefCountedPtr<PresentationQueryContractFunctionField> navigationLabelfield = PresentationQueryContractFunctionField::Create(Utf8String(fieldName).append("_inner").c_str(),
             FUNCTION_NAME_GetNavigationPropertyLabel, CreateFieldsList("ECClassId", "ECInstanceId"), true);
         navigationLabelfield->SetPrefixOverride(prefix);
 
@@ -1071,18 +1071,18 @@ PresentationQueryContractFieldCPtr ContentQueryContract::CreateInstanceKeyField(
             {
             // merging queries wrap merged ones, so we don't have access to field's instance class alias - in this
             // case we have to select by field alias
-            return CreateInstanceKeyField(field.GetName().c_str(), nullptr, ECClassId(), true);
+            return CreateInstanceKeyField(field.GetUniqueName().c_str(), nullptr, ECClassId(), true);
             }
         }
 
     ContentDescriptor::Property const* fieldPropertyForThisContract = FindMatchingProperty(*field.GetKeyFields().front(), m_class);
     if (nullptr != fieldPropertyForThisContract)
         {
-        return CreateInstanceKeyField(field.GetName().c_str(), fieldPropertyForThisContract->GetPrefix(),
+        return CreateInstanceKeyField(field.GetUniqueName().c_str(), fieldPropertyForThisContract->GetPrefix(),
             fieldPropertyForThisContract->GetPropertyClass().GetId(), isMerging);
         }
 
-    return PresentationQueryContractSimpleField::Create(field.GetName().c_str(), "CAST(null AS TEXT)", false);
+    return PresentationQueryContractSimpleField::Create(field.GetUniqueName().c_str(), "CAST(null AS TEXT)", false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1139,22 +1139,22 @@ bvector<PresentationQueryContractFieldCPtr> ContentQueryContract::_GetFields() c
                         {
                         Utf8String propertyAccessor = GetPropertySelectClauseFromAccessString(fieldPropertyForThisContract->GetProperty().GetName());
                         ECPropertyCR ecProperty = fieldPropertyForThisContract->GetProperty();
-                        contractField = CreatePropertySelectField(propertiesField.GetName().c_str(), fieldPropertyForThisContract->GetPrefix(),
+                        contractField = CreatePropertySelectField(propertiesField.GetUniqueName().c_str(), fieldPropertyForThisContract->GetPrefix(),
                             propertyAccessor.c_str(), ecProperty, m_descriptor->OnlyDistinctValues());
                         }
                     else
                         {
                         ECPropertyCR ecProperty = propertiesField.GetProperties().front().GetProperty();
-                        contractField = CreateNullPropertySelectField(propertiesField.GetName().c_str(), ecProperty);
+                        contractField = CreateNullPropertySelectField(propertiesField.GetUniqueName().c_str(), ecProperty);
                         }
                     }
                 }
             else if (descriptorField->IsCalculatedPropertyField())
                 {
                 if (nullptr == descriptorField->AsCalculatedPropertyField()->GetClass() || m_class->Is(descriptorField->AsCalculatedPropertyField()->GetClass()))
-                    contractField = GetCalculatedPropertyField(descriptorField->GetName(), descriptorField->AsCalculatedPropertyField()->GetValueExpression(), m_descriptor->OnlyDistinctValues());
+                    contractField = GetCalculatedPropertyField(descriptorField->GetUniqueName(), descriptorField->AsCalculatedPropertyField()->GetValueExpression(), m_descriptor->OnlyDistinctValues());
                 else
-                    contractField = PresentationQueryContractSimpleField::Create(descriptorField->GetName().c_str(), "CAST(null AS TEXT)", false);
+                    contractField = PresentationQueryContractSimpleField::Create(descriptorField->GetUniqueName().c_str(), "CAST(null AS TEXT)", false);
                 }
             else if (!m_descriptor->OnlyDistinctValues() && descriptorField->IsSystemField() && descriptorField->AsSystemField()->IsECInstanceKeyField())
                 {
@@ -1167,9 +1167,9 @@ bvector<PresentationQueryContractFieldCPtr> ContentQueryContract::_GetFields() c
                 ContentDescriptor::ECNavigationInstanceIdField const& idField = *descriptorField->AsSystemField()->AsECNavigationInstanceIdField();
                 ContentDescriptor::Property const* fieldPropertyForThisContract = FindMatchingProperty(idField.GetPropertiesField(), m_class);
                 if (nullptr != fieldPropertyForThisContract)
-                    contractField = GetNavigationInstanceIdField(idField.GetName(), fieldPropertyForThisContract->GetPrefix());
+                    contractField = GetNavigationInstanceIdField(idField.GetUniqueName(), fieldPropertyForThisContract->GetPrefix());
                 else
-                    contractField = GetNavigationInstanceIdField(idField.GetName(), nullptr);
+                    contractField = GetNavigationInstanceIdField(idField.GetUniqueName(), nullptr);
                 }
 
             if (contractField.IsNull())

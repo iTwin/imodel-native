@@ -16,9 +16,9 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentProviderContext::ContentProviderContext(PresentationRuleSetCR ruleset, Utf8String locale, Utf8String preferredDisplayType, int contentFlags,
     INavNodeKeysContainerCR inputKeys, INavNodeLocaterCR nodesLocater, IPropertyCategorySupplierCR categorySupplier,
-    IUserSettings const& userSettings, ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache, PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache, 
-    JsonNavNodesFactory const& nodesFactory, IJsonLocalState const* localState) 
-    : RulesDrivenProviderContext(ruleset, locale, userSettings, ecexpressionsCache, relatedPathsCache, polymorphicallyRelatedClassesCache, nodesFactory, localState), 
+    IUserSettings const& userSettings, ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache, PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache,
+    JsonNavNodesFactory const& nodesFactory, IJsonLocalState const* localState)
+    : RulesDrivenProviderContext(ruleset, locale, userSettings, ecexpressionsCache, relatedPathsCache, polymorphicallyRelatedClassesCache, nodesFactory, localState),
     m_preferredDisplayType(preferredDisplayType), m_contentFlags(contentFlags), m_nodesLocater(nodesLocater), m_categorySupplier(categorySupplier), m_inputNodeKeys(&inputKeys)
     {
     Init();
@@ -27,8 +27,8 @@ ContentProviderContext::ContentProviderContext(PresentationRuleSetCR ruleset, Ut
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentProviderContext::ContentProviderContext(ContentProviderContextCR other) 
-    : RulesDrivenProviderContext(other), m_preferredDisplayType(other.m_preferredDisplayType), m_nodesLocater(other.m_nodesLocater), 
+ContentProviderContext::ContentProviderContext(ContentProviderContextCR other)
+    : RulesDrivenProviderContext(other), m_preferredDisplayType(other.m_preferredDisplayType), m_nodesLocater(other.m_nodesLocater),
     m_categorySupplier(other.m_categorySupplier), m_inputNodeKeys(other.m_inputNodeKeys), m_contentFlags(other.m_contentFlags)
     {
     Init();
@@ -36,9 +36,9 @@ ContentProviderContext::ContentProviderContext(ContentProviderContextCR other)
 
     if (other.IsSelectionContext())
         SetSelectionInfo(other);
-    
+
     if (other.IsQueryContext())
-        SetQueryContext(other);    
+        SetQueryContext(other);
 
     SetIsNestedContent(other.IsNestedContent());
     }
@@ -127,7 +127,7 @@ static int GetSerializationFlags(bool isRelated, bool isMerged, bool isNested, C
             default: BeAssert(false); return ContentSetItem::SERIALIZE_All;
             }
         }
-    
+
     if (ContentRequest::DisplayValues == req)
         return ContentSetItem::SERIALIZE_DisplayValues;
 
@@ -137,7 +137,7 @@ static int GetSerializationFlags(bool isRelated, bool isMerged, bool isNested, C
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static rapidjson::Document GetNestedContent(NestedContentProviderCR provider, ContentRequest req, 
+static rapidjson::Document GetNestedContent(NestedContentProviderCR provider, ContentRequest req,
     bool isMergedContent, bool isNestedContent, bool isRelatedContent, rapidjson::Document::AllocatorType* allocator = nullptr)
     {
     int serializationFlags = GetSerializationFlags(isRelatedContent, isMergedContent, isNestedContent, req);
@@ -150,9 +150,9 @@ static rapidjson::Document GetNestedContent(NestedContentProviderCR provider, Co
     while (provider.GetContentSetItem(item, index++))
         {
         if (!isRelatedContent && ContentRequest::Values == req)
-            json.CopyFrom(item->GetValues()[provider.GetContentField().GetName().c_str()], json.GetAllocator());
+            json.CopyFrom(item->GetValues()[provider.GetContentField().GetUniqueName().c_str()], json.GetAllocator());
         else if (!isRelatedContent && ContentRequest::DisplayValues == req)
-            json.CopyFrom(item->GetDisplayValues()[provider.GetContentField().GetName().c_str()], json.GetAllocator());
+            json.CopyFrom(item->GetDisplayValues()[provider.GetContentField().GetUniqueName().c_str()], json.GetAllocator());
         else
             json.PushBack(item->AsJson(serializationFlags, &json.GetAllocator()), json.GetAllocator());
         }
@@ -209,7 +209,7 @@ static Utf8String GetLocalizedVariesString(ILocalizationProvider const* localiza
 * @bsimethod                                    Mantas.Kontrimas                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void MergeField (RapidJsonValueR targetValue, RapidJsonValueR targetDisplayValue,
-    rapidjson::Document::AllocatorType& targetDisplayValueAllocator, 
+    rapidjson::Document::AllocatorType& targetDisplayValueAllocator,
     ILocalizationProvider const* localizationProvider, Utf8StringCR locale)
     {
     targetValue.SetNull();
@@ -245,7 +245,7 @@ static bool MergeContent(rapidjson::Document& targetValues, rapidjson::Document&
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool MergeContentSetItems(bvector<ContentSetItemPtr> const& targetSetItems, bvector<ContentSetItemPtr> const& sourceSetItems, 
+static bool MergeContentSetItems(bvector<ContentSetItemPtr> const& targetSetItems, bvector<ContentSetItemPtr> const& sourceSetItems,
     ILocalizationProvider const* localizationProvider, Utf8StringCR locale)
     {
     if (targetSetItems.size() != sourceSetItems.size())
@@ -312,13 +312,13 @@ void ContentProvider::LoadNestedContentFieldValue(ContentSetItemR item, ContentD
     {
     ILocalizationProvider const* localizationProvider = GetContext().IsLocalizationContext() ? &GetContext().GetLocalizationProvider() : nullptr;
     ContentDescriptorCR descriptor = *GetContentDescriptor();
-    Utf8CP fieldName = field.GetName().c_str();
+    Utf8CP fieldName = field.GetUniqueName().c_str();
     bool isRelatedContent = (nullptr != field.AsRelatedContentField());
     NestedContentProviderPtr provider = GetNestedContentProvider(field, cacheable);
     provider->SetIsResultsMerged(descriptor.MergeResults());
     if (descriptor.MergeResults())
         {
-        // if records are merged, have to query nested content for each merged record individually 
+        // if records are merged, have to query nested content for each merged record individually
         // and merge them one after one
         rapidjson::Document contentValues, contentDisplayValues;
         bvector<ContentSetItemPtr> targetSetitems;
@@ -375,7 +375,7 @@ void ContentProvider::LoadNestedContentFieldValue(ContentSetItemR item, ContentD
             {
             if (mergeAllField)
                 {
-                MergeField(contentValues, contentDisplayValues, contentDisplayValues.GetAllocator(), 
+                MergeField(contentValues, contentDisplayValues, contentDisplayValues.GetAllocator(),
                     localizationProvider, GetContext().GetLocale());
                 }
             else
@@ -415,11 +415,11 @@ void ContentProvider::LoadNestedContentFieldValue(ContentSetItemR item, ContentD
         {
         // if not merging, can query nested content without any additional work afterwards
         provider->SetPrimaryInstanceKeys(item.GetKeys());
-        item.GetValues().AddMember(rapidjson::Value(fieldName, item.GetValues().GetAllocator()), 
-            GetNestedContent(*provider, ContentRequest::Values, false, GetContext().IsNestedContent(), isRelatedContent, &item.GetValues().GetAllocator()), 
+        item.GetValues().AddMember(rapidjson::Value(fieldName, item.GetValues().GetAllocator()),
+            GetNestedContent(*provider, ContentRequest::Values, false, GetContext().IsNestedContent(), isRelatedContent, &item.GetValues().GetAllocator()),
             item.GetValues().GetAllocator());
-        item.GetDisplayValues().AddMember(rapidjson::Value(fieldName, item.GetDisplayValues().GetAllocator()), 
-            GetNestedContent(*provider, ContentRequest::DisplayValues, false, GetContext().IsNestedContent(), isRelatedContent, &item.GetDisplayValues().GetAllocator()), 
+        item.GetDisplayValues().AddMember(rapidjson::Value(fieldName, item.GetDisplayValues().GetAllocator()),
+            GetNestedContent(*provider, ContentRequest::DisplayValues, false, GetContext().IsNestedContent(), isRelatedContent, &item.GetDisplayValues().GetAllocator()),
             item.GetDisplayValues().GetAllocator());
         }
     }
@@ -446,8 +446,8 @@ void ContentProvider::LoadCompositePropertiesFieldValue(ContentSetItemR item, Co
             BeAssert(matchingProperties.size() <= 1);
             if (matchingProperties.size() == 0)
                 {
-                item.GetValues().AddMember(rapidjson::Value(field.GetName().c_str(), item.GetValues().GetAllocator()), rapidjson::Value(), item.GetValues().GetAllocator());
-                item.GetDisplayValues().AddMember(rapidjson::Value(field.GetName().c_str(), item.GetDisplayValues().GetAllocator()), rapidjson::Value(), item.GetDisplayValues().GetAllocator());
+                item.GetValues().AddMember(rapidjson::Value(field.GetUniqueName().c_str(), item.GetValues().GetAllocator()), rapidjson::Value(), item.GetValues().GetAllocator());
+                item.GetDisplayValues().AddMember(rapidjson::Value(field.GetUniqueName().c_str(), item.GetDisplayValues().GetAllocator()), rapidjson::Value(), item.GetDisplayValues().GetAllocator());
                 }
             else
                 {
@@ -474,8 +474,8 @@ void ContentProvider::LoadCompositePropertiesFieldValue(ContentSetItemR item, Co
         ContentDescriptor::Property const* matchingProperty = contract->FindMatchingProperty(field, item.GetClass());
         if (nullptr == matchingProperty)
             {
-            item.GetValues().AddMember(rapidjson::Value(field.GetName().c_str(), item.GetValues().GetAllocator()), rapidjson::Value(), item.GetValues().GetAllocator()); 
-            item.GetDisplayValues().AddMember(rapidjson::Value(field.GetName().c_str(), item.GetDisplayValues().GetAllocator()), rapidjson::Value(), item.GetDisplayValues().GetAllocator());
+            item.GetValues().AddMember(rapidjson::Value(field.GetUniqueName().c_str(), item.GetValues().GetAllocator()), rapidjson::Value(), item.GetValues().GetAllocator());
+            item.GetDisplayValues().AddMember(rapidjson::Value(field.GetUniqueName().c_str(), item.GetDisplayValues().GetAllocator()), rapidjson::Value(), item.GetDisplayValues().GetAllocator());
             return;
             }
         propertiesPerItemClass[item.GetClass()] = matchingProperty;
@@ -488,15 +488,16 @@ void ContentProvider::LoadCompositePropertiesFieldValue(ContentSetItemR item, Co
 
         // create a nested content provider for it
         ContentDescriptor::ECPropertiesField* nestedField = new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category(), *matchingProperty);
-        nestedField->SetName(field.GetName());
-        ContentDescriptor::CompositeContentField nestingField(field.GetCategory(), field.GetName(), field.GetLabel(),
+        nestedField->SetUniqueName(field.GetUniqueName());
+        ContentDescriptor::CompositeContentField nestingField(field.GetCategory(), field.GetLabel(),
             *itemClass, "this", {nestedField}, false, field.GetPriority());
+        nestingField.SetUniqueName(field.GetUniqueName());
 
         // get the nested content
         LoadNestedContentFieldValue(item, nestingField, false);
 
         // don't repeat if detected different (merged) values
-        if (item.IsMerged(field.GetName()))
+        if (item.IsMerged(field.GetUniqueName()))
             break;
         }
     }
@@ -517,7 +518,7 @@ void ContentProvider::LoadNestedContent(ContentSetItemR item) const
         {
         if (field->IsNestedContentField())
             LoadNestedContentFieldValue(item, *field->AsNestedContentField(), true);
-        else if (field->IsPropertiesField() && field->AsPropertiesField()->IsCompositePropertiesField() && !item.GetValues().HasMember(field->GetName().c_str()))
+        else if (field->IsPropertiesField() && field->AsPropertiesField()->IsCompositePropertiesField() && !item.GetValues().HasMember(field->GetUniqueName().c_str()))
             LoadCompositePropertiesFieldValue(item, *field->AsPropertiesField());
         }
     }
@@ -528,7 +529,7 @@ void ContentProvider::LoadNestedContent(ContentSetItemR item) const
 struct ContentSpecificationsVisitor : PresentationRuleSpecificationVisitor
 {
 private:
-    IParsedInput const* m_input;    
+    IParsedInput const* m_input;
 protected:
     IParsedInput const* GetInput() {return m_input;}
 public:
@@ -547,7 +548,7 @@ private:
     ContentDescriptorBuilder* m_descriptorBuilder;
     CustomFunctionsContext* m_functionsContext;
     ContentDescriptorPtr m_descriptor;
-    
+
 protected:
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            07/2017
@@ -562,7 +563,7 @@ protected:
 
         if (m_descriptor.IsValid() && specification.GetOnlyIfNotHandled())
             {
-            LoggingHelper::LogMessage(Log::Content, "SelectedNodeInstances content specification was ignored because the rule is already handled", 
+            LoggingHelper::LogMessage(Log::Content, "SelectedNodeInstances content specification was ignored because the rule is already handled",
                 NativeLogging::LOG_INFO);
             return;
             }
@@ -576,7 +577,7 @@ protected:
 
         LoggingHelper::LogMessage(Log::Content, "SelectedNodeInstances content specification did not result in any query", NativeLogging::LOG_DEBUG);
         }
-    
+
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            07/2017
     +---------------+---------------+---------------+---------------+---------------+--*/
@@ -591,11 +592,11 @@ protected:
 
         LoggingHelper::LogMessage(Log::Content, "ContentInstancesOfSpecificClasses content specification did not result in any query", NativeLogging::LOG_DEBUG);
         }
-    
+
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            07/2017
     +---------------+---------------+---------------+---------------+---------------+--*/
-    void _Visit(ContentRelatedInstancesSpecificationCR specification) override 
+    void _Visit(ContentRelatedInstancesSpecificationCR specification) override
         {
         if (nullptr == GetInput())
             {
@@ -623,19 +624,19 @@ public:
         IECPropertyFormatter const* formatter = context.IsPropertyFormattingContext() ? &context.GetECPropertyFormatter() : nullptr;
         ILocalizationProvider const* localizationProvider = context.IsLocalizationContext() ? &context.GetLocalizationProvider() : nullptr;
         m_context = new ContentDescriptorBuilder::Context(context.GetSchemaHelper(), context.GetConnections(), context.GetConnection(), context.GetRuleset(),
-            context.GetPreferredDisplayType().c_str(), context.GetCategorySupplier(), formatter, localizationProvider, context.GetLocale(), 
+            context.GetPreferredDisplayType().c_str(), context.GetCategorySupplier(), formatter, localizationProvider, context.GetLocale(),
             context.GetInputKeys(), context.GetSelectionInfo());
         m_context->SetContentFlagsCalculator([flags = context.GetContentFlags()](int defaultFlags){return flags | defaultFlags;});
         m_descriptorBuilder = new ContentDescriptorBuilder(*m_context);
 
-        m_functionsContext = new CustomFunctionsContext(context.GetSchemaHelper(), context.GetConnections(), context.GetConnection(), 
-            context.GetRuleset(), context.GetLocale(), context.GetUserSettings(), &context.GetUsedSettingsListener(), 
-            context.GetECExpressionsCache(), context.GetNodesFactory(), nullptr, nullptr, nullptr, 
+        m_functionsContext = new CustomFunctionsContext(context.GetSchemaHelper(), context.GetConnections(), context.GetConnection(),
+            context.GetRuleset(), context.GetLocale(), context.GetUserSettings(), &context.GetUsedSettingsListener(),
+            context.GetECExpressionsCache(), context.GetNodesFactory(), nullptr, nullptr, nullptr,
             context.IsPropertyFormattingContext() ? &context.GetECPropertyFormatter() : nullptr);
         if (context.IsLocalizationContext())
             m_functionsContext->SetLocalizationProvider(*localizationProvider);
         }
-    
+
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            10/2017
     +---------------+---------------+---------------+---------------+---------------+--*/
@@ -656,7 +657,7 @@ private:
     ContentQueryBuilder* m_queryBuilder;
     ContentDescriptorPtr m_descriptor;
     ContentQueryPtr m_union;
-    
+
 protected:
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            04/2016
@@ -671,7 +672,7 @@ protected:
 
         if (m_union.IsValid() && specification.GetOnlyIfNotHandled())
             {
-            LoggingHelper::LogMessage(Log::Content, "SelectedNodeInstances content specification was ignored because the rule is already handled", 
+            LoggingHelper::LogMessage(Log::Content, "SelectedNodeInstances content specification was ignored because the rule is already handled",
                 NativeLogging::LOG_INFO);
             return;
             }
@@ -685,7 +686,7 @@ protected:
 
         LoggingHelper::LogMessage(Log::Content, "SelectedNodeInstances content specification did not result in any query", NativeLogging::LOG_DEBUG);
         }
-    
+
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            04/2016
     +---------------+---------------+---------------+---------------+---------------+--*/
@@ -700,11 +701,11 @@ protected:
 
         LoggingHelper::LogMessage(Log::Content, "ContentInstancesOfSpecificClasses content specification did not result in any query", NativeLogging::LOG_DEBUG);
         }
-    
+
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            04/2016
     +---------------+---------------+---------------+---------------+---------------+--*/
-    void _Visit(ContentRelatedInstancesSpecificationCR specification) override 
+    void _Visit(ContentRelatedInstancesSpecificationCR specification) override
         {
         if (nullptr == GetInput())
             {
@@ -732,10 +733,10 @@ public:
         IECPropertyFormatter const* formatter = context.IsPropertyFormattingContext() ? &context.GetECPropertyFormatter() : nullptr;
         ILocalizationProvider const* localizationProvider = context.IsLocalizationContext() ? &context.GetLocalizationProvider() : nullptr;
 
-        ContentQueryBuilderParameters params(context.GetSchemaHelper(), context.GetConnections(), context.GetNodesLocater(), context.GetConnection(), 
-            context.GetRuleset(), context.GetLocale(), context.GetUserSettings(), context.GetECExpressionsCache(), 
+        ContentQueryBuilderParameters params(context.GetSchemaHelper(), context.GetConnections(), context.GetNodesLocater(), context.GetConnection(),
+            context.GetRuleset(), context.GetLocale(), context.GetUserSettings(), context.GetECExpressionsCache(),
             context.GetCategorySupplier(), formatter, context.GetLocalState(), localizationProvider);
-        
+
         m_queryBuilder = new ContentQueryBuilder(params);
         m_descriptor = ContentDescriptor::Create(descriptor);
         }
@@ -759,7 +760,7 @@ public:
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentProvider::ContentProvider(ContentProviderContextR context)
-    : m_context(&context), m_executor(nullptr), m_initialized(false), 
+    : m_context(&context), m_executor(nullptr), m_initialized(false),
     m_contentSetSize(0), m_fullContentSetSizeDetermined(false)
     {
     if (GetContext().IsQueryContext())
@@ -772,7 +773,7 @@ ContentProvider::ContentProvider(ContentProviderContextR context)
 * @bsimethod                                    Grigas.Petraitis                05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentProvider::ContentProvider(ContentProviderCR other)
-    : m_executor(nullptr), m_initialized(false), 
+    : m_executor(nullptr), m_initialized(false),
     m_contentSetSize(0), m_fullContentSetSizeDetermined(false)
     {
     m_context = ContentProviderContext::Create(*other.m_context);
@@ -837,7 +838,7 @@ ContentDescriptorCP SpecificationContentProvider::_GetContentDescriptor() const
         DescriptorBuilder builder(GetContext());
         VisitRuleSpecifications(builder, m_inputCache, GetContext(), m_rules);
         m_descriptor = builder.GetDescriptor();
-        }    
+        }
     return m_descriptor.get();
     }
 
@@ -908,13 +909,13 @@ void ContentProvider::Initialize()
 
     m_initialized = true;
 
-    CustomFunctionsContext fnContext(GetContext().GetSchemaHelper(), GetContext().GetConnections(), GetContext().GetConnection(), 
-        GetContext().GetRuleset(), GetContext().GetLocale(), GetContext().GetUserSettings(), &GetContext().GetUsedSettingsListener(), 
-        GetContext().GetECExpressionsCache(), GetContext().GetNodesFactory(), nullptr, nullptr, nullptr, 
+    CustomFunctionsContext fnContext(GetContext().GetSchemaHelper(), GetContext().GetConnections(), GetContext().GetConnection(),
+        GetContext().GetRuleset(), GetContext().GetLocale(), GetContext().GetUserSettings(), &GetContext().GetUsedSettingsListener(),
+        GetContext().GetECExpressionsCache(), GetContext().GetNodesFactory(), nullptr, nullptr, nullptr,
         GetContext().IsPropertyFormattingContext() ? &GetContext().GetECPropertyFormatter() : nullptr);
     if (GetContext().IsLocalizationContext())
         fnContext.SetLocalizationProvider(GetContext().GetLocalizationProvider());
-    
+
     m_executor->SetQuery(*_GetQuery());
     m_executor->ReadRecords(&GetContext().GetCancelationToken());
 
@@ -945,9 +946,9 @@ size_t ContentProvider::GetFullContentSetSize() const
             }
         else if (GetContext().IsQueryContext())
             {
-            CustomFunctionsContext fnContext(GetContext().GetSchemaHelper(), GetContext().GetConnections(), GetContext().GetConnection(), 
-                GetContext().GetRuleset(), GetContext().GetLocale(), GetContext().GetUserSettings(), &GetContext().GetUsedSettingsListener(), 
-                GetContext().GetECExpressionsCache(), GetContext().GetNodesFactory(), nullptr, nullptr, nullptr, 
+            CustomFunctionsContext fnContext(GetContext().GetSchemaHelper(), GetContext().GetConnections(), GetContext().GetConnection(),
+                GetContext().GetRuleset(), GetContext().GetLocale(), GetContext().GetUserSettings(), &GetContext().GetUsedSettingsListener(),
+                GetContext().GetECExpressionsCache(), GetContext().GetNodesFactory(), nullptr, nullptr, nullptr,
                 GetContext().IsPropertyFormattingContext() ? &GetContext().GetECPropertyFormatter() : nullptr);
             if (GetContext().IsLocalizationContext())
                 fnContext.SetLocalizationProvider(GetContext().GetLocalizationProvider());
@@ -1048,7 +1049,7 @@ ContentQueryCPtr NestedContentProvider::_GetQuery() const
     if (m_query.IsNull())
         {
         IECPropertyFormatter const* formatter = GetContext().IsPropertyFormattingContext() ? &GetContext().GetECPropertyFormatter() : nullptr;
-        ContentQueryBuilderParameters params(GetContext().GetSchemaHelper(), GetContext().GetConnections(), GetContext().GetNodesLocater(), 
+        ContentQueryBuilderParameters params(GetContext().GetSchemaHelper(), GetContext().GetConnections(), GetContext().GetNodesLocater(),
             GetContext().GetConnection(), GetContext().GetRuleset(), GetContext().GetLocale(), GetContext().GetUserSettings(), GetContext().GetECExpressionsCache(),
             GetContext().GetCategorySupplier(), formatter, GetContext().GetLocalState());
         if (GetContext().IsLocalizationContext())
@@ -1056,7 +1057,7 @@ ContentQueryCPtr NestedContentProvider::_GetQuery() const
         ContentQueryBuilder queryBuilder(params);
         m_query = queryBuilder.CreateQuery(m_field);
         }
-    
+
     if (m_query.IsNull())
         return nullptr;
 
@@ -1089,7 +1090,7 @@ ContentQueryCPtr NestedContentProvider::_GetQuery() const
             query->Where(query->GetClause(CLAUSE_Where).c_str(), {new BoundQueryId(m_primaryInstanceKeys[0].GetId())}, false);
             }
         }
-        
+
     return m_adjustedQuery;
     }
 

@@ -540,7 +540,7 @@ TEST_F(ContentProviderTests, LoadsNestedContentFields)
     ContentSetItemPtr item;
     ASSERT_TRUE(provider->GetContentSetItem(item, 0));
 
-    Utf8CP fieldName = descriptor->GetVisibleFields()[3]->GetName().c_str();
+    Utf8CP fieldName = descriptor->GetVisibleFields()[3]->GetUniqueName().c_str();
     rapidjson::Document json = item->AsJson();
     RapidJsonValueCR value = json["Values"][fieldName];
     ASSERT_TRUE(value.IsArray());

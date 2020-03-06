@@ -115,7 +115,7 @@ void DefaultECPresentationSerializer::_FieldAsJson(ContentDescriptor::Field cons
     {
     fieldBaseJson.SetObject();
     fieldBaseJson.AddMember("Category", field.GetCategory().AsJson(&fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
-    fieldBaseJson.AddMember("Name", rapidjson::Value(field.GetName().c_str(), fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
+    fieldBaseJson.AddMember("Name", rapidjson::Value(field.GetUniqueName().c_str(), fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
     fieldBaseJson.AddMember("DisplayLabel", rapidjson::Value(field.GetLabel().c_str(), fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
     fieldBaseJson.AddMember("Type", field.GetTypeDescription().AsJson(&fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
     fieldBaseJson.AddMember("IsReadOnly", field.IsReadOnly(), fieldBaseJson.GetAllocator());
@@ -317,7 +317,7 @@ void DefaultECPresentationSerializer::_AsJson(ContentDescriptor::Field::NestedCo
     for (ContentDescriptor::Field const* nestedField : nestedContentTypeDescription.GetNestedContentField().GetFields())
         {
         rapidjson::Value member(rapidjson::kObjectType);
-        member.AddMember("Name", rapidjson::StringRef(nestedField->GetName().c_str()), typeDescriptionBaseJson.GetAllocator());
+        member.AddMember("Name", rapidjson::StringRef(nestedField->GetUniqueName().c_str()), typeDescriptionBaseJson.GetAllocator());
         member.AddMember("Label", rapidjson::StringRef(nestedField->GetLabel().c_str()), typeDescriptionBaseJson.GetAllocator());
         member.AddMember("Type", nestedField->GetTypeDescription().AsJson(&typeDescriptionBaseJson.GetAllocator()), typeDescriptionBaseJson.GetAllocator());
         members.PushBack(member, typeDescriptionBaseJson.GetAllocator());
@@ -431,7 +431,7 @@ rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContentSetItem cons
         rapidjson::Value fieldValueKeys(rapidjson::kObjectType);
         for (auto pair : contentSetItem.GetFieldInstanceKeys())
             {
-            Utf8CP fieldName = pair.first.GetField().GetName().c_str();
+            Utf8CP fieldName = pair.first.GetField().GetUniqueName().c_str();
             if (!fieldValueKeys.HasMember(fieldName))
                 fieldValueKeys.AddMember(rapidjson::StringRef(fieldName), rapidjson::Value(rapidjson::kArrayType), json.GetAllocator());
             rapidjson::Value& fieldProperties = fieldValueKeys[fieldName];

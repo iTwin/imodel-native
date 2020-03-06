@@ -132,7 +132,7 @@ ContentDescriptor::~ContentDescriptor()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ContentDescriptor::Equals(ContentDescriptor const& other) const
+bool ContentDescriptor::Equals(ContentDescriptorCR other) const
     {
     if (!m_preferredDisplayType.Equals(other.m_preferredDisplayType)
         || m_contentFlags != other.m_contentFlags
@@ -175,7 +175,7 @@ int ContentDescriptor::GetFieldIndex(Utf8CP name) const
     {
     for (size_t i = 0; i < m_fields.size(); ++i)
         {
-        if (m_fields[i]->GetName().Equals(name))
+        if (m_fields[i]->GetUniqueName().Equals(name))
             return (int)i;
         }
     return -1;
@@ -704,7 +704,6 @@ rapidjson::Document ContentDescriptor::CalculatedPropertyField::_AsJson(rapidjso
 ContentDescriptor::ECPropertiesField::ECPropertiesField(Category category, Property const& prop)
     {
     SetCategory(category);
-    SetName(Utf8String("pc_").append(QueryBuilderHelpers::CreateClassNameForDescriptor(prop.GetPropertyClass())).append("_").append(prop.GetProperty().GetName()));
     SetLabel(prop.GetProperty().GetDisplayLabel());
     m_properties.push_back(prop);
     }
@@ -822,7 +821,7 @@ int ContentDescriptor::ECPropertiesField::_GetPriority() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String CreateFieldName(ContentDescriptor::ECPropertiesField const& field)
+Utf8String ContentDescriptor::ECPropertiesField::_CreateName() const
     {
     Utf8String name;
     bvector<Utf8String> relatedClassNames;
@@ -831,7 +830,7 @@ static Utf8String CreateFieldName(ContentDescriptor::ECPropertiesField const& fi
     bset<ECClassCP> usedRelatedClasses;
     bset<ECClassCP> usedPropertyClasses;
 
-    for (ContentDescriptor::Property const& prop : field.GetProperties())
+    for (ContentDescriptor::Property const& prop : GetProperties())
         {
         if (prop.IsRelated())
             {
@@ -858,19 +857,8 @@ static Utf8String CreateFieldName(ContentDescriptor::ECPropertiesField const& fi
     if (!propertyClassNames.empty())
         name.append("pc_").append(BeStringUtilities::Join(propertyClassNames, "_")).append("_");
 
-    name.append(field.GetProperties().front().GetProperty().GetName());
+    name.append(GetProperties().front().GetProperty().GetName());
     return name;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ContentDescriptor::ECPropertiesField::_GetName() const
-    {
-    if (!m_isValidName)
-        const_cast<ECPropertiesField*>(this)->SetName(CreateFieldName(*this));
-
-    return Field::_GetName();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -916,6 +904,16 @@ rapidjson::Document ContentDescriptor::NestedContentField::_AsJson(rapidjson::Do
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                02/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ContentDescriptor::NestedContentField::_CreateName() const
+    {
+    Utf8String name("ncc_");
+    name.append(QueryBuilderHelpers::CreateClassNameForDescriptor(GetContentClass()));
+    return name;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ContentDescriptor::CompositeContentField::_Equals(Field const& other) const
@@ -957,6 +955,23 @@ rapidjson::Document ContentDescriptor::RelatedContentField::_AsJson(rapidjson::D
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                02/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ContentDescriptor::RelatedContentField::_CreateName() const
+    {
+    Utf8String name;
+    if (!m_pathFromSelectClassToContentClass.empty())
+        name.append("rc_");
+    for (RelatedClassCR rel : m_pathFromSelectClassToContentClass)
+        {
+        name.append(QueryBuilderHelpers::CreateClassNameForDescriptor(*rel.GetSourceClass()));
+        name.append("_");
+        }
+    name.append(NestedContentField::_CreateName());
+    return name;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document ContentDescriptor::ECInstanceKeyField::_AsJson(rapidjson::Document::AllocatorType* allocator) const
@@ -983,7 +998,7 @@ ContentDescriptor::Field::TypeDescriptionPtr ContentDescriptor::ECInstanceKeyFie
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentDescriptor::ECInstanceKeyField::RecalculateName()
+Utf8String ContentDescriptor::ECInstanceKeyField::_CreateName() const
     {
     Utf8String name("/key/");
     bset<Utf8String> uniqueAliases;
@@ -1003,17 +1018,7 @@ void ContentDescriptor::ECInstanceKeyField::RecalculateName()
             uniqueAliases.insert(prop.GetPrefix());
             }
         }
-    SetName(name);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ContentDescriptor::ECInstanceKeyField::_GetName() const
-    {
-    if (!m_isValidName)
-        const_cast<ECInstanceKeyField*>(this)->RecalculateName();
-    return Field::_GetName();
+    return name;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1073,15 +1078,12 @@ ContentDescriptor::Field::TypeDescriptionPtr ContentDescriptor::ECNavigationInst
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ContentDescriptor::ECNavigationInstanceIdField::_GetName() const
+Utf8String ContentDescriptor::ECNavigationInstanceIdField::_CreateName() const
     {
-    if (SystemField::_GetName().empty())
-        {
-        Utf8String name("/id/");
-        name.append(m_propertyField->GetName());
-        const_cast<ECNavigationInstanceIdField*>(this)->SetName(name);
-        }
-    return SystemField::_GetName();
+    BeAssert(!m_propertyField->GetUniqueName().empty());
+    Utf8String name("/id/");
+    name.append(m_propertyField->GetUniqueName());
+    return name;
     }
 
 /*---------------------------------------------------------------------------------**//**

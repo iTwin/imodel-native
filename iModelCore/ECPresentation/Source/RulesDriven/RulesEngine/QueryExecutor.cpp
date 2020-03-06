@@ -108,7 +108,7 @@ void QueryExecutor::ReadRecords(ICancelationTokenCP cancelationToken)
             LoggingHelper::LogMessage(Log::Default, "[QueryExecutor] Records read canceled while preparing statement", NativeLogging::LOG_TRACE);
             return;
             }
-        LoggingHelper::LogMessage(Log::Default, Utf8PrintfString("[QueryExecutor] Failed to prepare query (%s): '%s'", 
+        LoggingHelper::LogMessage(Log::Default, Utf8PrintfString("[QueryExecutor] Failed to prepare query (%s): '%s'",
             m_connection.GetDb().GetLastError().c_str(), m_queryString.c_str()).c_str(), NativeLogging::LOG_ERROR);
         BeAssert(false);
         return;
@@ -844,7 +844,7 @@ void ContentQueryExecutor::_ReadRecord(ECSqlStatement& statement)
         ContentQueryContractCPtr fieldsContract = m_query->GetContract(contractId);
         for (ContentDescriptor::Field const* field : descriptor.GetAllFields())
             {
-            Utf8StringCR fieldName = field->GetName();
+            Utf8StringCR fieldName = field->GetUniqueName();
             if (field->IsDisplayLabelField() && descriptor.ShowLabels())
                 {
                 // if this is a display label field, set the display label definition
@@ -893,7 +893,7 @@ void ContentQueryExecutor::_ReadRecord(ECSqlStatement& statement)
             else if (field->IsSystemField() && field->AsSystemField()->IsECNavigationInstanceIdField())
                 {
                 // if this is ECNavigationInstanceIdField, update value for ECPropertiesField
-                Utf8String propertiesFieldName = field->AsSystemField()->AsECNavigationInstanceIdField()->GetPropertiesField().GetName();
+                Utf8String propertiesFieldName = field->AsSystemField()->AsECNavigationInstanceIdField()->GetPropertiesField().GetUniqueName();
                 values.SetNavigationPropertyValue(propertiesFieldName.c_str(), statement.GetValue(columnIndex));
                 }
             else

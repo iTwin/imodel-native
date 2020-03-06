@@ -531,7 +531,7 @@ static Utf8String CreateEnumOrderByClause(ContentDescriptor::Field const& field,
     clause.append("('");
     clause.append(enumeration.GetSchema().GetName()).append("', '");
     clause.append(enumeration.GetName()).append("', ");
-    clause.append(QueryHelpers::Wrap(field.GetName())).append(")");
+    clause.append(QueryHelpers::Wrap(field.GetUniqueName())).append(")");
     return clause;
     }
 
@@ -556,14 +556,14 @@ void QueryBuilderHelpers::ApplyDescriptorOverrides(RefCountedPtr<ContentQuery>& 
                 }
             else if (sortingField->IsDisplayLabelField())
                 {
-                orderByClause.append(QueryHelpers::Wrap(sortingField->GetName().c_str()));
+                orderByClause.append(QueryHelpers::Wrap(sortingField->GetUniqueName().c_str()));
                 }
             else
                 {
-                orderByClause.append(QueryHelpers::Wrap(ovr.GetSortingField()->GetName()));
+                orderByClause.append(QueryHelpers::Wrap(ovr.GetSortingField()->GetUniqueName()));
                 }
 
-            sortingFieldNames.push_back(ovr.GetSortingField()->GetName().c_str());
+            sortingFieldNames.push_back(ovr.GetSortingField()->GetUniqueName().c_str());
             }
 #ifdef WIP_SORTING_GRID_CONTENT
         else if (ovr.ShowLabels())
@@ -633,7 +633,7 @@ void QueryBuilderHelpers::AddCalculatedFields(ContentDescriptorR descriptor, Cal
                 continue;
 
             ContentDescriptor::CalculatedPropertyField const* calculatedField = field->AsCalculatedPropertyField();
-            if (calculatedField->GetName() == propertyName && nullptr != ecClass && ecClass->Is(calculatedField->GetClass()))
+            if (calculatedField->GetRequestedName() == propertyName && nullptr != ecClass && ecClass->Is(calculatedField->GetClass()))
                 return;
             }
 

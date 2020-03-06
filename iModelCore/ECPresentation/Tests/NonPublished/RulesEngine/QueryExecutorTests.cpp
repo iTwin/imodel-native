@@ -1514,7 +1514,7 @@ TEST_F(ContentQueryExecutorTests, HandlesResultsMergingFromMultipleClasses)
     ContentDescriptor::Field* field = new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category("Misc.", "Misc.", "", 0), "Description", "Description");
     field->AsPropertiesField()->AddProperty(ContentDescriptor::Property("gadget", *m_gadgetClass, *m_gadgetClass->GetPropertyP("Description")->GetAsPrimitiveProperty()));
     field->AsPropertiesField()->AddProperty(ContentDescriptor::Property("widget", *m_widgetClass, *m_widgetClass->GetPropertyP("Description")->GetAsPrimitiveProperty()));
-    field->SetName("Description");
+    field->SetUniqueName("Description");
     innerDescriptor->AddField(field);
 
     ComplexContentQueryPtr q1 = ComplexContentQuery::Create();
@@ -1912,7 +1912,9 @@ TEST_F(ContentQueryExecutorTests, GetDistinctValuesFromCalculatedPropertyField)
     RulesDrivenECPresentationManager::ContentOptions options(m_ruleset->GetRuleSetId());
     ContentDescriptorPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
 
-    descriptor->AddField(new ContentDescriptor::CalculatedPropertyField("label", "MyID", "this.MyID", nullptr));
+    ContentDescriptor::CalculatedPropertyField* calculatedField = new ContentDescriptor::CalculatedPropertyField("label", "MyID", "this.MyID", nullptr);
+    calculatedField->SetUniqueName(calculatedField->CreateName());
+    descriptor->AddField(calculatedField);
     descriptor->AddContentFlag(ContentFlags::DistinctValues);
 
     ComplexContentQueryPtr nestedQuery = ComplexContentQuery::Create();
@@ -1961,7 +1963,7 @@ TEST_F(QueryExecutorTests, GetDistinctStringValuesFromMergedECPropertyField)
     ContentDescriptor::Field* field = new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category("Misc.", "Misc.", 0, false), "MyID", "MyID");
     field->AsPropertiesField()->AddProperty(ContentDescriptor::Property("widget", *m_widgetClass, *m_widgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty()));
     field->AsPropertiesField()->AddProperty(ContentDescriptor::Property("gadget", *m_gadgetClass, *m_gadgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty()));
-    field->SetName("MyID");
+    field->SetUniqueName("MyID");
     descriptor->AddField(field);
     descriptor->AddContentFlag(ContentFlags::DistinctValues);
 

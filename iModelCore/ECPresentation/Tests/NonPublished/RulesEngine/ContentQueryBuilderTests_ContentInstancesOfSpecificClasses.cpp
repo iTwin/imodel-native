@@ -227,10 +227,10 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_CategorizesF
     bvector<ContentDescriptor::Field*> fields = descriptor->GetVisibleFields();
     ASSERT_EQ(2, fields.size());
 
-    EXPECT_STREQ(FIELD_NAME(class2, "Name"), fields[0]->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME(class2, "Name"), fields[0]->GetUniqueName().c_str());
     EXPECT_STREQ("General", fields[0]->GetCategory().GetName().c_str());
 
-    EXPECT_STREQ(FIELD_NAME(class2, "CategorizedProperty"), fields[1]->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME(class2, "CategorizedProperty"), fields[1]->GetUniqueName().c_str());
     EXPECT_STREQ("CategoryName", fields[1]->GetCategory().GetName().c_str());
     EXPECT_STREQ("Category Label", fields[1]->GetCategory().GetLabel().c_str());
     EXPECT_STREQ("Category description", fields[1]->GetCategory().GetDescription().c_str());
@@ -278,10 +278,10 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_MergesSimila
     bvector<ContentDescriptor::Field*> fields = descriptor->GetVisibleFields();
     ASSERT_EQ(2, fields.size());
 
-    EXPECT_STREQ(FIELD_NAME((bvector<ECClassCP>{class1a, class2}), "Name"), fields[0]->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME((bvector<ECClassCP>{class1a, class2}), "Name"), fields[0]->GetUniqueName().c_str());
     EXPECT_EQ(2, fields[0]->AsPropertiesField()->GetProperties().size());
 
-    EXPECT_STREQ(FIELD_NAME(class2, "CategorizedProperty"), fields[1]->GetName().c_str());
+    EXPECT_STREQ(FIELD_NAME(class2, "CategorizedProperty"), fields[1]->GetUniqueName().c_str());
     EXPECT_EQ(1, fields[1]->AsPropertiesField()->GetProperties().size());
     }
 

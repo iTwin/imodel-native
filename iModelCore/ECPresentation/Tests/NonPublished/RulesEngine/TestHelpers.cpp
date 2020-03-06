@@ -494,7 +494,7 @@ void RulesEngineTestHelpers::ValidateContentSetItem(IECInstanceCR instance, Cont
     bvector<ContentDescriptor::Field*> fields = descriptor.GetVisibleFields();
     for (ContentDescriptor::Field const* field : fields)
         {
-        Utf8CP fieldName = field->GetName().c_str();
+        Utf8CP fieldName = field->GetUniqueName().c_str();
         ASSERT_TRUE(values.HasMember(fieldName));
         if (field->IsDisplayLabelField())
             continue;
@@ -577,6 +577,7 @@ ContentDescriptor::Field& RulesEngineTestHelpers::AddField(ContentDescriptorR de
     ContentDescriptor::Property prop, IPropertyCategorySupplierR categorySupplier)
     {
     ContentDescriptor::Field* field = new ContentDescriptor::ECPropertiesField(categorySupplier.CreateCategory(primaryClass, prop.GetProperty(), RelationshipMeaning::SameInstance), prop);
+    field->SetUniqueName(field->CreateName());
     descriptor.AddField(field);
     return *descriptor.GetAllFields().back();
     }

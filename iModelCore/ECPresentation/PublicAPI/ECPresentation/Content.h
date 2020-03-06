@@ -471,7 +471,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
 
     private:
         Category m_category;
-        Utf8String m_name;
+        Utf8String m_uniqueName;
         Utf8String m_label;
         ContentFieldEditor const* m_editor;
         mutable TypeDescriptionPtr m_type;
@@ -492,30 +492,35 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         virtual TypeDescriptionPtr _CreateTypeDescription() const = 0;
         virtual bool _IsReadOnly() const = 0;
         virtual bool _IsVisible() const {return true;}
-        virtual bool _Equals(Field const& other) const {return GetCategory() == other.GetCategory() && GetName().Equals(other.GetName()) && GetLabel().Equals(other.GetLabel());}
+        virtual bool _Equals(Field const& other) const {return GetCategory() == other.GetCategory() && m_uniqueName.Equals(other.m_uniqueName) && GetLabel().Equals(other.GetLabel());}
         virtual rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const = 0;
         virtual int _GetPriority() const = 0;
         virtual void _OnFieldsCloned(bmap<Field const*, Field const*> const& fieldsRemapInfo) {}
         virtual bool _OnFieldRemoved(Field const&) {return false;}
-        virtual Utf8StringCR _GetName() const {return m_name;}
-        virtual void _SetName(Utf8String name) {m_name = name;}
+        virtual Utf8String _CreateName() const = 0;
 
     public:
         //! Constructor.
         //! @param[in] category The category of this field.
-        //! @param[in] name The per-descriptor unique name of this field.
         //! @param[in] label The label of this field.
         //! @param[in] editor The custom editor for this field.
-        Field(Category category, Utf8String name, Utf8String label, ContentFieldEditor const* editor = nullptr)
-            : m_category(category), m_name(name), m_label(label), m_editor(nullptr)
+        Field(Category category, Utf8String label, ContentFieldEditor const* editor = nullptr)
+            : m_category(category), m_label(label), m_editor(nullptr)
             {
             if (editor)
                 m_editor = new ContentFieldEditor(*editor);
             }
 
+        //! Constructor.
+        Field(Category category, Utf8String uniqueName, Utf8String label, ContentFieldEditor const* editor = nullptr)
+            : Field(category, label, editor)
+            {
+            m_uniqueName = uniqueName;
+            }
+
         //! Copy constructor.
         Field(Field const& other)
-            : m_category(other.m_category), m_name(other.m_name), m_label(other.m_label), m_editor(other.m_editor)
+            : m_category(other.m_category), m_uniqueName(other.m_uniqueName), m_label(other.m_label), m_editor(other.m_editor)
             {
             if (nullptr != other.m_editor)
                 m_editor = new ContentFieldEditor(*other.m_editor);
@@ -523,7 +528,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
 
         //! Move constructor.
         Field(Field&& other)
-            : m_category(std::move(other.m_category)), m_name(std::move(other.m_name)), m_label(std::move(other.m_label)),
+            : m_category(std::move(other.m_category)), m_uniqueName(std::move(other.m_uniqueName)), m_label(std::move(other.m_label)),
             m_editor(std::move(other.m_editor))
             {}
 
@@ -581,10 +586,12 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         //! Set the category for this field.
         void SetCategory(Category category) {m_category = category;}
 
-        //! Get the name of this field.
-        Utf8StringCR GetName() const {return _GetName();}
-        //! Set the name for this field.
-        void SetName(Utf8String name) {_SetName(name);}
+        //! Create a default value for this field's name.
+        Utf8String CreateName() const {return _CreateName();}
+        //! Set unique name for this field.
+        void SetUniqueName(Utf8String name) {m_uniqueName = name;}
+        //! Getet unique name of this field.
+        Utf8StringCR GetUniqueName() const {return m_uniqueName;}
 
         //! Get the label of this field.
         Utf8StringCR GetLabel() const {return m_label;}
@@ -638,6 +645,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         int _GetPriority() const override {return m_priority;}
         bool _IsReadOnly() const override {return true;}
         ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const override;
+        Utf8String _CreateName() const override {return NAME;}
 
     public:
         //! Constructor.
@@ -671,6 +679,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         int m_priority;
         Utf8String m_valueExpression;
         ECClassCP m_class;
+        Utf8String m_requestedName;
 
     protected:
         CalculatedPropertyField* _AsCalculatedPropertyField() override {return this;}
@@ -680,6 +689,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         int _GetPriority() const override {return m_priority;}
         bool _IsReadOnly() const override {return true;}
         ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const override;
+        Utf8String _CreateName() const override {return m_requestedName;}
 
     public:
         //! Constructor.
@@ -689,8 +699,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         //! @param[in] ecClass Entity class this field is intended for.
         //! @param[in] priority Field priority.
         CalculatedPropertyField(Utf8String label, Utf8String name, Utf8String valueExpression, ECClassCP ecClass, int priority = Property::DEFAULT_PRIORITY)
-            : Field(Category::GetDefaultCategory(), name, label), m_valueExpression(valueExpression), m_class(ecClass), m_priority(priority)
+            : Field(Category::GetDefaultCategory(), label), m_requestedName(name), m_valueExpression(valueExpression), m_class(ecClass), m_priority(priority)
             {}
+
+        Utf8StringCR GetRequestedName() const {return m_requestedName;}
 
         //! Get the ECExpression used to calculate field's value.
         Utf8String const& GetValueExpression() const {return m_valueExpression;}
@@ -712,7 +724,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
     private:
         bvector<Property> m_properties;
         mutable std::unordered_map<ECClassCP, bvector<Property const*>> m_matchingPropertiesCache;
-        bool m_isValidName;
 
     protected:
         ECPropertiesField* _AsPropertiesField() override {return this;}
@@ -723,16 +734,19 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const override;
         ECPRESENTATION_EXPORT bool _Equals(Field const& other) const override;
         ECPRESENTATION_EXPORT int _GetPriority() const override;
-        ECPRESENTATION_EXPORT Utf8StringCR _GetName() const override;
-        void _SetName(Utf8String name) override {m_isValidName = true; Field::_SetName(name);}
+        ECPRESENTATION_EXPORT Utf8String _CreateName() const override;
     public:
         //! Constructor.
         //! @param[in] category The category of this field.
-        //! @param[in] name The per-descriptor unique name of this field.
         //! @param[in] label The label of this field.
         //! @param[in] editor The custom editor for this field.
-        ECPropertiesField(Category category, Utf8String name, Utf8String label, ContentFieldEditor const* editor = nullptr)
-            : Field(category, name, label, editor), m_isValidName(name.empty())
+        ECPropertiesField(Category category, Utf8String label, ContentFieldEditor const* editor = nullptr)
+            : Field(category, label, editor)
+            {}
+
+        //! Constructor.
+        ECPropertiesField(Category category, Utf8String uniqueName, Utf8String label, ContentFieldEditor const* editor = nullptr)
+            : Field(category, uniqueName, label, editor)
             {}
 
         //! Constructor. Creates a field with a single @ref Property.
@@ -740,11 +754,18 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         //! @param[in] prop Property that this field is based on.
         ECPRESENTATION_EXPORT ECPropertiesField(Category category, Property const& prop);
 
+        //! Constructor.
+        ECPropertiesField(Category category, Utf8String uniqueName, Property const& prop)
+            : ECPropertiesField(category, prop)
+            {
+            SetUniqueName(uniqueName);
+            }
+
         //! Copy constructor.
-        ECPropertiesField(ECPropertiesField const& other) : Field(other), m_properties(other.m_properties), m_isValidName(other.m_isValidName) {}
+        ECPropertiesField(ECPropertiesField const& other) : Field(other), m_properties(other.m_properties) {}
 
         //! Move constructor.
-        ECPropertiesField(ECPropertiesField&& other) : Field(std::move(other)), m_properties(std::move(other.m_properties)), m_isValidName(other.m_isValidName) {}
+        ECPropertiesField(ECPropertiesField&& other) : Field(std::move(other)), m_properties(std::move(other.m_properties)) {}
 
         //! Is this field equal to the supplied one.
         bool operator==(ECPropertiesField const& other) const {return Field::operator==(other) && m_properties == other.m_properties;}
@@ -753,9 +774,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         ECPRESENTATION_EXPORT bool IsCompositePropertiesField() const;
 
         //! Add property to this field.
-        void AddProperty(Property prop) {m_isValidName = false; m_properties.push_back(prop);}
+        void AddProperty(Property prop) {m_properties.push_back(prop);}
         //! Get the properties that this field is based on.
         bvector<Property> const& GetProperties() const {return m_properties;}
+        bvector<Property>& GetProperties() {return m_properties;}
         //! Find properties that match the supplied class. If nullptr is supplied,
         //! all properties are returned.
         bvector<Property const*> const& FindMatchingProperties(ECClassCP) const;
@@ -784,22 +806,25 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         ECPRESENTATION_EXPORT virtual bool _Equals(Field const& other) const override;
         int _GetPriority() const override {return m_priority;}
         ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const override;
+        ECPRESENTATION_EXPORT virtual Utf8String _CreateName() const override;
         virtual ECClassCR _GetContentClass() const = 0;
         virtual Utf8CP _GetContentClassAlias() const = 0;
         virtual CompositeContentField* _AsCompositeContentField() {return nullptr;}
         virtual RelatedContentField* _AsRelatedContentField() {return nullptr;}
 
-
         //! Constructor.
         //! @param[in] category The category of this field.
-        //! @param[in] name The per-descriptor unique name of this field.
         //! @param[in] label The label of this field.
         //! @param[in] fields A list of fields which this field consists from.
         //! @param[in] autoExpand Flag specifying if this field should be expanded.
         //! @param[in] priority Priority of the field
-        NestedContentField(Category category, Utf8String name, Utf8String label,
-            bvector<Field*> fields = bvector<Field*>(), bool autoExpand = false, int priority = Property::DEFAULT_PRIORITY)
-            : Field(category, name, label), m_fields(fields), m_priority(priority), m_autoExpand(autoExpand)
+        NestedContentField(Category category, Utf8String label, bvector<Field*> fields = bvector<Field*>(), bool autoExpand = false, int priority = Property::DEFAULT_PRIORITY)
+            : Field(category, label), m_fields(fields), m_priority(priority), m_autoExpand(autoExpand)
+            {}
+
+        //! Constructor.
+        NestedContentField(Category category, Utf8String uniqueName, Utf8String label, bvector<Field*> fields = bvector<Field*>(), bool autoExpand = false, int priority = Property::DEFAULT_PRIORITY)
+            : Field(category, uniqueName, label), m_fields(fields), m_priority(priority), m_autoExpand(autoExpand)
             {}
 
         //! Copy constructor.
@@ -855,10 +880,14 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         ECPRESENTATION_EXPORT bool _Equals(Field const& other) const override;
         ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const override;
     public:
-        CompositeContentField(Category category, Utf8String name, Utf8String label,
-            ECClassCR contentClass, Utf8String contentClassAlias,
+        CompositeContentField(Category category, Utf8String label, ECClassCR contentClass, Utf8String contentClassAlias,
             bvector<Field*> fields = bvector<Field*>(), bool autoExpand = false, int priority = Property::DEFAULT_PRIORITY)
-            : NestedContentField(category, name, label, fields, autoExpand, priority), m_contentClass(contentClass),
+            : NestedContentField(category, label, fields, autoExpand, priority), m_contentClass(contentClass),
+            m_contentClassAlias(contentClassAlias)
+            {}
+        CompositeContentField(Category category, Utf8String uniqueName, Utf8String label, ECClassCR contentClass, Utf8String contentClassAlias,
+            bvector<Field*> fields = bvector<Field*>(), bool autoExpand = false, int priority = Property::DEFAULT_PRIORITY)
+            : NestedContentField(category, uniqueName, label, fields, autoExpand, priority), m_contentClass(contentClass),
             m_contentClassAlias(contentClassAlias)
             {}
         CompositeContentField(CompositeContentField const& other)
@@ -883,11 +912,16 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         virtual RelatedContentField* _AsRelatedContentField() override {return this;}
         Field* _Clone() const override {return new RelatedContentField(*this);}
         ECPRESENTATION_EXPORT bool _Equals(Field const& other) const override;
+        ECPRESENTATION_EXPORT Utf8String _CreateName() const override;
         ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const override;
     public:
-        RelatedContentField(Category category, Utf8String name, Utf8String label, RelatedClassPath pathFromSelectClassToContentClass,
+        RelatedContentField(Category category, Utf8String label, RelatedClassPath pathFromSelectClassToContentClass,
             bvector<Field*> fields = bvector<Field*>(), bool autoExpand = false, int priority = Property::DEFAULT_PRIORITY)
-            : NestedContentField(category, name, label, fields, autoExpand, priority), m_pathFromSelectClassToContentClass(pathFromSelectClassToContentClass)
+            : NestedContentField(category, label, fields, autoExpand, priority), m_pathFromSelectClassToContentClass(pathFromSelectClassToContentClass)
+            {}
+        RelatedContentField(Category category, Utf8String uniqueName, Utf8String label, RelatedClassPath pathFromSelectClassToContentClass,
+            bvector<Field*> fields = bvector<Field*>(), bool autoExpand = false, int priority = Property::DEFAULT_PRIORITY)
+            : NestedContentField(category, uniqueName, label, fields, autoExpand, priority), m_pathFromSelectClassToContentClass(pathFromSelectClassToContentClass)
             {}
         RelatedContentField(RelatedContentField const& other)
             : NestedContentField(other), m_pathFromSelectClassToContentClass(other.m_pathFromSelectClassToContentClass)
@@ -918,7 +952,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         bool _IsReadOnly() const override {return true;}
         bool _IsVisible() const override {return false;}
     protected:
-        SystemField(Utf8StringCR fieldName) : Field(Category(), fieldName, "") {}
+        SystemField() : Field(Category(), "") {}
         virtual ECInstanceKeyField* _AsECInstanceKeyField() {return nullptr;}
         virtual ECInstanceKeyField const* _AsECInstanceKeyField() const {return nullptr;}
         virtual ECNavigationInstanceIdField* _AsECNavigationInstanceIdField() {return nullptr;}
@@ -939,7 +973,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
     {
     private:
         bvector<ContentDescriptor::ECPropertiesField const*> m_keyFields;
-        bool m_isValidName;
     protected:
         ECInstanceKeyField* _AsECInstanceKeyField() override {return this;}
         ECInstanceKeyField const* _AsECInstanceKeyField() const override {return this;}
@@ -947,14 +980,12 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         ECPRESENTATION_EXPORT TypeDescriptionPtr _CreateTypeDescription() const override;
         ECPRESENTATION_EXPORT void _OnFieldsCloned(bmap<Field const*, Field const*> const& fieldsRemapInfo) override;
         ECPRESENTATION_EXPORT bool _OnFieldRemoved(Field const&) override;
-        ECPRESENTATION_EXPORT Utf8StringCR _GetName() const override;
-        void _SetName(Utf8String name) override {m_isValidName = true; Field::_SetName(name);}
+        ECPRESENTATION_EXPORT Utf8String _CreateName() const override;
         ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const override;
     public:
-        ECInstanceKeyField() : SystemField("Invalid"), m_isValidName(false) {}
-        ECPRESENTATION_EXPORT void RecalculateName();
+        ECInstanceKeyField() : SystemField() {}
         bvector<ContentDescriptor::ECPropertiesField const*> const& GetKeyFields() const {return m_keyFields;}
-        void AddKeyField(ContentDescriptor::ECPropertiesField const& field) {m_keyFields.push_back(&field); m_isValidName = false;}
+        void AddKeyField(ContentDescriptor::ECPropertiesField const& field) {m_keyFields.push_back(&field);}
     };
 
     //===================================================================================
@@ -970,13 +1001,13 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         Field* _Clone() const override {return new ECNavigationInstanceIdField(*this);}
         ECPRESENTATION_EXPORT TypeDescriptionPtr _CreateTypeDescription() const override;
         ECPRESENTATION_EXPORT bool _Equals(Field const& other) const override;
-        ECPRESENTATION_EXPORT Utf8StringCR _GetName() const override;
+        ECPRESENTATION_EXPORT Utf8String _CreateName() const override;
         ECPRESENTATION_EXPORT void _OnFieldsCloned(bmap<Field const*, Field const*> const&) override;
         ECPRESENTATION_EXPORT bool _OnFieldRemoved(Field const&) override;
         ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const override;
     public:
         ECNavigationInstanceIdField(ECPropertiesField const& propertiesField)
-            : SystemField(""), m_propertyField(&propertiesField)
+            : SystemField(), m_propertyField(&propertiesField)
             {}
         ECNavigationInstanceIdField(ECNavigationInstanceIdField const& other)
             : SystemField(other), m_propertyField(other.m_propertyField)
@@ -1212,7 +1243,7 @@ struct ContentSetItem : RefCountedBase, RapidJsonExtendedDataHolder<>
             {
             if (m_propertyIndex != other.m_propertyIndex)
                 return m_propertyIndex < other.m_propertyIndex;
-            return m_field->GetName().CompareTo(other.m_field->GetName()) < 0;
+            return m_field->GetUniqueName().CompareTo(other.m_field->GetUniqueName()) < 0;
             }
         ContentDescriptor::ECPropertiesField const& GetField() const {return *m_field;}
         ContentDescriptor::Property const& GetProperty() const {return m_field->GetProperties()[m_propertyIndex];}
