@@ -9,6 +9,7 @@ dstDir = $(BuildContext)Delivery/msvcrt/
 
 always:
     ~linkfile "$(dstDir)concrt140.dll=$(srcDir)Microsoft.VC141.CRT/concrt140.dll"
+    ~linkfile "$(dstDir)mfc140u.dll=$(srcDir)Microsoft.VC141.MFC/mfc140u.dll"
     ~linkfile "$(dstDir)msvcp140.dll=$(srcDir)Microsoft.VC141.CRT/msvcp140.dll"
     ~linkfile "$(dstDir)vccorlib140.dll=$(srcDir)Microsoft.VC141.CRT/vccorlib140.dll"
     ~linkfile "$(dstDir)vcruntime140.dll=$(srcDir)Microsoft.VC141.CRT/vcruntime140.dll"
