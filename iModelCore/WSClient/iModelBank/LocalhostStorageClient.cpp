@@ -185,7 +185,8 @@ AsyncTaskPtr<AzureResult> LocalhostStorageClient::SendGetFileRequest
     BeFileNameCR filePath,
     Http::Request::ProgressCallbackCR progressCallback,
     IAzureBlobStorageClient::RequestOptionsPtr options,
-    ICancellationTokenPtr ct
+    ICancellationTokenPtr ct,
+    int maxRetries
     ) const
     {
     return CopyFile(true, url, filePath, progressCallback, options, ct);

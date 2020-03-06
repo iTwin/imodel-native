@@ -57,7 +57,8 @@ struct IAzureBlobStorageClient
             BeFileNameCR filePath,
             Http::Request::ProgressCallbackCR progressCallback = nullptr,
             RequestOptionsPtr options = nullptr,
-            ICancellationTokenPtr ct = nullptr
+            ICancellationTokenPtr ct = nullptr,
+            int maxRetries = 0
             ) const = 0;
 
         virtual AsyncTaskPtr<AzureResult> SendUpdateFileRequest
@@ -171,7 +172,8 @@ struct AzureBlobStorageClient : public IAzureBlobStorageClient
             BeFileNameCR filePath,
             Http::Request::ProgressCallbackCR progressCallback = nullptr,
             RequestOptionsPtr options = nullptr,
-            ICancellationTokenPtr ct = nullptr
+            ICancellationTokenPtr ct = nullptr,
+            int maxRetries = 0
             ) const override;
 
         //! Update file in Azure blob. Does chunked upload in blocks.

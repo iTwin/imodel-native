@@ -53,10 +53,11 @@ bool   DmsHelper::_UnInitialize()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Suvik.Rahane                    11/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DmsHelper::DmsHelper(Utf8StringCR callBackurl, Utf8StringCR accessToken, Utf8StringCR repositoryType, Utf8StringCR datasource)
+DmsHelper::DmsHelper(Utf8StringCR callBackurl, Utf8StringCR accessToken, int maxRetries, Utf8StringCR repositoryType, Utf8StringCR datasource)
     {
     m_callbackUrl = Utf8String(callBackurl);
     m_accessToken = Utf8String(accessToken);
+    m_maxRetries = maxRetries;
     m_repositoryType = Utf8String(repositoryType);
     m_datasource = Utf8String(datasource);
     }
@@ -214,7 +215,7 @@ bool            DmsHelper::_StageDocuments(BeFileNameR fileLocation, bool downlo
             fileLocation = fullDirPath;
         if (m_azureHelper->_InitializeSession(downloadURL))
             {
-            auto result = m_azureHelper->_AsyncStageInputFile(fullDirPath);
+            auto result = m_azureHelper->_AsyncStageInputFile(fullDirPath, m_maxRetries);
             if (result == nullptr)
                 {
                 LOG.errorv("Error sas url empty");

@@ -90,7 +90,8 @@ AsyncTaskPtr<AzureResult> StorageServiceClient::SendGetFileRequest
     BeFileNameCR filePath,
     Http::Request::ProgressCallbackCR progressCallback,
     IAzureBlobStorageClient::RequestOptionsPtr options,
-    ICancellationTokenPtr ct
+    ICancellationTokenPtr ct,
+    int maxRetries
     ) const
     {
     Http::Request request(url, "GET", m_httpHandler);

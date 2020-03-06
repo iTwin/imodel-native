@@ -243,7 +243,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         WString             m_dataSource;
         int                 m_folderId;
         int                 m_documentId;
-        int                 m_maxRetryCount;
+        int                 m_maxRetryCount = 3;
         bool                m_isv8i;
         bvector<WString>    m_bargs;
         BeFileName          m_applicationWorkspace;

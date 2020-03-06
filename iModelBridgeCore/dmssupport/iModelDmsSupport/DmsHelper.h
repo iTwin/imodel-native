@@ -25,6 +25,7 @@ struct DmsHelper : public IDmsSupport
         bmap<WString, WString> m_fileFolderIds;
         AzureBlobStorageHelper* m_azureHelper = nullptr;
         IConnectTokenProvider* m_tokenProvider = nullptr;
+        int m_maxRetries;
         Utf8String GetToken();
         bool CreateCFGFile(BeFileNameCR fileLocation, DmsResponseData fileData);
         virtual bool _Initialize() override;
@@ -38,7 +39,7 @@ struct DmsHelper : public IDmsSupport
 
 
     public:
-        DmsHelper(Utf8StringCR callBackurl, Utf8StringCR accessToken, Utf8StringCR repositoryType = Utf8String(), Utf8StringCR datasource = Utf8String());
+        DmsHelper(Utf8StringCR callBackurl, Utf8StringCR accessToken, int maxRetries , Utf8StringCR repositoryType = Utf8String(), Utf8StringCR datasource = Utf8String());
         ~DmsHelper();
         virtual bool _InitializeSession(WStringCR pwMoniker) override;
         virtual StatusInt _FetchWorkspace(BeFileNameR workspaceCfgFile, int folderId, int documentId, BeFileNameCR destination, bool isv8i, bvector<WString> const& additonalFilePatterns) override

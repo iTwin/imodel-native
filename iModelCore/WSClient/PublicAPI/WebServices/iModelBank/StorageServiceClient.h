@@ -64,7 +64,8 @@ public:
         BeFileNameCR filePath,
         Http::Request::ProgressCallbackCR progressCallback = nullptr,
         RequestOptionsPtr options = nullptr,
-        ICancellationTokenPtr ct = nullptr
+        ICancellationTokenPtr ct = nullptr,
+        int maxRetries = 0
         ) const override;
 
     //! Update file in Azure blob that is stored locally.

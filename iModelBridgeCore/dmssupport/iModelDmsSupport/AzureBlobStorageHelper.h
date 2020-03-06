@@ -30,7 +30,7 @@ struct AzureBlobStorageHelper : public IDmsSupport
         virtual bool _InitializeSession(WStringCR pwMoniker) override;
         virtual bool _UnInitializeSession() override;
         virtual bool _StageInputFile(BeFileNameCR fileLocation) override;
-        AsyncTaskPtr<AzureResult> _AsyncStageInputFile(BeFileNameCR fileLocation);
+        AsyncTaskPtr<AzureResult> _AsyncStageInputFile(BeFileNameCR fileLocation, int maxRetries = 0);
         virtual StatusInt _FetchWorkspace(BeFileNameR workspaceCfgFile, int folderId, int documentId, BeFileNameCR destination, bool isv8i, bvector<WString> const& additonalFilePatterns) override
             {
             return SUCCESS;

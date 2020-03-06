@@ -95,11 +95,11 @@ bool            AzureBlobStorageHelper::_StageInputFile(BeFileNameCR fileLocatio
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<AzureResult>            AzureBlobStorageHelper::_AsyncStageInputFile(BeFileNameCR fileLocation)
+AsyncTaskPtr<AzureResult>            AzureBlobStorageHelper::_AsyncStageInputFile(BeFileNameCR fileLocation, int maxRetries)
     {
     _Initialize();
     if (m_sasUrl.empty())
         return nullptr;
 
-    return m_client->SendGetFileRequest(m_sasUrl, fileLocation);
+    return m_client->SendGetFileRequest(m_sasUrl, fileLocation, nullptr, nullptr, nullptr, maxRetries);
     }

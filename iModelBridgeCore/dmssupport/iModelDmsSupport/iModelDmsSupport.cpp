@@ -14,26 +14,26 @@ USING_NAMESPACE_BENTLEY_DGN
 extern "C"
     {
 
-    IMODEL_DMSSUPPORT_EXPORT IDmsSupport*    iModelDmsSupport_getInstance(int sessionType, Utf8StringCR userName, Utf8StringCR password, Utf8StringCR callBackurl, Utf8StringCR accessToken, Utf8StringCR datasource, unsigned long productId)
+    IMODEL_DMSSUPPORT_EXPORT IDmsSupport*    iModelDmsSupport_getInstance(int sessionType, Utf8StringCR userName, Utf8StringCR password, Utf8StringCR callBackurl, Utf8StringCR accessToken, Utf8StringCR datasource, int maxReties, unsigned long productId)
         {
-        return iModelDmsSupport::GetInstance((iModelDmsSupport::SessionType)sessionType, userName, password, callBackurl, accessToken, datasource, productId);
+        return iModelDmsSupport::GetInstance((iModelDmsSupport::SessionType)sessionType, userName, password, callBackurl, accessToken, datasource, maxReties, productId);
         }
     }
 
- BentleyApi::Dgn::IDmsSupport*   iModelDmsSupport_getInstance(int sessionType, Utf8StringCR userName, Utf8StringCR password, Utf8StringCR callBackurl, Utf8StringCR accessToken, Utf8StringCR datasource, unsigned long productId);
+ BentleyApi::Dgn::IDmsSupport*   iModelDmsSupport_getInstance(int sessionType, Utf8StringCR userName, Utf8StringCR password, Utf8StringCR callBackurl, Utf8StringCR accessToken, Utf8StringCR datasource, int maxReties, unsigned long productId);
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
- IDmsSupport*    iModelDmsSupport::GetInstance(iModelDmsSupport::SessionType sessionType, Utf8StringCR userName, Utf8StringCR password, Utf8StringCR callBackurl, Utf8StringCR accessToken, Utf8StringCR datasource, unsigned long productId)
+ IDmsSupport*    iModelDmsSupport::GetInstance(iModelDmsSupport::SessionType sessionType, Utf8StringCR userName, Utf8StringCR password, Utf8StringCR callBackurl, Utf8StringCR accessToken, Utf8StringCR datasource, int maxReties, unsigned long productId)
     {
     if (sessionType == SessionType::AzureBlobStorage)
         return new AzureBlobStorageHelper();
 
     if (sessionType == SessionType::PWShare)
-         return new DmsHelper(callBackurl, accessToken);
+         return new DmsHelper(callBackurl, accessToken, maxReties);
 
     if (sessionType == SessionType::PWDIDMS)
-         return new DmsHelper(callBackurl, accessToken, PWREPOSITORYTYPE, datasource);
+         return new DmsHelper(callBackurl, accessToken, maxReties, PWREPOSITORYTYPE, datasource);
 
     // default - PWDI session
     DmsSession* session = nullptr;
