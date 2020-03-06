@@ -38,6 +38,24 @@ static void testSignalHandler(int s)
     s_sigReceived = s;
     }
 
+//=======================================================================================
+// @bsistruct                                   Sam.Wilson                  05/17
+//=======================================================================================
+struct IModelBridgeTestRepositoryAdmin : DgnPlatformLib::Host::RepositoryAdmin
+    {
+    DEFINE_T_SUPER(RepositoryAdmin);
+
+    IRepositoryManagerP _GetRepositoryManager(DgnDbR db) const override
+        {
+        return new TestRepositoryAdmin();
+        }
+
+    // IBriefcaseManagerPtr _CreateBriefcaseManager(DgnDbR db) const override
+    //     {
+    //     return new TestBriefcaseManager(db);
+    //     }
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -53,11 +71,47 @@ static bvector<SubjectCPtr> getJobSubjects(DgnDbR db)
     return subjects;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/20
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnClassId getClassId(DgnDbR db, Utf8StringCR fullClassName)
+    {
+    Utf8String   schema;
+    Utf8String   className;
+    Utf8String fn(fullClassName);
+    fn.ReplaceAll(".", ":");
+    ECN::ECClass::ParseClassName(schema, className, fn);
+    return db.Schemas().GetClassId(schema, className);
+    }
+
 //=======================================================================================
 // @bsistruct                                                   Sam.Wilson   04/17
 //=======================================================================================
 struct iModelBridgeTests : ::testing::Test
 {
+    struct DbFileInfo
+        {
+        BentleyApi::Dgn::ScopedDgnHost m_host;
+        DgnDbPtr m_db;
+
+        DbFileInfo(BeFileNameCR bcName, DgnDb::OpenMode openMode = DgnDb::OpenMode::Readonly)
+            {
+            m_db = DgnDb::OpenDgnDb(nullptr, bcName, DgnDb::OpenParams(openMode));
+            EXPECT_TRUE(m_db.IsValid());
+            }
+
+        DgnClassId GetClassId(Utf8StringCR fullClassName)
+            {
+            return getClassId(*m_db, fullClassName);
+            }
+
+        DgnClassId GetElementClassId(DgnElementId eid)
+            {
+            auto el = m_db->Elements().GetElement(eid);
+            return el.IsValid() ? el->GetElementClassId() : DgnClassId();
+            }
+        };
+
     static BeFileName GetOutputDir()
         {
         BeFileName bcDir;
@@ -78,7 +132,7 @@ struct iModelBridgeTests : ::testing::Test
         CreateDgnDbParams createProjectParams;
         createProjectParams.SetRootSubjectName("iModelBridgeTests");
 
-        // Create the seed DgnDb file. The BisCore domain schema is also imported.
+                // Create the seed DgnDb file. The BisCore domain schema is also imported.
         BeSQLite::DbResult createStatus;
         DgnDbPtr db = DgnDb::CreateDgnDb(&createStatus, seedDbName, createProjectParams);
         ASSERT_TRUE(db.IsValid());
@@ -118,6 +172,19 @@ struct iModelBridgeTests : ::testing::Test
         return new GenericPhysicalObject(GenericPhysicalObject::CreateParams(db, modelId, classId, categoryId));
         }
 
+    static DgnElementPtr CreateElementFromECClassId(DgnDbR db, DgnClassId classId, DgnCodeCR code = DgnCode::CreateEmpty())
+        {
+        auto ecClass = db.Schemas().GetClass(classId);
+        ECN::IECInstancePtr ecInstance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance().get();
+        ecInstance->SetValue("Model", ECN::ECValue(GetPhysicalModel(db)));
+        ecInstance->SetValue("Category", ECN::ECValue(GetSpatialCategory(db)));
+        ecInstance->SetValue("CodeSpec", ECN::ECValue(code.GetCodeSpecId()));
+        ecInstance->SetValue("CodeScope", ECN::ECValue(code.GetScopeElementId(db)));
+        ecInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueUtf8CP()));
+        DgnDbStatus stat;
+        return db.Elements().CreateElement(*ecInstance, true, &stat);
+        }
+
     static void GetWriteableCopyOfSeed(BeFileNameR cpPath, WCharCP cpName)
         {
         BeFileName seedDbName = GetSeedFilePath();
@@ -125,6 +192,60 @@ struct iModelBridgeTests : ::testing::Test
         cpPath.AppendToPath(cpName);
         BeFileName::CreateNewDirectory(cpPath.GetDirectoryName().c_str());
         ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(seedDbName, cpPath));
+        }
+
+    static ECN::ECSchemaReadContextPtr DeserializeSchemas(DgnDbR ecdb, std::vector<Utf8String> const& schemaXmlList)
+        {
+        ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext();
+        context->AddSchemaLocater(ecdb.GetSchemaLocater());
+        for (auto const& schemaXml : schemaXmlList)
+            {
+            ECN::ECSchemaPtr schema = nullptr;
+            if (ECN::SchemaReadStatus::Success != ECN::ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *context))
+                {
+                // LOG.errorv("Failed to deserialize schema '%s'", schemaXml.c_str());
+                EXPECT_TRUE(false);
+                return nullptr;
+                }
+            }
+        return context;
+        }
+
+    static BentleyStatus ImportSchemas(DgnDbR dgndb, std::vector<Utf8String> const& schemas)
+        {
+        dgndb.SaveChanges();
+        ECN::ECSchemaReadContextPtr ctx = DeserializeSchemas(dgndb, schemas);
+        if (ctx == nullptr)
+            {
+            // LOG.errorv("Failed to create new/upgrade test file '%s': Could not deserialize ECSchemas to import.", dgndb.GetDbFileName());
+            EXPECT_TRUE(false);
+            return ERROR;
+            }
+
+        if (SchemaStatus::Success == dgndb.ImportSchemas(ctx->GetCache().GetSchemas()))
+            {
+            dgndb.SaveChanges();
+            return SUCCESS;
+            }
+
+        dgndb.AbandonChanges();
+        EXPECT_TRUE(false);
+        // LOG.errorv("Failed to create new/upgrade test file '%s': Could not import ECSchemas.", dgndb.GetDbFileName());
+        return ERROR;
+        }
+        
+    static BentleyStatus ImportSchema(DgnDbR dgndb, Utf8StringCR schema) { return ImportSchemas(dgndb, {schema}); }
+
+    static BentleyStatus ImportTestSchema(DgnDbR db)
+        {
+        return ImportSchema(db, R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                            <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                                <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+                                                <ECEntityClass typeName="MyDomainElement">
+                                                    <BaseClass>bis:PhysicalElement</BaseClass>
+                                                    <ECProperty propertyName="Size" typeName="double" />
+                                                </ECEntityClass>
+                                            </ECSchema>)xml");
         }
 };
 
@@ -195,13 +316,17 @@ struct TestSourceItemWithId : iModelBridgeSyncInfoFile::ISourceItem
     Utf8String m_content;
     Utf8String m_type;
     Placement3d m_placement;
+    Utf8String m_ecClassName;
+    DgnElementId m_mappedToElement;
     TestSourceItemWithId(Utf8StringCR id, Utf8StringCR content, Utf8StringCR type, Placement3d placement) : m_id(id), m_content(content), m_type(type) {}
     Utf8String _GetId() override  {return m_id;}
     double _GetLastModifiedTime() override {return 0.0;}
     Utf8String _GetHash() override
         {
         SHA1 sha1;
-        sha1(m_content);
+        sha1.Add(m_content.c_str(), m_content.size());
+        if (!m_ecClassName.empty())
+            sha1.Add(m_ecClassName.c_str(), m_ecClassName.size());
         return sha1.GetHashString();
         }
     };
@@ -562,7 +687,7 @@ struct TestIModelHubFwkClientForBridges : TestIModelHubClientForBridges
         }
 
     iModel::Hub::iModelInfoPtr GetIModelInfo() override { return m_iModelInfo; }
-        virtual DgnRevisionPtr CaptureChangeSet(DgnDbP db, Utf8CP comment) override;
+    DgnRevisionPtr CaptureChangeSet(DgnDbP db, Utf8CP comment) override;
     };
 END_BENTLEY_DGN_NAMESPACE
 
@@ -778,15 +903,42 @@ void iModelBridgeTests_Test1_Bridge::ConvertItem(TestSourceItemWithId& item, iMo
     if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Unchanged == change.GetChangeType())
         {
         changeDetector._OnElementSeen(change.GetSyncInfoRecord().GetDgnElementId());
+        ASSERT_EQ(item.m_mappedToElement, change.GetSyncInfoRecord().GetDgnElementId());
         return;
         }
 
     ++m_changeCount;
     ASSERT_TRUE(m_expect.anyChanges);
+
     iModelBridgeSyncInfoFile::ConversionResults results;
-    results.m_element = iModelBridgeTests::CreateGenericPhysicalObject(*m_db);
+
+    if (item.m_ecClassName.empty())
+        {
+        results.m_element = iModelBridgeTests::CreateGenericPhysicalObject(*m_db);
+        DgnElementTransformer::ApplyTransformTo(*results.m_element, GetSpatialDataTransform());
+        ASSERT_EQ(BentleyStatus::SUCCESS, changeDetector._UpdateBimAndSyncInfo(results, change));
+        item.m_mappedToElement = results.m_element->GetElementId();
+        return;
+        }
+    
+    
+    auto classId = getClassId(*m_db, item.m_ecClassName); 
+    results.m_element = iModelBridgeTests::CreateElementFromECClassId(*m_db, classId);
+
+    if (change.GetChangeType() == iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Changed)
+        {
+        auto wasElement = m_db->Elements().GetElement(change.GetSyncInfoRecord().GetDgnElementId());
+        if (wasElement->GetElementClassId() != classId)
+            {
+            // A change in class must be done as a delete + add. We can use the same ElementId for the new element.
+            ASSERT_EQ(DgnDbStatus::Success, wasElement->Delete());
+            }
+        }
+
     DgnElementTransformer::ApplyTransformTo(*results.m_element, GetSpatialDataTransform());
     ASSERT_EQ(BentleyStatus::SUCCESS, changeDetector._UpdateBimAndSyncInfo(results, change));
+
+    item.m_mappedToElement = results.m_element->GetElementId();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -821,7 +973,7 @@ void iModelBridgeTests_Test1_Bridge::DoConvertToBim(SubjectCR jobSubject)
     ASSERT_EQ(m_expect.jobTransChanged, m_jobTransChanged);
 
     // Convert the "items" in my (non-existant) source file.
-    for (auto item : m_foo_items)
+    for (auto& item : m_foo_items)
         {
         if (item.m_type.EqualsI(Utf8String(_GetParams().GetInputFileName())))
             ConvertItem(item, *changeDetector);
@@ -949,6 +1101,7 @@ TEST_F(iModelBridgeTests, Test1)
         ASSERT_EQ(0, fwk.Run(argc, argv));
         }
 
+    BeFileName bcName;
     if (true)
     {
         // Run an update with deleting an item.
@@ -963,6 +1116,55 @@ TEST_F(iModelBridgeTests, Test1)
         MAKE_ARGC_ARGV(argptrs, args);
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
         ASSERT_EQ(0, fwk.Run(argc, argv));
+
+        bcName = fwk.GetBriefcaseName();
+    }
+
+    if (true)
+    {
+        // Change the ECClass of an item
+        if (true)
+            {
+            ScopedDgnHost host;
+            IModelBridgeTestRepositoryAdmin repositoryAdmin;
+            ScopedDgnHost::ScopedRepositoryAdminOverride overrideRepositoryAdmin(host, &repositoryAdmin);
+            auto db = DgnDb::OpenDgnDb(nullptr, bcName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+            ASSERT_TRUE(db.IsValid());
+            ImportTestSchema(*db);
+            db->SaveChanges();
+            testIModelHubClientForBridges.m_expect.push_back(true); // schema changeset
+            testBridge.m_expect.findJobSubject = true;
+            testBridge.m_expect.anyChanges = false;
+            testBridge.m_expect.anyDeleted = false;
+            testIModelHubClientForBridges.OpenBriefcase(*db);
+            testIModelHubClientForBridges.PullMergeAndPush("Test schema");
+            testIModelHubClientForBridges.CloseBriefcase();
+            }
+
+        testIModelHubClientForBridges.m_expect.clear();// Clear this flag at the outset. It is set by the test bridge as it runs.
+        testIModelHubClientForBridges.m_expect.push_back(false);
+        testBridge.m_expect.findJobSubject = true;
+        testBridge.m_expect.anyChanges = true;
+        testBridge.m_expect.anyDeleted = true;
+        testBridge.m_foo_items[0].m_ecClassName = "TestSchema.MyDomainElement";
+
+        if (true)
+            {
+            DbFileInfo dbInfo(bcName);
+            ASSERT_EQ(dbInfo.GetElementClassId(testBridge.m_foo_items[0].m_mappedToElement), dbInfo.GetClassId("Generic.PhysicalObject"));
+            }
+
+        iModelBridgeFwk fwk;
+        bvector<WCharCP> argptrs;
+        MAKE_ARGC_ARGV(argptrs, args);
+        ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
+        ASSERT_EQ(0, fwk.Run(argc, argv));
+
+        if (true)
+            {
+            DbFileInfo dbInfo(bcName);
+            ASSERT_EQ(dbInfo.GetElementClassId(testBridge.m_foo_items[0].m_mappedToElement), dbInfo.GetClassId("TestSchema.MyDomainElement"));
+            }
     }
     }
 
@@ -1691,6 +1893,8 @@ static void DoProjectExtentsTest (bvector <double> &extents, WCharCP testName)
 
     if (true)
         {
+        testIModelHubClientForBridges.m_expect.push_back(false);// We expect two calls to pushChanges. The first should have nothing to push ...
+        testIModelHubClientForBridges.m_expect.push_back(true);// ... and the second should have changes to push (the updated extents)
         iModelBridgeFwk fwk;
         bvector<WCharCP> argptrs;
         args.push_back(L"--fwk-input=Foo");

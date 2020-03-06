@@ -75,7 +75,7 @@
             "program": "${env:OutRoot}/Winx64/Product/iModelBridge-Gtest/iModelBridgeTest.exe",
             "args": [
                 "--gtest_break_on_failure",
-                "--gtest_filter=iModelBridgeTests.*"
+                "--gtest_filter=iModelBridgeTests.iModelProjectExtentsTest"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

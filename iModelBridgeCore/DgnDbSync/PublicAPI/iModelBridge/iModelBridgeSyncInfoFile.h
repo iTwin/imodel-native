@@ -166,7 +166,7 @@ implementation of syncinfo.
 * // changeDetector is the ChangeDetector to use.
 * BentleyStatus MyBridge::ConvertMyItem(void* nativeItem, iModelBridgeSyncInfoFile::ROWID scopingItem, Utf8CP sourceKind, DgnModelR model, iModelBridgeSyncInfoFile::ChangeDetector& changeDetector)
 *       {
-*       // Wrap the native item in your ISourceItem implementaiton, so that ChangeDetector can deal with it
+*       // Wrap the native item in your ISourceItem implementation, so that ChangeDetector can deal with it
 *       ExampleSourceItem item(nativeItem);
 *
 *       // See if the item is new or has changed.
@@ -178,7 +178,7 @@ implementation of syncinfo.
 *           return BentleyStatus::SUCCESS;
 *           }
 *
-*       // The item is new or has changed in the source. Convert it. YOu could also convert this item to more than one element, perhaps as an assembly.
+*       // The item is new or has changed in the source. Convert it. You could also convert this item to more than one element, perhaps as an assembly.
 *       DgnElementPtr convertedElement = ConvertMyItemToAnElement(model, item);
 *
 *       // write the converted element to the BIM and to syncinfo
@@ -199,6 +199,60 @@ implementation of syncinfo.
 * Later, after it has visited all of the source data, the bridge calls ChangeDetector::_DeleteElementsNotSeenInScopes to
 * delete the elements in the BIM that correspond to items that were not processed by the conversion logic.
 * The change detector is making the inference that the only reason why an item was not seen is because it is not there.
+*
+
+<h2>Changing an Element's Class</h2>
+
+You change the class of an existing element. This must be done as a delete and then an insert. 
+Firstdelete the existing element. Then set up the element with the new class. You can use the ElementId
+of the previously existing element. Then call _UpdateBimAndSyncInfo. That will perform an insert.
+
+* @code
+* // Convert an item to a BIM element, handling the case where the bridge wants to change the class of the existing element.
+* // nativeItem is an item from the source data files that is to be converted
+* // scopingItem is the parent or container of that item. The parent must have been converted to BIM and written to SyncInfo already.
+* // sourceKind is a string that you assign to your items for SyncInfo purposes only.
+* // model is the model write to in the BIM
+* // changeDetector is the ChangeDetector to use.
+* BentleyStatus MyBridge::ConvertMyItemWithClassChange(void* nativeItem, iModelBridgeSyncInfoFile::ROWID scopingItem, Utf8CP sourceKind, DgnModelR model, iModelBridgeSyncInfoFile::ChangeDetector& changeDetector)
+*       {
+*       // Wrap the native item in your ISourceItem implementation, so that ChangeDetector can deal with it
+*       ExampleSourceItem item(nativeItem);
+*
+*       // See if the item is new or has changed.
+*       auto change = changeDetector._DetectChange(scopingItem, sourceKind, item);
+*       if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Unchanged == change.GetChangeType())
+*           {
+*           // the item has already been converted and has not changed in the source
+*           changeDetector._OnElementSeen(change.GetSyncInfoRecord().GetDgnElementId());
+*           return BentleyStatus::SUCCESS;
+*           }
+*
+*       // The item is new or has changed in the source. Convert it. You could also convert this item to more than one element, perhaps as an assembly.
+*       DgnElementPtr convertedElement = ConvertMyItemToAnElement(model, item);
+*   
+*       // Check to see if this is an update to an existing element and if the update entails changing the element's class
+*       if (change.GetChangeType() == iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Changed)
+*           {
+*           auto existingElement = m_db->Elements().GetElement(change.GetSyncInfoRecord().GetDgnElementId());
+*           if (existingElement->GetElementClassId() != convertedElement->GetElementClassId())
+*               {
+*               // The first step in changing an element's class is to delete it.
+*               existingElement->Delete();
+*   
+*               // The call to changeDetector._UpdateBimAndSyncInfo will do the insert.
+*               // The new element will be assigned the same ElementId as the one we just deleted.
+*               // (That is because `change` has a record of it.)
+*               }
+*           }
+*
+*       // write the converted element to the BIM and to syncinfo
+*       iModelBridgeSyncInfoFile::ConversionResults results;
+*       results.m_element = convertedElement;                           // If this were an assembly, you would put the children in the iModelBridgeSyncInfoFile::ConversionResults::m_childElements member.
+*       return changeDetector._UpdateBimAndSyncInfo(results, change);
+*       }
+*
+*  @endcode
 *
 * <h2>Complex Mappings</h2>
 *

@@ -134,6 +134,17 @@ DgnDbStatus iModelBridgeSyncInfoFile::ChangeDetector::UpdateResultsInBIMForOneEl
 
     DgnElementPtr writeEl = MakeCopyForUpdate(*conversionResults.m_element, *el);
 
+    if (writeEl->GetElementClassId() != conversionResults.m_element->GetElementClassId())
+        {
+        LOG.errorv("Attempt to change element's class in an update operation. Do delete + add instead. ElementId %llx, old class=%s, new class=%s",
+            writeEl->GetElementId().GetValue(), 
+            GetDgnDb().Schemas().GetClass(writeEl->GetElementClassId())->GetFullName(),
+            GetDgnDb().Schemas().GetClass(conversionResults.m_element->GetElementClassId())->GetFullName()
+            );
+        BeAssert(false);
+        return DgnDbStatus::WrongClass;
+        }
+
     GetLocksAndCodes(*writeEl);
 
     DgnDbStatus stat; 
@@ -332,9 +343,10 @@ BentleyStatus iModelBridgeSyncInfoFile::ChangeDetector::_UpdateBimAndSyncInfo(Co
                 eid = conversionResults.m_element->GetElementId();
             }
 
-        
-        // *** NEEDS WORK: Git rid of this. Just do what changeDetectorResults.GetChangeType tells you to do: insert if New and update if Modified.
-        if (!eid.IsValid())
+        // Check if the caller delete the element. In that case, this is the second part of a delete + insert, preserving the ElementId
+        auto forceInsert = eid.IsValid() && !GetDgnDb().Elements().GetElement(eid).IsValid();
+
+        if (!eid.IsValid() || forceInsert)
             {
             AddProvenanceAspect(changeDetectorResults.GetSourceIdentity(), changeDetectorResults.GetCurrentState(), *conversionResults.m_element);
             
@@ -342,11 +354,9 @@ BentleyStatus iModelBridgeSyncInfoFile::ChangeDetector::_UpdateBimAndSyncInfo(Co
             }
         else
             {
-            // *** NEEDS WORK: Git rid of this. Just do what changeDetectorResults.GetChangeType tells you to do: insert if New and update if Modified.
             ECN::ECClassCP aspectClass = iModelExternalSourceAspect::GetAspectClass(conversionResults.m_element->GetDgnDb());
             if (nullptr != aspectClass)
                 {
-                // *** NEEDS WORK: Git rid of this. Just do what changeDetectorResults.GetChangeType tells you to do: insert if New and update if Modified.
                 auto idVals = iModelExternalSourceAspect::FindElementBySourceId(GetDgnDb(), DgnElementId(changeDetectorResults.GetSourceIdentity().GetScopeROWID()),
                     changeDetectorResults.GetSourceIdentity().GetKind().c_str(), changeDetectorResults.GetSourceIdentity().GetId());
                 iModelExternalSourceAspect aspect = iModelExternalSourceAspect::GetAspectForEdit(*conversionResults.m_element, BeSQLite::EC::ECInstanceId(idVals.aspectId), aspectClass);
