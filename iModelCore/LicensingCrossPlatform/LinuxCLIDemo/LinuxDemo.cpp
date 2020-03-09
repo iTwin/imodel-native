@@ -457,7 +457,7 @@ void ProcessClientCommand(vector<string> input)
         if(m_client != nullptr)
             {
             Licensing::LicenseStatus result;
-            if (if (input.size() > 2 && input.at(2).length > 1)
+            if (input.size() > 2 && input.at(2).length() > 1)
                 {
                    result = m_client->StartApplicationForProject(input.at(2).c_str()); 
                 }
@@ -527,7 +527,7 @@ void ProcessClientCommand(vector<string> input)
         else if(m_accessKeyClient != nullptr)
             {
             Licensing::LicenseStatus result;
-            if (if (input.size() > 2 && input.at(2).length > 1)
+            if (input.size() > 2 && input.at(2).length() > 1)
                 {
                 result = m_client->StartApplicationForProject(input.at(2).c_str());
                 }

@@ -133,10 +133,7 @@ public:
         ILicensingDbPtr licensingDb
         );
 
-	bool ValidateParamsAndDB();
-
-    //Validation of params and check for valid checkout policy
-    BentleyM0200::Licensing::LicenseStatus CheckoutCheck(bool &retflag);
+	bool ValidateParamsAndDB();    
 
     // Usages
     LICENSING_EXPORT LicenseStatus StartApplication();

@@ -45,6 +45,8 @@ public:
 
 	LICENSING_EXPORT int64_t ImportCheckout(BeFileNameCR filepath);
 
+    LICENSING_EXPORT BentleyStatus DeleteLocalCheckout(Utf8StringCR productId);
+
     LICENSING_EXPORT void DeleteAllOtherPoliciesByKey(std::shared_ptr<Policy> policy);
     };
 

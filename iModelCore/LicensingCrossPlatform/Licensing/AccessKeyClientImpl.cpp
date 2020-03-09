@@ -261,6 +261,11 @@ int64_t AccessKeyClientImpl::ImportCheckout(BeFileNameCR filepath)
 	return ClientImpl::ImportCheckout(filepath);
 }
 
+BentleyStatus AccessKeyClientImpl::DeleteLocalCheckout(Utf8StringCR productId)
+    {
+    return ClientImpl::DeleteLocalCheckout(productId);
+    }
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
