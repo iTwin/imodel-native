@@ -64,7 +64,7 @@
         <SubPart PartName="Docs" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
         <SubPart PartName="CodeSamples" PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
         <SubPart PartName="DwgResources" PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
-        <SubPart PartName="iModelBridgeFwkLib" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
+        <SubPart PartName="iModelBridgeFwkExe" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
         <!-- add Civil domains for C3dBridge -->
         <SubPart PartName="CivilBaseGeometry" PartFile="Domains/CivilGeometry/CivilBaseGeometry" Repository="imodel02"/>
         <SubPart PartName="LinearReferencing" PartFile="Domains/LinearReferencing/LinearReferencing" Repository="imodel02"/>
@@ -200,6 +200,7 @@
         <!-- exclude list -->
         <ProductDirectory Name="RealDwgAssemblies"      Deliver="false"/>
         <ProductDirectory Name="RealDwgAssembliesEnUS"  Deliver="false"/>
+        <ProductDirectory Name="OpenDwgAssemblies"      Deliver="false"/>
         <ProductDirectory Name="ShxFonts"               Deliver="false"/>
         <ProductDirectory Name="MergeModules"           Deliver="false"/>
         <ProductDirectory Name="DgnV8Dlls"              Deliver="false"/>

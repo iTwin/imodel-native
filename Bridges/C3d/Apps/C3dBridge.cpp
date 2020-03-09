@@ -102,9 +102,7 @@ void C3dBridge::_SetClientInfo ()
     auto& params = this->_GetParams();
     auto info = WebServices::ClientInfo::Create(s_bridgeName, bridgeVersion, s_bridgeGuid, s_bridgePrgId, params.GetDefaultHeaderProvider());
 
-#ifdef WIP_IMS2_FIX
     params.SetClientInfo (info);
-#endif
     }
 
 

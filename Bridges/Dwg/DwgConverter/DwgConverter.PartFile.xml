@@ -103,6 +103,7 @@
       <ProductDirectory Name="ApplicationRoot"            Path="" />
       <ProductDirectory Name="OpenDwgImportAssemblies"    Deliver="true"                  RelativeTo="ApplicationRoot"/>
       <ProductDirectory Name="OpenDwgDbAssemblies"        Deliver="true"                  RelativeTo="ApplicationRoot"/>
+      <ProductDirectory Name="OpenDwgAssemblies"          Deliver="true"                  RelativeTo="ApplicationRoot"/>
       <ProductDirectory Name="ShxFonts"                   Deliver="true"  Path="Fonts"    RelativeTo="ApplicationRoot"/>
       <ProductDirectory Name="MergeModules"               Deliver="false" />
       <ProductDirectory Name="RealDwgAssemblies"          Deliver="false" />
@@ -180,6 +181,7 @@
         <ProductDirectory Name="RealDwgAssembliesEnUS"      Deliver="true"  Path="en-US"    RelativeTo="ApplicationRoot"/>
         <ProductDirectory Name="ShxFonts"                   Deliver="true"  Path="Fonts"    RelativeTo="ApplicationRoot"/>
         <ProductDirectory Name="MergeModules"               Deliver="false"                 RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="OpenDwgAssemblies"          Deliver="false" />
         <ProductDirectory Name="SampleXData"                Deliver="false" />
         <ProductDirectory Name="SampleListProp"             Deliver="false" />
     </ProductDirectoryList>
