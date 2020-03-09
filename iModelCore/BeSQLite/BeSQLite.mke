@@ -74,18 +74,17 @@ $(o)BeLzma$(oext) : $(baseDir)BeLzma.cpp $(baseDir)/PublicAPI/BeSQLite/BeLzma.h 
 
 $(o)BeBriefcaseBasedIdSequence$(oext) : $(baseDir)BeBriefcaseBasedIdSequence.cpp $(baseDir)/PublicAPI/BeSQLite/BeBriefcaseBasedIdSequence.h ${MultiCompileDepends}
 
-%include MultiCppCompileGo.mki
-objs +% $(MultiCompileObjectList)
-
-CCompFpOpts=precise
-
 # Third-party section of this library.
+CCompFpOpts=precise
 %include $(SrcRoot)bsicommon/sharedmki/PushThirdPartyIgnores.mki
 
-$(o)bentley-sqlite$(oext): $(SQLiteDir)bentley-sqlite.c $(SQLiteDir)sqlite3.c $(SQLiteDir)zipvfs.c $(SQLiteDir)closure.c
+$(o)bentley-sqlite$(oext) : $(SQLiteDir)bentley-sqlite.c ${MultiCompileDepends}
+
 %include $(SrcRoot)bsicommon/sharedmki/PopThirdPartyIgnores.mki
 
-objs + $(o)bentley-sqlite$(oext)
+%include MultiCppCompileGo.mki
+
+objs +% $(MultiCompileObjectList)
 
 BeSQLiteRequiredLibs = $(ContextSubPartsStaticLibs)$(stlibprefix)BeZlib$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsStaticLibs)$(stlibprefix)snappy$(stlibext)
@@ -100,7 +99,9 @@ DLM_NOINITFUNC      = 1
 DLM_NOENTRY         = 1
 DLM_OBJECT_DEST     = $(o)
 
-LINKER_LIBRARIES    =  $(BeSQLiteRequiredLibs)
+%if $(TARGET_PLATFORM)=="Windows"
+LINKER_LIBRARIES    =  $(BeSQLiteRequiredLibs) ws2_32.lib
+%endif
 
 # We support shared or static linking.
 %include $(sharedMki)linkLibrary.mki

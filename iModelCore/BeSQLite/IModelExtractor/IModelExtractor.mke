@@ -23,7 +23,11 @@ EXE_NAME            = $(appName)
 EXE_OBJS            = $(MultiCompileObjectList)
 EXE_LOPT1           = -entry:wmainCRTStartup
 
-LINKER_LIBRARIES    = $(ContextSubpartsLibs)Bentley.lib
+%if $(TARGET_PLATFORM)=="Windows"
+LINKER_LIBRARIES    =  $(BeSQLiteRequiredLibs) ws2_32.lib
+%endif
+
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)Bentley.lib
 LINKER_LIBRARIES    + $(ContextSubpartsLibs)BeSQLite.lib
 LINKER_LIBRARIES    + $(ContextSubPartsStaticLibs)$(stlibprefix)BeZlib$(stlibext)
 LINKER_LIBRARIES    + $(ContextSubPartsStaticLibs)$(stlibprefix)snappy$(stlibext)

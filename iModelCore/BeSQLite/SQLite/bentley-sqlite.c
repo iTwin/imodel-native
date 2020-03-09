@@ -43,6 +43,13 @@
     #define SQLITE_OS_WINRT 1
 #endif
 
+#ifdef __APPLE__
+    #include <TargetConditionals.h>
+    #ifdef TARGET_OS_IPHONE
+        #define HAVE_GETHOSTUUID 0
+    #endif
+#endif
+
 #if defined (_WIN32)
     #pragma warning (disable: 4244 4267 4018 4090 4101)
 #elif defined (__clang__)
@@ -68,6 +75,8 @@
 #include "sqlite3.c"
 #include "zipvfs.c"
 #include "closure.c"
+#include "simplexml.c"
+#include "blockcachevfs.c"
 
 #if defined (SQLITE_ENABLE_SQLLOG)
 #include "test_sqllog.c"

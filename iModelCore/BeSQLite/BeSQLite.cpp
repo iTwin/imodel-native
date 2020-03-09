@@ -36,6 +36,7 @@ USING_NAMESPACE_BENTLEY_SQLITE
 static Utf8CP loadZlibVfs();
 static Utf8CP loadSnappyVfs();
 Utf8CP loadEncryptedDbVfs();
+extern "C" int bcvExtraInit(const char *);
 
 #if !defined (NDEBUG)
 extern "C" int checkNoActiveStatements(SqlDbP db);
@@ -2396,6 +2397,17 @@ Utf8CP Db::GetDbFileName() const
     {
     return  (m_dbFile && m_dbFile->m_sqlDb) ? sqlite3_db_filename(m_dbFile->m_sqlDb, "main") : nullptr;
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Affan.Khan                      1/20
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8CP loadBlockCacheVfs()
+    {
+    static Utf8CP s_blockcachevfs = "blockcachevfs";
+    if (0 == sqlite3_vfs_find(s_blockcachevfs))
+        bcvExtraInit(nullptr);
+
+    return s_blockcachevfs;
+    }
 
 //  See http://www.sqlite.org/fileformat.html for format of header.
 #define DBFILE_PAGESIZE_OFFSET  16
@@ -2443,6 +2455,12 @@ static DbResult isValidDbFile(Utf8CP filename, Utf8CP& vfs)
         {
         vfs = loadEncryptedDbVfs();
         doFileSizeCheck = false; // this VFS lays out the file differently
+        result = BE_SQLITE_OK;
+        }
+    else if (0 == memcmp(ident, BLOCKCACHEVFS_FORMAT_SIGNATURE, strlen(BLOCKCACHEVFS_FORMAT_SIGNATURE)))
+        {
+        vfs = loadBlockCacheVfs();
+        doFileSizeCheck = false;
         result = BE_SQLITE_OK;
         }
 
@@ -4848,7 +4866,6 @@ static Utf8CP loadSnappyVfs()
 
     return s_vfsSnappy;
     }
-
 /*---------------------------------------------------------------------------------**//**
 * implementation of SQL "InVirtualSet" function. Returns 1 if the value is contained in the set.
 * @bsimethod                                    Keith.Bentley                   11/13
