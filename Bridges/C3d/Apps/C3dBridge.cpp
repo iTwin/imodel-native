@@ -114,34 +114,15 @@ BEGIN_C3D_NAMESPACE
 struct AffinityHost : public IDwgDbHost
 {
 public:
-    AffinityHost () {}
-    ~AffinityHost ();
-    static AffinityHost&    GetHost ();
-}; // AffinityHost
-
-
-static AffinityHost*    s_affinityHostInstance = nullptr;
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          06/19
-+---------------+---------------+---------------+---------------+---------------+------*/
-AffinityHost::~AffinityHost ()
-    {
-    AffinityHost::TerminateToolkit ();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          06/19
-+---------------+---------------+---------------+---------------+---------------+------*/
-AffinityHost&  AffinityHost::GetHost ()
-    {
-    if (nullptr == s_affinityHostInstance)
+    AffinityHost ()
         {
-        s_affinityHostInstance = new AffinityHost ();
-        AffinityHost::InitializeToolkit (*s_affinityHostInstance);
+        AffinityHost::InitializeToolkit (*this);
         }
-    return  *s_affinityHostInstance;
-    }
+    ~AffinityHost ()
+        {
+        AffinityHost::TerminateToolkit ();
+        }
+}; // AffinityHost
 
 END_C3D_NAMESPACE
 
@@ -161,24 +142,29 @@ EXPORT_ATTRIBUTE void iModelBridge_getAffinity (WCharP buffer, const size_t buff
     if (!DwgHelper::SniffDwgFile(filename) && !DwgHelper::SniffDxfFile(filename))
         return;
 
-    auto dwg = BentleyApi::C3D::AffinityHost::GetHost().ReadFile (dwgdxfName, false, false, FileShareMode::DenyNo);
-    if (!dwg.IsValid())
-        return;
-
-    DwgDbObjectId   rootId;
-    DwgDbDictionaryPtr  mainDictionary(dwg->GetNamedObjectsDictionaryId(), DwgDbOpenMode::ForRead);
-    if (mainDictionary.OpenStatus() == DwgDbStatus::Success && mainDictionary->GetIdAt(rootId, L"Root") == DwgDbStatus::Success)
+    auto affinityHost = new BentleyApi::C3D::AffinityHost ();
+    if (affinityHost != nullptr)
         {
-        DwgDbObjectPtr  aeccRoot(rootId, DwgDbOpenMode::ForRead);
-        if (aeccRoot.OpenStatus() == DwgDbStatus::Success)
+        auto dwg = affinityHost->ReadFile (dwgdxfName, false, false, FileShareMode::DenyNo);
+        if (dwg.IsValid())
             {
-            auto className = aeccRoot->GetDwgClassName ();
-            if (className.EqualsI(L"AeccDbTreeNode"))
+            DwgDbObjectId   rootId;
+            DwgDbDictionaryPtr  mainDictionary(dwg->GetNamedObjectsDictionaryId(), DwgDbOpenMode::ForRead);
+            if (mainDictionary.OpenStatus() == DwgDbStatus::Success && mainDictionary->GetIdAt(rootId, L"Root") == DwgDbStatus::Success)
                 {
-                affinityLevel = BentleyApi::Dgn::iModelBridge::Affinity::ExactMatch;
-                BeStringUtilities::Wcsncpy(buffer, bufferSize, L"C3dBridge");
+                DwgDbObjectPtr  aeccRoot(rootId, DwgDbOpenMode::ForRead);
+                if (aeccRoot.OpenStatus() == DwgDbStatus::Success)
+                    {
+                    auto className = aeccRoot->GetDwgClassName ();
+                    if (className.EqualsI(L"AeccDbTreeNode"))
+                        {
+                        affinityLevel = BentleyApi::Dgn::iModelBridge::Affinity::ExactMatch;
+                        BeStringUtilities::Wcsncpy(buffer, bufferSize, L"C3dBridge");
+                        }
+                    }
                 }
             }
+        delete affinityHost;
         }
     }
 

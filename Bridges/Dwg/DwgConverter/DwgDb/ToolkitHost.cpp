@@ -749,25 +749,24 @@ DwgDbDatabasePtr    IDwgDbHost::ReadFile (WStringCR filename, bool convCodepage,
 
     DwgToolkitHost& host = DwgToolkitHost::GetHost ();
 
+    OdDbDatabasePtr oddwg;
     try
         {
         OdString        name(filename.c_str());
         OdString        passwd(password.c_str());
-        OdDbDatabasePtr oddwg = host.readFile (name, convCodepage, partialLoad, static_cast<Oda::FileShareMode>(sharemode), passwd);
 
-        if (!oddwg.isNull())
-            return  oddwg;
+        oddwg = host.readFile (name, convCodepage, partialLoad, static_cast<Oda::FileShareMode>(sharemode), passwd);
         }
-    catch (OdError&  odError)
-	{
+    catch (OdError& odError)
+        {
         this->_Alert (reinterpret_cast<WCharCP>(odError.description().c_str()));
-        return  DwgDbDatabasePtr();
         }
     catch (...)
         {
         this->_Alert (L"Failed reading file...\n");
-        return  DwgDbDatabasePtr();
         }
+
+    return  oddwg;
 
 #elif DWGTOOLKIT_RealDwg
 

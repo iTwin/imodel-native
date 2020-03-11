@@ -117,7 +117,7 @@
             "version_seed": "2.1.0",
             "has_installers": "basic",
             "depends" : [
-                "iModelBridgeCore"
+                "DwgBridge"
             ]
         }
     ],
