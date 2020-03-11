@@ -893,12 +893,24 @@ void MobileGateway::Terminate()
     BeAssert (s_instance.IsValid());
     s_instance = nullptr;
     }
-
+    
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Steve.Wilson                    6/17
 //---------------------------------------------------------------------------------------
 MobileGateway::MobileGateway()
     {
+    m_connectionId = 0;
+    m_connecting = true;
+    m_endpoint = WebSockets::ServerEndpoint::Create();
+    Connect();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Steve.Wilson                    2/20
+//---------------------------------------------------------------------------------------
+void MobileGateway::Connect()
+    {
+    ++m_connectionId;
     auto bindResult = Uv::Bind ("127.0.0.1", 0, Uv::IP::V4);
     BeAssert (!bindResult.IsError());
 
@@ -918,9 +930,9 @@ MobileGateway::MobileGateway()
 
 
 #if defined(BENTLEYCONFIG_OS_APPLE_IOS)
-        m_connection = m_endpoint.CreateConnection ([](WebSockets::Event event, WebSockets::websocketpp_server_t::message_ptr message)
+        m_connection = m_endpoint->CreateConnection ([this](WebSockets::Event event, WebSockets::websocketpp_server_t::message_ptr message)
 #else
-        m_connection = m_endpoint.CreateConnection ([this](WebSockets::Event event, WebSockets::websocketpp_server_t::message_ptr message)
+        m_connection = m_endpoint->CreateConnection ([this](WebSockets::Event event, WebSockets::websocketpp_server_t::message_ptr message)
 #endif
             {
             if (event == WebSockets::Event::Message)
@@ -928,6 +940,8 @@ MobileGateway::MobileGateway()
                 Napi::Value arg;
                 auto& env = Host::GetInstance().GetJsRuntime().Env();
                 Napi::HandleScope scope (env);
+                auto portArg = Napi::Number::New(env, m_connectionId);
+                
                 if (message->get_opcode() == websocketpp::frame::opcode::value::binary)
                     {
                     std::string const& data = message->get_payload();
@@ -939,9 +953,9 @@ MobileGateway::MobileGateway()
                     arg = Napi::String::New (env, data.c_str(), data.size());
                     }
 #if defined(BENTLEYCONFIG_OS_APPLE_IOS)
-                env.Global().Get("__imodeljs_mobilegateway_handler__").As<Napi::Function>().Call({ arg }); //WIP: napi add ref not implemented yet for jsc
+                env.Global().Get("__imodeljs_mobilegateway_handler__").As<Napi::Function>().Call({ arg, portArg }); //WIP: napi add ref not implemented yet for jsc
 #else
-                m_exports.Get("handler").As<Napi::Function>().Call({ arg });
+                m_exports.Get("handler").As<Napi::Function>().Call({ arg, portArg });
 #endif
                 }
             }, [this](const std::streambuf::char_type* s, std::streamsize c)
@@ -962,10 +976,11 @@ MobileGateway::MobileGateway()
         BeAssert (m_connection.IsValid());
         auto readResult = m_client->Read ([this](Uv::StatusCR status, uv_buf_t const& buffer, size_t nread)
             {
-            if (status.GetCode() == UV_EOF)
+            if (status.IsError()) {
+                //Reconnect();
                 return false;
+                }
 
-            BeAssert (!status.IsError());
             auto processed = m_connection->Process (buffer.base, 0, nread);
             BeAssert (processed);
             return true;
@@ -973,11 +988,32 @@ MobileGateway::MobileGateway()
 
         BeAssert (!readResult.IsError());
         });
+        
+    m_connecting = false;
     }
-#define Swap4Bytes(val) \
-                      ( (((val) >> 24) & 0x000000FF) | (((val) >>  8) & 0x0000FF00) | \
-                       (((val) <<  8) & 0x00FF0000) | (((val) << 24) & 0xFF000000) )
-                      
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Steve.Wilson                    2/20
+//---------------------------------------------------------------------------------------
+void MobileGateway::Disconnect()
+    {
+    m_connecting = true;
+    m_connection = nullptr;
+    m_client = nullptr;
+    m_server = nullptr;
+    m_port = 0;
+    m_endpoint = WebSockets::ServerEndpoint::Create();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Steve.Wilson                    2/20
+//---------------------------------------------------------------------------------------
+void MobileGateway::Reconnect()
+  {
+  Disconnect();
+  Connect();
+  }
+  
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Steve.Wilson                    6/17
 //---------------------------------------------------------------------------------------
@@ -992,27 +1028,41 @@ Napi::Value MobileGateway::ExportJsModule (Js::RuntimeR runtime)
     exports.Set ("port", Napi::Number::New (env, GetPort()));
     exports.Set ("sendString", Napi::Function::New (env, [this](Napi::CallbackInfo const& info) -> Napi::Value
         {
-        BeAssert (m_client.IsValid());
-        JS_CALLBACK_REQUIRE_N_ARGS (1);
-        std::string str = JS_CALLBACK_GET_STRING (0);
-        if(!m_connection->Send ((const char*)str.c_str(), str.size(), websocketpp::frame::opcode::value::text))
-            {
-            BeAssert(false);
+        if (m_client.IsValid()) {
+            JS_CALLBACK_REQUIRE_N_ARGS (2);
+            std::string str = JS_CALLBACK_GET_STRING (0);
+            
+            auto port = JS_CALLBACK_GET_NUMBER (1)
+            if (port.Uint32Value() != m_connectionId) {
+                return info.Env().Undefined();
             }
+            
+            if(!m_connection->Send ((const char*)str.c_str(), str.size(), websocketpp::frame::opcode::value::text))
+                {
+                BeAssert(false);
+                }
+        }
         return info.Env().Undefined();
         }));
     exports.Set ("sendBinary", Napi::Function::New (env, [this](Napi::CallbackInfo const& info) -> Napi::Value
         {
-        BeAssert (m_client.IsValid());
-        JS_CALLBACK_REQUIRE_N_ARGS (1);
-        Napi::Uint8Array binArray = JS_CALLBACK_GET_UINT8ARRAY (0);
-        Napi::ArrayBuffer buffer = binArray.ArrayBuffer();
-        const size_t byteLength = binArray.ByteLength();
-        const size_t byteOffset = binArray.ByteOffset();
-        if(!m_connection->Send ((const char*)buffer.Data() + byteOffset, byteLength, websocketpp::frame::opcode::value::binary))
-            {
-            BeAssert(false);
+        if (m_client.IsValid()) {
+            JS_CALLBACK_REQUIRE_N_ARGS (2);
+            Napi::Uint8Array binArray = JS_CALLBACK_GET_UINT8ARRAY (0);
+            
+            auto port = JS_CALLBACK_GET_NUMBER (1)
+            if (port.Uint32Value() != m_connectionId) {
+                return info.Env().Undefined();
             }
+            
+            Napi::ArrayBuffer buffer = binArray.ArrayBuffer();
+            const size_t byteLength = binArray.ByteLength();
+            const size_t byteOffset = binArray.ByteOffset();
+            if(!m_connection->Send ((const char*)buffer.Data() + byteOffset, byteLength, websocketpp::frame::opcode::value::binary))
+                {
+                BeAssert(false);
+                }
+        }
         return info.Env().Undefined();
         }));
         

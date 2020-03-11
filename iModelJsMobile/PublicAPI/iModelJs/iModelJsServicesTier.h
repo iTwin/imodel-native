@@ -202,6 +202,7 @@ struct UvHost : public Host
 private:
     uv_thread_t m_thread;
     Js::RuntimeP m_jsRuntime;
+    std::atomic<bool> m_terminated;
 
     static void EventLoopThreadEntry (void* arg);
     static Utf8CP RequireScript();
@@ -218,6 +219,9 @@ protected:
 public:
     IMODELJS_EXPORT UvHost();
     IMODELJS_EXPORT ~UvHost() override;
+    
+    IMODELJS_EXPORT void Terminate() { m_terminated = true; }
+    IMODELJS_EXPORT bool IsTerminated() const { return m_terminated.load(); }
     };
 
 //=======================================================================================
@@ -693,12 +697,14 @@ struct MobileGateway : public Extension
 private:
     static MobileGatewayPtr s_instance;
 
-    WebSockets::ServerEndpoint m_endpoint;
+    WebSockets::ServerEndpointPtr m_endpoint;
     Uv::ServerPtr m_server;
     Uv::TcpHandlePtr m_client;
     WebSockets::ClientConnectionPtr m_connection;
-    uint16_t m_port;
+    std::atomic<uint16_t> m_port;
+    std::atomic<bool> m_connecting;
     Napi::ObjectReference m_exports;
+    uint32_t m_connectionId;
 
 protected:
     IMODELJS_EXPORT Utf8CP SupplyName() const override { return "@bentley/imodeljs-mobilegateway"; }
@@ -709,7 +715,12 @@ public:
     IMODELJS_EXPORT static void Terminate();
 
     IMODELJS_EXPORT MobileGateway();
-    IMODELJS_EXPORT uint16_t GetPort() const { return m_port; }
+    IMODELJS_EXPORT uint16_t GetPort() const { return m_port.load(); }
+    
+    IMODELJS_EXPORT void Connect();
+    IMODELJS_EXPORT void Disconnect();
+    IMODELJS_EXPORT void Reconnect();
+    IMODELJS_EXPORT bool IsConnecting() const { return m_connecting.load(); }
     };
 
 END_BENTLEY_IMODELJS_SERVICES_TIER_NAMESPACE

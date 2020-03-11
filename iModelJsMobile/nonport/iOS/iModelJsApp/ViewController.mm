@@ -95,6 +95,7 @@ AppInfo* _appInfo;
     AssetHandler* handler = [[AssetHandler alloc] initWithAssetPathAndDefaultPage:backendFolder.absoluteString :indexHtml];
     [webConfiguration setURLSchemeHandler:handler forURLScheme:@"imodeljs"];
     _appWebView  = [[WKWebView alloc] initWithFrame:CGRectZero configuration:webConfiguration];
+    [[IModelJsHost sharedInstance] registerWebView:_appWebView];
     [_appWebView  setUIDelegate:self];
     [_appWebView  setNavigationDelegate:self];
     [_appWebView .scrollView.pinchGestureRecognizer setEnabled:NO];

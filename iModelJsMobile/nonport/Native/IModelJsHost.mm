@@ -30,9 +30,14 @@
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
 
+@interface IModelJsHost()
+- (void)reconnectWebView;
+@end
+
 @implementation IModelJsHost {
     JSContext* _jsContext;
     BentleyApi::iModelJs::ServicesTier::UvHostPtr _host;
+    WKWebView* _webView;
 }
 extern "C" {
     void imodeljs_addon_setMobileResourcesDir(Utf8CP d);
@@ -125,8 +130,34 @@ extern "C" {
                                auto evaluated = runtime.EvaluateScript ("native_module.runScript('bootstrap');");
                                BeAssert (evaluated.status == Js::EvaluateStatus::Success);
                            });
-    
+ 
+     [[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationDidEnterBackgroundNotification object:nil queue:nil usingBlock:^(NSNotification* notification) {
+         _host->PostToEventLoop([]() {
+            BentleyApi::iModelJs::ServicesTier::MobileGateway::GetInstance().Disconnect();
+         });
+     }];
+ 
+    [[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationWillEnterForegroundNotification object:nil queue:nil usingBlock:^(NSNotification* notification) {
+        _host->PostToEventLoop([]() {
+            auto& gateway = BentleyApi::iModelJs::ServicesTier::MobileGateway::GetInstance();
+            gateway.Connect();
+            while (gateway.IsConnecting()) { ; }
+            ServicesTier::Host::GetInstance().GetJsRuntime().EvaluateScript ("try { _imodeljs_rpc_reconnect_backend(); } catch (err) { console.log(err); }");
+            [[IModelJsHost sharedInstance] reconnectWebView];
+        });
+    }];
 }
+
+- (void)reconnectWebView {
+    dispatch_async(dispatch_get_main_queue(), ^() {
+        if (_webView == nil) {
+            return;
+        }
+        
+        [_webView evaluateJavaScript:[NSString stringWithFormat:@"try { window._imodeljs_rpc_reconnect(%d); } catch (err) { console.log(err); }", [self getPort]] completionHandler:nil];
+    });
+}
+
 - (JSContext*)getContext {
     return _jsContext;
 }
@@ -142,6 +173,10 @@ extern "C" {
             [function callWithArguments:arguments];
         }
     });
+}
+
+- (void)registerWebView: (WKWebView*)view {
+    _webView = view;
 }
 
 void BootstrapBackend(JSContext* ctx, NSURL* backendUrl, NSArray<NSString*>* searchPaths) {

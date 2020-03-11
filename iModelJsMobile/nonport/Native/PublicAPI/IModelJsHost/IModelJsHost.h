@@ -4,7 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #import <Foundation/Foundation.h>
 #import <JavaScriptCore/JavaScriptCore.h>
-
+#import <WebKit/WebKit.h>
 
 @interface IModelJsHost : NSObject
 
@@ -13,6 +13,7 @@
 - (JSContext*)getContext;
 - (BOOL)isReady;
 - (void)exec: (JSValue*)function arguments: (NSArray*)arguments;
+- (void)registerWebView: (WKWebView*)view;
 + (id)sharedInstance;
 
 @end

@@ -10,7 +10,8 @@ BEGIN_BENTLEY_IMODELJS_SERVICES_TIER_NAMESPACE
 // @bsimethod                                Steve.Wilson                    7/2017
 //---------------------------------------------------------------------------------------
 UvHost::UvHost()
-    : m_jsRuntime (nullptr)
+    : m_jsRuntime (nullptr),
+      m_terminated (false)
     {
     auto argv = GetSystemArgv();
     if (argv.find ("--inspect-brk") != std::string::npos || argv.find ("--debug-brk") != std::string::npos)
@@ -100,7 +101,11 @@ void UvHost::EventLoopThreadMain()
     m_jsRuntime = new Js::Runtime("iModel.js Services Tier", config.enableJsDebugger, config.jsDebuggerPort);
 
     NotifyStarting();
-    uv_run (GetEventLoop(), UV_RUN_DEFAULT);
+    
+    while (!m_terminated) {
+        uv_run (GetEventLoop(), UV_RUN_DEFAULT);
+    }
+    
     NotifyStop();
 
     size_t c = 0;
