@@ -59,6 +59,7 @@ private:
     uint32_t m_animate:1;          //!< Animate view (render continously).
     uint32_t m_backgroundMap:1;    //!< Background (web mercator) map.
     uint32_t m_forceSurfaceDiscard: 1; //!< Forces expensive shader logic to ensure edges display in front of surfaces and planar surfaces in front of coincident non-planar surfaces.
+    uint32_t m_noWhiteOnWhiteReversal: 1; //!< Disables white-on-white reversal
 
 public:
     BE_JSON_NAME(acs);
@@ -86,6 +87,7 @@ public:
     BE_JSON_NAME(animate);
     BE_JSON_NAME(backgroundMap);
     BE_JSON_NAME(forceSurfaceDiscard);
+    BE_JSON_NAME(noWhiteOnWhiteReversal);
 
     ViewFlags()
         {
@@ -114,6 +116,7 @@ public:
         m_animate = 0;
         m_backgroundMap = 0;
         m_forceSurfaceDiscard = 0;
+        m_noWhiteOnWhiteReversal = 0;
         }
 
     bool ShowDimensions() const {return m_dimensions;}
@@ -166,6 +169,8 @@ public:
     void SetShowBackgroundMap(bool val) {m_backgroundMap = val;}
     bool ForceSurfaceDiscard() const {return m_forceSurfaceDiscard;}
     void SetForceSurfaceDiscard(bool val) {m_forceSurfaceDiscard = val;}
+    bool ApplyWhiteOnWhiteReversal() const {return !m_noWhiteOnWhiteReversal;}
+    void SetApplyWhiteOnWhiteReversal(bool apply) {m_noWhiteOnWhiteReversal = !apply;}
 
     RenderMode GetRenderMode() const {return m_renderMode; }
     void SetRenderMode(RenderMode value) {m_renderMode = value;}
@@ -224,6 +229,7 @@ private:
         kEdgeMask,
         kBackgroundMap,
         kForceSurfaceDiscard,
+        kWhiteOnWhiteReversal,
     };
 
     uint32_t    m_present = 0;
@@ -260,6 +266,7 @@ public:
     void SetEdgeMask(int val) { m_values.SetEdgeMask(val); SetPresent(kEdgeMask); }
     void SetRenderMode(RenderMode val) { m_values.SetRenderMode(val); SetPresent(kRenderMode); }
     void SetForceSurfaceDiscard(bool val) { m_values.SetForceSurfaceDiscard(val); SetPresent(kForceSurfaceDiscard); }
+    void SetApplyWhiteOnWhiteReversal(bool val) { m_values.SetApplyWhiteOnWhiteReversal(val); SetPresent(kWhiteOnWhiteReversal); }
 
     bool AnyOverridden() const { return 0 != m_present; }
     void Clear() { m_present = 0; }
