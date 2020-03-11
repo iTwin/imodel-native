@@ -350,7 +350,7 @@ void BriefcaseManagerBase::_OnDgnDbDestroyed()
 IBriefcaseManagerPtr DgnPlatformLib::Host::RepositoryAdmin::_CreateBriefcaseManager(DgnDbR db) const
     {
     IBriefcaseManagerPtr bc;
-    if (db.IsMasterCopy() || db.IsStandaloneBriefcase())
+    if (db.IsLegacyMaster() || db.IsLegacyStandalone() || db.IsSnapshot() || db.IsFutureStandalone())
         bc = MasterBriefcaseManager::Create(db);
     else
         bc = BulkUpdateBriefcaseManager::Create(db);
@@ -1132,7 +1132,7 @@ RepositoryStatus BriefcaseManagerBase::FastQueryLocks(Response& response, LockRe
 
     RepositoryStatus status = RepositoryStatus::Success;
     bool wantDetails = ResponseOptions::None != (ResponseOptions::LockState & options);
-    BeBriefcaseId bcId(BeBriefcaseId::Standalone()); // a lie...
+    BeBriefcaseId bcId(BeBriefcaseId::LegacyStandalone()); // a lie...
     while (BE_SQLITE_ROW == stmt->Step())
         {
         status = RepositoryStatus::LockAlreadyHeld;

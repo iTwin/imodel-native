@@ -431,13 +431,16 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus CompactFile();
 
     //! Determine whether this DgnDb is the master copy.
-    bool IsMasterCopy() const {return GetBriefcaseId().IsMasterId();}
+    bool IsLegacyMaster() const {return GetBriefcaseId().IsLegacyMasterId();}
 
-    //! Determine whether this DgnDb is a briefcase.
-    bool IsBriefcase() const {return !IsMasterCopy();}
+    //! Return true if this DgnDb is a snapshot iModel.
+    bool IsSnapshot() const {return GetBriefcaseId().IsSnapshot();}
 
-    //! Determine whether this DgnDb is a stand-alone briefcase; that is, a transactable briefcase not associated with any master copy.
-    bool IsStandaloneBriefcase() const {return GetBriefcaseId().IsStandaloneId();}
+    //! Return true if this DgnDb is a legacy standalone iModel that is not synchronized with iModelHub.
+    bool IsLegacyStandalone() const {return GetBriefcaseId().IsLegacyStandaloneId();}
+    //! Return true if this DgnDb is a new single-practitioner standalone iModel.
+    //! @note This will be renamed to IsStandalone after legacy code is updated.
+    bool IsFutureStandalone() const {return GetBriefcaseId().IsFutureStandaloneId();}
 
     DGNPLATFORM_EXPORT RepositoryModelPtr GetRepositoryModel(); //!< Return the RepositoryModel for this DgnDb.
     DGNPLATFORM_EXPORT DictionaryModelR GetDictionaryModel(); //!< Return the dictionary model for this DgnDb.

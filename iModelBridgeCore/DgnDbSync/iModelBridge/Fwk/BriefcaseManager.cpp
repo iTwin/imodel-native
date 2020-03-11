@@ -1064,7 +1064,7 @@ iModelBridgeFwk::FwkRepoAdmin::_CreateBriefcaseManager(DgnDbR db) const
     }
 
     //  -- new briefcase manager --
-    if (db.IsMasterCopy() || db.IsStandaloneBriefcase())
+    if (db.IsLegacyMaster() || db.IsLegacyStandalone() || db.IsFutureStandalone())
         return MasterBriefcaseManager::Create(db);
 
     return new BriefcaseManager(db);

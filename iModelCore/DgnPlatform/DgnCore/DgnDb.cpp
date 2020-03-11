@@ -317,7 +317,7 @@ DbResult DgnDb::_OnAfterSetAsMaster(BeSQLite::BeGuid guid)
     if (result != BE_SQLITE_OK)
         return result;
 
-    BeBriefcaseId masterBriefcaseId(BeBriefcaseId::Master());
+    BeBriefcaseId masterBriefcaseId(BeBriefcaseId::LegacyMaster());
     result = ResetElementIdSequence(masterBriefcaseId);
     if (result != BE_SQLITE_OK)
         return result;

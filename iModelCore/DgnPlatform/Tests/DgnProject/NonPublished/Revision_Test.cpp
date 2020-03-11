@@ -127,7 +127,7 @@ void RevisionTestFixture::SetUpTestCase()
 
     DgnDbPtr db = DgnPlatformSeedManager::OpenSeedDbCopy(rootSeedInfo.fileName, RevisionTestFixture::s_seedFileInfo.fileName); // our seed starts as a copy of the root seed
     ASSERT_TRUE(db.IsValid());
-    TestDataManager::MustBeBriefcase(db, Db::OpenMode::ReadWrite);
+    TestDataManager::SetAsFutureStandalone(db, Db::OpenMode::ReadWrite);
 
     m_defaultCodeSpecId = DgnDbTestUtils::InsertCodeSpec(*db, "TestCodeSpec");
     ASSERT_TRUE(m_defaultCodeSpecId.IsValid());
@@ -446,7 +446,7 @@ TEST_F(RevisionTestFixture, MergeToMaster)
     BackupTestFile();
 
     // Create some revision
-    m_db->SetAsBriefcase(BeBriefcaseId(BeBriefcaseId::Standalone()));
+    m_db->SetAsBriefcase(BeBriefcaseId(BeBriefcaseId::LegacyStandalone()));
     m_db->SaveChanges("Created briefcase");
     DgnElementId elementId = RevisionTestFixture::InsertPhysicalElement(*m_db, *m_defaultModel, m_defaultCategoryId, 2, 2, 2);
     ASSERT_TRUE(elementId.IsValid());
@@ -1851,7 +1851,7 @@ TEST_F(RevisionTestFixture, TestMemoryLeak)
     m_db = DgnDb::OpenDgnDb(&openStatus, copyFile, openParams);
     ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
 
-    TestDataManager::MustBeBriefcase(m_db, Db::OpenMode::ReadWrite);
+    TestDataManager::SetAsFutureStandalone(m_db, Db::OpenMode::ReadWrite);
 
     Utf8String dbGuid = m_db->GetDbGuid().ToString();
     bvector<DgnRevisionPtr> revisionPtrs;
@@ -1929,7 +1929,7 @@ TEST_F(RevisionTestFixture, MergeMemoryIssue)
     m_db = DgnDb::OpenDgnDb(&openStatus, copyFile, openParams);
     ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
 
-    TestDataManager::MustBeBriefcase(m_db, Db::OpenMode::ReadWrite);
+    TestDataManager::SetAsFutureStandalone(m_db, Db::OpenMode::ReadWrite);
 
     Utf8String dbGuid = m_db->GetDbGuid().ToString();
     bvector<DgnRevisionPtr> revisionPtrs;
@@ -2011,7 +2011,7 @@ TEST_F(RevisionTestFixture, DISABLED_MergeFolderWithRevisions)
     m_db = DgnDb::OpenDgnDb(&openStatus, copyFile, openParams);
     ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
 
-    TestDataManager::MustBeBriefcase(m_db, Db::OpenMode::ReadWrite);
+    TestDataManager::SetAsFutureStandalone(m_db, Db::OpenMode::ReadWrite);
 
     Utf8String dbGuid = m_db->GetDbGuid().ToString();
     bvector<DgnRevisionPtr> revisionPtrs;

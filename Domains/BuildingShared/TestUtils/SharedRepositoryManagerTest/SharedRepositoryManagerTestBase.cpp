@@ -116,7 +116,7 @@ L10N::SqlangFiles SharedRepositoryManagerTestBase::_GetApplicationSqlangs()
 void SharedRepositoryManagerTestBase::ClearRevisions(DgnDbR db)
     {
     // Ensure the seed file doesn't contain any changes pending for a revision
-    if (!db.IsMasterCopy())
+    if (!db.IsLegacyMaster())
         {
         DgnRevisionPtr rev = db.Revisions().StartCreateRevision();
         if (rev.IsValid())

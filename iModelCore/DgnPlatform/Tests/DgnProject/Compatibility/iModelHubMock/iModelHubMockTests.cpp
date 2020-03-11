@@ -84,9 +84,10 @@ TEST_F(IModelHubMockTestFixture, AcquireBriefcase)
     DbResult stat;
     auto db = DgnDb::OpenDgnDb(&stat, briefcasePath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
     ASSERT_TRUE(db.IsValid());
-    ASSERT_TRUE(db->IsBriefcase());
-    ASSERT_FALSE(db->IsMasterCopy());
-    ASSERT_FALSE(db->IsStandaloneBriefcase());
+    ASSERT_FALSE(db->IsLegacyMaster());
+    ASSERT_FALSE(db->IsLegacyStandalone());
+    ASSERT_FALSE(db->IsFutureStandalone());
+    ASSERT_FALSE(db->IsSnapshot());
     }
 
 //-------------------------------------------------------------------------------------
@@ -102,9 +103,10 @@ TEST_F(IModelHubMockTestFixture, AcquireMultipleBriefcase)
     DbResult stat;
     auto db = DgnDb::OpenDgnDb(&stat, briefcasePath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
     ASSERT_TRUE(db.IsValid());
-    ASSERT_TRUE(db->IsBriefcase());
-    ASSERT_FALSE(db->IsMasterCopy());
-    ASSERT_FALSE(db->IsStandaloneBriefcase());
+    ASSERT_FALSE(db->IsLegacyMaster());
+    ASSERT_FALSE(db->IsLegacyStandalone());
+    ASSERT_FALSE(db->IsFutureStandalone());
+    ASSERT_FALSE(db->IsSnapshot());
 
     // Acquire another briefcase
     briefcasePath = BeFileName(GetTempPath()).AppendToPath(L"briefcase2.bim");
@@ -112,9 +114,10 @@ TEST_F(IModelHubMockTestFixture, AcquireMultipleBriefcase)
     ASSERT_TRUE(BeFileName::DoesPathExist(briefcasePath));
     auto db2 = DgnDb::OpenDgnDb(&stat, briefcasePath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
     ASSERT_TRUE(db2.IsValid());
-    ASSERT_TRUE(db2->IsBriefcase());
-    ASSERT_FALSE(db2->IsMasterCopy());
-    ASSERT_FALSE(db2->IsStandaloneBriefcase());
+    ASSERT_FALSE(db2->IsLegacyMaster());
+    ASSERT_FALSE(db2->IsLegacyStandalone());
+    ASSERT_FALSE(db2->IsFutureStandalone());
+    ASSERT_FALSE(db2->IsSnapshot());
 
     ASSERT_NE(db->GetBriefcaseId(), db2->GetBriefcaseId());
     }

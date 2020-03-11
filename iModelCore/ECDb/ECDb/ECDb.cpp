@@ -116,13 +116,13 @@ DbResult ECDb::_OnAfterSetAsBriefcase(BeBriefcaseId newBriefcaseId)
 // @bsimethod                                Krischan.Eberle                12/2012
 //---------------+---------------+---------------+---------------+---------------+------
 //override
-DbResult ECDb::_OnAfterSetAsMaster(BeGuid guid)
+DbResult ECDb::_OnAfterSetAsMaster(BeGuid guid) // SNAPSHOT_WIP: remove this method?
 {
     DbResult stat = Db::_OnAfterSetAsMaster(guid);
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    BeBriefcaseId masterBriefcaseId(BeBriefcaseId::Master());
+    BeBriefcaseId masterBriefcaseId(BeBriefcaseId::LegacyMaster());
     return m_pimpl->OnBriefcaseIdAssigned(masterBriefcaseId);
 }
 

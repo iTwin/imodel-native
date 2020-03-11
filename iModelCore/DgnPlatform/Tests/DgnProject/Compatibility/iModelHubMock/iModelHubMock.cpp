@@ -73,7 +73,7 @@ bool IModelHubMock::ManualMergeAllChangesets(BeGuid iModelId)
 
     {
     auto db = DgnDb::OpenDgnDb(&stat, path, DgnDb::OpenParams(Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes));
-    db->SetAsBriefcase(BeBriefcaseId(BeBriefcaseId::Standalone()));
+    db->SetAsBriefcase(BeBriefcaseId(BeBriefcaseId::LegacyStandalone()));
     db->SaveChanges();
     }
 

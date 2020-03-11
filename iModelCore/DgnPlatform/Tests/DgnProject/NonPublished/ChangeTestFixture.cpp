@@ -35,7 +35,7 @@ void ChangeTestFixture::SetUpTestCase()
     ASSERT_TRUE(db.IsValid());
 
     ASSERT_EQ(SchemaStatus::Success, DgnPlatformTestDomain::GetDomain().ImportSchema(*db));
-    TestDataManager::MustBeBriefcase(db, Db::OpenMode::ReadWrite);
+    TestDataManager::SetAsFutureStandalone(db, Db::OpenMode::ReadWrite);
 
     m_defaultCodeSpecId = DgnDbTestUtils::InsertCodeSpec(*db, "TestCodeSpec");
     ASSERT_TRUE(m_defaultCodeSpecId.IsValid());

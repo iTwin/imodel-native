@@ -66,8 +66,9 @@ void DgnDbTestFixture::SetupSeedProject(WCharCP inFileName, BeSQLite::Db::OpenMo
 
     if (needBriefcase)
         {
-        TestDataManager::MustBeBriefcase(m_db, mode);
-        ASSERT_TRUE(m_db->IsBriefcase());
+        TestDataManager::SetAsFutureStandalone(m_db, mode);
+        ASSERT_TRUE(m_db->IsFutureStandalone());
+        ASSERT_FALSE(m_db->IsLegacyMaster());
         ASSERT_TRUE((Db::OpenMode::ReadWrite != mode) || m_db->Txns().IsTracking());
         }
 
@@ -150,14 +151,14 @@ BeFileName DgnDbTestFixture::CopyDb(WCharCP inputFileName, WCharCP outputFileNam
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDbTestFixture::OpenDb(DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode mode, bool needBriefcase)
+void DgnDbTestFixture::OpenDb(DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode mode, bool needTxns)
     {
     DbResult result = BE_SQLITE_OK;
     db = DgnDb::OpenDgnDb(&result, name, DgnDb::OpenParams(mode));
     ASSERT_TRUE( db.IsValid() ) << WPrintfString(L"Failed to open %ls in mode %d => result=%x", name.c_str(), (int)mode, (int)result).c_str();
     ASSERT_EQ( BE_SQLITE_OK , result );
-    if (needBriefcase)
-        TestDataManager::MustBeBriefcase(db, mode);
+    if (needTxns)
+        TestDataManager::SetAsFutureStandalone(db, mode);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -289,7 +290,7 @@ void PerfTestFixture::SetupSeedProject(BeSQLite::Db::OpenMode mode, bool needBri
 * baseProjFile is the existing file and testProjFile is what we get
 * @bsimethod                                     Majd.Uddin                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PerfTestFixture::SetupSeedProject(WCharCP inFileName, BeSQLite::Db::OpenMode mode, bool needBriefcase)
+void PerfTestFixture::SetupSeedProject(WCharCP inFileName, BeSQLite::Db::OpenMode mode, bool needTxns)
     {
     // Note: We know that our group's SetUpTestCase() function has already created the group seed file. We can just ask for it.
     if (Db::OpenMode::ReadWrite == mode)
@@ -297,10 +298,11 @@ void PerfTestFixture::SetupSeedProject(WCharCP inFileName, BeSQLite::Db::OpenMod
     else
         m_db = DgnPlatformSeedManager::OpenSeedDb(s_seedFileInfo.fileName);
 
-    if (needBriefcase)
+    if (needTxns)
         {
-        TestDataManager::MustBeBriefcase(m_db, mode);
-        ASSERT_TRUE(m_db->IsBriefcase());
+        TestDataManager::SetAsFutureStandalone(m_db, mode);
+        ASSERT_TRUE(m_db->IsFutureStandalone());
+        ASSERT_FALSE(m_db->IsLegacyMaster());
         ASSERT_TRUE((Db::OpenMode::ReadWrite != mode) || m_db->Txns().IsTracking());
         }
 

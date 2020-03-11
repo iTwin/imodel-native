@@ -241,6 +241,7 @@ struct BeGuid
 
 //=======================================================================================
 //! A unique Id for a BeBriefcase (a particular copy of a BeSQLite::Db is referred to as a BeBriefcase.)
+//! The Id is assigned by iModelHub or is one of the special values that identify the special kinds of iModels that are not synchronized with iModelHub.
 //! Whenever more than one BeBriefcase of a the same Db exists, each of them must have a unique identifier to facilitate
 //! change merging via BeBriefcaseBasedId's.
 //! <p> This strategy relies on of uniqueness of BeBriefcaseId's, but that must be enforced by infrastructure outside of BeSQLite.
@@ -252,18 +253,36 @@ protected:
     uint32_t m_id;
 
 public:
+    //! BeBriefcaseIds must be less than this value
     static uint32_t const MaxRepo() {return 1L<<24;}
-    static uint32_t const Master()  {return 0;}
-    static uint32_t const Standalone() {return 1;}
+    //! The legacy concept of a master briefcase has been deprecated, but this function is preserved for code that might encounter older iModels
+    static uint32_t const LegacyMaster()  {return 0;}
+    //! From a legacy perspective, 1 used to identify a standalone iModel. However, this value now means Snapshot. This function is preserved for code that might encounter older iModels
+    static uint32_t const LegacyStandalone() {return 1;}
+    //! Reserve a new BeBriefcaseId for the new concept of single-practitioner standalone iModels.
+    //! @note This will be renamed to Standalone once all source code has been updated.
+    static uint32_t const FutureStandalone() {return MaxRepo() - 2;}
+    //! A snapshot iModel is read-only once created. They are typically used for archival and data transfer purposes.
+    //! @note Legacy standalone iModels are now considered snapshots
+    static uint32_t const Snapshot() {return 1;}
+    //! A checkpoint snapshot iModel is a snapshot of a point on the iModelHub timeline.
+    //! @note Legacy master briefcases are now considered checkpoint snapshots that match the beginning of the iModelHub timeline
+    static uint32_t const CheckpointSnapshot() {return 0;}
+    //! An illegal value
     static uint32_t const Illegal() {return (uint32_t)0xffffffff;}
+
+    // NOTE: The 10 largest valid BeBriefcaseIds will not be used by iModelHub, so are available to identify special kinds of iModels.
+    // NOTE: **FutureStandalone** is the first use of those reserved Ids.
 
     BeBriefcaseId GetNextBriefcaseId() const {return BeBriefcaseId(m_id+1);}
     BeBriefcaseId() {Invalidate();}             //!< Construct an invalid BeBriefcaseId.
     explicit BeBriefcaseId(uint32_t u) {m_id=u;} //!< Construct a BeBriefcaseId from a 32 bit value.
     void Invalidate() {m_id = Illegal();}  //!< Set this BeBriefcaseId to the invalid id value
     bool IsValid() const {return Illegal() != m_id;}  //!< Test to see whether this BriefcaseId is valid.
-    bool IsMasterId() const {return Master()==m_id;}  //!< Determine whether this is the id of the master briefcase (special id==0).
-    bool IsStandaloneId() const {return Standalone()==m_id;} //!< Determine whether this is the id of a standalone briefcase not associated with any master briefcase (special id==1)
+    bool IsLegacyMasterId() const {return LegacyMaster()==m_id;}  //!< Determine whether this is the id of the legacy master briefcase.
+    bool IsLegacyStandaloneId() const {return LegacyStandalone()==m_id;} //!< Determine whether this is the id of a legacy standalone iModel.
+    bool IsFutureStandaloneId() const {return FutureStandalone()==m_id;} //!< Determine whether this is the id of the future standalone iModel.
+    bool IsSnapshot() const {return Snapshot()==m_id || CheckpointSnapshot()==m_id;} //!< Determine whether the id equals Snapshot or CheckpointSnapshot.
     uint32_t GetValue() const {BeAssert(IsValid()); BeAssert(m_id<MaxRepo()); return m_id;} //!< Get the briefcase id as a uint32_t
     bool operator==(BeBriefcaseId const& rhs) const {return rhs.m_id==m_id;}
     bool operator!=(BeBriefcaseId const& rhs) const {return !(*this == rhs);}
@@ -2947,7 +2966,7 @@ public:
     //! @remarks Errors out if the Db is already a master copy.
     BE_SQLITE_EXPORT DbResult SetAsMaster(BeGuid guid = BeGuid());
 
-    // Sets up this Db as a briefcase with the supplied Id.
+    //! Sets up this Db as a briefcase with the supplied Id.
     //! @param[in] briefcaseId Id of the briefcase
     //! @remarks Errors out if the Db is already a briefcase. @see SetAsMaster()
     BE_SQLITE_EXPORT DbResult SetAsBriefcase(BeBriefcaseId briefcaseId);

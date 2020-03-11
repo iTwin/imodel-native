@@ -170,25 +170,24 @@ StatusInt TestDataManager::FindTestData(BeFileName& fullFileName, WCharCP fileNa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TestDataManager::MustBeBriefcase(DgnDbPtr& db, DgnDb::OpenMode mode)
+void TestDataManager::SetAsFutureStandalone(DgnDbPtr& db, DgnDb::OpenMode openMode)
     {
-    if (db->IsBriefcase())
+    if (db->IsFutureStandalone())
         return;
 
-    BeFileName name(db->GetFileName());
-
-    db->SetAsBriefcase(BeBriefcaseId(BeBriefcaseId::Standalone()));
+    BeFileName dbFileName(db->GetFileName());
+    db->SetAsBriefcase(BeBriefcaseId(BeBriefcaseId::FutureStandalone()));
     db->SaveChanges();
     db->CloseDb();
 
     DbResult result = BE_SQLITE_OK;
-    db = DgnDb::OpenDgnDb(&result, name, DgnDb::OpenParams(mode));
+    db = DgnDb::OpenDgnDb(&result, dbFileName, DgnDb::OpenParams(openMode));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   TestDataManager::OpenTestFile(bool needBriefcase)
+BentleyStatus   TestDataManager::OpenTestFile(bool needTxns)
     {
     DbResult stat;
     DgnDb::OpenParams params(m_openMode);
@@ -208,8 +207,8 @@ BentleyStatus   TestDataManager::OpenTestFile(bool needBriefcase)
         return ERROR;
         }
 
-    if (needBriefcase)
-        MustBeBriefcase(m_dgndb, m_openMode);
+    if (needTxns)
+        SetAsFutureStandalone(m_dgndb, m_openMode);
 
     for (ModelIteratorEntryCR entry : m_dgndb->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)))
         {
@@ -240,14 +239,14 @@ void    TestDataManager::CloseTestFile()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-TestDataManager::TestDataManager(WCharCP fullFileName, Db::OpenMode dbOpenMode, bool needBriefcase, bool fill)
+TestDataManager::TestDataManager(WCharCP fullFileName, Db::OpenMode dbOpenMode, bool needTxns, bool fill)
     {
     m_model     = NULL;
     m_fileName  = fullFileName;
     m_openMode  = dbOpenMode;
     m_fill      = fill;
 
-    OpenTestFile(needBriefcase);
+    OpenTestFile(needTxns);
     }
 
 /*---------------------------------------------------------------------------------**//**

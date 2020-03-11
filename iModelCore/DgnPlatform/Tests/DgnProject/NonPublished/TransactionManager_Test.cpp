@@ -389,8 +389,9 @@ TEST_F(TransactionManagerTests, UndoRedo)
     DgnDbTestFixture::GetSeedDbCopy(outFileName,L"Test.bim");
     OpenDb(m_db, outFileName, mode);
 
-    TestDataManager::MustBeBriefcase(m_db, mode);
-    ASSERT_TRUE(m_db->IsBriefcase());
+    TestDataManager::SetAsFutureStandalone(m_db, mode);
+    ASSERT_TRUE(m_db->IsFutureStandalone());
+    ASSERT_FALSE(m_db->IsLegacyMaster());
 
     auto& txns = m_db->Txns();
     txns.SetInteractive();
@@ -1380,7 +1381,7 @@ TEST_F(TransactionManagerTests, TestRelationshipLinkTableTracking)
     {
     SetupSeedProject();
 
-    m_db->SetAsBriefcase(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone()));
+    m_db->SetAsBriefcase(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::LegacyStandalone()));
     m_db->Txns().EnableTracking(true);
 
 

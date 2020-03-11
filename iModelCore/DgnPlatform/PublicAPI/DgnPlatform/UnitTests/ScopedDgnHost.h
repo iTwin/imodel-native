@@ -72,8 +72,8 @@ public:
     DGNPLATFORM_EXPORT BentleyStatus OpenTestFile (bool needBriefcase);
     DGNPLATFORM_EXPORT void CloseTestFile ();
 
-    // Ensures a transactable, standalone briefcase.
-    DGNPLATFORM_EXPORT static void MustBeBriefcase(DgnDbPtr& db, DgnDb::OpenMode mode);
+    // Ensures a transactable, standalone iModel.
+    DGNPLATFORM_EXPORT static void SetAsFutureStandalone(DgnDbPtr& db, DgnDb::OpenMode mode);
 };
 
 struct TestDgnManager : TestDataManager

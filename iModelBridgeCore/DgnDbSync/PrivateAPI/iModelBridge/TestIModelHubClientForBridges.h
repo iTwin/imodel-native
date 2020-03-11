@@ -252,7 +252,7 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
     DgnDbP m_briefcase{};
     BeSQLite::BeBriefcaseId m_currentBriefcaseId;
     TestRepositoryAdmin m_admin;
-    TestIModelHubClientForBridges(BeFileNameCR testWorkDir) : m_testWorkDir(testWorkDir), m_currentBriefcaseId(BeSQLite::BeBriefcaseId::Standalone())
+    TestIModelHubClientForBridges(BeFileNameCR testWorkDir) : m_testWorkDir(testWorkDir), m_currentBriefcaseId(BeSQLite::BeBriefcaseId::LegacyStandalone())
         {
         m_iModelInfo = new iModel::Hub::iModelInfo();
         }
@@ -291,7 +291,7 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
         m_serverRepo.clear();
         m_revisions.clear();
         m_briefcase = nullptr;
-        m_currentBriefcaseId = BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone());
+        m_currentBriefcaseId = BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::LegacyStandalone());
         return BSISUCCESS;
         }
 
@@ -387,8 +387,7 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
     virtual DgnRevisionPtr CaptureChangeSet(DgnDbP db, Utf8CP comment)
         {
         BeAssert(db != nullptr);
-
-        BeAssert(db->IsBriefcase());
+        BeAssert(!db->IsLegacyMaster());
 
         DgnRevisionPtr changeSet = db->Revisions().StartCreateRevision();
 

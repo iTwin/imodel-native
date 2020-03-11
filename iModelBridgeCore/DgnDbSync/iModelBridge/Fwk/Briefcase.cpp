@@ -511,7 +511,7 @@ bool iModelBridgeFwk::Briefcase_IsBriefcase()
     if (!dgndb.IsValid())
         return false;
 
-    return dgndb->IsBriefcase();
+    return !dgndb->IsLegacyMaster();
     }
 
 /*---------------------------------------------------------------------------------**//**

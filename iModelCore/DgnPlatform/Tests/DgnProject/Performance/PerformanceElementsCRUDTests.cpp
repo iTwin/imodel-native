@@ -872,7 +872,7 @@ struct ElementLocksPerformanceTest : PerformanceElementsCRUDTestFixture
         auto dbName = asBriefcase ? L"LocksBriefcase.ibim" : L"LocksRepository.ibim";
         SetUpTestDgnDb(dbName, className, 0);
         if (asBriefcase)
-            TestDataManager::MustBeBriefcase(m_db, Db::OpenMode::ReadWrite);
+            TestDataManager::SetAsFutureStandalone(m_db, Db::OpenMode::ReadWrite);
 
         bvector<DgnElementPtr> elems;
         elems.reserve(numElems);

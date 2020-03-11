@@ -1382,7 +1382,10 @@ DbResult Db::SaveBeDbGuid()
 DbResult Db::SaveBriefcaseId()
     {
     if (!m_dbFile->m_briefcaseId.IsValid())
-        m_dbFile->m_briefcaseId = BeBriefcaseId(BeBriefcaseId::Master());
+        {
+        BeAssert(false && "Invalid BeBriefcaseId");
+        return BE_SQLITE_ERROR;
+        }
 
     //To not break old DBs we need to use the old way to read/write briefcase ids from/to the be_Local table.
     //So we cannot use the official briefcase local value APIs.
@@ -1409,10 +1412,10 @@ void Db::ChangeDbGuid(BeGuid guid)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                  Ramanujam.Raman                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::SetAsMaster(BeGuid guid /*= BeGuid()*/)
+DbResult Db::SetAsMaster(BeGuid guid /*= BeGuid()*/) // SNAPSHOT_WIP: remove this method?
     {
     BeBriefcaseId currentId = GetBriefcaseId();
-    if (currentId.IsMasterId())
+    if (currentId.IsLegacyMasterId())
         {
         BeAssert(false && "Db is already a master copy");
         return BE_SQLITE_ERROR;
@@ -1424,7 +1427,7 @@ DbResult Db::SetAsMaster(BeGuid guid /*= BeGuid()*/)
     DbResult result = _OnBeforeSetAsMaster(guid);
     if (result == BE_SQLITE_OK)
         {
-        BeBriefcaseId masterBriefcaseId(BeBriefcaseId::Master());
+        BeBriefcaseId masterBriefcaseId(BeBriefcaseId::LegacyMaster());
         result = AssignBriefcaseId(masterBriefcaseId);
 
         if (result == BE_SQLITE_OK)
@@ -1441,7 +1444,7 @@ DbResult Db::SetAsMaster(BeGuid guid /*= BeGuid()*/)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                  Ramanujam.Raman                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::SetAsBriefcase(BeBriefcaseId briefcaseId)
+DbResult Db::SetAsBriefcase(BeBriefcaseId briefcaseId) // SNAPSHOT_WIP: remove this method?
     {
     if (!briefcaseId.IsValid())
         {
@@ -1456,7 +1459,7 @@ DbResult Db::SetAsBriefcase(BeBriefcaseId briefcaseId)
         return BE_SQLITE_ERROR;
         }
 
-    if (!currentId.IsMasterId() || briefcaseId.IsMasterId())
+    if (!currentId.IsLegacyMasterId() || briefcaseId.IsLegacyMasterId())
         {
         BeAssert(false && "Can only change Master -> Briefcase");
         return BE_SQLITE_ERROR;
@@ -1683,7 +1686,8 @@ DbResult Db::CreateNewDb(Utf8CP dbName, BeGuid dbGuid, CreateParams const& param
     m_dbFile->m_defaultTxn.Begin();
     m_dbFile->m_dbGuid = dbGuid;
 
-    m_dbFile->m_briefcaseId = (params.m_dbType == Db::CreateParams::DbType::Standalone) ? BeBriefcaseId(BeBriefcaseId::Standalone()) : BeBriefcaseId(BeBriefcaseId::Master());
+    // SNAPSHOT_WIP: Determine what to do here?
+    m_dbFile->m_briefcaseId = (params.m_dbType == Db::CreateParams::DbType::Standalone) ? BeBriefcaseId(BeBriefcaseId::LegacyStandalone()) : BeBriefcaseId(BeBriefcaseId::LegacyMaster());
 
     ExecuteSql(SqlPrintfString("PRAGMA page_size=%d;PRAGMA encoding=\"%s\";PRAGMA user_version=%d;PRAGMA application_id=%lld;PRAGMA locking_mode=\"%s\";", params.m_pagesize,
                               params.m_encoding==Encoding::Utf8 ? "UTF-8" : "UTF-16le", BeSQLite::DbUserVersion, params.m_applicationId,

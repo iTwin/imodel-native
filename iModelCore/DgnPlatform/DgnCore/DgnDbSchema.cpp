@@ -541,7 +541,7 @@ ProfileState DgnDb::_CheckProfileVersion() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::DbResult DgnDb::_OnBeforeProfileUpgrade()
     {  
-    if (IsMasterCopy() || IsReadonly())
+    if (IsLegacyMaster() || IsReadonly())
         return BE_SQLITE_OK;
 
     Txns().EnableTracking(true);
@@ -553,7 +553,7 @@ BeSQLite::DbResult DgnDb::_OnBeforeProfileUpgrade()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::DbResult DgnDb::_OnAfterProfileUpgrade()
     {
-    if (IsMasterCopy() || IsReadonly())
+    if (IsLegacyMaster() || IsReadonly())
         return BE_SQLITE_OK;
 
     if (Txns().HasDbSchemaChanges())

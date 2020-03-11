@@ -437,7 +437,7 @@ iModelTaskPtr Client::CreateNewiModel(Utf8StringCR contextId, Dgn::DgnDbCR db, i
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Credentials are not set.");
         return CreateCompletedAsyncTask<iModelResult>(iModelResult::Error(Error::Id::CredentialsNotSet));
         }    
-    if (!db.IsStandaloneBriefcase() && !db.IsMasterCopy())
+    if (!db.IsLegacyStandalone() && !db.IsLegacyMaster() && !db.IsSnapshot() && !db.IsFutureStandalone())
         {
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Seed file is a briefcase.");
         return CreateCompletedAsyncTask<iModelResult>(iModelResult::Error(Error::Id::FileIsBriefcase));
@@ -690,7 +690,7 @@ BriefcaseTaskPtr Client::OpenBriefcase(Dgn::DgnDbPtr db, bool doSync, Http::Requ
         }
     auto readResult = iModelInfo::ReadiModelInfo(*db);
     BeBriefcaseId briefcaseId = db->GetBriefcaseId();
-    if (!readResult.IsSuccess() || briefcaseId.IsMasterId() || briefcaseId.IsStandaloneId())
+    if (!readResult.IsSuccess() || briefcaseId.IsLegacyMasterId() || briefcaseId.IsLegacyStandaloneId() || briefcaseId.IsSnapshot() || briefcaseId.IsFutureStandaloneId())
         {
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File is not a briefcase.");
         return CreateCompletedAsyncTask<BriefcaseResult>(BriefcaseResult::Error(Error::Id::FileIsNotBriefcase));
@@ -777,7 +777,7 @@ StatusTaskPtr Client::RecoverBriefcase(Dgn::DgnDbPtr db, Http::Request::Progress
         }
     auto readResult = iModelInfo::ReadiModelInfo(*db);
     BeBriefcaseId briefcaseId = db->GetBriefcaseId();
-    if (!readResult.IsSuccess() || briefcaseId.IsMasterId() || briefcaseId.IsStandaloneId())
+    if (!readResult.IsSuccess() || briefcaseId.IsLegacyMasterId() || briefcaseId.IsLegacyStandaloneId() || briefcaseId.IsSnapshot() || briefcaseId.IsFutureStandaloneId())
         {
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File is not a briefcase.");
         return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(Error::Id::FileIsNotBriefcase));
@@ -1551,7 +1551,7 @@ ICancellationTokenPtr cancellationToken
         return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(SeedFileResult.GetError()));
         }
 
-    auto briefcaseId = BeBriefcaseId(BeBriefcaseId::Standalone());
+    auto briefcaseId = BeBriefcaseId(BeBriefcaseId::LegacyStandalone());
     auto result = connection->WriteBriefcaseIdIntoFile(filePath, briefcaseId);
     if (!result.IsSuccess())
         {

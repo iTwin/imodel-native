@@ -960,7 +960,7 @@ RevisionStatus RevisionManager::MergeRevision(DgnRevisionCR revision)
 RevisionStatus RevisionManager::DoMergeRevision(DgnRevisionCR revision)
     {
     PRECONDITION(!m_dgndb.IsReadonly() && "Cannot merge changes into a Readonly database", RevisionStatus::CannotMergeIntoReadonly);
-    PRECONDITION(!m_dgndb.IsMasterCopy() && "Cannot merge changes into the Master copy of a database", RevisionStatus::CannotMergeIntoMaster);
+    PRECONDITION(!m_dgndb.IsLegacyMaster() && "Cannot merge changes into the Master copy of a database", RevisionStatus::CannotMergeIntoMaster);
 
     TxnManagerR txnMgr = m_dgndb.Txns();
 

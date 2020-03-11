@@ -92,7 +92,7 @@ public:
     void ClearRevisions(DgnDbR db)
         {
         // Ensure the seed file doesn't contain any changes pending for a revision
-        if (!db.IsMasterCopy())
+        if (!db.IsLegacyMaster())
             {
             DgnRevisionPtr rev = db.Revisions().StartCreateRevision();
             if (rev.IsValid())
@@ -1491,12 +1491,12 @@ TEST_F(DoubleBriefcaseTest, DemoteLocks)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DoubleBriefcaseTest, StandaloneBriefcase)
     {
-    SetupDbs(BeBriefcaseId::Master());
+    SetupDbs(BeBriefcaseId::LegacyMaster());
 
     DgnDbR master = *m_dbA; // master copy
     DgnDbR brief  = *m_dbB; // standalone briefcase
 
-    EXPECT_TRUE(master.IsMasterCopy());
+    EXPECT_TRUE(master.IsLegacyMaster());
     EXPECT_FALSE(master.Txns().IsUndoPossible());
 
     // Locks unconditionally granted for both...
