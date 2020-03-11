@@ -21,6 +21,7 @@ struct RevisionStats
     size_t nDataRevs {};
     BentleyApi::bset<BentleyApi::Utf8String> descriptions;
     BentleyApi::bset<BentleyApi::Utf8String> userids;
+    std::set<BentleyApi::Utf8String> fileNames;
     };
 
 #define DEFAULT_IMODEL_NAME  L"iModelBridgeTests_Test1"

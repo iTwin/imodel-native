@@ -25,7 +25,7 @@ struct PushChangeSetArguments : RefCountedBase
 {
 private:
     Utf8CP m_description;
-    ChangeSetInfo::ContainingChanges m_containingChanges;
+    ChangeSetKind m_containingChanges;
     BridgePropertiesPtr m_bridgeProperties;
     bool m_relinquishCodesLocks;
     Http::Request::ProgressCallbackCR m_callback;
@@ -34,7 +34,7 @@ private:
     ConflictsInfoPtr m_conflictsInfo;
     CodeCallbackFunction* m_codesCallback;
 
-    PushChangeSetArguments(Utf8CP description, ChangeSetInfo::ContainingChanges containingChanges,
+    PushChangeSetArguments(Utf8CP description, ChangeSetKind containingChanges,
         BridgePropertiesPtr bridgeProperties, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR callback,
         Dgn::IBriefcaseManager::ResponseOptions options, ICancellationTokenPtr cancellationToken,
         ConflictsInfoPtr conflictsInfo, CodeCallbackFunction* codesCallback) :
@@ -57,7 +57,7 @@ public:
     static PushChangeSetArgumentsPtr Create
         (
         Utf8CP description = nullptr, 
-        ChangeSetInfo::ContainingChanges containingChanges = ChangeSetInfo::ContainingChanges::NotSpecified,
+        ChangeSetKind containingChanges = ChangeSetKind::NotSpecified,
         BridgePropertiesPtr bridgeProperties = nullptr,
         bool relinquishCodesLocks = false,
         Http::Request::ProgressCallbackCR callback = nullptr,
@@ -70,7 +70,7 @@ public:
             relinquishCodesLocks, callback, options, cancellationToken, conflictsInfo, codesCallback)); }
 
     Utf8CP GetDescription() const { return m_description; }
-    ChangeSetInfo::ContainingChanges GetContainingChanges() const { return m_containingChanges; }
+    ChangeSetKind GetContainingChanges() const { return m_containingChanges; }
     const BridgePropertiesPtr GetBridgeProperties() const { return m_bridgeProperties; }
     bool GetRelinquishCodesLocks() const { return m_relinquishCodesLocks; }
     Http::Request::ProgressCallbackCR GetProgressCallback() const { return m_callback; }

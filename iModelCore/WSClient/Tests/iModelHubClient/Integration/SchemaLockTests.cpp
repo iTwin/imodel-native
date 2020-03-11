@@ -109,7 +109,7 @@ TEST_F(SchemaLockTests, ModifySchema)
     Utf8String changeSet1 = briefcase1->GetLastChangeSetPulled();
     auto changeSetResult = briefcase1->GetiModelConnection().GetChangeSetById(changeSet1)->GetResult();
     ASSERT_SUCCESS(changeSetResult);
-    ASSERT_EQ(1, changeSetResult.GetValue()->GetContainingChanges());
+    ASSERT_EQ(ChangeSetKind::Schema, changeSetResult.GetValue()->GetContainingChanges());
 
     // Second briefcase does not have pushed changeset, so it should not be able to get lock
     EXPECT_EQ(RepositoryStatus::RevisionRequired, db2.BriefcaseManager().LockSchemas().Result());
@@ -146,7 +146,7 @@ TEST_F(SchemaLockTests, ModifySchema)
     // Check ContainsSchemaChanges set to false
     changeSetResult = briefcase2->GetiModelConnection().GetChangeSetById(changeSet2)->GetResult();
     ASSERT_TRUE(changeSetResult.IsSuccess());
-    EXPECT_EQ(0, changeSetResult.GetValue()->GetContainingChanges());
+    EXPECT_EQ(ChangeSetKind::Regular, changeSetResult.GetValue()->GetContainingChanges());
     EXPECT_TRUE(db2Ptr->TableExists("TestTable1"));
 
     // Second briefcase should be able to get lock

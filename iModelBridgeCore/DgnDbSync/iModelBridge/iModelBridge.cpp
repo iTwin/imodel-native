@@ -1166,21 +1166,8 @@ Utf8String iModelBridge::_FormatPushComment(DgnDbR db, Utf8CP commitComment)
 
     auto key = params.GetBridgeRegSubKeyUtf8();
 
-    auto localFileName = params.GetInputFileName();
-    iModelBridgeDocumentProperties docProps;
-    if (nullptr != params.GetDocumentPropertiesAccessor())
-        params.GetDocumentPropertiesAccessor()->_GetDocumentProperties(docProps, localFileName);
-
     Utf8String comment = key;
-    if (!comment.empty() && !localFileName.GetBaseName().empty())
-        comment.append(" - ");
-
-    comment.append(Utf8String(localFileName.GetBaseName()).c_str());
-
-    if (!comment.empty() && !docProps.m_docGuid.empty())
-        comment.append(" - ");
-
-    comment.append(Utf8String(docProps.m_docGuid.c_str()));
+    
     auto const& rcomment = params.GetRevisionComment();
     if (!comment.empty() && !rcomment.empty())
         comment.append(" - ");
@@ -1199,7 +1186,7 @@ Utf8String iModelBridge::_FormatPushComment(DgnDbR db, Utf8CP commitComment)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-iModelBridge::IBriefcaseManager::PushStatus iModelBridge::PushChanges(DgnDbR db, Params const& params, Utf8StringCR commitComment)
+iModelBridge::IBriefcaseManager::PushStatus iModelBridge::PushChanges(DgnDbR db, Params const& params, Utf8StringCR commitComment, bvector<Utf8String> const* changedFiles, ChangeSetKind changes)
     {
     auto bcMgr = params.m_briefcaseManager;
     if (nullptr == bcMgr)
@@ -1215,13 +1202,13 @@ iModelBridge::IBriefcaseManager::PushStatus iModelBridge::PushChanges(DgnDbR db,
             db.BriefcaseManager().StartBulkOperation();
             return iModelBridge::IBriefcaseManager::PushStatus::UnknownError;
             }
-        auto status = bcMgr->_Push(commitComment.c_str());
+        auto status = bcMgr->_Push(commitComment.c_str(), changedFiles, changes);
         db.BriefcaseManager().StartBulkOperation();
         return status;
         }
 
     db.SaveChanges(commitComment.c_str());
-    return bcMgr->_Push(commitComment.c_str());
+    return bcMgr->_Push(commitComment.c_str(), changedFiles, changes);
     }
 
 /*---------------------------------------------------------------------------------**//**

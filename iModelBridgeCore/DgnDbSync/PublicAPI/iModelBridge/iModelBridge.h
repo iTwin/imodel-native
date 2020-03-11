@@ -14,6 +14,7 @@
 #include <iModelBridge/iModelBridgeFwkTypes.h>
 #include <iModelDmsSupport/iModelDmsSupport.h>
 #include <DgnPlatform/DgnDbTables.h>
+#include <WebServices/iModelHub/Client/ChangeSetKind.h>
 
 BEGIN_BENTLEY_NAMESPACE namespace WebServices {
 typedef std::shared_ptr<struct ClientInfo> ClientInfoPtr;
@@ -499,8 +500,10 @@ struct iModelBridge
 
         //! Push all changes.
         //! @param revisionComment the summary comment for the revision.
+        //! @param changedFiles List of input files that caused this change.
+        //! @param changeType Type of change of the changeset
         //! @return non-zero status if the push failed.
-        virtual PushStatus _Push(Utf8CP revisionComment) = 0;
+        virtual PushStatus _Push(Utf8CP revisionComment, bvector<Utf8String> const* changedFiles, iModel::Hub::ChangeSetKind changeType) = 0;
         };
 
     //! Information about an element that is in a bridge's Job Subject child element/model hierarchy, that is, in the Job's channel.
@@ -1134,8 +1137,10 @@ public:
     //! @param db The briefcase Db
     //! @param params The bridge just params
     //! @param commitComment The summary description of the ChangeSet
+    //! @param changedFiles List of input files that caused this change.
+    //! @param changeType Type of change of the changeset
     //! @return the outcome of the attempt to push
-    IMODEL_BRIDGE_EXPORT static IBriefcaseManager::PushStatus PushChanges(DgnDbR db, Params const& params, Utf8StringCR commitComment);
+    IMODEL_BRIDGE_EXPORT static IBriefcaseManager::PushStatus PushChanges(DgnDbR db, Params const& params, Utf8StringCR commitComment, bvector<Utf8String> const* changedFiles, iModel::Hub::ChangeSetKind changeType);
 
     IMODEL_BRIDGE_EXPORT static bool AnyChangesToPush(DgnDbR);
     IMODEL_BRIDGE_EXPORT static bool AnyTxns(DgnDbR);

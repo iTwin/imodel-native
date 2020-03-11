@@ -34,9 +34,9 @@ struct IMODEL_BRIDGE_FWK_EXPORT IModelClientForBridges
     virtual StatusInt AcquireBriefcase(BeFileNameCR bcFileName, Utf8CP repositoryName) = 0;
     virtual StatusInt RestoreBriefcase(BeFileNameCR bcFileName, Utf8CP repositoryName, BeSQLite::BeBriefcaseId briefcaseId) = 0;
     virtual StatusInt OpenBriefcase(Dgn::DgnDbR db) = 0;
-    virtual StatusInt Push(Utf8CP) = 0;
-    virtual StatusInt PullMergeAndPush(Utf8CP) = 0;
-    virtual StatusInt PullAndMerge() = 0;
+    virtual StatusInt Push(iModel::Hub::PushChangeSetArgumentsPtr) = 0;
+    virtual StatusInt PullMergeAndPush(iModel::Hub::PullChangeSetsArgumentsPtr, iModel::Hub::PushChangeSetArgumentsPtr) = 0;
+    virtual StatusInt PullAndMerge(iModel::Hub::PullChangeSetsArgumentsPtr) = 0;
     virtual StatusInt PullAndMergeSchemaRevisions(Dgn::DgnDbPtr& db) = 0;
     virtual iModel::Hub::Error const& GetLastError() const = 0;
     virtual IRepositoryManagerP GetRepositoryManager(DgnDbR db) = 0;
@@ -84,9 +84,9 @@ public:
 
     StatusInt AcquireBriefcase(BeFileNameCR bcFileName, Utf8CP repoId) override;
     StatusInt OpenBriefcase(Dgn::DgnDbR db) override;
-    StatusInt Push(Utf8CP) override;
-    StatusInt PullMergeAndPush(Utf8CP) override;
-    StatusInt PullAndMerge() override;
+    StatusInt Push(iModel::Hub::PushChangeSetArgumentsPtr) override;
+    StatusInt PullMergeAndPush(iModel::Hub::PullChangeSetsArgumentsPtr, iModel::Hub::PushChangeSetArgumentsPtr) override;
+    StatusInt PullAndMerge(iModel::Hub::PullChangeSetsArgumentsPtr) override;
     StatusInt PullAndMergeSchemaRevisions(Dgn::DgnDbPtr& db) override;
     StatusInt RestoreBriefcase(BeFileNameCR bcFileName, Utf8CP repositoryName, BeSQLite::BeBriefcaseId briefcaseId) override;
     iModel::Hub::Error const& GetLastError() const override {return m_lastServerError;}

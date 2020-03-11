@@ -557,7 +557,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_IModelHub_CreateRepository()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-iModelBridge::IBriefcaseManager::PushStatus iModelBridgeFwkPush::_Push(Utf8CP comment)
+iModelBridge::IBriefcaseManager::PushStatus iModelBridgeFwkPush::_Push(Utf8CP comment, bvector<Utf8String> const* changedFiles,  iModel::Hub::ChangeSetKind changes)
     {
     if (m_fwk.m_isCreatingNewRepo || !iModelBridge::AnyChangesToPush(*m_fwk.m_briefcaseDgnDb))
         return iModelBridge::IBriefcaseManager::PushStatus::Success;
@@ -570,7 +570,7 @@ iModelBridge::IBriefcaseManager::PushStatus iModelBridgeFwkPush::_Push(Utf8CP co
 
     auto channelParentId = m_fwk.m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().channelParentId;
 
-    if (BSISUCCESS != m_fwk.Briefcase_PullMergePush(comment, false/*doPullAndMerge*/, true/*doPush*/))
+    if (BSISUCCESS != m_fwk.Briefcase_PullMergePush(comment, changedFiles, changes, false/*doPullAndMerge*/, true/*doPush*/ ))
         return m_fwk.m_lastBridgePushStatus;
 
     if (BSISUCCESS != m_fwk.MustHoldJobSubjectLock())
@@ -582,7 +582,11 @@ iModelBridge::IBriefcaseManager::PushStatus iModelBridgeFwkPush::_Push(Utf8CP co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP descIn, bool doPullAndMerge, bool doPush)
+Http::Request::ProgressCallback getHttpProgressMeter();
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP descIn, bvector<Utf8String> const* changedFiles, iModel::Hub::ChangeSetKind  changes, bool doPullAndMerge, bool doPush)
     {
     BeAssert(doPullAndMerge || doPush);
     bool doPullMergeAndPush = doPullAndMerge && doPush;
@@ -624,9 +628,21 @@ BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP descIn, bool doPul
         return BSIERROR;
         }
 
-    auto status = doPullMergeAndPush? m_client->PullMergeAndPush(comment.c_str()): 
-                  doPullAndMerge?     m_client->PullAndMerge():
-                                      m_client->Push(comment.c_str());
+    bvector<Utf8String> emptyFiles;
+    bvector<Utf8String> users;
+    iModel::Hub::PullChangeSetsArgumentsPtr pullArguments = iModel::Hub::PullChangeSetsArguments::Create(getHttpProgressMeter());
+
+    BeSQLite::BeGuid guid;
+    if (SUCCESS != guid.FromString(m_jobEnvArgs.m_jobRunCorrelationId.c_str()))
+        guid.Create();
+    
+    iModel::Hub::BridgePropertiesPtr bridgeProperties = iModel::Hub::BridgeProperties::Create(guid, changedFiles ? *changedFiles : emptyFiles, users);
+    
+    iModel::Hub::PushChangeSetArgumentsPtr pushArguments = iModel::Hub::PushChangeSetArguments::Create(comment.c_str(), changes, bridgeProperties,false, getHttpProgressMeter());
+
+    auto status = doPullMergeAndPush? m_client->PullMergeAndPush(pullArguments, pushArguments):
+                  doPullAndMerge?     m_client->PullAndMerge(pullArguments):
+                                      m_client->Push(pushArguments);
     bool needsSchemaMerge = false;
     if (SUCCESS != status)
         {
@@ -653,7 +669,10 @@ BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP descIn, bool doPul
         GetLogger().infov("PullAndMergeSchemaRevisions %s", m_briefcaseBasename.c_str());
         status = m_client->PullAndMergeSchemaRevisions(m_briefcaseDgnDb); // *** TRICKY: PullAndMergeSchemaRevisions closes and re-opens the briefcase, so m_briefcaseDgnDb is re-assigned!
         if (SUCCESS == status)
-            status = m_client->PullMergeAndPush(comment.c_str());
+            {
+            iModel::Hub::PushChangeSetArgumentsPtr pushArguments = iModel::Hub::PushChangeSetArguments::Create(comment.c_str(), iModel::Hub::ChangeSetKind::Schema, bridgeProperties);
+            status = m_client->PullMergeAndPush(pullArguments, pushArguments);
+            }
         }
 
     m_client->CloseBriefcase();

@@ -433,12 +433,13 @@ RevisionStats MstnBridgeTestsFixture::ComputeRevisionStats(BentleyApi::Dgn::DgnD
         {
         for (auto rev : testClient->GetDgnRevisions(start, end))
             {
-            stats.descriptions.insert(rev->GetSummary());
-            stats.userids.insert(rev->GetUserName());
-            if (rev->ContainsSchemaChanges(db))
+            stats.descriptions.insert(rev.first->GetSummary());
+            stats.userids.insert(rev.first->GetUserName());
+            if (rev.first->ContainsSchemaChanges(db))
                 ++stats.nSchemaRevs;
             else
                 ++stats.nDataRevs;
+            stats.fileNames.insert(rev.second);
             }
         return stats;
         }
@@ -454,7 +455,7 @@ RevisionStats MstnBridgeTestsFixture::ComputeRevisionStats(BentleyApi::Dgn::DgnD
         auto csInfo = changesets[i];
         stats.descriptions.insert(csInfo->GetDescription());
         stats.userids.insert(csInfo->GetUserCreated());
-        bool isSchemaChange = csInfo->GetContainingChanges() == BentleyApi::iModel::Hub::ChangeSetInfo::ContainingChanges::Schema;
+        bool isSchemaChange = csInfo->GetContainingChanges() == BentleyApi::iModel::Hub::ChangeSetKind::Schema;
         if (isSchemaChange)
             ++stats.nSchemaRevs;
         else

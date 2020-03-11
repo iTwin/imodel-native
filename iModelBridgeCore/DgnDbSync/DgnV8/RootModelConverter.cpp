@@ -1369,7 +1369,7 @@ void RootModelConverter::ConvertElementsInModel(ResolvedModelMapping const& v8mm
     else
         {
         if (_GetParams().GetPushIntermediateRevisions() == iModelBridge::Params::PushIntermediateRevisions::ByModel)
-            PushChangesForModel(v8mm.GetV8Model());
+            PushChangesForModel(v8mm.GetV8Model(), iModel::Hub::ChangeSetKind::SpatialData);
         }
     }
 
@@ -1428,7 +1428,7 @@ void RootModelConverter::DoConvertSpatialElements()
             }
 
         if (_GetParams().GetPushIntermediateRevisions() == iModelBridge::Params::PushIntermediateRevisions::ByFile)
-            PushChangesForFile(*v8FileGroup.first, ConverterDataStrings::SpatialData());
+            PushChangesForFile(*v8FileGroup.first, ConverterDataStrings::SpatialData(),iModel::Hub::ChangeSetKind::SpatialData);
         }
     }
 
@@ -2284,7 +2284,7 @@ BentleyStatus RootModelConverter::DoFinishConversion()
     _OnConversionComplete();
 
     if (ShouldCreateIntermediateRevisions())
-        PushChangesForFile(*GetRootV8File(), ConverterDataStrings::GlobalProperties());
+        PushChangesForFile(*GetRootV8File(), ConverterDataStrings::GlobalProperties(), iModel::Hub::ChangeSetKind::GlobalProperties);
 
     if (WasAborted())
         {
@@ -2436,7 +2436,7 @@ BentleyStatus  RootModelConverter::ConvertData()
             return ERROR;
 
         if (ShouldCreateIntermediateRevisions())
-            PushChangesForFile(*GetRootV8File(), ConverterDataStrings::ViewsAndModels());
+            PushChangesForFile(*GetRootV8File(), ConverterDataStrings::ViewsAndModels(), iModel::Hub::ChangeSetKind::ViewsAndModels);
 
         ConverterLogging::LogPerformance(timer, "Convert Spatial Views");
 
@@ -2450,7 +2450,7 @@ BentleyStatus  RootModelConverter::ConvertData()
     else
         {
         if (ShouldCreateIntermediateRevisions())
-            PushChangesForFile(*GetRootV8File(), ConverterDataStrings::ViewsAndModels());
+            PushChangesForFile(*GetRootV8File(), ConverterDataStrings::ViewsAndModels(), iModel::Hub::ChangeSetKind::ViewsAndModels);
         }
 
     timer.Start();
@@ -2466,7 +2466,7 @@ BentleyStatus  RootModelConverter::ConvertData()
         return ERROR;
 
     if (ShouldCreateIntermediateRevisions())
-        PushChangesForFile(*GetRootV8File(), ConverterDataStrings::Sheets());
+        PushChangesForFile(*GetRootV8File(), ConverterDataStrings::Sheets(), iModel::Hub::ChangeSetKind::SheetsAndDrawings);
 
     ConverterLogging::LogPerformance(timer, "Convert Sheets (total)");
 
@@ -2532,33 +2532,28 @@ ResolvedModelMapping RootModelConverter::_FindResolvedModelMappingByModelId(DgnM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialConverterBase::PushChangesForFile(DgnV8FileR file, BentleyApi::Utf8StringCR whatData)
+void SpatialConverterBase::PushChangesForFile(DgnV8FileR file, BentleyApi::Utf8StringCR whatData, iModel::Hub::ChangeSetKind changeType)
     {
-    BentleyApi::Utf8String comment;
-    if (&file == GetRootV8File())
-        comment = whatData;
-    else
-        {
-        BeFileName filename(file.GetFileName().c_str());
-        comment = BentleyApi::Utf8PrintfString("%s - %s", Utf8String(filename.GetBaseName()).c_str(), whatData.c_str());
-        }
-    iModelBridge::PushChanges(*m_dgndb, _GetParams(), comment.c_str());
+    bvector<Utf8String> files;
+    BeFileName v8fileName(file.GetFileName().c_str());
+    files.push_back(v8fileName.GetBaseName().GetNameUtf8());
+    iModelBridge::PushChanges(*m_dgndb, _GetParams(), whatData, &files, changeType);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialConverterBase::PushChangesForFile(DgnV8FileR file, ConverterDataStrings::StringId whatDataNo)
+void SpatialConverterBase::PushChangesForFile(DgnV8FileR file, ConverterDataStrings::StringId whatDataNo, iModel::Hub::ChangeSetKind changeType)
     {
-    PushChangesForFile(file, ConverterDataStrings::GetString(whatDataNo));
+    PushChangesForFile(file, ConverterDataStrings::GetString(whatDataNo), changeType);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialConverterBase::PushChangesForModel(DgnV8ModelRefCR model)
+void SpatialConverterBase::PushChangesForModel(DgnV8ModelRefCR model, iModel::Hub::ChangeSetKind changeType)
     {
-    PushChangesForFile(*model.GetDgnFileP(), BentleyApi::Utf8String(model.GetModelNameCP()));
+    PushChangesForFile(*model.GetDgnFileP(), BentleyApi::Utf8String(model.GetModelNameCP()), changeType);
     }
 
 /*---------------------------------------------------------------------------------**//**

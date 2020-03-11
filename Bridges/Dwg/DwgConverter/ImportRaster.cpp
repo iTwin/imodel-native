@@ -210,8 +210,10 @@ BentleyStatus   DwgRasterImageExt::_ConvertToBim (ProtocolExtensionContext& cont
         auto revOption = importer.GetOptions().GetPushIntermediateRevisions();
         if (revOption == iModelBridge::Params::PushIntermediateRevisions::ByModel || revOption == iModelBridge::Params::PushIntermediateRevisions::ByFile)
             {
-            Utf8PrintfString comment("Raster %ls", rasterFilename.GetBaseName().c_str());
-            iModelBridge::PushChanges(importer.GetDgnDb(), importer.GetOptions(), comment.c_str());
+            bvector <Utf8String> changedFiles;
+            changedFiles.push_back(rasterFilename.GetBaseName().GetNameUtf8());
+            Utf8String comment("Raster");
+            iModelBridge::PushChanges(importer.GetDgnDb(), importer.GetOptions(), comment.c_str(), &changedFiles, iModel::Hub::ChangeSetKind::Regular);
             }
         }
 

@@ -345,7 +345,7 @@ protected:
     void Briefcase_MakeBriefcaseName(); // Sets m_briefcaseName
     BentleyStatus Briefcase_AcquireBriefcase(FwkContext& context);
     BentleyStatus Briefcase_Push(Utf8CP);
-    BentleyStatus Briefcase_PullMergePush(Utf8CP, bool doPullAndMerge = true, bool doPush = true);
+    BentleyStatus Briefcase_PullMergePush(Utf8CP,bvector<Utf8String> const* changedFiles, iModel::Hub::ChangeSetKind  changes, bool doPullAndMerge = true, bool doPush = true );
     BentleyStatus Briefcase_ReleaseAllPublicLocks(bool isCrash = false);
     //! @}
 
@@ -376,7 +376,7 @@ protected:
     BentleyStatus StageInputFile(FwkContext& context);
     BentleyStatus StageWorkspace(FwkContext& context);
     BentleyStatus SetupDmsFiles(FwkContext& context);
-    int PullMergeAndPushChange(Utf8StringCR description, bool releaseLocks, bool reopenDataBase);
+    int PullMergeAndPushChange(Utf8StringCR description, bvector<Utf8String> const* changedFiles, iModel::Hub::ChangeSetKind  changes, bool releaseLocks, bool reopenDataBase);
 
     int StoreHeaderInformation();
     
@@ -385,7 +385,7 @@ protected:
     void WriteErrorDocument();
 
     int UpdateProjectExtents(FwkContext& context);
-    int PushDataChanges(Utf8StringCR pushComment);
+    int PushDataChanges(Utf8StringCR pushComment, bvector<Utf8String>* changedFiles, iModel::Hub::ChangeSetKind  changes);
     BentleyStatus GetUserProvidedExtents(AxisAlignedBox3d& extents, FwkContext& context);
 
     BentleyStatus SetUpECEFLocation(FwkContext& context);
@@ -474,7 +474,7 @@ struct iModelBridgeFwkPush : RefCounted<iModelBridge::IBriefcaseManager>
     iModelBridgeFwk& m_fwk;
     iModelBridgeFwkPush(iModelBridgeFwk& f) : m_fwk(f) {}
     public:
-    IMODEL_BRIDGE_FWK_EXPORT PushStatus _Push(Utf8CP comment) override;
+    IMODEL_BRIDGE_FWK_EXPORT PushStatus _Push(Utf8CP comment, bvector<Utf8String> const* changedFiles, iModel::Hub::ChangeSetKind changes) override;
 };
 
 END_BENTLEY_DGN_NAMESPACE

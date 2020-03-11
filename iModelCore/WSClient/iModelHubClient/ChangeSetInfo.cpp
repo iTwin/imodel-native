@@ -58,9 +58,9 @@ ChangeSetInfoPtr ChangeSetInfo::ParseRapidJson(RapidJsonValueCR properties)
         BeBriefcaseId(properties[ServerSchema::Property::BriefcaseId].GetInt64()) : BeBriefcaseId(-1);
     auto pushDate = properties.HasMember(ServerSchema::Property::PushDate) ? 
         BeJsonUtilities::DateTimeFromValue(properties[ServerSchema::Property::PushDate].GetString()) : DateTime();
-    ChangeSetInfo::ContainingChanges containingChanges = properties.HasMember(ServerSchema::Property::ContainingChanges) ?
-        static_cast<ChangeSetInfo::ContainingChanges>(properties[ServerSchema::Property::ContainingChanges].GetInt()) :
-        static_cast<ChangeSetInfo::ContainingChanges>(0);
+    ChangeSetKind containingChanges = properties.HasMember(ServerSchema::Property::ContainingChanges) ?
+        static_cast<ChangeSetKind>(properties[ServerSchema::Property::ContainingChanges].GetInt()) :
+        static_cast<ChangeSetKind>(0);
 
     return new ChangeSetInfo(id, parentChangeSetId, dbGuid, index, description, fileSize, briefcaseId, userCreated, pushDate, containingChanges);
     }

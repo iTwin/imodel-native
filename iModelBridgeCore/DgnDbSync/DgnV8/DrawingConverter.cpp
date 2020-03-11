@@ -237,7 +237,7 @@ void RootModelConverter::_ConvertDrawings()
             }
 
         if (_GetParams().GetPushIntermediateRevisions() == iModelBridge::Params::PushIntermediateRevisions::ByFile)
-            PushChangesForFile(*v8FileGroup.first, ConverterDataStrings::Drawings());
+            PushChangesForFile(*v8FileGroup.first, ConverterDataStrings::Drawings(), iModel::Hub::ChangeSetKind::SheetsAndDrawings);
         }
     }
 

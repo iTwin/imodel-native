@@ -1004,7 +1004,7 @@ TEST_F(CodesTests, FailingCodesResponseOptions)
 
     db1.SaveChanges();
     ConflictsInfoPtr conflictsInfo = std::make_shared<ConflictsInfo>();
-    PushChangeSetArgumentsPtr pushChangeSetArguments = PushChangeSetArguments::Create(nullptr, ChangeSetInfo::ContainingChanges::NotSpecified,
+    PushChangeSetArgumentsPtr pushChangeSetArguments = PushChangeSetArguments::Create(nullptr, ChangeSetKind::NotSpecified,
         nullptr, false, nullptr, IBriefcaseManager::ResponseOptions::All, nullptr, conflictsInfo);
     StatusResult result1 = briefcase1->Push(pushChangeSetArguments)->GetResult();
     ASSERT_SUCCESS(result1);

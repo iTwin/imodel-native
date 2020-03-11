@@ -1539,18 +1539,6 @@ TEST_F(MstnBridgeTests, DISABLED_PushAfterEachModel)
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      11/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool containsSubstr(BentleyApi::bset<BentleyApi::Utf8String> const& strings, BentleyApi::Utf8StringCR substr)
-    {
-    for (auto const& str: strings)
-        {
-        if (str.find(substr) != BentleyApi::Utf8String::npos)
-            return true;
-        }
-    return false;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2018
@@ -1610,8 +1598,8 @@ TEST_F(MstnBridgeTests, PushAfterEachFile)
         auto revstats = ComputeRevisionStats(*fileInfo.m_db, csCountBefore);
         EXPECT_EQ(revstats.nSchemaRevs, 0) << "no schema changes expected, since the initial conversion did that";
         EXPECT_GE(revstats.nDataRevs, 2) << "each file should have been pushed in its own changeset";
-        EXPECT_TRUE(containsSubstr(revstats.descriptions, "-Ref-1")) << "first ref should have been pushed in its own revision";
-        EXPECT_TRUE(containsSubstr(revstats.descriptions, "-Ref-2")) << "second ref should have been pushed in its own revision";
+        EXPECT_TRUE(revstats.fileNames.end() != revstats.fileNames.find (Utf8String("Test3d-Ref-1.dgn"))) << "first ref should have been pushed in its own revision";
+        EXPECT_TRUE(revstats.fileNames.end() != revstats.fileNames.find(Utf8String("Test3d-Ref-2.dgn"))) << "second ref should have been pushed in its own revision";
         }
     }
 

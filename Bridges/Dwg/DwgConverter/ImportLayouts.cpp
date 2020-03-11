@@ -249,10 +249,14 @@ BentleyStatus   DwgImporter::_ImportLayout (ResolvedModelMapping& modelMap, DwgD
     if (revOption == iModelBridge::Params::PushIntermediateRevisions::ByModel)
         {
         Utf8String  layoutName;
-        if (DwgHelper::GetLayoutOrBlockName(layoutName, block) != BSISUCCESS)
+        bvector <Utf8String> changedFiles;
+        if (DwgHelper::GetLayoutOrBlockName(layoutName, block) == BSISUCCESS)
             layoutName.assign ("unnamed");
-        Utf8PrintfString comment("Layout %s", layoutName.c_str());
-        iModelBridge::PushChanges(*m_dgndb, this->GetOptions(), comment.c_str());
+        
+        changedFiles.push_back(layoutName);
+        Utf8String comment("Layout");
+        
+        iModelBridge::PushChanges(*m_dgndb, this->GetOptions(), comment.c_str(), &changedFiles, iModel::Hub::ChangeSetKind::SheetsAndDrawings);
         }
 
     return  BSISUCCESS;

@@ -405,11 +405,11 @@ RevisionStats DwgBridgeTestsFixture::ComputeRevisionStats(BentleyApi::Dgn::DgnDb
         {
         for (auto rev : testClient->GetDgnRevisions(start, end))
             {
-            stats.descriptions.insert(rev->GetSummary());
+            stats.descriptions.insert(rev.first->GetSummary());
 #ifdef WIP_GetUserName_FOR_UNICODE
             stats.userids.insert(rev->GetUserName());
 #endif
-            if (rev->ContainsSchemaChanges(db))
+            if (rev.first->ContainsSchemaChanges(db))
                 ++stats.nSchemaRevs;
             else
                 ++stats.nDataRevs;
@@ -428,7 +428,7 @@ RevisionStats DwgBridgeTestsFixture::ComputeRevisionStats(BentleyApi::Dgn::DgnDb
         auto csInfo = changesets[i];
         stats.descriptions.insert(csInfo->GetDescription());
         stats.userids.insert(csInfo->GetUserCreated());
-        bool isSchemaChange = csInfo->GetContainingChanges() == BentleyApi::iModel::Hub::ChangeSetInfo::ContainingChanges::Schema;
+        bool isSchemaChange = csInfo->GetContainingChanges() == BentleyApi::iModel::Hub::ChangeSetKind::Schema;
         if (isSchemaChange)
             ++stats.nSchemaRevs;
         else

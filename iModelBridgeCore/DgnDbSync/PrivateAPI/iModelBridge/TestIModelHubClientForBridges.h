@@ -248,7 +248,7 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
     iModel::Hub::Error m_lastServerError;
     BeFileName m_serverRepo;
     BeFileName m_testWorkDir;
-    bvector<DgnRevisionPtr> m_revisions;
+    bvector<std::pair <DgnRevisionPtr, Utf8String>> m_revisions;
     DgnDbP m_briefcase{};
     BeSQLite::BeBriefcaseId m_currentBriefcaseId;
     TestRepositoryAdmin m_admin;
@@ -267,13 +267,13 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
 
     iModel::Hub::iModelInfoPtr GetIModelInfo() override {return m_iModelInfo;}
     
-    bvector<DgnRevisionPtr> GetDgnRevisions(size_t start = 0, size_t end = -1)
+    bvector<std::pair <DgnRevisionPtr, Utf8String>> GetDgnRevisions(size_t start = 0, size_t end = -1)
         {
         if (end < 0 || end > m_revisions.size())
             end = m_revisions.size();
-        bvector<DgnRevisionPtr> revs;
+        bvector<std::pair <DgnRevisionPtr, Utf8String>> revs;
         for (size_t i = start; i < end; ++i)
-            revs.push_back(m_revisions[i].get());
+            revs.push_back(m_revisions[i]);
         return revs;
         }
 
@@ -337,8 +337,8 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
         EXPECT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(m_serverRepo, bcFileName, false));
 
         bvector<DgnRevisionCP> revisions;
-        for (DgnRevisionPtr rev : m_revisions)
-            revisions.push_back(rev.get());
+        for (auto rev : m_revisions)
+            revisions.push_back(rev.first.get());
 
         auto db = DgnDb::OpenDgnDb(nullptr, bcFileName, DgnDb::OpenParams (DgnDb::OpenMode::ReadWrite));
         m_currentBriefcaseId = m_currentBriefcaseId.GetNextBriefcaseId();
@@ -370,19 +370,23 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
         m_briefcase = nullptr;
         }
 
-    StatusInt JustCaptureRevision(Utf8CP comment)
+    StatusInt JustCaptureRevision(Utf8CP comment, Utf8StringCP fileName)
         {
         BeAssert(nullptr != m_briefcase);
 
         DgnRevisionPtr revision = CaptureChangeSet(m_briefcase, comment);
         if (revision.IsNull())
             return BSISUCCESS;
-        m_revisions.push_back(revision);
+        m_revisions.push_back(std::make_pair(revision, fileName ? *fileName : ""));
         return BSISUCCESS;
         }
 
-    StatusInt Push(Utf8CP comment) override {return JustCaptureRevision(comment);}
-    StatusInt PullMergeAndPush(Utf8CP comment) override {return JustCaptureRevision(comment);}
+    StatusInt Push(iModel::Hub::PushChangeSetArgumentsPtr pushArgs) override {return JustCaptureRevision(pushArgs->GetDescription(), &pushArgs->GetBridgeProperties()->GetChangedFiles().front());}
+    StatusInt PullMergeAndPush(iModel::Hub::PullChangeSetsArgumentsPtr, iModel::Hub::PushChangeSetArgumentsPtr pushArgs) override 
+        {
+        Utf8StringCP fileName = pushArgs->GetBridgeProperties().IsValid() ? &pushArgs->GetBridgeProperties()->GetChangedFiles().front() : NULL;
+        return JustCaptureRevision(pushArgs->GetDescription(), fileName);
+        }
     StatusInt RestoreBriefcase (BeFileNameCR, Utf8CP, BeSQLite::BeBriefcaseId) override {return ERROR;}
     virtual DgnRevisionPtr CaptureChangeSet(DgnDbP db, Utf8CP comment)
         {
@@ -408,7 +412,7 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
         return changeSet;
         }
 
-    StatusInt PullAndMerge() override
+    StatusInt PullAndMerge(iModel::Hub::PullChangeSetsArgumentsPtr) override
         {
         return BSISUCCESS;
         }

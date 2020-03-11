@@ -253,7 +253,7 @@ BentleyStatus   C3dImporter::_MakeSchemaChanges ()
     if (status != BentleyStatus::BSISUCCESS)
         return  status;
 
-    iModelBridge::PushChanges (T_Super::GetDgnDb(), T_Super::GetOptions(), "DWG schemas");
+    iModelBridge::PushChanges (T_Super::GetDgnDb(), T_Super::GetOptions(), "DWG schemas", NULL, iModel::Hub::ChangeSetKind::Schema);
 
     this->SetStepName (ProgressMessage::TASK_IMPORTING(), "Civil domain & C3D schemas");
 

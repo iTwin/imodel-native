@@ -11,17 +11,17 @@ USING_NAMESPACE_BENTLEY_IMODELHUB
 //---------------------------------------------------------------------------------------
 StatusResult PushChangeSetArguments::Validate(Dgn::DgnRevisionPtr changeSet, Dgn::DgnDbR dgndb)
     {
-    if (m_containingChanges == ChangeSetInfo::ContainingChanges::NotSpecified)
+    if (m_containingChanges == ChangeSetKind::NotSpecified)
         {
-        m_containingChanges = changeSet->ContainsSchemaChanges(dgndb) ? ChangeSetInfo::ContainingChanges::Schema : ChangeSetInfo::ContainingChanges::Regular;
+        m_containingChanges = changeSet->ContainsSchemaChanges(dgndb) ? ChangeSetKind::Schema : ChangeSetKind::Regular;
         }
     else
         {
-        if (changeSet->ContainsSchemaChanges(dgndb) && m_containingChanges != ChangeSetInfo::ContainingChanges::Schema)
+        if (changeSet->ContainsSchemaChanges(dgndb) && m_containingChanges != ChangeSetKind::Schema)
             return StatusResult::Error(Error::Id::InvalidContainingChangesValue);
 
-        if (m_containingChanges != ChangeSetInfo::ContainingChanges::Schema && 
-            ((m_containingChanges & ChangeSetInfo::ContainingChanges::Schema) == ChangeSetInfo::ContainingChanges::Schema))
+        if (m_containingChanges != ChangeSetKind::Schema &&
+            ((m_containingChanges & ChangeSetKind::Schema) == ChangeSetKind::Schema))
             return StatusResult::Error(Error::Id::InvalidContainingChangesValue);
         }
 

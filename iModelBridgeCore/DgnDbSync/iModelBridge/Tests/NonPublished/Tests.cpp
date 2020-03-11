@@ -1137,7 +1137,7 @@ TEST_F(iModelBridgeTests, Test1)
             testBridge.m_expect.anyChanges = false;
             testBridge.m_expect.anyDeleted = false;
             testIModelHubClientForBridges.OpenBriefcase(*db);
-            testIModelHubClientForBridges.PullMergeAndPush("Test schema");
+            testIModelHubClientForBridges.PullMergeAndPush(iModel::Hub::PullChangeSetsArguments::Create(), iModel::Hub::PushChangeSetArguments::Create("Test schema"));
             testIModelHubClientForBridges.CloseBriefcase();
             }
 

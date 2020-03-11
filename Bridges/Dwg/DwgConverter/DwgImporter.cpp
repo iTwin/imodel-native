@@ -127,7 +127,7 @@ BentleyStatus   DwgImporter::_MakeSchemaChanges ()
     or else schema import will fail.  A Pull should have been done prior to this method 
     to be called, so no need to pull again.
     -----------------------------------------------------------------------------------*/
-    iModelBridge::PushChanges (*m_dgndb, this->GetOptions(), "repository links");
+    iModelBridge::PushChanges (*m_dgndb, this->GetOptions(), "repository links", NULL, iModel::Hub::ChangeSetKind::Regular);
 
     // create attribute definitions schema
     auto attrdefSchema = xrefLoader.GetAttrdefSchema ();

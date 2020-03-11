@@ -214,8 +214,10 @@ BentleyStatus   DwgImporter::_ImportXReference (ElementImportResults& results, E
     auto revOption = this->GetOptions().GetPushIntermediateRevisions ();
     if (revOption == iModelBridge::Params::PushIntermediateRevisions::ByModel || revOption == iModelBridge::Params::PushIntermediateRevisions::ByFile)
         {
-        Utf8PrintfString comment("xRef %ls", m_currentXref.GetSavedPath().GetBaseName().c_str());
-        iModelBridge::PushChanges(*m_dgndb, this->GetOptions(), comment.c_str());
+        Utf8PrintfString comment("xRef");
+        bvector<Utf8String> files;
+        files.push_back(m_currentXref.GetSavedPath().GetBaseName().GetNameUtf8());
+        iModelBridge::PushChanges(*m_dgndb, this->GetOptions(), comment.c_str(), &files, iModel::Hub::ChangeSetKind::Regular);
         }
 
     // restore current xref

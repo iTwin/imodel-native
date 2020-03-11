@@ -228,7 +228,7 @@ TEST_F(ChangeSetsTests, ChangeSetsInfo)
     EXPECT_NE("", lastChangeSet->GetUserCreated());
     EXPECT_GE(lastChangeSet->GetPushDate().GetYear(), 2017);
     EXPECT_GT(lastChangeSet->GetBriefcaseId().GetValue(), 0u);
-    EXPECT_EQ(0, lastChangeSet->GetContainingChanges());
+    EXPECT_EQ(ChangeSetKind::Regular, lastChangeSet->GetContainingChanges());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -260,7 +260,7 @@ TEST_F(ChangeSetsTests, PushWithBridgeProperties)
     auto model = CreateTestModel(*m_briefcase);
     CreateElement(*model, DgnCode(), false);
 
-    ChangeSetInfo::ContainingChanges containingChangesValue = ChangeSetInfo::ContainingChanges::Definition | ChangeSetInfo::ContainingChanges::ViewsAndModels;
+    ChangeSetKind containingChangesValue = ChangeSetKind::Definition | ChangeSetKind::ViewsAndModels;
     BridgePropertiesPtr expectedBridgeProperties = CreateBridgeProperties(2, 3);
     
     // Push changeSet with bridge properties

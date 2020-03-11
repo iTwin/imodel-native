@@ -169,7 +169,7 @@ ConflictsInfoPtr conflictsInfo,
 CodeCallbackFunction* codesCallback
 ) const
     {
-    PushChangeSetArgumentsPtr pushArguments = PushChangeSetArguments::Create(description, ChangeSetInfo::ContainingChanges::NotSpecified,
+    PushChangeSetArgumentsPtr pushArguments = PushChangeSetArguments::Create(description, ChangeSetKind::NotSpecified,
         nullptr, relinquishCodesLocks, uploadCallback, options, cancellationToken, conflictsInfo, codesCallback);
     return Push(pushArguments);
     }
@@ -368,7 +368,7 @@ CodeCallbackFunction* codesCallback
 )
     {
     PullChangeSetsArgumentsPtr pullArguments = PullChangeSetsArguments::Create(downloadCallback, cancellationToken);
-    PushChangeSetArgumentsPtr pushArguments = PushChangeSetArguments::Create(description, ChangeSetInfo::ContainingChanges::NotSpecified,
+    PushChangeSetArgumentsPtr pushArguments = PushChangeSetArguments::Create(description, ChangeSetKind::NotSpecified,
         nullptr, relinquishCodesLocks, uploadCallback, options, cancellationToken, conflictsInfo, codesCallback);
     return PullMergeAndPush(pullArguments, pushArguments, attemptsCount);
     }

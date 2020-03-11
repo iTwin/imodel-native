@@ -40,7 +40,7 @@ public:
     //! @param[in] changedFiles
     //! @param[in] users
     //! @return Returns a shared pointer to the created instance.
-    static BridgePropertiesPtr Create(BeSQLite::BeGuid jobId, bvector<Utf8String> changedFiles, bvector<Utf8String> users)
+    static BridgePropertiesPtr Create(BeSQLite::BeGuid jobId, bvector<Utf8String> const& changedFiles, bvector<Utf8String> const& users)
         { return BridgePropertiesPtr(new BridgeProperties(jobId, changedFiles, users)); }
 
     BeSQLite::BeGuidCR GetJobId() const { return m_jobId; }

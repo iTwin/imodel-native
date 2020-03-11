@@ -2361,9 +2361,9 @@ protected:
 public:
     virtual SpatialParams const& _GetSpatialParams() const = 0;
 
-    void PushChangesForFile(DgnV8FileR, BentleyApi::Utf8StringCR whatData);
-    void PushChangesForFile(DgnV8FileR, ConverterDataStrings::StringId);
-    void PushChangesForModel(DgnV8ModelRefCR);
+    void PushChangesForFile(DgnV8FileR, BentleyApi::Utf8StringCR whatData, iModel::Hub::ChangeSetKind changeType);
+    void PushChangesForFile(DgnV8FileR, ConverterDataStrings::StringId, iModel::Hub::ChangeSetKind changeType);
+    void PushChangesForModel(DgnV8ModelRefCR, iModel::Hub::ChangeSetKind changeType);
 
     DGNDBSYNC_EXPORT bool ImportXDomainSchemas();
 

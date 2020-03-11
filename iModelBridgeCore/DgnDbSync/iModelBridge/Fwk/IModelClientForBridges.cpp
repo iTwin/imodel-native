@@ -214,7 +214,7 @@ iModel::Hub::iModelInfoPtr IModelHubClient::GetIModelInfo()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Http::Request::ProgressCallback getHttpProgressMeter()
+Http::Request::ProgressCallback getHttpProgressMeter()
     {
     Http::Request::ProgressCallback progress = [](double bytesTransfered, double bytesTotal)
         {
@@ -287,10 +287,9 @@ StatusInt IModelHubClient::CreateRepository(Utf8CP repoName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt IModelClientBase::Push(Utf8CP descr)
+StatusInt IModelClientBase::Push(iModel::Hub::PushChangeSetArgumentsPtr psuhArgs)
     {
-    auto progress = getHttpProgressMeter();
-    auto result = m_briefcase->Push(descr, false, progress)->GetResult();
+    auto result = m_briefcase->Push(psuhArgs)->GetResult();
     if (result.IsSuccess())
         return SUCCESS;
 
@@ -301,10 +300,9 @@ StatusInt IModelClientBase::Push(Utf8CP descr)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt IModelClientBase::PullMergeAndPush(Utf8CP descr)
+StatusInt IModelClientBase::PullMergeAndPush(iModel::Hub::PullChangeSetsArgumentsPtr pullArgs, iModel::Hub::PushChangeSetArgumentsPtr pushArgs)
     {
-    auto progress = getHttpProgressMeter();
-    auto result = m_briefcase->PullMergeAndPush(descr, false, progress, progress, nullptr, m_maxRetryCount)->GetResult();
+    auto result = m_briefcase->PullMergeAndPush(pullArgs, pushArgs, m_maxRetryCount)->GetResult();
     if (result.IsSuccess())
         return SUCCESS;
 
@@ -341,7 +339,7 @@ static bool isTemporaryError(Error error)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt IModelClientBase::PullAndMerge()
+StatusInt IModelClientBase::PullAndMerge(iModel::Hub::PullChangeSetsArgumentsPtr pullArguments)
     {
     auto progress = getHttpProgressMeter();
     uint8_t attempt = 0;

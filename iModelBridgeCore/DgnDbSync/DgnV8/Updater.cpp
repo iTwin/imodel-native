@@ -516,7 +516,8 @@ BentleyApi::BentleyStatus RootModelConverter::DeleteOrphanReferenceModels()
         setChannelParentFromModel(*model);
         auto modelName = IssueReporter::FmtModel(*model);
         _DeleteModel(*model, xsa);
-        iModelBridge::PushChanges(*m_dgndb, _GetParams(), Utf8PrintfString("Deleted reference model %s", modelName.c_str()));
+        //TODO: Find the file name associated with the orphan model.
+        iModelBridge::PushChanges(*m_dgndb, _GetParams(), Utf8PrintfString("Deleted reference model %s", modelName.c_str()), NULL, iModel::Hub::ChangeSetKind::SpatialData);
         }
     return BSISUCCESS;
     }
@@ -612,7 +613,9 @@ BentleyApi::BentleyStatus RootModelConverter::DetectDeletedEmbeddedFiles()
             // No package file assigned to me embeds this file. Therefore, I say that the embedded file was deleted.
             DeleteEmbeddedFileAndContents(rlinkAspect->GetRepositoryLinkId());
     
-            iModelBridge::PushChanges(*m_dgndb, _GetParams(), Utf8PrintfString("Deleted reference file %s", identifier.c_str()));
+            bvector <Utf8String> fileNames;
+            fileNames.push_back(identifier);
+            iModelBridge::PushChanges(*m_dgndb, _GetParams(), Utf8PrintfString("Deleted reference file %s", identifier.c_str()),&fileNames, iModel::Hub::ChangeSetKind::SpatialData);
             }
         else
             {
