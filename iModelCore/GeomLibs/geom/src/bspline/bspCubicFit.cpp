@@ -193,11 +193,11 @@ double          tolerance           /* => max dist betw coincide pts or closed c
         if (endGap > tolerance)
             {
             outPts[newNumPts] = outPts[0];
-PUSH_MSVC_IGNORE(6385)
+PUSH_STATIC_ANALYSIS_WARNING(6385)
 // Not clear if compiler is unhappy about (a) newNumPts-1 being negative or (b) newNumPts being incremented.  This method apparently thinks caller knows to allocate for increment
             if (outParams && inParams && newNumPts > 1)
                 outParams[newNumPts] = outParams[newNumPts - 1] + (outParams[newNumPts - 1] - outParams[0]) / (newNumPts - 1);
-POP_MSVC_IGNORE
+POP_STATIC_ANALYSIS_WARNING
             newNumPts++;
             }
 

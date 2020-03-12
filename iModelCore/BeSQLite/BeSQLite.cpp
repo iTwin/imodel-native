@@ -5455,10 +5455,10 @@ static void saveRange(bool& valid, Utf8StringR str, int64_t start, int64_t end)
 static void saveCompactRange(Utf8StringR str, int64_t increment, int64_t len)
     {
     BeAssert(0 != len);
-    Utf8Char buf[0x12] = {'+'};
+    Utf8Char buf[0x12] = "+";
     BeStringUtilities::FormatUInt64(buf+1, _countof(buf)-1, static_cast<uint64_t>(increment), HexFormatOptions::Uppercase);
+    buf[0x11] = 0; // FormatUInt64 takes care of null terminator, but static analyzer doesn't know that.
     str.append(buf);
-
     if (1 < len)
         {
         *buf = '*';

@@ -14,6 +14,7 @@ namespace ManagedApi = ::Bentley::Logging;
 
 // Ignore static analysis warnings in system headers.
 #ifdef _MSC_VER
+    //PUSH_STATIC_ANALYSIS_WARNING
     #pragma warning(push)
     #pragma warning(disable:6054)
 #endif
@@ -27,6 +28,7 @@ namespace ManagedApi = ::Bentley::Logging;
 #include <vcclr.h>
 
 #ifdef _MSC_VER
+    //POP_STATIC_ANALYSIS_WARNING
     #pragma warning(pop)
 #endif
 

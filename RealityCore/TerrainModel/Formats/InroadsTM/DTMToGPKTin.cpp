@@ -435,9 +435,9 @@ static int _getSurfacePerimeterIndices ( struct CIVdtmsrf *srfP, DPoint3d **poin
 
         for (int i = 0; i < numVrts; i++)
         {
-            PUSH_MSVC_IGNORE(6386);
+            PUSH_STATIC_ANALYSIS_WARNING(6386);
             (*pointIndicesPP)[i] = vrtsP[i];
-            POP_MSVC_IGNORE;
+            POP_STATIC_ANALYSIS_WARNING;
             (*numIndicesP)++;
         }
     }

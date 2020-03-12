@@ -46,7 +46,7 @@ void TagTests::CreateTextStyle(V8FileEditor& v8editor)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat                      06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PUSH_MSVC_IGNORE(6385) // I can't figure out how to silence these static analysis warning(s) in this function, so just ignoring.
+PUSH_STATIC_ANALYSIS_WARNING(6385) // I can't figure out how to silence these static analysis warning(s) in this function, so just ignoring.
 void TagTests::CreateTagDef(V8FileEditor& v8editor, WCharCP tagSetName)
     {
     BentleyStatus status = SUCCESS;
@@ -69,7 +69,7 @@ void TagTests::CreateTagDef(V8FileEditor& v8editor, WCharCP tagSetName)
         }
     ASSERT_TRUE(SUCCESS == status);
     }
-POP_MSVC_IGNORE
+POP_STATIC_ANALYSIS_WARNING
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat                      06/16

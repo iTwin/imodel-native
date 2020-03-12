@@ -1119,7 +1119,7 @@ public:
 
     void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-PUSH_MSVC_IGNORE(6385)
+PUSH_STATIC_ANALYSIS_WARNING(6385)
         // To simplify RLE algo and avoid confusion between run len and run value
         // we will assume 0 to be black and 1 to be white. This is not the real pixel value
         // since the black and white position is determined by the pixel type.
@@ -1217,7 +1217,7 @@ PUSH_MSVC_IGNORE(6385)
         *pFinalDst = (uint16_t)FinalDstRunLen;
         //++pFinalDst;
         //FinalDstOnState = !FinalDstOnState;
-POP_MSVC_IGNORE
+POP_STATIC_ANALYSIS_WARNING
         }
 
     HRPPixelConverter* AllocateCopy() const override{
@@ -1881,7 +1881,7 @@ public:
 
     void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-PUSH_MSVC_IGNORE(6385)
+PUSH_STATIC_ANALYSIS_WARNING(6385)
         // To simplify RLE algo and avoid confusion between run len and run value
         // we will assume 0 to be black and 1 to be white. This is not the real pixel value
         // since the black and white position is determined by the pixel type.
@@ -2009,7 +2009,7 @@ PUSH_MSVC_IGNORE(6385)
         *pFinalDst = (uint16_t)FinalDstRunLen;
         //++pFinalDst;
         //FinalDstOnState = !FinalDstOnState;
-POP_MSVC_IGNORE
+POP_STATIC_ANALYSIS_WARNING
         }
 
     HRPPixelConverter* AllocateCopy() const override{

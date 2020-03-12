@@ -1478,7 +1478,7 @@ int*            pBufferLenOut       // <= no. of chars read
 * purpose writes given buffer to open file
 * @bsimethod                                                    Deepak.Malkan   04/96
 +---------------+---------------+---------------+---------------+---------------+------*/
-PUSH_MSVC_IGNORE(6386) // static analysis thinks we exceed the bounds of s_pFrIOBuffer... I don't see how.
+PUSH_STATIC_ANALYSIS_WARNING(6386) // static analysis thinks we exceed the bounds of s_pFrIOBuffer... I don't see how.
 static int      writeToFile
 (
 PFrustrumFile   pFileIn,            // => input file pointer
@@ -1536,7 +1536,7 @@ size_t          bufferLenIn         // => input buffer size
 
     return FR_no_errors;
     }
-POP_MSVC_IGNORE
+POP_STATIC_ANALYSIS_WARNING
 
 /*---------------------------------------------------------------------------------**//**
 * purpose skip header information on opening a file to

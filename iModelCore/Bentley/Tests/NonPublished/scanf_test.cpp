@@ -6,7 +6,7 @@
 #include    <Bentley/BeStringUtilities.h>
 #include    <Bentley/WString.h>
 
-PUSH_MSVC_IGNORE(6054 4996) // don't care about NULL termination warnings in tests...
+PUSH_STATIC_ANALYSIS_WARNING(6054 4996) // don't care about NULL termination warnings in tests...
 
 static void ok (bool b, CharCP fmt, ...)
     {
@@ -356,4 +356,4 @@ TEST(scanf_test,WStringMixes)
     ASSERT_EQ(v,99);
     }
 
-POP_MSVC_IGNORE
+POP_STATIC_ANALYSIS_WARNING

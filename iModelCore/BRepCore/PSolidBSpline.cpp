@@ -2046,7 +2046,7 @@ bool            smoothEnd   // => periodic ends
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Lu.Han          03/98
 +---------------+---------------+---------------+---------------+---------------+------*/
-PUSH_MSVC_IGNORE(6385 6386) // static analysis thinks we exceed the bounds of pCorners... I don't see how.
+PUSH_STATIC_ANALYSIS_WARNING(6385 6386) // static analysis thinks we exceed the bounds of pCorners... I don't see how.
 // It also thinks pPoints is exceeded... that's harder to disprove, but adding gratuitous checks feels wrong...
 static int      fitBoundaryToG1Curves
 (
@@ -2131,12 +2131,12 @@ double          tolerance   /* => tolerance used in the least square fitting */
 
     return status;
     }
-POP_MSVC_IGNORE
+POP_STATIC_ANALYSIS_WARNING
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Lu.Han          10/92
 +---------------+---------------+---------------+---------------+---------------+------*/
-PUSH_MSVC_IGNORE(6386) // static analysis thinks we exceed the bounds of uvCurvesPP[index] in the last else in this function... I don't see how.
+PUSH_STATIC_ANALYSIS_WARNING(6386) // static analysis thinks we exceed the bounds of uvCurvesPP[index] in the last else in this function... I don't see how.
 static int      createUVCurves
 (
 PK_ENTITY_t**   uvCurvesPP,
@@ -2227,7 +2227,7 @@ double          tolerance
 
     return status;
     }
-POP_MSVC_IGNORE
+POP_STATIC_ANALYSIS_WARNING
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Lu.Han          03/98

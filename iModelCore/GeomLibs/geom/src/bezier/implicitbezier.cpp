@@ -844,9 +844,9 @@ double relTol
             pDest[i].z = (a1 * pA1[i].z + a2 * pA2[i].z) * scale;
             pDest[i].w = (a1 * pA1[i].w + a2 * pA2[i].w) * scale;
             }
-PUSH_MSVC_IGNORE(6385)
+PUSH_STATIC_ANALYSIS_WARNING(6385)
         pDest[degree1] = pA2[degree1];
-POP_MSVC_IGNORE
+POP_STATIC_ANALYSIS_WARNING
         order = order1;
         }
     return order;

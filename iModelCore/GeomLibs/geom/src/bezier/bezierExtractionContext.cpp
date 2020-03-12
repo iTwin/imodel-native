@@ -135,10 +135,10 @@ const   double      *pOldKnots,
                 d1 = 0.0;       // for next iteration
                 d2 = 1.0;
                 }
-PUSH_MSVC_IGNORE(6385)
+PUSH_STATIC_ANALYSIS_WARNING(6385)
             beta = T[readIndex--] / (d1 + d2);
             T[writeIndex--] = term1 + d2 * beta;
-POP_MSVC_IGNORE
+POP_STATIC_ANALYSIS_WARNING
             term1 = d1 * beta;
             }
 

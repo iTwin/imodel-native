@@ -159,10 +159,10 @@ int aecDTM_patchHole        /* <= TRUE if error                    */
 
       if ( (npnt+k) % 2 == 0 )
       {
-        PUSH_MSVC_IGNORE(6385);
+        PUSH_STATIC_ANALYSIS_WARNING(6385);
         neistkP[j+k] = neistkP[i+k];
         pntstkP[j+k+1] = pntstkP[i+k+1];
-        POP_MSVC_IGNORE;
+        POP_STATIC_ANALYSIS_WARNING;
       }
 
       npnt = ( npnt + k + 1 ) / 2 + ( npnt + k + 1 ) % 2;

@@ -3669,7 +3669,7 @@ void GeometryListBuilder::AddImage2dR(ImageGraphicR img, double priority)
     AddImageR(img);
     }
 
-PUSH_MSVC_IGNORE(6386) // Static analysis warning claims we overrun tmpPts...bogus.
+PUSH_STATIC_ANALYSIS_WARNING(6386) // Static analysis warning claims we overrun tmpPts...bogus.
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3699,7 +3699,7 @@ void GeometryListBuilder::_AddTriStrip(int numPoints, DPoint3dCP points, AsThick
             _AddShape(3, points+iPt, true);
         }
     }
-POP_MSVC_IGNORE
+POP_STATIC_ANALYSIS_WARNING
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/16

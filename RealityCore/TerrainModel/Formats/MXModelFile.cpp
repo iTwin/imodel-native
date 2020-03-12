@@ -4011,9 +4011,9 @@ ErrorStatus MXTriangleString::getTriangle(const int triangleNumber, ElementTrian
         _timeNumbers[i] = CurTime++;
         ElementTriangleStringRecord& rec = (ElementTriangleStringRecord&)_records[i];
         data.doubles = rec.doubles[triangleNumber % 10];
-        PUSH_MSVC_IGNORE(6385);
+        PUSH_STATIC_ANALYSIS_WARNING(6385);
         data.ints = rec.ints[triangleNumber % 10];
-        POP_MSVC_IGNORE;
+        POP_STATIC_ANALYSIS_WARNING;
         }
     return eOk;
     }
@@ -4059,9 +4059,9 @@ ErrorStatus MXTriangleString::setTriangle(const int triangleNumber, const Elemen
         _timeNumbers[i] = CurTime++;
         ElementTriangleStringRecord& rec = (ElementTriangleStringRecord&)_records[i];
         rec.doubles[triangleNumber % 10] = data.doubles;
-        PUSH_MSVC_IGNORE(6386);
+        PUSH_STATIC_ANALYSIS_WARNING(6386);
         rec.ints[triangleNumber % 10] = data.ints;
-        POP_MSVC_IGNORE;
+        POP_STATIC_ANALYSIS_WARNING;
         _recordNumbers[i] = -recordNumber;
         }
     return eOk;

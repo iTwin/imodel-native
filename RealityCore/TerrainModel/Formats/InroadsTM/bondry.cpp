@@ -106,9 +106,9 @@ static int aecDTM_getSurfacePerimeterWithExterior /* <= TRUE if error         */
       for ( pP = blkP->rec.pnt; pP < blkP->rec.pnt + blkP->use; pP++ )
 	if ( !aecDTM_isPointDeletedFlagSet(pP) )
         {
-        PUSH_MSVC_IGNORE(6386);
+        PUSH_STATIC_ANALYSIS_WARNING(6386);
         DTMPOINTTODPOINT ( srfP, pP, tmpP[i] );
-        POP_MSVC_IGNORE;
+        POP_STATIC_ANALYSIS_WARNING;
 
           i++;
         }

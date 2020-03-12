@@ -3016,9 +3016,9 @@ int order
                 double b = *pB;
                 for (int k = 0; k < numComponent; k++)
                     {
-PUSH_MSVC_IGNORE(6385)
+PUSH_STATIC_ANALYSIS_WARNING(6385)
                     pQ[k] += pY[k] * b;
-POP_MSVC_IGNORE
+POP_STATIC_ANALYSIS_WARNING
                     }
                 }
             }

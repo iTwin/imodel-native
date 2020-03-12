@@ -5724,9 +5724,9 @@ BENTLEYDTM_Private int  bcdtmInsert_buildStringHullPointsIntersectionTableDtmObj
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Sorting Intersection Table") ;
 
- PUSH_MSVC_IGNORE(6386)
+ PUSH_STATIC_ANALYSIS_WARNING(6386)
  qsortCPP(*intTablePP,*numIntTableP,sizeof(DTM_STR_INT_TAB),bcdtmClean_stringLineIntersectionTableCompareFunction) ;
- POP_MSVC_IGNORE
+ POP_STATIC_ANALYSIS_WARNING
 /*
 ** Clean Up
 */
@@ -6196,9 +6196,9 @@ BENTLEYDTM_Private int  bcdtmInsert_buildStringHullLinesIntersectionTableDtmObje
 ** Sort Intersection Table
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Sorting Intersection Table") ;
- PUSH_MSVC_IGNORE(6386)
+ PUSH_STATIC_ANALYSIS_WARNING(6386)
      qsortCPP(*intTablePP,*numIntTableP,sizeof(DTM_STR_INT_TAB),bcdtmClean_stringLineIntersectionTableCompareFunction) ;
- POP_MSVC_IGNORE
+ POP_STATIC_ANALYSIS_WARNING
 /*
 ** Clean Up
 */
@@ -8549,9 +8549,9 @@ BENTLEYDTM_Private int bcdtmInsert_buildStringHullIntersectionTableDtmObject(BC_
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Sorting Intersection Table") ;
 
- PUSH_MSVC_IGNORE(6386)
+ PUSH_STATIC_ANALYSIS_WARNING(6386)
  qsortCPP(*intTablePP,*numIntTableP,sizeof(DTM_STR_INT_TAB),bcdtmClean_stringLineIntersectionTableCompareFunction) ;
- POP_MSVC_IGNORE
+ POP_STATIC_ANALYSIS_WARNING
 
 /*
 ** Clean Up

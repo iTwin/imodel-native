@@ -461,15 +461,15 @@ static int aecDTM_getFeaturePoints
             {
                 if ( !aecDTM_isPointDeletedFlagSet ( &ftrP->p1[i] ) && !( ftrP->p1[i].flg & DTM_C_PNTDFY ) )
                 {
-                    PUSH_MSVC_IGNORE(6386);
+                    PUSH_STATIC_ANALYSIS_WARNING(6386);
                     DTMPOINTTODPOINT(srfP, &ftrP->p1[i], (*pntsPP)[*numPntsP].cor);
                     (*pntsPP)[*numPntsP].flg = 0;
-                    POP_MSVC_IGNORE;
+                    POP_STATIC_ANALYSIS_WARNING;
 
-                    PUSH_MSVC_IGNORE(6385);
+                    PUSH_STATIC_ANALYSIS_WARNING(6385);
                     if ( ftrP->p1[i].flg & DTM_C_PNTPUD)
                         (*pntsPP)[*numPntsP].flg |= DTM_C_PNTPUD;
-                    POP_MSVC_IGNORE;
+                    POP_STATIC_ANALYSIS_WARNING;
 
                     (*numPntsP)++;
                 }

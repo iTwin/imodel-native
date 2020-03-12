@@ -11,12 +11,12 @@
 // I'd prefer to use PUSH_MSVC_IGNORE_ANALYZE here, but #pragma warning(pop) doesn't seem to work here.
 // Thus, if you use PUSH_MSVC_IGNORE_ANALYZE, it will leave all static analysis warnings ignored for our code later.
 // So ignore the specific warnings to get at least most coverage later.
-PUSH_MSVC_IGNORE(6385 6386)
+PUSH_STATIC_ANALYSIS_WARNING(6385 6386)
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
 #include <rapidjson/prettywriter.h>
-POP_MSVC_IGNORE
+POP_STATIC_ANALYSIS_WARNING
 
 /** @namespace rapidjson rapidjson JSON parser */
 

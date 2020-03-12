@@ -659,7 +659,7 @@ bool HCDCodecHMRGIF::SetByte(uint32_t pi_Code,
                               size_t& pi_rPosBuffer,
                               size_t& pi_rBufferSize)
     {
-    PUSH_MSVC_IGNORE(6386)
+    PUSH_STATIC_ANALYSIS_WARNING(6386)
     bool Status = true;
 
     // We are try to write data that goes with the block.
@@ -710,7 +710,7 @@ bool HCDCodecHMRGIF::SetByte(uint32_t pi_Code,
             }
         }
 
-    POP_MSVC_IGNORE
+    POP_STATIC_ANALYSIS_WARNING
     return Status;
     }
 

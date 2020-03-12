@@ -1526,9 +1526,9 @@ template<typename C, typename S> static void parseArguments(bvector<S>& subStrin
     parseIntoArgcArgv<C>(inString, argv, argStrings, &argc, &numchars, allDelimiters);
 
     for (uint32_t iArg = 0; iArg < argc; iArg++)
-PUSH_MSVC_IGNORE(6385) // Static analysis thinks that iArg can exceed the array bounds, but the if statement above ensures it will not.
+PUSH_STATIC_ANALYSIS_WARNING(6385) // Static analysis thinks that iArg can exceed the array bounds, but the if statement above ensures it will not.
         subStrings.push_back(argv[iArg]);
-POP_MSVC_IGNORE
+POP_STATIC_ANALYSIS_WARNING
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1577,9 +1577,9 @@ uint32_t        BeStringUtilities::ParseArguments(WCharCP inString, uint32_t num
             outStr = va_arg(args, WStringP);
 
             if (NULL != outStr)
-PUSH_MSVC_IGNORE(6385) // Static analysis thinks that iArg can exceed the array bounds, but the if statement above ensures it will not.
+PUSH_STATIC_ANALYSIS_WARNING(6385) // Static analysis thinks that iArg can exceed the array bounds, but the if statement above ensures it will not.
                 outStr->assign(argv[iArg]);
-POP_MSVC_IGNORE
+POP_STATIC_ANALYSIS_WARNING
             }
 
         numParsed = iArg;
@@ -1607,9 +1607,9 @@ void            BeStringUtilities::ParseDelimitedString (bvector<WString>& subSt
     parseIntoArgcArgv<WChar>(inString, argv, argStrings, &argc, &numchars, delimiters);
 
     for (uint32_t iArg = 0; iArg < argc; iArg++)
-PUSH_MSVC_IGNORE(6385) // Static analysis thinks that iArg can exceed the array bounds, but the if statement above ensures it will not.
+PUSH_STATIC_ANALYSIS_WARNING(6385) // Static analysis thinks that iArg can exceed the array bounds, but the if statement above ensures it will not.
         subStrings.push_back(argv[iArg]);
-POP_MSVC_IGNORE
+POP_STATIC_ANALYSIS_WARNING
     }
 
 #if defined (__unix__)

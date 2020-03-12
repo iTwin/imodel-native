@@ -470,7 +470,7 @@ DPoint3dCP      points,                 /* => points defining Akima curve */
 int             numPoints               /* => number of Akima points */
 )
     {
-PUSH_MSVC_IGNORE(6385)
+PUSH_STATIC_ANALYSIS_WARNING(6385)
     int             status = SUCCESS, i, numVerts, numPoles, numIntrKnots, allocSize;
     double          d[5], polyLength, cumLength, *intrKnots=NULL, tol2;
     DPoint3d        p[6], m[5], t[2], *pnts = NULL, *poleArray = NULL;
@@ -651,7 +651,7 @@ wrapup:
         }
 
     return status;
-POP_MSVC_IGNORE
+POP_STATIC_ANALYSIS_WARNING
     }
 
 

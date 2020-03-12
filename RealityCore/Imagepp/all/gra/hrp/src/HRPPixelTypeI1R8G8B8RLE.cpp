@@ -1003,7 +1003,7 @@ public:
 
     void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-PUSH_MSVC_IGNORE(6385)
+PUSH_STATIC_ANALYSIS_WARNING(6385)
         HFCMath (*pQuotients) (HFCMath::GetInstance());
 
         // To simplify RLE algo and avoid confusion between run len and run value
@@ -1116,7 +1116,7 @@ PUSH_MSVC_IGNORE(6385)
         *pFinalDst = (uint16_t)FinalDstRunLen;
         //++pFinalDst;
         //FinalDstOnState = !FinalDstOnState;
-POP_MSVC_IGNORE
+POP_STATIC_ANALYSIS_WARNING
         }
 
     virtual const int16_t* GetLostChannels() const override

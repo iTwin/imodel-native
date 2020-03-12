@@ -74,6 +74,9 @@ $(o)BeLzma$(oext) : $(baseDir)BeLzma.cpp $(baseDir)/PublicAPI/BeSQLite/BeLzma.h 
 
 $(o)BeBriefcaseBasedIdSequence$(oext) : $(baseDir)BeBriefcaseBasedIdSequence.cpp $(baseDir)/PublicAPI/BeSQLite/BeBriefcaseBasedIdSequence.h ${MultiCompileDepends}
 
+%include MultiCppCompileGo.mki
+objs +% $(MultiCompileObjectList)
+
 # Third-party section of this library.
 CCompFpOpts=precise
 %include $(SrcRoot)bsicommon/sharedmki/PushThirdPartyIgnores.mki
@@ -84,7 +87,7 @@ $(o)bentley-sqlite$(oext) : $(SQLiteDir)bentley-sqlite.c ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 
-objs +% $(MultiCompileObjectList)
+objs +% $(o)bentley-sqlite$(oext)
 
 BeSQLiteRequiredLibs = $(ContextSubPartsStaticLibs)$(stlibprefix)BeZlib$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsStaticLibs)$(stlibprefix)snappy$(stlibext)

@@ -15,6 +15,7 @@ namespace ManagedProviderApi = ::Bentley::Logging::Provider;
 
 // Ignore static analysis warnings in system headers.
 #ifdef _MSC_VER
+    // PUSH_STATIC_ANALYSIS_WARNING
     #pragma warning(push)
     #pragma warning(disable:6054)
 #endif
@@ -30,6 +31,7 @@ namespace ManagedProviderApi = ::Bentley::Logging::Provider;
 #include <assert.h>
 
 #ifdef _MSC_VER
+    //POP_STATIC_ANALYSIS_WARNING
     #pragma warning(pop)
 #endif
 

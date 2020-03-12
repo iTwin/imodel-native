@@ -667,7 +667,7 @@ int             dimension
 // A sensible thing to be suspicious of, indeed!
 // This is old, complex code and ripping it apart seems more dangerous than ignoring it.
 // 
-PUSH_MSVC_IGNORE(6385)
+PUSH_STATIC_ANALYSIS_WARNING(6385)
     int         i, j, itmp, jtmp, ltmp, k, num, numProduct,
                 allocSize, index, newIndex, status = SUCCESS;
     double      *product, *prodP, *endP, *mP, factor, *auxTmpPoles, *dP0, *dP1;
@@ -731,7 +731,7 @@ wrapup:
     if (tmpPoles)    BSIBaseGeom::Free(tmpPoles);
     if (auxTmpPoles) BSIBaseGeom::Free(auxTmpPoles);
     return status;
-POP_MSVC_IGNORE
+POP_STATIC_ANALYSIS_WARNING
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Lu.Han          04/92

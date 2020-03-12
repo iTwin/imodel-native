@@ -364,6 +364,7 @@ void HFCIniFileBrowser::ReadLine(Utf8String& po_rString,
     HPRECONDITION(pi_MaxSize == -1 || pi_MaxSize < UINT32_MAX - 512);
 
     const size_t BufferSize = 512;
+    PUSH_STATIC_ANALYSIS_WARNING(6054)
     char     Buffer[BufferSize + 1];
     Utf8String   CurrentLine;
 
@@ -397,7 +398,7 @@ void HFCIniFileBrowser::ReadLine(Utf8String& po_rString,
         if (EndOfLine)
             CleanUpString(CurrentLine, pi_KeepLineSeparator);
         }
-
+    POP_STATIC_ANALYSIS_WARNING
     po_rString = CurrentLine;
     }
 

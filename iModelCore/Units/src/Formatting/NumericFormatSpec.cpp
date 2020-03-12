@@ -872,9 +872,9 @@ POP_DISABLE_DEPRECATION_WARNINGS
         ind++;
         if (ind > bufLen)
             ind = bufLen;
-        PUSH_MSVC_IGNORE(6385 6386) // Static analysis thinks that ind can exceed buflen
+        PUSH_STATIC_ANALYSIS_WARNING(6385 6386) // Static analysis thinks that ind can exceed buflen
         memcpy(buf, locBuf, ind);
-        POP_MSVC_IGNORE
+        POP_STATIC_ANALYSIS_WARNING
         } // end fractional
     else if (stops) // we assume that stopping value is always positive
         {
@@ -923,9 +923,9 @@ POP_DISABLE_DEPRECATION_WARNINGS
         locBuf[k++] = '\0';
         if (k > bufLen)
             k = bufLen;
-        PUSH_MSVC_IGNORE(6385 6386) // Static analysis thinks that ind can exceed buflen
+        PUSH_STATIC_ANALYSIS_WARNING(6385 6386) // Static analysis thinks that ind can exceed buflen
             memcpy(buf, locBuf, k);
-        POP_MSVC_IGNORE
+        POP_STATIC_ANALYSIS_WARNING
         }
 
     return ind;
