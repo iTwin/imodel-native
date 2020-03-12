@@ -1848,6 +1848,13 @@ public:
 
     void CloseIModel(Napi::CallbackInfo const& info) {  CloseDgnDb(); }
 
+    Napi::Value CreateClassViewsInDb(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN
+        BentleyStatus status = GetDgnDb().Schemas().CreateClassViewsInDb();
+        return Napi::Number::New(Env(), (int) status);
+        }
+
     Napi::Value CreateChangeCache(Napi::CallbackInfo const& info)
         {
         REQUIRE_DB_TO_BE_OPEN
@@ -2416,6 +2423,7 @@ public:
             InstanceMethod("cancelTo", &NativeDgnDb::CancelTo),
             InstanceMethod("closeIModel", &NativeDgnDb::CloseIModel),
             InstanceMethod("createChangeCache", &NativeDgnDb::CreateChangeCache),
+            InstanceMethod("createClassViewsInDb", &NativeDgnDb::CreateClassViewsInDb),
             InstanceMethod("createIModel", &NativeDgnDb::CreateIModel),
             InstanceMethod("deleteElement", &NativeDgnDb::DeleteElement),
             InstanceMethod("deleteElementAspect", &NativeDgnDb::DeleteElementAspect),

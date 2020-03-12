@@ -186,6 +186,7 @@ export declare namespace IModelJsNative {
     public cancelTo(txnId: TxnIdString): IModelStatus;
     public closeIModel(): void;
     public createChangeCache(changeCacheFile: ECDb, changeCachePath: string): DbResult;
+    public createClassViewsInDb(): BentleyStatus;
     public createIModel(fileName: string, props: string): DbResult;
     public deleteElement(elemIdJson: string): IModelStatus;
     public deleteElementAspect(aspectIdJson: string): IModelStatus;
