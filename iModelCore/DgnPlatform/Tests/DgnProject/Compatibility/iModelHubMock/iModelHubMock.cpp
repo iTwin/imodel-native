@@ -33,7 +33,7 @@ bool IModelHubMock::AcquireBriefcase(BeGuid iModelId, BeFileName briefcaseDownlo
     BeFileName::BeCopyFile(m_storageMap[iModelId], filepath);
     auto db = DgnDb::OpenDgnDb(&stat, filepath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
     m_currentId = m_currentId.GetNextBriefcaseId(); // Update briefcaseID
-    if (db->IsBriefcase()) // Can't set briefcaseID if already a briefcase. Hacky workaround. This comes up when pulling multiple briefcases for 1 model
+    if (!db->IsLegacyMaster()) // Can't set briefcaseID if already a briefcase. Hacky workaround. This comes up when pulling multiple briefcases for 1 model
         db->SetAsMaster(iModelId);
 
     db->SetAsBriefcase(m_currentId);
