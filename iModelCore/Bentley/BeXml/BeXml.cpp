@@ -3261,7 +3261,7 @@ BeXmlStatus IBeXmlWriter::WriteAttribute(Utf8CP name, uint64_t value)
 BeXmlStatus IBeXmlWriter::WriteAttribute(Utf8CP name, double value)
     {
     char    valueString[128];
-    BeStringUtilities::Snprintf (valueString, _countof (valueString), "%lg", value);
+    BeStringUtilities::Snprintf (valueString, _countof (valueString), "%.17g", value);
 
     return _WriteAttribute(name, valueString);
     }

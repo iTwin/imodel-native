@@ -710,7 +710,7 @@ TEST_F(UnitsDeserializationTests, BasicRoundTripTest)
         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
             <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
-            <Unit typeName="TestUnit" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Unit" definition="M" description="This is an awesome new Unit" offset="10.0" numerator="10.0" denominator="10.0"/>
+            <Unit typeName="TestUnit" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Unit" definition="M" description="This is an awesome new Unit" offset="10.1234567890" numerator="10.1234567890" denominator="10.1234567890"/>
         </ECSchema>)xml";
 
     Utf8String serializedSchemaXml;
@@ -727,11 +727,11 @@ TEST_F(UnitsDeserializationTests, BasicRoundTripTest)
     EXPECT_STREQ("Unit", unit->GetInvariantDisplayLabel().c_str());
     EXPECT_STREQ("This is an awesome new Unit", unit->GetInvariantDescription().c_str());
     EXPECT_STREQ("M", unit->GetDefinition().c_str());
-    EXPECT_DOUBLE_EQ(10.0, unit->GetOffset());
+    EXPECT_DOUBLE_EQ(10.1234567890, unit->GetOffset());
     EXPECT_TRUE(unit->HasOffset());
-    EXPECT_DOUBLE_EQ(10.0, unit->GetNumerator());
+    EXPECT_DOUBLE_EQ(10.1234567890, unit->GetNumerator());
     EXPECT_TRUE(unit->HasNumerator());
-    EXPECT_DOUBLE_EQ(10.0, unit->GetDenominator());
+    EXPECT_DOUBLE_EQ(10.1234567890, unit->GetDenominator());
     EXPECT_TRUE(unit->HasDenominator());
 
     EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(serializedSchemaXml));
@@ -747,11 +747,11 @@ TEST_F(UnitsDeserializationTests, BasicRoundTripTest)
     EXPECT_STREQ("Unit", serializedECUnit->GetInvariantDisplayLabel().c_str());
     EXPECT_STREQ("This is an awesome new Unit", serializedECUnit->GetInvariantDescription().c_str());
     EXPECT_STREQ("M", serializedECUnit->GetDefinition().c_str());
-    EXPECT_DOUBLE_EQ(10.0, serializedECUnit->GetOffset());
+    EXPECT_DOUBLE_EQ(10.1234567890, serializedECUnit->GetOffset());
     EXPECT_TRUE(serializedECUnit->HasOffset());
-    EXPECT_DOUBLE_EQ(10.0, serializedECUnit->GetNumerator());
+    EXPECT_DOUBLE_EQ(10.1234567890, serializedECUnit->GetNumerator());
     EXPECT_TRUE(serializedECUnit->HasNumerator());
-    EXPECT_DOUBLE_EQ(10.0, serializedECUnit->GetDenominator());
+    EXPECT_DOUBLE_EQ(10.1234567890, serializedECUnit->GetDenominator());
     EXPECT_TRUE(serializedECUnit->HasDenominator());
     }
     }
