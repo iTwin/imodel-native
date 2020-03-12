@@ -74,6 +74,7 @@ LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)WebServicesClien
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BeXml$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BeHttp$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)iModelHubClient$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(stlibprefix)BeJsonCpp$(stlibext)
 

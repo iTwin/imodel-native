@@ -5,6 +5,8 @@
 #pragma once
 #include <iModelDmsSupport/iModelDmsSupport.h>
 #include <Bentley/BeFileName.h>
+#include <Bentley/bmap.h>
+#include <BeSQLite/BeSQLite.h>
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct DmsSession
@@ -20,9 +22,11 @@ struct DmsSession
         iModelDmsSupport::SessionType m_sessionType;
     protected:
         Utf8String  m_dataSource;
+        Utf8String  m_dnsServerUrl;
+        Utf8String  m_dnsServerName;
     public:
     
-        DmsSession(iModelDmsSupport::SessionType sessionType);
+        DmsSession(iModelDmsSupport::SessionType sessionType, Utf8StringCR dnsServerUrl);
         virtual ~DmsSession();
 
         static Utf8StringCR GetDataSourceFromMoniker(Utf8StringCR moniker);
@@ -46,6 +50,14 @@ struct DmsSession
         iModelDmsSupport::SessionType GetSessionType() const;
 
         virtual bool Login() = 0;
+
+        void AddDNServer();
+
+        void DeleteDNServer();
+
+        bool RunCommandForDNSServer(bool addDNSServer);
+
+        bool IsDnsServerPresentInRegistry();
     };
 
 struct UserCredentialsSession : DmsSession
@@ -54,7 +66,7 @@ struct UserCredentialsSession : DmsSession
         Utf8String  m_userName;
         Utf8String  m_password;
     public:
-        UserCredentialsSession(Utf8String userName, Utf8String password, iModelDmsSupport::SessionType sessionType);
+        UserCredentialsSession(Utf8String userName, Utf8String password, iModelDmsSupport::SessionType sessionType, Utf8StringCR dnsServerUrl);
         ~UserCredentialsSession() override;
         bool Login() override;
     };
@@ -65,7 +77,7 @@ struct SamlTokenSession : DmsSession
         Utf8String m_accessToken;
         unsigned long m_productId;
     public:
-        SamlTokenSession(Utf8String accessToken, unsigned long productId, iModelDmsSupport::SessionType sessionType);
+        SamlTokenSession(Utf8String accessToken, unsigned long productId, iModelDmsSupport::SessionType sessionType, Utf8StringCR dnsServerUrl);
         ~SamlTokenSession() override;
         bool Login() override;
     };

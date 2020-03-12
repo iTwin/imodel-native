@@ -38,9 +38,9 @@ extern "C"
     // default - PWDI session
     DmsSession* session = nullptr;
     if (!accessToken.empty())
-        session = new SamlTokenSession(accessToken, productId, sessionType);
+        session = new SamlTokenSession(accessToken, productId, sessionType, datasource);
     else
-        session = new UserCredentialsSession(userName, password, sessionType);
+        session = new UserCredentialsSession(userName, password, sessionType, datasource);
 
     return new PWWorkspaceHelper(*session);
     };
