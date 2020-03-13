@@ -164,8 +164,9 @@ EXPORT_ATTRIBUTE void iModelBridge_getAffinity (WCharP buffer, const size_t buff
                     }
                 }
             }
-        delete affinityHost;
         }
+    if (affinityHost != nullptr)
+        delete affinityHost;
     }
 
 /*---------------------------------------------------------------------------------**//**
