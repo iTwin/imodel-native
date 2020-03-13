@@ -460,7 +460,7 @@ void CreateSummaryAndCheckOutput(DgnDbPtr db, ElementMap& map, bvector<DgnRevisi
     StatusInt status = SUCCESS;
 
     clock_t t0 = clock();
-    VersionCompareChangeSummaryPtr changeSummary = VersionCompareChangeSummary::Generate (*db, changesets, presentationManager, "Items", backwards, filterSpatial, filterLastMod);
+    VersionCompareChangeSummaryPtr changeSummary = VersionCompareChangeSummary::Generate (*db, changesets, presentationManager, "Items", backwards, filterSpatial, filterLastMod, BeFileName());
     clock_t t1 = clock();
     double elapsed = (t1-t0)/(double)CLOCKS_PER_SEC;
     if (!Utf8String::IsNullOrEmpty(debugLabel.c_str()))
@@ -985,7 +985,7 @@ void CreateSummaryAndCheckPropertyOutput(DgnDbPtr db, ElementInputPropertyMap& i
     bvector<DgnModelId> modelIds;
     bvector<AxisAlignedBox3d> bboxes;
     StatusInt status = SUCCESS;
-    VersionCompareChangeSummaryPtr changeSummary = VersionCompareChangeSummary::Generate (*db, changesets, presentationManager, "Items", backwards, filterSpatial, filterLastMod);
+    VersionCompareChangeSummaryPtr changeSummary = VersionCompareChangeSummary::Generate (*db, changesets, presentationManager, "Items", backwards, filterSpatial, filterLastMod, BeFileName());
 
     status = changeSummary->GetChangedElements(elementIds, ecclassIds, opcodes, modelIds, bboxes);
     EXPECT_EQ(SUCCESS, status);

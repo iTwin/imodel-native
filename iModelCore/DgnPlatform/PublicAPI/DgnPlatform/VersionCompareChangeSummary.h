@@ -86,6 +86,7 @@ private:
     bvector<BentleyApi::Dgn::DgnRevisionPtr>                m_changesets;
     bmap<BentleyApi::BeSQLite::EC::ECInstanceKey, SummaryElementInfo> m_changedElements;
     Utf8String  m_rulesetId;
+    BeFileName  m_tempLocation;
 
     bool    m_filterSpatial;
     bool    m_filterLastMod;
@@ -118,7 +119,7 @@ private:
     //! Process a set of changed element IDs and their opcode. Accumulates the changes across change summaries
     void        ProcessChangedElements(ECInstanceKeySet const& changedIntancesKeys, BentleyApi::BeSQLite::DbOpcode opcode);
     //! Clones the current db to obtain a target one
-    static BentleyApi::Dgn::DgnDbPtr    CloneDb(BentleyApi::Dgn::DgnDbR db);
+    static BentleyApi::Dgn::DgnDbPtr    CloneDb(BentleyApi::Dgn::DgnDbR db, BeFileName location);
     //! Gets changed instances of a class
     void        GetChangedInstances(ECInstanceKeySet& instanceIds, BentleyApi::Dgn::DgnChangeSummary* changeSummary, BentleyApi::ECN::ECClassId ecclassId, BentleyApi::BeSQLite::EC::ChangeSummary::QueryDbOpcode opcode);
 //! Obtain the changes of instances of a particular class based on presentation rules related paths
@@ -251,8 +252,9 @@ public:
     //! @param[in] backwardsRoll whether this changesets are applied to go backwards or forwards in the db's history
     //! @param[in] filterSpatial whether to only show SpatialElements in the results
     //! @param[in] filterLastMod whether to filter out updates that only have last modified date changes
+    //! @param[in] tempLocation Location to use as temporary storage for cloned briefcase
     //! @return VersionCompareChangeSummaryPtr with the results
-    DGNPLATFORM_EXPORT static VersionCompareChangeSummaryPtr     Generate(BentleyApi::Dgn::DgnDbR db, bvector<BentleyApi::Dgn::DgnRevisionPtr>& changesets, IECPresentationManagerR presentationManager, Utf8String rulesetId, bool backwardsRoll, bool filterSpatial, bool filterLastMod);
+    DGNPLATFORM_EXPORT static VersionCompareChangeSummaryPtr     Generate(BentleyApi::Dgn::DgnDbR db, bvector<BentleyApi::Dgn::DgnRevisionPtr>& changesets, IECPresentationManagerR presentationManager, Utf8String rulesetId, bool backwardsRoll, bool filterSpatial, bool filterLastMod, BeFileName tempLocation);
     }; // VersionCompareChangeSummary
 
 typedef bmap<BentleyApi::BeSQLite::EC::ECInstanceKey, VersionCompareChangeSummary::SummaryElementInfo> ChangedElementsMap;

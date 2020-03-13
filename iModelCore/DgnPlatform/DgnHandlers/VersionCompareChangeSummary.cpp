@@ -304,7 +304,7 @@ StatusInt    VersionCompareChangeSummary::ProcessChangesets()
     CleanUp();
 
     // Clone the m_db
-    m_targetDb = CloneDb(m_db);
+    m_targetDb = CloneDb(m_db, m_tempLocation);
 
     if (!m_targetDb.IsValid())
         {
@@ -371,13 +371,16 @@ DgnDbPtr    VersionCompareChangeSummary::GetTargetDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    09/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbPtr    VersionCompareChangeSummary::CloneDb(DgnDbR db)
+DgnDbPtr    VersionCompareChangeSummary::CloneDb(DgnDbR db, BeFileName location)
     {
     BeSQLite::DbResult result;
     DgnDb::OpenParams params (Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::SkipCheck));
 
     BeFileName tempFilename;
-    T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectory(tempFilename, L"VersionCompareTemp");
+    if (location.IsEmpty())
+        T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectory(tempFilename, L"VersionCompareTemp");
+    else
+        tempFilename = location;
 
     WString name = WString(L"Temp_") + db.GetFileName().GetFileNameWithoutExtension();
     tempFilename.AppendToPath(name.c_str());
@@ -1132,13 +1135,14 @@ VersionCompareChangeSummaryPtr  VersionCompareChangeSummary::Generate(DgnDbR db,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    09/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-VersionCompareChangeSummaryPtr  VersionCompareChangeSummary::Generate(DgnDbR db, bvector<DgnRevisionPtr>& changesets, IECPresentationManagerR presentationManager, Utf8String rulesetId, bool backwardsComparison, bool filterSpatial, bool filterLastMod)
+VersionCompareChangeSummaryPtr  VersionCompareChangeSummary::Generate(DgnDbR db, bvector<DgnRevisionPtr>& changesets, IECPresentationManagerR presentationManager, Utf8String rulesetId, bool backwardsComparison, bool filterSpatial, bool filterLastMod, BeFileName tempLocation)
     {
     // Create the change summary
     VersionCompareChangeSummaryPtr changeSummary = new VersionCompareChangeSummary(db, presentationManager, backwardsComparison);
     changeSummary->m_filterSpatial = filterSpatial;
     changeSummary->m_filterLastMod = filterLastMod;
     changeSummary->m_rulesetId = rulesetId;
+    changeSummary->m_tempLocation = tempLocation;
 
     // Set changesets and store all changed elements
     if (SUCCESS != changeSummary->SetChangesets(changesets))

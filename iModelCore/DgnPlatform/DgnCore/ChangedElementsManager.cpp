@@ -392,7 +392,7 @@ DbResult ChangedElementsManager::ProcessChangesets(ECDbR cacheDb, Utf8String rul
         bvector<DgnRevisionPtr> currentRevisions;
         currentRevisions.push_back(revision);
         // Process going backwards
-        VersionCompareChangeSummaryPtr summary = VersionCompareChangeSummary::Generate(*db, currentRevisions, *m_presentationManager, rulesetId, true, m_filterSpatial, true);
+        VersionCompareChangeSummaryPtr summary = VersionCompareChangeSummary::Generate(*db, currentRevisions, *m_presentationManager, rulesetId, true, m_filterSpatial, true, m_tempLocation);
         if (!summary.IsValid())
             {
             LOG.errorv(L"Could not generate change summary for revision");
