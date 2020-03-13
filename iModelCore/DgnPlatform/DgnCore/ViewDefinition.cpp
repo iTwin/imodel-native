@@ -627,15 +627,15 @@ void CategorySelector::_RemapIds(DgnImportContext& importContext)
     {
     if (importContext.IsBetweenDbs())
         {
-        DgnCategoryIdSet remappedCategories;
-        for (auto const& category: m_categories)
+        DgnCategoryIdSet remappedCategoryIds;
+        for (auto const& categoryId: m_categories)
             {
-            DgnCategoryId categoryId = importContext.FindCategory(category);
-            if (categoryId.IsValid())
-                remappedCategories.insert(categoryId);
+            DgnCategoryId remappedCategoryId = importContext.FindCategory(categoryId);
+            if (remappedCategoryId.IsValid())
+                remappedCategoryIds.insert(remappedCategoryId);
             }
 
-        m_categories = remappedCategories;
+        m_categories = remappedCategoryIds;
         }
 
     T_Super::_RemapIds(importContext);
@@ -774,11 +774,15 @@ void ModelSelector::_RemapIds(DgnImportContext& importContext)
     {
     if (importContext.IsBetweenDbs())
         {
-        DgnModelIdSet remappedModels;
-        for (auto const& model: m_models)
-            remappedModels.insert(importContext.FindModelId(model));
+        DgnModelIdSet remappedModelIds;
+        for (auto const& modelId: m_models)
+            {
+            DgnModelId remappedModelId = importContext.FindModelId(modelId);
+            if (remappedModelId.IsValid())
+                remappedModelIds.insert(remappedModelId);
+            }
 
-        m_models = remappedModels;
+        m_models = remappedModelIds;
         }
 
     T_Super::_RemapIds(importContext);

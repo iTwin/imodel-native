@@ -1951,6 +1951,41 @@ void GeometricElement::_RemapIds(DgnImportContext& importer)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+static void remapIdsForTypeDefinition(DgnImportContext& importer, DgnElement::RelatedElement& typeDefinition)
+    {
+    if (typeDefinition.m_id.IsValid())
+        {
+        typeDefinition.m_id = importer.FindElementId(typeDefinition.m_id);
+        if (typeDefinition.m_relClassId.IsValid())
+            typeDefinition.m_relClassId = importer.RemapClassId(typeDefinition.m_relClassId);
+        }
+    else
+        {
+        typeDefinition.m_relClassId = DgnClassId();
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement2d::_RemapIds(DgnImportContext& importer)
+    {
+    T_Super::_RemapIds(importer);
+    remapIdsForTypeDefinition(importer, m_typeDefinition);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement3d::_RemapIds(DgnImportContext& importer)
+    {
+    T_Super::_RemapIds(importer);
+    remapIdsForTypeDefinition(importer, m_typeDefinition);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElementHandlerR DgnElement::GetElementHandler() const

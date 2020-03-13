@@ -2245,6 +2245,7 @@ protected:
     Placement3dCR _GetPlacement() const override final {return m_placement;}
     DGNPLATFORM_EXPORT DgnDbStatus _SetPlacement(Placement3dCR placement) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR, CopyFromOptions const&) override;
+    DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     DGNPLATFORM_EXPORT void _AdjustPlacementForImport(DgnImportContext const&) override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
@@ -2329,6 +2330,7 @@ protected:
     Placement2dCR _GetPlacement() const override final {return m_placement;}
     DGNPLATFORM_EXPORT DgnDbStatus _SetPlacement(Placement2dCR placement) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR, CopyFromOptions const&) override;
+    DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     DGNPLATFORM_EXPORT void _AdjustPlacementForImport(DgnImportContext const&) override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;

@@ -4608,7 +4608,7 @@ Json::Value GeometryCollection::ToJson(JsonValueCR opts) const
                     break;
 
                 TextStringStyleCR style = text->GetStyle();
-                DgnFontId fontId = m_state.m_dgnDb.Fonts().AcquireId(style.GetFont());
+                DgnFontId fontId = m_state.m_dgnDb.Fonts().FindId(style.GetFont());
 
                 if (!fontId.IsValid())
                     break; // Shouldn't happen...DecodeFromFlatBuf would have failed...
