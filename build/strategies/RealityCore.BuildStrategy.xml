@@ -20,18 +20,5 @@
     <DeferStrategy Name="*" BuildPass="1"/>
 
     <ImportStrategy Name="BuildIModelCore"/>
-
-    <PartStrategy PartFile="RealityCore"             PartName="*" BuildFromSource="Always" />
-    <!-- 3SM and Vortex -->
-    <PartStrategy PartFile="BePointCloud"           PartName="*" BuildFromSource="Once"/>
-    <PartStrategy PartFile="CloudDataSource"        PartName="*" BuildFromSource="Once"/>
-    <PartStrategy PartFile="ImagePP"                PartName="*" BuildFromSource="Once"/>
-    <PartStrategy PartFile="RealityModFramework"    PartName="*" BuildFromSource="Once"/>
-    <PartStrategy PartFile="RealityModeling"        PartName="*" BuildFromSource="Once"/>
-    <PartStrategy PartFile="ScalableMesh"           PartName="*" BuildFromSource="Once"/>
-    <PartStrategy PartFile="ScalableMeshUnitTests"  PartName="*" BuildFromSource="Once"/>
-    <PartStrategy PartFile="ScalableMeshCoreUnitTests"  PartName="*" BuildFromSource="Once"/>
-    <PartStrategy PartFile="ScalableMesh-Data"           PartName="*" BuildFromSource="Once"/>
-    <PartStrategy PartFile="TerrainModelDgnDb"      PartName="*" BuildFromSource="Once"/>
-
+    <ImportStrategy Name="BuildRealityCore"/>
 </BuildStrategy>
