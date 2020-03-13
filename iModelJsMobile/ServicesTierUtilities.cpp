@@ -1029,12 +1029,14 @@ Napi::Value MobileGateway::ExportJsModule (Js::RuntimeR runtime)
     exports.Set ("sendString", Napi::Function::New (env, [this](Napi::CallbackInfo const& info) -> Napi::Value
         {
         if (m_client.IsValid()) {
-            JS_CALLBACK_REQUIRE_N_ARGS (2);
+            JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS (1);
             std::string str = JS_CALLBACK_GET_STRING (0);
             
-            auto port = JS_CALLBACK_GET_NUMBER (1)
-            if (port.Uint32Value() != m_connectionId) {
-                return info.Env().Undefined();
+            if (info.Length() > 1) {
+                auto port = JS_CALLBACK_GET_NUMBER (1)
+                if (port.Uint32Value() != m_connectionId) {
+                    return info.Env().Undefined();
+                }
             }
             
             if(!m_connection->Send ((const char*)str.c_str(), str.size(), websocketpp::frame::opcode::value::text))
@@ -1047,12 +1049,14 @@ Napi::Value MobileGateway::ExportJsModule (Js::RuntimeR runtime)
     exports.Set ("sendBinary", Napi::Function::New (env, [this](Napi::CallbackInfo const& info) -> Napi::Value
         {
         if (m_client.IsValid()) {
-            JS_CALLBACK_REQUIRE_N_ARGS (2);
+            JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS (1);
             Napi::Uint8Array binArray = JS_CALLBACK_GET_UINT8ARRAY (0);
             
-            auto port = JS_CALLBACK_GET_NUMBER (1)
-            if (port.Uint32Value() != m_connectionId) {
-                return info.Env().Undefined();
+            if (info.Length() > 1) {
+                auto port = JS_CALLBACK_GET_NUMBER (1)
+                if (port.Uint32Value() != m_connectionId) {
+                    return info.Env().Undefined();
+                }
             }
             
             Napi::ArrayBuffer buffer = binArray.ArrayBuffer();
