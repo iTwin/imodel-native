@@ -109,61 +109,6 @@ struct DwgImportLogging
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          01/16
 +===============+===============+===============+===============+===============+======*/
-struct DwgProgressMeter : public IDwgDbProgressMeter
-    {
-private:
-    DgnProgressMeter*   m_meter;
-
-public:
-    DwgProgressMeter (DgnProgressMeter* newMeter) : m_meter(newMeter) { }
-
-    virtual void        _Start (WStringCR displayString = WString()) override { /* do nothing */ }
-    virtual void        _Stop () override { /* do nothing */ }
-    virtual void        _Progress () override;
-    virtual void        _SetLimit (int max) override { /* do nothing */ }
-    };  // IDwgDbProgressMeter
-
-/*=================================================================================**//**
-* @bsiclass                                                     Don.Fu          01/16
-+===============+===============+===============+===============+===============+======*/
-struct DwgImportHost : public IDwgDbHost
-{
-private:
-    DwgImporter*            m_importer;
-    DwgProgressMeter*       m_progressMeter;
-    WString                 m_lastShxFontName;
-    WString                 m_registryRootKey;
-
-    bool                    GetDefaultFontFile (WStringR outPath, WStringCR fontName, DgnFontType fontType);
-    bool                    FindFontFile (WStringR outPath, WStringR fontName, DgnFontType fontType) const;
-    bool                    FindFontFile (WStringR outPath, WCharCP fontName, AcadFileType hint);
-    bool                    FindXrefFile (WStringR outPath, WCharCP fileName, DwgDbDatabaseP dwg = nullptr);
-
-public:
-    virtual DwgDbStatus     _FindFile (WStringR fullpathOut, WCharCP filenameIn, DwgDbDatabaseP dwg = nullptr, AcadFileType hint = AcadFileType::Default) override;
-    virtual bool            _GetAlternateFontName (WStringR altFont) const override;
-    virtual bool            _GetPassword (WCharCP dwgName, PasswordChoice choice, WCharP password, const size_t bufSize) override;
-    virtual WCharCP         _GetRegistryProductRootKey (RootRegistry type) override;
-    virtual LCID            _GetRegistryProductLCID () override;
-    virtual WCharCP         _Product () const override;
-    virtual void            _FatalError (WCharCP format, ...) override;
-    virtual void            _Alert (WCharCP message) const override;
-    virtual void            _Message (WCharCP message, int numChars) const override;
-    virtual void            _DebugPrintf (WCharCP format, ...) const override;
-    virtual bool            _IsValid () const override;
-
-    DwgImportHost () : m_importer(nullptr), m_progressMeter(nullptr) {}
-
-    DWG_EXPORT void         Initialize (DwgImporter& importer);
-    DWG_EXPORT void         Terminate ();
-    void                    NewProgressMeter ();
-
-    DWG_EXPORT static DwgImportHost& GetHost ();
-};  // DwgImportHost
-
-/*=================================================================================**//**
-* @bsiclass                                                     Don.Fu          01/16
-+===============+===============+===============+===============+===============+======*/
 struct PolylineFactory
     {
 private:

@@ -409,6 +409,7 @@ RevisionStats DwgBridgeTestsFixture::ComputeRevisionStats(BentleyApi::Dgn::DgnDb
 #ifdef WIP_GetUserName_FOR_UNICODE
             stats.userids.insert(rev->GetUserName());
 #endif
+            stats.fileNames.insert(rev.second);                
             if (rev.first->ContainsSchemaChanges(db))
                 ++stats.nSchemaRevs;
             else

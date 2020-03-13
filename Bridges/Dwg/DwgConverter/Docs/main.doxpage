@@ -24,5 +24,6 @@ These are the main classes and namespaces for the API references:
 - @ref BentleyApi::Dwg::DwgSourceAspects
 - @ref BentleyApi::Dwg::DwgBridge
 - @ref BentleyApi::Dwg::DwgHelper
+- @ref BentleyApi::Dwg::DwgImportHost
 - @ref BentleyApi::DwgDb
 */

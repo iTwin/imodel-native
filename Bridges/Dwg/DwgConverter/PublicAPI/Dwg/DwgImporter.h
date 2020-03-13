@@ -32,6 +32,7 @@
 #include <Dwg/DwgDb/DwgDbEntities.h>
 #include <Dwg/DwgDb/DwgDbSymbolTables.h>
 #include <Dwg/DwgDb/DwgDrawables.h>
+#include <Dwg/DwgDb/DwgDbHost.h>
 #include <DgnPlatform/DgnProgressMeter.h>
 #include <BeXml/BeXml.h>
 #include <ECObjects/ECObjectsAPI.h>
@@ -1599,6 +1600,68 @@ public:
     //! @}
 };  // UpdaterChangeDetector
 DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(UpdaterChangeDetector)
+
+//=======================================================================================
+//! A progress meter for DwgImporter
+//=======================================================================================
+struct DwgProgressMeter : public IDwgDbProgressMeter
+    {
+private:
+    DgnProgressMeter*   m_meter;
+
+public:
+    DwgProgressMeter (DgnProgressMeter* newMeter) : m_meter(newMeter) { }
+
+    virtual void        _Start (WStringCR displayString = WString()) override { /* do nothing */ }
+    virtual void        _Stop () override { /* do nothing */ }
+    virtual void        _Progress () override;
+    virtual void        _SetLimit (int max) override { /* do nothing */ }
+    };  // IDwgDbProgressMeter
+
+//=======================================================================================
+//! A host application that provides services to a selected DWG toolkit and used by DwgImporter
+//=======================================================================================
+struct DwgImportHost : public IDwgDbHost
+{
+private:
+    DwgImporterP            m_importer;
+    DwgProgressMeter*       m_progressMeter;
+    WString                 m_lastShxFontName;
+    WString                 m_registryRootKey;
+
+    bool                    GetDefaultFontFile (WStringR outPath, WStringCR fontName, DgnFontType fontType);
+    bool                    FindFontFile (WStringR outPath, WStringR fontName, DgnFontType fontType) const;
+    bool                    FindFontFile (WStringR outPath, WCharCP fontName, AcadFileType hint);
+    bool                    FindXrefFile (WStringR outPath, WCharCP fileName, DwgDbDatabaseP dwg = nullptr);
+
+public:
+    //! @name Methods that override IDwgDbHost
+    //! @{
+    virtual DwgDbStatus     _FindFile (WStringR fullpathOut, WCharCP filenameIn, DwgDbDatabaseP dwg = nullptr, AcadFileType hint = AcadFileType::Default) override;
+    virtual bool            _GetAlternateFontName (WStringR altFont) const override;
+    virtual bool            _GetPassword (WCharCP dwgName, PasswordChoice choice, WCharP password, const size_t bufSize) override;
+    virtual WCharCP         _GetRegistryProductRootKey (RootRegistry type) override;
+    virtual LCID            _GetRegistryProductLCID () override;
+    virtual WCharCP         _Product () const override;
+    virtual void            _FatalError (WCharCP format, ...) override;
+    virtual void            _Alert (WCharCP message) const override;
+    virtual void            _Message (WCharCP message, int numChars) const override;
+    virtual void            _DebugPrintf (WCharCP format, ...) const override;
+    virtual bool            _IsValid () const override;
+    //! @}
+
+    //! The constructor
+    DwgImportHost () : m_importer(nullptr), m_progressMeter(nullptr) {}
+
+    //! Methods used by DwgImporter
+    //! @{
+    DWG_EXPORT void         Initialize (DwgImporter& importer);
+    DWG_EXPORT void         Terminate ();
+    void                    NewProgressMeter ();
+
+    DWG_EXPORT static DwgImportHost& GetHost ();
+    //! @}
+};  // DwgImportHost
 
 END_DWG_NAMESPACE
 //__PUBLISH_SECTION_END__
