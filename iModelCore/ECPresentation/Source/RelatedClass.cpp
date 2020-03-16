@@ -43,6 +43,27 @@ bool RelatedClass::operator<(RelatedClass const& other) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+static void AddProperties(bvector<ECPropertyCP>& properties, ECClassCR ecClass)
+    {
+    for (ECPropertyCP classProperty : ecClass.GetProperties(false))
+        properties.push_back(classProperty);
+    for (ECClassCP baseClass : ecClass.GetBaseClasses())
+        AddProperties(properties, *baseClass);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+static bvector<ECPropertyCP> GetProperties(ECClassCR ecClass)
+    {
+    bvector<ECPropertyCP> properties;
+    AddProperties(properties, ecClass);
+    return properties;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 NavigationECPropertyCP RelatedClass::GetNavigationProperty() const
@@ -50,8 +71,7 @@ NavigationECPropertyCP RelatedClass::GetNavigationProperty() const
     ECClassCP source = m_isForwardRelationship ? m_source : &m_target.GetClass();
     ECClassCP target = m_isForwardRelationship ? &m_target.GetClass() : m_source;
 
-    ECPropertyIterable sourceIterable = source->GetProperties(true);
-    for (ECPropertyCP prop : sourceIterable)
+    for (ECPropertyCP prop : GetProperties(*source))
         {
         if (prop->GetIsNavigation()
             && prop->GetAsNavigationProperty()->GetRelationshipClass() == m_relationship
@@ -61,8 +81,7 @@ NavigationECPropertyCP RelatedClass::GetNavigationProperty() const
             }
         }
 
-    ECPropertyIterable targetIterable = target->GetProperties(true);
-    for (ECPropertyCP prop : targetIterable)
+    for (ECPropertyCP prop : GetProperties(*target))
         {
         if (prop->GetIsNavigation()
             && prop->GetAsNavigationProperty()->GetRelationshipClass() == m_relationship
