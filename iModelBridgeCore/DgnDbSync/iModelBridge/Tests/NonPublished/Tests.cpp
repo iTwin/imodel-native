@@ -1153,6 +1153,7 @@ TEST_F(iModelBridgeTests, Test1)
             DbFileInfo dbInfo(bcName);
             ASSERT_EQ(dbInfo.GetElementClassId(testBridge.m_foo_items[0].m_mappedToElement), dbInfo.GetClassId("Generic.PhysicalObject"));
             }
+        auto item0_elementId = testBridge.m_foo_items[0].m_mappedToElement;
 
         iModelBridgeFwk fwk;
         bvector<WCharCP> argptrs;
@@ -1164,6 +1165,7 @@ TEST_F(iModelBridgeTests, Test1)
             {
             DbFileInfo dbInfo(bcName);
             ASSERT_EQ(dbInfo.GetElementClassId(testBridge.m_foo_items[0].m_mappedToElement), dbInfo.GetClassId("TestSchema.MyDomainElement"));
+            ASSERT_EQ(item0_elementId.GetValue(), testBridge.m_foo_items[0].m_mappedToElement.GetValue()) << "Element ID should be preserved even when class changes";
             }
     }
     }

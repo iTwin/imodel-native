@@ -343,8 +343,10 @@ BentleyStatus iModelBridgeSyncInfoFile::ChangeDetector::_UpdateBimAndSyncInfo(Co
                 eid = conversionResults.m_element->GetElementId();
             }
 
-        // Check if the caller delete the element. In that case, this is the second part of a delete + insert, preserving the ElementId
+        // Check if the caller deleted the element. In that case, this is the second part of a delete + insert, preserving the ElementId
         auto forceInsert = eid.IsValid() && !GetDgnDb().Elements().GetElement(eid).IsValid();
+        if (forceInsert)
+            conversionResults.m_element->ForceElementIdForInsert(eid);
 
         if (!eid.IsValid() || forceInsert)
             {
