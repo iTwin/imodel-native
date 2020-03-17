@@ -59,7 +59,10 @@ public:
         Utf8StringCR ultId
         );
 
-    LICENSING_EXPORT folly::Future<BentleyStatus> RealtimeTrackUsage
+    /**
+     * @throw Http::HttpError if the request is rejected
+     */
+    LICENSING_EXPORT folly::Future<folly::Unit> RealtimeTrackUsage
         (
         Utf8StringCR accessToken,
         int productId,
@@ -73,7 +76,10 @@ public:
         Utf8StringCR principalId
         );
 
-    LICENSING_EXPORT folly::Future<BentleyStatus> RealtimeTrackUsage
+    /**
+     * @throw Http::HttpError if the request is rejected
+     */
+    LICENSING_EXPORT folly::Future<folly::Unit> RealtimeTrackUsage
     (
         Utf8StringCR accessToken,
         int productId,
@@ -87,7 +93,10 @@ public:
         Utf8StringCR principalId
     );
 
-    LICENSING_EXPORT folly::Future<BentleyStatus> RealtimeMarkFeature
+    /**
+     * @throw Http::HttpError if the request is rejected
+     */
+    LICENSING_EXPORT folly::Future<folly::Unit> RealtimeMarkFeature
         (
         Utf8StringCR accessToken,
         FeatureEvent featureEvent,
@@ -96,7 +105,8 @@ public:
         Utf8StringCR deviceId,
         UsageType usageType,
         Utf8StringCR correlationId,
-        AuthType authType
+        AuthType authType,
+        Utf8StringCR principalId
         );
 
     LICENSING_EXPORT folly::Future<Json::Value> GetAccessKeyInfo

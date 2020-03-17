@@ -136,9 +136,7 @@ TEST_F(SaasClientTests, SaasClientTrackUsage_Success)
     const auto version = BeVersion(1, 0);
     FeatureEvent featureEvent = FeatureEvent("TestFeatureId", version);
 
-    BentleyStatus status = BentleyStatus::SUCCESS;
-
-    GetUlasProviderMock().MockRealtimeTrackUsage(BentleyStatus::SUCCESS);
+    GetUlasProviderMock().MockRealtimeTrackUsage(folly::Unit());
     WebEntitlementResult mocked{ std::atoi(TEST_PRODUCT_ID), LicenseStatus::Ok, "00000000-0000-0000-0000-000000000000" };
     GetEntitlementProviderMock().MockV4Result(mocked);
 
@@ -157,14 +155,12 @@ TEST_F(SaasClientTests, SaasClientTrackUsage_Success_Original)
     const auto version = BeVersion(1, 0);
     FeatureEvent featureEvent = FeatureEvent("TestFeatureId", version);
 
-    BentleyStatus status = BentleyStatus::SUCCESS;
-
-    GetUlasProviderMock().MockRealtimeTrackUsage(BentleyStatus::SUCCESS);
+    GetUlasProviderMock().MockRealtimeTrackUsage(folly::Unit());
     //GetEntitlementProviderMock().MockV4Result(LicenseStatus::Ok);
 
     Utf8String projectId = "00000000-0000-0000-0000-000000000000";
  
-    EXPECT_SUCCESS(client->TrackUsage(accessToken, version, projectId, AuthType::OIDC, std::atoi(TEST_PRODUCT_ID), "", UsageType::Production, "").get());
+    client->PostUserUsage(accessToken, version, projectId, AuthType::OIDC, std::atoi(TEST_PRODUCT_ID), "", UsageType::Production, "", "").get();
     EXPECT_EQ(1, GetUlasProviderMock().RealtimeTrackUsageCalls());
 }
 
@@ -176,10 +172,8 @@ TEST_F(SaasClientTests, SaasClientMarkFeatureNoDataNoProject_Success)
     const auto version = BeVersion(1, 0);
     FeatureEvent featureEvent = FeatureEvent("TestFeatureId", version);
 
-    BentleyStatus status = BentleyStatus::SUCCESS;
+    GetUlasProviderMock().MockRealtimeMarkFeature(folly::Unit());
 
-    GetUlasProviderMock().MockRealtimeMarkFeature(BentleyStatus::SUCCESS);
-
-    EXPECT_SUCCESS(client->MarkFeature(accessToken, featureEvent, AuthType::OIDC, std::atoi(TEST_PRODUCT_ID), "", UsageType::Production, "").get());
+    client->PostFeatureUsage(accessToken, featureEvent, AuthType::OIDC, std::atoi(TEST_PRODUCT_ID), "", UsageType::Production, "", "").get();
     EXPECT_EQ(1, GetUlasProviderMock().RealtimeMarkFeatureCalls());
     }

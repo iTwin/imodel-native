@@ -19,8 +19,6 @@
 #include <Licensing/AuthType.h>
 #include <Licensing/UsageType.h>
 
-USING_NAMESPACE_BENTLEY
-
 namespace IModelJsNative
     {
     enum class Region
@@ -52,7 +50,10 @@ namespace IModelJsNative
         void Initialize(Region);
         void Uninitialize();
 
-        BentleyStatus TrackUsage(
+        /**
+         * @deprecated use PostUserUsage instead.
+         */
+        folly::Future<BentleyStatus> TrackUsage(
             Utf8StringCR accessToken,
             BeVersionCR appVersion,
             Utf8StringCR projectId,
@@ -63,7 +64,26 @@ namespace IModelJsNative
             Utf8StringCR correlationId = ""
         ) const;
 
-        BentleyStatus MarkFeature(
+        /**
+         * @throw std::runtime_error when a parameter or configuration is invalid
+         * @throw Http::HttpError if the request is rejected
+         */
+        folly::Future<folly::Unit> PostUserUsage(
+            Utf8StringCR accessToken,
+            BeVersionCR appVersion,
+            Utf8StringCR projectId,
+            Licensing::AuthType authType = Licensing::AuthType::OIDC,
+            int productId = -1,
+            Utf8StringCR deviceId = "",
+            Licensing::UsageType usageType = Licensing::UsageType::Production,
+            Utf8StringCR correlationId = "",
+            Utf8StringCR principalId = ""
+        ) const;
+
+        /**
+         * @deprecated use PostFeatureUsage instead
+         */
+        folly::Future<BentleyStatus> MarkFeature(
             Utf8StringCR accessToken, 
             Licensing::FeatureEvent featureEvent,
             Licensing::AuthType authType = Licensing::AuthType::OIDC,
@@ -71,6 +91,21 @@ namespace IModelJsNative
             Utf8StringCR deviceId = "",
             Licensing::UsageType usageType = Licensing::UsageType::Production,
             Utf8StringCR correlationId = ""
+        ) const;
+
+        /**
+         * @throw std::runtime_error when a parameter or configuration is invalid
+         * @throw Http::HttpError if the request is rejected
+         */
+        folly::Future<folly::Unit> PostFeatureUsage(
+            Utf8StringCR accessToken, 
+            Licensing::FeatureEvent featureEvent,
+            Licensing::AuthType authType = Licensing::AuthType::OIDC,
+            int productId = -1,
+            Utf8StringCR deviceId = "",
+            Licensing::UsageType usageType = Licensing::UsageType::Production,
+            Utf8StringCR correlationId = "",
+            Utf8StringCR principalId = ""
         ) const;
 
         BentleyStatus CheckEntitlement(

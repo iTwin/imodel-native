@@ -256,7 +256,7 @@ TEST_F(SaasClientIntegrationTests, TrackUsage_Success_Original)
     auto version = BeVersion(1, 0);
     Utf8String projectId = "00000000-0000-0000-0000-000000000000";
 
-    EXPECT_NE(static_cast<int>(client->TrackUsage(oidcToken, version, projectId, AuthType::OIDC, std::atoi(TEST_PRODUCT_ID), "", UsageType::Production, "").get()), static_cast<int>(BentleyStatus::ERROR));
+    client->PostUserUsage(oidcToken, version, projectId, AuthType::OIDC, std::atoi(TEST_PRODUCT_ID), "", UsageType::Production, "", "").get();
 }
 
 TEST_F(SaasClientIntegrationTests, MarkFeature_Success)
@@ -278,7 +278,7 @@ TEST_F(SaasClientIntegrationTests, MarkFeature_Success)
 
     FeatureEvent featureEvent = FeatureEvent(featureId, version, projectId, featureData);
 
-    EXPECT_NE(static_cast<int>(client->MarkFeature(oidcToken, featureEvent, AuthType::OIDC, std::atoi(TEST_PRODUCT_ID), "", UsageType::Production, "").get()), static_cast<int>(BentleyStatus::ERROR));
+    client->PostFeatureUsage(oidcToken, featureEvent, AuthType::OIDC, std::atoi(TEST_PRODUCT_ID), "", UsageType::Production, "", "").get();
     }
 
 TEST_F(SaasClientIntegrationTests, CheckEntitlement_Success)

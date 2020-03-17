@@ -16,8 +16,8 @@ struct UlasProviderMock : IUlasProvider
 private:
     BentleyStatus m_mockedPostUsageLogs = BentleyStatus::BSISUCCESS;
     BentleyStatus m_mockedPostFeatureLogs = BentleyStatus::BSISUCCESS;
-    BentleyStatus m_mockedRealtimeTrackUsage = BentleyStatus::BSISUCCESS;
-    BentleyStatus m_mockedRealtimeMarkFeature = BentleyStatus::BSISUCCESS;
+    folly::Unit m_mockedRealtimeTrackUsage = folly::Unit();
+    folly::Unit m_mockedRealtimeMarkFeature = folly::Unit();
     Json::Value m_mockedGetAccessKeyInfo = Json::Value::GetNull();
 
     int m_postUsageLogsCalls = 0;
@@ -29,15 +29,15 @@ private:
 public:
     BentleyStatus PostUsageLogs(ApplicationInfoPtr applicationInfo, BeFileNameCR dbPath, ILicensingDb& licensingDb, std::shared_ptr<Policy> policy) override;
     BentleyStatus PostFeatureLogs(ApplicationInfoPtr applicationInfo, BeFileNameCR dbPath, ILicensingDb& licensingDb, std::shared_ptr<Policy> policy) override;
-    folly::Future<BentleyStatus> RealtimeTrackUsage(Utf8StringCR accessToken, int productId, Utf8StringCR featureString, Utf8StringCR deviceId, BeVersionCR version, Utf8StringCR projectId, UsageType usageType, Utf8StringCR correlationId, AuthType authType, Utf8StringCR principalId) override;
-    folly::Future<BentleyStatus> RealtimeTrackUsage(Utf8StringCR accessToken, int productId, Utf8StringCR featureString, Utf8StringCR deviceId, BeVersionCR version, Utf8StringCR projectId, LicenseStatus licenseStatus, Utf8StringCR correlationId, AuthType authType, Utf8StringCR principalId) override;
-    folly::Future<BentleyStatus> RealtimeMarkFeature(Utf8StringCR accessToken, FeatureEvent featureEvent, int productId, Utf8StringCR featureString, Utf8StringCR deviceId, UsageType usageType, Utf8StringCR correlationId, AuthType authType) override;
+    folly::Future<folly::Unit> RealtimeTrackUsage(Utf8StringCR accessToken, int productId, Utf8StringCR featureString, Utf8StringCR deviceId, BeVersionCR version, Utf8StringCR projectId, UsageType usageType, Utf8StringCR correlationId, AuthType authType, Utf8StringCR principalId) override;
+    folly::Future<folly::Unit> RealtimeTrackUsage(Utf8StringCR accessToken, int productId, Utf8StringCR featureString, Utf8StringCR deviceId, BeVersionCR version, Utf8StringCR projectId, LicenseStatus licenseStatus, Utf8StringCR correlationId, AuthType authType, Utf8StringCR principalId) override;
+    folly::Future<folly::Unit> RealtimeMarkFeature(Utf8StringCR accessToken, FeatureEvent featureEvent, int productId, Utf8StringCR featureString, Utf8StringCR deviceId, UsageType usageType, Utf8StringCR correlationId, AuthType authType, Utf8StringCR principalId) override;
     folly::Future<Json::Value> GetAccessKeyInfo(ApplicationInfoPtr applicationInfo, Utf8StringCR accessKey, Utf8StringCR ultimateId) override;
 
     void MockPostUsageLogs(BentleyStatus mocked) { m_mockedPostUsageLogs = mocked; }
     void MockPostFeatureLogs(BentleyStatus mocked) { m_mockedPostFeatureLogs = mocked; }
-    void MockRealtimeTrackUsage(BentleyStatus mocked) { m_mockedRealtimeTrackUsage = mocked; }
-    void MockRealtimeMarkFeature(BentleyStatus mocked) { m_mockedRealtimeMarkFeature = mocked; }
+    void MockRealtimeTrackUsage(folly::Unit mocked) { m_mockedRealtimeTrackUsage = mocked; }
+    void MockRealtimeMarkFeature(folly::Unit mocked) { m_mockedRealtimeMarkFeature = mocked; }
     void MockGetAccessKeyInfo(Json::Value mocked) { m_mockedGetAccessKeyInfo = mocked; }
 
     int PostUsageLogsCalls() const { return m_postUsageLogsCalls; }

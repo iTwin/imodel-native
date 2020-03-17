@@ -22,6 +22,7 @@ export enum NativeLoggerCategory {
   ECDb = "ECDb",
   ECObjectsNative = "ECObjectsNative",
   UnitsNative = "UnitsNative",
+  Licensing = "Bentley.LICENSING",
 }
 
 // tslint:disable: no-const-enum
@@ -531,28 +532,40 @@ export declare namespace IModelJsNative {
     featureId: string;
     versionStr: string;
     projectId?: string;
+    startDateZ?: string;
+    endDateZ?: string;
     featureUserData?: FeatureUserDataKeyValuePair[];
   }
-  
+
   /** Represent the entitlement Response.
-  * @internal
-  */
+   * @internal
+   */
   export interface Entitlement {
-	allowed: boolean;
-	usageType: string;
-	principalId: string;
-   }
+    allowed: boolean;
+    usageType: string;
+    principalId: string;
+  }
 
   /** Authentication methods used by the native addon
    * @internal
    */
   const enum AuthType {
-    None = 0, OIDC = 1, SAML = 2,
+    None = 0, SAML = 1, OIDC = 2,
   }
   class NativeUlasClient {
     public static initializeRegion(region: number): void;
+    /** Sends a single request to log user usage
+     * @deprecated Use postUserUsage instead
+     */
     public static trackUsage(accessToken: string, appVersionStr: string, projectId: GuidString, authType?: AuthType, productId?: number, deviceId?: string, usageType?: UsageType, correlationId?: string): BentleyStatus;
+    /** Sends a single request to log user usage */
+    public static postUserUsage(accessToken: string, appVersionStr: string, projectId: GuidString, authType?: AuthType, productId?: number, deviceId?: string, usageType?: UsageType, correlationId?: string, principalId?: string): Promise<void>;
+    /** Sends a single request to log feature usage
+     * @deprecated Use postFeatureUsage instead
+     */
     public static markFeature(accessToken: string, featureEvent: NativeUlasClientFeatureEvent, authType?: AuthType, productId?: number, deviceId?: string, usageType?: UsageType, correlationId?: string): BentleyStatus;
+    /** Sends a single request to log feature usage */
+    public static postFeatureUsage(accessToken: string, featureEvent: NativeUlasClientFeatureEvent, authType?: AuthType, productId?: number, deviceId?: string, usageType?: UsageType, correlationId?: string, principalId?: string): Promise<void>;
     public static checkEntitlement(accessToken: string, appVersionStr: string, projectId: GuidString, authType?: AuthType, productId?: number, deviceId?: string, correlationId?: string): Entitlement;
   }
 

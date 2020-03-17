@@ -42,7 +42,7 @@ SaasClientPtr SaasClient::Create
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> SaasClient::TrackUsage
+folly::Future<folly::Unit> SaasClient::PostUserUsage
     (
     Utf8StringCR accessToken,
     BeVersionCR version,
@@ -51,16 +51,17 @@ folly::Future<BentleyStatus> SaasClient::TrackUsage
     int productId,
     Utf8StringCR deviceId,
     UsageType usageType,
-    Utf8StringCR correlationId
+    Utf8StringCR correlationId,
+    Utf8StringCR principalId
     )
     {
-    return m_impl->TrackUsage(accessToken, version, projectId, authType, productId, deviceId, usageType, correlationId);
+    return m_impl->PostUserUsage(accessToken, version, projectId, authType, productId, deviceId, usageType, correlationId, principalId);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> SaasClient::MarkFeature
+folly::Future<folly::Unit> SaasClient::PostFeatureUsage
     (
     Utf8StringCR accessToken,
     FeatureEvent featureEvent,
@@ -68,10 +69,11 @@ folly::Future<BentleyStatus> SaasClient::MarkFeature
     int productId,
     Utf8StringCR deviceId,
     UsageType usageType,
-    Utf8StringCR correlationId
+    Utf8StringCR correlationId,
+    Utf8StringCR principalId
     )
     {
-    return m_impl->MarkFeature(accessToken, featureEvent, authType, productId, deviceId, usageType, correlationId);
+    return m_impl->PostFeatureUsage(accessToken, featureEvent, authType, productId, deviceId, usageType, correlationId, principalId);
     }
 
 /*--------------------------------------------------------------------------------------+

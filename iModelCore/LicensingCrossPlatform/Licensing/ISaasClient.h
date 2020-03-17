@@ -30,7 +30,7 @@ public:
 		Utf8StringCR correlationId
 		) = 0;
     
-	virtual folly::Future<BentleyStatus> TrackUsage
+	virtual folly::Future<folly::Unit> PostUserUsage
 		(
 		Utf8StringCR accessToken,
 		BeVersionCR version,
@@ -39,10 +39,11 @@ public:
 		int productId,
 		Utf8StringCR deviceId,
 		UsageType usageType,
-		Utf8StringCR correlationId
+		Utf8StringCR correlationId,
+		Utf8StringCR principalId
 		) = 0;
     
-	virtual folly::Future<BentleyStatus> MarkFeature
+	virtual folly::Future<folly::Unit> PostFeatureUsage
 		(
 		Utf8StringCR accessToken,
 		FeatureEvent featureEvent,
@@ -50,7 +51,9 @@ public:
 		int productId,
 		Utf8StringCR deviceId,
 		UsageType usageType,
-		Utf8StringCR correlationId
+		Utf8StringCR correlationId,
+		Utf8StringCR principalId
+
 		) = 0;
 	
 	virtual folly::Future<EntitlementResult> CheckEntitlement

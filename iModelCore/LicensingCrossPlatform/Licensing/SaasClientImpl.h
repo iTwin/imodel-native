@@ -53,7 +53,10 @@ public:
         Utf8StringCR correlationId
         );
 
-    LICENSING_EXPORT folly::Future<BentleyStatus> TrackUsage
+    /**
+     * @throw Http::HttpError if the request is rejected
+     */
+    LICENSING_EXPORT folly::Future<folly::Unit> PostUserUsage
     (
         Utf8StringCR accessToken,
         BeVersionCR version,
@@ -62,10 +65,14 @@ public:
         int productId,
         Utf8StringCR deviceId,
         UsageType usageType,
-        Utf8StringCR correlationId
+        Utf8StringCR correlationId,
+        Utf8StringCR principalId
     );
 
-    LICENSING_EXPORT folly::Future<BentleyStatus> MarkFeature
+    /**
+     * @throw Http::HttpError if the request is rejected
+     */
+    LICENSING_EXPORT folly::Future<folly::Unit> PostFeatureUsage
         (
         Utf8StringCR accessToken,
         FeatureEvent featureEvent,
@@ -73,7 +80,8 @@ public:
         int productId,
         Utf8StringCR deviceId,
         UsageType usageType,
-        Utf8StringCR correlationId
+        Utf8StringCR correlationId,
+        Utf8StringCR principalId
         );
 
     LICENSING_EXPORT folly::Future<EntitlementResult> CheckEntitlement

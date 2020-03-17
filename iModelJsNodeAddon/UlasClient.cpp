@@ -75,10 +75,10 @@ void UlasClient::Uninitialize()
     m_localState = RuntimeJsonLocalState();
     }
 
-//-------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle             11/2018
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Evan.Preslar                     03/2020
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus UlasClient::TrackUsage(
+folly::Future<BentleyStatus> UlasClient::TrackUsage(
     Utf8StringCR accessToken,
     BeVersionCR appVersion,
     Utf8StringCR projectId,
@@ -90,35 +90,84 @@ BentleyStatus UlasClient::TrackUsage(
     {
     if (m_client == nullptr)
         {
-        BeAssert(false && "Must call UlasClient::Initialize first.");
-        return ERROR;
+        Utf8String message = "Must call UlasClient::Initialize first.";
+        JsInterop::GetLogger().error(message.c_str());
+        return BentleyStatus::ERROR;
         }
 
     if (projectId.empty())
         {
-        JsInterop::GetLogger().error("Failed to track iModel.js usage: projectId was not specified.");
-        return ERROR;
+        Utf8String message = "Failed to track iModel.js usage: projectId was not specified.";
+        JsInterop::GetLogger().error(message.c_str());
+        return BentleyStatus::ERROR;
         }
 
     if (appVersion.IsEmpty())
         {
-        JsInterop::GetLogger().error("Failed to track iModel.js usage: application version was not specified or an invalid version string was passed.");
-        return ERROR;
+        Utf8String message = "Failed to track iModel.js usage: application version was not specified or an invalid version string was passed.";
+        JsInterop::GetLogger().error(message.c_str());
+        return BentleyStatus::ERROR;
         }
 
     if (Licensing::UsageType::Production > usageType || Licensing::UsageType::Academic < usageType)
         {
-        JsInterop::GetLogger().error("Failed to track iModel.js usage: usage type was not specified or an invalid usage type was specfied.");
-        return ERROR;
+        Utf8String message = "Failed to track iModel.js usage: usage type was not specified or an invalid usage type was specfied.";
+        JsInterop::GetLogger().error(message.c_str());
+        return BentleyStatus::ERROR;
         }
 
-    return m_client->TrackUsage(accessToken, appVersion, projectId, authType, productId, deviceId, usageType, correlationId).onError([] (void* e) { return ERROR; }).get();
+    return m_client->TrackUsage(accessToken, appVersion, projectId, authType, productId, deviceId, usageType, correlationId);
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                    Evan.Preslar                     05/2019
+// @bsimethod                                    Evan.Preslar                     03/2020
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus UlasClient::MarkFeature(
+folly::Future<folly::Unit> UlasClient::PostUserUsage(
+    Utf8StringCR accessToken,
+    BeVersionCR appVersion,
+    Utf8StringCR projectId,
+    Licensing::AuthType authType,
+    int productId,
+    Utf8StringCR deviceId,
+    Licensing::UsageType usageType,
+    Utf8StringCR correlationId,
+    Utf8StringCR principalId) const
+    {
+    if (m_client == nullptr)
+        {
+        Utf8String message = "Must call UlasClient::Initialize first.";
+        JsInterop::GetLogger().error(message.c_str());
+        throw std::runtime_error(message.c_str());
+        }
+
+    if (projectId.empty())
+        {
+        Utf8String message = "Failed to track iModel.js usage: projectId was not specified.";
+        JsInterop::GetLogger().error(message.c_str());
+        throw std::runtime_error(message.c_str());
+        }
+
+    if (appVersion.IsEmpty())
+        {
+        Utf8String message = "Failed to track iModel.js usage: application version was not specified or an invalid version string was passed.";
+        JsInterop::GetLogger().error(message.c_str());
+        throw std::runtime_error(message.c_str());
+        }
+
+    if (Licensing::UsageType::Production > usageType || Licensing::UsageType::Academic < usageType)
+        {
+        Utf8String message = "Failed to track iModel.js usage: usage type was not specified or an invalid usage type was specfied.";
+        JsInterop::GetLogger().error(message.c_str());
+        throw std::runtime_error(message.c_str());
+        }
+
+    return m_client->PostUserUsage(accessToken, appVersion, projectId, authType, productId, deviceId, usageType, correlationId, principalId);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Evan.Preslar                     03/2020
+//+---------------+---------------+---------------+---------------+---------------+------
+folly::Future<BentleyStatus> UlasClient::MarkFeature(
     Utf8StringCR accessToken,
     Licensing::FeatureEvent featureEvent,
     Licensing::AuthType authType,
@@ -129,11 +178,35 @@ BentleyStatus UlasClient::MarkFeature(
     {
     if (m_client == nullptr)
         {
-        BeAssert(false && "Must call UlasClient::Initialize first.");
-        return ERROR;
+        Utf8String message = "Must call UlasClient::Initialize first.";
+        JsInterop::GetLogger().error(message.c_str());
+        return BentleyStatus::ERROR;
         }
 
-    return m_client->MarkFeature(accessToken, featureEvent, authType, productId, deviceId, usageType, correlationId).onError([] (void* e) { return ERROR; }).get();
+    return m_client->MarkFeature(accessToken, featureEvent, authType, productId, deviceId, usageType, correlationId);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Evan.Preslar                     03/2020
+//+---------------+---------------+---------------+---------------+---------------+------
+folly::Future<folly::Unit> UlasClient::PostFeatureUsage(
+    Utf8StringCR accessToken,
+    Licensing::FeatureEvent featureEvent,
+    Licensing::AuthType authType,
+    int productId,
+    Utf8StringCR deviceId,
+    Licensing::UsageType usageType,
+    Utf8StringCR correlationId,
+    Utf8StringCR principalId) const
+    {
+    if (m_client == nullptr)
+        {
+        Utf8String message = "Must call UlasClient::Initialize first.";
+        JsInterop::GetLogger().error(message.c_str());
+        throw std::runtime_error(message.c_str());
+        }
+
+    return m_client->PostFeatureUsage(accessToken, featureEvent, authType, productId, deviceId, usageType, correlationId, principalId);
     }
 
 //---------------------------------------------------------------------------------------

@@ -81,17 +81,14 @@ folly::Future<TrackUsageStatus> SaasClientImpl::TrackUsage(Utf8StringCR accessTo
         if (allowed)
             {
             return m_ulasProvider->RealtimeTrackUsage(accessToken, result.ProductId, m_featureString, m_deviceId, version, projectId, result.Status, correlationId, authType, result.PrincipalId)
-                .then([=] (BentleyStatus usageStatus)
-                {
-                if (usageStatus == BentleyStatus::SUCCESS)
+                .then([=] ()
                     {
                     return TrackUsageStatus::Success;
-                    }
-                else
+                    })
+                .onError([](std::exception const& e)
                     {
                     return TrackUsageStatus::EntitledButErrorUsageTracking;
-                    }
-                });
+                    });
             }
         else
             {
@@ -100,12 +97,12 @@ folly::Future<TrackUsageStatus> SaasClientImpl::TrackUsage(Utf8StringCR accessTo
         });
     }
 
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                             Jason.Wichert           3/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> SaasClientImpl::TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId, AuthType authType, int productId, Utf8StringCR deviceId, UsageType usageType, Utf8StringCR correlationId)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Evan.Preslar                    03/2020
+//+---------------+---------------+---------------+---------------+---------------+------
+folly::Future<folly::Unit> SaasClientImpl::PostUserUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId, AuthType authType, int productId, Utf8StringCR deviceId, UsageType usageType, Utf8StringCR correlationId, Utf8StringCR principalId)
     {
-    LOG.debug("UlasProvider::RealtimeTrackUsage");
+    LOG.debug("SaasClientImpl::PostUserUsage");
 
     // override system product id if it is specified here
     if (productId != -1)
@@ -119,15 +116,15 @@ folly::Future<BentleyStatus> SaasClientImpl::TrackUsage(Utf8StringCR accessToken
         m_deviceId = deviceId;
         }
 
-    return m_ulasProvider->RealtimeTrackUsage(accessToken, m_productId, m_featureString, m_deviceId, version, projectId, usageType, correlationId, authType);
+    return m_ulasProvider->RealtimeTrackUsage(accessToken, m_productId, m_featureString, m_deviceId, version, projectId, usageType, correlationId, authType, principalId);
     }
 
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                            Jason.Wichert            3/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> SaasClientImpl::MarkFeature(Utf8StringCR accessToken, FeatureEvent featureEvent, AuthType authType, int productId, Utf8StringCR deviceId, UsageType usageType, Utf8StringCR correlationId)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Evan.Preslar                    03/2020
+//+---------------+---------------+---------------+---------------+---------------+------
+folly::Future<folly::Unit> SaasClientImpl::PostFeatureUsage(Utf8StringCR accessToken, FeatureEvent featureEvent, AuthType authType, int productId, Utf8StringCR deviceId, UsageType usageType, Utf8StringCR correlationId, Utf8StringCR principalId)
     {
-    LOG.debug("SaasClientImpl::MarkFeature");
+    LOG.debug("SaasClientImpl::PostFeatureUsage");
 
     // override system product id if it is specified here
     if (productId != -1)
@@ -141,7 +138,7 @@ folly::Future<BentleyStatus> SaasClientImpl::MarkFeature(Utf8StringCR accessToke
         m_deviceId = deviceId;
         }
 
-    return m_ulasProvider->RealtimeMarkFeature(accessToken, featureEvent, m_productId, m_featureString, m_deviceId, usageType, correlationId, authType);
+    return m_ulasProvider->RealtimeMarkFeature(accessToken, featureEvent, m_productId, m_featureString, m_deviceId, usageType, correlationId, authType, principalId);
     }
 
 /*--------------------------------------------------------------------------------------+

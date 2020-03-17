@@ -55,9 +55,20 @@ USING_NAMESPACE_BENTLEY_EC
 
 #define THROW_TYPE_EXCEPTION_AND_RETURN(str,retval) {THROW_JS_TYPE_ERROR(str) return retval;}
 
+#define REJECT_DEFERRED_AND_RETURN(deferred, message) {\
+    deferred.Reject(Napi::String::New(info.Env(), message));\
+    return deferred.Promise();\
+    }\
+
 #define REQUIRE_ARGUMENT_ANY_OBJ(i, var, retval)\
     if (info.Length() <= (i)) {\
         THROW_TYPE_EXCEPTION_AND_RETURN("Argument " #i " must be an object", retval)\
+    }\
+    Napi::Object var = info[i].As<Napi::Object>();
+
+#define REQUIRE_ARGUMENT_ANY_OBJ_ASYNC(i, var, deferred)\
+    if (info.Length() <= (i)) {\
+        REJECT_DEFERRED_AND_RETURN(deferred, "Argument " #i " must be an object")\
     }\
     Napi::Object var = info[i].As<Napi::Object>();
 
@@ -73,11 +84,23 @@ USING_NAMESPACE_BENTLEY_EC
     }\
     Napi::Function var = info[i].As<Napi::Function>();\
 
+#define ARGUMENT_IS_NOT_STRING(i)\
+    (info.Length() <= (i) || !info[i].IsString())\
+
+#define ARGUMENT_IS_STRING(i)\
+    !ARGUMENT_IS_NOT_STRING(i)\
+
 #define REQUIRE_ARGUMENT_STRING(i, var, retval)\
-    if (info.Length() <= (i) || !info[i].IsString()) {\
+    if (ARGUMENT_IS_NOT_STRING(i)) {\
         THROW_TYPE_EXCEPTION_AND_RETURN("Argument " #i " must be a string", retval)\
     }\
     Utf8String var = info[i].As<Napi::String>().Utf8Value().c_str();
+
+#define REQUIRE_ARGUMENT_STRING_ASYNC(i, var, deferred)\
+    if (ARGUMENT_IS_NOT_STRING(i)) {\
+        REJECT_DEFERRED_AND_RETURN(deferred, "Argument " #i " must be a string")\
+    }\
+    Utf8String var = info[i].As<Napi::String>().Utf8Value().c_str();\
 
 #define REQUIRE_ARGUMENT_STRING_ID(i, strId, T, id, retval)\
     REQUIRE_ARGUMENT_STRING(i, strId, retval)\
@@ -95,36 +118,63 @@ USING_NAMESPACE_BENTLEY_EC
             var.push_back(arrValue.As<Napi::String>().Utf8Value().c_str());\
     }
 
+#define ARGUMENT_IS_NOT_NUMBER(i)\
+    (info.Length() <= (i) || !info[i].IsNumber())\
+
+#define ARGUMENT_IS_NUMBER(i)\
+    !ARGUMENT_IS_NOT_NUMBER(i)\
+
 #define REQUIRE_ARGUMENT_NUMBER(i, var, retval)\
-    if (info.Length() <= (i) || !info[i].IsNumber()) {\
+    if (ARGUMENT_IS_NOT_NUMBER(i)) {\
         THROW_TYPE_EXCEPTION_AND_RETURN("Argument " #i " must be a number", retval)\
     }\
     Napi::Number var = info[i].As<Napi::Number>();
 
+#define REQUIRE_ARGUMENT_NUMBER_ASYNC(i, var, deferred)\
+    if (ARGUMENT_IS_NOT_NUMBER(i)) {\
+        REJECT_DEFERRED_AND_RETURN(deferred, "Argument " #i " must be a number")\
+    }\
+    Napi::Number var = info[i].As<Napi::Number>();\
+
 #define REQUIRE_ARGUMENT_INTEGER(i, var, retval)\
-    if (info.Length() <= (i) || !info[i].IsNumber()) {\
+    if (ARGUMENT_IS_NOT_NUMBER(i)) {\
         THROW_TYPE_EXCEPTION_AND_RETURN("Argument " #i " must be an integer", retval)\
     }\
     int32_t var = info[i].As<Napi::Number>().Int32Value();
 
 #define REQUIRE_ARGUMENT_UINTEGER(i, var, retval)\
-    if (info.Length() <= (i) || !info[i].IsNumber()) {\
+    if (ARGUMENT_IS_NOT_NUMBER(i)) {\
         THROW_TYPE_EXCEPTION_AND_RETURN("Argument " #i " must be an integer", retval)\
     }\
     int32_t var = info[i].As<Napi::Number>().Uint32Value();
 
+#define ARGUMENT_IS_NOT_BOOL(i)\
+    (info.Length() <= (i) || !info[i].IsBoolean())\
+
+#define ARGUMENT_IS_BOOL(i)\
+    !ARGUMENT_IS_NOT_BOOL(i)\
+
 #define REQUIRE_ARGUMENT_BOOL(i, var, retval)\
-    if (info.Length() <= (i) || !info[i].IsBoolean()) {\
+    if (ARGUMENT_IS_NOT_BOOL(i)) {\
         THROW_TYPE_EXCEPTION_AND_RETURN("Argument " #i " must be a boolean", retval)\
     }\
     bool var = info[i].As<Napi::Boolean>().Value();
 
+#define REQUIRE_ARGUMENT_BOOL_ASYNC(i, var, deferred)\
+    if (ARGUMENT_IS_NOT_BOOL(i)) {\
+        REJECT_DEFERRED_AND_RETURN(deferred, "Argument " #i " must be a boolean")\
+    }\
+    bool var = info[i].As<Napi::Boolean>().Value();
+
+#define ARGUMENT_IS_EMPTY(i)\
+    (info.Length() <= (i) || (info[i].IsUndefined() || info[i].IsNull()))\
+
 #define OPTIONAL_ARGUMENT_BOOL(i, var, default, retval)\
     bool var;\
-    if (info.Length() <= (i) || (info[i].IsUndefined() || info[i].IsNull())) {\
+    if (ARGUMENT_IS_EMPTY(i)) {\
         var = (default);\
     }\
-    else if (info[i].IsBoolean()) {\
+    else if (ARGUMENT_IS_BOOL(i)) {\
         var = info[i].As<Napi::Boolean>().Value();\
     }\
     else {\
@@ -132,12 +182,24 @@ USING_NAMESPACE_BENTLEY_EC
         THROW_TYPE_EXCEPTION_AND_RETURN("Argument " #i " must be an boolean", retval)\
     }
 
-#define OPTIONAL_ARGUMENT_INTEGER(i, var, default, retval)\
-    int var;\
-    if (info.Length() <= (i) || (info[i].IsUndefined() || info[i].IsNull())) {\
+#define OPTIONAL_ARGUMENT_BOOL_ASYNC(i, var, default, deferred)\
+    bool var;\
+    if (ARGUMENT_IS_EMPTY(i)) {\
         var = (default);\
     }\
-    else if (info[i].IsNumber()) {\
+    else if (ARGUMENT_IS_BOOL(i)) {\
+        var = info[i].As<Napi::Boolean>().Value();\
+    }\
+    else {\
+        REJECT_DEFERRED_AND_RETURN(deferred, "Argument " #i " must be a boolean")\
+    }
+
+#define OPTIONAL_ARGUMENT_INTEGER(i, var, default, retval)\
+    int var;\
+    if (ARGUMENT_IS_EMPTY(i)) {\
+        var = (default);\
+    }\
+    else if (ARGUMENT_IS_NUMBER(i)) {\
         var = info[i].As<Napi::Number>().Int32Value();\
     }\
     else {\
@@ -145,17 +207,42 @@ USING_NAMESPACE_BENTLEY_EC
         THROW_TYPE_EXCEPTION_AND_RETURN("Argument " #i " must be an integer", retval)\
     }
 
+#define OPTIONAL_ARGUMENT_INTEGER_ASYNC(i, var, default, deferred)\
+    int var;\
+    if (ARGUMENT_IS_EMPTY(i)) {\
+        var = (default);\
+    }\
+    else if (ARGUMENT_IS_NUMBER(i)) {\
+        var = info[i].As<Napi::Number>().Int32Value();\
+    }\
+    else {\
+        REJECT_DEFERRED_AND_RETURN(deferred, "Argument " #i " must be an integer")\
+    }
+
 #define OPTIONAL_ARGUMENT_STRING(i, var, retval)\
     Utf8String var;\
-    if (info.Length() <= (i) || (info[i].IsUndefined() || info[i].IsNull())) {\
+    if (ARGUMENT_IS_EMPTY(i)) {\
         ;\
     }\
-    else if (info[i].IsString()) {\
+    else if (ARGUMENT_IS_STRING(i)) {\
         var = info[i].As<Napi::String>().Utf8Value().c_str();\
     }\
     else {\
         Utf8PrintfString msg("Argument " #i " is type %d. It must be a string or undefined", info[i].Type());\
         THROW_TYPE_EXCEPTION_AND_RETURN(msg.c_str(), retval)\
+    }
+
+#define OPTIONAL_ARGUMENT_STRING_ASYNC(i, var, deferred)\
+    Utf8String var;\
+    if (ARGUMENT_IS_EMPTY(i)) {\
+        ;\
+    }\
+    else if (ARGUMENT_IS_STRING(i)) {\
+        var = info[i].As<Napi::String>().Utf8Value().c_str();\
+    }\
+    else {\
+        Utf8PrintfString msg("Argument " #i " is type %d. It must be a string or undefined", info[i].Type());\
+        REJECT_DEFERRED_AND_RETURN(deferred, msg.c_str())\
     }
 
 #define DEFINE_CONSTRUCTOR static Napi::FunctionReference& Constructor() { static Napi::FunctionReference s_ctor; return s_ctor; }
@@ -4830,21 +4917,22 @@ struct NativeUlasClient : BeObjectWrap<NativeUlasClient>
             }
 
         //---------------------------------------------------------------------------------------
-        // @bsimethod                                     Evan.Preslar                    08/2019
+        // @bsimethod                                     Evan.Preslar                    03/2020
+        // @deprecated use PostUserUsage instead
         //+---------------+---------------+---------------+---------------+---------------+------
         static Napi::Value TrackUsage(Napi::CallbackInfo const& info)
             {
-            REQUIRE_ARGUMENT_STRING(0, accessToken, Napi::Number::New(info.Env(), (int)BentleyStatus::ERROR));
-            REQUIRE_ARGUMENT_STRING(1, appVersionStr, Napi::Number::New(info.Env(), (int)BentleyStatus::ERROR));
+            REQUIRE_ARGUMENT_STRING(0, accessToken, info.Env().Undefined());
+            REQUIRE_ARGUMENT_STRING(1, appVersionStr, info.Env().Undefined());
             BeVersion appVersion = BeVersion(appVersionStr.c_str());
-            REQUIRE_ARGUMENT_STRING(2, projectId, Napi::Number::New(info.Env(), (int)BentleyStatus::ERROR));
-            OPTIONAL_ARGUMENT_INTEGER(3, authType, (int) Licensing::AuthType::OIDC, Napi::Number::New(info.Env(), (int)BentleyStatus::ERROR));
-            OPTIONAL_ARGUMENT_INTEGER(4, productId, -1, Napi::Number::New(info.Env(), (int)BentleyStatus::ERROR));
-            OPTIONAL_ARGUMENT_STRING(5, deviceId, Napi::Number::New(info.Env(), (int)BentleyStatus::ERROR));
-            OPTIONAL_ARGUMENT_INTEGER(6, usageType, (int) Licensing::UsageType::Production, Napi::Number::New(info.Env(), (int)BentleyStatus::ERROR));
-            OPTIONAL_ARGUMENT_STRING(7, correlationId, Napi::Number::New(info.Env(), (int)BentleyStatus::ERROR));
+            REQUIRE_ARGUMENT_STRING(2, projectId, info.Env().Undefined());
+            OPTIONAL_ARGUMENT_INTEGER(3, authType, (int) Licensing::AuthType::OIDC, info.Env().Undefined());
+            OPTIONAL_ARGUMENT_INTEGER(4, productId, -1, info.Env().Undefined());
+            OPTIONAL_ARGUMENT_STRING(5, deviceId, info.Env().Undefined());
+            OPTIONAL_ARGUMENT_INTEGER(6, usageType, (int) Licensing::UsageType::Production, info.Env().Undefined());
+            OPTIONAL_ARGUMENT_STRING(7, correlationId, info.Env().Undefined());
 
-            BentleyStatus status = UlasClient::Get().TrackUsage(accessToken, appVersion, projectId, (Licensing::AuthType) authType, productId, deviceId, (Licensing::UsageType) usageType, correlationId);
+            BentleyStatus status = UlasClient::Get().TrackUsage(accessToken, appVersion, projectId, (Licensing::AuthType) authType, productId, deviceId, (Licensing::UsageType) usageType, correlationId).get();
             if (status == BentleyStatus::ERROR)
                 THROW_TYPE_EXCEPTION_AND_RETURN("Could not log usage information", info.Env().Undefined());
 
@@ -4852,13 +4940,60 @@ struct NativeUlasClient : BeObjectWrap<NativeUlasClient>
             }
 
         //---------------------------------------------------------------------------------------
+        // @bsimethod                                     Evan.Preslar                    03/2020
+        //+---------------+---------------+---------------+---------------+---------------+------
+        static Napi::Value PostUserUsage(Napi::CallbackInfo const& info)
+            {
+            Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(info.Env());
+
+            REQUIRE_ARGUMENT_STRING_ASYNC(0, accessToken, deferred);
+            REQUIRE_ARGUMENT_STRING_ASYNC(1, appVersionStr, deferred);
+            BeVersion appVersion = BeVersion(appVersionStr.c_str());
+            REQUIRE_ARGUMENT_STRING_ASYNC(2, projectId, deferred);
+            OPTIONAL_ARGUMENT_INTEGER_ASYNC(3, authType, (int) Licensing::AuthType::OIDC, deferred);
+            OPTIONAL_ARGUMENT_INTEGER_ASYNC(4, productId, -1, deferred);
+            OPTIONAL_ARGUMENT_STRING_ASYNC(5, deviceId, deferred);
+            OPTIONAL_ARGUMENT_INTEGER_ASYNC(6, usageType, (int) Licensing::UsageType::Production, deferred);
+            OPTIONAL_ARGUMENT_STRING_ASYNC(7, correlationId, deferred);
+            OPTIONAL_ARGUMENT_STRING_ASYNC(8, principalId, deferred);
+
+            Utf8String errorMessage = "";
+            try
+                {
+                // TODO: find a way to avoid calling get() (which blocks the thread) and instead incorporate a .then() for the future, return the Napi promise immediately, and resolve/reject it later.
+                UlasClient::Get().PostUserUsage(accessToken, appVersion, projectId, (Licensing::AuthType) authType, productId, deviceId, (Licensing::UsageType) usageType, correlationId, principalId).get();
+                deferred.Resolve(info.Env().Undefined());
+                }
+            catch (const Http::HttpError& err)
+                {
+                errorMessage.Sprintf("Could not send user usage: request was rejected: %s", err.GetMessage().c_str());
+                }
+            catch (const std::exception err)
+                {
+                errorMessage.Sprintf("Could not send user usage: %s", err.what());
+                }
+            catch (...)
+                {
+                errorMessage = "Could not send user usage: internal error";
+                }
+
+            if (errorMessage != "")
+                {
+                REJECT_DEFERRED_AND_RETURN(deferred, errorMessage.c_str())
+                }
+
+            return deferred.Promise();
+            }
+
+        //---------------------------------------------------------------------------------------
         // @bsimethod                                     Evan.Preslar                    08/2019
+        // @deprecated use PostFeatureUsage instead
         //+---------------+---------------+---------------+---------------+---------------+------
         static Napi::Value MarkFeature(Napi::CallbackInfo const& info)
             {
-            REQUIRE_ARGUMENT_STRING(0, accessToken, Napi::Number::New(info.Env(), (int)BentleyStatus::ERROR));
+            REQUIRE_ARGUMENT_STRING(0, accessToken, info.Env().Undefined());
 
-            REQUIRE_ARGUMENT_ANY_OBJ(1, featureEventObj, Napi::Number::New(info.Env(), (int)BentleyStatus::ERROR));
+            REQUIRE_ARGUMENT_ANY_OBJ(1, featureEventObj, info.Env().Undefined());
             if (!featureEventObj.Has("featureId"))
                 THROW_TYPE_EXCEPTION_AND_RETURN("Could not track feature information: featureId must be specified", info.Env().Undefined());
 
@@ -4915,17 +5050,148 @@ struct NativeUlasClient : BeObjectWrap<NativeUlasClient>
 
             Licensing::FeatureEvent featureEvent = Licensing::FeatureEvent(featureId, appVersion, projectId, userFeatureData);
 
-            OPTIONAL_ARGUMENT_INTEGER(2, authType, (int) Licensing::AuthType::OIDC, Napi::Number::New(info.Env(), (int)BentleyStatus::ERROR));
-            OPTIONAL_ARGUMENT_INTEGER(3, productId, -1, Napi::Number::New(info.Env(), (int)BentleyStatus::ERROR));
-            OPTIONAL_ARGUMENT_STRING(4, deviceId, Napi::Number::New(info.Env(), (int)BentleyStatus::ERROR));
-            OPTIONAL_ARGUMENT_INTEGER(5, usageType, (int) Licensing::UsageType::Production, Napi::Number::New(info.Env(), (int)BentleyStatus::ERROR));
-            OPTIONAL_ARGUMENT_STRING(6, correlationId, Napi::Number::New(info.Env(), (int)BentleyStatus::ERROR));
+            OPTIONAL_ARGUMENT_INTEGER(2, authType, (int) Licensing::AuthType::OIDC, info.Env().Undefined());
+            OPTIONAL_ARGUMENT_INTEGER(3, productId, -1, info.Env().Undefined());
+            OPTIONAL_ARGUMENT_STRING(4, deviceId, info.Env().Undefined());
+            OPTIONAL_ARGUMENT_INTEGER(5, usageType, (int) Licensing::UsageType::Production, info.Env().Undefined());
+            OPTIONAL_ARGUMENT_STRING(6, correlationId, info.Env().Undefined());
 
-            BentleyStatus status = UlasClient::Get().MarkFeature(accessToken, featureEvent, (Licensing::AuthType) authType, productId, deviceId, (Licensing::UsageType) usageType, correlationId);
+            BentleyStatus status = UlasClient::Get().MarkFeature(accessToken, featureEvent, (Licensing::AuthType) authType, productId, deviceId, (Licensing::UsageType) usageType, correlationId).get();
             if (status == BentleyStatus::ERROR)
                 THROW_TYPE_EXCEPTION_AND_RETURN("Could not track feature information", info.Env().Undefined());
 
             return Napi::Number::New(info.Env(), (int)BentleyStatus::SUCCESS);
+            }
+
+        //---------------------------------------------------------------------------------------
+        // @bsimethod                                     Evan.Preslar                    03/2020
+        //+---------------+---------------+---------------+---------------+---------------+------
+        static Napi::Value PostFeatureUsage(Napi::CallbackInfo const& info)
+            {
+            Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(info.Env());
+
+            REQUIRE_ARGUMENT_STRING_ASYNC(0, accessToken, deferred);
+
+            REQUIRE_ARGUMENT_ANY_OBJ_ASYNC(1, featureEventObj, deferred);
+            if (!featureEventObj.Has("featureId"))
+                REJECT_DEFERRED_AND_RETURN(deferred, "Could not track feature information: featureId must be specified");
+
+            Utf8String featureId = featureEventObj.Get("featureId").ToString().Utf8Value().c_str();
+
+            if (!featureEventObj.Has("versionStr"))
+                REJECT_DEFERRED_AND_RETURN(deferred, "Could not track feature information: version must be specified");
+
+            BeVersion appVersion = BeVersion(featureEventObj.Get("versionStr").ToString().Utf8Value().c_str());
+
+            Utf8String projectId = "99999999-9999-9999-9999-999999999999"; // All iTwin applications are obligated by ULAS to send the 9-Guid (instead of the 0-Guid or undefined) to denote a global project scope.
+            if (featureEventObj.Has("projectId"))
+                {
+                Napi::Value projectIdValue = featureEventObj.Get("projectId");
+                if (!projectIdValue.IsUndefined() && !projectIdValue.IsNull())
+                    {
+                    Utf8String projectIdString(projectIdValue.ToString().Utf8Value().c_str());
+                    if(BentleyStatus::SUCCESS != BeSQLite::BeGuid(false).FromString(projectIdString.c_str()))
+                        JsInterop::GetLogger().warningv("Invalid feature tracking data: projectId: %s is not resolvable to a valid Guid. Feature request will continue as if no projectId was specified.",  projectIdString.c_str());
+                    else
+                        projectId = projectIdString;
+                    }
+                }
+
+            DateTime startDateZ;
+            if (featureEventObj.Has("startDateZ"))
+                {
+                Napi::Value startDateZValue = featureEventObj.Get("startDateZ");
+                if (!startDateZValue.IsUndefined() && !startDateZValue.IsNull())
+                    {
+                    Utf8String startDateZString(startDateZValue.ToString().Utf8Value().c_str());
+                    if (BentleyStatus::SUCCESS != DateTime::FromString(startDateZ, startDateZString.c_str()))
+                        JsInterop::GetLogger().warningv("Invalid feature tracking data: startDateZ: %s is not resolvable to a valid DateTime. Feature request will continue as if no startDateZ was specified.", startDateZString.c_str());
+                    }
+                }
+
+            DateTime endDateZ;
+            if (featureEventObj.Has("endDateZ"))
+                {
+                Napi::Value endDateZValue = featureEventObj.Get("endDateZ");
+                if (!endDateZValue.IsUndefined() && !endDateZValue.IsNull())
+                    {
+                    Utf8String endDateZString(endDateZValue.ToString().Utf8Value().c_str());
+                    if (BentleyStatus::SUCCESS != DateTime::FromString(endDateZ, endDateZString.c_str()))
+                        JsInterop::GetLogger().warningv("Invalid feature tracking data: endDateZ: %s is not resolvable to a valid DateTime. Feature request will continue as if no endDateZ was specified.", endDateZString.c_str());
+                    }
+                }
+
+            Licensing::FeatureUserDataMapPtr userFeatureData = std::make_shared<Licensing::FeatureUserDataMap>();
+            if (featureEventObj.Has("featureUserData"))
+              {
+              Napi::Array arr = featureEventObj.Get("featureUserData").As<Napi::Array>();
+              for (uint32_t arrIndex = 0; arrIndex < arr.Length(); ++arrIndex)
+                {
+                Napi::Value arrValue = arr[arrIndex];
+                if (arrValue.IsObject())
+                  {
+                  Napi::Object item = arrValue.As<Napi::Object>();
+                  if (!item.Has("value"))
+                    {
+                    JsInterop::GetLogger().warning("Invalid feature tracking data: userFeatureData entry is missing the field: value. Omitting this field from the feature tracking request.");
+                    continue;
+                    }
+
+                  Utf8String key = getOptionalStringProperty(item, "key", "");
+                  Utf8String value = getOptionalStringProperty(item, "value", "");
+
+                  if (key.empty())
+                    {
+                    JsInterop::GetLogger().warning("Invalid feature tracking data: userFeatureData entry has an empty or invalid field: key. Omitting this field from the feature tracking request.");
+                    continue;
+                    }
+                  userFeatureData->AddAttribute(Utf8String(key.c_str()), Utf8String(value.c_str()));
+                  }
+                else
+                  {
+                  JsInterop::GetLogger().warning("Invalid feature tracking data: userFeatureData entry is not a key-value pair. Omitting this field from the feature tracking request.");
+                  continue;
+                  }
+                }
+              }
+
+            Licensing::FeatureEvent featureEvent = startDateZ.IsValid() && endDateZ.IsValid()
+                ? Licensing::FeatureEvent(featureId, appVersion, projectId, startDateZ, endDateZ, userFeatureData)
+                : Licensing::FeatureEvent(featureId, appVersion, projectId, userFeatureData);
+
+            OPTIONAL_ARGUMENT_INTEGER_ASYNC(2, authType, (int) Licensing::AuthType::OIDC, deferred);
+            OPTIONAL_ARGUMENT_INTEGER_ASYNC(3, productId, -1, deferred);
+            OPTIONAL_ARGUMENT_STRING_ASYNC(4, deviceId, deferred);
+            OPTIONAL_ARGUMENT_INTEGER_ASYNC(5, usageType, (int) Licensing::UsageType::Production, deferred);
+            OPTIONAL_ARGUMENT_STRING_ASYNC(6, correlationId, deferred);
+            OPTIONAL_ARGUMENT_STRING_ASYNC(7, principalId, deferred);
+
+            Utf8String errorMessage = "";
+            try
+                {
+                // TODO: find a way to avoid calling get() (which blocks the thread) and instead incorporate a .then() for the future, return the Napi promise immediately, and resolve/reject it later.
+                UlasClient::Get().PostFeatureUsage(accessToken, featureEvent, (Licensing::AuthType) authType, productId, deviceId, (Licensing::UsageType) usageType, correlationId, principalId).get();
+                deferred.Resolve(info.Env().Undefined());
+                }
+            catch (const Http::HttpError& err)
+                {
+                errorMessage.Sprintf("Could not send feature usage: request was rejected: %s", err.GetMessage().c_str());
+                }
+            catch (const std::exception err)
+                {
+                errorMessage.Sprintf("Could not send feature usage: %s", err.what());
+                }
+            catch (...)
+                {
+                errorMessage = "Could not send feature usage: internal error";
+                }
+
+            if (errorMessage != "")
+                {
+                REJECT_DEFERRED_AND_RETURN(deferred, errorMessage.c_str())
+                }
+
+            return deferred.Promise();
             }
     public:
         NativeUlasClient(Napi::CallbackInfo const &info) : BeObjectWrap<NativeUlasClient>(info) {}
@@ -4940,7 +5206,9 @@ struct NativeUlasClient : BeObjectWrap<NativeUlasClient>
         Napi::Function t = DefineClass(env, "NativeUlasClient", {
             StaticMethod("initializeRegion", &NativeUlasClient::InitializeRegion),
             StaticMethod("trackUsage", &NativeUlasClient::TrackUsage),
+            StaticMethod("postUserUsage", &NativeUlasClient::PostUserUsage),
             StaticMethod("markFeature", &NativeUlasClient::MarkFeature),
+            StaticMethod("postFeatureUsage", &NativeUlasClient::PostFeatureUsage),
             StaticMethod("checkEntitlement", &NativeUlasClient::CheckEntitlement),
         });
         exports.Set("NativeUlasClient", t);

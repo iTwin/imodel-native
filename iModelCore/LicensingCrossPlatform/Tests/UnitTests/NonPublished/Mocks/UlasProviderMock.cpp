@@ -19,19 +19,19 @@ BentleyStatus UlasProviderMock::PostFeatureLogs(ApplicationInfoPtr applicationIn
     return m_mockedPostFeatureLogs;
     }
 
-folly::Future<BentleyStatus> UlasProviderMock::RealtimeTrackUsage(Utf8StringCR accessToken, int productId, Utf8StringCR featureString, Utf8StringCR deviceId, BeVersionCR version, Utf8StringCR projectId, UsageType usageType, Utf8StringCR correlationId, AuthType authType, Utf8StringCR principalId)
+folly::Future<folly::Unit> UlasProviderMock::RealtimeTrackUsage(Utf8StringCR accessToken, int productId, Utf8StringCR featureString, Utf8StringCR deviceId, BeVersionCR version, Utf8StringCR projectId, UsageType usageType, Utf8StringCR correlationId, AuthType authType, Utf8StringCR principalId)
     {
     m_realtimeTrackUsageCalls++;
     return folly::makeFuture(m_mockedRealtimeTrackUsage);
     }
 
-folly::Future<BentleyStatus> UlasProviderMock::RealtimeTrackUsage(Utf8StringCR accessToken, int productId, Utf8StringCR featureString, Utf8StringCR deviceId, BeVersionCR version, Utf8StringCR projectId, LicenseStatus licenseStatus, Utf8StringCR correlationId, AuthType authType, Utf8StringCR principalId)
+folly::Future<folly::Unit> UlasProviderMock::RealtimeTrackUsage(Utf8StringCR accessToken, int productId, Utf8StringCR featureString, Utf8StringCR deviceId, BeVersionCR version, Utf8StringCR projectId, LicenseStatus licenseStatus, Utf8StringCR correlationId, AuthType authType, Utf8StringCR principalId)
 {
     m_realtimeTrackUsageCalls++;
     return folly::makeFuture(m_mockedRealtimeTrackUsage);
 }
 
-folly::Future<BentleyStatus> UlasProviderMock::RealtimeMarkFeature(Utf8StringCR accessToken, FeatureEvent featureEvent, int productId, Utf8StringCR featureString, Utf8StringCR deviceId, UsageType usageType, Utf8StringCR correlationId, AuthType authType)
+folly::Future<folly::Unit> UlasProviderMock::RealtimeMarkFeature(Utf8StringCR accessToken, FeatureEvent featureEvent, int productId, Utf8StringCR featureString, Utf8StringCR deviceId, UsageType usageType, Utf8StringCR correlationId, AuthType authType, Utf8StringCR principalId)
     {
     m_realtimeMarkFeatureCalls++;
     return folly::makeFuture(m_mockedRealtimeMarkFeature);

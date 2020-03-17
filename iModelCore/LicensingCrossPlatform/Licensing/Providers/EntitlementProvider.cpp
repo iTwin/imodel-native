@@ -100,9 +100,10 @@ folly::Future<WebEntitlementResult> EntitlementProvider::FetchWebEntitlementV4(c
         {
         if (!response.IsSuccess())
             {
-            LOG.errorv("FetchWebEntitlementV4 ERROR: Unable to perform web v4 request. Response body: %s", response.GetBody().AsString().c_str());
-            LOG.errorv("FetchWebEntitlementV4 ERROR: Response connection status : ", response.GetConnectionStatus());
-            LOG.errorv("FetchWebEntitlementV4 ERROR: Response Body (Should contain requestID) :", response.GetBody().AsString().c_str());
+            LOG.errorv("FetchWebEntitlementV4 ERROR: Unable to perform web v4 request.");
+            LOG.errorv("FetchWebEntitlementV4 ERROR: Response body: %s", response.GetBody().AsString().c_str());
+            LOG.errorv("FetchWebEntitlementV4 ERROR: Response status: %s", response.ToStatusString(response.GetConnectionStatus(), response.GetHttpStatus()).c_str());
+            LOG.errorv("FetchWebEntitlementV4 ERROR: Response URL: %s", response.GetEffectiveUrl().c_str());
 
             //WebEntitlementResult httpError{ -1, LicenseStatus::NotEntitled, nullptr };
             //return httpError;

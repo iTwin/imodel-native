@@ -48,6 +48,7 @@ public:
     );
 
     //! Send realtime usage
+    //! @deprecated Use SaasClient::PostUserUsage instead
     //! @param[in] accessToken OIDC or SAML token of user to track usage against. OIDC is preferred
     //! @param[in] version version for this usage
     //! @param[in] projectId projectId of this usage
@@ -66,9 +67,39 @@ public:
         Utf8StringCR deviceId = "",
         UsageType usageType = UsageType::Production,
         Utf8StringCR correlationId = ""
+        ){
+        try { PostUserUsage(accessToken, version, projectId, authType, productId, deviceId, usageType, correlationId).get(); }
+        catch(...) { return folly::makeFuture(BentleyStatus::ERROR); }
+        return folly::makeFuture(BentleyStatus::SUCCESS);
+        };
+
+    /**
+     * Sends realtime user usage
+     * @throw Http::HttpError if the request is rejected
+     * @param accessToken OIDC or SAML token of user to track usage against. OIDC is preferred
+     * @param version version for this usage
+     * @param projectId projectId of this usage
+     * @param authType optional - specify whether the accessToken is OIDC or SAML. Defaults to OIDC which is preferred
+     * @param productId optional - specify the productId for this usage
+     * @param deviceId optional - specify the deviceId for this usage, required for multi-product id tracking
+     * @param usageType optional - specify the usage type for this usage
+     * @param correlationId optional - specify the correlationId for this usage, must be a GUID
+     */
+    LICENSING_EXPORT folly::Future<folly::Unit> PostUserUsage
+        (
+        Utf8StringCR accessToken,
+        BeVersionCR version,
+        Utf8StringCR projectId,
+        AuthType authType = AuthType::OIDC,
+        int productId = -1,
+        Utf8StringCR deviceId = "",
+        UsageType usageType = UsageType::Production,
+        Utf8StringCR correlationId = "",
+        Utf8StringCR principalId = ""
         );
 
     //! Mark realtime feature
+    //! @deprecated Use SaasClient::PostFeatureUsage instead
     //! @param[in] accessToken OIDC or SAML token of user to mark feature against. OIDC is preferred
     //! @param[in] featureEvent The feature event to mark
     //! @param[in] authType optional - specify whether the accessToken is OIDC or SAML. Defaults to OIDC which is preferred
@@ -85,6 +116,33 @@ public:
         Utf8StringCR deviceId = "",
         UsageType usageType = UsageType::Production,
         Utf8StringCR correlationId = ""
+        ){
+        try { PostFeatureUsage(accessToken, featureEvent, authType, productId, deviceId, usageType, correlationId).get(); }
+        catch(...) { return folly::makeFuture(BentleyStatus::ERROR); }
+        return folly::makeFuture(BentleyStatus::SUCCESS);
+        };
+
+    /**
+     * Sends realtime feature usage
+     * @throw Http::HttpError if the request is rejected
+     * @param accessToken OIDC or SAML token of user to mark feature against. OIDC is preferred
+     * @param featureEvent The feature event to mark
+     * @param authType optional - specify whether the accessToken is OIDC or SAML. Defaults to OIDC which is preferred
+     * @param productId optional - specify the productId for this usage
+     * @param deviceId optional - specify the deviceId for this usage
+     * @param usageType optional - specify the usage type for this usage
+     * @param correlationId optional - specify the correlationId for this usage, must be a GUID
+     */
+    LICENSING_EXPORT folly::Future<folly::Unit> PostFeatureUsage
+        (
+        Utf8StringCR accessToken,
+        FeatureEvent featureEvent,
+        AuthType authType = AuthType::OIDC,
+        int productId = -1,
+        Utf8StringCR deviceId = "",
+        UsageType usageType = UsageType::Production,
+        Utf8StringCR correlationId = "",
+        Utf8StringCR principalId = ""
         );
 
     //! Check entitlement status for a user, important to cache result recommended for session or 4 hours.

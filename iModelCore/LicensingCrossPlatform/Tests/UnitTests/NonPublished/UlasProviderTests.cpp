@@ -189,7 +189,7 @@ TEST_F(UlasProviderTests, SendUsageLogs_Failure)
     try
         {
         const auto result = GetUlasProvider().SendUsageLogs(appInfo, BeFileName("TestName"), Utf8String("1004175881")).get();
-        FAIL() << "Expected an execption to be thrown";
+        FAIL() << "Expected an exception to be thrown";
         }
     catch (HttpError error)
         {
@@ -294,7 +294,7 @@ TEST_F(UlasProviderTests, SendFeatureLogs_Failure)
     try
         {
         const auto result = GetUlasProvider().SendFeatureLogs(appInfo, BeFileName("TestName"), Utf8String("1004175881")).get();
-        FAIL() << "Expected an execption to be thrown";
+        FAIL() << "Expected an exception to be thrown";
         }
     catch (HttpError error)
         {
@@ -327,8 +327,8 @@ TEST_F(UlasProviderTests, RealtimeTrackUsage_WithPrincipalId)
         // Reponse
         return MockHttpHandler::StubHttpResponse();
         });
-
-    EXPECT_SUCCESS(GetUlasProvider().RealtimeTrackUsage("AccessToken", std::atoi(TEST_PRODUCT_ID), "", "DeviceId", BeVersion(1, 0), "ProjectId", UsageType::Production, "", AuthType::OIDC, mockPrincipalId).get());
+    
+    GetUlasProvider().RealtimeTrackUsage("AccessToken", std::atoi(TEST_PRODUCT_ID), "", "DeviceId", BeVersion(1, 0), "ProjectId", UsageType::Production, "", AuthType::OIDC, mockPrincipalId).get();
     }
 
 TEST_F(UlasProviderTests, RealtimeTrackUsage_WithoutPrincipalId)
@@ -351,7 +351,7 @@ TEST_F(UlasProviderTests, RealtimeTrackUsage_WithoutPrincipalId)
             return MockHttpHandler::StubHttpResponse();
         });
 
-    EXPECT_SUCCESS(GetUlasProvider().RealtimeTrackUsage("AccessToken", std::atoi(TEST_PRODUCT_ID), "", "DeviceId", BeVersion(1, 0), "ProjectId", UsageType::Production, "", AuthType::OIDC, mockPrincipalId).get());
+    GetUlasProvider().RealtimeTrackUsage("AccessToken", std::atoi(TEST_PRODUCT_ID), "", "DeviceId", BeVersion(1, 0), "ProjectId", UsageType::Production, "", AuthType::OIDC, mockPrincipalId).get();
 }
 
 TEST_F(UlasProviderTests, RealtimeTrackUsage_Failure)
@@ -369,10 +369,22 @@ TEST_F(UlasProviderTests, RealtimeTrackUsage_Failure)
         return MockHttpHandler::StubHttpFailureResponse();
         });
 
-    EXPECT_ERROR(GetUlasProvider().RealtimeTrackUsage("AccessToken", std::atoi(TEST_PRODUCT_ID), "", "DeviceId", BeVersion(1, 0), "ProjectId", UsageType::Production, "", AuthType::OIDC, "").get());
+    try
+        {
+        GetUlasProvider().RealtimeTrackUsage("AccessToken", std::atoi(TEST_PRODUCT_ID), "", "DeviceId", BeVersion(1, 0), "ProjectId", UsageType::Production, "", AuthType::OIDC, "").get();
+        FAIL() << "Expected an exception to be thrown";
+        }
+    catch (AsyncError error)
+        {
+        }
+    catch (...)
+        {
+        FAIL() << "Expected exception to be an AsyncError";
+        }
+
     }
 
-TEST_F(UlasProviderTests, RealtimeTrackUsageNoFeatureUserData_Success)
+TEST_F(UlasProviderTests, RealtimeMarkFeatureNoFeatureUserData_Success)
     {
     const auto version = BeVersion(1, 0);
     FeatureEvent featureEvent = FeatureEvent("TestFeatureId", version);
@@ -390,10 +402,10 @@ TEST_F(UlasProviderTests, RealtimeTrackUsageNoFeatureUserData_Success)
         return MockHttpHandler::StubHttpResponse();
         });
 
-    EXPECT_SUCCESS(GetUlasProvider().RealtimeMarkFeature("AccessToken", featureEvent, std::atoi(TEST_PRODUCT_ID), "", "DeviceId", UsageType::Production, "", AuthType::OIDC).get());
+    GetUlasProvider().RealtimeMarkFeature("AccessToken", featureEvent, std::atoi(TEST_PRODUCT_ID), "", "DeviceId", UsageType::Production, "", AuthType::OIDC, "").get();
     }
 
-TEST_F(UlasProviderTests, RealtimeTrackUsageNoFeatureUserData_Failure)
+TEST_F(UlasProviderTests, RealtimeMarkFeatureNoFeatureUserData_Failure)
     {
     const auto version = BeVersion(1, 0);
     FeatureEvent featureEvent = FeatureEvent("TestFeatureId", version);
@@ -411,10 +423,21 @@ TEST_F(UlasProviderTests, RealtimeTrackUsageNoFeatureUserData_Failure)
         return MockHttpHandler::StubHttpFailureResponse();
         });
 
-    EXPECT_ERROR(GetUlasProvider().RealtimeMarkFeature("AccessToken", featureEvent, std::atoi(TEST_PRODUCT_ID), "", "DeviceId", UsageType::Production, "", AuthType::OIDC).get());
+    try
+        {
+        GetUlasProvider().RealtimeMarkFeature("AccessToken", featureEvent, std::atoi(TEST_PRODUCT_ID), "", "DeviceId", UsageType::Production, "", AuthType::OIDC, "").get();
+        FAIL() << "Expected an exception to be thrown";
+        }
+    catch (AsyncError error)
+        {
+        }
+    catch (...)
+        {
+        FAIL() << "Expected exception to be an AsyncError";
+        }
     }
 
-TEST_F(UlasProviderTests, RealtimeTrackUsageWithUserData_Success)
+TEST_F(UlasProviderTests, RealtimeMarkFeatureWithUserData_Success)
     {
     const auto version = BeVersion(1, 0);
 
@@ -437,7 +460,39 @@ TEST_F(UlasProviderTests, RealtimeTrackUsageWithUserData_Success)
         return MockHttpHandler::StubHttpResponse();
         });
 
-    EXPECT_SUCCESS(GetUlasProvider().RealtimeMarkFeature("AccessToken", featureEvent, std::atoi(TEST_PRODUCT_ID), "", "DeviceId", UsageType::Production, "", AuthType::OIDC).get());
+    GetUlasProvider().RealtimeMarkFeature("AccessToken", featureEvent, std::atoi(TEST_PRODUCT_ID), "", "DeviceId", UsageType::Production, "", AuthType::OIDC, "").get();
+    }
+
+TEST_F(UlasProviderTests, RealtimeMarkFeatureWithPrincipalId_Success)
+    {
+    const auto version = BeVersion(1, 0);
+
+    FeatureUserDataMapPtr featureAttribute = std::make_shared<FeatureUserDataMap>();
+    featureAttribute->AddAttribute("Manufacturer", "Bentley Systems, Inc.");
+    featureAttribute->AddAttribute("Website", "https://www.w3schools.com");
+    featureAttribute->AddAttribute("Title", "Mobile App");
+    FeatureEvent featureEvent = FeatureEvent(Utf8String("TestFeatureId"), version, featureAttribute);
+
+    Utf8String mockUrl("https://ulasmockurl.bentley.com/feature");
+
+    GetMockBuddi().MockUlasRealtimeFeatureUrl(mockUrl);
+
+    GetMockHttp().ExpectRequests(1);
+
+    auto mockPrincipalId = "A79C4590-90B4-47EB-9239-F5AAE502434D";
+    // return a mock location response
+    GetMockHttp().ForRequest(1, [=](Http::RequestCR request)
+        {
+        // Asserts
+        EXPECT_EQ(mockUrl, request.GetUrl());
+        Json::Value requestJson = Json::Reader::DoParse(request.GetRequestBody()->AsString());
+        EXPECT_TRUE(requestJson.isValidIndex(0));
+        EXPECT_STREQ(mockPrincipalId, requestJson[0]["pid"].asCString());
+
+        return MockHttpHandler::StubHttpResponse();
+        });
+
+    GetUlasProvider().RealtimeMarkFeature("AccessToken", featureEvent, std::atoi(TEST_PRODUCT_ID), "", "DeviceId", UsageType::Production, "", AuthType::OIDC, mockPrincipalId).get();
     }
 
 TEST_F(UlasProviderTests, GetAccessKeyInfo_Success)
