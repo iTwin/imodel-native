@@ -2150,15 +2150,15 @@ void ConvertORDElementXDomain::_DetermineElementParams(DgnClassId& classId, DgnC
             }
 
         /* TODO: Delete existing element if its classId needs to change
+        THIS LOGIC WILL BE HANDLED BY THE DGNV8CONVERTER!
         if (m_converter.IsUpdating())
             {
-            iModelExternalSourceAspect::ElementAndAspectId elementAndAspectId =
-                iModelExternalSourceAspect::FindElementBySourceId(m_converter.GetDgnDb(),
-                    DgnElementId(m_converter.m_ordParams->fileScopeId), "Element",
-                    Utf8PrintfString("%d", v8el.GetElementId()).c_str());
-            if (elementAndAspectId.elementId.IsValid())
+            auto elementAndAspectId = static_cast<DgnDbSync::DgnV8::ChangeDetector&>(
+                m_converter.GetChangeDetector()).FindElementAspectById(
+                    m_converter, v8el, v8mm, nullptr);
+            if (elementAndAspectId.IsValid() && elementAndAspectId.GetElementId().IsValid())
                 {
-                auto existingElementId = elementAndAspectId.elementId;
+                auto existingElementId = elementAndAspectId.GetElementId();
                 auto existingElmCPtr = m_converter.GetDgnDb().Elements().GetElement(existingElementId);
                 if (classId != existingElmCPtr->GetElementClassId())
                     {

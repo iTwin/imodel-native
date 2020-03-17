@@ -58,10 +58,13 @@ bool DynamicSchemaComparer::RequireSchemaUpdate(BENTLEY_NAMESPACE_NAME::ECN::ECS
         for (size_t i = 0; i < diffCount; ++i)
             {
             auto& diffChange = diffChanges[i];
-            if (diffChange.GetType() == ECN::ECChange::Type::Class && diffChange.GetOpCode() == ECN::ECChange::OpCode::Deleted)
+            for (auto& classChangePtr : diffChange.Classes())
                 {
+                if (classChangePtr->GetOpCode() != ECN::ECChange::OpCode::Deleted)
+                    continue;
+
                 BENTLEY_NAMESPACE_NAME::ECN::ECEntityClassP ecClassP;
-                dynamicSchema.CreateEntityClass(ecClassP, diffChange.GetChangeName());
+                dynamicSchema.CreateEntityClass(ecClassP, classChangePtr->GetChangeName());
 
                 ecClassP->AddBaseClass(graphicalElement3dClass);
                 ecClassP->SetClassModifier(ECN::ECClassModifier::Sealed);
