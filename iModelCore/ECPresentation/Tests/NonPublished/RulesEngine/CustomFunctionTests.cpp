@@ -83,19 +83,8 @@ struct CustomFunctionTests : ECPresentationTest
 
     Utf8String GetJoinOptionallyQueryResult(Utf8CP separator, bvector<Utf8CP> parts)
         {
-        Utf8String displayLabel;
-        bvector<LabelDefinitionCPtr> values;
-        for (size_t i = 0; i < parts.size(); ++i)
-            {
-            LabelDefinitionPtr labelDefinition = LabelDefinition::Create(parts[i]);
-            if (!displayLabel.empty())
-                displayLabel.append(separator);
-            displayLabel.append(parts[i]);
-            values.push_back(labelDefinition);
-            }
-
-        std::unique_ptr<LabelDefinition::CompositeRawValue> compositeValue = std::make_unique<LabelDefinition::CompositeRawValue>(separator, values);
-        return LabelDefinition::Create(displayLabel.c_str(), "composite", std::move(compositeValue))->ToJsonString();
+        Utf8String value = BeStringUtilities::Join(parts, separator);
+        return LabelDefinition::Create(value.c_str())->ToJsonString();
         }
     };
 ECDbTestProject* CustomFunctionTests::s_project = nullptr;
@@ -1545,6 +1534,30 @@ TEST_F(CustomFunctionTests, JoinOptionallyRequired)
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), query.c_str()));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
     EXPECT_TRUE(stmt.IsValueNull(0));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Saulius.Skliutas                03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CustomFunctionTests, JoinOptionallyRequired_DoesNotAggregatedNonStringValues)
+    {
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_locale, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
+
+    ECSqlStatement stmt;
+    Utf8String query = "SELECT " FUNCTION_NAME_JoinOptionallyRequired " ('*', 'a', TRUE, ";
+    query.append("'{\"" NAVNODE_LABEL_DEFINITION_DisplayValue "\":\"2020-03-16\", \"" NAVNODE_LABEL_DEFINITION_RawValue "\":\"2020-03-16T00:00:00.000Z\", \"" NAVNODE_LABEL_DEFINITION_TypeName "\":\"dateTime\"}'");
+    query.append(", TRUE) FROM RET.Widget");
+
+    LabelDefinitionPtr stringPart = LabelDefinition::Create("a");
+    DateTime dt;
+    DateTime::FromString(dt, "2020-03-16T00:00:00Z");
+    LabelDefinitionPtr datePart = LabelDefinition::Create(ECValue(dt), "2020-03-16");
+    std::unique_ptr<LabelDefinition::CompositeRawValue> compositeValue(new LabelDefinition::CompositeRawValue("*", { stringPart, datePart }));
+    Utf8String expectedResult = LabelDefinition::Create("a*2020-03-16", std::move(compositeValue))->ToJsonString();
+
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), query.c_str()));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    EXPECT_STREQ(expectedResult.c_str(), stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**

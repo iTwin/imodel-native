@@ -1590,6 +1590,33 @@ struct ParseLocalIdScalar : ECPresentation::ScalarFunction
 +===============+===============+===============+===============+===============+======*/
 struct JoinOptionallyRequiredScalar : ECPresentation::ScalarFunction
     {
+    struct AggregatedStringLabelDefinition
+        {
+        private:
+            Utf8String m_displayValue;
+            Utf8String m_rawValue;
+
+        public:
+            void AddValue(LabelDefinitionCR value, Utf8CP separator)
+                {
+                if (!m_rawValue.empty())
+                    m_rawValue.append(separator);
+                if (!m_displayValue.empty())
+                    m_displayValue.append(separator);
+
+                m_rawValue.append(value.GetRawValue()->AsSimpleValue()->GetValue().GetString());
+                m_displayValue.append(value.GetDisplayValue());
+                }
+            bool Empty() { return m_displayValue.empty() && m_rawValue.empty(); }
+            LabelDefinitionPtr GetValueAndReset()
+                {
+                LabelDefinitionPtr value = LabelDefinition::Create(m_rawValue.c_str(), m_displayValue.c_str());
+                m_displayValue.clear();
+                m_rawValue.clear();
+                return value;
+                }
+        };
+
     JoinOptionallyRequiredScalar(CustomFunctionsManager const& manager)
         : ScalarFunction(FUNCTION_NAME_JoinOptionallyRequired, -1, DbValueType::TextVal, manager)
         {}
@@ -1600,6 +1627,7 @@ struct JoinOptionallyRequiredScalar : ECPresentation::ScalarFunction
         Utf8CP separator = args[0].GetValueText();
 
         bvector<LabelDefinitionCPtr> parts;
+        AggregatedStringLabelDefinition aggregatedValue;
         for (int i = 1; i < nArgs; i += 2)
             {
             Utf8CP valueJsonString = args[i].GetValueText();
@@ -1616,16 +1644,36 @@ struct JoinOptionallyRequiredScalar : ECPresentation::ScalarFunction
                 continue;
                 }
 
-            if (!displayLabel.empty())
+            if (!displayLabel.empty()) 
                 displayLabel.append(separator);
             displayLabel.append(value->GetDisplayValue());
 
-            parts.push_back(value);
+            // aggregate consecutive string label definitions into one
+            if (value->GetTypeName().EqualsI("string")) 
+                {
+                aggregatedValue.AddValue(*value, separator);
+                }
+            else
+                {
+                if (!aggregatedValue.Empty())
+                    parts.push_back(aggregatedValue.GetValueAndReset());
+                parts.push_back(value);
+                }
             }
 
         if (displayLabel.empty())
             {
             ctx.SetResultNull();
+            return;
+            }
+
+        if (!aggregatedValue.Empty())
+            parts.push_back(aggregatedValue.GetValueAndReset());
+
+        if (1 == parts.size())
+            {
+            Utf8String resultJson = parts.front()->ToJsonString();
+            ctx.SetResultText(resultJson.c_str(), resultJson.size(), DbFunction::Context::CopyData::Yes);
             return;
             }
 
