@@ -5,7 +5,7 @@
 #include <DgnDbSync/DgnV8/DgnV8.h> // NB: Must include this first!
 #include <functional>
 #include "PWWorkspaceHelper.h"
-#include "DmsHelper.h"
+#include <iModelDmsSupport/DmsHelper.h>
 #include <iModelDmsSupport/DmsSession.h>
 #include <ProjectWise_InternalSDK/Include/aaatypes.h>
 #include <ProjectWise_InternalSDK/Include/aadmsdef.h>

@@ -1,0 +1,7 @@
+--server-project=123456 
+--server-repository=Test
+--server-environment=DEV
+--server-accessToken="000000000000000000000000000000000000000000000000000" 
+--dms-inputFileUrn="pw:\\app-integration.eastus.cloudapp.azure.com:ProjectWise SaaS\Documents\D{1391cd0d-bd85-4920-8804-eb973ef40a6c}" 
+--dms-datasource="https://app-integration.eastus.cloudapp.azure.com/ws/v2.8/repositories/Bentley.PW--app-integration.eastus.cloudapp.azure.com~3AProjectWise~20SaaS/PW_WSG/Project/8c46d882-4641-4c30-be8e-9e533f6f9df6"
+--dms-type=4

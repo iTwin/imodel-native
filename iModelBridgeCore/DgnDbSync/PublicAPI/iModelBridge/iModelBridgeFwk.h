@@ -231,8 +231,6 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         bool ParsedAny() const {return m_parsedAny;}
         };
 
-    #pragma warning(pop)
-
     struct DmsServerArgs
         {
         WString             m_inputFileUrn;
@@ -252,7 +250,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         iModelDmsSupport::SessionType  m_dmsType;
         static void PrintUsage();
         Utf8String          GetDocumentGuid();
-        DmsServerArgs();
+        IMODEL_BRIDGE_FWK_EXPORT DmsServerArgs();
 
         T_iModelDmsSupport_getInstance*   LoadDmsLibrary(iModelBridgeError& error);
         //void*   ReleaseDmsLibrary();
@@ -260,14 +258,14 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         BentleyStatus ParseEnvironment();
         //! Parse the command-line arguments required by the iModelBridgeFwk itself, and return a vector of pointers to the remaining
         //! arguments (which are presumably the arguments to the bridge).
-        BentleyStatus ParseCommandLine(bvector<WCharCP>& bargptrs, int argc, WCharCP argv[], bool isEncrypted);
+        IMODEL_BRIDGE_FWK_EXPORT  BentleyStatus ParseCommandLine(bvector<WCharCP>& bargptrs, int argc, WCharCP argv[], bool isEncrypted);
 
         //! Validate that all require arguments were supplied and are valid
         BentleyStatus Validate(int argc, WCharCP argv[]);
 
         void SetDgnArg(WString argName, WStringCR arg, bvector<WCharCP>& bargptrs);
         };
-    
+#pragma warning(pop)
     //! Admin that supplies the live repository connection that the fwk has created, plus the bulk insert briefcasemgr that
     //! all bridges should use.
     struct FwkRepoAdmin : DgnPlatformLib::Host::RepositoryAdmin

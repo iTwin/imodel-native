@@ -1,0 +1,90 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+programName = iModelDmsSupportTests
+baseDir =   $(_MakeFilePath)
+
+BEGTEST_INPUT=$(baseDir)
+ALLOW_MSVC_PERMISSIVE=1 # otherwise we get errors Vancouver's header files; hopefully by the time permissive is Microsoft's default, Vancouver will have patched header files.
+
+%include mdl.mki
+
+#dirToSearch = $(BuildContext)iModelDmsSupportTests/
+#%include cincapnd.mki
+
+dmsAPISrc     = $(SrcRoot)imodel02/iModelBridgeCore/dmssupport/Tests/
+
+# We don't want to run the test from the build location because the dependencies are not there.
+GUNITTEST_NOEXEC = 1
+
+BEGTEST_NAME=$(programName)
+BEGTEST_OUTPUT=$(OutputRootDir)build/$(BEGTEST_NAME)/
+%include $(SrcRoot)bsicommon/sharedmki/BeTestSelectHarness.mki
+
+TestsHeaders = $(baseDir)iModelDmsSupportTests.h
+
+# Let all stand-alone tests share the same objects.
+o = $(OutputRootDir)Build/iModelDmsSupport/$(programName)/
+
+
+always:
+    !~@mkdir $(o)
+
+#--------------------------------------------------------------------------------------
+#   Compile the source
+#--------------------------------------------------------------------------------------
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)gtestmain$(oext)               : $(_MakeFilePath)gtestmain.cpp                 $(dmsAPISrc)iModelDmsSupportTests.h  ${MultiCompileDepends}
+
+$(o)iModelDmsSupportTests$(oext)   : $(_MakeFilePath)iModelDmsSupportTests.cpp     $(dmsAPISrc)iModelDmsSupportTests.h  ${MultiCompileDepends}
+
+
+%include MultiCppCompileGo.mki
+
+%undef CPchOpts
+%undef CCPchOpts
+
+#--------------------------------------------------------------------------------------
+#   Create the library
+#--------------------------------------------------------------------------------------
+GUNITTEST_OUT       = $(o)
+GUNITTEST_NAME      = $(programName)
+GUNITTEST_DEST      = $(o)
+GUNITTEST_NTLIBS    = advapi32.lib ole32.lib ws2_32.lib
+GUNITTEST_PATH      = $(o)
+GUNITTEST_SYMB      = $(o)
+
+GTEST_MAIN_IS_SUPPLIED = 1
+
+LOCAL_GUNITTEST_OBJS + $(MultiCompileObjectList)
+LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/*.lib]
+
+LINKER_LIBRARIES            = $(ContextSubpartsLibs)$(libprefix)Bentley$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)WebServicesClient$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BeXml$(libext)
+LINKER_LIBRARIES			+ $(ContextSubpartsLibs)$(libprefix)BeHttp$(libext)
+LINKER_LIBRARIES			+ $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
+LINKER_LIBRARIES			+ $(ContextSubpartsLibs)$(libprefix)iModelHubClient$(libext)
+LINKER_LIBRARIES			+ $(ContextSubpartsLibs)$(stlibprefix)BeJsonCpp$(stlibext)
+LINKER_LIBRARIES			+ $(ContextSubpartsLibs)$(libprefix)iModelBridge$(libext)
+
+
+
+LINKER_LIBRARIES_DELAYLOADED  = $(ContextSubpartsLibs)$(libprefix)iModelDmsSupport$(libext)
+LINKER_LIBRARIES_DELAYLOADED  + $(BuildContext)SubParts/VersionedDgnV8Libs/DgnPlatform.lib
+LINKER_LIBRARIES_DELAYLOADED  + $(BuildContext)SubParts/VersionedDgnV8Libs/Bentley.lib
+LINKER_LIBRARIES_DELAYLOADED  + $(BuildContext)SubParts/VersionedDgnV8Libs/BentleyAllocator.lib
+LINKER_LIBRARIES_DELAYLOADED  + $(BuildContext)SubParts/VersionedDgnV8Libs/BentleyGeom.lib
+LINKER_LIBRARIES_DELAYLOADED  + $(BuildContext)SubParts/VersionedDgnV8Libs/ECObjects.lib
+LINKER_LIBRARIES_DELAYLOADED  + $(BuildContext)SubParts/VersionedDgnV8Libs/RmgrTools.lib
+LINKER_LIBRARIES_DELAYLOADED  + $(BuildContext)SubParts/VersionedDgnV8Libs/RasterCore.lib
+
+%include $(SharedMki)gunittest.mki
+always:
+    ~linkfile "$(BuildContext)Delivery/$(programName).exe=$(o)$(programName).exe"
+
+$(BuildContext)Delivery/iModelDmsSupportTestData/ : $(baseDir)Data/
+    $(LinkFirstDepToFirstTargetAsDirectory)

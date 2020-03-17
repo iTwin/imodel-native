@@ -84,4 +84,32 @@
       <Libs Required="false">Delivery/iModelDmsSupport$(libext)</Libs>
     </Bindings>
   </Part>
+
+  <Part Name="iModelDmsSupportTestsExe" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/iModelDmsSupportTests.mke" OnlyPlatforms="x64">
+    <SubPart PartName="iModelDmsSupport" PartFile="iModelBridgeCore/dmssupport/iModelDmsSupport" Repository="imodel02"/>
+    <SubPart PartName="google_gtest_lib" PartFile="iModelCore/util/gtest/gtest" Repository="imodel02"/>
+    <SubPart PartName="StaticAppData" PartFile="MstnAppData" Repository="miscdev-mstnappdata"/>
+    <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest" Repository="imodel02"/>
+    <SubPart PartName="iModelBridgeFwkLib" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
+    <Bindings>
+      <Files ProductDirectoryName="DgnV8ConverterTestsExe">Delivery/iModelDmsSupportTests.exe</Files>
+      <Directory SourceName="Delivery/iModelDmsSupportTestData" SubPartDirectory="TestData" ProductDirectoryName="DgnDbSync_TestData"/>
+    </Bindings>
+  </Part>
+
+  <Product Name="iModelDmsSupportTests">
+    <SubProduct ProductName="iModelBridgeFwk" Repository="imodel02" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"/>
+    <SubPart PartName="iModelDmsSupportTestsExe"/>
+    <SubPart PartName="StaticAppData" PartFile="MstnAppData" Repository="miscdev-mstnappdata"/>
+    <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
+    <FeatureExclude>imodel02_Workspace_System_Fonts</FeatureExclude>
+    <Directories DirectoryListName="GtestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
+    <Directories DirectoryListName="DgnDbSyncAppCommonDirList" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync" Repository="imodel02"/>
+    <Directories DirectoryListName="DgnV8ConverterDirList"  PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync" Repository="imodel02"/>
+    <Directories DirectoryListName="Tests" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync" Repository="imodel02"/>
+  </Product>
+
+  <Part Name="RuniModelDmsSupportTests" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=iModelDmsSupportTests -dGTEST_NAME=iModelDmsSupportTests">
+    <SubProduct ProductName="iModelDmsSupportTests"/>
+  </Part>
 </BuildContext>

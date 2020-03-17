@@ -26,15 +26,17 @@ struct DmsClient
         Utf8String m_folderId;
         Utf8String m_fileId;
         Utf8String m_repositoryType;
-        bool _ParseInputUrlForPS(Utf8String url);
-        bool _ParseInputUrlForPW(Utf8String url);
-        Utf8PrintfString _CreateQuery(Utf8String datasource = Utf8String(), bool isWSQuery = false);
+        IMODEL_DMSSUPPORT_EXPORT virtual bool _ParseInputUrlForPS(Utf8String url);
+        IMODEL_DMSSUPPORT_EXPORT virtual bool _ParseInputUrlForPW(Utf8String url);
+        IMODEL_DMSSUPPORT_EXPORT virtual Utf8PrintfString _CreateQuery(Utf8String datasource = Utf8String(), bool isWSQuery = false);
 
     public:
-        bool _InitializeSession(Utf8String fileUrl, Utf8String repositoryType);
-        bool _UnInitializeSession();
-        bvector<DmsResponseData> _GetDownloadURLs(Utf8String token, Utf8String datasource = Utf8String());
-        bvector<DmsResponseData> _GetWorkspaceFiles(Utf8String token, Utf8String datasource, DmsResponseData& cfgData);
+        IMODEL_DMSSUPPORT_EXPORT DmsClient() {}
+        IMODEL_DMSSUPPORT_EXPORT virtual ~DmsClient() {}
+        IMODEL_DMSSUPPORT_EXPORT virtual bool _InitializeSession(Utf8String fileUrl, Utf8String repositoryType);
+        IMODEL_DMSSUPPORT_EXPORT virtual bool _UnInitializeSession();
+        IMODEL_DMSSUPPORT_EXPORT virtual bvector<DmsResponseData> _GetDownloadURLs(Utf8String token, Utf8String datasource = Utf8String());
+        IMODEL_DMSSUPPORT_EXPORT virtual bvector<DmsResponseData> _GetWorkspaceFiles(Utf8String token, Utf8String datasource, DmsResponseData& cfgData);
     };
 
 END_BENTLEY_DGN_NAMESPACE

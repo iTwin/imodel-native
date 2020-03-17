@@ -4,8 +4,8 @@
 *--------------------------------------------------------------------------------------------*/
 #include <iModelDmsSupport/DmsSession.h>
 #include "PWWorkspaceHelper.h"
-#include "AzureBlobStorageHelper.h"
-#include "DmsHelper.h"
+#include <iModelDmsSupport/AzureBlobStorageHelper.h>
+#include <iModelDmsSupport/DmsHelper.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 /*---------------------------------------------------------------------------------**//**

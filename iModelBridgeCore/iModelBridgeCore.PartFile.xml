@@ -19,6 +19,7 @@
         <SubPart PartName="RunDgnV8ConverterTests" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync" Repository="imodel02"/>
         <SubPart PartName="RunGtest" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
         <SubProduct ProductName="iModelHubNativeTests" PartFile="iModelCore/WSClient/WSClient" Repository="imodel02"/>
+        <SubPart PartName="RuniModelDmsSupportTests" PartFile="iModelBridgeCore/dmssupport/iModelDmsSupport" Repository="imodel02"/>
     </Part>
 
     <Part Name="iModelBridgeCore.Dev" PrgOutputDir="iModelBridgeCore">

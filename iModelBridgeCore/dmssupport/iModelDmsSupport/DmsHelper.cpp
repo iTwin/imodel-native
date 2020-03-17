@@ -2,7 +2,7 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See COPYRIGHT.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-#include "DmsHelper.h"
+#include <iModelDmsSupport/DmsHelper.h>
 #include <iModelDmsSupport/DmsSession.h>
 #include <Bentley/Desktop/FileSystem.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
@@ -18,16 +18,15 @@ USING_NAMESPACE_BENTLEY_DGN
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool   DmsHelper::_Initialize()
     {
-    if (m_azureHelper != nullptr && m_tokenProvider != nullptr)
+    if (m_azureHelper != nullptr && m_tokenProvider != nullptr && m_dmsClient != nullptr)
         return true;
 
-    m_azureHelper = new AzureBlobStorageHelper();
-    m_azureHelper->_Initialize();
-
     if (!m_callbackUrl.empty())
-        m_tokenProvider = new OidcTokenProvider(m_callbackUrl);
+        _SetDependecy(new OidcTokenProvider(m_callbackUrl), new DmsClient(), new AzureBlobStorageHelper());
     else
-        m_tokenProvider = new OidcStaticTokenProvider(m_accessToken);
+        _SetDependecy(new OidcStaticTokenProvider(m_accessToken), new DmsClient(), new AzureBlobStorageHelper());
+
+    m_azureHelper->_Initialize();
     return true;
     }
 
@@ -41,6 +40,11 @@ bool   DmsHelper::_UnInitialize()
         m_azureHelper->_UnInitialize();
         delete m_azureHelper;
         m_azureHelper = nullptr;
+        }
+    if (m_dmsClient != nullptr)
+        {
+        delete m_dmsClient;
+        m_dmsClient = nullptr;
         }
     if (m_tokenProvider != nullptr)
         {
@@ -133,11 +137,10 @@ bool            DmsHelper::_StageDocuments(BeFileNameR fileLocation, bool downlo
     _Initialize();
 
     //Parse URL
-    DmsClient dmsClient;
-    if (!dmsClient._InitializeSession(m_repositoryUrl, m_repositoryType))
+    if (!m_dmsClient->_InitializeSession(m_repositoryUrl, m_repositoryType))
         {
         LOG.errorv("Error while parsing url");
-        dmsClient._UnInitializeSession();
+        m_dmsClient->_UnInitializeSession();
         return false;
         }
     //Get OIDC token
@@ -149,12 +152,12 @@ bool            DmsHelper::_StageDocuments(BeFileNameR fileLocation, bool downlo
     bvector<DmsResponseData> downloadUrls;
     // download requested files
     if (!downloadWS)
-        downloadUrls = dmsClient._GetDownloadURLs(token, m_datasource);
+        downloadUrls = m_dmsClient->_GetDownloadURLs(token, m_datasource);
     else
         {
         // download workspace
         DmsResponseData cfgData;
-        downloadUrls = dmsClient._GetWorkspaceFiles(token, m_datasource, cfgData);
+        downloadUrls = m_dmsClient->_GetWorkspaceFiles(token, m_datasource, cfgData);
 
         if (!downloadUrls.empty())
             {
@@ -168,10 +171,10 @@ bool            DmsHelper::_StageDocuments(BeFileNameR fileLocation, bool downlo
     if (downloadUrls.empty())
         {
         LOG.errorv("Error while getting download urls");
-        dmsClient._UnInitializeSession();
+        m_dmsClient->_UnInitializeSession();
         return false;
         }
-    dmsClient._UnInitializeSession();
+    m_dmsClient->_UnInitializeSession();
 
     //Download files
     bvector<AsyncTaskPtr<AzureResult>> stageFileRequests;

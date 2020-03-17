@@ -2,7 +2,7 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See COPYRIGHT.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-#include "AzureBlobStorageHelper.h"
+#include <iModelDmsSupport/AzureBlobStorageHelper.h>
 #include <iModelDmsSupport/DmsSession.h>
 #include <Bentley/Desktop/FileSystem.h>
 

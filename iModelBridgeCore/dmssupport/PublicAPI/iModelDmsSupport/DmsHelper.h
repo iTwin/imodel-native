@@ -9,7 +9,6 @@
 #include <WebServices/iModelHub/Client/OidcTokenProvider.h>
 #include "AzureBlobStorageHelper.h"
 #include "DmsClient.h"
-
 USING_NAMESPACE_BENTLEY_IMODELHUB
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -26,33 +25,40 @@ struct DmsHelper : public IDmsSupport
         AzureBlobStorageHelper* m_azureHelper = nullptr;
         IConnectTokenProvider* m_tokenProvider = nullptr;
         int m_maxRetries;
+        DmsClient* m_dmsClient = nullptr;
         Utf8String GetToken();
         bool CreateCFGFile(BeFileNameCR fileLocation, DmsResponseData fileData);
-        virtual bool _Initialize() override;
-        virtual bool _UnInitialize() override;
-        virtual bool _UnInitializeSession() override;
+        IMODEL_DMSSUPPORT_EXPORT virtual bool _Initialize() override;
+        IMODEL_DMSSUPPORT_EXPORT virtual bool _UnInitialize() override;
+        IMODEL_DMSSUPPORT_EXPORT virtual bool _UnInitializeSession() override;
 
-        virtual bool _InitializeSessionFromDataSource(WStringCR dataSource) override
+        IMODEL_DMSSUPPORT_EXPORT virtual bool _InitializeSessionFromDataSource(WStringCR dataSource) override
             {
             return true;
             }
 
-
     public:
-        DmsHelper(Utf8StringCR callBackurl, Utf8StringCR accessToken, int maxRetries , Utf8StringCR repositoryType = Utf8String(), Utf8StringCR datasource = Utf8String());
-        ~DmsHelper();
-        virtual bool _InitializeSession(WStringCR pwMoniker) override;
+        IMODEL_DMSSUPPORT_EXPORT DmsHelper(Utf8StringCR callBackurl, Utf8StringCR accessToken, int maxRetries, Utf8StringCR repositoryType = Utf8String(), Utf8StringCR datasource = Utf8String());
+        IMODEL_DMSSUPPORT_EXPORT ~DmsHelper();
+        IMODEL_DMSSUPPORT_EXPORT virtual bool _InitializeSession(WStringCR pwMoniker) override;
         virtual StatusInt _FetchWorkspace(BeFileNameR workspaceCfgFile, int folderId, int documentId, BeFileNameCR destination, bool isv8i, bvector<WString> const& additonalFilePatterns) override
             {
             return SUCCESS;
             }
-        virtual StatusInt _FetchWorkspace(BeFileNameR workspaceCfgFile, WStringCR pWMoniker, BeFileNameCR workspaceDir, bool isv8i, bvector<WString> const& additonalFilePatterns) override;
+        IMODEL_DMSSUPPORT_EXPORT virtual StatusInt _FetchWorkspace(BeFileNameR workspaceCfgFile, WStringCR pWMoniker, BeFileNameCR workspaceDir, bool isv8i, bvector<WString> const& additonalFilePatterns) override;
         virtual  void SetApplicationResourcePath(BeFileNameCR applicationResourcePath) override
             {}
-        virtual Bentley::DgnPlatform::DgnDocumentManager* _GetDgnDocumentManager() override;
-        virtual bool _StageInputFile(BeFileNameCR fileLocation) override;
-        virtual bool _StageDocuments(BeFileNameR fileLocation, bool downloadWS = false, bool downloadRef = false);
-        WString _GetFolderId(WStringCR pwMoniker = WString());
+        IMODEL_DMSSUPPORT_EXPORT virtual Bentley::DgnPlatform::DgnDocumentManager* _GetDgnDocumentManager() override;
+        IMODEL_DMSSUPPORT_EXPORT virtual bool _StageInputFile(BeFileNameCR fileLocation) override;
+        IMODEL_DMSSUPPORT_EXPORT virtual bool _StageDocuments(BeFileNameR fileLocation, bool downloadWS = false, bool downloadRef = false);
+        IMODEL_DMSSUPPORT_EXPORT WString _GetFolderId(WStringCR pwMoniker = WString());
+
+        void _SetDependecy(IConnectTokenProvider* tokenProvider, DmsClient* dmsClient, AzureBlobStorageHelper* azureHelper)
+            {
+            m_tokenProvider = tokenProvider;
+            m_dmsClient = dmsClient;
+            m_azureHelper = azureHelper;
+            }
     };
 
 END_BENTLEY_DGN_NAMESPACE
