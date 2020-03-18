@@ -1445,7 +1445,7 @@ public:
         }
 
     Napi::Value QueryFirstTxnId(Napi::CallbackInfo const& info) {
-        OPTIONAL_ARGUMENT_BOOL(0, allowCrossSessions, false, Env().Undefined());
+        OPTIONAL_ARGUMENT_BOOL(0, allowCrossSessions, true, Env().Undefined()); // default to true for backwards compatibility
         auto& txns = m_dgndb->Txns();
         TxnManager::TxnId startTxnId = allowCrossSessions ? txns.QueryNextTxnId(TxnManager::TxnId(0)) : txns.GetSessionStartId();
         return toJsString(Env(), TxnIdToString(startTxnId));
