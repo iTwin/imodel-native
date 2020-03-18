@@ -30,13 +30,13 @@ private:
     VersionsManager(IWSRepositoryClientPtr reposiroryClient, GlobalRequestOptionsPtr globalRequestOptionsPtr, iModelConnectionCP connection)
         : m_connection(connection), m_wsRepositoryClient(reposiroryClient), m_globalRequestOptionsPtr(globalRequestOptionsPtr){};
 
-    WSQuery CreateChangeSetsBetweenVersionsQuery(Utf8StringCR sourceVersionId, Utf8String destinationVersionsId, BeSQLite::BeGuidCR fileId) const;
+    WSQuery CreateChangeSetsBetweenVersionsQuery(Utf8StringCR sourceVersionId, Utf8String destinationVersionsId) const;
 
-    WSQuery CreateVersionChangeSetsQuery(Utf8StringCR versionId, BeSQLite::BeGuidCR fileId) const;
+    WSQuery CreateVersionChangeSetsQuery(Utf8StringCR versionId) const;
 
-    WSQuery CreateChangeSetsAfterVersionQuery(Utf8StringCR versionId, BeSQLite::BeGuidCR fileId) const;
+    WSQuery CreateChangeSetsAfterVersionQuery(Utf8StringCR versionId) const;
 
-    WSQuery CreateChangeSetsBetweenVersionAndChangeSetQuery(Utf8StringCR versionId, Utf8StringCR changeSetId, BeSQLite::BeGuidCR fileId) const;
+    WSQuery CreateChangeSetsBetweenVersionAndChangeSetQuery(Utf8StringCR versionId, Utf8StringCR changeSetId) const;
 
     VersionsManager() {};
 

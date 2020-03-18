@@ -19,7 +19,6 @@ Json::Value CreateLockInstanceJson
 (
 bvector<BeInt64Id> const& ids,
 BeBriefcaseId            briefcaseId,
-BeGuidCR                 seedFileId,
 Utf8StringCR             releasedWithChangeSetId,
 LockableType             type,
 LockLevel                level,
@@ -29,7 +28,6 @@ bool                     queryOnly
     Json::Value properties;
 
     properties[ServerSchema::Property::BriefcaseId]           = briefcaseId.GetValue();
-    properties[ServerSchema::Property::SeedFileId]            = seedFileId.ToString();
     properties[ServerSchema::Property::ReleasedWithChangeSet] = releasedWithChangeSetId;
     properties[ServerSchema::Property::QueryOnly]             = queryOnly;
     RepositoryJson::LockableTypeToJson(properties[ServerSchema::Property::LockType], type);
@@ -54,7 +52,6 @@ WSChangeset&                     changeset,
 WSChangeset::ChangeState const&  changeState,
 bvector<BeInt64Id> const&        ids,
 BeBriefcaseId                    briefcaseId,
-BeGuidCR                         seedFileId,
 Utf8StringCR                     releasedWithChangeSetId,
 LockableType                     type,
 LockLevel                        level,
@@ -64,7 +61,7 @@ bool                             queryOnly
     if (ids.empty())
         return;
     ObjectId lockObject(ServerSchema::Schema::iModel, ServerSchema::Class::MultiLock, "MultiLock");
-    auto json = std::make_shared<Json::Value>(CreateLockInstanceJson(ids, briefcaseId, seedFileId, releasedWithChangeSetId, type, level, queryOnly));
+    auto json = std::make_shared<Json::Value>(CreateLockInstanceJson(ids, briefcaseId, releasedWithChangeSetId, type, level, queryOnly));
     changeset.AddInstance(lockObject, changeState, json);
     }
 
@@ -88,13 +85,12 @@ std::shared_ptr<WSChangeset>    changeset,
 const WSChangeset::ChangeState& changeState,
 bvector<BeInt64Id>              objects[],
 BeBriefcaseId                   briefcaseId,
-BeGuidCR                        seedFileId,
 Utf8StringCR                    releasedWithChangeSetId,
 bool                            queryOnly
 )
     {
     for (int i = 0; i < LOCKS_GROUPS_COUNT; ++i)
-        AddToInstance(*changeset, changeState, objects[i], briefcaseId, seedFileId, releasedWithChangeSetId, static_cast<LockableType>(i / 3),
+        AddToInstance(*changeset, changeState, objects[i], briefcaseId, releasedWithChangeSetId, static_cast<LockableType>(i / 3),
             static_cast<LockLevel>(i % 3), queryOnly);
 
     ClearBuffer(objects);
@@ -136,12 +132,12 @@ bool                            queryOnly
 
         if (!chunkedChangeset.AddInstance())
             {
-            FlushLocksToChangeset(chunkedChangeset.GetCurrentChangeset(), changeState, objects, briefcaseId, seedFileId, releasedWithChangeSetId, queryOnly);
+            FlushLocksToChangeset(chunkedChangeset.GetCurrentChangeset(), changeState, objects, briefcaseId, releasedWithChangeSetId, queryOnly);
             chunkedChangeset.StartNewChangeset();
             }
 
         AddLockToBuffer(objects, lock);
         }
 
-    FlushLocksToChangeset(chunkedChangeset.GetCurrentChangeset(), changeState, objects, briefcaseId, seedFileId, releasedWithChangeSetId, queryOnly);
+    FlushLocksToChangeset(chunkedChangeset.GetCurrentChangeset(), changeState, objects, briefcaseId, releasedWithChangeSetId, queryOnly);
     }

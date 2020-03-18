@@ -126,26 +126,6 @@ void ChangeSetQuery::SelectDownloadAccessKey()
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             10/2019
-//---------------------------------------------------------------------------------------
-bool ChangeSetQuery::FilterBySeedFileId(BeSQLite::BeGuidCR seedFileId)
-    {
-    if (!seedFileId.IsValid())
-        return false;
-
-    Utf8String queryFilter;
-    Utf8StringCR existingFilter = m_wsQuery.GetFilter();
-
-    if (!existingFilter.empty())
-        queryFilter.Sprintf("%s+and+", existingFilter.c_str());
-
-    queryFilter.Sprintf("%s%s+eq+'%s'", queryFilter.c_str(), ServerSchema::Property::SeedFileId, seedFileId.ToString().c_str());
-    m_wsQuery.SetFilter(queryFilter);
-
-    return true;
-    }
-
-//---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             11/2019
 //---------------------------------------------------------------------------------------
 WSQuery ChangeSetQuery::GetWSQuery()

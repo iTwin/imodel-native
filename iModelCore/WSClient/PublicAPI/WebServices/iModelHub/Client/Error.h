@@ -62,10 +62,10 @@ public:
         JobSchedulingFailed,
         ConflictsAggregate,
         FailedToGetProjectById,
-        ContextDoesNotExist,
 
         DatabaseOperationFailed,
         SQLiteOperationFailed,
+        ContextDoesNotExist,
 
         //Long Running Processes Errors
         FileIsNotYetInitialized = 100,

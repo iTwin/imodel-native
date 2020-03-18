@@ -30,7 +30,6 @@ PushChangeSetArgumentsPtr pushArguments
     changeSet->GetRevisionChangesFile().GetFileSize(size);
     properties[ServerSchema::Property::FileSize] = Json::Value(size);
     properties[ServerSchema::Property::ParentId] = changeSet->GetParentId();
-    properties[ServerSchema::Property::SeedFileId] = changeSet->GetDbGuid();
     properties[ServerSchema::Property::BriefcaseId] = briefcaseId.GetValue();
     properties[ServerSchema::Property::IsUploaded] = false;
     properties[ServerSchema::Property::ContainingChanges] = static_cast<int>(pushArguments->GetContainingChanges());

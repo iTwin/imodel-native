@@ -20,7 +20,6 @@ private:
     friend struct iModelConnection;
     WSQuery m_wsQuery;
 
-    bool FilterBySeedFileId(BeSQLite::BeGuidCR seedFileId);
     void SelectDownloadAccessKey();
 public:
     //! Create an instance of bridge properties.

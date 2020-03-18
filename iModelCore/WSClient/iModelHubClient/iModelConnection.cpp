@@ -1365,7 +1365,6 @@ ICancellationTokenPtr cancellationToken
     {
     ChangeSetQuery changeSetQuery;
     changeSetQuery.FilterChangeSetsAfterId(changeSetId);
-    changeSetQuery.FilterBySeedFileId(fileId);
 
     if (loadAccessKey)
         changeSetQuery.SelectDownloadAccessKey();
@@ -3054,7 +3053,6 @@ BeSQLite::BeGuidCR fileId
     {
     ChangeSetQuery changeSetQuery;
     changeSetQuery.FilterChangeSetsBetween(firstchangeSetId, secondChangeSetId);
-    changeSetQuery.FilterBySeedFileId(fileId);
 
     return changeSetQuery;
     }
