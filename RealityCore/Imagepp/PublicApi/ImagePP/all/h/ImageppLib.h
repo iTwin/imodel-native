@@ -316,6 +316,11 @@ public:
     virtual bool    _IsErMapperUseFeetInsteadofSurveyFeet() const                           {return false;}
 
     /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Marc.Bedard                     02/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual bool    _IsErMapperUsedDesignFileUnitInsteadOfRaster(double &factorFileToMeters) const { factorFileToMeters = 1.0;  return false; }
+
+    /*---------------------------------------------------------------------------------**//**
     * Target maximum memory cache size for ErMapper (ECW) raster format
     * @param maxMemorySize : Target maximum memory cache size
     * @return true if you want to initialize library with maxMemorySize, false to use default library value (maxMemorySize param ignored)

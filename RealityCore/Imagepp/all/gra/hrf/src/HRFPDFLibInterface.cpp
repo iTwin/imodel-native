@@ -117,13 +117,15 @@ void HRFPDFLibInterface::GetMaxResolutionSize(const PDDoc pi_pDoc,
     ASFixedMatrix Matrix;
     PDPageGetFlippedMatrix(Page, &Matrix);
 
-   
-    double maxOffsetSize = MAX( ASFixedToFloat(Matrix.h), ASFixedToFloat(Matrix.v));
-    if (maxOffsetSize==0)
-        maxOffsetSize=MaxPageSize;
+    //Fix TFS#489722; We should never have more than 32767 (16Bit integer value) when computing values for PDF API
+    double scaleAdjustmentWidth  = (ASFixedToFloat(Matrix.h)!=0) ? fabs(PageWidth / ASFixedToFloat(Matrix.h)) : 1.0;
+    double scaleAdjustmentHeight = (ASFixedToFloat(Matrix.v)!=0) ? fabs(PageHeight / ASFixedToFloat(Matrix.v)) : 1.0;
 
-    po_maxResSize = (uint32_t)( (32767.0 * MaxPageSize / maxOffsetSize)/ dpiConvertScaleFactor);
+    double scaleAdjustment = MIN(scaleAdjustmentWidth, scaleAdjustmentHeight);
+    if (scaleAdjustment > 1.0)
+        scaleAdjustment=1.0;
 
+    po_maxResSize = (UInt32)( (32767.0 * scaleAdjustment)/ dpiConvertScaleFactor);
 
     PDPageRelease(Page);
     }
@@ -1310,6 +1312,21 @@ void HRFPDFLibInterface::GetDimensionForDWGUnderlay(const PDDoc                p
                 }
             }                   
         }
+    else
+        {
+        //Fix TFS #771306:PDF did not display a correct size when the scale is other than 1.
+        uint32_t po_rWidth, po_rHeight;
+        double   po_rDPI;
+
+        PageSize(pi_pDoc, pi_Page, po_rWidth, po_rHeight, po_rDPI);
+
+        po_xDimension = (double)po_rWidth / po_rDPI;
+        po_yDimension = (double)po_rHeight / po_rDPI;
+
+        PDPageRelease(Page);
+
+        return;
+        }
 
     po_xDimension *= scaleX;
     po_yDimension *= scaleY;        
@@ -1690,7 +1707,7 @@ bool HRFPDFLibInterface::GetGeoreference(const CosObj&                  pi_rMeas
                 // and this will result in a conversion problem.
 
                 bool  isGeographic = false;
-                if ((pi_rpGeocoding != NULL) && (pi_rpGeocoding->IsValid()))
+                if ((pi_rpGeocoding != NULL) && (pi_rpGeocoding->IsValid()) && (pi_rpGeocoding->GetBaseGCS() != NULL))
                     isGeographic = (!pi_rpGeocoding->IsProjected());
 
                 if (isGeographic)

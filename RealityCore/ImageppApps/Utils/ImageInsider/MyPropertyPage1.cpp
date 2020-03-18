@@ -1617,11 +1617,11 @@ void CMyPropertyPage3::OnStartBench()
     {
         // Use Env for the location
         WChar pDir[MAX_PATH + MAX_PATH];
-
+        size_t strSize;
         // Try to get the HMR temp directory ("HMRTempDirectory")
-        if (_tgetenv_s (0, pDir, MAX_PATH + MAX_PATH, _TEXT("HMRTempDirectory")) == 0 ||
-            _tgetenv_s (0, pDir, MAX_PATH + MAX_PATH, _TEXT("TMP")) == 0       ||
-            _tgetenv_s (0, pDir, MAX_PATH + MAX_PATH, _TEXT("TEMP")) == 0      )
+        if (_tgetenv_s (&strSize, pDir, MAX_PATH + MAX_PATH, _TEXT("HMRTempDirectory")) == 0 ||
+            _tgetenv_s (&strSize, pDir, MAX_PATH + MAX_PATH, _TEXT("TMP")) == 0       ||
+            _tgetenv_s (&strSize, pDir, MAX_PATH + MAX_PATH, _TEXT("TEMP")) == 0      )
         {
             HCURSOR TheCursor = ::SetCursor(LoadCursor(NULL, IDC_WAIT));
 

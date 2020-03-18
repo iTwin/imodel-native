@@ -1307,6 +1307,44 @@ void HRFErMapperSupportedFile::CreateDescriptors ()
     }
 
 //-----------------------------------------------------------------------------
+// GetUnitsFromFile
+//-----------------------------------------------------------------------------
+bool HRFErMapperSupportedFile::GetUnitsFromFile(double& factorModelToMeter, AString& osUnits) const
+    {
+    bool isUnitDefinedInFile(false);
+    //DMx ECW SDK 5.0 support Geotiff Tag --> Version 3
+    //   Should we extract geocoding from geotiff tag?
+    if (m_pNcsObjs->m_pFileInfo->eCellSizeUnits == ECW_CELL_UNITS_FEET)
+        {
+        if (ImageppLib::GetHost().GetImageppLibAdmin()._IsErMapperUseFeetInsteadofSurveyFeet())
+            {
+            factorModelToMeter = 0.3048000000;//  meters by international feet.
+            osUnits = "IFEET";
+            isUnitDefinedInFile = true;
+            }
+        else
+            {
+            factorModelToMeter = 12000.0 / 39370.0; //0.30480060960121919 meters by survey feet.
+            osUnits = "FEET";
+            isUnitDefinedInFile = true;
+            }
+        }
+    else if (m_pNcsObjs->m_pFileInfo->eCellSizeUnits == ECW_CELL_UNITS_METERS)
+        {
+        factorModelToMeter = 1.0;
+        osUnits = "METERS";
+        isUnitDefinedInFile = true;
+        }
+    else if (m_pNcsObjs->m_pFileInfo->eCellSizeUnits == ECW_CELL_UNITS_DEGREES)
+        {
+        factorModelToMeter = 1.0;
+        osUnits = "DEGREES";
+        isUnitDefinedInFile = true;
+        }
+    return isUnitDefinedInFile;
+    }
+
+//-----------------------------------------------------------------------------
 // GetTagInfo
 // Private
 // Get a list of relevant tags found embedded in the file.
@@ -1317,30 +1355,13 @@ GeoCoordinates::BaseGCSPtr HRFErMapperSupportedFile::ExtractGeocodingInformation
 
 //DMx ECW SDK 5.0 support Geotiff Tag --> Version 3
 //   Should we extract geocoding from geotiff tag?
-    if (m_pNcsObjs->m_pFileInfo->eCellSizeUnits == ECW_CELL_UNITS_FEET )
-        {
-        if (ImageppLib::GetHost().GetImageppLibAdmin()._IsErMapperUseFeetInsteadofSurveyFeet())
-            {
-            factorModelToMeter = 0.3048000000;//  meters by international feet.
-            osUnits = "IFEET";
-            }
-        else
-            {
-            factorModelToMeter = 12000.0 / 39370.0; //0.30480060960121919 meters by survey feet.
-            osUnits = "FEET";
-            }
-        }
-    else if (m_pNcsObjs->m_pFileInfo->eCellSizeUnits == ECW_CELL_UNITS_METERS)
-        {
-        factorModelToMeter=1.0;
-        osUnits = "METERS";
-        }
-    else if (m_pNcsObjs->m_pFileInfo->eCellSizeUnits == ECW_CELL_UNITS_DEGREES)
-        {
-        factorModelToMeter = 1.0;
-        osUnits = "DEGREES";
-        }
+    GetUnitsFromFile(factorModelToMeter, osUnits);
 
+    double defaultFactorFileToMeter(1.0);
+    if (ImageppLib::GetHost().GetImageppLibAdmin()._IsErMapperUsedDesignFileUnitInsteadOfRaster(defaultFactorFileToMeter))
+        {
+        factorModelToMeter = defaultFactorFileToMeter;
+        }
     uint32_t EPSGCodeFomrERLibrary = GetEPSGFromProjectionAndDatum(m_pNcsObjs->m_pFileInfo->szProjection, m_pNcsObjs->m_pFileInfo->szDatum);
     GeoCoordinates::BaseGCSPtr pBaseGCS = HCPGCoordUtility::CreateRasterGcsFromERSIDS(EPSGCodeFomrERLibrary, m_pNcsObjs->m_pFileInfo->szProjection, m_pNcsObjs->m_pFileInfo->szDatum, osUnits.c_str());
 

@@ -53,7 +53,10 @@ RasterTestInfo::RasterTestInfo(BeFileNameCR rasterPath)
 
 // Probably not valid on non windows platforms.
 #ifndef BENTLEY_WINRT
-    m_computerName = getenv("COMPUTERNAME");
+    char str[MAX_PATH + MAX_PATH];
+    size_t strSize;
+    if (getenv_s(&strSize, str, MAX_PATH + MAX_PATH, "COMPUTERNAME") == 0)
+        m_computerName = str;
 #endif
     }
 
@@ -113,7 +116,9 @@ bool RasterTestInfo::Load()
 bool RasterTestInfo::Store()
     {
     time_t time = (time_t) (BeTimeUtilities::GetCurrentTimeAsUnixMillis() / 1000.0); time;  // Convert in second   
-    Utf8String timeString = ctime(&time);
+    char bufTime[32] = { 0 };
+    ctime_s(bufTime ,32, &time);
+    Utf8String timeString(bufTime);
     timeString.Trim();
 
     Json::Value value;

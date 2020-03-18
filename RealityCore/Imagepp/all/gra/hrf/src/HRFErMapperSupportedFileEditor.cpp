@@ -812,7 +812,7 @@ class ERMapperExporter
                     else if (EPSGCode != 0) // the function NCSGetProjectionAndDatum returns an error now
                         {                   // as a workaround, ECW support suggest to do that.
                         char defaultStr[64];
-                        sprintf_s(defaultStr, 63, "epsg:%d", EPSGCode);
+                        sprintf_s(defaultStr, 63, "epsg:%u", EPSGCode);
                         strcpy(m_pCompressClient->szProjection, defaultStr);
                         strcpy(m_pCompressClient->szDatum, defaultStr);
                         }

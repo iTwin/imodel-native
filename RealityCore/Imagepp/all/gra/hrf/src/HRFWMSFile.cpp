@@ -804,7 +804,13 @@ void HRFWMSFile::ReadWMS_1_1(BeXmlNodeP pi_pBentleyWMSFileNode)
     m_BBoxMaxX = 0.0;
     m_BBoxMaxY = 0.0;
 
-    m_BaseRequest = "SERVICE=WMS&REQUEST=GetMap";
+    // TFS #145512: it has been decided to always add "SERVICE=WMS" but make sure we don't add it when it is already present(#TFS 630573).
+    WString tmp;
+    BeStringUtilities::Utf8ToWChar(tmp, m_ServerURL.c_str());
+    if (std::string::npos == tmp.FindI(L"SERVICE=WMS"))
+        m_BaseRequest = "SERVICE=WMS&REQUEST=GetMap";
+    else
+        m_BaseRequest = "REQUEST=GetMap";
 
     for(BeXmlNodeP pSubNode = pChildNode->GetFirstChild (); NULL != pSubNode; pSubNode = pSubNode->GetNextSibling())
         {
@@ -1004,7 +1010,13 @@ void HRFWMSFile::ReadWMS_1_2(BeXmlNodeP pi_pBentleyWMSFileNode, Utf8String const
         throw HRFMissingParameterException(GetURL()->GetURL(),
                                         "REQUEST");
 
-    m_BaseRequest = "SERVICE=WMS&REQUEST=GetMap";
+    // TFS #145512: it has been decided to always add "SERVICE=WMS" but make sure we don't add it when it is already present(#TFS 630573).
+    WString tmp;
+    BeStringUtilities::Utf8ToWChar(tmp, m_ServerURL.c_str());
+    if (std::string::npos == tmp.FindI(L"SERVICE=WMS"))
+        m_BaseRequest = "SERVICE=WMS&REQUEST=GetMap";
+    else
+        m_BaseRequest = "REQUEST=GetMap";
 
 
     // We need to extract the WMS version in order to correctly form the SRS or CRS request (MWS 1.3 requires CRS)

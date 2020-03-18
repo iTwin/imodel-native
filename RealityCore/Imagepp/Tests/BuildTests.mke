@@ -23,6 +23,8 @@ o = $(PartBuildDir)$(BEGTEST_NAME)/
 #    BEGTEST_API = $(BuildContext)SubParts/PublishedApi/Bentley/
 #%endif
 
+CCCompOpts + -D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING
+
 %include $(SrcRoot)bsicommon/sharedmki/DetectAndCompileUnitTests.mki
 
 # Deliver test objs

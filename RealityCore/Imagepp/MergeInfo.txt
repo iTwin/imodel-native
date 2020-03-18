@@ -27,4 +27,18 @@ Revision
 4433	TFS:1024162 Add Support for Raster DEM GRD format, it is the Surfer Grid File Format.
 4432	TFS:1024162 Add Support for Raster DEM GRD format, it is the Surfer Grid File Format.
 4431	TFS#1022127 Large TIFF files fail to display.
-4430	 BF:TFS #755734:[Crash] Exiting MS leads in crash Raster.
+4430	BF:TFS #755734:[Crash] Exiting MS leads in crash Raster.
+
+4429	TFS#920311 - add an admin method to imagePP and rastercore to handle the case where we want to use design file unit instead of unit stored in ecw and jp2 file.
+4426	Done by lib
+4425	Done by lib
+4424	Done by lib
+4423	Done by lib
+4420	Done by lib
+4418	Done by lib
+4415	EF - TFS#967913 REGRESSION Pdf attached in Raster Manager was not at proper location. V8i was correct. Unit interpretation problem.
+4403	Do nothing ?
+4402	"
+4401	TFS#630573  Don't add "SERVICE=WMS" when already present.
+4399	Do nothing - Redesign
+4397	TFS#805436: fix decompression of 16 bits tif lzw with predicate = 2

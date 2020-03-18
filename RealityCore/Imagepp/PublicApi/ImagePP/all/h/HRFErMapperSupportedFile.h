@@ -118,6 +118,7 @@ protected:
 
     void                    BuildTransfoModelMatrix(HFCPtr<HGF2DTransfoModel>&     po_prTranfoModel);
 
+    bool                    GetUnitsFromFile(double &factorModelToMeter, AString& osUnits) const;
     GeoCoordinates::BaseGCSPtr
                             ExtractGeocodingInformation(double & factorModelToMeter) const;
 

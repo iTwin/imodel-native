@@ -915,9 +915,8 @@ bool HRFcTiffCreator::ValidatePageDirectory(HTIFFFile* pi_pTiffFilePtr, uint32_t
 
     if (bResult && !EmptyPage)
         {
-        uint32_t DirOffset;
         // To detect if it is a cTiff file, verify if the private tag is present
-        if (pi_pTiffFilePtr->GetField (HMR2_IMAGEINFORMATION, &DirOffset))
+        if (pi_pTiffFilePtr->TagIsPresent(HMR2_IMAGEINFORMATION))
             {
             // validate each pages
             Byte* pTransPalette = 0;
@@ -1569,137 +1568,6 @@ void HRFcTiffFile::CreateDescriptors()
         }
     }
 
-//-----------------------------------------------------------------------------
-// Protected
-// CreateDescriptors
-//-----------------------------------------------------------------------------
-/*
-void HRFcTiffFile::ReloadDescriptors()
-{
-    // Lock the sister file for the Write PrivateDirectory method
-    HRFLockManager SisterFileLock (GetSharingControl());
-
-    GetFilePtr()->ReadDirectories();
-
-    // Unlock the sister file
-    SisterFileLock.Unlock();
-
-    char*   pTileFlags;
-
-    UInt32  PreviousDirectory = GetFilePtr()->CurrentDirectory();
-
-    // Reload Flags to the descriptor for each page
-    for (UInt32 Page=0; Page < CountPages(); Page++)
-    {
-        // If directory not present, Add it.
-        if (!GetFilePtr()->SetDirectory(HTIFFFile::HMR_DIRECTORY))
-            GetFilePtr()->AddHMRDirectory(HMR2_IMAGEINFORMATION);
-
-        // Get TileFlags
-        if (GetFilePtr()->GetField(HMR2_TILEFLAG, &pTileFlags))
-        {
-            m_iTiffTileFlagsLength = strlen(pTileFlags)+1;
-            if (memcmp (m_piTiffTileFlags, pTileFlags, m_iTiffTileFlagsLength) != 0)
-            {
-
-                m_piTiffTileFlags = new Byte[m_iTiffTileFlagsLength];
-                memcpy(m_piTiffTileFlags, pTileFlags, m_iTiffTileFlagsLength * sizeof(char));
-                HFCPtr<HRFPageDescriptor> pPageDescriptor = GetPageDescriptor(Page);
-                UInt32 CurDataFlagsResolution = 0;
-
-                // For each Resolution...
-                for (UInt32 i=0; i<pPageDescriptor->CountResolutions(); i++)
-                {
-                    // Select the page and resolution
-                    SetImageInSubImage (GetIndexOfPage(Page)+i);
-
-                    HFCPtr<HRFResolutionDescriptor> pResDescriptor = pPageDescriptor->GetResolutionDescriptor(i);
-                    pResDescriptor->SetBlocksDataFlag((HRFDataFlag*)&(m_piTiffTileFlags[CurDataFlagsResolution]));
-
-                    // Incr list of DataFlag
-                    // + 1 because we have a marker to separate each resolution.
-                    if (pResDescriptor->GetBlockType() == HRFBlockType::TILE)
-                        CurDataFlagsResolution += GetFilePtr()->NumberOfTiles() + 1;
-                    else
-                        // Strip case
-                        CurDataFlagsResolution += GetFilePtr()->NumberOfStrips() + 1;
-                }
-            }
-        }
-    }
-    GetFilePtr()->SetDirectory(PreviousDirectory);
-
-}
-*/
-//-----------------------------------------------------------------------------
-// Protected
-// CreateDescriptors
-//-----------------------------------------------------------------------------
-/*
-void HRFcTiffFile::SaveDescriptors()
-{
-    HPRECONDITION (GetFilePtr());
-    HPRECONDITION(CountPages() > 0);
-    HASSERT(sizeof(HRFDataFlag) == sizeof(Byte));
-
-    UInt32  PreviousDirectory = GetFilePtr()->CurrentDirectory();
-
-    HFCPtr<HRFPageDescriptor>       pPageDescriptor = GetPageDescriptor(0);
-    HFCPtr<HRFResolutionDescriptor> pResDescriptor;
-    UInt32                          CountFlags = 0;
-
-    // For each Resolution...
-    for (UInt32 i=0; i<pPageDescriptor->CountResolutions(); i++)
-    {
-        pResDescriptor            = pPageDescriptor->GetResolutionDescriptor(i);
-        const HRFDataFlag* pFlags = pResDescriptor->GetBlocksDataFlag();
-        UInt32 NbResFlags         = pResDescriptor->GetBlocksPerWidth() *
-                                    pResDescriptor->GetBlocksPerHeight();
-
-        // Checking....
-        if (m_iTiffTileFlagsLength < (CountFlags+NbResFlags+1))
-            HASSERT(0);
-
-        // Check if flags are changed
-        if (memcmp (&(m_piTiffTileFlags[CountFlags]), pFlags, NbResFlags) != 0)
-        {
-            memcpy(&(m_piTiffTileFlags[CountFlags]), pFlags, NbResFlags);
-            m_HMRDirDirty = true;
-        }
-        CountFlags += NbResFlags;
-        // dn Resolution.
-        m_piTiffTileFlags[CountFlags] = HMR2_TILEFLAG_ENDRESOLUTION;
-        CountFlags++;
-    }
-    m_piTiffTileFlags[CountFlags-1] = 0;
-
-
-    // HMR Directory is changed ?
-    if (m_HMRDirDirty)
-    {
-        // If directory not present, Add it.
-        if (!GetFilePtr()->SetDirectory(HTIFFFile::HMR_DIRECTORY))
-            GetFilePtr()->AddHMRDirectory(HMR2_IMAGEINFORMATION);
-
-        // Set TilesFlag...
-        if (m_iTiffTileFlagsLength > 0)
-            GetFilePtr()->SetField(HMR2_TILEFLAG, (char*)m_piTiffTileFlags.get());
-
-        // Reset Directory
-        GetFilePtr()->SetDirectory(PreviousDirectory);
-
-        // Lock the sister file for the Write PrivateDirectory method
-        HRFLockManager SisterFileLock (GetSharingControl());
-
-        GetFilePtr()->WriteDirectories();
-
-        // Unlock the sister file.
-        SisterFileLock.Unlock();
-
-        m_HMRDirDirty = false;
-    }
-}
-*/
 //---------------------------------------------------------- Privates
 
 //-----------------------------------------------------------------------------

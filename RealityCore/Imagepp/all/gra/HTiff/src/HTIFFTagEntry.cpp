@@ -300,7 +300,6 @@ bool HTIFFTagEntry::ReadData (const HTagInfo&      pi_rTagInfo,
                             break;
 
                         case 2:
-                            HASSERT(false);
                             if (m_pByteOrder->IsStoredAsBigEndian()) // Motorola
                                 m_pEntry->Offset64 = m_pEntry->Offset64 >> 32;
 
@@ -475,7 +474,6 @@ bool HTIFFTagEntry::WriteTagEntry (const HTagInfo&     pi_rTagInfo,
                             break;
 
                         case 2:
-                            HASSERT(false);
                             TagDescriptor.Offset64 = 0;
                             memcpy (&TagDescriptor.Offset64, m_pEntry->pData, 4);
 
