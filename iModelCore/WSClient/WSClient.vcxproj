@@ -43,7 +43,7 @@
     <NMakeBuildCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WebServicesCache reb *WebServices* WSClient*</NMakeBuildCommandLine>
     <NMakeCleanCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WebServicesCache reb *WebServices* WSClient* -c</NMakeCleanCommandLine>
     <NMakeReBuildCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WebServicesCache b</NMakeReBuildCommandLine>
-    <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(IncludePath);$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <IncludePath>$(SrcRoot)imodel02\iModelCore\WSClient\PublicAPI\;$(SrcRoot)imodel02\iModelCore\WSClient\Client\;$(OutRoot)Winx64\build\WSClient\PublishedApi\;$(OutRoot)Winx64\BuildContexts\WSClient\PublicAPI\;$(OutRoot)Winx64\BuildContexts\WSClient\VendorAPI\;$(OutRoot)Winx64\Product\DgnClientSdk-Winx64\include\;$(IncludePath)</IncludePath>
     <OutDir>$(OutRoot)\Winx64\build\VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(OutDir)</IntDir>

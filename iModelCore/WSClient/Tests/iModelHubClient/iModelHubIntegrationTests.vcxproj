@@ -126,6 +126,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <NMakeIncludeSearchPath>$(SrcRoot)\libsrc\facebook\VendorApi\;$(SrcRoot)\DgnDbSync\PublicAPI\;$(SrcRoot)\libsrc\rapidxml2json\include;$(SrcRoot)\libsrc\libxml2\include\;$(SrcRoot)\libsrc\libxml2\BeXml\PublicApi\;$(SrcRoot)\DgnDbSync\DgnV8\;$(SrcRoot)\libsrc\rapidxml\include;$(SrcRoot)\libsrc\rapidjson\include;$(SrcRoot)\libsrc\jsoncpp\include;$(SrcRoot)\libsrc\jsoncpp\PublicAPI;$(SrcRoot)\DgnDbSync\;$(SrcRoot)\BePortableUI\PublicAPI;$(SrcRoot)\imodel02\iModelCore\ECDb\PublicAPI;$(SrcRoot)\imodel02\iModelCore\BeSQLite\PublicAPI;$(SrcRoot)\DgnClientFx\PublicAPI;$(SrcRoot)\imodel02\iModelCore\DgnPlatform\PublicAPI;$(SrcRoot)\DgnPlatform;$(SrcRoot)imodel02\iModelCore\WSClient\PublicAPI;$(SrcRoot)\imodel02\iModelCore\BeHttp\PublicAPI;$(SrcRoot)\imodel02\iModelCore\Bentley\PublicAPI</NMakeIncludeSearchPath>
+    <OutDir>$(OutRoot)Winx64\Product\iModelHubNativeTests</OutDir>
+    <IntDir>$(OutDir)</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

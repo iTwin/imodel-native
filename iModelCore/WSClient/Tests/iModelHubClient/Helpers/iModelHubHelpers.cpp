@@ -536,7 +536,7 @@ namespace iModelHubHelpers
                     locksCount++;
                 }
             }
-        EXPECT_TRUE(expectedCount == locksCount);
+        EXPECT_EQ(expectedCount, locksCount);
         }
     
     //---------------------------------------------------------------------------------------

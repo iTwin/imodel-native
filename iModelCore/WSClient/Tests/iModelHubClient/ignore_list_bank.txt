@@ -102,10 +102,7 @@ VersionsTests.GetVersionsWithThumbnails             #Thumbnails
 #----------------------------------------------------------------------------------------
 BriefcasePullTests.DownloadStandaloneBriefcaseUpdatedToChangeSet #Incorrect test, should properly query by index
 ChangeSetsTests.ChangeSetsInfo
-LocksTests.QueryLocksTest
 LocksTests.QueryUnavailableLocksTest
-LocksTests.LocksStatesResponseTest
-LocksTests.ReleasedWithChangeSetLocksTest
 CodesLocksTests.QueryLocksCodes
 PerformanceTests.RetrieveCodesById
 PerformanceTests.RetrieveFractionOfAllAvailableCodesById
@@ -113,7 +110,6 @@ PerformanceTests.PushLocks
 PerformanceTests.RetrieveLocksById
 PerformanceTests.RetrieveFractionOfAllAvailableLocksById
 SchemaLockTests.LockSchemas
-SchemaLockTests.ModifySchema
 BriefcaseSchemaChangesTests.UpdateToChangeSetPullWithoutReinstating
 BriefcaseSchemaChangesTests.UpdateToChangeSetPullWithReinstating
 
