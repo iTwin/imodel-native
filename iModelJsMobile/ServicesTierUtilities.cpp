@@ -960,7 +960,6 @@ void MobileGateway::Connect()
                 }
             }, [this](const std::streambuf::char_type* s, std::streamsize c)
             {
-            printf("Sending %ld Bytes\n", c);
             auto writeResult = m_client->Write (s, c, [&] (Uv::StatusCR status)
                 {
                 if (status.IsError())

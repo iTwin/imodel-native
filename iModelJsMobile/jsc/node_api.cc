@@ -182,11 +182,9 @@ public:
     }
     
     static bool HasPropertyCallback(JSContextRef ctx, JSObjectRef object, JSStringRef propertyName){
-        printf("here");
         return true;
     }
     static void GetPropertyNamesCallback(JSContextRef ctx, JSObjectRef object, JSPropertyNameAccumulatorRef propertyNames) {
-        printf("to");
     }
     // (JSContextRef ctx, JSObjectRef object, JSStringRef propertyName, JSValueRef *exception);
     static JSValueRef CallAsGetProperty (JSContextRef ctx, JSObjectRef thisObject, JSStringRef propertyName, JSValueRef* exception){
@@ -2427,7 +2425,6 @@ napi_status napi_create_async_work(napi_env env,
                       execute, complete, data);
     
     *result = reinterpret_cast<napi_async_work>(work);
-    printf("napi_create_async_work [%u]\n", uvimpl::Work::GetId(work));
     return napi_clear_last_error(env);
 }
 //---------------------------------------------------------------------------------------
@@ -2437,7 +2434,6 @@ napi_status napi_delete_async_work(napi_env env, napi_async_work work) {
     CHECK_ENV(env);
     CHECK_ARG(env, work);
     uvimpl::Work* w = reinterpret_cast<uvimpl::Work*>(work);
-    printf("napi_delete_async_work [%u]\n", uvimpl::Work::GetId(w));    
     uvimpl::Work::Delete(w);
     return napi_clear_last_error(env);
 }
@@ -2455,7 +2451,6 @@ napi_status napi_queue_async_work(napi_env env, napi_async_work work) {
     uv_loop_t* event_loop = uv_default_loop();
     
     uvimpl::Work* w = reinterpret_cast<uvimpl::Work*>(work);
-    printf("napi_queue_async_work [%u]\n", uvimpl::Work::GetId(w));    
     CALL_UV(env, uv_queue_work(event_loop,
                                w->Request(),
                                uvimpl::Work::ExecuteCallback,
@@ -2471,7 +2466,6 @@ napi_status napi_cancel_async_work(napi_env env, napi_async_work work) {
     CHECK_ARG(env, work);
     
     uvimpl::Work* w = reinterpret_cast<uvimpl::Work*>(work);
-    printf("napi_cancel_async_work [%u]\n", uvimpl::Work::GetId(w));    
     CALL_UV(env, uv_cancel(reinterpret_cast<uv_req_t*>(w->Request())));
     
     return napi_clear_last_error(env);
