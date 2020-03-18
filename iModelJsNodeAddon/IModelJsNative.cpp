@@ -48,47 +48,51 @@ USING_NAMESPACE_BENTLEY_EC
 #define REQUIRE_DB_TO_BE_OPEN if (!IsOpen()) return CreateBentleyReturnErrorObject(DgnDbStatus::NotOpen);
 
 #define THROW_JS_EXCEPTION(str) Napi::Error::New(info.Env(), str).ThrowAsJavaScriptException();
-
 #define THROW_JS_EXCEPTION_AND_RETURN(str,retval) {THROW_JS_EXCEPTION(str) return retval;}
-
 #define THROW_JS_TYPE_ERROR(str) Napi::TypeError::New(info.Env(), str).ThrowAsJavaScriptException();
-
 #define THROW_TYPE_EXCEPTION_AND_RETURN(str,retval) {THROW_JS_TYPE_ERROR(str) return retval;}
+
+#define ARGUMENT_IS_PRESENT(i) (info.Length() > (i))
+#define ARGUMENT_IS_NOT_PRESENT(i) !ARGUMENT_IS_PRESENT(i)
+
+#define ARGUMENT_IS_EMPTY(i) (ARGUMENT_IS_NOT_PRESENT(i) || info[i].IsUndefined() || info[i].IsNull())
+#define ARGUMENT_IS_STRING(i) (ARGUMENT_IS_PRESENT(i) && info[i].IsString())
+#define ARGUMENT_IS_NUMBER(i) (ARGUMENT_IS_PRESENT(i) && info[i].IsNumber())
+#define ARGUMENT_IS_BOOL(i) (ARGUMENT_IS_PRESENT(i) && info[i].IsBoolean())
+
+#define ARGUMENT_IS_NOT_STRING(i) !ARGUMENT_IS_STRING(i)
+#define ARGUMENT_IS_NOT_BOOL(i) !ARGUMENT_IS_BOOL(i)
+#define ARGUMENT_IS_NOT_NUMBER(i) !ARGUMENT_IS_NUMBER(i)
 
 #define REJECT_DEFERRED_AND_RETURN(deferred, message) {\
     deferred.Reject(Napi::String::New(info.Env(), message));\
     return deferred.Promise();\
-    }\
+    }
 
 #define REQUIRE_ARGUMENT_ANY_OBJ(i, var, retval)\
-    if (info.Length() <= (i)) {\
+    if (ARGUMENT_IS_NOT_PRESENT(i)) {\
         THROW_TYPE_EXCEPTION_AND_RETURN("Argument " #i " must be an object", retval)\
     }\
     Napi::Object var = info[i].As<Napi::Object>();
 
 #define REQUIRE_ARGUMENT_ANY_OBJ_ASYNC(i, var, deferred)\
-    if (info.Length() <= (i)) {\
+    if (ARGUMENT_IS_NOT_PRESENT(i)) {\
         REJECT_DEFERRED_AND_RETURN(deferred, "Argument " #i " must be an object")\
     }\
     Napi::Object var = info[i].As<Napi::Object>();
 
 #define REQUIRE_ARGUMENT_OBJ(i, T, var, retval)\
-    if (info.Length() <= (i) || !T::InstanceOf(info[i])) {\
+    if (ARGUMENT_IS_NOT_PRESENT(i) || !T::InstanceOf(info[i])) {\
         THROW_TYPE_EXCEPTION_AND_RETURN("Argument " #i " must be an object of type " #T, retval)\
     }\
     T* var = T::Unwrap(info[i].As<Napi::Object>());
 
 #define REQUIRE_ARGUMENT_FUNCTION(i, var, retval)\
-    if (info.Length() <= (i) || !info[i].IsFunction()) {\
+    if (ARGUMENT_IS_NOT_PRESENT(i) || !info[i].IsFunction()) {\
         THROW_TYPE_EXCEPTION_AND_RETURN("Argument " #i " must be a function", retval)\
     }\
-    Napi::Function var = info[i].As<Napi::Function>();\
+    Napi::Function var = info[i].As<Napi::Function>();
 
-#define ARGUMENT_IS_NOT_STRING(i)\
-    (info.Length() <= (i) || !info[i].IsString())\
-
-#define ARGUMENT_IS_STRING(i)\
-    !ARGUMENT_IS_NOT_STRING(i)\
 
 #define REQUIRE_ARGUMENT_STRING(i, var, retval)\
     if (ARGUMENT_IS_NOT_STRING(i)) {\
@@ -100,14 +104,14 @@ USING_NAMESPACE_BENTLEY_EC
     if (ARGUMENT_IS_NOT_STRING(i)) {\
         REJECT_DEFERRED_AND_RETURN(deferred, "Argument " #i " must be a string")\
     }\
-    Utf8String var = info[i].As<Napi::String>().Utf8Value().c_str();\
+    Utf8String var = info[i].As<Napi::String>().Utf8Value().c_str();
 
 #define REQUIRE_ARGUMENT_STRING_ID(i, strId, T, id, retval)\
     REQUIRE_ARGUMENT_STRING(i, strId, retval)\
     T id(BeInt64Id::FromString(strId.c_str()).GetValue());
 
 #define REQUIRE_ARGUMENT_STRING_ARRAY(i, var, retval)\
-    if (info.Length() <= (i) || !info[i].IsArray()) {\
+    if (ARGUMENT_IS_NOT_PRESENT(i) || !info[i].IsArray()) {\
         THROW_TYPE_EXCEPTION_AND_RETURN("Argument " #i " must be an array of strings", retval)\
     }\
     bvector<Utf8String> var;\
@@ -117,12 +121,6 @@ USING_NAMESPACE_BENTLEY_EC
         if (arrValue.IsString())\
             var.push_back(arrValue.As<Napi::String>().Utf8Value().c_str());\
     }
-
-#define ARGUMENT_IS_NOT_NUMBER(i)\
-    (info.Length() <= (i) || !info[i].IsNumber())\
-
-#define ARGUMENT_IS_NUMBER(i)\
-    !ARGUMENT_IS_NOT_NUMBER(i)\
 
 #define REQUIRE_ARGUMENT_NUMBER(i, var, retval)\
     if (ARGUMENT_IS_NOT_NUMBER(i)) {\
@@ -134,7 +132,7 @@ USING_NAMESPACE_BENTLEY_EC
     if (ARGUMENT_IS_NOT_NUMBER(i)) {\
         REJECT_DEFERRED_AND_RETURN(deferred, "Argument " #i " must be a number")\
     }\
-    Napi::Number var = info[i].As<Napi::Number>();\
+    Napi::Number var = info[i].As<Napi::Number>();
 
 #define REQUIRE_ARGUMENT_INTEGER(i, var, retval)\
     if (ARGUMENT_IS_NOT_NUMBER(i)) {\
@@ -148,12 +146,6 @@ USING_NAMESPACE_BENTLEY_EC
     }\
     int32_t var = info[i].As<Napi::Number>().Uint32Value();
 
-#define ARGUMENT_IS_NOT_BOOL(i)\
-    (info.Length() <= (i) || !info[i].IsBoolean())\
-
-#define ARGUMENT_IS_BOOL(i)\
-    !ARGUMENT_IS_NOT_BOOL(i)\
-
 #define REQUIRE_ARGUMENT_BOOL(i, var, retval)\
     if (ARGUMENT_IS_NOT_BOOL(i)) {\
         THROW_TYPE_EXCEPTION_AND_RETURN("Argument " #i " must be a boolean", retval)\
@@ -166,18 +158,14 @@ USING_NAMESPACE_BENTLEY_EC
     }\
     bool var = info[i].As<Napi::Boolean>().Value();
 
-#define ARGUMENT_IS_EMPTY(i)\
-    (info.Length() <= (i) || (info[i].IsUndefined() || info[i].IsNull()))\
 
 #define OPTIONAL_ARGUMENT_BOOL(i, var, default, retval)\
     bool var;\
     if (ARGUMENT_IS_EMPTY(i)) {\
         var = (default);\
-    }\
-    else if (ARGUMENT_IS_BOOL(i)) {\
+    } else if (ARGUMENT_IS_BOOL(i)) {\
         var = info[i].As<Napi::Boolean>().Value();\
-    }\
-    else {\
+    } else {\
         var = (default);\
         THROW_TYPE_EXCEPTION_AND_RETURN("Argument " #i " must be an boolean", retval)\
     }
@@ -186,11 +174,9 @@ USING_NAMESPACE_BENTLEY_EC
     bool var;\
     if (ARGUMENT_IS_EMPTY(i)) {\
         var = (default);\
-    }\
-    else if (ARGUMENT_IS_BOOL(i)) {\
+    } else if (ARGUMENT_IS_BOOL(i)) {\
         var = info[i].As<Napi::Boolean>().Value();\
-    }\
-    else {\
+    } else {\
         REJECT_DEFERRED_AND_RETURN(deferred, "Argument " #i " must be a boolean")\
     }
 
@@ -198,11 +184,9 @@ USING_NAMESPACE_BENTLEY_EC
     int var;\
     if (ARGUMENT_IS_EMPTY(i)) {\
         var = (default);\
-    }\
-    else if (ARGUMENT_IS_NUMBER(i)) {\
+    } else if (ARGUMENT_IS_NUMBER(i)) {\
         var = info[i].As<Napi::Number>().Int32Value();\
-    }\
-    else {\
+    } else {\
         var = (default);\
         THROW_TYPE_EXCEPTION_AND_RETURN("Argument " #i " must be an integer", retval)\
     }
@@ -211,11 +195,9 @@ USING_NAMESPACE_BENTLEY_EC
     int var;\
     if (ARGUMENT_IS_EMPTY(i)) {\
         var = (default);\
-    }\
-    else if (ARGUMENT_IS_NUMBER(i)) {\
+    } else if (ARGUMENT_IS_NUMBER(i)) {\
         var = info[i].As<Napi::Number>().Int32Value();\
-    }\
-    else {\
+    } else {\
         REJECT_DEFERRED_AND_RETURN(deferred, "Argument " #i " must be an integer")\
     }
 
@@ -223,11 +205,9 @@ USING_NAMESPACE_BENTLEY_EC
     Utf8String var;\
     if (ARGUMENT_IS_EMPTY(i)) {\
         ;\
-    }\
-    else if (ARGUMENT_IS_STRING(i)) {\
+    } else if (ARGUMENT_IS_STRING(i)) {\
         var = info[i].As<Napi::String>().Utf8Value().c_str();\
-    }\
-    else {\
+    } else {\
         Utf8PrintfString msg("Argument " #i " is type %d. It must be a string or undefined", info[i].Type());\
         THROW_TYPE_EXCEPTION_AND_RETURN(msg.c_str(), retval)\
     }
@@ -236,11 +216,9 @@ USING_NAMESPACE_BENTLEY_EC
     Utf8String var;\
     if (ARGUMENT_IS_EMPTY(i)) {\
         ;\
-    }\
-    else if (ARGUMENT_IS_STRING(i)) {\
+    } else if (ARGUMENT_IS_STRING(i)) {\
         var = info[i].As<Napi::String>().Utf8Value().c_str();\
-    }\
-    else {\
+    } else {\
         Utf8PrintfString msg("Argument " #i " is type %d. It must be a string or undefined", info[i].Type());\
         REJECT_DEFERRED_AND_RETURN(deferred, msg.c_str())\
     }
@@ -1456,7 +1434,9 @@ public:
         return CreateBentleyReturnObject(status, toJsString(Env(), json.ToString()));
         }
 
-    static TxnManager::TxnId TxnIdFromString(Utf8StringCR str) {return TxnManager::TxnId(BeInt64Id::FromString(str.c_str()).GetValue());}
+    static TxnManager::TxnId TxnIdFromString(Utf8StringCR str) {
+        return TxnManager::TxnId(BeInt64Id::FromString(str.c_str()).GetValueUnchecked());
+    }
     static Utf8String TxnIdToString(TxnManager::TxnId txnId) {return BeInt64Id(txnId.GetValue()).ToHexStr();}
 
     Napi::Value GetCurrentTxnId(Napi::CallbackInfo const& info)
@@ -1464,11 +1444,12 @@ public:
         return toJsString(Env(), TxnIdToString(m_dgndb->Txns().GetCurrentTxnId()));
         }
 
-    Napi::Value QueryFirstTxnId(Napi::CallbackInfo const& info)
-        {
-        TxnManager::TxnId startTxnId = m_dgndb->Txns().QueryNextTxnId(TxnManager::TxnId(0));
+    Napi::Value QueryFirstTxnId(Napi::CallbackInfo const& info) {
+        OPTIONAL_ARGUMENT_BOOL(0, allowCrossSessions, false, Env().Undefined());
+        auto& txns = m_dgndb->Txns();
+        TxnManager::TxnId startTxnId = allowCrossSessions ? txns.QueryNextTxnId(TxnManager::TxnId(0)) : txns.GetSessionStartId();
         return toJsString(Env(), TxnIdToString(startTxnId));
-        }
+    }
 
     Napi::Value QueryNextTxnId(Napi::CallbackInfo const& info) {
         REQUIRE_ARGUMENT_STRING(0, txnIdHexStr, Env().Undefined());
@@ -1500,25 +1481,34 @@ public:
     Napi::Value BeginMultiTxnOperation(Napi::CallbackInfo const& info) {return Napi::Number::New(Env(),  (int) m_dgndb->Txns().BeginMultiTxnOperation());}
     Napi::Value EndMultiTxnOperation(Napi::CallbackInfo const& info) {return Napi::Number::New(Env(),  (int) m_dgndb->Txns().EndMultiTxnOperation());}
     Napi::Value GetMultiTxnOperationDepth(Napi::CallbackInfo const& info) {return Napi::Number::New(Env(),  (int) m_dgndb->Txns().GetMultiTxnOperationDepth());}
-    Napi::Value GetUndoString(Napi::CallbackInfo const& info) {return toJsString(Env(), m_dgndb->Txns().GetUndoString());}
+    Napi::Value GetUndoString(Napi::CallbackInfo const& info) {
+        OPTIONAL_ARGUMENT_BOOL(0, allowCrossSessions, false, Env().Undefined());
+        return toJsString(Env(), m_dgndb->Txns().GetUndoString((TxnManager::AllowCrossSessions) allowCrossSessions));
+    }
     Napi::Value GetRedoString(Napi::CallbackInfo const& info) {return toJsString(Env(), m_dgndb->Txns().GetRedoString());}
     Napi::Value HasUnsavedChanges(Napi::CallbackInfo const& info) {return Napi::Boolean::New(Env(), m_dgndb->Txns().HasChanges());}
     Napi::Value HasSavedChanges(Napi::CallbackInfo const& info) {return Napi::Boolean::New(Env(), m_dgndb->Txns().QueryNextTxnId(TxnManager::TxnId(0)).IsValid());}
     Napi::Value IsRedoPossible(Napi::CallbackInfo const& info) {return Napi::Boolean::New(Env(), m_dgndb->Txns().IsRedoPossible());}
-    Napi::Value IsUndoPossible(Napi::CallbackInfo const& info) {return Napi::Boolean::New(Env(), m_dgndb->Txns().IsUndoPossible());}
+    Napi::Value IsUndoPossible(Napi::CallbackInfo const& info) {
+        OPTIONAL_ARGUMENT_BOOL(0, allowCrossSessions, false, Env().Undefined());
+        return Napi::Boolean::New(Env(), m_dgndb->Txns().IsUndoPossible((TxnManager::AllowCrossSessions) allowCrossSessions));
+    }
     Napi::Value ReinstateTxn(Napi::CallbackInfo const& info) {return Napi::Number::New(Env(), (int) m_dgndb->Txns().ReinstateTxn());}
-    Napi::Value ReverseAll(Napi::CallbackInfo const& info) {return Napi::Number::New(Env(), (int) m_dgndb->Txns().ReverseAll(false));}
+    Napi::Value ReverseAll(Napi::CallbackInfo const& info) {return Napi::Number::New(Env(), (int) m_dgndb->Txns().ReverseAll());}
     Napi::Value ReverseTo(Napi::CallbackInfo const& info) {
         REQUIRE_ARGUMENT_STRING(0, txnIdHexStr, Env().Undefined());
-        return Napi::Number::New(Env(), (int) m_dgndb->Txns().ReverseTo(TxnIdFromString(txnIdHexStr)));
+        OPTIONAL_ARGUMENT_BOOL(1, allowCrossSessions, false, Env().Undefined());
+        return Napi::Number::New(Env(), (int) m_dgndb->Txns().ReverseTo(TxnIdFromString(txnIdHexStr), (TxnManager::AllowCrossSessions) allowCrossSessions));
     }
     Napi::Value CancelTo(Napi::CallbackInfo const& info) {
         REQUIRE_ARGUMENT_STRING(0, txnIdHexStr, Env().Undefined());
-        return Napi::Number::New(Env(), (int) m_dgndb->Txns().CancelTo(TxnIdFromString(txnIdHexStr)));
+        OPTIONAL_ARGUMENT_BOOL(1, allowCrossSessions, false, Env().Undefined());
+        return Napi::Number::New(Env(), (int) m_dgndb->Txns().CancelTo(TxnIdFromString(txnIdHexStr), (TxnManager::AllowCrossSessions) allowCrossSessions));
     }
     Napi::Value ReverseTxns(Napi::CallbackInfo const& info) {
         REQUIRE_ARGUMENT_NUMBER(0, numTxns , Env().Undefined());
-        return Napi::Number::New(Env(), (int) m_dgndb->Txns().ReverseTxns(numTxns));
+        OPTIONAL_ARGUMENT_BOOL(1, allowCrossSessions, false, Env().Undefined());
+        return Napi::Number::New(Env(), (int) m_dgndb->Txns().ReverseTxns(numTxns, (TxnManager::AllowCrossSessions) allowCrossSessions));
     }
 
     Napi::Value StartCreateChangeSet(Napi::CallbackInfo const& info)
@@ -2230,7 +2220,7 @@ public:
 
         BeFileName dbFileName(dbName.c_str(), true);
         Json::Value encryptionPropsJson = Json::Value::From(encryptionPropsString);
-        
+
         DbResult status = BE_SQLITE_ERROR;
         BeSQLite::Db::EncryptionParams encryptionParams;
         if (encryptionPropsJson.isMember(JsInterop::json_password()))

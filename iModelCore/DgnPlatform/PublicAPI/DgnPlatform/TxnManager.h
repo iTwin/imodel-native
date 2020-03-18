@@ -263,8 +263,8 @@ private:
         TxnId m_last;
     public:
         TxnRange(TxnId first, TxnId last) : m_first(first), m_last(last) {}
-        TxnId GetFirst() {return m_first;}
-        TxnId GetLast() {return m_last;}
+        TxnId GetFirst() const {return m_first;}
+        TxnId GetLast() const {return m_last;}
     };
 
     struct UndoChangeSet : BeSQLite::ChangeSet
@@ -347,10 +347,10 @@ private:
     OnCommitStatus CancelChanges(BeSQLite::IChangeSet& changeset);
     BentleyStatus PropagateChanges();
     BentleyStatus DoPropagateChanges(BeSQLite::ChangeTracker& tracker);
-    void ReverseTxnRange(TxnRange& txnRange, Utf8StringP);
-    DgnDbStatus ReverseActions(TxnRange& txnRange, bool showMsg);
-    void ReinstateTxn(TxnRange&, Utf8StringP redoStr);
-    DgnDbStatus ReinstateActions(TxnRange& revTxn);
+    void ReverseTxnRange(TxnRange const& txnRange);
+    DgnDbStatus ReverseActions(TxnRange const& txnRange);
+    void ReinstateTxn(TxnRange const&);
+    DgnDbStatus ReinstateActions(TxnRange const& revTxn);
 
     RevisionStatus MergeRevision(DgnRevisionCR revision);
     RevisionStatus MergeDbSchemaChangesInRevision(DgnRevisionCR revision, RevisionChangesFileReader& revisionReader);
@@ -359,7 +359,7 @@ private:
 
     TxnTable* FindTxnTable(Utf8CP tableName) const;
     bool IsMultiTxnMember(TxnId rowid) const;
-    TxnManager::TxnId GetLastUndoableTxnId(AllowCrossSessions allowCrossSessions) const;
+    DGNPLATFORM_EXPORT TxnId GetLastUndoableTxnId(AllowCrossSessions allowCrossSessions) const;
     bool IsSchemaChangeTxn(TxnId rowid) const;
 
     void CancelDynamics();
@@ -402,7 +402,7 @@ public:
 
     //! Get a description of the operation that would be reversed by calling ReverseTxns(1).
     //! This is useful for showing the operation that would be undone, for example in a pull-down menu.
-    DGNPLATFORM_EXPORT Utf8String GetUndoString();
+    DGNPLATFORM_EXPORT Utf8String GetUndoString(AllowCrossSessions crossSessions);
 
     //! Get a description of the operation that would be reinstated by calling ReinstateTxn.
     //! This is useful for showing the operation that would be redone, in a pull-down menu for example.
@@ -470,7 +470,7 @@ public:
 
     //! Query if there are currently any reversible (undoable) changes
     //! @return true if there are currently any reversible (undoable) changes.
-    DGNPLATFORM_EXPORT bool IsUndoPossible(AllowCrossSessions allowCrossSessions = AllowCrossSessions::No) const;
+    bool IsUndoPossible(AllowCrossSessions allowCrossSessions = AllowCrossSessions::No) const {return GetLastUndoableTxnId(allowCrossSessions) < GetCurrentTxnId();}
 
     //! Query if there are currently any reinstateable (redoable) changes
     //! @return True if there are currently any reinstate-able (redoable) changes
@@ -494,7 +494,7 @@ public:
 
     //! Reverse all changes back to the beginning of the session.
     //! @param[in] prompt display a warning the user, and give an opportunity to cancel.
-    DGNPLATFORM_EXPORT DgnDbStatus ReverseAll(bool prompt);
+    DGNPLATFORM_EXPORT DgnDbStatus ReverseAll();
 
     //! Reverse all changes back to a previously saved TxnId.
     //! @param[in] txnId a TxnId obtained from a previous call to GetCurrentTxnId.

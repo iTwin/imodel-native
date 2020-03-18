@@ -1,8 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) 2019 Bentley Systems, Incorporated. All rights reserved.
-* Licensed under the MIT License. See LICENSE.md in the project root for license terms.
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-// *** OK to depend on bentleyjs-core and imodeljs-common
 import {
   BentleyStatus, ChangeSetApplyOption, ChangeSetStatus, DbOpcode, DbResult, GuidString, Id64Array, Id64String,
   IDisposable, IModelStatus, Logger, OpenMode, RepositoryStatus, StatusCodeWithMessage,
@@ -184,7 +183,7 @@ export declare namespace IModelJsNative {
     public buildBriefcaseManagerResourcesRequestForElement(req: BriefcaseManagerResourcesRequest, elemId: string, opcode: DbOpcode): RepositoryStatus;
     public buildBriefcaseManagerResourcesRequestForLinkTableRelationship(req: BriefcaseManagerResourcesRequest, relKey: string, opcode: DbOpcode): RepositoryStatus;
     public buildBriefcaseManagerResourcesRequestForModel(req: BriefcaseManagerResourcesRequest, modelId: string, opcode: DbOpcode): RepositoryStatus;
-    public cancelTo(txnId: TxnIdString): IModelStatus;
+    public cancelTo(txnId: TxnIdString, allowCrossSessions?: boolean): IModelStatus;
     public closeIModel(): void;
     public createChangeCache(changeCacheFile: ECDb, changeCachePath: string): DbResult;
     public createClassViewsInDb(): BentleyStatus;
@@ -232,7 +231,7 @@ export declare namespace IModelJsNative {
     public purgeTileTrees(modelIds: Id64Array | undefined): void;
     public cancelTileContentRequests(treeId: string, contentIds: string[]): void;
     public getTxnDescription(txnId: TxnIdString): string;
-    public getUndoString(): string;
+    public getUndoString(allowCrossSessions?: boolean): string;
     public hasFatalTxnError(): boolean;
     public hasUnsavedChanges(): boolean;
     public hasSavedChanges(): boolean;
@@ -250,12 +249,12 @@ export declare namespace IModelJsNative {
     public isReadonly(): boolean;
     public isRedoPossible(): boolean;
     public isTxnIdValid(txnId: TxnIdString): boolean;
-    public isUndoPossible(): boolean;
+    public isUndoPossible(allowCrossSessions?: boolean): boolean;
     public logTxnError(fatal: boolean): void;
     public getMassProperties(props: string): string;
     public openIModel(dbName: string, mode: OpenMode, upgrade?: UpgradeOptions, encryptionProps?: string /* JSON.stringify(IModelEncryptionProps) */): DbResult;
     public queryFileProperty(props: string, wantString: boolean): string | Uint8Array | undefined;
-    public queryFirstTxnId(): TxnIdString;
+    public queryFirstTxnId(allowCrossSessions?: boolean): TxnIdString;
     public queryModelExtents(options: string): ErrorStatusOrResult<IModelStatus, string>;
     public queryNextAvailableFileProperty(props: string): number;
     public queryNextTxnId(txnId: TxnIdString): TxnIdString;
@@ -265,8 +264,8 @@ export declare namespace IModelJsNative {
     public reinstateTxn(): IModelStatus;
     public removePendingChangeSet(changeSetId: string): DbResult;
     public reverseAll(): IModelStatus;
-    public reverseTo(txnId: TxnIdString): IModelStatus;
-    public reverseTxns(numOperations: number): IModelStatus;
+    public reverseTo(txnId: TxnIdString,allowCrossSessions?: boolean): IModelStatus;
+    public reverseTxns(numOperations: number, allowCrossSessions?: boolean): IModelStatus;
     public saveChanges(description?: string): DbResult;
     public saveFileProperty(props: string, strValue: string | undefined, blobVal: Uint8Array | undefined): number;
     public saveProjectGuid(guid: GuidString): DbResult;
@@ -614,8 +613,8 @@ export declare namespace IModelJsNative {
 
   /**
    * Native API to get, add, replace, and delete passwords in system's keychain. On macOS the passwords are managed by the Keychain, and on Windows they are managed by Credential Vault.
-   * Note: That the current implementation has only been setup on MacOS and Windows - platforms that support for Desktop/Electron applications. 
-   * On Linux, passwords are managed by the Secret Service API/libsecret, but support for that platform has NOT been added. 
+   * Note: That the current implementation has only been setup on MacOS and Windows - platforms that support for Desktop/Electron applications.
+   * On Linux, passwords are managed by the Secret Service API/libsecret, but support for that platform has NOT been added.
    * Code adapted from https://github.com/atom/node-keytar
    */
   class KeyTar {

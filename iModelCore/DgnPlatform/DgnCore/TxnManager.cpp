@@ -483,14 +483,6 @@ TxnManager::TxnId TxnManager::GetLastUndoableTxnId(AllowCrossSessions allowCross
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                  Ramanujam.Raman   01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool TxnManager::IsUndoPossible(AllowCrossSessions allowCrossSessions) const
-    {
-    return GetLastUndoableTxnId(allowCrossSessions) < GetCurrentTxnId();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/04
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus TxnManager::BeginMultiTxnOperation()
@@ -559,6 +551,8 @@ BentleyStatus TxnManager::DoPropagateChanges(ChangeTracker& tracker)
     return HasFatalError() ? BSIERROR : BSISUCCESS;
     }
 
+
+#define TABLE_NAME_STARTS_WITH(NAME) (0==strncmp(NAME, tableName, sizeof(NAME)-1))
 /*---------------------------------------------------------------------------------**//**
 * When journalling changes, SQLite calls this method to determine whether changes to a specific table are eligible or not.
 * @note tables with no primary key are skipped automatically.
@@ -566,25 +560,16 @@ BentleyStatus TxnManager::DoPropagateChanges(ChangeTracker& tracker)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TxnManager::TrackChangesForTable TxnManager::_FilterTable(Utf8CP tableName)
     {
-    // Skip the range tree tables - they hold redundant data that will be automatically updated when the changeset is applied.
-    // They all start with the string defined by DGN_VTABLE_SpatialIndex
-    if (0 == strncmp(DGN_VTABLE_SpatialIndex, tableName, sizeof(DGN_VTABLE_SpatialIndex)-1))
-        return  TrackChangesForTable::No;
-
-    if (0 == strncmp(DGN_TABLE_Txns, tableName, sizeof(DGN_TABLE_Txns)-1))
-        return  TrackChangesForTable::No;
-
-    if (0 == strncmp(DGN_TABLE_Rebase, tableName, sizeof(DGN_TABLE_Rebase)-1))
-        return  TrackChangesForTable::No;
-
-    if (DgnSearchableText::IsUntrackedFts5Table(tableName))
-        return  TrackChangesForTable::No;
-
-    if (0 == strncmp("ec_cache_", tableName, sizeof("ec_cache_")-1))
-        return  TrackChangesForTable::No;
-
-    return TrackChangesForTable::Yes;
+    // Skip these tables - they hold redundant data that will be automatically updated when the changeset is applied
+    return (
+        TABLE_NAME_STARTS_WITH(DGN_TABLE_Txns) ||
+        TABLE_NAME_STARTS_WITH(DGN_VTABLE_SpatialIndex) ||
+        TABLE_NAME_STARTS_WITH(DGN_TABLE_Rebase) ||
+        TABLE_NAME_STARTS_WITH("ec_cache_") ||
+        DgnSearchableText::IsUntrackedFts5Table(tableName)
+        ) ? TrackChangesForTable::No : TrackChangesForTable::Yes;
     }
+#undef TABLE_NAME_STARTS_WITH
 
 /*---------------------------------------------------------------------------------**//**
 * The supplied changeset represents all of the pending uncommited changes in the current transaction.
@@ -1366,7 +1351,7 @@ void TxnManager::OnEndApplyChanges() {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   02/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::ReverseTxnRange(TxnRange& txnRange, Utf8StringP undoStr)
+void TxnManager::ReverseTxnRange(TxnRange const& txnRange)
     {
     if (HasChanges() || InDynamicTxn())
         m_dgndb.AbandonChanges(); // will cancel dynamics if active
@@ -1377,12 +1362,6 @@ void TxnManager::ReverseTxnRange(TxnRange& txnRange, Utf8StringP undoStr)
     BeAssert(!HasChanges());
 
     m_dgndb.SaveChanges(); // make sure we save the updated Txn data to disk.
-
-    if (undoStr)
-        {
-        Utf8String fmtString = DgnCoreL10N::GetString(DgnCoreL10N::Undone());
-        undoStr->assign(GetTxnDescription(txnRange.GetFirst()) + fmtString);
-        }
 
     m_curr = txnRange.GetFirst(); // we reuse TxnIds
 
@@ -1403,19 +1382,14 @@ DgnDbStatus TxnManager::ReverseTo(TxnId pos, AllowCrossSessions allowCrossSessio
 
     TxnId lastId = GetCurrentTxnId();
     if (!pos.IsValid() || pos >= lastId)
-        {
-        T_HOST.GetTxnAdmin()._OnNothingToUndo();
         return DgnDbStatus::NothingToUndo;
-        }
 
     TxnId lastUndoableId = GetLastUndoableTxnId(allowCrossSessions);
     if (lastUndoableId >= lastId || pos < lastUndoableId)
         return DgnDbStatus::CannotUndo;
 
     T_HOST.GetTxnAdmin()._OnPrepareForUndoRedo(*this);
-
-    TxnRange range(pos, lastId);
-    return ReverseActions(range, false);
+    return ReverseActions(TxnRange(pos, lastId));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1424,19 +1398,17 @@ DgnDbStatus TxnManager::ReverseTo(TxnId pos, AllowCrossSessions allowCrossSessio
 DgnDbStatus TxnManager::CancelTo(TxnId pos, AllowCrossSessions allowCrossSessions)
     {
     DgnDbStatus status = ReverseTo(pos, allowCrossSessions);
-    if (DgnDbStatus::Success == status)
-        DeleteReversedTxns();
-
+    DeleteReversedTxns(); // call this even if we didn't reverse anything - there may have already been reversed changes.
     return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TxnManager::ReverseActions(TxnRange& txnRange, bool showMsg)
+DgnDbStatus TxnManager::ReverseActions(TxnRange const& txnRange)
     {
     Utf8String undoStr;
-    ReverseTxnRange(txnRange, &undoStr);     // do the actual undo now.
+    ReverseTxnRange(txnRange);     // do the actual undo now.
 
     while (GetCurrentTxnId() < GetMultiTxnOperationStart())
         EndMultiTxnOperation();
@@ -1474,22 +1446,17 @@ DgnDbStatus TxnManager::ReverseTxns(int numActions, AllowCrossSessions allowCros
         }
 
     if (firstId == lastId)
-        {
-        T_HOST.GetTxnAdmin()._OnNothingToUndo();
         return DgnDbStatus::NothingToUndo;
-        }
 
     T_HOST.GetTxnAdmin()._OnPrepareForUndoRedo(*this);
-
-    TxnRange range(firstId, lastId);
-    return ReverseActions(range, true);
+    return ReverseActions(TxnRange(firstId, lastId));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * reverse (undo) all previous transactions
 * @bsimethod                                                    Keith.Bentley   02/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TxnManager::ReverseAll(bool prompt)
+DgnDbStatus TxnManager::ReverseAll()
     {
     if (m_dgndb.Revisions().IsCreatingRevision())
         {
@@ -1500,23 +1467,19 @@ DgnDbStatus TxnManager::ReverseAll(bool prompt)
     TxnId lastId = GetCurrentTxnId();
     TxnId lastUndoableId = GetLastUndoableTxnId(AllowCrossSessions::No);
 
-    if (lastUndoableId >= lastId || (prompt && !T_HOST.GetTxnAdmin()._OnPromptReverseAll()))
-        {
-        T_HOST.GetTxnAdmin()._OnNothingToUndo();
+    if (lastUndoableId >= lastId)
         return DgnDbStatus::NothingToUndo;
-        }
 
     T_HOST.GetTxnAdmin()._OnPrepareForUndoRedo(*this);
 
-    TxnRange range(lastUndoableId, GetCurrentTxnId());
-    return ReverseActions(range, true);
+    return ReverseActions(TxnRange(lastUndoableId, GetCurrentTxnId()));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * Reinstate ("redo") a range of transactions. Also returns the description of the last reinstated Txn.
 * @bsimethod                                                    Keith.Bentley   02/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::ReinstateTxn(TxnRange& revTxn, Utf8StringP redoStr)
+void TxnManager::ReinstateTxn(TxnRange const& revTxn)
     {
     BeAssert(m_curr == revTxn.GetFirst());
     BeAssert(!m_reversedTxn.empty());
@@ -1530,12 +1493,6 @@ void TxnManager::ReinstateTxn(TxnRange& revTxn, Utf8StringP redoStr)
 
     m_dgndb.SaveChanges(); // make sure we save the updated Txn data to disk.
 
-    if (redoStr)
-        {
-        Utf8String fmtString = DgnCoreL10N::GetString(DgnCoreL10N::Redone());
-        redoStr->assign(GetTxnDescription(revTxn.GetFirst()) + fmtString);
-        }
-
     m_curr = revTxn.GetLast();
     m_reversedTxn.pop_back();
     }
@@ -1543,10 +1500,9 @@ void TxnManager::ReinstateTxn(TxnRange& revTxn, Utf8StringP redoStr)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TxnManager::ReinstateActions(TxnRange& revTxn)
+DgnDbStatus TxnManager::ReinstateActions(TxnRange const& revTxn)
     {
-    Utf8String redoStr;
-    ReinstateTxn(revTxn, &redoStr);     // do the actual redo now.
+    ReinstateTxn(revTxn);     // do the actual redo now.
 
     T_HOST.GetTxnAdmin()._OnUndoRedo(*this, TxnAction::Reinstate);
 
@@ -1559,10 +1515,7 @@ DgnDbStatus TxnManager::ReinstateActions(TxnRange& revTxn)
 DgnDbStatus TxnManager::ReinstateTxn()
     {
     if (!IsRedoPossible())
-        {
-        T_HOST.GetTxnAdmin()._OnNothingToRedo();
         return DgnDbStatus::NothingToRedo;
-        }
 
     T_HOST.GetTxnAdmin()._OnPrepareForUndoRedo(*this);
     TxnRange*  revTxn = &m_reversedTxn.back();
@@ -1572,9 +1525,9 @@ DgnDbStatus TxnManager::ReinstateTxn()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String TxnManager::GetUndoString()
+Utf8String TxnManager::GetUndoString(AllowCrossSessions crossSessions)
     {
-    if (!IsUndoPossible(AllowCrossSessions::No))
+    if (!IsUndoPossible(crossSessions))
         return "";
 
     return GetTxnDescription(QueryPreviousTxnId(GetCurrentTxnId()));

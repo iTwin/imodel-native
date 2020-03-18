@@ -628,7 +628,7 @@ TEST_F(TransactionManagerTests, ElementInsertReverse)
     EXPECT_NE(nullptr, m_db->Elements().FindLoadedElement(e2id));
 
     //Both the elements and the model shouldn't be in the database.
-    txns.ReverseAll(true);
+    txns.ReverseAll();
     EXPECT_FALSE(m_db->Models().GetModel(m1id).IsValid());
     }
 
@@ -675,7 +675,7 @@ TEST_F (TransactionManagerTests, ElementDeleteReverse)
     EXPECT_FALSE(m_db->Elements().GetElement(e1id).IsValid());
 
     //Both the elements and the model shouldn't be in the database.
-    txns.ReverseAll(true);
+    txns.ReverseAll();
     EXPECT_FALSE(m_db->Models().GetModel(m1id).IsValid());
     }
 

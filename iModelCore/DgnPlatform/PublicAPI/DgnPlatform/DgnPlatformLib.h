@@ -144,8 +144,6 @@ public:
             void CallMonitors(std::function<void (TxnMonitor&)>);
             virtual bool _OnPromptReverseAll() {return true;}
             virtual void _RestartTool() {}
-            virtual void _OnNothingToUndo() {}
-            virtual void _OnNothingToRedo() {}
             virtual void _OnGraphicElementAdded(DgnDbR, DgnElementId) {}
             virtual void _OnGraphicElementModified(DgnDbR, DgnElementId) {}
             virtual void _OnGraphicElementDeleted(DgnDbR, DgnElementId) {}
