@@ -71,7 +71,7 @@ $(o)ExUndoController$(oext)     : $(ToolkitHostServices)ExUndoController.cpp ${M
 
 $(o)ExHostAppServices$(oext)    : $(ToolkitHostServices)ExHostAppServices.cpp ${MultiCompileDepends}
 
-$(o)ExSystemServices$(oext)     : $(ToolkitCoreServices)ExSystemServices.cpp ${MultiCompileDepends}
+$(o)ExSystemServices$(oext)     : $(ToolkitBaseServices)ExSystemServices.cpp ${MultiCompileDepends}
 
 $(o)ExGiRasterImage$(oext)      : $(ToolkitCoreServices)ExGiRasterImage.cpp ${MultiCompileDepends}
 

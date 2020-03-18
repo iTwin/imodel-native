@@ -115,6 +115,11 @@
     ToolkitFModelerInc  = $(ToolkitRoot)FacetModeler/
     ToolkitLibs         = $(BuildContext)SubParts/Libs/Teigha/
 
+%if $(VendorVersion) >= 210200
+    ToolkitBaseInc      = $(ToolkitRoot)$(Kernel)Base/Include/
+    ToolkitBaseServices = $(ToolkitRoot)$(Kernel)Base/Extensions/ExServices/
+%endif
+
 %if $(TARGET_PLATFORM)=="Windows"
     %if $(VendorVersion) < 190815
         ToolkitCryptInc = $(ToolkitRoot)$(Drawing)/Extensions/win/Crypt/
@@ -153,6 +158,9 @@ CCompOpts + -DDWGTOOLKIT_$(DWGTOOLKIT) -DVendorVersion=$(VendorVersion)
 %endif
 %if defined(ToolkitCoreServices)
     cIncs + -I$(ToolkitCoreServices)
+%endif
+%if defined(ToolkitBaseServices)
+    cIncs + -I$(ToolkitBaseServices)
 %endif
 
 #----------------------------------------------------------------------

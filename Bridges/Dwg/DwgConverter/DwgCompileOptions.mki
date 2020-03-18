@@ -10,6 +10,7 @@
 
     ## Toolkit dirs
     ToolkitRoot     = $(BuildContext)VendorAPI/Teigha/
+    ToolkitBaseInc  = $(ToolkitRoot)KernelBase/Include/
     ToolkitCoreInc  = $(ToolkitRoot)Kernel/Include/
     ToolkitDrawInc  = $(ToolkitRoot)Drawing/Include/
     ToolkitSub1Inc  = $(ToolkitRoot)Architecture/
@@ -26,7 +27,7 @@
     %endif
 
     # C3861: 'm_pImpl': identifier not found in RxObjectImpl.h
-    %if $(VendorVersion) >= 200515
+    %if $(VendorVersion) >= 200515 && $(VendorVersion) < 210200
         CCompOpts   + -DODA_NEED_TEMP_USING
     %endif
 
@@ -87,6 +88,9 @@ CCompOpts + -DDWGTOOLKIT_$(DWGTOOLKIT) -D__DWGIMPORTER_BUILD__
 #   Include search path
 #----------------------------------------------------------------------------------------
 ###  Need to build source from \Core\Extensions\ExServices\
+%if defined(ToolkitBaseInc)
+    cIncs + -I$(ToolkitBaseInc)
+%endif
 %if defined(ToolkitCoreInc)
     cIncs + -I$(ToolkitCoreInc)
 %endif

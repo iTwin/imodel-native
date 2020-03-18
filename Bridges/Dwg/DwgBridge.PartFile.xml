@@ -82,6 +82,7 @@
         <ProductDirectory Name="OpenDwgDbLibs"      RelativeTo="ApplicationRoot" Path="Libs"/>
         <ProductDirectory Name="OpenDwgDbAssemblies" RelativeTo="ApplicationRoot" Path="Dlls"/>
         <ProductDirectory Name="OpenDwgImportAssemblies" RelativeTo="ApplicationRoot" Path="Dlls"/>
+        <ProductDirectory Name="ShxFonts"           RelativeTo="ApplicationRoot" Path="Fonts"/>
         <ProductDirectory Name="RealDwgDbLibs"      Deliver="false"/>
         <ProductDirectory Name="RealDwgDbAssemblies" Deliver="false"/>
         <ProductDirectory Name="RealDwgImportAssemblies" Deliver="false"/>
@@ -168,6 +169,7 @@
         <ProductDirectory Name="OpenDwgDbLibs"          Deliver="false"/>
         <ProductDirectory Name="OpenDwgDbAssemblies"    Deliver="false"/>
         <ProductDirectory Name="OpenDwgImportAssemblies" Deliver="false"/>
+        <ProductDirectory Name="ShxFonts"               Deliver="false"/>
     </ProductDirectoryList>
 
     <ProductDirectoryList ListName="DwgSdkCommonDirList">
@@ -201,7 +203,6 @@
         <ProductDirectory Name="RealDwgAssemblies"      Deliver="false"/>
         <ProductDirectory Name="RealDwgAssembliesEnUS"  Deliver="false"/>
         <ProductDirectory Name="OpenDwgAssemblies"      Deliver="false"/>
-        <ProductDirectory Name="ShxFonts"               Deliver="false"/>
         <ProductDirectory Name="MergeModules"           Deliver="false"/>
         <ProductDirectory Name="DgnV8Dlls"              Deliver="false"/>
         <ProductDirectory Name="VendorAPI"              Deliver="false"/>

@@ -30,8 +30,12 @@
 #if defined(_X64_) && defined(WIN32) && !defined(WIN64)
     #define WIN64
 #endif
+// OdPlatform.h explicitly defines WIN32_LEAN_AND_MEAN since v2021.x
+#if defined(WIN32_LEAN_AND_MEAN)
+    #undef WIN32_LEAN_AND_MEAN
+#endif
 
-#include    <Teigha/Kernel/Include/OdaCommon.h>
+#include    <Teigha/KernelBase/Include/OdaCommon.h>
 #include    <Teigha/Drawing/Include/DbClass.h>
 #include    <Teigha/Drawing/Include/DbObjectId.h>
 #include    <Teigha/Drawing/Include/DbDatabase.h>
@@ -47,7 +51,7 @@
 #include    <Teigha/Drawing/Include/DbSweptSurface.h>
 #include    <Teigha/Drawing/Include/ModelDocObj/DbViewBorder.h>
 #include    <Teigha/Drawing/Include/ModelDocObj/DbViewRepBlockReference.h>
-#include    <Teigha/Kernel/Include/OdString.h>
+#include    <Teigha/KernelBase/Include/OdString.h>
 #include    <Teigha/Kernel/Include/RxObject.h>
 #include    <Teigha/Drawing/Extensions/ExServices/ExHostAppServices.h>
 #include    <Teigha/Kernel/Extensions/ExServices/ExSystemServices.h>

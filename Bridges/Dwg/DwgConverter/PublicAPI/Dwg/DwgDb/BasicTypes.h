@@ -9,7 +9,7 @@
 
 #ifdef DWGTOOLKIT_OpenDwg
 #include    <Teigha/Kernel/Include/SmartPtr.h>
-#include    <Teigha/Kernel/Include/OdString.h>
+#include    <Teigha/KernelBase/Include/OdString.h>
 #elif DWGTOOLKIT_RealDwg
 #include    <RealDwg/Base/dbobjptr2.h>
 #include    <RealDwg/Base/AcString.h>
