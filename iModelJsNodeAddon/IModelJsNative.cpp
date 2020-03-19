@@ -2024,6 +2024,12 @@ public:
         return Napi::Number::New(Env(), (int)result);
         }
 
+    Napi::Value GetFilePath(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN
+        return toJsString(Env(), m_dgndb->GetDbFileName());
+        }
+
     Napi::Value GetBriefcaseId(Napi::CallbackInfo const& info)
         {
         REQUIRE_DB_TO_BE_OPEN
@@ -2528,10 +2534,11 @@ public:
             InstanceMethod("getDbGuid", &NativeDgnDb::GetDbGuid),
             InstanceMethod("getECClassMetaData", &NativeDgnDb::GetECClassMetaData),
             InstanceMethod("getElement", &NativeDgnDb::GetElement),
-            InstanceMethod("getMassProperties", &NativeDgnDb::GetMassProperties),
+            InstanceMethod("getFilePath", &NativeDgnDb::GetFilePath),
             InstanceMethod("getGeoCoordinatesFromIModelCoordinates", &NativeDgnDb::GetGeoCoordsFromIModelCoords),
             InstanceMethod("getIModelCoordinatesFromGeoCoordinates", &NativeDgnDb::GetIModelCoordsFromGeoCoords),
             InstanceMethod("getIModelProps", &NativeDgnDb::GetIModelProps),
+            InstanceMethod("getMassProperties", &NativeDgnDb::GetMassProperties),
             InstanceMethod("getModel", &NativeDgnDb::GetModel),
             InstanceMethod("getMultiTxnOperationDepth", &NativeDgnDb::GetMultiTxnOperationDepth),
             InstanceMethod("getParentChangeSetId", &NativeDgnDb::GetParentChangeSetId),
