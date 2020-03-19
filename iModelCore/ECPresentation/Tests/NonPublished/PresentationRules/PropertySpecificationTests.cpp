@@ -24,6 +24,7 @@ TEST_F(PropertySpecificationTests, LoadsFromJson)
         "name": "p1",
         "overridesPriority":1,
         "isDisplayed":false,
+        "doNotHideOtherPropertiesOnDisplayOverride": false,
         "editor": {
             "editorName": "custom editor"
         },
@@ -42,6 +43,7 @@ TEST_F(PropertySpecificationTests, LoadsFromJson)
     EXPECT_EQ(1, spec.GetOverridesPriority());
     ASSERT_TRUE(nullptr != spec.GetEditorOverride());
     EXPECT_STREQ("category id", spec.GetCategoryId().c_str());
+    EXPECT_FALSE(spec.DoNotHideOtherPropertiesOnDisplayOverride());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -63,6 +65,7 @@ TEST_F(PropertySpecificationTests, LoadsFromJsonWithDefaultValues)
     EXPECT_TRUE(nullptr == spec.GetEditorOverride());
     EXPECT_EQ(1000, spec.GetOverridesPriority());
     EXPECT_STREQ("", spec.GetCategoryId().c_str());
+    EXPECT_FALSE(spec.DoNotHideOtherPropertiesOnDisplayOverride());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -83,13 +86,14 @@ TEST_F(PropertySpecificationTests, LoadFromJsonFailsIfPropertyNameNotSpecified)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PropertySpecificationTests, WriteToJson)
     {
-    PropertySpecification spec("p1", 123, "custom label", "category id", true, new PropertyEditorSpecification("custom editor"));
+    PropertySpecification spec("p1", 123, "custom label", "category id", true, new PropertyEditorSpecification("custom editor"), true);
     Json::Value json = spec.WriteJson();
     Json::Value expected = Json::Reader::DoParse(R"({
         "name": "p1",
         "overridesPriority": 123,
         "labelOverride": "custom label",
         "isDisplayed": true,
+        "doNotHideOtherPropertiesOnDisplayOverride": true,
         "editor": {
             "editorName": "custom editor"
         },
@@ -97,3 +101,43 @@ TEST_F(PropertySpecificationTests, WriteToJson)
     })");
     EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ainoras.Zukauskas              03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertySpecificationTests, WriteToJsonShouldNotWriteDoNotHidePropertiesFlagWhenDisplayFalse)
+{
+    PropertySpecification spec("p15", 22, "test", "test category", false, new PropertyEditorSpecification("test editor"), true);
+    Json::Value json = spec.WriteJson();
+    Json::Value expected = Json::Reader::DoParse(R"({
+        "name": "p15",
+        "overridesPriority": 22,
+        "labelOverride": "test",
+        "isDisplayed": false,
+        "editor": {
+            "editorName": "test editor"
+        },
+        "categoryId": "test category"
+    })");
+    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ainoras.Zukauskas              03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertySpecificationTests, WriteToJsonShouldNotWriteDoNotHidePropertiesFlagWhenItIsFalse)
+{
+    PropertySpecification spec("p15", 22, "test", "test category", true, new PropertyEditorSpecification("test editor"), false);
+    Json::Value json = spec.WriteJson();
+    Json::Value expected = Json::Reader::DoParse(R"({
+        "name": "p15",
+        "overridesPriority": 22,
+        "labelOverride": "test",
+        "isDisplayed": true,
+        "editor": {
+            "editorName": "test editor"
+        },
+        "categoryId": "test category"
+    })");
+    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+}

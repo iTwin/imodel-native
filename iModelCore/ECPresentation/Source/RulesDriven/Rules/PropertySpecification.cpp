@@ -58,6 +58,8 @@ bool PropertySpecification::ReadJson(JsonValueCR json)
     else
         m_isDisplayed = nullptr;
 
+    m_doNotHideOtherPropertiesOnDisplayOverride = json[PROPERTY_SPECIFICATION_JSON_ATTRIBUTE_DONOTHIDEOTHERPROPERTIESONDISPLAYOVERRIDE].asBool(false);
+
     DELETE_AND_CLEAR(m_editorOverride);
     if (json.isMember(PROPERTY_SPECIFICATION_JSON_ATTRIBUTE_EDITOR))
         m_editorOverride = CommonToolsInternal::LoadRuleFromJson<PropertyEditorSpecification>(json[PROPERTY_SPECIFICATION_JSON_ATTRIBUTE_EDITOR]);
@@ -76,12 +78,17 @@ Json::Value PropertySpecification::WriteJson() const
         json[PROPERTY_SPECIFICATION_JSON_ATTRIBUTE_OVERRIDESPRIORITY] = m_overridesPriority;
     if (!m_labelOverride.empty())
         json[PROPERTY_SPECIFICATION_JSON_ATTRIBUTE_LABELOVERRIDE] = m_labelOverride;
-    if (m_isDisplayed.IsValid())
+    if (m_isDisplayed.IsValid()) 
+        {
         json[PROPERTY_SPECIFICATION_JSON_ATTRIBUTE_ISDISPLAYED] = m_isDisplayed.Value();
+        if (true == m_isDisplayed.Value() && true == m_doNotHideOtherPropertiesOnDisplayOverride)
+            json[PROPERTY_SPECIFICATION_JSON_ATTRIBUTE_DONOTHIDEOTHERPROPERTIESONDISPLAYOVERRIDE] = true;
+        }
     if (nullptr != m_editorOverride)
         json[PROPERTY_SPECIFICATION_JSON_ATTRIBUTE_EDITOR] = m_editorOverride->WriteJson();
     if (!m_categoryId.empty())
         json[PROPERTY_SPECIFICATION_JSON_ATTRIBUTE_CATEGORYID] = m_categoryId;
+
     return json;
     }
 
@@ -97,6 +104,8 @@ MD5 PropertySpecification::_ComputeHash(Utf8CP parentHash) const
     md5.Add(m_categoryId.c_str(), m_categoryId.size());
     if (m_isDisplayed.IsValid())
         md5.Add(&m_isDisplayed.Value(), sizeof(m_isDisplayed.Value()));
+    md5.Add(&m_doNotHideOtherPropertiesOnDisplayOverride, sizeof(m_doNotHideOtherPropertiesOnDisplayOverride));
+
     if (nullptr != m_editorOverride)
         {
         Utf8String editorOverrideHash = m_editorOverride->GetHash();

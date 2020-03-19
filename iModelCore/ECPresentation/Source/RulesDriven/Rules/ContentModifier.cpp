@@ -110,10 +110,12 @@ static void LoadPropertyDisplaySpecifications(JsonValueCR json, bvector<Property
 
         int priority = json[i][PROPERTIES_DISPLAY_SPECIFICATION_JSON_ATTRIBUTE_PRIORITY].asInt(1000);
         bool isDisplayed = json[i][PROPERTIES_DISPLAY_SPECIFICATION_JSON_ATTRIBUTE_ISDISPLAYED].asBool(true);
+        bool doNotHideOtherPropertiesOnDisplayOverride = json[i][PROPERTIES_DISPLAY_SPECIFICATION_JSON_ATTRIBUTE_DONOTHIDEOTHERPROPERTIESONDISPLAYOVERRIDE].asBool(false);
+
         for (Json::ArrayIndex j = 0; j < propertyNamesJson.size(); ++j)
             {
             Utf8CP propertyName = propertyNamesJson[j].asCString();
-            specs.push_back(new PropertySpecification(propertyName, priority, "", "", isDisplayed, nullptr));
+            specs.push_back(new PropertySpecification(propertyName, priority, "", "", isDisplayed, nullptr, doNotHideOtherPropertiesOnDisplayOverride));
             }
         }
     }

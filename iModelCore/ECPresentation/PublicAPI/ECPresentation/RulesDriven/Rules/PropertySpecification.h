@@ -21,6 +21,7 @@ private:
     int m_overridesPriority;
     Utf8String m_labelOverride;
     Nullable<bool> m_isDisplayed;
+    bool m_doNotHideOtherPropertiesOnDisplayOverride;
     PropertyEditorSpecification* m_editorOverride;
     Utf8String m_categoryId;
 
@@ -30,8 +31,8 @@ protected:
 
 public:
     PropertySpecification(): m_overridesPriority(1000), m_editorOverride(nullptr) {}
-    PropertySpecification(Utf8String propertyName, int overridesPriority = 1000, Utf8String labelOverride = "", Utf8String categoryId = "", Nullable<bool> isDisplayed = nullptr, PropertyEditorSpecification* editorOverride = nullptr)
-        : m_overridesPriority(overridesPriority), m_propertyName(propertyName), m_labelOverride(labelOverride), m_isDisplayed(isDisplayed), m_editorOverride(editorOverride), m_categoryId(categoryId)
+    PropertySpecification(Utf8String propertyName, int overridesPriority = 1000, Utf8String labelOverride = "", Utf8String categoryId = "", Nullable<bool> isDisplayed = nullptr, PropertyEditorSpecification* editorOverride = nullptr, bool doNotHideOtherPropertiesOnDisplayOverride = false)
+        : m_overridesPriority(overridesPriority), m_propertyName(propertyName), m_labelOverride(labelOverride), m_isDisplayed(isDisplayed), m_editorOverride(editorOverride), m_categoryId(categoryId), m_doNotHideOtherPropertiesOnDisplayOverride(doNotHideOtherPropertiesOnDisplayOverride)
         {}
     ~PropertySpecification() {DELETE_AND_CLEAR(m_editorOverride);}
     
@@ -47,6 +48,7 @@ public:
     Utf8StringCR GetPropertyName() const {return m_propertyName;}
     Utf8StringCR GetLabelOverride() const {return m_labelOverride;}
     Nullable<bool> const& IsDisplayed() const {return m_isDisplayed;}
+    bool DoNotHideOtherPropertiesOnDisplayOverride() const {return m_doNotHideOtherPropertiesOnDisplayOverride;}
     PropertyEditorSpecification const* GetEditorOverride() const {return m_editorOverride;}
     Utf8StringCR GetCategoryId() const {return m_categoryId;}
 };

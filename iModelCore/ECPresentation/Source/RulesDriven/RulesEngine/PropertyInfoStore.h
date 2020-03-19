@@ -31,6 +31,7 @@ struct ClassPropertyOverridesInfo
         NullablePrioritizedValue<std::shared_ptr<ContentFieldEditor const>> m_editor;
         NullablePrioritizedValue<Utf8String> m_labelOverride;
         NullablePrioritizedValue<ContentDescriptor::Category> m_category;
+        NullablePrioritizedValue<bool> m_doNotHideOtherPropertiesOnDisplayOverride;
     public:
         Overrides() : m_defaultPriority(0) {}
         Overrides(int defaultPriority) : m_defaultPriority(defaultPriority) {}
@@ -43,6 +44,8 @@ struct ClassPropertyOverridesInfo
         NullablePrioritizedValue<Utf8String> const& GetLabelOverride() const {return m_labelOverride;}
         void SetCategoryOverride(ContentDescriptor::Category ovr) {m_category = PrioritizedValue<ContentDescriptor::Category>({ m_defaultPriority, ovr });}
         NullablePrioritizedValue<ContentDescriptor::Category> const& GetCategoryOverride() const {return m_category;}
+        void SetDoNotHideOtherPropertiesOnDisplayOverride(bool ovr) { m_doNotHideOtherPropertiesOnDisplayOverride = PrioritizedValue<bool>({ m_defaultPriority, ovr }); }
+        NullablePrioritizedValue<bool> const& GetDoNotHideOtherPropertiesOnDisplayOverride() const { return m_doNotHideOtherPropertiesOnDisplayOverride; }
     };
 
 private:
@@ -58,6 +61,7 @@ public:
     NullablePrioritizedValue<std::shared_ptr<ContentFieldEditor const>> const& GetContentFieldEditorOverride(ECPropertyCR) const;
     NullablePrioritizedValue<Utf8String> const& GetLabelOverride(ECPropertyCR) const;
     NullablePrioritizedValue<ContentDescriptor::Category> const& GetCategoryOverride(ECPropertyCR) const;
+    NullablePrioritizedValue<bool> const& GetDoNotHideOtherPropertiesOnDisplayOverride(ECPropertyCR) const;
     bmap<Utf8String, Overrides> const& GetPropertyOverrides() const {return m_propertyOverrides;}
     void SetClassOverrides(ECClassCP ecClass, Overrides ovr) {m_defaultClassPropertyOverrides[ecClass] = ovr;}
     void SetPropertyOverrides(Utf8StringCR ecPropertyName, Overrides ovr) {m_propertyOverrides[ecPropertyName] = ovr;}

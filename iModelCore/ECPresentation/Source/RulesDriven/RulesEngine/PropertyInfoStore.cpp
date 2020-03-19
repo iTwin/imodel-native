@@ -23,6 +23,7 @@ void ClassPropertyOverridesInfo::Overrides::Merge(Overrides const& source)
     SET_PRIORITZED_NULLABLE_MEMBER(m_labelOverride);
     SET_PRIORITZED_NULLABLE_MEMBER(m_category);
     SET_PRIORITZED_NULLABLE_MEMBER(m_editor);
+    SET_PRIORITZED_NULLABLE_MEMBER(m_doNotHideOtherPropertiesOnDisplayOverride);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -114,6 +115,14 @@ ClassPropertyOverridesInfo::NullablePrioritizedValue<ContentDescriptor::Category
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ainoras.Zukauskas               03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassPropertyOverridesInfo::NullablePrioritizedValue<bool> const& ClassPropertyOverridesInfo::GetDoNotHideOtherPropertiesOnDisplayOverride(ECPropertyCR prop) const
+    {
+    return GetOverrides<bool>(prop, [](Overrides const& ovr) -> NullablePrioritizedValue<bool> const& {return ovr.GetDoNotHideOtherPropertiesOnDisplayOverride(); });
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 static std::shared_ptr<ContentFieldEditor> CreateEditorOverride(PropertyEditorSpecificationCR spec)
@@ -143,6 +152,9 @@ static ClassPropertyOverridesInfo::Overrides CreateOverrides(PropertySpecificati
         ovr.SetCategoryOverride(CreateCategoryOverride(spec.GetCategoryId(), categorySpecifications));
     if (spec.IsDisplayed().IsValid())
         ovr.SetDisplayOverride(spec.IsDisplayed().Value());
+
+    ovr.SetDoNotHideOtherPropertiesOnDisplayOverride(spec.DoNotHideOtherPropertiesOnDisplayOverride());
+
     return ovr;
     }
 
@@ -219,20 +231,23 @@ ClassPropertyOverridesInfo const& PropertyInfoStore::GetOverrides(ECClassCR ecCl
         if (m_perClassPropertyOverrides.end() != perClassIter)
             info.Merge(perClassIter->second);
 
-        // find if there's at least one override that requires property to be displayed
-        bool hasDisplayOverride = false;
+        // find if there's at least one override that requires property to be displayed alone (hiding other properties)
+        bool shouldHideOtherProperties = false;
         for (auto const& entry : info.GetPropertyOverrides())
             {
-            if (entry.second.GetDisplayOverride().IsValid() && true == entry.second.GetDisplayOverride().Value().value)
+            const auto displayOverride = entry.second.GetDisplayOverride();
+            const auto doNotHideOtherPropertiesOverride = entry.second.GetDoNotHideOtherPropertiesOnDisplayOverride();
+            if ((displayOverride.IsValid() && true == displayOverride.Value().value) &&
+                (doNotHideOtherPropertiesOverride.IsNull() || false == doNotHideOtherPropertiesOverride.Value().value))
                 {
-                hasDisplayOverride = true;
+                shouldHideOtherProperties = true;
                 break;
                 }
             }
-        if (hasDisplayOverride)
+        if (shouldHideOtherProperties)
             {
-            // if there's at least one spec requiring property display, it means we should hide all 
-            // others - insert hiding display infos with low priority so they don't override any
+            // if there's at least one spec requiring property display and requesting to hide other properties, 
+            // it means we should insert hiding display infos with low priority so they don't override any
             // explicitly specified infos
             info.SetClassOverrides(&ecClass, CreateDefaultHiddenPropertiesOverride());
             for (ECClassCP baseClass : ecClass.GetBaseClasses())
