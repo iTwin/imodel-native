@@ -160,13 +160,18 @@ static void createClassPropertyThumbprint(Utf8StringR thumbprint, ECN::ECClassCR
     {
     // N.B. Class names can only contain [0-9a-zA-Z_].
     
-    Utf8Char itoaBuff[10];
+    Utf8Char itoaBuff[_MAX_ITOSTR_BASE10_COUNT + 1];
 
     // Use a set as a cheap way to sort, so that order is disregarded when determining uniqueness.
     bset<Utf8String> propThumbprints;
     for (ECN::ECPropertyCP prop : ecClass.GetProperties(false))
         {
-        _itoa_s((int)prop->GetAsPrimitiveProperty()->GetType(), itoaBuff, 10);
+        if (0 != _itoa_s((int)prop->GetAsPrimitiveProperty()->GetType(), itoaBuff, 10))
+            {
+            BeAssert(false);
+            continue;
+            }
+        itoaBuff[_countof(itoaBuff) - 1] = 0;
         
         Utf8String propThumbprint(prop->GetName().c_str());
         propThumbprint += "|";
