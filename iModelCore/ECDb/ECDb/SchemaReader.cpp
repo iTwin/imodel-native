@@ -2839,6 +2839,11 @@ BentleyStatus SchemaReader::LegacyUnitsHelper::Initialize() const
     if (m_isInitialized)
         return SUCCESS;
 
+    BeMutexHolder lock(m_ecdb.GetImpl().GetMutex());
+
+    if (m_isInitialized)
+        return SUCCESS;
+
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT 1 FROM %s." TABLE_KindOfQuantity " LIMIT 1", m_tableSpace.GetName().c_str()).c_str()))
         {
@@ -2846,7 +2851,6 @@ BentleyStatus SchemaReader::LegacyUnitsHelper::Initialize() const
         return ERROR;
         }
 
-    m_isInitialized = true;
     const DbResult stat = stmt.Step();
     // no KOQs in the file -> units and formats schemas are not deserialized
     if (BE_SQLITE_DONE == stat)
@@ -2864,6 +2868,8 @@ BentleyStatus SchemaReader::LegacyUnitsHelper::Initialize() const
     m_formatsSchema = ECSchema::LocateSchema(formatsSchemaKey, *schemaReadCtx);
     SchemaKey unitsSchemaKey("Units", 1, 0, 0);
     m_unitsSchema = ECSchema::LocateSchema(unitsSchemaKey, *schemaReadCtx);
+
+    m_isInitialized = true;
     if (m_formatsSchema != nullptr && m_unitsSchema != nullptr)
         return SUCCESS;
 
