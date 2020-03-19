@@ -22,11 +22,13 @@ struct DmsSession
         iModelDmsSupport::SessionType m_sessionType;
     protected:
         Utf8String  m_dataSource;
-        Utf8String  m_dnsServerUrl;
-        Utf8String  m_dnsServerName;
+        Utf8String  m_serverUrl;
+        Utf8String  m_serverName;
+        bool dnsServerAdded;
+        bool dsListingServerAdded;
     public:
     
-        DmsSession(iModelDmsSupport::SessionType sessionType, Utf8StringCR dnsServerUrl);
+        DmsSession(iModelDmsSupport::SessionType sessionType, Utf8StringCR serverUrl);
         virtual ~DmsSession();
 
         static Utf8StringCR GetDataSourceFromMoniker(Utf8StringCR moniker);
@@ -51,13 +53,13 @@ struct DmsSession
 
         virtual bool Login() = 0;
 
-        void AddDNServer();
+        void AddServer();
 
-        void DeleteDNServer();
+        void DeleteServer();
 
-        bool RunCommandForDNSServer(bool addDNSServer);
+        bool RunCommandForServer(bool dnsServer, bool addServer);
 
-        bool IsDnsServerPresentInRegistry();
+        bool IsServerPresentInRegistry(bool dnsServer);
     };
 
 struct UserCredentialsSession : DmsSession
@@ -66,7 +68,7 @@ struct UserCredentialsSession : DmsSession
         Utf8String  m_userName;
         Utf8String  m_password;
     public:
-        UserCredentialsSession(Utf8String userName, Utf8String password, iModelDmsSupport::SessionType sessionType, Utf8StringCR dnsServerUrl);
+        UserCredentialsSession(Utf8String userName, Utf8String password, iModelDmsSupport::SessionType sessionType, Utf8StringCR serverUrl);
         ~UserCredentialsSession() override;
         bool Login() override;
     };
@@ -77,7 +79,7 @@ struct SamlTokenSession : DmsSession
         Utf8String m_accessToken;
         unsigned long m_productId;
     public:
-        SamlTokenSession(Utf8String accessToken, unsigned long productId, iModelDmsSupport::SessionType sessionType, Utf8StringCR dnsServerUrl);
+        SamlTokenSession(Utf8String accessToken, unsigned long productId, iModelDmsSupport::SessionType sessionType, Utf8StringCR serverUrl);
         ~SamlTokenSession() override;
         bool Login() override;
     };

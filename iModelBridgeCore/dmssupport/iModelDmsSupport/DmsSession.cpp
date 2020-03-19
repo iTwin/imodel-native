@@ -42,7 +42,7 @@ bool    DmsSession::Initialize()
 
     LOG.tracev("PW Initialized successfully.");
 
-    AddDNServer();
+    AddServer();
     bool loggedIn = Login();
     if (!loggedIn)
         {
@@ -76,9 +76,9 @@ bool            DmsSession::UnInitialize()
     aaOApi_UninitializeSession();
     bool status = aaApi_LogoutByHandle(m_activeDataSource) ? true : false;
     m_activeDataSource = NULL;
-    DeleteDNServer();
-    m_dnsServerUrl.clear();
-    m_dnsServerName.clear();
+    DeleteServer();
+    m_serverUrl.clear();
+    m_serverName.clear();
     aaApi_Uninitialize();
     return status;
     }
@@ -112,11 +112,13 @@ BeFileName      DmsSession::GetDefaultConfigPath(bool isv8i) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DmsSession::DmsSession(iModelDmsSupport::SessionType sessionType, Utf8StringCR dnsServerUrl)
+DmsSession::DmsSession(iModelDmsSupport::SessionType sessionType, Utf8StringCR serverUrl)
     :m_activeDataSource(NULL), m_sessionType(sessionType)
     {
-    m_dnsServerUrl = dnsServerUrl;
-    m_dnsServerName = Utf8String();
+    m_serverUrl = serverUrl;
+    m_serverName = Utf8String();
+    dnsServerAdded = false;
+    dsListingServerAdded = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -182,8 +184,8 @@ bool            DmsSession::SetDataSource(Utf8StringCR dataSource)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SamlTokenSession::SamlTokenSession(Utf8String accessToken, unsigned long productId, iModelDmsSupport::SessionType sessionType, Utf8StringCR dnsServerUrl)
-    :DmsSession(sessionType, dnsServerUrl), m_accessToken( accessToken), m_productId(productId)
+SamlTokenSession::SamlTokenSession(Utf8String accessToken, unsigned long productId, iModelDmsSupport::SessionType sessionType, Utf8StringCR serverUrl)
+    :DmsSession(sessionType, serverUrl), m_accessToken( accessToken), m_productId(productId)
     {
     }
 
@@ -220,8 +222,8 @@ bool SamlTokenSession::Login()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-UserCredentialsSession::UserCredentialsSession(Utf8String userName, Utf8String password, iModelDmsSupport::SessionType sessionType, Utf8StringCR dnsServerUrl)
-    :DmsSession(sessionType, dnsServerUrl), m_userName(userName), m_password(password)
+UserCredentialsSession::UserCredentialsSession(Utf8String userName, Utf8String password, iModelDmsSupport::SessionType sessionType, Utf8StringCR serverUrl)
+    :DmsSession(sessionType, serverUrl), m_userName(userName), m_password(password)
     {
     }
 
@@ -247,95 +249,105 @@ bool UserCredentialsSession::Login()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Suvik.Rahane                  03/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DmsSession::AddDNServer()
+void DmsSession::AddServer()
     {
-    //Get DNS server URL
+    //Get Server URL
     bvector<Utf8String> urlParts;
-    BeStringUtilities::Split(m_dnsServerUrl.c_str(), "/", urlParts);
+    BeStringUtilities::Split(m_serverUrl.c_str(), "/", urlParts);
     if (urlParts.size() < 2)
         {
-        m_dnsServerUrl = Utf8String();
+        m_serverUrl = Utf8String();
         LOG.error("Unable to get DNS server URL");
         return;
         }
-    m_dnsServerUrl = Utf8String(urlParts[1].c_str());
+    m_serverUrl = Utf8String(urlParts[1].c_str());
+    m_serverName = BeSQLite::BeGuid(true).ToString();
 
-    if (IsDnsServerPresentInRegistry())
-        {
-        LOG.tracev("DNS server: %s is already present in the registry", m_dnsServerUrl.c_str());
-        m_dnsServerUrl = Utf8String();
-        return;
-        }
-
-    LOG.tracev("DNS server: %s is not present in the registry", m_dnsServerUrl.c_str());
-    m_dnsServerName = BeSQLite::BeGuid(true).ToString();
     //Add DNS Server
-    if (RunCommandForDNSServer(true))
-        LOG.tracev("Successfully added DNS server");
-    else
-        LOG.error("Unable to run add DNS server command");
+    if (!IsServerPresentInRegistry(true))
+        dnsServerAdded = RunCommandForServer(true, true);
+
+    //Add DS Listing Server
+    if (!IsServerPresentInRegistry(false))
+        dsListingServerAdded = RunCommandForServer(false, true);
+
+    return;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Suvik.Rahane                  03/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DmsSession::DeleteDNServer()
+void DmsSession::DeleteServer()
     {
-    if (!Utf8String::IsNullOrEmpty(m_dnsServerName.c_str()))
-        {
-        //Delete DNS Server
-        if (RunCommandForDNSServer(false))
-            LOG.tracev("Successfully deleted DNS server");
-        else
-            LOG.error("Unable to run delete DNS server command");
-        }
-    else
-        {
-        LOG.error("Unable to delete DNS server as server url is empty");
-        }
+    //Delete DNS And DS Lisiting Server
+    if (dnsServerAdded)
+        RunCommandForServer(true, false);
+    if (dsListingServerAdded)
+        RunCommandForServer(false, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Suvik.Rahane                  03/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DmsSession::RunCommandForDNSServer(bool addDNSServer)
+bool DmsSession::RunCommandForServer(bool dnsServer, bool addServer)
     {
     BeFileName pwnetworkconfigcmdPath(L"C:\\Program Files\\Bentley\\ProjectWise\\bin\\pwnetworkconfigcmd.exe");
     if (pwnetworkconfigcmdPath.DoesPathExist())
         {
-        Utf8String cmd;
-        if (addDNSServer)
+        Utf8String cmd, server;
+        if (dnsServer)
+            server = "dns";
+        else
+            server = "dslisting";
+
+        //Create Command
+        if (addServer)
             {
-            cmd = Utf8PrintfString("start %s --add-dns-server %s %s", Utf8String(pwnetworkconfigcmdPath.GetName()).c_str(), m_dnsServerName.c_str(), m_dnsServerUrl.c_str());
-            LOG.tracev("Add DNS server command: %s", cmd.c_str());
+            cmd = Utf8PrintfString("start %s --add-%s-server %s %s", Utf8String(pwnetworkconfigcmdPath.GetName()).c_str(), server.c_str(), m_serverName.c_str(), m_serverUrl.c_str());
+            LOG.tracev("Add %s server command: %s", server.c_str(), cmd.c_str());
             }
         else
             {
-            cmd = Utf8PrintfString("start %s --delete-dns-server %s", Utf8String(pwnetworkconfigcmdPath.GetName()).c_str(), m_dnsServerName.c_str());
-            LOG.tracev("Delete DNS server command: %s", cmd.c_str());
+            cmd = Utf8PrintfString("start %s --delete-%s-server %s", Utf8String(pwnetworkconfigcmdPath.GetName()).c_str(), server.c_str(), m_serverName.c_str());
+            LOG.tracev("Delete %s server command: %s", server.c_str(), cmd.c_str());
             }
 
         cmd.ReplaceAll("Program Files", "\"Program Files\"");
         if (system(cmd.c_str()) == 0)
+            {
+            LOG.tracev("Command run successfully");
             return true;
+            }
         }
     else
         {
         LOG.error("PW Network Config exe not found");
         }
+    LOG.error("Command run failed");
     return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Suvik.Rahane                  03/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DmsSession::IsDnsServerPresentInRegistry()
+bool DmsSession::IsServerPresentInRegistry(bool dnsServer)
     {
-    bmap<HKEY, WString> regKeysForPWDnsServer;
-    regKeysForPWDnsServer.Insert(HKEY_LOCAL_MACHINE, L"SOFTWARE\\WOW6432Node\\Bentley\\ProjectWise\\10.00\\NetworkConfig\\Dns\\Servers");
-    regKeysForPWDnsServer.Insert(HKEY_CURRENT_USER, L"SOFTWARE\\Bentley\\ProjectWise\\10.00\\NetworkConfig\\Dns\\Servers");
+    bmap<HKEY, WString> regKeysForPWServer;
+    Utf8String server;
+    if (dnsServer)
+        {
+        server = "dns";
+        regKeysForPWServer.Insert(HKEY_LOCAL_MACHINE, L"SOFTWARE\\WOW6432Node\\Bentley\\ProjectWise\\10.00\\NetworkConfig\\Dns\\Servers");
+        regKeysForPWServer.Insert(HKEY_CURRENT_USER, L"SOFTWARE\\Bentley\\ProjectWise\\10.00\\NetworkConfig\\Dns\\Servers");
+        }
+    else
+        {
+        server = "dslisting";
+        regKeysForPWServer.Insert(HKEY_LOCAL_MACHINE, L"SOFTWARE\\WOW6432Node\\Bentley\\ProjectWise\\10.00\\NetworkConfig\\DsListing\\Servers");
+        regKeysForPWServer.Insert(HKEY_CURRENT_USER, L"SOFTWARE\\Bentley\\ProjectWise\\10.00\\NetworkConfig\\DsListing\\Servers");
+        }
 
-    for (bmap<HKEY, WString>::iterator itor = regKeysForPWDnsServer.begin(); itor != regKeysForPWDnsServer.end(); ++itor)
+    for (bmap<HKEY, WString>::iterator itor = regKeysForPWServer.begin(); itor != regKeysForPWServer.end(); ++itor)
         {
         HKEY dnsServersKey;
         long result = RegOpenKeyExW(itor->first, itor->second.c_str(), 0, KEY_ENUMERATE_SUB_KEYS | KEY_QUERY_VALUE, &dnsServersKey);
@@ -345,15 +357,15 @@ bool DmsSession::IsDnsServerPresentInRegistry()
             continue;
             }
 
-        WCHAR dnsServerName[257];
-        DWORD dnsServerNameLen = _countof(dnsServerName);
+        WCHAR serverName[257];
+        DWORD serverNameLen = _countof(serverName);
         DWORD index = 0;
-        while (RegEnumKeyExW(dnsServersKey, index, dnsServerName, &dnsServerNameLen, NULL, NULL, NULL, NULL) == ERROR_SUCCESS)
+        while (RegEnumKeyExW(dnsServersKey, index, serverName, &serverNameLen, NULL, NULL, NULL, NULL) == ERROR_SUCCESS)
             {
             HKEY subKey;
-            if (RegOpenKeyExW(dnsServersKey, dnsServerName, 0, KEY_ENUMERATE_SUB_KEYS | KEY_QUERY_VALUE, &subKey) != ERROR_SUCCESS)
+            if (RegOpenKeyExW(dnsServersKey, serverName, 0, KEY_ENUMERATE_SUB_KEYS | KEY_QUERY_VALUE, &subKey) != ERROR_SUCCESS)
                 {
-                LOG.errorv("Unable to open reg key: %s under %s error code: %ld", Utf8String(dnsServerName).c_str(), Utf8String(itor->second).c_str(), result);
+                LOG.errorv("Unable to open reg key: %s under %s error code: %ld", Utf8String(serverName).c_str(), Utf8String(itor->second).c_str(), result);
                 continue;
                 }
 
@@ -364,23 +376,25 @@ bool DmsSession::IsDnsServerPresentInRegistry()
             result = RegQueryValueExW(subKey, valueName.c_str(), NULL, NULL, (LPBYTE)szBuffer, &dwBufferSize);
             if (result == ERROR_SUCCESS)
                 {
-                if (m_dnsServerUrl.EqualsI(Utf8String(szBuffer)))
+                if (m_serverUrl.EqualsI(Utf8String(szBuffer)))
                     {
                     RegCloseKey(subKey);
+                    LOG.tracev("%s server: %s is already present in the registry", server.c_str(), m_serverUrl.c_str());
                     return true;
                     }
                 }
             else
                 {
-                LOG.errorv("Unable to read server value for key: %s under %s error code: %ld", Utf8String(dnsServerName).c_str(), Utf8String(itor->second).c_str(), result);
+                LOG.errorv("Unable to read server value for key: %s under %s error code: %ld", Utf8String(serverName).c_str(), Utf8String(itor->second).c_str(), result);
                 }
 
             RegCloseKey(subKey);
-            dnsServerNameLen = _countof(dnsServerName);
+            serverNameLen = _countof(serverName);
             ++index;
             }
 
         RegCloseKey(dnsServersKey);
         }
+    LOG.tracev("%s server: %s is not present in the registry", server.c_str(), m_serverUrl.c_str());
     return false;
     }
