@@ -1581,16 +1581,26 @@ bool ECSchemaHelper::DoesRelatedPropertyPathHaveInstances(RelatedClassPathCR pat
     if (pathFromSelectToPropertyClass.empty())
         return false;
 
-    Utf8String filteringSelectAlias = (pathToSelectClass.empty()) ? "this" : "nestedRel";
-    ComplexGenericQueryPtr filteringQuery = ComplexGenericQuery::Create();
-    filteringQuery->SelectContract(*SimpleQueryContract::Create(*PresentationQueryContractSimpleField::Create("ECInstanceId", "ECInstanceId")), filteringSelectAlias.c_str());
-    filteringQuery->From(*pathFromSelectToPropertyClass.front().GetSourceClass(), true, filteringSelectAlias.c_str());
+    ComplexGenericQueryPtr filteringQuery;
     if (nullptr != filteringParams)
         {
-        if (InstanceFilteringResult::NoResults == QueryBuilderHelpers::ApplyInstanceFilter(*filteringQuery, *filteringParams, RelatedClassPath(pathToSelectClass).Reverse("", false)))
-            return false;
-        for (RelatedClassPathCR relatedInstancePath : filteringParams->GetSelectInfo().GetRelatedInstancePaths())
-            filteringQuery->Join(relatedInstancePath);
+        Utf8String filteringSelectAlias = (pathToSelectClass.empty()) ? "this" : "nestedRel";
+        filteringQuery = ComplexGenericQuery::Create();
+        filteringQuery->SelectContract(*SimpleQueryContract::Create(*PresentationQueryContractSimpleField::Create("ECInstanceId", "ECInstanceId")), filteringSelectAlias.c_str());
+        filteringQuery->From(*pathFromSelectToPropertyClass.front().GetSourceClass(), true, filteringSelectAlias.c_str());
+        InstanceFilteringResult applyFilterResult = QueryBuilderHelpers::ApplyInstanceFilter(*filteringQuery, *filteringParams, RelatedClassPath(pathToSelectClass).Reverse("", false));
+        switch (applyFilterResult)
+            {
+            case InstanceFilteringResult::Success:
+                for (RelatedClassPathCR relatedInstancePath : filteringParams->GetSelectInfo().GetRelatedInstancePaths())
+                    filteringQuery->Join(relatedInstancePath);
+                break;
+            case InstanceFilteringResult::NoFilter:
+                filteringQuery = nullptr;
+                break;
+            case InstanceFilteringResult::NoResults:
+                return false;
+            }
         }
 
     RefCountedPtr<SimpleQueryContract> contract = SimpleQueryContract::Create(
@@ -1606,8 +1616,11 @@ bool ECSchemaHelper::DoesRelatedPropertyPathHaveInstances(RelatedClassPathCR pat
 
     query->Where(Utf8PrintfString("[%s].[%s] = ?", lastJoinAlias.c_str(), wasLastJoinForward ? "TargetECClassId" : "SourceECClassId").c_str(),
         {new BoundQueryId(pathFromSelectToPropertyClass.back().GetTargetClass().GetClass().GetId())});
-    query->Where(Utf8PrintfString("[%s].[%s] IN (%s)", "r0", pathFromSelectToPropertyClass.front().IsForwardRelationship() ? "SourceECInstanceId" : "TargetECInstanceId", filteringQuery->ToString().c_str()).c_str(),
-        filteringQuery->GetBoundValues().Clone());
+    if (filteringQuery.IsValid())
+        {
+        query->Where(Utf8PrintfString("[%s].[%s] IN (%s)", "r0", pathFromSelectToPropertyClass.front().IsForwardRelationship() ? "SourceECInstanceId" : "TargetECInstanceId", filteringQuery->ToString().c_str()).c_str(),
+            filteringQuery->GetBoundValues().Clone());
+        }
 
     CachedECSqlStatementPtr stmt = m_connection.GetStatementCache().GetPreparedStatement(m_connection.GetECDb().Schemas(),
         m_connection.GetDb(), query->ToString().c_str());

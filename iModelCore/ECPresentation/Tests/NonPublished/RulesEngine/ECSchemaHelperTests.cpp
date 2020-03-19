@@ -909,6 +909,14 @@ TEST_F (ECSchemaHelperTests, GetECClassesFromSchemaList_DoesNotReturnClassesFrom
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECSchemaHelperTests, DoesRelatedPropertyPathHaveInstances_ReturnsFalseWhenEmptyPropertyPathIsGiven)
+    {
+    EXPECT_FALSE(m_helper->DoesRelatedPropertyPathHaveInstances(RelatedClassPath(), RelatedClassPath(), nullptr));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                01/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(DoesRelatedPropertyPathHaveInstances_ReturnsTrueForPathsWithTargetClassInstances, R"*(
@@ -1029,6 +1037,38 @@ TEST_F(ECSchemaHelperTests, DoesRelatedPropertyPathHaveInstances_ReturnsTrueForM
         RelatedClass(*classA, SelectClass(*classC), *rel, true, "c", "ac"),
         };
     EXPECT_TRUE(m_helper->DoesRelatedPropertyPathHaveInstances(RelatedClassPath(), pathFromSelectClass, nullptr));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(DoesRelatedPropertyPathHaveInstances_ReturnsTrueForPathsWithProvidedAnEmptyInstanceFilter, R"*(
+    <ECEntityClass typeName="Model">
+        <ECProperty propertyName="Prop" typeName="int" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ModelContainsElements" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Model"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Element" />
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="Element" />
+)*");
+TEST_F(ECSchemaHelperTests, DoesRelatedPropertyPathHaveInstances_ReturnsTrueForPathsWithProvidedAnEmptyInstanceFilter)
+    {
+    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ModelContainsElements")->GetRelationshipClassCP();
+    ECClassCP modelClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Model");
+    ECClassCP elementClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Element");
+
+    IECInstancePtr model = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *modelClass, [](IECInstanceR instance) {instance.SetValue("Prop", ECValue(1)); });
+    IECInstancePtr element = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *model, *element);
+
+    RelatedClassPath path = {RelatedClass(*modelClass, *rel, true, "r", SelectClass(*elementClass), "e", true)};
+    InstanceFilteringParams filteringParams(*m_connection, m_helper->GetECExpressionsCache(), nullptr, SelectClassInfo(*modelClass), nullptr, nullptr);
+    EXPECT_TRUE(m_helper->DoesRelatedPropertyPathHaveInstances(RelatedClassPath(), path, &filteringParams));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1159,6 +1199,37 @@ TEST_F(ECSchemaHelperTests, DoesRelatedPropertyPathHaveInstances_ReturnsFalseFor
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(DoesRelatedPropertyPathHaveInstances_ReturnsFalseIfGivenInputIsEmpty, R"*(
+    <ECEntityClass typeName="Model" />
+    <ECRelationshipClass typeName="ModelContainsElements" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Model"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Element" />
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="Element" />
+)*");
+TEST_F(ECSchemaHelperTests, DoesRelatedPropertyPathHaveInstances_ReturnsFalseIfGivenInputIsEmpty)
+    {
+    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ModelContainsElements")->GetRelationshipClassCP();
+    ECClassCP modelClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Model");
+    ECClassCP elementClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Element");
+
+    IECInstancePtr model = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *modelClass);
+    IECInstancePtr element = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *model, *element);
+
+    RelatedClassPath path = {RelatedClass(*modelClass, *rel, true, "r", SelectClass(*elementClass), "e", true)};
+    TestParsedInput input;
+    InstanceFilteringParams filteringParams(*m_connection, m_helper->GetECExpressionsCache(), &input, SelectClassInfo(*modelClass), nullptr, "");
+    EXPECT_FALSE(m_helper->DoesRelatedPropertyPathHaveInstances(RelatedClassPath(), path, &filteringParams));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                01/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(DoesRelatedPropertyPathHaveInstances_ReturnsTrueForPathsWithInstancesMatchingNestedInstanceFilter, R"*(
@@ -1228,7 +1299,7 @@ TEST_F(ECSchemaHelperTests, DoesRelatedPropertyPathHaveInstances_ReturnsTrueForP
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                01/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(DoesRelatedPropertyPathHaveInstances_ReturnsFalsePathsWithoutsInstancesMatchingNestedInstanceFilter, R"*(
+DEFINE_SCHEMA(DoesRelatedPropertyPathHaveInstances_ReturnsFalseForPathsWithoutInstancesMatchingNestedInstanceFilter, R"*(
     <ECEntityClass typeName="Element">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.2.0">
@@ -1261,7 +1332,7 @@ DEFINE_SCHEMA(DoesRelatedPropertyPathHaveInstances_ReturnsFalsePathsWithoutsInst
         <BaseClass>Element</BaseClass>
     </ECEntityClass>
 )*");
-TEST_F(ECSchemaHelperTests, DoesRelatedPropertyPathHaveInstances_ReturnsFalsePathsWithoutsInstancesMatchingNestedInstanceFilter)
+TEST_F(ECSchemaHelperTests, DoesRelatedPropertyPathHaveInstances_ReturnsFalseForPathsWithoutInstancesMatchingNestedInstanceFilter)
     {
     ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ElementOwnsChildElements")->GetRelationshipClassCP();
     ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
@@ -1293,9 +1364,56 @@ TEST_F(ECSchemaHelperTests, DoesRelatedPropertyPathHaveInstances_ReturnsFalsePat
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(DoesRelatedPropertyPathHaveInstances_ReturnsTrueForPathsWithInstancesMatchingRelatedInstanceFilter, R"*(
+    <ECEntityClass typeName="Model" />
+    <ECRelationshipClass typeName="ModelContainsElements" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Model"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Element" />
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="Element" />
+    <ECRelationshipClass typeName="ElementHasAspects" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Aspect" />
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="Aspect">
+        <ECProperty propertyName="Prop" typeName="int" />
+    </ECEntityClass>
+)*");
+TEST_F(ECSchemaHelperTests, DoesRelatedPropertyPathHaveInstances_ReturnsTrueForPathsWithInstancesMatchingRelatedInstanceFilter)
+    {
+    ECRelationshipClassCP relModelToElement = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ModelContainsElements")->GetRelationshipClassCP();
+    ECRelationshipClassCP relElementToAspect = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ElementHasAspects")->GetRelationshipClassCP();
+    ECClassCP classModel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Model");
+    ECClassCP classElement = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Element");
+    ECClassCP classAspect = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Aspect");
+
+    IECInstancePtr model = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classModel);
+    IECInstancePtr element = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classElement);
+    IECInstancePtr aspect = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classAspect, [](IECInstanceR instance) {instance.SetValue("Prop", ECValue(1)); });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relModelToElement, *model, *element);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relElementToAspect, *element, *aspect);
+
+    RelatedClassPath pathFromSelectClass = {RelatedClass(*classElement, SelectClass(*classModel), *relModelToElement, false, "model", "model_to_elements")};
+    SelectClassInfo selectInfo(*classElement);
+    selectInfo.SetRelatedInstancePaths({RelatedClassPath{RelatedClass(*classElement, SelectClass(*classAspect), *relElementToAspect, true, "aspect", "element_to_aspect")}});
+    InstanceFilteringParams filteringParams(*m_connection, m_helper->GetECExpressionsCache(), nullptr, selectInfo, nullptr, "aspect.Prop = 1");
+    EXPECT_TRUE(m_helper->DoesRelatedPropertyPathHaveInstances(RelatedClassPath(), pathFromSelectClass, &filteringParams));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                01/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(DoesRelatedPropertyPathHaveInstances_ReturnsCurrectResultForRelatedToRecursivelyFilteredInstances, R"*(
+DEFINE_SCHEMA(DEPRECATED_DoesRelatedPropertyPathHaveInstances_ReturnsCorrectResultForRelatedToRecursivelyFilteredInstances, R"*(
     <ECEntityClass typeName="Element">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.2.0">
@@ -1332,31 +1450,91 @@ DEFINE_SCHEMA(DoesRelatedPropertyPathHaveInstances_ReturnsCurrectResultForRelate
     <ECEntityClass typeName="AspectB">
         <BaseClass>Aspect</BaseClass>
     </ECEntityClass>
+    <ECEntityClass typeName="AspectC">
+        <BaseClass>Aspect</BaseClass>
+    </ECEntityClass>
 )*");
-TEST_F(ECSchemaHelperTests, DoesRelatedPropertyPathHaveInstances_ReturnsCurrectResultForRelatedToRecursivelyFilteredInstances)
+TEST_F(ECSchemaHelperTests, DEPRECATED_DoesRelatedPropertyPathHaveInstances_ReturnsCorrectResultForRelatedToRecursivelyFilteredInstances)
     {
     ECClassCP elementClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Element");
     ECRelationshipClassCP elementToElementRel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ElementOwnsChildElements")->GetRelationshipClassCP();
     ECRelationshipClassCP elementToAspectRel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ElementHasAspect")->GetRelationshipClassCP();
     ECClassCP aspectAClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "AspectA");
     ECClassCP aspectBClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "AspectB");
+    ECClassCP aspectCClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "AspectC");
 
     IECInstancePtr e1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
     IECInstancePtr e2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementToElementRel, *e1, *e2);
     IECInstancePtr e3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementToElementRel, *e2, *e3);
+    IECInstancePtr e4 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
     IECInstancePtr aspectA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *aspectAClass);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementToAspectRel, *e2, *aspectA);
     IECInstancePtr aspectB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *aspectBClass);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementToAspectRel, *e3, *aspectB);
+    IECInstancePtr aspectC = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *aspectCClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementToAspectRel, *e4, *aspectC);
 
     SelectClassInfo selectInfo(*elementClass, true);
     RelatedClassPath pathToSelectClass{RelatedClass(*elementClass, *elementClass, *elementToElementRel, true, "e", "e_to_e")};
+    selectInfo.SetPathFromInputToSelectClass(pathToSelectClass);
     InstanceFilteringParams::RecursiveQueryInfo recursiveInfo({pathToSelectClass});
-    InstanceFilteringParams filteringParams(*m_connection, m_helper->GetECExpressionsCache(), nullptr, selectInfo, &recursiveInfo, "");
-    EXPECT_TRUE(m_helper->DoesRelatedPropertyPathHaveInstances(pathToSelectClass, {RelatedClass(*elementClass, *elementToAspectRel, true, "r", *aspectAClass, "a", true)}, &filteringParams));
-    EXPECT_TRUE(m_helper->DoesRelatedPropertyPathHaveInstances(pathToSelectClass, {RelatedClass(*elementClass, *elementToAspectRel, true, "r", *aspectBClass, "b", true)}, &filteringParams));
+    TestParsedInput input(*e1);
+    InstanceFilteringParams filteringParams(*m_connection, m_helper->GetECExpressionsCache(), &input, selectInfo, &recursiveInfo, "");
+    EXPECT_TRUE(m_helper->DoesRelatedPropertyPathHaveInstances(RelatedClassPath(), {RelatedClass(*elementClass, *elementToAspectRel, true, "r", *aspectAClass, "a", true)}, &filteringParams));
+    EXPECT_TRUE(m_helper->DoesRelatedPropertyPathHaveInstances(RelatedClassPath(), {RelatedClass(*elementClass, *elementToAspectRel, true, "r", *aspectBClass, "b", true)}, &filteringParams));
+    EXPECT_FALSE(m_helper->DoesRelatedPropertyPathHaveInstances(RelatedClassPath(), {RelatedClass(*elementClass, *elementToAspectRel, true, "r", *aspectCClass, "c", true)}, &filteringParams));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(DEPRECATED_DoesRelatedPropertyPathHaveInstances_ReturnsFalseWhenThereAreNoRecursivelyRelatedFilteredInstances, R"*(
+    <ECEntityClass typeName="Element">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsChildElements" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Element" />
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="Aspect" />
+    <ECRelationshipClass typeName="ElementHasAspect" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Aspect" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(ECSchemaHelperTests, DEPRECATED_DoesRelatedPropertyPathHaveInstances_ReturnsFalseWhenThereAreNoRecursivelyRelatedFilteredInstances)
+    {
+    ECClassCP elementClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Element");
+    ECRelationshipClassCP elementToElementRel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ElementOwnsChildElements")->GetRelationshipClassCP();
+    ECRelationshipClassCP elementToAspectRel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ElementHasAspect")->GetRelationshipClassCP();
+    ECClassCP aspectClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Aspect");
+
+    IECInstancePtr e1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
+    IECInstancePtr e2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
+    IECInstancePtr aspect = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *aspectClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementToAspectRel, *e2, *aspect);
+
+    SelectClassInfo selectInfo(*elementClass, true);
+    RelatedClassPath pathToSelectClass{RelatedClass(*elementClass, *elementClass, *elementToElementRel, true, "e", "e_to_e")};
+    selectInfo.SetPathFromInputToSelectClass(pathToSelectClass);
+    InstanceFilteringParams::RecursiveQueryInfo recursiveInfo({pathToSelectClass});
+    TestParsedInput input(*e1);
+    InstanceFilteringParams filteringParams(*m_connection, m_helper->GetECExpressionsCache(), &input, selectInfo, &recursiveInfo, "");
+    EXPECT_FALSE(m_helper->DoesRelatedPropertyPathHaveInstances(RelatedClassPath(), {RelatedClass(*elementClass, *elementToAspectRel, true, "r", *aspectClass, "a", true)}, &filteringParams));
     }
 
 //---------------------------------------------------------------------------------------

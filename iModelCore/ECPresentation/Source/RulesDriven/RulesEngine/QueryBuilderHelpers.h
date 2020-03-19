@@ -18,10 +18,12 @@ struct IParsedInput
     {
     protected:
         virtual bvector<ECClassCP> const& _GetClasses() const = 0;
+        virtual bool _HasClass(ECClassCR ecClass) const {return _GetClasses().end() != std::find(_GetClasses().begin(), _GetClasses().end(), &ecClass);}
         virtual bvector<BeSQLite::EC::ECInstanceId> const& _GetInstanceIds(ECClassCR) const = 0;
     public:
         virtual ~IParsedInput() {}
         bvector<ECClassCP> const& GetClasses() const { return _GetClasses(); }
+        bool HasClass(ECClassCR ecClass) const {return _HasClass(ecClass);}
         bvector<BeSQLite::EC::ECInstanceId> const& GetInstanceIds(ECClassCR selectClass) const { return _GetInstanceIds(selectClass); }
     };
 
@@ -68,6 +70,7 @@ public:
 enum class InstanceFilteringResult
     {
     Success,    //!< Filter appied successfully
+    NoFilter,   //!< Returned when it's clear the filter has no effect (matches all results)
     NoResults,  //!< Returned when it's clear the query will return no results after applying the filter
     };
 

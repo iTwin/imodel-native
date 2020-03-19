@@ -393,7 +393,8 @@ bset<ECInstanceId> RecursiveQueriesHelper::GetRecursiveChildrenIds(bset<ECInstan
 template<typename T>
 InstanceFilteringResult QueryBuilderHelpers::ApplyInstanceFilter(ComplexPresentationQuery<T>& query, InstanceFilteringParams const& params, RelatedClassPath pathFromSourceClassToSelectClass)
     {
-    InstanceFilteringResult result = InstanceFilteringResult::Success;
+    InstanceFilteringResult result = InstanceFilteringResult::NoFilter;
+
     if (!pathFromSourceClassToSelectClass.empty())
         pathFromSourceClassToSelectClass.back().SetTargetClassAlias("this"); // Changed in order instance filtering to work using this keyword
 
@@ -403,11 +404,15 @@ InstanceFilteringResult QueryBuilderHelpers::ApplyInstanceFilter(ComplexPresenta
             {
             // note: this code path is generally used for SelectedNodeInstances specification - we just
             // need to filter by selected instance ids
+            if (!params.GetInput()->HasClass(params.GetSelectInfo().GetSelectClass().GetClass()))
+                return InstanceFilteringResult::NoResults;
+
             bvector<ECInstanceId> const& selectedInstanceIds = params.GetInput()->GetInstanceIds(params.GetSelectInfo().GetSelectClass().GetClass());
             if (!selectedInstanceIds.empty())
                 {
                 IdsFilteringHelper<bvector<ECInstanceId>> filteringHelper(selectedInstanceIds);
                 query.Where(filteringHelper.CreateWhereClause("[this].[ECInstanceId]").c_str(), filteringHelper.CreateBoundValues());
+                result = InstanceFilteringResult::Success;
                 }
             }
         else
@@ -423,7 +428,8 @@ InstanceFilteringResult QueryBuilderHelpers::ApplyInstanceFilter(ComplexPresenta
                 IdsFilteringHelper<bset<ECInstanceId>> filteringHelper(ids);
                 query.Where(filteringHelper.CreateWhereClause("[this].[ECInstanceId]").c_str(), filteringHelper.CreateBoundValues());
                 if (ids.empty())
-                    result = InstanceFilteringResult::NoResults;
+                    return InstanceFilteringResult::NoResults;
+                result = InstanceFilteringResult::Success;
                 }
             else
                 {
@@ -438,7 +444,8 @@ InstanceFilteringResult QueryBuilderHelpers::ApplyInstanceFilter(ComplexPresenta
                     IdsFilteringHelper<bvector<ECInstanceId>> filteringHelper(ids);
                     query.Where(filteringHelper.CreateWhereClause("[related].[ECInstanceId]").c_str(), filteringHelper.CreateBoundValues());
                     if (ids.empty())
-                        result = InstanceFilteringResult::NoResults;
+                        return InstanceFilteringResult::NoResults;
+                    result = InstanceFilteringResult::Success;
                     }
                 else if (pathFromSelectToInputClass.empty())
                     {
@@ -448,8 +455,9 @@ InstanceFilteringResult QueryBuilderHelpers::ApplyInstanceFilter(ComplexPresenta
                     bset<ECInstanceId> const& ids = params.GetSelectInfo().GetPathFromInputToSelectClass().back().GetTargetIds();
                     IdsFilteringHelper<bset<ECInstanceId>> filteringHelper(ids);
                     query.Where(filteringHelper.CreateWhereClause("[this].[ECInstanceId]").c_str(), filteringHelper.CreateBoundValues());
-                    if (ids.empty())
-                        result = InstanceFilteringResult::NoResults;
+                    if (ids.empty()) 
+                        return InstanceFilteringResult::NoResults;
+                    result = InstanceFilteringResult::Success;
                     }
                 else
                     {
@@ -462,10 +470,16 @@ InstanceFilteringResult QueryBuilderHelpers::ApplyInstanceFilter(ComplexPresenta
         }
 
     if (!pathFromSourceClassToSelectClass.empty())
+        {
         query.Join(pathFromSourceClassToSelectClass, true);
+        result = InstanceFilteringResult::Success;
+        }
 
     if (params.GetInstanceFilter() && 0 != *params.GetInstanceFilter())
+        {
         query.Where(ECExpressionsHelper(params.GetECExpressionsCache()).ConvertToECSql(params.GetInstanceFilter()).c_str(), BoundQueryValuesList());
+        result = InstanceFilteringResult::Success;
+        }
 
     return result;
     }
