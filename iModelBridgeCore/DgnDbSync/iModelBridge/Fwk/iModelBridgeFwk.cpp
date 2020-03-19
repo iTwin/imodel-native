@@ -2764,7 +2764,11 @@ void iModelBridgeFwk::LogStderr()
     WString wstr;
     ReadEntireFile(wstr, m_stderrFileName);
     if (!wstr.empty())
+        {
+        GetLogger().error("BEGIN: errors from stderr");
         GetLogger().errorv(L"%ls", wstr.c_str());
+        GetLogger().errorv("END: errors from stderr");
+        }
 
     if (!m_briefcaseName.empty())
         {
@@ -2773,7 +2777,11 @@ void iModelBridgeFwk::LogStderr()
         BeFileName issuesFileName = ComputeReportFileName(m_briefcaseName);
         ReadEntireFile(wstr, issuesFileName);
         if (!wstr.empty())
+            {
+            GetLogger().errorv("BEGIN: errors from issues file.");
             GetLogger().errorv(L"%ls", wstr.c_str());
+            GetLogger().errorv("END: errors from issues file.");
+            }
         }
 
 //    BeFileName::BeDeleteFile(m_stdoutFileName.c_str());
