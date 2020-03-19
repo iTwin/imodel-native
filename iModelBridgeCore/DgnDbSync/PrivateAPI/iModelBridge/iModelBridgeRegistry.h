@@ -56,6 +56,7 @@ struct iModelBridgeRegistryBase : RefCounted<IModelBridgeRegistry>
         BeFileName m_inputFileName;
         bool m_searchForFilesInStagingDir{};
         bool m_noBridgeSearch{false};
+        bool m_writeProgressToStdout{};
         int ParseCommandLine(int argc, WCharCP argv[]);
         };
 
@@ -69,6 +70,9 @@ private:
     BeFileName m_registryDir;
     BeFileName m_masterFilePath;
     bool m_searchForFilesInStagingDir{};
+    bool m_writeProgressToStdout{};
+    uint32_t m_totalFileCount{};
+    uint32_t m_processedFileCount{};
     
     bool QueryAnyInstalledBridges();
   

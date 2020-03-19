@@ -10,11 +10,12 @@
             "request": "launch",
             "program": "${env:OutRoot}Winx64/Product/iModelBridgeFwk/bin/iModelBridgeAssign.exe",
             "args": [
-                "--server-repository=?",
-                "--fwk-staging-dir=D:/samw/sourceFiles",
+                "--fwk-logging-config-file=d:\\BridgeToiModelHub\\logging.config.xml",
+                "--server-repository=test62",
+                "--fwk-staging-dir=d:\\BridgeToiModelHub",
+                "--registry-dir=d:\\BridgeToiModelHub\\bridge",
                 "--fwk-search-in-staging-dir",
-                "--registry-dir=d:/tmp/job2",
-                "--fwk-logging-config-file=D:/imodel02/source/iModelBridgeFramework/Desktop/Orchestrator/static/bridge-logging.config.xml"
+                "--write-progress-to-stdout"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -338,7 +339,7 @@
                 }
             ],
             "args": [
-              "--gtest_filter=RelationshipMappingTestFixture.UpgradeModifierFromAbstract"
+                "--gtest_filter=RelationshipMappingTestFixture.UpgradeModifierFromAbstract"
             ]
         },
         {

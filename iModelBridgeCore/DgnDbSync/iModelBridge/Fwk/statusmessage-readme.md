@@ -34,5 +34,8 @@ The framework will POST to the supplied URL. The requests will have JSON bodies.
   stepsPct: number; // steps completed so far, as a percentage, that is, a number between 0 and 100
   tasksPct: number; // tasks completed so far, as a percentage, that is, a number between 0 and 100
   lastUpdateTime: number; // time of last POST
+  phaseCount?: number; // the total number of phases
+  stepCount?: number; // the total number of steps
+  taskCount?: number; // the total number of tasks  
 }
 ```

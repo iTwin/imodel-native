@@ -377,6 +377,8 @@ BentleyStatus       iModelBridgeRegistryBase::ComputeBridgeAffinityInParentConte
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeRegistryBase::SearchForBridgeToAssignToDocument(WStringR bridgeName, BeFileNameCR sourceFilePath, WStringCR parentBridgeName)
     {
+    ++m_processedFileCount;
+
     BeFileName a;
     if (BSISUCCESS == QueryBridgeAssignedToDocument(a, bridgeName, sourceFilePath)) // If we have already assigned a bridge to this document, then stick with that.
         return BSISUCCESS;
@@ -505,6 +507,58 @@ void iModelBridgeRegistryBase::_QueryAllFilesAssignedToBridge(bvector<BeFileName
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/20
++---------------+---------------+---------------+---------------+---------------+------*/
+static uint32_t countFilesInDirs(BeFileNameCR topDirIn)
+    {
+    uint32_t count = 0;
+    BeFileName topDir(topDirIn);
+    topDir.AppendSeparator();
+
+    BeFileName entryName;
+    bool        isDir;
+    for (BeDirectoryIterator dirs (topDir); dirs.GetCurrentEntry (entryName, isDir) == SUCCESS; dirs.ToNext())
+        {
+        if (entryName.GetBaseName().EndsWithI(L".prp"))         // Filter out some control files that we know we should ignore
+            continue;
+
+        if (!isDir)
+            ++count;
+        else
+            count += countFilesInDirs(entryName);
+        }
+
+    return count;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/20
++---------------+---------------+---------------+---------------+---------------+------*/
+static void printProgress(BeFileNameCR fileName, uint32_t processedFileCount, uint32_t totalFileCount)
+    {
+    if (totalFileCount == 0)
+        return;
+
+    Json::Value json(Json::objectValue);
+    // json["jobRequestId"] = m_jobRequestId;
+    // json["jobRunCorrelationId"] = m_jobRunCorrelationId;
+    json["messageType"] = "progress";
+    json["phase"] = "Assignments";
+    json["step"] = Utf8String(fileName.c_str());
+    // json["task"] = m_taskName.c_str();
+    json["phasesPct"] = 0;
+    json["stepsPct"] =  (processedFileCount == 0)?              0 : 
+                        (processedFileCount >= totalFileCount)? 100: 
+                        ((100 * (processedFileCount-1)) / totalFileCount);
+    json["phasesCount"] = 1;
+    json["stepsCount"] = totalFileCount;
+    // json["tasksPct"] = pct(m_tasksRemaining, m_totalTasks);
+    json["lastUpdateTime"] = BeTimeUtilities::QueryMillisecondsCounterUInt32();
+    // json["spinCount"] = (int)m_spinCount;
+    printf("%s\n", json.ToString().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridgeRegistryBase::SearchForBridgesToAssignToDocumentsInDir(BeFileNameCR topDirIn)
@@ -527,6 +581,9 @@ void iModelBridgeRegistryBase::SearchForBridgesToAssignToDocumentsInDir(BeFileNa
             {
             WString bridgeName;
             SearchForBridgeToAssignToDocument(bridgeName, entryName, L"");
+
+            if (m_writeProgressToStdout && m_totalFileCount)
+                printProgress(entryName, m_processedFileCount, m_totalFileCount);
             }
         else
             SearchForBridgesToAssignToDocumentsInDir(entryName);
@@ -579,6 +636,9 @@ void iModelBridgeRegistryBase::SearchForBridgesToAssignToDocuments()
         }
     else if (m_searchForFilesInStagingDir)
         {
+        if (m_writeProgressToStdout)
+            m_totalFileCount = countFilesInDirs(m_stagingDir);
+
         SearchForBridgesToAssignToDocumentsInDir(m_stagingDir);
         }
     else
@@ -891,6 +951,9 @@ static void  ParseCxxOptsResult(cxxopts::ParseResult& result, iModelBridgeRegist
     if (result.count("no-bridge-search") > 0)
         args.m_noBridgeSearch = result["no-bridge-search"].as<bool>();
 
+    if (result.count("write-progress-to-stdout") > 0)
+        args.m_writeProgressToStdout = result["write-progress-to-stdout"].as<bool>();
+
     if (result.count("server-repository") > 0)
         {
         args.m_repositoryName = result["server-repository"].as<std::string>().c_str();
@@ -913,6 +976,7 @@ static cxxopts::Options GetCmdLineOptions()
         ("l,fwk-logging-config-file", "The configuration file to be used for logging.", cxxopts::value<std::string>(), "<Optional>")
         ("x,fwk-search-in-staging-dir", "Search for files in fwk-staging-dir.", cxxopts::value<bool>(), "<Optional>")
         ("no-bridge-search", "Don't search for globally installed bridges.", cxxopts::value<bool>(), "<Optional>")
+        ("write-progress-to-stdout", "Write progress messages to stdout.", cxxopts::value<bool>(), "<Optional>")
         ("h,help", "Print help")
         ;
     return options;
@@ -1041,6 +1105,7 @@ int iModelBridgeRegistryBase::AssignMain(int argc, WCharCP argv[])
     auto dbname = MakeDbName(dbDir, args.m_repositoryName);
     Dgn::iModelBridgeRegistry app(args.m_stagingDir, dbname);
     app.m_searchForFilesInStagingDir = args.m_searchForFilesInStagingDir;
+    app.m_writeProgressToStdout = args.m_writeProgressToStdout;
 
     auto dbres = app.OpenOrCreateStateDb();
     if (BE_SQLITE_OK != dbres)
