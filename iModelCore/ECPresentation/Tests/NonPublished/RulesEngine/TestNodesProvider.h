@@ -31,6 +31,8 @@ protected:
     bool _GetNode(JsonNavNodePtr& node, size_t index) const override {return m_getNodeHandler ? m_getNodeHandler(node, index) : false;}
     bool _HasNodes() const override {return m_hasNodesHandler ? m_hasNodesHandler() : false;}
     size_t _GetNodesCount() const override {return m_getNodesCountHandler ? m_getNodesCountHandler() : 0;}
+    Iterator _CreateFrontIterator() const override {return Iterator(std::make_unique<RandomAccessIteratorImpl<NavNodesProvider, JsonNavNodePtr>>(*this));}
+    Iterator _CreateBackIterator() const override {return Iterator(std::make_unique<RandomAccessIteratorImpl<NavNodesProvider, JsonNavNodePtr>>(*this, GetNodesCount()));}
 
 public:
     static RefCountedPtr<TestNodesProvider> Create(NavNodesProviderContext const& context) {return new TestNodesProvider(context);}

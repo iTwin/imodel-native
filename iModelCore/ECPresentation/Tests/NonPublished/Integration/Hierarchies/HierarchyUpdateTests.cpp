@@ -19,7 +19,7 @@ struct HierarchyUpdateTests : UpdateTests
         {
         JsonNavNodeCR jsonNode = static_cast<JsonNavNodeCR>(node);
         const_cast<JsonNavNodeR>(jsonNode).SetIsExpanded(true);
-        static_cast<RulesDrivenECPresentationManagerImpl&>(m_manager->GetImpl()).GetNodesCache().Update(jsonNode.GetNodeId(), jsonNode);
+        static_cast<RulesDrivenECPresentationManagerImpl&>(m_manager->GetImpl()).GetNodesCache().Update(jsonNode.GetNodeId(), jsonNode, IHierarchyCache::UPDATE_NodeItself);
         }
     };
 

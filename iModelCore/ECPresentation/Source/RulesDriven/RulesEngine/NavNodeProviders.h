@@ -256,6 +256,7 @@ struct NavNodesProvider : RefCountedBase
     friend struct NodesCountContext;
     friend struct NodesCheckContext;
     friend struct DisabledFullNodesLoadContext;
+    typedef IteratorWrapper<JsonNavNodePtr> Iterator;
 
 private:
     NavNodesProviderContextPtr m_context;
@@ -273,13 +274,16 @@ protected:
     ECPRESENTATION_EXPORT void InitializeNodes() const;
     bool HasSimilarNodeInHierarchy(JsonNavNodeCR node, uint64_t parentNodeId) const;
     bool ShouldReturnChildNodes(JsonNavNodeR node) const;
-    NavNodesProviderPtr CreateProvider(JsonNavNodeR node) const;
-    NavNodesProviderPtr CreateProviderForCachedNode(JsonNavNodeR node) const;
+    NavNodesProviderPtr CreateProvider(JsonNavNodeR node, bool customizeLabel) const;
+    NavNodesProviderPtr CreateProviderForCachedNode(JsonNavNodeR node, bool customizeLabel) const;
     void EvaluateArtifacts(JsonNavNodeCR node) const;
 
     virtual bool _IsCacheable() const = 0;
     virtual ProviderNodesInitializationStrategy _GetInitializationStrategy() const {return ProviderNodesInitializationStrategy::Automatic;}
     virtual bool _InitializeNodes() {return true;}
+
+    virtual Iterator _CreateFrontIterator() const = 0;
+    virtual Iterator _CreateBackIterator() const = 0;
 
     virtual EmptyNavNodesProviderCP _AsEmptyProvider() const {return nullptr;}
     virtual SingleNavNodeProviderCP _AsSingleProvider() const {return nullptr;}
@@ -302,8 +306,11 @@ public:
     ECPRESENTATION_EXPORT size_t GetNodesCount() const;
     ECPRESENTATION_EXPORT bool HasNodes() const;
     void DetermineChildren(JsonNavNodeR) const;
-    void NotifyNodeChanged(JsonNavNodeCR node) const;
+    void NotifyNodeChanged(JsonNavNodeCR node, int partsThatChanged) const;
     void SetNodesCount(size_t count) {m_cachedNodesCount = count; m_hasCachedNodesCount = true;}
+    ECPRESENTATION_EXPORT Iterator begin() const;
+    Iterator end() const {return _CreateBackIterator();}
+    JsonNavNodePtr operator[](size_t index) const {JsonNavNodePtr node; return GetNode(node, index) ? node : nullptr;}
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -369,6 +376,8 @@ protected:
     bool _HasNodes() const override {return false;}
     size_t _GetNodesCount() const override {return 0;}
     EmptyNavNodesProviderCP _AsEmptyProvider() const override {return this;}
+    Iterator _CreateFrontIterator() const override {return Iterator(std::make_unique<EmptyIteratorImpl<JsonNavNodePtr>>());}
+    Iterator _CreateBackIterator() const override {return Iterator(std::make_unique<EmptyIteratorImpl<JsonNavNodePtr>>());}
 public:
     static RefCountedPtr<EmptyNavNodesProvider> Create(NavNodesProviderContextR context)
         {
@@ -383,9 +392,10 @@ struct SingleNavNodeProvider : NavNodesProvider
 {
 private:
     JsonNavNodePtr m_node;
+    bool m_customizeLabel;
 private:
-    SingleNavNodeProvider(JsonNavNode& node, NavNodesProviderContextCR context)
-        : NavNodesProvider(context), m_node(&node)
+    SingleNavNodeProvider(JsonNavNode& node, NavNodesProviderContextCR context, bool customizeLabel)
+        : NavNodesProvider(context), m_node(&node), m_customizeLabel(customizeLabel)
         {}
 protected:
     bool _IsCacheable() const override {return false;}
@@ -394,15 +404,18 @@ protected:
         if (0 != index)
             return false;
         node = m_node;
+        FinalizeNode(*node, m_customizeLabel);
         return true;
         }
     bool _HasNodes() const override {return true;}
     size_t _GetNodesCount() const override {return 1;}
     SingleNavNodeProviderCP _AsSingleProvider() const override {return this;}
+    Iterator _CreateFrontIterator() const override {return Iterator(std::make_unique<RandomAccessIteratorImpl<NavNodesProvider, JsonNavNodePtr>>(*this));}
+    Iterator _CreateBackIterator() const override {return Iterator(std::make_unique<RandomAccessIteratorImpl<NavNodesProvider, JsonNavNodePtr>>(*this, GetNodesCount()));}
 public:
-    static RefCountedPtr<SingleNavNodeProvider> Create(JsonNavNode& node, NavNodesProviderContextCR context)
+    static RefCountedPtr<SingleNavNodeProvider> Create(JsonNavNode& node, NavNodesProviderContextCR context, bool customizeLabel)
         {
-        return WithInitialize(new SingleNavNodeProvider(node, context));
+        return WithInitialize(new SingleNavNodeProvider(node, context, customizeLabel));
         }
     };
 
@@ -417,16 +430,20 @@ private:
     bool RequiresFullLoad() const;
 protected:
     MultiNavNodesProvider(NavNodesProviderContextCR context) : NavNodesProvider(context) {}
+    MultiNavNodesProviderCP _AsMultiProvider() const override {return this;}
+    bool _IsCacheable() const override {return false;}
+    ECPRESENTATION_EXPORT virtual bool _GetNode(JsonNavNodePtr& node, size_t index) const override;
+    ECPRESENTATION_EXPORT virtual bool _HasNodes() const override;
+    ECPRESENTATION_EXPORT virtual size_t _GetNodesCount() const override;
+    ECPRESENTATION_EXPORT virtual Iterator _CreateFrontIterator() const override;
+    ECPRESENTATION_EXPORT virtual Iterator _CreateBackIterator() const override;
+public:
+    static RefCountedPtr<MultiNavNodesProvider> Create(NavNodesProviderContextCR context) {return new MultiNavNodesProvider(context);}
     void AddProvider(NavNodesProvider& provider) {m_providers.push_back(&provider);}
     void RemoveProvider(NavNodesProvider& provider) {m_providers.erase(std::find(m_providers.begin(), m_providers.end(), &provider));}
     void SetProviders(bvector<NavNodesProviderPtr> const& providers) {m_providers = providers;}
-    void ClearProviders() {m_providers.clear(); }
+    void ClearProviders() {m_providers.clear();}
     bvector<NavNodesProviderPtr>& GetNodeProvidersR() {return m_providers;}
-    MultiNavNodesProviderCP _AsMultiProvider() const override {return this;}
-    virtual bool _GetNode(JsonNavNodePtr& node, size_t index) const override;
-    virtual bool _HasNodes() const override;
-    virtual size_t _GetNodesCount() const override;
-public:
     bvector<NavNodesProviderPtr> const& GetNodeProviders() const {return m_providers;}
 };
 
@@ -456,6 +473,8 @@ protected:
         }
     bool _HasNodes() const override {return !m_nodes.empty();}
     size_t _GetNodesCount() const override {return m_nodes.size();}
+    Iterator _CreateFrontIterator() const override {return Iterator(std::make_unique<RandomAccessIteratorImpl<bvector<JsonNavNodePtr>, JsonNavNodePtr>>(m_nodes));}
+    Iterator _CreateBackIterator() const override {return Iterator(std::make_unique<RandomAccessIteratorImpl<bvector<JsonNavNodePtr>, JsonNavNodePtr>>(m_nodes, m_nodes.size()));}
 
 public:
     static RefCountedPtr<BVectorNodesProvider> Create(NavNodesProviderContext const& context, bvector<JsonNavNodePtr> nodes)
@@ -545,16 +564,19 @@ struct PostProcessingNodesProvider : NavNodesProvider
 private:
     NavNodesProviderCPtr m_wrappedProvider;
     bvector<std::unique_ptr<IProvidedNodesPostProcessor const>> m_postProcessors;
-    mutable NavNodesProviderPtr m_processedProvider;
+    mutable NavNodesProviderCPtr m_processedProvider;
 
 private:
     ECPRESENTATION_EXPORT PostProcessingNodesProvider(NavNodesProviderCR wrappedProvider);
+    NavNodesProviderCPtr GetProcessedProvider() const;
 
 protected:
     bool _IsCacheable() const override {return false;}
     ECPRESENTATION_EXPORT bool _GetNode(JsonNavNodePtr& node, size_t index) const override;
     ECPRESENTATION_EXPORT size_t _GetNodesCount() const override;
     ECPRESENTATION_EXPORT bool _HasNodes() const override;
+    Iterator _CreateFrontIterator() const override {return GetProcessedProvider()->begin();}
+    Iterator _CreateBackIterator() const override {return GetProcessedProvider()->end();}
 
 public:
     static RefCountedPtr<PostProcessingNodesProvider> Create(NavNodesProviderCR provider)
@@ -585,6 +607,8 @@ protected:
     bool _GetNode(JsonNavNodePtr& node, size_t index) const override;
     bool _HasNodes() const override;
     size_t _GetNodesCount() const override;
+    Iterator _CreateFrontIterator() const override {return m_provider->begin();}
+    Iterator _CreateBackIterator() const override {return m_provider->end();}
 
 public:
     static RefCountedPtr<CustomNodesProvider> Create(NavNodesProviderContextCR context, CustomNodeSpecificationCR specification)
@@ -624,6 +648,7 @@ protected:
     bool _GetNode(JsonNavNodePtr& node, size_t index) const override;
     bool _HasNodes() const override;
     size_t _GetNodesCount() const override;
+    Iterator _CreateFrontIterator() const override;
 
 public:
     static RefCountedPtr<QueryBasedNodesProvider> Create(NavNodesProviderContextCR context,
@@ -688,7 +713,8 @@ protected:
     bool _GetNode(JsonNavNodePtr& node, size_t index) const override;
     bool _HasNodes() const override;
     size_t _GetNodesCount() const override;
-
+    Iterator _CreateFrontIterator() const override;
+    Iterator _CreateBackIterator() const override;
     virtual BeSQLite::CachedStatementPtr _GetNodesStatement() const = 0;
     virtual BeSQLite::CachedStatementPtr _GetCountStatement() const = 0;
 
@@ -813,10 +839,12 @@ private:
 protected:
     bool _InitializeNodes() override;
     bool _IsCacheable() const override {return false;}
-    bool _GetNode(JsonNavNodePtr& node, size_t index) const override { return m_singleNodeProvider->GetNode(node, index); }
-    bool _HasNodes() const override { return m_singleNodeProvider->HasNodes(); }
-    size_t _GetNodesCount() const override { return m_singleNodeProvider->GetNodesCount(); }
-    SingleNavNodeProviderCP _AsSingleProvider() const override { return m_singleNodeProvider.get(); }
+    bool _GetNode(JsonNavNodePtr& node, size_t index) const override {return m_singleNodeProvider->GetNode(node, index);}
+    bool _HasNodes() const override {return m_singleNodeProvider->HasNodes();}
+    size_t _GetNodesCount() const override {return m_singleNodeProvider->GetNodesCount();}
+    SingleNavNodeProviderCP _AsSingleProvider() const override {return m_singleNodeProvider.get();}
+    Iterator _CreateFrontIterator() const override {return m_singleNodeProvider->begin();}
+    Iterator _CreateBackIterator() const override {return m_singleNodeProvider->end();}
 public:
     static RefCountedPtr<CachedNodeProvider> Create(NavNodesProviderContextCR context, uint64_t id)
         {

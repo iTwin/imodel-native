@@ -58,3 +58,21 @@ size_t PagingDataSource::_GetSize() const
 
     return sourceSize - m_pageStart;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+PagingDataSource::Iterator PagingDataSource::_CreateFrontIterator() const
+    {
+    size_t offset = (m_pageStart < m_source->GetSize()) ? m_pageStart : m_source->GetSize();
+    return Iterator(std::make_unique<IterableIteratorImpl<INavNodesDataSource::Iterator, NavNodePtr>>(m_source->begin() += offset));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+PagingDataSource::Iterator PagingDataSource::_CreateBackIterator() const 
+    {
+    size_t offset = ((0 != m_pageSize) && (m_pageStart + m_pageSize < m_source->GetSize())) ? (m_pageStart + m_pageSize) : m_source->GetSize();
+    return Iterator(std::make_unique<IterableIteratorImpl<INavNodesDataSource::Iterator, NavNodePtr>>(m_source->begin() += offset));
+    }

@@ -205,9 +205,12 @@ protected:
             return nullptr;
         return item;
         }
+    Iterator _CreateFrontIterator() const override {return Iterator(std::make_unique<RandomAccessIteratorImpl<ContentSetDataSource, ContentSetItemCPtr>>(*this));}
+    Iterator _CreateBackIterator() const override {return Iterator(std::make_unique<RandomAccessIteratorImpl<ContentSetDataSource, ContentSetItemCPtr>>(*this, GetSize()));}
 
 public:
     static ContentSetDataSourcePtr Create(ContentProviderCR contentProvider) {return new ContentSetDataSource(contentProvider);}
+    ContentSetItemCPtr operator[](size_t index) const {return Get(index);}
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

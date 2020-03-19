@@ -1,0 +1,27 @@
+{
+  "$schema": "file:///D:/dev/imodeljs/imodeljs-1/presentation/common/Ruleset.schema.json",
+  "id": "All-Elements",
+  "rules": [
+    {
+      "ruleType": "RootNodes",
+      "specifications": [
+        {
+          "specType": "InstanceNodesOfSpecificClasses",
+          "classes": [
+            {
+              "schemaName": "BisCore",
+              "classNames": [
+                "Element"
+              ]
+            }
+          ],
+          "arePolymorphic": true,
+          "groupByClass": false,
+          "groupByLabel": false,
+          "hasChildren": "Never",
+          "doNotSort": true
+        }
+      ]
+    }
+  ]
+}

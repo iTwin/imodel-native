@@ -18,6 +18,7 @@
 #include <ECDb/ECDbApi.h>
 
 // ECPresentation includes
+#include <ECPresentation/Iterators.h>
 #include <ECPresentation/ECPresentationTypes.h>
 #include <ECPresentation/IECPresentationManager.h>
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>

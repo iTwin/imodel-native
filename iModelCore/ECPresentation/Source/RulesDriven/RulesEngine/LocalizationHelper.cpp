@@ -13,7 +13,13 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool LocalizationHelper::LocalizeString(Utf8StringR str) const
     {
-    std::regex expression("(@[\\w\\d\\-_]+:[\\w\\d\\-\\._]+?@)", std::regex_constants::ECMAScript);
+    if (!str.Contains("@"))
+        {
+        // quick test for majority of cases to avoid regex
+        return true;
+        }
+
+    static std::regex expression("(@[\\w\\d\\-_]+:[\\w\\d\\-\\._]+?@)", std::regex_constants::ECMAScript);
     std::cmatch matches;
     std::regex_search(str.c_str(), matches, expression);
 

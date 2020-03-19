@@ -133,7 +133,7 @@ public:
     size_t GetPageSize() const {return m_pageSize;}
 
     //! Check whether this @ref PageOptions object is equal to the supplied one.
-    bool Equals(PageOptions const& other) {return m_pageStart == other.m_pageStart && m_pageSize == other.m_pageSize;}
+    bool Equals(PageOptions const& other) const {return m_pageStart == other.m_pageStart && m_pageSize == other.m_pageSize;}
 };
 
 //=======================================================================================

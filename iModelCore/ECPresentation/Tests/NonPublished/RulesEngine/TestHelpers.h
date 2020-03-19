@@ -281,7 +281,7 @@ struct TestNodesCache : IHierarchyCache, INavNodeLocater
     typedef std::function<void(DataSourceInfo&, DataSourceFilter const&, bmap<ECClassId, bool> const&, bvector<UserSettingEntry> const&)> CacheDataSourceHandler;
     typedef std::function<void(JsonNavNodeR, NodeVisibility)> CacheNodeHandler;
     typedef std::function<void(JsonNavNodeCR)> NodeHandler;
-    typedef std::function<void(uint64_t, JsonNavNodeCR)> UpdateNodeHandler;
+    typedef std::function<void(uint64_t, JsonNavNodeCR, int)> UpdateNodeHandler;
     typedef std::function<void(DataSourceInfo const&, DataSourceFilter const*, bmap<ECClassId, bool> const*, bvector<UserSettingEntry> const*)> UpdateDataSourceHandler;
     typedef std::function<JsonNavNodeCPtr(IConnectionCR, Utf8StringCR, NavNodeKeyCR)> LocateNodeHandler;
 
@@ -634,11 +634,11 @@ protected:
         m_finalizedDataSources.insert(info.GetId());
         }
 
-    void _Update(uint64_t id, JsonNavNodeCR node) override
+    void _Update(uint64_t id, JsonNavNodeCR node, int partsToUpdate) override
         {
         BeMutexHolder lock(m_mutex);
         if (m_updateNodeHandler)
-            return m_updateNodeHandler(id, node);
+            return m_updateNodeHandler(id, node, partsToUpdate);
         }
     void _Update(DataSourceInfo const& info, DataSourceFilter const* filter, bmap<ECClassId, bool> const* relatedClassIds, bvector<UserSettingEntry> const* relatedSettings) override
         {

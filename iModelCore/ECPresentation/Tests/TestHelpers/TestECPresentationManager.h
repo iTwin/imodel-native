@@ -22,7 +22,6 @@ private:
 
 protected:
     size_t _GetSize() const override {return m_vector.size();}
-
     ContentSetItemCPtr _Get(size_t index) const override
         {
         ContentSetItemCPtr item;
@@ -30,6 +29,8 @@ protected:
             return nullptr;
         return m_vector[index];
         }
+    Iterator _CreateFrontIterator() const override {return Iterator(std::make_unique<IterableIteratorImpl<bvector<ContentSetItemCPtr>::const_iterator, ContentSetItemCPtr>>(m_vector.begin()));}
+    Iterator _CreateBackIterator() const override {return Iterator(std::make_unique<IterableIteratorImpl<bvector<ContentSetItemCPtr>::const_iterator, ContentSetItemCPtr>>(m_vector.end()));}
 public:
     static RefCountedPtr<TestContentDataSource> Create() {return new TestContentDataSource();}
     void AddContentSetItem(ContentSetItemCPtr item) {m_vector.push_back(item);}
@@ -44,8 +45,10 @@ private:
     bvector<NavNodeCPtr> m_vec;
     TestNodesDataSource(bvector<NavNodeCPtr> vec) : m_vec(vec) {}
 protected:
-    NavNodeCPtr _Get(size_t index) const override { return m_vec[index]; }
-    size_t _GetSize() const override { return m_vec.size(); }
+    NavNodeCPtr _Get(size_t index) const override {return m_vec[index];}
+    size_t _GetSize() const override {return m_vec.size();}
+    Iterator _CreateFrontIterator() const override {return Iterator(std::make_unique<IterableIteratorImpl<bvector<NavNodeCPtr>::const_iterator, NavNodeCPtr>>(m_vec.begin()));}
+    Iterator _CreateBackIterator() const override {return Iterator(std::make_unique<IterableIteratorImpl<bvector<NavNodeCPtr>::const_iterator, NavNodeCPtr>>(m_vec.end()));}
 public:
     static RefCountedPtr<TestNodesDataSource> Create(bvector<NavNodeCPtr> vec) { return new TestNodesDataSource(vec); }
 };

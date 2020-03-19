@@ -593,41 +593,41 @@ struct NodesChildrenCheckContext
 struct OptimizationFlagsCarrier
 {
 private:
-    NavNodesProviderCP m_childProvider;
+    NavNodesProviderContextP m_childContext;
     bool m_wasCheckingChildren;
     bool m_wasFullNodesLoadDisabled;
     bool m_reset;
 public:
-    OptimizationFlagsCarrier(NavNodesProviderCR parentProvider, NavNodesProviderCR childProvider)
-        : m_childProvider(&childProvider), m_reset(true)
+    OptimizationFlagsCarrier(NavNodesProviderContextCR parentContext, NavNodesProviderContextR childContext)
+        : m_childContext(&childContext), m_reset(true)
         {
-        m_wasFullNodesLoadDisabled = m_childProvider->GetContext().IsFullNodesLoadDisabled();
-        m_wasCheckingChildren = m_childProvider->GetContext().IsCheckingChildren();
-        m_childProvider->GetContextR().SetDisableFullLoad(parentProvider.GetContext().IsFullNodesLoadDisabled());
-        m_childProvider->GetContextR().SetIsCheckingChildren(parentProvider.GetContext().IsCheckingChildren());
+        m_wasFullNodesLoadDisabled = m_childContext->IsFullNodesLoadDisabled();
+        m_wasCheckingChildren = m_childContext->IsCheckingChildren();
+        m_childContext->SetDisableFullLoad(parentContext.IsFullNodesLoadDisabled());
+        m_childContext->SetIsCheckingChildren(parentContext.IsCheckingChildren());
         }
-    OptimizationFlagsCarrier(OptimizationFlagsCarrier&& other)
-        : m_childProvider(other.m_childProvider), m_wasCheckingChildren(other.m_wasCheckingChildren), m_wasFullNodesLoadDisabled(other.m_wasFullNodesLoadDisabled)
-        {
-        other.m_reset = false;
-        }
+    OptimizationFlagsCarrier(OptimizationFlagsCarrier&& other) = delete;
+    OptimizationFlagsCarrier(OptimizationFlagsCarrier const& other) = delete;
     ~OptimizationFlagsCarrier()
         {
         if (m_reset)
             {
-            m_childProvider->GetContextR().SetDisableFullLoad(m_wasFullNodesLoadDisabled);
-            m_childProvider->GetContextR().SetIsCheckingChildren(m_wasCheckingChildren);
+            m_childContext->SetDisableFullLoad(m_wasFullNodesLoadDisabled);
+            m_childContext->SetIsCheckingChildren(m_wasCheckingChildren);
             }
         }
-    OptimizationFlagsCarrier& operator=(OptimizationFlagsCarrier&& other)
+    static std::unique_ptr<OptimizationFlagsCarrier> Create(NavNodesProviderContextCR parentContext, NavNodesProviderContextR childContext)
         {
-        m_childProvider = other.m_childProvider;
-        m_wasCheckingChildren = other.m_wasCheckingChildren;
-        m_wasFullNodesLoadDisabled = other.m_wasFullNodesLoadDisabled;
-        other.m_reset = false;
-        return *this;
+        return std::make_unique<OptimizationFlagsCarrier>(parentContext, childContext);
+        }
+    static std::unique_ptr<OptimizationFlagsCarrier> CreateIfParentOptimized(NavNodesProviderContextCR parentContext, NavNodesProviderContextR childContext)
+        {
+        if (parentContext.IsFullNodesLoadDisabled() || parentContext.IsCheckingChildren())
+            return Create(parentContext, childContext);
+        return nullptr;
         }
 };
+typedef std::unique_ptr<OptimizationFlagsCarrier> OptimizationFlagsCarrierPtr;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
@@ -681,11 +681,21 @@ size_t NavNodesProvider::GetNodesCount() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+NavNodesProvider::Iterator NavNodesProvider::begin() const
+    {
+    if (_GetInitializationStrategy() == ProviderNodesInitializationStrategy::Automatic)
+        InitializeNodes();
+    return _CreateFrontIterator();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NavNodesProvider::NotifyNodeChanged(JsonNavNodeCR node) const
+void NavNodesProvider::NotifyNodeChanged(JsonNavNodeCR node, int partsThatChanged) const
     {
-    GetContext().GetNodesCache().Update(node.GetNodeId(), node);
+    GetContext().GetNodesCache().Update(node.GetNodeId(), node, partsThatChanged);
     }
 
 /*=================================================================================**//**
@@ -707,7 +717,7 @@ struct NodeHasChildrenFlagUpdater
         if (m_flag == m_initialFlag)
             return;
         m_node->SetHasChildren(HASCHILDREN_True == m_flag);
-        m_cache.Update(m_node->GetNodeId(), *m_node);
+        m_cache.Update(m_node->GetNodeId(), *m_node, IHierarchyCache::UPDATE_NodeItself);
         m_initialFlag = m_flag;
         }
     };
@@ -748,25 +758,27 @@ void NavNodesProvider::FinalizeNode(JsonNavNodeR node, bool customizeLabel) cons
 
     BeMutexHolder lock(GetContext().GetNodesCache().GetMutex());
     DataSourceRelatedSettingsUpdater updater(GetContext(), &node);
-    bool changed = false;
+    int updatedParts = 0;
 
     // make sure the node is customized
     if (!NavNodeExtendedData(node).IsCustomized())
         {
+        updatedParts |= IHierarchyCache::UPDATE_NodeItself;
+        if (customizeLabel)
+            updatedParts |= IHierarchyCache::UPDATE_NodeInstanceKeys;
         CustomizationHelper::Customize(GetContext(), node, customizeLabel);
-        changed = true;
         }
 
     // make sure the node has determined if it has any children
     if (!node.DeterminedChildren())
         {
+        updatedParts |= IHierarchyCache::UPDATE_NodeItself;
         DetermineChildren(node);
-        changed = true;
         }
 
     // if any changes mande, update the node in cache
-    if (changed)
-        NotifyNodeChanged(node);
+    if (0 != updatedParts)
+        NotifyNodeChanged(node, updatedParts);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -936,7 +948,7 @@ bool NavNodesProvider::ShouldReturnChildNodes(JsonNavNodeR node) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodesProviderPtr NavNodesProvider::CreateProvider(JsonNavNodeR node) const
+NavNodesProviderPtr NavNodesProvider::CreateProvider(JsonNavNodeR node, bool customizeLabel) const
     {
     NavNodeExtendedData extendedData(node);
 
@@ -956,20 +968,20 @@ NavNodesProviderPtr NavNodesProvider::CreateProvider(JsonNavNodeR node) const
         }
 
     // otherwise, make node physical
-    return SingleNavNodeProvider::Create(node, *nestedContext);
+    return SingleNavNodeProvider::Create(node, *nestedContext, customizeLabel);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodesProviderPtr NavNodesProvider::CreateProviderForCachedNode(JsonNavNodeR node) const
+NavNodesProviderPtr NavNodesProvider::CreateProviderForCachedNode(JsonNavNodeR node, bool customizeLabel) const
     {
     NavNodesProviderContextPtr nestedContext = CreateContextForSameHierarchyLevel(GetContext(), true);
     NavNodeExtendedData extendedData(node);
     if (GetContext().IsChildNodeContext() && HasSimilarNodeInHierarchy(node, extendedData.HasVirtualParentId() ? extendedData.GetVirtualParentId() : 0))
         return EmptyNavNodesProvider::Create(*nestedContext);
     if (NodeVisibility::Virtual != GetContext().GetNodesCache().GetNodeVisibility(node.GetNodeId()))
-        return SingleNavNodeProvider::Create(node, *nestedContext);
+        return SingleNavNodeProvider::Create(node, *nestedContext, customizeLabel);
     return GetContext().CreateHierarchyLevelProvider(*CreateContextForChildHierarchyLevel(GetContext(), node), &node);
     }
 
@@ -1020,7 +1032,7 @@ bool CustomNodesProvider::_InitializeNodes()
             return false;
             }
         EvaluateArtifacts(*cachedNode);
-        m_provider = CreateProviderForCachedNode(*cachedNode);
+        m_provider = CreateProviderForCachedNode(*cachedNode, true);
         return true;
         }
 
@@ -1055,7 +1067,7 @@ bool CustomNodesProvider::_InitializeNodes()
     node->SetNodeKey(*NavNodesHelper::CreateNodeKey(GetContext().GetConnection(), *node, parent.IsValid() ? parent->GetKey().get() : nullptr));
     EvaluateArtifacts(*node);
     GetContext().GetNodesCache().Cache(*node, GetContext().GetDataSourceInfo(), 0, NodeVisibility::Visible);
-    m_provider = CreateProvider(*node);
+    m_provider = CreateProvider(*node, true);
     GetContext().GetNodesCache().FinalizeInitialization(GetContext().GetDataSourceInfo());
     return true;
     }
@@ -1068,12 +1080,8 @@ bool CustomNodesProvider::_GetNode(JsonNavNodePtr& node, size_t index) const
     if (m_provider.IsNull())
         return false;
 
-    OptimizationFlagsCarrier useOptimizationFlags(*this, *m_provider);
-    if (!m_provider->GetNode(node, index))
-        return false;
-
-    FinalizeNode(*node, true);
-    return true;
+    OptimizationFlagsCarrierPtr useOptimizationFlags = OptimizationFlagsCarrier::CreateIfParentOptimized(GetContext(), m_provider->GetContextR());
+    return m_provider->GetNode(node, index);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1084,7 +1092,7 @@ bool CustomNodesProvider::_HasNodes() const
     if (m_provider.IsNull())
         return false;
 
-    OptimizationFlagsCarrier useOptimizationFlags(*this, *m_provider);
+    OptimizationFlagsCarrierPtr useOptimizationFlags = OptimizationFlagsCarrier::CreateIfParentOptimized(GetContext(), m_provider->GetContextR());
     return m_provider->HasNodes();
     }
 
@@ -1096,7 +1104,7 @@ size_t CustomNodesProvider::_GetNodesCount() const
     if (m_provider.IsNull())
         return 0;
 
-    OptimizationFlagsCarrier useOptimizationFlags(*this, *m_provider);
+    OptimizationFlagsCarrierPtr useOptimizationFlags = OptimizationFlagsCarrier::CreateIfParentOptimized(GetContext(), m_provider->GetContextR());
     return m_provider->GetNodesCount();
     }
 
@@ -1275,7 +1283,7 @@ bool QueryBasedNodesProvider::InitializeProvidersFromCache()
         while (cachedProvider->GetNode(cachedNode, cachedIndex++))
             {
             EvaluateArtifacts(*cachedNode);
-            AddProvider(*CreateProviderForCachedNode(*cachedNode));
+            AddProvider(*CreateProviderForCachedNode(*cachedNode, false));
             }
         return true;
         }
@@ -1330,7 +1338,7 @@ bool QueryBasedNodesProvider::InitializeProvidersForAllNodes()
 
         GetContext().GetNodesCache().Cache(*node, GetContext().GetDataSourceInfo(), m_executorIndex + m_offset, NodeVisibility::Visible);
 
-        NavNodesProviderPtr provider = CreateProvider(*node);
+        NavNodesProviderPtr provider = CreateProvider(*node, false);
         AddProvider(*provider);
         ++m_executorIndex;
         }
@@ -1433,8 +1441,6 @@ bool QueryBasedNodesProvider::_GetNode(JsonNavNodePtr& node, size_t index) const
             return childrenProvider->GetNode(node, 0);
             }
         }
-
-    FinalizeNode(*node, false);
     return true;
     }
 
@@ -1496,6 +1502,15 @@ size_t QueryBasedNodesProvider::_GetNodesCount() const
         GetContext().GetNodesCache().FinalizeInitialization(GetContext().GetDataSourceInfo());
 
     return count;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+NavNodesProvider::Iterator QueryBasedNodesProvider::_CreateFrontIterator() const
+    {
+    InitializeNodes();
+    return MultiNavNodesProvider::_CreateFrontIterator();
     }
 
 /*=================================================================================**//**
@@ -1724,7 +1739,7 @@ bool MultiNavNodesProvider::_GetNode(JsonNavNodePtr& node, size_t index) const
         if (provider.IsNull())
             continue;
 
-        OptimizationFlagsCarrier useOptimizationFlags(*this, *provider);
+        OptimizationFlagsCarrierPtr useOptimizationFlags = OptimizationFlagsCarrier::CreateIfParentOptimized(GetContext(), provider->GetContextR());
         size_t count = provider->GetNodesCount();
         if (index < count)
             return provider->GetNode(node, index);
@@ -1761,7 +1776,7 @@ bool MultiNavNodesProvider::_HasNodes() const
         if (provider.IsNull())
             continue;
 
-        OptimizationFlagsCarrier useOptimizationFlags(*this, *provider);
+        OptimizationFlagsCarrierPtr useOptimizationFlags = OptimizationFlagsCarrier::CreateIfParentOptimized(GetContext(), provider->GetContextR());
         hasNodes |= provider->HasNodes();
         if (hasNodes && !requiresFullLoad)
             return true;
@@ -1781,7 +1796,7 @@ size_t MultiNavNodesProvider::_GetNodesCount() const
         if (provider.IsNull())
             continue;
 
-        OptimizationFlagsCarrier useOptimizationFlags(*this, *provider);
+        OptimizationFlagsCarrierPtr useOptimizationFlags = OptimizationFlagsCarrier::CreateIfParentOptimized(GetContext(), provider->GetContextR());
         count += provider->GetNodesCount();
 
         if (GetContext().IsCheckingChildren() && !requiresFullLoad)
@@ -1792,6 +1807,117 @@ size_t MultiNavNodesProvider::_GetNodesCount() const
         }
     return count;
     }
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                03/2020
++===============+===============+===============+===============+===============+======*/
+struct NestedProvidersBasedIteratorImpl : IteratorImpl<JsonNavNodePtr>
+{
+private:
+    bvector<NavNodesProviderPtr> const& m_providers;
+    bvector<NavNodesProviderPtr>::const_iterator m_providerIterator;
+    NavNodesProvider::Iterator m_currNodesIterator;
+    size_t m_currNodePosInProvider;
+private:
+    NavNodesProvider::Iterator CreateNodesIterator()
+        {
+        NavNodesProvider::Iterator iter;
+        while (!iter.IsValid() && m_providerIterator != m_providers.end())
+            {
+            iter = (*m_providerIterator)->begin();
+            if (iter == (*m_providerIterator)->end())
+                {
+                iter = NavNodesProvider::Iterator();
+                ++m_providerIterator;
+                }
+            }
+        m_currNodePosInProvider = 0;
+        return iter;
+        }
+    void NextOne()
+        {
+        // 1. step nodes' iterator
+        // 2. if reached the end - step providers' iterator
+        // 3. if reached the end - reset nodes' iterator
+        ++m_currNodesIterator;
+        ++m_currNodePosInProvider;
+        while (m_currNodesIterator.IsValid() && m_currNodesIterator == (*m_providerIterator)->end())
+            {
+            if (++m_providerIterator != m_providers.end())
+                m_currNodesIterator = (*m_providerIterator)->begin();
+            else
+                m_currNodesIterator = NavNodesProvider::Iterator();
+            m_currNodePosInProvider = 0;
+            }
+        }
+protected:
+    std::unique_ptr<IteratorImpl<JsonNavNodePtr>> _Copy() const override {return std::make_unique<NestedProvidersBasedIteratorImpl>(m_providers, m_providerIterator, m_currNodesIterator, m_currNodePosInProvider);}
+    bool _Equals(IteratorImpl<JsonNavNodePtr> const& otherBase) const override
+        {
+        NestedProvidersBasedIteratorImpl const& other = static_cast<NestedProvidersBasedIteratorImpl const&>(otherBase);
+        return m_providerIterator == other.m_providerIterator && m_currNodesIterator == other.m_currNodesIterator;
+        }
+    void _Next(size_t count) override
+        {
+        if (0 == count)
+            return;
+
+        if (1 == count)
+            {
+            // use quicker approach for majority of cases (no need to get counts)
+            NextOne();
+            return;
+            }
+
+        // calculate the number of nodes we need to skip past the end for current provider
+        size_t nodesCountInCurrentProvider = (*m_providerIterator)->GetNodesCount();
+        size_t nodesLeftInCurrentProvider = nodesCountInCurrentProvider - m_currNodePosInProvider - 1;
+        if (count > nodesLeftInCurrentProvider)
+            {
+            // skip at the level of providers
+            count -= nodesLeftInCurrentProvider + 1;
+            ++m_providerIterator;
+            while (m_providerIterator != m_providers.end() && (*m_providerIterator)->GetNodesCount() <= count)
+                {
+                count -= (*m_providerIterator)->GetNodesCount();
+                ++m_providerIterator;
+                }
+            if (m_providerIterator == m_providers.end())
+                {
+                m_currNodesIterator = NavNodesProvider::Iterator();
+                m_currNodePosInProvider = 0;
+                return;
+                }
+            }
+
+        // m_providerIterator now points to the provider we need to step into
+        m_currNodesIterator = ((*m_providerIterator)->begin() += count);
+        m_currNodePosInProvider = count;
+        }
+    JsonNavNodePtr _GetCurrent() const override {return *m_currNodesIterator;}
+public:
+    NestedProvidersBasedIteratorImpl(bvector<NavNodesProviderPtr> const& providers)
+        : m_providers(providers), m_providerIterator(providers.begin()), m_currNodePosInProvider(0)
+        {
+        m_currNodesIterator = CreateNodesIterator();
+        }
+    NestedProvidersBasedIteratorImpl(bvector<NavNodesProviderPtr> const& providers, bvector<NavNodesProviderPtr>::const_iterator providerIter)
+        : m_providers(providers), m_providerIterator(providerIter), m_currNodePosInProvider(0)
+        {}
+    NestedProvidersBasedIteratorImpl(bvector<NavNodesProviderPtr> const& providers, bvector<NavNodesProviderPtr>::const_iterator providerIter, NavNodesProvider::Iterator currNodesIterator, size_t currNodePosInProvider)
+        : m_providers(providers), m_providerIterator(providerIter), m_currNodesIterator(currNodesIterator), m_currNodePosInProvider(currNodePosInProvider)
+        {}
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+NavNodesProvider::Iterator MultiNavNodesProvider::_CreateFrontIterator() const {return Iterator(std::make_unique<NestedProvidersBasedIteratorImpl>(m_providers));}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+NavNodesProvider::Iterator MultiNavNodesProvider::_CreateBackIterator() const {return Iterator(std::make_unique<NestedProvidersBasedIteratorImpl>(m_providers, m_providers.end()));}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2019
@@ -1988,7 +2114,7 @@ NavNodesProviderPtr SameLabelGroupingNodesPostProcessor::CreatePostProcessedProv
                     // nodes[pos] is an already merged node
                     merged = nodes[pos];
                     MergeInstanceKeys(*context, *merged, *node);
-                    context->GetNodesCache().Update(merged->GetNodeId(), *merged);
+                    context->GetNodesCache().Update(merged->GetNodeId(), *merged, IHierarchyCache::UPDATE_NodeAll);
                     }
                 else
                     {
@@ -2031,33 +2157,40 @@ PostProcessingNodesProvider::PostProcessingNodesProvider(NavNodesProviderCR wrap
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
+NavNodesProviderCPtr PostProcessingNodesProvider::GetProcessedProvider() const
+    {
+    if (m_processedProvider.IsNull())
+        {
+        OptimizationFlagsCarrierPtr useOptimizationFlags = OptimizationFlagsCarrier::CreateIfParentOptimized(GetContext(), m_wrappedProvider->GetContextR());
+        JsonNavNodePtr node;
+        if (m_wrappedProvider->GetNode(node, 0))
+            {
+            for (auto const& postProcessor : m_postProcessors)
+                {
+                useOptimizationFlags = nullptr;
+                NavNodesProviderPtr processed = postProcessor->PostProcessNodeRequest(m_processedProvider.IsValid() ? *m_processedProvider : *m_wrappedProvider, *node, 0);
+                if (processed.IsNull())
+                    continue;
+
+                m_processedProvider = processed;
+
+                useOptimizationFlags = OptimizationFlagsCarrier::CreateIfParentOptimized(GetContext(), m_processedProvider->GetContextR());
+                if (!m_processedProvider->GetNode(node, 0))
+                    break;
+                }
+            }
+        if (m_processedProvider.IsNull())
+            m_processedProvider = m_wrappedProvider;
+        }
+    return m_processedProvider;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                11/2019
++---------------+---------------+---------------+---------------+---------------+------*/
 bool PostProcessingNodesProvider::_GetNode(JsonNavNodePtr& node, size_t index) const
     {
-    if (m_processedProvider.IsValid())
-        {
-        OptimizationFlagsCarrier useOptimizationFlags(*this, *m_processedProvider);
-        return m_processedProvider->GetNode(node, index);
-        }
-
-    Holder<OptimizationFlagsCarrier> useOptimizationFlags(OptimizationFlagsCarrier(*this, *m_wrappedProvider));
-    if (!m_wrappedProvider->GetNode(node, index))
-        return false;
-
-    for (auto const& postProcessor : m_postProcessors)
-        {
-        useOptimizationFlags = nullptr;
-        NavNodesProviderPtr processed = postProcessor->PostProcessNodeRequest(m_processedProvider.IsValid() ? *m_processedProvider : *m_wrappedProvider, *node, index);
-        if (processed.IsNull())
-            continue;
-
-        m_processedProvider = processed;
-
-        useOptimizationFlags = OptimizationFlagsCarrier(*this, *m_processedProvider);
-        if (!m_processedProvider->GetNode(node, index))
-            return false;
-        }
-
-    return true;
+    return GetProcessedProvider()->GetNode(node, index);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2067,7 +2200,7 @@ size_t PostProcessingNodesProvider::_GetNodesCount() const
     {
     if (m_processedProvider.IsValid())
         {
-        OptimizationFlagsCarrier useOptimizationFlags(*this, *m_processedProvider);
+        OptimizationFlagsCarrierPtr useOptimizationFlags = OptimizationFlagsCarrier::CreateIfParentOptimized(GetContext(), m_processedProvider->GetContextR());
         return m_processedProvider->GetNodesCount();
         }
 
@@ -2240,6 +2373,24 @@ size_t SQLiteCacheNodesProvider::_GetNodesCount() const
         m_nodesCount = new size_t(stmt->GetValueInt(0));
         }
     return *m_nodesCount;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+NavNodesProvider::Iterator SQLiteCacheNodesProvider::_CreateFrontIterator() const
+    {
+    const_cast<SQLiteCacheNodesProvider*>(this)->InitializeNodes();
+    return Iterator(std::make_unique<RandomAccessIteratorImpl<NavNodesProvider, JsonNavNodePtr>>(*this));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+NavNodesProvider::Iterator SQLiteCacheNodesProvider::_CreateBackIterator() const
+    {
+    const_cast<SQLiteCacheNodesProvider*>(this)->InitializeNodes();
+    return Iterator(std::make_unique<RandomAccessIteratorImpl<NavNodesProvider, JsonNavNodePtr>>(*this, GetNodesCount()));
     }
 
 /*=================================================================================**//**
@@ -2557,7 +2708,6 @@ CachedStatementPtr FilteredNodesProvider::_GetNodesStatement() const
 bool CachedNodeProvider::_InitializeNodes()
     {
     JsonNavNodePtr node = GetContext().GetNodesCache().GetNode(m_nodeId);
-    FinalizeNode(*node, true);
-    m_singleNodeProvider = SingleNavNodeProvider::Create(*node, GetContext());
+    m_singleNodeProvider = SingleNavNodeProvider::Create(*node, GetContext(), true);
     return true;
     }

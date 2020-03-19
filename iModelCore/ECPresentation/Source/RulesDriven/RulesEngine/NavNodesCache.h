@@ -62,6 +62,14 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct IHierarchyCache
 {
+    enum NodeUpdateParts
+        {
+        UPDATE_NodeItself       = 1 << 0,
+        UPDATE_NodeKey          = 1 << 1,
+        UPDATE_NodeInstanceKeys = 1 << 2,
+        UPDATE_NodeAll = UPDATE_NodeItself | UPDATE_NodeKey | UPDATE_NodeInstanceKeys,
+        };
+
     struct Savepoint : RefCountedBase
     {
     protected:
@@ -89,7 +97,7 @@ protected:
     virtual void _Cache(DataSourceInfo&, DataSourceFilter const&, bmap<ECClassId, bool> const&, bvector<UserSettingEntry> const&) = 0;
     virtual void _Cache(JsonNavNodeR, DataSourceInfo const&, bvector<uint64_t> const&, NodeVisibility) = 0;
 
-    virtual void _Update(uint64_t, JsonNavNodeCR) = 0;
+    virtual void _Update(uint64_t, JsonNavNodeCR, int partsToUpdate) = 0;
     virtual void _Update(DataSourceInfo const&, DataSourceFilter const*, bmap<ECClassId, bool> const*, bvector<UserSettingEntry> const*) = 0;
 
     virtual void _MakePhysical(JsonNavNodeCR) = 0;
@@ -137,7 +145,7 @@ public:
     void Cache(JsonNavNodeR node, DataSourceInfo const& dsInfo, bvector<uint64_t> const& index, NodeVisibility visibility) {_Cache(node, dsInfo, index, visibility);}
     void Cache(JsonNavNodeR node, DataSourceInfo const& dsInfo, uint64_t index, NodeVisibility visibility) {_Cache(node, dsInfo, {index}, visibility);}
 
-    void Update(uint64_t nodeId, JsonNavNodeCR node) {_Update(nodeId, node);}
+    void Update(uint64_t nodeId, JsonNavNodeCR node, int partsToUpdate) {_Update(nodeId, node, partsToUpdate);}
     void Update(DataSourceInfo const& info, DataSourceFilter const* filter, bmap<ECClassId, bool> const* relatedClassIds, bvector<UserSettingEntry> const* relatedSettings)
         {
         _Update(info, filter, relatedClassIds, relatedSettings);
@@ -248,7 +256,7 @@ protected:
     ECPRESENTATION_EXPORT void _Cache(HierarchyLevelInfo&) override;
     ECPRESENTATION_EXPORT void _Cache(DataSourceInfo&, DataSourceFilter const&, bmap<ECClassId, bool> const&, bvector<UserSettingEntry> const&) override;
     ECPRESENTATION_EXPORT void _Cache(JsonNavNodeR, DataSourceInfo const&, bvector<uint64_t> const&, NodeVisibility) override;
-    ECPRESENTATION_EXPORT void _Update(uint64_t nodeId, JsonNavNodeCR) override;
+    ECPRESENTATION_EXPORT void _Update(uint64_t nodeId, JsonNavNodeCR, int partsToUpdate) override;
     ECPRESENTATION_EXPORT void _Update(DataSourceInfo const&, DataSourceFilter const*, bmap<ECClassId, bool> const*, bvector<UserSettingEntry> const*) override;
     ECPRESENTATION_EXPORT void _MakePhysical(JsonNavNodeCR) override;
     ECPRESENTATION_EXPORT void _MakeVirtual(JsonNavNodeCR) override;

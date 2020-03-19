@@ -103,3 +103,285 @@ TEST_F(NodesProviderTests, AbortsFinalizingNodesWhenCanceled)
     // verify finalization was aborted as soon as it was canceled (the third node wasn't even requested)
     EXPECT_EQ(2, nodesRequested);
     }
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                03/2020
++===============+===============+===============+===============+===============+======*/
+struct MultiNavNodesProviderTests : NodesProviderTests
+    {
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MultiNavNodesProviderTests, Iteration_SteppingThroughEmptyNestedProvidersInFront)
+    {
+    NavNodesProviderPtr provider1 = BVectorNodesProvider::Create(*m_context, bvector<JsonNavNodePtr>());
+
+    bvector<JsonNavNodePtr> nodes2 = {
+        TestNodesHelper::CreateCustomNode(*m_connection, "1", "1", "1"),
+        TestNodesHelper::CreateCustomNode(*m_connection, "2", "2", "2")
+        };
+    NavNodesProviderPtr provider2 = BVectorNodesProvider::Create(*m_context, nodes2);
+
+    bvector<JsonNavNodePtr> nodes3 = {
+        TestNodesHelper::CreateCustomNode(*m_connection, "3", "3", "3")
+        };
+    NavNodesProviderPtr provider3 = BVectorNodesProvider::Create(*m_context, nodes3);
+
+    RefCountedPtr<MultiNavNodesProvider> multiProvider = MultiNavNodesProvider::Create(*m_context);
+    multiProvider->SetProviders({provider1, provider2, provider3});
+
+    auto iter = multiProvider->begin();
+    ASSERT_NE(iter, multiProvider->end());
+    EXPECT_STREQ("1", (*iter)->GetType().c_str());
+
+    ++iter;
+    ASSERT_NE(iter, multiProvider->end());
+    EXPECT_STREQ("2", (*iter)->GetType().c_str());
+
+    ++iter;
+    ASSERT_NE(iter, multiProvider->end());
+    EXPECT_STREQ("3", (*iter)->GetType().c_str());
+
+    ++iter;
+    ASSERT_EQ(iter, multiProvider->end());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MultiNavNodesProviderTests, Iteration_SteppingThroughEmptyNestedProvidersInTheMiddle)
+    {
+    bvector<JsonNavNodePtr> nodes1 = {
+        TestNodesHelper::CreateCustomNode(*m_connection, "1", "1", "1"),
+        TestNodesHelper::CreateCustomNode(*m_connection, "2", "2", "2")
+        };
+    NavNodesProviderPtr provider1 = BVectorNodesProvider::Create(*m_context, nodes1);
+
+    NavNodesProviderPtr provider2 = BVectorNodesProvider::Create(*m_context, bvector<JsonNavNodePtr>());
+
+    bvector<JsonNavNodePtr> nodes3 = {
+        TestNodesHelper::CreateCustomNode(*m_connection, "3", "3", "3")
+        };
+    NavNodesProviderPtr provider3 = BVectorNodesProvider::Create(*m_context, nodes3);
+
+    RefCountedPtr<MultiNavNodesProvider> multiProvider = MultiNavNodesProvider::Create(*m_context);
+    multiProvider->SetProviders({ provider1, provider2, provider3 });
+
+    auto iter = multiProvider->begin();
+    ASSERT_NE(iter, multiProvider->end());
+    EXPECT_STREQ("1", (*iter)->GetType().c_str());
+
+    ++iter;
+    ASSERT_NE(iter, multiProvider->end());
+    EXPECT_STREQ("2", (*iter)->GetType().c_str());
+
+    ++iter;
+    ASSERT_NE(iter, multiProvider->end());
+    EXPECT_STREQ("3", (*iter)->GetType().c_str());
+
+    ++iter;
+    ASSERT_EQ(iter, multiProvider->end());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MultiNavNodesProviderTests, Iteration_SteppingThroughEmptyNestedProvidersInTheEnd)
+    {
+    bvector<JsonNavNodePtr> nodes1 = {
+        TestNodesHelper::CreateCustomNode(*m_connection, "1", "1", "1"),
+        TestNodesHelper::CreateCustomNode(*m_connection, "2", "2", "2")
+        };
+    NavNodesProviderPtr provider1 = BVectorNodesProvider::Create(*m_context, nodes1);
+    
+    bvector<JsonNavNodePtr> nodes2 = {
+        TestNodesHelper::CreateCustomNode(*m_connection, "3", "3", "3")
+        };
+    NavNodesProviderPtr provider2 = BVectorNodesProvider::Create(*m_context, nodes2);
+
+    NavNodesProviderPtr provider3 = BVectorNodesProvider::Create(*m_context, bvector<JsonNavNodePtr>());
+
+    RefCountedPtr<MultiNavNodesProvider> multiProvider = MultiNavNodesProvider::Create(*m_context);
+    multiProvider->SetProviders({provider1, provider2, provider3});
+
+    auto iter = multiProvider->begin();
+    ASSERT_NE(iter, multiProvider->end());
+    EXPECT_STREQ("1", (*iter)->GetType().c_str());
+
+    ++iter;
+    ASSERT_NE(iter, multiProvider->end());
+    EXPECT_STREQ("2", (*iter)->GetType().c_str());
+
+    ++iter;
+    ASSERT_NE(iter, multiProvider->end());
+    EXPECT_STREQ("3", (*iter)->GetType().c_str());
+
+    ++iter;
+    ASSERT_EQ(iter, multiProvider->end());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MultiNavNodesProviderTests, Iteration_SkippingZeroItems)
+    {
+    bvector<JsonNavNodePtr> nodes = {
+        TestNodesHelper::CreateCustomNode(*m_connection, "1", "1", "1"),
+        TestNodesHelper::CreateCustomNode(*m_connection, "2", "2", "2")
+        };
+    NavNodesProviderPtr provider = BVectorNodesProvider::Create(*m_context, nodes);
+
+    RefCountedPtr<MultiNavNodesProvider> multiProvider = MultiNavNodesProvider::Create(*m_context);
+    multiProvider->SetProviders({ provider });
+
+    auto iter = multiProvider->begin();
+    ASSERT_NE(iter, multiProvider->end());
+    EXPECT_STREQ("1", (*iter)->GetType().c_str());
+
+    iter += 0;
+    ASSERT_NE(iter, multiProvider->end());
+    EXPECT_STREQ("1", (*iter)->GetType().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MultiNavNodesProviderTests, Iteration_SkippingItemsWithOneNestedProvider)
+    {
+    bvector<JsonNavNodePtr> nodes = {
+        TestNodesHelper::CreateCustomNode(*m_connection, "1", "1", "1"),
+        TestNodesHelper::CreateCustomNode(*m_connection, "2", "2", "2"),
+        TestNodesHelper::CreateCustomNode(*m_connection, "3", "3", "3"),
+        TestNodesHelper::CreateCustomNode(*m_connection, "4", "4", "4"),
+        TestNodesHelper::CreateCustomNode(*m_connection, "5", "5", "5")
+        };
+    NavNodesProviderPtr provider = BVectorNodesProvider::Create(*m_context, nodes);
+
+    RefCountedPtr<MultiNavNodesProvider> multiProvider = MultiNavNodesProvider::Create(*m_context);
+    multiProvider->SetProviders({ provider });
+
+    auto iter = multiProvider->begin();
+    ASSERT_NE(iter, multiProvider->end());
+    EXPECT_STREQ("1", (*iter)->GetType().c_str());
+
+    iter += 2;
+    ASSERT_NE(iter, multiProvider->end());
+    EXPECT_STREQ("3", (*iter)->GetType().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MultiNavNodesProviderTests, Iteration_SkippingItemsTillTheEndOfNestedProvider)
+    {
+    bvector<JsonNavNodePtr> nodes1 = {
+        TestNodesHelper::CreateCustomNode(*m_connection, "1", "1", "1"),
+        TestNodesHelper::CreateCustomNode(*m_connection, "2", "2", "2")
+        };
+    NavNodesProviderPtr provider1 = BVectorNodesProvider::Create(*m_context, nodes1);
+
+    bvector<JsonNavNodePtr> nodes2 = {
+        TestNodesHelper::CreateCustomNode(*m_connection, "3", "3", "3"),
+        TestNodesHelper::CreateCustomNode(*m_connection, "4", "4", "4")
+        };
+    NavNodesProviderPtr provider2 = BVectorNodesProvider::Create(*m_context, nodes2);
+
+    RefCountedPtr<MultiNavNodesProvider> multiProvider = MultiNavNodesProvider::Create(*m_context);
+    multiProvider->SetProviders({ provider1, provider2 });
+
+    auto iter = multiProvider->begin();
+    ASSERT_NE(iter, multiProvider->end());
+    EXPECT_STREQ("1", (*iter)->GetType().c_str());
+
+    iter += 1;
+    ASSERT_NE(iter, multiProvider->end());
+    EXPECT_STREQ("2", (*iter)->GetType().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MultiNavNodesProviderTests, Iteration_SkippingItemsPastTheEndOfCurrentProvider)
+    {
+    bvector<JsonNavNodePtr> nodes1 = {
+        TestNodesHelper::CreateCustomNode(*m_connection, "1", "1", "1"),
+        TestNodesHelper::CreateCustomNode(*m_connection, "2", "2", "2")
+        };
+    NavNodesProviderPtr provider1 = BVectorNodesProvider::Create(*m_context, nodes1);
+
+    bvector<JsonNavNodePtr> nodes2 = {
+        TestNodesHelper::CreateCustomNode(*m_connection, "3", "3", "3"),
+        TestNodesHelper::CreateCustomNode(*m_connection, "4", "4", "4")
+        };
+    NavNodesProviderPtr provider2 = BVectorNodesProvider::Create(*m_context, nodes2);
+
+    RefCountedPtr<MultiNavNodesProvider> multiProvider = MultiNavNodesProvider::Create(*m_context);
+    multiProvider->SetProviders({ provider1, provider2 });
+
+    auto iter = multiProvider->begin();
+    ASSERT_NE(iter, multiProvider->end());
+    EXPECT_STREQ("1", (*iter)->GetType().c_str());
+
+    iter += 2;
+    ASSERT_NE(iter, multiProvider->end());
+    EXPECT_STREQ("3", (*iter)->GetType().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MultiNavNodesProviderTests, Iteration_SkippingItemsTillTheEndOfTheLastProvider)
+    {
+    bvector<JsonNavNodePtr> nodes1 = {
+        TestNodesHelper::CreateCustomNode(*m_connection, "1", "1", "1"),
+        TestNodesHelper::CreateCustomNode(*m_connection, "2", "2", "2")
+        };
+    NavNodesProviderPtr provider1 = BVectorNodesProvider::Create(*m_context, nodes1);
+
+    bvector<JsonNavNodePtr> nodes2 = {
+        TestNodesHelper::CreateCustomNode(*m_connection, "3", "3", "3"),
+        TestNodesHelper::CreateCustomNode(*m_connection, "4", "4", "4")
+        };
+    NavNodesProviderPtr provider2 = BVectorNodesProvider::Create(*m_context, nodes2);
+
+    RefCountedPtr<MultiNavNodesProvider> multiProvider = MultiNavNodesProvider::Create(*m_context);
+    multiProvider->SetProviders({ provider1, provider2 });
+
+    auto iter = multiProvider->begin();
+    ASSERT_NE(iter, multiProvider->end());
+    EXPECT_STREQ("1", (*iter)->GetType().c_str());
+
+    iter += 3;
+    ASSERT_NE(iter, multiProvider->end());
+    EXPECT_STREQ("4", (*iter)->GetType().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MultiNavNodesProviderTests, Iteration_SkippingItemsPastTheEndOfTheLastProvider)
+    {
+    bvector<JsonNavNodePtr> nodes1 = {
+        TestNodesHelper::CreateCustomNode(*m_connection, "1", "1", "1"),
+        TestNodesHelper::CreateCustomNode(*m_connection, "2", "2", "2")
+        };
+    NavNodesProviderPtr provider1 = BVectorNodesProvider::Create(*m_context, nodes1);
+
+    bvector<JsonNavNodePtr> nodes2 = {
+        TestNodesHelper::CreateCustomNode(*m_connection, "3", "3", "3"),
+        TestNodesHelper::CreateCustomNode(*m_connection, "4", "4", "4")
+        };
+    NavNodesProviderPtr provider2 = BVectorNodesProvider::Create(*m_context, nodes2);
+
+    RefCountedPtr<MultiNavNodesProvider> multiProvider = MultiNavNodesProvider::Create(*m_context);
+    multiProvider->SetProviders({ provider1, provider2 });
+
+    auto iter = multiProvider->begin();
+    ASSERT_NE(iter, multiProvider->end());
+    EXPECT_STREQ("1", (*iter)->GetType().c_str());
+
+    iter += 4;
+    ASSERT_EQ(iter, multiProvider->end());
+    }

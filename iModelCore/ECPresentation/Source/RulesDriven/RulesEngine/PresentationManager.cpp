@@ -363,7 +363,7 @@ folly::Future<NavNodesContainer> RulesDrivenECPresentationManager::_GetRootNodes
         if (source.IsValid())
             {
             source = PreloadedDataSource::Create(*source);
-            return DataContainer<NavNodeCPtr>(*source);
+            return DataContainer<NavNodeCPtr>(*ConstNodesDataSource::Create(*source));
             }
         return DataContainer<NavNodeCPtr>();
         }, TaskDependencies(connectionId, options.GetRulesetId()), true, options.GetPriority());
@@ -407,7 +407,7 @@ folly::Future<NavNodesContainer> RulesDrivenECPresentationManager::_GetChildren(
         if (source.IsValid())
             {
             source = PreloadedDataSource::Create(*source);
-            return DataContainer<NavNodeCPtr>(*source);
+            return DataContainer<NavNodeCPtr>(*ConstNodesDataSource::Create(*source));
             }
         return DataContainer<NavNodeCPtr>();
         }, TaskDependencies(connectionId, options.GetRulesetId()), true, options.GetPriority());

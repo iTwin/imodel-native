@@ -762,7 +762,7 @@ void HierarchyUpdater::CheckIfParentNeedsUpdate(bvector<IUpdateTaskPtr>& subTask
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HierarchyUpdater::CustomizeNode(JsonNavNodeCP oldNode, JsonNavNodeR nodeToCustomize, NavNodesProviderCR newNodeProvider) const
     {
-    bool nodeChanged = false;
+    int updatedParts = 0;
     DataSourceRelatedSettingsUpdater updater(newNodeProvider.GetContext(), &nodeToCustomize);
 
     // if the old node was customized, we have to customize the new one as well;
@@ -771,7 +771,7 @@ void HierarchyUpdater::CustomizeNode(JsonNavNodeCP oldNode, JsonNavNodeR nodeToC
     if (shouldCustomize && !NavNodeExtendedData(nodeToCustomize).IsCustomized())
         {
         CustomizationHelper::Customize(newNodeProvider.GetContext(), nodeToCustomize, NavNodesHelper::IsCustomNode(nodeToCustomize));
-        nodeChanged = true;
+        updatedParts |= IHierarchyCache::UPDATE_NodeItself | IHierarchyCache::UPDATE_NodeKey;
         }
 
     // the same with children
@@ -779,7 +779,7 @@ void HierarchyUpdater::CustomizeNode(JsonNavNodeCP oldNode, JsonNavNodeR nodeToC
     if (shouldDetermineChildren && !nodeToCustomize.DeterminedChildren())
         {
         newNodeProvider.DetermineChildren(nodeToCustomize);
-        nodeChanged = true;
+        updatedParts |= IHierarchyCache::UPDATE_NodeItself;
         }
 
     // if old node was expanded, we have to expand new node too
@@ -787,12 +787,12 @@ void HierarchyUpdater::CustomizeNode(JsonNavNodeCP oldNode, JsonNavNodeR nodeToC
     if (isOldNodeExpanded && !nodeToCustomize.IsExpanded())
         {
         nodeToCustomize.SetIsExpanded(true);
-        nodeChanged = true;
+        updatedParts |= IHierarchyCache::UPDATE_NodeItself;
         }
 
     // notify provider that we updated the node
-    if (nodeChanged)
-        newNodeProvider.NotifyNodeChanged(nodeToCustomize);
+    if (0 != updatedParts)
+        newNodeProvider.NotifyNodeChanged(nodeToCustomize, updatedParts);
     }
 
 /*---------------------------------------------------------------------------------**//**

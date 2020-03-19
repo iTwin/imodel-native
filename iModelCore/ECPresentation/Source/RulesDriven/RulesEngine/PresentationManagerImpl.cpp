@@ -667,7 +667,7 @@ INavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::GetCachedDataSource
     NavNodesProviderPtr provider = m_nodesProviderFactory->Create(*context, nullptr, ProviderCacheType::Combined);
 
     // cache the provider in quick cache
-    if (provider.IsValid())
+    if (provider.IsValid() && 0 != pageSize)
         {
         CombinedHierarchyLevelInfo info(connection.GetId(), options.GetRulesetId(), options.GetLocale(), 0);
         m_nodesCache->CacheHierarchyLevel(info, *provider);
@@ -684,7 +684,8 @@ INavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::_GetRootNodes(IConn
     INavNodesDataSourcePtr source = GetCachedDataSource(connection, cancelationToken, options, pageOpts.GetPageSize());
     if (source.IsNull())
         source = EmptyNavNodesDataSource::Create();
-    source = PagingDataSource::Create(*source, pageOpts.GetPageStart(), pageOpts.GetPageSize());
+    if (!pageOpts.Equals(PageOptions(0, 0)))
+        source = PagingDataSource::Create(*source, pageOpts.GetPageStart(), pageOpts.GetPageSize());
     LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("[GetRootNodes] Returned [%" PRIu64 ", %" PRIu64 ") nodes",
         (uint64_t)pageOpts.GetPageStart(), (uint64_t)(pageOpts.GetPageStart() + source->GetSize())).c_str());
     return source;
@@ -735,7 +736,8 @@ INavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::_GetChildren(IConne
     INavNodesDataSourcePtr source = GetCachedDataSource(connection, cancelationToken, parent, options, pageOpts.GetPageSize());
     if (source.IsNull())
         source = EmptyNavNodesDataSource::Create();
-    source = PagingDataSource::Create(*source, pageOpts.GetPageStart(), pageOpts.GetPageSize());
+    if (!pageOpts.Equals(PageOptions(0, 0)))
+        source = PagingDataSource::Create(*source, pageOpts.GetPageStart(), pageOpts.GetPageSize());
     LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("[GetChildren] Returned [%" PRIu64 ", %" PRIu64 ") nodes for parent: '%s'",
         (uint64_t)pageOpts.GetPageStart(), (uint64_t)(pageOpts.GetPageStart() + source->GetSize()), parent.GetLabelDefinition().GetDisplayValue().c_str()).c_str());
     return source;
@@ -794,15 +796,8 @@ static void TraverseHierarchy(RulesDrivenECPresentationManagerImpl& mgr, IConnec
         return;
 
     INavNodesDataSourceCPtr children = mgr.GetChildren(connection, root, PageOptions(), options, cancelationToken);
-    size_t count = children->GetSize();
-    for (size_t i = 0; i < count; ++i)
-        {
-        NavNodeCPtr child = children->GetNode(i);
-        if (child.IsNull())
-            continue;
-
+    for (NavNodePtr child : *children)
         TraverseHierarchy(mgr, connection, *child, options, cancelationToken);
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -811,37 +806,26 @@ static void TraverseHierarchy(RulesDrivenECPresentationManagerImpl& mgr, IConnec
 bvector<NavNodeCPtr> RulesDrivenECPresentationManagerImpl::_GetFilteredNodes(IConnectionCR connection, Utf8CP filterText, NavigationOptions const& options, ICancelationTokenCR cancelationToken)
     {
     if (!m_nodesCache->IsHierarchyLevelCached(connection.GetId(), options.GetRulesetId(), options.GetLocale()))
-        GetRootNodes(connection, PageOptions(), options, cancelationToken);
+        {
+        INavNodesDataSourceCPtr rootNodes = GetRootNodes(connection, PageOptions(), options, cancelationToken);
+        for (NavNodeCPtr node : *rootNodes)
+            ;
+        }
 
     // first we need to make sure the hierarchy is fully traversed so we can search in cache
-    NavNodesProviderPtr provider = m_nodesCache->GetUndeterminedNodesProvider(connection, options.GetRulesetId(), options.GetLocale());
+    NavNodesProviderCPtr provider = m_nodesCache->GetUndeterminedNodesProvider(connection, options.GetRulesetId(), options.GetLocale());
     if (provider.IsNull())
         return bvector<NavNodeCPtr>();
 
     provider->GetContextR().SetCancelationToken(&cancelationToken);
-
-    size_t nodesCount = provider->GetNodesCount();
-    for (size_t i = 0; i < nodesCount; i++)
-        {
-        JsonNavNodePtr node;
-        provider->GetNode(node, i);
-        if (node.IsNull())
-            continue;
-
+    for (JsonNavNodeCPtr node : *provider)
         TraverseHierarchy(*this, connection, *node, options, cancelationToken);
-        }
 
     // now we can filter nodes in cache
     NavNodesProviderPtr filteredProvider = m_nodesCache->GetFilteredNodesProvider(filterText, connection, options.GetRulesetId(), options.GetLocale());
     bvector<NavNodeCPtr> result;
-    nodesCount = filteredProvider->GetNodesCount();
-    for (size_t i = 0; i < nodesCount; i++)
-        {
-        JsonNavNodePtr node;
-        filteredProvider->GetNode(node, i);
-        if (node.IsValid())
-            result.push_back(node);
-        }
+    for (JsonNavNodeCPtr node : *filteredProvider)
+        result.push_back(node);
     return result;
     }
 
