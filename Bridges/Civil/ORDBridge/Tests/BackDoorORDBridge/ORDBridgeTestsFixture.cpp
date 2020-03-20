@@ -61,12 +61,11 @@ struct ORDBridgeTestsHostImpl : DgnPlatformLib::Host
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeFileName ORDBridgeTestsHost::GetTestAppProductDirectory()
     {
-    char* outPath = getenv("OutRoot");
+    BeFileName outputDir;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(outputDir);
+    outputDir.AppendA("..\\..\\ORDBridge\\");
 
-    BeFileName testAppPath(outPath);
-    testAppPath.AppendA("Winx64\\Product\\ORDBridge\\");
-
-    return testAppPath;
+    return outputDir;
     }
 
 //---------------------------------------------------------------------------------------
@@ -92,10 +91,11 @@ BeFileName ORDBridgeTestsHost::GetDgnPlatformAssetsDirectory()
 
 WString* ORDBridgeTestsHost::GetInputFileArgument(BeFileName inputPath, WCharCP input)
     {
-    char* outPath = getenv("OutRoot");
+    BeFileName assetsRootDirectory;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(assetsRootDirectory);
 
-    BeFileName inputPath1(outPath);
-    inputPath1.AppendString(WCharCP(L"Winx64\\Product\\CiviliModelBridges-Tests\\Assets\\TestFiles\\ORD\\"));
+    BeFileName inputPath1(assetsRootDirectory);
+    inputPath1.AppendString(WCharCP(L"TestFiles\\ORD\\"));
     inputPath1.AppendString(WCharCP(input));
 
     WString inArg(WString(L"--input=\"").append(inputPath1.c_str()).append(L"\"").c_str());
@@ -233,14 +233,14 @@ bool CiviliModelBridgesORDBridgeTestsFixture::TestFileName(Utf8CP source)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool CiviliModelBridgesORDBridgeTestsFixture::CopyTestFile(Utf8CP source, Utf8CP target)
     {
-    char* outPath = getenv("OutRoot");
+    BeFileName assetsPath = m_host->GetDgnPlatformAssetsDirectory();
 
-    BeFileName sourcePath(outPath);
-    sourcePath.AppendA("Winx64\\Product\\CiviliModelBridges-Tests\\Assets\\TestFiles\\ORD\\");
+    BeFileName sourcePath(assetsPath);
+    sourcePath.AppendA("TestFiles\\ORD\\");
     sourcePath.AppendA(source);
 
-    BeFileName targetPath(outPath);
-    targetPath.AppendA("Winx64\\Product\\CiviliModelBridges-Tests\\Assets\\TestFiles\\ORD\\");
+    BeFileName targetPath(assetsPath);
+    targetPath.AppendA("TestFiles\\ORD\\");
     targetPath.AppendA(target);
 
     return (BeFileNameStatus::Success == BeFileName::BeCopyFile(sourcePath, targetPath, false));
@@ -251,12 +251,12 @@ bool CiviliModelBridgesORDBridgeTestsFixture::CopyTestFile(Utf8CP source, Utf8CP
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool CiviliModelBridgesORDBridgeTestsFixture::RunTestApp(WCharCP input, WCharCP bimFileName, bool updateMode)
     {
-    char* outPath = getenv("OutRoot");
     BeFileName testAppPath = m_host->GetTestAppProductDirectory();
     testAppPath.AppendA("PublishORDToBim.exe");
 
-    BeFileName inputPath(outPath);
-    inputPath.AppendString(WCharCP(L"Winx64\\Product\\CiviliModelBridges-Tests\\Assets\\TestFiles\\ORD\\"));
+    BeFileName assetsPath = m_host->GetDgnPlatformAssetsDirectory();
+    BeFileName inputPath(assetsPath);
+    inputPath.AppendString(WCharCP(L"TestFiles\\ORD\\"));
     inputPath.AppendString(WCharCP(input));
 
     BeFileName outputPath = m_host->GetOutputDirectory();
