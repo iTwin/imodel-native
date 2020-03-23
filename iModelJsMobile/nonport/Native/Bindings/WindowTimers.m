@@ -29,24 +29,27 @@
                          arguments:(NSArray *)arguments
                         isInterval:(bool)isInterval {
     __block NSNumber *timeoutID = @(_timeoutCounter += 1);
-    __block dispatch_source_t dispatchSource = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER,
-            0,
-            0,
-            _queue);
-    dispatch_source_set_event_handler(dispatchSource, ^{
-        if (!isInterval) {
-            dispatch_source_cancel(dispatchSource);
-        }
-        [[IModelJsHost sharedInstance] exec:function arguments:arguments];
+    
+    dispatch_async(dispatch_get_main_queue(), ^() {
+        __block dispatch_source_t dispatchSource = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER,
+                0,
+                0,
+                _queue);
+        dispatch_source_set_event_handler(dispatchSource, ^{
+            if (!isInterval) {
+                dispatch_source_cancel(dispatchSource);
+            }
+            [[IModelJsHost sharedInstance] exec:function arguments:arguments];
+        });
+        dispatch_time_t dispatchInterval = (uint64_t)[timeout toUInt32] * NSEC_PER_MSEC;
+        dispatch_time_t dispatchTime = dispatch_time(DISPATCH_TIME_NOW, dispatchInterval);
+        dispatch_source_set_timer(dispatchSource,
+                dispatchTime,
+                isInterval ? dispatchInterval : DISPATCH_TIME_FOREVER,
+                self.tolerance * NSEC_PER_MSEC);
+        dispatch_resume(dispatchSource);
+        [_dispatchSourcesMapping setObject:dispatchSource forKey:timeoutID];
     });
-    dispatch_time_t dispatchInterval = (uint64_t)[timeout toUInt32] * NSEC_PER_MSEC;
-    dispatch_time_t dispatchTime = dispatch_time(DISPATCH_TIME_NOW, dispatchInterval);
-    dispatch_source_set_timer(dispatchSource,
-            dispatchTime,
-            isInterval ? dispatchInterval : DISPATCH_TIME_FOREVER,
-            self.tolerance * NSEC_PER_MSEC);
-    dispatch_resume(dispatchSource);
-    [_dispatchSourcesMapping setObject:dispatchSource forKey:timeoutID];
 
     return timeoutID;
 }

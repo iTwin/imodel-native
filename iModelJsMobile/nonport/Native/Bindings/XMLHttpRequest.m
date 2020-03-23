@@ -8,6 +8,7 @@
 
 #import "XMLHttpRequest.h"
 #import <JavaScriptCore/JavaScriptCore.h>
+#import  <IModelJsHost/IModelJsHost.h>
 @implementation XMLHttpRequest {
     NSURLSession *_urlSession;
     NSString *_method;
@@ -234,17 +235,42 @@
 }
 
 - (void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask didWriteData:(int64_t)bytesWritten totalBytesWritten:(int64_t)totalBytesWritten totalBytesExpectedToWrite:(int64_t)totalBytesExpectedToWrite {
-    NSLog(@"[XHR] PROGRESS [bytesWritten:%lld] [totalBytesWritten:%lld] [totalBytesExpectedToWrite:%lld]",
-          bytesWritten, totalBytesWritten, totalBytesExpectedToWrite);
+    // NSLog(@"[XHR] PROGRESS [bytesWritten:%lld] [totalBytesWritten:%lld] [totalBytesExpectedToWrite:%lld]",
+    //      bytesWritten, totalBytesWritten, totalBytesExpectedToWrite);
     if (self.onprogress != nil) {
         JSContext* context = self.onprogress.context;
         JSValue* doneBytes = [JSValue valueWithDouble:(double)bytesWritten inContext:context];
         JSValue* totalBytes = [JSValue valueWithDouble:(double)totalBytesExpectedToWrite inContext:context];
-        [self.onprogress callWithArguments:@[doneBytes, totalBytes]];
+        [[IModelJsHost sharedInstance] exec:self.onprogress arguments:@[doneBytes, totalBytes]];
     }
 }
 
 - (void)URLSession:(nonnull NSURLSession *)session downloadTask:(nonnull NSURLSessionDownloadTask *)downloadTask didFinishDownloadingToURL:(nonnull NSURL *)location {
+    self.errorObj = nil;
+    self.status = [NSNumber  numberWithInt:200];
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    NSURL *fileURL = [NSURL fileURLWithPath:_downloadFile];
+    NSError *moveError;
+    if (![fileManager moveItemAtURL:location toURL:fileURL error:&moveError]) {
+      if (self.onerror != nil) {
+          [self.onerror callWithArguments:@[]];
+      }
+      NSLog(@"[XHR] ERROR moveItemAtURL failed: %@", moveError);
+      return;
+    }
+    NSLog(@"[XHR] DOWNLOADED %@ ", location.absoluteString);
+    NSLog(@"[XHR] MOVING %@", fileURL.absoluteString);
+    self.responseType = @"file";
+    self.responseText =location.absoluteString;
+    if (self.onreadystatechange != nil) {
+      [self.onreadystatechange callWithArguments:@[]];
+    }
+    if (self.onload != nil) {
+      [self.onload callWithArguments:@[]];
+    }
+    if (_semaphore) {
+        dispatch_semaphore_signal(_semaphore);
+    }
 }
 
 - (void)downloadFile:(NSString*)fileName {
@@ -261,6 +287,7 @@
         NSLog(@"[XHR] EXISTS URL: %@,  PATH: %@", _url.absoluteString, _downloadFile);
         return;
     }
+
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:_url
                                      cachePolicy:NSURLRequestUseProtocolCachePolicy
                                      timeoutInterval:500.0];
@@ -304,9 +331,12 @@
             [weakSelf.onload callWithArguments:@[]];
         }
     };
- 
-   _task = [_urlSession downloadTaskWithRequest:request
-                         completionHandler:completionHandler];
+    if (self.onprogress) {
+        _task = [_urlSession downloadTaskWithRequest:request];
+    } else {
+        _task = [_urlSession downloadTaskWithRequest:request
+                                   completionHandler:completionHandler];
+    }
     [_task resume];
 }
 
