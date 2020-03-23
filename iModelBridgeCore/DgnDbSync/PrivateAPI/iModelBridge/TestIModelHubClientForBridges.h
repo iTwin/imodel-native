@@ -384,7 +384,13 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
     StatusInt Push(iModel::Hub::PushChangeSetArgumentsPtr pushArgs) override {return JustCaptureRevision(pushArgs->GetDescription(), &pushArgs->GetBridgeProperties()->GetChangedFiles().front());}
     StatusInt PullMergeAndPush(iModel::Hub::PullChangeSetsArgumentsPtr, iModel::Hub::PushChangeSetArgumentsPtr pushArgs) override 
         {
-        Utf8StringCP fileName = pushArgs->GetBridgeProperties().IsValid() ? &pushArgs->GetBridgeProperties()->GetChangedFiles().front() : NULL;
+        Utf8StringCP fileName = NULL;
+        bvector <Utf8String> files;
+        if (pushArgs->GetBridgeProperties().IsValid() && (!pushArgs->GetBridgeProperties()->GetChangedFiles().empty()))
+            {
+            files = pushArgs->GetBridgeProperties()->GetChangedFiles();
+            fileName = &files[0];
+            }
         return JustCaptureRevision(pushArgs->GetDescription(), fileName);
         }
     StatusInt RestoreBriefcase (BeFileNameCR, Utf8CP, BeSQLite::BeBriefcaseId) override {return ERROR;}

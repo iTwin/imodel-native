@@ -2680,8 +2680,9 @@ int iModelBridgeFwk::UpdateExistingBim(iModelBridgeFwk::FwkContext& context)
         callTerminate.m_status = BSISUCCESS;
         }
 
-    //TODO: We need to get a list of files that were modified during this run and pass it on to the changeset metadata.
-    PushDataChanges("", NULL, iModel::Hub::ChangeSetKind::Regular);
+    bvector<Utf8String> changedFiles;
+    changedFiles.push_back(m_jobEnvArgs.m_inputFileName.GetBaseName().GetNameUtf8());
+    PushDataChanges("", &changedFiles, iModel::Hub::ChangeSetKind::Regular);
 
     //  Finalize changes in the shared channel
     SetCurrentPhaseName("Finalizing Changes");
@@ -2719,7 +2720,7 @@ int iModelBridgeFwk::UpdateExistingBim(iModelBridgeFwk::FwkContext& context)
         }
 
     //  Done. Make sure that all changes are pushed and all shared locks are released.
-    PushDataChanges(iModelBridgeFwkMessages::GetString(iModelBridgeFwkMessages::FINALIZATION()), NULL, iModel::Hub::ChangeSetKind::GlobalProperties);
+    PushDataChanges(iModelBridgeFwkMessages::GetString(iModelBridgeFwkMessages::FINALIZATION()), &changedFiles, iModel::Hub::ChangeSetKind::GlobalProperties);
 
 
     // *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
