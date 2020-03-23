@@ -100,7 +100,7 @@ TEST_F(ModelTests, Design3dReferenceSameFile)
     ASSERT_TRUE(db->IsDbOpen());
     auto refsSubject = GetReferencesChildSubjectOf(*GetJobHierarchySubject(*db));
     ASSERT_TRUE(refsSubject.IsValid());
-    DgnCode partitionCode = InformationPartitionElement::CreateCode(*refsSubject, TESTMODELNEW);
+    DgnCode partitionCode = InformationPartitionElement::CreateCode(*refsSubject, "Test3d.dgn, " TESTMODELNEW);
     DgnModelId modelId = db->Models().QuerySubModelId(partitionCode);
     ASSERT_TRUE(modelId.IsValid()) << "Model is direct reference , It should be imported";
     }

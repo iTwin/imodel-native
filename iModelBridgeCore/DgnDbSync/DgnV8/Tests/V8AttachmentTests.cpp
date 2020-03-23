@@ -62,7 +62,7 @@ TEST_F(V8AttachmentTests, AttachSameFile)
         EXPECT_EQ(originalModelCount + 1, db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)).BuildIdSet().size());
         auto refsSubject = GetReferencesChildSubjectOf(*GetJobHierarchySubject(*db));
         ASSERT_TRUE(refsSubject.IsValid());
-        DgnCode partitionCode = InformationPartitionElement::CreateCode(*refsSubject, TESTMODELNEW);
+        DgnCode partitionCode = InformationPartitionElement::CreateCode(*refsSubject, "Test3d.dgn, " TESTMODELNEW);
         DgnModelId modelId = db->Models().QuerySubModelId(partitionCode);
         ASSERT_TRUE(modelId.IsValid()) << "Model is direct reference , It should be imported";
         }
@@ -79,7 +79,7 @@ TEST_F(V8AttachmentTests, AttachSameFile)
         EXPECT_EQ(originalModelCount, db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)).BuildIdSet().size());
         auto refsSubject = GetReferencesChildSubjectOf(*GetJobHierarchySubject(*db));
         ASSERT_TRUE(refsSubject.IsValid());
-        DgnCode partitionCode = InformationPartitionElement::CreateCode(*refsSubject, TESTMODELNEW);
+        DgnCode partitionCode = InformationPartitionElement::CreateCode(*refsSubject, "Test3d.dgn, " TESTMODELNEW);
         DgnModelId modelId = db->Models().QuerySubModelId(partitionCode);
         ASSERT_TRUE(!modelId.IsValid()) << "Model is direct reference , It should be deleted";
         }

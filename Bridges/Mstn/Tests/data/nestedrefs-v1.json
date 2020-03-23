@@ -32,88 +32,88 @@
                         {
                             "Children": [],
                             "class": "BisCore:PhysicalPartition",
-                            "code": "ref1"
+                            "code": "ref1.dgn.i.dgn, 3D Metric Design"
                         },
                         {
                             "Children": [
                                 {
                                     "Children": [],
                                     "class": "BisCore:PhysicalPartition",
-                                    "code": "nested11"
+                                    "code": "nested11.dgn.i.dgn, 3D Metric Design"
                                 }
                             ],
                             "class": "BisCore:Subject",
-                            "code": "nested11.dgn.i.dgn"
+                            "code": "nested11.dgn.i.dgn, 3D Metric Design"
                         },
                         {
                             "Children": [
                                 {
                                     "Children": [],
                                     "class": "BisCore:PhysicalPartition",
-                                    "code": "nested12"
+                                    "code": "nested12.dgn.i.dgn, 3D Metric Design"
                                 }
                             ],
                             "class": "BisCore:Subject",
-                            "code": "nested12.dgn.i.dgn"
+                            "code": "nested12.dgn.i.dgn, 3D Metric Design"
                         }
                     ],
                     "class": "BisCore:Subject",
-                    "code": "ref1.dgn.i.dgn"
+                    "code": "ref1.dgn.i.dgn, 3D Metric Design"
                 },
                 {
                     "Children": [
                         {
                             "Children": [],
                             "class": "BisCore:PhysicalPartition",
-                            "code": "ref2"
+                            "code": "ref2.dgn.i.dgn, 3D Metric Design"
                         },
                         {
                             "Children": [
                                 {
                                     "Children": [],
                                     "class": "BisCore:PhysicalPartition",
-                                    "code": "nested21"
+                                    "code": "nested21.dgn.i.dgn, 3D Metric Design"
                                 }
                             ],
                             "class": "BisCore:Subject",
-                            "code": "nested21.dgn.i.dgn"
+                            "code": "nested21.dgn.i.dgn, 3D Metric Design"
                         }
                     ],
                     "class": "BisCore:Subject",
-                    "code": "ref2.dgn.i.dgn"
+                    "code": "ref2.dgn.i.dgn, 3D Metric Design"
                 },
                 {
                     "Children": [
                         {
                             "Children": [],
                             "class": "BisCore:PhysicalPartition",
-                            "code": "ref3"
+                            "code": "ref3.dgn.i.dgn, 3D Metric Design"
                         }
                     ],
                     "class": "BisCore:Subject",
-                    "code": "ref3.dgn.i.dgn"
+                    "code": "ref3.dgn.i.dgn, 3D Metric Design"
                 },
                 {
                     "Children": [
                         {
                             "Children": [],
                             "class": "BisCore:PhysicalPartition",
-                            "code": "ref4"
+                            "code": "ref4.dgn.i.dgn, 3D Metric Design"
                         },
                         {
                             "Children": [
                                 {
                                     "Children": [],
                                     "class": "BisCore:PhysicalPartition",
-                                    "code": "nested41"
+                                    "code": "nested41.dgn.i.dgn, 3D Metric Design"
                                 }
                             ],
                             "class": "BisCore:Subject",
-                            "code": "nested41.dgn.i.dgn"
+                            "code": "nested41.dgn.i.dgn, 3D Metric Design"
                         }
                     ],
                     "class": "BisCore:Subject",
-                    "code": "ref4.dgn.i.dgn"
+                    "code": "ref4.dgn.i.dgn, 3D Metric Design"
                 }
             ],
             "class": "BisCore:Subject",

@@ -1225,7 +1225,7 @@ TEST_F(ConverterTests, CommonReferences)
     // The input files to this test have PW doc GUIDs. That is how we detect the common (embedded) reference.
     const Utf8CP s_master1Name = "master3d1 Package";
     const Utf8CP s_master2Name = "master3d2 Package";
-    const Utf8CP s_refName = "ref3d";
+    const Utf8CP s_refName = "ref3d.dgn.i.dgn, Default";
     BentleyApi::BeFileName masterPackageFile1 = GetInputFileName(L"master3d1 Package.i.dgn");
     BentleyApi::BeFileName masterPackageFile2 = GetInputFileName(L"master3d2 Package.i.dgn");
 
@@ -1266,7 +1266,8 @@ TEST_F(ConverterTests, CommonReferencesWithRecipe)
     // The input files to this test have PW doc GUIDs. That is how we detect the common (embedded) reference.
     const Utf8CP s_master1Name = "master_common";
     const Utf8CP s_master2Name = "master_common-v1";
-    const Utf8CP s_refName = "commonref";
+    const Utf8CP s_refName = "commonref.dgn.i.dgn, Default";
+    const Utf8CP s_recipeRefName = "commonref, Default";
     const Utf8CP s_refName_v1 = "commonref-v1";
     BentleyApi::BeFileName masterPackageFile1 = GetInputFileName(L"master_common.i.dgn");
     BentleyApi::BeFileName masterPackageFile2 = GetInputFileName(L"master_common-v1.i.dgn");
@@ -1290,7 +1291,8 @@ TEST_F(ConverterTests, CommonReferencesWithRecipe)
         ASSERT_TRUE(db.IsValid());
         ASSERT_EQ(1, getModelsByName(*db, s_master1Name).size());
         ASSERT_EQ(0, getModelsByName(*db, s_master2Name).size());
-        ASSERT_EQ(1, getModelsByName(*db, s_refName).size());
+        ASSERT_EQ(1, getModelsByName(*db, s_refName).size()) << "Reference should be named after the reference file";
+        ASSERT_EQ(0, getModelsByName(*db, s_recipeRefName).size());
         ASSERT_EQ(0, getModelsByName(*db, s_refName_v1).size());
         CheckNoDupXsas(*db, SyncInfo::ExternalSourceAspect::Kind::Element);
         countModels(*db, 0, 2);
@@ -1304,7 +1306,8 @@ TEST_F(ConverterTests, CommonReferencesWithRecipe)
         ASSERT_TRUE(db.IsValid());
         ASSERT_EQ(1, getModelsByName(*db, s_master1Name).size());
         ASSERT_EQ(1, getModelsByName(*db, s_master2Name).size());
-        ASSERT_EQ(1, getModelsByName(*db, s_refName).size());
+        ASSERT_EQ(1, getModelsByName(*db, s_recipeRefName).size()) << "Common reference should be renamed to recipe name";
+        ASSERT_EQ(0, getModelsByName(*db, s_refName).size());
         ASSERT_EQ(0, getModelsByName(*db, s_refName_v1).size());
         CheckNoDupXsas(*db, SyncInfo::ExternalSourceAspect::Kind::Element);
         countModels(*db, 0, 3);
@@ -1324,7 +1327,8 @@ TEST_F(ConverterTests, CommonReferencesNoDocGuids)
 
     const Utf8CP s_master1Name = "master3d1 Package";
     const Utf8CP s_master2Name = "master3d2 Package";
-    const Utf8CP s_refName = "commonref";
+    const Utf8CP s_refName = "commonref.dgn.i.dgn, Default";
+    const Utf8CP s_recipeRefName = "commonref, Default";
 
     BentleyApi::BeFileName inFile = GetInputFileName(L"referencesCommon.i.dgn");
     BentleyApi::BeFileName masterPackageFile1, masterPackageFile2;
@@ -1344,6 +1348,7 @@ TEST_F(ConverterTests, CommonReferencesNoDocGuids)
         ASSERT_EQ(1, getModelsByName(*db, s_master1Name).size());
         ASSERT_EQ(0, getModelsByName(*db, s_master2Name).size());
         ASSERT_EQ(1, getModelsByName(*db, s_refName).size());
+        ASSERT_EQ(0, getModelsByName(*db, s_recipeRefName).size());
         CheckNoDupXsas(*db, SyncInfo::ExternalSourceAspect::Kind::Element);
         }
 
@@ -1355,7 +1360,8 @@ TEST_F(ConverterTests, CommonReferencesNoDocGuids)
         ASSERT_TRUE(db.IsValid());
         ASSERT_EQ(1, getModelsByName(*db, s_master1Name).size());
         ASSERT_EQ(1, getModelsByName(*db, s_master2Name).size());
-        ASSERT_EQ(1, getModelsByName(*db, s_refName).size()) << "Since both master files reference the same commonref (by name), there should be only one copy of commonref in the iModel";
+        ASSERT_EQ(1, getModelsByName(*db, s_recipeRefName).size()) << "Since both master files reference the same commonref (by name), there should be only one copy of commonref in the iModel";
+        ASSERT_EQ(0, getModelsByName(*db, s_refName).size());
         CheckNoDupXsas(*db, SyncInfo::ExternalSourceAspect::Kind::Element);
         }
 
@@ -1937,7 +1943,10 @@ TEST_F(ConverterTests, CrashAndRerun)
     LineUpFiles(L"CrashAndRerun.bim", L"Test3d.dgn", false);
 
     wchar_t const* model1Name = L"Model1";
+    Utf8CP model1BimName = "Test3d.dgn, Model1";
+
     wchar_t const* model2Name = L"Model2";
+    Utf8CP model2BimName = "Ref, Test3d.dgn, Model2";
 
     if (true)
         {
@@ -1961,7 +1970,7 @@ TEST_F(ConverterTests, CrashAndRerun)
         ASSERT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
         }
 
-    // Do the initial conversion but crash half way through, after converting model1 but before converting model2.
+    // Do the initial conversion but crash half way through, after converting model1 but *before* converting model2.
     if (true)
         {
         auto db = OpenExistingDgnDb(m_dgnDbFileName);
@@ -1980,8 +1989,8 @@ TEST_F(ConverterTests, CrashAndRerun)
     if (true)
         {
         auto db = OpenExistingDgnDb(m_dgnDbFileName);
-        auto model1Found = getModelsByName(*db, Utf8String(model1Name).c_str());
-        auto model2Found = getModelsByName(*db, Utf8String(model2Name).c_str());
+        auto model1Found = getModelsByName(*db, model1BimName);
+        auto model2Found = getModelsByName(*db, model2BimName);
         ASSERT_EQ(1, model1Found.size());
         ASSERT_EQ(1, model2Found.size());
         countElements(*model1Found[0], 1);
@@ -1997,8 +2006,8 @@ TEST_F(ConverterTests, CrashAndRerun)
         auto db = OpenExistingDgnDb(m_dgnDbFileName);
         ASSERT_TRUE(db.IsValid());
 
-        auto model1Found = getModelsByName(*db, Utf8String(model1Name).c_str());
-        auto model2Found = getModelsByName(*db, Utf8String(model2Name).c_str());
+        auto model1Found = getModelsByName(*db, model1BimName);
+        auto model2Found = getModelsByName(*db, model2BimName);
         ASSERT_EQ(1, model1Found.size());
         ASSERT_EQ(1, model2Found.size());
         countElements(*model1Found[0], 1);

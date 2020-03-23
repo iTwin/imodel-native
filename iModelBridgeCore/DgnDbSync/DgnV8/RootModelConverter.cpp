@@ -448,19 +448,44 @@ BeSQLite::EC::ECInstanceId SpatialConverterBase::GetRootModelAspectIdFromSourceM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String Converter::ComputeV8AttachmentDescription(DgnAttachmentCR attachment)
+Utf8String Converter::ComputeV8AttachmentDescription(DgnAttachmentCR attachment, bool excludeLogical)
     {
     BeAssert(nullptr != attachment.GetDgnModelP());
     auto& v8Model = *attachment.GetDgnModelP();
     auto& v8File = *v8Model.GetDgnFileP();
 
     Bentley::WString v8FileName;
-    if (BSISUCCESS != DgnV8Api::DgnFile::ParsePackagedName(nullptr, nullptr, &v8FileName, v8File.GetFileName().c_str()))
+    if (BSISUCCESS == DgnV8Api::DgnFile::ParsePackagedName(nullptr, nullptr, &v8FileName, v8File.GetFileName().c_str()))
+        {
+        // this is an attachment to an embedded file.
+        if (excludeLogical && GetParams().GetEmbeddedFileIdRecipe() != nullptr)
+            {
+            // If we are computing the name of a common reference and if we are identifying embedded references by filtered names,
+            // then use the filtered common name. (When applying recipes, we ignore the part of a embedded file's name that holds
+            // suitabilty codes, version numbers, etc.)
+            // v8FileName = GetSyncInfo().GetUniqueNameForFile()
+            auto rlink = GetRepositoryLinkElement(v8File);
+            Utf8String filteredName;
+            if (rlink.IsValid())
+                {
+                filteredName = rlink->GetCode().GetValueUtf8();
+                }
+            else
+                {
+                BeAssert(false && "Missing RepositoryLink for embedded file");
+                filteredName = GetSyncInfo().GetUniqueNameForFile(v8File);
+                }
+            v8FileName.AssignUtf8(filteredName.c_str());
+            }
+        }
+    else
+        {
         v8FileName = v8File.GetFileName();
+        }
     
     Utf8String refFileName(BeFileName::GetFileNameAndExtension(v8FileName.c_str()).c_str());
 
-    auto modelName = _ComputeModelName(v8Model);
+    Utf8String modelName(v8Model.GetModelName()); // Use the actual V8 modelname, not the renamed model name. PBI#291480
 
     auto logicalName = attachment.GetLogicalName();
 
@@ -470,13 +495,12 @@ Utf8String Converter::ComputeV8AttachmentDescription(DgnAttachmentCR attachment)
 
     Utf8String refname;
 
-    if (0 != *logicalName)
+    if (0 != *logicalName && !excludeLogical)
         refname.append(Utf8String(logicalName)).append(", ");;
     
     refname.append(refFileName);
 
-    if (!modelName.EqualsI(GetFileBaseName(v8File)))
-        refname.append(", ").append(modelName);
+    refname.append(", ").append(modelName);
 
     return refname;
     }
@@ -1009,6 +1033,10 @@ ResolvedModelMapping RootModelConverter::ImportSpatialModels(bool& haveFoundSpat
     if (modeledElement->GetParentId() == GetDgnDb().Elements().GetRootSubjectId())
         {
         ReparentElement(v8mm.GetDgnModel().GetModeledElementId(), _GetSpatialParentSubject().GetElementId());
+        }
+    else if (modeledElement->GetParentId() != _GetSpatialParentSubject().GetElementId() && thisModelRef.AsDgnAttachmentCP())
+        {
+        RenameCommonReference(*modeledElement, *thisModelRef.AsDgnAttachmentCP());
         }
 
     if (nullptr == thisModelRef.GetDgnAttachmentsP())

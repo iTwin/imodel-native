@@ -1069,23 +1069,18 @@ DgnModelId Converter::CreateModelFromV8Model(DgnV8ModelCR v8Model, Utf8CP newNam
         {
         SubjectCR parentSubject = _GetSpatialParentSubject();
 
+        if (nullptr != attachment)
+            {
+            // The parent is a "References" Subject. Its CodeValue is the name of the V8 reference attachment.
+            // That is what we want to use for the referenced model as well. PBI#291480.
+            newName = parentSubject.GetCode().GetValueUtf8CP();
+            }
+
         DgnCode partitionCode = PhysicalPartition::CreateCode(parentSubject, newName);
-        Utf8String qualifiedName(newName);
         if (GetDgnDb().Elements().QueryElementIdByCode(partitionCode).IsValid())
             {
-            // if the model's own name is not unique among all references attachments of the parent, then
-            //  fall back on filename-modelname.
-            qualifiedName = GetFileBaseName(*v8Model.GetDgnFileP());
-            qualifiedName.append("-");
-            qualifiedName.append(newName);
-
-            partitionCode = PhysicalPartition::CreateCode(parentSubject, qualifiedName.c_str());
-            if (GetDgnDb().Elements().QueryElementIdByCode(partitionCode).IsValid())
-                {
-                //  If somehow!?! even filename-modelname is not unique among the parent's attachments, then just
-                //  generate a (meaningless) unique code.
-                partitionCode = PhysicalPartition::CreateUniqueCode(parentSubject, qualifiedName.c_str());
-                }
+            BeAssert(false);
+            partitionCode = PhysicalPartition::CreateUniqueCode(parentSubject, newName);
             }
 
         PhysicalPartitionPtr ed = PhysicalPartition::Create(parentSubject, partitionCode.GetValueUtf8CP());
@@ -2076,6 +2071,42 @@ void Converter::OnDeleteReferencesSubject(DgnElementId eid)
 
     // Now, re-parent the InformationPartition element
     ReparentElement(infoPartitionId, newParentId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/20
++---------------+---------------+---------------+---------------+---------------+------*/
+void Converter::RenameCommonReference(DgnElementCR modeledElement, DgnAttachmentCR v8Attachment)
+    {
+    auto parentId = modeledElement.GetParentId();
+    if (parentId == _GetSpatialParentSubject().GetElementId())
+        return;
+
+    DgnCodeCR code = modeledElement.GetCode();
+
+    auto parent = GetDgnDb().Elements().GetElement(parentId);
+    if (!parent.IsValid() || !code.GetValueUtf8().Equals(parent->GetCode().GetValueUtf8()))
+        return;
+
+    if (parentId != code.GetScopeElementId(GetDgnDb()))
+        return; // Not what I expected. Don't touch it.
+
+    // This model is named after its parent, which represents the first reference attachment to the corresponding V8 model.
+    // We have just discovered a second reference attachment to this model. 
+    // Therefore, this model's name should be changed to be neutral. PBI#291480.
+    // (Don't change its parent.)
+    auto newName = ComputeV8AttachmentDescription(v8Attachment, true);
+    // if (nullptr == v8Attachment.GetDgnModelP())
+    //     return;
+    // auto newName = _ComputeModelName(*v8Attachment.GetDgnModelP());
+    DgnCode newCode(code.GetCodeSpecId(), parentId, newName);
+    auto edit = modeledElement.CopyForEdit();
+    edit->SetCode(newCode);
+    auto updated = edit->Update();
+    if (!updated.IsValid())
+        {
+        LOG.errorv("Failed to update %s while re-naming to %s", Converter::IssueReporter::FmtElement(modeledElement).c_str(), newCode.GetValueUtf8CP());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

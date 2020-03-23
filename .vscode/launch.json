@@ -62,7 +62,7 @@
             "program": "${env:OutRoot}/Winx64/Product/DgnV8ConverterTests/DgnV8ConverterTests.exe",
             "args": [
                 "--gtest_break_on_failure",
-                "--gtest_filter=ECSchemaTests.SchemaWithMultiInheritance"
+                "--gtest_filter=ConverterTests.CommonReferences:ConverterTests.CommonReferencesWithRecipe:ConverterTests.CommonReferencesNoDocGuids:MultiBridgeTests.Sandwich:MultiBridgeTests.DetectDeletedModels"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -201,7 +201,7 @@
             "program": "${env:OutRoot}WinX64/Product/MstnBridgeTests/MstnBridgeTests.exe",
             "args": [
                 "--gtest_break_on_failure",
-                "--gtest_filter=MstnBridgeTests.DetectDeletionsInEmbeddedFiles"
+                "--gtest_filter=MstnBridgeTests.AddRemoveNestedEmbeddedRefsV2:MstnBridgeTests.AddRemoveNestedEmbeddedRefsV2OldBridge"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

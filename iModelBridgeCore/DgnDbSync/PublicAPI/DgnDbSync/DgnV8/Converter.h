@@ -1422,7 +1422,7 @@ public:
     //! @name Extracted drawing graphics
     //! @{
 
-    DGNDBSYNC_EXPORT Utf8String ComputeV8AttachmentDescription(DgnAttachmentCR);
+    DGNDBSYNC_EXPORT Utf8String ComputeV8AttachmentDescription(DgnAttachmentCR, bool excludeLogical = false);
     DGNDBSYNC_EXPORT Utf8String ComputeV8AttachmentPathDescription(DgnAttachmentCR);
     DGNDBSYNC_EXPORT Utf8String ComputeV8AttachmentPathDescriptionAsJson(DgnAttachmentCR);
     DGNDBSYNC_EXPORT Utf8String ComputeV8AttachmentIdPath(DgnAttachmentCR);
@@ -1793,6 +1793,8 @@ public:
     void OnDeleteReferencesSubject(DgnElementId); // *** TODO make RootModelConverter override _OnElementBeforeDelete, and move this logic into it
     //! @private
     void ReparentElement(DgnElementId elid, DgnElementId newParentId);
+    //! @private
+    void RenameCommonReference(DgnElementCR modeledElement, DgnAttachmentCR v8Attachment);
     //! @private
     std::pair<int,int> GetBridgeSchemaVersion();
     //! @private

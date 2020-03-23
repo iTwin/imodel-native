@@ -456,8 +456,8 @@ TEST_F(MultiBridgeTests, Sandwich)
         // Having run only bridge 'm', we should have only models from files that are assigned to 'm'. 
         // No model from a file assigned to 'r' should be in the iModel.
         auto masterModels = getModelsByName(*db, "master"); ASSERT_EQ(1, masterModels.size()) << "No model (master) a file assigned to 'r' should be in the iModel";;
-        auto rrefModels = getModelsByName(*db, "rref"); ASSERT_EQ(0, rrefModels.size()) << "No model (rref) from a file assigned to 'r' should be in the iModel";
-        auto mrefModels = getModelsByName(*db, "mref"); ASSERT_EQ(1, mrefModels.size());
+        auto rrefModels = getModelsByName(*db, "rref.dgn, Default"); ASSERT_EQ(0, rrefModels.size()) << "No model (rref) from a file assigned to 'r' should be in the iModel";
+        auto mrefModels = getModelsByName(*db, "mref.dgn, Default"); ASSERT_EQ(1, mrefModels.size());
 
         ASSERT_EQ(2, countElementsInModel(*masterModels[0]));
         ASSERT_EQ(2, countElementsInModel(*mrefModels[0]));
@@ -476,8 +476,8 @@ TEST_F(MultiBridgeTests, Sandwich)
 
         // Now that we have run both bridges, we should see all of the original models.
         auto masterModels = getModelsByName(*db, "master"); ASSERT_EQ(1, masterModels.size());
-        auto rrefModels = getModelsByName(*db, "rref"); ASSERT_EQ(1, rrefModels.size());
-        auto mrefModels = getModelsByName(*db, "mref"); ASSERT_EQ(1, mrefModels.size());
+        auto rrefModels = getModelsByName(*db, "rref.dgn, Default"); ASSERT_EQ(1, rrefModels.size());
+        auto mrefModels = getModelsByName(*db, "mref.dgn, Default"); ASSERT_EQ(1, mrefModels.size());
 
         ASSERT_EQ(2, countElementsInModel(*masterModels[0]));
         ASSERT_EQ(2, countElementsInModel(*rrefModels[0]));
@@ -497,8 +497,8 @@ TEST_F(MultiBridgeTests, Sandwich)
 
         // The model and element counts should not have changed.
         auto masterModels = getModelsByName(*db, "master"); ASSERT_EQ(1, masterModels.size());
-        auto rrefModels = getModelsByName(*db, "rref"); ASSERT_EQ(1, rrefModels.size());
-        auto mrefModels = getModelsByName(*db, "mref"); ASSERT_EQ(1, mrefModels.size());
+        auto rrefModels = getModelsByName(*db, "rref.dgn, Default"); ASSERT_EQ(1, rrefModels.size());
+        auto mrefModels = getModelsByName(*db, "mref.dgn, Default"); ASSERT_EQ(1, mrefModels.size());
 
         ASSERT_EQ(2, countElementsInModel(*masterModels[0]));
         ASSERT_EQ(2, countElementsInModel(*rrefModels[0]));
@@ -568,8 +568,8 @@ TEST_F(MultiBridgeTests, DetectDeletedModels)
         ASSERT_TRUE(db.IsValid());
 
         auto masterModels = getModelsByName(*db, "master"); ASSERT_EQ(1, masterModels.size());
-        auto rrefModels = getModelsByName(*db, "rref"); ASSERT_EQ(1, rrefModels.size());
-        auto mrefModels = getModelsByName(*db, "mref"); ASSERT_EQ(1, mrefModels.size());
+        auto rrefModels = getModelsByName(*db, "rref.dgn, Default"); ASSERT_EQ(1, rrefModels.size());
+        auto mrefModels = getModelsByName(*db, "mref.dgn, Default"); ASSERT_EQ(1, mrefModels.size());
 
         ASSERT_EQ(2, countElementsInModel(*masterModels[0]));
         ASSERT_EQ(2, countElementsInModel(*rrefModels[0]));
@@ -594,8 +594,8 @@ TEST_F(MultiBridgeTests, DetectDeletedModels)
         ASSERT_TRUE(db.IsValid());
 
         auto masterModels = getModelsByName(*db, "master"); ASSERT_EQ(1, masterModels.size()) << "Master.dgn is still there. No bridge should have deleted its models.";
-        auto rrefModels = getModelsByName(*db, "rref");     ASSERT_EQ(0, rrefModels.size()) << "Bridge R should notice that rref.dgn was deleted and delete the models from it.";
-        auto mrefModels = getModelsByName(*db, "mref");     ASSERT_EQ(1, mrefModels.size()) << "Bridge R should not delete models from files not assigned to it";
+        auto rrefModels = getModelsByName(*db, "rref.dgn, Default");     ASSERT_EQ(0, rrefModels.size()) << "Bridge R should notice that rref.dgn was deleted and delete the models from it.";
+        auto mrefModels = getModelsByName(*db, "mref.dgn, Default");     ASSERT_EQ(1, mrefModels.size()) << "Bridge R should not delete models from files not assigned to it";
 
         ASSERT_EQ(2, countElementsInModel(*masterModels[0]));
         // rref is gone
@@ -612,8 +612,8 @@ TEST_F(MultiBridgeTests, DetectDeletedModels)
         ASSERT_TRUE(db.IsValid());
 
         auto masterModels = getModelsByName(*db, "master"); ASSERT_EQ(1, masterModels.size()) << "Master.dgn is still there. No bridge should have deleted its models.";
-        auto rrefModels = getModelsByName(*db, "rref");     ASSERT_EQ(0, rrefModels.size());
-        auto mrefModels = getModelsByName(*db, "mref");     ASSERT_EQ(0, mrefModels.size()) << "Bridge M should notice that mref.dgn was deleted and delete the models from it.";
+        auto rrefModels = getModelsByName(*db, "rref.dgn, Default");     ASSERT_EQ(0, rrefModels.size());
+        auto mrefModels = getModelsByName(*db, "mref.dgn, Default");     ASSERT_EQ(0, mrefModels.size()) << "Bridge M should notice that mref.dgn was deleted and delete the models from it.";
 
         ASSERT_EQ(2, countElementsInModel(*masterModels[0]));
         // rref is gone
