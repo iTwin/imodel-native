@@ -7395,7 +7395,434 @@ TEST_F(SchemaUpgradeTestFixture, ModifyIsRelationshipClass)
         "</ECSchema>");
     ASSERT_EQ(ERROR, ImportSchema(editedSchemaItem)) << "Changing ECClass::IsRelationshipClass is not supported";
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                        03/20
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, Multiplicity_EndTableNonPersistedSideCardianlityCannotBeChanged)
+{
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "   <ECEntityClass typeName='A' modifier='None' >"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='B' modifier='None' >"
+        "       <ECNavigationProperty propertyName='A' relationshipName='RelClass' direction='backward'/>"
+        "   </ECEntityClass>"
+        "   <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >"
+        "       <Source multiplicity='(0..1)' roleLabel='A has B' polymorphic='False'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target multiplicity='(0..*)' roleLabel='B has A' polymorphic='False'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>");
 
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
+
+    SchemaItem updatePersistedSideCardianlity(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "   <ECEntityClass typeName='A' modifier='None' >"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='B' modifier='None' >"
+        "       <ECNavigationProperty propertyName='A' relationshipName='RelClass' direction='backward'/>"
+        "   </ECEntityClass>"
+        "   <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >"
+        "       <Source multiplicity='(0..2)' roleLabel='A has B' polymorphic='False'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target multiplicity='(0..*)' roleLabel='B has A' polymorphic='False'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>");
+    ASSERT_EQ(ERROR, ImportSchema(updatePersistedSideCardianlity)) << "end table non persisted side cardianlity cannot be changed";
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                        03/20
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, Multiplicity_ChangetoLowerLimitNotSupported)
+{
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "   <ECEntityClass typeName='A' modifier='None' >"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='B' modifier='None' >"
+        "       <ECNavigationProperty propertyName='A' relationshipName='RelClass' direction='backward'/>"
+        "   </ECEntityClass>"
+        "   <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >"
+        "       <Source multiplicity='(0..1)' roleLabel='A has B' polymorphic='False'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target multiplicity='(0..*)' roleLabel='B has A' polymorphic='False'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>");
+
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
+
+    SchemaItem updateLowerLimitOfMultiplicity(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "   <ECEntityClass typeName='A' modifier='None' >"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='B' modifier='None' >"
+        "       <ECNavigationProperty propertyName='A' relationshipName='RelClass' direction='backward'/>"
+        "   </ECEntityClass>"
+        "   <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >"
+        "       <Source multiplicity='(0..1)' roleLabel='A has B' polymorphic='False'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target multiplicity='(1..*)' roleLabel='B has A' polymorphic='False'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>");
+    ASSERT_EQ(ERROR, ImportSchema(updateLowerLimitOfMultiplicity)) << "changing lower limit of multiplicity is not allowed";
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                        03/20
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, DisablePolymorphicNotSupported)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "   <ECEntityClass typeName='A' modifier='None' >"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='B' modifier='None' >"
+        "   </ECEntityClass>"
+        "   <ECRelationshipClass typeName='R' modifier='Sealed' strength='embedding' >"
+        "       <Source multiplicity='(0..1)' roleLabel='A has B' polymorphic='true'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target multiplicity='(0..N)' roleLabel='B has A' polymorphic='true'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>");
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
+
+    SchemaItem turnOffPolymorphic(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "   <ECEntityClass typeName='A' modifier='None' >"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='B' modifier='None' >"
+        "   </ECEntityClass>"
+        "   <ECRelationshipClass typeName='R' modifier='Sealed' strength='embedding' ' >"
+        "       <Source multiplicity='(0..1)'  roleLabel='A has B' polymorphic='false'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target multiplicity='(0..N)'  roleLabel='B has A' polymorphic='false'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>");
+
+    ASSERT_EQ(ERROR, ImportSchema(turnOffPolymorphic));
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                        03/20
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, Polymorphic_LinkTable)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "   <ECEntityClass typeName='A' modifier='None' >"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='B' modifier='None' >"
+        "   </ECEntityClass>"
+        "   <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >"
+        "       <Source multiplicity='(0..1)'  roleLabel='A has B' polymorphic='False'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target multiplicity='(0..N)'  roleLabel='B has A' polymorphic='False'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>");
+
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
+    ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT * FROM ts.A"));
+    ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT * FROM ts.B"));
+    ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT * FROM ts.RelClass"));
+    if (true)
+        {
+        const auto relClass = m_ecdb.Schemas().GetClass("TestSchema", "RelClass")->GetRelationshipClassCP();
+        ASSERT_TRUE(relClass != nullptr);
+        ASSERT_FALSE(relClass->GetSource().GetIsPolymorphic());
+        ASSERT_FALSE(relClass->GetTarget().GetIsPolymorphic());
+        }
+    SchemaItem updateIsPolymorphic(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "   <ECEntityClass typeName='A' modifier='None' >"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='B' modifier='None' >"
+        "   </ECEntityClass>"
+        "   <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >"
+        "       <Source multiplicity='(0..1)'  roleLabel='A has B' polymorphic='True'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target multiplicity='(0..N)'  roleLabel='B has A' polymorphic='True'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "   <ECEntityClass typeName='A1' modifier='None' >"
+        "     <BaseClass>A</BaseClass>"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='B1' modifier='None' >"
+        "     <BaseClass>B</BaseClass>"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    ASSERT_EQ(ERROR, ImportSchema(updateIsPolymorphic)) << " The class map for the link table ECRelationshipClass 'TestSchema:RelClass' maps to more than one table on the source constraint: ts_A,ts_A1";
+    SchemaItem schemaItemTph(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "   <ECSchemaReference name = 'ECDbMap' version='02.00.00' alias = 'ecdbmap' />"
+        "   <ECEntityClass typeName='A' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "           <ClassMap xmlns='ECDbMap.02.00.00'>"
+        "               <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "           </ClassMap>"
+        "        </ECCustomAttributes>"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='B' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "           <ClassMap xmlns='ECDbMap.02.00.00'>"
+        "               <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "           </ClassMap>"
+        "        </ECCustomAttributes>"
+        "   </ECEntityClass>"
+        "   <ECRelationshipClass typeName='RelClass' modifier='Abstract' strength='embedding' strengthDirection='forward' >"
+        "        <ECCustomAttributes>"
+        "           <ClassMap xmlns='ECDbMap.02.00.00'>"
+        "               <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "           </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <Source multiplicity='(0..1)'  roleLabel='A has B' polymorphic='False'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target multiplicity='(0..N)'  roleLabel='B has A' polymorphic='False'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>");
+
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaItemTph.ecdb", schemaItemTph));
+    ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT * FROM ts.A"));
+    ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT * FROM ts.B"));
+    ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT * FROM ts.RelClass"));
+    if (true)
+        {
+        const auto relClass = m_ecdb.Schemas().GetClass("TestSchema", "RelClass")->GetRelationshipClassCP();
+        ASSERT_TRUE(relClass != nullptr);
+        ASSERT_FALSE(relClass->GetSource().GetIsPolymorphic());
+        ASSERT_FALSE(relClass->GetTarget().GetIsPolymorphic());
+        }
+    SchemaItem updateIsPolymorphicTph(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "   <ECSchemaReference name = 'ECDbMap' version='02.00.00' alias = 'ecdbmap' />"
+        "   <ECEntityClass typeName='A' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "           <ClassMap xmlns='ECDbMap.02.00.00'>"
+        "               <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "           </ClassMap>"
+        "        </ECCustomAttributes>"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='B' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "           <ClassMap xmlns='ECDbMap.02.00.00'>"
+        "               <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "           </ClassMap>"
+        "        </ECCustomAttributes>"
+        "   </ECEntityClass>"
+        "   <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >"
+        "        <ECCustomAttributes>"
+        "           <ClassMap xmlns='ECDbMap.02.00.00'>"
+        "               <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "           </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <Source multiplicity='(0..1)'  roleLabel='A has B' polymorphic='True'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target multiplicity='(0..N)' roleLabel='B has A' polymorphic='True'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "   <ECEntityClass typeName='A1' modifier='None' >"
+        "     <BaseClass>A</BaseClass>"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='B1' modifier='None' >"
+        "     <BaseClass>B</BaseClass>"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    ASSERT_EQ(SUCCESS, ImportSchema(updateIsPolymorphicTph)) << "changing RelationshipConstraint::IsPolymorphic is allowed";
+    ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT * FROM ts.A"));
+    ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT * FROM ts.B"));
+    ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT * FROM ts.RelClass"));
+    ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT * FROM ts.A1"));
+    ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT * FROM ts.B1"));
+    if (true)
+        {
+        const auto relClass = m_ecdb.Schemas().GetClass("TestSchema", "RelClass")->GetRelationshipClassCP();
+        ASSERT_TRUE(relClass != nullptr);
+        ASSERT_TRUE(relClass->GetSource().GetIsPolymorphic());
+        ASSERT_TRUE(relClass->GetTarget().GetIsPolymorphic());
+        }
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                        03/20
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, Polymorphic_EndTable)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "   <ECEntityClass typeName='A' modifier='None' >"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='B' modifier='None' >"
+        "       <ECNavigationProperty propertyName='A' relationshipName='RelClass' direction='backward'/>"
+        "   </ECEntityClass>"
+        "   <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >"
+        "       <Source multiplicity='(0..1)' roleLabel='A has B' polymorphic='False'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target multiplicity='(0..N)' roleLabel='B has A' polymorphic='False'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>");
+
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
+    ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT * FROM ts.A"));
+    ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT * FROM ts.B"));
+    ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT * FROM ts.RelClass"));
+    if (true)
+        {
+        const auto relClass = m_ecdb.Schemas().GetClass("TestSchema", "RelClass")->GetRelationshipClassCP();
+        ASSERT_TRUE(relClass != nullptr);
+        ASSERT_FALSE(relClass->GetSource().GetIsPolymorphic());
+        ASSERT_FALSE(relClass->GetTarget().GetIsPolymorphic());
+        }
+    /* 
+        Use class Change polymorphic=true and add derived classes 
+        Add dervied class A->A1 and B->B2 FK Relationship 
+    */
+    SchemaItem updateIsPolymorphic(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "   <ECEntityClass typeName='A' modifier='None' >"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='B' modifier='None' >"
+        "       <ECNavigationProperty propertyName='A' relationshipName='RelClass' direction='backward'/>"
+        "   </ECEntityClass>"
+        "   <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >"
+        "       <Source multiplicity='(0..1)' roleLabel='A has B' polymorphic='True'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target multiplicity='(0..N)' roleLabel='B has A' polymorphic='True'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "   <ECEntityClass typeName='A1' modifier='None' >"
+        "     <BaseClass>A</BaseClass>"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='B1' modifier='None' >"
+        "     <BaseClass>B</BaseClass>"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    ASSERT_EQ(ERROR, ImportSchema(updateIsPolymorphic)) << "Failed to map ECRelationshipClass 'TestSchema:RelClass'. The referenced end maps to more than one table.";
+    /*
+        Same has TPH
+        Use class Change polymorphic=true and add derived classes
+        Add dervied class A->A1 and B->B2 FK Relationship
+    */
+    SchemaItem schemaItemTPH(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "   <ECSchemaReference name = 'ECDbMap' version='02.00.00' alias = 'ecdbmap' />"
+        "   <ECEntityClass typeName='A' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "           <ClassMap xmlns='ECDbMap.02.00.00'>"
+        "               <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "           </ClassMap>"
+        "        </ECCustomAttributes>"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='B' modifier='None' >"
+        "       <ECNavigationProperty propertyName='A' relationshipName='RelClass' direction='backward'/>"
+        "   </ECEntityClass>"
+        "   <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >"
+        "       <Source multiplicity='(0..1)' roleLabel='A has B' polymorphic='False'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target multiplicity='(0..N)' roleLabel='B has A' polymorphic='False'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>");
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaItemTPH.ecdb", schemaItemTPH));
+    ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT * FROM ts.A"));
+    ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT * FROM ts.B"));
+    ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT * FROM ts.RelClass"));
+    if (true)
+        {
+        const auto relClass = m_ecdb.Schemas().GetClass("TestSchema", "RelClass")->GetRelationshipClassCP();
+        ASSERT_TRUE(relClass != nullptr);
+        ASSERT_FALSE(relClass->GetSource().GetIsPolymorphic());
+        ASSERT_FALSE(relClass->GetTarget().GetIsPolymorphic());
+        }
+    SchemaItem updateIsPolymorphicTph(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "   <ECSchemaReference name = 'ECDbMap' version='02.00.00' alias = 'ecdbmap' />"
+        "   <ECEntityClass typeName='A' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "           <ClassMap xmlns='ECDbMap.02.00.00'>"
+        "               <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "           </ClassMap>"
+        "        </ECCustomAttributes>"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='B' modifier='None' >"
+        "       <ECNavigationProperty propertyName='A' relationshipName='RelClass' direction='backward'/>"
+        "   </ECEntityClass>"
+        "   <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >"
+        "       <Source multiplicity='(0..1)' roleLabel='A has B' polymorphic='True'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target multiplicity='(0..N)' roleLabel='B has A' polymorphic='True'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "   <ECEntityClass typeName='A1' modifier='None' >"
+        "     <BaseClass>A</BaseClass>"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='B1' modifier='None' >"
+        "     <BaseClass>B</BaseClass>"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    ASSERT_EQ(SUCCESS, ImportSchema(updateIsPolymorphicTph)) << "changing RelationshipConstraint::IsPolymorphic is allowed";
+    ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT * FROM ts.A"));
+    ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT * FROM ts.B"));
+    ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT * FROM ts.RelClass"));
+    ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT * FROM ts.A1"));
+    ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT * FROM ts.B1"));
+    if (true)
+        {
+        const auto relClass = m_ecdb.Schemas().GetClass("TestSchema", "RelClass")->GetRelationshipClassCP();
+        ASSERT_TRUE(relClass != nullptr);
+        ASSERT_TRUE(relClass->GetSource().GetIsPolymorphic());
+        ASSERT_TRUE(relClass->GetTarget().GetIsPolymorphic());
+        }
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------

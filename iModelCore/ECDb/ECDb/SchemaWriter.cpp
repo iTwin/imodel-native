@@ -2051,25 +2051,93 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, PropertyChange& propert
 BentleyStatus SchemaWriter::UpdateRelationshipConstraint(Context& ctx, ECContainerId containerId, RelationshipConstraintChange& constraintChange, ECRelationshipConstraintCR oldConstraint, ECRelationshipConstraintCR newConstraint, bool isSource, Utf8CP relationshipName)
     {
     Utf8CP constraintEndStr = isSource ? "Source" : "Target";
-    SqlUpdateBuilder updater(TABLE_RelationshipConstraint);
 
     if (constraintChange.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
 
     if (constraintChange.Multiplicity().IsChanged())
         {
-        ctx.Issues().ReportV("ECSchema Upgrade failed. ECRelationshipClass %s - Constraint: %s: Changing 'Multiplicity' of an ECRelationshipConstraint is not supported.",
-                                  relationshipName, constraintEndStr);
-        return ERROR;
+        /*  SCHEMA_EVOLUTION_RULE: Allow 'ECRelationshipConstraint' to change property 'Multiplicity' such that upper limit can be increased but not decreased.
+            Notes: In case of FK we donot allow multiplicity to change in way that can effect mapping.
+            Rules:
+                1. Lower limit of multiplicity cannot be changed.
+                2. Upper limit of multiplicity can be chanegd as long as the new value is greater then current value.
+                3. FK relationship is only allowed to change Upper limit of multiplicity for source/target constraint as long as that is the side where FK is persisted.
+        */
+
+        // Rule 1: Lower limit of multiplicity cannot be changed.
+        if (oldConstraint.GetMultiplicity().GetLowerLimit() != newConstraint.GetMultiplicity().GetLowerLimit())
+            {
+            ctx.Issues().ReportV("ECSchema Upgrade failed. ECRelationshipClass %s - Constraint: %s: Changing 'Multiplicity' lower limit of an ECRelationshipConstraint is not supported",
+                relationshipName, constraintEndStr);
+            return ERROR;
+
+            }
+        // Rule 2: Upper limit of multiplicity can be chanegd as long as the new value is greater then current value.
+        if (oldConstraint.GetMultiplicity().GetUpperLimit() > newConstraint.GetMultiplicity().GetUpperLimit())
+            {
+            ctx.Issues().ReportV("ECSchema Upgrade failed. ECRelationshipClass %s - Constraint: %s: Changing 'Multiplicity' upper limit to be less than its current value is not supported.",
+                relationshipName, constraintEndStr);
+            return ERROR;
+            }
+        const auto relMap = ctx.GetSchemaManager().GetClassMap(oldConstraint.GetRelationshipClass());
+        if (relMap == nullptr)
+            {
+            BeDataAssert(relMap != nullptr && "ClassMap for existing relationship must exist");
+            return ERROR;
+            }            
+        // Rule 3: FK relationship is only allowed to change Upper limit of multiplicity for source/target constraint as long as that is the side where FK is persisted.
+        if (relMap->GetType() == ClassMap::Type::RelationshipEndTable)
+            {
+            if (isSource && relMap->GetMapStrategy().GetStrategy() == MapStrategy::ForeignKeyRelationshipInTargetTable)
+                {
+                ctx.Issues().ReportV("ECSchema Upgrade failed. ECRelationshipClass %s - Constraint: %s: Changing 'Multiplicity' of an Source ECRelationshipConstraint is not supported if relationship is mapped as 'ForeignKeyRelationshipInTargetTable'",
+                    relationshipName, constraintEndStr);
+                return ERROR;
+                }
+            if (!isSource && relMap->GetMapStrategy().GetStrategy() == MapStrategy::ForeignKeyRelationshipInSourceTable)
+                {
+                ctx.Issues().ReportV("ECSchema Upgrade failed. ECRelationshipClass %s - Constraint: %s: Changing 'Multiplicity' of an Target ECRelationshipConstraint is not supported if relationship is mapped as 'ForeignKeyRelationshipInSourceTable'",
+                    relationshipName, constraintEndStr);
+                return ERROR;
+                }
+            }
+
+        //Just in case if someone change above rules
+        BeAssert(newConstraint.GetMultiplicity().GetUpperLimit() > oldConstraint.GetMultiplicity().GetUpperLimit() &&
+            newConstraint.GetMultiplicity().GetLowerLimit() == oldConstraint.GetMultiplicity().GetLowerLimit());
+
+        // Action: Update upper bound for multiplicity for the constraint.
+        SqlUpdateBuilder updater(TABLE_RelationshipConstraint);
+        updater.AddSetExp("MultiplicityUpperLimit", newConstraint.GetMultiplicity().GetUpperLimit());
+        updater.AddWhereExp("RelationshipEnd", isSource ? ECRelationshipEnd_Source : ECRelationshipEnd_Target);
+        updater.AddWhereExp("RelationshipClassId", containerId.GetValue());
+        if (updater.ExecuteSql(ctx.GetECDb()) != SUCCESS)
+            return ERROR;
+
+        return SUCCESS;
         }
 
     if (constraintChange.IsPolymorphic().IsChanged())
         {
-        ctx.Issues().ReportV("ECSchema Upgrade failed. ECRelationshipClass %s - Constraint: %s: Changing flag 'IsPolymorphic' of an ECRelationshipConstraint is not supported.",
-                                  relationshipName, constraintEndStr);
-        return ERROR;
+        /*  SCHEMA_EVOLUTION_RULE: Allow 'ECRelationshipConstraint' to change property 'IsPolymorphic' from false -> true.
+            Notes: This rule would be applied to relationship that is mapped using LinkTable or EndTable map strategy.
+        */
+        if (!constraintChange.IsPolymorphic().GetOld().Value() && constraintChange.IsPolymorphic().GetNew().Value())
+            {
+            SqlUpdateBuilder updater(TABLE_RelationshipConstraint);
+            updater.AddSetExp("IsPolymorphic", constraintChange.IsPolymorphic().GetNew().Value());
+            updater.AddWhereExp("RelationshipEnd", isSource ? ECRelationshipEnd_Source : ECRelationshipEnd_Target);
+            updater.AddWhereExp("RelationshipClassId", containerId.GetValue());
+            if (updater.ExecuteSql(ctx.GetECDb()) != SUCCESS)
+                return ERROR;
+            }
+        else
+            {
+            ctx.Issues().ReportV("ECSchema Upgrade failed. ECRelationshipClass %s - Constraint: %s: Changing flag 'IsPolymorphic' of  from 'true' to 'false' is not supported.", relationshipName, constraintEndStr);
+            return ERROR;
+            }
         }
-
     if (constraintChange.ConstraintClasses().IsChanged())
         {
         ctx.Issues().ReportV("ECSchema Upgrade failed. ECRelationshipClass %s - Constraint: %s: Changing the constraint classes is not supported.",
@@ -2079,8 +2147,8 @@ BentleyStatus SchemaWriter::UpdateRelationshipConstraint(Context& ctx, ECContain
 
     if (constraintChange.RoleLabel().IsChanged())
         {
+        SqlUpdateBuilder updater(TABLE_RelationshipConstraint);
         updater.AddSetExp("RoleLabel", constraintChange.RoleLabel().GetNew().Value().c_str());
-
         updater.AddWhereExp("RelationshipEnd", isSource ? ECRelationshipEnd_Source : ECRelationshipEnd_Target);
         updater.AddWhereExp("RelationshipClassId", containerId.GetValue());
         if (updater.ExecuteSql(ctx.GetECDb()) != SUCCESS)
@@ -2461,11 +2529,11 @@ BentleyStatus SchemaWriter::UpdateClass(Context& ctx, ClassChange& classChange, 
             return ERROR;
 
         if (classChange.Source().IsChanged())
-            if (UpdateRelationshipConstraint(ctx, classId, classChange.Source(), newRel->GetSource(), oldRel->GetSource(), true, oldRel->GetFullName()) == ERROR)
+            if (UpdateRelationshipConstraint(ctx, classId, classChange.Source(), oldRel->GetSource(), newRel->GetSource(), true, oldRel->GetFullName()) == ERROR)
                 return ERROR;
 
         if (classChange.Target().IsChanged())
-            if (UpdateRelationshipConstraint(ctx, classId, classChange.Target(), newRel->GetTarget(), oldRel->GetTarget(), false, oldRel->GetFullName()) == ERROR)
+            if (UpdateRelationshipConstraint(ctx, classId, classChange.Target(), oldRel->GetTarget(), newRel->GetTarget(), false, oldRel->GetFullName()) == ERROR)
                 return ERROR;
         }
 
