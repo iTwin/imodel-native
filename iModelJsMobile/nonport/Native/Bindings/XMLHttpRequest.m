@@ -239,7 +239,7 @@
     //      bytesWritten, totalBytesWritten, totalBytesExpectedToWrite);
     if (self.onprogress != nil) {
         JSContext* context = self.onprogress.context;
-        JSValue* doneBytes = [JSValue valueWithDouble:(double)bytesWritten inContext:context];
+        JSValue* doneBytes = [JSValue valueWithDouble:(double)totalBytesWritten inContext:context];
         JSValue* totalBytes = [JSValue valueWithDouble:(double)totalBytesExpectedToWrite inContext:context];
         [[IModelJsHost sharedInstance] exec:self.onprogress arguments:@[doneBytes, totalBytes]];
     }
