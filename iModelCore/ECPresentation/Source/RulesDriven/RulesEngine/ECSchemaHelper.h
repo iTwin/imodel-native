@@ -225,7 +225,7 @@ struct RelatedPathsCacheDeprecated
         };
 
 private:
-    bmap<Key, Result> m_cache;
+    std::map<Key, std::unique_ptr<Result const>> m_cache;
     mutable BeMutex m_mutex;
 
 public:
@@ -240,16 +240,16 @@ public:
         auto iter = m_cache.find(key);
         if (m_cache.end() == iter)
             return nullptr;
-        return &iter->second;
+        return iter->second.get();
         }
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                02/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    Result const* Put(Key const& key, Result&& result)
+    Result const* Put(Key const& key, std::unique_ptr<Result const> result)
         {
         BeMutexHolder lock(m_mutex);
-        return &m_cache.Insert(key, result).first->second;
+        return m_cache.insert(std::make_pair(key, std::move(result))).first->second.get();
         }
 };
 
@@ -279,7 +279,7 @@ struct RelatedPathsCache
             {}
         };
 private:
-    bmap<Key, Result> m_cache;
+    std::map<Key, std::unique_ptr<Result const>> m_cache;
     mutable BeMutex m_mutex;
 public:
     BeMutex& GetMutex() const { return m_mutex; }
@@ -289,12 +289,12 @@ public:
         auto iter = m_cache.find(key);
         if (m_cache.end() == iter)
             return nullptr;
-        return &iter->second;
+        return iter->second.get();
         }
-    Result const* Put(Key const& key, Result&& result)
+    Result const* Put(Key const& key, std::unique_ptr<Result const> result)
         {
         BeMutexHolder lock(m_mutex);
-        return &m_cache.Insert(key, result).first->second;
+        return m_cache.insert(std::make_pair(key, std::move(result))).first->second.get();
         }
 };
 

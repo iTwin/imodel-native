@@ -751,7 +751,8 @@ public:
     +---------------+---------------+---------------+---------------+---------------+--*/
     ContentQueryPtr GetQuery()
         {
-        m_union = QueryBuilderHelpers::CreateMergedResultsQuery(*m_union, *m_descriptor);
+        if (m_union.IsValid())
+            m_union = QueryBuilderHelpers::CreateMergedResultsQuery(*m_union, *m_descriptor);
         return m_union;
         }
 };
@@ -804,7 +805,7 @@ SpecificationContentProvider::~SpecificationContentProvider()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void VisitRuleSpecifications(ContentSpecificationsVisitor& visitor, bmap<ContentRuleCP, IParsedInput const*> inputCache,
+static void VisitRuleSpecifications(ContentSpecificationsVisitor& visitor, bmap<ContentRuleCP, IParsedInput const*>& inputCache,
     ContentProviderContextCR context, ContentRuleInstanceKeysList const& rules)
     {
     for (ContentRuleInstanceKeys const& rule : rules)
@@ -907,8 +908,6 @@ void ContentProvider::Initialize()
     if (nullptr == m_executor)
         return;
 
-    m_initialized = true;
-
     CustomFunctionsContext fnContext(GetContext().GetSchemaHelper(), GetContext().GetConnections(), GetContext().GetConnection(),
         GetContext().GetRuleset(), GetContext().GetLocale(), GetContext().GetUserSettings(), &GetContext().GetUsedSettingsListener(),
         GetContext().GetECExpressionsCache(), GetContext().GetNodesFactory(), nullptr, nullptr, nullptr,
@@ -916,7 +915,14 @@ void ContentProvider::Initialize()
     if (GetContext().IsLocalizationContext())
         fnContext.SetLocalizationProvider(GetContext().GetLocalizationProvider());
 
-    m_executor->SetQuery(*_GetQuery());
+    ContentQueryCPtr query = _GetQuery();
+    if (query.IsNull())
+        {
+        m_initialized = true;
+        return;
+        }
+
+    m_executor->SetQuery(*query);
     m_executor->ReadRecords(&GetContext().GetCancelationToken());
 
     if (GetContext().GetCancelationToken().IsCanceled())
@@ -940,7 +946,7 @@ size_t ContentProvider::GetFullContentSetSize() const
     {
     if (!m_fullContentSetSizeDetermined)
         {
-        if (GetContentDescriptor()->MergeResults())
+        if (GetContentDescriptor() && GetContentDescriptor()->MergeResults())
             {
             m_contentSetSize = 1;
             }
@@ -953,25 +959,31 @@ size_t ContentProvider::GetFullContentSetSize() const
             if (GetContext().IsLocalizationContext())
                 fnContext.SetLocalizationProvider(GetContext().GetLocalizationProvider());
 
-            // remove any ordering
-            ContentQueryPtr queryNotSorted = _GetQuery()->Clone();
-            QueryBuilderHelpers::Order(*queryNotSorted, "");
+            ContentQueryCPtr query = _GetQuery();
+            if (query.IsNull())
+                {
+                m_contentSetSize = 0;
+                }
+            else
+                {
+                // remove any ordering
+                ContentQueryPtr queryNotSorted = _GetQuery()->Clone();
+                QueryBuilderHelpers::Order(*queryNotSorted, "");
 
-            // create a count query
-            RefCountedPtr<CountQueryContract> contract = CountQueryContract::Create();
-            ComplexGenericQueryPtr countQuery = ComplexGenericQuery::Create();
-            countQuery->SelectContract(*contract);
-            countQuery->GroupByContract(*contract);
-            countQuery->From(*StringGenericQuery::Create(queryNotSorted->ToString(), queryNotSorted->GetBoundValues()));
+                // create a count query
+                RefCountedPtr<CountQueryContract> contract = CountQueryContract::Create();
+                ComplexGenericQueryPtr countQuery = ComplexGenericQuery::Create();
+                countQuery->SelectContract(*contract);
+                countQuery->GroupByContract(*contract);
+                countQuery->From(*StringGenericQuery::Create(queryNotSorted->ToString(), queryNotSorted->GetBoundValues()));
 
-            // execute
-            CountQueryExecutor executor(GetContext().GetConnection(), *countQuery);
-            executor.ReadRecords(&GetContext().GetCancelationToken());
-            if (!GetContext().GetCancelationToken().IsCanceled())
+                // execute
+                CountQueryExecutor executor(GetContext().GetConnection(), *countQuery);
+                executor.ReadRecords(&GetContext().GetCancelationToken());
                 m_contentSetSize = executor.GetResult();
+                }
             }
-
-        m_fullContentSetSizeDetermined = true;
+        m_fullContentSetSizeDetermined = !GetContext().GetCancelationToken().IsCanceled();
         }
     return m_contentSetSize;
     }
@@ -991,6 +1003,9 @@ size_t ContentProvider::GetContentSetSize() const
 bool ContentProvider::GetContentSetItem(ContentSetItemPtr& item, size_t index) const
     {
     const_cast<ContentProviderP>(this)->Initialize();
+    if (!GetContentDescriptor())
+        return false;
+
     if (index >= m_records.size())
         return false;
 

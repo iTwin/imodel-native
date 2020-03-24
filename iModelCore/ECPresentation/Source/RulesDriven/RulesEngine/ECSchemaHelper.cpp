@@ -1162,7 +1162,7 @@ bvector<RelatedClassPath> ECSchemaHelper::GetRelationshipClassPaths(Relationship
     ApplyExcludedClasses(paths, resolver.GetPolymorphicallyExcludedClasses(), true, m_connection.GetECDb().Schemas());
 
     // cache
-    m_relatedPathsCacheDeprecated->Put(key, RelatedPathsCacheDeprecated::Result(paths, options.m_relationshipsUseCounter));
+    m_relatedPathsCacheDeprecated->Put(key, std::make_unique<RelatedPathsCacheDeprecated::Result>(paths, options.m_relationshipsUseCounter));
     return paths;
     }
 
@@ -1285,7 +1285,7 @@ bvector<RelatedClassPath> ECSchemaHelper::GetCachedRelationshipPaths(TOptions co
     bvector<RelatedClassPath> paths = handler();
 
     // cache
-    m_relatedPathsCache->Put(key, RelatedPathsCache::Result(paths, options.m_relationshipsUseCounter));
+    m_relatedPathsCache->Put(key, std::make_unique<RelatedPathsCache::Result>(paths, options.m_relationshipsUseCounter));
     return paths;
     }
 
