@@ -786,6 +786,8 @@ ResolvedModelMapping    DwgImporter::_InitializeRootTransform (DwgSourceAspects:
             }
         }
 
+    this->ApplyGeoCoordinateSystem ();
+
     return  rootModelMap;
     }
 

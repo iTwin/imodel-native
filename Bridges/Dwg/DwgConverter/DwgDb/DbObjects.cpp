@@ -18,6 +18,7 @@ DWGDB_OBJECT_DEFINE_MEMBERS2 (SolidBackground)
 DWGDB_OBJECT_DEFINE_MEMBERS2 (Sun)
 DWGDB_OBJECT_DEFINE_MEMBERS2 (VisualStyle)
 DWGDB_OBJECT_DEFINE_MEMBERS2 (Layout)
+DWGDB_OBJECT_DEFINE_MEMBERS2 (GeoData)
 DWGDB_OBJECT_DEFINE_MEMBERS2 (Group)
 DWGDB_OBJECT_DEFINE_MEMBERS2 (SpatialFilter)
 DWGDB_OBJECT_DEFINE_MEMBERS2 (SpatialIndex)
@@ -1230,3 +1231,43 @@ DwgDbStatus   DwgDbGroup::SetLinetypeScale (double scale) { ReturnVoidOrStatus(T
 DwgDbStatus   DwgDbGroup::SetMaterial (DwgDbObjectIdCR materialId) { ReturnVoidOrStatus(T_Super::setMaterial(materialId)); }
 DwgDbStatus   DwgDbGroup::SetSelectable (bool selectable) { ReturnVoidOrStatus(T_Super::setSelectable(selectable)); }
 DwgDbStatus   DwgDbGroup::Transfer (size_t from, size_t to, size_t num) { ReturnVoidOrStatus(T_Super::transfer((DwgDbUInt32)from, (DwgDbUInt32)to, (DwgDbUInt32)num)); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/20
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus   DwgDbGeoData::TransformFromLonLatAlt (DPoint3dR out, DPoint3dCR in) const
+    {
+    DWGGE_Type(Point3d) inPoint = Util::GePoint3dFrom(in);
+    DWGGE_Type(Point3d) outPoint;
+    
+    auto status = T_Super::transformFromLonLatAlt (outPoint, inPoint);
+    return  ToDwgDbStatus(status);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/20
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus   DwgDbGeoData::TransformToLonLatAlt (DPoint3dR out, DPoint3dCR in) const
+    {
+    DWGGE_Type(Point3d) inPoint = Util::GePoint3dFrom(in);
+    DWGGE_Type(Point3d) outPoint;
+    
+    auto status = T_Super::transformToLonLatAlt (outPoint, inPoint);
+    return  ToDwgDbStatus(status);
+    }
+
+DwgDbGeoData::CoordinateType    DwgDbGeoData::GetCoordinateSystemType () const { return static_cast<CoordinateType>(T_Super::coordinateType()); }
+DwgString     DwgDbGeoData::GetCoordinateSystem () const { return T_Super::coordinateSystem(); }
+DwgString     DwgDbGeoData::GetRSSTag () const { return T_Super::geoRSSTag(); }
+DPoint3d      DwgDbGeoData::GetDesignPoint () const { return Util::DPoint3dFrom(T_Super::designPoint()); }
+DwgDbUnits    DwgDbGeoData::GetHorizontalUnits () const { return static_cast<DwgDbUnits>(T_Super::horizontalUnits()); }
+double        DwgDbGeoData::GetHorizontalUnitScale () const { return T_Super::horizontalUnitScale(); }
+DwgDbUnits    DwgDbGeoData::GetVerticalUnits () const { return static_cast<DwgDbUnits>(T_Super::verticalUnits()); }
+double        DwgDbGeoData::GetVerticalUnitScale () const { return T_Super::verticalUnitScale(); }
+double        DwgDbGeoData::GetNorthDirection () const { return T_Super::northDirection(); }
+DVec2d        DwgDbGeoData::GetNorthDirectionVector () const { return Util::DVec2dFrom(T_Super::northDirectionVector()); }
+DVec3d        DwgDbGeoData::GetUpDirection () const { return Util::DVec3dFrom(T_Super::upDirection()); }
+DPoint3d      DwgDbGeoData::GetReferencePoint () const { return Util::DPoint3dFrom(T_Super::referencePoint()); }
+double        DwgDbGeoData::GetCoordinateProjectionRadius () const { return T_Super::coordinateProjectionRadius(); }
+double        DwgDbGeoData::GetScaleFactor () const { return T_Super::scaleFactor(); }
+double        DwgDbGeoData::GetSeaLevelElevation () const { return T_Super::seaLevelElevation(); }

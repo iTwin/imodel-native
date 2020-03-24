@@ -412,14 +412,6 @@ BentleyStatus   DwgImporter::OpenDwgFile (BeFileNameCR dwgdxfName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   DwgImporter::_ImportSpaces ()
     {
-    if (this->IsCreatingNewDgnDb())
-        {
-        // DWG global origin is at 0,0,0
-        DPoint3d    globalOrigin = DPoint3d::From (0.0, 0.0, 0.0);
-        m_dgndb->GeoLocation().SetGlobalOrigin (globalOrigin);
-        m_dgndb->GeoLocation().Save ();
-        }
-
     // save off effective DWG file units
     m_modelspaceUnits = DwgHelper::GetStandardUnitFromDwgUnit (m_dwgdb->GetINSUNITS());
     if (m_modelspaceUnits == StandardUnit::None)

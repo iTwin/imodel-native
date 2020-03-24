@@ -99,6 +99,7 @@ void            RegisterDwgDbObjectExtensions (bool beforeValidation)
     DwgDbDictionary::rxInit ();
     DwgDbMaterial::rxInit ();
     DwgDbLayout::rxInit ();
+    DwgDbGeoData::rxInit ();
     DwgDbGroup::rxInit ();
     DwgDbVisualStyle::rxInit ();
     DwgDbSpatialFilter::rxInit ();
@@ -233,6 +234,7 @@ void            UnRegisterDwgDbObjectExtensions ()
     DwgDbDictionary::rxUninit ();
     DwgDbMaterial::rxUninit ();
     DwgDbLayout::rxUninit ();
+    DwgDbGeoData::rxUninit ();
     DwgDbGroup::rxUninit ();
     DwgDbVisualStyle::rxUninit ();
     DwgDbSpatialFilter::rxUninit ();

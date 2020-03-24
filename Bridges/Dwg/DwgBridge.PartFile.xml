@@ -313,6 +313,7 @@
         <ProductDirectory Name="RealDwg2019Assemblies"      Deliver="false"/>
         <ProductDirectory Name="RealDwg2019AssembliesEnUS"  Deliver="false"/>
         <ProductDirectory Name="ShxFonts2019"               Deliver="false"/>
+        <ProductDirectory Name="ShxFonts"                   Deliver="false"/>
         <ProductDirectory Name="RealDwgDbAssemblies"        Deliver="false"/>
         <ProductDirectory Name="RealDwgImportAssemblies"    Deliver="false"/>
     </ProductDirectoryList>

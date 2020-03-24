@@ -21,6 +21,7 @@
 #include    <Teigha/Drawing/Include/DbObjectContextCollection.h>
 #include    <Teigha/Drawing/Include/DbObjectContextManager.h>
 #include    <Teigha/Drawing/Include/DbObjectContextInterface.h>
+#include    <Teigha/Drawing/Include/OdDbGeoCoordinateSystem.h>
 #include    <Teigha/Drawing/Include/OdFileDepMgr.h>
 #include    <Teigha/Drawing/Include/DbSymUtl.h>
 #include    <Teigha/Drawing/Include/XRefMan.h>
@@ -78,6 +79,7 @@
 #include    <RealDwg/Base/dbObjectContextCollection.h>
 #include    <RealDwg/Base/dbObjectContextManager.h>
 #include    <RealDwg/Base/dbObjectContextInterface.h>
+#include    <RealDwg/Base/AcDbGeoCoordinateSystem.h>
 
 // AcGe modules
 #include    <RealDwg/Base/gemat3d.h>

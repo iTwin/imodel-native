@@ -17,6 +17,7 @@
 #include    <Teigha/Drawing/Include/DbSpatialIndex.h>
 #include    <Teigha/Drawing/Include/DbSortentsTable.h>
 #include    <Teigha/Drawing/Include/DbObjectIterator.h>
+#include    <Teigha/Drawing/Include/DbGeoData.h>
 #include    <Teigha/Drawing/Include/DbBackground.h>
 #include    <Teigha/Drawing/Include/DbSun.h>
 
@@ -26,6 +27,7 @@
 #include    <RealDwg/Base/dbmain.h>
 #include    <RealDwg/Base/dbents.h>
 #include    <RealDwg/Base/dbmaterial.h>
+#include    <RealDwg/Base/dbGeoData.h>
 #include    <RealDwg/Base/dblayout.h>
 #include    <RealDwg/Base/dblead.h>
 #include    <RealDwg/Base/dbmleaderstyle.h>
@@ -806,6 +808,43 @@ public:
     DWGDB_EXPORT  DwgDbStatus   Transfer (size_t from, size_t to, size_t num);
     };  // DwgDbGroup
 DWGDB_DEFINE_OBJECTPTR (Group)
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          03/20
++===============+===============+===============+===============+===============+======*/
+class DwgDbGeoData : public DWGDB_EXTENDCLASS(GeoData)
+    {
+public:
+    DWGDB_DECLARE_COMMON_MEMBERS(GeoData)
+
+    enum CoordinateType
+        {
+        Unknown     = T_Super::kCoordTypUnknown,
+        Local       = T_Super::kCoordTypLocal,
+        Grid        = T_Super::kCoordTypGrid,
+        GeoGraphic  = T_Super::kCoordTypGeographic,
+        };  // CoordinateType
+
+    DWGDB_EXPORT  CoordinateType    GetCoordinateSystemType () const;
+    //! Returns XML string definining the GCS
+    DWGDB_EXPORT  DwgString     GetCoordinateSystem () const;
+    DWGDB_EXPORT  DwgString     GetRSSTag () const;
+    DWGDB_EXPORT  DPoint3d      GetDesignPoint () const;
+    DWGDB_EXPORT  DwgDbUnits    GetHorizontalUnits () const;
+    DWGDB_EXPORT  double        GetHorizontalUnitScale () const;
+    DWGDB_EXPORT  DwgDbUnits    GetVerticalUnits () const;
+    DWGDB_EXPORT  double        GetVerticalUnitScale () const;
+    DWGDB_EXPORT  double        GetNorthDirection () const;
+    DWGDB_EXPORT  DVec2d        GetNorthDirectionVector () const;
+    DWGDB_EXPORT  DVec3d        GetUpDirection () const;
+    DWGDB_EXPORT  DPoint3d      GetReferencePoint () const;
+    DWGDB_EXPORT  double        GetCoordinateProjectionRadius () const;
+    DWGDB_EXPORT  double        GetScaleFactor () const;
+    DWGDB_EXPORT  double        GetSeaLevelElevation () const;
+    DWGDB_EXPORT  DwgDbStatus   TransformFromLonLatAlt (DPoint3dR out, DPoint3dCR in) const;
+    DWGDB_EXPORT  DwgDbStatus   TransformToLonLatAlt (DPoint3dR out, DPoint3dCR in) const;
+    };  // DwgDbGeoData
+DWGDB_DEFINE_OBJECTPTR (GeoData)
 
 END_DWGDB_NAMESPACE
 //__PUBLISH_SECTION_END__

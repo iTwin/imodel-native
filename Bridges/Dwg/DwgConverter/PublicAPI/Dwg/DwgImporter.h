@@ -1069,6 +1069,7 @@ private:
     BentleyStatus           InitModelspaceMapping ();
     DgnElementId            CreateModelElement (DwgDbBlockTableRecordCR block, Utf8StringCR modelName, DgnClassId modelId);
     void                    ScaleModelTransformBy (TransformR trans, DwgDbBlockTableRecordCR block);
+    void                    ApplyGeoCoordinateSystem ();
     void                    AlignSheetToPaperOrigin (TransformR trans, DwgDbObjectIdCR layoutId);
     void                    CompoundModelTransformBy (TransformR trans, DwgDbBlockReferenceCR insert);
     UnitDefinition          GetModelUnitsFromBlock (double& unitScale, DwgDbBlockTableRecordCR block);

@@ -26,6 +26,7 @@
 #include <DgnPlatform/DgnFontData.h>
 #include <DgnPlatform/LineStyle.h>
 #include <DgnPlatform/DgnMaterial.h>
+#include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/DesktopTools/ConfigurationManager.h>
 #include <BRepCore/PSolidUtil.h>
 
