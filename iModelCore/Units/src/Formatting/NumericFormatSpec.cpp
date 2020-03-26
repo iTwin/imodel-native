@@ -709,6 +709,7 @@ size_t NumericFormatSpec::FormatDouble(double dval, Utf8P buf, size_t bufLen) co
     double ival;
     Utf8Char sign = '+';
     double precScale = GetDecimalPrecisionFactor();
+    bool hasSigFigs = abs(dval * precScale) >= 1.0;
     int totFractLen = Utils::DecimalPrecisionToInt(m_decPrecision);
     double expInt = 0.0;
     double fract;
@@ -824,8 +825,8 @@ size_t NumericFormatSpec::FormatDouble(double dval, Utf8P buf, size_t bufLen) co
             }
         auto* bufView = buf;
         memset(buf, 0, bufLen);
-        if (m_signOption == SignOption::SignAlways ||
-            ((m_signOption == SignOption::OnlyNegative || m_signOption == SignOption::NegativeParentheses) && sign != '+'))
+        if (hasSigFigs && (m_signOption == SignOption::SignAlways ||
+            ((m_signOption == SignOption::OnlyNegative || m_signOption == SignOption::NegativeParentheses) && sign != '+')))
             {
             *bufView = sign;
             ++bufView;
@@ -840,7 +841,7 @@ size_t NumericFormatSpec::FormatDouble(double dval, Utf8P buf, size_t bufLen) co
         bufView+=ind;
         // closing formatting
 PUSH_DISABLE_DEPRECATION_WARNINGS
-        if ('(' == sign)
+        if (hasSigFigs && '(' == sign)
             strcat(buf, ")");
 POP_DISABLE_DEPRECATION_WARNINGS
         } // decimal

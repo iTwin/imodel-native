@@ -724,6 +724,32 @@ TEST_F(FormatDoubleTest, FormatDoubleIndividualFormatTraitsTests)
 
     }
 
+TEST_F(FormatDoubleTest, ValuesThatPrintOutAsZeroDoNotShowSign)
+    {
+    NumericFormatSpec nfs(NumericFormatSpec::DefaultFormat());
+
+    nfs.SetSignOption(SignOption::OnlyNegative);
+    EXPECT_STREQ("0.0", nfs.Format(0.00000000000001).c_str());
+    EXPECT_STREQ("0.0", nfs.Format(-0.00000000000001).c_str());
+
+    nfs.SetSignOption(SignOption::NegativeParentheses);
+    EXPECT_STREQ("0.0", nfs.Format(0.00000000000001).c_str());
+    EXPECT_STREQ("0.0", nfs.Format(-0.00000000000001).c_str());
+
+    nfs.SetSignOption(SignOption::SignAlways);
+    EXPECT_STREQ("0.0", nfs.Format(0.00000000000001).c_str());
+    EXPECT_STREQ("0.0", nfs.Format(-0.00000000000001).c_str());
+
+    nfs.SetSignOption(SignOption::NoSign);
+    EXPECT_STREQ("0.0", nfs.Format(0.00000000000001).c_str());
+    EXPECT_STREQ("0.0", nfs.Format(-0.00000000000001).c_str());
+
+    nfs.SetPrecision(DecimalPrecision::Precision6);
+    nfs.SetSignOption(SignOption::OnlyNegative);
+    EXPECT_STREQ("-0.000001", nfs.Format(-0.000001).c_str());
+    EXPECT_STREQ("0.0", nfs.Format(-0.0000001).c_str());
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                  03/18
 //---------------+---------------+---------------+---------------+---------------+-------
