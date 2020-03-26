@@ -79,8 +79,11 @@ void            iModelBridgeFwk::DecryptCredentials(Http::Credentials& credentia
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeFwk::IModelHubArgs::ParseCommandLine(bvector<WCharCP>& bargptrs, int argc, WCharCP argv[])
+BentleyStatus iModelBridgeFwk::IModelHubArgs::ParseCommandLine(bvector<WString>& unrecognized, bvector<WString> const& args)
     {
+    auto argv = GetArgPtrs(args);   // TODO rewrite this function to work with WStrings, not an array of pointers
+    int argc = (int)args.size();
+
     m_isEncrypted = true;
     ParseEnvironment();
     for (int iArg = 1; iArg < argc; ++iArg)
@@ -88,8 +91,7 @@ BentleyStatus iModelBridgeFwk::IModelHubArgs::ParseCommandLine(bvector<WCharCP>&
         if (0 != BeStringUtilities::Wcsnicmp(argv[iArg], L"--server", 8))
             {
             // Not a fwk argument. We will forward it to the bridge.
-            m_bargs.push_back(argv[iArg]);  // Keep the string alive
-            bargptrs.push_back(m_bargs.back().c_str());
+            unrecognized.push_back(argv[iArg]);
             continue;
             }
 
@@ -245,7 +247,7 @@ BentleyStatus   iModelBridgeFwk::IModelHubArgs::ParseEnvironment()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-BentleyStatus iModelBridgeFwk::IModelHubArgs::Validate(int argc, WCharCP argv[])
+BentleyStatus iModelBridgeFwk::IModelHubArgs::Validate(bvector<WString> const&)
     {
     if (!m_parsedAny)
         return BSISUCCESS;
@@ -292,15 +294,16 @@ iModelBank:\n\
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeFwk::IModelBankArgs::ParseCommandLine(bvector<WCharCP>& bargptrs, int argc, WCharCP argv[])
+BentleyStatus iModelBridgeFwk::IModelBankArgs::ParseCommandLine(bvector<WString>& unrecognized, bvector<WString> const& args)
     {
+    auto argv = GetArgPtrs(args);   // TODO rewrite this function to work with WStrings, not an array of pointers
+    int argc = (int)args.size();
     for (int iArg = 1; iArg < argc; ++iArg)
         {
         if (0 != BeStringUtilities::Wcsnicmp(argv[iArg], L"--imodel-bank", 13))
             {
             // Not a fwk argument. We will forward it to the bridge.
-            m_bargs.push_back(argv[iArg]);  // Keep the string alive
-            bargptrs.push_back(m_bargs.back().c_str());
+            unrecognized.push_back(argv[iArg]);
             continue;
             }
 
@@ -383,7 +386,7 @@ BentleyStatus iModelBridgeFwk::IModelBankArgs::ParseCommandLine(bvector<WCharCP>
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-BentleyStatus iModelBridgeFwk::IModelBankArgs::Validate(int argc, WCharCP argv[])
+BentleyStatus iModelBridgeFwk::IModelBankArgs::Validate(bvector<WString> const&)
     {
     if (!m_parsedAny)
         return BSISUCCESS;

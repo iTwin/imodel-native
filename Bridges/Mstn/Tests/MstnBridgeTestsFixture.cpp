@@ -689,8 +689,9 @@ BentleyApi::Dgn::IModelBankClient* MstnBridgeTestsFixture::CreateIModelBankClien
     EXPECT_EQ(BSISUCCESS, argvMaker.ParseArgsFromRspFile(argvMaker.ReadRspFileFromTestData(L"imodel-bank.rsp")));
 
     iModelBridgeFwk::IModelBankArgs imbArgs;
-    EXPECT_EQ(BSISUCCESS, imbArgs.ParseCommandLine(argvMaker.m_bargptrs, argvMaker.GetArgC(), argvMaker.GetArgV()));
-    EXPECT_EQ(0, argvMaker.m_bargptrs.size());
+    BentleyApi::bvector<BentleyApi::WString> bridgeArgs;
+    EXPECT_EQ(BSISUCCESS, imbArgs.ParseCommandLine(bridgeArgs, argvMaker.GetArgVector()));
+    EXPECT_EQ(0, bridgeArgs.size());
 
     if (!accessToken.empty())
         imbArgs.m_accessToken = accessToken;
@@ -707,8 +708,9 @@ BentleyApi::Dgn::IModelHubClient* MstnBridgeTestsFixture::CreateIModelHubClient(
     EXPECT_EQ(BSISUCCESS, argvMaker.ParseArgsFromRspFile(argvMaker.ReadRspFileFromTestData(L"imodel-hub.rsp")));
 
     iModelBridgeFwk::IModelHubArgs imhArgs;
-    EXPECT_EQ(BSISUCCESS, imhArgs.ParseCommandLine(argvMaker.m_bargptrs, argvMaker.GetArgC(), argvMaker.GetArgV()));
-    EXPECT_EQ(0, argvMaker.m_bargptrs.size());
+    BentleyApi::bvector<BentleyApi::WString> bridgeArgs;
+    EXPECT_EQ(BSISUCCESS, imhArgs.ParseCommandLine(bridgeArgs, argvMaker.GetArgVector()));
+    EXPECT_EQ(0, bridgeArgs.size());
 
     // TODO: get userid from accessToken
 	iModelBridgeError error;

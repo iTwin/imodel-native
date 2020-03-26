@@ -109,4 +109,5 @@ struct DmsArgvMaker
 
         wchar_t const** GetArgV() const { return const_cast<wchar_t const**>(m_ptrs.data()); }
         int GetArgC() const { return (int)m_ptrs.size(); }
+        BentleyApi::bvector<BentleyApi::WString> GetArgVector() const {return BentleyApi::bvector<BentleyApi::WString> (m_ptrs.begin(), m_ptrs.end());}
     };

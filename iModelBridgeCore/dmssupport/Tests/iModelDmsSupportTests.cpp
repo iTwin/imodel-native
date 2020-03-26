@@ -231,12 +231,13 @@ void iModelDmsSupportTests::Initialize()
     EXPECT_EQ(BSISUCCESS, argvMaker.ParseArgsFromRspFile(argvMaker.ReadRspFileFromTestData(L"iModelDmsSupport-Input.rsp")));
 
     //Parse iModelHub Server Args
-    EXPECT_EQ(BSISUCCESS, m_iModelHubArgs.ParseCommandLine(argvMaker.m_bargptrs, argvMaker.GetArgC(), argvMaker.GetArgV()));
-    EXPECT_EQ(3, argvMaker.m_bargptrs.size());
+    BentleyApi::bvector<BentleyApi::WString> bridgeArgs;
+    EXPECT_EQ(BSISUCCESS, m_iModelHubArgs.ParseCommandLine(bridgeArgs, argvMaker.GetArgVector()));
+    EXPECT_EQ(3, bridgeArgs.size());
 
     //Parse Dms Server Args
-    EXPECT_EQ(BSISUCCESS, m_dmsServerArgs.ParseCommandLine(argvMaker.m_bargptrs, argvMaker.GetArgC(), argvMaker.GetArgV(), false));
-    EXPECT_EQ(6, argvMaker.m_bargptrs.size());
+    EXPECT_EQ(BSISUCCESS, m_dmsServerArgs.ParseCommandLine(bridgeArgs, argvMaker.GetArgVector(), false));
+    EXPECT_EQ(6, bridgeArgs.size());
 
     if (m_dmsServerArgs.m_dmsType == iModelDmsSupport::SessionType::PWDIDMS)
         m_dmsHelper = new DmsHelper(Utf8String(), m_iModelHubArgs.m_accessToken, 1,  Utf8String("PWDI"), Utf8String(m_dmsServerArgs.m_dataSource));

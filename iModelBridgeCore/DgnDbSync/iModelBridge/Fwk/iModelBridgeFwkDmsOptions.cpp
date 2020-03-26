@@ -146,11 +146,10 @@ BentleyStatus   iModelBridgeFwk::StageInputFile(FwkContext& context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  06/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            iModelBridgeFwk::DmsServerArgs::SetDgnArg(WString argName, WStringCR argValue, bvector<WCharCP>& bargptrs)
+void            iModelBridgeFwk::DmsServerArgs::SetDgnArg(WString argName, WStringCR argValue, bvector<WString>& result)
     {
     argName.append(argValue.c_str());
-    m_bargs.push_back(argName);  // Keep the string alive
-    bargptrs.push_back(argName.c_str());
+    result.push_back(argName.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -170,13 +169,13 @@ BentleyStatus   iModelBridgeFwk::StageWorkspace(FwkContext& context)
         {
         BeFileName workspaceCfgFile;
         if (SUCCESS == m_dmsSupport->_FetchWorkspace(workspaceCfgFile, m_dmsServerArgs.m_inputFileUrn, m_dmsServerArgs.m_workspaceDir, m_dmsServerArgs.m_isv8i, filePatterns))
-            m_dmsServerArgs.SetDgnArg(L"--DGN_CFGFILE=", workspaceCfgFile, m_bargptrs);
+            m_dmsServerArgs.SetDgnArg(L"--DGN_CFGFILE=", workspaceCfgFile, m_bridgeArgs);
         }
     else
         {
         BeFileName workspaceCfgFile;
         if (SUCCESS == m_dmsSupport->_FetchWorkspace(workspaceCfgFile, m_dmsServerArgs.m_folderId, m_dmsServerArgs.m_documentId, m_dmsServerArgs.m_workspaceDir, m_dmsServerArgs.m_isv8i, filePatterns))
-            m_dmsServerArgs.SetDgnArg(L"--DGN_CFGFILE=", workspaceCfgFile, m_bargptrs);
+            m_dmsServerArgs.SetDgnArg(L"--DGN_CFGFILE=", workspaceCfgFile, m_bridgeArgs);
         }
     m_dmsSupport->_UnInitialize();
     return status;
@@ -210,8 +209,11 @@ void iModelBridgeFwk::DmsServerArgs::PrintUsage()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  06/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeFwk::DmsServerArgs::ParseCommandLine(bvector<WCharCP>& bargptrs, int argc, WCharCP argv[], bool isEncrypted)
+BentleyStatus iModelBridgeFwk::DmsServerArgs::ParseCommandLine(bvector<WString>& unrecognized, bvector<WString> const& args, bool isEncrypted)
     {
+    auto argv = GetArgPtrs(args);   // TODO rewrite this function to work with WStrings, not an array of pointers
+    int argc = (int)args.size();
+
     WString savedWorkspace, savedCfgFile;
     for (int iArg = 1; iArg < argc; ++iArg)
         {
@@ -234,8 +236,7 @@ BentleyStatus iModelBridgeFwk::DmsServerArgs::ParseCommandLine(bvector<WCharCP>&
         if (0 != BeStringUtilities::Wcsnicmp(argv[iArg], L"--dms", 5))
             {
             // Not a fwk argument. We will forward it to the bridge.
-            m_bargs.push_back(argv[iArg]);  // Keep the string alive
-            bargptrs.push_back(m_bargs.back().c_str());
+            unrecognized.push_back(argv[iArg]);
             continue;
             }
 
@@ -349,19 +350,18 @@ BentleyStatus iModelBridgeFwk::DmsServerArgs::ParseCommandLine(bvector<WCharCP>&
     if (m_dmsLibraryName.empty())
         {
         if (!savedWorkspace.empty())
-            SetDgnArg(L"--DGN_WORKSPACE=", savedWorkspace, bargptrs);
+            SetDgnArg(L"--DGN_WORKSPACE=", savedWorkspace, unrecognized);
         if (!savedCfgFile.empty())
-            SetDgnArg(L"--DGN_CFGFILE=", savedCfgFile, bargptrs);
+            SetDgnArg(L"--DGN_CFGFILE=", savedCfgFile, unrecognized);
         return BSISUCCESS;
         }
     //--DGN_WORKSPACE=
     if (!m_applicationWorkspace.empty())
         {
-        SetDgnArg(L"--DGN_WORKSPACE=", m_applicationWorkspace, bargptrs);
+        SetDgnArg(L"--DGN_WORKSPACE=", m_applicationWorkspace, unrecognized);
      //   WString workspaceArg(L"--DGN_WORKSPACE=");
      //   workspaceArg.append(m_applicationWorkspace.c_str());
-     //   m_bargs.push_back(workspaceArg);  // Keep the string alive
-     //   bargptrs.push_back(workspaceArg.c_str());
+     //   unrecognized.push_back(workspaceArg.c_str());
         }
     
     if (isEncrypted)
@@ -404,7 +404,7 @@ BentleyStatus iModelBridgeFwk::DmsServerArgs::ParseEnvironment ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  06/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeFwk::DmsServerArgs::Validate(int argc, WCharCP argv[])
+BentleyStatus iModelBridgeFwk::DmsServerArgs::Validate(bvector<WString> const&)
     {
     if (m_dmsLibraryName.empty())
         {

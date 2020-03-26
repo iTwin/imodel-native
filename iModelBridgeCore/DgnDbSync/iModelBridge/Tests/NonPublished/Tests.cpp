@@ -660,6 +660,81 @@ TEST_F(iModelBridgeTests, FwkArgs)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson   03/20
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(iModelBridgeTests, FwkArgs_BadArg)
+    {
+    auto dir = GetOutputDir();
+    bvector<WString> args;
+    args.push_back(L"dummyarg0");
+    // args.push_back(LR"==(--fwk-staging-dir=d:\tmp2)==");
+    args.push_back(WPrintfString(L"--fwk-staging-dir=\"%ls\"", dir.c_str()));
+    // args.push_back(LR"==(--registry-dir=d:\tmp2)==");
+    args.push_back(WPrintfString(L"--registry-dir=\"%ls\"", dir.c_str()));
+    args.push_back(LR"==(--fwk-jobrun-guid="ffffffff-f0f6-4b1d-981c-10c2aef91a78")==");
+    args.push_back(LR"==(--fwk-jobrequest-guid="ffffffff-1f9d-456d-822a-26ecd209b65c")==");
+    args.push_back(LR"==(--server-repository="ffffffff-1cad-430f-8400-8bcd67ce83b3")==");
+    args.push_back(LR"==(--server-project-guid="ffffffff-33b8-4624-85fc-feb62d552252")==");
+    args.push_back(LR"==(--server-environment="release")==");
+    args.push_back(LR"==(--server-retries="30")==");
+    args.push_back(LR"==(--fwk-all-docs-processed)==");
+    // args.push_back(LR"==(--dms-library="C:\Program Files\Bentley\iModelBridgeMstn\iModelDmsSupportM02.dll")==");
+    // args.push_back(LR"==(--dms-workspaceDir=d:\tmp2)==");
+    args.push_back(WPrintfString(L"--dms-workspaceDir=\"%ls\"", dir.c_str()));
+    args.push_back(LR"==(--dms-user="_test_user_99999")==");
+    args.push_back(LR"==(--dms-password="ABC=")==");
+    args.push_back(LR"==(--dms-inputFileUrn="pw://test-pw.bentley.com:test2/Documents/D{ffffffff-9aba-455c-bfdb-561735deee13}")==");
+    args.push_back(LR"==(--dms-datasource="test-pw.bentley.com:test2")==");
+    args.push_back(LR"==(--dms-folderId="1111")==");
+    args.push_back(LR"==(--dms-documentId="11")==");
+    args.push_back(LR"==(--server-credentials-isEncrypted)==");
+    args.push_back(LR"==(--server-user="test-pw.connect@projectwiseonline.com")==");
+    args.push_back(LR"==(--server-password="ABC")==");
+    // args.push_back(LR"==(--fwk-logging-config-file=d:\tmp2\iModelBridgeFwk.logging.config.xml)==");
+    auto extraArgsStart = args.size();
+    args.push_back(LR"==(--DGN_CFGFILE)==");
+    args.push_back(LR"==(--A1)==");
+    args.push_back(LR"==(--A2)==");
+    args.push_back(LR"==(--A3)==");
+    args.push_back(LR"==(--A4)==");
+    args.push_back(LR"==(--A5)==");
+    args.push_back(LR"==(--A6)==");
+    args.push_back(LR"==(--A7)==");
+    args.push_back(LR"==(--A8)==");
+    args.push_back(LR"==(--A9)==");
+    args.push_back(LR"==(--A10)==");
+    args.push_back(LR"==(--A11)==");
+    args.push_back(LR"==(--A12)==");
+    args.push_back(LR"==(--A13)==");
+    args.push_back(LR"==(--A14)==");
+    args.push_back(LR"==(--A15)==");
+    args.push_back(LR"==(--A16)==");
+    args.push_back(LR"==(--A17)==");
+    args.push_back(LR"==(--A18)==");
+    args.push_back(LR"==(--A19)==");
+    args.push_back(LR"==(--A20)==");
+    args.push_back(LR"==(--A21)==");
+    args.push_back(LR"==(--A22)==");
+    args.push_back(LR"==(--A23)==");
+    args.push_back(LR"==(--A24)==");
+    auto extraArgsEnd = args.size();
+
+    iModelBridgeFwk fwk;
+    auto argv = iModelBridgeFwk::GetArgPtrs(args);
+    ASSERT_EQ(BSISUCCESS, fwk.ParseCommandLine((int)argv.size(), argv.data()));
+
+    // Verify that fwk has gathered all of the "extra" arguments into an array that must be parsed by the bridge
+    auto extraArgsCount = extraArgsEnd - extraArgsStart;
+    auto bridgeArgs = fwk.GetBridgeArgs();
+    auto bridgeArgsStart = 1; // (skip over bridgeArgs[0] as that is always a placeholder)
+    ASSERT_EQ(bridgeArgs.size() - bridgeArgsStart, extraArgsCount);
+    for (size_t i = 0; i < extraArgsCount; ++i)
+        {
+        ASSERT_STREQ(args[extraArgsStart+i].c_str(), bridgeArgs[i+bridgeArgsStart].c_str());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 static BeFileName getiModelBridgeTestsOutputDir(WCharCP subdir)

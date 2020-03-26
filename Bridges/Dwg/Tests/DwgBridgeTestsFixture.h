@@ -276,6 +276,7 @@ struct FwkArgvMaker
 
     wchar_t const** GetArgV() const {return const_cast<wchar_t const**>(m_ptrs.data());}
     int GetArgC() const {return (int)m_ptrs.size();}
+    BentleyApi::bvector<BentleyApi::WString> GetArgVector() const {return BentleyApi::bvector<BentleyApi::WString> (m_ptrs.begin(), m_ptrs.end());}
 
     static void ReplaceArgValue(BentleyApi::bvector<BentleyApi::WString>& args, WCharCP argName, WCharCP newValue);
     static void ReplaceArgValue(BentleyApi::bvector<BentleyApi::WCharCP>& ptrs, WCharCP argName, WCharCP newValue);

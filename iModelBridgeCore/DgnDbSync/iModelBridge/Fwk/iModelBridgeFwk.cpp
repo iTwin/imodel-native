@@ -364,9 +364,11 @@ iModelBridgeFwk::JobDefArgs::JobDefArgs()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      10/17
 //---------------------------------------------------------------------------------------
-BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& bargptrs, int argc, WCharCP argv[])
+BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WString>& unrecognized, bvector<WString> const& args)
     {
     BeFileName fwkAssetsDirRaw = GetDefaultAssetsDirectory();
+    auto argv = GetArgPtrs(args);   // TODO rewrite this function to work with WStrings, not an array of pointers
+    int argc = (int)args.size();
     for (int iArg = 1; iArg < argc; ++iArg)
         {
         if (argv[iArg][0] == '@')
@@ -380,19 +382,13 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
                 }
 
             bvector<WString> strings;
-            bvector<WCharCP> ptrs;
             BeStringUtilities::ParseArguments(strings, wargs.c_str(), L"\n\r");
 
+            strings.erase(std::remove(strings.begin(), strings.end(), L""), strings.end());
             if (!strings.empty())
                 {
-                ptrs.push_back(argv[0]);
-                for (auto const& str: strings)
-                    {
-                    if (!str.empty())
-                        ptrs.push_back(str.c_str());
-                    }
-
-                if (BSISUCCESS != ParseCommandLine(bargptrs, (int)ptrs.size(), &ptrs.front()))
+                strings.insert(strings.begin(), args[0]);
+                if (BSISUCCESS != ParseCommandLine(unrecognized, strings))
                     return BSIERROR;
                 }
 
@@ -413,8 +409,7 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
         if (0 != BeStringUtilities::Wcsnicmp(argv[iArg], L"--fwk", 5))
             {
             // Not a fwk argument. We will forward it to the bridge.
-            m_bargs.push_back(argv[iArg]);  // Keep the string alive
-            bargptrs.push_back(m_bargs.back().c_str());
+            unrecognized.push_back(argv[iArg]);
             continue;
             }
 
@@ -591,7 +586,7 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
             }
         if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-inputArgsJsonFile"))
             {
-            ProcessInputJson(bargptrs, getArgValue(argv[iArg]));
+            ProcessInputJson(unrecognized, getArgValue(argv[iArg]));
             continue;
             }
         if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-no-intermdiate-pushes"))
@@ -607,7 +602,7 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
     BeFileName::FixPathName(m_fwkAssetsDir, fwkAssetsDirRaw.c_str());
     m_fwkAssetsDir.BeGetFullPathName();
 
-    ParseEnvironment(bargptrs);//We cannot call this at the top due to input file, staging directory argument behavior.
+    ParseEnvironment(unrecognized);//We cannot call this at the top due to input file, staging directory argument behavior.
 
     return BSISUCCESS;
     }
@@ -615,7 +610,7 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  11/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   iModelBridgeFwk::JobDefArgs::ProcessInputJson(bvector<WCharCP>& bargptrs, Utf8StringCR jsonFileName)
+BentleyStatus   iModelBridgeFwk::JobDefArgs::ProcessInputJson(bvector<WString>& unrecognized, Utf8StringCR jsonFileName)
     {
     BeFileName rspFileName(jsonFileName);
     WString wargs;
@@ -628,19 +623,16 @@ BentleyStatus   iModelBridgeFwk::JobDefArgs::ProcessInputJson(bvector<WCharCP>& 
     Json::Value jsonValue;
     Json::Reader::Parse(Utf8String(wargs), jsonValue);
 
-    bvector<WCharCP> ptrs;
     bvector<WString> params;
-    ptrs.push_back(rspFileName.c_str());
+    params.push_back(rspFileName.c_str());
     Json::Value::Members     jsonParams = jsonValue.getMemberNames();
-    params.reserve(jsonParams.size());//Allocate required size
     for (auto& name : jsonParams)
         {
         auto& value = jsonValue[name];
         params.push_back(WPrintfString(L"%s=%s", name.c_str(), value.asCString()));
-        ptrs.push_back(params.back().c_str());
         }
 
-    if (BSISUCCESS != ParseCommandLine(bargptrs, (int)ptrs.size(), &ptrs.front()))
+    if (BSISUCCESS != ParseCommandLine(unrecognized, params))
         return BSIERROR;
 
     return SUCCESS;
@@ -649,11 +641,11 @@ BentleyStatus   iModelBridgeFwk::JobDefArgs::ProcessInputJson(bvector<WCharCP>& 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  11/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   iModelBridgeFwk::JobDefArgs::ParseEnvironment(bvector<WCharCP>& bargptrs)
+BentleyStatus   iModelBridgeFwk::JobDefArgs::ParseEnvironment(bvector<WString>& unrecognized)
     {
     Utf8String jsonFile;
     if (SetValueIfEmptyFromEnv(L"imbridge--fwk-inputArgsJsonFile", jsonFile))
-        ProcessInputJson(bargptrs, jsonFile);
+        ProcessInputJson(unrecognized, jsonFile);
 
     SetValueIfEmptyFromEnv(L"imbridge_fwk_bridge_library", m_bridgeLibraryName);
     SetValueIfEmptyFromEnv(L"imbridge_fwk_staging_dir", m_stagingDir);
@@ -712,7 +704,7 @@ void iModelBridgeFwk::GetLoggingConfigFileNameFromFeatureValue()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      10/17
 //---------------------------------------------------------------------------------------
-BentleyStatus iModelBridgeFwk::JobDefArgs::Validate(int argc, WCharCP argv[])
+BentleyStatus iModelBridgeFwk::JobDefArgs::Validate(bvector<WString> const&)
     {
     /*Commented out this assert for ease of debugging when not running against automation services.
     if (m_bridgeLibraryName.empty() && m_bridgeRegSubKey.empty()
@@ -802,9 +794,10 @@ BentleyStatus iModelBridgeFwk::ParseCommandLine(int argc, WCharCP argv[])
         return BSIERROR;
         }
 
-    // Parse --fwk args and push all unrecognized args to m_bargptrs
-    m_bargptrs.push_back(argv[0]);
-    if ((BSISUCCESS != m_jobEnvArgs.ParseCommandLine(m_bargptrs, argc, argv)) || (BSISUCCESS != m_jobEnvArgs.Validate(argc, argv)))
+    // Parse --fwk args and push all unrecognized args to m_bridgeArgs
+    m_bridgeArgs.push_back(argv[0]);
+    bvector<WString> args(argv, argv+argc);
+    if ((BSISUCCESS != m_jobEnvArgs.ParseCommandLine(m_bridgeArgs, args)) || (BSISUCCESS != m_jobEnvArgs.Validate(args)))
         {
         PrintUsage(argv[0]);
         return BSIERROR;
@@ -814,33 +807,33 @@ BentleyStatus iModelBridgeFwk::ParseCommandLine(int argc, WCharCP argv[])
     // Redirect stderr to a file in m_stagingDir. This is how we report some errors back to the calling program.
     RedirectStderr();
 
-    bvector<WCharCP> unparsedArgPtrs;          // Forward non-fwk args to next parser and get ready to accumulate the args that it does not recognize.
-    std::swap(unparsedArgPtrs, m_bargptrs);
-    m_bargptrs.push_back(argv[0]);
+    bvector<WString> unrecognizedArgs;          // Forward non-fwk args to next parser and get ready to accumulate the args that it does not recognize.
+    std::swap(unrecognizedArgs, m_bridgeArgs);
+    m_bridgeArgs.push_back(argv[0]);
 
-    // Parse --imodel-bank args and push all unrecognized args to m_bargptrs
+    // Parse --imodel-bank args and push all unrecognized args to m_bridgeArgs
     IModelBankArgs bankArgs;
-    if ((BSISUCCESS != bankArgs.ParseCommandLine(m_bargptrs, (int) unparsedArgPtrs.size(), unparsedArgPtrs.data())) || (BSISUCCESS != bankArgs.Validate((int) unparsedArgPtrs.size(), unparsedArgPtrs.data())))
+    if ((BSISUCCESS != bankArgs.ParseCommandLine(m_bridgeArgs, unrecognizedArgs)) || (BSISUCCESS != bankArgs.Validate(unrecognizedArgs)))
         {
         PrintUsage(argv[0]);
         return BSIERROR;
         }
 
-    unparsedArgPtrs.clear();                   // Forward non-bank args to next parser and get ready to accumulate the args that it does not recognize.
-    std::swap(unparsedArgPtrs, m_bargptrs);
-    m_bargptrs.push_back(argv[0]);
+    unrecognizedArgs.clear();                   // Forward non-bank args to next parser and get ready to accumulate the args that it does not recognize.
+    std::swap(unrecognizedArgs, m_bridgeArgs);
+    m_bridgeArgs.push_back(argv[0]);
 
-    // Parse --server args and push all unrecognized args to m_bargptrs
+    // Parse --server args and push all unrecognized args to m_bridgeArgs
     IModelHubArgs hubArgs;
-    if ((BSISUCCESS != hubArgs.ParseCommandLine(m_bargptrs, (int) unparsedArgPtrs.size(), unparsedArgPtrs.data())) || (BSISUCCESS != hubArgs.Validate((int) unparsedArgPtrs.size(), unparsedArgPtrs.data())))
+    if ((BSISUCCESS != hubArgs.ParseCommandLine(m_bridgeArgs, unrecognizedArgs)) || (BSISUCCESS != hubArgs.Validate(unrecognizedArgs)))
         {
         PrintUsage(argv[0]);
         return BSIERROR;
         }
 
-    unparsedArgPtrs.clear();                   // Forward non-bank and non-server args to next parser and get ready to accumulate the args that it does not recognize.
-    std::swap(unparsedArgPtrs, m_bargptrs);
-    m_bargptrs.push_back(argv[0]);
+    unrecognizedArgs.clear();                   // Forward non-bank and non-server args to next parser and get ready to accumulate the args that it does not recognize.
+    std::swap(unrecognizedArgs, m_bridgeArgs);
+    m_bridgeArgs.push_back(argv[0]);
 
     if (bankArgs.ParsedAny() && hubArgs.ParsedAny())
         {
@@ -868,14 +861,14 @@ BentleyStatus iModelBridgeFwk::ParseCommandLine(int argc, WCharCP argv[])
         dmsCredentialsAreEncrypted = m_iModelHubArgs->m_isEncrypted;
         }
 
-    // Parse --dms args and push all unrecognized args to m_bargptrs
-    if ((BSISUCCESS != m_dmsServerArgs.ParseCommandLine(m_bargptrs, (int) unparsedArgPtrs.size(), unparsedArgPtrs.data(), dmsCredentialsAreEncrypted)) || (BSISUCCESS != m_dmsServerArgs.Validate((int) unparsedArgPtrs.size(), unparsedArgPtrs.data())))
+    // Parse --dms args and push all unrecognized args to m_bridgeArgs
+    if ((BSISUCCESS != m_dmsServerArgs.ParseCommandLine(m_bridgeArgs, unrecognizedArgs, dmsCredentialsAreEncrypted)) || (BSISUCCESS != m_dmsServerArgs.Validate(unrecognizedArgs)))
         {
         PrintUsage(argv[0]);
         return BSIERROR;
         }
 
-    // The args that are now in m_bargptrs will be fowarded to the bridge's _ParseCommandLine function.
+    // The args that are now in m_bridgeArgs will be fowarded to the bridge's _ParseCommandLine function.
 
     // Now that we have the server arguments (including the repository name), we can access and parse the arguments that are parked in the registry db
     if (BSISUCCESS != ParseDocProps())
@@ -1379,7 +1372,8 @@ BentleyStatus iModelBridgeFwk::InitBridge()
     StopWatch initBridge(true);
     SetBridgeParams(m_bridge->_GetParams(), m_repoAdmin);
 
-    if (BentleyStatus::SUCCESS != m_bridge->_ParseCommandLine((int)m_bargptrs.size(), m_bargptrs.data()))
+    auto bargptrs = GetArgPtrs(m_bridgeArgs);
+    if (BentleyStatus::SUCCESS != m_bridge->_ParseCommandLine((int)bargptrs.size(), bargptrs.data()))
         {
         fprintf(stderr, "bridge _ParseCommandLine failed\n");
         m_bridge->_PrintUsage();
@@ -1393,7 +1387,7 @@ BentleyStatus iModelBridgeFwk::InitBridge()
         LOG.error("Bridge Usage tracking failed. Please ignore if OIDC is not initialized.");
         }
 
-    if (BSISUCCESS != m_bridge->_Initialize((int)m_bargptrs.size(), m_bargptrs.data()))
+    if (BSISUCCESS != m_bridge->_Initialize((int)bargptrs.size(), bargptrs.data()))
         return BentleyStatus::ERROR;
 
     BeAssert((m_bridge->_GetParams().GetRepositoryAdmin() == m_repoAdmin) && "Bridge must use the RepositoryAdmin that the fwk supplies");

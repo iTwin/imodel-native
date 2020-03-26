@@ -53,6 +53,14 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
 
     friend struct iModelBridgeFwkPush;
 
+    static bvector<WCharCP> GetArgPtrs(bvector<WString> const& args) // TODO remove this work-around function when we rewrite the ParseCommandLine functions to work with WStrings
+        {
+        bvector<WCharCP> ptrs;
+        for (auto const& str : args)
+            ptrs.push_back(str.c_str());
+        return ptrs;
+        }
+
     struct FwkContext
         {
         iModel::Hub::iModelInfoPtr m_iModelInfo;
@@ -159,17 +167,16 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         bvector<BeFileName> m_drawingAndSheetFiles;
         BeFileName m_fwkAssetsDir;
         Json::Value m_argsJson; // additional arguments, in JSON format. Some of these may be intended for the bridge.
-        bvector<WString> m_bargs;
         
         IMODEL_BRIDGE_FWK_EXPORT JobDefArgs();
-        BentleyStatus ProcessInputJson(bvector<WCharCP>& bargptrs, Utf8StringCR jsonFile);
-        BentleyStatus ParseEnvironment(bvector<WCharCP>& bargptrs);
+        BentleyStatus ProcessInputJson(bvector<WString>&, Utf8StringCR jsonFile);
+        BentleyStatus ParseEnvironment(bvector<WString>&);
         //! Parse the command-line arguments required by the iModelBridgeFwk itself, and return a vector of pointers to the remaining
         //! arguments (which are presumably the arguments to the bridge).
-        BentleyStatus ParseCommandLine(bvector<WCharCP>& bargptrs, int argc, WCharCP argv[]);
+        BentleyStatus ParseCommandLine(bvector<WString>& unrecognized, bvector<WString> const& allArgs);
 
         //! Validate that all require arguments were supplied and are valid
-        BentleyStatus Validate(int argc, WCharCP argv[]);
+        BentleyStatus Validate(bvector<WString> const&);
 
         //! Print a message describing the framework command-line arguments
         static void PrintUsage();
@@ -197,10 +204,9 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         Utf8String m_storageType;    //!< Storage type used in iModelBank.
         Utf8String m_accessToken;    //!< The token that identifies the user and the user's rights in this environment. (Is passed in http headers as the authorization property.)
         Utf8String m_iModelName;     //!< Optional. Friendly name of the iModel. Returned by GetBriefcaseBasename
-        bvector<WString> m_bargs;
 
-        BentleyStatus ParseCommandLine(bvector<WCharCP>& bargptrs, int argc, WCharCP argv[]);
-        BentleyStatus Validate(int argc, WCharCP argv[]);
+        BentleyStatus ParseCommandLine(bvector<WString>& unrecognized, bvector<WString> const& allArgs);
+        BentleyStatus Validate(bvector<WString> const& args);
         static void PrintUsage();
         bool IsDefined() const {return !m_url.empty();}
         bool ParsedAny() const {return m_parsedAny;}
@@ -222,11 +228,10 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         WebServices::UrlProvider::Environment m_environment;    //!< Connect environment
         uint8_t             m_maxRetryCount = 3;  //! The number of times to retry a failed pull, merge, and/or push. (0 means that the framework will try operations only once and will not re-try them in case of failure.)
         uint8_t             m_maxRetryWait = 5;   //!< The maximum number of seconds to wait during retries (each retry waits randomly between 0 and this maximum).
-        bvector<WString>    m_bargs;
         
         BentleyStatus ParseEnvironment();
-        BentleyStatus ParseCommandLine(bvector<WCharCP>& bargptrs, int argc, WCharCP argv[]);
-        BentleyStatus Validate(int argc, WCharCP argv[]);
+        BentleyStatus ParseCommandLine(bvector<WString>& unrecognized, bvector<WString> const& allArgs);
+        BentleyStatus Validate(bvector<WString> const& args);
         static void PrintUsage();
         bool ParsedAny() const {return m_parsedAny;}
         };
@@ -243,7 +248,6 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         int                 m_documentId;
         int                 m_maxRetryCount = 3;
         bool                m_isv8i;
-        bvector<WString>    m_bargs;
         BeFileName          m_applicationWorkspace;
         bvector<WString>    m_additionalFilePatterns;
         Utf8String          m_documentGuid;
@@ -258,12 +262,12 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         BentleyStatus ParseEnvironment();
         //! Parse the command-line arguments required by the iModelBridgeFwk itself, and return a vector of pointers to the remaining
         //! arguments (which are presumably the arguments to the bridge).
-        IMODEL_BRIDGE_FWK_EXPORT  BentleyStatus ParseCommandLine(bvector<WCharCP>& bargptrs, int argc, WCharCP argv[], bool isEncrypted);
+        IMODEL_BRIDGE_FWK_EXPORT  BentleyStatus ParseCommandLine(bvector<WString>& unrecognized, bvector<WString> const&, bool isEncrypted);
 
         //! Validate that all require arguments were supplied and are valid
-        BentleyStatus Validate(int argc, WCharCP argv[]);
+        BentleyStatus Validate(bvector<WString> const& args);
 
-        void SetDgnArg(WString argName, WStringCR arg, bvector<WCharCP>& bargptrs);
+        void SetDgnArg(WString argName, WStringCR arg, bvector<WString>&);
         };
 #pragma warning(pop)
     //! Admin that supplies the live repository connection that the fwk has created, plus the bulk insert briefcasemgr that
@@ -287,7 +291,7 @@ protected:
     iModelBridge::IBriefcaseManager::PushStatus m_lastBridgePushStatus;
     
     iModelBridge* m_bridge;
-    bvector<WCharCP> m_bargptrs;        // bridge command-line arguments
+    bvector<WString> m_bridgeArgs;        // bridge command-line arguments
     JobDefArgs m_jobEnvArgs;            // the framework's command-line arguments
     struct {
         bool m_useIModelHub;
@@ -397,6 +401,9 @@ public:
 
     //! wmain should call this first
     IMODEL_BRIDGE_FWK_EXPORT BentleyStatus ParseCommandLine(int argc, WCharCP argv[]);
+
+    //! @private
+    bvector<WString> const& GetBridgeArgs() const {return m_bridgeArgs;}
 
     //! wmain should call this to run the bridge, connected to iModelHub.
     IMODEL_BRIDGE_FWK_EXPORT int Run(int argc, WCharCP argv[]);

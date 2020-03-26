@@ -23,6 +23,24 @@
             "externalConsole": false
         },
         {
+            "name": "(Windows) iModelBridgeFwk.exe",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}Winx64/Product/iModelBridgeFwk/bin/iModelBridgeFwk.exe",
+            "args": [
+                "@d:\\BridgeToiModelHub\\iModelBridgeForMstn.rsp",
+                "--fwk-input=d:\\BridgeToiModelHub\\sourceFiles\\car.dgn",
+                "--server-repository=test100",
+                "--fwk-staging-dir=d:\\BridgeToiModelHub\\bridge",
+                "--fwk-assetsDir=d:\\imodel02\\out\\Winx64\\Product\\MstnBridge\\assets",
+                "--fwk-all-docs-processed",
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false
+        },
+        {
             "name": "Debug specific DgnPlatformTest",
             "type": "cppvsdbg",
             "request": "launch",
@@ -76,7 +94,7 @@
             "program": "${env:OutRoot}/Winx64/Product/iModelBridge-Gtest/iModelBridgeTest.exe",
             "args": [
                 "--gtest_break_on_failure",
-                "--gtest_filter=iModelBridgeTests.iModelProjectExtentsTest"
+                "--gtest_filter=iModelBridgeTests.FwkArgs_BadArg"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
