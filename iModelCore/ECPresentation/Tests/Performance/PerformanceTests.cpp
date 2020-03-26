@@ -110,6 +110,7 @@ void RulesEngineSingleProjectTests::_SetupRulesets()
 void RulesEngineSingleProjectTests::_SetupProjects()
     {
     BeFileName projectPath = _SupplyProjectPath();
+    ASSERT_TRUE(projectPath.DoesPathExist());
     OpenProject(m_project, projectPath);
     }
 

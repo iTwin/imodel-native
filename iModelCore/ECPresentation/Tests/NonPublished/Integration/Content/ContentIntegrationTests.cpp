@@ -16825,7 +16825,121 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesContentForRelatedBas
 
     ContentCPtr content = m_manager->GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
-    EXPECT_EQ(1, content->GetContentSet().GetSize());
+    RulesEngineTestHelpers::ValidateContentSet({relatedInstance.get()}, *content);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* VSTS#257477
+* @bsitest                                      Grigas.Petraitis                03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesContentForRelatedBaseClassWhenThereAreLotsOfDerivedClassesAndFiltering)
+    {
+    // set up the schema
+    ECSchemaPtr schema;
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, BeTest::GetNameOfCurrentTest(), Utf8PrintfString("alias_%s", BeTest::GetNameOfCurrentTest()), 0, 0, 0));
+    schema->AddReferencedSchema(*const_cast<ECSchemaP>(s_project->GetECDb().Schemas().GetSchema("ECDbMap")));
+    ECEntityClassP inputClass = nullptr;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(inputClass, "InputClass"));
+    ECEntityClassP baseClass = nullptr;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(baseClass, "BaseClass"));
+    ECClassCP classMapCustomAttributeClass = GetClass("ECDbMap", "ClassMap");
+    IECInstancePtr classMapCustomAttribute = classMapCustomAttributeClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    classMapCustomAttribute->SetValue("MapStrategy", ECValue("TablePerHierarchy"));
+    ASSERT_EQ(ECObjectsStatus::Success, baseClass->SetCustomAttribute(*classMapCustomAttribute));
+    PrimitiveECPropertyP prop = nullptr;
+    ASSERT_EQ(ECObjectsStatus::Success, baseClass->CreatePrimitiveProperty(prop, "Label", PRIMITIVETYPE_String));
+    bvector<ECEntityClassCP> derivedClasses = CreateNDerivedClasses(*schema, *baseClass, 1000);
+    ECRelationshipClassP relationshipClass = nullptr;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateRelationshipClass(relationshipClass, "Relationship", *inputClass, "Source", *baseClass, "Target"));
+    ASSERT_EQ(SUCCESS, s_project->GetECDb().Schemas().ImportSchemas({schema.get()}));
+
+    // insert just one of the derived class instances
+    IECInstancePtr inputInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *inputClass);
+    IECInstancePtr relatedInstance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *derivedClasses[0]);
+    IECInstancePtr relatedInstance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *derivedClasses[1], [](IECInstanceR instance){instance.SetValue("Label", ECValue("123"));});
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipClass, *inputInstance, *relatedInstance1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipClass, *inputInstance, *relatedInstance2);
+
+    // set up ruleset
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRule* rule = new ContentRule();
+    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, 0, false, "this.Label = \"123\"", RequiredRelationDirection_Forward, relationshipClass->GetFullName(), ""));
+    rules->AddPresentationRule(*rule);
+
+    // request content
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(*inputInstance), nullptr, options.GetJson()).get();
+
+    ASSERT_EQ(1, descriptor->GetSelectClasses().size());
+    EXPECT_EQ(derivedClasses[1]->GetId(), descriptor->GetSelectClasses()[0].GetSelectClass().GetClass().GetId());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    ContentCPtr content = m_manager->GetContent(*descriptor, PageOptions()).get();
+    ASSERT_TRUE(content.IsValid());
+    RulesEngineTestHelpers::ValidateContentSet({relatedInstance2.get()}, *content);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* VSTS#257477
+* @bsitest                                      Grigas.Petraitis                03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesContentForRelatedBaseClassWhenThereAreLotsOfDerivedClassesAndRelatedInstances)
+    {
+    // set up the schema
+    ECSchemaPtr schema;
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, BeTest::GetNameOfCurrentTest(), Utf8PrintfString("alias_%s", BeTest::GetNameOfCurrentTest()), 0, 0, 0));
+    schema->AddReferencedSchema(*const_cast<ECSchemaP>(s_project->GetECDb().Schemas().GetSchema("ECDbMap")));
+    ECEntityClassP inputClass = nullptr;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(inputClass, "InputClass"));
+    ECEntityClassP baseClass = nullptr;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(baseClass, "BaseClass"));
+    ECClassCP classMapCustomAttributeClass = GetClass("ECDbMap", "ClassMap");
+    IECInstancePtr classMapCustomAttribute = classMapCustomAttributeClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    classMapCustomAttribute->SetValue("MapStrategy", ECValue("TablePerHierarchy"));
+    ASSERT_EQ(ECObjectsStatus::Success, baseClass->SetCustomAttribute(*classMapCustomAttribute));
+    PrimitiveECPropertyP prop = nullptr;
+    ASSERT_EQ(ECObjectsStatus::Success, baseClass->CreatePrimitiveProperty(prop, "Label", PRIMITIVETYPE_String));
+    ECEntityClassP relatedClass = nullptr;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(relatedClass, "RelatedClass"));
+    bvector<ECEntityClassCP> derivedClasses = CreateNDerivedClasses(*schema, *baseClass, 1000);
+    ECRelationshipClassP relationshipClassInputToBase = nullptr;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateRelationshipClass(relationshipClassInputToBase, "Input_To_Base", *inputClass, "Source", *baseClass, "Target"));
+    ECRelationshipClassP relationshipClassBaseToRelated = nullptr;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateRelationshipClass(relationshipClassBaseToRelated, "Base_To_Related", *baseClass, "Source", *relatedClass, "Target"));
+    ASSERT_EQ(SUCCESS, s_project->GetECDb().Schemas().ImportSchemas({schema.get()}));
+
+    // insert just one of the derived class instances
+    IECInstancePtr inputInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *inputClass);
+    IECInstancePtr relatedDerivedInstance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *derivedClasses[0]);
+    IECInstancePtr relatedDerivedInstance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *derivedClasses[1]);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipClassInputToBase, *inputInstance, *relatedDerivedInstance1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipClassInputToBase, *inputInstance, *relatedDerivedInstance2);
+    IECInstancePtr relatedInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *relatedClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipClassBaseToRelated, *relatedDerivedInstance2, *relatedInstance);
+
+    // set up ruleset
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRule* rule = new ContentRule();
+    auto spec = new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Forward, relationshipClassInputToBase->GetFullName(), "");
+    spec->AddRelatedInstance(*new RelatedInstanceSpecification(RelationshipPathSpecification({new RelationshipStepSpecification(relationshipClassBaseToRelated->GetFullName(), RequiredRelationDirection_Forward)}), "test", true));
+    rule->AddSpecification(*spec);
+    rules->AddPresentationRule(*rule);
+
+    // request content
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(*inputInstance), nullptr, options.GetJson()).get();
+
+    ASSERT_EQ(1, descriptor->GetSelectClasses().size());
+    EXPECT_EQ(derivedClasses[1]->GetId(), descriptor->GetSelectClasses()[0].GetSelectClass().GetClass().GetId());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    ContentCPtr content = m_manager->GetContent(*descriptor, PageOptions()).get();
+    ASSERT_TRUE(content.IsValid());
+    RulesEngineTestHelpers::ValidateContentSet({relatedDerivedInstance2.get()}, *content);
     }
 
 /*---------------------------------------------------------------------------------**//**

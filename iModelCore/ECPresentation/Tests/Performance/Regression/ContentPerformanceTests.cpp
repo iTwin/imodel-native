@@ -70,14 +70,14 @@ struct ContentPerformanceTests : RulesEngineSingleProjectTests
         return ruleset;
         }
 
-    void GetContent(SelectionInfo const&, KeySetCR inputKeys, Utf8CP type, int expectedContentSize, int flags, Utf8CP passName);
+    void GetContent(SelectionInfo const*, KeySetCR inputKeys, Utf8CP type, int expectedContentSize, int flags, Utf8CP passName);
     void GetContentForAllGeometricElements(Utf8CP type, int expectedContentSize, int flags);
     };
 
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentPerformanceTests::GetContent(SelectionInfo const& selection, KeySetCR inputKeys, Utf8CP type, int expectedContentSize, int flags, Utf8CP passName)
+void ContentPerformanceTests::GetContent(SelectionInfo const* selection, KeySetCR inputKeys, Utf8CP type, int expectedContentSize, int flags, Utf8CP passName)
     {
     // start the timer
     Utf8PrintfString timerName("%s: %s pass", BeTest::GetNameOfCurrentTest(), passName);
@@ -85,7 +85,7 @@ void ContentPerformanceTests::GetContent(SelectionInfo const& selection, KeySetC
 
     // get the descriptor
     RulesDrivenECPresentationManager::ContentOptions options = CreateContentOptions();
-    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_project, type, 0, inputKeys, &selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_project, type, 0, inputKeys, selection, options.GetJson()).get();
 
     if (descriptor->GetContentFlags() != (flags | descriptor->GetContentFlags()))
         {
@@ -115,8 +115,8 @@ void ContentPerformanceTests::GetContentForAllGeometricElements(Utf8CP type, int
         keys.push_back(ECClassInstanceKey(m_project.Schemas().GetClass(stmt.GetValueId<ECClassId>(0)), stmt.GetValueId<ECInstanceId>(1)));
     SelectionInfoCPtr selection = SelectionInfo::Create("", false);
 
-    GetContent(*selection, *KeySet::Create(keys), type, expectedContentSize, flags, "First");
-    GetContent(*selection, *KeySet::Create(keys), type, expectedContentSize, flags, "Second");
+    GetContent(selection.get(), *KeySet::Create(keys), type, expectedContentSize, flags, "First");
+    GetContent(selection.get(), *KeySet::Create(keys), type, expectedContentSize, flags, "Second");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -241,6 +241,57 @@ TEST_F(ContentPerformanceTests, GetGridContentForAllGeometricElements)
 TEST_F(ContentPerformanceTests, GetGraphicsContentForAllGeometricElements)
     {
     GetContentForAllGeometricElements(ContentDisplayType::Graphics, 7414);
+    }
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                03/2020
++===============+===============+===============+===============+===============+======*/
+struct FunctionalRelatedContentPerformanceTests : ContentPerformanceTests
+    {
+    BeFileName _SupplyProjectPath() const override
+        {
+        BeFileName path;
+        BeTest::GetHost().GetDocumentsRoot(path);
+        path.AppendToPath(L"Datasets");
+        path.AppendToPath(L"Functional-ea6313fa-8322-47f6-b0e4-7edf717394d7.bim");
+        return path;
+        }
+    PresentationRuleSetPtr _SupplyRuleset() const override
+        {
+        PresentationRuleSetPtr ruleset = PresentationRuleSet::ReadFromJsonString(R"json({
+            "id": "PlantSightPhysicalProperties",
+            "rules": [{
+                "ruleType": "Content",
+                "condition": "SelectedNode.IsOfClass(\"FunctionalElement\", \"Functional\")",
+                "specifications": [{
+                    "specType": "ContentRelatedInstances",
+                    "relationships": {
+                        "schemaName": "Functional",
+                        "classNames": ["PhysicalElementFulfillsFunction"]
+                    },
+                    "requiredDirection": "Backward",
+                    "relatedClasses": {
+                        "schemaName": "ProcessPhysical",
+                        "classNames": ["PLANT_BASE_OBJECT"]
+                    },
+                    "arePolymorphic": true
+                }]
+            }]
+        })json");
+        return ruleset;
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(FunctionalRelatedContentPerformanceTests, GetPropertyGridContent)
+    {
+    ECClassCP functionalElementClass = m_project.Schemas().GetClass("ProcessFunctional", "TOWER");
+    ASSERT_NE(nullptr, functionalElementClass);
+    ECClassInstanceKey inputKey(functionalElementClass, (ECInstanceId)ECInstanceId::FromString("0x30000000400"));
+    GetContent(nullptr, *KeySet::Create({inputKey}), ContentDisplayType::PropertyPane, 1, 0, "First");
+    GetContent(nullptr, *KeySet::Create({inputKey}), ContentDisplayType::PropertyPane, 1, 0, "Second");
     }
 
 /*=================================================================================**//**

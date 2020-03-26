@@ -350,9 +350,109 @@ static bvector<RelatedClassPath> GetRelatedClassPaths(ContentSpecificationsHandl
     return paths;
     }
 
-#define COPY_INDEXED_ITEMS(target, source, indexes) \
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+static bset<ContentSource const*> FindSimpleContentSources(bvector<ContentSource> const& sources)
+    {
+    bset<ContentSource const*> simpleContentSources;
+    RelatedClassPath const* firstSimplePathFromInputToSelectClass = nullptr;
+    for (ContentSource const& source : sources)
+        {
+        if (source.GetSelectClass().IsSelectPolymorphic())
+            continue;
+
+        if (!source.GetPathsFromSelectToRelatedInstanceClasses().empty())
+            continue;
+
+        bool hasMissingRelationships = std::any_of(source.GetPathFromInputToSelectClass().begin(), source.GetPathFromInputToSelectClass().end(), 
+            [](RelatedClassCR rc){return !rc.GetRelationship();});
+        if (hasMissingRelationships)
+            continue;
+
+        if (nullptr == firstSimplePathFromInputToSelectClass)
+            {
+            firstSimplePathFromInputToSelectClass = &source.GetPathFromInputToSelectClass();
+            }
+        else
+            {
+            if (source.GetPathFromInputToSelectClass().size() != firstSimplePathFromInputToSelectClass->size())
+                continue;
+
+            bool beginningMatches = true;
+            for (size_t i = 0; i < firstSimplePathFromInputToSelectClass->size() - 1; ++i)
+                {
+                if (source.GetPathFromInputToSelectClass()[i] != firstSimplePathFromInputToSelectClass->at(i))
+                    {
+                    beginningMatches = false;
+                    break;
+                    }
+                }
+            if (!beginningMatches)
+                continue;
+
+            RelatedClassCR lastLhs = source.GetPathFromInputToSelectClass().back();
+            RelatedClassCR lastRhs = firstSimplePathFromInputToSelectClass->back();
+            if (lastLhs.GetSourceClass() != lastRhs.GetSourceClass() || lastLhs.GetRelationship() != lastRhs.GetRelationship() || lastLhs.IsForwardRelationship() != lastRhs.IsForwardRelationship())
+                continue;
+            }
+
+        simpleContentSources.insert(&source);
+        }
+    return simpleContentSources;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+static void FilterSimpleContentSources(bvector<ContentSource>& filteredSources, bset<ContentSource const*> const& simpleContentSources, IParsedInput const& input, ContentSpecificationsHandler::Context& context)
+    {
+    if (simpleContentSources.empty())
+        return;
+
+    ContentSource const& firstContentSource = **simpleContentSources.begin();
+    RelatedClassPath pathPrefix;
+    if (firstContentSource.GetPathFromInputToSelectClass().size() > 1)
+        std::copy(firstContentSource.GetPathFromInputToSelectClass().begin(), firstContentSource.GetPathFromInputToSelectClass().end() - 1, std::back_inserter(pathPrefix));
+    bset<ECClassId> targetClassIds = ContainerHelpers::TransformContainer<bset<ECClassId>, bset<ContentSource const*>>(simpleContentSources, [](ContentSource const* cs){return cs->GetSelectClass().GetClass().GetId();});
+    bool isForward = (firstContentSource.GetPathFromInputToSelectClass().back().IsForwardRelationship());
+    bvector<ECInstanceId> const& inputIds = input.GetInstanceIds(*firstContentSource.GetPathFromInputToSelectClass().front().GetSourceClass());
+    Utf8String relationshipJoinTarget = pathPrefix.empty() ? "related" : pathPrefix.back().GetTargetClassAlias();
+
+    ComplexGenericQueryPtr query = ComplexGenericQuery::Create();
+    query->SelectContract(*SimpleQueryContract::Create(*PresentationQueryContractSimpleField::Create("ClassId", 
+        Utf8PrintfString("[relationship].[%sECClassId]", isForward ? "Target" : "Source").c_str(), false)));
+    query->From(*firstContentSource.GetPathFromInputToSelectClass().front().GetSourceClass(), false, "related");
+    query->Where(IdsFilteringHelper<bvector<ECInstanceId>>(inputIds).Create("[related].[ECInstanceId]", false));
+    if (!pathPrefix.empty())
+        query->Join(pathPrefix);
+    query->Join(SelectClass(*firstContentSource.GetPathFromInputToSelectClass().back().GetRelationship()), "relationship", 
+        QueryClauseAndBindings(Utf8PrintfString("[relationship].[%sECInstanceId] = [%s].[ECInstanceId]", isForward ? "Source" : "Target", relationshipJoinTarget.c_str())), false);
+    query->Where(IdsFilteringHelper<bset<ECClassId>>(targetClassIds).Create(Utf8PrintfString("[relationship].[%sECClassId]", isForward ? "Target" : "Source").c_str(), false));
+
+    CachedECSqlStatementPtr stmt = context.GetConnection().GetStatementCache().GetPreparedStatement(context.GetConnection().GetECDb().Schemas(),
+        context.GetConnection().GetDb(), query->ToString().c_str());
+    if (stmt.IsNull())
+        {
+        BeAssert(false);
+        return;
+        }
+    query->BindValues(*stmt);
+
+    bset<ECClassId> filteredTargetClassIds;
+    while (BE_SQLITE_ROW == stmt->Step())
+        filteredTargetClassIds.insert(stmt->GetValueId<ECClassId>(0));
+
+    for (ContentSource const* source : simpleContentSources)
+        {
+        if (filteredTargetClassIds.end() != filteredTargetClassIds.find(source->GetSelectClass().GetClass().GetId()))
+            filteredSources.push_back(*source);
+        }
+    }
+
+#define COPY_INDEXED_ITEMS(target, sourcePtrs, indexes) \
     for (size_t index : indexes) \
-        target.push_back(source[index]);
+        target.push_back(*sourcePtrs[index]);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2020
@@ -380,17 +480,14 @@ static bvector<size_t> ExecuteAndResetInstanceFilteringQuery(GenericQueryPtr& qu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bvector<ContentSource> FilterContentSourcesWithInstances(bvector<ContentSource> const& sources, IParsedInput const& input, Utf8StringCR instanceFilter, ContentSpecificationsHandler::Context& context)
+static void FilterComplexContentSources(bvector<ContentSource>& filteredSources, bvector<ContentSource const*> const& complexContentSources, IParsedInput const& input, Utf8StringCR instanceFilter, ContentSpecificationsHandler::Context& context)
     {
-    bvector<ContentSource> filteredSources;
-    if (sources.empty())
-        return filteredSources;
-
     GenericQueryPtr query;
-    for (size_t i = 0; i < sources.size(); ++i)
+    uint64_t unionSize = 0;
+    for (size_t i = 0; i < complexContentSources.size(); ++i)
         {
-        ContentSource const& source = sources[i];
-
+        ContentSource const& source = *complexContentSources[i];
+        
         SelectClassInfo selectInfo(source.GetSelectClass());
         selectInfo.SetPathFromInputToSelectClass(source.GetPathFromInputToSelectClass());
         selectInfo.SetRelatedInstancePaths(source.GetPathsFromSelectToRelatedInstanceClasses());
@@ -408,12 +505,43 @@ static bvector<ContentSource> FilterContentSourcesWithInstances(bvector<ContentS
         q->Limit(1);
 
         QueryBuilderHelpers::SetOrUnion<GenericQuery>(query, ComplexGenericQuery::Create()->SelectAll().From(*q));
+        ++unionSize;
 
-        if ((i % 500) == 499)
-            COPY_INDEXED_ITEMS(filteredSources, sources, ExecuteAndResetInstanceFilteringQuery(query, context.GetConnection()));
+        if ((unionSize % 500) == 499)
+            {
+            COPY_INDEXED_ITEMS(filteredSources, complexContentSources, ExecuteAndResetInstanceFilteringQuery(query, context.GetConnection()));
+            unionSize = 0;
+            }
         }
 
-    COPY_INDEXED_ITEMS(filteredSources, sources, ExecuteAndResetInstanceFilteringQuery(query, context.GetConnection()));
+    if (query.IsValid())
+        COPY_INDEXED_ITEMS(filteredSources, complexContentSources, ExecuteAndResetInstanceFilteringQuery(query, context.GetConnection()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                02/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+static bvector<ContentSource> FilterContentSourcesWithInstances(bvector<ContentSource> const& sources, IParsedInput const& input, Utf8StringCR instanceFilter, ContentSpecificationsHandler::Context& context)
+    {
+    bvector<ContentSource> filteredSources;
+    if (sources.empty())
+        return filteredSources;
+
+    // cover majority of cases with a single query. we can do that if:
+    // - there's no instance filter
+    // - select is non-polymorphic
+    // - only the target class of 'input to select' path is different
+    bset<ContentSource const*> simpleContentSources = instanceFilter.empty() ? FindSimpleContentSources(sources) : bset<ContentSource const*>();
+    FilterSimpleContentSources(filteredSources, simpleContentSources, input, context);
+
+    // find all uncovered cases and handle them separately
+    bvector<ContentSource const*> complexContentSources;
+    for (ContentSource const& source : sources)
+        {
+        if (simpleContentSources.end() == simpleContentSources.find(&source))
+            complexContentSources.push_back(&source);
+        }
+    FilterComplexContentSources(filteredSources, complexContentSources, input, instanceFilter, context);
 
     return filteredSources;
     }
