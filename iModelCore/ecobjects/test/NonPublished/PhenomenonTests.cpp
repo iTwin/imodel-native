@@ -273,6 +273,29 @@ TEST_F(PhenomenonDeserializationTest, BasicRoundTripTest)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Kyle.Abramowitz                    02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(PhenomenonDeserializationTest, EmptyDisplayLabelRoundTripTest)
+{
+	Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <Phenomenon typeName="TestPhenomenon" displayLabel="" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
+        </ECSchema>)xml";
+
+	Utf8String serializedSchemaXml;
+	ECSchemaPtr schema;
+	ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+	ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+
+	PhenomenonCP phenomenon = schema->GetPhenomenonCP("TestPhenomenon");
+	ASSERT_TRUE(nullptr != phenomenon);
+	EXPECT_STREQ("TestPhenomenon", phenomenon->GetInvariantDisplayLabel().c_str());
+
+	EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(serializedSchemaXml));
+	ASSERT_FALSE(serializedSchemaXml.Contains("displayLabel=\"TestPhenomenon\""));
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Kyle.Abramowitz                    02/2018
+//---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(PhenomenonDeserializationTest, DuplicatePhenomenonNames)
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>

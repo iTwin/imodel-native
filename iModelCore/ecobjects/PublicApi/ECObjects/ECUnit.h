@@ -32,7 +32,7 @@ private:
     CachedSchemaQualifiedName m_fullName; // Cached when GetFullName is called the first time.
     mutable UnitSystemId m_unitSystemId;
 
-    ECObjectsStatus SetDisplayLabel(Utf8StringCR value) {m_displayLabel = value.c_str(); m_hasExplicitDisplayLabel = true; return ECObjectsStatus::Success;}
+	ECOBJECTS_EXPORT ECObjectsStatus SetDisplayLabel(Utf8StringCR value);
     ECObjectsStatus SetDescription(Utf8StringCR value) {m_description = value; return ECObjectsStatus::Success;}
 
     SchemaReadStatus ReadXml(BeXmlNodeR unitSystemNode, ECSchemaReadContextR context);
@@ -86,7 +86,7 @@ private:
     PhenomenonId m_phenomenonId;
     CachedSchemaQualifiedName m_fullName;
 
-    ECObjectsStatus SetDisplayLabel(Utf8StringCR value) {Units::Phenomenon::SetLabel(value.c_str()); m_isDisplayLabelExplicitlyDefined = true; return ECObjectsStatus::Success;}
+	ECOBJECTS_EXPORT ECObjectsStatus SetDisplayLabel(Utf8StringCR value);
     ECObjectsStatus SetDescription(Utf8StringCR value) {m_description = value; return ECObjectsStatus::Success;}
 
     SchemaReadStatus ReadXml(BeXmlNodeR phenomenonNode, ECSchemaReadContextR context);

@@ -39,6 +39,17 @@ Utf8String Phenomenon::GetQualifiedName(ECSchemaCR primarySchema) const
     return SchemaParseUtils::GetQualifiedName<Phenomenon>(primarySchema, *this);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Chris.Lawson                    03/2020
+//---------------------------------------------------------------------------------------
+ECObjectsStatus Phenomenon ::SetDisplayLabel(Utf8StringCR label)
+{
+	m_isDisplayLabelExplicitlyDefined = label != "";
+	Units::Phenomenon::SetLabel(label.c_str());
+
+	return ECObjectsStatus::Success;
+}
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 02/2018
 //--------------------------------------------------------------------------------------

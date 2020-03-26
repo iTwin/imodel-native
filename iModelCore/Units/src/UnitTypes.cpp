@@ -42,6 +42,23 @@ UnitsSymbol::~UnitsSymbol()
         delete m_symbolExpression;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Chris.Lawson                    03/2020
+//---------------------------------------------------------------------------------------
+void Unit::SetDisplayLabel(Utf8CP label) 
+    {
+    if (nullptr == label || '\0' == *label)
+        {
+        m_explicitlyDefinedDisplayLabel = false;
+        m_displayLabel.clear();
+        }
+    else
+        {
+        m_explicitlyDefinedDisplayLabel = true;
+        m_displayLabel = label;
+        }
+    } 
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------

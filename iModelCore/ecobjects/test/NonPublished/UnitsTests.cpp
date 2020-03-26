@@ -759,6 +759,33 @@ TEST_F(UnitsDeserializationTests, BasicRoundTripTest)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Kyle.Abramowitz                    02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(UnitsDeserializationTests, EmptyDisplayLabelRoundTripTest)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <Phenomenon typeName="TestPhenomenon" displayLabel="" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
+            <UnitSystem typeName="TestUnitSystem" displayLabel="" description="This is an awesome new Unit System"/>
+            <Unit typeName="TestUnit" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="" definition="M" description="This is an awesome new Unit" offset="10.1234567890" numerator="10.1234567890" denominator="10.1234567890"/>
+        </ECSchema>)xml";
+
+    Utf8String serializedSchemaXml;
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+
+    ASSERT_EQ(1, schema->GetUnitCount());
+    ECUnitCP unit = schema->GetUnitCP("TestUnit");
+    ASSERT_TRUE(nullptr != unit);
+
+    EXPECT_STREQ("TestUnit", unit->GetInvariantDisplayLabel().c_str());
+
+    EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(serializedSchemaXml));
+	ASSERT_FALSE(serializedSchemaXml.Contains("displayLabel=\"TestUnit\""));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Kyle.Abramowitz                    02/2018
+//---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(UnitsDeserializationTests, RoundTripWithReferencedSchemaForPhenomenonAndUnitSystem)
     {
     Utf8CP refXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>

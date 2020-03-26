@@ -223,7 +223,7 @@ protected:
     //! @return Pointer to the parent of this Inverted Unit, if this is an Inverted Unit; otherwise, nullptr.
     UnitCP GetParent() const {return m_parent;}
 
-    void SetDisplayLabel(Utf8CP label) {m_explicitlyDefinedDisplayLabel = true; m_displayLabel = label;} //!< Sets the display label.
+    UNITS_EXPORT void SetDisplayLabel(Utf8CP label); //!< Sets the display label.
     void SetConstant(bool isConstant) {m_isConstant = isConstant;}
 
     //! Sets the UnitSystem of this Unit if it does not already have one.

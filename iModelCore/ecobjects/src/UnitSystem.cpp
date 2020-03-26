@@ -31,6 +31,17 @@ Utf8String UnitSystem::GetQualifiedName(ECSchemaCR primarySchema) const
     return SchemaParseUtils::GetQualifiedName<UnitSystem>(primarySchema, *this);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Chris.Lawson                    03/2020
+//---------------------------------------------------------------------------------------
+ECObjectsStatus UnitSystem::SetDisplayLabel(Utf8StringCR label)
+{
+	m_hasExplicitDisplayLabel = label != "";
+	m_displayLabel = label.c_str();
+
+	return ECObjectsStatus::Success;
+}
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    01/2018
 //--------------------------------------------------------------------------------------

@@ -211,6 +211,29 @@ TEST_F(UnitSystemDeserializationTest, BasicRoundTripTest)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                 Kyle.Abramowitz                    02/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(UnitSystemDeserializationTest, EmptyDisplayLabelRoundTripTest)
+{
+	Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <UnitSystem typeName="TestUnitSystem" displayLabel="" description="This is an awesome new Unit System"/>
+        </ECSchema>)xml";
+
+	Utf8String serializedSchemaXml;
+	ECSchemaPtr schema;
+	ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+	ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+
+	UnitSystemCP unitSystem = schema->GetUnitSystemCP("TestUnitSystem");
+	ASSERT_TRUE(nullptr != unitSystem);
+	EXPECT_STREQ("TestUnitSystem", unitSystem->GetInvariantDisplayLabel().c_str());
+
+	EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(serializedSchemaXml));
+	ASSERT_FALSE(serializedSchemaXml.Contains("displayLabel=\"TestUnitSystem\""));
+}
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    06/2017
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(UnitSystemDeserializationTest, MissingOrInvalidName)
