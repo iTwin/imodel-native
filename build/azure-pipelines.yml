@@ -219,10 +219,10 @@ jobs:
           rootFolderOrFile: $(Build.BinariesDirectory)/Winx64/imodelbanklicensingaddon_pkgs/imodel-bank-licensing
           artifactName: imodel-bank-licensing
 
-      - publish: $(Build.BinariesDirectory)/Winx64/Nugetpkg/DgnV8ConverterNuget
-        displayName: Save DgnV8ConverterNuget
+      - publish: $(Build.BinariesDirectory)/Winx64/Product/DgnV8ConverterUPack
+        displayName: Save DgnV8ConverterUPack
         condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'iModelBridgeCore'))
-        artifact: DgnV8ConverterNuget
+        artifact: DgnV8ConverterUPack
 
       - publish: $(Build.BinariesDirectory)/Winx64/Nugetpkg/iModelBridgeFwkNuget
         displayName: Save iModelBridgeFwkNuget

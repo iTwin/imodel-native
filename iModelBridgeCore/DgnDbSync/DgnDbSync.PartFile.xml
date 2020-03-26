@@ -182,17 +182,17 @@
         <Directories DirectoryListName="DgnV8ConverterDirList" />
     </Product>
 
-    <ProductDirectoryList ListName="DgnV8ConverterNugetDirsOverride">
+    <ProductDirectoryList ListName="DgnV8ConverterUPackDirsOverride">
         <ProductDirectory Name="applicationroot" Path="DgnV8Converter"/>
     </ProductDirectoryList>
 
-    <NuGetProduct Name="DgnV8ConverterNuget" OnlyPlatforms="x64" Description="DgnV8ConverterNuget">
+    <UPackProduct Name="DgnV8ConverterUPack" OnlyPlatforms="x64" Description="DgnV8ConverterUPack">
         <SubPart PartName="TiledDgnV8ConverterExe"/>
         <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
         <Directories DirectoryListName="DgnDbSyncAppCommonDirList"/>
         <Directories DirectoryListName="DgnV8ConverterDirList"/>
-        <Directories DirectoryListName="DgnV8ConverterNugetDirsOverride"/>
-    </NuGetProduct>
+        <Directories DirectoryListName="DgnV8ConverterUPackDirsOverride"/>
+    </UPackProduct>
 
     <NuGetProduct Name="iModelFwkForPPNuget" OnlyPlatforms="x64" Description="A complete delivery of the iModel02 stream framework, including DgnV8Bridge support">
         <SubPart PartName="DgnV8ConverterExe"/>
