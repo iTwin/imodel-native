@@ -3308,7 +3308,9 @@ int             iModelBridgeFwk::UpdateProjectExtents(iModelBridgeFwk::FwkContex
     AxisAlignedBox3d calculated = m_briefcaseDgnDb->GeoLocation().ComputeProjectExtents(&rangeWithOutliers, &elementOutliers);
 
     // Yes, this is evil, but until users are allowed to manually specify a project extent, some bridges and scenarios need to defeat the outlier computation above.
+    AxisAlignedBox3d originalCalculatedRange = calculated;
     m_bridge->_AdjustProjectExtents(calculated, rangeWithOutliers, *m_briefcaseDgnDb);
+    bool didBridgeAdjustRange = !calculated.IsEqual(originalCalculatedRange); // used later to suppress reporting
 
     AxisAlignedBox3d userProvided = calculated;
     bool useiModelHubExtents = false;
@@ -3352,7 +3354,7 @@ int             iModelBridgeFwk::UpdateProjectExtents(iModelBridgeFwk::FwkContex
             GetElementOutLiers(elementOutliers, *m_briefcaseDgnDb, calculated);
             }
 
-        if (elementOutliers.size() > 0)
+        if (!didBridgeAdjustRange && elementOutliers.size() > 0)
             {
             Utf8String elementDetails;
             getOutlierElementInfo(elementOutliers, m_briefcaseDgnDb.get(), elementDetails);
