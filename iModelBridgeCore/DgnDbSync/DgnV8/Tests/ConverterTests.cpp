@@ -2085,3 +2085,239 @@ TEST_F(ConverterTests, MappingErrors)
         ASSERT_EQ(RootModelConverter::ImportJobCreateStatus::FailedExistingRoot, creator.InitializeJob()) << "Should not create a new job when one exists for this root";
         }
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2020
+//---------------+---------------+---------------+---------------+---------------+-------
+struct TestXDomain2 : DgnV8::XDomain
+    {
+    private:
+        bool _isFirst = true;
+
+    public:
+        void _DetermineElementParams(DgnClassId&, DgnCode&, DgnCategoryId&, DgnV8EhCR, DgnV8::Converter&, ECObjectsV8::IECInstance const* primaryV8Instance, DgnV8::ResolvedModelMapping const&) override;
+        void _RegisterDomain(BentleyApi::BeFileNameCR bridgeAssetsDir) override { _isFirst = true; }
+        BentleyApi::BentleyStatus _ImportSchema(DgnDbR db) override;
+        void _OnFinishConversion(Converter&) override {}
+        void _ProcessResults(ElementConversionResults& results, DgnV8EhCR v8eh, ResolvedModelMapping const&, Converter& converter) override;
+
+        TestXDomain2() {}
+        void ChangeClass() { _isFirst = false; }
+    };
+
+void TestXDomain2::_DetermineElementParams(DgnClassId& classId, DgnCode&, DgnCategoryId&, DgnV8EhCR, DgnV8::Converter& converter, ECObjectsV8::IECInstance const* primaryV8Instance, DgnV8::ResolvedModelMapping const&)
+    {
+    if (_isFirst)
+        classId = converter.GetDgnDb().Schemas().GetClassId("BisCore", "VolumeElement");
+    else
+        classId = converter.GetDgnDb().Schemas().GetClassId("Generic", "PhysicalObject");
+    }
+
+BentleyApi::BentleyStatus TestXDomain2::_ImportSchema(DgnDbR db)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="TestDomain" alias="td" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="BisCore" version="01.00" alias="bis"/>
+    <ECEntityClass typeName="TestAspect">
+        <BaseClass>bis:ElementMultiAspect</BaseClass>
+        <ECProperty propertyName="Value" typeName="double" displayLabel="Value"/>
+    </ECEntityClass>
+</ECSchema>)xml";
+
+    BentleyApi::ECN::ECSchemaPtr readSchema;
+    BentleyApi::ECN::ECSchemaReadContextPtr   schemaContext = BentleyApi::ECN::ECSchemaReadContext::CreateContext();
+    schemaContext->AddSchemaLocater(db.GetSchemaLocater());
+    BentleyApi::ECN::SchemaReadStatus readStatus = BentleyApi::ECN::ECSchema::ReadFromXmlString(readSchema, schemaXml, *schemaContext);
+
+    BentleyApi::bvector<BentleyApi::ECN::ECSchemaCP> schemas {readSchema.get()};
+    if (SchemaStatus::Success != db.ImportSchemas(schemas))
+        {
+        return BentleyApi::BentleyStatus::BSIERROR;
+        }
+    return BentleyApi::BentleyStatus::BSISUCCESS;
+    }
+
+void TestXDomain2::_ProcessResults(ElementConversionResults& results, DgnV8EhCR v8eh, ResolvedModelMapping const&, Converter& converter)
+    {
+    BentleyApi::ECN::ECClassCP aspectClass = converter.GetDgnDb().Schemas().GetClass("TestDomain", "TestAspect");
+    BentleyApi::RefCountedPtr<DgnElement::MultiAspect> aspect = DgnElement::MultiAspect::CreateAspect(converter.GetDgnDb(), *aspectClass);
+    aspect->SetPropertyValue("Value", BentleyApi::ECN::ECValue(1.0));
+    DgnElement::MultiAspect::AddAspect(*results.m_element, *aspect);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2020
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ConverterTests, UpdateElementClass)
+    {
+    LineUpFiles(L"UpdateElementClass.bim", L"Test3d.dgn", false);
+
+    DgnV8Api::ElementId v8LineElementId;
+    DgnV8Api::ElementId v8Cell1ElementId;
+    DgnV8Api::ElementId v8Cell2ElementId;
+    DgnV8Api::ElementId v8Arc3ElementId;
+    DgnV8Api::ModelId editV8ModelId;
+    DgnV8Api::EditElementHandle cellEEH, cell2EEH;
+    V8FileEditor v8editor;
+    v8editor.Open(m_v8FileName);
+    v8editor.AddLine(&v8LineElementId);
+    BentleyStatus status = ERROR;
+    DgnV8Api::EditElementHandle arcEEH1, arcEEH2;
+    v8editor.CreateArc(arcEEH1, false, v8editor.m_defaultModel);
+
+    DPoint3d center = DPoint3d::FromXYZ(4, 4, 0);
+    RotMatrix rot;
+    rot.InitIdentity();
+    DgnV8Api::ArcHandler::CreateArcElement(arcEEH2, NULL, center, 1500, 1000, rot, 0.5, 1.0, v8editor.m_defaultModel->Is3d(), *v8editor.m_defaultModel);
+    arcEEH2.GetElementP()->ehdr.level = v8editor.GetActiveLevel();
+
+    v8editor.CreateCell(cellEEH, L"UserCell", false, v8editor.m_defaultModel);
+
+    status = DgnV8Api::NormalCellHeaderHandler::AddChildElement(cellEEH, arcEEH1);
+    EXPECT_TRUE(SUCCESS == status);
+    status = DgnV8Api::NormalCellHeaderHandler::AddChildElement(cellEEH, arcEEH2);
+    EXPECT_TRUE(SUCCESS == status);
+    status = DgnV8Api::NormalCellHeaderHandler::AddChildComplete(cellEEH);
+    EXPECT_TRUE(SUCCESS == status);
+
+    EXPECT_TRUE(SUCCESS == cellEEH.AddToModel());
+    v8editor.Save();
+    editV8ModelId = v8editor.m_defaultModel->GetModelId();
+    v8Cell1ElementId = cellEEH.GetElementId();
+
+    DgnV8Api::EditElementHandle arcEEH3, arcEEH4;
+    v8editor.CreateArc(arcEEH3, false, v8editor.m_defaultModel);
+
+    DgnV8Api::ArcHandler::CreateArcElement(arcEEH4, NULL, center, 1000, 1500, rot, 0.5, 2.0, v8editor.m_defaultModel->Is3d(), *v8editor.m_defaultModel);
+    arcEEH4.GetElementP()->ehdr.level = v8editor.GetActiveLevel();
+
+    v8editor.CreateCell(cell2EEH, L"UserCell2", false, v8editor.m_defaultModel);
+
+    status = DgnV8Api::NormalCellHeaderHandler::AddChildElement(cell2EEH, arcEEH3);
+    EXPECT_TRUE(SUCCESS == status);
+    status = DgnV8Api::NormalCellHeaderHandler::AddChildElement(cell2EEH, arcEEH4);
+    EXPECT_TRUE(SUCCESS == status);
+    status = DgnV8Api::NormalCellHeaderHandler::AddChildComplete(cell2EEH);
+    EXPECT_TRUE(SUCCESS == status);
+
+    EXPECT_TRUE(SUCCESS == cell2EEH.AddToModel());
+    v8editor.Save();
+    v8Cell2ElementId = cell2EEH.GetElementId();
+    DgnV8Api::ChildElemIter v8childEh(cell2EEH, DgnV8Api::ExposeChildrenReason::Query);
+    v8Arc3ElementId = v8childEh.GetElementId();
+
+    TestXDomain2 testXdomain;
+    XDomain::Register(testXdomain);
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+    testXdomain.ChangeClass();
+
+    DgnElementId dgnDbLineElementId;
+    DgnElementId dgnDbCellElementId;
+    DgnElementId dgnDbCell2ElementId;
+    DgnElementId dgnDbArc1ElementId;
+    DgnElementId dgnDbArc3ElementId;
+    DgnModelId editModelId;
+    RepositoryLinkId editV8FileSyncInfoId;
+    DgnClassId originalClassId;
+    DgnElementIdSet c1Children;
+    DgnElementIdSet c2Children;
+    DgnElementId aspectElementId;
+
+    if (true)
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        DgnElementCPtr lineElement = FindV8ElementInDgnDb(*db, v8LineElementId);
+        dgnDbLineElementId = lineElement->GetElementId();
+        ASSERT_TRUE(lineElement.IsValid());
+        auto classId = db->Schemas().GetClassId("BisCore", "VolumeElement");
+        originalClassId = lineElement->GetElementClassId();
+        ASSERT_EQ(classId.GetValue(), originalClassId.GetValue());
+
+        DgnElementCPtr cellElement = FindV8ElementInDgnDb(*db, v8Cell1ElementId);
+        ASSERT_TRUE(cellElement.IsValid());
+        c1Children = cellElement->QueryChildren();
+        EXPECT_EQ(2, (int32_t) c1Children.size()) << "Number of child in cell1 are not equal";
+        dgnDbCellElementId = cellElement->GetElementId();
+
+        DgnElementCPtr cell2Element = FindV8ElementInDgnDb(*db, v8Cell2ElementId);
+        ASSERT_TRUE(cell2Element.IsValid());
+        c2Children = cell2Element->QueryChildren();
+        EXPECT_EQ(2, (int32_t) c2Children.size()) << "Number of child in cell2 are not equal";
+        dgnDbCell2ElementId = cell2Element->GetElementId();
+        dgnDbArc3ElementId = *c2Children.begin();
+
+        auto sel = db->GetPreparedECSqlStatement("SELECT ECInstanceId from td.TestAspect WHERE (Element.Id=?)");
+        sel->BindId(1, dgnDbLineElementId);
+        ASSERT_EQ(sel->Step(), BentleyApi::BeSQLite::DbResult::BE_SQLITE_ROW);
+        aspectElementId = sel->GetValueId<DgnElementId>(0);
+        }
+
+    DgnV8Api::EditElementHandle v8Eh(v8LineElementId, v8editor.m_defaultModel);
+    ASSERT_TRUE(v8Eh.IsValid());
+    Bentley::Transform xlat;
+    xlat.InitIdentity();
+    xlat.SetTranslation(Bentley::DPoint3d::From(10, 10, 10));
+    ASSERT_EQ(BentleyApi::SUCCESS, v8Eh.GetDisplayHandler()->ApplyTransform(v8Eh, DgnV8Api::TransformInfo(xlat)));
+    ASSERT_EQ(BentleyApi::SUCCESS, v8Eh.ReplaceInModel(v8Eh.GetElementRef()));
+
+    DgnV8Api::EditElementHandle c1Eh(v8Cell1ElementId, v8editor.m_defaultModel);
+    ASSERT_TRUE(c1Eh.IsValid());
+    ASSERT_EQ(BentleyApi::SUCCESS, c1Eh.GetDisplayHandler()->ApplyTransform(c1Eh, DgnV8Api::TransformInfo(xlat)));
+    ASSERT_EQ(BentleyApi::SUCCESS, c1Eh.ReplaceInModel(c1Eh.GetElementRef()));
+
+    // Figure out how to modify a child element
+    //DgnV8Api::EditElementHandle arcEh(v8Arc3ElementId, v8editor.m_defaultModel);
+    //ASSERT_TRUE(arcEh.IsValid());
+    //ASSERT_EQ(BentleyApi::SUCCESS, arcEh.GetDisplayHandler()->ApplyTransform(arcEh, DgnV8Api::TransformInfo(xlat)));
+    //ASSERT_EQ(BentleyApi::SUCCESS, arcEh.ReplaceInModel(arcEh.GetElementRef()));
+    v8editor.Save();
+
+    DoUpdate(m_dgnDbFileName, m_v8FileName);
+    if (true)
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        DgnElementCPtr lineElement = FindV8ElementInDgnDb(*db, v8LineElementId);
+        ASSERT_TRUE(lineElement.IsValid());
+        ASSERT_NE(lineElement->GetElementId().GetValue(), dgnDbLineElementId.GetValue());
+        ASSERT_NE(originalClassId.GetValue(), lineElement->GetElementClassId().GetValue());
+        DgnElementCPtr originalElement = db->Elements().GetElement(dgnDbLineElementId);
+        ASSERT_FALSE(originalElement.IsValid());
+
+        // Ensure original aspect no longer exits
+        {
+        auto sel = db->GetPreparedECSqlStatement("SELECT ECInstanceId from td.TestAspect WHERE (Element.Id=?)");
+        sel->BindId(1, dgnDbLineElementId);
+        ASSERT_EQ(sel->Step(), BentleyApi::BeSQLite::DbResult::BE_SQLITE_DONE);
+        }
+
+        // Ensure new aspect was created
+        {
+        auto sel = db->GetPreparedECSqlStatement("SELECT ECInstanceId from td.TestAspect WHERE (Element.Id=?)");
+        sel->BindId(1, lineElement->GetElementId());
+        ASSERT_EQ(sel->Step(), BentleyApi::BeSQLite::DbResult::BE_SQLITE_ROW);
+        }
+
+        // Ensure old child elements were deleted
+        for (DgnElementId childId : c1Children)
+            {
+            DgnElementCPtr child = db->Elements().GetElement(childId);
+            ASSERT_FALSE(child.IsValid()) << "Child element should have been deleted: " + childId.GetValue();
+            }
+
+        // Ensure new children were inserted
+        DgnElementCPtr cellElement = FindV8ElementInDgnDb(*db, v8Cell1ElementId);
+        ASSERT_TRUE(cellElement.IsValid());
+        c1Children = cellElement->QueryChildren();
+        EXPECT_EQ(2, (int32_t) c1Children.size()) << "Number of child in cell1 are not equal after update";
+
+        // Ensure cell2 wasn't deleted, but that its child was replaced
+        //DgnElementCPtr cell2Element = db->Elements().GetElement(dgnDbCell2ElementId);
+        //ASSERT_TRUE(cell2Element.IsValid());
+
+        //DgnElementCPtr arcElement = FindV8ElementInDgnDb(*db, v8Arc3ElementId);
+        //ASSERT_FALSE(arcElement.IsValid());
+
+        }
+    XDomain::UnRegister(testXdomain);
+
+    }

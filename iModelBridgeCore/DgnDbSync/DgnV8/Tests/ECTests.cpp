@@ -649,11 +649,11 @@ TEST_F(ECConversionTests, UpdateExistingWithNewInstance)
         v8editor.Save();
         }
 
+    // The class differs, so it changes it does a delete/insert of the old element
     m_count = 0;
     DoUpdate(m_dgnDbFileName, m_v8FileName, false);
-    ASSERT_EQ(1, m_count);
+    ASSERT_EQ(2, m_count);
     VerifyElement(eidNoInst, nullptr, false);
-    // NEEDS_WORK: The instance wasn't inserted because the TestClassElementAspect class doesn't exist.  Need to enhance the test to confirm this behavior
     }
 
 //---------------------------------------------------------------------------------------

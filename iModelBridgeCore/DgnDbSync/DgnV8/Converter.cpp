@@ -3049,7 +3049,7 @@ DgnElementPtr Converter::MakeCopyForUpdate(DgnElementCR newEl, DgnElementCR orig
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus Converter::UpdateResultsForOneElement(ElementConversionResults& conversionResults, DgnElementId existingElementId, SyncInfo::V8ElementExternalSourceAspectData const& elprov)
+DgnDbStatus Converter::UpdateResultsForOneElement(ElementConversionResults& conversionResults, DgnElementId existingElementId, DgnV8EhCR v8eh, SyncInfo::V8ElementExternalSourceAspectData const& elprov)
     {
     if (!conversionResults.m_element.IsValid() || !existingElementId.IsValid())
         {
@@ -3065,17 +3065,32 @@ DgnDbStatus Converter::UpdateResultsForOneElement(ElementConversionResults& conv
         return DgnDbStatus::BadArg;
         }
 
+    DgnDbStatus stat;
     if (el->GetElementClassId() != conversionResults.m_element->GetElementClassId())
         {
-        ReportIssueV(IssueSeverity::Error, IssueCategory::Unsupported(), Issue::UpdateDoesNotChangeClass(), nullptr,
-            m_issueReporter.FmtElement(*el).c_str(), conversionResults.m_element->GetElementClass()->GetECSqlName().c_str());
+        // If the class has changed, first must insert the new element, then let any extension or domains handle the change, and then delete the original element.
+        if ((stat = InsertResults(conversionResults, elprov)) != DgnDbStatus::Success)
+            return stat;
+
+        ConvertToDgnDbElementExtension* upx = ConvertToDgnDbElementExtension::Cast(v8eh.GetHandler());
+        if (nullptr != upx)
+            {
+            upx->_OnElementClassChanged(*this, v8eh, *conversionResults.m_element, existingElementId);
+            }
+
+        for (auto xdomain : XDomainRegistry::s_xdomains)
+            {
+            xdomain->_OnElementClassChanged(*this, v8eh, *conversionResults.m_element, existingElementId);
+            }
+
+        _DeleteElement(existingElementId);
+        return DgnDbStatus::Success;
         }
 
     DgnElementPtr writeEl = MakeCopyForUpdate(*conversionResults.m_element, *el);
 
     conversionResults.m_mapping = AddOrUpdateV8ElementExternalSourceAspect(*writeEl, elprov);
 
-    DgnDbStatus stat;
     DgnElementCPtr result = m_dgndb->Elements().Update(*writeEl, &stat);
     if (!result.IsValid())
         return stat;
@@ -3092,7 +3107,7 @@ DgnDbStatus Converter::UpdateResultsForOneElement(ElementConversionResults& conv
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus Converter::UpdateResultsForChildren(ElementConversionResults& parentConversionResults, SyncInfo::V8ElementExternalSourceAspectData const& parentelprov)
+DgnDbStatus Converter::UpdateResultsForChildren(ElementConversionResults& parentConversionResults, DgnV8EhCR v8eh, SyncInfo::V8ElementExternalSourceAspectData const& parentelprov)
     {
     if (parentConversionResults.m_childElements.empty())
         return DgnDbStatus::Success;
@@ -3128,7 +3143,7 @@ DgnDbStatus Converter::UpdateResultsForChildren(ElementConversionResults& parent
             auto iFound = existingChildIdSet.find(existingChildElementId);
             if (iFound != existingChildIdSet.end())
                 {
-                UpdateResults(childRes, existingChildElementId, parentelprov);
+                UpdateResults(childRes, existingChildElementId, v8eh, parentelprov);
                 // *** WIP_CONVERTER - bail out if any child update fails?
                 }
             }
@@ -3146,7 +3161,7 @@ DgnDbStatus Converter::UpdateResultsForChildren(ElementConversionResults& parent
     size_t i = 0;
     for ( ; i<count; ++i)
         {
-        UpdateResults(parentConversionResults.m_childElements.at(i), existingChildIds.at(i), parentelprov);
+        UpdateResults(parentConversionResults.m_childElements.at(i), existingChildIds.at(i), v8eh, parentelprov);
         // *** WIP_CONVERTER - bail out if any child update fails?
         }
 
@@ -3162,15 +3177,15 @@ DgnDbStatus Converter::UpdateResultsForChildren(ElementConversionResults& parent
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus Converter::UpdateResults(ElementConversionResults& conversionResults, DgnElementId existingElementId, SyncInfo::V8ElementExternalSourceAspectData const& elprov)
+DgnDbStatus Converter::UpdateResults(ElementConversionResults& conversionResults, DgnElementId existingElementId, DgnV8EhCR v8eh, SyncInfo::V8ElementExternalSourceAspectData const& elprov)
     {
-    auto status = UpdateResultsForOneElement(conversionResults, existingElementId, elprov);
+    auto status = UpdateResultsForOneElement(conversionResults, existingElementId, v8eh, elprov);
     if (DgnDbStatus::Success != status)
         {
         BeAssert((DgnDbStatus::LockNotHeld != status) && "Failed to get or retain necessary locks");
         return status;
         }
-    return UpdateResultsForChildren(conversionResults, elprov);
+    return UpdateResultsForChildren(conversionResults, v8eh, elprov);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3203,7 +3218,7 @@ void Converter::ProcessConversionResults(ElementConversionResults& conversionRes
             !(v8eh.GetElementType() == DgnV8Api::EXTENDED_ELM &&  // Quickly reject non-106
              DgnV8Api::ElementHandlerManager::GetHandlerId(v8eh) == DgnV8Api::PointCloudHandler::GetElemHandlerId()))
             {
-            UpdateResults(conversionResults, csearch.GetExistingElementId(), elprov);
+            UpdateResults(conversionResults, csearch.GetExistingElementId(), v8eh, elprov);
             }
         else
             {

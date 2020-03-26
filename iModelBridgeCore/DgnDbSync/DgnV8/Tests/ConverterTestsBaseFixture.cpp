@@ -341,6 +341,7 @@ void ConverterTestBaseFixture::DoConvert(BentleyApi::BeFileNameCR output, Bentle
         if (nullptr != m_verifier)
             creator.AddSchemaImportVerifier(*m_verifier);
         creator.MakeSchemaChanges();
+        creator.ImportXDomainSchemas();
         ASSERT_FALSE(creator.WasAborted());
         ASSERT_EQ(TestRootModelCreator::ImportJobCreateStatus::Success, creator.InitializeJob());
         ASSERT_EQ(BentleyApi::SUCCESS, creator.MakeDefinitionChanges());

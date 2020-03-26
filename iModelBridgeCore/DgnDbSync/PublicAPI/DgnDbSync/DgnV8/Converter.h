@@ -1803,9 +1803,9 @@ public:
     void DeleteOldOrphanReferencesSubjects();
 
     DgnDbStatus InsertResults(ElementConversionResults&, SyncInfo::V8ElementExternalSourceAspectData const&);
-    DgnDbStatus UpdateResultsForOneElement(ElementConversionResults&, DgnElementId existingElementId, SyncInfo::V8ElementExternalSourceAspectData const&);
-    DgnDbStatus UpdateResultsForChildren(ElementConversionResults&, SyncInfo::V8ElementExternalSourceAspectData const&);
-    DgnDbStatus UpdateResults(ElementConversionResults&, DgnElementId existingElementId, SyncInfo::V8ElementExternalSourceAspectData const&);
+    DgnDbStatus UpdateResultsForOneElement(ElementConversionResults&, DgnElementId existingElementId, DgnV8EhCR v8eh, SyncInfo::V8ElementExternalSourceAspectData const&);
+    DgnDbStatus UpdateResultsForChildren(ElementConversionResults&, DgnV8EhCR v8eh, SyncInfo::V8ElementExternalSourceAspectData const&);
+    DgnDbStatus UpdateResults(ElementConversionResults&, DgnElementId existingElementId, DgnV8EhCR v8eh, SyncInfo::V8ElementExternalSourceAspectData const&);
     //! Writes to the DgnDb and to SyncInfo, as specified by the change type in \a searchResults. The following cases are handled:
     //! -- \a conversionResults.m_element is invalid => records a discard in SyncInfo and sets \a conversionResults.m_wasDiscarded.
     //! -- IChangeDetector::ChangeType::Insert - the (non-persistent!) element in \a conversionResults is inserted into the BIM, and a mapping is
@@ -2935,6 +2935,7 @@ struct ConvertToDgnDbElementExtension : DgnV8Api::Handler::Extension
     virtual bool _DisablePostInstancing() {return false;} // When true, don't try to detect identical geometry and create GeometryParts from non-instanced V8 geometry.
     virtual void _UpdateResourceDefinitions (iModelBridge::IDocumentPropertiesAccessor& accessor) {}
     virtual bool _OnElementPostInsertOrUpdate(Converter&, DgnV8EhCR, DgnElementId elementId, Converter::ChangeOperation changeOperation) { return false; /* element doesn't need updating */ }
+    virtual void _OnElementClassChanged(Converter& converter, DgnV8EhCR v8eh, DgnElementCR newElement, DgnElementId originalElementId) {}
 };
 
 //=======================================================================================
@@ -3004,6 +3005,12 @@ struct XDomain
 
     //! This is invoked during _OnElementBeforeDelete to remove any relationships that would become invalid.
     virtual void _OnElementBeforeDelete(Converter&, DgnElementId elementId) {}
+
+    //! When an element's class has changed, the converter must do an insert of a new element and a deletion of the original element.  This callback is invoked after the
+    //! new element has been inserted but before it has been deleted.  The converter will take care of deleting any aspects or relationships on the old element, but any replacements
+    //! must be handled by the XDomain
+    virtual void _OnElementClassChanged(Converter& converter, DgnV8EhCR v8eh, DgnElementCR newElement, DgnElementId originalElementId) {}
+
 };
 
 //=======================================================================================
