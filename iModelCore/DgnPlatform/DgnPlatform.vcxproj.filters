@@ -407,9 +407,6 @@
     <ClInclude Include="PublicAPI\DgnPlatform\ECSqlStatementIterator.h">
       <Filter>PublicAPI</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\DgnPlatform\ECUtils.h">
-      <Filter>PublicAPI</Filter>
-    </ClInclude>
     <ClInclude Include="PublicAPI\DgnPlatform\ElementGeometry.h">
       <Filter>PublicAPI</Filter>
     </ClInclude>
@@ -861,9 +858,6 @@
       <Filter>DgnCore</Filter>
     </ClCompile>
     <ClCompile Include="DgnCore\DrawAreaPattern.cpp">
-      <Filter>DgnCore</Filter>
-    </ClCompile>
-    <ClCompile Include="DgnCore\ECUtils.cpp">
       <Filter>DgnCore</Filter>
     </ClCompile>
     <ClCompile Include="DgnCore\ElementDependency.cpp">

@@ -541,10 +541,10 @@ private:
     static void          AppendAccessString(Utf8String& compoundAccessString, Utf8CP baseAccessString, Utf8StringCR propertyName);
     static StatusInt     WritePropertyValuesOfClassOrStructArrayMember(Json::Value& valueToPopulate, ECN::ECClassCR ecClass, ECN::IECInstanceCR ecInstance, Utf8CP baseAccessString, IECClassLocaterP classLocator, bool writeFormattedQuantities = false, bool serializeNullValues = false, MemberNameCasing casing = MemberNameCasing::KeepOriginal, std::function<bool(Utf8CP)> shouldWriteProperty = nullptr);
     static StatusInt     WritePrimitiveValue(Json::Value& valueToPopulate, Utf8CP propertyName, ECN::ECValueCR ecValue, ECN::PrimitiveType propertyType, KindOfQuantityCP koq = nullptr, MemberNameCasing casing = MemberNameCasing::KeepOriginal);
-    static StatusInt     WriteArrayPropertyValue(Json::Value& valueToPopulate, ECN::ArrayECPropertyR arrayProperty, ECN::IECInstanceCR ecInstance, Utf8CP baseAccessString, IECClassLocaterP classLocator, bool writeFormattedQuantities = false, bool serializeNullValues = false, MemberNameCasing casing = MemberNameCasing::KeepOriginal);
-    static StatusInt     WriteNavigationPropertyValue(Json::Value& valueToPopulate, ECN::NavigationECPropertyR navigationProperty, ECN::IECInstanceCR ecInstance, Utf8CP baseAccessString, IECClassLocaterP classLocator, bool writeFormattedQuantities = false, bool serializeNullValues = false, MemberNameCasing casing = MemberNameCasing::KeepOriginal);
-    static StatusInt     WritePrimitivePropertyValue(Json::Value& valueToPopulate, ECN::PrimitiveECPropertyR primitiveProperty, ECN::IECInstanceCR ecInstance, Utf8CP baseAccessString, bool writeFormattedQuantities = false, bool serializeNullValues = false, MemberNameCasing casing = MemberNameCasing::KeepOriginal);
-    static StatusInt     WriteEmbeddedStructPropertyValue(Json::Value& valueToPopulate, ECN::StructECPropertyR structProperty, ECN::IECInstanceCR ecInstance, Utf8CP baseAccessString, bool writeFormattedQuantities = false, bool serializeNullValues = false, MemberNameCasing casing = MemberNameCasing::KeepOriginal);
+    static StatusInt     WriteArrayPropertyValue(Json::Value& valueToPopulate, ECN::ArrayECPropertyCR arrayProperty, ECN::IECInstanceCR ecInstance, Utf8CP baseAccessString, IECClassLocaterP classLocator, bool writeFormattedQuantities = false, bool serializeNullValues = false, MemberNameCasing casing = MemberNameCasing::KeepOriginal);
+    static StatusInt     WriteNavigationPropertyValue(Json::Value& valueToPopulate, ECN::NavigationECPropertyCR navigationProperty, ECN::IECInstanceCR ecInstance, Utf8CP baseAccessString, IECClassLocaterP classLocator, bool writeFormattedQuantities = false, bool serializeNullValues = false, MemberNameCasing casing = MemberNameCasing::KeepOriginal);
+    static StatusInt     WritePrimitivePropertyValue(Json::Value& valueToPopulate, ECN::PrimitiveECPropertyCR primitiveProperty, ECN::IECInstanceCR ecInstance, Utf8CP baseAccessString, bool writeFormattedQuantities = false, bool serializeNullValues = false, MemberNameCasing casing = MemberNameCasing::KeepOriginal);
+    static StatusInt     WriteEmbeddedStructPropertyValue(Json::Value& valueToPopulate, ECN::StructECPropertyCR structProperty, ECN::IECInstanceCR ecInstance, Utf8CP baseAccessString, bool writeFormattedQuantities = false, bool serializeNullValues = false, MemberNameCasing casing = MemberNameCasing::KeepOriginal);
 
 public:
     //! Convert an ECPropertyName to a JSON member name according to the specified MemberNameCasing option
@@ -556,7 +556,7 @@ public:
     //! @param[in] ecInstance the IEInstance containing the structProperty
     //! @param[in] baseAccessString The prefix to use to determine the full access string to the property, typically this would be the containing ECStruct's name.
     //! @return SUCCESS or error status.
-    ECOBJECTS_EXPORT static StatusInt WriteEmbeddedStructValue(Json::Value& valueToPopulate, ECN::StructECPropertyR structProperty, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString);
+    ECOBJECTS_EXPORT static StatusInt WriteEmbeddedStructValue(Json::Value& valueToPopulate, ECN::StructECPropertyCR structProperty, ECN::IECInstanceCR ecInstance, Utf8CP baseAccessString);
 
     //! Write the supplied primitive property value as JSON and include presentation data such as KOQ info in the Json
     //! @param[out] valueToPopulate the JSON object to populate
@@ -564,7 +564,7 @@ public:
     //! @param[in] ecInstance the IEInstance containing the structProperty value
     //! @param[in] baseAccessString The prefix to use to determine the full access string to the property, typically this would be the containing ECStruct's name.
     //! @return SUCCESS or error status.
-    ECOBJECTS_EXPORT static StatusInt WriteEmbeddedStructValueForPresentation(Json::Value& valueToPopulate, ECN::StructECPropertyR structProperty, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString);
+    ECOBJECTS_EXPORT static StatusInt WriteEmbeddedStructValueForPresentation(Json::Value& valueToPopulate, ECN::StructECPropertyCR structProperty, ECN::IECInstanceCR ecInstance, Utf8CP baseAccessString);
 
     //! Write the supplied primitive property value as JSON
     //! @param[out] valueToPopulate the JSON object to populate
@@ -572,7 +572,7 @@ public:
     //! @param[in] ecInstance the IEInstance containing the property value
     //! @param[in] baseAccessString The prefix to use to determine the full access string to the property, typically this would be the containing ECStruct name.
     //! @return SUCCESS or error status.
-    ECOBJECTS_EXPORT static StatusInt WritePrimitiveValue(Json::Value& valueToPopulate, PrimitiveECPropertyR primitiveProperty, IECInstanceCR ecInstance, Utf8String* baseAccessString);
+    ECOBJECTS_EXPORT static StatusInt WritePrimitiveValue(Json::Value& valueToPopulate, PrimitiveECPropertyCR primitiveProperty, IECInstanceCR ecInstance, Utf8CP baseAccessString);
 
     //! Write the supplied primitive property value as JSON and include presentation data such as KOQ info in the Json
     //! @param[out] valueToPopulate the JSON object to populate
@@ -580,7 +580,7 @@ public:
     //! @param[in] ecInstance the IEInstance containing the property value
     //! @param[in] baseAccessString The prefix to use to determine the full access string to the property, typically this would be the containing ECStruct name.
     //! @return SUCCESS or error status.
-    ECOBJECTS_EXPORT static StatusInt WritePrimitiveValueForPresentation(Json::Value& valueToPopulate, PrimitiveECPropertyR primitiveProperty, IECInstanceCR ecInstance, Utf8String* baseAccessString);
+    ECOBJECTS_EXPORT static StatusInt WritePrimitiveValueForPresentation(Json::Value& valueToPopulate, PrimitiveECPropertyCR primitiveProperty, IECInstanceCR ecInstance, Utf8CP baseAccessString);
 
     //! Write the supplied instance as JSON
     //! @param[out] valueToPopulate the JSON object to populate

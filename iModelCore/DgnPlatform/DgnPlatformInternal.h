@@ -39,7 +39,6 @@
 #include <DgnPlatform/DgnTexture.h>
 #include <DgnPlatform/ColorBook.h>
 #include <DgnPlatform/ViewDefinition.h>
-#include <DgnPlatform/ECUtils.h>
 #include <DgnPlatform/ElementGeometry.h>
 #include <DgnPlatform/ElementGraphics.h>
 #include <DgnPlatform/GenericDomain.h>

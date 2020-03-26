@@ -130,6 +130,26 @@ static void customAttributesToJson(JsonValueR jcas, ECN::IECCustomAttributeConta
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
 //---------------------------------------------------------------------------------------
+static void doubleOrIntToJson(JsonValueR json, ECN::ECValueR v)
+    {
+    if (v.IsNull())
+        {
+        json = Json::nullValue;
+        return;
+        }
+    
+    auto primType = v.GetPrimitiveType();
+    if (primType == PrimitiveType::PRIMITIVETYPE_Double)
+        json = v.GetDouble();
+    else if (primType == PrimitiveType::PRIMITIVETYPE_Long)
+        json = Json::Value(v.GetLong());
+    else
+        json = v.GetInteger();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                  06/17
+//---------------------------------------------------------------------------------------
 DgnDbStatus JsInterop::GetECClassMetaData(JsonValueR mjson, DgnDbR dgndb, Utf8CP ecSchemaName, Utf8CP ecClassName)
     {
     auto ecclass = dgndb.Schemas().GetClass(ecSchemaName, ecClassName, SchemaLookupMode::AutoDetect);
@@ -166,9 +186,9 @@ DgnDbStatus JsInterop::GetECClassMetaData(JsonValueR mjson, DgnDbR dgndb, Utf8CP
         SET_IF_NOT_EMPTY_STR(propjson[json_displayLabel()], ecprop->GetDisplayLabel());
         ECN::ECValue v;
         if (ECN::ECObjectsStatus::Success == ecprop->GetMinimumValue(v))
-            ECUtils::ConvertECValueToJson(propjson[json_minimumValue()], v);
+            doubleOrIntToJson(propjson[json_minimumValue()], v);
         if (ECN::ECObjectsStatus::Success == ecprop->GetMaximumValue(v))
-            ECUtils::ConvertECValueToJson(propjson[json_maximumValue()], v);
+            doubleOrIntToJson(propjson[json_maximumValue()], v);
         if (ecprop->IsMaximumLengthDefined())
             propjson[json_maximumLength()] = ecprop->GetMaximumLength();
         if (ecprop->IsMinimumLengthDefined())
@@ -607,31 +627,49 @@ BeSQLite::EC::ECInstanceKey parseECRelationshipInstanceKeyKey(DgnDbR dgndb, Json
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      09/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ECN::StandaloneECRelationshipInstancePtr getRelationshipProperties(ECN::ECRelationshipClassCP relClass, JsonValueR inJson)
+static ECN::StandaloneECRelationshipInstancePtr getRelationshipProperties(ECN::ECRelationshipClassCP relClass, JsonValueR inJson, DgnDbR dgndb)
     {
     ECN::StandaloneECRelationshipEnablerPtr relationshipEnabler = ECN::StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (*relClass);
-    ECN::StandaloneECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance ();
+    auto relationshipInstance = relationshipEnabler->CreateRelationshipInstance ();
+    ECN::IECInstanceR instance = *relationshipInstance;
+    IECClassLocaterR classLocater = dgndb.GetClassLocater();
+    bool hasProperties = false;
 
-    int count = 0;
-    for (auto const& jsPropName : inJson.getMemberNames())
+    static auto const isDefinitelyNotAutoHandled = [](Utf8CP propName) -> bool
         {
-        ECPropertyP ecprop = relClass->GetPropertyP(jsPropName.c_str());            // will be null for system properties, such as sourceId, targetId, classFullName, id
-        if (nullptr == ecprop || !ecprop->GetIsPrimitive())
-            continue; // TODO: support other property types
+        // *** NEEDS WORK:  We have defined a bunch of special properties in our element wire format
+        // ***              That are not in the biscore ECSchema. So, we have no way of checking
+        // ***              if they are auto-handled or not using metadata. Only some _FromJson method somewhere
+        // ***              knows what these properties are. Here, we check for the few special properties
+        // ***              that we know about. Similar Workaround as in (see DgnElement.cpp around Line 1300)
+        switch (propName[0])
+            {
+            case 'i': return 0==strcmp(propName, "id");
+            case 'c': return 0==strcmp(propName, "classFullName") || 0==strcmp(propName, "code");
+            case 'p': return 0==strcmp(propName, "placement");
+            }
+        return false;
+        };
 
-        ++count;
+    std::function<bool(Utf8CP)> shouldConvertProperty = [&relClass, &hasProperties](Utf8CP propName)
+        {
+        if (isDefinitelyNotAutoHandled(propName))
+            return false;
 
-        ECN::ECValue value;
-        ECN::PrimitiveECPropertyCP primitiveProperty = ecprop->GetAsPrimitiveProperty();
-        ECUtils::ConvertJsonToECValue(value, inJson[jsPropName], primitiveProperty->GetType(), primitiveProperty->GetExtendedTypeName().c_str());
+        if (ECJsonSystemNames::IsTopLevelSystemMember(propName))
+            return false;
 
-        relationshipInstance->SetValue(jsPropName.c_str(), value);
-        }
+        ECPropertyP ecprop = relClass->GetPropertyP(propName);            // will be null for system properties, such as sourceId, targetId, classFullName, id
+        if (nullptr == ecprop)
+            return false; // TODO: support other property types
 
-    // NB: don't include the sourceId and targetId properties. They are specified directly by insert
-    //      and are not relevant to update
+        hasProperties = true;
+        return true;
+        };
 
-    return (count > 0) ? relationshipInstance : nullptr;
+    JsonECInstanceConverter::JsonToECInstance(instance, inJson, classLocater, shouldConvertProperty);
+
+    return hasProperties ? relationshipInstance : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -647,7 +685,7 @@ DbResult JsInterop::InsertLinkTableRelationship(JsonValueR outJson, DgnDbR dgndb
     sourceId.FromJson(inJson["sourceId"]);
     targetId.FromJson(inJson["targetId"]);
 
-    ECN::StandaloneECRelationshipInstancePtr props = getRelationshipProperties(relClass, inJson);
+    ECN::StandaloneECRelationshipInstancePtr props = getRelationshipProperties(relClass, inJson, dgndb);
 
     BeSQLite::EC::ECInstanceKey relKey;
     auto rc = dgndb.InsertLinkTableRelationship(relKey, *relClass, sourceId, targetId, props.get()); // nullptr is okay if there are no props
@@ -669,7 +707,7 @@ DbResult JsInterop::UpdateLinkTableRelationship(DgnDbR dgndb, JsonValueR inJson)
     if (nullptr == relClass)
         return BE_SQLITE_NOTFOUND;
 
-    ECN::StandaloneECRelationshipInstancePtr props = getRelationshipProperties(relClass, inJson);
+    ECN::StandaloneECRelationshipInstancePtr props = getRelationshipProperties(relClass, inJson, dgndb);
     if (!props.IsValid())
         return BE_SQLITE_OK; // Relationship class had no properties - consider update successful
 

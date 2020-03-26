@@ -453,19 +453,19 @@ TEST_F(ECInstanceJsonWriterTests, WriteEmbeddedStructValueTest)
     
     Json::Value actualJsonValue2;
     Utf8String baseAccessString2("");
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteEmbeddedStructValue(actualJsonValue2, *m_sourceStructProperty, *sourceInstance, &baseAccessString2));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteEmbeddedStructValue(actualJsonValue2, *m_sourceStructProperty, *sourceInstance, baseAccessString2.c_str()));
 
     Json::Value actualJsonValue3;
     Utf8String baseAccessString3("StructProperty");
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteEmbeddedStructValue(actualJsonValue3, *m_structStructProperty, *sourceInstance, &baseAccessString3));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteEmbeddedStructValue(actualJsonValue3, *m_structStructProperty, *sourceInstance, baseAccessString3.c_str()));
 
     Json::Value actualJsonValue4;
     Utf8String baseAccessString4("StructProperty.");
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteEmbeddedStructValue(actualJsonValue4, *m_structStructProperty, *sourceInstance, &baseAccessString4));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteEmbeddedStructValue(actualJsonValue4, *m_structStructProperty, *sourceInstance, baseAccessString4.c_str()));
 
     Json::Value actualJsonValue5;
     Utf8String baseAccessString5("StructProperty");
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteEmbeddedStructValue(actualJsonValue5, *m_structStructProperty, *sourceInstance, &baseAccessString5));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteEmbeddedStructValue(actualJsonValue5, *m_structStructProperty, *sourceInstance, baseAccessString5.c_str()));
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteEmbeddedStructValue(actualJsonValue5, *m_sourceStructProperty, *sourceInstance, nullptr));
 
     // Assert
@@ -627,19 +627,19 @@ TEST_F(ECInstanceJsonWriterTests, WriteEmbeddedStructValueForPresentationTest)
 
     Json::Value actualJsonValue2;
     Utf8String baseAccessString2("");
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteEmbeddedStructValueForPresentation(actualJsonValue2, *m_sourceStructProperty, *sourceInstance, &baseAccessString2));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteEmbeddedStructValueForPresentation(actualJsonValue2, *m_sourceStructProperty, *sourceInstance, baseAccessString2.c_str()));
 
     Json::Value actualJsonValue3;
     Utf8String baseAccessString3("StructProperty");
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteEmbeddedStructValueForPresentation(actualJsonValue3, *m_structStructProperty, *sourceInstance, &baseAccessString3));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteEmbeddedStructValueForPresentation(actualJsonValue3, *m_structStructProperty, *sourceInstance, baseAccessString3.c_str()));
 
     Json::Value actualJsonValue4;
     Utf8String baseAccessString4("StructProperty.");
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteEmbeddedStructValueForPresentation(actualJsonValue4, *m_structStructProperty, *sourceInstance, &baseAccessString4));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteEmbeddedStructValueForPresentation(actualJsonValue4, *m_structStructProperty, *sourceInstance, baseAccessString4.c_str()));
 
     Json::Value actualJsonValue5;
     Utf8String baseAccessString5("StructProperty");
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteEmbeddedStructValueForPresentation(actualJsonValue5, *m_structStructProperty, *sourceInstance, &baseAccessString5));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteEmbeddedStructValueForPresentation(actualJsonValue5, *m_structStructProperty, *sourceInstance, baseAccessString5.c_str()));
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteEmbeddedStructValueForPresentation(actualJsonValue5, *m_sourceStructProperty, *sourceInstance, nullptr));
 
     // Assert
@@ -729,47 +729,47 @@ TEST_F(ECInstanceJsonWriterTests, WritePrimitiveValueTest)
     Utf8String structStructPropertyBaseAccessString("StructProperty.StructStructProperty");
 
     Json::Value actualJsonValue1;
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue1, *m_structIntProperty, *sourceInstance, &structPropertyBaseAccessString));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue1, *m_structIntProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
 
     Json::Value actualJsonValue2;
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue2, *m_structDoubleProperty, *sourceInstance, &structPropertyBaseAccessString));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue2, *m_structDoubleProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
 
     Json::Value actualJsonValue3;
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue3, *m_structStringProperty, *sourceInstance, &structPropertyBaseAccessString));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue3, *m_structStringProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
 
     Json::Value actualJsonValue4;
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue4, *m_structStrictEnumerationProperty, *sourceInstance, &structPropertyBaseAccessString));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue4, *m_structStrictEnumerationProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
 
     Json::Value actualJsonValue5;
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue5, *m_structLooseEnumerationProperty, *sourceInstance, &structPropertyBaseAccessString));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue5, *m_structLooseEnumerationProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
 
     Json::Value actualJsonValue6;
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue6, *m_structStructIntProperty, *sourceInstance, &structStructPropertyBaseAccessString));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue6, *m_structStructIntProperty, *sourceInstance, structStructPropertyBaseAccessString.c_str()));
 
     Json::Value actualJsonValue7;
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue7, *m_structStructDoubleProperty, *sourceInstance, &structStructPropertyBaseAccessString));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue7, *m_structStructDoubleProperty, *sourceInstance, structStructPropertyBaseAccessString.c_str()));
 
     Json::Value actualJsonValue8;
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue8, *m_structStructStringProperty, *sourceInstance, &structStructPropertyBaseAccessString));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue8, *m_structStructStringProperty, *sourceInstance, structStructPropertyBaseAccessString.c_str()));
 
     Json::Value actualJsonValue9;
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue9, *m_structStructStrictEnumerationProperty, *sourceInstance, &structStructPropertyBaseAccessString));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue9, *m_structStructStrictEnumerationProperty, *sourceInstance, structStructPropertyBaseAccessString.c_str()));
 
     Json::Value actualJsonValue10;
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue10, *m_structStructLooseEnumerationProperty, *sourceInstance, &structStructPropertyBaseAccessString));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue10, *m_structStructLooseEnumerationProperty, *sourceInstance, structStructPropertyBaseAccessString.c_str()));
 
     Json::Value actualJsonValue11;
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue11, *m_structDoubleProperty, *sourceInstance, &structPropertyBaseAccessString));
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue11, *m_structStringProperty, *sourceInstance, &structPropertyBaseAccessString));
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue11, *m_structLooseEnumerationProperty, *sourceInstance, &structPropertyBaseAccessString));
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue11, *m_structStructStrictEnumerationProperty, *sourceInstance, &structStructPropertyBaseAccessString));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue11, *m_structDoubleProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue11, *m_structStringProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue11, *m_structLooseEnumerationProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue11, *m_structStructStrictEnumerationProperty, *sourceInstance, structStructPropertyBaseAccessString.c_str()));
 
     Json::Value actualJsonValue12;
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue12, *m_structDoubleProperty, *sourceInstance, &structPropertyBaseAccessString));
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue12, *m_structStringProperty, *sourceInstance, &structPropertyBaseAccessString));
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue12, *m_structLooseEnumerationProperty, *sourceInstance, &structPropertyBaseAccessString));
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue12, *m_structStructStringProperty, *sourceInstance, &structStructPropertyBaseAccessString));
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue12, *m_structStructStrictEnumerationProperty, *sourceInstance, &structStructPropertyBaseAccessString));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue12, *m_structDoubleProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue12, *m_structStringProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue12, *m_structLooseEnumerationProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue12, *m_structStructStringProperty, *sourceInstance, structStructPropertyBaseAccessString.c_str()));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValue(actualJsonValue12, *m_structStructStrictEnumerationProperty, *sourceInstance, structStructPropertyBaseAccessString.c_str()));
 
     // Assert
 
@@ -902,48 +902,48 @@ TEST_F(ECInstanceJsonWriterTests, WritePrimitiveValueForPresentationTest)
     Utf8String structStructPropertyBaseAccessString("StructProperty.StructStructProperty");
 
     Json::Value actualJsonValue1;
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue1, *m_structIntProperty, *sourceInstance, &structPropertyBaseAccessString));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue1, *m_structIntProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
 
     Json::Value actualJsonValue2;
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue2, *m_structDoubleProperty, *sourceInstance, &structPropertyBaseAccessString));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue2, *m_structDoubleProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
 
     Json::Value actualJsonValue3;
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue3, *m_structStringProperty, *sourceInstance, &structPropertyBaseAccessString));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue3, *m_structStringProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
 
     Json::Value actualJsonValue4;
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue4, *m_structStrictEnumerationProperty, *sourceInstance, &structPropertyBaseAccessString));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue4, *m_structStrictEnumerationProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
 
     Json::Value actualJsonValue5;
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue5, *m_structLooseEnumerationProperty, *sourceInstance, &structPropertyBaseAccessString));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue5, *m_structLooseEnumerationProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
 
     Json::Value actualJsonValue6;
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue6, *m_structStructIntProperty, *sourceInstance, &structStructPropertyBaseAccessString));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue6, *m_structStructIntProperty, *sourceInstance, structStructPropertyBaseAccessString.c_str()));
 
     Json::Value actualJsonValue7;
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue7, *m_structStructDoubleProperty, *sourceInstance, &structStructPropertyBaseAccessString));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue7, *m_structStructDoubleProperty, *sourceInstance, structStructPropertyBaseAccessString.c_str()));
 
     Json::Value actualJsonValue8;
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue8, *m_structStructStringProperty, *sourceInstance, &structStructPropertyBaseAccessString));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue8, *m_structStructStringProperty, *sourceInstance, structStructPropertyBaseAccessString.c_str()));
 
     Json::Value actualJsonValue9;
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue9, *m_structStructStrictEnumerationProperty, *sourceInstance, &structStructPropertyBaseAccessString));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue9, *m_structStructStrictEnumerationProperty, *sourceInstance, structStructPropertyBaseAccessString.c_str()));
 
     Json::Value actualJsonValue10;
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue10, *m_structStructLooseEnumerationProperty, *sourceInstance, &structStructPropertyBaseAccessString));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue10, *m_structStructLooseEnumerationProperty, *sourceInstance, structStructPropertyBaseAccessString.c_str()));
 
     Json::Value actualJsonValue11;
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue11, *m_structDoubleProperty, *sourceInstance, &structPropertyBaseAccessString));
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue11, *m_structStringProperty, *sourceInstance, &structPropertyBaseAccessString));
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue11, *m_structLooseEnumerationProperty, *sourceInstance, &structPropertyBaseAccessString));
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue11, *m_structStructStrictEnumerationProperty, *sourceInstance, &structStructPropertyBaseAccessString));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue11, *m_structDoubleProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue11, *m_structStringProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue11, *m_structLooseEnumerationProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue11, *m_structStructStrictEnumerationProperty, *sourceInstance, structStructPropertyBaseAccessString.c_str()));
 
     Json::Value actualJsonValue12;
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue12, *m_structDoubleProperty, *sourceInstance, &structPropertyBaseAccessString));
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue12, *m_structStringProperty, *sourceInstance, &structPropertyBaseAccessString));
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue12, *m_structLooseEnumerationProperty, *sourceInstance, &structPropertyBaseAccessString));
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue12, *m_structStructDoubleProperty, *sourceInstance, &structStructPropertyBaseAccessString));
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue12, *m_structStructStringProperty, *sourceInstance, &structStructPropertyBaseAccessString));
-    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue12, *m_structStructStrictEnumerationProperty, *sourceInstance, &structStructPropertyBaseAccessString));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue12, *m_structDoubleProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue12, *m_structStringProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue12, *m_structLooseEnumerationProperty, *sourceInstance, structPropertyBaseAccessString.c_str()));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue12, *m_structStructDoubleProperty, *sourceInstance, structStructPropertyBaseAccessString.c_str()));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue12, *m_structStructStringProperty, *sourceInstance, structStructPropertyBaseAccessString.c_str()));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePrimitiveValueForPresentation(actualJsonValue12, *m_structStructStrictEnumerationProperty, *sourceInstance, structStructPropertyBaseAccessString.c_str()));
 
     // Assert
 

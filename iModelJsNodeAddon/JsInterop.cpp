@@ -941,12 +941,18 @@ void JsInterop::GetECValuesCollectionAsJson(Json::Value& json, ECN::ECValuesColl
     {
     for (ECN::ECPropertyValue const& prop : props)
         {
-        JsonValueR pvalue = json[prop.GetValueAccessor().GetAccessString(prop.GetValueAccessor().GetDepth()-1)];
-
         if (prop.HasChildValues())
-            GetECValuesCollectionAsJson(pvalue, *prop.GetChildValues());
+            GetECValuesCollectionAsJson(json[prop.GetValueAccessor().GetAccessString(prop.GetValueAccessor().GetDepth()-1)], *prop.GetChildValues());
         else
-            ECUtils::ConvertECValueToJson(pvalue, prop.GetValue());
+          {
+          ECN::PrimitiveECPropertyCP propertyPtr = prop.GetValueAccessor().GetECProperty()->GetAsPrimitiveProperty();
+          ECN::IECInstanceCR instance = prop.GetInstance();
+          if(propertyPtr != nullptr)
+            {
+            Utf8CP propName = propertyPtr->GetName().c_str();
+            JsonEcInstanceWriter::WritePrimitiveValue(json, *propertyPtr, instance, propName);
+            }
+          }
         }
     }
 

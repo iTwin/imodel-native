@@ -9,7 +9,6 @@
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/Tile.h>
 #include <ECDb/ECDbApi.h>
-#include <DgnPlatform/ECUtils.h>
 #include <DgnPlatform/DgnFontData.h>
 #include <Bentley/BeThread.h>
 #include <Bentley/CancellationToken.h>

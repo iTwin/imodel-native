@@ -325,8 +325,6 @@ $(CoreObjs)ScopedDgnHost$(oext) :                   $(DgnHandlersDir)ScopedDgnHo
 
 $(CoreObjs)ExternalReference$(oext) :               $(DgnCoreDir)ExternalReference.cpp $(HandlerDepends) ${MultiCompileDepends}
 
-$(o)ECUtils$(oext) :                                $(DgnCoreDir)ECUtils.cpp $(DgnPlatformAPISrc)ECUtils.h ${MultiCompileDepends}
-
 $(o)RenderMaterial$(oext) :                         $(DgnCoreDir)RenderMaterial.cpp $(DgnPlatformAPISrc)RenderMaterial.h ${MultiCompileDepends}
 
 $(CoreObjs)ModelSpatialClassifier$(oext) :          $(DgnCoreDir)ModelSpatialClassifier.cpp $(DgnPlatformAPISrc)ModelSpatialClassifier.h  ${MultiCompileDepends}

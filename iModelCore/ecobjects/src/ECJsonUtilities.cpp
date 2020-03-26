@@ -1640,7 +1640,7 @@ StatusInt JsonEcInstanceWriter::WritePrimitiveValue(Json::Value& valueToPopulate
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Bill.Steinbock                  02/2016
 //---------------------------------------------------------------------------------------
-StatusInt JsonEcInstanceWriter::WritePrimitivePropertyValue(Json::Value& valueToPopulate, PrimitiveECPropertyR primitiveProperty, IECInstanceCR ecInstance, Utf8CP baseAccessString, bool writeFormattedQuantities, bool serializeNullValues, MemberNameCasing casing)
+StatusInt JsonEcInstanceWriter::WritePrimitivePropertyValue(Json::Value& valueToPopulate, PrimitiveECPropertyCR primitiveProperty, IECInstanceCR ecInstance, Utf8CP baseAccessString, bool writeFormattedQuantities, bool serializeNullValues, MemberNameCasing casing)
     {
     ECObjectsStatus     getStatus;
     ECValue             ecValue;
@@ -1680,25 +1680,23 @@ StatusInt JsonEcInstanceWriter::WritePrimitivePropertyValue(Json::Value& valueTo
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Bill.Steinbock                  02/2016
 //---------------------------------------------------------------------------------------
-StatusInt JsonEcInstanceWriter::WritePrimitiveValueForPresentation(Json::Value& valueToPopulate, PrimitiveECPropertyR primitiveProperty, IECInstanceCR ecInstance, Utf8String* baseAccessString)
+StatusInt JsonEcInstanceWriter::WritePrimitiveValueForPresentation(Json::Value& valueToPopulate, PrimitiveECPropertyCR primitiveProperty, IECInstanceCR ecInstance, Utf8CP baseAccessString)
     {
-    auto const baseAccessStringP = nullptr == baseAccessString ? nullptr : baseAccessString->c_str();
-    return WritePrimitivePropertyValue(valueToPopulate, primitiveProperty, ecInstance, baseAccessStringP, true);
+    return WritePrimitivePropertyValue(valueToPopulate, primitiveProperty, ecInstance, baseAccessString, true);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Bill.Steinbock                  02/2016
 //---------------------------------------------------------------------------------------
-StatusInt JsonEcInstanceWriter::WritePrimitiveValue(Json::Value& valueToPopulate, PrimitiveECPropertyR primitiveProperty, IECInstanceCR ecInstance, Utf8String* baseAccessString)
+StatusInt JsonEcInstanceWriter::WritePrimitiveValue(Json::Value& valueToPopulate, PrimitiveECPropertyCR primitiveProperty, IECInstanceCR ecInstance, Utf8CP baseAccessString)
     {
-    auto const baseAccessStringP = nullptr == baseAccessString ? nullptr : baseAccessString->c_str();
-    return WritePrimitivePropertyValue(valueToPopulate, primitiveProperty, ecInstance, baseAccessStringP, false);
+    return WritePrimitivePropertyValue(valueToPopulate, primitiveProperty, ecInstance, baseAccessString, false);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Bill.Steinbock                  02/2016
 //---------------------------------------------------------------------------------------
-StatusInt JsonEcInstanceWriter::WriteArrayPropertyValue(Json::Value& valueToPopulate, ArrayECPropertyR arrayProperty, IECInstanceCR ecInstance, Utf8CP baseAccessString, IECClassLocaterP classLocator, bool writeFormattedQuantities, bool serializeNullValues, MemberNameCasing casing)
+StatusInt JsonEcInstanceWriter::WriteArrayPropertyValue(Json::Value& valueToPopulate, ArrayECPropertyCR arrayProperty, IECInstanceCR ecInstance, Utf8CP baseAccessString, IECClassLocaterP classLocator, bool writeFormattedQuantities, bool serializeNullValues, MemberNameCasing casing)
     {
     ArrayKind arrayKind = arrayProperty.GetKind();
 
@@ -1804,7 +1802,7 @@ StatusInt JsonEcInstanceWriter::WriteArrayPropertyValue(Json::Value& valueToPopu
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Bill.Steinbock                  02/2016
 //---------------------------------------------------------------------------------------
-StatusInt JsonEcInstanceWriter::WriteEmbeddedStructPropertyValue(Json::Value& valueToPopulate, StructECPropertyR structProperty, IECInstanceCR ecInstance, Utf8CP baseAccessString, bool writeFormattedQuantities, bool serializeNullValues, MemberNameCasing casing)
+StatusInt JsonEcInstanceWriter::WriteEmbeddedStructPropertyValue(Json::Value& valueToPopulate, StructECPropertyCR structProperty, IECInstanceCR ecInstance, Utf8CP baseAccessString, bool writeFormattedQuantities, bool serializeNullValues, MemberNameCasing casing)
     {
     Utf8String    structName = structProperty.GetName();
 
@@ -1829,29 +1827,27 @@ StatusInt JsonEcInstanceWriter::WriteEmbeddedStructPropertyValue(Json::Value& va
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Bill.Steinbock                  05/2017
 //---------------------------------------------------------------------------------------
-StatusInt JsonEcInstanceWriter::WriteEmbeddedStructValue(Json::Value& valueToPopulate, StructECPropertyR structProperty, IECInstanceCR ecInstance, Utf8String* baseAccessString)
+StatusInt JsonEcInstanceWriter::WriteEmbeddedStructValue(Json::Value& valueToPopulate, StructECPropertyCR structProperty, IECInstanceCR ecInstance, Utf8CP baseAccessString)
     {
-    auto const baseAccessStringP = nullptr == baseAccessString ? nullptr : baseAccessString->c_str();
-    return JsonEcInstanceWriter::WriteEmbeddedStructPropertyValue(valueToPopulate, structProperty, ecInstance, baseAccessStringP, false);
+    return JsonEcInstanceWriter::WriteEmbeddedStructPropertyValue(valueToPopulate, structProperty, ecInstance, baseAccessString, false);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Bill.Steinbock                  05/2017
 //---------------------------------------------------------------------------------------
-StatusInt JsonEcInstanceWriter::WriteEmbeddedStructValueForPresentation(Json::Value& valueToPopulate, ECN::StructECPropertyR structProperty, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString)
+StatusInt JsonEcInstanceWriter::WriteEmbeddedStructValueForPresentation(Json::Value& valueToPopulate, ECN::StructECPropertyCR structProperty, ECN::IECInstanceCR ecInstance, Utf8CP baseAccessString)
     {
-    auto const baseAccessStringP = nullptr == baseAccessString ? nullptr : baseAccessString->c_str();
-    return JsonEcInstanceWriter::WriteEmbeddedStructPropertyValue(valueToPopulate, structProperty, ecInstance, baseAccessStringP, true);
+    return JsonEcInstanceWriter::WriteEmbeddedStructPropertyValue(valueToPopulate, structProperty, ecInstance, baseAccessString, true);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Caleb.Shafer                    08/2017
 //---------------------------------------------------------------------------------------
-StatusInt JsonEcInstanceWriter::WriteNavigationPropertyValue(Json::Value& valueToPopulate, NavigationECPropertyR navigationProperty, IECInstanceCR ecInstance, Utf8CP baseAccessString, IECClassLocaterP classLocator, bool writeFormattedQuantities, bool serializeNullValues, MemberNameCasing casing)
+StatusInt JsonEcInstanceWriter::WriteNavigationPropertyValue(Json::Value& valueToPopulate, NavigationECPropertyCR navigationProperty, IECInstanceCR ecInstance, Utf8CP baseAccessString, IECClassLocaterP classLocator, bool writeFormattedQuantities, bool serializeNullValues, MemberNameCasing casing)
     {
     Utf8String navName = navigationProperty.GetName();
 
-    Utf8String thisAccessString;
+    Utf8String thisAccessString = navName;
     if (Utf8String::IsNullOrEmpty(baseAccessString))
         thisAccessString = navName.c_str();
     else
