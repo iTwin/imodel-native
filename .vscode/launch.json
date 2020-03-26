@@ -8,7 +8,7 @@
             "name": "(Windows) iModelBridgeAssign.exe",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${env:OutRoot}Winx64/Product/iModelBridgeFwk/bin/iModelBridgeAssign.exe",
+            "program": "${env:OutRoot}Winx64/Product/iModelBridgeAssign/iModelBridgeAssign.exe",
             "args": [
                 "--fwk-logging-config-file=d:\\BridgeToiModelHub\\logging.config.xml",
                 "--server-repository=test62",

@@ -173,7 +173,9 @@ void BroadcastProgressMeter::PostProgressMessage()
     json["tasksPct"] = pct(m_tasksRemaining, m_totalTasks);
     json["lastUpdateTime"] = m_timeOfLastPost;
     json["spinCount"] = (int)m_spinCount;
-    json["phasesCount"] = m_totalPhases;
+    json["phaseCount"] = m_totalPhases;
+    json["taskCount"] = m_totalTasks;
+    json["stepCount"] = m_totalSteps;
 
     PostRequest(json);
     }

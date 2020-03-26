@@ -268,7 +268,7 @@ BentleyStatus callAffinityFunc(Utf8String& line0, Utf8String& line1, CPLSpawnedP
     filePathU.append("\n");
     if (!CPLPipeWrite(CPLSpawnAsyncGetOutputFileHandle(calc), filePathU.c_str(), (int)filePathU.size()))
         {
-        LOG.errorv(L"%ls - has crashed", affinityLibraryPath.c_str());
+        LOG.errorv(L"%ls - has crashed on %ls", affinityLibraryPath.c_str(), filePath.c_str());
         return BSIERROR;
         }
 
@@ -278,7 +278,7 @@ BentleyStatus callAffinityFunc(Utf8String& line0, Utf8String& line1, CPLSpawnedP
     if ((BSISUCCESS != CPLPipeReadLine(line0, responseHandle))
      || (BSISUCCESS != CPLPipeReadLine(line1, responseHandle)))
         {
-        LOG.errorv(L"%ls - has crashed", affinityLibraryPath.c_str());
+        LOG.errorv(L"%ls - has crashed on %ls", affinityLibraryPath.c_str(), filePath.c_str());
         return BSIERROR;
         }
 
@@ -373,6 +373,27 @@ BentleyStatus       iModelBridgeRegistryBase::ComputeBridgeAffinityInParentConte
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/20
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeRegistryBase::RecommendBridge(BeFileNameCR doc, bvector<WString> recommendedBridges)
+    {
+    if (recommendedBridges.empty() || !m_stateDb.TableExists("Recommendations"))
+        return;
+    
+    for (auto const& bridge : recommendedBridges)
+        {
+        auto stmt = m_stateDb.GetCachedStatement("INSERT INTO Recommendations (LocalFilePath,Bridge) VALUES(?,?)");
+        stmt->BindText(1, Utf8String(doc.c_str()), BeSQLite::Statement::MakeCopy::Yes);      
+        stmt->BindText(2, Utf8String(bridge.c_str()), BeSQLite::Statement::MakeCopy::Yes);      
+        auto rc = stmt->Step();
+        if (rc != BE_SQLITE_DONE)
+            {
+            LOG.errorv(L"Insert recommendation %ls -> %ls failed with %lx", bridge.c_str(), doc.c_str(), rc);
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeRegistryBase::SearchForBridgeToAssignToDocument(WStringR bridgeName, BeFileNameCR sourceFilePath, WStringCR parentBridgeName)
@@ -386,6 +407,8 @@ BentleyStatus iModelBridgeRegistryBase::SearchForBridgeToAssignToDocument(WStrin
     LOG.tracev(L"SearchForBridgeToAssignToDocument %ls", sourceFilePath.c_str());
 
     iModelBridgeWithAffinity bestBridge;
+
+    bvector<WString> recommendedBridges;
 
     auto iterateInstalled = m_stateDb.GetCachedStatement("SELECT BridgeLibraryPath, AffinityLibraryPath, IsPowerPlatformBased FROM fwk_InstalledBridges");
     while (BE_SQLITE_ROW == iterateInstalled->Step())
@@ -406,6 +429,8 @@ BentleyStatus iModelBridgeRegistryBase::SearchForBridgeToAssignToDocument(WStrin
             continue;
 
         LOG.tracev(L"%ls -> (%ls,%d)", affinityLibraryPath.c_str(), thisBridge.m_bridgeRegSubKey.c_str(), (int)thisBridge.m_affinity);
+        if (!thisBridge.m_bridgeRegSubKey.empty() && thisBridge.m_affinity != iModelBridgeAffinityLevel::None)
+            recommendedBridges.push_back(thisBridge.m_bridgeRegSubKey);
 
         if (!thisBridge.m_bridgeRegSubKey.empty() && thisBridge.m_affinity > bestBridge.m_affinity)
             bestBridge = thisBridge;
@@ -413,7 +438,8 @@ BentleyStatus iModelBridgeRegistryBase::SearchForBridgeToAssignToDocument(WStrin
 
     if ((bestBridge.m_bridgeRegSubKey.empty()) || (bestBridge.m_affinity == iModelBridgeAffinityLevel::None))
         {
-        LOG.warningv(L"%ls - no installed bridge can convert this document", sourceFilePath.c_str());
+        LOG.tracev(L"%ls - no installed bridge can convert this document", sourceFilePath.c_str());
+        RecommendBridge(sourceFilePath, recommendedBridges);
         return BSIERROR;
         }
 
@@ -421,7 +447,8 @@ BentleyStatus iModelBridgeRegistryBase::SearchForBridgeToAssignToDocument(WStrin
     QueryBridgeLibraryPathByName(&bestBridgeRowid, bestBridge.m_bridgeRegSubKey);
     if (0 == bestBridgeRowid)
         {
-        LOG.warningv(L"%ls - no installed bridge can convert this document", sourceFilePath.c_str());
+        LOG.tracev(L"%ls - no installed bridge can convert this document", sourceFilePath.c_str());
+        RecommendBridge(sourceFilePath, recommendedBridges);
         return BSIERROR;
         }
 
@@ -439,7 +466,6 @@ BentleyStatus iModelBridgeRegistryBase::SearchForBridgeToAssignToDocument(WStrin
     bridgeName = bestBridge.m_bridgeRegSubKey;
     return BSISUCCESS;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/17
@@ -534,27 +560,30 @@ static uint32_t countFilesInDirs(BeFileNameCR topDirIn)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/20
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void printProgress(BeFileNameCR fileName, uint32_t processedFileCount, uint32_t totalFileCount)
+void iModelBridgeRegistryBase::PrintProgress(BeFileNameCR fileName)
     {
-    if (totalFileCount == 0)
+    if (!m_writeProgressToStdout || m_totalFileCount == 0)
         return;
 
+    auto timeNow = BeTimeUtilities::QueryMillisecondsCounterUInt32();
+    if ((timeNow - m_lastWriteToProgress) < m_writeProgressInterval)
+        return;
+
+    m_lastWriteToProgress = timeNow;
+
     Json::Value json(Json::objectValue);
-    // json["jobRequestId"] = m_jobRequestId;
-    // json["jobRunCorrelationId"] = m_jobRunCorrelationId;
+    // json["jobRequestId"] =
+    // json["jobRunCorrelationId"] =
     json["messageType"] = "progress";
     json["phase"] = "Assignments";
     json["step"] = Utf8String(fileName.c_str());
-    // json["task"] = m_taskName.c_str();
     json["phasesPct"] = 0;
-    json["stepsPct"] =  (processedFileCount == 0)?              0 : 
-                        (processedFileCount >= totalFileCount)? 100: 
-                        ((100 * (processedFileCount-1)) / totalFileCount);
-    json["phasesCount"] = 1;
-    json["stepsCount"] = totalFileCount;
-    // json["tasksPct"] = pct(m_tasksRemaining, m_totalTasks);
-    json["lastUpdateTime"] = BeTimeUtilities::QueryMillisecondsCounterUInt32();
-    // json["spinCount"] = (int)m_spinCount;
+    json["stepsPct"] =  (m_processedFileCount == 0)?              0 : 
+                        (m_processedFileCount >= m_totalFileCount)? 100: 
+                        ((100 * (m_processedFileCount-1)) / m_totalFileCount);
+    json["phaseCount"] = 1;
+    json["stepCount"] = m_totalFileCount;
+    json["lastUpdateTime"] = timeNow;
     printf("%s\n", json.ToString().c_str());
     }
 
@@ -582,8 +611,7 @@ void iModelBridgeRegistryBase::SearchForBridgesToAssignToDocumentsInDir(BeFileNa
             WString bridgeName;
             SearchForBridgeToAssignToDocument(bridgeName, entryName, L"");
 
-            if (m_writeProgressToStdout && m_totalFileCount)
-                printProgress(entryName, m_processedFileCount, m_totalFileCount);
+            PrintProgress(entryName);
             }
         else
             SearchForBridgesToAssignToDocumentsInDir(entryName);
@@ -637,7 +665,9 @@ void iModelBridgeRegistryBase::SearchForBridgesToAssignToDocuments()
     else if (m_searchForFilesInStagingDir)
         {
         if (m_writeProgressToStdout)
+            {
             m_totalFileCount = countFilesInDirs(m_stagingDir);
+            }
 
         SearchForBridgesToAssignToDocumentsInDir(m_stagingDir);
         }
@@ -954,6 +984,9 @@ static void  ParseCxxOptsResult(cxxopts::ParseResult& result, iModelBridgeRegist
     if (result.count("write-progress-to-stdout") > 0)
         args.m_writeProgressToStdout = result["write-progress-to-stdout"].as<bool>();
 
+    if (result.count("write-progress-interval") > 0)
+        args.m_writeProgressInterval = result["write-progress-interval"].as<uint32_t>();
+
     if (result.count("server-repository") > 0)
         {
         args.m_repositoryName = result["server-repository"].as<std::string>().c_str();
@@ -976,7 +1009,8 @@ static cxxopts::Options GetCmdLineOptions()
         ("l,fwk-logging-config-file", "The configuration file to be used for logging.", cxxopts::value<std::string>(), "<Optional>")
         ("x,fwk-search-in-staging-dir", "Search for files in fwk-staging-dir.", cxxopts::value<bool>(), "<Optional>")
         ("no-bridge-search", "Don't search for globally installed bridges.", cxxopts::value<bool>(), "<Optional>")
-        ("write-progress-to-stdout", "Write progress messages to stdout.", cxxopts::value<bool>(), "<Optional>")
+        ("write-progress-to-stdout", "Write progress messages to stdout. Defaults to false.", cxxopts::value<bool>(), "<Optional>")
+        ("write-progress-interval", "Time between progress messages in milliseconds. Defaults to 500.", cxxopts::value<uint32_t>(), "<Optional>")
         ("h,help", "Print help")
         ;
     return options;
@@ -1106,6 +1140,7 @@ int iModelBridgeRegistryBase::AssignMain(int argc, WCharCP argv[])
     Dgn::iModelBridgeRegistry app(args.m_stagingDir, dbname);
     app.m_searchForFilesInStagingDir = args.m_searchForFilesInStagingDir;
     app.m_writeProgressToStdout = args.m_writeProgressToStdout;
+    app.m_writeProgressInterval = args.m_writeProgressInterval;
 
     auto dbres = app.OpenOrCreateStateDb();
     if (BE_SQLITE_OK != dbres)
@@ -1194,7 +1229,7 @@ void iModelBridgeRegistryBase::EnsureDocumentPropertiesFor(BeFileNameCR fn, BeGu
     else
         {
         stmt->BindNull(2);
-        LOG.errorv(L"no guid for %ls", fn.c_str());
+        LOG.tracev(L"no guid for %ls", fn.c_str());
         }
     stmt->Step();
     }

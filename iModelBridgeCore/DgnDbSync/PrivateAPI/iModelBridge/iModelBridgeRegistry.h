@@ -57,6 +57,7 @@ struct iModelBridgeRegistryBase : RefCounted<IModelBridgeRegistry>
         bool m_searchForFilesInStagingDir{};
         bool m_noBridgeSearch{false};
         bool m_writeProgressToStdout{};
+        uint32_t m_writeProgressInterval{500};
         int ParseCommandLine(int argc, WCharCP argv[]);
         };
 
@@ -73,6 +74,8 @@ private:
     bool m_writeProgressToStdout{};
     uint32_t m_totalFileCount{};
     uint32_t m_processedFileCount{};
+    uint32_t m_writeProgressInterval{};
+    uint32_t m_lastWriteToProgress{};
     
     bool QueryAnyInstalledBridges();
   
@@ -87,9 +90,11 @@ private:
     
     void EnsureDocumentPropertiesFor(BeFileNameCR, BeSQLite::BeGuidCP guid);
     
-    
+    void PrintProgress(BeFileNameCR fileName);
 
     BentleyStatus    ComputeBridgeAffinityInParentContext(iModelBridgeWithAffinity& affinity, bool thisBridgeIsPP, WStringCR parent);
+    void RecommendBridge(BeFileNameCR doc, bvector<WString> recommendedBridges);
+
 protected:
     //Exported for testing
     
