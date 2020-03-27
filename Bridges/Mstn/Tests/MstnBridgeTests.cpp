@@ -2515,6 +2515,7 @@ TEST_F(MstnBridgeTests, DetectCommonReferencesUsingRecipes)
     testRegistry.Save();
     TerminateHost();
 
+    DgnCode commonRefCode;
     int modelCount = 0;
     if (true)
         {
@@ -2540,6 +2541,11 @@ TEST_F(MstnBridgeTests, DetectCommonReferencesUsingRecipes)
         RepositoryLinkId rid;
         bcInfo.MustFindFileByName(rid, masterFileName, 1);
         bcInfo.MustFindFileByName(rid, commonRefEmbeddedFileName_firstOccurence, 1);
+
+        auto rlink = bcInfo.m_db->Elements().Get<RepositoryLink>(rid);
+        ASSERT_TRUE(rlink.IsValid());
+        ASSERT_STREQ(rlink->GetUserLabel(), "commonref.dgn.i.dgn");
+        commonRefCode = rlink->GetCode();
         }
 
     if (true)
@@ -2570,6 +2576,14 @@ TEST_F(MstnBridgeTests, DetectCommonReferencesUsingRecipes)
         RepositoryLinkId rid;
         bcInfo.MustFindFileByName(rid, masterFileName, 1);
         bcInfo.MustFindFileByName(rid, commonRefEmbeddedFileName_firstOccurence, 1); // The RepositoryLink still refers to the first occurrence.
+
+        auto rlink = bcInfo.m_db->Elements().Get<RepositoryLink>(rid);
+        ASSERT_TRUE(rlink.IsValid());
+        ASSERT_STREQ(rlink->GetUserLabel(), "commonref-v1.i.dgn") << "while the reference file's unique ID should not change, its user label should update to match the actual filename";
+        auto code2 = rlink->GetCode();
+        auto code2JsonStr = code2.ToJson2().toStyledString();
+        auto originalJsonStr = commonRefCode.ToJson2().toStyledString();
+        ASSERT_STREQ(code2JsonStr.c_str(), originalJsonStr.c_str()) << "the reference file's Code must not change!";
         }
 
     putenv("MS_PROTECTION_PASSWORD_CACHE_LIFETIME=1"); // restore default

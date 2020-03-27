@@ -219,7 +219,7 @@
             "program": "${env:OutRoot}WinX64/Product/MstnBridgeTests/MstnBridgeTests.exe",
             "args": [
                 "--gtest_break_on_failure",
-                "--gtest_filter=MstnBridgeTests.AddRemoveNestedEmbeddedRefsV2:MstnBridgeTests.AddRemoveNestedEmbeddedRefsV2OldBridge"
+                "--gtest_filter=MstnBridgeTests.DetectCommonReferencesUsingRecipes"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

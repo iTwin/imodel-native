@@ -923,6 +923,10 @@ RepositoryLinkPtr iModelBridge::MakeRepositoryLink(DgnDbR db, Params const& para
     else
         rlink = RepositoryLink::Create(*lmodel, "", code.GetValue().GetUtf8CP());
 
+    // *** 
+    // *** NB: Keep this in sync with UpdateRepositoryLinkDocumentProperties
+    // *** 
+
     rlink->SetUrl(docProps.m_desktopURN.c_str());
     rlink->SetDescription("");
     WString relFileName;
@@ -953,25 +957,47 @@ RepositoryLinkPtr iModelBridge::MakeRepositoryLink(DgnDbR db, Params const& para
 //---------------+---------------+---------------+---------------+---------------+-------
 bool iModelBridge::UpdateRepositoryLinkDocumentProperties(RepositoryLinkP rlink, DgnDbR db, Params const& params, BeFileNameCR localFileName)
     {
+    // *** 
+    // *** NB: Keep this in sync with MakeRepositoryLink
+    // *** 
+
     if (nullptr == params.GetDocumentPropertiesAccessor())
         return false;
 
     iModelBridgeDocumentProperties docProps;
     params.GetDocumentPropertiesAccessor()->_GetDocumentProperties(docProps, localFileName);
 
+    auto anyChanges = false;
+
+    if (!docProps.m_desktopURN.Equals(rlink->GetUrl()))
+        {
+        rlink->SetUrl(docProps.m_desktopURN.c_str());
+        anyChanges = true;
+        }
+
+    WString relFileNameW;
+    BeFileName::FindRelativePath(relFileNameW, localFileName.c_str(), params.GetInputFileName().GetDirectoryName().c_str());
+    Utf8String relFileName(relFileNameW.c_str());
+    if (!relFileName.Equals(rlink->GetUserLabel()))
+        {
+        rlink->SetUserLabel(relFileName.c_str());
+        anyChanges = true;
+        }
+
     if (!docProps.m_attributesJSON.empty())
         {
         Json::Value jsonValue = Json::objectValue;
         jsonValue["attributes"] = Json::Value::From(docProps.m_attributesJSON);
         auto current = rlink->GetDocumentProperties();
-        if (current["attributes"] == jsonValue["attributes"])
-            return false;
-        jsonValue["desktopURN"] = docProps.m_desktopURN;
-        jsonValue["webURN"] = docProps.m_webURN;
-        rlink->SetDocumentProperties(jsonValue);
-        return true;
+        if (current["attributes"] != jsonValue["attributes"])
+            {
+            jsonValue["desktopURN"] = docProps.m_desktopURN;
+            jsonValue["webURN"] = docProps.m_webURN;
+            rlink->SetDocumentProperties(jsonValue);
+            anyChanges = true;
+            }
         }
-    return false;
+    return anyChanges;
     }
 
 //---------------------------------------------------------------------------------------
