@@ -732,10 +732,10 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
         DgnElementIdSet     m_elementsSeen;
         bset<ROWID>         m_scopesSkipped;
 
-        IMODEL_BRIDGE_EXPORT DgnDbStatus InsertResultsIntoBIM(ConversionResults&);;
-        IMODEL_BRIDGE_EXPORT DgnElementPtr MakeCopyForUpdate(DgnElementCR newEl, DgnElementCR originalEl);;
-        IMODEL_BRIDGE_EXPORT DgnDbStatus UpdateResultsInBIMForOneElement(ConversionResults& conversionResults, DgnElementId existingElementId);;
-        IMODEL_BRIDGE_EXPORT DgnDbStatus UpdateResultsInBIMForChildren(ConversionResults& parentConversionResults);;
+        IMODEL_BRIDGE_EXPORT DgnDbStatus InsertResultsIntoBIM(ConversionResults&, bool forceInsert=false);
+        IMODEL_BRIDGE_EXPORT DgnElementPtr MakeCopyForUpdate(DgnElementCR newEl, DgnElementCR originalEl);
+        IMODEL_BRIDGE_EXPORT DgnDbStatus UpdateResultsInBIMForOneElement(ConversionResults& conversionResults, DgnElementId existingElementId);
+        IMODEL_BRIDGE_EXPORT DgnDbStatus UpdateResultsInBIMForChildren(ConversionResults& parentConversionResults);
 
 
         //! Invoked just before an an element is deleted
@@ -782,7 +782,7 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
         IMODEL_BRIDGE_EXPORT virtual BentleyStatus _UpdateBimAndSyncInfo(ConversionResults& conversionResults, ChangeDetector::Results const& changeDetectorResults);
 
         //! @private
-        IMODEL_BRIDGE_EXPORT DgnDbStatus GetLocksAndCodes(DgnElementR);
+        IMODEL_BRIDGE_EXPORT DgnDbStatus GetLocksAndCodes(DgnElementR, bool forceInsert);
 
         //! Get the number of elements converted.
         uint32_t GetElementsConverted() const {return m_elementsConverted;}

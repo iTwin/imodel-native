@@ -16,12 +16,12 @@ USING_NAMESPACE_BENTLEY_LOGGING
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus iModelBridgeSyncInfoFile::ChangeDetector::InsertResultsIntoBIM(ConversionResults& conversionResults)
+DgnDbStatus iModelBridgeSyncInfoFile::ChangeDetector::InsertResultsIntoBIM(ConversionResults& conversionResults, bool forceInsert)
     {
     if (!conversionResults.m_element.IsValid())
         return DgnDbStatus::Success;
 
-    GetLocksAndCodes(*conversionResults.m_element);
+    GetLocksAndCodes(*conversionResults.m_element, forceInsert);
 
     DgnDbStatus stat;
 
@@ -89,14 +89,14 @@ DgnElementPtr iModelBridgeSyncInfoFile::ChangeDetector::MakeCopyForUpdate(DgnEle
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus iModelBridgeSyncInfoFile::ChangeDetector::GetLocksAndCodes(DgnElementR el)
+DgnDbStatus iModelBridgeSyncInfoFile::ChangeDetector::GetLocksAndCodes(DgnElementR el, bool forceInsert)
     {
     if (GetDgnDb().BriefcaseManager().IsBulkOperation())
         return DgnDbStatus::Success;
 
     // Request locks and codes explicity this is happening in a phase such as _OpenSource that is called before we go into bulk insert mode.
     IBriefcaseManager::Request req;
-    el.PopulateRequest(req, (el.GetElementId().IsValid())? BeSQLite::DbOpcode::Update: BeSQLite::DbOpcode::Insert);
+    el.PopulateRequest(req, (!forceInsert && el.GetElementId().IsValid())? BeSQLite::DbOpcode::Update: BeSQLite::DbOpcode::Insert);
     if (RepositoryStatus::Success != GetDgnDb().BriefcaseManager().Acquire(req).Result())
         {
         BeAssert(false);
@@ -145,7 +145,7 @@ DgnDbStatus iModelBridgeSyncInfoFile::ChangeDetector::UpdateResultsInBIMForOneEl
         return DgnDbStatus::WrongClass;
         }
 
-    GetLocksAndCodes(*writeEl);
+    GetLocksAndCodes(*writeEl, false);
 
     DgnDbStatus stat; 
     DgnElementCPtr result = GetDgnDb().Elements().Update(*writeEl, &stat); 
@@ -345,12 +345,14 @@ BentleyStatus iModelBridgeSyncInfoFile::ChangeDetector::_UpdateBimAndSyncInfo(Co
 
         // Check if the caller delete the element. In that case, this is the second part of a delete + insert, preserving the ElementId
         auto forceInsert = eid.IsValid() && !GetDgnDb().Elements().GetElement(eid).IsValid();
+        if (forceInsert)
+            conversionResults.m_element->ForceElementIdForInsert(eid);
 
         if (!eid.IsValid() || forceInsert)
             {
             AddProvenanceAspect(changeDetectorResults.GetSourceIdentity(), changeDetectorResults.GetCurrentState(), *conversionResults.m_element);
             
-            status = InsertResultsIntoBIM(conversionResults);
+            status = InsertResultsIntoBIM(conversionResults, forceInsert);
             }
         else
             {
