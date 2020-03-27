@@ -15,10 +15,21 @@ Json::Value EcefLocation::ToJson() const
         {
         val[json_origin()] = JsonUtils::DPoint3dToJson(m_origin);
         val[json_orientation()] = JsonUtils::YawPitchRollToJson(m_angles);
+
+        if (m_haveCartographicOrigin)
+            {
+            Json::Value latLongVal;
+
+            latLongVal["longitude"] = Json::Value(Angle::DegreesToRadians(m_cartographicOrigin.longitude)); // NOTE: GeoPoint angles are degrees, LatAndLong angles are radians...
+            latLongVal["latitude"] = Json::Value(Angle::DegreesToRadians(m_cartographicOrigin.latitude));
+            latLongVal["height"] = Json::Value(m_cartographicOrigin.elevation);
+
+            val[json_cartographicOrigin()] = latLongVal;
+            }
         }
     return val;
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/18
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -26,13 +37,22 @@ void EcefLocation::FromJson(JsonValueCR val)
     {
     m_isValid = false;
 
-    // due to a bug in a previous version, we sometimes see an EcefLocation with a null orientation. That is never 
+    // due to a bug in a previous version, we sometimes see an EcefLocation with a null orientation. That is never
     // a valid EcefLocation, just ignore it.
     if (!val.isMember(json_origin()) || !val.isMember(json_orientation()) || val[json_orientation()].isNull())
         return;
 
     m_origin = JsonUtils::ToDPoint3d(val[json_origin()]);
     m_angles = JsonUtils::YawPitchRollFromJson(val[json_orientation()]);
+
+    if (m_haveCartographicOrigin = (val.isMember(json_cartographicOrigin())))
+        {
+        Json::Value coVal = val[json_cartographicOrigin()];
+
+        m_cartographicOrigin.longitude = Angle::RadiansToDegrees(coVal["longitude"].asDouble()); // NOTE: LatAndLong angles are radians, GeoPoint angles are degrees...
+        m_cartographicOrigin.latitude = Angle::RadiansToDegrees(coVal["latitude"].asDouble());
+        m_cartographicOrigin.elevation = coVal["height"].asDouble();
+        }
 
     m_isValid = true;
     }
@@ -80,7 +100,7 @@ BentleyStatus DgnGeoLocation::XyzFromLatLongWGS84(DPoint3dR outXyz, GeoPointCR w
     if (nullptr == dgnGCS)
         return BSIERROR;
 
-    if (!m_wgs84GCS.IsValid()) 
+    if (!m_wgs84GCS.IsValid())
         {
         WString warningMsg;
         StatusInt warning;
@@ -144,7 +164,7 @@ EcefLocation DgnGeoLocation::GetEcefLocation() const
         dgnGCS->LatLongFromLatLong(originLatLong, tempLatLong, *wgs84GCS);
         tempLatLong = yLatLong;
         dgnGCS->LatLongFromLatLong(yLatLong, tempLatLong, *wgs84GCS);
-        
+
         DPoint3d ecefOrigin, ecefY;
         wgs84GCS->XYZFromLatLong(ecefOrigin, originLatLong);
         wgs84GCS->XYZFromLatLong(ecefY, yLatLong);
@@ -187,7 +207,7 @@ DgnDbStatus DgnGeoLocation::Load()
     JsonUtils::DPoint3dFromJson(m_globalOrigin, jsonObj[json_globalOrigin()]);
     LoadProjectExtents();
 
-    if (jsonObj.isMember(json_ecefLocation())) 
+    if (jsonObj.isMember(json_ecefLocation()))
         m_ecefLocation.FromJson(jsonObj[json_ecefLocation()]);
 
     if (jsonObj.isMember(json_initialProjectCenter()))
@@ -269,7 +289,7 @@ AxisAlignedBox3d DgnGeoLocation::ComputeProjectExtents(DRange3dP rangeWithOutlie
     // Set the project extents to the union of the ranges of all elements - but ignoring outlying (statistically insignificant).
     // Elements so that we do not get huge project extents for "offending elements".
     extent.Extend(GetDgnDb().ComputeGeometryExtentsWithoutOutliers(rangeWithOutliers, elementOutliers));
-    
+
     // Include non element (reality model) ranges.
     for (auto& entry : models.MakeIterator(BIS_SCHEMA(BIS_CLASS_SpatialModel)))
         {
@@ -332,7 +352,7 @@ void DgnGeoLocation::LoadProjectExtents() const
 
     if (BE_SQLITE_ROW == m_dgndb.QueryProperty(value, DgnProjectProperty::Extents()) && Json::Reader::Parse(value, jsonObj))
         JsonUtils::DRange3dFromJson(m_extent, jsonObj);
-    
+
     // if we can't get valid extents from the property, use default values
     if (m_extent.IsEmpty())
         m_extent = GetDefaultProjectExtents();

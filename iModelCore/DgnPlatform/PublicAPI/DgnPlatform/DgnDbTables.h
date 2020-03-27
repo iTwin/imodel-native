@@ -704,14 +704,22 @@ struct EcefLocation
 {
     BE_JSON_NAME(origin);
     BE_JSON_NAME(orientation);
+    BE_JSON_NAME(cartographicOrigin);
 
     bool m_isValid;
     DPoint3d m_origin;
     YawPitchRollAngles m_angles;
+    bool m_haveCartographicOrigin;
+    GeoPoint m_cartographicOrigin;
     DGNPLATFORM_EXPORT Json::Value ToJson() const; //!< Convert to json
     DGNPLATFORM_EXPORT void FromJson(JsonValueCR); //!< load from json
-    EcefLocation() {m_isValid = false;}
-    EcefLocation(DPoint3dCR origin, YawPitchRollAnglesCR angles) : m_origin(origin), m_angles(angles) {m_isValid = true;}
+    EcefLocation() {m_isValid = false; m_haveCartographicOrigin = false; }
+    EcefLocation(DPoint3dCR origin, YawPitchRollAnglesCR angles, GeoPointCP cartographicOrigin = nullptr) : m_origin(origin), m_angles(angles)
+    {
+    m_isValid = true;
+    if (m_haveCartographicOrigin = (nullptr != cartographicOrigin))
+        m_cartographicOrigin = *cartographicOrigin;
+    }
 };
 
 //=======================================================================================
