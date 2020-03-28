@@ -1211,7 +1211,6 @@ napi_status napi_call_function(napi_env env,
                                const napi_value* argv,
                                napi_value* result) {
     NAPI_PREAMBLE(env);
-    CHECK_ARG(env, recv);
     if (argc > 0) {
     CHECK_ARG(env, argv);
     }
