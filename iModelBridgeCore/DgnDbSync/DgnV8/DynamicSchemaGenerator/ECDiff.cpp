@@ -1737,7 +1737,9 @@ void ECSchemaMergeTool::EnsureSchemaIsReferenced (ECN::ECSchemaCR reference)
     {
     if (&GetMerged() == &reference)
         return;
-    if (!ECN::ECSchema::IsSchemaReferenced (GetMerged(), reference))
+    ECN::ECSchemaReferenceListCR referencedSchemas = GetMerged().GetReferencedSchemas();
+    ECN::SchemaKey matchKey = reference.GetSchemaKey();
+    if (referencedSchemas.end() == referencedSchemas.Find(matchKey, ECN::SchemaMatchType::Latest))
         GetMerged().AddReferencedSchema (const_cast<ECN::ECSchemaR>(reference));
     }
 /*---------------------------------------------------------------------------------**//**
