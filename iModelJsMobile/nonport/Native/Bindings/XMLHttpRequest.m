@@ -339,11 +339,27 @@
     }
     [_task resume];
 }
-
+- (void)URLSession:(NSURLSession *)session
+              task:(NSURLSessionTask *)task
+didCompleteWithError:(NSError *)error {
+    self.readyState = @(DONE);
+    if (_aborted)
+        self.status = @(5000);
+    else
+        self.status = @(503);
+    if (self.onerror != nil) {
+        [self.onerror callWithArguments:@[]];
+    }
+    if (self.onreadystatechange != nil ) {
+        [self.onreadystatechange callWithArguments:@[]];
+    }
+    NSLog(@"Error: %@", [error description]);
+}
 - (void)cancel {
     if (_task != nil) {
         [_task cancel];
-        self.status = [NSNumber  numberWithInt:404];
+        _aborted = true;
+        self.status = [NSNumber  numberWithInt:5000];
         if (self.onreadystatechange != nil) {
             [self.onreadystatechange callWithArguments:@[]];
         }
