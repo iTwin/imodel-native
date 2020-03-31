@@ -159,42 +159,50 @@ TEST_F(LocksTests, QueryAvailableLocksTest)
     req.Locks().GetLockSet().insert(DgnLock(LockableId(briefcase1->GetDgnDb()), LockLevel::Shared));
     req.Locks().GetLockSet().insert(DgnLock(LockableId(model1->GetModelId()), LockLevel::Exclusive));
     EXPECT_TRUE(db1.BriefcaseManager().AreResourcesAvailable(req, &response, IBriefcaseManager::FastQuery::No));
+	iModelHubHelpers::ExpectLocksCount(briefcase1, 4);
 
     //Demote should be possible
     req.Locks().GetLockSet().clear();
     req.Locks().GetLockSet().insert(DgnLock(LockableId(model1->GetModelId()), LockLevel::Shared));
     EXPECT_TRUE(db1.BriefcaseManager().AreResourcesAvailable(req, &response, IBriefcaseManager::FastQuery::No));
+	iModelHubHelpers::ExpectLocksCount(briefcase1, 4);
 
     //Locks are unavailable without pull
     req.Locks().GetLockSet().clear();
     req.Locks().GetLockSet().insert(DgnLock(LockableId(model1->GetModelId()), LockLevel::Shared));
     EXPECT_FALSE(db2.BriefcaseManager().AreResourcesAvailable(req, &response, IBriefcaseManager::FastQuery::No));
+	iModelHubHelpers::ExpectLocksCount(briefcase2, 0);
 
     //Shared locks are available for shared acquire
     EXPECT_SUCCESS(briefcase2->PullAndMerge()->GetResult());
     req.Locks().GetLockSet().clear();
     req.Locks().GetLockSet().insert(DgnLock(LockableId(briefcase1->GetDgnDb()), LockLevel::Shared));
     EXPECT_TRUE(db2.BriefcaseManager().AreResourcesAvailable(req, &response, IBriefcaseManager::FastQuery::No));
+	iModelHubHelpers::ExpectLocksCount(briefcase2, 0);
 
     //Shared locks are unavailable for exclusive acquire
     req.Locks().GetLockSet().clear();
     req.Locks().GetLockSet().insert(DgnLock(LockableId(briefcase1->GetDgnDb()), LockLevel::Exclusive));
     EXPECT_FALSE(db2.BriefcaseManager().AreResourcesAvailable(req, &response, IBriefcaseManager::FastQuery::No));
+	iModelHubHelpers::ExpectLocksCount(briefcase2, 0);
 
     //Exclusive locks are unavailable for both exclusvie and shared acquire
     req.Locks().GetLockSet().clear();
     req.Locks().GetLockSet().insert(DgnLock(LockableId(model1->GetModelId()), LockLevel::Exclusive));
     EXPECT_FALSE(db2.BriefcaseManager().AreResourcesAvailable(req, &response, IBriefcaseManager::FastQuery::No));
+	iModelHubHelpers::ExpectLocksCount(briefcase2, 0);
 
     req.Locks().GetLockSet().clear();
     req.Locks().GetLockSet().insert(DgnLock(LockableId(model1->GetModelId()), LockLevel::Shared));
     EXPECT_FALSE(db2.BriefcaseManager().AreResourcesAvailable(req, &response, IBriefcaseManager::FastQuery::No));
+	iModelHubHelpers::ExpectLocksCount(briefcase2, 0);
 
     //Promotion should be possible
     DemoteLock(*model1, LockLevel::Shared);
     req.Locks().GetLockSet().clear();
     req.Locks().GetLockSet().insert(DgnLock(LockableId(model1->GetModelId()), LockLevel::Exclusive));
     EXPECT_TRUE(db1.BriefcaseManager().AreResourcesAvailable(req, &response, IBriefcaseManager::FastQuery::No));
+	iModelHubHelpers::ExpectLocksCount(briefcase1, 4);
 
 
     //Released lock should be available for both exclusive and shared acquire
@@ -202,10 +210,12 @@ TEST_F(LocksTests, QueryAvailableLocksTest)
     req.Locks().GetLockSet().clear();
     req.Locks().GetLockSet().insert(DgnLock(LockableId(model1->GetModelId()), LockLevel::Exclusive));
     EXPECT_TRUE(db2.BriefcaseManager().AreResourcesAvailable(req, &response, IBriefcaseManager::FastQuery::No));
+	iModelHubHelpers::ExpectLocksCount(briefcase2, 0);
 
     req.Locks().GetLockSet().clear();
     req.Locks().GetLockSet().insert(DgnLock(LockableId(model1->GetModelId()), LockLevel::Shared));
     EXPECT_TRUE(db2.BriefcaseManager().AreResourcesAvailable(req, &response, IBriefcaseManager::FastQuery::No));
+	iModelHubHelpers::ExpectLocksCount(briefcase2, 0);
     }
 
 //---------------------------------------------------------------------------------------
