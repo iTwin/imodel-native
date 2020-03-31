@@ -1692,19 +1692,35 @@ inline Function::Function(napi_env env, napi_value value) : Object(env, value) {
 }
 
 inline Value Function::operator ()(const std::initializer_list<napi_value>& args) const {
+#if defined(BENTLEYCONFIG_OS_APPLE_IOS)
   return Call(nullptr, args);
+#else
+  return Call(Env().Undefined(), args);
+#endif
 }
 
 inline Value Function::Call(const std::initializer_list<napi_value>& args) const {
+#if defined(BENTLEYCONFIG_OS_APPLE_IOS)
   return Call(nullptr, args);
+#else
+  return Call(Env().Undefined(), args);
+#endif
 }
 
 inline Value Function::Call(const std::vector<napi_value>& args) const {
+#if defined(BENTLEYCONFIG_OS_APPLE_IOS)
   return Call(nullptr, args);
+#else
+  return Call(Env().Undefined(), args);
+#endif
 }
 
 inline Value Function::Call(size_t argc, const napi_value* args) const {
+#if defined(BENTLEYCONFIG_OS_APPLE_IOS)
   return Call(nullptr, argc, args);
+#else
+  return Call(Env().Undefined(), argc, args);
+#endif
 }
 
 inline Value Function::Call(napi_value recv, const std::initializer_list<napi_value>& args) const {
