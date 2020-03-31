@@ -1049,6 +1049,12 @@ SchemaWriteStatus SchemaXmlWriter::WriteSchemaReferences()
     for (auto const& pair : m_ecSchema.GetReferencedSchemas())
         {
         ECSchemaPtr refSchema = pair.second;
+        if (ECVersion::V3_1 >= m_ecXmlVersion)
+            {
+            if (refSchema->GetName().EqualsI("Units") || refSchema->GetName().EqualsI("Formats"))
+                continue;
+            }
+
         m_xmlWriter.WriteElementStart(ECXML_SCHEMAREFERENCE_ELEMENT);
         m_xmlWriter.WriteAttribute(NAME_ATTRIBUTE, refSchema->GetName().c_str());
 

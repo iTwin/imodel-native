@@ -361,6 +361,16 @@
             ]
         },
         {
+            "name": "MacOS Native ECObjectsTest, single test",
+            "type": "lldb",  // Install CodeLLDB extension
+            "request": "launch",
+            "program": "${env:OutRoot}MacOSX64/Product/ECObjects-Gtest/ECObjectsTest",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "--gtest_filter=KindOfQuantitySerializationTest.WriteXmlUsesProperUnitNameMappings"
+            ]
+        },
+        {
             "name": "LNX Native ECObjectsTest",
             "type": "cppdbg",
             "request": "launch",

@@ -596,6 +596,25 @@ TEST_F(SchemaXmlSerializationTest, ExpectCustomAttributeVersionAsTwoPartWhenEC2)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                               Colin.Kerr                         03/2020
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaXmlSerializationTest, UnitAndFormatSchemasAreNotSerializedInEC31)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "ReferencesUnitAndFormatSchemas", "RUAFS", 1, 0, 0);
+    schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
+    schema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
+
+    Utf8String schemaXml;
+    schema->WriteToXmlString(schemaXml, ECVersion::V3_1);
+    EXPECT_FALSE(schemaXml.Contains("ECSchemaReference")) << "References to Unit and Format schemas should have been stripped from EC 3.1 xml";
+
+    schemaXml.clear();
+    schema->WriteToXmlString(schemaXml, ECVersion::V3_2);
+    EXPECT_TRUE(schemaXml.Contains("ECSchemaReference")) << "References to Unit and Format schemas should not have been stripped from EC 3.2 xml";
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                           Victor.Cushman                          11/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaJsonSerializationTest, SchemaWithNoItems)
