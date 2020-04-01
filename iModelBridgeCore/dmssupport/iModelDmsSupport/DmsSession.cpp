@@ -15,6 +15,7 @@ USING_NAMESPACE_BENTLEY_DGN
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            DmsSession::InitPwLibraries(BeFileNameCR pwBinaryPath)
     {
+    AddServer();
     SetPWBinaryPath(pwBinaryPath);
 
     if (!aaApi_Initialize(0))
@@ -42,7 +43,6 @@ bool    DmsSession::Initialize()
 
     LOG.tracev("PW Initialized successfully.");
 
-    AddServer();
     bool loggedIn = Login();
     if (!loggedIn)
         {
