@@ -1616,10 +1616,10 @@ TEST_F(iModelBridgeTests, MixedFileTypeBridgeAssignmentTest)
                                                             BentleyApi::WCharCP sourceFileName)
         {
         BeFileName srcFile(sourceFileName);
-        if (srcFile.GetExtension().CompareToI(L"Dgn"))
+        if (0 == srcFile.GetExtension().CompareToI(L"Dgn"))
             {
 
-            affinityLevel = iModelBridgeAffinityLevel::Medium;
+            affinityLevel = iModelBridgeAffinityLevel::Low;
             wcsncpy(buffer, mstnBridgeRegSubKey.c_str(), mstnBridgeRegSubKey.length());
             }
         };
@@ -1627,7 +1627,7 @@ TEST_F(iModelBridgeTests, MixedFileTypeBridgeAssignmentTest)
     testRegistry.AddBridge(mstnBridgeRegSubKey, mstnLamda);
 
 
-    WString realDwgBridgeRegSubKey(L"RealDWG");
+    WString realDwgBridgeRegSubKey(L"RealDWGBridge");
     std::function<T_iModelBridge_getAffinity> realDWGLamda = [=](BentleyApi::WCharP buffer,
                                                                 const size_t bufferSize,
                                                                 BentleyApi::Dgn::iModelBridgeAffinityLevel& affinityLevel,
@@ -1635,7 +1635,7 @@ TEST_F(iModelBridgeTests, MixedFileTypeBridgeAssignmentTest)
                                                                 BentleyApi::WCharCP sourceFileName)
         {
         BeFileName srcFile(sourceFileName);
-        if (srcFile.GetExtension().CompareToI(L"DWG"))
+        if (0 == srcFile.GetExtension().CompareToI(L"DWG"))
             {
 
             affinityLevel = iModelBridgeAffinityLevel::Medium;
@@ -1644,6 +1644,45 @@ TEST_F(iModelBridgeTests, MixedFileTypeBridgeAssignmentTest)
         };
 
     testRegistry.AddBridge(realDwgBridgeRegSubKey, realDWGLamda);
+
+    WString civilBridgeRegSubKey(L"CivilBridge");
+    std::function<T_iModelBridge_getAffinity> civilLamda = [=](BentleyApi::WCharP buffer,
+                                                                const size_t bufferSize,
+                                                                BentleyApi::Dgn::iModelBridgeAffinityLevel& affinityLevel,
+                                                                BentleyApi::WCharCP affinityLibraryPath,
+                                                                BentleyApi::WCharCP sourceFileName)
+        {
+        BeFileName srcFile(sourceFileName);
+        if (srcFile.GetBaseName().ContainsI(L"Civil"))
+            {
+            affinityLevel = iModelBridgeAffinityLevel::Medium;
+            wcsncpy(buffer, civilBridgeRegSubKey.c_str(), civilBridgeRegSubKey.length());
+            return;
+            }
+        if (0 == srcFile.GetExtension().CompareToI(L"Dgn"))
+            {
+            affinityLevel = iModelBridgeAffinityLevel::Low;
+            wcsncpy(buffer, mstnBridgeRegSubKey.c_str(), mstnBridgeRegSubKey.length());
+            }
+        };
+
+    testRegistry.AddBridge(civilBridgeRegSubKey, civilLamda);
+    BeFileName dummyAffinity;
+    WString bridgeName;
+    testRegistry.SearchForBridgeToAssignToDocument(bridgeName, BeFileName(L"main.dgn"), L"");
+    EXPECT_STREQ(bridgeName.c_str(), L"iModelBridgeForMstn");
+    
+    testRegistry.SearchForBridgeToAssignToDocument(bridgeName, BeFileName(L"main.dwg"), L"");
+    EXPECT_STREQ(bridgeName.c_str(), L"RealDWGBridge");
+    
+    testRegistry.SearchForBridgeToAssignToDocument(bridgeName, BeFileName(L"ref.dwg"), L"iModelBridgeForMstn");
+    EXPECT_STREQ(bridgeName.c_str(), L"iModelBridgeForMstn");
+
+    testRegistry.SearchForBridgeToAssignToDocument(bridgeName, BeFileName(L"CivilMaster.dgn"), L"");
+    EXPECT_STREQ(bridgeName.c_str(), L"CivilBridge");
+    
+    testRegistry.SearchForBridgeToAssignToDocument(bridgeName, BeFileName(L"CivilRef.dgn"), L"iModelBridgeForMstn");
+    EXPECT_STREQ(bridgeName.c_str(), L"CivilBridge");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2024,10 +2063,29 @@ static void DoProjectExtentsTest (bvector <double> &extents, WCharCP testName)
         ASSERT_TRUE(db.IsValid());
 
         AxisAlignedBox3d newExtents = db->GeoLocation().GetProjectExtents();
-        bvector<BeInt64Id> elementOutliers;
-        AxisAlignedBox3d rangeWithOutliers;
-        AxisAlignedBox3d calculated = db->GeoLocation().ComputeProjectExtents(&rangeWithOutliers, &elementOutliers);
-        calculated.IsContained(newExtents);
+        WString warningMsg;
+        StatusInt warning;
+        auto wsg84 = GeoCoordinates::BaseGCS::CreateGCS();        // WGS84 - used to convert Long/Latitude to ECEF.
+        wsg84->InitFromEPSGCode(&warning, &warningMsg, 4326); // We do not care about warnings. This GCS exists in the dictionary
+        DPoint3d points[2];
+        GeoPoint low, high;
+        low.Init(extents[0], extents[1], 0);
+        high.Init(extents[2], extents[3], 0);
+        wsg84->XYZFromLatLong(points[0], low);
+        wsg84->XYZFromLatLong(points[1], high);
+
+        AxisAlignedBox3d userExtents;
+        userExtents.InitFrom(points[0], points[1]);
+
+        DPoint3d calcCenter = newExtents.GetCenter();
+        DPoint3d userProvidedCenter = userExtents.GetCenter();
+        DPoint3d diff;
+        diff.DifferenceOf(calcCenter, userProvidedCenter);
+        userExtents.low.Add(diff);
+        userExtents.high.Add(diff);
+        userExtents.low.z = newExtents.low.z;
+        userExtents.high.z = newExtents.high.z;
+        EXPECT_TRUE(newExtents.IsContained(userExtents));//Ensure compute extents are clamped down by user Extents
         }
     }
 /*---------------------------------------------------------------------------------**//**

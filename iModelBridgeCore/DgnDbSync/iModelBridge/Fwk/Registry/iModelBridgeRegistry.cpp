@@ -432,8 +432,28 @@ BentleyStatus iModelBridgeRegistryBase::SearchForBridgeToAssignToDocument(WStrin
         if (!thisBridge.m_bridgeRegSubKey.empty() && thisBridge.m_affinity != iModelBridgeAffinityLevel::None)
             recommendedBridges.push_back(thisBridge.m_bridgeRegSubKey);
 
-        if (!thisBridge.m_bridgeRegSubKey.empty() && thisBridge.m_affinity > bestBridge.m_affinity)
+        if (thisBridge.m_bridgeRegSubKey.empty())
+            continue;
+
+        if (thisBridge.m_affinity > bestBridge.m_affinity)
+            {
             bestBridge = thisBridge;
+            continue;
+            }
+
+        if (thisBridge.m_affinity == bestBridge.m_affinity)
+            {
+            if (!parentBridgeName.empty() &&  0 == thisBridge.m_bridgeRegSubKey.CompareToI(parentBridgeName))
+                {
+                bestBridge = thisBridge;
+                continue;
+                }
+             if (0 == thisBridge.m_bridgeRegSubKey.CompareToI(L"iModelBridgeForMstn"))
+                {
+                bestBridge = thisBridge;
+                continue;
+                }
+            }
         }
 
     if ((bestBridge.m_bridgeRegSubKey.empty()) || (bestBridge.m_affinity == iModelBridgeAffinityLevel::None))
