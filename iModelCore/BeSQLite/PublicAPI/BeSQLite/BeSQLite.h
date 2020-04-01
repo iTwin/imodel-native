@@ -10,6 +10,7 @@
 #include <json/value.h>
 #include <list>
 #include <type_traits>
+#include <functional>
 
 #ifndef NDEBUG
 #include <Logging/bentleylogging.h>
@@ -385,7 +386,16 @@ public:
     BE_SQLITE_EXPORT Utf8String ToJson() const;
     BE_SQLITE_EXPORT void FromJson(Utf8CP);
 };
-
+//=======================================================================================
+// @bsiclass                                                    Affan.Khan      04/20
+//=======================================================================================
+enum DbTrace
+{
+    BE_SQLITE_TRACE_STMT = 0x01,
+    BE_SQLITE_TRACE_PROFILE = 0x02,
+    BE_SQLITE_TRACE_ROW = 0x04,
+    BE_SQLITE_TRACE_CLOSE = 0x08,
+};
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/11
 //=======================================================================================
@@ -621,6 +631,32 @@ public:
     static bool IsConstraintDbResult(DbResult val1) {return GetBaseDbResult(val1) == BE_SQLITE_CONSTRAINT_BASE;}
 };
 
+//=======================================================================================
+//! Trace context provided during trace
+// @bsiclass                                                    Affan.Khan     03/20
+//=======================================================================================
+struct TraceContext : NonCopyableClass
+{
+private:
+    SqlStatementP m_stmt;
+public:
+    explicit TraceContext(SqlStatementP stmt) {m_stmt=stmt;}
+
+    //! Get a saved copy of the original SQL text used to prepare this Statement
+    //! @see sqlite3_sql
+    BE_SQLITE_EXPORT Utf8CP GetSql() const;
+
+    //! Returns a UTF-8 string containing the SQL text of prepared statement with bound parameters expanded.
+    //! @see sqlite3_expanded_sql
+    BE_SQLITE_EXPORT Utf8String ExpandedSql() const;
+
+    //! Returns a pointer to a UTF-8 string containing the normalized SQL text of prepared statement.
+    //! @see sqlite3_normalized_sql
+    BE_SQLITE_EXPORT Utf8CP GetNormalizedSql() const;
+
+    SqlStatementP GetSqlStatementP() const {return m_stmt;}  // for direct use of sqlite3 api
+    operator SqlStatementP(){return m_stmt;}
+};
 //=======================================================================================
 //! A wrapper for a SQLite Prepared Statement. Every BeSQLite::Statement object associated with a BeSQLite::Db must be deleted
 //! before the database is closed.
@@ -870,6 +906,14 @@ public:
     //! Get a saved copy of the original SQL text used to prepare this Statement
     //! @see sqlite3_sql
     BE_SQLITE_EXPORT Utf8CP GetSql() const;
+
+    //! Returns a UTF-8 string containing the SQL text of prepared statement with bound parameters expanded.
+    //! @see sqlite3_expanded_sql
+    BE_SQLITE_EXPORT Utf8String ExpandedSql() const;
+
+    //! Returns a pointer to a UTF-8 string containing the normalized SQL text of prepared statement.
+    //! @see sqlite3_normalized_sql
+    BE_SQLITE_EXPORT Utf8CP GetNormalizedSql() const;
 
     //! Dump query results to stdout, for debugging purposes
     BE_SQLITE_EXPORT void DumpResults();
@@ -2415,7 +2459,12 @@ protected:
     StatementCache m_statements;
     DbEmbeddedFileTable m_embeddedFiles;
     mutable AppDataCollection m_appData;
-
+    mutable std::function<void(TraceContext const&, Utf8CP)> m_stmtCb;
+    mutable std::function<void(TraceContext const&, int64_t)> m_profileCb;
+    mutable std::function<void(TraceContext const&)> m_rowCb;
+    mutable std::function<void(DbCR)> m_closeCb;
+    mutable bool m_traceEnabled;
+    static int TraceCallback(unsigned,void*,void*,void*);
     //! Called after a new Db had been created.
     //! Override to perform additional processing when Db is created
     //! @param[in] params - Create parameter used to create the Db.
@@ -2546,6 +2595,17 @@ public:
 
     //! Attempts to free as much heap memory as possible from database connection
     BE_SQLITE_EXPORT DbResult FreeMemory() const;
+
+    //! Configure low level sqlite trace
+    BE_SQLITE_EXPORT DbResult ConfigureTrace(DbTrace categories, 
+        std::function<void(TraceContext const& ctx, Utf8CP sql)> stmtCb,
+        std::function<void(TraceContext const& ctx, int64_t nanoseconds)> profileCn,
+        std::function<void(TraceContext const& ctx)> rowCb,
+        std::function<void(DbCR db)> closeCb
+        ) const;
+    BE_SQLITE_EXPORT bool IsTraceEnabled() const { return m_traceEnabled; }
+    //! Disable sqlite trace and uninstall trace hook
+    BE_SQLITE_EXPORT DbResult ClearTrace() const;
 
     //! Determine whether there is an active transaction against this Db.
     bool IsTransactionActive() const {return 0 < GetCurrentSavepointDepth();}
@@ -3015,6 +3075,19 @@ public:
     //! @return BE_SQLITE_OK if successful
     BE_SQLITE_EXPORT static DbResult Vacuum(Utf8CP dbFileName, int newPageSizeInBytes = 0);
 };
+//=======================================================================================
+// @bsiclass                                                   Affan.Khan        03/20
+//=======================================================================================
+struct SQLiteTraceScope final: NonCopyableClass
+    {
+    private:
+        DbCR m_db;
+        void* m_logger;
+
+    public:
+        BE_SQLITE_EXPORT  SQLiteTraceScope(DbTrace categories, DbCR db, Utf8CP loggerName = "SQLite");
+        BE_SQLITE_EXPORT ~SQLiteTraceScope();
+    };
 
 //=======================================================================================
 //! Error values returned from the ZLib functions. See ZLib documentation for details.

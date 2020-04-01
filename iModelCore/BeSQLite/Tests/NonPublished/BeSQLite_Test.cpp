@@ -250,7 +250,71 @@ TEST_F(BeSQliteTestFixture, variable_limit)
     BeTest::SetFailOnAssert(true);
 
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                             3/20
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQliteTestFixture, Trace)
+    {
+    auto db1 = Create("first.db");
+    int nStmt = 0;
+    int nProfile = 0;
+    int nRow = 0;
+    int nClose = 0;
+    db1->ConfigureTrace(
+        (DbTrace)(DbTrace::BE_SQLITE_TRACE_STMT |
+                  DbTrace::BE_SQLITE_TRACE_PROFILE |
+                  DbTrace::BE_SQLITE_TRACE_ROW |
+                  DbTrace::BE_SQLITE_TRACE_CLOSE),
+        [&](TraceContext const& ctx, Utf8CP sql) {
+            nStmt++;
+        },
+        [&](TraceContext const& ctx, int64_t nanoseconds) {
+            nProfile++;
+        },
+        [&](TraceContext const& ctx) {
+            nRow++;
+        },
+        [&](DbCR db) {
+            nClose++;
+        });
+    db1->ExecuteSql("create table test(Id integer primary key, c0);");
+    Statement stmt;
+    stmt.Prepare(*db1, "insert into test (id,c0) values(?,?)");
+    stmt.BindInt(1, 1000);
+    stmt.BindText(2, "Hello World", Statement::MakeCopy::Yes);
+    stmt.Step();
+    stmt.Reset();
+    stmt.ClearBindings();
+    stmt.BindInt(1, 2000);
+    stmt.BindText(2, "Hello Under World", Statement::MakeCopy::Yes);
+    stmt.Step();
+    stmt.Finalize();
+    db1->CloseDb();
 
+    ASSERT_EQ(nStmt, 4);
+    ASSERT_EQ(nProfile, 4);
+    ASSERT_EQ(nRow, 1);
+    ASSERT_EQ(nClose, 1);
+    }
+
+    //---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                             3/20
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQliteTestFixture, TraceScope)
+    {
+    auto db1 = Create("first.db");
+    SQLiteTraceScope scope((DbTrace)(DbTrace::BE_SQLITE_TRACE_STMT |
+                  DbTrace::BE_SQLITE_TRACE_PROFILE |
+                  DbTrace::BE_SQLITE_TRACE_ROW |
+                  DbTrace::BE_SQLITE_TRACE_CLOSE), *db1, "SQLiteTrace");
+    db1->ExecuteSql("create table test(Id integer primary key, c0);");
+    Statement stmt;
+    stmt.Prepare(*db1, "insert into test (id,c0) values(?,?)");
+    stmt.BindInt(1, 1000);
+    stmt.BindText(2, "Hello World", Statement::MakeCopy::Yes);
+    stmt.Step();
+    stmt.Finalize();
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Affan.Khan                             4/18
 //---------------------------------------------------------------------------------------

@@ -110,6 +110,35 @@ struct CachedPropertyMap : bmap<CachedPropertyKey, CachedPropertyValue>
         }
     };
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Affan.Khan         03/2020
+//---------------------------------------------------------------------------------------
+SQLiteTraceScope::SQLiteTraceScope(DbTrace categories, DbCR db, Utf8CP loggerName) : m_db(db)
+    {
+    m_logger = NativeLogging::LoggingManager::GetLogger(loggerName);
+    db.ConfigureTrace(categories,
+        [&](TraceContext const& ctx, Utf8CP sql) 
+            {
+            reinterpret_cast<NativeLogging::ILogger*>(m_logger)->messagev(NativeLogging::LOG_DEBUG, "[STMT] %s",ctx.ExpandedSql().c_str());
+            },
+        [&](TraceContext const& ctx, int64_t nanoseconds) 
+            {
+            reinterpret_cast<NativeLogging::ILogger*>(m_logger)->messagev(NativeLogging::LOG_DEBUG, "[PROF] %s (%lld ns)", ctx.ExpandedSql().c_str(), nanoseconds);
+            },
+        [&](TraceContext const& ctx) 
+            {
+            reinterpret_cast<NativeLogging::ILogger*>(m_logger)->messagev(NativeLogging::LOG_DEBUG, "[ROW] %s", ctx.GetSql());
+            },
+        [&](DbCR db) 
+            {
+            reinterpret_cast<NativeLogging::ILogger*>(m_logger)->messagev(NativeLogging::LOG_DEBUG, "[CLOSE] %s", db.GetDbFileName());
+            }
+        );
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Affan.Khan         03/2020
+//---------------------------------------------------------------------------------------
+SQLiteTraceScope::~SQLiteTraceScope() { m_db.ClearTrace(); }
 END_BENTLEY_SQLITE_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
@@ -407,7 +436,7 @@ DbDupValue  Statement::GetDbValue(int col)
 
 int         Statement::GetParameterIndex(Utf8CP name) {return sqlite3_bind_parameter_index(m_stmt, name);}
 int         Statement::GetParameterCount() { return sqlite3_bind_parameter_count(m_stmt); }
-Utf8CP      Statement::GetSql() const           {return sqlite3_sql(m_stmt);}
+Utf8CP      Statement::GetSql() const                {return sqlite3_sql(m_stmt);}
 
 DbValueType DbValue::GetValueType() const             {return (DbValueType) sqlite3_value_type(m_val);}
 int         DbValue::GetValueBytes() const            {return sqlite3_value_bytes(m_val);}
@@ -416,6 +445,123 @@ Utf8CP      DbValue::GetValueText() const             {return (Utf8CP)sqlite3_va
 int         DbValue::GetValueInt() const              {return sqlite3_value_int(m_val);}
 int64_t     DbValue::GetValueInt64() const            {return sqlite3_value_int64(m_val);}
 double      DbValue::GetValueDouble() const           {return sqlite3_value_double(m_val);}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Affan.Khan                   03/20
++---------------+---------------+---------------+---------------+---------------+------*/
+int Db::TraceCallback(unsigned t,void* ctx,void* p,void* x) 
+    {
+    Db *db = reinterpret_cast<Db *>(ctx);
+    if (db->IsTraceEnabled()) 
+        {
+        if (t == DbTrace::BE_SQLITE_TRACE_STMT && db->m_stmtCb != nullptr)
+            {
+            TraceContext ctx(reinterpret_cast<SqlStatementP>(p)); // suppress finalizer
+            db->m_stmtCb(ctx, reinterpret_cast<Utf8CP>(x));
+            } 
+        else if (t == DbTrace::BE_SQLITE_TRACE_PROFILE && db->m_profileCb != nullptr)
+            {
+            TraceContext ctx(reinterpret_cast<SqlStatementP>(p)); // suppress finalizer
+            db->m_profileCb(ctx, reinterpret_cast<int64_t>(x));
+            } 
+        else if (t == DbTrace::BE_SQLITE_TRACE_ROW && db->m_rowCb != nullptr)
+            {
+            TraceContext ctx(reinterpret_cast<SqlStatementP>(p)); // suppress finalizer
+            db->m_rowCb(ctx);
+            } 
+        else if (t == DbTrace::BE_SQLITE_TRACE_CLOSE && db->m_closeCb != nullptr)
+            {
+            db->m_closeCb(*db);
+            }
+        }
+    return 0; // not used and should be set to zero as per sqlite docs
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Affan.Khan                   03/20
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult Db::ConfigureTrace(DbTrace categories, 
+    std::function<void(TraceContext const& ctx, Utf8CP sql)> stmtCb,
+    std::function<void(TraceContext const& ctx, int64_t nanoseconds)> profileCb,
+    std::function<void(TraceContext const& ctx)> rowCb,
+    std::function<void(DbCR)> closeCb
+    ) const 
+        {
+        m_stmtCb = (categories & DbTrace::BE_SQLITE_TRACE_STMT) > 0 ? stmtCb : nullptr;
+        m_profileCb = (categories & DbTrace::BE_SQLITE_TRACE_PROFILE) > 0 ? profileCb : nullptr;
+        m_rowCb = (categories & DbTrace::BE_SQLITE_TRACE_ROW) > 0 ? rowCb : nullptr;
+        m_closeCb = (categories & DbTrace::BE_SQLITE_TRACE_CLOSE) > 0 ? closeCb : nullptr;
+        m_traceEnabled = (m_stmtCb || m_profileCb || m_rowCb || m_closeCb) && GetSqlDb();
+        if (m_traceEnabled)
+            return (DbResult)sqlite3_trace_v2(GetSqlDb(), categories, TraceCallback, (void*)this);
+        return ClearTrace();
+        }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Affan.Khan                   03/20
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult Db::ClearTrace() const 
+    {
+    m_stmtCb = nullptr;
+    m_profileCb = nullptr;
+    m_rowCb = nullptr;
+    m_closeCb = nullptr;
+    m_traceEnabled = false;
+    return (DbResult)sqlite3_trace_v2(GetSqlDb(), 0, nullptr, nullptr);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Affan.Khan                     03/20
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP Statement::GetNormalizedSql() const
+    {
+    #ifdef SQLITE_ENABLE_NORMALIZE
+        return sqlite3_normalized_sql(m_stmt);
+    #else
+        return nullptr;
+    #endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Affan.Khan                     03/20
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String Statement::ExpandedSql() const 
+    {
+    char * sql = sqlite3_expanded_sql(m_stmt);
+    Utf8String expendedSql = sql;
+    sqlite3_free(sql);
+    return expendedSql;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Affan.Khan                     03/20
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP TraceContext::GetNormalizedSql() const
+    {
+    #ifdef SQLITE_ENABLE_NORMALIZE
+        return sqlite3_normalized_sql(m_stmt);
+    #else
+        return nullptr;
+    #endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Affan.Khan                     03/20
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String TraceContext::ExpandedSql() const 
+    {
+    char * sql = sqlite3_expanded_sql(m_stmt);
+    Utf8String expendedSql = sql;
+    sqlite3_free(sql);
+    return expendedSql;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Affan.Khan                     03/20
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP TraceContext::GetSql() const 
+    { 
+    return sqlite3_sql(m_stmt);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/16
@@ -814,7 +960,7 @@ Utf8String DbFile::ExplainQuery(Utf8CP sql, bool explainPlan, bool suppressDiagn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-Db::Db() : m_embeddedFiles(*this), m_dbFile(nullptr), m_statements(35) {}
+Db::Db() : m_embeddedFiles(*this), m_dbFile(nullptr), m_statements(35), m_traceEnabled(false){}
 Db::~Db() {DoCloseDb();}
 
 /*---------------------------------------------------------------------------------**//**
@@ -840,8 +986,9 @@ DbResult Savepoint::Commit(Utf8CP operation) {return _Commit(operation);}
 DbResult Savepoint::Save(Utf8CP operation)
     {
     DbResult res = Commit(operation);
-    if (BE_SQLITE_BUSY == res)
+    if (BE_SQLITE_BUSY == res) {
         return res;
+    }
     return Begin();
     }
 DbResult Savepoint::Cancel() {return _Cancel();}
@@ -2607,7 +2754,6 @@ DbResult Db::OpenBeSQLiteDb(Utf8CP dbName, OpenParams const& params)
         {
         if (rc != BE_SQLITE_OK)
             CloseDb();
-
         return rc;
         }
 
@@ -5254,12 +5400,11 @@ DbResult BeSQLiteLib::Initialize(BeFileNameCR tempDir, LogErrors logErrors)
     {
     static bool s_done = false;
     RUNONCE_CHECK(s_done,BE_SQLITE_OK);
-
+			
 #ifndef NO_LOG_CALLBACK
     if (LogErrors::No != logErrors)
         sqlite3_config(SQLITE_CONFIG_LOG, logCallback, nullptr);
 #endif
-
     sqlite3_initialize();
     sqlite3_auto_extension((void(*)(void))&besqlite_db_init);
 
