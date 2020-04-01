@@ -622,17 +622,18 @@ public:
         : ContentSpecificationsVisitor(context)
         {
         IECPropertyFormatter const* formatter = context.IsPropertyFormattingContext() ? &context.GetECPropertyFormatter() : nullptr;
+        ECPresentation::UnitSystem unitSystem = context.IsPropertyFormattingContext() ? context.GetUnitSystem() : ECPresentation::UnitSystem::Undefined;
         ILocalizationProvider const* localizationProvider = context.IsLocalizationContext() ? &context.GetLocalizationProvider() : nullptr;
+
         m_context = new ContentDescriptorBuilder::Context(context.GetSchemaHelper(), context.GetConnections(), context.GetConnection(), context.GetRuleset(),
-            context.GetPreferredDisplayType().c_str(), context.GetCategorySupplier(), formatter, localizationProvider, context.GetLocale(),
+            context.GetPreferredDisplayType().c_str(), context.GetCategorySupplier(), formatter, unitSystem, localizationProvider, context.GetLocale(),
             context.GetInputKeys(), context.GetSelectionInfo());
         m_context->SetContentFlagsCalculator([flags = context.GetContentFlags()](int defaultFlags){return flags | defaultFlags;});
         m_descriptorBuilder = new ContentDescriptorBuilder(*m_context);
 
         m_functionsContext = new CustomFunctionsContext(context.GetSchemaHelper(), context.GetConnections(), context.GetConnection(),
             context.GetRuleset(), context.GetLocale(), context.GetUserSettings(), &context.GetUsedSettingsListener(),
-            context.GetECExpressionsCache(), context.GetNodesFactory(), nullptr, nullptr, nullptr,
-            context.IsPropertyFormattingContext() ? &context.GetECPropertyFormatter() : nullptr);
+            context.GetECExpressionsCache(), context.GetNodesFactory(), nullptr, nullptr, nullptr, formatter, unitSystem);
         if (context.IsLocalizationContext())
             m_functionsContext->SetLocalizationProvider(*localizationProvider);
         }
@@ -767,7 +768,10 @@ ContentProvider::ContentProvider(ContentProviderContextR context)
     if (GetContext().IsQueryContext())
         m_executor = new ContentQueryExecutor(context.GetConnection());
     if (nullptr != m_executor && GetContext().IsPropertyFormattingContext())
+        {
         m_executor->SetPropertyFormatter(GetContext().GetECPropertyFormatter());
+        m_executor->SetUnitSystem(GetContext().GetUnitSystem());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -782,7 +786,10 @@ ContentProvider::ContentProvider(ContentProviderCR other)
     if (GetContext().IsQueryContext())
         m_executor = new ContentQueryExecutor(m_context->GetConnection());
     if (nullptr != m_executor && GetContext().IsPropertyFormattingContext())
+        {
         m_executor->SetPropertyFormatter(GetContext().GetECPropertyFormatter());
+        m_executor->SetUnitSystem(GetContext().GetUnitSystem());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -908,10 +915,11 @@ void ContentProvider::Initialize()
     if (nullptr == m_executor)
         return;
 
+    IECPropertyFormatter const* formatter = GetContext().IsPropertyFormattingContext() ? &GetContext().GetECPropertyFormatter() : nullptr;
+    ECPresentation::UnitSystem unitSystem = GetContext().IsPropertyFormattingContext() ? GetContext().GetUnitSystem() : ECPresentation::UnitSystem::Undefined;
     CustomFunctionsContext fnContext(GetContext().GetSchemaHelper(), GetContext().GetConnections(), GetContext().GetConnection(),
         GetContext().GetRuleset(), GetContext().GetLocale(), GetContext().GetUserSettings(), &GetContext().GetUsedSettingsListener(),
-        GetContext().GetECExpressionsCache(), GetContext().GetNodesFactory(), nullptr, nullptr, nullptr,
-        GetContext().IsPropertyFormattingContext() ? &GetContext().GetECPropertyFormatter() : nullptr);
+        GetContext().GetECExpressionsCache(), GetContext().GetNodesFactory(), nullptr, nullptr, nullptr, formatter, unitSystem);
     if (GetContext().IsLocalizationContext())
         fnContext.SetLocalizationProvider(GetContext().GetLocalizationProvider());
 
@@ -952,10 +960,11 @@ size_t ContentProvider::GetFullContentSetSize() const
             }
         else if (GetContext().IsQueryContext())
             {
+            IECPropertyFormatter const* formatter = GetContext().IsPropertyFormattingContext() ? &GetContext().GetECPropertyFormatter() : nullptr;
+            ECPresentation::UnitSystem unitSystem = GetContext().IsPropertyFormattingContext() ? GetContext().GetUnitSystem() : ECPresentation::UnitSystem::Undefined;
             CustomFunctionsContext fnContext(GetContext().GetSchemaHelper(), GetContext().GetConnections(), GetContext().GetConnection(),
                 GetContext().GetRuleset(), GetContext().GetLocale(), GetContext().GetUserSettings(), &GetContext().GetUsedSettingsListener(),
-                GetContext().GetECExpressionsCache(), GetContext().GetNodesFactory(), nullptr, nullptr, nullptr,
-                GetContext().IsPropertyFormattingContext() ? &GetContext().GetECPropertyFormatter() : nullptr);
+                GetContext().GetECExpressionsCache(), GetContext().GetNodesFactory(), nullptr, nullptr, nullptr, formatter, unitSystem);
             if (GetContext().IsLocalizationContext())
                 fnContext.SetLocalizationProvider(GetContext().GetLocalizationProvider());
 

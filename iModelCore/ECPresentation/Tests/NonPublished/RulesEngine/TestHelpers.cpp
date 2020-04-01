@@ -609,18 +609,34 @@ void RulesEngineTestHelpers::CacheNode(IHierarchyCacheR cache, JsonNavNodeR node
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TestPropertyFormatter::_GetFormattedPropertyValue(Utf8StringR formattedValue, ECPropertyCR ecProperty, ECValueCR ecValue) const
+BentleyStatus TestPropertyFormatter::_GetFormattedPropertyValue(Utf8StringR formattedValue, ECPropertyCR ecProperty, ECValueCR ecValue, Utf8CP locale, ECPresentation::UnitSystem unitSystem) const
     {
+    formattedValue.clear();
     if (!ecValue.IsPrimitive())
         {
         EXPECT_TRUE(false);
         return ERROR;
         }
     Utf8String value = ecValue.ToString();
-    if (value.empty())
-        formattedValue = value;
-    else
+    if (!value.empty())
+        {
         formattedValue = Utf8String().append("_").append(value).append("_");
+        if (m_addLocaleSuffix)
+            formattedValue.append("[").append(locale).append("]");
+        if (m_addUnitSystemSuffix)
+            {
+            formattedValue.append("[");
+            switch (unitSystem)
+                {
+                case ECPresentation::UnitSystem::BritishImperial: formattedValue.append("British Imperial"); break;
+                case ECPresentation::UnitSystem::Metric: formattedValue.append("Metric"); break;
+                case ECPresentation::UnitSystem::UsCustomary: formattedValue.append("US Customary"); break;
+                case ECPresentation::UnitSystem::UsSurvey: formattedValue.append("US Survey"); break;
+                default: formattedValue.append("Default"); break;
+                }
+            formattedValue.append("]");
+            }
+        }
     return SUCCESS;
     }
 

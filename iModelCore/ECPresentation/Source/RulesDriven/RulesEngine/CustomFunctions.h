@@ -96,10 +96,12 @@ private:
     bvector<FunctionCache> m_caches;
     bset<ICustomFunctionsContextListener*> m_listeners;
     IECPropertyFormatter const* m_propertyFormatter;
+    ECPresentation::UnitSystem m_unitSystem;
 
 public:
     ECPRESENTATION_EXPORT CustomFunctionsContext(ECSchemaHelper const&, IConnectionManagerCR, IConnectionCR, PresentationRuleSetCR, Utf8String locale, IUserSettings const&, IUsedUserSettingsListener*,
-        ECExpressionsCache&, JsonNavNodesFactory const&, IUsedClassesListener*, JsonNavNodeCP parentNode, rapidjson::Value const* queryExtendedData, IECPropertyFormatter const* formatter = nullptr);
+        ECExpressionsCache&, JsonNavNodesFactory const&, IUsedClassesListener*, JsonNavNodeCP parentNode, rapidjson::Value const* queryExtendedData, IECPropertyFormatter const* formatter = nullptr,
+        ECPresentation::UnitSystem unitSystem = ECPresentation::UnitSystem::Undefined);
     ECPRESENTATION_EXPORT ~CustomFunctionsContext();
 
     ECPRESENTATION_EXPORT void _OnSettingChanged(Utf8CP rulesetId, Utf8CP settingId) const override;
@@ -119,6 +121,7 @@ public:
     JsonNavNodeCP GetParentNode() const {return m_parentNode;}
     rapidjson::Value const* GetQueryExtendedData() const {return m_extendedData;}
     IECPropertyFormatter const* GetPropertyFormatter() const {return m_propertyFormatter;}
+    ECPresentation::UnitSystem GetUnitSystem() const {return m_unitSystem;}
 
     void* GetCache(Utf8CP id) const;
     void InsertCache(Utf8CP id, void* cache);

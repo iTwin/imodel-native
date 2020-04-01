@@ -399,13 +399,13 @@ struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScala
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String GetFormattedPropertyValue(PrimitiveECPropertyCR property, DbValue const& sqlValue, IECPropertyFormatter const* formatter)
+static Utf8String GetFormattedPropertyValue(PrimitiveECPropertyCR property, DbValue const& sqlValue, IECPropertyFormatter const* formatter, ECPresentation::UnitSystem unitSystem)
     {
     if (sqlValue.IsNull())
         return "";
     ECValue value = ValueHelpers::GetECValueFromSqlValue(property.GetType(), sqlValue);
     Utf8String formattedValue;
-    if (nullptr != formatter && SUCCESS == formatter->GetFormattedPropertyValue(formattedValue, property, value))
+    if (nullptr != formatter && SUCCESS == formatter->GetFormattedPropertyValue(formattedValue, property, value, nullptr, unitSystem))
         return formattedValue;
     return value.ToString();
     }
@@ -517,7 +517,8 @@ struct GetECPropertyDisplayLabelScalar : CachingScalarFunction<bmap<ECPropertyDi
                     {
                     if (ecProperty->GetIsPrimitive())
                         {
-                        labelDefinition->SetECPropertyValue(*ecProperty, args[3], GetFormattedPropertyValue(*ecProperty->GetAsPrimitiveProperty(), args[3], GetContext().GetPropertyFormatter()).c_str());
+                        labelDefinition->SetECPropertyValue(*ecProperty, args[3], GetFormattedPropertyValue(*ecProperty->GetAsPrimitiveProperty(), args[3], 
+                            GetContext().GetPropertyFormatter(), GetContext().GetUnitSystem()).c_str());
                         }
                     else
                         {
@@ -602,7 +603,7 @@ struct GetPropertyDisplayValueScalar : ECPresentation::ScalarFunction
             }
         ECClassCP ecClass = GetContext().GetSchemaHelper().GetConnection().GetECDb().Schemas().GetClass(args[0].GetValueText(), args[1].GetValueText());
         ECPropertyP ecProperty = ecClass->GetPropertyP(args[2].GetValueText());
-        Utf8String formattedValue = GetFormattedPropertyValue(*ecProperty->GetAsPrimitiveProperty(), args[3], GetContext().GetPropertyFormatter());
+        Utf8String formattedValue = GetFormattedPropertyValue(*ecProperty->GetAsPrimitiveProperty(), args[3], GetContext().GetPropertyFormatter(), GetContext().GetUnitSystem());
         ctx.SetResultText(formattedValue.c_str(), (int)formattedValue.size(), DbFunction::Context::CopyData::Yes);
         }
     };
@@ -1821,7 +1822,7 @@ struct GetECPropertyValueDisplayLabelScalar : CachingScalarFunction<bmap<ECPrope
             PrimitiveECPropertyCR primitiveProperty = *ecProperty->GetAsPrimitiveProperty();
             ECValue value = ValueHelpers::GetECValueFromSqlValue(primitiveProperty.GetType(), args[2]);
             Utf8String formattedValue;
-            if (nullptr == GetContext().GetPropertyFormatter() || SUCCESS != GetContext().GetPropertyFormatter()->GetFormattedPropertyValue(formattedValue, *ecProperty, value))
+            if (nullptr == GetContext().GetPropertyFormatter() || SUCCESS != GetContext().GetPropertyFormatter()->GetFormattedPropertyValue(formattedValue, *ecProperty, value, nullptr, GetContext().GetUnitSystem()))
                 formattedValue = value.ToString();
 
             labelDefinition->SetECValue(value, formattedValue.c_str());
@@ -1876,11 +1877,11 @@ struct GetLabelDefinitionDisplayValueScalar : CachingScalarFunction<bmap<Utf8Str
 CustomFunctionsContext::CustomFunctionsContext(ECSchemaHelper const& schemaHelper, IConnectionManagerCR connections, IConnectionCR connection,
     PresentationRuleSetCR ruleset, Utf8String locale, IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener,
     ECExpressionsCache& ecexpressionsCache, JsonNavNodesFactory const& nodesFactory, IUsedClassesListener* usedClassesListener,
-    JsonNavNodeCP parentNode, rapidjson::Value const* queryExtendedData, IECPropertyFormatter const* formatter)
+    JsonNavNodeCP parentNode, rapidjson::Value const* queryExtendedData, IECPropertyFormatter const* formatter, ECPresentation::UnitSystem unitSystem)
     : m_schemaHelper(schemaHelper), m_connections(connections), m_connection(connection), m_ruleset(ruleset), m_locale(locale),
     m_userSettings(userSettings), m_usedSettingsListener(usedSettingsListener), m_ecexpressionsCache(ecexpressionsCache),
     m_parentNode(parentNode), m_nodesFactory(nodesFactory), m_usedClassesListener(usedClassesListener),
-    m_extendedData(queryExtendedData), m_localizationProvider(nullptr), m_propertyFormatter(formatter)
+    m_extendedData(queryExtendedData), m_localizationProvider(nullptr), m_propertyFormatter(formatter), m_unitSystem(unitSystem)
     {
     CustomFunctionsManager::GetManager().PushContext(*this);
     }

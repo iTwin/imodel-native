@@ -458,7 +458,7 @@ protected:
         if (-1 != pageSize)
             context->SetPageSize(pageSize);
 
-        context->SetPropertyFormattingContext(m_manager.GetECPropertyFormatter());
+        context->SetPropertyFormattingContext(m_manager.GetECPropertyFormatter(), UnitSystem::Undefined);
         context->SetIsUpdatesDisabled(m_manager.m_mode == Mode::ReadOnly);
         context->SetCancelationToken(cancelationToken);
         _l2 = nullptr;
@@ -896,7 +896,8 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpecificationContentProviderCPtr RulesDrivenECPresentationManagerImpl::GetContentProvider(IConnectionCR connection, ICancelationTokenCR cancelationToken, ContentProviderKey const& key, INavNodeKeysContainerCR inputKeys, SelectionInfo const* selectionInfo, ContentOptions const& options)
+SpecificationContentProviderCPtr RulesDrivenECPresentationManagerImpl::GetContentProvider(IConnectionCR connection, ICancelationTokenCR cancelationToken, ContentProviderKey const& key, INavNodeKeysContainerCR inputKeys, 
+    SelectionInfo const* selectionInfo, ContentOptions const& options)
     {
     RefCountedPtr<PerformanceLogger> _l1 = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManagerImpl::GetContentProvider]", NativeLogging::LOG_TRACE);
     RefCountedPtr<PerformanceLogger> _l2;
@@ -933,7 +934,7 @@ SpecificationContentProviderCPtr RulesDrivenECPresentationManagerImpl::GetConten
     if (nullptr != localizationProvider)
         context->SetLocalizationContext(*localizationProvider);
 
-    context->SetPropertyFormattingContext(GetECPropertyFormatter());
+    context->SetPropertyFormattingContext(GetECPropertyFormatter(), options.GetUnitSystem());
     context->SetCancelationToken(&cancelationToken);
     if (nullptr != selectionInfo)
         context->SetSelectionInfo(*selectionInfo);
@@ -963,7 +964,7 @@ SpecificationContentProviderCPtr RulesDrivenECPresentationManagerImpl::GetConten
 SpecificationContentProviderPtr RulesDrivenECPresentationManagerImpl::GetContentProvider(IConnectionCR connection, ICancelationTokenCR cancelationToken, ContentDescriptorCR descriptor, INavNodeKeysContainerCR inputKeys, SelectionInfo const* selectionInfo, ContentOptions const& options)
     {
     ContentProviderKey key(connection.GetId(), options.GetRulesetId(), descriptor.GetPreferredDisplayType(), descriptor.GetContentFlags(),
-        options.GetLocale(), inputKeys, selectionInfo);
+        options.GetLocale(), options.GetUnitSystem(), inputKeys, selectionInfo);
     SpecificationContentProviderCPtr cachedProvider = GetContentProvider(connection, cancelationToken, key, inputKeys, selectionInfo, options);
     if (cachedProvider.IsNull())
         return nullptr;
@@ -1023,7 +1024,7 @@ ContentDescriptorCPtr RulesDrivenECPresentationManagerImpl::_GetContentDescripto
         preferredDisplayType = ContentDisplayType::Undefined;
 
     INavNodeKeysContainerCPtr nodeKeys = inputKeys.GetAllNavNodeKeys();
-    ContentProviderKey key(connection.GetId(), options.GetRulesetId(), preferredDisplayType, contentFlags, options.GetLocale(), *nodeKeys, selectionInfo);
+    ContentProviderKey key(connection.GetId(), options.GetRulesetId(), preferredDisplayType, contentFlags, options.GetLocale(), options.GetUnitSystem(), *nodeKeys, selectionInfo);
     ContentProviderCPtr provider = GetContentProvider(connection, cancelationToken, key, *nodeKeys, selectionInfo, options);
     return provider.IsValid() ? provider->GetContentDescriptor() : nullptr;
     }

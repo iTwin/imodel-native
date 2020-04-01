@@ -22,12 +22,14 @@ private:
     Utf8String m_preferredDisplayType; 
     int m_contentFlags;
     Utf8String m_locale;
+    ECPresentation::UnitSystem m_unitSystem;
     INavNodeKeysContainerCPtr m_inputNodeKeys;
     SelectionInfoCPtr m_selectionInfo;
 public:
     ContentProviderKey() {}
     ECPRESENTATION_EXPORT ContentProviderKey(Utf8String connectionId, Utf8String rulesetId, Utf8String displayType, 
-        int contentFlags, Utf8String locale, INavNodeKeysContainerCR inputNodeKeys, SelectionInfo const* selectionInfo);
+        int contentFlags, Utf8String locale, ECPresentation::UnitSystem, INavNodeKeysContainerCR inputNodeKeys, 
+        SelectionInfo const* selectionInfo);
     ECPRESENTATION_EXPORT ContentProviderKey(ContentProviderKey const& other);
     ECPRESENTATION_EXPORT ContentProviderKey(ContentProviderKey&& other);
     ECPRESENTATION_EXPORT ContentProviderKey& operator=(ContentProviderKey const& other);
@@ -39,6 +41,7 @@ public:
     Utf8StringCR GetRulesetId() const {return m_rulesetId;}
     Utf8StringCR GetConnectionId() const {return m_connectionId;}
     Utf8StringCR GetLocale() const {return m_locale;}
+    ECPresentation::UnitSystem GetUnitSystem() const {return m_unitSystem;}
     SelectionInfo const* GetSelectionInfo() const {return m_selectionInfo.get();}
 };
 

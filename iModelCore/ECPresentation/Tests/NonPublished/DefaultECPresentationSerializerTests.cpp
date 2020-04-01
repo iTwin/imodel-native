@@ -1986,8 +1986,7 @@ TEST_F(DefaultECPresentationSerializerTests, ContentDescriptorSerializationNoSel
         "FilterExpression": "ExpressionText",
         "InputKeysHash": "",
         "ContentOptions": {
-            "RulesetId": "rulesetIdText",
-            "Locale": ""
+            "RulesetId": "rulesetIdText"
             }
         })");
 
@@ -2032,8 +2031,7 @@ TEST_F(DefaultECPresentationSerializerTests, ContentDescriptorSerializationWithS
         "FilterExpression": "",
         "InputKeysHash": "",
         "ContentOptions": {
-            "RulesetId": "rulesetIdText",
-            "Locale": ""
+            "RulesetId": "rulesetIdText"
             },
         "SelectionInfo": {
             "SelectionProvider": "ProviderNameText",
@@ -2193,8 +2191,7 @@ TEST_F(DefaultECPresentationSerializerTests, ContentSerialization)
             "FilterExpression": "",
             "InputKeysHash": "d41d8cd98f00b204e9800998ecf8427e",
             "ContentOptions": {
-                "RulesetId": "rulesetIdText",
-                "Locale": ""
+                "RulesetId": "rulesetIdText"
                 }
             },
         "ContentSet": [{
@@ -2247,8 +2244,7 @@ TEST_F(DefaultECPresentationSerializerTests, ContenteSerializationContentSetItem
             "FilterExpression": "",
             "InputKeysHash": "d41d8cd98f00b204e9800998ecf8427e",
             "ContentOptions": {
-                "RulesetId": "rulesetIdText",
-                "Locale": ""
+                "RulesetId": "rulesetIdText"
                 }
             },
         "ContentSet": []

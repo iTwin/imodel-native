@@ -12,30 +12,31 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 USING_NAMESPACE_ECPRESENTATIONTESTS
 
 #define TEST_SCHEMA R"xml(<?xml version="1.0" encoding="UTF-8"?>
-                    <ECSchema schemaName="TestSchema" nameSpacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-                        <ECClass typeName="TestClass" isDomainClass="True">
-                            <ECProperty propertyName="Prop1" typeName="string" displayLabel="Custom Label" />
-                            <ECProperty propertyName="Prop2" typeName="TestIntEnum" />
-                            <ECProperty propertyName="Prop3" typeName="TestStringEnum" />
-                            <ECProperty propertyName="Prop4" typeName="double" kindOfQuantity="Length" />
-                            <ECProperty propertyName="Prop5" typeName="double" />
-                            <ECProperty propertyName="Prop6" typeName="point2d" />
-                            <ECProperty propertyName="Prop7" typeName="point3d" />
-                            <ECProperty propertyName="Prop7" typeName="DateTime" />
-                        </ECClass>
-                        <ECEnumeration typeName="TestIntEnum" backingTypeName="int" isStrict="true">
-                            <ECEnumerator value="0" displayLabel="Zero"/>
-                            <ECEnumerator value="1" displayLabel="One"/>
-                            <ECEnumerator value="2" displayLabel="Two"/>
-                        </ECEnumeration>
-                        <ECEnumeration typeName="TestStringEnum" backingTypeName="string" isStrict="true">
-                            <ECEnumerator value="zero" displayLabel="Zero"/>
-                            <ECEnumerator value="one" displayLabel="One"/>
-                            <ECEnumerator value="two" displayLabel="Two"/>
-                        </ECEnumeration>
-                        <KindOfQuantity typeName="Length" displayLabel="Length" persistenceUnit="M" relativeError="1e-6"
-                            presentationUnits="FT(real4u);M(real4u);FT(fi8);IN(real)" />
-                    </ECSchema>)xml"
+    <ECSchema schemaName="TestSchema" nameSpacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+        <ECClass typeName="TestClass" isDomainClass="True">
+            <ECProperty propertyName="Prop1" typeName="string" displayLabel="Custom Label" />
+            <ECProperty propertyName="Prop2" typeName="TestIntEnum" />
+            <ECProperty propertyName="Prop3" typeName="TestStringEnum" />
+            <ECProperty propertyName="Prop4" typeName="double" kindOfQuantity="Length" />
+            <ECProperty propertyName="Prop5" typeName="double" />
+            <ECProperty propertyName="Prop6" typeName="point2d" />
+            <ECProperty propertyName="Prop7" typeName="point3d" />
+            <ECProperty propertyName="Prop7" typeName="DateTime" />
+        </ECClass>
+        <ECEnumeration typeName="TestIntEnum" backingTypeName="int" isStrict="true">
+            <ECEnumerator value="0" displayLabel="Zero"/>
+            <ECEnumerator value="1" displayLabel="One"/>
+            <ECEnumerator value="2" displayLabel="Two"/>
+        </ECEnumeration>
+        <ECEnumeration typeName="TestStringEnum" backingTypeName="string" isStrict="true">
+            <ECEnumerator value="zero" displayLabel="Zero"/>
+            <ECEnumerator value="one" displayLabel="One"/>
+            <ECEnumerator value="two" displayLabel="Two"/>
+        </ECEnumeration>
+        <KindOfQuantity typeName="Length" displayLabel="Length" persistenceUnit="M" relativeError="1e-6"
+            presentationUnits="FT(real4u);M(real4u);FT(fi8);IN(real)" />
+    </ECSchema>
+)xml"
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                10/2016
@@ -86,7 +87,7 @@ TEST_F(DefaultPropertyFormatterTests, GetFormattedPropertyValueHandlesEnumIntPro
     ECPropertyCP prop = m_class->GetPropertyP("Prop2");
     ECValue value(1);
     Utf8String formattedValue;
-    EXPECT_EQ(SUCCESS, m_formatter.GetFormattedPropertyValue(formattedValue, *prop, value));
+    EXPECT_EQ(SUCCESS, m_formatter.GetFormattedPropertyValue(formattedValue, *prop, value, nullptr, ECPresentation::UnitSystem::Undefined));
     EXPECT_STREQ("One", formattedValue.c_str());
     }
 
@@ -98,21 +99,35 @@ TEST_F(DefaultPropertyFormatterTests, GetFormattedPropertyValueHandlesEnumString
     ECPropertyCP prop = m_class->GetPropertyP("Prop3");
     ECValue value("one");
     Utf8String formattedValue;
-    EXPECT_EQ(SUCCESS, m_formatter.GetFormattedPropertyValue(formattedValue, *prop, value));
+    EXPECT_EQ(SUCCESS, m_formatter.GetFormattedPropertyValue(formattedValue, *prop, value, nullptr, ECPresentation::UnitSystem::Undefined));
     EXPECT_STREQ("One", formattedValue.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DefaultPropertyFormatterTests, GetFormattedPropertyValueHandlesPropertiesWithUnits_MetricUnitSystem)
+    {
+    ECPropertyCP prop = m_class->GetPropertyP("Prop4");
+    NamedFormat namedFormat = prop->GetKindOfQuantity()->GetPresentationFormats()[1];
+    Utf8Char decimalSeparator = namedFormat.GetNumericSpec()->GetDecimalSeparator();
+    ECValue value(123.0);
+    Utf8String formattedValue;
+    EXPECT_EQ(SUCCESS, m_formatter.GetFormattedPropertyValue(formattedValue, *prop, value, nullptr, ECPresentation::UnitSystem::Metric));
+    EXPECT_STREQ(Utf8PrintfString("123%c0 m", decimalSeparator).c_str(), formattedValue.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DefaultPropertyFormatterTests, GetFormattedPropertyValueHandlesPropertiesWithUnits)
+TEST_F(DefaultPropertyFormatterTests, GetFormattedPropertyValueHandlesPropertiesWithUnits_BritishImperialUnitSystem)
     {
     ECPropertyCP prop = m_class->GetPropertyP("Prop4");
     NamedFormatCP namedFormat = prop->GetKindOfQuantity()->GetDefaultPresentationFormat();
     Utf8Char decimalSeparator = namedFormat->GetNumericSpec()->GetDecimalSeparator();
     ECValue value(123.0); // persistence value in meters; 123 m = 403.5433 ft
     Utf8String formattedValue;
-    EXPECT_EQ(SUCCESS, m_formatter.GetFormattedPropertyValue(formattedValue, *prop, value));
+    EXPECT_EQ(SUCCESS, m_formatter.GetFormattedPropertyValue(formattedValue, *prop, value, nullptr, ECPresentation::UnitSystem::BritishImperial));
     EXPECT_STREQ(Utf8PrintfString("403%c5433 ft", decimalSeparator).c_str(), formattedValue.c_str());
     }
 
@@ -125,7 +140,7 @@ TEST_F(DefaultPropertyFormatterTests, GetFormattedPropertyValueHandlesNullValues
     ECValue value;
     value.SetIsNull(true);
     Utf8String formattedValue;
-    EXPECT_EQ(SUCCESS, m_formatter.GetFormattedPropertyValue(formattedValue, *prop, value));
+    EXPECT_EQ(SUCCESS, m_formatter.GetFormattedPropertyValue(formattedValue, *prop, value, nullptr, ECPresentation::UnitSystem::Undefined));
     EXPECT_STREQ("", formattedValue.c_str());
     }
 
@@ -137,7 +152,7 @@ TEST_F(DefaultPropertyFormatterTests, GetFormattedPropertyValueHandlesDoubleValu
     ECPropertyCP prop = m_class->GetPropertyP("Prop5");
     ECValue value(2.0);
     Utf8String formattedValue;
-    EXPECT_EQ(SUCCESS, m_formatter.GetFormattedPropertyValue(formattedValue, *prop, value));
+    EXPECT_EQ(SUCCESS, m_formatter.GetFormattedPropertyValue(formattedValue, *prop, value, nullptr, ECPresentation::UnitSystem::Undefined));
     EXPECT_STREQ("2.00", formattedValue.c_str());
     }
 
@@ -149,7 +164,7 @@ TEST_F(DefaultPropertyFormatterTests, GetFormattedPropertyValueHandlesPoint2dVal
     ECPropertyCP prop = m_class->GetPropertyP("Prop6");
     ECValue value(DPoint2d::From(1, 2));
     Utf8String formattedValue;
-    EXPECT_EQ(SUCCESS, m_formatter.GetFormattedPropertyValue(formattedValue, *prop, value));
+    EXPECT_EQ(SUCCESS, m_formatter.GetFormattedPropertyValue(formattedValue, *prop, value, nullptr, ECPresentation::UnitSystem::Undefined));
     EXPECT_STREQ("X: 1.00 Y: 2.00", formattedValue.c_str());
     }
 
@@ -161,7 +176,7 @@ TEST_F(DefaultPropertyFormatterTests, GetFormattedPropertyValueHandlesPoint3dVal
     ECPropertyCP prop = m_class->GetPropertyP("Prop7");
     ECValue value(DPoint3d::From(1, 2, 3));
     Utf8String formattedValue;
-    EXPECT_EQ(SUCCESS, m_formatter.GetFormattedPropertyValue(formattedValue, *prop, value));
+    EXPECT_EQ(SUCCESS, m_formatter.GetFormattedPropertyValue(formattedValue, *prop, value, nullptr, ECPresentation::UnitSystem::Undefined));
     EXPECT_STREQ("X: 1.00 Y: 2.00 Z: 3.00", formattedValue.c_str());
     }
 
@@ -173,6 +188,6 @@ TEST_F(DefaultPropertyFormatterTests, GetFormattedPropertyValueHandlesDateTimeVa
     ECPropertyCP prop = m_class->GetPropertyP("Prop7");
     ECValue value(DateTime(2019, 10, 03));
     Utf8String formattedValue;
-    EXPECT_EQ(SUCCESS, m_formatter.GetFormattedPropertyValue(formattedValue, *prop, value));
+    EXPECT_EQ(SUCCESS, m_formatter.GetFormattedPropertyValue(formattedValue, *prop, value, nullptr, ECPresentation::UnitSystem::Undefined));
     EXPECT_STREQ("2019-10-03", formattedValue.c_str());
     }

@@ -713,11 +713,18 @@ struct TestCategorySupplier : IPropertyCategorySupplier
 * @bsiclass                                     Grigas.Petraitis                09/2016
 +===============+===============+===============+===============+===============+======*/
 struct TestPropertyFormatter : IECPropertyFormatter
-    {
-    TestPropertyFormatter() {}
-    BentleyStatus _GetFormattedPropertyValue(Utf8StringR formattedValue, ECPropertyCR ecProperty, ECValueCR ecValue) const override;
+{
+private:
+    bool m_addLocaleSuffix;
+    bool m_addUnitSystemSuffix;
+protected:
+    BentleyStatus _GetFormattedPropertyValue(Utf8StringR formattedValue, ECPropertyCR ecProperty, ECValueCR ecValue, Utf8CP locale, ECPresentation::UnitSystem) const override;
     BentleyStatus _GetFormattedPropertyLabel(Utf8StringR formattedLabel, ECPropertyCR ecProperty, ECClassCR propertyClass, RelatedClassPath const& relatedClassPath, RelationshipMeaning relationshipMeaning) const override;
-    };
+public:
+    TestPropertyFormatter(bool addLocaleSuffix = false, bool addUnitSystemSuffix = false)
+        : m_addLocaleSuffix(addLocaleSuffix), m_addUnitSystemSuffix(addUnitSystemSuffix)
+        {}
+};
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                07/2017

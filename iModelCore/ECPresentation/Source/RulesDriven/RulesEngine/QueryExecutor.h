@@ -112,6 +112,7 @@ private:
     mutable bvector<ContentSetItemPtr> m_records;
     mutable bset<ECInstanceKey> m_readKeys;
     IECPropertyFormatter const* m_propertyFormatter;
+    ECPresentation::UnitSystem m_unitSystem;
     
 protected:
     void _Reset() override;
@@ -122,6 +123,8 @@ public:
     ECPRESENTATION_EXPORT ContentQueryExecutor(IConnectionCR);
     void SetPropertyFormatter(IECPropertyFormatter const& formatter) {m_propertyFormatter = &formatter;}
     IECPropertyFormatter const* GetPropertyFormatter() const {return m_propertyFormatter;}
+    void SetUnitSystem(ECPresentation::UnitSystem unitSystem) {m_unitSystem = unitSystem;}
+    ECPresentation::UnitSystem GetUnitSystem() const {return m_unitSystem;}
     ECPRESENTATION_EXPORT void SetQuery(ContentQuery const& query, bool clearCache = true);
     ContentQueryCP GetContentQuery() const {return m_query.get();}
     ECPRESENTATION_EXPORT ContentSetItemPtr GetRecord(size_t index) const;

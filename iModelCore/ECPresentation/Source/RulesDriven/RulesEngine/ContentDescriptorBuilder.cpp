@@ -573,7 +573,7 @@ public:
         : ContentSpecificationsHandler(context), m_specification(specification), m_isRecursiveSpecification(false),
         m_propertyInfos(GetContext().GetSchemaHelper(), GetContext().GetRuleset(), specification)
         {
-        RulesDrivenECPresentationManager::ContentOptions options(GetContext().GetRuleset().GetRuleSetId(), GetContext().GetLocale());
+        RulesDrivenECPresentationManager::ContentOptions options(GetContext().GetRuleset().GetRuleSetId(), GetContext().GetLocale(), GetContext().GetUnitSystem());
         m_descriptor = ContentDescriptor::Create(GetContext().GetConnection(), options.GetJson(), GetContext().GetInputKeys(), GetContext().GetPreferredDisplayType());
         m_descriptor->SetContentFlags(specification ? _GetContentFlags(*specification) : GetContext().GetContentFlagsCalculator() ? context.GetContentFlagsCalculator()(0) : 0);
         if (nullptr != GetContext().GetSelectionInfo())

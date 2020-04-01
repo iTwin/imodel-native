@@ -1376,7 +1376,20 @@ static Json::Value GetCommonOptions(JsonValueCR params)
         return s_empty;
         }
     RulesDrivenECPresentationManager::CommonOptions options(params["rulesetId"].asCString());
-    options.SetLocale((params.isMember("locale") && params["locale"].isString()) ? params["locale"].asCString() : "");
+    if (params.isMember("locale") && params["locale"].isString())
+        options.SetLocale(params["locale"].asCString());
+    if (params.isMember("unitSystem") && params["unitSystem"].isString())
+        {
+        Utf8CP unitSystem = params["unitSystem"].asCString();
+        if (0 == strcmp("metric", unitSystem))
+            options.SetUnitSystem(ECPresentation::UnitSystem::Metric);
+        else if (0 == strcmp("british-imperial", unitSystem))
+            options.SetUnitSystem(ECPresentation::UnitSystem::BritishImperial);
+        else if (0 == strcmp("us-customary", unitSystem))
+            options.SetUnitSystem(ECPresentation::UnitSystem::UsCustomary);
+        else if (0 == strcmp("us-survey", unitSystem))
+            options.SetUnitSystem(ECPresentation::UnitSystem::UsSurvey);
+        }
     options.SetPriority((params.isMember("priority") && params["priority"].isInt()) ? params["priority"].asInt() : DEFAULT_REQUEST_PRIORITY);
     return options.GetJson();
     }

@@ -102,6 +102,20 @@ enum class SortDirection
     };
 
 //=======================================================================================
+//! Unit system
+//! @ingroup GROUP_Presentation
+// @bsiclass                                    Grigas.Petraitis                04/2020
+//=======================================================================================
+enum class UnitSystem
+    {
+    Undefined,
+    Metric,
+    BritishImperial,
+    UsCustomary,
+    UsSurvey,
+    };
+
+//=======================================================================================
 //! Paging options.
 //! @ingroup GROUP_Presentation
 // @bsiclass                                    Grigas.Petraitis                05/2016

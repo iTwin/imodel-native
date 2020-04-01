@@ -5,6 +5,7 @@
 #include <ECPresentationPch.h>
 #include <ECPresentation/Content.h>
 #include <Units/Units.h>
+#include <Units/UnitRegistry.h>
 #include <ECObjects/ECQuantityFormatting.h>
 #include "ValueHelpers.h"
 #include "RulesDriven/RulesEngine/LoggingHelper.h"
@@ -1286,9 +1287,29 @@ BentleyStatus DefaultPropertyFormatter::_ApplyEnumFormatting(Utf8StringR formatt
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+static bvector<Utf8String> const& GetUnitSystemGroupNames(ECPresentation::UnitSystem group)
+    {
+    static bvector<Utf8String> s_metricUnitSystems{"SI", "METRIC", "INTERNATIONAL", "FINANCE"};
+    static bvector<Utf8String> s_britishImperialUnitSystems{"IMPERIAL", "USCUSTOM", "INTERNATIONAL", "FINANCE"};
+    static bvector<Utf8String> s_usCustomaryUnitSystems{"USCUSTOM", "INTERNATIONAL", "FINANCE"};
+    static bvector<Utf8String> s_usSurveyUnitSystems{"USSURVEY", "USCUSTOM", "INTERNATIONAL", "FINANCE"};
+    static bvector<Utf8String> s_empty;
+    switch (group)
+        {
+        case ECPresentation::UnitSystem::Metric: return s_metricUnitSystems;
+        case ECPresentation::UnitSystem::BritishImperial: return s_britishImperialUnitSystems;
+        case ECPresentation::UnitSystem::UsCustomary: return s_usCustomaryUnitSystems;
+        case ECPresentation::UnitSystem::UsSurvey: return s_usSurveyUnitSystems;
+        }
+    return s_empty;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DefaultPropertyFormatter::_ApplyKoqFormatting(Utf8StringR formattedValue, ECPropertyCR ecProperty, ECValueCR ecValue) const
+BentleyStatus DefaultPropertyFormatter::_ApplyKoqFormatting(Utf8StringR formattedValue, ECPropertyCR ecProperty, ECValueCR ecValue, ECPresentation::UnitSystem unitSystemGroup) const
     {
     KindOfQuantityCP koq = ecProperty.GetKindOfQuantity();
     if (nullptr == koq)
@@ -1299,7 +1320,27 @@ BentleyStatus DefaultPropertyFormatter::_ApplyKoqFormatting(Utf8StringR formatte
         return ERROR;
 
     // determine the presentation unit
-    NamedFormatCP format = koq->GetDefaultPresentationFormat();
+    NamedFormatCP format = nullptr;
+    for (Utf8StringCR unitSystemName : GetUnitSystemGroupNames(unitSystemGroup))
+        {
+        // find the first presentation format that uses one of the unit systems in the group
+        auto formatIter = std::find_if(koq->GetPresentationFormats().begin(), koq->GetPresentationFormats().end(), [&unitSystemName](NamedFormatCR f)
+            {
+            return f.HasCompositeMajorUnit()
+                && f.GetCompositeMajorUnit()->GetUnitSystem()
+                && f.GetCompositeMajorUnit()->GetUnitSystem()->GetName().EqualsI(unitSystemName);
+            });
+        if (koq->GetPresentationFormats().end() != formatIter)
+            {
+            format = &*formatIter;
+            break;
+            }
+        }
+    if (!format)
+        {
+        // if format based on requested unit systems group was not found, use default
+        format = koq->GetDefaultPresentationFormat();
+        }
     if (nullptr == format || nullptr == format->GetCompositeMajorUnit())
         {
         BeAssert(false);
@@ -1372,7 +1413,7 @@ BentleyStatus DefaultPropertyFormatter::_ApplyDateTimeFormatting(Utf8StringR for
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DefaultPropertyFormatter::_GetFormattedPropertyValue(Utf8StringR formattedValue, ECPropertyCR ecProperty, ECValueCR ecValue) const
+BentleyStatus DefaultPropertyFormatter::_GetFormattedPropertyValue(Utf8StringR formattedValue, ECPropertyCR ecProperty, ECValueCR ecValue, Utf8CP, ECPresentation::UnitSystem unitSystem) const
     {
     if (ecValue.IsNull())
         {
@@ -1383,7 +1424,7 @@ BentleyStatus DefaultPropertyFormatter::_GetFormattedPropertyValue(Utf8StringR f
     if (SUCCESS == _ApplyEnumFormatting(formattedValue, ecProperty, ecValue))
         return SUCCESS;
 
-    if (SUCCESS == _ApplyKoqFormatting(formattedValue, ecProperty, ecValue))
+    if (SUCCESS == _ApplyKoqFormatting(formattedValue, ecProperty, ecValue, unitSystem))
         return SUCCESS;
 
     if (ecValue.IsDouble() && SUCCESS == _ApplyDoubleFormatting(formattedValue, ecValue.GetDouble()))

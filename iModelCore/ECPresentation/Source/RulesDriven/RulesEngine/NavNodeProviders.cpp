@@ -1307,9 +1307,10 @@ bool QueryBasedNodesProvider::InitializeProvidersForAllNodes()
 
     // set up the custom functions context
     IECPropertyFormatter const* formatter = GetContext().IsPropertyFormattingContext() ? &GetContext().GetECPropertyFormatter() : nullptr;
+    ECPresentation::UnitSystem unitSystem = GetContext().IsPropertyFormattingContext() ? GetContext().GetUnitSystem() : ECPresentation::UnitSystem::Undefined;
     CustomFunctionsContext fnContext(GetContext().GetSchemaHelper(), GetContext().GetConnections(), GetContext().GetConnection(), GetContext().GetRuleset(),
         GetContext().GetLocale(), GetContext().GetUserSettings(), &GetContext().GetUsedSettingsListener(), GetContext().GetECExpressionsCache(),
-        GetContext().GetNodesFactory(), GetContext().GetUsedClassesListener(), virtualParent.get(), &m_query->GetExtendedData(), formatter);
+        GetContext().GetNodesFactory(), GetContext().GetUsedClassesListener(), virtualParent.get(), &m_query->GetExtendedData(), formatter, unitSystem);
     if (GetContext().IsLocalizationContext())
         fnContext.SetLocalizationProvider(GetContext().GetLocalizationProvider());
 
@@ -1479,9 +1480,11 @@ size_t QueryBasedNodesProvider::_GetNodesCount() const
     // run a separate query to get the total nodes count (we already know this count
     // won't change during post-processing)
     IECPropertyFormatter const* formatter = GetContext().IsPropertyFormattingContext() ? &GetContext().GetECPropertyFormatter() : nullptr;
+    ECPresentation::UnitSystem unitSystem = GetContext().IsPropertyFormattingContext() ? GetContext().GetUnitSystem() : ECPresentation::UnitSystem::Undefined;
     CustomFunctionsContext fnContext(GetContext().GetSchemaHelper(), GetContext().GetConnections(), GetContext().GetConnection(),
         GetContext().GetRuleset(), GetContext().GetLocale(), GetContext().GetUserSettings(), &GetContext().GetUsedSettingsListener(),
-        GetContext().GetECExpressionsCache(), GetContext().GetNodesFactory(), GetContext().GetUsedClassesListener(), virtualParent.get(), &m_query->GetExtendedData(), formatter);
+        GetContext().GetECExpressionsCache(), GetContext().GetNodesFactory(), GetContext().GetUsedClassesListener(), virtualParent.get(), 
+        &m_query->GetExtendedData(), formatter, unitSystem);
     if (GetContext().IsLocalizationContext())
         fnContext.SetLocalizationProvider(GetContext().GetLocalizationProvider());
 

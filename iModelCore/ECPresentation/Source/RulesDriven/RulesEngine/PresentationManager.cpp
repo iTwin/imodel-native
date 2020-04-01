@@ -14,6 +14,7 @@
 
 const Utf8CP RulesDrivenECPresentationManager::CommonOptions::OPTION_NAME_RulesetId = "RulesetId";
 const Utf8CP RulesDrivenECPresentationManager::CommonOptions::OPTION_NAME_Locale = "Locale";
+const Utf8CP RulesDrivenECPresentationManager::CommonOptions::OPTION_NAME_UnitSystem = "UnitSystem";
 const Utf8CP RulesDrivenECPresentationManager::CommonOptions::OPTION_NAME_Priority = "Priority";
 
 /*=================================================================================**//**

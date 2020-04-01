@@ -1452,7 +1452,7 @@ struct IECPropertyFormatter
 {
 protected:
     //! @see GetFormattedPropertyValue
-    virtual BentleyStatus _GetFormattedPropertyValue(Utf8StringR, ECPropertyCR, ECValueCR) const = 0;
+    virtual BentleyStatus _GetFormattedPropertyValue(Utf8StringR, ECPropertyCR, ECValueCR, Utf8CP locale, UnitSystem) const = 0;
     virtual BentleyStatus _GetFormattedPropertyLabel(Utf8StringR, ECPropertyCR, ECClassCR, RelatedClassPath const&, RelationshipMeaning) const = 0;
 
 public:
@@ -1463,10 +1463,12 @@ public:
     //! @param[out] formattedValue The formatted value.
     //! @param[in] ecProperty The property whose value is being formatted.
     //! @param[in] ecValue The value to format.
+    //! @param[in] locale Locale to use when formatting
+    //! @param[in] unitSystem Unit system to use when formatting
     //! @return SUCCESS if the value was successfully formatted.
-    BentleyStatus GetFormattedPropertyValue(Utf8StringR formattedValue, ECPropertyCR ecProperty, ECValueCR ecValue) const
+    BentleyStatus GetFormattedPropertyValue(Utf8StringR formattedValue, ECPropertyCR ecProperty, ECValueCR ecValue, Utf8CP locale, UnitSystem unitSystem) const
         {
-        return _GetFormattedPropertyValue(formattedValue, ecProperty, ecValue);
+        return _GetFormattedPropertyValue(formattedValue, ecProperty, ecValue, locale, unitSystem);
         }
 
     //! Returns formatted label for the supplied ECProperty.
@@ -1493,13 +1495,13 @@ struct DefaultPropertyFormatter : IECPropertyFormatter
 {
 protected:
     ECPRESENTATION_EXPORT virtual BentleyStatus _ApplyEnumFormatting(Utf8StringR, ECPropertyCR, ECValueCR) const;
-    ECPRESENTATION_EXPORT virtual BentleyStatus _ApplyKoqFormatting(Utf8StringR, ECPropertyCR, ECValueCR) const;
+    ECPRESENTATION_EXPORT virtual BentleyStatus _ApplyKoqFormatting(Utf8StringR, ECPropertyCR, ECValueCR, UnitSystem) const;
     ECPRESENTATION_EXPORT virtual BentleyStatus _ApplyPoint3dFormatting(Utf8StringR, DPoint3dCR) const;
     ECPRESENTATION_EXPORT virtual BentleyStatus _ApplyPoint2dFormatting(Utf8StringR, DPoint2dCR) const;
     ECPRESENTATION_EXPORT virtual BentleyStatus _ApplyDoubleFormatting(Utf8StringR, double) const;
     ECPRESENTATION_EXPORT virtual BentleyStatus _ApplyDateTimeFormatting(Utf8StringR, DateTimeCR) const;
 protected:
-    ECPRESENTATION_EXPORT virtual BentleyStatus _GetFormattedPropertyValue(Utf8StringR, ECPropertyCR, ECValueCR) const override;
+    ECPRESENTATION_EXPORT virtual BentleyStatus _GetFormattedPropertyValue(Utf8StringR, ECPropertyCR, ECValueCR, Utf8CP locale, UnitSystem) const override;
     ECPRESENTATION_EXPORT virtual BentleyStatus _GetFormattedPropertyLabel(Utf8StringR, ECPropertyCR, ECClassCR, RelatedClassPath const&, RelationshipMeaning) const override;
 public:
     DefaultPropertyFormatter() {}

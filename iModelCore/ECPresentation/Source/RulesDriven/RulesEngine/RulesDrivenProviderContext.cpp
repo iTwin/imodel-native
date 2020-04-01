@@ -64,6 +64,7 @@ RulesDrivenProviderContext::~RulesDrivenProviderContext()
 void RulesDrivenProviderContext::Init()
     {
     m_propertyFormatter = nullptr;
+    m_unitSystem = ECPresentation::UnitSystem::Undefined;
     m_isLocalizationContext = false;
     m_localizationProvider = nullptr;
     m_isQueryContext = false;
@@ -75,10 +76,11 @@ void RulesDrivenProviderContext::Init()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenProviderContext::SetPropertyFormattingContext(IECPropertyFormatter const& formatter)
+void RulesDrivenProviderContext::SetPropertyFormattingContext(IECPropertyFormatter const& formatter, ECPresentation::UnitSystem unitSystem)
     {
     BeAssert(!IsPropertyFormattingContext());
     m_propertyFormatter = &formatter;
+    m_unitSystem = unitSystem;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -88,6 +90,7 @@ void RulesDrivenProviderContext::SetPropertyFormattingContext(RulesDrivenProvide
     {
     BeAssert(!IsPropertyFormattingContext());
     m_propertyFormatter = other.m_propertyFormatter;
+    m_unitSystem = other.m_unitSystem;
     }
 
 /*---------------------------------------------------------------------------------**//**

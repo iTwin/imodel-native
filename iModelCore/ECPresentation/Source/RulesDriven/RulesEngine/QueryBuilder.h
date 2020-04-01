@@ -147,18 +147,20 @@ struct ContentDescriptorBuilder
     private:
         IPropertyCategorySupplierCR m_categorySupplier;
         IECPropertyFormatter const* m_propertyFormatter;
+        ECPresentation::UnitSystem m_unitSystem;
         ILocalizationProvider const* m_localizationProvider;
         INavNodeKeysContainerCPtr m_inputKeys;
         SelectionInfo const* m_selectionInfo;
     public:
         Context(ECSchemaHelper const& helper, IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, Utf8CP preferredDisplayType,
-            IPropertyCategorySupplierCR categorySupplier, IECPropertyFormatter const* propertyFormatter, ILocalizationProvider const* localizationProvider, Utf8String locale,
-            INavNodeKeysContainerCR input, SelectionInfo const* selection) 
+            IPropertyCategorySupplierCR categorySupplier, IECPropertyFormatter const* propertyFormatter, ECPresentation::UnitSystem unitSystem, 
+            ILocalizationProvider const* localizationProvider, Utf8String locale, INavNodeKeysContainerCR input, SelectionInfo const* selection) 
             : ContentSpecificationsHandler::Context(helper, connections, connection, ruleset, locale, preferredDisplayType), m_categorySupplier(categorySupplier),
-            m_propertyFormatter(propertyFormatter), m_localizationProvider(localizationProvider), m_inputKeys(&input), m_selectionInfo(selection)
+            m_propertyFormatter(propertyFormatter), m_unitSystem(unitSystem), m_localizationProvider(localizationProvider), m_inputKeys(&input), m_selectionInfo(selection)
             {}
         IPropertyCategorySupplierCR GetCategorySupplier() const {return m_categorySupplier;}
         IECPropertyFormatter const* GetPropertyFormatter() const {return m_propertyFormatter;}
+        ECPresentation::UnitSystem GetUnitSystem() const {return m_unitSystem;}
         ILocalizationProvider const* GetLocalizationProvider() const {return m_localizationProvider;}
         INavNodeKeysContainerCR GetInputKeys() const {return *m_inputKeys;}
         SelectionInfo const* GetSelectionInfo() const {return m_selectionInfo;}

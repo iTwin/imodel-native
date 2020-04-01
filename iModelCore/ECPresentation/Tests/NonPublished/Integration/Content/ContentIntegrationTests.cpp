@@ -17072,6 +17072,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, AppendsTheSameRelatedConten
 struct RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests : RulesDrivenECPresentationManagerContentTests
     {
     TestPropertyFormatter m_propertyFormatter;
+    RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests()
+        : RulesDrivenECPresentationManagerContentTests(), m_propertyFormatter(false, true)
+        {}
     virtual void _ConfigureManagerParams(RulesDrivenECPresentationManager::Params& params) override
         {
         RulesDrivenECPresentationManagerContentTests::_ConfigureManagerParams(params);
@@ -17107,6 +17110,7 @@ TEST_F(RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests, 
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    options.SetUnitSystem(ECPresentation::UnitSystem::BritishImperial);
 
     // validate descriptor
     ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
@@ -17132,37 +17136,37 @@ TEST_F(RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests, 
     Utf8String fieldName = FIELD_NAME(m_widgetClass, "MyID");
     ASSERT_TRUE(displayValues.HasMember(fieldName.c_str()));
     ASSERT_TRUE(displayValues[fieldName.c_str()].IsString());
-    EXPECT_STREQ("_Test 1_", displayValues[fieldName.c_str()].GetString());
+    EXPECT_STREQ("_Test 1_[British Imperial]", displayValues[fieldName.c_str()].GetString());
 
     fieldName = FIELD_NAME(m_widgetClass, "Description");
     ASSERT_TRUE(displayValues.HasMember(fieldName.c_str()));
     ASSERT_TRUE(displayValues[fieldName.c_str()].IsString());
-    EXPECT_STREQ("_Test 2_", displayValues[fieldName.c_str()].GetString());
+    EXPECT_STREQ("_Test 2_[British Imperial]", displayValues[fieldName.c_str()].GetString());
 
     fieldName = FIELD_NAME(m_widgetClass, "IntProperty");
     ASSERT_TRUE(displayValues.HasMember(fieldName.c_str()));
     ASSERT_TRUE(displayValues[fieldName.c_str()].IsString());
-    EXPECT_STREQ("_3_", displayValues[fieldName.c_str()].GetString());
+    EXPECT_STREQ("_3_[British Imperial]", displayValues[fieldName.c_str()].GetString());
 
     fieldName = FIELD_NAME(m_widgetClass, "BoolProperty");
     ASSERT_TRUE(displayValues.HasMember(fieldName.c_str()));
     ASSERT_TRUE(displayValues[fieldName.c_str()].IsString());
-    EXPECT_STREQ("_True_", displayValues[fieldName.c_str()].GetString());
+    EXPECT_STREQ("_True_[British Imperial]", displayValues[fieldName.c_str()].GetString());
 
     fieldName = FIELD_NAME(m_widgetClass, "DoubleProperty");
     ASSERT_TRUE(displayValues.HasMember(fieldName.c_str()));
     ASSERT_TRUE(displayValues[fieldName.c_str()].IsString());
-    EXPECT_STREQ("_4_", displayValues[fieldName.c_str()].GetString());
+    EXPECT_STREQ("_4_[British Imperial]", displayValues[fieldName.c_str()].GetString());
 
     fieldName = FIELD_NAME(m_widgetClass, "LongProperty");
     ASSERT_TRUE(displayValues.HasMember(fieldName.c_str()));
     ASSERT_TRUE(displayValues[fieldName.c_str()].IsString());
-    EXPECT_STREQ("_123_", displayValues[fieldName.c_str()].GetString());
+    EXPECT_STREQ("_123_[British Imperial]", displayValues[fieldName.c_str()].GetString());
 
     fieldName = FIELD_NAME(m_widgetClass, "DateProperty");
     ASSERT_TRUE(displayValues.HasMember(fieldName.c_str()));
     ASSERT_TRUE(displayValues[fieldName.c_str()].IsString());
-    EXPECT_STREQ("_2017-05-30T00:00:00.000Z_", displayValues[fieldName.c_str()].GetString());
+    EXPECT_STREQ("_2017-05-30T00:00:00.000Z_[British Imperial]", displayValues[fieldName.c_str()].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -17212,6 +17216,7 @@ TEST_F(RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests, 
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    options.SetUnitSystem(ECPresentation::UnitSystem::Metric);
 
     // validate descriptor
     ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
@@ -17239,7 +17244,7 @@ TEST_F(RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests, 
                 "%s": "Test"
                 },
             "DisplayValues": {
-                "%s": "_Test_"
+                "%s": "_Test_[Metric]"
                 },
             "MergedFieldNames": []
             }]
@@ -17317,6 +17322,7 @@ TEST_F(RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests, 
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
+    options.SetUnitSystem(ECPresentation::UnitSystem::UsCustomary);
 
     // validate descriptor
     ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
@@ -17339,7 +17345,7 @@ TEST_F(RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests, 
     rapidjson::Document expectedDisplayValues;
     expectedDisplayValues.Parse(Utf8PrintfString(R"(
         {
-        "%s": ["_2_", "_1_", null]
+        "%s": ["_2_[US Customary]", "_1_[US Customary]", null]
         })", FIELD_NAME(ecClass, "ArrayProperty")).c_str());
     EXPECT_EQ(expectedDisplayValues, recordJson["DisplayValues"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues) << "\r\n"
@@ -17383,6 +17389,7 @@ TEST_F(RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests, 
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    options.SetUnitSystem(ECPresentation::UnitSystem::UsSurvey);
 
     // validate descriptor
     ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
@@ -17406,8 +17413,8 @@ TEST_F(RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests, 
     expectedDisplayValues.Parse(Utf8PrintfString(R"({
         "%s": {
            "DoubleProperty": null,
-           "IntProperty": "_123_",
-           "StringProperty": "_abc_"
+           "IntProperty": "_123_[US Survey]",
+           "StringProperty": "_abc_[US Survey]"
            }
         })", FIELD_NAME(ecClass, "StructProperty")).c_str());
     EXPECT_EQ(expectedDisplayValues, recordJson["DisplayValues"])
@@ -17503,8 +17510,8 @@ TEST_F(RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests, 
             "DisplayValues": {
                 "%s": {
                     "DoubleProperty": null,
-                    "IntProperty": "_123_",
-                    "StringProperty": "_abc_"
+                    "IntProperty": "_123_[Default]",
+                    "StringProperty": "_abc_[Default]"
                     }
                 },
             "MergedFieldNames": []

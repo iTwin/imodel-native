@@ -271,6 +271,9 @@ protected:
     //! extended data object, it gets replaced.
     void AddMember(Utf8CP name, Json::Value value) {GetJsonR()[name] = value;}
 
+    //! Remove json member
+    void RemoveMember(Utf8CP name) {GetJsonR().removeMember(name);}
+
 public:
     //! Initializes an empty read-write accessor.
     JsonCppAccessor() {InitWritable(Json::Value(Json::objectValue));}

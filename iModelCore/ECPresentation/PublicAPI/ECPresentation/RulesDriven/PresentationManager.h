@@ -203,6 +203,7 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
         {
         ECPRESENTATION_EXPORT static const Utf8CP OPTION_NAME_RulesetId;
         ECPRESENTATION_EXPORT static const Utf8CP OPTION_NAME_Locale;
+        ECPRESENTATION_EXPORT static const Utf8CP OPTION_NAME_UnitSystem;
         ECPRESENTATION_EXPORT static const Utf8CP OPTION_NAME_Priority;
 
         //! Constructor. Creates a read-only accessor.
@@ -216,19 +217,31 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
         //! Constructor.
         //! @param[in] rulesetId The ID of the ruleset.
         //! @param[in] locale Locale identifier
-        CommonOptions(Utf8CP rulesetId, Utf8CP locale = nullptr) : JsonCppAccessor() { SetRulesetId(rulesetId); SetLocale(locale); }
+        //! @param[in] unitSystem Unit system to use for formatting property values
+        CommonOptions(Utf8CP rulesetId, Utf8CP locale = nullptr, UnitSystem unitSystem = UnitSystem::Undefined)
+            : JsonCppAccessor()
+            {
+            SetRulesetId(rulesetId);
+            SetLocale(locale);
+            SetUnitSystem(unitSystem);
+            }
 
         //! Is ruleset ID defined.
         bool HasRulesetId() const {return GetJson().isMember(OPTION_NAME_RulesetId);}
         //! Get the ruleset ID.
         Utf8CP GetRulesetId() const {return GetJson().isMember(OPTION_NAME_RulesetId) ? GetJson()[OPTION_NAME_RulesetId].asCString() : "";}
         //! Set the ruleset ID.
-        void SetRulesetId(Utf8CP rulesetId) {AddMember(OPTION_NAME_RulesetId, rulesetId);}
+        void SetRulesetId(Utf8CP rulesetId) {rulesetId ? AddMember(OPTION_NAME_RulesetId, rulesetId) : RemoveMember(OPTION_NAME_RulesetId);}
 
         //! Get locale identifier.
         Utf8CP GetLocale() const {return GetJson().isMember(OPTION_NAME_Locale) ? GetJson()[OPTION_NAME_Locale].asCString() : "";}
         //! Set locale identifier.
-        void SetLocale(Utf8CP locale) {AddMember(OPTION_NAME_Locale, locale);}
+        void SetLocale(Utf8CP locale) {locale ? AddMember(OPTION_NAME_Locale, locale) : RemoveMember(OPTION_NAME_Locale);}
+
+        //! Get unit system.
+        UnitSystem GetUnitSystem() const {return (UnitSystem)GetJson()[OPTION_NAME_UnitSystem].asInt(0);}
+        //! Set unit system.
+        void SetUnitSystem(UnitSystem unitSystem) {ECPresentation::UnitSystem::Undefined != unitSystem ? AddMember(OPTION_NAME_UnitSystem, (int)unitSystem) : RemoveMember(OPTION_NAME_UnitSystem);}
 
         //! Get priority.
         int GetPriority() const {return GetJson().isMember(OPTION_NAME_Priority) ? GetJson()[OPTION_NAME_Priority].asInt() : DEFAULT_REQUEST_PRIORITY;}
@@ -254,11 +267,17 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
         //! Constructor.
         //! @param[in] rulesetId The ID of the ruleset to use for requesting nodes.
         //! @param[in] locale Locale identifier
-        NavigationOptions(Utf8CP rulesetId, Utf8CP locale = nullptr) : CommonOptions(rulesetId, locale) {}
+        //! @param[in] unitSystem Unit system to use for formatting property values
+        NavigationOptions(Utf8CP rulesetId, Utf8CP locale = nullptr, UnitSystem unitSystem = UnitSystem::Undefined) 
+            : CommonOptions(rulesetId, locale, unitSystem) 
+            {}
         //! Constructor.
         //! @param[in] rulesetId The ID of the ruleset to use for requesting nodes.
         //! @param[in] locale Locale identifier
-        NavigationOptions(Utf8StringCR rulesetId, Utf8StringCR locale = "") : CommonOptions(rulesetId.c_str(), locale.empty() ? nullptr : locale.c_str()) {}
+        //! @param[in] unitSystem Unit system to use for formatting property values
+        NavigationOptions(Utf8StringCR rulesetId, Utf8StringCR locale = "", UnitSystem unitSystem = UnitSystem::Undefined) 
+            : CommonOptions(rulesetId.c_str(), locale.empty() ? nullptr : locale.c_str(), unitSystem) 
+            {}
         };
 
     //===================================================================================
@@ -279,11 +298,17 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
         //! Constructor.
         //! @param[in] rulesetId The ID of the ruleset to use for requesting content.
         //! @param[in] locale Locale identifier
-        ContentOptions(Utf8CP rulesetId, Utf8CP locale = nullptr) : CommonOptions(rulesetId, locale) {}
+        //! @param[in] unitSystem Unit system to use for formatting property values
+        ContentOptions(Utf8CP rulesetId, Utf8CP locale = nullptr, UnitSystem unitSystem = UnitSystem::Undefined) 
+            : CommonOptions(rulesetId, locale, unitSystem)
+            {}
         //! Constructor.
         //! @param[in] rulesetId The ID of the ruleset to use for requesting content.
         //! @param[in] locale Locale identifier
-        ContentOptions(Utf8StringCR rulesetId, Utf8StringCR locale = "") : CommonOptions(rulesetId.c_str(), locale.empty() ? nullptr : locale.c_str()) {}
+        //! @param[in] unitSystem Unit system to use for formatting property values
+        ContentOptions(Utf8StringCR rulesetId, Utf8StringCR locale = "", UnitSystem unitSystem = UnitSystem::Undefined) 
+            : CommonOptions(rulesetId.c_str(), locale.empty() ? nullptr : locale.c_str(), unitSystem)
+            {}
         };
 
 private:

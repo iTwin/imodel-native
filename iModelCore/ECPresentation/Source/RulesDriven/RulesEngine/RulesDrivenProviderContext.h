@@ -37,6 +37,7 @@ private:
 
     // Property formatting context
     IECPropertyFormatter const* m_propertyFormatter;
+    ECPresentation::UnitSystem m_unitSystem;
     
     // localization context
     bool m_isLocalizationContext;
@@ -79,10 +80,11 @@ public:
     ECPRESENTATION_EXPORT void AdoptToSameConnection(ICancelationTokenCP);
 
     // Property formatting context
-    ECPRESENTATION_EXPORT void SetPropertyFormattingContext(IECPropertyFormatter const&);
+    ECPRESENTATION_EXPORT void SetPropertyFormattingContext(IECPropertyFormatter const&, ECPresentation::UnitSystem);
     ECPRESENTATION_EXPORT void SetPropertyFormattingContext(RulesDrivenProviderContextCR);
     bool IsPropertyFormattingContext() const {return nullptr != m_propertyFormatter;}
     IECPropertyFormatter const& GetECPropertyFormatter() const {BeAssert(IsPropertyFormattingContext()); return *m_propertyFormatter;}
+    ECPresentation::UnitSystem GetUnitSystem() const {BeAssert(IsPropertyFormattingContext()); return m_unitSystem;}
     
     // localization context
     ECPRESENTATION_EXPORT void SetLocalizationContext(ILocalizationProvider const& provider);
