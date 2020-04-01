@@ -933,7 +933,7 @@ TEST_F (RulesPreprocessorTests, GetContentSpecifications_NoConditions)
     
     TestNodeLocater nodeLocater(*node);
     RulesPreprocessor::ContentRuleParameters params(*NavNodeKeyListContainer::Create(selectedNodeKeys), "", nullptr, &nodeLocater);
-    ContentRuleInputKeysList specs = GetTestRulesPreprocessor(*rules).GetContentSpecifications(params);
+    ContentRuleInputKeysContainer specs = GetTestRulesPreprocessor(*rules).GetContentSpecifications(params);
     ASSERT_EQ(1, specs.size());
     }
 
@@ -954,7 +954,7 @@ TEST_F (RulesPreprocessorTests, GetContentSpecifications_RulesSortedByPriority)
     
     TestNodeLocater nodeLocater(*node);
     RulesPreprocessor::ContentRuleParameters params(*NavNodeKeyListContainer::Create(selectedNodeKeys), "", nullptr, &nodeLocater);
-    ContentRuleInputKeysList specs = GetTestRulesPreprocessor(*rules).GetContentSpecifications(params);
+    ContentRuleInputKeysContainer specs = GetTestRulesPreprocessor(*rules).GetContentSpecifications(params);
     ASSERT_EQ(1, specs.size());
     ASSERT_EQ(rule2, &(*specs.begin()).GetRule());
     }
@@ -975,7 +975,7 @@ TEST_F (RulesPreprocessorTests, GetContentSpecifications_WithConditions)
     rules->AddPresentationRule(*rule2);
     TestNodeLocater nodeLocater(*node);
     RulesPreprocessor::ContentRuleParameters params(*NavNodeKeyListContainer::Create(selectedNodeKeys), "", nullptr, &nodeLocater);
-    ContentRuleInputKeysList specs = GetTestRulesPreprocessor(*rules).GetContentSpecifications(params);
+    ContentRuleInputKeysContainer specs = GetTestRulesPreprocessor(*rules).GetContentSpecifications(params);
     ASSERT_EQ(1, specs.size());
     ASSERT_EQ(rule2, &(*specs.begin()).GetRule());
     }
@@ -995,7 +995,7 @@ TEST_F (RulesPreprocessorTests, GetContentSpecifications_ReturnsMultipleRulesIfO
     
     TestNodeLocater nodeLocater(*node);
     RulesPreprocessor::ContentRuleParameters params(*NavNodeKeyListContainer::Create(selectedNodeKeys), "", nullptr, &nodeLocater);
-    ContentRuleInputKeysList specs = GetTestRulesPreprocessor(*rules).GetContentSpecifications(params);
+    ContentRuleInputKeysContainer specs = GetTestRulesPreprocessor(*rules).GetContentSpecifications(params);
     ASSERT_EQ(2, specs.size());
     }
 
@@ -1014,7 +1014,7 @@ TEST_F (RulesPreprocessorTests, GetContentSpecifications_ReturnsOneRuleIfOnlyIfN
     
     TestNodeLocater nodeLocater(*node);
     RulesPreprocessor::ContentRuleParameters params(*NavNodeKeyListContainer::Create(selectedNodeKeys), "", nullptr, &nodeLocater);
-    ContentRuleInputKeysList specs = GetTestRulesPreprocessor(*rules).GetContentSpecifications(params);
+    ContentRuleInputKeysContainer specs = GetTestRulesPreprocessor(*rules).GetContentSpecifications(params);
     ASSERT_EQ(1, specs.size());
     }
 

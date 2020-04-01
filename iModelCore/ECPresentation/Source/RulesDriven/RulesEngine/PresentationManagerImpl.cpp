@@ -881,13 +881,13 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Saulius.Skliutas                01/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
-    ContentRuleInstanceKeysList HandleSpecifications(ContentRuleInputKeysList& specs, ICancelationTokenCR cancelationToken)
+    ContentRuleInstanceKeysContainer HandleSpecifications(ContentRuleInputKeysContainer& specs, ICancelationTokenCR cancelationToken)
         {
-        ContentRuleInstanceKeysList instanceSpecs;
+        ContentRuleInstanceKeysContainer instanceSpecs;
         for (ContentRuleInputKeys& spec : specs)
             {
             bvector<ECInstanceKey> instanceKeys = GetECInstanceKeys(spec.GetMatchingNodeKeys(), cancelationToken);
-            instanceSpecs.insert(ContentRuleInstanceKeys(spec.GetRule(), instanceKeys));
+            instanceSpecs.push_back(ContentRuleInstanceKeys(spec.GetRule(), instanceKeys));
             }
         return instanceSpecs;
         }
@@ -942,11 +942,11 @@ SpecificationContentProviderCPtr RulesDrivenECPresentationManagerImpl::GetConten
     _l2 = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManagerImpl::GetContentProvider] Get specifications", NativeLogging::LOG_TRACE);
     RulesPreprocessor preprocessor(m_connections, connection, *ruleset, options.GetLocale(), settings, &context->GetUsedSettingsListener(), ecexpressionsCache);
     RulesPreprocessor::ContentRuleParameters params(inputKeys, key.GetPreferredDisplayType(), selectionInfo, m_nodesCache);
-    ContentRuleInputKeysList specs = preprocessor.GetContentSpecifications(params);
+    ContentRuleInputKeysContainer specs = preprocessor.GetContentSpecifications(params);
     _l2 = nullptr;
 
     ContentRulesSpecificationsInputHandler inputHandler(*this, connection, ruleset->GetRuleSetId().c_str());
-    ContentRuleInstanceKeysList instanceSpecs = inputHandler.HandleSpecifications(specs, cancelationToken);
+    ContentRuleInstanceKeysContainer instanceSpecs = inputHandler.HandleSpecifications(specs, cancelationToken);
 
     _l2 = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManagerImpl::GetContentProvider] Create provider", NativeLogging::LOG_TRACE);
     provider = SpecificationContentProvider::Create(*context, instanceSpecs);

@@ -330,4 +330,40 @@ public:
 };
 typedef RefCountedPtr<SimpleCancelationToken> SimpleCancelationTokenPtr;
 
+//=======================================================================================
+//! Wrapper of bvector that ensures pushed items are unique like in a set.
+//! @ingroup GROUP_Presentation
+// @bsiclass                                    Ainoras.Zukauskas                04/2020
+//=======================================================================================
+template <class T>
+struct VectorSet
+{
+private:
+    bvector<T> m_vector;
+    bset<T>    m_set;
+public:
+    using iterator = typename bvector<T>::iterator;
+    using const_iterator = typename bvector<T>::const_iterator;
+    //! Iterator to start of vector
+    iterator begin() { return m_vector.begin(); }
+    //! Iterator to end of vector
+    iterator end() { return m_vector.end(); }
+    //! Const iterator to start of vector
+    const_iterator begin() const { return m_vector.begin(); }
+    //! Const iterator to end of vector
+    const_iterator end() const { return m_vector.end(); }
+    //! Item at front of vector
+    const T& front() const { return m_vector.front(); }
+    //! Item at back of vector
+    const T& back() const { return m_vector.back(); }
+    //! Push back with uniqueness check
+    void push_back(const T& item) { if (m_set.insert(item).second) m_vector.push_back(item); }
+    //! Is vector empty
+    bool empty() const { return m_vector.empty(); }
+    //! Vector size
+    size_t size() const { return m_vector.size(); }
+    //! Finds item in vector and returns iterator to it.
+    iterator find(const T& key) { return std::find(begin(), end(), key); }
+};
+
 END_BENTLEY_ECPRESENTATION_NAMESPACE

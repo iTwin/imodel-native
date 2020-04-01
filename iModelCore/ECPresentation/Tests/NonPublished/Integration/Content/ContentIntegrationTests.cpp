@@ -17658,3 +17658,51 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, IncludesAllPropertiesWhenHi
     EXPECT_EQ(elementClass->GetPropertyP("RegularProperty"), &fields[0]->AsPropertiesField()->GetProperties()[0].GetProperty());
     EXPECT_EQ(elementClass->GetPropertyP("HiddenProperty"), &fields[1]->AsPropertiesField()->GetProperties()[0].GetProperty());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Ainoras.Zukauskas                04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(AppliesContentRulesInCorrectPriorityOrder,
+    R"*(
+    <ECEntityClass typeName="Element">
+        <ECProperty propertyName="RegularProperty" typeName="string" />
+        <ECProperty propertyName="HiddenProperty" typeName="string">
+            <ECCustomAttributes>
+                <HiddenProperty xmlns="CoreCustomAttributes.01.00" />
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesContentRulesInCorrectPriorityOrder)
+    {
+    // set up data set
+    ECClassCP elementClass = GetClass("Element");
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
+
+    // set up input
+    IECInstancePtr elementInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
+    KeySetPtr input = KeySet::Create(bvector<IECInstancePtr>{elementInstance});
+
+    // set up ruleset
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRule* contentRule1 = new ContentRule("", 1000, false);
+    rules->AddPresentationRule(*contentRule1);
+    contentRule1->AddSpecification(*(new SelectedNodeInstancesSpecification(1000, false, "", "", true)));
+;
+    ContentRule* contentRule2 = new ContentRule("", 1001, false);
+    rules->AddPresentationRule(*contentRule2);
+    ContentSpecification* hiddenPropertySpec = new SelectedNodeInstancesSpecification(1001, false, "", "", true);
+    contentRule2->AddSpecification(*hiddenPropertySpec);
+    hiddenPropertySpec->AddPropertyOverride(*(new PropertySpecification("HiddenProperty", 1001, "", "", true, nullptr, false)));
+
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *input, nullptr, options.GetJson()).get();
+
+    bvector<ContentDescriptor::Field*> fields = descriptor->GetVisibleFields();
+    ASSERT_EQ(1, fields.size());
+    ASSERT_TRUE(fields[0]->IsPropertiesField());
+    ASSERT_EQ(1, fields[0]->AsPropertiesField()->GetProperties().size());
+    EXPECT_EQ(elementClass->GetPropertyP("HiddenProperty"), &fields[0]->AsPropertiesField()->GetProperties()[0].GetProperty());
+    }

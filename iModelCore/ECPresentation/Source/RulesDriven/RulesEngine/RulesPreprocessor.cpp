@@ -787,9 +787,9 @@ bvector<NodeArtifactsRuleCP> RulesPreprocessor::_GetNodeArtifactRules(Customizat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentRuleInputKeysList RulesPreprocessor::_GetContentSpecifications(ContentRuleParametersCR params)
+ContentRuleInputKeysContainer RulesPreprocessor::_GetContentSpecifications(ContentRuleParametersCR params)
     {
-    ContentRuleInputKeysList specs;
+    ContentRuleInputKeysContainer specs;
     bset<NavNodeKeyCP> handledNodes;
     for (NavNodeKeyCPtr const& inputNodeKey : params.GetInputNodeKeys())
         {
@@ -811,7 +811,10 @@ ContentRuleInputKeysList RulesPreprocessor::_GetContentSpecifications(ContentRul
                 {
                 auto iter = specs.find(*rule);
                 if (specs.end() == iter)
-                    iter = specs.insert(*rule).first;
+                    {
+                    specs.push_back(*rule);
+                    iter = std::prev(specs.end());
+                    }
 
                 iter->GetMatchingNodeKeys().push_back(inputNodeKey);
                 handledNodes.insert(inputNodeKey.get());
@@ -832,7 +835,7 @@ ContentRuleInputKeysList RulesPreprocessor::_GetContentSpecifications(ContentRul
             continue;
 
         if (rule->GetCondition().empty() || VerifyCondition(rule->GetCondition().c_str(), m_ecexpressionsCache, nullptr, contextPreparer))
-            specs.insert(*rule);
+            specs.push_back(*rule);
         }
 
     return specs;

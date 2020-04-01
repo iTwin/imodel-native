@@ -82,7 +82,7 @@ void ContentProviderContext::SetSelectionInfo(ContentProviderContextCR other)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpecificationContentProvider::SpecificationContentProvider(ContentProviderContextR context, ContentRuleInstanceKeysList ruleSpecs)
+SpecificationContentProvider::SpecificationContentProvider(ContentProviderContextR context, ContentRuleInstanceKeysContainer ruleSpecs)
     : ContentProvider(context), m_rules(ruleSpecs)
     {}
 
@@ -806,7 +806,7 @@ SpecificationContentProvider::~SpecificationContentProvider()
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void VisitRuleSpecifications(ContentSpecificationsVisitor& visitor, bmap<ContentRuleCP, IParsedInput const*>& inputCache,
-    ContentProviderContextCR context, ContentRuleInstanceKeysList const& rules)
+    ContentProviderContextCR context, ContentRuleInstanceKeysContainer const& rules)
     {
     for (ContentRuleInstanceKeys const& rule : rules)
         {

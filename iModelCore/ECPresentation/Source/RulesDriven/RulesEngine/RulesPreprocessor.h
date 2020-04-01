@@ -48,7 +48,7 @@ protected:
     ECPRESENTATION_EXPORT bvector<SortingRuleCP> _GetSortingRules(AggregateCustomizationRuleParametersCR params) override;
 
     // IRulesPreprocessor: Content rules
-    ECPRESENTATION_EXPORT ContentRuleInputKeysList _GetContentSpecifications(ContentRuleParametersCR params) override;
+    ECPRESENTATION_EXPORT ContentRuleInputKeysContainer _GetContentSpecifications(ContentRuleParametersCR params) override;
 
 public:
     RulesPreprocessor(IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, Utf8String locale,

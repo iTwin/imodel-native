@@ -74,6 +74,12 @@ public:
     //! Compare operator.
     bool operator<(ContentRuleInputKeys const& rhs) const {return m_rule < rhs.m_rule;}
 
+    //! Equality operator. ContentRuleInputKeys are considered equal if their underlying rules are equal.
+    bool operator==(ContentRuleInputKeys const& rhs) const { return m_rule == rhs.m_rule; }
+
+    //! Inequality operator.
+    bool operator!=(ContentRuleInputKeys const& rhs) { return !(*this == rhs); }
+
     //! Get the rule.
     ContentRuleCR GetRule() const {BeAssert(nullptr != m_rule); return *m_rule;}
 
@@ -85,7 +91,7 @@ public:
     //! Get rule priority.
     int GetPriority() const {return nullptr == m_rule ? -1 : m_rule->GetPriority();}
 };
-typedef bset<ContentRuleInputKeys> ContentRuleInputKeysList;
+typedef VectorSet<ContentRuleInputKeys> ContentRuleInputKeysContainer;
 
 //=======================================================================================
 //! Holds a content rule and list of ECIntance keys objects that apply for
@@ -113,6 +119,12 @@ public:
     //! Compare operator.
     bool operator<(ContentRuleInstanceKeys const& rhs) const {return m_rule < rhs.m_rule;}
 
+    //! Equality operator. ContentRuleInstanceKeys are considered equal if their underlying rules are equal.
+    bool operator==(ContentRuleInstanceKeys const& rhs) const { return m_rule == rhs.m_rule; }
+
+    //! Inequality operator.
+    bool operator!=(ContentRuleInstanceKeys const& rhs) { return !(*this == rhs); }
+
     //! Get the rule.
     ContentRuleCR GetRule() const {BeAssert(nullptr != m_rule); return *m_rule;}
 
@@ -122,7 +134,7 @@ public:
     //! Get rule priority.
     int GetPriority() const {return nullptr == m_rule ? -1 : m_rule->GetPriority();}
 };
-typedef bset<ContentRuleInstanceKeys> ContentRuleInstanceKeysList;
+typedef VectorSet<ContentRuleInstanceKeys> ContentRuleInstanceKeysContainer;
 
 //=======================================================================================
 //! A class responsible for finding appropriate presentation rules based on supplied
@@ -279,7 +291,7 @@ protected:
 /** @name Content rules */
 /** @{ */
     //! @see GetContentSpecifications
-    virtual ContentRuleInputKeysList _GetContentSpecifications(ContentRuleParametersCR params) = 0;
+    virtual ContentRuleInputKeysContainer _GetContentSpecifications(ContentRuleParametersCR params) = 0;
 /** @} */
 
 public:
@@ -333,7 +345,7 @@ public:
 /** @{ */
     //! Get matching content rules.
     //! @param[in] params The request parameters.
-    ContentRuleInputKeysList GetContentSpecifications(ContentRuleParametersCR params) {return _GetContentSpecifications(params);}
+    ContentRuleInputKeysContainer GetContentSpecifications(ContentRuleParametersCR params) {return _GetContentSpecifications(params);}
 /** @} */
 };
 

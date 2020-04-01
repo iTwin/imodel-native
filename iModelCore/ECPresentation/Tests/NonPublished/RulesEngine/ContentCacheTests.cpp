@@ -37,7 +37,7 @@ struct ContentCacheTests : ECPresentationTest
             m_nodesLocater, m_categorySupplier, m_userSettings, m_ecexpressionsCache, m_relatedPathsCache,
             m_polymorphicallyRelatedClassesCache, m_nodesFactory, nullptr);
         context->GetUsedSettingsListener().OnUserSettingUsed(TEST_RELATED_SETTING);
-        return SpecificationContentProvider::Create(*context, ContentRuleInstanceKeysList());
+        return SpecificationContentProvider::Create(*context, ContentRuleInstanceKeysContainer());
         }
 
     SpecificationContentProviderP CacheProvider(ContentProviderKey& key)

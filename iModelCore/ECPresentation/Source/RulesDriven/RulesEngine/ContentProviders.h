@@ -126,12 +126,12 @@ public:
 struct SpecificationContentProvider : ContentProvider
 {
 private:
-    ContentRuleInstanceKeysList m_rules;
+    ContentRuleInstanceKeysContainer m_rules;
     mutable ContentDescriptorCPtr m_descriptor;
     mutable ContentQueryPtr m_query;
     mutable bmap<ContentRuleCP, IParsedInput const*> m_inputCache;
 private:
-    ECPRESENTATION_EXPORT SpecificationContentProvider(ContentProviderContextR, ContentRuleInstanceKeysList);
+    ECPRESENTATION_EXPORT SpecificationContentProvider(ContentProviderContextR, ContentRuleInstanceKeysContainer);
     ECPRESENTATION_EXPORT SpecificationContentProvider(SpecificationContentProviderCR);
     ContentQueryCPtr CreateQuery(ContentDescriptorCP) const;
 protected:
@@ -140,11 +140,11 @@ protected:
     ContentProviderPtr _Clone() const override {return new SpecificationContentProvider(*this);}
     void _Reset() override;
 public:
-    static SpecificationContentProviderPtr Create(ContentProviderContextR context, ContentRuleInstanceKeysList const& specs) {return new SpecificationContentProvider(context, specs);}
+    static SpecificationContentProviderPtr Create(ContentProviderContextR context, ContentRuleInstanceKeysContainer const& specs) {return new SpecificationContentProvider(context, specs);}
     static SpecificationContentProviderPtr Create(ContentProviderContextR context, ContentRuleInstanceKeys const& spec)
         {
-        ContentRuleInstanceKeysList specs;
-        specs.insert(spec);
+        ContentRuleInstanceKeysContainer specs;
+        specs.push_back(spec);
         return SpecificationContentProvider::Create(context, specs);
         }
     ~SpecificationContentProvider();
