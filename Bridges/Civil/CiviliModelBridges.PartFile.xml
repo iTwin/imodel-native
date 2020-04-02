@@ -389,6 +389,7 @@
 
   <Part Name="PublishORDToBIMExe" BentleyBuildMakeFile="ORDBridge/PublishORDToBIM/PublishORDToBIM.mke" >
     <SubPart PartName="ORDBridgeLibrary"/>
+    <SubPart PartName="Resources" />
     <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
     <Bindings>
       <Files ProductDirectoryName="ApplicationRoot">Delivery/PublishORDToBIM$(exeext)</Files>

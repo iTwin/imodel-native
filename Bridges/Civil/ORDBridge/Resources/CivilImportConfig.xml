@@ -61,6 +61,7 @@
         <OptionDouble name="ThumbnailTimeout" value="30"/>          <!-- number of seconds to wait for each thumbnail to be generated -->
         <OptionBool name="AutoDetectMixinParams" value="true"/>     <!-- if true, schemas will be automatically searched for mixin conversion parameters -->
         <OptionBool name="ValidateSchemas" value="false" />         <!-- if true, will validate the classes and properties of the imported schemas with the original V8 schemas -->
-        <OptionBool name="AllowSkipFailedSchemas" value="false" />   <!-- If a schema fails to deserialize, continue trying to deserialize others.  This will allow schemas unrelated to the failed schema to get imported-->
+        <OptionBool name="AllowSkipFailedSchemas" value="false" />  <!-- If a schema fails to deserialize, continue trying to deserialize others.  This will allow schemas unrelated to the failed schema to get imported-->
+        <OptionBool name="PhysicalPartitionPrivate" value="true" /> <!-- if true, the physical partition that the Civil iModel Bridge creates and all its submodels will be set as private (hidden) -->
     </Options>
 </ImportConfig>

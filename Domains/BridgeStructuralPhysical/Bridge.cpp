@@ -16,6 +16,8 @@ Bridge::Bridge(Dgn::PhysicalElementR element, CreateFromToParams const& fromToPa
     {
     _SetLinearElement(fromToParams.m_linearElementCPtr->GetElementId());
     _AddLinearlyReferencedLocation(*_GetUnpersistedFromToLocation());
+
+    SetStartValue(0);    
     }
 
 //---------------------------------------------------------------------------------------
@@ -106,6 +108,7 @@ bvector<DgnElementId> Bridge::QueryOrderedSuperstructures() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BridgeCPtr Bridge::Insert(DgnDbStatus* stat)
     {
+    _SetLength(fabs(GetToDistanceAlongFromStart() - GetFromDistanceAlongFromStart()));
     BridgeCPtr retCPtr = new Bridge(*getP()->GetDgnDb().Elements().Insert<PhysicalElement>(*getP(), stat));
 
     DgnDbStatus status = Dgn::DgnDbStatus::Success;
@@ -124,6 +127,7 @@ BridgeCPtr Bridge::Insert(DgnDbStatus* stat)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BridgeCPtr Bridge::Update(DgnDbStatus* stat)
     {
+    _SetLength(fabs(GetToDistanceAlongFromStart() - GetFromDistanceAlongFromStart()));
     BridgeCPtr retCPtr = new Bridge(*getP()->GetDgnDb().Elements().Update<PhysicalElement>(*getP(), stat));
 
     DgnDbStatus status = Dgn::DgnDbStatus::Success;

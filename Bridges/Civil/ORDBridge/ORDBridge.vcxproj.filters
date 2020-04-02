@@ -108,5 +108,6 @@
     <Xml Include="OpenBridgeModelerCE.ecschema.xml">
       <Filter>Installer Files</Filter>
     </Xml>
+    <Xml Include="Resources\CivilImportConfig.xml" />
   </ItemGroup>
 </Project>

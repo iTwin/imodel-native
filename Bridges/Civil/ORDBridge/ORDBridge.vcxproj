@@ -46,6 +46,7 @@
     </Xml>
     <Xml Include="installer\ORDBridgeinstaller.wix.xml" />
     <Xml Include="OpenBridgeModelerCE.ecschema.xml" />
+    <Xml Include="Resources\CivilImportConfig.xml" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{82006D28-7E29-44DB-A592-58AAE71563D4}</ProjectGuid>

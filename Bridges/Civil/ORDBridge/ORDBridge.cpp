@@ -17,8 +17,6 @@ static constexpr Utf8CP DefaultRoadNetworkName                      = "Road Netw
 static constexpr Utf8CP DefaultRailNetworkName                      = "Rail Network";
 static constexpr Utf8CP SubjectCivilGraphicsBreakdownStructureCode  = "Civil Designer Products";
 
-#define DomainModelsPrivate     true
-
 USING_NAMESPACE_BENTLEY_OBMNET_GEOMETRYMODEL_SDK
 
 BEGIN_ORDBRIDGE_NAMESPACE
@@ -286,11 +284,13 @@ BentleyStatus ORDBridge::InitializeAlignedPartitions(SubjectCR jobSubject)
     if (clippingsPartitionCPtr.IsNull())
         return BentleyStatus::ERROR;
 
+    bool physicalPartitionPrivate = m_converter->GetConfig().GetOptionValueBool("PhysicalPartitionPrivate", true);
+
     auto& spatialLocationModelHandlerR = dgn_ModelHandler::SpatialLocation::GetHandler();
     auto clippingsModelPtr = spatialLocationModelHandlerR.Create(
         Dgn::DgnModel::CreateParams(GetDgnDbR(), GetDgnDbR().Domains().GetClassId(spatialLocationModelHandlerR),
             clippingsPartitionCPtr->GetElementId()));
-    clippingsModelPtr->SetIsPrivate(DomainModelsPrivate);
+    clippingsModelPtr->SetIsPrivate(physicalPartitionPrivate);
     if (DgnDbStatus::Success != clippingsModelPtr->Insert())
         return BentleyStatus::ERROR;
 
@@ -312,7 +312,7 @@ BentleyStatus ORDBridge::InitializeAlignedPartitions(SubjectCR jobSubject)
     auto designAlignmentsCPtr = AlignmentBim::DesignAlignments::Insert(*roadNetworkCPtr->GetNetworkModel(), DefaultDesignAlignmentsName);
     auto designAlignmentModelPtr = designAlignmentsCPtr->GetAlignmentModel();
 
-    if (DomainModelsPrivate)
+    if (physicalPartitionPrivate)
         {
         AlignmentBim::RoadRailAlignmentDomain::QueryCategoryModel(GetDgnDbR())->SetIsPrivate(true);
 
@@ -389,9 +389,11 @@ BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
     iModelBridgeSyncInfoFile::ConversionResults docLink = RecordDocument(*changeDetectorPtr, _GetParams().GetInputFileName(), nullptr, "DocumentWithBeGuid", GetDgnDbR().Elements().GetRootSubjectId().GetValue());
     auto fileScopeId = jobSubject.GetElementId().GetValue();
 
+    bool physicalPartitionPrivate = m_converter->GetConfig().GetOptionValueBool("PhysicalPartitionPrivate", true);
+
     // IMODELBRIDGE REQUIREMENT: Note job transform and react when it changes
     ORDConverter::Params params(_GetParams(), jobSubject, *changeDetectorPtr, fileScopeId, m_converter->GetRootModelUnitSystem(), GetSyncInfo());
-    params.domainModelsPrivate = DomainModelsPrivate;
+    params.domainModelsPrivate = physicalPartitionPrivate;
 
     Transform _old, _new;
     params.spatialDataTransformHasChanged = DetectSpatialDataTransformChange(_new, _old, *changeDetectorPtr, fileScopeId, "JobTrans", "JobTrans");
