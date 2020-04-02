@@ -289,6 +289,7 @@ DPoint3d                m_hitClosePtLocal;
 Transform               m_hitWorldToLocal;
 DMap4d                  m_hitLocalToView;
 double                  m_hitDistanceView;
+bool                    m_hitCheckInterior;
 ICurvePrimitivePtr      m_hitCurveDerived;
 
 // NOTE: ComputeSnapLocation is const to ensure it only changes the below snap information:
@@ -341,7 +342,7 @@ bool EvaluateInterior(SnapMode snapMode) const
     if (!m_hitGeom.IsValid())
         return false;
 
-    if (m_closePtLocalCorrected.IsDisconnect())
+    if (!m_hitCheckInterior)
         return false;
 
     // NOTE: Nearest snap tracks surface when edge not within locate aperture...
@@ -2086,7 +2087,8 @@ void SetHitCurveDetail(CurveLocationDetailCR detail) {m_hitCurveDetail = detail;
 void OnHitChanged()
     {
     m_hitWorldToLocal.InverseOf(m_hitLocalToWorld);
-    m_hitClosePtLocal = m_closePtLocalCorrected.IsDisconnect() ? GetClosePointLocal(m_hitWorldToLocal) : m_closePtLocalCorrected;
+    m_hitCheckInterior = !m_closePtLocalCorrected.IsDisconnect();
+    m_hitClosePtLocal = m_hitCheckInterior ? m_closePtLocalCorrected : GetClosePointLocal(m_hitWorldToLocal);
 
     DMatrix4d viewToLocal = GetViewToLocal(m_hitWorldToLocal);
     DMatrix4d localToView;
