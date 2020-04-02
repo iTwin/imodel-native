@@ -254,8 +254,15 @@ template <typename T> struct ChannelBuffer
                                     uint32_t retval = --m_refCount;
                                     if (0 == retval)
                                         {
+                                        #if defined(__clang__) && __clang_major__ > 3
+                                        #pragma clang diagnostic push
+                                        #pragma clang diagnostic ignored "-Wundefined-var-template"
+                                        #endif
                                         //  Make the buffer available again
                                         m_pool.Deallocate (const_cast<ChannelBuffer<T>*>(this));
+                                        #if defined(__clang__) && __clang_major__ > 3
+                                        #pragma clang diagnostic pop
+                                        #endif
                                         }
 
                                     return retval;
