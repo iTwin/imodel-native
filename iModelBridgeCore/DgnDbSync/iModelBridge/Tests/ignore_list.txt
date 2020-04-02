@@ -1,1 +1,7 @@
+#----------------------------------------------------------------------------------------
+# Bad test that was only passing because DgnDb::InitializeDgnDb didn't call GetDefaultProjectExtents
+#----------------------------------------------------------------------------------------
+iModelBridgeTests.iModelProjectExtentsTest
+iModelBridgeTests.iModelProjectExtentsTest_SouthAsia
+
 

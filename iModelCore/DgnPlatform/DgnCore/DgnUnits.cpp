@@ -213,6 +213,9 @@ DgnDbStatus DgnGeoLocation::Load()
     if (jsonObj.isMember(json_initialProjectCenter()))
         JsonUtils::DPoint3dFromJson(m_initialProjectCenter, jsonObj[json_initialProjectCenter()]);
 
+    if (jsonObj.isMember(json_extentsSource()))
+        m_extentSource = (ProjectExtentsSource) jsonObj[json_extentsSource()].asInt();
+
     return DgnDbStatus::Success;
     }
 
@@ -228,6 +231,9 @@ void DgnGeoLocation::Save()
     // save the EcefLocation, if valid
     if (m_ecefLocation.m_isValid)
         jsonObj[json_ecefLocation()] = m_ecefLocation.ToJson();
+
+    if (ProjectExtentsSource::Calculated != m_extentSource)
+        jsonObj[json_extentsSource()] = Json::Value((int) m_extentSource);
 
     m_dgndb.SavePropertyString(DgnProjectProperty::Units(), jsonObj.ToString());
     }
@@ -277,12 +283,14 @@ void DgnGeoLocation::InitializeProjectExtents(DRange3dP rangeWithOutliers, bvect
     Save();
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 AxisAlignedBox3d DgnGeoLocation::ComputeProjectExtents(DRange3dP rangeWithOutliers, bvector<BeInt64Id>* elementOutliers) const
     {
+    if (ProjectExtentsSource::Calculated != GetProjectExtentsSource())
+      return GetProjectExtents(); // Don't change extents if defined by user...
+
     AxisAlignedBox3d extent;
     auto& models = GetDgnDb().Models();
 

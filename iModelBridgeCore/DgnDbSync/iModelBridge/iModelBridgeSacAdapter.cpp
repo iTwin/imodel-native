@@ -164,6 +164,9 @@ BentleyStatus iModelBridgeSacAdapter::ExtractFromIModel(BeFileName& outFile, BeF
 //---------------------------------------------------------------------------------------
 void updateProjectExtents(DgnDbR db, iModelBridge& bridge)
     {
+    if (ProjectExtentsSource::Calculated != db.GeoLocation().GetProjectExtentsSource())
+        return; // Don't allow bridges to adjust project extents established as correct by the user...
+
     AxisAlignedBox3d extents = db.GeoLocation().GetProjectExtents();
     size_t outlierCount;
     DRange3d rangeWithOutliers;
@@ -283,7 +286,7 @@ BentleyStatus iModelBridgeSacAdapter::CreateOrUpdateBim(iModelBridge& bridge, Pa
         return BSIERROR;
         }
     db->BriefcaseManager().GetChannelPropsR().channelType = IBriefcaseManager::ChannelType::Normal;
-    
+
     updateProjectExtents(*db, bridge);
 
     if (!bridge.HadAnyChanges())

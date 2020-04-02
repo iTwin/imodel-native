@@ -164,18 +164,21 @@ struct iModelBridgeTests : ::testing::Test
         return db.Domains().GetClassId(generic_ElementHandler::PhysicalObject::GetHandler());
         }
 
-    static GenericPhysicalObjectPtr CreateGenericPhysicalObject(DgnDbR db)
+    static GenericPhysicalObjectPtr CreateGenericPhysicalObject(DgnDbR db, Placement3dCR placement)
         {
         DgnModelId modelId = GetPhysicalModel(db);
         DgnCategoryId categoryId = GetSpatialCategory(db);
         DgnClassId classId = GetGenericPhysicalObjectClassId(db);
-        return new GenericPhysicalObject(GenericPhysicalObject::CreateParams(db, modelId, classId, categoryId));
+        return new GenericPhysicalObject(GenericPhysicalObject::CreateParams(db, modelId, classId, categoryId, placement));
         }
 
     static DgnElementPtr CreateElementFromECClassId(DgnDbR db, DgnClassId classId, DgnCodeCR code = DgnCode::CreateEmpty())
         {
         auto ecClass = db.Schemas().GetClass(classId);
-        ECN::IECInstancePtr ecInstance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance().get();
+        if (NULL == ecClass)
+            return nullptr;
+
+        ECN::IECInstancePtr ecInstance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
         ecInstance->SetValue("Model", ECN::ECValue(GetPhysicalModel(db)));
         ecInstance->SetValue("Category", ECN::ECValue(GetSpatialCategory(db)));
         ecInstance->SetValue("CodeSpec", ECN::ECValue(code.GetCodeSpecId()));
@@ -221,8 +224,8 @@ struct iModelBridgeTests : ::testing::Test
             EXPECT_TRUE(false);
             return ERROR;
             }
-
-        if (SchemaStatus::Success == dgndb.ImportSchemas(ctx->GetCache().GetSchemas()))
+        auto schemaPtrs = ctx->GetCache().GetSchemas();
+        if (SchemaStatus::Success == dgndb.ImportSchemas(schemaPtrs))
             {
             dgndb.SaveChanges();
             return SUCCESS;
@@ -238,7 +241,10 @@ struct iModelBridgeTests : ::testing::Test
 
     static BentleyStatus ImportTestSchema(DgnDbR db)
         {
-        return ImportSchema(db, R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        bool hasChanges = db.Txns().HasLocalChanges();
+        if (hasChanges)
+            return ERROR;
+        Utf8String schemaString(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                             <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                                 <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
                                                 <ECEntityClass typeName="MyDomainElement">
@@ -246,6 +252,7 @@ struct iModelBridgeTests : ::testing::Test
                                                     <ECProperty propertyName="Size" typeName="double" />
                                                 </ECEntityClass>
                                             </ECSchema>)xml");
+        return ImportSchema(db, schemaString);
         }
 };
 
@@ -318,7 +325,7 @@ struct TestSourceItemWithId : iModelBridgeSyncInfoFile::ISourceItem
     Placement3d m_placement;
     Utf8String m_ecClassName;
     DgnElementId m_mappedToElement;
-    TestSourceItemWithId(Utf8StringCR id, Utf8StringCR content, Utf8StringCR type, Placement3d placement) : m_id(id), m_content(content), m_type(type) {}
+    TestSourceItemWithId(Utf8StringCR id, Utf8StringCR content, Utf8StringCR type, Placement3d placement) : m_id(id), m_content(content), m_type(type) , m_placement(placement){}
     Utf8String _GetId() override  {return m_id;}
     double _GetLastModifiedTime() override {return 0.0;}
     Utf8String _GetHash() override
@@ -428,7 +435,7 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
         if (true)
             {
             iModelBridgeSyncInfoFile::ConversionResults results;
-            results.m_element = iModelBridgeTests::CreateGenericPhysicalObject(db);    // it really makes no difference how we create the element.
+            results.m_element = iModelBridgeTests::CreateGenericPhysicalObject(db, Placement3d());    // it really makes no difference how we create the element.
             ASSERT_EQ(BentleyStatus::SUCCESS, changeDetector._UpdateBimAndSyncInfo(results, change));
             }
 
@@ -466,7 +473,7 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
         if (true)
             {
             iModelBridgeSyncInfoFile::ConversionResults results;
-            results.m_element = iModelBridgeTests::CreateGenericPhysicalObject(db);
+            results.m_element = iModelBridgeTests::CreateGenericPhysicalObject(db, Placement3d());
             ASSERT_EQ(BentleyStatus::SUCCESS, changeDetector._UpdateBimAndSyncInfo(results, change));
             }
 
@@ -526,7 +533,7 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
         if (true)
             {
             iModelBridgeSyncInfoFile::ConversionResults results;
-            results.m_element = iModelBridgeTests::CreateGenericPhysicalObject(db);    // it really makes no difference how we create the element.
+            results.m_element = iModelBridgeTests::CreateGenericPhysicalObject(db, Placement3d());    // it really makes no difference how we create the element.
             ASSERT_EQ(BentleyStatus::SUCCESS, changeDetector._UpdateBimAndSyncInfo(results, change));
             }
 
@@ -566,7 +573,7 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
         if (true)
             {
             iModelBridgeSyncInfoFile::ConversionResults results;
-            results.m_element = iModelBridgeTests::CreateGenericPhysicalObject(db);
+            results.m_element = iModelBridgeTests::CreateGenericPhysicalObject(db, Placement3d());
             ASSERT_EQ(BentleyStatus::SUCCESS, changeDetector._UpdateBimAndSyncInfo(results, change));
             }
         // verify that the item is now in the bim and is unchanged w.r.t. i0WithId
@@ -879,14 +886,14 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
         {
         YawPitchRollAngles angles;
         //double left, double front, double bottom, double right, double back, double top
-        ElementAlignedBox3d range(10, 10, 10, 10, 10, 10);
+        ElementAlignedBox3d range(1000, 1000, 1000, 1000, 1000, 1000);
         Placement3d placement(DPoint3d::FromZero(), angles, range);
         m_foo_items.push_back(TestSourceItemWithId("0", "foo i0 - initial", "Foo",  placement));
-        placement.GetOriginR().x += 100;
+        placement.GetOriginR().x += 1000;
         m_foo_items.push_back(TestSourceItemWithId("1", "foo i1 - initial", "Foo", placement));
-        placement.GetOriginR().y += 100;
+        placement.GetOriginR().y += 1000;
         m_foo_items.push_back(TestSourceItemWithId("0", "bar i0 - initial", "Bar", placement));
-        placement.GetOriginR().x -= 100;
+        placement.GetOriginR().x -= 1000;
         m_foo_items.push_back(TestSourceItemWithId("1", "bar i1 - initial", "Bar", placement));
         }
 };
@@ -989,7 +996,7 @@ void iModelBridgeTests_Test1_Bridge::ConvertItem(TestSourceItemWithId& item, iMo
 
     if (item.m_ecClassName.empty())
         {
-        results.m_element = iModelBridgeTests::CreateGenericPhysicalObject(*m_db);
+        results.m_element = iModelBridgeTests::CreateGenericPhysicalObject(*m_db, item.m_placement);
         DgnElementTransformer::ApplyTransformTo(*results.m_element, GetSpatialDataTransform());
         ASSERT_EQ(BentleyStatus::SUCCESS, changeDetector._UpdateBimAndSyncInfo(results, change));
         item.m_mappedToElement = results.m_element->GetElementId();
@@ -1013,7 +1020,10 @@ void iModelBridgeTests_Test1_Bridge::ConvertItem(TestSourceItemWithId& item, iMo
     DgnElementTransformer::ApplyTransformTo(*results.m_element, GetSpatialDataTransform());
     ASSERT_EQ(BentleyStatus::SUCCESS, changeDetector._UpdateBimAndSyncInfo(results, change));
 
-    item.m_mappedToElement = results.m_element->GetElementId();
+    if (results.m_element.IsValid())
+        item.m_mappedToElement = results.m_element->GetElementId();
+    else
+        item.m_mappedToElement.Invalidate();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1205,6 +1215,7 @@ TEST_F(iModelBridgeTests, Test1)
             ScopedDgnHost::ScopedRepositoryAdminOverride overrideRepositoryAdmin(host, &repositoryAdmin);
             auto db = DgnDb::OpenDgnDb(nullptr, bcName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
             ASSERT_TRUE(db.IsValid());
+            db->SaveChanges();
             ImportTestSchema(*db);
             db->SaveChanges();
             testIModelHubClientForBridges.m_expect.push_back(true); // schema changeset
@@ -1218,6 +1229,7 @@ TEST_F(iModelBridgeTests, Test1)
 
         testIModelHubClientForBridges.m_expect.clear();// Clear this flag at the outset. It is set by the test bridge as it runs.
         testIModelHubClientForBridges.m_expect.push_back(false);
+        testIModelHubClientForBridges.m_expect.push_back(true);
         testBridge.m_expect.findJobSubject = true;
         testBridge.m_expect.anyChanges = true;
         testBridge.m_expect.anyDeleted = true;
@@ -1955,7 +1967,8 @@ static void DoProjectExtentsTest (bvector <double> &extents, WCharCP testName)
     // Register the test bridge that fwk should run
     iModelBridgeTests_Test1_Bridge testBridge(testIModelHubClientForBridges);
     iModelBridgeFwk::SetBridgeForTesting(testBridge);
-
+    std::vector <TestSourceItemWithId> items = testBridge.m_foo_items;
+    testBridge.m_foo_items.clear();
 
     BeFileName assignDbName(testDir);
     assignDbName.AppendToPath(L"iModelProjectExtentsTest.db");
@@ -1978,7 +1991,7 @@ static void DoProjectExtentsTest (bvector <double> &extents, WCharCP testName)
         {
         testIModelHubClientForBridges.m_expect.push_back(false);// Clear this flag at the outset. It is set by the test bridge as it runs.
         testBridge.m_expect.findJobSubject = false;
-        testBridge.m_expect.anyChanges = true;
+        testBridge.m_expect.anyChanges = false;
         testBridge.m_expect.anyDeleted = false;
         testBridge.m_expect.jobTransChanged = false;
         testIModelHubClientForBridges.m_expect.push_back(true);//For project extents
@@ -2004,7 +2017,37 @@ static void DoProjectExtentsTest (bvector <double> &extents, WCharCP testName)
         ASSERT_TRUE(db.IsValid());
         initalExtents = db->GeoLocation().GetProjectExtents();
         }
-
+    //Now add the items.
+    if (true)
+        {
+        testBridge.m_foo_items = items;
+        testIModelHubClientForBridges.m_expect.push_back(false);// Clear this flag at the outset. It is set by the test bridge as it runs.
+        testBridge.m_expect.findJobSubject = true;
+        testBridge.m_expect.anyChanges = true;
+        testBridge.m_expect.anyDeleted = false;
+        testBridge.m_expect.jobTransChanged = false;
+        testIModelHubClientForBridges.m_expect.push_back(true);//For project extents
+        // Ask the framework to run our test bridge to do the initial conversion and create the repo
+        iModelBridgeFwk fwk;
+        bvector<WCharCP> argptrs;
+        args.push_back(L"--fwk-input=Foo");
+        args.push_back(L"--fwk-argsJson=\"{\"skipExtents\":true}\"");
+        MAKE_ARGC_ARGV(argptrs, args);
+        ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
+        ASSERT_EQ(0, fwk.Run(argc, argv));
+        args.pop_back();
+        args.pop_back();
+        testIModelHubClientForBridges.m_expect.clear();
+        }
+    if (true)
+        {
+        ScopedDgnHost host;
+        // these should be the calculated extents
+        auto db = DgnDb::OpenDgnDb(nullptr, bcName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+        ASSERT_TRUE(db.IsValid());
+        AxisAlignedBox3d calculatedExtents = db->GeoLocation().GetProjectExtents();
+        ASSERT_TRUE(calculatedExtents.IsEqual(initalExtents)) << "Extents should not have been recalculated during AllDocsProcessed";
+        }
     if (true)
         {
         testIModelHubClientForBridges.m_expect.push_back(false);// We expect two calls to pushChanges. The first should have nothing to push ...

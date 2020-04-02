@@ -3287,6 +3287,9 @@ void            GetElementOutLiers(bvector<BeInt64Id> elementOutliers, DgnDbR db
 +---------------+---------------+---------------+---------------+---------------+------*/
 int             iModelBridgeFwk::UpdateProjectExtents(iModelBridgeFwk::FwkContext& context)
     {
+    if (ProjectExtentsSource::Calculated != m_briefcaseDgnDb->GeoLocation().GetProjectExtentsSource())
+        return SUCCESS; // Don't allow bridges to adjust project extents established as correct by the user...
+
     //For Bridges the rule is on every update
     // 1. We calculate the project extents based on input data
     // 2. We set the x-y to the value provided by iModelHub. (Need to check whether computed value is better and clamp it down by imodelhub values in real world cases)

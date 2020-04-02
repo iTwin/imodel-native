@@ -722,6 +722,13 @@ struct EcefLocation
     }
 };
 
+//! Source of DgnGeoLocation.GetProjectExtents
+enum class ProjectExtentsSource : int
+{
+    Calculated = 0, //!< Project extents set by querying the volume of all spatial models (default)
+    User = 1,       //!< Project extents established from user input
+};
+
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   09/13
 //=======================================================================================
@@ -730,11 +737,13 @@ struct DgnGeoLocation : NonCopyableClass
     BE_JSON_NAME(globalOrigin);
     BE_JSON_NAME(ecefLocation);
     BE_JSON_NAME(initialProjectCenter);
+    BE_JSON_NAME(extentsSource);
 
 private:
     friend struct DgnDb;
     DgnDbR  m_dgndb;
     mutable AxisAlignedBox3d m_extent;
+    mutable ProjectExtentsSource m_extentSource = ProjectExtentsSource::Calculated;
     DPoint3d m_globalOrigin;
     DPoint3d m_initialProjectCenter;
     mutable EcefLocation m_ecefLocation;
@@ -777,6 +786,12 @@ public:
 
     //! Get the iModel's global origin. All spatial coordinates in the BIM are stored relative to its global origin.
     DPoint3dCR GetGlobalOrigin() const {return m_globalOrigin;}
+
+    //! Get the source for GetProjectExtents.
+    ProjectExtentsSource GetProjectExtentsSource() const {return m_extentSource;}
+
+    //! Set the source for GetProjectExtents.
+    void SetProjectExtentsSource(ProjectExtentsSource source) const {m_extentSource = source;}
 
     //! Update the project extents for this BIM
     DGNPLATFORM_EXPORT void SetProjectExtents(AxisAlignedBox3dCR newExtents);

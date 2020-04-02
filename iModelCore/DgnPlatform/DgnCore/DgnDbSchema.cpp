@@ -60,7 +60,7 @@ bool DgnElement::IsCustomHandledProperty(Utf8CP propName) const
 * @bsimethod                                                    Sam.Wilson      07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 AutoHandledPropertiesCollection::Iterator::Iterator(ECN::ECPropertyIterable::const_iterator it, AutoHandledPropertiesCollection const& coll)
-    : m_i(it), m_coll(coll) 
+    : m_i(it), m_coll(coll)
     {
     ToNextValid();
     }
@@ -115,7 +115,7 @@ void AutoHandledPropertiesCollection::Iterator::ToNextValid()
                     }
                 }
         #endif
-        
+
         // Auto-handling is the default. Custom-handling is opt-in. A property must have the CustomHandledProperty CA in order to be custom-handled.
         ECN::IECInstancePtr ca = prop->GetCustomAttribute(*m_coll.m_customHandledProperty);
 
@@ -302,7 +302,7 @@ DbResult DgnDb::CreateDgnDbTables(CreateDgnDbParams const& params)
                                     "Permissions INTEGER,"
                                     "CONSTRAINT names UNIQUE(Domain,Name)");
 
-    CreateTable(DGN_TABLE_Txns, "Id INTEGER PRIMARY KEY NOT NULL," 
+    CreateTable(DGN_TABLE_Txns, "Id INTEGER PRIMARY KEY NOT NULL,"
                                 "Deleted BOOLEAN,"
                                 "Grouped BOOLEAN,"
                                 "Operation TEXT,"
@@ -315,7 +315,7 @@ DbResult DgnDb::CreateDgnDbTables(CreateDgnDbParams const& params)
 
     ExecuteSql("CREATE VIRTUAL TABLE " DGN_VTABLE_SpatialIndex " USING rtree(ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ)"); // Define this before importing dgn schema!
 
-    BisCoreDomain::GetDomain().SetCreateParams(params); 
+    BisCoreDomain::GetDomain().SetCreateParams(params);
         // BisCoreDomain is the only domain that requires the create params. They are passed through BisCoreDomain::_OnSchemaImported() -> DgnDb::OnBisCoreSchemaImported()
 
     SchemaStatus status = Domains().ImportSchemas();
@@ -328,17 +328,17 @@ DbResult DgnDb::CreateDgnDbTables(CreateDgnDbParams const& params)
     ExecuteSql("CREATE TRIGGER dgn_prjrange_del AFTER DELETE ON " BIS_TABLE(BIS_CLASS_GeometricElement3d)
                " BEGIN DELETE FROM " DGN_VTABLE_SpatialIndex " WHERE ElementId=old.ElementId;END");
 
-    ExecuteSql("CREATE TRIGGER dgn_rtree_upd AFTER UPDATE " OF_SPATIAL_DATA " ON " BIS_TABLE(BIS_CLASS_GeometricElement3d) 
-               " WHEN new.Origin_X IS NOT NULL AND " GEOM_IN_SPATIAL_INDEX_CLAUSE 
+    ExecuteSql("CREATE TRIGGER dgn_rtree_upd AFTER UPDATE " OF_SPATIAL_DATA " ON " BIS_TABLE(BIS_CLASS_GeometricElement3d)
+               " WHEN new.Origin_X IS NOT NULL AND " GEOM_IN_SPATIAL_INDEX_CLAUSE
                "BEGIN INSERT OR REPLACE INTO " DGN_VTABLE_SpatialIndex "(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,"
                "DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5)"
                " FROM (SELECT " AABB_FROM_PLACEMENT " as bb);END");
 
-    ExecuteSql("CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE " OF_SPATIAL_DATA " ON " BIS_TABLE(BIS_CLASS_GeometricElement3d) 
+    ExecuteSql("CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE " OF_SPATIAL_DATA " ON " BIS_TABLE(BIS_CLASS_GeometricElement3d)
                 " WHEN OLD.Origin_X IS NOT NULL AND NEW.Origin_X IS NULL"
                 " BEGIN DELETE FROM " DGN_VTABLE_SpatialIndex " WHERE ElementId=OLD.ElementId;END");
 
-    ExecuteSql("CREATE TRIGGER dgn_rtree_ins AFTER INSERT ON " BIS_TABLE(BIS_CLASS_GeometricElement3d) 
+    ExecuteSql("CREATE TRIGGER dgn_rtree_ins AFTER INSERT ON " BIS_TABLE(BIS_CLASS_GeometricElement3d)
                " WHEN new.Origin_X IS NOT NULL AND " GEOM_IN_SPATIAL_INDEX_CLAUSE
                "BEGIN INSERT INTO " DGN_VTABLE_SpatialIndex "(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,"
                "DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5)"
@@ -449,13 +449,11 @@ DbResult DgnDb::InitializeDgnDb(CreateDgnDbParams const& params)
 
     SavePropertyString(DgnProjectProperty::LastEditor(), Utf8String(T_HOST.GetProductName()));
     SavePropertyString(DgnProjectProperty::Client(), params.m_client);
-    
+
     AxisAlignedBox3d extents = params.m_projectExtents;
     if (extents.IsNull())
-        { 
-        extents.Extend(-1000.0, -1000.0, -500.0); // default lower left  bottom corner
-        extents.Extend(1000.0, 1000.0, 500.0);   // default upper right top corner
-        }
+        extents = m_geoLocation.GetDefaultProjectExtents();
+
     m_geoLocation.SetProjectExtents(extents);
     m_geoLocation.SetGlobalOrigin(params.m_globalOrigin);
     m_geoLocation.Save();
@@ -485,7 +483,7 @@ struct RebaseSupportUpgrader : ProjectSchemaUpgrader
 
         if (db.TableExists(DGN_TABLE_Rebase))
             return BE_SQLITE_OK;
-            
+
         return db.CreateRebaseTable();
         }
     };
@@ -540,7 +538,7 @@ ProfileState DgnDb::_CheckProfileVersion() const
 * @bsimethod                                    Affan.Khan                      02/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::DbResult DgnDb::_OnBeforeProfileUpgrade()
-    {  
+    {
     if (IsLegacyMaster() || IsReadonly())
         return BE_SQLITE_OK;
 
@@ -560,7 +558,7 @@ BeSQLite::DbResult DgnDb::_OnAfterProfileUpgrade()
         {
         if (RepositoryStatus::Success != BriefcaseManager().LockSchemas().Result())
             {
-            BeAssert(false && "Unable to obtain the schema lock");          
+            BeAssert(false && "Unable to obtain the schema lock");
             return BE_SQLITE_ERROR_ProfileUpgradeFailed;
             }
         }
