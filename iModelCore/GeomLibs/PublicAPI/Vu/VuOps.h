@@ -62,7 +62,25 @@ VuMask          leftMask,
 VuMask          rightMask,
 double          xyTolerance
 );
+/**
+@description Consruct a chain from an array of points.
+    Omit duplicates within an xy tolerance.
+@param graphP IN pointer to receiving graph.
+@param xyz IN input points
+@param leftMask IN mask for left side of edges.
+@param rightmask IN mask for right side of edges.
+@param xyTolerance IN tolerance for declaring adjacent points identical.
+@return pointer to some Vu node in the loop.
+*/
 
+static GEOMDLLIMPEXP VuP MakeChainFromArray
+(
+    VuSetP          graphP,
+    bvector<DPoint3d> const &xyz,
+    VuMask          leftMask,
+    VuMask          rightMask,
+    double          xyTolerance
+);
 /**
 @description Consruct an edge with coordinates and masks.lyz coordinates.
 @param graphP IN pointer to receiving graph.

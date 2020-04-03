@@ -490,7 +490,7 @@ bool             addVerticesAtCrossings
 #endif
     }
 
-static int coordinateFrameAndRank
+int PolygonOps::CoordinateFrameAndRank
 (
     DPoint3dCP pXYZIn,
     size_t    numXYZ,
@@ -592,7 +592,7 @@ TransformR  localToWorld,
 TransformR  worldToLocal
 )
     {
-    return coordinateFrameAndRank (pXYZIn, numXYZ, localToWorld, worldToLocal, 
+    return CoordinateFrameAndRank (pXYZIn, numXYZ, localToWorld, worldToLocal, 
             LOCAL_COORDINATE_SCALE_UnitAxesAtStart) > 0;
     }
 
@@ -605,7 +605,7 @@ TransformR  worldToLocal,
 enum LocalCoordinateSelect selector
 )
     {
-    return coordinateFrameAndRank (pXYZIn, numXYZ, localToWorld, worldToLocal, selector) > 0;
+    return CoordinateFrameAndRank (pXYZIn, numXYZ, localToWorld, worldToLocal, selector) > 0;
     }
 
 bool PolygonOps::FixupAndTriangulateProjectedLoops
@@ -770,6 +770,103 @@ bvector<DTriangle3d> &triangles
         return true;
         }
     return false;
+    }
+//! <ul>
+//! <li>Apply worldToLocal transform.
+//! <li>Triangulate as viewed in that plane
+//! <li>Apply localToWorld transform to the triangles.
+//! </ul>
+//! @return false if triangulation issues.
+bool PolygonOps::FixupAndTriangulateProjectedLoops
+(
+    bvector<bvector<DPoint3d>> const &loops,    //!< [in] array of loops
+    bvector<DPoint3d> const *extraPoints,       //!< [in] additional points.
+    bvector<bvector<DPoint3d>> const *extraChains, //!< [in] additional non-bounding lines
+    TransformCR localToWorld,                   //!< [in] transform for converting xy data to world
+    TransformCR worldToLocal,                   //!< [in] transform for converting world data to xy
+    bvector<DTriangle3d> &triangles             //!< [out] triangle coordinates.
+)
+    {
+    VuSetP      graphP = vu_newVuSet(0);
+    VuArrayP    faceArrayP = vu_grabArray(graphP);
+    VuMask      numberedNodeMask = vu_grabMask(graphP);
+    bool status = false;
+
+    vu_clearMaskInSet(graphP, numberedNodeMask);
+    VuMask newNodeMask = numberedNodeMask | VU_BOUNDARY_EDGE;
+    DRange3d range;
+    range.Init ();
+    for (auto &loop : loops)
+        range.Extend (loop);
+    if (extraPoints)
+        range.Extend (*extraPoints);
+    static double s_relTol = 1.0e-8;
+    double xyTolerance = s_relTol * range.low.Distance (range.high);
+    bvector<DPoint3d> workPoints;
+
+    for (auto &loop : loops)
+        {
+        worldToLocal.Multiply (workPoints, loop);
+        VuOps::MakeIndexedLoopsFromArrayWithDisconnects (graphP,
+                &workPoints, newNodeMask, newNodeMask, xyTolerance);
+        }
+    if (extraChains && extraChains->size() > 0)
+        {
+        VuMask extraNodeMask = VU_SEAM_EDGE;
+        for (auto &chain : *extraChains)
+            {
+            worldToLocal.Multiply(workPoints, chain);
+            VuOps::MakeChainFromArray(graphP,
+                workPoints, extraNodeMask, extraNodeMask, xyTolerance);
+
+            }
+        }
+    vu_mergeOrUnionLoops(graphP, VUUNION_UNION);
+
+    vu_regularizeGraph(graphP);
+    vu_markAlternatingExteriorBoundaries(graphP, true);
+    vu_splitMonotoneFacesToEdgeLimit(graphP, 3);
+
+    vu_flipTrianglesToImproveQuadraticAspectRatio(graphP);
+    if (extraPoints && extraPoints->size () > 0)
+        {
+        worldToLocal.Multiply(workPoints, *extraPoints);
+        vu_insertAndRetriangulate (graphP, workPoints.data (), (int)workPoints.size (), false);
+        }
+
+    vu_collectInteriorFaceLoops(faceArrayP, graphP);
+
+    vu_arrayOpen(faceArrayP);
+    status = true;
+    VuP faceP;
+    for (; status && vu_arrayRead(faceArrayP, &faceP);)
+        {
+        // We triangulated.  So of course there are 3 nodes per face.
+        // Really?  If the input polygon retraces itself, there will be
+        // sliver faces with only 2 edges.
+        if (vu_faceLoopSize(faceP) < 3)
+            continue;
+        workPoints.clear ();
+        VU_FACE_LOOP(currP, faceP)
+            {
+            workPoints.push_back (currP->GetXYZ ());
+            }
+        END_VU_FACE_LOOP (currP, faceP)
+        localToWorld.Multiply (workPoints);
+        // We triangulated.  But maybe someday this will be used with other setup.
+        // Assume convex -- add multiple triangles from base point.
+        for (size_t i = 1; i+1 < workPoints.size (); i++)
+            {
+            DTriangle3d triangle (workPoints[0], workPoints[i], workPoints[i+1]);
+            triangles.push_back (triangle);
+            }
+        }
+
+    vu_returnMask(graphP, numberedNodeMask);
+    vu_returnArray(graphP, faceArrayP);
+    vu_freeVuSet(graphP);
+
+    return status;
     }
 
 bool PolygonOps::ReorientTriangulationIndices

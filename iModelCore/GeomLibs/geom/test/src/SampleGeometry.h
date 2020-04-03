@@ -28,7 +28,7 @@ double x11, double y11, double z11, double u1, double v1);
 // Return a 2x2 linear bspline surface with control points (000)(100)(010)(u1 v1 w1)
 MSBsplineSurfacePtr SimpleBilinearPatch (double u1, double v1, double w1);
 
-PolyfaceHeaderPtr Mesh_XYGrid (int numXEdge, int numYEdge, double edgeX, double edgeY, bool triangulate);
+PolyfaceHeaderPtr Mesh_XYGrid (int numXEdge, int numYEdge, double edgeX, double edgeY, bool triangulate, bool params = false);
 
 // various arc samples, initially intended for use in creating point clouds .....
 extern bvector<DEllipse3d> s_arcSamples;

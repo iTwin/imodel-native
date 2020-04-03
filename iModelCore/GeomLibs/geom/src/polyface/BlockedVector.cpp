@@ -494,7 +494,32 @@ size_t n
     return false;
     }
 
-
+void BlockedVectorInt::AddSteppedBlock
+(
+int value,
+int valueStep,
+size_t numValue,
+size_t numWrap,
+size_t numTrailingZero,
+bool clearFirst
+)
+    {
+    if (Active())
+        {
+        if (clearFirst)
+            clear();
+        for (size_t i = 0; i < numValue; i++)
+            push_back(value + (int)i * valueStep);
+        for (size_t i = 0; i < numWrap; i++)
+            {
+            int value = at(i);
+            push_back(value);
+            }
+        if (numTrailingZero > 0)
+            for (size_t i = 0; i < numTrailingZero; i++)
+                push_back(0);
+        }
+    }
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/

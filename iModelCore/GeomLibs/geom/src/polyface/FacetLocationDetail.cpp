@@ -77,7 +77,20 @@ bool PolyfaceVisitor::LoadVertexData (FacetLocationDetailR detail, size_t index)
     detail.sourceFraction[0] = 1.0;
     detail.intColor[0] = 
             index < m_intColor.size () ? m_intColor[index] : -1;
+    detail.colorIndex[0] = 
+            index < m_colorIndex.size () ? m_colorIndex[index] : -1;
     return true;
+    }
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
+bool PolyfaceVisitor::LoadCyclicVertexData(FacetLocationDetailR detail, size_t index)
+    {
+    size_t n = this->NumEdgesThisFace();
+    if (n == 0)
+        return false;
+    index = (index % n);
+    return LoadVertexData (detail, index);
     }
 
 

@@ -596,5 +596,44 @@ bool                laplacianSmoothing
     return graph;
     }
 
+VuP     VuOps::MakeChainFromArray
+(
+VuSetP          graph,
+bvector<DPoint3d> const &xyz,
+VuMask          leftMask,
+VuMask          rightMask,
+double          xyTolerance
+)
+    {
+    DPoint3d    lastPoint;
+    DPoint3d    currPoint;
+    VuP         tail, head, newTail, newHead;
+    auto n = xyz.size();
+    if (n < 2)
+        return VU_NULL;
+    lastPoint = xyz[0];
+    head = VU_NULL;
+    tail = VU_NULL;
+    for (size_t i = 1; i < n; i++)
+        {
+        currPoint = xyz[i];
+        if (   fabs(currPoint.x - lastPoint.x) > xyTolerance
+            || fabs(currPoint.y - lastPoint.y) > xyTolerance)
+            {
+            vu_makeSling (graph, &newTail, &newHead);
+            VU_SET_UVW(newTail, lastPoint.x, lastPoint.y, lastPoint.z);
+            VU_SET_UVW(newHead, currPoint.x, currPoint.y, currPoint.z);
+            if (tail == VU_NULL)
+                tail = newTail;
+            vu_setMask (newTail, leftMask);
+            vu_setMask (newTail, rightMask);
+            if (head != VU_NULL)
+                vu_vertexTwist (graph, head, newTail);
+            head = newHead;
+            lastPoint = currPoint;
+            }
+        }
+    return tail;
+    }
 
 END_BENTLEY_GEOMETRY_NAMESPACE

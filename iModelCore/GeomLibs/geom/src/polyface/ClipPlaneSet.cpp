@@ -1348,6 +1348,16 @@ ClipPlaneSetCP maskSet
         return ClipPlaneContainment::ClipPlaneContainment_StronglyOutside;
     return ClipPlaneContainment::ClipPlaneContainment_Ambiguous;
     }
+
+// add polygons -- also interpolate from visitor if active.
+static void AddPolygonsToMesh(PolyfaceHeaderPtr &mesh, BVectorCache<DPoint3d> &shards, PolyfaceVisitorR visitor)
+    {
+    IndexedParameterMap map;
+    map.ConstructMapping (visitor.Point ());
+    for (auto &shard : shards)
+        mesh->AddPolygon(shard, visitor, map);
+    }
+
 static void AddPolygonsToMesh (PolyfaceHeaderPtr *mesh, BVectorCache<DPoint3d> &shards)
     {
     if (mesh != nullptr)
@@ -1357,26 +1367,28 @@ static void AddPolygonsToMesh (PolyfaceHeaderPtr *mesh, BVectorCache<DPoint3d> &
         }
     }
 
-static void AddTrianglesToMesh(PolyfaceHeaderPtr *mesh, bvector<DTriangle3d> &triangles, bool reverse, bvector<DPoint3d> &work)
+
+static void AddTrianglesToMesh(PolyfaceHeaderPtr *mesh,
+    bvector<DTriangle3d> &triangles,    // world coordinates, to save
+    bool reverse,                       // reverse coordinate order (does not affect normal)
+    bvector<DPoint3d> &work,            // work array for coordinates
+    TransformCR worldToParameterSpace,  // transform for parameters.
+    DVec3dCR normal,                    // normal (same for all)
+    bool compressNormal                 // if true, make only one normal.  If false, make same number of normals as points and params
+    )        
     {
     if (mesh != nullptr)
         {
+        DVec3d myNormal = normal;
+        if (reverse)
+            myNormal = normal;
         for (auto &t : triangles)
             {
-            work.clear ();
-            if (reverse)
-                {
-                work.push_back (t.point[2]);
-                work.push_back (t.point[1]);
-                work.push_back (t.point[0]);
-                }
-            else
-                {
-                work.push_back (t.point[0]);
-                work.push_back (t.point[1]);
-                work.push_back (t.point[2]);
-                }
-            (*mesh)->AddPolygon (work);
+            work.clear();
+            work.push_back(t.point[0]);
+            work.push_back(t.point[1]);
+            work.push_back(t.point[2]);
+            (*mesh)->AddPolygon(work, worldToParameterSpace, normal, compressNormal, reverse);
             }
         }
     }
@@ -1464,9 +1476,15 @@ PolyfaceHeaderPtr *outside
 )
     {
     if (inside != nullptr)
+        {
         *inside = PolyfaceHeader::CreateVariableSizeIndexed ();
+        (*inside)->ActivateVectorsForIndexingCR (polyface);
+        }
     if (outside != nullptr)
+        {
         *outside = PolyfaceHeader::CreateVariableSizeIndexed ();
+        (*outside)->ActivateVectorsForIndexingCR(polyface);
+        }
     auto visitor = PolyfaceVisitor::Attach (polyface);
     PolyfaceClipContext context (clipSet, nullptr);
     BVectorCache<DPoint3d> insideA;
@@ -1478,8 +1496,10 @@ PolyfaceHeaderPtr *outside
         insideA.ClearToCache ();
         outsideA.ClearToCache ();
         context.ClipAndCollect (visitor->Point (), clipSet, insideA, outsideA);
-        AddPolygonsToMesh (outside, outsideA);
-        AddPolygonsToMesh (inside, insideA);
+        if (outside)
+            AddPolygonsToMesh (*outside, outsideA, *visitor);
+        if (inside)
+            AddPolygonsToMesh (*inside, insideA, *visitor);
         }
     if (constructNewFacetsOnClipSetPlanes)
         {
@@ -1518,8 +1538,12 @@ PolyfaceHeaderPtr *outside
                             bvector<DTriangle3d> triangles;
     //                        PolygonOps::FixupAndTriangulateSpaceLoops (clippedLoopsXYZ, triangles);
                             PolygonOps::FixupAndTriangulateProjectedLoops (clippedLoopsXYZ, localToWorld, worldToLocal, triangles);
-                            AddTrianglesToMesh (inside, triangles, true, work);
-                            AddTrianglesToMesh (outside, triangles, false, work);
+                            DVec3d normal0 = DVec3d::FromMatrixColumn (localToWorld, 2);
+                            DVec3d normal1 = DVec3d::FromScale (normal0, -1.0);
+                            AddTrianglesToMesh (inside, triangles, true, work,
+                                    worldToLocal, normal1, true);
+                            AddTrianglesToMesh (outside, triangles, false, work,
+                                    worldToLocal, normal0, true);
                             }
                         }
                     }

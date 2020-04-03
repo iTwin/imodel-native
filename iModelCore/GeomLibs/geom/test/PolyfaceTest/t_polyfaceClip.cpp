@@ -46,7 +46,7 @@ TEST (Polyface, ClipNGonSweeps)
         for (auto pass : {-2, -1, 0,1, 2, 4})
             {
             SaveAndRestoreCheckTransform shifter (0,30,0);
-            IPolyfaceConstructionPtr builder = CreateBuilder (false, false);
+            IPolyfaceConstructionPtr builder = CreateBuilder (true, true);
             builder->GetFacetOptionsR ().SetMaxPerFace (4);
             builder->AddSweptNGon (numSide, 2.0, 0.0, 3.0, true, true);
 
@@ -247,7 +247,7 @@ TEST (Polyface, ClipTunnel)
     int64_t allocationCounter = BSIBaseGeom::GetAllocationDifference ();
     //static int s_printGraph = 0;
 
-    IPolyfaceConstructionPtr builder = CreateBuilder (false, false);
+    IPolyfaceConstructionPtr builder = CreateBuilder (true, true);
     builder->GetFacetOptionsR ().SetMaxPerFace (4);
     //varunused double mySize = SetTransformToNewGridSpot (*builder, true);
 
@@ -767,4 +767,104 @@ TEST(Range3d, isAnyRangeFaceInsideC)
             }
         }
     Check::ClearGeometry("Range3d.isAnyRangeFaceInsideC");
+    }
+bvector<DPoint3d> CreateStarPolygon(DPoint3dCR origin, double radiusA, double radiusB, int numPoints, bool includeClosurePoint = true)
+    {
+    if (numPoints < 2)
+        numPoints = 2;
+    double radiansStep = Angle::TwoPi () / numPoints;
+    bvector<DPoint3d> points;
+    for (int i = 0; i < numPoints; i++)
+        {
+        double thetaA = i * radiansStep;
+        double thetaB = (i + 0.5) * radiansStep;
+        points.push_back (DPoint3d::From (radiusA * cos(thetaA), radiusA * sin(thetaA), 0));
+        points.push_back(DPoint3d::From(radiusB * cos(thetaB), radiusB * sin(thetaB), 0));
+        }
+    auto point0 = points[0];
+    if (includeClosurePoint)
+        points.push_back (point0);
+    return points;
+    }
+void MarkClipStatus(ClipPlaneSet const & clipper, DPoint3dCR point, double tolerance)
+    {
+    bool status = clipper.IsPointOnOrInside(point, tolerance);
+    double marker0 = 0.05;
+    double marker1 = -0.05;
+    Check::SaveTransformedMarker (point, status ? marker0 : marker1);
+    }
+TEST(ClipPlaneSet, InsideStar)
+    {
+    auto starPolygon = CreateStarPolygon (DPoint3d::From (0,0,0), 3.0, 1.0, 5, true);
+    bvector<bvector<DPoint3d>> fragments;
+    auto clipper = ClipPlaneSet::FromSweptPolygon (starPolygon.data(), starPolygon.size (), nullptr, &fragments);
+    Check::SaveTransformed (starPolygon);
+    starPolygon.pop_back ();
+    Check::Shift (10,0,0);
+    for (auto & f : fragments)
+        {
+        auto xyz = f.front ();
+        f.push_back(xyz);
+        Check::SaveTransformed(f);
+        }
+    for (double tolerance : {0.0, 0.00001, 0.05, -0.05, -0.00001})
+        {
+        Check::Shift (0,10,0);
+        Check::SaveTransformed (starPolygon);
+        for (auto &f : fragments)
+            {
+            bvector<DPoint3d> offsetFragment;
+            PolylineOps::OffsetLineString(offsetFragment, f, tolerance, DVec3d::From(0, 0, 1), true, 3.1);
+            Check::SaveTransformed (offsetFragment);
+            }
+        for (size_t i = 0; i < starPolygon.size(); i++)
+            {
+            size_t i1 = (i + 1) % starPolygon.size ();
+            MarkClipStatus(clipper, starPolygon[i], tolerance);
+            for (double segmentFraction : {0.3, 0.5, 0.7})
+                {
+                MarkClipStatus(clipper, DPoint3d::FromInterpolate(starPolygon[i], segmentFraction, starPolygon[i1]), tolerance);
+                MarkClipStatus(clipper, DPoint3d::FromInterpolateAndPerpendicularXY(starPolygon[i], segmentFraction, starPolygon[i1], 0.02), tolerance);
+                MarkClipStatus(clipper, DPoint3d::FromInterpolateAndPerpendicularXY(starPolygon[i], segmentFraction, starPolygon[i1], -0.02), tolerance);
+                }
+
+            size_t i2 = (i + 2) % starPolygon.size ();
+            MarkClipStatus(clipper, DPoint3d::FromInterpolate(starPolygon[i], 0.5, starPolygon[i2]), tolerance);
+            MarkClipStatus(clipper, DPoint3d::FromInterpolateAndPerpendicularXY(starPolygon[i], 0.4, starPolygon[i2], 0.02), tolerance);
+            MarkClipStatus(clipper, DPoint3d::FromInterpolateAndPerpendicularXY(starPolygon[i], 0.6, starPolygon[i2], -0.02), tolerance);
+            double a = 1.0 / 3.0;
+            DPoint3d xyz = DPoint3d::FromSumOf(starPolygon[i], a, starPolygon[i1], a, starPolygon[i2], a);
+            MarkClipStatus(clipper, xyz, tolerance);
+            }
+        }
+    Check::ClearGeometry("ClipPlaneSet.InsideStar");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(Polyface, ClipWithParams)
+    {
+    DPoint3dDVec3dDVec3d plane (DPoint3d::From (0,0,0), DVec3d::From (2,0,0), DVec3d::From (1,2,0));
+    int numX = 2;
+    int numY = 2;
+    auto mesh = Mesh_XYGrid(numX, numY, 2.0, 2.5, false, true);
+    PolyfaceHeaderPtr insideClip;
+    PolyfaceHeaderPtr outsideClip;
+
+    ConvexClipPlaneSet convexClipper;
+    bvector<DPoint3d> points{ DPoint3d::From(-1,-4,0), DPoint3d::From(1,-4,0), DPoint3d::From(5,3,0) };
+    convexClipper.AddSweptPolyline(points, DVec3d::From(0, 0, 1), Angle::FromDegrees (0.0));
+    ClipPlaneSet clipper;
+    clipper.push_back(convexClipper);
+
+    ClipPlaneSet::ClipPlaneSetIntersectPolyface(
+        *mesh, clipper, false,
+        &insideClip, &outsideClip);
+    Check::SaveTransformed (points);
+    Check::SaveTransformed (*mesh);
+    Check::Shift (0,20,0);
+    Check::SaveTransformed (*insideClip);
+    Check::SaveTransformed(*outsideClip);
+    Check::ClearGeometry("Polyface.ClipWithParams");
     }

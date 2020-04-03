@@ -3281,6 +3281,9 @@ TEST(Box, ZeroSizeCap)
                         PolyfaceHeaderPtr mesh = builder->GetClientMeshPtr();
                         Check::SaveTransformed(*mesh);
                         }
+                    Check::Shift (0,0,-5);
+                    Check::SaveTransformed(*box);
+                    Check::Shift(0, 0, 5);
                     }
                 }
             }

@@ -448,7 +448,32 @@ size_t i2
         }
     return false;
     }
-
+static void SnapBarycentricToEdge(DPoint3dR vector, double tolerance = 1.0e-12)
+    {
+    uint32_t numSnap = 0;
+    double uu[3];
+    uu[0] = vector.x;
+    uu[1] = vector.y;
+    uu[2] = vector.z;
+    double s = 0.0;
+    
+    for (uint32_t i = 0; i < 3; i++)
+        {
+        s += uu[i];
+        if (fabs(uu[i]) < tolerance)
+            {
+            uu[i] = 0.0;
+            numSnap++;
+            }
+        }
+    if (numSnap > 0 && fabs (s) > tolerance && fabs (s) < 1.0 + tolerance)
+        {
+        double a = 1.0 / s;
+        vector.x = uu[0] * a;
+        vector.y = uu[1] * a;
+        vector.z = uu[2] * a;
+        }
+    }
 // Compute point and normal at uvParam wrt the triangle on (locally numbered) vertices 0,i1,(i1+1),
 // i.e.
 // Return false if i0,i1,i2 not a valid triangle with non-colinear points
@@ -493,7 +518,7 @@ size_t i2
         visitor.AccumulateScaledData (detail, i0, U.x);
         visitor.AccumulateScaledData (detail, i1, U.y);
         visitor.AccumulateScaledData (detail, i2, U.z);
-
+        SnapBarycentricToEdge(U);
         detail.SetIsInterior (DoubleOps::IsIn01 (U));
         detail.SetReadIndex (visitor.GetReadIndex ());
         detail.a = rayFraction;

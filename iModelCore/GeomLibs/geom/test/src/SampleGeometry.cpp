@@ -245,11 +245,12 @@ MSBsplineSurfacePtr SimpleBilinearPatch (double u1, double v1, double w1)
         );
     }
 
-PolyfaceHeaderPtr Mesh_XYGrid (int numXEdge, int numYEdge, double edgeX, double edgeY, bool triangulate)
+PolyfaceHeaderPtr Mesh_XYGrid (int numXEdge, int numYEdge, double edgeX, double edgeY, bool triangulate, bool params = false)
     {
     PolyfaceHeaderPtr mesh = PolyfaceHeader::CreateVariableSizeIndexed ();
     bvector<DPoint3d> &point = mesh->Point ();
     bvector<int> &pointIndex = mesh->PointIndex ();
+    bvector<int> &paramIndex = mesh->ParamIndex();
     int rowStep = 1;
     int colStep = numXEdge + 1;
     double du = edgeX / numXEdge;
@@ -258,11 +259,15 @@ PolyfaceHeaderPtr Mesh_XYGrid (int numXEdge, int numYEdge, double edgeX, double 
         du = 1.0;
     if (dv == 0.0)
         dv = 1.0;
+    double duParam = 1.0 / numXEdge;
+    double dvParam = 1.0 / numYEdge;
     for (int row = 0; row <= numYEdge; row++)
         {
         for (int col = 0; col <= numXEdge; col++)
             {
             point.push_back (DPoint3d::From ((double)col * du, (double)row * dv, 0.0));
+            if (params)
+                mesh->Param().push_back (DPoint2d::From ((double)col * duParam, (double)row * dvParam));
             int topRight = (int) point.size (); // 1 based -- all subtractions retain 1 based.
             if (row > 0 && col > 0)
                 {
@@ -289,6 +294,29 @@ PolyfaceHeaderPtr Mesh_XYGrid (int numXEdge, int numYEdge, double edgeX, double 
                     pointIndex.push_back (bottomLeft);
                     pointIndex.push_back (bottomRight);
                     pointIndex.push_back (0);
+                    }
+                if (params)
+                    {
+                    if (triangulate)
+                        {
+                        paramIndex.push_back(topRight);
+                        paramIndex.push_back(topLeft);
+                        paramIndex.push_back(bottomLeft);
+                        paramIndex.push_back(0);
+                        paramIndex.push_back(bottomLeft);
+                        paramIndex.push_back(bottomRight);
+                        paramIndex.push_back(topRight);
+                        paramIndex.push_back(0);
+
+                        }
+                    else
+                        {
+                        paramIndex.push_back(topRight);
+                        paramIndex.push_back(topLeft);
+                        paramIndex.push_back(bottomLeft);
+                        paramIndex.push_back(bottomRight);
+                        paramIndex.push_back(0);
+                        }
                     }
                 }
             }

@@ -50,7 +50,8 @@ ptrdiff_t m_vertex1;
 size_t m_readIndex;
 size_t m_faceSuccessorReadIndex;
 MTGNodeId m_nodeId;
-bool m_visible;
+uint8_t m_visible;
+uint8_t m_strongVisible;
 
 HalfEdge (size_t position, size_t faceSuccessorPosition, size_t vertex0, size_t vertex1, bool visible, MTGNodeId nodeId = MTG_NULL_NODEID)
     : m_readIndex (position),
@@ -58,7 +59,8 @@ HalfEdge (size_t position, size_t faceSuccessorPosition, size_t vertex0, size_t 
       m_vertex0 (vertex0),
       m_vertex1 (vertex1),
       m_nodeId  (nodeId),
-      m_visible (visible)
+      m_visible (visible),
+      m_strongVisible (false)
     {}
 
 /*--------------------------------------------------------------------------------**//**
@@ -114,10 +116,11 @@ bool IsAnyMateOf (HalfEdge &other)
     return IsReversedMateOf (other) || IsIdenticalMateOf (other);
     }
 
-bool IsVisible () const
-    {
-    return m_visible;
-    }
+bool IsVisible () const {return m_visible;}
+void SetVisible(bool value) {m_visible = value;}
+
+bool IsStrongVisible () const { return m_strongVisible; }
+void SetStrongVisible (bool value) { m_strongVisible = value; }
 
 void ReverseVertices ()
     {
@@ -165,9 +168,10 @@ static bool cb_LessThan_LowVertexHighVertex(HalfEdge const &edgeA, HalfEdge cons
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-void Add(size_t position, size_t faceSuccessorPosition, ptrdiff_t indexA, ptrdiff_t indexB, bool visible)
+void Add(size_t position, size_t faceSuccessorPosition, ptrdiff_t indexA, ptrdiff_t indexB, bool visible, bool strongVisible)
     {
-    push_back (HalfEdge (position, faceSuccessorPosition, indexA, indexB, visible));
+    push_back (HalfEdge(position, faceSuccessorPosition, indexA, indexB, visible));
+    back ().SetStrongVisible(strongVisible);
     }
 // input any index in the half edge array.
 // return a Size2 with:
@@ -363,7 +367,12 @@ void IncrementSignCounts (int &numPositive, int &numNegative, int &numZero, doub
 //! Assume array is sorted.   Assume normals are available from the mesh.
 //! ASSUME mesh arg is writable refernece to same PolyfaceQuery
 //! Examine normal angles on each side of paired edges.   Mark visible if variation is large, invisible if small.  
-bool MarkVisibility (double smoothAngle, PolyfaceHeaderR mesh, DVec3dCP silhouetteVector)
+bool MarkVisibility 
+(
+double smoothAngle,
+PolyfaceHeaderR mesh,
+DVec3dCP silhouetteVector
+)
     {
     size_t numHalfEdge = size ();
     bvector<int> &pointIndices = mesh.PointIndex ();
@@ -396,12 +405,16 @@ bool MarkVisibility (double smoothAngle, PolyfaceHeaderR mesh, DVec3dCP silhouet
                 smooth = true;
                 if (thetaA0B0 > smoothAngleMinusTolerance)
                     smooth = false;
+                if (at(i0).IsStrongVisible())
+                    smooth = false;
                 // and acceptable angle change across edge end ...
                 for (size_t i = i0 + 1; smooth && i < i0 + numMatch
                                 && GetNormals (i, normalA1, normalB1); i++)
                     {
                     thetaA0A1 = normalA0.AngleTo (normalA1);
                     thetaB0B1 = normalB0.AngleTo (normalB1);
+                    if (at(i).IsStrongVisible ())
+                        smooth = false;
                     if (thetaA0A1 > smoothAngleMinusTolerance)
                         smooth = false;
                     if (thetaB0B1 > smoothAngleMinusTolerance)
@@ -439,7 +452,7 @@ bool MarkVisibility (double smoothAngle, PolyfaceHeaderR mesh, DVec3dCP silhouet
             HalfEdge he = at (i);
             size_t readIndex = he.m_readIndex;
             ptrdiff_t signedVertexIndex = abs ((int)he.m_vertex0);
-            if (smooth)
+            if (smooth && !he.IsStrongVisible ())
                 signedVertexIndex = - signedVertexIndex;
             if (signedVertexIndex > 0)
                 numPositiveIndex++;
@@ -730,15 +743,46 @@ bool BuildGraph (PolyfaceQueryCR polyface, MTGFacetsP facets)
     return true;
     }
 
-
-
-
+static size_t FindIndexOfDiagonalCandidate(bvector<DPoint3d> const &points, double edgeLengthFactor)
+    {
+    size_t n = points.size();
+    if (n < 3)
+        return SIZE_MAX;
+    if (edgeLengthFactor == 0.0)
+        return SIZE_MAX;
+    double maxLength = points.back().Distance (points.front());
+    size_t iMax = n - 1;
+    for (size_t i = 0; i + 1 < n; i++)
+        {
+        double length = points[i].Distance (points[i+1]);
+        if (length > maxLength)
+            {
+            maxLength = length;
+            iMax = i;
+            }
+        }
+    for (size_t i = 0; i < n; i++)
+        {
+        size_t i1 = (i+1) % n;
+        if (i != iMax && points[i].Distance(points[i1]) * edgeLengthFactor > maxLength)
+            return SIZE_MAX;
+        }
+    return iMax;
+    }
 
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
+//! OPTIONAL
+//! edgeLengthFactor -- only apply to edges that are at least this factor larger than others in the facet
+//! maxPerFacet -- only apply in facets with this number or fewer vertices.
 +--------------------------------------------------------------------------------------*/
-void BuildArray(PolyfaceQueryCR source, bool omitInvisibles, bool ignoreDegenerateFaces = true, bool buildIndexToBaseReadIndex = false)
+void BuildArray(PolyfaceQueryCR source, bool omitInvisibles,
+    bool ignoreDegenerateFaces = true,
+    bool buildIndexToBaseReadIndex = false,
+    double diagonalEdgeFactor = 0.0,
+    uint32_t maxEdgesInFacetForDiagonalRules = 0
+    )
     {
     static size_t indexShift = 1;
     PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (source, true);
@@ -791,6 +835,13 @@ void BuildArray(PolyfaceQueryCR source, bool omitInvisibles, bool ignoreDegenera
             if (numEdge == 2)
                 continue;
             }
+        size_t diagonalIndex= SIZE_MAX;
+        if (numEdge <= maxEdgesInFacetForDiagonalRules)
+            {
+            diagonalIndex = FindIndexOfDiagonalCandidate (visitor->Point(), diagonalEdgeFactor);
+            if (diagonalIndex == SIZE_MAX)
+                diagonalIndex = numEdge + 1;
+            }
 
         pack.push_back (pack[0]);
         for (size_t k = 0; k < numEdge; k++)
@@ -802,10 +853,13 @@ void BuildArray(PolyfaceQueryCR source, bool omitInvisibles, bool ignoreDegenera
                 }
             else
                 {
+                bool strongVisible = false;
+                if (diagonalIndex != SIZE_MAX && i != diagonalIndex)
+                    strongVisible = true;
                 Add (indexPosition[i], indexPosition[j],
                     (size_t)visitor->ClientPointIndex ()[i] + indexShift,
                     (size_t)visitor->ClientPointIndex ()[j] + indexShift,
-                    visitor->Visible()[i]);
+                    visitor->Visible()[i], strongVisible);
                 }
             }
         }

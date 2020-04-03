@@ -34,6 +34,23 @@ static GEOMDLLIMPEXP size_t Append (bvector<T> *dest, T const *source, size_t co
 
 static GEOMDLLIMPEXP size_t Append (bvector<T> *dest, bvector<T> const *source);
 
+//! append source to dest, return first index 
+static GEOMDLLIMPEXP size_t AppendPrefix(bvector<T> &dest, bvector<T> const &source, size_t n, bool reversed)
+    {
+    size_t firstIndex = dest.size ();
+    if (n > source.size ())
+        n = source.size ();
+    if (reversed)
+        for (size_t i = n; i-- > 0;)
+            dest.push_back(source[i]);
+    else
+        {
+        for (size_t i = 0; i < n; i++)
+            dest.push_back(source[i]);
+        }
+    return firstIndex;
+    }
+
 //! size with pointer check 
 
 static GEOMDLLIMPEXP size_t Size (bvector<T> *dest);
@@ -91,6 +108,8 @@ static GEOMDLLIMPEXP void CompressCyclic (bvector<T> &data, double tolerance);
 //! @param [inout] dest array to be cleared and loaded.
 //! @param [in] tolerance for comparison via AlmostEqual (a,b,tolerance)
 static GEOMDLLIMPEXP void Compress (bvector<T> const &source, bvector<T> &dest, double tolerance);
+
+
 //!
 //! @description Reverse all points in the vector.
 //!
@@ -1377,9 +1396,25 @@ bool                    bSignedOneBasedIndices
 static GEOMDLLIMPEXP bool FixupAndTriangulateProjectedLoops
 (
 bvector<bvector<DPoint3d>> const &loops,    //!< [in] array of loops
+bvector<DPoint3d> const *extraPoints,       //!< [in] additional points.
+bvector<bvector<DPoint3d>> const *extraChains,       //!< [in] additional chains
 TransformCR localToWorld,                   //!< [in] transform for converting xy data to world
 TransformCR worldToLocal,                   //!< [in] transform for converting world data to xy
 bvector<DTriangle3d> &triangles             //!< [out] triangle coordinates.
+);
+
+//! <ul>
+//! <li>Apply worldToLocal transform.
+//! <li>Triangulate as viewed in that plane
+//! <li>Apply localToWorld transform to the triangles.
+//! </ul>
+//! @return false if triangulation issues.
+static GEOMDLLIMPEXP bool FixupAndTriangulateProjectedLoops
+(
+    bvector<bvector<DPoint3d>> const &loops,    //!< [in] array of loops
+    TransformCR localToWorld,                   //!< [in] transform for converting xy data to world
+    TransformCR worldToLocal,                   //!< [in] transform for converting world data to xy
+    bvector<DTriangle3d> &triangles             //!< [out] triangle coordinates.
 );
 //!
 //! Triangulate a single space polygon.  Best effort to handle non-planar polygons.  Optionally handle self-intersecting polygons.
@@ -1458,7 +1493,8 @@ TransformR              worldToLocal
 //! Favor first polygon CCW for upwards normal.
 //! Favor the first edge as x direction.
 //! Favor first point as origin.
-//! If unable to do that, use GPA code which will have random relation of origin and x direction.
+//! If the polygon is along an edge (e.g. degenerate triangle), the coordinate system will have x axis along the edge but status is false.
+//! @return true if polyon is not a single point.
 //! @param [in] pXYZIn polygon points.
 //! @param [in] numXYZ number of points.
 //! @param [out] localToWorld  coordinate frame
@@ -1483,6 +1519,30 @@ TransformR              worldToLocal,
 enum LocalCoordinateSelect selector
 );
 
+public:
+
+//!
+//! Compute a local to world transformation for a polygon (disconnects allowed)
+//! Favor first polygon CCW for upwards normal.
+//! Favor the first edge as x direction.
+//! Favor fi    rst point as origin.
+//! @return 0 if the polygon is a single point, 1 if all on an edge, 2 if proper non-degenerate
+//! @param [in] pXYZIn polygon points.
+//! @param [in] numXYZ number of points.
+//! @param [out] localToWorld  coordinate frame
+//! @param [out] worldToLocal  inverse
+//! @param [in] selector selects the scaling of the coordinate frame, as applied by
+//!             Transform::CorrectCoordinateFrameXYRange (..)
+//! @param [in] preferredR
+//!
+static GEOMDLLIMPEXP int CoordinateFrameAndRank
+(
+DPoint3dCP       pXYZIn,
+size_t          numXYZ,
+TransformR              localToWorld,
+TransformR              worldToLocal,
+enum LocalCoordinateSelect selector
+);
 
 
 //!

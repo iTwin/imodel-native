@@ -235,6 +235,51 @@ bool PolyfaceHeader::MarkInvisibleEdges (double smoothAngle, DVec3dCP silhouette
     return stat;
     }
     
+//! Mark edges invisible (negative index) if multiple conditions are met:
+//  1) dihedral angle between normals is small
+//  2) the edge is a diagonal -- in each of its two incident facets it is at least edgeLengthFactor larger than any other edge.
+//  3) no more than maxPerFace edges in the facet.
+//! For typical use, maxPerFacet=3 and edgeLengthFactor = 1.001 restricts this to diagonals in quads.
+//! 
+bool PolyfaceHeader::MarkDiagonalEdgesInvisible
+(
+double smoothAngle,
+double edgeLengthFactor,
+uint32_t maxEdgesInFacet
+)
+    {
+    uint32_t indexStyle = GetMeshStyle();
+    if (!ConvertToVariableSizeSignedOneBasedIndexedFaceLoops())
+        return false;
+    if (indexStyle == MESH_ELM_STYLE_COORDINATE_QUADS || indexStyle == MESH_ELM_STYLE_COORDINATE_TRIANGLES)
+        return false;
+
+    HalfEdgeArray halfEdges(this);
+    halfEdges.BuildArray(*this, false, false, false, edgeLengthFactor, maxEdgesInFacet);
+    halfEdges.SortForEdgeMatching();
+
+    bool stat = false;
+    if (!Normal().Active())
+        {
+        BuildPerFaceNormals();
+        stat = halfEdges.MarkVisibility(smoothAngle, *this, nullptr);
+        ClearNormals(false);
+        }
+    else
+        {
+        // There are normals -- these may blur near-smooth dihedral angles into appearing copylanar.
+        // Temporarily replace them by per-face normals.
+        BlockedVector<DVec3d> savedNormals = Normal();
+        BlockedVectorInt    savedNormalIndex = NormalIndex();
+        BuildPerFaceNormals();
+        stat = halfEdges.MarkVisibility(smoothAngle, *this, nullptr);
+        // Restore the originals . . 
+        Normal() = savedNormals;
+        NormalIndex() = savedNormalIndex;
+        }
+
+    return stat;
+    }
 
 bool PolyfaceHeader::MarkTopologicalBoundariesVisible (bool preserveOtherVisibility)
     {
@@ -754,6 +799,47 @@ bool PolyfaceHeader::ExcavateFacetsWithLongBoundaryEdges (double maxEdgeLength)
     return stat;
     }
 
+bool PolyfaceHeader::SplitByMaxEdgeLength(double splitLength, bvector<PolyfaceHeaderPtr> &splits)
+    {
+    splits.clear();
+    PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*this);
+
+    bvector<DPoint3d> &point = visitor->Point();
+    visitor->SetNumWrap(1);
+    bvector<ptrdiff_t> readIndex0, readIndex1;
+    double aMax = 0.0;
+    double aMin = DBL_MAX;
+    for (visitor->Reset(); visitor->AdvanceToNextFace();)
+        {
+        size_t readIndex = visitor->GetReadIndex();
+        double maxEdgeLength = 0.0;
+        for (size_t i = 1; i < point.size(); i++)
+            {
+            maxEdgeLength = DoubleOps::Max(maxEdgeLength, point[i - 1].Distance(point[i]));
+            }
+        aMax = DoubleOps::Max(aMax, maxEdgeLength);
+        aMin = DoubleOps::Min(aMin, maxEdgeLength);
+        if (maxEdgeLength > splitLength)
+            readIndex1.push_back(readIndex);
+        else
+            readIndex0.push_back(readIndex);
+        }
+    bvector<ptrdiff_t>splitIndices;
+    if (readIndex0.size() > 0 && readIndex1.size() > 0)
+        {
+        splitIndices = readIndex0;
+        splitIndices.push_back(-1);
+        for (size_t i = 0; i < readIndex1.size(); i++)
+            splitIndices.push_back(readIndex1[i]);
+        splitIndices.push_back(-1);
+        this->CopyPartitions(splitIndices, splits);
+        return true;
+        }
+    else
+        {
+        return false;
+        }
+    }
 
 
 END_BENTLEY_GEOMETRY_NAMESPACE

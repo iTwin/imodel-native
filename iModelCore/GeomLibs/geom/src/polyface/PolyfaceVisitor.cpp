@@ -106,6 +106,24 @@ bool PolyfaceVisitor::TryGetClientZeroBasedNormalIndex (int zeroBasedVisitorInde
     return false;
     }
 
+//! add coordinate data from a vertex described by a facet location detail.
+bool PolyfaceVisitor::AddCoordinatesFromFacetLocationDetail(FacetLocationDetailCR detail)
+    {
+    this->m_point.push_back (detail.point);
+    if (this->m_normal.Active())
+        this->m_normal.push_back (detail.normal);
+    if (this->m_param.Active())
+        this->m_param.push_back(detail.param);
+    // how to interpolate intColor and colorTable?
+    if (this->m_intColor.Active())
+        this->m_intColor.push_back(detail.intColor[0]);
+    if (this->m_colorIndex.Active())
+        this->m_colorIndex.push_back(detail.colorIndex[0]);
+    this->m_visible.push_back (true);
+    this->m_numEdgesThisFace++;
+    return true;
+    }
+
 //! access zero-based param index for an vertex within the curent face.
 bool PolyfaceVisitor::TryGetClientZeroBasedParamIndex (int zeroBasedVisitorIndex, int &zeroBasedIndex)
     {
@@ -233,6 +251,22 @@ static void AppendIndexed (bvector<T> &data,
         }
     }
 
+void PolyfaceVisitor::ClearAllArrays()
+    {
+    m_point.clear ();
+    m_pointIndex.clear ();
+    m_normal.clear ();
+    m_normalIndex.clear ();
+    m_param.clear();
+    m_paramIndex.clear ();
+    m_visible.clear ();
+    m_indexPosition.clear ();
+    m_colorIndex.clear ();
+    m_faceIndex.clear();
+    m_intColor.clear ();	
+    m_auxData = nullptr;
+    m_numEdgesThisFace = 0;
+    }
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================
@@ -292,6 +326,7 @@ bool _AdvanceToNextFace () override
     size_t i11 = i01 + 1;
 #define MAX_WRAP 10
     size_t indices[4 + MAX_WRAP];
+    ClearAllArrays();
 
     if (m_triangulate)
         {
@@ -757,6 +792,26 @@ void PolyfaceVisitor::CopyData (size_t fromIndex, size_t toIndex)
         }
     }
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
+bool PolyfaceVisitor::AddCoordinatesFromVisitor(PolyfaceVisitorCR fromVisitor, size_t fromIndex)
+    {
+    if (fromIndex >= fromVisitor.m_point.size ())
+        return false;
+    m_point.push_back(fromVisitor.m_point[fromIndex]);
+    if (fromIndex < fromVisitor.m_normal.size())
+        m_normal.push_back (fromVisitor.m_normal[fromIndex]);
+    if (fromIndex < fromVisitor.m_param.size())
+        m_param.push_back(fromVisitor.m_param[fromIndex]);
+    if (fromIndex < fromVisitor.m_intColor.size())
+        m_intColor.push_back(fromVisitor.m_intColor[fromIndex]);
+    if (fromIndex < fromVisitor.m_colorIndex.size())
+        m_colorIndex.push_back(fromVisitor.m_colorIndex[fromIndex]);
+    this->m_visible.push_back(true);
+    m_numEdgesThisFace++;
+    return true;
+    }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
@@ -860,7 +915,9 @@ size_t PolyfaceVisitor::PushInterpolatedFaceData (PolyfaceVisitor &source, size_
         color.blue  = f0 * color0.blue  + fraction * color1.blue;
         m_intColor.push_back (color.ToIntColor ());
         }
-
+    if (m_colorIndex.Active())
+        m_colorIndex.push_back (source.m_colorIndex[i0]);
+    m_numEdgesThisFace++;
     // Index data carries unchanged ..
     PushIndexData (source, i0);
     return outIndex;
@@ -1114,9 +1171,8 @@ bool _AdvanceToNextFace () override
             m_param.ClearAndAppendByOneBasedIndices (m_paramIndex,        NULL, m_parentMesh.Param (),   m_parentMesh.ParamIndex (),       i0, m_numEdgesThisFace, m_numWrap);
             m_faceData.ClearAndAppendByOneBasedIndices (m_faceIndex,      NULL, m_parentMesh.FaceData (),   m_parentMesh.FaceIndex (),       i0, m_numEdgesThisFace, m_numWrap);
             // NEEDS WORK: variant cases for color indexer?
-            m_doubleColor.ClearAndAppendByOneBasedIndices (m_colorIndex,  NULL, m_parentMesh.DoubleColor (), m_parentMesh.ColorIndex (),   i0, m_numEdgesThisFace, m_numWrap);
             m_intColor.ClearAndAppendByOneBasedIndices (m_colorIndex,     NULL, m_parentMesh.IntColor (), m_parentMesh.ColorIndex (),   i0, m_numEdgesThisFace, m_numWrap);
-            m_colorTable.ClearAndAppendByOneBasedIndices (m_colorIndex,   NULL, m_parentMesh.ColorTable (), m_parentMesh.ColorIndex (),   i0, m_numEdgesThisFace, m_numWrap);
+            m_colorIndex.ClearAndAppendByOneBasedIndices (m_colorIndex,   NULL, m_parentMesh.ColorIndex (), m_parentMesh.ColorIndex (),   i0, m_numEdgesThisFace, m_numWrap);
             }
         m_currentReadIndex = m_nextReadIndex;
         m_nextReadIndex = i2;
@@ -1191,3 +1247,36 @@ bool PolyfaceVisitor::TryRecomputeNormals ()
     return false;
     }
 
+bool IndexedParameterMap::ConstructMapping(bvector<DPoint3d> const &points)
+    {
+    // Try the obvious way with fixed indices .  .
+    localToWorld.InitFromPlaneOf3Points(points[0], points[1], points[2]);
+    if (worldToLocal.InverseOf(localToWorld))
+        {
+        index0 = 0;
+        index1 = 1;
+        index2 = 2;
+        return true;
+        }
+    worldToLocal.InitIdentity();
+    localToWorld.InitIdentity();
+    return false;
+    }
+// map xyz to barycentric.  Apply these in the data
+DPoint2d IndexedParameterMap::MapPoint2d(DPoint3dCR xyz, bvector<DPoint2d> const &params) const
+    {
+    DPoint3d uvw = worldToLocal * xyz;
+    double f1 = uvw.x;
+    double f2 = uvw.y;
+    double f0 = 1.0 - f1 - f2;
+    return DPoint2d::FromSumOf(params[index0], f0, params[index1], f1, params[index2], f2);
+    }
+// map xyz to barycentric.  Apply these in the data
+DVec3d IndexedParameterMap::MapDVec3d(DPoint3dCR xyz, bvector<DVec3d> const &normals) const
+    {
+    DPoint3d uvw = worldToLocal * xyz;
+    double f1 = uvw.x;
+    double f2 = uvw.y;
+    double f0 = 1.0 - f1 - f2;
+    return DVec3d::FromSumOf(normals[index0], f0, normals[index1], f1, normals[index2], f2);
+    }

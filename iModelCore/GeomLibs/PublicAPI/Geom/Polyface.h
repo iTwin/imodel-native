@@ -330,6 +330,19 @@ bool clearFirst = false
 );
 
 //!
+//! Add one row with wraparound, optional terminator.   NO ACTION if the array is not active !!!!
+//!
+GEOMDLLIMPEXP void AddSteppedBlock
+(
+    int firstValue,
+    int valueStep,
+    size_t numValue,
+    size_t numWrap,
+    size_t numTrailingZero = 0,
+    bool clearFirst = false
+);
+
+//!
 //! Add one row with terminator or pad.
 //!
 GEOMDLLIMPEXP bool AddAndTerminate
@@ -442,11 +455,12 @@ size_t readIndex;
 DPoint3d point; // interpolated
 DPoint2d param; // interpolated
 DVec3d   normal;    // interpolated
-
 #define MAX_FACET_LOCATION_INDEX 4
 size_t sourceIndex[MAX_FACET_LOCATION_INDEX];
 double sourceFraction[MAX_FACET_LOCATION_INDEX];
 uint32_t intColor[MAX_FACET_LOCATION_INDEX];
+uint32_t colorIndex[MAX_FACET_LOCATION_INDEX];    // can't be interpolated?
+
 int    numSourceIndex;
 
 double a;
@@ -1751,6 +1765,26 @@ size_t &numRangeError                   //!< [out] number of indices out of rang
     return true;
     }
 };
+// Mapping from 3 points (indexed within their parent polygon) to barycentric.
+// Methods to map arbitrary xyz to uv, normal, and color data from correspondingly organized source.
+struct IndexedParameterMap
+    {
+    // indices of 3 non-colinera points in preclip polygon
+    size_t index0;
+    size_t index1;
+    size_t index2;
+    // Transform from world xyz to u,v in triangle.  z coordinate of transform out is off-plane, ignored.
+    Transform worldToLocal;
+    Transform localToWorld;
+
+    //! Find any 3 non-colinear points and construct world-to-barycentric map.
+    //! Return false (with identity transforms) if no independent triple found.   
+    bool ConstructMapping(bvector<DPoint3d> const &points);
+    // map xyz to barycentric.  Apply these in the data
+    DPoint2d MapPoint2d(DPoint3dCR xyz, bvector<DPoint2d> const &params) const;
+    // map xyz to barycentric.  Apply these in the normals
+    DVec3d MapDVec3d(DPoint3dCR xyz, bvector<DVec3d> const &normals) const;
+    };
 
 
 //=======================================================================================
@@ -1831,6 +1865,9 @@ GEOMDLLIMPEXP void TerminateAllActiveIndexVectors ();
 
 //! Set active flags so this polyface carries data and indices for all the data in source.
 GEOMDLLIMPEXP void ActivateVectorsForIndexing (PolyfaceQueryR source);
+//! Set active flags so this polyface carries data and indices for all the data in source.
+//! (Same as ActivateVectorsForIndexing, but CR param)
+GEOMDLLIMPEXP void ActivateVectorsForIndexingCR(PolyfaceQueryCR source);
 
 //! Set active flags so this polyface carries data and indices for polylines compatible with source.
 GEOMDLLIMPEXP void ActivateVectorsForPolylineIndexing (PolyfaceQueryR source);
@@ -2108,7 +2145,15 @@ double maxEdgeLength = 0.0  //!< [in] exclude facets whose edge length is larger
 //!      the first removals creates a non-convex  outer boundary.  Later removals can create islands of facets.
 //! </ul>
 GEOMDLLIMPEXP bool ExcavateFacetsWithLongBoundaryEdges (double maxEdgeLength = 0.0);
-
+//!
+//! <ul>
+//! <li> Find the maximum edge length of each facet.
+//! <li> Split into two sets of facets with that criteria.
+//! <li> Note that removal can happen anywhere in the mesh.
+//! <li> use ExcavateFacetsWithBoundaryEdges to remove only edges reachable by crossing long edges 
+//!          from a long starting edge on the boundary.
+//! </ul>
+GEOMDLLIMPEXP bool SplitByMaxEdgeLength(double splitLength, bvector<PolyfaceHeaderPtr> &splits);
 //! Add Edge Chains
 GEOMDLLIMPEXP BentleyStatus AddEdgeChains (size_t drawMethodIndex);
 
@@ -2276,6 +2321,13 @@ bvector<ptrdiff_t> *baseIndexForAdditionalReadIndex    //!< [out] (optional) vec
 GEOMDLLIMPEXP bool AddPolygon (DPoint3dCP xyz, size_t n, DVec3dCP normal = NULL, DPoint2dCP param = NULL);
 //! Add a polygon directly to the arrays.  Indices created as needed.
 GEOMDLLIMPEXP bool AddPolygon (bvector<DPoint3d> const &xyz, bvector<DVec3d> const *normal = NULL, bvector<DPoint2d> const *param = NULL);
+//! Add a polygon directly to the arrays.  Indices created as needed.
+//! Interpolate (if active) params, normals, and colors with barycentric mapping from visitor.
+GEOMDLLIMPEXP bool AddPolygon(bvector<DPoint3d> const &xyz, PolyfaceVisitorR visitor, IndexedParameterMap const &mapping);
+//! Add a polygon with linear mapping to parameter space
+//! If compressNormal is true, the normal is compared to the most recent normal
+//!     and that index is reused when identical normal index.
+GEOMDLLIMPEXP bool AddPolygon(bvector<DPoint3d> const &xyz, TransformCR worldToParameterSpace, DVec3dCR normal, bool compressNormal, bool reverseXYZ);
 
 //! Sweep the existing mesh promote to a solid
 //! @returns false if the input mesh has inconsistent visibility -- i.e. side or mixture of forward and back facing facets.
@@ -2351,7 +2403,15 @@ GEOMDLLIMPEXP bool BuildParametersFromTransformedPoints
 (
 TransformCR worldToLocal         //!< [in] transform from world to params
 );
-
+//!    slightly twisted quads that must be triangulated for calculations.
+//!    If triangulated, both the transverse edges and diagonals would get hidden
+//!    by usual dihedral angle rules.
+//!    This hides the diagonals but leaves the simple transverse edges visible.
+GEOMDLLIMPEXP bool MarkDiagonalEdgesInvisible
+(
+double smoothAngle,
+double edgeLengthFactor = 1.001,
+uint32_t maxEdgesInFacetForDiagonalRules = 3);
 
 //! Clear current normal data.
 //! @param [in] active active state (true/false) to be applied after clearing.
@@ -2923,12 +2983,22 @@ GEOMDLLIMPEXP bool TryParamToScanBrackets
     FacetLocationDetailPairP verticalScanBracket
     );
 
+//! Clear all arrays in the visitor.
+GEOMDLLIMPEXP void ClearAllArrays ();
 //! Copy all data from a particular vertex (indexed within the visitor)
 //! into a facet location detail.
 //! @param [out] detail destination for copied data.
 //! @param [in] index index within data arrays for the visitor.
 GEOMDLLIMPEXP bool LoadVertexData (FacetLocationDetailR detail, size_t index);
+GEOMDLLIMPEXP bool LoadCyclicVertexData(FacetLocationDetailR detail, size_t index);
+//! add coordinate data from a vertex described by a facet location detail.
+GEOMDLLIMPEXP bool AddCoordinatesFromFacetLocationDetail(FacetLocationDetailCR detail);
 
+//! add coordinate data from a vertex at an index in another visitor.
+//! Only point, param, normal, colorTable, and color data are copied if available
+//! (visible and indices are not copied)
+//! Return false if index is out of range for the source visitor.  Array sizes may be irregular.
+GEOMDLLIMPEXP bool AddCoordinatesFromVisitor(PolyfaceVisitorCR source, size_t sourceIndex);
 //! Find a uv location within the facet.  Compute all available data there.
 //! returns false if the facet does not have params or if there are not edges on both sides along the scan lines.
 //! @param [in] uvParam pick parameter.

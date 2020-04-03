@@ -440,7 +440,7 @@ bool PolyfaceHeader::Triangulate (size_t maxEdge, bool hideNewEdges, IPolyfaceVi
             }
 
         if (    !triangulateThisFacet
-            ||  facePoints.size () <= (size_t) maxEdge + 1
+            &&  facePoints.size () <= (size_t) maxEdge + 1
             )
             {
             for (ptrdiff_t i = 0, n = facePoints.size () - 1; i < n; i++)
@@ -1179,6 +1179,110 @@ bool PolyfaceHeader::AddPolygon (DPoint3dCP xyz, size_t n, DVec3dCP normal, DPoi
 
     return true;
     }
+//! Add a polygon with linear mapping to parameter space
+//! If compressNormal is true, the normal is compared to the most recent normal
+//!     and that index is reused when identical.
+bool PolyfaceHeader::AddPolygon
+(
+bvector<DPoint3d> const &xyz,
+TransformCR worldToParameterSpace,
+DVec3dCR normal,
+bool compressNormal,
+bool reverseXYZ
+)
+    {
+    size_t n = xyz.size();
+    // Strip off trailing duplicates
+    while (n > 1 && xyz[n - 1].IsEqual(xyz[0]))
+        n--;
+    size_t basePointIndex = m_point.size();
+    size_t numIndex = 0, numPad = 0;
+    if (!GetIndexCounts(n, GetMeshStyle(), GetNumPerFace(), numIndex, numPad))
+        return false;
+    size_t pointIndex0 = m_point.size ();
+    m_pointIndex.AddSteppedBlock((int)basePointIndex + 1, 1, n, 0, numPad);
+    // produce reversal by flipping the points (indices go forward into the reversed points)
+    VectorOps<DPoint3d>::AppendPrefix (m_point, xyz, n, reverseXYZ);
+
+    if (m_normal.Active())
+        {
+        if (compressNormal)
+            {
+            // We will always reference the last entry ... 
+            //   sometimes "last" is as of input time, sometimes its a new push.
+            if (m_normal.size () == 0 || !normal.IsEqual (m_normal.back ()))
+                m_normal.push_back (normal);
+            size_t normalIndex = m_normal.size();     // !!! one based !!!
+            m_normalIndex.AddSteppedBlock ((int)normalIndex, 0, n, 0, numPad);
+            }
+        else
+            {
+            int baseNormalIndex = (int)m_normal.size();
+            m_normalIndex.AddSteppedBlock(baseNormalIndex + 1, 1, n, 0, numPad);
+            for (size_t i = 0; i < n; i++)
+                m_normal.push_back(normal);
+            }
+        }
+
+    if (m_param.Active())
+        {
+        size_t baseParamIndex = m_param.size();
+        m_paramIndex.AddSequentialBlock((int)baseParamIndex + 1, n, 0, numPad);
+        // access points from m_point (rather than xyz) to get the reverse effects buried in AppendPrefix.
+        for (size_t i = 0; i < n; i++)
+            {
+            DPoint3d uvw = worldToParameterSpace * m_point[pointIndex0 + i];
+            m_param.push_back(DPoint2d::From (uvw.x, uvw.y));
+            }
+        }
+    return true;
+    }
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
+bool PolyfaceHeader::AddPolygon(bvector<DPoint3d> const &xyz, PolyfaceVisitorR mappedVisitor, IndexedParameterMap const &mapping)
+    {
+    size_t n = xyz.size ();
+    // Strip off trailing duplicates
+    while (n > 1 && xyz[n - 1].IsEqual(xyz[0]))
+        n--;
+
+    if (n < 3)
+        return false;
+
+    size_t basePointIndex = m_point.size();
+    size_t numIndex = 0, numPad = 0;
+    if (!GetIndexCounts(n, GetMeshStyle(), GetNumPerFace(), numIndex, numPad))
+        return false;
+
+    m_pointIndex.AddSequentialBlock((int)basePointIndex + 1, n, 0, numPad);
+    for (size_t i = 0; i < n; i++)
+        m_point.push_back (xyz[i]);
+
+    if (m_normal.Active())
+        {
+        size_t baseNormalIndex = m_normal.size();
+        m_normalIndex.AddSequentialBlock((int)baseNormalIndex + 1, n, 0, numPad);
+        for (size_t i = 0; i < n; i++)
+            {
+            DVec3d normal = mapping.MapDVec3d (xyz[i], mappedVisitor.Normal ());
+            m_normal.push_back(normal);
+            }
+        }
+
+    if (m_param.Active ())
+        {
+        size_t baseParamIndex = m_param.size();
+        m_paramIndex.AddSequentialBlock((int)baseParamIndex + 1, n, 0, numPad);
+        for (size_t i = 0; i < n; i++)
+            {
+            DPoint2d param = mapping.MapPoint2d(xyz[i], mappedVisitor.Param());
+            m_param.push_back (param);
+            }
+        }
+
+    return true;
+    }
 
 
 /*--------------------------------------------------------------------------------**//**
@@ -1497,11 +1601,14 @@ void PolyfaceHeader::TerminateAllActiveIndexVectors ()
         m_faceIndex.push_back (0);
     }
 
-
+void PolyfaceHeader::ActivateVectorsForIndexing(PolyfaceQueryR source)
+    {
+    this->ActivateVectorsForIndexingCR (source);
+    }
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-void PolyfaceHeader::ActivateVectorsForIndexing (PolyfaceQueryR source)
+void PolyfaceHeader::ActivateVectorsForIndexingCR (PolyfaceQueryCR source)
     {
     Point ().SetActive (true);
     PointIndex ().SetActive (true);
