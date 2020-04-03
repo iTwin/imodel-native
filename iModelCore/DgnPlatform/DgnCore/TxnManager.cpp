@@ -1226,7 +1226,127 @@ DbResult TxnManager::ApplyChanges(IChangeSet& changeset, TxnAction action, bool 
     m_action = TxnAction::None;
     return result;
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Affan.Khan        04/20
+* This remove unchanged indexes from DDL. There is already a fix in to remove it from where
+* these unchanged indexes get added on ECDb side. But following fixes issue with existing
+* changesets that is already on imodelhub or old bridges that is not consuming the source fix.
+* In case of any error this function return original unchanged DDL.
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus TxnManager::PatchSlowSchemaChangeSet(Utf8StringR patchedDDL, Utf8StringCR compoundSQL)
+    {
+    /** Performance issue due to recreating indexes that have not changed
+     *  DDL in schema changeset are ordered so CREATE TABLE/ ALTER TABLE is followed by DROP INDEX followed by CREATE INDEX
+     *  How to skip indexes that have not changed.
+     *  1. Find all DROP indexes DDL
+     *  2. Find all CREATE indexes DDL
+     *  3. See if create index matches sql in sqlite_master.
+     *      a. If matches then skip the index and also erase DDL for DROP if any.
+     *      b. If does not exist record it and it will be executed after non-index DDLs
+     **/
+    const auto kStmtDelimiter = ";";
+    const auto kIdentDelimiter = " ";
+    const auto kQuotedLiteralStart = '[';
 
+    bmap<Utf8String, Utf8String> dropIndexes;
+    bmap<Utf8String, Utf8String> createIndexes;
+    bmap<Utf8String, Utf8String> currentIndexes;
+    // Split DDL on ; this would give use individual SQL. This is safe as we do not string literal ';' for any other use.
+    bvector<Utf8String> individualSQL;
+    BeStringUtilities::Split(compoundSQL.c_str(), kStmtDelimiter, individualSQL);
+
+    // Read all the index from sqlite_master
+    Statement indexStmt;
+    if (indexStmt.Prepare(m_dgndb, "SELECT name, sql FROM sqlite_master WHERE type='index' AND sql IS NOT NULL") != BE_SQLITE_OK)
+        {
+        BeAssert(false && "Should be able to read current indexes");
+        return ERROR;
+        }
+
+    while (indexStmt.Step() == BE_SQLITE_ROW)
+        {
+        currentIndexes[indexStmt.GetValueText(0)] = indexStmt.GetValueText(1);
+        }
+    indexStmt.Finalize(); // This is required as DDL will fail with DB_LOCK
+
+    for (auto && sql : individualSQL)
+        {
+        if (sql.StartsWith("DROP INDEX IF EXISTS") || sql.StartsWith("CREATE INDEX") || sql.StartsWith("CREATE UNIQUE INDEX"))
+            {
+            bvector<Utf8String> sqlTokens;
+            BeStringUtilities::Split(sql.c_str(), kIdentDelimiter, sqlTokens);
+            int index = -1;
+            bool drop = false;
+            if (sqlTokens[0] == "DROP")
+                {
+                index = 4;
+                drop = true;
+                }
+            else if (sqlTokens[0] == "CREATE")
+                {
+                if (sqlTokens[1] == "INDEX")
+                    index = 2;
+                else
+                    index = 3;
+                }
+            if (index < 0) 
+                {
+                BeAssert(false && "Should find index name");
+                return ERROR;
+                }
+            Utf8String& nameToken = sqlTokens[index];
+            Utf8String indexName = nameToken[0] == kQuotedLiteralStart ? nameToken.substr(1, nameToken.size() - 2) : nameToken;
+            if (drop) 
+                { 
+                // record drop index
+                dropIndexes[indexName] = sql;
+                }
+            else 
+                {
+                // check if we have exact match against sqlite_master index definition for given index name.
+                const auto iter = currentIndexes.find(indexName);
+                const bool hasExistingIndex = iter != currentIndexes.end();
+                const bool indexIsUnchanged = hasExistingIndex &&  (*iter).second == sql;
+                if (indexIsUnchanged)
+                    {
+                    // make sure not to drop the index nor create it.
+                    // this safe ton of time for large files.
+                    dropIndexes.erase(indexName);
+                    }
+                else 
+                    {
+                    // record sql for create index which may or may not have a DROP index associated with it.
+                    createIndexes[indexName] = sql;
+                    if (hasExistingIndex)
+                        {
+                        // ensure we have drop statement for this index
+                        if (dropIndexes.find(indexName) == dropIndexes.end())
+                            {
+                            dropIndexes[indexName].Sprintf("DROP INDEX IF EXISTS [%s]", indexName.c_str());
+                            }
+                        }
+                    }
+                }
+            }
+        else
+            {
+            // Append all non-index DDL as is.
+            patchedDDL.append(sql).append(kStmtDelimiter);
+            }
+        }
+    // Append all drop index to ddl changes before create index
+    for (auto&& kv : dropIndexes)
+        {
+        patchedDDL.append(kv.second).append(kStmtDelimiter);
+        }
+    // Append create index to dll after drop index
+    for (auto&& kv : createIndexes)
+        {
+        patchedDDL.append(kv.second).append(kStmtDelimiter);
+        }
+
+    return patchedDDL == compoundSQL ? ERROR : SUCCESS;
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Ramanujam.Raman   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1235,7 +1355,25 @@ DbResult TxnManager::ApplyDbSchemaChangeSet(DbSchemaChangeSetCR dbSchemaChanges)
     BeAssert(!dbSchemaChanges.IsEmpty() && "DbSchemaChangeSet is empty");
     bool wasTracking = EnableTracking(false);
 
-    DbResult result = m_dgndb.ExecuteSql(dbSchemaChanges.ToString().c_str());
+    Utf8String originalDDL = dbSchemaChanges.ToString();
+    Utf8String patchedDDL;
+    DbResult result = BE_SQLITE_OK;    
+    BentleyStatus status = PatchSlowSchemaChangeSet(patchedDDL, originalDDL);
+    if (status == SUCCESS)
+        {
+        // Info message so we can look out if this issue has gone due to fix in the place which produce these changeset.
+        LOG.info("[PATCH] Appling DDL patch for #292801 #281557");
+        result = m_dgndb.ExecuteSql(patchedDDL.c_str());
+        if (result != BE_SQLITE_OK)
+            {
+            LOG.info("[PATCH] Failed to apply patch for #292801 #281557. Fallback to original DDL");
+            result = m_dgndb.ExecuteSql(originalDDL.c_str());
+            }
+        } 
+    else
+        {
+        result = m_dgndb.ExecuteSql(originalDDL.c_str());
+        }
 
     EnableTracking(wasTracking);
     return result;

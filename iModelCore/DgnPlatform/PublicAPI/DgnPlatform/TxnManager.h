@@ -341,6 +341,7 @@ private:
     void ApplyTxnChanges(TxnId, TxnAction);
     BeSQLite::DbResult ApplyChanges(BeSQLite::IChangeSet& changeset, TxnAction txnAction, bool containsSchemaChanges, BeSQLite::Rebase* = nullptr, bool invert = false);
     BeSQLite::DbResult ApplyDbSchemaChangeSet(BeSQLite::DbSchemaChangeSetCR schemaChanges);
+    
     void OnBeginApplyChanges();
     void OnEndApplyChanges();
     void OnChangesApplied(BeSQLite::IChangeSet& changeset, bool invert);
@@ -363,7 +364,7 @@ private:
     bool IsSchemaChangeTxn(TxnId rowid) const;
 
     void CancelDynamics();
-
+    BentleyStatus PatchSlowSchemaChangeSet(Utf8StringR patchedDDL, Utf8StringCR compoundSQL);
 public:
     void CallJsMonitors(Utf8CP eventName, int* arg = nullptr);
     void CallJsTxnManager(Utf8CP methodName) {DgnDb::CallJsFunction(m_dgndb.GetJsTxns(), methodName, {}); };
