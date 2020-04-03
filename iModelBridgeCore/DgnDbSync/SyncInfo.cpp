@@ -388,6 +388,40 @@ BentleyStatus SyncInfo::LevelExternalSourceAspect::FindFirstSubCategory(DgnSubCa
     return BSIERROR;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            04/2020
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus SyncInfo::LevelExternalSourceAspect::FindFirstSubCategoryByName(DgnSubCategoryId& subCatId, DgnV8ModelCR v8Model, Utf8CP v8LevelName, Type ltype, Converter& converter)
+    {
+    DgnElementId repositoryLinkId = converter.GetRepositoryLinkId(*v8Model.GetDgnFileP());
+    BeAssert(repositoryLinkId.IsValid());
+
+    /* Do not join bis.externalsourceaspect to bis.subcategory. That one join causes a sub-query and an inner join (i.e., two more selects),
+    all just to verify that the XSA belongs to a SubCategory element.
+    We don't need all of that, as long as we know that only SubCategory elements have the 'Level' Kind of XSAs.
+
+    Also, to avoid yet another select on the elements (definitions) table, to check that the level type (drawing or spatial) was as specified,
+    we duplicate that information into the 'Level' XSA itself.
+
+    Tricky: to avoid multiple calls to json_extract (which parses the JSON text each time), we specify multiple properties to
+    extract. That returns an array of values, formatting as JSON text. That's why we have to bind a text value to match it.
+    */
+    auto aspectStmt = converter.GetDgnDb().GetPreparedECSqlStatement(
+        "SELECT x.Element.Id, x.JsonProperties FROM " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " x "
+        " WHERE (x.Scope.Id=? AND x.Kind=? AND json_extract(x.JsonProperties, '$.v8LevelName') = ? AND json_extract(x.JsonProperties, '$.v8ModelId', '$.levelType') = ?)");
+    aspectStmt->BindId(1, repositoryLinkId);
+    aspectStmt->BindText(2, Kind::Level, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    aspectStmt->BindText(3, v8LevelName, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    aspectStmt->BindText(4, Utf8PrintfString("[%d,%d]", v8Model.GetModelId(), (int) ltype).c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
+
+    while (BE_SQLITE_ROW == aspectStmt->Step())
+        {
+        subCatId = aspectStmt->GetValueId<DgnSubCategoryId>(0);
+        return BSISUCCESS;
+        }
+    return BSIERROR;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      1/19
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -468,12 +502,27 @@ SyncInfo::LevelExternalSourceAspect SyncInfo::LevelExternalSourceAspect::FindAsp
     return LevelExternalSourceAspect(ExternalSourceAspect::GetAspect(el, stmt->GetValueId<BeSQLite::EC::ECInstanceId>(0)).m_instance.get());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            04/2020
+//---------------+---------------+---------------+---------------+---------------+-------
+SyncInfo::LevelExternalSourceAspect SyncInfo::LevelExternalSourceAspect::FindEdittableAspectByV8Model(DgnSubCategoryR el, DgnV8ModelCR v8Model)
+    {
+    auto stmt = el.GetDgnDb().GetPreparedECSqlStatement(
+        "SELECT ECInstanceId, JsonProperties FROM " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect)
+        " WHERE (Element.Id=? AND Kind=? AND json_extract(JsonProperties, '$.v8ModelId') = ?)");
+    stmt->BindId(1, el.GetElementId());
+    stmt->BindText(2, Kind::Level, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    stmt->BindInt(3, (int) v8Model.GetModelId());
+    if (BE_SQLITE_ROW != stmt->Step())
+        return nullptr;
+    return LevelExternalSourceAspect(ExternalSourceAspect::GetAspectForEdit(el, stmt->GetValueId<BeSQLite::EC::ECInstanceId>(0)).m_instance.get());
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnSubCategoryId SyncInfo::FindSubCategory(uint32_t v8levelId, DgnV8FileR v8File, LevelExternalSourceAspect::Type ltype)
     {
-    RepositoryLinkId fid = m_converter.GetRepositoryLinkId(v8File);
     DgnSubCategoryId glid;
     return (FindFirstSubCategory(glid, *m_dgndb, v8File.GetDictionaryModel(), v8levelId, ltype) == BSISUCCESS) ? glid : DgnSubCategoryId();
     }
@@ -485,6 +534,24 @@ DgnCategoryId SyncInfo::FindCategory(uint32_t v8levelId, DgnV8FileR v8File, Leve
     {
     DgnSubCategoryId subcatid = FindSubCategory(v8levelId, v8File, ltype);
     return DgnSubCategory::QueryCategoryId(*GetDgnDb(), subcatid);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            04/2020
+//---------------+---------------+---------------+---------------+---------------+-------
+DgnSubCategoryId SyncInfo::FindSubCategoryByName(Utf8CP v8LevelName, DgnV8ModelCR v8Model, LevelExternalSourceAspect::Type ltype)
+    {
+    DgnSubCategoryId glid;
+    return (LevelExternalSourceAspect::FindFirstSubCategoryByName(glid, v8Model, v8LevelName, ltype, m_converter) == BSISUCCESS) ? glid : DgnSubCategoryId();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            04/2020
+//---------------+---------------+---------------+---------------+---------------+-------
+DgnCategoryId SyncInfo::FindCategoryByName(Utf8CP v8LevelName, DgnV8FileR v8File, LevelExternalSourceAspect::Type ltype)
+    {
+    DgnSubCategoryId subcatId = FindSubCategoryByName(v8LevelName, v8File.GetDictionaryModel(), ltype);
+    return DgnSubCategory::QueryCategoryId(*GetDgnDb(), subcatId);
     }
 
 /*---------------------------------------------------------------------------------**//**

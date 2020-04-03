@@ -2093,6 +2093,7 @@ struct TestXDomain2 : DgnV8::XDomain
     {
     private:
         bool _isFirst = true;
+        DgnElementId findFirstElementByClass(DgnDbR db, DgnClassId classId);
 
     public:
         void _DetermineElementParams(DgnClassId&, DgnCode&, DgnCategoryId&, DgnV8EhCR, DgnV8::Converter&, ECObjectsV8::IECInstance const* primaryV8Instance, DgnV8::ResolvedModelMapping const&) override;
@@ -2100,17 +2101,28 @@ struct TestXDomain2 : DgnV8::XDomain
         BentleyApi::BentleyStatus _ImportSchema(DgnDbR db) override;
         void _OnFinishConversion(Converter&) override {}
         void _ProcessResults(ElementConversionResults& results, DgnV8EhCR v8eh, ResolvedModelMapping const&, Converter& converter) override;
+        bool _OnElementPostInsertOrUpdate(Converter&, DgnV8EhCR, DgnElementId elementId, Converter::ChangeOperation changeOperation) override;
 
         TestXDomain2() {}
         void ChangeClass() { _isFirst = false; }
     };
 
-void TestXDomain2::_DetermineElementParams(DgnClassId& classId, DgnCode&, DgnCategoryId&, DgnV8EhCR, DgnV8::Converter& converter, ECObjectsV8::IECInstance const* primaryV8Instance, DgnV8::ResolvedModelMapping const&)
+void TestXDomain2::_DetermineElementParams(DgnClassId& classId, DgnCode&, DgnCategoryId&, DgnV8EhCR v8eh, DgnV8::Converter& converter, ECObjectsV8::IECInstance const* primaryV8Instance, DgnV8::ResolvedModelMapping const&)
     {
     if (_isFirst)
-        classId = converter.GetDgnDb().Schemas().GetClassId("BisCore", "VolumeElement");
+        {
+        if (&DgnV8Api::LineStringHandler::GetInstance() == &v8eh.GetHandler())
+            classId = converter.GetDgnDb().Schemas().GetClassId("TestDomain", "GeneralClass");
+        else
+            classId = converter.GetDgnDb().Schemas().GetClassId("TestDomain", "MyFirstClass");
+        }
     else
-        classId = converter.GetDgnDb().Schemas().GetClassId("Generic", "PhysicalObject");
+        {
+        if (&DgnV8Api::LineStringHandler::GetInstance() == &v8eh.GetHandler())
+            classId = converter.GetDgnDb().Schemas().GetClassId("TestDomain", "GeneralClass");
+        else
+            classId = converter.GetDgnDb().Schemas().GetClassId("TestDomain", "MySecondClass");
+        }
     }
 
 BentleyApi::BentleyStatus TestXDomain2::_ImportSchema(DgnDbR db)
@@ -2122,6 +2134,34 @@ BentleyApi::BentleyStatus TestXDomain2::_ImportSchema(DgnDbR db)
         <BaseClass>bis:ElementMultiAspect</BaseClass>
         <ECProperty propertyName="Value" typeName="double" displayLabel="Value"/>
     </ECEntityClass>
+    <ECEntityClass typeName="MyFirstClass">
+        <BaseClass>bis:VolumeElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="MySecondClass">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="GeneralClass">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <ECNavigationProperty propertyName="NavToFirst" relationshipName="GeneralIsInFirst" direction="backward" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="FirstHasGeneral" displayLabel="FirstClass has GeneralClass" modifier="None" strength="referencing">
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
+        <Source multiplicity="(0..1)" roleLabel="FirstHasGeneral" polymorphic="true">
+            <Class class="MyFirstClass"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="FirstHasGeneral (reversed)" polymorphic="true">
+            <Class class="GeneralClass"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="GeneralIsInFirst" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="FirstHasGeneral" polymorphic="true">
+            <Class class="MyFirstClass"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="FirstHasGeneral (reversed)" polymorphic="true">
+            <Class class="GeneralClass"/>
+        </Target>
+    </ECRelationshipClass>
+
 </ECSchema>)xml";
 
     BentleyApi::ECN::ECSchemaPtr readSchema;
@@ -2137,12 +2177,46 @@ BentleyApi::BentleyStatus TestXDomain2::_ImportSchema(DgnDbR db)
     return BentleyApi::BentleyStatus::BSISUCCESS;
     }
 
+DgnElementId TestXDomain2::findFirstElementByClass(DgnDbR db, DgnClassId classId)
+    {
+    auto stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId from " BIS_SCHEMA(BIS_CLASS_Element) " WHERE ECClassId=?");
+    stmt->BindId(1, classId);
+    if (BE_SQLITE_ROW != stmt->Step())
+        return DgnElementId();
+
+    return stmt->GetValueId<DgnElementId>(0);
+    }
+
 void TestXDomain2::_ProcessResults(ElementConversionResults& results, DgnV8EhCR v8eh, ResolvedModelMapping const&, Converter& converter)
     {
     BentleyApi::ECN::ECClassCP aspectClass = converter.GetDgnDb().Schemas().GetClass("TestDomain", "TestAspect");
     BentleyApi::RefCountedPtr<DgnElement::MultiAspect> aspect = DgnElement::MultiAspect::CreateAspect(converter.GetDgnDb(), *aspectClass);
     aspect->SetPropertyValue("Value", BentleyApi::ECN::ECValue(1.0));
     DgnElement::MultiAspect::AddAspect(*results.m_element, *aspect);
+
+    }
+
+bool TestXDomain2::_OnElementPostInsertOrUpdate(Converter& converter, DgnV8EhCR v8eh, DgnElementId elementId, Converter::ChangeOperation changeOperation)
+    {
+    if (!_isFirst || &DgnV8Api::LineStringHandler::GetInstance() != &v8eh.GetHandler())
+        return false;
+
+    DgnElementId lineId = findFirstElementByClass(converter.GetDgnDb(), converter.GetDgnDb().Schemas().GetClassId("TestDomain", "MyFirstClass"));
+    EXPECT_TRUE(lineId.IsValid());
+
+    BentleyApi::BeSQLite::EC::ECInstanceKey relKey;
+    EXPECT_EQ(BE_SQLITE_OK, converter.GetDgnDb().InsertLinkTableRelationship(relKey, *converter.GetDgnDb().Schemas().GetClass("TestDomain", "FirstHasGeneral")->GetRelationshipClassCP(), lineId, elementId));
+
+    return false; // we didn't modify the element, just created a new link table relationship
+
+    //BentleyApi::ECN::ECClassCP generalClass = converter.GetDgnDb().Schemas().GetClass("TestDomain", "GeneralClass");
+    //BentleyApi::ECN::NavigationECPropertyP navProp = generalClass->GetPropertyP("NavToFirst")->GetAsNavigationPropertyP();
+    //
+    //BentleyApi::ECN::ECValue val;
+    //val.SetNavigationInfo(lineId, converter.GetDgnDb().Schemas().GetClassId("TestDomain", "GeneralIsInFirst"));
+    //DgnElementPtr element = converter.GetDgnDb().Elements().GetForEdit<DgnElement>(results.m_element->GetElementId());
+    //element->SetPropertyValue(navProp->GetName().c_str(), val);
+    //element->Update();
     }
 
 //---------------------------------------------------------------------------------------
@@ -2161,6 +2235,18 @@ TEST_F(ConverterTests, UpdateElementClass)
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
     v8editor.AddLine(&v8LineElementId);
+
+    DPoint3d points[] = {{0,   0,   0},
+                     {100, 0,   0},
+                     {0,   100, 0},
+                     {0,   0,   0}};
+
+    const int numPoints = sizeof(points) / sizeof(DPoint3d);
+    const int numSegments = numPoints - 1;
+    DgnV8Api::EditElementHandle lsEEH;
+    DgnV8Api::LineStringHandler::CreateLineStringElement(lsEEH, NULL, points, numPoints, v8editor.m_defaultModel->Is3d(), *v8editor.m_defaultModel);
+    lsEEH.AddToModel();
+
     BentleyStatus status = ERROR;
     DgnV8Api::EditElementHandle arcEEH1, arcEEH2;
     v8editor.CreateArc(arcEEH1, false, v8editor.m_defaultModel);
@@ -2229,7 +2315,7 @@ TEST_F(ConverterTests, UpdateElementClass)
         DgnElementCPtr lineElement = FindV8ElementInDgnDb(*db, v8LineElementId);
         dgnDbLineElementId = lineElement->GetElementId();
         ASSERT_TRUE(lineElement.IsValid());
-        auto classId = db->Schemas().GetClassId("BisCore", "VolumeElement");
+        auto classId = db->Schemas().GetClassId("TestDomain", "MyFirstClass");
         originalClassId = lineElement->GetElementClassId();
         ASSERT_EQ(classId.GetValue(), originalClassId.GetValue());
 
@@ -2250,6 +2336,10 @@ TEST_F(ConverterTests, UpdateElementClass)
         sel->BindId(1, dgnDbLineElementId);
         ASSERT_EQ(sel->Step(), BentleyApi::BeSQLite::DbResult::BE_SQLITE_ROW);
         aspectElementId = sel->GetValueId<DgnElementId>(0);
+
+        // ensure there is an entry in the link table
+        sel = db->GetPreparedECSqlStatement("SELECT * from td.FirstHasGeneral");
+        ASSERT_EQ(sel->Step(), BentleyApi::BeSQLite::DbResult::BE_SQLITE_ROW);
         }
 
     DgnV8Api::EditElementHandle v8Eh(v8LineElementId, v8editor.m_defaultModel);
@@ -2316,6 +2406,12 @@ TEST_F(ConverterTests, UpdateElementClass)
 
         //DgnElementCPtr arcElement = FindV8ElementInDgnDb(*db, v8Arc3ElementId);
         //ASSERT_FALSE(arcElement.IsValid());
+
+        // ensure there is are no more entries in the link table
+        {
+        auto sel = db->GetPreparedECSqlStatement("SELECT * from td.FirstHasGeneral");
+        ASSERT_EQ(sel->Step(), BentleyApi::BeSQLite::DbResult::BE_SQLITE_DONE);
+        }
 
         }
     XDomain::UnRegister(testXdomain);

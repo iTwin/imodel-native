@@ -316,8 +316,11 @@ struct SyncInfo
         //! Create a new aspect in memory. The scope will be the RepositoryLink element that stands for the source file. Caller must call AddAspect, passing in the Category element.
         DGNDBSYNC_EXPORT static LevelExternalSourceAspect CreateAspect(DgnV8Api::LevelHandle const&, DgnV8ModelCR, Type, Converter&);
         DGNDBSYNC_EXPORT static LevelExternalSourceAspect LevelExternalSourceAspect::FindAspectByV8Model(DgnSubCategoryCR, DgnV8ModelCR v8Model);
+        DGNDBSYNC_EXPORT static LevelExternalSourceAspect LevelExternalSourceAspect::FindEdittableAspectByV8Model(DgnSubCategoryR, DgnV8ModelCR v8Model);
 
         DGNDBSYNC_EXPORT static BentleyStatus FindFirstSubCategory(DgnSubCategoryId&, DgnV8ModelCR v8Model, uint32_t flid, Type ltype, Converter& converter);
+        DGNDBSYNC_EXPORT static BentleyStatus FindFirstSubCategoryByName(DgnSubCategoryId&, DgnV8ModelCR v8Model, Utf8CP v8LevelName, Type ltype, Converter& converter);
+
         };
 
     //! Identifies a drawing graphic in the V8 source
@@ -508,6 +511,8 @@ public:
     DGNDBSYNC_EXPORT DgnSubCategoryId FindSubCategory(uint32_t v8levelid, DgnV8ModelCR, LevelExternalSourceAspect::Type ltype);
     DGNDBSYNC_EXPORT DgnSubCategoryId FindSubCategory(uint32_t v8levelId, DgnV8FileR, LevelExternalSourceAspect::Type ltype);
     DGNDBSYNC_EXPORT DgnCategoryId FindCategory(uint32_t v8levelId, DgnV8FileR, LevelExternalSourceAspect::Type ltype);
+    DGNDBSYNC_EXPORT DgnSubCategoryId FindSubCategoryByName(Utf8CP v8LevelName, DgnV8ModelCR, LevelExternalSourceAspect::Type ltype);
+    DGNDBSYNC_EXPORT DgnCategoryId FindCategoryByName(Utf8CP v8LevelName, DgnV8FileR, LevelExternalSourceAspect::Type ltype);
 
     BentleyStatus FindFirstSubCategory (DgnSubCategoryId& glid, BeSQLite::Db&, DgnV8ModelCR v8Model, uint32_t flid, LevelExternalSourceAspect::Type ltype)
         {

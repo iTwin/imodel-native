@@ -156,9 +156,7 @@ DgnSubCategoryId Converter::ConvertLevelToSubCategory(DgnV8Api::LevelHandle cons
     if (dbSubCategoryName.empty())
         dbSubCategoryName = Utf8PrintfString("model_%llu", dgnModel->GetModeledElementId().GetValue());
     // *** ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    dbSubCategoryName.Trim(); // in DgnDb, we don't allow leading or trailing blanks
-    dbSubCategoryName.insert(0, _GetNamePrefix().c_str());
-    DgnDbTable::ReplaceInvalidCharacters(dbSubCategoryName, DgnCategory::GetIllegalCharacters(), '_');
+    FixCategoryName(dbSubCategoryName);
 
     DgnSubCategoryId dbSubCategoryId = DgnSubCategory::QuerySubCategoryId(GetDgnDb(), DgnSubCategory::CreateCode(GetDgnDb(), catid, dbSubCategoryName));
     if (dbSubCategoryId.IsValid())
@@ -203,6 +201,16 @@ DgnSubCategoryId Converter::ConvertLevelToSubCategory(DgnV8Api::LevelHandle cons
     return dbSubCategoryId;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            04/2020
+//---------------+---------------+---------------+---------------+---------------+-------
+void Converter::FixCategoryName(Utf8StringR name)
+    {
+    name.Trim(); // in DgnDb, we don't allow leading or trailing blanks
+    name.insert(0, _GetNamePrefix().c_str());
+    DgnDbTable::ReplaceInvalidCharacters(name, DgnCategory::GetIllegalCharacters(), '_');
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -210,9 +218,7 @@ DgnCategoryId Converter::ConvertLevelToCategory(DgnV8Api::LevelHandle const& lev
     {
     // Always map levels -> categories by name. We will create model-specific sub-categories later on in the conversion.
     Utf8String dbCategoryName(level.GetName());
-    dbCategoryName.Trim(); // in DgnDb, we don't allow leading or trailing blanks
-    dbCategoryName.insert(0, _GetNamePrefix().c_str());
-    DgnDbTable::ReplaceInvalidCharacters(dbCategoryName, DgnCategory::GetIllegalCharacters(), '_');
+    FixCategoryName(dbCategoryName);
 
     DefinitionModelPtr definitionModel = ShouldMergeDefinitions()? &m_dgndb->GetDictionaryModel(): GetJobDefinitionModel();
     if (!definitionModel.IsValid())
@@ -288,6 +294,39 @@ DgnCategoryId Converter::ConvertLevelToCategory(DgnV8Api::LevelHandle const& lev
     return dbCategoryId;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            04/2020
+//---------------+---------------+---------------+---------------+---------------+-------
+DgnCategoryId Converter::CheckForRemappedLevel(DgnV8Api::LevelHandle const& level, DgnV8FileR v8file, DgnCategoryId categoryId, bool is3d)
+    {
+    Utf8String levelName(level.GetName());
+    FixCategoryName(levelName);
+    DgnSubCategoryId subCatId = DgnCategory::GetDefaultSubCategoryId(categoryId);
+    DgnSubCategoryPtr dgnDbSubCategory = GetDgnDb().Elements().GetForEdit<DgnSubCategory>(subCatId);
+    if (levelName.Equals(dgnDbSubCategory->GetCode().GetValueUtf8()))
+        return categoryId;
+
+    DgnCategoryId byNameId = m_syncInfo.FindCategoryByName(levelName.c_str(), v8file, is3d ? SyncInfo::LevelExternalSourceAspect::Type::Spatial : SyncInfo::LevelExternalSourceAspect::Type::Drawing);
+    if (byNameId.IsValid())
+        {
+        DgnSubCategoryId byNameSubCatId = DgnCategory::GetDefaultSubCategoryId(byNameId);
+        DgnSubCategoryPtr byNameSubCategory = GetDgnDb().Elements().GetForEdit<DgnSubCategory>(byNameSubCatId);
+        SyncInfo::LevelExternalSourceAspect aspect = SyncInfo::LevelExternalSourceAspect::FindEdittableAspectByV8Model(*byNameSubCategory, v8file.GetDictionaryModel());
+        ECN::IECInstance* instance = aspect.GetInstanceP();
+        ECN::ECValue v;
+        instance->GetValue(v, XTRN_SRC_ASPCT_Identifier);
+        char buf[32];
+        BeStringUtilities::FormatUInt64(buf, level->GetLevelId());
+        LOG.infov("File has changed level mapping for level %s from %s to %s", levelName.c_str(), v.GetUtf8CP(), buf);
+        instance->SetValue(XTRN_SRC_ASPCT_Identifier, ECN::ECValue(buf));
+        byNameSubCategory->Update();
+        categoryId = byNameId;
+        }
+    else
+        categoryId = DgnCategoryId();
+
+    return categoryId;
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -308,8 +347,12 @@ void Converter::ConvertAllSpatialLevels(DgnV8FileR v8file)
                 {
                 if (IsSpatialCategory(categoryId)) // go with previously converted level ... as long as it's a spatial level
                     {
-                    _OnUpdateLevel(level, categoryId, v8file);
-                    continue;
+                    categoryId = CheckForRemappedLevel(level, v8file, categoryId, true);
+                    if (categoryId.IsValid())
+                        {
+                        _OnUpdateLevel(level, categoryId, v8file);
+                        continue;
+                        }
                     }
                 }
             }
@@ -691,8 +734,13 @@ DgnCategoryId Converter::ConvertDrawingLevel(DgnV8FileR v8file, DgnV8Api::LevelI
         if (IsDrawingCategory(categoryId)) // go with previously converted level ... as long as it's a drawing level
             {
             if (IsUpdating())
-                _OnUpdateLevel(level, categoryId, v8file);
-            return categoryId;
+                {
+                categoryId = CheckForRemappedLevel(level, v8file, categoryId, false);
+                if (categoryId.IsValid())
+                    _OnUpdateLevel(level, categoryId, v8file);
+                }
+            if (categoryId.IsValid())
+                return categoryId;
             }
         }
 
