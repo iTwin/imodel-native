@@ -148,8 +148,8 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
         IPropertyCategorySupplier const* m_categorySupplier;
         IRulesetLocaterManager* m_rulesetLocaters;
         IUserSettingsManager* m_userSettings;
-        bvector<ECInstanceChangeEventSourcePtr> m_ecInstanceChangeEventSources;
-        bvector<RefCountedPtr<IUpdateRecordsHandler>> m_updateRecordsHandlers;
+        bvector<std::shared_ptr<ECInstanceChangeEventSource>> m_ecInstanceChangeEventSources;
+        bvector<std::shared_ptr<IUpdateRecordsHandler>> m_updateRecordsHandlers;
     public:
         //! Constructor.
         //! @param[in] paths Known directory paths required by the presentation manager
@@ -188,10 +188,10 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
         void SetECPropertyFormatter(IECPropertyFormatter const* formatter) {m_propertyFormatter = formatter;}
         IPropertyCategorySupplier const* GetCategorySupplier() const {return m_categorySupplier;}
         void SetCategorySupplier(IPropertyCategorySupplier const* supplier) {m_categorySupplier = supplier;}
-        bvector<ECInstanceChangeEventSourcePtr> const& GetECInstanceChangeEventSources() const {return m_ecInstanceChangeEventSources;}
-        void SetECInstanceChangeEventSources(bvector<ECInstanceChangeEventSourcePtr> sources) {m_ecInstanceChangeEventSources = sources;}
-        bvector<RefCountedPtr<IUpdateRecordsHandler>> const& GetUpdateRecordsHandlers() const {return m_updateRecordsHandlers;}
-        void SetUpdateRecordsHandlers(bvector<RefCountedPtr<IUpdateRecordsHandler>> handlers) {m_updateRecordsHandlers = handlers;}
+        bvector<std::shared_ptr<ECInstanceChangeEventSource>> const& GetECInstanceChangeEventSources() const {return m_ecInstanceChangeEventSources;}
+        void SetECInstanceChangeEventSources(bvector<std::shared_ptr<ECInstanceChangeEventSource>> sources) {m_ecInstanceChangeEventSources = sources;}
+        bvector<std::shared_ptr<IUpdateRecordsHandler>> const& GetUpdateRecordsHandlers() const {return m_updateRecordsHandlers;}
+        void SetUpdateRecordsHandlers(bvector<std::shared_ptr<IUpdateRecordsHandler>> handlers) {m_updateRecordsHandlers = handlers;}
     };
 
     //===================================================================================

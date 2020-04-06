@@ -35,7 +35,7 @@ protected:
     virtual IPropertyCategorySupplier const& _GetCategorySupplier() const = 0;
     virtual IECPropertyFormatter const& _GetECPropertyFormatter() const = 0;
     virtual IUserSettingsManager& _GetUserSettingsManager() const = 0;
-    virtual bvector<ECInstanceChangeEventSourcePtr> const& _GetECInstanceChangeEventSources() const = 0;
+    virtual bvector<std::shared_ptr<ECInstanceChangeEventSource>> const& _GetECInstanceChangeEventSources() const = 0;
     virtual ILocalizationProvider const* _GetLocalizationProvider() const = 0;
     virtual IJsonLocalState* _GetLocalState() const = 0;
     virtual IRulesetLocaterManager& _GetLocaters() const = 0;
@@ -66,7 +66,7 @@ public:
     virtual ~Impl() {}
     IUserSettingsManager& GetUserSettingsManager() const {return _GetUserSettingsManager();}
     IUserSettings& GetUserSettings(Utf8CP rulesetId) const {return GetUserSettingsManager().GetSettings(rulesetId);}
-    bvector<ECInstanceChangeEventSourcePtr> const& GetECInstanceChangeEventSources() const {return _GetECInstanceChangeEventSources();}
+    bvector<std::shared_ptr<ECInstanceChangeEventSource>> const& GetECInstanceChangeEventSources() const {return _GetECInstanceChangeEventSources();}
     ILocalizationProvider const* GetLocalizationProvider() const {return _GetLocalizationProvider();}
     IRulesPreprocessorPtr GetRulesPreprocessor(IConnectionCR connection, Utf8StringCR rulesetId, Utf8StringCR locale, IUsedUserSettingsListener* usedSettingsListener) const {return _GetRulesPreprocessor(connection, rulesetId, locale, usedSettingsListener);}
     IPropertyCategorySupplier const& GetCategorySupplier() const {return _GetCategorySupplier();}
@@ -127,7 +127,7 @@ private:
     IECPropertyFormatter const* m_ecPropertyFormatter;
     IPropertyCategorySupplier const* m_categorySupplier;
     ILocalizationProvider const* m_localizationProvider;
-    bvector<ECInstanceChangeEventSourcePtr> m_ecInstanceChangeEventSources;
+    bvector<std::shared_ptr<ECInstanceChangeEventSource>> m_ecInstanceChangeEventSources;
     mutable BeMutex m_mutex;
 
 private:
@@ -142,7 +142,7 @@ protected:
     IPropertyCategorySupplier const& _GetCategorySupplier() const override;
     IECPropertyFormatter const& _GetECPropertyFormatter() const override;
     IUserSettingsManager& _GetUserSettingsManager() const override {return *m_userSettings;}
-    bvector<ECInstanceChangeEventSourcePtr> const& _GetECInstanceChangeEventSources() const override {return m_ecInstanceChangeEventSources;}
+    bvector<std::shared_ptr<ECInstanceChangeEventSource>> const& _GetECInstanceChangeEventSources() const override {return m_ecInstanceChangeEventSources;}
     ILocalizationProvider const* _GetLocalizationProvider() const override {return m_localizationProvider;}
     IJsonLocalState* _GetLocalState() const override {return m_localState;}
     IRulesetLocaterManager& _GetLocaters() const override {return *m_locaters;}

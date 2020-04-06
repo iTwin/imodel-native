@@ -22,7 +22,7 @@ struct RulesDrivenECPresentationManagerMultithreadingTestsBase : ECPresentationT
     static ECDbTestProject* s_project;
     IConnectionManager* m_connections;
     IConnection* m_connection;
-    RefCountedPtr<TestECInstanceChangeEventsSource> m_eventsSource;
+    std::shared_ptr<TestECInstanceChangeEventsSource> m_eventsSource;
     RulesDrivenECPresentationManager* m_manager;
 
     static void SetUpTestCase();
@@ -75,7 +75,7 @@ void RulesDrivenECPresentationManagerMultithreadingTestsBase::SetUp()
     ECPresentationTest::SetUp();
     m_connections = _CreateConnectionManager();
     m_connection = m_connections->CreateConnection(s_project->GetECDb()).get();
-    m_eventsSource = new TestECInstanceChangeEventsSource();
+    m_eventsSource = std::make_shared<TestECInstanceChangeEventsSource>();
     RulesDrivenECPresentationManager::Params params(_CreateManagerParams());
     m_manager = new RulesDrivenECPresentationManager(params);
 

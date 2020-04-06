@@ -476,7 +476,7 @@ export declare namespace IModelJsNative {
   }
 
   class ECPresentationManager implements IDisposable {
-    constructor(id: string, localeDirectories: string[], taskAllocationsMap: {[priority: number]: number}, mode: ECPresentationManagerMode);
+    constructor(id: string, localeDirectories: string[], taskAllocationsMap: {[priority: number]: number}, mode: ECPresentationManagerMode, isChangeTrackingEnabled: boolean);
     public forceLoadSchemas(db: DgnDb, callback: (result: ECPresentationStatus) => void): void;
     public setupRulesetDirectories(directories: string[]): ErrorStatusOrResult<ECPresentationStatus, void>;
     public setupSupplementalRulesetDirectories(directories: string[]): ErrorStatusOrResult<ECPresentationStatus, void>;
@@ -487,6 +487,7 @@ export declare namespace IModelJsNative {
     public removeRuleset(rulesetId: string, hash: string): ErrorStatusOrResult<ECPresentationStatus, boolean>;
     public clearRulesets(): ErrorStatusOrResult<ECPresentationStatus, void>;
     public handleRequest(db: DgnDb, options: string, callback: (result: ErrorStatusOrResult<ECPresentationStatus, string>) => void): void;
+    public getUpdateInfo(): ErrorStatusOrResult<ECPresentationStatus, any>;
     public dispose(): void;
   }
 

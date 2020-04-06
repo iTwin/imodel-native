@@ -26,18 +26,21 @@
 struct CompositeUpdateRecordsHandler : IUpdateRecordsHandler
 {
 private:
-    bvector<RefCountedPtr<IUpdateRecordsHandler>> m_handlers;
+    bvector<std::shared_ptr<IUpdateRecordsHandler>> m_handlers;
     mutable BeMutex m_mutex;
 protected:
-    void _Start() override {BeMutexHolder lock(m_mutex); std::for_each(m_handlers.begin(), m_handlers.end(), [](RefCountedPtr<IUpdateRecordsHandler> h){h->Start();});}
-    void _Accept(UpdateRecord const& record) override {BeMutexHolder lock(m_mutex); std::for_each(m_handlers.begin(), m_handlers.end(), [&record](RefCountedPtr<IUpdateRecordsHandler> h){h->Accept(record);});}
-    void _Accept(FullUpdateRecord const& record) override {BeMutexHolder lock(m_mutex); std::for_each(m_handlers.begin(), m_handlers.end(), [&record](RefCountedPtr<IUpdateRecordsHandler> h){h->Accept(record);});}
-    void _Finish() override {BeMutexHolder lock(m_mutex); std::for_each(m_handlers.begin(), m_handlers.end(), [](RefCountedPtr<IUpdateRecordsHandler> h){h->Finish();});}
+    void _Start() override {BeMutexHolder lock(m_mutex); std::for_each(m_handlers.begin(), m_handlers.end(), [](auto const& h){h->Start();});}
+    void _Accept(HierarchyUpdateRecord const& record) override {BeMutexHolder lock(m_mutex); std::for_each(m_handlers.begin(), m_handlers.end(), [&record](auto const& h){h->Accept(record);});}
+    void _Accept(FullUpdateRecord const& record) override {BeMutexHolder lock(m_mutex); std::for_each(m_handlers.begin(), m_handlers.end(), [&record](auto const& h){h->Accept(record);});}
+    void _Finish() override {BeMutexHolder lock(m_mutex); std::for_each(m_handlers.begin(), m_handlers.end(), [](auto const& h){h->Finish();});}
 public:
-    void Register(IUpdateRecordsHandler& handler)
+    CompositeUpdateRecordsHandler(bvector<std::shared_ptr<IUpdateRecordsHandler>> handlers)
+        : m_handlers(handlers)
+        {}
+    void Register(std::shared_ptr<IUpdateRecordsHandler> handler)
         {
         BeMutexHolder lock(m_mutex);
-        m_handlers.push_back(&handler);
+        m_handlers.push_back(handler);
         }
     bool Unregister(IUpdateRecordsHandler& handler)
         {
@@ -63,7 +66,7 @@ struct RulesDrivenECPresentationManagerImpl::UsedClassesListener : IECDbUsedClas
     UsedClassesListener(RulesDrivenECPresentationManagerImpl& manager) : m_manager(manager) {}
     void _OnClassUsed(ECDbCR db, ECClassCR ecClass, bool polymorphically) override
         {
-        for (ECInstanceChangeEventSourcePtr source : m_manager.GetECInstanceChangeEventSources())
+        for (std::shared_ptr<ECInstanceChangeEventSource> const& source : m_manager.GetECInstanceChangeEventSources())
             source->NotifyClassUsed(db, ecClass, polymorphically);
         }
     };
@@ -490,12 +493,8 @@ RulesDrivenECPresentationManagerImpl::RulesDrivenECPresentationManagerImpl(Param
     GetUserSettingsManager().SetLocalState(m_localState);
 
     m_ecInstanceChangeEventSources = params.GetECInstanceChangeEventSources(); // need to copy this list to keep the ref counts
-    for (auto const& ecInstanceChangeEventSource : params.GetECInstanceChangeEventSources())
+    for (auto const& ecInstanceChangeEventSource : m_ecInstanceChangeEventSources)
         ecInstanceChangeEventSource->RegisterEventHandler(*this);
-
-    RefCountedPtr<CompositeUpdateRecordsHandler> composedRecordsHandler = new CompositeUpdateRecordsHandler();
-    for (auto const& handler : params.GetUpdateRecordsHandlers())
-        composedRecordsHandler->Register(*handler);
 
     m_customFunctions = new CustomFunctionsInjector(m_connections);
     m_rulesetECExpressionsCache = new RulesetECExpressionsCache();
@@ -512,7 +511,7 @@ RulesDrivenECPresentationManagerImpl::RulesDrivenECPresentationManagerImpl(Param
 
     m_updateHandler = new UpdateHandler(m_nodesCache, m_contentCache, m_connections, *m_nodesProviderContextFactory,
         *m_nodesProviderFactory, *m_rulesetECExpressionsCache);
-    m_updateHandler->SetRecordsHandler(composedRecordsHandler.get());
+    m_updateHandler->SetRecordsHandler(std::make_unique<CompositeUpdateRecordsHandler>(params.GetUpdateRecordsHandlers()));
 
     m_connections.AddListener(*this);
     }

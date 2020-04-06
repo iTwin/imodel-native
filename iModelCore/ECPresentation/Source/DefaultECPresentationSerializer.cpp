@@ -166,11 +166,10 @@ void DefaultECPresentationSerializer::_AsJson(ContentDescriptor::RelatedContentF
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document DefaultECPresentationSerializer::_AsJson(UpdateRecord const& updateRecord, rapidjson::Document::AllocatorType* allocator) const
+rapidjson::Document DefaultECPresentationSerializer::_AsJson(HierarchyUpdateRecord const& updateRecord, rapidjson::Document::AllocatorType* allocator) const
     {
     rapidjson::Document json(allocator);
     json.SetObject();
-
     switch (updateRecord.GetChangeType())
         {
         case ChangeType::Delete:
@@ -203,11 +202,7 @@ rapidjson::Document DefaultECPresentationSerializer::_AsJson(UpdateRecord const&
             break;
             }
         }
-
-    RapidJsonValueCR extendedData =  updateRecord.GetNode()->GetExtendedData();
-    if (extendedData.HasMember("RulesetId"))
-        json.AddMember("RulesetId", rapidjson::Value(extendedData["RulesetId"].GetString(), json.GetAllocator()), json.GetAllocator());
-
+    json.AddMember("RulesetId", rapidjson::Value(updateRecord.GetRulesetId().c_str(), json.GetAllocator()), json.GetAllocator());
     return json;
     }
 

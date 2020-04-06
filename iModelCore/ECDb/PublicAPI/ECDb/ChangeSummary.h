@@ -320,7 +320,7 @@ public:
     ECDB_EXPORT void QueryByClass(bmap<ECInstanceId, ChangeSummary::Instance>& changes, ECN::ECClassId classId, bool isPolymorphic = true, QueryDbOpcode queryDbOpcodes = QueryDbOpcode::All) const;
 
     Utf8String ConstructWhereInClause(QueryDbOpcode queryDbOpcodes) const; //! @private
-    ECDB_EXPORT static BentleyStatus GetMappedPrimaryTable(Utf8StringR tableName, bool& isTablePerHierarcy, ECN::ECClassCR ecClass, ECDbCR ecdb); //!< @private
+    ECDB_EXPORT static BentleyStatus GetMappedPrimaryTable(Utf8CP& tableName, bool& isTablePerHierarcy, ECN::ECClassCR ecClass, ECDbCR ecdb); //!< @private
 };
 
 typedef ChangeSummary const& ChangeSummaryCR;

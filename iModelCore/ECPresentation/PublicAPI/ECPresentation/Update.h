@@ -118,9 +118,10 @@ enum class ChangeType
 //! @ingroup GROUP_Presentation
 // @bsiclass                                    Grigas.Petraitis                02/2016
 //=======================================================================================
-struct UpdateRecord
+struct HierarchyUpdateRecord
 {
 private:
+    Utf8String m_rulesetId;
     ChangeType m_changeType;
     NavNodePtr m_node;
     bvector<JsonChange> m_changes;
@@ -130,38 +131,57 @@ public:
     //! A constructor for the insert case.
     //! @param[in] node The inserted node.
     //! @param[in] position The insert position.
-    UpdateRecord(NavNodeR node, size_t position) : m_changeType(ChangeType::Insert), m_node(&node), m_position(position) {}
+    HierarchyUpdateRecord(Utf8String rulesetId, NavNodeR node, size_t position) 
+        : m_changeType(ChangeType::Insert), m_rulesetId(rulesetId), m_node(&node), m_position(position) 
+        {}
 
     //! A constructor for the delete case.
     //! @param[in] node The deleted node.
-    UpdateRecord(NavNodeR node) : m_changeType(ChangeType::Delete), m_node(&node) {}
+    HierarchyUpdateRecord(Utf8String rulesetId, NavNodeR node) : m_changeType(ChangeType::Delete), m_rulesetId(rulesetId), m_node(&node) {}
 
     //! A constructor for the update case.
     //! @param[in] node The updated node.
     //! @param[in] changes The list of changes.
-    UpdateRecord(NavNodeR node, bvector<JsonChange>&& changes)
-        : m_changeType(ChangeType::Update), m_node(&node), m_changes(std::move(changes))
+    HierarchyUpdateRecord(Utf8String rulesetId, NavNodeR node, bvector<JsonChange>&& changes)
+        : m_changeType(ChangeType::Update), m_rulesetId(rulesetId), m_node(&node), m_changes(std::move(changes))
         {}
 
     //! Copy constructor.
-    UpdateRecord(UpdateRecord const& other)
-        : m_changeType(other.m_changeType), m_node(other.m_node), m_changes(other.m_changes), m_position(other.m_position)
+    HierarchyUpdateRecord(HierarchyUpdateRecord const& other)
+        : m_changeType(other.m_changeType), m_rulesetId(other.m_rulesetId), m_node(other.m_node), 
+        m_changes(other.m_changes), m_position(other.m_position)
         {}
 
     //! Move constructor.
-    UpdateRecord(UpdateRecord&& other)
-        : m_changeType(other.m_changeType), m_node(std::move(other.m_node)), m_changes(std::move(other.m_changes)), m_position(other.m_position)
+    HierarchyUpdateRecord(HierarchyUpdateRecord&& other)
+        : m_changeType(other.m_changeType), m_rulesetId(std::move(other.m_rulesetId)), m_node(std::move(other.m_node)), 
+        m_changes(std::move(other.m_changes)), m_position(other.m_position)
         {}
 
     //! Assignment operator
-    UpdateRecord& operator=(UpdateRecord const& other)
+    HierarchyUpdateRecord& operator=(HierarchyUpdateRecord const& other)
         {
         m_changeType = other.m_changeType;
+        m_rulesetId = other.m_rulesetId;
         m_node = other.m_node;
         m_changes = other.m_changes;
         m_position = other.m_position;
         return *this;
         }
+
+    //! Move-assignment operator
+    HierarchyUpdateRecord& operator=(HierarchyUpdateRecord&& other)
+        {
+        m_changeType = other.m_changeType;
+        m_rulesetId.swap(other.m_rulesetId);
+        m_node.swap(other.m_node);
+        m_changes.swap(other.m_changes);
+        m_position = other.m_position;
+        return *this;
+        }
+
+    //! Get ID of the ruleset that was used to produce the node
+    Utf8StringCR GetRulesetId() const {return m_rulesetId;}
 
     //! Get the change type.
     ChangeType GetChangeType() const {return m_changeType;}
@@ -202,9 +222,11 @@ struct FullUpdateRecord
         Content   = 1 << 1,              //!< Update all content controls.
         Both      = Hierarchy | Content, //!< Update all controls including hierarchy and content ones.
         };
+
 private:
     Utf8String m_rulesetId;
     UpdateTarget m_target;
+
 public:
     //! Constructor.
     //! @param[in] rulesetId The ID of the ruleset whose driven controls should be fully updated.
@@ -236,7 +258,7 @@ public:
 //! @ingroup GROUP_Presentation
 // @bsiclass                                    Grigas.Petraitis                02/2016
 //=======================================================================================
-struct IUpdateRecordsHandler : RefCountedBase
+struct IUpdateRecordsHandler
 {
 protected:
     //! Called before update to clear caches.
@@ -244,7 +266,7 @@ protected:
 
     //! Called when a node is inserted / deleted / updated.
     //! @param[in] record   The update record that contains information about the change.
-    virtual void _Accept(UpdateRecord const& record) = 0;
+    virtual void _Accept(HierarchyUpdateRecord const& record) = 0;
 
     //! Called when a full update should be performed.
     //! @param[in] record   The update record that contains information about the update.
@@ -254,11 +276,13 @@ protected:
     virtual void _Finish() = 0;
 
 public:
+    virtual ~IUpdateRecordsHandler() {}
+
     //! Starts a new report.
     void Start() {_Start();}
 
-    //! Accepts an @ref UpdateRecord.
-    void Accept(UpdateRecord const& record) {_Accept(record);}
+    //! Accepts an @ref HierarchyUpdateRecord.
+    void Accept(HierarchyUpdateRecord const& record) {_Accept(record);}
 
     //! Accepts a @ref FullUpdateRecord.
     void Accept(FullUpdateRecord const& record) {_Accept(record);}

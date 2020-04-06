@@ -48,7 +48,7 @@ public:
 //! @ingroup GROUP_RulesDrivenPresentation
 // @bsiclass                                    Grigas.Petraitis                01/2016
 //=======================================================================================
-struct ECInstanceChangeEventSource : RefCountedBase, IECDbUsedClassesListener
+struct ECInstanceChangeEventSource : IECDbUsedClassesListener
 {    
     //===================================================================================
     //! Information about a changed ECInstance.
@@ -131,6 +131,5 @@ public:
     //! Unregisters an event handler.
     void UnregisterEventHandler(IEventHandler& handler) {BeMutexHolder lock(m_mutex); m_eventHandlers.erase(&handler);}
 };
-typedef RefCountedPtr<ECInstanceChangeEventSource> ECInstanceChangeEventSourcePtr;
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

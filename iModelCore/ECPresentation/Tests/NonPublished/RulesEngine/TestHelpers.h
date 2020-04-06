@@ -206,9 +206,11 @@ private:
         ECInstanceId::FromString(id, instance.GetInstanceId().c_str());
         ECInstanceChangeEventSource::NotifyECInstanceChanged(db, ECInstanceChangeEventSource::ChangedECInstance(instance.GetClass(), id, change));
         }
-
 public:
-    static RefCountedPtr<TestECInstanceChangeEventsSource> Create() {return new TestECInstanceChangeEventsSource();}
+    void NotifyECInstancesChanged(ECDbCR db, bvector<ChangedECInstance> changes) const
+        {
+        ECInstanceChangeEventSource::NotifyECInstancesChanged(db, changes);
+        }
     void NotifyECInstancesChanged(ECDbCR db, bvector<IECInstanceCP> instances, ChangeType change) const
         {
         bvector<ECInstanceChangeEventSource::ChangedECInstance> changes;
@@ -218,7 +220,7 @@ public:
             ECInstanceId::FromString(id, instance->GetInstanceId().c_str());
             changes.push_back(ECInstanceChangeEventSource::ChangedECInstance(instance->GetClass(), id, change));
             }
-        ECInstanceChangeEventSource::NotifyECInstancesChanged(db, changes);
+        NotifyECInstancesChanged(db, changes);
         }
     void NotifyECInstanceInserted(ECDbCR db, IECInstanceCR instance) const {NotifyECInstanceChanged(db, instance, ChangeType::Insert);}
     void NotifyECInstanceDeleted(ECDbCR db, IECInstanceCR instance) const {NotifyECInstanceChanged(db, instance, ChangeType::Delete);}

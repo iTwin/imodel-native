@@ -7,13 +7,12 @@
 #include <ECPresentation/RulesDriven/PresentationManager.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 
+BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
+
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_EC
-USING_NAMESPACE_BENTLEY_ECPRESENTATION
-
-BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
 //=======================================================================================
 //! @bsiclass                                   Grigas.Petraitis                05/2018
@@ -65,7 +64,7 @@ public:
 struct ECPresentationUtils
 {
     static RulesDrivenECPresentationManager* CreatePresentationManager(Dgn::DgnPlatformLib::Host::IKnownLocationsAdmin&, IJsonLocalState&, 
-        Utf8StringCR, bvector<Utf8String> const&, bmap<int, unsigned>, Utf8StringCR);
+        Utf8StringCR, bvector<Utf8String> const&, bmap<int, unsigned>, Utf8StringCR, bool, std::shared_ptr<IUpdateRecordsHandler>);
 
     static ECPresentationResult SetupRulesetDirectories(RulesDrivenECPresentationManager&, bvector<Utf8String> const&);
     static ECPresentationResult SetupSupplementalRulesetDirectories(RulesDrivenECPresentationManager&, bvector<Utf8String> const&);

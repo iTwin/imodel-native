@@ -471,7 +471,7 @@ TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeType
     TestNavNodePtr node = TestNavNode::Create(*m_connection);
     node->SetHasChildren(true);
 
-    UpdateRecord updateRecord(*node);
+    HierarchyUpdateRecord updateRecord("ruleset-id", *node);
     rapidjson::Document actual = updateRecord.AsJson();
     rapidjson::Document expected;
     expected.Parse(R"({
@@ -503,7 +503,7 @@ TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeType
                 "TypeName": "string"
                 }
             },
-        "RulesetId": "Invalid ruleset ID"
+        "RulesetId": "ruleset-id"
         })");
 
     EXPECT_EQ(expected, actual)
@@ -519,7 +519,7 @@ TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeType
     TestNavNodePtr node = TestNavNode::Create(*m_connection);
     node->SetHasChildren(true);
 
-    UpdateRecord updateRecord(*node, 10);
+    HierarchyUpdateRecord updateRecord("ruleset-id", *node, 10);
     rapidjson::Document actual = updateRecord.AsJson();
     rapidjson::Document expected;
     expected.Parse(R"({
@@ -552,7 +552,7 @@ TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeType
                 }
             },
         "Position": 10,
-        "RulesetId": "Invalid ruleset ID"
+        "RulesetId": "ruleset-id"
         })");
 
     EXPECT_EQ(expected, actual)
@@ -571,7 +571,7 @@ TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeType
     bvector<JsonChange> changes;
     changes.push_back(JsonChange("PropertyName", rapidjson::Value("oldValue"), rapidjson::Value("newValue")));
 
-    UpdateRecord updateRecord(*node, std::move(changes));
+    HierarchyUpdateRecord updateRecord("ruleset-id", *node, std::move(changes));
     rapidjson::Document actual = updateRecord.AsJson();
     rapidjson::Document expected;
     expected.Parse(R"({
@@ -610,7 +610,7 @@ TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeType
             "NewValue": "newValue"
             }
             ],
-        "RulesetId": "Invalid ruleset ID"
+        "RulesetId": "ruleset-id"
         })");
 
     EXPECT_EQ(expected, actual)
@@ -630,7 +630,7 @@ TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeType
     changes.push_back(JsonChange("PropertyName", rapidjson::Value("oldValue"), rapidjson::Value("newValue")));
     changes.push_back(JsonChange("PropertyName2", rapidjson::Value("oldValue2"), rapidjson::Value("newValue2")));
 
-    UpdateRecord updateRecord(*node, std::move(changes));
+    HierarchyUpdateRecord updateRecord("ruleset-id", *node, std::move(changes));
     rapidjson::Document actual = updateRecord.AsJson();
     rapidjson::Document expected;
     expected.Parse(R"({
@@ -674,7 +674,7 @@ TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeType
             "NewValue": "newValue2"
             }
             ],
-        "RulesetId": "Invalid ruleset ID"
+        "RulesetId": "ruleset-id"
         })");
 
     EXPECT_EQ(expected, actual)
@@ -691,7 +691,7 @@ TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeType
     node->SetHasChildren(true);
     node->GetExtendedDataR().RemoveAllMembers();
 
-    UpdateRecord updateRecord(*node);
+    HierarchyUpdateRecord updateRecord("ruleset-id", *node);
 
     rapidjson::Document actual = updateRecord.AsJson();
     rapidjson::Document expected;
@@ -723,7 +723,8 @@ TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeType
                 "RawValue": "TestLabel",
                 "TypeName": "string"
                 }
-            }
+            },
+        "RulesetId": "ruleset-id"
         })");
 
     EXPECT_EQ(expected, actual)

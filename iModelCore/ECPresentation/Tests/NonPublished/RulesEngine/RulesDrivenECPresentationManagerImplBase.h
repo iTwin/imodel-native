@@ -25,13 +25,13 @@ private:
     IECPropertyFormatter const* m_ecPropertyFormatter;
     IPropertyCategorySupplier const* m_categorySupplier;
     ILocalizationProvider const* m_localizationProvider;
-    bvector<ECInstanceChangeEventSourcePtr> m_ecInstanceChangeEventSources;
+    bvector<std::shared_ptr<ECInstanceChangeEventSource>> m_ecInstanceChangeEventSources;
 protected:
     IRulesPreprocessorPtr _GetRulesPreprocessor(IConnectionCR connection, Utf8StringCR rulesetId, Utf8StringCR locale, IUsedUserSettingsListener*) const override { return nullptr; }
     IPropertyCategorySupplier const& _GetCategorySupplier() const override { return *m_categorySupplier; }
     IECPropertyFormatter const& _GetECPropertyFormatter() const override { return *m_ecPropertyFormatter; }
     IUserSettingsManager& _GetUserSettingsManager() const override { return *m_userSettings; }
-    bvector<ECInstanceChangeEventSourcePtr> const& _GetECInstanceChangeEventSources() const override { return m_ecInstanceChangeEventSources; }
+    bvector<std::shared_ptr<ECInstanceChangeEventSource>> const& _GetECInstanceChangeEventSources() const override { return m_ecInstanceChangeEventSources; }
     ILocalizationProvider const* _GetLocalizationProvider() const override { return m_localizationProvider; }
     IJsonLocalState* _GetLocalState() const override { return m_localState; }
     IRulesetLocaterManager& _GetLocaters() const override { return *m_locaters; }

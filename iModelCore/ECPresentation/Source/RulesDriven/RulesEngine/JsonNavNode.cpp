@@ -440,14 +440,18 @@ void JsonNavNodesFactory::InitFromJson(JsonNavNodeR node, IConnectionCR connecti
 #define COMPARE_PROPERTY(lhs,rhs,prop,json_name) \
     if (lhs.prop != rhs.prop) \
         changes.push_back(JsonChange(json_name, lhs.prop, rhs.prop));
+
+#define COMPARE_PROPERTY_PTR(lhs,rhs,prop,json_name,json_getter) \
+    if (*lhs.prop != *rhs.prop) \
+        changes.push_back(JsonChange(json_name, lhs.prop->json_getter(), rhs.prop->json_getter()));
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<JsonChange> NavNodesHelper::GetChanges(JsonNavNode const& lhs, JsonNavNode const& rhs)
     {
     bvector<JsonChange> changes;
-    COMPARE_PROPERTY(lhs, rhs, m_nodeId, NAVNODE_NodeId);
-    COMPARE_PROPERTY(lhs, rhs, m_parentNodeId, NAVNODE_ParentNodeId);
+    COMPARE_PROPERTY_PTR(lhs, rhs, m_nodeKey, NAVNODE_Key, AsJson);
     COMPARE_PROPERTY(lhs, rhs, m_hasChildren, NAVNODE_HasChildren);
     COMPARE_PROPERTY(lhs, rhs, m_isSelectable, NAVNODE_IsSelectable);
     COMPARE_PROPERTY(lhs, rhs, m_isEditable, NAVNODE_IsEditable);
@@ -461,7 +465,7 @@ bvector<JsonChange> NavNodesHelper::GetChanges(JsonNavNode const& lhs, JsonNavNo
     COMPARE_PROPERTY(lhs, rhs, m_backColor, NAVNODE_BackColor);
     COMPARE_PROPERTY(lhs, rhs, m_fontStyle, NAVNODE_FontStyle);
     COMPARE_PROPERTY(lhs, rhs, m_type, NAVNODE_Type);
-    COMPARE_PROPERTY(lhs, rhs, m_labelDefinition->ToInternalJson(), NAVNODE_LabelDefinition);
+    COMPARE_PROPERTY_PTR(lhs, rhs, m_labelDefinition, NAVNODE_LabelDefinition, ToInternalJson);
     return changes;
     }
 

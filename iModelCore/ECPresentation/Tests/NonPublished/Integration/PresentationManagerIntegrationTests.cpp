@@ -256,8 +256,8 @@ void UpdateTests::SetUpTestCase()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UpdateTests::SetUp()
     {
-    m_updateRecordsHandler = TestUpdateRecordsHandler::Create();
-    m_eventsSource = TestECInstanceChangeEventsSource::Create();
+    m_updateRecordsHandler = std::make_shared<TestUpdateRecordsHandler>();
+    m_eventsSource = std::make_shared<TestECInstanceChangeEventsSource>();
 
     PresentationManagerIntegrationTests::SetUp();
     

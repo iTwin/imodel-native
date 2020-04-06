@@ -24,17 +24,7 @@ struct RulesDrivenECPresentationManager::ECInstanceChangeEventSourceWrapper : EC
 {
 private:
     RulesDrivenECPresentationManager& m_manager;
-    ECInstanceChangeEventSourcePtr m_wrapped;
-private:
-    ECInstanceChangeEventSourceWrapper(RulesDrivenECPresentationManager& manager, ECInstanceChangeEventSource& wrapped)
-        : m_manager(manager), m_wrapped(&wrapped)
-        {
-        m_wrapped->RegisterEventHandler(*this);
-        }
-    ~ECInstanceChangeEventSourceWrapper()
-        {
-        m_wrapped->UnregisterEventHandler(*this);
-        }
+    std::shared_ptr<ECInstanceChangeEventSource> m_wrapped;
 protected:
     void _OnClassUsed(ECDbCR db, ECClassCR ecClass, bool polymorphically) override
         {
@@ -64,9 +54,14 @@ protected:
         m_manager.GetTasksManager().Execute(*task);
         }
 public:
-    static RefCountedPtr<ECInstanceChangeEventSourceWrapper> Create(RulesDrivenECPresentationManager& manager, ECInstanceChangeEventSource& wrapped)
+    ECInstanceChangeEventSourceWrapper(RulesDrivenECPresentationManager& manager, std::shared_ptr<ECInstanceChangeEventSource> wrapped)
+        : m_manager(manager), m_wrapped(std::move(wrapped))
         {
-        return new ECInstanceChangeEventSourceWrapper(manager, wrapped);
+        m_wrapped->RegisterEventHandler(*this);
+        }
+    ~ECInstanceChangeEventSourceWrapper()
+        {
+        m_wrapped->UnregisterEventHandler(*this);
         }
     ECInstanceChangeEventSource& GetWrappedEventSource() const {return *m_wrapped;}
 };
@@ -287,10 +282,10 @@ RulesDrivenECPresentationManager::Params RulesDrivenECPresentationManager::Creat
     result.SetUserSettings(new RulesDrivenECPresentationManager::UserSettingsManagerWrapper(*this, source.GetPaths().GetTemporaryDirectory()));
     result.SetRulesetLocaters(new RulesDrivenECPresentationManager::RulesetLocaterManagerWrapper(*this, *result.GetConnections()));
 
-    bvector<ECInstanceChangeEventSourcePtr> ecInstanceChangeEventSources;
-    for (ECInstanceChangeEventSourcePtr const& evtSource : source.GetECInstanceChangeEventSources())
+    bvector<std::shared_ptr<ECInstanceChangeEventSource>> ecInstanceChangeEventSources;
+    for (std::shared_ptr<ECInstanceChangeEventSource> const& evtSource : source.GetECInstanceChangeEventSources())
         {
-        auto wrapper = RulesDrivenECPresentationManager::ECInstanceChangeEventSourceWrapper::Create(*this, *evtSource);
+        auto wrapper = std::make_shared<RulesDrivenECPresentationManager::ECInstanceChangeEventSourceWrapper>(*this, evtSource);
         ecInstanceChangeEventSources.push_back(wrapper);
         }
     result.SetECInstanceChangeEventSources(ecInstanceChangeEventSources);

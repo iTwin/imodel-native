@@ -53,16 +53,15 @@ struct PresentationManagerIntegrationTests : ECPresentationTest
 struct TestUpdateRecordsHandler : IUpdateRecordsHandler
     {
     private:
-        bvector<UpdateRecord> m_records;
+        bvector<HierarchyUpdateRecord> m_records;
         bvector<FullUpdateRecord> m_fullUpdateRecords;
     protected:
         void _Start() override { m_records.clear(); m_fullUpdateRecords.clear(); }
-        void _Accept(UpdateRecord const& record) override { m_records.push_back(record); }
+        void _Accept(HierarchyUpdateRecord const& record) override { m_records.push_back(record); }
         void _Accept(FullUpdateRecord const& record) override { m_fullUpdateRecords.push_back(record); }
         void _Finish() override {}
     public:
-        static RefCountedPtr<TestUpdateRecordsHandler> Create() { return new TestUpdateRecordsHandler(); }
-        bvector<UpdateRecord> const& GetRecords() const { return m_records; }
+        bvector<HierarchyUpdateRecord> const& GetRecords() const { return m_records; }
         bvector<FullUpdateRecord> const& GetFullUpdateRecords() const { return m_fullUpdateRecords; }
     };
 
@@ -74,8 +73,8 @@ struct UpdateTests : PresentationManagerIntegrationTests
     static BeFileName s_seedProjectPath;
 
     ECDb m_db;
-    RefCountedPtr<TestECInstanceChangeEventsSource> m_eventsSource;
-    RefCountedPtr<TestUpdateRecordsHandler> m_updateRecordsHandler;
+    std::shared_ptr<TestECInstanceChangeEventsSource> m_eventsSource;
+    std::shared_ptr<TestUpdateRecordsHandler> m_updateRecordsHandler;
 
     ECSchemaCP m_schema;
     ECClassCP m_widgetClass;

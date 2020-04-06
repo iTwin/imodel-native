@@ -1116,7 +1116,7 @@ Utf8String ChangeSummary::GetValuesTableName() const { return m_valuesTable->Get
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
 // static
-BentleyStatus ChangeSummary::GetMappedPrimaryTable(Utf8StringR tableName, bool& isTablePerHierarcy, ECN::ECClassCR ecClass, ECDbCR ecdb)
+BentleyStatus ChangeSummary::GetMappedPrimaryTable(Utf8CP& tableName, bool& isTablePerHierarcy, ECN::ECClassCR ecClass, ECDbCR ecdb)
     {
     // TODO: This functionality needs to be moved to some publicly available ECDb mapping utility. 
     ClassMap const* classMap = ecdb.Schemas().Main().GetClassMap(ecClass);
@@ -1127,7 +1127,7 @@ BentleyStatus ChangeSummary::GetMappedPrimaryTable(Utf8StringR tableName, bool& 
     if (!table.IsValid())
         return ERROR;
 
-    tableName = classMap->GetPrimaryTable().GetName();
+    tableName = classMap->GetPrimaryTable().GetName().c_str();
     isTablePerHierarcy = classMap->GetMapStrategy().IsTablePerHierarchy();
     return SUCCESS;
     }

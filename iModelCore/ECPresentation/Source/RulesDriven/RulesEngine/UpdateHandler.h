@@ -124,7 +124,7 @@ public:
     ECPRESENTATION_EXPORT IUpdateTaskPtr CreateContentInvalidationTask(ContentCache&, UpdateContext&, ContentProviderR) const;
 
     // reporting tasks
-    ECPRESENTATION_EXPORT IUpdateTaskPtr CreateReportTask(UpdateRecord) const;
+    ECPRESENTATION_EXPORT IUpdateTaskPtr CreateReportTask(HierarchyUpdateRecord) const;
     ECPRESENTATION_EXPORT IUpdateTaskPtr CreateReportTask(FullUpdateRecord) const;
 };
 
@@ -139,7 +139,7 @@ private:
     IConnectionManagerCR m_connections;
     UpdateTasksFactory m_tasksFactory;
     IECExpressionsCacheProvider& m_ecexpressionsCacheProvider;
-    RefCountedPtr<IUpdateRecordsHandler> m_updateRecordsHandler;
+    std::unique_ptr<IUpdateRecordsHandler> m_updateRecordsHandler;
     HierarchyUpdater* m_hierarchyUpdater;
     mutable BeMutex m_mutex;
 
@@ -158,7 +158,7 @@ public:
         INodesProviderFactoryCR, IECExpressionsCacheProvider&);
     ECPRESENTATION_EXPORT ~UpdateHandler();
     UpdateTasksFactory const& GetTasksFactory() const {return m_tasksFactory;}
-    void SetRecordsHandler(IUpdateRecordsHandler* handler) {m_updateRecordsHandler = handler; m_tasksFactory.SetRecordsHandler(handler);}
+    void SetRecordsHandler(std::unique_ptr<IUpdateRecordsHandler> handler) {m_updateRecordsHandler = std::move(handler); m_tasksFactory.SetRecordsHandler(m_updateRecordsHandler.get());}
 
     void NotifyRulesetDisposed(PresentationRuleSetCR ruleset);
     void NotifySettingChanged(Utf8CP rulesetId, Utf8CP settingId);

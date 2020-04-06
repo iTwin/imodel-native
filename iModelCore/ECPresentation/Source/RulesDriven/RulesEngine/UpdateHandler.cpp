@@ -12,7 +12,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document UpdateRecord::AsJson(rapidjson::Document::AllocatorType* allocator) const
+rapidjson::Document HierarchyUpdateRecord::AsJson(rapidjson::Document::AllocatorType* allocator) const
     {
     return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
     }
@@ -213,9 +213,9 @@ struct HierarchyChangeReportTask : IUpdateTask
 {
 private:
     IUpdateRecordsHandler& m_recordsHandler;
-    UpdateRecord m_record;
+    HierarchyUpdateRecord m_record;
 private:
-    static Utf8String GetString(UpdateRecord const& record)
+    static Utf8String GetString(HierarchyUpdateRecord const& record)
         {
         switch (record.GetChangeType())
             {
@@ -243,7 +243,7 @@ protected:
         return str;
         }
 public:
-    HierarchyChangeReportTask(IUpdateRecordsHandler& recordsHandler, UpdateRecord record) 
+    HierarchyChangeReportTask(IUpdateRecordsHandler& recordsHandler, HierarchyUpdateRecord record)
         : m_recordsHandler(recordsHandler), m_record(record)
         {}
 };
@@ -317,7 +317,7 @@ IUpdateTaskPtr UpdateTasksFactory::CreateContentInvalidationTask(ContentCache& c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-IUpdateTaskPtr UpdateTasksFactory::CreateReportTask(UpdateRecord record) const
+IUpdateTaskPtr UpdateTasksFactory::CreateReportTask(HierarchyUpdateRecord record) const
     {
     if (nullptr == m_nodesCache)
         {
@@ -473,7 +473,7 @@ void UpdateHandler::ExecuteTasks(bvector<IUpdateTaskPtr>& tasks) const
     BeMutexHolder lock(m_mutex, BeMutexHolder::Lock::No);
     LoggingHelper::LogMessage(Log::Update, Utf8PrintfString("Total initial update tasks: %u", tasks.size()).c_str());
 
-    if (m_updateRecordsHandler.IsValid())
+    if (m_updateRecordsHandler)
         {
         lock.lock();
         m_updateRecordsHandler->Start();
@@ -504,7 +504,7 @@ void UpdateHandler::ExecuteTasks(bvector<IUpdateTaskPtr>& tasks) const
         }
     LoggingHelper::LogMessage(Log::Update, Utf8PrintfString("Total executed tasks: %u", i).c_str());
 
-    if (m_updateRecordsHandler.IsValid())
+    if (m_updateRecordsHandler)
         m_updateRecordsHandler->Finish();
     }
 
@@ -542,7 +542,7 @@ void UpdateHandler::NotifySettingChanged(Utf8CP rulesetId, Utf8CP settingId)
 void UpdateHandler::DoFullUpdate(Utf8CP rulesetId, bool updateHierarchies, bool updateContent) const
     {
     BeMutexHolder lock(m_mutex, BeMutexHolder::Lock::No);
-    if (m_updateRecordsHandler.IsValid())
+    if (m_updateRecordsHandler)
         {
         lock.lock();
         m_updateRecordsHandler->Start();
@@ -568,7 +568,7 @@ void UpdateHandler::DoFullUpdate(Utf8CP rulesetId, bool updateHierarchies, bool 
         updateTarget |= (int)FullUpdateRecord::UpdateTarget::Content;
         }
 
-    if (m_updateRecordsHandler.IsValid())
+    if (m_updateRecordsHandler)
         {
         if (0 != updateTarget)
             m_updateRecordsHandler->Accept(FullUpdateRecord(rulesetId, (FullUpdateRecord::UpdateTarget)updateTarget));
@@ -664,7 +664,7 @@ void HierarchyUpdater::CompareDataSources(bvector<IUpdateTaskPtr>& subTasks, Upd
         for (size_t i = oldIndexStart; i < oldIndex; ++i)
             {
             NavNodePtr node = oldDs->GetNode(i);
-            subTasks.push_back(m_tasksFactory.CreateReportTask(UpdateRecord(*node)));
+            subTasks.push_back(m_tasksFactory.CreateReportTask(HierarchyUpdateRecord(oldProvider.GetContext().GetRuleset().GetRuleSetId(), *node)));
             context.GetRemovedNodeIds().insert(node->GetNodeId());
             }
 
@@ -673,7 +673,7 @@ void HierarchyUpdater::CompareDataSources(bvector<IUpdateTaskPtr>& subTasks, Upd
             {
             JsonNavNodePtr node = newDs->GetNode(i);
             CustomizeNode(nullptr, *node, newProvider);
-            subTasks.push_back(m_tasksFactory.CreateReportTask(UpdateRecord(*node, i)));
+            subTasks.push_back(m_tasksFactory.CreateReportTask(HierarchyUpdateRecord(newProvider.GetContext().GetRuleset().GetRuleSetId(), *node, i)));
             }
 
         // now the lists are synchronized - iterate over both of them at the same time
@@ -691,7 +691,7 @@ void HierarchyUpdater::CompareDataSources(bvector<IUpdateTaskPtr>& subTasks, Upd
     for (size_t i = oldIndex; i < oldDs->GetSize(); ++i)
         {
         NavNodePtr node = oldDs->GetNode(i);
-        subTasks.push_back(m_tasksFactory.CreateReportTask(UpdateRecord(*node)));
+        subTasks.push_back(m_tasksFactory.CreateReportTask(HierarchyUpdateRecord(oldProvider.GetContext().GetRuleset().GetRuleSetId(), *node)));
         context.GetRemovedNodeIds().insert(node->GetNodeId());
         }
 
@@ -700,7 +700,7 @@ void HierarchyUpdater::CompareDataSources(bvector<IUpdateTaskPtr>& subTasks, Upd
         {
         JsonNavNodePtr node = newDs->GetNode(i);
         CustomizeNode(nullptr, *node, newProvider);
-        subTasks.push_back(m_tasksFactory.CreateReportTask(UpdateRecord(*node, i)));
+        subTasks.push_back(m_tasksFactory.CreateReportTask(HierarchyUpdateRecord(newProvider.GetContext().GetRuleset().GetRuleSetId(), *node, i)));
         }
     }
 
@@ -719,7 +719,7 @@ void HierarchyUpdater::CompareNodes(bvector<IUpdateTaskPtr>& subTasks, UpdateCon
     
     bvector<JsonChange> changes = NavNodesHelper::GetChanges(oldNode, newNode);
     if (!changes.empty())
-        subTasks.push_back(m_tasksFactory.CreateReportTask(UpdateRecord(newNode, std::move(changes))));
+        subTasks.push_back(m_tasksFactory.CreateReportTask(HierarchyUpdateRecord(newProvider.GetContext().GetRuleset().GetRuleSetId(), newNode, std::move(changes))));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -864,6 +864,7 @@ void HierarchyUpdater::Update(bvector<IUpdateTaskPtr>& subTasks, UpdateContext& 
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool HierarchyUpdater::IsHierarchyExpanded(HierarchyLevelInfo const& info) const
     {
+#ifdef not_tracking_node_expansion_in_imodeljs
     if (nullptr != info.GetPhysicalParentNodeId())
         {
         //Go up the hierarchy and look if all parents are expanded
@@ -876,6 +877,7 @@ bool HierarchyUpdater::IsHierarchyExpanded(HierarchyLevelInfo const& info) const
             parent = m_nodesCache.GetNode(parent->GetParentNodeId());
             }
         }
+#endif
     return true;
     }
 

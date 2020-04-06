@@ -1077,7 +1077,7 @@ TEST_F(SimpleRuleSetLocaterTests, AddRuleSetReplacesRulesetWithSameId)
     {
     m_ruleSetLocater->AddRuleSet(*ruleSet1);
     bvector<PresentationRuleSetPtr> ruleSets = m_ruleSetLocater->LocateRuleSets();
-    m_ruleSetLocater->AddRuleSet(*PresentationRuleSet::CreateInstance("id1", 0, 0, "", "", "", "", false));
+    m_ruleSetLocater->AddRuleSet(*PresentationRuleSet::CreateInstance("id1", 0, 0, "", "", "", "", true));
 
     EXPECT_EQ(2, m_createdRulesetCount);
     EXPECT_EQ(1, m_disposedRulesetCount);

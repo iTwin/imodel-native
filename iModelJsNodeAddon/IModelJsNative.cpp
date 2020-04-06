@@ -15,7 +15,6 @@
 #include <ECDb/ECDb.h>
 #include <ECObjects/ECSchema.h>
 #include <rapidjson/rapidjson.h>
-#include "ECPresentationUtils.h"
 #include "ECSchemaXmlContextUtils.h"
 #include <Bentley/Desktop/FileSystem.h>
 #include <Bentley/BeThread.h>
@@ -28,6 +27,8 @@
 #include "UlasClient.h"
 #include "SignalTestUtility.h"
 #include <Bentley/BeThreadLocalStorage.h>
+#include "presentation/ECPresentationUtils.h"
+#include "presentation/UpdateRecordsHandler.h"
 
 #if defined(BENTLEYCONFIG_OS_WINDOWS) || defined(BENTLEYCONFIG_OS_APPLE_MACOS)
 #include "KeyTarInterop.h"
@@ -5535,6 +5536,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
     std::unique_ptr<RulesDrivenECPresentationManager> m_presentationManager;
     RefCountedPtr<SimpleRuleSetLocater> m_ruleSetLocater;
     RuntimeJsonLocalState m_localState;
+    std::shared_ptr<IModelJsECPresentationUpdateRecordsHandler> m_updateRecords;
 
     static bool InstanceOf(Napi::Value val) {
         if (!val.IsObject())
@@ -5559,6 +5561,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             InstanceMethod("removeRuleset", &NativeECPresentationManager::RemoveRuleset),
             InstanceMethod("clearRulesets", &NativeECPresentationManager::ClearRulesets),
             InstanceMethod("handleRequest", &NativeECPresentationManager::HandleRequest),
+            InstanceMethod("getUpdateInfo", &NativeECPresentationManager::GetUpdateInfo),
             InstanceMethod("dispose", &NativeECPresentationManager::Terminate)
         });
 
@@ -5632,8 +5635,10 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         REQUIRE_ARGUMENT_STRING_ARRAY(1, localeDirectories, );
         REQUIRE_ARGUMENT_ANY_OBJ(2, taskAllocationSlots, );
         REQUIRE_ARGUMENT_STRING(3, mode, );
+        REQUIRE_ARGUMENT_BOOL(4, isChangeTrackingEnabled, );
+        m_updateRecords = std::make_shared<IModelJsECPresentationUpdateRecordsHandler>();
         m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>(ECPresentationUtils::CreatePresentationManager(T_HOST.GetIKnownLocationsAdmin(),
-            m_localState, id, localeDirectories, CreateTaskAllocationSlotsMap(taskAllocationSlots), mode));
+            m_localState, id, localeDirectories, CreateTaskAllocationSlotsMap(taskAllocationSlots), mode, isChangeTrackingEnabled, m_updateRecords));
         m_ruleSetLocater = SimpleRuleSetLocater::Create();
         m_presentationManager->GetLocaters().RegisterLocater(*m_ruleSetLocater);
         }
@@ -5816,6 +5821,11 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         Json::Value jsonValue = NapiUtils::Convert(value);
         ECPresentationResult result = ECPresentationUtils::SetRulesetVariableValue(*m_presentationManager, ruleSetId, variableId, variableType, jsonValue);
         return CreateReturnValue(result);
+        }
+
+    Napi::Value GetUpdateInfo(Napi::CallbackInfo const& info)
+        {
+        return CreateReturnValue(ECPresentationResult(m_updateRecords->GetReport()));
         }
 
     void Terminate(Napi::CallbackInfo const& info)

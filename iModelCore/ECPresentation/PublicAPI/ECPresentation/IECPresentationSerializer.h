@@ -39,7 +39,7 @@ protected:
     virtual void _AsJson(ContentDescriptor::ECInstanceKeyField const&, RapidJsonDocumentR) const = 0;
     virtual void _AsJson(ContentDescriptor::ECNavigationInstanceIdField const&, RapidJsonDocumentR) const = 0;
 
-    virtual rapidjson::Document _AsJson(UpdateRecord const&, rapidjson::Document::AllocatorType*) const = 0;
+    virtual rapidjson::Document _AsJson(HierarchyUpdateRecord const&, rapidjson::Document::AllocatorType*) const = 0;
 
     virtual void _ParamsAsJson(ContentFieldEditor::Params const&, RapidJsonDocumentR) const = 0;
     virtual void _AsJson(FieldEditorJsonParams const&, RapidJsonDocumentR) const = 0;
@@ -105,7 +105,7 @@ protected:
 public:
     virtual ~IECPresentationSerializer() {}
 
-    rapidjson::Document AsJson(UpdateRecord const& updateRecord, rapidjson::Document::AllocatorType* allocator = nullptr) const {return _AsJson(updateRecord, allocator);}
+    rapidjson::Document AsJson(HierarchyUpdateRecord const& updateRecord, rapidjson::Document::AllocatorType* allocator = nullptr) const {return _AsJson(updateRecord, allocator);}
 
     rapidjson::Document AsJson(ConnectionEvent const& connectionEvent, rapidjson::Document::AllocatorType* allocator = nullptr) const {return _AsJson(connectionEvent, allocator);}
 

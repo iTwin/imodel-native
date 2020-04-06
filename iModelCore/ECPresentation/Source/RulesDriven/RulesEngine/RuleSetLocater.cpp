@@ -658,6 +658,10 @@ void SimpleRuleSetLocater::AddRuleSet(PresentationRuleSetR ruleSet)
     if (iter != m_cached.end())
         {
         BeAssert(iter->second->GetRuleSetId().Equals(iter->first));
+
+        if (iter->second->GetHash().Equals(ruleSet.GetHash()))
+            return;
+
         disposedRuleset = iter->second;
         m_cached.erase(iter);
         }

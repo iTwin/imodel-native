@@ -82,14 +82,11 @@ TEST_F (HierarchyUpdateTests, RemovesECInstanceNodeAfterECInstanceDelete)
     ASSERT_EQ(1, nodes.GetSize());
     EXPECT_EQ(*retainedNode->GetKey(), *nodes[0]->GetKey());
 
-    // expect two update records
-    ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
+    // verify records
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
 
     EXPECT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
     EXPECT_EQ(*removedNode->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
-
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
-    EXPECT_EQ(*nodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -148,17 +145,11 @@ TEST_F (HierarchyUpdateTests, UpdatesECClassGroupingNodeChildrenAfterECInstanceD
     ASSERT_TRUE(childNodes[0].IsValid());
     VerifyNodeInstance(*childNodes[0], *widget2);
 
-    // expect 3 update records
-    ASSERT_EQ(3, m_updateRecordsHandler->GetRecords().size());
+    // verify records
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
 
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
-    EXPECT_EQ(*rootNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
-
-    EXPECT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
-    EXPECT_EQ(*removedNode->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
-
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[2].GetChangeType());
-    EXPECT_EQ(*childNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[2].GetNode()->GetKey());
+    EXPECT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_EQ(*removedNode->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -335,8 +326,8 @@ TEST_F (HierarchyUpdateTests, RemovesDisplayLabelGroupingNodeChildrenAfterECInst
     ASSERT_TRUE(rootNodes[0]->GetLabelDefinition().GetDisplayValue().Equals("My Label"));
     ASSERT_EQ(*retainedNode->GetKey(), *rootNodes[1]->GetKey());
 
-    // expect 3 update records
-    ASSERT_EQ(3, m_updateRecordsHandler->GetRecords().size());
+    // verify records
+    ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
 
     ASSERT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
     ASSERT_EQ(*displayLabelGroupingNode->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
@@ -344,9 +335,6 @@ TEST_F (HierarchyUpdateTests, RemovesDisplayLabelGroupingNodeChildrenAfterECInst
     ASSERT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
     ASSERT_TRUE(m_updateRecordsHandler->GetRecords()[1].GetNode()->GetType().Equals(NAVNODE_TYPE_ECInstancesNode));
     ASSERT_EQ(0, m_updateRecordsHandler->GetRecords()[1].GetPosition());
-
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[2].GetChangeType());
-    EXPECT_EQ(*rootNodes[1]->GetKey(), *m_updateRecordsHandler->GetRecords()[2].GetNode()->GetKey());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -417,14 +405,11 @@ TEST_F (HierarchyUpdateTests, RemovesDisplayLabelGroupingNodeAfterECInstanceDele
     ASSERT_TRUE(rootNodes[0]->GetType().Equals(NAVNODE_TYPE_ECInstancesNode));
     ASSERT_TRUE(rootNodes[0]->GetLabelDefinition().GetDisplayValue().Equals("Other Label"));
 
-    // expect one update record
-    ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
+    // verify records
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
 
     ASSERT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
     ASSERT_EQ(*removedLabelGroupingNode->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
-
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
-    EXPECT_EQ(*rootNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -475,14 +460,11 @@ TEST_F (HierarchyUpdateTests, RemovesDisplayLabelGroupingNodeAfterECInstanceDele
     ASSERT_TRUE(rootNodes[0]->GetType().Equals(NAVNODE_TYPE_ECInstancesNode));
     ASSERT_TRUE(rootNodes[0]->GetLabelDefinition().GetDisplayValue().Equals("Other Label"));
 
-    // expect one update record
-    ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
+    // verify records
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
 
     ASSERT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
     ASSERT_EQ(*removedNode->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
-
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
-    EXPECT_EQ(*rootNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -545,8 +527,8 @@ TEST_F (HierarchyUpdateTests, RemovesDisplayLabelGroupingNodeAfterECInstanceLabe
     ASSERT_TRUE(rootNodes[1]->GetType().Equals(NAVNODE_TYPE_ECInstancesNode));
     ASSERT_TRUE(rootNodes[1]->GetLabelDefinition().GetDisplayValue().Equals("My Other Label"));
 
-    // expect 3 update records
-    ASSERT_EQ(4, m_updateRecordsHandler->GetRecords().size());
+    // verify records
+    ASSERT_EQ(3, m_updateRecordsHandler->GetRecords().size());
 
     ASSERT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
     ASSERT_EQ(*displayLabelGroupingNode->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
@@ -558,9 +540,6 @@ TEST_F (HierarchyUpdateTests, RemovesDisplayLabelGroupingNodeAfterECInstanceLabe
     ASSERT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[2].GetChangeType());
     EXPECT_EQ(*rootNodes[1]->GetKey(), *m_updateRecordsHandler->GetRecords()[2].GetNode()->GetKey());
     ASSERT_EQ(1, m_updateRecordsHandler->GetRecords()[2].GetPosition());
-
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[3].GetChangeType());
-    EXPECT_EQ(*rootNodes[2]->GetKey(), *m_updateRecordsHandler->GetRecords()[3].GetNode()->GetKey());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -641,18 +620,12 @@ TEST_F (HierarchyUpdateTests, SetsCorrectInsertPositionWhenMultipleSpecification
     ASSERT_TRUE(rootNodes[2]->GetType().Equals(NAVNODE_TYPE_ECInstancesNode));
     ASSERT_TRUE(rootNodes[2]->GetLabelDefinition().GetDisplayValue().Equals("WidgetID"));
 
-    // expect 3 update records
-    ASSERT_EQ(3, m_updateRecordsHandler->GetRecords().size());
+    // verify records
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
 
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
-    EXPECT_EQ(*rootNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
-
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
-    EXPECT_EQ(*rootNodes[1]->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
-
-    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[2].GetChangeType());
-    EXPECT_EQ(*rootNodes[2]->GetKey(), *m_updateRecordsHandler->GetRecords()[2].GetNode()->GetKey());
-    EXPECT_EQ(2, m_updateRecordsHandler->GetRecords()[2].GetPosition());
+    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_EQ(*rootNodes[2]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
+    EXPECT_EQ(2, m_updateRecordsHandler->GetRecords()[0].GetPosition());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -708,8 +681,8 @@ TEST_F (HierarchyUpdateTests, CreatesDisplayLabelGroupingNodeAfterECInstanceLabe
     ASSERT_TRUE(rootNodes[1]->GetType().Equals(NAVNODE_TYPE_ECInstancesNode));
     ASSERT_TRUE(rootNodes[1]->GetLabelDefinition().GetDisplayValue().Equals("Label 3"));
 
-    // expect 4 update records
-    ASSERT_EQ(4, m_updateRecordsHandler->GetRecords().size());
+    // verify records
+    ASSERT_EQ(3, m_updateRecordsHandler->GetRecords().size());
 
     ASSERT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
     ASSERT_EQ(*deletedNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
@@ -720,9 +693,6 @@ TEST_F (HierarchyUpdateTests, CreatesDisplayLabelGroupingNodeAfterECInstanceLabe
     ASSERT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[2].GetChangeType());
     ASSERT_EQ(*rootNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[2].GetNode()->GetKey());
     ASSERT_EQ(0, m_updateRecordsHandler->GetRecords()[2].GetPosition());
-
-    ASSERT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[3].GetChangeType());
-    ASSERT_EQ(*rootNodes[1]->GetKey(), *m_updateRecordsHandler->GetRecords()[3].GetNode()->GetKey());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -772,18 +742,15 @@ TEST_F (HierarchyUpdateTests, CreatesDisplayLabelGroupingNodeAfterECInstanceInse
     ASSERT_TRUE(rootNodes[1]->GetType().Equals(NAVNODE_TYPE_DisplayLabelGroupingNode));
     ASSERT_TRUE(rootNodes[1]->GetLabelDefinition().GetDisplayValue().Equals("Label 2"));
 
-    // expect 3 update records
-    ASSERT_EQ(3, m_updateRecordsHandler->GetRecords().size());
+    // verify records
+    ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
 
-    ASSERT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
-    ASSERT_EQ(*rootNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
+    ASSERT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    ASSERT_EQ(*deletedNode->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
 
-    ASSERT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
-    ASSERT_EQ(*deletedNode->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
-
-    ASSERT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[2].GetChangeType());
-    ASSERT_EQ(*rootNodes[1]->GetKey(), *m_updateRecordsHandler->GetRecords()[2].GetNode()->GetKey());
-    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords()[2].GetPosition());
+    ASSERT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
+    ASSERT_EQ(*rootNodes[1]->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords()[1].GetPosition());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -837,24 +804,12 @@ TEST_F (HierarchyUpdateTests, UpdatesDisplayLabelGroupingNodeAfterECInstanceInse
         EXPECT_STREQ("Label 1", node->GetLabelDefinition().GetDisplayValue().c_str());
         }
 
-    // expect 5 update records
-    ASSERT_EQ(5, m_updateRecordsHandler->GetRecords().size());
+    // verify records
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
 
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
-    EXPECT_EQ(*rootNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
-
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
-    EXPECT_EQ(*rootNodes[1]->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
-
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[2].GetChangeType());
-    EXPECT_EQ(*childNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[2].GetNode()->GetKey());
-
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[3].GetChangeType());
-    EXPECT_EQ(*childNodes[1]->GetKey(), *m_updateRecordsHandler->GetRecords()[3].GetNode()->GetKey());
-
-    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[4].GetChangeType());
-    EXPECT_EQ(*childNodes[2]->GetKey(), *m_updateRecordsHandler->GetRecords()[4].GetNode()->GetKey());
-    EXPECT_EQ(2, m_updateRecordsHandler->GetRecords()[4].GetPosition());
+    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_EQ(*childNodes[2]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
+    EXPECT_EQ(2, m_updateRecordsHandler->GetRecords()[0].GetPosition());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -899,19 +854,14 @@ TEST_F (HierarchyUpdateTests, UpdatesVirtualDisplayLabelGroupingNodeAfterECInsta
         EXPECT_STREQ("Label 1", node->GetLabelDefinition().GetDisplayValue().c_str());
         }
 
-    // expect 3 update records
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
-    ASSERT_EQ(3, m_updateRecordsHandler->GetRecords().size());
 
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
-    EXPECT_EQ(*rootNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
+    // verify records
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
 
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
-    EXPECT_EQ(*rootNodes[1]->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
-
-    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[2].GetChangeType());
-    EXPECT_EQ(*rootNodes[2]->GetKey(), *m_updateRecordsHandler->GetRecords()[2].GetNode()->GetKey());
-    EXPECT_EQ(2, m_updateRecordsHandler->GetRecords()[2].GetPosition());
+    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_EQ(*rootNodes[2]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
+    EXPECT_EQ(2, m_updateRecordsHandler->GetRecords()[0].GetPosition());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -958,17 +908,11 @@ TEST_F (HierarchyUpdateTests, UpdatesVirtualDisplayLabelGroupingNodeAfterECInsta
         EXPECT_STREQ("Label 1", node->GetLabelDefinition().GetDisplayValue().c_str());
         }
 
-    // expect 3 update records
-    ASSERT_EQ(3, m_updateRecordsHandler->GetRecords().size());
+    // verify records
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
 
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
-    EXPECT_EQ(*rootNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
-
-    EXPECT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
-    EXPECT_EQ(*deletedNode->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
-
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[2].GetChangeType());
-    EXPECT_EQ(*rootNodes[1]->GetKey(), *m_updateRecordsHandler->GetRecords()[2].GetNode()->GetKey());
+    EXPECT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_EQ(*deletedNode->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1060,15 +1004,12 @@ TEST_F (HierarchyUpdateTests, UpdatesRootDataSourceAfterECInstanceInsert_AllInst
     ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[1]->GetType().c_str());
     ASSERT_STREQ("2", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    // expect 2 update records
-    ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
+    // verify records
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
 
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
-    EXPECT_EQ(*rootNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
-
-    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
-    EXPECT_EQ(*rootNodes[1]->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
-    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[1].GetPosition());
+    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_EQ(*rootNodes[1]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
+    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[0].GetPosition());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1110,15 +1051,12 @@ TEST_F (HierarchyUpdateTests, UpdatesRootDataSourceAfterECInstanceInsert_Instanc
     ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, rootNodes[1]->GetType().c_str());
     ASSERT_STREQ("2", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    // expect 2 update records
-    ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
+    // verify records
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
 
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
-    EXPECT_EQ(*rootNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
-
-    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
-    EXPECT_EQ(*rootNodes[1]->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
-    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[1].GetPosition());
+    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_EQ(*rootNodes[1]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
+    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[0].GetPosition());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1195,15 +1133,12 @@ TEST_F (HierarchyUpdateTests, UpdatesRootDataSourceAfterECInstanceInsert_Instanc
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(2, rootNodes.GetSize());
 
-    // expect 2 update records
-    ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
+    // verify records
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
 
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
-    EXPECT_EQ(*rootNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
-
-    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
-    EXPECT_EQ(*rootNodes[1]->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
-    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[1].GetPosition());
+    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_EQ(*rootNodes[1]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
+    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[0].GetPosition());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1340,18 +1275,12 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterECInstanceInsert_SearchResul
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(3, rootNodes.GetSize());
 
-    // expect 3 update records
-    ASSERT_EQ(3, m_updateRecordsHandler->GetRecords().size());
+    // verify records
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
 
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
-    EXPECT_EQ(*rootNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
-
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
-    EXPECT_EQ(*rootNodes[1]->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
-
-    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[2].GetChangeType());
-    EXPECT_EQ(*rootNodes[2]->GetKey(), *m_updateRecordsHandler->GetRecords()[2].GetNode()->GetKey());
-    EXPECT_EQ(2, m_updateRecordsHandler->GetRecords()[2].GetPosition());
+    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_EQ(*rootNodes[2]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
+    EXPECT_EQ(2, m_updateRecordsHandler->GetRecords()[0].GetPosition());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1393,18 +1322,12 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterECInstanceInsert_SearchResul
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(3, rootNodes.GetSize());
 
-    // expect 3 update records
-    ASSERT_EQ(3, m_updateRecordsHandler->GetRecords().size());
+    // verify records
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
 
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
-    EXPECT_EQ(*rootNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
-
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
-    EXPECT_EQ(*rootNodes[1]->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
-
-    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[2].GetChangeType());
-    EXPECT_EQ(*rootNodes[2]->GetKey(), *m_updateRecordsHandler->GetRecords()[2].GetNode()->GetKey());
-    EXPECT_EQ(2, m_updateRecordsHandler->GetRecords()[2].GetPosition());
+    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_EQ(*rootNodes[2]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
+    EXPECT_EQ(2, m_updateRecordsHandler->GetRecords()[0].GetPosition());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1445,15 +1368,12 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterECInstanceInsert_SearchResul
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(2, rootNodes.GetSize());
 
-    // expect 2 update records
-    ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
+    // verify records
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
 
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
-    EXPECT_EQ(*rootNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
-
-    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
-    EXPECT_EQ(*rootNodes[1]->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
-    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[1].GetPosition());
+    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_EQ(*rootNodes[1]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
+    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[0].GetPosition());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1522,17 +1442,11 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterParentECInstanceUpdate_Searc
     childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
 
-    // expect 3 update records
-    ASSERT_EQ(3, m_updateRecordsHandler->GetRecords().size());
+    // verify records
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
 
-    ASSERT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
-    ASSERT_EQ(*rootNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
-
-    ASSERT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
-    ASSERT_EQ(*childNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
-
-    ASSERT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[2].GetChangeType());
-    VerifyNodeInstance(*m_updateRecordsHandler->GetRecords()[2].GetNode(), *gadget2);
+    ASSERT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    VerifyNodeInstance(*m_updateRecordsHandler->GetRecords()[0].GetNode(), *gadget2);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1626,7 +1540,7 @@ TEST_F (HierarchyUpdateTests, SameLabelInstanceGroupIsCreatedWhenAdditionalInsta
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     VerifyNodeInstances(*rootNodes[0], {widget, widget2});
-    
+
     // expect 2 update records
     ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
 
@@ -1692,18 +1606,12 @@ TEST_F (HierarchyUpdateTests, BaseClassGroupIsUpdatedWhenAdditionalInstancesAreI
     DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(2, childNodes.GetSize());
 
-    // expect 3 update records
-    ASSERT_EQ(3, m_updateRecordsHandler->GetRecords().size());
+    // verify records
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
 
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
-    EXPECT_EQ(*rootNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
-
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
-    EXPECT_EQ(*childNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
-
-    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[2].GetChangeType());
-    EXPECT_EQ(*childNodes[1]->GetKey(), *m_updateRecordsHandler->GetRecords()[2].GetNode()->GetKey());
-    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[2].GetPosition());
+    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_EQ(*childNodes[1]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
+    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[0].GetPosition());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1755,18 +1663,12 @@ TEST_F (HierarchyUpdateTests, ValuePropertyGroupIsUpdatedWhenAdditionalInstances
     DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(2, childNodes.GetSize());
 
-    // expect 3 update records
-    ASSERT_EQ(3, m_updateRecordsHandler->GetRecords().size());
+    // verify records
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
 
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
-    EXPECT_EQ(*rootNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
-
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
-    EXPECT_EQ(*childNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
-
-    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[2].GetChangeType());
-    EXPECT_EQ(*childNodes[1]->GetKey(), *m_updateRecordsHandler->GetRecords()[2].GetNode()->GetKey());
-    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[2].GetPosition());
+    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_EQ(*childNodes[1]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
+    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[0].GetPosition());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1821,18 +1723,12 @@ TEST_F (HierarchyUpdateTests, RangePropertyGroupIsUpdatedWhenAdditionalInstances
     DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(2, childNodes.GetSize());
 
-    // expect 3 update records
-    ASSERT_EQ(3, m_updateRecordsHandler->GetRecords().size());
+    // verify records
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
 
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
-    EXPECT_EQ(*rootNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
-
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
-    EXPECT_EQ(*childNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
-
-    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[2].GetChangeType());
-    EXPECT_EQ(*childNodes[1]->GetKey(), *m_updateRecordsHandler->GetRecords()[2].GetNode()->GetKey());
-    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[2].GetPosition());
+    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_EQ(*childNodes[1]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
+    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[0].GetPosition());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1894,21 +1790,15 @@ TEST_F (HierarchyUpdateTests, PropertyGroupIsCreatedWhenInstanceValuesChange)
     DataContainer<NavNodeCPtr> childNodes2 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[1], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, childNodes2.GetSize());
 
-    // expect 4 update records
-    ASSERT_EQ(4, m_updateRecordsHandler->GetRecords().size());
+    // verify records
+    ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
 
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
-    EXPECT_EQ(*rootNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
+    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_EQ(*rootNodes[1]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
+    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[0].GetPosition());
 
-    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
-    EXPECT_EQ(*rootNodes[1]->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
-    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[1].GetPosition());
-
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[2].GetChangeType());
-    EXPECT_EQ(*childNodes1[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[2].GetNode()->GetKey());
-
-    EXPECT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[3].GetChangeType());
-    EXPECT_EQ(*deletedNode, *m_updateRecordsHandler->GetRecords()[3].GetNode()->GetKey());
+    EXPECT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
+    EXPECT_EQ(*deletedNode, *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2256,25 +2146,22 @@ TEST_F (HierarchyUpdateTests, HidesDisplayLabelGroupingNodeWhenSiblingIsRemovedF
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, childNodes[1]->GetType().c_str());
     EXPECT_STREQ("WidgetID", childNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    // expect 5 update records
-    ASSERT_EQ(5, m_updateRecordsHandler->GetRecords().size());
+    // verify records
+    ASSERT_EQ(4, m_updateRecordsHandler->GetRecords().size());
 
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
-    EXPECT_EQ(*rootNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
+    EXPECT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_EQ(*deletedNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
 
     EXPECT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
-    EXPECT_EQ(*deletedNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
+    EXPECT_EQ(*deletedNodes[1]->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
 
-    EXPECT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[2].GetChangeType());
-    EXPECT_EQ(*deletedNodes[1]->GetKey(), *m_updateRecordsHandler->GetRecords()[2].GetNode()->GetKey());
+    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[2].GetChangeType());
+    EXPECT_EQ(*childNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[2].GetNode()->GetKey());
+    EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[2].GetPosition());
 
     EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[3].GetChangeType());
-    EXPECT_EQ(*childNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[3].GetNode()->GetKey());
-    EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[3].GetPosition());
-
-    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[4].GetChangeType());
-    EXPECT_EQ(*childNodes[1]->GetKey(), *m_updateRecordsHandler->GetRecords()[4].GetNode()->GetKey());
-    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[4].GetPosition());
+    EXPECT_EQ(*childNodes[1]->GetKey(), *m_updateRecordsHandler->GetRecords()[3].GetNode()->GetKey());
+    EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[3].GetPosition());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2327,15 +2214,12 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterOneToManyForwar
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, childNodes[0]->GetType().c_str());
     EXPECT_STREQ("GadgetID", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    // expect 2 update records
-    ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
+    // verify records
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
 
     EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
     EXPECT_EQ(*childNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
     EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[0].GetPosition());
-
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
-    EXPECT_EQ(*rootNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2388,15 +2272,12 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterOneToManyBackwa
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, childNodes[0]->GetType().c_str());
     EXPECT_STREQ("WidgetID", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    // expect 2 update records
-    ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
+    // verify records
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
 
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
-    EXPECT_EQ(*rootNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
-
-    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
-    EXPECT_EQ(*childNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
-    EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[1].GetPosition());
+    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_EQ(*childNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
+    EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[0].GetPosition());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2451,14 +2332,11 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterOneToManyForwar
     childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(0, childNodes.GetSize());
 
-    // expect 2 update records
-    ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
+    // verify records
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
 
     EXPECT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
     EXPECT_EQ(*deletedNode->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
-
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
-    EXPECT_EQ(*rootNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2513,14 +2391,11 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterOneToManyBackwa
     childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(0, childNodes.GetSize());
 
-    // expect 2 update records
-    ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
+    // verify records
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
 
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
-    EXPECT_EQ(*rootNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
-
-    EXPECT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
-    EXPECT_EQ(*deletedNode->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
+    EXPECT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_EQ(*deletedNode->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2576,15 +2451,12 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterManyToManyForwa
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, childNodes[0]->GetType().c_str());
     EXPECT_STREQ("GadgetID", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    // expect 2 update records
-    ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
+    // verify records
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
 
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
-    EXPECT_EQ(*rootNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
-
-    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
-    EXPECT_EQ(*childNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
-    EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[1].GetPosition());
+    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_EQ(*childNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
+    EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[0].GetPosition());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2640,15 +2512,12 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterManyToManyBackw
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, childNodes[0]->GetType().c_str());
     EXPECT_STREQ("WidgetID", childNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    // expect 2 update records
-    ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
+    // verify records
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
 
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
-    EXPECT_EQ(*rootNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
-
-    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
-    EXPECT_EQ(*childNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
-    EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[1].GetPosition());
+    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_EQ(*childNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
+    EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[0].GetPosition());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2706,14 +2575,11 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterManyToManyForwa
     childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(0, childNodes.GetSize());
 
-    // expect 2 update records
-    ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
+    // verify records
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
 
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
-    EXPECT_EQ(*rootNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
-
-    EXPECT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
-    EXPECT_EQ(*deletedNode->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
+    EXPECT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_EQ(*deletedNode->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2771,14 +2637,11 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterManyToManyBackw
     childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(0, childNodes.GetSize());
 
-    // expect 2 update records
-    ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
+    // verify records
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
 
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
-    EXPECT_EQ(*rootNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
-
-    EXPECT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
-    EXPECT_EQ(*deletedNode->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
+    EXPECT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_EQ(*deletedNode->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3646,15 +3509,12 @@ TEST_F (HierarchyUpdateTests, UpdateAfterSkippedOneToManyRelationshipInsert)
     childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
 
-    // expect 2 update records
-    ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
+    // verify records
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
 
     EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
     EXPECT_EQ(*childNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
     EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[0].GetPosition());
-
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
-    EXPECT_EQ(*rootNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
     }
 
 #ifdef wip_skipped_instance_keys_performance_issue
@@ -3774,15 +3634,12 @@ TEST_F (HierarchyUpdateTests, UpdateAfterSkippedManyToManyRelationshipInsert)
     ASSERT_EQ(1, childNodes.GetSize());
     VerifyNodeInstance(*childNodes[0], *widget2);
 
-    // expect 2 update records
-    ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
+    // verify records
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
 
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
-    EXPECT_EQ(*rootNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
-
-    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
-    EXPECT_EQ(*childNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
-    EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[1].GetPosition());
+    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_EQ(*childNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
+    EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[0].GetPosition());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3869,8 +3726,11 @@ TEST_F (HierarchyUpdateTests, UpdateAfterRelatedInstanceDelete)
     EXPECT_STREQ("Gadget_1", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     RulesEngineTestHelpers::DeleteInstance(m_db, *widget, true);
-    m_eventsSource->NotifyECInstanceDeleted(m_db, *widget);
-    m_eventsSource->NotifyECInstanceUpdated(m_db, *gadget);
+    m_eventsSource->NotifyECInstancesChanged(m_db, bvector<ECInstanceChangeEventSource::ChangedECInstance>
+        {
+        ECInstanceChangeEventSource::ChangedECInstance(*m_widgetClass, (ECInstanceId)ECInstanceId::FromString(widget->GetInstanceId().c_str()), ChangeType::Delete),
+        ECInstanceChangeEventSource::ChangedECInstance(*m_gadgetClass, (ECInstanceId)ECInstanceId::FromString(gadget->GetInstanceId().c_str()), ChangeType::Update),
+        });
 
     // still expect 1 root node
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
@@ -4003,11 +3863,11 @@ TEST_F (HierarchyUpdateTests, UpdatesAllAffectedRootHierarchies)
 
     EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
     EXPECT_STREQ("456", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
-    EXPECT_STREQ("UpdatesAllAffectedRootHierarchies_1", NavNodeExtendedData(*m_updateRecordsHandler->GetRecords()[0].GetNode()).GetRulesetId());
+    EXPECT_STREQ("UpdatesAllAffectedRootHierarchies_1", m_updateRecordsHandler->GetRecords()[0].GetRulesetId().c_str());
 
     EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
     EXPECT_STREQ("456", m_updateRecordsHandler->GetRecords()[1].GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
-    EXPECT_STREQ("UpdatesAllAffectedRootHierarchies_2", NavNodeExtendedData(*m_updateRecordsHandler->GetRecords()[1].GetNode()).GetRulesetId());
+    EXPECT_STREQ("UpdatesAllAffectedRootHierarchies_2", m_updateRecordsHandler->GetRecords()[1].GetRulesetId().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4103,11 +3963,11 @@ TEST_F (HierarchyUpdateTests, UpdatesAllAffectedChildHierarchies)
 
     EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
     EXPECT_STREQ("456", m_updateRecordsHandler->GetRecords()[0].GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
-    EXPECT_STREQ("UpdatesAllAffectedChildHierarchies_1", NavNodeExtendedData(*m_updateRecordsHandler->GetRecords()[0].GetNode()).GetRulesetId());
+    EXPECT_STREQ("UpdatesAllAffectedChildHierarchies_1", m_updateRecordsHandler->GetRecords()[0].GetRulesetId().c_str());
 
     EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
     EXPECT_STREQ("456", m_updateRecordsHandler->GetRecords()[1].GetNode()->GetLabelDefinition().GetDisplayValue().c_str());
-    EXPECT_STREQ("UpdatesAllAffectedChildHierarchies_2", NavNodeExtendedData(*m_updateRecordsHandler->GetRecords()[1].GetNode()).GetRulesetId());
+    EXPECT_STREQ("UpdatesAllAffectedChildHierarchies_2", m_updateRecordsHandler->GetRecords()[1].GetRulesetId().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4218,18 +4078,16 @@ TEST_F (HierarchyUpdateTests, UpdatesParentsHasChildrenFlagWhenChildNodeIsInsert
     grandchildNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *childNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, grandchildNodes.GetSize());
 
-    // expect 3 update records
-    ASSERT_EQ(3, m_updateRecordsHandler->GetRecords().size());
+    // verify records
+    ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
 
     EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
-    EXPECT_EQ(*rootNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
+    EXPECT_EQ(*childNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
 
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
-    EXPECT_EQ(*childNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
 
-    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[2].GetChangeType());
-    EXPECT_EQ(*grandchildNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[2].GetNode()->GetKey());
-    EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[2].GetPosition());
+    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
+    EXPECT_EQ(*grandchildNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
+    EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[1].GetPosition());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4947,6 +4805,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChangesSever
     EXPECT_TRUE(NavNodeExtendedData(*m_updateRecordsHandler->GetRecords()[0].GetNode()).IsCustomized());
     }
 
+#ifdef not_tracking_node_expansion_in_imodeljs
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Saulius.Skliutas                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -5409,6 +5268,7 @@ TEST_F(HierarchyUpdateTests, UpdateHierarchyWhenLastGroupedNodeDeletedFromCollap
     EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
     EXPECT_EQ(*rootNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Saulius.Skliutas                06/2017
@@ -5465,14 +5325,11 @@ TEST_F(HierarchyUpdateTests, DoesNotCollapseParentNodeAfterChildNodeIsInserted)
     EXPECT_STREQ("WidgetID", childrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_STREQ("WidgetID", childrenNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    // expect 3 recors
-    ASSERT_EQ(3, m_updateRecordsHandler->GetRecords().size());
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
-    EXPECT_EQ(*rootNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
-    EXPECT_EQ(*childrenNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
-    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[2].GetChangeType());
-    EXPECT_EQ(*childrenNodes[1]->GetKey(), *m_updateRecordsHandler->GetRecords()[2].GetNode()->GetKey());
+    // verify records
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
+
+    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_EQ(*childrenNodes[1]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5589,14 +5446,11 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterInsertWhenItAlreadyHasManyTo
     VerifyNodeInstance(*childNodes[0], *gadget2);
     VerifyNodeInstance(*childNodes[1], *gadget);
 
-    // expect 2 records
-    ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
+    // verify records
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
 
     EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
     EXPECT_EQ(*childNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
-
-    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
-    EXPECT_EQ(*childNodes[1]->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
     }
 
 /*---------------------------------------------------------------------------------**//**

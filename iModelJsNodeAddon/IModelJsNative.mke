@@ -8,6 +8,7 @@ CLANG_ALLOW_UNDEFINED=1
 appName = imodeljs-addon
 
 baseDir = $(_MakeFilePath)
+presentationDir = $(baseDir)presentation/
 
 cDefs + -DBUILDING_NODE_EXTENSION
 
@@ -88,8 +89,6 @@ $(o)JsInteropBriefcaseManager$(oext) : $(baseDir)JsInteropBriefcaseManager.cpp $
 
 $(o)JsInteropExportGraphics$(oext) : $(baseDir)JsInteropExportGraphics.cpp ${MultiCompileDepends}
 
-$(o)ECPresentationUtils$(oext) : $(baseDir)ECPresentationUtils.cpp $(baseDir)ECPresentationUtils.h ${MultiCompileDepends}
-
 $(o)SignalTestUtility$(oext) : $(baseDir)SignalTestUtility.cpp $(baseDir)SignalTestUtility.h ${MultiCompileDepends}
 
 $(o)ECSchemaXmlContextUtils$(oext) : $(baseDir)ECSchemaXmlContextUtils.cpp $(baseDir)ECSchemaXmlContextUtils.h ${MultiCompileDepends}
@@ -97,6 +96,14 @@ $(o)ECSchemaXmlContextUtils$(oext) : $(baseDir)ECSchemaXmlContextUtils.cpp $(bas
 $(o)UlasClient$(oext) : $(baseDir)UlasClient.cpp $(baseDir)UlasClient.h $(baseDir)IModelJsNative.h ${MultiCompileDepends}
 
 $(o)CrashReportingCommon$(oext) : $(baseDir)CrashReportingCommon.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends}
+
+$(o)ECPresentationUtils$(oext) : $(presentationDir)ECPresentationUtils.cpp $(presentationDir)ECPresentationUtils.h ${MultiCompileDepends}
+
+$(o)DgnDbECInstanceChangeEventSource$(oext) : $(presentationDir)DgnDbECInstanceChangeEventSource.cpp $(presentationDir)DgnDbECInstanceChangeEventSource.h ${MultiCompileDepends}
+
+$(o)UpdateRecordsHandler$(oext) : $(presentationDir)UpdateRecordsHandler.cpp $(presentationDir)UpdateRecordsHandler.h ${MultiCompileDepends}
+
+$(o)ECPresentationSerializer$(oext) : $(presentationDir)ECPresentationSerializer.cpp $(presentationDir)ECPresentationSerializer.h ${MultiCompileDepends}
 
 %if $(TARGET_PLATFORM)=="MacOS" || $(TARGET_PLATFORM)=="Windows"
 $(o)KeyTarInterop$(oext) : $(baseDir)KeyTarInterop.cpp $(baseDir)KeyTarInterop.h ${MultiCompileDepends}
