@@ -7,6 +7,8 @@ steps:
 
   - script: python $(BB_SRC_ROOT)/imodel02/build/call_bb.py pull $(BB_V) -a $(BB_ARCH) -b $(BDF_DIR)
     displayName: Pull
+    env:
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 
   - script: python $(BB_SRC_ROOT)/imodel02/build/call_bb.py build $(BB_V) -a $(BB_ARCH) -r $(VERSIONS_FILE)
     displayName: Build
