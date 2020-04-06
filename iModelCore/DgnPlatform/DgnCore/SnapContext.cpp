@@ -84,6 +84,67 @@ void BRepDataCache::AddCachedBRepEntity(DgnElementCR element, GeometryStreamEntr
     }
 
 /*=================================================================================**//**
+* @bsiclass                                                     Brien.Bastings  04/2020
++===============+===============+===============+===============+===============+======*/
+struct RangeCache : DgnElement::AppData
+{
+static DgnElement::AppData::Key const& GetKey() {static DgnElement::AppData::Key s_key; return s_key;}
+typedef bmap<uint16_t, DRange3d> IndexedGeomMap;
+IndexedGeomMap m_map;
+
+virtual DropMe _OnInserted(DgnElementCR el){return DropMe::Yes;}
+virtual DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original, bool isOriginal) {return DropMe::Yes;}
+virtual DropMe _OnAppliedUpdate(DgnElementCR original, DgnElementCR modified) {return DropMe::Yes;}
+virtual DropMe _OnDeleted(DgnElementCR el) {return DropMe::Yes;}
+
+static RangeCache* Get(DgnElementCR elem, bool addIfNotFound)
+    {
+    if (addIfNotFound)
+        return static_cast<RangeCache*>(elem.FindOrAddAppData(GetKey(), []() { return new RangeCache(); }).get());
+    else
+        return static_cast<RangeCache*>(elem.FindAppData(GetKey()).get());
+    }
+};
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct LocalRangeCache
+{
+static DRange3dCP FindCachedRange(DgnElementCR element, GeometryStreamEntryIdCR entryId);
+static void AddCachedRange(DgnElementCR element, GeometryStreamEntryIdCR entryId, DRange3dCR range);
+
+}; // LocalRangeCache
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DRange3dCP LocalRangeCache::FindCachedRange(DgnElementCR element, GeometryStreamEntryIdCR entryId)
+    {
+    RangeCache* cache = RangeCache::Get(element, false);
+
+    if (nullptr == cache)
+        return nullptr;
+
+    RangeCache::IndexedGeomMap::const_iterator found = cache->m_map.find(entryId.GetGeometryPartId().IsValid() ? entryId.GetPartIndex() : entryId.GetIndex());
+
+    if (found == cache->m_map.end())
+        return nullptr;
+
+    return &found->second;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+void LocalRangeCache::AddCachedRange(DgnElementCR element, GeometryStreamEntryIdCR entryId, DRange3dCR range)
+    {
+    RangeCache* cache = RangeCache::Get(element, true);
+
+    cache->m_map[entryId.GetGeometryPartId().IsValid() ? entryId.GetPartIndex() : entryId.GetIndex()] = range;
+    }
+
+/*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 struct SnapData
@@ -289,6 +350,7 @@ DPoint3d                m_hitClosePtLocal;
 Transform               m_hitWorldToLocal;
 DMap4d                  m_hitLocalToView;
 double                  m_hitDistanceView;
+double                  m_hitDistanceLocal;
 bool                    m_hitCheckInterior;
 ICurvePrimitivePtr      m_hitCurveDerived;
 
@@ -855,14 +917,35 @@ void SimplifyHitDetail()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool UpdateIfCloser(CurveLocationDetailCR curveDetail, HitGeomType geomType, HitParentGeomType parentGeomType)
+bool IsCloserToTestPoint(CurveLocationDetailCR curveDetail, double distanceLocal, bool checkInterior)
     {
-    if ((nullptr == m_hitCurveDetail.curve && HitGeomType::None == m_hitGeomType) || (curveDetail.a < m_hitCurveDetail.a))
+    if (checkInterior || m_hitCheckInterior)
+        {
+        if (distanceLocal < m_hitDistanceLocal)
+            return true; // Prefer surface that is closer to test point...
+        }
+
+    return (curveDetail.a < m_hitCurveDetail.a);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool UpdateIfCloser(CurveLocationDetailCR curveDetail, HitGeomType geomType, HitParentGeomType parentGeomType, DPoint3dCR localPoint)
+    {
+    bool        checkInterior = !m_closePtLocalCorrected.IsDisconnect();
+    double      distanceLocal = checkInterior ? localPoint.Distance(m_closePtLocalCorrected) : curveDetail.a;
+
+    if ((nullptr == m_hitCurveDetail.curve && HitGeomType::None == m_hitGeomType) || IsCloserToTestPoint(curveDetail, distanceLocal, checkInterior))
         {
         m_hitCurveDerived   = const_cast<ICurvePrimitiveP>(curveDetail.curve); // Make sure m_hitCurveDetail.curve remains valid...
         m_hitCurveDetail    = curveDetail;
         m_hitGeomType       = geomType;
         m_hitParentGeomType = parentGeomType;
+
+        m_hitClosePtLocal   = checkInterior ? m_closePtLocalCorrected : localPoint;
+        m_hitDistanceLocal  = distanceLocal;
+        m_hitCheckInterior  = checkInterior;
 
         return true;
         }
@@ -958,7 +1041,7 @@ bool ProcessPointString(ICurvePrimitiveCR curve, DPoint3dCR localPoint)
 
     curveDetail.curve = nullptr; // Don't store curve for point string hit...
 
-    return UpdateIfCloser(curveDetail, HitGeomType::Point, HitParentGeomType::None);
+    return UpdateIfCloser(curveDetail, HitGeomType::Point, HitParentGeomType::None, localPoint);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -971,7 +1054,7 @@ bool ProcessICurvePrimitive(ICurvePrimitiveCR curve, DPoint3dCR localPoint, HitG
     if (!curve.ClosestPointBounded(localPoint, curveDetail))
         return false;
 
-    return UpdateIfCloser(curveDetail, geomType, parentGeomType);
+    return UpdateIfCloser(curveDetail, geomType, parentGeomType, localPoint);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -994,7 +1077,7 @@ bool ProcessCurveVector(CurveVectorCR curves, DPoint3dCR localPoint, HitGeomType
             m_closePtLocalCorrected = solidDetail.GetXYZ();
         }
 
-    return UpdateIfCloser(curveDetail, geomType, parentGeomType);
+    return UpdateIfCloser(curveDetail, geomType, parentGeomType, localPoint);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1503,21 +1586,21 @@ bool ProcessSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR localPoint, T
             {
             CurveVectorPtr faceCurves = faceGeom->GetAsCurveVector();
 
-            return (faceCurves.IsValid() && ProcessCurveVector(*faceCurves, location.GetXYZ(), HitGeomType::None, parentGeomType));
+            return (faceCurves.IsValid() && ProcessCurveVector(*faceCurves, localPoint, HitGeomType::None, parentGeomType));
             }
 
         case IGeometry::GeometryType::SolidPrimitive:
             {
             ISolidPrimitivePtr facePrimitive = faceGeom->GetAsISolidPrimitive();
 
-            return (facePrimitive.IsValid() && ProcessSingleFaceSolidPrimitive(*facePrimitive, location.GetXYZ(), worldToLocal, parentGeomType));
+            return (facePrimitive.IsValid() && ProcessSingleFaceSolidPrimitive(*facePrimitive, localPoint, worldToLocal, parentGeomType));
             }
 
         case IGeometry::GeometryType::BsplineSurface:
             {
             MSBsplineSurfacePtr faceSurface = faceGeom->GetAsMSBsplineSurface();
 
-            return (faceSurface.IsValid() && ProcessBsplineSurface(*faceSurface, location.GetXYZ(), parentGeomType));
+            return (faceSurface.IsValid() && ProcessBsplineSurface(*faceSurface, localPoint, parentGeomType));
             }
 
         default:
@@ -1801,7 +1884,7 @@ bool ProcessImageGraphic(ImageGraphicCR img, DPoint3dCR localPoint)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ProcessGeometry(GeometricPrimitiveR geom, TransformCR localToWorld, bool checkRange)
+bool ProcessGeometry(GeometricPrimitiveR geom, TransformCR localToWorld, DRange3dP localRange)
     {
     Transform   worldToLocal;
 
@@ -1811,14 +1894,12 @@ bool ProcessGeometry(GeometricPrimitiveR geom, TransformCR localToWorld, bool ch
 
     m_closePtLocalCorrected.InitDisconnect(); // Will be corrected to exact interior point by process methods...
 
-    if (checkRange)
+    if (nullptr != localRange)
         {
-        DRange3d localRange;
-
-        if (geom.GetRange(localRange))
+        if (geom.GetRange(*localRange))
             {
             double maxOutsideDist = GetMaxOutsideDistance();
-            double outsideDist = localRange.DistanceOutside(localPoint);
+            double outsideDist = localRange->DistanceOutside(localPoint);
 
             if (outsideDist > maxOutsideDist)
                 return false;
@@ -1929,21 +2010,26 @@ bool ProcessEntry(GeometryCollection::Iterator const& iter, bool preFiltered, Dg
         }
 
     Transform localToWorld = iter.GetGeometryToWorld();
+    DRange3d  localRange = DRange3d::NullRange();
+    bool      checkRange = (!preFiltered && nullptr != element);
+    bool      accepted = ProcessGeometry(*geom, localToWorld, checkRange ? &localRange : nullptr);
 
-    if (!ProcessGeometry(*geom, localToWorld, !preFiltered && nullptr != element))
+    if (checkRange && elemEntryId.GetGeometryPartId().IsValid() && elemEntryId.GetPartIndex() > 1)
+        LocalRangeCache::AddCachedRange(*element, elemEntryId, localRange); // Cache multi-entry parts because they don't support sub-ranges...
+
+    if (!accepted)
         return false;
 
     m_hitGeom = geom;
     m_hitParams = iter.GetGeometryParams();
     m_hitEntryId = elemEntryId;
-    m_hitLocalToWorld = localToWorld;
 
-    OnHitChanged();
+    OnHitChanged(localToWorld);
 
     if (!preFiltered)
         {
-        // If we found an edge within locate tolerance, it's good enough and we can stop slogging through the geometry stream...
-        if (m_hitDistanceView < m_snapAperture)
+        // If we found a curve/surface near the point from readPixels we can stop looking...
+        if (m_hitDistanceLocal < 1.0e-3)
             return true;
 
         return false; // Keep going...
@@ -1955,7 +2041,7 @@ bool ProcessEntry(GeometryCollection::Iterator const& iter, bool preFiltered, Dg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SkipEntry(GeometryCollection::Iterator const& iter, GeometryStreamEntryIdCR snapElemEntryId, bool isPart, DgnSubCategoryId const* subCategoryId, DgnGeometryClass const* geomClass, ViewFlagsCP viewFlags, bool checkRange)
+bool SkipEntry(GeometryCollection::Iterator const& iter, GeometryStreamEntryIdCR snapElemEntryId, DgnSubCategoryId const* subCategoryId, DgnGeometryClass const* geomClass, ViewFlagsCP viewFlags, DgnElementCP element)
     {
     GeometryStreamEntryId elemEntryId = iter.GetGeometryStreamEntryId();
 
@@ -1991,12 +2077,39 @@ bool SkipEntry(GeometryCollection::Iterator const& iter, GeometryStreamEntryIdCR
             }
         }
 
+    bool checkRange = (nullptr != element);
+
     if (!checkRange)
         return false;
 
     DRange3d    localRange = iter.GetSubGraphicLocalRange();
 
-    if (localRange.IsNull() && (!isPart || SUCCESS != DgnGeometryPart::QueryGeometryPartRange(localRange, iter.GetDgnDb(), iter.GetGeometryPartId())))
+    if (localRange.IsNull())
+        {
+        DgnGeometryPartId   partId = elemEntryId.GetGeometryPartId();
+
+        if (partId.IsValid())
+            {
+            if (0 == elemEntryId.GetPartIndex())
+                {
+                // See if entire part can be skipped on range criteria w/o getting it's geometry stream...
+                DRange3d partRange;
+
+                if (SUCCESS == DgnGeometryPart::QueryGeometryPartRange(partRange, iter.GetDgnDb(), partId))
+                    localRange = partRange;
+                }
+            else
+                {
+                // See if we have a cached range for this part's geometry entry since parts don't currently support sub-ranges...
+                DRange3dCP  cachedRange = LocalRangeCache::FindCachedRange(*element, elemEntryId);
+
+                if (nullptr != cachedRange)
+                    localRange = *cachedRange;
+                }
+            }
+        }
+
+    if (localRange.IsNull())
         return false;
 
     Transform   localToWorld = iter.GetGeometryToWorld();
@@ -2028,7 +2141,7 @@ SnapStatus GetClosestCurve(GeometryCollection& collection, DgnElementCP element,
     for (auto iter : collection)
         {
         // Quick exclude of geometry that didn't generate the hit...
-        if (SkipEntry(iter, snapElemEntryId, false, subCategoryId, geomClass, viewFlags, nullptr != element))
+        if (SkipEntry(iter, snapElemEntryId, subCategoryId, geomClass, viewFlags, element))
             continue;
 
         if (GeometryCollection::Iterator::EntryType::GeometryPart != iter.GetEntryType())
@@ -2047,6 +2160,7 @@ SnapStatus GetClosestCurve(GeometryCollection& collection, DgnElementCP element,
         if (!geomPart.IsValid())
             continue; // Shouldn't happen...
 
+        DgnGeometryPartCP  partElement = geomPart.get();
         GeometryCollection partCollection(geomPart->GetGeometryStream(), geomPart->GetDgnDb());
 
         partCollection.SetNestedIteratorContext(iter); // Iterate part GeomStream in context of parent...
@@ -2054,10 +2168,10 @@ SnapStatus GetClosestCurve(GeometryCollection& collection, DgnElementCP element,
         for (auto partIter : partCollection)
             {
             // Quick exclude of geometry that didn't generate the hit...
-            if (SkipEntry(partIter, snapPartEntryId, true, subCategoryId, geomClass, viewFlags, true))
+            if (SkipEntry(partIter, snapPartEntryId, subCategoryId, geomClass, viewFlags, partElement))
                 continue;
 
-            if (ProcessEntry(partIter, snapPartEntryId.IsValid(), geomPart.get()))
+            if (ProcessEntry(partIter, snapPartEntryId.IsValid(), partElement))
                 break;
 
             if (nullptr != m_stopTester && m_stopTester->_CheckStop())
@@ -2079,16 +2193,14 @@ public:
 * @bsimethod                                                    BrienBastings   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SetHitGeometryStreamEntryId(GeometryStreamEntryIdCR entryId) {m_hitEntryId = entryId;}
-void SetHitCurveDetail(CurveLocationDetailCR detail) {m_hitCurveDetail = detail; OnHitChanged();}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void OnHitChanged()
+void OnHitChanged(TransformCR localToWorld)
     {
+    m_hitLocalToWorld = localToWorld;
     m_hitWorldToLocal.InverseOf(m_hitLocalToWorld);
-    m_hitCheckInterior = !m_closePtLocalCorrected.IsDisconnect();
-    m_hitClosePtLocal = m_hitCheckInterior ? m_closePtLocalCorrected : GetClosePointLocal(m_hitWorldToLocal);
 
     DMatrix4d viewToLocal = GetViewToLocal(m_hitWorldToLocal);
     DMatrix4d localToView;
