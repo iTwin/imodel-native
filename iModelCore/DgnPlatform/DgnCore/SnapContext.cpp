@@ -2053,7 +2053,8 @@ bool SkipEntry(GeometryCollection::Iterator const& iter, GeometryStreamEntryIdCR
     if (nullptr != subCategoryId && params.GetSubCategoryId() != *subCategoryId)
         return true;
 
-    if (nullptr != geomClass && params.GetGeometryClass() != *geomClass)
+    // Since patterns aren't stroked for snap ignore input geometry class...
+    if (nullptr != geomClass && DgnGeometryClass::Pattern != *geomClass && params.GetGeometryClass() != *geomClass)
         return true;
 
     if (nullptr != viewFlags)
