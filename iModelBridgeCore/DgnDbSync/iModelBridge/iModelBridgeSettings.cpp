@@ -257,7 +257,7 @@ std::shared_ptr<BentleyApi::WebServices::ConnectAuthenticationHandler> iModelBri
 
     auto tokenProvider = m_signInMgr->GetTokenProvider(baseUrl);
     bool isSaml = true;
-    if (NULL != dynamic_cast<OidcTokenProvider*>(tokenProvider.get()))
+    if (NULL != dynamic_cast<OidcTokenProvider*>(tokenProvider.get()) || NULL != dynamic_cast<OidcStaticTokenProvider*>(tokenProvider.get()))
         isSaml = false;
 
     m_authHandler = ConnectAuthenticationHandler::Create
