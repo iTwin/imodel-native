@@ -1527,10 +1527,9 @@ void IModelTileWriter::AddMeshes(Render::Primitives::GeometryCollectionCR geomet
     Json::Value     nodes      = Json::objectValue;
 
     bool enforceDisplayPriority = m_loader.GetTree().GetId().GetEnforceDisplayPriority();
-    Utf8Char idBuffer[17];
     for (auto& geomMesh : geometry.Meshes())
         {
-        Utf8CP id;
+        Utf8String id;
         uint64_t nodeIndex = geomMesh->GetNodeId();
         if (0 == nodeIndex)
             {
@@ -1538,8 +1537,18 @@ void IModelTileWriter::AddMeshes(Render::Primitives::GeometryCollectionCR geomet
             }
         else
             {
-            BeStringUtilities::FormatHexUInt64(idBuffer, nodeIndex);
-            id = idBuffer;
+            if (enforceDisplayPriority)
+                {
+                // node index is a subcategory Id.
+                Utf8Char subcatIdBuffer[17];
+                BeStringUtilities::FormatHexUInt64(subcatIdBuffer, nodeIndex);
+                id = subcatIdBuffer;
+                }
+            else
+                {
+                // node index is an integer in sequence.
+                id = Utf8PrintfString("%d", nodeIndex);
+                }
             }
 
         Utf8String meshId("Mesh_");
