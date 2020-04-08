@@ -19,7 +19,7 @@ struct iModelHubWebsiteHost : DgnPlatformLib::Host
     //---------------------------------------------------------------------------------------
     //@bsimethod                                   Algirdas.Mikoliunas             12/2017
     //---------------------------------------------------------------------------------------
-    void _SupplyProductName(Utf8StringR name) override { name.assign("iModel Hub Website"); }
+    void _SupplyProductName(Utf8StringR name) override { name.assign("iModel Hub"); }
 
     //---------------------------------------------------------------------------------------
     //@bsimethod                                   Algirdas.Mikoliunas             12/2017
@@ -76,15 +76,14 @@ TEST_F(WebsiteSeedFileTests, CreateSeedFile)
     DgnPlatformLib::Initialize(*new iModelHubWebsiteHost());
 
     CreateDgnDbParams createProjectParams;
-    createProjectParams.SetRootSubjectName("iModel Hub Website seed file");
-    createProjectParams.SetRootSubjectDescription("Seed file for iModel Hub Website.");
+    createProjectParams.SetRootSubjectName("iModel");
     createProjectParams.SetOverwriteExisting(true);
     BeSQLite::DbResult createStatus;
 
     BeFileName newfilePath;
     BentleyStatus status = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectory(newfilePath, L"seedFile");
     BeAssert(SUCCESS == status && "Cannot get local directory");
-    newfilePath.AppendToPath(L"iModelHubWebsiteSeed.bim");
+    newfilePath.AppendToPath(L"Empty.bim");
 
     auto db = DgnDb::CreateDgnDb(&createStatus, newfilePath, createProjectParams);
     db->SaveChanges();
