@@ -258,12 +258,17 @@ bool            DmsHelper::_StageDocuments(BeFileNameR fileLocation, bool downlo
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt   DmsHelper::_FetchWorkspace(BeFileNameR workspaceCfgFile, WStringCR pwMoniker, BeFileNameCR workspaceDir, bool isv8i, bvector<WString> const& additonalFilePatterns)
     {
-    BeFileName fLocation = workspaceDir;
-    _StageDocuments(fLocation, true);
-    if (m_cfgfilePath.empty())
-        return ERROR;
-    workspaceCfgFile = BeFileName(m_cfgfilePath.c_str());
-    return SUCCESS;
+    if (GetRepositoryType().EqualsI(PWREPOSITORYTYPE))
+        {
+        BeFileName fLocation = workspaceDir;
+        _StageDocuments(fLocation, true);
+        if (!m_cfgfilePath.empty())
+            {
+            workspaceCfgFile = BeFileName(m_cfgfilePath.c_str());
+            return SUCCESS;
+            }
+        }
+    return ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -371,4 +376,12 @@ bool   DmsHelper::CreateCFGFile(BeFileNameCR fileLocation, DmsResponseData fileD
 
     m_cfgfilePath = cfgPath;
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Suvik.Rahane                    04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String      DmsHelper::GetRepositoryType()
+    {
+    return m_repositoryType;
     }

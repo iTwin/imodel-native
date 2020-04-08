@@ -124,7 +124,7 @@ bvector<DmsResponseData> DmsClient::_GetWorkspaceFiles(Utf8String token, Utf8Str
     bvector<DmsResponseData> files;
     if (datasource.empty())
         {
-        LOG.warningv("Error datasource url is NULL");
+        LOG.errorv("Error datasource url is NULL");
         return files;
         }
     Utf8String graphqlRequestUrl = UrlProvider::Urls::ProjectWiseDocumentService.Get();
@@ -145,7 +145,7 @@ bvector<DmsResponseData> DmsClient::_GetWorkspaceFiles(Utf8String token, Utf8Str
     auto response = request.Perform().get();
     if (!response.IsSuccess())
         {
-        LOG.errorv("Error getting workspace related files");
+        LOG.errorv("Error call to get workspace files failed");
         return files;
         }
 
@@ -155,7 +155,7 @@ bvector<DmsResponseData> DmsClient::_GetWorkspaceFiles(Utf8String token, Utf8Str
 
     if (document["data"].IsNull() || document["data"]["pwWorkspaces"].IsNull())
         {
-        LOG.warningv("Error getting data or workspace related instances");
+        LOG.warningv("Error getting data or workspace related instances or workspace not found");
         return files;
         }
     cfgData.fileId = WString(document["data"]["pwWorkspaces"][0]["id"].GetString(), 0);

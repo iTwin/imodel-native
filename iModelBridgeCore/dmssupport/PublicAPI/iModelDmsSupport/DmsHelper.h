@@ -59,6 +59,7 @@ struct DmsHelper : public IDmsSupport
             m_dmsClient = dmsClient;
             m_azureHelper = azureHelper;
             }
+        Utf8String GetRepositoryType();
     };
 
 END_BENTLEY_DGN_NAMESPACE

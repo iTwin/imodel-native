@@ -283,15 +283,22 @@ DgnDocumentMonikerPtr PWDocumentManager::_CreateMonikerImplFromDMS(WCharCP porta
             return parentFunction(portableName, fullDirPath.c_str(), providerId, searchPathIn, findFullPathFirst, customXMLString);
 
         // Download Reference File
-        if (m_DMSHelper->_InitializeSession(dmsMoniker))
+        if (m_DMSHelper->GetRepositoryType().EqualsI(PWREPOSITORYTYPE))
             {
-            if (m_DMSHelper->_StageDocuments(fullDirPath, false, true))
+            if (m_DMSHelper->_InitializeSession(dmsMoniker))
                 {
-                if (fullDirPath.DoesPathExist())
-                    return parentFunction(portableName, fullDirPath.c_str(), providerId, searchPathIn, findFullPathFirst, customXMLString);
+                if (m_DMSHelper->_StageDocuments(fullDirPath, false, true))
+                    {
+                    if (fullDirPath.DoesPathExist())
+                        return parentFunction(portableName, fullDirPath.c_str(), providerId, searchPathIn, findFullPathFirst, customXMLString);
+                    }
                 }
+            LOG.errorv("Error downloading reference file: %ls", refFileName.c_str());
             }
-        LOG.errorv("Error downloading reference file.");
+        else
+            {
+            LOG.warningv("Reference file not found: %ls", refFileName.c_str());
+            }
         }
 
     return parentFunction(portableName, fullPathIn, providerId, searchPathIn, findFullPathFirst, customXMLString);
