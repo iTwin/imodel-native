@@ -438,6 +438,7 @@ private:
     DwgGiFillPtr        m_fill;
     DwgDbLineWeight     m_weight;
     uint32_t            m_mappedDgnWeight;  // only a performance need
+    int32_t             m_displayPriority;
     double              m_linetypeScale;
     double              m_thickness;
     DwgTransparency     m_transparency;

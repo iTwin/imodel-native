@@ -1045,6 +1045,7 @@ protected:
     T_DwgRepositoryLinkMap      m_repositoryLinksInSync;
     uint32_t                    m_entitiesImported;
     uint32_t                    m_layersImported;
+    int32_t                     m_displayPriority;
     MessageCenter               m_messageCenter;
     ECN::ECSchemaCP             m_attributeDefinitionSchema;
     ECN::ECSchemaCP             m_aecPropertySetSchema;
@@ -1092,6 +1093,8 @@ private:
     bool                    UpdatePaperspaceView (ViewControllerP view, DwgDbObjectIdCR viewportId);
     DgnElementId            CreateOrUpdateRepositoryLink (DwgDbDatabaseP dwg = nullptr);
     DgnSubCategoryId        GetSubcategoryForDrawingCategory (DefinitionModelR model, DgnCategoryId categoryId, DgnSubCategory::Appearance const& appear, Utf8StringCR name);
+    void                    InitializeDisplayPriority (DwgDbBlockChildIteratorR modelspaceIter);
+    uint32_t                IncrementDisplayPriority (int32_t upBy = 1) { return (m_displayPriority += upBy); }
 
     static void             RegisterProtocolExtensions ();
     static void             UnRegisterProtocolExtensions ();
@@ -1314,10 +1317,16 @@ protected:
     //! Create a new or update an existing element from an entity based on the sync info
     DWG_EXPORT BentleyStatus  ImportOrUpdateEntity (ElementImportInputs& inputs);
     //! Override this method to create application specific object provenance for an input entity
-    //! @param[in] hash The output hash value to be applied as the provenance for the object
+    //! @param[out] hash The output hash value to be applied as the provenance for the object
     //! @param[in] object The source entity for which the provenance should be calculated
     //! @return True to apply returned provenance, false to fallback on the default calculation
+    //! @see _PostCreateObjectProvenance
     virtual bool    _CreateObjectProvenance (BentleyApi::MD5::HashVal& hash, DwgDbObjectCR object) { return false; }
+    //! Override this method to post process the object provenance for an input entity. It may be used to append provenance in addition to what's created by the default implementation, rather than creating the whole provenance from scratch.
+    //! @param[out] hash The input hash value calculated by _CreateObjectProvenance, and may be updated by this method
+    //! @param[in] object The source entity for which the provenance may be updated
+    //! @see _CreateObjectProvenance
+    virtual void    _PostCreateObjectProvenance (BentleyApi::MD5::HashVal& hash, DwgDbObjectCR object) {}
 
     //! @name  Importing layouts
     //! @{
@@ -1503,6 +1512,7 @@ public:
     DWG_EXPORT uint32_t         GetEntitiesImported () const { return m_entitiesImported; }
     DWG_EXPORT DgnModelId       GetGroupModelId () const { return m_groupModelId; }
     DWG_EXPORT DgnModelId       GetSheetListModelId () const { return m_sheetListModelId; }
+    DWG_EXPORT int32_t          GetCurrentDisplayPriority () const { return m_displayPriority; }
     
     };  // DwgImporter
 DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(DwgImporter)

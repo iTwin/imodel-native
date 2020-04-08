@@ -1604,6 +1604,8 @@ DwgSourceAspects::ObjectProvenance::ObjectProvenance(DwgDbObjectCR object, DwgIm
     factory.CreateObjectHash(true);
 
     m_hash = factory.GetHashValue();
+
+    importer._PostCreateObjectProvenance (m_hash, object);
     }
 
 /*---------------------------------------------------------------------------------**//**

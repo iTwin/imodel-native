@@ -452,6 +452,9 @@ BentleyStatus   DwgImporter::ImportOrUpdateEntity (ElementImportInputs& inputs)
     if (nullptr == object)
         return  BentleyStatus::BSIERROR;
 
+    // set display priority per DWG draw order, i.e. sequential
+    this->IncrementDisplayPriority ();
+
     // consult the sync info to see if the entity has been changed, and what action to take:
     IDwgChangeDetector::DetectionResults    detectionResults;
     bool isChanged = this->_GetChangeDetector()._IsElementChanged (detectionResults, *this, *object, inputs.GetModelMapping());
@@ -571,6 +574,8 @@ BentleyStatus   DwgImporter::_ImportEntitySection ()
             return  BSISUCCESS;
         }
 
+    this->InitializeDisplayPriority (*entityIter);
+
     // set modelspace as current space being processed
     m_currentspaceId = m_modelspaceId;
 
@@ -677,6 +682,37 @@ BentleyStatus   DwgImporter::_ImportEntitySection ()
         m_dwgdb->SetPDSIZE (currentPDSIZE);
         
     return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/20
++---------------+---------------+---------------+---------------+---------------+------*/
+void            DwgImporter::InitializeDisplayPriority (DwgDbBlockChildIteratorR masterModelspaceIter)
+    {
+    // count total entities in all modelspaces of the master file and xref files
+    size_t  entityCount = 0;
+    for (masterModelspaceIter.Start(); !masterModelspaceIter.Done(); masterModelspaceIter.Step())
+        entityCount++;
+
+    for (auto xref : m_loadedXrefFiles)
+        {
+        DwgDbBlockTableRecordPtr xrefModelspace(xref.GetDatabase().GetModelspaceId(), DwgDbOpenMode::ForRead);
+        if (xrefModelspace.OpenStatus() == DwgDbStatus::Success)
+            {
+            DwgDbBlockChildIteratorPtr  iter = xrefModelspace->GetBlockChildIterator ();
+            if (iter.IsValid() && iter->IsValid())
+                {
+                for (iter->Start(); !iter->Done(); iter->Step())
+                    entityCount++;
+                }
+            }
+        }
+    entityCount += 2000;
+
+    if (entityCount > UINT_MAX)
+        entityCount = UINT_MAX - 2;
+
+    m_displayPriority = entityCount > 10000 ? (-0.5 * entityCount) : 0;
     }
 
 /*---------------------------------------------------------------------------------**//**

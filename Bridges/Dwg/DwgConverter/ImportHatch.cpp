@@ -52,7 +52,7 @@ GeometricPrimitivePtr DwgHatchExt::_ConvertToGeometry (DwgDbEntityCP entity, boo
     {
     // called from block draw or above _ConvertToBim from importing model entity
     m_hatch = DwgDbHatch::Cast (entity);
-    if (m_hatch == nullptr)
+    if (m_hatch == nullptr || (!m_hatch->IsSolidFill() && !m_hatch->IsGradient()))
         return  nullptr;
 
     size_t  numLoops = m_hatch->GetLoopCount ();

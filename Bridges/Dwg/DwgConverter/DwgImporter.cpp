@@ -729,6 +729,7 @@ DwgImporter::DwgImporter (DwgImporter::Options& options) : m_options(options), m
     m_isProcessingDwgModelMap = false;
     m_presentationRuleContents.clear ();
     m_sizeTolerance = 0.0;
+    m_displayPriority = 0;
 
     this->SetStepName (ProgressMessage::STEP_INITIALIZING());
 

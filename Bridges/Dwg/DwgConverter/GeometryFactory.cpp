@@ -85,6 +85,7 @@ void DrawParameters::Initialize (DwgDbEntityCR ent, DrawParameters const* parent
     m_thickness = this->InitThicknessFromEntity(ent);
     m_sourceEntity = &ent;
     m_dwgdb = ent.GetDatabase ();
+    m_displayPriority = m_dwgImporter.GetCurrentDisplayPriority ();
 
     // if this is a new entity, use template DWG or fallback to master file:
     if (m_dwgdb.IsNull() && nullptr != templateEntity)
@@ -651,6 +652,7 @@ void DrawParameters::GetDisplayParams (Render::GeometryParams& params)
         }
 
     params.SetGeometryClass (Render::DgnGeometryClass::Primary);
+    params.SetDisplayPriority (m_displayPriority);
     }
 
 /*---------------------------------------------------------------------------------**//**
