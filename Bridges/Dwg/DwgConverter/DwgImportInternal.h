@@ -16,6 +16,7 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <Bentley/BeDirectoryIterator.h>
 #include <Bentley/BeFileListIterator.h>
+#include <Bentley/BeTextFile.h>
 #include <Bentley/Desktop/FileSystem.h>
 #include <BeHttp/HttpClient.h>
 #include <BeSQLite/BeSQLite.h>
@@ -250,6 +251,7 @@ private:
     void ApplyViewportClipping (Sheet::ViewAttachmentR viewAttachment);
     bool ComputeClipperTransformation (TransformR toClipper, RotMatrixCR viewRotation);
     void ComputeEnvironment (DisplayStyle3dR displayStyle);
+    void ApplyGeoMapMode (DisplayStyle3dR displayStyle) const;
     DgnTextureId FindEnvironmentImageFile (BeFileNameCR filename) const;
     bool UpdateViewName (ViewDefinitionR view, Utf8StringCR proposedName);
     void UpdateViewAspect (ViewDefinitionR view, Utf8StringCR viewName, bool isNew);

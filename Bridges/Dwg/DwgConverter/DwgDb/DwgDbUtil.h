@@ -38,6 +38,7 @@ public:
     static DVec3dCP     DVec3dCPFrom (DWGGE_TypeCP(Vector3d) geVectors);
     static DVec2d       DVec2dFrom (DWGGE_TypeCR(Vector2d) gePoint);
     static DRange3d     DRange3dFrom (DWGDB_SDKNAME(OdGeExtents3d,AcDbExtents) const& extents);
+    static DRange2d     DRange2dFrom (DWGDB_SDKNAME(OdGeExtents2d,AcDbExtents2d) const& extents);
     static DRange2d     DRange2dFrom (DWGGE_TypeCR(Point2d) extents);
     static DEllipse3d   DEllipse3dFrom (DWGGE_TypeCR(EllipArc3d) geEllipse);
     static DEllipse3d   DEllipse3dFrom (DWGGE_TypeCR(EllipArc2d) geEllipse);

@@ -133,6 +133,8 @@ public:
     DWG_EXPORT static BentleyStatus    ExtractAndConcatenateTextsFrom (Utf8StringR texts, DgnElementCR element);
     //! Add reference schemas and add DynamicSchema attribute to the target schema
     DWG_EXPORT static ECObjectsStatus  MakeSchemaDynamicForDwg (DgnDbR db, ECSchemaR targetSchema);
+    //! Read the first string value on a dictionary variable object, aka DICTIONARYVAR per DXF group code.
+    DWG_EXPORT static DwgDbStatus      ExtractDictionaryVariable (Utf8StringR outString, DwgDbObjectCR inObject);
     };  // DwgHelper
 
 END_DWG_NAMESPACE

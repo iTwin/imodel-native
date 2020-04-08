@@ -846,5 +846,220 @@ public:
     };  // DwgDbGeoData
 DWGDB_DEFINE_OBJECTPTR (GeoData)
 
+class DwgDbGeoCoordinateSystem;
+typedef RefCountedPtr<DwgDbGeoCoordinateSystem> DwgDbGeoCoordinateSystemPtr;
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          03/20
++===============+===============+===============+===============+===============+======*/
+class DwgDbGeoCoordinateSystem : public RefCountedBase
+    {
+//__PUBLISH_SECTION_END__
+private:
+#ifdef DWGTOOLKIT_OpenDwg
+    OdDbGeoCoordinateSystemPtr  m_geoCoordinateSystem;
+    DwgDbGeoCoordinateSystem (OdDbGeoCoordinateSystem* gcs) : m_geoCoordinateSystem(gcs) {}
+#elif DWGTOOLKIT_RealDwg
+    AcDbGeoCoordinateSystem*    m_geoCoordinateSystem;
+    DwgDbGeoCoordinateSystem (AcDbGeoCoordinateSystem* gcs) : m_geoCoordinateSystem(gcs) {}
+#endif
+//__PUBLISH_SECTION_START__
+
+public:
+    enum class Type
+        {
+        Unknown     = DWGDB_Type(GeoCoordinateSystem)::kTypeUnknown,
+        Arbitrary   = DWGDB_Type(GeoCoordinateSystem)::kTypeArbitrary,
+        Geographic  = DWGDB_Type(GeoCoordinateSystem)::kTypeGeographic,
+        Projected   = DWGDB_Type(GeoCoordinateSystem)::kTypeProjected,
+        };  // Type
+
+    enum class ProjectionCode
+        {
+        Unknown     = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeUnknown,
+        Alber       = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeAlber,
+        Azede       = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeAzede,
+        Azmea       = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeAzmea,
+        Azmed       = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeAzmed,
+        Bipolar     = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeBipolar,
+        Bonne       = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeBonne,
+        Cassini     = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeCassini,
+        Eckert4     = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeEckert4,
+        Eckert6     = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeEckert6,
+        Edcnc       = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeEdcnc,
+        Edcyl       = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeEdcyl,
+        GaussK      = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeGaussK,
+        Gnomonic    = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeGnomonic,
+        Goode       = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeGoode,
+        Hom1uv      = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeHom1uv,
+        Hom1xy      = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeHom1xy,
+        Hom2uv      = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeHom2uv,
+        Hom2xy      = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeHom2xy,
+        Krovak      = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeKrovak,
+        Krvk95      = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeKrvk95,
+        LL          = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeLL,
+        Lm1sp       = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeLm1sp,
+        Lm2sp       = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeLm2sp,
+        Lmblg       = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeLmblg,
+        Lmtan       = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeLmtan,
+        Miller      = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeMiller,
+        Mndotl      = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeMndotl,
+        Mndott      = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeMndott,
+        Modpc       = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeModpc,
+        Mollweid    = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeMollweid,
+        Mrcat       = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeMrcat,
+        MrcatK      = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeMrcatK,
+        Mstero      = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeMstero,
+        Neacyl      = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeNeacyl,
+        Nerth       = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeNerth,
+        Nzealand    = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeNzealand,
+        OblqM       = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeOblqM,
+        Obqcyl      = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeObqcyl,
+        Ortho       = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeOrtho,
+        Ostn02      = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeOstn02,
+        Ostn97      = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeOstn97,
+        Ostro       = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeOstro,
+        Plycn       = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodePlycn,
+        Pstro       = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodePstro,
+        Pstrosl     = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodePstrosl,
+        Rskew       = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeRskew,
+        Rskewc      = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeRskewc,
+        Rskewo      = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeRskewo,
+        Robinson    = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeRobinson,
+        Sinus       = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeSinus,
+        Sotrm       = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeSotrm,
+        Sstro       = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeSstro,
+        Swiss       = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeSwiss,
+        Sys34       = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeSys34,
+        Sys34_99    = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeSys34_99,
+        Teacyl      = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeTeacyl,
+        Tm          = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeTm,
+        Trmeraf     = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeTrmeraf,
+        Trmrkrg     = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeTrmrkrg,
+        Trmrs       = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeTrmrs,
+        Vdgrntn     = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeVdgrntn,
+        Wccsl       = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeWccsl,
+        Wccst       = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeWccst,
+        Utm         = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeUtm,
+        Winkl       = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeWinkl,
+        Nrthsrt     = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeNrthsrt,
+        Lmbrtaf     = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeLmbrtaf,
+        Sys34_01    = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeSys34_01,
+        EdcylE      = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodeEdcylE,
+        PlateCarree = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodePlateCarree,
+        PvMercator  = DWGDB_Type(GeoCoordinateSystem)::kProjectionCodePvMercator,
+        };  // ProjectionCode
+
+    enum class Unit
+        {
+        Unknown             = DWGDB_Type(GeoCoordinateSystem)::kUnitUnknown,
+        Meter               = DWGDB_Type(GeoCoordinateSystem)::kUnitMeter,
+        Foot                = DWGDB_Type(GeoCoordinateSystem)::kUnitFoot,
+        Inch                = DWGDB_Type(GeoCoordinateSystem)::kUnitInch,
+        IFoot               = DWGDB_Type(GeoCoordinateSystem)::kUnitIFoot,
+        ClarkeFoot          = DWGDB_Type(GeoCoordinateSystem)::kUnitClarkeFoot,
+        IInch               = DWGDB_Type(GeoCoordinateSystem)::kUnitIInch,
+        Centimeter          = DWGDB_Type(GeoCoordinateSystem)::kUnitCentimeter,
+        Kilometer           = DWGDB_Type(GeoCoordinateSystem)::kUnitKilometer,
+        Yard                = DWGDB_Type(GeoCoordinateSystem)::kUnitYard,
+        SearsYard           = DWGDB_Type(GeoCoordinateSystem)::kUnitSearsYard,
+        Mile                = DWGDB_Type(GeoCoordinateSystem)::kUnitMile,
+        IYard               = DWGDB_Type(GeoCoordinateSystem)::kUnitIYard,
+        IMile               = DWGDB_Type(GeoCoordinateSystem)::kUnitIMile,
+        Knot                = DWGDB_Type(GeoCoordinateSystem)::kUnitKnot,
+        NautM               = DWGDB_Type(GeoCoordinateSystem)::kUnitNautM,
+        Lat66               = DWGDB_Type(GeoCoordinateSystem)::kUnitLat66,
+        Lat83               = DWGDB_Type(GeoCoordinateSystem)::kUnitLat83,
+        Decimeter           = DWGDB_Type(GeoCoordinateSystem)::kUnitDecimeter,
+        Millimeter          = DWGDB_Type(GeoCoordinateSystem)::kUnitMillimeter,
+        Dekameter           = DWGDB_Type(GeoCoordinateSystem)::kUnitDekameter,
+        Hectometer          = DWGDB_Type(GeoCoordinateSystem)::kUnitHectometer,
+        GermanMeter         = DWGDB_Type(GeoCoordinateSystem)::kUnitGermanMeter,
+        CaGrid              = DWGDB_Type(GeoCoordinateSystem)::kUnitCaGrid,
+        ClarkeChain         = DWGDB_Type(GeoCoordinateSystem)::kUnitClarkeChain,
+        GunterChain         = DWGDB_Type(GeoCoordinateSystem)::kUnitGunterChain,
+        BenoitChain         = DWGDB_Type(GeoCoordinateSystem)::kUnitBenoitChain,
+        SearsChain          = DWGDB_Type(GeoCoordinateSystem)::kUnitSearsChain,
+        ClarkeLink          = DWGDB_Type(GeoCoordinateSystem)::kUnitClarkeLink,
+        GunterLink          = DWGDB_Type(GeoCoordinateSystem)::kUnitGunterLink,
+        BenoitLink          = DWGDB_Type(GeoCoordinateSystem)::kUnitBenoitLink,
+        SearsLink           = DWGDB_Type(GeoCoordinateSystem)::kUnitSearsLink,
+        Rod                 = DWGDB_Type(GeoCoordinateSystem)::kUnitRod,
+        Perch               = DWGDB_Type(GeoCoordinateSystem)::kUnitPerch,
+        Pole                = DWGDB_Type(GeoCoordinateSystem)::kUnitPole,
+        Furlong             = DWGDB_Type(GeoCoordinateSystem)::kUnitFurlong,
+        Rood                = DWGDB_Type(GeoCoordinateSystem)::kUnitRood,
+        CapeFoot            = DWGDB_Type(GeoCoordinateSystem)::kUnitCapeFoot,
+        Brealey             = DWGDB_Type(GeoCoordinateSystem)::kUnitBrealey,
+        SearsFoot           = DWGDB_Type(GeoCoordinateSystem)::kUnitSearsFoot,
+        GoldCoastFoot       = DWGDB_Type(GeoCoordinateSystem)::kUnitGoldCoastFoot,
+        MicroInch           = DWGDB_Type(GeoCoordinateSystem)::kUnitMicroInch,
+        IndianYard          = DWGDB_Type(GeoCoordinateSystem)::kUnitIndianYard,
+        IndianFoot          = DWGDB_Type(GeoCoordinateSystem)::kUnitIndianFoot,
+        IndianFt37          = DWGDB_Type(GeoCoordinateSystem)::kUnitIndianFt37,
+        IndianFt62          = DWGDB_Type(GeoCoordinateSystem)::kUnitIndianFt62,
+        IndianFt75          = DWGDB_Type(GeoCoordinateSystem)::kUnitIndianFt75,
+        IndianYd37          = DWGDB_Type(GeoCoordinateSystem)::kUnitIndianYd37,
+        Decameter           = DWGDB_Type(GeoCoordinateSystem)::kUnitDecameter,
+        InternationalChain  = DWGDB_Type(GeoCoordinateSystem)::kUnitInternationalChain,
+        InternationalLink   = DWGDB_Type(GeoCoordinateSystem)::kUnitInternationalLink,
+        Degree              = DWGDB_Type(GeoCoordinateSystem)::kUnitDegree,
+        Grad                = DWGDB_Type(GeoCoordinateSystem)::kUnitGrad,
+        Grade               = DWGDB_Type(GeoCoordinateSystem)::kUnitGrade,
+        MapInfo             = DWGDB_Type(GeoCoordinateSystem)::kUnitMapInfo,
+        Mil                 = DWGDB_Type(GeoCoordinateSystem)::kUnitMil,
+        Minute              = DWGDB_Type(GeoCoordinateSystem)::kUnitMinute,
+        Radian              = DWGDB_Type(GeoCoordinateSystem)::kUnitRadian,
+        Second              = DWGDB_Type(GeoCoordinateSystem)::kUnitSecond,
+        Decisec             = DWGDB_Type(GeoCoordinateSystem)::kUnitDecisec,
+        Centisec            = DWGDB_Type(GeoCoordinateSystem)::kUnitCentisec,
+        Millisec            = DWGDB_Type(GeoCoordinateSystem)::kUnitMillisec,
+        };  // Unit
+
+    struct ProjectionParameter
+        {
+        DwgString   m_name;
+        double      m_value;
+        };  // ProjectionParameter
+    typedef bvector<ProjectionParameter>    ProjectionParameters;
+
+    struct Datum
+        {
+        DwgString   m_id;
+        DwgString   m_description;
+        };  // Datum
+
+    struct Ellipsoid
+        {
+        DwgString   m_id;
+        DwgString   m_description;
+        double      m_polarRadius;
+        double      m_eccentricity;
+        };  // Ellipsoid
+
+    DWGDB_EXPORT DwgDbStatus    GetCartesianExtents (DRange2dR extents) const;
+    DWGDB_EXPORT DwgDbStatus    GetDatum (Datum& datum) const;
+    DWGDB_EXPORT DwgDbStatus    GetId (DwgStringR coordSystemId) const;
+    DWGDB_EXPORT DwgDbStatus    GetDescription (DwgStringR coordSystemDescription) const;
+    DWGDB_EXPORT DwgDbStatus    GetEllipsoid (Ellipsoid& ellisoid) const;
+    DWGDB_EXPORT DwgDbStatus    GetEpsgCode (int& epsgCode) const;
+    DWGDB_EXPORT DwgDbStatus    GetGeodeticExtents (DRange2dR extents) const;
+    DWGDB_EXPORT DwgDbStatus    GetOffset (DVec2dR offset) const;
+    DWGDB_EXPORT DwgDbStatus    GetProjectionCode (ProjectionCode& projectionCode) const;
+    //! The special projection parameters may include: Origin Longitude, Origin Latitude, False Easting, False Northing, Scale Reduction
+    DWGDB_EXPORT DwgDbStatus    GetProjectionParameters (ProjectionParameters& parameters, bool includeSpecialParams) const;
+    DWGDB_EXPORT DwgDbStatus    GetType (Type& type) const;
+    DWGDB_EXPORT DwgDbStatus    GetUnit (Unit& unit) const;
+    DWGDB_EXPORT DwgDbStatus    GetUnit (DwgDbUnits& unit) const;
+    DWGDB_EXPORT DwgDbStatus    GetUnitScale (double& scale) const;
+    DWGDB_EXPORT DwgDbStatus    GetWktRepresentation (DwgStringR wkt) const;
+    DWGDB_EXPORT DwgDbStatus    GetXmlRepresentation (DwgStringR xml) const;
+    DWGDB_EXPORT bool           IsValid () const;
+    DWGDB_EXPORT static DwgDbStatus Create (DwgDbGeoCoordinateSystemPtr& out, DwgStringCR def);
+    DWGDB_EXPORT static DwgDbStatus CreateAll (bvector<DwgDbGeoCoordinateSystemPtr>& out, DPoint3dCR geodeticPoint);
+    DWGDB_EXPORT ~DwgDbGeoCoordinateSystem ();
+    };  // DwgDbGeoCoordinateSystem
+DEFINE_NO_NAMESPACE_TYPEDEFS (DwgDbGeoCoordinateSystem)
+
 END_DWGDB_NAMESPACE
 //__PUBLISH_SECTION_END__

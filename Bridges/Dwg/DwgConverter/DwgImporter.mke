@@ -152,6 +152,7 @@ LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)Raster$(libext)
 LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)ECPresentation$(libext)
 LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)iModelBridge$(libext)
 LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)pskernel$(libext)
+LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)BaseGeoCoord$(libext)
 
 %if $(DWGTOOLKIT) == "OpenDwg"
 

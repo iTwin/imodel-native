@@ -2262,3 +2262,53 @@ ECObjectsStatus DwgHelper::MakeSchemaDynamicForDwg (DgnDbR db, ECSchemaR targetS
 
     return  status;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/20
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgHelper::ExtractDictionaryVariable (Utf8StringR outString, DwgDbObjectCR inObject)
+    {
+    struct DictionaryVar : IDxfFiler
+        {
+    private:
+        DwgDbDatabasePtr    m_dwg;
+        DwgDbObjectCR   m_dictionaryVar;
+        Utf8StringR     m_outputValue;
+
+    public:
+        explicit DictionaryVar (Utf8StringR out, DwgDbObjectCR obj) : m_outputValue(out), m_dictionaryVar(obj), m_dwg(obj.GetDatabase()) {}
+        DwgFilerType    _GetFilerType () const override { return DwgFilerType::BagFiler; }
+        DwgDbDatabaseP  _GetDatabase () const override { return const_cast<DwgDbDatabaseP>(m_dwg.get()); }
+        DwgDbStatus _Write (DxfGroupCode code, int8_t v) override { return DwgDbStatus::Success; }
+        DwgDbStatus _Write (DxfGroupCode code, int16_t v) override { return DwgDbStatus::Success; }
+        DwgDbStatus _Write (DxfGroupCode code, int32_t v) override { return DwgDbStatus::Success; }
+        DwgDbStatus _Write (DxfGroupCode code, int64_t v) override { return DwgDbStatus::Success; }
+        DwgDbStatus _Write (DxfGroupCode code, uint8_t v) override { return DwgDbStatus::Success; }
+        DwgDbStatus _Write (DxfGroupCode code, uint16_t v) override { return DwgDbStatus::Success; }
+        DwgDbStatus _Write (DxfGroupCode code, uint32_t v) override { return DwgDbStatus::Success; }
+        DwgDbStatus _Write (DxfGroupCode code, uint64_t v) override { return DwgDbStatus::Success; }
+        DwgDbStatus _Write (DxfGroupCode code, bool v) override { return DwgDbStatus::Success; }
+        DwgDbStatus _Write (DxfGroupCode code, double v, DoublePrecision prec) override { return DwgDbStatus::Success; }
+        DwgDbStatus _Write (DxfGroupCode code, DPoint2dCR v, DoublePrecision prec) override { return DwgDbStatus::Success; }
+        DwgDbStatus _Write (DxfGroupCode code, DPoint3dCR v, DoublePrecision prec) override { return DwgDbStatus::Success; }
+        DwgDbStatus _Write (DxfGroupCode code, DVec2dCR v, DoublePrecision prec) override { return DwgDbStatus::Success; }
+        DwgDbStatus _Write (DxfGroupCode code, DVec3dCR v, DoublePrecision prec) override { return DwgDbStatus::Success; }
+        DwgDbStatus _Write (DxfGroupCode code, DwgBinaryDataCR v) override { return DwgDbStatus::Success; }
+        DwgDbStatus _Write (DxfGroupCode code, double x, double y, double z, DoublePrecision prec) override { return DwgDbStatus::Success; }
+        DwgDbStatus _Write(DxfGroupCode code, DwgDbObjectIdCR v) override { return DwgDbStatus::Success; }
+        DwgDbStatus _Write(DxfGroupCode code, DwgDbHandleCR v) override { return DwgDbStatus::Success; }
+        DwgDbStatus _Write (DxfGroupCode code, DwgStringCR v) override
+            {
+            if (code == DxfGroupCode::Text)
+                {
+                m_outputValue.Assign (v.c_str());
+                // stop the iteration
+                return DwgDbStatus::UnknownError;
+                }
+            return DwgDbStatus::Success;
+            }
+        };
+
+    DictionaryVar filer(outString, inObject);
+    return inObject.DxfOut (filer);
+    }

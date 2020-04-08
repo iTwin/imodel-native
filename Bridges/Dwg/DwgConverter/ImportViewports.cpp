@@ -404,6 +404,63 @@ void            ViewportFactory::ComputeSpatialDisplayStyle (DisplayStyle3dR dis
 
     // set solar, scene lighting and backgrounds
     this->ComputeEnvironment (displayStyle);
+
+    // set background map for GCS
+    if (m_importer.GetDgnDb().GeoLocation().GetDgnGCS() != nullptr)
+        this->ApplyGeoMapMode (displayStyle);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/20
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ViewportFactory::ApplyGeoMapMode (DisplayStyle3dR displayStyle) const
+    {
+    if (m_inputViewport == nullptr)
+        return;
+
+    // check GEOMAPMODE stored on viewport's extended dictionary (i.e. sys var GEOMAP in ACAD)
+    Utf8String  geoMapMode;
+    DwgDbDictionaryPtr  extDictionary(m_inputViewport->GetExtensionDictionary(), DwgDbOpenMode::ForRead);
+    if (extDictionary.OpenStatus() == DwgDbStatus::Success)
+        {
+        DwgDbObjectId   objectId;
+        if (extDictionary->GetIdAt(objectId, L"AcDbVariableDictionary") == DwgDbStatus::Success)
+            {
+            DwgDbDictionaryPtr  varDictionary(objectId, DwgDbOpenMode::ForRead);
+            if (varDictionary.OpenStatus() == DwgDbStatus::Success && varDictionary->GetIdAt(objectId, L"GEOMAPMODE") == DwgDbStatus::Success)
+                {
+                DwgDbObjectPtr  dictionaryVar(objectId, DwgDbOpenMode::ForRead);
+                if (dictionaryVar.OpenStatus() == DwgDbStatus::Success)
+                    DwgHelper::ExtractDictionaryVariable (geoMapMode, *dictionaryVar);
+                }
+            }
+        }
+    if (geoMapMode.empty())
+        return;
+
+    BackgroundMapProps mapProps = displayStyle.GetBackgroundMap ();
+
+    if (geoMapMode.Equals("0"))
+        mapProps.m_mapType = BackgroundMapType::None;
+    else if (geoMapMode.Equals("1"))
+        mapProps.m_mapType = BackgroundMapType::Aerial;
+    else if (geoMapMode.Equals("2"))
+        mapProps.m_mapType = BackgroundMapType::Street;
+    else if (geoMapMode.Equals("3"))
+        mapProps.m_mapType = BackgroundMapType::Hybrid;
+    else
+        return;
+        
+    mapProps.SetProviderType (BackgroundMapProviderType::Bing);
+    displayStyle.SetBackgroundMap (mapProps);
+
+    // toggle on background map if not already on
+    auto viewFlags = displayStyle.GetViewFlags ();
+    if (!viewFlags.ShowBackgroundMap())
+        {
+        viewFlags.SetShowBackgroundMap (true);
+        displayStyle.SetViewFlags (viewFlags);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

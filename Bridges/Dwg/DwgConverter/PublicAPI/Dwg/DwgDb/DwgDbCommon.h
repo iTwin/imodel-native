@@ -49,6 +49,7 @@
 #include    <Teigha/Drawing/Include/DbPlaneSurface.h>
 #include    <Teigha/Drawing/Include/DbRevolvedSurface.h>
 #include    <Teigha/Drawing/Include/DbSweptSurface.h>
+#include    <Teigha/Drawing/Include/OdDbGeoCoordinateSystem.h>
 #include    <Teigha/Drawing/Include/ModelDocObj/DbViewBorder.h>
 #include    <Teigha/Drawing/Include/ModelDocObj/DbViewRepBlockReference.h>
 #include    <Teigha/KernelBase/Include/OdString.h>
@@ -90,6 +91,7 @@
 #include    <RealDwg/Base/AcDbLMgr.h>
 #include    <RealDwg/Base/AcString.h>
 #include    <RealDwg/Base/idver.h>
+#include    <RealDwg/Base/AcDbGeoCoordinateSystem.h>
 
 #else
     #error  "Must define DWGTOOLKIT!!!"

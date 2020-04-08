@@ -1412,6 +1412,8 @@ public:
     DWG_EXPORT bool             HasRootTransformChanged () const { return m_rootTransformInfo.HasChanged(); }
     //! @return Current the root transform.
     TransformCR                 GetRootTransform () const { return m_rootTransformInfo.GetRootTransform(); }
+    //! @return Current the root transform for edit.
+    TransformR                  GetRootTransformR () { return m_rootTransformInfo.GetRootTransformR(); }
     DWG_EXPORT double           GetScaleToMeters () const;
     DwgDbObjectId               GetCurrentViewportId () { return m_currentGeometryOptions.GetViewportId(); }
     DwgDbObjectIdCR             GetCurrentSpaceId () const { return m_currentspaceId; }

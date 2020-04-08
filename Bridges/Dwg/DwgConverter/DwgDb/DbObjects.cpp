@@ -1240,8 +1240,13 @@ DwgDbStatus   DwgDbGeoData::TransformFromLonLatAlt (DPoint3dR out, DPoint3dCR in
     DWGGE_Type(Point3d) inPoint = Util::GePoint3dFrom(in);
     DWGGE_Type(Point3d) outPoint;
     
-    auto status = T_Super::transformFromLonLatAlt (outPoint, inPoint);
-    return  ToDwgDbStatus(status);
+    auto es = T_Super::transformFromLonLatAlt (inPoint, outPoint);
+
+    DwgDbStatus status = ToDwgDbStatus(es);
+    if (status == DwgDbStatus::Success)
+        out = Util::DPoint3dFrom (outPoint);
+
+    return  status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1252,8 +1257,13 @@ DwgDbStatus   DwgDbGeoData::TransformToLonLatAlt (DPoint3dR out, DPoint3dCR in) 
     DWGGE_Type(Point3d) inPoint = Util::GePoint3dFrom(in);
     DWGGE_Type(Point3d) outPoint;
     
-    auto status = T_Super::transformToLonLatAlt (outPoint, inPoint);
-    return  ToDwgDbStatus(status);
+    auto es = T_Super::transformToLonLatAlt (inPoint, outPoint);
+
+    DwgDbStatus status = ToDwgDbStatus(es);
+    if (status == DwgDbStatus::Success)
+        out = Util::DPoint3dFrom (outPoint);
+
+    return  status;
     }
 
 DwgDbGeoData::CoordinateType    DwgDbGeoData::GetCoordinateSystemType () const { return static_cast<CoordinateType>(T_Super::coordinateType()); }
@@ -1271,3 +1281,257 @@ DPoint3d      DwgDbGeoData::GetReferencePoint () const { return Util::DPoint3dFr
 double        DwgDbGeoData::GetCoordinateProjectionRadius () const { return T_Super::coordinateProjectionRadius(); }
 double        DwgDbGeoData::GetScaleFactor () const { return T_Super::scaleFactor(); }
 double        DwgDbGeoData::GetSeaLevelElevation () const { return T_Super::seaLevelElevation(); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/20
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbGeoCoordinateSystem::Create (DwgDbGeoCoordinateSystemPtr& out, DwgStringCR def)
+    {
+    DWGDB_SDKNAME(OdDbGeoCoordinateSystemPtr,AcDbGeoCoordinateSystem*)  gcs;
+
+    gcs = nullptr;
+    auto es = DWGDB_Type(GeoCoordinateSystem)::create (def, gcs);
+
+    DwgDbStatus status = ToDwgDbStatus (es);
+    if (status == DwgDbStatus::Success)
+        out = new DwgDbGeoCoordinateSystem (gcs);
+
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/20
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbGeoCoordinateSystem::CreateAll (bvector<DwgDbGeoCoordinateSystemPtr>& out, DPoint3dCR geodeticPoint)
+    {
+    DWGDB_SDKNAME(OdArray<OdDbGeoCoordinateSystemPtr>,AcArray<AcDbGeoCoordinateSystem*>)  gcsArray;
+
+    auto es = DWGDB_SDKCLASSNAME(GeoCoordinateSystem)::createAll (Util::GePoint3dFrom(geodeticPoint), gcsArray);
+
+    DwgDbStatus status = ToDwgDbStatus (es);
+    if (status == DwgDbStatus::Success)
+        {
+        for (auto gcs : gcsArray)
+            out.push_back (new DwgDbGeoCoordinateSystem(gcs));
+        }
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/20
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbGeoCoordinateSystem::~DwgDbGeoCoordinateSystem ()
+    {
+#ifdef DWGTOOLKIT_RealDwg
+    if (m_geoCoordinateSystem != nullptr)
+        {
+        delete m_geoCoordinateSystem;
+        m_geoCoordinateSystem = nullptr;
+        }
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/20
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbGeoCoordinateSystem::GetCartesianExtents (DRange2dR extents) const
+    {
+    DwgDbStatus status = DwgDbStatus::InvalidData;
+    if (this->IsValid())
+        {
+        DWGDB_SDKNAME(OdGeExtents2d,AcDbExtents2d)  exts2d;
+        auto es = m_geoCoordinateSystem->getCartesianExtents (exts2d);
+
+        status = ToDwgDbStatus (es);
+        if (status == DwgDbStatus::Success)
+            extents = Util::DRange2dFrom (exts2d);
+        }
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/20
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbGeoCoordinateSystem::GetGeodeticExtents (DRange2dR extents) const
+    {
+    DwgDbStatus status = DwgDbStatus::InvalidData;
+    if (this->IsValid())
+        {
+        DWGDB_SDKNAME(OdGeExtents2d,AcDbExtents2d)  exts2d;
+        auto es = m_geoCoordinateSystem->getGeodeticExtents (exts2d);
+
+        status = ToDwgDbStatus (es);
+        if (status == DwgDbStatus::Success)
+            extents = Util::DRange2dFrom (exts2d);
+        }
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/20
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbGeoCoordinateSystem::GetDatum (Datum& datum) const
+    {
+    DwgDbStatus status = DwgDbStatus::InvalidData;
+    if (this->IsValid())
+        {
+        DWGDB_Type(GeoDatum)    geoDatum;
+        auto es = m_geoCoordinateSystem->getDatum (geoDatum);
+
+        status = ToDwgDbStatus(es);
+        if (status == DwgDbStatus::Success)
+            {
+            datum.m_id = geoDatum.id;
+            datum.m_description = geoDatum.desc;
+            }
+        }
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/20
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbGeoCoordinateSystem::GetEllipsoid (Ellipsoid& ellipsoid) const
+    {
+    DwgDbStatus status = DwgDbStatus::InvalidData;
+    if (this->IsValid())
+        {
+        DWGDB_Type(GeoEllipsoid)    ellip;
+        auto es = m_geoCoordinateSystem->getEllipsoid(ellip);
+
+        status = ToDwgDbStatus(es);
+        if (status == DwgDbStatus::Success)
+            {
+            ellipsoid.m_id = ellip.id;
+            ellipsoid.m_description = ellip.desc;
+            ellipsoid.m_polarRadius = ellip.polarRadius;
+            ellipsoid.m_eccentricity = ellip.eccentricity;
+            }
+        }
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/20
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbGeoCoordinateSystem::GetOffset (DVec2dR offset) const
+    {
+    DwgDbStatus status = DwgDbStatus::InvalidData;
+    if (this->IsValid())
+        {
+        DWGGE_Type(Vector2d)    vector2d;
+        auto es = m_geoCoordinateSystem->getOffset (vector2d);
+
+        status = ToDwgDbStatus (es);
+        if (status == DwgDbStatus::Success)
+            offset = Util::DVec2dFrom (vector2d);
+        }
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/20
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbGeoCoordinateSystem::GetProjectionCode (ProjectionCode& projectionCode) const
+    {
+    DwgDbStatus status = DwgDbStatus::InvalidData;
+    if (this->IsValid())
+        {
+        DWGDB_Type(GeoCoordinateSystem)::ProjectionCode code;
+        auto es = m_geoCoordinateSystem->getProjectionCode (code);
+
+        status = ToDwgDbStatus (es);
+        if (status == DwgDbStatus::Success)
+            projectionCode = static_cast<ProjectionCode>(code);
+        }
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/20
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbGeoCoordinateSystem::GetProjectionParameters (ProjectionParameters& parameters, bool includeSpecialParams) const
+    {
+    DwgDbStatus status = DwgDbStatus::InvalidData;
+    if (this->IsValid())
+        {
+        DWG_Type(Array)<DWGDB_Type(GeoProjectionParameter)> params;
+
+        auto es = m_geoCoordinateSystem->getProjectionParameters (params, includeSpecialParams);
+
+        status = ToDwgDbStatus (es);
+        if (status == DwgDbStatus::Success)
+            {
+            for (auto entry = params.begin(); entry != params.end(); entry++)
+                {
+                ProjectionParameter param;
+                param.m_name = entry->name;
+                param.m_value = entry->value;
+                parameters.push_back (param);
+                }
+            }
+        }
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/20
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbGeoCoordinateSystem::GetType (Type& type) const
+    {
+    DwgDbStatus status = DwgDbStatus::InvalidData;
+    if (this->IsValid())
+        {
+        DWGDB_Type(GeoCoordinateSystem)::Type geoType;
+        auto es = m_geoCoordinateSystem->getType (geoType);
+
+        status = ToDwgDbStatus (es);
+        if (status == DwgDbStatus::Success)
+            type = static_cast<Type>(geoType);
+        }
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/20
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbGeoCoordinateSystem::GetUnit (Unit& unit) const
+    {
+    DwgDbStatus status = DwgDbStatus::InvalidData;
+    if (this->IsValid())
+        {
+        DWGDB_Type(GeoCoordinateSystem)::Unit   geoUnit;
+        auto es = m_geoCoordinateSystem->getUnit (geoUnit);
+
+        status = ToDwgDbStatus (es);
+        if (status == DwgDbStatus::Success)
+            unit = static_cast<Unit>(geoUnit);
+        }
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/20
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbGeoCoordinateSystem::GetUnit (DwgDbUnits& unit) const
+    {
+    DwgDbStatus status = DwgDbStatus::InvalidData;
+    if (this->IsValid())
+        {
+        DWGDB_Type(::UnitsValue)    dwgUnit;
+        auto es = m_geoCoordinateSystem->getUnit (dwgUnit);
+
+        status = ToDwgDbStatus (es);
+        if (status == DwgDbStatus::Success)
+            unit = static_cast<DwgDbUnits>(dwgUnit);
+        }
+    return  status;
+    }
+
+bool DwgDbGeoCoordinateSystem::IsValid() const { return DWGDB_CALLSDKMETHOD(!m_geoCoordinateSystem.isNull(), m_geoCoordinateSystem!=nullptr); }
+DwgDbStatus DwgDbGeoCoordinateSystem::GetId (DwgStringR id) const { return IsValid() ? ToDwgDbStatus(m_geoCoordinateSystem->getId(id)) : DwgDbStatus::InvalidData; }
+DwgDbStatus DwgDbGeoCoordinateSystem::GetDescription (DwgStringR s) const { return IsValid() ? ToDwgDbStatus(m_geoCoordinateSystem->getDescription(s)) : DwgDbStatus::InvalidData; }
+DwgDbStatus DwgDbGeoCoordinateSystem::GetEpsgCode (int& i) const { return IsValid() ? ToDwgDbStatus(m_geoCoordinateSystem->getEpsgCode(i)) : DwgDbStatus::InvalidData; }
+DwgDbStatus DwgDbGeoCoordinateSystem::GetUnitScale (double& d) const { return IsValid() ? ToDwgDbStatus(m_geoCoordinateSystem->getUnitScale(d)) : DwgDbStatus::InvalidData; }
+DwgDbStatus DwgDbGeoCoordinateSystem::GetWktRepresentation (DwgStringR s) const { return IsValid() ? ToDwgDbStatus(m_geoCoordinateSystem->getWktRepresentation(s)) : DwgDbStatus::InvalidData; }
+DwgDbStatus DwgDbGeoCoordinateSystem::GetXmlRepresentation (DwgStringR s) const { return IsValid() ? ToDwgDbStatus(m_geoCoordinateSystem->getXmlRepresentation(s)) : DwgDbStatus::InvalidData; }

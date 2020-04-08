@@ -64,7 +64,7 @@ DwgDbDepends        = $(DwgDbPublicApiDir)DwgDbCommon.h         \
 
 %include MultiCppCompileRule.mki
 
-# source files from \Core\Extensions\ExServices\...
+# source files from \Drawing\Extensions\ExServices\...
 $(o)OdFileBuf$(oext)            : $(ToolkitCoreServices)OdFileBuf.cpp ${MultiCompileDepends}
 
 $(o)ExUndoController$(oext)     : $(ToolkitHostServices)ExUndoController.cpp ${MultiCompileDepends}
