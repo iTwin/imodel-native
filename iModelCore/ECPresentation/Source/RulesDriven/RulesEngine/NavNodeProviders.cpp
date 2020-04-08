@@ -445,6 +445,8 @@ void NavNodesProviderContext::SetUpdateContext(NavNodesProviderContextCR other)
 +---------------+---------------+---------------+---------------+---------------+------*/
 HierarchyLevelInfo const& NavNodesProviderContext::GetHierarchyLevelInfo() const
     {
+    // mutex is required to avoid other threads looking for hierarchy level info while it is not cached
+    BeMutexHolder lock(GetNodesCache().GetMutex());
     if (!m_hierarchyLevelInfo.IsValid())
         {
         m_hierarchyLevelInfo = GetNodesCache().FindHierarchyLevel(GetConnection().GetId().c_str(),
@@ -468,6 +470,8 @@ HierarchyLevelInfo const& NavNodesProviderContext::GetHierarchyLevelInfo() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DataSourceInfo const& NavNodesProviderContext::GetDataSourceInfo() const
     {
+    // mutex is required to avoid other threads looking for data source while it is not cached
+    BeMutexHolder lock(GetNodesCache().GetMutex());
     if (!m_dataSourceInfo.IsValid())
         {
         bvector<uint64_t> index;
@@ -1796,6 +1800,12 @@ size_t MultiNavNodesProvider::_GetNodesCount() const
     size_t count = 0;
     for (NavNodesProviderPtr const& provider : m_providers)
         {
+        if (GetContext().GetCancelationToken().IsCanceled())
+            {
+            LoggingHelper::LogMessage(Log::Navigation, "[MultiNavNodesProvider] GetNodesCount cancelled", NativeLogging::LOG_DEBUG);
+            return 0;
+            }
+
         if (provider.IsNull())
             continue;
 
@@ -2266,7 +2276,6 @@ void SQLiteCacheNodesProvider::InitializeUsedSettings()
         query.append("IS NULL");
     else
         query.append(" = ?");
-    query.append(" AND [hl].[ConnectionId] = ?");
     query.append(" AND [hl].[RulesetId] = ?");
     query.append(" AND [hl].[Locale] = ?");
 
@@ -2280,7 +2289,6 @@ void SQLiteCacheNodesProvider::InitializeUsedSettings()
     int bindingIndex = 1;
     if (nullptr != GetContext().GetVirtualParentNodeId())
         stmt->BindUInt64(bindingIndex++, *GetContext().GetVirtualParentNodeId());
-    stmt->BindText(bindingIndex++, GetContext().GetConnection().GetId().c_str(), Statement::MakeCopy::No);
     stmt->BindText(bindingIndex++, GetContext().GetRuleset().GetRuleSetId().c_str(), Statement::MakeCopy::No);
     stmt->BindText(bindingIndex++, GetContext().GetLocale(), Statement::MakeCopy::No);
 
@@ -2420,7 +2428,7 @@ CachedStatementPtr CachedCombinedHierarchyLevelProvider::_GetNodesStatement() co
                        "  JOIN [" NODESCACHE_TABLENAME_NodeKeys "] nk ON [nk].[NodeId] = [n].[Id]"
                        "  JOIN [" NODESCACHE_TABLENAME_NodesOrder "] no ON [no].[HierarchyLevelId] = [hl].[Id] AND [no].[DataSourceId] = [ds].[Id] AND [no].[NodeId] = [n].[Id]"
                        " WHERE     [n].[Visibility] = ? AND [hl].[RemovalId] IS NULL "
-                       "       AND [hl].[ConnectionId] = ? AND [hl].[RulesetId] = ? AND [hl].[Locale] = ? AND [hl].[PhysicalParentNodeId] ";
+                       "       AND [hl].[RulesetId] = ? AND [hl].[Locale] = ? AND [hl].[PhysicalParentNodeId] ";
     if (nullptr == m_info.GetPhysicalParentNodeId())
         query.append("IS NULL");
     else
@@ -2436,7 +2444,6 @@ CachedStatementPtr CachedCombinedHierarchyLevelProvider::_GetNodesStatement() co
 
     int bindingIndex = 1;
     stmt->BindInt(bindingIndex++, (int)NodeVisibility::Visible);
-    stmt->BindText(bindingIndex++, m_info.GetConnectionId(), Statement::MakeCopy::No);
     stmt->BindText(bindingIndex++, m_info.GetRulesetId(), Statement::MakeCopy::No);
     stmt->BindText(bindingIndex++, m_info.GetLocale(), Statement::MakeCopy::No);
     if (nullptr != m_info.GetPhysicalParentNodeId())
@@ -2455,7 +2462,7 @@ CachedStatementPtr CachedCombinedHierarchyLevelProvider::_GetCountStatement() co
                        "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[HierarchyLevelId] = [hl].[Id]"
                        "  JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[DataSourceId] = [ds].[Id]"
                        " WHERE     [n].[Visibility] = ? AND [hl].[RemovalId] IS NULL "
-                       "       AND [hl].[ConnectionId] = ? AND [hl].[RulesetId] = ? AND [hl].[Locale] = ? AND [hl].[PhysicalParentNodeId] ";
+                       "       AND [hl].[RulesetId] = ? AND [hl].[Locale] = ? AND [hl].[PhysicalParentNodeId] ";
     if (nullptr == m_info.GetPhysicalParentNodeId())
         query.append("IS NULL");
     else
@@ -2470,7 +2477,6 @@ CachedStatementPtr CachedCombinedHierarchyLevelProvider::_GetCountStatement() co
 
     int bindingIndex = 1;
     stmt->BindInt(bindingIndex++, (int)NodeVisibility::Visible);
-    stmt->BindText(bindingIndex++, m_info.GetConnectionId(), Statement::MakeCopy::No);
     stmt->BindText(bindingIndex++, m_info.GetRulesetId(), Statement::MakeCopy::No);
     stmt->BindText(bindingIndex++, m_info.GetLocale(), Statement::MakeCopy::No);
     if (nullptr != m_info.GetPhysicalParentNodeId())
@@ -2599,7 +2605,7 @@ CachedStatementPtr NodesWithUndeterminedChildrenProvider::_GetCountStatement() c
                        "     JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[DataSourceId] = [dsn].[Id] "
                        "LEFT JOIN [" NODESCACHE_TABLENAME_HierarchyLevels "] hl ON [hl].[VirtualParentNodeId] = [n].[Id] "
                        "LEFT JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[HierarchyLevelId] = [hl].[Id] "
-                       "    WHERE     [hln].[ConnectionId] = ? AND [hln].[RulesetId] = ? AND [hln].[Locale] = ? "
+                       "    WHERE     [hln].[RulesetId] = ? AND [hln].[Locale] = ? "
                        "          AND ([hl].[Id] IS NULL OR [ds].[Id] IS NULL OR NOT [ds].[IsInitialized]) ";
 
     CachedStatementPtr stmt;
@@ -2609,9 +2615,8 @@ CachedStatementPtr NodesWithUndeterminedChildrenProvider::_GetCountStatement() c
         return nullptr;
         }
 
-    stmt->BindText(1, GetContext().GetConnection().GetId(), Statement::MakeCopy::No);
-    stmt->BindText(2, GetContext().GetRuleset().GetRuleSetId().c_str(), Statement::MakeCopy::No);
-    stmt->BindText(3, GetContext().GetLocale(), Statement::MakeCopy::No);
+    stmt->BindText(1, GetContext().GetRuleset().GetRuleSetId().c_str(), Statement::MakeCopy::No);
+    stmt->BindText(2, GetContext().GetLocale(), Statement::MakeCopy::No);
     return stmt;
     }
 
@@ -2627,7 +2632,7 @@ CachedStatementPtr NodesWithUndeterminedChildrenProvider::_GetNodesStatement() c
                        "     JOIN [" NODESCACHE_TABLENAME_NodeKeys "] nk ON [nk].[NodeId] = [n].[Id] "
                        "LEFT JOIN [" NODESCACHE_TABLENAME_HierarchyLevels "] hl ON [hl].[VirtualParentNodeId] = [n].[Id] "
                        "LEFT JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[HierarchyLevelId] = [hl].[Id] "
-                       "    WHERE     [hln].[ConnectionId] = ? AND [hln].[RulesetId] = ? AND [hln].[Locale] = ? "
+                       "    WHERE     [hln].[RulesetId] = ? AND [hln].[Locale] = ? "
                        "          AND ([hl].[Id] IS NULL OR [ds].[Id] IS NULL OR NOT [ds].[IsInitialized]) ";
 
     CachedStatementPtr stmt;
@@ -2637,9 +2642,8 @@ CachedStatementPtr NodesWithUndeterminedChildrenProvider::_GetNodesStatement() c
         return nullptr;
         }
 
-    stmt->BindText(1, GetContext().GetConnection().GetId(), Statement::MakeCopy::No);
-    stmt->BindText(2, GetContext().GetRuleset().GetRuleSetId().c_str(), Statement::MakeCopy::No);
-    stmt->BindText(3, GetContext().GetLocale(), Statement::MakeCopy::No);
+    stmt->BindText(1, GetContext().GetRuleset().GetRuleSetId().c_str(), Statement::MakeCopy::No);
+    stmt->BindText(2, GetContext().GetLocale(), Statement::MakeCopy::No);
     return stmt;
     }
 
@@ -2659,7 +2663,7 @@ CachedStatementPtr FilteredNodesProvider::_GetCountStatement() const
         "  FROM [" NODESCACHE_TABLENAME_Nodes "] n "
         "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [n].[DataSourceId] "
         "  JOIN [" NODESCACHE_TABLENAME_HierarchyLevels "] hl ON [hl].[Id] = [ds].[HierarchyLevelId] "
-        " WHERE [hl].[ConnectionId] = ? AND [hl].[RulesetId] = ? AND [hl].[Locale] = ? AND [n].[Label] LIKE ? ESCAPE \'\\\'";
+        " WHERE [hl].[RulesetId] = ? AND [hl].[Locale] = ? AND [n].[Label] LIKE ? ESCAPE \'\\\'";
 
     CachedStatementPtr stmt;
     if (BE_SQLITE_OK != GetStatements().GetPreparedStatement(stmt, *GetCache().GetDbFile(), query.c_str()))
@@ -2670,10 +2674,9 @@ CachedStatementPtr FilteredNodesProvider::_GetCountStatement() const
 
     Utf8String filter;
     filter.append("%").append(m_filter).append("%");
-    stmt->BindText(1, GetContext().GetConnection().GetId(), Statement::MakeCopy::No);
-    stmt->BindText(2, GetContext().GetRuleset().GetRuleSetId().c_str(), Statement::MakeCopy::No);
-    stmt->BindText(3, GetContext().GetLocale().c_str(), Statement::MakeCopy::No);
-    stmt->BindText(4, filter.c_str(), Statement::MakeCopy::Yes);
+    stmt->BindText(1, GetContext().GetRuleset().GetRuleSetId().c_str(), Statement::MakeCopy::No);
+    stmt->BindText(2, GetContext().GetLocale().c_str(), Statement::MakeCopy::No);
+    stmt->BindText(3, filter.c_str(), Statement::MakeCopy::Yes);
     return stmt;
     }
 
@@ -2687,7 +2690,7 @@ CachedStatementPtr FilteredNodesProvider::_GetNodesStatement() const
         "  JOIN [" NODESCACHE_TABLENAME_NodeKeys "] nk ON [nk].[NodeId] = [n].[Id] "
         "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [n].[DataSourceId] "
         "  JOIN [" NODESCACHE_TABLENAME_HierarchyLevels "] hl ON [hl].[Id] = [ds].[HierarchyLevelId] "
-        " WHERE [hl].[ConnectionId] = ? AND [hl].[RulesetId] = ? AND [hl].[Locale] = ? AND [n].[Label] LIKE ? ESCAPE \'\\\'";
+        " WHERE [hl].[RulesetId] = ? AND [hl].[Locale] = ? AND [n].[Label] LIKE ? ESCAPE \'\\\'";
 
     CachedStatementPtr stmt;
     if (BE_SQLITE_OK != GetStatements().GetPreparedStatement(stmt, *GetCache().GetDbFile(), query.c_str()))
@@ -2698,10 +2701,9 @@ CachedStatementPtr FilteredNodesProvider::_GetNodesStatement() const
 
     Utf8String filter;
     filter.append("%").append(m_filter).append("%");
-    stmt->BindText(1, GetContext().GetConnection().GetId(), Statement::MakeCopy::No);
-    stmt->BindText(2, GetContext().GetRuleset().GetRuleSetId().c_str(), Statement::MakeCopy::No);
-    stmt->BindText(3, GetContext().GetLocale().c_str(), Statement::MakeCopy::No);
-    stmt->BindText(4, filter.c_str(), Statement::MakeCopy::Yes);
+    stmt->BindText(1, GetContext().GetRuleset().GetRuleSetId().c_str(), Statement::MakeCopy::No);
+    stmt->BindText(2, GetContext().GetLocale().c_str(), Statement::MakeCopy::No);
+    stmt->BindText(3, filter.c_str(), Statement::MakeCopy::Yes);
     return stmt;
     }
 

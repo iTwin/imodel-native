@@ -5636,9 +5636,10 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         REQUIRE_ARGUMENT_ANY_OBJ(2, taskAllocationSlots, );
         REQUIRE_ARGUMENT_STRING(3, mode, );
         REQUIRE_ARGUMENT_BOOL(4, isChangeTrackingEnabled, );
+        REQUIRE_ARGUMENT_STRING(5, cacheDirectory, );
         m_updateRecords = std::make_shared<IModelJsECPresentationUpdateRecordsHandler>();
         m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>(ECPresentationUtils::CreatePresentationManager(T_HOST.GetIKnownLocationsAdmin(),
-            m_localState, id, localeDirectories, CreateTaskAllocationSlotsMap(taskAllocationSlots), mode, isChangeTrackingEnabled, m_updateRecords));
+            m_localState, id, localeDirectories, CreateTaskAllocationSlotsMap(taskAllocationSlots), mode, isChangeTrackingEnabled, m_updateRecords, cacheDirectory));
         m_ruleSetLocater = SimpleRuleSetLocater::Create();
         m_presentationManager->GetLocaters().RegisterLocater(*m_ruleSetLocater);
         }

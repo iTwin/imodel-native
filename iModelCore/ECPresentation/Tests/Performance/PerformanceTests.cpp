@@ -31,6 +31,9 @@ void RulesEngineTests::SetUp()
     ECSchemaReadContext::Initialize(assetsDirectory);
 
     RulesDrivenECPresentationManager::Params params(RulesDrivenECPresentationManager::Paths(assetsDirectory, temporaryDirectory));
+    RulesDrivenECPresentationManager::Params::CachingParams cachingParams;
+    cachingParams.SetCacheDirectoryPath(temporaryDirectory);
+    params.SetCachingParams(cachingParams);
     _ConfigureManagerParams(params);
     m_manager = new RulesDrivenECPresentationManager(params);
 

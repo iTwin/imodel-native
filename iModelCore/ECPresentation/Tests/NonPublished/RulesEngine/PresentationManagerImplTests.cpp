@@ -17,6 +17,7 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 struct RulesDrivenECPresentationManagerImplTests : ECPresentationTest
     {
     static ECDbTestProject* s_project;
+    TestConnectionManager* m_connections;
     IConnectionPtr m_connection;
     RulesDrivenECPresentationManagerImpl* m_impl;
     TestCategorySupplier m_categorySupplier;
@@ -61,11 +62,12 @@ void RulesDrivenECPresentationManagerImplTests::SetUp()
     ECPresentationTest::SetUp();
 
     m_locater = TestRuleSetLocater::Create();
+    m_connections = new TestConnectionManager();
 
     RulesDrivenECPresentationManagerImpl::Params::CachingParams cachingParams;
     cachingParams.SetDisableDiskCache(true);
     RulesDrivenECPresentationManagerImpl::Params params(RulesEngineTestHelpers::GetPaths(BeTest::GetHost()));
-    params.SetConnections(new TestConnectionManager());
+    params.SetConnections(m_connections);
     params.SetCachingParams(cachingParams);
     params.SetCategorySupplier(&m_categorySupplier);
     params.SetLocalizationProvider(&m_localizationProvider);
@@ -128,10 +130,46 @@ TEST_F(RulesDrivenECPresentationManagerImplTests, LocatesChildNodeWhoseGrandPare
 
     // clear nodes cache and try to locate the node by its key
     NavNodeKeyCPtr key = childNodes->GetNode(0)->GetKey();
-    m_impl->GetNodesCache().Clear();
+    m_impl->GetNodesCache(*m_connection)->Clear();
     NavNodeCPtr locatedNode = m_impl->GetNode(*m_connection, *key, options, *cancelationToken);
     ASSERT_TRUE(locatedNode.IsValid());
     EXPECT_STREQ("child2.1", locatedNode->GetLabelDefinition().GetDisplayValue().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Saulius.Skliutas                03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerImplTests, CreatesSeparateNodesCachesForEachConnection)
+    {
+    ECDbTestProject secondProject;
+    secondProject.Create("RulesDrivenECPresentationManagerImplTests2");
+    IConnectionPtr connection2 = m_impl->GetConnections().CreateConnection(secondProject.GetECDb());
+
+    NodesCache* firstCache = m_impl->GetNodesCache(*m_connection);
+    ASSERT_TRUE(nullptr != firstCache);
+    NodesCache* secondCache = m_impl->GetNodesCache(*connection2);
+    ASSERT_TRUE(nullptr != secondCache);
+
+    EXPECT_NE(firstCache, secondCache);
+    m_connections->NotifyConnectionClosed(*connection2);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Saulius.Skliutas                03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerImplTests, ClosesNodesCacheWhenConnectionsIsClosed)
+    {
+    ECDbTestProject secondProject;
+    secondProject.Create("RulesDrivenECPresentationManagerImplTests2");
+    IConnectionPtr connection = m_impl->GetConnections().CreateConnection(secondProject.GetECDb());
+
+    NodesCache* nodesCache = m_impl->GetNodesCache(*connection);
+    ASSERT_TRUE(nullptr != nodesCache);
+
+    // simulate connection closing
+    m_connections->NotifyConnectionClosed(*connection);
+    nodesCache = m_impl->GetNodesCache(*connection);
+    ASSERT_TRUE(nullptr == nodesCache);
     }
 
 /*=================================================================================**//**

@@ -101,9 +101,11 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
         private:
             bool m_disableDiskCache;
             uint64_t m_diskCacheFileSizeLimit;
+            BeFileName m_cacheDirectory;
         public:
-            CachingParams() : m_disableDiskCache(false), m_diskCacheFileSizeLimit(DEFAULT_DISK_CACHE_SIZE_LIMIT) {}
-            CachingParams(uint64_t diskCacheFileSizeLimit): m_disableDiskCache(false), m_diskCacheFileSizeLimit(diskCacheFileSizeLimit) {}
+            CachingParams() : m_disableDiskCache(false), m_diskCacheFileSizeLimit(DEFAULT_DISK_CACHE_SIZE_LIMIT), m_cacheDirectory(L"") {}
+            CachingParams(uint64_t diskCacheFileSizeLimit): m_disableDiskCache(false), m_diskCacheFileSizeLimit(diskCacheFileSizeLimit), m_cacheDirectory(L"") {}
+            CachingParams(Utf8StringCR cacheDirectory) : m_disableDiskCache(false), m_diskCacheFileSizeLimit(DEFAULT_DISK_CACHE_SIZE_LIMIT), m_cacheDirectory(cacheDirectory) {}
             //! Is hierarchy caching on disk disabled
             bool ShouldDisableDiskCache() const {return m_disableDiskCache;}
             void SetDisableDiskCache(bool value) {m_disableDiskCache = value;}
@@ -111,6 +113,10 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
             //! 0 means infinite size. Defaults to DEFAULT_DISK_CACHE_SIZE_LIMIT.
             uint64_t GetDiskCacheFileSizeLimit() const {return m_diskCacheFileSizeLimit;}
             void SetDiskCacheFileSizeLimit(uint64_t value) {m_diskCacheFileSizeLimit = value;}
+            //! Path to the directory for storing hierarchy caches.
+            //! Empty path means cache is stored alongside db used to create hierarchy
+            BeFileNameCR GetCacheDirectoryPath() const { return m_cacheDirectory; }
+            void SetCacheDirectoryPath(BeFileNameCR value) { m_cacheDirectory = value; }
         };
 
         //===================================================================================

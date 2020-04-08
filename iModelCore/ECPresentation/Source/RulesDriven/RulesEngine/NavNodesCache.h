@@ -188,7 +188,7 @@ public:
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                03/2017
 +===============+===============+===============+===============+===============+======*/
-struct NodesCache : IHierarchyCache, INavNodeLocater, IConnectionsListener
+struct NodesCache : IHierarchyCache, INavNodeLocater
 {
     struct Savepoint;
 
@@ -197,7 +197,7 @@ struct NodesCache : IHierarchyCache, INavNodeLocater, IConnectionsListener
 private:
     JsonNavNodesFactory const& m_nodesFactory;
     INodesProviderContextFactoryCR m_contextFactory;
-    IConnectionManagerCR m_connections;
+    IConnectionCR m_connection;
     IUserSettingsManager const& m_userSettings;
     NodesCacheType m_type;
     bool m_cacheUpdateData;
@@ -212,7 +212,7 @@ private:
     mutable BeMutex m_quickCacheMutex;
 
 private:
-    void Initialize(BeFileNameCR tempDirectory);
+    void Initialize(BeFileNameCR directory, IConnectionCR connection);
 
     void CacheNode(DataSourceInfo const&, NavNodeR, bvector<uint64_t> const&, NodeVisibility visibility);
     void CacheEmptyHierarchyLevel(HierarchyLevelInfo& info);
@@ -237,9 +237,6 @@ private:
     void RemoveQuick(uint64_t) const;
     void RemoveQuick(std::function<bool(JsonNavNodeCR)> const&) const;
     JsonNavNodePtr GetQuick(uint64_t) const;
-
-    void OnConnectionClosed(IConnectionCR);
-    void OnFirstConnection(IConnectionCR);
 
 protected:
     // IHierarchyCache
@@ -271,18 +268,15 @@ protected:
     // INavNodeLocater
     ECPRESENTATION_EXPORT JsonNavNodeCPtr _LocateNode(IConnectionCR, Utf8StringCR, NavNodeKeyCR) const override;
 
-    // IConnectionsListener
-    ECPRESENTATION_EXPORT void _OnConnectionEvent(ConnectionEvent const&) override;
-
 public:
-    ECPRESENTATION_EXPORT NodesCache(BeFileNameCR tempDirectory, JsonNavNodesFactoryCR, INodesProviderContextFactoryCR, 
-        IConnectionManagerCR, IUserSettingsManager const&, NodesCacheType, bool cacheUpdateData);
+    ECPRESENTATION_EXPORT NodesCache(IConnectionCR, BeFileNameCR, JsonNavNodesFactoryCR, INodesProviderContextFactoryCR, IUserSettingsManager const&,
+        NodesCacheType, bool cacheUpdateData);
     ECPRESENTATION_EXPORT ~NodesCache();
 
     ECPRESENTATION_EXPORT void CacheHierarchyLevel(CombinedHierarchyLevelInfo const&, NavNodesProviderR);
 
     ECPRESENTATION_EXPORT bool IsNodeCached(uint64_t nodeId) const;
-    ECPRESENTATION_EXPORT bool IsHierarchyLevelCached(Utf8StringCR connectionId, Utf8CP rulesetId, Utf8CP locale) const;
+    ECPRESENTATION_EXPORT bool IsHierarchyLevelCached(Utf8CP rulesetId, Utf8CP locale) const;
     ECPRESENTATION_EXPORT bool IsHierarchyLevelCached(uint64_t parentNodeId) const;
 
     ECPRESENTATION_EXPORT HierarchyLevelInfo FindHierarchyLevel(uint64_t id) const;
@@ -296,15 +290,32 @@ public:
     ECPRESENTATION_EXPORT bvector<HierarchyLevelInfo> GetRelatedHierarchyLevels(IConnectionCR connection, bset<ECInstanceKey> const&) const;
     ECPRESENTATION_EXPORT bvector<HierarchyLevelInfo> GetRelatedHierarchyLevels(Utf8CP rulesetId, Utf8CP settingId) const;
 
-    ECPRESENTATION_EXPORT void Clear(IConnectionCP connection = nullptr, Utf8CP rulesetId = nullptr);
+    ECPRESENTATION_EXPORT void Clear(Utf8CP rulesetId = nullptr);
     ECPRESENTATION_EXPORT void Persist();
 
-    ECPRESENTATION_EXPORT void OnRulesetCreated(PresentationRuleSetCR);
+    ECPRESENTATION_EXPORT void OnRulesetUsed(PresentationRuleSetCR);
     BeSQLite::Db const& GetDb() const {return m_db;}
     void SetCacheFileSizeLimit(uint64_t size) {m_sizeLimit = size;}
 
     ECPRESENTATION_EXPORT NavNodesProviderPtr GetUndeterminedNodesProvider(IConnectionCR connection, Utf8CP ruleSetId, Utf8CP locale) const;
     ECPRESENTATION_EXPORT NavNodesProviderPtr GetFilteredNodesProvider(Utf8CP filter, IConnectionCR connection, Utf8CP ruleSetId, Utf8CP locale) const;
+};
+
+/*=================================================================================**//**
+* @bsiclass                                     Saulius.Skliutas                03/2020
++===============+===============+===============+===============+===============+======*/
+struct INodesCacheManager
+{
+protected:
+    virtual NodesCache* _GetCache(Utf8StringCR connectionId) const = 0;
+    virtual void _ClearCaches(Utf8CP rulesetId) const = 0;
+    virtual bvector<NodesCache*> _GetAllNodeCaches() const = 0;
+
+public:
+    virtual ~INodesCacheManager() {}
+    NodesCache* GetCache(Utf8StringCR connectionId) const { return _GetCache(connectionId); }
+    void ClearCaches(Utf8CP rulesetId) const { _ClearCaches(rulesetId); }
+    bvector<NodesCache*> GetAllNodeCaches() const { return _GetAllNodeCaches(); }
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

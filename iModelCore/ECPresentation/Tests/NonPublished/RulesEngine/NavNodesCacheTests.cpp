@@ -74,9 +74,9 @@ struct NodesCacheTests : ECPresentationTest
         m_connection = m_connections.NotifyConnectionOpened(s_project->GetECDb());
         }
 
-    virtual NodesCache* _CreateNodesCache(BeFileNameCR tempDirectory)
+    virtual NodesCache* _CreateNodesCache(IConnectionR connection, BeFileNameCR tempDirectory)
         {
-        return new NodesCache(tempDirectory, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Memory, true);
+        return new NodesCache(connection, tempDirectory, m_nodesFactory, m_nodesProviderContextFactory, m_userSettings, NodesCacheType::Memory, true);
         }
 
     void ReCreateNodesCache()
@@ -84,9 +84,9 @@ struct NodesCacheTests : ECPresentationTest
         DELETE_AND_CLEAR(m_cache);
         BeFileName temporaryDirectory;
         BeTest::GetHost().GetTempDir(temporaryDirectory);
-        m_cache = _CreateNodesCache(temporaryDirectory);
         m_connection = m_connections.NotifyConnectionOpened(s_project->GetECDb());
-        m_cache->OnRulesetCreated(*PresentationRuleSet::CreateInstance("ruleset_id", 1, 0, false, "", "", "", false));
+        m_cache = _CreateNodesCache(*m_connection, temporaryDirectory);
+        m_cache->OnRulesetUsed(*PresentationRuleSet::CreateInstance("ruleset_id", 1, 0, false, "", "", "", false));
         m_nodesProviderContextFactory.SetNodesCache(m_cache);
         }
 
@@ -178,23 +178,16 @@ bpair<HierarchyLevelInfo, DataSourceInfo> NodesCacheTests::CacheDataSource(Utf8S
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(NodesCacheTests, Clear_Full)
     {
-    // create a different connection
-    ECDbTestProject project2;
-    project2.Create("test2");
-    IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project2.GetECDb());
-
     // create a different ruleset
-    m_cache->OnRulesetCreated(*PresentationRuleSet::CreateInstance("ruleset_id2", 1, 0, false, "", "", "", false));
+    m_cache->OnRulesetUsed(*PresentationRuleSet::CreateInstance("ruleset_id2", 1, 0, false, "", "", "", false));
 
     // cache
     CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
-    CacheDataSource(connection2->GetId(), "ruleset_id", "locale", 0);
     CacheDataSource(m_connection->GetId(), "ruleset_id2", "locale", 0);
     CacheDataSource(m_connection->GetId(), "ruleset_id", "locale2", 0);
 
     // make sure everything's cached
     EXPECT_TRUE(m_cache->FindHierarchyLevel(m_connection->GetId().c_str(), "ruleset_id", "locale", nullptr).IsValid());
-    EXPECT_TRUE(m_cache->FindHierarchyLevel(connection2->GetId().c_str(), "ruleset_id", "locale", nullptr).IsValid());
     EXPECT_TRUE(m_cache->FindHierarchyLevel(m_connection->GetId().c_str(), "ruleset_id2", "locale", nullptr).IsValid());
     EXPECT_TRUE(m_cache->FindHierarchyLevel(m_connection->GetId().c_str(), "ruleset_id", "locale2", nullptr).IsValid());
 
@@ -203,39 +196,8 @@ TEST_F(NodesCacheTests, Clear_Full)
 
     // verify everything's gone
     EXPECT_FALSE(m_cache->FindHierarchyLevel(m_connection->GetId().c_str(), "ruleset_id", "locale", nullptr).IsValid());
-    EXPECT_FALSE(m_cache->FindHierarchyLevel(connection2->GetId().c_str(), "ruleset_id", "locale", nullptr).IsValid());
     EXPECT_FALSE(m_cache->FindHierarchyLevel(m_connection->GetId().c_str(), "ruleset_id2", "locale", nullptr).IsValid());
     EXPECT_FALSE(m_cache->FindHierarchyLevel(m_connection->GetId().c_str(), "ruleset_id", "locale2", nullptr).IsValid());
-
-    m_connections.NotifyConnectionClosed(*connection2);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                12/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(NodesCacheTests, Clear_ByConnection)
-    {
-    // create a different connection
-    ECDbTestProject project2;
-    project2.Create("test2");
-    IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project2.GetECDb());
-
-    // cache
-    CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
-    CacheDataSource(connection2->GetId(), "ruleset_id", "locale", 0);
-
-    // make sure everything's cached
-    EXPECT_TRUE(m_cache->FindHierarchyLevel(m_connection->GetId().c_str(), "ruleset_id", "locale", nullptr).IsValid());
-    EXPECT_TRUE(m_cache->FindHierarchyLevel(connection2->GetId().c_str(), "ruleset_id", "locale", nullptr).IsValid());
-
-    // clear m_connection hierarchy from cache
-    m_cache->Clear(m_connection.get());
-
-    // verify only m_connection hierarchy is removed
-    EXPECT_FALSE(m_cache->FindHierarchyLevel(m_connection->GetId().c_str(), "ruleset_id", "locale", nullptr).IsValid());
-    EXPECT_TRUE(m_cache->FindHierarchyLevel(connection2->GetId().c_str(), "ruleset_id", "locale", nullptr).IsValid());
-
-    m_connections.NotifyConnectionClosed(*connection2);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -244,7 +206,7 @@ TEST_F(NodesCacheTests, Clear_ByConnection)
 TEST_F(NodesCacheTests, Clear_ByRulesetId)
     {
     // create a different ruleset
-    m_cache->OnRulesetCreated(*PresentationRuleSet::CreateInstance("ruleset_id2", 1, 0, false, "", "", "", false));
+    m_cache->OnRulesetUsed(*PresentationRuleSet::CreateInstance("ruleset_id2", 1, 0, false, "", "", "", false));
 
     // cache
     CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
@@ -255,28 +217,11 @@ TEST_F(NodesCacheTests, Clear_ByRulesetId)
     EXPECT_TRUE(m_cache->FindHierarchyLevel(m_connection->GetId().c_str(), "ruleset_id2", "locale", nullptr).IsValid());
 
     // clear "ruleset_id" hierarchy from cache
-    m_cache->Clear(nullptr, "ruleset_id");
+    m_cache->Clear("ruleset_id");
 
     // verify only "ruleset_id" hierarchy was removed
     EXPECT_FALSE(m_cache->FindHierarchyLevel(m_connection->GetId().c_str(), "ruleset_id", "locale", nullptr).IsValid());
     EXPECT_TRUE(m_cache->FindHierarchyLevel(m_connection->GetId().c_str(), "ruleset_id2", "locale", nullptr).IsValid());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                07/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(NodesCacheTests, ClearsQuickCacheWhenConnectionCloses)
-    {
-    auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale");
-    auto nodes = FillWithNodes(info, 1);
-    auto cachedNode = m_cache->GetNode(nodes[0]->GetNodeId());
-    ASSERT_EQ(2, cachedNode->GetRefCount());
-    cachedNode->Release();
-    EXPECT_EQ(cachedNode.get(), m_cache->GetNode(nodes[0]->GetNodeId()).get())
-        << "Expecting subsequent requests for the same node to return the same node from quick cache";
-    cachedNode->AddRef();
-    ReCreateProject();
-    ASSERT_EQ(1, cachedNode->GetRefCount());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -290,14 +235,8 @@ TEST_F(NodesCacheTests, RemoveHierarchyLevel_RemovesHierarchyLevel)
     // verify it got cached
     EXPECT_TRUE(m_cache->FindHierarchyLevel(info.first.GetConnectionId().c_str(), info.first.GetRulesetId().c_str(), info.first.GetLocale().c_str(), nullptr).IsValid());
 
-    // attempt to remove with invalid connection id and verify it didn't get removed
-    BeGuid removalId = m_cache->CreateRemovalId(CombinedHierarchyLevelInfo("invalid",
-        info.first.GetRulesetId(), info.first.GetLocale(), 0));
-    m_cache->RemoveHierarchyLevel(removalId);
-    EXPECT_TRUE(m_cache->FindHierarchyLevel(info.first.GetConnectionId().c_str(), info.first.GetRulesetId().c_str(), info.first.GetLocale().c_str(), nullptr).IsValid());
-
     // attempt to remove with invalid ruleset id and verify it didn't get removed
-    removalId = m_cache->CreateRemovalId(CombinedHierarchyLevelInfo(info.first.GetConnectionId(),
+    BeGuid removalId = m_cache->CreateRemovalId(CombinedHierarchyLevelInfo(info.first.GetConnectionId(),
         "invalid", info.first.GetLocale(), 0));
     m_cache->RemoveHierarchyLevel(removalId);
     EXPECT_TRUE(m_cache->FindHierarchyLevel(info.first.GetConnectionId().c_str(), info.first.GetRulesetId().c_str(), info.first.GetLocale().c_str(), nullptr).IsValid());
@@ -741,7 +680,7 @@ TEST_F(NodesCacheTests, GetUndeterminedNodesProvider_DoesNotReturnNodeThatHasIni
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(NodesCacheTests, ReturnsNullsWhenEmpty)
     {
-    EXPECT_FALSE(m_cache->IsHierarchyLevelCached(m_connection->GetId(), "test ruleset id", "test locale"));
+    EXPECT_FALSE(m_cache->IsHierarchyLevelCached("test ruleset id", "test locale"));
     EXPECT_FALSE(m_cache->IsHierarchyLevelCached(999));
     EXPECT_FALSE(m_cache->IsNodeCached(999));
 
@@ -768,7 +707,7 @@ TEST_F(NodesCacheTests, ReturnsCachedRootDataSource)
     auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale");
 
     // verify the data source is cached
-    EXPECT_TRUE(m_cache->IsHierarchyLevelCached(m_connection->GetId(), info.first.GetRulesetId().c_str(), info.first.GetLocale().c_str()));
+    EXPECT_TRUE(m_cache->IsHierarchyLevelCached(info.first.GetRulesetId().c_str(), info.first.GetLocale().c_str()));
 
     EXPECT_TRUE(m_cache->FindHierarchyLevel(m_connection->GetId().c_str(), info.first.GetRulesetId().c_str(), info.first.GetLocale().c_str(), nullptr).IsValid());
     EXPECT_TRUE(m_cache->FindHierarchyLevel(info.first.GetId()).IsValid());
@@ -779,13 +718,10 @@ TEST_F(NodesCacheTests, ReturnsCachedRootDataSource)
     EXPECT_TRUE(m_cache->GetDataSource(info.second).IsValid());
 
     // verify it's not found when looking with invalid parameters
-    EXPECT_FALSE(m_cache->IsHierarchyLevelCached("invalid", info.first.GetRulesetId().c_str(), info.first.GetLocale().c_str()));
-    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo("invalid", info.first.GetRulesetId(), info.first.GetLocale(), 0)).IsNull());
-
-    EXPECT_FALSE(m_cache->IsHierarchyLevelCached(m_connection->GetId(), "invalid", info.first.GetLocale().c_str()));
+    EXPECT_FALSE(m_cache->IsHierarchyLevelCached("invalid", info.first.GetLocale().c_str()));
     EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo(m_connection->GetId(), "invalid", info.first.GetLocale(), 0)).IsNull());
 
-    EXPECT_FALSE(m_cache->IsHierarchyLevelCached(m_connection->GetId(), info.first.GetRulesetId().c_str(), "invalid"));
+    EXPECT_FALSE(m_cache->IsHierarchyLevelCached(info.first.GetRulesetId().c_str(), "invalid"));
     EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo(m_connection->GetId(), info.first.GetRulesetId(), "invalid", 0)).IsNull());
     }
 
@@ -918,42 +854,14 @@ TEST_F(NodesCacheTests, GetNodeVisibility_ReturnsVirtualNodeVisibility)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(NodesCacheTests, GetHierarchyLevel_ReturnsDataSourcesFromValidConnections)
-    {
-    // create a new connection
-    ECDbTestProject project2;
-    project2.Create("test2");
-    IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project2.GetECDb());
-
-    // cache root data source for the first connection
-    auto info1 = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
-
-    // cache root data source for the second connection
-    auto info2 = CacheDataSource(connection2->GetId(), "ruleset_id", "locale", 0);
-
-    // verify correct sources are returned
-    NavNodesProviderPtr cached1 = m_cache->GetHierarchyLevel(info1.first);
-    ASSERT_TRUE(cached1.IsValid());
-    EXPECT_EQ(m_connection.get(), &cached1->GetContext().GetConnection());
-
-    NavNodesProviderPtr cached2 = m_cache->GetHierarchyLevel(info2.first);
-    ASSERT_TRUE(cached2.IsValid());
-    EXPECT_EQ(connection2.get(), &cached2->GetContext().GetConnection());
-
-    m_connections.NotifyConnectionClosed(*connection2);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                12/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(NodesCacheTests, GetHierarchyLevel_ReturnsDataSourcesWithValidRulesetIds)
     {
     // cache root data source for the first ruleset
-    m_cache->OnRulesetCreated(*PresentationRuleSet::CreateInstance("ruleset_id1", 1, 0, false, "", "", "", false));
+    m_cache->OnRulesetUsed(*PresentationRuleSet::CreateInstance("ruleset_id1", 1, 0, false, "", "", "", false));
     auto info1 = CacheDataSource(m_connection->GetId(), "ruleset_id1", "locale", 0);
 
     // cache root data source for the second ruleset
-    m_cache->OnRulesetCreated(*PresentationRuleSet::CreateInstance("ruleset_id2", 1, 0, false, "", "", "", false));
+    m_cache->OnRulesetUsed(*PresentationRuleSet::CreateInstance("ruleset_id2", 1, 0, false, "", "", "", false));
     auto info2 = CacheDataSource(m_connection->GetId(), "ruleset_id2", "locale", 0);
 
     // verify correct sources are returned
@@ -1099,19 +1007,6 @@ TEST_F(NodesCacheTests, HasParentNode_ReturnsTrueIfListContainsGrandParentNodeId
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(NodesCacheTests, LocateNode_LocatesECInstanceNode)
     {
-    // create a similar node in a closed connection
-    ECDbTestProject project;
-    project.Create(BeTest::GetNameOfCurrentTest(), "RulesEngineTest.01.00.ecschema.xml");
-    IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project.GetECDb());
-    ECClassCP widgetClass2 = project.GetECDb().Schemas().GetClass("RulesEngineTest", "Widget");
-    auto diffConnectionInfo = CacheDataSource(connection2->GetId(), "ruleset_id", "locale", 0);
-    bvector<JsonNavNodePtr> diffConnectionNodes = {
-        TestNodesHelper::CreateInstanceNode(*connection2, *widgetClass2)
-        };
-    FillWithNodes(diffConnectionInfo, diffConnectionNodes);
-    m_connections.NotifyConnectionClosed(*connection2);
-    project.GetECDb().CloseDb();
-
     // create a node in an open connection
     ECClassCP widgetClass = GetDb().Schemas().GetClass("RulesEngineTest", "Widget");
     auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
@@ -1141,14 +1036,14 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECInstanceNode_FromCorrectRuleset)
     ECClassCP widgetClass = GetDb().Schemas().GetClass("RulesEngineTest", "Widget");
 
     // create a node with ruleset 1
-    m_cache->OnRulesetCreated(*PresentationRuleSet::CreateInstance("ruleset_id_1", 1, 0, false, "", "", "", false));
+    m_cache->OnRulesetUsed(*PresentationRuleSet::CreateInstance("ruleset_id_1", 1, 0, false, "", "", "", false));
     auto info1 = CacheDataSource(m_connection->GetId(), "ruleset_id_1", "locale", 0);
     JsonNavNodePtr node1 = TestNodesHelper::CreateInstanceNode(*m_connection, *widgetClass);
     NavNodeExtendedData(*node1).SetRulesetId(info1.first.GetRulesetId().c_str());
     FillWithNodes(info1, { node1 });
 
     // create a node with ruleset 2
-    m_cache->OnRulesetCreated(*PresentationRuleSet::CreateInstance("ruleset_id_2", 1, 0, false, "", "", "", false));
+    m_cache->OnRulesetUsed(*PresentationRuleSet::CreateInstance("ruleset_id_2", 1, 0, false, "", "", "", false));
     auto info2 = CacheDataSource(m_connection->GetId(), "ruleset_id_2", "locale", 0);
     JsonNavNodePtr node2 = TestNodesHelper::CreateInstanceNode(*m_connection, *widgetClass);
     NavNodeExtendedData(*node2).SetRulesetId(info2.first.GetRulesetId().c_str());
@@ -1169,19 +1064,6 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECInstanceNode_FromCorrectRuleset)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(NodesCacheTests, LocateNode_LocatesECClassGroupingNode)
     {
-    // create a similar node in a closed connection
-    ECDbTestProject project;
-    project.Create("LocateNode_LocatesECClassGroupingNode", "RulesEngineTest.01.00.ecschema.xml");
-    IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project.GetECDb());
-    ECClassCP widgetClass2 = project.GetECDb().Schemas().GetClass("RulesEngineTest", "Widget");
-    auto diffConnectionInfo = CacheDataSource(connection2->GetId(), "ruleset_id", "locale", 0);
-    bvector<JsonNavNodePtr> diffConnectionNodes = {
-        TestNodesHelper::CreateClassGroupingNode(*m_connection, *widgetClass2, "test label")
-        };
-    FillWithNodes(diffConnectionInfo, diffConnectionNodes);
-    m_connections.NotifyConnectionClosed(*connection2);
-    project.GetECDb().CloseDb();
-
     // create a node in an open connection
     ECClassCP widgetClass1 = GetDb().Schemas().GetClass("RulesEngineTest", "Widget");
     auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
@@ -1207,21 +1089,6 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECPropertyValueGroupingNode)
     {
     rapidjson::Document groupingValue;
     groupingValue.SetInt(9);
-
-    // create a similar node in a closed connection
-    ECDbTestProject project;
-    project.Create("LocateNode_LocatesECPropertyValueGroupingNode", "RulesEngineTest.01.00.ecschema.xml");
-    IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project.GetECDb());
-    ECClassCP widgetClass2 = project.GetECDb().Schemas().GetClass("RulesEngineTest", "Widget");
-    ECPropertyCP groupingProperty2 = widgetClass2->GetPropertyP("IntProperty");
-    auto diffConnectionInfo = CacheDataSource(connection2->GetId(), "ruleset_id", "locale", 0);
-    bvector<JsonNavNodePtr> diffConnectionNodes = {
-        TestNodesHelper::CreatePropertyGroupingNode(*m_connection, *widgetClass2, *groupingProperty2, "test label", groupingValue, false)
-        };
-    FillWithNodes(diffConnectionInfo, diffConnectionNodes);
-    m_connections.NotifyConnectionClosed(*connection2);
-    project.GetECDb().CloseDb();
-
     // create a node in an open connection
     ECClassCP widgetClass1 = GetDb().Schemas().GetClass("RulesEngineTest", "Widget");
     ECPropertyCP groupingProperty1 = widgetClass1->GetPropertyP("IntProperty");
@@ -1248,21 +1115,6 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECPropertyRangeGroupingNode)
     {
     rapidjson::Document groupingValue;
     groupingValue.SetInt(2);
-
-    // create a similar node in a closed connection
-    ECDbTestProject project;
-    project.Create("LocateNode_LocatesECPropertyRangeGroupingNode", "RulesEngineTest.01.00.ecschema.xml");
-    IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project.GetECDb());
-    ECClassCP widgetClass2 = project.GetECDb().Schemas().GetClass("RulesEngineTest", "Widget");
-    ECPropertyCP groupingProperty2 = widgetClass2->GetPropertyP("IntProperty");
-    auto diffConnectionInfo = CacheDataSource(connection2->GetId(), "ruleset_id", "locale", 0);
-    bvector<JsonNavNodePtr> diffConnectionNodes = {
-        TestNodesHelper::CreatePropertyGroupingNode(*m_connection, *widgetClass2, *groupingProperty2, "test label", groupingValue, true)
-        };
-    FillWithNodes(diffConnectionInfo, diffConnectionNodes);
-    m_connections.NotifyConnectionClosed(*connection2);
-    project.GetECDb().CloseDb();
-
     // create a node in an open connection
     ECClassCP widgetClass1 = GetDb().Schemas().GetClass("RulesEngineTest", "Widget");
     ECPropertyCP groupingProperty1 = widgetClass1->GetPropertyP("IntProperty");
@@ -1287,18 +1139,6 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECPropertyRangeGroupingNode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(NodesCacheTests, LocateNode_LocatesLabelGroupingNode)
     {
-    // create a similar node in a closed connection
-    ECDbTestProject project;
-    project.Create("LocateNode_LocatesLabelGroupingNode");
-    IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project.GetECDb());
-    auto diffConnectionInfo = CacheDataSource(connection2->GetId(), "ruleset_id", "locale", 0);
-    bvector<JsonNavNodePtr> diffConnectionNodes = {
-        TestNodesHelper::CreateLabelGroupingNode(*m_connection, "test label")
-        };
-    FillWithNodes(diffConnectionInfo, diffConnectionNodes);
-    m_connections.NotifyConnectionClosed(*connection2);
-    project.GetECDb().CloseDb();
-
     // create a node in an open connection
     auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
     bvector<JsonNavNodePtr> nodes = {
@@ -1321,18 +1161,6 @@ TEST_F(NodesCacheTests, LocateNode_LocatesLabelGroupingNode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(NodesCacheTests, LocateNode_LocatesCustomNode)
     {
-    // create a similar node in a closed connection
-    ECDbTestProject project;
-    project.Create("LocateNode_LocatesCustomNode");
-    IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project.GetECDb());
-    auto diffConnectionInfo = CacheDataSource(connection2->GetId(), "ruleset_id", "locale", 0);
-    bvector<JsonNavNodePtr> diffConnectionNodes = {
-        TestNodesHelper::CreateCustomNode(*m_connection, "test type", "test label", "test descr")
-        };
-    FillWithNodes(diffConnectionInfo, diffConnectionNodes);
-    m_connections.NotifyConnectionClosed(*connection2);
-    project.GetECDb().CloseDb();
-
     // create a node in an open connection
     auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
     bvector<JsonNavNodePtr> nodes = {
@@ -1486,8 +1314,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Settings_ReturnsEmptyListWhenR
     {
     // cache the data source
     auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
-    EXPECT_TRUE(m_cache->IsHierarchyLevelCached(info.first.GetConnectionId().c_str(),
-        info.first.GetRulesetId().c_str(), info.first.GetLocale().c_str()));
+    EXPECT_TRUE(m_cache->IsHierarchyLevelCached(info.first.GetRulesetId().c_str(), info.first.GetLocale().c_str()));
 
     bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels("invalid", "any");
     EXPECT_TRUE(related.empty());
@@ -1525,44 +1352,12 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsEmptyListWhen
     {
     // cache the data source
     auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
-    EXPECT_TRUE(m_cache->IsHierarchyLevelCached(info.first.GetConnectionId(),
-        info.first.GetRulesetId().c_str(), info.first.GetLocale().c_str()));
+    EXPECT_TRUE(m_cache->IsHierarchyLevelCached(info.first.GetRulesetId().c_str(), info.first.GetLocale().c_str()));
 
     bset<ECInstanceKey> keys;
     keys.insert(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1)));
     bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels(*m_connection, keys);
     EXPECT_TRUE(related.empty());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsEmptyListWhenConnectionsAreDifferent)
-    {
-    // create a secondary connection
-    ECDbTestProject project2;
-    project2.Create(BeTest::GetNameOfCurrentTest());
-    IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project2.GetECDb());
-
-    // cache the data source in primary connection
-    auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
-    bmap<ECClassId, bool> usedClassIds;
-    usedClassIds[ECClassId((uint64_t)1)] = false;
-    m_cache->Update(info.second, nullptr, &usedClassIds, nullptr);
-    EXPECT_TRUE(m_cache->IsHierarchyLevelCached(info.first.GetConnectionId(),
-        info.first.GetRulesetId().c_str(), info.first.GetLocale().c_str()));
-
-    // cache the data source in secondary connection
-    auto info2 = CacheDataSource(connection2->GetId(), "ruleset_id", "locale", 0);
-    EXPECT_TRUE(m_cache->IsHierarchyLevelCached(info2.first.GetConnectionId(),
-        info2.first.GetRulesetId().c_str(), info2.first.GetLocale().c_str()));
-
-    bset<ECInstanceKey> keys;
-    keys.insert(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1)));
-    bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels(*connection2, keys);
-    EXPECT_TRUE(related.empty());
-
-    m_connections.NotifyConnectionClosed(*connection2);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1575,8 +1370,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
     bmap<ECClassId, bool> usedClassIds;
     usedClassIds[ECClassId((uint64_t)1)] = false;
     m_cache->Update(info.second, nullptr, &usedClassIds, nullptr);
-    EXPECT_TRUE(m_cache->IsHierarchyLevelCached(info.first.GetConnectionId(),
-        info.first.GetRulesetId().c_str(), info.first.GetLocale().c_str()));
+    EXPECT_TRUE(m_cache->IsHierarchyLevelCached(info.first.GetRulesetId().c_str(), info.first.GetLocale().c_str()));
 
     bset<ECInstanceKey> keys;
     keys.insert(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1)));
@@ -1878,40 +1672,6 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                02/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(NodesCacheTests, AllowsUsingMultipleConnectionsToTheSameDbAtDifferentPaths)
-    {
-    // copy the dataset
-    BeFileName name1(s_project->GetECDb().GetDbFileName(), true);
-    BeFileName name2 = BeFileName(name1).AppendExtension(L"copy");
-    name2.BeDeleteFile();
-    BeFileName::BeCopyFile(name1.c_str(), name2.c_str());
-
-    // make sure both datasets have the same mod time
-    time_t fileModTime;
-    name1.GetFileTime(nullptr, nullptr, &fileModTime);
-    name2.SetFileTime(nullptr, &fileModTime);
-
-    // open the second project
-    ECDbTestProject project2;
-    ASSERT_EQ(BE_SQLITE_OK, project2.Open(name2.GetNameUtf8().c_str()));
-    IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project2.GetECDb());
-
-    // cache root data source for the first connection
-    auto info1 = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
-
-    // cache root data source for the second connection
-    auto info2 = CacheDataSource(connection2->GetId(), "ruleset_id", "locale", 0);
-
-    // verify both data sources got cached
-    EXPECT_TRUE(m_cache->IsHierarchyLevelCached(m_connection->GetId(), "ruleset_id", "locale"));
-    EXPECT_TRUE(m_cache->IsHierarchyLevelCached(connection2->GetId(), "ruleset_id", "locale"));
-
-    m_connections.NotifyConnectionClosed(*connection2);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Mantas.Kontrimas                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(NodesCacheTests, GetCombinedHierarchyLevel_ClearsRootDatasourceCacheIfRelatedSettingsValuesChanged)
@@ -2149,9 +1909,9 @@ struct DiskNodesCacheTests : NodesCacheTests
         cacheDb.BeDeleteFile();
         }
 
-    virtual NodesCache* _CreateNodesCache(BeFileNameCR tempDir) override
+    virtual NodesCache* _CreateNodesCache(IConnectionR connection, BeFileNameCR tempDir) override
         {
-        return new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk, m_cacheUpdateData);
+        return new NodesCache(connection, tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_userSettings, NodesCacheType::Disk, m_cacheUpdateData);
         }
     };
 
@@ -2162,7 +1922,7 @@ TEST_F(DiskNodesCacheTests, CreatesNewDbFileIfCacheIsAlreadyInUse)
     {
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
-    NodesCache secondCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk, true);
+    NodesCache secondCache(*m_connection, tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_userSettings, NodesCacheType::Disk, true);
 
     Utf8CP firstCacheName = m_cache->GetDb().GetDbFileName();
     Utf8CP secondCacheName = secondCache.GetDb().GetDbFileName();
@@ -2185,18 +1945,13 @@ TEST_F(DiskNodesCacheTests, ShareCachedHierarchiesBetweenSessions)
     EXPECT_TRUE(m_cache->IsHierarchyLevelCached(nodes[1]->GetNodeId()));
 
     // close cache
-    m_connections.NotifyConnectionClosed(*m_connection);
-    DELETE_AND_CLEAR(s_project);
     DELETE_AND_CLEAR(m_cache);
 
     // open cache
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
-    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk, true);
+    m_cache = new NodesCache(*m_connection, tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_userSettings, NodesCacheType::Disk, true);
     m_nodesProviderContextFactory.SetNodesCache(m_cache);
-
-    // mock connection re-opening
-    ReCreateProject();
 
     // cache should not be cleaned
     CombinedHierarchyLevelInfo updatedInfo(m_connection->GetId(), info.first.GetRulesetId(),
@@ -2248,49 +2003,6 @@ TEST_F(DiskNodesCacheTests, DowngradesReadWriteCacheToReadOnly)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Saulius.Skliutas                10/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DiskNodesCacheTests, ClearSharedCacheIfHierarchyWasModified)
-    {
-    // cache root data source
-    auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
-
-    // cache some nodes
-    auto nodes = FillWithNodes(info, 2, true);
-    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info.first).IsValid());
-    EXPECT_TRUE(m_cache->IsHierarchyLevelCached(nodes[0]->GetNodeId()));
-    EXPECT_TRUE(m_cache->IsHierarchyLevelCached(nodes[1]->GetNodeId()));
-
-    // close cache
-    BeFileName projectPath(s_project->GetECDbPath());
-    m_connections.NotifyConnectionClosed(*m_connection);
-    DELETE_AND_CLEAR(s_project);
-    DELETE_AND_CLEAR(m_cache);
-
-    // change connection file last modification time
-    time_t modTime;
-    projectPath.GetFileTime(nullptr, nullptr, &modTime);
-    modTime -= 100;
-    projectPath.SetFileTime(nullptr, &modTime);
-
-    // open cache
-    BeFileName tempDir;
-    BeTest::GetHost().GetTempDir(tempDir);
-    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk, true);
-    m_nodesProviderContextFactory.SetNodesCache(m_cache);
-
-    // mock connection re-opening
-    ReCreateProject();
-
-    // cache should be empty for this connection
-    CombinedHierarchyLevelInfo updatedInfo(m_connection->GetId(), info.first.GetRulesetId(),
-        info.first.GetLocale(), 0);
-    EXPECT_FALSE(m_cache->GetCombinedHierarchyLevel(updatedInfo).IsValid());
-    EXPECT_FALSE(m_cache->IsHierarchyLevelCached(nodes[0]->GetNodeId()));
-    EXPECT_FALSE(m_cache->IsHierarchyLevelCached(nodes[1]->GetNodeId()));
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * Test situation when app is closed, ruleset is modified and app is turned on.
 * In this case OnRulesetDisposed isn't called and only OnRulesetCreated is called.
 * @bsitest                                      Saulius.Skliutas                10/2017
@@ -2300,7 +2012,7 @@ TEST_F(DiskNodesCacheTests, ClearSharedCacheIfRulesetWasModified)
     // create ruleset
     PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance("TestRuleset", 1, 0, false, "", "", "", false);
     ruleset->AddPresentationRule(*new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_MainTree, false));
-    m_cache->OnRulesetCreated(*ruleset);
+    m_cache->OnRulesetUsed(*ruleset);
 
     // cache root data source
     auto info = CacheDataSource(m_connection->GetId(), ruleset->GetRuleSetId(), "locale", 0);
@@ -2313,7 +2025,7 @@ TEST_F(DiskNodesCacheTests, ClearSharedCacheIfRulesetWasModified)
 
     // mock new session: app is turned on with modified ruleset and OnRulesetCreated is called
     ruleset->AddPresentationRule(*new ChildNodeRule("", 1, false, RuleTargetTree::TargetTree_MainTree));
-    m_cache->OnRulesetCreated(*ruleset);
+    m_cache->OnRulesetUsed(*ruleset);
 
     // verify cache is cleared
     EXPECT_FALSE(m_cache->GetCombinedHierarchyLevel(info.first).IsValid());
@@ -2344,7 +2056,7 @@ TEST_F(DiskNodesCacheTests, ClearsCacheIfCacheFileSizeExceedsLimit)
     // open cache
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
-    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk, true);
+    m_cache = new NodesCache(*m_connection, tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_userSettings, NodesCacheType::Disk, true);
     m_nodesProviderContextFactory.SetNodesCache(m_cache);
 
     // verify cache is cleared
@@ -2356,23 +2068,19 @@ TEST_F(DiskNodesCacheTests, ClearsCacheIfCacheFileSizeExceedsLimit)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Saulius.Skliutas                12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DiskNodesCacheTests, ClearsOldestConnectionCacheWhenCacheFileSizeExceedsLimit)
+TEST_F(DiskNodesCacheTests, ClearsOldestRulesetCacheWhenCacheFileSizeExceedsLimit)
     {
     // cache root data source
     auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
     FillWithNodes(info, 30, true);
     EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info.first).IsValid());
-    m_connections.NotifyConnectionClosed(*m_connection);
 
-    // open second connection and cache root data source
-    ECDbTestProject project;
-    project.Create("ClearsOldestConnectionCacheWhenCacheFileSizeExceedsLimit");
-    IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project.GetECDb());
+    // create second ruleset and cache root data source
+    m_cache->OnRulesetUsed(*PresentationRuleSet::CreateInstance("ruleset_id2", 1, 0, false, "", "", "", false));
 
-    auto info2 = CacheDataSource(connection2->GetId(), "ruleset_id", "locale", 0);
+    auto info2 = CacheDataSource(m_connection->GetId(), "ruleset_id2", "locale", 0);
     FillWithNodes(info2, 40, true);
     EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info2.first).IsValid());
-    m_connections.NotifyConnectionClosed(*connection2);
 
     // set cache file size limit
     const_cast<Db&>(m_cache->GetDb()).SaveChanges();
@@ -2387,19 +2095,14 @@ TEST_F(DiskNodesCacheTests, ClearsOldestConnectionCacheWhenCacheFileSizeExceedsL
     // open cache
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
-    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk, true);
+    m_cache = new NodesCache(*m_connection, tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_userSettings, NodesCacheType::Disk, true);
     m_nodesProviderContextFactory.SetNodesCache(m_cache);
 
-    // verify first connection cache was deleted
-    m_connection = m_connections.NotifyConnectionOpened(GetDb());
+    // verify first ruleset cache was deleted
     EXPECT_FALSE(m_cache->GetCombinedHierarchyLevel(info.first).IsValid());
 
-    // verify second connection cache wasn't deleted
-    connection2 = m_connections.NotifyConnectionOpened(project.GetECDb());
+    // verify second ruleset cache wasn't deleted
     EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info2.first).IsValid());
-
-    m_connections.NotifyConnectionClosed(*connection2);
-    project.GetECDb().CloseDb();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2411,7 +2114,6 @@ TEST_F(DiskNodesCacheTests, DoesntClearCacheWhenCacheFileSizeAndLimitAreEqual)
     auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
     FillWithNodes(info, 30, true);
     EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info.first).IsValid());
-    m_connections.NotifyConnectionClosed(*m_connection);
 
     // set cache file size limit
     const_cast<Db&>(m_cache->GetDb()).SaveChanges();
@@ -2426,12 +2128,49 @@ TEST_F(DiskNodesCacheTests, DoesntClearCacheWhenCacheFileSizeAndLimitAreEqual)
     // open cache
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
-    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk, true);
+    m_cache = new NodesCache(*m_connection, tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_userSettings, NodesCacheType::Disk, true);
     m_nodesProviderContextFactory.SetNodesCache(m_cache);
 
     // verify the cache is still valid
-    m_connection = m_connections.NotifyConnectionOpened(GetDb());
     EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info.first).IsValid());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Saulius.Skliutas                04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DiskNodesCacheTests, ClearSharedCacheIfHierarchyWasModified)
+    {
+    // cache root data source
+    auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
+
+    // cache some nodes
+    auto nodes = FillWithNodes(info, 2, true);
+    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info.first).IsValid());
+    EXPECT_TRUE(m_cache->IsHierarchyLevelCached(nodes[0]->GetNodeId()));
+    EXPECT_TRUE(m_cache->IsHierarchyLevelCached(nodes[1]->GetNodeId()));
+
+    // close cache
+    DELETE_AND_CLEAR(m_cache);
+
+    // change connection file last modification time
+    BeFileName projectPath(s_project->GetECDbPath());
+    time_t modTime;
+    projectPath.GetFileTime(nullptr, nullptr, &modTime);
+    modTime -= 100;
+    projectPath.SetFileTime(nullptr, &modTime);
+
+    // open cache
+    BeFileName tempDir;
+    BeTest::GetHost().GetTempDir(tempDir);
+    m_cache = new NodesCache(*m_connection, tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_userSettings, NodesCacheType::Disk, true);
+    m_nodesProviderContextFactory.SetNodesCache(m_cache);
+
+    // cache should be empty for this connection
+    CombinedHierarchyLevelInfo updatedInfo(m_connection->GetId(), info.first.GetRulesetId(),
+        info.first.GetLocale(), 0);
+    EXPECT_FALSE(m_cache->GetCombinedHierarchyLevel(updatedInfo).IsValid());
+    EXPECT_FALSE(m_cache->IsHierarchyLevelCached(nodes[0]->GetNodeId()));
+    EXPECT_FALSE(m_cache->IsHierarchyLevelCached(nodes[1]->GetNodeId()));
     }
 
 /*=================================================================================**//**
@@ -2439,11 +2178,15 @@ TEST_F(DiskNodesCacheTests, DoesntClearCacheWhenCacheFileSizeAndLimitAreEqual)
 +===============+===============+===============+===============+===============+======*/
 struct DiskNodesCacheLocationTests : ECPresentationTest
     {
+    static ECDbTestProject* s_project;
+
     TestConnectionManager m_connections;
+    IConnectionPtr m_connection;
     TestUserSettingsManager m_userSettings;
     JsonNavNodesFactory m_nodesFactory;
     TestNodesProviderContextFactory m_nodesProviderContextFactory;
     BeFileName m_directory;
+    Utf8String m_ecdbFileName;
     DiskNodesCacheLocationTests() : m_nodesProviderContextFactory(m_connections) {}
     void SetUp() override
         {
@@ -2451,8 +2194,29 @@ struct DiskNodesCacheLocationTests : ECPresentationTest
         m_directory.AppendToPath(L"DiskNodesCacheLocationTests");
         if (!m_directory.DoesPathExist())
             BeFileName::CreateNewDirectory(m_directory.c_str());
+        m_ecdbFileName = Utf8String(BeFileName(s_project->GetECDbCR().GetDbFileName()).GetFileNameAndExtension().c_str());
+        m_connection = m_connections.NotifyConnectionOpened(s_project->GetECDb());
+        }
+
+    virtual void TearDown() override
+        {
+        m_connections.ClearConnections();
+        s_project->GetECDb().AbandonChanges();
+        }
+
+    static void SetUpTestCase()
+        {
+        s_project = new ECDbTestProject();
+        s_project->Create("DiskNodesCacheLocationTestsProject");
+        }
+
+    static void TearDownTestCase()
+        {
+        s_project->GetECDb().CloseDb();
+        DELETE_AND_CLEAR(s_project);
         }
     };
+ECDbTestProject* DiskNodesCacheLocationTests::s_project = nullptr;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                12/2018
@@ -2460,9 +2224,10 @@ struct DiskNodesCacheLocationTests : ECPresentationTest
 TEST_F(DiskNodesCacheLocationTests, CreatesCacheInSpecifiedDirectory)
     {
     BeFileName expectedPath = m_directory;
-    expectedPath.AppendToPath(L"HierarchyCache.db");
+    Utf8PrintfString cacheName("%s.HierarchyCache.db", m_ecdbFileName.c_str());
+    expectedPath.AppendSeparator().AppendUtf8(cacheName.c_str());
 
-    NodesCache cache(m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk, true);
+    NodesCache cache(*m_connection, m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_userSettings, NodesCacheType::Disk, true);
     EXPECT_STREQ(expectedPath.GetNameUtf8().c_str(), cache.GetDb().GetDbFileName());
     }
 
@@ -2472,14 +2237,15 @@ TEST_F(DiskNodesCacheLocationTests, CreatesCacheInSpecifiedDirectory)
 TEST_F(DiskNodesCacheLocationTests, ReusesExistingCache)
     {
     BeFileName expectedPath = m_directory;
-    expectedPath.AppendToPath(L"HierarchyCache.db");
+    Utf8PrintfString cacheName("%s.HierarchyCache.db", m_ecdbFileName.c_str());
+    expectedPath.AppendSeparator().AppendUtf8(cacheName.c_str());
 
     {
-    NodesCache cache(m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk, true);
+    NodesCache cache(*m_connection, m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_userSettings, NodesCacheType::Disk, true);
     }
     EXPECT_TRUE(expectedPath.DoesPathExist());
 
-    NodesCache cache(m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk, true);
+    NodesCache cache(*m_connection, m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_userSettings, NodesCacheType::Disk, true);
     EXPECT_STREQ(expectedPath.GetNameUtf8().c_str(), cache.GetDb().GetDbFileName());
     }
 
@@ -2489,24 +2255,38 @@ TEST_F(DiskNodesCacheLocationTests, ReusesExistingCache)
 TEST_F(DiskNodesCacheLocationTests, CreatesSeparateCacheWhenExistingIsLocked)
     {
     BeFileName expectedPath1 = m_directory;
-    expectedPath1.AppendToPath(L"HierarchyCache.db");
-    NodesCache cache1(m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk, true);
+    Utf8PrintfString cacheName("%s.HierarchyCache.db", m_ecdbFileName.c_str());
+    expectedPath1.AppendSeparator().AppendUtf8(cacheName.c_str());
+
+    NodesCache cache1(*m_connection, m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_userSettings, NodesCacheType::Disk, true);
     EXPECT_STREQ(expectedPath1.GetNameUtf8().c_str(), cache1.GetDb().GetDbFileName());
 
     BeFileName cache2Path;
     {
-    NodesCache cache2(m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk, true);
+    NodesCache cache2(*m_connection, m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_userSettings, NodesCacheType::Disk, true);
     cache2Path = BeFileName(cache2.GetDb().GetDbFileName());
     BeFileName expectedDirectory2 = BeFileName(m_directory).AppendSeparator();
     EXPECT_STREQ(expectedDirectory2.c_str(), cache2Path.GetDirectoryName().c_str());
 
     bvector<WString> nameParts;
     BeStringUtilities::Split(cache2Path.GetFileNameAndExtension().c_str(), L".", nullptr, nameParts);
-    ASSERT_EQ(3, nameParts.size());
-    EXPECT_STREQ(L"HierarchyCache", nameParts[0].c_str());
-    EXPECT_EQ(SUCCESS, BeGuid().FromString(Utf8String(nameParts[1].c_str()).c_str()));
-    EXPECT_STREQ(L"db", nameParts[2].c_str());
+    ASSERT_EQ(4, nameParts.size());
+    EXPECT_STREQ(L"HierarchyCache", nameParts[1].c_str());
+    EXPECT_EQ(SUCCESS, BeGuid().FromString(Utf8String(nameParts[2].c_str()).c_str()));
+    EXPECT_STREQ(L"db", nameParts[3].c_str());
     }
     EXPECT_FALSE(cache2Path.DoesPathExist());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Saulius.Skliutas                03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DiskNodesCacheLocationTests, CreatesCacheInTheSameDirectoryAsIModelIfDirectoryNotSpecified)
+    {
+    BeFileName expectedPath = BeFileName(s_project->GetECDbPath()).GetDirectoryName();
+    Utf8PrintfString cacheName("%s.HierarchyCache.db", m_ecdbFileName.c_str());
+    expectedPath.AppendUtf8(cacheName.c_str());
+
+    NodesCache cache(*m_connection, BeFileName(), m_nodesFactory, m_nodesProviderContextFactory, m_userSettings, NodesCacheType::Disk, true);
+    EXPECT_STREQ(expectedPath.GetNameUtf8().c_str(), cache.GetDb().GetDbFileName());
+    }

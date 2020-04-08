@@ -49,7 +49,7 @@ protected:
         task->SetDependencies(TaskDependencies(connection->GetId()));
         task->SetBlockedTasksPredicate([connectionId = connection->GetId()](IECPresentationTaskCR task)
             {
-            return task.GetDependencies().GetConnectionId().Equals(connectionId);
+            return task.GetDependencies().DependsOnConnection(connectionId);
             });
         m_manager.GetTasksManager().Execute(*task);
         }
@@ -104,11 +104,11 @@ protected:
             BeMutexHolder lock(m_tasksManager.GetMutex());
             TasksCancelationResult cancelation = m_tasksManager.Cancel([&](IECPresentationTaskCR task)
                 {
-                return task.GetDependencies().GetConnectionId().Equals(evt.GetConnection().GetId());
+                return task.GetDependencies().DependsOnConnection(evt.GetConnection().GetId());
                 });
             block = m_tasksManager.Block([&](IECPresentationTaskCR task)
                 {
-                return task.GetDependencies().GetConnectionId().Equals(evt.GetConnection().GetId())
+                return task.GetDependencies().DependsOnConnection(evt.GetConnection().GetId())
                     && cancelation.GetTasks().end() == cancelation.GetTasks().find(&task);
                 });
             lock.unlock();
@@ -208,11 +208,12 @@ protected:
                 GetChangesListener()->_OnSettingChanged(rulesetId.c_str(), settingId.c_str());
                 }
             );
-        task->SetBlockedTasksPredicate([rulesetId = Utf8String(rulesetId)](IECPresentationTaskCR)
+        task->SetBlockedTasksPredicate([](IECPresentationTaskCR)
             {
             // we don't know which connections this task can affect - need to block everything..
             return true;
             });
+        task->SetDependencies(TaskDependencies("*"));
         m_tasksManager.Execute(*task);
         }
 public:

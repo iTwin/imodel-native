@@ -64,7 +64,7 @@ public:
 struct ECPresentationUtils
 {
     static RulesDrivenECPresentationManager* CreatePresentationManager(Dgn::DgnPlatformLib::Host::IKnownLocationsAdmin&, IJsonLocalState&, 
-        Utf8StringCR, bvector<Utf8String> const&, bmap<int, unsigned>, Utf8StringCR, bool, std::shared_ptr<IUpdateRecordsHandler>);
+        Utf8StringCR, bvector<Utf8String> const&, bmap<int, unsigned>, Utf8StringCR, bool, std::shared_ptr<IUpdateRecordsHandler>, Utf8StringCR);
 
     static ECPresentationResult SetupRulesetDirectories(RulesDrivenECPresentationManager&, bvector<Utf8String> const&);
     static ECPresentationResult SetupSupplementalRulesetDirectories(RulesDrivenECPresentationManager&, bvector<Utf8String> const&);

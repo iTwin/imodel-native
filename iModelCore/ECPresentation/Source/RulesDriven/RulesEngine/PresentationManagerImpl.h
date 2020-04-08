@@ -106,6 +106,7 @@ struct RulesDrivenECPresentationManagerImpl : RulesDrivenECPresentationManager::
     struct UsedClassesListener;
     struct NodesProviderContextFactory;
     struct NodesProviderFactory;
+    struct NodesCacheManager;
 
 private:
     Mode m_mode;
@@ -114,7 +115,7 @@ private:
     NodesProviderContextFactory const* m_nodesProviderContextFactory;
     NodesProviderFactory const* m_nodesProviderFactory;
     CustomFunctionsInjector* m_customFunctions;
-    mutable NodesCache* m_nodesCache;
+    NodesCacheManager* m_nodesCachesManager;
     mutable ContentCache* m_contentCache;
     ECDbCaches* m_ecdbCaches;
     RulesetECExpressionsCache* m_rulesetECExpressionsCache;
@@ -182,7 +183,7 @@ public:
     ECPRESENTATION_EXPORT RulesDrivenECPresentationManagerImpl(Params const&);
     ECPRESENTATION_EXPORT ~RulesDrivenECPresentationManagerImpl();
     ECPRESENTATION_EXPORT void Initialize();
-    NodesCache& GetNodesCache() {return *m_nodesCache;}
+    ECPRESENTATION_EXPORT NodesCache* GetNodesCache(IConnectionCR connection);
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

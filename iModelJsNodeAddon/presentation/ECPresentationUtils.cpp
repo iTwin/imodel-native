@@ -193,7 +193,7 @@ static IModelJsECPresentationStaticSetupHelper s_staticSetup;
 +---------------+---------------+---------------+---------------+---------------+------*/
 RulesDrivenECPresentationManager* ECPresentationUtils::CreatePresentationManager(Dgn::DgnPlatformLib::Host::IKnownLocationsAdmin& locations,
     IJsonLocalState& localState, Utf8StringCR id, bvector<Utf8String> const& localeDirectories, bmap<int, unsigned> taskAllocationSlots, Utf8StringCR mode,
-    bool isChangeTrackingEnabled, std::shared_ptr<IUpdateRecordsHandler> updateRecordsHandler)
+    bool isChangeTrackingEnabled, std::shared_ptr<IUpdateRecordsHandler> updateRecordsHandler, Utf8StringCR cacheDirectory)
     {
     BeFileName assetsDir = locations.GetDgnPlatformAssetsDirectory();
     BeFileName tempDir = locations.GetLocalTempDirectoryBaseName();
@@ -210,12 +210,15 @@ RulesDrivenECPresentationManager* ECPresentationUtils::CreatePresentationManager
 
     RulesDrivenECPresentationManager::Params::MultiThreadingParams threadingParams(taskAllocationSlots);
 
+    RulesDrivenECPresentationManager::Params::CachingParams cachingParams(cacheDirectory);
+
     bvector<BeFileName> localeDirectoryPaths;
     for (Utf8StringCR dir : localeDirectories)
         localeDirectoryPaths.push_back(BeFileName(dir).AppendSeparator());
 
     RulesDrivenECPresentationManager::Params params(pathParams);
     params.SetMultiThreadingParams(threadingParams);
+    params.SetCachingParams(cachingParams);
     params.SetLocalizationProvider(new IModelJsECPresentationLocalizationProvider(localeDirectoryPaths));
     params.SetLocalState(&localState);
     params.SetMode(mode.Equals("ro") ? RulesDrivenECPresentationManager::Mode::ReadOnly : RulesDrivenECPresentationManager::Mode::ReadWrite);

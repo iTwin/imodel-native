@@ -17,9 +17,10 @@ struct HierarchyUpdateTests : UpdateTests
     {
     void SetNodeExpanded(NavNodeCR node)
         {
+        IConnectionCPtr connection = m_manager->GetConnections().GetConnection(m_db);
         JsonNavNodeCR jsonNode = static_cast<JsonNavNodeCR>(node);
         const_cast<JsonNavNodeR>(jsonNode).SetIsExpanded(true);
-        static_cast<RulesDrivenECPresentationManagerImpl&>(m_manager->GetImpl()).GetNodesCache().Update(jsonNode.GetNodeId(), jsonNode, IHierarchyCache::UPDATE_NodeItself);
+        static_cast<RulesDrivenECPresentationManagerImpl&>(m_manager->GetImpl()).GetNodesCache(*connection)->Update(jsonNode.GetNodeId(), jsonNode, IHierarchyCache::UPDATE_NodeItself);
         }
     };
 
@@ -5531,10 +5532,12 @@ TEST_F(HierarchyUpdateTests, UserSettingsTrackedWhenCustomizingChildNodesDuringH
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
 
+    IConnectionCPtr connection = m_manager->GetConnections().GetConnection(m_db);
+
     // expect user settings have been tracked
-    bvector<HierarchyLevelInfo> hierarchies = static_cast<RulesDrivenECPresentationManagerImpl&>(m_manager->GetImpl()).GetNodesCache().GetRelatedHierarchyLevels(rules->GetRuleSetId().c_str(), "custom");
+    bvector<HierarchyLevelInfo> hierarchies = static_cast<RulesDrivenECPresentationManagerImpl&>(m_manager->GetImpl()).GetNodesCache(*connection)->GetRelatedHierarchyLevels(rules->GetRuleSetId().c_str(), "custom");
     ASSERT_EQ(1, hierarchies.size());
-    ASSERT_EQ(m_manager->GetConnections().GetConnection(m_db)->GetId(), hierarchies[0].GetConnectionId());
+    ASSERT_EQ(connection->GetId(), hierarchies[0].GetConnectionId());
     ASSERT_EQ(rules->GetRuleSetId(), hierarchies[0].GetRulesetId());
     ASSERT_EQ(rootNodes[0]->GetNodeId(), *hierarchies[0].GetPhysicalParentNodeId());
     }
@@ -5629,10 +5632,12 @@ TEST_F(HierarchyUpdateTests, UserSettingsTrackedWhenCustomizingChildNodesWithVir
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
 
+    IConnectionCPtr connection = m_manager->GetConnections().GetConnection(m_db);
+
     // expect user settings have been tracked
-    bvector<HierarchyLevelInfo> hierarchies = static_cast<RulesDrivenECPresentationManagerImpl&>(m_manager->GetImpl()).GetNodesCache().GetRelatedHierarchyLevels(rules->GetRuleSetId().c_str(), "custom");
+    bvector<HierarchyLevelInfo> hierarchies = static_cast<RulesDrivenECPresentationManagerImpl&>(m_manager->GetImpl()).GetNodesCache(*connection)->GetRelatedHierarchyLevels(rules->GetRuleSetId().c_str(), "custom");
     ASSERT_EQ(1, hierarchies.size());
-    ASSERT_EQ(m_manager->GetConnections().GetConnection(m_db)->GetId(), hierarchies[0].GetConnectionId());
+    ASSERT_EQ(connection->GetId(), hierarchies[0].GetConnectionId());
     ASSERT_EQ(rules->GetRuleSetId(), hierarchies[0].GetRulesetId());
     ASSERT_EQ(rootNodes[0]->GetNodeId(), *hierarchies[0].GetPhysicalParentNodeId());
     }

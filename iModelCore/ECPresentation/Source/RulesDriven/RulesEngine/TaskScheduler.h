@@ -52,6 +52,7 @@ public:
     Utf8StringCR GetRulesetId() const {return m_rulesetId;}
     Utf8StringCR GetDisplayType() const {return m_displayType;}
     SelectionInfo const* GetSelectionInfo() const {return m_selectionInfo.get();}
+    bool DependsOnConnection(Utf8StringCR connection) const { return m_connectionId.Equals(connection) || m_connectionId.Equals("*"); }
 };
 
 typedef bmap<int, unsigned> TThreadAllocationsMap;
