@@ -323,14 +323,15 @@ private:
 public:
     ModelChanges m_modelChanges;
 private:
+    void Initialize();
     OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) override;
     void _OnCommitted(bool isCommit, Utf8CP operation) override;
     TrackChangesForTable _FilterTable(Utf8CP tableName) override;
 
     void AddChanges(BeSQLite::Changes const&);
     BeSQLite::DbResult SaveChanges(BeSQLite::IByteArrayCR changeset, Utf8CP operation, bool isSchemaChange);
-    BeSQLite::DbResult SaveSchemaChanges(BeSQLite::DbSchemaChangeSetCR schemaChangeSet, Utf8CP operation);
-    BeSQLite::DbResult SaveDataChanges(BeSQLite::ChangeSetCR changeSet, Utf8CP operation);
+    BeSQLite::DbResult SaveSchemaChanges(BeSQLite::DbSchemaChangeSetCR schemaChangeSet, Utf8CP operation) {return SaveChanges(schemaChangeSet, operation, true); }
+    BeSQLite::DbResult SaveDataChanges(BeSQLite::ChangeSetCR changeSet, Utf8CP operation) {return SaveChanges(changeSet, operation, false);}
 
     BeSQLite::DbResult SaveRebase(int64_t& id, BeSQLite::Rebase const& rebase);
 
@@ -341,12 +342,12 @@ private:
     void ApplyTxnChanges(TxnId, TxnAction);
     BeSQLite::DbResult ApplyChanges(BeSQLite::IChangeSet& changeset, TxnAction txnAction, bool containsSchemaChanges, BeSQLite::Rebase* = nullptr, bool invert = false);
     BeSQLite::DbResult ApplyDbSchemaChangeSet(BeSQLite::DbSchemaChangeSetCR schemaChanges);
-    
+
     void OnBeginApplyChanges();
     void OnEndApplyChanges();
     void OnChangesApplied(BeSQLite::IChangeSet& changeset, bool invert);
     OnCommitStatus CancelChanges(BeSQLite::IChangeSet& changeset);
-    BentleyStatus PropagateChanges();
+    BentleyStatus PropagateChanges() {return DoPropagateChanges(*this);}
     BentleyStatus DoPropagateChanges(BeSQLite::ChangeTracker& tracker);
     void ReverseTxnRange(TxnRange const& txnRange);
     DgnDbStatus ReverseActions(TxnRange const& txnRange);
@@ -370,16 +371,17 @@ public:
     void CallJsTxnManager(Utf8CP methodName) {DgnDb::CallJsFunction(m_dgndb.GetJsTxns(), methodName, {}); };
     void SetInteractive() {m_isInteractive = true;}
 
-    DgnDbStatus DeleteFromStartTo(TxnId lastId); //!< @private
-    DgnDbStatus DeleteRebases(int64_t lastRebaseId); //!< @private
+    void DeleteAllTxns();
+    void DeleteFromStartTo(TxnId lastId); //!< @private
+    void DeleteRebases(int64_t lastRebaseId); //!< @private
     void DeleteReversedTxns(); //!< @private
     void OnBeginValidate(); //!< @private
     void OnEndValidate(); //!< @private
     void AddTxnTable(DgnDomain::TableHandler*);//!< @private
     DGNPLATFORM_EXPORT TxnManager(DgnDbR); //!< @private
     DGNPLATFORM_EXPORT BeSQLite::DbResult InitializeTableHandlers(); //!< @private
-    TxnRelationshipLinkTables& RelationshipLinkTables(); //!< @private
     void EnableNotifyTxnMonitors(bool enabled) { m_enableNotifyTxnMonitors = enabled; }
+    TxnRelationshipLinkTables& GetRelationshipLinkTables() { return m_rlt; }//!< @private
 
     //! A statement cache exclusively for Txn-based statements.
     BeSQLite::CachedStatementPtr GetTxnStatement(Utf8CP sql) const;
@@ -477,8 +479,11 @@ public:
     //! @return True if there are currently any reinstate-able (redoable) changes
     bool IsRedoPossible() const {return !m_reversedTxn.empty();}
 
+    // return true if there are any non-reversed txns in the db
+    DGNPLATFORM_EXPORT bool HasPendingTxns() const;
+
     //! Returns true if there are uncommitted OR committed changes.
-    bool HasLocalChanges() const {return HasChanges() || QueryNextTxnId(TxnManager::TxnId(0)).IsValid();}
+    bool HasLocalChanges() const {return HasChanges() || HasPendingTxns();}
 
     //! Reverse (undo) the most recent operation(s).
     //! @param[in] numOperations the number of operations to reverse. If this is greater than 1, the entire set of operations will
@@ -516,11 +521,6 @@ public:
     //! @note If there are any outstanding uncommitted changes, they are reversed before the Txn is reinstated.
     DGNPLATFORM_EXPORT DgnDbStatus ReinstateTxn();
     //@}
-
-    //! Get a summary of changes from all transactions starting with the specified TxnId.
-    //! @remarks Errors out if there are any uncommitted changes in the current transaction. i.e., @ref HasChanges() has to
-    //! return false. Call @ref BeSQLite::Db::SaveChanges() or @ref BeSQLite::Db::AbandonChanges() before calling this method.
-    DGNPLATFORM_EXPORT BentleyStatus GetChangeSummary(BeSQLite::EC::ChangeSummary& changeSummary, TxnId startTxnId);
 
     //! Get the DgnDb for this TxnManager
     DgnDbR GetDgnDb() {return m_dgndb;}

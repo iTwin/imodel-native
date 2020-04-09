@@ -1488,7 +1488,7 @@ public:
     }
     Napi::Value GetRedoString(Napi::CallbackInfo const& info) {return toJsString(Env(), m_dgndb->Txns().GetRedoString());}
     Napi::Value HasUnsavedChanges(Napi::CallbackInfo const& info) {return Napi::Boolean::New(Env(), m_dgndb->Txns().HasChanges());}
-    Napi::Value HasSavedChanges(Napi::CallbackInfo const& info) {return Napi::Boolean::New(Env(), m_dgndb->Txns().QueryNextTxnId(TxnManager::TxnId(0)).IsValid());}
+    Napi::Value HasPendingTxns(Napi::CallbackInfo const& info) {return Napi::Boolean::New(Env(), m_dgndb->Txns().HasPendingTxns());}
     Napi::Value IsRedoPossible(Napi::CallbackInfo const& info) {return Napi::Boolean::New(Env(), m_dgndb->Txns().IsRedoPossible());}
     Napi::Value IsUndoPossible(Napi::CallbackInfo const& info) {
         OPTIONAL_ARGUMENT_BOOL(0, allowCrossSessions, false, Env().Undefined());
@@ -2506,6 +2506,7 @@ public:
             InstanceMethod("cancelTileContentRequests", &NativeDgnDb::CancelTileContentRequests),
             InstanceMethod("cancelTo", &NativeDgnDb::CancelTo),
             InstanceMethod("closeIModel", &NativeDgnDb::CloseIModel),
+            InstanceMethod("concurrentQueryInit", &NativeDgnDb::ConcurrentQueryInit),
             InstanceMethod("createChangeCache", &NativeDgnDb::CreateChangeCache),
             InstanceMethod("createClassViewsInDb", &NativeDgnDb::CreateClassViewsInDb),
             InstanceMethod("createIModel", &NativeDgnDb::CreateIModel),
@@ -2550,12 +2551,12 @@ public:
             InstanceMethod("getSchemaItem", &NativeDgnDb::GetSchemaItem),
             InstanceMethod("getTileContent", &NativeDgnDb::GetTileContent),
             InstanceMethod("getTileTree", &NativeDgnDb::GetTileTree),
-            InstanceMethod("purgeTileTrees", &NativeDgnDb::PurgeTileTrees),
             InstanceMethod("getTxnDescription", &NativeDgnDb::GetTxnDescription),
             InstanceMethod("getUndoString", &NativeDgnDb::GetUndoString),
             InstanceMethod("hasFatalTxnError", &NativeDgnDb::HasFatalTxnError),
+            InstanceMethod("hasSavedChanges", &NativeDgnDb::HasPendingTxns), // deprecated, use hasPendingChanges
+            InstanceMethod("hasPendingTxns", &NativeDgnDb::HasPendingTxns),
             InstanceMethod("hasUnsavedChanges", &NativeDgnDb::HasUnsavedChanges),
-            InstanceMethod("hasSavedChanges", &NativeDgnDb::HasSavedChanges),
             InstanceMethod("importFunctionalSchema", &NativeDgnDb::ImportFunctionalSchema),
             InstanceMethod("importSchemas", &NativeDgnDb::ImportSchemas),
             InstanceMethod("inBulkOperation", &NativeDgnDb::InBulkOperation),
@@ -2573,7 +2574,10 @@ public:
             InstanceMethod("isUndoPossible", &NativeDgnDb::IsUndoPossible),
             InstanceMethod("logTxnError", &NativeDgnDb::LogTxnError),
             InstanceMethod("openIModel", &NativeDgnDb::OpenIModel),
+            InstanceMethod("pollConcurrentQuery", &NativeDgnDb::PollConcurrentQuery),
             InstanceMethod("pollTileContent", &NativeDgnDb::PollTileContent),
+            InstanceMethod("postConcurrentQuery", &NativeDgnDb::PostConcurrentQuery),
+            InstanceMethod("purgeTileTrees", &NativeDgnDb::PurgeTileTrees),
             InstanceMethod("queryFileProperty", &NativeDgnDb::QueryFileProperty),
             InstanceMethod("queryFirstTxnId", &NativeDgnDb::QueryFirstTxnId),
             InstanceMethod("queryModelExtents", &NativeDgnDb::QueryModelExtents),
@@ -2603,9 +2607,6 @@ public:
             InstanceMethod("updateLinkTableRelationship", &NativeDgnDb::UpdateLinkTableRelationship),
             InstanceMethod("updateModel", &NativeDgnDb::UpdateModel),
             InstanceMethod("updateProjectExtents", &NativeDgnDb::UpdateProjectExtents),
-            InstanceMethod("concurrentQueryInit", &NativeDgnDb::ConcurrentQueryInit),
-            InstanceMethod("postConcurrentQuery", &NativeDgnDb::PostConcurrentQuery),
-            InstanceMethod("pollConcurrentQuery", &NativeDgnDb::PollConcurrentQuery),
             StaticMethod("getAssetsDir", &NativeDgnDb::GetAssetDir),
             StaticMethod("enableSharedCache", &NativeDgnDb::EnableSharedCache),
             StaticMethod("encryptDb", &NativeDgnDb::EncryptDb),

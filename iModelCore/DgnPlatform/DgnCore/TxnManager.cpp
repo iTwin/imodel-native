@@ -74,29 +74,15 @@ CachedStatementPtr TxnManager::GetTxnStatement(Utf8CP sql) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                  Ramanujam.Raman   01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult TxnManager::SaveSchemaChanges(BeSQLite::DbSchemaChangeSetCR schemaChangeSet, Utf8CP operation)
-    {
-    return SaveChanges(schemaChangeSet, operation, true /*=isSchemaChange*/);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                  Ramanujam.Raman   01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult TxnManager::SaveDataChanges(BeSQLite::ChangeSetCR changeSet, Utf8CP operation)
-    {
-    return SaveChanges(changeSet, operation, false /*=isSchemaChange*/);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * Save an array of bytes representing a change for the current Txn into the DGN_TABLE_Txns table
 * in the DgnDb. This also compresses the changes.
 * @bsimethod                                    Keith.Bentley                   07/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult TxnManager::SaveChanges(IByteArrayCR changeBytes, Utf8CP operation, bool isSchemaChange)
-    {
-    BeAssert(0 != changeBytes.GetSize());
+DbResult TxnManager::SaveChanges(IByteArrayCR changeBytes, Utf8CP operation, bool isSchemaChange) {
+    if (0 == changeBytes.GetSize()) {
+        BeAssert(false);
+        return BE_SQLITE_ERROR;
+    }
 
     enum Column : int {Id=1,Deleted=2,Grouped=3,Operation=4,IsSchemaChange=5,Change=6};
     CachedStatementPtr stmt = GetTxnStatement("INSERT INTO " DGN_TABLE_Txns "(Id,Deleted,Grouped,Operation,IsSchemaChange,Change) VALUES(?,?,?,?,?,?)");
@@ -157,11 +143,10 @@ DbResult TxnManager::SaveRebase(int64_t& id, Rebase const& rebase)
 
     BeAssert(0 != rebase.GetSize());
 
-    CachedStatementPtr stmt = GetTxnStatement("INSERT INTO " DGN_TABLE_Rebase "(Rebase) VALUES(?)");
+    Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE_Rebase "(Rebase) VALUES(?)");
+    stmt.BindBlob(1, rebase.GetData(), rebase.GetSize(), Statement::MakeCopy::No);
 
-    stmt->BindBlob(1, rebase.GetData(), rebase.GetSize(), Statement::MakeCopy::No);
-
-    auto rc = stmt->Step();
+    auto rc = stmt.Step();
     if (BE_SQLITE_DONE == rc)
         id = m_dgndb.GetLastInsertRowId();
     else
@@ -176,107 +161,108 @@ DbResult TxnManager::SaveRebase(int64_t& id, Rebase const& rebase)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult TxnManager::LoadRebases(Rebaser& rebaser, int64_t thruId)
     {
-    if (!m_enableRebasers)
-        {
+    if (!m_enableRebasers) {
         BeAssert(false && "rebasers are not enabled for the DgnDb");
         return BE_SQLITE_OK;
-        }
+    }
 
-    CachedStatementPtr stmt = GetTxnStatement("SELECT Rebase FROM " DGN_TABLE_Rebase " WHERE (Id <= ?)");
-
-    stmt->BindInt64(1, thruId);
+    Statement stmt(m_dgndb, "SELECT Rebase FROM " DGN_TABLE_Rebase " WHERE (Id <= ?)");
+    stmt.BindInt64(1, thruId);
 
     DbResult rc;
-    while (BE_SQLITE_ROW == (rc = stmt->Step()))
-        rebaser.AddRebase(stmt->GetValueBlob(0), stmt->GetColumnBytes(0));
+    while (BE_SQLITE_ROW == (rc = stmt.Step()))
+        rebaser.AddRebase(stmt.GetValueBlob(0), stmt.GetColumnBytes(0));
 
-    return (BE_SQLITE_DONE == rc)? BE_SQLITE_OK: rc;
+    return BE_SQLITE_DONE == rc ? BE_SQLITE_OK : rc;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TxnManager::DeleteRebases(int64_t id)
-    {
-    if (!m_enableRebasers)
-        return DgnDbStatus::Success;
+void TxnManager::DeleteRebases(int64_t id) {
+    if (!m_enableRebasers || id==0)
+        return;
 
-    if (id == 0)
-        return DgnDbStatus::Success;
-    auto delStmt = GetTxnStatement("DELETE FROM " DGN_TABLE_Rebase " WHERE (Id <= ?)");
-    delStmt->BindInt64(1, id);
-    return (BE_SQLITE_DONE == delStmt->Step())? DgnDbStatus::Success: DgnDbStatus::SQLiteError;
-    }
+    Statement stmt(m_dgndb, "DELETE FROM " DGN_TABLE_Rebase " WHERE (Id <= ?)");
+    stmt.BindInt64(1, id);
+    auto result = stmt.Step();
+    BeAssert(BE_SQLITE_DONE == result);
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-int64_t TxnManager::QueryLastRebaseId()
-    {
+int64_t TxnManager::QueryLastRebaseId() {
     if (!m_enableRebasers || !m_dgndb.TableExists(DGN_TABLE_Rebase))
         return 0;
-    auto queryLastRebaseId = GetTxnStatement("SELECT MAX(Id) FROM " DGN_TABLE_Rebase);
-    return (BE_SQLITE_ROW == queryLastRebaseId->Step())? queryLastRebaseId->GetValueInt64(0): 0;
-    }
+
+    Statement stmt(m_dgndb, "SELECT MAX(Id) FROM " DGN_TABLE_Rebase);
+    return BE_SQLITE_ROW == stmt.Step() ? stmt.GetValueInt64(0) : 0;
+}
 
 /*---------------------------------------------------------------------------------**//**
 * Read the description of a Txn
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String TxnManager::GetTxnDescription(TxnId rowid) const
-    {
-    CachedStatementPtr stmt = GetTxnStatement("SELECT Operation FROM " DGN_TABLE_Txns " WHERE Id=?");
-    stmt->BindInt64(1, rowid.GetValue());
-
-    auto rc = stmt->Step();
-    return rc != BE_SQLITE_ROW ? "" : stmt->GetValueText(0);
-    }
+Utf8String TxnManager::GetTxnDescription(TxnId rowid) const {
+    Statement stmt(m_dgndb, "SELECT Operation FROM " DGN_TABLE_Txns " WHERE Id=?");
+    stmt.BindInt64(1, rowid.GetValue());
+    return stmt.Step() == BE_SQLITE_ROW ? stmt.GetValueText(0) : "";
+}
 
 /*---------------------------------------------------------------------------------**//**
 * Returns true if it's a transaction representing a schema change
 * @bsimethod                                                  Ramanujam.Raman   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool TxnManager::IsSchemaChangeTxn(TxnId rowid) const
-    {
-    CachedStatementPtr stmt = GetTxnStatement("SELECT IsSchemaChange FROM " DGN_TABLE_Txns " WHERE Id=?");
-    stmt->BindInt64(1, rowid.GetValue());
-
-    auto rc = stmt->Step();
-    BeAssert(rc == BE_SQLITE_ROW);
-
-    return stmt->GetValueBoolean(0);
-    }
+bool TxnManager::IsSchemaChangeTxn(TxnId rowid) const {
+    Statement stmt(m_dgndb, "SELECT IsSchemaChange FROM " DGN_TABLE_Txns " WHERE Id=?");
+    stmt.BindInt64(1, rowid.GetValue());
+    return stmt.Step() == BE_SQLITE_ROW ? stmt.GetValueBoolean(0) : false;
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool TxnManager::IsMultiTxnMember(TxnId rowid) const
-    {
+bool TxnManager::IsMultiTxnMember(TxnId rowid) const {
     CachedStatementPtr stmt = GetTxnStatement("SELECT Grouped FROM " DGN_TABLE_Txns " WHERE Id=?");
     stmt->BindInt64(1, rowid.GetValue());
+    return stmt->Step() != BE_SQLITE_ROW ? false : stmt->GetValueBoolean(0);
+}
 
-    auto rc = stmt->Step();
-    return rc != BE_SQLITE_ROW ? false : TO_BOOL(stmt->GetValueInt(0));
-    }
+/*---------------------------------------------------------------------------------**//**
+ return true if there are any (non-reversed) txns in the db
+ @bsimethod                                    Keith.Bentley                    04/20
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TxnManager::HasPendingTxns() const {
+    Statement stmt(m_dgndb, "SELECT Id FROM " DGN_TABLE_Txns " WHERE Deleted=0");
+    return stmt.Step() == BE_SQLITE_ROW;
+}
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                    Keith.Bentley                    04/20
++---------------+---------------+---------------+---------------+---------------+------*/
+void TxnManager::Initialize() {
+    m_action = TxnAction::None;
+
+    Statement stmt(m_dgndb, "SELECT MAX(Id) FROM " DGN_TABLE_Txns " WHERE Deleted=0");
+    DbResult result = stmt.Step();
+    BeAssert(result == BE_SQLITE_ROW);
+
+    TxnId last = stmt.GetValueInt64(0); // this is where we left off last session
+    m_curr = TxnId(SessionId(last.GetSession().GetValue()+1), 0); // increment the session id, reset to index to 0.
+    m_reversedTxn.clear();
+    m_dynamicTxns.clear();
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TxnManager::TxnManager(DgnDbR dgndb) : m_dgndb(dgndb), m_stmts(20), m_rlt(*this), m_initTableHandlers(false), m_enableNotifyTxnMonitors(true), m_modelChanges(*this)
     {
-    m_action = TxnAction::None;
-
     m_dgndb.SetChangeTracker(this);
-
-    Statement stmt;
-    stmt.Prepare(m_dgndb, "SELECT MAX(Id) FROM " DGN_TABLE_Txns);
-    DbResult result = stmt.Step();
-    BeAssert(result == BE_SQLITE_ROW);
-
-    TxnId last = stmt.GetValueInt64(0); // this is where we left off last session
-    m_curr = TxnId(SessionId(last.GetSession().GetValue()+1), 0); // increment the session id, reset to index to 0.
-
     m_enableRebasers = m_dgndb.TableExists(DGN_TABLE_Rebase);
+
+    Initialize();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -284,7 +270,10 @@ TxnManager::TxnManager(DgnDbR dgndb) : m_dgndb(dgndb), m_stmts(20), m_rlt(*this)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult TxnManager::InitializeTableHandlers()
     {
-    BeAssert(m_isTracking && "Tracking must be enabled before initializing table handlers");
+    if (!m_isTracking) {
+        BeAssert(false && "Tracking must be enabled before initializing table handlers");
+        return BE_SQLITE_ERROR;
+    }
 
     if (m_initTableHandlers || m_dgndb.IsReadonly())
         return BE_SQLITE_OK;
@@ -293,14 +282,12 @@ DbResult TxnManager::InitializeTableHandlers()
         table->_Initialize();
 
     DbResult result = m_dgndb.SaveChanges(); // "Commit" the creation of temp tables, so that a subsequent call to AbandonChanges will not un-create them.
-    if (result != BE_SQLITE_OK)
-        {
+    if (result != BE_SQLITE_OK) {
         BeAssert(false);
         return result;
-        }
+    }
 
     m_initTableHandlers = true;
-
     return BE_SQLITE_OK;
     }
 
@@ -325,7 +312,7 @@ DgnDbStatus TxnManager::BeginTrackingRelationship(ECN::ECClassCR relClass)
     auto handler = FindTxnTable(tableName);
     if (handler != nullptr)
         {
-        //  Somebody is already tracking this table
+        // Somebody is already tracking this table
         rlt = dynamic_cast<dgn_TxnTable::RelationshipLinkTable*>(handler);
         if (nullptr == rlt)
             {
@@ -524,14 +511,6 @@ DgnDbStatus TxnManager::EndMultiTxnOperation()
 TxnManager::TxnId TxnManager::GetMultiTxnOperationStart()
     {
     return m_multiTxnOp.empty() ? GetSessionStartId() : m_multiTxnOp.back();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TxnManager::PropagateChanges()
-    {
-    return DoPropagateChanges(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -825,7 +804,7 @@ RevisionStatus TxnManager::MergeDataChangesInRevision(DgnRevisionCR revision, Re
 
     RevisionStatus status = RevisionStatus::Success;
     UndoChangeSet indirectChanges;
-    if (HasDataChanges() || QueryNextTxnId(TxnManager::TxnId(0)).IsValid()) // has local data changes
+    if (HasDataChanges() || HasPendingTxns()) // has local data changes
         {
         /*
          * We propagate changes (run dependency rules) ONLY if there are local changes.
@@ -1026,15 +1005,13 @@ void TxnManager::ReportError(bool fatal, Utf8CP errorType, Utf8CP msg)  {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::ModelChanges::Apply()
-    {
-    if (m_enabled)
-        {
+void TxnManager::ModelChanges::Apply() {
+    if (m_enabled) {
         m_mgr.SetMode(BeSQLite::ChangeTracker::Mode::Indirect);
         DoApply();
         m_mgr.SetMode(BeSQLite::ChangeTracker::Mode::Direct);
-        }
     }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/19
@@ -1226,6 +1203,7 @@ DbResult TxnManager::ApplyChanges(IChangeSet& changeset, TxnAction action, bool 
     m_action = TxnAction::None;
     return result;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Affan.Khan        04/20
 * This remove unchanged indexes from DDL. There is already a fix in to remove it from where
@@ -1289,19 +1267,19 @@ BentleyStatus TxnManager::PatchSlowSchemaChangeSet(Utf8StringR patchedDDL, Utf8S
                 else
                     index = 3;
                 }
-            if (index < 0) 
+            if (index < 0)
                 {
                 BeAssert(false && "Should find index name");
                 return ERROR;
                 }
             Utf8String& nameToken = sqlTokens[index];
             Utf8String indexName = nameToken[0] == kQuotedLiteralStart ? nameToken.substr(1, nameToken.size() - 2) : nameToken;
-            if (drop) 
-                { 
+            if (drop)
+                {
                 // record drop index
                 dropIndexes[indexName] = sql;
                 }
-            else 
+            else
                 {
                 // check if we have exact match against sqlite_master index definition for given index name.
                 const auto iter = currentIndexes.find(indexName);
@@ -1313,7 +1291,7 @@ BentleyStatus TxnManager::PatchSlowSchemaChangeSet(Utf8StringR patchedDDL, Utf8S
                     // this safe ton of time for large files.
                     dropIndexes.erase(indexName);
                     }
-                else 
+                else
                     {
                     // record sql for create index which may or may not have a DROP index associated with it.
                     createIndexes[indexName] = sql;
@@ -1336,17 +1314,15 @@ BentleyStatus TxnManager::PatchSlowSchemaChangeSet(Utf8StringR patchedDDL, Utf8S
         }
     // Append all drop index to ddl changes before create index
     for (auto&& kv : dropIndexes)
-        {
         patchedDDL.append(kv.second).append(kStmtDelimiter);
-        }
+
     // Append create index to dll after drop index
     for (auto&& kv : createIndexes)
-        {
         patchedDDL.append(kv.second).append(kStmtDelimiter);
-        }
 
     return patchedDDL == compoundSQL ? ERROR : SUCCESS;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Ramanujam.Raman   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1357,7 +1333,7 @@ DbResult TxnManager::ApplyDbSchemaChangeSet(DbSchemaChangeSetCR dbSchemaChanges)
 
     Utf8String originalDDL = dbSchemaChanges.ToString();
     Utf8String patchedDDL;
-    DbResult result = BE_SQLITE_OK;    
+    DbResult result = BE_SQLITE_OK;
     BentleyStatus status = PatchSlowSchemaChangeSet(patchedDDL, originalDDL);
     if (status == SUCCESS)
         {
@@ -1369,7 +1345,7 @@ DbResult TxnManager::ApplyDbSchemaChangeSet(DbSchemaChangeSetCR dbSchemaChanges)
             LOG.info("[PATCH] Failed to apply patch for #292801 #281557. Fallback to original DDL");
             result = m_dgndb.ExecuteSql(originalDDL.c_str());
             }
-        } 
+        }
     else
         {
         result = m_dgndb.ExecuteSql(originalDDL.c_str());
@@ -1613,12 +1589,11 @@ DgnDbStatus TxnManager::ReverseAll()
     return ReverseActions(TxnRange(lastUndoableId, GetCurrentTxnId()));
     }
 
-/*---------------------------------------------------------------------------------**//**
-* Reinstate ("redo") a range of transactions. Also returns the description of the last reinstated Txn.
+/*---------------------------------------------------------------------------------**/ /**
+* Reinstate ("redo") a range of transactions.
 * @bsimethod                                                    Keith.Bentley   02/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::ReinstateTxn(TxnRange const& revTxn)
-    {
+void TxnManager::ReinstateTxn(TxnRange const& revTxn) {
     BeAssert(m_curr == revTxn.GetFirst());
     BeAssert(!m_reversedTxn.empty());
 
@@ -1626,153 +1601,80 @@ void TxnManager::ReinstateTxn(TxnRange const& revTxn)
         m_dgndb.AbandonChanges();
 
     TxnId last = QueryPreviousTxnId(revTxn.GetLast());
-    for (TxnId curr=revTxn.GetFirst(); curr.IsValid() && curr <= last; curr=QueryNextTxnId(curr))
+    for (TxnId curr = revTxn.GetFirst(); curr.IsValid() && curr <= last; curr = QueryNextTxnId(curr))
         ApplyTxnChanges(curr, TxnAction::Reinstate);
 
     m_dgndb.SaveChanges(); // make sure we save the updated Txn data to disk.
 
     m_curr = revTxn.GetLast();
     m_reversedTxn.pop_back();
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
+/*---------------------------------------------------------------------------------**/ /**
 * @bsimethod                                                    Keith.Bentley   03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TxnManager::ReinstateActions(TxnRange const& revTxn)
-    {
-    ReinstateTxn(revTxn);     // do the actual redo now.
+DgnDbStatus TxnManager::ReinstateActions(TxnRange const& revTxn) {
+    ReinstateTxn(revTxn); // do the actual redo now.
 
     T_HOST.GetTxnAdmin()._OnUndoRedo(*this, TxnAction::Reinstate);
-
     return DgnDbStatus::Success;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
+/*---------------------------------------------------------------------------------**/ /**
 * @bsimethod                                                    Keith.Bentley   03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TxnManager::ReinstateTxn()
-    {
+DgnDbStatus TxnManager::ReinstateTxn() {
     if (!IsRedoPossible())
         return DgnDbStatus::NothingToRedo;
 
     T_HOST.GetTxnAdmin()._OnPrepareForUndoRedo(*this);
-    TxnRange*  revTxn = &m_reversedTxn.back();
-    return  ReinstateActions(*revTxn);
-    }
+    return ReinstateActions(m_reversedTxn.back());
+}
 
-/*---------------------------------------------------------------------------------**//**
+/*---------------------------------------------------------------------------------**/ /**
 * @bsimethod                                                    Keith.Bentley   03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String TxnManager::GetUndoString(AllowCrossSessions crossSessions)
-    {
-    if (!IsUndoPossible(crossSessions))
-        return "";
+Utf8String TxnManager::GetUndoString(AllowCrossSessions crossSessions) {
+    return IsUndoPossible(crossSessions) ? GetTxnDescription(QueryPreviousTxnId(GetCurrentTxnId())) : "";
+}
 
-    return GetTxnDescription(QueryPreviousTxnId(GetCurrentTxnId()));
-    }
-
-/*---------------------------------------------------------------------------------**//**
+/*---------------------------------------------------------------------------------**/ /**
 * @bsimethod                                                    Keith.Bentley   03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String TxnManager::GetRedoString()
-    {
-    if (!IsRedoPossible())
-        return "";
-
-    TxnRange*  revTxn = &m_reversedTxn.back();
-    return GetTxnDescription(revTxn->GetFirst());
-    }
+Utf8String TxnManager::GetRedoString() {
+    return IsRedoPossible() ? GetTxnDescription(m_reversedTxn.back().GetFirst()) : "";
+}
 
 /*---------------------------------------------------------------------------------**//**
-* Cancel any undone (rolled-back) transactions.
+ @bsimethod                                    Keith.Bentley                    04/20
++---------------+---------------+---------------+---------------+---------------+------*/
+void TxnManager::DeleteAllTxns() {
+    m_dgndb.ExecuteSql("DELETE FROM " DGN_TABLE_Txns);
+    if (m_dgndb.TableExists(DGN_TABLE_Rebase))
+        m_dgndb.ExecuteSql("DELETE FROM " DGN_TABLE_Rebase);
+    Initialize();
+}
+
+/*---------------------------------------------------------------------------------**//**
+* Cancel any undone (reversed) transactions.
 * @bsimethod                                                    Keith.Bentley   03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::DeleteReversedTxns()
-    {
-    if (m_reversedTxn.empty())
-        return; // nothing currently undone, nothing to do
-
-    // these transactions are no longer reinstateable. Throw them away.
-    m_reversedTxn.clear();
-    CachedStatementPtr stmt = GetTxnStatement("DELETE FROM " DGN_TABLE_Txns " WHERE Deleted=1");
-    stmt->Step();
-    }
+void TxnManager::DeleteReversedTxns() {
+    m_reversedTxn.clear(); // do this even if this is already empty - there may be reversed txns from a previous session
+    m_dgndb.ExecuteSql("DELETE FROM " DGN_TABLE_Txns " WHERE Deleted=1"); // these transactions are no longer reinstateable. Throw them away.
+}
 
 /*---------------------------------------------------------------------------------**//**
-* Delete transactions from the start of the table to (but not including) the specified
-* last transaction.
+* Delete transactions from the start of the table to (but not including) the specified transaction.
 * @bsimethod                                                  Ramanujam.Raman   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TxnManager::DeleteFromStartTo(TxnId lastId)
-    {
-    CachedStatementPtr stmt = GetTxnStatement("DELETE FROM " DGN_TABLE_Txns " WHERE Id < ?");
-    stmt->BindInt64(1, lastId.GetValue());
+void TxnManager::DeleteFromStartTo(TxnId lastId) {
+    Statement stmt(m_dgndb, "DELETE FROM " DGN_TABLE_Txns " WHERE Id < ?");
+    stmt.BindInt64(1, lastId.GetValue());
 
-    DbResult result = stmt->Step();
-    if (BE_SQLITE_DONE != result)
-        {
-        BeAssert(false);
-        return DgnDbStatus::SQLiteError;
-        }
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                  Ramanujam.Raman   07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TxnManager::GetChangeSummary(ChangeSummary& changeSummary, TxnId startTxnId)
-    {
-    BeAssert(&changeSummary.GetDb() == &m_dgndb);
-
-    TxnId endTxnId = GetCurrentTxnId();
-    if (!startTxnId.IsValid() || startTxnId >= endTxnId)
-        {
-        BeAssert(false && "Invalid starting transaction");
-        return ERROR;
-        }
-
-    if (HasChanges() || InDynamicTxn())
-        {
-        BeAssert(false && "There are unsaved changes in the current transaction. Call db.SaveChanges() or db.AbandonChanges() first");
-        return ERROR;
-        }
-
-    DbResult result;
-
-    TxnId nextTxnId;
-    ChangeGroup changeGroup;
-    for (TxnId currTxnId = startTxnId; currTxnId < endTxnId; currTxnId = QueryNextTxnId(currTxnId))
-        {
-        BeAssert(currTxnId.IsValid());
-
-        if (IsSchemaChangeTxn(currTxnId))
-            {
-            BeAssert(false && "Cannot create a change summary if there are schema changes");
-            return ERROR;
-            }
-
-        UndoChangeSet sqlChangeSet;
-        ReadDataChanges(sqlChangeSet, currTxnId, TxnAction::None);
-
-        result = changeGroup.AddChanges(sqlChangeSet.GetSize(), sqlChangeSet.GetData());
-        if (result != BE_SQLITE_OK)
-            {
-            BeAssert(false); // Failed to group sqlite changesets due to either schema changes- see error codes in sqlite3changegroup_add()
-            return ERROR;
-            }
-        }
-
-    UndoChangeSet mergedSqlChangeSet;
-    result = mergedSqlChangeSet.FromChangeGroup(changeGroup);
-    if (result != BE_SQLITE_OK)
-        {
-        BeAssert(false && "Failed to merge SqlChangeSet-s into a single SqlChangeSet");
-        return ERROR;
-        }
-
-    changeSummary.Free();
-    return changeSummary.FromChangeSet(mergedSqlChangeSet);
-    }
+    DbResult result = stmt.Step();
+    BeAssert(result == BE_SQLITE_DONE);
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
@@ -1877,7 +1779,7 @@ void dgn_TxnTable::Model::AddChange(Changes::Change const& change, ChangeType ch
     DgnClassId classId;
     if (ChangeType::Update == changeType)
         {
-        // for updates, the element table must be queried for ECClassId since the change set will only contain changed columns
+        // for updates, the model table must be queried for ECClassId since the change set will only contain changed columns
         CachedStatementPtr stmt = m_txnMgr.GetDgnDb().Elements().GetStatement("SELECT ECClassId FROM " BIS_TABLE(BIS_CLASS_Model) " WHERE Id=?");
         stmt->BindId(1, modelId);
         if (BE_SQLITE_ROW != stmt->Step())
@@ -2146,17 +2048,16 @@ dgn_TxnTable::Element::Iterator::Entry dgn_TxnTable::Element::Iterator::begin() 
     return Entry(m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
     }
 
-DgnElementId dgn_TxnTable::Element::Iterator::Entry::GetElementId() const {return m_sql->GetValueId<DgnElementId>(0);}
-DgnModelId dgn_TxnTable::Element::Iterator::Entry::GetModelId() const {return m_sql->GetValueId<DgnModelId>(1);}
-TxnTable::ChangeType dgn_TxnTable::Element::Iterator::Entry::GetChangeType() const {return (TxnTable::ChangeType) m_sql->GetValueInt(2);}
-DgnClassId dgn_TxnTable::Element::Iterator::Entry::GetECClassId() const {return m_sql->GetValueId<DgnClassId>(3);}
+DgnElementId dgn_TxnTable::Element::Iterator::Entry::GetElementId() const { return m_sql->GetValueId<DgnElementId>(0); }
+DgnModelId dgn_TxnTable::Element::Iterator::Entry::GetModelId() const { return m_sql->GetValueId<DgnModelId>(1); }
+TxnTable::ChangeType dgn_TxnTable::Element::Iterator::Entry::GetChangeType() const { return (TxnTable::ChangeType)m_sql->GetValueInt(2); }
+DgnClassId dgn_TxnTable::Element::Iterator::Entry::GetECClassId() const { return m_sql->GetValueId<DgnClassId>(3); }
 
-/*---------------------------------------------------------------------------------**//**
+/*---------------------------------------------------------------------------------**/ /**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::ElementDep::AddDependency(EC::ECInstanceId const& relid, ChangeType changeType)
-    {
-    CachedECSqlStatementPtr stmt  = m_txnMgr.GetDgnDb().GetPreparedECSqlStatement(
+void dgn_TxnTable::ElementDep::AddDependency(EC::ECInstanceId const& relid, ChangeType changeType) {
+    CachedECSqlStatementPtr stmt = m_txnMgr.GetDgnDb().GetPreparedECSqlStatement(
         "SELECT element.Model.Id FROM " BIS_SCHEMA(BIS_CLASS_Element) " AS element, " BIS_SCHEMA(BIS_REL_ElementDrivesElement) " AS DEP"
         " WHERE (DEP.ECInstanceId=?) AND (element.ECInstanceId=DEP.SourceECInstanceId)");
     stmt->BindId(1, relid);
@@ -2166,21 +2067,13 @@ void dgn_TxnTable::ElementDep::AddDependency(EC::ECInstanceId const& relid, Chan
 
     m_stmt.BindId(1, relid);
     m_stmt.BindId(2, mid);
-    m_stmt.BindInt(3, (int) changeType);
+    m_stmt.BindInt(3, (int)changeType);
     auto rc = m_stmt.Step();
     UNUSED_VARIABLE(rc);
 
     m_stmt.Reset();
     m_stmt.ClearBindings();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-TxnRelationshipLinkTables& TxnManager::RelationshipLinkTables()
-    {
-    return m_rlt;
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                   04/2016
@@ -2288,7 +2181,7 @@ void dgn_TxnTable::UniqueRelationshipLinkTable::_UpdateSummary(Changes::Change c
         QueryTargets(srcelemid, tgtelemid, relid, *m_ecclass); //  SourceECInstanceId and TargetECInstanceId never change.
         }
 
-    m_txnMgr.RelationshipLinkTables().Insert(relid, relclsid, srcelemid, tgtelemid, changeType);
+    m_txnMgr.GetRelationshipLinkTables().Insert(relid, relclsid, srcelemid, tgtelemid, changeType);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2315,7 +2208,7 @@ void dgn_TxnTable::MultiRelationshipLinkTable::_UpdateSummary(Changes::Change ch
     ECN::ECClassCP relcls = m_txnMgr.GetDgnDb().Schemas().GetClass(relclsid);
 
     if (m_ecclasses.find(relcls) == m_ecclasses.end())  // while this class (among others) is mapped into this table,
-        return;                                         // I am not actually tracking this class.
+         return;                                         // I am not actually tracking this class.
 
     ECInstanceId relid = change.GetValue(ECInstanceId_LTColId, stage).GetValueId<ECInstanceId>();
 
@@ -2330,7 +2223,7 @@ void dgn_TxnTable::MultiRelationshipLinkTable::_UpdateSummary(Changes::Change ch
         QueryTargets(srcelemid, tgtelemid, relid, *relcls); //  SourceECInstanceId and TargetECInstanceId never change.
         }
 
-    m_txnMgr.RelationshipLinkTables().Insert(relid, relclsid, srcelemid, tgtelemid, changeType);
+    m_txnMgr.GetRelationshipLinkTables().Insert(relid, relclsid, srcelemid, tgtelemid, changeType);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2586,7 +2479,7 @@ void TxnManager::DumpTxns(bool verbose) const
             else
                 {
                 printf("%s\n\n", title.c_str());
-                BeSQLite::EC::ChangeSummary changeSummary(db);
+                ChangeSummary changeSummary(db);
                 changeSummary.FromChangeSet(sqlChangeSet);
                 changeSummary.Dump();
                 }

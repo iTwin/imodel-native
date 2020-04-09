@@ -27,7 +27,6 @@ protected:
     void DumpSqlChanges(DgnDbCR dgnDb, Changes const& sqlChanges, Utf8CP label);
 
     void GetChangeSummaryFromCurrentTransaction(ChangeSummary& changeSummary);
-    void GetChangeSummaryFromSavedTransactions(ChangeSummary& changeSummary);
 
     bool ChangeSummaryContainsInstance(ChangeSummary const& changeSummary, ECInstanceId instanceId, Utf8CP schemaName, Utf8CP className, DbOpcode dbOpcode);
 
@@ -191,15 +190,6 @@ void ChangeSummaryTestFixture::GetChangeSummaryFromCurrentTransaction(ChangeSumm
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    07/2015
 //---------------------------------------------------------------------------------------
-void ChangeSummaryTestFixture::GetChangeSummaryFromSavedTransactions(ChangeSummary& changeSummary)
-    {
-    BentleyStatus status = m_db->Txns().GetChangeSummary(changeSummary, m_db->Txns().GetSessionStartId());
-    ASSERT_TRUE(status == SUCCESS);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    07/2015
-//---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
     {
     SetupDgnDb(ChangeTestFixture::s_seedFileInfo.fileName, L"ElementChangesFromCurrentTransaction.bim");
@@ -321,7 +311,7 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
                 TargetECClassId;NULL;BisCore:SpatialCategory:259
                 TargetECInstanceId;NULL;0:7
     */
-    
+
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(csModel->GetModelId().GetValueUnchecked()), BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalModel, DbOpcode::Insert));
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(csCategoryId.GetValueUnchecked()), BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialCategory, DbOpcode::Insert));
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(elementId.GetValueUnchecked()), GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject, DbOpcode::Insert));
@@ -332,7 +322,7 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
     m_db->SaveChanges();
     ModifyElement(elementId);
     GetChangeSummaryFromCurrentTransaction(changeSummary);
-    
+
     DumpChangeSummary(changeSummary, "ChangeSummary after updates");
 
     /*
@@ -348,7 +338,7 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
     m_db->SaveChanges();
     DeleteElement(elementId);
     GetChangeSummaryFromCurrentTransaction(changeSummary);
-    
+
     DumpChangeSummary(changeSummary, "ChangeSummary after deletes");
 
     /*
@@ -400,147 +390,6 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(elementId.GetValueUnchecked()), GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject, DbOpcode::Delete));
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    07/2015
-//---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
-    {
-    SetupDgnDb(ChangeTestFixture::s_seedFileInfo.fileName, L"ElementChangesFromSavedTransactions.bim");
-
-    DgnElementId elementId = InsertPhysicalElement(*m_db, *m_defaultModel, m_defaultCategoryId, 0, 0, 0);
-
-    m_db->SaveChanges();
-
-    ChangeSummary changeSummary(*m_db);
-    GetChangeSummaryFromSavedTransactions(changeSummary);
-
-    DumpChangeSummary(changeSummary, "After inserts");
-
-    /* 
-        After inserts:
-        BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
-                AccessString;OldValue;NewValue
-        0:1;Generic:PhysicalObject:256;Insert;No
-                BBoxHigh.X;NULL;0.50000000000000000
-                BBoxHigh.Y;NULL;0.50000000000000000
-                BBoxHigh.Z;NULL;0.50000000000000000
-                BBoxLow.X;NULL;-0.50000000000000000
-                BBoxLow.Y;NULL;-0.50000000000000000
-                BBoxLow.Z;NULL;-0.50000000000000000
-                Category.Id;NULL;18
-                CodeScope.Id;NULL;1
-                CodeSpec.Id;NULL;1
-                GeometryStream;NULL;...
-                InSpatialIndex;NULL;1
-                LastMod;NULL;2458716.17355979187414050
-                Model.Id;NULL;17
-                Origin.X;NULL;0.00000000000000000
-                Origin.Y;NULL;0.00000000000000000
-                Origin.Z;NULL;0.00000000000000000
-                Pitch;NULL;0.00000000000000000
-                Roll;NULL;0.00000000000000000
-                Yaw;NULL;0.00000000000000000
-        0:17;BisCore:PhysicalModel:198;Update;Yes
-                GeometryGuid;NULL;...
-                LastMod;NULL;2458716.17355987289920449
-        0:1;BisCore:ModelContainsElements:81;Insert;No
-                SourceECClassId;NULL;BisCore:PhysicalModel:198
-                SourceECInstanceId;NULL;0:17
-                TargetECClassId;NULL;Generic:PhysicalObject:256
-                TargetECInstanceId;NULL;0:1
-        0:1;BisCore:CodeSpecSpecifiesCode:88;Insert;No
-                SourceECClassId;NULL;BisCore:CodeSpec:89
-                SourceECInstanceId;NULL;0:1
-                TargetECClassId;NULL;Generic:PhysicalObject:256
-                TargetECInstanceId;NULL;0:1
-        0:1;BisCore:ElementScopesCode:90;Insert;No
-                SourceECClassId;NULL;BisCore:Subject:229
-                SourceECInstanceId;NULL;0:1
-                TargetECClassId;NULL;Generic:PhysicalObject:256
-                TargetECInstanceId;NULL;0:1
-        0:1;BisCore:GeometricElement3dIsInCategory:161;Insert;No
-                SourceECClassId;NULL;Generic:PhysicalObject:256
-                SourceECInstanceId;NULL;0:1
-                TargetECClassId;NULL;BisCore:SpatialCategory:162
-                TargetECInstanceId;NULL;0:18
-    */
-    EXPECT_EQ(6, changeSummary.MakeInstanceIterator().QueryCount());
-
-    ModifyElement(elementId);
-
-    m_db->SaveChanges();
-
-    GetChangeSummaryFromSavedTransactions(changeSummary);
-
-    DumpChangeSummary(changeSummary, "After updates");
-
-    /*
-        After updates:
-        BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
-                AccessString;OldValue;NewValue
-        0:1;Generic:PhysicalObject:256;Insert;No
-                BBoxHigh.X;NULL;0.50000000000000000
-                BBoxHigh.Y;NULL;0.50000000000000000
-                BBoxHigh.Z;NULL;0.50000000000000000
-                BBoxLow.X;NULL;-0.50000000000000000
-                BBoxLow.Y;NULL;-0.50000000000000000
-                BBoxLow.Z;NULL;-0.50000000000000000
-                Category.Id;NULL;18
-                CodeScope.Id;NULL;1
-                CodeSpec.Id;NULL;1
-                GeometryStream;NULL;...
-                InSpatialIndex;NULL;1
-                LastMod;NULL;2458716.17936656251549721
-                Model.Id;NULL;17
-                Origin.X;NULL;0.00000000000000000
-                Origin.Y;NULL;0.00000000000000000
-                Origin.Z;NULL;0.00000000000000000
-                Pitch;NULL;0.00000000000000000
-                Roll;NULL;0.00000000000000000
-                Yaw;NULL;0.00000000000000000
-        0:17;BisCore:PhysicalModel:198;Update;Yes
-                GeometryGuid;NULL;...
-                LastMod;NULL;2458716.17936658579856157
-        0:1;BisCore:ModelContainsElements:81;Insert;No
-                SourceECClassId;NULL;BisCore:PhysicalModel:198
-                SourceECInstanceId;NULL;0:17
-                TargetECClassId;NULL;Generic:PhysicalObject:256
-                TargetECInstanceId;NULL;0:1
-        0:1;BisCore:CodeSpecSpecifiesCode:88;Insert;No
-                SourceECClassId;NULL;BisCore:CodeSpec:89
-                SourceECInstanceId;NULL;0:1
-                TargetECClassId;NULL;Generic:PhysicalObject:256
-                TargetECInstanceId;NULL;0:1
-        0:1;BisCore:ElementScopesCode:90;Insert;No
-                SourceECClassId;NULL;BisCore:Subject:229
-                SourceECInstanceId;NULL;0:1
-                TargetECClassId;NULL;Generic:PhysicalObject:256
-                TargetECInstanceId;NULL;0:1
-        0:1;BisCore:GeometricElement3dIsInCategory:161;Insert;No
-                SourceECClassId;NULL;Generic:PhysicalObject:256
-                SourceECInstanceId;NULL;0:1
-                TargetECClassId;NULL;BisCore:SpatialCategory:162
-                TargetECInstanceId;NULL;0:18
-    */
-    EXPECT_EQ(6, changeSummary.MakeInstanceIterator().QueryCount());
-
-    DeleteElement(elementId);
-
-    m_db->SaveChanges();
-
-    GetChangeSummaryFromSavedTransactions(changeSummary);
-
-    DumpChangeSummary(changeSummary, "After deletes");
-    /*
-        After deletes:
-        BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
-                AccessString;OldValue;NewValue
-        0:17;BisCore:PhysicalModel:198;Update;Yes
-                GeometryGuid;NULL;...
-                LastMod;NULL;2458716.18158209510147572
-     */
-    EXPECT_EQ(1, changeSummary.MakeInstanceIterator().QueryCount());
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    07/2015
@@ -585,16 +434,16 @@ TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
     m_db->SaveChanges();
 
     RefCountedPtr<DgnElement> childElementPtr = m_db->Elements().GetForEdit<DgnElement>(childElementId);
-    
+
     DgnDbStatus dbStatus = childElementPtr->SetParentId(parentElementId, parentRelClassId);
     ASSERT_TRUE(DgnDbStatus::Success == dbStatus);
-    
+
     childElementPtr->Update(&dbStatus);
     ASSERT_TRUE(DgnDbStatus::Success == dbStatus);
 
     ChangeSummary changeSummary(*m_db);
     GetChangeSummaryFromCurrentTransaction(changeSummary);
-    
+
     DumpChangeSummary(changeSummary, "ChangeSummary after setting ParentId");
 
     /*
@@ -683,7 +532,7 @@ TEST_F(ChangeSummaryTestFixture, QueryChangedElements)
     Utf8CP ecsql = "SELECT el.ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_PhysicalElement) " el WHERE IsChangedInstance(?, el.ECClassId, el.ECInstanceId)";
     ECSqlStatus status = stmt.Prepare(*m_db, ecsql);
     ASSERT_TRUE(status.IsSuccess());
-    
+
     stmt.BindInt64(1, (int64_t) &changeSummary);
 
     bset<DgnElementId> changedElements;
@@ -696,7 +545,7 @@ TEST_F(ChangeSummaryTestFixture, QueryChangedElements)
     EXPECT_EQ(insertedElements, changedElements);
 
     stmt.Finalize();
-    
+
     // Query changed elements directly using the API
     bmap<ECInstanceId, ChangeSummary::Instance> changes;
     ECClassId elClassId = m_db->Schemas().GetClassId(BIS_ECSCHEMA_NAME, "Element");
@@ -708,41 +557,3 @@ TEST_F(ChangeSummaryTestFixture, QueryChangedElements)
         }
     EXPECT_EQ(insertedElements.size(), changedElements.size());
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    07/2015
-//---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, QueryMultipleSessions)
-    {
-    SetupDgnDb(ChangeTestFixture::s_seedFileInfo.fileName, L"QueryMultipleSessions.bim");
-    
-    int nSessions = 5;
-    int nTransactionsPerSession = 5;
-    BeFileName fileName = BeFileName(m_db->GetDbFileName(), true);
-    for (int ii = 0; ii < nSessions; ii++)
-        {
-        OpenDgnDb(fileName);
-
-        for (int jj = 0; jj < nTransactionsPerSession; jj++)
-            {
-            InsertPhysicalElement(*m_db, *m_defaultModel, m_defaultCategoryId, ii, jj, 0);
-            m_db->SaveChanges();
-            }
-
-        CloseDgnDb();
-        }
-
-    OpenDgnDb(fileName);
-
-    TxnManager::TxnId startTxnId(TxnManager::SessionId(1), 0); // First session, First transaction
-    ChangeSummary changeSummary(*m_db);
-    BentleyStatus status = m_db->Txns().GetChangeSummary(changeSummary, startTxnId);
-    ASSERT_TRUE(status == SUCCESS);
-
-    //printf("\t%s:\n", "ChangeSummary after multiple sessions");
-    //changeSummary.Dump();
-
-    int expectedPhysicalObjects = nSessions * nTransactionsPerSession;
-    EXPECT_EQ(expectedPhysicalObjects, GetChangeSummaryInstanceCount(changeSummary, GENERIC_SCHEMA(GENERIC_CLASS_PhysicalObject)));
-    }
-

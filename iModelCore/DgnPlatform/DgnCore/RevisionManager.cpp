@@ -556,7 +556,7 @@ void DgnRevision::ExtractCodes(DgnCodeSet& assignedCodes, DgnCodeSet& discardedC
                 continue;
             if (bcMgr->GetNormalChannelParentOf(modelId, nullptr).IsValid())    // Feature #160330: if element is in normal channel, then its model should be *regarded* as locked for Code-scoping purposes
                 continue;
-            } 
+            }
 
         DgnCode oldCode = (dbOpcode == DbOpcode::Insert) ? DgnCode() : GetCodeFromChangeOrDb(dgndb, columnIter, Changes::Change::Stage::Old);
         DgnCode newCode = (dbOpcode == DbOpcode::Delete) ? DgnCode() : GetCodeFromChangeOrDb(dgndb, columnIter, Changes::Change::Stage::New);
@@ -1223,6 +1223,8 @@ DgnRevisionPtr RevisionManager::StartCreateRevision(RevisionStatus* outStatus /*
         return nullptr;
         }
 
+    txnMgr.DeleteReversedTxns(); // make sure there's nothing undone before we create a new revision
+
     if (txnMgr.HasChanges())
         {
         BeAssert(false && "There are unsaved changes in the current transaction. Call db.SaveChanges() or db.AbandonChanges() first");
@@ -1243,6 +1245,11 @@ DgnRevisionPtr RevisionManager::StartCreateRevision(RevisionStatus* outStatus /*
         status = RevisionStatus::IsCreatingRevision;
         return nullptr;
         }
+
+    if (!txnMgr.HasPendingTxns()) {
+        status = RevisionStatus::NoTransactions;
+        return nullptr;
+    }
 
     TxnManager::TxnId endTxnId = txnMgr.GetCurrentTxnId();
     int64_t lastRebaseId = txnMgr.QueryLastRebaseId();
@@ -1274,11 +1281,8 @@ RevisionStatus RevisionManager::FinishCreateRevision()
     TxnManager::TxnId endTxnId = QueryCurrentRevisionEndTxnId();
     BeAssert(endTxnId.IsValid());
 
-    if (DgnDbStatus::Success != m_dgndb.Txns().DeleteFromStartTo(endTxnId))
-        return RevisionStatus::SQLiteError;
-
-    if (DgnDbStatus::Success != m_dgndb.Txns().DeleteRebases(QueryLastRebaseId()))
-        return RevisionStatus::SQLiteError;
+    m_dgndb.Txns().DeleteFromStartTo(endTxnId);
+    m_dgndb.Txns().DeleteRebases(QueryLastRebaseId());
 
     RevisionStatus status = SaveParentRevisionId(currentRevision->GetId());
     if (RevisionStatus::Success != status)

@@ -183,8 +183,10 @@ export declare namespace IModelJsNative {
     public buildBriefcaseManagerResourcesRequestForElement(req: BriefcaseManagerResourcesRequest, elemId: string, opcode: DbOpcode): RepositoryStatus;
     public buildBriefcaseManagerResourcesRequestForLinkTableRelationship(req: BriefcaseManagerResourcesRequest, relKey: string, opcode: DbOpcode): RepositoryStatus;
     public buildBriefcaseManagerResourcesRequestForModel(req: BriefcaseManagerResourcesRequest, modelId: string, opcode: DbOpcode): RepositoryStatus;
+    public cancelTileContentRequests(treeId: string, contentIds: string[]): void;
     public cancelTo(txnId: TxnIdString, allowCrossSessions?: boolean): IModelStatus;
     public closeIModel(): void;
+    public concurrentQueryInit(config: ConcurrentQuery.Config): boolean;
     public createChangeCache(changeCacheFile: ECDb, changeCachePath: string): DbResult;
     public createClassViewsInDb(): BentleyStatus;
     public createIModel(fileName: string, props: string): DbResult;
@@ -218,6 +220,7 @@ export declare namespace IModelJsNative {
     public getGeoCoordinatesFromIModelCoordinates(points: string): string;
     public getIModelCoordinatesFromGeoCoordinates(points: string): string;
     public getIModelProps(): string;
+    public getMassProperties(props: string): string;
     public getModel(opts: string): ErrorStatusOrResult<IModelStatus, string>;
     public getMultiTxnOperationDepth(): number;
     public getParentChangeSetId(): string;
@@ -227,15 +230,14 @@ export declare namespace IModelJsNative {
     public getSchema(name: string): ErrorStatusOrResult<IModelStatus, string>;
     public getSchemaItem(schemaName: string, itemName: string): ErrorStatusOrResult<IModelStatus, string>;
     public getTileContent(treeId: string, tileId: string, callback: (result: ErrorStatusOrResult<IModelStatus, Uint8Array>) => void): void;
-    public pollTileContent(treeId: string, tileId: string): ErrorStatusOrResult<IModelStatus, TileContentState | TileContent>;
     public getTileTree(id: string, callback: (result: ErrorStatusOrResult<IModelStatus, any>) => void): void;
-    public purgeTileTrees(modelIds: Id64Array | undefined): void;
-    public cancelTileContentRequests(treeId: string, contentIds: string[]): void;
     public getTxnDescription(txnId: TxnIdString): string;
     public getUndoString(allowCrossSessions?: boolean): string;
     public hasFatalTxnError(): boolean;
-    public hasUnsavedChanges(): boolean;
+    /** @deprecated */
     public hasSavedChanges(): boolean;
+    public hasPendingTxns(): boolean;
+    public hasUnsavedChanges(): boolean;
     public importFunctionalSchema(): DbResult;
     public importSchemas(schemaFileNames: string[]): DbResult;
     public inBulkOperation(): boolean;
@@ -252,8 +254,11 @@ export declare namespace IModelJsNative {
     public isTxnIdValid(txnId: TxnIdString): boolean;
     public isUndoPossible(allowCrossSessions?: boolean): boolean;
     public logTxnError(fatal: boolean): void;
-    public getMassProperties(props: string): string;
     public openIModel(dbName: string, mode: OpenMode, upgrade?: UpgradeOptions, encryptionProps?: string /* JSON.stringify(IModelEncryptionProps) */): DbResult;
+    public pollConcurrentQuery(taskId: number): { status: ConcurrentQuery.PollStatus, result: string, rowCount: number };
+    public pollTileContent(treeId: string, tileId: string): ErrorStatusOrResult<IModelStatus, TileContentState | TileContent>;
+    public postConcurrentQuery(ecsql: string, bindings: string, limit: QueryLimit, quota: QueryQuota, priority: QueryPriority): { status: ConcurrentQuery.PostStatus, taskId: number };
+    public purgeTileTrees(modelIds: Id64Array | undefined): void;
     public queryFileProperty(props: string, wantString: boolean): string | Uint8Array | undefined;
     public queryFirstTxnId(allowCrossSessions?: boolean): TxnIdString;
     public queryModelExtents(options: string): ErrorStatusOrResult<IModelStatus, string>;
@@ -283,9 +288,6 @@ export declare namespace IModelJsNative {
     public updateLinkTableRelationship(props: string): DbResult;
     public updateModel(modelProps: string): IModelStatus;
     public updateProjectExtents(newExtentsJson: string): void;
-    public concurrentQueryInit(config: ConcurrentQuery.Config): boolean;
-    public postConcurrentQuery(ecsql: string, bindings: string, limit: QueryLimit, quota: QueryQuota, priority: QueryPriority): { status: ConcurrentQuery.PostStatus, taskId: number };
-    public pollConcurrentQuery(taskId: number): { status: ConcurrentQuery.PollStatus, result: string, rowCount: number };
     public static vacuum(dbName: string, pageSize?: number): DbResult;
     public static unsafeSetBriefcaseId(dbName: string, briefcaseId: number, dbGuid?: GuidString, projectGuid?: GuidString): DbResult;
     public static enableSharedCache(enable: boolean): DbResult;

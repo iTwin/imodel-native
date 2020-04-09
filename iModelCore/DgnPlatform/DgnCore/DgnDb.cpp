@@ -261,25 +261,6 @@ DbResult DgnDb::_OnDbOpening()
     return InitializeElementIdSequence();
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    06/2018
-//---------------------------------------------------------------------------------------
-DbResult DgnDb::DeleteAllTxns()
-    {
-    PRECONDITION(!Revisions().IsCreatingRevision() && "Cannot setup a master Db when a revision is being created", BE_SQLITE_ERROR);
-
-    TxnManagerR txnMgr = Txns();
-    DgnDbStatus status = txnMgr.DeleteFromStartTo(txnMgr.GetCurrentTxnId());
-    if (DgnDbStatus::Success != status)
-        return BE_SQLITE_ERROR;
-
-    status = txnMgr.DeleteRebases(txnMgr.QueryLastRebaseId());
-    if (DgnDbStatus::Success != status)
-        return BE_SQLITE_ERROR;
-
-    return BE_SQLITE_OK;
-    }
-
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    04/17
 //--------------------------------------------------------------------------------------
@@ -299,10 +280,7 @@ DbResult DgnDb::_OnBeforeSetAsMaster(BeSQLite::BeGuid guid)
         BackupParentChangeSetIds();
     else
         {
-        result = DeleteAllTxns();
-        if (BE_SQLITE_OK != result)
-            return result;
-
+        Txns().DeleteAllTxns();
         InitParentChangeSetIds();
         }
     return BE_SQLITE_OK;
@@ -386,7 +364,7 @@ DbResult DgnDb::_AfterDataChangeSetApplied()
     result = ResetElementIdSequence(GetBriefcaseId());
     if (result != BE_SQLITE_OK)
         {
-        LOG.errorv("Failed to reset element id sequence after apply with SQLite error %s", GetLastError().c_str());   
+        LOG.errorv("Failed to reset element id sequence after apply with SQLite error %s", GetLastError().c_str());
         return result;
         }
 

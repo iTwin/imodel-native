@@ -182,7 +182,6 @@ private:
     void InitParentChangeSetIds();
     void BackupParentChangeSetIds();
     BeSQLite::DbResult RestoreParentChangeSetIds();
-    BeSQLite::DbResult DeleteAllTxns();
 
 protected:
     friend struct Txns;
