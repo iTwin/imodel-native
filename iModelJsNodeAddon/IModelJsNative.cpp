@@ -5154,9 +5154,7 @@ struct NativeUlasClient : BeObjectWrap<NativeUlasClient>
                 }
               }
 
-            Licensing::FeatureEvent featureEvent = startDateZ.IsValid() && endDateZ.IsValid()
-                ? Licensing::FeatureEvent(featureId, appVersion, projectId, startDateZ, endDateZ, userFeatureData)
-                : Licensing::FeatureEvent(featureId, appVersion, projectId, userFeatureData);
+            Licensing::FeatureEvent featureEvent = Licensing::FeatureEvent(featureId, appVersion, projectId, startDateZ, endDateZ, userFeatureData);
 
             OPTIONAL_ARGUMENT_INTEGER_ASYNC(2, authType, (int) Licensing::AuthType::OIDC, deferred);
             OPTIONAL_ARGUMENT_INTEGER_ASYNC(3, productId, -1, deferred);
