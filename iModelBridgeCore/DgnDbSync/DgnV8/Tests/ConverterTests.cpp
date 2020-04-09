@@ -1267,7 +1267,6 @@ TEST_F(ConverterTests, CommonReferencesWithRecipe)
     const Utf8CP s_master1Name = "master_common";
     const Utf8CP s_master2Name = "master_common-v1";
     const Utf8CP s_refName = "commonref.dgn.i.dgn, Default";
-    const Utf8CP s_recipeRefName = "commonref, Default";
     const Utf8CP s_refName_v1 = "commonref-v1";
     BentleyApi::BeFileName masterPackageFile1 = GetInputFileName(L"master_common.i.dgn");
     BentleyApi::BeFileName masterPackageFile2 = GetInputFileName(L"master_common-v1.i.dgn");
@@ -1291,9 +1290,7 @@ TEST_F(ConverterTests, CommonReferencesWithRecipe)
         ASSERT_TRUE(db.IsValid());
         ASSERT_EQ(1, getModelsByName(*db, s_master1Name).size());
         ASSERT_EQ(0, getModelsByName(*db, s_master2Name).size());
-        ASSERT_EQ(1, getModelsByName(*db, s_refName).size()) << "Reference should be named after the reference file";
-        ASSERT_EQ(0, getModelsByName(*db, s_recipeRefName).size());
-        ASSERT_EQ(0, getModelsByName(*db, s_refName_v1).size());
+        ASSERT_EQ(1, getModelsByName(*db, s_refName).size());
         CheckNoDupXsas(*db, SyncInfo::ExternalSourceAspect::Kind::Element);
         countModels(*db, 0, 2);
         }
@@ -1306,9 +1303,7 @@ TEST_F(ConverterTests, CommonReferencesWithRecipe)
         ASSERT_TRUE(db.IsValid());
         ASSERT_EQ(1, getModelsByName(*db, s_master1Name).size());
         ASSERT_EQ(1, getModelsByName(*db, s_master2Name).size());
-        ASSERT_EQ(1, getModelsByName(*db, s_recipeRefName).size()) << "Common reference should be renamed to recipe name";
-        ASSERT_EQ(0, getModelsByName(*db, s_refName).size());
-        ASSERT_EQ(0, getModelsByName(*db, s_refName_v1).size());
+        ASSERT_EQ(1, getModelsByName(*db, s_refName).size());
         CheckNoDupXsas(*db, SyncInfo::ExternalSourceAspect::Kind::Element);
         countModels(*db, 0, 3);
         }
@@ -1328,7 +1323,6 @@ TEST_F(ConverterTests, CommonReferencesNoDocGuids)
     const Utf8CP s_master1Name = "master3d1 Package";
     const Utf8CP s_master2Name = "master3d2 Package";
     const Utf8CP s_refName = "commonref.dgn.i.dgn, Default";
-    const Utf8CP s_recipeRefName = "commonref, Default";
 
     BentleyApi::BeFileName inFile = GetInputFileName(L"referencesCommon.i.dgn");
     BentleyApi::BeFileName masterPackageFile1, masterPackageFile2;
@@ -1348,7 +1342,6 @@ TEST_F(ConverterTests, CommonReferencesNoDocGuids)
         ASSERT_EQ(1, getModelsByName(*db, s_master1Name).size());
         ASSERT_EQ(0, getModelsByName(*db, s_master2Name).size());
         ASSERT_EQ(1, getModelsByName(*db, s_refName).size());
-        ASSERT_EQ(0, getModelsByName(*db, s_recipeRefName).size());
         CheckNoDupXsas(*db, SyncInfo::ExternalSourceAspect::Kind::Element);
         }
 
@@ -1360,8 +1353,7 @@ TEST_F(ConverterTests, CommonReferencesNoDocGuids)
         ASSERT_TRUE(db.IsValid());
         ASSERT_EQ(1, getModelsByName(*db, s_master1Name).size());
         ASSERT_EQ(1, getModelsByName(*db, s_master2Name).size());
-        ASSERT_EQ(1, getModelsByName(*db, s_recipeRefName).size()) << "Since both master files reference the same commonref (by name), there should be only one copy of commonref in the iModel";
-        ASSERT_EQ(0, getModelsByName(*db, s_refName).size());
+        ASSERT_EQ(1, getModelsByName(*db, s_refName).size());
         CheckNoDupXsas(*db, SyncInfo::ExternalSourceAspect::Kind::Element);
         }
 

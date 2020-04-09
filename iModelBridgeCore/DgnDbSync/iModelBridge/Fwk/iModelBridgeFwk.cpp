@@ -1827,9 +1827,11 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     m_lastError = &errorContext;
     try
         {
+        LOG.tracev(L"UpdateExistingBim...");
         StopWatch updateExistingBim(true);
         status = UpdateExistingBimWithExceptionHandling(context);
         iModelBridge::LogPerformance(updateExistingBim, "Updating Existing Bim file.");
+        LOG.tracev(L"UpdateExistingBim  : Done (status=%x)", status);
         }
     catch (...)
         {
@@ -1845,21 +1847,32 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
         {
         GetProgressMeter().SetCurrentStepName("Releasing locks");
 
+        LOG.tracev(L"ReleaseAllPublicLocks...");
         Briefcase_ReleaseAllPublicLocks(SUCCESS != status);  // regardless of the success or failure of the bridge, we must not hold onto any locks that are not the private property of the bridge
+        LOG.tracev(L"ReleaseAllPublicLocks : Done");
 
         if (BSISUCCESS != status)
+            {
+            LOG.tracev(L"AbandonChanges while cleaning up after update error");
             m_briefcaseDgnDb->AbandonChanges();
+            }
 
         m_briefcaseDgnDb = nullptr;
         }
 
     //We are done processing the dgn db file. Release the bridge
     GetProgressMeter().SetCurrentStepName("Releasing bridge");
+    LOG.tracev(L"ReleaseBridge...");
     if (SUCCESS != ReleaseBridge())
         LOG.errorv(L"%s - Memory leak. This bridge was not released properly.", m_jobEnvArgs.m_bridgeRegSubKey.c_str());
+    LOG.tracev(L"ReleaseBridge         : Done");
 
     if (m_useIModelHub)
+        {
+        LOG.tracev(L"iModelBridgeLdClient close...");
         iModelBridgeLdClient::GetInstance(m_iModelHubArgs->m_environment).Close();
+        LOG.tracev(L"iModelBridgeLdClient close: Done");
+        }
 
     s_fwkInstanceForSignalHandler = nullptr;
 
@@ -1870,6 +1883,8 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
         }
 
     T_HOST.GetProgressMeter()->Hide();
+
+    LOG.tracev(L"iModelBridgeFwk::RunExclusive:  Done");
 
     return status;
     }
@@ -2613,6 +2628,8 @@ int iModelBridgeFwk::UpdateExistingBim(iModelBridgeFwk::FwkContext& context)
         return BentleyStatus::ERROR;
     LOG.tracev(L"TryOpenBimWithBisSchemaUpgrade  : Done");
 
+    LOG.tracev(L"Merge schema changes");
+    LOG.tracev(L"Merge schema changes (PullMergePush)");
     if (BSISUCCESS != Briefcase_PullMergePush("", NULL, iModel::Hub::ChangeSetKind::Schema)) //TODO: I am not sure whether we need this since TryOpenBimWithBisSchemaUpgrade has already pushed the changes
         return RETURN_STATUS_SERVER_ERROR;
 
@@ -2620,6 +2637,7 @@ int iModelBridgeFwk::UpdateExistingBim(iModelBridgeFwk::FwkContext& context)
 
     // >------> pullmergepush *may* have pulled schema changes -- close and re-open the briefcase in order to merge them in <-----------<
 
+    LOG.tracev(L"Merge schema changes (SaveChanges)");
     DbResult dbres = m_briefcaseDgnDb->SaveChanges();
     if (BeSQLite::BE_SQLITE_OK != dbres)
         {
@@ -2627,12 +2645,17 @@ int iModelBridgeFwk::UpdateExistingBim(iModelBridgeFwk::FwkContext& context)
         return RETURN_STATUS_LOCAL_ERROR;
         }
 
+    LOG.tracev(L"Merge schema changes (ReleaseAllPublicLocks)");
     Briefcase_ReleaseAllPublicLocks();
     m_briefcaseDgnDb = nullptr;             // This is safe, because we released all locks.
 
+    LOG.tracev(L"Merge schema changes        : Done");
+
     // Now initialize the bridge.
+    LOG.tracev(L"InitBridge");
     if (BSISUCCESS != InitBridge())
         return BentleyStatus::ERROR;
+    LOG.tracev(L"InitBridge                  : Done");
 
     bool hadBridgeChanges = false;
     if (true)
@@ -2660,11 +2683,15 @@ int iModelBridgeFwk::UpdateExistingBim(iModelBridgeFwk::FwkContext& context)
         int res;
         if (!m_jobEnvArgs.m_allDocsProcessed)
             {
+            LOG.tracev(L"DoNormalUpdate");
             res = DoNormalUpdate();
+            LOG.tracev(L"DoNormalUpdate              : Done (result=%x)", res);
             }
         else
             {
+            LOG.tracev(L"OnAllDocsProcessed");
             res = OnAllDocsProcessed(context);
+            LOG.tracev(L"OnAllDocsProcessed          : Done (result=%x)", res);
             }
 
         if (0 != res)
@@ -2674,9 +2701,11 @@ int iModelBridgeFwk::UpdateExistingBim(iModelBridgeFwk::FwkContext& context)
         callTerminate.m_status = BSISUCCESS;
         }
 
+    LOG.tracev(L"PushDataChanges");
     bvector<Utf8String> changedFiles;
     changedFiles.push_back(m_jobEnvArgs.m_inputFileName.GetBaseName().GetNameUtf8());
     PushDataChanges("", &changedFiles, iModel::Hub::ChangeSetKind::Regular);
+    LOG.tracev(L"PushDataChanges                :Done");
 
     //  Finalize changes in the shared channel
     SetCurrentPhaseName("Finalizing Changes");
@@ -2693,16 +2722,27 @@ int iModelBridgeFwk::UpdateExistingBim(iModelBridgeFwk::FwkContext& context)
 
     if (!m_jobEnvArgs.m_allDocsProcessed)
         {
+        LOG.tracev(L"DoFinalizationChanges");
         m_bridge->DoFinalizationChanges(*m_briefcaseDgnDb);
+        LOG.tracev(L"DoFinalizationChanges          : Done");
         if (!m_jobEnvArgs.m_argsJson.isMember("skipExtents"))
+            {
+            LOG.tracev(L"UpdateProjectExtents");
             UpdateProjectExtents(context);
+            LOG.tracev(L"UpdateProjectExtents       : Done");
+            }
         //SetUpECEFLocation(context);
         }
 
     // Running ANALYZE allows SQLite to create optimize execution plans when running queries. It should be be included in changeset that bridges post.
     if (hadBridgeChanges)
+        {
+        LOG.tracev(L"ANALYZE");
         m_briefcaseDgnDb->ExecuteSql("ANALYZE");
+        LOG.tracev(L"ANALYZE                        : Done");
+        }
 
+    LOG.tracev(L"Final Save and Push");
     dbres = m_briefcaseDgnDb->SaveChanges();
 
     //*** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
@@ -2716,6 +2756,7 @@ int iModelBridgeFwk::UpdateExistingBim(iModelBridgeFwk::FwkContext& context)
     //  Done. Make sure that all changes are pushed and all shared locks are released.
     PushDataChanges(iModelBridgeFwkMessages::GetString(iModelBridgeFwkMessages::FINALIZATION()), &changedFiles, iModel::Hub::ChangeSetKind::GlobalProperties);
 
+    LOG.tracev(L"Final Save and Push:           Done");
 
     // *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
 

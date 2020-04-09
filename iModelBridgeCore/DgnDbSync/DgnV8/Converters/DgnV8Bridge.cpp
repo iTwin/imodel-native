@@ -712,6 +712,13 @@ BentleyStatus DgnV8Bridge::_OnAllDocumentsProcessed()
     {
     m_converter->DetectDeletedEmbeddedFiles();
     m_converter->DeleteOrphanReferenceModels();
+        
+    // TODO Detect multiply referenced models, and report an issue if the many references to them do not use the same name. PBI#291480
+    // Doing that would require selecting each InformationPartition that is "referenced by" more than on References Subject element.
+    // See Converter::OnDeleteReferencesSubject for the kind of logic we need to detect references to a partition.
+    // At this time, we only have JSON properties that records a reference from a References Subject to a partition. That is
+    // not adequate to do the queries efficiently. So, this fix will have to wait for a BIS core schema change. 
+    
     m_hadAnyChanges |= m_converter->HadAnyChanges();
     return m_converter->WasAborted()? BSIERROR: BSISUCCESS;
     }

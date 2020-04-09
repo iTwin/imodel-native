@@ -1032,11 +1032,8 @@ ResolvedModelMapping RootModelConverter::ImportSpatialModels(bool& haveFoundSpat
     auto modeledElement = GetDgnDb().Elements().GetElement(v8mm.GetDgnModel().GetModeledElementId());
     if (modeledElement->GetParentId() == GetDgnDb().Elements().GetRootSubjectId())
         {
-        ReparentElement(v8mm.GetDgnModel().GetModeledElementId(), _GetSpatialParentSubject().GetElementId());
-        }
-    else if (modeledElement->GetParentId() != _GetSpatialParentSubject().GetElementId() && thisModelRef.AsDgnAttachmentCP())
-        {
-        RenameCommonReference(*modeledElement, *thisModelRef.AsDgnAttachmentCP());
+        // See "How referenced models are named ... and re-named"
+        ReparentElement(v8mm.GetDgnModel().GetModeledElementId(), _GetSpatialParentSubject().GetElementId(), true);
         }
 
     if (nullptr == thisModelRef.GetDgnAttachmentsP())

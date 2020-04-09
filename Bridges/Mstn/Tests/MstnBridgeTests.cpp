@@ -2879,6 +2879,169 @@ TEST_F(MstnBridgeTests, ChangeFileNameShouldUpdateModelName2d)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MstnBridgeTests, ChangeEmbeddedFileNameShouldUpdateModelName)
+    {
+    auto testDir = CreateTestDir();
+
+    putenv("MS_PROTECTION_PASSWORD_CACHE_LIFETIME=0"); // must disable pw caching, as we copy new files on top of old ones too quickly
+    static const uint32_t s_v8PasswordCacheLifetime = 2*1000; // the timeout is 1 second. Wait for 2 to be safe.
+
+    BentleyApi::BeFileName inputStagingDir = GetOutputDir();
+
+    putenv("iModelBridge_MatchOnEmbeddedFileBasename=_v[0-9]$");    // The recipe specifies that any -vn suffix should be stripped when forming internal file identifiers.
+    // The recipe also says that file extensions should be stripped, PW URNs should be ignored, and filename case should be ignored. That is the default, when a regex is supplied.
+
+    // In this test:
+    // In v1, master embeds ref_v1.dgn.i.dgn
+    // In v2, master embeds ref_v2.i.dgn. According to the recipe, that should be recognized as referring to the same file as the original ref_v1.dgn.i.dgn
+    // So, the recipe that we supply above should enable the bridge to recognize that both versions are based on the same reference file, just different versions of it.
+
+    auto masterFileName = GetOutputFileName(L"master.i.dgn");      // The name of the staged input file
+    BeFileName refFileName(L"ref");                            // Because of the recipe, all versions of the reference file will be mapped to this name.
+
+    BeFileName refV1FileName_firstOccurence(masterFileName);
+    Utf8CP ref_v1_name = "ref_v1.dgn.i.dgn";
+    Utf8CP ref_v1_ref_name = "logical, ref_v1.dgn.i.dgn, Default"; // the name of the reference attachment in v1
+    refV1FileName_firstOccurence.append(L"<1>").append(WString(ref_v1_name,true));
+
+    BeFileName refv2FileName_firstOccurence(masterFileName);
+    Utf8CP ref_v2_name = "ref_v2.dgn.i.dgn";
+    Utf8CP ref_v2_ref_name = "logical, ref_v2.dgn.i.dgn, Default"; // the name of the reference attachment in v2
+    refv2FileName_firstOccurence.append(L"<1>").append(WString(ref_v2_name,true));
+
+    SetupClient();
+    CreateRepository();
+    auto runningServer = StartServer();
+
+    BentleyApi::BeFileName assignDbName(testDir);
+    assignDbName.AppendToPath(DEFAULT_IMODEL_NAME L".fwk-registry.db");
+    FakeRegistry testRegistry(testDir, assignDbName);
+    testRegistry.WriteAssignments();
+    testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, iModelBridge_getAffinity);
+
+    BentleyApi::BeSQLite::BeGuid guidMaster, guidRef;
+    guidMaster.Create();
+    guidRef.Create();
+
+    iModelBridgeDocumentProperties docPropsMaster(guidMaster.ToString().c_str(), "wurnMaster", "durnMaster", "otherMaster", "");
+    iModelBridgeDocumentProperties docPropsRef(guidRef.ToString().c_str(), "wurnRef", "durnRef", "otherRef", "");
+    testRegistry.SetDocumentProperties(docPropsMaster, masterFileName);
+    testRegistry.SetDocumentProperties(docPropsRef, refFileName);           // <--------- the reference file will have a doc id. (The recipe will tell the bridge to ignore it.)
+    std::function<T_iModelBridge_getAffinity> lambda = [=](BentleyApi::WCharP buffer,
+        const size_t bufferSize,
+        iModelBridgeAffinityLevel& affinityLevel,
+        BentleyApi::WCharCP affinityLibraryPath,
+            BentleyApi::WCharCP sourceFileName)
+        {
+        wcscpy(buffer, MSTN_BRIDGE_REG_SUB_KEY);
+        affinityLevel = iModelBridgeAffinityLevel::Medium;
+        };
+
+    testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, lambda);
+    BentleyApi::WString bridgeName;
+    testRegistry.SearchForBridgeToAssignToDocument(bridgeName, masterFileName, L"");
+    ASSERT_TRUE(bridgeName.Equals(MSTN_BRIDGE_REG_SUB_KEY));
+    testRegistry.Save();
+    TerminateHost();
+
+    DgnCode refCode;
+    int modelCount = 0;
+    DgnElementId refModelId;
+    if (true)
+        {
+        // In v1, master embeds ref_v1.dgn.i.dgn
+        bvector<WString> args;
+        SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, DEFAULT_IMODEL_NAME);
+
+        auto master_v1 = GetTestDataFileName(L"versionedEmbeddedRef\\master_v1.i.dgn");
+
+        ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(master_v1.c_str(), masterFileName.c_str()));
+
+        args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", masterFileName.c_str()));
+        RunTheBridge(args);
+        CleanupElementECExtensions();
+
+        args.push_back(WPrintfString(L"--fwk-all-docs-processed"));
+        RunTheBridge(args);
+        CleanupElementECExtensions();
+
+        DbFileInfo bcInfo(m_briefcaseName);
+        modelCount = bcInfo.GetPhysicalModelCount();
+        ASSERT_EQ(2, modelCount);
+        RepositoryLinkId rid;
+        bcInfo.MustFindFileByName(rid, masterFileName, 1);
+        bcInfo.MustFindFileByName(rid, refV1FileName_firstOccurence, 1);
+
+        auto rlink = bcInfo.m_db->Elements().Get<RepositoryLink>(rid);
+        ASSERT_TRUE(rlink.IsValid());
+        EXPECT_STREQ(rlink->GetUserLabel(), ref_v1_name);
+        refCode = rlink->GetCode();
+        // ASSERT_STREQ(rlink->GetUrl(), ref_v1_name)
+        printf("%s\n\n", rlink->GetUrl());
+
+        // Verify that the model imported from ref_v1 is named according to the rules and reflects the name of the v1 file.
+        BeSQLite::EC::ECSqlStatement stmt;
+        ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.Prepare(*bcInfo.m_db, "SELECT ecinstanceid FROM BisCore.PhysicalPartition WHERE CodeValue=?"));
+        stmt.BindText(1, ref_v1_ref_name, BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
+        auto rc = stmt.Step();
+        ASSERT_EQ(BentleyApi::BeSQLite::DbResult::BE_SQLITE_ROW, rc);
+        refModelId = stmt.GetValueId<DgnElementId>(0);
+        }
+
+    if (true)
+        {
+        // In v2, master embeds ref_v2.i.dgn. According to the recipe, that should be recognized as referring to the same file as the original ref_v1.dgn.i.dgn
+        bvector<WString> args;
+        SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, DEFAULT_IMODEL_NAME);
+
+        auto master_v2 = GetTestDataFileName(L"versionedEmbeddedRef\\master_v2.i.dgn");
+
+        ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(master_v2.c_str(), masterFileName.c_str()));
+
+        // NEEDS WORK temporary work-around for V8 password cache entry lifetime
+        BentleyApi::BeThreadUtilities::BeSleep(s_v8PasswordCacheLifetime);
+
+        args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", masterFileName.c_str()));
+        RunTheBridge(args);
+        CleanupElementECExtensions();
+
+        args.push_back(WPrintfString(L"--fwk-all-docs-processed"));
+        RunTheBridge(args);
+        CleanupElementECExtensions();
+
+        // No change in model count is expected, as we still have the same two files in v2 as we did in v0
+        DbFileInfo bcInfo(m_briefcaseName);
+        auto newModelCount = bcInfo.GetPhysicalModelCount();
+        ASSERT_EQ(modelCount, newModelCount) << "No change in model count is expected, as we still have the same two files in v2 as we did in v0";
+        RepositoryLinkId rid;
+        bcInfo.MustFindFileByName(rid, masterFileName, 1);
+        bcInfo.MustFindFileByName(rid, refV1FileName_firstOccurence, 1); // The RepositoryLink still refers to the first occurrence.
+
+        auto rlink = bcInfo.m_db->Elements().Get<RepositoryLink>(rid);
+        ASSERT_TRUE(rlink.IsValid());
+        EXPECT_STREQ(rlink->GetUserLabel(), ref_v2_name);
+        printf("%s\n\n", rlink->GetUrl());
+        auto code2 = rlink->GetCode();
+        auto code2JsonStr = code2.ToJson2().toStyledString();
+        auto originalJsonStr = refCode.ToJson2().toStyledString();
+        EXPECT_STREQ(code2JsonStr.c_str(), originalJsonStr.c_str()) << "the reference file's Code must not change!";
+
+        // Verify that the model imported from ref_v2 is named according to the rules and reflects the name of the v2 file.
+        BeSQLite::EC::ECSqlStatement stmt;
+        ASSERT_EQ(BeSQLite::EC::ECSqlStatus::Success, stmt.Prepare(*bcInfo.m_db, "SELECT ecinstanceid FROM BisCore.PhysicalPartition WHERE CodeValue=?"));
+        stmt.BindText(1, ref_v2_ref_name, BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
+        auto rc = stmt.Step();
+        EXPECT_EQ(BentleyApi::BeSQLite::DbResult::BE_SQLITE_ROW, rc);
+        EXPECT_EQ(refModelId.GetValue(), stmt.GetValueId<DgnElementId>(0).GetValue());
+        }
+
+    putenv("MS_PROTECTION_PASSWORD_CACHE_LIFETIME=1"); // restore default
+    putenv("iModelBridge_MatchOnEmbeddedFileBasename=");
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mayuresh.Kanade                 01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P (SynchInfoTests, TestSynchInfoAspect)

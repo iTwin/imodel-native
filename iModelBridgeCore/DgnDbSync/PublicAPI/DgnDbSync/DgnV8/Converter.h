@@ -1794,9 +1794,7 @@ public:
     //! @private
     void OnDeleteReferencesSubject(DgnElementId); // *** TODO make RootModelConverter override _OnElementBeforeDelete, and move this logic into it
     //! @private
-    void ReparentElement(DgnElementId elid, DgnElementId newParentId);
-    //! @private
-    void RenameCommonReference(DgnElementCR modeledElement, DgnAttachmentCR v8Attachment);
+    void ReparentElement(DgnElementId elid, DgnElementId newParentId, bool renameToNewParent);
     //! @private
     std::pair<int,int> GetBridgeSchemaVersion();
     //! @private

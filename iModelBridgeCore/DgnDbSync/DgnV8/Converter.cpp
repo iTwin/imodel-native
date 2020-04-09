@@ -1071,8 +1071,7 @@ DgnModelId Converter::CreateModelFromV8Model(DgnV8ModelCR v8Model, Utf8CP newNam
 
         if (nullptr != attachment)
             {
-            // The parent is a "References" Subject. Its CodeValue is the name of the V8 reference attachment.
-            // That is what we want to use for the referenced model as well. PBI#291480.
+            // See "How referenced models are named ... and re-named"
             newName = parentSubject.GetCode().GetValueUtf8CP();
             }
 
@@ -1104,6 +1103,12 @@ DgnModelId Converter::CreateModelFromV8Model(DgnV8ModelCR v8Model, Utf8CP newNam
     else if (m_dgndb->Schemas().GetClass(classId)->Is(m_dgndb->Schemas().GetClass(BIS_ECSCHEMA_NAME, "GraphicalModel3d")))
         {
         SubjectCR parentSubject = _GetSpatialParentSubject();
+
+        if (nullptr != attachment)
+            {
+            // See "How referenced models are named ... and re-named"
+            newName = parentSubject.GetCode().GetValueUtf8CP();
+            }
 
         DgnCode partitionCode = InformationPartitionElement::CreateCode(parentSubject, newName);
         Utf8String qualifiedName(newName);
@@ -2059,9 +2064,14 @@ void Converter::OnDeleteReferencesSubject(DgnElementId eid)
     auto allRefs = getReferencesSubjects(GetDgnDb(), infoPartitionId);
     BeAssert(allRefs.size() != 0); // Must at least find this one!
     DgnElementId newParentId;
+
+    bool renameToNewParent = false;    
     auto itOtherSubj = std::find_if(allRefs.begin(), allRefs.end(), [eid](auto refId) { return refId != eid; });
     if (itOtherSubj != allRefs.end())
+        {
         newParentId = *itOtherSubj;
+        renameToNewParent = true;
+        }
     else
         {
         // This is the only reference to the child InformationPartition. It will eventually be deleted by DetectDeletedEmbeddedFiles or DetectDeletedDocuments or DeleteOrphanReferenceModels.
@@ -2070,49 +2080,14 @@ void Converter::OnDeleteReferencesSubject(DgnElementId eid)
         }
 
     // Now, re-parent the InformationPartition element
-    ReparentElement(infoPartitionId, newParentId);
+    // See "How referenced models are named ... and re-named"
+    ReparentElement(infoPartitionId, newParentId, renameToNewParent);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/20
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::RenameCommonReference(DgnElementCR modeledElement, DgnAttachmentCR v8Attachment)
-    {
-    auto parentId = modeledElement.GetParentId();
-    if (parentId == _GetSpatialParentSubject().GetElementId())
-        return;
-
-    DgnCodeCR code = modeledElement.GetCode();
-
-    auto parent = GetDgnDb().Elements().GetElement(parentId);
-    if (!parent.IsValid() || !code.GetValueUtf8().Equals(parent->GetCode().GetValueUtf8()))
-        return;
-
-    if (parentId != code.GetScopeElementId(GetDgnDb()))
-        return; // Not what I expected. Don't touch it.
-
-    // This model is named after its parent, which represents the first reference attachment to the corresponding V8 model.
-    // We have just discovered a second reference attachment to this model. 
-    // Therefore, this model's name should be changed to be neutral. PBI#291480.
-    // (Don't change its parent.)
-    auto newName = ComputeV8AttachmentDescription(v8Attachment, true);
-    // if (nullptr == v8Attachment.GetDgnModelP())
-    //     return;
-    // auto newName = _ComputeModelName(*v8Attachment.GetDgnModelP());
-    DgnCode newCode(code.GetCodeSpecId(), parentId, newName);
-    auto edit = modeledElement.CopyForEdit();
-    edit->SetCode(newCode);
-    auto updated = edit->Update();
-    if (!updated.IsValid())
-        {
-        LOG.errorv("Failed to update %s while re-naming to %s", Converter::IssueReporter::FmtElement(modeledElement).c_str(), newCode.GetValueUtf8CP());
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      03/20
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::ReparentElement(DgnElementId elid, DgnElementId newParentId)
+void Converter::ReparentElement(DgnElementId elid, DgnElementId newParentId, bool renameToNewParent)
     {
     // Now, re-parent the InformationPartition element
     auto pp = GetDgnDb().Elements().GetForEdit<DgnElement>(elid);
@@ -2121,8 +2096,18 @@ void Converter::ReparentElement(DgnElementId elid, DgnElementId newParentId)
         BeAssert(false);
         return;
         }
+
+    Utf8String newCodeValue = pp->GetCode().GetValue().GetUtf8();
+    if (renameToNewParent)
+        {
+        // See "How referenced models are named ... and re-named"
+        auto parent = GetDgnDb().Elements().GetElement(newParentId);
+        if (parent.IsValid())
+            newCodeValue = parent->GetCode().GetValue().GetUtf8();
+        }
+
     pp->SetParentId(newParentId, pp->GetParentRelClassId());
-    pp->SetCode(DgnCode(pp->GetCode().GetCodeSpecId(), newParentId, pp->GetCode().GetValue().GetUtf8()));
+    pp->SetCode(DgnCode(pp->GetCode().GetCodeSpecId(), newParentId, newCodeValue));
     auto updated = pp->Update();
     if (!updated.IsValid())
         {
@@ -3772,7 +3757,7 @@ ResolvedModelMapping RootModelConverter::_GetResolvedModelMapping(DgnV8ModelRefC
         }
     else
         {
-        newModelName = _ComputeModelName(v8Model).c_str();
+        newModelName = _ComputeModelName(v8Model);
 
         if (inconsistentEmbeddedReference)
             {
@@ -4374,3 +4359,32 @@ bool Converter::ShouldMergeDefinitions() const
 
 END_DGNDBSYNC_DGNV8_NAMESPACE
 
+/*
+    How referenced models are named ... and re-named.
+
+    PBI#291480:
+    The CodeValue of a "References" Subject is the name of a V8 reference attachment.
+    When such a "References" Subject is the parent of a PhysicalPartitions and GraphicalPartition3d element,
+    then the CodeValue of the partition should be the CodeValue of the parent.
+
+    WARNING: This reference-naming rule is applied in TWO PLACES:
+    1. CreateModelFromV8Model when a model is created.
+    2. ReparentElement when a partition is re-parented to a different "References" Subject.
+
+    Re-parenting occurs when a partition is referenced by more than one "References" Subject and the first
+    Subject is deleted. This scenario arises in three cases:
+    a) A reference is dropped in one model and added to another model.
+    b) A reference file is renamed.
+    c) The first of several persistent references is dropped.
+
+    In cases a and b, a new "References" Subject is created to represent the newly discovered attachment. However,
+    the partition still points to the old refs Subject as its parent.
+    
+    In all three cases, OnDeleteReferencesSubject (called by _DetectDeletedElements->_DeleteElement->_OnElementBeforeDelete), 
+    handles the deletion of a "References" Subject by re-parenting its partition child to any remaning "References"
+    Subjects that references it. (If none, the partition child becomes temporarily a child of the root element. In that case,
+    RootModelConverter::ImportSpatialModels later notices the orphan and re-parents it).
+
+    As noted, ReparentElement applies the naming rule, causing the partition to take on the CodeValue of its new parent.
+
+*/
