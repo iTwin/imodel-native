@@ -1075,7 +1075,13 @@ public:
 
     // @private
     //! Update the document properties on a repository link
-    IMODEL_BRIDGE_EXPORT static bool UpdateRepositoryLinkDocumentProperties(RepositoryLinkP rlink, DgnDbR db, Params const& params, BeFileNameCR localFileName);
+    //! @param rlink The RepositoryLink element to be updated (in memory)
+    //! @param _db - unused
+    //! @param params The bridge Params
+    //! @param localFileName The source filename
+    //! @param updateProperties Pass true if the RepositoryLink's UserLabel and URL should also be updated; otherwise, only the document properties will be updated.
+    //! @return true if any change was made to rlink. In that case, the caller should update rlink in the db.
+    IMODEL_BRIDGE_EXPORT static bool UpdateRepositoryLinkDocumentProperties(RepositoryLinkP rlink, DgnDbR _db, Params const& params, BeFileNameCR localFileName, bool updateProperties = true);
 
     // @private
     IMODEL_BRIDGE_EXPORT static void GetRepositoryLinkInfo(DgnCode& code, iModelBridgeDocumentProperties& docProps, DgnDbR db, Params const& params,

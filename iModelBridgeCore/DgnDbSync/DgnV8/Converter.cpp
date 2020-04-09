@@ -221,11 +221,60 @@ BeFileName Converter::GetLocalFileName(DgnV8FileR file)
         }
     return localFileName;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Converter::UpdateRepositoryLink(RepositoryLinkR rlink, DgnV8FileR file)
+    {
+    bool anyChanges = false;
+
+    // Update the URL and UserLabel properties
+
+    //      *** Keep in sync with WriteRepositoryLink
+    SyncInfo::V8FileInfo finfo = GetSyncInfo().ComputeFileInfo(file);
+
+    Utf8String code = finfo.m_uniqueName;
+
+    Utf8String uri = GetDocumentURNforFile(file);
+    if (!iModelBridge::IsNonFileURN(uri) || IsEmbeddedFileName(uri) || BentleyApi::BeFileName::DoesPathExist(BentleyApi::WString(uri.c_str(), true).c_str()))
+        uri.clear();    // Don't store filepaths that refer to someone's computer.
+
+    BeFileName localFileName = GetLocalFileName(file);
+    auto rlinkNew = iModelBridge::MakeRepositoryLink(GetDgnDb(), GetParams(), localFileName, code.c_str(), uri.c_str(), /*preferDefaultCode*/true);
+
+    BeAssert(rlinkNew->GetCode().GetValue() == rlink.GetCode().GetValue());
+
+    if (0 != strcmp(rlink.GetUrl(), rlinkNew->GetUrl()))
+        {
+        rlink.SetUrl(rlinkNew->GetUrl());
+        anyChanges = true;
+        }
+
+    if (0 != strcmp(rlink.GetUserLabel(), rlinkNew->GetUserLabel()))
+        {
+        rlink.SetUserLabel(rlinkNew->GetUserLabel());
+        anyChanges = true;
+        }
+
+    // Update the ProjectWise document properties    
+    anyChanges |= iModelBridge::UpdateRepositoryLinkDocumentProperties(&rlink, GetDgnDb(), GetParams(), localFileName, false);
+
+    // Update the ExternalSourceAspect to reflect the file's lmt, etc.
+    auto rlinkXsa = SyncInfo::RepositoryLinkExternalSourceAspect::GetAspectForEdit(rlink);
+    if (rlinkXsa.IsValid())
+        anyChanges |= rlinkXsa.Update(finfo, _GetParams().IgnoreStaleFiles());
+
+    return anyChanges;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 RepositoryLinkId Converter::WriteRepositoryLink(DgnV8FileR file)
     {
+    //      *** Keep in sync with UpdateRepositoryLink
+
     SyncInfo::V8FileInfo finfo = GetSyncInfo().ComputeFileInfo(file);
 
     // The RepositoryLink's Code always matches its ExternalSourceAspects's Identifier. This is 

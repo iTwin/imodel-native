@@ -955,7 +955,7 @@ RepositoryLinkPtr iModelBridge::MakeRepositoryLink(DgnDbR db, Params const& para
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            12/2019
 //---------------+---------------+---------------+---------------+---------------+-------
-bool iModelBridge::UpdateRepositoryLinkDocumentProperties(RepositoryLinkP rlink, DgnDbR db, Params const& params, BeFileNameCR localFileName)
+bool iModelBridge::UpdateRepositoryLinkDocumentProperties(RepositoryLinkP rlink, DgnDbR db, Params const& params, BeFileNameCR localFileName, bool updateProperties)
     {
     // *** 
     // *** NB: Keep this in sync with MakeRepositoryLink
@@ -969,19 +969,22 @@ bool iModelBridge::UpdateRepositoryLinkDocumentProperties(RepositoryLinkP rlink,
 
     auto anyChanges = false;
 
-    if (!docProps.m_desktopURN.Equals(rlink->GetUrl()))
+    if (updateProperties)
         {
-        rlink->SetUrl(docProps.m_desktopURN.c_str());
-        anyChanges = true;
-        }
+        if (!docProps.m_desktopURN.Equals(rlink->GetUrl()))
+            {
+            rlink->SetUrl(docProps.m_desktopURN.c_str());
+            anyChanges = true;
+            }
 
-    WString relFileNameW;
-    BeFileName::FindRelativePath(relFileNameW, localFileName.c_str(), params.GetInputFileName().GetDirectoryName().c_str());
-    Utf8String relFileName(relFileNameW.c_str());
-    if (!relFileName.Equals(rlink->GetUserLabel()))
-        {
-        rlink->SetUserLabel(relFileName.c_str());
-        anyChanges = true;
+        WString relFileNameW;
+        BeFileName::FindRelativePath(relFileNameW, localFileName.c_str(), params.GetInputFileName().GetDirectoryName().c_str());
+        Utf8String relFileName(relFileNameW.c_str());
+        if (!relFileName.Equals(rlink->GetUserLabel()))
+            {
+            rlink->SetUserLabel(relFileName.c_str());
+            anyChanges = true;
+            }
         }
 
     if (!docProps.m_attributesJSON.empty())

@@ -1171,6 +1171,9 @@ public:
     //! Create a RepositoryLink to represent this file in the BIM and cache it in memory
     RepositoryLinkId WriteRepositoryLink(DgnV8FileR);
 
+    //! Update the properties of the specified RepositoryLink (in memory) to match the current doc props, filename, and URL of the specified file.
+    bool UpdateRepositoryLink(RepositoryLinkR rlink, DgnV8FileR file);
+
     void SetRepositoryLinkInAppData(DgnV8FileCR, RepositoryLinkId) const;
 
     DGNDBSYNC_EXPORT static void DiscardV8FileSyncInfoAppData(DgnV8FileR);

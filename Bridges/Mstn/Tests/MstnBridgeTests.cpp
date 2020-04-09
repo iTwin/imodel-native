@@ -2978,8 +2978,7 @@ TEST_F(MstnBridgeTests, ChangeEmbeddedFileNameShouldUpdateModelName)
         ASSERT_TRUE(rlink.IsValid());
         EXPECT_STREQ(rlink->GetUserLabel(), ref_v1_name);
         refCode = rlink->GetCode();
-        // ASSERT_STREQ(rlink->GetUrl(), ref_v1_name)
-        printf("%s\n\n", rlink->GetUrl());
+        EXPECT_STREQ(rlink->GetUrl(), ref_v1_name);
 
         // Verify that the model imported from ref_v1 is named according to the rules and reflects the name of the v1 file.
         BeSQLite::EC::ECSqlStatement stmt;
@@ -3022,7 +3021,7 @@ TEST_F(MstnBridgeTests, ChangeEmbeddedFileNameShouldUpdateModelName)
         auto rlink = bcInfo.m_db->Elements().Get<RepositoryLink>(rid);
         ASSERT_TRUE(rlink.IsValid());
         EXPECT_STREQ(rlink->GetUserLabel(), ref_v2_name);
-        printf("%s\n\n", rlink->GetUrl());
+        EXPECT_STREQ(rlink->GetUrl(), ref_v2_name);
         auto code2 = rlink->GetCode();
         auto code2JsonStr = code2.ToJson2().toStyledString();
         auto originalJsonStr = refCode.ToJson2().toStyledString();
