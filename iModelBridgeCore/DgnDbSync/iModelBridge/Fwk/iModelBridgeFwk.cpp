@@ -1549,10 +1549,8 @@ struct LoggingContext //This class allows to pass in a logging sequence id to re
 int windows_filterException(EXCEPTION_POINTERS* ptrs)
     {
     CrashProcessor* crashProc = CrashProcessor::GetInstance();
-    if (nullptr == crashProc)
-        return EXCEPTION_CONTINUE_SEARCH; // Act as if no manual crash processing.
-
-    crashProc->CreateDump(ptrs);
+    if (nullptr != crashProc)
+        crashProc->CreateDump(ptrs);
 
     win32Tools_resetFloatingPointExceptions(0); // Sam had this previously... not sure why... but keeping until proven otherwise
     return EXCEPTION_EXECUTE_HANDLER; // Ignore the exception for now so we can perform cleanup.
