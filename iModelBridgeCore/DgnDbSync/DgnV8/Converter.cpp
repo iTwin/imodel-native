@@ -2165,6 +2165,52 @@ void Converter::ReparentElement(DgnElementId elid, DgnElementId newParentId, boo
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/20
++---------------+---------------+---------------+---------------+---------------+------*/
+void Converter::EnsurePartitionCodeValueMatchesParent(ResolvedModelMapping const& v8mm, SubjectCR parentSubject)
+    {
+    if (GetBridgeSchemaVersion().first >= 2)
+        return;
+    
+    if (parentSubject.GetSubjectJsonProperties(Subject::json_Model()).GetMember("Type") != "References")
+        return;
+
+    BeAssert(nullptr != v8mm.GetV8Attachment() && "The child of a References Subject is always a partition that represents a V8 DgnAttachment");
+
+    auto modeledElement = v8mm.GetDgnModel().GetModeledElement();
+    if (!modeledElement.IsValid())
+        return;
+
+    if (modeledElement->GetParentId() != parentSubject.GetElementId())
+        return; // We are in the middle of moving this reference to a different parent. The final stage of doing that will take care of its name. Do nothing here.
+
+    // v8mm is a Physical or Graphical3d Model that is the child of the specified "References" Subject.
+
+    // Make sure that the name of this model (i.e., the CodeValue of the modeled partition element) mataches its "References" Subject parent.
+    // See "How referenced models are named ... and re-named."
+    // Models and parents were not kept in sync prior to the fix for PBI#291480. 
+    if (modeledElement->GetCode() == parentSubject.GetCode())
+        return; // partition matches parent => we're OK.
+
+    // Rename the partition to match its parent
+    auto pp = modeledElement->CopyForEdit();
+    if (!pp.IsValid())
+        {
+        BeAssert(false);
+        return;
+        }
+
+    Utf8String newCodeValue = parentSubject.GetCode().GetValue().GetUtf8();
+
+    pp->SetCode(DgnCode(pp->GetCode().GetCodeSpecId(), pp->GetCode().GetScopeElementId(GetDgnDb()), newCodeValue));
+    auto updated = pp->Update();
+    if (!updated.IsValid())
+        {
+        LOG.errorv("EnsurePartitionCodeValueMatchesParent failed to update %s codevalue to %s", Converter::IssueReporter::FmtElement(*pp).c_str(), newCodeValue.c_str());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::ReportDgnFileStatus(DbResult fileStatus, BeFileNameCR projectFileName)
@@ -4435,5 +4481,7 @@ END_DGNDBSYNC_DGNV8_NAMESPACE
     RootModelConverter::ImportSpatialModels later notices the orphan and re-parents it).
 
     As noted, ReparentElement applies the naming rule, causing the partition to take on the CodeValue of its new parent.
+
+    We also fix incorrectly named partition elements in RootModelConverter::ImportSpatialModels.
 
 */

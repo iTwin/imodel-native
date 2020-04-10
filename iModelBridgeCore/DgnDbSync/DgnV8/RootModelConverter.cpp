@@ -8,7 +8,7 @@
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 #include "RuleSetEmbedder.h"
 
-#define BRIDGE_SCHEMA_VERSION "1.0"
+#define BRIDGE_SCHEMA_VERSION "2.0"
 
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 
@@ -1034,6 +1034,10 @@ ResolvedModelMapping RootModelConverter::ImportSpatialModels(bool& haveFoundSpat
         {
         // See "How referenced models are named ... and re-named"
         ReparentElement(v8mm.GetDgnModel().GetModeledElementId(), _GetSpatialParentSubject().GetElementId(), true);
+        }
+    else
+        {
+        EnsurePartitionCodeValueMatchesParent(v8mm, _GetSpatialParentSubject());
         }
 
     if (nullptr == thisModelRef.GetDgnAttachmentsP())

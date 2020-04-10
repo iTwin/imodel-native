@@ -214,7 +214,7 @@ struct MstnBridgeTestsFixture : ::testing::Test
         BentleyApi::Dgn::ScopedDgnHost m_host;
         BentleyApi::Dgn::DgnDbPtr m_db;
 
-        DbFileInfo(BentleyApi::BeFileNameCR fileName);
+        DbFileInfo(BentleyApi::BeFileNameCR fileName, bool readWrite=false);
         ~DbFileInfo();
         int32_t GetElementCount();
         int32_t GetModelCount();

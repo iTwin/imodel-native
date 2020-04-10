@@ -7,6 +7,62 @@ ThreadSafetyTests.*     # Experimental tests for thread safety. Should not run w
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
+ECDbTestFixture.ConcurrentQueryManagerReadonly
+
+    # 2020-04-10T14:45:33.5795489Z Worker 0
+    # 2020-04-10T14:45:33.5795888Z Worker 0
+    # 2020-04-10T14:45:33.5796406Z unknown file: error: SEH exception with code 0xc0000005 thrown in TearDown().
+    # 2020-04-10T14:45:33.5797079Z *********************** STACK TRACE ************************
+    # 2020-04-10T14:45:33.5797688Z [24] _chkstk (0x7fff20c14670)
+    # 2020-04-10T14:45:33.5798521Z [23] RtlWalkFrameChain (0x7fff20b73730)
+    # 2020-04-10T14:45:33.5799372Z [22] KiUserExceptionDispatcher (0x7fff20c134d0)
+    # 2020-04-10T14:45:33.5800289Z [21] BentleyM0200::BeSQLite::DbFile::~DbFile (0x7ffef13a6500)
+    # 2020-04-10T14:45:33.5801105Z [20] BentleyM0200::BeSQLite::Db::DoCloseDb (0x7ffef13aa690)
+    # 2020-04-10T14:45:33.5802717Z [19] std::unique_ptr<BentleyM0200::BeSQLite::EC::QueryWorker,std::default_delete<BentleyM0200::BeSQLite::EC::QueryWorker> >::~unique_ptr<BentleyM0200::BeSQLite::EC::QueryWorker,std::default_delete<BentleyM0200::BeSQLite::EC::QueryWorker> > (0x7ffecb705360)
+    # 2020-04-10T14:45:33.5805020Z [18] std::vector<std::unique_ptr<BentleyM0200::BeSQLite::EC::QueryWorker,std::default_delete<BentleyM0200::BeSQLite::EC::QueryWorker> >,std::allocator<std::unique_ptr<BentleyM0200::BeSQLite::EC::QueryWorker,std::default_delete<BentleyM0200::BeSQLite::EC::Query (0x7ffecb705520)
+    # 2020-04-10T14:45:33.5807001Z [17] std::default_delete<BentleyM0200::BeSQLite::EC::QueryWorkerPool>::operator() (0x7ffecb7060f0)
+    # 2020-04-10T14:45:33.5807985Z [16] BentleyM0200::BeSQLite::EC::ConcurrentQueryManager::Impl::`scalar deleting destructor' (0x7ffecb7062c0)
+    # 2020-04-10T14:45:33.5808914Z [15] BentleyM0200::BeSQLite::EC::ECDb::Impl::`scalar deleting destructor' (0x7ffecb7311f0)
+    # 2020-04-10T14:45:33.5809683Z [14] BentleyM0200::BeSQLite::EC::ECDb::_OnDbClose (0x7ffecb731870)
+    # 2020-04-10T14:45:33.5810342Z [13] BentleyM0200::BeSQLite::Db::CloseDb (0x7ffef13a8df0)
+    # 2020-04-10T14:45:33.5811153Z [12] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void> (0x7ff6bce15810)
+    # 2020-04-10T14:45:33.5812081Z [11] testing::internal::HandleExceptionsInMethodIfSupported<testing::Test,void> (0x7ff6bce156a0)
+    # 2020-04-10T14:45:33.5812805Z [10] testing::TestInfo::Run (0x7ff6bce26bb0)
+    # 2020-04-10T14:45:33.5813348Z [9] testing::TestCase::Run (0x7ff6bce269d0)
+    # 2020-04-10T14:45:33.5813956Z [8] testing::internal::UnitTestImpl::RunAllTests (0x7ff6bce26f60)
+    # 2020-04-10T14:45:33.5814833Z [7] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff6bce158b0)
+    # 2020-04-10T14:45:33.5815874Z [6] testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff6bce15790)
+    # 2020-04-10T14:45:33.5816651Z [5] testing::UnitTest::Run (0x7ff6bce26e40)
+    # 2020-04-10T14:45:33.5817787Z [4] std::_LaunchPad<std::unique_ptr<std::tuple<<lambda_90af95f0f43eb4cf96d060fd72bdc335> >,std::default_delete<std::tuple<<lambda_90af95f0f43eb4cf96d060fd72bdc335> > > > >::_Run (0x7ff6bc79e290)
+    # 2020-04-10T14:45:33.5818884Z [3] std::_Pad::_Call_func (0x7ff6bc79dd60)
+    # 2020-04-10T14:45:33.5819343Z [2] o_exp (0x7fff1cd01fa0)
+    # 2020-04-10T14:45:33.5819763Z [1] BaseThreadInitThunk (0x7fff1e7e7960)
+    # 2020-04-10T14:45:33.5820229Z [0] RtlUserThreadStart (0x7fff20bda240)
+    # 2020-04-10T14:45:33.5820547Z 
+    # 2020-04-10T14:45:33.5823302Z unknown file: error: SEH exception with code 0xc0000005 thrown in the test fixture's destructor.
+    # 2020-04-10T14:45:33.5824526Z *********************** STACK TRACE ************************
+    # 2020-04-10T14:45:33.5825293Z [21] _chkstk (0x7fff20c14670)
+    # 2020-04-10T14:45:33.5826614Z [20] RtlWalkFrameChain (0x7fff20b73730)
+    # 2020-04-10T14:45:33.5828185Z [19] KiUserExceptionDispatcher (0x7fff20c134d0)
+    # 2020-04-10T14:45:33.5829587Z [18] Mtx_destroy (0x7ffeffa98da0)
+    # 2020-04-10T14:45:33.5831282Z [17] BentleyM0200::BeMutexHolder::BeMutexHolder (0x7fff0d20f2c0)
+    # 2020-04-10T14:45:33.5832812Z [16] BentleyM0200::BeSQLite::StatementCache::Empty (0x7ffef13ab4c0)
+    # 2020-04-10T14:45:33.5834388Z [15] BentleyM0200::BeSQLite::EC::ECDb::Impl::`scalar deleting destructor' (0x7ffecb7311f0)
+    # 2020-04-10T14:45:33.5835858Z [14] BentleyM0200::BeSQLite::EC::ECDb::~ECDb (0x7ffecb730ff0)
+    # 2020-04-10T14:45:33.5837862Z [13] BentleyM0200::BeSQLite::EC::Tests::ECDbTestFixture::`scalar deleting destructor' (0x7ff6bc7bb170)
+    # 2020-04-10T14:45:33.5839006Z [12] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void> (0x7ff6bce15810)
+    # 2020-04-10T14:45:33.5840109Z [11] testing::internal::HandleExceptionsInMethodIfSupported<testing::Test,void> (0x7ff6bce156a0)
+    # 2020-04-10T14:45:33.5840955Z [10] testing::TestInfo::Run (0x7ff6bce26bb0)
+    # 2020-04-10T14:45:33.5841595Z [9] testing::TestCase::Run (0x7ff6bce269d0)
+    # 2020-04-10T14:45:33.5842309Z [8] testing::internal::UnitTestImpl::RunAllTests (0x7ff6bce26f60)
+    # 2020-04-10T14:45:33.5843347Z [7] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff6bce158b0)
+    # 2020-04-10T14:45:33.5844570Z [6] testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff6bce15790)
+    # 2020-04-10T14:45:33.5845488Z [5] testing::UnitTest::Run (0x7ff6bce26e40)
+    # 2020-04-10T14:45:33.5846810Z [4] std::_LaunchPad<std::unique_ptr<std::tuple<<lambda_90af95f0f43eb4cf96d060fd72bdc335> >,std::default_delete<std::tuple<<lambda_90af95f0f43eb4cf96d060fd72bdc335> > > > >::_Run (0x7ff6bc79e290)
+    # 2020-04-10T14:45:33.5848311Z [3] std::_Pad::_Call_func (0x7ff6bc79dd60)
+    # 2020-04-10T14:45:33.5848830Z [2] o_exp (0x7fff1cd01fa0)
+    # 2020-04-10T14:45:33.5849321Z [1] BaseThreadInitThunk (0x7fff1e7e7960)
+    # 2020-04-10T14:45:33.5849882Z [0] RtlUserThreadStart (0x7fff20bda240)
 
 FileFormatCompatibilityTests.CompareDdl_NewFile
 

@@ -1804,6 +1804,8 @@ public:
     void SetBridgeSchemaVersion();
     //! @private
     void DeleteOldOrphanReferencesSubjects();
+    //! @private
+    void EnsurePartitionCodeValueMatchesParent(ResolvedModelMapping const& v8mm, SubjectCR parentSubject);
 
     DgnDbStatus InsertResults(ElementConversionResults&, SyncInfo::V8ElementExternalSourceAspectData const&);
     DgnDbStatus UpdateResultsForOneElement(ElementConversionResults&, DgnElementId existingElementId, DgnV8EhCR v8eh, SyncInfo::V8ElementExternalSourceAspectData const&);

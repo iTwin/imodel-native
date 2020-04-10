@@ -272,10 +272,10 @@ int32_t MstnBridgeTestsFixture::DbFileInfo::GetElementCount()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-MstnBridgeTestsFixture::DbFileInfo::DbFileInfo(BentleyApi::BeFileNameCR fileName)
+MstnBridgeTestsFixture::DbFileInfo::DbFileInfo(BentleyApi::BeFileNameCR fileName, bool readWrite)
     {
     BentleyApi::BeSQLite::DbResult result;
-    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(BentleyApi::BeSQLite::Db::OpenMode::Readonly));
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(readWrite ? BentleyApi::BeSQLite::Db::OpenMode::ReadWrite : BentleyApi::BeSQLite::Db::OpenMode::Readonly));
     BeAssert(BentleyApi::BeSQLite::DbResult::BE_SQLITE_OK ==  result);
     }
 
