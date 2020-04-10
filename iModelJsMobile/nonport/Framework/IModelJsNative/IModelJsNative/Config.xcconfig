@@ -1,0 +1,7 @@
+OutRoot = /Users/affan.khan/bsw/imodel02/out/debug/
+BuildArchitecture = iOSARM64
+IOSARCH = arm64
+ENABLE_BITCODE = No
+BsiIncludeDir = $(OutRoot)$(BuildArchitecture)/BuildContexts/iModelJsMobile/
+BsiLibDir = /Users/affan.khan/bsw/imodel02/out/debug/iOSARM64/build/iModelJsHost/libs/
+CONFIGURATION_BUILD_DIR= /Users/affan.khan/bsw/imodel02/out/debug/iOSARM64/build/iModelJsHost/framework/

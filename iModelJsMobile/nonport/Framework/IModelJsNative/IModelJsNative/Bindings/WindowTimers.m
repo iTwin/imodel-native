@@ -1,5 +1,5 @@
 #import "WindowTimers.h"
-#import  <IModelJsHost/IModelJsHost.h>
+#import  <IModelJsNative/IModelJsHost.h>
 
 @implementation WTWindowTimers {
     NSUInteger _timeoutCounter;

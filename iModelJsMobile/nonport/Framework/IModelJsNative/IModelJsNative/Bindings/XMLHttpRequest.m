@@ -8,7 +8,7 @@
 
 #import "XMLHttpRequest.h"
 #import <JavaScriptCore/JavaScriptCore.h>
-#import  <IModelJsHost/IModelJsHost.h>
+#import  <IModelJsNative/IModelJsHost.h>
 @implementation XMLHttpRequest {
     NSURLSession *_urlSession;
     NSString *_method;

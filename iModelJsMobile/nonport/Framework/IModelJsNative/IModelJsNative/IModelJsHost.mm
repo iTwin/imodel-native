@@ -12,7 +12,7 @@
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <BeSQLite/L10N.h>
 
-#import "PublicAPI/IModelJsHost/IModelJsHost.h"
+#import <IModelJsNative/IModelJsHost.h>
 #import <UIKit/UIKit.h>
 
 #import <Foundation/Foundation.h>
@@ -90,8 +90,7 @@ extern "C" {
     }
 
     using namespace BentleyApi::iModelJs;
-    NSString *appFolderPath = [[NSBundle mainBundle] resourcePath];
-    NSString *iModelJsNativePath = [appFolderPath stringByAppendingPathComponent:@"iModelJsNative"];
+    NSString *iModelJsNativePath = [[NSBundle bundleForClass:[self class]] resourcePath];
     NSString *iTempFolder = NSTemporaryDirectory();
     imodeljs_addon_setMobileResourcesDir(iModelJsNativePath.UTF8String);
     imodeljs_addon_setMobileTempDir(iTempFolder.UTF8String);

@@ -88,7 +88,8 @@ LinkOptions + -framework JavaScriptCore
 LinkOptions + -framework CFNetwork
 LinkOptions + -framework Security
 LinkOptions + -framework UIKit
-%include dlmlink.mki
+# %include dlmlink.mki
+%include $(sharedMki)linkLibrary.mki
 #----------------------------------------------------------------------
 # Deliver System JavaScript library required by runtime
 #----------------------------------------------------------------------

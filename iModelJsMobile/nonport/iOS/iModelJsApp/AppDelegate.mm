@@ -7,7 +7,7 @@
 //
 
 #import "AppDelegate.h"
-#import  <IModelJsHost/IModelJsHost.h>
+#import  <IModelJsNative/IModelJsHost.h>
 #import <Foundation/Foundation.h>
 @interface AppDelegate ()
 

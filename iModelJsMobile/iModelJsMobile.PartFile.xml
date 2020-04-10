@@ -9,15 +9,12 @@
 
     <Part Name="iModelJs" BentleyBuildMakeFile="iModelJs.mke" ApiNumber="M02">
         <RequiredRepository>Libsrc-websocketpp</RequiredRepository>
-
         <SubPart PartName="WebSocketPP" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BentleyDll" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02" />
         <SubPart PartName="libuv" PartFile="libuv" Repository="Thirdparty-libuv" />
-        <!-- SubPart PartName="VendorAPI"/ -->
         <SubPart PartName="iModelJsNative-Mobile" Repository="imodel02" PartFile="iModelJsNodeAddon/iModelJsNodeAddon" />
         <SubPart PartName="iModelJsApiDeclarations" Repository="imodel02" PartFile="iModelJsNodeAddon/iModelJsNodeAddon" />
         <SubPart PartName="iModelJsWindows-Only-SubParts" />
-
         <Bindings>
             <PublicAPI Domain="iModelJs" />
             <Libs>Delivery/$(libprefix)iModelJs$(libext)</Libs>
@@ -28,23 +25,15 @@
         <SdkSource>google_v8_winx64</SdkSource>
     </Part>
 
-    <!-- Part Name="VendorAPI" BentleyBuildMakeFile="prewirenapi.mke">
-        <Bindings>
-            <VendorAPI Domain="Napi"/>
-        </Bindings>
-    </Part -->
     <!-- ========================================================================================================
       Platform-specific apps IOS
      ======================================================================================================== -->
-    <Part Name="iModelJsHostLib" BentleyBuildMakeFile="nonport/Native/IModelJsHost.mke" ApiNumber="M02">
+    <Part Name="AppleFramework" BentleyBuildMakeFile="nonport/Framework/IModelJsNative/BuildFramework.mke" ApiNumber="M02">
         <SubPart PartName="iModelJs" LibType="Static" />
         <Bindings>
-            <PublicAPI ProductDirectoryName="iModelJsHostPublicAPI" Domain="iModelJsHost" />
-            <Assemblies ProductDirectoryName="iModelJsHostLibs">Delivery/$(shlibprefix)iModelJsHost$(ApiNumber)$(shlibext)</Assemblies>
             <Directory ProductDirectoryName="Assets" ProductSubDirectory="system" SourceName="Delivery/system"/>
         </Bindings>
     </Part>
-
     <Part Name="MakePackages" BentleyBuildMakeFile="package/makePackages.mke">
         <SubProduct ProductName="iModelJsHost"/>
     </Part>
@@ -53,7 +42,7 @@
         "Dev" means to also run the unit tests of dependencies.
         Our highest-order dependency is iModelJsNodeAddon, but we can't run that directly on iOS...
     -->
-    <Part Name="iModelJsHostPakage.Dev">
+    <Part Name="iModelJsHostPackage.Dev">
        <SubPart PartName="iModelCorePRG" PartFile="iModelCore/iModelCore"/>
        <SubPart PartName="MakePackages"/>
     </Part>
@@ -63,7 +52,7 @@
     </Part>
 
     <Product Name="iModelJsHost">
-        <SubPart PartName="iModelJsHostLib" LibType="Dynamic" />
+        <SubPart PartName="AppleFramework" LibType="Dynamic" />
         <Directories DirectoryListName="iModelJsHost" />
         <FeatureExclude>GeoCoordAssetsLarge</FeatureExclude>
     </Product>

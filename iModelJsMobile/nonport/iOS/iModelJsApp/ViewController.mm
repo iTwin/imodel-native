@@ -7,7 +7,7 @@
 //
 
 #import "ViewController.h"
-#import  <IModelJsHost/IModelJsHost.h>
+#import  <IModelJsNative/IModelJsHost.h>
 #import "AssetHandler.h"
 #import "AppDelegate.h"
 #import "AppRegistry.h"

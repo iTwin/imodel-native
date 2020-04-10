@@ -9,7 +9,7 @@
 # technique... so we can re-use some of the "make package" logic, but need
 # substantial changes.
 
-ProductDir = $(OutputRootDir)Product/iModelJsHost
+ProductDir = $(OutputRootDir)build/iModelJsHost/framework/
 o = $(OutputRootDir)imodeljsnodeaddon_pkgs/
 baseDir = $(_MakeFilePath)
 imjsAddonDir = $(SrcRoot)imodel02/iModelJsNodeAddon/

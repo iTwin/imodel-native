@@ -1,0 +1,17 @@
+//
+//  Config.xcconfig
+//  IModelJsNative
+//
+//  Created by Affan Khan on 4/8/20.
+//  Copyright © 2020 Affan Khan. All rights reserved.
+//
+ // #include "/Users/MyUserName/Desktop/MyOtherConfigFile.xcconfig"
+// Configuration settings file format documentation can be found at:
+// https://help.apple.com/xcode/#/dev745c5c974
+BuildArchitecture = iOSARM64
+OutRoot = /Users/affan.khan/bsw/imodel02/out/debug/
+CONFIGURATION_BUILD_DIR= $(OutRoot)$(BuildArchitecture)/Product/Framework
+ENABLE_BITCODE = No
+
+BsiIncludeDir = $(OutRoot)$(BuildArchitecture)/BuildContexts/iModelJsMobile/
+BsiLibDir = $(OutRoot)$(BuildArchitecture)/Product/iModelJsHost/libs
