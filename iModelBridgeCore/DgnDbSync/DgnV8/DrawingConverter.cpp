@@ -840,7 +840,11 @@ ViewDefinitionPtr DrawingViewFactory::_MakeView(Converter& converter, ViewDefini
         return nullptr;
 
     converter._TurnOnExtractionCategories(*parms.m_categories);
-
+    if (nullptr == parms.m_dstyle->ToDisplayStyle2dP())
+        {
+        LOG.errorv("DrawingViewFactory::_MakeView - parms.m_dstyle->ToDisplayStyle2dP() returns null for %s", parms.m_name.c_str());
+        return nullptr;
+        }
     DrawingViewDefinitionPtr view = new DrawingViewDefinition(*converter.GetJobDefinitionModel(), parms.m_name, parms.GetDgnModel().GetModelId(), *parms.m_categories, *parms.m_dstyle->ToDisplayStyle2dP());
 
     parms.Apply(*view);

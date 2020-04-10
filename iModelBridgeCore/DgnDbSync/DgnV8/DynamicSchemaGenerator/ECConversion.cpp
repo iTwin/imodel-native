@@ -1855,6 +1855,11 @@ BentleyStatus DynamicSchemaGenerator::CopyFlattenedProperty(ECN::ECClassP target
         else
             targetClass->CreatePrimitiveProperty(destPrimitive, sourceProperty->GetName(), sourcePrimitive->GetType());
 
+        if (nullptr == destPrimitive)
+            {
+            LOG.errorv("DynamicSchemaGenerator::CopyFlattenedProperty - failed to create a primitive property for %s:%s", sourceProperty->GetClass().GetFullName(), sourceProperty->GetName().c_str());
+            return BSIERROR;
+            }
         if (sourcePrimitive->IsMinimumValueDefined())
             {
             ECN::ECValue valueToCopy;
@@ -1900,6 +1905,12 @@ BentleyStatus DynamicSchemaGenerator::CopyFlattenedProperty(ECN::ECClassP target
             targetClass->CreateStructArrayProperty(destArray, sourceProperty->GetName(), *flatBaseSchema->GetClassP(structElementType.GetName().c_str())->GetStructClassP());
             }
 
+        if (nullptr == destArray)
+            {
+            LOG.errorv("DynamicSchemaGenerator::CopyFlattenedProperty - failed to create a structArray property for %s:%s", sourceProperty->GetClass().GetFullName(), sourceProperty->GetName().c_str());
+            return BSIERROR;
+            }
+
         destArray->SetMaxOccurs(sourceArray->GetStoredMaxOccurs());
         destArray->SetMinOccurs(sourceArray->GetMinOccurs());
         destProperty = destArray;
@@ -1930,6 +1941,12 @@ BentleyStatus DynamicSchemaGenerator::CopyFlattenedProperty(ECN::ECClassP target
             }
         else
             targetClass->CreatePrimitiveArrayProperty(destArray, sourceProperty->GetName(), sourceArray->GetPrimitiveElementType());
+
+        if (nullptr == destArray)
+            {
+            LOG.errorv("DynamicSchemaGenerator::CopyFlattenedProperty - failed to create a primitiveArray property for %s:%s", sourceProperty->GetClass().GetFullName(), sourceProperty->GetName().c_str());
+            return BSIERROR;
+            }
 
         if (sourceArray->IsMinimumValueDefined())
             {
@@ -1980,6 +1997,12 @@ BentleyStatus DynamicSchemaGenerator::CopyFlattenedProperty(ECN::ECClassP target
                 targetClass->GetSchemaR().AddReferencedSchema(*flatBaseSchema);
             targetClass->CreateStructProperty(destStruct, sourceProperty->GetName(), *flatBaseSchema->GetClassP(sourceType.GetName().c_str())->GetStructClassP());
             }
+        if (nullptr == destStruct)
+            {
+            LOG.errorv("DynamicSchemaGenerator::CopyFlattenedProperty - failed to create a struct property for %s:%s", sourceProperty->GetClass().GetFullName(), sourceProperty->GetName().c_str());
+            return BSIERROR;
+            }
+
         destProperty = destStruct;
         }
     else if (sourceProperty->GetIsNavigation())
@@ -2004,6 +2027,12 @@ BentleyStatus DynamicSchemaGenerator::CopyFlattenedProperty(ECN::ECClassP target
             ECN::ECSchemaPtr flatBaseSchema = m_flattenedRefs[sourceRelClass->GetSchema().GetName()];
             targetClass->GetEntityClassP()->CreateNavigationProperty(destNav, sourceProperty->GetName(), *flatBaseSchema->GetClassP(sourceRelClass->GetName().c_str())->GetRelationshipClassP(), sourceNav->GetDirection(), false);
             }
+        if (nullptr == destNav)
+            {
+            LOG.errorv("DynamicSchemaGenerator::CopyFlattenedProperty - failed to create a navigation property for %s:%s", sourceProperty->GetClass().GetFullName(), sourceProperty->GetName().c_str());
+            return BSIERROR;
+            }
+
         destProperty = destNav;
         }
 

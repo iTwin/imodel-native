@@ -50,8 +50,10 @@ void iModelBridgeError::WriteErrorMessage(BeFileNameCR errorFileName)
         }
 
     FILE* fp;
-    BeFile::Fopen(&fp, fileNameutf8.c_str(), "w");
+    if (0 != BeFile::Fopen(&fp, fileNameutf8.c_str(), "w"))
+        return;
     char buffer[1024];
+
     rapidjson::FileWriteStream fs(fp, buffer, sizeof(buffer));
     rapidjson::PrettyWriter<rapidjson::FileWriteStream> writer(fs);
     //rapidjson::StringBuffer buffer;
