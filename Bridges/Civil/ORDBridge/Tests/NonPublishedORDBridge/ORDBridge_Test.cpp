@@ -28,7 +28,20 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDHelloWorldCorridorConversionTest)
 TEST_F(CiviliModelBridgesORDBridgeTests, ORDFullyFederatedConversionTest)
     {
     ASSERT_TRUE(RunTestApp(WCharCP(L"Fully Federated\\container 2.dgn"), WCharCP(L"ORDFullyFederatedTest.bim"), false));
-    VerifyConvertedElementCount("ORDFullyFederatedTest.bim", 2, 0);
+    auto dgnDbPtr = VerifyConvertedElementCount("ORDFullyFederatedTest.bim", 2, 0);
+    
+    // Testing conversion of view-groups and Saved Views...
+    ECSqlStatement stmt;
+    stmt.Prepare(*dgnDbPtr, "SELECT CodeValue FROM " BIS_SCHEMA(BIS_CLASS_ViewDefinition));
+    ASSERT_TRUE(stmt.IsPrepared());
+
+    size_t index = 0;
+    bvector<Utf8String> expectedViewNames = { "Default - View 1", "Curve", "Plan-view Models" };
+
+    while (DbResult::BE_SQLITE_ROW == stmt.Step())
+        ASSERT_TRUE(expectedViewNames[index++].Equals(stmt.GetValueText(0)));
+
+    ASSERT_EQ(expectedViewNames.size(), index);
     }
 
 /*---------------------------------------------------------------------------------**//**

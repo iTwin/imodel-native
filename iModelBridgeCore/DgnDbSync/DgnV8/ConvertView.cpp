@@ -354,7 +354,7 @@ void Converter::ConvertSceneLighting(DisplayStyle3dR displayStyle, DgnV8ViewInfo
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewDefinitionPtr SpatialViewFactory::_MakeView(Converter& converter, ViewDefinitionParams const& parms)
     {
-    if (!parms.GetDgnModel().IsPhysicalModel())
+    if (!parms.GetDgnModel().Is3dModel())
         return nullptr;
 
     DgnDbR db = converter.GetDgnDb();
