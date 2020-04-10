@@ -214,8 +214,8 @@ BentleyStatus   DwgImporter::_ImportXReference (ElementImportResults& results, E
     auto revOption = this->GetOptions().GetPushIntermediateRevisions ();
     if (revOption == iModelBridge::Params::PushIntermediateRevisions::ByModel || revOption == iModelBridge::Params::PushIntermediateRevisions::ByFile)
         {
-        Utf8PrintfString comment("xRef");
-        bvector<Utf8String> files;
+        Utf8String  comment(DataStrings::GetString(DataStrings::XrefModel()));
+        T_Utf8StringVector  files;
         files.push_back(m_currentXref.GetSavedPath().GetBaseName().GetNameUtf8());
         iModelBridge::PushChanges(*m_dgndb, this->GetOptions(), comment.c_str(), &files, iModel::Hub::ChangeSetKind::Regular);
         }
@@ -419,9 +419,6 @@ BentleyStatus XRefLoader::LoadXrefsInMasterFile ()
     if (!iter.IsValid() || !iter->IsValid())
         return  BentleyStatus::BSIERROR;
 
-    // create a repository link from the root file
-    auto rootlinkId = m_importer.CreateOrUpdateRepositoryLink ();
-
     // create a DwgAppData schema as we see app data we support
     XDataFactory xdataFactory(m_importer);
 
@@ -459,7 +456,6 @@ BentleyStatus XRefLoader::LoadXrefsInMasterFile ()
                 {
                 // add the new xref in local cache as well as in the syncInfo:
                 m_importer.GetLoadedXrefs().push_back (xref);
-                m_importer.CreateOrUpdateRepositoryLink (xref.GetDatabaseP());
                 }
             else
                 {

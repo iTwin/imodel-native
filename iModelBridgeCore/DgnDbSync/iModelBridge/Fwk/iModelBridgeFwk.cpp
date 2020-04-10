@@ -2702,7 +2702,7 @@ int iModelBridgeFwk::UpdateExistingBim(iModelBridgeFwk::FwkContext& context)
     LOG.tracev(L"PushDataChanges");
     bvector<Utf8String> changedFiles;
     changedFiles.push_back(m_jobEnvArgs.m_inputFileName.GetBaseName().GetNameUtf8());
-    PushDataChanges("", &changedFiles, iModel::Hub::ChangeSetKind::Regular);
+    PushDataChanges(iModelBridgeFwkMessages::GetString(iModelBridgeFwkMessages::DATA_CHANGES()), &changedFiles, iModel::Hub::ChangeSetKind::Regular);
     LOG.tracev(L"PushDataChanges                :Done");
 
     //  Finalize changes in the shared channel

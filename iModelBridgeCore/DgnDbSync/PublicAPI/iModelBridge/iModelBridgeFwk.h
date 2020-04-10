@@ -41,6 +41,7 @@ BENTLEY_TRANSLATABLE_STRINGS_START(iModelBridgeFwkMessages, iModelBridgeFwkMessa
     L10N_STRING(DOMAIN_SCHEMA_UPGRADE)         // =="Domain schema upgrade"==
     L10N_STRING(INITIALIZATION_CHANGES)        // =="Initialization changes"==
     L10N_STRING(DEFINITIONS)                   // =="Definitions"==
+    L10N_STRING(DATA_CHANGES)                  // =="Data changes"==
     L10N_STRING(FINALIZATION)                  // =="Finalization changes"==
 BENTLEY_TRANSLATABLE_STRINGS_END
 

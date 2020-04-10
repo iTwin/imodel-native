@@ -1092,6 +1092,7 @@ private:
     bool                    UpdateModelspaceView (ViewControllerP view);
     bool                    UpdatePaperspaceView (ViewControllerP view, DwgDbObjectIdCR viewportId);
     DgnElementId            CreateOrUpdateRepositoryLink (DwgDbDatabaseP dwg = nullptr);
+    BentleyStatus           CreateOrUpdateRepositoryLinks ();
     DgnSubCategoryId        GetSubcategoryForDrawingCategory (DefinitionModelR model, DgnCategoryId categoryId, DgnSubCategory::Appearance const& appear, Utf8StringCR name);
     void                    InitializeDisplayPriority (DwgDbBlockChildIteratorR modelspaceIter);
     uint32_t                IncrementDisplayPriority (int32_t upBy = 1) { return (m_displayPriority += upBy); }

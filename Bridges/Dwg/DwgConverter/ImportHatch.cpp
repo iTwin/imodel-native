@@ -176,6 +176,17 @@ CurveVector::BoundaryType DwgHatchExt::GetBoundaryType (DwgDbHatch::LoopType loo
 CurveVectorPtr  DwgHatchExt::CreatePathFromLoop (size_t loopIndex)
     {
     auto loopType = m_hatch->GetLoopType (loopIndex);
+    /*---------------------------------------------------------------------------------------------------
+    Below check is an attempt to single out a spectial case seen in VSTS 269304 - ACAD does not seem to 
+        apply the expected area difference for a supposedly text inner boundary in this case.
+
+    From RealDWG API Reference:
+    kTextIsland - Text loops that are surrounded by even number of outer loops. Text island loops are 
+                  avoided when performing solid fill.
+    ---------------------------------------------------------------------------------------------------*/
+    if (0 != (loopType & DwgDbHatch::LoopType::External) && 0 != (loopType & DwgDbHatch::LoopType::Textbox) && 0 != (loopType & DwgDbHatch::LoopType::TextIsland))
+        return  nullptr;
+
     auto boundaryType = this->GetBoundaryType (loopType);
     auto path = CurveVector::Create (boundaryType);
     if (!path.IsValid())

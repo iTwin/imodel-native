@@ -133,6 +133,7 @@ IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START (DataStrings, dwg_dataStrings)
     L10N_STRING(ModelView)                  // =="Model View"==
     L10N_STRING(LayoutView)                 // =="Layout View"==
     L10N_STRING(XrefView)                   // =="XReference View"==
+    L10N_STRING(XrefModel)                  // =="XReference Model"==
     L10N_STRING(CategorySelector)           // =="Categories"==
     L10N_STRING(ModelSelector)              // =="Models"==
     L10N_STRING(DisplayStyle)               // =="Display Style"==

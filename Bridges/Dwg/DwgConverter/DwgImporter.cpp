@@ -122,13 +122,6 @@ BentleyStatus   DwgImporter::_MakeSchemaChanges ()
     xrefLoader.LoadXrefsInMasterFile ();
     xrefLoader.CacheUnresolvedXrefs ();
 
-    /*-----------------------------------------------------------------------------------
-    RepositoryLinks are created by the xRefLoader, push changes before importing schemas; 
-    or else schema import will fail.  A Pull should have been done prior to this method 
-    to be called, so no need to pull again.
-    -----------------------------------------------------------------------------------*/
-    iModelBridge::PushChanges (*m_dgndb, this->GetOptions(), "repository links", NULL, iModel::Hub::ChangeSetKind::Regular);
-
     // create attribute definitions schema
     auto attrdefSchema = xrefLoader.GetAttrdefSchema ();
     if (attrdefSchema.IsValid() && attrdefSchema->GetClassCount() > 0)
@@ -170,7 +163,9 @@ BentleyStatus   DwgImporter::_MakeSchemaChanges ()
         if (status != SchemaStatus::Success)
             return  static_cast<BentleyStatus>(status);
         }
-    return  BentleyStatus::SUCCESS;
+
+    // create/update all repository links after schemas imported; otherwise ImportSchema fails
+    return  this->CreateOrUpdateRepositoryLinks ();
     }
 
 /*---------------------------------------------------------------------------------**//**

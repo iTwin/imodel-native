@@ -159,6 +159,27 @@ DgnElementId    DwgImporter::CreateOrUpdateRepositoryLink (DwgDbDatabaseP source
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/20
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DwgImporter::CreateOrUpdateRepositoryLinks ()
+    {
+    // create/update a repository link from the root file
+    auto replinkId = this->CreateOrUpdateRepositoryLink ();
+    if (!replinkId.IsValid())
+        return  BentleyStatus::BSIERROR;
+
+    // create/update repository links for xref files
+    for (auto xref : m_loadedXrefFiles)
+        {
+        replinkId = this->CreateOrUpdateRepositoryLink (xref.GetDatabaseP());
+        if (!replinkId.IsValid())
+            return  BentleyStatus::BSIERROR;
+        }
+
+    return  BentleyStatus::BSISUCCESS;    
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          02/19
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementId    DwgImporter::GetRepositoryLink (DwgDbDatabaseP source)
