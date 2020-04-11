@@ -24,7 +24,7 @@ BentleyStatus   iModelBridgeLdClient::Init(CharCP authKey)
         NativeLogging::LoggingManager::GetLogger(L"iModelBridge")->info(msg);
     });
 
-    m_config = LDConfigNew(authKey);
+    m_config = LDConfigNew(m_key.c_str());//authKey will be freed in the restart case.
     if (NULL == m_config)
         return ERROR;
 
