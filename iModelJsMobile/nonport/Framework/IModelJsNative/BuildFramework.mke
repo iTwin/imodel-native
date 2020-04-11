@@ -19,6 +19,17 @@ appName = iModelJsHost
 %else
     %error Unsupported platform
 %endif
+
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "iOSARM64" 
+    ARCH=arm64
+%else
+    %if $(TARGET_PROCESSOR_ARCHITECTURE) == "iOSX64"
+        ARCH=x86_64
+    %else
+        %error Unsupported platform
+    %endif
+%endif
+
 o = $(OutputRootDir)build/$(appName)
 fwk = $(o)/framework/
 libs = $(o)/libs/
@@ -67,7 +78,7 @@ LinkOptions + -framework UIKit
 # %include dlmlink.mki
 %include $(sharedMki)linkLibrary.mki
 
-%message $(TARGET_PROCESSOR_ARCHITECTURE)
+
 #----------------------------------------------------------------------
 # Deliver System JavaScript library required by runtime
 #----------------------------------------------------------------------
@@ -80,4 +91,5 @@ always:
         -project $(baseDir)IModelJsNative.xcodeproj\
         -scheme 'IModelJsNative'\
         -configuration $(BuildConfiguration)\
+        -arch $(ARCH)\
         $(CODE_SIGN_OVERRIDE)

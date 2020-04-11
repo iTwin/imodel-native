@@ -90,7 +90,7 @@ extern "C" {
     }
 
     using namespace BentleyApi::iModelJs;
-    NSString *iModelJsNativePath = [[NSBundle bundleForClass:[self class]] resourcePath];
+    NSString *iModelJsNativePath = [[NSBundle bundleWithIdentifier:@"bentley.IModelJsNative"] resourcePath];
     NSString *iTempFolder = NSTemporaryDirectory();
     imodeljs_addon_setMobileResourcesDir(iModelJsNativePath.UTF8String);
     imodeljs_addon_setMobileTempDir(iTempFolder.UTF8String);
@@ -179,15 +179,16 @@ extern "C" {
 }
 
 void BootstrapBackend(JSContext* ctx, NSURL* backendUrl, NSArray<NSString*>* searchPaths) {
-    NSString* resourcePath = [[NSBundle mainBundle] bundlePath];
+    NSString* resourcePath = [[NSBundle bundleWithIdentifier:@"bentley.IModelJsNative"] resourcePath];
     NSProcessInfo* currentProcess = [NSProcessInfo processInfo];
     NSMutableArray<NSString*>* paths = [NSMutableArray<NSString*> new];
-    [paths addObject: [resourcePath stringByAppendingPathComponent:@"iModelJsNative/Assets/system"]];
-    [paths addObject: [resourcePath stringByAppendingPathComponent:@"iModelJsNative/Assets/system/polyfill"]];
-    [paths addObject: [resourcePath stringByAppendingPathComponent:@"iModelJsNative/Assets/system/polyfill/node_modules"]];
+    [paths addObject: [resourcePath stringByAppendingPathComponent:@"Assets/system"]];
+    [paths addObject: [resourcePath stringByAppendingPathComponent:@"Assets/system/polyfill"]];
+    [paths addObject: [resourcePath stringByAppendingPathComponent:@"Assets/system/polyfill/node_modules"]];
     if (searchPaths != nil) {
+        NSString* mainPath = [[NSBundle mainBundle] bundlePath];
         for (NSString* searchPath in searchPaths) {
-            [paths addObject: [resourcePath stringByAppendingPathComponent:searchPath]];
+            [paths addObject: [mainPath stringByAppendingPathComponent:searchPath]];
         }
     }
     ctx[@"process"] = [JSValue valueWithNewObjectInContext:ctx];
