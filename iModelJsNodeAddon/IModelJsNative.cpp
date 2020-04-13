@@ -1330,12 +1330,16 @@ public:
         {
         REQUIRE_ARGUMENT_STRING(0, dbName, Env().Undefined());
         REQUIRE_ARGUMENT_INTEGER(1, mode, Env().Undefined());
-        OPTIONAL_ARGUMENT_INTEGER(2, upgrade, (int) SchemaUpgradeOptions::DomainUpgradeOptions::CheckRequiredUpgrades, Env().Undefined());
+        OPTIONAL_ARGUMENT_INTEGER(2, upgrade, 0, Env().Undefined());
         OPTIONAL_ARGUMENT_STRING(3, encryptionPropsString, Env().Undefined());
 
         BeFileName dbFileName(dbName.c_str(), true);
-        SchemaUpgradeOptions schemaUpgradeOptions((SchemaUpgradeOptions::DomainUpgradeOptions) upgrade);
+        SchemaUpgradeOptions schemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::CheckRequiredUpgrades);
         DgnDb::OpenParams openParams((Db::OpenMode)mode, BeSQLite::DefaultTxn::Yes, schemaUpgradeOptions);
+        if (1 == upgrade)
+            openParams.SetProfileUpgradeOptions(BeSQLite::Db::ProfileUpgradeOptions::Upgrade);
+        else if (2 == upgrade)
+            schemaUpgradeOptions = SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade;
 
         if (!encryptionPropsString.empty() && BeSQLite::Db::IsEncryptedDb(dbFileName))
             {

@@ -39,13 +39,11 @@ export declare namespace IModelJsNative {
     Production = 0 , Trial = 1, Beta = 2, HomeUse= 3, PreActivation = 4,
   }
 
-  const enum UpgradeOptions {
-    CheckRequiredUpgrades = 0,
-    CheckRecommendedUpgrades = 1,
-    Upgrade = 2,
-    SkipCheck = 3,
+  const enum UpgradeMode {
+    None = 0,
+    Profile = 1,
+    Domain = 2,
   }
-
   /** A string that identifies a Txn. */
   type TxnIdString = string;
 
@@ -254,7 +252,7 @@ export declare namespace IModelJsNative {
     public isTxnIdValid(txnId: TxnIdString): boolean;
     public isUndoPossible(allowCrossSessions?: boolean): boolean;
     public logTxnError(fatal: boolean): void;
-    public openIModel(dbName: string, mode: OpenMode, upgrade?: UpgradeOptions, encryptionProps?: string /* JSON.stringify(IModelEncryptionProps) */): DbResult;
+    public openIModel(dbName: string, mode: OpenMode, upgrade?: UpgradeMode, encryptionProps?: string /* JSON.stringify(IModelEncryptionProps) */): DbResult;
     public pollConcurrentQuery(taskId: number): { status: ConcurrentQuery.PollStatus, result: string, rowCount: number };
     public pollTileContent(treeId: string, tileId: string): ErrorStatusOrResult<IModelStatus, TileContentState | TileContent>;
     public postConcurrentQuery(ecsql: string, bindings: string, limit: QueryLimit, quota: QueryQuota, priority: QueryPriority): { status: ConcurrentQuery.PostStatus, taskId: number };
