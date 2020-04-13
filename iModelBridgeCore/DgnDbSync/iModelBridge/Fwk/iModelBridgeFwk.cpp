@@ -1820,7 +1820,6 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     LOG.tracev(L"Setting up iModel Briefcase for processing  : Done");
     }
 
-    //  The repo already exists. Run the bridge to update it and then push the changeset to the iModel.
     int status;
     m_lastError = &errorContext;
     try
@@ -2010,6 +2009,8 @@ BentleyStatus   iModelBridgeFwk::TryOpenBimWithOptions(DgnDb::OpenParams& oparam
         GetLogger().fatalv("OpenDgnDb failed with error %s (%x)", BeSQLite::Db::InterpretDbResult(dbres), dbres);
         return BentleyStatus::ERROR;
         }
+
+    writeBriefcaseIdTxtFile(m_briefcaseName, m_briefcaseDgnDb->GetBriefcaseId()); // write this as early as possible, so that caller can release locks in case of a crash that defeats fwk's own cleanup code.
 
     //                                       *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
     if (madeSchemaChanges || iModelBridge::AnyChangesToPush(*m_briefcaseDgnDb))
