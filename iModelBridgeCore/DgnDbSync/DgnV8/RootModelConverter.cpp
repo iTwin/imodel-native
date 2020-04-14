@@ -2341,7 +2341,10 @@ BentleyStatus RootModelConverter::MakeDefinitionChanges()
         return ERROR;
 
     if (!m_isRootModelSpatial)
+        {
+        _ConvertDrawingLevels();
         return BSISUCCESS;
+        }
 
     for (auto v8Model : m_spatialModelsInAttachmentOrder)
         {

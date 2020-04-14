@@ -36,6 +36,22 @@ DgnElementId FindElementByCodeValue(DgnDbR db, Utf8CP className , Utf8CP codeVal
         return DgnElementId();
     return stmt->GetValueId<DgnElementId>(0);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DrawingTests, SubStationSheet)
+    {
+    LineUpFiles(L"SubStationSheet.bim", L"SubStationSheet.dgn", true);
+
+    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+    auto sheet = db->Elements().Get<Sheet::Element>(findFirstElementByClass(*db, getBisClassId(*db, BIS_CLASS_Sheet)));
+    ASSERT_TRUE(sheet.IsValid());
+    auto sheetModel = sheet->GetSub<Sheet::Model>();
+    ASSERT_TRUE(sheetModel.IsValid());
+    countElements(*sheetModel, 180);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/

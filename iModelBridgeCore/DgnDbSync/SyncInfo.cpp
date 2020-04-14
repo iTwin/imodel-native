@@ -607,7 +607,7 @@ DgnCategoryId SyncInfo::GetCategory(DgnV8EhCR v8Eh, ResolvedModelMapping const& 
     if (0 != v8Level)
         categoryId = FindCategory(v8Level, *v8Eh.GetDgnModelP()->GetDgnFileP(), ltype);
 
-    return (categoryId.IsValid() ? categoryId : GetConverter().GetUncategorizedCategory()); // return uncategorized if we didn't find a valid category...
+    return (categoryId.IsValid() ? categoryId : v8mm.GetDgnModel().Is2dModel() ? GetConverter().GetUncategorizedDrawingCategory() : GetConverter().GetUncategorizedCategory()); // return uncategorized if we didn't find a valid category...
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -60,7 +60,7 @@
             "request": "launch",
             "program": "${env:OutRoot}/Winx64/Product/DgnV8Converter/DgnV8Converter.exe",
             "args": [
-                "--input=d:/dgn/problem/284079/ANOTHER_GUINNESS.i.dgn",
+                "--input=d:/dgn/WB_TT2/-3.DGN",
                 "--output=d:/tmp"
             ],
             "stopAtEntry": false,
@@ -80,7 +80,7 @@
             "program": "${env:OutRoot}/Winx64/Product/DgnV8ConverterTests/DgnV8ConverterTests.exe",
             "args": [
                 "--gtest_break_on_failure",
-                "--gtest_filter=ConverterTests.CommonReferencesWithRecipe:ConverterTests.CommonReferencesNoDocGuids"
+                "--gtest_filter=DrawingTests.SubStationSheet"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
