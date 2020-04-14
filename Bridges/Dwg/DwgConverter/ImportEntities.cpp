@@ -335,7 +335,8 @@ BentleyStatus   DwgImporter::_GetElementCreateParams (DwgImporter::ElementCreate
     if (model.Is3d())
         {
         // get spatial category & subcategory from the syncInfo:
-        params.m_categoryId = this->GetSpatialCategory (params.m_subCategoryId, layerId, xrefDwg);
+        bool    isOn = false;
+        params.m_categoryId = this->GetSpatialCategory (params.m_subCategoryId, isOn, layerId, xrefDwg);
         }
     else
         {

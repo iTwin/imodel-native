@@ -1770,6 +1770,7 @@ void GeometryFactory::_Draw (DwgGiDrawableR drawable)
     if (this->IsDrawingBlock() && nullptr != drawable.GetAttributeDefinitionP())
         return;
 
+    DrawParameters  nestingParams = m_drawParams;
     DwgDbBlockTableRecordP block = drawable.GetBlockP ();
     if (nullptr != block)
         {
@@ -1778,7 +1779,7 @@ void GeometryFactory::_Draw (DwgGiDrawableR drawable)
 
         try
             {
-            drawable.Draw (*this, *m_geometryOptions, m_drawParams);
+            drawable.Draw (*this, *m_geometryOptions, nestingParams);
             }
         catch (...)
             {
@@ -1791,7 +1792,6 @@ void GeometryFactory::_Draw (DwgGiDrawableR drawable)
         }
 
     // we want to use "this" factory to collect sub-entities, so override "this" sub-entity traits:
-    DrawParameters  savedParams = m_drawParams;
     DwgGiRegenType  savedRegentype = m_geometryOptions->_GetRegenType ();
     DwgDbEntityP    entity = nullptr;
     DwgDbEntityPtr  child(drawable.GetId(), DwgDbOpenMode::ForRead);
@@ -1803,14 +1803,14 @@ void GeometryFactory::_Draw (DwgGiDrawableR drawable)
         protocal extention; otherwise prepare for the next draw call in the stack.
         -------------------------------------------------------------------------------*/
         entity = child.get ();
-        if (!this->PreprocessBlockChildGeometry(entity, savedParams))
+        if (!this->PreprocessBlockChildGeometry(entity, nestingParams))
             return;
         }
 
     // draw a primitive - could be a child entity, a primitive of an exploded parenty geometry, etc:
     try
         {
-        drawable.Draw (*this, *m_geometryOptions, m_drawParams);
+        drawable.Draw (*this, *m_geometryOptions, nestingParams);
         }
     catch (...)
         {
@@ -1826,7 +1826,7 @@ void GeometryFactory::_Draw (DwgGiDrawableR drawable)
             this->DrawBlockAttributes (*blockRef);
 
         // restore params & options for next child or popping back to previous draw stack
-        m_drawParams.CopyFrom (savedParams);
+        m_drawParams.CopyFrom (nestingParams);
         m_geometryOptions->SetRegenType (savedRegentype);
         }
     }
@@ -1834,7 +1834,7 @@ void GeometryFactory::_Draw (DwgGiDrawableR drawable)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryFactory::PreprocessBlockChildGeometry (DwgDbEntityP entity, DrawParameters& savedParams)
+bool GeometryFactory::PreprocessBlockChildGeometry (DwgDbEntityP entity, DrawParameters& parentParams)
     {
     if (entity == nullptr)
         return  false;
@@ -1849,12 +1849,12 @@ bool GeometryFactory::PreprocessBlockChildGeometry (DwgDbEntityP entity, DrawPar
     if (this->SkipBlockChildGeometry(entity))
         return  false;
 
-    m_drawParams.Initialize (*entity, &m_drawParams);
+    m_drawParams.Initialize (*entity, &parentParams);
 
     // give protocal extensions a chance to create their own geometry:
     if (this->CreateBlockChildGeometry(entity) == BSISUCCESS)
         {
-        m_drawParams.CopyFrom (savedParams);
+        m_drawParams.CopyFrom (parentParams);
         return  false;
         }
 
@@ -2156,32 +2156,14 @@ void GeometryFactory::ComputeCategory (DgnCategoryId& categoryId, DgnSubCategory
     if (toModel.Is3d())
         {
         // we are in a modelspace, of the master file or an xref file, get a spatial category and a sub-category from the syncInfo:
-        categoryId = importer.GetSpatialCategory (subcategoryId, layerId, xrefDwg);
+        bool    isDisplayed = true;
+        categoryId = importer.GetSpatialCategory (subcategoryId, isDisplayed, layerId, xrefDwg);
 
-        if (this->IsDrawingBlock())
+        if (this->IsDrawingBlock() && m_drawParams.GetDwgImporter().GetOptions().IsBlockAsSharedParts())
             {
             // we are creating a shared geometry part - resolve its visibility:
-            DgnDbR  db = toModel.GetDgnDb ();
-            DgnSubCategoryCPtr  subcategory = DgnSubCategory::Get (db, subcategoryId);
-            DgnSubCategory::Appearance  appearance;
-
-            if (subcategory.IsValid() && m_drawParams.IsDisplayed() != (appearance = subcategory->GetAppearance()).IsVisible())
-                {
-                // find a different sub-category that matches this part's display status:
-                for (auto entry : DgnSubCategory::MakeIterator(db, categoryId))
-                    {
-                    DgnSubCategoryCPtr  checkSubcat = DgnSubCategory::Get (db, entry.GetId<DgnSubCategoryId>());
-                    if (checkSubcat.IsValid() && m_drawParams.IsDisplayed() == checkSubcat->GetAppearance().IsVisible())
-                        {
-                        subcategoryId = checkSubcat->GetSubCategoryId();
-                        return;
-                        }
-                    }
-
-                // a subcategory with the same on/off status does not exist - add one:
-                appearance.SetInvisible (!appearance.IsInvisible());
-                subcategoryId = m_drawParams.GetDwgImporter().InsertAlternateSubCategory (subcategory, appearance);
-                }
+            if (m_drawParams.IsDisplayed() != isDisplayed)
+                m_drawParams.GetDwgImporter().GetOrAddAlternateCategory (categoryId, subcategoryId, m_drawParams.IsDisplayed());
             }
         }
     else

@@ -178,35 +178,6 @@ BentleyStatus   DwgImporter::GetLayerAppearance (DgnSubCategory::Appearance& app
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnSubCategoryId    DwgImporter::InsertAlternateSubCategory (DgnSubCategoryCPtr subcategory, DgnSubCategory::Appearance const& appearance, Utf8CP desiredName)
-    {
-    // create a new sub-category next to the input sub-category with a different appearance:
-    DgnSubCategoryId    newSubcatId;
-    if (!subcategory.IsValid() || subcategory->GetAppearance().IsEqual(appearance))
-        return  newSubcatId;
-
-    Utf8String  name;
-    if (nullptr == desiredName)
-        name.Sprintf ("%s-%s", subcategory->GetSubCategoryName().c_str(), appearance.IsVisible() ? "on" : "off");
-    else
-        name.assign (desiredName);
-
-    DgnCategoryId   categoryId = subcategory->GetCategoryId ();
-    DgnSubCategory  newSubcat (DgnSubCategory::CreateParams(*m_dgndb, categoryId, name, appearance, subcategory->GetDescription()));
-
-    auto    inserted = newSubcat.Insert ();
-    if (inserted.IsValid())
-        newSubcatId = inserted->GetSubCategoryId ();
-
-    if (!newSubcatId.IsValid())
-        BeAssert (false && "failed inserting a new sub-category!");
-
-    return  newSubcatId;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   DwgImporter::_ImportLayer (DwgDbLayerTableRecordCR layer, DwgStringP layerName)
@@ -223,6 +194,7 @@ BentleyStatus   DwgImporter::_ImportLayer (DwgDbLayerTableRecordCR layer, DwgStr
     this->GetLayerAppearance (appear, layer);
 
     auto layerId = layer.GetObjectId ();
+    bool isOn = !layer.IsOff() && !layer.IsFrozen();
     auto& db = this->GetDgnDb ();
     DgnDbStatus status;
 
@@ -249,14 +221,8 @@ BentleyStatus   DwgImporter::_ImportLayer (DwgDbLayerTableRecordCR layer, DwgStr
         // add an ExternalSourceAspect
         m_sourceAspects.AddLayerAspect(subId, layerId);
         // also cache the mapping
-        CategoryEntry   entry(categoryId, subId, layerId);
+        CategoryEntry   entry(categoryId, subId, layerId, isOn);
         m_layersInSync.insert (T_DwgDgnLayer(layerId, entry));
-
-#ifdef ADD_SUBCATEGORIES_WHILE_IMPORTING_LAYERS
-        // add another sub-category which has an inversed on/off status of the default sub-category:
-        appear.SetInvisible(!appear.IsInvisible());
-        this->InsertAlternateSubCategory (subCat, appear);
-#endif
 
         if (LOG_LAYER_IS_SEVERITY_ENABLED(NativeLogging::LOG_TRACE))
             LOG_LAYER.tracev("merged layer %ls (%llx) -> %d", layer.GetName().c_str(), layerId.GetHandle().AsUInt64(), categoryId.GetValue());
@@ -316,12 +282,6 @@ BentleyStatus   DwgImporter::_ImportLayer (DwgDbLayerTableRecordCR layer, DwgStr
     if (!categoryId.IsValid())
         return  BSIERROR;
 
-#ifdef ADD_SUBCATEGORIES_WHILE_IMPORTING_LAYERS
-    // add another sub-category which has an inversed on/off status of the default sub-category:
-    appear.SetInvisible(!appear.IsInvisible());
-    this->InsertAlternateSubCategory (DgnSubCategory::Get(db, newCategory.GetDefaultSubCategoryId()), appear);
-#endif
-
     if (LOG_LAYER_IS_SEVERITY_ENABLED (NativeLogging::LOG_TRACE))
         LOG_LAYER.tracev("inserted layer (%llx) -> %s (%d)", layerId.GetHandle().AsUInt64(), name.c_str(), categoryId.GetValue());
 
@@ -335,6 +295,8 @@ BentleyStatus   DwgImporter::_ImportLayer (DwgDbLayerTableRecordCR layer, DwgStr
     name.Assign (layer.GetName().c_str());
     XRefLayerResolver xrefResolver(*this, nullptr);
 
+    // when VISRETAIN=1, we xRef layers should not hit here;
+    // when VISRETAIN=0, *this* layer may be in xRef file - treat it as master file layer for nested xRef's, it is not in the root master file anyway.
     auto layerIdInMasterFile = layerId;
 
     bool matched = xrefResolver.SearchXrefLayerByName (layerId, name);
@@ -342,8 +304,8 @@ BentleyStatus   DwgImporter::_ImportLayer (DwgDbLayerTableRecordCR layer, DwgStr
     DgnSubCategoryId    subcategoryId = DgnCategory::GetDefaultSubCategoryId (categoryId);
     m_sourceAspects.AddLayerAspect(subcategoryId, layerId);
 
-    // also cache the mapping for fast future retrieving
-    CategoryEntry   entry(categoryId, subcategoryId, layerIdInMasterFile);
+    // cache the mapping for fast future retrieving
+    CategoryEntry   entry(categoryId, subcategoryId, layerIdInMasterFile, isOn);
     m_layersInSync.insert (T_DwgDgnLayer(layerId, entry));
 
     m_layersImported++;
@@ -405,7 +367,7 @@ size_t  DwgImporter::_ImportLayersByFile (DwgDbDatabaseP dwg)
                 {
                 this->_OnUpdateLayer (categoryId, *layer.get());
                 // cache the layer mapping
-                CategoryEntry   entry(categoryId, subcategoryId, layerIdInMasterFile);
+                CategoryEntry   entry(categoryId, subcategoryId, layerIdInMasterFile, !layer->IsOff() && !layer->IsFrozen());
                 m_layersInSync.insert (T_DwgDgnLayer(layerId, entry));
                 continue;
                 }
@@ -644,7 +606,7 @@ DgnSubCategoryId DwgImporter::GetSubcategoryForDrawingCategory (DefinitionModelR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCategoryId   DwgImporter::GetSpatialCategory (DgnSubCategoryId& subCategoryId, DwgDbObjectIdCR entityLayer, DwgDbDatabaseP xrefDwg)
+DgnCategoryId   DwgImporter::GetSpatialCategory (DgnSubCategoryId& subCategoryId, bool& isOn, DwgDbObjectIdCR entityLayer, DwgDbDatabaseP xrefDwg)
     {
     /*-----------------------------------------------------------------------------------
     Spetial layers in xRef share the same layers in master file, resolve these layers.
@@ -674,6 +636,7 @@ DgnCategoryId   DwgImporter::GetSpatialCategory (DgnSubCategoryId& subCategoryId
         {
         // a sync layer found in cache
         subCategoryId = found->second.GetSubCategoryId ();
+        isOn = found->second.IsDispalyedInMasterFile ();
         return  found->second.GetCategoryId ();
         }
 
@@ -710,9 +673,71 @@ DgnCategoryId   DwgImporter::GetSpatialCategory (DgnSubCategoryId& subCategoryId
             }
         }
 
+    DwgDbLayerTableRecordPtr    masterLayer(masterLayerId, DwgDbOpenMode::ForRead);
+    bool displayed = masterLayer.OpenStatus() == DwgDbStatus::Success && !masterLayer->IsOff() && !masterLayer->IsFrozen();
+
     // cache the sync'ed layer-category mapping for fast retrieving
-    CategoryEntry   entry(categoryId, subCategoryId, masterLayerId);
+    CategoryEntry   entry(categoryId, subCategoryId, masterLayerId, displayed);
     m_layersInSync.insert (T_DwgDgnLayer(layerId, entry));
 
     return  categoryId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DwgImporter::GetOrAddAlternateCategory (DgnCategoryId& categoryId, DgnSubCategoryId& subcategoryId, bool isOn)
+    {
+    // this is called because a layer needs an alternate category for a differing display status on/off
+    auto& db = this->GetDgnDb ();
+    auto category = DgnCategory::Get (db, categoryId);
+    auto subCategory = DgnSubCategory::Get (db, subcategoryId);
+    auto alternateModel = this->GetOrCreateJobDefinitionModel().get();
+    auto definitionModel = this->GetOptions().GetMergeDefinitions() ? &db.GetDictionaryModel() : alternateModel;
+    if (!category.IsValid() || !subCategory.IsValid() || alternateModel == nullptr || definitionModel == nullptr)
+        return  BentleyStatus::BSIERROR;
+
+    bool isSpatial = dynamic_cast<SpatialCategoryCP>(category.get()) != nullptr;
+    auto alternateName = category->GetCategoryName ();
+
+    alternateName.append (isOn ? "-on" : "-off");
+
+    DgnCode categoryCode = isSpatial ? SpatialCategory::CreateCode(*alternateModel, alternateName.c_str()) : DrawingCategory::CreateCode(*alternateModel, alternateName.c_str());;
+    DgnCategoryId alternateId = isSpatial ? SpatialCategory::QueryCategoryId(*alternateModel, categoryCode.GetValueUtf8()) : DrawingCategory::QueryCategoryId(*alternateModel, categoryCode.GetValueUtf8());
+
+    // if the queried alternate category exists, return it
+    if (alternateId.IsValid())
+        {
+        categoryId = alternateId;
+        subcategoryId = DgnCategory::GetDefaultSubCategoryId (alternateId);
+        return  BentleyStatus::BSISUCCESS;
+        }
+
+    // create a new alternate category with the same appearance from the default sub category
+    DgnDbStatus status = DgnDbStatus::BadArg;
+    auto        appearance = subCategory->GetAppearance ();
+    if (isSpatial)
+        {
+        SpatialCategory newCategory (*alternateModel, alternateName, DgnCategory::Rank::User, category->GetDescription());
+        newCategory.Insert (appearance, &status);
+
+        if (DgnDbStatus::Success == status && newCategory.GetCategoryId().IsValid())
+            {
+            categoryId = newCategory.GetCategoryId ();
+            subcategoryId = newCategory.GetDefaultSubCategoryId ();
+            }
+        }
+    else
+        {
+        DrawingCategory newCategory (*alternateModel, alternateName, DgnCategory::Rank::User, category->GetDescription());
+        newCategory.Insert (appearance, &status);
+
+        if (DgnDbStatus::Success == status && newCategory.GetCategoryId().IsValid())
+            {
+            categoryId = newCategory.GetCategoryId ();
+            subcategoryId = newCategory.GetDefaultSubCategoryId ();
+            }
+        }
+
+    return static_cast<BentleyStatus>(status);
     }

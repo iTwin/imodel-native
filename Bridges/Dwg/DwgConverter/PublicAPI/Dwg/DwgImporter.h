@@ -808,12 +808,14 @@ public:
         DgnCategoryId       m_categoryId;
         DgnSubCategoryId    m_subcategoryId;
         DwgDbObjectId       m_layerIdInMasterFile;
+        bool                m_isDisplayedInMasterFile;
     public:
-        CategoryEntry (DgnCategoryId cat, DgnSubCategoryId sub, DwgDbObjectIdCR mlid) : m_categoryId(cat), m_subcategoryId(sub), m_layerIdInMasterFile(mlid) {}
+        CategoryEntry (DgnCategoryId cat, DgnSubCategoryId sub, DwgDbObjectIdCR mlid, bool on) : m_categoryId(cat), m_subcategoryId(sub), m_layerIdInMasterFile(mlid), m_isDisplayedInMasterFile(on) {}
         CategoryEntry () {}
         DgnCategoryId       GetCategoryId () const { return m_categoryId; }
         DgnSubCategoryId    GetSubCategoryId () const { return m_subcategoryId; }
         DwgDbObjectId       GetLayerIdInMasterFile () const { return m_layerIdInMasterFile; }
+        bool                IsDispalyedInMasterFile () const { return m_isDisplayedInMasterFile; }
         };  // CategoryEntry
     typedef bpair<DwgDbObjectId, CategoryEntry>         T_DwgDgnLayer;
     typedef bmap<DwgDbObjectId, CategoryEntry>          T_DwgDgnLayerMap;
@@ -1440,7 +1442,7 @@ public:
     ECN::ECSchemaCP             GetDwgAppSchema () { return m_dwgAppDataSchema; }
     bool                        GetConstantAttrdefIdsFor (DwgDbObjectIdArray& ids, DwgDbObjectIdCR blockId);
     //! Get a spatial category and/or a sub-category for a modelspace entity layer. The syncInfo is read in and cached for fast retrieval.
-    DgnCategoryId               GetSpatialCategory (DgnSubCategoryId& subCategoryId, DwgDbObjectIdCR layerId, DwgDbDatabaseP xrefDwg = nullptr);
+    DgnCategoryId               GetSpatialCategory (DgnSubCategoryId& subCategoryId, bool& isOn, DwgDbObjectIdCR layerId, DwgDbDatabaseP xrefDwg = nullptr);
     //! Get a drawing category for paperspace entity layer. If the category not already exists, a new one will be created.
     //! @param[out] subCategory A sub-category found or created from inputs
     //! @param[in] layerId A DWG layer from which the sub-category is queried
@@ -1448,7 +1450,12 @@ public:
     //! @param[in] model A DgnDb model into elements using the sub-category will be inserted
     //! @param[in] xrefDwg A DWG file in which a source entity is to be imported using the sub-category.  Null if in master file.
     DgnCategoryId               GetOrAddDrawingCategory (DgnSubCategoryId& subCategory, DwgDbObjectIdCR layerId, DwgDbObjectIdCR viewportId, DgnModelCR model, DwgDbDatabaseP xrefDwg = nullptr);
-    DgnSubCategoryId            InsertAlternateSubCategory (DgnSubCategoryCPtr subcategory, DgnSubCategory::Appearance const& appearance, Utf8CP desiredName = nullptr);
+    //! An alternate category is created to compensate an imported category with a differing on/off status.  If the imported category is displayed, the alternate category is not displayed, and vise versa.
+    //  Elements imported from the same layer are placed to either the imported or alternate category, such that they can be displayed correctly in the imported model view.
+    //! @param[out] categoryId Input category ID of an imported category from a layer, and output ID of a new category with a different display status
+    //! @param[out] subcategoryId Input & output sub-category ID for an imported category
+    //! @param[in] isOn The display status of the output alternate category
+    BentleyStatus               GetOrAddAlternateCategory (DgnCategoryId& categoryId, DgnSubCategoryId& subcategoryId, bool isOn);
     //! Get the block-geometry map that caches imported geometries.
     T_BlockPartsMap&            GetBlockPartsR () { return m_blockPartsMap; }
     //! Get/create the DefinitionModel that stores all other job specific definitions

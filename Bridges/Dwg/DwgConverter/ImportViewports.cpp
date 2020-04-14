@@ -1938,6 +1938,7 @@ bool            DwgImporter::UpdateModelspaceView (ViewControllerP view)
         modelSelector.Update ();
         }
 
+    bool changed = false;
     if (this->IsUpdating() && m_layersImported > 0)
         {
         // new layers are imported - update spatial/drawing categories from a viewport entity:
@@ -1954,11 +1955,36 @@ bool            DwgImporter::UpdateModelspaceView (ViewControllerP view)
                 else
                     factory.UpdateModelspaceCategories (view->GetViewDefinitionR().GetCategorySelector().GetCategoriesR());
 
-                return  true;
+                changed = true;
                 }
             }
         }
-    return  false;
+
+    // if we have ever created alternate categories that should be displayed, add them into the view
+    auto defModel = this->GetOrCreateJobDefinitionModel ();
+    if (defModel.IsValid())
+        {
+        auto& db = this->GetDgnDb ();
+        auto& viewedCategories = view->GetViewDefinitionR().GetCategorySelector().GetCategoriesR ();
+
+        auto stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId,CodeValue FROM " BIS_SCHEMA(BIS_CLASS_Category) " WHERE Model.Id=?");
+        if (stmt.IsValid())
+            {
+            stmt->BindId (1, defModel->GetModelId());
+            while (BE_SQLITE_ROW == stmt->Step())
+                {
+                DgnCategoryId   id = stmt->GetValueId<DgnCategoryId>(0);
+                Utf8String  codeValue = stmt->GetValueText(1);
+                if (id.IsValid() && codeValue.EndsWith("-on"))
+                    {
+                    viewedCategories.insert (id);
+                    changed = true;
+                    }
+                }
+            }
+        }
+
+    return  changed;
     }
 
 /*---------------------------------------------------------------------------------**//**
