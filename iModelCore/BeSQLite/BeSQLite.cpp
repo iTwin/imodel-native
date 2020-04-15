@@ -128,10 +128,6 @@ SQLiteTraceScope::SQLiteTraceScope(DbTrace categories, DbCR db, Utf8CP loggerNam
         [&](TraceContext const& ctx) 
             {
             reinterpret_cast<NativeLogging::ILogger*>(m_logger)->messagev(NativeLogging::LOG_DEBUG, "[ROW] %s", ctx.GetSql());
-            },
-        [&](DbCR db) 
-            {
-            reinterpret_cast<NativeLogging::ILogger*>(m_logger)->messagev(NativeLogging::LOG_DEBUG, "[CLOSE] %s", db.GetDbFileName());
             }
         );
     }
@@ -447,32 +443,87 @@ int64_t     DbValue::GetValueInt64() const            {return sqlite3_value_int6
 double      DbValue::GetValueDouble() const           {return sqlite3_value_double(m_val);}
 
 /*---------------------------------------------------------------------------------**//**
+* @bsiclass                                  Affan.Khan                   03/20
++---------------+---------------+---------------+---------------+---------------+------*/
+struct TraceAppData: Db::AppData
+    {
+    private:
+        std::function<void(TraceContext const &, Utf8CP)> m_stmtCb;
+        std::function<void(TraceContext const &, int64_t)> m_profileCb;
+        std::function<void(TraceContext const &)> m_rowCb;
+        static Db::AppData::Key s_key;
+    public:
+        static TraceAppData& GetOrCreate(DbCR db)
+            {
+            BeSQLite::Db::AppDataPtr appdata = db.FindAppData(s_key);
+            if (appdata.IsValid())
+                return static_cast<TraceAppData&>(*appdata);
+
+            TraceAppData* thisAppData = new TraceAppData();
+            db.AddAppData(s_key, thisAppData);
+            return *thisAppData;
+            }
+        static TraceAppData* Get(DbCR db)
+            {
+            BeSQLite::Db::AppData* appdata = db.FindRawAppData(s_key);
+            return (nullptr != appdata) ? static_cast<TraceAppData*>(appdata) : nullptr;
+            }
+        void Drop(DbCR db) const
+            {
+            db.DropAppData(TraceAppData::s_key);
+            }
+        void Setup(DbTrace categories,
+            std::function<void(TraceContext const& ctx, Utf8CP sql)> stmtCb,
+            std::function<void(TraceContext const& ctx, int64_t nanoseconds)> profileCb,
+            std::function<void(TraceContext const& ctx)> rowCb)
+                {
+                m_stmtCb = (categories & DbTrace::BE_SQLITE_TRACE_STMT) > 0 ? stmtCb : nullptr;
+                m_profileCb = (categories & DbTrace::BE_SQLITE_TRACE_PROFILE) > 0 ? profileCb : nullptr;
+                m_rowCb = (categories & DbTrace::BE_SQLITE_TRACE_ROW) > 0 ? rowCb : nullptr;
+                }
+        bool Enabled() const { return (m_stmtCb || m_profileCb || m_rowCb); }
+        std::function<void(TraceContext const &, Utf8CP)> GetStmtCallback() const { return m_stmtCb; }
+        std::function<void(TraceContext const &, int64_t)> GetProfileCallback() const { return m_profileCb; }
+        std::function<void(TraceContext const &)> GetRowCallback() const { return m_rowCb; }
+    };
+
+Db::AppData::Key TraceAppData::s_key;
+    /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod                                  Affan.Khan                   03/20
 +---------------+---------------+---------------+---------------+---------------+------*/
-int Db::TraceCallback(unsigned t,void* ctx,void* p,void* x) 
+bool Db::IsTraceEnabled() const
+    {
+    if (TraceAppData* appData = TraceAppData::Get(*this))
+        return appData->Enabled() && GetSqlDb();
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Affan.Khan                   03/20
++---------------+---------------+---------------+---------------+---------------+------*/
+int Db::TraceCallback(unsigned t, void* ctx, void* p, void* x) 
     {
     Db *db = reinterpret_cast<Db *>(ctx);
-    if (db->IsTraceEnabled()) 
+    if (!db) return 0;
+    TraceAppData *appData = TraceAppData::Get(*db);
+    if (!appData) return 0;
+    if (appData->Enabled() && db->GetSqlDb()) 
         {
-        if (t == DbTrace::BE_SQLITE_TRACE_STMT && db->m_stmtCb != nullptr)
+        if (t == DbTrace::BE_SQLITE_TRACE_STMT && appData->GetStmtCallback() != nullptr)
             {
             TraceContext ctx(reinterpret_cast<SqlStatementP>(p)); // suppress finalizer
-            db->m_stmtCb(ctx, reinterpret_cast<Utf8CP>(x));
+            appData->GetStmtCallback()(ctx, reinterpret_cast<Utf8CP>(x));
             } 
-        else if (t == DbTrace::BE_SQLITE_TRACE_PROFILE && db->m_profileCb != nullptr)
+        else if (t == DbTrace::BE_SQLITE_TRACE_PROFILE && appData->GetProfileCallback() != nullptr)
             {
             TraceContext ctx(reinterpret_cast<SqlStatementP>(p)); // suppress finalizer
-            db->m_profileCb(ctx, reinterpret_cast<int64_t>(x));
+            appData->GetProfileCallback()(ctx, reinterpret_cast<int64_t>(x));
             } 
-        else if (t == DbTrace::BE_SQLITE_TRACE_ROW && db->m_rowCb != nullptr)
+        else if (t == DbTrace::BE_SQLITE_TRACE_ROW && appData->GetRowCallback() != nullptr)
             {
             TraceContext ctx(reinterpret_cast<SqlStatementP>(p)); // suppress finalizer
-            db->m_rowCb(ctx);
+            appData->GetRowCallback()(ctx);
             } 
-        else if (t == DbTrace::BE_SQLITE_TRACE_CLOSE && db->m_closeCb != nullptr)
-            {
-            db->m_closeCb(*db);
-            }
         }
     return 0; // not used and should be set to zero as per sqlite docs
     }
@@ -483,16 +534,12 @@ int Db::TraceCallback(unsigned t,void* ctx,void* p,void* x)
 DbResult Db::ConfigureTrace(DbTrace categories, 
     std::function<void(TraceContext const& ctx, Utf8CP sql)> stmtCb,
     std::function<void(TraceContext const& ctx, int64_t nanoseconds)> profileCb,
-    std::function<void(TraceContext const& ctx)> rowCb,
-    std::function<void(DbCR)> closeCb
+    std::function<void(TraceContext const& ctx)> rowCb
     ) const 
         {
-        m_stmtCb = (categories & DbTrace::BE_SQLITE_TRACE_STMT) > 0 ? stmtCb : nullptr;
-        m_profileCb = (categories & DbTrace::BE_SQLITE_TRACE_PROFILE) > 0 ? profileCb : nullptr;
-        m_rowCb = (categories & DbTrace::BE_SQLITE_TRACE_ROW) > 0 ? rowCb : nullptr;
-        m_closeCb = (categories & DbTrace::BE_SQLITE_TRACE_CLOSE) > 0 ? closeCb : nullptr;
-        m_traceEnabled = (m_stmtCb || m_profileCb || m_rowCb || m_closeCb) && GetSqlDb();
-        if (m_traceEnabled)
+        TraceAppData& appData = TraceAppData::GetOrCreate(*this);
+        appData.Setup(categories, stmtCb, profileCb, rowCb);
+        if (appData.Enabled() && GetSqlDb())
             return (DbResult)sqlite3_trace_v2(GetSqlDb(), categories, TraceCallback, (void*)this);
         return ClearTrace();
         }
@@ -502,11 +549,9 @@ DbResult Db::ConfigureTrace(DbTrace categories,
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::ClearTrace() const 
     {
-    m_stmtCb = nullptr;
-    m_profileCb = nullptr;
-    m_rowCb = nullptr;
-    m_closeCb = nullptr;
-    m_traceEnabled = false;
+    if (TraceAppData* appData = TraceAppData::Get(*this))
+        appData->Drop(*this);
+
     return (DbResult)sqlite3_trace_v2(GetSqlDb(), 0, nullptr, nullptr);
     }
 /*---------------------------------------------------------------------------------**//**
@@ -960,7 +1005,7 @@ Utf8String DbFile::ExplainQuery(Utf8CP sql, bool explainPlan, bool suppressDiagn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-Db::Db() : m_embeddedFiles(*this), m_dbFile(nullptr), m_statements(35), m_traceEnabled(false){}
+Db::Db() : m_embeddedFiles(*this), m_dbFile(nullptr), m_statements(35){}
 Db::~Db() {DoCloseDb();}
 
 /*---------------------------------------------------------------------------------**//**

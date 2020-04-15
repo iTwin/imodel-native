@@ -394,7 +394,6 @@ enum DbTrace
     BE_SQLITE_TRACE_STMT = 0x01,
     BE_SQLITE_TRACE_PROFILE = 0x02,
     BE_SQLITE_TRACE_ROW = 0x04,
-    BE_SQLITE_TRACE_CLOSE = 0x08,
 };
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/11
@@ -2459,11 +2458,6 @@ protected:
     StatementCache m_statements;
     DbEmbeddedFileTable m_embeddedFiles;
     mutable AppDataCollection m_appData;
-    mutable std::function<void(TraceContext const&, Utf8CP)> m_stmtCb;
-    mutable std::function<void(TraceContext const&, int64_t)> m_profileCb;
-    mutable std::function<void(TraceContext const&)> m_rowCb;
-    mutable std::function<void(DbCR)> m_closeCb;
-    mutable bool m_traceEnabled;
     static int TraceCallback(unsigned,void*,void*,void*);
     //! Called after a new Db had been created.
     //! Override to perform additional processing when Db is created
@@ -2600,10 +2594,9 @@ public:
     BE_SQLITE_EXPORT DbResult ConfigureTrace(DbTrace categories, 
         std::function<void(TraceContext const& ctx, Utf8CP sql)> stmtCb,
         std::function<void(TraceContext const& ctx, int64_t nanoseconds)> profileCn,
-        std::function<void(TraceContext const& ctx)> rowCb,
-        std::function<void(DbCR db)> closeCb
+        std::function<void(TraceContext const& ctx)> rowCb
         ) const;
-    BE_SQLITE_EXPORT bool IsTraceEnabled() const { return m_traceEnabled; }
+    BE_SQLITE_EXPORT bool IsTraceEnabled() const;
     //! Disable sqlite trace and uninstall trace hook
     BE_SQLITE_EXPORT DbResult ClearTrace() const;
 

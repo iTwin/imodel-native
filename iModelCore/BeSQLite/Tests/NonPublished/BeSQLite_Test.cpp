@@ -259,12 +259,10 @@ TEST_F(BeSQliteTestFixture, Trace)
     int nStmt = 0;
     int nProfile = 0;
     int nRow = 0;
-    int nClose = 0;
     db1->ConfigureTrace(
         (DbTrace)(DbTrace::BE_SQLITE_TRACE_STMT |
                   DbTrace::BE_SQLITE_TRACE_PROFILE |
-                  DbTrace::BE_SQLITE_TRACE_ROW |
-                  DbTrace::BE_SQLITE_TRACE_CLOSE),
+                  DbTrace::BE_SQLITE_TRACE_ROW),
         [&](TraceContext const& ctx, Utf8CP sql) {
             nStmt++;
         },
@@ -273,9 +271,6 @@ TEST_F(BeSQliteTestFixture, Trace)
         },
         [&](TraceContext const& ctx) {
             nRow++;
-        },
-        [&](DbCR db) {
-            nClose++;
         });
     db1->ExecuteSql("create table test(Id integer primary key, c0);");
     Statement stmt;
@@ -291,10 +286,9 @@ TEST_F(BeSQliteTestFixture, Trace)
     stmt.Finalize();
     db1->CloseDb();
 
-    ASSERT_EQ(nStmt, 4);
-    ASSERT_EQ(nProfile, 4);
+    ASSERT_EQ(nStmt, 3);
+    ASSERT_EQ(nProfile, 3);
     ASSERT_EQ(nRow, 1);
-    ASSERT_EQ(nClose, 1);
     }
 
     //---------------------------------------------------------------------------------------
@@ -305,8 +299,7 @@ TEST_F(BeSQliteTestFixture, TraceScope)
     auto db1 = Create("first.db");
     SQLiteTraceScope scope((DbTrace)(DbTrace::BE_SQLITE_TRACE_STMT |
                   DbTrace::BE_SQLITE_TRACE_PROFILE |
-                  DbTrace::BE_SQLITE_TRACE_ROW |
-                  DbTrace::BE_SQLITE_TRACE_CLOSE), *db1, "SQLiteTrace");
+                  DbTrace::BE_SQLITE_TRACE_ROW), *db1, "SQLiteTrace");
     db1->ExecuteSql("create table test(Id integer primary key, c0);");
     Statement stmt;
     stmt.Prepare(*db1, "insert into test (id,c0) values(?,?)");
