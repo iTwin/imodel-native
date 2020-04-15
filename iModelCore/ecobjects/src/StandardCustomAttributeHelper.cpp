@@ -414,6 +414,7 @@ struct ConversionCustomAttributesSchemaHolder : RefCountedBase
 
     public:
         static ConversionCustomAttributesSchemaHolderPtr GetHolder();
+        static bool HasHolder() { return s_schemaHolder.IsValid(); }
         static ECSchemaPtr GetSchema() {return GetHolder()->_GetSchema();}
         static IECInstancePtr CreateCustomAttributeInstance(Utf8CP attribute) {return GetHolder()->_CreateCustomAttributeInstance(attribute);}
         void Reset();
@@ -475,6 +476,7 @@ void ConversionCustomAttributesSchemaHolder::Reset()
     m_schema = nullptr;
     m_enablers.clear();
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Caleb.Shafer                   01/2017
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -523,6 +525,8 @@ IECInstancePtr ConversionCustomAttributeHelper::CreateCustomAttributeInstance(Ut
 //---------------+---------------+---------------+---------------+---------------+-------
 void ConversionCustomAttributeHelper::Reset()
     {
+    if (!ConversionCustomAttributesSchemaHolder::HasHolder())
+        return;
     ConversionCustomAttributesSchemaHolder::GetHolder()->Reset();
     }
 
