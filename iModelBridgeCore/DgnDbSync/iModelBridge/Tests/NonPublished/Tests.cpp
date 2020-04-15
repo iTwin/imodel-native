@@ -1075,6 +1075,66 @@ void iModelBridgeTests_Test1_Bridge::DoConvertToBim(SubjectCR jobSubject)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson   04/20
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(iModelBridgeTests, TestAffinityDb)
+    {
+    auto testDir = getiModelBridgeTestsOutputDir(L"TestAffinityDb");
+    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testDir));
+    
+    BeFileName affinityDbFilename(testDir);
+    affinityDbFilename.AppendToPath(L"affinity.db");
+    RefCountedPtr<iModelBridgeAffinityDb> db = iModelBridgeAffinityDb::OpenOrCreate(affinityDbFilename);
+    
+    auto json = Json::Value::From(R"({ "foo": "bar" })");
+
+    auto b1 = db->InsertBridge("b1");
+    auto b2 = db->InsertBridge("b2");
+    auto b3 = db->InsertBridge("b3");
+    ASSERT_NE(0, b1);
+    ASSERT_NE(0, b2);
+
+    ASSERT_EQ(b1, db->FindBridge("b1"));
+    ASSERT_EQ(b2, db->FindBridge("b2"));
+
+    auto f1 = db->InsertFile(BeFileName(L"f1"));
+    auto f2 = db->InsertFile(BeFileName(L"f2"));
+    auto f3 = db->InsertFile(BeFileName(L"f3"));
+    ASSERT_NE(0, f1);
+    ASSERT_NE(0, f2);
+    ASSERT_NE(0, f3);
+
+    ASSERT_EQ(f1, db->FindFile(BeFileName(L"f1")));
+    ASSERT_EQ(f2, db->FindFile(BeFileName(L"f2")));
+    ASSERT_EQ(f3, db->FindFile(BeFileName(L"f3")));
+
+    db->InsertAffinity(f1, b1, iModelBridgeAffinityLevel::Medium, &json);    // b1 has the highest affinity for f1
+    db->InsertAffinity(f1, b2, iModelBridgeAffinityLevel::Low, nullptr);
+    db->InsertAffinity(f2, b2, iModelBridgeAffinityLevel::High, nullptr);    // b2           "                  f2
+    db->InsertAffinity(f2, b1, iModelBridgeAffinityLevel::Low, &json);
+    db->InsertAffinity(f3, b2, iModelBridgeAffinityLevel::High, nullptr);    // b2 has the only affinity for    f3
+    // And b3 has no affinity to anything
+
+    Utf8String foundJsonStr;
+    iModelBridgeAffinityLevel foundAffinity;
+    ASSERT_EQ(BSISUCCESS, db->FindAffinity(&foundAffinity, &foundJsonStr, f1, b1));
+    ASSERT_EQ(iModelBridgeAffinityLevel::Medium, foundAffinity);
+    auto foundJson = Json::Value::From(foundJsonStr);
+    ASSERT_TRUE(foundJson == json);
+
+    std::map<BeFileName, Utf8String> assignments;
+    db->ComputeAssignments([&assignments] (BeFileNameCR file, Utf8StringCR bridge, iModelBridgeAffinityLevel affinity) {
+        wprintf(L"%ls <- %ls @ %d\n", file.c_str(), WString(bridge.c_str(), true).c_str(), affinity);
+        assignments[file] = bridge;
+    });
+
+    ASSERT_EQ(3, assignments.size());
+    ASSERT_TRUE(assignments[BeFileName(L"f1")] == "b1");
+    ASSERT_TRUE(assignments[BeFileName(L"f2")] == "b2");
+    ASSERT_TRUE(assignments[BeFileName(L"f3")] == "b2");
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(iModelBridgeTests, Test1)

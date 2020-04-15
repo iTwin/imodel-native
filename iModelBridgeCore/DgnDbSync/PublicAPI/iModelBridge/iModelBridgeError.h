@@ -30,6 +30,8 @@ enum class iModelBridgeErrorId
     Unknown = -1,
     Success = 0,
     //Leaving a gap to deal with all the iModelHub Error Ids that start at 0 and stop before 600
+    // *** Please do not change the values below. This enum is duplicated in iTwin Synchronizer and possibly other driver programs.
+    // *** If you must add a new value, please add to the end, and notify the iTwin Synchronizer team.
     Usage_Error = 10000,
     Converter_Error,
     Local_error,
@@ -41,6 +43,7 @@ enum class iModelBridgeErrorId
     ProjectwiseError,
     FailedToLockChannelParent,
     Killed, //!< Killed by the user or the executive program
+    // *** VVVV Add new values here VVVV
     // The error status could also be a RepositoryStatus, which starts at 86016 (0x15000)
     };
 

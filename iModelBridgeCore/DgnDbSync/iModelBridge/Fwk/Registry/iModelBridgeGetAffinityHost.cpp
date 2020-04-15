@@ -17,9 +17,29 @@ int iModelBridgeRegistryUtils::ComputeAffinityMain(int argc, WCharCP argv[])
     {
     InitCrt(false);
 
+    if (argc == 6)
+        {
+        WCharCP outputFileName = argv[1];
+        WCharCP affinityLibraryPathStr = argv[2];
+        WCharCP assetsPathStr = argv[3];
+        WCharCP sourceFileNameStr = argv[4];
+        WCharCP bridgeRegSubkey = argv[5];
+        
+        BeFileName affinityLibraryPath(affinityLibraryPathStr);
+
+        auto DiscloseFilesAndAffinities = (T_iModelBridge_discloseFilesAndAffinities*)iModelBridgeRegistryUtils::GetBridgeFunction(affinityLibraryPath, "iModelBridge_discloseFilesAndAffinities");
+        if (nullptr == DiscloseFilesAndAffinities)
+            {
+            LOG.warningv(L"%ls - does not export the iModelBridge_discloseFilesAndAffinities function. This bridge should be upgraded to implement that function.", affinityLibraryPath.c_str());
+            return -1;
+            }
+        return DiscloseFilesAndAffinities(outputFileName, affinityLibraryPathStr, assetsPathStr, sourceFileNameStr, bridgeRegSubkey);
+        }
+
+
     if (argc != 2)
         {
-        fprintf(stderr, "syntax: iModelBridgeGetAffinityHost affinityLibraryName\n");
+        fprintf(stderr, "syntax: iModelBridgeGetAffinityHost affinityLibraryPath\n");
         return -1;
         }
 

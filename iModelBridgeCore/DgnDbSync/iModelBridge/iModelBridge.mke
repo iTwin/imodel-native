@@ -40,6 +40,10 @@ $(o)iModelBridgeSettings$(oext) : $(_MakeFilePath)iModelBridgeSettings.cpp $(iMo
 
 $(o)iModelBridgeSyncInfoFileChangeDetector$(oext) : $(_MakeFilePath)iModelBridgeSyncInfoFileChangeDetector.cpp $(iModelBridgeAPISrc)iModelBridge.h $(iModelBridgeAPISrc)iModelBridgeSyncInfoFile.h ${MultiCompileDepends}
 
+$(o)AffinityDb$(oext) : $(_MakeFilePath)AffinityDb.cpp $(iModelBridgeAPISrc)AffinityDb.h ${MultiCompileDepends}
+
+$(o)iModelBridgeDiscloseFilesAndAffinities$(oext) : $(_MakeFilePath)iModelBridgeDiscloseFilesAndAffinities.cpp $(iModelBridgeAPISrc)iModelBridge.h ${MultiCompileDepends}
+
 %if $(TARGET_PLATFORM)=="Windows"
 
 $(o)iModelBridgeLdClient$(oext) : $(_MakeFilePath)iModelBridgeLdClient.cpp $(iModelBridgePrivateAPISrc)iModelBridge/iModelBridgeLdClient.h ${MultiCompileDepends}

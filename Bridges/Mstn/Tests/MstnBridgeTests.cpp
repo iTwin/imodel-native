@@ -730,8 +730,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentSingleBridge)
     CreateRepository();
     auto runningServer = StartServer();
 
-    BentleyApi::BeFileName assignDbName(testDir);
-    assignDbName.AppendToPath(DEFAULT_IMODEL_NAME L".fwk-registry.db");
+    BentleyApi::BeFileName assignDbName = iModelBridgeRegistry::MakeDbName(testDir, DEFAULT_IMODEL_NAME_A);
     FakeRegistry testRegistry(testDir, assignDbName);
     testRegistry.WriteAssignments();
     testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, iModelBridge_getAffinity);
@@ -806,8 +805,7 @@ TEST_F(MstnBridgeTests, ConvertIfcAttachmentSingleBridge)
     CreateRepository();
     auto runningServer = StartServer();
 
-    BentleyApi::BeFileName assignDbName(testDir);
-    assignDbName.AppendToPath(DEFAULT_IMODEL_NAME L".fwk-registry.db");
+    BentleyApi::BeFileName assignDbName = iModelBridgeRegistry::MakeDbName(testDir, DEFAULT_IMODEL_NAME_A);
     FakeRegistry testRegistry(testDir, assignDbName);
     testRegistry.WriteAssignments();
     testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, iModelBridge_getAffinity);
@@ -902,8 +900,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentSingleBridgeAlternateRegistry)
     CreateRepository();
     auto runningServer = StartServer();
 
-    BentleyApi::BeFileName assignDbName(registryDir);
-    assignDbName.AppendToPath(DEFAULT_IMODEL_NAME L".fwk-registry.db");
+    BentleyApi::BeFileName assignDbName = iModelBridgeRegistry::MakeDbName(registryDir, DEFAULT_IMODEL_NAME_A);
     FakeRegistry testRegistry(registryDir, assignDbName);
     testRegistry.WriteAssignments();
 
@@ -975,8 +972,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridge)
     args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", inputFile.c_str()));
     AddLine(inputFile);
 
-    BentleyApi::BeFileName assignDbName(testDir);
-    assignDbName.AppendToPath(DEFAULT_IMODEL_NAME L".fwk-registry.db");
+    BentleyApi::BeFileName assignDbName = iModelBridgeRegistry::MakeDbName(testDir, DEFAULT_IMODEL_NAME_A);
     FakeRegistry testRegistry(testDir, assignDbName);
     testRegistry.WriteAssignments();
 
@@ -1492,8 +1488,7 @@ TEST_F(MstnBridgeTests, DISABLED_PushAfterEachModel)
     bvector<WString> args;
     SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, DEFAULT_IMODEL_NAME);
 
-    BentleyApi::BeFileName assignDbName(testDir);
-    assignDbName.AppendToPath(DEFAULT_IMODEL_NAME L".fwk-registry.db");
+    BentleyApi::BeFileName assignDbName = iModelBridgeRegistry::MakeDbName(testDir, DEFAULT_IMODEL_NAME_A);
     FakeRegistry testRegistry(testDir, assignDbName);
     testRegistry.WriteAssignments();
     std::function<T_iModelBridge_getAffinity> lambda = [=](BentleyApi::WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel,
@@ -1555,8 +1550,7 @@ TEST_F(MstnBridgeTests, PushAfterEachFile)
     bvector<WString> args;
     SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, DEFAULT_IMODEL_NAME);
 
-    BentleyApi::BeFileName assignDbName(testDir);
-    assignDbName.AppendToPath(DEFAULT_IMODEL_NAME L".fwk-registry.db");
+    BentleyApi::BeFileName assignDbName = iModelBridgeRegistry::MakeDbName(testDir, DEFAULT_IMODEL_NAME_A);
     FakeRegistry testRegistry(testDir, assignDbName);
     testRegistry.WriteAssignments();
     std::function<T_iModelBridge_getAffinity> lambda = [=](BentleyApi::WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel,
@@ -1702,8 +1696,7 @@ void MstnBridgeTests::DoDetectDeletionsInEmbeddedFiles(bool simulateOldBridge)
     CreateRepository();
     auto runningServer = StartServer();
 
-    BentleyApi::BeFileName assignDbName(testDir);
-    assignDbName.AppendToPath(DEFAULT_IMODEL_NAME L".fwk-registry.db");
+    BentleyApi::BeFileName assignDbName = iModelBridgeRegistry::MakeDbName(testDir, DEFAULT_IMODEL_NAME_A);
     FakeRegistry testRegistry(testDir, assignDbName);
     testRegistry.WriteAssignments();
     testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, iModelBridge_getAffinity);
@@ -1942,8 +1935,7 @@ void MstnBridgeTests::DoMoveEmbeddedReferenceToDifferentFile(bool simulateOldBri
     CreateRepository();
     auto runningServer = StartServer();
 
-    BentleyApi::BeFileName assignDbName(testDir);
-    assignDbName.AppendToPath(DEFAULT_IMODEL_NAME L".fwk-registry.db");
+    BentleyApi::BeFileName assignDbName = iModelBridgeRegistry::MakeDbName(testDir, DEFAULT_IMODEL_NAME_A);
     FakeRegistry testRegistry(testDir, assignDbName);
     testRegistry.WriteAssignments();
     testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, iModelBridge_getAffinity);
@@ -2150,8 +2142,7 @@ void MstnBridgeTests::DoAddRemoveNestedEmbeddedRefs(bool simulateOldBridge)
     CreateRepository();
     auto runningServer = StartServer();
 
-    BentleyApi::BeFileName assignDbName(testDir);
-    assignDbName.AppendToPath(DEFAULT_IMODEL_NAME L".fwk-registry.db");
+    BentleyApi::BeFileName assignDbName = iModelBridgeRegistry::MakeDbName(testDir, DEFAULT_IMODEL_NAME_A);
     FakeRegistry testRegistry(testDir, assignDbName);
     testRegistry.WriteAssignments();
     testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, iModelBridge_getAffinity);
@@ -2306,8 +2297,7 @@ void MstnBridgeTests::DoAddRemoveNestedEmbeddedRefsV2(bool simulateOldBridge)
     CreateRepository();
     auto runningServer = StartServer();
 
-    BentleyApi::BeFileName assignDbName(testDir);
-    assignDbName.AppendToPath(DEFAULT_IMODEL_NAME L".fwk-registry.db");
+    BentleyApi::BeFileName assignDbName = iModelBridgeRegistry::MakeDbName(testDir, DEFAULT_IMODEL_NAME_A);
     FakeRegistry testRegistry(testDir, assignDbName);
     testRegistry.WriteAssignments();
     testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, iModelBridge_getAffinity);
@@ -2484,8 +2474,7 @@ TEST_F(MstnBridgeTests, DetectCommonReferencesUsingRecipes)
     CreateRepository();
     auto runningServer = StartServer();
 
-    BentleyApi::BeFileName assignDbName(testDir);
-    assignDbName.AppendToPath(DEFAULT_IMODEL_NAME L".fwk-registry.db");
+    BentleyApi::BeFileName assignDbName = iModelBridgeRegistry::MakeDbName(testDir, DEFAULT_IMODEL_NAME_A);
     FakeRegistry testRegistry(testDir, assignDbName);
     testRegistry.WriteAssignments();
     testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, iModelBridge_getAffinity);
@@ -2609,8 +2598,7 @@ TEST_F(MstnBridgeTests, UpdateDocumentProperties)
     CreateRepository();
     auto runningServer = StartServer();
 
-    BentleyApi::BeFileName assignDbName(testDir);
-    assignDbName.AppendToPath(DEFAULT_IMODEL_NAME L".fwk-registry.db");
+    BentleyApi::BeFileName assignDbName = iModelBridgeRegistry::MakeDbName(testDir, DEFAULT_IMODEL_NAME_A);
     FakeRegistry testRegistry(testDir, assignDbName);
     testRegistry.WriteAssignments();
     testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, iModelBridge_getAffinity);
@@ -2684,8 +2672,7 @@ TEST_F(MstnBridgeTests, ChangeFileNameShouldUpdateModelName)
     CreateRepository();
     auto runningServer = StartServer();
 
-    BentleyApi::BeFileName assignDbName(testDir);
-    assignDbName.AppendToPath(DEFAULT_IMODEL_NAME L".fwk-registry.db");
+    BentleyApi::BeFileName assignDbName = iModelBridgeRegistry::MakeDbName(testDir, DEFAULT_IMODEL_NAME_A);
     FakeRegistry testRegistry(testDir, assignDbName);
     testRegistry.WriteAssignments();
     testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, iModelBridge_getAffinity);
@@ -2791,8 +2778,7 @@ TEST_F(MstnBridgeTests, ChangeFileNameShouldUpdateModelName2d)
     CreateRepository();
     auto runningServer = StartServer();
 
-    BentleyApi::BeFileName assignDbName(testDir);
-    assignDbName.AppendToPath(DEFAULT_IMODEL_NAME L".fwk-registry.db");
+    BentleyApi::BeFileName assignDbName = iModelBridgeRegistry::MakeDbName(testDir, DEFAULT_IMODEL_NAME_A);
     FakeRegistry testRegistry(testDir, assignDbName);
     testRegistry.WriteAssignments();
     testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, iModelBridge_getAffinity);
@@ -2876,6 +2862,429 @@ TEST_F(MstnBridgeTests, ChangeFileNameShouldUpdateModelName2d)
         }
         }
 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool jsonHasMember(Utf8StringCR jsonStr, Utf8CP memberName)
+    {
+    auto json = Json::Value::From(jsonStr);
+    if (json.isNull())
+        return false;
+    return json.isMember(memberName);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MstnBridgeTests, TestCallAssignToDisclose)
+    {
+    auto testDir = CreateTestDir();
+
+    BeFileName stagingDir(GetTestDataDir());
+    stagingDir.AppendToPath(L"attachmentExample");
+
+    auto masterFileName = GetTestDataFileName(L"attachmentExample/master.dgn");
+    auto ref1FileName = GetTestDataFileName(L"attachmentExample/ref1.dgn");
+    auto ref2FileName = GetTestDataFileName(L"attachmentExample/ref2.dgn");
+    auto commonrefFileName = GetTestDataFileName(L"attachmentExample/commonref.dgn");
+    auto dwgFileName = GetTestDataFileName(L"attachmentExample/d.dwg");
+    auto obdFileName = GetTestDataFileName(L"attachmentExample/obd.dgn");
+
+    WPrintfString inputArg(L"--fwk-input=%ls", masterFileName.c_str());
+    WPrintfString registryDirArg(L"--registry-dir=%ls", testDir.c_str());
+    WPrintfString stagingDirArg(L"--fwk-staging-dir=%ls", stagingDir.c_str());
+
+    BeFileName regDbName = iModelBridgeRegistry::MakeDbName(testDir, "TestCallAssignToDisclose");
+    if (true)
+        {
+        FakeRegistry testRegistry(stagingDir, regDbName);
+        FakeRegistry::FakeBridgeDef bridgeDef;
+        bridgeDef.m_regSubKey = MSTN_BRIDGE_REG_SUB_KEY;
+        bridgeDef.m_libraryFilename = GetDgnv8BridgeDllName();
+        bridgeDef.m_bridgeAssetsDir = bridgeDef.m_libraryFilename.GetDirectoryName();
+        bridgeDef.m_bridgeAssetsDir.AppendToPath(L"Assets");
+        testRegistry.WriteInstalledBridgesTable({ bridgeDef });
+        }
+
+    if (true)
+        {
+        WCharCP argv[] = {
+            L"argv0",
+            L"--server-repository=TestCallAssignToDisclose",
+            stagingDirArg.c_str(),
+            registryDirArg.c_str(),
+            inputArg.c_str(),
+            L"--affinity-db-name=foo.db",   // This argument tells iModelBridgeAssign to run the new disclose files and affinities on the specified input file
+            L"--no-bridge-search"
+        };
+        int argc = (int)_countof(argv);
+
+        ASSERT_EQ(0, iModelBridgeRegistry::AssignMain(argc, argv));
+        }
+
+    bmap<WString, int64_t> assignments;
+    bset<WString> docs;
+    if (true)
+        {
+        BeSQLite::Db reg;
+        ASSERT_EQ(BeSQLite::BE_SQLITE_OK, reg.OpenBeSQLiteDb(regDbName, BeSQLite::Db::OpenParams(BeSQLite::Db::OpenMode::Readonly)));
+
+        auto dstmt = reg.GetCachedStatement("select LocalFilePath from DocumentProperties");
+        while (dstmt->Step() == BeSQLite::BE_SQLITE_ROW)
+            {
+            auto file = WString(dstmt->GetValueText(0), true);
+            docs.insert(file);
+            }
+
+        ASSERT_EQ(6, docs.size());
+        ASSERT_TRUE(docs.find(masterFileName) != docs.end());
+        ASSERT_TRUE(docs.find(ref1FileName) != docs.end());
+        ASSERT_TRUE(docs.find(ref2FileName) != docs.end());
+        ASSERT_TRUE(docs.find(commonrefFileName) != docs.end());
+        ASSERT_TRUE(docs.find(dwgFileName) != docs.end());
+        ASSERT_TRUE(docs.find(obdFileName) != docs.end());
+
+        auto astmt = reg.GetCachedStatement("select SourceFile, Bridge from fwk_BridgeAssignments");
+        while (astmt->Step() == BeSQLite::BE_SQLITE_ROW)
+            {
+            auto file = WString(astmt->GetValueText(0), true);
+            auto bridgeRowId =  astmt->GetValueInt64(1);
+            assignments[file] = bridgeRowId;
+            }
+
+        ASSERT_EQ(5, assignments.size());
+        ASSERT_EQ(1, assignments[masterFileName]);
+        ASSERT_EQ(1, assignments[ref1FileName]);
+        ASSERT_EQ(1, assignments[ref2FileName]);
+        ASSERT_EQ(1, assignments[commonrefFileName]);
+        ASSERT_EQ(1, assignments[dwgFileName]);
+
+        bmap<WString, Utf8String> recommendations;
+        auto rstmt = reg.GetCachedStatement("select LocalFilePath, Bridge from Recommendations");
+        while (rstmt->Step() == BeSQLite::BE_SQLITE_ROW)
+            {
+            auto file = WString(rstmt->GetValueText(0), true);
+            auto bridgeKey = rstmt->GetValueText(1);
+            recommendations[file] = bridgeKey;
+            }
+
+        ASSERT_EQ(1, recommendations.size());
+        ASSERT_TRUE(recommendations[obdFileName].EqualsI("OpenBuildingsDesigner"));
+        }
+
+    // Run again, pretending that MstnBridge is a legacy bridge that does not support disclosing files and assignments.
+    // We just want to verify that assign does not change any of the assignments computed above.
+    if (true)
+        {
+        WCharCP argv[] = {
+            L"argv0",
+            L"--server-repository=TestCallAssignToDisclose",
+            stagingDirArg.c_str(),
+            registryDirArg.c_str(),
+            L"--fwk-search-in-staging-dir",
+            L"--update-assignments",
+            L"--no-bridge-search"
+        };
+        int argc = (int)_countof(argv);
+
+        ASSERT_EQ(0, iModelBridgeRegistry::AssignMain(argc, argv));
+        }
+
+    if (true)
+        {
+        BeSQLite::Db reg;
+        ASSERT_EQ(BeSQLite::BE_SQLITE_OK, reg.OpenBeSQLiteDb(regDbName, BeSQLite::Db::OpenParams(BeSQLite::Db::OpenMode::Readonly)));
+
+        bset<WString> updatedDocs;
+        auto dstmt = reg.GetCachedStatement("select LocalFilePath from DocumentProperties");
+        while (dstmt->Step() == BeSQLite::BE_SQLITE_ROW)
+            {
+            auto file = WString(dstmt->GetValueText(0), true);
+            updatedDocs.insert(file);
+            }
+
+        EXPECT_EQ(docs, updatedDocs);
+
+        bmap<WString, int64_t> updatedAssignments;
+        auto astmt = reg.GetCachedStatement("select SourceFile, Bridge from fwk_BridgeAssignments");
+        while (astmt->Step() == BeSQLite::BE_SQLITE_ROW)
+            {
+            auto file = WString(astmt->GetValueText(0), true);
+            auto bridgeRowId =  astmt->GetValueInt64(1);
+            updatedAssignments[file] = bridgeRowId;
+            }
+        
+        EXPECT_EQ(assignments, updatedAssignments);
+        }
+
+    
+    if (true)
+        {
+        // Now pretend that a bridge called "OpenBuildingsDesigner" is installed. 
+        // Pretend that it did not have a discloseFilesAndAffinities function.
+        // Instead, we now have to call its getAffinity function and *update* the
+        // registry with this result. It should take the obd file. 
+        // We'll also have it take over commonref.dgn, just to demonstrate that the update
+        // can change an existing assignment.
+        FakeRegistry testRegistry(stagingDir, regDbName);
+
+        std::function<T_iModelBridge_getAffinity> lambda = [=](BentleyApi::WCharP buffer,
+                                                            const size_t bufferSize,
+                                                            iModelBridgeAffinityLevel& affinityLevel,
+                                                            BentleyApi::WCharCP affinityLibraryPath,
+                                                            BentleyApi::WCharCP sourceFileName)
+            {
+            wcscpy(buffer, L"OpenBuildingsDesigner");
+            if (obdFileName.Equals(sourceFileName) || commonrefFileName.Equals(sourceFileName))
+                affinityLevel = iModelBridgeAffinityLevel::High;
+            else if (WString(sourceFileName).EndsWith(L".dgn"))
+                affinityLevel = iModelBridgeAffinityLevel::Low;
+            else
+                affinityLevel = iModelBridgeAffinityLevel::None;
+            };
+        testRegistry.AddBridge(L"OpenBuildingsDesigner", lambda);
+
+        WCharCP argv[] = {
+            L"argv0",
+            L"--server-repository=TestCallAssignToDisclose",
+            registryDirArg.c_str(),
+            L"--fwk-search-in-staging-dir",
+            L"--update-assignments",
+            L"--no-bridge-search"
+        };
+        int argc = (int)_countof(argv);
+
+        ASSERT_EQ(0, testRegistry.RunAssign(argc, argv));
+        }
+
+    if (true)
+        {
+        BeSQLite::Db reg;
+        ASSERT_EQ(BeSQLite::BE_SQLITE_OK, reg.OpenBeSQLiteDb(regDbName, BeSQLite::Db::OpenParams(BeSQLite::Db::OpenMode::Readonly)));
+
+        bset<WString> updatedDocs;
+        auto dstmt = reg.GetCachedStatement("select LocalFilePath from DocumentProperties");
+        while (dstmt->Step() == BeSQLite::BE_SQLITE_ROW)
+            {
+            auto file = WString(dstmt->GetValueText(0), true);
+            updatedDocs.insert(file);
+            }
+
+        EXPECT_EQ(docs, updatedDocs);
+
+        bmap<WString, int64_t> updatedAssignments;
+        auto astmt = reg.GetCachedStatement("select SourceFile, Bridge from fwk_BridgeAssignments");
+        while (astmt->Step() == BeSQLite::BE_SQLITE_ROW)
+            {
+            auto file = WString(astmt->GetValueText(0), true);
+            auto bridgeRowId =  astmt->GetValueInt64(1);
+            updatedAssignments[file] = bridgeRowId;
+            }
+        
+        EXPECT_EQ(6, updatedAssignments.size());
+
+        auto obdAssignment = updatedAssignments.find(obdFileName);
+        ASSERT_TRUE(obdAssignment != updatedAssignments.end());
+        ASSERT_EQ(2, obdAssignment->second) << "The (fictious) OpenBuildingsDesigner should have been found. It would be the second bridge in the installedBridges table.";
+
+        auto commonRefAssignment = updatedAssignments.find(commonrefFileName);
+        ASSERT_TRUE(commonRefAssignment != updatedAssignments.end());
+        ASSERT_EQ(2, commonRefAssignment->second);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef TEST_DATA_IS_TOO_BIG
+TEST_F(MstnBridgeTests, TestCallAssignToDisclose_BigFile)
+    {
+    auto testDir = CreateTestDir();
+
+    BeFileName affinityDbName(testDir);
+    affinityDbName.AppendToPath(L"affinity.db");
+    
+    BeFileName stagingDir(GetTestDataDir());
+
+    auto masterFileName = GetTestDataFileName(L"house_model_keith.dgn");
+
+    WPrintfString inputArg(L"--fwk-input=%ls", masterFileName.c_str());
+    WPrintfString registryDirArg(L"--registry-dir=%ls", testDir.c_str());
+    WPrintfString stagingDirArg(L"--fwk-staging-dir=%ls", stagingDir.c_str());
+    WPrintfString affinityDbNameArg(L"--affinity-db-name=%ls", affinityDbName.c_str());
+
+    BeFileName regDbName = iModelBridgeRegistry::MakeDbName(testDir, "TestCallAssignToDisclose");
+    if (true)
+        {
+        FakeRegistry testRegistry(stagingDir, regDbName);
+        FakeRegistry::FakeBridgeDef bridgeDef;
+        bridgeDef.m_regSubKey = MSTN_BRIDGE_REG_SUB_KEY;
+        bridgeDef.m_libraryFilename = GetDgnv8BridgeDllName();
+        bridgeDef.m_bridgeAssetsDir = bridgeDef.m_libraryFilename.GetDirectoryName();
+        bridgeDef.m_bridgeAssetsDir.AppendToPath(L"Assets");
+        testRegistry.WriteInstalledBridgesTable({ bridgeDef });
+        }
+
+    if (true)
+        {
+        WCharCP argv[] = {
+            L"argv0",
+            L"--server-repository=TestCallAssignToDisclose",
+            stagingDirArg.c_str(),
+            registryDirArg.c_str(),
+            inputArg.c_str(),
+            affinityDbNameArg.c_str(),
+            L"--no-bridge-search"
+        };
+        int argc = (int)_countof(argv);
+
+        ASSERT_EQ(0, iModelBridgeRegistry::AssignMain(argc, argv));
+        }
+
+    bmap<WString, int64_t> assignments;
+    bset<WString> docs;
+    if (true)
+        {
+        BeSQLite::Db reg;
+        ASSERT_EQ(BeSQLite::BE_SQLITE_OK, reg.OpenBeSQLiteDb(regDbName, BeSQLite::Db::OpenParams(BeSQLite::Db::OpenMode::Readonly)));
+
+        auto dstmt = reg.GetCachedStatement("select LocalFilePath from DocumentProperties");
+        while (dstmt->Step() == BeSQLite::BE_SQLITE_ROW)
+            {
+            auto file = WString(dstmt->GetValueText(0), true);
+            docs.insert(file);
+            }
+
+        ASSERT_EQ(1, docs.size()) << "All models are in this one file";;
+        ASSERT_TRUE(docs.find(masterFileName) != docs.end());
+
+        auto countAssignmentsStmt = reg.GetCachedStatement("select count(*) from fwk_BridgeAssignments");
+        countAssignmentsStmt->Step();
+        EXPECT_EQ(1, countAssignmentsStmt->GetValueInt(0));
+
+        auto detectAssignmentStmt = reg.GetCachedStatement("select SourceFile from fwk_BridgeAssignments where Bridge=1");
+        detectAssignmentStmt->Step();
+        auto file = detectAssignmentStmt->GetValueText(0);
+        EXPECT_TRUE(Utf8String(masterFileName).EqualsI(file));
+        }
+
+    if (true)
+        {
+        auto adb = iModelBridgeAffinityDb::Open(affinityDbName);
+
+        auto mstmt = adb->GetDb().GetCachedStatement("select count(*) from Model");
+        mstmt->Step();
+        auto modelCount = mstmt->GetValueInt(0);
+        EXPECT_EQ(5, modelCount);
+
+        auto attstmt = adb->GetDb().GetCachedStatement("select count(*) from Attachment");
+        attstmt->Step();
+        auto attachmentCount = attstmt->GetValueInt(0);
+        EXPECT_EQ(4, attachmentCount);
+        }
+    }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MstnBridgeTests, DiscloseFilesAndAffinities)
+    {
+    auto testDir = CreateTestDir();
+    BeFileName outDir = GetOutputDir();
+    BeFileName affinityDbName(outDir);
+    affinityDbName.AppendToPath(L"affinity.db");
+
+    auto masterFileName = GetTestDataFileName(L"attachmentExample/master.dgn");
+    auto ref1FileName = GetTestDataFileName(L"attachmentExample/ref1.dgn");
+    auto ref2FileName = GetTestDataFileName(L"attachmentExample/ref2.dgn");
+    auto commonrefFileName = GetTestDataFileName(L"attachmentExample/commonref.dgn");
+    auto dwgFileName = GetTestDataFileName(L"attachmentExample/d.dwg");
+    auto obdFileName = GetTestDataFileName(L"attachmentExample/obd.dgn");
+
+    auto affinityLibraryPath = GetDgnv8BridgeDllName();
+    BeFileName assetsPath(affinityLibraryPath.GetDirectoryName());
+    assetsPath.AppendToPath(L"assets");
+
+    auto discloseFilesAndAffinities = (T_iModelBridge_discloseFilesAndAffinities*)iModelBridgeRegistryUtils::GetBridgeFunction(affinityLibraryPath, "iModelBridge_discloseFilesAndAffinities");
+    ASSERT_TRUE(discloseFilesAndAffinities != nullptr);
+    ASSERT_EQ(0, discloseFilesAndAffinities(affinityDbName, affinityLibraryPath.c_str(), assetsPath.c_str(), masterFileName.c_str(), MSTN_BRIDGE_REG_SUB_KEY));
+
+    auto db = iModelBridgeAffinityDb::Open(affinityDbName);
+    ASSERT_TRUE(db.IsValid());
+    auto mid = db->FindFile(masterFileName);
+    auto r1id = db->FindFile(ref1FileName);
+    auto r2id = db->FindFile(ref2FileName);
+    auto crid = db->FindFile(commonrefFileName);
+    auto did = db->FindFile(dwgFileName);
+    auto oid = db->FindFile(obdFileName);
+    ASSERT_NE(0, mid);
+    ASSERT_EQ(1, mid);
+    ASSERT_NE(0, r1id);
+    ASSERT_NE(0, r2id);
+    ASSERT_NE(0, crid);
+    ASSERT_NE(0, did);
+    ASSERT_NE(0, oid);
+
+    auto mstnBridgeId = db->FindBridge(MSTN_BRIDGE_REG_SUB_KEY_A);
+    ASSERT_NE(0, mstnBridgeId);
+    auto obdBridgeId = db->FindBridge("OpenBuildingsDesigner");
+    ASSERT_NE(0, obdBridgeId);
+
+    iModelBridgeAffinityLevel level;
+    ASSERT_EQ(BSISUCCESS, db->FindAffinity(&level, nullptr, mid, mstnBridgeId));
+    ASSERT_EQ(iModelBridgeAffinityLevel::Low, level);
+    ASSERT_EQ(BSISUCCESS, db->FindAffinity(&level, nullptr, r1id, mstnBridgeId));
+    ASSERT_EQ(iModelBridgeAffinityLevel::Low, level);
+    ASSERT_EQ(BSISUCCESS, db->FindAffinity(&level, nullptr, r2id, mstnBridgeId));
+    ASSERT_EQ(iModelBridgeAffinityLevel::Low, level);
+    ASSERT_EQ(BSISUCCESS, db->FindAffinity(&level, nullptr, crid, mstnBridgeId));
+    ASSERT_EQ(iModelBridgeAffinityLevel::Low, level);
+    ASSERT_EQ(BSISUCCESS, db->FindAffinity(&level, nullptr, did, mstnBridgeId));
+    ASSERT_EQ(iModelBridgeAffinityLevel::Low, level);
+    ASSERT_EQ(BSISUCCESS, db->FindAffinity(&level, nullptr, oid, obdBridgeId));
+    ASSERT_EQ(iModelBridgeAffinityLevel::High, level);
+
+    Utf8String json;
+    auto mmid = db->FindModel(nullptr, &json, mid, "0");
+    ASSERT_NE(0, mmid);
+    ASSERT_EQ(1, mmid);
+    ASSERT_TRUE(jsonHasMember(json, "transform"));
+    auto r1mid = db->FindModel(nullptr, &json, r1id, "0");
+    ASSERT_NE(0, r1mid);
+    ASSERT_TRUE(jsonHasMember(json, "transform"));
+    auto r2mid = db->FindModel(nullptr, &json, r2id, "0");
+    ASSERT_NE(0, r2mid);
+    ASSERT_TRUE(jsonHasMember(json, "transform"));
+    auto crmid = db->FindModel(nullptr, &json, crid, "0");
+    ASSERT_NE(0, crmid);
+    ASSERT_TRUE(jsonHasMember(json, "transform"));
+    auto dmid = db->FindModel(nullptr, &json, did, "0");
+    ASSERT_NE(0, dmid);
+    ASSERT_TRUE(jsonHasMember(json, "transform"));
+    auto omid = db->FindModel(nullptr, &json, oid, "0");
+    ASSERT_NE(0, omid);
+    ASSERT_TRUE(jsonHasMember(json, "transform"));
+
+    ASSERT_EQ(BSISUCCESS, db->FindAttachment(nullptr, mmid, r1mid));
+    ASSERT_EQ(BSISUCCESS, db->FindAttachment(nullptr, mmid, r2mid));
+    ASSERT_EQ(BSISUCCESS, db->FindAttachment(nullptr, r1id, crmid));
+    ASSERT_EQ(BSISUCCESS, db->FindAttachment(nullptr, r2id, crmid));
+    ASSERT_EQ(BSISUCCESS, db->FindAttachment(nullptr, mmid, dmid));
+    ASSERT_EQ(BSISUCCESS, db->FindAttachment(nullptr, r1mid, dmid));
+    ASSERT_EQ(BSISUCCESS, db->FindAttachment(nullptr, r2mid, omid));
+
+    bset<int64_t> attachedToMaster;
+    db->QueryAttachmentsToFile(mid, [&attachedToMaster](int64_t refFileRowId) 
+        {
+        attachedToMaster.insert(refFileRowId);
+        });
+    ASSERT_EQ(3, attachedToMaster.size());
+    ASSERT_TRUE(attachedToMaster.find(r1id) != attachedToMaster.end());
+    ASSERT_TRUE(attachedToMaster.find(r2id) != attachedToMaster.end());
+    ASSERT_TRUE(attachedToMaster.find(did) != attachedToMaster.end());
     }
 
 /*---------------------------------------------------------------------------------**//**

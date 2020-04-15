@@ -393,7 +393,7 @@ void RootModelConverter::_OnFileDiscovered(DgnV8FileCR file) const
         SyncInfo::V8FileInfo finfo = const_cast<RootModelConverter*>(this)->GetSyncInfo().ComputeFileInfo(file);
         if (!file.IsEmbeddedFile())
             {
-            LOG.tracev("Discovered file %s last saved at %lf", file.GetFileName().c_str(), finfo.m_lastSaveTime);
+            LOG.tracev(L"Discovered file %ls last saved at %lf", file.GetFileName().c_str(), finfo.m_lastSaveTime);
             m_v8FilesByName[BentleyApi::BeFileName(file.GetFileName().c_str())] = fileP;
             }
         else
@@ -3996,6 +3996,19 @@ bvector<ResolvedModelMapping> RootModelConverter::FindResolvedModelMappings(DgnV
     for (auto i = range.first; i != range.second; ++i)
         found.push_back(*i);
     return found;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+ResolvedModelMapping RootModelConverter::FindAttachmentResolvedModelMapping(DgnAttachmentCR attachment)
+    {
+    for (auto& thisModel : FindResolvedModelMappings(*attachment.GetDgnModelP())) // all unique transforms of attachments of this model
+        {
+        if (thisModel.GetV8Attachment() == &attachment)
+            return thisModel;
+        }
+    return ResolvedModelMapping();
     }
 
 /*---------------------------------------------------------------------------------**//**

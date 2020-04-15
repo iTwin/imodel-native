@@ -723,6 +723,14 @@ BentleyStatus DgnV8Bridge::_OnAllDocumentsProcessed()
     return m_converter->WasAborted()? BSIERROR: BSISUCCESS;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/20
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DgnV8Bridge::_DiscloseFilesAndAffinities(iModelBridgeAffinityDb& db)
+    {
+    return m_converter->DiscloseFilesAndAffinities(db);
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------

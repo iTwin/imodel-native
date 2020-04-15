@@ -807,6 +807,14 @@ BentleyStatus Converter::GetAuthoringFileInfo(WCharP buffer, const size_t buffer
     if (SUCCESS != openStatus)
         return BSIERROR;
 
+    return GetAffinityEx(buffer, bufferSize, affinityLevel, file.get(), affinityLibraryPath);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus Converter::GetAffinityEx(WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel, DgnV8FileP file, BentleyApi::BeFileName const& affinityLibraryPath)
+    {
     if (file->IsIModel())
         {
         // Fulfill the request of VSTS 32629 - assign an i.dgn file to MicroStation Bridge by default:
@@ -826,7 +834,7 @@ BentleyStatus Converter::GetAuthoringFileInfo(WCharP buffer, const size_t buffer
     auto isMyFile = (T_iModelBridge_isMyFile*) getBridgeFunction(affinityLibraryPath, "iModelBridge_isMyFile");
     if (isMyFile)
         {
-        if (isMyFile(buffer, bufferSize, affinityLevel, file.get()))
+        if (isMyFile(buffer, bufferSize, affinityLevel, file))
             {
             return BSISUCCESS;
             }

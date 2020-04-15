@@ -10,6 +10,9 @@
 
 #define BRIDGE_SCHEMA_VERSION "2.0"
 
+// The official ID of the generic v8 bridge. Note that case matters!
+#define IMODELBRIDGEFORMSTN L"IModelBridgeForMstn"
+
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 
 // We enter this namespace in order to avoid having to qualify all of the types, such as bmap, that are common
@@ -908,7 +911,7 @@ bool Converter::IsFileAssignedToBridge(DgnV8FileCR v8File) const
     if (_GetParams().IsFileAssignedToBridge(fn))
         return true;
 
-    // 2. Is it is an iModel we have two cases
+    // 2. If it is an iModel, we have two cases
     if (v8File.IsIModel())
         {
         if (v8File.IsEmbeddedFile()) //Embedded file assignments are owned by the parent.
@@ -921,7 +924,7 @@ bool Converter::IsFileAssignedToBridge(DgnV8FileCR v8File) const
         return false;
         }
 
-    //3. Now lets check for foreign file formats that do not have a bridge assignment yet.
+    //3. Now let's check for foreign file formats that do not have a bridge assignment yet.
     bool isMyFile = false;
     // Before we get the bridge affinity work for references of foreign file formats, treat them as owned, so they get processed - TFS's 916434,921023.
     auto rootFilename = _GetParams().GetInputFileName ();
@@ -2600,6 +2603,100 @@ DgnV8FileCP RootModelConverter::_GetPackageFileOf(DgnV8FileCR f)
 bool RootModelConverter::_WasEmbeddedFileSeen(Utf8StringCR uniqueName) const
     {
     return m_embeddedFilesSeen.find(uniqueName) != m_embeddedFilesSeen.end();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus RootModelConverter::DiscloseFileAndAffinity(iModelBridgeAffinityDb& affinityDb, DgnV8FileR v8File)
+    {
+    iModelBridgeAffinityLevel affinityLevel;
+    wchar_t bridgeRegSubKey[MAX_PATH];
+
+    auto format = v8File.GetOriginalFormat();
+    // Foreign file formats do not have authoring file info - don't load them:
+    if (format != DgnV8Api::DgnFileFormatType::V8 && format != DgnV8Api::DgnFileFormatType::V7)
+        {
+        affinityLevel = iModelBridgeAffinityLevel::Low;
+        BeStringUtilities::Wcsncpy(bridgeRegSubKey, _countof(bridgeRegSubKey), IMODELBRIDGEFORMSTN);
+        }
+    else
+        {
+        auto status = GetAffinityEx(bridgeRegSubKey, _countof(bridgeRegSubKey), affinityLevel, &v8File, m_params.GetAffinityLibraryPath());
+        if (BSISUCCESS != status)
+            return status;
+        }
+
+    auto fileRowId = affinityDb.FindOrInsertFile(BeFileName(v8File.GetFileName().c_str()));
+    auto bridgeRowId = affinityDb.FindOrInsertBridge(Utf8String(bridgeRegSubKey));
+    return affinityDb.FindOrInsertAffinity(fileRowId, bridgeRowId, affinityLevel, nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+int64_t RootModelConverter::FindOrInsertModelIntoAffinityDb(iModelBridgeAffinityDb& affinityDb, DgnModelRefR model, ResolvedModelMapping v8mm)
+    {
+    auto fileRowId = affinityDb.FindOrInsertFile(BeFileName(model.GetDgnFileP()->GetFileName().c_str()));
+
+    Json::Value jsonData(Json::objectValue);
+    if (v8mm.IsValid())
+        JsonUtils::TransformToJson(jsonData["transform"], v8mm.GetTransform());
+
+    return affinityDb.FindOrInsertModel(fileRowId, Utf8PrintfString("%d", model.GetModelId()), Utf8String(model.GetModelNameCP()), &jsonData);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+void RootModelConverter::DiscloseReferenceAttachments(iModelBridgeAffinityDb& affinityDb, int64_t parentModelRowId, DgnModelRefR model)
+    {
+    auto attachments = model.GetDgnAttachmentsP();
+    if (nullptr == attachments)
+        return;
+
+    for (auto attachment : *attachments)
+        {
+        auto refModel = attachment->GetDgnModelP();
+        if (nullptr == refModel)
+            continue;
+
+        auto childModelRowId = FindOrInsertModelIntoAffinityDb(affinityDb, *refModel, FindAttachmentResolvedModelMapping(*attachment));
+
+        affinityDb.FindOrInsertAttachment(parentModelRowId, childModelRowId, nullptr);
+
+        DiscloseReferenceAttachments(affinityDb, childModelRowId, *attachment);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus RootModelConverter::DiscloseFilesAndAffinities(iModelBridgeAffinityDb& affinityDb)
+    {
+    if (m_rootFile->IsIModel() && !m_params.DiscloseEmbeddedRefs())
+        {
+        // i.dgn file
+        return DiscloseFileAndAffinity(affinityDb, *m_rootFile);
+        }
+
+    // Normal dgn file
+
+    for (auto v8File : m_v8Files)
+        {
+        auto status = DiscloseFileAndAffinity(affinityDb, *v8File);
+        if (status != BSISUCCESS)
+            return status;
+        }
+
+    _ConvertModels(); // This does not convert the content of the models. It does create modeled elements and adds ExternalSourceAspects to them.
+    if (nullptr != m_rootModelRef && m_isRootModelSpatial)
+        {
+        auto parentModelRowId = FindOrInsertModelIntoAffinityDb(affinityDb, *m_rootModelRef, m_rootModelMapping);
+        DiscloseReferenceAttachments(affinityDb, parentModelRowId, *m_rootModelRef);
+        }
+
+    return BSISUCCESS;
     }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE

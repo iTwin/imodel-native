@@ -56,10 +56,36 @@ BentleyStatus            FakeRegistry::WriteAssignments()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus            FakeRegistry::WriteInstalledBridgesTable(bvector<FakeBridgeDef> const& bridges)
+    {
+    if (BentleyApi::BeSQLite::DbResult::BE_SQLITE_OK != OpenOrCreateStateDb())
+        return ERROR;
+    for (auto bridge : bridges)
+        {
+        auto stmt = m_stateDb.GetCachedStatement("INSERT INTO fwk_InstalledBridges (Name,BridgeLibraryPath,AffinityLibraryPath,BridgeAssetsDir,IsPowerPlatformBased) VALUES(?,?,?,?,?)");
+        stmt->BindText(1, Utf8String(bridge.m_regSubKey).c_str(), BeSQLite::Statement::MakeCopy::Yes);
+        stmt->BindText(2, Utf8String(bridge.m_libraryFilename).c_str(), BeSQLite::Statement::MakeCopy::Yes);
+        stmt->BindText(3, Utf8String(bridge.m_libraryFilename).c_str(), BeSQLite::Statement::MakeCopy::Yes);
+        stmt->BindText(4, Utf8String(bridge.m_bridgeAssetsDir).c_str(), BeSQLite::Statement::MakeCopy::Yes);
+        stmt->BindBoolean(5, false);
+        stmt->Step();
+        }
+    return (BentleyApi::BeSQLite::DbResult::BE_SQLITE_OK == m_stateDb.SaveChanges() ? SUCCESS : ERROR);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  06/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 void FakeRegistry::AddBridge(WStringCR bridgeName, std::function<T_iModelBridge_getAffinity>const & affinityCalc)
     {
+    if (!m_stateDb.IsDbOpen())
+        {
+        if (BentleyApi::BeSQLite::DbResult::BE_SQLITE_OK != OpenOrCreateStateDb())
+            return;
+        }
+
     m_affinityCalc[bridgeName] = affinityCalc;
     _DiscoverInstalledBridges();
     }
@@ -87,4 +113,34 @@ BentleyStatus   FakeRegistry::ComputeBridgeAffinityToDocument(iModelBridgeWithAf
 void    FakeRegistry::Save()
     {
     m_stateDb.SaveChanges();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+int FakeRegistry::RunAssign(int argc, WCharCP argv[])
+    {
+    if (m_stagingDir.empty() || !m_stagingDir.DoesPathExist())
+        {
+        return -1;
+        }
+
+    AssignCmdLineArgs args;
+    if (BSISUCCESS != args.ParseCommandLine(argc, argv))
+        {
+        return -1;
+        }
+
+     if (args.m_repositoryName.empty())
+        {
+        return -1;
+        }
+
+    if (!m_stateDb.IsDbOpen())
+        {
+        if (BeSQLite::BE_SQLITE_OK != OpenOrCreateStateDb())
+            return -1;
+        }
+
+    return iModelBridgeRegistryBase::RunAssign(args);
     }

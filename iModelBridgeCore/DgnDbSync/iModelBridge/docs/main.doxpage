@@ -77,11 +77,27 @@ The bridge libray may implement both iModelBridge_getInstance and iModelBridge_g
 <h2>Bridge Affinity</h2>
 The framework decides which bridge should be applied to a given input file by searching the registry for the bridge with the greatest affinity to that file.
 
-To report its affinity for files, a bridge or affinity library must define and export a function called <code>iModelBridge_getAffinity</code>. That function must conform to @ref T_iModelBridge_getAffinity.
+To report its affinities, a bridge or affinity library should preferrably define and export a function called <code>iModelBridge_discloseFilesAndAffinities</code>.
+That function must conform to @ref T_iModelBridge_discloseFilesAndAffinities.
+
+The framework will load a bridge or affinity library and call <code>iModelBridge_discloseFilesAndAffinities</code> when searching for the best bridges to convert source files.
+
+The iModelBridge_discloseFilesAndAffinities should do nothing more than instantiate the bridge and then call iModelBridge::DiscloseFilesAndAffinities.
+For example:
+<pre>
+extern "C" BentleyApi::BentleyStatus iModelBridge_discloseFilesAndAffinities(WCharCP outputFileName, WCharCP affinityLibraryPathStr, WCharCP assetsPathStr, WCharCP sourceFileNameStr, WCharCP bridgeId)
+    {
+    DgnV8Bridge bridge;
+    return iModelBridge::DiscloseFilesAndAffinities(bridge, outputFileName, affinityLibraryPathStr, assetsPathStr, sourceFileNameStr, bridgeId);
+    }
+</pre>
+
+iModelBridge::DiscloseFilesAndAffinities will initialize the specified bridge and then call its iModelBridge::_DiscloseFilesAndAffinities function.
+
+If it cannot implement iModelBridge_discloseFilesAndAffinities, then the bridge or affinity library must define and export a function called <code>iModelBridge_getAffinity</code>.
+That function must conform to @ref T_iModelBridge_getAffinity.
 
 The framework will load a bridge or affinity library and call <code>iModelBridge_getAffinity</code> when searching for the best bridge to convert source files.
-
-An affinity library could actually support multiple bridges. iModelBridge_getAffinity returns the @ref ANCHOR_BridgeRegistration "subkey" of the bridge that should be used.
 
 @anchor ANCHOR_BridgeConfig
 <h2>Bridge-Specific Configuration</h2>

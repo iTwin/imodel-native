@@ -8,6 +8,7 @@
 #include <unistd.h>
 #endif
 #include <iModelBridge/iModelBridgeRegistry.h>
+#include <iModelBridge/iModelBridge.h>
 #include <Bentley/BeDirectoryIterator.h>
 #include <Bentley/BeTextFile.h>
 #include <Bentley/Desktop/FileSystem.h>
@@ -45,7 +46,7 @@ USING_NAMESPACE_BENTLEY_DGN
 
 static bmap<BeFileName, CPLSpawnedProcess*> s_affinityCalculators;
 static bset<BeFileName> s_badAffinityCalculators;
-static ProfileVersion s_schemaVer(1,0,0,0);
+static ProfileVersion s_schemaVer(1,1,0,0);
 static BeSQLite::PropertySpec s_schemaVerPropSpec("SchemaVersion", "be_iModelBridgeFwk", BeSQLite::PropertySpec::Mode::Normal, BeSQLite::PropertySpec::Compress::No);
 
 /*---------------------------------------------------------------------------------**//**
@@ -110,10 +111,12 @@ BeSQLite::DbResult iModelBridgeRegistryBase::OpenOrCreateStateDb()
         MUSTBEOK(m_stateDb.CreateTable("fwk_InstalledBridges", "Name TEXT NOT NULL UNIQUE COLLATE NoCase, \
                                                                 BridgeLibraryPath TEXT UNIQUE COLLATE NoCase, \
                                                                 AffinityLibraryPath TEXT UNIQUE COLLATE NoCase, \
-                                                                IsPowerPlatformBased BOOLEAN \
+                                                                IsPowerPlatformBased BOOLEAN, \
+                                                                BridgeAssetsDir TEXT COLLATE NoCase \
                                                                 "));
         MUSTBEOK(m_stateDb.CreateTable("fwk_BridgeAssignments", "SourceFile TEXT NOT NULL UNIQUE COLLATE NoCase PRIMARY KEY, \
-                                                                 Bridge BIGINT"));  // Bridge --foreign key--> fwk_InstalledBridges
+                                                                 Bridge BIGINT, \
+                                                                 Affinity INT"));
 
         // WARNING: Do not change the name or layout of the DocumentProperties - Bentley Automation Services assumes the following definition:
         MUSTBEOK(m_stateDb.CreateTable("DocumentProperties", "LocalFilePath TEXT NOT NULL UNIQUE COLLATE NoCase,\
@@ -123,6 +126,8 @@ BeSQLite::DbResult iModelBridgeRegistryBase::OpenOrCreateStateDb()
                                                                 AttributesJSON TEXT,\
                                                                 ChangeHistoryJSON TEXT,\
                                                                 SpatialRootTransformJSON TEXT"));
+        MUSTBEOK(m_stateDb.CreateTable("Recommendations", "LocalFilePath TEXT NOT NULL COLLATE NoCase, Bridge TEXT NOT NULL COLLATE NoCase"));
+        MUSTBEOK(m_stateDb.CreateTable("DiscloseNotSupported", "Bridge TEXT NOT NULL UNIQUE COLLATE NoCase, FOREIGN KEY(Bridge) REFERENCES fwk_InstalledBridges(Name)"));
 
         MUSTBEOK(m_stateDb.SavePropertyString(s_schemaVerPropSpec, s_schemaVer.ToJson()));
 
@@ -189,17 +194,20 @@ BeFileName iModelBridgeRegistryBase::QueryBridgeLibraryPathByName(uint64_t* rowi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeRegistryBase::QueryBridgeAssignedToDocument(BeFileNameR libPath, WStringR name, BeFileNameCR docName)
+BentleyStatus iModelBridgeRegistryBase::QueryBridgeAssignedToDocument(iModelBridgeWithAffinity* ba, BeFileNameCR docName)
     {
     // *** NEEDS WORK: SourceFile should be a relative path, relative to m_fwkAssetsDir
 
-    auto stmt = m_stateDb.GetCachedStatement("SELECT b.BridgeLibraryPath, b.Name FROM fwk_BridgeAssignments a, fwk_InstalledBridges b WHERE (a.SourceFile=?) AND (b.ROWID = a.Bridge)");
+    auto stmt = m_stateDb.GetCachedStatement("SELECT b.Name, a.Affinity FROM fwk_BridgeAssignments a, fwk_InstalledBridges b WHERE (a.SourceFile=?) AND (b.ROWID = a.Bridge)");
     stmt->BindText(1, Utf8String(docName), Statement::MakeCopy::Yes);
     if (BE_SQLITE_ROW != stmt->Step())
         return BSIERROR;
 
-    libPath.SetNameUtf8(stmt->GetValueText(0));
-    name.AssignUtf8(stmt->GetValueText(1));
+    if (ba != nullptr)
+        {
+        ba->m_bridgeRegSubKey = WString(stmt->GetValueText(0), true);
+        ba->m_affinity = (iModelBridgeAffinityLevel)stmt->GetValueInt(1);
+        }
     return BSISUCCESS;
     }
 
@@ -250,12 +258,45 @@ static CPLSpawnedProcess* findOrStartAffinityCalculator(BeFileNameCR affinityLib
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
+static int callDiscloseFilesAndAffinities(BeFileNameCR outputFileName, BeFileNameCR affinityLibraryPath, BeFileNameCR assetsPath, BeFileNameCR sourceFileName, WStringCR bridgeName)
+    {
+    BeFileName calcexe;
+    GetAffinityHostExePath(calcexe, affinityLibraryPath);
+    if (!calcexe.DoesPathExist())
+        return -1;
+
+    Utf8String calcexeU(calcexe);
+    Utf8String libU(affinityLibraryPath);
+    libU.AddQuotes();
+    Utf8String outputNameU(outputFileName);
+    outputNameU.AddQuotes();
+    Utf8String assetsPathU(assetsPath);
+    assetsPathU.AddQuotes();
+    Utf8String sourceFileNameU(sourceFileName);
+    sourceFileNameU.AddQuotes();
+    Utf8String bridgeNameU(bridgeName.c_str());
+    bridgeNameU.AddQuotes();
+    const char* callData[] = { calcexeU.c_str(), outputNameU.c_str(), libU.c_str(), assetsPathU.c_str(), sourceFileNameU.c_str(), bridgeNameU.c_str(), nullptr };
+
+    LOG.tracev(L"%ls <-discloseFilesAndAffinities- (%ls,%ls,%ls)", outputFileName.c_str(), affinityLibraryPath.c_str(), bridgeName.c_str(), sourceFileName.c_str());
+
+    auto proc = CPLSpawnAsync(NULL, callData, true, true, false, nullptr);
+    if (nullptr == proc)
+        return -1;
+
+    return CPLSpawnAsyncFinish(proc, true, false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      06/17
++---------------+---------------+---------------+---------------+---------------+------*/
 static void killAllAffinityCalculators()
     {
     for (auto i = s_affinityCalculators.begin(); i != s_affinityCalculators.end(); ++i)
         {
         CPLSpawnAsyncFinish(i->second, false, true);
         }
+    s_affinityCalculators.clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -401,25 +442,55 @@ void iModelBridgeRegistryBase::RecommendBridge(BeFileNameCR doc, bvector<WString
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/20
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeRegistryBase::BridgeDoesNotDiscloseFiles(Utf8StringCR bridgeRegSubKey)
+    {
+    LOG.tracev("%s -> BridgeDoesNotDiscloseFiles", bridgeRegSubKey.c_str());
+    
+    auto stmt = m_stateDb.GetCachedStatement("INSERT OR IGNORE INTO DiscloseNotSupported (Bridge) VALUES(?)");
+    stmt->BindText(1, bridgeRegSubKey, BeSQLite::Statement::MakeCopy::No);      
+    auto rc = stmt->Step();
+    if (rc != BE_SQLITE_DONE)
+        {
+        LOG.errorv(L"Insert BridgeDoesNotDiscloseFiles %s failed with %lx", bridgeRegSubKey.c_str(), rc);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeRegistryBase::SearchForBridgeToAssignToDocument(WStringR bridgeName, BeFileNameCR sourceFilePath, WStringCR parentBridgeName)
     {
     ++m_processedFileCount;
 
-    BeFileName a;
-    if (BSISUCCESS == QueryBridgeAssignedToDocument(a, bridgeName, sourceFilePath)) // If we have already assigned a bridge to this document, then stick with that.
-        return BSISUCCESS;
+    bool hasExistingAssignment = false;
+    iModelBridgeWithAffinity bestBridge;
+    if (BSISUCCESS == QueryBridgeAssignedToDocument(&bestBridge, sourceFilePath)) // If we have already assigned a bridge to this document
+        {
+        if (!m_updateAssignments) // and if we are not updating
+            {
+            bridgeName = bestBridge.m_bridgeRegSubKey;
+            return BSISUCCESS;
+            }
+        hasExistingAssignment = true;
+        }
 
     LOG.tracev(L"SearchForBridgeToAssignToDocument %ls", sourceFilePath.c_str());
 
-    iModelBridgeWithAffinity bestBridge;
-
     bvector<WString> recommendedBridges;
 
-    auto iterateInstalled = m_stateDb.GetCachedStatement("SELECT BridgeLibraryPath, AffinityLibraryPath, IsPowerPlatformBased FROM fwk_InstalledBridges");
+    auto iterateInstalled = m_stateDb.GetCachedStatement("SELECT BridgeLibraryPath, AffinityLibraryPath, IsPowerPlatformBased, Name FROM fwk_InstalledBridges");
     while (BE_SQLITE_ROW == iterateInstalled->Step())
         {
+        if (!m_bridgeFilter.empty())
+            {
+            Utf8String bridge(iterateInstalled->GetValueText(3));
+            bridge.ToLower();
+            if (m_bridgeFilter.find(bridge) == m_bridgeFilter.end())
+                continue;
+            }
+
         BeFileName bridgePath(iterateInstalled->GetValueText(0));
         BeFileName affinityLibraryPath(iterateInstalled->GetValueText(1));
         if (affinityLibraryPath.empty())
@@ -480,14 +551,26 @@ BentleyStatus iModelBridgeRegistryBase::SearchForBridgeToAssignToDocument(WStrin
         }
 
     // *** NEEDS WORK: SourceFile should be a relative path, relative to m_fwkAssetsDir
-
-    auto insertAssignment = m_stateDb.GetCachedStatement("INSERT INTO fwk_BridgeAssignments (SourceFile,Bridge) VALUES(?,?)");
-    insertAssignment->BindText(1, Utf8String(sourceFilePath), Statement::MakeCopy::Yes);
-    insertAssignment->BindInt64(2, bestBridgeRowid);
-    auto rc = insertAssignment->Step();
-    BeAssert(BE_SQLITE_DONE == rc);
-
-    LOG.tracev(L"%ls := (%ls,%d)", sourceFilePath.c_str(), bestBridge.m_bridgeRegSubKey.c_str(), (int)bestBridge.m_affinity);
+    if (!hasExistingAssignment)
+        {
+        auto insert = m_stateDb.GetCachedStatement("INSERT INTO fwk_BridgeAssignments (SourceFile,Bridge,Affinity) VALUES(?,?,?)");
+        insert->BindText(1, Utf8String(sourceFilePath), Statement::MakeCopy::Yes);
+        insert->BindInt64(2, bestBridgeRowid);
+        insert->BindInt(3, bestBridge.m_affinity);
+        auto rc = insert->Step();
+        BeAssert(BE_SQLITE_DONE == rc);
+        LOG.tracev(L"%ls := (%ls,%d)", sourceFilePath.c_str(), bestBridge.m_bridgeRegSubKey.c_str(), (int)bestBridge.m_affinity);
+        }
+    else
+        {
+        auto update = m_stateDb.GetCachedStatement("UPDATE fwk_BridgeAssignments SET Bridge=?, Affinity=? WHERE SourceFile=?");
+        update->BindInt64(1, bestBridgeRowid);
+        update->BindInt(2, bestBridge.m_affinity);
+        update->BindText(3, Utf8String(sourceFilePath), Statement::MakeCopy::Yes);
+        auto rc = update->Step();
+        BeAssert(BeSQLite::BE_SQLITE_DONE == rc);
+        LOG.tracev(L"%ls := (%ls,%d) (update)", sourceFilePath.c_str(), bestBridge.m_bridgeRegSubKey.c_str(), (int)bestBridge.m_affinity);
+        }
 
     EnsureDocumentPropertiesFor(sourceFilePath, nullptr);
     bridgeName = bestBridge.m_bridgeRegSubKey;
@@ -528,9 +611,10 @@ BentleyStatus iModelBridgeRegistryBase::_AssignFileToBridge(BeFileNameCR sourceF
         return ERROR;
         }
 
-    auto insertAssignment = m_stateDb.GetCachedStatement("INSERT INTO fwk_BridgeAssignments (SourceFile,Bridge) VALUES(?,?)");
+    auto insertAssignment = m_stateDb.GetCachedStatement("INSERT INTO fwk_BridgeAssignments (SourceFile,Bridge,Affinity) VALUES(?,?,?)");
     insertAssignment->BindText(1, Utf8String(sourceFilePath), Statement::MakeCopy::Yes);
     insertAssignment->BindInt64(2, bestBridgeRowid);
+    insertAssignment->BindInt64(3, iModelBridgeAffinityLevel::ExactMatch);
     auto rc = insertAssignment->Step();
     if (BE_SQLITE_DONE != rc)
         {
@@ -679,18 +763,169 @@ BentleyStatus   iModelBridgeRegistryBase::SearchForBridgesToAssignToFile(BeFileN
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/20
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   iModelBridgeRegistryBase::DiscloseFilesAndComputeAssignments()
+    {
+    if (m_masterFilePath.empty() || m_affinityDbName.empty())
+        {
+        BeAssert(false);
+        return BSIERROR;
+        }
+
+    LOG.tracev(L"DiscloseFilesAndComputeAssignments %ls", m_masterFilePath.c_str());
+
+    BeFileName affinityDbName(m_affinityDbName);
+    WString dir,basename;
+    affinityDbName.ParseName(nullptr, &dir, &basename, nullptr);
+    if (dir.empty())
+        {
+        if (m_registryDir.empty())
+            {
+            LOG.fatalv(L"If you do not supply a full path to the --affinity-db-name, then you must supply a value for the --registry-dir argument.");
+            return BSIERROR;
+            }
+        affinityDbName = m_registryDir;
+        affinityDbName.AppendToPath(m_affinityDbName);
+        }
+
+    if (true)
+        {
+        if (!affinityDbName.DoesPathExist())
+            iModelBridgeAffinityDb::Create(affinityDbName);
+         }
+
+    auto iterateInstalled = m_stateDb.GetCachedStatement("SELECT BridgeLibraryPath, AffinityLibraryPath, bridgeAssetsDir, Name FROM fwk_InstalledBridges");
+    while (BE_SQLITE_ROW == iterateInstalled->Step())
+        {
+        BeFileName bridgePath(iterateInstalled->GetValueText(0));
+        BeFileName affinityLibraryPath(iterateInstalled->GetValueText(1));
+        if (affinityLibraryPath.empty())
+            affinityLibraryPath = bridgePath;
+        if (affinityLibraryPath.empty())
+            continue;
+        BeFileName bridgeAssetsDir(iterateInstalled->GetValueText(2));
+        if (bridgeAssetsDir.empty())
+            {
+            bridgeAssetsDir = affinityLibraryPath.GetDirectoryName();
+            bridgeAssetsDir.AppendToPath(L"Assets");
+            }
+        Utf8String bridgeId(iterateInstalled->GetValueText(3));
+
+        auto exitCode = callDiscloseFilesAndAffinities(affinityDbName, affinityLibraryPath, bridgeAssetsDir, m_masterFilePath, WString(bridgeId.c_str(), true));
+        if (0 != exitCode)
+            BridgeDoesNotDiscloseFiles(bridgeId);
+        }
+
+    auto affinityDb = iModelBridgeAffinityDb::Open(affinityDbName);
+    if (!affinityDb.IsValid())
+        {
+        LOG.errorv(L"%ls - not found or could not be opened", affinityDbName.c_str());
+        return BSIERROR;
+        }
+
+    if (true)
+        {
+        auto allSourceFiles = affinityDb->GetDb().GetCachedStatement("select filename from File");
+        while (BE_SQLITE_ROW == allSourceFiles->Step())
+            {
+            EnsureDocumentPropertiesFor(BeFileName(allSourceFiles->GetValueText(0), true), nullptr);
+            }
+        EnsureDocumentPropertiesFor(m_masterFilePath, nullptr); // If the affinity function didn't report it, we must record the file, even if we don't report any affinity to it.
+        }
+
+    affinityDb->ComputeAssignments([this](BeFileNameCR filePath, Utf8StringCR bridgeRegSubKeyA, iModelBridgeAffinityLevel affinity)
+        {
+        WString bridgeRegSubKey(bridgeRegSubKeyA.c_str(), true);
+
+        if (BSISUCCESS == QueryBridgeAssignedToDocument(nullptr, filePath)) // If we have already assigned a bridge to this document, then stick with that.
+            return;
+
+        uint64_t bestBridgeRowid = 0;
+        QueryBridgeLibraryPathByName(&bestBridgeRowid, bridgeRegSubKey);
+        if (0 == bestBridgeRowid)
+            {
+            LOG.tracev(L"%ls - no installed bridge can convert this document", filePath.c_str());
+            bvector<WString> recommendedBridges = { bridgeRegSubKey };
+            RecommendBridge(filePath, recommendedBridges);
+            return;
+            }
+
+        auto insertAssignment = m_stateDb.GetCachedStatement("INSERT INTO fwk_BridgeAssignments (SourceFile,Bridge,Affinity) VALUES(?,?,?)");
+        insertAssignment->BindText(1, Utf8String(filePath), Statement::MakeCopy::Yes);
+        insertAssignment->BindInt64(2, bestBridgeRowid);
+        insertAssignment->BindInt64(3, affinity);
+        auto rc = insertAssignment->Step();
+        BeAssert(BE_SQLITE_DONE == rc);
+
+        LOG.tracev(L"%ls := (%ls,%d)", filePath.c_str(), bridgeRegSubKey.c_str(), (int)affinity);
+        });
+
+    // In some cases, when a bridge has an affinity to the masterfile, we assert its priority in handling certain types of reference files.
+    auto masterfileRowId = affinityDb->FindFile(m_masterFilePath);
+    bset<int64_t> parentFileRowIdsSeen;
+    iModelBridgeWithAffinity assignment;
+    if (BSISUCCESS == QueryBridgeAssignedToDocument(&assignment, m_masterFilePath))
+        {
+        UpdateAssignmentsOfReferences(*affinityDb, parentFileRowIdsSeen, masterfileRowId, assignment.m_bridgeRegSubKey);
+        }
+
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/20
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeRegistryBase::UpdateAssignmentsOfReferences(iModelBridgeAffinityDb& db, bset<int64_t>& parentFileRowIdsSeen, int64_t parentFileRowId, WStringCR parentBridgeRegSubKey)
+    {
+    if (!parentFileRowIdsSeen.insert(parentFileRowId).second)
+        return; // we've already processed the attachments to this file.
+
+    db.QueryAttachmentsToFile(parentFileRowId, [&](int64_t childFileRowId) {
+        auto childFileName = db.GetFilename(childFileRowId);
+        
+        iModelBridgeWithAffinity assignment;
+        if (BSISUCCESS == QueryBridgeAssignedToDocument(&assignment, childFileName))
+            {
+            auto originalBridge = assignment.m_bridgeRegSubKey;
+            ComputeBridgeAffinityInParentContext(assignment, false, parentBridgeRegSubKey); // (*may* reassign assignment.m_bridgeRegSubKey to parentBridgeRegSubKey)
+            if (!assignment.m_bridgeRegSubKey.EqualsI(originalBridge))
+                {
+                uint64_t newAssigedBridgeRowId;
+                QueryBridgeLibraryPathByName(&newAssigedBridgeRowId, assignment.m_bridgeRegSubKey);
+
+                auto update = m_stateDb.GetCachedStatement("UPDATE fwk_BridgeAssignments SET Bridge=? WHERE SourceFile=?");
+                update->BindInt64(1, newAssigedBridgeRowId);
+                update->BindText(2, Utf8String(childFileName), Statement::MakeCopy::Yes);
+                auto rc = update->Step();
+                BeAssert(BeSQLite::BE_SQLITE_DONE == rc);
+                }
+            }
+        UpdateAssignmentsOfReferences(db, parentFileRowIdsSeen, childFileRowId, parentBridgeRegSubKey);
+    });
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridgeRegistryBase::SearchForBridgesToAssignToDocuments()
     {
-    LOG.tracev("SearchForBridgesToAssignToDocuments - m_searchForFilesInStagingDir = %d", m_searchForFilesInStagingDir);
     if (!m_masterFilePath.empty())
         {
-        bset<BeFileName> currentContext;
-        SearchForBridgesToAssignToFile(m_masterFilePath, L"", currentContext);
+        if (!m_affinityDbName.empty())
+            {
+            DiscloseFilesAndComputeAssignments();
+            }
+        else
+            {
+            LOG.tracev(L"SearchForBridgesToAssignToDocuments - file=%ls", m_masterFilePath.c_str());
+            bset<BeFileName> currentContext;
+            SearchForBridgesToAssignToFile(m_masterFilePath, L"", currentContext);
+            }
         }
     else if (m_searchForFilesInStagingDir)
         {
+        LOG.tracev(L"SearchForBridgesToAssignToDocuments - search in %ls", m_stagingDir.c_str());
         if (m_writeProgressToStdout)
             {
             m_totalFileCount = countFilesInDirs(m_stagingDir);
@@ -700,6 +935,7 @@ void iModelBridgeRegistryBase::SearchForBridgesToAssignToDocuments()
         }
     else
         {
+        LOG.tracev(L"SearchForBridgesToAssignToDocuments - search below %ls", m_stagingDir.c_str());
         // There are no documents in the staging directory itself. The docs are all in subdirectories (where the
         // subdir name corresponds to the PW doc GUID).
         BeFileName entryName;
@@ -877,13 +1113,14 @@ void iModelBridgeRegistry::_DiscoverInstalledBridges()
         if (ERROR_SUCCESS != RegOpenKeyExW(iModelBridgesKey, iModelBridgeName, 0, KEY_ENUMERATE_SUB_KEYS | KEY_QUERY_VALUE, &subKey))
             continue;
 
-        auto stmt = m_stateDb.GetCachedStatement("INSERT INTO fwk_InstalledBridges (Name,BridgeLibraryPath,AffinityLibraryPath,IsPowerPlatformBased) VALUES(?,?,?,?)");
+        auto stmt = m_stateDb.GetCachedStatement("INSERT INTO fwk_InstalledBridges (Name,BridgeLibraryPath,AffinityLibraryPath,IsPowerPlatformBased,BridgeAssetsDir) VALUES(?,?,?,?,?)");
 
-        BeFileName bridgeLibraryPath, affinityLibraryPath;
+        BeFileName bridgeLibraryPath, affinityLibraryPath, bridgeAssetsDir;
         WString isPowerPlatformBased;
         GetStringRegKey(bridgeLibraryPath, subKey, L"BridgeLibraryPath", L"");
         GetStringRegKey(affinityLibraryPath, subKey, L"AffinityLibraryPath", L"");
         GetStringRegKey(isPowerPlatformBased, subKey, L"IsPowerPlatformBased", L"");
+        GetStringRegKey(bridgeAssetsDir, subKey, L"BridgeAssetsDir", L"");
 
         stmt->BindText(1, Utf8String(iModelBridgeName).c_str(), Statement::MakeCopy::Yes);
 
@@ -905,6 +1142,11 @@ void iModelBridgeRegistry::_DiscoverInstalledBridges()
             }
         else
             stmt->BindNull(4);
+
+        if (!bridgeAssetsDir.empty())
+            stmt->BindText(5, Utf8String(bridgeAssetsDir).c_str(), Statement::MakeCopy::Yes);
+        else
+            stmt->BindNull(5);
 
         stmt->Step(); // may fail with constraint if bridge library is already registered.
 
@@ -1000,7 +1242,26 @@ static void  ParseCxxOptsResult(cxxopts::ParseResult& result, iModelBridgeRegist
     AssignCxxOptsResult(result, "fwk-input", args.m_inputFileName);
     AssignCxxOptsResult(result, "fwk-staging-dir", args.m_stagingDir);
     AssignCxxOptsResult(result, "registry-dir", args.m_registryDir);
+    AssignCxxOptsResult(result, "affinity-db-name", args.m_affinityDbName);
     AssignCxxOptsResult(result, "fwk-logging-config-file", args.m_loggingConfigFileName);
+    
+    if (result.count("bridge-filter") > 0)
+        {
+        Utf8String filter = result["bridge-filter"].as<std::string>().c_str();
+        filter.Trim();
+        filter.DropQuotes();
+        size_t offset = 0;
+        Utf8String bridge;
+        while ((offset = filter.GetNextToken (bridge, ":", offset)) != Utf8String::npos)
+            {
+            bridge.Trim();
+            bridge.ToLower();
+            args.m_bridgeFilter.insert(bridge);
+            }
+        }
+
+    if (result.count("update-assignments") > 0)
+        args.m_updateAssignments = result["update-assignments"].as<bool>();
 
     if (result.count("fwk-search-in-staging-dir") > 0)
         args.m_searchForFilesInStagingDir = result["fwk-search-in-staging-dir"].as<bool>();
@@ -1033,11 +1294,14 @@ static cxxopts::Options GetCmdLineOptions()
         ("d,fwk-staging-dir", "Optional input staging directory for assignment scanning. Ignored if --fwk-input is specified.", cxxopts::value<std::string>(),"eg.\"c:\\BAS_WORKDIR\\1\"")
         ("s,server-repository", "The iModel for the conversion job.", cxxopts::value<std::string>(),"<Required>")
         ("r,registry-dir", "The directory to store assignments.", cxxopts::value<std::string>(),"<Optional>")
+        ("a,affinity-db-name", "The name of the affinity db to create within the registry-dir.", cxxopts::value<std::string>(),"<Optional>")
         ("l,fwk-logging-config-file", "The configuration file to be used for logging.", cxxopts::value<std::string>(), "<Optional>")
         ("x,fwk-search-in-staging-dir", "Search for files in fwk-staging-dir.", cxxopts::value<bool>(), "<Optional>")
+        ("bridge-filter", "Consider only the specified bridges. Separate bridge names by colons.", cxxopts::value<std::string>(), "<Optional>")
         ("no-bridge-search", "Don't search for globally installed bridges.", cxxopts::value<bool>(), "<Optional>")
         ("write-progress-to-stdout", "Write progress messages to stdout. Defaults to false.", cxxopts::value<bool>(), "<Optional>")
         ("write-progress-interval", "Time between progress messages in milliseconds. Defaults to 500.", cxxopts::value<uint32_t>(), "<Optional>")
+        ("update-assignments", "Update existing bridge-file assignments with better ones? Otherwise, stick with existing assignments.", cxxopts::value<bool>(), "<Optional>")
         ("h,help", "Print help")
         ;
     return options;
@@ -1165,24 +1429,37 @@ int iModelBridgeRegistryBase::AssignMain(int argc, WCharCP argv[])
     BeFileName dbDir = !args.m_registryDir.empty() ? args.m_registryDir : args.m_stagingDir;
     auto dbname = MakeDbName(dbDir, args.m_repositoryName);
     Dgn::iModelBridgeRegistry app(args.m_stagingDir, dbname);
-    app.m_searchForFilesInStagingDir = args.m_searchForFilesInStagingDir;
-    app.m_writeProgressToStdout = args.m_writeProgressToStdout;
-    app.m_writeProgressInterval = args.m_writeProgressInterval;
 
     auto dbres = app.OpenOrCreateStateDb();
     if (BE_SQLITE_OK != dbres)
         return RETURN_STATUS_LOCAL_ERROR;
 
+    return app.RunAssign(args);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+int iModelBridgeRegistryBase::RunAssign(AssignCmdLineArgs& args)
+    {
+    m_searchForFilesInStagingDir = args.m_searchForFilesInStagingDir;
+    m_writeProgressToStdout = args.m_writeProgressToStdout;
+    m_writeProgressInterval = args.m_writeProgressInterval;
+    m_affinityDbName = args.m_affinityDbName;
+    m_bridgeFilter = args.m_bridgeFilter;
+    m_registryDir = args.m_registryDir;
+    m_updateAssignments = args.m_updateAssignments;
+
     if (!args.m_noBridgeSearch)
-        app._DiscoverInstalledBridges();
+        _DiscoverInstalledBridges();
     
-    app.m_masterFilePath = args.m_inputFileName;
-    app.SearchForBridgesToAssignToDocuments();
-    app.m_stateDb.SaveChanges();
+    m_masterFilePath = args.m_inputFileName;
+    SearchForBridgesToAssignToDocuments();
+    m_stateDb.SaveChanges();
 
-    app.WriteBridgesFile();
+    WriteBridgesFile();
 
-    app.m_stateDb.CloseDb();
+    m_stateDb.CloseDb();
 
     return 0;
     }

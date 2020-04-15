@@ -12,6 +12,7 @@
 #include <DgnPlatform/DgnDb.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <iModelBridge/iModelBridgeFwkTypes.h>
+#include <iModelBridge/AffinityDb.h>
 #include <iModelDmsSupport/iModelDmsSupport.h>
 #include <DgnPlatform/DgnDbTables.h>
 #include <WebServices/iModelHub/Client/ChangeSetKind.h>
@@ -418,7 +419,6 @@ A bridge must override _SupplySqlangRelPath to specify the location of its .db3 
 A bridge must define its own translatable string tables using the IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START macro, and @em not the BENTLEY_TRANSLATABLE_STRINGS_START macro.
 
 */
-
 //=======================================================================================
 //! Interface between an @ref GROUP_iModelBridge "iModel bridge" and the @ref GROUP_iModelBridgeFwk "iModelBridge framework"
 //! @ingroup GROUP_iModelBridge
@@ -562,6 +562,7 @@ struct iModelBridge
         bool m_ignoreStaleFiles = false;
         bool m_errorOnStaleFiles = false;
         bool m_doNotTrackReferencesSubjects = false;
+        bool m_discloseEmbeddedRefs = false;
         FileIdRecipe m_embeddedFileIdRecipe;
         PushIntermediateRevisions m_pushIntermediateRevisions = PushIntermediateRevisions::None;
         BeFileName m_inputFileName;
@@ -577,6 +578,7 @@ struct iModelBridge
         BeFileName m_assetsDir;
         BeFileName m_geoCoordDir;
         BeFileName m_libraryDir;
+        BeFileName m_affinityLibraryPath; // Optional
         BeFileName m_reportFileName;
         BeFileName m_realityDataDir;
         Utf8String m_converterJobName;
@@ -662,6 +664,7 @@ struct iModelBridge
         bool IsCreatingNewDgnDb() const {return m_isCreatingNewDb;} //!< True in the rare case when the bridge is asked to populate a new local file, in preparation for pushing a new repository to the iModelHub
         void SetIsUpdating(bool b) {m_isUpdating=b;}
         bool IsUpdating() const {return m_isUpdating;} //!< True if the bridge is updating an existing job subject and its contents from a previous conversion.
+        bool DiscloseEmbeddedRefs() const {return m_discloseEmbeddedRefs;} //!< Should _DiscloseFilesAndAffinities report embedded Dgn reference files?
         BeFileNameCR GetBriefcaseName() const {return m_briefcaseName;} //!< The name of the BIM that is being updated
         BeFileNameCR GetInputFileName() const {return m_inputFileName;} //!< The name of the input file that is to be read and converted and/or scanned for changes.
         void SetInputFileName(BeFileNameCR fn) {m_inputFileName=fn;} //!< Set the name of the input file that is to be read and converted and/or scanned for changes.
@@ -670,6 +673,7 @@ struct iModelBridge
         BeFileNameCR GetGeoCoordData() const { return m_geoCoordDir; }
         void SetGeoCoordData(BeFileNameCR dir) { m_geoCoordDir = dir; }
         BeFileNameCR GetLibraryDir() const { return m_libraryDir; } //!< The directory from which the bridge library itself was loaded
+        BeFileNameCR GetAffinityLibraryPath() const { return m_affinityLibraryPath; } //!< The full path to the affinity library (set only when _DiscloseFilesAndAffinities is called)
         BeFileNameCR GetDrawingsDirs() const {return m_drawingsDirs;} //!< The top-level directory to scan for other files that may contain drawings and sheets
         void SetDrawingsDir(BeFileNameCR dir) {m_drawingsDirs = dir;}
         void AddDrawingAndSheetFile(BeFileNameCR fn) {m_drawingAndSheetFiles.push_back(fn);}
@@ -1211,6 +1215,44 @@ public:
     //! Report usage of a feature from the bridge to ULAS
     IMODEL_BRIDGE_EXPORT BentleyStatus MarkFeature(CharCP featureString);
     //! @}
+
+    
+    //! @name Feature Configuration
+    //! @{
+    protected:
+    //! Report the specified source file and all files attached to it, along with the bridge's affinity to them. Optionally report models and reference attachments.
+    //! The following functions have already been called: iModelBridge::_Initialize, iModelBridge::_OnOpenBim, iModelBridge::_OpenSource, iModelBridge::_FindJobSubject / _InitializeJobSubject.
+    //! In other words, this bridge has been intialized and prepared to process the specified source file just as if it were going to be asked to convert it. Instead of converting it,
+    //! this bridge is now being asked simply to disclose information about it.
+    //! @param affinityDb The db where information about this file, other files attached to it, and this bridge's affinity to them should be reported.
+    //! @return a non-zero error code only if the bridge is prevented from disclosing this information, e.g., by an error of some kind. Otherwise, return 0, even if the bridge
+    //! has no affinity to or cannot even open the source file.
+    virtual BentleyStatus _DiscloseFilesAndAffinities(iModelBridgeAffinityDb& affinityDb) { return BSIERROR; }
+
+    public:
+
+    //! Report the specified source file and all files attached to it, along with the bridge's affinity to them.
+    //! This function prepares the bridge as though it were going to convert data but then calls the bridge's _DiscloseFilesAndAffinities method instead of its conversion methods.
+    //! Specifically, DiscloseFilesAndAffinities calls:
+    //! -# iModelBridge::_Initialize
+    //! -# iModelBridge::_OnOpenBim
+    //! -# iModelBridge::_OpenSource
+    //! -# iModelBridge::_FindJobSubject / _InitializeJobSubject
+    //! -# iModelBridge::_DiscloseFilesAndAffinities
+    //! -# iModelBridge::_CloseSource
+    //! -# iModelBridge::_OnCloseBim
+    //! -# iModelBridge::_Terminate
+    //! @param bridge The bridge that may have affinity to the specified file and its references.
+    //! @param outputFileName The name of the affinity database where files and affinities are to be recorded. This must be the string that was passed to iModelBridge_discloseFilesAndAffinities.
+    //! @param affinityLibraryPath The full path to the affinity library that implements iModelBridge_discloseFilesAndAffinities. This must be the string that was passed to iModelBridge_discloseFilesAndAffinities.
+    //! @param assetsPathStr The full path to the brigde's assets directory. This must be the string that was passed to iModelBridge_discloseFilesAndAffinities.
+    //! @param sourceFileNameStr The full path to the "master" file that should be checked for affinity. This must be the string that was passed to iModelBridge_discloseFilesAndAffinities.
+    //! @param regSubKey The @ref ANCHOR_BridgeRegistration "subkey" of the bridge that is expressing an affinity (or None) to the file and its references. This must be the string that was passed to iModelBridge_discloseFilesAndAffinities.
+    //! Note the bim is just a local scratch file. It is not a real iModel. The _DiscloseFilesAndAffinities function and other bridge functions may write to this scratch bim file if necessary.
+    IMODEL_BRIDGE_EXPORT static BentleyStatus DiscloseFilesAndAffinities(iModelBridge& bridge, WCharCP outputFileName, WCharCP affinityLibraryPath, WCharCP assetsPathStr, WCharCP sourceFileNameStr, WCharCP regSubKey);
+
+    //! @}
+
     };
 
 //=======================================================================================

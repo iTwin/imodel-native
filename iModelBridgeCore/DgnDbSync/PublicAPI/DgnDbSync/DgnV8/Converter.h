@@ -1159,6 +1159,7 @@ public:
     //! @private
     //! This is called in a separate process to check bridge file affinity only.
     DGNDBSYNC_EXPORT static BentleyStatus GetAuthoringFileInfo(WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel, BentleyApi::BeFileName const& sourceFileName, BentleyApi::BeFileName const& affinityLibraryPath);
+    DGNDBSYNC_EXPORT static BentleyStatus GetAffinityEx(WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel, DgnV8FileP file, BentleyApi::BeFileName const& affinityLibraryPath);
     DGNDBSYNC_EXPORT static void InitializeDllPath(BentleyApi::BeFileName const& thisLibraryPath);
     DGNDBSYNC_EXPORT static void InitializeDgnv8Platform(BentleyApi::BeFileName const& thisLibraryPath);
     DGNDBSYNC_EXPORT static void GetAffinity(WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel,WCharCP affinityLibraryPathStr, WCharCP sourceFileNameStr);
@@ -2663,6 +2664,7 @@ protected:
     DGNDBSYNC_EXPORT ResolvedModelMapping _FindFirstResolvedModelMapping(DgnV8ModelR v8Model) override;
     DGNDBSYNC_EXPORT ResolvedModelMapping _FindResolvedModelMappingByModelId(DgnModelId) override;
     DGNDBSYNC_EXPORT bvector<ResolvedModelMapping> FindResolvedModelMappings(DgnV8ModelR v8Model);
+    ResolvedModelMapping FindAttachmentResolvedModelMapping(DgnAttachmentCR attachment);
     ResolvedModelMapping GetResolvedModelMapping(DgnV8ModelRefCR v8Model, TransformCR toBim) {return _GetResolvedModelMapping(v8Model, toBim);}
     DGNDBSYNC_EXPORT ResolvedModelMapping MapDgnV8ModelToDgnDbModel(DgnV8ModelR, TransformCR, DgnModelId targetModelId); // Like GetResolvedModelMapping, except that caller already knows the target model
     DGNDBSYNC_EXPORT void _OnDrawingModelFound(DgnV8ModelR v8model) override;
@@ -2777,6 +2779,11 @@ public:
     DGNDBSYNC_EXPORT BentleyStatus ConvertData();
     DGNDBSYNC_EXPORT BentleyStatus DetectDeletedEmbeddedFiles();
     DGNDBSYNC_EXPORT BentleyStatus DeleteOrphanReferenceModels();
+
+    DGNDBSYNC_EXPORT int64_t FindOrInsertModelIntoAffinityDb(iModelBridgeAffinityDb& affinityDb, DgnModelRefR model, ResolvedModelMapping v8mm);
+    DGNDBSYNC_EXPORT BentleyStatus DiscloseFileAndAffinity(iModelBridgeAffinityDb&, DgnV8FileR v8File);
+    DGNDBSYNC_EXPORT BentleyStatus DiscloseFilesAndAffinities(iModelBridgeAffinityDb&);
+    DGNDBSYNC_EXPORT void DiscloseReferenceAttachments(iModelBridgeAffinityDb&, int64_t parentModelRowId, DgnModelRefR model);
 };
 
 //=======================================================================================

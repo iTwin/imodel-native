@@ -62,3 +62,12 @@ void iModelBridge_getAffinity(WCharP buffer,
         }
 #endif
     }
+
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod                                    Sam.Wilson                      03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+extern "C" BentleyApi::BentleyStatus iModelBridge_discloseFilesAndAffinities(WCharCP outputFileName, WCharCP affinityLibraryPathStr, WCharCP assetsPathStr, WCharCP sourceFileNameStr, WCharCP bridgeId)
+    {
+    DgnV8Bridge bridge;
+    return iModelBridge::DiscloseFilesAndAffinities(bridge, outputFileName, affinityLibraryPathStr, assetsPathStr, sourceFileNameStr, bridgeId);
+    }

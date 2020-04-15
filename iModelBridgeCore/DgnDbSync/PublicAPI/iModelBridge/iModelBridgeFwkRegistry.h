@@ -14,6 +14,12 @@
     #define USING_NAMESPACE_BENTLEY_DGN         using namespace BentleyApi::Dgn;
 #endif
 
+#ifdef __IMODEL_BRIDGE_FWK_BUILD__
+#define IMODEL_BRIDGE_FWK_EXPORT EXPORT_ATTRIBUTE
+#else
+#define IMODEL_BRIDGE_FWK_EXPORT IMPORT_ATTRIBUTE
+#endif
+
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 //! Properties that may be assigned to a document by its home document control system (DCS).
@@ -47,7 +53,7 @@ struct iModelBridgeWithAffinity
 struct iModelBridgeRegistryUtils
     {
     static void InitCrt(bool quietAsserts);
-    static void* GetBridgeFunction(BeFileNameCR bridgeDllName, Utf8CP funcName);
+    IMODEL_BRIDGE_FWK_EXPORT static void* GetBridgeFunction(BeFileNameCR bridgeDllName, Utf8CP funcName);
     static int ComputeAffinityMain(int argc, WCharCP argv[]);
     };
 
@@ -58,9 +64,20 @@ END_BENTLEY_DGN_NAMESPACE
  *  Note that the iModelBridge_getAffinity function must have extern "C" linkage and must be exported.
  *  \param[out] bridgeAffinity      Return the bridge, if any, that could convert this source document.
  *  \param[in] affinityLibraryPath  The full path to the affinity library that implements this function. This is a convenience, in case this function needs to locate assets relative to itself.
- *  \param[in] sourceFIleName       The name of the source file to check
+ *  \param[in] sourceFileName       The name of the source file to check
  *  @note If set, the value in bridgeAffinity.m_bridgeRegSubKey must match the @ref ANCHOR_BridgeRegistration "subkey" of a bridge in the registry.
  *  @note This function will be called in a separate process from the bridge. The iModelBridge_getAffinity function can (and must) do its own initialization as required to compute affinity.
+ * @ingroup GROUP_iModelBridge
+ */
+
+/*! \typedef typedef BentleyApi::BentleyStatus T_iModelBridge_discloseFilesAndAffinities(WCharCP outputDbFileName, WCharCP affinityLibraryPathStr, WCharCP assetsPathStr, WCharCP sourceFileNameStr, WCharCP bridgeId);
+ *  \brief The signature of the <code>iModelBridge_discloseFilesAndAffinities</code> function that a shared library must implement in order to @ref iModelBridge_getAffinity "report the affinity of a bridge for a source document and its references to the framework".
+ *  Note that the iModelBridge_discloseFilesAndAffinities function must have extern "C" linkage and must be exported.
+ *  \param[out] outputDbFileName    The name of the database where files and affinities must be written.
+ *  \param[in] affinityLibraryPathStr  The full path to the affinity library that implements this function. This is a convenience, in case this function needs to locate assets relative to itself.
+ *  \param[in] assetsPathStr        The full path to the bridge's assets library.
+ *  \param[in] sourceFileNameStr    The name of the "master" source file. This file and all files attached to it should be reported.
+ *  \param[in] bridgeId             The @ref ANCHOR_BridgeRegistration "subkey" of this bridge in the registry.
  * @ingroup GROUP_iModelBridge
  */
 
@@ -82,14 +99,11 @@ extern "C"
                                              BentleyApi::WCharCP affinityLibraryPath,
                                              BentleyApi::WCharCP sourceFileName);
 
+    typedef BentleyApi::BentleyStatus T_iModelBridge_discloseFilesAndAffinities(WCharCP outputDbFileName, WCharCP affinityLibraryPathStr, WCharCP assetsPathStr, WCharCP sourceFileNameStr, WCharCP bridgeId);
+
     typedef bool T_iModelBridge_isMyFile(BentleyApi::WCharP buffer,
                                          const size_t bufferSize,
                                          BentleyApi::Dgn::iModelBridgeAffinityLevel& affinityLevel,
                                          void* dgnFileP);
     };
 
-#ifdef __IMODEL_BRIDGE_FWK_BUILD__
-#define IMODEL_BRIDGE_FWK_EXPORT EXPORT_ATTRIBUTE
-#else
-#define IMODEL_BRIDGE_FWK_EXPORT IMPORT_ATTRIBUTE
-#endif

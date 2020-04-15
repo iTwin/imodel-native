@@ -8,6 +8,7 @@
 // NB: Do not include anything from DgnPlatform! That is not on the include path, and we can't put it there when building standalone programs.
 
 #include <iModelBridge/iModelBridgeFwkTypes.h>
+#include <iModelBridge/AffinityDb.h>
 #include <BeSQLite/BeSQLite.h>
 #include <Logging/bentleylogging.h>
 
@@ -54,24 +55,29 @@ struct iModelBridgeRegistryBase : RefCounted<IModelBridgeRegistry>
         BeFileName m_loggingConfigFileName;
         Utf8String m_repositoryName;
         BeFileName m_inputFileName;
+        BeFileName m_affinityDbName;
+        bset<Utf8String> m_bridgeFilter;
         bool m_searchForFilesInStagingDir{};
         bool m_noBridgeSearch{false};
         bool m_writeProgressToStdout{};
+        bool m_updateAssignments{};
         uint32_t m_writeProgressInterval{500};
-        int ParseCommandLine(int argc, WCharCP argv[]);
+        IMODEL_BRIDGE_FWK_EXPORT int ParseCommandLine(int argc, WCharCP argv[]);
         };
 
 protected:
     BeSQLite::Db m_stateDb;
     RefCountedPtr<RegistryBusyHandler> m_retry;
     IMODEL_BRIDGE_FWK_EXPORT BeSQLite::DbResult OpenOrCreateStateDb();
-private:
     BeFileName m_stateFileName;
     BeFileName m_stagingDir;
     BeFileName m_registryDir;
+    BeFileName m_affinityDbName;
     BeFileName m_masterFilePath;
+    bset<Utf8String> m_bridgeFilter;
     bool m_searchForFilesInStagingDir{};
     bool m_writeProgressToStdout{};
+    bool m_updateAssignments{};
     uint32_t m_totalFileCount{};
     uint32_t m_processedFileCount{};
     uint32_t m_writeProgressInterval{};
@@ -81,8 +87,9 @@ private:
   
     BentleyStatus SearchForBridgesToAssignToFile(BeFileNameCR fileName, WStringCR parentBridgeName, bset<BeFileName>& currentContext);
     void SearchForBridgesToAssignToDocumentsInDir(BeFileNameCR);
+    BentleyStatus DiscloseFilesAndComputeAssignments();
     
-    BentleyStatus QueryBridgeAssignedToDocument(BeFileNameR libPath, WStringR name, BeFileNameCR docName);
+    BentleyStatus QueryBridgeAssignedToDocument(iModelBridgeWithAffinity* bridgeAndAssignment, BeFileNameCR docName);
     BeFileName QueryBridgeLibraryPathByName(uint64_t* rowid, WStringCR bridgeName);
     
     BentleyStatus WriteBridgesFile();
@@ -94,6 +101,8 @@ private:
 
     BentleyStatus    ComputeBridgeAffinityInParentContext(iModelBridgeWithAffinity& affinity, bool thisBridgeIsPP, WStringCR parent);
     void RecommendBridge(BeFileNameCR doc, bvector<WString> recommendedBridges);
+    void BridgeDoesNotDiscloseFiles(Utf8StringCR bridgeRegSubKey);
+    void UpdateAssignmentsOfReferences(iModelBridgeAffinityDb&, bset<int64_t>& parentFileRowIdsSeen, int64_t parentFileRowId, WStringCR parentBridgeRegSubKey);
 
 protected:
     //Exported for testing
@@ -118,12 +127,16 @@ public:
     IMODEL_BRIDGE_FWK_EXPORT BentleyStatus RemoveFileAssignment(BeFileNameCR fn);
     IMODEL_BRIDGE_FWK_EXPORT void SetDocumentProperties(iModelBridgeDocumentProperties&, BeFileNameCR fn);
     IMODEL_BRIDGE_FWK_EXPORT BentleyStatus _GetDocumentProperties(iModelBridgeDocumentProperties&, BeFileNameCR fn) override;
-    //! @private
-    static BeFileName MakeDbName(BeFileNameCR stagingDir, Utf8StringCR iModelName);
+    //! @private - called directly by unit tests
+    IMODEL_BRIDGE_FWK_EXPORT static BeFileName MakeDbName(BeFileNameCR stagingDir, Utf8StringCR iModelName);
     //! @private
     
-    //! @private
-    static int AssignMain(int argc, WCharCP argv[]);
+    //! @private - called directly by unit tests
+    IMODEL_BRIDGE_FWK_EXPORT static int AssignMain(int argc, WCharCP argv[]);
+
+    //! @private - called directly by unit tests
+    IMODEL_BRIDGE_FWK_EXPORT int RunAssign(AssignCmdLineArgs&);
+
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -139,7 +152,7 @@ struct iModelBridgeRegistry : iModelBridgeRegistryBase
     virtual void _DiscoverInstalledBridges() override;
     //! @private
     static RefCountedPtr<iModelBridgeRegistry> OpenForFwk(BeSQLite::DbResult&, BeFileNameCR stagingDir, Utf8StringCR iModelName);
-    iModelBridgeRegistry(BeFileNameCR stagingDir, BeFileNameCR dbName);
+    IMODEL_BRIDGE_FWK_EXPORT iModelBridgeRegistry(BeFileNameCR stagingDir, BeFileNameCR dbName);
     };
 
 

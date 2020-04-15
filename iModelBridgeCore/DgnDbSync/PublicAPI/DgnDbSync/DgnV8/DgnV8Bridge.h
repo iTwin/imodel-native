@@ -108,6 +108,7 @@ protected:
     DGNV8_BRIDGE_EXPORT void _CloseSource(BentleyStatus , iModelBridge::ClosePurpose) override;
     DGNV8_BRIDGE_EXPORT BentleyStatus _DetectDeletedDocuments() override;
     DGNV8_BRIDGE_EXPORT BentleyStatus _MakeSchemaChanges(bool& hasMoreChanges) override;
+    DGNV8_BRIDGE_EXPORT BentleyStatus _DiscloseFilesAndAffinities(iModelBridgeAffinityDb&) override;
 
     DgnFontCP _TryResolveFont(DgnFontCP font) override {return m_converter->TryResolveFont(font);}
 
@@ -115,6 +116,8 @@ public:
     DGNV8_BRIDGE_EXPORT DgnV8Bridge();
     ~DgnV8Bridge() {BeAssert(nullptr == m_converter.get());}
     
+    RootModelConverter::RootModelSpatialParams& GetParams() {return m_params;}
+    DGNDBSYNC_EXPORT bvector<DgnV8FileP> const & GetV8Files() const { return m_converter->GetV8Files(); }
 };
 
 
@@ -123,6 +126,7 @@ END_DGNDBSYNC_DGNV8_NAMESPACE
 extern "C"
     {
     EXPORT_ATTRIBUTE T_iModelBridge_getAffinity iModelBridge_getAffinity;
+    EXPORT_ATTRIBUTE T_iModelBridge_discloseFilesAndAffinities iModelBridge_discloseFilesAndAffinities;
     EXPORT_ATTRIBUTE T_iModelBridge_getInstance iModelBridge_getInstance;
     EXPORT_ATTRIBUTE T_iModelBridge_releaseInstance iModelBridge_releaseInstance;
     }

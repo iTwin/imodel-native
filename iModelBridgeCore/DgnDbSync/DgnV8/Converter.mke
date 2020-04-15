@@ -27,13 +27,14 @@ ContextDeliveryDir  = $(BuildContext)Delivery/
 DgnPlatformV8LibDir = ${BuildContext}/SubParts/VersionedDgnV8Libs/
 
 DgnDbSyncAPISrc     = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/PublicAPI/DgnDbSync/
+iModelBridgeAPISrc     = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/PublicAPI/iModelBridge/
 
 DgnV8APISrc         = $(DgnDbSyncAPISrc)DgnV8/
 
 dgndbsyncSyncDir    = $(baseDir)../
 dynamicSchemaGeneratorDir = $(baseDir)DynamicSchemaGenerator/
 
-DgnDbSyncDepends    = $(DgnDbSyncAPISrc)DgnDbSync.h
+DgnDbSyncDepends    = $(DgnDbSyncAPISrc)DgnDbSync.h $(iModelBridgeAPISrc)iModelBridge.h $(iModelBridgeAPISrc)iModelBridgeFwkTypes.h
 
 # Via RequiredRepository entry in the DgnV8ConverterDLL Part. The way this piece was designed was that is was so small, every library gets and builds as source.
 SrcV8IModelExtraFiles = $(SrcRoot)V8IModelExtraFiles/

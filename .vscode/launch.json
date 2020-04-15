@@ -5,16 +5,34 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "(Windows) iModelBridgeGetAffinityHost.exe",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}Winx64/Product/iModelBridgeFwk/bin/iModelBridgeGetAffinityHost.exe",
+            "args": [
+                "d:/tmp2/disclosereferences.bim",
+                "${env:OutRoot}Winx64/Product/MstnBridge/DgnV8BridgeM02.dll",
+                "${env:OutRoot}Winx64/Product/MstnBridge/assets",
+                "d:/tmp/obd.dgn",
+                "IModelBridgeForMstn"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false
+        },
+        {
             "name": "(Windows) iModelBridgeAssign.exe",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${env:OutRoot}Winx64/Product/iModelBridgeAssign/iModelBridgeAssign.exe",
+            "program": "${env:OutRoot}Winx64/Product/iModelBridgeFwk/bin/iModelBridgeAssign.exe",
             "args": [
                 "--fwk-logging-config-file=d:\\BridgeToiModelHub\\logging.config.xml",
-                "--server-repository=test62",
+                "--server-repository=test9999",
                 "--fwk-staging-dir=d:\\BridgeToiModelHub",
-                "--registry-dir=d:\\BridgeToiModelHub\\bridge",
-                "--fwk-search-in-staging-dir",
+                "--registry-dir=d:\\tmp2",
+                "--fwk-input=Car.dgn",
+                "--affinity-db-name=foo.db",
                 "--write-progress-to-stdout"
             ],
             "stopAtEntry": false,
@@ -94,7 +112,7 @@
             "program": "${env:OutRoot}/Winx64/Product/iModelBridge-Gtest/iModelBridgeTest.exe",
             "args": [
                 "--gtest_break_on_failure",
-                "--gtest_filter=iModelBridgeTests.FwkArgs_BadArg"
+                "--gtest_filter=iModelBridgeTests.CallAssignToDisclose"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -219,7 +237,7 @@
             "program": "${env:OutRoot}WinX64/Product/MstnBridgeTests/MstnBridgeTests.exe",
             "args": [
                 "--gtest_break_on_failure",
-                "--gtest_filter=MstnBridgeTests.FixIncorrectlyNamedEmbeddedFileModels"
+                "--gtest_filter=MstnBridgeTests.TestCallAssignToDisclose"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
