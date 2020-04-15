@@ -369,6 +369,13 @@ BentleyStatus       iModelBridgeRegistryBase::ComputeBridgeAffinityInParentConte
         return SUCCESS;
         }
 
+    // if we have a C3D bridge file, but the parent is not C3D, ignore its affinity
+    if (0 == bridgeAffinity.m_bridgeRegSubKey.CompareToI(L"C3dBridge"))
+        {
+        bridgeAffinity.m_affinity = iModelBridgeAffinityLevel::None;
+        return SUCCESS;
+        }
+
     return SUCCESS;
     }
 
