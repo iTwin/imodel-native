@@ -117,15 +117,15 @@ SQLiteTraceScope::SQLiteTraceScope(DbTrace categories, DbCR db, Utf8CP loggerNam
     {
     m_logger = NativeLogging::LoggingManager::GetLogger(loggerName);
     db.ConfigureTrace(categories,
-        [&](TraceContext const& ctx, Utf8CP sql) 
+        [&](TraceContext const& ctx, Utf8CP sql)
             {
             reinterpret_cast<NativeLogging::ILogger*>(m_logger)->messagev(NativeLogging::LOG_DEBUG, "[STMT] %s",ctx.ExpandedSql().c_str());
             },
-        [&](TraceContext const& ctx, int64_t nanoseconds) 
+        [&](TraceContext const& ctx, int64_t nanoseconds)
             {
             reinterpret_cast<NativeLogging::ILogger*>(m_logger)->messagev(NativeLogging::LOG_DEBUG, "[PROF] %s (%lld ns)", ctx.ExpandedSql().c_str(), nanoseconds);
             },
-        [&](TraceContext const& ctx) 
+        [&](TraceContext const& ctx)
             {
             reinterpret_cast<NativeLogging::ILogger*>(m_logger)->messagev(NativeLogging::LOG_DEBUG, "[ROW] %s", ctx.GetSql());
             }
@@ -501,29 +501,29 @@ bool Db::IsTraceEnabled() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                  Affan.Khan                   03/20
 +---------------+---------------+---------------+---------------+---------------+------*/
-int Db::TraceCallback(unsigned t, void* ctx, void* p, void* x) 
+int Db::TraceCallback(unsigned t, void* ctx, void* p, void* x)
     {
     Db *db = reinterpret_cast<Db *>(ctx);
     if (!db) return 0;
     TraceAppData *appData = TraceAppData::Get(*db);
     if (!appData) return 0;
-    if (appData->Enabled() && db->GetSqlDb()) 
+    if (appData->Enabled() && db->GetSqlDb())
         {
         if (t == DbTrace::BE_SQLITE_TRACE_STMT && appData->GetStmtCallback() != nullptr)
             {
             TraceContext ctx(reinterpret_cast<SqlStatementP>(p)); // suppress finalizer
             appData->GetStmtCallback()(ctx, reinterpret_cast<Utf8CP>(x));
-            } 
+            }
         else if (t == DbTrace::BE_SQLITE_TRACE_PROFILE && appData->GetProfileCallback() != nullptr)
             {
             TraceContext ctx(reinterpret_cast<SqlStatementP>(p)); // suppress finalizer
             appData->GetProfileCallback()(ctx, reinterpret_cast<int64_t>(x));
-            } 
+            }
         else if (t == DbTrace::BE_SQLITE_TRACE_ROW && appData->GetRowCallback() != nullptr)
             {
             TraceContext ctx(reinterpret_cast<SqlStatementP>(p)); // suppress finalizer
             appData->GetRowCallback()(ctx);
-            } 
+            }
         }
     return 0; // not used and should be set to zero as per sqlite docs
     }
@@ -531,11 +531,11 @@ int Db::TraceCallback(unsigned t, void* ctx, void* p, void* x)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                  Affan.Khan                   03/20
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::ConfigureTrace(DbTrace categories, 
+DbResult Db::ConfigureTrace(DbTrace categories,
     std::function<void(TraceContext const& ctx, Utf8CP sql)> stmtCb,
     std::function<void(TraceContext const& ctx, int64_t nanoseconds)> profileCb,
     std::function<void(TraceContext const& ctx)> rowCb
-    ) const 
+    ) const
         {
         TraceAppData& appData = TraceAppData::GetOrCreate(*this);
         appData.Setup(categories, stmtCb, profileCb, rowCb);
@@ -547,7 +547,7 @@ DbResult Db::ConfigureTrace(DbTrace categories,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                  Affan.Khan                   03/20
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::ClearTrace() const 
+DbResult Db::ClearTrace() const
     {
     if (TraceAppData* appData = TraceAppData::Get(*this))
         appData->Drop(*this);
@@ -569,7 +569,7 @@ Utf8CP Statement::GetNormalizedSql() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Affan.Khan                     03/20
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String Statement::ExpandedSql() const 
+Utf8String Statement::ExpandedSql() const
     {
     char * sql = sqlite3_expanded_sql(m_stmt);
     Utf8String expendedSql = sql;
@@ -592,7 +592,7 @@ Utf8CP TraceContext::GetNormalizedSql() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Affan.Khan                     03/20
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String TraceContext::ExpandedSql() const 
+Utf8String TraceContext::ExpandedSql() const
     {
     char * sql = sqlite3_expanded_sql(m_stmt);
     Utf8String expendedSql = sql;
@@ -603,8 +603,8 @@ Utf8String TraceContext::ExpandedSql() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Affan.Khan                     03/20
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP TraceContext::GetSql() const 
-    { 
+Utf8CP TraceContext::GetSql() const
+    {
     return sqlite3_sql(m_stmt);
     }
 
@@ -1595,96 +1595,42 @@ DbResult Db::SaveBriefcaseId()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Db::ChangeDbGuid(BeGuid guid)
-    {
-    m_dbFile->m_dbGuid = guid;
-    SaveBeDbGuid();
+DbResult Db::ChangeDbGuid(BeGuid guid) {
+    if (IsReadonly()) {
+        BeAssert(false && "must be a writeable db");
+        return BE_SQLITE_READONLY;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                  Ramanujam.Raman                   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::SetAsMaster(BeGuid guid /*= BeGuid()*/) // SNAPSHOT_WIP: remove this method?
-    {
-    BeBriefcaseId currentId = GetBriefcaseId();
-    if (currentId.IsLegacyMasterId())
-        {
-        BeAssert(false && "Db is already a master copy");
-        return BE_SQLITE_ERROR;
-        }
-
     if (!guid.IsValid())
         guid.Create();
 
-    DbResult result = _OnBeforeSetAsMaster(guid);
-    if (result == BE_SQLITE_OK)
-        {
-        BeBriefcaseId masterBriefcaseId(BeBriefcaseId::LegacyMaster());
-        result = AssignBriefcaseId(masterBriefcaseId);
-
-        if (result == BE_SQLITE_OK)
-            result = _OnAfterSetAsMaster(guid);
-
-        if (result == BE_SQLITE_OK)
-            ChangeDbGuid(guid);
-        }
-
-    (result == BE_SQLITE_OK) ? SaveChanges() : AbandonChanges();
-    return result;
+    m_dbFile->m_dbGuid = guid;
+    return SaveBeDbGuid();
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                  Ramanujam.Raman                   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::SetAsBriefcase(BeBriefcaseId briefcaseId) // SNAPSHOT_WIP: remove this method?
-    {
-    if (!briefcaseId.IsValid())
-        {
-        BeAssert(false && "Cannot set invalid BriefcaseId");
-        return BE_SQLITE_ERROR;
-        }
-
-    BeBriefcaseId currentId = GetBriefcaseId();
-    if (currentId.IsValid() && currentId == briefcaseId)
-        {
-        BeAssert(false && "BriefcaseId must be changed");
-        return BE_SQLITE_ERROR;
-        }
-
-    if (!currentId.IsLegacyMasterId() || briefcaseId.IsLegacyMasterId())
-        {
-        BeAssert(false && "Can only change Master -> Briefcase");
-        return BE_SQLITE_ERROR;
-        }
-
-    DbResult result = _OnBeforeSetAsBriefcase(briefcaseId);
-    if (result == BE_SQLITE_OK)
-        {
-        result = AssignBriefcaseId(briefcaseId);
-
-        if (result == BE_SQLITE_OK)
-            result = _OnAfterSetAsBriefcase(briefcaseId);
-        }
-
-    (result == BE_SQLITE_OK) ? SaveChanges() : AbandonChanges();
-    return result;
-    }
-
-/*---------------------------------------------------------------------------------**//**
+/*---------------------------------------------------------------------------------**/ /**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::AssignBriefcaseId(BeBriefcaseId id)
-    {
-    if (IsReadonly())
+DbResult Db::ResetBriefcaseId(BeBriefcaseId id) {
+    if (IsReadonly()) {
+        BeAssert(false && "must be a writeable db");
         return BE_SQLITE_READONLY;
+    }
+    if (!id.IsValid()) {
+        BeAssert(false && "Id must be valid");
+        return BE_SQLITE_ERROR;
+    }
 
-    DbResult result = ClearBriefcaseLocalValues();
-    if (result != BE_SQLITE_OK)
-        return result;
+    Utf8String parentRevId, initialParentRevId;
+    _OnBeforeSetBriefcaseId(id, parentRevId, initialParentRevId);
+
+    ClearBriefcaseLocalValues(); // note, clears parent revision info
 
     m_dbFile->m_briefcaseId = id;
-    return SaveBriefcaseId();
-    }
+    SaveBriefcaseId();
+
+    _OnAfterSetBriefcaseId(parentRevId, initialParentRevId);
+    return SaveChanges();
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
@@ -1879,7 +1825,7 @@ DbResult Db::CreateNewDb(Utf8CP dbName, BeGuid dbGuid, CreateParams const& param
     m_dbFile->m_dbGuid = dbGuid;
 
     // SNAPSHOT_WIP: Determine what to do here?
-    m_dbFile->m_briefcaseId = (params.m_dbType == Db::CreateParams::DbType::Standalone) ? BeBriefcaseId(BeBriefcaseId::LegacyStandalone()) : BeBriefcaseId(BeBriefcaseId::LegacyMaster());
+    m_dbFile->m_briefcaseId = (params.m_dbType == Db::CreateParams::DbType::Standalone) ? BeBriefcaseId(BeBriefcaseId::StandAlone()) : BeBriefcaseId(BeBriefcaseId::CheckpointSnapshot());
 
     ExecuteSql(SqlPrintfString("PRAGMA page_size=%d;PRAGMA encoding=\"%s\";PRAGMA user_version=%d;PRAGMA application_id=%lld;PRAGMA locking_mode=\"%s\";", params.m_pagesize,
                               params.m_encoding==Encoding::Utf8 ? "UTF-8" : "UTF-16le", BeSQLite::DbUserVersion, params.m_applicationId,
@@ -5445,7 +5391,7 @@ DbResult BeSQLiteLib::Initialize(BeFileNameCR tempDir, LogErrors logErrors)
     {
     static bool s_done = false;
     RUNONCE_CHECK(s_done,BE_SQLITE_OK);
-			
+
 #ifndef NO_LOG_CALLBACK
     if (LogErrors::No != logErrors)
         sqlite3_config(SQLITE_CONFIG_LOG, logCallback, nullptr);

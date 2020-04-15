@@ -20,7 +20,7 @@ Dgn::DgnCategoryId CreateCategory(Utf8CP name, DgnDbR db)
     DgnSubCategory::Appearance appearance;
     appearance.SetColor(ColorDef::White());
 
-    if (!db.IsLegacyMaster())
+    if (!db.IsCheckpointSnapshot())
         {
         IBriefcaseManager::Request req;
         db.BriefcaseManager().AcquireForElementInsert(category);
@@ -214,7 +214,7 @@ void InsertSpatialView(SpatialModelR model, Utf8CP name, bool isPrivate)
     viewDef->SetStandardViewRotation(StandardView::Iso);
     viewDef->LookAtVolume(model.QueryElementsRange());
 
-    if (!db.IsLegacyMaster())
+    if (!db.IsCheckpointSnapshot())
         {
         IBriefcaseManager::Request req;
         db.BriefcaseManager().AcquireForElementInsert(*viewDef);

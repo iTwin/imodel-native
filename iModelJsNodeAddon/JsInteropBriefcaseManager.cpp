@@ -38,7 +38,7 @@ private:
 
         return RepositoryStatus::Success;
         }
-    bool _AreResourcesHeld(DgnLockSet&, DgnCodeSet&, RepositoryStatus* status) override 
+    bool _AreResourcesHeld(DgnLockSet&, DgnCodeSet&, RepositoryStatus* status) override
         {
         if (nullptr != status)
             *status = RepositoryStatus::Success;
@@ -186,7 +186,7 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
         {
         BeAssert(false && "native code should not be trying to manage locks and codes");
         // TODO: forward to TypeScript?
-        return RepositoryStatus::Success; 
+        return RepositoryStatus::Success;
         }
 
     RepositoryStatus _OnFinishRevision(DgnRevision const& rev) override
@@ -292,7 +292,7 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
         }
 
     void _StartBulkOperation() override { ++m_inBulkUpdate; }
-    
+
     bool _IsBulkOperation() const override { return 0 != m_inBulkUpdate; }
 
     Response _EndBulkOperation() override
@@ -332,7 +332,7 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
             reqOut.Locks().GetLockSet().insert(m_req.Locks().GetLockSet().begin(), m_req.Locks().GetLockSet().end());
             m_req.Locks().Clear();
             }
-        
+
         // TODO: merge options
         // reqOut.SetOptions(m_req.Options());
 
@@ -465,7 +465,7 @@ struct NopBriefcaseManager : IBriefcaseManager, TxnMonitor
         }
 
     void _StartBulkOperation() override { }
-    
+
     bool _IsBulkOperation() const override { return true; }
 
     Response _EndBulkOperation() override
@@ -536,7 +536,7 @@ struct NativeRepositoryAdmin : DgnPlatformLib::Host::RepositoryAdmin
     IBriefcaseManagerPtr _CreateBriefcaseManager(DgnDbR db) const override
         {
         IBriefcaseManagerPtr bc;
-        if (db.IsLegacyMaster() || db.IsLegacyStandalone() || db.IsSnapshot() || db.IsFutureStandalone())
+        if (db.IsSnapshot() || db.IsStandAlone())
             bc = MasterBriefcaseManager::Create(db);
         else
             {

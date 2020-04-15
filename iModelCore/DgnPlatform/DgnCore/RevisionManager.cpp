@@ -710,7 +710,8 @@ RevisionManager::RevisionManager(DgnDbR dgndb) : m_dgndb(dgndb)
 //---------------------------------------------------------------------------------------
 RevisionStatus RevisionManager::SaveParentRevisionId(Utf8StringCR revisionId)
     {
-    BeAssert(revisionId.length() == SHA1::HashBytes * 2);
+    if (revisionId.length() != SHA1::HashBytes * 2)
+        return RevisionStatus::BadVersionId;
 
     DbResult result = m_dgndb.SaveBriefcaseLocalValue(PARENT_CS_ID, revisionId);
     if (BE_SQLITE_DONE != result)
@@ -787,6 +788,9 @@ Utf8String RevisionManager::GetReversedRevisionId() const
 //---------------------------------------------------------------------------------------
 RevisionStatus RevisionManager::SaveInitialParentRevisionId(Utf8StringCR revisionId)
     {
+    if (revisionId.length() != SHA1::HashBytes * 2)
+        return RevisionStatus::BadVersionId;
+
     DbResult result = m_dgndb.SaveBriefcaseLocalValue(INITIAL_PARENT_CS_ID, revisionId);
     if (BE_SQLITE_DONE != result)
         {
@@ -959,8 +963,7 @@ RevisionStatus RevisionManager::MergeRevision(DgnRevisionCR revision)
 //---------------------------------------------------------------------------------------
 RevisionStatus RevisionManager::DoMergeRevision(DgnRevisionCR revision)
     {
-    PRECONDITION(!m_dgndb.IsReadonly() && "Cannot merge changes into a Readonly database", RevisionStatus::CannotMergeIntoReadonly);
-    PRECONDITION(!m_dgndb.IsLegacyMaster() && "Cannot merge changes into the Master copy of a database", RevisionStatus::CannotMergeIntoMaster);
+    PRECONDITION(!m_dgndb.IsReadonly() && m_dgndb.AreTxnsAllowed() &&"Cannot merge changes into this database", RevisionStatus::CannotMergeIntoReadonly);
 
     TxnManagerR txnMgr = m_dgndb.Txns();
 

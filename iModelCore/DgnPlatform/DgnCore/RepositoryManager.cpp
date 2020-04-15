@@ -350,7 +350,7 @@ void BriefcaseManagerBase::_OnDgnDbDestroyed()
 IBriefcaseManagerPtr DgnPlatformLib::Host::RepositoryAdmin::_CreateBriefcaseManager(DgnDbR db) const
     {
     IBriefcaseManagerPtr bc;
-    if (db.IsLegacyMaster() || db.IsLegacyStandalone() || db.IsSnapshot() || db.IsFutureStandalone())
+    if (db.IsSnapshot() || db.IsStandAlone())
         bc = MasterBriefcaseManager::Create(db);
     else
         bc = BulkUpdateBriefcaseManager::Create(db);
@@ -1132,7 +1132,7 @@ RepositoryStatus BriefcaseManagerBase::FastQueryLocks(Response& response, LockRe
 
     RepositoryStatus status = RepositoryStatus::Success;
     bool wantDetails = ResponseOptions::None != (ResponseOptions::LockState & options);
-    BeBriefcaseId bcId(BeBriefcaseId::LegacyStandalone()); // a lie...
+    BeBriefcaseId bcId(BeBriefcaseId::Snapshot()); // a lie...
     while (BE_SQLITE_ROW == stmt->Step())
         {
         status = RepositoryStatus::LockAlreadyHeld;
@@ -2812,7 +2812,7 @@ IBriefcaseManager::Response IBriefcaseManager::_LockChannelParent()
     req.Locks().InsertLock(LockableId(channelParentInfo.channelParentId), LockLevel::Exclusive);
     req.Locks().InsertLock(LockableId(channelParent->GetModelId()), LockLevel::Shared);
     req.Locks().InsertLock(LockableId(channelParent->GetDgnDb()), LockLevel::Shared);
- 
+
     req.SetOptions(ResponseOptions::All);
 
     return Acquire(req);

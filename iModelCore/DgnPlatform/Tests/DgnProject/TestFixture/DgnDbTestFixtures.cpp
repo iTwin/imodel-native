@@ -66,9 +66,8 @@ void DgnDbTestFixture::SetupSeedProject(WCharCP inFileName, BeSQLite::Db::OpenMo
 
     if (needBriefcase)
         {
-        TestDataManager::SetAsFutureStandalone(m_db, mode);
-        ASSERT_TRUE(m_db->IsFutureStandalone());
-        ASSERT_FALSE(m_db->IsLegacyMaster());
+        TestDataManager::SetAsStandAlone(m_db, mode);
+        ASSERT_TRUE(m_db->IsStandAlone());
         ASSERT_TRUE((Db::OpenMode::ReadWrite != mode) || m_db->Txns().IsTracking());
         }
 
@@ -157,8 +156,8 @@ void DgnDbTestFixture::OpenDb(DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode m
     db = DgnDb::OpenDgnDb(&result, name, DgnDb::OpenParams(mode));
     ASSERT_TRUE( db.IsValid() ) << WPrintfString(L"Failed to open %ls in mode %d => result=%x", name.c_str(), (int)mode, (int)result).c_str();
     ASSERT_EQ( BE_SQLITE_OK , result );
-    if (needTxns)
-        TestDataManager::SetAsFutureStandalone(db, mode);
+    if (mode == DgnDb::OpenMode::ReadWrite && needTxns)
+        TestDataManager::SetAsStandAlone(db, mode);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -300,9 +299,8 @@ void PerfTestFixture::SetupSeedProject(WCharCP inFileName, BeSQLite::Db::OpenMod
 
     if (needTxns)
         {
-        TestDataManager::SetAsFutureStandalone(m_db, mode);
-        ASSERT_TRUE(m_db->IsFutureStandalone());
-        ASSERT_FALSE(m_db->IsLegacyMaster());
+        TestDataManager::SetAsStandAlone(m_db, mode);
+        ASSERT_TRUE(m_db->IsStandAlone());
         ASSERT_TRUE((Db::OpenMode::ReadWrite != mode) || m_db->Txns().IsTracking());
         }
 

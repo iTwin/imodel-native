@@ -75,7 +75,7 @@ StatusResult iModelInfo::WriteiModelInfo(Dgn::DgnDbR db, BeSQLite::BeBriefcaseId
     {
     const Utf8String methodName = "iModelInfo::WriteiModelInfo";
     BeSQLite::DbResult status;
-    status = db.SetAsBriefcase(briefcaseId);
+    status = db.ResetBriefcaseId(briefcaseId);
 
     //Write the iModelInfo properties to the file
     if (BeSQLite::DbResult::BE_SQLITE_OK == status)
@@ -121,7 +121,7 @@ iModelInfoPtr iModelInfo::Parse(RapidJsonValueCR properties, Utf8StringCR iModel
             extent.push_back(coordinate.GetDouble());
             }
         }
-    
+
     Utf8String imodelTemplate;
     if (!TryParseStringProperty(imodelTemplate, properties, ServerSchema::Property::iModelTemplate))
         imodelTemplate = "";

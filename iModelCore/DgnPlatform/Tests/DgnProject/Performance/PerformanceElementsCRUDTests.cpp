@@ -3,12 +3,12 @@
 * See COPYRIGHT.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "PerformanceElementsCRUDTests.h"
-#define INFO_SQL R"(with 
+#define INFO_SQL R"(with
 	pr_application_id as (select 1 id, application_id from pragma_application_id()),
 	pr_auto_vacuum as (select 1 id, case auto_vacuum when 0 then 'false' else 'true' end  auto_vacuum from pragma_auto_vacuum()),
 	pr_cache_size as (select 1 id, cache_size from pragma_cache_size()),
 	pr_collation_list as (select 1 id, json('[' || group_concat( '"' ||name ||'"',',') || ']') collation_list from pragma_collation_list()),
-	pr_encoding as (select 1 id, encoding from pragma_encoding()), 
+	pr_encoding as (select 1 id, encoding from pragma_encoding()),
 	pr_foreign_keys as (select 1 id, foreign_keys from pragma_foreign_keys()),
 	pr_freelist_count as (select 1 id, freelist_count from pragma_freelist_count()),
 	pr_journal_mode as (select 1 id, journal_mode from pragma_journal_mode()),
@@ -19,7 +19,7 @@
 	pr_page_size as (select 1 id, page_size from pragma_page_size()),
 	pr_schema_version as (select 1 id, schema_version from pragma_schema_version()),
 	pr_user_version as (select 1 id, user_version from pragma_user_version()),
-	pr_writable_schema as (select 1 id, case writable_schema when 0 then 'false' else 'true' end writable_schema from pragma_writable_schema()), 
+	pr_writable_schema as (select 1 id, case writable_schema when 0 then 'false' else 'true' end writable_schema from pragma_writable_schema()),
 	ss_cell_size_check as (select 1 id, case cell_size_check when 0 then 'false' else 'true' end cell_size_check from pragma_cell_size_check()),
 	ss_checkpoint_fullfsync as (select 1 id, case checkpoint_fullfsync when 0 then 'false' else 'true' end checkpoint_fullfsync from pragma_checkpoint_fullfsync()),
 	ss_defer_foreign_keys as (select 1 id, case defer_foreign_keys when 0 then 'false' else 'true' end defer_foreign_keys from pragma_defer_foreign_keys()),
@@ -40,7 +40,7 @@
 	ss_synchronous as (select 1 id, case synchronous when 0 then 'off' when 1 then 'normal' when 2 then 'full' when 3 then 'extra' end synchronous from pragma_synchronous()),
 	ss_temp_store as (select 1 id, case temp_store when 0 then 'default' when 1 then 'file' when 2 then 'memory' end temp_store from pragma_temp_store()) ,
 	ss_compile_options as (select 1 id, json('[' || group_concat( '"' ||compile_options ||'"',',') || ']') compile_options from pragma_compile_options())
-select 
+select
 	json_object(
 	'application_id', application_id,
 	'auto_vacuum', auto_vacuum,
@@ -158,7 +158,7 @@ void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb(WCharCP destFileName, Ut
         ASSERT_EQ(SchemaStatus::Success, PerfTestDomain::GetDomain().ImportSchema(*m_db));
         ASSERT_TRUE(m_db->IsDbOpen());
         ApplyPragmas(*m_db);
-        CreateElementsAndInsert(initialInstanceCount, testClassName, "InitialInstances");        
+        CreateElementsAndInsert(initialInstanceCount, testClassName, "InitialInstances");
         m_db->ExecuteSql("analyze");
         m_db->CloseDb();
         }
@@ -529,13 +529,13 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::VerifyPerfElementSub2SelectParam
     {
     if (DgnDbStatus::Success != VerifyPerfElementSub1SelectParams(element))
         return DgnDbStatus::ReadError;;
-    
+
     if (0 != strcmp("PerfElementSub2 - InitValue", element.GetPropertyValueString("Sub2Str").c_str()))
         return DgnDbStatus::ReadError;
-    
+
     if (30000000 != element.GetPropertyValueUInt64("Sub2Long"))
         return DgnDbStatus::ReadError;
-    
+
     if (1.414121 != element.GetPropertyValueDouble("Sub2Double"))
         return DgnDbStatus::ReadError;
 
@@ -773,7 +773,7 @@ int  PerformanceElementsCRUDTestFixture::GetfirstElementId(Utf8CP className)
     {// Get the minimum Id from bis_Element table.
         Statement stat1;
         DgnClassId classId = m_db->Schemas().GetClassId(PTEST_SCHEMA_NAME, className);
-        
+
         DbResult result = stat1.Prepare(*m_db, "SELECT min(Id) from bis_Element where ECClassId=?");
         stat1.BindId(1, classId);
         EXPECT_EQ(result, BE_SQLITE_OK);
@@ -872,7 +872,7 @@ struct ElementLocksPerformanceTest : PerformanceElementsCRUDTestFixture
         auto dbName = asBriefcase ? L"LocksBriefcase.ibim" : L"LocksRepository.ibim";
         SetUpTestDgnDb(dbName, className, 0);
         if (asBriefcase)
-            TestDataManager::SetAsFutureStandalone(m_db, Db::OpenMode::ReadWrite);
+            TestDataManager::SetAsStandAlone(m_db, Db::OpenMode::ReadWrite);
 
         bvector<DgnElementPtr> elems;
         elems.reserve(numElems);

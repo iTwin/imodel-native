@@ -13,7 +13,7 @@
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
 
-#define CHECK_BRIEFCASEID(b,t) if (!b.IsValid() || b.IsLegacyMasterId() || b.IsLegacyStandaloneId() || b.IsSnapshot() || b.IsFutureStandaloneId()){ LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "BriefcaseId is not valid."); return CreateCompletedAsyncTask<t>(t::Error(Error::Id::InvalidBriefcase));}
+#define CHECK_BRIEFCASEID(b,t) if (!b.IsValid() || b.IsSnapshot() || b.IsStandAloneId()){ LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "BriefcaseId is not valid."); return CreateCompletedAsyncTask<t>(t::Error(Error::Id::InvalidBriefcase));}
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 
 namespace ServerSchema
@@ -259,7 +259,7 @@ template <typename T>
 static TaskPtr<T> ExecuteWithRetry(const std::function<TaskPtr<T>()> taskCallback)
     {
     std::shared_ptr<Result<T>> finalResult = std::make_shared<Result<T>>();
-    return taskCallback()->Then([=](Result<T>const& res) 
+    return taskCallback()->Then([=](Result<T>const& res)
         {
         *finalResult = res;
         if (!res.IsSuccess())

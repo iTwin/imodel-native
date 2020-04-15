@@ -63,7 +63,7 @@ struct iModelBridgePerformanceTests : ::testing::Test
         DgnDbTestUtils::InsertSpatialCategory(*db, "SpatialCategory");
 
         // Force the seed db to have non-zero briefcaseid, so that changes made to it will be in a txn
-        db->SetAsBriefcase(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::FutureStandalone()));
+        db->ResetBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::StandAlone()));
         db->SaveChanges();
         }
 
@@ -282,7 +282,7 @@ POP_DISABLE_DEPRECATION_WARNINGS
 DgnRevisionPtr TestIModelHubFwkClientForBridges::CaptureChangeSet(DgnDbP db, Utf8CP comment)
     {
     BeAssert(db != nullptr);
-    BeAssert(!db->IsLegacyMaster());
+    BeAssert(!db->IsCheckpointSnapshot());
 
     // printf("*** %s : %d\n", comment, anyTxnsInFile(*db));
 

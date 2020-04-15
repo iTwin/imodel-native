@@ -31,7 +31,7 @@ struct TestingConfigurationAdmin : DgnPlatformLib::Host::IKnownLocationsAdmin
     BeFileName  m_tmp;
     BeFileName  m_appDir;
 
-    TestingConfigurationAdmin() 
+    TestingConfigurationAdmin()
         {
         BeTest::GetHost().GetTempDir(m_tmp);
         BeTest::GetHost().GetDgnPlatformAssetsDirectory(m_appDir);
@@ -63,7 +63,7 @@ struct ProxyRepositoryAdmin : Dgn::DgnPlatformLib::Host::RepositoryAdmin
 
 /*---------------------------------------------------------------------------------**//**
 * Here is the real implementation of ScopeDgnHost. Registers itself as a DgnHost in its
-* constructor. Supplies key admins that direct DgnPlatform to the files in the 
+* constructor. Supplies key admins that direct DgnPlatform to the files in the
 * directories delivered with the unit test framework.
 * @bsiclass                                     Sam.Wilson                      01/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -96,7 +96,7 @@ ScopedDgnHost::ScopedDgnHost()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ScopedDgnHost::~ScopedDgnHost() 
+ScopedDgnHost::~ScopedDgnHost()
     {
     delete m_pimpl;
     }
@@ -123,7 +123,7 @@ DgnPlatformLib::Host::RepositoryAdmin* ScopedDgnHost::GetRepositoryAdmin()
 ScopedDgnHostImpl::ScopedDgnHostImpl()  : m_isInitialized(false)
     {
     DgnPlatformLib::StaticInitialize();
-    
+
     BeAssert((DgnPlatformLib::QueryHost() == NULL) && L"This means an old host is still registered. You should have terminated it first before creating a new host.");
 
     DgnPlatformLib::Initialize(*this);
@@ -133,7 +133,7 @@ ScopedDgnHostImpl::ScopedDgnHostImpl()  : m_isInitialized(false)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ScopedDgnHostImpl::~ScopedDgnHostImpl() 
+ScopedDgnHostImpl::~ScopedDgnHostImpl()
     {
     if (m_isInitialized)
         Terminate(false);
@@ -170,13 +170,13 @@ StatusInt TestDataManager::FindTestData(BeFileName& fullFileName, WCharCP fileNa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TestDataManager::SetAsFutureStandalone(DgnDbPtr& db, DgnDb::OpenMode openMode)
+void TestDataManager::SetAsStandAlone(DgnDbPtr& db, DgnDb::OpenMode openMode)
     {
-    if (db->IsFutureStandalone())
+    if (db->IsStandAlone())
         return;
 
     BeFileName dbFileName(db->GetFileName());
-    db->SetAsBriefcase(BeBriefcaseId(BeBriefcaseId::FutureStandalone()));
+    db->ResetBriefcaseId(BeBriefcaseId(BeBriefcaseId::StandAlone()));
     db->SaveChanges();
     db->CloseDb();
 
@@ -208,7 +208,7 @@ BentleyStatus   TestDataManager::OpenTestFile(bool needTxns)
         }
 
     if (needTxns)
-        SetAsFutureStandalone(m_dgndb, m_openMode);
+        SetAsStandAlone(m_dgndb, m_openMode);
 
     for (ModelIteratorEntryCR entry : m_dgndb->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)))
         {

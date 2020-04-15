@@ -26,6 +26,7 @@ export enum NativeLoggerCategory {
 
 // tslint:disable: no-const-enum
 // tslint:disable:prefer-get
+
 /** Module that declares the IModelJs native code.
  * @internal
  */
@@ -232,8 +233,6 @@ export declare namespace IModelJsNative {
     public getTxnDescription(txnId: TxnIdString): string;
     public getUndoString(allowCrossSessions?: boolean): string;
     public hasFatalTxnError(): boolean;
-    /** @deprecated */
-    public hasSavedChanges(): boolean;
     public hasPendingTxns(): boolean;
     public hasUnsavedChanges(): boolean;
     public importFunctionalSchema(): DbResult;
@@ -273,8 +272,7 @@ export declare namespace IModelJsNative {
     public saveChanges(description?: string): DbResult;
     public saveFileProperty(props: string, strValue: string | undefined, blobVal: Uint8Array | undefined): number;
     public saveProjectGuid(guid: GuidString): DbResult;
-    public setAsMaster(guid?: GuidString): DbResult;
-    public setBriefcaseId(idValue: number, encryptionProps?: string /* JSON.stringify(IModelEncryptionProps) */): DbResult;
+    public resetBriefcaseId(idValue: number): DbResult;
     public setBriefcaseManagerOptimisticConcurrencyControlPolicy(conflictPolicy: BriefcaseManagerOnConflictPolicy): RepositoryStatus;
     public setBriefcaseManagerPessimisticConcurrencyControlPolicy(): RepositoryStatus;
     public setDbGuid(guid: GuidString): DbResult;
@@ -287,7 +285,6 @@ export declare namespace IModelJsNative {
     public updateModel(modelProps: string): IModelStatus;
     public updateProjectExtents(newExtentsJson: string): void;
     public static vacuum(dbName: string, pageSize?: number): DbResult;
-    public static unsafeSetBriefcaseId(dbName: string, briefcaseId: number, dbGuid?: GuidString, projectGuid?: GuidString): DbResult;
     public static enableSharedCache(enable: boolean): DbResult;
     public static encryptDb(dbFileName: string, encryptionProps: string /* JSON.stringify(IModelEncryptionProps) */): DbResult;
   }

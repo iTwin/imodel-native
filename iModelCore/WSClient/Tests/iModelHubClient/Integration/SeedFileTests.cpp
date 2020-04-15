@@ -84,7 +84,7 @@ struct SeedFileTests : public IntegrationTestsBase
         result = s_connection->GetLatestSeedFile()->GetResult();
         ASSERT_SUCCESS(result);
         }
-    
+
     /*--------------------------------------------------------------------------------------+
     * @bsimethod                                    Karolis.Dziedzelis              01/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -214,7 +214,7 @@ TEST_F(SeedFileTests, DownloadArchivedSeedFile)
     BeGuid originalGuid = GetLatestFileId();
 
     iModelHubHelpers::AcquireAndAddChangeSets(s_client, s_info, 2);
-    
+
     ReplaceSeedFile();
 
     auto queryResult = s_connection->GetSeedFileById(originalGuid)->GetResult();
@@ -240,7 +240,7 @@ TEST_F(SeedFileTests, DownloadArchivedSeedFile)
     ASSERT_TRUE(originalDb.IsValid());
 
     // Attempt to merge the changeSets
-    originalDb->SetAsBriefcase(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::LegacyStandalone()));
+    originalDb->ResetBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Snapshot()));
     originalDb->ChangeDbGuid(originalGuid);
     originalDb->SaveChanges();
     originalDb->CloseDb();

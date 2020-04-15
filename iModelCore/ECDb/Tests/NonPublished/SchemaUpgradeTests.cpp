@@ -378,7 +378,7 @@ TEST_F(SchemaUpgradeTestFixture, ECVersions)
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "</ECSchema>"))) << "Downgrade of ECXml version is not supported";
     }
-    
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -509,7 +509,7 @@ TEST_F(SchemaUpgradeTestFixture, AddingUpdatingAndDeletingMinMax)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     03/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, AddingUpdatingAndDeletingPriority) 
+TEST_F(SchemaUpgradeTestFixture, AddingUpdatingAndDeletingPriority)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -3544,7 +3544,7 @@ TEST_F(SchemaUpgradeTestFixture, AddPropertyToBaseClass)
 
     //verify that all three props map to different columns
     Statement stmt2;
-    ASSERT_EQ(BE_SQLITE_OK, stmt2.Prepare(m_ecdb, 
+    ASSERT_EQ(BE_SQLITE_OK, stmt2.Prepare(m_ecdb,
                 "select count(distinct pm.ColumnId) FROM ec_PropertyPath pp JOIN ec_PropertyMap pm "
                 "ON pm.PropertyPathId = pp.Id JOIN ec_Property p ON p.Id = pp.RootPropertyId "
                 "WHERE p.Name IN ('BaseProp1', 'Prop1', 'Prop2')"));
@@ -3663,7 +3663,7 @@ TEST_F(SchemaUpgradeTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TP
     ASSERT_EQ(JsonValue(R"json([{"Code":20,"PropA":"1-A","PropB":1},{"Code":21,"Name":"Object 21","PropA":"2-A","PropB":2}])json"), GetHelper().ExecuteSelectECSql("SELECT Code, Name, PropA, PropB FROM ts.Sub2"));
 
     // Expected Mapping:
-    //          ts_Base  
+    //          ts_Base
     //          ps1    ps2     ps3     ps4     ps5
     //Sub1      Code   Prop1   Prop2   Prop3   Name
     //Sub2      Code   PropA   PropB           Name
@@ -3863,7 +3863,7 @@ TEST_F(SchemaUpgradeTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TP
                                 {"Code":202,"Origin": {"x":2.0,"y":2.0},"Name": "Sub2 2", "Kind":2, "PropA":"A","PropB":2}])json"), GetHelper().ExecuteSelectECSql("SELECT Code,Origin,Name,Kind,PropA,PropB FROM ts.Sub2"));
 
     // Expected Mapping:
-    //          ts_Element  ts_Geometric2dElement               
+    //          ts_Element  ts_Geometric2dElement
     //          Code        Origin_X  Origin_Y  js1     js2     js3     js3     js4
     //Sub1      Code        Origin.X  Origin.Y  Name    Prop1   Prop2   Prop3   Kind
     //Sub2      Code        Origin.X  Origin.Y  Name    PropA   PropB           Kind
@@ -3871,7 +3871,7 @@ TEST_F(SchemaUpgradeTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TP
     ASSERT_EQ(ExpectedColumn("ts_Element", "Code"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Element", "Code")));
 
     ASSERT_EQ(ExpectedColumn("ts_Element", "Code"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Geometric2dElement", "Code")));
-    ASSERT_EQ(std::vector<ExpectedColumn>({ExpectedColumn("ts_Geometric2dElement", "Origin_X"), ExpectedColumn("ts_Geometric2dElement", "Origin_Y")}), 
+    ASSERT_EQ(std::vector<ExpectedColumn>({ExpectedColumn("ts_Geometric2dElement", "Origin_X"), ExpectedColumn("ts_Geometric2dElement", "Origin_Y")}),
               GetHelper().GetPropertyMapColumns(AccessString("ts", "Geometric2dElement", "Origin")));
 
     ASSERT_EQ(ExpectedColumn("ts_Element", "Code"), GetHelper().GetPropertyMapColumn(AccessString("ts", "PhysicalElement", "Code")));
@@ -5377,7 +5377,7 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Base"), nullptr);
 
     ASSERT_EQ(5, GetHelper().GetColumnCount("ts_Base")) << "After deleting all classes and readding base class";
-    
+
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Base(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Base(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
     m_ecdb.SaveChanges();
@@ -6810,7 +6810,7 @@ TEST_F(SchemaUpgradeTestFixture, AddNavigationProperty)
                             <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
                               <Class class="B"/>
                             </Target>
-                     </ECRelationshipClass>            
+                     </ECRelationshipClass>
                 </ECSchema>)xml";
 
     Utf8String schemaV1Xml;
@@ -6863,7 +6863,7 @@ TEST_F(SchemaUpgradeTestFixture, DeleteNavigationProperty)
                             <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
                               <Class class="B"/>
                             </Target>
-                     </ECRelationshipClass>            
+                     </ECRelationshipClass>
                 </ECSchema>)xml";
 
     Utf8String schemaV1Xml;
@@ -6913,7 +6913,7 @@ TEST_F(SchemaUpgradeTestFixture, AddForeignKeyConstraint)
                             <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
                               <Class class="B"/>
                             </Target>
-                     </ECRelationshipClass>            
+                     </ECRelationshipClass>
                 </ECSchema>)xml";
 
     Utf8String schemaV1Xml;
@@ -6951,7 +6951,7 @@ TEST_F(SchemaUpgradeTestFixture, AddLinkTableRelationshipMap)
                             <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
                               <Class class="B"/>
                             </Target>
-                     </ECRelationshipClass>            
+                     </ECRelationshipClass>
                 </ECSchema>)xml";
 
     for (Utf8CP parentMultiplicity : {"(0..1)", {"(0..*)"}})
@@ -7713,9 +7713,9 @@ TEST_F(SchemaUpgradeTestFixture, Polymorphic_EndTable)
         ASSERT_FALSE(relClass->GetSource().GetIsPolymorphic());
         ASSERT_FALSE(relClass->GetTarget().GetIsPolymorphic());
         }
-    /* 
-        Use class Change polymorphic=true and add derived classes 
-        Add dervied class A->A1 and B->B2 FK Relationship 
+    /*
+        Use class Change polymorphic=true and add derived classes
+        Add dervied class A->A1 and B->B2 FK Relationship
     */
     SchemaItem updateIsPolymorphic(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -8486,7 +8486,7 @@ TEST_F(SchemaUpgradeTestFixture, ModifyPropToReadOnly)
     //skipping readonly Property, Update should be successful.
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "UPDATE ts.TestClass Set ReadWriteProp='RW1new', P2='P2_Val1new' WHERE P2='P2_Val1'");
 
-    //Update schema 
+    //Update schema
     SchemaItem schemaItem2(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -8536,7 +8536,7 @@ TEST_F(SchemaUpgradeTestFixture, ModifyPropToReadOnly)
 
     sp.Cancel();
 
-    //Update schema 
+    //Update schema
     SchemaItem schemaItem3(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -8595,9 +8595,9 @@ TEST_F(SchemaUpgradeTestFixture, ModifyPropToReadOnlyOnClientBriefcase)
 
     ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
 
-    m_ecdb.SetAsBriefcase(BeBriefcaseId(123));
+    m_ecdb.ResetBriefcaseId(BeBriefcaseId(123));
 
-    //Update schema 
+    //Update schema
     SchemaItem schemaItem2(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -8810,7 +8810,7 @@ TEST_F(SchemaUpgradeTestFixture, DeleteECCustomAttributeClass_Complex)
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='T' nameSpacePrefix='T' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "</ECSchema>");
-    
+
     ASSERT_EQ(SUCCESS, ImportSchema(s3));
     {
     auto stmt = m_ecdb.GetCachedStatement("SELECT  NULL FROM ec_Class WHERE Id = ?");
@@ -9148,7 +9148,7 @@ TEST_F(SchemaUpgradeTestFixture, AddKoQAndUpdatePropertiesWithKoQ)
         "                    presentationUnits='FT;IN;M' />"
         "    <ECEntityClass typeName='Foo' >"
         "        <ECProperty propertyName='Length' typeName='double'  kindOfQuantity='MyKindOfQuantity' />"
-        "        <ECProperty propertyName='Homepage' typeName='string' extendedTypeName='URL' />" 
+        "        <ECProperty propertyName='Homepage' typeName='string' extendedTypeName='URL' />"
         "        <ECArrayProperty propertyName='AlternativeLengths' typeName='double' minOccurs='0' maxOccurs='unbounded' kindOfQuantity = 'MyKindOfQuantity'/>"
         "        <ECArrayProperty propertyName='Favorites' typeName='string' extendedTypeName='URL' minOccurs='0' maxOccurs='unbounded' />"
         "    </ECEntityClass>"
@@ -9441,7 +9441,7 @@ TEST_F(SchemaUpgradeTestFixture, ModifyECArrayProperty_KOQToKOQ)
         "        <ECArrayProperty propertyName='Length' typeName='double' minOccurs='0' maxOccurs='unbounded' kindOfQuantity = 'KindOfQuantity2'/>"
         "        <ECArrayProperty propertyName='Width' typeName='double' minOccurs='0' maxOccurs='unbounded' kindOfQuantity = 'KindOfQuantity1'/>"
         "    </ECEntityClass>"
-                       "</ECSchema>", filePath, 
+                       "</ECSchema>", filePath,
                        {true, true}, "Changing of KindOfQuantity of an ECArrayProperty to another KindOfQuantity with same persistence unit");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
@@ -10051,7 +10051,7 @@ TEST_F(SchemaUpgradeTestFixture, RemoveExistingEnum)
 
         ASSERT_TRUE(foo_type != nullptr);
         ASSERT_TRUE(foo_type->GetEnumeration() == strictEnum);
-         
+
         m_ecdb.CloseDb();
         }
     }
@@ -11047,7 +11047,7 @@ TEST_F(SchemaUpgradeTestFixture, PropertyCategoryAddUpdateDelete)
                                     </ECSchema>)xml")));
 
 
-    
+
         {
         ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
 
@@ -11108,8 +11108,8 @@ TEST_F(SchemaUpgradeTestFixture, PropertyCategoryAddUpdateDelete)
                                             <ECProperty propertyName="P4" typeName="double" category="C1" />
                                         </ECEntityClass>
                                     </ECSchema>)xml")));
-        
-    
+
+
         {
         ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
 
@@ -11767,7 +11767,7 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPC)
     ASSERT_NE(nullptr, classTestClassB);
     ASSERT_NE(nullptr, classTestClassC);
     //L1=====================================================
-    
+
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts1.TestClassA WHERE ECInstanceId=1 AND ECClassId=%s AND L1=101",
@@ -11775,7 +11775,7 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPC)
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Expect Row : " << stmt.GetECSql();
         }
 
-    
+
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts1.TestClassA WHERE ECInstanceId=2 AND ECClassId=%s AND L1=102",
@@ -11783,7 +11783,7 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPC)
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Expect Row : " << stmt.GetECSql();
         }
 
-    
+
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts1.TestClassA WHERE ECInstanceId=3 AND ECClassId=%s AND L1=103",
@@ -11792,13 +11792,13 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPC)
         }
 
     //L2=====================================================
-    
+
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts2.TestClassB WHERE ECInstanceId=1")));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Not Expecting Row : " << stmt.GetECSql();
         }
-    
+
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts2.TestClassB WHERE ECInstanceId=2 AND ECClassId=%s AND L1=102 AND L2=202",
@@ -11806,7 +11806,7 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPC)
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Expect Row : " << stmt.GetECSql();
         }
 
-    
+
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts2.TestClassB WHERE ECInstanceId=3 AND ECClassId=%s AND L1=103 AND L2=203",
@@ -11815,20 +11815,20 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPC)
         }
 
     //L3=====================================================
-    
+
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts3.TestClassC WHERE ECInstanceId=1")));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Not Expecting Row : " << stmt.GetECSql();
         }
-    
+
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts3.TestClassC WHERE ECInstanceId=2 ")));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Not Expecting Row : " << stmt.GetECSql();
         }
 
-    
+
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts3.TestClassC WHERE ECInstanceId=3 AND ECClassId=%s AND L1=103 AND L2=203 AND L3=303",
@@ -11896,7 +11896,7 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPH_Joined_OnDerivedCl
     ASSERT_NE(nullptr, classTestClassB);
     ASSERT_NE(nullptr, classTestClassC);
     //L1=====================================================
-    
+
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts1.TestClassA WHERE ECInstanceId=1 AND ECClassId=%s AND L1=101",
@@ -11904,7 +11904,7 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPH_Joined_OnDerivedCl
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Expect Row : " << stmt.GetECSql();
         }
 
-    
+
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts1.TestClassA WHERE ECInstanceId=2 AND ECClassId=%s AND L1=102",
@@ -11912,7 +11912,7 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPH_Joined_OnDerivedCl
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Expect Row : " << stmt.GetECSql();
         }
 
-    
+
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts1.TestClassA WHERE ECInstanceId=3 AND ECClassId=%s AND L1=103",
@@ -11921,13 +11921,13 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPH_Joined_OnDerivedCl
         }
 
     //L2=====================================================
-    
+
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts2.TestClassB WHERE ECInstanceId=1")));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Not Expecting Row : " << stmt.GetECSql();
         }
-    
+
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts2.TestClassB WHERE ECInstanceId=2 AND ECClassId=%s AND L1=102 AND L2=202",
@@ -11935,7 +11935,7 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPH_Joined_OnDerivedCl
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Expect Row : " << stmt.GetECSql();
         }
 
-    
+
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts2.TestClassB WHERE ECInstanceId=3 AND ECClassId=%s AND L1=103 AND L2=203",
@@ -11944,20 +11944,20 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPH_Joined_OnDerivedCl
         }
 
     //L3=====================================================
-    
+
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts3.TestClassC WHERE ECInstanceId=1")));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Not Expecting Row : " << stmt.GetECSql();
         }
-    
+
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts3.TestClassC WHERE ECInstanceId=2 ")));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Not Expecting Row : " << stmt.GetECSql();
         }
 
-    
+
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts3.TestClassC WHERE ECInstanceId=3 AND ECClassId=%s AND L1=103 AND L2=203 AND L3=303",
@@ -12023,7 +12023,7 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPH_OnDerivedClass)
     ASSERT_NE(nullptr, classTestClassB);
     ASSERT_NE(nullptr, classTestClassC);
     //L1=====================================================
-    
+
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts1.TestClassA WHERE ECInstanceId=1 AND ECClassId=%s AND L1=101",
@@ -12031,7 +12031,7 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPH_OnDerivedClass)
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Expect Row : " << stmt.GetECSql();
         }
 
-    
+
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts1.TestClassA WHERE ECInstanceId=2 AND ECClassId=%s AND L1=102",
@@ -12039,7 +12039,7 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPH_OnDerivedClass)
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Expect Row : " << stmt.GetECSql();
         }
 
-    
+
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts1.TestClassA WHERE ECInstanceId=3 AND ECClassId=%s AND L1=103",
@@ -12048,13 +12048,13 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPH_OnDerivedClass)
         }
 
     //L2=====================================================
-    
+
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts2.TestClassB WHERE ECInstanceId=1")));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Not Expecting Row : " << stmt.GetECSql();
         }
-    
+
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts2.TestClassB WHERE ECInstanceId=2 AND ECClassId=%s AND L1=102 AND L2=202",
@@ -12062,7 +12062,7 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPH_OnDerivedClass)
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Expect Row : " << stmt.GetECSql();
         }
 
-    
+
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts2.TestClassB WHERE ECInstanceId=3 AND ECClassId=%s AND L1=103 AND L2=203",
@@ -12071,20 +12071,20 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPH_OnDerivedClass)
         }
 
     //L3=====================================================
-    
+
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts3.TestClassC WHERE ECInstanceId=1")));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Not Expecting Row : " << stmt.GetECSql();
         }
-    
+
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts3.TestClassC WHERE ECInstanceId=2 ")));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Not Expecting Row : " << stmt.GetECSql();
         }
 
-    
+
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts3.TestClassC WHERE ECInstanceId=3 AND ECClassId=%s AND L1=103 AND L2=203 AND L3=303",
@@ -12793,7 +12793,7 @@ TEST_F(SchemaUpgradeTestFixture, DisallowMajorSchemaUpgrade)
     EXPECT_EQ(ERROR, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Physical FK on new nav prop in existing class";
 
     }
-   
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     03/18
@@ -12969,7 +12969,7 @@ TEST_F(SchemaUpgradeTestFixture, SchemaDiff)
             ASSERT_TRUE(classChange.StrengthDirection().GetOld().IsNull());
             ASSERT_EQ(ECRelatedInstanceDirection::Forward, classChange.StrengthDirection().GetNew().Value());
 
-            
+
             RelationshipConstraintChange& sourceChange = classChange.Source();
             ASSERT_TRUE(sourceChange.IsChanged());
             ASSERT_EQ(ECChange::OpCode::Modified, sourceChange.GetOpCode());
@@ -13064,9 +13064,9 @@ TEST_F(SchemaUpgradeTestFixture, UpdateReferencesFromDifferentContext)
     if (true) // second without locator
         {
         ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
-        
+
         // no locator
-        // ctx->AddSchemaLocater(m_ecdb.GetSchemaLocater()); 
+        // ctx->AddSchemaLocater(m_ecdb.GetSchemaLocater());
         ECSchemaPtr myRef, mySchema;
         // newer references 1.0.1
         ECSchema::ReadFromXmlString(myRef, R"xml(<?xml version="1.0" encoding="utf-8"?>
@@ -13091,7 +13091,7 @@ TEST_F(SchemaUpgradeTestFixture, UpdateReferencesFromDifferentContext)
         m_ecdb.SaveChanges();
         }
     }
-  
+
 
 
 

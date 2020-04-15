@@ -142,7 +142,7 @@ struct iModelBridgeTests : ::testing::Test
         DgnDbTestUtils::InsertSpatialCategory(*db, "SpatialCategory");
 
         // Force the seed db to have non-zero briefcaseid, so that changes made to it will be in a txn
-        db->SetAsBriefcase(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::FutureStandalone()));
+        db->ResetBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::StandAlone()));
         db->SaveChanges();
         }
 
@@ -236,7 +236,7 @@ struct iModelBridgeTests : ::testing::Test
         // LOG.errorv("Failed to create new/upgrade test file '%s': Could not import ECSchemas.", dgndb.GetDbFileName());
         return ERROR;
         }
-        
+
     static BentleyStatus ImportSchema(DgnDbR dgndb, Utf8StringCR schema) { return ImportSchemas(dgndb, {schema}); }
 
     static BentleyStatus ImportTestSchema(DgnDbR db)
@@ -931,7 +931,7 @@ DgnRevisionPtr TestIModelHubFwkClientForBridges::CaptureChangeSet(DgnDbP db, Utf
     {
     BeAssert(db != nullptr);
 
-    BeAssert(!db->IsLegacyMaster());
+    BeAssert(!db->IsCheckpointSnapshot());
     bool expectedResult = false;
     if (!m_expect.empty())
         {
@@ -1002,9 +1002,9 @@ void iModelBridgeTests_Test1_Bridge::ConvertItem(TestSourceItemWithId& item, iMo
         item.m_mappedToElement = results.m_element->GetElementId();
         return;
         }
-    
-    
-    auto classId = getClassId(*m_db, item.m_ecClassName); 
+
+
+    auto classId = getClassId(*m_db, item.m_ecClassName);
     results.m_element = iModelBridgeTests::CreateElementFromECClassId(*m_db, classId);
 
     if (change.GetChangeType() == iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Changed)
@@ -1683,16 +1683,16 @@ TEST_F(iModelBridgeTests, MixedFileTypeBridgeAssignmentTest)
     WString bridgeName;
     testRegistry.SearchForBridgeToAssignToDocument(bridgeName, BeFileName(L"main.dgn"), L"");
     EXPECT_STREQ(bridgeName.c_str(), L"iModelBridgeForMstn");
-    
+
     testRegistry.SearchForBridgeToAssignToDocument(bridgeName, BeFileName(L"main.dwg"), L"");
     EXPECT_STREQ(bridgeName.c_str(), L"RealDWGBridge");
-    
+
     testRegistry.SearchForBridgeToAssignToDocument(bridgeName, BeFileName(L"ref.dwg"), L"iModelBridgeForMstn");
     EXPECT_STREQ(bridgeName.c_str(), L"iModelBridgeForMstn");
 
     testRegistry.SearchForBridgeToAssignToDocument(bridgeName, BeFileName(L"CivilMaster.dgn"), L"");
     EXPECT_STREQ(bridgeName.c_str(), L"CivilBridge");
-    
+
     testRegistry.SearchForBridgeToAssignToDocument(bridgeName, BeFileName(L"CivilRef.dgn"), L"iModelBridgeForMstn");
     EXPECT_STREQ(bridgeName.c_str(), L"CivilBridge");
     }

@@ -438,50 +438,6 @@ POP_DISABLE_DEPRECATION_WARNINGS
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Affan.Khan                      06/19
-//---------------------------------------------------------------------------------------
-DbResult JsInterop::UnsafeSetBriefcaseId(BeFileNameCR fileOrPathname, BeBriefcaseId briefcaseId, Utf8StringCR dbGuid, Utf8StringCR projectGuid)
-    {
-    DbResult result;
-    BeFileName pathname = ResolveFileName(fileOrPathname);
-    SchemaUpgradeOptions schemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::CheckRequiredUpgrades);
-    DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::No, schemaUpgradeOptions);
-    auto db = DgnDb::OpenDgnDb(&result, pathname, openParams);
-    if (result != BE_SQLITE_OK)
-        return result;
-
-    result = db->TryExecuteSql("PRAGMA synchronous=off");
-    if (result != BE_SQLITE_OK)
-        return result;
-
-    Savepoint savePoint(*db, "Set BriefcaseId");
-    if (!projectGuid.empty())
-        {
-        BeGuid id;
-        if (id.FromString(projectGuid.c_str()) != SUCCESS)
-            return BE_SQLITE_ERROR;
-        db->SaveProjectGuid(id);
-        }
-
-    if (!dbGuid.empty())
-        {
-        BeGuid id;
-        if (id.FromString(dbGuid.c_str()) != SUCCESS)
-            return BE_SQLITE_ERROR;
-        db->ChangeDbGuid(id);
-        }
-
-    result = db->SetAsBriefcase(briefcaseId);
-    if (result != BE_SQLITE_OK)
-        {
-        savePoint.Cancel();
-        return result;
-        }
-
-    return result;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 01/18
 //---------------------------------------------------------------------------------------
 RevisionStatus JsInterop::ReadChangeSet(DgnRevisionPtr& revision, Utf8StringCR dbGuid, JsonValueCR changeSetToken)

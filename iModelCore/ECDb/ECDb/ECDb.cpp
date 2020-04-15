@@ -16,8 +16,8 @@ ECDb::ECDb() : Db(), m_pimpl(new Impl(*this)) {}
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                09/2012
 //---------------+---------------+---------------+---------------+---------------+------
-ECDb::~ECDb() 
-    { 
+ECDb::~ECDb()
+    {
     m_appData.Clear();
     if (m_pimpl != nullptr)
         {
@@ -102,29 +102,10 @@ bool ECDb::TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCount) c
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                12/2012
 //---------------+---------------+---------------+---------------+---------------+------
-//override
-DbResult ECDb::_OnAfterSetAsBriefcase(BeBriefcaseId newBriefcaseId)
+void ECDb::_OnAfterSetBriefcaseId(Utf8StringCR parentCSId, Utf8StringCR initialParentCSId)
     {
-    DbResult stat = Db::_OnAfterSetAsBriefcase(newBriefcaseId);
-    if (stat != BE_SQLITE_OK)
-        return stat;
-
-    return m_pimpl->OnBriefcaseIdAssigned(newBriefcaseId);
+    m_pimpl->OnBriefcaseIdAssigned(GetBriefcaseId());
     }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                12/2012
-//---------------+---------------+---------------+---------------+---------------+------
-//override
-DbResult ECDb::_OnAfterSetAsMaster(BeGuid guid) // SNAPSHOT_WIP: remove this method?
-{
-    DbResult stat = Db::_OnAfterSetAsMaster(guid);
-    if (stat != BE_SQLITE_OK)
-        return stat;
-
-    BeBriefcaseId masterBriefcaseId(BeBriefcaseId::LegacyMaster());
-    return m_pimpl->OnBriefcaseIdAssigned(masterBriefcaseId);
-}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                11/2012
@@ -154,10 +135,10 @@ void ECDb::_OnDbChangedByOtherConnection()
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                07/2013
 //---------------+---------------+---------------+---------------+---------------+------
-ProfileState ECDb::_CheckProfileVersion() const 
-    { 
+ProfileState ECDb::_CheckProfileVersion() const
+    {
     ProfileState besqliteState = Db::_CheckProfileVersion();
-    return besqliteState.Merge(m_pimpl->GetProfileManager().CheckProfileVersion()); 
+    return besqliteState.Merge(m_pimpl->GetProfileManager().CheckProfileVersion());
     }
 
 //--------------------------------------------------------------------------------------

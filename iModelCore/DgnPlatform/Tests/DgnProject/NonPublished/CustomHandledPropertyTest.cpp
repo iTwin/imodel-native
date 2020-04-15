@@ -174,7 +174,7 @@ TEST_F(GetSetCustomHandledProprty, InaccessibleProperty)
     TestElement el(params);
 
     ECN::ECValue checkValue1;
-    uint32_t Gsindex; 
+    uint32_t Gsindex;
     const static int DataSize = 10;
     Byte DummyData[DataSize] = { 1,2,3,4,5,6,7,8,9,10 };
     ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(Gsindex, "GeometryStream"));
@@ -201,7 +201,7 @@ TEST_F(GetSetCustomHandledProprty, ElementProperties3d)
         DgnClassId classId(m_db->Schemas().GetClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME));
         TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnCode());
         TestElement el(params);
-        //Check a few CustomhandleProperties 
+        //Check a few CustomhandleProperties
         ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(Orgindex, "Origin"));
         ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(Yawindex, "Yaw"));
         ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(Pitchindex, "Pitch"));
@@ -209,7 +209,7 @@ TEST_F(GetSetCustomHandledProprty, ElementProperties3d)
         ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(BBlindex, "BBoxLow"));
         ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(BBHindex, "BBoxHigh"));
 
-        // Try to set Invaild value type 
+        // Try to set Invaild value type
         ASSERT_EQ(DgnDbStatus::BadArg, el.SetPropertyValue(Orgindex, ECN::ECValue(true)));
         ASSERT_EQ(DgnDbStatus::BadArg, el.SetPropertyValue(BBlindex, ECN::ECValue(true)));
         ASSERT_EQ(DgnDbStatus::BadArg, el.SetPropertyValue(BBHindex, ECN::ECValue(true)));
@@ -358,13 +358,13 @@ TEST_F(GetSetCustomHandledProprty, ElementProperties2d)
         TestElement2d::CreateParams params(*m_db, drawingModel->GetModelId(), classId, categoryId, Placement2d(),DgnCode());
         TestElement2d el(params);
         ASSERT_TRUE(el.Is2d());
-        //Check a few CustomhandleProperties 
+        //Check a few CustomhandleProperties
         ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(Orgindex, "Origin"));
         ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(Rotindex, "Rotation"));
         ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(BBlindex, "BBoxLow"));
         ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(BBHindex, "BBoxHigh"));
 
-        // Try to set Invaild value type 
+        // Try to set Invaild value type
         ASSERT_EQ(DgnDbStatus::BadArg, el.SetPropertyValue(Orgindex, ECN::ECValue(true)));
         ASSERT_EQ(DgnDbStatus::BadArg, el.SetPropertyValue(BBlindex, ECN::ECValue(true)));
         ASSERT_EQ(DgnDbStatus::BadArg, el.SetPropertyValue(BBHindex, ECN::ECValue(true)));
@@ -502,7 +502,7 @@ TEST_F(GetSetCustomHandledProprty, CategoryProperties)
     BeFileName fileName = m_db->GetFileName();
     m_db->CloseDb();
     m_db = nullptr;
-    //Check what stored in Db 
+    //Check what stored in Db
     OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
     {
      DgnCategoryCPtr category = m_db->Elements().Get<DgnCategory>(categoryId);
@@ -658,7 +658,7 @@ TEST_F(GetSetCustomHandledProprty, Annotation)
     BeFileName fileName = m_db->GetFileName();
     m_db->CloseDb();
     m_db = nullptr;
-    //Check what stored in Db 
+    //Check what stored in Db
     OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
     {
     AnnotationTextStyleCPtr textStyle = m_db->Elements().Get<AnnotationTextStyle>(Tsid);
@@ -808,8 +808,8 @@ TEST_F(GetSetCustomHandledProprty, Linkelement)
     BeFileName fileName = m_db->GetFileName();
     m_db->CloseDb();
     m_db = nullptr;
-    //Check what stored in Db 
-    OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
+    //Check what stored in Db
+    OpenDb(m_db, fileName, Db::OpenMode::Readonly, false);
     {
     UrlLinkCPtr link = UrlLink::Get(*m_db,linkid);
     ASSERT_TRUE(link.IsValid());
@@ -862,8 +862,8 @@ TEST_F(GetSetCustomHandledProprty, Linkelement)
     }
     m_db->CloseDb();
     m_db = nullptr;
-    //Check what stored in Db 
-    OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
+    //Check what stored in Db
+    OpenDb(m_db, fileName, Db::OpenMode::Readonly, false);
     {
     UrlLinkCPtr link = m_db->Elements().Get<UrlLink>(linkid);
     ASSERT_EQ(DgnDbStatus::Success, link->GetPropertyValue(checkValue, ulindex));
@@ -925,7 +925,7 @@ TEST_F(GetSetCustomHandledProprty, GeometryPart)
     BeFileName fileName = m_db->GetFileName();
     m_db->CloseDb();
     m_db = nullptr;
-    //Check what stored in Db 
+    //Check what stored in Db
     OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
     {
     DgnGeometryPartCPtr geoele = m_db->Elements().Get<DgnGeometryPart>(existingPartId);
@@ -1023,7 +1023,7 @@ TEST_F(GetSetCustomHandledProprty, Viewdefinition2d)
     BeFileName fileName = m_db->GetFileName();
     m_db->CloseDb();
     m_db = nullptr;
-    //Check what stored in Db 
+    //Check what stored in Db
     OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
     {
     DrawingViewDefinitionCPtr view= m_db->Elements().Get<DrawingViewDefinition>(viewId);
@@ -1170,7 +1170,7 @@ TEST_F(GetSetCustomHandledProprty, Viewdefinition3d)
     BeFileName fileName = m_db->GetFileName();
     m_db->CloseDb();
     m_db = nullptr;
-    //Check what stored in Db 
+    //Check what stored in Db
     OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
     {
     SpatialViewDefinitionCPtr view= m_db->Elements().Get<SpatialViewDefinition>(viewId);

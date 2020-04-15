@@ -9,7 +9,7 @@
 #include <UnitTests/BackDoor/DgnPlatform/DgnPlatformTestDomain.h>
 
 // #define DEBUG_REVISION_TEST_MANUAL 1
-#ifdef DEBUG_REVISION_TEST_MANUAL 
+#ifdef DEBUG_REVISION_TEST_MANUAL
 #include <windows.h>
 #endif
 
@@ -127,7 +127,7 @@ void RevisionTestFixture::SetUpTestCase()
 
     DgnDbPtr db = DgnPlatformSeedManager::OpenSeedDbCopy(rootSeedInfo.fileName, RevisionTestFixture::s_seedFileInfo.fileName); // our seed starts as a copy of the root seed
     ASSERT_TRUE(db.IsValid());
-    TestDataManager::SetAsFutureStandalone(db, Db::OpenMode::ReadWrite);
+    TestDataManager::SetAsStandAlone(db, Db::OpenMode::ReadWrite);
 
     m_defaultCodeSpecId = DgnDbTestUtils::InsertCodeSpec(*db, "TestCodeSpec");
     ASSERT_TRUE(m_defaultCodeSpecId.IsValid());
@@ -221,7 +221,7 @@ void RevisionTestFixture::ProcessSchemaRevision(DgnRevisionCR revision, Revision
     {
     BeFileName fileName = BeFileName(m_db->GetDbFileName(), true);
     CloseDgnDb();
-    
+
     DbResult openStatus;
     DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(revision, revisionProcessOption));
     m_db = DgnDb::OpenDgnDb(&openStatus, fileName, openParams);
@@ -390,7 +390,7 @@ TEST_F(RevisionTestFixture, MoreWorkflow)
     ASSERT_TRUE(m_defaultModel.IsValid());
     revStatus = m_db->Revisions().MergeRevision(*revision3);
     ASSERT_TRUE(revStatus == RevisionStatus::Success);
-    
+
     // Delete model and Merge Rev1 - should fail since the model does not exist
     RestoreTestFile();
     status = m_defaultModel->Delete();
@@ -424,7 +424,7 @@ TEST_F(RevisionTestFixture, MergeToReadonlyBriefcase)
 
     // Restore the master file again, and open in Readonly mode
     RestoreTestFile(Db::OpenMode::Readonly);
-   
+
     // Merge revision that was previously created to create a checkpoint file
     BeTest::SetFailOnAssert(false);
     RevisionStatus revStatus = m_db->Revisions().MergeRevision(*revision1);
@@ -441,12 +441,12 @@ TEST_F(RevisionTestFixture, MergeToMaster)
     SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"Master.bim");
     m_db->SaveChanges();
     DgnRevisionPtr initialRevision = CreateRevision(); // Clears Txn table
-    m_db->SetAsMaster();
+    m_db->ResetBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::CheckpointSnapshot()));
     m_db->SaveChanges("Setup master seed file");
     BackupTestFile();
 
     // Create some revision
-    m_db->SetAsBriefcase(BeBriefcaseId(BeBriefcaseId::LegacyStandalone()));
+    m_db->ResetBriefcaseId(BeBriefcaseId(BeBriefcaseId::StandAlone()));
     m_db->SaveChanges("Created briefcase");
     DgnElementId elementId = RevisionTestFixture::InsertPhysicalElement(*m_db, *m_defaultModel, m_defaultCategoryId, 2, 2, 2);
     ASSERT_TRUE(elementId.IsValid());
@@ -460,7 +460,7 @@ TEST_F(RevisionTestFixture, MergeToMaster)
     // Merge revision that was previously created to create a checkpoint file
     BeTest::SetFailOnAssert(false);
     RevisionStatus revStatus = m_db->Revisions().MergeRevision(*revision1);
-    ASSERT_TRUE(revStatus == RevisionStatus::CannotMergeIntoMaster);
+    ASSERT_TRUE(revStatus != RevisionStatus::Success);
     BeTest::SetFailOnAssert(true);
     }
 
@@ -503,7 +503,7 @@ TEST_F(RevisionTestFixture, Codes)
 
     DgnCodeSet expectedCodes;
     ExpectCodes(expectedCodes, discardedCodes);
-    
+
     expectedCodes.insert(subCat.GetCode());
     expectedCodes.insert(ViewDefinition::CreateCode(db.GetDictionaryModel(), "Default"));
     ExpectCodes(expectedCodes, createdCodes);
@@ -592,7 +592,7 @@ TEST_F(RevisionTestFixture, ResetIdSequencesAfterApply)
     DgnElementId idBeforeInserts;
     DbResult result = m_db->GetElementIdSequence().GetNextValue(idBeforeInserts);
     ASSERT_TRUE(result == BE_SQLITE_OK);
-    
+
     // Backup the test file
     BackupTestFile();
 
@@ -607,7 +607,7 @@ TEST_F(RevisionTestFixture, ResetIdSequencesAfterApply)
     result = m_db->GetElementIdSequence().GetNextValue(idAfterInserts);
     ASSERT_TRUE(result == BE_SQLITE_OK);
     ASSERT_GE(idAfterInserts, idBeforeInserts);
-    
+
     // Restore baseline file, apply the change sets with the same element inserts, and validate the last sequence id
     RestoreTestFile();
 
@@ -890,8 +890,8 @@ TEST_F(DependencyRevisionTest, Merge)
     DumpRevision(*revBA, "Revision BA");
 
     // Note: The tests below ensure that the order of merges A->AB or A->BA doesn't affect
-    // the final state of the properties of A, B and C. 
-    
+    // the final state of the properties of A, B and C.
+
     // Restore initial state, merge in AB
     RestoreTestFile();
     LOG.infov("Merging Revision A");
@@ -1010,7 +1010,7 @@ TEST_F(DependencyRevisionTest, DirectAndIndirectChangesToSameElement)
 TEST_F(DependencyRevisionTest, UpdateCache)
     {
     SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"UpdateCache.bim");
-    
+
     // Initial state: create two elements
     DgnElementId aId = InsertElement(123)->GetElementId();
     DgnElementId bId = InsertElement(456)->GetElementId();
@@ -1058,7 +1058,7 @@ TEST_F(DependencyRevisionTest, UpdateCache)
 TEST_F(DependencyRevisionTest, MergeDependencyPermutations)
     {
     SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"MergeDependencyPermutations.bim");
-    
+
     RevisionStatus status;
 
     // Value of dependent's TestIntegerProperty2 == root's TestIntegerProperty1
@@ -1448,7 +1448,7 @@ TEST_F(RevisionTestFixture, InvalidSchemaChanges)
     // Setup baseline
     SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"SchemaChanges.bim");
     m_db->SaveChanges("Created Initial Model");
-   
+
     ASSERT_TRUE(BE_SQLITE_OK == m_db->CreateTable("TestTable", "Id INTEGER PRIMARY KEY, Column1 INTEGER"));
     m_db->SaveChanges("Created test table");
     DgnRevisionPtr initialRevision = CreateRevision();
@@ -1462,7 +1462,7 @@ TEST_F(RevisionTestFixture, InvalidSchemaChanges)
     BeTest::SetFailOnAssert(true);
 
     // Make invalid schema changes (outside the schema change API)
-    ASSERT_TRUE(BE_SQLITE_OK == m_db->ExecuteSql("ALTER TABLE TestTable RENAME TO TestTableWillHappen")); // Unfortunately succeeds. Need a way to monitor DDL changes. 
+    ASSERT_TRUE(BE_SQLITE_OK == m_db->ExecuteSql("ALTER TABLE TestTable RENAME TO TestTableWillHappen")); // Unfortunately succeeds. Need a way to monitor DDL changes.
 
     // Make schema changes with tracking disabled
     m_db->Txns().EnableTracking(false);
@@ -1536,7 +1536,7 @@ TEST_F(RevisionTestFixture, MergeSchemaChanges)
 
     ASSERT_FALSE(m_db->Txns().HasDataChanges());
     ASSERT_TRUE(m_db->Txns().HasDbSchemaChanges());
-   
+
     m_db->SaveChanges("Schema changes");
     DgnRevisionPtr schemaChangesRevision = CreateRevision();
     ASSERT_TRUE(schemaChangesRevision.IsValid());
@@ -1545,10 +1545,10 @@ TEST_F(RevisionTestFixture, MergeSchemaChanges)
     /* Restore baseline, make data changes, and merge revision with schema changes */
     RestoreTestFile();
     ASSERT_EQ(m_db->ExecuteSql("INSERT INTO TestTable(Id, Column1) VALUES(1,1)"), BE_SQLITE_OK);
-    
+
     ASSERT_TRUE(m_db->Txns().HasDataChanges());
     ASSERT_FALSE(m_db->Txns().HasDbSchemaChanges());
-    
+
     m_db->SaveChanges("Data changes");
     MergeSchemaRevision(*schemaChangesRevision);
 
@@ -1560,7 +1560,7 @@ TEST_F(RevisionTestFixture, MergeSchemaChanges)
     /* Create new revision with more data changes on top of the previous schema changes */
     ASSERT_EQ(m_db->ExecuteSql("UPDATE TestTable SET Column2=1 WHERE Id=1"), BE_SQLITE_OK);
     ASSERT_EQ(m_db->ExecuteSql("INSERT INTO TestTable(Id,Column1,Column2) VALUES(2,2,2)"), BE_SQLITE_OK);
-   
+
     ASSERT_TRUE(m_db->Txns().HasDataChanges());
     ASSERT_FALSE(m_db->Txns().HasDbSchemaChanges());
 
@@ -1617,7 +1617,7 @@ TEST_F(RevisionTestFixture, TableAndColumnAdditions)
     ECClassCP definitionElement = m_db->Schemas().GetClass(Utf8String("BisCore"), Utf8String("DefinitionElement"));
     ASSERT_TRUE(definitionElement != nullptr);
 
-    // Create a schema with a sub-class of definition element that will cause a new overflow table. 
+    // Create a schema with a sub-class of definition element that will cause a new overflow table.
     ECSchemaPtr testSchema;
     ECObjectsStatus status = ECSchema::CreateSchema(testSchema, Utf8String("TableAndColumnAdditionTest"), Utf8String("tcat"), 1, 0, 0);
     ASSERT_TRUE(status == ECObjectsStatus::Success);
@@ -1662,7 +1662,7 @@ TEST_F(RevisionTestFixture, TableAndColumnAdditions)
     ASSERT_FALSE(m_db->TableExists("bis_DefinitionElement_Overflow"));
 
     MergeSchemaRevision(*revision1);
-    
+
     ASSERT_EQ(afterCount, GetColumnCount(*m_db, "bis_DefinitionElement"));
     ASSERT_TRUE(m_db->TableExists("bis_DefinitionElement_Overflow"));
     }
@@ -1738,8 +1738,8 @@ TEST_F(RevisionTestFixture, MoreDataAndSchemaChanges)
     ASSERT_TRUE(revisionPtrs[ii].IsValid());
     ASSERT_TRUE(ii == 10);
 
-    /* 
-     * Test 1: Reopen with Reverse 
+    /*
+     * Test 1: Reopen with Reverse
      */
     RestoreTestFile();
     DbResult openStatus;
@@ -1806,7 +1806,7 @@ TEST_F(RevisionTestFixture, MoreDataAndSchemaChanges)
     openParams.GetSchemaUpgradeOptionsR().SetUpgradeFromRevisions(processRevisions, RevisionProcessOption::Merge);
     m_db = DgnDb::OpenDgnDb(&openStatus, fileName, openParams);
     ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
-    
+
     ASSERT_FALSE(m_db->Revisions().HasReversedRevisions());
     ASSERT_STREQ(m_db->Revisions().GetReversedRevisionId().c_str(), "");
     ASSERT_STREQ(m_db->Revisions().GetParentRevisionId().c_str(), revisionPtrs[9]->GetId().c_str());
@@ -1851,7 +1851,7 @@ TEST_F(RevisionTestFixture, TestMemoryLeak)
     m_db = DgnDb::OpenDgnDb(&openStatus, copyFile, openParams);
     ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
 
-    TestDataManager::SetAsFutureStandalone(m_db, Db::OpenMode::ReadWrite);
+    TestDataManager::SetAsStandAlone(m_db, Db::OpenMode::ReadWrite);
 
     Utf8String dbGuid = m_db->GetDbGuid().ToString();
     bvector<DgnRevisionPtr> revisionPtrs;
@@ -1929,7 +1929,7 @@ TEST_F(RevisionTestFixture, MergeMemoryIssue)
     m_db = DgnDb::OpenDgnDb(&openStatus, copyFile, openParams);
     ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
 
-    TestDataManager::SetAsFutureStandalone(m_db, Db::OpenMode::ReadWrite);
+    TestDataManager::SetAsStandAlone(m_db, Db::OpenMode::ReadWrite);
 
     Utf8String dbGuid = m_db->GetDbGuid().ToString();
     bvector<DgnRevisionPtr> revisionPtrs;
@@ -2011,7 +2011,7 @@ TEST_F(RevisionTestFixture, DISABLED_MergeFolderWithRevisions)
     m_db = DgnDb::OpenDgnDb(&openStatus, copyFile, openParams);
     ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
 
-    TestDataManager::SetAsFutureStandalone(m_db, Db::OpenMode::ReadWrite);
+    TestDataManager::SetAsStandAlone(m_db, Db::OpenMode::ReadWrite);
 
     Utf8String dbGuid = m_db->GetDbGuid().ToString();
     bvector<DgnRevisionPtr> revisionPtrs;
@@ -2269,7 +2269,7 @@ TEST_F(RevisionTestFixture, OptimisticConcurrencyConflict)
     auto second = DgnDb::OpenDgnDb(nullptr, secondDbName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     // auto secondModel = second->Models().GetModel(m_defaultModel->GetModelId());
 
-    // Configure both copies to use optimistic concurrency    
+    // Configure both copies to use optimistic concurrency
     OptimisticConcurrencyControl::Policy policy;
     policy.updateVsUpdate = OptimisticConcurrencyControl::OnConflict::RejectIncomingChange;
     policy.updateVsDelete = OptimisticConcurrencyControl::OnConflict::AcceptIncomingChange;
@@ -2285,12 +2285,12 @@ TEST_F(RevisionTestFixture, OptimisticConcurrencyConflict)
     DgnElementId eid;   // The element that the two db's will fight over.
     DgnElementId eid2;  // another element that the two db's will fight over.
     DgnElementId eid3;  // another element that the two db's will fight over.
-    
+
     // First: Create an element.
     int baseIntegerPropertyValue = 1;
     int expectedIntegerPropertyValueForElement2 = baseIntegerPropertyValue;
     int expectedIntegerPropertyValueForElement3 = baseIntegerPropertyValue;
-    if (true) 
+    if (true)
         {
         eid = insertTestElement(*firstModel, catId, baseIntegerPropertyValue)->GetElementId();
         eid2 = insertTestElement(*firstModel, catId, expectedIntegerPropertyValueForElement2)->GetElementId();
@@ -2335,10 +2335,10 @@ TEST_F(RevisionTestFixture, OptimisticConcurrencyConflict)
     if (true)
         {
         verifyIntegerProperty(*second, eid, baseIntegerPropertyValue);
-        
+
         updateIntegerProperty(*second, eid, expectedIntegerPropertyValue = 22);
         second->SaveChanges();
-        
+
         // merge first's changeset and reject his change
         ASSERT_EQ( RevisionStatus::Success, second->Revisions().MergeRevision(*history[++secondParent]) );
 
@@ -2393,7 +2393,7 @@ TEST_F(RevisionTestFixture, OptimisticConcurrencyConflict)
         ASSERT_EQ( RevisionStatus::Success, second->Revisions().MergeRevision(*history[++secondParent]) );
 
         ASSERT_EQ(0, second->GetOptimisticConcurrencyControl()->_GetConflictingElementsAccepted().size());
-        ASSERT_EQ(1, second->GetOptimisticConcurrencyControl()->_GetConflictingElementsRejected().size());  // NEEDS WORK: LastMod is reported as a conflict. While that's 
+        ASSERT_EQ(1, second->GetOptimisticConcurrencyControl()->_GetConflictingElementsRejected().size());  // NEEDS WORK: LastMod is reported as a conflict. While that's
                                                                                                             // always indirect, first changed another column in bis_Element.
         second->GetOptimisticConcurrencyControl()->_ConflictsProcessed();                                   // So, the in-coming change, which includes LastMod and the other property, is marked as direct.
 
@@ -2437,13 +2437,13 @@ TEST_F(RevisionTestFixture, OptimisticConcurrencyConflict)
     if (true)
         {
         verifyIntegerProperty(*second, eid, baseIntegerPropertyValue);
-        
+
         auto el = second->Elements().GetElement(eid);
         ASSERT_TRUE(el.IsValid());
         el->Delete();
         el = nullptr;
         second->SaveChanges();
-        
+
         // merge first's changeset and reject his change
         ASSERT_EQ( RevisionStatus::Success, second->Revisions().MergeRevision(*history[++secondParent]) );
 
@@ -2453,7 +2453,7 @@ TEST_F(RevisionTestFixture, OptimisticConcurrencyConflict)
 
         auto elafter = second->Elements().GetElement(eid);
         ASSERT_FALSE(elafter.IsValid()) << " second deleted el and resolved the delete vs update conflict by rejecting the update, so el should be gone.";
-        
+
         verifyIntegerProperty(*second, eid2, expectedIntegerPropertyValueForElement2);  // Nothing should have happened to el2.
 
         history.push_back(createRevision(*second));
@@ -2477,7 +2477,7 @@ TEST_F(RevisionTestFixture, OptimisticConcurrencyConflict)
     // --- update vs delete ----
     // -------------------------
     // Note that eid was deleted in the test above. Therefore, work with eid2
-    
+
     if (true)
         {
         auto el2 = first->Elements().GetElement(eid2);
@@ -2496,7 +2496,7 @@ TEST_F(RevisionTestFixture, OptimisticConcurrencyConflict)
         ASSERT_EQ( RevisionStatus::Success, second->Revisions().MergeRevision(*history[++secondParent]) );
 
         ASSERT_EQ(1, second->GetOptimisticConcurrencyControl()->_GetConflictingElementsAccepted().size());  // updateVsDelete = acceptIncomingChanges
-        ASSERT_EQ(0, second->GetOptimisticConcurrencyControl()->_GetConflictingElementsRejected().size());  
+        ASSERT_EQ(0, second->GetOptimisticConcurrencyControl()->_GetConflictingElementsRejected().size());
         second->GetOptimisticConcurrencyControl()->_ConflictsProcessed();
 
         ASSERT_FALSE(second->Elements().GetElement(eid2).IsValid()) << "First deleted el. Second updated el and resolved the update vs delete conflict by accepting the deletion. So, el2 should be gone.";

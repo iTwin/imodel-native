@@ -116,7 +116,7 @@ DgnDbPtr DataCaptureTestsFixture::CreateProject(WCharCP baseName, bool needsSetB
 
     if (needsSetBriefcase)
         {
-        s_currentProject->SetAsBriefcase(BeBriefcaseId(1));
+        s_currentProject->ResetBriefcaseId(BeBriefcaseId(1));
         s_currentProject->CloseDb();
         s_currentProject = m_host->OpenProject(baseName);
         }
@@ -146,7 +146,7 @@ Dgn::DgnDbPtr DataCaptureTestsFixture::OpenProject(WCharCP baseName, bool needsS
 
     if (needsSetBriefcase && s_currentProject.IsValid())
         {
-        s_currentProject->SetAsBriefcase(BeBriefcaseId(1));
+        s_currentProject->ResetBriefcaseId(BeBriefcaseId(1));
         s_currentProject->SaveChanges();
         s_currentProject->CloseDb();
         s_currentProject = m_host->OpenProject(baseName);

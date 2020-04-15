@@ -73,7 +73,7 @@ struct ChangeSetArg final
 
 //=======================================================================================
 //! ECDb is the %EC API used to access %EC data in an @ref ECDbFile "ECDb file".
-//! 
+//!
 //! It is used to create, open, close @ref ECDbFile "ECDb files" (see ECDb::CreateNewDb, ECDb::OpenBeSQLiteDb,
 //! ECDb::CloseDb) and gives access to the %EC data.
 //!
@@ -111,7 +111,7 @@ public:
         Settings m_settings;
         ECCrudWriteToken const* m_crudWriteToken = nullptr;
         SchemaImportToken const* m_schemaImportToken = nullptr;
-        
+
     public:
 #if !defined (DOCUMENTATION_GENERATOR)
         //not inlined as ctors are only needed internally
@@ -152,7 +152,7 @@ public:
 
     //=======================================================================================
     //! Allows clients to be notified of error messages.
-    //! @remarks ECDb cares for logging any error sent to listeners via BentleyApi::NativeLogging. 
+    //! @remarks ECDb cares for logging any error sent to listeners via BentleyApi::NativeLogging.
     //! So implementors don't have to do that anymore.
     // @bsiclass                                                        09/2015
     //+===============+===============+===============+===============+===============+======
@@ -189,8 +189,7 @@ protected:
 
     ECDB_EXPORT DbResult _OnDbOpening() override;
     ECDB_EXPORT DbResult _OnDbCreated(CreateParams const&) override;
-    ECDB_EXPORT DbResult _OnAfterSetAsMaster(BeGuid guid) override;
-    ECDB_EXPORT DbResult _OnAfterSetAsBriefcase(BeBriefcaseId newBriefcaseId) override;
+    ECDB_EXPORT void _OnAfterSetBriefcaseId(Utf8StringCR parentCSId, Utf8StringCR initialParentCSId) override;
     ECDB_EXPORT void _OnDbClose() override;
     ECDB_EXPORT void _OnDbChangedByOtherConnection() override;
     ECDB_EXPORT ProfileState _CheckProfileVersion() const override;
@@ -226,7 +225,7 @@ public:
     //!          ECN:ECSchemaReadContext::Initialize
     //! @param[in] ecdbTempDir Directory where ECDb stores SQLite's temporary files.
     //!            Must not be an existing directory!
-    //! @param[in] hostAssetsDir Directory to where the application has deployed assets 
+    //! @param[in] hostAssetsDir Directory to where the application has deployed assets
     //!            that come with this API, e.g. standard ECSchemas.
     //!            In the assets directory the standard ECSchemas have to be located in @b ECSchemas/Standard/.
     //!            The standard ECSchemas are needed when importing ECSchemas into the ECDb file
@@ -248,7 +247,7 @@ public:
     //! Gets the version of the ECDb profile of this file.
     ECDB_EXPORT ProfileVersion const& GetECDbProfileVersion() const;
 
-    //! Gets the current version of the ECDb profile 
+    //! Gets the current version of the ECDb profile
     static ProfileVersion CurrentECDbProfileVersion() { return ProfileVersion(4, 0, 0, 2); }
     //! Gets the minimum version of the ECDb profile for which in-situ upgrades are possible.
     //! Files with an older version cannot be upgraded in-situ.
@@ -316,7 +315,7 @@ public:
     //! using the @b ECDbChange ECClasses or using the ECSQL function @b Changes.
     //!
     //! @note The change summaries are persisted in a separate Change Cache file. Before extracting you must make sure
-    //! the Change Cache file exists and is attached. Call ECDb::AttachChangeCache first. 
+    //! the Change Cache file exists and is attached. Call ECDb::AttachChangeCache first.
     //! If the Change Cache file does not exist or is not attached, the method returns ERROR.
     //!
     //! @param[out] changeSummaryKey Key of the generated change summary (of the ECClass @b ECDbChange.ChangeSummary)
@@ -325,7 +324,7 @@ public:
     //! @return SUCCESS or ERROR
     //! @see @ref ECDbChange
     ECDB_EXPORT BentleyStatus ExtractChangeSummary(ECInstanceKey& changeSummaryKey, ChangeSetArg const& changeSetArg, ChangeSummaryExtractOptions const& options = ChangeSummaryExtractOptions()) const;
-    
+
     //! Extracts and generates the change summary from the specified change set.
     //! @remarks The change summary is persisted as an instance of the ECClass @b ECDbChange.ChangeSummary and its related classes
     //! @b ECDbChange.InstanceChange and @b ECDbChange.PropertyValueChange.
@@ -333,7 +332,7 @@ public:
     //! using the @b ECDbChange ECClasses or using the ECSQL function @b Changes.
     //!
     //! @note The change summaries are persisted in a separate Change Cache file file, specified by @p changeCacheFile.
-    //! Before extracting you must make sure the Change Cache file exists. Either call ECDb::CreateChangeCache or ECDb::AttachChangeCache first. 
+    //! Before extracting you must make sure the Change Cache file exists. Either call ECDb::CreateChangeCache or ECDb::AttachChangeCache first.
     //! The Change Cache file doesn't have to be attached though.
     //! If the Change Cache file does not exist, the method returns ERROR.
     //!
@@ -385,7 +384,7 @@ public:
     //! @param[in] propertyAccessString The access string in @p ecClass to the ECProperty holding the blob to be opened.
     //! @param[in] ecInstanceId The ECInstanceId of the instance holding the blob.
     //! @param[in] writable If true, blob is opened for read/write access, otherwise it is opened readonly.
-    //! @param[in] writeToken Token required if @p writable is true and if 
+    //! @param[in] writeToken Token required if @p writable is true and if
     //!            the ECDb file was set-up with the option "ECSQL write token validation".
     //!            If @p writable is false or if the option is not set, nullptr can be passed for @p writeToken.
     //! @return SUCCESS in case of success. ERROR in these cases:
@@ -409,7 +408,7 @@ public:
     //! @param[in] propertyAccessString The access string in @p ecClass to the ECProperty holding the blob to be opened.
     //! @param[in] ecInstanceId The ECInstanceId of the instance holding the blob.
     //! @param[in] writable If true, blob is opened for read/write access, otherwise it is opened readonly.
-    //! @param[in] writeToken Token required if @p writable is true and if 
+    //! @param[in] writeToken Token required if @p writable is true and if
     //!            the ECDb file was set-up with the option "ECSQL write token validation".
     //!            If @p writable is false or if the option is not set, nullptr can be passed for @p writeToken.
     //! @return SUCCESS in case of success. ERROR in these cases:
@@ -428,7 +427,7 @@ public:
     //! This includes publicly exposed objects like the ECSchema elements like ECClasses.
     //! Once this method has been called, <b>the objects that were previously held by the cache must
     //! no longer be used</b>.
-    //! Likewise any objects that have referenced the cached information may no longer be used anymore either. 
+    //! Likewise any objects that have referenced the cached information may no longer be used anymore either.
     //! This includes ECSqlStatements and anything that uses them like the ECSQL adapters or an ECSqlStatementCache.
     //!
     //! @note ECDb also calls this method internally, e.g. within ECDb::ImportSchemas, ECDb::DetachChangeCache or BeSQLite::Db::DetachDb.

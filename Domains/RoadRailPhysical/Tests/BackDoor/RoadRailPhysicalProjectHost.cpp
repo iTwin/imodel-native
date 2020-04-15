@@ -234,7 +234,7 @@ DgnDbPtr RoadRailPhysicalProjectHost::CreateProject(WCharCP baseName)
 
     auto physicalPartitionCPtr = PhysicalModelUtilities::CreateAndInsertPhysicalPartitionAndModel(*subjectCPtr, "Physical");
 
-    auto roadNetworkCPtr = RoadNetwork::Insert(*physicalPartitionCPtr->GetSubModel()->ToPhysicalModelP(), 
+    auto roadNetworkCPtr = RoadNetwork::Insert(*physicalPartitionCPtr->GetSubModel()->ToPhysicalModelP(),
         "Road Network");
 
     DesignAlignments::Insert(*roadNetworkCPtr->GetNetworkModel(), "Design Alignments");
@@ -344,7 +344,7 @@ DgnDbPtr RoadRailPhysicalTestsFixture::CreateProject(WCharCP baseName, bool need
 
     if (needsSetBriefcase)
         {
-        s_currentProject->SetAsBriefcase(BeBriefcaseId(1));
+        s_currentProject->ResetBriefcaseId(BeBriefcaseId(1));
         s_currentProject->CloseDb();
         s_currentProject = m_host->OpenProject(baseName);
         }
@@ -374,7 +374,7 @@ Dgn::DgnDbPtr RoadRailPhysicalTestsFixture::OpenProject(WCharCP baseName, bool n
 
     if (needsSetBriefcase && s_currentProject.IsValid())
         {
-        s_currentProject->SetAsBriefcase(BeBriefcaseId(1));
+        s_currentProject->ResetBriefcaseId(BeBriefcaseId(1));
         s_currentProject->SaveChanges();
         s_currentProject->CloseDb();
         s_currentProject = m_host->OpenProject(baseName);

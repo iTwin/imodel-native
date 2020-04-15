@@ -159,8 +159,8 @@ struct DgnDb : RefCounted<BeSQLite::EC::ECDb>
         //! @param[in] openMode The mode for opening the database
         //! @param[in] startDefaultTxn Whether to start a default transaction on the database
         //! @param[in] schemaUpgradeOptions Options to upgrade the ECSchema-s in the database from registered domains, or revisions.
-        explicit OpenParams(OpenMode openMode, BeSQLite::DefaultTxn startDefaultTxn = BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions schemaUpgradeOptions = SchemaUpgradeOptions()) : ECDb::OpenParams(openMode, startDefaultTxn), m_schemaUpgradeOptions(schemaUpgradeOptions)
-            {}
+        explicit OpenParams(OpenMode openMode, BeSQLite::DefaultTxn startDefaultTxn = BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions schemaUpgradeOptions = SchemaUpgradeOptions()) :
+            ECDb::OpenParams(openMode, startDefaultTxn), m_schemaUpgradeOptions(schemaUpgradeOptions)   {}
 
         SchemaUpgradeOptions& GetSchemaUpgradeOptionsR() { return m_schemaUpgradeOptions; }
         SchemaUpgradeOptions const& GetSchemaUpgradeOptions() const { return m_schemaUpgradeOptions; }
@@ -179,9 +179,6 @@ private:
 
     BeSQLite::DbResult InitializeSchemas(BeSQLite::Db::OpenParams const& params);
     BeSQLite::DbResult ProcessRevisions(BeSQLite::Db::OpenParams const& params);
-    void InitParentChangeSetIds();
-    void BackupParentChangeSetIds();
-    BeSQLite::DbResult RestoreParentChangeSetIds();
 
 protected:
     friend struct Txns;
@@ -203,8 +200,6 @@ protected:
     mutable std::unique_ptr<RevisionManager> m_revisionManager;
     mutable BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
     mutable std::unordered_map<uint64_t, std::unique_ptr<BeSQLite::EC::ECInstanceInserter>> m_cacheECInstanceInserter;
-    Utf8String m_parentChangeSetId;
-    Utf8String m_initialParentChangeSetId;
 
     DGNPLATFORM_EXPORT BeSQLite::ProfileState _CheckProfileVersion() const override;
     DGNPLATFORM_EXPORT BeSQLite::DbResult _UpgradeProfile() override;
@@ -214,11 +209,8 @@ protected:
     DGNPLATFORM_EXPORT BeSQLite::DbResult _OnDbOpening() override;
     DGNPLATFORM_EXPORT BeSQLite::DbResult _OnDbOpened(BeSQLite::Db::OpenParams const& params) override;
 
-    DGNPLATFORM_EXPORT BeSQLite::DbResult _OnBeforeSetAsMaster(BeSQLite::BeGuid guid) override;
-    DGNPLATFORM_EXPORT BeSQLite::DbResult _OnAfterSetAsMaster(BeSQLite::BeGuid guid) override;
-
-    DGNPLATFORM_EXPORT BeSQLite::DbResult _OnBeforeSetAsBriefcase(BeSQLite::BeBriefcaseId newBriefcaseId) override;
-    DGNPLATFORM_EXPORT BeSQLite::DbResult _OnAfterSetAsBriefcase(BeSQLite::BeBriefcaseId newBriefcaseId) override;
+    DGNPLATFORM_EXPORT void _OnBeforeSetBriefcaseId(BeSQLite::BeBriefcaseId newId, Utf8StringR parentCSId, Utf8StringR initialParentCSId) override;
+    DGNPLATFORM_EXPORT void _OnAfterSetBriefcaseId(Utf8StringCR parentCSId, Utf8StringCR initialParentCSId) override;
 
     DGNPLATFORM_EXPORT BeSQLite::DbResult _AfterSchemaChangeSetApplied() const override;
     DGNPLATFORM_EXPORT BeSQLite::DbResult _AfterDataChangeSetApplied() override;
@@ -429,17 +421,20 @@ public:
     //! Perform a SQLite VACUUM on this DgnDb. This potentially makes the file smaller and more efficient to access.
     DGNPLATFORM_EXPORT DgnDbStatus CompactFile();
 
-    //! Determine whether this DgnDb is the master copy.
-    bool IsLegacyMaster() const {return GetBriefcaseId().IsLegacyMasterId();}
+    bool AreTxnsAllowed() const {return IsBriefcase() || IsStandAlone(); }
+
+    //! Return true if this DgnDb is a briefcase iModel.
+    bool IsBriefcase() const {return GetBriefcaseId().IsBriefcase();}
 
     //! Return true if this DgnDb is a snapshot iModel.
     bool IsSnapshot() const {return GetBriefcaseId().IsSnapshot();}
 
-    //! Return true if this DgnDb is a legacy standalone iModel that is not synchronized with iModelHub.
-    bool IsLegacyStandalone() const {return GetBriefcaseId().IsLegacyStandaloneId();}
+    //! Return true if this DgnDb is a snapshot iModel.
+    bool IsCheckpointSnapshot() const {return GetBriefcaseId().IsCheckpointSnapshotId();}
+
     //! Return true if this DgnDb is a new single-practitioner standalone iModel.
     //! @note This will be renamed to IsStandalone after legacy code is updated.
-    bool IsFutureStandalone() const {return GetBriefcaseId().IsFutureStandaloneId();}
+    bool IsStandAlone() const {return GetBriefcaseId().IsStandAloneId();}
 
     DGNPLATFORM_EXPORT RepositoryModelPtr GetRepositoryModel(); //!< Return the RepositoryModel for this DgnDb.
     DGNPLATFORM_EXPORT DictionaryModelR GetDictionaryModel(); //!< Return the dictionary model for this DgnDb.

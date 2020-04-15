@@ -284,7 +284,7 @@ TEST_F(DgnDbTest, CreateTrackedDgnDb)
     SchemaStatus schemaStatus = DgnPlatformTestDomain::GetDomain().ImportSchema(*dgndb);
     ASSERT_TRUE(schemaStatus == SchemaStatus::Success);
 
-    dgndb->SetAsBriefcase(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::LegacyStandalone()));
+    dgndb->ResetBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Snapshot()));
     dgndb->Txns().EnableTracking(true);
 
     PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*dgndb, "TestPartition");
@@ -310,13 +310,13 @@ TEST_F(DgnDbTest, CreateTrackedDgnDb)
 
     // Check that we can turn the Briefcase -> Master
     BeGuid oldGuid = dgndb->QueryProjectGuid();
-    result = dgndb->SetAsMaster();
+    result = dgndb->ResetBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::CheckpointSnapshot()));
     ASSERT_TRUE(result == BE_SQLITE_OK);
     BeGuid newGuid = dgndb->QueryProjectGuid();
     ASSERT_TRUE(oldGuid != newGuid && "A new GUID has to be assigned when turning a briefcase into a master copy");
 
     // Check that we can turn the Master -> Briefcase again
-    result = dgndb->SetAsBriefcase(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::LegacyStandalone()));
+    result = dgndb->ResetBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Snapshot()));
     ASSERT_TRUE(result == BE_SQLITE_OK);
     oldGuid = newGuid;
     newGuid = dgndb->QueryProjectGuid();
@@ -334,8 +334,8 @@ TEST_F(DgnDbTest, SetUntrackedDbAsMaster)
     DgnDbPtr dgndb = DgnDb::CreateDgnDb(&result, DgnDbTestDgnManager::GetOutputFilePath(L"MasterCopy.ibim"), params);
     ASSERT_TRUE(dgndb.IsValid());
 
-    dgndb->SetAsBriefcase(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::LegacyStandalone()));
-    dgndb->Txns().EnableTracking(true);
+    dgndb->ResetBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::StandAlone()));
+    ASSERT_TRUE(dgndb->Txns().IsTracking());
 
     PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*dgndb, "TestPartition");
     ASSERT_TRUE(model.IsValid());
@@ -344,10 +344,12 @@ TEST_F(DgnDbTest, SetUntrackedDbAsMaster)
     ASSERT_TRUE(categoryId.IsValid());
 
     dgndb->SaveChanges();
-    dgndb->Txns().EnableTracking(false);
+    ASSERT_TRUE(dgndb->Txns().HasPendingTxns());
 
     // Check that we can turn the Briefcase -> Master
-    result = dgndb->SetAsMaster();
+    result = dgndb->ResetBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::CheckpointSnapshot()));
+    ASSERT_FALSE(dgndb->Txns().HasPendingTxns());
+    ASSERT_FALSE(dgndb->Txns().IsTracking());
     ASSERT_TRUE(result == BE_SQLITE_OK);
 }
 
@@ -364,8 +366,8 @@ TEST_F(DgnDbTest, ImportSchemaWithLocalChanges)
     // Fails on Linux
     ASSERT_TRUE(dgndb.IsValid());
 
-    dgndb->SetAsBriefcase(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::LegacyStandalone()));
-    dgndb->Txns().EnableTracking(true);
+    dgndb->ResetBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::StandAlone()));
+    ASSERT_TRUE(dgndb->Txns().IsTracking());
 
     PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*dgndb, "TestPartition");
     ASSERT_TRUE(model.IsValid());

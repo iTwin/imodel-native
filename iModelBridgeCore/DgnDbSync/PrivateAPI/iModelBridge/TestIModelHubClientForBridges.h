@@ -71,7 +71,7 @@ struct TestRepositoryAdmin : IRepositoryManager
         else
             {
             BeAssert(iHeld->GetOwnership().GetLockLevel() == LockLevel::None);
-    
+
             // TODO: if indexof(clientParentRevisionId) < indexof(held.GetRevisionId())
             //          Pull is required
             }
@@ -99,7 +99,7 @@ struct TestRepositoryAdmin : IRepositoryManager
                 response.LockStates().insert(*iHeld);       // *** NEEDS WORK: Should return only the locks that the briefcase owns?
             }
         return response;
-        } 
+        }
 
     void ProcessedUpdateLockRequest(Response& response, DgnLock const& requestedLock, BeSQLite::BeBriefcaseId bcId, Utf8StringCR clientParentRevisionId)
         {
@@ -252,11 +252,11 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
     DgnDbP m_briefcase{};
     BeSQLite::BeBriefcaseId m_currentBriefcaseId;
     TestRepositoryAdmin m_admin;
-    TestIModelHubClientForBridges(BeFileNameCR testWorkDir) : m_testWorkDir(testWorkDir), m_currentBriefcaseId(BeSQLite::BeBriefcaseId::LegacyStandalone())
+    TestIModelHubClientForBridges(BeFileNameCR testWorkDir) : m_testWorkDir(testWorkDir), m_currentBriefcaseId(BeSQLite::BeBriefcaseId::Snapshot())
         {
         m_iModelInfo = new iModel::Hub::iModelInfo();
         }
-    
+
     static BeFileName MakeFakeRepoPath(BeFileNameCR testWorkDir, Utf8CP repoName)
         {
         BeFileName repoPath = testWorkDir;
@@ -266,7 +266,7 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
         }
 
     iModel::Hub::iModelInfoPtr GetIModelInfo() override {return m_iModelInfo;}
-    
+
     bvector<std::pair <DgnRevisionPtr, Utf8String>> GetDgnRevisions(size_t start = 0, size_t end = -1)
         {
         if (end < 0 || end > m_revisions.size())
@@ -291,7 +291,7 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
         m_serverRepo.clear();
         m_revisions.clear();
         m_briefcase = nullptr;
-        m_currentBriefcaseId = BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::LegacyStandalone());
+        m_currentBriefcaseId = BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Snapshot());
         return BSISUCCESS;
         }
 
@@ -342,7 +342,7 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
 
         auto db = DgnDb::OpenDgnDb(nullptr, bcFileName, DgnDb::OpenParams (DgnDb::OpenMode::ReadWrite));
         m_currentBriefcaseId = m_currentBriefcaseId.GetNextBriefcaseId();
-        db->SetAsBriefcase(m_currentBriefcaseId);
+        db->ResetBriefcaseId(m_currentBriefcaseId);
         db->SaveChanges();
         db = nullptr;
         if (revisions.empty())
@@ -382,7 +382,7 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
         }
 
     StatusInt Push(iModel::Hub::PushChangeSetArgumentsPtr pushArgs) override {return JustCaptureRevision(pushArgs->GetDescription(), &pushArgs->GetBridgeProperties()->GetChangedFiles().front());}
-    StatusInt PullMergeAndPush(iModel::Hub::PullChangeSetsArgumentsPtr, iModel::Hub::PushChangeSetArgumentsPtr pushArgs) override 
+    StatusInt PullMergeAndPush(iModel::Hub::PullChangeSetsArgumentsPtr, iModel::Hub::PushChangeSetArgumentsPtr pushArgs) override
         {
         Utf8StringCP fileName = NULL;
         bvector <Utf8String> files;
@@ -397,7 +397,7 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
     virtual DgnRevisionPtr CaptureChangeSet(DgnDbP db, Utf8CP comment)
         {
         BeAssert(db != nullptr);
-        BeAssert(!db->IsLegacyMaster());
+        BeAssert(!db->IsCheckpointSnapshot());
 
         DgnRevisionPtr changeSet = db->Revisions().StartCreateRevision();
 

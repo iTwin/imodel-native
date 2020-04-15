@@ -241,9 +241,7 @@ TEST_F(BriefcaseTests, SuccessfulOpenBriefcase)
     DgnDbPtr db;
     OpenDgnDb(db, acquireResult.GetValue()->GetLocalPath());
     EXPECT_TRUE(db->GetBriefcaseId().IsValid());
-    EXPECT_FALSE(db->GetBriefcaseId().IsLegacyMasterId());
-    EXPECT_FALSE(db->GetBriefcaseId().IsLegacyStandaloneId());
-    EXPECT_FALSE(db->GetBriefcaseId().IsFutureStandaloneId());
+    EXPECT_FALSE(db->GetBriefcaseId().IsStandAloneId());
     EXPECT_FALSE(db->GetBriefcaseId().IsSnapshot());
 
     iModelHubHelpers::OpenBriefcase(s_client, db);
@@ -328,19 +326,9 @@ TEST_F(BriefcaseTests, QueryInformationAboutInvalidBriefcase)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Karolis.Dziedzelis              01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(BriefcaseTests, QueryInformationAboutLegacyMaster)
+TEST_F(BriefcaseTests, QueryInformationAboutCheckpointSnapshot)
     {
-    BriefcaseInfoResult result = s_connection->QueryBriefcaseInfo(BeBriefcaseId(BeBriefcaseId::LegacyMaster()))->GetResult();
-    ASSERT_FAILURE(result);
-    EXPECT_EQ(Error::Id::InvalidBriefcase, result.GetError().GetId()) << "TFS#804283";
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                    Karolis.Dziedzelis              01/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(BriefcaseTests, QueryInformationAboutLegacyStandalone)
-    {
-    BriefcaseInfoResult result = s_connection->QueryBriefcaseInfo(BeBriefcaseId(BeBriefcaseId::LegacyStandalone()))->GetResult();
+    BriefcaseInfoResult result = s_connection->QueryBriefcaseInfo(BeBriefcaseId(BeBriefcaseId::CheckpointSnapshot()))->GetResult();
     ASSERT_FAILURE(result);
     EXPECT_EQ(Error::Id::InvalidBriefcase, result.GetError().GetId()) << "TFS#804283";
     }
@@ -348,9 +336,9 @@ TEST_F(BriefcaseTests, QueryInformationAboutLegacyStandalone)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Shaun.Sewall                    03/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(BriefcaseTests, QueryInformationAboutFutureStandalone)
+TEST_F(BriefcaseTests, QueryInformationAboutStandAlone)
     {
-    BriefcaseInfoResult result = s_connection->QueryBriefcaseInfo(BeBriefcaseId(BeBriefcaseId::FutureStandalone()))->GetResult();
+    BriefcaseInfoResult result = s_connection->QueryBriefcaseInfo(BeBriefcaseId(BeBriefcaseId::StandAlone()))->GetResult();
     ASSERT_FAILURE(result);
     EXPECT_EQ(Error::Id::InvalidBriefcase, result.GetError().GetId());
     }

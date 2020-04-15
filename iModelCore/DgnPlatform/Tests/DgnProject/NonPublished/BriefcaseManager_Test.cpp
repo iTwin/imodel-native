@@ -70,7 +70,7 @@ public:
         if (bcId.GetValue() != db->GetBriefcaseId().GetValue())
             {
             BeFileName name(db->GetFileName());
-            db->SetAsBriefcase(bcId);
+            db->ResetBriefcaseId(bcId);
             db->SaveChanges();
             db->CloseDb();
             DbResult result = BE_SQLITE_OK;
@@ -92,7 +92,7 @@ public:
     void ClearRevisions(DgnDbR db)
         {
         // Ensure the seed file doesn't contain any changes pending for a revision
-        if (!db.IsLegacyMaster())
+        if (!db.IsCheckpointSnapshot())
             {
             DgnRevisionPtr rev = db.Revisions().StartCreateRevision();
             if (rev.IsValid())
@@ -102,7 +102,7 @@ public:
                 }
             }
         }
-        
+
     DgnModelPtr CreateModel(Utf8CP name, DgnDbR db)
         {
         SubjectCPtr rootSubject = db.Elements().GetRootSubject();
@@ -285,7 +285,7 @@ struct LocksManagerTest : RepositoryManagerTest
 };
 
 /*---------------------------------------------------------------------------------**//**
-* gcc errs if defined inside the class: explicit specialization in non-namespace scope 
+* gcc errs if defined inside the class: explicit specialization in non-namespace scope
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<> DgnDbR LocksManagerTest::ExtractDgnDb(DgnDb const& obj) { return const_cast<DgnDbR>(obj); }
@@ -377,7 +377,7 @@ TEST_F(SingleBriefcaseLocksTest, AcquireLocks)
     ExpectLevel(lockableSchemas, LockLevel::None);
 
     EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().RelinquishLocks());
-    
+
     ExpectAcquire(model, LockLevel::Exclusive);
     ExpectLevel(model, LockLevel::Exclusive);
     ExpectLevel(db, LockLevel::Shared);
@@ -428,7 +428,7 @@ TEST_F(SingleBriefcaseLocksTest, ElementSpecificLockTests)
     DgnDbR db = *m_db;
 
     // TFS#901239: Test category and its subcategory insertion inside the _OnInserted call, need locks for sub category
-    SpatialCategory cat(db.GetDictionaryModel(), "SpatialCategoryTestInsert", DgnCategory::Rank::Domain); 
+    SpatialCategory cat(db.GetDictionaryModel(), "SpatialCategoryTestInsert", DgnCategory::Rank::Domain);
     DgnDbStatus catStat;
     IBriefcaseManager::Request req;
     EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().PrepareForElementInsert(req, cat, IBriefcaseManager::PrepareAction::Acquire));
@@ -549,7 +549,7 @@ TEST_F(SingleBriefcaseLocksTest, AcquireLocksBulkMode)
     ExpectLevel(lockableSchemas, LockLevel::None);
 
     EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().RelinquishLocks());
-    
+
     db.BriefcaseManager().StartBulkOperation();             // >>>>>>> start bulk ops
     ExpectAcquire(model, LockLevel::Exclusive);
     ExpectLevel(model, LockLevel::None);
@@ -1001,7 +1001,7 @@ struct DoubleBriefcaseTest : LocksManagerTest
     DgnModelId m_modelIds[2];
     DgnElementId m_elemIds[4];
 
-    ~DoubleBriefcaseTest() 
+    ~DoubleBriefcaseTest()
         {
         if (m_dbA.IsValid())
             m_dbA->SaveChanges();
@@ -1012,10 +1012,10 @@ struct DoubleBriefcaseTest : LocksManagerTest
     DgnModelId Model3dId() { return m_modelIds[0]; }
     DgnModelId Model2dId() { return m_modelIds[1]; }
 
-    DgnElementId Elem3dId1() { return m_elemIds[0]; } 
-    DgnElementId Elem3dId2() { return m_elemIds[1]; } 
-    DgnElementId Elem2dId1() { return m_elemIds[2]; } 
-    DgnElementId Elem2dId2() { return m_elemIds[3]; } 
+    DgnElementId Elem3dId1() { return m_elemIds[0]; }
+    DgnElementId Elem3dId2() { return m_elemIds[1]; }
+    DgnElementId Elem2dId1() { return m_elemIds[2]; }
+    DgnElementId Elem2dId2() { return m_elemIds[3]; }
 
     DgnModelPtr GetModel(DgnDbR db, bool twoD) { return db.Models().GetModel(twoD ? Model2dId() : Model3dId()); }
     DgnElementCPtr GetElement(DgnDbR db, DgnElementId id) { return db.Elements().GetElement(id); }
@@ -1475,56 +1475,9 @@ TEST_F(DoubleBriefcaseTest, DemoteLocks)
     EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().DemoteLocks(toRelease));
     ExpectLevel(*elem3d2, LockLevel::None);
     ExpectLevel(*model3d, LockLevel::None);
-    
+
     // After releasing lock, redo of change to previously-locked element is not possible
     EXPECT_FALSE(db.Txns().IsRedoPossible());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* A 'standalone briefcase' is a transactable DgnDb which did not originate from a master
-* copy - i.e., it is not associated with a repository on a server somewhere. Generally
-* used for tests; for developer activities operating on local files; or for initializing
-* a DgnDb which will later become promoted to be the master DgnDb for a new repository
-* on a server.
-* TxnManager is enabled; no requirement to acquire locks/codes.
-* @bsimethod                                                    Paul.Connelly   04/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (DoubleBriefcaseTest, StandaloneBriefcase)
-    {
-    SetupDbs(BeBriefcaseId::LegacyMaster());
-
-    DgnDbR master = *m_dbA; // master copy
-    DgnDbR brief  = *m_dbB; // standalone briefcase
-
-    EXPECT_TRUE(master.IsLegacyMaster());
-    EXPECT_FALSE(master.Txns().IsUndoPossible());
-
-    // Locks unconditionally granted for both...
-    ExpectLevel(master, LockLevel::Exclusive);
-    ExpectLevel(*GetElement(master, Elem2dId2()), LockLevel::Exclusive);
-    ExpectAcquire(*GetElement(master, Elem3dId2()), LockLevel::Exclusive);
-
-    ExpectLevel(brief, LockLevel::Exclusive);
-    ExpectLevel(*GetElement(brief, Elem2dId2()), LockLevel::Exclusive);
-    ExpectAcquire(*GetElement(brief, Elem3dId2()), LockLevel::Exclusive);
-
-    // So are codes...
-    AnnotationTextStyle style(master.GetDictionaryModel());
-    style.SetName("MyStyle");
-    DgnCode code = style.GetCode(); // the only reason we created the style...
-    EXPECT_EQ(RepositoryStatus::Success, master.BriefcaseManager().ReserveCode(code));
-    EXPECT_EQ(RepositoryStatus::Success, brief.BriefcaseManager().ReserveCode(code));
-
-    // TxnManager is ONLY enabled for briefcase...
-    EXPECT_TRUE(style.Insert().IsValid());
-    EXPECT_EQ(BE_SQLITE_OK, master.SaveChanges());
-    EXPECT_FALSE(master.Txns().IsUndoPossible());
-
-    AnnotationTextStyle briefStyle(brief.GetDictionaryModel());
-    briefStyle.SetName("MyStyle");
-    EXPECT_TRUE(briefStyle.Insert().IsValid());
-    EXPECT_EQ(BE_SQLITE_OK, brief.SaveChanges());
-    EXPECT_TRUE(brief.Txns().IsUndoPossible());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1766,7 +1719,7 @@ struct ExtractLocksTest : SingleBriefcaseLocksTest
                 return DgnDbStatus::Success;
             return DgnDbStatus::BadRequest;
             }
-        
+
         return m_db->Revisions().FinishCreateRevision() == RevisionStatus::Success ? DgnDbStatus::Success : DgnDbStatus::BadRequest;
         }
 };

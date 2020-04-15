@@ -147,7 +147,7 @@ static_assert((int)RepositoryStatus::ServerUnavailable == REPOSITORY_ERROR_BASE 
 enum class RevisionStatus : int
     {
     Success = SUCCESS, //!< Success
-    ApplyError = REVISION_ERROR_BASE + 1, //!< Error applying a revision when merging, reversing or reinstating it. 
+    ApplyError = REVISION_ERROR_BASE + 1, //!< Error applying a revision when merging, reversing or reinstating it.
     ChangeTrackingNotEnabled, //!< Change tracking has not been enabled. The Revision API mandates this.
     CorruptedChangeStream, //!< Contents of the change stream are corrupted and does not match the Revision
     FileNotFound, //!< File containing the changes to the revision is not found
@@ -170,8 +170,8 @@ enum class RevisionStatus : int
     ReverseOrReinstateSchemaChangesOnOpen, //! Cannot reverse or reinstate schema changes in an open DgnDb. Close the DgnDb, and process the operation when it is opened.
     ProcessSchemaChangesOnOpen, //! Cannot process changes schema changes in an open DgnDb. Close the DgnDb, and process the operation when it is opened.
     CannotMergeIntoReadonly, //! Cannot merge changes into a Readonly DgnDb.
-    CannotMergeIntoMaster, //! Cannot merge changes into a Master DgnDb.
     CannotMergeIntoReversed, //! Cannot merge changes into a DgnDb that has reversed revisions.
+    BadVersionId, // illegal version length
     };
 
 //=======================================================================================

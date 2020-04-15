@@ -256,34 +256,32 @@ protected:
 public:
     //! BeBriefcaseIds must be less than this value
     static uint32_t const MaxRepo() {return 1L<<24;}
-    //! The legacy concept of a master briefcase has been deprecated, but this function is preserved for code that might encounter older iModels
-    static uint32_t const LegacyMaster()  {return 0;}
-    //! From a legacy perspective, 1 used to identify a standalone iModel. However, this value now means Snapshot. This function is preserved for code that might encounter older iModels
-    static uint32_t const LegacyStandalone() {return 1;}
-    //! Reserve a new BeBriefcaseId for the new concept of single-practitioner standalone iModels.
-    //! @note This will be renamed to Standalone once all source code has been updated.
-    static uint32_t const FutureStandalone() {return MaxRepo() - 2;}
-    //! A snapshot iModel is read-only once created. They are typically used for archival and data transfer purposes.
-    //! @note Legacy standalone iModels are now considered snapshots
-    static uint32_t const Snapshot() {return 1;}
     //! A checkpoint snapshot iModel is a snapshot of a point on the iModelHub timeline.
-    //! @note Legacy master briefcases are now considered checkpoint snapshots that match the beginning of the iModelHub timeline
-    static uint32_t const CheckpointSnapshot() {return 0;}
+    //! @note Legacy master briefcases are now checkpoint snapshots that match the beginning of the iModelHub timeline
+    static uint32_t const CheckpointSnapshot() {return 0;} // was previously called "master"
+    //! A snapshot iModel is read-only once created. They are typically used for archival and data transfer purposes.
+    static uint32_t const Snapshot() {return 1;} // Note: this value was previously used for "standalone",
+    // Reserve a new BeBriefcaseId for the new concept of single-practitioner standalone iModels.
+    static uint32_t const StandAlone() {return MaxRepo() - 2;}
+    //! the first valid briefcaseId. 0 and 1 are reserved for snapshots
+    static uint32_t const FirstValidBriefcaseId() {return 2;}
+    //! the last valid briefcaseId
+    // NOTE: The 10 largest valid BeBriefcaseIds will not be assigned by iModelHub, so are available to identify special kinds of iModels.
+    static uint32_t const LastValidBriefcaseId() {return MaxRepo() - 10;}
     //! An illegal value
     static uint32_t const Illegal() {return (uint32_t)0xffffffff;}
 
-    // NOTE: The 10 largest valid BeBriefcaseIds will not be used by iModelHub, so are available to identify special kinds of iModels.
-    // NOTE: **FutureStandalone** is the first use of those reserved Ids.
-
     BeBriefcaseId GetNextBriefcaseId() const {return BeBriefcaseId(m_id+1);}
     BeBriefcaseId() {Invalidate();}             //!< Construct an invalid BeBriefcaseId.
-    explicit BeBriefcaseId(uint32_t u) {m_id=u;} //!< Construct a BeBriefcaseId from a 32 bit value.
+    //! Construct a BeBriefcaseId from a 32 bit value. Sets to Invalid if value is greater than MaxRepo.
+    explicit BeBriefcaseId(uint32_t u) {m_id = (u >= MaxRepo()) ? Illegal() : u;}
     void Invalidate() {m_id = Illegal();}  //!< Set this BeBriefcaseId to the invalid id value
     bool IsValid() const {return Illegal() != m_id;}  //!< Test to see whether this BriefcaseId is valid.
-    bool IsLegacyMasterId() const {return LegacyMaster()==m_id;}  //!< Determine whether this is the id of the legacy master briefcase.
-    bool IsLegacyStandaloneId() const {return LegacyStandalone()==m_id;} //!< Determine whether this is the id of a legacy standalone iModel.
-    bool IsFutureStandaloneId() const {return FutureStandalone()==m_id;} //!< Determine whether this is the id of the future standalone iModel.
-    bool IsSnapshot() const {return Snapshot()==m_id || CheckpointSnapshot()==m_id;} //!< Determine whether the id equals Snapshot or CheckpointSnapshot.
+    bool IsStandAloneId() const {return StandAlone()==m_id;} //!< Determine whether this is a standalone iModel.
+    bool IsCheckpointSnapshotId() const {return  CheckpointSnapshot()==m_id;} //!< Determine whether the id equals CheckpointSnapshot.
+    bool IsSnapshotId() const {return Snapshot()==m_id;} //!< Determine whether the id equals Snapshot
+    bool IsSnapshot() const {return IsSnapshotId() || IsCheckpointSnapshotId();} //!< Determine whether the id equals Snapshot or CheckpointSnapshot.
+    bool IsBriefcase() const {return m_id >= FirstValidBriefcaseId() &&  m_id <= LastValidBriefcaseId();}
     uint32_t GetValue() const {BeAssert(IsValid()); BeAssert(m_id<MaxRepo()); return m_id;} //!< Get the briefcase id as a uint32_t
     bool operator==(BeBriefcaseId const& rhs) const {return rhs.m_id==m_id;}
     bool operator!=(BeBriefcaseId const& rhs) const {return !(*this == rhs);}
@@ -2489,15 +2487,8 @@ protected:
     //! @note implementers should always forward this call to their superclass.
     BE_SQLITE_EXPORT virtual void _OnDbChangedByOtherConnection();
 
-    //!< Override to perform additional processing before and after the Db is setup as the master
-    //! @note implementers should always forward this call to their superclass.
-    virtual DbResult _OnBeforeSetAsMaster(BeGuid guid) { return BE_SQLITE_OK; }
-    virtual DbResult _OnAfterSetAsMaster(BeGuid guid) { return BE_SQLITE_OK; }
-
-    //!< Override to perform additional processing before and after the Db is setup as a local briefcase
-    //! @note implementers should always forward this call to their superclass.
-    virtual DbResult _OnBeforeSetAsBriefcase(BeBriefcaseId newBriefcaseId) { return BE_SQLITE_OK; }
-    virtual DbResult _OnAfterSetAsBriefcase(BeBriefcaseId newBriefcaseId) { return BE_SQLITE_OK; }
+    virtual void _OnBeforeSetBriefcaseId(BeBriefcaseId newId, Utf8StringR parentRevId, Utf8StringR initialParentRevId) {}
+    virtual void _OnAfterSetBriefcaseId(Utf8StringCR parentRevId, Utf8StringCR initialParentRevId) {}
 
     //! Gets called when a Db is opened and checks whether the file can be opened, i.e
     //! whether the file version matches what the opening API expects.
@@ -2545,7 +2536,6 @@ private:
     DbResult ClearBriefcaseLocalValues();
     void SetupBlvSaveStmt(Statement& stmt, Utf8CP name);
     DbResult ExecBlvQueryStmt(Statement& stmt, Utf8CP name) const;
-    DbResult AssignBriefcaseId(BeBriefcaseId);
     BE_SQLITE_EXPORT DbResult DropTable(Utf8CP tableName, bool requireExists) const;
 
 public:
@@ -2591,7 +2581,7 @@ public:
     BE_SQLITE_EXPORT DbResult FreeMemory() const;
 
     //! Configure low level sqlite trace
-    BE_SQLITE_EXPORT DbResult ConfigureTrace(DbTrace categories, 
+    BE_SQLITE_EXPORT DbResult ConfigureTrace(DbTrace categories,
         std::function<void(TraceContext const& ctx, Utf8CP sql)> stmtCb,
         std::function<void(TraceContext const& ctx, int64_t nanoseconds)> profileCn,
         std::function<void(TraceContext const& ctx)> rowCb
@@ -3011,18 +3001,8 @@ public:
     //! @see https://sqlite.org/c3ref/update_hook.html
     BE_SQLITE_EXPORT void RemoveDataUpdateCallback() const;
 
-    BE_SQLITE_EXPORT void ChangeDbGuid(BeGuid);
-
-    //! Sets up this Db as a new master copy
-    //! @param[in] guid The guid for the new database. The guid will be saved persistently in the new database.
-    //! If the guid is invalid (e.g. by passing "BeGuid()" for dbGuid), a new guid is created by this method.
-    //! @remarks Errors out if the Db is already a master copy.
-    BE_SQLITE_EXPORT DbResult SetAsMaster(BeGuid guid = BeGuid());
-
-    //! Sets up this Db as a briefcase with the supplied Id.
-    //! @param[in] briefcaseId Id of the briefcase
-    //! @remarks Errors out if the Db is already a briefcase. @see SetAsMaster()
-    BE_SQLITE_EXPORT DbResult SetAsBriefcase(BeBriefcaseId briefcaseId);
+    BE_SQLITE_EXPORT DbResult ChangeDbGuid(BeGuid);
+    BE_SQLITE_EXPORT DbResult ResetBriefcaseId(BeBriefcaseId);
 
     //! Set or replace the ChangeTracker for this Db.
     //! @param[in] tracker The new ChangeTracker for this Db.

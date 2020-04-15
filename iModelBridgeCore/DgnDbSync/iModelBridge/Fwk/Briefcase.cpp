@@ -202,7 +202,7 @@ Utf8String      iModelBridgeFwk::ParseTokenFile(Utf8StringCR tokenFile)
     WString contents;
     if (SUCCESS != iModelBridgeFwk::ReadEntireFile(contents, BeFileName(tokenFile)))
         return tokenFile;
-    
+
     return Utf8String(contents);
     }
 
@@ -218,10 +218,10 @@ BentleyStatus   iModelBridgeFwk::IModelHubArgs::ParseEnvironment()
         m_accessToken = ParseTokenFile(tokenFileName);
         }
     SetValueIfEmptyFromEnv(L"imbridge--server-oidcCallBackUrl", m_callBackurl);
-    
+
     if (!m_briefcaseId.IsValid())
         SetValueFromEnv(L"imbridge--server-briefcaseId", m_briefcaseId);
-    
+
     //
     Utf8String value;
     if (SetValueIfEmptyFromEnv(L"imbridge--server-environment", value))
@@ -236,9 +236,9 @@ BentleyStatus   iModelBridgeFwk::IModelHubArgs::ParseEnvironment()
         SetValueIfEmptyFromEnv(L"imbridge--server-context", m_bcsProjectId);
     else
         m_haveProjectGuid = true;
-    
+
     SetValueIfEmptyFromEnv(L"imbridge--server-iModelName", m_repositoryName);
-    
+
     SetValueFromEnv(L"imbridge--server-retries", m_maxRetryCount);
 
     return SUCCESS;
@@ -344,7 +344,7 @@ BentleyStatus iModelBridgeFwk::IModelBankArgs::ParseCommandLine(bvector<WString>
             m_accessToken = getArgValue(argv[iArg]);
             continue;
             }
-        
+
         if (argv[iArg] == wcsstr(argv[iArg], L"--imodel-bank-imodel-id="))
             {
             m_iModelId = getArgValue(argv[iArg]);
@@ -453,7 +453,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_AcquireBriefcase(iModelBridgeFwk::FwkCo
         {
         context.m_settings.GetBriefCaseId(m_dmsServerArgs.GetDocumentGuid(), briefcaseId);
         }
-    
+
     if (briefcaseId.IsValid())
         {
         if (BSISUCCESS != m_client->RestoreBriefcase(m_briefcaseName, m_briefcaseBasename.c_str(), briefcaseId))
@@ -493,7 +493,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_AcquireBriefcase(iModelBridgeFwk::FwkCo
             GetLogger().infov("Cannot open briefcase (error %x)\n", rc);
             }
         }
-    
+
     if (BE_SQLITE_OK == rc)
         context.m_settings.SetBriefCaseId(m_dmsServerArgs.GetDocumentGuid(), briefcaseId);
 
@@ -514,7 +514,7 @@ bool iModelBridgeFwk::Briefcase_IsBriefcase()
     if (!dgndb.IsValid())
         return false;
 
-    return !dgndb->IsLegacyMaster();
+    return dgndb->IsBriefcase();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -638,9 +638,9 @@ BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP descIn, bvector<Ut
     BeSQLite::BeGuid guid;
     if (SUCCESS != guid.FromString(m_jobEnvArgs.m_jobRunCorrelationId.c_str()))
         guid.Create();
-    
+
     iModel::Hub::BridgePropertiesPtr bridgeProperties = iModel::Hub::BridgeProperties::Create(guid, changedFiles ? *changedFiles : emptyFiles, users);
-    
+
     iModel::Hub::PushChangeSetArgumentsPtr pushArguments = iModel::Hub::PushChangeSetArguments::Create(comment.c_str(), changes, bridgeProperties,false, getHttpProgressMeter());
 
     auto status = doPullMergeAndPush? m_client->PullMergeAndPush(pullArguments, pushArguments):
@@ -739,7 +739,7 @@ static bool shouldBridgeHoldThisLock(DgnLockCR lock, DgnDbR db)
         BeAssert((!isExclusive || !isShareOnlyModel(lock)) && "bridge must never lock a shared definitions model exclusively");
         return isExclusive || isRepositoryModel(lock);
         }
-    
+
     if (LockableType::Db == lock.GetType())
         {
         // A bridge must hold onto its shared lock on the Db.(3)
@@ -749,7 +749,7 @@ static bool shouldBridgeHoldThisLock(DgnLockCR lock, DgnDbR db)
     // A bridge never holds the Schema, CodeSpecs, or other locks that guard the schema channel.
     return false;
 
-    // (1) The repository model is where the bridge created its JobSubject and its child Subject. 
+    // (1) The repository model is where the bridge created its JobSubject and its child Subject.
     // The bridge must retain its exclusive lock on those Subjects. If we were to release
     // The bridge's shared lock on that model, that would auto-release locks on all elements in that model.
 
@@ -763,7 +763,7 @@ static bool shouldBridgeHoldThisLock(DgnLockCR lock, DgnDbR db)
     // (4) RepositoryLink elements are stored in the repository model and are shared by multiple bridges.
     // There is no way to predict which bridge will create a RepositoryLink element. A bridge may create
     // a RepositoryLink that corresponds to a file that is not assigned to that bridge, if that is necessary
-    // in order to traverse references from that file and to create subjects for them. 
+    // in order to traverse references from that file and to create subjects for them.
     // Nevertheless. the bridge to which the file is assigned must be able to update the RepositoryLink element.
     // So, we must keep RepositoryLink elements unlocked.
     }
@@ -845,7 +845,7 @@ void iModelBridgeFwk::Briefcase_Shutdown()
     {
     if (nullptr != m_client && m_client != s_clientForTesting)
         delete m_client;       // This relases the DgnDbBriefcase
-        
+
     m_client = nullptr;
 
     Http::HttpClient::Uninitialize();
@@ -884,7 +884,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_Initialize(int argc, WCharCP argv[], iM
 
     Http::HttpClient::Initialize(assetsDir);
     Http::HttpClient::Reinitialize(); // In case Unintialize was called prior to this.
-    
+
     BeAssert(nullptr == m_client);
     WebServices::ClientInfoPtr clientInfo = nullptr;
     if (NULL != m_bridge)

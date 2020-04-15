@@ -59,7 +59,7 @@ struct AsyncQuery
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
             } while (rcPoll == ConcurrentQueryManager::PollStatus::Pending);
 
-        auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start);        
+        auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start);
         if (rcPoll == ConcurrentQueryManager::PollStatus::Done)
             {
             q->m_rows += rows;
@@ -130,7 +130,7 @@ struct AsyncQuery
 
 
     void Wait()
-        {        
+        {
         m_promise.get_future().wait();
         m_thread.join();
         }
@@ -167,7 +167,7 @@ TEST_F(ECDbTestFixture, ConcurrentQueryManagerReadonly)
         .SetConcurrent(8)
         .SetIdleCleanupTime(30s);
 
-    auto& mgr = m_ecdb.GetConcurrentQueryManager();  
+    auto& mgr = m_ecdb.GetConcurrentQueryManager();
     mgr.Initalize(config);
     std::async([&] ()
         {
@@ -187,10 +187,10 @@ TEST_F(ECDbTestFixture, ConcurrentQueryManagerReadonly)
 struct RetryHandler final : BeSQLite::BusyRetry
     {
     private:
-        virtual int _OnBusy(int count) const override 
+        virtual int _OnBusy(int count) const override
             {
             printf("Main %d\n", count);
-            return 1; 
+            return 1;
             }
     };
 
@@ -223,7 +223,7 @@ TEST_F(ECDbTestFixture, ConcurrentQueryManagerReadWrite)
             queries.push_back(std::make_unique<AsyncQuery>(mgr, SqlPrintfString("select * from meta.ecclassdef where ecinstanceid<> %d", i), ConcurrentQueryManager::Priority::Low));
             queries.push_back(std::make_unique<AsyncQuery>(mgr, SqlPrintfString("select * from meta.ecpropertydef where ecinstanceid<> %d", i), ConcurrentQueryManager::Priority::High));
 
-            // simulate write to primary connection and call save changes to trigger RetryBusy handler 
+            // simulate write to primary connection and call save changes to trigger RetryBusy handler
             m_ecdb.ExecuteSql("insert into test_foo(col) values (1)");
 
             }
@@ -368,7 +368,7 @@ TEST_F(ECDbTestFixture, Settings)
     BeFileName testFilePath(m_ecdb.GetDbFileName());
     CloseECDb();
 
-    auto createSchemaV1 = [] () 
+    auto createSchemaV1 = [] ()
         {
         ECSchemaPtr schema = nullptr;
         EXPECT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "Test", "t", 1, 0, 0));
@@ -382,7 +382,7 @@ TEST_F(ECDbTestFixture, Settings)
         return schema;
         };
 
-    //creates V2 of the test schema that contains changes (a class is deleted) that are not supported by changeset merging 
+    //creates V2 of the test schema that contains changes (a class is deleted) that are not supported by changeset merging
     auto createSchemaV2 = [] ()
         {
         ECSchemaPtr schema = nullptr;
@@ -682,10 +682,10 @@ TEST_F(ECDbTestFixture, ResetInstanceIdSequence)
                                                                                 <ECProperty propertyName="Prop4" typeName="int" />
                                                                             </ECEntityClass>
                                                                         </ECSchema>)xml")));
-    
+
     BeFileName filePath(m_ecdb.GetDbFileName());
 
-    BeBriefcaseId masterBriefcaseId(BeBriefcaseId::LegacyMaster());
+    BeBriefcaseId masterBriefcaseId(BeBriefcaseId::CheckpointSnapshot());
     BeBriefcaseId briefcaseAId(3);
     BeBriefcaseId briefcaseBId(111);
 
@@ -695,7 +695,7 @@ TEST_F(ECDbTestFixture, ResetInstanceIdSequence)
     ASSERT_EQ(BE_SQLITE_OK, PopulateECDb(5));
     sequenceValuesPerBriefcase[masterBriefcaseId.GetValue()] = UINT64_C(40);
 
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SetAsBriefcase(briefcaseAId));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ResetBriefcaseId(briefcaseAId));
     ASSERT_EQ(BE_SQLITE_OK, PopulateECDb(5));
     sequenceValuesPerBriefcase[briefcaseAId.GetValue()] = UINT64_C(40);
 
@@ -722,14 +722,13 @@ TEST_F(ECDbTestFixture, ResetInstanceIdSequence)
 TEST_F(ECDbTestFixture, GetAndAssignBriefcaseIdForDb)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("ecdbbriefcaseIdtest.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
-    
+
     BeBriefcaseId id = m_ecdb.GetBriefcaseId();
     ASSERT_TRUE(id.IsValid());
-    int32_t previousBriefcaseId = id.GetValue();
-    BeBriefcaseId nextid = id.GetNextBriefcaseId();
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SetAsBriefcase(nextid));
+    BeBriefcaseId newId = BeBriefcaseId(BeBriefcaseId::FirstValidBriefcaseId());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ResetBriefcaseId(newId));
     int32_t changedBriefcaseId = m_ecdb.GetBriefcaseId().GetValue();
-    ASSERT_NE(previousBriefcaseId, changedBriefcaseId);
+    ASSERT_EQ(newId.GetValue(), changedBriefcaseId);
     }
 
 //---------------------------------------------------------------------------------------

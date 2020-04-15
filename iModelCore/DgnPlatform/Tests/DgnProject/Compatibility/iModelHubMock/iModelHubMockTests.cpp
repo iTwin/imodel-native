@@ -8,7 +8,7 @@
 #include "iModelHubMock.h"
 #include "../CompatibilityTestFixture.h"
 
-struct IModelHubMockTestFixture : public ::testing::Test, DgnPlatformLib::Host::RepositoryAdmin 
+struct IModelHubMockTestFixture : public ::testing::Test, DgnPlatformLib::Host::RepositoryAdmin
 {
 private:
     static bool                     s_isInitialized;
@@ -18,7 +18,7 @@ private:
     BeFileName                      m_outputRoot;
     IModelHubMock*                  m_mock;
 
-    void Initialize() 
+    void Initialize()
         {
         BeFileName assets;
         BeTest::GetHost().GetDgnPlatformAssetsDirectory(assets);
@@ -31,7 +31,7 @@ public:
     BeFileNameCR GetTempPath() {return m_tempPath;}
     BeFileNameCR GetOutputPath() {return m_outputRoot;}
 
-    void SetUp() override 
+    void SetUp() override
         {
         if (!s_isInitialized)
             Initialize();
@@ -42,7 +42,7 @@ public:
         m_mock = new IModelHubMock(m_outputRoot);
         }
 
-    void TearDown() override 
+    void TearDown() override
         {
         delete m_mock;
         delete s_host;
@@ -84,9 +84,7 @@ TEST_F(IModelHubMockTestFixture, AcquireBriefcase)
     DbResult stat;
     auto db = DgnDb::OpenDgnDb(&stat, briefcasePath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
     ASSERT_TRUE(db.IsValid());
-    ASSERT_FALSE(db->IsLegacyMaster());
-    ASSERT_FALSE(db->IsLegacyStandalone());
-    ASSERT_FALSE(db->IsFutureStandalone());
+    ASSERT_FALSE(db->IsStandAlone());
     ASSERT_FALSE(db->IsSnapshot());
     }
 
@@ -103,9 +101,7 @@ TEST_F(IModelHubMockTestFixture, AcquireMultipleBriefcase)
     DbResult stat;
     auto db = DgnDb::OpenDgnDb(&stat, briefcasePath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
     ASSERT_TRUE(db.IsValid());
-    ASSERT_FALSE(db->IsLegacyMaster());
-    ASSERT_FALSE(db->IsLegacyStandalone());
-    ASSERT_FALSE(db->IsFutureStandalone());
+    ASSERT_FALSE(db->IsStandAlone());
     ASSERT_FALSE(db->IsSnapshot());
 
     // Acquire another briefcase
@@ -114,9 +110,7 @@ TEST_F(IModelHubMockTestFixture, AcquireMultipleBriefcase)
     ASSERT_TRUE(BeFileName::DoesPathExist(briefcasePath));
     auto db2 = DgnDb::OpenDgnDb(&stat, briefcasePath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
     ASSERT_TRUE(db2.IsValid());
-    ASSERT_FALSE(db2->IsLegacyMaster());
-    ASSERT_FALSE(db2->IsLegacyStandalone());
-    ASSERT_FALSE(db2->IsFutureStandalone());
+    ASSERT_FALSE(db2->IsStandAlone());
     ASSERT_FALSE(db2->IsSnapshot());
 
     ASSERT_NE(db->GetBriefcaseId(), db2->GetBriefcaseId());
@@ -311,7 +305,7 @@ TEST_F(IModelHubMockTestFixture, OverflowIssue)
                         <ECProperty propertyName="p29" typeName="int"/>
                         <ECProperty propertyName="p30" typeName="int"/>
                         <ECProperty propertyName="p31" typeName="int"/>
-                        <ECProperty propertyName="p32" typeName="int"/>		
+                        <ECProperty propertyName="p32" typeName="int"/>
                     </ECEntityClass>
                 </ECSchema>)xml";
 
@@ -365,8 +359,8 @@ TEST_F(IModelHubMockTestFixture, OverflowIssue)
         GeometricElement3d::CreateParams param = GeometricElement3d::CreateParams(*db, modelId, classId, categoryId);
         auto handler = dgn_ElementHandler::Element::FindHandler(*db, param.m_classId);
         for (int i = 0; i < 10; ++i)
-            {           
-            auto newEl = handler->Create(param);        
+            {
+            auto newEl = handler->Create(param);
             ((PhysicalElementP) (newEl.get()))->SetCategoryId(categoryId);
             for (ECN::ECPropertyCP property : newEl->GetElementClass()->GetProperties(false))
                 {
@@ -428,12 +422,12 @@ TEST_F(IModelHubMockTestFixture, OverflowIssue)
                         <ECProperty propertyName="p29" typeName="int"/>
                         <ECProperty propertyName="p30" typeName="int"/>
                         <ECProperty propertyName="p31" typeName="int"/>
-                        <ECProperty propertyName="p32" typeName="int"/>		
+                        <ECProperty propertyName="p32" typeName="int"/>
 
                         <!-- bis_GeometricElement3d_overflow -->
-                        <ECProperty propertyName="o33" typeName="int"/>		
-                        <ECProperty propertyName="o34" typeName="int"/>		
-                        <ECProperty propertyName="o35" typeName="int"/>		
+                        <ECProperty propertyName="o33" typeName="int"/>
+                        <ECProperty propertyName="o34" typeName="int"/>
+                        <ECProperty propertyName="o35" typeName="int"/>
                     </ECEntityClass>
                 </ECSchema>)xml";
 
@@ -504,7 +498,7 @@ TEST_F(IModelHubMockTestFixture, OverflowIssue)
 
     dbB->SaveChanges("test3");
     dbB->BriefcaseManager().RelinquishLocks();
-    dbB->CloseDb();   
+    dbB->CloseDb();
     dbB = nullptr;
 
     auto openParam = DgnDb::OpenParams(Db::OpenMode::ReadWrite);
@@ -515,8 +509,8 @@ TEST_F(IModelHubMockTestFixture, OverflowIssue)
     auto rev3 = dbB->Revisions().StartCreateRevision();
     ASSERT_TRUE(rev3.IsValid());
     ASSERT_EQ(RevisionStatus::Success, dbB->Revisions().FinishCreateRevision());
-    
-    ASSERT_FALSE(GetMock()->PushChangeset(rev3, id).empty());    
+
+    ASSERT_FALSE(GetMock()->PushChangeset(rev3, id).empty());
     dbB->CloseDb();
     dbB = nullptr;
     ASSERT_TRUE(GetMock()->ManualMergeAllChangesets(id));

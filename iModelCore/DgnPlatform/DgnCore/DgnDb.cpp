@@ -261,96 +261,50 @@ DbResult DgnDb::_OnDbOpening()
     return InitializeElementIdSequence();
     }
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    04/17
-//--------------------------------------------------------------------------------------
-DbResult DgnDb::_OnBeforeSetAsMaster(BeSQLite::BeGuid guid)
-    {
-    PRECONDITION(!Revisions().IsCreatingRevision() && "Cannot setup a master Db when a revision is being created", BE_SQLITE_ERROR);
-    PRECONDITION(!Revisions().HasReversedRevisions() && "A briefcase that has reversed changesets cannot be set as the master copy", BE_SQLITE_ERROR);
+/*---------------------------------------------------------------------------------**/ /**
+@bsimethod                                    Keith.Bentley                    04/20
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnDb::_OnBeforeSetBriefcaseId(BeBriefcaseId newId, Utf8StringR parentRevId, Utf8StringR initialParentRevId) {
+    T_Super::_OnBeforeSetBriefcaseId(newId, parentRevId, initialParentRevId);
 
-    DbResult result = T_Super::_OnBeforeSetAsMaster(guid);
-    if (result != BE_SQLITE_OK)
-        return result;
+    Txns().EnableTracking(false);
+    Txns().DeleteAllTxns(); // whenever we switch briefcaseIds, all of the current txn data is invalid
 
-    // Save and restore the parentChangeSetId and initialParentChangeSetId if a checkpoint was
-    // created with the briefcase. Otherwise, these Ids are lost when the entire local table
-    // are cleared.
-    if (GetDbGuid() == guid)
-        BackupParentChangeSetIds();
-    else
-        {
-        Txns().DeleteAllTxns();
-        InitParentChangeSetIds();
-        }
-    return BE_SQLITE_OK;
+    // We have to save timeline data because it gets lost when the BeLocal table is cleared. It is restored in _OnAfterSetBriefcase.
+    if (!newId.IsStandAloneId() && !newId.IsSnapshotId()) { // However, Standalone and Snapshots should not have timeline data
+        parentRevId = Revisions().GetParentRevisionId();
+        initialParentRevId = Revisions().QueryInitialParentRevisionId();
+    }
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+@bsimethod                                    Keith.Bentley                    04/20
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnDb::_OnAfterSetBriefcaseId(Utf8StringCR parentRevId, Utf8StringCR initialParentRevId) {
+    T_Super::_OnAfterSetBriefcaseId(parentRevId, initialParentRevId);
+
+    ResetElementIdSequence(GetBriefcaseId());
+
+    if (AreTxnsAllowed()) {
+        Txns().EnableTracking(true);
+        Txns().InitializeTableHandlers();
     }
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    04/17
-//--------------------------------------------------------------------------------------
-DbResult DgnDb::_OnAfterSetAsMaster(BeSQLite::BeGuid guid)
-    {
-    DbResult result = T_Super::_OnAfterSetAsMaster(guid);
-    if (result != BE_SQLITE_OK)
-        return result;
-
-    BeBriefcaseId masterBriefcaseId(BeBriefcaseId::LegacyMaster());
-    result = ResetElementIdSequence(masterBriefcaseId);
-    if (result != BE_SQLITE_OK)
-        return result;
-
-    // Save and restore the parentChangeSetId and initialParentChangeSetId if a checkpoint was
-    // created with the briefcase. Otherwise, these Ids are lost when the entire local table hg comm
-    // are cleared.
-    return RestoreParentChangeSetIds();
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    04/18
-//--------------------------------------------------------------------------------------
-DbResult DgnDb::_OnBeforeSetAsBriefcase(BeBriefcaseId newBriefcaseId)
-    {
-    DbResult result = T_Super::_OnBeforeSetAsBriefcase(newBriefcaseId);
-    if (result != BE_SQLITE_OK)
-        return result;
-
-    BackupParentChangeSetIds();
-    return BE_SQLITE_OK;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    04/17
-//--------------------------------------------------------------------------------------
-DbResult DgnDb::_OnAfterSetAsBriefcase(BeBriefcaseId newBriefcaseId)
-    {
-    DbResult result = T_Super::_OnAfterSetAsBriefcase(newBriefcaseId);
-    if (result != BE_SQLITE_OK)
-        return result;
-
-    result = ResetElementIdSequence(newBriefcaseId);
-    if (result != BE_SQLITE_OK)
-        return result;
-
-    Txns().EnableTracking(true);
-    result = Txns().InitializeTableHandlers();
-    if (result != BE_SQLITE_OK)
-        return result;
-
-    return RestoreParentChangeSetIds();
-    }
+    // restore the timeline data, if present
+    Revisions().SaveParentRevisionId(parentRevId);
+    Revisions().SaveInitialParentRevisionId(initialParentRevId);
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    09/19
 //--------------------------------------------------------------------------------------
-DbResult DgnDb::_AfterSchemaChangeSetApplied() const
-    {
+DbResult DgnDb::_AfterSchemaChangeSetApplied() const {
     DbResult result = T_Super::_AfterSchemaChangeSetApplied();
     if (result != BE_SQLITE_OK)
         return result;
     Domains().SyncWithSchemas();
     return BE_SQLITE_OK;
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    09/19
@@ -368,39 +322,6 @@ DbResult DgnDb::_AfterDataChangeSetApplied()
         return result;
         }
 
-    return BE_SQLITE_OK;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    04/18
-//--------------------------------------------------------------------------------------
-void DgnDb::InitParentChangeSetIds()
-    {
-    m_parentChangeSetId = "";
-    m_initialParentChangeSetId = "";
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    04/18
-//--------------------------------------------------------------------------------------
-void DgnDb::BackupParentChangeSetIds()
-    {
-    m_parentChangeSetId = Revisions().GetParentRevisionId();
-    m_initialParentChangeSetId = Revisions().QueryInitialParentRevisionId();
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    04/18
-//--------------------------------------------------------------------------------------
-DbResult DgnDb::RestoreParentChangeSetIds()
-    {
-    if (!m_parentChangeSetId.empty() && RevisionStatus::Success != Revisions().SaveParentRevisionId(m_parentChangeSetId))
-        return BE_SQLITE_ERROR;
-
-    if (!m_initialParentChangeSetId.empty() && RevisionStatus::Success != Revisions().SaveInitialParentRevisionId(m_initialParentChangeSetId))
-        return BE_SQLITE_ERROR;
-
-    InitParentChangeSetIds();
     return BE_SQLITE_OK;
     }
 

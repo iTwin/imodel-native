@@ -61,7 +61,7 @@ struct iModelTests : public IntegrationTestsBase
         {
         TestsProgressCallback callback;
         iModelHubHelpers::DeleteiModelByName(s_client, name);
-        iModelResult createResult = s_client->CreateNewiModel(s_projectId, *m_db, name, description, true, callback.Get())->GetResult();        
+        iModelResult createResult = s_client->CreateNewiModel(s_projectId, *m_db, name, description, true, callback.Get())->GetResult();
         callback.Verify(true);
         return createResult;
         }
@@ -347,7 +347,7 @@ TEST_F(iModelTests, UnsuccessfulCreateiModelFromBriefcase)
     TestsProgressCallback callback;
     m_imodelName = GetTestiModelName();
     Utf8String description = m_imodelName + " is created by iModelHubHost";
-    m_db->SetAsBriefcase(BeSQLite::BeBriefcaseId(2));
+    m_db->ResetBriefcaseId(BeSQLite::BeBriefcaseId(2));
 
     iModelResult createResult = s_client->CreateNewiModel(s_projectId, *m_db, m_imodelName, description, true, callback.Get())->GetResult();
     ASSERT_FAILURE(createResult);
@@ -361,7 +361,7 @@ TEST_F(iModelTests, CreateiModelUsingOidcLogin)
     {
     ClientPtr oidcClient;
     iModelHubHelpers::CreateOidcClient(oidcClient, IntegrationTestsSettings::Instance().GetValidAdminCredentials());
-    
+
     iModelResult createResult = iModelHubHelpers::CreateNewiModel(oidcClient, m_db, s_projectId, true);
     ASSERT_SUCCESS(createResult) << "iModel create using Oidc login failed";
     auto creatediModelInfo = createResult.GetValue();
@@ -434,7 +434,7 @@ TEST_F(iModelTests, UpdateiModel)
 
     Utf8String name2 = "TestiModel2";
     ASSERT_SUCCESS(CreateiModel(name2));
-    
+
     iModelResult imodelResult = s_client->GetiModelById(s_projectId, createResult.GetValue()->GetId())->GetResult();
     ASSERT_SUCCESS(imodelResult);
 
@@ -446,7 +446,7 @@ TEST_F(iModelTests, UpdateiModel)
     EXPECT_EQ(Error::Id::iModelAlreadyExists, updateResult.GetError().GetId());
     // Clean up
     iModelHubHelpers::DeleteiModelByName(s_client, name2);
-    
+
     // Rename to invalid name
     imodel->SetName("");
     updateResult = s_client->UpdateiModel(s_projectId, *imodel)->GetResult();

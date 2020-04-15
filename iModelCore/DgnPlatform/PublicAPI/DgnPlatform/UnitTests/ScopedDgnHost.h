@@ -11,7 +11,7 @@
 #include <DgnPlatform/DgnPlatformLib.h>
 
 // A published unit test can include only published API header files ... with the exception of a few utilities like this.
-// This header file is snuck in through a back door. This header file can only include and use published API header files 
+// This header file is snuck in through a back door. This header file can only include and use published API header files
 // (or the few headers that are brought in through the back door).
 
 BEGIN_BENTLEY_DGN_NAMESPACE
@@ -73,7 +73,7 @@ public:
     DGNPLATFORM_EXPORT void CloseTestFile ();
 
     // Ensures a transactable, standalone iModel.
-    DGNPLATFORM_EXPORT static void SetAsFutureStandalone(DgnDbPtr& db, DgnDb::OpenMode mode);
+    DGNPLATFORM_EXPORT static void SetAsStandAlone(DgnDbPtr& db, DgnDb::OpenMode mode);
 };
 
 struct TestDgnManager : TestDataManager

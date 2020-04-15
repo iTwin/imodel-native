@@ -50,7 +50,7 @@ void CreatSeedDb (WCharCP seedFileName)
     dgnDbPtr = DgnDbTestUtils::CreateSeedDb (seedFileName);
     ASSERT_TRUE (dgnDbPtr.IsValid ());
 
-    dgnDbPtr->SetAsBriefcase (BeBriefcaseId (BeBriefcaseId::Standalone ()));
+    dgnDbPtr->ResetBriefcaseId (BeBriefcaseId (BeBriefcaseId::Standalone ()));
 
     // Import the units and formats schema.
     ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext();

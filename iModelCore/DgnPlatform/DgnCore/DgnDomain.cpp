@@ -261,7 +261,7 @@ void DgnDomains::DeleteHandlers()
 * Before you can register a Handler, its superclass Handler must be registered.
 * @bsimethod                                    Keith.Bentley                   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnDomain::VerifySuperclass(Handler& handler) 
+DgnDbStatus DgnDomain::VerifySuperclass(Handler& handler)
     {
     Handler* superclass = handler.GetSuperClass();
     if (&DgnDomain::Handler::GetHandler() == superclass) // Handler is always "registered"
@@ -279,7 +279,7 @@ DgnDbStatus DgnDomain::VerifySuperclass(Handler& handler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnDomain::RegisterHandler(Handler& handler, bool reregister) 
+DgnDbStatus DgnDomain::RegisterHandler(Handler& handler, bool reregister)
     {
     auto stat = VerifySuperclass(handler);
     if (DgnDbStatus::Success != stat)
@@ -308,7 +308,7 @@ DgnDbStatus DgnDomain::RegisterHandler(Handler& handler, bool reregister)
         return DgnDbStatus::AlreadyLoaded;
         }
 
-    handler.SetDomain(*this); 
+    handler.SetDomain(*this);
     m_handlers.push_back(&handler);
     return DgnDbStatus::Success;
     }
@@ -318,11 +318,11 @@ DgnDbStatus DgnDomain::RegisterHandler(Handler& handler, bool reregister)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnDomains::OnDbOpened()
     {
-    if (!m_dgndb.IsLegacyMaster() && !m_dgndb.IsReadonly())
+    if (m_dgndb.AreTxnsAllowed() && !m_dgndb.IsReadonly())
         {
         TxnManagerR txnManager = m_dgndb.Txns();
         txnManager.EnableTracking(true);
-        txnManager.InitializeTableHandlers(); // Necessary to this after the domains are loaded so that the tables are already setup. The method calls SaveChanges(). 
+        txnManager.InitializeTableHandlers(); // Necessary to this after the domains are loaded so that the tables are already setup. The method calls SaveChanges().
         }
 
     for (DgnDomainCP domain : m_domains)
@@ -404,7 +404,7 @@ SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaPtr> const& schemasToIm
         return status;
 
     SyncWithSchemas();
-    
+
     m_dgndb.BriefcaseManager().StartBulkOperation();
 
     for (DgnDomainP domain : domainsToImport)
@@ -432,7 +432,7 @@ SchemaStatus DgnDomains::UpgradeSchemas()
     for (auto& schema : schemasToImport)
         importSchemas.push_back(schema.get());
 
-    if (!m_dgndb.IsLegacyMaster())
+    if (m_dgndb.AreTxnsAllowed())
         m_dgndb.Txns().EnableTracking(true); // Ensure all schema changes are captured in the txn table for creating revisions
 
     SchemaManager::SchemaImportOptions importOptions = SchemaManager::SchemaImportOptions::None;
@@ -442,20 +442,20 @@ SchemaStatus DgnDomains::UpgradeSchemas()
 
     SyncWithSchemas();
 
-    if (!m_dgndb.IsLegacyMaster())
+    if (m_dgndb.AreTxnsAllowed())
         {
-        m_dgndb.Txns().InitializeTableHandlers(); 
-        // Necessary to this after the domains are loaded so that the tables are already setup. The method calls SaveChanges(). 
+        m_dgndb.Txns().InitializeTableHandlers();
+        // Necessary to this after the domains are loaded so that the tables are already setup. The method calls SaveChanges().
         }
-        
+
     for (DgnDomainCP domain : m_domains)
         {
         // Call domain handlers of dependent domains before the newly imported domains
         if (std::find(domainsToImport.begin(), domainsToImport.end(), domain) != domainsToImport.end())
             continue;
-        domain->_OnDgnDbOpened(m_dgndb); 
+        domain->_OnDgnDbOpened(m_dgndb);
         }
-        
+
     m_dgndb.BriefcaseManager().StartBulkOperation();
     for (DgnDomainP domain : domainsToImport)
         {
@@ -482,7 +482,7 @@ SchemaStatus DgnDomains::InitializeSchemas(SchemaUpgradeOptions const& schemaUpg
         status = ValidateSchemas();
         if (status == SchemaStatus::SchemaTooNew || status == SchemaStatus::SchemaTooOld || status == SchemaStatus::SchemaUpgradeRequired)
             return status;
-        if (status == SchemaStatus::SchemaUpgradeRecommended && 
+        if (status == SchemaStatus::SchemaUpgradeRecommended &&
             (domainUpgradeOptions == SchemaUpgradeOptions::DomainUpgradeOptions::CheckRecommendedUpgrades ||
             domainUpgradeOptions == SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade))
             return status;
@@ -511,7 +511,7 @@ ECSchemaReadContextPtr DgnDomains::PrepareSchemaReadContext() const
     // Legacy file handling: When importing/upgrading domain schemas into a file that does not support EC 3.2 yet (corresponds to ECDb profile 4.0.0.1 or older)
     // the ECDb schema assets must not be included, because they are all EC3.2 schemas and the schema locate
     // would prefer those over the ones in the DgnDb file. For the legacy file handling case we cannot import EC3.2 schemas though.
-    // We can safely ignore those for legacy files, as the ECDbSchemaPolicies schema is already included in any legacy iModel (because BisCore references it). 
+    // We can safely ignore those for legacy files, as the ECDbSchemaPolicies schema is already included in any legacy iModel (because BisCore references it).
     // So we never have to look that schema up from disk for legacy files.
     if (GetDgnDb().GetECDbProfileVersion() >= BeVersion(4, 0, 0, 2))
         {
@@ -558,7 +558,7 @@ SchemaStatus DgnDomains::DoValidateSchemas(bvector<ECSchemaPtr>* schemasToImport
             {
             if (!domain->IsRequired())
                 {
-                // Restore schema context to the state before the read so that we don't 
+                // Restore schema context to the state before the read so that we don't
                 // later import unwanted references of optional domain schemas.
                 bvector<ECSchemaP> currentSchemas;
                 cache.GetSchemas(currentSchemas);
@@ -583,7 +583,7 @@ SchemaStatus DgnDomains::DoValidateSchemas(bvector<ECSchemaPtr>* schemasToImport
                 LOG.infov("Schema for a required domain %s is not found, but may be imported later in the process by the same calling app", domain->GetDomainName());
             continue;
             }
-            
+
         if (locStatus == SchemaStatus::SchemaTooNew || locStatus == SchemaStatus::SchemaTooOld)
             return locStatus;
 
@@ -605,7 +605,7 @@ SchemaStatus DgnDomains::DoValidateSchemas(bvector<ECSchemaPtr>* schemasToImport
             continue;
 
         SchemaStatus locStatus = DoValidateSchema(*schema, true /*=isReadonly*/, dgndb);
-        
+
         validatedSchemas.insert(schema);
 
         if (locStatus == SchemaStatus::Success)
@@ -754,7 +754,7 @@ SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaCP> const& importSchema
         {
         if ((importOptions & SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues) == SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues)
             {
-            LOG.errorv("Failed to import legacy V8 schemas"); 
+            LOG.errorv("Failed to import legacy V8 schemas");
             }
         else
             {
@@ -830,7 +830,7 @@ DgnDomain::Handler* DgnDomains::FindHandler(DgnClassId handlerId, DgnClassId bas
     handler = FindHandler(DgnClassId(superClass->GetId()), baseClassId);
     if (nullptr != handler)
         {
-        // Determine if we are using a superclass handler because (a) the subclass does not need its own handler or (b) the handler for the subclass is not loaded. 
+        // Determine if we are using a superclass handler because (a) the subclass does not need its own handler or (b) the handler for the subclass is not loaded.
         bool isMissingHandler = GetHandlerInfo(nullptr, handlerId, *handler);
         if (isMissingHandler)
             {
@@ -889,7 +889,7 @@ bool DgnDomains::GetHandlerInfo(uint64_t* restrictionMask, DgnClassId handlerId,
     ECN::IECInstancePtr attr = nullptr != ecClass ? ecClass->GetCustomAttributeLocal("ClassHasHandler") : nullptr;
     if (attr.IsNull())
         return false; // ECClass is not supposed to have a handler
-    
+
      if (nullptr == restrictionMask)
         return true; // ECClass is supposed to have a handler and caller doesn't care about restrictions
 
@@ -975,14 +975,14 @@ DgnDbStatus DgnDomain::Handler::_VerifySchema(DgnDomains& domains)
 #if !defined (NDEBUG)
     if (&DgnDomain::Handler::GetHandler() == this) // Handler is always ok
         return DgnDbStatus::Success;
-    
+
     DgnClassId classId = domains.GetClassId(*this);
     BeAssert(classId.IsValid());
 
     Handler* handlerSuperClass = GetSuperClass();
     if (&DgnDomain::Handler::GetHandler() == handlerSuperClass)
         return DgnDbStatus::Success;
-    
+
     DgnClassId superClassId = domains.GetClassId(*handlerSuperClass);
 
     auto const& schemas = domains.GetDgnDb().Schemas();
@@ -993,7 +993,7 @@ DgnDbStatus DgnDomain::Handler::_VerifySchema(DgnDomains& domains)
         {
         LOG.errorv("ERROR: HANDLER hiearchy does not match ECSCHMA hiearchy:\n"
                " Handler [%s] says it handles ECClass '%s', \n"
-               " but that class does not derive from its superclass handler's ECClass '%s'\n", 
+               " but that class does not derive from its superclass handler's ECClass '%s'\n",
                 typeid(*this).name(), GetClassName().c_str(), handlerSuperClass->GetClassName().c_str());
 
         BeAssert(false && "Handler::_VerifySchema() failed. Check log for details");
@@ -1012,7 +1012,7 @@ DgnDbStatus DgnDomain::Handler::_VerifySchema(DgnDomains& domains)
             }
         }
 #endif
-    
+
     return DgnDbStatus::Success;
     }
 
@@ -1133,7 +1133,7 @@ template<> struct HandlerTraits<dgn_ElementHandler::Element>
     typedef DgnElement T_Instantiation;
 
     static DgnDomain::Handler* GetBaseHandler() {return &dgn_ElementHandler::Element::GetHandler();}
-    static DgnElementPtr CreateInstance(dgn_ElementHandler::Element& handler, DgnDbR db) 
+    static DgnElementPtr CreateInstance(dgn_ElementHandler::Element& handler, DgnDbR db)
         {
         DgnElement::CreateParams params(db, DgnModelId(), DgnClassId());
         params.SetIsLoadingElement(true);
@@ -1214,7 +1214,7 @@ public:
             {
             LOG.errorv("ERROR: HANDLER hierarchy does not match ECSCHMA hiearchy:\n"
                    " Handler [%s] says it handles ECClass '%s', \n"
-                   " but that class does not derive from its superclass handler's ECClass '%s'\n", 
+                   " but that class does not derive from its superclass handler's ECClass '%s'\n",
                     typeid(m_handler).name(), m_handler.GetClassName().c_str(), handlerSuperClass->GetClassName().c_str());
 
             BeAssert(false && "Incorrect handler hierarchy - see log for details");
@@ -1249,7 +1249,7 @@ public:
                 typeid(m_handler).name(), m_handler.GetClassName().c_str(),
                 typeid(*instance).name(), T_Traits::GetECClassName(*instance),
                 T_Traits::GetMacroName(), T_Traits::GetCppClassName());
-            
+
             LOG.errorv("%s", msg.c_str());
             BeAssert(false && "Inconsistent handler class hierarchy - see log for details");
             }
@@ -1257,10 +1257,10 @@ public:
         if (0 != strcmp(T_Traits::GetSuperECClassName(*instance), handlerSuperClass->GetClassName().c_str()))
             {
             Utf8PrintfString msg("HANDLER SUPERCLASS ERROR: Handler [%s] says its superclass ECClass is '%s', \n"
-                   "    but its %s class [%s] says its ECClass superclass is '%s'\n", 
-                    typeid(m_handler).name(), handlerSuperClass->GetClassName().c_str(), 
+                   "    but its %s class [%s] says its ECClass superclass is '%s'\n",
+                    typeid(m_handler).name(), handlerSuperClass->GetClassName().c_str(),
                     T_Traits::GetCppClassName(), typeid(*instance).name(), T_Traits::GetSuperECClassName(*instance));
-            
+
             LOG.errorv("%s", msg.c_str());
             BeAssert(false && "Inconsistent handler class hierarchy - see log for details");
             }

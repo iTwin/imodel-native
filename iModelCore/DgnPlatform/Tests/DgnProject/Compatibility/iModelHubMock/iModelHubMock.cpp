@@ -33,10 +33,7 @@ bool IModelHubMock::AcquireBriefcase(BeGuid iModelId, BeFileName briefcaseDownlo
     BeFileName::BeCopyFile(m_storageMap[iModelId], filepath);
     auto db = DgnDb::OpenDgnDb(&stat, filepath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
     m_currentId = m_currentId.GetNextBriefcaseId(); // Update briefcaseID
-    if (!db->IsLegacyMaster()) // Can't set briefcaseID if already a briefcase. Hacky workaround. This comes up when pulling multiple briefcases for 1 model
-        db->SetAsMaster(iModelId);
-
-    db->SetAsBriefcase(m_currentId);
+    db->ResetBriefcaseId(m_currentId);
     db->Txns().EnableTracking(true);
     db->SaveChanges();
     db->CloseDb();
@@ -73,7 +70,7 @@ bool IModelHubMock::ManualMergeAllChangesets(BeGuid iModelId)
 
     {
     auto db = DgnDb::OpenDgnDb(&stat, path, DgnDb::OpenParams(Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes));
-    db->SetAsBriefcase(BeBriefcaseId(BeBriefcaseId::LegacyStandalone()));
+    db->ResetBriefcaseId(BeBriefcaseId(BeBriefcaseId::Snapshot()));
     db->SaveChanges();
     }
 
@@ -84,7 +81,7 @@ bool IModelHubMock::ManualMergeAllChangesets(BeGuid iModelId)
     auto openParam = DgnDb::OpenParams(Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes);
     openParam.GetSchemaUpgradeOptionsR().SetUpgradeFromRevisions(revisions);
     auto db = DgnDb::OpenDgnDb(&stat, path, openParam);
-    db->SetAsMaster(iModelId);
+    db->SetAsCheckpointSnapshot(iModelId);
     db->SaveChanges();
     m_revisions[iModelId].clear();
     return true;

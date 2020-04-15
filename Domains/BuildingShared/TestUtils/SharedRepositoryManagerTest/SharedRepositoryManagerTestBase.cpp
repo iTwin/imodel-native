@@ -44,13 +44,13 @@ void SharedRepositoryManagerTestBase::CreateSeedDb(WCharCP seedFileName, WCharCP
 
     temporaryDir.AppendToPath(appendedPath);
     BeFileName::CreateNewDirectory(temporaryDir);
-    
+
     (*RegisterDomainFunction)();
 
     dgnDbPtr = DgnDbTestUtils::CreateSeedDb(seedFileName);
     ASSERT_TRUE(dgnDbPtr.IsValid());
 
-    dgnDbPtr->SetAsBriefcase(BeBriefcaseId(2));
+    dgnDbPtr->ResetBriefcaseId(BeBriefcaseId(2));
     dgnDbPtr->GeoLocation().SetProjectExtents(AxisAlignedBox3d(DPoint3d::From(-500.0, -500.0, 0.0), DPoint3d::From(500.0, 500.0, 500.0)));
 
     dgnDbPtr->SaveChanges();
@@ -116,7 +116,7 @@ L10N::SqlangFiles SharedRepositoryManagerTestBase::_GetApplicationSqlangs()
 void SharedRepositoryManagerTestBase::ClearRevisions(DgnDbR db)
     {
     // Ensure the seed file doesn't contain any changes pending for a revision
-    if (!db.IsLegacyMaster())
+    if (!db.IsCheckpointSnapshot())
         {
         DgnRevisionPtr rev = db.Revisions().StartCreateRevision();
         if (rev.IsValid())

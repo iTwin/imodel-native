@@ -102,7 +102,7 @@ void AecUnitsBaseFixture::SetUp_CreateNewDgnDb()
    // ASSERT_TRUE(db.IsValid());
 
     // Force the seed db to have non-zero briefcaseid, so that changes made to it will be in a txn
-  //  db->ChangeBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone()));
+  //  db->ResetBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone()));
    // db->SaveChanges();
 
     }

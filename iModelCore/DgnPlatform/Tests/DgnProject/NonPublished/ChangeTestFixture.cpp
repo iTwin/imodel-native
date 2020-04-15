@@ -10,7 +10,7 @@
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
-USING_NAMESPACE_BENTLEY_DPTEST 
+USING_NAMESPACE_BENTLEY_DPTEST
 
 DgnPlatformSeedManager::SeedDbInfo ChangeTestFixture::s_seedFileInfo;
 CodeSpecId ChangeTestFixture::m_defaultCodeSpecId;
@@ -35,7 +35,7 @@ void ChangeTestFixture::SetUpTestCase()
     ASSERT_TRUE(db.IsValid());
 
     ASSERT_EQ(SchemaStatus::Success, DgnPlatformTestDomain::GetDomain().ImportSchema(*db));
-    TestDataManager::SetAsFutureStandalone(db, Db::OpenMode::ReadWrite);
+    TestDataManager::SetAsStandAlone(db, Db::OpenMode::ReadWrite);
 
     m_defaultCodeSpecId = DgnDbTestUtils::InsertCodeSpec(*db, "TestCodeSpec");
     ASSERT_TRUE(m_defaultCodeSpecId.IsValid());

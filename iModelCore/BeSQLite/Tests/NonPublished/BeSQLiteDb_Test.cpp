@@ -114,9 +114,9 @@ TEST(BeSQLiteDb, AssignBriefcaseIdInReadonlyMode)
     ASSERT_EQ(BE_SQLITE_OK, stat) << L"Reopening test Bim '" << dbPath.c_str() << L"' failed.";
 
     BeTest::SetFailOnAssert(false);
-    stat = db.SetAsBriefcase(BeBriefcaseId(12345));
+    stat = db.ResetBriefcaseId(BeBriefcaseId(12345));
     BeTest::SetFailOnAssert(true);
-    ASSERT_EQ(BE_SQLITE_READONLY, stat) << L"Calling SetAsBriefcase on readonly Bim file is expected to fail.";
+    ASSERT_EQ(BE_SQLITE_READONLY, stat) << L"Calling ResetBriefcaseId on readonly Bim file is expected to fail.";
     }
 
 //---------------------------------------------------------------------------------------
@@ -159,9 +159,7 @@ TEST(BeSQLiteDb, AssignBriefcaseId)
     ASSERT_EQ(BE_SQLITE_OK, stat) << "Reopening test Bim '" << dbPath.c_str() << "' failed.";
 
     //now change briefcase id. This should truncate be_local and reinsert the new briefcase id
-    const BeBriefcaseId currentBriefcaseId = db.GetBriefcaseId();
-    expectedBriefcaseId = currentBriefcaseId.GetNextBriefcaseId();
-    stat = db.SetAsBriefcase(expectedBriefcaseId);
+    stat = db.ResetBriefcaseId(BeBriefcaseId(BeBriefcaseId::FirstValidBriefcaseId()));
     ASSERT_EQ(BE_SQLITE_OK, stat) << "Changing the briefcase id is not expected to fail.";
     }
 
@@ -440,7 +438,7 @@ TEST_F(BeSQLiteDbTests, VacuumWithPageSize)
     WCharCP dbName = L"smalldb.db";
     SetupDb(db, dbName);
     ASSERT_TRUE(db.IsDbOpen());
-    BeFileName dbFileName(db.GetDbFileName(), BentleyCharEncoding::Utf8);       
+    BeFileName dbFileName(db.GetDbFileName(), BentleyCharEncoding::Utf8);
     db.CloseDb();
 
     ASSERT_EQ((int)Db::PageSize::PAGESIZE_4K, GetPageSize(dbFileName));
@@ -486,7 +484,7 @@ TEST_F(BeSQLiteDbTests, TwoConnections)
 
     EXPECT_EQ (BE_SQLITE_OK, result);
     EXPECT_TRUE (db1.IsDbOpen());
-    
+
     result = db2.OpenBeSQLiteDb(getDbFilePath(L"one.db"), Db::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::No));
     EXPECT_EQ (BE_SQLITE_OK, result);
     EXPECT_TRUE (db2.IsDbOpen());
@@ -571,7 +569,7 @@ TEST_F(BeSQLiteDbTests, Concurrency_UsingSavepoints)
     result = sp1.Begin();
     EXPECT_EQ (BE_SQLITE_OK, result);
     result = sp2.Begin();
-    EXPECT_EQ (BE_SQLITE_OK, result); 
+    EXPECT_EQ (BE_SQLITE_OK, result);
 
     result = db2.SavePropertyString(PropertySpec("Foo", "DB2"), "Test2");
     EXPECT_EQ (BE_SQLITE_OK, result);
@@ -595,7 +593,7 @@ TEST_F(BeSQLiteDbTests, Concurrency_UsingSavepoints)
     result = sp1.Begin();
     EXPECT_EQ (BE_SQLITE_OK, result);
     result = sp2.Begin();
-    EXPECT_EQ (BE_SQLITE_BUSY, result); 
+    EXPECT_EQ (BE_SQLITE_BUSY, result);
     EXPECT_EQ (3, retry2.m_onBusyCalls);
     }
 }
@@ -724,7 +722,7 @@ TEST_F(BeSQLiteDbTests, GetLastRowId)
     EXPECT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("INSERT INTO TestTable2 Values(1, 'test')"));
     rowId = m_db.GetLastInsertRowId();
     EXPECT_EQ(1, rowId);
-    
+
     m_db.CloseDb();
 }
 
@@ -734,7 +732,7 @@ TEST_F(BeSQLiteDbTests, GetLastRowId)
 TEST_F(BeSQLiteDbTests, QueryCreationDate)
 {
     SetupDb(L"CreationDate.db");
-    
+
     DateTime creationDate;
     //CreationDate is only inserted by Publishers/Convertors? And always return an error
     EXPECT_EQ(BE_SQLITE_ERROR, m_db.QueryCreationDate(creationDate));
@@ -848,15 +846,15 @@ TEST_F(BeSQLiteDbTests, PropertyString)
 
     PropertySpec spec1("TestSpec", "TestApplication");
     Utf8String stringValue("This is test value");
-    
-    m_result = m_db.SavePropertyString(spec1, stringValue); 
+
+    m_result = m_db.SavePropertyString(spec1, stringValue);
     EXPECT_EQ (BE_SQLITE_OK, m_result) << "SavePropertyString failed";
     EXPECT_TRUE (m_db.HasProperty(spec1));
 
     Utf8String stringValue2;
     m_result = m_db.QueryProperty(stringValue2, spec1);
     EXPECT_EQ (BE_SQLITE_ROW, m_result);
-    
+
     EXPECT_STREQ (stringValue.c_str(), stringValue2.c_str());
     }
 
@@ -869,9 +867,9 @@ TEST_F(BeSQLiteDbTests, Property)
     SetupDb(L"Props2.db");
 
     PropertySpec spec1("TestSpec", "TestApplication");
-    m_result = m_db.SaveProperty(spec1, L"Any Value", 10, 400, 10); 
+    m_result = m_db.SaveProperty(spec1, L"Any Value", 10, 400, 10);
     EXPECT_EQ (BE_SQLITE_OK, m_result) << "SaveProperty failed";
-    
+
     EXPECT_TRUE (m_db.HasProperty(spec1, 400, 10));
 
     Utf8CP buffer[10];
@@ -893,7 +891,7 @@ TEST_F(BeSQLiteDbTests, CachedProperties)
 
     Byte values[] = {1,2,3,4,5,6};
     PropertySpec spec1("TestSpec", "CachedProp", PropertySpec::Mode::Cached);
-    m_result = m_db.SaveProperty(spec1, values, sizeof(values), 400, 10); 
+    m_result = m_db.SaveProperty(spec1, values, sizeof(values), 400, 10);
     EXPECT_TRUE (m_db.HasProperty(spec1, 400, 10));
 
     PropertySpec spec2("TestSpec", "CachedProp2", PropertySpec::Mode::Cached);
@@ -914,7 +912,7 @@ TEST_F(BeSQLiteDbTests, CachedProperties)
     EXPECT_TRUE(0==memcmp(values, buffer, sizeof(values)));
 
     Byte values2[] = {10,20};
-    m_result = m_db.SaveProperty(spec1, values2, sizeof(values2), 400, 10); 
+    m_result = m_db.SaveProperty(spec1, values2, sizeof(values2), 400, 10);
 
     m_db.SaveChanges();
 
@@ -963,7 +961,7 @@ TEST_F(BeSQLiteDbTests, CachedProperties)
 TEST_F(BeSQLiteDbTests, BriefcaseLocalValues)
     {
     SetupDb(L"local.db");
-    
+
     //Working with RLVs through RLVCache
     int val = -1345;
     Utf8CP testPropValueName = "TestProp";
@@ -998,7 +996,7 @@ TEST_F(BeSQLiteDbTests, BriefcaseLocalValues)
     m_result = m_db.QueryBriefcaseLocalValue(val2, testProp2);
     EXPECT_EQ(BE_SQLITE_ROW, m_result);
     EXPECT_STREQ("Test Value", val2.c_str());
-    
+
     m_db.CloseDb();
     }
 
@@ -1033,7 +1031,7 @@ TEST(BeSQLiteDbOpenTest, Expired)
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
     BeSQLiteLib::Initialize(tempDir);
-    
+
     BeFileName docDir;
     BeTest::GetHost().GetDocumentsRoot(docDir);
 
@@ -1066,7 +1064,7 @@ TEST(BeSQLiteDbOpenTest, Expired2)
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
     BeSQLiteLib::Initialize(tempDir);
-    
+
     Utf8String expiredFileName;
     if (true)
         {
@@ -1080,7 +1078,7 @@ TEST(BeSQLiteDbOpenTest, Expired2)
         ASSERT_TRUE( db.IsDbOpen() );
         ASSERT_TRUE( db.IsExpired() );
         expiredFileName.assign(db.GetDbFileName());
-        }    
+        }
 
     BeSQLite::Db::OpenParams parms(BeSQLite::Db::OpenMode::Readonly);
 
@@ -1425,7 +1423,7 @@ TEST_F (BeSQLiteDbTests, SaveCreationDate)
 
     BentleyM0200::DateTime currentDate = BentleyM0200::DateTime::GetCurrentTimeUtc ();
     EXPECT_EQ (BE_SQLITE_OK, m_db.SaveCreationDate ());
-   
+
     BentleyM0200::DateTime newDate;
     EXPECT_EQ(BE_SQLITE_ROW, m_db.QueryCreationDate(newDate));
 
@@ -1434,7 +1432,7 @@ TEST_F (BeSQLiteDbTests, SaveCreationDate)
         result=true;
     }
     EXPECT_TRUE (result);
-        
+
     m_db.CloseDb ();
 }
 
@@ -1467,14 +1465,14 @@ TEST_F (BeSQLiteDbTests, AddColumnToTable)
 //---------------------------------------------------------------------------------------
 TEST_F(BeSQLiteDbTests, CreateChangeSetWithSchemaAndDataChanges)
     {
-    /* Tests that 
-     * 1. Schema and data changes are not allowed to the same tables in the same change set. 
-     * This validates our assumptions in storing transactions and creating revisions 
-     * 2. Schema and data changes can be made to different tables in the same change set. 
+    /* Tests that
+     * 1. Schema and data changes are not allowed to the same tables in the same change set.
+     * This validates our assumptions in storing transactions and creating revisions
+     * 2. Schema and data changes can be made to different tables in the same change set.
      * This validates our assumptions in allowing this for bridge-framework workflows when
-     * importing v8 legacy schemas. 
+     * importing v8 legacy schemas.
      * */
-    
+
     SetupDb(L"RealTest.db");
 
     DbResult result = m_db.ExecuteSql("CREATE TABLE TestTable1 ([Id] INTEGER PRIMARY KEY, [Column1] REAL)");
@@ -1500,7 +1498,7 @@ TEST_F(BeSQLiteDbTests, CreateChangeSetWithSchemaAndDataChanges)
     // Create change set - succeeds!
     MyChangeSet changeSet;
     result = changeSet.FromChangeTrack(changeTracker);
-    ASSERT_TRUE(result == BE_SQLITE_OK); 
+    ASSERT_TRUE(result == BE_SQLITE_OK);
 
     // Add column to TestTable1
     result = m_db.AddColumnToTable("TestTable1", "Column2", "REAL");
@@ -1530,7 +1528,7 @@ TEST_F(BeSQLiteDbTests, CreateChangeSetWithSchemaAndDataChanges)
 //---------------------------------------------------------------------------------------
 TEST_F(BeSQLiteDbTests, ApplyChangeSetAfterSchemaChanges)
     {
-    /* Tests that you can create a change set, make a schema change, and then apply that change 
+    /* Tests that you can create a change set, make a schema change, and then apply that change
      * set to the Db. This validates our assumption that we can merge a schema revision when
      * there are local changes */
 
@@ -1558,7 +1556,7 @@ TEST_F(BeSQLiteDbTests, ApplyChangeSetAfterSchemaChanges)
     result = m_db.ExecuteSql("DELETE FROM TestTable");
     EXPECT_TRUE(result == BE_SQLITE_OK);
 
-    // Add column 
+    // Add column
     result = m_db.AddColumnToTable("TestTable", "Column3", "REAL");
     EXPECT_TRUE(result == BE_SQLITE_OK);
 

@@ -99,7 +99,7 @@ protected:
     Db*             m_db;
     SqlSessionP     m_session;
     Utf8String      m_name;
-    
+
     enum class OnCommitStatus {Continue=0, Abort, Completed};
     enum class TrackChangesForTable : bool {No=0, Yes=1};
 
@@ -154,7 +154,7 @@ public:
     BE_SQLITE_EXPORT bool HasDataChanges() const;
 
     //! Determine whether any db-schema changes have beeen tracked by this ChangeTracker
-    bool HasDbSchemaChanges() const {return !m_dbSchemaChanges.IsEmpty();} 
+    bool HasDbSchemaChanges() const {return !m_dbSchemaChanges.IsEmpty();}
 
     //! Clear the contents of this ChangeTracker and re-start it.
     void Restart() {EndTracking(); EnableTracking(true);}
@@ -162,7 +162,7 @@ public:
 };
 
 //=======================================================================================
-//! An Iterator for a ChangeSet or a ChangeStream. This class is used to step through the individual 
+//! An Iterator for a ChangeSet or a ChangeStream. This class is used to step through the individual
 //! changes within a ChangeSet, ChangeStream or individual pages of a ChangeStream.
 // @bsiclass                                                    Keith.Bentley   05/11
 //=======================================================================================
@@ -229,11 +229,11 @@ public:
 
             enum class Stage : bool {Old=0, New=1};
             DbValue GetValue(int colNum, Stage stage) const {return (stage==Stage::Old) ? GetOldValue(colNum) : GetNewValue(colNum);}
-            
+
             //! Get the total number of foreign key violations in the database (if there's a ForeignKey conflict)
             //! @param nConflicts The number of foreign key conflicts
-            //! @return Returns BE_SQLITE_OK if called from the conflict handler callback. In all other cases 
-            //! this returns BE_SQLITE_MISUSE. 
+            //! @return Returns BE_SQLITE_OK if called from the conflict handler callback. In all other cases
+            //! this returns BE_SQLITE_MISUSE.
             BE_SQLITE_EXPORT DbResult GetFKeyConflicts(int *nConflicts) const;
 
             //! Move the iterator to the next entry in the ChangeSet. After the last valid entry, the entry will be invalid.
@@ -274,7 +274,7 @@ struct ChangeGroup : NonCopyableClass
     friend struct ChangeStream;
 private:
     void*  m_changegroup;
-    
+
 public:
     BE_SQLITE_EXPORT ChangeGroup();
     BE_SQLITE_EXPORT ~ChangeGroup();
@@ -283,9 +283,9 @@ public:
 
 //=======================================================================================
 //! A set of "rebases" that hold the result of conflict resolutions during a call to ChangeSet::ApplyChanges from
-//! a ChangeSet received from a remote session. 
+//! a ChangeSet received from a remote session.
 //! All ChangeSets for the local session should be "rebased" via calls to Rebaser::AddRebease + Rebaser::DoRebase
-//! before sending to the server. This essentially moves the local ChangeSet to be "based on" the state of the 
+//! before sending to the server. This essentially moves the local ChangeSet to be "based on" the state of the
 //! database AFTER the remote changes were made, rather than the state of the database at the start of the session.
 // @bsiclass                                                    Keith.Bentley   03/18
 //=======================================================================================
@@ -306,7 +306,7 @@ public:
 
 //=======================================================================================
 //! Tool to "rebase" a ChangeSet to become based on the state of the database "as of" a new state, different than the beginning
-//! of the session in which the changes were recoreded. This is only necessary when remote changes are applied and conflicts are resolved. 
+//! of the session in which the changes were recoreded. This is only necessary when remote changes are applied and conflicts are resolved.
 //! See SQlite documentation on "Rebasing changesets" for complete explanation.
 // @bsiclass                                                    Keith.Bentley   06/15
 //=======================================================================================
@@ -314,11 +314,11 @@ struct Rebaser : NonCopyableClass
 {
 private:
     sqlite3_rebaser* m_rebaser;
-    
+
 public:
     BE_SQLITE_EXPORT Rebaser();
     BE_SQLITE_EXPORT ~Rebaser();
-    
+
     BE_SQLITE_EXPORT void AddRebase(Rebase const& rebase);
     BE_SQLITE_EXPORT void AddRebase(void const* data, int count);
     BE_SQLITE_EXPORT DbResult DoRebase(struct ChangeSet const&in, struct ChangeSet& out);
@@ -345,7 +345,7 @@ private:
     virtual bool _IsEmpty() const = 0;
 protected:
     ~IChangeSet() = default;
-    
+
     virtual ApplyChangesForTable _FilterTable(Utf8CP tableName) {return ApplyChangesForTable::Yes;}
     virtual ConflictResolution _OnConflict(ConflictCause clause, Changes::Change iter) = 0;
 
@@ -361,13 +361,13 @@ public:
     //! Create a ChangeSet/ChangeStream from a ChangeTracker. The ChangeSet can then be saved persistently.
     //! @param[in] tracker  ChangeTracker from which to create ChangeSet or PatchSet
     //! @param[in] setType  whether to create a full ChangeSet or just a PatchSet
-    //! @return BE_SQLITE_OK if successful. Error status otherwise. 
+    //! @return BE_SQLITE_OK if successful. Error status otherwise.
     //! @remarks If using a ChangeStream, implement _OutputPage to receive the stream
     DbResult FromChangeTrack(ChangeTracker& tracker, SetType setType=SetType::Full) {return _FromChangeTrack(tracker, setType);}
 
     //! Create a ChangeSet/ChangeStream by merging the contents of a ChangeGroup
-    //! @param[in] changeGroup ChangeGroup to be merged together. 
-    //! @return BE_SQLITE_OK if successful. Error status otherwise. 
+    //! @param[in] changeGroup ChangeGroup to be merged together.
+    //! @return BE_SQLITE_OK if successful. Error status otherwise.
     //! @remarks If using a ChangeStream, implement _OutputPage to receive the stream
     DbResult FromChangeGroup(ChangeGroupCR changeGroup) {return _FromChangeGroup(changeGroup);}
 
@@ -375,10 +375,10 @@ public:
     //! @param[in] db the database to which the changes are applied.
     //! @param[in] rebase a Rebase object to record conflict resolutions
     //! @param[in] invert invert the changeset and apply
-    //! @return BE_SQLITE_OK if successful. Error status otherwise. 
-    //! @remarks If using a ChangeStream, implement _InputPage to send the stream. 
-    //! If the apply fails, it's upto the caller to call AbandonChanges() to abandon the 
-    //! transaction containing partially applied changes. 
+    //! @return BE_SQLITE_OK if successful. Error status otherwise.
+    //! @remarks If using a ChangeStream, implement _InputPage to send the stream.
+    //! If the apply fails, it's upto the caller to call AbandonChanges() to abandon the
+    //! transaction containing partially applied changes.
     DbResult ApplyChanges(DbR db, Rebase* rebase = nullptr, bool invert = false) {return _ApplyChanges(db, rebase, invert);}
 
     //! Returns a Changes object for iterating over the changes contained within this IChangeSet
@@ -418,7 +418,7 @@ private:
     BE_SQLITE_EXPORT DbResult _FromChangeGroup(ChangeGroupCR changeGroup) override final;
     BE_SQLITE_EXPORT DbResult _ApplyChanges(DbR db, Rebase*, bool) override final;
     bool _IsEmpty() const override final { return !m_changeset || !m_size; }
-    Changes _GetChanges(bool invert) override final {return Changes(*this, invert);}    
+    Changes _GetChanges(bool invert) override final {return Changes(*this, invert);}
 public:
     //! construct a blank, empty ChangeSet
     ChangeSet() {m_size=0; m_changeset=nullptr;}
@@ -431,12 +431,12 @@ public:
     BE_SQLITE_EXPORT DbResult Invert();
 
     //! Re-create this ChangeSet from data from a previously saved ChangeSet.
-    //! @return BE_SQLITE_OK if successful. Error status otherwise. 
+    //! @return BE_SQLITE_OK if successful. Error status otherwise.
     BE_SQLITE_EXPORT DbResult FromData(int size, void const* data, bool invert);
 
     //! Concatenate this ChangeSet with a second ChangeSet
     //! @param[in] second The change set to concatenate
-    //! @return BE_SQLITE_OK if successful. Error status otherwise. 
+    //! @return BE_SQLITE_OK if successful. Error status otherwise.
     BE_SQLITE_EXPORT DbResult ConcatenateWith(ChangeSet const& second);
 
     //! Determine whether this ChangeSet holds valid data or not.
@@ -464,9 +464,9 @@ private:
 };
 
 //=======================================================================================
-//! A base class for a streaming version of the ChangeSet. ChangeSets require that their 
+//! A base class for a streaming version of the ChangeSet. ChangeSets require that their
 //! entire contents be stored in large memory buffers. This streaming version is meant to
-//! be used in low memory environments where it is required to handle very large Change Sets. 
+//! be used in low memory environments where it is required to handle very large Change Sets.
 // @bsiclass                                                 Ramanujam.Raman   10/15
 //=======================================================================================
 struct ChangeStream : NonCopyableClass, IChangeSet
@@ -479,7 +479,7 @@ private:
     static int ConflictCallback(void *pCtx, int cause, SqlChangesetIterP iter);
     static int FilterTableCallback(void *pCtx, Utf8CP tableName);
 
-    // Resets the change stream, and is internally called at the 
+    // Resets the change stream, and is internally called at the
     // end of various change stream operations
     void Reset() {_Reset();}
 
@@ -489,22 +489,22 @@ private:
     BE_SQLITE_EXPORT bool _IsEmpty() const override final;
     Changes _GetChanges(bool invert) override final {return Changes(*this, invert);}
 
-    //! Application implements this to supply input to the system. 
-    //! @param[out] pData Buffer to copy data into. 
-    //! @param[in,out] pnData System sets this to the size of the buffer. Implementation sets it to the 
-    //! actual number of bytes copied. If the input is exhausted implementation should set this to 0. 
-    //! @return BE_SQLITE_OK if successfully copied data. Return BE_SQLITE_ERROR otherwise. 
+    //! Application implements this to supply input to the system.
+    //! @param[out] pData Buffer to copy data into.
+    //! @param[in,out] pnData System sets this to the size of the buffer. Implementation sets it to the
+    //! actual number of bytes copied. If the input is exhausted implementation should set this to 0.
+    //! @return BE_SQLITE_OK if successfully copied data. Return BE_SQLITE_ERROR otherwise.
     virtual DbResult _InputPage(void *pData, int *pnData) {return BE_SQLITE_OK;}
 
-    //! Application implements this to receive data from the system. 
+    //! Application implements this to receive data from the system.
     //! @param[in] pData Points to a buffer containing the output data
     //! @param[in] nData Size of buffer
-    //! @return BE_SQLITE_OK if the data has been successfully processed. Return BE_SQLITE_ERROR otherwise. 
+    //! @return BE_SQLITE_OK if the data has been successfully processed. Return BE_SQLITE_ERROR otherwise.
     virtual DbResult _OutputPage(const void *pData, int nData) {return BE_SQLITE_OK;}
 
     //! Override to reset any state of the change stream
-    //! @remarks Called at end of various change stream operations, and is used by application to reset the stream and 
-    //! dispose resources as necessary. 
+    //! @remarks Called at end of various change stream operations, and is used by application to reset the stream and
+    //! dispose resources as necessary.
     virtual void _Reset() {}
 
 protected:
@@ -513,44 +513,44 @@ protected:
 
 public:
     BE_SQLITE_EXPORT static DbResult TransferBytesBetweenStreams(ChangeStream& inStream, ChangeStream& outStream);
-    
-    //! Stream changes to a ChangeGroup. 
+
+    //! Stream changes to a ChangeGroup.
     //! @param[out] changeGroup ChangeGroup to stream to stream the contents to
     //! @remarks Implement _InputPage to send the stream
-    //! @return BE_SQLITE_OK if successful. Error status otherwise. 
+    //! @return BE_SQLITE_OK if successful. Error status otherwise.
     BE_SQLITE_EXPORT DbResult ToChangeGroup(ChangeGroup& changeGroup);
 
     //! Stream changes to an in-memory ChangeSet
     //! @param[out] changeSet ChangeSet to stream the contents to
     //! @param[in] invert Pass true if the input stream needs to be inverted
     //! @remarks Implement _InputPage to send the stream
-    //! @return BE_SQLITE_OK if successful. Error status otherwise. 
+    //! @return BE_SQLITE_OK if successful. Error status otherwise.
     BE_SQLITE_EXPORT DbResult ToChangeSet(ChangeSet& changeSet, bool invert = false);
 
     //! Stream changes from another ChangeStream
     //! @param[in] inStream Another stream that provides input
     //! @param[in] invert Pass true if the input stream needs to be inverted
     //! @remarks Implement _OutputPage to receive the input stream. The
-    //! input stream needs to implement _InputPage to send the stream. 
-    //! @return BE_SQLITE_OK if successful. Error status otherwise. 
+    //! input stream needs to implement _InputPage to send the stream.
+    //! @return BE_SQLITE_OK if successful. Error status otherwise.
     BE_SQLITE_EXPORT DbResult FromChangeStream(ChangeStream& inStream, bool invert = false);
 
     //! Stream changes to another ChangeStream
     //! @param[out] outStream Another stream that accepts the output
     //! @param[in] invert Pass true if this stream needs to be inverted
     //! @remarks Implement _InputPage to send this stream. The output stream
-    //! needs to implement _OutputPage to receive this stream. 
-    //! @return BE_SQLITE_OK if successful. Error status otherwise. 
+    //! needs to implement _OutputPage to receive this stream.
+    //! @return BE_SQLITE_OK if successful. Error status otherwise.
     BE_SQLITE_EXPORT DbResult ToChangeStream(ChangeStream& outStream, bool invert = false);
 
     //! Stream changes by concatenating two other ChangeStream-s
     //! @param[in] inStream1 First input stream
     //! @param[in] inStream2 Second input stream
     //! @remarks Implement _OutputPage to receive the concatenated stream. The input streams
-    //! need to implement _InputPage to send the streams. 
-    //! @return BE_SQLITE_OK if successful. Error status otherwise. 
+    //! need to implement _InputPage to send the streams.
+    //! @return BE_SQLITE_OK if successful. Error status otherwise.
     BE_SQLITE_EXPORT DbResult FromConcatenatedChangeStreams(ChangeStream& inStream1, ChangeStream& inStream2);
-    
+
     //! Dump the contents of this stream for debugging
     BE_SQLITE_EXPORT void Dump(Utf8CP label, DbCR db, bool isPatchSet = false, int detailLevel = 0);
 };

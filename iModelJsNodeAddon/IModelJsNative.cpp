@@ -1326,31 +1326,30 @@ public:
         return result;
         }
 
-    Napi::Value OpenIModel(Napi::CallbackInfo const& info)
-        {
+    Napi::Value OpenIModel(Napi::CallbackInfo const& info) {
         REQUIRE_ARGUMENT_STRING(0, dbName, Env().Undefined());
         REQUIRE_ARGUMENT_INTEGER(1, mode, Env().Undefined());
         OPTIONAL_ARGUMENT_INTEGER(2, upgrade, 0, Env().Undefined());
         OPTIONAL_ARGUMENT_STRING(3, encryptionPropsString, Env().Undefined());
 
         BeFileName dbFileName(dbName.c_str(), true);
-        SchemaUpgradeOptions schemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::CheckRequiredUpgrades);
+        SchemaUpgradeOptions schemaUpgradeOptions((2 == upgrade) ?
+            SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade :
+            SchemaUpgradeOptions::DomainUpgradeOptions::CheckRequiredUpgrades);
+
         DgnDb::OpenParams openParams((Db::OpenMode)mode, BeSQLite::DefaultTxn::Yes, schemaUpgradeOptions);
         if (1 == upgrade)
             openParams.SetProfileUpgradeOptions(BeSQLite::Db::ProfileUpgradeOptions::Upgrade);
-        else if (2 == upgrade)
-            schemaUpgradeOptions = SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade;
 
-        if (!encryptionPropsString.empty() && BeSQLite::Db::IsEncryptedDb(dbFileName))
-            {
+        if (!encryptionPropsString.empty() && BeSQLite::Db::IsEncryptedDb(dbFileName)) {
             Json::Value encryptionPropsJson = Json::Value::From(encryptionPropsString);
             if (encryptionPropsJson.isMember(JsInterop::json_password()))
                 openParams.GetEncryptionParamsR().SetPassword(encryptionPropsJson[JsInterop::json_password()].asCString());
-            }
+        }
 
         DbResult result = OpenDgnDb(dbFileName, openParams);
-        return Napi::Number::New(Env(), (int) result);
-        }
+        return Napi::Number::New(Env(), (int)result);
+    }
 
     Napi::Value CreateIModel(Napi::CallbackInfo const& info)
         {
@@ -1986,49 +1985,6 @@ public:
         return CreateBentleyReturnSuccessObject(toJsString(Env(), changeSummaryKey.GetInstanceId()));
         }
 
-    Napi::Value SetBriefcaseId(Napi::CallbackInfo const& info)
-        {
-        REQUIRE_DB_TO_BE_OPEN
-        REQUIRE_ARGUMENT_INTEGER(0, idValue, Env().Undefined());
-        OPTIONAL_ARGUMENT_STRING(1, encryptionPropsString, Env().Undefined());
-        BeFileName name(m_dgndb->GetFileName());
-
-        // TODO: This routine has excessive logging to diagnose performance issues with this
-        // simple operation. The logs must be removed after the issue is addressed.
-        PERFLOG_START("iModelJsNative", "SetAsBriefcase");
-        DbResult result = m_dgndb->SetAsBriefcase(BeBriefcaseId(idValue));
-        PERFLOG_FINISH("iModelJsNative", "SetAsBriefcase");
-
-        if (BE_SQLITE_OK == result)
-            {
-            PERFLOG_START("iModelJsNative", "SaveChanges");
-            result = m_dgndb->SaveChanges();
-            PERFLOG_FINISH("iModelJsNative", "SaveChanges");
-            }
-
-         // Note: We need to close and reopen the Db to enable change tracking
-        if (BE_SQLITE_OK == result)
-            {
-            CloseDgnDb();
-
-            PERFLOG_START("iModelJsNative", "OpenDgnDb");
-            SchemaUpgradeOptions schemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::SkipCheck);
-            DgnDb::OpenParams openParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, schemaUpgradeOptions);
-
-            if (!encryptionPropsString.empty())
-                {
-                Json::Value encryptionPropsJson = Json::Value::From(encryptionPropsString);
-                if (encryptionPropsJson.isMember(JsInterop::json_password()))
-                    openParams.GetEncryptionParamsR().SetPassword(encryptionPropsJson[JsInterop::json_password()].asCString());
-                }
-
-            result = OpenDgnDb(name, openParams);
-            PERFLOG_FINISH("iModelJsNative", "OpenDgnDb");
-            }
-
-        return Napi::Number::New(Env(), (int)result);
-        }
-
     Napi::Value GetFilePath(Napi::CallbackInfo const& info)
         {
         REQUIRE_DB_TO_BE_OPEN
@@ -2085,46 +2041,33 @@ public:
         return Napi::Number::New(Env(), (int)BE_SQLITE_OK);
         }
 
-    Napi::Value QueryProjectGuid(Napi::CallbackInfo const& info)
-        {
+    Napi::Value QueryProjectGuid(Napi::CallbackInfo const& info) {
         REQUIRE_DB_TO_BE_OPEN
         BeGuid beGuid = m_dgndb->QueryProjectGuid();
         return toJsString(Env(), beGuid.ToString());
-        }
+    }
 
-    Napi::Value SetAsMaster(Napi::CallbackInfo const& info)
-        {
+    Napi::Value ResetBriefcaseId(Napi::CallbackInfo const& info) {
         REQUIRE_DB_TO_BE_OPEN
-        OPTIONAL_ARGUMENT_STRING(0, guidStr, Env().Undefined());
-        if (!guidStr.empty())
-            {
-            BeGuid guid;
-            if (guid.FromString(guidStr.c_str()) != SUCCESS)
-                return Napi::Number::New(Env(), (int) BE_SQLITE_ERROR);
+        REQUIRE_ARGUMENT_INTEGER(0, newId, Env().Undefined());
+        return Napi::Number::New(Env(), (int)m_dgndb->ResetBriefcaseId(BeSQLite::BeBriefcaseId(newId)));
+    }
 
-            return Napi::Number::New(Env(), (int) m_dgndb->SetAsMaster(guid));
-            }
-
-        return Napi::Number::New(Env(), (int) m_dgndb->SetAsMaster());
-        }
-
-    Napi::Value BuildBriefcaseManagerResourcesRequestForElement(Napi::CallbackInfo const& info)
-        {
+    Napi::Value BuildBriefcaseManagerResourcesRequestForElement(Napi::CallbackInfo const& info) {
         REQUIRE_ARGUMENT_OBJ(0, BriefcaseManagerResourcesRequest, req, Env().Undefined());
         REQUIRE_ARGUMENT_STRING(1, elemProps, Env().Undefined());
         REQUIRE_ARGUMENT_INTEGER(2, dbop, Env().Undefined());
         Json::Value elemPropsJson = Json::Value::From(elemProps);
         return Napi::Number::New(Env(), (int)JsInterop::BuildBriefcaseManagerResourcesRequestForElement(req->m_req, GetDgnDb(), elemPropsJson, (BeSQLite::DbOpcode)dbop));
-        }
+    }
 
-    Napi::Value BuildBriefcaseManagerResourcesRequestForLinkTableRelationship(Napi::CallbackInfo const& info)
-        {
+    Napi::Value BuildBriefcaseManagerResourcesRequestForLinkTableRelationship(Napi::CallbackInfo const& info) {
         REQUIRE_ARGUMENT_OBJ(0, BriefcaseManagerResourcesRequest, req, Env().Undefined());
         REQUIRE_ARGUMENT_STRING(1, props, Env().Undefined());
         REQUIRE_ARGUMENT_INTEGER(2, dbop, Env().Undefined());
         Json::Value propsJson = Json::Value::From(props);
         return Napi::Number::New(Env(), (int)JsInterop::BuildBriefcaseManagerResourcesRequestForLinkTableRelationship(req->m_req, GetDgnDb(), propsJson, (BeSQLite::DbOpcode)dbop));
-        }
+    }
 
     Napi::Value BuildBriefcaseManagerResourcesRequestForModel(Napi::CallbackInfo const& info)
         {
@@ -2558,7 +2501,6 @@ public:
             InstanceMethod("getTxnDescription", &NativeDgnDb::GetTxnDescription),
             InstanceMethod("getUndoString", &NativeDgnDb::GetUndoString),
             InstanceMethod("hasFatalTxnError", &NativeDgnDb::HasFatalTxnError),
-            InstanceMethod("hasSavedChanges", &NativeDgnDb::HasPendingTxns), // deprecated, use hasPendingChanges
             InstanceMethod("hasPendingTxns", &NativeDgnDb::HasPendingTxns),
             InstanceMethod("hasUnsavedChanges", &NativeDgnDb::HasUnsavedChanges),
             InstanceMethod("importFunctionalSchema", &NativeDgnDb::ImportFunctionalSchema),
@@ -2592,14 +2534,13 @@ public:
             InstanceMethod("readFontMap", &NativeDgnDb::ReadFontMap),
             InstanceMethod("reinstateTxn", &NativeDgnDb::ReinstateTxn),
             InstanceMethod("removePendingChangeSet", &NativeDgnDb::RemovePendingChangeSet),
+            InstanceMethod("resetBriefcaseId", &NativeDgnDb::ResetBriefcaseId),
             InstanceMethod("reverseAll", &NativeDgnDb::ReverseAll),
             InstanceMethod("reverseTo", &NativeDgnDb::ReverseTo),
             InstanceMethod("reverseTxns", &NativeDgnDb::ReverseTxns),
             InstanceMethod("saveChanges", &NativeDgnDb::SaveChanges),
             InstanceMethod("saveFileProperty", &NativeDgnDb::SaveFileProperty),
             InstanceMethod("saveProjectGuid", &NativeDgnDb::SaveProjectGuid),
-            InstanceMethod("setAsMaster", &NativeDgnDb::SetAsMaster),
-            InstanceMethod("setBriefcaseId", &NativeDgnDb::SetBriefcaseId),
             InstanceMethod("setBriefcaseManagerOptimisticConcurrencyControlPolicy", &NativeDgnDb::SetBriefcaseManagerOptimisticConcurrencyControlPolicy),
             InstanceMethod("setBriefcaseManagerPessimisticConcurrencyControlPolicy", &NativeDgnDb::SetBriefcaseManagerPessimisticConcurrencyControlPolicy),
             InstanceMethod("setDbGuid", &NativeDgnDb::SetDbGuid),
@@ -2615,7 +2556,6 @@ public:
             StaticMethod("enableSharedCache", &NativeDgnDb::EnableSharedCache),
             StaticMethod("encryptDb", &NativeDgnDb::EncryptDb),
             StaticMethod("vacuum", &NativeDgnDb::Vacuum),
-            StaticMethod("unsafeSetBriefcaseId", &NativeDgnDb::UnsafeSetBriefcaseId),
         });
 
         exports.Set("DgnDb", t);

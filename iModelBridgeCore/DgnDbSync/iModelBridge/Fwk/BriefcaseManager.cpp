@@ -66,7 +66,7 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
         T_HOST.GetTxnAdmin().AddTxnMonitor(*this);
 
         // All of the initial schema upgrade operations and domain imports are done in the shared channel.
-        // These initialization steps occur while opening the briefcase, and therefore iModelBridgeFwk won't 
+        // These initialization steps occur while opening the briefcase, and therefore iModelBridgeFwk won't
         // have the chance to set the channel parent before hand. So, bc mgr must enter the shared channel at the outset.
         // (Bug #275103)
         GetChannelPropsR().channelType = IBriefcaseManager::ChannelType::Shared;
@@ -1046,7 +1046,7 @@ iModelBridgeFwk::FwkRepoAdmin::_CreateBriefcaseManager(DgnDbR db) const
         m_fwk.TestFeatureFlag("imodel-bridge-fwk-briefcase-manager-no-strict", nostrict);
         if (getenv("imodel-bridge-fwk-briefcase-manager-no-strict"))
             nostrict = true;
-        
+
         if (nostrict)
             s_failOnChannelConstraintViolation = false;
 
@@ -1064,7 +1064,7 @@ iModelBridgeFwk::FwkRepoAdmin::_CreateBriefcaseManager(DgnDbR db) const
     }
 
     //  -- new briefcase manager --
-    if (db.IsLegacyMaster() || db.IsLegacyStandalone() || db.IsFutureStandalone())
+    if (db.IsSnapshot() || db.IsStandAlone())
         return MasterBriefcaseManager::Create(db);
 
     return new BriefcaseManager(db);
