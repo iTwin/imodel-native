@@ -50,18 +50,8 @@ iModelTests.UnsuccessfulGetiModels
 #----------------------------------------------------------------------------------------
 #   Fails when running all tests
 #----------------------------------------------------------------------------------------
-BriefcaseTests.SuccessfulRestoreBriefcase
-PerformanceTests.RetrieveFractionOfAllAvailableCodes
-CodesTests.QueryAvailableCodesTest
-VersionsTests.GetChangeSetsAfterBaselineVersionSucceeds
-VersionsTests.GetChangeSetsBetweenBaselineVersionAndChangeSetSucceeds
-
-#----------------------------------------------------------------------------------------
-#   Fails only on pipeline #266395
-#----------------------------------------------------------------------------------------
-BriefcasePullTests.UpdateBriefcaseToVersion
-BriefcasePullTests.SuccessfulAcquireAndMergeBriefcase
-BriefcasePullTests.DownloadStandaloneBriefcaseUpdatedToVersion
+VersionsTests.GetChangeSetsAfterBaselineVersionSucceeds                     #301247 Baseline iModel version is not listed
+VersionsTests.GetChangeSetsBetweenBaselineVersionAndChangeSetSucceeds       #301247 Baseline iModel version is not listed
 
 #----------------------------------------------------------------------------------------
 #   Missing features in iModelBank
@@ -96,36 +86,28 @@ LocksTests.FailingLocksResponseOptions              #222178 - ConflictOptions
 GlobalEventsTests.*                                 #Global events
 ThumbnailsTests.*                                   #Thumbnails
 VersionsTests.GetVersionsWithThumbnails             #Thumbnails
+SeedFileTests.*                                     #Seed files
 
 #----------------------------------------------------------------------------------------
 #   Should fix
 #----------------------------------------------------------------------------------------
-BriefcasePullTests.DownloadStandaloneBriefcaseUpdatedToChangeSet #Incorrect test, should properly query by index
-ChangeSetsTests.ChangeSetsInfo
-LocksTests.QueryUnavailableLocksTest
-CodesLocksTests.QueryLocksCodes
-PerformanceTests.RetrieveCodesById
-PerformanceTests.RetrieveFractionOfAllAvailableCodesById
-PerformanceTests.PushLocks
-PerformanceTests.RetrieveLocksById
-PerformanceTests.RetrieveFractionOfAllAvailableLocksById
-SchemaLockTests.LockSchemas
-BriefcaseSchemaChangesTests.UpdateToChangeSetPullWithoutReinstating
-BriefcaseSchemaChangesTests.UpdateToChangeSetPullWithReinstating
+ChangeSetsTests.ChangeSetsInfo                                          #299701 fix backward relationships
+BriefcaseSchemaChangesTests.UpdateToChangeSetPullWithoutReinstating     #299701 fix backward relationships
+BriefcaseSchemaChangesTests.UpdateToChangeSetPullWithReinstating        #299701 fix backward relationships
+LocksTests.QueryUnavailableLocksTest                                    #299702 $filter for released locks
+PerformanceTests.PushLocks                                              #299702 $filter for released locks
+CodesLocksTests.QueryLocksCodes                                         #300574 Fix `in` operator when filtering code ids
+PerformanceTests.RetrieveCodesById                                      #300575 Fix Content-Type in WSClient
+PerformanceTests.RetrieveFractionOfAllAvailableCodesById                #300575 Fix Content-Type in WSClient
+PerformanceTests.RetrieveLocksById                                      #300575 Fix Content-Type in WSClient
+PerformanceTests.RetrieveFractionOfAllAvailableLocksById                #300575 Fix Content-Type in WSClient
+SchemaLockTests.LockSchemas                                             #300576 Restrict objectId for schema locks
 
 #----------------------------------------------------------------------------------------
 #   iModelManager or Gateway issues, might need fix
 #----------------------------------------------------------------------------------------
-BriefcaseTests.UnsuccessfulAcquireBriefcase
-iModelTests.QueryNonExistentiModelById
-iModelTests.GetiModelsInvalidContextId
-
-#----------------------------------------------------------------------------------------
-#   Failing tests, need investigation
-#----------------------------------------------------------------------------------------
-PushRetryTests.*
-SeedFileTests.*
-
+BriefcaseTests.UnsuccessfulAcquireBriefcase                             #301244 Return a body for an iModel that wasn't found
+iModelTests.GetiModelsInvalidContextId                                  #301245 Validate that the context id is a valid guid
 #----------------------------------------------------------------------------------------
 #   Unit tests
 #----------------------------------------------------------------------------------------
