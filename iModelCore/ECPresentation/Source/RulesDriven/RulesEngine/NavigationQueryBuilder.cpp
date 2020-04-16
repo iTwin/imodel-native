@@ -2947,6 +2947,25 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+static void FilterRelationshipPathsByTargetClass(bvector<RelatedClassPath>& paths, ECClassCR targetClass)
+    {
+    bvector<RelatedClassPath> filtered;
+    for (RelatedClassPathR path : paths)
+        {
+        if (!targetClass.Is(&path.back().GetTargetClass().GetClass()))
+            continue;
+
+        if (&path.back().GetTargetClass().GetClass() != &targetClass)
+            path.back().GetTargetClass().SetClass(targetClass);
+
+        filtered.push_back(path);
+        }
+    filtered.swap(paths);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP parentNode, RelatedInstanceNodesSpecification const& specification, Utf8StringCR specificationHash, ChildNodeRuleCR rule) const
@@ -3032,6 +3051,8 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
                 {
                 relationshipClassPaths = m_params.GetSchemaHelper().GetRecursiveRelationshipClassPaths(parentClass, parentInstanceIds,
                     specification.GetRelationshipPaths(), queryContext->GetRelationshipUseCounter(), true);
+                if (groupingResolver.GetGroupingClass())
+                    FilterRelationshipPathsByTargetClass(relationshipClassPaths, *groupingResolver.GetGroupingClass());
                 }
 
             // create select infos

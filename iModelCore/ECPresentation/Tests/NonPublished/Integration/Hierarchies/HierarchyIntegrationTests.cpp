@@ -1946,6 +1946,80 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, DEPRECATED_RelatedInsta
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(RelatedInstanceNodes_GroupedByClass, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="C">
+        <BaseClass>B</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="D">
+        <BaseClass>B</BaseClass>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="A_Has_B" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="B"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstanceNodes_GroupedByClass)
+    {
+    // set up the dataset
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+    ECClassCP classD = GetClass("D");
+    ECRelationshipClassCP rel = GetClass("A_Has_B")->GetRelationshipClassCP();
+
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr c = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+    IECInstancePtr d = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *a, *c);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *a, *d);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule();
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", classA->GetFullName(), false));
+    rules->AddPresentationRule(*rootRule);
+
+    ChildNodeRule* childRule = new ChildNodeRule("ParentNode.ClassName=\"A\"", 1, false);
+    childRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, ChildrenHint::Unknown, false, false, true, false, 
+        "", { new RepeatableRelationshipPathSpecification(*new RepeatableRelationshipStepSpecification(rel->GetFullName(), RequiredRelationDirection_Forward)) }));
+    rules->AddPresentationRule(*childRule);
+
+    // verify
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
+    ASSERT_EQ(1, rootNodes.GetSize());
+    VerifyNodeInstance(*rootNodes[0], *a);
+
+    DataContainer<NavNodeCPtr> classGroupingNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
+    ASSERT_EQ(2, classGroupingNodes.GetSize());
+    EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, classGroupingNodes[0]->GetType().c_str());
+    EXPECT_STREQ("C", classGroupingNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, classGroupingNodes[1]->GetType().c_str());
+    EXPECT_STREQ("D", classGroupingNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
+
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *classGroupingNodes[1], PageOptions(), options).get(); });
+    ASSERT_EQ(1, childNodes.GetSize());
+    VerifyNodeInstance(*childNodes[0], *d);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                02/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(DEPRECATED_RelatedInstanceNodes_ReturnsRelatedChildrenBasedOnSameSpecificationAndGroupedByClass, R"*(
