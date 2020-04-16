@@ -1399,7 +1399,7 @@ CurveVectorPtr  DwgHelper::CreateCurveVectorFrom (DwgDbPolylineCR polyline, Curv
 +---------------+---------------+---------------+---------------+---------------+------*/
 CurveVectorPtr  DwgHelper::CreateCurveVectorFrom (DwgDb2dPolylineCR polyline2d, CurveVector::BoundaryType type, TransformCP transform)
     {
-    BeAssert (false && "2DPolyline clipper not implemented yet!");
+    LOG_ENTITY.debugv ("2DPolyline clipper not implemented yet!");
     return  nullptr;
     }
 
@@ -1408,7 +1408,7 @@ CurveVectorPtr  DwgHelper::CreateCurveVectorFrom (DwgDb2dPolylineCR polyline2d, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 CurveVectorPtr  DwgHelper::CreateCurveVectorFrom (DwgDb3dPolylineCR polyline3d, CurveVector::BoundaryType type, TransformCP transform)
     {
-    BeAssert (false && "3DPolyline clipper not implemented yet!");
+    LOG_ENTITY.debugv ("3DPolyline clipper not implemented yet!");
     return  nullptr;
     }
 

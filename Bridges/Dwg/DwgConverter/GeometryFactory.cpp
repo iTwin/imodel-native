@@ -2061,7 +2061,7 @@ void GeometryFactory::_GetModelTransform (TransformR outTransform)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryFactory::_PushClipBoundary (DwgGiClipBoundaryCP boundary)
     {
-    BeAssert (false && "_PushClipBoundary not implemented!");
+    LOG_ENTITY.debugv ("_PushClipBoundary not implemented!");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2069,7 +2069,7 @@ void GeometryFactory::_PushClipBoundary (DwgGiClipBoundaryCP boundary)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryFactory::_PopClipBoundary ()
     {
-    BeAssert (false && "_PopClipBoundary not implemented!");
+    LOG_ENTITY.debugv ("_PopClipBoundary not implemented!");
     }
 
 /*---------------------------------------------------------------------------------**//**

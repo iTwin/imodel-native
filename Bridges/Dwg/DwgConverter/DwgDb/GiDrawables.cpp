@@ -206,7 +206,7 @@ virtual OdGiDrawablePtr openDrawable (OdDbStub* drawableId) override
     if (nullptr != drawableId)
         {
         OdDbObjectId    id(drawableId);
-        return id.safeOpenObject ();
+        return id.openObject ();
         }
     return  OdGiDrawablePtr();
     }

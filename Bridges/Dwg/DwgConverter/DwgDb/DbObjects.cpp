@@ -80,7 +80,7 @@ DwgDbObjectIdR      DwgDbObjectId::operator = (DWGDB_TypeCR(ObjectId) id) { DWGD
 DwgString       DwgDbObjectId::GetDwgClassName () const
     {
 #ifdef DWGTOOLKIT_OpenDwg
-    OdDbObjectPtr   obj = T_Super::safeOpenObject ();
+    OdDbObjectPtr   obj = T_Super::openObject ();
     if (obj.isNull())
         {
         BeAssert (false && "Null object opened from OdDbObjectId");
@@ -101,7 +101,7 @@ DwgString       DwgDbObjectId::GetDwgClassName () const
 DWG_TypeP(RxClass) DwgDbObjectId::GetDwgClass () const
     {
 #ifdef DWGTOOLKIT_OpenDwg
-    OdDbObjectPtr   obj = T_Super::safeOpenObject ();
+    OdDbObjectPtr   obj = T_Super::openObject ();
     if (obj.isNull())
         {
         BeAssert (false && "Null object opened from OdDbObjectId");
@@ -119,7 +119,7 @@ DWG_TypeP(RxClass) DwgDbObjectId::GetDwgClass () const
 bool            DwgDbObjectId::IsObjectDerivedFrom (DWG_TypeCP(RxClass) rxClass) const
     {
 #ifdef DWGTOOLKIT_OpenDwg
-    OdDbObjectPtr   obj = T_Super::safeOpenObject ();
+    OdDbObjectPtr   obj = T_Super::openObject ();
     if (obj.isNull())
         {
         BeAssert (false && "Null object opened from OdDbObjectId");

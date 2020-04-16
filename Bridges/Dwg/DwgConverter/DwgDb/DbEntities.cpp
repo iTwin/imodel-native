@@ -286,7 +286,7 @@ DwgDbStatus     DwgDb2dPolyline::GetPoints (DPoint3dArrayR out) const
     for (iter->Start(); !iter->Done(); iter->Next())
         {
 #ifdef DWGTOOLKIT_OpenDwg
-        OdDb2dVertexPtr vertex = iter->GetObjectId().safeOpenObject (OdDb::kForRead);
+        OdDb2dVertexPtr vertex = iter->GetObjectId().openObject (OdDb::kForRead);
         if (!vertex.isNull())
 #elif DWGTOOLKIT_RealDwg
         AcDbSmartObjectPointer<AcDb2dVertex>    vertex(iter->GetObjectId(), AcDb::kForRead);
@@ -1924,7 +1924,7 @@ DwgDbStatus     DwgDbHatch::SetElevation (double z) { RETURNVOIDORSTATUS(T_Super
 DwgDbStatus     DwgDbRasterImage::GetFileName (DwgStringR name, DwgStringP activeFile) const
     {
 #ifdef DWGTOOLKIT_OpenDwg
-    OdDbRasterImageDefPtr   def = T_Super::imageDefId().safeOpenObject ();
+    OdDbRasterImageDefPtr   def = T_Super::imageDefId().openObject ();
     if (def.isNull())
         return  DwgDbStatus::ObjectNotOpenYet;
 
