@@ -189,12 +189,12 @@ void Expression::MergeSymbol(Utf8CP targetDefinition, ExpressionR targetExpressi
     if (it == targetExpression.end())
         {
         // TODO: We should ensure we are not adding an inverted unit in an expression because this will fail to generate a conversion
-        LOG.debugv("%s --> %s - Adding Unit for %s with Exponent: %d", sourceDefinition, targetDefinition, symbol->GetName().c_str(), symbolExponent);
+        LOG.tracev("%s --> %s - Adding Unit for %s with Exponent: %d", sourceDefinition, targetDefinition, symbol->GetName().c_str(), symbolExponent);
         targetExpression.Add(symbol, symbolExponent);
         return;
         }
 
-    LOG.debugv("%s --> %s - Merging existing Unit %s. with Exponent: %d", sourceDefinition, targetDefinition, (*it).GetName(), symbolExponent);
+    LOG.tracev("%s --> %s - Merging existing Unit %s. with Exponent: %d", sourceDefinition, targetDefinition, (*it).GetName(), symbolExponent);
     (*it).AddToExponent(symbolExponent);
     }
 
@@ -213,7 +213,7 @@ void Expression::MergeExpressions(Utf8CP targetDefinition, ExpressionR targetExp
 // static
 void Expression::MergeExpressions(Utf8CP targetDefinition, ExpressionR targetExpression, Utf8CP sourceDefinition, ExpressionR sourceExpression, int startingExponent, std::function<bool(UnitsSymbolCR, UnitsSymbolCR)> areEqual)
     {
-    LOG.debugv("Merging Expressions %s --> %s", sourceDefinition, targetDefinition);
+    LOG.tracev("Merging Expressions %s --> %s", sourceDefinition, targetDefinition);
     for (auto it = sourceExpression.rbegin(); it != sourceExpression.rend(); ++it)
         {
         int     mergedExponent = (*it).GetExponent() * startingExponent;
@@ -228,7 +228,7 @@ void Expression::MergeExpressions(Utf8CP targetDefinition, ExpressionR targetExp
 BentleyStatus Expression::HandleToken(UnitsSymbolCR owner, int& depth, ExpressionR expression,
     Utf8CP definition, TokenCR token, int startingExponent, std::function<UnitsSymbolCP(Utf8CP, IUnitsContextCP)> getSymbolByName)
     {
-    LOG.debugv("%s - Handle Token: %s  TokenExp: %d  StartExp: %d", definition, token.GetName(), token.GetExponent(), startingExponent);
+    LOG.tracev("%s - Handle Token: %s  TokenExp: %d  StartExp: %d", definition, token.GetName(), token.GetExponent(), startingExponent);
     int mergedExponent = token.GetExponent() * startingExponent;
 
     UnitsSymbolCP symbol = getSymbolByName(token.GetName(), owner.m_unitsContext);
@@ -253,7 +253,7 @@ BentleyStatus Expression::HandleToken(UnitsSymbolCR owner, int& depth, Expressio
             return BentleyStatus::ERROR;
             }
 
-        LOG.debugv("Evaluating %s", symbol->GetName().c_str());
+        LOG.tracev("Evaluating %s", symbol->GetName().c_str());
         Expression sourceExpression = symbol->Evaluate(depth, getSymbolByName);
         MergeExpressions(definition, expression, symbol->GetDefinition().c_str(), sourceExpression, mergedExponent);
         }
@@ -340,7 +340,7 @@ BentleyStatus Expression::ParseDefinition(UnitsSymbolCR owner, int& depth, Utf8C
     auto new_iter = remove_if(expression.begin(), expression.end(), [](ExpressionSymbolCR a) { return a.GetExponent() == 0; });
     expression.erase(new_iter, expression.end());
 
-    LOG.debugv("%s - DONE", definition);
+    LOG.tracev("%s - DONE", definition);
 
     return expression.size() > 0 ? BentleyStatus::SUCCESS : BentleyStatus::ERROR;
     }

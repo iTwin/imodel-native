@@ -270,44 +270,44 @@ bool Unit::GenerateConversion(UnitCR toUnit, Conversion& conversion) const
         if (toUnitExp.GetExponent() == 0)
             continue;
 
-        LOG.infov("Adding unit %s^%d to the conversion.  Factor: %.17g / %.17g  Offset:%.17g", toUnitExp.GetSymbol()->GetName().c_str(),
+        LOG.tracev("Adding unit %s^%d to the conversion.  Factor: %.17g / %.17g  Offset:%.17g", toUnitExp.GetSymbol()->GetName().c_str(),
                   toUnitExp.GetExponent(), toUnitExp.GetSymbol()->GetNumerator(), toUnitExp.GetSymbol()->GetDenominator(), toUnitExp.GetSymbol()->GetOffset());
         double unitFactor = FastIntegerPower(toUnitExp.GetSymbolFactor(), abs(toUnitExp.GetExponent()));
         if (toUnitExp.GetExponent() > 0)
             {
-            LOG.infov("Multiplying existing factor %.17g by %.17g", conversion.Factor, unitFactor);
+            LOG.tracev("Multiplying existing factor %.17g by %.17g", conversion.Factor, unitFactor);
             conversion.Factor *= unitFactor;
-            LOG.infov("New factor %.17g", conversion.Factor);
+            LOG.tracev("New factor %.17g", conversion.Factor);
             if (toUnitExp.GetSymbol()->HasOffset())
                 {
                 double unitOffset = toUnitExp.GetSymbol()->GetOffset() * toUnitExp.GetSymbolFactor();
-                LOG.infov("Adding %.17g to existing offset %.17g.", unitOffset, conversion.Offset);
+                LOG.tracev("Adding %.17g to existing offset %.17g.", unitOffset, conversion.Offset);
                 conversion.Offset += unitOffset;
-                LOG.infov("New offset %.17g", conversion.Offset);
+                LOG.tracev("New offset %.17g", conversion.Offset);
                 }
             else
                 {
-                LOG.infov("Multiplying offset %.17g by units conversion factor %.17g", conversion.Offset, unitFactor);
+                LOG.tracev("Multiplying offset %.17g by units conversion factor %.17g", conversion.Offset, unitFactor);
                 conversion.Offset *= unitFactor;
-                LOG.infov("New offset %.17g", conversion.Offset);
+                LOG.tracev("New offset %.17g", conversion.Offset);
                 }
             }
         else
             {
-            LOG.infov("Dividing existing factor %.17g by %.17g", conversion.Factor, unitFactor);
+            LOG.tracev("Dividing existing factor %.17g by %.17g", conversion.Factor, unitFactor);
             conversion.Factor /= unitFactor;
-            LOG.infov("New factor %.17g", conversion.Factor);
+            LOG.tracev("New factor %.17g", conversion.Factor);
             if (toUnitExp.GetSymbol()->HasOffset())
                 {
                 double unitOffset = toUnitExp.GetSymbol()->GetOffset() * toUnitExp.GetSymbolFactor();
-                LOG.infov("Subtracting %.17g from existing offset %.17g.", unitOffset, conversion.Offset);
+                LOG.tracev("Subtracting %.17g from existing offset %.17g.", unitOffset, conversion.Offset);
                 conversion.Offset -= unitOffset;
-                LOG.infov("New offset %.17g", conversion.Offset);
+                LOG.tracev("New offset %.17g", conversion.Offset);
                 }
 
-            LOG.infov("Dividing offset %.17g by units conversion factor %.17g", conversion.Offset, unitFactor);
+            LOG.tracev("Dividing offset %.17g by units conversion factor %.17g", conversion.Offset, unitFactor);
             conversion.Offset /= unitFactor;
-            LOG.infov("New offset %.17g", conversion.Offset);
+            LOG.tracev("New offset %.17g", conversion.Offset);
             }
         }
 
@@ -333,7 +333,7 @@ UnitsProblemCode Unit::DoNumericConversion(double& converted, double value, Unit
         return UnitsProblemCode::UncomparableUnits;
         }
 
-    LOG.infov("Conversion factor: %.17g, offset: %.17g", conversion.Factor, conversion.Offset);
+    LOG.tracev("Conversion factor: %.17g, offset: %.17g", conversion.Factor, conversion.Offset);
     converted = value * conversion.Factor + conversion.Offset;
     return UnitsProblemCode::NoProblem;
     }

@@ -709,7 +709,6 @@ size_t NumericFormatSpec::FormatDouble(double dval, Utf8P buf, size_t bufLen) co
     double ival;
     Utf8Char sign = '+';
     double precScale = GetDecimalPrecisionFactor();
-    bool hasSigFigs = abs(dval * precScale) >= 1.0;
     int totFractLen = Utils::DecimalPrecisionToInt(m_decPrecision);
     double expInt = 0.0;
     double fract;
@@ -774,6 +773,7 @@ size_t NumericFormatSpec::FormatDouble(double dval, Utf8P buf, size_t bufLen) co
                 }
             }
 
+        bool hasSigFigs = ival >= 1.0 || fract >= 1.0;
         int iLen = IntPartToText(ival, intBuf, sizeof(intBuf), true);
 
         memcpy(&locBuf[ind], intBuf, iLen);

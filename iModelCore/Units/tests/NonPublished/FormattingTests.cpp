@@ -747,7 +747,15 @@ TEST_F(FormatDoubleTest, ValuesThatPrintOutAsZeroDoNotShowSign)
     nfs.SetPrecision(DecimalPrecision::Precision6);
     nfs.SetSignOption(SignOption::OnlyNegative);
     EXPECT_STREQ("-0.000001", nfs.Format(-0.000001).c_str());
-    EXPECT_STREQ("0.0", nfs.Format(-0.0000001).c_str());
+    EXPECT_STREQ("0.0",       nfs.Format(-0.0000001).c_str());
+    EXPECT_STREQ("-0.000001", nfs.Format(-0.0000005).c_str());
+    EXPECT_STREQ("0.0",       nfs.Format(-0.0000004999999).c_str());
+
+    nfs.SetPrecision(DecimalPrecision::Precision0);
+    EXPECT_STREQ("-1.0", nfs.Format(-1.0).c_str());
+    EXPECT_STREQ("0.0",  nfs.Format(-0.4999999).c_str());
+    EXPECT_STREQ("-1.0", nfs.Format(-0.5).c_str());
+    EXPECT_STREQ("0.0",  nfs.Format(-0.1).c_str());
     }
 
 //---------------------------------------------------------------------------------------
