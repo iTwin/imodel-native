@@ -2,7 +2,7 @@
     <Product>
         <ProductName>iModel Bridge Service - Bentley Civil</ProductName>
         <ProductShortName>Civil iModel Bridge</ProductShortName>
-        <ProductCode>{6E0B46CE-58C6-4E5C-A0F1-F19C782CBB33}</ProductCode>
+        <ProductCode>${REL_V}.${MAJ_V}.${MIN_V}.${SUBMIN_V}.${PartName}.${Platform}.CivilBridge.MSI</ProductCode>
         <UpgradeCode>{BA04D7DE-6102-4C66-B0C0-7C488B8CDD17}</UpgradeCode>
         <MkiBeforeCompile>ordbridgeinstallerbeforecompile.mki</MkiBeforeCompile>
         <WxsElementRefs>UIRef=WixUI_NoCustomization</WxsElementRefs>
