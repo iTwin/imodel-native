@@ -60,6 +60,7 @@ enum TypeFamilyID
     TFID_LINEAR,
     TFID_TIN,
     TFID_MESH,
+    TFID_BOUNDARY,
 
     TFID_QTY,
     };
@@ -86,6 +87,7 @@ protected:
         static const DataTypeFamily LINEAR_TYPE_FAMILY(LinearTypeFamilyCreator().Create());
         static const DataTypeFamily TIN_TYPE_FAMILY(TINTypeFamilyCreator().Create());
         static const DataTypeFamily MESH_TYPE_FAMILY(MeshTypeFamilyCreator().Create());
+        static const DataTypeFamily BOUNDARY_TYPE_FAMILY(BoundaryTypeFamilyCreator().Create());
 
         const uint32_t DataTypeFamilyField = sourceData.GetTypeFamilyID();
         switch (DataTypeFamilyField)
@@ -98,6 +100,8 @@ protected:
             return &TIN_TYPE_FAMILY;
         case TFID_MESH:
             return &MESH_TYPE_FAMILY;
+        case TFID_BOUNDARY:
+            return &BOUNDARY_TYPE_FAMILY;
         default:
             return 0;
         }
@@ -123,7 +127,7 @@ struct CmdFactory
     {
 private:
     typedef const CmdCreator*   CreatorItem;
-
+    
     static const CreatorItem*   GetCreatorIndex            ();
 
 public:
@@ -135,12 +139,14 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @description  
 * @bsiclass                                                  Raymond.Gauthier   06/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
+-+---------------+---------------+---------------+---------------+---------------+------*/
 const CmdFactory::CreatorItem* CmdFactory::GetCreatorIndex ()
     {
 
     return nullptr;
     }
+
+
 
 /*---------------------------------------------------------------------------------**//**
 * @description  
@@ -192,6 +198,7 @@ const DataTypeFamily*       LoadType(uint32_t id)
     static const DataTypeFamily LINEAR_TYPE_FAMILY(LinearTypeFamilyCreator().Create());
     static const DataTypeFamily TIN_TYPE_FAMILY(TINTypeFamilyCreator().Create());
     static const DataTypeFamily MESH_TYPE_FAMILY(MeshTypeFamilyCreator().Create());
+    static const DataTypeFamily BOUNDARY_TYPE_FAMILY(BoundaryTypeFamilyCreator().Create());
 
     switch (id)
         {
@@ -203,6 +210,8 @@ const DataTypeFamily*       LoadType(uint32_t id)
             return &TIN_TYPE_FAMILY;
         case TFID_MESH:
             return &MESH_TYPE_FAMILY;
+        case TFID_BOUNDARY:
+            return &BOUNDARY_TYPE_FAMILY;
         default:
             return 0;
         }

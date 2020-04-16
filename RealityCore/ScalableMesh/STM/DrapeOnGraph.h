@@ -46,7 +46,7 @@ class ScalableMeshGraphDrapingProcess
         bool LastSegment() { return *m_currentSegment == m_nPointsInLine - 1; }
 
         int FindNextTriangleEdgeInDirection(const DPoint3d* vertices, size_t nVertices);
-        void SetCurrentVertex(DPoint3d& pt) { m_lastVertex = m_currentVertex;  m_currentVertex = pt; }
+        void SetCurrentVertex(const DPoint3d& pt) { m_lastVertex = m_currentVertex;  m_currentVertex = pt; }
 
         DVec3d GetCurrentLineSegmentDirection() { return m_directionOfCurrentSegment; }
         DPoint3d GetCurrentVertex()  { return m_currentVertex; }
@@ -86,7 +86,7 @@ class ScalableMeshGraphDraping
 
     public:
         static const double POINT_TOLERANCE;
-        ScalableMeshGraphDraping(MTGGraph* graph, bool use3d = false) : m_graphP(graph), m_3d(use3d), m_drapeDirection(DVec3d::From(0, 0, -1)) {};
+        explicit ScalableMeshGraphDraping(MTGGraph* graph, bool use3d = false) : m_graphP(graph), m_3d(use3d), m_drapeDirection(DVec3d::From(0, 0, -1)) {};
         void SetPolyLine(const DPoint3d* linePts, size_t nPts)
             {
             m_linePoints = linePts;

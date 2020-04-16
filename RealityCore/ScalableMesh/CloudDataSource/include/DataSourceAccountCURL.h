@@ -28,9 +28,13 @@ class OpenSSLMutexes
         std::mutex* m_mutexes;
         
         OpenSSLMutexes() = delete;
-        OpenSSLMutexes(size_t numMutexes);
+        explicit OpenSSLMutexes(size_t numMutexes);
 
     public:
+        OpenSSLMutexes(const OpenSSLMutexes&) = delete;
+        OpenSSLMutexes& operator=(const OpenSSLMutexes&) = delete;
+        OpenSSLMutexes(OpenSSLMutexes&&) = delete;
+        OpenSSLMutexes& operator=(OpenSSLMutexes&&) = delete;
         ~OpenSSLMutexes();
         std::mutex* GetMutexes();
 
@@ -49,7 +53,7 @@ protected:
         struct curl_slist* m_headers = nullptr;
         public:
             CURLHandle() = delete;
-            CURLHandle(CURL* curl) : m_curl(curl)
+            explicit CURLHandle(CURL* curl) : m_curl(curl)
                 {
                 }
             CURL*    get(void)

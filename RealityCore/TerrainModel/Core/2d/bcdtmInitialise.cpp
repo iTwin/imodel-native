@@ -9,10 +9,33 @@
 #endif
 #include <thread>
 
+#pragma warning( disable : 4701 )  
+#include "predicates.h"
+#pragma warning( default : 4701 )  
 #include "dtmvars.h"
 FILE    *fpLOG = NULL;
 
 PUSH_DISABLE_DEPRECATION_WARNINGS
+double splitter;
+double epsilon;         /* = 2^(-p).  Used to estimate roundoff errors. */
+                        /* A set of coefficients used to calculate maximum roundoff errors.          */
+double resulterrbound;
+double ccwerrboundA, ccwerrboundB, ccwerrboundC;
+double o3derrboundA, o3derrboundB, o3derrboundC;
+double iccerrboundA, iccerrboundB, iccerrboundC;
+double isperrboundA, isperrboundB, isperrboundC;
+double o3derrboundlifted;
+
+class init
+    {
+    public: init()
+        {
+        exactinit();
+        }
+    };
+
+init i;
+
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |

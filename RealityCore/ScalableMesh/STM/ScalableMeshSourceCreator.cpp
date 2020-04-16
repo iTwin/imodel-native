@@ -65,9 +65,6 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
 
  ISMPointIndexFilter<DPoint3d, Extent3dType>* s_filterClass = nullptr;
 
-//ScalableMeshExistingMeshMesher<DPoint3d,DRange3d> s_ExistingMeshMesher;
-
-
 size_t nGraphPins =0;
 size_t nGraphReleases = 0;
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
@@ -94,123 +91,64 @@ bool canCreateFile(const WChar* fileName)
 // TDORAY: Return a ref counted pointer
 template<class POINT, class EXTENT>
 static ISMPointIndexFilter<POINT, EXTENT>* scm_createFilterFromType(ScalableMeshFilterType filterType)
-{
-#ifdef VANCOUVER_API
-    WString filterTypeStr;
-
-    if (BSISUCCESS == ConfigurationManager::GetVariable(filterTypeStr, L"SM_FILTER_TYPE"))
-    {
+ {
+    #ifdef VANCOUVER_API
+         WString filterTypeStr;
+    
+        if (BSISUCCESS == ConfigurationManager::GetVariable(filterTypeStr, L"SM_FILTER_TYPE"))
+         {
         ScalableMeshFilterType filterTypeOverwrite = (ScalableMeshFilterType)_wtoi(filterTypeStr.c_str());
         if (filterTypeOverwrite >= 0 && filterTypeOverwrite < SCM_FILTER_QTY)
-        {
+             {
             filterType = filterTypeOverwrite;
-        }
+            }
         else
-        {
+             {
             assert(!"Unknown filter type");
+            }
         }
-    }
-#endif
-    switch (filterType)
-    {
-    case SCM_FILTER_DUMB:
-        return new ScalableMeshQuadTreeBCLIBFilter1<POINT, EXTENT>();
-    case SCM_FILTER_PROGRESSIVE_DUMB:
-        return new ScalableMeshQuadTreeBCLIBProgressiveFilter1<POINT, EXTENT>();
-    case SCM_FILTER_DUMB_MESH:
-        return new ScalableMeshQuadTreeBCLIBMeshFilter1<POINT, EXTENT>();
-    case SCM_FILTER_CGAL_SIMPLIFIER:
-        return new ScalableMeshQuadTreeBCLIB_CGALMeshFilter<POINT, EXTENT>();
-    default:
-        assert(!"Not supposed to be here");
-    }
+    #endif
+         switch (filterType)
+        {
+            case SCM_FILTER_DUMB:
+            return new ScalableMeshQuadTreeBCLIBFilter1<POINT, EXTENT>();
+            case SCM_FILTER_PROGRESSIVE_DUMB:
+            return new ScalableMeshQuadTreeBCLIBProgressiveFilter1<POINT, EXTENT>();
+            case SCM_FILTER_DUMB_MESH:
+            return new ScalableMeshQuadTreeBCLIBMeshFilter1<POINT, EXTENT>();
+            default:
+            assert(!"Not supposed to be here");
+            }
     return 0;
-}
+    }
 
 template<class POINT, class EXTENT>
 static ISMPointIndexMesher<POINT, EXTENT>* Create2_5dMesherFromType(ScalableMeshMesherType mesherType)
-{
-    //Only one 2.5d mesher
-    assert(mesherType == SCM_MESHER_2D_DELAUNAY);
-
-    return new ScalableMesh2DDelaunayMesher<POINT, EXTENT>();
-}
-
-
-template<class POINT, class EXTENT>
-static ISMPointIndexMesher<POINT, EXTENT>* Create3dMesherFromType(ScalableMeshMesherType mesherType)
-{
-    /*WString mesherTypeStr;
-
-    if (BSISUCCESS == ConfigurationManager::GetVariable(mesherTypeStr, L"SM_3D_MESHER_TYPE"))
-    {
-    ScalableMeshMesherType mesherTypeOverwrite = (ScalableMeshMesherType)_wtoi(mesherTypeStr.c_str());
-    if (mesherTypeOverwrite >= 0 && mesherTypeOverwrite < SCM_MESHER_QTY)
-    {
-    mesherType = mesherTypeOverwrite;
-    }
-    else
-    {
-    assert(!"Unknown mesher type");
-    }
-    }*/
-
-    switch (mesherType)
-    {
-    case SCM_MESHER_2D_DELAUNAY:
+ {
+        //Only one 2.5d mesher
+        assert(mesherType == SCM_MESHER_2D_DELAUNAY);
+    
         return new ScalableMesh2DDelaunayMesher<POINT, EXTENT>();
-        /*
-        case SCM_MESHER_3D_DELAUNAY:
-        return new ScalableMesh3DDelaunayMesher<POINT, EXTENT> (false);
-        case SCM_MESHER_TETGEN:
-        return new ScalableMesh3DDelaunayMesher<POINT, EXTENT> (true);*/
-    default:
-        assert(!"Not supposed to be here");
     }
-    return 0;
-}
 
-ScalableMeshFilterType scm_getFilterType()
-{
-    //return SCM_FILTER_CGAL_SIMPLIFIER;
-    return SCM_FILTER_DUMB_MESH;
-}
-
-ScalableMeshMesherType Get2_5dMesherType()
-{
-    return SCM_MESHER_2D_DELAUNAY;
-}
-
-ScalableMeshMesherType Get3dMesherType()
-{
-    //return SCM_MESHER_2D_DELAUNAY;
-    //return SCM_MESHER_3D_DELAUNAY;
-#ifndef NO_3D_MESH
-    return SCM_MESHER_TETGEN;
-#else
-    return SCM_MESHER_2D_DELAUNAY;
-#endif
-}
-
-
-void IScalableMeshSourceCreator::Impl::ConfigureMesherFilter(ISMPointIndexFilter<PointType, PointIndexExtentType>*& pFilter, ISMPointIndexMesher<PointType, PointIndexExtentType>*& pMesher2d, ISMPointIndexMesher<PointType, PointIndexExtentType>*& pMesher3d)
-{
-   pFilter =
-        scm_createFilterFromType<PointType, PointIndexExtentType>(scm_getFilterType());
-
+void IScalableMeshSourceCreator::Impl::ConfigureMesherFilter(ISMPointIndexFilter<PointType, PointIndexExtentType>*& pFilter, ISMPointIndexMesher<PointType, PointIndexExtentType>*& pMesher2d)
+ {
+    pFilter =
+        scm_createFilterFromType<PointType, PointIndexExtentType>(ScalableMeshFilterType::SCM_FILTER_DUMB_MESH);
+    
     pMesher2d =
-        Create2_5dMesherFromType<PointType, PointIndexExtentType>(Get2_5dMesherType());
+        Create2_5dMesherFromType<PointType, PointIndexExtentType>(ScalableMeshMesherType::SCM_MESHER_2D_DELAUNAY);
+  }
 
-    pMesher3d =
-        Create3dMesherFromType<PointType, PointIndexExtentType>(Get3dMesherType());
-}
-
-
-//static HPMPool* s_rasterMemPool = nullptr;
 IScalableMeshSourceCreatorPtr IScalableMeshSourceCreator::GetFor(const WChar*  filePath,
 	StatusInt&      status)
 {
 	RegisterDelayedImporters();
+
+#if TRACE_ON
+    CachedDataEventTracer::GetInstance()->setLogDirectory("C:\\traceLogs\\");
+    CachedDataEventTracer::GetInstance()->start();
+#endif
 
 	using namespace ISMStore;
 	BeFileName fileName = BeFileName(filePath);
@@ -361,8 +299,7 @@ IScalableMeshSourceCreator::Impl::Impl(const IScalableMeshPtr& scmPtr)
 
 IScalableMeshSourceCreator::Impl::~Impl()
     {
-m_sources.UnregisterEditListener(*this);
-
+    m_sources.UnregisterEditListener(*this);
     }
 
 
@@ -407,9 +344,14 @@ int IScalableMeshSourceCreator::Impl::CreateScalableMesh(bool isSingleFile, bool
 
         m_smSQLitePtr->SetSingleFile(isSingleFile);
 
+        // We don't need the BTree checking during generation
+        bcdtmObject_disableBTreeChecks();
+
         if (0 < m_sources.GetCount() &&
             S_SUCCESS != SyncWithSources(restrictLevelForPropagation))
             status = SMStatus::S_ERROR;
+
+        bcdtmObject_enableBTreeChecks();
 
         // Update last synchronization time
         m_lastSyncTime = Time::CreateActual();
@@ -462,14 +404,6 @@ void IScalableMeshSourceCreator::Impl::SetupFileForCreation(bool doPartialUpdate
         }
     else
         {
-        m_scmPtr = nullptr;
-        m_smSQLitePtr = nullptr;
-
-        if (FileExist() && BeFileName::BeDeleteFile(m_scmFileName.c_str()) != BeFileNameStatus::Success)
-            return ;
-
-        m_smSQLitePtr = IScalableMeshCreator::Impl::GetFile(false);
-
         if (!m_smSQLitePtr.IsValid() || !m_smSQLitePtr->IsOpen())
             return;
 
@@ -855,7 +789,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
             startClock = clock();
 #endif
 
-            if (BSISUCCESS != IScalableMeshCreator::Impl::Stitch<MeshIndexType>(*pDataIndex, depth, false))
+            if (BSISUCCESS != IScalableMeshCreator::Impl::Stitch<MeshIndexType>(*pDataIndex, depth))
                 return BSIERROR;
 
 #ifdef SCALABLE_MESH_ATP
@@ -913,7 +847,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
                 //The full resolution should already be stitched
                 if ((m_sourceCreationMethod != SCM_CREATION_METHOD_BIG_SPLIT_CUT) || (level < depth))
                     {
-                    if (BSISUCCESS != IScalableMeshCreator::Impl::Stitch<MeshIndexType>(*pDataIndex, level, false))
+                    if (BSISUCCESS != IScalableMeshCreator::Impl::Stitch<MeshIndexType>(*pDataIndex, level))
                         return BSIERROR;
                     }
 
@@ -1001,6 +935,15 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 #ifdef SCALABLE_MESH_ATP
     startClock = clock();
 #endif
+
+    if(m_scmPtr.IsValid())
+        {
+        auto mainIndex = dynamic_cast<ScalableMesh<DPoint3d>&>(*m_scmPtr).GetMainIndexP();
+        if(mainIndex != nullptr && mainIndex != pDataIndex)
+            {
+            mainIndex->ForgetChanges();
+            }
+        }
 
     pDataIndex->Store();
     m_smSQLitePtr->Save();

@@ -39,7 +39,7 @@ class SMSQLiteSisterFile
         void CloseSisterFile(SMStoreDataType dataType);
 
     public:
-        SMSQLiteSisterFile(SMSQLiteFilePtr sqliteFile);
+        explicit SMSQLiteSisterFile(SMSQLiteFilePtr sqliteFile);
 
         ~SMSQLiteSisterFile();
 
@@ -47,7 +47,7 @@ class SMSQLiteSisterFile
 
 		bool DoesSisterSQLiteFileExist(SMStoreDataType dataType) const;
 
-        bool SetProjectFilesPath(BeFileName& projectFilesPath);
+        bool SetProjectFilesPath(const BeFileName& projectFilesPath);
 
         BENTLEY_SM_EXPORT void SaveSisterFiles();
 

@@ -228,7 +228,7 @@ inline double sign(DPoint3d p1, DPoint3d p2, DPoint3d p3)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Thomas.Butzbach                 01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline bool pointWithinTriangle3D(const DPoint3d v1, const DPoint3d v2, const DPoint3d v3, DPoint3d& query)
+inline bool pointWithinTriangle3D(const DPoint3d v1, const DPoint3d v2, const DPoint3d v3, const DPoint3d& query)
     {
     bool b1, b2, b3;
 
@@ -242,7 +242,7 @@ inline bool pointWithinTriangle3D(const DPoint3d v1, const DPoint3d v2, const DP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Thomas.Butzbach                 01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline double pointDistance(DPoint3d& p1, DPoint3d& p2)
+inline double pointDistance(const DPoint3d& p1, const DPoint3d& p2)
     {
     return sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2) + pow(p1.z - p2.z, 2));
     }
@@ -257,12 +257,13 @@ GroundDetection::GroundDetection(EditElementHandleR elHandle, PointCloudQuadTree
     s_minimalAcceptableTriangulationVerticeNumRatioVersusTileVerticeNum = 0.05; 
     s_maxRefinementLoop = 20; 
     s_MaxNumberOfThreads = 8; 
+    m_debugWriteInfo = false;
 
     WString cfgVarValueStr;
     if (BSISUCCESS == ConfigurationManager::GetVariable(cfgVarValueStr, L"POINTCLOUDADV_MIN_TILE_PT_NUM"))
         {
         size_t  minimalTriangulableTilePointNum;
-        if (1 == swscanf(cfgVarValueStr.c_str(), L"%ld", &minimalTriangulableTilePointNum))
+        if (1 == swscanf(cfgVarValueStr.c_str(), L"%zu", &minimalTriangulableTilePointNum))
             {
             s_minimalTriangulableTilePointNum = minimalTriangulableTilePointNum;
             }
@@ -310,7 +311,7 @@ GroundDetection::~GroundDetection()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GroundDetection::transformDataForSeedsTriangulation(std::vector<DPoint3d>& pPt)
     {
-    for (std::vector<DPoint3d>::iterator it = m_cloudSeed->seedPoints.begin(); it != m_cloudSeed->seedPoints.end(); it++)
+    for (std::vector<DPoint3d>::iterator it = m_cloudSeed->seedPoints.begin(); it != m_cloudSeed->seedPoints.end(); ++it)
         {
         DPoint3d p = { it->x, it->y, it->z };
         pPt.push_back(p);
@@ -475,7 +476,7 @@ void GroundDetection::makeTriangulationForExtent(BC_DTM_OBJ* dtmObj, DPoint3d& m
 
     // Triangulation delaunay
     std::vector<DPoint3d> pPt;
-    for (std::set<int>::iterator it = insideIndiceSet.begin(); it != insideIndiceSet.end(); it++)
+    for (std::set<int>::iterator it = insideIndiceSet.begin(); it != insideIndiceSet.end(); ++it)
         {
         DPoint3d pt(m_pQuadTree->GetPoint(*it));
         insertedPointsPtr.push_back(pt);
@@ -601,7 +602,7 @@ bool GroundDetection::getClosestTriangleToPoint(BC_DTM_OBJ* dtmObject, DPoint3d&
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Thomas.Butzbach                 01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GroundDetection::isPointWithinSlopeOfTin(double allowedSlope, DPoint3d& point, DPoint3d& projectedPoint, std::vector<DPoint3d>& tri)
+bool GroundDetection::isPointWithinSlopeOfTin(double allowedSlope, const DPoint3d& point, const DPoint3d& projectedPoint, const std::vector<DPoint3d>& tri)
     {
     for (int i = 0; i < 3; i++)
         {
@@ -653,7 +654,7 @@ long GroundDetection::triangulation(DPoint3d**& dtmPtsPP, BC_DTM_OBJ* dtmObject)
 
 void addFaceToEdge(bvector<bvector<bpair<int, bvector<int>>>>& edgeMap, int idx1, int idx2, int i)
     {
-    auto idx1_it = std::find_if(edgeMap[idx1].begin(), edgeMap[idx1].end(), [idx2] (bpair<int, bvector<int>>& edge) { return edge.first == idx2; });
+    auto idx1_it = std::find_if(edgeMap[idx1].begin(), edgeMap[idx1].end(), [idx2] (const bpair<int, const bvector<int>>& edge) { return edge.first == idx2; });
     if (idx1_it == edgeMap[idx1].end())
         {
         edgeMap[idx1].push_back(make_bpair(idx2, bvector<int>()));
@@ -741,7 +742,7 @@ void filterInitialTriangulation(std::vector<DPoint3d>& insertedPoints, std::vect
         for (size_t i = 0; i < toDeletePts.size(); i++)
             {
             DPoint3d toDelete = toDeletePts[i];
-            auto it = std::find_if(insertedPoints.begin(), insertedPoints.end(), [&toDelete] (DPoint3d& pt) { return fabs(toDelete.x - pt.x) <= 0.001 && fabs(toDelete.y - pt.y) <= 0.001 && fabs(toDelete.z - pt.z) <= 0.001; });
+            auto it = std::find_if(insertedPoints.begin(), insertedPoints.end(), [&toDelete] (const DPoint3d& pt) { return fabs(toDelete.x - pt.x) <= 0.001 && fabs(toDelete.y - pt.y) <= 0.001 && fabs(toDelete.z - pt.z) <= 0.001; });
             if (it != insertedPoints.end()) insertedPoints.erase(it);
             }
         }
@@ -932,7 +933,6 @@ void GroundDetection::filterGroundForTile(QuadSeedPtr currentTile, BcDTMPtr dtmO
 
     long numTriangles = 0;
    // DPoint3d **dtmPtsPP = 0; /* <== Pointer To Dtm Points Array ( Dpoint3d )       */
-    std::vector<DPoint3d> removedPts;
     std::vector<DPoint3d> insertedPoints;
         {
         timer = clock();
@@ -1173,7 +1173,7 @@ if (endT > 0 && timer1 > 0) s_ticksForAllTile += (float)(endT - timer1) / CLOCKS
 * @bsimethod                                    Thomas.Butzbach                 01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 // For multithreading
-void doTileFiltering(DgnPlatformLib::Host* hostToAdopt, GroundDetection* ground, std::vector<QuadSeedPtr>& tiles, TileLoaderQueue* queue, std::atomic<bool>* threadStop, std::vector<BcDTMPtr>& dtmArray, int threadId, int NUM_THREADS)
+void doTileFiltering(DgnPlatformLib::Host* hostToAdopt, GroundDetection* ground, std::vector<QuadSeedPtr>& tiles, TileLoaderQueue* queue, std::atomic<bool>* threadStop, const std::vector<BcDTMPtr>& dtmArray, int threadId, int NUM_THREADS)
     {
     //According to Keith Bentley the AdoptHost function could be use the set the host created in the main thread
     //to the other working thread (see UstationLibHost.h for more information). 

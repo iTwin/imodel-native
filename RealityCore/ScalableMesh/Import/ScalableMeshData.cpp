@@ -24,7 +24,7 @@ struct ScalableMeshData::Impl : public ShareableObjectTypeTrait<Impl>::type
     // not persisted information    
     std::vector<DRange3d>       m_vectorRangeAdd;
 
-    explicit                    Impl            (const std::vector<DRange3d>& extent, const time_t time, SMis3D isRepresenting3dData = SMis3D::isUnknown, bool isGroundDetection = false, const bvector<uint32_t>& classesToImport = bvector<uint32_t>(), UpToDateState state=UpToDateState::UP_TO_DATE, std::vector<DRange3d> vecRangeAdd = {})
+    explicit                    Impl            (const std::vector<DRange3d>& extent, const time_t time, SMis3D isRepresenting3dData = SMis3D::isUnknown, bool isGroundDetection = false, const bvector<uint32_t>& classesToImport = bvector<uint32_t>(), UpToDateState state=UpToDateState::UP_TO_DATE, const std::vector<DRange3d>& vecRangeAdd = {})
         : m_extent(extent),
           m_upToDateState(state),
           m_time(time), 

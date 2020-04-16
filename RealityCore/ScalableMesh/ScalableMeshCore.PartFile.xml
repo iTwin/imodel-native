@@ -36,7 +36,6 @@
     <SubPart PartName="PointCloud"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
     <SubPart PartName="CloudDataSource_Vancouver" PartFile="CloudDataSource"                      Repository="ScalableMesh"/>
     <SubPart PartName="BeCurl"          PartFile="BeCurl"                                   Repository="Libsrc-Curl"/>
-    <SubPart PartName="CGALHeaders" PartFile="CGAL" Repository="Libsrc-CGAL" />
     <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
     <!-- For Importer-->
     <SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
@@ -98,7 +97,6 @@
     <SubPart PartName="DgnGeoCoord"     PartFile="GeoCoord"                             Repository="GeoCoord" />
     <SubPart PartName="AutomaticGroundDetection" PartFile="TerrainModel"                         Repository="TerrainModel"/>
     <SubPart PartName="PointCloud"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
-    <SubPart PartName="CGALHeaders" PartFile="CGAL" Repository="Libsrc-CGAL" />
     <SubPart PartName="ScalableMeshCore"/>
     <Bindings>
       <Libs ProductDirectoryName="ScalableMeshLibs" Required="false">Delivery/$(shlibprefix)ScalableMeshCreator$(libext)</Libs>
@@ -107,7 +105,7 @@
       <PublicAPI Domain="ScalableMesh" />
     </Bindings>
   </Part>
-  
+
   <Part Name="ScalableMeshATPexe" BentleyBuildMakeFile="Tests/ATP/ScalableMeshATPexe_Vancouver.mke" OnlyPlatforms="x64, x86" ExcludeLibType="Static">    
     <SubPart PartName="ScalableMeshCore"  />
     <SubPart PartName="ScalableMeshCreator"  />
@@ -144,6 +142,36 @@
     </Bindings>
   </Part>-->
 
+  <Part Name="ScalableMeshExamplesParts">
+    <SubPart PartName="ThreeMX2ThreeSM" />
+    <SubPart PartName="Publish3DTiles"  />
+    <SubPart PartName="IntersectRay"/>
+  </Part>
+  
+  <Part Name="ThreeMX2ThreeSM" BentleyBuildMakeFile="Tests/ATP/ScalableMeshExamples.mke" BentleyBuildMakeOptions="+dExampleName=ThreeMX2ThreeSM" OnlyPlatforms="x64, x86" ExcludeLibType="Static">
+    <SubPart PartName="ScalableMeshCore"  />
+    <SubPart PartName="ScalableMeshCreator"  />
+    <Bindings>
+      <Files ProductDirectoryName="ScalableMeshAssemblies">Delivery\ThreeMX2ThreeSM.exe</Files>
+    </Bindings>
+  </Part>
+
+  <Part Name="Publish3DTiles" BentleyBuildMakeFile="Tests/ATP/ScalableMeshExamples.mke" BentleyBuildMakeOptions="+dExampleName=Publish3DTiles" OnlyPlatforms="x64, x86" ExcludeLibType="Static">
+    <SubPart PartName="ScalableMeshCore"  />
+    <SubPart PartName="ScalableMeshCreator"  />
+    <Bindings>
+      <Files ProductDirectoryName="ScalableMeshAssemblies">Delivery\Publish3DTiles.exe</Files>
+    </Bindings>
+  </Part>
+
+  <Part Name="IntersectRay" BentleyBuildMakeFile="Tests/ATP/ScalableMeshExamples.mke" BentleyBuildMakeOptions="+dExampleName=IntersectRay" OnlyPlatforms="x64, x86" ExcludeLibType="Static">
+    <SubPart PartName="ScalableMeshCore"  />
+    <SubPart PartName="ScalableMeshCreator"  />
+    <Bindings>
+      <Files ProductDirectoryName="ScalableMeshAssemblies">Delivery\IntersectRay.exe</Files>
+    </Bindings>
+  </Part>
+
   <ProductDirectoryList ListName="ScalableMeshSDK">
     <ProductDirectory Name="TMSchemas"  Deliver="true" Path="Dlls"/>
     <ProductDirectory Name="ECSchemas"  Deliver="true" Path="Dlls"/>
@@ -151,7 +179,6 @@
     <ProductDirectory Name="BentleyDesktopClientApi_Native"  Deliver="true" Path="Dlls"/>
     <!--<ProductDirectory Name="wastorageAssemblies" Path="Dlls"/>-->
     <!--<ProductDirectory Name="cpprestsdkAssemblies" Path="Dlls"/>-->
-    <ProductDirectory Name="CGALAssemblies" Path="Dlls"/>
     <ProductDirectory   Name="ecobjectsnativeassemblies"                Path="Dlls"                              />
     <ProductDirectory   Name="ecschemas"                                Path="Dlls"                              />
     <ProductDirectory   Name="DGNIndexerECSchemas"                      Path="Dlls"                              />
@@ -200,9 +227,9 @@
     <ProductDirectory Name="TerrainModelNativeAssemblies" Path="Dlls"/>
     <ProductDirectory Name="PointoolsAssemblies" Path="Dlls"/>
     <ProductDirectory Name="PointCloudCoreAssemblies" Path="Dlls"/>
+    <ProductDirectory Name="FaroLSAssemblies" Path="Dlls/FaroLS"/>
     <ProductDirectory Name="LoggingNativeAssemblies" Deliver="false"/>
     <ProductDirectory Name="PCLAssemblies" Path="Dlls"/>
-    <ProductDirectory Name="CGALAssemblies" Path="Dlls"/>
     <ProductDirectory Name="PPNativeAssemblies" Path="Dlls" Deliver="true"/>
     <ProductDirectory Name="AdobeAssemblies" Deliver="false"/>
     <ProductDirectory Name="PdfLibinitNativeAssemblies" Path="Dlls"/>
@@ -297,10 +324,10 @@
     <ProductDirectory Name="AutomaticGroundDetection" Path="Dlls"/>
     <ProductDirectory Name="TerrainModelNativeAssemblies" Path="Dlls"/>
     <ProductDirectory Name="PointoolsAssemblies" Path="Dlls"/>
+    <ProductDirectory Name="FaroLSAssemblies" Path="Dlls/FaroLS"/>
     <ProductDirectory Name="PointCloudCoreAssemblies" Path="Dlls"/>
     <ProductDirectory Name="LoggingNativeAssemblies" Path="Dlls"/>
     <ProductDirectory Name="PCLAssemblies" Path="Dlls"/>
-    <ProductDirectory Name="CGALAssemblies" Path="Dlls"/>
     <ProductDirectory Name="PPNativeAssemblies" Path="Dlls" Deliver="true"/>
     <ProductDirectory Name="AdobeAssemblies" Deliver="false"/>
     <ProductDirectory Name="PdfLibinitNativeAssemblies" Path="Dlls"/>
@@ -356,6 +383,18 @@
     <Directories DirectoryListName="ScalableMeshATP" />
   </Product>
 
+  <Product Name="ScalableMeshExamples" SaveProduct="true" >
+    <SubPart PartName="ScalableMeshExamplesParts" />
+    <!--<SubPart PartName="DgnPlatformDll" PartFile="DgnPlatform" Repository="DgnPlatform"/>-->
+    <!--<SubPart PartName="PSolidCore" PartFile="DgnDisplay" Repository="DgnDisplay" />
+        <SubPart PartName="RasterCore" PartFile="DgnDisplay" Repository="DgnDisplay"/>
+        <SubPart PartName="PSolidAcisInterop" PartFile="DgnDisplay" Repository="DgnDisplay" />
+        <SubPart PartName="DgnGeoCoord" PartFile="GeoCoord" Repository="GeoCoord" />
+        <SubPart PartName="DgnPlatformDataFiles" PartFile="MstnAppData" Repository="miscdev-mstnappdata"/>-->
+    <!--<SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>-->
+    <Directories DirectoryListName="DgnPlatform" PartFile="DgnPlatform" Repository="DgnPlatform" />
+    <Directories DirectoryListName="ScalableMeshATP" />
+  </Product>
 
 
   <ProductDirectoryList ListName="MemoryPoolTest">
@@ -429,6 +468,7 @@
     <ProductDirectory Name="PPNativeAssemblies" Path="Dlls" Deliver="true"/>
     <ProductDirectory Name="RasterAssemblies" Path="Dlls" Deliver="true"/>
     <ProductDirectory Name="PointoolsAssemblies" Path="Dlls" Deliver="true"/>
+    <ProductDirectory Name="FaroLSAssemblies" Path="Dlls/FaroLS" Deliver="true"/>
     <ProductDirectory Name="ThreeMxAssemblies" Path="Dlls" Deliver="true"/>
     <ProductDirectory Name="DgnClientFxNativeAssemblies" Path="Dlls" Deliver="true"/>
   </ProductDirectoryList>

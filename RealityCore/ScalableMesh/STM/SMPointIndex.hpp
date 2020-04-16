@@ -8408,6 +8408,11 @@ template<class POINT, class EXTENT> uint64_t SMPointIndex<POINT, EXTENT>::GetNex
     return ++m_nextNodeID;
     }
 
+template<class POINT, class EXTENT> void  SMPointIndex<POINT, EXTENT>::ForgetChanges()
+    {
+    m_indexHeaderDirty = false;
+    }
+
 //=======================================================================================
 // @bsimethod                                                   Alain.Robert 12/2010
 //=======================================================================================
@@ -9170,7 +9175,6 @@ size_t SMPointIndex<POINT, EXTENT>::GetDepth() const
         {
         const_cast<SMPointIndex<POINT, EXTENT>*>(this)->m_indexHeader.m_depth = m_pRootNode->GetDepth();
         const_cast<SMPointIndex<POINT, EXTENT>*>(this)->m_indexHeaderDirty = true;
-        const_cast<SMPointIndex<POINT, EXTENT>*>(this)->m_dataStore->StoreMasterHeader(&const_cast<SMPointIndex<POINT, EXTENT>*>(this)->m_indexHeader, sizeof(m_indexHeader));
         }
     return m_indexHeader.m_depth;
     }

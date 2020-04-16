@@ -873,6 +873,7 @@ void RunDrapeLinearTinTest()
 		fread(&listOfPts[0], sizeof(DPoint3d), nVerts, mesh);
 		TerrainModel::DTMDrapedLinePtr test;
 	dtm->GetBcDTM()->DrapeLinear(test, listOfPts.data(), (int)listOfPts.size());
+    fclose(mesh);
 }
 
 void AddLoopsFromShape(bvector<bvector<DPoint3d>>& polygons, const HGF2DShape* shape, std::function<void(const bvector<DPoint3d>& element)> afterPolygonAdded)

@@ -144,6 +144,7 @@ bool OpenResultFile(BeXmlNodeP pRootNode, FILE*& pResultFile)
     if (pResultFile == 0)
         {
         assert(false && "Invalid result filename");
+        std::cerr << "Invalid result filename";
         return false;
         }
     return true;
@@ -300,6 +301,18 @@ bool RunTestPlan(BeFileName& testPlanPath)
         return false;
         }
     BeXmlNodeP pRootNode(pXmlDom->GetRootElement());
+
+    WString resultFileName;
+    if (pRootNode->GetAttributeStringValue(resultFileName, "resultFileName") == BEXML_Success)
+        {
+        WString dev;
+        WString dir;
+        WString name;
+        WString ext;
+        BeFileName::ParseName(&dev, &dir, &name, &ext, resultFileName.c_str());
+        BeFileName::CreateNewDirectory((dev + L":\\" + dir).c_str());
+        }
+
     if (0 != BeStringUtilities::Stricmp(pRootNode->GetName(), "testplan"))
         {
         assert(false && "Invalid test plan format");
@@ -316,6 +329,17 @@ bool RunTestPlan(BeFileName& testPlanPath)
         }
     fwprintf(pResultFile, GetHeaderForTestType(t).c_str());
     BeXmlNodeP pTestNode = pRootNode->GetFirstChild();
+
+    WString stmFileName;
+    if (pTestNode->GetAttributeStringValue(stmFileName, "stmFileName") == BEXML_Success)
+        {
+        WString dev;
+        WString dir;
+        WString name;
+        WString ext;
+        BeFileName::ParseName(&dev, &dir, &name, &ext, stmFileName.c_str());
+        BeFileName::CreateNewDirectory((dev + L":\\" + dir).c_str());
+        }
 
     while (0 != pTestNode)
         {
@@ -650,7 +674,7 @@ void ConvertUorPointsToDestUnit(bvector<DPoint3d>& regionPointsMeter, const bvec
     }
 
 
-void CreateBreaklines(BeFileNameCR extraLinearFeatureAbsFileName, bvector<DPoint3d> const& closedPolygonPoints, ScalableMesh::IScalableMeshPtr& scalableMeshModel, Transform& uorToDestUnits)
+void CreateBreaklines(BeFileNameCR extraLinearFeatureAbsFileName, bvector<DPoint3d> const& closedPolygonPoints, ScalableMesh::IScalableMeshPtr& scalableMeshModel, const Transform& uorToDestUnits)
     {
     TerrainModel::DTMPtr dtm(scalableMeshModel->GetDTMInterface(DTMAnalysisType::RawDataOnly));
 

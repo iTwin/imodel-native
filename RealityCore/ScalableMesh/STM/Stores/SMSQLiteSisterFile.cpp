@@ -274,7 +274,7 @@ bool SMSQLiteSisterFile::DoesSisterSQLiteFileExist(SMStoreDataType dataType) con
 #endif
 	}
 
-bool SMSQLiteSisterFile::SetProjectFilesPath(BeFileName & projectFilesPath)
+bool SMSQLiteSisterFile::SetProjectFilesPath(const BeFileName & projectFilesPath)
     {
     /*if (m_projectFilesPath.length() > 0)
         return false;*/

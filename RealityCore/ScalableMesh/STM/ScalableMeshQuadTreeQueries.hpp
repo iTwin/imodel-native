@@ -998,10 +998,10 @@ template<class POINT, class EXTENT> void ScalableMeshQuadTreeViewDependentMeshQu
                                                                                                                size_t                                     numSubNodes) 
     {    
     assert(queryNodeOrder.size() == 0);
-	
+    
     DMatrix4d rootToViewMatrix; 
 
-	memcpy(&rootToViewMatrix.coff, this->m_rootToViewMatrix, sizeof(double) * 16);                
+    memcpy(&rootToViewMatrix.coff, this->m_rootToViewMatrix, sizeof(double) * 16);                
     
     struct OrderInfo
         {
@@ -1021,7 +1021,7 @@ template<class POINT, class EXTENT> void ScalableMeshQuadTreeViewDependentMeshQu
                 
         DPoint3d outPoint;
 
-		rootToViewMatrix.MultiplyAndRenormalize(outPoint, center);
+        rootToViewMatrix.MultiplyAndRenormalize(outPoint, center);
         
         OrderInfo orderInfo;
         orderInfo.m_zScreen = outPoint.z;
@@ -1029,18 +1029,18 @@ template<class POINT, class EXTENT> void ScalableMeshQuadTreeViewDependentMeshQu
 
         orderInfos.push_back(orderInfo);                           
         }
-	DPoint4d fwd;
-	rootToViewMatrix.GetColumn(fwd, 2);
-	DVec3d vecFwd;
-	vecFwd.XyzOf(fwd);
+    DPoint4d fwd;
+    rootToViewMatrix.GetColumn(fwd, 2);
+    DVec3d vecFwd;
+    vecFwd.XyzOf(fwd);
     std::sort(orderInfos.begin(), orderInfos.end(), [vecFwd](OrderInfo& i,OrderInfo& j){
-		if (vecFwd.z != 0)
-		{
-			return vecFwd.z > 0 ? i.m_zScreen < j.m_zScreen : i.m_zScreen > j.m_zScreen;
+        if (vecFwd.z != 0)
+        {
+            return vecFwd.z > 0 ? i.m_zScreen < j.m_zScreen : i.m_zScreen > j.m_zScreen;
 
-		}
-		return i.m_zScreen > j.m_zScreen;
-	});            
+        }
+        return i.m_zScreen > j.m_zScreen;
+    });            
 
      for (size_t nodeInd = 0; nodeInd < numSubNodes; nodeInd++)
         {
@@ -1061,7 +1061,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
         node->Load();
  
     size_t nbOfPointsInTile = node->GetNbObjects();     
-		
+        
 
     //Return always true for the root node so that something is displayed at the screen.
     /*NEEDS_WORK_SM : Not required? 
@@ -1072,7 +1072,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
     else
     */
     if (nbOfPointsInTile > 0)
-        {        		
+        {               
 
         double                  rootToViewScale;
         int                     nbPoints = 8;
@@ -1232,10 +1232,10 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
     if (nbOfPointsInTile > 0)
         {      
 
-		if (s_useSplit)
-			{
-			nbOfPointsInTile = node->GetSplitTreshold();
-			}
+        if (s_useSplit)
+            {
+            nbOfPointsInTile = node->GetSplitTreshold();
+            }
 
         //double                  rootToViewScale;
         int                     nbPoints = 8;
@@ -1281,13 +1281,13 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
         double distance = centerInView.DistanceXY(edgeInView) * 2;
         double area = distance * distance;
 
-		
-		/*if ((this->m_rootToViewMatrix[3][0] != 0 || this->m_rootToViewMatrix[3][1] != 0 || this->m_rootToViewMatrix[3][2] != 0) && (centerInView.z > 0 || edgeInView.z > 0))
-			{
-			IsCorrect = true;
-			}
-		else*/
-			{
+        
+        /*if ((this->m_rootToViewMatrix[3][0] != 0 || this->m_rootToViewMatrix[3][1] != 0 || this->m_rootToViewMatrix[3][2] != 0) && (centerInView.z > 0 || edgeInView.z > 0))
+            {
+            IsCorrect = true;
+            }
+        else*/
+            {
             double res = node->GetMinResolution();
             if (res != 0.0)
                 {
@@ -1299,8 +1299,8 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
                 double screenPixelsPerPoint = area / nbOfPointsInTile;
                 IsCorrect = screenPixelsPerPoint > this->m_meanScreenPixelsPerPoint;
                 }
-			}
-						       
+            }
+                               
     #ifdef ACTIVATE_NODE_QUERY_TRACING
 
         if (m_pTracingXMLFile != 0)
@@ -1570,7 +1570,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelPlaneIntersect
                 {
                 meshNodes.push_back(typename SMPointIndexNode<POINT, EXTENT>::QueriedNode(node));
                 }
-				return false;
+                return false;
             }
         else if (node->m_nodeHeader.m_balanced && node->GetLevel() > this->m_requestedLevel) return false; //too deep
         }

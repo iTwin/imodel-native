@@ -25,6 +25,7 @@ enum TypeFamilyID
     TFID_LINEAR,
     TFID_TIN,
     TFID_MESH,
+    TFID_BOUNDARY,
 
     TFID_QTY,
     };
@@ -35,6 +36,7 @@ uint32_t  OutputTypeID(const DataTypeFamily&                       type)
     static const DataTypeFamily LINEAR_TYPE_FAMILY(LinearTypeFamilyCreator().Create());
     static const DataTypeFamily TIN_TYPE_FAMILY(TINTypeFamilyCreator().Create());
     static const DataTypeFamily MESH_TYPE_FAMILY(MeshTypeFamilyCreator().Create());
+    static const DataTypeFamily BOUNDARY_TYPE_FAMILY(BoundaryTypeFamilyCreator().Create());
 
 
     if (POINT_TYPE_FAMILY == type)
@@ -45,6 +47,8 @@ uint32_t  OutputTypeID(const DataTypeFamily&                       type)
         return static_cast<byte>(TFID_TIN);
     else if (MESH_TYPE_FAMILY == type)
         return static_cast<byte>(TFID_MESH);
+    else if(BOUNDARY_TYPE_FAMILY == type)
+        return static_cast<byte>(TFID_BOUNDARY);
     else
         return UINT_MAX;
 

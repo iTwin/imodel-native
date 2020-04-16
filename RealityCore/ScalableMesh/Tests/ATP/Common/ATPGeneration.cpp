@@ -556,9 +556,6 @@ WString GetFilterTypeName(ScalableMeshFilterType filterType)
         case SCM_FILTER_DUMB_MESH:
             return WString(L"Dumb mesh");
             break;
-        case SCM_FILTER_CGAL_SIMPLIFIER:
-            return WString(L"CGAL simplifier");
-            break;
         default:
             assert(!"Unknown filter type");
         }

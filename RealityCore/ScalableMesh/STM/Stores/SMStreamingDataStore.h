@@ -279,7 +279,7 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
 
         virtual SMNodeHeaderLocation GetNodeHeaderLocation(HPMBlockID blockID) override;
 
-        virtual bool SetProjectFilesPath(BeFileName& projectFilesPath) override;
+        virtual bool SetProjectFilesPath(const BeFileName& projectFilesPath) override;
 
         virtual bool SetUseTempPath(bool useTempPath) override;
 

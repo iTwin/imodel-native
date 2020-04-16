@@ -84,7 +84,20 @@ template <class DATATYPE, class EXTENT> size_t SMExternalProviderDataStore<DATAT
 	{
 	case SMStoreDataType::ClipDefinition:
 		m_clipProvider->GetClipPolygon(dataForClip, blockID.m_integerID);
-		blockDataCount = dataForClip.size();
+        if (dataForClip.empty()) 
+            {
+            ClipVectorPtr cp = nullptr;
+            SMNonDestructiveClipType type;
+            m_clipProvider->GetClipVector(cp, blockID.m_integerID, type);
+            if (cp != nullptr && !cp->empty())
+                {
+                blockDataCount = cp->size();
+                }
+            }
+        else
+            {
+            blockDataCount = dataForClip.size();
+            }
 		break;
 	case SMStoreDataType::CoveragePolygon:
 		m_clipProvider->GetTerrainRegion(dataForClip, blockID.m_integerID);

@@ -51,6 +51,10 @@ struct ScalableMeshDraping : TerrainModel::IDTMDraping
     public:
         ScalableMeshDraping(IScalableMeshPtr scMesh);
         virtual ~ScalableMeshDraping(){}
+        ScalableMeshDraping(const ScalableMeshDraping&) = delete;
+        ScalableMeshDraping& operator=(const ScalableMeshDraping&) = delete;
+        ScalableMeshDraping(ScalableMeshDraping&&) = delete;
+        ScalableMeshDraping& operator=(ScalableMeshDraping&&) = delete;
         void SetTransform(TransformR transform)
             {
             m_transform = transform;

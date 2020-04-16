@@ -99,7 +99,8 @@ size_t                       Sink::GetTotalNumberOfExpectedSources() const
 * @bsimethod                                                  Raymond.Gauthier   03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 BackInserter::BackInserter ()    
-    : m_is3dData(false)
+    : m_is3dData(false),
+      m_isGridData(false)
     {        
     }
 

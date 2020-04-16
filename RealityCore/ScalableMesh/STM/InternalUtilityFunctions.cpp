@@ -25,7 +25,9 @@
 
 USING_NAMESPACE_IMAGEPP;
 
-
+#define NON_HULL_FEATURES_USER_TAG 10000000
+#define HULL_FEATURES_USER_TAG     10000001
+BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 static int s_faceToBoxPoint[6][4] =
     {
@@ -1284,8 +1286,8 @@ int AddIslandToDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&              dt
             featurePtsPtr[pointInd].x = pointIter->GetX();    
             featurePtsPtr[pointInd].y = pointIter->GetY();
             featurePtsPtr[pointInd].z = 0;              
-            pointInd++;
-            pointIter++;
+            ++pointInd;
+            ++pointIter;
             }                       
 
         // Check if given DTM is already triangulated  ...
@@ -1370,8 +1372,8 @@ int AddHolesToDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&                 
             featurePtsPtr[pointInd].x = pointIter->GetX();    
             featurePtsPtr[pointInd].y = pointIter->GetY();
             featurePtsPtr[pointInd].z = 0;              
-            pointInd++;
-            pointIter++;
+            ++pointInd;
+            ++pointIter;
             }      
 
         long numDrapePoints = (long)pointCollection.size();  // Default value to be used if not tinned
@@ -1411,7 +1413,7 @@ int AddHolesToDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&                 
 
         assert(status == 0);
        
-        holeIter++;
+        ++holeIter;
         }
 
     return status;
@@ -1806,141 +1808,185 @@ void SimplifyPolygonToMinEdge(double minEdge, bvector<DPoint3d>& poly)
     poly.resize(maxPts);
 }
 
-bool MergeFeatures(bvector<bvector<DPoint3d>> features, bvector<bvector<DPoint3d>>& result, bool isClosedFeatures)
+int AddToBCDtm(BC_DTM_OBJ* dtmObjP, bvector<DPoint3d>& points, CurveVectorPtr nonHullFeatures, bvector< std::pair<DTMFeatureType, DTMFeatureId>>& nonHullFeatureTypes, CurveVectorPtr hullFeatures)
     {
-    if(features.empty()) return false;
-
-    bvector<bool> isMerged(features.size(), false);
-    bool mergeOccured = false;
-
-    if(isClosedFeatures)
+    int status = SUCCESS;
+    if(!points.empty())
         {
-        typedef std::map<DPoint3d, double, DPoint3dYXTolerancedSortComparison> MapOfPoints;
-        MapOfPoints pointElevationMap(DPoint3dYXTolerancedSortComparison(1e-6));
-        for(auto const& feature : features)
+        // Add points
+        status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, DTMFeatureType::RandomSpots, dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, &points[0], (long)points.size());
+        }
+
+    if(SUCCESS == status)
+        {
+        // Add linear features
+        BeAssert(!nonHullFeatures.IsValid() || nonHullFeatureTypes.size() == nonHullFeatures->size());
+
+        DTMUserTag    nonHullFeaturesUserTag = NON_HULL_FEATURES_USER_TAG;
+        for(int i = 0; i < nonHullFeatureTypes.size() && SUCCESS == status; i++)
             {
-            for (auto const& pt : feature)
-                if(pointElevationMap.count(pt) == 0) pointElevationMap.insert(std::make_pair(pt, pt.z));
+            auto type = nonHullFeatureTypes[i].first;
+            if(type == DTMFeatureType::Hull) continue;
+            auto id = &nonHullFeatureTypes[i] - &nonHullFeatureTypes[0];//nonHullFeatureTypes[i].second;
+            auto const& feature = (*nonHullFeatures)[i];
+            status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, type, nonHullFeaturesUserTag, 2, &id, &(*feature->GetLineStringCP())[0], (long)feature->GetLineStringCP()->size());
             }
 
-        VuPolygonClassifier vu(1e-6, 0);
-
-        for(auto& fA : features)
+        DTMUserTag    hullFeaturesUserTag = HULL_FEATURES_USER_TAG;
+        if(SUCCESS == status && hullFeatures.IsValid() && !hullFeatures->empty())
             {
-            if(fA.size() > 2)
+            for(auto const& hull : *hullFeatures)
                 {
-                if(!fA.front().IsEqual(*(&fA.back()), 1e-8)) fA.push_back(fA.front());
+                if(SUCCESS == status && !hull->GetLineStringCP()->empty())
+                    status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, DTMFeatureType::BreakVoid, hullFeaturesUserTag, 1, &dtmObjP->nullFeatureId, &(*hull->GetLineStringCP())[0], (long)hull->GetLineStringCP()->size());
+                if(SUCCESS == status && !hull->GetLineStringCP()->empty())
+                    status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, DTMFeatureType::Breakline, hullFeaturesUserTag, 1, &dtmObjP->nullFeatureId, &(*hull->GetLineStringCP())[0], (long)hull->GetLineStringCP()->size());
+                }
+            }
+        }
 
-                if(fA.size() >= 4)
+    return status;
+    }
+
+int ResolveCrossingVoidIslands(bvector<bvector<DPoint3d>>& polylines, bvector<DTMFeatureType>& types, const bvector<uint32_t>& idOfSurroundingFeature, bvector<uint64_t>& ids)
+    {
+    bvector< std::pair<DTMFeatureType, DTMFeatureId>> featureTypes;
+    CurveVectorPtr features = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer);
+    for(auto const& feature : polylines)
+        {
+        features->Add(ICurvePrimitive::CreateLineString(feature));
+        featureTypes.push_back(std::make_pair(types[&feature - &polylines[0]], DTMFeatureId(&feature - &polylines[0])));
+        }
+
+    int status = SUCCESS;
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr dtmPtr;
+
+    status = CreateBcDTM(dtmPtr);
+    BeAssert(status == SUCCESS);
+
+    BC_DTM_OBJ* dtmObjP(dtmPtr->GetBcDTM()->GetTinHandle());
+
+    bvector<DPoint3d> points;
+    AddToBCDtm(dtmObjP, points, features, featureTypes, nullptr);
+
+    struct CrossingFeaturesInfo {
+        DTMFeatureType type1;
+        DTMFeatureType type2;
+        DTMFeatureId featureId1;
+        DTMFeatureId featureId2;
+        };
+
+    std::map< DTMFeatureId, CrossingFeaturesInfo> crossingFeaturesInfo;
+    static const DTMFeatureType voidIslandTypes[] =
+        {
+        DTMFeatureType::Void,
+        DTMFeatureType::Island
+        };
+    bcdtmReport_crossingFeaturesDtmObject(dtmObjP, voidIslandTypes, 2, [&idOfSurroundingFeature] (DTM_CROSSING_FEATURE_ERROR& crossError, void *userP) -> int
+                                          {
+                                          if(crossError.dtmFeatureType1 == crossError.dtmFeatureType2)
+                                              return DTM_SUCCESS;
+
+                                          std::map< DTMFeatureId, CrossingFeaturesInfo>& info = *(std::map< DTMFeatureId, CrossingFeaturesInfo>*)(userP);
+
+                                          // Always store in the order feature1 is inside feature2
+                                          if(idOfSurroundingFeature[crossError.dtmFeatureId1] != uint32_t(-1) &&
+                                             crossError.dtmFeatureId2 == idOfSurroundingFeature[crossError.dtmFeatureId1] &&
+                                             info.count(crossError.dtmFeatureId1) == 0)
+                                              {
+                                              info[crossError.dtmFeatureId1] = { crossError.dtmFeatureType1,
+                                                                                 crossError.dtmFeatureType2,
+                                                                                 crossError.dtmFeatureId1,
+                                                                                 crossError.dtmFeatureId2 };
+                                              }
+                                          if(idOfSurroundingFeature[crossError.dtmFeatureId2] != uint32_t(-1) &&
+                                             crossError.dtmFeatureId1 == idOfSurroundingFeature[crossError.dtmFeatureId2] &&
+                                             info.count(crossError.dtmFeatureId2) == 0)
+                                              {
+                                              info[crossError.dtmFeatureId2] = { crossError.dtmFeatureType2,
+                                                                                 crossError.dtmFeatureType1,
+                                                                                 crossError.dtmFeatureId2,
+                                                                                 crossError.dtmFeatureId1 };
+                                              }
+                                          
+                                          return DTM_SUCCESS;
+                                          }, &crossingFeaturesInfo);
+
+    for(auto const& crossingFeature : crossingFeaturesInfo)
+        {
+        // Assume feature1 is inside feature2
+        CurveVectorPtr area1 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Inner);
+        area1->Add((*features)[crossingFeature.second.featureId1]);
+
+        CurveVectorPtr area2 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer);
+        area2->Add((*features)[crossingFeature.second.featureId2]);
+
+        CurveVectorPtr result = nullptr;
+        if(crossingFeature.second.type1 == DTMFeatureType::Void &&
+           crossingFeature.second.type2 == DTMFeatureType::Island)
+            {
+            result = CurveVector::AreaDifference(*area2, *area1);
+
+            polylines[crossingFeature.second.featureId1].clear();
+            }
+        if(crossingFeature.second.type1 == DTMFeatureType::Island &&
+           crossingFeature.second.type2 == DTMFeatureType::Void)
+            {
+            result = CurveVector::AreaUnion(*area1, *area2);
+            }
+
+        if(result.IsValid())
+            {
+            bvector<bvector<bvector<DPoint3d>>> regions;
+            result->CollectLinearGeometry(regions);
+            for(auto const& region : regions)
+                {
+                for(auto const& poly : region)
                     {
-                    bvector<DPoint3d> fA2D;
-                    for(auto& pt2 : fA)
-                        fA2D.push_back(DPoint3d::From(pt2.x, pt2.y, 0));
-
-                    auto curveAPtr = ICurvePrimitive::CreateLineString(&fA2D[0], fA2D.size());
-                    auto curveVectorAPtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curveAPtr);
-
-                    bool mergeSucceed = true;
-                    while(mergeSucceed)
+                    if(&region == &regions[0] && &poly == &region[0])
+                        polylines[crossingFeature.second.featureId2] = region[0];
+                    else
                         {
-                        mergeSucceed = false;
-                        for(auto& fB : features)
-                            {
-                            if(isMerged[&fB - &features[0]]) continue;
-                            if(&fB <= &fA) continue;
-
-                            bvector<DPoint3d> fB2D;
-                            for(auto& pt3 : fB)
-                                fB2D.push_back(DPoint3d::From(pt3.x, pt3.y, 0));
-                            if(bsiDPoint3dArray_polygonClashXYZ(&fA2D.front(), (int)fA2D.size(), &fB2D.front(), (int)fB2D.size()))
-                                {
-                                double fAArea = fabs(bsiGeom_getXYPolygonArea(&fA2D[0], (int)fA2D.size()));
-                                double fBArea = fabs(bsiGeom_getXYPolygonArea(&fB2D[0], (int)fB2D.size()));
-
-                                auto curveBPtr = ICurvePrimitive::CreateLineString(&fB2D[0], fB2D.size());
-                                auto curveVectorBPtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curveBPtr);
-
-                                const CurveVectorPtr mergeArea = CurveVector::AreaUnion(*curveVectorAPtr, *curveVectorBPtr);
-                                bvector<bvector<bvector<DPoint3d>>> regions;
-                                mergeArea->CollectLinearGeometry(regions);
-                                if(regions.size() > 1) continue;
-                                for(auto &region : regions)
-                                    {
-                                    for(auto &xyz : region)
-                                        {
-                                        //if(mergeSucceed) break;
-                                        double mergedArea = bsiGeom_getXYPolygonArea(&xyz[0], (int)xyz.size());
-                                        if(mergedArea < 0) continue;
-                                        if(std::max(fAArea, fBArea) < mergedArea && mergedArea < fAArea + fBArea + 1.e-6)
-                                            {
-                                            fA2D = xyz;
-                                            isMerged[&fB - &features[0]] = true;
-                                            curveAPtr = ICurvePrimitive::CreateLineString(&fA2D[0], fA2D.size());
-                                            curveVectorAPtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curveAPtr);
-
-                                            mergeSucceed = true;
-                                            mergeOccured = true;
-                                            }
-                                        break;
-                                        }
-                                    //if(mergeSucceed) break;
-                                    //break;
-                                    }
-
-                                //bvector<DPoint3d> xyz;
-                                //vu.ClassifyAUnionB(fA2D, fB2D);
-                                //for(int faceIndx = 0; vu.GetFace(xyz); faceIndx++)
-                                //    {
-                                //    if(faceIndx > 0) continue;
-                                //
-                                //    double mergedArea = bsiGeom_getXYPolygonArea(&xyz[0], (int)xyz.size());
-                                //    if(mergedArea < 0) continue;
-                                //    if(std::max(fAArea, fBArea) < mergedArea && mergedArea < fAArea + fBArea + 1.e-6)
-                                //        {
-                                //        fA2D = xyz;
-                                //        isMerged[&fB - &features[0]] = true;
-                                //        mergeSucceed = true;
-                                //        }
-                                //    }
-                                }
-                            }
-                        }
-
-                    if(!isMerged[&fA - &features[0]])
-                        {
-                        isMerged[&fA - &features[0]] = true;
-                        result.push_back(fA2D);
-
-                        // reconstruct proper elevations
-                        for(auto& pt : result.back())
-                            {
-                            if (pointElevationMap.count(pt) == 1)
-                                pt.z = pointElevationMap[pt];
-                            }
-
-                        features[&fA - &features[0]] = result.back();
-
-                        //bvector<bvector<DPoint3d>> others;
-                        //for(auto& feature : features)
-                        //    if(isMerged[&feature - &features[0]] == false) others.push_back(feature);
-                        //
-                        //if(others.empty()) break;
-                        //if(others.size() == 1)
-                        //    {
-                        //    result.push_back(others[0]);
-                        //    break;
-                        //    }
-                        //
-                        //mergeOccured = MergeFeatures(others, result, isClosedFeatures) || mergeOccured;
-                        //if(!mergeOccured) break;
+                        polylines.push_back(poly);
+                        types.push_back(DTMFeatureType::Island);
+                        ids.push_back(ids[crossingFeature.second.featureId2]);
                         }
                     }
                 }
             }
         }
+
+    return DTM_SUCCESS;
+    }
+
+bool MergeFeatures(bvector<bvector<DPoint3d>> features, CurveVectorPtr& result, bool isClosedFeatures)
+    {
+    if(features.empty()) return false;
+
+    auto tempFeatures = features;
+
+    bvector<bool> isMerged(tempFeatures.size(), false);
+    bool mergeOccured = false;
+
+    if(isClosedFeatures)
+        {
+        for(auto const& feature : tempFeatures)
+            {
+            auto curveVectorPtr = CurveVector::CreateLinear(feature, CurveVector::BOUNDARY_TYPE_Outer);
+            if(!result.IsValid())
+                std::swap(result, curveVectorPtr);
+            else
+                {
+                curveVectorPtr = CurveVector::AreaUnion(*result, *curveVectorPtr);
+                if(curveVectorPtr.IsValid())
+                    result = curveVectorPtr;
+                }
+            }
+        BeAssert(result.IsValid()); // There was a problem merging the features
+        mergeOccured = result.IsValid() && !result->empty();
+        }
     else
         {
-        auto tempFeatures = features;
         for(auto& fA : tempFeatures)
             {
             if(!isMerged[&fA - &tempFeatures[0]])
@@ -1987,8 +2033,7 @@ bool MergeFeatures(bvector<bvector<DPoint3d>> features, bvector<bvector<DPoint3d
                             }
                         }
                     }
-
-                result.push_back(fA);
+                result->Add(ICurvePrimitive::CreateLineString(fA));
                 isMerged[&fA - &tempFeatures[0]] = true;
                 }
             }
@@ -1996,3 +2041,40 @@ bool MergeFeatures(bvector<bvector<DPoint3d>> features, bvector<bvector<DPoint3d
 
     return mergeOccured;
     }
+
+    bool ClipIntersectsBox(const ClipVectorPtr& cp, DRange3d ext, Transform tr)
+        {
+        DRange3d transformedExt = ext;
+        if (!tr.IsIdentity())
+            {
+            bvector<DPoint3d> box(8);
+            transformedExt.Get8Corners(box.data());
+            tr.Multiply(&box[0], &box[0], (int)box.size());
+            transformedExt = DRange3d::From(box);
+            }
+
+        for (ClipPrimitivePtr const& primitive : *cp)
+            {
+            auto clipPlane = primitive->GetClipPlanes();
+            if (clipPlane->IsAnyRangeFacePointInside(transformedExt)) return true;
+            }
+        return false;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Mathieu.St-Pierre               05/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void PlaneSetFromPolygon(bvector<DPoint3d> const& polygon, ClipPlaneSet*& planeSet)
+        {
+        int size = (int)polygon.size();
+
+        DVec3d        vecs[3];
+
+        vecs[2].NormalizedDifference(polygon[1], polygon[0]);
+        vecs[1].NormalizedDifference(polygon[size - 2], polygon[0]);
+        vecs[0].CrossProduct(vecs[2], vecs[1]);
+
+        planeSet = new ClipPlaneSet(ClipPlaneSet::FromSweptPolygon(&polygon[0], polygon.size(), &vecs[0]));
+        }
+
+    END_BENTLEY_SCALABLEMESH_NAMESPACE

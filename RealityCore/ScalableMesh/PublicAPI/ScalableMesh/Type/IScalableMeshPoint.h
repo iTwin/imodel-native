@@ -47,6 +47,17 @@ public:
     BENTLEY_SM_EXPORT explicit                    PointTypeFamilyCreator                         ();
     };
 
+/*---------------------------------------------------------------------------------**//**
+* @description
+* @bsiclass                                                  Raymond.Gauthier   10/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+class BoundaryTypeFamilyCreator : public Import::Plugin::V0::StaticDataTypeFamilyCreatorBase
+    {
+    virtual const Import::DataTypeFamily&         _Create() const override;
+    public:
+        BENTLEY_SM_EXPORT explicit                    BoundaryTypeFamilyCreator();
+    };
+
 
 /*---------------------------------------------------------------------------------**//**
 * @description  
@@ -57,6 +68,17 @@ class PointType3d64fCreator : public Import::Plugin::V0::StaticDataTypeCreatorBa
     virtual const Import::DataType&                 _Create                                        () const override;
 public: 
     BENTLEY_SM_EXPORT explicit                    PointType3d64fCreator                          ();
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @description
+* @bsiclass                                                  Raymond.Gauthier   10/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+class BoundaryType3d64fCreator : public Import::Plugin::V0::StaticDataTypeCreatorBase
+    {
+    virtual const Import::DataType&                 _Create() const override;
+    public:
+        BENTLEY_SM_EXPORT explicit                    BoundaryType3d64fCreator();
     };
 
 

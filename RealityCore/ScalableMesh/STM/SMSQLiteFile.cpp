@@ -9,6 +9,7 @@
 #include "SMSQLiteDiffsetFile.h"
 #include "SMSQLiteFeatureFile.h"
 #include "Stores/SMSQLiteStore.h"
+#include "Tracer.h"
 
 #define WSTRING_FROM_CSTR(cstr) WString(cstr, BentleyCharEncoding::Utf8)
 #define MAKE_COPY_NO Statement::MakeCopy::No
@@ -48,7 +49,9 @@ void SMSQLiteFile::Save()
 
 bool SMSQLiteFile::Close()
     {
-    Save();    
+    TRACEPOINT_WSTRING(EventType::CUSTOM_STRING, "SMSQLITEFILE_CLOSE", reinterpret_cast<uint64_t>(m_database))
+    
+    Save();
     m_database->CloseDb();
     return true;
     }
@@ -225,6 +228,8 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
         m_database = new ScalableMeshDb(type, this, fileNameStr);
         }
 
+    TRACEPOINT_WSTRING(EventType::CUSTOM_STRING, "SMSQLITEFILE_OPEN4 " + Utf8String(filename), reinterpret_cast<uint64_t>(m_database))
+        
     DbResult result = BE_SQLITE_OK;
     if (m_database->IsDbOpen())
         m_database->CloseDb();
@@ -240,12 +245,20 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
     if (result != BE_SQLITE_ERROR_FileNotFound)
         {
 #ifndef VANCOUVER_API
-    if (result == BE_SQLITE_SCHEMA || result == BE_SQLITE_ERROR_ProfileTooOld)
+        if (result == BE_SQLITE_SCHEMA || result == BE_SQLITE_ERROR_ProfileTooOld)
 #else
-    if (result != BE_SQLITE_ERROR_FileNotFound && result != BE_SQLITE_ERROR)
-        {
-        Db::OpenParams params = Db::OpenParams(openReadOnly ? READONLY : READWRITE);
-        result = m_database->IsProfileVersionUpToDate(params);
+        if (result != BE_SQLITE_ERROR)
+            {
+            if (m_database->IsDbOpen())
+                {
+                Db::OpenParams params = Db::OpenParams(openReadOnly ? READONLY : READWRITE);
+                result = m_database->IsProfileVersionUpToDate(params);
+                }
+            else
+                {
+                return false;
+                }
+        
         }
         if (result == BE_SQLITE_SCHEMA)
 #endif     
@@ -459,21 +472,21 @@ DbResult SMSQLiteFile::CreateTables()
                                      "SizeUVs INTEGER,"
                                      "UVIndexData BLOB,"
                                      "SizeUVIndex INTEGER");
-
+    assert(result == BE_SQLITE_OK);
 
 #ifdef WIP_MESH_IMPORT
 
     result = m_database->CreateTable("SMMeshParts", "NodeId INTEGER PRIMARY KEY,"
                                      "Data BLOB,"
                                      "Size INTEGER");
+    assert(result == BE_SQLITE_OK);
 
     result = m_database->CreateTable("SMMeshMetadata", "NodeId INTEGER PRIMARY KEY,"
                                      "Data BLOB,"
                                      "Size INTEGER");
-#endif
 
     assert(result == BE_SQLITE_OK);
-
+#endif
 
     result = m_database->CreateTable(m_sSourceTable.c_str(), "SourceId INTEGER PRIMARY KEY,"
                                      "SourceType INTEGER,"
@@ -528,6 +541,8 @@ DbResult SMSQLiteFile::CreateTables()
         Utf8String fileNameStr(filename);
         m_database = new ScalableMeshDb(type, this, fileNameStr);        
         }
+
+    TRACEPOINT_WSTRING(EventType::CUSTOM_STRING, "SMSQLITEFILE_CREATE", reinterpret_cast<uint64_t>(m_database))
 
     DbResult result;
     result = m_database->CreateNewDb(filename);
@@ -675,9 +690,14 @@ bool SMSQLiteFile::GetMasterHeader(SQLiteIndexHeader& header)
 
 bool SMSQLiteFile::GetNodeHeader(SQLiteNodeHeader& nodeHeader)
     {
+#ifdef VANCOUVER_API
+    if (ConfigurationManager::IsVariableDefined(L"__BE_SQLITE_CORRUPT__"))
+        ConfigurationManager::UndefineVariable(L"__BE_SQLITE_CORRUPT__");
+#endif
+
     std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
-    
+
     DbResult status = m_database->GetCachedStatement(stmt, "SELECT ParentNodeId, Resolution, Filtered, Extent,"
                                   "ContentExtent, TotalCount, ArePoints3d, NbFaceIndexes, "
                                   "NumberOfMeshComponents, AllComponent,SubNode, Neighbor, TexID, IsTextured, NodeCount, GeometryResolution, TextureResolution, length(SubNode), length(Neighbor) FROM SMNodeHeader WHERE NodeId=?");
@@ -691,12 +711,22 @@ bool SMSQLiteFile::GetNodeHeader(SQLiteNodeHeader& nodeHeader)
     stmt->BindInt64(1, nodeHeader.m_nodeID);
 
     status = stmt->Step();
-    assert(status == BE_SQLITE_DONE || status == BE_SQLITE_ROW);
-    if (status == BE_SQLITE_DONE) 
+    if (status != BE_SQLITE_ROW)
         {
-        assert(!"Node header not found");
+#ifdef VANCOUVER_API
+        if (BE_SQLITE_CORRUPT == status)
+            {
+            //  #AD1060961
+            //  this is a temporary cfg variable to tell MRMesh that the file database has got BE_SQLITE_CORRUPT error.
+            //  there is no easy way to propagate this error directly up to MRMesh so I choose to use a temporary cfg variable.
+            ConfigurationManager::DefineVariable(L"__BE_SQLITE_CORRUPT__", L"1");
+            }
+#else
+        BeAssert(!"Node header not found");
+#endif
         return false;
         }
+
     nodeHeader.m_parentNodeID = stmt->GetValueInt64(0);
     nodeHeader.m_level = stmt->GetValueInt64(1);
     nodeHeader.m_filtered = stmt->GetValueInt(2) ? true : false;

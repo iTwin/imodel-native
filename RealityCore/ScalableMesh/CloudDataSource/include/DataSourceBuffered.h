@@ -27,15 +27,15 @@ public:
                                                 DataSourceBuffered      (DataSourceAccount *sourceAccount, const SessionName &session);
                                                 ~DataSourceBuffered     (void);
 
-    bool                                        isValid                 (void);
-    bool                                        isEmpty                 (void);
+    bool                                        isValid                 (void) override;
+    bool                                        isEmpty                 (void) override;
 
-    DataSourceStatus                            open                    (const DataSourceURL & sourceURL, DataSourceMode sourceMode);
-    DataSourceStatus                            close                   (void);
+    DataSourceStatus                            open                    (const DataSourceURL & sourceURL, DataSourceMode sourceMode) override;
+    DataSourceStatus                            close                   (void) override;
 
-    DataSourceStatus                            read                    (Buffer *dest, DataSize destSize, DataSize &readSize, DataSize size = 0);
-    DataSourceStatus                            read                    (std::vector<Buffer>& dest);
-    DataSourceStatus                            write                   (const Buffer * source, DataSize size);
+    DataSourceStatus                            read                    (Buffer *dest, DataSize destSize, DataSize &readSize, DataSize size = 0) override;
+    DataSourceStatus                            read                    (std::vector<Buffer>& dest) override;
+    DataSourceStatus                            write                   (const Buffer * source, DataSize size) override;
 
     DataSourceStatus                            flush                   (void);
 

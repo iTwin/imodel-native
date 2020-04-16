@@ -64,6 +64,11 @@ class ScalableMeshRasterDraping
 public:    
 
     BENTLEY_SM_EXPORT static ScalableMeshRasterDraping* Create(const AString& pi_rFileNameDescriptors);    
+    
+    ScalableMeshRasterDraping(const ScalableMeshRasterDraping&) = delete;
+    ScalableMeshRasterDraping& operator=(const ScalableMeshRasterDraping&) = delete;
+    ScalableMeshRasterDraping(ScalableMeshRasterDraping&&) = delete;
+    ScalableMeshRasterDraping& operator=(ScalableMeshRasterDraping&&) = delete;
 
     BENTLEY_SM_EXPORT virtual ~ScalableMeshRasterDraping();
 
@@ -160,7 +165,7 @@ private:
                                        double       pi_zValue);
 #endif
     
-    ScalableMeshRasterDraping(const AString& pi_rFileNameDescriptors);
+    explicit ScalableMeshRasterDraping(const AString& pi_rFileNameDescriptors);
                                
     //This class is used to hide the existence of Imagepp to the users of the ScalableMeshRasterDraping class.
     ImageppOpaqueData* m_pImageppOpaqueData;        

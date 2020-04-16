@@ -20,7 +20,7 @@ protected:
 
 public:
 
-                                                DataSourceServiceManager      (DataSourceManager &manager);
+                                       explicit DataSourceServiceManager      (DataSourceManager &manager);
                                                ~DataSourceServiceManager      (void);
 
             DataSourceStatus                    initialize                    (DataSourceManager &manager);

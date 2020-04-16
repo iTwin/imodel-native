@@ -710,7 +710,7 @@ StatusInt QuerySubResolutionData(DTMPtr&         dtmPtr,
 * @bsimethod                                                    Mathieu.St-Pierre 11/2015
 +---------------+---------------+---------------+---------------+---------------+------*/    
 int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
-                               IMrDTMPtr&                   mrdtmPtr, 
+                               const IMrDTMPtr&                   mrdtmPtr, 
                                const std::vector<DPoint3d>& regionPoints,                               
                                UInt64                       maximumNbPoints)
     {    
@@ -720,31 +720,9 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
     size_t  remainingPointCount = static_cast<size_t>(MAX_POINT_COUNT);
 
     double decimationFactorRequested; 
-
-    vector<__int64> approximateNbPointsForLinearFeaturesList;
     
     size_t approximateTotalNbPoints = 0;
      
-#if 0 
-    for (ElementAgenda::const_iterator elemIter = agenda.begin(); elemIter != agenda.end(); ++elemIter)
-        {            
-        unsigned int approximateNbPointsForPointFeatures;
-        unsigned int approximateNbPointsForLinearFeatures;            
-                               
-        StatusInt status = GetApproximationNbPtsNeedToExtract(*elemIter, regionPoints, &approximateNbPointsForPointFeatures, &approximateNbPointsForLinearFeatures);
-
-        if (status != SUCCESS)
-            {
-            //MST TBD - What should we do?
-            approximateNbPointsForLinearFeaturesList.push_back(0);
-            }
-        else
-            {                
-            approximateTotalNbPoints += approximateNbPointsForPointFeatures + approximateNbPointsForLinearFeatures;
-            approximateNbPointsForLinearFeaturesList.push_back(approximateNbPointsForLinearFeatures);
-            }            
-        }    
-#endif
 
     unsigned int approximateNbPointsForPointFeatures = 0;
     unsigned int approximateNbPointsForLinearFeatures = 0;          
@@ -1114,13 +1092,16 @@ void GetImportRange(DRange3d& importRange, BeXmlNodeP pRootNode)
                 StatusInt status = mrdtmCreatorPtr->Create();
 
                 if (status != SUCCESS)
+                {
+                    if(tempStmstreamFile != nullptr) fclose(tempStmstreamFile); 
                     return ERROR;
+                }
                 
                 if (workingThread.joinable())
                     workingThread.join();
 
                 mrdtmCreatorPtr = 0;
-                fclose(tempStmstreamFile); 
+                if(tempStmstreamFile != nullptr) fclose(tempStmstreamFile); 
 
                 int statusInt = _wremove(tempStmstream.c_str());
                 assert(statusInt == 0);
@@ -1155,7 +1136,7 @@ void GetImportRange(DRange3d& importRange, BeXmlNodeP pRootNode)
                 --input=                (required)  Configuration file listing the input files and options. \n\
                 \n\
                 --output=               (required)  Named pipe where data is to be transferred.\n\
-                ", programName, programName);
+                ", programName);
 
         return 1;
         }

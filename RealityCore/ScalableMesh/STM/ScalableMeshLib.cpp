@@ -73,6 +73,9 @@ STMAdmin& ScalableMeshLib::Host::_SupplySTMAdmin()
     {
     return *new STMAdmin();
     }
+
+static void dummy() {;}
+
 #endif
 
 #ifndef LINUX_SCALABLEMESH_BUILD
@@ -511,7 +514,10 @@ bool BingAuthenticationCallback::GetAuthentication(HFCAuthentication* pio_Authen
 
 
 static BingAuthenticationCallbackPtr s_bingAuthCallback;
+
 #endif
+
+
 void ScalableMeshLib::Host::Initialize()
     {
     BeAssert(NULL == m_scalableTerrainModelAdmin);
@@ -547,6 +553,23 @@ void ScalableMeshLib::Host::Initialize()
 #endif
 
     BeFileName geocoordinateDataPath(L".\\GeoCoordinateData\\");
+
+#ifdef VANCOUVER_API
+    BeFileName  dllFileName;
+
+    if(SUCCESS == BENTLEY_NAMESPACE_NAME::BeGetModuleFileName(dllFileName, (void*)&dummy))
+        {
+        WString device;
+        WString dir;
+        dllFileName.ParseName(&device, &dir, NULL, NULL);
+        dir.append(L"GeoCoordinateData");
+
+        BeFileName  geoCoordDataDir;
+        geoCoordDataDir.BuildName(device.c_str(), dir.c_str(), NULL, NULL);
+        geocoordinateDataPath.assign(geoCoordDataDir.GetName());
+        }
+#endif
+
     GeoCoordinates::BaseGCS::Initialize(geocoordinateDataPath.c_str());
     //BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMElementHandlerManager::InitializeDgnPlatform();
 
@@ -718,6 +741,10 @@ void ScalableMeshLib::Initialize(ScalableMeshLib::Host& host)
     static RegisterConverter<IDTMPointConverter< IDTMPointDimConverter<DPoint3d, DPoint3d> >,
         PointType3d64f_R16G16B16_I16Creator,
         PointType3d64fCreator>                                  s_ptTypeConvSp0;
+
+    static RegisterConverter<IDTMFeatureConverter< IDTMPointDimConverter<DPoint3d, DPoint3d> >,
+        BoundaryType3d64fCreator,
+        BoundaryType3d64fCreator>                                  s_boundaryPtTypeConvSp0;
 
 
     // Register linear converters

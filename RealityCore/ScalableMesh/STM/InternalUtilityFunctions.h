@@ -9,7 +9,7 @@
 #include <ScalableMesh/IScalableMeshQuery.h>
 #include "ImagePPHeaders.h" 
 
-
+BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 void CalcNormals (DVec3d**      calculatedNormals,                  
                   const DVec3d& viewNormalParam, 
@@ -77,4 +77,9 @@ double ComputeMinEdgeLength(const DPoint3d* points, size_t ptNum, const int32_t*
 BENTLEY_SM_EXPORT inline bool IsUrl(WCharCP filename);
 void SimplifyPolygonToMinEdge(double minEdge, bvector<DPoint3d>& poly);
 
-BENTLEY_SM_EXPORT bool MergeFeatures(bvector<bvector<DPoint3d>> features, bvector<bvector<DPoint3d>>& result, bool isClosedFeature);
+BENTLEY_SM_EXPORT bool MergeFeatures(bvector<bvector<DPoint3d>> features, CurveVectorPtr& result, bool isClosedFeature);
+BENTLEY_SM_EXPORT int    ResolveCrossingVoidIslands(bvector<bvector<DPoint3d>>& polylines, bvector<DTMFeatureType>& types, const bvector<uint32_t>& idOfSurroundingFeature, bvector<uint64_t>& ids);
+BENTLEY_SM_EXPORT bool ClipIntersectsBox(const ClipVectorPtr& cp, DRange3d ext, Transform tr);
+BENTLEY_SM_EXPORT void PlaneSetFromPolygon(bvector<DPoint3d> const& polygon, ClipPlaneSet*& planeSet);
+BENTLEY_SM_EXPORT int AddToBCDtm(BC_DTM_OBJ* dtmObjP, bvector<DPoint3d>& points, CurveVectorPtr nonHullFeatures, bvector< std::pair<DTMFeatureType, DTMFeatureId>>& nonHullFeatureTypes, CurveVectorPtr hullFeatures);
+END_BENTLEY_SCALABLEMESH_NAMESPACE

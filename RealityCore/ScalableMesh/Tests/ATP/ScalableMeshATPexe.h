@@ -99,7 +99,7 @@ struct ScalableMeshATPexe : DgnPlatformLib::Host
 
     public:
         BeFileName          m_outputName;
-        ScalableMeshATPexe() : m_sMesh(nullptr), m_pipe(NULL) {}
+        ScalableMeshATPexe() : m_sMesh(nullptr), m_pipe(NULL), m_optionClean(false) {}
         int PrintUsage(WCharCP programName);
         int ParseCommandLine(int argc, WCharP argv[]);
         BentleyStatus Initialize(int argc, WCharP argv[]);

@@ -67,6 +67,23 @@ struct SQLiteNodeHeader
         m_uvID = SQLiteNodeHeader::NO_NODEID;
         m_graphID = SQLiteNodeHeader::NO_NODEID;
         m_geometricResolution = m_textureResolution = 0.0;
+        m_nodeID = SQLiteNodeHeader::NO_NODEID;
+        m_SplitTreshold = 0;
+        m_contentExtentDefined = false;
+        m_level = 0;
+        m_numberOfSubNodesOnSplit = 0;
+        m_totalCountDefined = false;
+        m_totalCount = 0;
+        m_arePoints3d = false;
+        m_isTextured = false;
+        m_filtered = false;
+        m_nbFaceIndexes = 0;
+        m_nbUvIndexes = 0;
+        m_nbTextures = 0;
+        m_textureID = 0;
+        m_numberOfMeshComponents = 0;
+        m_meshComponents = 0;
+        m_nodeCount = 0;
         }
     };
 

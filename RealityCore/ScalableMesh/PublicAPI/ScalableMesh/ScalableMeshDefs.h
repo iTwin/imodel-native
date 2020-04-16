@@ -85,7 +85,6 @@ enum ScalableMeshFilterType
     SCM_FILTER_DUMB = 0,    
     SCM_FILTER_PROGRESSIVE_DUMB = 1,    
     SCM_FILTER_DUMB_MESH = 2,        
-    SCM_FILTER_CGAL_SIMPLIFIER = 3,
     SCM_FILTER_QTY,
     };
 
@@ -243,7 +242,6 @@ enum class SMGenerateOperation
     SCM_FILTER_DUMB = 0,
     SCM_FILTER_PROGRESSIVE_DUMB = 1,
     SCM_FILTER_DUMB_MESH = 2,
-    SCM_FILTER_CGAL_SIMPLIFIER = 3,
     SCM_FILTER_QTY,
     };
 

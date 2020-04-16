@@ -258,8 +258,6 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
         virtual int                    _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const override {return ERROR;}
 #endif
         
-        virtual void _ReFilter() override {}
-        
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) override {}
 
         virtual Utf8String                         _GetEditFilesBasePath() override { return Utf8String(); }

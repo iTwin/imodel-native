@@ -113,9 +113,10 @@ DataSourceLocator::DataSourceLocator(void)
 {
     setService(nullptr);
     setAccount(nullptr);
+    m_mode = DataSourceMode::DataSourceMode_Null;
 }
 
-DataSourceLocator::DataSourceLocator(DataSourceLocator & locator)
+DataSourceLocator::DataSourceLocator(const DataSourceLocator & locator)
 {
     *this = locator;
 }
@@ -243,15 +244,3 @@ DataSourceMode DataSourceLocator::getMode(void) const
 {
     return m_mode;
 }
-
-/*
-void DataSourceLocator::getFullSubPath(DataSourceURL &dest) const
-{
-    dest = getSubPath();
-
-    if (getSegmentName().size() > 0)
-    {
-        dest += getSegmentName();
-    }
-}
-*/

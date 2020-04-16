@@ -26,12 +26,10 @@ public:
     static Source*                              CreateFromBase                     (Base*                               baseP);
 
     static Base&                                GetOriginalBaseFor                 (Source&                             source);
-    static const Base&                          GetOriginalBaseFor                 (const Source&                       source);
 
     static Base&                                GetBaseFor                         (Source&                             source);
-    static const Base&                          GetBaseFor                         (const Source&                       source);
 
-    static const ContentDescriptor&             GetDescriptorFor                   (const Source&                       source);
+    static const ContentDescriptor&             GetDescriptorFor                   (Source&                       source);
     };
 
 

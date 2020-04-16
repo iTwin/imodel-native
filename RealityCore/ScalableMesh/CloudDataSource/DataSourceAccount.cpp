@@ -42,6 +42,7 @@ DataSourceAccount::PrefixPathType DataSourceAccount::getPrefixPathType(void) con
 DataSourceAccount::DataSourceAccount(void) : dataSourceManager(nullptr)
     {
     setReferenceCounter(0);
+    cachingEnabled = false;
                                                             // Default to using Account level prefix paths. Derived accounts should set this if necessary.
     setPrefixPathType(PrefixPathAccount);
     }
@@ -109,6 +110,7 @@ DataSourceAccount::DataSourceAccount(const ServiceName & service, const AccountN
 
 DataSourceAccount::DataSourceAccount(const ServiceName & service, const AccountName &account, const AccountIdentifier & identifier, const AccountKey & key) : DataSourceAccount()
     {
+    cachingEnabled = false;
     setAccount(service, account, identifier, key);
     }
 

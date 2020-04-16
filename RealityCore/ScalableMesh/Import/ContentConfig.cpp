@@ -23,8 +23,8 @@ struct TypeConfigImpl : public RefCountedBase
             {
             m_isSet = false;
             }
-        TypeConfigImpl(const DataType& type) : m_type(type) { m_isSet = true; }
-        TypeConfigImpl(const TypeConfigImpl& type) : m_type(type.m_type) { m_isSet = type.m_isSet; }
+        explicit TypeConfigImpl(const DataType& type) : m_type(type) { m_isSet = true; }
+        explicit TypeConfigImpl(const TypeConfigImpl& type) : m_type(type.m_type) { m_isSet = type.m_isSet; }
     };
 
 TypeConfig::TypeConfig()
@@ -61,7 +61,7 @@ struct ScalableMeshConfigImpl : public RefCountedBase
         bool m_isSet;
     public:
         ScalableMeshConfigImpl() : m_smData(ScalableMeshData::GetNull()) { m_isSet = false; }
-        ScalableMeshConfigImpl(const ScalableMeshData& data) : m_smData(data) { m_isSet = true; }
+        explicit ScalableMeshConfigImpl(const ScalableMeshData& data) : m_smData(data) { m_isSet = true; }
         ScalableMeshConfigImpl(const ScalableMeshConfigImpl& smConfig) : m_smData(smConfig.m_smData) { m_isSet = smConfig.m_isSet; }
     };
 
@@ -105,9 +105,9 @@ struct GCSConfigImpl : public RefCountedBase
         uint32_t m_flags;
         bool m_isSet;
     public:
-        GCSConfigImpl() : m_gcs(GCS::GetNull()) { m_isSet = false; }
-        GCSConfigImpl(const GCS& gcs, uint32_t flags) : m_gcs(gcs), m_flags(flags) { m_isSet = true; }
-        GCSConfigImpl(const GCSConfigImpl& gcsConfig) : m_gcs(gcsConfig.m_gcs), m_flags(gcsConfig.m_flags) { m_isSet = gcsConfig.m_isSet; }
+        GCSConfigImpl() : m_gcs(GCS::GetNull()), m_flags(0), m_isSet(false) {}
+        GCSConfigImpl(const GCS& gcs, uint32_t flags) : m_gcs(gcs), m_flags(flags), m_isSet(true) {}
+        GCSConfigImpl(const GCSConfigImpl& gcsConfig) : m_gcs(gcsConfig.m_gcs), m_flags(gcsConfig.m_flags), m_isSet(gcsConfig.m_isSet) {}
     };
 
 GCSConfig::GCSConfig()

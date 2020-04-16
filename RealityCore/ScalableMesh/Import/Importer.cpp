@@ -424,7 +424,6 @@ void ImporterImpl::Filter(std::vector<DRange3d> vecRangeFilter, PacketGroup& dst
 
     dstSource[pointPacketInd].SetReadOnly(false);
     pointPacket.AssignTo(dstSource[pointPacketInd]);
-    std::vector<DPoint3d> pts;
 
     Memory::ClassPacketProxy<DPoint3d>::iterator ptIt;
     Memory::ClassPacketProxy<DPoint3d>::iterator ptIt2;
@@ -439,7 +438,7 @@ void ImporterImpl::Filter(std::vector<DRange3d> vecRangeFilter, PacketGroup& dst
         double y = PointOp<DPoint3d>::GetY(*ptIt2);
         double z = PointOp<DPoint3d>::GetZ(*ptIt2);
 
-        for(std::vector<DRange3d>::iterator it = vecRangeFilter.begin(); it != vecRangeFilter.end(); it++)
+        for(std::vector<DRange3d>::iterator it = vecRangeFilter.begin(); it != vecRangeFilter.end(); ++it)
             {
             if(it->IsContained(x,y,z))
                 {
@@ -451,12 +450,12 @@ void ImporterImpl::Filter(std::vector<DRange3d> vecRangeFilter, PacketGroup& dst
         if(isContained)
             {
             (*ptIt)=(*ptIt2);
-            ptIt++;
-            ptIt2++;
-            size++;
+            ++ptIt;
+            ++ptIt2;
+            ++size;
             }
         else
-            ptIt2++;
+            ++ptIt2;
         }
 
     pointPacket.SetSize(size);

@@ -1308,7 +1308,7 @@ template <class EXTENT> SMNodeHeaderLocation SMStreamingStore<EXTENT>::GetNodeHe
     }
 
 
-template <class EXTENT> bool SMStreamingStore<EXTENT>::SetProjectFilesPath(BeFileName& projectFilesPath)
+template <class EXTENT> bool SMStreamingStore<EXTENT>::SetProjectFilesPath(const BeFileName& projectFilesPath)
     {
     return SMSQLiteSisterFile::SetProjectFilesPath(projectFilesPath);
     }
@@ -1783,6 +1783,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SM
             else
                 {
                 header->m_contentExtent = header->m_nodeExtent;
+                header->m_contentExtentDefined = true;
                 }
             }
 

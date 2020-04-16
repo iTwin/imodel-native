@@ -282,7 +282,12 @@ void ScalableMeshRDSProvider::UpdateToken()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ScalableMeshRDSProvider::GetBuddiUrl()
     {
-    Utf8String serverUrl;
+    static Utf8String serverUrl;
+
+    if (!Utf8String::IsNullOrEmpty(serverUrl.c_str()))
+        {
+        return serverUrl;
+        }
 
 #ifdef LINUX_SCALABLEMESH_BUILD
     SMRDSPROVIDER_LOG.error("ScalableMeshRDSProvider::GetBuddiUrl() not implemented under linux yet");
@@ -418,18 +423,25 @@ bool ScalableMeshRDSProvider::IsHostedByRDS(const Utf8String& serverUrl, const U
 
 Utf8String ScalableMeshRDSProvider::GetRootDocumentName()
     {
-    RawServerResponse rawResponse;
-    RealityDataByIdRequest idReq = RealityDataByIdRequest(m_PWCSMeshGuid);
-    RealityDataPtr entity = RealityDataService::Request(idReq, rawResponse);
-
-    if(entity == nullptr || rawResponse.status == RequestStatus::BADREQ)
+    if (Utf8String::IsNullOrEmpty(m_rootDocument.c_str()))
         {
-        SMRDSPROVIDER_LOG.errorv("GetRootDocumentName() : RealityDataService failed with response code [%d]", rawResponse.responseCode);
-        SMRDSPROVIDER_LOG.errorv("GetRootDocumentName() : RealityDataService body: %s", rawResponse.body.c_str());
-        return Utf8String();
+        RawServerResponse rawResponse;
+        RealityDataByIdRequest idReq = RealityDataByIdRequest(m_PWCSMeshGuid);
+        RealityDataPtr entity = RealityDataService::Request(idReq, rawResponse);
+
+        if (entity == nullptr || rawResponse.status == RequestStatus::BADREQ)
+            {
+            SMRDSPROVIDER_LOG.errorv("GetRootDocumentName() : RealityDataService failed with response code [%d]", rawResponse.responseCode);
+            SMRDSPROVIDER_LOG.errorv("GetRootDocumentName() : RealityDataService body: %s", rawResponse.body.c_str());
+            m_rootDocument = "";
+            }
+        else
+            {
+            m_rootDocument = entity->GetRootDocument();
+            }
         }
 
-    return entity->GetRootDocument();
+    return m_rootDocument;
     }
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

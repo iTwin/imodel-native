@@ -82,6 +82,7 @@ private:
                 storedTypes.push_back(TINTypeAsLinearTi32Pi32Pq32Gi32_3d64fCreator().Create());
                 storedTypes.push_back(LinearTypeTi32Pi32Pq32Gi32_3d64fCreator().Create());
                 storedTypes.push_back(PointType3d64fCreator().Create());
+                storedTypes.push_back(BoundaryType3d64fCreator().Create());
                 break;
             default:
                 assert(!"Unexpected!");
@@ -237,6 +238,21 @@ class CivilDTMFileCreator : public LocalFileSourceCreatorBase
             case FILE_TYPE_DAT:
                 pDTM = BcDTM::CreateFromGeopakDatFile(sourceRef.GetPathCStr());
                 break;
+            }
+
+        if(pDTM == nullptr) return nullptr;
+
+        BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFeatureStatisticsInfo info;
+        pDTM->CalculateFeatureStatistics(info);
+
+        // If there is no fixed boundary create one.
+        if(!info.hasHull)
+            {
+            pDTM = pDTM->Clone();
+            auto dtmP = pDTM->GetTinHandle();
+            bcdtmList_copyHptrListToTptrListDtmObject(dtmP, dtmP->hullPoint);
+            long newDtmFeatureNum;
+            bcdtmInsert_addToFeatureTableDtmObject(dtmP, nullptr, 0, DTMFeatureType::Hull, 0, DTM_NULL_FEATURE_ID, dtmP->hullPoint, &newDtmFeatureNum);
             }
 
         return pDTM;
@@ -726,6 +742,152 @@ class CivilDTMMeshExtractorCreator : public InputExtractorCreatorMixinBase<Civil
 
 const ExtractorRegistry::AutoRegister<CivilDTMMeshExtractorCreator> s_RegisterCivilDTMMeshExtractor;
 
+/*---------------------------------------------------------------------------------**//**
+* @description
+* @bsiclass                                                  Richard.Bois   03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+class CivilDTMBoundaryExtractor : public InputExtractorBase
+    {
+    private:
+        // Dimension groups definition
+        enum
+            {
+            DG_Header,
+            DG_XYZ,
+            DG_QTY,
+            };
+
+        const LinearHandler&             m_rLinearHandler;
+        PointHandler::TypeInfoCIter     m_typeInfoIter;
+        PointHandler::TypeInfoCIter     m_typeInfoEnd;
+
+        PODPacketProxy<ISMStore::FeatureHeader> m_headerPacket;
+        PODPacketProxy<DPoint3d>                m_pointPacket;
+
+        IDTMFeatureArray<DPoint3d>              m_boundaryArray;
+
+        /*---------------------------------------------------------------------------------**//**
+        * @description
+        * @bsimethod                                                  Richard.Bois   03/2020
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        virtual void                    _Assign(PacketGroup&     pi_rRawEntities) override
+            {
+            m_headerPacket.AssignTo(pi_rRawEntities[DG_Header]);
+            m_pointPacket.AssignTo(pi_rRawEntities[DG_XYZ]);
+#ifdef VANCOUVER_API
+            m_boundaryArray.EditHeaders().WrapEditable((IDTMFile::FeatureHeader *)m_headerPacket.Edit(), 0, m_headerPacket.GetCapacity());
+#else
+            m_boundaryArray.EditHeaders().WrapEditable(m_headerPacket.Edit(), 0, m_headerPacket.GetCapacity());
+#endif
+            m_boundaryArray.EditPoints().WrapEditable(m_pointPacket.Edit(), 0, m_pointPacket.GetCapacity());
+            }
+
+        virtual size_t              _GetPhysicalSize() override
+            {
+            return 0;
+            }
+
+        virtual size_t              _GetReadPosition() override
+            {
+            return 0;
+            }
+
+        /*---------------------------------------------------------------------------------**//**
+        * @description
+        * @bsimethod                                                  Raymond.Gauthier   10/2010
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        virtual void                    _Read() override
+            {
+            m_boundaryArray.Clear();
+
+            if(m_typeInfoIter == m_typeInfoEnd ||
+               !m_rLinearHandler.Copy(m_typeInfoIter, m_boundaryArray))
+                {
+                m_headerPacket.SetSize(0);
+                m_pointPacket.SetSize(0);
+                return;
+                }
+
+            m_headerPacket.SetSize(m_boundaryArray.GetHeaders().GetSize());
+            m_pointPacket.SetSize(m_boundaryArray.GetPoints().GetSize());
+
+            assert(m_typeInfoIter->m_linearCount == m_headerPacket.GetSize());
+            assert(m_typeInfoIter->m_pointCount == m_pointPacket.GetSize());
+            }
+
+        /*---------------------------------------------------------------------------------**//**
+        * @description
+        * @bsimethod                                                  Raymond.Gauthier   10/2010
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        virtual bool                    _Next() override
+            {
+            if(m_typeInfoIter == m_typeInfoEnd)
+                return false;
+
+            return ++m_typeInfoIter < m_typeInfoEnd;
+            }
+    public:
+        /*---------------------------------------------------------------------------------**//**
+        * @description
+        * @bsimethod                                                  Raymond.Gauthier   10/2010
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        explicit                        CivilDTMBoundaryExtractor(const LinearHandler& pi_rLinearHandler)
+            : m_rLinearHandler(pi_rLinearHandler)
+            {
+            m_typeInfoIter = std::find_if(pi_rLinearHandler.TypesInfoBegin(), pi_rLinearHandler.TypesInfoEnd(), [] (const LinearFeatureTypeInfo& ti)
+                                          {
+                                          return ti.m_typeID == DTMFeatureType::Hull || ti.m_typeID == DTMFeatureType::TinHull;
+                                          });
+            m_typeInfoEnd = m_typeInfoIter;
+            ++m_typeInfoEnd;
+            }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @description
+* @bsiclass                                                  Raymond.Gauthier   10/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+class CivilDTMBoundaryExtractorCreator : public InputExtractorCreatorMixinBase<CivilDTMSource>
+    {
+    virtual bool                                _Supports(const DataType&         pi_rType) const override
+        {
+        return pi_rType.GetFamily() == BoundaryTypeFamilyCreator().Create();
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @description
+    * @bsimethod                                                  Raymond.Gauthier   07/2011
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual RawCapacities                       _GetOutputCapacities(CivilDTMSource&                 sourceBase,
+                                                                     const Source&                   source,
+                                                                     const ExtractionQuery&         selection) const override
+        {
+        if(!sourceBase.GetLinearHandler().ComputeCounts())
+            return RawCapacities(0, 0);
+
+        // Only one boundary?
+        return RawCapacities(sizeof(ISMStore::FeatureHeader),
+                             sourceBase.GetLinearHandler().GetBoundaryPointCount() * sizeof(DPoint3d));
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @description
+    * @bsimethod                                                  Raymond.Gauthier   07/2011
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual InputExtractorBase*                 _Create(CivilDTMSource&                 sourceBase,
+                                                        const Source&                   source,
+                                                        const ExtractionQuery&         selection,
+                                                        const ExtractionConfig&         config,
+                                                        Log&                     log) const override
+        {
+        if(!sourceBase.GetLinearHandler().ComputeCounts())
+            return 0;
+
+        return new CivilDTMBoundaryExtractor(sourceBase.GetLinearHandler());
+        }
+    };
+
+const ExtractorRegistry::AutoRegister<CivilDTMBoundaryExtractorCreator> s_RegisterCivilDTMBoundaryExtractor;
 
 
 /*---------------------------------------------------------------------------------**//**

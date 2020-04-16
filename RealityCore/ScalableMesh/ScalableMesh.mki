@@ -12,10 +12,6 @@ DLM_NAME    = $(appName)
 LIB_NAME    = $(appName)
 CCompPDBName = $(appName)
 
-#This is because GMP and MPFR don't use vendor prefixes in the CGAL files
-#dirToSearch=$(OutputRootDir)BuildContexts/CGAL/VendorAPI/GMP
-#%include cincapnd.mki
-
 #----------------------------------------------------------
 # Preprocessor definition.
 #----------------------------------------------------------

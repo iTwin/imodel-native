@@ -6,6 +6,12 @@
 #include "DTMEvars.h"
 #include "bcdtminlines.h" 
 
+#pragma warning( disable : 4701 )  
+
+#include "predicates.h"
+
+#pragma warning( default : 4701 )  
+
 #if _WIN32
 #pragma float_control(precise, on, push)
 #endif
@@ -202,7 +208,6 @@ BENTLEYDTM_EXPORT int bcdtmMath_calculateMachinePrecisionForDtmObject(BC_DTM_OBJ
 BENTLEYDTM_Public int bcdtmMath_pointSideOfDtmObject(BC_DTM_OBJ *dtmP,long p1,long p2,long p3)
 {
  int    ret=0,dbg=DTM_TRACE_VALUE(0) ;
- double sd1,sd2;
  DPoint3d *point1P, *point2P, *point3P ;
 /*
 ** Get Point Coordinates
@@ -210,33 +215,14 @@ BENTLEYDTM_Public int bcdtmMath_pointSideOfDtmObject(BC_DTM_OBJ *dtmP,long p1,lo
  point1P = pointAddrP(dtmP,p1) ;
  point2P = pointAddrP(dtmP,p2) ;
  point3P = pointAddrP(dtmP,p3) ;
-/*
-** Calculate Side Of Function
-*/
- sd1 = ((point1P->x-point3P->x) * (point2P->y-point3P->y)) - ((point1P->y-point3P->y) * (point2P->x-point3P->x)) ;
 
- if (sd1 == 0.0)
-    return 0;
- sd2 = ((point1P->x-point2P->x) * (point3P->y-point2P->y)) - ((point1P->y-point2P->y) * (point3P->x-point2P->x)) ;
+ double a = orient2d(*point1P, *point2P, *point3P);
+ if (a == 0)
+     ret = 0;
+ else
+     ret = a < 0 ? -1 : 1;
 
- if( dbg )
-   {
-    bcdtmWrite_message(0,0,0,"p1 = %8ld ** %12.5lf %12.5lf %10.4lf",p1,point1P->x,point1P->y,point1P->z) ;
-    bcdtmWrite_message(0,0,0,"p2 = %8ld ** %12.5lf %12.5lf %10.4lf",p2,point2P->x,point2P->y,point2P->z) ;
-    bcdtmWrite_message(0,0,0,"p3 = %8ld ** %12.5lf %12.5lf %10.4lf",p3,point3P->x,point3P->y,point3P->z) ;
-    bcdtmWrite_message(0,0,0,"sd1 = %16.15lf sd2 = %16.15lf",sd1,sd2) ;
-    if( sd1 == 0.0 ) bcdtmWrite_message(0,0,0,"sd1 is zero") ;
-    else             bcdtmWrite_message(0,0,0,"sd1 is not zero") ;
-    if( sd2 == 0.0 ) bcdtmWrite_message(0,0,0,"sd2 is zero") ;
-    else             bcdtmWrite_message(0,0,0,"sd2 is not zero") ;
-   }
- if( ( sd1 > 0.0 && sd2 < 0.0 ) || ( sd1 < 0.0 && sd2 > 0.0 ))
-   {
-    if     ( sd1 <  0.0 ) ret = -1 ; /* Right of Line */
-    else if( sd1 == 0.0 ) ret =  0 ; /* On Line       */
-    else                  ret =  1 ; /* Left of Line  */
-   }
- return(ret) ;
+ return ret;
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -245,24 +231,15 @@ BENTLEYDTM_Public int bcdtmMath_pointSideOfDtmObject(BC_DTM_OBJ *dtmP,long p1,lo
 +-------------------------------------------------------------------*/
 BENTLEYDTM_Public int bcdtmMath_linePointSideOfDtmObject(BC_DTM_OBJ *dtmP,long p1,long p2,double x3,double y3)
 {
- int    ret ;
- double sd1,sd2,sd3,x1,y1,x2,y2 ;
- DPoint3d *pointP ;
- pointP = pointAddrP(dtmP,p1) ;
- x1 = pointP->x ;
- y1 = pointP->y ;
- pointP = pointAddrP(dtmP,p2) ;
- x2 = pointP->x ;
- y2 = pointP->y ;
- sd1 = ((x1-x3) * (y2-y3)) - ((y1-y3) * (x2-x3)) ;
- sd2 = ((x2-x1) * (y3-y1)) - ((y2-y1) * (x3-x1)) ;
- if( ( sd1 < 0.0 && sd2 >= 0.0 ) || ( sd1 > 0.0 && sd2 <= 0.0) ) return(0) ;
- sd3 = ((x3-x2) * (y1-y2)) - ((y3-y2) * (x1-x2)) ;
- if( ( sd1 < 0.0 && sd3 >= 0.0 ) || ( sd1 > 0.0 && sd3 <= 0.0) ) return(0) ;
- if     ( sd1 <  0.0 ) ret = -1 ; /* Right of Line */
- else if( sd1 == 0.0 ) ret =  0 ; /* On Line       */
- else                  ret =  1 ; /* Left of Line  */
- return(ret) ;
+
+    double a = orient2d(*pointAddrP(dtmP,p1), *pointAddrP(dtmP,p2), DPoint3d::From(x3, y3));
+    int ret;
+    if (a == 0)
+        ret = 0;
+    else
+        ret = a < 0 ? -1 : 1;
+
+    return ret;
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -317,24 +294,7 @@ BENTLEYDTM_Public double bcdtmMath_pointDistance3DDtmObject(BC_DTM_OBJ *dtmP,lon
 +-------------------------------------------------------------------*/
 BENTLEYDTM_Public int bcdtmMath_allPointSideOfDtmObject(BC_DTM_OBJ *dtmP,long p1,long p2,long p3)
 {
- int    ret=0 ;
- double sd1,sd2,sd3,x1,y1,x2,y2,x3,y3 ;
- DPoint3d *pP ;
- pP = pointAddrP(dtmP,p1) ;
- x1  = pP->x ; y1 = pP->y ;
- pP = pointAddrP(dtmP,p2) ;
- x2  = pP->x ; y2 = pP->y ;
- pP = pointAddrP(dtmP,p3) ;
- x3  = pP->x ; y3 = pP->y ;
- sd1 = ((x1-x3) * (y2-y3)) - ((y1-y3) * (x2-x3))  ;
- sd2 = ((x2-x1) * (y3-y1)) - ((y2-y1) * (x3-x1))  ;
- sd3 = ((x3-x2) * (y1-y2)) - ((y3-y2) * (x1-x2))  ;
- if( ( sd1 < 0.0 && sd2 >= 0.0 ) || ( sd1 > 0.0 && sd2 <= 0.0) ) return(0) ;
- if( ( sd1 < 0.0 && sd3 >= 0.0 ) || ( sd1 > 0.0 && sd3 <= 0.0) ) return(0) ;
- if( sd1 <  0.0 ) ret = -1 ; /* Right of Line */
- if( sd1 == 0.0 ) ret =  0 ; /* On Line       */
- if( sd1 >  0.0 ) ret =  1 ; /* Left of Line  */
- return(ret) ;
+    return bcdtmMath_pointSideOfDtmObject(dtmP, p1, p2, p3);
 }
 /*-------------------------------------------------------------------+
 |                                                                    |

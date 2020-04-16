@@ -140,10 +140,7 @@ FaceWithProperties::FaceWithProperties(const FaceWithProperties& face)
     }
 
 FaceWithProperties::~FaceWithProperties()
-    {
-    int i = 0;
-    i = i;
-    }
+    {}
 
 IBcDTMMeshFacePtr FaceWithProperties::GetFace() const
     {

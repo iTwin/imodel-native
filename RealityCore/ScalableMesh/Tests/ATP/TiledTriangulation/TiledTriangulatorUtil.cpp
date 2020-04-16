@@ -321,8 +321,6 @@ void getAllMeshFacesAndComputeBoundingCircles (Bentley::TerrainModel::BcDTMMeshP
 {
 
     const int numFaces = mesh->GetFaceCount();
-    string faceCt = "" + std::to_string(numFaces);
-    faceCt += "";
         VectorFaces.resize(numFaces);
 
         for (int i = 0; i<numFaces; i++)
@@ -422,7 +420,7 @@ bool getLineIntersection(double p0_x, double p0_y, double p1_x, double p1_y,
     return true;
     }
 
-bool isLineIntersectingRange(DPoint3d* linePtsP, DRange2d& range)
+bool isLineIntersectingRange(DPoint3d* linePtsP, const DRange2d& range)
     {
     DRange2d localLineRange;
     getRangeFromPoints((DPoint3dP)&linePtsP[0], 2, localLineRange);

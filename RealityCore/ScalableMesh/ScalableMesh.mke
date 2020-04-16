@@ -31,6 +31,18 @@ STM_EXPORT = 1
 STM_IMPORT = 1
 %endif
 
+#uncomment to enable usage of geom serialization for debugging
+#SCALABLEMESH_DEBUG_USE_GEOM_SERIALIZATION = 1
+%if defined(SCALABLEMESH_DEBUG_USE_GEOM_SERIALIZATION)
+CCompOpts + -DSCALABLEMESH_DEBUG_USE_GEOM_SERIALIZATION
+%endif
+
+#uncomment to use geomlibs for clipping
+#SCALABLEMESH_USE_GEOMLIBS_CLIPPING = 1
+%if defined(SCALABLEMESH_USE_GEOMLIBS_CLIPPING)
+CCompOpts + -DSCALABLEMESH_USE_GEOMLIBS_CLIPPING
+%endif
+
 %include  mdl.mki
 
 #%if !defined(VANCOUVER_BUILD) && !defined(DGNDB06_BUILD)
@@ -58,11 +70,6 @@ dirToSearch=$(BuildContext)VendorAPI/Boost
 NO_DEFAULT_CLANG_WARNINGS = 1
 %endif
 
-%if defined(BUILD_CREATOR) && $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
-#this means we can use CGAL with the modules that were licensed to us
-%include $(BuildContext)SubParts/Files/LicensedComponents.mki
-%endif
-
 %if defined(subAppName)
 DLM_NAME    = $(subAppName)
 CCompPDBName = $(subAppName)
@@ -86,7 +93,7 @@ always:
    ~linkfile "$(BuildContext)VendorAPI/TilePublisher/MeshTile.h=$(tilePublisherDir)MeshTile.h"
 
 
-CCompOpts + -openmp -bigobj -DCGAL_NO_AUTOLINK -DBOOST_ALL_NO_LIB -DBOOST_SYSTEM_NO_DEPRECATED -GR
+CCompOpts + -openmp -bigobj -DBOOST_ALL_NO_LIB -DBOOST_SYSTEM_NO_DEPRECATED -GR
 
 %if !defined(DGNDB06_BUILD)
 CCompOpts + -Zc:twoPhase-
@@ -94,11 +101,6 @@ CCompOpts + -Zc:twoPhase-
 
 #Uncomment this to allow generating design meshes
 #CCompOpts + -DWIP_MESH_IMPORT
-
-#For legal reasons, not compiling these libraries or code depending on them right now.
-%if !defined (3DMesh)
-CCompOpts + -DNO_3D_MESH
-%endif
 
 %if !defined (GarlandFilter)
 CCompOpts + -DNO_GARLAND_FILTER 
@@ -140,7 +142,7 @@ CCompOpts + -wd4018 -wd4309 -wd4305
     cUser + -fdelayed-template-parsing
 
     %if $(BUILD_TOOLSET) == "LINUX_CLANG"
-        cUser + -fopenmp=libomp -w -I/usr/lib/llvm-7/include/openmp
+        cUser + -fopenmp=libomp -w
     %endif
 %endif
 
@@ -204,10 +206,6 @@ CCPchOpts = $(UsePrecompiledHeaderOptions) -DSCALABLE_TERRAIN_MODEL_PRIVATE_SECT
 
 %if defined(DGNDB06_BUILD)
 CCPchOpts + -DDGNDB06_API -DNEED_SAVE_AS_IN_IMPORT_DLL
-%endif
-
-%if !defined (3DMesh)
-CCPchOpts + -DNO_3D_MESH
 %endif
 
 PCHHeaderDepends=$(o)ScalableMeshPCH$(oext)
@@ -663,33 +661,6 @@ $(o)ScalableMeshMeshTypes$(oext) : $(pluginsDir)ScalableMeshMeshTypes.cpp $(PCHH
 
 %endif
 
-%if defined(BUILD_CREATOR)
-
-%if defined (3DMesh)
-delaunayDir=$(stmDir)3dDelaunay/
-
-delaunayIncludes = \
-$(delaunayDir)DTetrahedron3d.h \
-$(delaunayDir)predicates.h \
-$(delaunayDir)ScalableMeshCao.h \
-$(delaunayDir)timer.h \
-$(delaunayDir)TrimHull.h 
-
-$(o)ScalableMeshCao$(oext) : $(delaunayDir)ScalableMeshCao.cpp $(delaunayIncludes) ${MultiCompileDepends}
-
-$(o)TrimHull$(oext) : $(delaunayDir)TrimHull.cpp $(delaunayIncludes) ${MultiCompileDepends}
-
-$(o)MeshData$(oext) : $(delaunayDir)MeshData.cpp $(delaunayIncludes) ${MultiCompileDepends}
-
-$(o)tetgen$(oext) : $(delaunayDir)tetgen/tetgen.cpp $(delaunayDir)tetgen/tetgen.h $(delaunayIncludes) ${MultiCompileDepends}
-
-$(o)tetgenpredicates$(oext) : $(delaunayDir)tetgen/tetgenpredicates.cpp $(delaunayDir)tetgen/tetgen.h $(delaunayIncludes) ${MultiCompileDepends}
-%endif
-
-%endif
-
-
-
 %include MultiCppCompileGo.mki
 
 
@@ -749,10 +720,9 @@ LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)$(BentleyGeomLib) \
     $(ContextSubpartsLibs)DgnPlatform.lib \
     $(ContextSubpartsLibs)CloudDataSource.lib
-
-%if defined(BUILD_CREATOR) && $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
-LINKER_LIBRARIES + \
-    $(ContextSubpartsLibs)CGAL.lib \
+    
+%if defined(SCALABLEMESH_DEBUG_USE_GEOM_SERIALIZATION)
+    LINKER_LIBRARIES + $(ContextSubpartsLibs)BentleyGeomSerialization.lib
 %endif
 
 %if defined(BUILD_CREATOR)
@@ -777,6 +747,16 @@ LINKER_LIBRARIES + \
 LINKER_LIBRARIES + \
     $(ContextSubpartsLibs)DgnView.lib \
     $(ContextSubpartsLibs)RasterCore.lib
+#%if defined (BUILD_USING_VS2013)
+#    $(ContextSubpartsLibs)libboost_system-vc120-mt-1_57$(libext) \
+#    $(ContextSubpartsLibs)libboost_thread-vc120-mt-1_57$(libext) \
+#%elif defined (BUILD_USING_VS2015)
+#    $(ContextSubpartsLibs)libboost_system-vc140-mt-1_57$(libext) \
+#    $(ContextSubpartsLibs)libboost_thread-vc140-mt-1_57$(libext) \
+#%elif defined (BUILD_USING_VS2017)
+#    $(ContextSubpartsLibs)libboost_system-vc140-mt-1_57$(libext) \
+#    $(ContextSubpartsLibs)libboost_thread-vc140-mt-1_57$(libext) \
+#%endif
 %endif
     
 %elif defined(DGNDB06_BUILD)
@@ -790,9 +770,7 @@ LINKER_LIBRARIES + \
 LINKER_LIBRARIES + \
     $(ContextSubpartsStaticLibs)BeLibJpegTurbo.lib \
     $(ContextSubpartsLibs)BeJpeg.lib \
-%if !defined(BUILD_CORE) || defined(BUILD_SINGLE_LIB)
     $(ContextSubpartsLibs)ThreeMxReaderLegacy.lib \
-%endif
 
 %else
 

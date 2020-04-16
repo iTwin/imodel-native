@@ -839,7 +839,7 @@ class PODPointExtractorCreator : public InputExtractorCreatorMixinBase<PODSource
         {
         // NEEDS_WORK_SM : internal classification => classification ?
         if (sourceBase.HasInternalClassification() || isGroundDetection)
-            return new PODPointExtractorWithInternalClassif(dataQueryPtr, sourceBase.GetElementHandle(), isClipped, isGroundDetection, classesToImport, sourceBase.NeedToDetach());
+            return new PODPointExtractorWithInternalClassif(dataQueryPtr, sourceBase.GetElementHandle(), isClipped, isGroundDetection, classesToImport, !sourceBase.NeedToDetach());
 
         return new PODPointExtractor(dataQueryPtr, isClipped);
         }

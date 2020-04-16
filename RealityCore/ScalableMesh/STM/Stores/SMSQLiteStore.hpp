@@ -238,7 +238,7 @@ template <class EXTENT> SMNodeHeaderLocation SMSQLiteStore<EXTENT>::GetNodeHeade
     return SMNodeHeaderLocation::Local;    
     }
 
-template <class EXTENT> bool SMSQLiteStore<EXTENT>::SetProjectFilesPath(BeFileName& projectFilesPath)
+template <class EXTENT> bool SMSQLiteStore<EXTENT>::SetProjectFilesPath(const BeFileName& projectFilesPath)
     {
     return SMSQLiteSisterFile::SetProjectFilesPath(projectFilesPath);
     }    

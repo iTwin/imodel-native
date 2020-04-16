@@ -27,7 +27,7 @@ Config::Config ()
         m_defaultTargetTypeP(0),
         m_defaultSourceGCSP(0),
         m_defaultTargetGCSP(0),
-    m_defaultTargetSMDataP(0),
+        m_defaultTargetSMDataP(0),
         m_extractionConfigP(&DEFAULT_EXTRACTION_CONFIG),
         m_filteringConfigP(&DEFAULT_FILTERING_CONFIG)
     {

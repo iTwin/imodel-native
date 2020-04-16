@@ -396,6 +396,7 @@ StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, in
 
     //green color when no texture is available
     uint32_t green;
+    //uint32_t green = 0x00007700; //I am not sure if we should do this instead of setting individual bytes in regard to endianness
 
     ((uint8_t*)&green)[0] = 0;
     ((uint8_t*)&green)[1] = 0x77;
@@ -479,7 +480,6 @@ StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, in
 #endif
 
     delete[] pixelBufferPRGB;
-    pTextureBitmap = 0;
     return SUCCESS;
     }
 

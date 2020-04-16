@@ -3,6 +3,7 @@
 #  See COPYRIGHT.md in the repository root for full copyright notice.
 #---------------------------------------------------------------------------------------------
 baseDir         = $(_MakeFilePath)
+appName = ScalableMeshATPexe
 
 PolicyFile      = $(SrcRoot)ScalableMesh/mki/AssertScalableMeshPolicy.mki
 SolutionPolicyMki=$(SrcRoot)ScalableMesh/ScalableMesh.mki
@@ -18,7 +19,6 @@ consoleAppUnicode = 1
 #----------------------------------------------------------------------
 #   Build precompiled header
 #----------------------------------------------------------------------
-appName = ScalableMeshATPexe
 o = $(OutputRootDir)Build/ScalableMesh/$(appName)/
 always:
     ~mkdir $(o)

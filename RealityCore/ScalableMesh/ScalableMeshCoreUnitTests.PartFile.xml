@@ -39,7 +39,6 @@
     <ProductDirectory   Name="ECSchemas"  Deliver="true" Path="Dlls"/>
     <ProductDirectory   Name="ECServicesManagedAssemblies"  Deliver="true" Path="Dlls"/>
     <ProductDirectory   Name="BentleyDesktopClientApi_Native"  Deliver="true" Path="Dlls"/>
-    <ProductDirectory   Name="CGALAssemblies" Path="Dlls"/>
     <ProductDirectory   Name="ecobjectsnativeassemblies"                Path="Dlls"                              />
     <ProductDirectory   Name="ecschemas"                                Path="Dlls"                              />
     <ProductDirectory   Name="DGNIndexerECSchemas"                      Path="Dlls"                              />
@@ -105,10 +104,10 @@
     <ProductDirectory   Name="ImagePPAssemblies" Path="Dlls"/>
     <ProductDirectory   Name="TerrainModelNativeAssemblies" Path="Dlls"/>
     <ProductDirectory   Name="PointoolsAssemblies" Path="Dlls"/>
+    <ProductDirectory   Name="FaroLSAssemblies" Path="Dlls/FaroLS"/>
     <ProductDirectory   Name="PointCloudCoreAssemblies" Path="Dlls"/>
     <ProductDirectory   Name="LoggingNativeAssemblies" Path="Dlls"/>
     <ProductDirectory   Name="PCLAssemblies" Path="Dlls"/>
-    <ProductDirectory   Name="CGALAssemblies" Path="Dlls"/>
     <ProductDirectory   Name="PPNativeAssemblies" Path="Dlls" Deliver="true"/>
     <ProductDirectory   Name="ThreeMxAssemblies" Path="Dlls" Deliver="true"/>
     <ProductDirectory   Name="AdobeAssemblies" Deliver="false"/>

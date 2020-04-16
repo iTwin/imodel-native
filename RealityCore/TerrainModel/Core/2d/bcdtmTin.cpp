@@ -13,10 +13,14 @@
 #include <list>
 #include <mutex>
 
-
+#include <bcMem.h>
+#pragma warning( disable : 4701 )  
+#include "predicates.h"
+#pragma warning( default : 4701 )  
 
 
 #include <thread>
+#include "../PublicAPI/dtm2dfns.h"
 
 const int MINIMUM_POINTS_PER_TIN_THREAD = 2000;
 
@@ -1517,65 +1521,13 @@ BENTLEYDTM_Private int bcdtmTin_inCircleTestDtmObject(BC_DTM_OBJ *dtmP,long maxM
 ** and P3. P1 P2 and P3 must be in an anticlockwise direction
 */
 {
- double adx,bdx,cdx,ady,bdy,cdy;
- double bdxcdy,cdxbdy,cdxady,adxcdy,adxbdy,bdxady;
- double det,aval,bval,cval;
- DPoint3d  *p1P,*p2P,*p3P,*p4P ;
-/*
-** Get Point Addresses
-*/
-
- p1P = pointAddrP(dtmP,P1) ;
- p2P = pointAddrP(dtmP,P2) ;
- p4P = pointAddrP(dtmP,P4) ;
-/*
-** Initialise
-*/
- adx = p1P->x - p4P->x ;
- bdx = p2P->x - p4P->x ;
- ady = p1P->y - p4P->y ;
- bdy = p2P->y - p4P->y ;
- adxbdy = adx * bdy;
- bdxady = bdx * ady;
-/*
-** Test For Validity Of Triangle P1P2P4
-*/
- if( adxbdy - bdxady <= 0 ) return(FALSE) ;
-
- p3P = pointAddrP(dtmP,P3) ;
- cdx = p3P->x - p4P->x ;
- cdy = p3P->y - p4P->y ;
-
- cval  = cdx * cdx + cdy * cdy;
-
- bdxcdy = bdx * cdy;
- cdxbdy = cdx * bdy;
- aval   = adx * adx + ady * ady;
-
- cdxady = cdx * ady;
- adxcdy = adx * cdy;
- bval   = bdx * bdx + bdy * bdy;
-
- det = aval * (bdxcdy - cdxbdy) + bval * (cdxady - adxcdy) + cval * (adxbdy - bdxady) ;
-/*
-** RobC - July 2004
-** If the determinat value is less than a certain value
-** use the maxMin test as it it more precision tolerant.
-** Not quite sure what the value should be before switching
-** to the maxMin test
-*/
- if( fabs(det) < 0.001 )   // Possibilty Of Precision Problem So Use MaxMinTest
-   {
-    if( maxMinTest == 1 ) return(bcdtmTin_maxMinTestDtmObject(dtmP,P2,P4,P1,P3));
-    if( maxMinTest == 2 ) return(bcdtmTin_maxMinTestDtmObject(dtmP,P1,P4,P2,P3));
-    if( maxMinTest == 3 ) return(bcdtmTin_maxMinTestDtmObject(dtmP,P1,P4,P2,P3));
-   }
-/*
-** Job Completed
-*/
- if( det > 0.0 ) return(TRUE) ;
- else            return(FALSE) ;
-}
+    DPoint3dCR p1P = *pointAddrP(dtmP,P1) ;
+    DPoint3dCR p2P = *pointAddrP(dtmP,P2) ;
+    DPoint3dCR p3P = *pointAddrP(dtmP,P3) ;
+    DPoint3dCR p4P = *pointAddrP(dtmP,P4) ;
+    double det = incircle(p1P, p2P, p3P, p4P);
+    if( det > 0.0 ) return(TRUE) ;
+    else            return(FALSE) ;}
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -2336,6 +2288,370 @@ BENTLEYDTM_Public int bcdtmTin_getSwapTriangleDtmObject(BC_DTM_OBJ *dtmP,long st
  ret = DTM_ERROR ;
  goto cleanup ;
 }
+
+enum class DoInsertFeatureStatus
+    {
+    None,
+    Inserted,
+    UnknownFailure,
+    LoopDetected
+    };
+
+int DoInsertFeature(BC_DTM_OBJ* dtmP, const long featureNum, const DTMFeatureType dtmFeatureType, BC_DTM_FEATURE*& dtmFeatureP, DPoint3dCP hullPtsP, const long numHullPts, const long drapeOption, const long insertOption,
+                    const long dtmFeatureNum, bool detectLoop, DoInsertFeatureStatus& status)
+    {
+    int ret = DTM_SUCCESS;
+    int dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
+    long startPnt, pnt, internalPoint, nextPnt;
+    long validateResult;
+    long numPriorPts = dtmP->numPoints;
+    long insertError = 0;
+    long firstPnt = dtmP->nullPnt;
+    DPoint3dP drapeVoidPtsP = nullptr;
+    long numDrapeVoidPts = 0;
+    long closeFlag;
+    long* tempOffsetP = nullptr;
+    DTMFeatureType insFeatureType;
+    long flPtr;
+    DTM_FEATURE_LIST* flistP;
+    DTMMemPnt featPtsPI = 0;
+    DPoint3dP featPtsP = nullptr;
+
+    status = DoInsertFeatureStatus::None;
+    if (dbg == 1) bcdtmWrite_message(0, 0, 0, "Inserting Feature %8ld", featureNum);
+    /*
+    **  Validate Polygonal Dtm Features
+    */
+    switch (dtmFeatureType)
+        {
+            case DTMFeatureType::Void:
+            case DTMFeatureType::BreakVoid:
+            case DTMFeatureType::Hole:
+            case DTMFeatureType::Island:
+            case DTMFeatureType::Region:
+
+                if (dbg) bcdtmWrite_message(0, 0, 0, "Validating Feature Point Offsets");
+                if (bcdtmTin_validatePolygonalOffsetFeatureDtmObject(dtmP, dtmFeatureP, &validateResult)) goto errexit2;
+                if (validateResult == FALSE)
+                    {
+                    insertError = 1;
+                    if (dbg)
+                        {
+                        if (dtmFeatureP->numDtmFeaturePts < 3) bcdtmWrite_message(0, 0, 0, "Feature Has Less Than 3 Points");
+                        if (bcdtmMemory_getPointerOffset(dtmP, dtmFeatureP->dtmFeaturePts.offsetPI)[0] != bcdtmMemory_getPointerOffset(dtmP, dtmFeatureP->dtmFeaturePts.offsetPI)[dtmFeatureP->numDtmFeaturePts - 1])bcdtmWrite_message(0, 0, 0, "Feature Does Not Close");
+                        }
+                    }
+                break;
+
+            case DTMFeatureType::DrapeVoid:
+                if (dbg) bcdtmWrite_message(0, 0, 0, "Validating Drape Void");
+                if (bcdtmTin_validateDrapeVoidDtmObject(dtmP, dtmFeatureP, const_cast<DPoint3dP>(hullPtsP), numHullPts, &validateResult, &drapeVoidPtsP, &numDrapeVoidPts)) goto errexit2;
+                if (validateResult == FALSE)
+                    {
+                    insertError = 1;
+                    if (drapeVoidPtsP != NULL) { free(drapeVoidPtsP); drapeVoidPtsP = NULL; }
+                    }
+                break;
+
+            default:
+                break;
+        };
+    /*
+    **  Create Tptr List For Feature
+    */
+    if (!insertError)
+        {
+        /*
+        **     Get Point Offsets
+        */
+        //       offsetP = bcdtmMemory_getPointerOffset(dtmP,dtmFeatureP->dtmFeaturePts.offsetPI);
+        /*
+        **     Insert Group Spots
+        */
+        if (dtmFeatureType == DTMFeatureType::GroupSpots)
+            {
+            if (dbg) bcdtmWrite_message(0, 0, 0, "Inserting Group Spot Feature");
+            /*
+            **        Check Point Offsets
+            */
+            long* offsetP = bcdtmMemory_getPointerOffset(dtmP, dtmFeatureP->dtmFeaturePts.offsetPI);
+            firstPnt = startPnt = offsetP[0];
+            if (dtmFeatureP->numDtmFeaturePts == 1)
+                {
+                nodeAddrP(dtmP, startPnt)->tPtr = dtmP->nullPnt;
+                }
+            else
+                {
+                for (pnt = 1; pnt < dtmFeatureP->numDtmFeaturePts && !insertError; ++pnt)
+                    {
+                    if (dbg)
+                        {
+                        bcdtmWrite_message(0, 0, 0, "startPnt = %8ld ** startPnt->tPtr = %8ld", startPnt, nodeAddrP(dtmP, startPnt)->tPtr);
+                        bcdtmWrite_message(0, 0, 0, "nextPnt  = %8ld ** nextPnt->tPtr  = %8ld", offsetP[pnt], nodeAddrP(dtmP, offsetP[pnt])->tPtr);
+                        }
+                    if (startPnt != offsetP[pnt] && nodeAddrP(dtmP, offsetP[pnt])->tPtr == dtmP->nullPnt)
+                        {
+                        nodeAddrP(dtmP, startPnt)->tPtr = offsetP[pnt];
+                        startPnt = offsetP[pnt];
+                        }
+                    }
+                }
+            }
+        /*
+        **     Insert Drape Voids
+        */
+        else if (dtmFeatureType == DTMFeatureType::DrapeVoid)
+            {
+            internalPoint = 1;
+            if ((insertError = bcdtmInsert_internalStringIntoDtmObject(dtmP, drapeOption, internalPoint, drapeVoidPtsP, numDrapeVoidPts, &firstPnt)) == 1) goto errexit2;
+            if (drapeVoidPtsP != NULL) { free(drapeVoidPtsP); drapeVoidPtsP = NULL; }
+            }
+        /*
+        **     Insert All Other Dtm Feature Types
+        */
+        else
+            {
+            /*
+            **        Write Out Feature Points
+            */
+            numPriorPts = dtmP->numPoints;
+            long* offsetP = bcdtmMemory_getPointerOffset(dtmP, dtmFeatureP->dtmFeaturePts.offsetPI);
+            if (dbg == 2)
+                {
+                for (pnt = 0; pnt < dtmFeatureP->numDtmFeaturePts; ++pnt)
+                    {
+                    startPnt = offsetP[pnt];
+                    bcdtmWrite_message(0, 0, 0, "Segment[%6ld] ** Pnt = %8ld ** %12.4lf %12.4lf", pnt + 1, startPnt, pointAddrP(dtmP, startPnt)->x, pointAddrP(dtmP, startPnt)->y);
+                    }
+                }
+            /*
+            **        Insert Lines Between Feature Points
+            */
+            if (dbg) bcdtmWrite_message(0, 0, 0, "Inserting Feature Lines");
+            firstPnt = dtmP->nullPnt;
+            for (pnt = 0; pnt < dtmFeatureP->numDtmFeaturePts - 1 && !insertError; ++pnt)
+                {
+                startPnt = offsetP[pnt];
+                nextPnt = offsetP[pnt + 1];
+                if (dbg == 1) bcdtmWrite_message(0, 0, 0, "Inserting Segment %6ld of %6ld From Point %8ld To %8ld ** %12.4lf %12.4lf ** %12.4lf %12.4lf", pnt + 1, dtmFeatureP->numDtmFeaturePts - 1, startPnt, nextPnt, pointAddrP(dtmP, startPnt)->x, pointAddrP(dtmP, startPnt)->y, pointAddrP(dtmP, nextPnt)->x, pointAddrP(dtmP, nextPnt)->y);
+                /*
+                **           Insert Feature Line Segment Into Tin
+                */
+                if (startPnt != nextPnt)
+                    {
+                    if (nodeAddrP(dtmP, nextPnt)->tPtr != dtmP->nullPnt && (pnt != (dtmFeatureP->numDtmFeaturePts - 2) || firstPnt != nextPnt))
+                        insertError = 20;
+                    else
+                        if ((insertError = bcdtmInsert_lineBetweenPointsDtmObject(dtmP, startPnt, nextPnt, drapeOption, insertOption)) == 1) goto errexit2;
+                    if ((insertError == 12 || insertError == 10 || insertError == 20)) // Check for polygonized feature.
+                        {
+                        if (dtmFeatureType == DTMFeatureType::Void || dtmFeatureType == DTMFeatureType::BreakVoid || dtmFeatureType == DTMFeatureType::DrapeVoid || dtmFeatureType == DTMFeatureType::Hole || dtmFeatureType == DTMFeatureType::Island)
+                            {
+                            // Can't split polygonal features.
+                            }
+                        else if (firstPnt != dtmP->nullPnt)
+                            {
+                            if (dtmP->extended && dtmP->extended->rollBackInfoP && bcdtmInsert_rollBackDtmFeatureDtmObject(dtmP, dtmFeatureP->dtmFeatureId)) goto errexit2;
+                            // if startOffset = 0 then add this feature to rollback.
+                            // Add the points processed so far to the feature, then create a new feature holder to store the rest in. then come out.
+                            if (insertError == 10)
+                                {
+                                // If this isn't the first point then take the point before as well.
+                                if (pnt != 1)
+                                    {
+                                    // Find Knot Point
+                                    int startPnt = firstPnt;
+                                    int knotPnt = dtmP->nullPnt;
+                                    while (nodeAddrP(dtmP, startPnt)->tPtr != dtmP->nullPnt && nodeAddrP(dtmP, startPnt)->tPtr >= 0)
+                                        {
+                                        knotPnt = startPnt;
+                                        int nextPnt = nodeAddrP(dtmP, startPnt)->tPtr;
+                                        nodeAddrP(dtmP, startPnt)->tPtr = -(nodeAddrP(dtmP, startPnt)->tPtr + 1);
+                                        startPnt = nextPnt;
+                                        }
+                                    if (knotPnt != dtmP->nullPnt)
+                                        nodeAddrP(dtmP, knotPnt)->tPtr = dtmP->nullPnt;
+                                    //  Reset Tptr List
+
+                                    startPnt = firstPnt;
+                                    while (nodeAddrP(dtmP, startPnt)->tPtr != dtmP->nullPnt)
+                                        {
+                                        int nextPnt = -(nodeAddrP(dtmP, startPnt)->tPtr + 1);
+                                        nodeAddrP(dtmP, startPnt)->tPtr = nextPnt;
+                                        startPnt = nextPnt;
+                                        }
+
+                                    --pnt;
+                                    }
+                                }
+                            BC_DTM_FEATURE* dtmFeature2P = NULL;
+                            int dtmFeatureNum2 = 0;
+                            long newDtmFeatureNum2 = 0;
+                            if (dbg) bcdtmWrite_message(0, 0, 0, "Adding Dtm Feature To Feature Table");
+                            if (bcdtmInsert_addToFeatureTableDtmObject(dtmP, dtmFeature2P, dtmFeatureNum2, dtmFeatureP->dtmFeatureType, dtmFeatureP->dtmUserTag, dtmFeatureP->dtmFeatureId, dtmP->nullPnt, &newDtmFeatureNum2)) goto errexit2;
+                            // Reload the feature pointer as this may change.
+                            dtmFeatureP = ftableAddrP(dtmP, dtmFeatureNum);
+                            dtmFeature2P = ftableAddrP(dtmP, newDtmFeatureNum2);
+                            dtmFeature2P->dtmFeatureState = dtmFeatureP->dtmFeatureState;
+                            int newNumPts = dtmFeatureP->numDtmFeaturePts - pnt;
+                            dtmFeature2P->numDtmFeaturePts = newNumPts;
+                            dtmFeatureP->numDtmFeaturePts = pnt + 1;
+                            dtmFeature2P->dtmFeaturePts.offsetPI = bcdtmMemory_allocate(dtmP, sizeof(long) * newNumPts);
+
+                            long* newOffset = (long*) bcdtmMemory_getPointer(dtmP, dtmFeature2P->dtmFeaturePts.offsetPI);
+                            memcpy(newOffset, &offsetP[pnt], sizeof(long) * newNumPts);
+                            insertError = 0;
+                            break;
+                            }
+                        }
+                    if (dbg && insertError) bcdtmWrite_message(0, 0, 0, "Insert Error %2ld Processing Feature %8ld", insertError, featureNum);
+                    if (firstPnt == dtmP->nullPnt) firstPnt = startPnt;
+                    }
+                }
+            if (firstPnt == dtmP->nullPnt) insertError = 1;
+            }
+        }
+    /*
+    **  Check That Single Line Feature Does Not Loop Back On Itself
+    */
+    if (!insertError && dtmFeatureP->numDtmFeaturePts > 1)
+        {
+        if (nodeAddrP(dtmP, nodeAddrP(dtmP, firstPnt)->tPtr)->tPtr == firstPnt)
+            {
+            nodeAddrP(dtmP, nodeAddrP(dtmP, firstPnt)->tPtr)->tPtr = dtmP->nullPnt;
+            }
+        }
+    /*
+    **  Check Connectivity Of Inserted Feature
+    */
+    if (!insertError && dtmFeatureType != DTMFeatureType::GroupSpots)
+        {
+        if (dbg) bcdtmWrite_message(0, 0, 0, "Checking Feature Connectivity");
+        if (bcdtmList_checkConnectivityTptrListDtmObject(dtmP, firstPnt, 0))
+            {
+            insertError = 1;
+            if (detectLoop)
+                status = DoInsertFeatureStatus::LoopDetected;
+            if (dbg) bcdtmWrite_message(0, 0, 0, "Tptr List Connectivity Error ** Feature = %8ld", featureNum);
+            }
+        }
+    /*
+    **  Check Voids And Islands Do Not Intersect Inserted Voids And Islands
+    */
+    if (!insertError && (dtmFeatureType == DTMFeatureType::Void || dtmFeatureType == DTMFeatureType::BreakVoid || dtmFeatureType == DTMFeatureType::DrapeVoid || dtmFeatureType == DTMFeatureType::Hole || dtmFeatureType == DTMFeatureType::Island))
+        {
+        if (dbg) bcdtmWrite_message(0, 0, 0, "Checking For Intersected Voids Or Islands");
+        if (bcdtmTin_checkForIntersectionWithInsertedVoidsAndIslandsDtmObject(dtmP, firstPnt, &closeFlag, &insertError)) goto errexit2;
+        if (dbg && insertError) bcdtmWrite_message(0, 0, 0, "Intersecting Voids Or Islands");
+        if (closeFlag == FALSE) insertError = TRUE;
+        }
+    /*
+    **  Insert Feature Into Tin
+    */
+    if (!insertError)
+        {
+        if (dbg) bcdtmWrite_message(0, 0, 0, "Inserting Feature Into Tin");
+        /*
+        **     Save Point Offsets
+        */
+        long* offsetP = bcdtmMemory_getPointerOffset(dtmP, dtmFeatureP->dtmFeaturePts.offsetPI);
+        tempOffsetP = (long*) malloc(dtmFeatureP->numDtmFeaturePts * sizeof(long));
+        if (tempOffsetP == NULL)
+            {
+            bcdtmWrite_message(0, 0, 0, "Memory Allocation Failure");
+            goto errexit2;
+            }
+        memcpy(tempOffsetP, offsetP, dtmFeatureP->numDtmFeaturePts * sizeof(long));
+        /*
+        **     Add Feature To Tin
+        */
+        if (dtmFeatureType == DTMFeatureType::BreakVoid || dtmFeatureType == DTMFeatureType::DrapeVoid) insFeatureType = DTMFeatureType::Void;
+        else insFeatureType = dtmFeatureType;
+        if (bcdtmInsert_addDtmFeatureToDtmObject(dtmP, dtmFeatureP, dtmFeatureNum, insFeatureType, dtmFeatureP->dtmUserTag, dtmFeatureP->dtmFeatureId, firstPnt, 1)) goto errexit2;
+        if (dbg)
+            {
+            char    dtmFeatureTypeName[100];
+            if (bcdtmData_getDtmFeatureTypeNameFromDtmFeatureType(insFeatureType, dtmFeatureTypeName)) goto errexit2;
+            bcdtmWrite_message(0, 0, 0, "Inserting %s Into Tin Completed", dtmFeatureTypeName);
+            }
+        status = DoInsertFeatureStatus::Inserted;
+        /*
+        **     Scan Feature And Set Point Types
+        */
+        if (dtmFeatureType != DTMFeatureType::DrapeVoid)
+            {
+            /*
+            **     Marked All Points as Inserted.
+            */
+            bcdtmList_setPntTypeForForDtmTinFeatureDtmObject(dtmP, dtmFeatureNum, 2);
+            /*
+            **     Unmarked All Real Points.
+            */
+            for (pnt = 0; pnt < dtmFeatureP->numDtmFeaturePts; ++pnt)
+                {
+                flPtr = nodeAddrP(dtmP, tempOffsetP[pnt])->fPtr;
+                while (flPtr != dtmP->nullPtr)
+                    {
+                    flistP = flistAddrP(dtmP, flPtr);
+                    if (flistP->dtmFeature == dtmFeatureNum)
+                        {
+                        flistP->pntType = 1;
+                        flPtr = dtmP->nullPtr;
+                        }
+                    else flPtr = flistP->nextPtr;
+                    }
+                }
+            }
+        /*
+        **     Free Temporary Offsets Memory
+        */
+        if (tempOffsetP != NULL) { free(tempOffsetP); tempOffsetP = NULL; }
+        }
+    /*
+    **  Set Feature State To Tin Insert Error
+    */
+    else
+        {
+        if (firstPnt != dtmP->nullPnt) bcdtmList_nullTptrListDtmObject(dtmP, firstPnt);
+        if (status == DoInsertFeatureStatus::None)
+            {
+            status = DoInsertFeatureStatus::UnknownFailure;
+            dtmFeatureP->dtmFeatureState = DTMFeatureState::TinError;
+            /*
+            **     Copy Point Offset Array To Point Array
+            */
+            if (dtmFeatureType != DTMFeatureType::DrapeVoid)
+                {
+                if (dbg) bcdtmWrite_message(0, 0, 0, "Feature Insert Error");
+                featPtsPI = bcdtmMemory_allocate(dtmP, dtmFeatureP->numDtmFeaturePts * sizeof(DPoint3d));
+                featPtsP = bcdtmMemory_getPointerP3D(dtmP, featPtsPI);
+                if (featPtsP == NULL)
+                    {
+                    bcdtmWrite_message(1, 0, 0, "Memory Allocation Failure");
+                    goto errexit2;
+                    }
+
+                long* offsetP = bcdtmMemory_getPointerOffset(dtmP, dtmFeatureP->dtmFeaturePts.offsetPI);
+                for (pnt = 0; pnt < dtmFeatureP->numDtmFeaturePts; ++pnt)
+                    {
+                    *(featPtsP + pnt) = *((DPoint3d*) pointAddrP(dtmP, offsetP[pnt]));
+                    }
+                bcdtmMemory_free(dtmP, dtmFeatureP->dtmFeaturePts.offsetPI);
+                dtmFeatureP->dtmFeaturePts.pointsPI = featPtsPI;
+                featPtsP = NULL;
+                }
+            }
+        }
+cleanup:
+    if (featPtsP != NULL) bcdtmMemory_free(dtmP, featPtsPI);
+    if (drapeVoidPtsP != NULL) free(drapeVoidPtsP);
+    if (tempOffsetP != NULL) { free(tempOffsetP); tempOffsetP = NULL; }
+    return ret;
+errexit2:
+    ret = DTM_ERROR;
+    goto cleanup;
+    }
+
 /*-----------------------------------------------------------+
 |                                                            |
 |                                                            |
@@ -2347,15 +2663,17 @@ int bcdtmTin_insertDtmFeatureTypeIntoDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureType d
 */
 {
  int     ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
- long    pnt,closeFlag,firstPnt,startPnt,nextPnt,insertError,dtmFeatureNum,flPtr,numPriorPts;
- long    *tempOffsetP=NULL,drapeOption,insertOption,internalPoint,validateResult ;
- long    numFeatures = 0, numFeaturesError = 0, numFeaturesInserted = 0, numHullPts = 0, numDrapeVoidPts = 0, featureNum = 0;
- DTMFeatureType insFeatureType;
+ //long    pnt,closeFlag,firstPnt,startPnt,nextPnt,insertError,flPtr,numPriorPts;
+ //long    *tempOffsetP=NULL,internalPoint,validateResult ;
+ long    dtmFeatureNum, numFeatures = 0, drapeOption, insertOption, numHullPts = 0, featureNum = 0, numFeaturesError = 0, numFeaturesInserted = 0;
+ //, , ,  numDrapeVoidPts = 0, 
+ //DTMFeatureType insFeatureType;
  char    dtmFeatureTypeName[100] ;
- DPoint3d     *hullPtsP=NULL,*featPtsP=NULL,*drapeVoidPtsP=NULL ;
- DTMMemPnt featPtsPI = 0;
+ DPoint3d* hullPtsP = NULL;
+// , * featPtsP = NULL, * drapeVoidPtsP = NULL;
+ //DTMMemPnt featPtsPI = 0;
  BC_DTM_FEATURE *dtmFeatureP ;
- DTM_FEATURE_LIST *flistP ;
+ //DTM_FEATURE_LIST *flistP ;
 /*
 ** Write Entry Message
 */
@@ -2418,326 +2736,19 @@ int bcdtmTin_insertDtmFeatureTypeIntoDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureType d
  bcdtmTin_getPointerAndOffsetToNextDtmFeatureTypeOccurrenceDtmObject(dtmP,dtmFeatureType,TRUE,&dtmFeatureP,&dtmFeatureNum) ;
  while( dtmFeatureP != NULL )
    {
-    insertError = 0 ;
-    firstPnt = dtmP->nullPnt ;
-    ++featureNum ;
-    numPriorPts = dtmP->numPoints ;
-    if( dbg ==  1 ) bcdtmWrite_message(0,0,0,"Inserting Feature %8ld",featureNum) ;
-/*
-**  Validate Polygonal Dtm Features
-*/
-    switch ( dtmFeatureType )
-      {
-       case DTMFeatureType::Void       :
-       case DTMFeatureType::BreakVoid :
-       case DTMFeatureType::Hole       :
-       case DTMFeatureType::Island     :
-       case DTMFeatureType::Region     :
+     ++featureNum;
+     DoInsertFeatureStatus status;
 
-         if( dbg ) bcdtmWrite_message(0,0,0,"Validating Feature Point Offsets") ;
-         if( bcdtmTin_validatePolygonalOffsetFeatureDtmObject(dtmP,dtmFeatureP,&validateResult)) goto errexit ;
-         if( validateResult == FALSE )
-           {
-            insertError = 1 ;
-            if( dbg )
-              {
-               if( dtmFeatureP->numDtmFeaturePts < 3 ) bcdtmWrite_message(0,0,0,"Feature Has Less Than 3 Points") ;
-               if( bcdtmMemory_getPointerOffset(dtmP,dtmFeatureP->dtmFeaturePts.offsetPI)[0] != bcdtmMemory_getPointerOffset(dtmP,dtmFeatureP->dtmFeaturePts.offsetPI)[dtmFeatureP->numDtmFeaturePts-1] )bcdtmWrite_message(0,0,0,"Feature Does Not Close") ;
-              }
-           }
-       break ;
-
-       case DTMFeatureType::DrapeVoid :
-         if( dbg ) bcdtmWrite_message(0,0,0,"Validating Drape Void") ;
-         if( bcdtmTin_validateDrapeVoidDtmObject(dtmP,dtmFeatureP,hullPtsP,numHullPts,&validateResult,&drapeVoidPtsP,&numDrapeVoidPts)) goto errexit ;
-         if( validateResult == FALSE )
-           {
-            insertError = 1 ;
-            if( drapeVoidPtsP != NULL ) { free(drapeVoidPtsP) ; drapeVoidPtsP = NULL ; }
-           }
-       break   ;
-
-       default :
-       break   ;
-      } ;
-/*
-**  Create Tptr List For Feature
-*/
-    if( ! insertError )
-      {
-/*
-**     Get Point Offsets
-*/
-//       offsetP = bcdtmMemory_getPointerOffset(dtmP,dtmFeatureP->dtmFeaturePts.offsetPI);
-/*
-**     Insert Group Spots
-*/
-       if( dtmFeatureType == DTMFeatureType::GroupSpots )
+     if (DoInsertFeature(dtmP, featureNum, dtmFeatureType, dtmFeatureP, hullPtsP, numHullPts, drapeOption, insertOption, dtmFeatureNum, true, status)) goto errexit;
+     if (status == DoInsertFeatureStatus::LoopDetected) // Try again.
          {
-          if( dbg ) bcdtmWrite_message(0,0,0,"Inserting Group Spot Feature") ;
-/*
-**        Check Point Offsets
-*/
-          long* offsetP = bcdtmMemory_getPointerOffset(dtmP,dtmFeatureP->dtmFeaturePts.offsetPI);
-          firstPnt = startPnt = offsetP[0] ;
-          if( dtmFeatureP->numDtmFeaturePts == 1 )
-            {
-             nodeAddrP(dtmP,startPnt)->tPtr = dtmP->nullPnt ;
-            }
-          else
-            {
-             for( pnt = 1 ; pnt < dtmFeatureP->numDtmFeaturePts && ! insertError ; ++pnt )
-               {
-                if( dbg )
-                  {
-                   bcdtmWrite_message(0,0,0,"startPnt = %8ld ** startPnt->tPtr = %8ld",startPnt,nodeAddrP(dtmP,startPnt)->tPtr) ;
-                   bcdtmWrite_message(0,0,0,"nextPnt  = %8ld ** nextPnt->tPtr  = %8ld",offsetP[pnt],nodeAddrP(dtmP,offsetP[pnt])->tPtr) ;
-                  }
-                if( startPnt != offsetP[pnt] && nodeAddrP(dtmP,offsetP[pnt])->tPtr == dtmP->nullPnt )
-                  {
-                   nodeAddrP(dtmP,startPnt)->tPtr = offsetP[pnt] ;
-                   startPnt = offsetP[pnt] ;
-                  }
-               }
-            }
-        }
-/*
-**     Insert Drape Voids
-*/
-       else if( dtmFeatureType == DTMFeatureType::DrapeVoid )
-         {
-          internalPoint = 1 ;
-          if( ( insertError = bcdtmInsert_internalStringIntoDtmObject(dtmP,drapeOption,internalPoint,drapeVoidPtsP,numDrapeVoidPts,&firstPnt)) == 1 ) goto errexit  ;
-          if( drapeVoidPtsP != NULL ) { free(drapeVoidPtsP) ; drapeVoidPtsP = NULL ; }
+         if (DoInsertFeature(dtmP, featureNum, dtmFeatureType, dtmFeatureP, hullPtsP, numHullPts, drapeOption, 2, dtmFeatureNum, false, status)) goto errexit;
          }
-/*
-**     Insert All Other Dtm Feature Types
-*/
-       else
-         {
-/*
-**        Write Out Feature Points
-*/
-          numPriorPts = dtmP->numPoints ;
-          long* offsetP = bcdtmMemory_getPointerOffset(dtmP,dtmFeatureP->dtmFeaturePts.offsetPI);
-          if( dbg == 2 )
-            {
-             for( pnt = 0 ; pnt < dtmFeatureP->numDtmFeaturePts ; ++pnt )
-               {
-                startPnt = offsetP[pnt] ;
-                bcdtmWrite_message(0,0,0,"Segment[%6ld] ** Pnt = %8ld ** %12.4lf %12.4lf",pnt+1,startPnt,pointAddrP(dtmP,startPnt)->x,pointAddrP(dtmP,startPnt)->y) ;
-               }
-            }
-/*
-**        Insert Lines Between Feature Points
-*/
-          if( dbg ) bcdtmWrite_message(0,0,0,"Inserting Feature Lines") ;
-          firstPnt = dtmP->nullPnt ;
-          for( pnt = 0 ; pnt < dtmFeatureP->numDtmFeaturePts - 1 && ! insertError ; ++pnt )
-            {
-             startPnt = offsetP[pnt] ;
-             nextPnt  = offsetP[pnt+1] ;
-             if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Inserting Segment %6ld of %6ld From Point %8ld To %8ld ** %12.4lf %12.4lf ** %12.4lf %12.4lf",pnt+1,dtmFeatureP->numDtmFeaturePts-1,startPnt,nextPnt,pointAddrP(dtmP,startPnt)->x,pointAddrP(dtmP,startPnt)->y,pointAddrP(dtmP,nextPnt)->x,pointAddrP(dtmP,nextPnt)->y) ;
-/*
-**           Insert Feature Line Segment Into Tin
-*/
-             if( startPnt != nextPnt )
-               {
-                if( ( insertError = bcdtmInsert_lineBetweenPointsDtmObject(dtmP,startPnt,nextPnt,drapeOption,insertOption)) == 1 ) goto errexit ;
-                if ((insertError == 12 || insertError == 10)) // Check for polygonized feature.
-                    {
-                    if ( dtmFeatureType == DTMFeatureType::Void || dtmFeatureType == DTMFeatureType::BreakVoid || dtmFeatureType == DTMFeatureType::DrapeVoid || dtmFeatureType == DTMFeatureType::Hole || dtmFeatureType == DTMFeatureType::Island )
-                        {
-                        // Can't split polygonal features.
-                        }
-                    else if( firstPnt != dtmP->nullPnt )
-                        {
-                        if (dtmP->extended && dtmP->extended->rollBackInfoP && bcdtmInsert_rollBackDtmFeatureDtmObject (dtmP, dtmFeatureP->dtmFeatureId)) goto errexit;
-                        // if startOffset = 0 then add this feature to rollback.
-                        // Add the points processed so far to the feature, then create a new feature holder to store the rest in. then come out.
-                        if (insertError == 10)
-                            {
-                            // If this isn't the first point then take the point before as well.
-                            if (pnt != 1)
-                                {
-                                // Find Knot Point
-                                int startPnt  = firstPnt ;
-                                int knotPnt = dtmP->nullPnt;
-                                while( nodeAddrP(dtmP, startPnt)->tPtr != dtmP->nullPnt  && nodeAddrP(dtmP, startPnt)->tPtr  >= 0 )
-                                    {
-                                    knotPnt = startPnt;
-                                    int nextPnt = nodeAddrP(dtmP, startPnt)->tPtr ;
-                                    nodeAddrP(dtmP, startPnt)->tPtr = -( nodeAddrP(dtmP, startPnt)->tPtr+1) ;
-                                    startPnt = nextPnt;
-                                    }
-                                if (knotPnt != dtmP->nullPnt)
-                                    nodeAddrP(dtmP, knotPnt)->tPtr = dtmP->nullPnt;
-                                //  Reset Tptr List
-
-                                startPnt = firstPnt;
-                                while( nodeAddrP(dtmP, startPnt)->tPtr != dtmP->nullPnt )
-                                    {
-                                    int nextPnt = -(nodeAddrP(dtmP,startPnt)->tPtr + 1 ) ;
-                                    nodeAddrP(dtmP, startPnt)->tPtr = nextPnt ;
-                                    startPnt = nextPnt;
-                                    }
-
-                                --pnt;
-                                }
-                            }
-                        BC_DTM_FEATURE *dtmFeature2P = NULL;
-                        int dtmFeatureNum2 = 0;
-                        long newDtmFeatureNum2 = 0;
-                        if( dbg ) bcdtmWrite_message(0,0,0,"Adding Dtm Feature To Feature Table") ;
-                        if( bcdtmInsert_addToFeatureTableDtmObject (dtmP,dtmFeature2P,dtmFeatureNum2,dtmFeatureP->dtmFeatureType,dtmFeatureP->dtmUserTag,dtmFeatureP->dtmFeatureId,dtmP->nullPnt,&newDtmFeatureNum2)) goto errexit  ;
-                        // Reload the feature pointer as this may change.
-                        dtmFeatureP = ftableAddrP(dtmP, dtmFeatureNum);
-                        dtmFeature2P = ftableAddrP(dtmP, newDtmFeatureNum2) ;
-                        dtmFeature2P->dtmFeatureState = dtmFeatureP->dtmFeatureState;
-                        int newNumPts = dtmFeatureP->numDtmFeaturePts - pnt;
-                        dtmFeature2P->numDtmFeaturePts = newNumPts;
-                        dtmFeatureP->numDtmFeaturePts = pnt + 1;
-                        dtmFeature2P->dtmFeaturePts.offsetPI = bcdtmMemory_allocate (dtmP,sizeof (long) * newNumPts);
-
-                        long* newOffset = (long*)bcdtmMemory_getPointer (dtmP, dtmFeature2P->dtmFeaturePts.offsetPI);
-                        memcpy (newOffset, &offsetP[pnt], sizeof (long) * newNumPts);
-                        insertError = 0;
-                        break;
-                        }
-                    }
-                if( dbg && insertError ) bcdtmWrite_message(0,0,0,"Insert Error %2ld Processing Feature %8ld",insertError,featureNum) ;
-                if( firstPnt == dtmP->nullPnt ) firstPnt = startPnt ;
-               }
-            }
-          if( firstPnt == dtmP->nullPnt ) insertError = 1 ;
-         }
-      }
-/*
-**  Check That Single Line Feature Does Not Loop Back On Itself
-*/
-    if( ! insertError && dtmFeatureP->numDtmFeaturePts > 1 )
-      {
-       if( nodeAddrP(dtmP,nodeAddrP(dtmP,firstPnt)->tPtr)->tPtr == firstPnt )
-         {
-          nodeAddrP(dtmP,nodeAddrP(dtmP,firstPnt)->tPtr)->tPtr = dtmP->nullPnt ;
-         }
-      }
-/*
-**  Check Connectivity Of Inserted Feature
-*/
-    if( ! insertError && dtmFeatureType != DTMFeatureType::GroupSpots )
-      {
-       if( dbg ) bcdtmWrite_message(0,0,0,"Checking Feature Connectivity") ;
-       if( bcdtmList_checkConnectivityTptrListDtmObject(dtmP,firstPnt,0))
-         {
-          insertError = 1 ;
-          if( dbg ) bcdtmWrite_message(0,0,0,"Tptr List Connectivity Error ** Feature = %8ld",featureNum) ;
-         }
-      }
-/*
-**  Check Voids And Islands Do Not Intersect Inserted Voids And Islands
-*/
-    if( ! insertError && ( dtmFeatureType == DTMFeatureType::Void || dtmFeatureType == DTMFeatureType::BreakVoid || dtmFeatureType == DTMFeatureType::DrapeVoid || dtmFeatureType == DTMFeatureType::Hole || dtmFeatureType == DTMFeatureType::Island ) )
-      {
-       if( dbg ) bcdtmWrite_message(0,0,0,"Checking For Intersected Voids Or Islands") ;
-       if( bcdtmTin_checkForIntersectionWithInsertedVoidsAndIslandsDtmObject(dtmP,firstPnt,&closeFlag,&insertError)) goto errexit ;
-       if( dbg && insertError ) bcdtmWrite_message(0,0,0,"Intersecting Voids Or Islands") ;
-       if( closeFlag == FALSE ) insertError = TRUE ;
-      }
-/*
-**  Insert Feature Into Tin
-*/
-    if( ! insertError )
-      {
-       if( dbg ) bcdtmWrite_message(0,0,0,"Inserting Feature Into Tin") ;
-/*
-**     Save Point Offsets
-*/
-       long* offsetP = bcdtmMemory_getPointerOffset(dtmP,dtmFeatureP->dtmFeaturePts.offsetPI);
-       tempOffsetP = ( long *) malloc(dtmFeatureP->numDtmFeaturePts*sizeof(long)) ;
-       if( tempOffsetP == NULL )
-         {
-          bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ;
-          goto errexit ;
-         }
-       memcpy(tempOffsetP,offsetP,dtmFeatureP->numDtmFeaturePts*sizeof(long)) ;
-/*
-**     Add Feature To Tin
-*/
-       if( dtmFeatureType == DTMFeatureType::BreakVoid || dtmFeatureType == DTMFeatureType::DrapeVoid ) insFeatureType = DTMFeatureType::Void ;
-       else insFeatureType = dtmFeatureType ;
-       if( bcdtmInsert_addDtmFeatureToDtmObject(dtmP,dtmFeatureP,dtmFeatureNum,insFeatureType,dtmFeatureP->dtmUserTag,dtmFeatureP->dtmFeatureId,firstPnt,1)) goto errexit ;
-       if( dbg )
-         {
-          if( bcdtmData_getDtmFeatureTypeNameFromDtmFeatureType(insFeatureType,dtmFeatureTypeName) ) goto errexit ;
-          bcdtmWrite_message(0,0,0,"Inserting %s Into Tin Completed",dtmFeatureTypeName) ;
-         }
-       ++numFeaturesInserted ;
-/*
-**     Scan Feature And Set Point Types
-*/
-       if( dtmFeatureType != DTMFeatureType::DrapeVoid )
-         {
-/*
-**     Marked All Points as Inserted.
-*/
-          bcdtmList_setPntTypeForForDtmTinFeatureDtmObject(dtmP,dtmFeatureNum,2) ;
-/*
-**     Unmarked All Real Points.
-*/
-          for( pnt = 0 ; pnt < dtmFeatureP->numDtmFeaturePts ; ++pnt )
-            {
-             flPtr = nodeAddrP(dtmP,tempOffsetP[pnt])->fPtr ;
-             while( flPtr != dtmP->nullPtr )
-               {
-                flistP = flistAddrP(dtmP,flPtr) ;
-                if( flistP->dtmFeature == dtmFeatureNum )
-                  {
-                   flistP->pntType = 1 ;
-                   flPtr = dtmP->nullPtr ;
-                  }
-                else flPtr = flistP->nextPtr ;
-               }
-            }
-         }
-/*
-**     Free Temporary Offsets Memory
-*/
-       if( tempOffsetP != NULL ) { free( tempOffsetP ) ; tempOffsetP = NULL ; }
-      }
-/*
-**  Set Feature State To Tin Insert Error
-*/
-    else
-      {
-       ++numFeaturesError ;
-       dtmFeatureP->dtmFeatureState = DTMFeatureState::TinError ;
-       if( firstPnt != dtmP->nullPnt ) bcdtmList_nullTptrListDtmObject(dtmP,firstPnt) ;
-/*
-**     Copy Point Offset Array To Point Array
-*/
-       if( dtmFeatureType != DTMFeatureType::DrapeVoid )
-         {
-          if( dbg ) bcdtmWrite_message(0,0,0,"Feature Insert Error") ;
-          featPtsPI = bcdtmMemory_allocate(dtmP, dtmFeatureP->numDtmFeaturePts * sizeof(DPoint3d));
-          featPtsP  = bcdtmMemory_getPointerP3D(dtmP, featPtsPI);
-          if( featPtsP == NULL )
-            {
-             bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-             goto errexit ;
-            }
-
-          long* offsetP = bcdtmMemory_getPointerOffset(dtmP,dtmFeatureP->dtmFeaturePts.offsetPI);
-          for( pnt = 0 ; pnt < dtmFeatureP->numDtmFeaturePts ; ++pnt )
-            {
-             *(featPtsP+pnt) = *(( DPoint3d * ) pointAddrP(dtmP,offsetP[pnt])) ;
-            }
-          bcdtmMemory_free(dtmP,dtmFeatureP->dtmFeaturePts.offsetPI) ;
-          dtmFeatureP->dtmFeaturePts.pointsPI = featPtsPI ;
-          featPtsP = NULL ;
-         }
-      }
-/*
+     if (status == DoInsertFeatureStatus::Inserted)
+         numFeaturesInserted++;
+     else
+         numFeaturesError++;
+    /*
 **  Get Next Feature
 */
     bcdtmTin_getPointerAndOffsetToNextDtmFeatureTypeOccurrenceDtmObject(dtmP,dtmFeatureType,FALSE,&dtmFeatureP,&dtmFeatureNum) ;
@@ -2760,9 +2771,7 @@ int bcdtmTin_insertDtmFeatureTypeIntoDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureType d
 */
  cleanup :
  if( hullPtsP      != NULL ) free(hullPtsP) ;
- if( featPtsP      != NULL ) bcdtmMemory_free(dtmP, featPtsPI) ;
- if( drapeVoidPtsP != NULL ) free(drapeVoidPtsP) ;
- if( tempOffsetP   != NULL ) { free( tempOffsetP ) ; tempOffsetP = NULL ; }
+
 /*
 ** Job Completed
 */
@@ -4158,6 +4167,241 @@ BENTLEYDTM_Public int bcdtmTin_removeExternalMaxSideTrianglesDtmObject(BC_DTM_OB
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
 }
+
+static bool CheckIntersect(DEllipse3d& circle, DPoint3dCR sP, DPoint3dCR eP)
+    {
+    double lineParams[3];
+    int num = circle.IntersectXYLineBounded(nullptr, lineParams, nullptr, nullptr, nullptr, sP, eP);
+    if(num == 0)
+        return false;
+    const double tol = 0.00000001;
+    for(int i = 0; i < num; i++)
+        if(fabs(lineParams[i]) > tol && fabs(lineParams[i] - 1) > tol)
+            return true;
+    return false;
+    }
+
+static bool TestDelaunayWithEdge(BC_DTM_OBJ* dtmP, int p1, int p2, int p3, DRange3dCR range)
+    {
+    DPoint3dCR pt1 = *pointAddrP(dtmP, p1);
+    DPoint3dCR pt2 = *pointAddrP(dtmP, p2);
+    DPoint3dCR pt3 = *pointAddrP(dtmP, p3);
+
+    DEllipse3d circle;
+    if(!circle.InitFromPointsOnArc(DPoint3d::From(pt1.x, pt1.y), DPoint3d::From(pt2.x, pt2.y), DPoint3d::From(pt3.x, pt3.y)))
+        return true;
+
+    circle.MakeFullSweep();
+    //circle.SetStartEnd(DPoint3d::From(pt1.x, pt1.y), DPoint3d::From(pt2.x, pt2.y), false);
+    DRange3d triangleRange;
+
+    circle.GetRange(triangleRange);
+    if(!(triangleRange.high.x > range.high.x || triangleRange.high.y > range.high.y ||
+        triangleRange.low.x < range.low.x || triangleRange.low.y < range.low.y))
+        return false;
+    if(CheckIntersect(circle, DPoint3d::From(range.low.x, range.low.y), DPoint3d::From(range.low.x, range.high.y)))
+        return true;
+    if(CheckIntersect(circle, DPoint3d::From(range.low.x, range.high.y), DPoint3d::From(range.high.x, range.high.y)))
+        return true;
+    if(CheckIntersect(circle, DPoint3d::From(range.high.x, range.high.y), DPoint3d::From(range.high.x, range.low.y)))
+        return true;
+    if(CheckIntersect(circle, DPoint3d::From(range.high.x, range.low.y), DPoint3d::From(range.low.x, range.low.y)))
+        return true;
+    return false;
+    }
+
+static DTMStatusInt removeTriangle(BC_DTM_OBJ* dtmP, long p1, long p2, long p3, bvector<DPoint3d>& removedPoints, bvector<removeEdge>& voidTriangles)
+    {
+    if(nodeAddrP(dtmP, p1)->hPtr == p2)
+        {
+        if(nodeAddrP(dtmP, p3)->hPtr == dtmP->nullPnt)
+            {
+            if(bcdtmList_deleteLineDtmObject(dtmP, p1, p2)) goto errexit;
+            nodeAddrP(dtmP, p1)->hPtr = p3;
+            nodeAddrP(dtmP, p3)->hPtr = p2;
+            return DTM_SUCCESS;
+            }
+        else if(nodeAddrP(dtmP, p3)->hPtr == p1)
+            {
+            if(bcdtmList_deleteLineDtmObject(dtmP, p3, p1)) goto errexit;
+            if(bcdtmList_deleteLineDtmObject(dtmP, p1, p2)) goto errexit;
+            if(dtmP->hullPoint == p1)
+                dtmP->hullPoint = p3;
+            removedPoints.push_back(*pointAddrP(dtmP, p1));
+
+            nodeAddrP(dtmP, p3)->hPtr = p2;
+            return DTM_SUCCESS;
+            }
+        else if(nodeAddrP(dtmP, p2)->hPtr == p3)
+            {
+            if(bcdtmList_deleteLineDtmObject(dtmP, p2, p3)) goto errexit;
+            if(bcdtmList_deleteLineDtmObject(dtmP, p1, p2)) goto errexit;
+            if(dtmP->hullPoint == p2)
+                dtmP->hullPoint = p3;
+            removedPoints.push_back(*pointAddrP(dtmP, p2));
+            nodeAddrP(dtmP, p1)->hPtr = p3;
+            return DTM_SUCCESS;
+            }
+        }
+    voidTriangles.push_back(removeEdge(0, p1, p2, p3));
+    return DTM_SUCCESS;
+errexit:
+    return DTM_ERROR;
+    }
+
+BENTLEYDTM_Public int bcdtmTin_removePossiblyNonDelaunayTrianglesOnEdgeDtmObject(BC_DTM_OBJ* dtmP, DRange3dCR range, bvector<DPoint3d>& removedPoints, CurveVectorPtr& boundary)
+/*
+** This Function Removes Edge Triangles Greater Than Maxside
+*/
+    {
+    int    ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE(0), cdbg = DTM_CHECK_VALUE(0);
+    long   p, np, ap, p1 = 0, p2 = 0, p3 = 0,/*process,*/numRemoved = 0;
+    bvector<std::pair<long, long>> hullEdges;
+    bvector<removeEdge> voidTriangles;
+    long startTime;
+    DTMStatusInt status;
+    DPoint3d *verticesP = nullptr;
+    long nPts;
+
+    /*
+    ** Write Entry Message
+    */
+    startTime = bcdtmClock();
+    if(dbg) bcdtmWrite_message(0, 0, 0, "Removing Possible External Non Dealunay Side Triangles");
+    if(dbg) bcdtmWrite_message(0, 0, 0, "minX = %10.4lf minY = %10.4lf", range.low.x, range.low.y);
+    if(dbg) bcdtmWrite_message(0, 0, 0, "maxX = %10.4lf maxY = %10.4lf", range.high.x, range.high.y);
+
+    /*
+    ** Scan Around Edge And Remove Largest Edge
+    */
+    p = dtmP->hullPoint;
+    /*
+    **     Scan Boundary Line to get largest line
+    */
+    do
+        {
+        np = nodeAddrP(dtmP, p)->hPtr;
+        hullEdges.push_back(std::pair <int, int>(p, np));
+        p = np;
+        } while(p != dtmP->hullPoint);
+
+        for(size_t i = 0; i < hullEdges.size(); i++)
+            {
+            auto& edge = hullEdges[i];
+            p = edge.first;
+            if(-1 == p)
+                continue;
+            np = edge.second;
+            if((ap = bcdtmList_nextAntDtmObject(dtmP, p, np)) < 0) goto errexit;
+            if(!bcdtmList_testForDtmFeatureLineDtmObject(dtmP, p, np))
+                {
+                if(TestDelaunayWithEdge(dtmP, p, np, ap, range))
+                    {
+                    // remove or void Triangle.
+                    removeTriangle(dtmP, p, np, ap, removedPoints, voidTriangles);
+
+                    edge.first = -1;
+                    edge.second = -1;
+                    auto edge1 = std::find(hullEdges.begin(), hullEdges.end(), std::pair<long, long>(ap, p));
+                    if(edge1 == hullEdges.end())
+                        hullEdges.push_back(std::pair<long, long>(p, ap));
+                    else
+                        edge1->first = -1;
+                    auto edge2 = std::find(hullEdges.begin(), hullEdges.end(), std::pair<long, long>(np, ap));
+                    if(edge2 == hullEdges.end())
+                        hullEdges.push_back(std::pair<long, long>(ap, np));
+                    else
+                        edge2->first = -1;
+                    }
+                }
+            }
+
+        status = (DTMStatusInt)bcdtmList_extractHullDtmObject(dtmP, &verticesP, &nPts);
+        if(status == DTM_SUCCESS)
+            {
+            boundary = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer);
+            boundary->Add(ICurvePrimitive::CreateLineString(verticesP, nPts));
+            bcMem_free(verticesP);
+            }
+
+        if(!voidTriangles.empty())
+            {
+            auto trisPrimitive = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer);
+            for(auto tri : voidTriangles)
+                {
+                // Check for points which are voided and should be removed
+                if(nodeAddrP(dtmP, tri.p1)->hPtr == tri.p2 && nodeAddrP(dtmP, tri.p2)->hPtr == tri.p3)
+                    {
+                    removedPoints.push_back(*pointAddrP(dtmP, tri.p2));
+                    }
+                if(nodeAddrP(dtmP, tri.p2)->hPtr == tri.p3 && nodeAddrP(dtmP, tri.p3)->hPtr == tri.p1)
+                    {
+                    removedPoints.push_back(*pointAddrP(dtmP, tri.p3));
+                    }
+                if(nodeAddrP(dtmP, tri.p3)->hPtr == tri.p1 && nodeAddrP(dtmP, tri.p1)->hPtr == tri.p2)
+                    {
+                    removedPoints.push_back(*pointAddrP(dtmP, tri.p1));
+                    }
+
+                if(status == DTM_SUCCESS)
+                    {
+                    bvector<DPoint3d> triPoints = { *pointAddrP(dtmP, tri.p1), *pointAddrP(dtmP, tri.p2), *pointAddrP(dtmP, tri.p3), *pointAddrP(dtmP, tri.p1) };
+                    trisPrimitive->Add(ICurvePrimitive::CreateLineString(&triPoints[0], triPoints.size()));
+                    }
+
+                nodeAddrP(dtmP, tri.p1)->tPtr = tri.p2;
+                nodeAddrP(dtmP, tri.p2)->tPtr = tri.p3;
+                nodeAddrP(dtmP, tri.p3)->tPtr = tri.p1;
+                if(bcdtmInsert_addDtmFeatureToDtmObject(dtmP, nullptr, 0, DTMFeatureType::Void, dtmP->nullUserTag, dtmP->nullFeatureId, tri.p1, 1))
+                    goto errexit;
+                }
+            boundary = CurveVector::AreaDifference(*boundary, *trisPrimitive);
+
+            //boundary = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
+            //for(const auto& edges : hullEdges)
+            //    {
+            //    if(edges.first == -1)
+            //        continue;
+            //    boundary->Add(ICurvePrimitive::CreateLine(DSegment3d::From(*pointAddrP(dtmP, edges.first), *pointAddrP(dtmP, edges.second))));
+            //    }
+            //boundary->ConsolidateAdjacentPrimitives(false);
+            }
+        //bcdtmClip_modifyIslandHullsForExternalVoidsDtmObject
+        /*
+        ** Write Stats On Number Removed
+        */
+        if(dbg) bcdtmWrite_message(0, 0, 0, "Number Of Lines Removed = %6ld", numRemoved);
+        /*
+        ** Check Tin
+        */
+        if(cdbg)
+            {
+            if(bcdtmCheck_tinComponentDtmObject(dtmP))
+                {
+                bcdtmWrite_message(0, 0, 0, "Tin Corrupted After Removing Max Side Triangles");
+                goto errexit;
+                }
+            }
+        /*
+        ** Clean Up
+        */
+    cleanup:
+        /*
+        ** Job Completed
+        */
+
+        if(dbg && ret == DTM_SUCCESS) bcdtmWrite_message(0, 0, 0, "Removing Possible External Non Dealunay Side Triangless Completed");
+        if(dbg && ret != DTM_SUCCESS) bcdtmWrite_message(0, 0, 0, "Removing Possible External Non Dealunay Side Triangles Error");
+        return(ret);
+        /*
+        ** Error Exit
+        */
+    errexit:
+        if(ret == DTM_SUCCESS) ret = DTM_ERROR;
+        goto cleanup;
+    }
+
+
 /*-----------------------------------------------------------+
 |                                                            |
 |                                                            |
@@ -6294,7 +6538,7 @@ BENTLEYDTM_Public int bcdtmTin_clipVoidLinesFromDtmFeatureDtmObject(BC_DTM_OBJ *
                 if( bcdtmList_testForVoidLineDtmObject(dtmP,sp,np,voidLine)) goto errexit  ;
                 if( ! voidLine) { sp = np ; np = nodeAddrP(dtmP,sp)->tPtr ; }
                }
-            } while ( np != spnt && np != dtmP->nullPnt &&  voidLine) ;
+            } while ( np != spnt && np != dtmP->nullPnt && !voidLine) ;
           tptr = nodeAddrP(dtmP,sp)->tPtr ;
           nodeAddrP(dtmP,sp)->tPtr = dtmP->nullPnt ;
 /*

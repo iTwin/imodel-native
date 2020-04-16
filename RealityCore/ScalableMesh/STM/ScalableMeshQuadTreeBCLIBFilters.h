@@ -18,8 +18,6 @@
 #include "ScalableMeshRelevanceDistribution.h"
 #include <ScalableMesh/IScalableMeshSourceCreator.h>
 
-extern bool   GET_HIGHEST_RES;
-
 /*----------------------------------------------------------------------+
 | CLASS definitions                                                     |
 +----------------------------------------------------------------------*/
@@ -89,26 +87,6 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeBCLIBMeshFilter1 :
 };
 
   
-template<class POINT, class EXTENT> class ScalableMeshQuadTreeBCLIB_CGALMeshFilter : public ISMMeshIndexFilter<POINT, EXTENT>
-    {
-    public:
-
-        // Primary methods
-        ScalableMeshQuadTreeBCLIB_CGALMeshFilter() {};
-        virtual             ~ScalableMeshQuadTreeBCLIB_CGALMeshFilter() {};
-
-        // IHGFPointFilter implementation
-        virtual bool        Filter(HFCPtr<SMPointIndexNode<POINT, EXTENT> > parentNode,
-                                   std::vector<HFCPtr<SMPointIndexNode<POINT, EXTENT> >>& subNodes,
-                                   size_t numSubNodes) const;       
-        
-        virtual bool        IsProgressiveFilter() const { return false; }       
-        virtual ISMPointIndexFilter<POINT, EXTENT>* Clone() override
-            {
-            return new ScalableMeshQuadTreeBCLIB_CGALMeshFilter();
-            }
-    };
-
 //#ifdef WIP_MESH_IMPORT
 template<class POINT, class EXTENT> class ScalableMeshQuadTreeBCLIB_UserMeshFilter : public ISMMeshIndexFilter<POINT, EXTENT>
     {

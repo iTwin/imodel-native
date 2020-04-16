@@ -37,7 +37,6 @@ using namespace std;
 #include <ScalableTerrainModel/IMrDTMURL.h>
 
 
-//USING_NAMESPACE_BENTLEY_SCALABLEMESH
 USING_NAMESPACE_BENTLEY_MRDTM
 using namespace BENTLEY_NAMESPACE_NAME::DgnPlatform;
 using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
@@ -124,7 +123,7 @@ struct AppRasterCoreLibHost : BENTLEY_NAMESPACE_NAME::DgnPlatform::Raster::Raste
 virtual BENTLEY_NAMESPACE_NAME::DgnPlatform::Raster::RasterCoreAdmin& _SupplyRasterCoreAdmin() override {return *new AppRasterCoreAdmin();}
 }; // RasterCoreLib::Host
 
-void AppHost::Startup (BeFileName& systemDtyPath, BeFileName& customDtyPath)
+void AppHost::Startup (const BeFileName& systemDtyPath, const BeFileName& customDtyPath)
     {           
     m_systemDtyPath = systemDtyPath;
     m_customDtyPath = customDtyPath;

@@ -24,12 +24,12 @@ public:
                                     DataSourceAccountCached         (void);
                                    ~DataSourceAccountCached         (void);
 
-        DataSourceStatus            setCaching                      (DataSourceAccount &cacheAccount, const DataSourceURL &cachingRootPath);
+        DataSourceStatus            setCaching                      (DataSourceAccount &cacheAccount, const DataSourceURL &cachingRootPath) override;
 
-        void                        setCacheAccount                 (DataSourceAccount *account);
-        DataSourceAccount    *      getCacheAccount                 (void);
+        void                        setCacheAccount                 (DataSourceAccount *account) override;
+        DataSourceAccount    *      getCacheAccount                 (void) override;
 
-        DataSourceStatus            getFormattedCacheURL            (const DataSourceURL & sourceURL, DataSourceURL & cacheURL);
+        DataSourceStatus            getFormattedCacheURL            (const DataSourceURL & sourceURL, DataSourceURL & cacheURL) override;
         
-        unsigned int                getDefaultNumTransferTasks      (void);
+        unsigned int                getDefaultNumTransferTasks      (void) override;
 };

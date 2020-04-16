@@ -3553,6 +3553,77 @@ int          n
         }
     }
 
+/* METHOD(Geom,approximateLineThroughPoints,none) */
+/*-----------------------------------------------------------------*//**
+* @description Compute a line segment approximating an array of points, with endpoints selected from the array.
+* @remarks The returned distances are useful for testing if the points are colinear.  A typical followup test
+*       would be to test if maxDist is less than a tolerance and dist01 is larger than (say) 1000 times the tolerance.
+*       This test is implemented by ~mbsiGeom_isUnorderedDPoint3dArrayColinear.
+* @remarks Note that the returned start and end points are selected from the given points; they are not points on
+*       the least squares approximation that might have a smaller maxDist but not pass through any points.
+* @param pPoint0 <= suggested starting point of the line segment.
+* @param pPoint1 <= suggested end point.
+* @param pDist01 <= distance from pPoint0 to pPoint1
+* @param pMaxDist <= largest distance of any point to the (infinite) line
+* @param pPointArray => array of points
+* @param numPoint => number of points
+* @group "DPoint3d Queries"
+* @bsihdr                                       DavidAssaf      12/98
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void        bsiGeom_approximateLineThroughPoints
+
+(
+    DPoint3dP pPoint0,
+    DPoint3dP pPoint1,
+    double      *pDist01,
+    double      *pMaxDist,
+    const   DPoint3d    *pPointArray,
+    int         numPoint
+)
+    {
+    int             i;
+    double          dist, maxDist = 0.0;
+    DPoint3d        proj, p0, p1, direction;
+    double          dist01;
+
+    /* no pts or 1 pt: default to colinear */
+    if(!bsiGeom_findWidelySeparatedPoints
+    (&p0, NULL, &p1, NULL, pPointArray, numPoint))
+        {
+        dist01 = maxDist = 0.0;
+        if(numPoint > 0)
+            p0 = p1 = pPointArray[0];
+        else
+            {
+            p0.Zero();
+            p1 = p0;
+            }
+        }
+    else
+        {
+        double s;
+        direction.DifferenceOf(p1, p0);
+        dist01 = direction.Normalize();
+
+        for(i = 0; i < numPoint; i++)
+            {
+            s = pPointArray[i].DotDifference(p0, *(DVec3d*)&direction);
+            proj = DPoint3d::FromSumOf(p0, direction, s);
+            if((dist = proj.DistanceSquared(pPointArray[i])) > maxDist)
+                maxDist = dist;
+            }
+        }
+
+    if(pMaxDist)
+        *pMaxDist = sqrt(maxDist);
+    if(pDist01)
+        *pDist01 = dist01;
+    if(pPoint0)
+        *pPoint0 = p0;
+    if(pPoint1)
+        *pPoint1 = p1;
+    }
+
 /*-----------------------------------------------------------------*//**
 * @description Test if an array of points is effectively a straight line from the first to the last.
 * @param pOnLine <= true if all points are all within tolerance of the (bounded) line segment from the first point to the last point.
@@ -3641,6 +3712,34 @@ double      tolerance
     {
     bool    onLine;
     return bsiGeom_pointArrayColinearTest (&onLine, pPointArray, numPoint, tolerance);
+    }
+
+/* METHOD(Geom,isUnorderedArrayColinear,none) */
+/*-----------------------------------------------------------------*//**
+* @description Test if the points are colinear.
+* @param pPointArray    => array of points
+* @param numPoint       => number of points
+* @param relativeTol    => fraction of the distance <i>d</i> between extremal points to use as colinearity threshhold
+* @return true if all points are within the distance relativeTol * <i>d</i> of the line through the extremal points.
+* @group "DPoint3d Queries"
+* @bsihdr                                       DavidAssaf      01/2004
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool        bsiGeom_isUnorderedDPoint3dArrayColinear
+
+(
+    DPoint3dCP    pPointArray,
+    int         numPoint,
+    double      relativeTol
+)
+    {
+    double chordalDistance, maxDeviation;
+
+    if(!pPointArray)
+        return false;
+
+    bsiGeom_approximateLineThroughPoints(NULL, NULL, &chordalDistance, &maxDeviation, pPointArray, numPoint);
+
+    return maxDeviation <= chordalDistance * relativeTol;
     }
 
 /*-----------------------------------------------------------------*//**

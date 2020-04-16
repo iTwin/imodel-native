@@ -124,6 +124,82 @@ class ScalableMeshPointNonDestructiveStorageEditor : public ScalableMeshPointSto
         }
     };
 
+/*---------------------------------------------------------------------------------**//**
+* @description
+*
+* @bsiclass                                                  Richard.Bois   01/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename PtType>
+class ScalableMeshBoundaryStorageEditor : public Import::BackInserter
+    {
+
+    friend class                            ScalableMeshStorage<PtType>;
+    protected:
+        Memory::ConstPacketProxy<PtType>      m_pointPacket;
+        Memory::ConstPacketProxy < ISMStore::FeatureHeader >
+            m_headerPacket;
+
+        typedef IDTMFeatureArray<PtType> ArrayType;
+        ArrayType                               m_Features;
+
+        typedef SMMeshIndex<PtType, Extent3dType>
+            MeshIndexType;
+        MeshIndexType&                         m_rIndex;
+
+        size_t m_totalSources;
+        size_t m_totalBytesToImport;
+        size_t m_nSourcesImported;
+
+
+        explicit                                ScalableMeshBoundaryStorageEditor(MeshIndexType&                 pi_rIndex, size_t nSources)
+            : m_rIndex(pi_rIndex), m_totalSources(nSources), m_totalBytesToImport(0), m_nSourcesImported(0) {}
+
+        virtual void                            _Assign(const Memory::PacketGroup&      pi_rSrc) override
+            {
+            m_headerPacket.AssignTo(pi_rSrc[0]);
+            m_pointPacket.AssignTo(pi_rSrc[1]);
+            }
+
+        virtual void                            _NotifyImportProgress(size_t currentlyImportedBytes)
+            {
+            if(m_rIndex.m_progress != nullptr && m_totalBytesToImport > 0 && m_totalSources > 0)
+                m_rIndex.m_progress->Progress() = (float)(m_nSourcesImported + (float)currentlyImportedBytes / m_totalBytesToImport) / m_totalSources;
+            };
+
+        virtual void                            _Write() override
+            {
+            DRange3d boundaryExtent = DRange3d::From(m_pointPacket.Get(), (int)m_pointPacket.GetSize());
+
+            bvector<DPoint3d> boundaryFeature;
+
+            for(int i = 0; i < m_pointPacket.GetSize(); i++)
+                {
+                auto myPoint = m_pointPacket.Get()[i];
+                boundaryFeature.push_back(DPoint3d::From(PointOp<PtType>::GetX(myPoint),
+                                                         PointOp<PtType>::GetY(myPoint),
+                                                         PointOp<PtType>::GetZ(myPoint)));
+                }
+
+            // Append to index
+            m_rIndex.AddFeatureDefinition((ISMStore::FeatureType)DTMFeatureType::Hull, boundaryFeature, boundaryExtent);
+
+            // TDORAY: Throw on failures?
+            }
+
+        virtual bool                           _IsAcceptingData() {
+            return m_rIndex.m_progress == nullptr || !m_rIndex.m_progress->IsCanceled();
+            }
+
+        virtual void                            _NotifyImportSourceStarted(size_t totalBytes)
+            {
+            m_totalBytesToImport = totalBytes;
+            };
+
+        virtual void                            _NotifySourceImported() override
+            {
+            m_nSourcesImported++;
+            }
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @description  
@@ -440,7 +516,9 @@ class ScalableMeshStorage : public IStorage
     typedef typename MeshAsLinearTypeCreatorTrait<DPoint3d>::type
                                             MeshAsLinearTypeFactory;
     typedef typename MeshTypeCreatorTrait<DPoint3d>::type
-        MeshTypeFactory;
+                                            MeshTypeFactory;
+    typedef typename BoundaryTypeCreatorTrait<PtType>::type
+                                            BoundaryTypeFactory;
 
     typedef SMMeshIndex<PtType, Extent3dType>
                                             MeshIndexType;    
@@ -463,7 +541,8 @@ class ScalableMeshStorage : public IStorage
                                 (
                                 PointTypeFactory().Create(), 
                                 LinearTypeFactory().Create(),
-                                MeshTypeFactory().Create()
+                                MeshTypeFactory().Create(),
+                                BoundaryTypeFactory().Create()
                                 ),
                             m_geoCoordSys,
                             0,
@@ -485,6 +564,8 @@ class ScalableMeshStorage : public IStorage
             return (0 != m_pPointIndex) ? new ScalableMeshLinearStorageEditor<PtType>(*m_pPointIndex, GetTotalNumberOfExpectedSources()) : 0;
         if (MeshTypeFactory().Create() == type)
             return (0 != m_pPointIndex) ? new ScalableMeshMeshStorageEditor<PtType>(*m_pPointIndex, GetTotalNumberOfExpectedSources()) : 0;
+        if (BoundaryTypeFactory().Create() == type)
+            return (0 != m_pPointIndex) ? new ScalableMeshBoundaryStorageEditor<PtType>(*m_pPointIndex, GetTotalNumberOfExpectedSources()) : 0;
         return 0;
         }
 

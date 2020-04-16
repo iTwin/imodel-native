@@ -598,7 +598,7 @@ template <typename DataType> class SMStoredMemoryPoolGenericBlobItem : public SM
                 }
             }
 
-        SMStoredMemoryPoolGenericBlobItem(uint64_t nodeId, ISMNodeDataStoreTypePtr<DataType>& store, const DataType* data, uint64_t dataSize, SMStoreDataType dataType, uint64_t smId)
+        SMStoredMemoryPoolGenericBlobItem(uint64_t nodeId, const ISMNodeDataStoreTypePtr<DataType>& store, const DataType* data, uint64_t dataSize, SMStoreDataType dataType, uint64_t smId)
             : SMMemoryPoolGenericBlobItem((DataType*)new Byte[dataSize], dataSize, nodeId, dataType, smId)
             {
             m_dataStore = store;
@@ -655,7 +655,7 @@ template <typename DataType> class SMStoredMemoryPoolBlobItem : public SMMemoryP
                 }           
             }
          
-        SMStoredMemoryPoolBlobItem(uint64_t nodeId, ISMNodeDataStoreTypePtr<DataType>& store, const DataType* data, uint64_t dataSize, SMStoreDataType dataType, uint64_t smId)
+        SMStoredMemoryPoolBlobItem(uint64_t nodeId, const ISMNodeDataStoreTypePtr<DataType>& store, const DataType* data, uint64_t dataSize, SMStoreDataType dataType, uint64_t smId)
             : SMMemoryPoolBlobItem<DataType>(dataSize, nodeId, dataType, smId)
             {                                    
             m_dataStore = store;                        
@@ -1116,10 +1116,6 @@ template <typename DataType> class SMMemoryPoolGenericVectorItem : public SMMemo
             clear();
         else
             {
-            size_t clearedDataSize = 0;
-            for (size_t i = indexToClearFrom; i < this->m_nbItems; ++i)
-                clearedDataSize += GetSizeInMemory((DataType*) this->m_data + i);
-				
 			// No memory size modification
             this->NotifySizeChangePoolItem(0, -1 * ((int64_t)indexToClearFrom - (int64_t)this->m_nbItems));
             this->m_nbItems = indexToClearFrom;

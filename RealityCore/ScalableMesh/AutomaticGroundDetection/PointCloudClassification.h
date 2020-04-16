@@ -65,7 +65,7 @@ class ClassificationChannelHandler :    public IPointCloudChannelQueryHandler,
                                         public PointCloudChannelHandler,
                                         public BENTLEY_NAMESPACE_NAME::RefCountedBase
     {
-    ClassificationChannelHandler (ElementHandleCR eh, IPointCloudChannelPtr channelPtr=NULL);
+    explicit ClassificationChannelHandler (ElementHandleCR eh, IPointCloudChannelPtr channelPtr=NULL);
 
     WString m_filePath;
 

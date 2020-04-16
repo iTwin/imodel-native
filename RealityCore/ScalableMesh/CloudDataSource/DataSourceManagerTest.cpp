@@ -96,7 +96,7 @@ DataSourceStatus DataSourceManagerTest::testBasicWriteRead(DataSource *dataSourc
                 return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
         }
     }
-    catch (DataSourceStatus s)
+    catch (DataSourceStatus& s)
     {
         status = s;
     }
@@ -143,7 +143,7 @@ DataSourceStatus DataSourceManagerTest::testBasicRead(DataSource * dataSource, c
                 return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
         }
     }
-    catch (DataSourceStatus s)
+    catch (DataSourceStatus& s)
     {
         status = s;
     }

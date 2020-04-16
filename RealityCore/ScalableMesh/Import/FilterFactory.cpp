@@ -163,7 +163,7 @@ private:
         }
 
 public:
-    explicit                        CustomFilterSequenceFilter         (Sequence&                       pi_filterSequence,
+    explicit                        CustomFilterSequenceFilter         (const Sequence&                 pi_filterSequence,
                                                                         const PacketGroupSequence*      pi_pPacketGroupSequence)
         :   m_pPacketGroupSequence(pi_pPacketGroupSequence),
             m_filterSequence(pi_filterSequence)

@@ -52,29 +52,6 @@ extern std::map<void*, std::atomic<unsigned int>> s_nodeMap;
 */
 
 
-bool TryReserveNodes(std::map<void*, std::shared_ptr<std::atomic<unsigned int>>>& map, void** reservedNodes, size_t nNodesToReserve, unsigned int id)
-    {
-    bool isReserved = true;
-    for (size_t i = 0; i < nNodesToReserve && isReserved; ++i)
-        {
-        unsigned int val = (unsigned int)-1;
-        if (map.count(reservedNodes[i]) == 0 || !map[reservedNodes[i]]->compare_exchange_weak(val,id)) isReserved = false;
-        }
-    if (!isReserved) 
-        for (size_t i = 0; i < nNodesToReserve; ++i)
-            {
-            unsigned int val = (unsigned int)-1;
-            if(map.count(reservedNodes[i]) == 0)
-            {
-                map[reservedNodes[i]] = std::make_shared<std::atomic<unsigned int>>();
-                *map[reservedNodes[i]] = (unsigned int)-1;
-            }
-            map[reservedNodes[i]]->compare_exchange_strong(id, val);
-            }
-    return isReserved;
-    }
-
-
 void SetThreadAvailableAsync(size_t threadId)
     {
     std::atomic<bool>* areThreadsBusy = LightThreadPool::GetInstance()->m_areThreadsBusy;
@@ -111,7 +88,7 @@ void RunOnNextAvailableThread(std::function<void(size_t threadId)> lambda)
         for (size_t t = 0; t < LightThreadPool::GetInstance()->m_nbThreads; ++t)
             {
             bool expected = false;
-            if (LightThreadPool::GetInstance()->m_areThreadsBusy[t].compare_exchange_weak(expected, true))
+            if (LightThreadPool::GetInstance()->m_areThreadsBusy[t].compare_exchange_strong(expected, true))
                 {
                 if (LightThreadPool::GetInstance()->m_threads[t].joinable()) LightThreadPool::GetInstance()->m_threads[t].join();
                 wait = false;
@@ -154,6 +131,7 @@ void WaitForThreadStop(IScalableMeshProgress* p)
 WorkerThreadPool::WorkerThreadPool(int numWorkingThreads)
     : m_numWorkingThreads(numWorkingThreads)
     {
+    m_activeWait = nullptr;
     m_futures = new std::future<void>[m_numWorkingThreads];
     
     m_currentWorkInd = 0;

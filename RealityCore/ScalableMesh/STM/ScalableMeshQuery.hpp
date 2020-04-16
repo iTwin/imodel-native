@@ -1755,14 +1755,13 @@ template <class POINT> bool ScalableMeshNode<POINT>::ComputeDiffSet(DifferenceSe
         bool diffsetEnabledForSelection = (d.clientID == 0 || (d.clientID < ((uint64_t)-1) && clipsToShow.count(d.clientID) == 0) && d.upToDate);
 
 
-        if (d.toggledForID && ((diffsetEnabledForSelection && !shouldInvertClips) || (shouldInvertClips && !diffsetEnabledForSelection)))
+        if (d.toggledForID && d.clientID != (uint64_t)-1 && ((diffsetEnabledForSelection && !shouldInvertClips) || (shouldInvertClips && !diffsetEnabledForSelection)))
                 {
                 wasApplied = true;
                 //meshPtr->ApplyDifferenceSet(d);
                 diffs.ApplySet(d, 0);
                 //break;
-
-            }
+                }
         }
     return wasApplied;
     }
@@ -2370,7 +2369,7 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::GetOrLoadAllTe
             if (!displayTextureDataPtr.IsValid() || displayTextureDataPtr->GetData()->GetDisplayCacheManager() != displayCacheManagerPtr.get())
                 {
                 auto texPtr = meshNode->GetTexturePtr();
-                if (texPtr.IsValid())
+                if(texPtr.IsValid() && texPtr->GetData() != nullptr)
                     {
                     int width, height;
                     memcpy(&width, texPtr->GetData(), sizeof(int));
@@ -2410,12 +2409,13 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::GetOrLoadAllTe
 
                     TRACEPOINT(EventType::LOAD_TEX_CREATE_0, meshNode->GetBlockID().m_integerID,-1, data->GetTextureID(), -1,-1, displayTextureDataPtr->GetRefCount())
                     }
-                else assert(false);
-
                 }
             if (meshNode->m_SMIndex->IsTextured() != SMTextureType::Streaming && meshNode->GetParentNodePtr() != nullptr) meshNode->GetParentNodePtr()->m_sharedTexLock.unlock();
+            if(!displayTextureDataPtr.IsValid())
+                return false;
             const_cast<SmCachedDisplayTextureData*>(displayTextureDataPtr->GetData())->AddConsumer(meshNode);
             m_cachedDisplayTextureData.push_back(displayTextureDataPtr);
+
 #ifdef WIP_MESH_IMPORT
             }
 #endif
@@ -2507,7 +2507,7 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
                 {
                 meshParts.push_back(0);
                 meshParts.push_back((int)nbFaceIndices);
-                if (meshNode->IsTextured()) textureIDs.push_back(make_bpair(true, meshNode->GetSingleTextureID()));
+                if (texLoaded && meshNode->IsTextured()) textureIDs.push_back(make_bpair(true, meshNode->GetSingleTextureID()));
                 else textureIDs.push_back(make_bpair(false, meshNode->GetSingleTextureID()));
                 }
             size_t sizeToReserve = meshParts.size() / 2;
@@ -2543,14 +2543,6 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
                         nbUvs = uvCoordsPtr->size();
                         uvPtr = &(*uvCoordsPtr)[0];
                         }
-                    }
-
-                auto const& extent = meshNode->GetContentExtent();
-                DPoint3d point = DPoint3d::From(336951.048, 4732062.981, 306.845);
-                if (!ExtentPointOp<Extent3dType, DPoint3d>::IsPointOutterIn3D(extent, point))
-                    {
-                    int i = 0;
-                    i++;
                     }
 
                 DifferenceSet clipDiffSet;
@@ -2708,7 +2700,7 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
                 size_t usedMemInBytes = 0;
                 bool isStoredOnGpu = false;
 
-                if (s_deactivateTexture || !meshNode->IsTextured())
+                if (s_deactivateTexture || !meshNode->IsTextured() || !texLoaded)
                     {
                     BentleyStatus status = displayCacheManagerPtr->_CreateCachedMesh(cachedDisplayMesh,
                                                                                      usedMemInBytes,
@@ -3045,8 +3037,8 @@ template <class POINT> DRange3d ScalableMeshNode<POINT>::_GetContentExtent() con
     {
     LOAD_NODE
 
-    if (this->m_node->m_nodeHeader.m_totalCountDefined && this->m_node->m_nodeHeader.m_totalCount == 0)
-        {
+    if (!this->m_node->m_nodeHeader.m_contentExtentDefined || (this->m_node->m_nodeHeader.m_totalCountDefined && this->m_node->m_nodeHeader.m_totalCount == 0))
+        { 
         return DRange3d::NullRange();
         }
 

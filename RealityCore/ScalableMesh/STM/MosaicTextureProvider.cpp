@@ -69,7 +69,6 @@ StatusInt MosaicTextureProvider::_GetTextureForArea(bvector<uint8_t>& texData, i
 #ifdef VANCOUVER_API
     HFCPtr<HCDCodec>     pCodec(new HCDCodecIdentity());
 #endif
-   // texData.resize(3 * sizeof(int) + width * height * 3);
 
 #ifdef VANCOUVER_API
     pTextureBitmap = new HRABitmap(width,
@@ -89,53 +88,7 @@ StatusInt MosaicTextureProvider::_GetTextureForArea(bvector<uint8_t>& texData, i
                                        8);
 #endif
     m_minExt.ChangeCoordSys(pTextureBitmap->GetCoordSys());
-   /* byte* pixelBufferPRGBA = new byte[width * height * 4];
-    pTextureBitmap->GetPacket()->SetBuffer(pixelBufferPRGBA, width * height * 4);
-    pTextureBitmap->GetPacket()->SetBufferOwnership(false);
 
-    HRAClearOptions clearOptions;
-
-    //green color when no texture is available
-    uint32_t green;
-
-    ((uint8_t*)&green)[0] = 0;
-    ((uint8_t*)&green)[1] = 0x77;
-    ((uint8_t*)&green)[2] = 0;
-
-    clearOptions.SetRawDataValue(&green);
-
-    pTextureBitmap->Clear(clearOptions);
-
-    HRACopyFromOptions copyFromOptions;
-
-    //Rasterlib set this option on the last tile of a row or a column to avoid black lines.     
-    copyFromOptions.SetAlphaBlend(true);
-
-#ifdef VANCOUVER_API
-    copyFromOptions.SetGridShapeMode(true);
-    pTextureBitmap->CopyFrom(m_targetMosaic, copyFromOptions);
-#else
-    pTextureBitmap->CopyFrom(*m_targetMosaic, copyFromOptions);
-#endif
-
-
-    Byte *pPixel = &texData[0] + 3*sizeof(int);
-
-    int nChannels = 3;
-    memcpy(&texData[0], &width, sizeof(int));
-    memcpy(&texData[0]+sizeof(int), &height, sizeof(int));
-    memcpy(&texData[0] + 2*sizeof(int), &nChannels, sizeof(int));
-    
-
-    for (size_t i = 0; i < width*height; ++i)
-        {
-        *pPixel++ = pixelBufferPRGBA[i * 4];
-        *pPixel++ = pixelBufferPRGBA[i * 4 + 1]; 
-        *pPixel++ = pixelBufferPRGBA[i * 4 + 2];
-        }
-    delete[] pixelBufferPRGBA;
-    pTextureBitmap = 0;
-    return SUCCESS;*/   
     pTextureBitmap = 0;
 
     return RasterUtilities::CopyFromArea(texData, width, height, area, nullptr, *m_targetMosaic);

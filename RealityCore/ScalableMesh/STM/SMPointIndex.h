@@ -145,7 +145,7 @@ public:
         {
         public :
 
-            QueriedNode(HFCPtr<SMPointIndexNode<POINT, EXTENT>> indexNode,
+             QueriedNode(HFCPtr<SMPointIndexNode<POINT, EXTENT>> indexNode, 
                         bool                                    isOverview = false)
                 {
                 m_indexNode = indexNode;
@@ -1350,6 +1350,9 @@ public:
     -----------------------------------------------------------------------------*/
     virtual bool        Store();
 
+    BENTLEY_SM_EXPORT void ForgetChanges();
+
+    
     /**----------------------------------------------------------------------------
      Returns the filter used for filtering the points when promoting them to upper levels.
 
@@ -2559,7 +2562,7 @@ private:
 
 public:
 
-    HGFAutoLevelPointIndexQuery(const EXTENT* exent, size_t levelBias = 0)
+    explicit HGFAutoLevelPointIndexQuery(const EXTENT* exent, size_t levelBias = 0)
         : HGFLevelPointIndexQuery<POINT, EXTENT> (extent, 0)
         {
         m_levelBias = levelBias;
@@ -2604,7 +2607,7 @@ public:
         return (!m_levelSet);
         }
 
-    virtual ISMPointIndexQuery<POINT, EXTENT>* Clone()
+    virtual ISMPointIndexQuery<POINT, EXTENT>* Clone() override
     {
         return new HGFAutoLevelPointIndexQuery<POINT, EXTENT>(m_extent, m_levelBias);
     }
@@ -2629,7 +2632,7 @@ private:
     list <HFCPtr<SMPointIndexNode<POINT, EXTENT> > > m_neighborNodes;
 public:
 
-    HGFNeighborNodesPointIndexQuery(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node)
+    explicit HGFNeighborNodesPointIndexQuery(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node)
         {
         m_node = node;
         m_index = NULL;
@@ -2974,7 +2977,7 @@ template<class POINT, class EXTENT> class SMLeafPointIndexQuery : public ISMPoin
     public:
 
 
-        SMLeafPointIndexQuery(const EXTENT extent, /*double meterToNPCMatrix[][4],*/ bool returnAllPtsForLowestLevel = true,
+        explicit SMLeafPointIndexQuery(const EXTENT extent, /*double meterToNPCMatrix[][4],*/ bool returnAllPtsForLowestLevel = true,
                                 size_t maxNumberOfPoints = std::numeric_limits<size_t>::max())
             {
             m_extent = extent;

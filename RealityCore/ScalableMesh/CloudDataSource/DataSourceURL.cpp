@@ -209,7 +209,7 @@ DataSourceStatus DataSourceURL::collapseDirectories(DataSourceURL & result) cons
 bool DataSourceURL::endsWithSeparator()
     {
     bool endsWithSeparator = true;
-    if (length() < m_separator.length()) return !endsWithSeparator;
+    if (length() < m_separator.length()) return false;
     for (auto c1 = rbegin(), c2 = m_separator.rbegin(); c2 != m_separator.rend() && endsWithSeparator; c1++, c2++)
         endsWithSeparator = *c1 == *c2;
     return endsWithSeparator;

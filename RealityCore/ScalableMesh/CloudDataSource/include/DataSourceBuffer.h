@@ -74,8 +74,8 @@ protected:
 public:
 
                                         DataSourceBuffer                    (void);
-                                        DataSourceBuffer                    (BufferSize size, BufferData *extBuffer = nullptr);
-                                        DataSourceBuffer                    (BufferVectorData& extBuffer);
+                               explicit DataSourceBuffer                    (BufferSize size, BufferData *extBuffer = nullptr);
+                               explicit DataSourceBuffer                    (BufferVectorData& extBuffer);
 
                                         ~DataSourceBuffer                   ();
 

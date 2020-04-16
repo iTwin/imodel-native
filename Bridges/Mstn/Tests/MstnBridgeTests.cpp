@@ -1739,7 +1739,7 @@ void MstnBridgeTests::DoDetectDeletionsInEmbeddedFiles(bool simulateOldBridge)
         // In v1, master1 and master2 both embed commonRef
         bvector<WString> args;
         SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, DEFAULT_IMODEL_NAME);
-        
+
         if (simulateOldBridge)
             args.push_back(L"--do-not-track-references-subjects");
             
@@ -1850,7 +1850,7 @@ void MstnBridgeTests::DoDetectDeletionsInEmbeddedFiles(bool simulateOldBridge)
 
         args.push_back(WPrintfString(L"--fwk-all-docs-processed"));
         RunTheBridge(args);
-        
+
         DbFileInfo dbInfo(m_briefcaseName);
         ASSERT_EQ(modelCount - 1, dbInfo.GetPhysicalModelCount()) << "commonRef should have been deleted";
         auto references = dbInfo.GetReferencesSubjects();

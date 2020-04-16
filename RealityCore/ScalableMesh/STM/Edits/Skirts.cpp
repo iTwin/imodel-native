@@ -55,7 +55,7 @@ struct HoleBoundary
 void FindSegmentHoleBoundaries(bvector<HoleBoundary>&            holeBoundaries,
                                bool                              isInHole,
                                TerrainModel::DTMDrapedLinePtr& drapedLinePtr,
-                               bvector<DPoint3d>&                skirtEndConditionSegments,
+                               const bvector<DPoint3d>&                skirtEndConditionSegments,
                                size_t                            drapedSegmentInd)
     {
     for (size_t sampleInd = 0; sampleInd < drapedLinePtr->GetPointCount(); sampleInd++)
@@ -237,7 +237,7 @@ void BuildSkirt(PolyfaceHeaderPtr& skirt, bvector<DPoint3d> polylineToSkirt, Ter
         }
     }
 
-SkirtBuilder::SkirtBuilder(DTMPtr& dtmP)
+SkirtBuilder::SkirtBuilder(const DTMPtr& dtmP)
     {
     m_dtm = dtmP;
     m_useTargetTerrain = false;
@@ -259,7 +259,7 @@ void SkirtBuilder::BuildSkirtMesh(bvector<PolyfaceHeaderPtr>& meshParts, bvector
         }
     }
 
-SkirtBuilder::SkirtBuilder(DTMPtr& dtmP, bvector<IScalableMeshNodePtr>& smTerrainNodes)
+SkirtBuilder::SkirtBuilder(const DTMPtr& dtmP, const bvector<IScalableMeshNodePtr>& smTerrainNodes)
     {
     m_dtm = dtmP;
     m_smTerrainNodes = smTerrainNodes;

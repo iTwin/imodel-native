@@ -271,11 +271,7 @@ void PerformExportToUnityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                         facesUV[i + 2] = polyface->GetParamIndexCP()[i + 2] - 1;
                         }
                     fwrite(facesUV, sizeof(int32_t), pointIndexCount, outBin);
-                    }
 
-                //write texture
-                if (isTextured)
-                    {
                     int32_t x = texture->GetDimension().x;
                     int32_t y = texture->GetDimension().y;
                     fwrite(&x, sizeof(int32_t), 1, outBin);
@@ -1013,7 +1009,7 @@ void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
     WString stmFileName;
     ScalableMeshMesherType mesherType = SCM_MESHER_2D_DELAUNAY;
-    ScalableMeshFilterType filterType = SCM_FILTER_CGAL_SIMPLIFIER;
+    ScalableMeshFilterType filterType = SCM_FILTER_DUMB_MESH;
     vector<UpToDateState> sourcesPartialUpdate;
     vector<WString> sourceToAdd;
 
@@ -1189,7 +1185,7 @@ void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
             IDTMSourceCollection sourceCollec = creatorGeneratePtr->GetSources();
             IDTMSourceCollection::iterator srcIt = sourceCollec.BeginEdit();
-            for (IDTMSourceCollection::iterator srcIt = sourceCollec.BeginEdit(); srcIt != sourceCollec.EndEdit(); srcIt++)
+            for (IDTMSourceCollection::iterator srcIt = sourceCollec.BeginEdit(); srcIt != sourceCollec.EndEdit(); ++srcIt)
                 {
                 IDTMSource& source = *srcIt;
                 SourceImportConfig& conf = source.EditConfig();
@@ -1223,7 +1219,7 @@ void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                     ScalableMeshData data = conf.GetReplacementSMData();
                     data.SetUpToDateState(sourcesPartialUpdate[i]);
                     conf.SetReplacementSMData(data);
-                    sourceIt++;
+                    ++sourceIt;
                     }
                 }
 
@@ -1284,7 +1280,7 @@ void PerformMeshQualityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     assert(false && "not implemented");
     /*    WString stmFileName;
         ScalableMeshMesherType mesherType = SCM_MESHER_3D_DELAUNAY;
-        ScalableMeshFilterType filterType = SCM_FILTER_CGAL_SIMPLIFIER;
+        ScalableMeshFilterType filterType = SCM_FILTER_DUMB_MESH;
         int blossomMatching = 0;
         int indexMethod = 3;
         int trimmingMethod = 5;
@@ -1521,7 +1517,7 @@ void Perform2DStitchQualityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     assert(false && "not implemented");
     /*    WString stmFileName;
         ScalableMeshMesherType mesherType = SCM_MESHER_2D_DELAUNAY;
-        ScalableMeshFilterType filterType = SCM_FILTER_CGAL_SIMPLIFIER;
+        ScalableMeshFilterType filterType = SCM_FILTER_DUMB_MESH;
 
         // Parses the test(s) definition:
         if (pTestNode->GetAttributeStringValue(stmFileName, "stmFileName") != BEXML_Success)
@@ -1732,19 +1728,19 @@ struct DPoint3dComparer
         DPoint3dComparer()
             {
             }
-        DPoint3dComparer(DPoint3d& start, DPoint3d& end)
+        DPoint3dComparer(const DPoint3d& start, const DPoint3d& end)
             {
             SetStart(start); SetEnd(end);
             }
-        void SetStart(DPoint3d& start)
+        void SetStart(const DPoint3d& start)
             {
             m_start = start;
             }
-        void SetEnd(DPoint3d& end)
+        void SetEnd(const DPoint3d& end)
             {
             m_end = end;
             }
-        bool operator() (DPoint3d& X1, DPoint3d& X2)
+        bool operator() (const DPoint3d& X1, const DPoint3d& X2)
             {
             DPoint3d direction;
             direction.x = m_end.x - m_start.x;
@@ -4264,7 +4260,7 @@ void PerformLoadingTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
     t = clock() - t;
 
-    fwprintf(pResultFile, L"%s,%.5f,%d,%I64d\n",
+    fwprintf(pResultFile, L"%s,%.5f,%d,%zu\n",
              stmFileName.c_str(),
              (double)t / CLOCKS_PER_SEC,
              level,
@@ -4811,7 +4807,7 @@ void PerformConstraintTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                         }
                     featureFile.close();
                     //L"Test Case,  Pass/Fail, Nb of constraints, Nb of constraint points, Nb of valid constraints, Constraint error rate(%%), Nb of triangles violating constraints\n";
-                    fwprintf(pResultFile, L"%s,%s, %I64d, %I64d, %I64d, %.5f, %I64d\n",
+                    fwprintf(pResultFile, L"%s,%s, %zu, %zu, %zu, %.5f, %zu\n",
                              stmFileName.c_str(),
                              validDefs == featureDefs.size() ? L"PASS" : L"FAIL",
                              featureDefs.size(),
@@ -5099,7 +5095,7 @@ void PerformSMSaveAs(BeXmlNodeP pTestNode, FILE* pResultFile)
     if (isClipped)
         {
         // Create clip based on mesh extent
-        if (allTestPass = DTM_SUCCESS == myScalableMesh->GetRange(range))
+        if (allTestPass = (DTM_SUCCESS == myScalableMesh->GetRange(range)))
             {
             range.ScaleAboutCenter(range, 0.75);
 
@@ -5117,7 +5113,7 @@ void PerformSMSaveAs(BeXmlNodeP pTestNode, FILE* pResultFile)
                 }
             }
         }
-    uint64_t nOfTriangles3SM = 0, nOfTrianglesResult = -1;
+    size_t nOfTriangles3SM = 0, nOfTrianglesResult = -1;
 
     if (allTestPass)
         {
@@ -5198,7 +5194,7 @@ void PerformSMSaveAs(BeXmlNodeP pTestNode, FILE* pResultFile)
         }
 
 
-    fwprintf(pResultFile, L"%s,%s,%I64d,%I64d,%s,%0.5f,%0.5f\n",
+    fwprintf(pResultFile, L"%s,%s,%zu,%zu,%s,%0.5f,%0.5f\n",
         smFileName.c_str(),
         outputDirectory.c_str(),
         nOfTriangles3SM,
@@ -5825,7 +5821,7 @@ void PerformTestDrapeRandomLines(BeXmlNodeP pTestNode, FILE* pResultFile)
                 }
 
             // L"Test Case, Line Number, N Of Points Draped (SM), N Of Points Draped (Civil), Length (SM), Length (Civil), N Of Points Difference (%%), Length Difference (%%), NDifferentLines Total, Time total(SM) (s), Time total(Civil) (s)\n";
-            fwprintf(pResultFile, L"%s,%I64d,%I64d,%I64d,%0.5f,%0.5f,%0.5f, %0.5f\n",
+            fwprintf(pResultFile, L"%s,%zu,%zu,%zu,%0.5f,%0.5f,%0.5f, %0.5f\n",
                      stmFileName.c_str(),
                      lineN,
                      nPtsDraped,
@@ -5837,7 +5833,7 @@ void PerformTestDrapeRandomLines(BeXmlNodeP pTestNode, FILE* pResultFile)
             ++lineN;
             if (fabs(lengthDTM - length) > 1e-3 || nPtsDraped != nPtsDrapedDTM) ++nDiffLines;
             }
-        fwprintf(pResultFile, L"%s,,,,,,,,%I64d,%0.5f,%0.5f,%0.5f\n",
+        fwprintf(pResultFile, L"%s,,,,,,,,%zu,%0.5f,%0.5f,%0.5f\n",
                  stmFileName.c_str(),
                  nDiffLines,
                  timeToDrapeSM,
@@ -5861,7 +5857,7 @@ void PerformTestDrapeRandomLines(BeXmlNodeP pTestNode, FILE* pResultFile)
             DrapeLinesOnScalableMesh(lines2, drapedLines2, d);
             }
         double timeToDrapeSM210 = (double)(clock() - start) / CLOCKS_PER_SEC;
-        fwprintf(pResultFile, L"%s,,,,,,,,%I64d,%0.5f,%0.5f,%0.5f,%0.5f,%0.5f,%0.5f\n",
+        fwprintf(pResultFile, L"%s,,,,,,,,%zu,%0.5f,%0.5f,%0.5f,%0.5f,%0.5f,%0.5f\n",
                  stmFileName.c_str(),
                  nDiffLines,
                  timeToDrapeSM10,
@@ -5887,7 +5883,7 @@ void PerformTestDrapeRandomLines(BeXmlNodeP pTestNode, FILE* pResultFile)
             DrapeLinesOnScalableMesh(lines2, drapedLines2, d);
             }
         double timeToDrapeSM2100 = (double)(clock() - start) / CLOCKS_PER_SEC;
-        fwprintf(pResultFile, L"%s,,,,,,,,%I64d,%0.5f,%0.5f,%0.5f,%0.5f,%0.5f,%0.5f\n",
+        fwprintf(pResultFile, L"%s,,,,,,,,%zu,%0.5f,%0.5f,%0.5f,%0.5f,%0.5f,%0.5f\n",
                  stmFileName.c_str(),
                  nDiffLines,
                  timeToDrapeSM100,

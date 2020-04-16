@@ -46,21 +46,22 @@ std::map<EventType, bool> __TRACEPOINT__typeToFilter = {
     {EventType::START_NEWQUERY_COLLECT,         false},
     {EventType::START_NEWQUERY_FINDLOADED,      false},
     {EventType::START_NEWQUERY_COLLECTCLIPS,    false},
-    {EventType::START_NEWQUERY_CHECKCLIPS,      false}
+    {EventType::START_NEWQUERY_CHECKCLIPS,      false},
+    {EventType::CUSTOM_STRING,                  true}
 };
 
 std::map<EventType, std::string> __TRACEPOINT__typeDesc = {
-    {EventType::LOAD_MESH_CREATE_0,             std::string("LOAD (CREATE) MESH")         },
-    {EventType::CACHED_MESH_ACQUIRE,            std::string(" ACQUIRE CACHED MESH ")      },
-    {EventType::LOAD_TEX_CREATE_0,              std::string(" LOAD (CREATE) TEX ")        },
-    {EventType::CACHED_TEX_ACQUIRE,             std::string(" ACQUIRE CACHED TEX ")       },
-    {EventType::CACHED_MESH_RELEASE,            std::string("RELEASE CACHED MESH")        },
-    {EventType::CACHED_TEX_RELEASE,             std::string("RELEASE CACHED TEX")         },
-    {EventType::SWITCH_VIDEO_MESH,              std::string("SWITCH TO VRAM(MESH)")       },
-    {EventType::SWITCH_VIDEO_TEX,               std::string(" SWITCH TO VRAM(TEX)")       },
-    {EventType::EVT_LOAD_NODE,                  std::string("LOAD NODE")                  },
-    {EventType::UNLOAD_NODE,                    std::string("UNLOAD NODE")                },
-    {EventType::EVT_CREATE_DISPLAY_OVR_1,       std::string("OVERVIEW 1")                 },
+    {EventType::LOAD_MESH_CREATE_0,             std::string("LOAD_(CREATE)_MESH")         },
+    {EventType::CACHED_MESH_ACQUIRE,            std::string("ACQUIRE_CACHED_MESH ")      },
+    {EventType::LOAD_TEX_CREATE_0,              std::string("LOAD_(CREATE)_TEX ")        },
+    {EventType::CACHED_TEX_ACQUIRE,             std::string("ACQUIRE_CACHED_TEX ")       },
+    {EventType::CACHED_MESH_RELEASE,            std::string("RELEASE_CACHED_MESH")        },
+    {EventType::CACHED_TEX_RELEASE,             std::string("RELEASE_CACHED_TEX")         },
+    {EventType::SWITCH_VIDEO_MESH,              std::string("SWITCH_TO_VRAM(MESH)")       },
+    {EventType::SWITCH_VIDEO_TEX,               std::string("SWITCH_TO_VRAM(TEX)")       },
+    {EventType::EVT_LOAD_NODE,                  std::string("LOAD_NODE")                  },
+    {EventType::UNLOAD_NODE,                    std::string("UNLOAD_NODE")                },
+    {EventType::EVT_CREATE_DISPLAY_OVR_1,       std::string("OVERVIEW_1")                 },
     {EventType::EVT_CREATE_DISPLAY_LOAD,        std::string("LOADNODEDISPLAYDATA")        },
     {EventType::EVT_CREATE_DISPLAY_OVR_PRELOAD, std::string("PRELOADOVERVIEW")            },
     {EventType::POOL_ADDITEM,                   std::string("ADDITEM")                    },
@@ -87,8 +88,9 @@ std::map<EventType, std::string> __TRACEPOINT__typeDesc = {
     {EventType::START_NEWQUERY_COLLECT,         std::string("START_NEWQUERY_COLLECT")     },
     {EventType::START_NEWQUERY_FINDLOADED,      std::string("START_NEWQUERY_FINDLOADED")  },
     {EventType::START_NEWQUERY_COLLECTCLIPS,    std::string("START_NEWQUERY_COLLECTCLIPS")},
-    {EventType::START_NEWQUERY_CHECKCLIPS,      std::string("START_NEWQUERY_CHECKCLIPS")  }
-};
+    {EventType::START_NEWQUERY_CHECKCLIPS,      std::string("START_NEWQUERY_CHECKCLIPS")  },
+    {EventType::CUSTOM_STRING,                  std::string("CUSTOM_STRING")  }
+    };
 
 CachedDataEventTracer* CachedDataEventTracer::s_instance;
 
@@ -125,7 +127,7 @@ void CachedDataEventTracer::start()
     started = true;
     }
 
-void CachedDataEventTracer::logEvent(TraceEvent e)
+void CachedDataEventTracer::logEvent(const TraceEvent& e)
     {
     if (!started) return;
     TraceEvent* val = end;
@@ -156,20 +158,30 @@ void CachedDataEventTracer::analyze(int processId)
     fileNameObjStr << ".log";
 
     std::ofstream traceFile;
-    traceFile.open(fileNameStr.str(), std::ios_base::app);
+    traceFile.open(fileNameStr.str(), std::ios_base::trunc);
     bmap<uint64_t, bvector<std::string>> eventsByVal;
     for (TraceEvent* init = ring.data(); init != current; ++init)
         {
         std::ostringstream str;
-        str << std::to_string((unsigned long long) init->timestamp)
-            << "[" << init->threadId << "] >> "
-            << __TRACEPOINT__typeDesc[init->typeOfEvent] << " : " << std::to_string(init->nodeId)
-            << " INSTANCE " << std::to_string(init->objVal) << " POOL ID " << std::to_string(init->poolId)
-            << " MESH " << std::to_string(init->meshId) << " TEX " << std::to_string(init->texId)
-            << " CT " << std::to_string(init->refCount);
-        if (init->typeOfEvent == EventType::POOL_CHANGESIZEITEM)
+        if(init->typeOfEvent == EventType::CUSTOM_STRING)
             {
-            str << " ITEM SIZE " << std::to_string(init->objectSize);
+            str << "[] >> " << __TRACEPOINT__typeDesc[init->typeOfEvent] << " : "
+                << init->custom_string.c_str() 
+                << " INSTANCE " << std::to_string(init->objVal) << std::endl;
+            }
+        else
+            {
+            str << std::to_string((unsigned long long) init->timestamp)
+                << "[" << init->threadId << "] >> "
+                << __TRACEPOINT__typeDesc[init->typeOfEvent] << " : " << std::to_string(init->nodeId)
+                << " INSTANCE " << std::to_string(init->objVal) << " POOL ID " << std::to_string(init->poolId)
+                << " MESH " << std::to_string(init->meshId) << " TEX " << std::to_string(init->texId)
+                << " CT " << std::to_string(init->refCount)
+                << std::endl;
+            if(init->typeOfEvent == EventType::POOL_CHANGESIZEITEM)
+                {
+                str << " ITEM SIZE " << std::to_string(init->objectSize);
+                }
             }
         traceFile << str.str();
         eventsByVal[init->objVal].push_back(str.str());
@@ -190,5 +202,86 @@ void CachedDataEventTracer::analyze(int processId)
         }
     }
 
+#if defined(_WIN32) && TRACE_ON
+/*
+How to use:
+            DisplayStack("AddRef", m_nodeId, m_poolItemId, GetRefCount());
+            All the parameters are only informative, see the end of the function.
+
+            You need to add     DbgHelp.lib in ScalableMesh.mke around Urlmon.lib and Version.lib
+*/
+
+
+#include <DbgHelp.h>
+void DisplayStack(char* text, uint64_t nodeID, uint64_t poolID, uint64_t refCount)
+{
+    DWORD  error;
+    HANDLE hProcess;
+
+    SymSetOptions(SYMOPT_UNDNAME | SYMOPT_DEFERRED_LOADS | SYMOPT_LOAD_LINES);
+    hProcess = GetCurrentProcess();
+
+    if (!SymInitialize(hProcess, NULL, TRUE))
+    {
+        // SymInitialize failed
+        error = GetLastError();
+        printf("SymInitialize returned error : %d\n", error);
+        return;
+    }
+
+    std::string outWalk;
+
+    // Capture up to 25 stack frames from the current call stack.  We're going to
+    // skip the first stack frame returned because that's the GetStackWalk function
+    // itself, which we don't care about.
+    PVOID addrs[25] = { 0 };
+    USHORT frames = CaptureStackBackTrace(1, 25, addrs, NULL);
+
+    for (USHORT i = 0; i < frames; i++)
+    {
+        // Allocate a buffer large enough to hold the symbol information on the stack and get 
+        // a pointer to the buffer.  We also have to set the size of the symbol structure itself
+        // and the number of bytes reserved for the name.
+        ULONG64 buffer[(sizeof(SYMBOL_INFO) + 1024 + sizeof(ULONG64) - 1) / sizeof(ULONG64)] = { 0 };
+        SYMBOL_INFO* info = (SYMBOL_INFO*)buffer;
+        info->SizeOfStruct = sizeof(SYMBOL_INFO);
+        info->MaxNameLen = 1024;
+
+        // Attempt to get information about the symbol and add it to our output parameter.
+        DWORD64 displacement = 0;
+        if (::SymFromAddr(hProcess, (DWORD64)addrs[i], &displacement, info))
+        {
+            DWORD displacement2 = 0;
+            IMAGEHLP_LINE64 line = { 0 };
+            line.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
+            SymGetLineFromAddr(hProcess, (DWORD64)(addrs[i]), &displacement2, &line);
+
+            outWalk.append(info->Name, info->NameLen);
+            if (line.FileName != 0)
+            {
+                outWalk.append(" - ");
+                outWalk.append(line.FileName);
+                outWalk.append(" - ");
+                char lineText[2014];
+                sprintf(lineText, "%d", line.LineNumber);
+                outWalk.append(lineText);
+            }
+            outWalk.append(" + ");
+            //            outWalk.append("\n");
+        }
+    }
+    outWalk.append("\n");
+    ::SymCleanup(hProcess);
+
+    std::ostringstream fileNameStr;
+    fileNameStr << "C:\\traceLogs\\tracestack.log";
+    std::ofstream traceFile;
+    traceFile.open(fileNameStr.str(), std::ios_base::app);
+
+    traceFile << clock() << "#" << text << "#" << nodeID << "#" << poolID << "#" << refCount << "#" << outWalk.c_str();
+
+    traceFile.close();
+}
+#endif
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

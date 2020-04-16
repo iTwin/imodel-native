@@ -20,9 +20,6 @@
 #include <ScalableMesh/IScalableMeshQuery.h>
 #include <ScalableMesh/IScalableMeshClipContainer.h>
 
-
-USING_NAMESPACE_BENTLEY_SCALABLEMESH
-
 BENTLEY_SM_EXPORT int GetShapeInFrontOfProjectivePlane(std::vector<DPoint3d>&       shapeInFrontOfProjectivePlane, 
                                                  double&                 ratioShapeInFrontToTile,
                                                  const std::vector<DPoint3d>& tileborderPoints,
@@ -31,7 +28,7 @@ BENTLEY_SM_EXPORT int GetShapeInFrontOfProjectivePlane(std::vector<DPoint3d>&   
 BENTLEY_SM_EXPORT bool GetVisibleAreaForView(DPoint3d**   fencePt, 
                                             int&           nbPts, 
                                             const DPoint3d viewBox[],                                         
-                                            DRange3d&      dtmRange, 
+                                            const DRange3d&      dtmRange, 
                                             DRange3d&      dtmIntersectionRange);
 /*
 static HFCPtr<HVE2DPolygonOfSegments> ComputeConvexHull    (const DPoint3d*      inputPts,

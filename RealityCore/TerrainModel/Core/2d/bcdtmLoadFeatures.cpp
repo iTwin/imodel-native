@@ -1132,7 +1132,8 @@ BENTLEYDTM_Private int bcdtmInterruptLoad_dtmFeatureTypeOccurrencesDtmObject(BC_
     case  DTMFeatureType::Breakline :
     case  DTMFeatureType::SoftBreakline :
     case  DTMFeatureType::ContourLine :
-    case  DTMFeatureType::Void :
+    case  DTMFeatureType::Void:
+    case  DTMFeatureType::BreakVoid:
     case  DTMFeatureType::Island :
     case  DTMFeatureType::Hole :
     case  DTMFeatureType::GraphicBreak :

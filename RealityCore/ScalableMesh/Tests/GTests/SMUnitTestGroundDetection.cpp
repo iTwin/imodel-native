@@ -27,7 +27,7 @@ void ConvertUorPointsToDestUnit(bvector<DPoint3d>& regionPointsMeter, const bvec
 
 
 
-void CreateBreaklines(BeFileNameCR extraLinearFeatureAbsFileName, bvector<DPoint3d> const& closedPolygonPoints, ScalableMesh::IScalableMeshPtr& scalableMeshModel, Transform& uorToDestUnits)
+void CreateBreaklines(BeFileNameCR extraLinearFeatureAbsFileName, bvector<DPoint3d> const& closedPolygonPoints, ScalableMesh::IScalableMeshPtr& scalableMeshModel, const Transform& uorToDestUnits)
     {
     TerrainModel::DTMPtr dtm(scalableMeshModel->GetDTMInterface(DTMAnalysisType::RawDataOnly));
 
@@ -80,6 +80,7 @@ void CreateBreaklines(BeFileNameCR extraLinearFeatureAbsFileName, bvector<DPoint
 +---------------+---------------+---------------+---------------+---------------+------*/
 GroundDetectionTester::GroundDetectionTester()
     {    
+    m_expectedGroundPts = 0;
     }
 
 /*---------------------------------------------------------------------------------**//**

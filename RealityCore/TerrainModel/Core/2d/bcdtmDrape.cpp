@@ -243,6 +243,7 @@ BENTLEYDTM_EXPORT int bcdtmDrape_stringDtmObject
  DPoint3d   *pnt1P,*pnt2P ;
 // long    removeOn ;
  DTM_GUID nullGuid=DTM_NULL_GUID ;
+ const double ppTolSq = dtmP->ppTol * dtmP->ppTol;
 /*
 ** Write Entry Message
 */
@@ -329,7 +330,7 @@ volatile long lineL = lineNum;
           if( fndType == 1 )     // Hull Point
             {
              pnt1P = pointAddrP(dtmP,p1) ;
-             if( bcdtmMath_distance(xls,yls,pnt1P->x,pnt1P->y) > dtmP->ppTol ) fndType = 0 ;
+             if( bcdtmMath_distanceSquared(xls,yls,pnt1P->x,pnt1P->y) > ppTolSq ) fndType = 0 ;
             }
           if( fndType == 2 )     // Hull Line
             {
@@ -376,9 +377,9 @@ volatile long lineL = lineNum;
     else if( fndType == 2 )
       {
        fndType = 3 ;
-       if     ( bcdtmMath_distance(xls,yls,pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y) < dtmP->ppTol ) { fndType = 1 ; p2 = p3 = dtmP->nullPnt ; }
-       else if( bcdtmMath_distance(xls,yls,pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y) < dtmP->ppTol ) { fndType = 1 ; p1 = p2 ; p2 = p3 = dtmP->nullPnt ; }
-       else if( bcdtmMath_distance(xls,yls,pointAddrP(dtmP,p3)->x,pointAddrP(dtmP,p3)->y) < dtmP->ppTol ) { fndType = 1 ; p1 = p3 ; p2 = p3 = dtmP->nullPnt ; }
+       if     ( bcdtmMath_distanceSquared(xls,yls,pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y) < ppTolSq ) { fndType = 1 ; p2 = p3 = dtmP->nullPnt ; }
+       else if( bcdtmMath_distanceSquared(xls,yls,pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y) < ppTolSq ) { fndType = 1 ; p1 = p2 ; p2 = p3 = dtmP->nullPnt ; }
+       else if( bcdtmMath_distanceSquared(xls,yls,pointAddrP(dtmP,p3)->x,pointAddrP(dtmP,p3)->y) < ppTolSq ) { fndType = 1 ; p1 = p3 ; p2 = p3 = dtmP->nullPnt ; }
        else if( bcdtmMath_normalDistanceToCordLine(pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y,pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y,xls,yls) < dtmP->plTol ) { fndType = 2 ; p3 = dtmP->nullPnt ; }
        else if( bcdtmMath_normalDistanceToCordLine(pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y,pointAddrP(dtmP,p3)->x,pointAddrP(dtmP,p3)->y,xls,yls) < dtmP->plTol ) { fndType = 2 ; p1 = p2 ; p2 = p3 ; p3 = dtmP->nullPnt ; }
        else if( bcdtmMath_normalDistanceToCordLine(pointAddrP(dtmP,p3)->x,pointAddrP(dtmP,p3)->y,pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y,xls,yls) < dtmP->plTol ) { fndType = 2 ; p2 = p1 ; p1 = p3 ; p3 = dtmP->nullPnt ; }
@@ -436,9 +437,9 @@ volatile long lineL = lineNum;
 */
            if( drapeType == 3 )
              {
-              if     ( bcdtmMath_distance(xls,yls,pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y) < dtmP->ppTol ) { drapeType = 1 ; p2 = p3 = dtmP->nullPnt ; }
-              else if( bcdtmMath_distance(xls,yls,pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y) < dtmP->ppTol ) { drapeType = 1 ; p1 = p2 ; p2 = p3 = dtmP->nullPnt ; }
-              else if( bcdtmMath_distance(xls,yls,pointAddrP(dtmP,p3)->x,pointAddrP(dtmP,p3)->y) < dtmP->ppTol ) { drapeType = 1 ; p1 = p3 ; p2 = p3 = dtmP->nullPnt ; }
+              if     ( bcdtmMath_distanceSquared(xls,yls,pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y) < ppTolSq ) { drapeType = 1 ; p2 = p3 = dtmP->nullPnt ; }
+              else if( bcdtmMath_distanceSquared(xls,yls,pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y) < ppTolSq) { drapeType = 1 ; p1 = p2 ; p2 = p3 = dtmP->nullPnt ; }
+              else if( bcdtmMath_distanceSquared(xls,yls,pointAddrP(dtmP,p3)->x,pointAddrP(dtmP,p3)->y) < ppTolSq ) { drapeType = 1 ; p1 = p3 ; p2 = p3 = dtmP->nullPnt ; }
               else if( bcdtmMath_normalDistanceToCordLine(pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y,pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y,xls,yls) < dtmP->plTol ) { drapeType = 2 ; p3 = dtmP->nullPnt ; }
               else if( bcdtmMath_normalDistanceToCordLine(pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y,pointAddrP(dtmP,p3)->x,pointAddrP(dtmP,p3)->y,xls,yls) < dtmP->plTol ) { drapeType = 2 ; p1 = p2 ; p2 = p3 ; p3 = dtmP->nullPnt ; }
               else if( bcdtmMath_normalDistanceToCordLine(pointAddrP(dtmP,p3)->x,pointAddrP(dtmP,p3)->y,pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y,xls,yls) < dtmP->plTol ) { drapeType = 2 ; p2 = p1 ; p1 = p3 ; p3 = dtmP->nullPnt ; }
@@ -511,6 +512,22 @@ volatile long lineL = lineNum;
           if( fndType == 0 )
             {
              if( bcdtmDrape_findClosestLineInterceptWithHullDtmObject(dtmP,xls,yls,xle,yle,&drapeType,&p1,&p2,&xi,&yi,&zls) ) goto errexit ;
+
+             if (drapeType == 2)
+                 {
+                 double d1 = bcdtmMath_distanceSquared(xls, yls, xi, yi);
+                 if (d1 <= (dtmP->mppTol * dtmP->mppTol))
+                     {
+                     const auto sPt = DPoint2d::From(xls, yls);
+                     const auto ePt = DPoint2d::From(xle, yle);
+                     d1 = dtmP->mppTol / sPt.Distance(ePt);
+                     DPoint2d pt = DPoint2d::FromInterpolate(sPt, d1, ePt);
+                     
+                     if( bcdtmDrape_findClosestLineInterceptWithHullDtmObject(dtmP,pt.x,pt.y,xle,yle,&drapeType,&p1,&p2,&xi,&yi,&zls) ) goto errexit ;
+
+                     }
+                 }
+
              if( dbg == 2 ) bcdtmWrite_message(0,0,0,"drapeType = %2ld ** p1 = %9ld p2 = %9ld",drapeType,p1,p2) ;
 /*
 **           No Further Intersections Of Drape Line With Tin Hull
@@ -520,7 +537,7 @@ volatile long lineL = lineNum;
 /*
 **              Check If Last Point Is Within Point To Point Tolerance Of Tin Hull
 */
-                if( bcdtmMath_distance(xls,yls,xle,yle) > dtmP->ppTol )
+                if( bcdtmMath_distanceSquared(xls,yls,xle,yle) > ppTolSq )
                   {
                    if( bcdtmDrape_storeDrapePointWithDtmFeaturesDtmObject(dtmP,lineNum,0,xle,yle,dtmP->zMin,dtmP->nullPnt,dtmP->nullPnt,dtmP->nullPnt,dtmFeatureOption,drapePts) ) goto errexit ;
                   }
@@ -1373,7 +1390,7 @@ BENTLEYDTM_Public int bcdtmDrape_findClosestLineInterceptWithHullDtmObject
              if( sdof1 != sdof2 )
                {
                 bcdtmMath_normalIntersectCordLines(startX,startY,endX,endY,pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y,pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y,&xc,&yc) ;
-                dist = bcdtmMath_distance(startX,startY,xc,yc) ;
+                dist = bcdtmMath_distanceSquared(startX,startY,xc,yc) ;
                 if( firstFound || dist < tolerance  )
                   {
                    if( dbg ) bcdtmWrite_message(0,0,0,"p1 = %8ld p2 = %8ld ** xc = %12.5lf yc = %12.5lf  ** dist %12.5lf",p1,p2,xc,yc,dist) ;
@@ -1417,7 +1434,7 @@ BENTLEYDTM_Public int bcdtmDrape_findClosestLineInterceptWithHullDtmObject
           n1 = bcdtmMath_distanceOfPointFromLine(&onLine1,startX,startY,endX,endY,pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y,&xc,&yc) ;
           if( n1 <= dtmP->ppTol )
             {
-             dist = bcdtmMath_distance(startX,startY,xc,yc) ;
+             dist = bcdtmMath_distanceSquared(startX,startY,xc,yc) ;
              if( firstFound || dist < tolerance  )
                {
                 firstFound = 0 ;

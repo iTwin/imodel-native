@@ -55,14 +55,14 @@
     
     <Part Name="ScalableMeshUnitTestDependencies">
         <SubPart PartName="PrewireForUnitTests"/>
-        <SubPart PartName="ScalableMeshLib" PartFile="RealityCore/ScalableMesh/ScalableMesh" Repository="imodel02"/>
+        <SubPart PartName="ScalableMeshLib" PartFile="iModelBridgeCore/ScalableMesh/ScalableMesh" Repository="imodel02"/>
         <SubPart PartName="ScalableMeshUnitTestsDependenciesNotForLinux"/>
         <SubPart PartName="ScalableMeshUnitTestsLinuxDependencies"/>
     </Part>
 
   <Part Name="ScalableMeshUnitTests" BentleyBuildMakeFile="Tests/GTests/BuildTests.mke" BentleyBuildMakeOptions="-dIMODEL02=1">
     <SubPart PartName="PrewireForUnitTests"/>
-    <SubPart PartName="ScalableMeshLib" PartFile="RealityCore/ScalableMesh/ScalableMesh" Repository="imodel02"/>
+    <SubPart PartName="ScalableMeshLib" PartFile="iModelBridgeCore/ScalableMesh/ScalableMesh" Repository="imodel02"/>
     <!--<SubPart PartName="DgnView" PartFile="DgnDisplay" Repository="DgnDisplay"/>-->
     <Bindings>
       <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="ScalableMesh" SourceName="Delivery/UnitTests/Objects/ScalableMesh"/>

@@ -34,7 +34,7 @@ public:
 	void    operator delete [](void* rawMemory, size_t size) { bentleyAllocator_deleteArrayRefCounted(rawMemory, size); }
 
 	ScalableMeshClippingOptions() : m_allowOverlappingClips(false), m_shouldRegenerateClipFiles(false){};
-	ScalableMeshClippingOptions(std::function<void(const ScalableMeshClippingOptions*)> onDataChanged, bool shouldRegenerateClipFiles=false);
+	explicit ScalableMeshClippingOptions(std::function<void(const ScalableMeshClippingOptions*)> onDataChanged, bool shouldRegenerateClipFiles=false);
 
 	bool ShouldRegenerateStaleClipFiles() const;
 	

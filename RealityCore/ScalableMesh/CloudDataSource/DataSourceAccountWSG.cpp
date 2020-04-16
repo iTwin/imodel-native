@@ -252,7 +252,7 @@ void DataSourceAccountWSG::setOrganizationID(const WSGServer::organizationID & o
     wsgOrganizationID = orgID;
     }
 
-DataSourceAccountWSG::WSGToken DataSourceAccountWSG::getWSGToken(DataSourceURL &url)
+DataSourceAccountWSG::WSGToken DataSourceAccountWSG::getWSGToken(const DataSourceURL &url)
     {
     auto token = this->m_getWSGToken();
     if (this->needsUpdateToken(token))

@@ -116,7 +116,7 @@ private:
         bool _FilterRangeIntersection(GeometrySourceCR element) override { return false; }
         void _CookDisplayParams(ElemDisplayParamsR, ElemMatSymbR) override {}
         void _SetupOutputs() override { SetIViewDraw(*m_IViewDraw); }
-        NullContext(DgnDbR db) { m_dgnDb = &db; m_IViewDraw = nullptr; m_IDrawGeom = nullptr; m_ignoreViewRange = true; }
+        explicit NullContext(DgnDbR db) { m_dgnDb = &db; m_IViewDraw = nullptr; m_IDrawGeom = nullptr; m_ignoreViewRange = true; }
         };
 
 
@@ -696,7 +696,7 @@ private:
                                 }
                             }
                         }
-                    m_currentElement++;
+                    ++m_currentElement;
                     }
                     m_hasNext =/* m_nelements < 20 && */m_currentElement != m_model->end();
 //                m_headerPacket.SetSize(m_featureArray.GetHeaders().GetSize());

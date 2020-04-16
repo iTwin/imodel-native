@@ -424,7 +424,7 @@ bool ScalableMeshPointsProvider::ScalableMeshPointsProviderPrefetchedIteratorImp
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ScalableMeshPointsProvider::ScalableMeshPointsProviderPrefetchedIteratorImpl::_MoveToNext()
     {
-    m_currentItr++;
+    ++m_currentItr;
     }
 
 /*---------------------------------------------------------------------------------**//**

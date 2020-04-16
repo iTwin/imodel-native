@@ -6,64 +6,141 @@
 #include <TerrainModel/Core/DTMEvars.h>
 #include <TerrainModel/Core/bcdtminlines.h>
 #include <TerrainModel/Core/PartitionArray.h>
+#include <queue>
+#include <set>
 
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Public int bcdtmList_getDtmFeatureNumsLineDtmObject(BC_DTM_OBJ *dtmP,long pnt1,long pnt2,bvector<long>& featureNumList)
+static int bcdtmList_testForBreakLineDtmObject(BC_DTM_OBJ* dtmP, long P1, long P2, bool isTestingForVoid)
 /*
-** This Function Tests If The Line pnt1-pnt2 is A DtmFeature Type Line
+** This Function Tests If The Line P1P2 or Line P2P1 is A Break Line
 */
     {
-    long clc ;
-    clc = nodeAddrP(dtmP,pnt1)->fPtr ;
-    while ( clc != dtmP->nullPtr )
+    long clc;
+    /*
+    ** Test For P1 P2 Being Break Line
+    */
+    clc = nodeAddrP(dtmP, P1)->fPtr;
+    while (clc != dtmP->nullPtr)
         {
-        if( flistAddrP(dtmP,clc)->nextPnt == pnt2 )
+        if (flistAddrP(dtmP, clc)->nextPnt == P2)
             {
-            long num = flistAddrP(dtmP,clc)->dtmFeature;
-            bool found = false;
-
-            for (unsigned int i = 0; i < featureNumList.size(); i++)
+            auto fTable = ftableAddrP(dtmP, flistAddrP(dtmP, clc)->dtmFeature);
+            if (fTable->dtmFeatureType == DTMFeatureType::Breakline)
                 {
-                if (featureNumList[i] == num)
-                    {
-                    found = true;
-                    break;
-                    }
-                }
-            if (!found)
-                featureNumList.push_back (num);
-            }
-        clc = flistAddrP(dtmP,clc)->nextPtr ;
-        }
-    clc = nodeAddrP(dtmP,pnt2)->fPtr ;
-    while ( clc != dtmP->nullPtr )
-        {
-        if( flistAddrP(dtmP,clc)->nextPnt == pnt1 )
-            {
-            long num = flistAddrP(dtmP,clc)->dtmFeature;
-            bool found = false;
+                auto fType = (DTMFeatureType) fTable->dtmUserTag;
+                if (!isTestingForVoid && fType == DTMFeatureType::Island)
+                    return 1;
 
-            for (unsigned int i = 0; i < featureNumList.size(); i++)
-                {
-                if (featureNumList[i] == num)
-                    {
-                    found = true;
-                    break;
-                    }
+                if (isTestingForVoid && fType != DTMFeatureType::Island)
+                    return 1;
                 }
-            if (!found)
-                featureNumList.push_back (num);
             }
-        clc = flistAddrP(dtmP,clc)->nextPtr ;
+        clc = flistAddrP(dtmP, clc)->nextPtr;
         }
     /*
     ** Job Completed
     */
-    return(0) ;
+    return(0);
+    }
+
+static int bcdtmList_testForBreakLineDtmObjectQuick(BC_DTM_OBJ* dtmP, long P1, long P2)
+/*
+** This Function Tests If The Line P1P2 or Line P2P1 is A Break Line
+*/
+    {
+    long clc;
+    /*
+    ** Test For P1 P2 Being Break Line
+    */
+    clc = nodeAddrP(dtmP, P1)->fPtr;
+    while (clc != dtmP->nullPtr)
+        {
+        if (flistAddrP(dtmP, clc)->nextPnt == P2)
+            {
+            auto fTable = ftableAddrP(dtmP, flistAddrP(dtmP, clc)->dtmFeature);
+            if (fTable->dtmFeatureType == DTMFeatureType::Breakline)
+                {
+                return 1;
+                }
+            }
+        clc = flistAddrP(dtmP, clc)->nextPtr;
+        }
+    /*
+    ** Job Completed
+    */
+    return(0);
+    }
+
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+BENTLEYDTM_Public int bcdtmList_getDtmFeatureNumsLineDtmObject(BC_DTM_OBJ* dtmP, long pnt1, long pnt2, std::set<long>& featureNumList, bool isLookingForVoids)
+/*
+** This Function Tests If The Line pnt1-pnt2 is A DtmFeature Type Line
+*/
+    {
+    long clc;
+    clc = nodeAddrP(dtmP, pnt1)->fPtr;
+    while (clc != dtmP->nullPtr)
+        {
+        if (flistAddrP(dtmP, clc)->nextPnt == pnt2)
+            {
+            long num = flistAddrP(dtmP, clc)->dtmFeature;
+            auto fType = (DTMFeatureType)ftableAddrP(dtmP, num)->dtmUserTag;
+            if (!isLookingForVoids && fType == DTMFeatureType::Island)
+                {
+                if (featureNumList.find(num) == featureNumList.end())
+                    featureNumList.insert(num);
+                }
+            else if (isLookingForVoids && fType != DTMFeatureType::Island)
+                {
+                if (featureNumList.find(num) == featureNumList.end())
+                    featureNumList.insert(num);
+                }
+            }
+        clc = flistAddrP(dtmP, clc)->nextPtr;
+        }
+    /*
+    ** Job Completed
+    */
+    return(0);
+    }
+
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+long bcdtmList_getFirstDtmFeatureLineDtmObject(BC_DTM_OBJ* dtmP, long pnt1, long pnt2)
+/*
+** This Function Tests If The Line pnt1-pnt2 is A DtmFeature Type Line
+*/
+    {
+    long clc;
+    clc = nodeAddrP(dtmP, pnt1)->fPtr;
+    while (clc != dtmP->nullPtr)
+        {
+        if (flistAddrP(dtmP, clc)->nextPnt == pnt2)
+            return flistAddrP(dtmP, clc)->dtmFeature;
+        clc = flistAddrP(dtmP, clc)->nextPtr;
+        }
+    clc = nodeAddrP(dtmP, pnt2)->fPtr;
+    while (clc != dtmP->nullPtr)
+        {
+        if (flistAddrP(dtmP, clc)->nextPnt == pnt1)
+            return flistAddrP(dtmP, clc)->dtmFeature;
+        clc = flistAddrP(dtmP, clc)->nextPtr;
+        }
+    /*
+    ** Job Completed
+    */
+    return -1;
     }
 
 
@@ -72,11 +149,11 @@ BENTLEYDTM_Public int bcdtmList_getDtmFeatureNumsLineDtmObject(BC_DTM_OBJ *dtmP,
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmList_writeVectorList (bvector<long>& featureNumList)
+BENTLEYDTM_Private int bcdtmList_writeVectorList (std::set<long>& featureNumList)
     {
-    for (unsigned int i = 0; i < featureNumList.size(); i++)
+    for (auto featureNum : featureNumList)
         {
-        bcdtmWrite_message(0,0,0,"FeatureNum %d", featureNumList[i]) ;
+        bcdtmWrite_message(0,0,0,"FeatureNum %d", featureNum) ;
         }
     return (0);
     }
@@ -86,87 +163,634 @@ BENTLEYDTM_Private int bcdtmList_writeVectorList (bvector<long>& featureNumList)
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmCleanUp_resolvePolygonalHolesFeatureTypeDtmObject (BC_DTM_OBJ* dtmP, BC_DTM_OBJ* cleanedDtmP, bvector<long>& usedFeatureIndexes, DTMFeatureType featureType, bvector <DPoint3d>& points, DTMFeatureId dtmFeatureId)
+static DTMFeatureId GetFeatureIdForLink(BC_DTM_OBJ* dtmP, std::set<long>& usedFeatureIndexes, long p1, long p2)
     {
-    int    ret=DTM_SUCCESS;
-    long   dtmFeature,numFeaturePts=0 ;
-    DPoint3d    *featurePtsP=NULL ;
-    BC_DTM_OBJ *tempDtmP=NULL ;
-    BC_DTM_FEATURE *dtmFeatureP ;
-    bool isValid = true;
+    auto featureNum = bcdtmList_getFirstDtmFeatureLineDtmObject(dtmP, p1, p2);
+    BeAssert(featureNum != -1);
+    if (featureNum == -1)
+        return ftableAddrP(dtmP, *usedFeatureIndexes.begin())->dtmFeatureId;
+    return ftableAddrP(dtmP, featureNum)->dtmFeatureId;
+    }
 
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+static void StoreInDTMFindEdges(BC_DTM_OBJ* dtmP, std::set<long>& usedFeatureIndexes, bvector<DPoint3d>& ls, DTMFeatureType featureType)
+    {
+    auto startPoint = &ls[0];
+    long prevPtNum = -1;
+    DTMFeatureId prevFtId = DTM_NULL_FEATURE_ID;
+
+    DTMDirection direction;
+    double area;
+    bcdtmMath_getPolygonDirectionP3D(ls.data(), (long) ls.size(), &direction, &area);
+    if (direction == DTMDirection::Clockwise)
+        std::reverse(ls.begin(), ls.end());
+    for (auto& pt : ls)
+        {
+        long ptNum;
+        auto ret = bcdtmFind_closestPointDtmObject(dtmP, pt.x, pt.y, &ptNum);
+        pt.z = pointAddrP(dtmP, ret)->z;
+        BeAssert(ret == 1);
+        if (prevPtNum != -1)
+            {
+            auto fId = GetFeatureIdForLink(dtmP, usedFeatureIndexes, prevPtNum, ptNum);
+
+            if (fId != prevFtId)
+                {
+                if (prevFtId != DTM_NULL_FEATURE_ID)
+                    {
+                    prevFtId = -prevFtId;
+                    const int numPoints = (long) (&pt - startPoint);
+                    bcdtmObject_storeDtmFeatureInDtmObject(dtmP, DTMFeatureType::Breakline, (DTMUserTag) featureType, 2, &prevFtId, startPoint, numPoints);
+                    }
+
+                startPoint = &pt - 1;
+                prevFtId = fId;
+                }
+            }
+        prevPtNum = ptNum;
+        }
+    if (prevFtId != DTM_NULL_FEATURE_ID)
+        {
+        prevFtId = -prevFtId;
+        const long numPoints = (long) (&*ls.end() - startPoint);
+        bcdtmObject_storeDtmFeatureInDtmObject(dtmP, DTMFeatureType::Breakline, (DTMUserTag) featureType, 2, &prevFtId, startPoint, numPoints);
+        }
+    }
+
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+static int loadTinEdges(BC_DTM_OBJ* dtmP, std::function <int(BC_DTM_OBJ* dtmP, long p1, long p2, void* userArg)> loadFunctionP, void* userP)
+    {
+    // Doesn't cope with voids, but we know there isn't any as we add them all as breaklines.
+    long startPnt = 0;
+    long lastPnt = dtmP->numPoints;
+    long clPtr;
+    for (long p1 = startPnt; p1 < lastPnt; ++p1)
+        {
+        auto nodeP = nodeAddrP(dtmP, p1);
+        if ((clPtr = nodeP->cPtr) != dtmP->nullPtr)
+            {
+            while (clPtr != dtmP->nullPtr)
+                {
+                auto clistP = clistAddrP(dtmP, clPtr);
+                auto p2 = clistP->pntNum;
+                clPtr = clistP->nextPtr;
+                if (p2 > p1)
+                    loadFunctionP(dtmP, p1, p2, userP);
+                }
+            }
+        }
+    return SUCCESS;
+    }
+
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+static int StoreLinksOnVoidEdge(BC_DTM_OBJ* dtm, long p1, long p2, void* userArg)
+    {
+    if (nodeAddrP(dtm, p1)->hPtr == p2 || nodeAddrP(dtm, p2)->hPtr == p1)
+        {
+        }
+    else
+        {
+        bool addEdge = false;
+        auto cv = (CurveVectorP) userArg;
+        auto p3 = bcdtmList_nextAntDtmObject(dtm, p1, p2);
+        auto p4 = bcdtmList_nextClkDtmObject(dtm, p1, p2);
+
+        bool v1 = bcdtmList_testForVoidTriangleDtmObject(dtm, p2, p1, p3);
+        bool v2 = bcdtmList_testForVoidTriangleDtmObject(dtm, p1, p2, p4);
+
+        addEdge = v1 != v2;
+        if(addEdge)
+    {
+            if (!bcdtmList_testForBreakLineDtmObject(dtm, p1, p2))
+                {
+                if (v1)
+                    std::swap(p3, p4);
+                if (bcdtmList_testForBreakLineDtmObject(dtm, p1, p3) &&
+                    bcdtmList_testForBreakLineDtmObject(dtm, p3, p2))
+                    {
+                    DPoint3d pts[3];
+                    pts[0] = *pointAddrP(dtm, p1);
+                    pts[1] = *pointAddrP(dtm, p3);
+                    //cv->Add(ICurvePrimitive::CreateLineString(pts, 2));
+                    pts[2] = *pointAddrP(dtm, p2);
+                    cv->Add(ICurvePrimitive::CreateLineString(pts, 3));
+                    return DTM_SUCCESS;
+                    }
+                }
+            DPoint3d pts[2];
+            pts[0] = *pointAddrP(dtm, p1);
+            pts[1] = *pointAddrP(dtm, p2);
+            cv->Add(ICurvePrimitive::CreateLineString(pts, 2));
+            }
+        }
+    return DTM_SUCCESS;
+    }
+
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+static int StoreLinksNotOnHull(BC_DTM_OBJ* dtm, long p1, long p2, void* userArg)
+    {
+    if (nodeAddrP(dtm, p1)->hPtr == p2 || nodeAddrP(dtm, p2)->hPtr == p1)
+        return DTM_SUCCESS;
+
+    if (bcdtmList_testForBreakLineDtmObjectQuick(dtm, p1, p2))
+        {
+        BC_DTM_OBJ* dtm2 = (BC_DTM_OBJ*) userArg;
+        DPoint3d pts[2];
+        pts[0] = *pointAddrP(dtm, p2);
+        pts[1] = *pointAddrP(dtm, p1);
+        DTMFeatureId dtmFeatureId;
+        bcdtmObject_storeDtmFeatureInDtmObject(dtm2, DTMFeatureType::Breakline, dtm2->nullUserTag, 2, &dtmFeatureId, pts, 2);
+        }
+    else if (bcdtmList_testForBreakLineDtmObjectQuick(dtm, p2, p1))
+        {
+        BC_DTM_OBJ* dtm2 = (BC_DTM_OBJ*) userArg;
+        DPoint3d pts[2];
+        pts[0] = *pointAddrP(dtm, p1);
+        pts[1] = *pointAddrP(dtm, p2);
+        DTMFeatureId dtmFeatureId;
+        bcdtmObject_storeDtmFeatureInDtmObject(dtm2, DTMFeatureType::Breakline, dtm2->nullUserTag, 2, &dtmFeatureId, pts, 2);
+        }
+    return DTM_SUCCESS;
+    }
+//#define DHDEBUG
+
+#ifdef DHDEBUG
+
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+static void DebugCurveVector(BC_DTM_OBJ* dtmP, ICurvePrimitiveCR prim)
+    {
+    switch (prim.GetCurvePrimitiveType())
+        {
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector:
+            {
+            auto ccv = prim.GetChildCurveVectorCP();
+            BeAssert(nullptr != ccv);
+            if (ccv != nullptr)
+                {
+                for (auto prim2 : *ccv)
+                    DebugCurveVector(dtmP, *prim2);
+                }
+            }
+            break;
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
+            {
+            auto ls = prim.GetLineStringCP();
+            DTMFeatureId dtmFeatureId;
+            bcdtmObject_storeDtmFeatureInDtmObject(dtmP, DTMFeatureType::Breakline, dtmP->nullUserTag, 2, &dtmFeatureId, (DPoint3d*) ls->data(), (long) ls->size());
+            }
+            break;
+            default:
+                BeAssert(false);
+        }
+    }
+
+
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+static void DebugCurveVector(CurveVectorCR cv)
+    {
+    BC_DTM_OBJ* tempDtm = nullptr;
+    bcdtmObject_createDtmObject(&tempDtm);
+
+    for (auto& prim : cv)
+        DebugCurveVector(tempDtm, *prim);
+
+    tempDtm->ppTol = 0.0;
+    tempDtm->plTol = 0.0;
+    bcdtmObject_createTinDtmObject(tempDtm, 1, 0.0, false);
+    bcdtmList_removeNoneFeatureHullLinesDtmObject(tempDtm);
+    bcdtmWrite_toFileDtmObject(tempDtm, L"d:\\debugCV.bcdtm");
+    bcdtmObject_destroyDtmObject(&tempDtm);
+
+    }
+#endif
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+static int bcdtmCleanUp_resolvePolygonalHolesFeatureTypeDtmObjectOld (BC_DTM_OBJ* dtmP, BC_DTM_OBJ* cleanedDtmP, std::set<long>& usedFeatureIndexes, DTMFeatureType featureType, bvector <DPoint3d>& points, DTMFeatureId dtmFeatureId)
+    {
+    bool useDtm = false;
     // If this polygon has 3 points or else then it isn't valid.
     if (points.size() <= 3)
         return DTM_ERROR;
 
-    if( bcdtmObject_storeDtmFeatureInDtmObject (cleanedDtmP,featureType,cleanedDtmP->nullUserTag,2,&dtmFeatureId,(DPoint3d*)&points[0],(long)points.size())) goto errexit ;
-    /*
-    **  Create Temporary Object To Store Feature Occurrences
-    */
-    if( bcdtmObject_createDtmObject(&tempDtmP)) goto errexit ;
+    if (ftableAddrP(dtmP, *usedFeatureIndexes.begin())->dtmFeatureState == DTMFeatureState::Deleted)
+        return DTM_SUCCESS;
 
-    for (unsigned int i = 0; i < usedFeatureIndexes.size(); i++)
+    if (bcdtmObject_storeDtmFeatureInDtmObject(cleanedDtmP, featureType, cleanedDtmP->nullUserTag, 2, &dtmFeatureId, (DPoint3d*) &points[0], (long) points.size()))
+        return DTM_ERROR;
+
+    BC_DTM_OBJ* tempDtm = nullptr;
+    bcdtmObject_createDtmObject(&tempDtm);
+    auto cv = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+
+    bvector<bvector<DPoint3d>> voids;
+    for (auto featureNum : usedFeatureIndexes)
         {
-        dtmFeatureP = ftableAddrP(dtmP, usedFeatureIndexes [i]) ;
-
+        auto dtmFeatureP = ftableAddrP(dtmP, featureNum);
         // This feature was part of an invalid combination so just add this as is to the DTM.
-        if( bcdtmList_copyDtmFeaturePointsToPointArrayDtmObject (dtmP, usedFeatureIndexes [i], &featurePtsP, &numFeaturePts)) goto errexit ;
-        if (numFeaturePts == 0 || !featurePtsP[0].IsEqual(featurePtsP[numFeaturePts - 1]))
+        long numFeaturePts;
+        DPoint3dP tFeaturePts = nullptr;
+        if (bcdtmList_copyDtmFeaturePointsToPointArrayDtmObject(dtmP, featureNum, &tFeaturePts, &numFeaturePts))
+            continue;
+        if (tFeaturePts[0].IsEqual(tFeaturePts[numFeaturePts - 1]))
             {
-            isValid = false;
-            break;
+            bcdtmObject_storeDtmFeatureInDtmObject(tempDtm, DTMFeatureType::Breakline, tempDtm->nullUserTag, 2, &dtmFeatureId, (DPoint3d*)tFeaturePts, numFeaturePts);
+            bvector<DPoint3d> pts;
+            for (int j = 0; j < numFeaturePts; j++)
+                pts.push_back(tFeaturePts[j]);
+            voids.push_back(pts);
             }
-
-        if( bcdtmObject_storeDtmFeatureInDtmObject (tempDtmP,DTMFeatureType::Void, dtmFeatureP->dtmUserTag,2,&dtmFeatureP->dtmFeatureId, featurePtsP, numFeaturePts)) goto errexit;
-        if( featurePtsP != NULL ) { free(featurePtsP) ; featurePtsP = NULL ; }
+        else
+            cv->Add(ICurvePrimitive::CreateLineString(tFeaturePts, numFeaturePts));
+        free(tFeaturePts);
+        tFeaturePts = nullptr;
         }
 
-    if( bcdtmObject_storeDtmFeatureInDtmObject (cleanedDtmP,featureType,cleanedDtmP->nullUserTag,2,&dtmFeatureId,(DPoint3d*)&points[0],(long)points.size())) goto errexit ;
-
-    if (isValid)
+    bvector<bvector<bvector<DPoint3d>>> regions;
+    if (!cv->empty())
         {
-        if (bcdtmData_getHullsForIntersectingPolyonalFeaturesDtmObject(tempDtmP, DTMFeatureType::Void)) goto errexit;
-        //    if (bcdtmData_resolveIntersectingPolygonalDtmFeatureTypeDtmObject (tempDtmP, featureType) ) goto errexit;
+        //DebugCurveVector(*cv);
+        cv = cv->AssembleChains();
+        //DebugCurveVector(*cv);
 
-        for (dtmFeature = 0; dtmFeature < tempDtmP->numFeatures; ++dtmFeature)
+        for (auto& prim : *cv)
             {
-            DTMFeatureType newFeatureType;
-            dtmFeatureP = ftableAddrP(tempDtmP, dtmFeature);
-            if (dtmFeatureP->dtmFeatureType == DTMFeatureType::Void)
-                newFeatureType = featureType;
-            else if (featureType == DTMFeatureType::Island)
-                newFeatureType = DTMFeatureType::Void;
-            else
-                newFeatureType = DTMFeatureType::Island;
-
-            if (dtmFeatureP->dtmFeatureState != DTMFeatureState::Deleted && dtmFeatureP->dtmFeatureType != DTMFeatureType::Void)
+            auto ccv = prim->GetChildCurveVectorP();
+            ccv->CollectLinearGeometry(regions);
+            for (auto& l1 : regions)
                 {
-                if (bcdtmList_copyDtmFeaturePointsToPointArrayDtmObject(tempDtmP, dtmFeature, &featurePtsP, &numFeaturePts)) goto errexit;
-                DTMFeatureId dtmFeatureId = (DTMFeatureId)(-1 - usedFeatureIndexes[0]);
-                if (bcdtmObject_storeDtmFeatureInDtmObject(dtmP, DTMFeatureType::Breakline, (DTMUserTag)newFeatureType, 2, &dtmFeatureId, featurePtsP, numFeaturePts)) goto errexit;
-                if (featurePtsP != NULL)
+                for (auto& l2 : l1)
                     {
-                    free(featurePtsP); featurePtsP = NULL;
+                    bcdtmObject_storeDtmFeatureInDtmObject(tempDtm, DTMFeatureType::Breakline, tempDtm->nullUserTag, 2, &dtmFeatureId, (DPoint3d*) l2.data(), (long) l2.size());
+                    voids.push_back(l2);
                     }
                 }
             }
         }
-    /*
-    ** Clean Up
-    */
-cleanup :
-    /*
-    ** Job Completed
-    */
-    if( featurePtsP != NULL ) { free(featurePtsP) ; featurePtsP = NULL ; }
-    if( tempDtmP    != NULL )   bcdtmObject_destroyDtmObject(&tempDtmP) ;
-    return(ret) ;
-    /*
-    ** Error Exit
-    */
-errexit :
-    if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
-    goto cleanup ;
+
+    tempDtm->ppTol = 0.0;
+    tempDtm->plTol = 0.0;
+    bcdtmObject_createTinDtmObject(tempDtm, 1, 0.0, false);
+    bcdtmList_removeNoneFeatureHullLinesDtmObject(tempDtm);
+    //bcdtmWrite_toFileDtmObject(tempDtm, L"d:\\voidHulls.bcdtm");
+    for (auto& pts : voids)
+        {
+        DTMDirection direction;
+        double area;
+        bcdtmMath_getPolygonDirectionP3D(pts.data(), (long) pts.size(), &direction, &area);
+        if (direction == DTMDirection::Clockwise)
+            std::reverse(pts.begin(), pts.end());
+
+        auto status = bcdtmClip_toPolygonDtmObject(tempDtm, pts.data(), (long) pts.size(), DTMClipOption::Internal);
+
+        if (status != DTM_SUCCESS)
+            status = status;
+        }
+    //bcdtmWrite_toFileDtmObject(tempDtm, L"d:\\voidHulls.bcdtm");
+
+    auto cv2 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+    loadTinEdges(tempDtm, StoreLinksOnVoidEdge, cv2.get());
+    if (!cv2->empty())
+        {
+        bcdtmObject_destroyDtmObject(&tempDtm);
+
+        //DebugCurveVector(*cv2);
+        cv2 = cv2->AssembleChains();
+        //DebugCurveVector(*cv2);
+        int j = 0;
+        for (auto& prim : *cv2)
+            {
+            auto ccv = prim->GetChildCurveVectorP();
+            ccv->CollectLinearGeometry(regions);
+            for (auto& l1 : regions)
+                {
+                for (auto& l2 : l1)
+                    {
+                    if (l2.front().IsEqual(l2.back()))
+                        StoreInDTMFindEdges(dtmP, usedFeatureIndexes, l2, featureType != DTMFeatureType::Island ? DTMFeatureType::Island : DTMFeatureType::Void);
+                    }
+                }
+            j++;
+            }
+        }
+    return DTM_SUCCESS;
+    }
+
+
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+    static void ExtractInnerLoops(BC_DTM_OBJ& dtm, bvector<CurveVectorCP>& vectors)
+        {
+        BC_DTM_OBJ* tempDtm = nullptr;
+        bcdtmObject_createDtmObject(&tempDtm);
+
+        for (auto ccv : vectors)
+                {
+            bvector<bvector<bvector<DPoint3d>>> regions;
+            ccv->CollectLinearGeometry(regions);
+
+            for (auto& l1 : regions)
+                    {
+                for (auto& l2 : l1)
+                    {
+                    if (l2.front().AlmostEqualXY(l2.back()))
+                        {
+                        l2.front() = l2.back();
+                        DTMFeatureId dtmFeatureId;
+                        bcdtmObject_storeDtmFeatureInDtmObject(tempDtm, DTMFeatureType::Breakline, (DTMUserTag) DTMFeatureType::Island, 2, &dtmFeatureId, (DPoint3d*) l2.data(), (long) l2.size());
+                    }
+                }
+            }
+        }
+
+        tempDtm->ppTol = 0.0;
+        tempDtm->plTol = 0.0;
+        bcdtmObject_createTinDtmObject(tempDtm, 1, 0.0, false);
+        bcdtmList_removeNoneFeatureHullLinesDtmObject(tempDtm);
+        loadTinEdges(tempDtm, StoreLinksNotOnHull, &dtm);
+//        bcdtmWrite_toFileDtmObject(tempDtm, L"d:\\voidHullsEIL.bcdtm");
+        bcdtmObject_destroyDtmObject(&tempDtm);
+
+        }
+
+    const long PTTYPE_MARK = 45;
+
+
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+    static void AddTPtrToResultAndClearTPtr(BC_DTM_OBJ& dtm, long startPnt, bvector<bvector<DPoint3d>>& result)
+        {
+        result.push_back(bvector<DPoint3d>());
+        auto& pts = result.back();
+
+        while (startPnt != dtm.nullPnt)
+            {
+            pts.push_back(*pointAddrP(&dtm, startPnt));
+            auto np = nodeAddrP(&dtm, startPnt)->tPtr;
+            nodeAddrP(&dtm, startPnt)->tPtr = dtm.nullPnt;
+            startPnt = np;
+            }
+        }
+
+    static void FindPolygonsHelper(BC_DTM_OBJ& dtm, long startPnt, DTM_FEATURE_LIST* fListP, bvector<bvector<DPoint3d>>& result)
+        {
+        long p1 = startPnt;
+        long p2 = fListP->nextPnt;
+        if (p2 == dtm.nullPnt)
+            return;
+        while (true)
+            {
+            //if (p2 == dtm.nullPnt)
+            //    {
+            //    bcdtmList_cleanTptrPolygonDtmObject(&dtm, startPnt);
+            //    break;
+            //    }
+            fListP->pntType = PTTYPE_MARK;
+            if (nodeAddrP(&dtm, p1)->tPtr != dtm.nullPnt)
+                {
+                AddTPtrToResultAndClearTPtr(dtm, p1, result);
+                }
+            nodeAddrP(&dtm, p1)->tPtr = p2;
+
+            long fList = nodeAddrP(&dtm, p2)->fPtr;
+            fListP = flistAddrP(&dtm, fList);
+
+            long np = fListP->nextPnt;
+
+            if (fListP->nextPtr != dtm.nullPtr)
+                {
+                // There is more than 1 link for this point. find next Pnt clockwise.
+                long tPnt = bcdtmList_nextClkDtmObject(&dtm, p2, p1);
+                while(tPnt != p1)
+                    {
+                    if (bcdtmList_testForBreakLineDtmObjectQuick(&dtm, p2, tPnt))
+                        break;
+                    tPnt = bcdtmList_nextClkDtmObject(&dtm, p2, tPnt);
+                    }
+                np = tPnt;
+                while (fListP->nextPnt != np)
+                    {
+                    if (fListP->nextPtr == dtm.nullPtr)
+                        {
+                        np = dtm.nullPnt;
+                        break;
+                        }
+                    fListP = flistAddrP(&dtm, fListP->nextPtr);
+                    }
+                }
+
+            if (np == dtm.nullPnt)
+                {
+                bcdtmList_nullTptrListDtmObject(&dtm, p1);
+                break;
+                }
+            p1 = p2;
+            p2 = np;
+            if (p1 == startPnt)
+                {
+                AddTPtrToResultAndClearTPtr(dtm, p1, result);
+                break;
+                }
+            }
+        }
+
+
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+    static void FindPolygons(BC_DTM_OBJ& dtm, bvector<bvector<DPoint3d>>& result)
+        {
+        if (dtm.dtmState != DTMState::Tin)
+            return;
+        for (long ptNum = 0; ptNum < dtm.numPoints; ptNum++)
+            {
+            auto nodePP = nodeAddrP(&dtm, ptNum);
+            auto fList = nodePP->fPtr;
+
+            if (fList == dtm.nullPtr)
+                continue;
+
+            auto fListP = flistAddrP(&dtm, fList);
+
+            while(fListP)
+                {
+                if (fListP->pntType != PTTYPE_MARK)
+                    FindPolygonsHelper(dtm, ptNum, fListP, result);
+                fList = fListP->nextPtr;
+                if (fList == dtm.nullPtr)
+                    break;
+                fListP = flistAddrP(&dtm, fList);
+                }
+            }
+        }
+
+
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+    static int bcdtmCleanUp_resolvePolygonalHolesFeatureTypeDtmObject(BC_DTM_OBJ* dtmP, BC_DTM_OBJ* cleanedDtmP, std::set<long>& usedFeatureIndexes, DTMFeatureType featureType, bvector <DPoint3d>& points, DTMFeatureId dtmFeatureId)
+        {
+        bool useDtm = false;
+        // If this polygon has 3 points or else then it isn't valid.
+        if (points.size() <= 3)
+            return DTM_ERROR;
+
+        if (ftableAddrP(dtmP, *usedFeatureIndexes.begin())->dtmFeatureState == DTMFeatureState::Deleted)
+            return DTM_SUCCESS;
+
+        if (bcdtmObject_storeDtmFeatureInDtmObject(cleanedDtmP, featureType, cleanedDtmP->nullUserTag, 2, &dtmFeatureId, (DPoint3d*) &points[0], (long) points.size()))
+            return DTM_ERROR;
+
+        CurveVectorPtr cv = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+
+        bvector<bvector<DPoint3d>> voids;
+        for (auto featureNum : usedFeatureIndexes)
+            {
+            auto dtmFeatureP = ftableAddrP(dtmP, featureNum);
+            // This feature was part of an invalid combination so just add this as is to the DTM.
+            long numFeaturePts;
+            DPoint3dP tFeaturePts = nullptr;
+            if (bcdtmList_copyDtmFeaturePointsToPointArrayDtmObject(dtmP, featureNum, &tFeaturePts, &numFeaturePts))
+                continue;
+            if (nullptr != tFeaturePts)
+                {
+                if (tFeaturePts[0].IsEqual(tFeaturePts[numFeaturePts - 1]))
+                    {
+                    bvector<DPoint3d> pts;
+                    for (int j = 0; j < numFeaturePts; j++)
+                        pts.push_back(tFeaturePts[j]);
+                    voids.push_back(pts);
+                    }
+                else
+                    cv->Add(ICurvePrimitive::CreateLineString(tFeaturePts, numFeaturePts));
+                free(tFeaturePts);
+                tFeaturePts = nullptr;
+                }
+            }
+
+        bvector<bvector<bvector<DPoint3d>>> regions;
+        if (!cv->empty())
+            {
+            cv = cv->AssembleChains();
+
+            for (auto& prim : *cv)
+                {
+                auto ccv = prim->GetChildCurveVectorP();
+                ccv->CollectLinearGeometry(regions);
+                for (auto& l1 : regions)
+                    {
+                    for (auto& l2 : l1)
+                        voids.push_back(l2);
+                    }
+                }
+            }
+
+        cv = nullptr;
+
+        for (auto&& pts : voids)
+            {
+            auto cv2 = CurveVector::CreateLinear(pts, CurveVector::BOUNDARY_TYPE_Outer);
+            if (cv.IsNull())
+                std::swap(cv, cv2);
+            else
+                {
+                auto newCv = CurveVector::AreaUnion(*cv2, *cv);
+                if (newCv.IsValid())
+                    cv = newCv;
+                }
+            }
+
+        BC_DTM_OBJ* tempDtm = nullptr;
+        bcdtmObject_createDtmObject(&tempDtm);
+        bvector<CurveVectorCP> outerLoops;
+        if (cv->size() == 1)
+            {
+            outerLoops.push_back(cv.get());
+            ExtractInnerLoops(*tempDtm, outerLoops);
+            }
+        else
+            {
+            for (auto& prim : *cv)
+                {
+                auto ccv = prim->GetChildCurveVectorCP();
+
+                BeAssert(ccv != nullptr);
+
+                if (nullptr != ccv)
+                    {
+                    if (ccv->GetBoundaryType() == CurveVector::BOUNDARY_TYPE_Inner)
+                        {
+                        for (auto& prim2 : *ccv)
+                            {
+                            auto ls = prim2->GetLineStringCP();
+                            bcdtmObject_storeDtmFeatureInDtmObject(tempDtm, DTMFeatureType::Breakline, tempDtm->nullUserTag, 2, &dtmFeatureId, (DPoint3d*) ls->data(), (long) ls->size());
+                            }
+                        }
+                    else
+                        {
+                        outerLoops.push_back(ccv);
+                        //DebugCurveVector(*ccv);
+                        }
+                    }
+                }
+                ExtractInnerLoops(*tempDtm, outerLoops);
+            }
+
+
+        if (tempDtm->numFeatures != 0)
+            {
+            tempDtm->ppTol = 0.0;
+            tempDtm->plTol = 0.0;
+            bcdtmObject_createTinDtmObject(tempDtm, 1, 0.0, false);
+            bcdtmList_removeNoneFeatureHullLinesDtmObject(tempDtm);
+            //bcdtmWrite_toFileDtmObject(tempDtm, L"d:\\voidHulls.bcdtm");
+            bvector<bvector<DPoint3d>> polygons;
+            FindPolygons(*tempDtm, polygons);
+            bcdtmObject_destroyDtmObject(&tempDtm);
+
+            for (auto& l2 : polygons)
+                {
+                if (l2.front().IsEqual(l2.back()))
+                    StoreInDTMFindEdges(dtmP, usedFeatureIndexes, l2, featureType != DTMFeatureType::Island ? DTMFeatureType::Island : DTMFeatureType::Void);
+                }
+            }
+        return DTM_SUCCESS;
     }
 
 /*-------------------------------------------------------------------+
@@ -263,6 +887,125 @@ struct DTMUniqueFeatureCollection : bvector<DTMUniqueFeatureItem>
         return true;
         }
     };
+
+struct UnionTests
+    {
+    DRange3d range;
+    CurveVectorPtr cv;
+    bool addFeature;
+    BC_DTM_FEATURE* feature;
+    int parent;
+    bvector<int> children;
+    };
+
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+//int FindParentOld(UnionTests& childTest, bvector<UnionTests>& tests)
+//    {
+//    for (int i = (int) tests.size() - 1; i >= 0; i--)
+//        {
+//        auto& item2 = tests[i];
+//
+//        auto ucv = CurveVector::AreaIntersection(*childTest.cv, *item2.cv);
+//        if (ucv.IsValid() && ucv->size() == 1)
+//            {
+//            return i;
+//            }
+//        }
+//    return -1;
+//    }
+
+int FindParent(UnionTests& childTest, bvector<UnionTests>& tests, const bvector<int>& children)
+    {
+    if (!children.empty())
+        {
+        for (int childIndex : children)
+            {
+            auto& item2 = tests[childIndex];
+            bool testArea = childTest.range.IsContained(item2.range);
+
+            if (testArea)
+                {
+                int parent = FindParent(childTest, tests, item2.children);
+                if (parent != -1)
+                    return parent;
+
+                DPoint3d testPt;
+                childTest.cv->GetStartPoint(testPt);
+                auto inOut = item2.cv->PointInOnOutXY(testPt);
+
+                if (inOut == CurveVector::InOutClassification::INOUT_In)
+                    return childIndex;
+                else if (inOut == CurveVector::InOutClassification::INOUT_On)
+                    {
+                    auto ucv = CurveVector::AreaIntersection(*childTest.cv, *item2.cv);
+                    bool isAreaIn = (ucv.IsValid() && ucv->size() == 1);
+                    if (isAreaIn)
+                        return childIndex;
+                    }
+
+                //if (inOut != CurveVector::InOutClassification::INOUT_Out)
+                //    testArea = true;
+                //else
+                //    testArea = false;
+
+                //if (testArea)
+                //    {
+                //    auto ucv = CurveVector::AreaIntersection(*childTest.cv, *item2.cv);
+                //    bool isAreaIn = (ucv.IsValid() && ucv->size() == 1);
+                //    if (isAreaIn)
+                //        return childIndex;
+                //    }
+                }
+            }
+        }
+    return -1;
+    }
+
+void CollectInternalConnectingVoids(BC_DTM_OBJ* dtmP, std::set<long>& usedFeatureIndexes)
+    {
+    std::queue<long> features;
+
+    for (auto feature : usedFeatureIndexes)
+        features.push(feature);
+
+    bool isLookingForVoids = (DTMFeatureType)(ftableAddrP(dtmP, features.back())->dtmUserTag) != DTMFeatureType::Island;
+    while (!features.empty())
+        {
+        long featureNum = features.front();
+        features.pop();
+        
+        long firstPnt = ftableAddrP(dtmP, featureNum)->dtmFeaturePts.firstPoint;
+        long p1 = firstPnt;
+        do
+            {
+            long p2;
+            bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP, featureNum, p1, &p2);
+            if (p2 == dtmP->nullPnt)
+                break;
+            if (nodeAddrP(dtmP, p1)->tPtr != p2)
+                {
+                // loop all links, and find all voids, goind the same way, if the feature hasn't been added, add it.
+                // Might beable to use TPtr to skip ones which are on the edge.
+                std::set<long> newFeatures;
+                //bcdtmList_getDtmFeatureNumsLineDtmObject(dtmP, p1, p2, newFeatures, isLookingForVoids);
+                bcdtmList_getDtmFeatureNumsLineDtmObject(dtmP, p2, p1, newFeatures, isLookingForVoids);
+                for (auto newFeatureNum : newFeatures)
+                    {
+                    if (usedFeatureIndexes.find(newFeatureNum) == usedFeatureIndexes.end())
+                        {
+                        usedFeatureIndexes.insert(newFeatureNum);
+                        features.push(newFeatureNum);
+                        }
+                    }
+                }
+            p1 = p2;
+            } while (p1 != firstPnt);
+        }
+    }
 
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -389,7 +1132,7 @@ BENTLEYDTM_Public int bcdtmCleanUp_resolveMultipleIntersectingPolygonalDtmObject
             */
             if( dbg ) bcdtmWrite_message(0,0,0,"Removing Non Feature Hull Lines") ;
             if( bcdtmList_removeNoneFeatureHullLinesDtmObject(polyDtmP)) goto errexit ;
-            if( dbg ) bcdtmWrite_toFileDtmObject(polyDtmP,L"voidHulls.bcdtm") ;
+            if (dbg) bcdtmWrite_toFileDtmObject(polyDtmP, L"d:\\voidHulls.bcdtm");
             /*
             ** Report DTM Stats
             */
@@ -408,10 +1151,10 @@ BENTLEYDTM_Public int bcdtmCleanUp_resolveMultipleIntersectingPolygonalDtmObject
             do
                 {
                 np = nodeAddrP(polyDtmP,sp)->hPtr ;
-                if( nodeAddrP(polyDtmP,sp)->tPtr == polyDtmP->nullPnt && bcdtmList_testForBreakLineDtmObject(polyDtmP,sp,np) )
+                if (nodeAddrP(polyDtmP, sp)->tPtr == polyDtmP->nullPnt && bcdtmList_testForBreakLineDtmObject(polyDtmP, sp, np, isLookingForVoids))
                     {
                     bvector<DPoint3d> points;
-                    bvector<long> usedFeatureIndexes;
+                    std::set<long> usedFeatureIndexes;
 
                     /*
                     **        Scan Around External Edge Of Break Lines and get the Feature Numbers which are on this feature.
@@ -422,16 +1165,18 @@ BENTLEYDTM_Public int bcdtmCleanUp_resolveMultipleIntersectingPolygonalDtmObject
                     do
                         {
                         if( ( hp = bcdtmList_nextAntDtmObject(polyDtmP,np,hp)) < 0 ) goto errexit ;
-                        while ( ! bcdtmList_testForBreakLineDtmObject(polyDtmP,np,hp))
+                        while (!bcdtmList_testForBreakLineDtmObject(polyDtmP, np, hp, isLookingForVoids))
                             {
                             if( ( hp = bcdtmList_nextAntDtmObject(polyDtmP,np,hp)) < 0 ) goto errexit ;
                             }
 
+                        if (nodeAddrP(polyDtmP, np)->tPtr != polyDtmP->nullPnt)
+                            bcdtmList_nullTptrListDtmObject(polyDtmP, np);
                         nodeAddrP(polyDtmP,np)->tPtr = hp ;
                         ss = hp ;
                         hp = np ;
                         np = ss ;
-                        } while ( hp != sp ) ;
+                        } while ( np != sp ) ;
                         /*
                         **        Check Connectivity
                         */
@@ -448,10 +1193,10 @@ BENTLEYDTM_Public int bcdtmCleanUp_resolveMultipleIntersectingPolygonalDtmObject
                                 np = nodeAddrP(polyDtmP,tp)->tPtr ;
                                 nodeAddrP(polyDtmP,tp)->tPtr = -(np+1) ;
                                 points.push_back( *pointAddrP(polyDtmP, np));
-                                bcdtmList_getDtmFeatureNumsLineDtmObject (polyDtmP, tp,np, usedFeatureIndexes);
+                                bcdtmList_getDtmFeatureNumsLineDtmObject(polyDtmP, tp, np, usedFeatureIndexes, isLookingForVoids);
                                 tp = np ;
                                 }
-                                bcdtmList_getDtmFeatureNumsLineDtmObject (polyDtmP, tp,np, usedFeatureIndexes);
+                            bcdtmList_getDtmFeatureNumsLineDtmObject(polyDtmP, tp, np, usedFeatureIndexes, isLookingForVoids);
                             /*
                             **  Reset Tptr Values Positive
                             */
@@ -473,7 +1218,7 @@ BENTLEYDTM_Public int bcdtmCleanUp_resolveMultipleIntersectingPolygonalDtmObject
                             /*
                             ** As they are only one feature which made up this element, it must be closed so add this element to the cleaned DTM as it should be the same as the original.
                             */
-                            dtmFeatureP = ftableAddrP(polyDtmP, usedFeatureIndexes [0]);
+                            dtmFeatureP = ftableAddrP(polyDtmP, *usedFeatureIndexes.begin());
                             DTMFeatureType useFeatureType = (DTMFeatureType)dtmFeatureP->dtmUserTag;
                             // If this is a type we are looking for then process it otherwise it will be processed on the next go round.
                             if ((useFeatureType == DTMFeatureType::Island && !isLookingForVoids) || (useFeatureType != DTMFeatureType::Island && isLookingForVoids))
@@ -506,13 +1251,14 @@ BENTLEYDTM_Public int bcdtmCleanUp_resolveMultipleIntersectingPolygonalDtmObject
                             int numIslands = 0;
 //                            int numHoles = 0;
 
-                            dtmFeatureP = ftableAddrP(polyDtmP, usedFeatureIndexes [0]);
+                            CollectInternalConnectingVoids(polyDtmP, usedFeatureIndexes);
+                            dtmFeatureP = ftableAddrP(polyDtmP, *usedFeatureIndexes.begin());
                             dtmFeatureP = ftableAddrP(dtmP, dtmFeatureP->dtmFeatureId < 0 ? -1 - (long)dtmFeatureP->dtmFeatureId : (long)dtmFeatureP->dtmFeatureId);
                             DTMFeatureId useFeatureId = dtmFeatureP->dtmFeatureId;
 
-                            for (unsigned int i = 0; i < usedFeatureIndexes.size(); i++)
+                            for (auto featureNum : usedFeatureIndexes)
                                 {
-                                dtmFeatureP = ftableAddrP(polyDtmP, usedFeatureIndexes [i]) ;
+                                dtmFeatureP = ftableAddrP(polyDtmP, featureNum) ;
                                 DTMFeatureType dtmFeatureType = (DTMFeatureType)dtmFeatureP->dtmUserTag;
                                 if (dtmFeatureType == DTMFeatureType::Island)
                                     numIslands++;
@@ -577,9 +1323,9 @@ BENTLEYDTM_Public int bcdtmCleanUp_resolveMultipleIntersectingPolygonalDtmObject
                                 }
 
                             changed = true;
-                            for (unsigned int i = 0; i < usedFeatureIndexes.size(); i++)
+                            for (auto featureNum : usedFeatureIndexes)
                                 {
-                                dtmFeatureP = ftableAddrP(polyDtmP, usedFeatureIndexes [i]) ;
+                                dtmFeatureP = ftableAddrP(polyDtmP, featureNum) ;
 
                                 //if (!valid)
                                 //    {
@@ -607,8 +1353,7 @@ BENTLEYDTM_Public int bcdtmCleanUp_resolveMultipleIntersectingPolygonalDtmObject
                     break;
                 if ( bcdtmObject_changeStateDtmObject(polyDtmP,DTMState::Data))
                     goto errexit ;
-            }
-            while (changed);
+            } while (changed);
 
             for( dtmFeature = 0 ; dtmFeature < dtmP->numFeatures ; ++dtmFeature )
                 {
@@ -619,6 +1364,8 @@ BENTLEYDTM_Public int bcdtmCleanUp_resolveMultipleIntersectingPolygonalDtmObject
                     }
                 }
 
+            bvector<int> topLevel;
+            bvector<UnionTests> uf;
             /*
             **  Copy Intersected Features To DTM
             */
@@ -628,13 +1375,60 @@ BENTLEYDTM_Public int bcdtmCleanUp_resolveMultipleIntersectingPolygonalDtmObject
                 if (dtmFeatureP->dtmFeatureState == DTMFeatureState::Data || dtmFeatureP->dtmFeatureState == DTMFeatureState::PointsArray)
                     {
                     if( bcdtmList_copyDtmFeaturePointsToPointArrayDtmObject(cleanedDtmP,dtmFeature,&featurePtsP,&numFeaturePts)) goto errexit ;
+                    UnionTests item;
+                    item.feature = dtmFeatureP;
+                    item.cv = CurveVector::CreateLinear(featurePtsP, numFeaturePts, CurveVector::BOUNDARY_TYPE_Outer);
+                    item.cv->GetRange(item.range);
+                    item.range.low.z = 0;
+                    item.range.high.z = 0;
+                    if (featurePtsP != NULL) { free(featurePtsP); featurePtsP = NULL; }
+                    item.addFeature = true;
+                    item.parent = -1;
 
-                    if( bcdtmObject_storeDtmFeatureInDtmObject(dtmP,dtmFeatureP->dtmFeatureType,dtmFeatureP->dtmUserTag,2,&dtmFeatureP->dtmFeatureId,featurePtsP,numFeaturePts)) goto errexit ;
-                    if( featurePtsP != NULL ) { free(featurePtsP) ; featurePtsP = NULL ; }
+                    //int parentOld = FindParentOld(item, uf);
+                    item.parent = FindParent(item, uf, topLevel);
+                    //if (item.parent != parentOld)
+                    //    parentOld = item.parent;
+
+                    if (item.parent != -1)
+                        {
+                        auto& item2 = uf[item.parent];
+                        if ((item2.feature->dtmFeatureType == DTMFeatureType::Island && item.feature->dtmFeatureType == DTMFeatureType::Island) || (item2.feature->dtmFeatureType != DTMFeatureType::Island && item.feature->dtmFeatureType != DTMFeatureType::Island))
+                            item.addFeature = false;
+                        else
+                            {
+                            if (item2.range.IsEqual(item.range))
+                                {
+                                auto parity = CurveVector::AreaParity(*item2.cv, *item.cv);
+
+                                if (parity.IsNull() || parity->size() == 0)
+                                    {
+                                    item.addFeature = false;
+                                    item2.addFeature = false;
+                                    }
+                                }
+                            }
+                        if (item.addFeature)
+                            item2.children.push_back((int) uf.size());
+                        }
+                    else
+                        topLevel.push_back((int) uf.size());
+                    if (item.addFeature)
+                        uf.push_back(item);
+                    }
+                }
+
+            for (auto& item : uf)
+                {
+                if (item.addFeature)
+                    {
+                    auto ls = (*item.cv)[0]->GetLineStringCP();
+                    if (bcdtmObject_storeDtmFeatureInDtmObject(dtmP, item.feature->dtmFeatureType, item.feature->dtmUserTag, 2, &item.feature->dtmFeatureId, ls->data(), (int)ls->size())) goto errexit;
                     }
                 }
         }
-    if( dbg ) bcdtmWrite_toFileDtmObject(dtmP,L"cleaned.bcdtm") ;
+        if (dbg) bcdtmWrite_toFileDtmObject(cleanedDtmP, L"d:\\cleaned1.bcdtm");
+        if (dbg) bcdtmWrite_toFileDtmObject(dtmP, L"d:\\cleaned.bcdtm");
     /*
     ** Clean Up
     */
@@ -779,17 +1573,17 @@ int bcdtmClean_validateDtmFeaturesDtmObject
 /*
 **     Close Polygonal Features
 */
-       if( polygonalFeature == TRUE && ! closeFlag && forceClose )
-         {
-          featurePtsP->x = (featurePtsP+numFeaturePts-1)->x ;
-          featurePtsP->y = (featurePtsP+numFeaturePts-1)->y ;
-          featurePtsP->z = (featurePtsP+numFeaturePts-1)->z ;
+       if (polygonalFeature == TRUE && !closeFlag && forceClose)
+           {
+           numFeaturePts++;
+           featurePtsP = (DPoint3dP)realloc(featurePtsP, numFeaturePts * sizeof(DPoint3d));
+           *(featurePtsP + numFeaturePts - 1) = *featurePtsP;
 
-          long IntFlag = 0;
-          if (bcdtmData_checkPolygonForKnots (featurePtsP, numFeaturePts, &IntFlag)) goto errexit;
-          if ((IntFlag & 1) != 1)
-            closeFlag = 1 ;
-         }
+           long IntFlag = 0;
+           if (bcdtmData_checkPolygonForKnots(featurePtsP, numFeaturePts, &IntFlag)) goto errexit;
+           if ((IntFlag & 1) != 1)
+               closeFlag = 1;
+           }
 /*
 **     Check For Close Error
 */

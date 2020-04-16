@@ -13,6 +13,10 @@
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
+#if defined(_WIN32)
+void DisplayStack(char* text, uint64_t nodeID, uint64_t poolID, uint64_t refCount);
+#endif
+
 enum class EventType
 {
     LOAD_MESH_CREATE_0,
@@ -52,7 +56,8 @@ enum class EventType
     START_NEWQUERY_COLLECT,
     START_NEWQUERY_FINDLOADED,
     START_NEWQUERY_COLLECTCLIPS,
-    START_NEWQUERY_CHECKCLIPS
+    START_NEWQUERY_CHECKCLIPS,
+    CUSTOM_STRING
 };
 
 struct TraceEvent
@@ -67,6 +72,7 @@ struct TraceEvent
     uint64_t objVal;
     uint64_t poolId;
     int64_t objectSize;
+    Utf8String custom_string;
     std::string stackTrace;
 };
 
@@ -98,12 +104,22 @@ public:
     
     BENTLEY_SM_EXPORT void start();
         
-    BENTLEY_SM_EXPORT void logEvent(TraceEvent e);
+    BENTLEY_SM_EXPORT void logEvent(const TraceEvent& e);
         
     BENTLEY_SM_EXPORT void analyze(int processId = -1);    
 };
 
 #if TRACE_ON
+#define TRACEPOINT_WSTRING(type,string,val) \
+{ \
+if (__TRACEPOINT__typeToFilter[type]) { \
+TraceEvent __TRACEPOINT__event; \
+__TRACEPOINT__event.typeOfEvent = (type); \
+__TRACEPOINT__event.objVal = (uint64_t)(val); \
+__TRACEPOINT__event.custom_string = Utf8String(string); \
+CachedDataEventTracer::GetInstance()->logEvent(__TRACEPOINT__event); } \
+}
+
 #define TRACEPOINT(type,id,meshid,texid,poolid,val,rc) \
 {  \
 if (__TRACEPOINT__typeToFilter[type]) { \
@@ -137,6 +153,10 @@ __TRACEPOINT__event.objectSize = objSize; \
 CachedDataEventTracer::GetInstance()->logEvent(__TRACEPOINT__event);  } \
 }
 #else
+#define TRACEPOINT_WSTRING(type, string, val) \
+{ \
+}
+
 #define TRACEPOINT(type,id,meshid,texid,poolid,val,rc) \
 {  \
 }

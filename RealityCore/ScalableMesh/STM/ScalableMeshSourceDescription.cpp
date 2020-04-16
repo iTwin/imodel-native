@@ -35,7 +35,7 @@ struct SourceLayerDescriptorHolder
     {
     SourceLayerDescriptor           m_held;
 
-                                    SourceLayerDescriptorHolder        (const SourceLayerDescriptor&    rhs) 
+                                    explicit SourceLayerDescriptorHolder        (const SourceLayerDescriptor&    rhs) 
         : m_held(rhs) 
         {}
     SourceLayerDescriptorHolder&    operator=                          (const SourceLayerDescriptor&    rhs) 

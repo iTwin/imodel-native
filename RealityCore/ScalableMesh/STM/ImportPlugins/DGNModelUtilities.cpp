@@ -197,7 +197,6 @@ DgnFilePtr DgnFileOpenParams::CreateFileAndLoad ()
     else if (SUCCESS == m_openStatus)
         return  dgnFile;
 
-    m_openStatus = m_openStatus;    // ???
     return  NULL;
     }
 

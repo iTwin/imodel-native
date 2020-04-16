@@ -33,7 +33,7 @@ protected:
 
 public:
                                         ActivitySemaphore       (void);
-                                        ActivitySemaphore       (CounterValue value);
+                               explicit ActivitySemaphore       (CounterValue value);
                                        ~ActivitySemaphore       (void);
 
     void                                setCounter              (CounterValue value);

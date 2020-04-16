@@ -166,7 +166,8 @@ struct ContentDescriptorImpl : public ShareableObjectTypeTrait<ContentDescriptor
     explicit                                    ContentDescriptorImpl          (const WChar*                     name)
         :   m_name(name),
             m_holdsIncompleteTypes(false),
-            m_isPod(false)
+            m_isPod(false),
+            m_canRepresent3dData(false)
         {
         
         }

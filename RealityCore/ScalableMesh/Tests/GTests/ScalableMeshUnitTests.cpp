@@ -36,7 +36,14 @@
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
+BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
+bool ClipIntersectsBox(const ClipVectorPtr& cp, DRange3d ext, Transform tr);
+void PlaneSetFromPolygon(bvector<DPoint3d> const& polygon, ClipPlaneSet*& planeSet);
+END_BENTLEY_SCALABLEMESH_NAMESPACE
+
 #define BINGWKT L"PROJCS[\"Google Maps Global Mercator\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.01745329251994328,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]],PROJECTION[\"Mercator_2SP\"],PARAMETER[\"standard_parallel_1\",0],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",0],PARAMETER[\"false_easting\",0],PARAMETER[\"false_northing\",0],UNIT[\"Meter\",1],EXTENSION[\"PROJ4\",\"+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext  +no_defs\"],AUTHORITY[\"EPSG\",\"900913\"]]"
+#define EPSG_102738_WKT L"PROJCS[\"NAD_1983_StatePlane_Texas_North_Central_FIPS_4202_Feet\",GEOGCS[\"GCS_North_American_1983\",DATUM[\"North_American_Datum_1983\",SPHEROID[\"GRS_1980\", 6378137, 298.257222101]],PRIMEM[\"Greenwich\", 0],UNIT[\"Degree\", 0.017453292519943295]],PROJECTION[\"Lambert_Conformal_Conic_2SP\"],PARAMETER[\"False_Easting\", 1968500],PARAMETER[\"False_Northing\", 6561666.666666666],PARAMETER[\"Central_Meridian\", -98.5],PARAMETER[\"Standard_Parallel_1\", 32.13333333333333],PARAMETER[\"Standard_Parallel_2\", 33.96666666666667],PARAMETER[\"Latitude_Of_Origin\", 31.66666666666667],UNIT[\"Foot_US\", 0.30480060960121924],AUTHORITY[\"EPSG\", \"102738\"]]"
+#define EPSG_26914_WKT L"PROJCS[\"NAD83 / UTM zone 14N\",GEOGCS[\"NAD83\",DATUM[\"North_American_Datum_1983\",SPHEROID[\"GRS 1980\", 6378137, 298.257222101,AUTHORITY[\"EPSG\", \"7019\"]],TOWGS84[0, 0, 0, 0, 0, 0, 0],AUTHORITY[\"EPSG\", \"6269\"]],PRIMEM[\"Greenwich\", 0,AUTHORITY[\"EPSG\", \"8901\"]],UNIT[\"degree\", 0.0174532925199433,AUTHORITY[\"EPSG\", \"9122\"]],AUTHORITY[\"EPSG\", \"4269\"]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\", 0],PARAMETER[\"central_meridian\", -99],PARAMETER[\"scale_factor\", 0.9996],PARAMETER[\"false_easting\", 500000],PARAMETER[\"false_northing\", 0],UNIT[\"metre\", 1,AUTHORITY[\"EPSG\", \"9001\"]],AXIS[\"Easting\", EAST],AXIS[\"Northing\", NORTH],AUTHORITY[\"EPSG\", \"26914\"]]"
 #define NUM_CLIP_POINTS 21
 
 class ScalableMeshEnvironment : public ::testing::Environment
@@ -148,7 +155,10 @@ class ScalableMeshTest : public ::testing::Test
             return true;
             };
         getNonEmptyNodes(sm->GetRootNode());
-        if(nodesList.empty()) return nullptr;
+        if (nodesList.empty())
+            {
+            return nullptr;
+            }
         if (returnFirstNonEmptyNode) return nodesList[0];
         std::random_device rd;
         std::default_random_engine e1(rd());
@@ -213,7 +223,7 @@ class ScalableMeshTestWithParams : public ::testing::TestWithParam<BeFileName>
                 }
             };
 
-        void CreateSimpleClipFromRangeHelper(bvector<DPoint3d>& vec, const DRange3d& range)
+         void CreateSimpleClipFromRangeHelper2D(bvector<DPoint3d>& vec, const DRange3d& range)
             {
             std::random_device rd;
 
@@ -234,6 +244,73 @@ class ScalableMeshTestWithParams : public ::testing::TestWithParam<BeFileName>
             vec.push_back(clipRange.high);
             vec.push_back(DPoint3d::From(clipRange.high.x, clipRange.low.y, clipRange.high.z)); 
             vec.push_back(DPoint3d::From(clipRange.low.x, clipRange.low.y, clipRange.high.z));
+            }
+
+         void CreateSimpleClipFromRangeHelper3D(bvector<DPoint3d>& vec, const DRange3d& range)
+            {
+            std::random_device rd;
+
+            std::default_random_engine e1(rd());
+            std::uniform_real_distribution<double> val_n(-1.0, 1.0);
+            std::uniform_real_distribution<double> val_x(range.low.x, range.high.x);
+            std::uniform_real_distribution<double> val_y(range.low.y, range.high.y);
+            std::uniform_real_distribution<double> val_z(range.low.z, range.high.z);
+
+            //create equation of plane
+            double nx = val_n(e1);
+            double ny = val_n(e1);
+            double nz = val_n(e1);
+            double x0 = val_x(e1);
+            double y0 = val_y(e1);
+            double z0 = val_z(e1);
+
+            vec.clear();
+            for (int i = 0; i < 4; ++i)
+                {
+                double x = val_x(e1);
+                double y = val_y(e1);
+                double z;
+                if (nz != 0.0)
+                    {
+                    z = (nx * (x0 - x) + ny * (y0 - y)) / nz + z0;
+                    }
+                else
+                    {
+                    z = 0.0;
+                    }
+                vec.push_back(DPoint3d::From(x, y, z));
+                }
+            vec.push_back(vec.front());
+            }
+
+        bool CreateClip2Dor3D(DRange3d range, ClipVectorPtr& cp, bvector<DPoint3d>& clipPoints, bool is3D)
+            {
+            clipPoints.clear();
+            if (is3D)
+                {
+                CreateSimpleClipFromRangeHelper3D(clipPoints, range);
+                }
+            else
+                {
+                CreateSimpleClipFromRangeHelper2D(clipPoints, range);
+                }
+
+            ClipPlaneSet* planeSetBoundaryPolygon = nullptr;
+            PlaneSetFromPolygon(clipPoints, planeSetBoundaryPolygon);
+            if (planeSetBoundaryPolygon == nullptr) return false;
+            cp = ClipVector::CreateFromPrimitive(ClipPrimitive::CreateFromClipPlanes(*planeSetBoundaryPolygon));
+            delete(planeSetBoundaryPolygon);
+            if (cp == nullptr) return false;
+
+            for (ClipPrimitivePtr const& primitive : *cp)
+                {
+                for (auto& planes : *(primitive->GetClipPlanes()))
+                    {
+                    if (planes.size() != 4) return false; //get rid of self crossing polygons
+                    }
+                }
+
+            return true;
             }
 
         void SetReprojection(IScalableMeshPtr myScalableMesh, bool& status)
@@ -734,6 +811,10 @@ TEST_P(ScalableMeshTestWithParams, VerifyMeshNodeInfo)
 
     // Node content extent
     DRange3d nodeContentExtent = rootNode->GetContentExtent();
+
+    bool isContentExtentDefined = !nodeContentExtent.IsNull() && !nodeContentExtent.IsEmpty();
+    if(!isContentExtentDefined)
+        nodeContentExtent = nodeExtent;
 
     auto const& groundTruthNodeContentExtent = groundTruthRoot["ContentExtent"];
 
@@ -1389,6 +1470,85 @@ TEST_F(ScalableMeshTest, SaveAsWithClipMask)
     ASSERT_TRUE(BeFileNameStatus::Success == BeFileName::BeDeleteFile(destination.c_str()));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sarah.Keenan      03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ScalableMeshTest, SaveAsWithGCS)
+{
+    WString filterTypeStr;
+
+    ASSERT_TRUE(BSISUCCESS == ConfigurationManager::GetVariable(filterTypeStr, L"SM_FILTER_TYPE"));
+
+    // Original 3SM is at EPSG:102738 (US Survey Feet)
+    WString testFile = L"Building_EPSG_102738.3sm";
+    BeFileName filename(SM_DATA_PATH);
+    ASSERT_TRUE(ScalableMeshGTestUtil::GetDataPath(filename));
+
+    filename.AppendToPath(testFile.c_str());
+
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    BeFileName destination = ScalableMeshGTestUtil::GetUserSMTempDir();
+    destination.AppendToPath(testFile.c_str());
+
+    if (BeFileName::DoesPathExist(destination.c_str()))
+        ASSERT_TRUE(BeFileNameStatus::Success == BeFileName::BeDeleteFile(destination.c_str()));    
+
+    DRange3d rangeEpsg102738UsFeet;
+    ASSERT_EQ(DTM_SUCCESS, myScalableMesh->GetRange(rangeEpsg102738UsFeet));
+
+    // Test SaveAs to GCS EPSG:26914 (meters)
+    GeoCoords::GCSFactory gcsFactory;
+    GeoCoords::GCS srcGCS(myScalableMesh->GetGCS());
+    GeoCoords::GCS targetGCS = gcsFactory.Create(EPSG_26914_WKT);    
+    Transform computedTransform = Transform::FromIdentity();
+    
+    // apply the units scale ratio between the src GCS and the target GCS
+    // this is not a proper reprojection transform but will still change the values of the points
+    // written to the new file so we can test that the range has changed
+    double srcUnitsRatio = srcGCS.GetUnit().GetRatioToBase();
+    double targetUnitsRatio = targetGCS.GetUnit().GetRatioToBase();
+    if (fabs(srcUnitsRatio - targetUnitsRatio) > 1e-5)
+    {
+        Transform scaleTransform = Transform::FromRowValues(srcUnitsRatio / targetUnitsRatio, 0, 0, 0,
+            0, srcUnitsRatio / targetUnitsRatio, 0, 0,
+            0, 0, srcUnitsRatio / targetUnitsRatio, 0);
+        computedTransform.productOf(&scaleTransform, &computedTransform);
+    }
+        
+    auto ret = IScalableMeshSaveAs::DoSaveAs(myScalableMesh, destination, nullptr, nullptr/*progressSM*/, computedTransform, targetGCS);
+    
+    EXPECT_EQ(SUCCESS == ret && BeFileName::DoesPathExist(destination.c_str()), true) << "\n Error saving to new 3sm" << std::endl << std::endl;
+   
+    // Open saved 3sm and check range is correct 
+    auto newGcsScalableMesh = ScalableMeshTest::OpenMesh(destination);
+    ASSERT_EQ(newGcsScalableMesh.IsValid(), true);
+
+    DRange3d rangeEpsg26914Meters;
+    ASSERT_EQ(DTM_SUCCESS, newGcsScalableMesh->GetRange(rangeEpsg26914Meters));
+
+    // do range check    
+    DPoint3d testRangeLow, testRangeHigh;
+    Transform inverseTransform;
+    inverseTransform.InverseOf(computedTransform);
+    inverseTransform.Multiply(testRangeLow, rangeEpsg26914Meters.low);
+    inverseTransform.Multiply(testRangeHigh, rangeEpsg26914Meters.high);
+    ASSERT_TRUE(testRangeLow.IsEqual(rangeEpsg102738UsFeet.low, 1e-5));
+    ASSERT_TRUE(testRangeHigh.IsEqual(rangeEpsg102738UsFeet.high, 1e-5));
+
+    // make sure the target GCS was set properly in the newly saved 3SM
+    GeoCoords::GCS newGCS(newGcsScalableMesh->GetGCS());
+    WString targetWKT = targetGCS.GetWKT().Get();
+    WString newWKT = newGCS.GetWKT().Get();
+    ASSERT_TRUE(!WString::IsNullOrEmpty(targetWKT.c_str()));
+    ASSERT_TRUE(targetWKT == newWKT);
+
+    // Cleanup
+    ASSERT_TRUE(BeFileNameStatus::Success == BeFileName::BeDeleteFile(destination.c_str()));
+}
+
+
 INSTANTIATE_TEST_CASE_P(ScalableMesh, ScalableMeshTestDrapePoints, ::testing::ValuesIn(ScalableMeshGTestUtil::GetListOfValues(BeFileName(SM_LISTING_FILE_NAME))));
 
 /*---------------------------------------------------------------------------------**//**
@@ -1668,8 +1828,6 @@ TEST_P(ScalableMeshGenerationTestWithParams, FromSourceCreation)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ScalableMeshTestWithParams, GetNodeQueryInterface)
     {
-    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
-
     auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
     ASSERT_EQ(myScalableMesh.IsValid(), true);
 
@@ -1683,8 +1841,6 @@ TEST_P(ScalableMeshTestWithParams, GetNodeQueryInterface)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ScalableMeshTestWithParams, NodeRayQuerySingleNode)
     {
-    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
-
     auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
     ASSERT_EQ(myScalableMesh.IsValid(), true);
 
@@ -1752,8 +1908,6 @@ TEST_P(ScalableMeshTestWithParams, NodeRayQueryMultipleNode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ScalableMeshTestWithParams, NodeRayQueryByDepth)
     {
-    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
-
     auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
     ASSERT_EQ(myScalableMesh.IsValid(), true);
 
@@ -1787,8 +1941,6 @@ TEST_P(ScalableMeshTestWithParams, NodeRayQueryByDepth)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ScalableMeshTestWithParams, NodeRayQueryByLevel)
 {
-    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
-
     auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
     ASSERT_EQ(myScalableMesh.IsValid(), true);
 
@@ -1816,8 +1968,6 @@ TEST_P(ScalableMeshTestWithParams, NodeRayQueryByLevel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ScalableMeshTestWithParams, NodeRayQueryUnbounded)
     {
-    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
-
     auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
     ASSERT_EQ(myScalableMesh.IsValid(), true);
 
@@ -1852,8 +2002,6 @@ TEST_P(ScalableMeshTestWithParams, NodeRayQueryUnbounded)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ScalableMeshTestWithParams, NodeRayQueryUsing2dProjectedRays)
 {
-    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
-
     auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
     ASSERT_EQ(myScalableMesh.IsValid(), true);
 
@@ -1893,8 +2041,6 @@ TEST_P(ScalableMeshTestWithParams, NodeRayQueryUsing2dProjectedRays)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ScalableMeshTestWithParams, LoadMeshWithTexture)
 {
-    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
-
     auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
     ASSERT_EQ(myScalableMesh.IsValid(), true);
     auto nodeP = ScalableMeshTest::GetNonEmptyNode(myScalableMesh);
@@ -1930,8 +2076,6 @@ TEST_P(ScalableMeshTestWithParams, LoadMeshWithTexture)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ScalableMeshTestWithParams, LoadMeshWithGraph)
 {
-    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
-
     auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
     ASSERT_EQ(myScalableMesh.IsValid(), true);
 
@@ -1962,13 +2106,16 @@ TEST_P(ScalableMeshTestWithParams, LoadMeshWithGraph)
     }
 }
 
-//cliping do not work on linux
-#ifndef __linux__
+#if 0
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                               Richard.Bois     02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ScalableMeshTestWithParams, LoadMeshWithClip)
 {
+    uint64_t clipId = 0;
+    for(int testIteration = 0; testIteration < 8; ++testIteration)
+    {
     auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
 
     auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
@@ -1989,56 +2136,67 @@ TEST_P(ScalableMeshTestWithParams, LoadMeshWithClip)
     DRange3d range;
     ASSERT_EQ(DTM_SUCCESS, myScalableMesh->GetRange(range));
 
-#ifdef VANCOUVER_API
-    range.scaleAboutCenter(&range, 0.75);
-#else
-    range.ScaleAboutCenter(range, 0.75);
-#endif
-
+    ScalableMesh::IScalableMeshNodePtr nodeP = nullptr;
     bvector<DPoint3d> clipPoints;
-    CreateSimpleClipFromRangeHelper(clipPoints, range);
-
-    DRange3d clipRange = DRange3d::From(clipPoints);
-
-
-    auto nodeP = ScalableMeshTest::GetNonEmptyNode(myScalableMesh, [&] (IScalableMeshNodePtr nodeP)
-                                                   {
-                                                   return clipRange.IntersectsWith(nodeP->GetContentExtent(), 2);
-                                                   });
-
-    if(nodeP->GetPointCount() > 4)
+    ClipVectorPtr cp = nullptr;
+    Transform tr = Transform::FromIdentity();
+    
+    while (!CreateClip2Dor3D(range, cp, clipPoints, testIteration % 2) || nodeP == nullptr)
         {
-
-        Transform tr = Transform::FromIdentity();
-
-        uint64_t clipId = 1;
-        ASSERT_TRUE(myScalableMesh->AddClip(clipPoints.data(), clipPoints.size(), clipId));
-
-        IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create(true, false, true);
-
-        auto mesh = nodeP->GetMesh(flags);
-        if(!nodeP->GetContentExtent().IsNull())
-            ASSERT_TRUE(mesh.IsValid());
-        if(mesh.IsValid())
+        nodeP = ScalableMeshTest::GetNonEmptyNode(myScalableMesh, [&](IScalableMeshNodePtr nodeP)
             {
-            if(nodeP->IsTextured())
-                ASSERT_TRUE(mesh->GetPolyfaceQuery()->GetParamCP() != nullptr);
-            else
-                ASSERT_TRUE(mesh->GetPolyfaceQuery()->GetParamCP() == nullptr);
+            return ClipIntersectsBox(cp, nodeP->GetContentExtent(), tr);
+            });
+        if (!nodeP.IsValid() || nodeP->GetPointCount() < 4) nodeP = nullptr;
+        }
 
-            ASSERT_EQ(mesh->GetNbPoints(), mesh->GetPolyfaceQuery()->GetPointCount());
-            ASSERT_EQ(mesh->GetNbFaces(), mesh->GetPolyfaceQuery()->GetPointIndexCount() / 3);
-            ASSERT_NE(nodeP->GetPointCount(), mesh->GetNbPoints());
+    ++clipId;
+    ASSERT_TRUE(myScalableMesh->AddClip(clipPoints.data(), clipPoints.size(), clipId));
 
-            flags = IScalableMeshMeshFlags::Create(false, false);
-            mesh = nodeP->GetMesh(flags);
+    IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create(true, false, true);
+    auto mesh = nodeP->GetMesh(flags);
+
+    if(!nodeP->GetContentExtent().IsNull())
+        ASSERT_TRUE(mesh.IsValid());
+    if(mesh.IsValid())
+        {
+        if(nodeP->IsTextured())
+            ASSERT_TRUE(mesh->GetPolyfaceQuery()->GetParamCP() != nullptr);
+        else
             ASSERT_TRUE(mesh->GetPolyfaceQuery()->GetParamCP() == nullptr);
 
-            ASSERT_EQ(mesh->GetNbPoints(), mesh->GetPolyfaceQuery()->GetPointCount());
-            ASSERT_EQ(mesh->GetNbFaces(), mesh->GetPolyfaceQuery()->GetPointIndexCount() / 3);
-            ASSERT_GE(nodeP->GetPointCount(), mesh->GetNbPoints());
+        auto poly = mesh->GetPolyfaceQuery();
+        for (size_t i = 0; i < poly->GetPointIndexCount(); i += 3)
+            {
+            DPoint3d p1 = poly->GetPointCP()[poly->GetPointIndexCP()[i] - 1];
+            DPoint3d p2 = poly->GetPointCP()[poly->GetPointIndexCP()[i + 1] - 1];
+            DPoint3d p3 = poly->GetPointCP()[poly->GetPointIndexCP()[i + 2] - 1];
+            
+            for (ClipPrimitivePtr const& primitive : *cp)
+                {
+                for (auto& planes : *(primitive->GetClipPlanes()))
+                    {
+                    ASSERT_FALSE(planes.IsPointOnOrInside(p1, -1e-6));
+                    ASSERT_FALSE(planes.IsPointOnOrInside(p2, -1e-6));
+                    ASSERT_FALSE(planes.IsPointOnOrInside(p3, -1e-6));
+                    int intersectCountP1P2 = 0;
+                    int intersectCountP1P3 = 0;
+                    int intersectCountP2P3 = 0;
+                    for (auto& plane : planes)
+                        {
+                        double fraction;
+                        if (plane.BoundedSegmentHasSimpleIntersection(p1, p2, fraction)) ++intersectCountP1P2;
+                        if (plane.BoundedSegmentHasSimpleIntersection(p1, p3, fraction)) ++intersectCountP1P3;
+                        if (plane.BoundedSegmentHasSimpleIntersection(p2, p3, fraction)) ++intersectCountP2P3;
+                        }
+                    ASSERT_LT(intersectCountP1P2, 2);
+                    ASSERT_LT(intersectCountP1P3, 2);
+                    ASSERT_LT(intersectCountP2P3, 2);
+                    }
+                }
             }
         }
+    }
 }
 #endif
 
@@ -2047,8 +2205,6 @@ TEST_P(ScalableMeshTestWithParams, LoadMeshWithClip)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ScalableMeshTestWithParams, GetAsBcDTM)
 {
-    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
-
     auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
     ASSERT_EQ(myScalableMesh.IsValid(), true);
 
@@ -2075,8 +2231,6 @@ TEST_P(ScalableMeshTestWithParams, GetAsBcDTM)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ScalableMeshTestWithParams, GetTexture)
 {
-    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
-
     auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
     ASSERT_EQ(myScalableMesh.IsValid(), true);
     auto nodeP = ScalableMeshTest::GetNonEmptyNode(myScalableMesh);
@@ -2100,8 +2254,6 @@ TEST_P(ScalableMeshTestWithParams, GetTexture)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ScalableMeshTestWithParams, AddSkirt)
 {
-    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
-
     auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
     ASSERT_EQ(myScalableMesh.IsValid(), true);
 
@@ -2142,9 +2294,6 @@ TEST_P(ScalableMeshTestWithParams, AddSkirt)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ScalableMeshTestWithParams, ModifySkirt)
 {
-
-    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
-
     auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
     ASSERT_EQ(myScalableMesh.IsValid(), true);
 
@@ -2190,9 +2339,6 @@ TEST_P(ScalableMeshTestWithParams, ModifySkirt)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ScalableMeshTestWithParams, RemoveSkirt)
 {
-
-    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
-
     auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
     ASSERT_EQ(myScalableMesh.IsValid(), true);
 
@@ -2235,8 +2381,6 @@ TEST_P(ScalableMeshTestWithParams, RemoveSkirt)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ScalableMeshTestWithParams, GetAllClipIds)
 {
-    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
-
     auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
     ASSERT_EQ(myScalableMesh.IsValid(), true);
 
@@ -2394,8 +2538,6 @@ TEST_P(ScalableMeshTestWithParams, GetSkirtMeshes)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ScalableMeshTestWithParams, GetChildrenNodes)
 {
-    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
-
     auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
     ASSERT_EQ(myScalableMesh.IsValid(), true);
 
@@ -2465,8 +2607,6 @@ TEST_P(ScalableMeshTestWithParams, GetBcDTM)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ScalableMeshTestWithParams, GetNeighborAt)
 {
-    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
-
     auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
     ASSERT_EQ(myScalableMesh.IsValid(), true);
 
@@ -2580,15 +2720,11 @@ TEST_P(ScalableMeshTestWithParams, GetTextureCompressed)
     }
 }
 
-//fails on linux
-#ifndef __linux__
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                               Elenie.Godzaridis     09/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ScalableMeshTestWithParams, GetMeshUnderClip)
 {
-    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
-
     auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
     ASSERT_EQ(myScalableMesh.IsValid(), true);
 
@@ -2616,7 +2752,7 @@ TEST_P(ScalableMeshTestWithParams, GetMeshUnderClip)
 
     range.high.z = maxZ;
     bvector<DPoint3d> clipPoints;
-    CreateSimpleClipFromRangeHelper(clipPoints, range);
+    CreateSimpleClipFromRangeHelper2D(clipPoints, range);
 
     uint64_t clipId = 20;
     ASSERT_TRUE(myScalableMesh->AddClip(clipPoints.data(), clipPoints.size(), clipId));
@@ -2634,9 +2770,8 @@ TEST_P(ScalableMeshTestWithParams, GetMeshUnderClip)
         Transform tr = myScalableMesh->GetReprojectionTransform();
         nodeP->RefreshMergedClip(tr);
         auto mesh = nodeP->GetMeshUnderClip(flags, clipId);
-        if(!nodeP->GetContentExtent().IsNull() && nodeP->GetPointCount() > 4)
+        if(!nodeP->GetContentExtent().IsNull() && nodeP->GetPointCount() > 4 && mesh.IsValid())
             {
-            ASSERT_TRUE(mesh.IsValid());
             for(size_t pt = 0; pt < mesh->GetPolyfaceQuery()->GetPointIndexCount(); ++pt)
                 ASSERT_TRUE(range.IsContainedXY(mesh->GetPolyfaceQuery()->GetPointCP()[mesh->GetPolyfaceQuery()->GetPointIndexCP()[pt] - 1]));
             }
@@ -2646,7 +2781,6 @@ TEST_P(ScalableMeshTestWithParams, GetMeshUnderClip)
         std::cerr << "[          ] Skipping data where clips has no effect on the mesh..." << std::endl;
         }
 }
-#endif
 
 TEST_P(ScalableMeshTestWithParams, MeshClipperClipFilterModes3D)
 {

@@ -78,4 +78,4 @@ void ReadFeatureFile(std::ifstream& file, std::vector<std::pair<std::vector<DPoi
 bool DPoint3dEqualityTest(const DPoint3d& point1, const DPoint3d& point2);
 void SetReprojectionMatrixForMeterData(IScalableMeshPtr& stmFile);
 bool GetLinePointsFromLnsFile(bvector<bvector<DPoint3d>>& lines, WString& lnsFileName);
-void CreateBreaklines(BeFileNameCR extraLinearFeatureAbsFileName, bvector<DPoint3d> const& closedPolygonPoints, ScalableMesh::IScalableMeshPtr& scalableMeshModel, Transform& uorToDestUnits);
+void CreateBreaklines(BeFileNameCR extraLinearFeatureAbsFileName, bvector<DPoint3d> const& closedPolygonPoints, ScalableMesh::IScalableMeshPtr& scalableMeshModel, const Transform& uorToDestUnits);

@@ -12,6 +12,9 @@
 #include <TerrainModel/Core/DTMIterators.h>
 #include <array>
 #include "../ScalableMeshQuery.h"
+#ifdef SCALABLEMESH_DEBUG_USE_GEOM_SERIALIZATION
+#include <GeomSerialization/GeomLibsFlatBufferApi.h>
+#endif
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 #define SM_TRACE_CLIPS_GETMESH 0
@@ -682,7 +685,7 @@ void Clipper::TagUVsOnPolyface(PolyfaceHeaderPtr& poly, BENTLEY_NAMESPACE_NAME::
             poly->Point().push_back(pt);
             }
         }
-    //size_t nFaceMisses = 0;
+    size_t nFaceMisses = 0;
     poly->PointIndex().clear();
     poly->Param().SetActive(true);
     poly->ParamIndex().SetActive(true);
@@ -690,7 +693,7 @@ void Clipper::TagUVsOnPolyface(PolyfaceHeaderPtr& poly, BENTLEY_NAMESPACE_NAME::
         {
         DPoint2d uvCoords[3];
         int32_t newIndices[3] = { indices[i], indices[i + 1], indices[i + 2] };
-       /* for (size_t j = 0; j < 3; ++j)
+        for (size_t j = 0; j < 3; ++j)
             {
             if (mapOfIndices.count(indices[i + j]) != 0)
                 {
@@ -708,7 +711,7 @@ void Clipper::TagUVsOnPolyface(PolyfaceHeaderPtr& poly, BENTLEY_NAMESPACE_NAME::
             for (size_t uvI = 0; uvI < 3; ++uvI)
                 poly->ParamIndex().push_back(1);
             continue;
-            }*/
+            }
         poly->PointIndex().push_back(allPts[newIndices[0]] + 1);
         poly->PointIndex().push_back(allPts[newIndices[1]] + 1);
         poly->PointIndex().push_back(allPts[newIndices[2]] + 1);
@@ -790,14 +793,6 @@ void Clipper::TagUVsOnPolyface(PolyfaceHeaderPtr& poly, BENTLEY_NAMESPACE_NAME::
 #endif
     }
 
-bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons)
-    {
-    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr dtmPtr;
-    MakeDTMFromIndexList(dtmPtr);
-    bvector<bpair<double, int>> metadata(polygons.size(), make_bpair(0,0));
-    return GetRegionsFromClipPolys(polyfaces, polygons, metadata, dtmPtr);
-    }
-
 DTMInsertPointCallback Clipper::GetInsertPointCallback(FaceToUVMap& faceToUVMap, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& ptr)
     {
     return[&faceToUVMap, &ptr] (int newPtNum, DPoint3dCR pt, double&elevation, bool onEdge, const int pts[])
@@ -857,233 +852,6 @@ DTMInsertPointCallback Clipper::GetInsertPointCallback(FaceToUVMap& faceToUVMap,
     }
 
 size_t s_nclip = 0;
-
-bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, bvector<bpair<double, int>>& metadata, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr)
-    {
-//#ifndef NDEBUG
-    volatile bool dbg = false;
-    if (dbg)
-        {
-#if _WIN32
-        WString nameBefore = WString(s_path)+L"fpreclipmeshregion2d_";
-        nameBefore.append(to_wstring(s_nclip).c_str());
-        nameBefore.append(L"_");
-        nameBefore.append(to_wstring(m_range.low.x).c_str());
-        nameBefore.append(L"_");
-        nameBefore.append(to_wstring(m_range.low.y).c_str());
-        nameBefore.append(L".m");
-        FILE* meshBeforeClip = _wfopen(nameBefore.c_str(), L"wb");
-        fwrite(&m_nVertices, sizeof(size_t), 1, meshBeforeClip);
-        fwrite(m_vertexBuffer, sizeof(DPoint3d), m_nVertices, meshBeforeClip);
-        fwrite(&m_nIndices, sizeof(size_t), 1, meshBeforeClip);
-        fwrite(m_indexBuffer, sizeof(int32_t), m_nIndices, meshBeforeClip);
-        fclose(meshBeforeClip);
-        for (size_t j = 0; j < polygons.size(); ++j)
-            {
-            WString namePoly = WString(s_path) + L"fpreclippolyreg2d_";
-            namePoly.append(to_wstring(s_nclip).c_str());
-            namePoly.append(L"_");
-            namePoly.append(to_wstring(j).c_str());
-            namePoly.append(L"_");
-            namePoly.append(to_wstring(m_range.low.x).c_str());
-            namePoly.append(L"_");
-            namePoly.append(to_wstring(m_range.low.y).c_str());
-            namePoly.append(L".p");
-            FILE* polyCliPFile = _wfopen(namePoly.c_str(), L"wb");
-            size_t polySize = polygons[j].size();
-            fwrite(&polySize, sizeof(size_t), 1, polyCliPFile);
-            fwrite(&polygons[j][0], sizeof(DPoint3d), polySize, polyCliPFile);
-            fclose(polyCliPFile);
-            }
-#endif
-        }
-//#endif
-    DTMUserTag    userTag = 0;
-    DTMFeatureId* textureRegionIdsP = 0;
-    long          numRegionTextureIds = 0;
-    FaceToUVMap originalFaceMap(m_range);
-    int32_t* toDTMIndexBuffer = 0;
-    DPoint3d* toDTMVertexBuffer = 0;
-    if (m_uvBuffer && m_uvIndices)
-        {
-        toDTMIndexBuffer = new int32_t[m_nIndices];
-        TranslateToDTMIndices(toDTMIndexBuffer, m_vertexBuffer, m_indexBuffer, dtmPtr, m_nIndices);
-        toDTMVertexBuffer = new DPoint3d[dtmPtr->GetBcDTM()->GetPointCount()];
-        for (size_t i = 0; i < (size_t)dtmPtr->GetBcDTM()->GetPointCount(); ++i)
-            {
-            DPoint3d pt;
-            dtmPtr->GetBcDTM()->GetPoint((int)i, pt);
-            toDTMVertexBuffer[i] = pt;
-            }
-        originalFaceMap.ReadFrom(toDTMIndexBuffer, m_uvIndices, m_uvBuffer, m_nIndices);
-        }
-    if (dtmPtr->GetBcDTM()->GetTinHandle()->dtmState != DTMState::Tin) return false;
-    polyfaces.resize(polygons.size() + 1);
-#ifndef NDEBUG
-    if (dbg) bcdtmWrite_toFileDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(), (WString(s_path) + WString(L"featurepolytest") + WString(std::to_wstring(s_nclip).c_str()) + WString(L".tin")).c_str());
-#endif
-    int stat = DTM_SUCCESS;
-    for (auto& poly : polygons)
-        {
-        bool applyClipPoly = true;//metadata[&poly - &polygons[0]].second == 0;
-        if (!applyClipPoly)
-            {
-            if (metadata[&poly - &polygons[0]].second == 1)
-                {
-                auto maxLength = std::max(m_range.XLength(), m_range.YLength());
-                if (metadata[&poly - &polygons[0]].first / maxLength > 0.0025) applyClipPoly = true;
-                }
-            else if (metadata[&poly - &polygons[0]].second == 2)
-                {
-                if (metadata[&poly - &polygons[0]].first / (m_range.XLength()* m_range.YLength()) > 0.001) applyClipPoly = true;
-                }
-            }
-
-        if (applyClipPoly && poly.size() > 1)
-            {
-            bvector<DPoint3d> closedPoly;
-            closedPoly.reserve(poly.size());
-
-            for (auto& point : poly)
-                {
-                closedPoly.push_back(point);
-                }
-
-            if (poly[0].x != poly[poly.size() - 1].x ||
-                poly[0].y != poly[poly.size() - 1].y ||
-                poly[0].z != poly[poly.size() - 1].z)
-                {
-                closedPoly.push_back(poly[0]);
-                }
-
-            stat = bcdtmInsert_internalDtmFeatureMrDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(),
-                                                             DTMFeatureType::Region,
-                                                             1,
-                                                             2,
-                                                             userTag,
-                                                             &textureRegionIdsP,
-                                                             &numRegionTextureIds,
-                                                             &closedPoly[0],
-                                                             (long)closedPoly.size(),
-                                                             m_uvBuffer && m_uvIndices ? GetInsertPointCallback(originalFaceMap, dtmPtr) : nullptr);
-
-            userTag++;
-            }
-        }
-#ifndef NDEBUG
-    if (dbg) bcdtmWrite_toFileDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(), (WString(s_path) + WString(L"featurepolytest") + WString(std::to_wstring(s_nclip).c_str()) + WString(L"_after.tin")).c_str());
-#endif
-
-    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumeratorPtr en = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumerator::Create(*dtmPtr->GetBcDTM());
-    if (m_uvBuffer && m_uvIndices)en->SetUseRealPointIndexes(true);
-    en->SetExcludeAllRegions();
-    en->SetMaxTriangles((int)m_nIndices*10);
-    bmap<int32_t, int32_t> updatedIndices;
-    if (m_uvBuffer && m_uvIndices)
-        {
-        int32_t* newDTMIndexBuffer = new int32_t[m_nIndices];
-        for (size_t i = 0; i < m_nIndices; ++i)
-            {
-            toDTMIndexBuffer[i] += 1;
-            }
-        TranslateToDTMIndices(newDTMIndexBuffer, toDTMVertexBuffer, toDTMIndexBuffer, dtmPtr, m_nIndices);
-        for (size_t i = 0; i < m_nIndices; ++i)
-            {
-            updatedIndices[newDTMIndexBuffer[i]] = toDTMIndexBuffer[i] - 1;
-            }
-        delete[] toDTMIndexBuffer;
-        delete[] newDTMIndexBuffer;
-        }
-    size_t no = 0;
-    for (PolyfaceQueryP pf : *en)
-        {
-        PolyfaceHeaderPtr vec = PolyfaceHeader::CreateFixedBlockIndexed(3);
-        vec->CopyFrom(*pf);
-        if (m_uvBuffer && m_uvIndices) TagUVsOnPolyface(vec, dtmPtr, originalFaceMap, updatedIndices);
-//#ifndef NDEBUG
-#if _WIN32
-        if (dbg)
-            {
-            WString name = WString(s_path) + L"fpostclipmeshnoutsideregion2d_";
-            name.append(to_wstring(s_nclip).c_str());
-            name.append(L"_");
-            name.append(to_wstring(no).c_str());
-            name.append(L"_");
-            name.append(to_wstring(m_range.low.x).c_str());
-            name.append(L"_");
-            name.append(to_wstring(m_range.low.y).c_str());
-            name.append(L".m");
-            FILE* meshAfterClip = _wfopen(name.c_str(), L"wb");
-            size_t ptCount = vec->GetPointCount();
-            size_t faceCount = vec->GetPointIndexCount();
-            fwrite(&ptCount, sizeof(size_t), 1, meshAfterClip);
-            fwrite(vec->GetPointCP(), sizeof(DPoint3d), ptCount, meshAfterClip);
-            fwrite(&faceCount, sizeof(size_t), 1, meshAfterClip);
-            fwrite(vec->GetPointIndexCP(), sizeof(int32_t), faceCount, meshAfterClip);
-            fclose(meshAfterClip);
-            }
-#endif
-//#endif
-        polyfaces[0].push_back(vec);
-        }
-    for (size_t n = 0; n < polygons.size() && n < (size_t)userTag; ++n)
-        {
-        size_t n2 = 0;
-
-        en->Reset();
-        en->SetFilterRegionByUserTag(n);
-        for (PolyfaceQueryP pf : *en)
-            {
-            PolyfaceHeaderPtr vec = PolyfaceHeader::CreateFixedBlockIndexed(3);
-            vec->CopyFrom(*pf);
-            if (m_uvBuffer && m_uvIndices) TagUVsOnPolyface(vec, dtmPtr, originalFaceMap, updatedIndices);
-//#ifndef NDEBUG
-#if _WIN32
-            if (dbg)
-                {
-                WString name = WString(s_path) + L"fpostclipmeshregion2d_";
-                name.append(to_wstring(s_nclip).c_str());
-                name.append(L"_");
-                name.append(to_wstring(n).c_str());
-                name.append(L"_");
-                name.append(to_wstring(n2).c_str());
-                name.append(L"_");
-                name.append(to_wstring(m_range.low.x).c_str());
-                name.append(L"_");
-                name.append(to_wstring(m_range.low.y).c_str());
-                name.append(L".m");
-                FILE* meshAfterClip = _wfopen(name.c_str(), L"wb");
-                size_t ptCount = vec->GetPointCount();
-                size_t faceCount = vec->GetPointIndexCount();
-                fwrite(&ptCount, sizeof(size_t), 1, meshAfterClip);
-                fwrite(vec->GetPointCP(), sizeof(DPoint3d), ptCount, meshAfterClip);
-                fwrite(&faceCount, sizeof(size_t), 1, meshAfterClip);
-                fwrite(vec->GetPointIndexCP(), sizeof(int32_t), faceCount, meshAfterClip);
-                fclose(meshAfterClip);
-                }
-#endif
-//#endif
-            ++n2;
-            polyfaces[n + 1].push_back(vec);
-            }
-
-        }
-
-    if (textureRegionIdsP != 0)
-        {
-        free(textureRegionIdsP);
-        textureRegionIdsP = 0;
-        }
-    ++s_nclip;
-    for (auto& polygon : polyfaces)
-        if (polygon.size() > 0) return true;
-    IPolyfaceConstructionPtr builder = IPolyfaceConstruction::New(*IFacetOptions::Create());
-    PolyfaceQueryCarrier* poly = new PolyfaceQueryCarrier(3, false, m_nIndices, m_nVertices, m_vertexBuffer, m_indexBuffer, 0, 0, 0, m_uvBuffer && m_uvIndices ? m_nVertices : 0, m_uvBuffer && m_uvIndices ? m_uvBuffer : 0, m_uvIndices);
-    builder->AddPolyface(*poly);
-    delete poly;
-    polyfaces[0].push_back(builder->GetClientMeshPtr());
-    return true;
-    }
 
 bool s_useOwnClip = false;
 
@@ -1202,9 +970,9 @@ PolyfaceHeaderPtr CreateFromSubsetAndValues(PolyfaceHeaderPtr& originalMesh, con
     return vec;
     }
 
-bool Process3dRegions(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, PolyfaceHeaderPtr& clippedMesh, bvector<ClipVectorPtr>& clipPolys, std::pair<bool, uint64_t> shouldInvertBoundary = { false, -1 })
+bool Process3dRegions(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, PolyfaceHeaderPtr& clippedMesh, ClipVectorCP clipPolys, std::pair<bool, uint64_t> shouldInvertBoundary = { false, -1 })
     {
-    bvector<bvector<int>> idxOfFaces(clipPolys.size());
+    bvector<bvector<int>> idxOfFaces(clipPolys->size());
     bvector<int32_t> nCrossingPolys(clippedMesh->GetPointIndexCount() / 3, 0);
 
     PolyfaceVisitorPtr vis = PolyfaceVisitor::Attach(*clippedMesh);
@@ -1216,7 +984,6 @@ bool Process3dRegions(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, PolyfaceHe
         {
         DPoint3d tri[3] = { clippedMesh->GetPointCP()[pointIndex[0]], clippedMesh->GetPointCP()[pointIndex[1]], clippedMesh->GetPointCP()[pointIndex[2]] };
         DVec3d normal;
-        //double area;
         PolygonOps::CentroidNormalAndArea(tri, 3, centroids[idxFace], normal, areas[idxFace]);
         idxFace++;
         }
@@ -1227,116 +994,27 @@ bool Process3dRegions(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, PolyfaceHe
         // Degenerate triangles are always outside (must be filtered out)
         if(areas[idxFace] > 1e-10)
             {
-            for(auto it = clipPolys.rbegin(); it != clipPolys.rend(); it++)
-                {
-                ClipVectorPtr& clip = *it;
-
-                if(!clip.IsValid())
-                    continue;
-
-                bool shouldKeepFace = false;
-                for(auto& primitive : *clip)
+                for(auto& primitive : *clipPolys)
                     {
+                    if (!primitive.IsValid()) continue;
                     bool pointInside = primitive->PointInside(centroids[idxFace], 1e-8);
                     if(!pointInside)
                         {
-                        shouldKeepFace = true;
+                        idxOfFaces[&primitive - &clipPolys->front()].push_back((int)idxFace);
+                        nCrossingPolys[idxFace]++;
                         }
                     }
-
-                if(shouldKeepFace)
-                    {
-                    idxOfFaces[&clip - &clipPolys.front()].push_back((int)idxFace);
-                    nCrossingPolys[idxFace]++;
-                    }
-                }
             }
         idxFace++;
         }
 
-//    bool hasBeenClipped = false;
-    for (size_t i = 1; i < clipPolys.size() + 1; ++i)
+    for (size_t i = 1; i < clipPolys->size() + 1; ++i)
         {
         PolyfaceHeaderPtr vec = CreateFromFaceSubset(clippedMesh, idxOfFaces[i - 1]);
-
-       /* if (clipPolys.size() > 1 && vec != nullptr && vec->GetPointCount() != 0)
-            {
-            bvector<int32_t> indices;
-            bvector<DPoint3d> pts(vec->GetPointCount());
-            memcpy(pts.data(), vec->GetPointCP(), vec->GetPointCount() *sizeof(DPoint3d));
-            for (PolyfaceVisitorPtr vis2 = PolyfaceVisitor::Attach(*vec); vis2->AdvanceToNextFace();)
-                {
-                indices.push_back(vis2->ClientPointIndex()[0] + 1);
-                indices.push_back(vis2->ClientPointIndex()[1] + 1);
-                indices.push_back(vis2->ClientPointIndex()[2] + 1);
-
-
-                }
-
-            if (!indices.empty() && !pts.empty())
-                {
-                WString nameBefore = WString(L"E:\\output\\scmesh\\2017-01-27\\") + L"fpostclipmeshregion_";
-                nameBefore.append(to_wstring(s_nclip).c_str());
-                nameBefore.append(L"_");
-                nameBefore.append(to_wstring(i).c_str());
-                nameBefore.append(L".m");
-                FILE* meshBeforeClip = _wfopen(nameBefore.c_str(), L"wb");
-                size_t count = pts.size();
-                fwrite(&count, sizeof(size_t), 1, meshBeforeClip);
-                fwrite(pts.data(), sizeof(DPoint3d), count, meshBeforeClip);
-                count = indices.size();
-                fwrite(&count, sizeof(size_t), 1, meshBeforeClip);
-                fwrite(indices.data(), sizeof(int32_t), count, meshBeforeClip);
-                fclose(meshBeforeClip);
-                }
-
-            }*/
-
         polyfaces[i].push_back(vec);
-        //if (vec->GetPointIndexCount() > 0) hasBeenClipped = true;
         }
-/*    bvector<PolyfaceHeaderPtr> outmeshes;
-    clippedMesh->CopyPartitions(idxOfFaces, outmeshes);
-    for (size_t i = 1; i < clipPolys.size() + 1; ++i)
-        {
-        polyfaces[i].push_back(outmeshes[i-1]);
-        if (outmeshes[i-1]->GetPointIndexCount() > 0) hasBeenClipped = true;
-        }*/
 
     PolyfaceHeaderPtr vec2 = CreateFromSubsetAndValues(clippedMesh, nCrossingPolys, 0);
-
-    /* (clipPolys.size() > 1 && vec2 != nullptr && vec2->GetPointCount() != 0)
-        {
-        bvector<int32_t> indices;
-        bvector<DPoint3d> pts(vec2->GetPointCount());
-        memcpy(pts.data(), vec2->GetPointCP(), vec2->GetPointCount() *sizeof(DPoint3d));
-        for (PolyfaceVisitorPtr vis2 = PolyfaceVisitor::Attach(*vec2); vis2->AdvanceToNextFace();)
-            {
-            indices.push_back(vis2->ClientPointIndex()[0] + 1);
-            indices.push_back(vis2->ClientPointIndex()[1] + 1);
-            indices.push_back(vis2->ClientPointIndex()[2] + 1);
-
-
-            }
-
-        if (!indices.empty() && !pts.empty())
-            {
-            WString nameBefore = WString(L"E:\\output\\scmesh\\2017-01-27\\") + L"fpostclipmeshregion_";
-            nameBefore.append(to_wstring(s_nclip).c_str());
-            nameBefore.append(L"_");
-            nameBefore.append(to_wstring(-1).c_str());
-            nameBefore.append(L".m");
-            FILE* meshBeforeClip = _wfopen(nameBefore.c_str(), L"wb");
-            size_t count = pts.size();
-            fwrite(&count, sizeof(size_t), 1, meshBeforeClip);
-            fwrite(pts.data(), sizeof(DPoint3d), count, meshBeforeClip);
-            count = indices.size();
-            fwrite(&count, sizeof(size_t), 1, meshBeforeClip);
-            fwrite(indices.data(), sizeof(int32_t), count, meshBeforeClip);
-            fclose(meshBeforeClip);
-            }
-
-        }*/
 
     polyfaces[0].push_back(vec2);
 
@@ -1344,7 +1022,6 @@ bool Process3dRegions(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, PolyfaceHe
         {
         std::swap(polyfaces[0], polyfaces[shouldInvertBoundary.second + 1]);
         }
-    //return hasBeenClipped;
     return true;
     }
 
@@ -1417,69 +1094,6 @@ bool ComputeCut(bvector<IntersectionLocation>& foundIntersects, const DPlane3d& 
         }
     else return false;
     }
-
-bool ComputeCut(bvector<IntersectionLocation>& foundIntersects, const DPlane3d& plane, const DPoint3d& pt0, const DPoint3d& pt1, const DPoint3d* tri, bvector<bvector<double>>* pointDistanceTable, int* pointIdxTri, size_t planeIdx)
-    {
-    double sign = 0;
-    bool planeCutsTriangle = false;
-    for (size_t j = 0; j < 3 && !planeCutsTriangle; j++)
-        {
-		double sideOfPoint;
-		if (pointDistanceTable != nullptr && (*pointDistanceTable)[pointIdxTri[j]][planeIdx] == DBL_MAX)
-		{
-			(*pointDistanceTable)[pointIdxTri[j]][planeIdx] = plane.Evaluate(tri[j]);
-			sideOfPoint = (*pointDistanceTable)[pointIdxTri[j]][planeIdx];
-		}
-		else sideOfPoint = plane.Evaluate(tri[j]);
-        if (fabs(sideOfPoint) < 1e-8) sideOfPoint = 0;
-        if (sign == 0) sign = sideOfPoint;
-        else if ((sign > 0 && sideOfPoint < 0) || (sign < 0 && sideOfPoint > 0))
-            planeCutsTriangle = true;
-        }
-
-    if (planeCutsTriangle)
-        {
-        DPoint3d intersectPts[2];
-        int32_t cutEdges[2];
-        int32_t vIds[2] = { -1, -1 };
-        size_t nOfIntersects = 0;
-        //intersect segments to find cut
-        for (size_t j = 0; j < 3 && nOfIntersects < 2; j++)
-            {
-            DSegment3d edgeSegment = DSegment3d::From(tri[j], tri[(j + 1) % 3]);
-            double param = -DBL_MAX;
-            if (edgeSegment.Intersect(intersectPts[nOfIntersects], param, plane) && param > -1.0e-5 && param <= 1.0+1e-5)
-                {
-                cutEdges[nOfIntersects] = (int32_t)j;
-                if (param < 1e-5) vIds[nOfIntersects] = (int32_t)j;
-                if (param > 1 - 1e-5) vIds[nOfIntersects] = (int32_t)(j + 1) % 3;
-                ++nOfIntersects;
-                }
-            }
-        DSegment3d origSeg = DSegment3d::From(pt0, pt1);
-        double params[2];
-        origSeg.PointToFractionParameter(params[0], intersectPts[0]);
-        origSeg.PointToFractionParameter(params[1], intersectPts[1]);
-        if ((params[0] >= -1e-5 && params[0] <= 1 + 1e-5) || (params[1] >= -1e-5 && params[1] <= 1 + 1e-5)
-            || (params[0] < -1e-5 && params[1] > 1 + 1e-5) || (params[0] > 1 + 1e-5 && params[1] < -1e-5))
-            {
-            for (size_t i = 0; i < 2; ++i)
-                {
-                IntersectionLocation loc;
-                loc.pt = intersectPts[i];
-                loc.edgeIdx = cutEdges[i];
-                loc.onVertex = vIds[i];
-                foundIntersects.push_back(loc);
-                }
-            return true;
-            }
-        else return false;
-
-        }
-    else return false;
-    }
-
-
 
 void ComputeReplacementFacets(bvector<bvector<int32_t>>& newFacets, bvector<IntersectionLocation>& foundIntersects, bvector<int32_t>& splitFacet, bool useParam = false)
     {
@@ -1563,120 +1177,7 @@ void InsertCutPoints(PolyfaceHeaderPtr& inOutMesh, bvector<IntersectionLocation>
         }
     }
 
-bool InsertMeshCuts(PolyfaceHeaderPtr& inOutMesh, PolyfaceVisitorPtr& vis, bvector<DPoint3d>& clipSegments, bvector<DRange2d>& faceRanges, const DRange2d& polyRange)
-    {
-    bool meshIsCut = false;
-    bvector<DPlane3d> planesFromSegments;
-    bool meshHasTexture = inOutMesh->Param().size() > 0 && inOutMesh->ParamIndex().size() > 0;
-    CreatePlanes(planesFromSegments, clipSegments);
-    bvector<bvector<double>> pointToPlaneDists(inOutMesh->GetPointCount());
-    for(auto& dist : pointToPlaneDists)dist.resize(planesFromSegments.size(), DBL_MAX);
-
-    bvector<int> &pointIndex = vis->ClientPointIndex();
-    bvector<int> &param = vis->ClientParamIndex();
-    bvector<bvector<bool>> pointToPlaneChecks(inOutMesh->GetPointIndexCount() / 3);
-    for(auto& check : pointToPlaneChecks)check.resize(planesFromSegments.size(), true);
-
-
-    for(vis->Reset(); vis->AdvanceToNextFace();)
-        {
-        DPoint3d tri[3] = { inOutMesh->GetPointCP()[pointIndex[0]], inOutMesh->GetPointCP()[pointIndex[1]], inOutMesh->GetPointCP()[pointIndex[2]] };
-        if(faceRanges[vis->GetReadIndex() / 3].IsNull())faceRanges[vis->GetReadIndex() / 3] = DRange2d::From(tri, 3);
-        if(!faceRanges[vis->GetReadIndex() / 3].IntersectsWith(polyRange)) continue;
-        for(auto& plane : planesFromSegments)
-            {
-            bvector<IntersectionLocation> results;
-            if(!pointToPlaneChecks[vis->GetReadIndex() / 3][&plane - &planesFromSegments[0]]) continue;
-            if(ComputeCut(results, plane, clipSegments[&plane - &planesFromSegments[0]], clipSegments[&plane - &planesFromSegments[0] + 1], tri, &pointToPlaneDists, pointIndex.data(), &plane - &planesFromSegments[0]))
-                {
-                assert(results.size() == 2);
-
-                //don't cut if both cut points are the same (the intersection is on a vertex only)
-                if(results.size() == 2 && DVec3d::FromStartEnd(results[0].pt, results[1].pt).MagnitudeSquared() > 1e-10 && (results[0].onVertex == -1 || results[1].onVertex == -1))
-                    {
-                    meshIsCut = true;
-                    InsertCutPoints(inOutMesh, results, tri, meshHasTexture ? param.data() : nullptr, pointIndex.data(), meshHasTexture, &pointToPlaneDists, planesFromSegments.size());
-                    pointToPlaneChecks[vis->GetReadIndex() / 3][&plane - &planesFromSegments[0]] = false;
-                    bvector<bvector<int32_t>> newFaces;
-                    ComputeReplacementFacets(newFaces, results, pointIndex);
-
-                    DVec3d vec01 = DVec3d::FromStartEnd(inOutMesh->GetPointCP()[newFaces[0][0]], inOutMesh->GetPointCP()[newFaces[0][1]]);
-                    DVec3d vec02 = DVec3d::FromStartEnd(inOutMesh->GetPointCP()[newFaces[0][0]], inOutMesh->GetPointCP()[newFaces[0][2]]);
-                    DVec3d vec12 = DVec3d::FromStartEnd(inOutMesh->GetPointCP()[newFaces[0][1]], inOutMesh->GetPointCP()[newFaces[0][2]]);
-
-                    assert(!newFaces.empty());
-                    if(!newFaces.empty())
-                        {
-                        inOutMesh->PointIndex()[vis->GetReadIndex()] = newFaces[0][0] + 1;
-                        inOutMesh->PointIndex()[vis->GetReadIndex() + 1] = newFaces[0][1] + 1;
-                        inOutMesh->PointIndex()[vis->GetReadIndex() + 2] = newFaces[0][2] + 1;
-                        tri[0] = inOutMesh->GetPointCP()[newFaces[0][0]];
-                        tri[1] = inOutMesh->GetPointCP()[newFaces[0][1]];
-                        tri[2] = inOutMesh->GetPointCP()[newFaces[0][2]];
-                        pointIndex[0] = newFaces[0][0];
-                        pointIndex[1] = newFaces[0][1];
-                        pointIndex[2] = newFaces[0][2];
-
-                        faceRanges[vis->GetReadIndex() / 3] = DRange2d::From(&inOutMesh->Point()[newFaces[0][0]], 1);
-                        faceRanges[vis->GetReadIndex() / 3].Extend(inOutMesh->Point()[newFaces[0][1]]);
-                        faceRanges[vis->GetReadIndex() / 3].Extend(inOutMesh->Point()[newFaces[0][2]]);
-                        for(size_t i = 1; i < newFaces.size(); ++i)
-                            {
-                            inOutMesh->PointIndex().push_back(newFaces[i][0] + 1);
-                            inOutMesh->PointIndex().push_back(newFaces[i][1] + 1);
-                            inOutMesh->PointIndex().push_back(newFaces[i][2] + 1);
-                            faceRanges.push_back(DRange2d::NullRange());
-                            pointToPlaneChecks.push_back(pointToPlaneChecks[vis->GetReadIndex() / 3]);
-                            pointToPlaneChecks[(inOutMesh->PointIndex().size() - 3) / 3][&plane - &planesFromSegments[0]] = false;
-                            }
-                        }
-
-                    if(meshHasTexture)
-                        {
-                        newFaces.clear();
-                        ComputeReplacementFacets(newFaces, results, param, true);
-                        assert(!newFaces.empty());
-                        if(!newFaces.empty())
-                            {
-                            inOutMesh->ParamIndex()[vis->GetReadIndex()] = newFaces[0][0] + 1;
-                            inOutMesh->ParamIndex()[vis->GetReadIndex() + 1] = newFaces[0][1] + 1;
-                            inOutMesh->ParamIndex()[vis->GetReadIndex() + 2] = newFaces[0][2] + 1;
-                            param[0] = newFaces[0][0];
-                            param[1] = newFaces[0][1];
-                            param[2] = newFaces[0][2];
-                            for(size_t i = 1; i < newFaces.size(); ++i)
-                                {
-                                inOutMesh->ParamIndex().push_back(newFaces[i][0] + 1);
-                                inOutMesh->ParamIndex().push_back(newFaces[i][1] + 1);
-                                inOutMesh->ParamIndex().push_back(newFaces[i][2] + 1);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    return meshIsCut;
-    }
-
-typedef std::pair<bool, DRange3d> PrimitiveResult;
-PrimitiveResult ShouldConsiderPrimitive(ClipPrimitivePtr const& primitive, DRange3dCR range, bool hasMaskInfoOutsidePrimitive, bool isPrimitiveAMask)
-    {
-    DRange3d        primitiveRange;
-    if (!primitive->GetRange(primitiveRange, nullptr, primitive->IsMask()))
-        {
-        return PrimitiveResult(false, DRange3d());
-        }
-    if ((!hasMaskInfoOutsidePrimitive && primitive->IsMask()) || (hasMaskInfoOutsidePrimitive && isPrimitiveAMask))
-        {
-        //if node and primitive are fully disjoint, do not count this primitive
-        bool isFullyDisjoint = !primitiveRange.IntersectsWith(range) && !primitiveRange.IsContained(range.low) && !range.IsContained(primitiveRange.low);
-        return PrimitiveResult(!isFullyDisjoint, primitiveRange);
-        }
-    return PrimitiveResult(primitiveRange.IntersectsWith(range), primitiveRange);
-    }
-
-bool InsertMeshCuts(PolyfaceHeaderPtr& inOutMesh, PolyfaceVisitorPtr& vis, ClipVectorPtr& clipSegments, bvector<DRange3d>& faceRanges, const DRange3d& polyRange, const bvector<bool>& isMask)
+bool InsertMeshCuts(PolyfaceHeaderPtr& inOutMesh, PolyfaceVisitorPtr& vis, ClipVectorCP clipSegments, bvector<DRange3d>& faceRanges, const DRange3d& polyRange)
     {
     bool meshIsCut = false;
     bvector<DPlane3d> planesFromSegments;
@@ -1684,15 +1185,12 @@ bool InsertMeshCuts(PolyfaceHeaderPtr& inOutMesh, PolyfaceVisitorPtr& vis, ClipV
 	DRange3d meshRange = DRange3d::From(inOutMesh->GetPointCP(), (int)inOutMesh->GetPointCount());
     for (auto& primitive : *clipSegments)
         {
-      //  if (ShouldConsiderPrimitive(primitive, meshRange,!isMask.empty(), isMask.empty()? false : isMask[&primitive - &clipSegments->front()]).first)
-      //      {
             for (auto& planes : *(primitive->GetClipPlanes()))
                 for(auto& plane : planes)
                     {
                     if(plane.IsVisible())
                         planesFromSegments.push_back(plane.GetDPlane3d());
                     }
-      //      }
         }
 
 	bool doNotOptimizeDistanceChecks = false;
@@ -1786,9 +1284,123 @@ bool InsertMeshCuts(PolyfaceHeaderPtr& inOutMesh, PolyfaceVisitorPtr& vis, ClipV
     return meshIsCut;
     }
 
-bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<size_t>& polyfaceIndices, ClipVectorCP clip, const PolyfaceQuery* meshP, const bvector<bool>& isMask)
+#ifdef SCALABLEMESH_USE_GEOMLIBS_CLIPPING
+bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<size_t>& polyfaceIndices, ClipVectorCP clip, const PolyfaceQuery* meshP)
     {
-    polyfaces.resize(2);
+    polyfaces.resize(std::max((int)clip->size() + 1, 2));
+    bvector<DRange3d> triangleBoxes;
+    PolyfaceHeaderPtr clippedMesh = PolyfaceHeader::CreateFixedBlockIndexed(3);
+    clippedMesh->CopyFrom(*meshP);
+    DRange3d polyBox;
+    polyBox.Init();
+
+    std::pair<bool, uint64_t> boundaryInfo(false, -1);
+    DRange3d meshRange = DRange3d::From(clippedMesh->GetPointCP(), (int)clippedMesh->GetPointCount());
+    bool hasBoundaryClip = false;
+    uint64_t i = -1;
+    for (ClipPrimitivePtr const& primitive : *clip)
+        {
+        polyfaceIndices.push_back(++i);
+        bool clipIsMask = primitive->IsMask();
+        if (!clipIsMask)
+            {
+            boundaryInfo.first = true;
+            boundaryInfo.second = i;
+            }
+        if (!hasBoundaryClip) hasBoundaryClip = !clipIsMask;
+
+        DRange3d        primitiveRange;
+        if (!primitive->GetRange(primitiveRange, nullptr, primitive->IsMask()))
+            {
+            primitiveRange.low.x = primitiveRange.low.y = primitiveRange.low.z = -DBL_MAX;
+            primitiveRange.high.x = primitiveRange.high.y = primitiveRange.high.z = DBL_MAX;
+            }
+        if (i == 0)
+            {
+            polyBox = primitiveRange;
+            }
+        else {
+            polyBox.UnionOf(polyBox, primitiveRange);
+            }
+        }
+    if (polyBox.IsEmpty()) return hasBoundaryClip; // Node is outside the boundary clip, therefore it must be clipped out
+
+    if (clip->empty()) return false;
+
+    i = 1;
+    PolyfaceHeaderPtr result;
+    PolyfaceHeaderPtr inside;
+    PolyfaceHeaderPtr outside;
+    for (auto& primitive : *clip)
+        {
+        for (auto& planes : *(primitive->GetClipPlanes()))
+            {
+#ifdef SCALABLEMESH_DEBUG_USE_GEOM_SERIALIZATION
+            BENTLEY_NAMESPACE_NAME::Utf8String meshStr;
+            auto copyForSerialization = clippedMesh->Clone();
+            copyForSerialization->ConvertToVariableSizeSignedOneBasedIndexedFaceLoops();
+            auto g = IGeometry::Create(copyForSerialization);
+            BENTLEY_NAMESPACE_NAME::BentleyGeometryJson::TryGeometryToJsonString(meshStr, *g);
+#endif
+
+            inside = nullptr;
+            outside = nullptr;
+            ClipPlaneSet::ClipPlaneSetIntersectPolyface(*clippedMesh, planes, false, &inside, &outside);
+            if (primitive->IsMask())
+                {
+                result = outside;
+                }
+            else
+                {
+                result = inside;
+                }
+            result->Triangulate();
+
+#ifdef SCALABLEMESH_DEBUG_USE_GEOM_SERIALIZATION
+            BENTLEY_NAMESPACE_NAME::Utf8String resultStr;
+            copyForSerialization = result->Clone();
+            copyForSerialization->ConvertToVariableSizeSignedOneBasedIndexedFaceLoops();
+            g = IGeometry::Create(copyForSerialization);
+            BENTLEY_NAMESPACE_NAME::BentleyGeometryJson::TryGeometryToJsonString(resultStr, *g);
+#endif
+
+            polyfaces[i].push_back(result);
+            ++i;
+            }
+    }
+
+    result = clippedMesh;
+    for (auto& primitive : *clip)
+        {
+        for (auto& planes : *(primitive->GetClipPlanes()))
+            {
+            inside = nullptr;
+            outside = nullptr;
+            ClipPlaneSet::ClipPlaneSetIntersectPolyface(*result, planes, false, &inside, &outside);
+            if (primitive->IsMask())
+                {
+                result = outside;
+                }
+            else
+                {
+                result = inside;
+                }
+            }
+        }
+    result->Triangulate();
+    polyfaces[0].push_back(result);
+
+    if (boundaryInfo.first)
+        {
+        std::swap(polyfaces[0], polyfaces[boundaryInfo.second + 1]);
+        }
+
+    return true;
+}
+#else
+bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<size_t>& polyfaceIndices, ClipVectorCP clip, const PolyfaceQuery* meshP)
+    {
+    polyfaces.resize(std::max((int)clip->size() + 1, 2));
     bvector<DRange3d> triangleBoxes;
     PolyfaceHeaderPtr clippedMesh = PolyfaceHeader::CreateFixedBlockIndexed(3);
     clippedMesh->CopyFrom(*meshP);
@@ -1797,173 +1409,45 @@ bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, 
     DRange3d polyBox;
     polyBox.Init();
 
+    std::pair<bool, uint64_t> boundaryInfo(false, -1);
     DRange3d meshRange = DRange3d::From(clippedMesh->GetPointCP(), (int)clippedMesh->GetPointCount());
     bool hasBoundaryClip = false;
+    uint64_t i = -1;
     for (ClipPrimitivePtr const& primitive : *clip)
         {
-        bool clipIsMask = isMask.empty() ? primitive->IsMask() : isMask[&primitive - &clip->front()];
-        if(!hasBoundaryClip) hasBoundaryClip = !clipIsMask;
-        auto result = ShouldConsiderPrimitive(primitive, meshRange, !isMask.empty(), isMask.empty()? false : isMask[&primitive - &clip->front()]);
-        if (result.first)
-            {
-            if (polyBox.IsEmpty())
-                polyBox = result.second;
-            else
-                polyBox.UnionOf(polyBox, result.second);
-            }
-        }
-    if(polyBox.IsEmpty()) return hasBoundaryClip; // Node is outside the boundary clip, therefore it must be clipped out
-    ClipVectorPtr currentClip(const_cast<ClipVector*>(clip));
-    bool meshIsCut = InsertMeshCuts(clippedMesh, vis, currentClip, triangleBoxes, polyBox, isMask);
-    bvector<ClipVectorPtr> clipPolys;
-    bool shouldUseClipPrimitives = true;
-    std::pair<bool, uint64_t> boundaryInfo(false, -1);
-
-    if (!shouldUseClipPrimitives)
-    {
-        polyfaces.resize(currentClip->size()+1);
-        clipPolys.push_back(currentClip);
-        for(size_t i = 0; i < currentClip->size(); ++i)
-            polyfaceIndices.push_back(i);
-        }
-    else
-        {
-        size_t i = 0;
-        for (ClipPrimitivePtr const& primitive : *clip)
-            {
-            if (ShouldConsiderPrimitive(primitive, meshRange,!isMask.empty(), isMask.empty()? false : isMask[&primitive - &clip->front()]).first)
-                {
-#ifndef VANCOUVER_API
-                ClipVectorPtr newClip = ClipVector::CreateFromPrimitive(primitive.get());
-#else
-                ClipVectorPtr newClip = ClipVector::CreateFromPrimitive(primitive);
-#endif
-                bool clipIsMask = isMask.empty() ? primitive->IsMask() : isMask[&primitive - &clip->front()];
-                clipPolys.push_back(newClip);
-                polyfaceIndices.push_back(i);
-
-                if(!clipIsMask)
-                    {
-                    boundaryInfo.first = true;
-                    boundaryInfo.second = &clipPolys.back() - &clipPolys.front();
-                    }
-                }
-            ++i;
-            }
-        polyfaces.resize(clipPolys.size() + 1);
-        }
-    if (clipPolys.empty()) return false;
-    if(meshIsCut) clippedMesh->Triangulate();
-
-    return Process3dRegions(polyfaces, clippedMesh, clipPolys, boundaryInfo);
-    }
-
-bool GetRegionsFromClipPolys3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, const PolyfaceQuery* meshP, const bvector<bool>& isMask)
-    {
-    polyfaces.resize(polygons.size() + 1);
-    bvector<DRange2d> triangleBoxes;
-    bvector<ClipVectorPtr> clipPolys;
-    PolyfaceHeaderPtr clippedMesh = PolyfaceHeader::CreateFixedBlockIndexed(3);
-    clippedMesh->CopyFrom(*meshP);
-    s_nclip++;
-    int clipVal = (int)s_nclip;
-
-    bool dbg = false;
-#ifndef NDEBUG
-#if _WIN32
-    if (dbg)
-        {
-        WString nameBefore = WString(L"C:\\work\\tmp\\") + L"fpreclipmeshregion_";
-        nameBefore.append(to_wstring(clipVal).c_str());
-        nameBefore.append(L".m");
-        FILE* meshBeforeClip = _wfopen(nameBefore.c_str(), L"wb");
-        size_t count = meshP->GetPointCount();
-        fwrite(&count, sizeof(size_t), 1, meshBeforeClip);
-        fwrite(meshP->GetPointCP(), sizeof(DPoint3d), count, meshBeforeClip);
-        count = meshP->GetPointIndexCount();
-        fwrite(&count, sizeof(size_t), 1, meshBeforeClip);
-        fwrite(meshP->GetPointIndexCP(), sizeof(int32_t), count, meshBeforeClip);
-        fclose(meshBeforeClip);
-        for (size_t j = 0; j < polygons.size(); ++j)
-            {
-            WString namePoly = WString(L"C:\\work\\tmp\\") + L"fpreclippolyreg_";
-            namePoly.append(to_wstring(clipVal).c_str());
-            namePoly.append(L"_");
-            namePoly.append(to_wstring(j).c_str());
-            namePoly.append(L".p");
-            FILE* polyCliPFile = _wfopen(namePoly.c_str(), L"wb");
-            size_t polySize = polygons[j].size();
-            fwrite(&polySize, sizeof(size_t), 1, polyCliPFile);
-            fwrite(&polygons[j][0], sizeof(DPoint3d), polySize, polyCliPFile);
-            fclose(polyCliPFile);
-            }
-        }
-#endif
-#endif
-
-    PolyfaceVisitorPtr vis = PolyfaceVisitor::Attach(*clippedMesh);
-    triangleBoxes.resize(clippedMesh->GetPointIndexCount() / 3, DRange2d::NullRange());
-    std::pair<bool, uint64_t> boundaryInfo(false, -1);
-    bool meshIsCut = false;
-    for (auto& clip : polygons)
-        {
-        ClipVectorPtr cp;
-        bvector<DPoint3d> currentPoly = clip;
-        for (auto& pt : currentPoly)
-            pt.z = 0;
-        DRange2d polyBox = DRange2d::From(&currentPoly[0], (int)currentPoly.size());
-        CurveVectorPtr curvePtr = CurveVector::CreateLinear(currentPoly, CurveVector::BOUNDARY_TYPE_Outer);
-        cp = ClipVector::CreateFromCurveVector(*curvePtr,1e-8,1e-8);
-        (*cp)[0]->SetIsMask(isMask[&clip - polygons.data()]);
-        if(!isMask[&clip - polygons.data()])
+        polyfaceIndices.push_back(++i);
+        bool clipIsMask = primitive->IsMask();
+        if (!clipIsMask)
             {
             boundaryInfo.first = true;
-            boundaryInfo.second = &clip - polygons.data();
+            boundaryInfo.second = i;
             }
+        if (!hasBoundaryClip) hasBoundaryClip = !clipIsMask;
 
-        meshIsCut = InsertMeshCuts(clippedMesh, vis, currentPoly, triangleBoxes, polyBox) || meshIsCut;
-
-        clipPolys.push_back(cp);
+        DRange3d        primitiveRange;
+        if (!primitive->GetRange(primitiveRange, nullptr, primitive->IsMask()))
+            {
+            primitiveRange.low.x = primitiveRange.low.y = primitiveRange.low.z = -DBL_MAX;
+            primitiveRange.high.x = primitiveRange.high.y = primitiveRange.high.z = DBL_MAX;
+            }
+        if (i == 0)
+            {
+            polyBox = primitiveRange;
+            }
+        else {
+            polyBox.UnionOf(polyBox, primitiveRange);
+            }
         }
-    if(meshIsCut) clippedMesh->Triangulate();
-     bool ret = Process3dRegions(polyfaces, clippedMesh, clipPolys, boundaryInfo);
+    if (polyBox.IsEmpty()) return hasBoundaryClip; // Node is outside the boundary clip, therefore it must be clipped out
+    bool meshIsCut = InsertMeshCuts(clippedMesh, vis, clip, triangleBoxes, polyBox);
 
-#if SM_TRACE_CLIPS_FULL
-     if (dbg)
-         {
-         WString nameBefore = WString(L"C:\\work\\tmp\\") + L"fpostclipmeshregion_";
-         nameBefore.append(to_wstring(clipVal).c_str());
-         nameBefore.append(L".m");
-         FILE* meshBeforeClip = _wfopen(nameBefore.c_str(), L"wb");
-         size_t count = polyfaces[0][0]->GetPointCount();
-         fwrite(&count, sizeof(size_t), 1, meshBeforeClip);
-         fwrite(polyfaces[0][0]->GetPointCP(), sizeof(DPoint3d), count, meshBeforeClip);
-         count = polyfaces[0][0]->GetPointIndexCount();
-         fwrite(&count, sizeof(size_t), 1, meshBeforeClip);
-         fwrite(polyfaces[0][0]->GetPointIndexCP(), sizeof(int32_t), count, meshBeforeClip);
-         fclose(meshBeforeClip);
+    if (clip->empty()) return false;
+    if (meshIsCut) clippedMesh->Triangulate();
 
-         for (size_t i = 1; i < polyfaces.size(); ++i)
-             {
-             nameBefore = WString(L"C:\\work\\tmp\\") + L"fpostclipmeshregion_";
-             nameBefore.append(to_wstring(clipVal).c_str());
-             nameBefore.append(L"_");
-             nameBefore.append(to_wstring(i).c_str());
-             nameBefore.append(L".m");
-             meshBeforeClip = _wfopen(nameBefore.c_str(), L"wb");
-             count = polyfaces[i][0]->GetPointCount();
-             fwrite(&count, sizeof(size_t), 1, meshBeforeClip);
-             fwrite(polyfaces[i][0]->GetPointCP(), sizeof(DPoint3d), count, meshBeforeClip);
-             count = polyfaces[i][0]->GetPointIndexCount();
-             fwrite(&count, sizeof(size_t), 1, meshBeforeClip);
-             fwrite(polyfaces[i][0]->GetPointIndexCP(), sizeof(int32_t), count, meshBeforeClip);
-             fclose(meshBeforeClip);
-             }
-         }
-#endif
-     return ret;
+    return Process3dRegions(polyfaces, clippedMesh, clip, boundaryInfo);
     }
-
+#endif
+        
 
 void MeshClipper::TagUVsOnPolyface(PolyfaceHeaderPtr& poly, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr, FaceToUVMap& faceToUVMap, bmap<int32_t, int32_t>& mapOfIndices)
 {
@@ -2090,110 +1574,6 @@ void MeshClipper::MakeDTMFromIndexList(BENTLEY_NAMESPACE_NAME::TerrainModel::DTM
         bcdtmObject_storeDtmFeatureInDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(), DTMFeatureType::GraphicBreak, dtmPtr->GetBcDTM()->GetTinHandle()->nullUserTag, 1, &dtmPtr->GetBcDTM()->GetTinHandle()->nullFeatureId, &triangle[0], 4);
         }
     bcdtmObject_triangulateStmTrianglesDtmObject(dtmPtr->GetBcDTM()->GetTinHandle());
-    }
-
-bool MeshClipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons)
-    {
-    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr dtmPtr;
-    MakeDTMFromIndexList(dtmPtr);
-    return GetRegionsFromClipPolys(polyfaces, polygons, dtmPtr);
-    }
-
-bool MeshClipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr)
-    {
-    DTMUserTag    userTag = 0;
-    DTMFeatureId* textureRegionIdsP = 0;
-    long          numRegionTextureIds = 0;
-    FaceToUVMap originalFaceMap(m_range);
-    int32_t* toDTMIndexBuffer = 0;
-    DPoint3d* toDTMVertexBuffer = 0;
-    if (m_uvBuffer && m_uvIndices)
-        {
-        toDTMIndexBuffer = new int32_t[m_nIndices];
-        TranslateToDTMIndices(toDTMIndexBuffer, m_vertexBuffer, m_indexBuffer, dtmPtr, m_nIndices);
-        toDTMVertexBuffer = new DPoint3d[dtmPtr->GetBcDTM()->GetPointCount()];
-        for (size_t i = 0; i < (size_t)dtmPtr->GetBcDTM()->GetPointCount(); ++i)
-            {
-            DPoint3d pt;
-            dtmPtr->GetBcDTM()->GetPoint((int)i, pt);
-            toDTMVertexBuffer[i] = pt;
-            }
-        originalFaceMap.ReadFrom(toDTMIndexBuffer, m_uvIndices, m_uvBuffer, m_nIndices);
-        }
-    if (dtmPtr->GetBcDTM()->GetTinHandle()->dtmState != DTMState::Tin) return false;
-    polyfaces.resize(polygons.size() + 1);
-
-    int stat = DTM_SUCCESS;
-    for (auto& poly : polygons)
-        {
-        stat = bcdtmInsert_internalDtmFeatureMrDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(),
-            DTMFeatureType::Region,
-            1,
-            2,
-            userTag,
-            &textureRegionIdsP,
-            &numRegionTextureIds,
-            &poly[0],
-            (long)poly.size(),
-            m_uvBuffer && m_uvIndices ? GetInsertPointCallback(originalFaceMap, dtmPtr) : nullptr);
-
-        userTag++;
-        }
-
-
-    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumeratorPtr en = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumerator::Create(*dtmPtr->GetBcDTM());
-    if (m_uvBuffer && m_uvIndices)en->SetUseRealPointIndexes(true);
-    en->SetExcludeAllRegions();
-    en->SetMaxTriangles((int)m_nIndices * 10);
-    bmap<int32_t, int32_t> updatedIndices;
-    if (m_uvBuffer && m_uvIndices)
-        {
-        int32_t* newDTMIndexBuffer = new int32_t[m_nIndices];
-        for (size_t i = 0; i < m_nIndices; ++i)
-            {
-            toDTMIndexBuffer[i] += 1;
-            }
-        TranslateToDTMIndices(newDTMIndexBuffer, toDTMVertexBuffer, toDTMIndexBuffer, dtmPtr, m_nIndices);
-        for (size_t i = 0; i < m_nIndices; ++i)
-            {
-            updatedIndices[newDTMIndexBuffer[i]] = toDTMIndexBuffer[i] - 1;
-            }
-        delete[] toDTMIndexBuffer;
-        delete[] newDTMIndexBuffer;
-        }
-    for (PolyfaceQueryP pf : *en)
-        {
-        PolyfaceHeaderPtr vec = PolyfaceHeader::CreateFixedBlockIndexed(3);
-        vec->CopyFrom(*pf);
-        if (m_uvBuffer && m_uvIndices) TagUVsOnPolyface(vec, dtmPtr, originalFaceMap, updatedIndices);
-        polyfaces[0].push_back(vec);
-        }
-    for (size_t n = 0; n < polygons.size() && n < (size_t)userTag; ++n)
-        {
-        en->Reset();
-        en->SetFilterRegionByUserTag(n);
-        for (PolyfaceQueryP pf : *en)
-            {
-            PolyfaceHeaderPtr vec = PolyfaceHeader::CreateFixedBlockIndexed(3);
-            vec->CopyFrom(*pf);
-            if (m_uvBuffer && m_uvIndices) TagUVsOnPolyface(vec, dtmPtr, originalFaceMap, updatedIndices);
-            polyfaces[n + 1].push_back(vec);
-            }
-        }
-
-    if (textureRegionIdsP != 0)
-        {
-        free(textureRegionIdsP);
-        textureRegionIdsP = 0;
-        }
-    for (auto& polygon : polyfaces)
-        if (polygon.size() > 0) return true;
-    IPolyfaceConstructionPtr builder = IPolyfaceConstruction::New(*IFacetOptions::Create());
-    PolyfaceQueryCarrier* poly = new PolyfaceQueryCarrier(3, false, m_nIndices, m_nVertices, m_vertexBuffer, m_indexBuffer, 0, 0, 0, m_uvBuffer && m_uvIndices ? m_nVertices : 0, m_uvBuffer && m_uvIndices ? m_uvBuffer : 0, m_uvIndices);
-    builder->AddPolyface(*poly);
-    delete poly;
-    polyfaces[0].push_back(builder->GetClientMeshPtr());
-    return true;
     }
 
 MeshClipper::MeshClipper()
@@ -2375,23 +1755,6 @@ void MeshClipper::OrderClipGeometryList()
     });
 }
 
-bool MeshClipper::HasOnlyPolygons()
-{
-    return allVectors.empty();
-}
-
-void MeshClipper::GetClipsAsPolygons(bvector<bvector<DPoint3d>>& outPolygons, bvector<bool>& isMask)
-{
-    for (auto& clip : orderedClipList)
-    {
-        if(clip->type == ClipInfo::Type::Polygon)
-            {
-            outPolygons.push_back(static_cast<ClipPolyInfo*>(clip)->pts);
-            isMask.push_back(clip->isClipMask());
-            }
-    }
-}
-
 void MeshClipper::GetClipsAsVectors(bvector<ClipVectorPtr>& outVectors)
 {
     for (auto& clip : orderedClipList)
@@ -2438,115 +1801,58 @@ void MeshClipper::GetClipsAsSingleVector(ClipVectorPtr& outVector)
 void MeshClipper::ComputeClip()
 {
     bvector<bvector<PolyfaceHeaderPtr>> outputRegions;
-    if(m_is25dData && HasOnlyPolygons())
+    ClipVectorPtr unifiedVector = ClipVector::Create();
+    GetClipsAsSingleVector(unifiedVector);
+
+    bvector<size_t> polyIndices;
+    if(true == GetRegionsFromClipVector3D(outputRegions, polyIndices, unifiedVector.get(), m_sourceData))
+    {
+        if(!polyIndices.empty())
         {
-        bvector<bvector<DPoint3d>> polygons;
-        bvector<bool> isMask;
-        GetClipsAsPolygons(polygons, isMask);
-
-        GetRegionsFromClipPolys(outputRegions, polygons);
-
-        for(size_t i = 0; i < orderedClipList.size() && i < polygons.size() && i < outputRegions.size() + 1; ++i)
-            {
-            ClippedRegion reg;
-            reg.isExterior = false;
-            reg.id = orderedClipList[i]->id;
-            for(auto& m : outputRegions[i + 1])
-                reg.meshes.push_back(m);
-            computedRegions.push_back(reg);
-            }
-        ClippedRegion regExt;
-        regExt.isExterior = true;
-        regExt.id = 0;
-        for(auto& m : outputRegions[0])
-            regExt.meshes.push_back(m);
-        computedRegions.push_back(regExt);
-        }
-    else
-        {
-        if(HasOnlyPolygons())
-            {
-            bvector<bvector<DPoint3d>> polygons;
-            bvector<bool> isMask;
-            GetClipsAsPolygons(polygons, isMask);
-
-            GetRegionsFromClipPolys3D(outputRegions, polygons, m_sourceData, isMask);
-
-            for(size_t i = 0; i < orderedClipList.size() && i < polygons.size() && i < outputRegions.size() + 1; ++i)
-                {
-                ClippedRegion reg;
-                reg.isExterior = false;
-                reg.id = orderedClipList[i]->id;
-                for(auto& m : outputRegions[i + 1])
-                    reg.meshes.push_back(m);
-                computedRegions.push_back(reg);
-                }
             ClippedRegion regExt;
             regExt.isExterior = true;
             regExt.id = 0;
             for(auto& m : outputRegions[0])
                 regExt.meshes.push_back(m);
             computedRegions.push_back(regExt);
-            wasClipped = true;
-            }
-        else
+
+            size_t reg = 1, clipIdx = 0;
+            for(auto& clip : orderedClipList)
             {
-            ClipVectorPtr unifiedVector = ClipVector::Create();
-            bvector<bool> isMask;
-            GetClipsAsSingleVector(unifiedVector);
-
-            bvector<size_t> polyIndices;
-            if(true == GetRegionsFromClipVector3D(outputRegions, polyIndices, unifiedVector.get(), m_sourceData, isMask))
-                {
-                if(!polyIndices.empty())
-                    {
-                    ClippedRegion regExt;
-                    regExt.isExterior = true;
-                    regExt.id = 0;
-                    for(auto& m : outputRegions[0])
-                        regExt.meshes.push_back(m);
-                    computedRegions.push_back(regExt);
-
-                    size_t reg = 1, clipIdx = 0;
-                    for(auto& clip : orderedClipList)
-                        {
-                        if(reg >= outputRegions.size())  break;
-                        ClippedRegion regClipped;
-                        regClipped.isExterior = false;
-                        regClipped.id = clip->id;
-                        if(clip->type == ClipInfo::Type::Vector)
-                            {
-                            for(size_t i = 0; i < static_cast<ClipVectorInfo*>(clip)->clip->size(); ++i)
-                                {
-                                if(polyIndices[reg - 1] == clipIdx)
-                                    {
-                                    for(auto& m : outputRegions[reg])
-                                        regClipped.meshes.push_back(m);
-                                    ++reg;
-                                    }
-                                ++clipIdx;
-                                }
-                            }
-                        else if(clip->type == ClipInfo::Type::Polygon)
-                            {
-                            if(polyIndices[reg - 1] == clipIdx)
-                                {
-                                for(auto& m : outputRegions[reg])
-                                    regClipped.meshes.push_back(m);
-                                ++reg;
-                                }
-                            ++clipIdx;
-                            }
-                        if(!regClipped.meshes.empty())
-                            computedRegions.push_back(regClipped);
-
-                        }
-                    wasClipped = computedRegions.size() > 1;
-                    }
-                }
+                if(reg >= outputRegions.size())  break;
+                ClippedRegion regClipped;
+                regClipped.isExterior = false;
+                 regClipped.id = clip->id;
+                 if(clip->type == ClipInfo::Type::Vector)
+                 {
+                     for(size_t i = 0; i < static_cast<ClipVectorInfo*>(clip)->clip->size(); ++i)
+                     {
+                         if(polyIndices[reg - 1] == clipIdx)
+                         {
+                             for(auto& m : outputRegions[reg])
+                                 regClipped.meshes.push_back(m);
+                             ++reg;
+                         }
+                         ++clipIdx;
+                     }
+                 }
+                 else if(clip->type == ClipInfo::Type::Polygon)
+                 {
+                     if(polyIndices[reg - 1] == clipIdx)
+                     {
+                         for(auto& m : outputRegions[reg])
+                             regClipped.meshes.push_back(m);
+                         ++reg;
+                     }
+                     ++clipIdx;
+                 }
+                 if(!regClipped.meshes.empty())
+                     computedRegions.push_back(regClipped);
             }
+            wasClipped = computedRegions.size() > 1;
         }
     }
+}
 
 MeshClipper::RegionResult MeshClipper::GetRegions(bvector<uint64_t>& ids, bvector<bvector<PolyfaceHeaderPtr>>& polyfaces)
 {

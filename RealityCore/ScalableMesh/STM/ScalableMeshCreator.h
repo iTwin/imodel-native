@@ -180,8 +180,7 @@ struct IScalableMeshCreator::Impl
 
         template <typename PointIndex>
           StatusInt                    Stitch(PointIndex&                             pointIndex,
-                                                                   int                                     levelToStitch = -1,
-                                                                   bool                                    do2_5dStitchFirst = false);
+                                                                   int                                     levelToStitch = -1);
 
 
           HFCPtr<MeshIndexType>                   m_pDataIndex;
@@ -190,7 +189,7 @@ struct IScalableMeshCreator::Impl
 
     protected:
 
-        BENTLEY_SM_EXPORT virtual void ConfigureMesherFilter(ISMPointIndexFilter<PointType, PointIndexExtentType>*& pFilter, ISMPointIndexMesher<PointType, PointIndexExtentType>*& pMesher2d, ISMPointIndexMesher<PointType, PointIndexExtentType>*& pMesher3d);
+        BENTLEY_SM_EXPORT virtual void ConfigureMesherFilter(ISMPointIndexFilter<PointType, PointIndexExtentType>*& pFilter, ISMPointIndexMesher<PointType, PointIndexExtentType>*& pMesher2d);
 
         BENTLEY_SM_EXPORT void SetThreadingOptions(bool useThreadsInMeshing, bool useThreadsInStitching, bool useThreadsInFiltering);
           
@@ -276,10 +275,9 @@ StatusInt IScalableMeshCreator::Impl::Mesh  (PointIndex& pointIndex)
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <typename PointIndex>
 StatusInt IScalableMeshCreator::Impl::Stitch  (PointIndex& pointIndex, 
-                                        int         levelToStitch, 
-                                        bool        do2_5dStitchFirst)
+                                        int         levelToStitch)
     {
-    pointIndex.Stitch(levelToStitch, do2_5dStitchFirst);
+    pointIndex.Stitch(levelToStitch);
     return BSISUCCESS;
     }
 

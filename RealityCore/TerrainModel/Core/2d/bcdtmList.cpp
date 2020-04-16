@@ -8398,7 +8398,13 @@ BENTLEYDTM_Public int bcdtmList_testForVoidLineDtmObject
        while ( fPtr != dtmP->nullPtr && voidLine == false && process )
          {
          auto flistP = flistAddrP(dtmP, fPtr);
-          if( flistP->nextPnt == P2 ) process = 0 ;  // Consecutive Points On Hull
+         if (flistP->nextPnt == P2)
+             {
+             if (ftableAddrP(dtmP, flistP->dtmFeature)->dtmFeatureType == DTMFeatureType::Island ||
+                 ftableAddrP(dtmP, flistP->dtmFeature)->dtmFeatureType == DTMFeatureType::Void ||
+                 ftableAddrP(dtmP, flistP->dtmFeature)->dtmFeatureType == DTMFeatureType::Hole)
+                 process = 0;  // Consecutive Points On Hull
+             }
 /*
 **        P1 On An Island Hull
 */
@@ -8465,6 +8471,7 @@ BENTLEYDTM_Public int bcdtmList_testForVoidLineDtmObject
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
 }
+
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |

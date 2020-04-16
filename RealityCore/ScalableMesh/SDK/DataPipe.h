@@ -46,6 +46,8 @@ using namespace BENTLEY_NAMESPACE_NAME::Bstdcxx;
 
             DataPipe()
                 {                
+                m_points = nullptr;
+                m_nbOfPoints = 0;
                 m_consumePointsDone = true;   
                 m_consumeFeaturesDone = true;   
                 m_finishWritingPoints = false;

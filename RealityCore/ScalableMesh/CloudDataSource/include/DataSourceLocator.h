@@ -45,7 +45,7 @@ class DataSourceSession
     public:
 
         CLOUD_EXPORT                            DataSourceSession           (void);
-        CLOUD_EXPORT                            DataSourceSession           (const SessionKey &key);
+        CLOUD_EXPORT                   explicit DataSourceSession           (const SessionKey &key);
 
         CLOUD_EXPORT    void                    setSessionKey               (const SessionKey &key);
         CLOUD_EXPORT    const SessionKey &      getSessionKey               (void) const;
@@ -108,7 +108,7 @@ protected:
 public:
 
                                             DataSourceLocator       (void);
-                                            DataSourceLocator       (DataSourceLocator &locator);
+                                            DataSourceLocator       (const DataSourceLocator &locator);
 
                                            ~DataSourceLocator       () = default;
 

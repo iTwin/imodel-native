@@ -132,7 +132,7 @@ struct iModelBridgeTests : ::testing::Test
         CreateDgnDbParams createProjectParams;
         createProjectParams.SetRootSubjectName("iModelBridgeTests");
 
-                // Create the seed DgnDb file. The BisCore domain schema is also imported.
+        // Create the seed DgnDb file. The BisCore domain schema is also imported.
         BeSQLite::DbResult createStatus;
         DgnDbPtr db = DgnDb::CreateDgnDb(&createStatus, seedDbName, createProjectParams);
         ASSERT_TRUE(db.IsValid());

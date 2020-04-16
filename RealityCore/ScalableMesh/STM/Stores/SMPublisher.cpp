@@ -58,7 +58,11 @@ StatusInt SaveAsNodeCreator::SetGCS(const GeoCoords::GCS& gcs)
 IScalableMeshNodeEditPtr SaveAsNodeCreator::GetRootNode()
     {
     auto rootNode = m_pDataIndex->GetRootNode();
-    return new ScalableMeshNodeEdit<PointType>(rootNode);
+    if (rootNode != nullptr)
+        {
+        return new ScalableMeshNodeEdit<PointType>(rootNode);
+        }
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -125,9 +129,10 @@ StatusInt SaveAsNodeCreator::SaveSources(IDTMSourceCollection& sources)
     if (BENTLEY_NAMESPACE_NAME::ScalableMesh::SaveSources(sources, *sourcesData, dummyDoc))
         {
         m_smSQLitePtr->SaveSource(*sourcesData);
+        delete(sourcesData);
         return SUCCESS;
         }
-
+    delete(sourcesData);
     return ERROR;
     }
 
@@ -392,18 +397,18 @@ StatusInt SM3SMPublisher::_Publish(IScalableMeshPublishParamsPtr params)
 void SM3SMPublisher::OptimiseIndex(SaveAsNodeCreatorPtr destination)
     {
     auto destNode = destination->GetRootNode();
-    if(!destNode->GetChildrenNodes().empty())
+    if(destNode.IsValid() && !destNode->GetChildrenNodes().empty())
         {
-        DRange3d newContentExtent = DRange3d::NullRange();
+        DRange3d newNodeExtent = DRange3d::NullRange();
         for(auto child : destNode->GetChildrenNodes())
             {
             if(destination->GetPointCountFor(child) > 0)
                 {
                 DRange3d childExtent = child->GetNodeExtent();
-                newContentExtent.Extend(childExtent);
+                newNodeExtent.Extend(childExtent);
                 }
             }
-        destNode->SetNodeExtent(newContentExtent);
+        destNode->SetNodeExtent(newNodeExtent);
         }
     }
 
@@ -415,6 +420,7 @@ void SM3SMPublisher::UpdateContentExtentsAllNodes(IScalableMeshNodeEditPtr destN
     std::function<DRange3d(IScalableMeshNodeEditPtr node)> recursiveUpdate;
     recursiveUpdate = [&recursiveUpdate] (IScalableMeshNodeEditPtr node) -> DRange3d
         {
+        if (!node.IsValid()) return DRange3d();
         if(!node->GetChildrenNodes().empty())
             {
             DRange3d newContentExtent = DRange3d::NullRange();
@@ -424,7 +430,8 @@ void SM3SMPublisher::UpdateContentExtentsAllNodes(IScalableMeshNodeEditPtr destN
                 newContentExtent.Extend(childContentExtent);
                 }
             node->SetContentExtent(newContentExtent);
-            }
+            }    
+
         return node->GetContentExtent();
         };
     recursiveUpdate(destNode);
@@ -485,9 +492,8 @@ StatusInt SM3SMPublisher::SetNodeMeshData(IScalableMeshNodePtr sourceNode, IScal
         if (!uvIndices.empty() && nullptr != polyfaceQuery->GetParamIndexCP()) memcpy(uvIndices.data(), polyfaceQuery->GetParamIndexCP(), uvIndices.size() * sizeof(int32_t));
 
         if (!points.empty() && !indices.empty())
-            {
-
-            if (!transform.IsIdentity())
+            {            
+            if (!transform.IsIdentity() || sourceNode->HasAnyClip())
                 {
                 contentExtent = DRange3d::From(points);
                 }

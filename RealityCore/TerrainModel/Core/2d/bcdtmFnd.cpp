@@ -148,7 +148,7 @@ BENTLEYDTM_EXPORT int bcdtmFind_closestPointDtmObject(BC_DTM_OBJ *dtmP,double x,
 */
 {
  long    dbg=DTM_TRACE_VALUE(0) ;
- long    cpnt,spnt,process ;
+ long    cpnt,spnt;
  double  dn = 0.0,dns,dd ;
  DPoint3d *cpntP ;
 /*
@@ -187,49 +187,52 @@ BENTLEYDTM_EXPORT int bcdtmFind_closestPointDtmObject(BC_DTM_OBJ *dtmP,double x,
 ** Scan Back Until x - x point value  > dn
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Scanning Backwards") ;
-    process = 1 ;
-    for( cpnt = spnt - 1 ; cpnt >= 0 && process  ; --cpnt )
-      {
-       cpntP = pointAddrP(dtmP,cpnt) ;
-       if( x - cpntP->x >= dn ) process = 0 ;
-       else
-         {
-          if( fabs(y-cpntP->y ) < dn && nodeAddrP(dtmP,cpnt)->cPtr != dtmP->nullPtr )
+    for (cpnt = spnt - 1; cpnt >= 0; --cpnt)
+        {
+        cpntP = pointAddrP(dtmP, cpnt);
+        if (x - cpntP->x < dn)
             {
-             dd = bcdtmMath_distanceSquared(cpntP->x,cpntP->y,x,y) ;
-             if( dd < dns ) 
-               {
-                dns = dd ;
-                dn = sqrt (dns);
+            if (fabs(y - cpntP->y) < dn && nodeAddrP(dtmP, cpnt)->cPtr != dtmP->nullPtr)
+                {
+                dd = bcdtmMath_distanceSquared(cpntP->x, cpntP->y, x, y);
+                if (dd < dns)
+                    {
+                    dns = dd;
+                    dn = sqrt(dns);
 
-                *cPointP = cpnt ;
-               }
+                    *cPointP = cpnt;
+                    }
+                }
             }
-         }
-      }
+        else
+            break;
+        }
 /*
 **  Scan Forwards Until x point value - x > dn
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Scanning Forwards") ;
-    if( dn > 0.0 ) process = 1 ;
-    for( cpnt = spnt + 1 ; cpnt < dtmP->numSortedPoints && process ; ++cpnt )
-      {
-       cpntP = pointAddrP(dtmP,cpnt) ;
-       if( cpntP->x - x >= dn ) process = 0 ;
-       else 
-         {
-          if( fabs(y-cpntP->y) < dn && nodeAddrP(dtmP,cpnt)->cPtr != dtmP->nullPtr )
+    if (dn > 0.0)
+        {
+        for (cpnt = spnt + 1; cpnt < dtmP->numSortedPoints; ++cpnt)
             {
-             dd = bcdtmMath_distanceSquared(cpntP->x,cpntP->y,x,y) ;
-             if( dd < dns ) 
-               { 
-                dns = dd ;
-                dn = sqrt (dns);
-                *cPointP = cpnt ;
-               }
+            cpntP = pointAddrP(dtmP, cpnt);
+            if (cpntP->x - x < dn)
+                {
+                if (fabs(y - cpntP->y) < dn && nodeAddrP(dtmP, cpnt)->cPtr != dtmP->nullPtr)
+                    {
+                    dd = bcdtmMath_distanceSquared(cpntP->x, cpntP->y, x, y);
+                    if (dd < dns)
+                        {
+                        dns = dd;
+                        dn = sqrt(dns);
+                        *cPointP = cpnt;
+                        }
+                    }
+                }
+            else
+                break;
             }
-         }
-      }
+        }
 /*
 **  Scan Inserted 
 */
@@ -567,13 +570,15 @@ BENTLEYDTM_EXPORT int bcdtmFind_findClosestHullLineDtmObject(BC_DTM_OBJ *dtmP,do
  do
    {
     pnt2 = nodeAddrP(dtmP,pnt1)->hPtr ;
-    if( pointAddrP(dtmP,pnt1)->x <= pointAddrP(dtmP,pnt2)->x ) { xmin = pointAddrP(dtmP,pnt1)->x ; xmax = pointAddrP(dtmP,pnt2)->x ; }
-    else                                                       { xmin = pointAddrP(dtmP,pnt2)->x ; xmax = pointAddrP(dtmP,pnt1)->x ; }
-    if( pointAddrP(dtmP,pnt1)->y <= pointAddrP(dtmP,pnt2)->y ) { ymin = pointAddrP(dtmP,pnt1)->y ; ymax = pointAddrP(dtmP,pnt2)->y ; }
-    else                                                       { ymin = pointAddrP(dtmP,pnt2)->y ; ymax = pointAddrP(dtmP,pnt1)->y ; }
+    const auto pt1 = pointAddrP(dtmP, pnt1);
+    const auto pt2 = pointAddrP(dtmP, pnt2);
+    if( pt1->x <= pt2->x ) { xmin = pt1->x ; xmax = pt2->x ; }
+    else                                                       { xmin = pt2->x ; xmax = pt1->x ; }
+    if( pt1->y <= pt2->y ) { ymin = pt1->y ; ymax = pt2->y ; }
+    else                                                       { ymin = pt2->y ; ymax = pt1->y ; }
     if( x >= (xmin-tolerance) && x <= (xmax+tolerance)  && y >= (ymin-tolerance) && y <= (ymax+tolerance)    )
       {
-       dist = bcdtmMath_distanceOfPointFromLine(&onLine,pointAddrP(dtmP,pnt1)->x,pointAddrP(dtmP,pnt1)->y,pointAddrP(dtmP,pnt2)->x,pointAddrP(dtmP,pnt2)->y,x,y,&xi,&yi) ;
+       dist = bcdtmMath_distanceOfPointFromLine(&onLine,pt1->x,pt1->y,pt2->x,pt2->y,x,y,&xi,&yi) ;
        if( onLine && ( dist < tolerance ) )
          {
           tolerance  = dist ;

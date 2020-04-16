@@ -57,7 +57,7 @@ void TileLoaderQueue::SetStop(TileLoaderStop stopFunc)
     stopFunction = stopFunc;
     }
 
-void TileLoaderQueue::Send(TileLoadMessage& m)
+void TileLoaderQueue::Send(const TileLoadMessage& m)
     {
     while (needResize) { this_thread::sleep_for(std::chrono::microseconds(50));  }
     if (tail > MAX_N_MESSAGES - 10) needResize = true;

@@ -309,7 +309,7 @@ StatusInt GroundDetectionManager::DoGroundDetection(EditElementHandleR elHandle,
 
     invalidSeedIndexes.resize(seeds.size());
     std::vector<QuadSeedPtr>::iterator pSeedItr = seeds.begin();
-    for (size_t k = 0; k < seeds.size(); k++, pSeedItr++)
+    for (size_t k = 0; k < seeds.size(); ++k, ++pSeedItr)
         invalidSeedIndexes[k].resize((*pSeedItr)->seedPoints.size());
 
 
@@ -436,7 +436,7 @@ StatusInt GroundDetectionManager::DoGroundDetectionFromDTM(BENTLEY_NAMESPACE_NAM
 
     invalidSeedIndexes.resize(seeds.size());
     std::vector<QuadSeedPtr>::iterator pSeedItr = seeds.begin();
-    for (size_t k = 0; k < seeds.size(); k++, pSeedItr++)
+    for (size_t k = 0; k < seeds.size(); ++k, ++pSeedItr)
         invalidSeedIndexes[k].resize((*pSeedItr)->seedPoints.size());
 
     // Data structure is ready, now, we can process

@@ -13,6 +13,7 @@ DataSourceBuffered::DataSourceBuffered(DataSourceAccount *sourceAccount, const S
 {
                                                             // Default segment size is zero until initialized
     setSegmentSize(0);
+    buffer = nullptr;
 }
 
 DataSourceBuffered::~DataSourceBuffered(void)

@@ -193,7 +193,7 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, Dat
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&buffer);
     curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, DataSourceAccountCURL::CURLHandle::CURLWriteHeaderCallback);
     curl_easy_setopt(curl, CURLOPT_HEADERDATA, &response_header);
-    curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_1);
+    curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);        // &&RB TODO : Ask Francis.Boily about his server certificate
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
 
@@ -265,7 +265,7 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, Dat
     curl_easy_setopt(curl, CURLOPT_BUFFERSIZE, 524288L);
     curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, DataSourceAccountCURL::CURLHandle::CURLWriteHeaderCallback);
     curl_easy_setopt(curl, CURLOPT_HEADERDATA, &response_header);
-    curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_1);
+    curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);        // &&RB TODO : Ask Francis.Boily about his server certificate
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
 
@@ -334,7 +334,7 @@ void DataSourceAccountCURL::setupCertificateAuthorities(CURL* curl)
     if (!certificateAuthoritiesUrl.empty())
         {
         curl_easy_setopt(curl, CURLOPT_CAINFO, certificateAuthoritiesUrl.c_str());
-        curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_1);
+        curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1);
         }
     }

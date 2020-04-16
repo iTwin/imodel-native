@@ -176,7 +176,7 @@ class LinearHandler
 
     size_t                          m_maxPtCount;
     size_t                          m_maxLinearCount;
-
+    size_t                          m_boundaryPtCount;
 
 public:
     typedef LinearFeatureTypeInfoList::const_iterator
@@ -193,6 +193,7 @@ public:
 
     size_t                          GetMaxLinearCount          () const;
     size_t                          GetMaxPointCount           () const;
+    size_t                          GetBoundaryPointCount      () const;
 
     bool                            Copy                       (TypeInfoCIter                   pi_typeInfoIter,
                                                                 IDTMFeatureArray<DPoint3d>&     po_featureArray) const;

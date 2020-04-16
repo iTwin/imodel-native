@@ -22,8 +22,6 @@ PUSH_DISABLE_DEPRECATION_WARNINGS
 
 USING_NAMESPACE_IMAGEPP;
 
-extern bool   GET_HIGHEST_RES;
-
 /*------------------------------------------------------------------+
 | Include of the current class header                               |
 +------------------------------------------------------------------*/
@@ -845,11 +843,7 @@ void CheckFaceIndexes(size_t& nbFaceIndexes, int32_t* faceIndexes, size_t nbPoin
     }
 
 #ifndef LINUX_SCALABLEMESH_BUILD
-double checkNormal (DVec3dCR viewNormal, DVec3dCR normal) restrict (amp,cpu)
-    {
-    return (viewNormal.x*normal.x + viewNormal.y*normal.y + viewNormal.z*normal.z);
-    }
-
+double checkNormal(DVec3dCR viewNormal, DVec3dCR normal) restrict(amp, cpu);
 void ScalableMeshMesh::CalcNormals () const
     {
     int triangleCount = (int)(m_nbFaceIndexes / 3);

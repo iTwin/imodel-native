@@ -48,15 +48,6 @@ InternalSourceHandler::Base& InternalSourceHandler::GetOriginalBaseFor (Source& 
 
 /*---------------------------------------------------------------------------------**//**
 * @description  
-* @bsimethod                                                  Raymond.Gauthier   07/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-const InternalSourceHandler::Base& InternalSourceHandler::GetOriginalBaseFor (const Source& source)
-    {
-    return source.m_originalBase;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @description  
 * @bsimethod                                                  Raymond.Gauthier   11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 inline InternalSourceHandler::Base& InternalSourceHandler::GetBaseFor (Source& source)
@@ -68,16 +59,7 @@ inline InternalSourceHandler::Base& InternalSourceHandler::GetBaseFor (Source& s
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline const InternalSourceHandler::Base& InternalSourceHandler::GetBaseFor (const Source& source)
-    {
-    return *source.m_baseP;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @description  
-* @bsimethod                                                  Raymond.Gauthier   11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-inline const ContentDescriptor& InternalSourceHandler::GetDescriptorFor (const Source& source)
+inline const ContentDescriptor& InternalSourceHandler::GetDescriptorFor (Source& source)
     {
     return source.m_baseP->GetDescriptor();
     }

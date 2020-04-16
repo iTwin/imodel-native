@@ -72,9 +72,14 @@ StatusInt IScalableMeshSaveAs::DoSaveAs(const IScalableMeshPtr& source, const WS
         if(source->GetClip(clipID, clipData))
             {
             //create a clipvector with infinite z dimensions for the polygons
-            auto curvePtr = ICurvePrimitive::CreateLineString(clipData);
-            CurveVectorPtr cv = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curvePtr);
-            clips->Append(*ClipVector::CreateFromCurveVector(*cv, 0.0, 0.1));
+            CurveVectorPtr cv = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString(clipData));
+            SMNonDestructiveClipType clipType;
+            source->GetClipType(clipID, clipType);
+
+            ClipVectorPtr clipv = ClipVector::CreateFromCurveVector(*cv, 0.0, 0.1);
+            for (auto&clipPrimitive : *clipv)
+                clipPrimitive->SetIsMask(clipType == SMNonDestructiveClipType::Mask);
+            clips->Append(*clipv);
             }
         else
             {
@@ -82,9 +87,6 @@ StatusInt IScalableMeshSaveAs::DoSaveAs(const IScalableMeshPtr& source, const WS
             source->GetClip(clipID, clipVector);
             clips->Append(*clipVector);
             }
-        SMNonDestructiveClipType clipType;
-        source->GetClipType(clipID, clipType);
-        clips->back()->SetIsMask(clipType == SMNonDestructiveClipType::Mask);
         }
 
     PrepareClipsForSaveAs(clips);
@@ -121,6 +123,75 @@ StatusInt IScalableMeshSaveAs::DoSaveAs(const IScalableMeshPtr& source, const WS
     return SUCCESS;
 }
 
+BENTLEY_SM_IMPORT_EXPORT StatusInt IScalableMeshSaveAs::DoSaveAs(const IScalableMeshPtr& source, const WString& destination, ClipVectorPtr clips, IScalableMeshProgressPtr progress, const Transform& transform, const GeoCoords::GCS& gcs)
+{
+    // Create Scalable Mesh at output path
+    SaveAsNodeCreatorPtr scMeshDestination = new SaveAsNodeCreator(destination.c_str());
+    if (!scMeshDestination.IsValid())
+        return ERROR;
+
+    IScalableMeshTextureInfoPtr textureInfo = nullptr;
+    if (SUCCESS != source->GetTextureInfo(textureInfo))
+        return ERROR;
+
+    // Gather 3sm clips along with the other clips that are being passed
+    bvector<uint64_t> clipIds;
+    source->GetAllClipIds(clipIds);
+
+    for (auto clipID : clipIds)
+    {
+        bvector<DPoint3d> clipData;
+        if (source->GetClip(clipID, clipData))
+        {
+            //create a clipvector with infinite z dimensions for the polygons
+            CurveVectorPtr cv = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString(clipData));
+            clips->Append(*ClipVector::CreateFromCurveVector(*cv, 0.0, 0.1));
+        }
+        else
+        {
+            ClipVectorPtr clipVector;
+            source->GetClip(clipID, clipVector);
+            clips->Append(*clipVector);
+        }
+        SMNonDestructiveClipType clipType;
+        source->GetClipType(clipID, clipType);
+        clips->back()->SetIsMask(clipType == SMNonDestructiveClipType::Mask);
+    }
+
+    PrepareClipsForSaveAs(clips);
+
+    // Set global parameters to the new 3sm (this will also create a new index),
+    // using the GCS of the DGN if available, otherwise use the source GCS
+    if (SUCCESS != scMeshDestination->SetGCS(gcs))
+        return ERROR;
+    scMeshDestination->SetIsTerrain(source->IsTerrain());
+    scMeshDestination->SetIsSingleFile(!source->IsCesium3DTiles());
+    scMeshDestination->SetTextured(textureInfo->GetTextureType());
+
+    //copy sources
+    IDTMSourceCollection sourceCollection;
+    source->LoadSources(sourceCollection);
+    scMeshDestination->SaveSources(sourceCollection);
+
+    { // Scope the publishing part for proper cleanup of parameters when finished
+        SM3SMPublishParamsPtr smParams = new SM3SMPublishParams();
+
+        smParams->SetSource(source.get());
+        smParams->SetDestination(scMeshDestination);
+        smParams->SetClips(clips);
+        smParams->SetProgress(progress);
+        smParams->SetSaveTextures(textureInfo->IsTextureAvailable() && !textureInfo->IsUsingBingMap());
+        smParams->SetTransform(transform);
+
+        auto smPublisher = IScalableMeshPublisher::Create(SMPublishType::THREESM);
+        if (SUCCESS != smPublisher->Publish(smParams))
+            return ERROR;
+    }
+
+    scMeshDestination = nullptr;
+
+    return SUCCESS;
+}
 
 bool Publish3DTile(IScalableMeshNodePtr& node, ISMDataStoreTypePtr<DRange3d>& pi_pDataStore, TransformCR transform, ClipVectorPtr clips, const uint64_t& coverageID, bool isClipBoundary, const GeoCoordinates::BaseGCSCPtr sourceGCS, const GeoCoordinates::BaseGCSCPtr destinationGCS, IScalableMeshProgressPtr progress, bool outputTexture)
 {

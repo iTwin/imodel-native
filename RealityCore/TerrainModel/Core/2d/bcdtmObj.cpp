@@ -8,12 +8,13 @@
 #include "bcdtminlines.h"
 #include <mutex>
 
-#ifndef PUSH_STATIC_ANALYSIS_WARNING
-#define PUSH_STATIC_ANALYSIS_WARNING(a)
-#define POP_STATIC_ANALYSIS_WARNING
+#ifndef PUSH_MSVC_IGNORE
+#define PUSH_MSVC_IGNORE(a)
+#define POP_MSVC_IGNORE
 #endif
 
 std::mutex s_dtmMutex;
+static bool g_dtmObjectBTreeChecksEnabled = true;
 
 #ifdef DTM_MEMORY_DEBUG
 #include <ppl.h>
@@ -68,6 +69,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_createVer200DtmObject(BC_DTM_OBJ_VER_200 **dtm
 /*
 ** Create B Tree For BC DTM Dtm Objects Exists. If It Doesn't Exist Then Create It
 */
+ if (g_dtmObjectBTreeChecksEnabled)
         {
         std::lock_guard<std::mutex> lock (s_dtmMutex);
         if (glbDtmObjBtreeP == NULL) if (bcdtmBtree_createBtree (&glbDtmObjBtreeP, BC_DTM_MAX_OBJS)) goto errexit;
@@ -79,7 +81,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_createVer200DtmObject(BC_DTM_OBJ_VER_200 **dtm
             bcdtmWrite_message (1, 0, 0, "Maximum BC Dtm Dtm Objects Exceeded");
             goto errexit;
             }
-            }
+        }
 /*
 ** Create Dtm Object
 */
@@ -176,6 +178,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_createVer200DtmObject(BC_DTM_OBJ_VER_200 **dtm
  /*
  ** Add Dtm Object To B Tree
  */
+ if (g_dtmObjectBTreeChecksEnabled)
      {
      std::lock_guard<std::mutex> lock (s_dtmMutex);
      if (bcdtmBtree_addNode (glbDtmObjBtreeP, (BC_DTM_OBJ *)*dtmPP)) goto errexit;
@@ -257,6 +260,32 @@ BENTLEYDTM_EXPORT int bcdtmObject_destoryDTMExtended (BC_DTM_OBJ_EXTENDED ** dtm
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
+BENTLEYDTM_EXPORT void bcdtmObject_disableBTreeChecks()
+/*
+** This Function disables checks on the DTM Object BTree
+*/
+    {
+    g_dtmObjectBTreeChecksEnabled = false;
+    }
+
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+BENTLEYDTM_EXPORT void bcdtmObject_enableBTreeChecks()
+/*
+** This Function enables checks on the DTM Object BTree
+*/
+    {
+    g_dtmObjectBTreeChecksEnabled = true;
+    }
+
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
 BENTLEYDTM_EXPORT int bcdtmObject_createDtmObject(BC_DTM_OBJ **dtmPP )
 /*
 ** This Function Creates a BC DTM Object
@@ -272,6 +301,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_createDtmObject(BC_DTM_OBJ **dtmPP )
 /*
 ** Create B Tree For BC DTM Dtm Objects Exists. If It Doesn't Exist Then Create It
 */
+ if (g_dtmObjectBTreeChecksEnabled)
     {
             std::lock_guard<std::mutex> lock (s_dtmMutex);
             if (glbDtmObjBtreeP == NULL) if (bcdtmBtree_createBtree (&glbDtmObjBtreeP, BC_DTM_MAX_OBJS)) goto errexit;
@@ -283,7 +313,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_createDtmObject(BC_DTM_OBJ **dtmPP )
                 bcdtmWrite_message (1, 0, 0, "Maximum BC Dtm Dtm Objects Exceeded");
                 goto errexit;
                 }
-            }
+    }
 /*
 ** Create Dtm Object
 */
@@ -377,6 +407,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_createDtmObject(BC_DTM_OBJ **dtmPP )
  /*
  ** Add Dtm Object To B Tree
  */
+ if (g_dtmObjectBTreeChecksEnabled)
      {
      std::lock_guard<std::mutex> lock (s_dtmMutex);
      if (bcdtmBtree_addNode (glbDtmObjBtreeP, *dtmPP)) goto errexit;
@@ -931,7 +962,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_createDtmElementFromDtmObject
 BENTLEYDTM_EXPORT int bcdtmObject_testForInMemoryDtmObject(BC_DTM_OBJ *dtmP)
 {
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long node,priorNode,nodeFound,nodeLevel ;
+ long node,priorNode,nodeFound = 0,nodeLevel ;
 /*
 ** Write Entry Message
 */
@@ -944,6 +975,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_testForInMemoryDtmObject(BC_DTM_OBJ *dtmP)
 ** Check For None Null Object
 */
  if (dtmP == NULL) goto errexit;
+ if (g_dtmObjectBTreeChecksEnabled)
      {
      /*
 **  Check B Tree Exits
@@ -998,6 +1030,9 @@ BENTLEYDTM_EXPORT int bcdtmObject_testForValidDtmObject(BC_DTM_OBJ *dtmP)
        else                                           bcdtmWrite_message(0,0,0,"Object Type = Unknown") ;
       }
    }
+
+ if( !g_dtmObjectBTreeChecksEnabled ) goto cleanup;
+
 /*
 ** Check For None Null Object
 */
@@ -1009,15 +1044,18 @@ BENTLEYDTM_EXPORT int bcdtmObject_testForValidDtmObject(BC_DTM_OBJ *dtmP)
  /*
  **  Check B Tree Exits
  */
- if (glbDtmObjBtreeP == NULL) goto errexit;
- /*
- **  Find Entry For Dtm Object In Btree
- */
- if (bcdtmBtree_findNode (glbDtmObjBtreeP, dtmP, &node, &priorNode, &nodeFound, &nodeLevel)) goto errexit;
-/*
-**  Check Node Found
-*/
- if( ! nodeFound ) ret = DTM_ERROR ;
+ if(g_dtmObjectBTreeChecksEnabled)
+     {
+     if(glbDtmObjBtreeP == NULL) goto errexit;
+     /*
+     **  Find Entry For Dtm Object In Btree
+     */
+     if(bcdtmBtree_findNode(glbDtmObjBtreeP, dtmP, &node, &priorNode, &nodeFound, &nodeLevel)) goto errexit;
+     /*
+     **  Check Node Found
+     */
+     if(!nodeFound) ret = DTM_ERROR;
+     }
 /*
 ** Clean Up
 */
@@ -1402,7 +1440,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_destroyDtmObject(BC_DTM_OBJ **dtmPP)
 */
 {
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long n,node,priorNode,nodeFound,nodeLevel,offset,feature,partitionNum;
+ long n,node = 0,priorNode,nodeFound,nodeLevel,offset,feature,partitionNum;
  BC_DTM_FEATURE *dtmFeatureP ;
 /*
 ** Write Entry Message
@@ -1441,9 +1479,12 @@ BENTLEYDTM_EXPORT int bcdtmObject_destroyDtmObject(BC_DTM_OBJ **dtmPP)
  /*
  ** Find Entry For Dtm Object In Btree
  */
- if (dbg == 2) bcdtmWrite_message (0, 0, 0, "Finding Btree Entry For Dtm Object");
- if (bcdtmBtree_findNode (glbDtmObjBtreeP, *dtmPP, &node, &priorNode, &nodeFound, &nodeLevel)) goto errexit;
- if (dbg == 2) bcdtmWrite_message (0, 0, 0, "nodeFound = %2ld node = %6ld", nodeFound, node);
+ if(g_dtmObjectBTreeChecksEnabled)
+     {
+     if(dbg == 2) bcdtmWrite_message(0, 0, 0, "Finding Btree Entry For Dtm Object");
+     if(bcdtmBtree_findNode(glbDtmObjBtreeP, *dtmPP, &node, &priorNode, &nodeFound, &nodeLevel)) goto errexit;
+     if(dbg == 2) bcdtmWrite_message(0, 0, 0, "nodeFound = %2ld node = %6ld", nodeFound, node);
+     }
 /*
 ** Tell bcMemory that we are being freed
 */
@@ -1539,11 +1580,14 @@ BENTLEYDTM_EXPORT int bcdtmObject_destroyDtmObject(BC_DTM_OBJ **dtmPP)
 /*
 ** Remove Entry For Dtm Object In Btree
 */
- if (dbg == 2) bcdtmWrite_message (0, 0, 0, "Removing Node For Dtm Object From Btree");
-     {
-     std::lock_guard<std::mutex> lock (s_dtmMutex);
-     if (bcdtmBtree_removeNode (glbDtmObjBtreeP, node)) goto errexit;
-     }
+  if(g_dtmObjectBTreeChecksEnabled)
+      {
+      if(dbg == 2) bcdtmWrite_message(0, 0, 0, "Removing Node For Dtm Object From Btree");
+      {
+      std::lock_guard<std::mutex> lock(s_dtmMutex);
+      if(bcdtmBtree_removeNode(glbDtmObjBtreeP, node)) goto errexit;
+      }
+      }
 /*
 ** Clean Up
 */
@@ -2345,9 +2389,11 @@ BENTLEYDTM_Public int bcdtmObject_resizeFeaturesMemoryDtmObject(BC_DTM_OBJ *dtmP
             bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
             goto errexit ;
             }
-        PUSH_STATIC_ANALYSIS_WARNING(6386);
+        PUSH_MSVC_IGNORE(6386);
+        #pragma warning(disable: 6386)
         for( n = 0 ; n < dtmP->numFeaturePartitions ; ++n ) dtmP->fTablePP[n] = nullptr ;
-        POP_STATIC_ANALYSIS_WARNING;
+        #pragma warning(default: 6386)
+        POP_MSVC_IGNORE;
         /*
         **  Allocate Memory For Feature Partitions
         */
@@ -2362,14 +2408,16 @@ BENTLEYDTM_Public int bcdtmObject_resizeFeaturesMemoryDtmObject(BC_DTM_OBJ *dtmP
             /*
             **     Allocate Partition Memory
             */
-            PUSH_STATIC_ANALYSIS_WARNING(6385);
+            PUSH_MSVC_IGNORE(6385);
+            #pragma warning(disable: 6385)
             dtmP->fTablePP[n] = ( BC_DTM_FEATURE * ) bcdtmMemory_allocatePartition(dtmP, DTMPartition::Feature, n, partitionSize * sizeof( BC_DTM_FEATURE)) ;
             if( dtmP->fTablePP[n] == nullptr )
                 {
                 bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
                 goto errexit ;
                 }
-            POP_STATIC_ANALYSIS_WARNING;
+            #pragma warning(default: 6385)
+            POP_MSVC_IGNORE;
             if( dbg ) bcdtmWrite_message(0,0,0,"Allocationg Memory Amount Of %8ld for Partition %8ld Completed",partitionSize,n) ;
             }
         }
@@ -2697,9 +2745,11 @@ BENTLEYDTM_EXPORT int bcdtmObject_allocatePointsMemoryDtmObject(BC_DTM_OBJ *dtmP
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        goto errexit ;
       }
-    PUSH_STATIC_ANALYSIS_WARNING(6386);
+    PUSH_MSVC_IGNORE(6386);
+    #pragma warning(disable: 6386)
     for( n = 0 ; n < dtmP->numPointPartitions ; ++n ) dtmP->pointsPP[n] = NULL ;
-    POP_STATIC_ANALYSIS_WARNING;
+    #pragma warning(default: 6386)
+    POP_MSVC_IGNORE;
 /*
 **  Allocate Memory For Point Partitions
 */
@@ -2714,14 +2764,16 @@ BENTLEYDTM_EXPORT int bcdtmObject_allocatePointsMemoryDtmObject(BC_DTM_OBJ *dtmP
 /*
 **     Allocate Partition Memory
 */
-       PUSH_STATIC_ANALYSIS_WARNING(6385);
+       PUSH_MSVC_IGNORE(6385);
+       #pragma warning(disable: 6385)
        dtmP->pointsPP[n] = ( DPoint3d * ) bcdtmMemory_allocatePartition(dtmP, DTMPartition::Point, n, partitionSize * sizeof( DPoint3d)) ;
        if( dtmP->pointsPP[n] == NULL )
          {
           bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
           goto errexit ;
          }
-       POP_STATIC_ANALYSIS_WARNING;
+       #pragma warning(default: 6385)
+       POP_MSVC_IGNORE;
       }
    }
 /*
@@ -2922,9 +2974,11 @@ BENTLEYDTM_Public int  bcdtmObject_allocateNodesMemoryDtmObject(BC_DTM_OBJ *dtmP
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        goto errexit ;
       }
-    PUSH_STATIC_ANALYSIS_WARNING(6386);
+    PUSH_MSVC_IGNORE(6386);
+    #pragma warning(disable: 6386)
     for( n = 0 ; n < dtmP->numNodePartitions ; ++n ) dtmP->nodesPP[n] = NULL ;
-    POP_STATIC_ANALYSIS_WARNING;
+    #pragma warning(default: 6386)
+    POP_MSVC_IGNORE;
 /*
 **  Allocate Memory For Node Partitions
 */
@@ -2939,14 +2993,16 @@ BENTLEYDTM_Public int  bcdtmObject_allocateNodesMemoryDtmObject(BC_DTM_OBJ *dtmP
 /*
 **     Allocate Partition Memory
 */
-       PUSH_STATIC_ANALYSIS_WARNING(6385);
+       PUSH_MSVC_IGNORE(6385);
+       #pragma warning(disable: 6385)
        dtmP->nodesPP[n] = ( DTM_TIN_NODE * ) bcdtmMemory_allocatePartition(dtmP, DTMPartition::Node, n, partitionSize * sizeof( DTM_TIN_NODE)) ;
        if( dtmP->nodesPP[n] == NULL )
          {
           bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
           goto errexit ;
          }
-       POP_STATIC_ANALYSIS_WARNING;
+       #pragma warning(default: 6385)
+       POP_MSVC_IGNORE;
       }
    }
 /*
@@ -3154,9 +3210,11 @@ BENTLEYDTM_Public int  bcdtmObject_allocateCircularListMemoryDtmObject(BC_DTM_OB
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        goto errexit ;
       }
-    PUSH_STATIC_ANALYSIS_WARNING(6386);
+    PUSH_MSVC_IGNORE(6386);
+    #pragma warning(disable: 6386)
     for( n = 0 ; n < dtmP->numClistPartitions ; ++n ) dtmP->cListPP[n] = NULL ;
-    POP_STATIC_ANALYSIS_WARNING;
+    #pragma warning(default: 6386)
+    POP_MSVC_IGNORE;
     /*
 **  Allocate Memory For Clist Partitions
 */
@@ -3171,14 +3229,16 @@ BENTLEYDTM_Public int  bcdtmObject_allocateCircularListMemoryDtmObject(BC_DTM_OB
 /*
 **     Allocate Partition Memory
 */
-       PUSH_STATIC_ANALYSIS_WARNING(6385);
+       PUSH_MSVC_IGNORE(6385);
+       #pragma warning(disable: 6385)
        dtmP->cListPP[n] = ( DTM_CIR_LIST * ) bcdtmMemory_allocatePartition(dtmP, DTMPartition::CList, n, partitionSize * sizeof( DTM_CIR_LIST)) ;
        if( dtmP->cListPP[n] == NULL )
          {
           bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
           goto errexit ;
          }
-       POP_STATIC_ANALYSIS_WARNING;
+       #pragma warning(default: 6385)
+       POP_MSVC_IGNORE;
        }
    }
 /*
@@ -3376,9 +3436,11 @@ BENTLEYDTM_Public int  bcdtmObject_allocateFeatureListMemoryDtmObject(BC_DTM_OBJ
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        goto errexit ;
       }
-    PUSH_STATIC_ANALYSIS_WARNING(6386);
+    PUSH_MSVC_IGNORE(6386);
+    #pragma warning(disable: 6386)
     for( n = 0 ; n < dtmP->numFlistPartitions ; ++n ) dtmP->fListPP[n] = NULL ;
-    POP_STATIC_ANALYSIS_WARNING;
+    #pragma warning(default: 6386)
+    POP_MSVC_IGNORE;
 
 /*
 **  Allocate Memory For Flist Partitions
@@ -3394,14 +3456,16 @@ BENTLEYDTM_Public int  bcdtmObject_allocateFeatureListMemoryDtmObject(BC_DTM_OBJ
 /*
 **     Allocate Partition Memory
 */
-       PUSH_STATIC_ANALYSIS_WARNING(6385);
+       PUSH_MSVC_IGNORE(6385);
+       #pragma warning(disable: 6385)
        dtmP->fListPP[n] = ( DTM_FEATURE_LIST * ) bcdtmMemory_allocatePartition(dtmP, DTMPartition::FList, n, partitionSize * sizeof( DTM_FEATURE_LIST)) ;
        if( dtmP->fListPP[n] == NULL )
          {
           bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
           goto errexit ;
          }
-       POP_STATIC_ANALYSIS_WARNING;
+       #pragma warning(default: 6385)
+       POP_MSVC_IGNORE;
        if( dbg ) bcdtmWrite_message(0,0,0,"Partition Memory Allocated") ;
       }
    }
@@ -4021,6 +4085,9 @@ BENTLEYDTM_EXPORT int bcdtmObject_reportMemoryUsageAllDtmObjects
  *clistMemAmountP    = 0 ;
  *featPtsMemAmountP  = 0 ;
  *totalMemAmountP    = 0 ;
+
+ if(!g_dtmObjectBTreeChecksEnabled) goto cleanup;
+
 /*
 ** Get Array Of Dtm Objects
 */
@@ -4135,6 +4202,8 @@ BENTLEYDTM_EXPORT int bcdtmObject_reportEntityUsageAllDtmObjects
  *memFeaturesP = 0 ;
  *numPointsP   = 0 ;
  *memPointsP   = 0 ;
+
+ if(g_dtmObjectBTreeChecksEnabled) goto cleanup;
 /*
 ** Get Array Of Dtm Objects
 */

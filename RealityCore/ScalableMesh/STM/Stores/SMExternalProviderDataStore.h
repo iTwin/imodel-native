@@ -53,7 +53,7 @@ private:
 
 public:
 
-	SMExternalClipDefinitionExtOps(IClipDefinitionDataProvider* provider);
+	explicit SMExternalClipDefinitionExtOps(IClipDefinitionDataProvider* provider);
 
 	virtual ~SMExternalClipDefinitionExtOps() {}
 

@@ -50,7 +50,7 @@ protected:
 
     AzureConnectionString                   createConnectionString              (AccountIdentifier identifier, AccountKey key);
 
-    DataSourceStatus                        setConnectionString                 (const AzureConnectionString string);
+    DataSourceStatus                        setConnectionString                 (const AzureConnectionString& string);
     const AzureConnectionString        &    getConnectionString                 (void);
 
 #ifdef USE_WASTORAGE
@@ -71,17 +71,17 @@ public:
         void                                setDefaultTimeout                   (DataSourceBuffer::Timeout time);
         DataSourceBuffer::Timeout           getDefaultTimeout                   (void);
 
-        DataSourceStatus                    setAccount                          (const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
+        DataSourceStatus                    setAccount                          (const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key) override;
 
-        DataSource                   *      createDataSource                    (const SessionName &session);
+        DataSource                   *      createDataSource                    (const SessionName &session) override;
       //DataSourceStatus                    destroyDataSource                   (DataSource *dataSource);
 
 #ifdef USE_WASTORAGE
         AzureContainer                      initializeContainer                 (const DataSourceURL &containerName, DataSourceMode mode);
 
-        DataSourceStatus                    downloadBlobSync                    (DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize);
-        DataSourceStatus                    downloadBlobSync                    (DataSourceURL &blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size, const DataSource::SessionName &session);
-        DataSourceStatus                    uploadBlobSync                      (DataSource & dataSource, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size);
+        DataSourceStatus                    downloadBlobSync                    (DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize) override;
+        DataSourceStatus                    downloadBlobSync                    (DataSourceURL &blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size, const DataSource::SessionName &session) override;
+        DataSourceStatus                    uploadBlobSync                      (DataSource & dataSource, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size) override;
         DataSourceStatus                    uploadBlobSync                      (const DataSourceURL &blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size, const DataSource::SessionName &session);
 #endif
 };
@@ -97,10 +97,10 @@ class DataSourceAccountAzureCURL : public DataSourceAccountCURL
                                             DataSourceAccountAzureCURL          (const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
         virtual                            ~DataSourceAccountAzureCURL          (void) = default;
 
-        DataSourceStatus                    setAccount                          (const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
+        DataSourceStatus                    setAccount                          (const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key) override;
 
-        DataSourceStatus                    downloadBlobSync                    (DataSourceURL &blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size, const DataSource::SessionName &session);
-        DataSourceStatus                    downloadBlobSync                    (DataSourceURL & blobPath, DataSourceBuffer * source, const DataSource::SessionName &session);
-        DataSourceStatus                    uploadBlobSync                      (DataSourceURL &blobPath, const std::wstring &filename, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size);
+        DataSourceStatus                    downloadBlobSync                    (DataSourceURL &blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size, const DataSource::SessionName &session) override;
+        DataSourceStatus                    downloadBlobSync                    (DataSourceURL & blobPath, DataSourceBuffer * source, const DataSource::SessionName &session) override;
+        DataSourceStatus                    uploadBlobSync                      (DataSourceURL &blobPath, const std::wstring &filename, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size) override;
 
     };

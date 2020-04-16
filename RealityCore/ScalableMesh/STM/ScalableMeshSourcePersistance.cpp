@@ -206,7 +206,7 @@ private:
 
     virtual bool                _Serialize(const IDTMLocalFileSource&          source,
         const DocumentEnv&                      env,
-        SourceDataSQLite&                          sourceData) const
+        SourceDataSQLite&                          sourceData) const override
     {
         return OutputID(sourceData, DTM_SOURCE_ID_LOCAL_FILE_V0) &&
             OutputLocalFile(sourceData, source, env);
@@ -220,7 +220,7 @@ private:
 
     virtual bool                _Serialize(const IDTMDgnLevelSource&               source,
         const DocumentEnv&                      env,
-        SourceDataSQLite&                          sourceData) const
+        SourceDataSQLite&                          sourceData) const override
     {
         return OutputID(sourceData, DTM_SOURCE_ID_DGN_LEVEL_V1) &&
             OutputDGNFileLevel(sourceData, source, env);
@@ -236,7 +236,7 @@ private:
 
     virtual bool                _Serialize(const IDTMDgnReferenceLevelSource&      source,
         const DocumentEnv&                      env,
-        SourceDataSQLite&                          sourceData) const
+        SourceDataSQLite&                          sourceData) const override
     {
         return OutputID(sourceData, DTM_SOURCE_ID_DGN_REFERENCE_LEVEL_V1) &&
             OutputDGNFileReferenceLevel(sourceData, source, env);
@@ -251,7 +251,7 @@ struct IDTMDgnTerrainModelSourceSerializer : public IDTMSourceSerializerBase<IDT
 
         virtual bool                _Serialize(const IDTMDgnTerrainModelSource&               source,
             const DocumentEnv&                      env,
-            SourceDataSQLite&                          sourceData) const
+            SourceDataSQLite&                          sourceData) const override
             {
             return OutputID(sourceData, DTM_SOURCE_ID_DGN_TERRAIN_MODEL_V0) &&
                 OutputDGNFileTerrainModel(sourceData, source, env);
@@ -444,7 +444,7 @@ bool                            LoadDGNTerrainModelPart(SourceDataSQLite&      s
 struct IDTMLocalFileSourceCreator : public IDTMSourceCreator
     {
         virtual IDTMSource*     _Create(SourceDataSQLite&      sourceData,
-            const DocumentEnv&    env) const
+            const DocumentEnv&    env) const override
         {
             DTMSourceDataType   sourceType;
             //IMonikerPtr         monikerPtr;
@@ -466,7 +466,7 @@ struct IDTMLocalFileSourceCreator : public IDTMSourceCreator
 struct IDTMDgnLevelSourceCreator : public IDTMSourceCreator
     {
         virtual IDTMSource*     _Create(SourceDataSQLite&      sourceData,
-            const DocumentEnv&    env) const
+            const DocumentEnv&    env) const override
         {
             DTMSourceDataType   sourceType;
             IMonikerPtr         monikerPtr;
@@ -499,7 +499,7 @@ struct IDTMDgnReferenceLevelSourceCreatorV0 : public IDTMSourceCreator
     {
 
         virtual IDTMSource*     _Create(SourceDataSQLite&      sourceData,
-            const DocumentEnv&  env) const
+            const DocumentEnv&  env) const override
         {
             DTMSourceDataType   sourceType;
             IMonikerPtr         monikerPtr;
@@ -534,7 +534,7 @@ struct IDTMDgnReferenceLevelSourceCreator : public IDTMSourceCreator
     {
 
         virtual IDTMSource*     _Create(SourceDataSQLite&      sourceData,
-            const DocumentEnv&  env) const
+            const DocumentEnv&  env) const override
         {
             DTMSourceDataType   sourceType;
             IMonikerPtr         monikerPtr;
@@ -575,7 +575,7 @@ struct IDTMDgnReferenceLevelSourceCreator : public IDTMSourceCreator
 struct IDTMDgnTerrainModelSourceCreator : public IDTMSourceCreator
     {
     virtual IDTMSource*     _Create(SourceDataSQLite&      sourceData,
-        const DocumentEnv&    env) const
+        const DocumentEnv&    env) const override
         {
         DTMSourceDataType   sourceType;
         IMonikerPtr         monikerPtr;

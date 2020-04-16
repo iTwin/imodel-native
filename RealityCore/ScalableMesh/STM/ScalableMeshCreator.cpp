@@ -574,30 +574,6 @@ ScalableMeshDb* IScalableMeshCreator::Impl::GetDatabaseFile()
     return m_smSQLitePtr->GetDb();
 }
 
-/*
-ScalableMeshFilterType scm_getFilterType ()
-    {
-    //return SCM_FILTER_CGAL_SIMPLIFIER;
-    return SCM_FILTER_DUMB_MESH;
-    }
-
-ScalableMeshMesherType Get2_5dMesherType ()
-    {
-    return SCM_MESHER_2D_DELAUNAY;
-    }
-
-ScalableMeshMesherType Get3dMesherType ()
-    {
-    //return SCM_MESHER_2D_DELAUNAY;
-    //return SCM_MESHER_3D_DELAUNAY;
-#ifndef NO_3D_MESH
-    return SCM_MESHER_TETGEN;
-#else
-return SCM_MESHER_2D_DELAUNAY;
-#endif
-    }
-*/
-
 bool scm_isProgressiveFilter ()
     {
     return true;
@@ -719,10 +695,11 @@ int IScalableMeshCreator::Impl::CreateScalableMesh(bool isSingleFile, bool restr
     return status;
     }
 
-void IScalableMeshCreator::Impl::ConfigureMesherFilter(ISMPointIndexFilter<PointType, PointIndexExtentType>*& pFilter, ISMPointIndexMesher<PointType, PointIndexExtentType>*& pMesher2d, ISMPointIndexMesher<PointType, PointIndexExtentType>*& pMesher3d)
+void IScalableMeshCreator::Impl::ConfigureMesherFilter(ISMPointIndexFilter<PointType, PointIndexExtentType>*& pFilter, ISMPointIndexMesher<PointType, PointIndexExtentType>*& pMesher2d)
 {
-
+    
 }
+
 
 void IScalableMeshCreator::Impl::SetThreadingOptions(bool useThreadsInMeshing, bool useThreadsInStitching, bool useThreadsInFiltering)
     {
@@ -730,6 +707,7 @@ void IScalableMeshCreator::Impl::SetThreadingOptions(bool useThreadsInMeshing, b
     s_useThreadsInStitching = useThreadsInStitching;
     s_useThreadsInFiltering = useThreadsInFiltering;
     }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @description
@@ -748,20 +726,9 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>& pD
     //accessMode = filePtr->GetAccessMode();
     s_inEditing = false;
 
-
-   /* ISMPointIndexFilter<PointType, PointIndexExtentType>* pFilter = s_filter != nullptr? s_filter:
-        scm_createFilterFromType<PointType, PointIndexExtentType>(scm_getFilterType());
-
-    ISMPointIndexMesher<PointType, PointIndexExtentType>* pMesher2_5d =
-                Create2_5dMesherFromType<PointType, PointIndexExtentType>(Get2_5dMesherType());
-
-    ISMPointIndexMesher<PointType, PointIndexExtentType>* pMesher3d =
-                Create3dMesherFromType<PointType, PointIndexExtentType>(Get3dMesherType());*/
-
     ISMPointIndexFilter<PointType, PointIndexExtentType>* pFilter = nullptr;
     ISMPointIndexMesher<PointType, PointIndexExtentType>* pMesher2_5d = nullptr;
-    ISMPointIndexMesher<PointType, PointIndexExtentType>* pMesher3d = nullptr;
-    ConfigureMesherFilter(pFilter, pMesher2_5d, pMesher3d);
+    ConfigureMesherFilter(pFilter, pMesher2_5d);
 
     if (!isSingleFile)
         {
@@ -791,8 +758,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>& pD
                                        splitThreshold,
                                        pFilter,
                                        needBalancing, false, false, true,
-                                       pMesher2_5d,
-                                       pMesher3d);
+                                       pMesher2_5d);
 
         Utf8String fileNameStr;
         m_smSQLitePtr->GetFileName(fileNameStr);
@@ -822,8 +788,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>& pD
                                        splitThreshold,
                                        pFilter,
                                        needBalancing, false, false, true,
-                                       pMesher2_5d,
-                                       pMesher3d);
+                                       pMesher2_5d);
 
         Utf8String fileNameStr;
         m_smSQLitePtr->GetFileName(fileNameStr);

@@ -460,11 +460,11 @@ void GetIndexedMesh(bvector<DPoint3d>& pts, bvector<int32_t>& indexes,bvector<DP
     meshP->Triangulate();
     pts.insert(pts.end(), meshP->GetPointCP(), meshP->GetPointCP() + meshP->GetPointCount());
     PolyfaceVisitorPtr vis = PolyfaceVisitor::Attach(*meshP);
-    bvector<int> &pointIndex = vis->ClientPointIndex();
+    const bvector<int> &pointIndex = vis->ClientPointIndex();
     int nextPt = (int)pts.size();
     if (meshP->GetParamCount() > pts.size()) pts.resize(meshP->GetParamCount());
     if (meshP->GetParamCount() > 0) uvs.resize(pts.size());
-    bvector<int> &param = vis->ClientParamIndex();
+    const bvector<int> &param = vis->ClientParamIndex();
     bmap<int, int> paramsMap;
     DPoint2d uvMax = DPoint2d::From(1.0, 1.0);
     for (size_t i = 0; i < meshP->GetParamCount(); ++i)
@@ -845,7 +845,6 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
     BENTLEY_NAMESPACE_NAME::ScalableMesh::IDTMSourcePtr srcPtr = BENTLEY_NAMESPACE_NAME::ScalableMesh::IDTMLocalFileSource::Create(BENTLEY_NAMESPACE_NAME::ScalableMesh::DTM_SOURCE_DATA_MESH, L"E:\\hololens\\SaltLakeHololens.dgndb");
     creatorPtr->EditSources().Add(srcPtr);
     creatorPtr->SetUserFilterCallback(&FilterElement);
-    //creatorPtr->ReFilter();
     creatorPtr->Create(true);
     creatorPtr->SaveToFile();
     creatorPtr = nullptr;

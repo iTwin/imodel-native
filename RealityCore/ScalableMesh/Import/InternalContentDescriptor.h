@@ -42,7 +42,7 @@ class LayerDesc
 public:
     typedef const DataType*         TypeCIterator;
 
-                                    LayerDesc                  (const ILayerDescriptor&      layerDesc);
+                           explicit LayerDesc                  (const ILayerDescriptor&      layerDesc);
 
     explicit                        LayerDesc                  (const ILayerDescriptor&      layerDesc,
                                                                 uint32_t                        layerID);

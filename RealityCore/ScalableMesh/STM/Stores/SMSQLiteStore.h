@@ -38,7 +38,7 @@ template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterH
 
     public : 
     
-        SMSQLiteStore(SMSQLiteFilePtr database);
+        explicit SMSQLiteStore(SMSQLiteFilePtr database);
             
         virtual ~SMSQLiteStore();       
                     
@@ -56,7 +56,7 @@ template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterH
 
         virtual SMNodeHeaderLocation GetNodeHeaderLocation(HPMBlockID blockID) override;
 
-        virtual bool SetProjectFilesPath(BeFileName& projectFilesPath) override;
+        virtual bool SetProjectFilesPath(const BeFileName& projectFilesPath) override;
 
         virtual bool SetUseTempPath(bool useTempPath) override;
 
@@ -171,7 +171,7 @@ class SMSQLiteClipDefinitionExtOps : public IClipDefinitionExtOps
 
     public :
 
-        SMSQLiteClipDefinitionExtOps(SMSQLiteFilePtr& smSQLiteFile);
+        explicit SMSQLiteClipDefinitionExtOps(SMSQLiteFilePtr& smSQLiteFile);
 
         virtual ~SMSQLiteClipDefinitionExtOps();
 
@@ -212,7 +212,7 @@ class SMSQLiteLinearFeaturesExtOps : public ILinearFeaturesExtOps
 
     public:
 
-        SMSQLiteLinearFeaturesExtOps(SMSQLiteFilePtr& smSQLiteFile);
+        explicit SMSQLiteLinearFeaturesExtOps(SMSQLiteFilePtr& smSQLiteFile);
 
         virtual ~SMSQLiteLinearFeaturesExtOps();
 

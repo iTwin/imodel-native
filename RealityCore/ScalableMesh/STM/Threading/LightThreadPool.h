@@ -25,6 +25,11 @@ class LightThreadPool
         std::map<void*, std::shared_ptr<std::atomic<unsigned int>>> m_nodeMap;
 
         LightThreadPool();
+        LightThreadPool(const LightThreadPool&) = delete;
+        LightThreadPool& operator=(const LightThreadPool&) = delete;
+        LightThreadPool(LightThreadPool&&) = delete;
+        LightThreadPool& operator=(LightThreadPool&&) = delete;
+        
 
         virtual ~LightThreadPool();
         
@@ -38,7 +43,6 @@ class LightThreadPool
 
 
 
-bool TryReserveNodes(std::map<void*, std::shared_ptr<std::atomic<unsigned int>>>& map, void** reservedNodes, size_t nNodesToReserve, unsigned int id);
 BENTLEY_SM_EXPORT void SetThreadAvailableAsync(size_t threadId);
 BENTLEY_SM_EXPORT void RunOnNextAvailableThread(std::function<void(size_t threadId)> lambda);
 BENTLEY_SM_EXPORT void WaitForThreadStop(IScalableMeshProgress* p =nullptr);
@@ -95,7 +99,7 @@ private:
 
 protected:
 
-    WorkerThreadPool(int numWorkingThreads);
+    explicit WorkerThreadPool(int numWorkingThreads);
 
     void WorkThread(/*DgnPlatformLib::Host* hostToAdopt, */int threadId);
 

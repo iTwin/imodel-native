@@ -229,8 +229,6 @@ struct IScalableMesh :  IRefCounted
         virtual int                                 _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const = 0;
 #endif
 
-        virtual void _ReFilter() = 0;
-
         virtual void                               _RegenerateClips(bool forceRegenerate = false) = 0;
 
         virtual uint64_t                           _AddClip(const DPoint3d* pts, size_t ptsSize) = 0;
@@ -592,7 +590,6 @@ struct IScalableMesh :  IRefCounted
         BENTLEY_SM_EXPORT void  GetAllTextures(bvector<IScalableMeshTexturePtr>& textures);
 #endif
         
-        void ReFilter();
 
     };
 

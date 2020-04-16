@@ -232,7 +232,7 @@ class DEMRasterFileSourceCreator : public LocalFileSourceCreatorBase
     {
     virtual ExtensionFilter         _GetExtensions                         () const override
         {
-        return L"*.img;*.dim;*.dt0;*.dt1;*.dt2;*.tif;*.tiff;*.itiff;*.itiff64;*.dem;*catd.ddf;*.adf;*.asc";
+        return L"*.img;*.dim;*.dt0;*.dt1;*.dt2;*.tif;*.tiff;*.itiff;*.itiff64;*.dem;*catd.ddf;*.adf;*.asc;*.hgt";
         }
 
     virtual bool                    _Supports                              (const LocalFileSourceRef&   pi_rSourceRef) const override

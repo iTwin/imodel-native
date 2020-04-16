@@ -15,7 +15,6 @@ struct ScalableMeshFeature : public IScalableMeshFeature
     private:
         size_t           m_type;
         vector<DPoint2d> m_points;
-        uint32_t           m_refCount;   
 
     protected:
        

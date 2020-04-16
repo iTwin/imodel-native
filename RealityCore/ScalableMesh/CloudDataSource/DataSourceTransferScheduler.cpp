@@ -39,6 +39,8 @@ DataSourceTransferScheduler::DataSourceTransferScheduler(void)
     {
                                                             // Initially not shutting down
     setShutDownFlag(false);
+    maxTasks = 0;
+    getBuffer = nullptr;
     }
 
 
@@ -253,7 +255,7 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
             if ((account = locator.getAccount()) == nullptr)
                 {
                 //assert(false);
-                buffer->setTransferStatus(DataSourceStatus::Status_Error);
+                buffer->setTransferStatus(DataSourceStatus(DataSourceStatus::Status_Error));
 
                 //return DataSourceStatus(DataSourceStatus::Status_Error);
                 }
@@ -271,7 +273,7 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
                         // Attempt to download a single segment
                         if ((status = account->downloadBlobSync(segmentName, segmentBuffer, readSize, segmentSize, locator.getSessionName())).isFailed())
                             {
-                            buffer->setTransferStatus(DataSourceStatus::Status_Error_Failed_To_Download);
+                            buffer->setTransferStatus(DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Download));
                             }
                         else
                             {
@@ -292,7 +294,7 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
                                 char TempBuffer[500];
                                 int  NbChars;
 
-                                NbChars = sprintf(TempBuffer, "Segment name: %ls   Number of threads doing work: %i   Queue size: %lli   Ideal queue size: %i   Total work done: %i   size: %lli   total size: %i   download speed: %fMB/s\n", segmentName.c_str(), (int)s_nWorkThreads, dataSourceBuffers.size(), (int)s_nIdealQueueSize, (int)s_nTotalTransfers, readSize, (int)s_nTotalSize, (double)((double)(readSize) / (double)s_nDownloadTime) / 8000);
+                                NbChars = sprintf(TempBuffer, "Segment name: %ls   Number of threads doing work: %i   Queue size: %zu   Ideal queue size: %i   Total work done: %i   size: %llu   total size: %i   download speed: %fMB/s\n", segmentName.c_str(), (int)s_nWorkThreads, dataSourceBuffers.size(), (int)s_nIdealQueueSize, (int)s_nTotalTransfers, readSize, (int)s_nTotalSize, (double)((double)(readSize) / (double)s_nDownloadTime) / 8000);
 
                                 size_t NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pOutputFileStream);
                                 assert(NbWrittenChars == NbChars);
@@ -308,7 +310,7 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
                         }
                     else if ((status = account->downloadBlobSync(segmentName, buffer, locator.getSessionName())).isFailed())
                         {
-                        buffer->setTransferStatus(DataSourceStatus::Status_Error_Failed_To_Download);
+                        buffer->setTransferStatus(DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Download));
                         }
                     }
                 else
@@ -334,7 +336,7 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
                                 {
                                 if ((status = account->uploadBlobSync(segmentName, segmentBuffer, segmentSize)).isFailed())
                                     {
-                                    buffer->setTransferStatus(DataSourceStatus::Status_Error_Failed_To_Upload);
+                                    buffer->setTransferStatus(DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Upload));
                                     }
                                 }
                             }
@@ -342,7 +344,7 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
                             {
                             if ((status = account->uploadBlobSync(segmentName, buffer)).isFailed())
                                 {
-                                buffer->setTransferStatus(DataSourceStatus::Status_Error_Failed_To_Upload);
+                                buffer->setTransferStatus(DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Upload));
                                 }
 
                             }

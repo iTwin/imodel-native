@@ -140,7 +140,7 @@ void SisterFileManager::SaveChannelToFile(ElementHandleR eh, IPointCloudChannelP
 void SisterFileManager::ProcessElementHandle(ElementHandleR eh)
     {
     SisterFileMap::iterator itExtToFile;
-    for(itExtToFile = m_mapExtensionToChannelFileListner.begin(); itExtToFile != m_mapExtensionToChannelFileListner.end(); itExtToFile++)
+    for(itExtToFile = m_mapExtensionToChannelFileListner.begin(); itExtToFile != m_mapExtensionToChannelFileListner.end(); ++itExtToFile)
         {
         itExtToFile->second->_ProcessElementHandle(eh);
         }
@@ -152,7 +152,7 @@ void SisterFileManager::ProcessElementHandle(ElementHandleR eh)
 void SisterFileManager::ProcessElementChange(ChangeTrackAction action, XAttributeHandleCR xAttr)
     {
     SisterFileMap::iterator itExtToFile;
-    for(itExtToFile = m_mapExtensionToChannelFileListner.begin(); itExtToFile != m_mapExtensionToChannelFileListner.end(); itExtToFile++)
+    for(itExtToFile = m_mapExtensionToChannelFileListner.begin(); itExtToFile != m_mapExtensionToChannelFileListner.end(); ++itExtToFile)
         {
         itExtToFile->second->_ProcessElementChange(action, xAttr);
         }
@@ -169,7 +169,7 @@ void SisterFileManager::ProcessModel(DgnModelRefP modelRef, bool processChildren
         ElementHandle  eh (*itr, modelRef);
 
         SisterFileMap::iterator itExtToFile;
-        for(itExtToFile = m_mapExtensionToChannelFileListner.begin(); itExtToFile != m_mapExtensionToChannelFileListner.end(); itExtToFile++)
+        for(itExtToFile = m_mapExtensionToChannelFileListner.begin(); itExtToFile != m_mapExtensionToChannelFileListner.end(); ++itExtToFile)
             {
              itExtToFile->second->_ProcessElementHandle(eh);
             }
@@ -203,7 +203,7 @@ void SisterFileManager::ProcessModel(DgnModelRefP modelRef, bool processChildren
 void SisterFileManager::OnUnload(DgnModelRefP modelRef)
     {
     SisterFileMap::iterator itExtToFile;
-    for(itExtToFile = m_mapExtensionToChannelFileListner.begin(); itExtToFile != m_mapExtensionToChannelFileListner.end(); itExtToFile++)
+    for(itExtToFile = m_mapExtensionToChannelFileListner.begin(); itExtToFile != m_mapExtensionToChannelFileListner.end(); ++itExtToFile)
         {
         itExtToFile->second->_OnUnload(modelRef);
         }

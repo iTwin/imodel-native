@@ -236,7 +236,7 @@ void IDTMFeatureArray<PointType, HeaderType>::Insert   (const_iterator  pi_Posit
     while (start != pi_End)
         {
         InsertedPointsQty += pi_Begin->GetSize();
-        start++;
+        ++start;
         }    
 
     PointArray::iterator    InsertedPointIt  = m_Points.Insert(pi_Position->Begin(), InsertedPointsQty);

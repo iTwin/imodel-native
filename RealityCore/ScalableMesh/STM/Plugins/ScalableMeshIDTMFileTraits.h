@@ -59,4 +59,15 @@ struct TINAsLinearTypeCreatorTrait                            { /* Default: Fail
 template <> 
 struct TINAsLinearTypeCreatorTrait<DPoint3d>                  { typedef TINTypeAsLinearTi32Pi32Pq32Gi32_3d64fCreator type; };
 
+/*---------------------------------------------------------------------------------**//**
+* @description
+* @bsiclass                                                  Richard.Bois   03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+template <typename PointT>
+struct BoundaryTypeCreatorTrait { /* Default: Fail*/
+    };
+template <> struct BoundaryTypeCreatorTrait<DPoint3d> {
+    typedef BoundaryType3d64fCreator type;
+    };
+
 END_BENTLEY_SCALABLEMESH_NAMESPACE

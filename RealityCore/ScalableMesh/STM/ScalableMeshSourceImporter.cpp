@@ -311,13 +311,18 @@ int IScalableMeshSourceImporter::Impl::Import()
         try
             {        
 
+            // We don't need the BTree checking during generation
+            bcdtmObject_disableBTreeChecks();
+
             // Sync only when there are sources with which to sync
             // TR #325614: This special condition provides us with a way of efficiently detecting if STM is empty
             //             as indexes won't be initialized.
             if (0 < m_sources.GetCount() && BSISUCCESS == SyncWithSources())
                 {
                 status = SUCCESS;
-                }                            
+                }
+
+            bcdtmObject_enableBTreeChecks();
             }
         catch (...)
             {            

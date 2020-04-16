@@ -14,9 +14,9 @@ public:
                                 DataSourceAccountFile       (const ServiceName &service, const AccountName &account);
                                 DataSourceAccountFile       (const ServiceName &service, const AccountName &account, const AccountIdentifier identifier, const AccountKey key);
 
-    DataSource             *    createDataSource            (const SessionName &session);
-    DataSourceStatus            destroyDataSource           (DataSource *dataSource);
+    DataSource             *    createDataSource            (const SessionName &session) override;
+    DataSourceStatus            destroyDataSource           (DataSource *dataSource) override;
 
-    unsigned int                getDefaultNumTransferTasks  (void);
+    unsigned int                getDefaultNumTransferTasks  (void) override;
 
 };

@@ -1035,6 +1035,8 @@ BENTLEYDTM_EXPORT                      int bcdtmObject_deleteLatticeObject (DTM_
 BENTLEYDTM_EXPORT                      int bcdtmObject_destoryDTMExtended (BC_DTM_OBJ_EXTENDED ** dtmObjectExtendedPP);
 BENTLEYDTM_EXPORT                      int bcdtmObject_destroyAllDtmObjects (void);
 BENTLEYDTM_EXPORT                      int bcdtmObject_destroyDtmObject (BC_DTM_OBJ **dtmPP);
+BENTLEYDTM_EXPORT                     void bcdtmObject_disableBTreeChecks();
+BENTLEYDTM_EXPORT                     void bcdtmObject_enableBTreeChecks();
 BENTLEYDTM_Public                      int bcdtmObject_divConqMergeSortDtmObject (BC_DTM_OBJ *dtmP, long startPnt, long numPts, long *sortP, long *tempP);
 BENTLEYDTM_Private                     int bcdtmObject_featureIdCompareFunction (const DTMFeatureId *id1P, const DTMFeatureId *id2P);
 BENTLEYDTM_Public                      int bcdtmObject_freeMemoryLatticeObject (DTM_LAT_OBJ *Lattice);
@@ -1364,6 +1366,7 @@ BENTLEYDTM_Public                      int bcdtmTin_precisionRemoveEdgeSliversDt
 BENTLEYDTM_Private                     int bcdtmTin_processConnectedLinesDtmObject (BC_DTM_OBJ *dtmP, long numGraphicBreaks, long numHardBreaks, long numSoftBreaks, long numContourLines);
 BENTLEYDTM_Private                     int bcdtmTin_reconstructSortOrderDtmObject (BC_DTM_OBJ *dtmP);
 BENTLEYDTM_Public                      int bcdtmTin_removeExternalMaxSideTrianglesDtmObject (BC_DTM_OBJ *dtmP, double maxSide);
+BENTLEYDTM_Public                      int bcdtmTin_removePossiblyNonDelaunayTrianglesOnEdgeDtmObject(BC_DTM_OBJ* dtmP, DRange3dCR range, bvector<DPoint3d>& removedPoints, CurveVectorPtr& boundary);
 BENTLEYDTM_Public                      int bcdtmTin_removeExternalSliverTrianglesDtmObject (BC_DTM_OBJ *dtmP);
 BENTLEYDTM_Private                     int bcdtmTin_removeHullLinesWithBoundaryVextexDtmObject (BC_DTM_OBJ *dtmP, long numTinFeatures, long *numRemovedP);
 BENTLEYDTM_Private                     int bcdtmTin_removeSliversPriorToBoundaryLineClipDtmObject (BC_DTM_OBJ *dtmP, long *numRemovedP);

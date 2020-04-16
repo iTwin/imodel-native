@@ -488,8 +488,6 @@ DbResult SMSQLiteClipDefinitionsFile::CreateTables()
     {
     DbResult result;
 
-
-
     result = m_database->CreateTable("SMClipDefinitions", "PolygonId INTEGER PRIMARY KEY,"
                                      "PolygonData BLOB,"
                                      "Size INTEGER,"
@@ -498,10 +496,14 @@ DbResult SMSQLiteClipDefinitionsFile::CreateTables()
                                      "ClipType    INTEGER,"
                                      "OnOff       INTEGER,"
                                      "ClipGeometryType INTEGER");
+                                     
+    assert(result == BE_SQLITE_OK);
 
     result = m_database->CreateTable("SMSkirts", "PolygonId INTEGER PRIMARY KEY,"
                                      "PolygonData BLOB,"
                                      "Size INTEGER");
+
+    assert(result == BE_SQLITE_OK);
 
     result = m_database->CreateTable("SMCoverages", "PolygonId INTEGER PRIMARY KEY,"
                                      "PolygonData BLOB,"

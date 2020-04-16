@@ -171,6 +171,19 @@ class CivilElementSourceCreator : public DGNElementSourceCreatorBase
 
         BcDTM* fullDTM = dtm->GetBcDTM();
 
+        Bentley::TerrainModel::DTMFeatureStatisticsInfo info;
+        fullDTM->CalculateFeatureStatistics(info);
+
+        // If there is no fixed boundary create one.
+        if(!info.hasHull)
+            {
+            fullDTM = fullDTM->Clone();
+            auto dtmP = fullDTM->GetTinHandle();
+            bcdtmList_copyHptrListToTptrListDtmObject(dtmP, dtmP->hullPoint);
+            long newDtmFeatureNum;
+            bcdtmInsert_addToFeatureTableDtmObject(dtmP, nullptr, 0, DTMFeatureType::Hull, 0, DTM_NULL_FEATURE_ID, dtmP->hullPoint, &newDtmFeatureNum);
+            }
+
         SourceBase* decoratedSourceP = CreateCivilDTMSource(*fullDTM, log);
         if (0 == decoratedSourceP)
             return 0;

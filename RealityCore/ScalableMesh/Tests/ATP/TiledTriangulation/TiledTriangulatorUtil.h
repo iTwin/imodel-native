@@ -82,14 +82,14 @@ template <class PointType>
 struct IsEqualPoint : public std::unary_function <PointType, bool>
     {
     PointType m_Point;
-    IsEqualPoint (PointType& point) { m_Point = point; }
+    explicit IsEqualPoint (const PointType& point) { m_Point = point; }
     };
 
 template<>
 struct IsEqualPoint<DPoint2d>
     {
     DPoint2d m_Point;
-    IsEqualPoint (DPoint2d& point) { m_Point = point; }
+    explicit IsEqualPoint (const DPoint2d& point) { m_Point = point; }
     bool operator () (const DPoint2d& point) const
         {
         return isEqualPoint2d(point, m_Point);
@@ -100,7 +100,7 @@ template<>
 struct IsEqualPoint<DPoint3d>
     {
     DPoint3d m_Point;
-    IsEqualPoint (DPoint3d& point) { m_Point = point; }
+    explicit IsEqualPoint (const DPoint3d& point) { m_Point = point; }
     bool operator () (const DPoint3d& point) const
         {
         return isEqualPoint3d(point, m_Point);
@@ -111,7 +111,7 @@ template<>
 struct IsEqualPoint<HGF2DLocation>
     {
     HGF2DLocation m_Point;
-    IsEqualPoint (HGF2DLocation& point) { m_Point = point; }
+    explicit IsEqualPoint (const HGF2DLocation& point) { m_Point = point; }
     bool operator () (const HGF2DLocation& point) const
         {
         return point.IsEqualTo(m_Point);
@@ -128,7 +128,7 @@ struct DPoint3dOnSegmentComparer
         DPoint3dOnSegmentComparer (const DPoint3d& start, const DPoint3d& end) { SetStart(start); SetEnd(end); }
         void SetStart(const DPoint3d& start) { m_start = start; }
         void SetEnd  (const DPoint3d& end)   { m_end   = end;   }
-        bool operator() (DPoint3d& X1, DPoint3d& X2)
+        bool operator() (const DPoint3d& X1, const DPoint3d& X2)
             {
             DPoint3d direction;
             direction.x = m_end.x - m_start.x;

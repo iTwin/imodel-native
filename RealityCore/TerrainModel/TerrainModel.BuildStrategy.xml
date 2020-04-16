@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildStrategy  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"  xsi:noNamespaceSchemaLocation="../bsicommon/build/BuildStrategy.xsd">
+    
+    <!-- PRG will use -s ThisFile;PRG for its strategy. Devs will often use -s ThisFile;buildall -->
+
+    <ImportStrategy Name="Base" />
+    <!-- Should use PartName=TerainModel -->
+    <DefaultTarget Repository="TerrainModel" PartFile="TerrainModel" PartName="FullProduct" />
+
+    <!--PartStrategy PartFile="*"            PartName="*" LastKnownGoodSource="PowerPlatform" /-->
+
+    <FirebugJob Name="Terrain Model Vancouver"/>
+
+    <PartStrategy PartFile="TerrainModel"            PartName="*" BuildFromSource="Once"/>
+    <PartStrategy PartFile="TerrainModel"            PartName="TerrainModelTestData" SaveLKG="false" />
+
+</BuildStrategy>

@@ -22,9 +22,9 @@ class SMSQLiteDiffsetFile : public SMSQLiteFile
 
     virtual ~SMSQLiteDiffsetFile();
 
-    virtual void GetDiffSet(int64_t diffsetID, bvector<uint8_t>& diffsetData, size_t& uncompressedSize);
-    virtual void StoreDiffSet(int64_t& diffsetID, const bvector<uint8_t>& diffsetData, size_t uncompressedSize);
-    virtual void DeleteDiffSet(int64_t diffsetID);
+    virtual void GetDiffSet(int64_t diffsetID, bvector<uint8_t>& diffsetData, size_t& uncompressedSize) override;
+    virtual void StoreDiffSet(int64_t& diffsetID, const bvector<uint8_t>& diffsetData, size_t uncompressedSize) override;
+    virtual void DeleteDiffSet(int64_t diffsetID) override;
 
     static const BESQL_VERSION_STRUCT CURRENT_VERSION;
 

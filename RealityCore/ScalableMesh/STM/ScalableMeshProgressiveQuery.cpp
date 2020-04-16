@@ -962,59 +962,57 @@ void FindOverview(bvector<IScalableMeshCachedDisplayNodePtr>& lowerResOverviewNo
     SMMeshIndexNode<DPoint3d, Extent3dType>* smNode = dynamic_cast<SMMeshIndexNode<DPoint3d, Extent3dType>*>(parentNodePtr.GetPtr());
     TRACEPOINT(EventType::EVT_CREATE_DISPLAY_OVR_1, parentNodePtr->GetBlockID().m_integerID, (uint64_t)-1, smNode->GetSingleTextureID(), -1, (uint64_t)meshNodePtr.get(), -1)
     size_t levelForOverviewLoad = MAX_PRELOAD_OVERVIEW_LEVEL;
-    if (smNode->IsFromCesium()) levelForOverviewLoad++; //we have an extra empty level in Cesium
+    if (smNode->IsFromCesium()) 
+        levelForOverviewLoad++; //we have an extra empty level in Cesium
 
-        if (smNode->GetLevel() >= levelForOverviewLoad)
+    if (smNode->GetLevel() >= levelForOverviewLoad)
         {
-            ScalableMeshCachedDisplayNode<DPoint3d>::Ptr smNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(parentNodePtr));
-            if(smNode->LastClippingStateUpdateTimestamp() > dynamic_cast<SMMeshIndexNode<DPoint3d, Extent3dType>*>(node.GetPtr())->LastClippingStateUpdateTimestamp())
-            smNode->CollectClipIds(collectedClips);
+        ScalableMeshCachedDisplayNode<DPoint3d>::Ptr smNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(parentNodePtr));
+        if(smNode->LastClippingStateUpdateTimestamp() > dynamic_cast<SMMeshIndexNode<DPoint3d, Extent3dType>*>(node.GetPtr())->LastClippingStateUpdateTimestamp())
+        smNode->CollectClipIds(collectedClips);
         }
-            if (!meshNodePtr->IsLoadedInVRAM(displayCacheManagerPtr.get(), loadTexture) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(clipVisibilities)) && !s_keepSomeInvalidate)
-                || (scalableMeshPtr->ShouldInvertClips() != meshNodePtr->HasInvertedClips()))
 
-            {
-                if (!(meshNodePtr->IsLoaded(displayCacheManagerPtr.get(), loadTexture) && (meshNodePtr->GetLevel() == 0 || smNode->GetParentNodePtr()->GetNbPoints() < 4)))
-                {
-        return FindOverview(lowerResOverviewNodes, collectedClips, extentToCover/*meshNodePtr->GetContentExtent()*/, parentNodePtr, loadTexture, clipVisibilities, scalableMeshPtr, displayCacheManagerPtr);
-                }
-            }
-			
-        auto nodeIter = lowerResOverviewNodes.begin();
+    if (!meshNodePtr->IsLoadedInVRAM(displayCacheManagerPtr.get(), loadTexture) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(clipVisibilities)) && !s_keepSomeInvalidate)
+        || (scalableMeshPtr->ShouldInvertClips() != meshNodePtr->HasInvertedClips()))
+        {
+        if (!(meshNodePtr->IsLoaded(displayCacheManagerPtr.get(), loadTexture) && (meshNodePtr->GetLevel() == 0 || smNode->GetParentNodePtr()->GetNbPoints() < 4)))
+            return FindOverview(lowerResOverviewNodes, collectedClips, extentToCover/*meshNodePtr->GetContentExtent()*/, parentNodePtr, loadTexture, clipVisibilities, scalableMeshPtr, displayCacheManagerPtr);
+        }
+		
+    auto nodeIter = lowerResOverviewNodes.begin();
 
-        while (nodeIter != lowerResOverviewNodes.end())
-            {            
-            if ((*nodeIter)->GetNodeId() == meshNodePtr->GetNodeId())
-                break;            
+    while (nodeIter != lowerResOverviewNodes.end())
+        {            
+        if ((*nodeIter)->GetNodeId() == meshNodePtr->GetNodeId())
+            break;            
 
-            nodeIter++;
-            }
+        nodeIter++;
+        }
 
-        ClipVectorPtr clipVector;
+    ClipVectorPtr clipVector;
 
-        if (!extentToCover.IsEmpty())
-            {
-            CurveVectorPtr curvePtr = CurveVector::CreateRectangle(extentToCover.low.x, extentToCover.low.y, extentToCover.high.x, extentToCover.high.y, 0);
-            ClipPrimitivePtr clipPrimitive = ClipPrimitive::CreateFromBoundaryCurveVector(*curvePtr, DBL_MAX, 0, 0, 0, 0, true);
-            clipPrimitive->SetIsMask(false);
-            clipVector = ClipVector::CreateFromPrimitive(clipPrimitive.get());
-            }
-        
-        if (nodeIter == lowerResOverviewNodes.end())
-            {                    
-            if (clipVector.IsValid())
-                meshNodePtr->AddClipVector(clipVector);    
+    if (!extentToCover.IsEmpty())
+        {
+        CurveVectorPtr curvePtr = CurveVector::CreateRectangle(extentToCover.low.x, extentToCover.low.y, extentToCover.high.x, extentToCover.high.y, 0);
+        ClipPrimitivePtr clipPrimitive = ClipPrimitive::CreateFromBoundaryCurveVector(*curvePtr, DBL_MAX, 0, 0, 0, 0, true);
+        clipPrimitive->SetIsMask(false);
+        clipVector = ClipVector::CreateFromPrimitive(clipPrimitive.get());
+        }
+    
+    if (nodeIter == lowerResOverviewNodes.end())
+        {                    
+        if (clipVector.IsValid())
+            meshNodePtr->AddClipVector(clipVector);    
 
-            lowerResOverviewNodes.push_back(meshNodePtr);             
-            }        
-        else
-            {          
-            ScalableMeshCachedDisplayNode<DPoint3d>* displayNode(dynamic_cast<ScalableMeshCachedDisplayNode<DPoint3d>*>((*nodeIter).get()));
+        lowerResOverviewNodes.push_back(meshNodePtr);             
+        }        
+    else
+        {          
+        ScalableMeshCachedDisplayNode<DPoint3d>* displayNode(dynamic_cast<ScalableMeshCachedDisplayNode<DPoint3d>*>((*nodeIter).get()));
 
-            if (clipVector.IsValid())
-                displayNode->AddClipVector(clipVector);            
-            }
-        
+        if (clipVector.IsValid())
+            displayNode->AddClipVector(clipVector);            
+        }
     }
 
 static bool s_sortOverviewBySize = true; 

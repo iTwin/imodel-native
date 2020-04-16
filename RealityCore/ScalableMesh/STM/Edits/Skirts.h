@@ -18,8 +18,8 @@ class SkirtBuilder
         bool m_useTargetTerrain;
         bvector<IScalableMeshNodePtr> m_smTerrainNodes;
     public:
-        SkirtBuilder(DTMPtr& dtmP);
-        SkirtBuilder(DTMPtr& dtmP, bvector<IScalableMeshNodePtr>& smTerrainNodes);
+        explicit SkirtBuilder(const DTMPtr& dtmP);
+        SkirtBuilder(const DTMPtr& dtmP, const bvector<IScalableMeshNodePtr>& smTerrainNodes);
        void BuildSkirtMesh(bvector<PolyfaceHeaderPtr>& meshParts, bvector<bvector<DPoint3d>>& targetLines);
     };
 END_BENTLEY_SCALABLEMESH_NAMESPACE

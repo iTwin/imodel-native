@@ -155,7 +155,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
                                      const HFCPtr<SMMeshIndexNode<POINT, EXTENT> >& pi_rpParentNode,
                                      bool IsUnsplitSubLevel);
 
-    // SMMeshIndexNode(const SMMeshIndexNode<POINT, EXTENT>& pi_rNode);    
+    //SMMeshIndexNode(const SMMeshIndexNode<POINT, EXTENT>& pi_rNode);    
 
     SMMeshIndexNode(uint64_t nodeID,
                     size_t pi_SplitTreshold,
@@ -166,7 +166,6 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
                     bool textured,
                     bool propagateDataDown,
                     ISMPointIndexMesher<POINT, EXTENT>* mesher2_5d,
-                    ISMPointIndexMesher<POINT, EXTENT>* mesher3d,
                     CreatedNodeMap*                      createdNodeMap);
 
     SMMeshIndexNode(size_t pi_SplitTreshold,
@@ -177,7 +176,6 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
                         bool textured,
                         bool propagateDataDown,
                         ISMPointIndexMesher<POINT, EXTENT>* mesher2_5d,
-                        ISMPointIndexMesher<POINT, EXTENT>* mesher3d,
                         CreatedNodeMap*                      createdNodeMap);
     
     SMMeshIndexNode(HPMBlockID blockID,
@@ -188,7 +186,6 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
                       bool textured,
                       bool propagateDataDown,
                       ISMPointIndexMesher<POINT, EXTENT>* mesher2_5d,
-                      ISMPointIndexMesher<POINT, EXTENT>* mesher3d,
                       CreatedNodeMap*                      createdNodeMap);
     
     virtual ~SMMeshIndexNode<POINT, EXTENT>();
@@ -228,6 +225,17 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         m_graphMutex.unlock();
         }
 
+    void LockDTM()
+        {
+        m_dtmLock.lock();
+        }
+
+    void UnlockDTM()
+        {
+        m_dtmLock.unlock();
+        }
+
+
     BENTLEY_SM_EXPORT ISMMTGGraphDataStorePtr GetGraphStore() const;
         
     virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> GetGraphPtr(bool loadGraph = true);       
@@ -243,14 +251,6 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     -----------------------------------------------------------------------------*/
     BENTLEY_SM_EXPORT  ISMPointIndexMesher<POINT, EXTENT>*
         GetMesher2_5d() const;
-
-    /**----------------------------------------------------------------------------
-    Returns the 3d mesher used for meshing the points
-
-    @return Pointer to mesher or NULL if none is set.
-    -----------------------------------------------------------------------------*/
-    BENTLEY_SM_EXPORT ISMPointIndexMesher<POINT, EXTENT>*
-        GetMesher3d() const;
 
 
     /**----------------------------------------------------------------------------
@@ -312,12 +312,12 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     //NEEDS_WORK_SM: clean up clipping API (remove extra calls, clarify uses, etc)
 
     //Synchronously add clip on this node and all descendants, used in generation.
-    void                AddClipDefinitionRecursive(bvector<DPoint3d>& points, DRange3d& extent);
+    void                AddClipDefinitionRecursive(bvector<DPoint3d>& points);
     //Synchronously update clips, if necessary, so as to merge them with other clips applied on the node, for this node and all descendants, if applicable. Used in generation.
     void                RefreshMergedClipsRecursive();
 
     //Checks whether clip should apply to node and update lists accordingly
-   void                ClipActionRecursive(ClipAction action,uint64_t clipId, DRange3d& extent,size_t& nOfNodesTouched, bool setToggledWhenIdIsOn = true, Transform tr = Transform::FromIdentity());
+   void                ClipActionRecursive(ClipAction action, uint64_t clipId, const ClipVectorPtr& cp,size_t& nOfNodesTouched, bool setToggledWhenIdIsOn = true, Transform tr = Transform::FromIdentity());
    bool                SyncWithClipSets(const bvector<uint64_t>& clipId, const bvector<bool>& hasSkirts, const bvector<DRange3d>& clipExtents, Transform tr = Transform::FromIdentity());
    bool SyncWithClipSets(const bset<uint64_t>& clips, const IScalableMesh* meshP);
    bool SyncWithClipSets(const bset<uint64_t>& clips, Transform tr = Transform::FromIdentity());
@@ -893,8 +893,6 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     private:
 
-		bool ClipIntersectsBox(uint64_t clipId, EXTENT ext, Transform tr = Transform::FromIdentity(), bool skirtIntersects = false);
-
         mutable std::mutex m_graphInflateMutex;
         mutable std::mutex m_graphMutex;
         mutable SMMemoryPoolItemId m_triIndicesPoolItemId;        
@@ -911,7 +909,6 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         mutable bset<uint64_t>     m_textureVideoIds;
         
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher2_5d;
-        ISMPointIndexMesher<POINT, EXTENT>* m_mesher3d;
 
 
              
@@ -946,16 +943,12 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
                     bool textured,
                     bool propagatesDataDown,
                     bool needsNeighbors,
-                    ISMPointIndexMesher<POINT, EXTENT>* mesher2_5d, 
-                    ISMPointIndexMesher<POINT, EXTENT>* mesher3d);
+                    ISMPointIndexMesher<POINT, EXTENT>* mesher2_5d);
 
         BENTLEY_SM_EXPORT virtual             ~SMMeshIndex<POINT, EXTENT>();
 
 
         BENTLEY_SM_EXPORT ISMPointIndexMesher<POINT, EXTENT>* GetMesher2_5d();
-
-        ISMPointIndexMesher<POINT, EXTENT>*
-            GetMesher3d();
 
 
         virtual void        Mesh(bvector<uint64_t>* pNodesToMesh = nullptr);
@@ -968,7 +961,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         BENTLEY_SM_EXPORT void DoParallelStitching(vector<SMMeshIndexNode<POINT, EXTENT>*>& nodesToStitch);
 
-        virtual void        Stitch(int pi_levelToStitch, bool do2_5dStitchFirst = false, vector<SMMeshIndexNode<POINT, EXTENT>*>* nodesToStitchInfo = nullptr);
+        virtual void        Stitch(int pi_levelToStitch, vector<SMMeshIndexNode<POINT, EXTENT>*>* nodesToStitchInfo = nullptr);
         
         // void                SetClipStore(HFCPtr<IScalableMeshDataStore<DifferenceSet, Byte, Byte>>& clipStore);
         void                SetClipRegistry(ClipRegistry* registry);       
@@ -994,7 +987,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
 
         BENTLEY_SM_EXPORT void                AddClipDefinition(bvector<DPoint3d>& points, DRange3d& extent);
-        void                PerformClipAction(ClipAction action, uint64_t clipId, DRange3d& extent, bool setToggledWhenIDIsOn=true, Transform tr = Transform::FromIdentity());
+        void                PerformClipAction(ClipAction action, uint64_t clipId, bool setToggledWhenIDIsOn=true, Transform tr = Transform::FromIdentity());
         BENTLEY_SM_EXPORT void                RefreshMergedClips();
 
         BENTLEY_SM_EXPORT size_t GetNextTextureId();
@@ -1029,6 +1022,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         // void SetSMTerrain(SMMeshIndex<POINT, EXTENT>* terrainP);
         // SMMeshIndex<POINT, EXTENT>* GetSMTerrain();
+
 #if 0
         void SetSMTerrainMesh(IScalableMesh* terrainP);
         IScalableMesh* GetSMTerrainMesh();
@@ -1038,8 +1032,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         SMMemoryPoolPtr             m_smMemoryPool;
         ISMDataStoreTypePtr<EXTENT> m_smDataStore;
                 
-        ISMPointIndexMesher<POINT, EXTENT>* m_mesher2_5d;
-        ISMPointIndexMesher<POINT, EXTENT>* m_mesher3d;                
+        ISMPointIndexMesher<POINT, EXTENT>* m_mesher2_5d;             
         HFCPtr<ClipRegistry> m_clipRegistry;
 
         std::atomic<size_t> m_texId = {0};

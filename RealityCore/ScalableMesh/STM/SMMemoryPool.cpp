@@ -89,18 +89,18 @@ SMMemoryPoolItemBase::SMMemoryPoolItemBase(Byte* data, uint64_t size, uint64_t n
 uint32_t SMMemoryPoolItemBase::AddRef() const
 {
     if (m_dataType == SMStoreDataType::DisplayMesh || m_dataType == SMStoreDataType::DisplayTexture)
-    {
+        {
         TRACEPOINT(m_dataType == SMStoreDataType::DisplayMesh ? EventType::CACHED_MESH_ACQUIRE : EventType::CACHED_TEX_ACQUIRE, m_nodeId, (uint64_t)-1, m_dataType == SMStoreDataType::DisplayTexture ? m_nodeId : -1, m_poolItemId, (uint64_t)this, GetRefCount())
-    }
+        }
         return RefCounted <IRefCounted>::AddRef();
 }
 
 uint32_t SMMemoryPoolItemBase::Release() const
 {
     if (m_dataType == SMStoreDataType::DisplayMesh || m_dataType == SMStoreDataType::DisplayTexture)
-    {
+        {
         TRACEPOINT(m_dataType == SMStoreDataType::DisplayMesh ? EventType::CACHED_MESH_RELEASE : EventType::CACHED_TEX_RELEASE, m_nodeId, (uint64_t)-1, m_dataType == SMStoreDataType::DisplayTexture ? m_nodeId : -1, m_poolItemId, (uint64_t)this, GetRefCount())
-    }
+        }
         return RefCounted <IRefCounted>::Release();
 }
    

@@ -51,7 +51,7 @@ ScalableMeshScheduler::ScalableMeshScheduler()
 void ScalableMeshScheduler::OnTaskRequested(ScalableMeshThreadPool* requestor)
     {
     sched_lock.lock();
-    for (uint8_t priority = MAX_N_OF_PRIORITIES-1; priority >= 0; priority--)
+    for (uint8_t priority = MAX_N_OF_PRIORITIES-1; true ; priority--)
         {
         if (unassignedTasks[priority].size() > 0)
             {
@@ -67,7 +67,7 @@ void ScalableMeshScheduler::ScheduleTask(SMTask& t, uint8_t priority)
     {
     sched_lock.lock();
     unassignedTasks[priority].push(t);
-    for (uint8_t p = MAX_N_OF_PRIORITIES-1; p >= 0; p--)
+    for (uint8_t p = MAX_N_OF_PRIORITIES-1; true; p--)
         {
         if (unassignedTasks[p].size() > 0)
             {
@@ -85,6 +85,7 @@ void ScalableMeshScheduler::ScheduleTask(SMTask& t, uint8_t priority)
 
 ScalableMeshThreadPool::ScalableMeshThreadPool(uint8_t nThreads)
     {
+    scheduler = nullptr;
     workerThreads.resize(nThreads);
     assignedTasks.resize(nThreads);
     for (uint8_t i = 0; i < nThreads; ++i)
@@ -140,7 +141,7 @@ void ScalableMeshThreadPool::RegisterTaskScheduler(Scheduler* sched)
     scheduler = sched;
     }
 
-bool ScalableMeshThreadPool::AssignTask(SMTask& task)
+bool ScalableMeshThreadPool::AssignTask(const SMTask& task)
     {
     if (freeWorkers.size() == 0) return false;
     assignedTasks[freeWorkers.front()] = task;
@@ -149,7 +150,7 @@ bool ScalableMeshThreadPool::AssignTask(SMTask& task)
     return true;
     }
 
-bool ScalableMeshThreadPool::TryAssignTask(SMTask& task)
+bool ScalableMeshThreadPool::TryAssignTask(const SMTask& task)
     {
     if (!hasWatcherThread &&freeWorkers.size() > 0) return AssignTask(task);
     else taskAvailable = true;

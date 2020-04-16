@@ -35,6 +35,7 @@ struct DifferenceSet
         upToDate = true;
         firstIndex = 0;
         toggledForID = true;
+        clientID = -1;
         }
 
     DifferenceSet(const DifferenceSet& d) :clientID(d.clientID), firstIndex(d.firstIndex), addedVertices(d.addedVertices),
@@ -191,7 +192,7 @@ struct DifferenceSet
 
     void ApplySet(DifferenceSet& d, int firstIndex);
     void ApplyMapped(DifferenceSet& d, const int* idxMap);
-    bool ConflictsWith(DifferenceSet& d);
+    bool ConflictsWith(const DifferenceSet& d);
     DifferenceSet MergeSetWith(DifferenceSet& d, const DPoint3d* vertices);
     DifferenceSet MergeSetWith(DifferenceSet& d, const DPoint3d* vertices, bvector<DPoint3d>& clip1, bvector<DPoint3d>& clip2);
     static DifferenceSet  FromPolyfaceSet(bvector<PolyfaceHeaderPtr>& polyMesh, const DPoint3d* vertices, size_t nVertices);
@@ -232,10 +233,8 @@ double absTol
 struct DPoint2dZYXTolerancedSortComparison
     {
     double m_absTol;
-    DPoint2dZYXTolerancedSortComparison(double absTol) : m_absTol(absTol)
-        {
-
-        }
+    explicit DPoint2dZYXTolerancedSortComparison(double absTol) : m_absTol(absTol)
+        {}
     bool operator() (const DPoint2d& pointA, const DPoint2d &pointB) const
         {
         return sort_yx<double>(pointA.x, pointA.y, pointB.x, pointB.y, m_absTol);
@@ -246,10 +245,8 @@ struct DPoint2dZYXTolerancedSortComparison
 struct DPoint3dYXTolerancedSortComparison
     {
     double m_absTol;
-    DPoint3dYXTolerancedSortComparison(double absTol) : m_absTol(absTol)
-        {
-
-        }
+    explicit DPoint3dYXTolerancedSortComparison(double absTol) : m_absTol(absTol)
+        {}
     bool operator() (const DPoint3d& pointA, const DPoint3d &pointB) const
         {
         return sort_yx<double>(pointA.x, pointA.y, pointB.x, pointB.y, m_absTol);

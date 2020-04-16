@@ -57,7 +57,7 @@ class PerformanceLogger
 
         void LogLoadActionStat(size_t nbLoadActions, uint64_t totalNbMem, int numWorkingThreads)
             {
-            fprintf(m_perfLogFile, "nbLoadAction : %zi, totalNbMem : %llu nbThreads : %i \r\n", nbLoadActions, totalNbMem, numWorkingThreads);
+            fprintf(m_perfLogFile, "nbLoadAction : %zu, totalNbMem : %llu nbThreads : %i \r\n", nbLoadActions, totalNbMem, numWorkingThreads);
             }
 
         void LogPerformanceStat(clock_t durationTime)
@@ -146,6 +146,8 @@ class MemoryPoolItem : public RefCountedBase
 
         MemoryPoolItem()
             {
+            m_data = nullptr;
+            m_size = 0;
             m_dataType = DataTypeDesc::Unknown;
             m_dirty = false;
             m_nodeId = numeric_limits<uint64_t>::max();
@@ -157,7 +159,6 @@ class MemoryPoolItem : public RefCountedBase
             m_size = size;
             m_nodeId = nodeId;
             m_dataType = dataType;
-            m_data = data;
             m_dirty = true;
             }
 
@@ -705,7 +706,7 @@ class QueryProcessor
                 while (1)
                     {
                     LoadingAction action;                                                                     
-                    fscanf(logFile, "%lli %zi %i \r\n", &action.m_nodeId, &action.m_nbElements, &action.m_dataType);                        
+                    fscanf(logFile, "%llu %zu %i \r\n", &action.m_nodeId, &action.m_nbElements, &action.m_dataType);                        
 
                     if (feof(logFile) || ferror(logFile))
                         break;
@@ -769,9 +770,6 @@ static uint64_t s_poolSize = 40000000;
 
 int wmain(int argc, wchar_t* argv[])
     {
-    argc = argc;
-    argv = argv;    
-    
     s_nbTotalDataLoaded = 0; 
 
     MemoryPool memPool(s_poolSize); 
@@ -785,7 +783,7 @@ int wmain(int argc, wchar_t* argv[])
     queryProcessor.Stop();
     clock_t durationTime = (clock() - startTime) / CLOCKS_PER_SEC; 
 
-    durationTime = durationTime;
+
 
     s_performanceLogger.LogPerformanceStat(durationTime);
     

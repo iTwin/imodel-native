@@ -55,7 +55,7 @@ public:
 
                                 DataSourceStatus            (void);
                                 DataSourceStatus            (const DataSourceStatus &otherStatus);
-                                DataSourceStatus            (DataSourceStatusCode code);
+                                explicit DataSourceStatus            (DataSourceStatusCode code);
 
         void                    set                         (DataSourceStatusCode newCode);
         void                    set                         (const DataSourceStatus &newStatus);

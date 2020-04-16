@@ -582,7 +582,7 @@ void ScalableMeshRasterDraping::CreateTextureBitmapForCurrentView(vector<Texture
                         rTextures.push_back(textureDesc);                                                                    
 
                         
-                    copyFromAreaIter++;
+                    ++copyFromAreaIter;
                     }                         
                 }
         }

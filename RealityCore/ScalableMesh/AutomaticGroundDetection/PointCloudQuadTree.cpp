@@ -138,7 +138,7 @@ bool         ProgressBarMonitorForTree::s_process_canceled=false;
 bool         ProgressBarMonitorForTree::s_process_errorSignaled = (false);
 
 
-quadSeed::quadSeed(std::vector<DPoint3d> seedPoints_, PointCloudQuadNode* tile_)
+quadSeed::quadSeed(const std::vector<DPoint3d>& seedPoints_, PointCloudQuadNode* tile_)
     {
     seedPoints = seedPoints_;
     tile = tile_;
@@ -148,6 +148,8 @@ quadSeed::quadSeed()
     {
     tile = NULL;
     seedPoints = vector<DPoint3d>();
+    density = 0.0;
+    trustworthiness = 0.0;
     }
 
 
@@ -300,7 +302,7 @@ void PointCloudQuadTree::createTree(PointCloudQuadTreeData* data, ProgressReport
 void PointCloudQuadTree::excludeOutlierSeeds(std::vector<QuadSeedPtr>& seeds)
     {
     double avgDensity = 0.0;
-    std::for_each(seeds.begin(), seeds.end(), [&avgDensity] (QuadSeedPtr& seed) { avgDensity+=seed->density; });
+    std::for_each(seeds.begin(), seeds.end(), [&avgDensity] (const QuadSeedPtr& seed) { avgDensity+=seed->density; });
     avgDensity /= seeds.size();
     std::vector<std::vector<DPoint3d>> toErase(seeds.size());
     std::vector<float> percentageOfInliers(seeds.size());
@@ -353,7 +355,7 @@ void PointCloudQuadTree::excludeOutlierSeeds(std::vector<QuadSeedPtr>& seeds)
         if (SeedExclusionParams::dontExcludeSeedsIfHighlyTrustworthy && seed->trustworthiness > SeedExclusionParams::trustworthinessThresholdForExclusion) continue;
         for (DPoint3d i : listPoints)
             {
-            auto it2 = std::find_if(seed->seedPoints.begin(), seed->seedPoints.end(), [&i] (DPoint3d& pt) { return i.x == pt.x && i.y == pt.y && i.z == pt.z; });
+            auto it2 = std::find_if(seed->seedPoints.begin(), seed->seedPoints.end(), [&i] (const DPoint3d& pt) { return i.x == pt.x && i.y == pt.y && i.z == pt.z; });
             if (it2 != seed->seedPoints.end()) seed->seedPoints.erase(it2);
             }
         }
@@ -402,7 +404,7 @@ void PointCloudQuadTree::visitUnmarkedNodes(std::vector<QuadSeedPtr>& seeds)
 * @bsimethod                                    Thomas.Butzbach                 02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 //spatial partition for triangles 
-void PointCloudQuadTree::setTriangles(std::vector<DPoint3d>& points, std::vector<int>& indices)
+void PointCloudQuadTree::setTriangles(const std::vector<DPoint3d>& points, std::vector<int>& indices)
     {
     this->m_points = points;
     this->m_triangleIndexes = &indices;
@@ -442,7 +444,7 @@ void PointCloudQuadTree::setSeedsPoints(std::vector<DPoint3d>& seedsPoints, std:
         mapIdVecPt3D[node->uid].push_back(*itr);
         }
     MapPts::iterator itPts = mapIdVecPt3D.begin();
-    for(MapNode::iterator itNode = mapIdNode.begin(); itNode != mapIdNode.end(); itNode++, itPts++)
+    for(MapNode::iterator itNode = mapIdNode.begin(); itNode != mapIdNode.end(); ++itNode, ++itPts)
         {
         QuadSeedPtr seed(quadSeed::Create());
         seed->tile = itNode->second;
@@ -482,6 +484,7 @@ PointCloudQuadNode::PointCloudQuadNode(DPoint3d* bb, PointCloudQuadTree* tree, P
     m_ptsError = 0;
     m_ptsGood = 0;
     m_ptsGround = 0;
+    m_nOfPointsRead = 0;
     m_pXyzBuffer = nullptr;
     m_pFilterBuffer = nullptr;
     m_pChannelBuffer = nullptr;
@@ -656,7 +659,7 @@ void PointCloudQuadNode::createTrianglesRegions()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Thomas.Butzbach                 02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool isPointInTriangle(DPoint3d& vecIn3, DPoint3d& vec13, DPoint3d& vec23, DPoint3d& vec33)
+bool isPointInTriangle(const DPoint3d& vecIn3, const DPoint3d& vec13, const DPoint3d& vec23, const DPoint3d& vec33)
     {
     DPoint2d vecIn = {vecIn3.x, vecIn3.y};
     DPoint2d vec1 = {vec13.x, vec13.y};
@@ -1074,7 +1077,7 @@ void PointCloudQuadNode::findTriangleIntersection(DPoint3d* triangle, size_t sta
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Thomas.Butzbach                 02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PointCloudQuadNode::findIntersectionWithX(DPoint3d& direction, DPoint3d* triangle, size_t startIdx, int k)
+void PointCloudQuadNode::findIntersectionWithX(const DPoint3d& direction, DPoint3d* triangle, size_t startIdx, int k)
     {
     // Find intersection with plane x = m_pivot.dx
     double t = (m_pivot.x - triangle[k].x) / (direction.x);
@@ -1125,7 +1128,7 @@ void PointCloudQuadNode::findIntersectionWithX(DPoint3d& direction, DPoint3d* tr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Thomas.Butzbach                 02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PointCloudQuadNode::findIntersectionWithY(DPoint3d& direction, DPoint3d* triangle, size_t startIdx, int k)
+void PointCloudQuadNode::findIntersectionWithY(const DPoint3d& direction, DPoint3d* triangle, size_t startIdx, int k)
     {
     // find intersection with plane y = m_pivot.dY
     double t = (m_pivot.y - triangle[k].y) / (direction.y);

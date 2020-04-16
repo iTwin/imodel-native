@@ -5,7 +5,6 @@
 
 #include <ScalableMeshPCH.h>
 #include "ImagePPHeaders.h"
-extern bool   GET_HIGHEST_RES;
 
 #include <STMInternal/Foundations/FoundationsPrivateTools.h>
 /*------------------------------------------------------------------+
@@ -638,10 +637,6 @@ int IScalableMesh::SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, cons
     }
 #endif
 
-void IScalableMesh::ReFilter()
-    {
-    return _ReFilter();
-    }
 
 /*----------------------------------------------------------------------------+
 |IScalableMesh Method Definition Section - End
@@ -702,6 +697,10 @@ IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
                                        StatusInt&            status)
 {
     status = BSISUCCESS;
+
+    if(ScalableMeshLib::GetHost().GetRegisteredScalableMesh(filePath) != nullptr) 
+        return ScalableMeshLib::GetHost().GetRegisteredScalableMesh(filePath);
+
     bool isLocal = true;
     Utf8String newBaseEditsFilePath(baseEditsFilePath);
     SMSQLiteFilePtr smSQLiteFile;
@@ -758,7 +757,6 @@ IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
         return 0;
         }
 
-    if (ScalableMeshLib::GetHost().GetRegisteredScalableMesh(filePath) != nullptr) return ScalableMeshLib::GetHost().GetRegisteredScalableMesh(filePath);
 #ifndef LINUX_SCALABLEMESH_BUILD
     if(isLocal && 0 != _waccess(filePath, 04))
     {
@@ -938,53 +936,12 @@ template <class POINT> void ScalableMesh<POINT>::_RegenerateClips(bool forceRege
 
     for (auto& id : existingClipIds)
     {
-        bvector<DPoint3d> clipData;
-        m_scmIndexPtr->GetClipRegistry()->GetClip(id, clipData);
         DRange3d extent = DRange3d::NullRange();
-        if (!clipData.empty())
-            extent.Extend(DRange3d::From(&clipData[0], (int)clipData.size()));
-        else
-        {
-            SMClipGeometryType geom;
-            SMNonDestructiveClipType type;
-            bool isActive;
-            m_scmIndexPtr->GetClipRegistry()->GetClipWithParameters(id, clipData, geom, type, isActive);
-            if (geom == SMClipGeometryType::BoundedVolume)
-            {
-                ClipVectorPtr cp;
-                m_scmIndexPtr->GetClipRegistry()->GetClipWithParameters(id, cp, geom, type, isActive);
-                if (cp.IsValid())
-                {
-                    for (ClipPrimitivePtr& primitive : *cp)
-                        primitive->SetIsMask(false);
-                    cp->GetRange(extent, nullptr);
-                }
-                if (extent.Volume() == 0)
-                {
-                    if (extent.XLength() == 0)
-                    {
-                        extent.low.x -= 1.e-5;
-                        extent.high.x += 1.e-5;
-                    }
-                    if (extent.YLength() == 0)
-                    {
-                        extent.low.y -= 1.e-5;
-                        extent.high.y += 1.e-5;
-                    }
-                    if (extent.ZLength() == 0)
-                    {
-                        extent.low.z -= 1.e-5;
-                        extent.high.z += 1.e-5;
-                    }
-                }
-            }
-
-        }
 
         Transform t = Transform::FromIdentity();
         if (IsCesium3DTiles()) t = GetReprojectionTransform();
 
-        m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_ADD, id, extent, true, t);
+        m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_ADD, id, true, t);
 
     }
 
@@ -1016,65 +973,6 @@ template <class POINT> ScalableMesh<POINT>::ScalableMesh(SMSQLiteFilePtr& smSQLi
 
 		if (changed->ShouldRegenerateStaleClipFiles() && !store->DoesClipFileExist())
 		{
-			/*SetIsInsertingClips(true);
-
-			bvector<uint64_t> existingClipIds;
-			GetAllClipIds(existingClipIds);
-
-			for (auto& id : existingClipIds)
-			{
-				bvector<DPoint3d> clipData;
-				m_scmIndexPtr->GetClipRegistry()->GetClip(id, clipData);
-				DRange3d extent = DRange3d::NullRange();
-				if (!clipData.empty())
-					extent.Extend(DRange3d::From(&clipData[0], (int)clipData.size()));
-                else
-                {
-                    SMClipGeometryType geom;
-                    SMNonDestructiveClipType type;
-                    bool isActive;
-                    m_scmIndexPtr->GetClipRegistry()->GetClipWithParameters(id, clipData, geom, type, isActive);
-                    if (geom == SMClipGeometryType::BoundedVolume)
-                    {
-                        ClipVectorPtr cp;
-                        m_scmIndexPtr->GetClipRegistry()->GetClipWithParameters(id, cp, geom, type, isActive);
-                        if (cp.IsValid())
-                        {
-                            for (ClipPrimitivePtr& primitive : *cp)
-                                primitive->SetIsMask(false);
-                            cp->GetRange(extent, nullptr);
-                        }
-                        if (extent.Volume() == 0)
-                        {
-                            if (extent.XLength() == 0)
-                            {
-                                extent.low.x -= 1.e-5;
-                                extent.high.x += 1.e-5;
-                            }
-                            if (extent.YLength() == 0)
-                            {
-                                extent.low.y -= 1.e-5;
-                                extent.high.y += 1.e-5;
-                            }
-                            if (extent.ZLength() == 0)
-                            {
-                                extent.low.z -= 1.e-5;
-                                extent.high.z += 1.e-5;
-                            }
-                        }
-                    }
-
-                }
-
-				Transform t = Transform::FromIdentity();
-				if (IsCesium3DTiles()) t = GetReprojectionTransform();
-
-				m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_ADD, id, extent, true, t);
-
-			}
-
-			SetIsInsertingClips(false);
-			SaveEditFiles();*/
             _RegenerateClips();
 		}
 	});
@@ -1233,6 +1131,8 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 #if TRACE_ON
     CachedDataEventTracer::GetInstance()->setLogDirectory("C:\\traceLogs\\");
     CachedDataEventTracer::GetInstance()->start();
+
+    TRACEPOINT_WSTRING(EventType::CUSTOM_STRING, "SCALABLEMESH_OPEN " + Utf8String(m_path.c_str()), reinterpret_cast<uint64_t>(this))
 #endif
 
     try
@@ -1270,7 +1170,6 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                 false,
                 false,
                 false,
-                0,
                 0);
 
             {
@@ -1299,7 +1198,6 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                 false,
                 false,
                 false,
-                0,
                 0);
             }
 
@@ -1396,10 +1294,6 @@ template <class POINT> int ScalableMesh<POINT>::Close
 (
 )
     {
-
-#ifdef TRACE_ON
-    CachedDataEventTracer::GetInstance()->analyze(-1);
-#endif
     WString path = m_path;
     if (this->IsCesium3DTiles() && !this->IsStubFile())
         {
@@ -1429,8 +1323,13 @@ template <class POINT> int ScalableMesh<POINT>::Close
         m_smSQLitePtr->Close();
     m_smSQLitePtr = nullptr;
 
+    TRACEPOINT_WSTRING(EventType::CUSTOM_STRING, "SCALABLEMESH_CLOSE " + Utf8String(m_path.c_str()), reinterpret_cast<uint64_t>(this))
 
-    return SUCCESS;
+#ifdef TRACE_ON
+    CachedDataEventTracer::GetInstance()->analyze(-1);
+#endif
+
+    return SUCCESS;        
     }
 
 /*----------------------------------------------------------------------------+
@@ -2524,26 +2423,7 @@ template <class POINT> bool ScalableMesh<POINT>::_AddClip(const DPoint3d* pts, s
     {
     bvector<bvector<DPoint3d>> coverageData;
     if (m_scmIndexPtr->GetClipRegistry() == nullptr || pts == nullptr || ptsSize == 0) return false;
-
-    DRange3d extent = DRange3d::From(pts, (int)ptsSize);
-    if (extent.Volume() == 0)
-        {
-        if (extent.XLength() == 0)
-            {
-            extent.low.x -= 1.e-5;
-            extent.high.x += 1.e-5;
-            }
-        if (extent.YLength() == 0)
-            {
-            extent.low.y -= 1.e-5;
-            extent.high.y += 1.e-5;
-            }
-        if (extent.ZLength() == 0)
-            {
-            extent.low.z -= 1.e-5;
-            extent.high.z += 1.e-5;
-            }
-        }
+    if (m_scmIndexPtr->GetClipRegistry()->HasClip(clipID)) return false;
 
     const DPoint3d* targetPts;
     bvector<DPoint3d> reprojectedPts(ptsSize);
@@ -2553,17 +2433,15 @@ template <class POINT> bool ScalableMesh<POINT>::_AddClip(const DPoint3d* pts, s
         trans.InverseOf(m_reprojectionTransform);
         trans.Multiply(&reprojectedPts[0], pts, (int)ptsSize);
         targetPts = reprojectedPts.data();
-        extent = DRange3d::From(targetPts, (int)ptsSize);
         }
     else targetPts = pts;
 
-    if (m_scmIndexPtr->GetClipRegistry()->HasClip(clipID)) return false;
-    m_scmIndexPtr->GetClipRegistry()->ModifyClip(clipID, targetPts, ptsSize);
+    m_scmIndexPtr->GetClipRegistry()->ModifyClip(clipID, targetPts, ptsSize); //should replace with AddClip???
     if (!alsoAddOnTerrain || coverageData.empty())
         {
 		Transform t = Transform::FromIdentity();
 		if (IsCesium3DTiles()) t = GetReprojectionTransform();
-        m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_ADD, clipID, extent,true, t);
+        m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_ADD, clipID, true, t);
         }
     else
         {
@@ -2595,33 +2473,13 @@ template <class POINT> bool ScalableMesh<POINT>::_AddClip(const DPoint3d* pts, s
         }
     else targetPts = pts;
 
-    DRange3d extent = DRange3d::From(targetPts, (int)ptsSize);
-    if (extent.Volume() == 0)
-        {
-        if (extent.XLength() == 0)
-            {
-            extent.low.x -= 1.e-5;
-            extent.high.x += 1.e-5;
-            }
-        if (extent.YLength() == 0)
-            {
-            extent.low.y -= 1.e-5;
-            extent.high.y += 1.e-5;
-            }
-        if (extent.ZLength() == 0)
-            {
-            extent.low.z -= 1.e-5;
-            extent.high.z += 1.e-5;
-            }
-        }
-
     if (m_scmIndexPtr->GetClipRegistry()->HasClip(clipID)) return false;
     m_scmIndexPtr->GetClipRegistry()->AddClipWithParameters(clipID, targetPts, ptsSize, geom, type, isActive);
 
 	Transform t = Transform::FromIdentity();
 	if (IsCesium3DTiles()) t = GetReprojectionTransform();
 
-    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_ADD, clipID, extent,true, t);
+    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_ADD, clipID, true, t);
     SaveEditFiles();
     return true;
     }
@@ -2629,32 +2487,14 @@ template <class POINT> bool ScalableMesh<POINT>::_AddClip(const DPoint3d* pts, s
 template <class POINT> bool ScalableMesh<POINT>::_AddClip(const ClipVectorPtr& clip, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive)
 {
     ClipVectorPtr clipP = ClipVector::CreateCopy(*clip);
+    for (auto&clipPrimitive : *clipP)
+        clipPrimitive->SetIsMask(type == SMNonDestructiveClipType::Mask);
+
     if (!m_reprojectionTransform.IsIdentity())
     {
         Transform trans;
         trans.InverseOf(m_reprojectionTransform);
         clipP->TransformInPlace(trans);
-    }
-
-    DRange3d extent;
-    clipP->GetRange(extent, nullptr);
-    if (extent.Volume() == 0)
-    {
-        if (extent.XLength() == 0)
-        {
-            extent.low.x -= 1.e-5;
-            extent.high.x += 1.e-5;
-        }
-        if (extent.YLength() == 0)
-        {
-            extent.low.y -= 1.e-5;
-            extent.high.y += 1.e-5;
-        }
-        if (extent.ZLength() == 0)
-        {
-            extent.low.z -= 1.e-5;
-            extent.high.z += 1.e-5;
-        }
     }
 
     if (!m_reprojectionTransform.IsIdentity() && IsCesium3DTiles())
@@ -2667,7 +2507,7 @@ template <class POINT> bool ScalableMesh<POINT>::_AddClip(const ClipVectorPtr& c
     Transform t = Transform::FromIdentity();
     if (IsCesium3DTiles()) t = GetReprojectionTransform();
 
-    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_ADD, clipID, extent, true, t);
+    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_ADD, clipID, true, t);
     SaveEditFiles();
     return true;
 }
@@ -2680,25 +2520,6 @@ template <class POINT> bool ScalableMesh<POINT>::_ModifyClip(const DPoint3d* pts
     if (m_scmIndexPtr->GetClipRegistry() == nullptr) return false;
     bvector<DPoint3d> clipData;
     m_scmIndexPtr->GetClipRegistry()->GetClip(clipID, clipData);
-    DRange3d extent = DRange3d::From(&clipData[0], (int)clipData.size());
-    if (extent.Volume() == 0)
-        {
-        if (extent.XLength() == 0)
-            {
-            extent.low.x -= 1.e-5;
-            extent.high.x += 1.e-5;
-            }
-        if (extent.YLength() == 0)
-            {
-            extent.low.y -= 1.e-5;
-            extent.high.y += 1.e-5;
-            }
-        if (extent.ZLength() == 0)
-            {
-            extent.low.z -= 1.e-5;
-            extent.high.z += 1.e-5;
-            }
-        }
 
     const DPoint3d* targetPts;
     bvector<DPoint3d> reprojectedPts(ptsSize);
@@ -2710,15 +2531,13 @@ template <class POINT> bool ScalableMesh<POINT>::_ModifyClip(const DPoint3d* pts
         targetPts = reprojectedPts.data();
         }
     else targetPts = pts;
-    DRange3d extentNew = DRange3d::From(targetPts, (int)ptsSize);
-    extent.Extend(extentNew);
 
     m_scmIndexPtr->GetClipRegistry()->ModifyClip(clipID, targetPts, ptsSize);
 
 	Transform t = Transform::FromIdentity();
 	if (IsCesium3DTiles()) t = GetReprojectionTransform();
 
-    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_MODIFY, clipID, extent,true, t);
+    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_MODIFY, clipID, true, t);
 
     SaveEditFiles();
 
@@ -2733,31 +2552,11 @@ template <class POINT> bool ScalableMesh<POINT>::_ModifyClip(const ClipVectorPtr
     SMNonDestructiveClipType type2;
     bool isActive2;
     m_scmIndexPtr->GetClipRegistry()->GetClipWithParameters(clipID, clipData,geom2,type2,isActive2);
-    DRange3d extent;
     if (!m_reprojectionTransform.IsIdentity() && IsCesium3DTiles())
     {
         Transform trans;
         trans.InverseOf(m_reprojectionTransform);
         clipData->TransformInPlace(trans);
-    }
-    clipData->GetRange(extent, nullptr);
-    if (extent.Volume() == 0)
-    {
-        if (extent.XLength() == 0)
-        {
-            extent.low.x -= 1.e-5;
-            extent.high.x += 1.e-5;
-        }
-        if (extent.YLength() == 0)
-        {
-            extent.low.y -= 1.e-5;
-            extent.high.y += 1.e-5;
-        }
-        if (extent.ZLength() == 0)
-        {
-            extent.low.z -= 1.e-5;
-            extent.high.z += 1.e-5;
-        }
     }
 
     ClipVectorPtr clipP = ClipVector::CreateCopy(*clip);
@@ -2767,9 +2566,6 @@ template <class POINT> bool ScalableMesh<POINT>::_ModifyClip(const ClipVectorPtr
         trans.InverseOf(m_reprojectionTransform);
         clipP->TransformInPlace(trans);
     }
-    DRange3d extentNew;
-    clipP->GetRange(extentNew, nullptr);
-    extent.Extend(extentNew);
 
     if (!m_reprojectionTransform.IsIdentity() && IsCesium3DTiles())
     {
@@ -2781,7 +2577,7 @@ template <class POINT> bool ScalableMesh<POINT>::_ModifyClip(const ClipVectorPtr
     Transform t = Transform::FromIdentity();
     if (IsCesium3DTiles()) t = GetReprojectionTransform();
 
-    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_MODIFY, clipID, extent, true, t);
+    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_MODIFY, clipID, true, t);
 
     SaveEditFiles();
 
@@ -2804,37 +2600,15 @@ template <class POINT> bool ScalableMesh<POINT>::_ModifyClip(const DPoint3d* pts
         }
     else targetPts = pts;
 
-    DRange3d extent = DRange3d::From(targetPts, (int)ptsSize);
-    if (extent.Volume() == 0)
-        {
-        if (extent.XLength() == 0)
-            {
-            extent.low.x -= 1.e-5;
-            extent.high.x += 1.e-5;
-            }
-        if (extent.YLength() == 0)
-            {
-            extent.low.y -= 1.e-5;
-            extent.high.y += 1.e-5;
-            }
-        if (extent.ZLength() == 0)
-            {
-            extent.low.z -= 1.e-5;
-            extent.high.z += 1.e-5;
-            }
-        }
-
 	bvector<DPoint3d> clipData;
 	m_scmIndexPtr->GetClipRegistry()->GetClip(clipID, clipData);
-	if(!clipData.empty())
-		extent.Extend(DRange3d::From(&clipData[0], (int)clipData.size()));
 
     m_scmIndexPtr->GetClipRegistry()->AddClipWithParameters(clipID, targetPts, ptsSize, geom, type, isActive);
 
 	Transform t = Transform::FromIdentity();
 	if (IsCesium3DTiles()) t = GetReprojectionTransform();
 
-    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_MODIFY, clipID, extent,true, t);
+    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_MODIFY, clipID, true, t);
 
     SaveEditFiles();
 
@@ -2847,53 +2621,10 @@ template <class POINT> bool ScalableMesh<POINT>::_ModifyClip(const DPoint3d* pts
 template <class POINT> bool ScalableMesh<POINT>::_RemoveClip(uint64_t clipID)
     {
     if (m_scmIndexPtr->GetClipRegistry() == nullptr) return false;
-    bvector<DPoint3d> clipPolyData;
-    m_scmIndexPtr->GetClipRegistry()->GetClip(clipID, clipPolyData);
-    if (clipPolyData.empty())
-        return true;
+    if (!m_scmIndexPtr->GetClipRegistry()->HasClip(clipID)) return false;
 
-    DRange3d extent = DRange3d::From(&clipPolyData[0], (int)clipPolyData.size());
-
-    ClipVectorPtr clipVectorData;
-    SMClipGeometryType geom;
-    SMNonDestructiveClipType type;
-    bool isActive;
-    m_scmIndexPtr->GetClipRegistry()->GetClipWithParameters(clipID, clipVectorData, geom, type, isActive);
-
-    if(clipVectorData.IsValid() && !clipVectorData->empty())
-        {
-        if(!m_reprojectionTransform.IsIdentity() && IsCesium3DTiles())
-            {
-            Transform trans;
-            trans.InverseOf(m_reprojectionTransform);
-            clipVectorData->TransformInPlace(trans);
-            }
-
-        DRange3d clipVectorRange;
-        clipVectorData->GetRange(clipVectorRange, nullptr);
-        extent.Extend(clipVectorRange);
-        }
-
-    if (extent.Volume() == 0)
-        {
-        if (extent.XLength() == 0)
-            {
-            extent.low.x -= 1.e-5;
-            extent.high.x += 1.e-5;
-            }
-        if (extent.YLength() == 0)
-            {
-            extent.low.y -= 1.e-5;
-            extent.high.y += 1.e-5;
-            }
-        if (extent.ZLength() == 0)
-            {
-            extent.low.z -= 1.e-5;
-            extent.high.z += 1.e-5;
-            }
-        }
+    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_DELETE, clipID);
     m_scmIndexPtr->GetClipRegistry()->DeleteClip(clipID);
-    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_DELETE, clipID, extent);
 
     SaveEditFiles();
 
@@ -3024,12 +2755,9 @@ template <class POINT> bool ScalableMesh<POINT>::_AddSkirt(const bvector<bvector
             }
         else reprojSkirt = skirt;
 
-
-        DRange3d extent = DRange3d::From(reprojSkirt[0][0]);
-        for (auto& vec : reprojSkirt) extent.Extend(vec, nullptr);
         if (m_scmIndexPtr->GetClipRegistry()->HasSkirt(clipID)) return false;
         m_scmIndexPtr->GetClipRegistry()->ModifySkirt(clipID, reprojSkirt);
-        m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_ADD, clipID, extent, false);
+        m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_ADD, clipID, false);
         }
     else
         {
@@ -3069,13 +2797,11 @@ template <class POINT> bool ScalableMesh<POINT>::_ModifySkirt(const bvector<bvec
             }
         }
     else reprojSkirt = skirt;
-    DRange3d extent = DRange3d::From(reprojSkirt[0][0]);
-    for (auto& vec : reprojSkirt) extent.Extend(vec, nullptr);
     m_scmIndexPtr->GetClipRegistry()->ModifySkirt(clipID, reprojSkirt);
 	Transform t = Transform::FromIdentity();
 	if (IsCesium3DTiles()) t = GetReprojectionTransform();
 
-    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_MODIFY, clipID, extent, false, t);
+    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_MODIFY, clipID, false, t);
 
     SaveEditFiles();
 
@@ -3268,14 +2994,12 @@ template <class POINT> bool ScalableMesh<POINT>::_RemoveSkirt(uint64_t clipID)
     {
     bvector<bvector<DPoint3d>> skirt;
     if (!_GetSkirt(clipID, skirt)) return false;
-    DRange3d extent =  DRange3d::From(skirt[0][0]);
-    for (auto& vec : skirt) extent.Extend(vec, nullptr);
-    m_scmIndexPtr->GetClipRegistry()->DeleteSkirt(clipID);
 
 	Transform t = Transform::FromIdentity();
 	if (IsCesium3DTiles()) t = GetReprojectionTransform();
 
-    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_DELETE, clipID, extent, false, t);
+    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_DELETE, clipID, false, t);
+    m_scmIndexPtr->GetClipRegistry()->DeleteSkirt(clipID);
     SaveEditFiles();
     return true;
     }
@@ -3978,9 +3702,7 @@ template <class POINT> void ScalableMesh<POINT>::_ImportTerrainSM(WString terrai
                                    10000,
                                    dynamic_cast<ScalableMeshNode<POINT>*>(nodeP.get())->GetNodePtr()->GetFilter(),
                                    true, true, true, true,
-                                   dynamic_cast<SMMeshIndexNode<POINT,Extent3dType>*>((dynamic_cast<ScalableMeshNode<POINT>*>(nodeP.get()))->GetNodePtr().GetPtr())->GetMesher2_5d(),
-                                   dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>((dynamic_cast<ScalableMeshNode<POINT>*>(nodeP.get()))->GetNodePtr().GetPtr())->GetMesher3d()
-                                   );
+                                   dynamic_cast<SMMeshIndexNode<POINT,Extent3dType>*>((dynamic_cast<ScalableMeshNode<POINT>*>(nodeP.get()))->GetNodePtr().GetPtr())->GetMesher2_5d());
     auto rootNodeP = m_scmTerrainIndexPtr->CreateRootNode();
     dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(rootNodeP.GetPtr())->ImportTreeFrom(nodeP);
     }
@@ -4090,15 +3812,7 @@ template <class POINT> int ScalableMesh<POINT>::_SaveGroupedNodeHeaders(const WS
     }
 #endif
 
-template <class POINT> void ScalableMesh<POINT>::_ReFilter()
-    {
-    size_t depth = m_scmIndexPtr->GetDepth();
-    for (int level = (int)depth-1; level >= 0; level--)
-        {
-        m_scmIndexPtr->Filter(level);
-        }
-    m_scmIndexPtr = 0;
-    }
+ 
 /*----------------------------------------------------------------------------+
 |ScalableMeshSingleResolutionPointIndexView Method Definition Section - Begin
 +----------------------------------------------------------------------------*/
@@ -4436,72 +4150,6 @@ DTMStatusInt IDTMVolume::ComputeVolumeCutAndFill(PolyfaceHeaderPtr& terrainMesh,
     }
 */
 
-
-void edgeCollapseTest(WCharCP param)
-    {
-#if 0
-    FILE* mesh = _wfopen(param, L"rb");
-
-    size_t ct;
-    fread(&ct, sizeof(size_t), 1, mesh);
-    void* graph = new byte[ct];
-    fread(graph, 1, ct, mesh);
-    MTGGraph g;
-    g.LoadFromBinaryStream(graph, ct);
-    size_t npts;
-    fread(&npts, sizeof(size_t), 1, mesh);
-    std::vector<DPoint3d> pts(npts);
-    fread(&pts[0], sizeof(DPoint3d), npts, mesh);
-    //CGALEdgeCollapse(&g, pts, 20000000);
-    fclose(mesh);
-#endif
-    }
-
-void edgeCollapsePrintGraph(WCharCP param)
-    {
-#if 0
-    FILE* mesh = _wfopen(param, L"rb");
-
-    size_t ct;
-    fread(&ct, sizeof(size_t), 1, mesh);
-    void* graph = new byte[ct];
-    fread(graph, 1, ct, mesh);
-    MTGGraph g;
-    g.LoadFromBinaryStream(graph, ct);
-    size_t npts;
-    fread(&npts, sizeof(size_t), 1, mesh);
-    std::vector<DPoint3d> pts(npts);
-    fread(&pts[0], sizeof(DPoint3d), npts, mesh);
-    fclose(mesh);
-    Utf8String path = "E:\\output\\scmesh\\2016-01-28\\";
-    Utf8String str1 = "tested";
-    PrintGraphWithPointInfo(path, str1, &g, &pts[0], npts);
-#endif
-    }
-
-void edgeCollapseShowMesh(WCharCP param, PolyfaceQueryP& outMesh)
-    {
-#if 0
-    FILE* mesh = _wfopen(param, L"rb");
-    size_t ct;
-    fread(&ct, sizeof(size_t), 1, mesh);
-    void* graph = new byte[ct];
-    fread(graph, 1, ct, mesh);
-    MTGGraph g;
-    g.LoadFromBinaryStream(graph, ct);
-    size_t npts;
-    fread(&npts, sizeof(size_t), 1, mesh);
-    DPoint3d* pts = new DPoint3d[npts];
-    fread(pts, sizeof(DPoint3d), npts, mesh);
-    fclose(mesh);
-    std::vector<int32_t> indices;
-    ExtractMeshIndicesFromGraph(indices, &g);
-    int32_t* indicesArray = new int32_t[indices.size()];
-    memcpy(indicesArray, &indices[0], indices.size()*sizeof(int32_t));
-    for (size_t i = 0; i < npts; ++i) pts[i].Scale(10000);
-    outMesh = new PolyfaceQueryCarrier(3, false, indices.size(), npts, pts,indicesArray);
-#endif
-    }
 
 void AddLoopsFromShape(bvector<bvector<DPoint3d>>& polygons, const HGF2DShape* shape, std::function<void(const bvector<DPoint3d>& element)> afterPolygonAdded)
 {

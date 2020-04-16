@@ -72,8 +72,6 @@ class Clipper
 		}
 
         void MakeDTMFromIndexList(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtm);
-        bool GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons);
-        bool GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, bvector<bpair<double, int>>& metadata, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr);
 
 
     };
@@ -84,8 +82,7 @@ template<class POINT, class EXTENT> void ClipMeshToNodeRange(std::vector<int>& f
 
 void print_polygonarray(std::string& s, const char* tag, DPoint3d* polyArray, int polySize);
 
-BENTLEY_SM_EXPORT bool GetRegionsFromClipPolys3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, const PolyfaceQuery* meshP, const bvector<bool>& isMask);
-BENTLEY_SM_EXPORT bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<size_t>& polyfaceIndices, ClipVectorCP clip, const PolyfaceQuery* meshP, const bvector<bool>& isMask);
+BENTLEY_SM_EXPORT bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<size_t>& polyfaceIndices, ClipVectorCP clip, const PolyfaceQuery* meshP);
 //void BuildSkirtMeshesForPolygonSet(bvector<bvector<PolyfaceHeaderPtr>>& skirts, bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, DRange3d& nodeRange);
 
 
@@ -160,7 +157,7 @@ private:
         bvector<Byte> arePrimitivesMasks;
         DRange3d clipExt;
         ClipVectorInfo() { type = Type::Vector; }
-        virtual bool isClipMask() {
+        virtual bool isClipMask() override{
             bool isMask = true;
             for (auto& mask : arePrimitivesMasks)
                 if (!mask) isMask = false;
@@ -172,8 +169,8 @@ private:
     {
         bvector<DPoint3d> pts;
         bool isMask;
-        ClipPolyInfo() { type = Type::Polygon; }
-        virtual bool isClipMask() { return isMask; }
+        ClipPolyInfo() { type = Type::Polygon; isMask = false; }
+        virtual bool isClipMask() override { return isMask; }
     };
 
     bvector<ClipVectorPtr> vectorDefs;
@@ -207,13 +204,9 @@ private:
     DTMInsertPointCallback GetInsertPointCallback(FaceToUVMap& faceToUVMap, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& ptr);
 
     void MakeDTMFromIndexList(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtm);
-    bool GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons);
-    bool GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr);
 
     void OrderClipGeometryList();
 
-    bool HasOnlyPolygons();
-    void GetClipsAsPolygons(bvector<bvector<DPoint3d>>& outPolygons, bvector<bool>& isMask);
     void GetClipsAsVectors(bvector<ClipVectorPtr>& outVectors);
     void GetClipsAsSingleVector(ClipVectorPtr& outVector);
 

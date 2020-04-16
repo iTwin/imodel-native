@@ -444,7 +444,7 @@ int                 nbDist         /* => Number of distance               */
                     endSection = FALSE;
                     BC_TRY (AddPointInTable (iPt, selectedDrapedPoints));
                     }
-                if (code == DTMDrapedLineCode::Void && endSection == FALSE)
+                if ((code == DTMDrapedLineCode::External || code == DTMDrapedLineCode::Void) && endSection == FALSE)
                     {
                     // If the point is not on the triangulation and we have not
                     // yet reached the end of a section, we say that we have

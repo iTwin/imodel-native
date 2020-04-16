@@ -42,7 +42,7 @@ DataSourceAccountAzure::AzureConnectionString DataSourceAccountAzure::createConn
     return cs;
 }
 
-DataSourceStatus DataSourceAccountAzure::setConnectionString(const AzureConnectionString string)
+DataSourceStatus DataSourceAccountAzure::setConnectionString(const AzureConnectionString& string)
 {
     if (string.length() == 0)
         return DataSourceStatus(DataSourceStatus::Status_Error_Bad_Parameters);
@@ -367,7 +367,7 @@ DataSourceStatus DataSourceAccountAzureCURL::uploadBlobSync(DataSourceURL &blobP
     DataSourceURL url(L"https://" + this->getAccountIdentifier() + L".blob.core.windows.net/" + blobPath);
     CURLHandle* curl_handle = m_CURLManager.getOrCreateThreadCURLHandle();
     CURL* curl = curl_handle->get();
-    curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_1);
+    curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
     return SuperCURL::uploadBlobSync(url, filename, source, size);

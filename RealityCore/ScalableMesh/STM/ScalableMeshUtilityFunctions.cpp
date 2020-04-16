@@ -74,7 +74,7 @@ void StitchSegmentsAtJunctions(bvector<bvector<DPoint3d>>& polylines, const bvec
             polylines[updatedMaxVal].clear();
             }
         }
-    std::remove_if(polylines.begin(), polylines.end(), [](const bvector<DPoint3d>& elem) {return elem.empty(); });
+    polylines.erase(std::remove_if(polylines.begin(), polylines.end(), [](const bvector<DPoint3d>& elem) {return elem.empty(); }));
     }
 
 /*----------------------------------------------------------------------+
@@ -276,7 +276,7 @@ static ::DPoint3d const s_npcViewBox[8] =
 * ratio must be provided.
 * @bsimethod                                                    MathieuStPierre  2/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GetVisibleAreaForView(::DPoint3d** areaPt, int& nbPts, const DPoint3d viewBox[], DRange3d& dtmRange, DRange3d& dtmIntersectionRange)
+bool GetVisibleAreaForView(::DPoint3d** areaPt, int& nbPts, const DPoint3d viewBox[], const DRange3d& dtmRange, DRange3d& dtmIntersectionRange)
     {        
     // Work out which bit of the triangulation is displayed on screen.    
     DRange3d dtmViewRange;
@@ -479,7 +479,7 @@ int GetShapeInFrontOfProjectivePlane(vector<DPoint3d>&       shapeInFrontOfProje
         {              
         tileCornerCoordinateBuffer2D[ptInd * 2] = pointIter->x;
         tileCornerCoordinateBuffer2D[ptInd * 2 + 1] = pointIter->y;
-        pointIter++;
+        ++pointIter;
         }  
 
     assert(pointIter == tileborderPoints.end());
@@ -638,8 +638,8 @@ int GetShapeInFrontOfProjectivePlane(vector<DPoint3d>&       shapeInFrontOfProje
             tileCutByVanishingLineCornerBuffer2D[borderPtInd * 2] = locationIter->GetX();
             tileCutByVanishingLineCornerBuffer2D[borderPtInd * 2 + 1] = locationIter->GetY();
 
-            borderPtInd++;
-            locationIter++;
+            ++borderPtInd;
+            ++locationIter;
             }     
 
         HVE2DPolygonOfSegments tileOriShape(8, tileCornerCoordinateBuffer2D, pDummyCoordSys);
@@ -812,12 +812,12 @@ bool AddExtentAndTestMatch(bool&           shouldAddMatchedCachedTile,
                                 pt.x = pointIter->GetX();
                                 pt.y = pointIter->GetY();                            
                                 maskPoints.push_back(pt);
-                                pointIter++;
+                                ++pointIter;
                                 }                                                
                                    
                             maskList.push_back(maskPoints);
 
-                            shapeIterator++;
+                            ++shapeIterator;
                             }                                
                         }                        
                     else
@@ -838,7 +838,7 @@ bool AddExtentAndTestMatch(bool&           shouldAddMatchedCachedTile,
                             pt.x = pointIter->GetX();
                             pt.y = pointIter->GetY();                            
                             maskPoints.push_back(pt);
-                            pointIter++;
+                            ++pointIter;
                             }                                                
                                    
                         maskList.push_back(maskPoints);                        

@@ -35,7 +35,7 @@ ClassificationChannelManager ClassificationChannelManager::s_instance;
 class ChannelAppData :  public ElementRefAppData
     {
     public:
-        ChannelAppData (ClassificationChannelHandlerPtr channelHandlerP)
+        explicit ChannelAppData (ClassificationChannelHandlerPtr channelHandlerP)
             :m_handlerP (channelHandlerP) {}
 
         ClassificationChannelHandler* GetHandler () {return m_handlerP.get();}

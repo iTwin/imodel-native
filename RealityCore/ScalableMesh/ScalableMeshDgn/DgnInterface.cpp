@@ -239,7 +239,6 @@ DgnV8Api::DgnFilePtr DgnV8Api::DgnFileOpenParams::CreateFileAndLoad ()
     else if (SUCCESS == m_openStatus)
         return  dgnFile;
 
-    m_openStatus = m_openStatus;    // ???
     return  NULL;
     }
 
@@ -416,6 +415,11 @@ struct ElementIterator
         m_scanCriteria->SetModelRef(modelRefPtr);
         m_scanCriteria->SetReturnType(DgnV8Api::MSSCANCRIT_ITERATE_ELMREF, false, false);
         }
+        
+    ElementIterator(const ElementIterator&) = delete;
+    ElementIterator& operator=(const ElementIterator&) = delete;
+    ElementIterator(ElementIterator&&) = delete;
+    ElementIterator& operator=(ElementIterator&&) = delete;
 
     ~ElementIterator()
         {

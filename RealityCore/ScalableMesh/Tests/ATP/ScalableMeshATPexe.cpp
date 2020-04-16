@@ -181,8 +181,6 @@ BentleyStatus ScalableMeshATPexe::Initialize(int argc, WCharP argv[])
 
 int ScalableMeshATPexe::PrintUsage(WCharCP programName)
     {
-    WString exeName = BeFileName::GetFileNameAndExtension(programName);
-
     fwprintf(stderr,
              L"\n\
                  Run ATP for ScalableMesh.\n\

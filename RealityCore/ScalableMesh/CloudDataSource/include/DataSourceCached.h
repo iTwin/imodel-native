@@ -200,20 +200,20 @@ protected:
     const DataSourceURL        &    getCacheURL             (void);
 
     void                            setCacheDataSource      (DataSource *source);
-    DataSource                *     getCacheDataSource      (void);
+    DataSource                *     getCacheDataSource      (void) override;
 
 public:
                                     DataSourceCached        (DataSourceAccount *account, const SessionName &session);
 
-    void                            setCachingEnabled       (bool enabled);
-    bool                            getCachingEnabled       (void);
-    void                            setForceWriteToCache    (void);
+    void                            setCachingEnabled       (bool enabled) override;
+    bool                            getCachingEnabled       (void) override;
+    void                            setForceWriteToCache    (void) override;
 
-    DataSourceStatus                open                    (const DataSourceURL & sourceURL, DataSourceMode sourceMode);
-    DataSourceStatus                close                   (void);
+    DataSourceStatus                open                    (const DataSourceURL & sourceURL, DataSourceMode sourceMode) override;
+    DataSourceStatus                close                   (void) override;
 
-    DataSourceStatus                read                    (Buffer *dest, DataSize destSize, DataSize &readSize, DataSize size);
-    DataSourceStatus                read                    (std::vector<Buffer>& dest);
-    DataSourceStatus                write                   (const Buffer * source, DataSize size);
+    DataSourceStatus                read                    (Buffer *dest, DataSize destSize, DataSize &readSize, DataSize size) override;
+    DataSourceStatus                read                    (std::vector<Buffer>& dest) override;
+    DataSourceStatus                write                   (const Buffer * source, DataSize size) override;
 
 };

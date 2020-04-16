@@ -90,7 +90,7 @@ private :
        AzureDirectPrefix                    m_AzureDirectPrefix;
        AzureDirectSuffix                    m_AzureDirectSuffix;
 
-       WSGToken                             getWSGToken                         (DataSourceURL &url);
+       WSGToken                             getWSGToken                         (const DataSourceURL &url);
        WSGEtag                              getWSGHandshake                     (const DataSourceURL &url, const DataSourceURL &filename, DataSourceBuffer::BufferSize size);
        bool                                 needsUpdateToken                    (const WSGToken& token);
        void                                 updateToken                         (const WSGToken& newToken, DataSourceURL url);

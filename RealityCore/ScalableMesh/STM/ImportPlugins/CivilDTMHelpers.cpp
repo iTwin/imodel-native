@@ -212,6 +212,33 @@ static size_t ComputeMaxFeatureCounts (const LinearFeatureTypeInfoList& pi_rList
     return maxFeatureCount;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @description
+*
+* @bsimethod                                                  Richard.Bois   03/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+static size_t ComputeBoundaryPointCount(const LinearFeatureTypeInfoList& pi_rList)
+    {
+    struct TypeInfoIsHullFeature
+        {
+        bool operator () (const LinearFeatureTypeInfo& pi_rFeatureInfo) const
+            {
+            return pi_rFeatureInfo.m_typeID == DTMFeatureType::Hull || pi_rFeatureInfo.m_typeID == DTMFeatureType::TinHull;
+            }
+        };
+
+    size_t boundaryPtCount = 0;
+
+    if(0 != pi_rList.size())
+        {
+        auto foundItr = std::find_if(pi_rList.begin(), pi_rList.end(), TypeInfoIsHullFeature());
+        if(foundItr != pi_rList.end())
+            boundaryPtCount = foundItr->m_pointCount;
+        }
+
+    return boundaryPtCount;
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @description
@@ -369,6 +396,7 @@ bool LinearHandler::ComputeCounts ()
     m_initialized = true;
     m_maxLinearCount = ComputeMaxFeatureCounts(m_typesInfo);
     m_maxPtCount = ComputeMaxPointCounts(m_typesInfo);
+    m_boundaryPtCount = ComputeBoundaryPointCount(m_typesInfo);
     return true;
     }
 
@@ -414,6 +442,17 @@ size_t LinearHandler::GetMaxPointCount () const
     {
     assert(m_initialized);
     return m_maxPtCount;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @description
+*
+* @bsimethod                                                  Raymond.Gauthier   02/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t LinearHandler::GetBoundaryPointCount() const
+    {
+    assert(m_initialized);
+    return m_boundaryPtCount;
     }
 
 /*---------------------------------------------------------------------------------**//**

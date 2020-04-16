@@ -19,7 +19,7 @@ class SMTask
             {
             executed = false;
             }
-        SMTask(std::function<void()> taskCallback) :m_callable(taskCallback)
+        explicit SMTask(std::function<void()> taskCallback) :m_callable(taskCallback)
             {
             executed = false;
             };
@@ -70,7 +70,7 @@ class ScalableMeshScheduler : public Scheduler
     std::mutex sched_lock;
 
 
-    virtual void OnTaskRequested(ScalableMeshThreadPool* requestor);
+    virtual void OnTaskRequested(ScalableMeshThreadPool* requestor) override;
 
     public:
         static const uint8_t PRIORITY_LOW = 2;
@@ -78,6 +78,10 @@ class ScalableMeshScheduler : public Scheduler
         static const uint8_t PRIORITY_HIGH = 6;
         static const uint8_t PRIORITY_IMMEDIATE = 10;
         ScalableMeshScheduler();
+        ScalableMeshScheduler(const ScalableMeshScheduler&) = delete;
+        ScalableMeshScheduler& operator=(const ScalableMeshScheduler&) = delete;
+        ScalableMeshScheduler(ScalableMeshScheduler&&) = delete;
+        ScalableMeshScheduler& operator=(ScalableMeshScheduler&&) = delete;
         void ScheduleTask(SMTask& t, uint8_t priority=PRIORITY_DEFAULT);
     };
 
@@ -97,11 +101,11 @@ class ScalableMeshThreadPool
     void _StartWatcherThread();
     void _Watch();
     public:
-    ScalableMeshThreadPool(uint8_t nThreads);
+    explicit ScalableMeshThreadPool(uint8_t nThreads);
 
     void RegisterTaskScheduler(Scheduler* sched);
-    bool AssignTask(SMTask& task);
-    bool TryAssignTask(SMTask& task);
+    bool AssignTask(const SMTask& task);
+    bool TryAssignTask(const SMTask& task);
     
     };
 

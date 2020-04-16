@@ -156,7 +156,7 @@ struct SMNodeHeader {
 struct SMGroupHeader : public bvector<SMNodeHeader>, public HFCShareableObject<SMGroupHeader> {
 public:
     SMGroupHeader() : m_groupID(-1) {}
-    SMGroupHeader(const uint32_t& pi_pGroupID) : m_groupID(pi_pGroupID) {}
+    explicit SMGroupHeader(const uint32_t& pi_pGroupID) : m_groupID(pi_pGroupID) {}
     SMGroupHeader(const uint32_t& pi_pGroupID, const size_t& pi_pSize) : bvector<SMNodeHeader>(pi_pSize), m_groupID(pi_pGroupID) {}
 
     uint32_t GetID() { return m_groupID; }
@@ -221,7 +221,7 @@ public:
 
 template<typename Function, typename PredicateFunc>
 SMNodeDistributor(Function function
-	, PredicateFunc can_run_function
+	, const PredicateFunc& can_run_function
 	, unsigned int concurrency /*= std::thread::hardware_concurrency()*/
 	//, unsigned int concurrency = 2
 	, typename Queue::size_type max_items_per_thread /*= 5000*/
@@ -321,7 +321,8 @@ SMNodeDistributor(Function function
             SMNODEGROUP_LOG.infov("nodes/sec: %f, remaining: %f", speed, Queue::size());
             for(auto state : m_threadStates)
                 {
-                if (!(areThreadsFinished = state.second == ThreadState::IDLE))
+                areThreadsFinished = (state.second == ThreadState::IDLE);
+                if (!areThreadsFinished)
                     break;
                 }
             if (Queue::empty() && areThreadsFinished)
@@ -340,7 +341,8 @@ SMNodeDistributor(Function function
             {
             for (auto state : m_threadStates)
                 {
-                if (!(areThreadsFinished = state.second == ThreadState::IDLE))
+                areThreadsFinished = (state.second == ThreadState::IDLE);
+                if (!areThreadsFinished)
                     break;
                 }
             if (!Queue::empty() || !areThreadsFinished)
@@ -769,7 +771,7 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
 
         SMNodeHeader* GetNodeHeader(const size_t& pi_pNodeHeaderID)
             {
-            return (&*std::find_if(begin(*m_groupHeader), end(*m_groupHeader), [&](SMNodeHeader& nodeId)
+            return &(*std::find_if(begin(*m_groupHeader), end(*m_groupHeader), [&](const SMNodeHeader& nodeId)
                 {
                 return pi_pNodeHeaderID == nodeId.blockid;
                 }));
@@ -808,7 +810,8 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
             : m_parametersPtr(parameters),
               m_groupCachePtr(cache),
               m_groupHeader(new SMGroupHeader(pi_pID, pi_pSize)),
-              m_rawHeaders(pi_pTotalSizeOfHeaders)
+              m_rawHeaders(pi_pTotalSizeOfHeaders),
+              m_totalSize(0)
             {
             };
 
@@ -840,12 +843,7 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
         bool DownloadFromID(std::vector<DataSourceBuffer::BufferData>& dest)
             {
             wchar_t buffer[10000];
-#if _WIN32
-            swprintf(buffer, L"%s%lu%s", m_dataSourcePrefix.c_str(), this->GetID(), m_dataSourceExtension.c_str());
-#else
-            swprintf(buffer, 10000, L"%s%lu%s", m_dataSourcePrefix.c_str(), this->GetID(), m_dataSourceExtension.c_str());
-#endif
-
+            swprintf(buffer, 10000, L"%ls%u%ls", m_dataSourcePrefix.c_str(), this->GetID(), m_dataSourceExtension.c_str());
             return DownloadBlob(dest, DataSourceURL(buffer));
             }
 
@@ -874,7 +872,7 @@ class SMNodeGroupMasterHeader : public std::map<uint32_t, SMGroupNodeIds>, publi
     public:
         SMNodeGroupMasterHeader() {}
 
-        SMNodeGroupMasterHeader(SMGroupGlobalParameters::Ptr parameters)
+        explicit SMNodeGroupMasterHeader(SMGroupGlobalParameters::Ptr parameters)
             : m_parametersPtr(parameters)
             {}
 
@@ -1068,7 +1066,7 @@ class SMBentleyGroupingStrategy : public SMGroupingStrategy<EXTENT>
     {
     public:
 
-        SMBentleyGroupingStrategy(const SMGroupGlobalParameters::StrategyType& mode) : m_Mode(mode) {}
+        explicit SMBentleyGroupingStrategy(const SMGroupGlobalParameters::StrategyType& mode) : m_Mode(mode) {}
 
     protected:
 

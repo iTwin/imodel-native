@@ -6,196 +6,7 @@
 
 #include <set>
 
-#ifdef VANCOUVER_API
-
-#undef static_assert //needed because boost uses static_assert and apparently one of the headers we include redefines it
-#include "../mki/StaticAnalysisWarningsPush.h"
-#pragma warning(disable:4180) //using function for stop predicate
-#include "CGALEdgeCollapse.h"
-#include "CGAL_MTGGraphGraphTraits.h"
-#include <CGAL/algorithm.h> 
-#undef round
-#include <CGAL/exceptions.h> 
-#include <CGAL/squared_distance_3.h> 
-// Simplification function
-#include <CGAL/Surface_mesh_simplification/edge_collapse.h>
-// Stop-condition policy
-#include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Count_ratio_stop_predicate.h>
-#include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Edge_length_cost.h>
-#include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Midpoint_placement.h>
-#include <iostream>
-
-#include <boost/geometry.hpp>
-#include <boost/geometry/geometries/linestring.hpp>
-#include <boost/geometry/geometries/point_xy.hpp>
-
-#include <queue>
-
-#include "../mki/StaticAnalysisWarningsPop.h"
-
-#include "Edits/DifferenceSet.h"
-
-namespace SMS = CGAL::Surface_mesh_simplification;
-
-
-bool boost::graph_traits<GraphWithGeometryInfo>::log = false;
-
-
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
-
-
-template<class ECM_>
-class Vertex_placement
-    {
-    public:
-
-        Vertex_placement()
-            {}
-
-        template <typename Profile>
-        boost::optional<typename Profile::Point> operator()(Profile const& aProfile) const
-            {
-            return boost::optional<typename Profile::Point>(aProfile.p0());
-            }
-
-    };
-typedef SMS::Edge_profile<GraphWithGeometryInfo> Profile;
-bool stop_predicate(double const&  aCurrentCost
-                       , Profile const& //aEdgeProfile 
-                       , size_t      //aInitialCount 
-                       , size_t      //aCurrentCount 
-                       )
-    {
-
-    return aCurrentCost>1e-4;
-
-    }
-
-
-template<class ECM_>
-class Preserve25DCost : public SMS::LindstromTurk_cost < ECM_ >
-    {
-    typedef typename SMS::Edge_profile<ECM_> Profile;
-    typedef typename SMS::Edge_profile<ECM_>::Point Point;
-    typedef boost::optional<double> result_type;
-
-    public:
-    result_type operator() (Profile const& profile, boost::optional<Point> const& placement) const
-        {
-        if (placement == boost::none)
-            return result_type(std::numeric_limits<double>::max());
-        MTGNodeId v0v1 = (MTGNodeId)profile.v0_v1();
-        MTGNodeId v1v0 = (MTGNodeId)profile.v1_v0();
-
-        std::vector<std::array<MTGNodeId, 3>> facets;
-        facets.reserve(20);
-        MTGGraph* graphP = profile.surface().graphP;
-        for (MTGNodeId id = profile.surface().graphP->VSucc(v0v1); id != v0v1; id = profile.surface().graphP->VSucc(id))
-            {
-            if (FastCountNodesAroundFace(graphP, id) == 3)
-                {
-                std::array<MTGNodeId, 3> nodeArray;
-                size_t i = 0;
-                MTGARRAY_FACE_LOOP(faceID, graphP, id)
-                    {
-                    nodeArray[i] = faceID;
-                    ++i;
-                    }
-                MTGARRAY_END_FACE_LOOP(faceID, graphP, id)
-                    facets.push_back(nodeArray);
-                }
-            }
-        for (MTGNodeId id = profile.surface().graphP->VSucc(v1v0); id != v1v0; id = profile.surface().graphP->VSucc(id))
-            {
-            if (FastCountNodesAroundFace(graphP, id) == 3)
-                {
-                std::array<MTGNodeId, 3> nodeArray;
-                size_t i = 0;
-                MTGARRAY_FACE_LOOP(faceID, graphP, id)
-                    {
-                    nodeArray[i] = faceID;
-                    ++i;
-                    }
-                MTGARRAY_END_FACE_LOOP(faceID, graphP, id)
-                    facets.push_back(nodeArray);
-                }
-            }
-        DVec3d zDir = DVec3d::From(0, 0, 1);
-        bvector<DPoint3d> triangle(3);
-        for (auto& facet : facets)
-            {
-            int indices[3];
-            graphP->TryGetLabel(facet[0], 0, indices[0]);
-            graphP->TryGetLabel(facet[1], 0, indices[1]);
-            graphP->TryGetLabel(facet[2], 0, indices[2]);
-            for (size_t i = 0; i < 3; ++i)
-                {
-                if (indices[i] == profile.v0() || indices[i] == profile.v1())
-                    {
-                    triangle[i] = DPoint3d::From(placement->x(), placement->y(), placement->z());
-                    }
-                else
-                    {
-                    triangle[i] = profile.surface().ptArray[indices[i] - 1];
-                    }
-                triangle[i].z = 0;
-                }
-            DVec3d areaNormal = PolygonOps::AreaNormal(triangle);
-            areaNormal.Normalize();
-            if (zDir.AngleTo(areaNormal) > PI / 2) return result_type(std::numeric_limits<double>::max());
-            }
-        int label = -1;
-        profile.surface().graphP->TryGetLabel(v0v1, 2, label);
-        if (label != -1)
-            {
-            auto score = SMS::LindstromTurk_cost < ECM_ >::operator()(profile, placement);
-            if (score) score = *score *3.0;
-            }
-        return SMS::LindstromTurk_cost < ECM_ >::operator()(profile, placement);
-        }
-    };
-//=======================================================================================
-// @bsimethod                                                   Elenie.Godzaridis 11/15
-//=======================================================================================
-bool CGALEdgeCollapse(MTGGraph* inoutMesh, std::vector<DPoint3d>& pts, uint64_t id)
-    {
-    bool ret = true;
-    // This is a stop predicate (defines when the algorithm terminates).  
-    SMS::Count_ratio_stop_predicate<GraphWithGeometryInfo> stop(0.25);
-    // This the actual call to the simplification algorithm.  
-    // The surface mesh and stop conditions are mandatory arguments. 
-    // The index maps are needed because the vertices and edges  
-    // of this surface mesh lack an "id()" field.  
-
-
-   RemoveKnotsFromGraph(inoutMesh, pts);
-   GraphWithGeometryInfo graphData(inoutMesh, &pts[0], pts.size());
-   graphData.id = id;
-
-
-
-
-        auto params = CGAL::parameters::vertex_index_map(get(CGAL::vertex_external_index, graphData)).halfedge_index_map(get(CGAL::halfedge_external_index, graphData)).get_cost(Preserve25DCost<GraphWithGeometryInfo>()).get_placement(SMS::Midpoint_placement<GraphWithGeometryInfo>());
-        try
-            {
-        SMS::edge_collapse(graphData, stop, params);
-        }
-    catch (CGAL::Assertion_exception e)
-        {
-        std::string s;
-        s = e.message();
-        ret = false;
-        }
-
-
-    return ret;
-    }
-
-#else
-BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
-
-#endif
-
 
 
 struct PointWithId
@@ -207,16 +18,25 @@ struct PointWithId
 
 struct PolylineArea
     {
-    std::list<PointWithId>::iterator m_listItr;
     mutable double m_area;
+    mutable double m_edgeSquaredLength;
+    std::list<PointWithId>::iterator m_listItr;
     uint64_t m_key;
+    double m_maxLength;
 
-    PolylineArea(std::list<PointWithId>::iterator ptPtr) : m_listItr(ptPtr)
+    explicit PolylineArea(std::list<PointWithId>::iterator ptPtr, const double& tolerance) : m_listItr(ptPtr), m_maxLength(tolerance)
         {
         m_area = ComputeArea();
+        m_edgeSquaredLength = ComputeEdgeSquaredLength();
         m_key = (uint64_t)m_listItr->m_id | (uint64_t)(m_listItr->m_polyID << 32);
         }
-    PolylineArea(const PolylineArea& other) : m_listItr(other.m_listItr), m_area(other.m_area), m_key(other.m_key) {}
+    PolylineArea(const PolylineArea& other) 
+        : m_listItr(other.m_listItr), 
+        m_area(other.m_area), 
+        m_edgeSquaredLength(other.m_edgeSquaredLength), 
+        m_key(other.m_key), 
+        m_maxLength(other.m_maxLength) 
+        {}
 
     double ComputeArea() const
         {
@@ -228,9 +48,24 @@ struct PolylineArea
         double dArea = ((dX1 - dX0)*(dY2 - dY0) - (dX2 - dX0)*(dY1 - dY0)) / 2.0;
         return (dArea > 0.0) ? dArea : -dArea;
         }
+    double ComputeEdgeSquaredLength()
+        {
+        auto left = m_listItr; --left;
+        auto right = m_listItr; ++right;
+        return (DSegment3d::From(right->m_point, left->m_point).LengthSquared());
+        }
     bool operator <(PolylineArea const& other) const
         {
-        return (m_key != other.m_key && m_area < other.m_area) || (m_area == other.m_area && m_key < other.m_key);
+        if(m_key == other.m_key)
+            return false;
+        if(m_edgeSquaredLength < m_maxLength && other.m_edgeSquaredLength < other.m_maxLength)
+            return (m_area < other.m_area) || (m_area == other.m_area && m_key < other.m_key);
+        else if(other.m_edgeSquaredLength < other.m_maxLength)
+            return false;
+        else if(m_edgeSquaredLength < m_maxLength)
+            return true;
+        return (m_area < other.m_area) || (m_area == other.m_area && m_key < other.m_key);
+        //return (m_edgeSquaredLength < other.m_edgeSquaredLength || m_edgeSquaredLength == other.m_edgeSquaredLength && m_key < other.m_key);
         }
     };
 
@@ -241,8 +76,8 @@ struct priority_queue_unique : public std::set<PolylineArea>
         std::pair<std::set<PolylineArea>::iterator, bool> ret = insert(item);
         if(!ret.second)
             {
-            // update area
-            PolylineArea newItem(ret.first->m_listItr);
+            // Item already exists, update area
+            PolylineArea newItem(ret.first->m_listItr, item.m_maxLength);
             erase(ret.first);
             insert(newItem);
             }
@@ -285,34 +120,42 @@ double HausdorffDistance(const bvector<DPoint3d>& A, const bvector<DPoint3d>& B)
     return std::sqrt(cmax);
     }
 
-void SimplifyPolylines(bvector<bvector<DPoint3d>>& polylines, bvector<DPoint3d>& removedPoints, double distanceTol, size_t targetNumPoints)
+void SimplifyPolylines(bvector<bvector<DPoint3d>>& polylines, bvector<DTMFeatureType>& types, bvector<DPoint3d>& removedPoints, double distanceTol, size_t targetNumPoints)
     {
+    auto isClosedFeatureType = [](DTMFeatureType type) -> bool
+        { 
+        bool isSpecialHullType = (uint32_t(type) >> 16) > 0;
+        return (type == DTMFeatureType::Hole || type == DTMFeatureType::Island || type == DTMFeatureType::Void || type == DTMFeatureType::BreakVoid ||
+            type == DTMFeatureType::Polygon || type == DTMFeatureType::Region || type == DTMFeatureType::Contour || type == DTMFeatureType::Hull ||
+            type == DTMFeatureType::TinHull || type == DTMFeatureType::DrapeVoid || 
+                isSpecialHullType);
+        };
     // Filter lines that are too close to each other
     for(int i = 0; i < polylines.size() - 1; i++)
         {
-        if(!polylines[i].empty())
+        if(!isClosedFeatureType(types[i]) && !polylines[i].empty())
             {
             for(int j = i + 1; j < polylines.size(); j++)
                 {
-                if(!polylines[j].empty())
+                if(!isClosedFeatureType(types[j]) && !polylines[j].empty())
                     {
                     if(distanceTol >= HausdorffDistance(polylines[i], polylines[j]))
                         {
                         for(auto pt : polylines[i]) removedPoints.push_back(pt);
                         polylines[i].clear();
+                        if(removedPoints.size() >= targetNumPoints) return;
                         break;
                         }
                     else if(distanceTol >= HausdorffDistance(polylines[j], polylines[i]))
                         {
                         for(auto pt : polylines[j]) removedPoints.push_back(pt);
                         polylines[j].clear();
+                        if(removedPoints.size() >= targetNumPoints) return;
                         }
                     }
                 }
             }
         }
-
-    if(removedPoints.size() >= targetNumPoints) return;
 
     // Update target to reflect filtered features in the previous step
     targetNumPoints -= removedPoints.size();
@@ -321,7 +164,11 @@ void SimplifyPolylines(bvector<bvector<DPoint3d>>& polylines, bvector<DPoint3d>&
     bvector<std::list<PointWithId>> polyline2(polylines.size());
     for(auto& polyline : polylines)
         {
-        if(polyline.empty()) continue;
+        auto polyIdx = &polyline - &polylines.front();
+        if(polyline.empty()) 
+            continue;
+        if(types[polyIdx] == DTMFeatureType::Hull || types[polyIdx] == DTMFeatureType::TinHull || ((uint32_t)types[polyIdx] >> 16) == 1)
+            continue; // Don't simplify hulls, they are too important
         bool isLoop = polyline.front().IsEqual(polyline.back(), 1.e-5);
         if(isLoop && polyline.size() < 5) continue;
         else if(polyline.size() < 3) continue;
@@ -332,7 +179,7 @@ void SimplifyPolylines(bvector<bvector<DPoint3d>>& polylines, bvector<DPoint3d>&
 
         for(auto it = ++poly2.begin(); it != --poly2.end(); ++it)
             {
-            pointQueue.push(PolylineArea(it));
+            pointQueue.push(PolylineArea(it, distanceTol));
             }
         }
 
@@ -345,21 +192,34 @@ void SimplifyPolylines(bvector<bvector<DPoint3d>>& polylines, bvector<DPoint3d>&
         removedPoints.push_back(current->m_point);
 
         auto previous = current; --previous;
-        PolylineArea previousPolylineArea(previous);
+        PolylineArea previousPolylineArea(previous, distanceTol);
         auto next = current; ++next;
-        PolylineArea nextPolylineArea(next);
-        polyline2[current->m_polyID].erase(current);
+        PolylineArea nextPolylineArea(next, distanceTol);
 
         auto currentPolyID = current->m_polyID;
+
+        bool canRemovePoint =   (!isClosedFeatureType(types[current->m_polyID]) && polyline2[current->m_polyID].size() > 2) ||
+                                (polyline2[current->m_polyID].size() > 4);
+        if (canRemovePoint)
+            polyline2[current->m_polyID].erase(current);
+
         pointQueue.pop();
 
-        if(previous->m_id > 0) pointQueue.push(previousPolylineArea);
-        if(next->m_id < polylines[currentPolyID].size() - 1) pointQueue.push(nextPolylineArea);
+        // Only update neighbors if the point has been removed
+        if(canRemovePoint)
+            {
+            if(previous->m_id > 0) pointQueue.push(previousPolylineArea);
+            if(next->m_id < polylines[currentPolyID].size() - 1) pointQueue.push(nextPolylineArea);
+            }
         }
 
     for(auto& polyline : polylines)
         {
         if(polyline.empty()) continue;
+        bool isSpecialHullType = (uint32_t(types[&polyline - &polylines.front()]) >> 16) > 0;
+
+        if(types[&polyline - &polylines.front()] == DTMFeatureType::Hull || types[&polyline - &polylines.front()] == DTMFeatureType::TinHull || isSpecialHullType)
+            continue;
         polyline.clear();
 
         for (auto pt : polyline2[&polyline - &polylines.front()])
@@ -368,7 +228,7 @@ void SimplifyPolylines(bvector<bvector<DPoint3d>>& polylines, bvector<DPoint3d>&
         }
     
     // // boost uses Douglas-Peucker algorithm to simplify a polyline. This algorithm requires a tolerance
-	// // parameter which is not well suited for our need to target a specified number of points.
+    // // parameter which is not well suited for our need to target a specified number of points.
     //typedef boost::geometry::model::d2::point_xy<double> xy;
     //for (auto& polyline : polylines)
     //    {

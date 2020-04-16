@@ -29,14 +29,14 @@ public:
                                     DataSourceFile          (DataSourceAccount *sourceAccount, const SessionName &session);
                                    ~DataSourceFile          (void);
 
-        DataSourceStatus            open                    (const DataSourceURL &sourceURL, DataSourceMode mode);
-        DataSourceStatus            close                   (void);
+        DataSourceStatus            open                    (const DataSourceURL &sourceURL, DataSourceMode mode) override;
+        DataSourceStatus            close                   (void) override;
 
         DataSource::DataSize        getSize                 (void);
 
-        DataSourceStatus            read                    (Buffer *dest, DataSize destSize, DataSize &readSize, DataSize size = 0);
-        DataSourceStatus            read                    (std::vector<Buffer>& dest);
-        DataSourceStatus            write                   (const Buffer *source, DataSize size);
+        DataSourceStatus            read                    (Buffer *dest, DataSize destSize, DataSize &readSize, DataSize size = 0) override;
+        DataSourceStatus            read                    (std::vector<Buffer>& dest) override;
+        DataSourceStatus            write                   (const Buffer *source, DataSize size) override;
 
         DataSourceStatus            move                    (DataPtr position);
 };

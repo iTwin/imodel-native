@@ -292,6 +292,17 @@ ImportSequence CreateImportDTMSequence ()
     return sequence;
     }
 
+ImportSequence CreateImportDTMPointsSequence()
+    {
+    ImportSequence sequence;
+    ImportCommandBase importPoints, importBoundary;
+    importPoints.SetSourceType(PointTypeFamilyCreator().Create());
+    importBoundary.SetSourceType(BoundaryTypeFamilyCreator().Create());
+    sequence.push_back(importPoints);
+    sequence.push_back(importBoundary);
+    return sequence;
+    }
+
 ImportSequence CreateImportPointsSequence ()
     {
     ImportSequence sequence;
@@ -333,6 +344,7 @@ ImportSequence CreateImportMeshSequence()
 const ImportSequence& GetImportSequenceFor (DTMSourceDataType type)
     {
     static const ImportSequence IMPORT_DTM_SEQUENCE(CreateImportDTMSequence());
+    static const ImportSequence IMPORT_DTM_POINTS_SEQUENCE(CreateImportDTMPointsSequence());
     static const ImportSequence IMPORT_POINTS_SEQUENCE(CreateImportPointsSequence());
     static const ImportSequence IMPORT_LINEARS_SEQUENCE(CreateImportLinearsSequence());
     static const ImportSequence IMPORT_CLIPMASKS_SEQUENCE(CreateImportClipMasksSequence());
@@ -344,7 +356,7 @@ const ImportSequence& GetImportSequenceFor (DTMSourceDataType type)
     case DTM_SOURCE_DATA_DTM:
         return IMPORT_DTM_SEQUENCE;
     case DTM_SOURCE_DATA_POINT:
-        return IMPORT_POINTS_SEQUENCE;
+        return IMPORT_DTM_POINTS_SEQUENCE;
     case DTM_SOURCE_DATA_BREAKLINE:
     case DTM_SOURCE_DATA_HARD_MASK:
         return IMPORT_LINEARS_SEQUENCE;

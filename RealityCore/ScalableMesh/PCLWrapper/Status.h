@@ -24,7 +24,7 @@ class Status : public IStatus
 
     public :
 
-        Status(IStatus::Type pi_status);
+        explicit Status(IStatus::Type pi_status);
 
         ~Status();
     };

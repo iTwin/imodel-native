@@ -30,7 +30,7 @@ ScalableMeshEdit::~ScalableMeshEdit()
 //=======================================================================================
 int ScalableMeshEdit::_RemoveWithin(ClipVectorCP clipPlaneSet, const bvector<IScalableMeshNodePtr>& priorityNodes)
     {
-    if (m_smIndex == nullptr) return SMStatus::S_ERROR;
+    if (m_smIndex == nullptr || clipPlaneSet == nullptr) return SMStatus::S_ERROR;
 
     DRange3d range;
 	range.Init();

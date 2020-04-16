@@ -200,7 +200,7 @@ void DifferenceSet::ApplyMapped(DifferenceSet& d, const int* idxMap)
         }
     }
 
-bool DifferenceSet::ConflictsWith(DifferenceSet& d)
+bool DifferenceSet::ConflictsWith(const DifferenceSet& d)
     {
     if (d.firstIndex != firstIndex) return false;
     for (auto f : d.addedFaces)
@@ -209,7 +209,7 @@ bool DifferenceSet::ConflictsWith(DifferenceSet& d)
     return false;
     }
 
-void AddFacesFromIntersectingSets(DifferenceSet& outSet, vector<vector<int32_t>>& setA, vector<vector<int32_t>>& setB, DifferenceSet& diffA, DifferenceSet& diffB, const DPoint3d* vertices, const int32_t vtxId)
+void AddFacesFromIntersectingSets(DifferenceSet& outSet, vector<vector<int32_t>>& setA, vector<vector<int32_t>>& setB, const DifferenceSet& diffA, const DifferenceSet& diffB, const DPoint3d* vertices, const int32_t vtxId)
     {
     size_t n = 0;
     for (auto& facet1 : setA)

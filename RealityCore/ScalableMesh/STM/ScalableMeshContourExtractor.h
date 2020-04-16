@@ -14,7 +14,7 @@ class ScalableMeshContourExtractor
 {
 public:
     ScalableMeshContourExtractor();
-    ScalableMeshContourExtractor(ContoursParameters p);
+    explicit ScalableMeshContourExtractor(ContoursParameters p);
 
     void GetMajorContours(bvector<bvector<DPoint3d>>& contoursMajor, IScalableMeshMeshPtr& meshP, double lowZ, double highZ);
     void GetMinorContours(bvector<bvector<DPoint3d>>& contoursMinor, IScalableMeshMeshPtr& meshP, double lowZ, double highZ);

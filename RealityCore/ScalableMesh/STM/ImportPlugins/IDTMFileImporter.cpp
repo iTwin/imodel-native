@@ -485,12 +485,12 @@ class IDTMPointExtractorCreator : public InputExtractorCreatorMixinBase<IDTMSour
 
         const LayerDir* pLayer = sourceBase.GetFile().GetRootDir()->GetLayerDir(selection.GetLayer());
         if (0 == pLayer || 0 == pLayer->CountUniformFeatureDirs())
-            return 0;
+            return nullptr;
 
         DirList pointDirs;
 
         if (!FindPointOnlyDirs(*pLayer, pointDirs))
-            return false;
+            return nullptr;
 
  
         return new IDTMPointExtractor(selection.GetType(), pLayer, pointDirs);
@@ -724,12 +724,12 @@ class IDTMLinearExtractorCreator : public InputExtractorCreatorMixinBase<IDTMSou
 
         const LayerDir* pLayer = sourceBase.GetFile().GetRootDir()->GetLayerDir(selection.GetLayer());
         if (0 == pLayer)
-            return 0;
+            return nullptr;
 
         DirList featureDirs;
 
         if (!FindFeatureDirs(*pLayer, featureDirs))
-            return false;
+            return nullptr;
 
         return new IDTMLinearExtractor(selection.GetType(), pLayer, featureDirs);
         }

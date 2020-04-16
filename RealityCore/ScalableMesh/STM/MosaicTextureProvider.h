@@ -25,6 +25,6 @@ struct MosaicTextureProvider : virtual public ITextureProvider
         virtual StatusInt _GetTextureForArea(bvector<uint8_t>& texData, int width, int height, DRange2d& area) override;
     public:
 
-        BENTLEY_SM_EXPORT MosaicTextureProvider(HFCPtr<HIMMosaic>& mosaic);
+        BENTLEY_SM_EXPORT explicit MosaicTextureProvider(HFCPtr<HIMMosaic>& mosaic);
     };
 END_BENTLEY_SCALABLEMESH_NAMESPACE
