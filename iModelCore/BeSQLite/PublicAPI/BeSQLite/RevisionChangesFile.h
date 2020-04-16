@@ -67,10 +67,33 @@ private:
     void _Reset() override;
     ChangeSet::ConflictResolution _OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter) override;
 public:
-    BE_SQLITE_EXPORT RevisionChangesFileWriter(BeFileNameCR pathname, bool containsSchemaChanges, DbSchemaChangeSetCR dbSchemaChanges, Db const&);
+    BE_SQLITE_EXPORT RevisionChangesFileWriter(BeFileNameCR pathname, bool containsSchemaChanges, DbSchemaChangeSetCR dbSchemaChanges, Db const&, BeSQLite::LzmaEncoder::LzmaParams const& lzmaParams = BeSQLite::LzmaEncoder::LzmaParams());
     BE_SQLITE_EXPORT ~RevisionChangesFileWriter();
     BE_SQLITE_EXPORT DbResult Initialize();
     BE_SQLITE_EXPORT DbResult CallOutputPage(const void* pData, int nData);
     };
 
+//=======================================================================================
+// @bsiclass                                                 Affan.Khan         04/20
+//=======================================================================================
+struct RevisionUtility final
+{
+private:
+    static Utf8String GetChangesetId(BeFileName changesetFile);
+    static BentleyStatus ReadChangesetPrefix(BeSQLite::LzmaDecoder& lzmaDecoder, Utf8StringR prefix);
+    static BentleyStatus OpenChangesetForReading(BeSQLite::LzmaDecoder& lzmaDecoder, BlockFilesLzmaInStream& inLzmaFileStream);
+    static BentleyStatus ExportPrefixFile(BeFileName targetDir, Utf8StringCR changesetId, Utf8StringCR prefix);
+    static BentleyStatus ExportChangesetFile(BeFileName targetDir, Utf8StringCR changesetId, BeSQLite::LzmaDecoder& lzmaDecoder);
+    static BentleyStatus WritePrefix(BeSQLite::LzmaEncoder& lzmaEncoder, Utf8StringCR prefix);
+    static BentleyStatus WriteChangeset(BeSQLite::LzmaEncoder& lzmaEncoder, BeFileName inChangesetFileName);
+    static BentleyStatus GetUncompressSize(BeSQLite::LzmaDecoder &lzmaDecoder, uint32_t &uncompressSize);
+
+public:
+    RevisionUtility() = delete;
+    BE_SQLITE_EXPORT static BentleyStatus RecompressRevision(Utf8CP sourceFile, Utf8CP targetFile, LzmaEncoder::LzmaParams param);
+    BE_SQLITE_EXPORT static BentleyStatus DisassembleRevision(Utf8CP sourceFile, Utf8CP targetDir);
+    BE_SQLITE_EXPORT static BentleyStatus AssembleRevision(Utf8CP inPrefixFile, Utf8CP inChangesetFile, Utf8CP outputFile, LzmaEncoder::LzmaParams params = LzmaEncoder::LzmaParams());
+    BE_SQLITE_EXPORT static BentleyStatus ComputeStatistics(Utf8CP changesetFile, bool addPrefix, Json::Value& stats);
+    BE_SQLITE_EXPORT static BentleyStatus GetUncompressSize(Utf8CP sourceFile, uint32_t & compressSize, uint32_t &changesetSize, uint32_t &prefixSize);
+};
 END_BENTLEY_SQLITE_NAMESPACE

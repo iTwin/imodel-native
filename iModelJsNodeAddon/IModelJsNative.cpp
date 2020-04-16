@@ -2424,6 +2424,7 @@ public:
         DbResult status = JsInterop::UnsafeSetBriefcaseId(BeFileName(dbName), BeBriefcaseId(briefcaseId), dbGuid, projectGuid);
         return Napi::Number::New(info.Env(), (int)status);
         }
+
     // ========================================================================================
     // Test method handler
     // ========================================================================================
@@ -2564,6 +2565,118 @@ public:
         }
 };
 
+//=======================================================================================
+//  RevisionUtility class into JS
+//! @bsiclass
+//=======================================================================================
+struct NativeRevisionUtility : BeObjectWrap<NativeRevisionUtility>
+    {
+    private:
+        DEFINE_CONSTRUCTOR
+
+    public:
+        NativeRevisionUtility(Napi::CallbackInfo const& info) : BeObjectWrap<NativeRevisionUtility>(info) {}
+        ~NativeRevisionUtility() {SetInDestructor();}
+
+        // Check if val is really a NativeRevisionUtility peer object
+        static bool InstanceOf(Napi::Value val)
+            {
+            if (!val.IsObject())
+                return false;
+
+            Napi::HandleScope scope(val.Env());
+            return val.As<Napi::Object>().InstanceOf(Constructor().Value());
+            }
+    static Napi::Value RecompressRevision(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, sourceChangeSetFile, Napi::Number::New(info.Env(), (int) ERROR));
+        REQUIRE_ARGUMENT_STRING(1, targetChangeSetFile, Napi::Number::New(info.Env(), (int) ERROR));
+        OPTIONAL_ARGUMENT_STRING(2, lzmaProperties, Napi::Number::New(info.Env(), (int)ERROR));
+        LzmaEncoder::LzmaParams params;
+        if (!lzmaProperties.empty())
+            {
+            Json::Value v = Json::Value::From(lzmaProperties);
+            params.FromJson(v);
+            }
+
+        BentleyStatus status = RevisionUtility::RecompressRevision(sourceChangeSetFile.c_str(), targetChangeSetFile.c_str(), params);
+        return Napi::Number::New(info.Env(), (int)status);
+        }
+    static Napi::Value DisassembleRevision(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, sourceFile, Napi::Number::New(info.Env(), (int) ERROR));
+        REQUIRE_ARGUMENT_STRING(1, targetDir, Napi::Number::New(info.Env(), (int) ERROR));
+        BentleyStatus status = RevisionUtility::DisassembleRevision(sourceFile.c_str(), targetDir.c_str());
+        return Napi::Number::New(info.Env(), (int)status);
+        }
+    static Napi::Value AssembleRevision(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, outputChangesetFile, Napi::Number::New(info.Env(), (int) ERROR));
+        REQUIRE_ARGUMENT_STRING(1, rawChangesetFile, Napi::Number::New(info.Env(), (int) ERROR));
+        OPTIONAL_ARGUMENT_STRING(2, prefixFile, Napi::Number::New(info.Env(), (int)ERROR));
+        OPTIONAL_ARGUMENT_STRING(3, lzmaProperties, Napi::Number::New(info.Env(), (int)ERROR));
+        LzmaEncoder::LzmaParams params;
+        if (!lzmaProperties.empty())
+            {
+            Json::Value v = Json::Value::From(lzmaProperties);
+            params.FromJson(v);
+            }
+
+        BentleyStatus status = RevisionUtility::AssembleRevision(prefixFile.c_str(), rawChangesetFile.c_str(), outputChangesetFile.c_str(), params);
+        return Napi::Number::New(info.Env(), (int)status);
+        }
+    static Napi::Value NormalizeLzmaParams(Napi::CallbackInfo const& info)
+        {
+        OPTIONAL_ARGUMENT_STRING(0, lzmaProperties,info.Env().Undefined());
+        LzmaEncoder::LzmaParams params;
+        if (!lzmaProperties.empty())
+            {
+            Json::Value v = Json::Value::From(lzmaProperties);
+            params.FromJson(v);
+            }
+        auto out = params.ToJson();
+        return Napi::String::New(info.Env(), out.ToString().c_str());
+        }
+    static Napi::Value ComputeStatistics(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, changesetFile, Napi::Number::New(info.Env(), (int) ERROR));
+        REQUIRE_ARGUMENT_BOOL(1, addPrefix, Napi::Number::New(info.Env(), (int) ERROR));
+        Json::Value out;
+        if (SUCCESS != RevisionUtility::ComputeStatistics(changesetFile.c_str(), addPrefix, out))
+             Napi::Error::New(info.Env(), "Failed to compute statistic").ThrowAsJavaScriptException();
+
+        return Napi::String::New(info.Env(), out.ToString().c_str());
+        }
+    static Napi::Value GetUncompressSize(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, changesetFile, Napi::Number::New(info.Env(), (int) ERROR));
+        uint32_t compressSize, uncompressSize, prefixSize;
+        if (SUCCESS != RevisionUtility::GetUncompressSize(changesetFile.c_str(), compressSize, uncompressSize, prefixSize))
+            Napi::Error::New(info.Env(), "Failed to get uncompress size").ThrowAsJavaScriptException();
+        
+        auto out = Json::Value(Json::ValueType::objectValue);
+        out["compressSize"] = compressSize;
+        out["uncompressSize"] = uncompressSize;
+        out["prefixSize"] = prefixSize;
+        return Napi::String::New(info.Env(), out.ToString().c_str());
+        }
+    static void Init(Napi::Env env, Napi::Object exports)
+        {
+        Napi::HandleScope scope(env);
+        Napi::Function t = DefineClass(env, "RevisionUtility", {
+            StaticMethod("recompressRevision", &NativeRevisionUtility::RecompressRevision),
+            StaticMethod("disassembleRevision", &NativeRevisionUtility::DisassembleRevision),
+            StaticMethod("assembleRevision", &NativeRevisionUtility::AssembleRevision),
+            StaticMethod("normalizeLzmaParams", &NativeRevisionUtility::NormalizeLzmaParams),
+            StaticMethod("computeStatistics", &NativeRevisionUtility::ComputeStatistics),
+            StaticMethod("getUncompressSize", &NativeRevisionUtility::GetUncompressSize),
+        });
+
+        exports.Set("RevisionUtility", t);
+
+        SET_CONSTRUCTOR(t)
+        }
+    };
 //=======================================================================================
 // Projects the Changed Elements ECDb class into JS
 //! @bsiclass
@@ -6711,6 +6824,7 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports)
     JsInterop::Initialize(addondir, env, tempdir);
 
     NativeDgnDb::Init(env, exports);
+    NativeRevisionUtility::Init(env, exports);
     NativeECDb::Init(env, exports);
     NativeChangedElementsECDb::Init(env, exports);
     NativeECSqlStatement::Init(env, exports);

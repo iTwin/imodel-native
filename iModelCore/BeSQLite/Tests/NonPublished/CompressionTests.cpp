@@ -165,7 +165,7 @@ public:
         compressed.resize(lenInput/3); //  avoid too many resizes
 
         uint64_t beforeCompress = BeTimeUtilities::QueryMillisecondsCounter();
-        BeSQLite::LzmaEncoder  encoder(1 << (m_level+10), true /*=supportRandomAccess*/);
+        BeSQLite::LzmaEncoder  encoder(BeSQLite::LzmaEncoder::LzmaParams(1 << (m_level+10), true /*=supportRandomAccess*/));
         encoder.CompressBuffer(compressed, input, (uint32_t)lenInput);
 
         uint64_t afterCompress = BeTimeUtilities::QueryMillisecondsCounter();
@@ -184,7 +184,7 @@ public:
         {
         compressed.resize(lenInput/3); //  avoid too many resizes
 
-        BeSQLite::LzmaEncoder encoder(1 << (m_level+10), true /*=supportRandomAccess*/);
+        BeSQLite::LzmaEncoder encoder(BeSQLite::LzmaEncoder::LzmaParams(1 << (m_level+10), true /*=supportRandomAccess*/));
         encoder.CompressBuffer(compressed, input, (uint32_t)lenInput);
         }
     };

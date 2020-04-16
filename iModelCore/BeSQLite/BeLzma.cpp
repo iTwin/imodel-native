@@ -376,6 +376,128 @@ public:
         }
 };
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Affan.Khan    04/20
+//--------------------------------------------------------------------------------------
+LzmaEncoder::LzmaParams::LzmaParams(uint32_t dictionarySize, bool supportRandomAccess, int level, int threads)
+    :m_dictSize(dictionarySize), m_supportRandomAccess(supportRandomAccess), m_level(level), m_numTotalThreads(threads) 
+    {
+    CLzma2EncProps props;
+    Lzma2EncProps_Init(&props);
+    props.lzmaProps.level = level;
+    props.lzmaProps.dictSize = (int) getDictionarySize(dictionarySize);
+    props.numTotalThreads = threads;
+    Lzma2EncProps_Normalize(&props);
+    FromProps(&props);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Affan.Khan    04/20
+//--------------------------------------------------------------------------------------
+Json::Value LzmaEncoder::LzmaParams::ToJson() const
+    {
+    Json::Value out(Json::ValueType::objectValue);
+    out["algo"] = (int)m_algo;
+    out["blockSize"] = (double)m_blockSize;
+    out["btMode"] = (int)m_btMode;
+    out["dictSize"] = m_dictSize;
+    out["fb"] = m_fb;
+    out["lc"] = m_lc;
+    out["level"] = m_level;
+    out["lp"] = m_lp;
+    out["mc"] = m_mc;
+    out["numBlockThreads"] = m_numBlockThreads;
+    out["numHashBytes"] = m_numHashBytes;
+    out["numThreads"] = m_numThreads;
+    out["numTotalThreads"] = m_numTotalThreads;
+    out["pb"] = m_pb;
+    out["writeEndMark"] = m_writeEndMark;
+    return out;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Affan.Khan    04/20
+//--------------------------------------------------------------------------------------
+BentleyStatus LzmaEncoder::LzmaParams::FromJson(Json::Value const& v) 
+    {
+    if (v.type() != Json::ValueType::objectValue)
+        return ERROR;
+    if (v.isMember("algo")) m_algo = static_cast<Algorithm>(v["algo"].asInt());
+    if (v.isMember("blockSize")) m_blockSize = v["blockSize"].asUInt64();
+    if (v.isMember("btMode")) m_btMode = static_cast<BtMode>(v["btMode"].asInt());
+    if (v.isMember("dictSize")) m_dictSize = v["dictSize"].asUInt();
+    if (v.isMember("fb")) m_fb = v["fb"].asInt();
+    if (v.isMember("lc")) m_lc = v["lc"].asInt();
+    if (v.isMember("level")) m_level = v["level"].asInt();
+    if (v.isMember("lp")) m_lp = v["lp"].asInt();
+    if (v.isMember("mc")) m_mc = v["mc"].asInt();
+    if (v.isMember("numBlockThreads")) m_numBlockThreads = v["numBlockThreads"].asInt();
+    if (v.isMember("numHashBytes")) m_numHashBytes = v["numHashBytes"].asInt();
+    if (v.isMember("numThreads")) m_numThreads = v["numThreads"].asInt();
+    if (v.isMember("numTotalThreads")) m_numTotalThreads = v["numTotalThreads"].asInt();
+    if (v.isMember("pb")) m_pb = v["pb"].asInt();
+    if (v.isMember("writeEndMark")) m_writeEndMark = v["writeEndMark"].asInt();
+    Normalize();
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Affan.Khan    04/20
+//--------------------------------------------------------------------------------------
+void LzmaEncoder::LzmaParams::ToProps(void* v) const
+    {
+    CLzma2EncProps *props = reinterpret_cast<CLzma2EncProps *>(v);
+    props->lzmaProps.algo = (int)m_algo;
+    props->blockSize = m_blockSize;
+    props->lzmaProps.btMode = (int)m_btMode;
+    props->lzmaProps.dictSize = m_dictSize;
+    props->lzmaProps.fb = m_fb;
+    props->lzmaProps.lc = m_lc;
+    props->lzmaProps.level = m_level;
+    props->lzmaProps.lp = m_lp;
+    props->lzmaProps.mc = m_mc;
+    props->numBlockThreads = m_numBlockThreads;
+    props->lzmaProps.numHashBytes = m_numHashBytes;
+    props->lzmaProps.numThreads = m_numThreads;
+    props->numTotalThreads = m_numTotalThreads;
+    props->lzmaProps.pb = m_pb;
+    props->lzmaProps.writeEndMark = m_writeEndMark;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Affan.Khan    04/20
+//--------------------------------------------------------------------------------------
+void LzmaEncoder::LzmaParams::FromProps(void* v) 
+    {
+    CLzma2EncProps *props = reinterpret_cast<CLzma2EncProps *>(v);
+    m_algo =  static_cast<Algorithm>(props->lzmaProps.algo);
+    m_blockSize = props->blockSize;
+    m_btMode =  static_cast<BtMode>(props->lzmaProps.btMode);
+    m_dictSize = props->lzmaProps.dictSize;
+    m_fb = props->lzmaProps.fb;
+    m_lc = props->lzmaProps.lc;
+    m_level = props->lzmaProps.level;
+    m_lp = props->lzmaProps.lp;
+    m_mc = props->lzmaProps.mc;
+    m_numBlockThreads = props->numBlockThreads;
+    m_numHashBytes = props->lzmaProps.numHashBytes;
+    m_numThreads = props->lzmaProps.numThreads;
+    m_numTotalThreads = props->numTotalThreads;
+    m_pb = props->lzmaProps.pb;
+    m_writeEndMark = props->lzmaProps.writeEndMark;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Affan.Khan    04/20
+//--------------------------------------------------------------------------------------
+void LzmaEncoder::LzmaParams::Normalize()
+    {
+    CLzma2EncProps props;
+    Lzma2EncProps_Init(&props);
+    ToProps(&props);
+    Lzma2EncProps_Normalize(&props);
+    FromProps(&props);
+    }
 //=======================================================================================
 // @bsiclass                                                  Ramanujam.Raman    11/16
 //=======================================================================================
@@ -396,13 +518,11 @@ private:
     //---------------------------------------------------------------------------------------
     // @bsimethod                                                  Ramanujam.Raman    11/16
     //---------------------------------------------------------------------------------------
-    void InitProps(uint32_t dictionarySize)
+    void InitProps(LzmaEncoder::LzmaParams const& param)
         {
         m_enc2Props = new CLzma2EncProps();
         Lzma2EncProps_Init(m_enc2Props);
-        m_enc2Props->lzmaProps.dictSize = (int) getDictionarySize(dictionarySize);
-        m_enc2Props->lzmaProps.level = 7;
-        m_enc2Props->numTotalThreads = 8;
+        param.ToProps(m_enc2Props);
         Lzma2EncProps_Normalize(m_enc2Props);
         }
 
@@ -528,11 +648,11 @@ public:
     //---------------------------------------------------------------------------------------
     // @bsimethod                                                  Ramanujam.Raman    11/16
     //---------------------------------------------------------------------------------------
-    Impl(uint32_t dictionarySize, bool supportRandomAccess) : m_inStream(nullptr), m_outStream(nullptr), m_supportRandomAccess(supportRandomAccess), m_progressImpl(nullptr), m_encHandle(0)
-        {
+    Impl(LzmaEncoder::LzmaParams const& param) : m_inStream(nullptr), m_outStream(nullptr), m_supportRandomAccess(param.GetSupportRandomAccess()), m_progressImpl(nullptr), m_encHandle(0)
+        {//uint32_t dictionarySize, int level, int threads, int algo
         m_szAlloc.Alloc = allocFor7z;
         m_szAlloc.Free = freeFor7z;
-        InitProps(dictionarySize);
+        InitProps(param);
         }
 
     //---------------------------------------------------------------------------------------
@@ -685,9 +805,9 @@ public:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Ramanujam.Raman    11/16
 //---------------------------------------------------------------------------------------
-LzmaEncoder::LzmaEncoder(uint32_t dictionarySize /*= 1 << 24*/, bool supportRandomAccess /*=false*/)
+LzmaEncoder::LzmaEncoder(LzmaEncoder::LzmaParams const& params)
     {
-    m_impl = new LzmaEncoder::Impl(dictionarySize, supportRandomAccess);
+    m_impl = new LzmaEncoder::Impl(params);
     }
 
 //---------------------------------------------------------------------------------------

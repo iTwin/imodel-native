@@ -290,6 +290,20 @@ export declare namespace IModelJsNative {
   }
 
   /**
+   * RevisionUtility help with debugging and testing
+   * @internal
+   */
+  class RevisionUtility {
+    constructor();
+    public static recompressRevision(sourceFile: string, targetFile: string, lzmaPropsJson?: string): BentleyStatus;
+    public static disassembleRevision(sourceFile: string, targetDir: string): BentleyStatus;
+    public static assembleRevision(targetFile: string, rawChangesetFile: string, prefixFile?: string, lzmaPropsJson?: string): BentleyStatus;
+    public static normalizeLzmaParams(lzmaPropsJson?: string): string;
+    public static computeStatistics(sourceFile: string, addPrefix: boolean): string;
+    public static getUncompressSize (sourceFile: string): string;
+  }
+
+  /**
    * Utility to apply change sets (synchronously or asynchronously)
    * @internal
    */

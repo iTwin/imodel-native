@@ -4228,7 +4228,7 @@ static DbResult compressAndEmbedFileImage(Db& db, uint32_t& chunkSize, BeBriefca
 
     uint32_t dictionarySize = std::min(size, chunkSize);
 
-    LzmaEncoder encoder(dictionarySize, false);
+    LzmaEncoder encoder(LzmaEncoder::LzmaParams(dictionarySize, false));
 
     EmbeddedLzmaHeader  header(EmbeddedLzmaHeader::LZMA2);
     uint32_t bytesWritten;
@@ -4320,7 +4320,7 @@ static DbResult compressAndEmbedFile(Db& db, uint64_t& filesize, uint32_t& chunk
 
     uint32_t dictionarySize = static_cast <uint32_t> (std::min(filesize, (uint64_t) chunkSize));
 
-    LzmaEncoder encoder(dictionarySize, supportRandomAccess);
+    LzmaEncoder encoder(LzmaEncoder::LzmaParams(dictionarySize, supportRandomAccess));
 
     if (supportRandomAccess)
         //  Forces LZMA to process input in chunks that correspond to block size.
@@ -5799,7 +5799,7 @@ ZipErrors LzmaUtility::CompressDb(BeFileNameCR targetFile, BeFileNameCR sourceFi
     if (outStream._Write(&dbLzmaHeader, sizeof(dbLzmaHeader), bytesWritten) != ZIP_SUCCESS)
         return ZIP_ERROR_WRITE_ERROR;
 
-    LzmaEncoder encoder(dictionarySize, supportRandomAccess);
+    LzmaEncoder encoder(LzmaEncoder::LzmaParams(dictionarySize, supportRandomAccess));
     encoder.SetProgressTracker(progressTracker);
     return encoder.CompressStream(outStream, inStream);
     }

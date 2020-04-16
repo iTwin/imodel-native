@@ -156,6 +156,66 @@ public:
 //=======================================================================================
 struct LzmaEncoder
 {
+    public:
+    struct LzmaParams
+        {
+        public:
+        enum class Algorithm : int
+            {
+            Fast = 0,
+            Normal = 1,
+            Default = Normal,
+            };
+        enum class BtMode : int
+            {
+            HashChain = 0,
+            BinTree = 1,
+            Default = BinTree,
+            };
+
+        private:
+            uint32_t m_dictSize;
+            bool m_supportRandomAccess;
+            int m_level;
+            int m_lc;
+            int m_lp;
+            int m_pb;
+            int m_fb;
+            int m_numHashBytes;
+            uint32_t m_mc;
+            unsigned m_writeEndMark;
+            BtMode m_btMode;
+            int m_numThreads;
+            size_t m_blockSize;
+            int m_numBlockThreads;
+            int m_numTotalThreads;
+            Algorithm m_algo;
+            void FromProps(void *);
+        public:
+            BE_SQLITE_EXPORT LzmaParams(uint32_t dictionarySize = 1 << 24, bool supportRandomAccess = false, int level = 7, int threads = 8);
+            LzmaParams& SetDictSize(uint32_t dictSize) {m_dictSize = dictSize; return *this;}
+            LzmaParams& SetSupportRandomAccess(uint32_t supportRandomAccess) {m_supportRandomAccess = supportRandomAccess; return *this;}
+            LzmaParams& SetLevel(int level) {m_level = level; return *this;}
+            LzmaParams& SetNumThreads(int threads) {m_numThreads = threads; return *this;}
+            LzmaParams& SetAlog(Algorithm algorithm) {m_algo = algorithm; return *this;}
+            LzmaParams& SetLC(int lc) {m_lc = lc; return *this;}
+            LzmaParams& SetLP(int lp) {m_lp = lp; return *this;}
+            LzmaParams& SetPB(int pb) {m_pb = pb; return *this;}
+            LzmaParams& SetFB(int fb) {m_fb = fb; return *this;}
+            LzmaParams& SetMC(int mc) {m_mc = mc; return *this;}
+            LzmaParams& SetNumHashBytes(int numHashBytes) {m_numHashBytes = numHashBytes; return *this;}
+            LzmaParams& SetWriteEndMark(int writeEndMark) {m_writeEndMark = writeEndMark; return *this;}
+            LzmaParams& SetBTMode(BtMode btMode) {m_btMode = btMode; return *this;}
+            LzmaParams& SetBlockSize(size_t size) {m_blockSize = size; return *this;}
+            LzmaParams& SetNumBlockThreads(int threads) {m_numBlockThreads = threads; return *this;}
+            LzmaParams& SetNumTotalThreads(int threads) {m_numTotalThreads = threads; return *this;}
+            bool GetSupportRandomAccess() const { return m_supportRandomAccess; }
+            BE_SQLITE_EXPORT Json::Value ToJson() const;
+            BE_SQLITE_EXPORT BentleyStatus FromJson(Json::Value const &v);
+            BE_SQLITE_EXPORT void Normalize();
+            BE_SQLITE_EXPORT void ToProps(void *) const;
+        };
+
 public:
     struct Impl;
 
@@ -168,7 +228,7 @@ public:
     //! the compression becomes better, but slower and memory intensive. Default's about 16MB. 
     //! @param[in] supportRandomAccess Pass true to create a one to one mapping from input blocks to 
     //! output blobs. This makes it possible to randomly access, and decode any given block.
-    BE_SQLITE_EXPORT LzmaEncoder(uint32_t dictionarySize = 1 << 24, bool supportRandomAccess = false);
+    BE_SQLITE_EXPORT LzmaEncoder(LzmaParams const& params = LzmaParams());
 
     //! Destructor
     BE_SQLITE_EXPORT ~LzmaEncoder();
