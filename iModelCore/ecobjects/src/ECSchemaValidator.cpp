@@ -873,7 +873,7 @@ static ECObjectsStatus CheckStrength(ECRelationshipClassCR relClass)
 
         // RULE: Embedding relationships should not have 'Has' (case-sensitive) in the class name.
         //      Exception for all SP3D schemas.
-        if (relClass.GetName().ContainsI("Has"))
+        if (relClass.GetName().Contains("Has") || relClass.GetName().ContainsI("_has_"))
             {
             if (relClass.GetSchema().GetName().StartsWith("SP3D") || relClass.GetSchema().GetName().EqualsI("ProcessFunctional") || relClass.GetSchema().GetName().EqualsI("ProcessPhysical"))
                 {

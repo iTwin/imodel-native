@@ -1734,7 +1734,7 @@ TEST_F(SchemaValidatorTests, EmbeddingRelationshipsShouldNotContainHasInClassNam
         "    <ECEntityClass typeName='TestClass'>"
         "        <BaseClass>bis:Element</BaseClass>"
         "    </ECEntityClass>"
-        "    <ECRelationshipClass typeName='OtherRelationshipHASBadString' strength='embedding' modifier='Sealed'>"
+        "    <ECRelationshipClass typeName='OtherRelationship_HAS_BadString' strength='embedding' modifier='Sealed'>"
         "        <Source multiplicity='(0..1)' roleLabel='read from source to target' polymorphic='true'>"
         "            <Class class='TestClass'/>"
         "        </Source>"
@@ -1745,8 +1745,28 @@ TEST_F(SchemaValidatorTests, EmbeddingRelationshipsShouldNotContainHasInClassNam
         "</ECSchema>";
     InitBisContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_FALSE(validator.Validate(*schema)) << "Should fail validation as relationship is embedding and contains 'HAS'";
+    ASSERT_FALSE(validator.Validate(*schema)) << "Should fail validation as relationship is embedding and contains '_HAS_'";
     }
+	{
+		Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+			"<ECSchema schemaName='BadSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+			"    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+			"    <ECEntityClass typeName='TestClass'>"
+			"        <BaseClass>bis:Element</BaseClass>"
+			"    </ECEntityClass>"
+			"    <ECRelationshipClass typeName='OtherRelationshipHASBadString' strength='embedding' modifier='Sealed'>"
+			"        <Source multiplicity='(0..1)' roleLabel='read from source to target' polymorphic='true'>"
+			"            <Class class='TestClass'/>"
+			"        </Source>"
+			"        <Target multiplicity='(0..*)' roleLabel='read from target to source' polymorphic='true'>"
+			"            <Class class='TestClass'/>"
+			"        </Target>"
+			"    </ECRelationshipClass>"
+			"</ECSchema>";
+		InitBisContextWithSchemaXml(badSchemaXml.c_str());
+		ASSERT_TRUE(schema.IsValid());
+		ASSERT_TRUE(validator.Validate(*schema)) << "Should pass validation with relationship as embedding and contains 'HAS'";
+	}
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
         "<ECSchema schemaName='GoodSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
