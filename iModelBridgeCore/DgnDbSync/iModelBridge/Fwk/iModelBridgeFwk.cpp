@@ -3169,73 +3169,38 @@ void iModelBridgeFwk::SetLastError(IBriefcaseManager::Response const& response, 
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Elonas.Seviakovas               07/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-static DgnModelPtr getElementPartitionSubModel(DgnDbCR db, DgnElementCR outlierElement)
-    {
-    bvector<iModelExternalSourceAspect> aspects = iModelExternalSourceAspect::GetAllByKind(outlierElement, "Element", NULL);// SyncInfo::V8ElementExternalSourceAspect::Kind::Element
-    if (aspects.empty())
-        return outlierElement.GetModel();
-
-    PhysicalPartitionCPtr physicalPartition = db.Elements().Get<PhysicalPartition>(aspects[0].GetScope());
-    return physicalPartition.IsValid() ? physicalPartition->GetSubModel() : outlierElement.GetModel();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mayuresh.Kanade                 04/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void getOutlierElementInfo(const bvector<BeInt64Id>& elementOutliers, DgnDbCP db, Utf8String& message)
     {
+    EC::ECSqlStatement stmt;
+    stmt.Prepare(*db, "SELECT e2.Identifier, json_extract(e1.JsonProperties, '$.v8ModelName') V8ModelName, \
+        json_extract(e3.JsonProperties, '$.fileName') FileName FROM bis.ExternalSourceAspect e1 INNER JOIN bis.ExternalSourceAspect e2 ON e1.Element.Id = e2.Scope.Id \
+        INNER JOIN bis.ExternalSourceAspect e3 ON e3.Element.Id = e1.Scope.Id WHERE e2.Element.Id =?");
+    BeAssert(stmt.IsPrepared());
+
     for (auto eid : elementOutliers)
         {
         auto outlierElement = db->Elements().GetElement((DgnElementId)eid.GetValue());
-        if (outlierElement.IsValid())
-            {
-            BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
-            auto status = estmt.Prepare(*db, "SELECT Identifier FROM " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " AS xsa WHERE (xsa.Element.Id=?)");
+        if (!outlierElement.IsValid())
+            continue;
 
-            estmt.BindInt64(1, eid.GetValue());
-            int64_t v8ElementId = 0;
+        Utf8String v8ElementId;
+        Utf8String sourceModelName = "<unknown>";
+        Utf8String sourceFileName = "<unknown>";
+        
+        stmt.Reset();
+        stmt.ClearBindings();
+        stmt.BindId(1, eid);
+        if (BeSQLite::DbResult::BE_SQLITE_ROW != stmt.Step())
+            continue;
+            
+        v8ElementId = stmt.GetValueText(0);
+        sourceModelName = stmt.GetValueText(1);
+        sourceFileName = stmt.GetValueText(2);
 
-            if (BentleyApi::BeSQLite::BE_SQLITE_ROW == estmt.Step())
-                v8ElementId = estmt.GetValueInt64(0);
-
-            DgnModelPtr partitionsubModel = getElementPartitionSubModel(*db, *outlierElement);
-            if (partitionsubModel.IsNull())
-                {
-                BeAssert(false);
-                continue;
-                }
-
-            auto el = partitionsubModel->GetModeledElement();
-            if (el.IsNull())
-                {
-                BeAssert(false);
-                continue;
-                }
-
-            Utf8String sourceModelName = "<unknown>";
-            Utf8String sourceFileName = "<unknown>";
-            bvector<iModelExternalSourceAspect> aspects = iModelExternalSourceAspect::GetAllByKind(*el, "Model", NULL); // SyncInfo::V8ElementExternalSourceAspect::Kind::Model
-            if (aspects.size()>1)
-                {
-                //sourceModelName = v8ModelInfo.GetV8ModelName();
-                RepositoryLinkId id = RepositoryLinkId(aspects[0].GetScope().GetValueUnchecked());
-                auto repositoryLinkElement = db->Elements().Get<RepositoryLink>(id);
-                if (repositoryLinkElement.IsValid())
-                    {
-                    bvector<iModelExternalSourceAspect> raspects = iModelExternalSourceAspect::GetAllByKind(*el, "DocumentWithBeGuid", NULL); // SyncInfo::V8ElementExternalSourceAspect::Kind::RepositoryLink
-                    if (raspects.size() > 1)
-                        {
-                        auto json = raspects[0].GetProperties();
-                        if (json.IsObject() && json.HasMember("fileName"))
-                            sourceFileName = json["fileName"].GetString();
-                        }
-                    }
-                }
-            Utf8PrintfString elementDetails("\nElement Name:%s, Id: %lld, Model Name: %s, File Name: %s", outlierElement->GetDisplayLabel().c_str(), v8ElementId, sourceModelName.c_str(), sourceFileName.c_str());
-            message.append(elementDetails.c_str());
-            }
+        Utf8PrintfString elementDetails("\nElement Name:%s, Id: %s, Model Name: %s, File Name: %s", outlierElement->GetDisplayLabel().c_str(), v8ElementId.c_str(), sourceModelName.c_str(), sourceFileName.c_str());
+        message.append(elementDetails.c_str());
         }
     }
 
@@ -3296,7 +3261,7 @@ BentleyStatus   iModelBridgeFwk::GetUserProvidedExtents(AxisAlignedBox3d& extent
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  10/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            GetElementOutLiers(bvector<BeInt64Id> elementOutliers, DgnDbR db, AxisAlignedBox3d const& range)
+void            GetElementOutLiers(bvector<BeInt64Id>& elementOutliers, DgnDbR db, AxisAlignedBox3d const& range)
     {
     auto stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId,Origin,Yaw,Pitch,Roll,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d));
 
