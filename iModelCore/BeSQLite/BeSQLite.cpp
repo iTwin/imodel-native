@@ -1611,6 +1611,9 @@ DbResult Db::ChangeDbGuid(BeGuid guid) {
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::ResetBriefcaseId(BeBriefcaseId id) {
+    if (m_dbFile->m_briefcaseId == id) // nothing to do?
+        return BE_SQLITE_OK;
+
     if (IsReadonly()) {
         BeAssert(false && "must be a writeable db");
         return BE_SQLITE_READONLY;
