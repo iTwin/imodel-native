@@ -2315,8 +2315,8 @@ Json::Value Tree::ToJson() const
 void Tree::CancelAllTileLoads()
     {
     BeMutexHolder lock(m_cv.GetMutex());
-    for (auto& load : m_activeLoads)
-        CancelTileLoad(load);
+    while (!m_activeLoads.empty())
+        CancelTileLoad(*m_activeLoads.begin());
     }
 
 /*---------------------------------------------------------------------------------**//**
