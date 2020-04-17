@@ -189,6 +189,7 @@ export declare namespace IModelJsNative {
     public createChangeCache(changeCacheFile: ECDb, changeCachePath: string): DbResult;
     public createClassViewsInDb(): BentleyStatus;
     public createIModel(fileName: string, props: string): DbResult;
+    public createPolyfaceFromElement(props: any): any;
     public deleteElement(elemIdJson: string): IModelStatus;
     public deleteElementAspect(aspectIdJson: string): IModelStatus;
     public deleteLinkTableRelationship(props: string): DbResult;

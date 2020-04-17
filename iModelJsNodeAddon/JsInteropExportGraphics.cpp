@@ -188,7 +188,7 @@ void _AddTextString(TextStringCR) override { }
 void _AddTextString2d(TextStringCR, double) override { }
 void AddImage(ImageGraphicCR) override { }
 void AddImage2d(ImageGraphicCR, double) override { }
-bool _WantStrokeLineStyle(Render::LineStyleSymbCR, IFacetOptionsPtr&) override { return false; }
+bool _WantStrokeLineStyle(Render::LineStyleSymbCR symb, IFacetOptionsPtr&) override { return !symb.IsCosmetic(); }
 bool _WantStrokePattern(PatternParamsCR) override { return false; }
 Render::GraphicPtr _Finish() override {m_isOpen = false; return nullptr;} // we don't use output, don't allocate!
 

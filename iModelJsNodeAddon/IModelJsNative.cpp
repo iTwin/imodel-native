@@ -1710,6 +1710,18 @@ public:
         return Napi::Number::New(Env(), (int)status);
         }
 
+    Napi::Value CreatePolyfaceFromElement(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN
+        REQUIRE_ARGUMENT_ANY_OBJ(0, requestProps, Env().Undefined());
+
+        Napi::Value elementIdVal = requestProps.Get("elementId");
+        if (!elementIdVal.IsString())
+            THROW_TYPE_EXCEPTION_AND_RETURN("elementId must be a string", Env().Undefined());
+
+        return JsInterop::CreatePolyfaceFromElement(GetDgnDb(), requestProps);
+        }
+
     void GetTileTree(Napi::CallbackInfo const& info)
         {
         REQUIRE_ARGUMENT_STRING(0, idStr, );
@@ -2458,6 +2470,7 @@ public:
             InstanceMethod("createChangeCache", &NativeDgnDb::CreateChangeCache),
             InstanceMethod("createClassViewsInDb", &NativeDgnDb::CreateClassViewsInDb),
             InstanceMethod("createIModel", &NativeDgnDb::CreateIModel),
+            InstanceMethod("createPolyfaceFromElement", &NativeDgnDb::CreatePolyfaceFromElement),
             InstanceMethod("deleteElement", &NativeDgnDb::DeleteElement),
             InstanceMethod("deleteElementAspect", &NativeDgnDb::DeleteElementAspect),
             InstanceMethod("deleteLinkTableRelationship", &NativeDgnDb::DeleteLinkTableRelationship),

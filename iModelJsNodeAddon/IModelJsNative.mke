@@ -89,6 +89,8 @@ $(o)JsInteropBriefcaseManager$(oext) : $(baseDir)JsInteropBriefcaseManager.cpp $
 
 $(o)JsInteropExportGraphics$(oext) : $(baseDir)JsInteropExportGraphics.cpp ${MultiCompileDepends}
 
+$(o)JsInteropPolyfaceFromElement$(oext) : $(baseDir)JsInteropPolyfaceFromElement.cpp ${MultiCompileDepends}
+
 $(o)SignalTestUtility$(oext) : $(baseDir)SignalTestUtility.cpp $(baseDir)SignalTestUtility.h ${MultiCompileDepends}
 
 $(o)ECSchemaXmlContextUtils$(oext) : $(baseDir)ECSchemaXmlContextUtils.cpp $(baseDir)ECSchemaXmlContextUtils.h ${MultiCompileDepends}
