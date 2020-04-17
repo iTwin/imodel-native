@@ -1551,7 +1551,7 @@ ICancellationTokenPtr cancellationToken
         return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(SeedFileResult.GetError()));
         }
 
-    auto briefcaseId = BeBriefcaseId(BeBriefcaseId::Snapshot());
+    auto briefcaseId = BeBriefcaseId(BeBriefcaseId::StandAlone());
     auto result = connection->WriteBriefcaseIdIntoFile(filePath, briefcaseId);
     if (!result.IsSuccess())
         {
