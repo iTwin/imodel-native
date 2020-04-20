@@ -63,24 +63,23 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
         {
         LOG.infov("------------------------------------------------------------------");
         LOG.infov("Conflict detected - Cause: %s", ChangeSet::InterpretConflictCause(cause, 1));
-        if (cause == ChangeSet::ConflictCause::ForeignKey)
-            {
-            // Note: No current or conflicting row information is provided if it's a FKey conflict
-            int nConflicts = 0;
-            result = iter.GetFKeyConflicts(&nConflicts);
-            BeAssert(result == BE_SQLITE_OK);
-            LOG.infov("Detected %d foreign key conflicts in ChangeSet", nConflicts);
-            }
-        else
+        if (cause != ChangeSet::ConflictCause::ForeignKey)
             {
             iter.Dump(dgndb, false, 1);
             }
         }
 
     // Handle some special cases
-
     if (cause == ChangeSet::ConflictCause::ForeignKey)
+        {
+        // Note: No current or conflicting row information is provided if it's a FKey conflict
+        // Since we abort on FKey conflicts, always try and provide details about the error
+        int nConflicts = 0;
+        result = iter.GetFKeyConflicts(&nConflicts);
+        BeAssert(result == BE_SQLITE_OK);
+        LOG.errorv("Detected %d foreign key conflicts in ChangeSet. Aborting merge.", nConflicts);
         return ChangeSet::ConflictResolution::Abort;
+        }
 
     if (cause == ChangeSet::ConflictCause::NotFound)
         {
