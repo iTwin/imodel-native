@@ -134,6 +134,7 @@
     <ClCompile Include="NonPublished\Integration\Content\ContentIntegrationTests.cpp" />
     <ClCompile Include="NonPublished\Integration\Content\ContentUpdateTests.cpp" />
     <ClCompile Include="NonPublished\Integration\Content\LocatingClasses.cpp" />
+    <ClCompile Include="NonPublished\Integration\Hierarchies\HierarchiesCompareTests.cpp" />
     <ClCompile Include="NonPublished\Integration\Hierarchies\HierarchyIntegrationTests.cpp" />
     <ClCompile Include="NonPublished\Integration\Hierarchies\HierarchyUpdateTests.cpp" />
     <ClCompile Include="NonPublished\Integration\PresentationManagerIntegrationTests.cpp" />

@@ -22,7 +22,7 @@ private:
     RequiredRelationDirection m_direction;
     Utf8String m_targetClassName;
 protected:
-    ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
+    ECPRESENTATION_EXPORT virtual MD5 _ComputeHash() const override;
 public:
     RelationshipStepSpecification() : m_direction(RequiredRelationDirection_Forward) {}
     RelationshipStepSpecification(RelationshipStepSpecification const& other)
@@ -69,7 +69,7 @@ struct RelationshipPathSpecification : HashableBase
 private:
     bvector<RelationshipStepSpecification*> m_steps;
 protected:
-    ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const;        
+    ECPRESENTATION_EXPORT MD5 _ComputeHash() const;
 public:
     RelationshipPathSpecification() {}
     RelationshipPathSpecification(RelationshipStepSpecification& step) {m_steps.push_back(&step);}
@@ -98,7 +98,7 @@ struct RepeatableRelationshipStepSpecification : RelationshipStepSpecification
 private:
     int m_count;
 protected:
-    ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+    ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 public:
     RepeatableRelationshipStepSpecification() : RelationshipStepSpecification(), m_count(1) {}
     RepeatableRelationshipStepSpecification(RepeatableRelationshipStepSpecification const& other)
@@ -141,7 +141,7 @@ struct RepeatableRelationshipPathSpecification : HashableBase
 private:
     bvector<RepeatableRelationshipStepSpecification*> m_steps;
 protected:
-    ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const;
+    ECPRESENTATION_EXPORT MD5 _ComputeHash() const;
 public:
     RepeatableRelationshipPathSpecification() {}
     RepeatableRelationshipPathSpecification(RepeatableRelationshipStepSpecification& step) { m_steps.push_back(&step); }

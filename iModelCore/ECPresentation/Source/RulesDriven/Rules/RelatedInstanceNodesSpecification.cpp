@@ -26,7 +26,7 @@ RelatedInstanceNodesSpecification::RelatedInstanceNodesSpecification()
 +---------------+---------------+---------------+---------------+---------------+------*/
 RelatedInstanceNodesSpecification::RelatedInstanceNodesSpecification(RelatedInstanceNodesSpecification const& other)
     : ChildNodeSpecification(other), m_groupByClass(other.m_groupByClass), m_showEmptyGroups(other.m_showEmptyGroups),
-    m_groupByRelationship(other.m_groupByRelationship), m_groupByLabel(other.m_groupByLabel), m_skipRelatedLevel(other.m_skipRelatedLevel), 
+    m_groupByRelationship(other.m_groupByRelationship), m_groupByLabel(other.m_groupByLabel), m_skipRelatedLevel(other.m_skipRelatedLevel),
     m_instanceFilter(other.m_instanceFilter), m_supportedSchemas(other.m_supportedSchemas), m_requiredDirection(other.m_requiredDirection),
     m_relationshipClassNames(other.m_relationshipClassNames), m_relatedClassNames(other.m_relatedClassNames)
     {
@@ -65,7 +65,7 @@ RelatedInstanceNodesSpecification::RelatedInstanceNodesSpecification(int priorit
     bool hideIfNoChildren, bool groupByClass, bool groupByLabel, int skipRelatedLevel, Utf8String instanceFilter,
     RequiredRelationDirection requiredDirection, Utf8String supportedSchemas, Utf8String relationshipClassNames, Utf8String relatedClassNames)
     : ChildNodeSpecification(priority, hasChildren, hideNodesInHierarchy, hideIfNoChildren), m_groupByClass(groupByClass), m_showEmptyGroups(false),
-    m_groupByRelationship(false), m_groupByLabel(groupByLabel), m_skipRelatedLevel(skipRelatedLevel), m_instanceFilter(instanceFilter), 
+    m_groupByRelationship(false), m_groupByLabel(groupByLabel), m_skipRelatedLevel(skipRelatedLevel), m_instanceFilter(instanceFilter),
     m_supportedSchemas(supportedSchemas), m_requiredDirection(requiredDirection), m_relationshipClassNames(relationshipClassNames), m_relatedClassNames(relatedClassNames)
     {
     }
@@ -245,9 +245,9 @@ void RelatedInstanceNodesSpecification::_WriteJson(JsonValueR json) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 RelatedInstanceNodesSpecification::_ComputeHash(Utf8CP parentHash) const
+MD5 RelatedInstanceNodesSpecification::_ComputeHash() const
     {
-    MD5 md5 = ChildNodeSpecification::_ComputeHash(parentHash);
+    MD5 md5 = ChildNodeSpecification::_ComputeHash();
     md5.Add(&m_groupByClass, sizeof(m_groupByClass));
     md5.Add(&m_groupByRelationship, sizeof(m_groupByRelationship));
     md5.Add(&m_groupByLabel, sizeof(m_groupByLabel));
@@ -258,13 +258,6 @@ MD5 RelatedInstanceNodesSpecification::_ComputeHash(Utf8CP parentHash) const
     md5.Add(m_supportedSchemas.c_str(), m_supportedSchemas.size());
     md5.Add(m_relationshipClassNames.c_str(), m_relationshipClassNames.size());
     md5.Add(m_relatedClassNames.c_str(), m_relatedClassNames.size());
-
-    Utf8String currentHash = md5.GetHashString();
-    for (RepeatableRelationshipPathSpecification const* spec : m_relationshipPaths)
-        {
-        Utf8StringCR specHash = spec->GetHash(currentHash.c_str());
-        md5.Add(specHash.c_str(), specHash.size());
-        }
-
+    ADD_RULES_TO_HASH(md5, m_relationshipPaths);
     return md5;
     }

@@ -296,7 +296,7 @@ TEST_F(HierarchyPerformanceTests, FilterNodesFromExpandedHierarchy)
 +===============+===============+===============+===============+===============+======*/
 struct HierarchyUpdatePerformanceTests : HierarchyPerformanceTests
     {
-    RefCountedPtr<TestECInstanceChangeEventsSource> m_eventSource = TestECInstanceChangeEventsSource::Create();
+    std::shared_ptr<TestECInstanceChangeEventsSource> m_eventSource = std::make_shared<TestECInstanceChangeEventsSource>();
 
     virtual void _ConfigureManagerParams(RulesDrivenECPresentationManager::Params& params) override
         {

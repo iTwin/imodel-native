@@ -36,4 +36,19 @@ public:
     rapidjson::Document GetReport();
 };
 
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                04/2020
++===============+===============+===============+===============+===============+======*/
+struct IModelJsECPresentationHierarchiesCompareRecordsHandler : IUpdateRecordsHandler
+{
+private:
+    bvector<HierarchyUpdateRecord> m_records;
+protected:
+    void _Start() override {m_records.clear();}
+    void _Accept(HierarchyUpdateRecord const& record) override {m_records.push_back(record);}
+    void _Accept(FullUpdateRecord const&) override {}
+    void _Finish() override {}
+public:
+    rapidjson::Document GetReport() const;
+};
 END_BENTLEY_ECPRESENTATION_NAMESPACE

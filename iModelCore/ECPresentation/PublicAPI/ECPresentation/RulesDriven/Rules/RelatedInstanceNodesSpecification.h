@@ -51,7 +51,7 @@ protected:
     ChildNodeSpecification* _Clone() const override {return new RelatedInstanceNodesSpecification(*this);}
 
     //! Compute specification hash.
-    ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+    ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
 public:
     ECPRESENTATION_EXPORT RelatedInstanceNodesSpecification ();
@@ -96,7 +96,7 @@ public:
     //! ECQuery that is used to filter query results (ChildNodes).
     Utf8StringCR GetInstanceFilter() const {return m_instanceFilter;}
     void SetInstanceFilter(Utf8String value) {m_instanceFilter = value;}
-    
+
     //! Returns level of related instances to skip.
     int GetSkipRelatedLevel() const { return m_skipRelatedLevel; }
     void SetSkipRelatedLevel(int value) { m_skipRelatedLevel = value; }

@@ -5529,6 +5529,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         JsInterop::ObjectReferenceClaimCheck m_requestContext;
         BeConditionVariable m_waiter;
         ECPresentationResult m_result;
+        bool m_serializeResult;
         bool m_hasResult;
         uint64_t m_startTime;
     protected:
@@ -5541,7 +5542,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             {
             JsInterop::LogMessageInContext("ECPresentation.Node", NativeLogging::LOG_DEBUG, Utf8PrintfString("Sending success response (took %" PRIu64 " ms)",
                 (BeTimeUtilities::GetCurrentTimeAsUnixMillis() - m_startTime)), m_requestContext);
-            Callback().MakeCallback(Receiver().Value(), {CreateReturnValue(Env(), m_result, true)});
+            Callback().MakeCallback(Receiver().Value(), {CreateReturnValue(Env(), m_result, m_serializeResult)});
             }
         void OnError(Napi::Error const& e) override
             {
@@ -5549,13 +5550,14 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             Callback().MakeCallback(Receiver().Value(), {CreateReturnValue(Env(), ECPresentationResult(ECPresentationStatus::Error, "callback error"))});
             }
     public:
-        ResponseSender(Napi::Function& callback)
-            : Napi::AsyncWorker(callback), m_requestContext(JsInterop::GetCurrentClientRequestContextForMainThread()), m_hasResult(false), m_startTime(BeTimeUtilities::GetCurrentTimeAsUnixMillis())
+        ResponseSender(Napi::Function& callback, bool serializeResultToString = true)
+            : Napi::AsyncWorker(callback), m_requestContext(JsInterop::GetCurrentClientRequestContextForMainThread()), m_hasResult(false), 
+            m_startTime(BeTimeUtilities::GetCurrentTimeAsUnixMillis()), m_serializeResult(serializeResultToString)
             {}
-        void SetResult(ECPresentationResult&& result)
+        void SetResult(ECPresentationResult result)
             {
             BeMutexHolder lock(m_waiter.GetMutex());
-            m_result = std::move(result);
+            m_result = result;
             m_hasResult = true;
             m_waiter.notify_all();
             }
@@ -5631,6 +5633,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             InstanceMethod("clearRulesets", &NativeECPresentationManager::ClearRulesets),
             InstanceMethod("handleRequest", &NativeECPresentationManager::HandleRequest),
             InstanceMethod("getUpdateInfo", &NativeECPresentationManager::GetUpdateInfo),
+            InstanceMethod("compareHierarchies", &NativeECPresentationManager::CompareHierarchies),
             InstanceMethod("dispose", &NativeECPresentationManager::Terminate)
         });
 
@@ -5803,7 +5806,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             result
             .then([responseSender](ECPresentationResult result)
                 {
-                responseSender->SetResult(std::move(result));
+                responseSender->SetResult(result);
                 })
             .onError([responseSender](folly::exception_wrapper e)
                 {
@@ -5896,6 +5899,64 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
     Napi::Value GetUpdateInfo(Napi::CallbackInfo const& info)
         {
         return CreateReturnValue(ECPresentationResult(m_updateRecords->GetReport()));
+        }
+
+    void CompareHierarchies(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_ARGUMENT_FUNCTION(2, responseCallback, );
+
+        REQUIRE_ARGUMENT_OBJ(0, NativeDgnDb, db, );
+        if (!db->IsOpen())
+            {
+            responseCallback.Call({CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "iModel not open"))});
+            return;
+            }
+
+        REQUIRE_ARGUMENT_ANY_OBJ(1, options, );
+        Napi::Value const& jsPrevRulesetId = options.Get("prevRulesetId");
+        if (!jsPrevRulesetId.IsString())
+            {
+            responseCallback.Call({CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "options.prevRulesetId must be a string"))});
+            return;
+            }
+        Napi::Value const& jsCurrRulesetId = options.Get("currRulesetId");
+        if (!jsCurrRulesetId.IsString())
+            {
+            responseCallback.Call({CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "options.currRulesetId must be a string"))});
+            return;
+            }
+        Napi::Value const& jsLocale = options.Get("locale");
+        if (!jsLocale.IsString())
+            {
+            responseCallback.Call({CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "options.locale must be a string"))});
+            return;
+            }
+
+        ResponseSender* responseSender = new ResponseSender(responseCallback, false);
+        responseSender->Queue();
+        try
+            {
+            auto compareResults = std::make_shared<IModelJsECPresentationHierarchiesCompareRecordsHandler>();
+            ECPresentationUtils::CompareHierarchies(*m_presentationManager, compareResults, db->GetDgnDb(), jsPrevRulesetId.ToString().Utf8Value(), jsCurrRulesetId.ToString().Utf8Value(), jsLocale.ToString().Utf8Value(), CreateRequestContext())
+                .then([responseSender, compareResults](ECPresentationResult result)
+                    {
+                    if (result.IsError())
+                        responseSender->SetResult(result);
+                    else
+                        responseSender->SetResult(ECPresentationResult(compareResults->GetReport()));
+                    })
+                .onError([responseSender](folly::exception_wrapper e)
+                    {
+                    if (e.is_compatible_with<folly::FutureCancellation>())
+                        responseSender->SetResult(ECPresentationResult(ECPresentationStatus::Canceled, "Request was canceled"));
+                    else
+                        responseSender->SetResult(ECPresentationResult(ECPresentationStatus::Error, Utf8PrintfString("Error handling request: %s", e.what().c_str())));
+                    });
+            }
+        catch (...)
+            {
+            responseSender->SetResult(ECPresentationResult(ECPresentationStatus::Error, "Unknown error creating `compare` request"));
+            }
         }
 
     void Terminate(Napi::CallbackInfo const& info)

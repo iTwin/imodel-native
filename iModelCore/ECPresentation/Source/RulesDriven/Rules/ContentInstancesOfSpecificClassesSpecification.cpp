@@ -15,14 +15,14 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentInstancesOfSpecificClassesSpecification::ContentInstancesOfSpecificClassesSpecification () 
+ContentInstancesOfSpecificClassesSpecification::ContentInstancesOfSpecificClassesSpecification ()
     : ContentSpecification(), m_handleInstancesPolymorphically(false)
     {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentInstancesOfSpecificClassesSpecification::ContentInstancesOfSpecificClassesSpecification (int priority, Utf8StringCR instanceFilter, Utf8StringCR classNames, bool arePolymorphic) 
+ContentInstancesOfSpecificClassesSpecification::ContentInstancesOfSpecificClassesSpecification (int priority, Utf8StringCR instanceFilter, Utf8StringCR classNames, bool arePolymorphic)
     : ContentSpecification (priority), m_instanceFilter (instanceFilter), m_classNames (classNames), m_handleInstancesPolymorphically(arePolymorphic)
     {
     }
@@ -126,9 +126,9 @@ void ContentInstancesOfSpecificClassesSpecification::_WriteJson(JsonValueR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 ContentInstancesOfSpecificClassesSpecification::_ComputeHash(Utf8CP parentHash) const
+MD5 ContentInstancesOfSpecificClassesSpecification::_ComputeHash() const
     {
-    MD5 md5 = ContentSpecification::_ComputeHash(parentHash);
+    MD5 md5 = ContentSpecification::_ComputeHash();
     md5.Add(m_instanceFilter.c_str(), m_instanceFilter.size());
     md5.Add(m_classNames.c_str(), m_classNames.size());
     md5.Add(&m_handleInstancesPolymorphically, sizeof(m_handleInstancesPolymorphically));

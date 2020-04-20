@@ -32,6 +32,8 @@ struct TestRulesDrivenECPresentationManagerImpl : RulesDrivenECPresentationManag
     typedef std::function<size_t(IConnectionCR, ContentDescriptorCR, ICancelationTokenCR)> Handler_GetContentSetSize;
     typedef std::function<LabelDefinitionCPtr(IConnectionCR, KeySetCR, ICancelationTokenCR)> Handler_GetDisplayLabel;
 
+    typedef std::function<void(IUpdateRecordsHandler&, IConnectionCR, Utf8StringCR, Utf8StringCR, Utf8StringCR, ICancelationTokenCR)> Handler_CompareHierarchies;
+
     typedef std::function<void()> Handler_OnUpdateRecordsHandlerChanged;
     typedef std::function<void(ECInstanceChangeEventSource&)> Handler_OnECInstanceChangeEventSourceRegistered;
     typedef std::function<void(ECInstanceChangeEventSource&)> Handler_OnECInstanceChangeEventSourceUnregister;
@@ -50,6 +52,8 @@ private:
     Handler_GetContent m_contentHandler;
     Handler_GetContentSetSize m_contentSetSizeHandler;
     Handler_GetDisplayLabel m_displayLabelHandler;
+
+    Handler_CompareHierarchies m_compareHierarchiesHandler;
 
 protected:
     INavNodesDataSourcePtr _GetRootNodes(IConnectionCR connection, PageOptionsCR pageOptions, NavigationOptions const& options, ICancelationTokenCR cancelationToken) override
@@ -125,6 +129,11 @@ protected:
             return m_displayLabelHandler(connection, key, cancelationToken);
         return LabelDefinition::Create();
         }
+    void _CompareHierarchies(IUpdateRecordsHandler& updateRecordsHandler, IConnectionCR connection, Utf8StringCR lhsRulesetId, Utf8StringCR rhsRulesetId, Utf8StringCR locale, ICancelationTokenCR cancelationToken) override
+        {
+        if (m_compareHierarchiesHandler)
+            m_compareHierarchiesHandler(updateRecordsHandler, connection, lhsRulesetId, rhsRulesetId, locale, cancelationToken);
+        }
 
 public:
     TestRulesDrivenECPresentationManagerImpl(RulesDrivenECPresentationManager::Params const& params)
@@ -144,6 +153,8 @@ public:
     void SetContentHandler(Handler_GetContent handler) {m_contentHandler = handler;}
     void SetContentSetSizeHandler(Handler_GetContentSetSize handler) {m_contentSetSizeHandler = handler;}
     void SetDisplayLabelHandler(Handler_GetDisplayLabel handler) {m_displayLabelHandler = handler;}
+
+    void SetCompareHierarchiesHandler(Handler_CompareHierarchies handler) {m_compareHierarchiesHandler = handler;}
 };
 
 END_ECPRESENTATIONTESTS_NAMESPACE

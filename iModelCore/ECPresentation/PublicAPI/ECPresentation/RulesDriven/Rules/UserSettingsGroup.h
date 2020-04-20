@@ -32,7 +32,7 @@ struct UserSettingsGroup : public PresentationKey
         ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
 
         //! Computes rule hash.
-        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+        ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
@@ -52,19 +52,19 @@ struct UserSettingsGroup : public PresentationKey
 
         //! Add UserSettingsItem.
         ECPRESENTATION_EXPORT void AddSettingsItem (UserSettingsItemR item);
-        
+
         //! Returns a list of UserSettingsItems.
         ECPRESENTATION_EXPORT UserSettingsItemList const& GetSettingsItems (void) const;
 
         //! Add nested UserSettingGroup.
         ECPRESENTATION_EXPORT void AddNestedSettings (UserSettingsGroupR group);
-        
+
         //! Returns a list of nested UserSettingsGroup. This allows to create sub-categories.
         ECPRESENTATION_EXPORT UserSettingsGroupList const& GetNestedSettings (void) const;
     };
 
 /*---------------------------------------------------------------------------------**//**
-Implementation of UserSettingsItem definition. It represents a single user setting in 
+Implementation of UserSettingsItem definition. It represents a single user setting in
 UserSettingsGroup.
 * @bsiclass                                     Eligijus.Mauragas               01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -78,7 +78,7 @@ struct UserSettingsItem : HashableBase
 
     protected:
         //! Computes specification hash.
-        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+        ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
@@ -95,7 +95,7 @@ struct UserSettingsItem : HashableBase
 
         //! Reads specification from json.
         ECPRESENTATION_EXPORT bool ReadJson(JsonValueCR json);
-        
+
         //! Writes specification to json.
         ECPRESENTATION_EXPORT Json::Value WriteJson() const;
 

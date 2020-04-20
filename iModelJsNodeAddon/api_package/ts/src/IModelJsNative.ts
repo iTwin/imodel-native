@@ -500,6 +500,7 @@ export declare namespace IModelJsNative {
     public clearRulesets(): ErrorStatusOrResult<ECPresentationStatus, void>;
     public handleRequest(db: DgnDb, options: string, callback: (result: ErrorStatusOrResult<ECPresentationStatus, string>) => void): void;
     public getUpdateInfo(): ErrorStatusOrResult<ECPresentationStatus, any>;
+    public compareHierarchies(db: DgnDb, options: { prevRulesetId: string, currRulesetId: string, locale: string }, callback: (result: ErrorStatusOrResult<ECPresentationStatus, any>) => void): void;
     public dispose(): void;
   }
 

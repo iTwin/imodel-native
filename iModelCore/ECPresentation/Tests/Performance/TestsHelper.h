@@ -44,7 +44,6 @@ private:
         ECInstanceChangeEventSource::NotifyECInstanceChanged(db, ECInstanceChangeEventSource::ChangedECInstance(ecClass, id, change));
         }
 public:
-    static RefCountedPtr<TestECInstanceChangeEventsSource> Create() {return new TestECInstanceChangeEventsSource();}
     void NotifyECInstanceUpdated(ECDbCR db, ECInstanceId const& id, ECClassCR ecClass) const {NotifyECInstanceChanged(db, id, ecClass, ChangeType::Update);}
 };
 

@@ -23,12 +23,12 @@ struct TestUpdateRecordsHandler : IUpdateRecordsHandler
 {
 protected:
     void _Start() override {}
-    void _Accept(UpdateRecord const&) override {}
+    void _Accept(HierarchyUpdateRecord const&) override {}
     void _Accept(FullUpdateRecord const&) override {}
     void _Finish() override {}
 public:
-    static RefCountedPtr<TestUpdateRecordsHandler> Create() {return new TestUpdateRecordsHandler();}
-    };
+    TestUpdateRecordsHandler() {}
+};
 
 /*=================================================================================**//**
 * @bsiclass                                     Mantas.Kontrimas                07/2018
@@ -39,8 +39,8 @@ struct StressTests : RulesEngineTests
     ECDb m_project2;
     bvector<std::function<folly::Future<folly::Unit>()>> m_functions;
 
-    RefCountedPtr<TestECInstanceChangeEventsSource> m_eventsSource = TestECInstanceChangeEventsSource::Create();
-    RefCountedPtr<TestUpdateRecordsHandler> m_updateRecordsHandler = TestUpdateRecordsHandler::Create();
+    std::shared_ptr<TestECInstanceChangeEventsSource> m_eventsSource = std::make_shared<TestECInstanceChangeEventsSource>();
+    std::shared_ptr<TestUpdateRecordsHandler> m_updateRecordsHandler = std::make_shared<TestUpdateRecordsHandler>();
     RuntimeJsonLocalState m_localState;
 
     // Data
@@ -237,9 +237,20 @@ struct StressTests : RulesEngineTests
             {
             return PresentationManagerTestsHelper::FilterNodes(*m_manager, m_project1, ITEMS_RULESET, "ist");
             });
+        // [17]
+        m_functions.push_back([this]()
+            {
+            bvector<folly::Future<folly::Unit>> initHierarchies;
+            initHierarchies.push_back(PresentationManagerTestsHelper::GetFullHierarchy(*m_manager, m_project1, ITEMS_RULESET));
+            initHierarchies.push_back(PresentationManagerTestsHelper::GetFullHierarchy(*m_manager, m_project1, CUSTOM_RULESET));
+            return folly::collect(initHierarchies).then([this]()
+                    {
+                    return m_manager->CompareHierarchies(m_updateRecordsHandler, m_project1, ITEMS_RULESET, CUSTOM_RULESET, Json::Value());
+                    });
+            });
 
         // Events:
-        // [17]
+        // [18]
         m_functions.push_back([this]()
             {
             ECInstanceId instanceId = m_project1GeometricElementKeys[0].GetId();
@@ -247,7 +258,7 @@ struct StressTests : RulesEngineTests
             m_eventsSource->NotifyECInstanceUpdated(m_project1, instanceId, *ecClass);
             return folly::makeFuture();
             });
-        // [18]
+        // [19]
         m_functions.push_back([this]()
             {
             ECInstanceId instanceId = m_project2GeometricElementKeys[0].GetId();
@@ -256,20 +267,20 @@ struct StressTests : RulesEngineTests
             return folly::makeFuture();
             });
 
-        // [19]
+        // [20]
         m_functions.push_back([this]()
             {
             m_manager->GetUserSettings(CUSTOM_RULESET).SetSettingBoolValue("TestSetting", false);
             return folly::makeFuture();
             });
-        // [20]
+        // [21]
         m_functions.push_back([this]()
             {
             m_manager->GetUserSettings(CUSTOM_RULESET).SetSettingBoolValue("TestSetting", true);
             return folly::makeFuture();
             });
 
-        // [21]
+        // [22]
         m_functions.push_back([this]()
             {
             m_project1.CloseDb();
@@ -277,7 +288,7 @@ struct StressTests : RulesEngineTests
             m_project1GeometricElementKeys = PresentationManagerTestsHelper::GetGeometricElementKeys(m_project1);
             return PresentationManagerTestsHelper::GetNodesPath(*m_manager, m_project1, ITEMS_RULESET, 7).then([&](bvector<NavNodeCPtr> path){m_nodesPath1Items = path;});
             });
-        // [22]
+        // [23]
         m_functions.push_back([this]()
             {
             m_project2.CloseDb();
@@ -287,7 +298,7 @@ struct StressTests : RulesEngineTests
             return PresentationManagerTestsHelper::GetNodesPath(*m_manager, m_project2, ITEMS_RULESET, 7).then([&](bvector<NavNodeCPtr> path){m_nodesPath2Items = path;});
             });
 
-        // [23]
+        // [24]
         m_functions.push_back([this]()
             {
             m_locater->Clear();

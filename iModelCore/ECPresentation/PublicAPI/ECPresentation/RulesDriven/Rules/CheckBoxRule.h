@@ -35,7 +35,7 @@ struct CheckBoxRule : public ConditionalCustomizationRule
         ECPRESENTATION_EXPORT void _Accept(CustomizationRuleVisitor& visitor) const override;
 
         //! Computes rule hash.
-        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+        ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
         //! Clones rule.
         CustomizationRule* _Clone() const override {return new CheckBoxRule(*this);}

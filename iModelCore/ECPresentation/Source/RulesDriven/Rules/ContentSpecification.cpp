@@ -129,7 +129,7 @@ void ContentSpecification::_WriteJson(JsonValueR json) const
             (json[CONTENT_SPECIFICATION_JSON_ATTRIBUTE_RELATEDINSTANCESSPECIFICATION], m_relatedInstances);
         }
     m_modifiers.WriteJson(json);
-    } 
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Kelly.Shiptoski                 06/2015
@@ -149,22 +149,15 @@ void ContentSpecification::AddRelatedInstance(RelatedInstanceSpecificationR rela
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 ContentSpecification::_ComputeHash(Utf8CP parentHash) const
+MD5 ContentSpecification::_ComputeHash() const
     {
-    MD5 md5 = PresentationRuleSpecification::_ComputeHash(parentHash);
+    MD5 md5 = PresentationRuleSpecification::_ComputeHash();
     md5.Add(&m_priority, sizeof(m_priority));
     md5.Add(&m_showImages, sizeof(m_showImages));
     Utf8CP name = _GetXmlElementName();
     md5.Add(name, strlen(name));
-
-    Utf8String currentHash = md5.GetHashString();
-    for (RelatedInstanceSpecificationP spec : m_relatedInstances)
-        {
-        Utf8StringCR specHash = spec->GetHash(currentHash.c_str());
-        md5.Add(specHash.c_str(), specHash.size());
-        }
-    Utf8StringCR modifiersHash = m_modifiers.GetHash(currentHash.c_str());
+    ADD_RULES_TO_HASH(md5, m_relatedInstances);
+    Utf8StringCR modifiersHash = m_modifiers.GetHash();
     md5.Add(modifiersHash.c_str(), modifiersHash.size());
-
     return md5;
     }

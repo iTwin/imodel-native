@@ -46,10 +46,10 @@ protected:
                 NotifyECInstancesChanged(connections.GetConnection(connectionId.c_str())->GetECDb(), changes);
                 }
             );
-        task->SetDependencies(TaskDependencies(connection->GetId()));
+        task->SetDependencies(TaskDependencies{std::make_shared<TaskDependencyOnConnection>(connection->GetId())});
         task->SetBlockedTasksPredicate([connectionId = connection->GetId()](IECPresentationTaskCR task)
             {
-            return task.GetDependencies().DependsOnConnection(connectionId);
+            return task.GetDependencies().Has(TaskDependencyOnConnection(connectionId));
             });
         m_manager.GetTasksManager().Execute(*task);
         }
@@ -104,11 +104,11 @@ protected:
             BeMutexHolder lock(m_tasksManager.GetMutex());
             TasksCancelationResult cancelation = m_tasksManager.Cancel([&](IECPresentationTaskCR task)
                 {
-                return task.GetDependencies().DependsOnConnection(evt.GetConnection().GetId());
+                return task.GetDependencies().Has(TaskDependencyOnConnection(evt.GetConnection().GetId()));
                 });
             block = m_tasksManager.Block([&](IECPresentationTaskCR task)
                 {
-                return task.GetDependencies().DependsOnConnection(evt.GetConnection().GetId())
+                return task.GetDependencies().Has(TaskDependencyOnConnection(evt.GetConnection().GetId()))
                     && cancelation.GetTasks().end() == cancelation.GetTasks().find(&task);
                 });
             lock.unlock();
@@ -164,7 +164,7 @@ protected:
 
         m_tasksManager.Cancel([&](IECPresentationTaskCR task)
             {
-            return task.GetDependencies().GetRulesetId().Equals(ruleset.GetRuleSetId());
+            return task.GetDependencies().Has(TaskDependencyOnRuleset(ruleset.GetRuleSetId()));
             }).GetCompletion().wait();
         GetRulesetCallbacksHandler()->_OnRulesetDispose(locater, ruleset);
         }
@@ -213,7 +213,7 @@ protected:
             // we don't know which connections this task can affect - need to block everything..
             return true;
             });
-        task->SetDependencies(TaskDependencies("*"));
+        task->SetDependencies(TaskDependencies{std::make_shared<TaskDependencyOnConnection>("*")});
         m_tasksManager.Execute(*task);
         }
 public:
@@ -330,7 +330,17 @@ Utf8CP RulesDrivenECPresentationManager::GetConnectionId(ECDbCR db) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 IConnectionCPtr RulesDrivenECPresentationManager::GetTaskConnection(IECPresentationTaskCR task) const
     {
-    return GetConnectionsCR().GetConnection(task.GetDependencies().GetConnectionId().c_str());
+    bset<Utf8String> taskConnectionIds;
+    auto filter = TaskDependencyOnConnection::CreatePredicate([&taskConnectionIds](Utf8StringCR connectionId)
+        {
+        taskConnectionIds.insert(connectionId);
+        return false;
+        });
+    for (auto const& dep : task.GetDependencies())
+        filter(*dep);
+
+    BeAssert(1 == taskConnectionIds.size());
+    return GetConnectionsCR().GetConnection((*taskConnectionIds.begin()).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -363,7 +373,7 @@ folly::Future<NavNodesContainer> RulesDrivenECPresentationManager::_GetRootNodes
             return DataContainer<NavNodeCPtr>(*ConstNodesDataSource::Create(*source));
             }
         return DataContainer<NavNodeCPtr>();
-        }, TaskDependencies(connectionId, options.GetRulesetId()), true, options.GetPriority());
+        }, TaskDependencies{std::make_shared<TaskDependencyOnConnection>(connectionId), std::make_shared<TaskDependencyOnRuleset>(options.GetRulesetId())}, true, options.GetPriority());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -382,7 +392,7 @@ folly::Future<size_t> RulesDrivenECPresentationManager::_GetRootNodesCount(ECDbC
         {
         context.OnTaskStart();
         return m_impl->GetRootNodesCount(*GetTaskConnection(task), options, *task.GetCancelationToken());
-        }, TaskDependencies(connectionId, options.GetRulesetId()), true, options.GetPriority());
+        }, TaskDependencies{std::make_shared<TaskDependencyOnConnection>(connectionId), std::make_shared<TaskDependencyOnRuleset>(options.GetRulesetId())}, true, options.GetPriority());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -407,7 +417,7 @@ folly::Future<NavNodesContainer> RulesDrivenECPresentationManager::_GetChildren(
             return DataContainer<NavNodeCPtr>(*ConstNodesDataSource::Create(*source));
             }
         return DataContainer<NavNodeCPtr>();
-        }, TaskDependencies(connectionId, options.GetRulesetId()), true, options.GetPriority());
+        }, TaskDependencies{std::make_shared<TaskDependencyOnConnection>(connectionId), std::make_shared<TaskDependencyOnRuleset>(options.GetRulesetId())}, true, options.GetPriority());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -426,7 +436,7 @@ folly::Future<size_t> RulesDrivenECPresentationManager::_GetChildrenCount(ECDbCR
         {
         context.OnTaskStart();
         return m_impl->GetChildrenCount(*GetTaskConnection(task), *parent, options, *task.GetCancelationToken());
-        }, TaskDependencies(connectionId, options.GetRulesetId()), true, options.GetPriority());
+        }, TaskDependencies{std::make_shared<TaskDependencyOnConnection>(connectionId), std::make_shared<TaskDependencyOnRuleset>(options.GetRulesetId())}, true, options.GetPriority());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -445,7 +455,7 @@ folly::Future<NavNodeCPtr> RulesDrivenECPresentationManager::_GetParent(ECDbCR d
         {
         context.OnTaskStart();
         return m_impl->GetParent(*GetTaskConnection(task), *node, options, *task.GetCancelationToken());
-        }, TaskDependencies(connectionId, options.GetRulesetId()), true, options.GetPriority());
+        }, TaskDependencies{std::make_shared<TaskDependencyOnConnection>(connectionId), std::make_shared<TaskDependencyOnRuleset>(options.GetRulesetId())}, true, options.GetPriority());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -464,7 +474,7 @@ folly::Future<NavNodeCPtr> RulesDrivenECPresentationManager::_GetNode(ECDbCR db,
         {
         context.OnTaskStart();
         return m_impl->GetNode(*GetTaskConnection(task), *nodeKey, options, *task.GetCancelationToken());
-        }, TaskDependencies(connectionId, options.GetRulesetId()), true, options.GetPriority());
+        }, TaskDependencies{std::make_shared<TaskDependencyOnConnection>(connectionId), std::make_shared<TaskDependencyOnRuleset>(options.GetRulesetId())}, true, options.GetPriority());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -483,7 +493,7 @@ folly::Future<bvector<NavNodeCPtr>> RulesDrivenECPresentationManager::_GetFilter
         {
         context.OnTaskStart();
         return m_impl->GetFilteredNodes(*GetTaskConnection(task), filterText.c_str(), options, *task.GetCancelationToken());
-        }, TaskDependencies(connectionId, options.GetRulesetId()), true, options.GetPriority());
+        }, TaskDependencies{std::make_shared<TaskDependencyOnConnection>(connectionId), std::make_shared<TaskDependencyOnRuleset>(options.GetRulesetId())}, true, options.GetPriority());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -615,7 +625,7 @@ folly::Future<bvector<SelectClassInfo>> RulesDrivenECPresentationManager::_GetCo
         {
         context.OnTaskStart();
         return m_impl->GetContentClasses(*GetTaskConnection(task), displayType.c_str(), contentFlags, classes, options, *task.GetCancelationToken());
-        }, TaskDependencies(connectionId, options.GetRulesetId()), true, options.GetPriority());
+        }, TaskDependencies{std::make_shared<TaskDependencyOnConnection>(connectionId), std::make_shared<TaskDependencyOnRuleset>(options.GetRulesetId())}, true, options.GetPriority());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -623,11 +633,13 @@ folly::Future<bvector<SelectClassInfo>> RulesDrivenECPresentationManager::_GetCo
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool ShouldCancelContentRequest(IECPresentationTaskCR request, Utf8CP displayType, Utf8CP connectionId, SelectionInfoCR selectionInfo)
     {
-    return request.GetDependencies().GetDisplayType().Equals(displayType ? displayType : "")
-        && request.GetDependencies().GetConnectionId().Equals(connectionId ? connectionId : "")
-        && request.GetDependencies().GetSelectionInfo()
-        && selectionInfo.GetSelectionProviderName().Equals(request.GetDependencies().GetSelectionInfo()->GetSelectionProviderName())
-        && selectionInfo.GetTimestamp() != request.GetDependencies().GetSelectionInfo()->GetTimestamp();
+    return request.GetDependencies().Has(TaskDependencyOnDisplayType(displayType ? displayType : ""))
+        && request.GetDependencies().Has(TaskDependencyOnConnection(connectionId ? connectionId : ""))
+        && request.GetDependencies().Has(TaskDependencyOnSelection::CreatePredicate([&selectionInfo](SelectionInfoCR dependencySelectionInfo)
+            {
+            return dependencySelectionInfo.GetSelectionProviderName().Equals(selectionInfo.GetSelectionProviderName())
+                && dependencySelectionInfo.GetTimestamp() != selectionInfo.GetTimestamp();
+            }));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -652,11 +664,20 @@ folly::Future<ContentDescriptorCPtr> RulesDrivenECPresentationManager::_GetConte
         }
 
     ContentOptions options(jsonOptions);
+    TaskDependencies dependencies
+        {
+        std::make_shared<TaskDependencyOnConnection>(connectionId),
+        std::make_shared<TaskDependencyOnRuleset>(options.GetRulesetId()),
+        std::make_shared<TaskDependencyOnDisplayType>(preferredDisplayType ? preferredDisplayType : ""),
+        };
+    if (selectionInfo)
+        dependencies.push_back(std::make_shared<TaskDependencyOnSelection>(*selectionInfo));
+
     return m_tasksManager->CreateAndExecute<ContentDescriptorCPtr>([&, displayType = Utf8String(preferredDisplayType), contentFlags, input = KeySetCPtr(&inputKeys), selectionInfo = SelectionInfoCPtr(selectionInfo), options, context](IECPresentationTaskWithResult<ContentDescriptorCPtr> const& task)
         {
         context.OnTaskStart();
         return m_impl->GetContentDescriptor(*GetTaskConnection(task), displayType.c_str(), contentFlags, *input, selectionInfo.get(), options, *task.GetCancelationToken());
-        }, TaskDependencies(connectionId, options.GetRulesetId(), preferredDisplayType, selectionInfo), true, options.GetPriority());
+        }, dependencies, true, options.GetPriority());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -673,11 +694,20 @@ folly::Future<ContentCPtr> RulesDrivenECPresentationManager::_GetContent(Content
         }
 
     ContentOptions options(descriptor.GetOptions());
+    TaskDependencies dependencies
+        {
+        std::make_shared<TaskDependencyOnConnection>(descriptor.GetConnectionId()),
+        std::make_shared<TaskDependencyOnRuleset>(options.GetRulesetId()),
+        std::make_shared<TaskDependencyOnDisplayType>(descriptor.GetPreferredDisplayType()),
+        };
+    if (descriptor.GetSelectionInfo())
+        dependencies.push_back(std::make_shared<TaskDependencyOnSelection>(*descriptor.GetSelectionInfo()));
+
     return m_tasksManager->CreateAndExecute<ContentCPtr>([&, descriptor = ContentDescriptorCPtr(&descriptor), pageOpts, context](IECPresentationTaskWithResult<ContentCPtr> const& task)
         {
         context.OnTaskStart();
         return m_impl->GetContent(*GetTaskConnection(task), *descriptor, pageOpts, *task.GetCancelationToken());
-        }, TaskDependencies(descriptor.GetConnectionId(), options.GetRulesetId(), descriptor.GetPreferredDisplayType(), descriptor.GetSelectionInfo()), true, options.GetPriority());
+        }, dependencies, true, options.GetPriority());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -694,11 +724,20 @@ folly::Future<size_t> RulesDrivenECPresentationManager::_GetContentSetSize(Conte
         }
 
     ContentOptions options(descriptor.GetOptions());
+    TaskDependencies dependencies
+        {
+        std::make_shared<TaskDependencyOnConnection>(descriptor.GetConnectionId()),
+        std::make_shared<TaskDependencyOnRuleset>(options.GetRulesetId()),
+        std::make_shared<TaskDependencyOnDisplayType>(descriptor.GetPreferredDisplayType()),
+        };
+    if (descriptor.GetSelectionInfo())
+        dependencies.push_back(std::make_shared<TaskDependencyOnSelection>(*descriptor.GetSelectionInfo()));
+
     return m_tasksManager->CreateAndExecute<size_t>([&, descriptor = ContentDescriptorCPtr(&descriptor), context](IECPresentationTaskWithResult<size_t> const& task)
         {
         context.OnTaskStart();
         return m_impl->GetContentSetSize(*GetTaskConnection(task), *descriptor, *task.GetCancelationToken());
-        }, TaskDependencies(descriptor.GetConnectionId(), options.GetRulesetId(), descriptor.GetPreferredDisplayType(), descriptor.GetSelectionInfo()), true, options.GetPriority());
+        }, dependencies, true, options.GetPriority());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -712,12 +751,20 @@ folly::Future<LabelDefinitionCPtr> RulesDrivenECPresentationManager::_GetDisplay
         BeAssert(false && "ECDb not registered as a connection");
         return LabelDefinition::Create();
         }
+
     CommonOptions options(jsonOptions);
+    TaskDependencies dependencies
+        {
+        std::make_shared<TaskDependencyOnConnection>(connectionId),
+        std::make_shared<TaskDependencyOnRuleset>(DISPLAY_LABEL_RULESET_ID),
+        std::make_shared<TaskDependencyOnDisplayType>(ContentDisplayType::List),
+        };
+
     return m_tasksManager->CreateAndExecute<LabelDefinitionCPtr>([&, keys = KeySetCPtr(&keys), context](IECPresentationTaskWithResult<LabelDefinitionCPtr> const& task)
         {
         context.OnTaskStart();
         return m_impl->GetDisplayLabel(*GetTaskConnection(task), *keys, *task.GetCancelationToken());
-        }, TaskDependencies(connectionId, DISPLAY_LABEL_RULESET_ID, ContentDisplayType::List, nullptr), true, options.GetPriority());
+        }, dependencies, true, options.GetPriority());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -729,3 +776,28 @@ IRulesetLocaterManager& RulesDrivenECPresentationManager::GetLocaters() {return 
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 IUserSettings& RulesDrivenECPresentationManager::GetUserSettings(Utf8CP rulesetId) const {return m_impl->GetUserSettings(rulesetId);}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<folly::Unit> RulesDrivenECPresentationManager::CompareHierarchies(std::shared_ptr<IUpdateRecordsHandler> updateRecordsHandler, ECDbCR db, Utf8StringCR lhsRulesetId, Utf8StringCR rhsRulesetId, JsonValueCR jsonOptions, PresentationRequestContextCR context)
+    {
+    Utf8CP connectionId = GetConnectionId(db);
+    if (!connectionId)
+        {
+        BeAssert(false && "ECDb not registered as a connection");
+        return folly::unit;
+        }
+    CommonOptions options(jsonOptions);
+    TaskDependencies dependencies
+        {
+        std::make_shared<TaskDependencyOnConnection>(connectionId),
+        std::make_shared<TaskDependencyOnRuleset>(lhsRulesetId),
+        std::make_shared<TaskDependencyOnRuleset>(rhsRulesetId),
+        };
+    return m_tasksManager->CreateAndExecute([&, updateRecordsHandler, lhsRulesetId, rhsRulesetId, locale = options.GetLocale(), context](IECPresentationTask const& task)
+        {
+        context.OnTaskStart();
+        m_impl->CompareHierarchies(*updateRecordsHandler, *GetTaskConnection(task), lhsRulesetId, rhsRulesetId, locale, *task.GetCancelationToken());
+        }, dependencies, true, options.GetPriority());
+    }

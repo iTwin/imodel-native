@@ -88,6 +88,8 @@ $(o)PresentationManagerImpl$(oext):      $(RulesEngineSourceDirectory)Presentati
 
 $(o)TaskScheduler$(oext):                $(RulesEngineSourceDirectory)TaskScheduler.cpp $(RulesEngineDependencies)
 
+$(o)HierarchiesComparer$(oext):          $(RulesEngineSourceDirectory)HierarchiesComparer.cpp $(RulesEngineDependencies)
+
 %include MultiCppCompileGo.mki
 
 RulesEngineObjs =

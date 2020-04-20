@@ -38,7 +38,7 @@ protected:
     virtual ContentSpecification* _Clone() const = 0;
 
     //! Computes specification hash.
-    ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
+    ECPRESENTATION_EXPORT virtual MD5 _ComputeHash() const override;
 
 public:
     ECPRESENTATION_EXPORT static ContentSpecificationP Create(JsonValueCR);
@@ -63,7 +63,7 @@ public:
 
     //! A list of related instance specifications.
     ECPRESENTATION_EXPORT void AddRelatedInstance(RelatedInstanceSpecificationR relatedInstance);
-    RelatedInstanceSpecificationList const& GetRelatedInstances() const {return m_relatedInstances;}    
+    RelatedInstanceSpecificationList const& GetRelatedInstances() const {return m_relatedInstances;}
 
     RelatedPropertiesSpecificationList const& GetRelatedProperties() const {return m_modifiers.GetRelatedProperties();}
     void AddRelatedProperty(RelatedPropertiesSpecificationR specification) {m_modifiers.AddRelatedProperty(specification);}

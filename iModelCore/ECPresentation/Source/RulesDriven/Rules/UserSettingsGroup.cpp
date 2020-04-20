@@ -14,7 +14,7 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-UserSettingsGroup::UserSettingsGroup() 
+UserSettingsGroup::UserSettingsGroup()
     : PresentationKey()
     {}
 
@@ -124,11 +124,9 @@ Utf8StringCR UserSettingsGroup::GetCategoryLabel (void) const { return m_categor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UserSettingsGroup::AddSettingsItem(UserSettingsItemR item) 
+void UserSettingsGroup::AddSettingsItem(UserSettingsItemR item)
     {
-    InvalidateHash();
-    item.SetParent(this);
-    m_settingsItems.push_back(&item);
+    ADD_HASHABLE_CHILD(m_settingsItems, item);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -136,9 +134,7 @@ void UserSettingsGroup::AddSettingsItem(UserSettingsItemR item)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UserSettingsGroup::AddNestedSettings(UserSettingsGroupR group)
     {
-    InvalidateHash();
-    group.SetParent(this);
-    m_nestedSettings.push_back(&group);
+    ADD_HASHABLE_CHILD(m_nestedSettings, group);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -154,26 +150,14 @@ UserSettingsGroupList const& UserSettingsGroup::GetNestedSettings (void) const {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 UserSettingsGroup::_ComputeHash(Utf8CP parentHash) const
+MD5 UserSettingsGroup::_ComputeHash() const
     {
-    MD5 md5 = PresentationKey::_ComputeHash(parentHash);
+    MD5 md5 = PresentationKey::_ComputeHash();
     md5.Add(m_categoryLabel.c_str(), m_categoryLabel.size());
-    Utf8String currentHash = md5.GetHashString();
-
-    for (UserSettingsGroupP group : m_nestedSettings)
-        {
-        Utf8StringCR groupHash = group->GetHash(currentHash.c_str());
-        md5.Add(groupHash.c_str(), groupHash.size());
-        }
-    for (UserSettingsItemP item : m_settingsItems)
-        {
-        Utf8StringCR itemHash = item->GetHash(currentHash.c_str());
-        md5.Add(itemHash.c_str(), itemHash.size());
-        }
+    ADD_RULES_TO_HASH(md5, m_nestedSettings);
+    ADD_RULES_TO_HASH(md5, m_settingsItems);
     return md5;
     }
-
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/2013
@@ -211,7 +195,7 @@ bool UserSettingsItem::ReadXml (BeXmlNodeP xmlNode)
         m_options = "";
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_defaultValue, USER_SETTINGS_ITEM_XML_ATTRIBUTE_DEFAULT_VALUE))
-        m_defaultValue = "";    
+        m_defaultValue = "";
 
     return true;
     }
@@ -296,14 +280,12 @@ Utf8StringCR UserSettingsItem::GetDefaultValue (void) const     { return m_defau
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 UserSettingsItem::_ComputeHash(Utf8CP parentHash) const
+MD5 UserSettingsItem::_ComputeHash() const
     {
     MD5 md5;
     md5.Add(m_id.c_str(), m_id.size());
     md5.Add(m_label.c_str(), m_label.size());
     md5.Add(m_options.c_str(), m_options.size());
     md5.Add(m_defaultValue.c_str(), m_defaultValue.size());
-    if (nullptr != parentHash)
-        md5.Add(parentHash, strlen(parentHash));
     return md5;
     }

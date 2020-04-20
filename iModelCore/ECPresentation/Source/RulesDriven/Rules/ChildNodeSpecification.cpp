@@ -178,7 +178,7 @@ bool ChildNodeSpecification::_ReadJson(JsonValueCR json)
     {
     if (!PresentationRuleSpecification::_ReadJson(json))
         return false;
-    
+
     m_priority = json[COMMON_JSON_ATTRIBUTE_PRIORITY].asInt(1000);
     if (json.isMember(CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_HASCHILDREN))
         m_hasChildren = ParseChildrenHint(json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_HASCHILDREN].asCString(""));
@@ -191,7 +191,7 @@ bool ChildNodeSpecification::_ReadJson(JsonValueCR json)
     CommonToolsInternal::LoadFromJson(json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_RELATEDINSTANCES], m_relatedInstances, CommonToolsInternal::LoadRuleFromJson<RelatedInstanceSpecification>, this);
     CommonToolsInternal::LoadFromJsonByPriority(json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_NESTEDRULES], m_nestedRules, CommonToolsInternal::LoadRuleFromJson<ChildNodeRule>, this);
     return true;
-    } 
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2018
@@ -215,7 +215,7 @@ void ChildNodeSpecification::_WriteJson(JsonValueR json) const
         CommonToolsInternal::WriteRulesToJson<RelatedInstanceSpecification, RelatedInstanceSpecificationList>(json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_RELATEDINSTANCES], m_relatedInstances);
     if (!m_nestedRules.empty())
         CommonToolsInternal::WriteRulesToJson<ChildNodeRule, ChildNodeRuleList>(json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_NESTEDRULES], m_nestedRules);
-    } 
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -229,19 +229,6 @@ int ChildNodeSpecification::GetPriority (void) const
 * @bsimethod                                    Kelly.Shiptoski                 05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ChildNodeSpecification::SetPriority (int value) { m_priority = value; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Eligijus.Mauragas               10/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-/*bool ChildNodeSpecification::GetAlwaysReturnsChildren (void) const
-    {
-    return m_alwaysReturnsChildren;
-    }*/
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Kelly.Shiptoski                 05/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-// void ChildNodeSpecification::SetAlwaysReturnsChildren (bool value) { m_alwaysReturnsChildren = value; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -314,9 +301,7 @@ ChildNodeRuleList const& ChildNodeSpecification::GetNestedRules (void) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ChildNodeSpecification::AddNestedRule(ChildNodeRuleR rule)
     {
-    InvalidateHash();
-    rule.SetParent(this);
-    m_nestedRules.push_back(&rule);
+    ADD_HASHABLE_CHILD(m_nestedRules, rule);
     }
 
 
@@ -325,17 +310,15 @@ void ChildNodeSpecification::AddNestedRule(ChildNodeRuleR rule)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ChildNodeSpecification::AddRelatedInstance(RelatedInstanceSpecificationR relatedInstance)
     {
-    InvalidateHash();
-    relatedInstance.SetParent(this);
-    m_relatedInstances.push_back(&relatedInstance);
+    ADD_HASHABLE_CHILD(m_relatedInstances, relatedInstance);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 ChildNodeSpecification::_ComputeHash(Utf8CP parentHash) const
+MD5 ChildNodeSpecification::_ComputeHash() const
     {
-    MD5 md5 = PresentationRuleSpecification::_ComputeHash(parentHash);
+    MD5 md5 = PresentationRuleSpecification::_ComputeHash();
     md5.Add(&m_priority, sizeof(m_priority));
     md5.Add(&m_hasChildren, sizeof(m_hasChildren));
     md5.Add(&m_hideNodesInHierarchy, sizeof(m_hideNodesInHierarchy));
@@ -344,17 +327,7 @@ MD5 ChildNodeSpecification::_ComputeHash(Utf8CP parentHash) const
     md5.Add(m_extendedData.c_str(), m_extendedData.size());
     Utf8CP name = _GetXmlElementName();
     md5.Add(name, strlen(name));
-
-    Utf8String currentHash = md5.GetHashString();
-    for (RelatedInstanceSpecificationP spec : m_relatedInstances)
-        {
-        Utf8StringCR specHash = spec->GetHash(currentHash.c_str());
-        md5.Add(specHash.c_str(), specHash.size());
-        }
-    for (ChildNodeRuleP rule : m_nestedRules)
-        {
-        Utf8StringCR ruleHash = rule->GetHash(currentHash.c_str());
-        md5.Add(ruleHash.c_str(), ruleHash.size());
-        }
+    ADD_RULES_TO_HASH(md5, m_relatedInstances);
+    ADD_RULES_TO_HASH(md5, m_nestedRules);
     return md5;
     }

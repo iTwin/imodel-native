@@ -31,7 +31,7 @@ struct EXPORT_VTABLE_ATTRIBUTE AllInstanceNodesSpecification : public ChildNodeS
         ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName () const override;
         ECPRESENTATION_EXPORT bool _ReadXml (BeXmlNodeP xmlNode) override;
         ECPRESENTATION_EXPORT void _WriteXml (BeXmlNodeP xmlNode) const override;
-        
+
         ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
         ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
         ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
@@ -40,12 +40,12 @@ struct EXPORT_VTABLE_ATTRIBUTE AllInstanceNodesSpecification : public ChildNodeS
         ChildNodeSpecification* _Clone() const override {return new AllInstanceNodesSpecification(*this);}
 
         //! Computes specification hash.
-        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+        ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECPRESENTATION_EXPORT AllInstanceNodesSpecification ();
-        
+
         //! Constructor.
         //! @deprecated Use AllInstanceNodesSpecification(int, ChildrenHint, bool, bool, bool, bool, Utf8StringCR)
         ECPRESENTATION_EXPORT AllInstanceNodesSpecification (int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy, bool hideIfNoChildren,

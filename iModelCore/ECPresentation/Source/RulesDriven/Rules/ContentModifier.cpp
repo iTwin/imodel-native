@@ -170,29 +170,13 @@ void ContentModifiersList::WriteJson(JsonValueR json) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 ContentModifiersList::_ComputeHash(Utf8CP parentHash) const
+MD5 ContentModifiersList::_ComputeHash() const
     {
     MD5 md5;
-    for (RelatedPropertiesSpecificationP spec : m_relatedProperties)
-        {
-        Utf8StringCR specHash = spec->GetHash(parentHash);
-        md5.Add(specHash.c_str(), specHash.size());
-        }
-    for (CalculatedPropertiesSpecificationP spec : m_calculatedProperties)
-        {
-        Utf8StringCR specHash = spec->GetHash(parentHash);
-        md5.Add(specHash.c_str(), specHash.size());
-        }
-    for (PropertySpecificationP spec : m_propertyOverrides)
-        {
-        Utf8StringCR specHash = spec->GetHash(parentHash);
-        md5.Add(specHash.c_str(), specHash.size());
-        }
-    for (PropertyCategorySpecificationP spec : m_propertyCategories)
-        {
-        Utf8StringCR specHash = spec->GetHash(parentHash);
-        md5.Add(specHash.c_str(), specHash.size());
-        }
+    ADD_RULES_TO_HASH(md5, m_relatedProperties);
+    ADD_RULES_TO_HASH(md5, m_calculatedProperties);
+    ADD_RULES_TO_HASH(md5, m_propertyOverrides);
+    ADD_RULES_TO_HASH(md5, m_propertyCategories);
     return md5;
     }
 
@@ -272,14 +256,14 @@ void ContentModifier::_WriteJson(JsonValueR json) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 ContentModifier::_ComputeHash(Utf8CP parentHash) const
+MD5 ContentModifier::_ComputeHash() const
     {
-    MD5 md5 = PresentationKey::_ComputeHash(parentHash);
+    MD5 md5 = PresentationKey::_ComputeHash();
     md5.Add(m_schemaName.c_str(), m_schemaName.size());
     md5.Add(m_className.c_str(), m_className.size());
 
-    Utf8String currentHash = md5.GetHashString();
-    Utf8StringCR modifiersHash = m_modifiers.GetHash(currentHash.c_str());
+    Utf8StringCR modifiersHash = m_modifiers.GetHash();
     md5.Add(modifiersHash.c_str(), modifiersHash.size());
+
     return md5;
     }

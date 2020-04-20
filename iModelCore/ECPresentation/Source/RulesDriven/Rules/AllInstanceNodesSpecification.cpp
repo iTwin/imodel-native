@@ -23,18 +23,18 @@ AllInstanceNodesSpecification::AllInstanceNodesSpecification ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-AllInstanceNodesSpecification::AllInstanceNodesSpecification(int priority, bool alwaysReturnsChildren, 
-    bool hideNodesInHierarchy, bool hideIfNoChildren, bool groupByClass, bool groupByLabel, Utf8StringCR supportedSchemas) 
-    : AllInstanceNodesSpecification(priority, alwaysReturnsChildren ? ChildrenHint::Always : ChildrenHint::Unknown, 
+AllInstanceNodesSpecification::AllInstanceNodesSpecification(int priority, bool alwaysReturnsChildren,
+    bool hideNodesInHierarchy, bool hideIfNoChildren, bool groupByClass, bool groupByLabel, Utf8StringCR supportedSchemas)
+    : AllInstanceNodesSpecification(priority, alwaysReturnsChildren ? ChildrenHint::Always : ChildrenHint::Unknown,
         hideNodesInHierarchy, hideIfNoChildren, groupByClass, groupByLabel, supportedSchemas)
     {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-AllInstanceNodesSpecification::AllInstanceNodesSpecification(int priority, ChildrenHint hasChildren, bool hideNodesInHierarchy, 
-    bool hideIfNoChildren, bool groupByClass, bool groupByLabel, Utf8StringCR supportedSchemas) 
-    : ChildNodeSpecification (priority, hasChildren, hideNodesInHierarchy, hideIfNoChildren), 
+AllInstanceNodesSpecification::AllInstanceNodesSpecification(int priority, ChildrenHint hasChildren, bool hideNodesInHierarchy,
+    bool hideIfNoChildren, bool groupByClass, bool groupByLabel, Utf8StringCR supportedSchemas)
+    : ChildNodeSpecification (priority, hasChildren, hideNodesInHierarchy, hideIfNoChildren),
     m_groupByClass(groupByClass), m_groupByLabel(groupByLabel), m_supportedSchemas(supportedSchemas)
     {}
 
@@ -119,7 +119,7 @@ bool AllInstanceNodesSpecification::_ReadJson(JsonValueCR json)
     m_groupByLabel = json[COMMON_JSON_ATTRIBUTE_GROUPBYLABEL].asBool(true);
     m_supportedSchemas = CommonToolsInternal::SupportedSchemasToString(json[COMMON_JSON_ATTRIBUTE_SUPPORTEDSCHEMAS]);
     return true;
-    } 
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2018
@@ -168,9 +168,9 @@ void AllInstanceNodesSpecification::SetSupportedSchemas (Utf8StringCR value) { m
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 AllInstanceNodesSpecification::_ComputeHash(Utf8CP parentHash) const
+MD5 AllInstanceNodesSpecification::_ComputeHash() const
     {
-    MD5 md5 = ChildNodeSpecification::_ComputeHash(parentHash);
+    MD5 md5 = ChildNodeSpecification::_ComputeHash();
     md5.Add(&m_groupByClass, sizeof(m_groupByClass));
     md5.Add(&m_groupByLabel, sizeof(m_groupByLabel));
     md5.Add(m_supportedSchemas.c_str(), m_supportedSchemas.size());

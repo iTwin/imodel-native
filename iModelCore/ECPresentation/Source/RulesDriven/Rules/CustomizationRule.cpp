@@ -98,9 +98,9 @@ void ConditionalCustomizationRule::_WriteJson(JsonValueR json) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 ConditionalCustomizationRule::_ComputeHash(Utf8CP parentHash) const
+MD5 ConditionalCustomizationRule::_ComputeHash() const
     {
-    MD5 md5 = CustomizationRule::_ComputeHash(parentHash);
+    MD5 md5 = CustomizationRule::_ComputeHash();
     md5.Add(m_condition.c_str(), m_condition.size());
     return md5;
     }

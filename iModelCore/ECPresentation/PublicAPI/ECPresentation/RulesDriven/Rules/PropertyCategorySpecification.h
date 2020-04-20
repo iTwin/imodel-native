@@ -23,7 +23,7 @@ private:
     bool m_autoExpand;
 
 protected:
-    ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+    ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
 public:
     PropertyCategorySpecification(): m_priority(1000), m_autoExpand(false) {}

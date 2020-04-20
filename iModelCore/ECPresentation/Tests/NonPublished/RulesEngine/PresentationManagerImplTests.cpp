@@ -264,7 +264,6 @@ TEST_F(RulesDrivenECPresentationManagerImplRequestCancelationTests, AbortsChildN
     // add a ruleset locater which cancels the request
     RefCountedPtr<TestCallbackRulesetLocater> locater = TestCallbackRulesetLocater::Create();
     m_impl->GetLocaters().RegisterLocater(*locater);
-    m_impl->GetLocaters().InvalidateCache();
     locater->SetCallback([&]()
         {
         token->SetCanceled(true);
@@ -291,7 +290,6 @@ TEST_F(RulesDrivenECPresentationManagerImplRequestCancelationTests, AbortsChildN
     // add a ruleset locater which cancels the request
     RefCountedPtr<TestCallbackRulesetLocater> locater = TestCallbackRulesetLocater::Create();
     m_impl->GetLocaters().RegisterLocater(*locater);
-    m_impl->GetLocaters().InvalidateCache();
     locater->SetCallback([&]()
         {
         token->SetCanceled(true);

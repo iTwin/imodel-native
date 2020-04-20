@@ -24,19 +24,19 @@ InstanceNodesOfSpecificClassesSpecification::InstanceNodesOfSpecificClassesSpeci
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceNodesOfSpecificClassesSpecification::InstanceNodesOfSpecificClassesSpecification(int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy, 
-    bool hideIfNoChildren, bool groupByClass, bool groupByLabel, bool showEmptyGroups, Utf8StringCR instanceFilter, Utf8StringCR classNames, bool arePolymorphic) 
-    : InstanceNodesOfSpecificClassesSpecification(priority, alwaysReturnsChildren ? ChildrenHint::Always : ChildrenHint::Unknown, hideNodesInHierarchy, 
+InstanceNodesOfSpecificClassesSpecification::InstanceNodesOfSpecificClassesSpecification(int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy,
+    bool hideIfNoChildren, bool groupByClass, bool groupByLabel, bool showEmptyGroups, Utf8StringCR instanceFilter, Utf8StringCR classNames, bool arePolymorphic)
+    : InstanceNodesOfSpecificClassesSpecification(priority, alwaysReturnsChildren ? ChildrenHint::Always : ChildrenHint::Unknown, hideNodesInHierarchy,
         hideIfNoChildren, groupByClass, groupByLabel, instanceFilter, classNames, arePolymorphic)
     {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceNodesOfSpecificClassesSpecification::InstanceNodesOfSpecificClassesSpecification(int priority, ChildrenHint hasChildren, bool hideNodesInHierarchy, 
-    bool hideIfNoChildren, bool groupByClass, bool groupByLabel, Utf8StringCR instanceFilter, Utf8StringCR classNames, bool arePolymorphic) 
-    : ChildNodeSpecification (priority, hasChildren, hideNodesInHierarchy, hideIfNoChildren), 
-    m_groupByClass(groupByClass), m_groupByLabel(groupByLabel), m_showEmptyGroups(false), 
+InstanceNodesOfSpecificClassesSpecification::InstanceNodesOfSpecificClassesSpecification(int priority, ChildrenHint hasChildren, bool hideNodesInHierarchy,
+    bool hideIfNoChildren, bool groupByClass, bool groupByLabel, Utf8StringCR instanceFilter, Utf8StringCR classNames, bool arePolymorphic)
+    : ChildNodeSpecification (priority, hasChildren, hideNodesInHierarchy, hideIfNoChildren),
+    m_groupByClass(groupByClass), m_groupByLabel(groupByLabel), m_showEmptyGroups(false),
     m_instanceFilter(instanceFilter), m_classNames(classNames), m_arePolymorphic(arePolymorphic)
     {}
 
@@ -230,9 +230,9 @@ Utf8StringCR InstanceNodesOfSpecificClassesSpecification::GetInstanceFilter (voi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 InstanceNodesOfSpecificClassesSpecification::_ComputeHash(Utf8CP parentHash) const
+MD5 InstanceNodesOfSpecificClassesSpecification::_ComputeHash() const
     {
-    MD5 md5 = ChildNodeSpecification::_ComputeHash(parentHash);
+    MD5 md5 = ChildNodeSpecification::_ComputeHash();
     md5.Add(&m_groupByClass, sizeof(m_groupByClass));
     md5.Add(&m_groupByLabel, sizeof(m_groupByLabel));
     md5.Add(&m_showEmptyGroups, sizeof(m_showEmptyGroups));

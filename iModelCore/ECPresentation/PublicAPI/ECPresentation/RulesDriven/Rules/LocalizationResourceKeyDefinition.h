@@ -9,7 +9,7 @@
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
-Implementation of localization resource key definition. This rule is used to define 
+Implementation of localization resource key definition. This rule is used to define
 additional settings for the resource key.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -28,7 +28,7 @@ struct LocalizationResourceKeyDefinition : public PresentationKey
         Utf8CP _GetJsonElementType() const override {return "LocalizationResourceKeyDefinition";}
 
         //! Computes rule hash.
-        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+        ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.

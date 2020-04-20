@@ -31,7 +31,7 @@ protected:
     void _Accept(CustomizationRuleVisitor& visitor) const override { visitor._Visit(*this); }
 
     //! Computes rule hash
-    ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+    ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
     //! Clones rule.
     CustomizationRule* _Clone() const override {return new ExtendedDataRule(*this);}
@@ -47,7 +47,7 @@ public:
     //! Set key-value pairs for extended data value definitions in this rule
     ECPRESENTATION_EXPORT void SetItemsMap(bmap<Utf8String, Utf8String> map);
 
-    //! Set a single extended data value definition. The `key` property must be 
+    //! Set a single extended data value definition. The `key` property must be
     //! unique. The `value` property is an ECExpression.
     ECPRESENTATION_EXPORT void AddItem(Utf8String key, Utf8String value);
 };

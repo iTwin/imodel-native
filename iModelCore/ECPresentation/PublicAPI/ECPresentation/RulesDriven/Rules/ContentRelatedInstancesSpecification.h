@@ -12,7 +12,7 @@
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
-Specification that creates content ECQueries for predefined relationships and/or 
+Specification that creates content ECQueries for predefined relationships and/or
 related ECClasses of the selected node.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -30,7 +30,7 @@ private:
 protected:
     //! Allows the visitor to visit this specification.
     ECPRESENTATION_EXPORT void _Accept(PresentationRuleSpecificationVisitor& visitor) const override;
-        
+
     ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName () const override;
     ECPRESENTATION_EXPORT bool _ReadXml (BeXmlNodeP xmlNode) override;
     ECPRESENTATION_EXPORT void _WriteXml (BeXmlNodeP xmlNode) const override;
@@ -38,19 +38,19 @@ protected:
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
     ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
-        
+
     //! Clones this content specification.
     ContentSpecification* _Clone() const override {return new ContentRelatedInstancesSpecification(*this);}
 
     //! Computes specification hash.
-    ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+    ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
 public:
     //! Constructor. It is used to initialize the rule with default settings.
     ECPRESENTATION_EXPORT ContentRelatedInstancesSpecification();
     ECPRESENTATION_EXPORT ContentRelatedInstancesSpecification(ContentRelatedInstancesSpecification const&);
     ECPRESENTATION_EXPORT ContentRelatedInstancesSpecification(ContentRelatedInstancesSpecification&&);
-    ECPRESENTATION_EXPORT ContentRelatedInstancesSpecification(int priority, int skipRelatedLevel, bool isRecursive, 
+    ECPRESENTATION_EXPORT ContentRelatedInstancesSpecification(int priority, int skipRelatedLevel, bool isRecursive,
         Utf8String instanceFilter, RequiredRelationDirection requiredDirection, Utf8String relationshipClassNames, Utf8String relatedClassNames);
     ContentRelatedInstancesSpecification(int priority, Utf8String instanceFilter, bvector<RepeatableRelationshipPathSpecification*> relationshipPaths)
         : ContentSpecification(priority), m_instanceFilter(instanceFilter), m_relationshipPaths(relationshipPaths), m_skipRelatedLevel(0),

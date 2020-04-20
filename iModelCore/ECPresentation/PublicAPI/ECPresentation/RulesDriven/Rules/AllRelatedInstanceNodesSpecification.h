@@ -29,27 +29,27 @@ struct EXPORT_VTABLE_ATTRIBUTE AllRelatedInstanceNodesSpecification : public Chi
     protected:
         //! Allows the visitor to visit this specification.
         ECPRESENTATION_EXPORT void _Accept(PresentationRuleSpecificationVisitor& visitor) const override;
-        
+
         ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationRuleSpecification const& other) const override;
 
         ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName () const override;
         ECPRESENTATION_EXPORT bool _ReadXml (BeXmlNodeP xmlNode) override;
         ECPRESENTATION_EXPORT void _WriteXml (BeXmlNodeP xmlNode) const override;
-        
+
         ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
         ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
         ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
-        
+
         //! Clones this specification.
         ChildNodeSpecification* _Clone() const override {return new AllRelatedInstanceNodesSpecification(*this);}
 
         //! Computes specification hash.
-        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+        ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECPRESENTATION_EXPORT AllRelatedInstanceNodesSpecification ();
-        
+
         //! Constructor.
         //! @deprecated Use AllRelatedInstanceNodesSpecification(int, ChildrenHint, bool, bool, bool, bool, int, Utf8StringCR)
         ECPRESENTATION_EXPORT AllRelatedInstanceNodesSpecification (int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy, bool hideIfNoChildren,
@@ -81,7 +81,7 @@ struct EXPORT_VTABLE_ATTRIBUTE AllRelatedInstanceNodesSpecification : public Chi
 
         //! Returns level of related instances to skip.
         ECPRESENTATION_EXPORT int                          GetSkipRelatedLevel (void) const;
-        
+
         //! Sets the SkipRelatedLevel value. Can be int.
         ECPRESENTATION_EXPORT void                         SetSkipRelatedLevel (int value);
 

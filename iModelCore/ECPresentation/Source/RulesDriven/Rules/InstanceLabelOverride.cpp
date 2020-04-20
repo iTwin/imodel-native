@@ -147,17 +147,11 @@ void InstanceLabelOverride::_WriteJson(JsonValueR json) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 InstanceLabelOverride::_ComputeHash(Utf8CP parentHash) const
+MD5 InstanceLabelOverride::_ComputeHash() const
     {
-    MD5 md5 = CustomizationRule::_ComputeHash(parentHash);
+    MD5 md5 = CustomizationRule::_ComputeHash();
     md5.Add(m_className.c_str(), m_className.size());
-
-    Utf8String currentHash = md5.GetHashString();
-    for (InstanceLabelOverrideValueSpecification* spec : m_valueSpecifications)
-        {
-        Utf8StringCR specHash = spec->GetHash(currentHash.c_str());
-        md5.Add(specHash.c_str(), specHash.size());
-        }
+    ADD_RULES_TO_HASH(md5, m_valueSpecifications);
     return md5;
     }
 
@@ -171,9 +165,7 @@ void InstanceLabelOverride::_Accept(CustomizationRuleVisitor& visitor) const {vi
 +---------------+---------------+---------------+---------------+---------------+------*/
 void InstanceLabelOverride::AddValueSpecification(InstanceLabelOverrideValueSpecification& spec)
     {
-    InvalidateHash();
-    spec.SetParent(this);
-    m_valueSpecifications.push_back(&spec);
+    ADD_HASHABLE_CHILD(m_valueSpecifications, spec);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -205,11 +197,9 @@ InstanceLabelOverrideValueSpecification* InstanceLabelOverrideValueSpecification
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 InstanceLabelOverrideValueSpecification::_ComputeHash(Utf8CP parentHash) const
+MD5 InstanceLabelOverrideValueSpecification::_ComputeHash() const
     {
     MD5 md5;
-    if (parentHash != nullptr)
-        md5.Add(parentHash, strlen(parentHash));
     Utf8CP type = _GetJsonElementType();
     md5.Add(type, strlen(type));
     return md5;
@@ -263,16 +253,11 @@ Utf8CP InstanceLabelOverrideCompositeValueSpecification::_GetJsonElementType() c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 InstanceLabelOverrideCompositeValueSpecification::_ComputeHash(Utf8CP parentHash) const
+MD5 InstanceLabelOverrideCompositeValueSpecification::_ComputeHash() const
     {
-    MD5 md5 = InstanceLabelOverrideValueSpecification::_ComputeHash(parentHash);
+    MD5 md5 = InstanceLabelOverrideValueSpecification::_ComputeHash();
     md5.Add(m_separator.c_str(), m_separator.size());
-    Utf8String currentHash = md5.GetHashString();
-    for (Part* part : m_parts)
-        {
-        Utf8StringCR partHash = part->GetHash(currentHash.c_str());
-        md5.Add(partHash.c_str(), partHash.size());
-        }
+    ADD_RULES_TO_HASH(md5, m_parts);
     return md5;
     }
 
@@ -309,23 +294,18 @@ void InstanceLabelOverrideCompositeValueSpecification::_WriteJson(JsonValueR jso
 +---------------+---------------+---------------+---------------+---------------+------*/
 void InstanceLabelOverrideCompositeValueSpecification::AddValuePart(InstanceLabelOverrideValueSpecification& partSpecification, bool isRequired)
     {
-    InvalidateHash();
     Part* part = new Part(partSpecification, isRequired);
-    part->SetParent(this);
-    m_parts.push_back(part);
+    ADD_HASHABLE_CHILD(m_parts, *part);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 InstanceLabelOverrideCompositeValueSpecification::Part::_ComputeHash(Utf8CP parentHash) const
+MD5 InstanceLabelOverrideCompositeValueSpecification::Part::_ComputeHash() const
     {
     MD5 md5;
-    if (parentHash != nullptr)
-        md5.Add(parentHash, strlen(parentHash));
     md5.Add(&m_isRequired, sizeof(m_isRequired));
 
-    Utf8String currentHash = md5.GetHashString();
-    Utf8StringCR specHash = m_specification->GetHash(currentHash.c_str());
+    Utf8StringCR specHash = m_specification->GetHash();
     md5.Add(specHash.c_str(), specHash.size());
 
     return md5;
@@ -347,6 +327,7 @@ bool InstanceLabelOverrideCompositeValueSpecification::Part::ReadJson(JsonValueC
         ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, "InstanceLabelOverrideCompositeValueSpecification.Part", INSTANCE_LABEL_OVERRIDE_COMPOSITE_VALUE_SPECIFICATION_PART_JSON_ATTRIBUTE_SPEC);
         return false;
         }
+    m_specification->SetParent(this);
 
     if (json.isMember(INSTANCE_LABEL_OVERRIDE_COMPOSITE_VALUE_SPECIFICATION_PART_JSON_ATTRIBUTE_ISREQUIRED) && json[INSTANCE_LABEL_OVERRIDE_COMPOSITE_VALUE_SPECIFICATION_PART_JSON_ATTRIBUTE_ISREQUIRED].isBool())
         m_isRequired = json[INSTANCE_LABEL_OVERRIDE_COMPOSITE_VALUE_SPECIFICATION_PART_JSON_ATTRIBUTE_ISREQUIRED].asBool();
@@ -373,9 +354,9 @@ Utf8CP InstanceLabelOverridePropertyValueSpecification::_GetJsonElementType() co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 InstanceLabelOverridePropertyValueSpecification::_ComputeHash(Utf8CP parentHash) const
+MD5 InstanceLabelOverridePropertyValueSpecification::_ComputeHash() const
     {
-    MD5 md5 = InstanceLabelOverrideValueSpecification::_ComputeHash(parentHash);
+    MD5 md5 = InstanceLabelOverrideValueSpecification::_ComputeHash();
     md5.Add(m_propertyName.c_str(), m_propertyName.size());
     return md5;
     }
@@ -424,9 +405,9 @@ Utf8CP InstanceLabelOverrideClassNameValueSpecification::_GetJsonElementType() c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 InstanceLabelOverrideClassNameValueSpecification::_ComputeHash(Utf8CP parentHash) const
+MD5 InstanceLabelOverrideClassNameValueSpecification::_ComputeHash() const
     {
-    MD5 md5 = InstanceLabelOverrideValueSpecification::_ComputeHash(parentHash);
+    MD5 md5 = InstanceLabelOverrideValueSpecification::_ComputeHash();
     md5.Add(&m_full, sizeof(m_full));
     return md5;
     }
@@ -475,9 +456,9 @@ Utf8CP InstanceLabelOverrideStringValueSpecification::_GetJsonElementType() cons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 InstanceLabelOverrideStringValueSpecification::_ComputeHash(Utf8CP parentHash) const
+MD5 InstanceLabelOverrideStringValueSpecification::_ComputeHash() const
     {
-    MD5 md5 = InstanceLabelOverrideValueSpecification::_ComputeHash(parentHash);
+    MD5 md5 = InstanceLabelOverrideValueSpecification::_ComputeHash();
     md5.Add(m_value.c_str(), m_value.size());
     return md5;
     }

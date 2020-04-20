@@ -51,7 +51,8 @@ RulesEngineInternalHeaders    = $(RulesEngineSourceDirectory)RulesEngineTypes.h 
                                 $(RulesEngineSourceDirectory)ECExpressionOptimizer.h                \
                                 $(RulesEngineSourceDirectory)UsedClassesListener.h                  \
                                 $(RulesEngineSourceDirectory)PresentationManagerImpl.h              \
-                                $(RulesEngineSourceDirectory)TaskScheduler.h
+                                $(RulesEngineSourceDirectory)TaskScheduler.h                        \
+                                $(RulesEngineSourceDirectory)HierarchiesComparer.h
 
 RulesEngineXliffHeaders       = $(XliffsDirectory)RulesEngine.xliff.h
 

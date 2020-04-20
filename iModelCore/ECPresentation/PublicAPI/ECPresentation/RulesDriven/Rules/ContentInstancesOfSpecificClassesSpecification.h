@@ -26,7 +26,7 @@ private:
 protected:
     //! Allows the visitor to visit this specification.
     ECPRESENTATION_EXPORT void _Accept(PresentationRuleSpecificationVisitor& visitor) const override;
-        
+
     ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName () const override;
     ECPRESENTATION_EXPORT bool _ReadXml (BeXmlNodeP xmlNode) override;
     ECPRESENTATION_EXPORT void _WriteXml (BeXmlNodeP xmlNode) const override;
@@ -34,12 +34,12 @@ protected:
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
     ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
-        
+
     //! Clones this content specification.
     ContentSpecification* _Clone() const override {return new ContentInstancesOfSpecificClassesSpecification(*this);}
 
     //! Compute specification hash.
-    ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+    ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
 public:
     ECPRESENTATION_EXPORT ContentInstancesOfSpecificClassesSpecification ();
@@ -49,12 +49,12 @@ public:
     Utf8StringCR GetClassNames() const {return m_classNames;}
     void SetClassNames(Utf8StringCR value) {m_classNames = value;}
 
-    //! A flag indicating whether ECInstances of all ECClasses that derive from the specified class should be loaded in 
+    //! A flag indicating whether ECInstances of all ECClasses that derive from the specified class should be loaded in
     //! addition to ECInstances of exactly the given class
     bool ShouldHandleInstancesPolymorphically() const {return m_handleInstancesPolymorphically;}
     void SetShouldHandleInstancesPolymorphically(bool value) { m_handleInstancesPolymorphically = value;}
 
-    //! InstanceFiler is specially formated string that represents WhereCriteria in 
+    //! InstanceFiler is specially formated string that represents WhereCriteria in
     //! ECQuery that is used to filter query results.
     Utf8StringCR GetInstanceFilter() const {return m_instanceFilter;}
     void SetInstanceFilter(Utf8StringCR value) {m_instanceFilter = value;}

@@ -83,13 +83,11 @@ Json::Value CalculatedPropertiesSpecification::WriteJson() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 CalculatedPropertiesSpecification::_ComputeHash(Utf8CP parentHash) const
+MD5 CalculatedPropertiesSpecification::_ComputeHash() const
     {
     MD5 md5;
     md5.Add(m_label.c_str(), m_label.size());
     md5.Add(m_value.c_str(), m_value.size());
     md5.Add(&m_priority, sizeof(m_priority));
-    if (nullptr != parentHash)
-        md5.Add(parentHash, strlen(parentHash));
     return md5;
     }

@@ -123,9 +123,7 @@ ContentSpecificationList const& ContentRule::GetSpecifications (void) const { re
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ContentRule::AddSpecification(ContentSpecificationR specification)
     {
-    InvalidateHash();
-    specification.SetParent(this);
-    m_specifications.push_back(&specification);
+    ADD_HASHABLE_CHILD(m_specifications, specification);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -141,16 +139,10 @@ void ContentRule::SetCustomControl (Utf8StringCR customControl)    { m_customCon
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 ContentRule::_ComputeHash(Utf8CP parentHash) const
+MD5 ContentRule::_ComputeHash() const
     {
-    MD5 md5 = ConditionalPresentationRule::_ComputeHash(parentHash);
+    MD5 md5 = ConditionalPresentationRule::_ComputeHash();
     md5.Add(m_customControl.c_str(), m_customControl.size());
-
-    Utf8String currentHash = md5.GetHashString();
-    for (ContentSpecificationP spec : m_specifications)
-        {
-        Utf8StringCR specHash = spec->GetHash(currentHash.c_str());
-        md5.Add(specHash.c_str(), specHash.size());
-        }
+    ADD_RULES_TO_HASH(md5, m_specifications);
     return md5;
     }

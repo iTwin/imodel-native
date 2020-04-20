@@ -109,9 +109,6 @@ private:
     mutable NavigationQueryBuilder* m_queryBuilder;
     ECDbUsedClassesListenerWrapper* m_usedClassesListener;
 
-    // Update context
-    bool m_isUpdateContext;
-
 private:
     void Init();
     void InitProvidersIndexAllocator(uint64_t const* virtualParentNodeId);
@@ -185,11 +182,6 @@ public:
     ECPRESENTATION_EXPORT void SetQueryContext(NavNodesProviderContextCR other);
     NavigationQueryBuilder& GetQueryBuilder() const;
     IUsedClassesListener* GetUsedClassesListener() const;
-
-    // Update context
-    ECPRESENTATION_EXPORT void SetUpdateContext(bool isUpdateContext);
-    ECPRESENTATION_EXPORT void SetUpdateContext(NavNodesProviderContextCR other);
-    bool IsUpdateContext() const {return m_isUpdateContext;}
 };
 
 /*=================================================================================**//**

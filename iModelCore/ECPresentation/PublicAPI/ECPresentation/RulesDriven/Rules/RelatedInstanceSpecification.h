@@ -19,9 +19,9 @@ private:
     RelationshipPathSpecification m_relationshipPath;
     Utf8String m_alias;
     bool m_isRequired;
-        
+
 protected:
-    ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+    ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
 public:
     RelatedInstanceSpecification() : m_isRequired(false) {}
@@ -55,7 +55,7 @@ public:
 
     //! Related instance alias which will be used to access properties of this instance. Must be unique per parent specification.
     Utf8StringCR GetAlias() const {return m_alias;}
-        
+
     //! @see GetAlias
     void SetAlias(Utf8String alias) {m_alias = alias;}
 

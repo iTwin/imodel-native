@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include <ECPresentation/ECPresentationTypes.h>
+#include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 #include "../../../Localization/Xliffs/ECPresentation.xliff.h"
 #include "../../../Localization/Xliffs/RulesEngine.xliff.h"
 

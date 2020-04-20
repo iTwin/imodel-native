@@ -48,7 +48,7 @@ protected:
     ECPRESENTATION_EXPORT virtual bool _ReadJson(JsonValueCR json);
     ECPRESENTATION_EXPORT virtual void _WriteJson(JsonValueR json) const;
     virtual QuerySpecification* _Clone() const = 0;
-    ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
+    ECPRESENTATION_EXPORT virtual MD5 _ComputeHash() const override;
 
 public:
     virtual ~QuerySpecification() {}
@@ -79,7 +79,7 @@ public:
 
     //! Returns name of the schema whose instances will be returned by this query specification.
     Utf8StringCR GetSchemaName() const {return m_schemaName;}
-    
+
     //! Sets name of the class whose instances will be returned by this query specification.
     void SetClassName(Utf8StringCR className) {m_className = className;}
 
@@ -105,7 +105,7 @@ protected:
     ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
     ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
     QuerySpecification* _Clone() const override {return new StringQuerySpecification(*this);}
-    ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+    ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
 public:
     //! Constructor
@@ -140,7 +140,7 @@ protected:
     ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
     ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
     QuerySpecification* _Clone() const override{return new ECPropertyValueQuerySpecification(*this);}
-    ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+    ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
 public:
     //! Constructor
@@ -159,7 +159,7 @@ public:
 };
 
 /*---------------------------------------------------------------------------------**//**
-This specification returns search results instance nodes. Nodes are returned only if 
+This specification returns search results instance nodes. Nodes are returned only if
 parent node is SearchNodes.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -175,11 +175,11 @@ struct EXPORT_VTABLE_ATTRIBUTE SearchResultInstanceNodesSpecification : public C
         ECPRESENTATION_EXPORT void _Accept(PresentationRuleSpecificationVisitor& visitor) const override;
 
         ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationRuleSpecification const& other) const override;
-        
+
         ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName () const override;
         ECPRESENTATION_EXPORT bool _ReadXml (BeXmlNodeP xmlNode) override;
         ECPRESENTATION_EXPORT void _WriteXml (BeXmlNodeP xmlNode) const override;
-        
+
         ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
         ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
         ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
@@ -188,7 +188,7 @@ struct EXPORT_VTABLE_ATTRIBUTE SearchResultInstanceNodesSpecification : public C
         ChildNodeSpecification* _Clone() const override {return new SearchResultInstanceNodesSpecification(*this);}
 
         //! Computes specification hash.
-        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+        ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
@@ -196,19 +196,19 @@ struct EXPORT_VTABLE_ATTRIBUTE SearchResultInstanceNodesSpecification : public C
 
         //! Constructor.
         //! @deprecated Use SearchResultInstanceNodesSpecification(int, ChildrenHint, bool, bool, bool, bool)
-        ECPRESENTATION_EXPORT SearchResultInstanceNodesSpecification (int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy, 
+        ECPRESENTATION_EXPORT SearchResultInstanceNodesSpecification (int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy,
             bool hideIfNoChildren, bool groupByClass, bool groupByLabel);
 
         //! Constructor.
         ECPRESENTATION_EXPORT SearchResultInstanceNodesSpecification (int priority, ChildrenHint hasChildren, bool hideNodesInHierarchy,
             bool hideIfNoChildren, bool groupByClass, bool groupByLabel);
-        
+
         //! Copy Constructor.
         ECPRESENTATION_EXPORT SearchResultInstanceNodesSpecification (SearchResultInstanceNodesSpecification const&);
 
         //! Destructor.
         ECPRESENTATION_EXPORT ~SearchResultInstanceNodesSpecification();
-        
+
         //! Returns the list of query specifications that are responsible for the results of this rule.
         QuerySpecificationList const& GetQuerySpecifications() const {return m_querySpecifications;}
 

@@ -11,7 +11,7 @@
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
-Label and Description override rule implementation. This rule is used to override default 
+Label and Description override rule implementation. This rule is used to override default
 label and description generation algorithm.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -34,7 +34,7 @@ struct EXPORT_VTABLE_ATTRIBUTE LabelOverride : public ConditionalCustomizationRu
         ECPRESENTATION_EXPORT void _Accept(CustomizationRuleVisitor& visitor) const override;
 
         //! Computes rule hash.
-        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+        ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
         //! Clones rule.
         virtual CustomizationRule* _Clone() const override {return new LabelOverride(*this);}
@@ -49,13 +49,13 @@ struct EXPORT_VTABLE_ATTRIBUTE LabelOverride : public ConditionalCustomizationRu
         //! Label override value. Can be ECExpression string. If value is not set it will not affect original value defined by schema.
         ECPRESENTATION_EXPORT Utf8StringCR        GetLabel (void) const;
 
-        //! Set label override value. Can be ECExpression string. 
+        //! Set label override value. Can be ECExpression string.
         ECPRESENTATION_EXPORT void             SetLabel (Utf8String value);
 
         //! Description override value. Can be ECExpression string. If value is not set it will not affect original value defined by schema.
         ECPRESENTATION_EXPORT Utf8StringCR        GetDescription (void) const;
 
-        //! Set description override value. Can be ECExpression string. 
+        //! Set description override value. Can be ECExpression string.
         ECPRESENTATION_EXPORT void             SetDescription (Utf8String value);
     };
 

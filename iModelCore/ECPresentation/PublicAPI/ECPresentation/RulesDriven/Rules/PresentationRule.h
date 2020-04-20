@@ -14,41 +14,38 @@ Base class for providing hashing functionality.
 * @bsiclass                                     Saulius.Skliutas                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct HashableBase
-    {
-    private:
-        HashableBase* m_parent;
-        mutable Utf8String m_hash;
-        mutable BeMutex m_mutex;
+{
+private:
+    HashableBase* m_parent;
+    mutable Utf8String m_hash;
+    mutable BeMutex m_mutex;
 
-    private:
-        void ComputeHash();
+private:
+    void ComputeHash();
 
-    protected:
-        HashableBase() : m_parent(nullptr) {}
-        HashableBase(HashableBase const& other) : m_parent(other.m_parent), m_hash(other.m_hash) {}
-        virtual ~HashableBase() {}
-        virtual MD5 _ComputeHash(Utf8CP parentHash) const = 0;
+protected:
+    HashableBase() : m_parent(nullptr) {}
+    HashableBase(HashableBase const& other) : m_parent(other.m_parent), m_hash(other.m_hash) {}
+    virtual ~HashableBase() {}
+    virtual MD5 _ComputeHash() const = 0;
 
-/*__PUBLISH_SECTION_END__*/
-    public:
-        Utf8StringCR GetHash(Utf8CP parentHash) const;
-/*__PUBLISH_SECTION_START__*/
+public:
+    ECPRESENTATION_EXPORT Utf8StringCR GetHash() const;
+    ECPRESENTATION_EXPORT void InvalidateHash();
+    void SetParent(HashableBase* parent) {BeMutexHolder lock(m_mutex); m_parent = parent;}
+};
 
-    public:
-        //! Get hash.
-        ECPRESENTATION_EXPORT Utf8StringCR GetHash() const;
-
-        //! Invalidates current hash.
-        ECPRESENTATION_EXPORT void InvalidateHash();
-
-        //! Sets parent.
-        void SetParent(HashableBase* parent) {BeMutexHolder lock(m_mutex); m_parent = parent;}
-    };
+#define ADD_RULES_TO_HASH(md5, rules) \
+    for (auto rule : rules) \
+        { \
+        Utf8StringCR h = rule->GetHash(); \
+        md5.Add(h.c_str(), h.size()); \
+        }
 
 #define ADD_HASHABLE_CHILD(container, childR) \
     InvalidateHash(); \
-    childR.SetParent(this); \
-    container.push_back(&childR); 
+    (childR).SetParent(this); \
+    container.push_back(&childR);
 
 
 //! This enumerator contains trees for which the rule can be applied.
@@ -83,13 +80,13 @@ protected:
     virtual Utf8CP _GetXmlElementName () const = 0;
     virtual bool _ReadXml(BeXmlNodeP xmlNode) {return true;}
     virtual void _WriteXml(BeXmlNodeP xmlNode) const {}
-    
+
     virtual Utf8CP _GetJsonElementType() const = 0;
     virtual bool _ReadJson(JsonValueCR json) {return true;}
     virtual void _WriteJson(JsonValueR) const {}
 
     //! Computes rule hash.
-    ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
+    ECPRESENTATION_EXPORT virtual MD5 _ComputeHash() const override;
 
 public:
     //! Virtual destructor.
@@ -97,7 +94,7 @@ public:
 
     //! Does shallow comparison between this PresentationRule and other PresentationRule
     bool ShallowEqual(PresentationKeyCR other) const {return _ShallowEqual(other);}
-    
+
     //! Reads PresentationRule from xml node.
     ECPRESENTATION_EXPORT bool ReadXml(BeXmlNodeP xmlNode);
 
@@ -134,12 +131,12 @@ protected:
 
     ECPRESENTATION_EXPORT virtual bool _ReadXml (BeXmlNodeP xmlNode) override;
     ECPRESENTATION_EXPORT virtual void _WriteXml (BeXmlNodeP xmlNode) const override;
-    
+
     ECPRESENTATION_EXPORT virtual bool _ReadJson(JsonValueCR json) override;
     ECPRESENTATION_EXPORT virtual void _WriteJson(JsonValueR) const override;
 
     //! Compute rule hash.
-    ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
+    ECPRESENTATION_EXPORT virtual MD5 _ComputeHash() const override;
 
 public:
     //! Returns true if this rule should be executed only in the case where there are no other higher priority rules for this particular cotext.
@@ -160,7 +157,7 @@ protected:
     ConditionalPresentationRule() {}
 
     //! Constructor.
-    ConditionalPresentationRule(Utf8String condition, int priority, bool onlyIfNotHandled) 
+    ConditionalPresentationRule(Utf8String condition, int priority, bool onlyIfNotHandled)
         : PresentationRule(priority, onlyIfNotHandled), m_condition(condition)
         {}
 
@@ -173,7 +170,7 @@ protected:
     ECPRESENTATION_EXPORT virtual void _WriteJson(JsonValueR) const override;
 
     //! Compute rule hash.
-    ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
+    ECPRESENTATION_EXPORT virtual MD5 _ComputeHash() const override;
 
 public:
     //! Condition is an ECExpression string, which will be evaluated against the given context in order to decide whether to apply this rule or not.
@@ -192,7 +189,7 @@ struct EXPORT_VTABLE_ATTRIBUTE PresentationRuleSpecification : HashableBase
 protected:
     virtual ~PresentationRuleSpecification() {}
     virtual void _Accept(PresentationRuleSpecificationVisitor& visitor) const {}
-    ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
+    ECPRESENTATION_EXPORT virtual MD5 _ComputeHash() const override;
 
     virtual bool _ShallowEqual(PresentationRuleSpecification const& other) const { return true; }
 

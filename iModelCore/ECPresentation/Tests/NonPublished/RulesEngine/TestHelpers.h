@@ -256,7 +256,7 @@ private:
     bmap<NavNodeKeyCP, JsonNavNodeCPtr, NavNodeKeyPtrComparer> m_nodes;
 
 protected:
-    JsonNavNodeCPtr _LocateNode(IConnectionCR, Utf8StringCR, NavNodeKeyCR key) const override
+    JsonNavNodeCPtr _LocateNode(IConnectionCR, Utf8StringCR, Utf8StringCR, NavNodeKeyCR key) const override
         {
         auto iter = m_nodes.find(&key);
         if (m_nodes.end() != iter)
@@ -285,7 +285,7 @@ struct TestNodesCache : IHierarchyCache, INavNodeLocater
     typedef std::function<void(JsonNavNodeCR)> NodeHandler;
     typedef std::function<void(uint64_t, JsonNavNodeCR, int)> UpdateNodeHandler;
     typedef std::function<void(DataSourceInfo const&, DataSourceFilter const*, bmap<ECClassId, bool> const*, bvector<UserSettingEntry> const*)> UpdateDataSourceHandler;
-    typedef std::function<JsonNavNodeCPtr(IConnectionCR, Utf8StringCR, NavNodeKeyCR)> LocateNodeHandler;
+    typedef std::function<JsonNavNodeCPtr(IConnectionCR, Utf8StringCR, Utf8StringCR, NavNodeKeyCR)> LocateNodeHandler;
 
     /*=================================================================================**//**
     * @bsiclass                                     Grigas.Petraitis                11/2017
@@ -649,11 +649,11 @@ protected:
             return m_updateDataSourceHandler(info, filter, relatedClassIds, relatedSettings);
         }
 
-    JsonNavNodeCPtr _LocateNode(IConnectionCR connection, Utf8StringCR locale, NavNodeKeyCR key) const override
+    JsonNavNodeCPtr _LocateNode(IConnectionCR connection, Utf8StringCR rulesetId, Utf8StringCR locale, NavNodeKeyCR key) const override
         {
         BeMutexHolder lock(m_mutex);
         if (m_locateNodeHandler)
-            return m_locateNodeHandler(connection, locale, key);
+            return m_locateNodeHandler(connection, rulesetId, locale, key);
         return nullptr;
         }
     IHierarchyCache::SavepointPtr _CreateSavepoint() override {return new Savepoint(*this);}

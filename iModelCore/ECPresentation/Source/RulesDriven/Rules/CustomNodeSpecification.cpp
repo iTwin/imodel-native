@@ -22,7 +22,7 @@ CustomNodeSpecification::CustomNodeSpecification()
 * @bsimethod                                    Grigas.Petraitis                10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 CustomNodeSpecification::CustomNodeSpecification (int priority, bool hideIfNoChildren, Utf8StringCR type, Utf8StringCR label, Utf8StringCR description, Utf8StringCR imageId)
-    : ChildNodeSpecification (priority, ChildrenHint::Always, false, hideIfNoChildren), 
+    : ChildNodeSpecification (priority, ChildrenHint::Always, false, hideIfNoChildren),
     m_type(type), m_label(label), m_description(description), m_imageId(imageId)
     {}
 
@@ -71,7 +71,7 @@ bool CustomNodeSpecification::_ReadXml (BeXmlNodeP xmlNode)
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue(m_label, CUSTOM_NODE_SPECIFICATION_XML_ATTRIBUTE_LABEL))
         return false;
-    
+
     //Optional:
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_description, CUSTOM_NODE_SPECIFICATION_XML_ATTRIBUTE_DESCRIPTION))
         m_description = "";
@@ -186,9 +186,9 @@ void CustomNodeSpecification::SetImageId (Utf8StringCR value) { m_imageId = valu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 CustomNodeSpecification::_ComputeHash(Utf8CP parentHash) const
+MD5 CustomNodeSpecification::_ComputeHash() const
     {
-    MD5 md5 = ChildNodeSpecification::_ComputeHash(parentHash);
+    MD5 md5 = ChildNodeSpecification::_ComputeHash();
     md5.Add(m_type.c_str(), m_type.size());
     md5.Add(m_label.c_str(), m_label.size());
     md5.Add(m_description.c_str(), m_description.size());

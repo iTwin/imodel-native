@@ -792,7 +792,7 @@ TEST_F(ECExpressionContextsProviderTests, GetContentRulesContext_ContentDisplayT
     {
     TestNodeLocater nodeLocater;
     ECExpressionContextsProvider::ContentRulesContextParameters params("MyContentType", "", false, *s_connection, 
-        m_locale, &nodeLocater, nullptr, m_userSettings, nullptr);
+        "ruleset_id", m_locale, &nodeLocater, nullptr, m_userSettings, nullptr);
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetContentRulesContext(params);
     Utf8CP expression = "ContentDisplayType";
     ECValue resultValue = EvaluateAndGetResult(expression, *ctx);
@@ -807,7 +807,7 @@ TEST_F(ECExpressionContextsProviderTests, GetContentRulesContext_SelectionProvid
     {
     TestNodeLocater nodeLocater;
     ECExpressionContextsProvider::ContentRulesContextParameters params("", "MySelectionProvider", false, *s_connection,
-        m_locale, &nodeLocater, nullptr, m_userSettings, nullptr);
+        "ruleset_id", m_locale, &nodeLocater, nullptr, m_userSettings, nullptr);
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetContentRulesContext(params);
     Utf8CP expression = "SelectionProviderName";
     ECValue resultValue = EvaluateAndGetResult(expression, *ctx);
@@ -822,7 +822,7 @@ TEST_F(ECExpressionContextsProviderTests, GetContentRulesContext_IsSubSelectionM
     {
     TestNodeLocater nodeLocater;
     ECExpressionContextsProvider::ContentRulesContextParameters params1("", "", false, *s_connection,
-        m_locale, &nodeLocater, nullptr, m_userSettings, nullptr);
+        "ruleset_id", m_locale, &nodeLocater, nullptr, m_userSettings, nullptr);
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetContentRulesContext(params1);
     Utf8CP expression = "IsSubSelection";
     ECValue resultValue = EvaluateAndGetResult(expression, *ctx);
@@ -830,7 +830,7 @@ TEST_F(ECExpressionContextsProviderTests, GetContentRulesContext_IsSubSelectionM
     ASSERT_FALSE(resultValue.GetBoolean());
 
     ECExpressionContextsProvider::ContentRulesContextParameters params2("", "", true, *s_connection,
-        m_locale, &nodeLocater, nullptr, m_userSettings, nullptr);
+        "ruleset_id", m_locale, &nodeLocater, nullptr, m_userSettings, nullptr);
     ctx = ECExpressionContextsProvider::GetContentRulesContext(params2);
     resultValue = EvaluateAndGetResult(expression, *ctx);
     ASSERT_TRUE(resultValue.IsBoolean());

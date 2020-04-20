@@ -796,7 +796,7 @@ ContentRuleInputKeysContainer RulesPreprocessor::_GetContentSpecifications(Conte
         std::function<ExpressionContextPtr()> contextPreparer = [&]()
             {
             ECExpressionContextsProvider::ContentRulesContextParameters contextParams(params.GetPreferredDisplayType().c_str(), params.GetSelectionProviderName(),
-                params.IsSubSelection(), m_connection, m_locale, params.GetNodeLocater(), inputNodeKey.get(),
+                params.IsSubSelection(), m_connection, m_ruleset.GetRuleSetId(), m_locale, params.GetNodeLocater(), inputNodeKey.get(),
                 m_userSettings, m_usedSettingsListener);
             return ECExpressionContextsProvider::GetContentRulesContext(contextParams);
             };
@@ -825,7 +825,7 @@ ContentRuleInputKeysContainer RulesPreprocessor::_GetContentSpecifications(Conte
     std::function<ExpressionContextPtr()> contextPreparer = [&]()
         {
         ECExpressionContextsProvider::ContentRulesContextParameters contextParams(params.GetPreferredDisplayType().c_str(), "", false,
-            m_connection, m_locale, params.GetNodeLocater(), nullptr, m_userSettings, m_usedSettingsListener);
+            m_connection, m_ruleset.GetRuleSetId(), m_locale, params.GetNodeLocater(), nullptr, m_userSettings, m_usedSettingsListener);
         return ECExpressionContextsProvider::GetContentRulesContext(contextParams);
         };
 

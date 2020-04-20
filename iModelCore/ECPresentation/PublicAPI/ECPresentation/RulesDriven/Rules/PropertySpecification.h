@@ -27,7 +27,7 @@ private:
 
 protected:
     //! Computes specification hash.
-    ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+    ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
 public:
     PropertySpecification(): m_overridesPriority(1000), m_editorOverride(nullptr) {}
@@ -35,7 +35,7 @@ public:
         : m_overridesPriority(overridesPriority), m_propertyName(propertyName), m_labelOverride(labelOverride), m_isDisplayed(isDisplayed), m_editorOverride(editorOverride), m_categoryId(categoryId), m_doNotHideOtherPropertiesOnDisplayOverride(doNotHideOtherPropertiesOnDisplayOverride)
         {}
     ~PropertySpecification() {DELETE_AND_CLEAR(m_editorOverride);}
-    
+
     //! Reads rule information from Json, returns true if it can read it successfully.
     ECPRESENTATION_EXPORT bool ReadJson(JsonValueCR json);
     //! Reads rule information from deprecated PropertyEditorSpecification json, returns true if it can read it successfully.
@@ -43,7 +43,7 @@ public:
 
     //! Reads rule information from Json, returns true if it can read it successfully.
     ECPRESENTATION_EXPORT Json::Value WriteJson() const;
-        
+
     int GetOverridesPriority() const {return m_overridesPriority;}
     Utf8StringCR GetPropertyName() const {return m_propertyName;}
     Utf8StringCR GetLabelOverride() const {return m_labelOverride;}

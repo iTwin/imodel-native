@@ -78,7 +78,7 @@ Json::Value PropertySpecification::WriteJson() const
         json[PROPERTY_SPECIFICATION_JSON_ATTRIBUTE_OVERRIDESPRIORITY] = m_overridesPriority;
     if (!m_labelOverride.empty())
         json[PROPERTY_SPECIFICATION_JSON_ATTRIBUTE_LABELOVERRIDE] = m_labelOverride;
-    if (m_isDisplayed.IsValid()) 
+    if (m_isDisplayed.IsValid())
         {
         json[PROPERTY_SPECIFICATION_JSON_ATTRIBUTE_ISDISPLAYED] = m_isDisplayed.Value();
         if (true == m_isDisplayed.Value() && true == m_doNotHideOtherPropertiesOnDisplayOverride)
@@ -95,7 +95,7 @@ Json::Value PropertySpecification::WriteJson() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 PropertySpecification::_ComputeHash(Utf8CP parentHash) const
+MD5 PropertySpecification::_ComputeHash() const
     {
     MD5 md5;
     md5.Add(m_propertyName.c_str(), m_propertyName.size());
@@ -105,13 +105,10 @@ MD5 PropertySpecification::_ComputeHash(Utf8CP parentHash) const
     if (m_isDisplayed.IsValid())
         md5.Add(&m_isDisplayed.Value(), sizeof(m_isDisplayed.Value()));
     md5.Add(&m_doNotHideOtherPropertiesOnDisplayOverride, sizeof(m_doNotHideOtherPropertiesOnDisplayOverride));
-
     if (nullptr != m_editorOverride)
         {
         Utf8String editorOverrideHash = m_editorOverride->GetHash();
         md5.Add(editorOverrideHash.c_str(), editorOverrideHash.size());
         }
-    if (nullptr != parentHash)
-        md5.Add(parentHash, strlen(parentHash));
     return md5;
     }

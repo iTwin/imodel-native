@@ -91,7 +91,7 @@ bool SortingRule::_ReadJson(JsonValueCR json)
     {
     if (!ConditionalCustomizationRule::_ReadJson(json))
         return false;
-    
+
     bool ruleIdentified = false;
     if (0 == strcmp(json[COMMON_JSON_ATTRIBUTE_RULETYPE].asCString(), SORTING_RULE_PROPERTYSORTING_JSON_TYPE))
         {
@@ -121,7 +121,7 @@ bool SortingRule::_ReadJson(JsonValueCR json)
 void SortingRule::_WriteJson(JsonValueR json) const
     {
     ConditionalCustomizationRule::_WriteJson(json);
-    
+
     if (!m_schemaName.empty() && !m_className.empty())
         json[COMMON_JSON_ATTRIBUTE_CLASS] = CommonToolsInternal::SchemaAndClassNameToJson(m_schemaName, m_className);
     if (m_isPolymorphic)
@@ -178,9 +178,9 @@ void SortingRule::_Accept(CustomizationRuleVisitor& visitor) const { visitor._Vi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 SortingRule::_ComputeHash(Utf8CP parentHash) const
+MD5 SortingRule::_ComputeHash() const
     {
-    MD5 md5 = ConditionalCustomizationRule::_ComputeHash(parentHash);
+    MD5 md5 = ConditionalCustomizationRule::_ComputeHash();
     md5.Add(m_schemaName.c_str(), m_schemaName.size());
     md5.Add(m_className.c_str(), m_className.size());
     md5.Add(m_propertyName.c_str(), m_propertyName.size());

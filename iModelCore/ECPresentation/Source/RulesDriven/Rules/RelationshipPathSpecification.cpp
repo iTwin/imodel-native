@@ -49,11 +49,9 @@ Json::Value RelationshipStepSpecification::WriteJson() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 RelationshipStepSpecification::_ComputeHash(Utf8CP parentHash) const
+MD5 RelationshipStepSpecification::_ComputeHash() const
     {
     MD5 md5;
-    if (nullptr != parentHash)
-        md5.Add(parentHash, strlen(parentHash));
     md5.Add(m_relationshipClassName.c_str(), m_relationshipClassName.size());
     md5.Add(&m_direction, sizeof(m_direction));
     md5.Add(m_targetClassName.c_str(), m_targetClassName.size());
@@ -93,9 +91,9 @@ Json::Value RepeatableRelationshipStepSpecification::WriteJson() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 RepeatableRelationshipStepSpecification::_ComputeHash(Utf8CP parentHash) const
+MD5 RepeatableRelationshipStepSpecification::_ComputeHash() const
     {
-    MD5 md5 = RelationshipStepSpecification::_ComputeHash(parentHash);
+    MD5 md5 = RelationshipStepSpecification::_ComputeHash();
     md5.Add(&m_count, sizeof(m_count));
     return md5;
     }
@@ -189,14 +187,10 @@ void RelationshipPathSpecification::AddStep(RelationshipStepSpecification& step)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                01/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 RelationshipPathSpecification::_ComputeHash(Utf8CP parentHash) const
+MD5 RelationshipPathSpecification::_ComputeHash() const
     {
     MD5 md5;
-    for (RelationshipStepSpecification const* step : m_steps)
-        {
-        Utf8StringCR stepHash = step->GetHash(parentHash);
-        md5.Add(stepHash.c_str(), stepHash.size());
-        }
+    ADD_RULES_TO_HASH(md5, m_steps);
     return md5;
     }
 
@@ -298,13 +292,9 @@ void RepeatableRelationshipPathSpecification::ClearSteps()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                01/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 RepeatableRelationshipPathSpecification::_ComputeHash(Utf8CP parentHash) const
+MD5 RepeatableRelationshipPathSpecification::_ComputeHash() const
     {
     MD5 md5;
-    for (RepeatableRelationshipStepSpecification const* step : m_steps)
-        {
-        Utf8StringCR stepHash = step->GetHash(parentHash);
-        md5.Add(stepHash.c_str(), stepHash.size());
-        }
+    ADD_RULES_TO_HASH(md5, m_steps);
     return md5;
     }

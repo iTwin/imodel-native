@@ -60,6 +60,10 @@ protected:
     virtual LabelDefinitionCPtr _GetDisplayLabel(IConnectionCR, KeySetCR, ICancelationTokenCR) = 0;
 /** @} */
 
+/** @name Update */
+    virtual void _CompareHierarchies(IUpdateRecordsHandler&, IConnectionCR, Utf8StringCR lhsRulesetId, Utf8StringCR rhsRulesetId, Utf8StringCR locale, ICancelationTokenCR) = 0;
+/** @} */
+
 public:
 /** @name General */
 /** @{ */
@@ -92,6 +96,11 @@ public:
     ContentCPtr GetContent(IConnectionCR connection, ContentDescriptorCR descriptor, PageOptionsCR pageOptions, ICancelationTokenCR cancelationToken) {return _GetContent(connection, descriptor, pageOptions, cancelationToken);}
     size_t GetContentSetSize(IConnectionCR connection, ContentDescriptorCR descriptor, ICancelationTokenCR cancelationToken) {return _GetContentSetSize(connection, descriptor, cancelationToken);}
     LabelDefinitionCPtr GetDisplayLabel(IConnectionCR connection, KeySetCR keys, ICancelationTokenCR cancelationToken) {return _GetDisplayLabel(connection, keys, cancelationToken);}
+/** @} */
+    
+/** @name Update */
+    void CompareHierarchies(IUpdateRecordsHandler& recordsHandler, IConnectionCR connection, Utf8StringCR lhsRulesetId, Utf8String rhsRulesetId, 
+        Utf8StringCR locale, ICancelationTokenCR cancelationToken) {return _CompareHierarchies(recordsHandler, connection, lhsRulesetId, rhsRulesetId, locale, cancelationToken);}
 /** @} */
 };
 
@@ -178,6 +187,9 @@ protected:
     ECPRESENTATION_EXPORT ContentCPtr _GetContent(IConnectionCR, ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR) override;
     ECPRESENTATION_EXPORT size_t _GetContentSetSize(IConnectionCR, ContentDescriptorCR, ICancelationTokenCR) override;
     ECPRESENTATION_EXPORT LabelDefinitionCPtr _GetDisplayLabel(IConnectionCR, KeySetCR, ICancelationTokenCR) override;
+
+    // RulesDrivenECPresentationManager::Impl: Update
+    ECPRESENTATION_EXPORT void _CompareHierarchies(IUpdateRecordsHandler&, IConnectionCR, Utf8StringCR lhsRulesetId, Utf8StringCR rhsRulesetId, Utf8StringCR locale, ICancelationTokenCR) override;
     
 public:
     ECPRESENTATION_EXPORT RulesDrivenECPresentationManagerImpl(Params const&);

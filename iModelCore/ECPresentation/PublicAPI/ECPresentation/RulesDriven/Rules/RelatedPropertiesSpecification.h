@@ -17,7 +17,7 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 Specifies how should related instance properties appear in presentation controls.
-* @bsiclass                                     
+* @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 enum class RelationshipMeaning
     {
@@ -33,7 +33,7 @@ enum class RelationshipMeaning
 enum class IncludedProperties
     {
     //! No properties are included
-    None, 
+    None,
     //! All properties are included
     All,
     // Specific properties are included
@@ -41,7 +41,7 @@ enum class IncludedProperties
     };
 
 /*---------------------------------------------------------------------------------**//**
-Related properties specification. It allow to extend a content ECQuery to include 
+Related properties specification. It allow to extend a content ECQuery to include
 properties of related classes.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -61,8 +61,8 @@ private:
 
 protected:
     //! Computes specification hash.
-    ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const;
-        
+    ECPRESENTATION_EXPORT MD5 _ComputeHash() const;
+
 public:
     ECPRESENTATION_EXPORT RelatedPropertiesSpecification();
     ECPRESENTATION_EXPORT RelatedPropertiesSpecification(RelatedPropertiesSpecification const&);
@@ -125,7 +125,7 @@ public:
     //! Meaning of properties returned by this specification.
     RelationshipMeaning GetRelationshipMeaning() const {return m_relationshipMeaning;}
     void SetRelationshipMeaning(RelationshipMeaning value) {m_relationshipMeaning = value;}
-        
+
     //! Should related classes be handled polymorphically
     bool IsPolymorphic() const {return m_polymorphic;}
     void SetIsPolymorphic(bool value) {m_polymorphic = value;}

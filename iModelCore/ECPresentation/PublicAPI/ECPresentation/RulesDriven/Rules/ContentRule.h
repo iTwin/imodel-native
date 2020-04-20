@@ -32,7 +32,7 @@ struct ContentRule : public ConditionalPresentationRule
         ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
 
         //! Computes rule hash.
-        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+        ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
@@ -49,7 +49,7 @@ struct ContentRule : public ConditionalPresentationRule
 
         //! Collection ContentSpecifications that will be used to provide content.
         ECPRESENTATION_EXPORT ContentSpecificationList const& GetSpecifications(void) const;
-        
+
         //! Adds ContentSpecification that will be used to provide content.
         ECPRESENTATION_EXPORT void AddSpecification(ContentSpecificationR specification);
 

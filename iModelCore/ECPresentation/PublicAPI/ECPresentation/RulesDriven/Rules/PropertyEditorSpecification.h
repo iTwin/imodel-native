@@ -38,7 +38,7 @@ protected:
     virtual bool _ReadJson(JsonValueCR json) = 0;
     virtual void _WriteJson(JsonValueR json) const = 0;
     virtual void _Accept(Visitor&) const = 0;
-    ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
+    ECPRESENTATION_EXPORT virtual MD5 _ComputeHash() const override;
 
 public:
     static PropertyEditorParametersSpecification* Create(JsonValueCR);
@@ -46,7 +46,7 @@ public:
 
     //! Accepts a visitor.
     void Accept(Visitor& visitor) const {_Accept(visitor);}
-    
+
     //! Reads rule information from XmlNode, returns true if it can read it successfully.
     bool ReadXml(BeXmlNodeP xmlNode) {return _ReadXml(xmlNode);}
 
@@ -76,7 +76,7 @@ protected:
     ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
     ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
     void _Accept(Visitor& visitor) const override {visitor._Visit(*this);}
-    ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+    ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 public:
     PropertyEditorJsonParameters() {}
     PropertyEditorJsonParameters(Json::Value json) : m_json(json) {}
@@ -84,7 +84,7 @@ public:
 };
 
 /*---------------------------------------------------------------------------------**//**
-* Parameters for property editors which want to be displayed as multiline text editors. 
+* Parameters for property editors which want to be displayed as multiline text editors.
 * @note Should only be used on text type properties.
 * @bsiclass                                     Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -100,7 +100,7 @@ protected:
     ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
     ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
     void _Accept(Visitor& visitor) const override {visitor._Visit(*this);}
-    ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+    ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 public:
     PropertyEditorMultilineParameters() : m_height(1) {}
     PropertyEditorMultilineParameters(uint32_t height) : m_height(height) {}
@@ -108,7 +108,7 @@ public:
 };
 
 /*---------------------------------------------------------------------------------**//**
-* Parameters for property editors which want to be displayed as multiline text editors. 
+* Parameters for property editors which want to be displayed as multiline text editors.
 * @note Should only be used on text type properties.
 * @bsiclass                                     Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -127,7 +127,7 @@ protected:
     ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
     ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
     void _Accept(Visitor& visitor) const override {visitor._Visit(*this);}
-    ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+    ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 public:
     PropertyEditorRangeParameters() : m_min(0), m_isMinSet(false), m_max(0), m_isMaxSet(false) {}
     PropertyEditorRangeParameters(double min, double max) : m_min(min), m_isMinSet(true), m_max(max), m_isMaxSet(true) {}
@@ -136,7 +136,7 @@ public:
 };
 
 /*---------------------------------------------------------------------------------**//**
-* Parameters for property editors which want to be displayed as multiline text editors. 
+* Parameters for property editors which want to be displayed as multiline text editors.
 * @note Should only be used on text type properties.
 * @bsiclass                                     Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -156,10 +156,10 @@ protected:
     ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
     ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
     void _Accept(Visitor& visitor) const override {visitor._Visit(*this);}
-    ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+    ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 public:
     PropertyEditorSliderParameters() : m_min(0), m_max(0), m_intervalsCount(1), m_valueFactor(1), m_isVertical(false) {}
-    PropertyEditorSliderParameters(double min, double max, uint32_t intervalsCount = 1, uint32_t valueFactor = 1, bool isVertical = false) 
+    PropertyEditorSliderParameters(double min, double max, uint32_t intervalsCount = 1, uint32_t valueFactor = 1, bool isVertical = false)
         : m_min(min), m_max(max), m_isVertical(isVertical), m_intervalsCount(intervalsCount), m_valueFactor(valueFactor)
         {}
     double GetMinimumValue() const {return m_min;}
@@ -181,7 +181,7 @@ private:
 
 protected:
     //! Computes specification hash.
-    ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+    ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
 public:
     PropertyEditorSpecification() {}
@@ -203,10 +203,10 @@ public:
 
     //! Writes rule information to json.
     ECPRESENTATION_EXPORT Json::Value WriteJson() const;
-    
+
     //! Get editor name.
     Utf8StringCR GetEditorName() const {return m_name;}
-        
+
     //! Get parameters.
     PropertyEditorParametersList const& GetParameters() const {return m_parameters;}
 

@@ -7,6 +7,47 @@
 #include <folly/executors/InlineExecutor.h>
 #include "TaskScheduler.h"
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TaskDependencies::Has(ITaskDependency const& dep) const
+    {
+    return std::any_of(begin(), end(), [&dep](auto const& containedDep) { return containedDep->Matches(dep); });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TaskDependencies::Has(std::function<bool(ITaskDependency const&)> pred) const
+    {
+    return std::any_of(begin(), end(), [&pred](auto const& containedDep) { return pred(*containedDep); });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+std::function<bool(ITaskDependency const&)> StringBasedTaskDependency::CreatePredicate(Utf8CP dependencyType, std::function<bool(Utf8StringCR)> pred)
+    {
+    return [pred, dependencyType](ITaskDependency const& dep)
+        {
+        return dep.GetDependencyType() == dependencyType
+            && pred(static_cast<StringBasedTaskDependency const&>(dep).GetValue());
+        };
+    }
+
+Utf8CP TaskDependencyOnConnection::s_dependencyType = "Connection";
+Utf8CP TaskDependencyOnSelection::s_dependencyType = "Selection";
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+std::function<bool(ITaskDependency const&)> TaskDependencyOnSelection::CreatePredicate(std::function<bool(SelectionInfoCR)> selectionInfoPredicate)
+    {
+    return [selectionInfoPredicate, type = s_dependencyType](ITaskDependency const& dep)
+        {
+        return dep.GetDependencyType() == type
+            && selectionInfoPredicate(static_cast<TaskDependencyOnSelection const&>(dep).GetSelectionInfo());
+        };
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2019

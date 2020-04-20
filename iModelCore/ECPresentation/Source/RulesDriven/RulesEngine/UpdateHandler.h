@@ -4,14 +4,9 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include <ECPresentation/RulesDriven/PresentationManager.h>
-#include <ECPresentation/RulesDriven/Rules/SpecificationVisitor.h>
 #include "RulesEngineTypes.h"
 #include "NavNodesCache.h"
 #include "ContentCache.h"
-#include "NavNodeProviders.h"
-#include "ECSchemaHelper.h"
-#include "ECExpressionContextsProvider.h"
-#include "LoggingHelper.h"
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
@@ -76,28 +71,24 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct HierarchyUpdater
 {
+    struct CompareReporter;
+
 private:
     UpdateTasksFactory const& m_tasksFactory;
+    IConnectionCacheCR m_connections;
     INodesCacheManager const& m_nodesCacheManager;
     INodesProviderContextFactoryCR m_contextFactory;
     INodesProviderFactoryCR m_nodesProviderFactory;
 
 private:
-    NavNodesProviderPtr CreateProvider(IConnectionCR, NodesCache const&, HierarchyLevelInfo const&) const;
-    void SynchronizeLists(NavNodesDataSource const& oldDs, size_t& oldIndex, NavNodesDataSource const& newDs, size_t& newIndex) const;
-    void CompareDataSources(bvector<IUpdateTaskPtr>&, UpdateContext&, NavNodesProviderCR oldProvider, NavNodesProviderR newProvider) const;
-    void CompareNodes(bvector<IUpdateTaskPtr>&, UpdateContext&, JsonNavNodeCR oldNode, NavNodesProviderCR newProvider, JsonNavNodeR newNode) const;
-    void CustomizeNode(JsonNavNodeCP oldNode, JsonNavNodeR newNode, NavNodesProviderCR newNodeProvider) const;
     bool IsHierarchyRemoved(UpdateContext const&, NodesCache const&, HierarchyLevelInfo const&) const;
-    bool IsHierarchyExpanded(NodesCache const&, HierarchyLevelInfo const&) const;
-    void CheckIfParentNeedsUpdate(bvector<IUpdateTaskPtr>&, NodesCache const&, UpdateContext&, NavNodesProviderCR, NavNodesProviderCR) const;
-    void MarkNodesAsRemoved(UpdateContext&, NavNodesProviderCR) const;
+    void UpdateParentHierarchy(bvector<IUpdateTaskPtr>&, UpdateContext&, NodesCache const&, NavNodesProviderCR, NavNodesProviderCR) const;
 
 public:
-    HierarchyUpdater(UpdateTasksFactory const& tasksFactory, INodesCacheManager const& nodesCacheManager, INodesProviderContextFactoryCR contextFactory, INodesProviderFactoryCR providerFactory)
-        : m_tasksFactory(tasksFactory), m_nodesCacheManager(nodesCacheManager), m_contextFactory(contextFactory), m_nodesProviderFactory(providerFactory)
+    HierarchyUpdater(UpdateTasksFactory const& tasksFactory, IConnectionCacheCR connections, INodesCacheManager const& nodesCacheManager, INodesProviderContextFactoryCR contextFactory, INodesProviderFactoryCR providerFactory)
+        : m_tasksFactory(tasksFactory), m_connections(connections), m_nodesCacheManager(nodesCacheManager), m_contextFactory(contextFactory), m_nodesProviderFactory(providerFactory)
         {}
-    void Update(bvector<IUpdateTaskPtr>&, UpdateContext&, IConnectionCR, HierarchyLevelInfo const&, HierarchyLevelInfo const&) const;
+    void Update(bvector<IUpdateTaskPtr>&, UpdateContext&, HierarchyLevelInfo const&, HierarchyLevelInfo const&) const;
 };
 
 /*=================================================================================**//**
@@ -107,7 +98,7 @@ struct UpdateTasksFactory
 {
 private:
     mutable IUpdateRecordsHandler* m_recordsHandler;
-    
+
 public:
     UpdateTasksFactory(ContentCache* contentCache, IUpdateRecordsHandler* recordsHandler)
         : m_recordsHandler(recordsHandler)
@@ -116,7 +107,7 @@ public:
 
     // hierarchy-related update tasks
     ECPRESENTATION_EXPORT IUpdateTaskPtr CreateRemapNodeIdsTask(NodesCache&, bmap<uint64_t, uint64_t> const&) const;
-    ECPRESENTATION_EXPORT IUpdateTaskPtr CreateRefreshHierarchyTask(HierarchyUpdater const&, UpdateContext&, IConnectionCR, HierarchyLevelInfo const&) const;
+    ECPRESENTATION_EXPORT IUpdateTaskPtr CreateRefreshHierarchyTask(HierarchyUpdater const&, UpdateContext&, HierarchyLevelInfo const&) const;
     ECPRESENTATION_EXPORT IUpdateTaskPtr CreateRemoveHierarchyLevelTask(NodesCache&, BeSQLite::BeGuidCR removalId) const;
 
     // content-related update tasks
@@ -151,9 +142,9 @@ private:
     void ExecuteTasks(bvector<IUpdateTaskPtr>& tasks) const;
     void DoFullUpdate(Utf8CP rulesetId, bool updateHierarchies = true, bool updateContent = true) const;
     bvector<HierarchyLevelInfo> GetAffectedHierarchyLevels(IConnectionCR, bvector<ECInstanceChangeEventSource::ChangedECInstance> const&) const;
-    
+
 public:
-    ECPRESENTATION_EXPORT UpdateHandler(INodesCacheManager const&, ContentCache*, IConnectionManagerCR, INodesProviderContextFactoryCR, 
+    ECPRESENTATION_EXPORT UpdateHandler(INodesCacheManager const&, ContentCache*, IConnectionManagerCR, INodesProviderContextFactoryCR,
         INodesProviderFactoryCR, IECExpressionsCacheProvider&);
     ECPRESENTATION_EXPORT ~UpdateHandler();
     UpdateTasksFactory const& GetTasksFactory() const {return m_tasksFactory;}

@@ -19,6 +19,7 @@
 #include "ECExpressionContextsProvider.h"
 #include "ContentClassesLocater.h"
 #include "UsedClassesListener.h"
+#include "HierarchiesComparer.h"
 
 //=======================================================================================
 // @bsiclass                                    Grigas.Petraitis                04/2018
@@ -207,7 +208,7 @@ struct RulesDrivenECPresentationManagerImpl::NodesCacheManager : INodesCacheMana
                 return nullptr;
             return iter->second;
             }
-        void _OnConnectionEvent(ConnectionEvent const& event) override 
+        void _OnConnectionEvent(ConnectionEvent const& event) override
             {
             if (event.GetEventType() == ConnectionEventType::Opened)
                 {
@@ -220,7 +221,7 @@ struct RulesDrivenECPresentationManagerImpl::NodesCacheManager : INodesCacheMana
                 Clear(event.GetConnection());
                 }
             }
-        void _ClearCaches(Utf8CP rulesetId) const override 
+        void _ClearCaches(Utf8CP rulesetId) const override
             {
             for (auto cache : m_caches)
                 cache.second->Clear(rulesetId);
@@ -385,7 +386,8 @@ public:
         NodesCache* nodesCache = m_manager.GetNodesCache(m_connection);
         if (nullptr == nodesCache)
             return nullptr;
-        NavNodeCPtr node = nodesCache->LocateNode(m_connection, m_options.GetLocale(), nodeKey);
+
+        NavNodeCPtr node = nodesCache->LocateNode(m_connection, m_options.GetRulesetId(), m_options.GetLocale(), nodeKey);
         if (node.IsNull())
             node = LocateNodeInHierarchy(nodeKey.GetHashPath(), 0, nullptr, cancelationToken);
 
@@ -619,9 +621,9 @@ void RulesDrivenECPresentationManagerImpl::Initialize()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                03/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-NodesCache* RulesDrivenECPresentationManagerImpl::GetNodesCache(IConnectionCR connection) 
+NodesCache* RulesDrivenECPresentationManagerImpl::GetNodesCache(IConnectionCR connection)
     {
-    return m_nodesCachesManager->GetCache(connection.GetId()); 
+    return m_nodesCachesManager->GetCache(connection.GetId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -814,8 +816,15 @@ INavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::GetCachedDataSource
     if (context.IsNull())
         return nullptr;
 
+    // get the parent and mark it as expanded (for hierarchy comparison & update optimizations)
+    JsonNavNodePtr jsonParent = context->GetNodesCache().GetNode(parentNodeId);
+    if (jsonParent.IsNull())
+        {
+        BeAssert(false);
+        return EmptyNavNodesDataSource::Create();
+        }
+
     // create the nodes provider
-    JsonNavNodeCPtr jsonParent = context->GetNodesCache().GetNode(parentNodeId);
     NavNodesProviderPtr provider = m_nodesProviderFactory->Create(*context, jsonParent.get(), ProviderCacheType::Combined);
 
     // cache the provider in quick cache
@@ -1002,7 +1011,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpecificationContentProviderCPtr RulesDrivenECPresentationManagerImpl::GetContentProvider(IConnectionCR connection, ICancelationTokenCR cancelationToken, ContentProviderKey const& key, INavNodeKeysContainerCR inputKeys, 
+SpecificationContentProviderCPtr RulesDrivenECPresentationManagerImpl::GetContentProvider(IConnectionCR connection, ICancelationTokenCR cancelationToken, ContentProviderKey const& key, INavNodeKeysContainerCR inputKeys,
     SelectionInfo const* selectionInfo, ContentOptions const& options)
     {
     RefCountedPtr<PerformanceLogger> _l1 = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManagerImpl::GetContentProvider]", NativeLogging::LOG_TRACE);
@@ -1252,4 +1261,69 @@ IRulesPreprocessorPtr RulesDrivenECPresentationManagerImpl::_GetRulesPreprocesso
     ECExpressionsCache& ecexpressionsCache = m_rulesetECExpressionsCache->Get(ruleset->GetRuleSetId().c_str());
 
     return new RulesPreprocessor(m_connections, connection, *ruleset, locale, settings, usedSettingsListener, ecexpressionsCache);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+struct CompareReporter : IHierarchyChangesReporter
+{
+private:
+    IUpdateRecordsHandler& m_updateRecordsHandler;
+protected:
+    void _OnFoundLhsProvider(NavNodesProviderCR) override {}
+    bool _OnStartCompare(NavNodesProviderCR, NavNodesProviderCR) override { return true; }
+    void _OnEndCompare(NavNodesProviderCR, NavNodesProviderCP) override {}
+    void _Added(HierarchyLevelInfo const& hli, JsonNavNodeCR node, size_t index) override
+        {
+        m_updateRecordsHandler.Accept(HierarchyUpdateRecord(hli.GetRulesetId(), node, index));
+        }
+    void _Removed(HierarchyLevelInfo const& hli, JsonNavNodeCR node) override
+        {
+        m_updateRecordsHandler.Accept(HierarchyUpdateRecord(hli.GetRulesetId(), node));
+        }
+    void _Changed(HierarchyLevelInfo const& hli, JsonNavNodeCR lhsNode, JsonNavNodeCR rhsNode, bvector<JsonChange> const& changes) override
+        {
+        if (!changes.empty())
+            m_updateRecordsHandler.Accept(HierarchyUpdateRecord(hli.GetRulesetId(), rhsNode, changes));
+        }
+public:
+    CompareReporter(IUpdateRecordsHandler& handler) : m_updateRecordsHandler(handler) {}
+};
+
+/*---------------------------------------------------------------------------------**//**
+* TODO: ruleset variables
+* @bsimethod                                    Grigas.Petraitis                04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+void RulesDrivenECPresentationManagerImpl::_CompareHierarchies(IUpdateRecordsHandler& handler, IConnectionCR connection, Utf8StringCR lhsRulesetId, Utf8StringCR rhsRulesetId, Utf8StringCR locale, ICancelationTokenCR cancelationToken)
+    {
+    RefCountedPtr<PerformanceLogger> _l = LoggingHelper::CreatePerformanceLogger(Log::Update, "[RulesDrivenECPresentationManagerImpl::CompareHierarchies]", NativeLogging::LOG_TRACE);
+
+    NodesCache* nodesCache = m_nodesCachesManager->GetCache(connection.GetId());
+    if (nullptr == nodesCache)
+        {
+        BeAssert(false);
+        return;
+        }
+
+    // get the rulesets
+    PresentationRuleSetPtr lhsRuleset = FindRuleset(GetLocaters(), connection, lhsRulesetId.c_str());
+    PresentationRuleSetPtr rhsRuleset = FindRuleset(GetLocaters(), connection, rhsRulesetId.c_str());
+    if (!lhsRuleset.IsValid() || !rhsRuleset.IsValid() || lhsRuleset->GetHash().Equals(rhsRuleset->GetHash()))
+        return;
+
+    if (cancelationToken.IsCanceled())
+        {
+        LoggingHelper::LogMessage(Log::Content, "[RulesDrivenECPresentationManagerImpl::Compare] Canceled");
+        return;
+        }
+
+    nodesCache->OnRulesetUsed(*lhsRuleset);
+    nodesCache->OnRulesetUsed(*rhsRuleset);
+
+    HierarchyLevelInfo lhsInfo(connection.GetId(), lhsRulesetId, locale, 0, 0);
+    HierarchyLevelInfo rhsInfo(connection.GetId(), rhsRulesetId, locale, 0, 0);
+    CompareReporter reporter(handler);
+    HierarchiesComparer comparer(HierarchiesComparer::Params(*nodesCache, *m_nodesProviderContextFactory, *m_nodesProviderFactory, reporter, true));
+    comparer.Compare(m_connections, lhsInfo, rhsInfo);
     }

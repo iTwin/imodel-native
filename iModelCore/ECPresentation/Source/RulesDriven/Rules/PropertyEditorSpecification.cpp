@@ -80,7 +80,7 @@ bool PropertyEditorSpecification::ReadJson(JsonValueCR json)
         return false;
         }
 
-    CommonToolsInternal::LoadFromJson(json[PROPERTY_EDITORS_SPECIFICATION_JSON_ATTRIBUTE_PARAMETERS], 
+    CommonToolsInternal::LoadFromJson(json[PROPERTY_EDITORS_SPECIFICATION_JSON_ATTRIBUTE_PARAMETERS],
         m_parameters, PropertyEditorParametersSpecification::Create, this);
     return true;
     }
@@ -91,7 +91,7 @@ bool PropertyEditorSpecification::ReadJson(JsonValueCR json)
 Json::Value PropertyEditorSpecification::WriteJson() const
     {
     Json::Value json(Json::objectValue);
-    json[PROPERTY_EDITORS_SPECIFICATION_JSON_ATTRIBUTE_EDITORNAME] = m_name;    
+    json[PROPERTY_EDITORS_SPECIFICATION_JSON_ATTRIBUTE_EDITORNAME] = m_name;
     if (!m_parameters.empty())
         {
         CommonToolsInternal::WriteRulesToJson<PropertyEditorParametersSpecification, PropertyEditorParametersList>
@@ -105,38 +105,26 @@ Json::Value PropertyEditorSpecification::WriteJson() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PropertyEditorSpecification::AddParameter(PropertyEditorParametersSpecificationR specification)
     {
-    InvalidateHash();
-    specification.SetParent(this);
-    m_parameters.push_back(&specification);
+    ADD_HASHABLE_CHILD(m_parameters, specification);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 PropertyEditorSpecification::_ComputeHash(Utf8CP parentHash) const
+MD5 PropertyEditorSpecification::_ComputeHash() const
     {
     MD5 md5;
     md5.Add(m_name.c_str(), m_name.size());
-    if (nullptr != parentHash)
-        md5.Add(parentHash, strlen(parentHash));
-
-    Utf8String currentHash = md5.GetHashString();
-    for (PropertyEditorParametersSpecificationP spec : m_parameters)
-        {
-        Utf8StringCR specHash = spec->GetHash(currentHash.c_str());
-        md5.Add(specHash.c_str(), specHash.size());
-        }
+    ADD_RULES_TO_HASH(md5, m_parameters);
     return md5;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 PropertyEditorParametersSpecification::_ComputeHash(Utf8CP parentHash) const
+MD5 PropertyEditorParametersSpecification::_ComputeHash() const
     {
     MD5 md5;
-    if (nullptr != parentHash)
-        md5.Add(parentHash, strlen(parentHash));
     Utf8CP name = _GetXmlElementName();
     md5.Add(name, strlen(name));
     return md5;
@@ -154,7 +142,7 @@ void PropertyEditorParametersSpecification::WriteXml(BeXmlNodeP parentXmlNode) c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyEditorParametersSpecification::ReadJson(JsonValueCR json) 
+bool PropertyEditorParametersSpecification::ReadJson(JsonValueCR json)
     {
     if (!json.isMember(COMMON_JSON_ATTRIBUTE_PARAMSTYPE) || !json[COMMON_JSON_ATTRIBUTE_PARAMSTYPE].isString())
         {
@@ -170,7 +158,7 @@ bool PropertyEditorParametersSpecification::ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value PropertyEditorParametersSpecification::WriteJson() const 
+Json::Value PropertyEditorParametersSpecification::WriteJson() const
     {
     Json::Value json(Json::objectValue);
     json[COMMON_JSON_ATTRIBUTE_PARAMSTYPE] = _GetJsonElementType();
@@ -233,9 +221,9 @@ void PropertyEditorJsonParameters::_WriteJson(JsonValueR json) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 PropertyEditorJsonParameters::_ComputeHash(Utf8CP parentHash) const
+MD5 PropertyEditorJsonParameters::_ComputeHash() const
     {
-    MD5 md5 = PropertyEditorParametersSpecification::_ComputeHash(parentHash);
+    MD5 md5 = PropertyEditorParametersSpecification::_ComputeHash();
     Utf8String jsonString = m_json.ToString();
     md5.Add(jsonString.c_str(), jsonString.size());
     return md5;
@@ -292,9 +280,9 @@ void PropertyEditorMultilineParameters::_WriteJson(JsonValueR json) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 PropertyEditorMultilineParameters::_ComputeHash(Utf8CP parentHash) const
+MD5 PropertyEditorMultilineParameters::_ComputeHash() const
     {
-    MD5 md5 = PropertyEditorParametersSpecification::_ComputeHash(parentHash);
+    MD5 md5 = PropertyEditorParametersSpecification::_ComputeHash();
     md5.Add(&m_height, sizeof(m_height));
     return md5;
     }
@@ -310,7 +298,7 @@ Utf8CP PropertyEditorRangeParameters::_GetXmlElementName() const {return PROPERT
 bool PropertyEditorRangeParameters::_ReadXml(BeXmlNodeP xmlNode)
     {
     if (BEXML_Success == xmlNode->GetAttributeDoubleValue(m_min, PROPERTY_EDITOR_RANGE_PARAMETERS_XML_ATTRIBUTE_MINIMUM))
-        m_isMinSet = true;    
+        m_isMinSet = true;
     if (BEXML_Success == xmlNode->GetAttributeDoubleValue(m_max, PROPERTY_EDITOR_RANGE_PARAMETERS_XML_ATTRIBUTE_MAXIMUM))
         m_isMaxSet = true;
     return true;
@@ -370,9 +358,9 @@ void PropertyEditorRangeParameters::_WriteJson(JsonValueR json) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 PropertyEditorRangeParameters::_ComputeHash(Utf8CP parentHash) const
+MD5 PropertyEditorRangeParameters::_ComputeHash() const
     {
-    MD5 md5 = PropertyEditorParametersSpecification::_ComputeHash(parentHash);
+    MD5 md5 = PropertyEditorParametersSpecification::_ComputeHash();
     md5.Add(&m_min, sizeof(m_min));
     md5.Add(&m_max, sizeof(m_max));
     md5.Add(&m_isMinSet, sizeof(m_isMinSet));
@@ -472,9 +460,9 @@ void PropertyEditorSliderParameters::_WriteJson(JsonValueR json) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 PropertyEditorSliderParameters::_ComputeHash(Utf8CP parentHash) const
+MD5 PropertyEditorSliderParameters::_ComputeHash() const
     {
-    MD5 md5 = PropertyEditorParametersSpecification::_ComputeHash(parentHash);
+    MD5 md5 = PropertyEditorParametersSpecification::_ComputeHash();
     md5.Add(&m_min, sizeof(m_min));
     md5.Add(&m_max, sizeof(m_max));
     md5.Add(&m_intervalsCount, sizeof(m_intervalsCount));

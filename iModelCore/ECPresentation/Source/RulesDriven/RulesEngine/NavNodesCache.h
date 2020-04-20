@@ -51,10 +51,10 @@ public:
 struct  INavNodeLocater
 {
 protected:
-    virtual JsonNavNodeCPtr _LocateNode(IConnectionCR, Utf8StringCR, NavNodeKeyCR) const = 0;
+    virtual JsonNavNodeCPtr _LocateNode(IConnectionCR, Utf8StringCR, Utf8StringCR, NavNodeKeyCR) const = 0;
 public:
     virtual ~INavNodeLocater() {}
-    JsonNavNodeCPtr LocateNode(IConnectionCR connection, Utf8StringCR locale, NavNodeKeyCR key) const {return _LocateNode(connection, locale, key);}
+    JsonNavNodeCPtr LocateNode(IConnectionCR connection, Utf8StringCR rulesetId, Utf8StringCR locale, NavNodeKeyCR key) const {return _LocateNode(connection, rulesetId, locale, key);}
 };
 
 /*=================================================================================**//**
@@ -266,7 +266,7 @@ protected:
     BeMutex& _GetMutex() override { return m_mutex; }
 
     // INavNodeLocater
-    ECPRESENTATION_EXPORT JsonNavNodeCPtr _LocateNode(IConnectionCR, Utf8StringCR, NavNodeKeyCR) const override;
+    ECPRESENTATION_EXPORT JsonNavNodeCPtr _LocateNode(IConnectionCR, Utf8StringCR, Utf8StringCR, NavNodeKeyCR) const override;
 
 public:
     ECPRESENTATION_EXPORT NodesCache(IConnectionCR, BeFileNameCR, JsonNavNodesFactoryCR, INodesProviderContextFactoryCR, IUserSettingsManager const&,

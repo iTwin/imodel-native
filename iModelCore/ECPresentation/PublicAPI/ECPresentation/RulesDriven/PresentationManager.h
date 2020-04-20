@@ -215,6 +215,8 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
         //! Constructor. Creates a read-only accessor.
         CommonOptions(JsonValueCR data) : JsonCppAccessor(data) {}
         //! Constructor. Creates a read-write accessor.
+        CommonOptions() : JsonCppAccessor() {}
+        //! Constructor. Creates a read-write accessor.
         CommonOptions(JsonValueR data) : JsonCppAccessor(data) {}
         //! Constructor. Creates a read-write accessor.
         CommonOptions(Json::Value&& data) : JsonCppAccessor(std::move(data)) {}
@@ -385,6 +387,9 @@ public:
     
     //! Get the connection manager used by this presentation manager.
     ECPRESENTATION_EXPORT IConnectionManagerCR GetConnectionsCR() const;
+
+     //! Compare cached presentation data between two rulesets.
+    ECPRESENTATION_EXPORT folly::Future<folly::Unit> CompareHierarchies(std::shared_ptr<IUpdateRecordsHandler>, ECDbCR db, Utf8StringCR lhsRulesetId, Utf8StringCR rhsRulesetId, JsonValueCR, PresentationRequestContextCR = PresentationRequestContext());
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

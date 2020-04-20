@@ -15,7 +15,7 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentRelatedInstancesSpecification::ContentRelatedInstancesSpecification () 
+ContentRelatedInstancesSpecification::ContentRelatedInstancesSpecification ()
     : ContentSpecification(), m_skipRelatedLevel(0), m_isRecursive(false), m_requiredDirection(RequiredRelationDirection_Both)
     {}
 
@@ -34,8 +34,8 @@ ContentRelatedInstancesSpecification::ContentRelatedInstancesSpecification(Conte
 * @bsimethod                                    Grigas.Petraitis                01/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentRelatedInstancesSpecification::ContentRelatedInstancesSpecification(ContentRelatedInstancesSpecification&& other)
-    : ContentSpecification(other), m_skipRelatedLevel(other.m_skipRelatedLevel), m_isRecursive(other.m_isRecursive), 
-    m_instanceFilter(std::move(other.m_instanceFilter)), m_requiredDirection(other.m_requiredDirection), 
+    : ContentSpecification(other), m_skipRelatedLevel(other.m_skipRelatedLevel), m_isRecursive(other.m_isRecursive),
+    m_instanceFilter(std::move(other.m_instanceFilter)), m_requiredDirection(other.m_requiredDirection),
     m_relationshipClassNames(std::move(other.m_relationshipClassNames)), m_relatedClassNames(std::move(other.m_relatedClassNames))
     {
     m_relationshipPaths.swap(other.m_relationshipPaths);
@@ -44,9 +44,9 @@ ContentRelatedInstancesSpecification::ContentRelatedInstancesSpecification(Conte
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentRelatedInstancesSpecification::ContentRelatedInstancesSpecification(int priority, int skipRelatedLevel, bool isRecursive, 
-    Utf8String instanceFilter, RequiredRelationDirection requiredDirection, Utf8String relationshipClassNames, Utf8String relatedClassNames) 
-    : ContentSpecification (priority), m_skipRelatedLevel (skipRelatedLevel), m_isRecursive(isRecursive), m_instanceFilter (instanceFilter), 
+ContentRelatedInstancesSpecification::ContentRelatedInstancesSpecification(int priority, int skipRelatedLevel, bool isRecursive,
+    Utf8String instanceFilter, RequiredRelationDirection requiredDirection, Utf8String relationshipClassNames, Utf8String relatedClassNames)
+    : ContentSpecification (priority), m_skipRelatedLevel (skipRelatedLevel), m_isRecursive(isRecursive), m_instanceFilter (instanceFilter),
     m_requiredDirection (requiredDirection), m_relationshipClassNames (relationshipClassNames), m_relatedClassNames (relatedClassNames)
     {}
 
@@ -81,7 +81,7 @@ bool ContentRelatedInstancesSpecification::_ReadXml (BeXmlNodeP xmlNode)
 
     if (BEXML_Success != xmlNode->GetAttributeInt32Value (m_skipRelatedLevel, COMMON_XML_ATTRIBUTE_SKIPRELATEDLEVEL))
         m_skipRelatedLevel = 0;
-    
+
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue(m_isRecursive, CONTENT_RELATED_INSTANCES_SPECIFICATION_XML_ATTRIBUTE_ISRECURSIVE))
         m_isRecursive = false;
 
@@ -175,22 +175,15 @@ void ContentRelatedInstancesSpecification::_WriteJson(JsonValueR json) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 ContentRelatedInstancesSpecification::_ComputeHash(Utf8CP parentHash) const
+MD5 ContentRelatedInstancesSpecification::_ComputeHash() const
     {
-    MD5 md5 = ContentSpecification::_ComputeHash(parentHash);
+    MD5 md5 = ContentSpecification::_ComputeHash();
     md5.Add(&m_skipRelatedLevel, sizeof(m_skipRelatedLevel));
     md5.Add(&m_isRecursive, sizeof(m_isRecursive));
     md5.Add(m_instanceFilter.c_str(), m_instanceFilter.size());
     md5.Add(&m_requiredDirection, sizeof(m_requiredDirection));
     md5.Add(m_relationshipClassNames.c_str(), m_relationshipClassNames.size());
     md5.Add(m_relatedClassNames.c_str(), m_relatedClassNames.size());
-
-    Utf8String currentHash = md5.GetHashString();
-    for (RepeatableRelationshipPathSpecification const* spec : m_relationshipPaths)
-        {
-        Utf8StringCR specHash = spec->GetHash(currentHash.c_str());
-        md5.Add(specHash.c_str(), specHash.size());
-        }
-
+    ADD_RULES_TO_HASH(md5, m_relationshipPaths);
     return md5;
     }

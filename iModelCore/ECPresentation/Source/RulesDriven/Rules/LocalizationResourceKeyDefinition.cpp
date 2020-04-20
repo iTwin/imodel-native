@@ -78,9 +78,9 @@ Utf8StringCR LocalizationResourceKeyDefinition::GetDefaultValue (void) const   {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 LocalizationResourceKeyDefinition::_ComputeHash(Utf8CP parentHash) const
+MD5 LocalizationResourceKeyDefinition::_ComputeHash() const
     {
-    MD5 md5 = PresentationKey::_ComputeHash(parentHash);
+    MD5 md5 = PresentationKey::_ComputeHash();
     md5.Add(m_id.c_str(), m_id.size());
     md5.Add(m_key.c_str(), m_key.size());
     md5.Add(m_defaultValue.c_str(), m_defaultValue.size());

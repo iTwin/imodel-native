@@ -213,3 +213,14 @@ rapidjson::Document IModelJsECPresentationUpdateRecordsHandler::GetReport()
     {
     return m_finalReport->BuildJsonAndReset();
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document IModelJsECPresentationHierarchiesCompareRecordsHandler::GetReport() const
+    {
+    rapidjson::Document report(rapidjson::kArrayType);
+    for (auto const& record : m_records)
+        report.PushBack(record.AsJson(&report.GetAllocator()), report.GetAllocator());
+    return report;
+    }

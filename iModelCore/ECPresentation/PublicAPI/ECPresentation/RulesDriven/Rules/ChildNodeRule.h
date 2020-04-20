@@ -17,7 +17,7 @@ typedef bvector<SubConditionP>           SubConditionList;
 typedef bvector<CustomizationRuleP>      ChildNodeCustomizationRuleList;
 
 /*---------------------------------------------------------------------------------**//**
-SubCondition can be used in ChildNodeRule or RootNodeRule in order to separate 
+SubCondition can be used in ChildNodeRule or RootNodeRule in order to separate
 specifications by using sub-conditions.
 * @bsiclass                                     Eligijus.Mauragas               02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -29,7 +29,7 @@ struct SubCondition : HashableBase
         ChildNodeSpecificationList m_specifications;
 
     protected:
-        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+        ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
@@ -37,7 +37,7 @@ struct SubCondition : HashableBase
 
         //! Constructor.
         ECPRESENTATION_EXPORT SubCondition (Utf8StringCR condition);
-        
+
         //! Copy constructor.
         ECPRESENTATION_EXPORT SubCondition(SubConditionCR);
 
@@ -94,13 +94,13 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeRule : public ConditionalPresentationRul
         ECPRESENTATION_EXPORT virtual Utf8CP _GetXmlElementName() const override;
         ECPRESENTATION_EXPORT virtual bool _ReadXml(BeXmlNodeP xmlNode) override;
         ECPRESENTATION_EXPORT virtual void _WriteXml(BeXmlNodeP xmlNode) const override;
-        
+
         ECPRESENTATION_EXPORT virtual Utf8CP _GetJsonElementType() const override;
         ECPRESENTATION_EXPORT virtual bool _ReadJson(JsonValueCR json) override;
         ECPRESENTATION_EXPORT virtual void _WriteJson(JsonValueR json) const override;
 
         //! Computes rule hash.
-        ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
+        ECPRESENTATION_EXPORT virtual MD5 _ComputeHash() const override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
@@ -162,20 +162,20 @@ struct EXPORT_VTABLE_ATTRIBUTE RootNodeRule : public ChildNodeRule
         ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName () const override;
         ECPRESENTATION_EXPORT bool _ReadXml (BeXmlNodeP xmlNode) override;
         ECPRESENTATION_EXPORT void _WriteXml (BeXmlNodeP xmlNode) const override;
-        
+
         ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
         ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
         ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
 
         //! Computes rule hash.
-        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+        ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECPRESENTATION_EXPORT RootNodeRule ();
 
         //! Constructor.
-        ECPRESENTATION_EXPORT RootNodeRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled, 
+        ECPRESENTATION_EXPORT RootNodeRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled,
             RuleTargetTree targetTree = TargetTree_Both, bool autoExpand = false);
 
         //! Returns flag which determines if nodes have to be automatically expanded.

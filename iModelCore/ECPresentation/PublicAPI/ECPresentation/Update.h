@@ -75,14 +75,14 @@ public:
         }
 
     //! Copy constructor.
-    JsonChange(const JsonChange& obj)
+    JsonChange(JsonChange const& obj)
         {
         m_name = obj.m_name;
         m_oldValue.CopyFrom(obj.m_oldValue, m_allocator);
         m_newValue.CopyFrom(obj.m_newValue, m_allocator);
         }
 
-    //! Is this change equal to the supplied one.
+    //! Copy assignment operator
     JsonChange& operator=(JsonChange const& other)
         {
         m_name = other.m_name;
@@ -123,7 +123,7 @@ struct HierarchyUpdateRecord
 private:
     Utf8String m_rulesetId;
     ChangeType m_changeType;
-    NavNodePtr m_node;
+    NavNodeCPtr m_node;
     bvector<JsonChange> m_changes;
     size_t m_position;
 
@@ -131,19 +131,19 @@ public:
     //! A constructor for the insert case.
     //! @param[in] node The inserted node.
     //! @param[in] position The insert position.
-    HierarchyUpdateRecord(Utf8String rulesetId, NavNodeR node, size_t position) 
+    HierarchyUpdateRecord(Utf8String rulesetId, NavNodeCR node, size_t position) 
         : m_changeType(ChangeType::Insert), m_rulesetId(rulesetId), m_node(&node), m_position(position) 
         {}
 
     //! A constructor for the delete case.
     //! @param[in] node The deleted node.
-    HierarchyUpdateRecord(Utf8String rulesetId, NavNodeR node) : m_changeType(ChangeType::Delete), m_rulesetId(rulesetId), m_node(&node) {}
+    HierarchyUpdateRecord(Utf8String rulesetId, NavNodeCR node) : m_changeType(ChangeType::Delete), m_rulesetId(rulesetId), m_node(&node) {}
 
     //! A constructor for the update case.
     //! @param[in] node The updated node.
     //! @param[in] changes The list of changes.
-    HierarchyUpdateRecord(Utf8String rulesetId, NavNodeR node, bvector<JsonChange>&& changes)
-        : m_changeType(ChangeType::Update), m_rulesetId(rulesetId), m_node(&node), m_changes(std::move(changes))
+    HierarchyUpdateRecord(Utf8String rulesetId, NavNodeCR node, bvector<JsonChange> changes)
+        : m_changeType(ChangeType::Update), m_rulesetId(rulesetId), m_node(&node), m_changes(changes)
         {}
 
     //! Copy constructor.
@@ -187,7 +187,7 @@ public:
     ChangeType GetChangeType() const {return m_changeType;}
 
     //! Get the node.
-    NavNodePtr GetNode() const {return m_node;}
+    NavNodeCPtr GetNode() const {return m_node;}
 
     //! Get the changes that were applied to the node.
     //! @note Only valid for the update case.

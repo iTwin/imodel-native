@@ -1016,7 +1016,7 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECInstanceNode)
     FillWithNodes(info, nodes);
 
     // verify the node is found successfully with valid key
-    NavNodeCPtr locatedNode = m_cache->LocateNode(*m_connection, "locale", *nodes[0]->GetKey());
+    NavNodeCPtr locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *nodes[0]->GetKey());
     ASSERT_TRUE(locatedNode.IsValid());
     ASSERT_TRUE(nodes[0]->Equals(*locatedNode));
 
@@ -1024,7 +1024,7 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECInstanceNode)
     ECClassInstanceKey invalidKey(
         nodes[0]->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().front().GetClass(),
         ECInstanceId(nodes[0]->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().front().GetId().GetValue() + 100));
-    locatedNode = m_cache->LocateNode(*m_connection, "locale", *ECInstancesNodeKey::Create(invalidKey, { "wrong hash" }));
+    locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *ECInstancesNodeKey::Create(invalidKey, { "wrong hash" }));
     ASSERT_TRUE(locatedNode.IsNull());
     }
 
@@ -1050,11 +1050,11 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECInstanceNode_FromCorrectRuleset)
     FillWithNodes(info2, { node2 });
 
     // verify the node is found successfully with valid key
-    NavNodeCPtr locatedNode = m_cache->LocateNode(*m_connection, "locale", *node1->GetKey());
+    NavNodeCPtr locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id_1", "locale", *node1->GetKey());
     ASSERT_TRUE(locatedNode.IsValid());
     EXPECT_TRUE(node1->Equals(*locatedNode));
 
-    locatedNode = m_cache->LocateNode(*m_connection, "locale", *node2->GetKey());
+    locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id_2", "locale", *node2->GetKey());
     ASSERT_TRUE(locatedNode.IsValid());
     EXPECT_TRUE(node2->Equals(*locatedNode));
     }
@@ -1073,12 +1073,12 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECClassGroupingNode)
     FillWithNodes(info, nodes);
 
     // verify the node is found successfully with valid key
-    NavNodeCPtr locatedNode = m_cache->LocateNode(*m_connection, "locale", *nodes[0]->GetKey());
+    NavNodeCPtr locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *nodes[0]->GetKey());
     ASSERT_TRUE(locatedNode.IsValid());
     ASSERT_TRUE(nodes[0]->Equals(*locatedNode));
 
     // verify the node is not found when node hash doesnt match
-    locatedNode = m_cache->LocateNode(*m_connection, "locale", *ECClassGroupingNodeKey::Create(*widgetClass1, {"different hash"}, 1));
+    locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *ECClassGroupingNodeKey::Create(*widgetClass1, {"different hash"}, 1));
     ASSERT_TRUE(locatedNode.IsNull());
     }
 
@@ -1099,12 +1099,12 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECPropertyValueGroupingNode)
     FillWithNodes(info, nodes);
 
     // verify the node is found successfully with valid key
-    NavNodeCPtr locatedNode = m_cache->LocateNode(*m_connection, "locale", *nodes[0]->GetKey());
+    NavNodeCPtr locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *nodes[0]->GetKey());
     ASSERT_TRUE(locatedNode.IsValid());
     ASSERT_TRUE(nodes[0]->Equals(*locatedNode));
 
     // verify the node is not found when node hash doesnt match
-    locatedNode = m_cache->LocateNode(*m_connection, "locale", *ECPropertyGroupingNodeKey::Create(*widgetClass1, "IntProperty", &groupingValue, {"different hash"}, 1));
+    locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *ECPropertyGroupingNodeKey::Create(*widgetClass1, "IntProperty", &groupingValue, {"different hash"}, 1));
     ASSERT_TRUE(locatedNode.IsNull());
     }
 
@@ -1125,12 +1125,12 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECPropertyRangeGroupingNode)
     FillWithNodes(info, nodes);
 
     // verify the node is found successfully with valid key
-    NavNodeCPtr locatedNode = m_cache->LocateNode(*m_connection, "locale", *nodes[0]->GetKey());
+    NavNodeCPtr locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *nodes[0]->GetKey());
     ASSERT_TRUE(locatedNode.IsValid());
     ASSERT_TRUE(nodes[0]->Equals(*locatedNode));
 
     // verify the node is not found when node hash doesnt match
-    locatedNode = m_cache->LocateNode(*m_connection, "locale", *ECPropertyGroupingNodeKey::Create(*widgetClass1, "IntProperty", &groupingValue, {"different hash"}, 1));
+    locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *ECPropertyGroupingNodeKey::Create(*widgetClass1, "IntProperty", &groupingValue, {"different hash"}, 1));
     ASSERT_TRUE(locatedNode.IsNull());
     }
 
@@ -1147,12 +1147,12 @@ TEST_F(NodesCacheTests, LocateNode_LocatesLabelGroupingNode)
     FillWithNodes(info, nodes);
 
     // verify the node is found successfully with valid key
-    NavNodeCPtr locatedNode = m_cache->LocateNode(*m_connection, "locale", *nodes[0]->GetKey());
+    NavNodeCPtr locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *nodes[0]->GetKey());
     ASSERT_TRUE(locatedNode.IsValid());
     ASSERT_TRUE(nodes[0]->Equals(*locatedNode));
 
     // verify the node is not found when node hash doesnt match
-    locatedNode = m_cache->LocateNode(*m_connection, "locale", *NavNodeKey::Create("type", {"wrong hash"}));
+    locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *NavNodeKey::Create("type", {"wrong hash"}));
     ASSERT_TRUE(locatedNode.IsNull());
     }
 
@@ -1169,12 +1169,12 @@ TEST_F(NodesCacheTests, LocateNode_LocatesCustomNode)
     FillWithNodes(info, nodes);
 
     // verify the node is found successfully with valid key
-    NavNodeCPtr locatedNode = m_cache->LocateNode(*m_connection, "locale", *nodes[0]->GetKey());
+    NavNodeCPtr locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *nodes[0]->GetKey());
     ASSERT_TRUE(locatedNode.IsValid());
     ASSERT_TRUE(nodes[0]->Equals(*locatedNode));
 
     // verify the node is not found when node hash doesnt matchSetInstanceId
-    locatedNode = m_cache->LocateNode(*m_connection, "locale", *NavNodeKey::Create("type", {"wrong hash"}));
+    locatedNode = m_cache->LocateNode(*m_connection, "ruleset_id", "locale", *NavNodeKey::Create("type", {"wrong hash"}));
     ASSERT_TRUE(locatedNode.IsNull());
     }
 

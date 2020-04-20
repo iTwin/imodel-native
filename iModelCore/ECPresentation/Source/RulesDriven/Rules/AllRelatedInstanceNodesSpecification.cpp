@@ -16,7 +16,7 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 AllRelatedInstanceNodesSpecification::AllRelatedInstanceNodesSpecification ()
-    : ChildNodeSpecification (), m_groupByClass (true), m_groupByRelationship (false), m_groupByLabel (true), 
+    : ChildNodeSpecification (), m_groupByClass (true), m_groupByRelationship (false), m_groupByLabel (true),
       m_skipRelatedLevel (0), m_requiredDirection (RequiredRelationDirection_Both)
     {
     }
@@ -24,9 +24,9 @@ AllRelatedInstanceNodesSpecification::AllRelatedInstanceNodesSpecification ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-AllRelatedInstanceNodesSpecification::AllRelatedInstanceNodesSpecification(int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy, 
-    bool hideIfNoChildren, bool groupByClass, bool groupByRelationship, bool groupByLabel, int skipRelatedLevel, Utf8StringCR supportedSchemas) 
-    : AllRelatedInstanceNodesSpecification(priority, alwaysReturnsChildren ? ChildrenHint::Always : ChildrenHint::Unknown, hideNodesInHierarchy, 
+AllRelatedInstanceNodesSpecification::AllRelatedInstanceNodesSpecification(int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy,
+    bool hideIfNoChildren, bool groupByClass, bool groupByRelationship, bool groupByLabel, int skipRelatedLevel, Utf8StringCR supportedSchemas)
+    : AllRelatedInstanceNodesSpecification(priority, alwaysReturnsChildren ? ChildrenHint::Always : ChildrenHint::Unknown, hideNodesInHierarchy,
         hideIfNoChildren, groupByClass, groupByLabel, skipRelatedLevel, supportedSchemas)
     {
     m_groupByRelationship = groupByRelationship;
@@ -35,9 +35,9 @@ AllRelatedInstanceNodesSpecification::AllRelatedInstanceNodesSpecification(int p
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-AllRelatedInstanceNodesSpecification::AllRelatedInstanceNodesSpecification(int priority, ChildrenHint hasChildren, bool hideNodesInHierarchy, 
-    bool hideIfNoChildren, bool groupByClass, bool groupByLabel, int skipRelatedLevel, Utf8StringCR supportedSchemas) 
-    : ChildNodeSpecification(priority, hasChildren, hideNodesInHierarchy, hideIfNoChildren), m_groupByClass(groupByClass), m_groupByRelationship(false), 
+AllRelatedInstanceNodesSpecification::AllRelatedInstanceNodesSpecification(int priority, ChildrenHint hasChildren, bool hideNodesInHierarchy,
+    bool hideIfNoChildren, bool groupByClass, bool groupByLabel, int skipRelatedLevel, Utf8StringCR supportedSchemas)
+    : ChildNodeSpecification(priority, hasChildren, hideNodesInHierarchy, hideIfNoChildren), m_groupByClass(groupByClass), m_groupByRelationship(false),
     m_groupByLabel(groupByLabel), m_skipRelatedLevel(skipRelatedLevel), m_supportedSchemas(supportedSchemas), m_requiredDirection(RequiredRelationDirection_Both)
     {}
 
@@ -142,7 +142,7 @@ bool AllRelatedInstanceNodesSpecification::_ReadJson(JsonValueCR json)
     m_supportedSchemas = CommonToolsInternal::SupportedSchemasToString(json[COMMON_JSON_ATTRIBUTE_SUPPORTEDSCHEMAS]);
     m_requiredDirection = CommonToolsInternal::ParseRequiredDirectionString(json[COMMON_JSON_ATTRIBUTE_REQUIREDDIRECTION].asCString(""));
     return true;
-    } 
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2018
@@ -224,9 +224,9 @@ void AllRelatedInstanceNodesSpecification::SetRequiredRelationDirection (Require
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 AllRelatedInstanceNodesSpecification::_ComputeHash(Utf8CP parentHash) const
+MD5 AllRelatedInstanceNodesSpecification::_ComputeHash() const
     {
-    MD5 md5 = ChildNodeSpecification::_ComputeHash(parentHash);
+    MD5 md5 = ChildNodeSpecification::_ComputeHash();
     md5.Add(&m_groupByClass, sizeof(m_groupByClass));
     md5.Add(&m_groupByRelationship, sizeof(m_groupByRelationship));
     md5.Add(&m_groupByLabel, sizeof(m_groupByLabel));

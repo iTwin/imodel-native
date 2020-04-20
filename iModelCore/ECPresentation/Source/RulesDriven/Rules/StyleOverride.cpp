@@ -126,9 +126,9 @@ void StyleOverride::_Accept(CustomizationRuleVisitor& visitor) const { visitor._
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 StyleOverride::_ComputeHash(Utf8CP parentHash) const
+MD5 StyleOverride::_ComputeHash() const
     {
-    MD5 md5 = ConditionalCustomizationRule::_ComputeHash(parentHash);
+    MD5 md5 = ConditionalCustomizationRule::_ComputeHash();
     md5.Add(m_foreColor.c_str(), m_foreColor.size());
     md5.Add(m_backColor.c_str(), m_backColor.size());
     md5.Add(m_fontStyle.c_str(), m_fontStyle.size());

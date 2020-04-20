@@ -29,11 +29,11 @@ struct EXPORT_VTABLE_ATTRIBUTE InstanceNodesOfSpecificClassesSpecification : pub
         ECPRESENTATION_EXPORT void _Accept(PresentationRuleSpecificationVisitor& visitor) const override;
 
         ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationRuleSpecification const& other) const override;
-        
+
         ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName () const override;
         ECPRESENTATION_EXPORT bool _ReadXml (BeXmlNodeP xmlNode) override;
         ECPRESENTATION_EXPORT void _WriteXml (BeXmlNodeP xmlNode) const override;
-        
+
         ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
         ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
         ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
@@ -42,15 +42,15 @@ struct EXPORT_VTABLE_ATTRIBUTE InstanceNodesOfSpecificClassesSpecification : pub
         ChildNodeSpecification* _Clone() const override {return new InstanceNodesOfSpecificClassesSpecification(*this);}
 
         //! Computes specification hash.
-        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+        ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECPRESENTATION_EXPORT InstanceNodesOfSpecificClassesSpecification ();
-        
+
         //! Constructor.
         //! @deprecated Use InstanceNodesOfSpecificClassesSpecification(int, ChildrenHint, bool, bool, bool, bool, Utf8StringCR, Utf8StringCR, bool)
-        ECPRESENTATION_EXPORT InstanceNodesOfSpecificClassesSpecification (int priority, bool alwaysReturnsChildren, 
+        ECPRESENTATION_EXPORT InstanceNodesOfSpecificClassesSpecification (int priority, bool alwaysReturnsChildren,
             bool hideNodesInHierarchy, bool hideIfNoChildren, bool groupByClass, bool groupByLabel, bool showEmptyGroups,
             Utf8StringCR instanceFilter, Utf8StringCR classNames, bool arePolymorphic);
 
@@ -70,7 +70,7 @@ struct EXPORT_VTABLE_ATTRIBUTE InstanceNodesOfSpecificClassesSpecification : pub
         //! Set GroupByLabel value. Can be boolean.
         ECPRESENTATION_EXPORT void                         SetGroupByLabel (bool value);
 
-        //! Returns true if class grouping nodes should be shown even if there are no 
+        //! Returns true if class grouping nodes should be shown even if there are no
         //! ECInstances of those classes. Grouping nodes will be generated for all listed classes.
         //! @deprecated
         ECPRESENTATION_EXPORT bool                         GetShowEmptyGroups (void) const;
@@ -91,10 +91,10 @@ struct EXPORT_VTABLE_ATTRIBUTE InstanceNodesOfSpecificClassesSpecification : pub
         //! Set ArePolymorphic value. Can be boolean.
         ECPRESENTATION_EXPORT void                         SetArePolymorphic (bool value);
 
-        //! InstanceFiler is spacially formated string that represents WhereCriteria in 
+        //! InstanceFiler is spacially formated string that represents WhereCriteria in
         //! ECQuery that is used to filter query results (ChildNodes).
         ECPRESENTATION_EXPORT Utf8StringCR                 GetInstanceFilter (void) const;
-        
+
         //! Set instance filter. Can be string.
         ECPRESENTATION_EXPORT void                         SetInstanceFilter (Utf8String value);
     };

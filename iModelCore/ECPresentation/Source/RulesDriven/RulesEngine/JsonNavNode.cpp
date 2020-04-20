@@ -465,7 +465,7 @@ bvector<JsonChange> NavNodesHelper::GetChanges(JsonNavNode const& lhs, JsonNavNo
     COMPARE_PROPERTY(lhs, rhs, m_backColor, NAVNODE_BackColor);
     COMPARE_PROPERTY(lhs, rhs, m_fontStyle, NAVNODE_FontStyle);
     COMPARE_PROPERTY(lhs, rhs, m_type, NAVNODE_Type);
-    COMPARE_PROPERTY_PTR(lhs, rhs, m_labelDefinition, NAVNODE_LabelDefinition, ToInternalJson);
+    COMPARE_PROPERTY_PTR(lhs, rhs, m_labelDefinition, NAVNODE_LabelDefinition, AsJson);
     return changes;
     }
 
@@ -560,13 +560,11 @@ static Utf8String CreateNodeHash(IConnectionCR connection, JsonNavNodeCR node)
     {
     MD5 h;
     NavNodeExtendedData extendedData(node);
+    Utf8CP specificationHash = extendedData.GetSpecificationHash();
     Utf8String type = node.GetType();
     Utf8String dbGuid = connection.GetDb().GetDbGuid().ToString();
-    Utf8CP specHash = extendedData.GetSpecificationHash();
-    Utf8CP rulesetId = extendedData.GetRulesetId();
+    h.Add(specificationHash, strlen(specificationHash));
     h.Add(type.c_str(), type.SizeInBytes());
-    h.Add(rulesetId, strlen(rulesetId));
-    h.Add(specHash, strlen(specHash));
     h.Add(dbGuid.c_str(), dbGuid.SizeInBytes());
 
     if (0 == strcmp(NAVNODE_TYPE_ECInstancesNode, type.c_str()))

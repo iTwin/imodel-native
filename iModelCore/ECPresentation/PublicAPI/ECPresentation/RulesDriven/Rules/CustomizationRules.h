@@ -39,7 +39,7 @@ protected:
 * Base class for CustomizationRules.
 * @bsiclass                                     Aidas.Vaiksnoras                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct EXPORT_VTABLE_ATTRIBUTE CustomizationRule : public PresentationRule 
+struct EXPORT_VTABLE_ATTRIBUTE CustomizationRule : public PresentationRule
 {
 protected:
     virtual void _Accept(CustomizationRuleVisitor& visitor) const {}
@@ -70,13 +70,13 @@ protected:
     ECPRESENTATION_EXPORT virtual void _WriteJson(JsonValueR json) const override;
 
     //! Compute rule hash.
-    ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
+    ECPRESENTATION_EXPORT virtual MD5 _ComputeHash() const override;
 
 public:
     ConditionalCustomizationRule() {}
 
-    ConditionalCustomizationRule(Utf8String condition, int priority, bool onlyIfNotHandled) 
-        : CustomizationRule(priority, onlyIfNotHandled), m_condition(condition) 
+    ConditionalCustomizationRule(Utf8String condition, int priority, bool onlyIfNotHandled)
+        : CustomizationRule(priority, onlyIfNotHandled), m_condition(condition)
         {}
 
     ECPRESENTATION_EXPORT Utf8StringCR GetCondition() const;

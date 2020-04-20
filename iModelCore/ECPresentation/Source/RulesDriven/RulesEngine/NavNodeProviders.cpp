@@ -187,9 +187,6 @@ NavNodesProviderContext::NavNodesProviderContext(NavNodesProviderContextCR other
     if (other.IsQueryContext())
         SetQueryContext(other);
 
-    if (other.IsUpdateContext())
-        SetUpdateContext(other);
-
     if (other.IsUpdatesDisabled())
         SetIsUpdatesDisabled(true);
 
@@ -222,7 +219,6 @@ void NavNodesProviderContext::Init()
     m_childNodeRule = nullptr;
     m_queryBuilder = nullptr;
     m_usedClassesListener = nullptr;
-    m_isUpdateContext = false;
     m_isUpdatesDisabled = false;
     m_isCheckingChildren = false;
     m_hasPageSize = false;
@@ -425,22 +421,6 @@ NavigationQueryBuilder& NavNodesProviderContext::GetQueryBuilder() const
 IUsedClassesListener* NavNodesProviderContext::GetUsedClassesListener() const {return m_usedClassesListener;}
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                02/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void NavNodesProviderContext::SetUpdateContext(bool isUpdateContext)
-    {
-    m_isUpdateContext = isUpdateContext;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                02/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void NavNodesProviderContext::SetUpdateContext(NavNodesProviderContextCR other)
-    {
-    m_isUpdateContext = other.m_isUpdateContext;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 HierarchyLevelInfo const& NavNodesProviderContext::GetHierarchyLevelInfo() const
@@ -451,7 +431,7 @@ HierarchyLevelInfo const& NavNodesProviderContext::GetHierarchyLevelInfo() const
         {
         m_hierarchyLevelInfo = GetNodesCache().FindHierarchyLevel(GetConnection().GetId().c_str(),
             GetRuleset().GetRuleSetId().c_str(), IsLocalizationContext() ? GetLocale().c_str() : "",
-            GetVirtualParentNodeId());
+            GetVirtualParentNodeId() ? GetVirtualParentNodeId() : GetPhysicalParentNodeId());
         }
     if (!m_hierarchyLevelInfo.IsValid())
         {

@@ -23,7 +23,7 @@ struct CalculatedPropertiesSpecification : HashableBase
 
     protected:
         //! Computes specification hash.
-        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+        ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
     public:
         CalculatedPropertiesSpecification(): m_priority(1000) {}
@@ -39,7 +39,7 @@ struct CalculatedPropertiesSpecification : HashableBase
 
         //! Reads rule information from Json, returns true if it can read it successfully.
         ECPRESENTATION_EXPORT bool ReadJson(JsonValueCR json);
-    
+
         //! Writes specification to json.
         ECPRESENTATION_EXPORT Json::Value WriteJson() const;
 

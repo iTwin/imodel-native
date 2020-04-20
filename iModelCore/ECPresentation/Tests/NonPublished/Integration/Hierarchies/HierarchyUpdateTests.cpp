@@ -15,11 +15,11 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 +===============+===============+===============+===============+===============+======*/
 struct HierarchyUpdateTests : UpdateTests
     {
-    void SetNodeExpanded(NavNodeCR node)
+    void SetNodeExpanded(NavNodeCR node, bool isExpanded = true)
         {
         IConnectionCPtr connection = m_manager->GetConnections().GetConnection(m_db);
         JsonNavNodeCR jsonNode = static_cast<JsonNavNodeCR>(node);
-        const_cast<JsonNavNodeR>(jsonNode).SetIsExpanded(true);
+        const_cast<JsonNavNodeR>(jsonNode).SetIsExpanded(isExpanded);
         static_cast<RulesDrivenECPresentationManagerImpl&>(m_manager->GetImpl()).GetNodesCache(*connection)->Update(jsonNode.GetNodeId(), jsonNode, IHierarchyCache::UPDATE_NodeItself);
         }
     };
@@ -4848,8 +4848,8 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateHierarchyWhenNodeRemovedFromCollapsedH
     EXPECT_STREQ("GadgetID", childrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
     EXPECT_STREQ("GadgetID", childrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    // expect root node to be collapsed
-    EXPECT_FALSE(rootNodes[0]->IsExpanded());
+    // make sure the root node is set as collapsed
+    SetNodeExpanded(*rootNodes[0], false);
 
     // delete one gadget
     RulesEngineTestHelpers::DeleteInstance(m_db, *gadget2, true);
@@ -4908,8 +4908,8 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateHierarchyWhenNodeInsertedIntoCollapsed
     ASSERT_EQ(1, childrenNodes.GetSize());
     EXPECT_STREQ("GadgetID", childrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    // expect root node to be collapsed
-    EXPECT_FALSE(rootNodes[0]->IsExpanded());
+    // make sure the root node is set as collapsed
+    SetNodeExpanded(*rootNodes[0], false);
 
     // relate second gadget
     RulesEngineTestHelpers::InsertRelationship(m_db, *widgetHasGadgetsClass, *widget, *gadget2, nullptr, true);
@@ -4969,8 +4969,8 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateHierarchyWhenNodeUpdatedInCollapsedHie
     ASSERT_EQ(1, childrenNodes.GetSize());
     EXPECT_STREQ("Widget_Label", childrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    // expect root node to be collapsed
-    EXPECT_FALSE(rootNodes[0]->IsExpanded());
+    // make sure the root node is set as collapsed
+    SetNodeExpanded(*rootNodes[0], false);
 
     // update widget
     widget->SetValue("MyID", ECValue("New_Widget_Label"));
@@ -5118,8 +5118,8 @@ TEST_F(HierarchyUpdateTests, UpdateHierarchyWhenLastNodeRemovedFromCollapsedHier
     ASSERT_EQ(1, childrenNodes.GetSize());
     EXPECT_STREQ("GadgetID", childrenNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    // expect root node to be collapsed
-    EXPECT_FALSE(rootNodes[0]->IsExpanded());
+    // make sure the root node is set as collapsed
+    SetNodeExpanded(*rootNodes[0], false);
 
     // delete gadget
     RulesEngineTestHelpers::DeleteInstance(m_db, *gadget, true);
@@ -5178,8 +5178,8 @@ TEST_F(HierarchyUpdateTests, UpdateHierarchyWhenNodeInsertedIntoEmptyCollapsedHi
     DataContainer<NavNodeCPtr> childrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(0, childrenNodes.GetSize());
 
-    // expect root node to be collapsed
-    EXPECT_FALSE(rootNodes[0]->IsExpanded());
+    // make sure the root node is set as collapsed
+    SetNodeExpanded(*rootNodes[0], false);
 
     // relate gadget
     RulesEngineTestHelpers::InsertRelationship(m_db, *widgetHasGadgetClass, *widget, *gadget, nullptr, true);
@@ -5247,8 +5247,8 @@ TEST_F(HierarchyUpdateTests, UpdateHierarchyWhenLastGroupedNodeDeletedFromCollap
     EXPECT_STREQ(NAVNODE_TYPE_ECInstancesNode, gadgetNodes[0]->GetType().c_str());
     EXPECT_STREQ("GadgetID", gadgetNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
-    // expect root node to be collapsed
-    EXPECT_FALSE(rootNodes[0]->IsExpanded());
+    // make sure the root node is set as collapsed
+    SetNodeExpanded(*rootNodes[0], false);
 
     // delete gadget
     RulesEngineTestHelpers::DeleteInstance(m_db, *gadget, true);

@@ -4,10 +4,8 @@
 *--------------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 #include "UpdateHandler.h"
-#include "ExtendedData.h"
-#include "NavNodeProviders.h"
-#include "ECExpressionContextsProvider.h"
-#include "CustomizationHelper.h"
+#include "HierarchiesComparer.h"
+#include "LoggingHelper.h"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2016
@@ -29,7 +27,7 @@ IUpdateTask::IUpdateTask() : m_didPerform(false), m_id(s_taskId++) {}
 bvector<IUpdateTaskPtr> IUpdateTask::Perform()
     {
     BeAssert(!m_didPerform);
-    bvector<IUpdateTaskPtr> tasks = _Perform(); 
+    bvector<IUpdateTaskPtr> tasks = _Perform();
     m_didPerform = true;
     return tasks;
     }
@@ -78,7 +76,7 @@ protected:
         return str;
         }
 public:
-    RemapNodeIdsTask(NodesCache& cache, bmap<uint64_t, uint64_t> const& remapInfo) 
+    RemapNodeIdsTask(NodesCache& cache, bmap<uint64_t, uint64_t> const& remapInfo)
         : m_cache(cache), m_remapInfo(remapInfo)
         {}
 };
@@ -107,7 +105,7 @@ protected:
         return str;
         }
 public:
-    RemoveHierarchyLevelTask(NodesCache& cache, BeGuid removalId) 
+    RemoveHierarchyLevelTask(NodesCache& cache, BeGuid removalId)
         : m_cache(cache), m_removalId(removalId)
         {}
 };
@@ -120,7 +118,6 @@ struct RefreshHierarchyTask : IUpdateTask
 private:
     HierarchyUpdater const& m_updater;
     UpdateContext& m_updateContext;
-    IConnectionCR m_connection;
     HierarchyLevelInfo m_hierarchyInfo;
 protected:
     virtual uint32_t _GetPriority() const override {return TASK_PRIORITY_RefreshHierarchy;}
@@ -141,7 +138,7 @@ protected:
                 newInfo.SetVirtualParentNodeId(iter->second);
             }
         bvector<IUpdateTaskPtr> subTasks;
-        m_updater.Update(subTasks, m_updateContext, m_connection, m_hierarchyInfo, newInfo);
+        m_updater.Update(subTasks, m_updateContext, m_hierarchyInfo, newInfo);
         return subTasks;
         }
     virtual Utf8String _GetPrintStr() const override
@@ -157,8 +154,8 @@ protected:
         return str;
         }
 public:
-    RefreshHierarchyTask(HierarchyUpdater const& updater, UpdateContext& updateContext, IConnectionCR connection, HierarchyLevelInfo info) 
-        : m_updater(updater), m_updateContext(updateContext), m_connection(connection), m_hierarchyInfo(info)
+    RefreshHierarchyTask(HierarchyUpdater const& updater, UpdateContext& updateContext, HierarchyLevelInfo info)
+        : m_updater(updater), m_updateContext(updateContext), m_hierarchyInfo(info)
         {}
 };
 
@@ -201,7 +198,7 @@ protected:
         return str;
         }
 public:
-    InvalidateContentTask(UpdateTasksFactoryCR factory, UpdateContext& updateContext, ContentCache& contentCache, ContentProviderR provider) 
+    InvalidateContentTask(UpdateTasksFactoryCR factory, UpdateContext& updateContext, ContentCache& contentCache, ContentProviderR provider)
         : m_tasksFactory(factory), m_updateContext(updateContext), m_contentCache(contentCache), m_provider(&provider)
         {}
 };
@@ -237,7 +234,7 @@ protected:
         if (!DidPerform())
             {
             NavNodeCPtr node = m_record.GetNode();
-            str.append(Utf8PrintfString(" %s: Type = %s, Label = %s, Id = %" PRIu64 ", ParentId = %" PRIu64, 
+            str.append(Utf8PrintfString(" %s: Type = %s, Label = %s, Id = %" PRIu64 ", ParentId = %" PRIu64,
                 GetString(m_record).c_str(), node->GetType().c_str(), node->GetLabelDefinition().GetDisplayValue().c_str(), node->GetNodeId(), node->GetParentNodeId()));
             }
         return str;
@@ -264,7 +261,7 @@ protected:
         return Utf8PrintfString("[FullUpdateReportTask] RulesetId = '%s'", m_record.GetRulesetId().c_str());
         }
 public:
-    FullUpdateReportTask(IUpdateRecordsHandler& recordsHandler, FullUpdateRecord record) 
+    FullUpdateReportTask(IUpdateRecordsHandler& recordsHandler, FullUpdateRecord record)
         : m_recordsHandler(recordsHandler), m_record(record)
         {}
 };
@@ -288,10 +285,10 @@ IUpdateTaskPtr UpdateTasksFactory::CreateRemoveHierarchyLevelTask(NodesCache& no
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-IUpdateTaskPtr UpdateTasksFactory::CreateRefreshHierarchyTask(HierarchyUpdater const& updater, UpdateContext& updateContext, 
-    IConnectionCR db, HierarchyLevelInfo const& info) const
+IUpdateTaskPtr UpdateTasksFactory::CreateRefreshHierarchyTask(HierarchyUpdater const& updater, UpdateContext& updateContext,
+    HierarchyLevelInfo const& info) const
     {
-    return new RefreshHierarchyTask(updater, updateContext, db, info);
+    return new RefreshHierarchyTask(updater, updateContext, info);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -327,12 +324,12 @@ IUpdateTaskPtr UpdateTasksFactory::CreateReportTask(FullUpdateRecord record) con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-UpdateHandler::UpdateHandler(INodesCacheManager const& nodesCachesManager, ContentCache* contentCache, IConnectionManagerCR connections, INodesProviderContextFactoryCR contextFactory, 
-    INodesProviderFactoryCR providerFactory, IECExpressionsCacheProvider& ecexpressionsCacheProvider) 
+UpdateHandler::UpdateHandler(INodesCacheManager const& nodesCachesManager, ContentCache* contentCache, IConnectionManagerCR connections, INodesProviderContextFactoryCR contextFactory,
+    INodesProviderFactoryCR providerFactory, IECExpressionsCacheProvider& ecexpressionsCacheProvider)
     : m_nodesCachesManager(nodesCachesManager), m_contentCache(contentCache), m_connections(connections), m_tasksFactory(contentCache, nullptr),
     m_ecexpressionsCacheProvider(ecexpressionsCacheProvider), m_hierarchyUpdater(nullptr)
     {
-    m_hierarchyUpdater = new HierarchyUpdater(m_tasksFactory, nodesCachesManager, contextFactory, providerFactory);
+    m_hierarchyUpdater = new HierarchyUpdater(m_tasksFactory, connections, nodesCachesManager, contextFactory, providerFactory);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -362,7 +359,7 @@ bvector<HierarchyLevelInfo> UpdateHandler::GetAffectedHierarchyLevels(IConnectio
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<IUpdateTaskPtr> UpdateHandler::CreateUpdateTasks(UpdateContext& updateContext, IConnectionCR connection, 
+bvector<IUpdateTaskPtr> UpdateHandler::CreateUpdateTasks(UpdateContext& updateContext, IConnectionCR connection,
     bvector<ECInstanceChangeEventSource::ChangedECInstance> const& changes) const
     {
     bvector<IUpdateTaskPtr> tasks;
@@ -435,7 +432,7 @@ void UpdateHandler::AddTasksForAffectedHierarchies(bvector<IUpdateTaskPtr>& task
             BeAssert(false);
             continue;
             }
-        AddTask(tasks, *m_tasksFactory.CreateRefreshHierarchyTask(*m_hierarchyUpdater, updateContext, *connection, info));
+        AddTask(tasks, *m_tasksFactory.CreateRefreshHierarchyTask(*m_hierarchyUpdater, updateContext, info));
         AddTask(tasks, *m_tasksFactory.CreateRemapNodeIdsTask(*nodesCache, updateContext.GetRemapInfo()));
         }
     }
@@ -474,7 +471,7 @@ void UpdateHandler::ExecuteTasks(bvector<IUpdateTaskPtr>& tasks) const
         lock.lock();
         m_updateRecordsHandler->Start();
         }
-    
+
     RefCountedPtr<PerformanceLogger> _l2 = LoggingHelper::CreatePerformanceLogger(Log::Update, "Executing tasks", NativeLogging::LOG_TRACE);
 
     size_t i = 0;
@@ -483,7 +480,7 @@ void UpdateHandler::ExecuteTasks(bvector<IUpdateTaskPtr>& tasks) const
         IUpdateTaskPtr task = tasks[i++];
         if (task.IsNull())
             continue;
-            
+
         LoggingHelper::LogMessage(Log::Update, Utf8PrintfString("Executing task: %s", task->GetPrintStr().c_str()).c_str());
 
         StopWatch timer(nullptr, true);
@@ -554,7 +551,7 @@ void UpdateHandler::DoFullUpdate(Utf8CP rulesetId, bool updateHierarchies, bool 
 
     if (updateHierarchies)
         {
-        m_nodesCachesManager.ClearCaches(rulesetId);        
+        m_nodesCachesManager.ClearCaches(rulesetId);
         updateTarget |= (int)FullUpdateRecord::UpdateTarget::Hierarchy;
         }
 
@@ -569,7 +566,7 @@ void UpdateHandler::DoFullUpdate(Utf8CP rulesetId, bool updateHierarchies, bool 
         if (0 != updateTarget)
             m_updateRecordsHandler->Accept(FullUpdateRecord(rulesetId, (FullUpdateRecord::UpdateTarget)updateTarget));
         m_updateRecordsHandler->Finish();
-        }    
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -595,134 +592,10 @@ void UpdateHandler::NotifyCategoriesChanged()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                03/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-NavNodesProviderPtr HierarchyUpdater::CreateProvider(IConnectionCR connection, NodesCache const& nodesCache, HierarchyLevelInfo const& info) const
-    {
-    // create the nodes provider context
-    NavNodesProviderContextPtr context = m_contextFactory.Create(connection, info.GetRulesetId().c_str(), 
-        info.GetLocale().c_str(), info.GetPhysicalParentNodeId());
-    if (context.IsNull())
-        return nullptr;
-
-    context->SetUpdateContext(true);
-
-    // create the provider
-    JsonNavNodeCPtr parentNode = (nullptr != info.GetPhysicalParentNodeId()) ? nodesCache.GetNode(*info.GetPhysicalParentNodeId()) : nullptr;
-    return m_nodesProviderFactory.Create(*context, parentNode.get(), ProviderCacheType::None);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                02/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void HierarchyUpdater::SynchronizeLists(NavNodesDataSource const& oldDs, size_t& oldIndex, NavNodesDataSource const& newDs, size_t& newIndex) const
-    {
-    size_t newIndexReset = newIndex;
-    while (oldIndex < oldDs.GetSize())
-        {
-        JsonNavNodeCPtr oldNode = oldDs.GetNode(oldIndex);
-        newIndex = newIndexReset;
-        bool found = false;
-        while (newIndex < newDs.GetSize())
-            {
-            JsonNavNodePtr newNode = newDs.GetNode(newIndex);
-            if (oldNode->GetKey()->IsSimilar(*newNode->GetKey()))
-                {
-                found = true;
-                break;
-                }
-            ++newIndex;
-            }
-        if (found)
-            break;
-        ++oldIndex;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                03/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void HierarchyUpdater::CompareDataSources(bvector<IUpdateTaskPtr>& subTasks, UpdateContext& context, 
-    NavNodesProviderCR oldProvider, NavNodesProviderR newProvider) const
-    {
-    NavNodesDataSourcePtr oldDs = NavNodesDataSource::Create(oldProvider);
-    NavNodesDataSourcePtr newDs = NavNodesDataSource::Create(newProvider);
-
-    size_t oldIndex = 0;
-    size_t newIndex = 0;
-    while (oldIndex < oldDs->GetSize() && newIndex < newDs->GetSize())
-        {
-        size_t oldIndexStart = oldIndex;
-        size_t newIndexStart = newIndex;
-        SynchronizeLists(*oldDs, oldIndex, *newDs, newIndex);
-
-        // handle removed nodes
-        for (size_t i = oldIndexStart; i < oldIndex; ++i)
-            {
-            NavNodePtr node = oldDs->GetNode(i);
-            subTasks.push_back(m_tasksFactory.CreateReportTask(HierarchyUpdateRecord(oldProvider.GetContext().GetRuleset().GetRuleSetId(), *node)));
-            context.GetRemovedNodeIds().insert(node->GetNodeId());
-            }
-
-        // insert added nodes
-        for (size_t i = newIndexStart; i < newIndex; ++i)
-            {
-            JsonNavNodePtr node = newDs->GetNode(i);
-            CustomizeNode(nullptr, *node, newProvider);
-            subTasks.push_back(m_tasksFactory.CreateReportTask(HierarchyUpdateRecord(newProvider.GetContext().GetRuleset().GetRuleSetId(), *node, i)));
-            }
-
-        // now the lists are synchronized - iterate over both of them at the same time
-        JsonNavNodePtr oldNode, newNode;
-        while (oldIndex < oldDs->GetSize() && newIndex < newDs->GetSize() 
-            && (oldNode = oldDs->GetNode(oldIndex))->GetKey()->IsSimilar(*(newNode = newDs->GetNode(newIndex))->GetKey()))
-            {
-            CompareNodes(subTasks, context, *oldNode, newProvider, *newNode);
-            ++oldIndex;
-            ++newIndex;
-            }
-        }
-    
-    // handle removed nodes
-    for (size_t i = oldIndex; i < oldDs->GetSize(); ++i)
-        {
-        NavNodePtr node = oldDs->GetNode(i);
-        subTasks.push_back(m_tasksFactory.CreateReportTask(HierarchyUpdateRecord(oldProvider.GetContext().GetRuleset().GetRuleSetId(), *node)));
-        context.GetRemovedNodeIds().insert(node->GetNodeId());
-        }
-
-    // insert added nodes
-    for (size_t i = newIndex; i < newDs->GetSize(); ++i)
-        {
-        JsonNavNodePtr node = newDs->GetNode(i);
-        CustomizeNode(nullptr, *node, newProvider);
-        subTasks.push_back(m_tasksFactory.CreateReportTask(HierarchyUpdateRecord(newProvider.GetContext().GetRuleset().GetRuleSetId(), *node, i)));
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                03/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void HierarchyUpdater::CompareNodes(bvector<IUpdateTaskPtr>& subTasks, UpdateContext& context, 
-    JsonNavNodeCR oldNode, NavNodesProviderCR newProvider, JsonNavNodeR newNode) const
-    {
-    CustomizeNode(&oldNode, newNode, newProvider);
-    
-    if (oldNode.GetNodeId() != newNode.GetNodeId())
-        {
-        context.GetRemapInfo()[oldNode.GetNodeId()] = newNode.GetNodeId();
-        }
-    
-    bvector<JsonChange> changes = NavNodesHelper::GetChanges(oldNode, newNode);
-    if (!changes.empty())
-        subTasks.push_back(m_tasksFactory.CreateReportTask(HierarchyUpdateRecord(newProvider.GetContext().GetRuleset().GetRuleSetId(), newNode, std::move(changes))));
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HierarchyUpdater::CheckIfParentNeedsUpdate(bvector<IUpdateTaskPtr>& subTasks, NodesCache const& nodesCache, UpdateContext& context, 
-    NavNodesProviderCR oldProvider, NavNodesProviderCR newProvider) const
+void HierarchyUpdater::UpdateParentHierarchy(bvector<IUpdateTaskPtr>& subTasks, UpdateContext& context,
+    NodesCache const& nodesCache, NavNodesProviderCR oldProvider, NavNodesProviderCR newProvider) const
     {
     if (nullptr == newProvider.GetContext().GetPhysicalParentNodeId())
         {
@@ -731,7 +604,7 @@ void HierarchyUpdater::CheckIfParentNeedsUpdate(bvector<IUpdateTaskPtr>& subTask
         }
 
     size_t oldNodesCount = oldProvider.GetNodesCount();
-    size_t newNodesCount = newProvider.GetNodesCount();    
+    size_t newNodesCount = newProvider.GetNodesCount();
     if (0 != oldNodesCount && 0 != newNodesCount || oldNodesCount == newNodesCount)
         {
         // update parent data source only if the count of nodes changed from/to 0
@@ -750,45 +623,7 @@ void HierarchyUpdater::CheckIfParentNeedsUpdate(bvector<IUpdateTaskPtr>& subTask
         BeAssert(false);
         return;
         }
-    subTasks.push_back(m_tasksFactory.CreateRefreshHierarchyTask(*this, context, newProvider.GetContext().GetConnection(), parentHierarchyLevelInfo));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                03/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void HierarchyUpdater::CustomizeNode(JsonNavNodeCP oldNode, JsonNavNodeR nodeToCustomize, NavNodesProviderCR newNodeProvider) const
-    {
-    int updatedParts = 0;
-    DataSourceRelatedSettingsUpdater updater(newNodeProvider.GetContext(), &nodeToCustomize);
-
-    // if the old node was customized, we have to customize the new one as well;
-    // otherwise the comparison is incorrect
-    bool shouldCustomize = (nullptr == oldNode || NavNodeExtendedData(*oldNode).IsCustomized());
-    if (shouldCustomize && !NavNodeExtendedData(nodeToCustomize).IsCustomized())
-        {
-        CustomizationHelper::Customize(newNodeProvider.GetContext(), nodeToCustomize, NavNodesHelper::IsCustomNode(nodeToCustomize));
-        updatedParts |= IHierarchyCache::UPDATE_NodeItself | IHierarchyCache::UPDATE_NodeKey;
-        }
-
-    // the same with children
-    bool shouldDetermineChildren = (nullptr == oldNode || oldNode->DeterminedChildren());
-    if (shouldDetermineChildren && !nodeToCustomize.DeterminedChildren())
-        {
-        newNodeProvider.DetermineChildren(nodeToCustomize);
-        updatedParts |= IHierarchyCache::UPDATE_NodeItself;
-        }
-
-    // if old node was expanded, we have to expand new node too
-    bool isOldNodeExpanded = (nullptr != oldNode && oldNode->IsExpanded());
-    if (isOldNodeExpanded && !nodeToCustomize.IsExpanded())
-        {
-        nodeToCustomize.SetIsExpanded(true);
-        updatedParts |= IHierarchyCache::UPDATE_NodeItself;
-        }
-
-    // notify provider that we updated the node
-    if (0 != updatedParts)
-        newNodeProvider.NotifyNodeChanged(nodeToCustomize, updatedParts);
+    subTasks.push_back(m_tasksFactory.CreateRefreshHierarchyTask(*this, context, parentHierarchyLevelInfo));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -798,73 +633,28 @@ bool HierarchyUpdater::IsHierarchyRemoved(UpdateContext const& context, NodesCac
     {
     if (nullptr == info.GetPhysicalParentNodeId())
         return false;
-    
+
     return nodesCache.HasParentNode(*info.GetPhysicalParentNodeId(), context.GetRemovedNodeIds());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                03/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void HierarchyUpdater::Update(bvector<IUpdateTaskPtr>& subTasks, UpdateContext& context, IConnectionCR connection, HierarchyLevelInfo const& oldInfo, HierarchyLevelInfo const& newInfo) const
-    {
-    if (context.GetHandledHierarchies().end() != context.GetHandledHierarchies().find(oldInfo))
-        {
-        // no need to update hierarchy levels which are already updated
-        LoggingHelper::LogMessage(Log::Update, "Skipping update as this hierarchy level is already updated", NativeLogging::LOG_DEBUG);
-        return;
-        }
-    NodesCache* nodesCache = m_nodesCacheManager.GetCache(connection.GetId());
-    if (nullptr == nodesCache)
-        {
-        BeAssert(false);
-        return;
-        }
-    context.GetHandledHierarchies().insert(oldInfo);
-    context.GetHandledHierarchies().insert(newInfo);
-
-    BeMutexHolder lock(nodesCache->GetMutex());
-    Savepoint txn(connection.GetDb(), "Update");
-    BeAssert(txn.IsActive());
-
-    if (IsHierarchyRemoved(context, *nodesCache, oldInfo))
-        {
-        // no need to update this data source since it's already removed
-        LoggingHelper::LogMessage(Log::Update, "Skipping update as this hierarchy level is removed", NativeLogging::LOG_DEBUG);
-        return;
-        }
-
-    NavNodesProviderPtr oldProvider = nodesCache->GetCombinedHierarchyLevel(oldInfo, false, false);
-    if (oldProvider.IsNull())
-        {
-        BeAssert(false);
-        return;
-        }
-    // note: need to make sure oldProvider initialized its nodes cache before setting the removal id
-    JsonNavNodePtr temp;
-    oldProvider->GetNode(temp, 0);
-
-    BeGuid removalId = nodesCache->CreateRemovalId(oldInfo);
-    LoggingHelper::LogMessage(Log::Update, Utf8PrintfString("Flagged data source for removal with ID %s", removalId.ToString().c_str()).c_str(), NativeLogging::LOG_DEBUG);
- 
-    NavNodesProviderPtr newProvider = CreateProvider(connection, *nodesCache, newInfo);
-    if (newProvider.IsValid())
-        {
-        DisabledFullNodesLoadContext doNotCustomizeOld(*oldProvider);
-        DisabledFullNodesLoadContext doNotCustomizeNew(*newProvider);
-        if (IsHierarchyExpanded(*nodesCache, oldInfo))
-            CompareDataSources(subTasks, context, *oldProvider, *newProvider);
-        else
-            MarkNodesAsRemoved(context, *oldProvider);
-
-        CheckIfParentNeedsUpdate(subTasks, *nodesCache, context, *oldProvider, *newProvider);
-        }
-    subTasks.push_back(m_tasksFactory.CreateRemoveHierarchyLevelTask(*nodesCache, removalId));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool HierarchyUpdater::IsHierarchyExpanded(NodesCache const& nodesCache, HierarchyLevelInfo const& info) const
+static void MarkNodesAsRemoved(UpdateContext& context, NavNodesProviderCR oldProvider)
+    {
+    NavNodesDataSourcePtr oldDs = NavNodesDataSource::Create(oldProvider);
+    size_t size = oldDs->GetSize();
+    for (size_t i = 0; i < size; i++)
+        {
+        NavNodePtr node = oldDs->GetNode(i);
+        context.GetRemovedNodeIds().insert(node->GetNodeId());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool IsHierarchyExpanded(IHierarchyCacheCR nodesCache, HierarchyLevelInfo const& info)
     {
 #ifdef not_tracking_node_expansion_in_imodeljs
     if (nullptr != info.GetPhysicalParentNodeId())
@@ -883,16 +673,111 @@ bool HierarchyUpdater::IsHierarchyExpanded(NodesCache const& nodesCache, Hierarc
     return true;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                06/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void HierarchyUpdater::MarkNodesAsRemoved(UpdateContext& context, NavNodesProviderCR oldProvider) const
-    {
-    NavNodesDataSourcePtr oldDs = NavNodesDataSource::Create(oldProvider);
-    size_t size = oldDs->GetSize();
-    for (size_t i = 0; i < size; i++)
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                04/2020
++===============+===============+===============+===============+===============+======*/
+struct HierarchyUpdater::CompareReporter : IHierarchyChangesReporter
+{
+private:
+    UpdateContext& m_context;
+    bvector<IUpdateTaskPtr>& m_tasks;
+    HierarchyUpdater const& m_updater;
+    NodesCache& m_nodesCache;
+    bmap<NavNodesProviderCP, BeGuid> m_removalIds;
+
+protected:
+    void _OnFoundLhsProvider(NavNodesProviderCR provider) override
         {
-        NavNodePtr node = oldDs->GetNode(i);
-        context.GetRemovedNodeIds().insert(node->GetNodeId());
+        // need to make sure the provider initialized its nodes cache before setting the removal id
+        JsonNavNodePtr temp;
+        provider.GetNode(temp, 0);
+
+        BeGuid removalId = m_nodesCache.CreateRemovalId(provider.GetContext().GetHierarchyLevelInfo());
+        m_removalIds.Insert(&provider, removalId);
+        LoggingHelper::LogMessage(Log::Update, Utf8PrintfString("Flagged data source for removal with ID %s", removalId.ToString().c_str()).c_str(), NativeLogging::LOG_DEBUG);
         }
+
+    bool _OnStartCompare(NavNodesProviderCR lhs, NavNodesProviderCR) override
+        {
+        if (!IsHierarchyExpanded(m_nodesCache, lhs.GetContext().GetHierarchyLevelInfo()))
+            {
+            MarkNodesAsRemoved(m_context, lhs);
+            return false;
+            }
+        return true;
+        }
+
+    void _OnEndCompare(NavNodesProviderCR lhs, NavNodesProviderCP rhs) override
+        {
+        if (rhs)
+            m_updater.UpdateParentHierarchy(m_tasks, m_context, m_nodesCache, lhs, *rhs);
+
+        auto removalIdIter = m_removalIds.find(&lhs);
+        if (m_removalIds.end() == removalIdIter)
+            {
+            BeAssert(false);
+            return;
+            }
+        m_tasks.push_back(m_updater.m_tasksFactory.CreateRemoveHierarchyLevelTask(m_nodesCache, removalIdIter->second));
+        m_removalIds.erase(removalIdIter);
+        }
+
+    void _Added(HierarchyLevelInfo const& hli, JsonNavNodeCR node, size_t index) override
+        {
+        m_tasks.push_back(m_updater.m_tasksFactory.CreateReportTask(HierarchyUpdateRecord(hli.GetRulesetId(), node, index)));
+        }
+
+    void _Removed(HierarchyLevelInfo const& hli, JsonNavNodeCR node) override
+        {
+        m_tasks.push_back(m_updater.m_tasksFactory.CreateReportTask(HierarchyUpdateRecord(hli.GetRulesetId(), node)));
+        m_context.GetRemovedNodeIds().insert(node.GetNodeId());
+        }
+
+    void _Changed(HierarchyLevelInfo const& hli, JsonNavNodeCR lhsNode, JsonNavNodeCR rhsNode, bvector<JsonChange> const& changes) override
+        {
+        if (lhsNode.GetNodeId() != rhsNode.GetNodeId())
+            m_context.GetRemapInfo()[lhsNode.GetNodeId()] = rhsNode.GetNodeId();
+        if (!changes.empty())
+            m_tasks.push_back(m_updater.m_tasksFactory.CreateReportTask(HierarchyUpdateRecord(hli.GetRulesetId(), rhsNode, changes)));
+        }
+
+public:
+    CompareReporter(UpdateContext& context, bvector<IUpdateTaskPtr>& tasks, HierarchyUpdater const& updater, NodesCache& nodesCache)
+        : m_context(context), m_tasks(tasks), m_updater(updater), m_nodesCache(nodesCache)
+        {}
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void HierarchyUpdater::Update(bvector<IUpdateTaskPtr>& subTasks, UpdateContext& context, HierarchyLevelInfo const& oldInfo, HierarchyLevelInfo const& newInfo) const
+    {
+    if (context.GetHandledHierarchies().end() != context.GetHandledHierarchies().find(oldInfo))
+        {
+        // no need to update hierarchy levels which are already updated
+        LoggingHelper::LogMessage(Log::Update, "Skipping update as this hierarchy level is already updated", NativeLogging::LOG_DEBUG);
+        return;
+        }
+    context.GetHandledHierarchies().insert(oldInfo);
+    context.GetHandledHierarchies().insert(newInfo);
+
+    NodesCache* nodesCache = m_nodesCacheManager.GetCache(newInfo.GetConnectionId());
+    if (nullptr == nodesCache)
+        {
+        BeAssert(false);
+        return;
+        }
+
+    BeMutexHolder lock(nodesCache->GetMutex());
+
+    if (IsHierarchyRemoved(context, *nodesCache, oldInfo))
+        {
+        // no need to update this data source since it's already removed
+        LoggingHelper::LogMessage(Log::Update, "Skipping update as this hierarchy level is removed", NativeLogging::LOG_DEBUG);
+        return;
+        }
+
+    CompareReporter reporter(context, subTasks, *this, *nodesCache);
+    HierarchiesComparer comparer(HierarchiesComparer::Params(*nodesCache, m_contextFactory, m_nodesProviderFactory, reporter, false));
+    comparer.Compare(m_connections, oldInfo, newInfo);
     }

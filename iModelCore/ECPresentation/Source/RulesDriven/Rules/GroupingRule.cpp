@@ -197,29 +197,21 @@ GroupList const& GroupingRule::GetGroups (void) const            { return m_grou
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GroupingRule::AddGroup(GroupSpecificationR group)
     {
-    InvalidateHash();
-    group.SetParent(this);
-    m_groups.push_back(&group);
+    ADD_HASHABLE_CHILD(m_groups, group);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 GroupingRule::_ComputeHash(Utf8CP parentHash) const
+MD5 GroupingRule::_ComputeHash() const
     {
-    MD5 md5 = ConditionalCustomizationRule::_ComputeHash(parentHash);
+    MD5 md5 = ConditionalCustomizationRule::_ComputeHash();
     md5.Add(m_schemaName.c_str(), m_schemaName.size());
     md5.Add(m_className.c_str(), m_className.size());
     md5.Add(m_contextMenuCondition.c_str(), m_contextMenuCondition.size());
     md5.Add(m_contextMenuLabel.c_str(), m_contextMenuLabel.size());
     md5.Add(m_settingsId.c_str(), m_settingsId.size());
-
-    Utf8String currentHash = md5.GetHashString();
-    for (GroupSpecificationP spec : m_groups)
-        {
-        Utf8StringCR specHash = spec->GetHash(currentHash.c_str());
-        md5.Add(specHash.c_str(), specHash.size());
-        }
+    ADD_RULES_TO_HASH(md5, m_groups);
     return md5;
     }
 
@@ -249,7 +241,7 @@ GroupSpecification::GroupSpecification () {}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-GroupSpecification::GroupSpecification (Utf8StringCR contextMenuLabel, Utf8CP defaultLabel) 
+GroupSpecification::GroupSpecification (Utf8StringCR contextMenuLabel, Utf8CP defaultLabel)
     : m_contextMenuLabel (contextMenuLabel), m_defaultLabel (defaultLabel)
     {}
 
@@ -328,15 +320,13 @@ Utf8StringCR GroupSpecification::GetDefaultLabel (void) const      { return m_de
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 GroupSpecification::_ComputeHash(Utf8CP parentHash) const
+MD5 GroupSpecification::_ComputeHash() const
     {
     MD5 md5;
     md5.Add(m_contextMenuLabel.c_str(), m_contextMenuLabel.size());
     md5.Add(m_defaultLabel.c_str(), m_defaultLabel.size());
     Utf8CP name = _GetXmlElementName();
     md5.Add(name, strlen(name));
-    if (nullptr != parentHash)
-        md5.Add(parentHash, strlen(parentHash));
     return md5;
     }
 
@@ -414,9 +404,9 @@ void SameLabelInstanceGroup::_WriteJson(JsonValueR json) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 SameLabelInstanceGroup::_ComputeHash(Utf8CP parentHash) const
+MD5 SameLabelInstanceGroup::_ComputeHash() const
     {
-    MD5 md5 = GroupSpecification::_ComputeHash(parentHash);
+    MD5 md5 = GroupSpecification::_ComputeHash();
     md5.Add(&m_applicationStage, sizeof(m_applicationStage));
     return md5;
     }
@@ -464,7 +454,7 @@ bool ClassGroup::_ReadXml (BeXmlNodeP xmlNode)
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_schemaName, CLASS_GROUP_XML_ATTRIBUTE_SCHEMANAME))
         m_schemaName = "";
-    
+
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_baseClassName, CLASS_GROUP_XML_ATTRIBUTE_BASECLASSNAME))
         m_baseClassName = "";
 
@@ -493,7 +483,7 @@ Utf8CP ClassGroup::_GetJsonElementType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Kilinskas                  04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ClassGroup::_ReadJson (JsonValueCR json) 
+bool ClassGroup::_ReadJson (JsonValueCR json)
     {
     if (!GroupSpecification::_ReadJson(json))
         return false;
@@ -533,9 +523,9 @@ Utf8StringCR ClassGroup::GetBaseClassName (void) const             { return m_ba
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 ClassGroup::_ComputeHash(Utf8CP parentHash) const
+MD5 ClassGroup::_ComputeHash() const
     {
-    MD5 md5 = GroupSpecification::_ComputeHash(parentHash);
+    MD5 md5 = GroupSpecification::_ComputeHash();
     md5.Add(&m_createGroupForSingleItem, sizeof(m_createGroupForSingleItem));
     md5.Add(m_schemaName.c_str(), m_schemaName.size());
     md5.Add(m_baseClassName.c_str(), m_baseClassName.size());
@@ -546,7 +536,7 @@ MD5 ClassGroup::_ComputeHash(Utf8CP parentHash) const
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 PropertyGroup::PropertyGroup ()
-    : GroupSpecification(), m_createGroupForSingleItem(false), m_createGroupForUnspecifiedValues(true), 
+    : GroupSpecification(), m_createGroupForSingleItem(false), m_createGroupForUnspecifiedValues(true),
     m_groupingValue(PropertyGroupingValue::DisplayLabel), m_sortingValue(PropertyGroupingValue::DisplayLabel)
     {
     }
@@ -555,8 +545,8 @@ PropertyGroup::PropertyGroup ()
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 PropertyGroup::PropertyGroup (Utf8StringCR contextMenuLabel, Utf8StringCR imageId, bool createGroupForSingleItem, Utf8StringCR propertyName, Utf8CP defaultLabel)
-    : GroupSpecification (contextMenuLabel, defaultLabel), m_imageId (imageId), 
-    m_createGroupForSingleItem (createGroupForSingleItem), m_createGroupForUnspecifiedValues(true), 
+    : GroupSpecification (contextMenuLabel, defaultLabel), m_imageId (imageId),
+    m_createGroupForSingleItem (createGroupForSingleItem), m_createGroupForUnspecifiedValues(true),
     m_propertyName (propertyName), m_groupingValue(PropertyGroupingValue::DisplayLabel), m_sortingValue(PropertyGroupingValue::DisplayLabel)
     {
     }
@@ -566,7 +556,7 @@ PropertyGroup::PropertyGroup (Utf8StringCR contextMenuLabel, Utf8StringCR imageI
 +---------------+---------------+---------------+---------------+---------------+------*/
 PropertyGroup::PropertyGroup(PropertyGroupCR other)
     : GroupSpecification(other), m_imageId(other.m_imageId), m_createGroupForSingleItem(other.m_createGroupForSingleItem),
-    m_createGroupForUnspecifiedValues(other.m_createGroupForUnspecifiedValues), m_propertyName(other.m_propertyName), 
+    m_createGroupForUnspecifiedValues(other.m_createGroupForUnspecifiedValues), m_propertyName(other.m_propertyName),
     m_groupingValue(other.m_groupingValue), m_sortingValue(other.m_sortingValue)
     {
     CommonToolsInternal::CopyRules(m_ranges, other.m_ranges, this);
@@ -642,14 +632,14 @@ bool PropertyGroup::_ReadXml (BeXmlNodeP xmlNode)
 
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_createGroupForSingleItem, GROUP_XML_ATTRIBUTE_CREATEGROUPFORSINGLEITEM))
         m_createGroupForSingleItem = false;
-    
+
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_createGroupForUnspecifiedValues, GROUP_XML_ATTRIBUTE_CREATEGROUPFORUNSPECIFIEDVALUES))
         m_createGroupForUnspecifiedValues = true;
-    
+
     Utf8String groupingValueStr;
     if (BEXML_Success == xmlNode->GetAttributeStringValue(groupingValueStr, PROPERTY_GROUP_XML_ATTRIBUTE_GROUPINGVALUE))
         m_groupingValue = GetPropertyGroupingValueFromString(groupingValueStr);
-    
+
     Utf8String sortingValueStr;
     if (BEXML_Success == xmlNode->GetAttributeStringValue(sortingValueStr, PROPERTY_GROUP_XML_ATTRIBUTE_SORTINGVALUE))
         m_sortingValue = GetPropertyGroupingValueFromString(sortingValueStr);
@@ -686,7 +676,7 @@ Utf8CP PropertyGroup::_GetJsonElementType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Kilinskas                  04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyGroup::_ReadJson (JsonValueCR json) 
+bool PropertyGroup::_ReadJson (JsonValueCR json)
     {
     if (!GroupSpecification::_ReadJson(json))
         return false;
@@ -766,32 +756,24 @@ PropertyRangeGroupList const& PropertyGroup::GetRanges (void) const { return m_r
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyGroup::AddRange (PropertyRangeGroupSpecificationR range) 
+void PropertyGroup::AddRange (PropertyRangeGroupSpecificationR range)
     {
-    InvalidateHash();
-    range.SetParent(this);
-    m_ranges.push_back(&range);
+    ADD_HASHABLE_CHILD(m_ranges, range);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 PropertyGroup::_ComputeHash(Utf8CP parentHash) const
+MD5 PropertyGroup::_ComputeHash() const
     {
-    MD5 md5 = GroupSpecification::_ComputeHash(parentHash);
+    MD5 md5 = GroupSpecification::_ComputeHash();
     md5.Add(m_imageId.c_str(), m_imageId.size());
     md5.Add(&m_createGroupForSingleItem, sizeof(m_createGroupForSingleItem));
     md5.Add(&m_createGroupForUnspecifiedValues, sizeof(m_createGroupForUnspecifiedValues));
     md5.Add(&m_groupingValue, sizeof(m_groupingValue));
     md5.Add(&m_sortingValue, sizeof(m_sortingValue));
     md5.Add(m_propertyName.c_str(), m_propertyName.size());
-
-    Utf8String currentHash = md5.GetHashString();
-    for (PropertyRangeGroupSpecificationP spec : m_ranges)
-        {
-        Utf8StringCR specHash = spec->GetHash(currentHash.c_str());
-        md5.Add(specHash.c_str(), specHash.size());
-        }
+    ADD_RULES_TO_HASH(md5, m_ranges);
     return md5;
     }
 
@@ -834,7 +816,7 @@ bool PropertyRangeGroupSpecification::ReadXml (BeXmlNodeP xmlNode)
         m_label = "";
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_imageId, PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_IMAGEID))
-        m_imageId = "";    
+        m_imageId = "";
 
     return true;
     }
@@ -917,14 +899,12 @@ Utf8StringCR PropertyRangeGroupSpecification::GetToValue (void) const   { return
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 PropertyRangeGroupSpecification::_ComputeHash(Utf8CP parentHash) const
+MD5 PropertyRangeGroupSpecification::_ComputeHash() const
     {
     MD5 md5;
     md5.Add(m_label.c_str(), m_label.size());
     md5.Add(m_imageId.c_str(), m_imageId.size());
     md5.Add(m_fromValue.c_str(), m_fromValue.size());
     md5.Add(m_toValue.c_str(), m_toValue.size());
-    if (nullptr != parentHash)
-        md5.Add(parentHash, strlen(parentHash));
     return md5;
     }

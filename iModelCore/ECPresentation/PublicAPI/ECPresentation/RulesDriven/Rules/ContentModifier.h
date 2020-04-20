@@ -29,7 +29,7 @@ public:
     ECPRESENTATION_EXPORT void WriteJson(JsonValueR json) const;
 
     //! Computes rule hash.
-    ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+    ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
 public:
     //! Constructor. It is used to initialize the rule with default settings.
@@ -40,7 +40,7 @@ public:
 
     //! Move constructor.
     ECPRESENTATION_EXPORT ContentModifiersList(ContentModifiersList&&);
-    
+
     //! Destructor.
     ECPRESENTATION_EXPORT ~ContentModifiersList();
 
@@ -56,7 +56,7 @@ public:
     //! Adds calculated property
     ECPRESENTATION_EXPORT void AddCalculatedProperty(CalculatedPropertiesSpecificationR specification);
 
-    //! Returns custom property categories 
+    //! Returns custom property categories
     PropertyCategorySpecificationsList const& GetPropertyCategories() const {return m_propertyCategories;}
 
     //! Adds a custom property category
@@ -88,7 +88,7 @@ protected:
     ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
     ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
 
-    ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+    ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
 public:
     ContentModifier() {}

@@ -62,7 +62,7 @@ struct GroupingRule : public ConditionalCustomizationRule
         ECPRESENTATION_EXPORT void _Accept(CustomizationRuleVisitor& visitor) const override;
 
         //! Computes rule hash.
-        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+        ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
         //! Clones rule.
         CustomizationRule* _Clone() const override {return new GroupingRule(*this);}
@@ -95,7 +95,7 @@ struct GroupingRule : public ConditionalCustomizationRule
         ECPRESENTATION_EXPORT void                SetContextMenuCondition (Utf8String value);
 
         //! Label of the parent context menu for choosing one of the predefined ProeprtyGroups.
-        //! If this parameters is not set, the default name will be used - "Group By". 
+        //! If this parameters is not set, the default name will be used - "Group By".
         //! Menu will be shown only if there are more than 2 PropertyGroups defined in the rule.
         ECPRESENTATION_EXPORT Utf8StringCR        GetContextMenuLabel (void) const;
 
@@ -125,7 +125,7 @@ protected:
 
     //! Constructor.
     ECPRESENTATION_EXPORT GroupSpecification (Utf8StringCR contextMenuLabel, Utf8CP defaultLabel = NULL);
-    
+
     ECPRESENTATION_EXPORT virtual Utf8CP _GetXmlElementName() const = 0;
     ECPRESENTATION_EXPORT virtual bool _ReadXml(BeXmlNodeP xmlNode) {return true;}
     ECPRESENTATION_EXPORT virtual void _WriteXml(BeXmlNodeP xmlNode) const {}
@@ -133,15 +133,15 @@ protected:
     ECPRESENTATION_EXPORT virtual Utf8CP _GetJsonElementType() const = 0;
     ECPRESENTATION_EXPORT virtual bool _ReadJson(JsonValueCR json) {return true;}
     ECPRESENTATION_EXPORT virtual void _WriteJson(JsonValueR json) const {}
-    
+
     //! Allows the visitor to visit this group specification.
     virtual void _Accept(GroupingRuleSpecificationVisitor& visitor) const = 0;
-    
+
     //! Clones this specification.
     virtual GroupSpecification* _Clone() const = 0;
 
     //! Computes specification hash.
-    ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
+    ECPRESENTATION_EXPORT virtual MD5 _ComputeHash() const override;
 
 public:
     //! Virtual destructor.
@@ -199,22 +199,22 @@ protected:
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
     ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
-        
+
     //! Allows the visitor to visit this group specification.
     ECPRESENTATION_EXPORT void _Accept(GroupingRuleSpecificationVisitor& visitor) const override;
-    
+
     //! Clones this specification.
     GroupSpecification* _Clone() const override {return new SameLabelInstanceGroup(*this);}
 
     //! Computes specification hash.
-    ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+    ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
 public:
     SameLabelInstanceGroup(SameLabelInstanceGroupApplicationStage applicationStage = SameLabelInstanceGroupApplicationStage::Query)
-        : GroupSpecification(), m_applicationStage(applicationStage) 
+        : GroupSpecification(), m_applicationStage(applicationStage)
         {}
-    SameLabelInstanceGroup(Utf8StringCR contextMenuLabel) 
-        : GroupSpecification(contextMenuLabel), m_applicationStage(SameLabelInstanceGroupApplicationStage::Query) 
+    SameLabelInstanceGroup(Utf8StringCR contextMenuLabel)
+        : GroupSpecification(contextMenuLabel), m_applicationStage(SameLabelInstanceGroupApplicationStage::Query)
         {}
     SameLabelInstanceGroupApplicationStage GetApplicationStage() const {return m_applicationStage;}
     void SetApplicationStage(SameLabelInstanceGroupApplicationStage value) {m_applicationStage = value;}
@@ -239,15 +239,15 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassGroup : public GroupSpecification
         ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
         ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
         ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
-        
+
         //! Allows the visitor to visit this group specification.
         ECPRESENTATION_EXPORT void _Accept(GroupingRuleSpecificationVisitor& visitor) const override;
-    
+
         //! Clones this specification.
         GroupSpecification* _Clone() const override {return new ClassGroup(*this);}
 
         //! Computes specification hash.
-        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+        ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
@@ -277,7 +277,7 @@ enum class PropertyGroupingValue
     };
 
 /*---------------------------------------------------------------------------------**//**
-PropertyGroup that identifies parameters on how to group specific class ECInstances 
+PropertyGroup that identifies parameters on how to group specific class ECInstances
 by a specific property.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -300,15 +300,15 @@ struct EXPORT_VTABLE_ATTRIBUTE PropertyGroup : public GroupSpecification
         ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
         ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
         ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
-        
+
         //! Allows the visitor to visit this group specification.
         ECPRESENTATION_EXPORT void _Accept(GroupingRuleSpecificationVisitor& visitor) const override;
-    
+
         //! Clones this specification.
         GroupSpecification* _Clone() const override {return new PropertyGroup(*this);}
 
         //! Computes specification hash.
-        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+        ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
@@ -328,10 +328,10 @@ struct EXPORT_VTABLE_ATTRIBUTE PropertyGroup : public GroupSpecification
 
         //! Idendifies whether a group should be created even if there is only single of particular group.
         ECPRESENTATION_EXPORT bool                     GetCreateGroupForSingleItem (void) const;
-        
+
         //! Idendifies whether a group should be created for unspecified (NULL) values.
         ECPRESENTATION_EXPORT bool                     GetCreateGroupForUnspecifiedValues() const;
-        
+
         //! Should a group should be created for unspecified (NULL) values.
         ECPRESENTATION_EXPORT void                     SetCreateGroupForUnspecifiedValues(bool value);
 
@@ -343,7 +343,7 @@ struct EXPORT_VTABLE_ATTRIBUTE PropertyGroup : public GroupSpecification
 
         //! Set the property grouping value type.
         void SetPropertyGroupingValue(PropertyGroupingValue value) {m_groupingValue = value;}
-        
+
         //! Get the sorting value type.
         PropertyGroupingValue GetSortingValue() const {return m_sortingValue;}
 
@@ -357,7 +357,7 @@ struct EXPORT_VTABLE_ATTRIBUTE PropertyGroup : public GroupSpecification
     };
 
 /*---------------------------------------------------------------------------------**//**
-PropertyGroup that identifies parameters on how to group specific class ECInstances 
+PropertyGroup that identifies parameters on how to group specific class ECInstances
 by a specific property.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -370,7 +370,7 @@ struct PropertyRangeGroupSpecification : HashableBase
         Utf8String  m_toValue;
 
     protected:
-        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+        ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.

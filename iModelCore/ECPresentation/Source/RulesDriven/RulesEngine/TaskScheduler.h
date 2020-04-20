@@ -11,48 +11,110 @@
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
 /*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                11/2017
+* @bsiclass                                     Grigas.Petraitis                04/2020
 +===============+===============+===============+===============+===============+======*/
-struct TaskDependencies
+struct ITaskDependency
+{
+protected:
+    virtual Utf8CP _GetDependencyType() const = 0;
+    virtual bool _Matches(ITaskDependency const& other) const {return _GetDependencyType() == other._GetDependencyType();}
+public:
+    virtual ~ITaskDependency() {}
+    Utf8CP GetDependencyType() const {return _GetDependencyType();}
+    bool Matches(ITaskDependency const& other) const {return _Matches(other);}
+};
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                04/2020
++===============+===============+===============+===============+===============+======*/
+struct StringBasedTaskDependency : ITaskDependency
 {
 private:
-    Utf8String m_connectionId;
-    Utf8String m_rulesetId;
-    Utf8String m_displayType;
-    SelectionInfoCPtr m_selectionInfo;
+    Utf8String m_value;
+protected:
+    virtual bool _Matches(ITaskDependency const& other) const override
+        {
+        return ITaskDependency::_Matches(other)
+            && m_value.Equals(static_cast<StringBasedTaskDependency const&>(other).m_value);
+        }
+    StringBasedTaskDependency(Utf8String value) : m_value(value) {}
+    static std::function<bool(ITaskDependency const&)> CreatePredicate(Utf8CP dependencyType, std::function<bool(Utf8StringCR)>);
 public:
-    TaskDependencies(Utf8String connectionId = "", Utf8String rulesetId = "", Utf8String displayType = nullptr, SelectionInfo const* selectionInfo = nullptr)
-        : m_connectionId(connectionId), m_rulesetId(rulesetId), m_displayType(displayType), m_selectionInfo(selectionInfo)
-        {}
-    TaskDependencies(TaskDependencies const& other)
-        : m_connectionId(other.m_connectionId), m_rulesetId(other.m_rulesetId), m_displayType(other.m_displayType),
-        m_selectionInfo(other.m_selectionInfo)
-        {}
-    TaskDependencies(TaskDependencies&& other)
-        : m_connectionId(std::move(other.m_connectionId)), m_rulesetId(std::move(other.m_rulesetId)),
-        m_displayType(std::move(other.m_displayType)), m_selectionInfo(std::move(other.m_selectionInfo))
-        {}
-    TaskDependencies& operator=(TaskDependencies const& other)
+    Utf8StringCR GetValue() const {return m_value;}
+};
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                04/2020
++===============+===============+===============+===============+===============+======*/
+struct TaskDependencyOnConnection : StringBasedTaskDependency
+{
+private:
+    static Utf8CP s_dependencyType;
+protected:
+    Utf8CP _GetDependencyType() const override {return s_dependencyType;}
+    bool _Matches(ITaskDependency const& other) const override
         {
-        m_connectionId = other.m_connectionId;
-        m_rulesetId = other.m_rulesetId;
-        m_displayType = other.m_displayType;
-        m_selectionInfo = other.m_selectionInfo;
-        return *this;
+        return ITaskDependency::_Matches(other)
+            && (GetValue().Equals(static_cast<TaskDependencyOnConnection const&>(other).GetValue()) || GetValue().Equals("*"));
         }
-    TaskDependencies& operator=(TaskDependencies&& other)
+public:
+    TaskDependencyOnConnection(Utf8String connectionId) : StringBasedTaskDependency(connectionId) { }
+    static std::function<bool(ITaskDependency const&)> CreatePredicate(std::function<bool(Utf8StringCR)> pred) {return StringBasedTaskDependency::CreatePredicate(s_dependencyType, pred);}
+};
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                04/2020
++===============+===============+===============+===============+===============+======*/
+struct TaskDependencyOnRuleset : StringBasedTaskDependency
+    {
+    Utf8CP _GetDependencyType() const override {return "Ruleset";}
+    TaskDependencyOnRuleset(Utf8String rulesetId) : StringBasedTaskDependency(rulesetId) {}
+    };
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                04/2020
++===============+===============+===============+===============+===============+======*/
+struct TaskDependencyOnDisplayType : StringBasedTaskDependency
+    {
+    Utf8CP _GetDependencyType() const override {return "DisplayType";}
+    TaskDependencyOnDisplayType(Utf8String displayType) : StringBasedTaskDependency(displayType) {}
+    };
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                04/2020
++===============+===============+===============+===============+===============+======*/
+struct TaskDependencyOnSelection : ITaskDependency
+{
+private:
+    static Utf8CP s_dependencyType;
+    SelectionInfoCPtr m_selectionInfo;
+protected:
+    Utf8CP _GetDependencyType() const override {return s_dependencyType;}
+    bool _Matches(ITaskDependency const& other) const override
         {
-        m_connectionId = std::move(other.m_connectionId);
-        m_rulesetId = std::move(other.m_rulesetId);
-        m_displayType = std::move(other.m_displayType);
-        m_selectionInfo = std::move(other.m_selectionInfo);
-        return *this;
+        return ITaskDependency::_Matches(other)
+            && (*m_selectionInfo) == (*static_cast<TaskDependencyOnSelection const&>(other).m_selectionInfo);
         }
-    Utf8StringCR GetConnectionId() const {return m_connectionId;}
-    Utf8StringCR GetRulesetId() const {return m_rulesetId;}
-    Utf8StringCR GetDisplayType() const {return m_displayType;}
-    SelectionInfo const* GetSelectionInfo() const {return m_selectionInfo.get();}
-    bool DependsOnConnection(Utf8StringCR connection) const { return m_connectionId.Equals(connection) || m_connectionId.Equals("*"); }
+public:
+    TaskDependencyOnSelection(SelectionInfoCR selectionInfo) : m_selectionInfo(&selectionInfo) {}
+    SelectionInfoCR GetSelectionInfo() const {return *m_selectionInfo;}
+    static std::function<bool(ITaskDependency const&)> CreatePredicate(std::function<bool(SelectionInfoCR)>);
+};
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                04/2020
++===============+===============+===============+===============+===============+======*/
+struct TaskDependencies : bvector<std::shared_ptr<ITaskDependency>>
+{
+    DEFINE_T_SUPER(bvector<std::shared_ptr<ITaskDependency>>)
+    TaskDependencies() {}
+    TaskDependencies(TaskDependencies const& other) : T_Super(other) {}
+    TaskDependencies(TaskDependencies&& other) : T_Super(std::move(other)) {}
+    TaskDependencies(std::initializer_list<std::shared_ptr<ITaskDependency>> deps) : T_Super(deps) {}
+    TaskDependencies& operator=(TaskDependencies const& other) {assign(other.begin(), other.end()); return *this;}
+    TaskDependencies& operator=(TaskDependencies&& other) {swap(other); return *this;}
+    bool Has(ITaskDependency const& dep) const;
+    bool Has(std::function<bool(ITaskDependency const&)> pred) const;
 };
 
 typedef bmap<int, unsigned> TThreadAllocationsMap;
@@ -104,7 +166,7 @@ DEFINE_REF_COUNTED_PTR(IECPresentationTask);
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                08/2019
 +===============+===============+===============+===============+===============+======*/
-template<typename TResult> 
+template<typename TResult>
 struct IECPresentationTaskWithResult : IECPresentationTask
 {
 protected:
@@ -355,7 +417,7 @@ private:
     IECPresentationTasksScheduler& m_scheduler;
     IECPresentationTask::Predicate m_predicate;
 private:
-    ECPresentationTasksBlocker(IECPresentationTasksScheduler& scheduler, IECPresentationTask::Predicate pred) 
+    ECPresentationTasksBlocker(IECPresentationTasksScheduler& scheduler, IECPresentationTask::Predicate pred)
         : m_scheduler(scheduler), m_predicate(pred)
         {
         m_scheduler.Block(this);
@@ -405,7 +467,7 @@ public:
         m_scheduler->Schedule(task);
         return task.GetFuture();
         }
-    template<typename TResult> folly::Future<TResult> CreateAndExecute(std::function<TResult(IECPresentationTaskWithResult<TResult> const&)> func, 
+    template<typename TResult> folly::Future<TResult> CreateAndExecute(std::function<TResult(IECPresentationTaskWithResult<TResult> const&)> func,
         TaskDependencies deps = TaskDependencies(), bool isCancelable = true, int priority = 1000)
         {
         RefCountedPtr<ECPresentationTaskWithResult<TResult>> task = new ECPresentationTaskWithResult<TResult>(GetMutex(), func);

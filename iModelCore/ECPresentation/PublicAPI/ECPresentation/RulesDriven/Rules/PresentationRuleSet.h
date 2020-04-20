@@ -77,7 +77,7 @@ struct PresentationRuleSet : public RefCountedBase, HashableBase
         uint32_t _GetExcessiveRefCountThreshold() const override {return (uint32_t)-1;}
 
         //! Computes rules set hash.
-        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+        ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
     private:
         //Private constructor. This class instance should be creates using static helper methods.
@@ -91,7 +91,7 @@ struct PresentationRuleSet : public RefCountedBase, HashableBase
 
     public:
         //! Creates an instance of PresentationRuleSet.
-        ECPRESENTATION_EXPORT static PresentationRuleSetPtr  CreateInstance 
+        ECPRESENTATION_EXPORT static PresentationRuleSetPtr  CreateInstance
             (
             Utf8StringCR ruleSetId,
             int          versionMajor,
@@ -104,16 +104,16 @@ struct PresentationRuleSet : public RefCountedBase, HashableBase
             );
 
         //! Creates an instance of PresentationRuleSet.
-        ECPRESENTATION_EXPORT static PresentationRuleSetPtr CreateInstance 
+        ECPRESENTATION_EXPORT static PresentationRuleSetPtr CreateInstance
             (
             Utf8StringCR id,
             int          versionMajor = 1,
             int          versionMinor = 0,
             Utf8StringCR supportedSchemas = ""
             );
-        
+
         //! Creates an instance of supplemental PresentationRuleSet.
-        ECPRESENTATION_EXPORT static PresentationRuleSetPtr CreateInstance 
+        ECPRESENTATION_EXPORT static PresentationRuleSetPtr CreateInstance
             (
             Utf8StringCR id,
             Utf8StringCR supplementationPurpose,
@@ -156,7 +156,7 @@ struct PresentationRuleSet : public RefCountedBase, HashableBase
 
         //! Writes PresentationRuleSet to XmlFile.
         ECPRESENTATION_EXPORT bool                           WriteToXmlFile (BeFileNameCR xmlFilePath) const;
-        
+
         //! Reads PresentationRuleSet from Json::Value.
         ECPRESENTATION_EXPORT static PresentationRuleSetPtr  ReadFromJsonValue(JsonValueCR json);
 
@@ -165,7 +165,7 @@ struct PresentationRuleSet : public RefCountedBase, HashableBase
 
         //! Reads PresentationRuleSet from JSON file.
         ECPRESENTATION_EXPORT static PresentationRuleSetPtr  ReadFromJsonFile(BeFileNameCR jsonFilePath);
-        
+
         //! Writes PresentationRuleSet to Json::Value.
         ECPRESENTATION_EXPORT Json::Value                    WriteToJsonValue() const;
 

@@ -131,9 +131,7 @@ SubConditionList const& SubCondition::GetSubConditions(void) const { return m_su
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SubCondition::AddSubCondition(SubConditionR subCondition)
     {
-    InvalidateHash();
-    subCondition.SetParent(this);
-    m_subConditions.push_back(&subCondition);
+    ADD_HASHABLE_CHILD(m_subConditions, subCondition);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -146,33 +144,18 @@ ChildNodeSpecificationList const& SubCondition::GetSpecifications(void) const { 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SubCondition::AddSpecification(ChildNodeSpecificationR specification)
     {
-    InvalidateHash();
-    specification.SetParent(this);
-    m_specifications.push_back(&specification);
+    ADD_HASHABLE_CHILD(m_specifications, specification);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 SubCondition::_ComputeHash(Utf8CP parentHash) const
+MD5 SubCondition::_ComputeHash() const
     {
     MD5 md5;
     md5.Add(m_condition.c_str(), m_condition.size());
-    if (nullptr != parentHash)
-        md5.Add(parentHash, strlen(parentHash));
-
-    Utf8String currentHash = md5.GetHashString();
-    for (SubConditionP condition : m_subConditions)
-        {
-        Utf8StringCR conditionHash = condition->GetHash(currentHash.c_str());
-        md5.Add(conditionHash.c_str(), conditionHash.size());
-        }
-    for (ChildNodeSpecificationP spec : m_specifications)
-        {
-        Utf8StringCR conditionHash = spec->GetHash(currentHash.c_str());
-        md5.Add(conditionHash.c_str(), conditionHash.size());
-        }
-
+    ADD_RULES_TO_HASH(md5, m_subConditions);
+    ADD_RULES_TO_HASH(md5, m_specifications);
     return md5;
     }
 
@@ -357,9 +340,7 @@ SubConditionList const& ChildNodeRule::GetSubConditions(void) const { return m_s
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ChildNodeRule::AddSubCondition(SubConditionR subCondition)
     {
-    InvalidateHash();
-    subCondition.SetParent(this);
-    m_subConditions.push_back(&subCondition);
+    ADD_HASHABLE_CHILD(m_subConditions, subCondition);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -372,9 +353,7 @@ ChildNodeSpecificationList const& ChildNodeRule::GetSpecifications(void) const {
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ChildNodeRule::AddSpecification(ChildNodeSpecificationR specification)
     {
-    InvalidateHash();
-    specification.SetParent(this);
-    m_specifications.push_back(&specification);
+    ADD_HASHABLE_CHILD(m_specifications, specification);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -387,9 +366,7 @@ ChildNodeCustomizationRuleList const& ChildNodeRule::GetCustomizationRules(void)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ChildNodeRule::AddCustomizationRule(CustomizationRuleR customizationRule)
     {
-    InvalidateHash();
-    customizationRule.SetParent(this);
-    m_customizationRules.push_back(&customizationRule);
+    ADD_HASHABLE_CHILD(m_customizationRules, customizationRule);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -405,29 +382,14 @@ bool ChildNodeRule::GetStopFurtherProcessing(void) const { return m_stopFurtherP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 ChildNodeRule::_ComputeHash(Utf8CP parentHash) const
+MD5 ChildNodeRule::_ComputeHash() const
     {
-    MD5 md5 = ConditionalPresentationRule::_ComputeHash(parentHash);
+    MD5 md5 = ConditionalPresentationRule::_ComputeHash();
     md5.Add(&m_targetTree, sizeof(m_targetTree));
     md5.Add(&m_stopFurtherProcessing, sizeof(m_stopFurtherProcessing));
-
-    Utf8String currentHash = md5.GetHashString();
-    for (SubConditionP condition : m_subConditions)
-        {
-        Utf8StringCR conditionHash = condition->GetHash(currentHash.c_str());
-        md5.Add(conditionHash.c_str(), conditionHash.size());
-        }
-    for (ChildNodeSpecificationP spec : m_specifications)
-        {
-        Utf8StringCR conditionHash = spec->GetHash(currentHash.c_str());
-        md5.Add(conditionHash.c_str(), conditionHash.size());
-        }
-    for (CustomizationRuleP custRule : m_customizationRules)
-        {
-        Utf8StringCR custRuleHash = custRule->GetHash(currentHash.c_str());
-        md5.Add(custRuleHash.c_str(), custRuleHash.size());
-        }
-
+    ADD_RULES_TO_HASH(md5, m_subConditions);
+    ADD_RULES_TO_HASH(md5, m_specifications);
+    ADD_RULES_TO_HASH(md5, m_customizationRules);
     return md5;
     }
 
@@ -529,9 +491,9 @@ bool RootNodeRule::GetAutoExpand(void) const { return m_autoExpand; }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 RootNodeRule::_ComputeHash(Utf8CP parentHash) const
+MD5 RootNodeRule::_ComputeHash() const
     {
-    MD5 md5 = ChildNodeRule::_ComputeHash(parentHash);
+    MD5 md5 = ChildNodeRule::_ComputeHash();
     md5.Add(&m_autoExpand, sizeof(m_autoExpand));
     return md5;
     }

@@ -57,11 +57,9 @@ Json::Value PropertyCategorySpecification::WriteJson() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 PropertyCategorySpecification::_ComputeHash(Utf8CP parentHash) const
+MD5 PropertyCategorySpecification::_ComputeHash() const
     {
     MD5 md5;
-    if (nullptr != parentHash)
-        md5.Add(parentHash, strlen(parentHash));
     md5.Add(m_id.c_str(), m_id.size());
     md5.Add(m_label.c_str(), m_label.size());
     md5.Add(m_description.c_str(), m_description.size());

@@ -133,17 +133,13 @@ Json::Value RelatedInstanceSpecification::WriteJson() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 RelatedInstanceSpecification::_ComputeHash(Utf8CP parentHash) const
+MD5 RelatedInstanceSpecification::_ComputeHash() const
     {
     MD5 md5;
-
-    if (nullptr != parentHash)
-        md5.Add(parentHash, strlen(parentHash));
-
     md5.Add(m_alias.c_str(), m_alias.size());
     md5.Add(&m_isRequired, sizeof(m_isRequired));
 
-    Utf8StringCR relationshipPathHash = m_relationshipPath.GetHash(md5.GetHashString().c_str());
+    Utf8StringCR relationshipPathHash = m_relationshipPath.GetHash();
     md5.Add(relationshipPathHash.c_str(), relationshipPathHash.size());
 
     return md5;

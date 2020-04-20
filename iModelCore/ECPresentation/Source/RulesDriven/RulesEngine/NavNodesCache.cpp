@@ -749,7 +749,7 @@ IHierarchyCache::SavepointPtr NodesCache::_CreateSavepoint() {return new Savepoi
 bool NodesCache::IsNodeCached(uint64_t nodeId) const
     {
     BeMutexHolder lock(m_mutex);
-    static Utf8CP query = 
+    static Utf8CP query =
         "SELECT 1 FROM [" NODESCACHE_TABLENAME_Nodes "] "
         "WHERE [Id] = ?";
     CachedStatementPtr stmt;
@@ -770,7 +770,7 @@ bool NodesCache::IsNodeCached(uint64_t nodeId) const
 bool NodesCache::IsHierarchyLevelCached(Utf8CP rulesetId, Utf8CP locale) const
     {
     BeMutexHolder lock(m_mutex);
-    static Utf8CP query = 
+    static Utf8CP query =
         "SELECT 1 "
         "FROM [" NODESCACHE_TABLENAME_HierarchyLevels "] "
         "WHERE [RulesetId] = ? AND [Locale] = ? AND [VirtualParentNodeId] IS NULL";
@@ -794,7 +794,7 @@ bool NodesCache::IsHierarchyLevelCached(Utf8CP rulesetId, Utf8CP locale) const
 bool NodesCache::IsHierarchyLevelCached(uint64_t virtualParentNodeId) const
     {
     BeMutexHolder lock(m_mutex);
-    static Utf8CP query = 
+    static Utf8CP query =
         "SELECT 1 FROM [" NODESCACHE_TABLENAME_HierarchyLevels "] "
         "WHERE [VirtualParentNodeId] = ?";
 
@@ -818,7 +818,7 @@ void NodesCache::CacheNodeKey(NavNodeCR node)
     BeMutexHolder lock(m_mutex);
 
     // delete the old key, if exists
-    static Utf8CP deleteQuery = 
+    static Utf8CP deleteQuery =
         "DELETE FROM [" NODESCACHE_TABLENAME_NodeKeys "] "
         "WHERE [NodeId] = ?";
     CachedStatementPtr stmt;
@@ -831,7 +831,7 @@ void NodesCache::CacheNodeKey(NavNodeCR node)
     stmt->Step();
 
     // insert a new key
-    static Utf8CP insertQuery = 
+    static Utf8CP insertQuery =
         "INSERT INTO [" NODESCACHE_TABLENAME_NodeKeys "] "
         "([NodeId],[Type],[PathFromRoot])"
         "VALUES (?, ?, ?)";
@@ -879,7 +879,7 @@ void NodesCache::CacheNodeInstanceKeys(NavNodeCR node)
     BeMutexHolder lock(m_mutex);
 
     // delete old keys, if any
-    static Utf8CP deleteQuery = 
+    static Utf8CP deleteQuery =
         "DELETE FROM [" NODESCACHE_TABLENAME_NodeInstances "] "
         "WHERE [NodeId] = ?";
     CachedStatementPtr stmt;
@@ -892,7 +892,7 @@ void NodesCache::CacheNodeInstanceKeys(NavNodeCR node)
     stmt->Step();
 
     // insert new keys
-    static Utf8CP insertQuery = 
+    static Utf8CP insertQuery =
         "INSERT INTO [" NODESCACHE_TABLENAME_NodeInstances "] "
         "([NodeId], [ECClassId], [ECInstanceId], [IsDirectlyRelated]) "
         "VALUES (?, ?, ?, ?)";
@@ -992,7 +992,7 @@ void NodesCache::CacheNode(DataSourceInfo const& datasourceInfo, NavNodeR node, 
     BeMutexHolder lock(m_mutex);
     BeAssert(node.GetNodeId() == 0);
 
-    static Utf8CP query = 
+    static Utf8CP query =
         "INSERT INTO [" NODESCACHE_TABLENAME_Nodes "] ("
         "[DataSourceId], [Index], [Visibility], [Data], [Label]"
         ") VALUES (?, ?, ?, ?, ?)";
@@ -1056,7 +1056,7 @@ static void BindNullableId(StatementR stmt, int index, uint64_t const* id)
 void NodesCache::CacheEmptyHierarchyLevel(HierarchyLevelInfo& info)
     {
     BeMutexHolder lock(m_mutex);
-    static Utf8CP query = 
+    static Utf8CP query =
         "INSERT INTO [" NODESCACHE_TABLENAME_HierarchyLevels "] ("
         "[RulesetId], [Locale], [PhysicalParentNodeId], [VirtualParentNodeId]"
         ") VALUES (?, ?, ?, ?)";
@@ -1090,7 +1090,7 @@ void NodesCache::CacheEmptyHierarchyLevel(HierarchyLevelInfo& info)
 void NodesCache::CacheEmptyDataSource(DataSourceInfo& info, DataSourceFilter const& filter)
     {
     BeMutexHolder lock(m_mutex);
-    static Utf8CP query = 
+    static Utf8CP query =
         "INSERT INTO [" NODESCACHE_TABLENAME_DataSources "] ("
         "[HierarchyLevelId], [FullIndex], [Filter]"
         ") VALUES (?, ?, ?)";
@@ -1137,7 +1137,7 @@ void NodesCache::CacheRelatedClassIds(uint64_t datasourceId, bmap<ECClassId, boo
         return;
 
     BeMutexHolder lock(m_mutex);
-    static Utf8CP deleteQuery = 
+    static Utf8CP deleteQuery =
         "DELETE FROM [" NODESCACHE_TABLENAME_DataSourceClasses "] "
         "WHERE [DataSourceId] = ?";
     CachedStatementPtr stmt;
@@ -1150,7 +1150,7 @@ void NodesCache::CacheRelatedClassIds(uint64_t datasourceId, bmap<ECClassId, boo
     DbResult deleteResult = stmt->Step();
     BeAssert(BE_SQLITE_DONE == deleteResult);
 
-    static Utf8CP insertQuery = 
+    static Utf8CP insertQuery =
         "INSERT INTO [" NODESCACHE_TABLENAME_DataSourceClasses "] "
         "([DataSourceId], [ECClassId], [Polymorphic]) "
         "VALUES (?, ?, ?)";
@@ -1176,7 +1176,7 @@ void NodesCache::CacheRelatedClassIds(uint64_t datasourceId, bmap<ECClassId, boo
 void NodesCache::CacheRelatedSettings(uint64_t datasourceId, bvector<UserSettingEntry> const& settings)
     {
     BeMutexHolder lock(m_mutex);
-    static Utf8CP deleteQuery = 
+    static Utf8CP deleteQuery =
         "DELETE FROM [" NODESCACHE_TABLENAME_DataSourceSettings "] "
         "WHERE [DataSourceId] = ?";
     CachedStatementPtr stmt;
@@ -1189,7 +1189,7 @@ void NodesCache::CacheRelatedSettings(uint64_t datasourceId, bvector<UserSetting
     DbResult deleteResult = stmt->Step();
     BeAssert(BE_SQLITE_DONE == deleteResult);
 
-    static Utf8CP insertQuery = 
+    static Utf8CP insertQuery =
         "INSERT INTO [" NODESCACHE_TABLENAME_DataSourceSettings "] "
         "([DataSourceId], [SettingId], [SettingValue]) "
         "VALUES (?, ?, ?)";
@@ -1259,7 +1259,7 @@ HierarchyLevelInfo NodesCache::_FindHierarchyLevel(Utf8CP, Utf8CP rulesetId, Utf
 HierarchyLevelInfo NodesCache::FindHierarchyLevel(uint64_t id) const
     {
     BeMutexHolder lock(m_mutex);
-    static Utf8CP query = 
+    static Utf8CP query =
         "SELECT [hl].[Id], [hl].[RulesetId], [hl].[Locale], [hl].[PhysicalParentNodeId], [hl].[VirtualParentNodeId] "
         "FROM [" NODESCACHE_TABLENAME_HierarchyLevels "] hl "
         "WHERE [hl].[RemovalId] IS NULL AND [hl].[Id] = ?";
@@ -1288,7 +1288,7 @@ HierarchyLevelInfo NodesCache::FindHierarchyLevel(uint64_t id) const
 DataSourceInfo NodesCache::_FindDataSource(uint64_t hierarchyLevelId, bvector<uint64_t> const& index) const
     {
     BeMutexHolder lock(m_mutex);
-    static Utf8CP query = 
+    static Utf8CP query =
         "SELECT [ds].[Id] "
         "FROM [" NODESCACHE_TABLENAME_DataSources "] ds "
         "JOIN [" NODESCACHE_TABLENAME_HierarchyLevels "] hl ON [hl].[Id] = [ds].[HierarchyLevelId] "
@@ -1324,7 +1324,7 @@ DataSourceInfo NodesCache::_FindDataSource(uint64_t hierarchyLevelId, bvector<ui
 DataSourceInfo NodesCache::_FindDataSource(uint64_t nodeId) const
     {
     BeMutexHolder lock(m_mutex);
-    static Utf8CP query = 
+    static Utf8CP query =
         "SELECT [ds].[Id], [ds].[HierarchyLevelId], [ds].[FullIndex] "
         "FROM [" NODESCACHE_TABLENAME_DataSources "] ds "
         "JOIN [" NODESCACHE_TABLENAME_HierarchyLevels "] hl ON [hl].[Id] = [ds].[HierarchyLevelId] "
@@ -1361,7 +1361,7 @@ JsonNavNodePtr NodesCache::_GetNode(uint64_t id) const
         return node;
 
     BeMutexHolder lock(m_mutex);
-    static Utf8CP query = 
+    static Utf8CP query =
         "SELECT [hl].[PhysicalParentNodeId], [hl].[VirtualParentNodeId], [n].[Data], [n].[Id], [nk].[PathFromRoot] "
         "FROM [" NODESCACHE_TABLENAME_Nodes "] n "
         "JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [n].[DataSourceId] "
@@ -1393,7 +1393,7 @@ JsonNavNodePtr NodesCache::_GetNode(uint64_t id) const
 NodeVisibility NodesCache::_GetNodeVisibility(uint64_t nodeId) const
     {
     BeMutexHolder lock(m_mutex);
-    static Utf8CP query = 
+    static Utf8CP query =
         "SELECT [n].[Visibility]"
         "FROM [" NODESCACHE_TABLENAME_Nodes "] n "
         "WHERE [n].[Id] = ?";
@@ -1422,7 +1422,7 @@ NodeVisibility NodesCache::_GetNodeVisibility(uint64_t nodeId) const
 bvector<uint64_t> NodesCache::_GetNodeIndex(uint64_t nodeId) const
     {
     BeMutexHolder lock(m_mutex);
-    static Utf8CP query = 
+    static Utf8CP query =
         "SELECT [ds].[FullIndex], [n].[Index] "
         "FROM [" NODESCACHE_TABLENAME_DataSources "] ds "
         "JOIN [" NODESCACHE_TABLENAME_HierarchyLevels "] hl ON [hl].[Id] = [ds].[HierarchyLevelId] "
@@ -1464,7 +1464,7 @@ bvector<uint64_t> NodesCache::_GetNodeIndex(uint64_t nodeId) const
 bool NodesCache::HasRelatedSettingsChanged(uint64_t datasourceId, Utf8StringCR rulesetId) const
     {
     BeMutexHolder lock(m_mutex);
-    static Utf8CP query = 
+    static Utf8CP query =
         "SELECT [dss].[SettingId], [dss].[SettingValue] "
         "FROM [" NODESCACHE_TABLENAME_DataSourceSettings "] dss "
         "WHERE [dss].[DataSourceId] = ? ";
@@ -1540,7 +1540,7 @@ bvector<DataSourceInfo> NodesCache::GetDataSourcesWithChangedUserSettings(Combin
 bvector<DataSourceInfo> NodesCache::GetDataSourcesWithChangedUserSettings(HierarchyLevelInfo const& info) const
     {
     BeMutexHolder lock(m_mutex);
-    static Utf8CP query = 
+    static Utf8CP query =
         "SELECT [ds].[Id], [ds].[HierarchyLevelId], [ds].[FullIndex], [dss].[SettingId], [dss].[SettingValue] "
         "FROM [" NODESCACHE_TABLENAME_DataSources "] ds "
         "JOIN [" NODESCACHE_TABLENAME_DataSourceSettings "] dss ON [dss].[DataSourceId] = [ds].[Id] "
@@ -1784,7 +1784,7 @@ void NodesCache::_Update(DataSourceInfo const& info, DataSourceFilter const* fil
     if (nullptr != filter)
         {
         BeMutexHolder lock(m_mutex);
-        static Utf8CP query = 
+        static Utf8CP query =
             "UPDATE [" NODESCACHE_TABLENAME_DataSources "] "
             "SET [Filter] = ? "
             "WHERE [Id] = ?";
@@ -1821,7 +1821,7 @@ void NodesCache::RemapNodeIds(bmap<uint64_t, uint64_t> const& remapInfo)
     BeMutexHolder lock(m_mutex);
 
     // statement to remap physical hierarchy levels
-    static Utf8CP s_pdsQuery = 
+    static Utf8CP s_pdsQuery =
         "UPDATE [" NODESCACHE_TABLENAME_HierarchyLevels "] "
         "SET [PhysicalParentNodeId] = ? "
         "WHERE [PhysicalParentNodeId] = ?";
@@ -1833,7 +1833,7 @@ void NodesCache::RemapNodeIds(bmap<uint64_t, uint64_t> const& remapInfo)
         }
 
     // statement to remap virtual hierarchy levels
-    static Utf8CP s_vdsQuery = 
+    static Utf8CP s_vdsQuery =
         "UPDATE [" NODESCACHE_TABLENAME_HierarchyLevels "] "
         "SET [VirtualParentNodeId] = ? "
         "WHERE [VirtualParentNodeId] = ?";
@@ -1906,7 +1906,7 @@ BeGuid NodesCache::CreateRemovalId(CombinedHierarchyLevelInfo const& info)
 void NodesCache::RemoveHierarchyLevel(BeGuidCR removalId)
     {
     BeMutexHolder lock(m_mutex);
-    static Utf8CP query = 
+    static Utf8CP query =
         "DELETE FROM [" NODESCACHE_TABLENAME_HierarchyLevels "] "
         "WHERE [RemovalId] = ?";
 
@@ -1930,7 +1930,7 @@ void NodesCache::RemoveHierarchyLevel(BeGuidCR removalId)
 void NodesCache::ResetDataSource(DataSourceInfo const& info)
     {
     BeMutexHolder lock(m_mutex);
-    static Utf8CP query = 
+    static Utf8CP query =
         "DELETE FROM [" NODESCACHE_TABLENAME_DataSources "] "
         "WHERE [Id] = ?";
 
@@ -1954,7 +1954,7 @@ void NodesCache::ResetDataSource(DataSourceInfo const& info)
 HierarchyLevelInfo NodesCache::GetParentHierarchyLevelInfo(uint64_t nodeId) const
     {
     BeMutexHolder lock(m_mutex);
-    static Utf8CP query = 
+    static Utf8CP query =
         "SELECT [hl].[Id], [hl].[RulesetId], [hl].[Locale], [hl].[PhysicalParentNodeId], [hl].[VirtualParentNodeId] "
         "FROM [" NODESCACHE_TABLENAME_HierarchyLevels "] hl "
         "JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON ds.HierarchyLevelId = hl.Id "
@@ -2000,7 +2000,7 @@ HierarchyLevelInfo NodesCache::GetParentHierarchyLevelInfo(uint64_t nodeId) cons
 void NodesCache::ChangeVisibility(uint64_t nodeId, NodeVisibility visibility)
     {
     // first, make sure the node is not virtual
-    static Utf8CP query = 
+    static Utf8CP query =
         "UPDATE [" NODESCACHE_TABLENAME_Nodes "] "
         "SET [Visibility] = ? "
         "WHERE [Id] = ?";
@@ -2070,7 +2070,7 @@ void NodesCache::_MakeVirtual(JsonNavNodeCR node)
 
     ChangeVisibility(node.GetNodeId(), NodeVisibility::Virtual);
 
-    static Utf8CP query = 
+    static Utf8CP query =
         "UPDATE [" NODESCACHE_TABLENAME_HierarchyLevels "] "
         "SET [PhysicalParentNodeId] = ("
         "    SELECT [parentHl].[PhysicalParentNodeId] "
@@ -2156,7 +2156,7 @@ bool NodesCache::_IsInitialized(HierarchyLevelInfo const& info) const
         }
 
     BeMutexHolder lock(m_mutex);
-    static Utf8CP query = 
+    static Utf8CP query =
         "SELECT [ds].[IsInitialized] "
         "  FROM [" NODESCACHE_TABLENAME_HierarchyLevels "] hl "
         "  LEFT JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[HierarchyLevelId] = [hl].[Id] "
@@ -2191,7 +2191,7 @@ bool NodesCache::_IsInitialized(DataSourceInfo const& info) const
         }
 
     BeMutexHolder lock(m_mutex);
-    static Utf8CP query = 
+    static Utf8CP query =
         "SELECT 1 "
         "FROM [" NODESCACHE_TABLENAME_DataSources "] ds "
         "WHERE [ds].[IsInitialized] AND [ds].[Id] = ?";
@@ -2220,7 +2220,7 @@ void NodesCache::_FinalizeInitialization(DataSourceInfo const& info)
         }
 
     BeMutexHolder lock(m_mutex);
-    static Utf8CP query = 
+    static Utf8CP query =
         "UPDATE [" NODESCACHE_TABLENAME_DataSources "] "
         "SET [IsInitialized] = true "
         "WHERE [Id] = ?";
@@ -2476,7 +2476,7 @@ bvector<HierarchyLevelInfo> NodesCache::GetRelatedHierarchyLevels(IConnectionCR 
     BeMutexHolder lock(m_mutex);
     bvector<HierarchyLevelInfo> infos;
 
-    static Utf8CP query = 
+    static Utf8CP query =
         "SELECT [hl].[Id], [RulesetId], [Locale], [PhysicalParentNodeId], [VirtualParentNodeId], [Filter], 1 AS Priority "
         "  FROM [" NODESCACHE_TABLENAME_HierarchyLevels "] hl "
         "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[HierarchyLevelId] = [hl].[Id] "
@@ -2542,7 +2542,7 @@ bvector<HierarchyLevelInfo> NodesCache::GetRelatedHierarchyLevels(Utf8CP ruleset
     BeMutexHolder lock(m_mutex);
 
     bvector<HierarchyLevelInfo> infos;
-    static Utf8CP query = 
+    static Utf8CP query =
         "SELECT DISTINCT [hl].[Id], [Locale], [PhysicalParentNodeId], [VirtualParentNodeId] "
         "  FROM [" NODESCACHE_TABLENAME_HierarchyLevels "] hl "
         "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[HierarchyLevelId] = [hl].[Id] "
@@ -2578,7 +2578,7 @@ bool NodesCache::HasParentNode(uint64_t nodeId, bset<uint64_t> const& parentNode
 
     BeMutexHolder lock(m_mutex);
 
-    static Utf8CP query = 
+    static Utf8CP query =
         "SELECT [hl].[VirtualParentNodeId] "
         "  FROM [" NODESCACHE_TABLENAME_HierarchyLevels "] hl "
         "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[HierarchyLevelId] = [hl].[Id] "
@@ -2607,17 +2607,17 @@ bool NodesCache::HasParentNode(uint64_t nodeId, bset<uint64_t> const& parentNode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-JsonNavNodeCPtr NodesCache::_LocateNode(IConnectionCR, Utf8StringCR locale, NavNodeKeyCR nodeKey) const
+JsonNavNodeCPtr NodesCache::_LocateNode(IConnectionCR connection, Utf8StringCR rulesetId, Utf8StringCR locale, NavNodeKeyCR nodeKey) const
     {
     BeMutexHolder lock(m_mutex);
 
-    static Utf8CP query = 
+    static Utf8CP query =
         "SELECT [hl].[PhysicalParentNodeId], [hl].[VirtualParentNodeId], [n].[Data], [n].[Id], [k].[PathFromRoot] "
         "  FROM [" NODESCACHE_TABLENAME_Nodes "] n "
         "  JOIN [" NODESCACHE_TABLENAME_NodeKeys "] k ON [k].[NodeId] = [n].[Id]"
         "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [n].[DataSourceId] "
         "  JOIN [" NODESCACHE_TABLENAME_HierarchyLevels "] hl ON [hl].[Id] = [ds].[HierarchyLevelId] "
-        " WHERE [k].[PathFromRoot] = ?";
+        " WHERE [k].[PathFromRoot] = ? AND [hl].[RulesetId] = ?";
 
     CachedStatementPtr stmt;
     if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), query))
@@ -2626,7 +2626,9 @@ JsonNavNodeCPtr NodesCache::_LocateNode(IConnectionCR, Utf8StringCR locale, NavN
         return nullptr;
         }
 
-    stmt->BindText(1, NavNodesHelper::NodeKeyHashPathToString(nodeKey), Statement::MakeCopy::Yes);
+    int bindingIndex = 0;
+    stmt->BindText(++bindingIndex, NavNodesHelper::NodeKeyHashPathToString(nodeKey), Statement::MakeCopy::Yes);
+    stmt->BindText(++bindingIndex, rulesetId, Statement::MakeCopy::No);
 
     if (BE_SQLITE_ROW != stmt->Step())
         return nullptr;

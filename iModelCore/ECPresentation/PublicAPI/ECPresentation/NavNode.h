@@ -179,6 +179,7 @@ private:
 protected:
     ECClassGroupingNodeKey const* _AsECClassGroupingNodeKey() const override {return this;}
     ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const override;
+    ECPRESENTATION_EXPORT bool _IsSimilar(NavNodeKey const& other) const override;
 public:
     //! Create an @ref ECClassGroupingNodeKey from a JSON object.
     ECPRESENTATION_EXPORT static RefCountedPtr<ECClassGroupingNodeKey> Create(IConnectionCR, JsonValueCR);
@@ -225,6 +226,7 @@ private:
 protected:
     ECPropertyGroupingNodeKey const* _AsECPropertyGroupingNodeKey() const override {return this;}
     ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const override;
+    ECPRESENTATION_EXPORT bool _IsSimilar(NavNodeKey const& other) const override;
 public:
     //! Create an @ref ECPropertyGroupingNodeKey from a JSON object.
     ECPRESENTATION_EXPORT static RefCountedPtr<ECPropertyGroupingNodeKey> Create(IConnectionCR, JsonValueCR);
@@ -263,6 +265,7 @@ private:
 protected:
     LabelGroupingNodeKey const* _AsLabelGroupingNodeKey() const override {return this;}
     ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const override;
+    ECPRESENTATION_EXPORT bool _IsSimilar(NavNodeKey const& other) const override;
 public:
     //! Create an @ref LabelGroupingNodeKey from a JSON object.
     ECPRESENTATION_EXPORT static RefCountedPtr<LabelGroupingNodeKey> Create(JsonValueCR);

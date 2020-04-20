@@ -13,16 +13,6 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR HashableBase::GetHash(Utf8CP parentHash) const
-    {
-    BeMutexHolder lock(m_mutex);
-    m_hash = const_cast<HashableBase*>(this)->_ComputeHash(parentHash).GetHashString();
-    return m_hash;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                09/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR HashableBase::GetHash() const
     {
     BeMutexHolder lock(m_mutex);
@@ -51,16 +41,7 @@ void HashableBase::InvalidateHash()
 void HashableBase::ComputeHash()
     {
     BeMutexHolder lock(m_mutex);
-
-    // go up rules and specifications hierarchy and start computing hashes from the top
-    if (nullptr != m_parent)
-        {
-        m_parent->ComputeHash();
-        return;
-        }
-
-    // we are at the top, start computing hashes
-    m_hash = _ComputeHash(nullptr).GetHashString();
+    m_hash = _ComputeHash().GetHashString();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -132,14 +113,12 @@ int PresentationKey::GetPriority (void) const { return m_priority; }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 PresentationKey::_ComputeHash(Utf8CP parentHash) const
+MD5 PresentationKey::_ComputeHash() const
     {
     MD5 md5;
     md5.Add(&m_priority, sizeof(m_priority));
     Utf8CP name = _GetXmlElementName();
     md5.Add(name, strlen(name));
-    if (parentHash != nullptr)
-        md5.Add(parentHash, strlen(parentHash));
     return md5;
     }
 
@@ -233,9 +212,9 @@ bool PresentationRule::GetOnlyIfNotHandled (void) const     { return m_onlyIfNot
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 PresentationRule::_ComputeHash(Utf8CP parentHash) const
+MD5 PresentationRule::_ComputeHash() const
     {
-    MD5 md5 = PresentationKey::_ComputeHash(parentHash);
+    MD5 md5 = PresentationKey::_ComputeHash();
     md5.Add(&m_onlyIfNotHandled, sizeof(m_onlyIfNotHandled));
     return md5;
     }
@@ -309,9 +288,9 @@ void ConditionalPresentationRule::_WriteJson(JsonValueR json) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 ConditionalPresentationRule::_ComputeHash(Utf8CP parentHash) const
+MD5 ConditionalPresentationRule::_ComputeHash() const
     {
-    MD5 md5 = PresentationRule::_ComputeHash(parentHash);
+    MD5 md5 = PresentationRule::_ComputeHash();
     md5.Add(m_condition.c_str(), m_condition.size());
     return md5;
     }
@@ -324,13 +303,7 @@ void PresentationRuleSpecification::Accept(PresentationRuleSpecificationVisitor&
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 PresentationRuleSpecification::_ComputeHash(Utf8CP parentHash) const
-    {
-    MD5 md5;
-    if (nullptr != parentHash)
-        md5.Add(parentHash, strlen(parentHash));
-    return md5;
-    }
+MD5 PresentationRuleSpecification::_ComputeHash() const {return MD5();}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -362,7 +335,7 @@ bool PresentationRuleSpecification::ReadJson(JsonValueCR json)
     if (0 != strcmp(json[COMMON_JSON_ATTRIBUTE_SPECTYPE].asCString(), _GetJsonElementType()))
         return false;
     return _ReadJson(json);
-    } 
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2018
@@ -373,4 +346,4 @@ Json::Value PresentationRuleSpecification::WriteJson() const
     json[COMMON_JSON_ATTRIBUTE_SPECTYPE] = _GetJsonElementType();
     _WriteJson(json);
     return json;
-    } 
+    }

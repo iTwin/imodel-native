@@ -75,8 +75,8 @@ RelatedPropertiesSpecification::RelatedPropertiesSpecification ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-RelatedPropertiesSpecification::RelatedPropertiesSpecification(RequiredRelationDirection requiredDirection, Utf8String relationshipClassNames, 
-    Utf8String relatedClassNames, Utf8String propertyNames, RelationshipMeaning relationshipMeaning, bool polymorphic, bool autoExpand) 
+RelatedPropertiesSpecification::RelatedPropertiesSpecification(RequiredRelationDirection requiredDirection, Utf8String relationshipClassNames,
+    Utf8String relatedClassNames, Utf8String propertyNames, RelationshipMeaning relationshipMeaning, bool polymorphic, bool autoExpand)
     : m_requiredDirection (requiredDirection), m_relationshipClassNames (relationshipClassNames), m_relatedClassNames (relatedClassNames),
     m_relationshipMeaning (relationshipMeaning), m_polymorphic(polymorphic), m_autoExpand(autoExpand), m_propertiesSourceSpecification(nullptr)
     {
@@ -88,9 +88,9 @@ RelatedPropertiesSpecification::RelatedPropertiesSpecification(RequiredRelationD
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-RelatedPropertiesSpecification::RelatedPropertiesSpecification(RequiredRelationDirection requiredDirection, Utf8String relationshipClassNames, 
-    Utf8String relatedClassNames, PropertySpecificationsList properties, RelationshipMeaning relationshipMeaning, bool polymorphic, bool autoExpand) 
-    : m_requiredDirection(requiredDirection), m_relationshipClassNames(relationshipClassNames), m_relatedClassNames(relatedClassNames), 
+RelatedPropertiesSpecification::RelatedPropertiesSpecification(RequiredRelationDirection requiredDirection, Utf8String relationshipClassNames,
+    Utf8String relatedClassNames, PropertySpecificationsList properties, RelationshipMeaning relationshipMeaning, bool polymorphic, bool autoExpand)
+    : m_requiredDirection(requiredDirection), m_relationshipClassNames(relationshipClassNames), m_relatedClassNames(relatedClassNames),
     m_relationshipMeaning(relationshipMeaning), m_properties(properties), m_polymorphic(polymorphic), m_autoExpand(autoExpand), m_propertiesSourceSpecification(nullptr)
     {
     m_includedProperties = properties.empty() ? IncludedProperties::All : IncludedProperties::Specified;
@@ -100,9 +100,9 @@ RelatedPropertiesSpecification::RelatedPropertiesSpecification(RequiredRelationD
 * @bsimethod                                    Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 RelatedPropertiesSpecification::RelatedPropertiesSpecification(RelatedPropertiesSpecification const& other)
-    : m_requiredDirection(other.m_requiredDirection), m_relationshipClassNames(other.m_relationshipClassNames), 
+    : m_requiredDirection(other.m_requiredDirection), m_relationshipClassNames(other.m_relationshipClassNames),
     m_relatedClassNames(other.m_relatedClassNames), m_includedProperties(other.m_includedProperties),
-    m_relationshipMeaning(other.m_relationshipMeaning), m_polymorphic(other.m_polymorphic), m_autoExpand(other.m_autoExpand), 
+    m_relationshipMeaning(other.m_relationshipMeaning), m_polymorphic(other.m_polymorphic), m_autoExpand(other.m_autoExpand),
     m_propertiesSourceSpecification(nullptr)
     {
     CommonToolsInternal::CopyRules(m_properties, other.m_properties, this);
@@ -152,7 +152,7 @@ bool RelatedPropertiesSpecification::ReadXml (BeXmlNodeP xmlNode)
         m_includedProperties = propertyNames.empty() ? IncludedProperties::All
             : propertyNames.EqualsI(INCLUDE_NO_PROPERTIES_SPEC) ? IncludedProperties::None : IncludedProperties::Specified;
         m_properties = CreatePropertySpecsFromPropertyNames(propertyNames, this);
-        }    
+        }
 
     Utf8String requiredDirectionString = "";
     if (BEXML_Success != xmlNode->GetAttributeStringValue (requiredDirectionString, COMMON_XML_ATTRIBUTE_REQUIREDDIRECTION))
@@ -165,7 +165,7 @@ bool RelatedPropertiesSpecification::ReadXml (BeXmlNodeP xmlNode)
         relationshipMeaningString = "";
     else
         m_relationshipMeaning = CommonToolsInternal::ParseRelationshipMeaningString(relationshipMeaningString.c_str());
-    
+
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue(m_polymorphic, COMMON_XML_ATTRIBUTE_ISPOLYMORPHIC))
         m_polymorphic = false;
 
@@ -216,7 +216,7 @@ bool RelatedPropertiesSpecification::ReadJson(JsonValueCR json)
     m_polymorphic = json[COMMON_JSON_ATTRIBUTE_ISPOLYMORPHIC].asBool(false);
     m_autoExpand = json[COMMON_JSON_ATTRIBUTE_AUTOEXPAND].asBool(false);
     m_relationshipMeaning = CommonToolsInternal::ParseRelationshipMeaningString(json[COMMON_JSON_ATTRIBUTE_RELATIONSHIPMEANING].asCString(""));
-    
+
     JsonValueCR propertyNamesJson = json[RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTYNAMES];
     JsonValueCR propertySpecsJson = json[RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTIES];
     if (propertySpecsJson.isString() && 0 == BeStringUtilities::Stricmp(propertySpecsJson.asCString(), INCLUDE_NO_PROPERTIES_SPEC)
@@ -257,9 +257,9 @@ bool RelatedPropertiesSpecification::ReadJson(JsonValueCR json)
         m_includedProperties = IncludedProperties::All;
         }
 
-    CommonToolsInternal::LoadFromJson(json[RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_NESTEDRELATEDPROPERTIES], 
+    CommonToolsInternal::LoadFromJson(json[RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_NESTEDRELATEDPROPERTIES],
         m_nestedRelatedPropertiesSpecification, CommonToolsInternal::LoadRuleFromJson<RelatedPropertiesSpecification>, this);
-    
+
     return true;
     }
 
@@ -342,47 +342,27 @@ RelatedPropertiesSpecificationList const& RelatedPropertiesSpecification::GetNes
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RelatedPropertiesSpecification::AddNestedRelatedProperty(RelatedPropertiesSpecificationR specification)
     {
-    InvalidateHash();
-    specification.SetParent(this);
-    m_nestedRelatedPropertiesSpecification.push_back(&specification);
+    ADD_HASHABLE_CHILD(m_nestedRelatedPropertiesSpecification, specification);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 RelatedPropertiesSpecification::_ComputeHash(Utf8CP parentHash) const
+MD5 RelatedPropertiesSpecification::_ComputeHash() const
     {
     MD5 md5;
-
-    if (nullptr != parentHash)
-        md5.Add(parentHash, strlen(parentHash));
-
     md5.Add(&m_requiredDirection, sizeof(m_requiredDirection));
     md5.Add(m_relationshipClassNames.c_str(), m_relationshipClassNames.size());
     md5.Add(m_relatedClassNames.c_str(), m_relatedClassNames.size());
     md5.Add(&m_relationshipMeaning, sizeof(m_relationshipMeaning));
     md5.Add(&m_polymorphic, sizeof(m_polymorphic));
     md5.Add(&m_includedProperties, sizeof(m_includedProperties));
-
-    Utf8String currentHash = md5.GetHashString();
-
     if (m_propertiesSourceSpecification)
         {
-        Utf8StringCR specHash = m_propertiesSourceSpecification->GetHash(currentHash.c_str());
+        Utf8StringCR specHash = m_propertiesSourceSpecification->GetHash();
         md5.Add(specHash.c_str(), specHash.size());
         }
-
-    for (PropertySpecificationP spec : m_properties)
-        {
-        Utf8StringCR specHash = spec->GetHash(currentHash.c_str());
-        md5.Add(specHash.c_str(), specHash.size());
-        }
-
-    for (RelatedPropertiesSpecificationP spec : m_nestedRelatedPropertiesSpecification)
-        {
-        Utf8StringCR specHash = spec->GetHash(currentHash.c_str());
-        md5.Add(specHash.c_str(), specHash.size());
-        }
-
+    ADD_RULES_TO_HASH(md5, m_properties);
+    ADD_RULES_TO_HASH(md5, m_nestedRelatedPropertiesSpecification);
     return md5;
     }

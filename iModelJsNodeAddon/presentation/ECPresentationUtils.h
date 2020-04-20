@@ -43,12 +43,46 @@ public:
     //! Create a success result with response
     ECPresentationResult(rapidjson::Value&& successResponse) : m_status(ECPresentationStatus::Success), m_isJsonCppResponse(false) {successResponse.Swap(m_successResponse);}
     //! Create a success result with response
-    ECPresentationResult(Json::Value&& successResponse) : m_status(ECPresentationStatus::Success), m_jsoncppSuccessResponse(std::move(successResponse)), m_isJsonCppResponse(true) {}
+    ECPresentationResult(Json::Value successResponse) : m_status(ECPresentationStatus::Success), m_jsoncppSuccessResponse(successResponse), m_isJsonCppResponse(true) {}
     //! Create a succes result with no response
     ECPresentationResult(): m_status(ECPresentationStatus::Success), m_isJsonCppResponse(false) {m_successResponse.SetNull();}
-
     //! Create an error result
     ECPresentationResult(ECPresentationStatus errorCode, Utf8String message) : m_status(errorCode), m_errorMessage(message) {}
+    //! Copy constructor
+    ECPresentationResult(ECPresentationResult const& other)
+        : m_status(other.m_status), m_isJsonCppResponse(other.m_isJsonCppResponse), m_errorMessage(other.m_errorMessage)
+        {
+        m_successResponse.CopyFrom(other.m_successResponse, m_successResponse.GetAllocator());
+        m_jsoncppSuccessResponse = other.m_jsoncppSuccessResponse;
+        }
+    //! Move constructor
+    ECPresentationResult(ECPresentationResult&& other)
+        : m_status(other.m_status), m_isJsonCppResponse(other.m_isJsonCppResponse), m_errorMessage(std::move(other.m_errorMessage))
+        {
+        m_successResponse.Swap(other.m_successResponse);
+        m_jsoncppSuccessResponse.swap(other.m_jsoncppSuccessResponse);
+        }
+
+    //! Copy assignment
+    ECPresentationResult& operator=(ECPresentationResult const& other)
+        {
+        m_status = other.m_status;
+        m_isJsonCppResponse = other.m_isJsonCppResponse;
+        m_errorMessage = other.m_errorMessage;
+        m_successResponse.CopyFrom(other.m_successResponse, m_successResponse.GetAllocator());
+        m_jsoncppSuccessResponse = other.m_jsoncppSuccessResponse;
+        return *this;
+        }
+    //! Move assignment
+    ECPresentationResult& operator=(ECPresentationResult&& other)
+        {
+        m_status = other.m_status;
+        m_isJsonCppResponse = other.m_isJsonCppResponse;
+        m_errorMessage.swap(other.m_errorMessage);
+        m_successResponse.Swap(other.m_successResponse);
+        m_jsoncppSuccessResponse.swap(other.m_jsoncppSuccessResponse);
+        return *this;
+        }
 
     bool IsError() const {return ECPresentationStatus::Success != m_status;}
     bool IsJsonCppResponse() const {return m_isJsonCppResponse;}
@@ -63,12 +97,12 @@ public:
 //=======================================================================================
 struct ECPresentationUtils
 {
-    static RulesDrivenECPresentationManager* CreatePresentationManager(Dgn::DgnPlatformLib::Host::IKnownLocationsAdmin&, IJsonLocalState&, 
+    static RulesDrivenECPresentationManager* CreatePresentationManager(Dgn::DgnPlatformLib::Host::IKnownLocationsAdmin&, IJsonLocalState&,
         Utf8StringCR, bvector<Utf8String> const&, bmap<int, unsigned>, Utf8StringCR, bool, std::shared_ptr<IUpdateRecordsHandler>, Utf8StringCR);
 
     static ECPresentationResult SetupRulesetDirectories(RulesDrivenECPresentationManager&, bvector<Utf8String> const&);
     static ECPresentationResult SetupSupplementalRulesetDirectories(RulesDrivenECPresentationManager&, bvector<Utf8String> const&);
-    
+
     static ECPresentationResult GetRulesets(SimpleRuleSetLocater&, Utf8StringCR ruleSetId);
     static ECPresentationResult AddRuleset(SimpleRuleSetLocater&, Utf8StringCR rulesetJsonString);
     static ECPresentationResult RemoveRuleset(SimpleRuleSetLocater&, Utf8StringCR ruleSetId, Utf8StringCR hash);
@@ -88,9 +122,11 @@ struct ECPresentationUtils
     static folly::Future<ECPresentationResult> GetDistinctValues(RulesDrivenECPresentationManager&, ECDbR, JsonValueCR params, PresentationRequestContextCR);
     static folly::Future<ECPresentationResult> GetDisplayLabel(RulesDrivenECPresentationManager&, ECDbR, JsonValueCR params, PresentationRequestContextCR);
 
+    static folly::Future<ECPresentationResult> CompareHierarchies(RulesDrivenECPresentationManager&, std::shared_ptr<IUpdateRecordsHandler>, ECDbR,
+        Utf8StringCR prevRulesetId, Utf8StringCR currRulesetId, Utf8StringCR locale, PresentationRequestContextCR);
+
     static ECPresentationResult SetRulesetVariableValue(RulesDrivenECPresentationManager& manager, Utf8StringCR rulesetId, Utf8StringCR variableId, Utf8StringCR variableType, JsonValueCR value);
     static ECPresentationResult GetRulesetVariableValue(RulesDrivenECPresentationManager& manager, Utf8StringCR rulesetId, Utf8StringCR variableId, Utf8StringCR variableType);
-
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

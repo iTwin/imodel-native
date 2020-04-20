@@ -46,7 +46,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeSpecification : PresentationRuleSpecific
 
         //! Constructor.
         ECPRESENTATION_EXPORT ChildNodeSpecification (int priority, ChildrenHint hasChildren, bool hideNodesInHierarchy, bool hideIfNoChildren);
-        
+
         //! Copy constructor.
         ECPRESENTATION_EXPORT ChildNodeSpecification(ChildNodeSpecificationCR);
 
@@ -57,19 +57,19 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeSpecification : PresentationRuleSpecific
 
         ECPRESENTATION_EXPORT virtual bool _ReadJson(JsonValueCR json) override;
         ECPRESENTATION_EXPORT virtual void _WriteJson(JsonValueR json) const override;
-        
+
         //! Clones this specification.
         virtual ChildNodeSpecification* _Clone() const = 0;
 
         //! Computes specification hash.
-        ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
+        ECPRESENTATION_EXPORT virtual MD5 _ComputeHash() const override;
 
     public:
         ECPRESENTATION_EXPORT static ChildNodeSpecificationP Create(JsonValueCR);
 
         //! Destructor.
         ECPRESENTATION_EXPORT virtual ~ChildNodeSpecification (void);
-        
+
         //! Clones this specification.
         ChildNodeSpecification* Clone() const {return _Clone();}
 
@@ -93,7 +93,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeSpecification : PresentationRuleSpecific
         //! @deprecated Use SetHasChildren
         // ECPRESENTATION_EXPORT void                         SetAlwaysReturnsChildren (bool value);
 
-        //! If this property is set it will not show nodes of this specification in the hierarchy, instead it will 
+        //! If this property is set it will not show nodes of this specification in the hierarchy, instead it will
         //! use those nodes to get children that will be actually returned.
         ECPRESENTATION_EXPORT bool                         GetHideNodesInHierarchy (void) const;
 

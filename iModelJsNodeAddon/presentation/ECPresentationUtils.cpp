@@ -856,3 +856,20 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetDisplayLabel(RulesDr
         return ECPresentationResult(labelDefinition->AsJson());
         });
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<ECPresentationResult> ECPresentationUtils::CompareHierarchies(RulesDrivenECPresentationManager& manager, std::shared_ptr<IUpdateRecordsHandler> updateRecordsHandler, ECDbR db,
+    Utf8StringCR prevRulesetId, Utf8StringCR currRulesetId, Utf8StringCR locale, PresentationRequestContextCR context)
+    {
+    IConnectionCPtr connection = manager.GetConnections().GetConnection(db);
+    RulesDrivenECPresentationManager::CommonOptions options;
+    options.SetLocale(locale.c_str());
+    return manager.CompareHierarchies(updateRecordsHandler, db, prevRulesetId, currRulesetId, options.GetJson(), context)
+        .then([context]()
+        {
+        context.OnTaskStart();
+        return ECPresentationResult();
+        });
+    }

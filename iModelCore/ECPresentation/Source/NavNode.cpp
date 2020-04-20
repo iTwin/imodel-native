@@ -103,6 +103,15 @@ rapidjson::Document ECClassGroupingNodeKey::_AsJson(rapidjson::Document::Allocat
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECClassGroupingNodeKey::_IsSimilar(NavNodeKey const& other) const
+    {
+    return GroupingNodeKey::_IsSimilar(other)
+        && m_class == static_cast<ECClassGroupingNodeKey const&>(other).m_class;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 RefCountedPtr<ECPropertyGroupingNodeKey> ECPropertyGroupingNodeKey::Create(IConnectionCR connection, JsonValueCR json)
@@ -127,6 +136,16 @@ rapidjson::Document ECPropertyGroupingNodeKey::_AsJson(rapidjson::Document::Allo
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECPropertyGroupingNodeKey::_IsSimilar(NavNodeKey const& other) const
+    {
+    return GroupingNodeKey::_IsSimilar(other)
+        && m_class == static_cast<ECPropertyGroupingNodeKey const&>(other).m_class
+        && m_propertyName.Equals(static_cast<ECPropertyGroupingNodeKey const&>(other).m_propertyName);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 RefCountedPtr<LabelGroupingNodeKey> LabelGroupingNodeKey::Create(JsonValueCR json)
@@ -148,6 +167,15 @@ RefCountedPtr<LabelGroupingNodeKey> LabelGroupingNodeKey::Create(RapidJsonValueC
 rapidjson::Document LabelGroupingNodeKey::_AsJson(rapidjson::Document::AllocatorType* allocator) const
     {
     return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+bool LabelGroupingNodeKey::_IsSimilar(NavNodeKey const& other) const
+    {
+    return GroupingNodeKey::_IsSimilar(other)
+        && m_label.Equals(static_cast<LabelGroupingNodeKey const&>(other).m_label);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -71,9 +71,9 @@ void ExtendedDataRule::_WriteJson(JsonValueR json) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 ExtendedDataRule::_ComputeHash(Utf8CP parentHash) const
+MD5 ExtendedDataRule::_ComputeHash() const
     {
-    MD5 md5 = ConditionalCustomizationRule::_ComputeHash(parentHash);
+    MD5 md5 = ConditionalCustomizationRule::_ComputeHash();
     for (auto entry : m_items)
         {
         md5.Add(entry.first.c_str(), entry.first.size());
