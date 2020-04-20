@@ -3366,6 +3366,8 @@ int             iModelBridgeFwk::UpdateProjectExtents(iModelBridgeFwk::FwkContex
             }
         }
 
+    m_briefcaseDgnDb->GeoLocation().Save();//Save the geo location value incase a bridge or the fwk has modified the in memory values.
+
     return SUCCESS;
     }
 
