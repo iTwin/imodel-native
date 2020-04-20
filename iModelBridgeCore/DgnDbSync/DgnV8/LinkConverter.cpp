@@ -557,13 +557,14 @@ BentleyStatus LinkConverter::ImportEmbeddedFile(Utf8StringR embeddedName, BeFile
 
     Utf8String extension(pathname.GetExtension());
 
-    DbResult result;
-    m_converter.GetDgnDb().EmbeddedFiles().Import(&result, embeddedName.c_str(), embeddedName.c_str(), extension.c_str(), description.c_str(), &fileLastModified);
-    if (BE_SQLITE_OK != result)
-        {
-        BeAssert(false && "Could not embed the linked file");
-        return ERROR;
-        }
+    // There is no way to retrieve embedded files.  Eventually we will instead store the file in some sort of context share
+    //DbResult result;
+    //m_converter.GetDgnDb().EmbeddedFiles().Import(&result, embeddedName.c_str(), embeddedName.c_str(), extension.c_str(), description.c_str(), &fileLastModified);
+    //if (BE_SQLITE_OK != result)
+    //    {
+    //    BeAssert(false && "Could not embed the linked file");
+    //    return ERROR;
+    //    }
 
     return SUCCESS;
     }

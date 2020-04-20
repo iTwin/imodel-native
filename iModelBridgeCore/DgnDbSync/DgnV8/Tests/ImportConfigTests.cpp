@@ -79,32 +79,6 @@ Utf8CP TestSchema = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
 "        <ECProperty propertyName=\"p\" typeName=\"int\" />"
 "    </ECClass>"
 "</ECSchema>";
-/*---------------------------------------------------------------------------------**//**
-// By default Convert should import Design links
-* @bsimethod                                    Umar.Hayat                      08/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ImportConfigTests, FileLink)
-    {
-    LineUpFiles(L"FileLink.bim", L"Test3d.dgn", false); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
-    ASSERT_EQ(0, m_count) << L"The initial V8 file is supposed to be empty!";
-
-    BentleyApi::BeFileName linkFile;
-    MakeWritableCopyOf(linkFile, L"test2d.dgn");
-    V8FileEditor v8editor;
-    v8editor.Open(m_v8FileName);
-    DgnV8Api::ElementId elementId;
-    v8editor.AddLine(&elementId);
-    v8editor.AddFileLink(elementId, linkFile);
-    v8editor.Save();
-
-    DoConvert(m_dgnDbFileName, m_v8FileName);
-
-    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-    DgnElementIdSet linkIdSet = EmbeddedFileLink::Query(*db);
-    EXPECT_EQ(1, linkIdSet.size());
-    EXPECT_EQ(1, db->EmbeddedFiles().MakeIterator().QueryCount());
-    m_wantCleanUp = false;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 // If import configuration is Not to embed desgin links , it Should Not
@@ -135,33 +109,6 @@ TEST_F(ImportConfigTests, FileLink_NoEmbed)
     DgnElementIdSet linkIdSet = EmbeddedFileLink::Query(*db);
     EXPECT_EQ(0, linkIdSet.size());
     EXPECT_EQ(0, db->EmbeddedFiles().MakeIterator().QueryCount()) << "With EmbedDgnLinkFiles = false configuration. Link files should not be embedded in dgndb";
-    m_wantCleanUp = false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// Non Dgn file links should be ported to DgnDb
-* @bsimethod                                    Umar.Hayat                      08/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ImportConfigTests, FileLinkNonDgn)
-    {
-    LineUpFiles(L"FileLinkNonDgn.bim", L"Test3d.dgn", false); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
-    ASSERT_EQ(0, m_count) << L"The initial V8 file is supposed to be empty!";
-
-    BentleyApi::BeFileName linkFile;
-    MakeWritableCopyOf(linkFile, L"chkmrk.bmp");
-    V8FileEditor v8editor;
-    v8editor.Open(m_v8FileName);
-    DgnV8Api::ElementId elementId;
-    v8editor.AddLine(&elementId);
-    v8editor.AddFileLink(elementId, linkFile);
-    v8editor.Save();
-
-    DoConvert(m_dgnDbFileName, m_v8FileName);
-
-    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-    DgnElementIdSet linkIdSet = EmbeddedFileLink::Query(*db);
-    EXPECT_EQ(1, linkIdSet.size());
-    EXPECT_EQ(1, db->EmbeddedFiles().MakeIterator().QueryCount());
     m_wantCleanUp = false;
     }
 
