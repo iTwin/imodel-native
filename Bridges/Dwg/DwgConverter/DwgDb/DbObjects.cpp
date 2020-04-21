@@ -950,8 +950,21 @@ TransformR      DwgDbSpatialFilter::GetBlockTransform (TransformR transform) con
 bool            DwgDbSpatialFilter::IsEntityFilteredOut (DwgDbEntityCR entity) const
     {
     DWGDB_SDKNAME(OdGeExtents3d,AcDbExtents)    extents;
-    if (DwgDbStatus::Success == ToDwgDbStatus(entity.getGeomExtents(extents)))
-        return  !T_Super::clipVolumeIntersectsExtents (extents);
+    try
+        {
+        if (DwgDbStatus::Success == ToDwgDbStatus(entity.getGeomExtents(extents)))
+            return  !T_Super::clipVolumeIntersectsExtents (extents);
+        }
+#ifdef DWGTOOLKIT_OpenDwg
+    catch (OdError e)
+        {
+        std::wcout << L"OpenDWG exception: " << reinterpret_cast<wchar_t const*>(e.description().c_str()) << std::endl;
+        }
+#elif DWGTOOLKIT_RealDwg
+    catch (...)
+        {
+        }
+#endif
     return  false;
     }
 

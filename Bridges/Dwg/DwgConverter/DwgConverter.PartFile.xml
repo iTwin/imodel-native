@@ -45,7 +45,7 @@
         <SubPart PartName="OpenDwgImportExe" />
     </Product>
 
-    <Part Name="OpenDwgImportExe" BentleyBuildMakeFile="Apps/DwgImportExe.mke" BentleyBuildMakeOptions="+dDWGTOOLKIT=OpenDwg +dVendorVersion=210200" OnlyPlatforms="x64" ExcludeLibType="Static" >
+    <Part Name="OpenDwgImportExe" BentleyBuildMakeFile="Apps/DwgImportExe.mke" BentleyBuildMakeOptions="+dDWGTOOLKIT=OpenDwg +dVendorVersion=210315" OnlyPlatforms="x64" ExcludeLibType="Static" >
         <SubPart PartName="BentleyDll"          PartFile="iModelCore/Bentley/Bentley"      Repository="imodel02"/>
         <SubPart PartName="iModelBridgeFwkExe"  PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"/>
         <!-- Need to pull ShxFonts from RealDWG -->
@@ -58,7 +58,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="OpenDwgBridgeDLL" BentleyBuildMakeFile="Apps/DwgBridge.mke" BentleyBuildMakeOptions="+dDWGTOOLKIT=OpenDwg +dVendorVersion=210200" ApiNumber="M02" OnlyPlatforms="x64" ExcludeLibType="Static" >
+    <Part Name="OpenDwgBridgeDLL" BentleyBuildMakeFile="Apps/DwgBridge.mke" BentleyBuildMakeOptions="+dDWGTOOLKIT=OpenDwg +dVendorVersion=210315" ApiNumber="M02" OnlyPlatforms="x64" ExcludeLibType="Static" >
         <SubPart PartName="BentleyDll"          PartFile="iModelCore/Bentley/Bentley"      Repository="imodel02"/>
         <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"/>
         <SubPart PartName="iModelBridgeFwk-en"  PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"/>
@@ -69,7 +69,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="OpenDwgImportDLL" BentleyBuildMakeFile="DwgImporter.mke" BentleyBuildMakeOptions="+dDWGTOOLKIT=OpenDwg +dVendorVersion=210200" ApiNumber="212M02" OnlyPlatforms="x64" ExcludeLibType="Static" >
+    <Part Name="OpenDwgImportDLL" BentleyBuildMakeFile="DwgImporter.mke" BentleyBuildMakeOptions="+dDWGTOOLKIT=OpenDwg +dVendorVersion=210315" ApiNumber="212M02" OnlyPlatforms="x64" ExcludeLibType="Static" >
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="BentleyDll"          PartFile="iModelCore/Bentley/Bentley"              Repository="imodel02"/>
         <SubPart PartName="DgnPlatformDLL"      PartFile="iModelCore/DgnPlatform/DgnPlatform"          Repository="imodel02"/>
@@ -84,10 +84,11 @@
         </Bindings>
     </Part>
 
-    <Part Name="OpenDwgDb" BentleyBuildMakeFile="DwgDb/DwgDbExchange.mke" BentleyBuildMakeOptions="+dDWGTOOLKIT=OpenDwg +dVendorVersion=210200 +dBUILD_DWGDB" ApiNumber="212M02" OnlyPlatforms="x64" ExcludeLibType="Static" >
+    <Part Name="OpenDwgDb" BentleyBuildMakeFile="DwgDb/DwgDbExchange.mke" BentleyBuildMakeOptions="+dDWGTOOLKIT=OpenDwg +dVendorVersion=210315 +dBUILD_DWGDB" ApiNumber="212M02" OnlyPlatforms="x64" ExcludeLibType="Static" >
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="BentleyDll"      PartFile="iModelCore/Bentley/Bentley"                   Repository="imodel02"/>
         <SubPart PartName="Teigha"          PartFile="${SrcRoot}bsicommon/CvsPartFiles/teigha"      Repository="bin-teigha"/>
+        <SubPart PartName="CSDictionary"    PartFile="${SrcRoot}bsicommon/CvsPartFiles/teigha"      Repository="bin-teighaCSDicts"/>
         <SubPart PartName="RapidJson"       PartFile="Libsrc-Nugets"                                Repository="bsicommon"/>
         <SubPart PartName="PsolidShim_x64"  PartFile="iModelCore/BRepCore/BRepCore"/> <!-- so we more easily match what DgnPlatform uses -->
         <SubPart PartName="GeomDlls"        PartFile="iModelCore/GeomLibs/GeomLibs"/>
@@ -104,6 +105,7 @@
       <ProductDirectory Name="OpenDwgImportAssemblies"    Deliver="true"                  RelativeTo="ApplicationRoot"/>
       <ProductDirectory Name="OpenDwgDbAssemblies"        Deliver="true"                  RelativeTo="ApplicationRoot"/>
       <ProductDirectory Name="OpenDwgAssemblies"          Deliver="true"                  RelativeTo="ApplicationRoot"/>
+      <ProductDirectory Name="OpenDwgCsDictionary"        Deliver="true"  Path="CSDicts"  RelativeTo="ApplicationRoot"/>
       <ProductDirectory Name="ShxFonts"                   Deliver="true"  Path="Fonts"    RelativeTo="ApplicationRoot"/>
       <ProductDirectory Name="MergeModules"               Deliver="false" />
       <ProductDirectory Name="RealDwgAssemblies"          Deliver="false" />
@@ -182,6 +184,7 @@
         <ProductDirectory Name="ShxFonts"                   Deliver="true"  Path="Fonts"    RelativeTo="ApplicationRoot"/>
         <ProductDirectory Name="MergeModules"               Deliver="false"                 RelativeTo="ApplicationRoot"/>
         <ProductDirectory Name="OpenDwgAssemblies"          Deliver="false" />
+        <ProductDirectory Name="OpenDwgCsDictionary"        Deliver="false" />
         <ProductDirectory Name="SampleXData"                Deliver="false" />
         <ProductDirectory Name="SampleListProp"             Deliver="false" />
     </ProductDirectoryList>
@@ -359,7 +362,7 @@
     </Part>
 
     <!-- OpenDwgImporterTests -->
-    <Part Name="OpenDwgImporterTestsExe" BentleyBuildMakeFile="Tests/Tests.mke" BentleyBuildMakeOptions="+dDWGTOOLKIT=OpenDwg +dVendorVersion=210200" OnlyPlatforms="x64">
+    <Part Name="OpenDwgImporterTestsExe" BentleyBuildMakeFile="Tests/Tests.mke" BentleyBuildMakeOptions="+dDWGTOOLKIT=OpenDwg +dVendorVersion=210315" OnlyPlatforms="x64">
         <SubPart PartName="GTestDependencies"/>
         <SubPart PartName="OpenDwgImportExe"/>
         <SubPart PartName="DgnPlatformSqlang"   PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>

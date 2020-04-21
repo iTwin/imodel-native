@@ -83,6 +83,7 @@
         <ProductDirectory Name="OpenDwgDbAssemblies" RelativeTo="ApplicationRoot" Path="Dlls"/>
         <ProductDirectory Name="OpenDwgImportAssemblies" RelativeTo="ApplicationRoot" Path="Dlls"/>
         <ProductDirectory Name="ShxFonts"           RelativeTo="ApplicationRoot" Path="Fonts"/>
+        <ProductDirectory Name="OpenDwgCsDictionary" Deliver="false"/>
         <ProductDirectory Name="RealDwgDbLibs"      Deliver="false"/>
         <ProductDirectory Name="RealDwgDbAssemblies" Deliver="false"/>
         <ProductDirectory Name="RealDwgImportAssemblies" Deliver="false"/>
