@@ -27,7 +27,7 @@ BEGIN_ORDBRIDGE_NAMESPACE
 ORDBridge::ORDBridge() : 
     m_converter(nullptr), m_isUnitTesting(false), m_schemaImportPhase(SchemaImportPhase::Base)
     {
-    static constexpr char s_bridgeName[] = "iModel Bridge Service - Bentley Civil";
+    static constexpr char s_bridgeName[] = "iModelBridgeService-BentleyCivil";
     static constexpr char s_bridgeGuid[] = "6E0B46CE-58C6-4E5C-A0F1-F19C782CBB33";
     static constexpr char s_bridgePrgId[] = "2716";
 
