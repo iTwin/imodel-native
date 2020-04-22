@@ -1,0 +1,64 @@
+# This is just to run the black duck scan on thirdparty libsrc build. 
+# Why a separate pipeline? Currently black duck requires java which nobody wants to install.
+# https://aka.ms/yaml
+
+name: ThirdPartyLibsrsc-BlackDuckScan
+trigger: none
+schedules:
+  - cron: "0 2 * * Wed"
+    displayName: Wendsday 2 AM (UTC -5) weekly build
+    branches:
+      include:
+        - master
+
+pool:
+  name: FirebugCI
+  demands:
+  - Agent.OS -equals Windows_NT
+
+variables:
+  BSISRC: $(Agent.BuildDirectory)/bbsrc/
+  BSIOUT: $(Build.BinariesDirectory)/
+  BUILDSTRATEGY: DgnClientSdkThirdParty;PRG
+
+jobs:
+  # ================================================================================================
+  - job: blackduckscan
+    displayName: Black Duck Scan
+
+    steps:
+      - task: bentleybootstrap@0
+        displayName: BentleyBootstrap
+        inputs:
+          streamname: bim0200
+          srcroot: $(BSISRC)
+
+      - script: python $(BSISRC)/bentleybuild/bentleybuild.py -s $(BUILDSTRATEGY) --srcroot $(BSISRC) --outputroot $(BSIOUT) $(BB_V) pull
+        displayName: Pull
+
+       # SynopsysDetect requires Java. "Install" in this case means copy and set a few env vars so it's not installed on the box.
+      - task: JavaToolInstaller@0
+        inputs:
+          versionSpec: '14'
+          jdkArchitectureOption: 'x64'
+          jdkSourceOption: 'LocalDirectory'
+          jdkFile: '\\winxx\devprog\Java\Latest_openjdk-14_windows-x64.zip'
+          jdkDestinationDirectory: '$(agent.toolsDirectory)/jdk14'
+          cleanDestinationDirectory: true
+
+      - task: SynopsysDetectTask@2
+        inputs:
+          Products: 'BD'
+          BlackDuckService: 'BlackDuck for Imodel02'
+          DetectVersion: 'latest'
+          DetectArguments: |
+            --detect.project.name=iModelThirdPartyLibsrc
+            --detect.project.version.name=master
+            --detect.tools=DETECTOR,SIGNATURE_SCAN
+            --detect.bom.aggregate.name=BOMFile
+            --detect.bom.aggregate.remediation.mode=DIRECT
+            --detect.project.version.distribution=EXTERNAL
+            --detect.source.path="$(BSISRC)"
+            --detect.output.path="$(Build.ArtifactStagingDirectory)/BlackDuck"
+
+
