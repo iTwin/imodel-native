@@ -167,6 +167,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         Utf8String m_statusMessageSinkUrl;
         bvector<BeFileName> m_drawingAndSheetFiles;
         BeFileName m_fwkAssetsDir;
+        BeFileName m_snapshotFileName;
         Json::Value m_argsJson; // additional arguments, in JSON format. Some of these may be intended for the bridge.
         
         IMODEL_BRIDGE_FWK_EXPORT JobDefArgs();
@@ -187,6 +188,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
 
         T_iModelBridge_releaseInstance* ReleaseBridge();
 
+        bool CreateSnapshot() const {return !m_snapshotFileName.empty(); }
         };
 
 #pragma warning(push)
@@ -355,7 +357,13 @@ protected:
     BentleyStatus ParseDocProps();
 
     void ReportFeatureFlags();
+    void InitializeLaunchDarklyClient();
+    void ConfigureLaunchDarklyClient();
     void GetMutexName(wchar_t* buf, size_t bufLen);
+    BentleyStatus CreateSnapshotSecondBridge(iModelBridgeError&);
+    BentleyStatus CreateNewSnapshot(iModelBridgeError&, Utf8CP);
+    int CreateSnapshot(iModelBridgeError&);
+    int CreateSnapshotWithExceptionHandling(iModelBridgeError&);
     int RunExclusive(int argc, WCharCP argv[]);
     BentleyStatus  TryOpenBimWithOptions(DgnDb::OpenParams& oparams);
     BentleyStatus  TryOpenBimWithBimProfileUpgrade();
@@ -412,6 +420,9 @@ public:
     BeFileName GetBriefcaseName() const {return m_briefcaseName;}
     bool AreCodesInLockedModelsReported() const {return m_areCodesInLockedModelsReported;}  //<! Query if the briefcase manager reports Codes in locked models to the Code service
     BentleyApi::Dgn::LockLevel GetRetainedChannelLockLevel() const {return m_retainedChannedlLockLevel;}
+
+    void EnterSharedChannel();
+    void EnterNormalChannel(DgnElementId channelParent);
 
     static NativeLogging::ILogger& GetLogger() { return *NativeLogging::LoggingManager::GetLogger("iModelBridge"); }
     bool GetCreateRepositoryIfNecessary() const {return m_jobEnvArgs.m_createRepositoryIfNecessary;}

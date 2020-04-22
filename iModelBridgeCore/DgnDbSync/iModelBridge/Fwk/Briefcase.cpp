@@ -562,7 +562,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_IModelHub_CreateRepository()
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelBridge::IBriefcaseManager::PushStatus iModelBridgeFwkPush::_Push(Utf8CP comment, bvector<Utf8String> const* changedFiles,  iModel::Hub::ChangeSetKind changes)
     {
-    if (m_fwk.m_isCreatingNewRepo || !iModelBridge::AnyChangesToPush(*m_fwk.m_briefcaseDgnDb))
+    if (m_fwk.m_jobEnvArgs.CreateSnapshot() || m_fwk.m_isCreatingNewRepo || !iModelBridge::AnyChangesToPush(*m_fwk.m_briefcaseDgnDb))
         return iModelBridge::IBriefcaseManager::PushStatus::Success;
 
     if (!m_fwk.AllowIntermediatePushes())

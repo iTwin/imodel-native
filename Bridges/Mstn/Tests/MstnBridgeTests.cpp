@@ -1598,6 +1598,145 @@ TEST_F(MstnBridgeTests, PushAfterEachFile)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MstnBridgeTests, CreateSnapshot)
+    {
+    auto testDir = CreateTestDir();
+
+    // Set up to process a master file and two reference files, all mapped to MstnBridge
+    bvector<WString> args;
+    SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, DEFAULT_IMODEL_NAME);
+
+    BentleyApi::BeFileName assignDbName = iModelBridgeRegistry::MakeDbName(testDir, DEFAULT_IMODEL_NAME_A);
+    FakeRegistry testRegistry(testDir, assignDbName);
+    testRegistry.WriteAssignments();
+    std::function<T_iModelBridge_getAffinity> lambda = [=](BentleyApi::WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel,
+                                                           BentleyApi::WCharCP affinityLibraryPath, BentleyApi::WCharCP sourceFileName)
+        {
+        affinityLevel = iModelBridgeAffinityLevel::Medium;
+        wcscpy(buffer, MSTN_BRIDGE_REG_SUB_KEY);
+        };
+    testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, lambda);
+
+    BentleyApi::BeFileName masterFile, refFile1, refFile2;
+    SetupTwoRefs(args, masterFile, refFile1, refFile2, testDir, testRegistry);
+    args.push_back(L"--fwk-snapshot=TestSnapshot");
+
+    testRegistry.Save();
+
+    // Ask the framework to run our test bridge to do the initial conversion and create the repo
+    RunTheBridge(args);
+    CleanupElementECExtensions();
+
+    args.push_back(WPrintfString(L"--fwk-all-docs-processed"));
+    RunTheBridge(args);
+    CleanupElementECExtensions();
+
+    if (true)
+        {
+        DbFileInfo dbFileInfo(m_briefcaseName);
+        ASSERT_TRUE(dbFileInfo.m_db->IsSnapshot());
+        ASSERT_FALSE(dbFileInfo.m_db->Txns().HasPendingTxns());
+        auto modelCount = dbFileInfo.GetModelCount();
+        ASSERT_EQ(8, modelCount);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Sam.Wilson                      04/202
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(MstnBridgeTests, CreateSnapshotTwoBridges)
+    {
+    auto testDir = CreateTestDir();
+
+    auto master1 = GetOutputFileName(L"master1.i.dgn");      // These are the names of the staged input files
+    auto master2 = GetOutputFileName(L"master2.i.dgn");      //          "
+    BeFileName commonRef(L"commonRef.i.dgn");                   // The common embedded file will be identified by its basename only
+
+    putenv("iModelBridge_MatchOnEmbeddedFileBasename=1");     // TODO: Replace this with a settings service parameter check
+
+    SetupClient();
+    CreateRepository();
+    auto runningServer = StartServer();
+
+    BentleyApi::BeFileName assignDbName = iModelBridgeRegistry::MakeDbName(testDir, DEFAULT_IMODEL_NAME_A);
+    FakeRegistry testRegistry(testDir, assignDbName);
+    testRegistry.WriteAssignments();
+    testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, iModelBridge_getAffinity);
+
+    BentleyApi::BeSQLite::BeGuid guid1, guid2, guidC;
+    guid1.Create();
+    guid2.Create();
+    guidC.Create();
+
+    iModelBridgeDocumentProperties docProps1(guid1.ToString().c_str(), "wurn1", "durn1", "other1", "");
+    iModelBridgeDocumentProperties docProps2(guid2.ToString().c_str(), "wurn2", "durn2", "other2", "");
+    iModelBridgeDocumentProperties docPropsC(guidC.ToString().c_str(), "wurnC", "durnC", "otherC", "");
+    testRegistry.SetDocumentProperties(docProps1, master1);
+    testRegistry.SetDocumentProperties(docProps2, master2);
+    testRegistry.SetDocumentProperties(docPropsC, commonRef);
+    std::function<T_iModelBridge_getAffinity> lambda = [=](BentleyApi::WCharP buffer,
+                                                           const size_t bufferSize,
+                                                           iModelBridgeAffinityLevel& affinityLevel,
+                                                           BentleyApi::WCharCP affinityLibraryPath,
+                                                           BentleyApi::WCharCP sourceFileName)
+        {
+        wcscpy(buffer, MSTN_BRIDGE_REG_SUB_KEY);
+        affinityLevel = iModelBridgeAffinityLevel::Medium;
+        };
+
+    testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, lambda);
+    BentleyApi::WString bridgeName;
+    testRegistry.SearchForBridgeToAssignToDocument(bridgeName, master1, L"");
+    ASSERT_TRUE(bridgeName.Equals(MSTN_BRIDGE_REG_SUB_KEY));
+    testRegistry.SearchForBridgeToAssignToDocument(bridgeName, master2, L"");
+    ASSERT_TRUE(bridgeName.Equals(MSTN_BRIDGE_REG_SUB_KEY));
+    testRegistry.Save();
+    TerminateHost();
+
+    int modelCount = 0;
+    DgnElementId master1JobSubjectId;
+    DgnElementId master2JobSubjectId;
+    if (true)
+        {
+        bvector<WString> args;
+        SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, DEFAULT_IMODEL_NAME);
+
+        args.push_back(L"--fwk-snapshot=CreateSnapshotTwoBridges");
+
+        auto master_1_v3 = GetTestDataFileName(L"SharedEmbeddedReferences/v3/master1.i.dgn"); // no embedded ref
+        auto master_2_v1 = GetTestDataFileName(L"SharedEmbeddedReferences/v1/master2.i.dgn"); // embedded ref
+
+        ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(master_1_v3.c_str(), master1.c_str()));
+        ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(master_2_v1.c_str(), master2.c_str()));
+
+        args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", master1.c_str()));
+        RunTheBridge(args);
+        master1JobSubjectId = m_jobSubjectId;
+
+        CleanupElementECExtensions();
+        args.pop_back();
+        args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", master2.c_str()));
+        RunTheBridge(args);
+        CleanupElementECExtensions();
+        master2JobSubjectId = m_jobSubjectId;
+
+        args.push_back(WPrintfString(L"--fwk-all-docs-processed"));
+        RunTheBridge(args);
+        CleanupElementECExtensions();
+
+        DbFileInfo dbInfo(m_briefcaseName);
+        modelCount = dbInfo.GetPhysicalModelCount();
+        ASSERT_EQ(3, modelCount);
+        
+        auto references = dbInfo.GetReferencesSubjects();
+        ASSERT_EQ(1, references.size());
+        ASSERT_TRUE(dbInfo.IsChildOf(references[0], master2JobSubjectId));
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MstnBridgeTests, DISABLED_OidcTest)
