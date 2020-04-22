@@ -438,14 +438,30 @@ private:
             RulesPreprocessor::RootNodeRuleParameters params(TargetTree_MainTree);
             RootNodeRuleSpecificationsList specs = preprocessor.GetRootNodeSpecifications(params);
             if (!specs.empty())
+                {
+                LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("[NodesProviderFactory::CreateProvider] Creating root nodes provider from %" PRIu64 " specs", (uint64_t)specs.size()).c_str(), NativeLogging::LOG_TRACE);
                 provider = WithPostProcessing(*MultiSpecificationNodesProvider::Create(context, specs), MapRules(specs));
+                }
+            else
+                {
+                LoggingHelper::LogMessage(Log::Navigation, "[NodesProviderFactory::CreateProvider] Creating empty root nodes provider (found 0 specs)", NativeLogging::LOG_TRACE);
+                }
             }
         else
             {
             RulesPreprocessor::ChildNodeRuleParameters params(*parent, TargetTree_MainTree);
             ChildNodeRuleSpecificationsList specs = preprocessor.GetChildNodeSpecifications(params);
             if (!specs.empty())
+                {
+                LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("[NodesProviderFactory::CreateProvider] Creating child nodes provider for %s from %" PRIu64 " specs",
+                    parent->GetLabelDefinition().GetDisplayValue().c_str(), (uint64_t)specs.size()).c_str(), NativeLogging::LOG_TRACE);
                 provider = WithPostProcessing(*MultiSpecificationNodesProvider::Create(context, specs, *parent), MapRules(specs));
+                }
+            else
+                {
+                LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("[NodesProviderFactory::CreateProvider] Creating empty child nodes provider for %s (found 0 specs)",
+                    parent->GetLabelDefinition().GetDisplayValue().c_str()).c_str(), NativeLogging::LOG_TRACE);
+                }
             }
         if (provider.IsNull())
             {
@@ -470,10 +486,12 @@ protected:
             case ProviderCacheType::None:
                 break;
             case ProviderCacheType::Partial:
+                LoggingHelper::LogMessage(Log::Navigation, "[NodesProviderFactory::Create] Looking for `Partial` in cache", NativeLogging::LOG_TRACE);
                 provider = context.GetNodesCache().GetDataSource(context.GetDataSourceInfo());
                 break;
             case ProviderCacheType::Full:
                 {
+                LoggingHelper::LogMessage(Log::Navigation, "[NodesProviderFactory::Create] Looking for `Full` in cache", NativeLogging::LOG_TRACE);
                 uint64_t parentId = parent ? parent->GetNodeId() : 0;
                 HierarchyLevelInfo info = context.GetNodesCache().FindHierarchyLevel(context.GetConnection().GetId().c_str(),
                     context.GetRuleset().GetRuleSetId().c_str(), context.GetLocale().c_str(), parent ? &parentId : nullptr);
@@ -483,6 +501,7 @@ protected:
                 }
             case ProviderCacheType::Combined:
                 {
+                LoggingHelper::LogMessage(Log::Navigation, "[NodesProviderFactory::Create] Looking for `Combined` in cache", NativeLogging::LOG_TRACE);
                 CombinedHierarchyLevelInfo info(context.GetConnection().GetId(), context.GetRuleset().GetRuleSetId(),
                     context.GetLocale(), parent ? parent->GetNodeId() : 0);
                 provider = context.GetNodesCache().GetCombinedHierarchyLevel(info);
@@ -490,9 +509,15 @@ protected:
                 }
             }
         if (provider.IsNull())
+            {
+            LoggingHelper::LogMessage(Log::Navigation, "[NodesProviderFactory::Create] Have no provider, creating one.", NativeLogging::LOG_TRACE);
             provider = CreateProvider(context, parent);
+            }
         else
+            {
+            LoggingHelper::LogMessage(Log::Navigation, "[NodesProviderFactory::Create] Found a provider, adopting it.", NativeLogging::LOG_TRACE);
             provider->GetContextR().Adopt(context);
+            }
         return provider;
         }
 

@@ -795,7 +795,7 @@ folly::Future<folly::Unit> RulesDrivenECPresentationManager::CompareHierarchies(
         std::make_shared<TaskDependencyOnRuleset>(lhsRulesetId),
         std::make_shared<TaskDependencyOnRuleset>(rhsRulesetId),
         };
-    return m_tasksManager->CreateAndExecute([&, updateRecordsHandler, lhsRulesetId, rhsRulesetId, locale = options.GetLocale(), context](IECPresentationTask const& task)
+    return m_tasksManager->CreateAndExecute([&, updateRecordsHandler, lhsRulesetId, rhsRulesetId, locale = Utf8String(options.GetLocale()), context](IECPresentationTask const& task)
         {
         context.OnTaskStart();
         m_impl->CompareHierarchies(*updateRecordsHandler, *GetTaskConnection(task), lhsRulesetId, rhsRulesetId, locale, *task.GetCancelationToken());

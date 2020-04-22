@@ -5,6 +5,7 @@
 #include <ECPresentationPch.h>
 #include "HierarchiesComparer.h"
 #include "CustomizationHelper.h"
+#include "LoggingHelper.h"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2017
@@ -38,8 +39,13 @@ static void SynchronizeLists(NavNodesDataSource const& oldDs, size_t& oldIndex, 
             JsonNavNodePtr newNode = newDs.GetNode(newIndex);
             if (oldNode->GetKey()->IsSimilar(*newNode->GetKey()))
                 {
+                LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("[HierarchiesComparer::SynchronizeLists] Nodes similar. Indexes: %" PRIu64 " / %" PRIu64, (uint64_t)oldIndex, (uint64_t)newIndex).c_str(), NativeLogging::LOG_TRACE);
                 found = true;
                 break;
+                }
+            else
+                {
+                LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("[HierarchiesComparer::SynchronizeLists] Nodes NOT similar. Indexes: %" PRIu64 " / %" PRIu64, (uint64_t)oldIndex, (uint64_t)newIndex).c_str(), NativeLogging::LOG_TRACE);
                 }
             ++newIndex;
             }
@@ -57,6 +63,8 @@ void HierarchiesComparer::CompareDataSources(NavNodesProviderCR lhsProvider, Nav
     NavNodesDataSourcePtr oldDs = NavNodesDataSource::Create(lhsProvider);
     NavNodesDataSourcePtr newDs = NavNodesDataSource::Create(rhsProvider);
 
+    LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("[HierarchiesComparer::CompareDataSources] Datasource sizes: %" PRIu64 ", %" PRIu64, (uint64_t)oldDs->GetSize(), (uint64_t)newDs->GetSize()).c_str(), NativeLogging::LOG_TRACE);
+
     size_t oldIndex = 0;
     size_t newIndex = 0;
     while (oldIndex < oldDs->GetSize() && newIndex < newDs->GetSize())
@@ -70,6 +78,7 @@ void HierarchiesComparer::CompareDataSources(NavNodesProviderCR lhsProvider, Nav
             {
             JsonNavNodePtr node = oldDs->GetNode(i);
             m_context.Reporter().Removed(lhsProvider.GetContext().GetHierarchyLevelInfo(), *node);
+            LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("[HierarchiesComparer::CompareDataSources] Removed: %" PRIu64 ", %s", (uint64_t)i, node->GetLabelDefinition().GetDisplayValue().c_str()).c_str(), NativeLogging::LOG_TRACE);
             }
 
         // insert added nodes
@@ -78,24 +87,27 @@ void HierarchiesComparer::CompareDataSources(NavNodesProviderCR lhsProvider, Nav
             JsonNavNodePtr node = newDs->GetNode(i);
             CustomizeNode(nullptr, *node, rhsProvider);
             m_context.Reporter().Added(rhsProvider.GetContext().GetHierarchyLevelInfo(), *node, i);
+            LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("[HierarchiesComparer::CompareDataSources] Added: %" PRIu64 ", %s", (uint64_t)i, node->GetLabelDefinition().GetDisplayValue().c_str()).c_str(), NativeLogging::LOG_TRACE);
             }
 
         // now the lists are synchronized - iterate over both of them at the same time
         JsonNavNodePtr oldNode, newNode;
-        while (oldIndex < oldDs->GetSize() && newIndex < newDs->GetSize() 
+        while (oldIndex < oldDs->GetSize() && newIndex < newDs->GetSize()
             && (oldNode = oldDs->GetNode(oldIndex))->GetKey()->IsSimilar(*(newNode = newDs->GetNode(newIndex))->GetKey()))
             {
+            LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("[HierarchiesComparer::CompareDataSources] Nodes similar. Indexes: %" PRIu64 " / %" PRIu64, (uint64_t)oldIndex, (uint64_t)newIndex).c_str(), NativeLogging::LOG_TRACE);
             CompareNodes(lhsProvider, *oldNode, rhsProvider, *newNode);
             ++oldIndex;
             ++newIndex;
             }
         }
-    
+
     // handle removed nodes
     for (size_t i = oldIndex; i < oldDs->GetSize(); ++i)
         {
         JsonNavNodePtr node = oldDs->GetNode(i);
         m_context.Reporter().Removed(lhsProvider.GetContext().GetHierarchyLevelInfo(), *node);
+        LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("[HierarchiesComparer::CompareDataSources] Removed: %" PRIu64 ", %s", (uint64_t)i, node->GetLabelDefinition().GetDisplayValue().c_str()).c_str(), NativeLogging::LOG_TRACE);
         }
 
     // insert added nodes
@@ -104,6 +116,7 @@ void HierarchiesComparer::CompareDataSources(NavNodesProviderCR lhsProvider, Nav
         JsonNavNodePtr node = newDs->GetNode(i);
         CustomizeNode(nullptr, *node, rhsProvider);
         m_context.Reporter().Added(rhsProvider.GetContext().GetHierarchyLevelInfo(), *node, i);
+        LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("[HierarchiesComparer::CompareDataSources] Added: %" PRIu64 ", %s", (uint64_t)i, node->GetLabelDefinition().GetDisplayValue().c_str()).c_str(), NativeLogging::LOG_TRACE);
         }
     }
 
@@ -113,9 +126,10 @@ void HierarchiesComparer::CompareDataSources(NavNodesProviderCR lhsProvider, Nav
 void HierarchiesComparer::CompareNodes(NavNodesProviderCR lhsProvider, JsonNavNodeCR lhsNode, NavNodesProviderCR rhsProvider, JsonNavNodeR rhsNode) const
     {
     CustomizeNode(&lhsNode, rhsNode, rhsProvider);
-    
+
     bvector<JsonChange> changes = NavNodesHelper::GetChanges(lhsNode, rhsNode);
     m_context.Reporter().Changed(rhsProvider.GetContext().GetHierarchyLevelInfo(), lhsNode, rhsNode, changes);
+    LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("[HierarchiesComparer::CompareNodes] Node '%s' changes: %" PRIu64, rhsNode.GetLabelDefinition().GetDisplayValue().c_str(), (uint64_t)changes.size()).c_str(), NativeLogging::LOG_TRACE);
 
     if (m_context.ShouldTraverseRecursively())
         {
@@ -179,7 +193,7 @@ void HierarchiesComparer::Compare(IConnectionCacheCR connections, HierarchyLevel
     IConnectionPtr connection = connections.GetConnection(lhs.GetConnectionId().c_str());
     if (connection.IsNull())
         return;
-        
+
     Compare(*connection, lhs, rhs);
     }
 
