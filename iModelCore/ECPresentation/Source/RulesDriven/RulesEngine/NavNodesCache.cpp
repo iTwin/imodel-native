@@ -363,7 +363,7 @@ static bool DoesCacheUpdateData(BeSQLite::Db const& db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                04/2020
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool ConnectionAndCacheOutOfSync(BeSQLite::Db const& db, IConnectionCR connection)
+static bool IsConnectionAndCacheOutOfSync(BeSQLite::Db const& db, IConnectionCR connection)
     {
     Utf8String lastModValueStr;
     if (BE_SQLITE_ROW != db.QueryProperty(lastModValueStr, s_connectionLastModTimePropertySpec))
@@ -410,24 +410,66 @@ static BeFileName GetCachePath(BeFileNameCR directory, IConnectionCR connection)
     return cachePath;
     }
 
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                04/2020
++===============+===============+===============+===============+===============+======*/
+struct NodesCache::UniquePtrEnabler : NodesCache
+{
+template<typename... Args> UniquePtrEnabler(Args&&... args)
+    : NodesCache(std::forward<Args>(args)...)
+    {}
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+std::unique_ptr<NodesCache> NodesCache::Create(IConnectionCR connection, BeFileNameCR directory, JsonNavNodesFactoryCR nodesFactory, INodesProviderContextFactoryCR contextFactory,
+    IUserSettingsManager const& userSettings, NodesCacheType type, bool cacheUpdateData)
+    {
+    auto cache = std::make_unique<UniquePtrEnabler>(connection, nodesFactory, contextFactory, userSettings, cacheUpdateData);
+    if (SUCCESS != cache->Initialize(directory, connection, type))
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+    return cache;
+    }
+
+#define EVALUATE_SQLITE_RESULT(result) \
+    if (BE_SQLITE_OK != (result)) \
+        { \
+        LoggingHelper::LogMessage(Log::NavigationCache, m_db.GetLastError().c_str(), NativeLogging::LOG_ERROR); \
+        return ERROR; \
+        }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodesCache::Initialize(BeFileNameCR directory, IConnectionCR connection)
+BentleyStatus NodesCache::Initialize(BeFileNameCR directory, IConnectionCR connection, NodesCacheType cacheType)
     {
+    LoggingHelper::LogMessage(Log::NavigationCache, Utf8PrintfString("Initializing hierarchies cache with directory='%s', connection='%s', cacheType='%s'",
+        directory.GetNameUtf8().c_str(), connection.GetId().c_str(), cacheType == NodesCacheType::Disk ? "Disk" : "Memory").c_str(), NativeLogging::LOG_INFO);
+
+#ifdef NAVNODES_CACHE_DEBUG
+    // always use Disk cache when debugging
+    cacheType = NodesCacheType::Disk;
+    LoggingHelper::LogMessage(Log::NavigationCache, "Using 'Disk' cache type for debugging", NativeLogging::LOG_DEBUG);
+#endif
+
     DbResult result = BE_SQLITE_ERROR;
-    if (NodesCacheType::Memory == m_type)
+    if (NodesCacheType::Memory == cacheType)
         {
         result = m_db.CreateNewDb(":memory:", BeGuid(), Db::CreateParams(Db::PageSize::PAGESIZE_4K, Db::Encoding::Utf8,
             true, DefaultTxn::Yes, new NavigationCacheBusyRetry()));
         }
 
-    if (NodesCacheType::Disk == m_type)
+    if (NodesCacheType::Disk == cacheType)
         {
         BeFileName cachePath = GetCachePath(directory, connection);
 
         BeFileName path(cachePath);
         path.AppendString(NAVNODES_CACHE_DB_SUFFIX);
+        LoggingHelper::LogMessage(Log::NavigationCache, Utf8PrintfString("Using path '%s'", path.GetNameUtf8().c_str()).c_str(), NativeLogging::LOG_DEBUG);
 
 #ifdef NAVNODES_CACHE_DEBUG
         // don't use Exclusive lock so we can have a look at the DB while debugging
@@ -442,22 +484,26 @@ void NodesCache::Initialize(BeFileNameCR directory, IConnectionCR connection)
 #else
         if (path.DoesPathExist())
             {
+            LoggingHelper::LogMessage(Log::NavigationCache, Utf8PrintfString("File exists: '%s'", path.GetNameUtf8().c_str()).c_str(), NativeLogging::LOG_DEBUG);
             result = m_db.OpenBeSQLiteDb(path, Db::OpenParams(Db::OpenMode::ReadWrite, txnLockType, new NavigationCacheBusyRetry()));
             if (BE_SQLITE_OK == result)
                 {
+                LoggingHelper::LogMessage(Log::NavigationCache, "DB opened for read-write successfully", NativeLogging::LOG_DEBUG);
                 if (GetCacheVersion(m_db).GetMajor() != NAVNODES_CACHE_DB_VERSION_MAJOR)
                     {
                     // if the existing cache version is too old, simply delete the old cache and create a new one
                     m_db.CloseDb();
                     path.BeDeleteFile();
                     result = BE_SQLITE_ERROR_ProfileTooOld;
+                    LoggingHelper::LogMessage(Log::NavigationCache, "Profile too old, deleted DB file", NativeLogging::LOG_DEBUG);
                     }
-                else if (ConnectionAndCacheOutOfSync(m_db, connection))
+                else if (IsConnectionAndCacheOutOfSync(m_db, connection))
                     {
                     // if connection modification date does not match cached date delete cache (hierarchies may be out of sync)
                     m_db.CloseDb();
                     path.BeDeleteFile();
                     result = BE_SQLITE_ERROR_ProfileTooOld;
+                    LoggingHelper::LogMessage(Log::NavigationCache, "Cache is out-of-sync, deleted DB file", NativeLogging::LOG_DEBUG);
                     }
                 else if (m_cacheUpdateData && !DoesCacheUpdateData(m_db))
                     {
@@ -465,18 +511,23 @@ void NodesCache::Initialize(BeFileNameCR directory, IConnectionCR connection)
                     m_db.CloseDb();
                     path.BeDeleteFile();
                     result = BE_SQLITE_ERROR_ProfileTooOldForReadWrite;
+                    LoggingHelper::LogMessage(Log::NavigationCache, "Cache doesn't contain update data (requested), deleted DB file", NativeLogging::LOG_DEBUG);
                     }
                 else if (DoesCacheUpdateData(m_db) && !m_cacheUpdateData)
                     {
                     // if the cache has update data and we won't be caching any, update the cache setting
                     m_db.SaveProperty(s_cachesUpdateDataFlagPropertySpec, "0", nullptr, 0);
+                    LoggingHelper::LogMessage(Log::NavigationCache, "Cache contains update data, but it's not requested. Changed the DB setting.", NativeLogging::LOG_DEBUG);
                     }
                 }
             }
 #endif
 
         if (BE_SQLITE_OK != result && BE_SQLITE_BUSY != result)
+            {
+            LoggingHelper::LogMessage(Log::NavigationCache, "Failed to open the DB, creating a new one", NativeLogging::LOG_DEBUG);
             result = CreateCacheDb(m_db, path, txnLockType, m_cacheUpdateData);
+            }
 
         if (BE_SQLITE_BUSY == result)
             {
@@ -484,16 +535,14 @@ void NodesCache::Initialize(BeFileNameCR directory, IConnectionCR connection)
             Utf8PrintfString fileName(".HierarchyCache.%s.db", BeGuid(true).ToString().c_str());
             path.AppendUtf8(fileName.c_str());
 
+            LoggingHelper::LogMessage(Log::NavigationCache, Utf8PrintfString("DB is busy, switching to a different (temporary) path: %s", path.GetNameUtf8().c_str()).c_str(), NativeLogging::LOG_DEBUG);
+
             result = CreateCacheDb(m_db, path, txnLockType, m_cacheUpdateData);
             m_tempCache = true;
             }
         }
 
-    if (BE_SQLITE_OK != result)
-        {
-        BeAssert(false);
-        return;
-        }
+    EVALUATE_SQLITE_RESULT(result);
 
     // create the tables
     if (!m_db.TableExists(NODESCACHE_TABLENAME_HierarchyLevels))
@@ -504,11 +553,11 @@ void NodesCache::Initialize(BeFileNameCR directory, IConnectionCR connection)
                      "[RulesetId] TEXT NOT NULL REFERENCES " NODESCACHE_TABLENAME_Rulesets "([RulesetId]) ON DELETE CASCADE ON UPDATE CASCADE, "
                      "[Locale] TEXT, "
                      "[RemovalId] GUID ";
-        m_db.CreateTable(NODESCACHE_TABLENAME_HierarchyLevels, ddl);
-        m_db.ExecuteSql("CREATE UNIQUE INDEX [UX_HierarchyLevels_Virtual] ON [" NODESCACHE_TABLENAME_HierarchyLevels "](COALESCE([VirtualParentNodeId], 0),[RulesetId],[Locale],COALESCE([RemovalId], 0))");
-        m_db.ExecuteSql("CREATE INDEX [IX_HierarchyLevels_Physical] ON [" NODESCACHE_TABLENAME_HierarchyLevels "]([PhysicalParentNodeId],[RulesetId],[Locale])");
-        m_db.ExecuteSql("CREATE INDEX [IX_HierarchyLevels_Virtual] ON [" NODESCACHE_TABLENAME_HierarchyLevels "]([VirtualParentNodeId],[RulesetId],[Locale])");
-        m_db.ExecuteSql("CREATE INDEX [IX_HierarchyLevels_RemovalId] ON [" NODESCACHE_TABLENAME_HierarchyLevels "]([RemovalId])");
+        EVALUATE_SQLITE_RESULT(m_db.CreateTable(NODESCACHE_TABLENAME_HierarchyLevels, ddl));
+        EVALUATE_SQLITE_RESULT(m_db.ExecuteSql("CREATE UNIQUE INDEX [UX_HierarchyLevels_Virtual] ON [" NODESCACHE_TABLENAME_HierarchyLevels "](COALESCE([VirtualParentNodeId], 0),[RulesetId],[Locale],COALESCE([RemovalId], 0))"));
+        EVALUATE_SQLITE_RESULT(m_db.ExecuteSql("CREATE INDEX [IX_HierarchyLevels_Physical] ON [" NODESCACHE_TABLENAME_HierarchyLevels "]([PhysicalParentNodeId],[RulesetId],[Locale])"));
+        EVALUATE_SQLITE_RESULT(m_db.ExecuteSql("CREATE INDEX [IX_HierarchyLevels_Virtual] ON [" NODESCACHE_TABLENAME_HierarchyLevels "]([VirtualParentNodeId],[RulesetId],[Locale])"));
+        EVALUATE_SQLITE_RESULT(m_db.ExecuteSql("CREATE INDEX [IX_HierarchyLevels_RemovalId] ON [" NODESCACHE_TABLENAME_HierarchyLevels "]([RemovalId])"));
         }
     if (!m_db.TableExists(NODESCACHE_TABLENAME_DataSources))
         {
@@ -521,8 +570,8 @@ void NodesCache::Initialize(BeFileNameCR directory, IConnectionCR connection)
 #endif
                      "[IsInitialized] BOOLEAN NOT NULL DEFAULT FALSE, "
                      "[Filter] TEXT ";
-        m_db.CreateTable(NODESCACHE_TABLENAME_DataSources, ddl);
-        m_db.ExecuteSql("CREATE INDEX [IX_DataSources_HierarchyLevelId] ON [" NODESCACHE_TABLENAME_DataSources "]([HierarchyLevelId])");
+        EVALUATE_SQLITE_RESULT(m_db.CreateTable(NODESCACHE_TABLENAME_DataSources, ddl));
+        EVALUATE_SQLITE_RESULT(m_db.ExecuteSql("CREATE INDEX [IX_DataSources_HierarchyLevelId] ON [" NODESCACHE_TABLENAME_DataSources "]([HierarchyLevelId])"));
         }
     if (!m_db.TableExists(NODESCACHE_TABLENAME_DataSourceClasses))
         {
@@ -530,7 +579,7 @@ void NodesCache::Initialize(BeFileNameCR directory, IConnectionCR connection)
                      "[ECClassId] INTEGER NOT NULL, "
                      "[Polymorphic] BOOLEAN NOT NULL DEFAULT FALSE, "
                      "PRIMARY KEY([DataSourceId], [ECClassId])";
-        m_db.CreateTable(NODESCACHE_TABLENAME_DataSourceClasses, ddl);
+        EVALUATE_SQLITE_RESULT(m_db.CreateTable(NODESCACHE_TABLENAME_DataSourceClasses, ddl));
         }
     if (!m_db.TableExists(NODESCACHE_TABLENAME_DataSourceSettings))
         {
@@ -538,8 +587,8 @@ void NodesCache::Initialize(BeFileNameCR directory, IConnectionCR connection)
                      "[SettingId] TEXT NOT NULL, "
                      "[SettingValue] TEXT NOT NULL, "
                      "PRIMARY KEY([SettingId],[DataSourceId])";
-        m_db.CreateTable(NODESCACHE_TABLENAME_DataSourceSettings, ddl);
-        m_db.ExecuteSql("CREATE INDEX [IX_DataSourceSettings] ON [" NODESCACHE_TABLENAME_DataSourceSettings "]([DataSourceId])");
+        EVALUATE_SQLITE_RESULT(m_db.CreateTable(NODESCACHE_TABLENAME_DataSourceSettings, ddl));
+        EVALUATE_SQLITE_RESULT(m_db.ExecuteSql("CREATE INDEX [IX_DataSourceSettings] ON [" NODESCACHE_TABLENAME_DataSourceSettings "]([DataSourceId])"));
         }
     if (!m_db.TableExists(NODESCACHE_TABLENAME_Nodes))
         {
@@ -553,15 +602,15 @@ void NodesCache::Initialize(BeFileNameCR directory, IConnectionCR connection)
                      "[Visibility] INTEGER NOT NULL DEFAULT 0, "
                      "[Data] TEXT NOT NULL, "
                      "[Label] TEXT";
-        m_db.CreateTable(NODESCACHE_TABLENAME_Nodes, ddl);
-        m_db.ExecuteSql("CREATE INDEX [IX_Nodes_DataSourceId] ON [" NODESCACHE_TABLENAME_Nodes "]([DataSourceId])");
+        EVALUATE_SQLITE_RESULT(m_db.CreateTable(NODESCACHE_TABLENAME_Nodes, ddl));
+        EVALUATE_SQLITE_RESULT(m_db.ExecuteSql("CREATE INDEX [IX_Nodes_DataSourceId] ON [" NODESCACHE_TABLENAME_Nodes "]([DataSourceId])"));
         }
     if (!m_db.TableExists(NODESCACHE_TABLENAME_NodeKeys))
         {
         Utf8CP ddl = "[NodeId] INTEGER PRIMARY KEY NOT NULL UNIQUE REFERENCES " NODESCACHE_TABLENAME_Nodes "([Id]) ON DELETE CASCADE ON UPDATE CASCADE, "
                      "[Type] TEXT NOT NULL,"
                      "[PathFromRoot] TEXT NOT NULL";
-        m_db.CreateTable(NODESCACHE_TABLENAME_NodeKeys, ddl);
+        EVALUATE_SQLITE_RESULT(m_db.CreateTable(NODESCACHE_TABLENAME_NodeKeys, ddl));
         }
     if (!m_db.TableExists(NODESCACHE_TABLENAME_NodeInstances))
         {
@@ -570,15 +619,15 @@ void NodesCache::Initialize(BeFileNameCR directory, IConnectionCR connection)
             "[ECInstanceId] INTEGER NOT NULL, "
             "[IsDirectlyRelated] BOOLEAN, "
             "PRIMARY KEY([NodeId], [ECClassId], [ECInstanceId])";
-        m_db.CreateTable(NODESCACHE_TABLENAME_NodeInstances, ddl);
-        m_db.ExecuteSql("CREATE INDEX [IX_NodeInstances_InstanceKeys] ON [" NODESCACHE_TABLENAME_NodeInstances "]([ECClassId],[ECInstanceId])");
+        EVALUATE_SQLITE_RESULT(m_db.CreateTable(NODESCACHE_TABLENAME_NodeInstances, ddl));
+        EVALUATE_SQLITE_RESULT(m_db.ExecuteSql("CREATE INDEX [IX_NodeInstances_InstanceKeys] ON [" NODESCACHE_TABLENAME_NodeInstances "]([ECClassId],[ECInstanceId])"));
         }
     if (!m_db.TableExists(NODESCACHE_TABLENAME_Rulesets))
         {
         Utf8CP ddl = "[RulesetId] TEXT PRIMARY KEY NOT NULL, "
                      "[LastUsedTime] INTEGER NOT NULL, "
                      "[RulesetHash] TEXT NOT NULL";
-        m_db.CreateTable(NODESCACHE_TABLENAME_Rulesets, ddl);
+        EVALUATE_SQLITE_RESULT(m_db.CreateTable(NODESCACHE_TABLENAME_Rulesets, ddl));
         }
     if (!m_db.TableExists(NODESCACHE_TABLENAME_NodesOrder))
         {
@@ -590,42 +639,41 @@ void NodesCache::Initialize(BeFileNameCR directory, IConnectionCR connection)
 #else
                      "[OrderValue] TEXT NOT NULL";
 #endif
-        m_db.CreateTable(NODESCACHE_TABLENAME_NodesOrder, ddl);
-        m_db.ExecuteSql("CREATE INDEX [IX_Order] ON [" NODESCACHE_TABLENAME_NodesOrder "]([HierarchyLevelId],[OrderValue])");
-        m_db.ExecuteSql("CREATE TRIGGER IF NOT EXISTS [TRIGG_" NODESCACHE_TABLENAME_NodesOrder "] AFTER INSERT ON [" NODESCACHE_TABLENAME_Nodes "] "
-                        "BEGIN"
-                        "    INSERT INTO [" NODESCACHE_TABLENAME_NodesOrder "] "
-                        "    SELECT [d].[HierarchyLevelId], [d].[Id], NEW.[Id], "
+        EVALUATE_SQLITE_RESULT(m_db.CreateTable(NODESCACHE_TABLENAME_NodesOrder, ddl));
+        EVALUATE_SQLITE_RESULT(m_db.ExecuteSql("CREATE INDEX [IX_Order] ON [" NODESCACHE_TABLENAME_NodesOrder "]([HierarchyLevelId],[OrderValue])"));
+        Utf8CP triggerDdl = "CREATE TRIGGER IF NOT EXISTS [TRIGG_" NODESCACHE_TABLENAME_NodesOrder "] AFTER INSERT ON [" NODESCACHE_TABLENAME_Nodes "] "
+            "BEGIN"
+            "    INSERT INTO [" NODESCACHE_TABLENAME_NodesOrder "] "
+            "    SELECT [d].[HierarchyLevelId], [d].[Id], NEW.[Id], "
 #ifdef NAVNODES_CACHE_BINARY_INDEX
-                        "    " NODESCACHE_FUNCNAME_ConcatBinaryIndex "([d].[FullIndex], NEW.[Index]) "
+            "    " NODESCACHE_FUNCNAME_ConcatBinaryIndex "([d].[FullIndex], NEW.[Index]) "
 #else
-                        "    CASE WHEN length([d].[FullIndex]) > 0 THEN ([d].[FullIndex] || '-' || NEW.[Index]) ELSE (NEW.[Index]) END "
+            "    CASE WHEN length([d].[FullIndex]) > 0 THEN ([d].[FullIndex] || '-' || NEW.[Index]) ELSE (NEW.[Index]) END "
 #endif
-                        "    FROM [" NODESCACHE_TABLENAME_DataSources "] d "
-                        "    WHERE [d].[Id] = NEW.[DataSourceId]; "
-                        "END");
+            "    FROM [" NODESCACHE_TABLENAME_DataSources "] d "
+            "    WHERE [d].[Id] = NEW.[DataSourceId]; "
+            "END";
+        EVALUATE_SQLITE_RESULT(m_db.ExecuteSql(triggerDdl));
         }
-    m_db.SaveChanges();
+    EVALUATE_SQLITE_RESULT(m_db.SaveChanges());
 
 #ifdef NAVNODES_CACHE_BINARY_INDEX
     m_customFunctions.push_back(new ConcatBinaryIndexScalar());
     m_db.AddFunction(*m_customFunctions.back());
 #endif
+
+    LoggingHelper::LogMessage(Log::NavigationCache, "Initialized successfully", NativeLogging::LOG_INFO);
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-NodesCache::NodesCache(IConnectionCR connection, BeFileNameCR directory, JsonNavNodesFactoryCR nodesFactory, INodesProviderContextFactoryCR contextFactory,
-    IUserSettingsManager const& userSettings, NodesCacheType type, bool cacheUpdateData)
+NodesCache::NodesCache(IConnectionCR connection, JsonNavNodesFactoryCR nodesFactory, INodesProviderContextFactoryCR contextFactory,
+    IUserSettingsManager const& userSettings, bool cacheUpdateData)
     : m_connection(connection), m_nodesFactory(nodesFactory), m_contextFactory(contextFactory), m_userSettings(userSettings),
-    m_statements(50), m_type(type), m_tempCache(false), m_sizeLimit(0), m_cacheUpdateData(cacheUpdateData)
+    m_statements(50), m_tempCache(false), m_sizeLimit(0), m_cacheUpdateData(cacheUpdateData)
     {
-#ifdef NAVNODES_CACHE_DEBUG
-    // always use Disk cache when debugging
-    m_type = NodesCacheType::Disk;
-#endif
-    Initialize(directory, connection);
     }
 
 /*---------------------------------------------------------------------------------**//**

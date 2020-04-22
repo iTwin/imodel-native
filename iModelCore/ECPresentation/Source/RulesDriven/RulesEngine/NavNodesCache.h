@@ -190,6 +190,7 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct NodesCache : IHierarchyCache, INavNodeLocater
 {
+    struct UniquePtrEnabler;
     struct Savepoint;
 
     using IHierarchyCache::FindHierarchyLevel;
@@ -199,7 +200,6 @@ private:
     INodesProviderContextFactoryCR m_contextFactory;
     IConnectionCR m_connection;
     IUserSettingsManager const& m_userSettings;
-    NodesCacheType m_type;
     bool m_cacheUpdateData;
     bool m_tempCache;
     mutable BeSQLite::Db m_db;
@@ -212,7 +212,8 @@ private:
     mutable BeMutex m_quickCacheMutex;
 
 private:
-    void Initialize(BeFileNameCR directory, IConnectionCR connection);
+    ECPRESENTATION_EXPORT NodesCache(IConnectionCR, JsonNavNodesFactoryCR, INodesProviderContextFactoryCR, IUserSettingsManager const&, bool);
+    BentleyStatus Initialize(BeFileNameCR directory, IConnectionCR, NodesCacheType);
 
     void CacheNode(DataSourceInfo const&, NavNodeR, bvector<uint64_t> const&, NodeVisibility visibility);
     void CacheEmptyHierarchyLevel(HierarchyLevelInfo& info);
@@ -269,8 +270,8 @@ protected:
     ECPRESENTATION_EXPORT JsonNavNodeCPtr _LocateNode(IConnectionCR, Utf8StringCR, Utf8StringCR, NavNodeKeyCR) const override;
 
 public:
-    ECPRESENTATION_EXPORT NodesCache(IConnectionCR, BeFileNameCR, JsonNavNodesFactoryCR, INodesProviderContextFactoryCR, IUserSettingsManager const&,
-        NodesCacheType, bool cacheUpdateData);
+    ECPRESENTATION_EXPORT static std::unique_ptr<NodesCache> Create(IConnectionCR, BeFileNameCR, JsonNavNodesFactoryCR, INodesProviderContextFactoryCR, 
+        IUserSettingsManager const&, NodesCacheType, bool cacheUpdateData);
     ECPRESENTATION_EXPORT ~NodesCache();
 
     ECPRESENTATION_EXPORT void CacheHierarchyLevel(CombinedHierarchyLevelInfo const&, NavNodesProviderR);

@@ -172,81 +172,77 @@ public:
 * @bsiclass                                     Saulius.Skliutas                03/2020
 +===============+===============+===============+===============+===============+======*/
 struct RulesDrivenECPresentationManagerImpl::NodesCacheManager : INodesCacheManager, IConnectionsListener
-    {
-    private:
-        BeFileName m_cacheDirectory;
-        uint64_t m_cacheSizeLimit;
-        NodesCacheType m_cacheType;
-        bool m_cacheUpdateData;
+{
+private:
+    BeFileName m_cacheDirectory;
+    uint64_t m_cacheSizeLimit;
+    NodesCacheType m_cacheType;
+    bool m_cacheUpdateData;
 
-        JsonNavNodesFactoryCR m_nodeFactory;
-        INodesProviderContextFactoryCR m_contextFactory;
-        IConnectionManagerCR m_connections;
-        IUserSettingsManager const& m_userSettings;
+    JsonNavNodesFactoryCR m_nodeFactory;
+    INodesProviderContextFactoryCR m_contextFactory;
+    IConnectionManagerCR m_connections;
+    IUserSettingsManager const& m_userSettings;
 
-        bmap<Utf8String, NodesCache*> m_caches;
-        mutable BeMutex m_mutex;
+    std::map<Utf8String, std::unique_ptr<NodesCache>> m_caches;
+    mutable BeMutex m_mutex;
 
-    private:
-        void Clear(IConnectionCR connection)
+private:
+    void Clear(IConnectionCR connection)
+        {
+        BeMutexHolder lock(m_mutex);
+        m_caches.erase(connection.GetId());
+        }
+
+protected:
+    NodesCache* _GetCache(Utf8StringCR connectionId) const override
+        {
+        BeMutexHolder lock(m_mutex);
+        auto iter = m_caches.find(connectionId);
+        if (m_caches.end() == iter)
+            return nullptr;
+        return iter->second.get();
+        }
+    void _OnConnectionEvent(ConnectionEvent const& event) override
+        {
+        if (event.GetEventType() == ConnectionEventType::Opened)
             {
-            BeMutexHolder lock(m_mutex);
-            auto iter = m_caches.find(connection.GetId());
-            if (m_caches.end() != iter)
+            auto nodesCache = NodesCache::Create(event.GetConnection(), m_cacheDirectory, m_nodeFactory, m_contextFactory, m_userSettings, m_cacheType, m_cacheUpdateData);
+            if (nodesCache)
                 {
-                delete iter->second;
-                m_caches.erase(iter);
-                }
-            }
-
-    protected:
-        NodesCache* _GetCache(Utf8StringCR connectionId) const override
-            {
-            BeMutexHolder lock(m_mutex);
-            auto iter = m_caches.find(connectionId);
-            if (m_caches.end() == iter)
-                return nullptr;
-            return iter->second;
-            }
-        void _OnConnectionEvent(ConnectionEvent const& event) override
-            {
-            if (event.GetEventType() == ConnectionEventType::Opened)
-                {
-                NodesCache* nodesCache = new NodesCache(event.GetConnection(), m_cacheDirectory, m_nodeFactory, m_contextFactory, m_userSettings, m_cacheType, m_cacheUpdateData);
                 nodesCache->SetCacheFileSizeLimit(m_cacheSizeLimit);
-                m_caches.Insert(event.GetConnection().GetId(), nodesCache);
-                }
-            else if (event.GetEventType() == ConnectionEventType::Closed)
-                {
-                Clear(event.GetConnection());
+                m_caches.insert(std::pair<Utf8String, std::unique_ptr<NodesCache>>(event.GetConnection().GetId(), std::move(nodesCache)));
                 }
             }
-        void _ClearCaches(Utf8CP rulesetId) const override
+        else if (event.GetEventType() == ConnectionEventType::Closed)
             {
-            for (auto cache : m_caches)
-                cache.second->Clear(rulesetId);
+            Clear(event.GetConnection());
             }
-        bvector<NodesCache*> _GetAllNodeCaches() const override
-            {
-            return ContainerHelpers::TransformContainer<bvector<NodesCache*>>(m_caches, [](bpair<Utf8String, NodesCache*> entry) {return entry.second; });
-            }
+        }
+    void _ClearCaches(Utf8CP rulesetId) const override
+        {
+        for (auto const& entry : m_caches)
+            entry.second->Clear(rulesetId);
+        }
+    bvector<NodesCache*> _GetAllNodeCaches() const override
+        {
+        return ContainerHelpers::TransformContainer<bvector<NodesCache*>>(m_caches, [](auto const& entry) {return entry.second.get();});
+        }
 
-    public:
-        NodesCacheManager(BeFileNameCR tempDirectory, JsonNavNodesFactoryCR nodeFactory, INodesProviderContextFactoryCR nodeProviderContextFactory,
-            IConnectionManagerCR connectionManager, IUserSettingsManager const& settingsManager, NodesCacheType type, bool cacheUpdateData, uint64_t cacheSizeLimit)
-            : m_cacheDirectory(tempDirectory), m_nodeFactory(nodeFactory), m_contextFactory(nodeProviderContextFactory), m_connections(connectionManager), m_userSettings(settingsManager), m_cacheUpdateData(cacheUpdateData),
-            m_cacheSizeLimit(cacheSizeLimit), m_cacheType(type)
-            {
-            m_connections.AddListener(*this);
-            }
-        ~NodesCacheManager()
-            {
-            BeMutexHolder lock(m_mutex);
-            m_connections.DropListener(*this);
-            for (auto iter : m_caches)
-                delete iter.second;
-            }
-    };
+public:
+    NodesCacheManager(BeFileNameCR tempDirectory, JsonNavNodesFactoryCR nodeFactory, INodesProviderContextFactoryCR nodeProviderContextFactory,
+        IConnectionManagerCR connectionManager, IUserSettingsManager const& settingsManager, NodesCacheType type, bool cacheUpdateData, uint64_t cacheSizeLimit)
+        : m_cacheDirectory(tempDirectory), m_nodeFactory(nodeFactory), m_contextFactory(nodeProviderContextFactory), m_connections(connectionManager), m_userSettings(settingsManager), m_cacheUpdateData(cacheUpdateData),
+        m_cacheSizeLimit(cacheSizeLimit), m_cacheType(type)
+        {
+        m_connections.AddListener(*this);
+        }
+    ~NodesCacheManager()
+        {
+        BeMutexHolder lock(m_mutex);
+        m_connections.DropListener(*this);
+        }
+};
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                02/2018
@@ -385,7 +381,10 @@ public:
         {
         NodesCache* nodesCache = m_manager.GetNodesCache(m_connection);
         if (nullptr == nodesCache)
+            {
+            BeAssert(false && "Failed to find the hierarchy cache for given connection");
             return nullptr;
+            }
 
         NavNodeCPtr node = nodesCache->LocateNode(m_connection, m_options.GetRulesetId(), m_options.GetLocale(), nodeKey);
         if (node.IsNull())
@@ -550,7 +549,7 @@ protected:
         NodesCache* nodesCache = m_manager.m_nodesCachesManager->GetCache(connection.GetId());
         if (nullptr == nodesCache)
             {
-            BeAssert(false);
+            BeAssert(false && "Failed to find the hierarchy cache for given connection");
             return nullptr;
             }
         // make sure latest ruleset version is used in cache
@@ -942,7 +941,7 @@ bvector<NavNodeCPtr> RulesDrivenECPresentationManagerImpl::_GetFilteredNodes(ICo
     NodesCache* nodesCache = m_nodesCachesManager->GetCache(connection.GetId());
     if (nullptr == nodesCache)
         {
-        BeAssert(false);
+        BeAssert(false && "Failed to find the hierarchy cache for given connection");
         return bvector<NavNodeCPtr>();
         }
     if (!nodesCache->IsHierarchyLevelCached(options.GetRulesetId(), options.GetLocale()))
@@ -1057,7 +1056,7 @@ SpecificationContentProviderCPtr RulesDrivenECPresentationManagerImpl::GetConten
     NodesCache* nodesCache = m_nodesCachesManager->GetCache(connection.GetId());
     if (nullptr == nodesCache)
         {
-        BeAssert(false);
+        BeAssert(false && "Failed to find the hierarchy cache for given connection");
         return nullptr;
         }
     // make sure latest ruleset version is used in cache
@@ -1142,7 +1141,7 @@ bvector<SelectClassInfo> RulesDrivenECPresentationManagerImpl::_GetContentClasse
     NodesCache* nodesCache = m_nodesCachesManager->GetCache(connection.GetId());
     if (nullptr == nodesCache)
         {
-        BeAssert(false);
+        BeAssert(false && "Failed to find the hierarchy cache for given connection");
         return bvector<SelectClassInfo>();
         }
     // make sure latest ruleset version is used in cache
@@ -1327,7 +1326,7 @@ void RulesDrivenECPresentationManagerImpl::_CompareHierarchies(IUpdateRecordsHan
     NodesCache* nodesCache = m_nodesCachesManager->GetCache(connection.GetId());
     if (nullptr == nodesCache)
         {
-        BeAssert(false);
+        BeAssert(false && "Failed to find the hierarchy cache for given connection");
         return;
         }
 
