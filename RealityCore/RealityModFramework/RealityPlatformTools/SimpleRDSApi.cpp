@@ -1103,7 +1103,7 @@ ConnectedResponse ConnectedRealityData::UpdateInfo()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                10/2017
 //-------------------------------------------------------------------------------------
-ConnectedResponse ConnectedRealityData::Upload(BeFileName filePath, Utf8StringR serverPath, bool overwrite, bool listable)
+ConnectedResponse ConnectedRealityData::Upload(BeFileName filePath, Utf8StringR serverPath, bool overwrite, bool listable, RealityDataServiceTransfer_StatusCallBack pi_func)
     {
     m_identifier = serverPath;
 
@@ -1168,7 +1168,7 @@ ConnectedResponse ConnectedRealityData::Upload(BeFileName filePath, Utf8StringR 
 
     Utf8String propertyString = RealityDataServiceUpload::PackageProperties(properties);
 
-    RealityDataServiceUpload upload = RealityDataServiceUpload(filePath, m_identifier, propertyString, overwrite, listable);
+    RealityDataServiceUpload upload = RealityDataServiceUpload(filePath, m_identifier, propertyString, overwrite, listable, pi_func);
     if (upload.IsValidTransfer())
         {
         m_identifier = upload.GetRealityDataId();

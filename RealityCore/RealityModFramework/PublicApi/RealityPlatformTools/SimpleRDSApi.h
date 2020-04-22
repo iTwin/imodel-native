@@ -300,7 +300,7 @@ public:
     //! If serverPath is an empty string, a new reality data entry will be created on the server
     //! and the auto-generated guid will be assigned to the serverPath variable
     //! If a new entry is created, any properties set on this object will be set on the server
-    REALITYDATAPLATFORM_EXPORT ConnectedResponse Upload(BeFileName filePath, Utf8StringR serverPath, bool overwrite = true, bool listable = true);
+    REALITYDATAPLATFORM_EXPORT ConnectedResponse Upload(BeFileName filePath, Utf8StringR serverPath, bool overwrite = true, bool listable = true, RealityDataServiceTransfer_StatusCallBack pi_func = nullptr);
 
     //! Server request
     //! Will download the reality data to the specified file path, from the specified server path (GUID)

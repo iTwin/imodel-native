@@ -18,6 +18,11 @@ BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 BE_JSON_NAME(tilesetUrl)
 BE_JSON_NAME(tilesetToDbTransform)
 
+void rdsStatusCallback(int index, void* pClient, int ErrorCode, const char* pMsg)
+    {
+    LOG.infov("RealityDataService: %s",pMsg);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -372,7 +377,7 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
             Utf8String empty = "";
             LOG.tracev("Begin upload reality data for %s", model->GetName().c_str());
             StopWatch timer(true);
-            ConnectedResponse response = crd.Upload(modelDir, empty);
+            ConnectedResponse response = crd.Upload(modelDir, empty, true, true, &rdsStatusCallback);
             LOG.tracev("End upload reality data for %s", model->GetName().c_str());
             ConverterLogging::LogPerformance(timer, "RealityModelTilesets> Upload tilesets");
 
