@@ -11,6 +11,7 @@
 #include <GeomSerialization/GeomSerializationApi.h>
 #include <ECDb/ChangeIterator.h>
 #include <DgnPlatform/FunctionalDomain.h>
+#include <WebServices/iModelHub/Client/ChangeSetKind.h>
 #include <chrono>
 
 #if defined (BENTLEYCONFIG_PARASOLID)
@@ -24,11 +25,13 @@ static bool s_useTileCache = true;
 
 using namespace ElementDependency;
 
+USING_NAMESPACE_BENTLEY_IMODELHUB
+
 namespace IModelJsNative {
 
 BE_JSON_NAME(parentId)
 BE_JSON_NAME(pathname)
-BE_JSON_NAME(containsSchemaChanges)
+BE_JSON_NAME(changeType)
 BE_JSON_NAME(codeSpecId)
 BE_JSON_NAME(codeScope)
 BE_JSON_NAME(value)
@@ -655,7 +658,7 @@ RevisionStatus JsInterop::ReadChangeSets(bvector<DgnRevisionPtr>& revisionPtrs, 
             return status;
 
         if (!containsSchemaChanges)
-            containsSchemaChanges = changeSetToken.isMember("containsSchemaChanges") && changeSetToken["containsSchemaChanges"].asBool();
+            containsSchemaChanges = changeSetToken.isMember("changeType") && (BentleyApi::iModel::Hub::ChangeSetKind) changeSetToken["changeType"].asInt() == BentleyApi::iModel::Hub::ChangeSetKind::Schema;
 
         revisionPtrs.push_back(revision);
         }
@@ -709,7 +712,7 @@ RevisionStatus JsInterop::StartCreateChangeSet(JsonValueR changeSetInfo, DgnDbR 
     changeSetInfo[json_id()] = revision->GetId().c_str();
     changeSetInfo[json_parentId()] = revision->GetParentId().c_str();
     changeSetInfo[json_pathname()] = Utf8String(revision->GetRevisionChangesFile()).c_str();
-    changeSetInfo[json_containsSchemaChanges()] = revision->ContainsSchemaChanges(dgndb) ? 1 : 0;
+    changeSetInfo[json_changeType()] = (int) (revision->ContainsSchemaChanges(dgndb) ? ChangeSetKind::Schema : ChangeSetKind::Regular);
     return RevisionStatus::Success;
     }
 

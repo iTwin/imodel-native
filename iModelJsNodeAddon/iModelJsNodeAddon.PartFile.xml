@@ -78,6 +78,7 @@
     <SubPart PartName="napi-lib" PartFile="node-addon-api/node-addon-api"/>
     <SubPart PartName="iModelJsNativeLibCommon"/>
     <SubPart PartName="iModelJsNativeLibSqlang"/>
+    <SubPart PartName="iModelHubClient-PublicAPI" PartFile="iModelCore/WSClient/WSClient" Repository="imodel02" />
     <Bindings>
       <Files ProductDirectoryName="Assemblies">Delivery/imodeljs.node</Files>
       <VendorNotices IfNotPresent="Continue">
