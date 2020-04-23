@@ -156,6 +156,8 @@ The bridge should write only to its own private models during the data conversio
 Any codes created in this phase must be scoped to private models or to the bridge's own job subject.
 
 -# iModelBridge::_ConvertToBim
+-# iModelBridge::_DetectDeletedDocuments
+-# iModelBridge::_FinalizeChanges
 
 @anchor ANCHOR_FinalizationPhase
 <h3>II. Finalization Phase</h3>
@@ -181,6 +183,21 @@ minor differences:
 - iModelBridge::_DeleteSyncInfo is called.
 - iModelBridge::_FindJob is @em not called. Instead, the framework skips that step and goes right to the call to iModelBridge::_InitializeJob.
 - iModelBridge::Params::IsCreatingNewDgnDb will be true, where normally that property is false.
+
+<h2>Cleanup and "Garbage Collection"</h2>
+After being called to convert data from several source files, a bridge will be called one more time to do any final clean-up or garbage-collection tasks that may be necessary.
+When called for this purpose, the callbacks are:
+-#	iModelBridge::_Initialize
+-#	iModelBridge::_OnOpenBim
+-#	iModelBridge::_OnAllDocumentsProcessed
+-#	iModelBridge::_OnCloseBim
+-#	iModelBridge::_Terminate
+
+Note that _OpenSource, _InitializeJobSubject/_FindJobSubject, _ConvertToBim, _DetectDeletedDocuments, and _FinalizeChanges are <em>not</em> called during this final cleanup/GC phase.
+
+Note that _OnAllDocumentsProcessed differs from _FinalizeChanges. 
+* _FinalizeChanges is called after each document is processed. _OnAllDocumentsProcessed is called after <em>all</em> documents have been processed. 
+* _FinalizeChanges is called in the shared channel under the schema lock and is meant to clean up shared definitions. _OnAllDocumentsProcessed is meant to clean up a bridge's private data only, not shared definitions. 
 
 @anchor ANCHOR_iModelUnitsAndGCS
 <h2>Units and Geographic Coordinate System</h2>
