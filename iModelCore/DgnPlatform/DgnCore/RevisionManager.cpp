@@ -962,10 +962,8 @@ RevisionStatus RevisionManager::MergeRevision(DgnRevisionCR revision)
 //---------------------------------------------------------------------------------------
 RevisionStatus RevisionManager::DoMergeRevision(DgnRevisionCR revision)
     {
-    PRECONDITION(!m_dgndb.IsReadonly() && m_dgndb.AreTxnsAllowed() &&"Cannot merge changes into this database", RevisionStatus::CannotMergeIntoReadonly);
-
+    PRECONDITION(!m_dgndb.IsReadonly() &&"Cannot merge changes into this database", RevisionStatus::CannotMergeIntoReadonly);
     TxnManagerR txnMgr = m_dgndb.Txns();
-
     PRECONDITION(!txnMgr.HasChanges() && "There are unsaved changes in the current transaction. Call db.SaveChanges() or db.AbandonChanges() first", RevisionStatus::HasUncommittedChanges);
     PRECONDITION(!txnMgr.InDynamicTxn() && "Cannot merge revisions if in the middle of a dynamic transaction", RevisionStatus::InDynamicTransaction);
     PRECONDITION(!IsCreatingRevision() && "There is already a revision being created. Call AbandonCreateRevision() or FinishCreateRevision() first", RevisionStatus::IsCreatingRevision)
