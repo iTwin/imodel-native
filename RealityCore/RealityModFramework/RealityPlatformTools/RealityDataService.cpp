@@ -1848,7 +1848,7 @@ BentleyStatus RealityDataServiceUpload::CreateUpload(Utf8String properties)
         if (!instance["changedInstance"].isNull() && !instance["changedInstance"]["instanceAfterChange"].isNull() && !instance["changedInstance"]["instanceAfterChange"]["instanceId"].isNull())
             {
             m_id = instance["changedInstance"]["instanceAfterChange"]["instanceId"].asString();
-            ReportStatus(0, nullptr, -1, Utf8PrintfString("New RealityData created with GUID %s\n", m_id.c_str()).c_str());
+            ReportStatus(0, nullptr, 0, Utf8PrintfString("New RealityData created with GUID %s\n", m_id.c_str()).c_str());
             }
         else
             {

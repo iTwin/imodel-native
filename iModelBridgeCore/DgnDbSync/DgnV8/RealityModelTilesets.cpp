@@ -20,7 +20,10 @@ BE_JSON_NAME(tilesetToDbTransform)
 
 void rdsStatusCallback(int index, void* pClient, int ErrorCode, const char* pMsg)
     {
-    LOG.infov("RealityDataService: %s",pMsg);
+    if (0 == ErrorCode)
+        LOG.infov("RealityDataService: %s",pMsg);
+    else
+        LOG.errorv("RealityDataService: %s", pMsg);
     }
 
 /*---------------------------------------------------------------------------------**//**
