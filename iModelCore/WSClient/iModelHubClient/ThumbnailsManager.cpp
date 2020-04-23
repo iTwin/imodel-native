@@ -66,7 +66,7 @@ ICancellationTokenPtr cancellationToken
 
     WSQuery thumbnailsQuery(ServerSchema::Schema::iModel, Thumbnail::GetClassName(size));
 
-    return ExecuteWithRetry<bvector<Utf8String>>([=]()
+    return ExecuteWithRetry<bvector<Utf8String>, Error>([=]()
         {
         return m_wsRepositoryClient->SendQueryRequestWithOptions(thumbnailsQuery, nullptr, nullptr, requestOptions, cancellationToken)
             ->Then<ThumbnailsIdsResult>([=](const WSObjectsResult& result)
@@ -139,7 +139,7 @@ ICancellationTokenPtr cancellationToken
 
     ObjectId thumbnail(ServerSchema::Schema::iModel, Thumbnail::GetClassName(size), thumbnailId);
 
-    return ExecuteWithRetry<Render::Image>([=]()
+    return ExecuteWithRetry<Render::Image, Error>([=]()
         {
         return GetThumbnailByIdInternal(thumbnail, cancellationToken);
         });
@@ -166,7 +166,7 @@ ICancellationTokenPtr cancellationToken
     filter.Sprintf("(%s-backward-%s.%s+eq+'%s')", ServerSchema::Relationship::HasThumbnail, ServerSchema::Class::Version, ServerSchema::Property::Id, versionId.c_str());
     query.SetFilter(filter);
 
-    return ExecuteWithRetry<Render::Image>([=]()
+    return ExecuteWithRetry<Render::Image, Error>([=]()
         {
         ThumbnailImageResultPtr finalResult = std::make_shared<ThumbnailImageResult>();
         return m_wsRepositoryClient->SendQueryRequestWithOptions(query, nullptr, nullptr, requestOptions, cancellationToken)

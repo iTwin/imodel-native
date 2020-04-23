@@ -28,6 +28,7 @@
 #include <WebServices/iModelHub/Client/GlobalRequestOptions.h>
 #include <WebServices/iModelHub/Client/ChangeSetArguments.h>
 #include <WebServices/iModelHub/Client/ChangeSetQuery.h>
+#include <WebServices/iModelHub/Client/ResultRange.h>
 
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 
@@ -48,6 +49,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(EventManager);
 typedef RefCountedPtr<struct EventManager> EventManagerPtr;
 typedef RefCountedPtr<struct PredownloadManager> PredownloadManagerPtr;
 typedef RefCountedPtr<struct CodeLockSetResultInfo> CodeLockSetResultInfoPtr;
+typedef RefCountedPtr<struct MultiProgressCallbackHandler> MultiProgressCallbackHandlerPtr;
 typedef std::function<void(const WSObjectsReader::Instance& value, CodeLockSetResultInfoPtr codesLocksResult)> CodeLocksSetAddFunction;
 DEFINE_POINTER_SUFFIX_TYPEDEFS(CodeSequence);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ChangeSetCacheManager);
@@ -200,12 +202,12 @@ private:
     iModelConnection(iModelInfoCR iModel, CredentialsCR credentials, ClientInfoPtr clientInfo, GlobalRequestOptionsPtr globalRequestOptions, IHttpHandlerPtr customHandler, bool enableCompression);
     iModelConnection(iModelInfoCR iModel, CredentialsCR credentials, ClientInfoPtr clientInfo, GlobalRequestOptionsPtr globalRequestOptions, IHttpHandlerPtr customHandler, bool enableCompression, IAzureBlobStorageClientPtr storageClient);
 
-    StatusTaskPtr DownloadFileInternal(BeFileName localFile, ObjectIdCR fileId, FileAccessKeyPtr fileAccessKey, 
+    AsyncTaskPtr<AzureResult> DownloadFileInternal(BeFileName localFile, ObjectIdCR fileId, FileAccessKeyPtr fileAccessKey,
                                        Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const;
 
     //! Download a copy of the file from the iModel.
-    StatusTaskPtr DownloadFile(BeFileName localFile, ObjectIdCR fileId, FileAccessKeyPtr fileAccessKey, Http::Request::ProgressCallbackCR callback = nullptr,
-        ICancellationTokenPtr cancellationToken = nullptr) const;
+    StatusTaskPtr DownloadFileWithRetry(BeFileName localFile, ObjectIdCR fileId, FileAccessKeyPtr fileAccessKey, Http::Request::ProgressCallbackCR callback = nullptr,
+        ICancellationTokenPtr cancellationToken = nullptr, int currentAttempt = 1, int attemptsLimit = 2) const;
 
     FileAccessKeyTaskPtr QueryFileAccessKey(ObjectId objectId, ICancellationTokenPtr cancellationToken) const;
 
@@ -347,39 +349,42 @@ private:
     ChangeSetInfoTaskPtr GetChangeSetByIdInternal(Utf8StringCR changeSetId, bool loadAccessKey, ICancellationTokenPtr cancellationToken) const;
 
     //! Get all ChangeSet information based on a query by chunks.
-    ChangeSetsInfoTaskPtr GetChangeSetsFromQueryByChunks(WSQuery query, bool parseFileAccessKey, ICancellationTokenPtr cancellationToken = nullptr) const;
+    ChangeSetsInfoTaskPtr GetChangeSetsFromQueryByChunks(ChangeSetQuery changeSetQuery, bool parseFileAccessKey, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Get ChangeSet information based on a query (repeated).
-    SkipTokenTaskPtr ChangeSetsFromQueryInternal
+    ChangeSetsInfoRangeTaskPtr ChangeSetsFromQueryInternal
     (
     WSQueryCR query,
     Utf8StringCR skipToken,
     bool parseFileAccessKey,
-    ChangeSetsInfoResultPtr finalResult,
     IWSRepositoryClient::RequestOptionsPtr requestOptions,
     ICancellationTokenPtr cancellationToken = nullptr
     ) const;
 
-    //! Get all of the changeSets.
-    ChangeSetsInfoTaskPtr GetAllChangeSetsInternal(bool loadAccessKey, ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //! Get all of the changeSets after the specific ChangeSetId.
-    ChangeSetsInfoTaskPtr GetChangeSetsAfterIdInternal(Utf8StringCR changeSetId, BeSQLite::BeGuidCR fileId = BeSQLite::BeGuid(false), 
-                                                       bool loadAccessKey = false, ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //! Download the ChangeSet files.
-    ChangeSetsTaskPtr DownloadChangeSetsInternal(bvector<ChangeSetInfoPtr> const& changeSets, Http::Request::ProgressCallbackCR callback = nullptr,
-        ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //! Download the ChangeSet files.
-    ChangeSetsTaskPtr DownloadChangeSets(std::deque<ObjectId>& changeSetIds, Http::Request::ProgressCallbackCR callback = nullptr,
-        ICancellationTokenPtr cancellationToken = nullptr) const;
+    static double CountChangeSetsTotalSize(const bvector<ChangeSetInfoPtr>& changeSets);
 
     //! Download the file for this change set from server.
     ChangeSetTaskPtr DownloadChangeSetFile(ChangeSetInfoPtr changeSet, Http::Request::ProgressCallbackCR callback = nullptr,
         ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    ChangeSetQuery CreateBetweenChangeSetsQuery(Utf8StringCR firstchangeSetId, Utf8StringCR secondChangeSetId, BeSQLite::BeGuidCR fileId) const;
+    //! Download chunk of changesets.
+    ChangeSetsTaskPtr DownloadChangeSetsChunk(bvector<ChangeSetInfoPtr> changeSets, MultiProgressCallbackHandlerPtr multiProgressCallbackHandlerPtr,
+        ICancellationTokenPtr cancellationToken) const;
+
+    //! Recursive download ChangeSet by chunks.
+    ChangeSetsTaskPtr DownloadChangeSetsByChunksRecursive(WSQuery query, Utf8StringCR skipToken, IWSRepositoryClient::RequestOptionsPtr requestOptions,
+        MultiProgressCallbackHandlerPtr callbacksHandlerPtr, ICancellationTokenPtr cancellationToken, ChangeSetsResultPtr finalResult, uint32_t changeSetsCountToDownload) const;
+
+    //! Download the ChangeSet files by chunks.
+    ChangeSetsTaskPtr DownloadChangeSetsByChunks(ChangeSetQuery changeSetQuery, bvector<ChangeSetInfoPtr> const& changeSets,
+        Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Query and download ChangeSets by chunks.
+    ChangeSetsTaskPtr QueryAndDownloadChangeSetsByChunks(ChangeSetQueryR changeSetQuery, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const;
+
+    //! Download the ChangeSet files by Id.
+    ChangeSetsTaskPtr DownloadChangeSetsById(std::deque<ObjectId>& changeSetIds, Http::Request::ProgressCallbackCR callback = nullptr,
+        ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Sends a request from changeset.
     StatusTaskPtr SendChangesetRequest(

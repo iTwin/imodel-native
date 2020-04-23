@@ -33,7 +33,7 @@ ICancellationTokenPtr cancellationToken
     AddHasStatisticsSelect(select, propertiesToSelect);
     query.SetSelect(select);
 
-    return ExecuteWithRetry<StatisticsInfoPtr>([=] ()
+    return ExecuteWithRetry<StatisticsInfoPtr,Error>([=] ()
         {
         //Execute query
         return m_repositoryClient->SendQueryRequestWithOptions(query, "", "", requestOptions, cancellationToken)->Then<StatisticsInfoResult>
@@ -86,7 +86,7 @@ ICancellationTokenPtr cancellationToken
     AddHasStatisticsSelect(select, propertiesToSelect);
     query.SetSelect(select);
 
-    return ExecuteWithRetry<bvector<StatisticsInfoPtr> >([=] ()
+    return ExecuteWithRetry<bvector<StatisticsInfoPtr>, Error>([=] ()
         {
         //Execute query
         return m_repositoryClient->SendQueryRequestWithOptions(query, "", "", requestOptions, cancellationToken)
@@ -144,7 +144,7 @@ ICancellationTokenPtr cancellationToken
         query.SetSelect(select);
         query.AddFilterIdsIn(usersIdsQueue);
 
-        auto queryStatisticsResult = ExecuteWithRetry<void>([&] ()
+        auto queryStatisticsResult = ExecuteWithRetry<void, Error>([&] ()
             {
             //Execute query
             return m_repositoryClient->SendQueryRequestWithOptions(query, "", "", requestOptions, cancellationToken)->Then<StatusResult>

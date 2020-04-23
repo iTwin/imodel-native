@@ -46,7 +46,7 @@ END_UNNAMED_NAMESPACE
 //---------------------------------------------------------------------------------------
 ChangeSetInfoPtr ChangeSetInfo::ParseRapidJson(RapidJsonValueCR properties)
     {
-    auto id = properties[ServerSchema::Property::Id].GetString();
+    auto id = ParseString(properties, ServerSchema::Property::Id, "");
     auto dbGuid = ParseString(properties, ServerSchema::Property::SeedFileId, "");
     auto parentChangeSetId = ParseString(properties, ServerSchema::Property::ParentId, "");
     auto description = ParseString(properties, ServerSchema::Property::Description, "");

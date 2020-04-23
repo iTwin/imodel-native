@@ -71,7 +71,8 @@ iModelHubClientMkiHeaders =	$(iModelHubClientMkiPublicApiDir)Common.h           
                                 $(iModelHubClientMkiPublicApiDir)Client/ChangeSetArguments.h     \
                                 $(iModelHubClientMkiPublicApiDir)Client/ChangeSetQuery.h		 \
 								$(iModelHubClientMkiPublicApiDir)Client/OidcToken.h				 \
-								$(iModelHubClientMkiPublicApiDir)Client/OidcTokenProvider.h		
+								$(iModelHubClientMkiPublicApiDir)Client/OidcTokenProvider.h		 \
+								$(iModelHubClientMkiPublicApiDir)Client/ResultRange.h		
 
 #----------------------------------------------------------------------------------------
 #   Compile
@@ -188,4 +189,3 @@ $(o)BridgeProperties$(oext)                : $(iModelHubClientMkiSourceDir)Bridg
 $(o)OidcToken$(oext)					   : $(iModelHubClientMkiSourceDir)OidcToken.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)OidcTokenProvider$(oext)			   : $(iModelHubClientMkiSourceDir)OidcTokenProvider.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
-

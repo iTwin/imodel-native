@@ -76,7 +76,7 @@ iModelConnection::iModelConnection
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             02/2017
 //---------------------------------------------------------------------------------------
-StatusTaskPtr iModelConnection::DownloadFileInternal
+AsyncTaskPtr<AzureResult> iModelConnection::DownloadFileInternal
 (
 BeFileName                        localFile,
 ObjectIdCR                        fileId,
@@ -90,21 +90,20 @@ ICancellationTokenPtr             cancellationToken
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
 
     // Download file directly from the url.
-    return ExecuteWithRetry<void>([=]()
+    return ExecuteWithRetry<AzureFileResponse, AzureError>([=]()
         {
         return m_azureClient->SendGetFileRequest(fileAccessKey->GetDownloadUrl(), localFile, callback, nullptr, cancellationToken)
-            ->Then<StatusResult>([=](const AzureResult& result)
+            ->Then<AzureResult>([=](const AzureResult& result)
             {
             if (!result.IsSuccess())
                 {
-                HttpError error(result.GetError());
-                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, error.GetMessage().c_str());
-                return StatusResult::Error(Error(error));
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
+                return result;
                 }
 
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
             LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
-            return StatusResult::Success();
+            return result;
             });
         });
     }
@@ -112,25 +111,55 @@ ICancellationTokenPtr             cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             02/2017
 //---------------------------------------------------------------------------------------
-StatusTaskPtr iModelConnection::DownloadFile
+StatusTaskPtr iModelConnection::DownloadFileWithRetry
 (
 BeFileName                        localFile,
 ObjectIdCR                        fileId,
 FileAccessKeyPtr                  fileAccessKey,
 Http::Request::ProgressCallbackCR callback,
-ICancellationTokenPtr             cancellationToken
+ICancellationTokenPtr             cancellationToken,
+int                               currentAttempt,
+int                               attemptsLimit
 ) const
     {
-    if (fileAccessKey.IsNull())
+    auto fileAccessKeyTask = fileAccessKey.IsNull()
+        ? QueryFileAccessKey(fileId, cancellationToken)
+        : CreateCompletedAsyncTask(FileAccessKeyResult::Success(fileAccessKey));
+    
+    std::shared_ptr<StatusResult> finalResult = std::make_shared<StatusResult>();
+    finalResult->SetSuccess();
+
+    return fileAccessKeyTask->Then([=](FileAccessKeyResult fileAccessKeyResult)
         {
-        auto fileAccessKeyResult = ExecuteAsync(QueryFileAccessKey(fileId, cancellationToken));
-        if (!fileAccessKeyResult->IsSuccess())
-            return CreateCompletedAsyncTask(StatusResult::Error(fileAccessKeyResult->GetError()));
+        if (!fileAccessKeyResult.IsSuccess())
+            {
+            finalResult->SetError(fileAccessKeyResult.GetError());
+            return;
+            }
 
-        fileAccessKey = fileAccessKeyResult->GetValue();
-        }
+        DownloadFileInternal(localFile, fileId, fileAccessKeyResult.GetValue(), callback, cancellationToken)->Then([=](const AzureResult& downloadResult)
+            {
+            if (downloadResult.IsSuccess())
+                return;
 
-    return DownloadFileInternal(localFile, fileId, fileAccessKey, callback, cancellationToken);
+            auto azureError = downloadResult.GetError();
+            if (azureError.GetHttpStatus() != HttpStatus::Forbidden || currentAttempt >= attemptsLimit)
+                {
+                HttpError error(azureError);
+                finalResult->SetError(Error(error));
+                return;
+                }
+
+            DownloadFileWithRetry(localFile, fileId, nullptr, callback, cancellationToken, currentAttempt + 1, attemptsLimit)->Then([=] (StatusResultCR statusResult)
+                {
+                if (!statusResult.IsSuccess())
+                    finalResult->SetError(statusResult.GetError());
+                });
+            });
+        })->Then<StatusResult>([=]
+        {
+        return *finalResult;
+        });
     }
 
 //---------------------------------------------------------------------------------------
@@ -343,7 +372,7 @@ FilesTaskPtr iModelConnection::SeedFilesQuery(WSQuery query, ICancellationTokenP
     auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
 
-    return ExecuteWithRetry<bvector<FileInfoPtr>>([=]()
+    return ExecuteWithRetry<bvector<FileInfoPtr>, Error>([=]()
         {
         return m_wsRepositoryClient->SendQueryRequestWithOptions(query, nullptr, nullptr, requestOptions, cancellationToken)
             ->Then<FilesResult>([=](WSObjectsResult const& result)
@@ -402,7 +431,7 @@ ChangesetResponseOptions const options,
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    return ExecuteWithRetry<void>([=]() { return SendChangesetRequest(changeset, options, cancellationToken); });
+    return ExecuteWithRetry<void, Error>([=]() { return SendChangesetRequest(changeset, options, cancellationToken); });
     }
 
 //---------------------------------------------------------------------------------------
@@ -549,7 +578,7 @@ ICancellationTokenPtr             cancellationToken
     instanceId.Sprintf("%u", briefcaseId.GetValue());
     ObjectId fileObject(ServerSchema::Schema::iModel, ServerSchema::Class::Briefcase, instanceId);
 
-    auto downloadResult = DownloadFile(localFile, fileObject, fileAccessKey, callback, cancellationToken)->GetResult();
+    auto downloadResult = DownloadFileWithRetry(localFile, fileObject, fileAccessKey, callback, cancellationToken)->GetResult();
 
     if (!downloadResult.IsSuccess())
         return downloadResult;
@@ -722,7 +751,7 @@ BriefcasesInfoTaskPtr iModelConnection::QueryBriefcaseInfoInternal(WSQuery const
     auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
 
-    return ExecuteWithRetry<bvector<BriefcaseInfoPtr>>([=]()
+    return ExecuteWithRetry<bvector<BriefcaseInfoPtr>, Error>([=]()
         {
         return m_wsRepositoryClient->SendQueryRequestWithOptions(query, nullptr, nullptr, requestOptions, cancellationToken)
             ->Then<BriefcasesInfoResult>([=](const WSObjectsResult& result)
@@ -793,7 +822,7 @@ ICancellationTokenPtr cancellationToken
     const Utf8String methodName = "iModelConnection::QueryCodesLocksInternal";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
 
-    return ExecuteWithRetry<Utf8String>([=]()
+    return ExecuteWithRetry<Utf8String, Error>([=]()
         {
         //Execute query
         return m_wsRepositoryClient->SendQueryRequestWithOptions(query, "", skipToken, requestOptions, cancellationToken)->Then<SkipTokenResult>
@@ -1037,7 +1066,7 @@ ICancellationTokenPtr cancellationToken
 
     auto requestString = changeSet->ToRequestString();
     HttpStringBodyPtr request = HttpStringBody::Create(requestString);
-    return ExecuteWithRetry<CodeSequence>([=]()
+    return ExecuteWithRetry<CodeSequence, Error>([=]()
         {
         return m_wsRepositoryClient->SendChangesetRequestWithOptions(request, nullptr, requestOptions, cancellationToken)->Then<CodeSequenceResult>
             ([=](const WSChangesetResult& result)
@@ -1082,7 +1111,7 @@ ICancellationTokenPtr cancellationToken
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
 
     HttpStringBodyPtr request = HttpStringBody::Create(changeSet->ToRequestString());
-    return ExecuteWithRetry<CodeSequence>([=]()
+    return ExecuteWithRetry<CodeSequence, Error>([=]()
         {
         return m_wsRepositoryClient->SendChangesetRequestWithOptions(request, nullptr, requestOptions, cancellationToken)->Then<CodeSequenceResult>
             ([=](const WSChangesetResult& result)
@@ -1222,7 +1251,7 @@ ICancellationTokenPtr cancellationToken
     {
     const Utf8String methodName = "iModelConnection::SubscribeToEvents";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    return ExecuteWithRetry<void>([=]()
+    return ExecuteWithRetry<void, Error>([=]()
         {
         return m_eventManagerPtr->SetEventServiceClient(eventTypes, cancellationToken);
         });
@@ -1273,7 +1302,7 @@ StatusTaskPtr iModelConnection::UnsubscribeEventsCallback(EventCallbackPtr callb
 //---------------------------------------------------------------------------------------
 ChangeSetsInfoTaskPtr iModelConnection::GetChangeSetsFromQueryByChunks
 (
-WSQuery                     query,
+ChangeSetQuery              changeSetQuery,
 bool                        parseFileAccessKey,
 ICancellationTokenPtr       cancellationToken
 ) const
@@ -1282,37 +1311,40 @@ ICancellationTokenPtr       cancellationToken
     auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
 
+    WSQuery query = changeSetQuery.GetWSQuery();
     query.SetOrderBy(ServerSchema::Property::Index);
     query.SetTop(m_changeSetsPageSize);
 
-    ChangeSetsInfoResultPtr finalResult = std::make_shared<ChangeSetsInfoResult>();
-    finalResult->SetSuccess(bvector<ChangeSetInfoPtr>());
+    auto changeSetsRange = std::make_shared<bvector<ChangeSetInfoPtr>>();
 
-    SkipTokenResultPtr result;
     Utf8String nextSkipToken = nullptr;
     do
         {
-        result = ExecuteAsync(ChangeSetsFromQueryInternal(query, nextSkipToken, parseFileAccessKey, finalResult, requestOptions, cancellationToken));
-        if (!result->IsSuccess())
+        auto changeSetsInfoRangeResult = ExecuteAsync(ChangeSetsFromQueryInternal(query, nextSkipToken, parseFileAccessKey, requestOptions, cancellationToken));
+        if (!changeSetsInfoRangeResult->IsSuccess())
             {
-            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result->GetError().GetMessage().c_str());
-            return CreateCompletedAsyncTask<ChangeSetsInfoResult>(ChangeSetsInfoResult::Error(result->GetError()));
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, changeSetsInfoRangeResult->GetError().GetMessage().c_str());
+            return CreateCompletedAsyncTask<ChangeSetsInfoResult>(ChangeSetsInfoResult::Error(changeSetsInfoRangeResult->GetError()));
             }
-        nextSkipToken = result->GetValue();
+
+        auto changeSetsInfoRange = changeSetsInfoRangeResult->GetValue();
+        auto changeSetsInfo = changeSetsInfoRange.GetValue();
+        changeSetsRange->insert(changeSetsRange->end(), changeSetsInfo.begin(), changeSetsInfo.end());
+
+        nextSkipToken = changeSetsInfoRange.GetSkipToken();
         } while (!nextSkipToken.empty());
 
-    return CreateCompletedAsyncTask<ChangeSetsInfoResult>(ChangeSetsInfoResult::Success(finalResult->GetValue()));
+    return CreateCompletedAsyncTask<ChangeSetsInfoResult>(ChangeSetsInfoResult::Success(*changeSetsRange));
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-SkipTokenTaskPtr iModelConnection::ChangeSetsFromQueryInternal
+ChangeSetsInfoRangeTaskPtr iModelConnection::ChangeSetsFromQueryInternal
 (
 WSQueryCR                   query,
 Utf8StringCR                skipToken,
 bool                        parseFileAccessKey,
-ChangeSetsInfoResultPtr     finalResult,
 IWSRepositoryClient::RequestOptionsPtr requestOptions,
 ICancellationTokenPtr       cancellationToken
 ) const
@@ -1320,13 +1352,16 @@ ICancellationTokenPtr       cancellationToken
     const Utf8String methodName = "iModelConnection::ChangeSetsFromQueryInternal";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
 
-    return ExecuteWithRetry<Utf8String>([=]()
+    auto changeSetsRange = std::make_shared<bvector<ChangeSetInfoPtr>>();
+
+    return ExecuteWithRetry<ChangeSetsInfoRange, Error>([=]()
         {
-        return m_wsRepositoryClient->SendQueryRequestWithOptions(query, nullptr, skipToken, requestOptions, cancellationToken)->Then<SkipTokenResult>
+        return m_wsRepositoryClient->SendQueryRequestWithOptions(query, nullptr, skipToken, requestOptions, cancellationToken)->Then<ChangeSetsInfoRangeResult>
             ([=](const WSObjectsResult& changeSetsInfoResult)
             {
             if (changeSetsInfoResult.IsSuccess())
                 {
+                bvector<ChangeSetInfoPtr> changeSetInfos;
                 if (!changeSetsInfoResult.GetValue().GetRapidJsonDocument().IsNull())
                     {
                     for (auto const& value : changeSetsInfoResult.GetValue().GetInstances())
@@ -1338,73 +1373,170 @@ ICancellationTokenPtr       cancellationToken
                             changeSetInfo->SetFileAccessKey(fileAccessKey);
                             }
 
-                        finalResult->GetValue().push_back(changeSetInfo);
+                        changeSetInfos.push_back(changeSetInfo);
                         }
                     }
-                return SkipTokenResult::Success(changeSetsInfoResult.GetValue().GetSkipToken());
+
+                return ChangeSetsInfoRangeResult::Success(ChangeSetsInfoRange(changeSetInfos, changeSetsInfoResult.GetValue().GetSkipToken()));
                 }
             else
                 {
                 LogHelper::Log(SEVERITY::LOG_WARNING, methodName, requestOptions, changeSetsInfoResult.GetError().GetMessage().c_str());
-                return SkipTokenResult::Error(changeSetsInfoResult.GetError());
+                return ChangeSetsInfoRangeResult::Error(changeSetsInfoResult.GetError());
                 }
             });
         });
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             02/2017
+//@bsimethod                                     Algirdas.Mikoliunas            04/2020
 //---------------------------------------------------------------------------------------
-ChangeSetsInfoTaskPtr iModelConnection::GetChangeSetsAfterIdInternal
-(
-Utf8StringCR          changeSetId,
-BeGuidCR              fileId,
-bool                  loadAccessKey,
-ICancellationTokenPtr cancellationToken
-) const
+double iModelConnection::CountChangeSetsTotalSize (const bvector<ChangeSetInfoPtr>& changeSets)
     {
-    ChangeSetQuery changeSetQuery;
-    changeSetQuery.FilterChangeSetsAfterId(changeSetId);
+    double totalSize = 0.0;
+    for (ChangeSetInfoPtr const& changeSet : changeSets)
+        totalSize += changeSet->GetFileSize();
 
-    if (loadAccessKey)
-        changeSetQuery.SelectDownloadAccessKey();
-
-    return GetChangeSetsFromQueryByChunks(changeSetQuery.GetWSQuery(), loadAccessKey, cancellationToken);
+    return totalSize;
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             11/2015
+//@bsimethod                                     Algirdas.Mikoliunas            04/2020
 //---------------------------------------------------------------------------------------
-ChangeSetsTaskPtr iModelConnection::DownloadChangeSetsInternal
+ChangeSetsTaskPtr iModelConnection::DownloadChangeSetsByChunks
 (
+ChangeSetQuery                         changeSetQuery,
 const bvector<ChangeSetInfoPtr>&       changeSets,
 Http::Request::ProgressCallbackCR      callback,
 ICancellationTokenPtr                  cancellationToken
 ) const
     {
-    const Utf8String methodName = "iModelConnection::DownloadChangeSetsInternal";
-    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    const Utf8String methodName = "iModelConnection::DownloadChangeSetsByChunks";
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
 
     if (changeSets.empty())
         {
         return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Success(ChangeSets {}));
         }
+
+    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+    MultiProgressCallbackHandlerPtr callbacksHandlerPtr = new MultiProgressCallbackHandler(callback, CountChangeSetsTotalSize(changeSets));
+
+    changeSetQuery.SetSelect("*");
+    changeSetQuery.SelectDownloadAccessKey();
+    WSQuery query = changeSetQuery.GetWSQuery();
+    query.SetOrderBy(ServerSchema::Property::Index);
+    query.SetTop(m_changeSetsPageSize);
+
+    ChangeSetsResultPtr finalResult = std::make_shared<ChangeSetsResult>();
+    finalResult->SetSuccess(ChangeSets());
+    
+    return DownloadChangeSetsByChunksRecursive(query, nullptr, requestOptions, callbacksHandlerPtr, cancellationToken, finalResult, changeSets.size())
+        ->Then<ChangeSetsResult>([=](ChangeSetsResultCR changeSetsResult)
+        {
+        if (!finalResult->IsSuccess())
+            {
+            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, finalResult->GetError().GetMessage().c_str());
+            return *finalResult;
+            }
+
+        callbacksHandlerPtr->SetFinished();
+        double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+        LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
+        return *finalResult;
+        });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas            04/2020
+//---------------------------------------------------------------------------------------
+ChangeSetsTaskPtr iModelConnection::DownloadChangeSetsByChunksRecursive
+(
+WSQuery                                query,
+Utf8StringCR                           skipToken,
+IWSRepositoryClient::RequestOptionsPtr requestOptions,
+MultiProgressCallbackHandlerPtr        callbacksHandlerPtr,
+ICancellationTokenPtr                  cancellationToken,
+ChangeSetsResultPtr                    finalResult,
+uint32_t                               changeSetsCountToDownload
+) const
+    {
+    const Utf8String methodName = "iModelConnection::DownloadChangeSetsByChunksRecursive";
+    if (changeSetsCountToDownload < m_changeSetsPageSize)
+        query.SetTop(changeSetsCountToDownload);
+
+    return ChangeSetsFromQueryInternal(query, skipToken, true, requestOptions, cancellationToken)->Then([=](ChangeSetsInfoRangeResultCR queryRangeResult)
+        {
+        if (!queryRangeResult.IsSuccess())
+            {
+            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, queryRangeResult.GetError().GetMessage().c_str());
+            finalResult->SetError(queryRangeResult.GetError());
+            return;
+            }
+
+        auto changeSetsInfoChunk = queryRangeResult.GetValue();
+        DownloadChangeSetsChunk(changeSetsInfoChunk.GetValue(), callbacksHandlerPtr, cancellationToken)->Then([=](ChangeSetsResultCR changeSetsResult)
+            {
+            if (!changeSetsResult.IsSuccess())
+                {
+                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, changeSetsResult.GetError().GetMessage().c_str());
+                finalResult->SetError(changeSetsResult.GetError());
+                return;
+                }
+
+            auto changeSetsChunk = changeSetsResult.GetValue();
+            finalResult->GetValue().insert(finalResult->GetValue().end(), changeSetsChunk.begin(), changeSetsChunk.end());
+
+            auto nextSkipToken = changeSetsInfoChunk.GetSkipToken();
+            if (nextSkipToken.empty())
+                return;
+
+            uint32_t missingChangeSetsCount = changeSetsCountToDownload - changeSetsChunk.size();
+            if (missingChangeSetsCount == 0)
+                return;
+
+            DownloadChangeSetsByChunksRecursive(query, nextSkipToken, requestOptions, callbacksHandlerPtr, cancellationToken, finalResult, 
+                missingChangeSetsCount)->Then([=](ChangeSetsResultCR recursiveResult) {});
+            });
+        })->Then<ChangeSetsResult>([=]
+            {
+            return *finalResult;
+            });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas            04/2020
+//---------------------------------------------------------------------------------------
+ChangeSetsTaskPtr iModelConnection::DownloadChangeSetsChunk
+(
+bvector<ChangeSetInfoPtr>       changeSets,
+MultiProgressCallbackHandlerPtr multiProgressCallbackHandlerPtr,
+ICancellationTokenPtr           cancellationToken
+) const
+{
+    const Utf8String methodName = "iModelConnection::DownloadChangeSetsChunk";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+
+    if (changeSets.empty())
+        {
+        return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Success(ChangeSets{}));
+        }
+
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
 
-    double totalSize = 0.0;
-    for (ChangeSetInfoPtr const& changeSet : changeSets)
+    // Order changesets by file size asc for higher probability download url won't timeout
+    std::sort(changeSets.begin(), changeSets.end(), [](ChangeSetInfoPtr a, ChangeSetInfoPtr b)
         {
-        totalSize += changeSet->GetFileSize();
-        }
-    MultiProgressCallbackHandlerPtr callbacksHandlerPtr = new MultiProgressCallbackHandler(callback, totalSize);
-
+        return a->GetFileSize() <= b->GetFileSize();
+        });
 
     bset<std::shared_ptr<AsyncTask>> tasks;
     bmap<Utf8String, int64_t> changeSetIdIndexMap;
     for (auto& changeSet : changeSets)
         {
         Http::Request::ProgressCallback changeSetCallback;
-        callbacksHandlerPtr->AddCallback(changeSetCallback);
+        multiProgressCallbackHandlerPtr->AddCallback(changeSetCallback);
         tasks.insert(DownloadChangeSetFile(changeSet, changeSetCallback, cancellationToken));
         changeSetIdIndexMap.Insert(changeSet->GetId(), changeSet->GetIndex());
         }
@@ -1437,7 +1569,6 @@ ICancellationTokenPtr                  cancellationToken
             return itemA->second < itemB->second;
             });
 
-        callbacksHandlerPtr->SetFinished();
         double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
         LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
         return ChangeSetsResult::Success(resultChangeSets);
@@ -1447,27 +1578,20 @@ ICancellationTokenPtr                  cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             02/2017
 //---------------------------------------------------------------------------------------
-ChangeSetsTaskPtr iModelConnection::DownloadChangeSets(std::deque<ObjectId>& changeSetIds, Http::Request::ProgressCallbackCR callback, 
-                                                       ICancellationTokenPtr cancellationToken) const
+ChangeSetsTaskPtr iModelConnection::QueryAndDownloadChangeSetsByChunks(ChangeSetQueryR changeSetQuery, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
-    if (0 == changeSetIds.size())
-        return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Error(Error::Id::QueryIdsNotSpecified));
-    
-    ChangeSetQuery changeSetQuery;
-    changeSetQuery.FilterByIds(changeSetIds);
-    changeSetQuery.SelectDownloadAccessKey();
-    
     std::shared_ptr<ChangeSetsResult> finalResult = std::make_shared<ChangeSetsResult>();
 
-    return GetChangeSetsFromQueryByChunks(changeSetQuery.GetWSQuery(), true, cancellationToken)
-        ->Then([=](ChangeSetsInfoResultCR changeSetsQueryResult) {
-        if (!changeSetsQueryResult.IsSuccess())
+    changeSetQuery.SetSelect(ServerSchema::Property::FileSize);
+    return GetChangeSetsFromQueryByChunks(changeSetQuery, false, cancellationToken)->Then([=](ChangeSetsInfoResultCR changeSetsInfoResult) 
+        {
+        if (!changeSetsInfoResult.IsSuccess())
             {
-            finalResult->SetError(changeSetsQueryResult.GetError());
+            finalResult->SetError(changeSetsInfoResult.GetError());
             return;
             }
 
-        DownloadChangeSetsInternal(changeSetsQueryResult.GetValue(), callback, cancellationToken)->Then([=](ChangeSetsResultCR changesetsResult) {
+        DownloadChangeSetsByChunks(changeSetQuery, changeSetsInfoResult.GetValue(), callback, cancellationToken)->Then([=](ChangeSetsResultCR changesetsResult) {
             if (!changesetsResult.IsSuccess())
                 {
                 finalResult->SetError(changesetsResult.GetError());
@@ -1480,6 +1604,21 @@ ChangeSetsTaskPtr iModelConnection::DownloadChangeSets(std::deque<ObjectId>& cha
             {
             return *finalResult;
             });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             02/2017
+//---------------------------------------------------------------------------------------
+ChangeSetsTaskPtr iModelConnection::DownloadChangeSetsById(std::deque<ObjectId>& changeSetIds, Http::Request::ProgressCallbackCR callback, 
+                                                       ICancellationTokenPtr cancellationToken) const
+    {
+    if (0 == changeSetIds.size())
+        return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Error(Error::Id::QueryIdsNotSpecified));
+    
+    ChangeSetQuery changeSetQuery;
+    changeSetQuery.FilterByIds(changeSetIds);
+
+    return QueryAndDownloadChangeSetsByChunks(changeSetQuery, callback, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1491,32 +1630,10 @@ ChangeSetsTaskPtr iModelConnection::DownloadChangeSetsBetween(Utf8StringCR first
     if (Utf8String::IsNullOrEmpty(firstChangeSetId.c_str()) && Utf8String::IsNullOrEmpty(secondChangeSetId.c_str()))
         return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Error(Error::Id::InvalidChangeSet));
 
-    ChangeSetQuery changeSetQuery = CreateBetweenChangeSetsQuery(firstChangeSetId, secondChangeSetId, fileId);
-    changeSetQuery.SelectDownloadAccessKey();
+    ChangeSetQuery changeSetQuery;
+    changeSetQuery.FilterChangeSetsBetween(firstChangeSetId, secondChangeSetId);
 
-    std::shared_ptr<ChangeSetsResult> finalResult = std::make_shared<ChangeSetsResult>();
-
-    return GetChangeSetsFromQueryByChunks(changeSetQuery.GetWSQuery(), true, cancellationToken)
-        ->Then([=](ChangeSetsInfoResultCR changeSetsQueryResult) {
-        if (!changeSetsQueryResult.IsSuccess())
-            {
-            finalResult->SetError(changeSetsQueryResult.GetError());
-            return;
-            }
-
-        DownloadChangeSetsInternal(changeSetsQueryResult.GetValue(), callback, cancellationToken)->Then([=](ChangeSetsResultCR changesetsResult) {
-            if (!changesetsResult.IsSuccess())
-                {
-                finalResult->SetError(changesetsResult.GetError());
-                return;
-                }
-
-            finalResult->SetSuccess(changesetsResult.GetValue());
-            });
-        })->Then<ChangeSetsResult>([=]
-            {
-            return *finalResult;
-            });
+    return QueryAndDownloadChangeSetsByChunks(changeSetQuery, callback, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1545,7 +1662,7 @@ ICancellationTokenPtr             cancellationToken
         return CreateCompletedAsyncTask<ChangeSetResult>(ChangeSetResult::Success(changeSetPtr));
 
     ObjectId fileObject(ServerSchema::Schema::iModel, ServerSchema::Class::ChangeSet, changeSet->GetId());
-    return DownloadFile(changeSetFileName, fileObject, changeSet->GetFileAccessKey(), callback, cancellationToken)
+    return DownloadFileWithRetry(changeSetFileName, fileObject, changeSet->GetFileAccessKey(), callback, cancellationToken)
         ->Then<ChangeSetResult>([=](StatusResultCR downloadResult)
         {
         if (!downloadResult.IsSuccess())
@@ -1553,17 +1670,6 @@ ICancellationTokenPtr             cancellationToken
 
         return ChangeSetResult::Success(changeSetPtr);
         });
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas              02/2017
-//---------------------------------------------------------------------------------------
-ChangeSetsInfoTaskPtr iModelConnection::GetAllChangeSetsInternal(bool loadAccessKey, ICancellationTokenPtr cancellationToken) const
-    {
-    const Utf8String methodName = "iModelConnection::GetAllChangeSetsInternal";
-    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::ChangeSet);
-    return GetChangeSetsFromQueryByChunks(query, loadAccessKey, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1677,7 +1783,7 @@ PushChangeSetArgumentsPtr           pushArguments
     // Stage 1. Create changeSet.
     std::shared_ptr<Json::Value> pushJson = std::make_shared<Json::Value>(ChangeSetFormatter::Format(changeSet, dgndb.GetBriefcaseId(), pushArguments));
     std::shared_ptr<StatusResult> finalResult = std::make_shared<StatusResult>();
-    return ExecuteWithRetry<void>([=]()
+    return ExecuteWithRetry<void, Error>([=]()
         {
         return m_wsRepositoryClient->SendCreateObjectRequestWithOptions(*pushJson, BeFileName(), nullptr, requestOptions, pushArguments->GetCancelationToken())
             ->Then([=](const WSCreateObjectResult& initializePushResult)
@@ -2141,7 +2247,7 @@ StatusTaskPtr iModelConnection::LockiModel(ICancellationTokenPtr cancellationTok
     auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    return ExecuteWithRetry<void>([=]()
+    return ExecuteWithRetry<void, Error>([=]()
         {
         Json::Value iModelLockJson = Json::objectValue;
         iModelLockJson[ServerSchema::Instance] = Json::objectValue;
@@ -2174,7 +2280,7 @@ StatusTaskPtr iModelConnection::UnlockiModel(ICancellationTokenPtr cancellationT
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
 
-    return ExecuteWithRetry<void>([=]()
+    return ExecuteWithRetry<void, Error>([=]()
         {
         ObjectId id = ObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::iModelLock, ServerSchema::Class::iModelLock);
         return m_wsRepositoryClient->SendDeleteObjectRequestWithOptions(id, requestOptions, cancellationToken)
@@ -2203,7 +2309,7 @@ FileTaskPtr iModelConnection::UploadNewSeedFile(BeFileNameCR filePath, FileInfoC
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     std::shared_ptr<FileResult> finalResult = std::make_shared<FileResult>();
-    return ExecuteWithRetry<FileInfoPtr>([=]()
+    return ExecuteWithRetry<FileInfoPtr, Error>([=]()
         {
         return CreateNewServerFile(fileInfo, cancellationToken)->Then([=](FileResultCR fileCreationResult)
             {
@@ -2337,7 +2443,7 @@ StatusTaskPtr iModelConnection::DownloadSeedFile(BeFileName localFile, Utf8Strin
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
 
     ObjectId fileObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::File, fileId);
-    return DownloadFile(localFile, fileObjectId, nullptr, callback, cancellationToken);
+    return DownloadFileWithRetry(localFile, fileObjectId, nullptr, callback, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2961,7 +3067,7 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 BriefcaseInfoTaskPtr iModelConnection::AcquireNewBriefcase(ICancellationTokenPtr cancellationToken) const
     {
-    return ExecuteWithRetry<BriefcaseInfoPtr>([=]()
+    return ExecuteWithRetry<BriefcaseInfoPtr, Error>([=]()
         {
         return CreateBriefcaseInstance(cancellationToken)->Then<BriefcaseInfoResult>([=](const WSCreateObjectResult& result)
             {
@@ -2986,7 +3092,7 @@ ChangeSetsInfoTaskPtr iModelConnection::GetChangeSets(ChangeSetQuery query, ICan
     const Utf8String methodName = "iModelConnection::GetChangeSets";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     
-    return GetChangeSetsFromQueryByChunks(query.GetWSQuery(), false, cancellationToken);
+    return GetChangeSetsFromQueryByChunks(query, false, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2996,7 +3102,9 @@ ChangeSetsInfoTaskPtr iModelConnection::GetAllChangeSets(ICancellationTokenPtr c
     {
     const Utf8String methodName = "iModelConnection::GetAllChangeSets";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    return GetAllChangeSetsInternal(false, cancellationToken);
+
+    ChangeSetQuery allChangeSetsQuery;
+    return GetChangeSetsFromQueryByChunks(allChangeSetsQuery, false, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3037,24 +3145,9 @@ BeGuidCR              fileId,
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    return GetChangeSetsAfterIdInternal(changeSetId, fileId, false, cancellationToken);
-    }
-
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Viktorija.Adomauskaite           08/2017
-//---------------------------------------------------------------------------------------
-ChangeSetQuery iModelConnection::CreateBetweenChangeSetsQuery
-(
-Utf8StringCR firstchangeSetId,
-Utf8StringCR secondChangeSetId,
-BeSQLite::BeGuidCR fileId
-) const
-    {
-    ChangeSetQuery changeSetQuery;
-    changeSetQuery.FilterChangeSetsBetween(firstchangeSetId, secondChangeSetId);
-
-    return changeSetQuery;
+    ChangeSetQuery changeSetAfterIdQuery;
+    changeSetAfterIdQuery.FilterChangeSetsAfterId(changeSetId);
+    return GetChangeSetsFromQueryByChunks(changeSetAfterIdQuery, false, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3069,8 +3162,9 @@ ChangeSetsInfoTaskPtr iModelConnection::GetChangeSetsBetween(Utf8StringCR firstC
     if (Utf8String::IsNullOrEmpty(firstChangeSetId.c_str()) && Utf8String::IsNullOrEmpty(secondChangeSetId.c_str()))
         return CreateCompletedAsyncTask(ChangeSetsInfoResult::Error(Error::Id::InvalidChangeSet));
 
-    ChangeSetQuery changeSetQuery = CreateBetweenChangeSetsQuery(firstChangeSetId, secondChangeSetId, fileId);
-    return GetChangeSetsFromQueryByChunks(changeSetQuery.GetWSQuery(), false, cancellationToken);
+    ChangeSetQuery changeSetQuery;
+    changeSetQuery.FilterChangeSetsBetween(firstChangeSetId, secondChangeSetId);
+    return GetChangeSetsFromQueryByChunks(changeSetQuery, false, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3085,7 +3179,7 @@ ChangeSetsTaskPtr iModelConnection::DownloadChangeSets(const bvector<Utf8String>
         queryIds.push_back(ObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::ChangeSet, changeSetId));
         }
 
-    return DownloadChangeSets(queryIds, callback, cancellationToken);
+    return DownloadChangeSetsById(queryIds, callback, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3100,7 +3194,7 @@ ChangeSetsTaskPtr iModelConnection::DownloadChangeSets(const bvector<ChangeSetIn
         queryIds.push_back(ObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::ChangeSet, changeSet->GetId()));
         }
 
-    return DownloadChangeSets(queryIds, callback, cancellationToken);
+    return DownloadChangeSetsById(queryIds, callback, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3117,35 +3211,21 @@ ICancellationTokenPtr               cancellationToken
     const Utf8String methodName = "iModelConnection::DownloadChangeSetsAfterId";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    std::shared_ptr<ChangeSetsResult> finalResult = std::make_shared<ChangeSetsResult>();
-    return GetChangeSetsAfterIdInternal(changeSetId, fileId, true, cancellationToken)->Then([=](ChangeSetsInfoResultCR changeSetsResult)
+
+    ChangeSetQuery changeSetQuery;
+    changeSetQuery.FilterChangeSetsAfterId(changeSetId);
+    return QueryAndDownloadChangeSetsByChunks(changeSetQuery, callback, cancellationToken)->Then<ChangeSetsResult>([=](ChangeSetsResultCR changeSetsResult)
         {
-        if (changeSetsResult.IsSuccess())
+        if (!changeSetsResult.IsSuccess())
             {
-            DownloadChangeSetsInternal(changeSetsResult.GetValue(), callback, cancellationToken)->Then([=](ChangeSetsResultCR downloadResult)
-                {
-                if (downloadResult.IsSuccess())
-                    {
-                    double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-                    LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
-                    finalResult->SetSuccess(downloadResult.GetValue());
-                    }
-                else
-                    {
-                    LogHelper::Log(SEVERITY::LOG_WARNING, methodName, downloadResult.GetError().GetMessage().c_str());
-                    finalResult->SetError(downloadResult.GetError());
-                    }
-                });
+            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, changeSetsResult.GetError().GetMessage().c_str());
+            return changeSetsResult;
             }
-        else
-            {
-            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, changeSetsResult.GetError().GetMessage().c_str());
-            finalResult->SetError(changeSetsResult.GetError());
-            }
-        })->Then<ChangeSetsResult>([=]()
-            {
-            return *finalResult;
-            });
+
+        double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+        LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
+        return changeSetsResult;
+        });
     }
 
 //---------------------------------------------------------------------------------------
@@ -3157,7 +3237,7 @@ StatusTaskPtr iModelConnection::VerifyConnection(ICancellationTokenPtr cancellat
     auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
 
-    return ExecuteWithRetry<void>([=]()
+    return ExecuteWithRetry<void, Error>([=]()
         {
         return m_wsRepositoryClient->VerifyAccessWithOptions(requestOptions, cancellationToken)->Then<StatusResult>([=](const AsyncResult<void, WSError>& result)
             {

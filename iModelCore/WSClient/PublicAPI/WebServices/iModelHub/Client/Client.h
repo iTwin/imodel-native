@@ -77,6 +77,7 @@ private:
     IWSRepositoryClientPtr CreateContextConnection(Utf8StringCR contextId) const;
 
     BeFileNameTaskPtr DownloadStandaloneBriefcaseInternal(iModelConnectionPtr connection, iModelInfoCR iModelInfo, FileInfoCR fileInfo, 
+                                                          ChangeSetQuery changeSetsQuery,
                                                           bvector<ChangeSetInfoPtr> changeSetsToMerge, 
                                                           LocalBriefcaseFileNameCallback const & fileNameCallBack, 
                                                           Http::Request::ProgressCallback callback, ICancellationTokenPtr cancellationToken) const;

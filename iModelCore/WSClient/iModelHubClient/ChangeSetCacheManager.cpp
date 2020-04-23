@@ -96,7 +96,7 @@ BeFileName ChangeSetCacheManager::BuildChangeSetPredownloadPathname(Utf8String c
     BentleyStatus status = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectory(tempPathname, L"DgnDbRev\\PreDownload");
     BeAssert(SUCCESS == status && "Cannot get pre-download directory");
     tempPathname.AppendToPath(WString(changeSetId.c_str(), true).c_str());
-    tempPathname.AppendExtension(L"rev");
+    tempPathname.AppendExtension(L"cs");
     return tempPathname;
     }
 
@@ -153,7 +153,7 @@ bvector<BeFileName> ChangeSetCacheManager::GetOrderedCacheFiles(BeFileName direc
 void ChangeSetCacheManager::CheckCacheSize(BeFileName changeSetFileName) const
     {
     auto directoryName = changeSetFileName.GetDirectoryName();
-    directoryName.AppendToPath(L"*.rev");
+    directoryName.AppendToPath(L"*.cs");
 
     uint64_t cacheSize = GetCacheSize(directoryName);
     int maxCacheSize = m_preDownloadCacheSize;
@@ -237,7 +237,7 @@ ICancellationTokenPtr             cancellationToken
         auto changeSetPtr = changeSetResult.GetValue();
         ObjectId fileObject(ServerSchema::Schema::iModel, ServerSchema::Class::ChangeSet, changeSetId);
         imodelConnectionP->DownloadFileInternal(changeSetPreDownloadPath, fileObject, changeSetPtr->GetFileAccessKey(), callback, cancellationToken)
-            ->Then([=](StatusResultCR downloadResult)
+            ->Then([=](const AzureResult& downloadResult)
             {
             if (!downloadResult.IsSuccess())
                 {

@@ -337,6 +337,7 @@
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\ChangeSetArguments.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\OidcToken.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\OidcTokenProvider.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\ResultRange.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\CommonDefinition.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\EventsCommon\BaseEventManager.h" />
     <ClInclude Include="iModelHubClient\Events\EventManager.h" />

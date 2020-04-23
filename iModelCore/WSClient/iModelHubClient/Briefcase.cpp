@@ -709,35 +709,28 @@ ICancellationTokenPtr cancellationToken
         return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(Error::Id::FileNotFound));
         }
 
-    auto versionManager = m_imodelConnection->GetVersionsManager();
+    ChangeSetQuery changeSetsBetweenQuery;
+    changeSetsBetweenQuery.FilterChangeSetsBetweenVersionAndChangeSet(versionId, GetLastChangeSetPulled());
 
-    ChangeSetsInfoResultPtr changeSetResult = ExecuteAsync(versionManager.GetChangeSetsBetweenVersionAndChangeSet(versionId, GetLastChangeSetPulled(), m_db->GetDbGuid(), cancellationToken));
+    return m_imodelConnection->QueryAndDownloadChangeSetsByChunks(changeSetsBetweenQuery, callback, cancellationToken)->Then<StatusResult>([=](ChangeSetsResultCR changeSetsResult) {
+        if (!changeSetsResult.IsSuccess())
+            {
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, changeSetsResult.GetError().GetMessage().c_str());
+            return StatusResult::Error(changeSetsResult.GetError());
+            }
 
-    if (!changeSetResult->IsSuccess())
-        {
-        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, changeSetResult->GetError().GetMessage().c_str());
-        return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(changeSetResult->GetError()));
-        }
-    auto changeSetInfos = changeSetResult->GetValue();
+        auto changeSets = changeSetsResult.GetValue();
+        RevisionStatus mergeStatus = AddRemoveChangeSetsFromDgnDb(changeSets, cancellationToken);
 
-    auto changeSetsResult = m_imodelConnection->DownloadChangeSetsInternal(changeSetInfos, callback, cancellationToken)->GetResult();
-    if (!changeSetsResult.IsSuccess())
-        {
-        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, changeSetsResult.GetError().GetMessage().c_str());
-        return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(changeSetsResult.GetError()));
-        }
-    auto changeSets = changeSetsResult.GetValue();
+        if (RevisionStatus::Success == mergeStatus)
+            {
+            LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Success.");
+            return StatusResult::Success();
+            }
 
-    RevisionStatus mergeStatus = AddRemoveChangeSetsFromDgnDb(changeSets);
-
-    if (RevisionStatus::Success == mergeStatus)
-        {
-        LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Success.");
-        return CreateCompletedAsyncTask<StatusResult>(StatusResult::Success());
-        }
-
-    LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Merge failed.");
-    return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(mergeStatus));
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Merge failed.");
+        return StatusResult::Error(mergeStatus);
+        });
     }
 
 //---------------------------------------------------------------------------------------
@@ -759,35 +752,28 @@ ICancellationTokenPtr cancellationToken
         return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(Error::Id::FileNotFound));
         }
 
-    ChangeSetsInfoResultPtr changeSetResult;
-    changeSetResult = ExecuteAsync(m_imodelConnection->GetChangeSetsBetween(changeSetId, GetLastChangeSetPulled(), m_db->GetDbGuid(), 
-                                                                            cancellationToken));
+    ChangeSetQuery changeSetQuery;
+    changeSetQuery.FilterChangeSetsBetween(changeSetId, GetLastChangeSetPulled());
+    
+    return m_imodelConnection->QueryAndDownloadChangeSetsByChunks(changeSetQuery, callback, cancellationToken)->Then<StatusResult>([=](ChangeSetsResultCR changeSetsResult) {
+        if (!changeSetsResult.IsSuccess())
+            {
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, changeSetsResult.GetError().GetMessage().c_str());
+            return StatusResult::Error(changeSetsResult.GetError());
+            }
 
-    if (!changeSetResult->IsSuccess())
-        {
-        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, changeSetResult->GetError().GetMessage().c_str());
-        return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(changeSetResult->GetError()));
-        }
-    auto changeSetInfos = changeSetResult->GetValue();
+        auto changeSets = changeSetsResult.GetValue();
+        RevisionStatus mergeStatus = AddRemoveChangeSetsFromDgnDb(changeSets, cancellationToken);
 
-    auto changeSetsResult = m_imodelConnection->DownloadChangeSetsInternal(changeSetInfos, callback, cancellationToken)->GetResult();
-    if (!changeSetsResult.IsSuccess())
-        {
-        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, changeSetsResult.GetError().GetMessage().c_str());
-        return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(changeSetsResult.GetError()));
-        }
-    auto changeSets = changeSetsResult.GetValue();
+        if (RevisionStatus::Success == mergeStatus)
+            {
+            LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Success.");
+            return StatusResult::Success();
+            }
 
-    RevisionStatus mergeStatus = AddRemoveChangeSetsFromDgnDb(changeSets, cancellationToken);
-
-    if (RevisionStatus::Success == mergeStatus)
-        {
-        LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Success.");
-        return CreateCompletedAsyncTask<StatusResult>(StatusResult::Success());
-        }
-
-    LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Merge failed.");
-    return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(mergeStatus));
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Merge failed.");
+        return StatusResult::Error(mergeStatus);
+        });
     }
 
 //---------------------------------------------------------------------------------------

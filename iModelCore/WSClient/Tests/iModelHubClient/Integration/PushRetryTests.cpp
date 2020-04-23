@@ -271,8 +271,30 @@ TEST_F(PushRetryTests, DownloadedChangeSetInvalid)
 
     std::shared_ptr<MockHttpHandler> mockHandler = std::make_shared<MockHttpHandler>();
     mockHandler->
-        ExpectRequests(1)
+        ExpectRequests(2)
         .ForRequest(1, [=](Http::RequestCR request)
+            {
+            // Query changeSet instances
+            return StubHttpResponse(HttpStatus::OK, "{\"instances\":"
+                "[{\"instanceId\":\"00000000-0000-0000-0000-0000000000000000\","
+                "\"schemaName\":\"iModelScope\","
+                "\"className\":\"ChangeSet\","
+                "\"properties\":{"
+                    "\"FileName\":\"00000000-0000-0000-0000-000000000000.rev\","
+                    "\"Description\":\"\","
+                    "\"URL\":null,"
+                    "\"FileSize\":\"0\","
+                    "\"Index\":1,"
+                    "\"Id\":\"00000000-0000-0000-0000-0000000000000000\","
+                    "\"ParentId\":\"\","
+                    "\"MasterFileId\":\"GUID-0\","
+                    "\"BriefcaseId\":2,"
+                    "\"UserCreated\":\"test\","
+                    "\"PushDate\":\"2016-09-28T05:43:55.2\","
+                    "\"ContainingChanges\":0,"
+                    "\"IsUploaded\":true"
+                "}}]}");
+            }).ForRequest(2, [=](Http::RequestCR request)
             {
             // Query changeSet instances
             return StubHttpResponse(HttpStatus::OK, "{\"instances\":"

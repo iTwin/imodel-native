@@ -39,7 +39,7 @@ ICancellationTokenPtr cancellationToken
     ObjectId userInfoObject(ServerSchema::Schema::iModel, ServerSchema::Class::UserInfo, userId);
     WSQuery query(userInfoObject);
 
-    return ExecuteWithRetry<UserInfoPtr>([=]()
+    return ExecuteWithRetry<UserInfoPtr, Error>([=]()
         {
         //Execute query
         return m_repositoryClient->SendQueryRequestWithOptions(query, "", "", requestOptions, cancellationToken)->Then<UserInfoResult>
@@ -87,7 +87,7 @@ ICancellationTokenPtr cancellationToken
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
     WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::UserInfo);
 
-    return ExecuteWithRetry<bvector<UserInfoPtr> >([=]()
+    return ExecuteWithRetry<bvector<UserInfoPtr>, Error>([=]()
         {
         //Execute query
         return m_repositoryClient->SendQueryRequestWithOptions(query, "", "", requestOptions, cancellationToken)
@@ -147,7 +147,7 @@ ICancellationTokenPtr cancellationToken
         WSQuery query = WSQuery(ServerSchema::Schema::iModel, ServerSchema::Class::UserInfo);
         query.AddFilterIdsIn(locallyUnavailableUserObjects);
 
-        UsersInfoResultPtr queryUsersResult = ExecuteAsync(ExecuteWithRetry<bvector<UserInfoPtr> > ([=] ()
+        UsersInfoResultPtr queryUsersResult = ExecuteAsync(ExecuteWithRetry<bvector<UserInfoPtr>, Error> ([=] ()
             {
             //Execute query
             return m_repositoryClient->SendQueryRequestWithOptions(query, "", "", requestOptions, cancellationToken)->Then<UsersInfoResult>

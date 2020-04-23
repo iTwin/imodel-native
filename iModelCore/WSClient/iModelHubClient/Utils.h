@@ -255,18 +255,24 @@ void FillArrayPropertyJson(JsonValueR propertiesJson, Utf8CP propertyName, bvect
 
 bool IsErrorForRetry(Error::Id errorId);
 
-template <typename T>
-static TaskPtr<T> ExecuteWithRetry(const std::function<TaskPtr<T>()> taskCallback)
+template <class T, class T2>
+using ExecuteResult = AsyncResult<T, T2>;
+template <class T, class T2>
+using ExecuteTaskPtr = AsyncTaskPtr<ExecuteResult<T, T2>>;
+
+template <typename T, class T2>
+static ExecuteTaskPtr<T,T2> ExecuteWithRetry(const std::function<ExecuteTaskPtr<T,T2>()> taskCallback)
     {
-    std::shared_ptr<Result<T>> finalResult = std::make_shared<Result<T>>();
-    return taskCallback()->Then([=](Result<T>const& res)
+    std::shared_ptr<ExecuteResult<T,T2>> finalResult = std::make_shared<ExecuteResult<T,T2>>();
+    return taskCallback()->Then([=](ExecuteResult<T,T2>const& res)
         {
         *finalResult = res;
         if (!res.IsSuccess())
             {
-            if (IsErrorForRetry(res.GetError().GetId()))
+            auto error = Error(res.GetError());
+            if (IsErrorForRetry(error.GetId()))
                 {
-                taskCallback()->Then([=](Result<T>const& res)
+                taskCallback()->Then([=](ExecuteResult<T,T2>const& res)
                     {
                     *finalResult = res;
                     });
@@ -274,7 +280,7 @@ static TaskPtr<T> ExecuteWithRetry(const std::function<TaskPtr<T>()> taskCallbac
             }
 
         return ;
-        })->template Then<Result<T>>([=]()
+        })->template Then<ExecuteResult<T,T2>>([=]()
             {
             return *finalResult;
             });

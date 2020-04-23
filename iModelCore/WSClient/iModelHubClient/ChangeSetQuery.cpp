@@ -23,23 +23,18 @@ bool ChangeSetQuery::FilterChangeSetsBetween(Utf8StringCR firstChangeSetId, Utf8
     if (Utf8String::IsNullOrEmpty(firstChangeSetId.c_str()) && Utf8String::IsNullOrEmpty(secondChangeSetId.c_str()))
         return false;
 
-    Utf8String queryFilter;
-    Utf8StringCR existingFilter = m_wsQuery.GetFilter();
-
-    if (!existingFilter.empty())
-        queryFilter.Sprintf("%s+and+", existingFilter.c_str());
+    Utf8String queryFilter(m_wsQuery.GetFilter());
 
     if (Utf8String::IsNullOrEmpty(firstChangeSetId.c_str()) || Utf8String::IsNullOrEmpty(secondChangeSetId.c_str()))
         {
         Utf8String notNullChangeSetId = Utf8String::IsNullOrEmpty(firstChangeSetId.c_str()) ? secondChangeSetId : firstChangeSetId;
-        queryFilter.Sprintf("%s%s-backward-%s.%s+eq+'%s'", queryFilter.c_str(),
-            ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id,
-            notNullChangeSetId.c_str());
+        AppendFilter(queryFilter, "%s-backward-%s.%s+eq+'%s'", ServerSchema::Relationship::CumulativeChangeSet,
+            ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, notNullChangeSetId.c_str());
         }
     else
         {
-        queryFilter.Sprintf
-        ("%s((%s-backward-%s.%s+eq+'%s'+and+%s-backward-%s.%s+eq+'%s')+or+(%s-backward-%s.%s+eq+'%s'+and+%s-backward-%s.%s+eq+'%s'))", queryFilter.c_str(),
+        AppendFilter(queryFilter,
+            "((%s-backward-%s.%s+eq+'%s'+and+%s-backward-%s.%s+eq+'%s')+or+(%s-backward-%s.%s+eq+'%s'+and+%s-backward-%s.%s+eq+'%s'))",
             ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, firstChangeSetId.c_str(),
             ServerSchema::Relationship::FollowingChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, secondChangeSetId.c_str(),
             ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, secondChangeSetId.c_str(),
@@ -51,21 +46,107 @@ bool ChangeSetQuery::FilterChangeSetsBetween(Utf8StringCR firstChangeSetId, Utf8
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             10/2019
+//@bsimethod                                     Algirdas.Mikoliunas             04/2020
 //---------------------------------------------------------------------------------------
 bool ChangeSetQuery::FilterChangeSetsAfterId(Utf8StringCR changeSetId)
     {
     if (Utf8String::IsNullOrEmpty(changeSetId.c_str()))
         return false;
 
-    Utf8String queryFilter;
-    Utf8StringCR existingFilter = m_wsQuery.GetFilter();
-
-    if (!existingFilter.empty())
-        queryFilter.Sprintf("%s+and+", existingFilter.c_str());
-
-    queryFilter.Sprintf("%s%s-backward-%s.%s+eq+'%s'", queryFilter.c_str(), ServerSchema::Relationship::FollowingChangeSet, ServerSchema::Class::ChangeSet,
+    Utf8String queryFilter(m_wsQuery.GetFilter());
+    AppendFilter(queryFilter, "%s-backward-%s.%s+eq+'%s'", ServerSchema::Relationship::FollowingChangeSet, ServerSchema::Class::ChangeSet,
         ServerSchema::Property::Id, changeSetId.c_str());
+
+    m_wsQuery.SetFilter(queryFilter);
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             04/2020
+//---------------------------------------------------------------------------------------
+bool ChangeSetQuery::FilterChangeSetsAfterVersion(Utf8StringCR versionId)
+    {
+    if (Utf8String::IsNullOrEmpty(versionId.c_str()))
+        return false;
+
+    Utf8String queryFilter(m_wsQuery.GetFilter());
+    AppendFilter(queryFilter, "%s-backward-%s.%s+eq+'%s'", ServerSchema::Relationship::FollowingChangeSet, ServerSchema::Class::Version,
+        ServerSchema::Property::Id, versionId.c_str());
+
+    m_wsQuery.SetFilter(queryFilter);
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             04/2020
+//---------------------------------------------------------------------------------------
+bool ChangeSetQuery::FilterChangeSetsBetweenVersionAndChangeSet(Utf8StringCR versionId, Utf8StringCR changeSetId)
+    {
+    Utf8String queryFilter(m_wsQuery.GetFilter());
+
+    if (Utf8String::IsNullOrEmpty(changeSetId.c_str()))
+        {
+        AppendFilter(queryFilter, "%s-backward-%s.%s+eq+'%s'", ServerSchema::Relationship::CumulativeChangeSet, 
+            ServerSchema::Class::Version, ServerSchema::Property::Id, versionId.c_str());
+        }
+    else
+        {
+        AppendFilter(queryFilter, 
+            "(%s-backward-%s.%s+eq+'%s'+and+%s-backward-%s.%s+eq+'%s')+or+(%s-backward-%s.%s+eq+'%s'+and+%s-backward-%s.%s+eq+'%s')",
+            ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::Version, ServerSchema::Property::Id, versionId.c_str(),
+            ServerSchema::Relationship::FollowingChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, changeSetId.c_str(),
+            ServerSchema::Relationship::FollowingChangeSet, ServerSchema::Class::Version, ServerSchema::Property::Id, versionId.c_str(),
+            ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, changeSetId.c_str());
+        }
+
+    m_wsQuery.SetFilter(queryFilter);
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             04/2020
+//--------------------------------------------------------------------------------------
+bool ChangeSetQuery::FilterCumulativeChangeSetsByChangeSetId(Utf8StringCR changeSetId)
+    {
+    if (Utf8String::IsNullOrEmpty(changeSetId.c_str()))
+        return false;
+
+    Utf8String queryFilter(m_wsQuery.GetFilter());
+    AppendFilter(queryFilter, "%s-backward-%s.%s+eq+'%s'", ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::ChangeSet,
+        ServerSchema::Property::Id, changeSetId.c_str());
+
+    m_wsQuery.SetFilter(queryFilter);
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             04/2020
+//--------------------------------------------------------------------------------------
+bool ChangeSetQuery::FilterCumulativeChangeSetsByVersionId(Utf8StringCR versionId)
+    {
+    if (Utf8String::IsNullOrEmpty(versionId.c_str()))
+        return false;
+
+    Utf8String queryFilter(m_wsQuery.GetFilter());
+    AppendFilter(queryFilter, "%s-backward-%s.%s+eq+'%s'", ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::Version,
+        ServerSchema::Property::Id, versionId.c_str());
+
+    m_wsQuery.SetFilter(queryFilter);
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             04/2020
+//--------------------------------------------------------------------------------------
+bool ChangeSetQuery::FilterChangeSetsBetweenVersions(Utf8StringCR firstVersionId, Utf8StringCR secondVersionId)
+    {
+    Utf8String queryFilter(m_wsQuery.GetFilter());
+    AppendFilter(queryFilter, 
+        "(%s-backward-%s.%s+eq+'%s'+and+%s-backward-%s.%s+eq+'%s')+or+(%s-backward-%s.%s+eq+'%s'+and+%s-backward-%s.%s+eq+'%s')",
+        ServerSchema::Relationship::FollowingChangeSet, ServerSchema::Class::Version, ServerSchema::Property::Id, firstVersionId.c_str(),
+        ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::Version, ServerSchema::Property::Id, secondVersionId.c_str(),
+        ServerSchema::Relationship::FollowingChangeSet, ServerSchema::Class::Version, ServerSchema::Property::Id, secondVersionId.c_str(),
+        ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::Version, ServerSchema::Property::Id, firstVersionId.c_str());
 
     m_wsQuery.SetFilter(queryFilter);
     return true;
@@ -79,13 +160,8 @@ bool ChangeSetQuery::FilterById(Utf8StringCR changeSetId)
     if (Utf8String::IsNullOrEmpty(changeSetId.c_str()))
         return false;
 
-    Utf8String queryFilter;
-    Utf8StringCR existingFilter = m_wsQuery.GetFilter();
-
-    if (!existingFilter.empty())
-        queryFilter.Sprintf("%s+and+", existingFilter.c_str());
-
-    queryFilter.Sprintf("%s$id+in+['%s']", queryFilter.c_str(), changeSetId.c_str());
+    Utf8String queryFilter(m_wsQuery.GetFilter());
+    AppendFilter(queryFilter, "$id+in+['%s']", changeSetId.c_str());
 
     m_wsQuery.SetFilter(queryFilter);
     return true;
@@ -113,6 +189,20 @@ void ChangeSetQuery::SelectBridgeProperties()
     Utf8StringCR existingSelect = m_wsQuery.GetSelect();
     select.Sprintf("%s,%s-%s-%s.*", existingSelect.c_str(), ServerSchema::Relationship::HasBridgeProperties, ServerSchema::RelationshipDirection::Forward, ServerSchema::Class::BridgeProperties);
     m_wsQuery.SetSelect(select);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             04/2020
+//---------------------------------------------------------------------------------------
+void ChangeSetQuery::AppendFilter(Utf8StringR filterString, Utf8CP format, ...)
+    {
+    if (!filterString.empty())
+        filterString += "+and+";
+
+    va_list args;
+    va_start(args, format);
+    filterString += Utf8PrintfString::CreateFromVaList(format, args);
+    va_end(args);
     }
 
 //---------------------------------------------------------------------------------------

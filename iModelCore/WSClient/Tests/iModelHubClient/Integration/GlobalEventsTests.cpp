@@ -265,7 +265,16 @@ TEST_F(GlobalEventsTests, EventPeekAndDelete)
     iModelHubHelpers::DeleteiModelByName(s_client, GetTestiModelName());
 
     // First peek should have an event to return
-    auto peekedEventResult = m_eventManager->PeekEvent(m_subscriptionId, false)->GetResult();
+    GlobalEventResult peekedEventResult;
+    for(int i = 0; i < 5; i++)
+        {
+        peekedEventResult = m_eventManager->PeekEvent(m_subscriptionId, false)->GetResult();
+        if (peekedEventResult.IsSuccess())
+            break;
+
+        BeThreadUtilities::BeSleep(1000);
+        }
+
     ASSERT_SUCCESS(peekedEventResult);
     auto peekedEvent = peekedEventResult.GetValue();
     EXPECT_EQ(GlobalEvent::GlobalEventType::iModelCreatedEvent, peekedEvent->GetEventType());
@@ -302,7 +311,16 @@ TEST_F(GlobalEventsTests, DeleteNotPeekedEvent)
     iModelHubHelpers::DeleteiModelByName(s_client, GetTestiModelName());
 
     //Get event
-    auto eventResult = m_eventManager->GetEvent(m_subscriptionId, false)->GetResult();
+    GlobalEventResult eventResult;
+    for(int i = 0; i < 5; i++)
+        {
+        eventResult = m_eventManager->GetEvent(m_subscriptionId, false)->GetResult();
+        if (eventResult.IsSuccess())
+            break;
+
+        BeThreadUtilities::BeSleep(1000);
+        }
+
     ASSERT_SUCCESS(eventResult);
     auto gotEvent = eventResult.GetValue();
     EXPECT_EQ(GlobalEvent::GlobalEventType::iModelCreatedEvent, gotEvent->GetEventType());

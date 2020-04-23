@@ -18,6 +18,7 @@ iModelScope/Briefcase?$select=$id,FileAccessKey-forward-AccessKey.DownloadURL&$f
 iModelScope/ChangeSet
 iModelScope/ChangeSet?$orderby=Index&$top=*
 iModelScope/ChangeSet?$filter=$id+in+['*']
+iModelScope/ChangeSet?$filter=$id+in+['*']&$orderby=Index&$top=*
 iModelScope/ChangeSet?$filter=((CumulativeChangeSet-backward-ChangeSet.Id+eq+'*'+and+FollowingChangeSet-backward-ChangeSet.Id+eq+'*')+or+(CumulativeChangeSet-backward-ChangeSet.Id+eq+'*'+and+FollowingChangeSet-backward-ChangeSet.Id+eq+'*'))&$orderby=Index&$top=*
 iModelScope/ChangeSet?$filter=(CumulativeChangeSet-backward-Version.Id+eq+'********-****-****-****-************'+and+FollowingChangeSet-backward-ChangeSet.Id+eq+'*')+or+(FollowingChangeSet-backward-Version.Id+eq+'********-****-****-****-************'+and+CumulativeChangeSet-backward-ChangeSet.Id+eq+'*')&$orderby=Index&$top=*
 iModelScope/ChangeSet?$filter=(FollowingChangeSet-backward-Version.Id+eq+'********-****-****-****-************'+and+CumulativeChangeSet-backward-Version.Id+eq+'********-****-****-****-************')+or+(FollowingChangeSet-backward-Version.Id+eq+'********-****-****-****-************'+and+CumulativeChangeSet-backward-Version.Id+eq+'********-****-****-****-************')&$orderby=Index&$top=*
@@ -32,8 +33,18 @@ iModelScope/ChangeSet?$select=*,FileAccessKey-forward-AccessKey.DownloadURL&$fil
 iModelScope/ChangeSet?$select=*,FileAccessKey-forward-AccessKey.DownloadURL&$filter=FollowingChangeSet-backward-ChangeSet.Id+eq+'*'&$orderby=Index&$top=*
 iModelScope/ChangeSet?$select=*,FileAccessKey-forward-AccessKey.DownloadURL&$orderby=Index&$top=*
 iModelScope/ChangeSet?$select=*,FileAccessKey-forward-AccessKey.DownloadURL&$filter=((CumulativeChangeSet-backward-ChangeSet.Id+eq+'*'+and+FollowingChangeSet-backward-ChangeSet.Id+eq+'*')+or+(CumulativeChangeSet-backward-ChangeSet.Id+eq+'*'+and+FollowingChangeSet-backward-ChangeSet.Id+eq+'*'))&$orderby=Index&$top=*
+iModelScope/ChangeSet?$select=*,FileAccessKey-forward-AccessKey.DownloadURL&$filter=(CumulativeChangeSet-backward-Version.Id+eq+'********-****-****-****-************'+and+FollowingChangeSet-backward-ChangeSet.Id+eq+'*')+or+(FollowingChangeSet-backward-Version.Id+eq+'********-****-****-****-************'+and+CumulativeChangeSet-backward-ChangeSet.Id+eq+'*')&$orderby=Index&$top=*
 iModelScope/ChangeSet?$select=*,FileAccessKey-forward-AccessKey.DownloadURL&$filter=CumulativeChangeSet-backward-ChangeSet.Id+eq+'*'&$orderby=Index&$top=*
+iModelScope/ChangeSet?$select=*,FileAccessKey-forward-AccessKey.DownloadURL&$filter=CumulativeChangeSet-backward-Version.Id+eq+'********-****-****-****-************'&$orderby=Index&$top=*
 iModelScope/ChangeSet?$select=*,HasBridgeProperties-forward-BridgeProperties.*&$orderby=Index&$top=*
+iModelScope/ChangeSet?$select=FileSize&$filter=$id+in+['*']
+iModelScope/ChangeSet?$select=FileSize&$filter=$id+in+['*']&$orderby=Index&$top=*
+iModelScope/ChangeSet?$select=FileSize&$filter=FollowingChangeSet-backward-ChangeSet.Id+eq+'*'&$orderby=Index&$top=*
+iModelScope/ChangeSet?$select=FileSize&$orderby=Index&$top=*
+iModelScope/ChangeSet?$select=FileSize&$filter=((CumulativeChangeSet-backward-ChangeSet.Id+eq+'*'+and+FollowingChangeSet-backward-ChangeSet.Id+eq+'*')+or+(CumulativeChangeSet-backward-ChangeSet.Id+eq+'*'+and+FollowingChangeSet-backward-ChangeSet.Id+eq+'*'))&$orderby=Index&$top=*
+iModelScope/ChangeSet?$select=FileSize&$filter=(CumulativeChangeSet-backward-Version.Id+eq+'********-****-****-****-************'+and+FollowingChangeSet-backward-ChangeSet.Id+eq+'*')+or+(FollowingChangeSet-backward-Version.Id+eq+'********-****-****-****-************'+and+CumulativeChangeSet-backward-ChangeSet.Id+eq+'*')&$orderby=Index&$top=*
+iModelScope/ChangeSet?$select=FileSize&$filter=CumulativeChangeSet-backward-ChangeSet.Id+eq+'*'&$orderby=Index&$top=*
+iModelScope/ChangeSet?$select=FileSize&$filter=CumulativeChangeSet-backward-Version.Id+eq+'********-****-****-****-************'&$orderby=Index&$top=*
 iModelScope/Code/$query
 iModelScope/Code?$filter=$id+in+['*']&$top=*
 iModelScope/EventSAS

@@ -10,12 +10,15 @@
 #include <WebServices/Client/Response/WSObjectsReader.h>
 #include <WebServices/iModelHub/Client/BridgeProperties.h>
 #include <WebServices/iModelHub/Client/ChangeSetKind.h>
+#include <WebServices/iModelHub/Client/ResultRange.h>
 
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 typedef RefCountedPtr<struct ChangeSetInfo> ChangeSetInfoPtr;
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ChangeSetInfo);
 DEFINE_TASK_TYPEDEFS(ChangeSetInfoPtr, ChangeSetInfo);
 DEFINE_TASK_TYPEDEFS(bvector<ChangeSetInfoPtr>, ChangeSetsInfo);
+typedef ResultRange<bvector<ChangeSetInfoPtr>> ChangeSetsInfoRange;
+DEFINE_TASK_TYPEDEFS(ChangeSetsInfoRange, ChangeSetsInfoRange);
 typedef bvector<Dgn::DgnRevisionPtr> ChangeSets;
 DEFINE_TASK_TYPEDEFS(ChangeSets, ChangeSets);
 DEFINE_TASK_TYPEDEFS(Dgn::DgnRevisionPtr, ChangeSet);

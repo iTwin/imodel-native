@@ -5,13 +5,10 @@
 #pragma once
 #include <WebServices/iModelHub/Common.h>
 #include <BeHttp/HttpRequest.h>
-#include <WebServices/iModelHub/Client/iModelConnection.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
-
-typedef RefCountedPtr<struct MultiProgressCallbackHandler> MultiProgressCallbackHandlerPtr;
 
 //=======================================================================================
 //@bsiclass                                      Algirdas.Mikoliunas             09/2017
