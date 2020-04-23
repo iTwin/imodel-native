@@ -4,7 +4,7 @@
   "description": "TypeScript API of imodeljs-native",
   "private": true,
   "engines": {
-    "node": ">=10.11.0 <11.0"
+    "node": ">=10.11.0 <13.0"
   },
   "scripts": {
     "build": "tsc 1>&2",
@@ -19,24 +19,20 @@
     "NOTE: Tests may NOT depend on other iModel.js packages"
   ],
   "dependencies": {
-    "@bentley/bentleyjs-core": "1.10.0",
-    "@bentley/imodeljs-common": "1.10.0"
+    "@bentley/bentleyjs-core": "1.14.0",
+    "@bentley/imodeljs-common": "1.14.0"
   },
   "devDependencies": {
-    "@bentley/build-tools": "1.10.0",
+    "@bentley/build-tools": "1.14.0",
     "@types/node": "10.14.1",
     "@types/chai": "^4.1.4",
     "@types/mocha": "^5.2.5",
+    "cpx": "^1.5.0",
     "rimraf": "^2.6.2",
     "tslint": "^5.11.0",
     "tslint-etc": "^1.5.2",
-    "typescript": "~3.5.2",
-    "ts-node": "^7.0.1",
-    "nyc": "^14.0.0",
+    "typescript": "~3.7.4",
     "mocha": "^5.2.0",
     "chai": "^4.1.2"
-  },
-  "nyc": {
-    "nycrc-path": "./node_modules/@bentley/build-tools/.nycrc"
   }
 }
