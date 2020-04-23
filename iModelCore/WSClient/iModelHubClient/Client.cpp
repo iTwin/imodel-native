@@ -690,7 +690,7 @@ BriefcaseTaskPtr Client::OpenBriefcase(Dgn::DgnDbPtr db, bool doSync, Http::Requ
         }
     auto readResult = iModelInfo::ReadiModelInfo(*db);
     BeBriefcaseId briefcaseId = db->GetBriefcaseId();
-    if (!readResult.IsSuccess() || briefcaseId.IsSnapshot() || briefcaseId.IsStandAloneId())
+    if (!readResult.IsSuccess() || !briefcaseId.IsBriefcase())
         {
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File is not a briefcase.");
         return CreateCompletedAsyncTask<BriefcaseResult>(BriefcaseResult::Error(Error::Id::FileIsNotBriefcase));
@@ -777,7 +777,7 @@ StatusTaskPtr Client::RecoverBriefcase(Dgn::DgnDbPtr db, Http::Request::Progress
         }
     auto readResult = iModelInfo::ReadiModelInfo(*db);
     BeBriefcaseId briefcaseId = db->GetBriefcaseId();
-    if (!readResult.IsSuccess() || briefcaseId.IsSnapshot() || briefcaseId.IsStandAloneId())
+    if (!readResult.IsSuccess() || !briefcaseId.IsBriefcase())
         {
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File is not a briefcase.");
         return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(Error::Id::FileIsNotBriefcase));
@@ -1545,7 +1545,7 @@ ICancellationTokenPtr cancellationToken
         return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(SeedFileResult.GetError()));
         }
 
-    auto briefcaseId = BeBriefcaseId(BeBriefcaseId::StandAlone());
+    auto briefcaseId = BeBriefcaseId(BeBriefcaseId::Standalone());
     auto result = connection->WriteBriefcaseIdIntoFile(filePath, briefcaseId);
     if (!result.IsSuccess())
         {

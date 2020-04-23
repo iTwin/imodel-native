@@ -101,7 +101,6 @@ void HierarchiesComparer::CompareDataSources(NavNodesProviderCR lhsProvider, Nav
             ++newIndex;
             }
         }
-
     // handle removed nodes
     for (size_t i = oldIndex; i < oldDs->GetSize(); ++i)
         {
@@ -193,7 +192,6 @@ void HierarchiesComparer::Compare(IConnectionCacheCR connections, HierarchyLevel
     IConnectionPtr connection = connections.GetConnection(lhs.GetConnectionId().c_str());
     if (connection.IsNull())
         return;
-
     Compare(*connection, lhs, rhs);
     }
 

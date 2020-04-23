@@ -120,10 +120,11 @@ void VersionCompareTestFixture::SetUpTestCase()
 
     BeSQLite::DbResult result;
     CreateDgnDbParams createParams ("VersionCompareTest");
-    createParams.SetDbType(BeSQLite::Db::CreateParams::DbType::Standalone);
     m_db = DgnDb::CreateDgnDb(&result, dgndbPath, createParams);
     ASSERT_TRUE(m_db.IsValid());
     ASSERT_TRUE(result == BeSQLite::DbResult::BE_SQLITE_OK);
+
+    m_db->ResetBriefcaseId(BeBriefcaseId(2));
 
     // Import DgnPlatformTest schema containing the test element and such
     SchemaStatus schemaStatus = DgnPlatformTestDomain::GetDomain().ImportSchema(*m_db);
@@ -1032,7 +1033,7 @@ TEST_F(VersionCompareTestFixture, PropertyTest1)
     // Create the starting changeset containing an element
     TestElementPtr tempEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "PropertyTest1_Element1");
     TestElementPtr tempEl2 = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "PropertyTest1_Element2");
-    ASSERT_EQ(tempEl->SetPropertyValue(DPTEST_TEST_ELEMENT_IntegerProperty1, ECValue(0)), DgnDbStatus::Success); 
+    ASSERT_EQ(tempEl->SetPropertyValue(DPTEST_TEST_ELEMENT_IntegerProperty1, ECValue(0)), DgnDbStatus::Success);
     ASSERT_EQ(tempEl2->SetPropertyValue(DPTEST_TEST_ELEMENT_DoubleProperty1, ECValue(0.3)), DgnDbStatus::Success);
     m_db->Elements().Insert(*tempEl);
     m_db->Elements().Insert(*tempEl2);
@@ -1158,7 +1159,7 @@ void CreateSummaryAndCheckModels(DgnDbPtr db, bmap<DgnModelId,DbOpcode>& map, bv
     bvector<DbOpcode> opcodes;
     StatusInt status = SUCCESS;
     VersionCompareChangeSummaryPtr changeSummary = VersionCompareChangeSummary::Generate (*db, changesets, "Items", backwards);
-    
+
     status = changeSummary->GetChangedModels(modelIds, opcodes);
     EXPECT_EQ(SUCCESS, status);
 
@@ -1437,7 +1438,7 @@ TEST_F(VersionCompareTestFixture, ChangedElementsManagerTest_PassRulesetDirector
     SetUniqueAspectPropertyValue(*tempEl, *aspectClassUnique, "TestUniqueAspectProperty", "New Value for Property");
     tempEl->Update();
     elementMap[tempEl->GetElementId()] = ElementData(tempEl, DbOpcode::Update);
-    
+
     DgnRevisionPtr changeset1 = CreateRevision();
     DumpRevision(*changeset1, "ChangedElementsManagerTest_Aspects: Aspect modification");
     changesets.push_back(changeset1);

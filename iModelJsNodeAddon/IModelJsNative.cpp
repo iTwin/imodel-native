@@ -2006,8 +2006,7 @@ public:
     Napi::Value GetBriefcaseId(Napi::CallbackInfo const& info)
         {
         REQUIRE_DB_TO_BE_OPEN
-        auto bid = m_dgndb->GetBriefcaseId();
-        return Napi::Number::New(Env(), bid.GetValue());
+        return Napi::Number::New(Env(), m_dgndb->GetBriefcaseId().GetValue());
         }
 
     Napi::Value GetParentChangeSetId(Napi::CallbackInfo const& info)
@@ -2291,6 +2290,27 @@ public:
         return toJsString(Env(), thisFont.ToString());
         }
 
+    // query a value from the be_local table.
+    Napi::Value QueryLocalValue(Napi::CallbackInfo const& info) {
+        REQUIRE_ARGUMENT_STRING(0, name, Env().Undefined())
+        Utf8String val;
+        auto stat = GetDgnDb().QueryBriefcaseLocalValue(val, name.c_str());
+        return (stat != BE_SQLITE_ROW) ? Env().Undefined() : toJsString(Env(), val);
+    }
+
+    // save a value to the be_local table.
+    Napi::Value SaveLocalValue(Napi::CallbackInfo const& info) {
+        REQUIRE_ARGUMENT_STRING(0, name, Env().Undefined())
+        REQUIRE_ARGUMENT_STRING(1, val, Env().Undefined())
+        return Napi::Number::New(Env(), (int) GetDgnDb().SaveBriefcaseLocalValue(name.c_str(), val));
+    }
+
+    // delete a value from the be_local table.
+    Napi::Value DeleteLocalValue(Napi::CallbackInfo const& info) {
+        REQUIRE_ARGUMENT_STRING(0, name, Env().Undefined())
+        return Napi::Number::New(Env(), (int) GetDgnDb().DeleteBriefcaseLocalValue(name.c_str()));
+    }
+
     // query a property from the be_prop table.
     Napi::Value QueryFileProperty(Napi::CallbackInfo const& info)
         {
@@ -2474,6 +2494,7 @@ public:
             InstanceMethod("deleteElement", &NativeDgnDb::DeleteElement),
             InstanceMethod("deleteElementAspect", &NativeDgnDb::DeleteElementAspect),
             InstanceMethod("deleteLinkTableRelationship", &NativeDgnDb::DeleteLinkTableRelationship),
+            InstanceMethod("deleteLocalValue", &NativeDgnDb::DeleteLocalValue),
             InstanceMethod("deleteModel", &NativeDgnDb::DeleteModel),
             InstanceMethod("detachChangeCache", &NativeDgnDb::DetachChangeCache),
             InstanceMethod("dumpChangeSet", &NativeDgnDb::DumpChangeSet),
@@ -2540,6 +2561,7 @@ public:
             InstanceMethod("purgeTileTrees", &NativeDgnDb::PurgeTileTrees),
             InstanceMethod("queryFileProperty", &NativeDgnDb::QueryFileProperty),
             InstanceMethod("queryFirstTxnId", &NativeDgnDb::QueryFirstTxnId),
+            InstanceMethod("queryLocalValue", &NativeDgnDb::QueryLocalValue),
             InstanceMethod("queryModelExtents", &NativeDgnDb::QueryModelExtents),
             InstanceMethod("queryNextAvailableFileProperty", &NativeDgnDb::QueryNextAvailableFileProperty),
             InstanceMethod("queryNextTxnId", &NativeDgnDb::QueryNextTxnId),
@@ -2554,6 +2576,7 @@ public:
             InstanceMethod("reverseTxns", &NativeDgnDb::ReverseTxns),
             InstanceMethod("saveChanges", &NativeDgnDb::SaveChanges),
             InstanceMethod("saveFileProperty", &NativeDgnDb::SaveFileProperty),
+            InstanceMethod("saveLocalValue", &NativeDgnDb::SaveLocalValue),
             InstanceMethod("saveProjectGuid", &NativeDgnDb::SaveProjectGuid),
             InstanceMethod("setBriefcaseManagerOptimisticConcurrencyControlPolicy", &NativeDgnDb::SetBriefcaseManagerOptimisticConcurrencyControlPolicy),
             InstanceMethod("setBriefcaseManagerPessimisticConcurrencyControlPolicy", &NativeDgnDb::SetBriefcaseManagerPessimisticConcurrencyControlPolicy),
@@ -2566,6 +2589,7 @@ public:
             InstanceMethod("updateLinkTableRelationship", &NativeDgnDb::UpdateLinkTableRelationship),
             InstanceMethod("updateModel", &NativeDgnDb::UpdateModel),
             InstanceMethod("updateProjectExtents", &NativeDgnDb::UpdateProjectExtents),
+
             StaticMethod("getAssetsDir", &NativeDgnDb::GetAssetDir),
             StaticMethod("enableSharedCache", &NativeDgnDb::EnableSharedCache),
             StaticMethod("encryptDb", &NativeDgnDb::EncryptDb),
@@ -2666,7 +2690,7 @@ struct NativeRevisionUtility : BeObjectWrap<NativeRevisionUtility>
         uint32_t compressSize, uncompressSize, prefixSize;
         if (SUCCESS != RevisionUtility::GetUncompressSize(changesetFile.c_str(), compressSize, uncompressSize, prefixSize))
             Napi::Error::New(info.Env(), "Failed to get uncompress size").ThrowAsJavaScriptException();
-        
+
         auto out = Json::Value(Json::ValueType::objectValue);
         out["compressSize"] = compressSize;
         out["uncompressSize"] = uncompressSize;
@@ -5551,7 +5575,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             }
     public:
         ResponseSender(Napi::Function& callback, bool serializeResultToString = true)
-            : Napi::AsyncWorker(callback), m_requestContext(JsInterop::GetCurrentClientRequestContextForMainThread()), m_hasResult(false), 
+            : Napi::AsyncWorker(callback), m_requestContext(JsInterop::GetCurrentClientRequestContextForMainThread()), m_hasResult(false),
             m_startTime(BeTimeUtilities::GetCurrentTimeAsUnixMillis()), m_serializeResult(serializeResultToString)
             {}
         void SetResult(ECPresentationResult result)
@@ -6045,13 +6069,14 @@ public:
             InstanceMethod("addClass", &NativeImportContext::AddClass),
             InstanceMethod("addCodeSpecId", &NativeImportContext::AddCodeSpecId),
             InstanceMethod("addElementId", &NativeImportContext::AddElementId),
+            InstanceMethod("cloneElement", &NativeImportContext::CloneElement),
             InstanceMethod("dispose", &NativeImportContext::Dispose),
+            InstanceMethod("dump", &NativeImportContext::Dump),
             InstanceMethod("findCodeSpecId", &NativeImportContext::FindCodeSpecId),
             InstanceMethod("findElementId", &NativeImportContext::FindElementId),
             InstanceMethod("importCodeSpec", &NativeImportContext::ImportCodeSpec),
-            InstanceMethod("cloneElement", &NativeImportContext::CloneElement),
             InstanceMethod("importFont", &NativeImportContext::ImportFont),
-            InstanceMethod("dump", &NativeImportContext::Dump),
+            InstanceMethod("removeElementId", &NativeImportContext::RemoveElementId),
         });
         exports.Set("ImportContext", t);
         SET_CONSTRUCTOR(t);
@@ -6136,6 +6161,16 @@ public:
         REQUIRE_ARGUMENT_STRING_ID(0, sourceIdStr, DgnElementId, sourceId, Napi::Number::New(Env(), (int) BentleyStatus::ERROR));
         REQUIRE_ARGUMENT_STRING_ID(1, targetIdStr, DgnElementId, targetId, Napi::Number::New(Env(), (int) BentleyStatus::ERROR));
         m_importContext->AddElementId(sourceId, targetId);
+        return Napi::Number::New(Env(), (int) BentleyStatus::SUCCESS);
+        }
+
+    Napi::Value RemoveElementId(Napi::CallbackInfo const& info)
+        {
+        if (nullptr == m_importContext)
+            THROW_TYPE_EXCEPTION_AND_RETURN("Invalid NativeImportContext", Env().Undefined());
+
+        REQUIRE_ARGUMENT_STRING_ID(0, sourceIdStr, DgnElementId, sourceId, Napi::Number::New(Env(), (int) BentleyStatus::ERROR));
+        m_importContext->AddElementId(sourceId, DgnElementId());
         return Napi::Number::New(Env(), (int) BentleyStatus::SUCCESS);
         }
 

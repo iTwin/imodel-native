@@ -73,7 +73,7 @@ public:
     DGNPLATFORM_EXPORT void CloseTestFile ();
 
     // Ensures a transactable, standalone iModel.
-    DGNPLATFORM_EXPORT static void SetAsStandAlone(DgnDbPtr& db, DgnDb::OpenMode mode);
+    DGNPLATFORM_EXPORT static void SetAsStandaloneDb(DgnDbPtr& db, DgnDb::OpenMode mode);
 };
 
 struct TestDgnManager : TestDataManager

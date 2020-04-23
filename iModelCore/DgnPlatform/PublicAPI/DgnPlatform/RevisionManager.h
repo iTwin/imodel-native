@@ -37,7 +37,7 @@ private:
 
     static BeFileName BuildRevisionChangesPathname(Utf8String revisionId);
 
-protected:    
+protected:
     //! Constructor
     DgnRevision(Utf8StringCR revisionId, Utf8StringCR parentRevisionId, Utf8StringCR dbGuid) : m_id(revisionId), m_parentId(parentRevisionId), m_dbGuid(dbGuid), m_ownsRevChangesFile(false) {}
 
@@ -54,14 +54,14 @@ public:
 
     //! Get the Revision Id
     //! @remarks The Revision Id is a 40 character HEX string that is initialized based on the parentId and contents of the revision
-    //! and the "change" contents of the revision. 
+    //! and the "change" contents of the revision.
     Utf8StringCR GetId() const { return m_id; }
 
     //! Get the parent's Revision Id
     Utf8StringCR GetParentId() const { return m_parentId; }
 
     //! Get/Set the initial parent Revision Id (before any merges)
-    //! @remarks This is only used for informational purposes to review change history. 
+    //! @remarks This is only used for informational purposes to review change history.
     Utf8StringCR GetInitialParentId() const { return m_initialParentId; }
     void SetInitialParentId(Utf8StringCR initialParentRevisionId) { m_initialParentId = initialParentRevisionId; }
 
@@ -87,7 +87,7 @@ public:
 
     //! Extract the set of locks which are required for this revision's changes
     DGNPLATFORM_EXPORT void ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb, bool extractInserted = true, bool avoidExclusiveModelElements = true) const;
-    
+
     //! Extract the set of codes which were assigned to objects within this revision's changes
     DGNPLATFORM_EXPORT void ExtractCodes(DgnCodeSet& assignedCodes, DgnCodeSet& discardedCodes, DgnDbCR dgndb) const;
 
@@ -129,7 +129,7 @@ public:
 };
 
 //=======================================================================================
-//! Utility to download and upload revisions of changes to/from the DgnDb. 
+//! Utility to download and upload revisions of changes to/from the DgnDb.
 // @bsiclass                                                 Ramanujam.Raman   10/15
 //=======================================================================================
 struct RevisionManager : NonCopyableClass
@@ -184,9 +184,12 @@ public:
     //! Get the DgnDb for this RevisionManager
     DgnDbR GetDgnDb() { return m_dgndb; }
 
+    bool HasParentRevision() const;
+    void ClearSavedValues();
+
     //! Merge a single revision to the Db
     //! @param[in] revision The revision to be merged
-    //! @return RevisionStatus::Success if the revision was successfully merged, error status otherwise. 
+    //! @return RevisionStatus::Success if the revision was successfully merged, error status otherwise.
     DGNPLATFORM_EXPORT RevisionStatus MergeRevision(DgnRevisionCR revision);
 
     //! Get the Id of the last revision that was merged into or created from the BIM. This is the parent for any new revisions that will be created from the BIM.
@@ -194,32 +197,32 @@ public:
     DGNPLATFORM_EXPORT Utf8String GetParentRevisionId() const;
 
     //! Start creating a new revision from the changes saved to the Db
-    //! @return Newly created revision. Null if there was an error, or if 
-    //! there aren't any changes to create a revision. 
-    //! @remarks 
+    //! @return Newly created revision. Null if there was an error, or if
+    //! there aren't any changes to create a revision.
+    //! @remarks
     //! <ul>
     //! <li> The revision is initialized with an id, a parent id and a local file
-    //! containing all the changes made since the previous revision. 
+    //! containing all the changes made since the previous revision.
     //! <li> The revision must be finished or aborted with calls to FinishCreateRevision()
     //! or AbortCreateRevision()
     //! <li> Unless AbandonCreateRevision is subsequently called, transactions cannot be
-    //! undone anymore. 
+    //! undone anymore.
     //! </ul>
-    //! @param[out] status Optional (can pass null). Set to RevisionStatus::Success if the revision was successfully 
+    //! @param[out] status Optional (can pass null). Set to RevisionStatus::Success if the revision was successfully
     //! finished or some error status otherwise.
     //! @see FinishCreateRevision, AbandonCreateRevision
     DGNPLATFORM_EXPORT DgnRevisionPtr StartCreateRevision(RevisionStatus* status = nullptr);
-    
+
     //! Return true if in the process of creating a revision
     DGNPLATFORM_EXPORT bool IsCreatingRevision() const;
-        
+
     //! Returns the revision currently being created
     //! @remarks Is valid only if in the process of creating a revision
     DGNPLATFORM_EXPORT DgnRevisionPtr GetCreatingRevision();
 
     //! Finish creating a new revision
     //! @return RevisionStatus::Success if the revision was successfully finished or some error status otherwise.
-    //! @remarks Upon successful return, the transaction table is flushed and cannot be undone. 
+    //! @remarks Upon successful return, the transaction table is flushed and cannot be undone.
     //! @see StartCreateRevision
     DGNPLATFORM_EXPORT RevisionStatus FinishCreateRevision();
 
@@ -229,15 +232,15 @@ public:
 
     //! Reverses a previously merged revision
     //! @param[in] revision The revision to be reversed. Must match the parent revision of the Db. i.e., the revisions
-    //! must be reversed in the opposite order of how were merged. 
+    //! must be reversed in the opposite order of how were merged.
     //! @return RevisionStatus::Success if the revision was successfully reversed or some error status otherwise.
     //! @remarks After reversals no changes can be committed to the DgnDb unless all the reversed revisions are reinstated
     //! again. @see ReinstateRevision()
     DGNPLATFORM_EXPORT RevisionStatus ReverseRevision(DgnRevisionCR revision);
 
     //! Reinstates a previously reversed revision
-    //! @param[in] revision The revision to be reinstated. The parent of the revision must match the parent revision of the 
-    //! Db. i.e., the revisions must be reinstated in the opposite order of how they were reversed. 
+    //! @param[in] revision The revision to be reinstated. The parent of the revision must match the parent revision of the
+    //! Db. i.e., the revisions must be reinstated in the opposite order of how they were reversed.
     //! @return RevisionStatus::Success if the revision was successfully reinstated or some error status otherwise.
     //! @remarks After reinstating all the revisions, the user can make changes to the DgnDb and create new revisions
     //! again. @see ReverseRevision()
@@ -254,7 +257,7 @@ public:
     DGNPLATFORM_EXPORT bool HasReversedRevisions() const;
 
     //! Get the last revision that the Db was reversed to
-    //! @remarks Returns an empty string if there aren't any reversed revisions. 
+    //! @remarks Returns an empty string if there aren't any reversed revisions.
     //! @see HasReversedRevisions()
     DGNPLATFORM_EXPORT Utf8String GetReversedRevisionId() const;
 

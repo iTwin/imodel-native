@@ -685,7 +685,7 @@ TEST_F(ECDbTestFixture, ResetInstanceIdSequence)
 
     BeFileName filePath(m_ecdb.GetDbFileName());
 
-    BeBriefcaseId masterBriefcaseId(BeBriefcaseId::CheckpointSnapshot());
+    BeBriefcaseId masterBriefcaseId(BeBriefcaseId::Standalone());
     BeBriefcaseId briefcaseAId(3);
     BeBriefcaseId briefcaseBId(111);
 

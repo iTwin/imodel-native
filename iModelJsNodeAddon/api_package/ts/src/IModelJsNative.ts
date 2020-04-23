@@ -7,9 +7,7 @@ import {
   IDisposable, IModelStatus, Logger, OpenMode, RepositoryStatus, StatusCodeWithMessage,
 } from "@bentley/bentleyjs-core";
 import { ElementProps, QueryLimit, QueryQuota, QueryPriority } from "@bentley/imodeljs-common";
-// *** Add no dependencies on other packages! ***
-// *** Add no dependencies on other packages! ***
-// *** Add no dependencies on other packages! ***
+// *** NOTE: DO NOT add dependencies on any other packages! ***
 
 /** Logger categories used by the native addon
  * @internal
@@ -170,7 +168,6 @@ export declare namespace IModelJsNative {
   /** The native object for a Briefcase. */
   class DgnDb implements IConcurrentQueryManager {
     constructor();
-    public static getAssetsDir(): string;
     public abandonChanges(): DbResult;
     public abandonCreateChangeSet(): void;
     public addPendingChangeSet(changeSetId: string): DbResult;
@@ -193,6 +190,7 @@ export declare namespace IModelJsNative {
     public deleteElement(elemIdJson: string): IModelStatus;
     public deleteElementAspect(aspectIdJson: string): IModelStatus;
     public deleteLinkTableRelationship(props: string): DbResult;
+    public deleteLocalValue(name: string): number;
     public deleteModel(modelIdJson: string): IModelStatus;
     public detachChangeCache(): number;
     public dumpChangeSet(changeSet: string): void;
@@ -259,6 +257,7 @@ export declare namespace IModelJsNative {
     public purgeTileTrees(modelIds: Id64Array | undefined): void;
     public queryFileProperty(props: string, wantString: boolean): string | Uint8Array | undefined;
     public queryFirstTxnId(allowCrossSessions?: boolean): TxnIdString;
+    public queryLocalValue(name: string): string | undefined;
     public queryModelExtents(options: string): ErrorStatusOrResult<IModelStatus, string>;
     public queryNextAvailableFileProperty(props: string): number;
     public queryNextTxnId(txnId: TxnIdString): TxnIdString;
@@ -267,13 +266,14 @@ export declare namespace IModelJsNative {
     public readFontMap(): string;
     public reinstateTxn(): IModelStatus;
     public removePendingChangeSet(changeSetId: string): DbResult;
+    public resetBriefcaseId(idValue: number): DbResult;
     public reverseAll(): IModelStatus;
     public reverseTo(txnId: TxnIdString,allowCrossSessions?: boolean): IModelStatus;
     public reverseTxns(numOperations: number, allowCrossSessions?: boolean): IModelStatus;
     public saveChanges(description?: string): DbResult;
     public saveFileProperty(props: string, strValue: string | undefined, blobVal: Uint8Array | undefined): number;
+    public saveLocalValue(name: string, value: string): number;
     public saveProjectGuid(guid: GuidString): DbResult;
-    public resetBriefcaseId(idValue: number): DbResult;
     public setBriefcaseManagerOptimisticConcurrencyControlPolicy(conflictPolicy: BriefcaseManagerOnConflictPolicy): RepositoryStatus;
     public setBriefcaseManagerPessimisticConcurrencyControlPolicy(): RepositoryStatus;
     public setDbGuid(guid: GuidString): DbResult;
@@ -285,9 +285,11 @@ export declare namespace IModelJsNative {
     public updateLinkTableRelationship(props: string): DbResult;
     public updateModel(modelProps: string): IModelStatus;
     public updateProjectExtents(newExtentsJson: string): void;
-    public static vacuum(dbName: string, pageSize?: number): DbResult;
+
     public static enableSharedCache(enable: boolean): DbResult;
     public static encryptDb(dbFileName: string, encryptionProps: string /* JSON.stringify(IModelEncryptionProps) */): DbResult;
+    public static getAssetsDir(): string;
+    public static vacuum(dbName: string, pageSize?: number): DbResult;
   }
 
   /**
@@ -595,6 +597,7 @@ export declare namespace IModelJsNative {
     public addClass(sourceClassFullName: string, targetClassFullName: string): BentleyStatus;
     public addCodeSpecId(sourceId: Id64String, targetId: Id64String): BentleyStatus;
     public addElementId(sourceId: Id64String, targetId: Id64String): BentleyStatus;
+    public removeElementId(sourceId: Id64String): BentleyStatus;
     public findCodeSpecId(sourceId: Id64String): Id64String;
     public findElementId(sourceId: Id64String): Id64String;
     public cloneElement(sourceId: Id64String): ElementProps;

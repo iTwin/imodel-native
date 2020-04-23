@@ -318,7 +318,7 @@ DgnDbStatus DgnDomain::RegisterHandler(Handler& handler, bool reregister)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnDomains::OnDbOpened()
     {
-    if (m_dgndb.AreTxnsAllowed() && !m_dgndb.IsReadonly())
+    if (m_dgndb.AreTxnsEnabled())
         {
         TxnManagerR txnManager = m_dgndb.Txns();
         txnManager.EnableTracking(true);
@@ -432,7 +432,7 @@ SchemaStatus DgnDomains::UpgradeSchemas()
     for (auto& schema : schemasToImport)
         importSchemas.push_back(schema.get());
 
-    if (m_dgndb.AreTxnsAllowed())
+    if (m_dgndb.AreTxnsRequired())
         m_dgndb.Txns().EnableTracking(true); // Ensure all schema changes are captured in the txn table for creating revisions
 
     SchemaManager::SchemaImportOptions importOptions = SchemaManager::SchemaImportOptions::None;
@@ -442,7 +442,7 @@ SchemaStatus DgnDomains::UpgradeSchemas()
 
     SyncWithSchemas();
 
-    if (m_dgndb.AreTxnsAllowed())
+    if (m_dgndb.AreTxnsRequired())
         {
         m_dgndb.Txns().InitializeTableHandlers();
         // Necessary to this after the domains are loaded so that the tables are already setup. The method calls SaveChanges().

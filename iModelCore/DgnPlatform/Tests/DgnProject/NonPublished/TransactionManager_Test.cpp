@@ -389,8 +389,8 @@ TEST_F(TransactionManagerTests, UndoRedo)
     DgnDbTestFixture::GetSeedDbCopy(outFileName,L"Test.bim");
     OpenDb(m_db, outFileName, mode);
 
-    TestDataManager::SetAsStandAlone(m_db, mode);
-    ASSERT_TRUE(m_db->IsStandAlone());
+    TestDataManager::SetAsStandaloneDb(m_db, mode);
+    ASSERT_TRUE(m_db->IsStandalone());
 
     auto& txns = m_db->Txns();
     txns.SetInteractive();
@@ -1380,9 +1380,8 @@ TEST_F(TransactionManagerTests, TestRelationshipLinkTableTracking)
     {
     SetupSeedProject();
 
-    m_db->ResetBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Snapshot()));
+    m_db->ResetBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone()));
     m_db->Txns().EnableTracking(true);
-
 
     // Put a couple of elements in the default model
     DgnElementId eid1, eid2;

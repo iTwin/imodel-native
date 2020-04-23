@@ -209,8 +209,9 @@ protected:
     DGNPLATFORM_EXPORT BeSQLite::DbResult _OnDbOpening() override;
     DGNPLATFORM_EXPORT BeSQLite::DbResult _OnDbOpened(BeSQLite::Db::OpenParams const& params) override;
 
-    DGNPLATFORM_EXPORT void _OnBeforeSetBriefcaseId(BeSQLite::BeBriefcaseId newId, Utf8StringR parentCSId, Utf8StringR initialParentCSId) override;
-    DGNPLATFORM_EXPORT void _OnAfterSetBriefcaseId(Utf8StringCR parentCSId, Utf8StringCR initialParentCSId) override;
+    DGNPLATFORM_EXPORT void _OnDbGuidChange(BeSQLite::BeGuid guid) override;
+    DGNPLATFORM_EXPORT void _OnBeforeSetBriefcaseId(BeSQLite::BeBriefcaseId newId) override;
+    DGNPLATFORM_EXPORT void _OnAfterSetBriefcaseId() override;
 
     DGNPLATFORM_EXPORT BeSQLite::DbResult _AfterSchemaChangeSetApplied() const override;
     DGNPLATFORM_EXPORT BeSQLite::DbResult _AfterDataChangeSetApplied() override;
@@ -421,20 +422,26 @@ public:
     //! Perform a SQLite VACUUM on this DgnDb. This potentially makes the file smaller and more efficient to access.
     DGNPLATFORM_EXPORT DgnDbStatus CompactFile();
 
-    bool AreTxnsAllowed() const {return IsBriefcase() || IsStandAlone(); }
-
-    //! Return true if this DgnDb is a briefcase iModel.
-    bool IsBriefcase() const {return GetBriefcaseId().IsBriefcase();}
-
-    //! Return true if this DgnDb is a snapshot iModel.
-    bool IsSnapshot() const {return GetBriefcaseId().IsSnapshot();}
-
-    //! Return true if this DgnDb is a snapshot iModel.
-    bool IsCheckpointSnapshot() const {return GetBriefcaseId().IsCheckpointSnapshotId();}
-
-    //! Return true if this DgnDb is a new single-practitioner standalone iModel.
-    //! @note This will be renamed to IsStandalone after legacy code is updated.
-    bool IsStandAlone() const {return GetBriefcaseId().IsStandAloneId();}
+    // determine whether this Db has a parent changeset id (is attached to a timeline)
+    DGNPLATFORM_EXPORT bool HasParentChangeset() const;
+    // determine whether this StandaloneDb requires txns if it is modified
+    DGNPLATFORM_EXPORT bool RequireStandaloneTxns() const;
+    // determine whether this StandaloneDb permits write operations
+    bool AllowStandaloneWrites() const { return !QueryStandaloneEditFlags().isNull(); }
+    // determine whether this DgnDb requires txns whenever it is modified
+    bool AreTxnsRequired() const { return IsBriefcase() || (IsStandalone() && RequireStandaloneTxns()); }
+    // determine whether this DgnDb requires txns and is opened writeable
+    bool AreTxnsEnabled() const { return !IsReadonly() && AreTxnsRequired(); }
+    // determine whether this DgnDb is a BriefcaseDb.
+    bool IsBriefcase() const { return GetBriefcaseId().IsBriefcase(); }
+    // determine whether this DgnDb is a StandaloneDb
+    bool IsStandalone() const { return GetBriefcaseId().IsStandalone(); }
+    // determine whether this DgnDb is a snapshot StandaloneDb.
+    bool IsSnapshot() const { return IsStandalone() && !AllowStandaloneWrites(); }
+    // determine whether this DgnDb is a checkpoint snapshot StandaloneDb
+    bool IsCheckpointSnapshot() const { return IsSnapshot() && HasParentChangeset(); }
+    // determine whether if this DgnDb is an editable StandaloneDb.
+    bool IsWriteableStandalone() const { return IsStandalone() && AllowStandaloneWrites(); }
 
     DGNPLATFORM_EXPORT RepositoryModelPtr GetRepositoryModel(); //!< Return the RepositoryModel for this DgnDb.
     DGNPLATFORM_EXPORT DictionaryModelR GetDictionaryModel(); //!< Return the dictionary model for this DgnDb.

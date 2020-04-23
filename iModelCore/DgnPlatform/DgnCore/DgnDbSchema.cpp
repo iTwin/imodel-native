@@ -539,10 +539,9 @@ ProfileState DgnDb::_CheckProfileVersion() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::DbResult DgnDb::_OnBeforeProfileUpgrade()
     {
-    if (IsCheckpointSnapshot() || IsReadonly())
-        return BE_SQLITE_OK;
+    if (AreTxnsEnabled())
+        Txns().EnableTracking(true);
 
-    Txns().EnableTracking(true);
     return BE_SQLITE_OK;
     }
 
@@ -551,7 +550,7 @@ BeSQLite::DbResult DgnDb::_OnBeforeProfileUpgrade()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::DbResult DgnDb::_OnAfterProfileUpgrade()
     {
-    if (IsCheckpointSnapshot() || IsReadonly())
+    if (!AreTxnsEnabled())
         return BE_SQLITE_OK;
 
     if (Txns().HasDbSchemaChanges())

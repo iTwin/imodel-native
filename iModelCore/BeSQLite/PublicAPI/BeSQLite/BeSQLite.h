@@ -256,14 +256,10 @@ protected:
 public:
     //! BeBriefcaseIds must be less than this value
     static uint32_t const MaxRepo() {return 1L<<24;}
-    //! A checkpoint snapshot iModel is a snapshot of a point on the iModelHub timeline.
-    //! @note Legacy master briefcases are now checkpoint snapshots that match the beginning of the iModelHub timeline
-    static uint32_t const CheckpointSnapshot() {return 0;} // was previously called "master"
-    //! A snapshot iModel is read-only once created. They are typically used for archival and data transfer purposes.
-    static uint32_t const Snapshot() {return 1;} // Note: this value was previously used for "standalone",
-    // Reserve a new BeBriefcaseId for the new concept of single-practitioner standalone iModels.
-    static uint32_t const StandAlone() {return MaxRepo() - 2;}
-    //! the first valid briefcaseId. 0 and 1 are reserved for snapshots
+    //! A standalone Db. These files are not mergeable, and cannot generate changesets.
+    static uint32_t const Standalone() {return 0;} // was previously called "master"
+    static uint32_t const DeprecatedStandalone() {return 1;} // Note: this value was previously used for "standalone",
+    //! the first valid briefcaseId
     static uint32_t const FirstValidBriefcaseId() {return 2;}
     //! the last valid briefcaseId
     // NOTE: The 10 largest valid BeBriefcaseIds will not be assigned by iModelHub, so are available to identify special kinds of iModels.
@@ -277,11 +273,8 @@ public:
     explicit BeBriefcaseId(uint32_t u) {m_id = (u >= MaxRepo()) ? Illegal() : u;}
     void Invalidate() {m_id = Illegal();}  //!< Set this BeBriefcaseId to the invalid id value
     bool IsValid() const {return Illegal() != m_id;}  //!< Test to see whether this BriefcaseId is valid.
-    bool IsStandAloneId() const {return StandAlone()==m_id;} //!< Determine whether this is a standalone iModel.
-    bool IsCheckpointSnapshotId() const {return  CheckpointSnapshot()==m_id;} //!< Determine whether the id equals CheckpointSnapshot.
-    bool IsSnapshotId() const {return Snapshot()==m_id;} //!< Determine whether the id equals Snapshot
-    bool IsSnapshot() const {return IsSnapshotId() || IsCheckpointSnapshotId();} //!< Determine whether the id equals Snapshot or CheckpointSnapshot.
-    bool IsBriefcase() const {return m_id >= FirstValidBriefcaseId() &&  m_id <= LastValidBriefcaseId();}
+    bool IsBriefcase() const {return m_id >= FirstValidBriefcaseId() && m_id <=LastValidBriefcaseId();}
+    bool IsStandalone() const {return m_id == Standalone() || m_id == DeprecatedStandalone();} //!< Determine whether this is a standalone iModel.
     uint32_t GetValue() const {BeAssert(IsValid()); BeAssert(m_id<MaxRepo()); return m_id;} //!< Get the briefcase id as a uint32_t
     bool operator==(BeBriefcaseId const& rhs) const {return rhs.m_id==m_id;}
     bool operator!=(BeBriefcaseId const& rhs) const {return !(*this == rhs);}
@@ -2245,8 +2238,6 @@ public:
     //! Whether to open an BeSQLite::Db readonly or readwrite.
     enum class OpenMode {Readonly = 1<<0, ReadWrite = 1<<1, Create = ReadWrite|(1<<2), SharedCache = 1<<17, };
 
-
-
     //=======================================================================================
     //! Options that control whether a profile upgrade should be performed when opening a file
     // @bsienum                                                     06/18
@@ -2368,7 +2359,6 @@ public:
     {
         Encoding m_encoding;
         PageSize m_pagesize;
-        enum DbType {Master=0,Standalone=1} m_dbType;
         enum CompressedDb {CompressDb_None=0,CompressDb_Zlib=1,CompressDb_Snappy=2,} m_compressedDb;
         enum ApplicationId : uint64_t {APPLICATION_ID_BeSQLiteDb='BeDb',} m_applicationId;
         bool m_failIfDbExists;
@@ -2383,9 +2373,9 @@ public:
         //!                  to the database and do not permit sharing.
         //! @param[in] dbType Option to create a standalone or a master database.
         explicit CreateParams(PageSize pagesize=PageSize::PAGESIZE_4K, Encoding encoding=Encoding::Utf8, bool failIfDbExists=true,
-                DefaultTxn defaultTxn=DefaultTxn::Yes, BusyRetry* retry=nullptr, DbType dbType=DbType::Master)
+                DefaultTxn defaultTxn=DefaultTxn::Yes, BusyRetry* retry=nullptr)
                 : OpenParams(OpenMode::Create, defaultTxn, retry), m_encoding(encoding), m_pagesize(pagesize), m_compressedDb(CompressDb_None),
-                m_failIfDbExists(failIfDbExists), m_applicationId(APPLICATION_ID_BeSQLiteDb), m_dbType(dbType)
+                m_failIfDbExists(failIfDbExists), m_applicationId(APPLICATION_ID_BeSQLiteDb)
             {}
 
         //! Set the page size for the newly created database.
@@ -2400,8 +2390,6 @@ public:
         void SetApplicationId(ApplicationId applicationId) {m_applicationId=applicationId;}
         //! Set expiration date for the newly created database.
         void SetExpirationDate(DateTime xdate) {m_expirationDate=xdate;}
-        //! Set whether to create a standalone or master database.
-        void SetDbType(DbType val) { m_dbType = val; }
     };
 
     //=======================================================================================
@@ -2487,8 +2475,9 @@ protected:
     //! @note implementers should always forward this call to their superclass.
     BE_SQLITE_EXPORT virtual void _OnDbChangedByOtherConnection();
 
-    virtual void _OnBeforeSetBriefcaseId(BeBriefcaseId newId, Utf8StringR parentRevId, Utf8StringR initialParentRevId) {}
-    virtual void _OnAfterSetBriefcaseId(Utf8StringCR parentRevId, Utf8StringCR initialParentRevId) {}
+    virtual void _OnBeforeSetBriefcaseId(BeBriefcaseId newId) {}
+    virtual void _OnAfterSetBriefcaseId() {}
+    virtual void _OnDbGuidChange(BeGuid guid) {}
 
     //! Gets called when a Db is opened and checks whether the file can be opened, i.e
     //! whether the file version matches what the opening API expects.
@@ -2672,6 +2661,9 @@ public:
     //! Query the BeProjectGuid for this Db.
     //! @see SaveMyProjectGuid
     BE_SQLITE_EXPORT BeGuid QueryProjectGuid() const;
+
+    BE_SQLITE_EXPORT Json::Value QueryStandaloneEditFlags() const;
+    BE_SQLITE_EXPORT DbResult SaveStandaloneEditFlags(JsonValueCR val);
 
     //! Saves the current date and time as the CreationDate property of this database.
     //! @return BE_SQLITE_OK if property was successfully saved, error status otherwise.

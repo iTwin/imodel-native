@@ -170,19 +170,18 @@ StatusInt TestDataManager::FindTestData(BeFileName& fullFileName, WCharCP fileNa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TestDataManager::SetAsStandAlone(DgnDbPtr& db, DgnDb::OpenMode openMode)
-    {
-    if (db->IsStandAlone())
+void TestDataManager::SetAsStandaloneDb(DgnDbPtr& db, DgnDb::OpenMode openMode) {
+    if (db->IsWriteableStandalone() || openMode == DgnDb::OpenMode::Readonly && db->IsStandalone())
         return;
 
-    BeFileName dbFileName(db->GetFileName());
-    db->ResetBriefcaseId(BeBriefcaseId(BeBriefcaseId::StandAlone()));
-    db->SaveChanges();
-    db->CloseDb();
-
-    DbResult result = BE_SQLITE_OK;
-    db = DgnDb::OpenDgnDb(&result, dbFileName, DgnDb::OpenParams(openMode));
+    if (openMode == DgnDb::OpenMode::ReadWrite) {
+        auto val = Json::Value();
+        val["txns"] = true;
+        db->SaveStandaloneEditFlags(val);
     }
+
+    db->ResetBriefcaseId(BeBriefcaseId(BeBriefcaseId::Standalone()));
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
@@ -208,7 +207,7 @@ BentleyStatus   TestDataManager::OpenTestFile(bool needTxns)
         }
 
     if (needTxns)
-        SetAsStandAlone(m_dgndb, m_openMode);
+        SetAsStandaloneDb(m_dgndb, m_openMode);
 
     for (ModelIteratorEntryCR entry : m_dgndb->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)))
         {

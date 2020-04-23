@@ -383,7 +383,7 @@ BentleyStatus iModelBridgeSacAdapter::Execute(iModelBridge& bridge, Params const
         DgnDbPtr db = DgnDb::OpenDgnDb(nullptr, outputFileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
         if (db.IsValid())
             {
-            db->ResetBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Snapshot()));
+            db->ResetBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone()));
             db->SaveChanges();
             }
         }

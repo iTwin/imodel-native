@@ -42,7 +42,6 @@ struct DgnProjectProperty
     static ProjectProperty Units()           {return ProjectProperty("Units");}
     static ProjectProperty DgnGCS()          {return ProjectProperty("DgnGCS");}
     static ProjectProperty LastSchemaUpgradeInPhase() { return ProjectProperty("LastSchemaUpgradeInPhase"); }
-    static ProjectProperty ConnectedContextId() {return ProjectProperty("ConnectedContextId");} // Optional: the stringified GUID of the associated Connected Context
 };
 
 //=======================================================================================
@@ -64,8 +63,8 @@ struct DgnEmbeddedProjectProperty
     static ProjectProperty LastEditor()      {return ProjectProperty("LastEditor");}
     static ProjectProperty Thumbnail()       {return ProjectProperty("Thumbnail");}
     static ProjectProperty CreationDate()    {return ProjectProperty("CreationDate");}
-    
-    // Added by Keith Bertram. 3/27/2015. It was decided that it was advantageous to have the LatestChangeSetId property 
+
+    // Added by Keith Bertram. 3/27/2015. It was decided that it was advantageous to have the LatestChangeSetId property
     // available within the imodel so the application does not have to extract the ibim just to determine if change sets
     // are available for the imodel.
     static ProjectProperty LatestChangeSetId()    {return ProjectProperty("LatestChangeSetId");}

@@ -252,7 +252,7 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
     DgnDbP m_briefcase{};
     BeSQLite::BeBriefcaseId m_currentBriefcaseId;
     TestRepositoryAdmin m_admin;
-    TestIModelHubClientForBridges(BeFileNameCR testWorkDir) : m_testWorkDir(testWorkDir), m_currentBriefcaseId(BeSQLite::BeBriefcaseId::Snapshot())
+    TestIModelHubClientForBridges(BeFileNameCR testWorkDir) : m_testWorkDir(testWorkDir), m_currentBriefcaseId(100)
         {
         m_iModelInfo = new iModel::Hub::iModelInfo();
         }
@@ -291,7 +291,7 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
         m_serverRepo.clear();
         m_revisions.clear();
         m_briefcase = nullptr;
-        m_currentBriefcaseId = BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Snapshot());
+        m_currentBriefcaseId = BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone());
         return BSISUCCESS;
         }
 

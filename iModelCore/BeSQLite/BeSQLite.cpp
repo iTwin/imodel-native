@@ -1603,6 +1603,8 @@ DbResult Db::ChangeDbGuid(BeGuid guid) {
     if (!guid.IsValid())
         guid.Create();
 
+    _OnDbGuidChange(guid);
+
     m_dbFile->m_dbGuid = guid;
     return SaveBeDbGuid();
     }
@@ -1611,9 +1613,7 @@ DbResult Db::ChangeDbGuid(BeGuid guid) {
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::ResetBriefcaseId(BeBriefcaseId id) {
-    if (m_dbFile->m_briefcaseId == id) // nothing to do?
-        return BE_SQLITE_OK;
-
+    // perform this even if id is already correct. May be changing txn state
     if (IsReadonly()) {
         BeAssert(false && "must be a writeable db");
         return BE_SQLITE_READONLY;
@@ -1623,15 +1623,13 @@ DbResult Db::ResetBriefcaseId(BeBriefcaseId id) {
         return BE_SQLITE_ERROR;
     }
 
-    Utf8String parentRevId, initialParentRevId;
-    _OnBeforeSetBriefcaseId(id, parentRevId, initialParentRevId);
+    _OnBeforeSetBriefcaseId(id);
 
-    ClearBriefcaseLocalValues(); // note, clears parent revision info
-
+    // NOTE: we used to clear the whole table here. That's not necessary and a bad idea
     m_dbFile->m_briefcaseId = id;
     SaveBriefcaseId();
 
-    _OnAfterSetBriefcaseId(parentRevId, initialParentRevId);
+    _OnAfterSetBriefcaseId();
     return SaveChanges();
 }
 
@@ -1826,10 +1824,7 @@ DbResult Db::CreateNewDb(Utf8CP dbName, BeGuid dbGuid, CreateParams const& param
 
     m_dbFile->m_defaultTxn.Begin();
     m_dbFile->m_dbGuid = dbGuid;
-
-    // SNAPSHOT_WIP: Determine what to do here?
-    m_dbFile->m_briefcaseId = (params.m_dbType == Db::CreateParams::DbType::Standalone) ? BeBriefcaseId(BeBriefcaseId::StandAlone()) : BeBriefcaseId(BeBriefcaseId::CheckpointSnapshot());
-
+    m_dbFile->m_briefcaseId = BeBriefcaseId(BeBriefcaseId::Standalone());
     ExecuteSql(SqlPrintfString("PRAGMA page_size=%d;PRAGMA encoding=\"%s\";PRAGMA user_version=%d;PRAGMA application_id=%lld;PRAGMA locking_mode=\"%s\";", params.m_pagesize,
                               params.m_encoding==Encoding::Utf8 ? "UTF-8" : "UTF-16le", BeSQLite::DbUserVersion, params.m_applicationId,
                               params.m_startDefaultTxn==DefaultTxn::Exclusive ? "EXCLUSIVE" : "NORMAL"));
@@ -1840,7 +1835,7 @@ DbResult Db::CreateNewDb(Utf8CP dbName, BeGuid dbGuid, CreateParams const& param
         if (BE_SQLITE_OK != rc)
             return  rc;
 
-        // this table purposely has no primary key so it won't be tracked / merged. It is meant to hold values that are
+        // NOTE: this table purposely has no primary key so it won't be tracked / merged. It is meant to hold values that are
         // local to the briefcase and never in a changeset.
         rc = CreateTable(BEDB_TABLE_Local, "Name CHAR NOT NULL COLLATE NOCASE UNIQUE,Val BLOB");
         if (BE_SQLITE_OK != rc)
@@ -5715,6 +5710,22 @@ DbResult Db::QueryCreationDate(DateTime& creationDate) const
 
     return (BSISUCCESS == DateTime::FromString(creationDate, date.c_str())) ? BE_SQLITE_ROW : BE_SQLITE_MISMATCH;
     }
+
+#define BE_LOCAL_StandaloneEdit "StandaloneEdit"
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                    Keith.Bentley                    04/20
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value Db::QueryStandaloneEditFlags() const {
+    Utf8String val;
+    return (BE_SQLITE_ROW != QueryBriefcaseLocalValue(val, BE_LOCAL_StandaloneEdit)) ? Json::Value() : Json::Value::From(val);
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+@bsimethod                                    Keith.Bentley                    04/20
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult Db::SaveStandaloneEditFlags(JsonValueCR val) {
+    return val.isNull() ? DeleteBriefcaseLocalValue(BE_LOCAL_StandaloneEdit) : SaveBriefcaseLocalValue(BE_LOCAL_StandaloneEdit, val.ToString());
+}
 
 void BeSQLiteLib::Randomness(int numBytes, void* random) {sqlite3_randomness(numBytes, random);}
 void* BeSQLiteLib::MallocMem(int sz) {return sqlite3_malloc(sz);}

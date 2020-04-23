@@ -13,7 +13,7 @@
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
 
-#define CHECK_BRIEFCASEID(b,t) if (!b.IsValid() || b.IsSnapshot() || b.IsStandAloneId()){ LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "BriefcaseId is not valid."); return CreateCompletedAsyncTask<t>(t::Error(Error::Id::InvalidBriefcase));}
+#define CHECK_BRIEFCASEID(b,t) if (!b.IsBriefcase()){ LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "BriefcaseId is not valid."); return CreateCompletedAsyncTask<t>(t::Error(Error::Id::InvalidBriefcase));}
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 
 namespace ServerSchema

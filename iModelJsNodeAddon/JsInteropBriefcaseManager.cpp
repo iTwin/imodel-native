@@ -536,7 +536,7 @@ struct NativeRepositoryAdmin : DgnPlatformLib::Host::RepositoryAdmin
     IBriefcaseManagerPtr _CreateBriefcaseManager(DgnDbR db) const override
         {
         IBriefcaseManagerPtr bc;
-        if (db.IsSnapshot() || db.IsStandAlone())
+        if (db.IsStandalone())
             bc = MasterBriefcaseManager::Create(db);
         else
             {

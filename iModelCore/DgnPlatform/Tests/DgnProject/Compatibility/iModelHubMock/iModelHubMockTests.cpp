@@ -84,7 +84,7 @@ TEST_F(IModelHubMockTestFixture, AcquireBriefcase)
     DbResult stat;
     auto db = DgnDb::OpenDgnDb(&stat, briefcasePath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
     ASSERT_TRUE(db.IsValid());
-    ASSERT_FALSE(db->IsStandAlone());
+    ASSERT_FALSE(db->IsStandalone());
     ASSERT_FALSE(db->IsSnapshot());
     }
 
@@ -101,7 +101,7 @@ TEST_F(IModelHubMockTestFixture, AcquireMultipleBriefcase)
     DbResult stat;
     auto db = DgnDb::OpenDgnDb(&stat, briefcasePath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
     ASSERT_TRUE(db.IsValid());
-    ASSERT_FALSE(db->IsStandAlone());
+    ASSERT_FALSE(db->IsStandalone());
     ASSERT_FALSE(db->IsSnapshot());
 
     // Acquire another briefcase
@@ -110,7 +110,7 @@ TEST_F(IModelHubMockTestFixture, AcquireMultipleBriefcase)
     ASSERT_TRUE(BeFileName::DoesPathExist(briefcasePath));
     auto db2 = DgnDb::OpenDgnDb(&stat, briefcasePath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
     ASSERT_TRUE(db2.IsValid());
-    ASSERT_FALSE(db2->IsStandAlone());
+    ASSERT_FALSE(db2->IsStandalone());
     ASSERT_FALSE(db2->IsSnapshot());
 
     ASSERT_NE(db->GetBriefcaseId(), db2->GetBriefcaseId());

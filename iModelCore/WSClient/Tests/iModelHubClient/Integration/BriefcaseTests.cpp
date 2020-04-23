@@ -241,8 +241,7 @@ TEST_F(BriefcaseTests, SuccessfulOpenBriefcase)
     DgnDbPtr db;
     OpenDgnDb(db, acquireResult.GetValue()->GetLocalPath());
     EXPECT_TRUE(db->GetBriefcaseId().IsValid());
-    EXPECT_FALSE(db->GetBriefcaseId().IsStandAloneId());
-    EXPECT_FALSE(db->GetBriefcaseId().IsSnapshot());
+    EXPECT_FALSE(db->GetBriefcaseId().IsStandalone());
 
     iModelHubHelpers::OpenBriefcase(s_client, db);
     }
@@ -328,7 +327,7 @@ TEST_F(BriefcaseTests, QueryInformationAboutInvalidBriefcase)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BriefcaseTests, QueryInformationAboutCheckpointSnapshot)
     {
-    BriefcaseInfoResult result = s_connection->QueryBriefcaseInfo(BeBriefcaseId(BeBriefcaseId::CheckpointSnapshot()))->GetResult();
+    BriefcaseInfoResult result = s_connection->QueryBriefcaseInfo(BeBriefcaseId(BeBriefcaseId::Standalone()))->GetResult();
     ASSERT_FAILURE(result);
     EXPECT_EQ(Error::Id::InvalidBriefcase, result.GetError().GetId()) << "TFS#804283";
     }
@@ -338,7 +337,7 @@ TEST_F(BriefcaseTests, QueryInformationAboutCheckpointSnapshot)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BriefcaseTests, QueryInformationAboutStandAlone)
     {
-    BriefcaseInfoResult result = s_connection->QueryBriefcaseInfo(BeBriefcaseId(BeBriefcaseId::StandAlone()))->GetResult();
+    BriefcaseInfoResult result = s_connection->QueryBriefcaseInfo(BeBriefcaseId(BeBriefcaseId::Standalone()))->GetResult();
     ASSERT_FAILURE(result);
     EXPECT_EQ(Error::Id::InvalidBriefcase, result.GetError().GetId());
     }
@@ -348,7 +347,7 @@ TEST_F(BriefcaseTests, QueryInformationAboutStandAlone)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BriefcaseTests, QueryInformationAboutSnapshot)
     {
-    BriefcaseInfoResult result = s_connection->QueryBriefcaseInfo(BeBriefcaseId(BeBriefcaseId::Snapshot()))->GetResult();
+    BriefcaseInfoResult result = s_connection->QueryBriefcaseInfo(BeBriefcaseId(BeBriefcaseId::Standalone()))->GetResult();
     ASSERT_FAILURE(result);
     EXPECT_EQ(Error::Id::InvalidBriefcase, result.GetError().GetId());
     }

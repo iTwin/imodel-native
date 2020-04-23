@@ -261,38 +261,51 @@ DbResult DgnDb::_OnDbOpening()
     return InitializeElementIdSequence();
     }
 
-/*---------------------------------------------------------------------------------**/ /**
-@bsimethod                                    Keith.Bentley                    04/20
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                    Keith.Bentley                    04/20
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDb::_OnBeforeSetBriefcaseId(BeBriefcaseId newId, Utf8StringR parentRevId, Utf8StringR initialParentRevId) {
-    T_Super::_OnBeforeSetBriefcaseId(newId, parentRevId, initialParentRevId);
+void DgnDb::_OnDbGuidChange(BeSQLite::BeGuid guid) {
+    // whenever we switch DbGuid's, these values are no longer valid
+    Revisions().ClearSavedValues();
+}
 
-    Txns().EnableTracking(false);
-    Txns().DeleteAllTxns(); // whenever we switch briefcaseIds, all of the current txn data is invalid
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                    Keith.Bentley                    04/20
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnDb::HasParentChangeset() const {
+     return Revisions().HasParentRevision();
+}
 
-    // We have to save timeline data because it gets lost when the BeLocal table is cleared. It is restored in _OnAfterSetBriefcase.
-    if (!newId.IsStandAloneId() && !newId.IsSnapshotId()) { // However, Standalone and Snapshots should not have timeline data
-        parentRevId = Revisions().GetParentRevisionId();
-        initialParentRevId = Revisions().QueryInitialParentRevisionId();
-    }
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                    Keith.Bentley                    04/20
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnDb::RequireStandaloneTxns() const {
+    auto standalone = QueryStandaloneEditFlags();
+    return standalone.isNull() ? false : standalone["txns"].asBool();
 }
 
 /*---------------------------------------------------------------------------------**/ /**
 @bsimethod                                    Keith.Bentley                    04/20
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDb::_OnAfterSetBriefcaseId(Utf8StringCR parentRevId, Utf8StringCR initialParentRevId) {
-    T_Super::_OnAfterSetBriefcaseId(parentRevId, initialParentRevId);
+void DgnDb::_OnBeforeSetBriefcaseId(BeBriefcaseId newId) {
+    T_Super::_OnBeforeSetBriefcaseId(newId);
+
+    Txns().EnableTracking(false);
+    Txns().DeleteAllTxns(); // whenever we switch briefcaseIds, all of the current txn data is invalid
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+@bsimethod                                    Keith.Bentley                    04/20
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnDb::_OnAfterSetBriefcaseId() {
+    T_Super::_OnAfterSetBriefcaseId();
 
     ResetElementIdSequence(GetBriefcaseId());
 
-    if (AreTxnsAllowed()) {
+    if (AreTxnsRequired()) {
         Txns().EnableTracking(true);
         Txns().InitializeTableHandlers();
     }
-
-    // restore the timeline data, if present
-    Revisions().SaveParentRevisionId(parentRevId);
-    Revisions().SaveInitialParentRevisionId(initialParentRevId);
 }
 
 //--------------------------------------------------------------------------------------

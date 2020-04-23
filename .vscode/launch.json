@@ -65,7 +65,7 @@
             "program": "${env:OutRoot}Winx64/Product/DgnPlatform-Gtest/DgnPlatformTest.exe",
             "args": [
                 "--gtest_break_on_failure",
-                "--gtest_filter=RevisionTestFixture.MoreWorkflow"
+                "--gtest_filter=FastQueryTest.CacheLocks"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -112,7 +112,7 @@
             "program": "${env:OutRoot}/Winx64/Product/iModelBridge-Gtest/iModelBridgeTest.exe",
             "args": [
                 "--gtest_break_on_failure",
-                "--gtest_filter=iModelBridgeTests.CallAssignToDisclose"
+                "--gtest_filter=iModelBridgeTests.ECEFTransformTest"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

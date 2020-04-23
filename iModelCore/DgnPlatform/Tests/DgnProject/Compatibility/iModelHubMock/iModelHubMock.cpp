@@ -70,7 +70,7 @@ bool IModelHubMock::ManualMergeAllChangesets(BeGuid iModelId)
 
     {
     auto db = DgnDb::OpenDgnDb(&stat, path, DgnDb::OpenParams(Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes));
-    db->ResetBriefcaseId(BeBriefcaseId(BeBriefcaseId::Snapshot()));
+    db->ResetBriefcaseId(BeBriefcaseId(2));
     db->SaveChanges();
     }
 
@@ -81,7 +81,7 @@ bool IModelHubMock::ManualMergeAllChangesets(BeGuid iModelId)
     auto openParam = DgnDb::OpenParams(Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes);
     openParam.GetSchemaUpgradeOptionsR().SetUpgradeFromRevisions(revisions);
     auto db = DgnDb::OpenDgnDb(&stat, path, openParam);
-    db->SetAsCheckpointSnapshot(iModelId);
+    db->ResetBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone()));
     db->SaveChanges();
     m_revisions[iModelId].clear();
     return true;

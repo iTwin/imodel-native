@@ -45,7 +45,6 @@ ChangeSet::ConflictResolution ApplyRevisionChangeSet::_OnConflict(ChangeSet::Con
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
-// static
 ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, ChangeSet::ConflictCause cause, Changes::Change iter)
     {
     Utf8CP tableName = nullptr;
@@ -704,6 +703,17 @@ RevisionManager::RevisionManager(DgnDbR dgndb) : m_dgndb(dgndb)
     m_tempRevisionPathname = BuildTempRevisionPathname();
     }
 
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                    Keith.Bentley                    04/20
++---------------+---------------+---------------+---------------+---------------+------*/
+void RevisionManager::ClearSavedValues() {
+    m_dgndb.DeleteBriefcaseLocalValue(CURRENT_CS_END_TXN_ID);
+    m_dgndb.DeleteBriefcaseLocalValue(LAST_REBASE_ID);
+    m_dgndb.DeleteBriefcaseLocalValue(INITIAL_PARENT_CS_ID);
+    m_dgndb.DeleteBriefcaseLocalValue(PARENT_CS_ID);
+    m_dgndb.DeleteBriefcaseLocalValue(REVERSED_CS_ID);
+}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
@@ -761,6 +771,14 @@ bool RevisionManager::HasReversedRevisions() const
     DbResult result = m_dgndb.QueryBriefcaseLocalValue(reversedParentId, REVERSED_CS_ID);
     return (result == BE_SQLITE_ROW);
     }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                    Keith.Bentley                    04/20
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RevisionManager::HasParentRevision() const {
+    Utf8String revisionId;
+    return BE_SQLITE_ROW == m_dgndb.QueryBriefcaseLocalValue(revisionId, PARENT_CS_ID);
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
@@ -962,7 +980,8 @@ RevisionStatus RevisionManager::MergeRevision(DgnRevisionCR revision)
 //---------------------------------------------------------------------------------------
 RevisionStatus RevisionManager::DoMergeRevision(DgnRevisionCR revision)
     {
-    PRECONDITION(!m_dgndb.IsReadonly() &&"Cannot merge changes into this database", RevisionStatus::CannotMergeIntoReadonly);
+    PRECONDITION(!m_dgndb.IsReadonly() && "Cannot merge changes into this database", RevisionStatus::CannotMergeIntoReadonly);
+
     TxnManagerR txnMgr = m_dgndb.Txns();
     PRECONDITION(!txnMgr.HasChanges() && "There are unsaved changes in the current transaction. Call db.SaveChanges() or db.AbandonChanges() first", RevisionStatus::HasUncommittedChanges);
     PRECONDITION(!txnMgr.InDynamicTxn() && "Cannot merge revisions if in the middle of a dynamic transaction", RevisionStatus::InDynamicTransaction);

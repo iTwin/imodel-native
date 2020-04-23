@@ -240,7 +240,7 @@ TEST_F(SeedFileTests, DownloadArchivedSeedFile)
     ASSERT_TRUE(originalDb.IsValid());
 
     // Attempt to merge the changeSets
-    originalDb->ResetBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Snapshot()));
+    originalDb->ResetBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone()));
     originalDb->ChangeDbGuid(originalGuid);
     originalDb->SaveChanges();
     originalDb->CloseDb();

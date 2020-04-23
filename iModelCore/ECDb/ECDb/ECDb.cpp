@@ -98,11 +98,10 @@ bool ECDb::TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCount) c
     return m_pimpl->TryGetSqlFunction(function, name, argCount);
     }
 
-
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                12/2012
 //---------------+---------------+---------------+---------------+---------------+------
-void ECDb::_OnAfterSetBriefcaseId(Utf8StringCR parentCSId, Utf8StringCR initialParentCSId)
+void ECDb::_OnAfterSetBriefcaseId()
     {
     m_pimpl->OnBriefcaseIdAssigned(GetBriefcaseId());
     }

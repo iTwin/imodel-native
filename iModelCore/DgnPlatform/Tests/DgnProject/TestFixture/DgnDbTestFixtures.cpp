@@ -44,11 +44,11 @@ DgnDbStatus DgnDbTestFixture::GetSeedDbCopy(BeFileNameR actualName, WCharCP newN
 * Project file name is the name of the test, mode is ReadWrite and it is Briefcase
 * @bsimethod                                     Majd.Uddin                   01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDbTestFixture::SetupSeedProject(BeSQLite::Db::OpenMode mode, bool needBriefcase)
+void DgnDbTestFixture::SetupSeedProject(BeSQLite::Db::OpenMode mode, bool wantStandalone)
     {
     WString fileName (TEST_NAME, BentleyCharEncoding::Utf8);
     fileName.append(L".bim");
-    SetupSeedProject(fileName.c_str(), mode, needBriefcase);
+    SetupSeedProject(fileName.c_str(), mode, wantStandalone);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -56,7 +56,7 @@ void DgnDbTestFixture::SetupSeedProject(BeSQLite::Db::OpenMode mode, bool needBr
 * baseProjFile is the existing file and testProjFile is what we get
 * @bsimethod                                     Majd.Uddin                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDbTestFixture::SetupSeedProject(WCharCP inFileName, BeSQLite::Db::OpenMode mode, bool needBriefcase)
+void DgnDbTestFixture::SetupSeedProject(WCharCP inFileName, BeSQLite::Db::OpenMode mode, bool wantStandalone)
     {
     // Note: We know that our group's SetUpTestCase() function has already created the group seed file. We can just ask for it.
     if (Db::OpenMode::ReadWrite == mode)
@@ -64,10 +64,10 @@ void DgnDbTestFixture::SetupSeedProject(WCharCP inFileName, BeSQLite::Db::OpenMo
     else
         m_db = DgnPlatformSeedManager::OpenSeedDb(s_seedFileInfo.fileName);
 
-    if (needBriefcase)
+    if (wantStandalone)
         {
-        TestDataManager::SetAsStandAlone(m_db, mode);
-        ASSERT_TRUE(m_db->IsStandAlone());
+        TestDataManager::SetAsStandaloneDb(m_db, mode);
+        ASSERT_TRUE(m_db->IsStandalone());
         ASSERT_TRUE((Db::OpenMode::ReadWrite != mode) || m_db->Txns().IsTracking());
         }
 
@@ -157,7 +157,7 @@ void DgnDbTestFixture::OpenDb(DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode m
     ASSERT_TRUE( db.IsValid() ) << WPrintfString(L"Failed to open %ls in mode %d => result=%x", name.c_str(), (int)mode, (int)result).c_str();
     ASSERT_EQ( BE_SQLITE_OK , result );
     if (mode == DgnDb::OpenMode::ReadWrite && needTxns)
-        TestDataManager::SetAsStandAlone(db, mode);
+        TestDataManager::SetAsStandaloneDb(db, mode);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -299,8 +299,8 @@ void PerfTestFixture::SetupSeedProject(WCharCP inFileName, BeSQLite::Db::OpenMod
 
     if (needTxns)
         {
-        TestDataManager::SetAsStandAlone(m_db, mode);
-        ASSERT_TRUE(m_db->IsStandAlone());
+        TestDataManager::SetAsStandaloneDb(m_db, mode);
+        ASSERT_TRUE(m_db->IsStandalone());
         ASSERT_TRUE((Db::OpenMode::ReadWrite != mode) || m_db->Txns().IsTracking());
         }
 

@@ -1715,7 +1715,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
         errorContext.WriteErrorMessage(errorFile);
         return errorContext.GetIntErrorId();
         }
-    
+
     ConfigureLaunchDarklyClient();
 
     // Initialize crash reporting.
@@ -1768,7 +1768,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     if (m_jobEnvArgs.CreateSnapshot())
         {
         auto status = CreateSnapshotWithExceptionHandling(errorContext);
-    
+
         BeAssert(!m_briefcaseDgnDb.IsValid() && "CreateSnapshotWithExceptionHandling should manage the lifetime of the briefcase");
 
         LOG.tracev(L"ReleaseBridge...");
@@ -1857,7 +1857,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     bool doNotTrackRefs = false;
     TestFeatureFlag("imodel-bridge-do-not-track-references-subjects", doNotTrackRefs);
     m_bridge->_GetParams().SetDoNotTrackReferencesSubjects(doNotTrackRefs);
-    
+
     bool createdNewRepo = false;
     if (BSISUCCESS != BootstrapBriefcase(createdNewRepo, context))
         {
@@ -3044,9 +3044,9 @@ int iModelBridgeFwk::CreateSnapshot(iModelBridgeError& error)
         {
         m_briefcaseBasename.Assign(m_jobEnvArgs.m_snapshotFileName.c_str());
         }
-    
+
     Briefcase_MakeBriefcaseName();
-    
+
     // TODO - do we need this for a snapshot?
     // if (m_bridge->TestFeatureFlag("imodel-bridge-terrain-conversion"))
     //     m_bridge->_GetParams().SetDoTerrainModelConversion(true);
@@ -3075,9 +3075,9 @@ int iModelBridgeFwk::CreateSnapshot(iModelBridgeError& error)
         if (BSISUCCESS == status)
             {
             EnterSharedChannel();
-        
+
             m_bridge->DoFinalizationChanges(*m_briefcaseDgnDb);
-        
+
             if (!m_jobEnvArgs.m_argsJson.isMember("skipExtents"))
                 {
                 UpdateProjectExtents(context);
@@ -3098,15 +3098,14 @@ int iModelBridgeFwk::CreateSnapshot(iModelBridgeError& error)
             OnAllDocsProcessed(context);
 
             // Do this last, to avoid creating Txns in DoCreateDgnDb
-            m_briefcaseDgnDb->ResetBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Snapshot()));
-
+            m_briefcaseDgnDb->ResetBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone()));
             m_briefcaseDgnDb->ExecuteSql("ANALYZE");
 
             // TODO: Call vacuum?
             }
         }
 
-    BentleyApi::Http::HttpClient::Uninitialize();        
+    BentleyApi::Http::HttpClient::Uninitialize();
 
     if (callTerminate.m_status == BSISUCCESS)
         {
@@ -3562,13 +3561,13 @@ static void getOutlierElementInfo(const bvector<BeInt64Id>& elementOutliers, Dgn
         Utf8String v8ElementId;
         Utf8String sourceModelName = "<unknown>";
         Utf8String sourceFileName = "<unknown>";
-        
+
         stmt.Reset();
         stmt.ClearBindings();
         stmt.BindId(1, eid);
         if (BeSQLite::DbResult::BE_SQLITE_ROW != stmt.Step())
             continue;
-            
+
         v8ElementId = stmt.GetValueText(0);
         sourceModelName = stmt.GetValueText(1);
         sourceFileName = stmt.GetValueText(2);
@@ -3620,7 +3619,7 @@ BentleyStatus   iModelBridgeFwk::GetUserProvidedExtents(AxisAlignedBox3d& extent
     StatusInt warning;
     auto wsg84 = GeoCoordinates::BaseGCS::CreateGCS();        // WGS84 - used to convert Long/Latitude to ECEF.
     wsg84->InitFromEPSGCode(&warning, &warningMsg, 4326); // We do not care about warnings. This GCS exists in the dictionary
-    
+
     DPoint3d points[2];
     wsg84->XYZFromLatLong(points[0], low);
     wsg84->XYZFromLatLong(points[1], high);
@@ -3628,7 +3627,7 @@ BentleyStatus   iModelBridgeFwk::GetUserProvidedExtents(AxisAlignedBox3d& extent
     extents.InitFrom(points[0], points[1]);
     DPoint3d delta;
     delta.Init(points[1].x - points[0].x, points[1].y - points[0].y, points[1].z - points[1].z);
-    LOG.tracev(L"iModel extent rectangle from hub %f x %f", delta.x, delta.y);  
+    LOG.tracev(L"iModel extent rectangle from hub %f x %f", delta.x, delta.y);
     return SUCCESS;
     }
 

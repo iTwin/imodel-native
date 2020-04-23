@@ -127,7 +127,7 @@ void RevisionTestFixture::SetUpTestCase()
 
     DgnDbPtr db = DgnPlatformSeedManager::OpenSeedDbCopy(rootSeedInfo.fileName, RevisionTestFixture::s_seedFileInfo.fileName); // our seed starts as a copy of the root seed
     ASSERT_TRUE(db.IsValid());
-    TestDataManager::SetAsStandAlone(db, Db::OpenMode::ReadWrite);
+    TestDataManager::SetAsStandaloneDb(db, Db::OpenMode::ReadWrite);
 
     m_defaultCodeSpecId = DgnDbTestUtils::InsertCodeSpec(*db, "TestCodeSpec");
     ASSERT_TRUE(m_defaultCodeSpecId.IsValid());
@@ -429,38 +429,6 @@ TEST_F(RevisionTestFixture, MergeToReadonlyBriefcase)
     BeTest::SetFailOnAssert(false);
     RevisionStatus revStatus = m_db->Revisions().MergeRevision(*revision1);
     ASSERT_TRUE(revStatus == RevisionStatus::CannotMergeIntoReadonly);
-    BeTest::SetFailOnAssert(true);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    01/2016
-//---------------------------------------------------------------------------------------
-TEST_F(RevisionTestFixture, MergeToMaster)
-    {
-    // Setup master file
-    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"Master.bim");
-    m_db->SaveChanges();
-    DgnRevisionPtr initialRevision = CreateRevision(); // Clears Txn table
-    m_db->ResetBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::CheckpointSnapshot()));
-    m_db->SaveChanges("Setup master seed file");
-    BackupTestFile();
-
-    // Create some revision
-    m_db->ResetBriefcaseId(BeBriefcaseId(BeBriefcaseId::StandAlone()));
-    m_db->SaveChanges("Created briefcase");
-    DgnElementId elementId = RevisionTestFixture::InsertPhysicalElement(*m_db, *m_defaultModel, m_defaultCategoryId, 2, 2, 2);
-    ASSERT_TRUE(elementId.IsValid());
-    m_db->SaveChanges("Inserted an element");
-    DgnRevisionPtr revision1 = CreateRevision();
-    ASSERT_TRUE(revision1.IsValid());
-
-    // Restore the master file again
-    RestoreTestFile();
-
-    // Merge revision that was previously created to create a checkpoint file
-    BeTest::SetFailOnAssert(false);
-    RevisionStatus revStatus = m_db->Revisions().MergeRevision(*revision1);
-    ASSERT_TRUE(revStatus != RevisionStatus::Success);
     BeTest::SetFailOnAssert(true);
     }
 

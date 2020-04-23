@@ -84,7 +84,7 @@ public:
 
     void SetupMasterFile(bool andClearTxns=true)
         {
-        SetupSeedProject();
+        SetupSeedProject(Db::OpenMode::ReadWrite, true);
         if (andClearTxns)
             ClearRevisions(*m_db);
         }

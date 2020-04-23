@@ -142,7 +142,7 @@ struct iModelBridgeTests : ::testing::Test
         DgnDbTestUtils::InsertSpatialCategory(*db, "SpatialCategory");
 
         // Force the seed db to have non-zero briefcaseid, so that changes made to it will be in a txn
-        db->ResetBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::StandAlone()));
+        db->ResetBriefcaseId(BeSQLite::BeBriefcaseId(100));
         db->SaveChanges();
         }
 
@@ -604,6 +604,8 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
 TEST_F(iModelBridgeTests, iModelBridgeSyncInfoFileTesterSyncInfoFile)
     {
     ScopedDgnHost host;
+	IModelBridgeTestRepositoryAdmin repositoryAdmin;
+	ScopedDgnHost::ScopedRepositoryAdminOverride overrideRepositoryAdmin(host, &repositoryAdmin);
 
 #ifdef _WIN32
     _set_error_mode(_OUT_TO_MSGBOX);
@@ -1081,11 +1083,11 @@ TEST_F(iModelBridgeTests, TestAffinityDb)
     {
     auto testDir = getiModelBridgeTestsOutputDir(L"TestAffinityDb");
     ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testDir));
-    
+
     BeFileName affinityDbFilename(testDir);
     affinityDbFilename.AppendToPath(L"affinity.db");
     RefCountedPtr<iModelBridgeAffinityDb> db = iModelBridgeAffinityDb::OpenOrCreate(affinityDbFilename);
-    
+
     auto json = Json::Value::From(R"({ "foo": "bar" })");
 
     auto b1 = db->InsertBridge("b1");

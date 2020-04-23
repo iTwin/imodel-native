@@ -17,6 +17,8 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_DGNDB_UNIT_TESTS_NAMESPACE
 USING_NAMESPACE_BENTLEY_DPTEST
 
+static BeSQLite::BeBriefcaseId TEST_BRIEFCASE_ID = BeSQLite::BeBriefcaseId(1000);
+
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   05/11
 //=======================================================================================
@@ -71,35 +73,6 @@ TEST_F(DgnDbTest, CheckStandardProperties)
     ASSERT_TRUE(displayInfo.GetMasterUnits().GetBase() == UnitBase::Meter);
     ASSERT_TRUE(displayInfo.GetSubUnits().GetBase() == UnitBase::Meter);
 }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    10/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnDbTest, ConnectedContextId)
-    {
-    SetupSeedProject();
-
-    BeGuid fakeContextId1(true);
-    BeGuid fakeContextId2(true);
-    Utf8String value;
-
-    ASSERT_FALSE(m_db->HasProperty(DgnProjectProperty::ConnectedContextId())) << "Optional properties should not be present by default";
-
-    ASSERT_EQ(BE_SQLITE_OK, m_db->SavePropertyString(DgnProjectProperty::ConnectedContextId(), fakeContextId1.ToString()));
-    ASSERT_EQ(BE_SQLITE_ROW, m_db->QueryProperty(value, DgnProjectProperty::ConnectedContextId()));
-    ASSERT_STREQ(value.c_str(), fakeContextId1.ToString().c_str()) << "Expected fakeContextId1";
-
-    ASSERT_EQ(BE_SQLITE_OK, m_db->SavePropertyString(DgnProjectProperty::ConnectedContextId(), fakeContextId2.ToString()));
-    ASSERT_EQ(BE_SQLITE_ROW, m_db->QueryProperty(value, DgnProjectProperty::ConnectedContextId()));
-    ASSERT_STREQ(value.c_str(), fakeContextId2.ToString().c_str()) << "Expected fakeContextId2";
-
-    ASSERT_EQ(BE_SQLITE_DONE, m_db->DeleteProperty(DgnProjectProperty::ConnectedContextId()));
-    ASSERT_FALSE(m_db->HasProperty(DgnProjectProperty::ConnectedContextId())) << "Property should have been deleted";
-
-    ASSERT_EQ(BE_SQLITE_OK, m_db->SavePropertyString(DgnProjectProperty::ConnectedContextId(), fakeContextId1.ToString()));
-    ASSERT_EQ(BE_SQLITE_ROW, m_db->QueryProperty(value, DgnProjectProperty::ConnectedContextId()));
-    ASSERT_STREQ(value.c_str(), fakeContextId1.ToString().c_str()) << "Expected fakeContextId1";
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    02/2020
@@ -284,7 +257,7 @@ TEST_F(DgnDbTest, CreateTrackedDgnDb)
     SchemaStatus schemaStatus = DgnPlatformTestDomain::GetDomain().ImportSchema(*dgndb);
     ASSERT_TRUE(schemaStatus == SchemaStatus::Success);
 
-    dgndb->ResetBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Snapshot()));
+    dgndb->ResetBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone()));
     dgndb->Txns().EnableTracking(true);
 
     PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*dgndb, "TestPartition");
@@ -310,13 +283,13 @@ TEST_F(DgnDbTest, CreateTrackedDgnDb)
 
     // Check that we can turn the Briefcase -> Master
     BeGuid oldGuid = dgndb->QueryProjectGuid();
-    result = dgndb->ResetBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::CheckpointSnapshot()));
+    result = dgndb->ResetBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone()));
     ASSERT_TRUE(result == BE_SQLITE_OK);
     BeGuid newGuid = dgndb->QueryProjectGuid();
     ASSERT_TRUE(oldGuid != newGuid && "A new GUID has to be assigned when turning a briefcase into a master copy");
 
     // Check that we can turn the Master -> Briefcase again
-    result = dgndb->ResetBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Snapshot()));
+    result = dgndb->ResetBriefcaseId(TEST_BRIEFCASE_ID);
     ASSERT_TRUE(result == BE_SQLITE_OK);
     oldGuid = newGuid;
     newGuid = dgndb->QueryProjectGuid();
@@ -326,7 +299,7 @@ TEST_F(DgnDbTest, CreateTrackedDgnDb)
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod                                  Ramanujam.Raman                 06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnDbTest, SetUntrackedDbAsMaster)
+TEST_F(DgnDbTest, SetBriefcaseAsStandalone)
 {
     // TFS#905753 - Setup an untracked DB as a master copy after local changes
     DbResult result = BE_SQLITE_ERROR;
@@ -334,7 +307,7 @@ TEST_F(DgnDbTest, SetUntrackedDbAsMaster)
     DgnDbPtr dgndb = DgnDb::CreateDgnDb(&result, DgnDbTestDgnManager::GetOutputFilePath(L"MasterCopy.ibim"), params);
     ASSERT_TRUE(dgndb.IsValid());
 
-    dgndb->ResetBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::StandAlone()));
+    dgndb->ResetBriefcaseId(TEST_BRIEFCASE_ID);
     ASSERT_TRUE(dgndb->Txns().IsTracking());
 
     PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*dgndb, "TestPartition");
@@ -347,7 +320,7 @@ TEST_F(DgnDbTest, SetUntrackedDbAsMaster)
     ASSERT_TRUE(dgndb->Txns().HasPendingTxns());
 
     // Check that we can turn the Briefcase -> Master
-    result = dgndb->ResetBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::CheckpointSnapshot()));
+    result = dgndb->ResetBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone()));
     ASSERT_FALSE(dgndb->Txns().HasPendingTxns());
     ASSERT_FALSE(dgndb->Txns().IsTracking());
     ASSERT_TRUE(result == BE_SQLITE_OK);
@@ -359,14 +332,14 @@ TEST_F(DgnDbTest, SetUntrackedDbAsMaster)
 TEST_F(DgnDbTest, ImportSchemaWithLocalChanges)
 {
     // TFS#906843 was resolved as WAD. This ensures that that's really WAD - i.e.,
-    // importing schema into a standalone briefcase with local changes should NOT be possible.
+    // importing schema into a briefcase with local changes should NOT be possible.
     DbResult result = BE_SQLITE_ERROR;
     CreateDgnDbParams params(TEST_NAME);
     DgnDbPtr dgndb = DgnDb::CreateDgnDb(&result, DgnDbTestDgnManager::GetOutputFilePath(L"ImportSchemaWithLocalChanges.ibim"), params);
     // Fails on Linux
     ASSERT_TRUE(dgndb.IsValid());
 
-    dgndb->ResetBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::StandAlone()));
+    dgndb->ResetBriefcaseId(TEST_BRIEFCASE_ID);
     ASSERT_TRUE(dgndb->Txns().IsTracking());
 
     PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*dgndb, "TestPartition");

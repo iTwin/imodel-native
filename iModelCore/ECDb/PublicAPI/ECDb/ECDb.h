@@ -189,7 +189,7 @@ protected:
 
     ECDB_EXPORT DbResult _OnDbOpening() override;
     ECDB_EXPORT DbResult _OnDbCreated(CreateParams const&) override;
-    ECDB_EXPORT void _OnAfterSetBriefcaseId(Utf8StringCR parentCSId, Utf8StringCR initialParentCSId) override;
+    ECDB_EXPORT void _OnAfterSetBriefcaseId() override;
     ECDB_EXPORT void _OnDbClose() override;
     ECDB_EXPORT void _OnDbChangedByOtherConnection() override;
     ECDB_EXPORT ProfileState _CheckProfileVersion() const override;
