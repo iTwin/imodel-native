@@ -270,7 +270,19 @@ ConvertToDgnDbElementExtension::Result ConvertDTMElement::_PreConvertElement(Dgn
             BentleyM0200::ScalableMesh::IDTMSourcePtr sourceP = ScalableMesh::IDTMLocalFileSource::Create(ScalableMesh::DTMSourceDataType::DTM_SOURCE_DATA_DTM, dtmFile.c_str());
 
             scalableMeshCreatorPtr->EditSources().Add(sourceP);
+
+            auto projectGCS = converter.GetDgnDb().GeoLocation().GetDgnGCS();
+            if(projectGCS != nullptr)
+                {
+                WString streamingRasterUrl = L"http://www.bing.com/maps/Aerial";
+
+                ScalableMesh::IDTMSourcePtr bingSourceP = ScalableMesh::IDTMLocalFileSource::Create(ScalableMesh::DTMSourceDataType::DTM_SOURCE_DATA_IMAGE,
+                                                                                                    streamingRasterUrl.c_str());
+                scalableMeshCreatorPtr->EditSources().Add(bingSourceP);
+                }
+
             scalableMeshCreatorPtr->Create();
+            scalableMeshCreatorPtr->SetBaseGCS(projectGCS);
             scalableMeshCreatorPtr->SaveToFile();
             scalableMeshCreatorPtr = nullptr;
             BeFileName::BeDeleteFile(dtmFile.c_str());

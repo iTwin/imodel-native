@@ -740,7 +740,7 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
 //----------------------------------------------------------------------------------------
 bool ScalableMeshModel::AllowPublishing() const
     {
-    return m_smPtr.IsValid() && !m_smPtr->IsCesium3DTiles() && !m_textureInfo->IsUsingBingMap();
+    return m_smPtr.IsValid() && !m_smPtr->IsCesium3DTiles() /*&& !m_textureInfo->IsUsingBingMap()*/;
     }
 
 //----------------------------------------------------------------------------------------
