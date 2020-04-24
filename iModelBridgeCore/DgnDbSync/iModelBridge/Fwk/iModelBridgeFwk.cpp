@@ -1320,6 +1320,8 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin
         params.SetiModelName(m_iModelHubArgs->m_repositoryName);
         params.SetUserName(m_iModelHubArgs->m_credentials.GetUsername());
         params.SetProjectGuid(m_iModelHubArgs->m_bcsProjectId);
+        params.SetCallBackUrl(m_iModelHubArgs->m_callBackurl);
+        params.SetAccessToken(m_iModelHubArgs->m_accessToken);
         }
     }
 

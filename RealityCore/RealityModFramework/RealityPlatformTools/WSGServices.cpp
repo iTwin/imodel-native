@@ -794,6 +794,18 @@ ProxyManager::ProxyManager()
 // @bsimethod                                   Spencer.Mason                10/2017
 //-------------------------------------------------------------------------------------
 ConnectTokenManager* ConnectTokenManager::s_ctInstance = nullptr;
+WebServices::IConnectTokenProvider* ConnectTokenManager::m_tokenProvider = nullptr;
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Vishal.Shingare              04/2020
+//-------------------------------------------------------------------------------------
+void ConnectTokenManager::SetTokenProvider(Utf8String callBackurl, Utf8String accessToken)
+    {
+    if (!callBackurl.empty())
+        m_tokenProvider = new iModel::Hub::OidcTokenProvider(callBackurl);
+    else
+        m_tokenProvider = new iModel::Hub::OidcStaticTokenProvider(accessToken);
+    }
+
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                10/2017
 //-------------------------------------------------------------------------------------
@@ -818,8 +830,7 @@ ConnectTokenManager::ConnectTokenManager() :
 //-------------------------------------------------------------------------------------
 Utf8String ConnectTokenManager::GetToken() const
     {
-    if ((std::time(nullptr) - m_tokenRefreshTimer) > (59 * 60)) //refresh required every 60 minutes
-        RefreshToken();
+    RefreshToken();
     return m_token;
     }
 POP_DISABLE_DEPRECATION_WARNINGS

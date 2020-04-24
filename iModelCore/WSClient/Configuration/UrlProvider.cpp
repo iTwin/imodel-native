@@ -371,6 +371,22 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ProjectWiseDocumentService(
 	&s_urlRegistry
 );
 
+const UrlProvider::UrlDescriptor UrlProvider::Urls::RealityDataServices(
+    "RealityDataServices",
+    "https://dev-connect-realitydataservices.bentley.com/",
+    "https://qa-connect-realitydataservices.bentley.com/",
+    "https://connect-realitydataservices.bentley.com/",
+    "https://perf-connect-realitydataservices.bentley.com/",
+    &s_urlRegistry
+);
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ContextServices(
+    "ContextServices",
+    "https://dev-connect-contextservices.bentley.com/",
+    "https://qa-connect-contextservices.bentley.com/",
+    "https://connect-contextservices.bentley.com/",
+    "https://perf-connect-contextservices.bentley.com/",
+    &s_urlRegistry
+);
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                julius.cepukenas   11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/

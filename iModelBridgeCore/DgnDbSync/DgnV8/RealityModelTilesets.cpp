@@ -186,6 +186,7 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
 
     if (doUpload)
         {
+        ConnectTokenManager::SetTokenProvider(_GetParams().GetCallBackUrl(), _GetParams().GetAccessToken());
         RDSRequestManager::Setup();
         if (!RealityDataService::AreParametersSet())
             {

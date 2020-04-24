@@ -86,7 +86,9 @@ LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
                        $(ContextSubPartsStaticLibs)$(libprefix)BeZLib$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeXml$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libext) \
-                       $(ContextSubpartsLibs)$(libprefix)RealityPlatform$(libext)
+                       $(ContextSubpartsLibs)$(libprefix)RealityPlatform$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)WebServicesClient$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)iModelHubClient$(libext)
 
 %if defined (MSVC_VERSION)
 # windows specific for Unzipfile

@@ -613,6 +613,8 @@ struct iModelBridge
         bvector<WString> m_additionalFiles;
         Utf8String                              m_repositoryName;     //!< A repository in the iModelHub project
         int                                     m_environment;    //!< Connect environment. Should match UrlProvider::Environment
+        Utf8String                              m_accessToken;
+        Utf8String                              m_callBackurl;
         Utf8String                              m_iModelHubUserName;
         Utf8String                              m_projectGuid;
         Utf8String  m_revisionComment;
@@ -760,6 +762,12 @@ struct iModelBridge
         //UrlProvider::Environment
         int GetUrlEnvironment() const { return m_environment; }
         void SetUrlEnvironment(int env)  { m_environment = env; }
+
+        Utf8String GetAccessToken() const { return m_accessToken; }
+        void SetAccessToken(Utf8String accessToken) { m_accessToken = accessToken; }
+
+        Utf8String GetCallBackUrl() const { return m_callBackurl; }
+        void SetCallBackUrl(Utf8String callBackurl) { m_callBackurl = callBackurl; }
 
         Utf8String GetUserName() const { return m_iModelHubUserName; }
         void SetUserName(Utf8StringCR name) { m_iModelHubUserName = name; }

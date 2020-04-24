@@ -30,6 +30,8 @@
         <SubPart PartName="BeHttp"                     PartFile="iModelCore/BeHttp/BeHttp"                    Repository="imodel02"/>
         <SubPart PartName="BeJsonCpp"                  PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp"                 Repository="imodel02"/>
         <SubPart PartName="BentleyDesktopClientCCApi"  PartFile="SdkSources"                Repository="bsicommon" />
+        <SubPart PartName="WebServicesClient"          PartFile="iModelCore/WSClient/WSClient"            Repository="imodel02"/>
+        <SubPart PartName="iModelHubClient"            PartFile="iModelCore/WSClient/WSClient"            Repository="imodel02"/>
         <Bindings>
             <Libs>Delivery/$(stlibprefix)RealityPlatformTools$(stlibext)</Libs>
             <Assemblies>delivery/$(shlibprefix)RealityPlatformTools$(ApiNumber)$(shlibext)</Assemblies>
@@ -42,6 +44,8 @@
         <SubPart PartName="RealityPlatform" />
         <SubPart PartName="BeJsonCpp"                  PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp"            Repository="imodel02"/>
         <SubPart PartName="ImagePPDll"                 PartFile="RealityCore/Imagepp/ImagePP"                   Repository="imodel02" />
+        <SubPart PartName="WebServicesClient"          PartFile="iModelCore/WSClient/WSClient"            Repository="imodel02"/>
+        <SubPart PartName="iModelHubClient"            PartFile="iModelCore/WSClient/WSClient"            Repository="imodel02"/>
         <Bindings>
             <Libs>Delivery/$(stlibprefix)RealityPlatformToolsLight$(stlibext)</Libs>
             <Assemblies>delivery/$(shlibprefix)RealityPlatformToolsLight$(ApiNumber)$(shlibext)</Assemblies>
@@ -56,6 +60,8 @@
         <SubPart PartName="BeJsonCpp"                  PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp"                 Repository="imodel02"/>
         <SubPart PartName="BeXml" PartFile="iModelCore/Bentley/Bentley"/>
         <SubPart PartName="GeomDlls" PartFile="iModelCore/GeomLibs/geomlibs"/>
+        <SubPart PartName="WebServicesClient"          PartFile="iModelCore/WSClient/WSClient"            Repository="imodel02"/>
+        <SubPart PartName="iModelHubClient"            PartFile="iModelCore/WSClient/WSClient"            Repository="imodel02"/>
         <Bindings>
             <Libs>Delivery/$(stlibprefix)RealityPlatformToolsNoCC$(stlibext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)RealityPlatformToolsNoCC$(ApiNumber)$(shlibext)</Assemblies>

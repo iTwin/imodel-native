@@ -13,6 +13,8 @@
 #include <Bentley/BeFile.h>
 #include <RealityPlatform/RealityPlatformAPI.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
+#include <WebServices/iModelHub/Client/OidcTokenProvider.h>
+
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
@@ -540,6 +542,7 @@ protected:
     REALITYDATAPLATFORM_EXPORT ConnectTokenManager();
 public:
     REALITYDATAPLATFORM_EXPORT static ConnectTokenManager& GetInstance();
+    REALITYDATAPLATFORM_EXPORT static void SetTokenProvider(Utf8String callBackurl, Utf8String accessToken);
 
     //! Set token callback informations
     REALITYDATAPLATFORM_EXPORT void SetTokenCallback(RequestConstructor_TokenCallBack pi_func) { m_tokenCallback = pi_func; }
@@ -548,6 +551,7 @@ public:
     REALITYDATAPLATFORM_EXPORT void RefreshToken() const;
 
 private:
+    static WebServices::IConnectTokenProvider*       m_tokenProvider;
     mutable Utf8String                  m_token;
     mutable time_t                      m_tokenRefreshTimer;
     RequestConstructor_TokenCallBack    m_tokenCallback;
