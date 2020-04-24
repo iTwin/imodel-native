@@ -3,6 +3,9 @@ Merge Done:
 
 Topaz Tree
 Revision
+
+4458	DevOps #218882 [GCS] Geocoordination service 3SM computation crash.
+
 		February 2020
 		---------------
 4457	Accept to open .ctiff file as .tiff64 format.

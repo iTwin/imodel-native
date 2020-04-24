@@ -175,6 +175,9 @@ HFCPtr<HRFRasterFile> HRFiTiffCacheFileCreator::GetCacheFileFor(HFCPtr<HRFRaster
                              s_cTiffExtensionCache,
                              pOriginalFile->GetOffset(),
                              pi_Page);
+    if (CacheURL == NULL)
+        throw(HFCInvalidFileNameException(pOriginalFile->GetURL()->GetURL()));
+
     HFCStat CacheFileStat(CacheURL);
     bool   OpenNewFile = false;
 
@@ -204,6 +207,9 @@ HFCPtr<HRFRasterFile> HRFiTiffCacheFileCreator::GetCacheFileFor(HFCPtr<HRFRaster
                                                        s_iTiffExtensionCache,
                                                        pOriginalFile->GetOffset(),
                                                        pi_Page);
+
+            if (OldCacheURL == NULL)
+                throw(HFCInvalidFileNameException(pOriginalFile->GetURL()->GetURL()));
 
             HFCStat  OldCacheFileStat(OldCacheURL);
 
@@ -284,10 +290,10 @@ HFCPtr<HFCURL> HRFiTiffCacheFileCreator::ComposeURLFor(const HFCPtr<HFCURL>& pi_
     if (pi_Page != -1 && pi_Page != 0)
         {
         Utf8PrintfString extension(".page%d%s", pi_Page, pi_Extension.c_str());
-        return HRFLocalCacheFileCreator::ComposeURLFor(pi_rpURLFileName, extension.c_str(), pi_Offset);
+        return HRFLocalCacheFileCreator::ComposeURLFor_longFilename(pi_rpURLFileName, extension.c_str(), pi_Offset);
         }
     else
-        return HRFLocalCacheFileCreator::ComposeURLFor(pi_rpURLFileName, pi_Extension, pi_Offset);
+        return HRFLocalCacheFileCreator::ComposeURLFor_longFilename(pi_rpURLFileName, pi_Extension, pi_Offset);
     }
 
 //-----------------------------------------------------------------------------
@@ -340,6 +346,9 @@ bool HRFiTiffCacheFileCreator::HasCacheFor(const HFCPtr<HFCURL>& pi_rForRasterFi
                                   s_iTiffExtensionCache,
                                   pi_Offset,
                                   pi_Page);
+
+        if (pCacheURL == NULL)
+            throw(HFCInvalidFileNameException(pi_rForRasterFileURL->GetURL()));
 
         HFCStat OldCacheFileStat(pCacheURL);
         // Check if the Cache file exist.

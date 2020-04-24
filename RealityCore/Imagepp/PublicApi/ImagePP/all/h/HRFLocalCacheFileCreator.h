@@ -38,6 +38,10 @@ public:
                                                   const Utf8String&        pi_Extension,
                                                   uint64_t             pi_Offset = 0) const;
 
+    HFCPtr<HFCURL>                  ComposeURLFor_longFilename(const HFCPtr<HFCURL>& pi_rpURLFileName,
+                                                               const Utf8String&     pi_Extension,
+                                                               uint64_t              pi_Offset = 0) const;
+
 protected:
     HFCPtr<HFCURL> m_pPath;
     HFCPtr<HFCURL> m_pDefaultPath;
@@ -47,6 +51,11 @@ protected:
 
     HRFLocalCacheFileCreator();
 private:
+    void internComposeURLFor(const HFCPtr<HFCURL>& pi_rpURLFileName,
+                             const Utf8String&     pi_Extension,
+                             uint64_t              pi_Offset,
+                             BeFileName&           po_FileName) const;
+
     // Disabled methods
     HRFLocalCacheFileCreator(const HRFLocalCacheFileCreator&);
     HRFLocalCacheFileCreator& operator=(const HRFLocalCacheFileCreator&);

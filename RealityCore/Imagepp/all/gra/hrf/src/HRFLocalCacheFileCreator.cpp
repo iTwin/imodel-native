@@ -48,21 +48,21 @@ HRFLocalCacheFileCreator::~HRFLocalCacheFileCreator()
 //-----------------------------------------------------------------------------
 HFCPtr<HFCURL> HRFLocalCacheFileCreator::GetTentativeURLFor(
     const HFCPtr<HFCURL>& pi_rpURLFileName,
-    const Utf8String&        pi_Extension,
-    uint64_t             pi_Offset) const
+    const Utf8String&     pi_Extension,
+    uint64_t              pi_Offset) const
     {
     return ComposeURLFor(pi_rpURLFileName, pi_Extension, pi_Offset);
     }
 
-
 //-----------------------------------------------------------------------------
-// public
-// ComposeURLFor
+// private
+// internComposeURLFor
 //-----------------------------------------------------------------------------
-HFCPtr<HFCURL> HRFLocalCacheFileCreator::ComposeURLFor(
-    const HFCPtr<HFCURL>& pi_rpURLFileName,
-    const Utf8String&        pi_Extension,
-    uint64_t             pi_Offset) const
+void HRFLocalCacheFileCreator::internComposeURLFor(
+    const HFCPtr<HFCURL>&   pi_rpURLFileName,
+    const Utf8String&       pi_Extension,
+    uint64_t                pi_Offset,
+    BeFileName&             po_FileName) const
     {
     // Get the filename
     Utf8String ComposedFileName(ComposeFilenameFor(pi_rpURLFileName));
@@ -81,12 +81,82 @@ HFCPtr<HFCURL> HRFLocalCacheFileCreator::ComposeURLFor(
 
     // Add the path to the Booster url
     BeFileName localPath;
-    ImageppLib::GetHost().GetImageppLibAdmin()._GetLocalCacheDirPath(localPath);
+    ImageppLib::GetHost().GetImageppLibAdmin()._GetLocalCacheDirPath(po_FileName);
     WString ComposedFileNameW(ComposedFileName.c_str(), BentleyCharEncoding::Utf8);
-    localPath.AppendToPath(ComposedFileNameW.c_str());
+    po_FileName.AppendToPath(ComposedFileNameW.c_str());
+    }
+
+//-----------------------------------------------------------------------------
+// public
+// ComposeURLFor
+//-----------------------------------------------------------------------------
+HFCPtr<HFCURL> HRFLocalCacheFileCreator::ComposeURLFor(
+    const HFCPtr<HFCURL>&   pi_rpURLFileName,
+    const Utf8String&       pi_Extension,
+    uint64_t                pi_Offset) const
+{
+    BeFileName localPath;
+    internComposeURLFor(pi_rpURLFileName, pi_Extension, pi_Offset, localPath);
+
+    return HFCURL::CreateFrom(localPath);
+}
+
+//-----------------------------------------------------------------------------
+// public
+// ComposeURLFor_longFilename
+//-----------------------------------------------------------------------------
+uint64_t inline MurmurOAAT64(WCharCP key)
+    {
+    uint64_t h(525201411107845655ull);
+    for (; *key; ++key) {
+        h ^= *key;
+        h *= 0x5bd1e9955bd1e995;
+        h ^= h >> 47;
+        }
+    return h;
+    }
+
+// +20 to support the ".sharing.tmp" for the sharing file + some bytes for safety.
+#define  SHARING_SAFETY 20
+
+HFCPtr<HFCURL> HRFLocalCacheFileCreator::ComposeURLFor_longFilename(
+    const HFCPtr<HFCURL>& pi_rpURLFileName,
+    const Utf8String&     pi_Extension,
+    uint64_t              pi_Offset) const
+    {
+    BeFileName localPath;
+    internComposeURLFor(pi_rpURLFileName, pi_Extension, pi_Offset, localPath);
+
+    if (localPath.GetNameSize() >= (MAX_PATH - SHARING_SAFETY))
+        {
+        // Extract the filename
+        size_t i(localPath.GetNameSize() - 1);
+        while ((i >= 1) && (localPath[i] != WCSDIR_SEPARATOR_CHAR))
+            --i;
+
+        HASSERT(i > 0);
+        size_t FilenameSize = localPath.GetNameSize() - i;
+
+        uint64_t hash = MurmurOAAT64(&(localPath.c_str()[i]));
+        Utf8String hashkey;
+        hashkey.Sprintf("_%016llX_", hash);
+
+        size_t reduceSize = (localPath.GetNameSize() - MAX_PATH) + 18 /*GUID*/ + SHARING_SAFETY;
+        HASSERT(FilenameSize > reduceSize);
+
+        // Reduce string at the middle 
+        Utf8String FirstPartName(localPath.substr(0, i + (FilenameSize / 2) - reduceSize / 2));
+        Utf8String LastPartName(localPath.substr(i + (FilenameSize / 2) + reduceSize / 2, (FilenameSize / 2) - reduceSize / 2));
+        FirstPartName += hashkey;
+        FirstPartName += LastPartName;
+
+        localPath = BeFileName(FirstPartName.c_str());
+        }
 
     return HFCURL::CreateFrom(localPath);
     }
+
+
 
 //-----------------------------------------------------------------------------
 // Protected
