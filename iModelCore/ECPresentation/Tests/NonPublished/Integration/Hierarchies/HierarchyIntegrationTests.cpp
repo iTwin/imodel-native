@@ -6643,6 +6643,69 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, FiltersNodesByParentNod
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                04/2020
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(FiltersGroupedNodesByGrandParentNodes_MatchingFilter, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="Value" typeName="int" />
+    </ECEntityClass>
+    <ECEntityClass typeName="B" />
+    <ECEntityClass typeName="C">
+        <ECProperty propertyName="Value" typeName="int" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, FiltersGroupedNodesByGrandParentNodes_MatchingFilter)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("Value", ECValue(1));});
+    IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr c = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance) {instance.SetValue("Value", ECValue(1));});
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule();
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
+        "", classA->GetFullName(), false));
+    rules->AddPresentationRule(*rootRule);
+
+    ChildNodeRule* childRule = new ChildNodeRule(Utf8PrintfString("ParentNode.ClassName=\"%s\"", classA->GetName().c_str()), 1, false, TargetTree_Both);
+    childRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, true, false, false,
+        "", classB->GetFullName(), false));
+    rules->AddPresentationRule(*childRule);
+
+    ChildNodeRule* grandChildRule = new ChildNodeRule(Utf8PrintfString("ParentNode.ClassName=\"%s\"", classB->GetName().c_str()), 1, false, TargetTree_Both);
+    grandChildRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
+        "this.Value = parent.parent.Value", classC->GetFullName(), false));
+    rules->AddPresentationRule(*grandChildRule);
+
+    // make sure we have 1 root node
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
+    DataContainer<NavNodeCPtr> aNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
+    ASSERT_EQ(1, aNodes.GetSize());
+    VerifyNodeInstance(*aNodes[0], *a);
+
+    // make sure it has 1 'B' grouping node
+    DataContainer<NavNodeCPtr> bGroupingNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *aNodes[0], PageOptions(), options).get(); });
+    ASSERT_EQ(1, bGroupingNodes.GetSize());
+    EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, bGroupingNodes[0]->GetKey()->GetType().c_str());
+
+    // make sure it has 1 'B' instance node
+    DataContainer<NavNodeCPtr> bNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *bGroupingNodes[0], PageOptions(), options).get(); });
+    ASSERT_EQ(1, bNodes.GetSize());
+    VerifyNodeInstance(*bNodes[0], *b);
+    
+    // make sure it has 1 'C' instance node
+    DataContainer<NavNodeCPtr> cNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *bNodes[0], PageOptions(), options).get(); });
+    ASSERT_EQ(1, cNodes.GetSize());
+    VerifyNodeInstance(*cNodes[0], *c);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Saulius.Skliutas                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoubleProperty_NoDigitsAfterDecimalPointAppendTwoZeroes)

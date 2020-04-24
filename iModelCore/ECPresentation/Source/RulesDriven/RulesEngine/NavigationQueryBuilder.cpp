@@ -2518,18 +2518,15 @@ static bset<unsigned> GetUsedParentInstanceLevels(Utf8String instanceFilter)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static NavNodeCPtr GetParentNodeByLevel(IHierarchyCacheCR nodesCache, NavNodeCR currNode, unsigned currNodeLevel, unsigned targetNodeLevel)
+static NavNodeCPtr GetParentInstanceNodeByLevel(IHierarchyCacheCR nodesCache, NavNodeCR currInstanceNode, unsigned currNodeLevel, unsigned targetNodeLevel)
     {
-    NavNodeCPtr curr = &currNode;
-    for (unsigned i = currNodeLevel; i < targetNodeLevel; ++i)
+    NavNodeCPtr curr = &currInstanceNode;
+    while (curr.IsValid() && currNodeLevel < targetNodeLevel)
         {
-        if (curr.IsNull() || !NavNodeExtendedData(*curr).HasVirtualParentId())
-            {
-            BeAssert(false);
-            return nullptr;
-            }
         uint64_t parentId = NavNodeExtendedData(*curr).GetVirtualParentId();
         curr = nodesCache.GetNode(parentId);
+        if (curr->GetKey()->AsECInstanceNodeKey())
+            ++currNodeLevel;
         }
     return curr;
     }
@@ -2576,7 +2573,7 @@ static BentleyStatus AppendParents(ComplexNavigationQuery& query, bset<unsigned>
             return ERROR;
             }
 
-        NavNodeCPtr parent = GetParentNodeByLevel(params.GetNodesCache(), *previousParent, previousLevel, targetLevel);
+        NavNodeCPtr parent = GetParentInstanceNodeByLevel(params.GetNodesCache(), *previousParent, previousLevel, targetLevel);
         if (parent.IsNull() || nullptr == parent->GetKey()->AsECInstanceNodeKey())
             {
             BeAssert(false);
